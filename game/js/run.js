@@ -662,6 +662,7 @@ const RUN_HINTS = {
   stall: () => 'A stall: a shop with new stock every day, but no clinic.',
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
   boss: () => 'The boss. Beat it and the run is won.',
+  rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',
   relic: () =>
     `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
 };
@@ -676,6 +677,6 @@ export function runHint(id) {
 export function runArrivedHint() {
   const run = saveData.run,
     node = run && run.map && run.map.nodes[runMapNode(saveData.trip.node)];
-  if (node && ['town', 'event', 'stall', 'miniboss', 'boss'].includes(node.type))
+  if (node && ['town', 'event', 'stall', 'miniboss', 'boss', 'rival'].includes(node.type))
     runHint(/** @type {any} */ (node.type));
 }

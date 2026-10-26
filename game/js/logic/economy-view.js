@@ -16,6 +16,7 @@
    Logic only: no DOM, runs in Node (tools/test/economy-view.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { META_CURRENCIES } from './meta-state.js';
 /* eslint-disable no-func-assign */
 expose({
   ECONOMY_PAYOUT: [() => ECONOMY_PAYOUT],
@@ -36,6 +37,7 @@ export const ECONOMY_PAYOUT = {
   winCrests: ['crests', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
+  beansWin: ['beans', 'Beans for a win'],
 };
 
 /**
@@ -126,7 +128,7 @@ export function economyLines(D) {
   const B = D.buildings || {};
   for (const [k, U] of Object.entries(D.unlocks || {})) {
     const G = /** @type {any} */ (U).grant || {};
-    for (const c of ['research', 'scrap', 'crests'])
+    for (const c of META_CURRENCIES)
       if (G[c])
         add({
           currency: c,

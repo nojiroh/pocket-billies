@@ -102,11 +102,18 @@ test("the run's foes: a leader on every mini-boss node and the boss's, none twic
   assert.equal(LEADERS.length, 8);
   for (let k = 0; k < 200; k++) {
     const run = runOf(`FOES${k}`),
-      foes = L.runFoes(run, { leaders: LEADERS, rules: R }),
+      /* RL-S2: Blake's foes are rival.test.mjs's */
+      leadersOf = (/** @type {any} */ o) =>
+        Object.fromEntries(Object.entries(o).filter(([, F]) => F.runFoe !== 'rival')),
+      foes = leadersOf(L.runFoes(run, { leaders: LEADERS, rules: R })),
       want = run.map.nodes.flatMap((n, i) => (n.type === 'miniboss' || n.type === 'boss' ? [i] : []));
     assert.deepEqual(Object.keys(foes).sort(), want.map(L.runFoeId).sort());
     assert.equal(new Set(Object.values(foes).map(F => F.from)).size, want.length, 'no leader twice in a run');
-    assert.deepEqual(L.runFoes(run, { leaders: LEADERS.slice().reverse(), rules: R }), foes, 'the same foes again');
+    assert.deepEqual(
+      leadersOf(L.runFoes(run, { leaders: LEADERS.slice().reverse(), rules: R })),
+      foes,
+      'the same foes again'
+    );
     for (const F of Object.values(foes)) {
       const i = F.runNode,
         node = run.map.nodes[i],

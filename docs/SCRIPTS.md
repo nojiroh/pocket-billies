@@ -100,10 +100,16 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `money >= 200` | Moneys on hand (RL-12b) |
 | `team >= 2` | Billies in the team (RL-12b) |
 | `badge:Water` | a badge of that type is won: `meta.badges` (RL-R2) or a leader's seat (RL-12b) |
-| `last:lost`, `last:row <= 3` | the last run (RL-S1, `meta.history`): `won`, `lost`, `quit` (1 or 0), `row` (the furthest reached), `days`, `perks`, `team`, `leaders` (beaten), `expedition`; all 0 before the first run |
-| `lastby:bureau`, `lastby:boss`, `lastby:marina` | what ended the last run: its kind (`wild`, `route`, `event`, `miniboss`, `boss`, `trainer`), a leader's or class's id, the Billie standing, or `bureau` (a Bureau agent) |
-| `history:losses >= 2` | over the runs kept (the last 20): `runs`, `wins`, `losses`, `quits`, `streak` (wins in a row, newest back), `lstreak` (losses in a row), `bureau` (runs a Bureau agent ended) |
+| `last:lost`, `last:row <= 3` | the last run (RL-S1, `meta.history`): `won`, `lost`, `quit` (1 or 0), `row` (the furthest reached), `days`, `perks`, `team`, `leaders` (beaten), `expedition`, RL-S2 `rival` (meetings with Blake) and `rivalwon`; all 0 before the first run |
+| `lastby:bureau`, `lastby:boss`, `lastby:marina` | what ended the last run: its kind (`wild`, `route`, `event`, `miniboss`, `boss`, `rival`, `trainer`), a leader's or class's id (Blake's is `blake`), the Billie standing, or `bureau` (a Bureau agent) |
+| `history:losses >= 2` | over the runs kept (the last 20): `runs`, `wins`, `losses`, `quits`, `streak` (wins in a row, newest back), `lstreak` (losses in a row), `bureau` (runs a Bureau agent ended), RL-S2 `rivalmet`, `rivalwon` (meetings with Blake, and wins), `rivallost` (runs he ended) |
 | `rematch >= 1` | in a leader's or agent's line: how many runs kept that foe ended |
+| `rel:hazel >= 2` | your level with a hub person (RL-S2, relations.json: the levels their points reach) |
+| `beans >= 1` | Beans on hand, the gift currency (RL-S2) |
+| `gifted:hazel` | you gave them a gift since the last run (RL-S2) |
+| `lastteam:Grass`, `lastteam:musk >= 2` | the team the last run ended with (RL-S2, `meta.history`'s newest entry): Billies of a type, a line or a species; `type:` reads the team you have now |
+| `rival >= 1` | on a run, the meetings with Blake so far (RL-S2; before his battle, `rival >= 1` means a second meeting); 0 off a run |
+| `chapter >= 2` | the story's chapter (RL-S2: `meta.chapter`, 1 at the start, moved on only by the command `chapter n`, at most 9) |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own
 (`item:honey`, `badges`) means more than 0. Conditions are parsed once and never run as code. A mistake says where:
@@ -121,7 +127,11 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `wait s` | waits, in seconds |
 | `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
-| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`; nothing if no line fits |
+| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`, RL-S2 `thanks_chosen`, `thanks_hazel`, `thanks_juniper`; nothing if no line fits |
+| `beans n` | Beans found (RL-S2): into `meta.beans` at once, counted on the run for its payout screen |
+| `gift who` | a gift for a hub person (RL-S2): a Bean, `gift.points` with them; nothing with too few Beans or one given since the last run (gate it: `> [if beans >= 1 and not gifted:hazel] ...`) |
+| `rel who n` | points with a hub person, as for a favour done (RL-S2) |
+| `chapter n` | moves the story on to chapter n (RL-S2), never back |
 | `end` | stops the script |
 | `camera run-up` | someone runs up to you: the walk scene you stand in becomes a scene, with you and the one who talks (out of sight beyond you) on it; a battle, or the script's end, ends it |
 | `walk who beside me` | the one who ran up comes over to stand beside you |
@@ -177,11 +187,57 @@ is drawn from the runs ended and who, so the same save picks the same line. What
 - **In a run**: a leader's script is `pick leader`, then its battle; a Bureau agent's (a class with `"bureau": 1` in
   events.json) `pick bureau` in place of its sight line.
 
+- **Blake** (RL-S2, below) says `pick rival` before his battle (banter.json has lines with `who: "rival"`).
+- **A `must` line not yet heard** (a Chapter beat, a favour's ask or thanks) waits for the next talk instead of
+  being picked over on the next return: its `once` is marked when it is picked, its script runs when it is said.
+
 The run history is `meta.history` (logic/run-history.js): the newest 20 runs, each with its seed, region, Expedition,
 end (`won`, `lost`, `quit`), what beat you, the furthest row, days, the team's species, Perks, the region's leaders
 beaten or not, and the rival's result (RL-S2). The checks: banter.json's schema, a line for every who a script picks,
 a leader and an agent always have a line with no `when`, a `once` line has no cooldown, and every fact a condition
 names exists.
+
+## The rival and the hub folk (RL-S2)
+
+**Blake.** rules.json `run.rival` places him on a run's map (logic/run-map.js `runMapRival`, after the side area, on
+streams of his own, `map|rival|k`): `meet` meetings by Expedition, meeting k on a main-path place of band k (a share of
+the rows) of the first type in `on` the band has (a route, else a waystation), one a row; the node type `rival` (pin
+"Rival", place "<Biome> Route"). His foe (logic/run-loop.js `runFoes`, logic/rival.js `rivalTeam`) has
+trainers/blake.json's name and words (person `chad`, his music): `size` Billies at the first meeting, one more for every
+`grow` meetings kept (`meta.history` entries' `rival.met`, then this run's), at most `max`; the ace of a type that hits
+the lead's types for more than normal damage (the lead: `run.rival.lead`, the Billie you took off with), the region's
+dex first; each a level below the one before from the row's top wild level + `up`. Never blocking; a reward pick,
+`reward` Moneys and, the first win in a run, `run.beans.rival` Beans when beaten; losing to him ends the run like any
+trainer battle (the owner's answer, 2026-10-26). His words: banter.json `who: "rival"` before the battle (his first
+meeting ever, a plain line, after you beat him, after he ended a run, a second meeting in a run: the condition
+`rival`), his win line in trainers/blake.json, and a `back_lost` pair with `lastby:rival`. `run.rival` counts the meetings and
+wins; the history keeps them as `rival: {met, won}` (null when you never met him).
+
+**The hub folk.** game/data/relations.json: `gift` (`cost` in Beans, `points`, `favour`) and `people` (Chosen, Hazel,
+Juniper), each with `levels` (`at` points). While you hold a level its `fx` rows join every run's effects (as a
+Perk's, tagged `rel:<who>`), its `items` and `pyramids` go into the bag at each takeoff, and its `wardrobe` piece is
+given once when reached. Points are `meta.rel`; one gift a person each time home (`meta.gifted`). In the hub, with a
+Bean and none given them since the last run, talking to one of them offers a Bean first (story.js `storyGiftOffer`).
+Beans (currencies.json's fifth row) come from rules.json `run.beans` (the first badge of a type, a side area's leader,
+Blake's first defeat in a run), `run.payout.beansWin` and events' `beans n`. A gift's thank-you is the talk: story.js
+plays `pick thanks_<who>` after it (the level just reached first, a `once` line with `rel:<who> >= n`; else their
+plain `cycle`), and the talk ends there. The levels (the owner's answers, 2026-10-26): 1 a line, 2 and 3 a takeoff
+bonus each, 4 a wardrobe piece, 5 a once-only line.
+
+**Favours.** A person's relations.json `favour`: `quest` (story.json `quests`, stages `asked` and `done`), `check` (a
+condition) and `points` (else `gift.favour`). Their ask is a `once` + `must` banter line whose script ends `quest
+<id> asked`; on the way home (story-stage.js `storyHomeArrive` → relations.js `relFavoursPay`, before the lines are
+picked) a favour at `asked` whose `check` holds is paid: the quest `done`, the points, a toast, and their thanks
+(`when: quest:<id> = done`, once, must) is their next line. Chosen: a leader beaten (`last:leaders >= 1`); Hazel: row
+six (`last:row >= 6`); Juniper: a Grass Billie home (`lastteam:Grass`). The story checks: the quest exists with both
+stages, the check reads.
+
+**Chapters.** `meta.chapter` (1 at the start); `chapter n` moves it on; `chapter >= n` reads it. It is not story.json's
+`chapters` (map variants), which can read it in their own conditions. **Chapter 1's beats** are five `once` + `must`
+banter lines on Hazel and Chosen (`ch1_drop`, `ch1_blake`, `ch1_beans`, `ch1_number`, `ch1_signal`), each setting its
+flag, each needing the one before; its end is story.json `scripts.chapter1-end` (Hazel and Chosen, then `chapter 2`).
+Nothing plays it yet: RL-14's Voltron win sets story `pending = 'chapter1-end'` after `storyHomeArrive` (which clears it on a won run), as a lost run sets `back-lost`;
+until then the debug menu's Story scripts row plays it.
 
 ## Flags
 

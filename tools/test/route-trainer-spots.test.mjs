@@ -19,7 +19,9 @@ const RT = modules['route-trainers'],
     biomes: GAME_DATA.biomes,
     pools: GAME_DATA.pools,
     scenery: GAME_DATA.scenery,
-    rules: RUN,
+    /* RL-S2: Blake kept off, so the samples are the same runs' route places as before his (a rival place has no
+       route trainers; the rarer-spot shares below were tuned on these seeds) */
+    rules: { ...RUN, rival: { ...RUN.rival, meet: [0] } },
     /* RT-3: the set pieces take spots before the trainers do, as in the game */
     setPieces: GAME_DATA.setPieces,
     unlockData: UNLOCK_DATA,

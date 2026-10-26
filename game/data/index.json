@@ -52,6 +52,7 @@
   "lore",
   "story",
   "banter",
+  "relations",
   "cutscenes"
  ],
  "split": {
@@ -114,7 +115,7 @@
     "nacre"
    ]
   },
-  "trainers": {"ids":["crude","markdown","alta","marina","blake0","poppy","vault","morel","carat","tinker"]},
+  "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
   "maps": {
    "ids": [
     "copperleaf",

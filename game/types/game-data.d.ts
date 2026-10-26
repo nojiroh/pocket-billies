@@ -63,6 +63,8 @@ export interface GameData {
   events?: EventsData;
   /** RL-S1: the story director's lines */
   banter?: Record<DataId, BanterLine>;
+  /** RL-S2: the hub folk and you (relations.json) */
+  relations?: RelationsData;
   /** RL-12b: rewards.json */
   rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -830,7 +832,7 @@ export interface TrainerEntry extends Trainer {
   /** RL-8: a run's foe (logic/run-loop.js runFoes): its map node, 'miniboss' or 'boss', the leader it copies, and
       for the boss its top Billie fought alone as an Alpha */
   runNode?: number;
-  runFoe?: 'miniboss' | 'boss';
+  runFoe?: 'miniboss' | 'boss' | 'rival';
   from?: DataId;
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
@@ -1007,7 +1009,11 @@ export interface Rules {
       /** RL-9: Scrap per node cleared, and for a win */
       scrapNode: number;
       scrapWin: number;
+      /** RL-S2: Beans for a win */
+      beansWin: number;
     };
+    /** RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten */
+    beans: { badge: number; side: number; rival: number };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
     /** RL-6: the clock (owner, 8.10): the forecast keeps `ahead` days after today (RL-R2: no deadline) */
@@ -1058,6 +1064,8 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
+    /** RL-S2: Blake, the rival (logic/run-map.js runMapRival, logic/rival.js; placeholders) */
+    rival: RivalRules;
     /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
      * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
      * a double, levels over the place's top wild level, what each pays, how far they see (m) */
@@ -1764,6 +1772,8 @@ export interface Biome {
 export interface NodeType {
   /** what the player reads */
   name: string;
+  /** RL-S2: the word its place's name ends with, when not the name (a rival's place is a Route) */
+  place?: string;
   /** its marker's outline (logic/run-marks.js RUN_MARK_TYPES); the type's id when left out */
   mark?: string;
   /** how it plays: a walkable map, or a menu (a story script or a shop sheet, RL-12) */
@@ -1905,7 +1915,7 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau';
+  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
   when?: string;
   priority: number;
   once?: boolean;
@@ -1951,8 +1961,8 @@ export interface Perk {
   fx: FxRow[];
 }
 
-/** currencies.json: one of the game's four currencies (roguelite track RL-11) */
-export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests';
+/** currencies.json: one of the game's five currencies (roguelite track RL-11; RL-S2: Beans) */
+export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests' | 'beans';
 export interface Currency {
   /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
   name: string;
@@ -1985,7 +1995,8 @@ export type UnlockGrant =
   | { biome: string }
   | { research: number }
   | { scrap: number }
-  | { crests: number };
+  | { crests: number }
+  | { beans: number };
 /** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
  * the Lab's rows are its board) or earned when a condition holds (when) */
 export interface Unlock {
@@ -2165,4 +2176,44 @@ export interface RunSideRules {
   altBoss: number;
   moves: Record<string, number>;
   lean: number;
+}
+/** RL-S2: rules.json run.rival: Blake's meetings in a run and his team (placeholders until the owner answers) */
+export interface RivalRules {
+  /** meetings a run by Expedition (index 0 = Expedition I; past the end, the last) */
+  meet: number[];
+  /** the node types he can stand in for, in order: the first a band has */
+  on: string[];
+  /** meeting k's rows: [from, to) as a share of the map's rows */
+  bands: [number, number][];
+  /** his team: Billies at the first meeting, one more per `grow` past meetings, at most `max` */
+  size: number;
+  grow: number;
+  max: number;
+  /** levels over the row's top wild level, and what beating him pays (Moneys) */
+  up: number;
+  reward: number;
+}
+
+/** RL-S2: relations.json: what a gift costs and gives, and each hub person's levels (logic/relations.js) */
+export interface RelationsData {
+  gift: { cost: number; points: number; favour: number };
+  people: Record<string, { levels: RelationLevel[]; favour?: RelationFavour }>;
+}
+/** RL-S2 part B: what a hub person asks of you on a run: its quest (story.json quests, stages asked and done), the
+ * condition that says it is done (read on the way home), the points it gives (else gift.favour) */
+export interface RelationFavour {
+  quest: string;
+  check: string;
+  points?: number;
+}
+/** RL-S2: one level of a person's: the points it takes and what it brings */
+export interface RelationLevel {
+  at: number;
+  /** effect rows on every run while held (as a Perk's) */
+  fx?: FxRow[];
+  /** items and pyramids into the bag at each takeoff while held */
+  items?: Record<string, number>;
+  pyramids?: Record<string, number>;
+  /** a wardrobe piece given once, when the level is reached */
+  wardrobe?: string;
 }

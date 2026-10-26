@@ -34,6 +34,106 @@
    "Hazel: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
   ]
  },
+ "lost_postcard": {
+  "who": "back_lost",
+  "when": "lastby:rival",
+  "priority": 6,
+  "script": [
+   "Chosen: Blake sent a postcard. It just says “Ha.” #l:3c86",
+   "Hazel: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
+  ]
+ },
+ "ch1_drop": {
+  "who": "hazel",
+  "when": "history:runs >= 1",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["You fell out of the sky once. Fine. Now you do it on a schedule. #l:44ee","set ch1_drop"]
+ },
+ "ch1_blake": {
+  "who": "chosen",
+  "when": "ch1_drop and history:rivalmet >= 1",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. #l:8d8e","set ch1_blake"]
+ },
+ "ch1_beans": {
+  "who": "hazel",
+  "when": "ch1_blake and (beans >= 1 or rel:chosen or rel:hazel or rel:juniper)",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": [
+   "These Beans. Every crate the Bureau loses has them. Nobody eats them. Nobody throws them out. #l:c6c3",
+   "set ch1_beans"
+  ]
+ },
+ "ch1_number": {
+  "who": "hazel",
+  "when": "ch1_beans and (history:bureau >= 1 or history:runs >= 3)",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["Their forms number lost things. I found yours. You’re item four hundred and something. #l:a7b4","set ch1_number"]
+ },
+ "ch1_signal": {
+  "who": "chosen",
+  "when": "ch1_number and (lastby:boss or history:wins >= 1)",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["Something big walked across Hazel’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
+ },
+ "fav_chosen_ask": {
+  "who": "chosen",
+  "when": "history:runs >= 2 and quest:fav_chosen = none",
+  "priority": 7,
+  "once": true,
+  "must": true,
+  "script": ["Beat a leader and tell them Professor Chosen sends his regards. Loudly. #l:7d69","quest fav_chosen asked"]
+ },
+ "fav_chosen_thanks": {
+  "who": "chosen",
+  "when": "quest:fav_chosen = done",
+  "priority": 8,
+  "once": true,
+  "must": true,
+  "script": ["They remembered me? Brand awareness. Have two points of my respect. #l:5363"]
+ },
+ "fav_hazel_ask": {
+  "who": "hazel",
+  "when": "ch1_drop and quest:fav_hazel = none",
+  "priority": 7,
+  "once": true,
+  "must": true,
+  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_hazel asked"]
+ },
+ "fav_hazel_thanks": {
+  "who": "hazel",
+  "when": "quest:fav_hazel = done",
+  "priority": 8,
+  "once": true,
+  "must": true,
+  "script": ["Readings. Real ones. The numbers hum near their crates. #l:e544"]
+ },
+ "fav_juniper_ask": {
+  "who": "juniper",
+  "when": "met_juniper and quest:fav_juniper = none",
+  "priority": 7,
+  "once": true,
+  "must": true,
+  "script": ["Bring a Grass Billie home, dear. The garden’s lonely. #l:c391","quest fav_juniper asked"]
+ },
+ "fav_juniper_thanks": {
+  "who": "juniper",
+  "when": "quest:fav_juniper = done",
+  "priority": 8,
+  "once": true,
+  "must": true,
+  "script": ["[happy] Oh, look at it. The bees have already filed a complaint. That’s love. #l:f356"]
+ },
  "chosen_first": {
   "who": "chosen",
   "when": "history:runs = 1",
@@ -142,6 +242,161 @@
   "when": "met_juniper and last:days >= 12",
   "priority": 3,
   "script": ["You were gone a while. The lavender grew back. Mind where you land. #l:d521"]
+ },
+ "rival_first": {
+  "who": "rival",
+  "when": "history:rivalmet = 0 and rival = 0",
+  "priority": 9,
+  "once": true,
+  "must": true,
+  "script": ["“Blake. You’ve heard of me. You haven’t? Weird. I’ve been out here being heard of.” #l:7ea4"]
+ },
+ "rival_built": {"who":"rival","priority":1,"script":["“I built this team for yours. Specifically. It took ages.” #l:8db3"]},
+ "rival_warmup": {
+  "who": "rival",
+  "when": "history:rivalwon >= 1",
+  "priority": 4,
+  "script": ["“Last time doesn’t count. I was warming up. For a whole battle.” #l:239c"]
+ },
+ "rival_longway": {
+  "who": "rival",
+  "when": "history:rivallost >= 1",
+  "priority": 5,
+  "script": ["“Last time I sent you home the long way. Through the sky.” #l:6a21"]
+ },
+ "rival_routes": {
+  "who": "rival",
+  "when": "rival >= 1",
+  "priority": 6,
+  "script": ["“Our routes aren’t the same route. Stop following me.” #l:acbd"]
+ },
+ "thanks_chosen": {
+  "who": "thanks_chosen",
+  "priority": 1,
+  "script": [
+   "cycle",
+   "  - A Bean. For me. Naturally. #l:12fd",
+   "  - I’ll add it to the collection. The collection is one Bean. #l:a3ac"
+  ]
+ },
+ "thanks_chosen_1": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 1",
+  "priority": 2,
+  "once": true,
+  "script": ["You’ve noticed me. Most people do. Eventually. #l:35e2"]
+ },
+ "thanks_chosen_2": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 2",
+  "priority": 3,
+  "once": true,
+  "script": ["Take this. Moneys, a little extra each trip. I’ll say I invented interest. #l:6c17"]
+ },
+ "thanks_chosen_3": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 3",
+  "priority": 4,
+  "once": true,
+  "script": ["You’re on my list of people I tolerate. It’s a short list. Mostly mirrors. #l:e0e4"]
+ },
+ "thanks_chosen_4": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 4",
+  "priority": 5,
+  "once": true,
+  "script": ["Wear these. Sunglasses. Now you look chosen. Adjacent. #l:5d53"]
+ },
+ "thanks_chosen_5": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 5",
+  "priority": 6,
+  "once": true,
+  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Hazel I said that. She knows. #l:608e"]
+ },
+ "thanks_hazel": {
+  "who": "thanks_hazel",
+  "priority": 1,
+  "script": [
+   "cycle",
+   "  - Thanks. I’ll test it. I mean that literally. #l:1c33",
+   "  - Another one. They’re warm. Why are they warm? #l:f5c6"
+  ]
+ },
+ "thanks_hazel_1": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 1",
+  "priority": 2,
+  "once": true,
+  "script": ["Oh. Thank you. People don’t usually give me things. They give me forms. #l:5db1"]
+ },
+ "thanks_hazel_2": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 2",
+  "priority": 3,
+  "once": true,
+  "script": ["Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. #l:355b"]
+ },
+ "thanks_hazel_3": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 3",
+  "priority": 4,
+  "once": true,
+  "script": ["I’m adding you to my notes. Under “reliable.” It’s a short section. #l:79b4"]
+ },
+ "thanks_hazel_4": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 4",
+  "priority": 5,
+  "once": true,
+  "script": ["My spare lab coat. It has pockets for evidence. Please don’t put snacks in them. #l:fbdf"]
+ },
+ "thanks_hazel_5": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 5",
+  "priority": 6,
+  "once": true,
+  "script": ["My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. #l:9a5c"]
+ },
+ "thanks_juniper": {
+  "who": "thanks_juniper",
+  "priority": 1,
+  "script": ["cycle","  - Oh, dear. For the jar. #l:e2c5","  - The bees will want to see this. #l:e107"]
+ },
+ "thanks_juniper_1": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 1",
+  "priority": 2,
+  "once": true,
+  "script": ["[happy] Aren’t you kind. Sit, dear. The kettle’s on. It’s always on. #l:74c8"]
+ },
+ "thanks_juniper_2": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 2",
+  "priority": 3,
+  "once": true,
+  "script": ["A pyramid for the road, each time. The bees made it. No, they didn’t. But imagine. #l:bf60"]
+ },
+ "thanks_juniper_3": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 3",
+  "priority": 4,
+  "once": true,
+  "script": ["You remind me of someone who used to visit. Before the drop point moved. #l:93b8"]
+ },
+ "thanks_juniper_4": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 4",
+  "priority": 5,
+  "once": true,
+  "script": ["A sun hat. It’s not much. The bees picked the colour. They have opinions. #l:2fda"]
+ },
+ "thanks_juniper_5": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 5",
+  "priority": 6,
+  "once": true,
+  "script": ["You’re not the first to fall here, dear. The bees remember the others. They don’t talk about them. #l:1f2a"]
  },
  "leader_badge": {"who":"leader","priority":1,"script":["“I’m a leader. It says so on my badge. Let’s see yours.” #l:8ee4"]},
  "leader_again": {

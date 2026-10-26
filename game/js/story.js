@@ -14,11 +14,14 @@ import {
   selfTest,
   showPendingWindows,
   storyFreshTake,
+  storyPickPlay,
   storyRun,
   storyWorldOK,
+  toast,
 } from './hooks.js';
-import { RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
-import { encountersHere, today } from './logic/rules.js';
+import { CURRENCIES, PEOPLE, RELATIONS, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
+import { encountersHere, plural, today } from './logic/rules.js';
+import { relGift, relGiftBlock, relReached } from './logic/relations.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
@@ -42,12 +45,13 @@ expose({
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
   storyEnding: [() => storyEnding, v => (storyEnding = v)],
   storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
+  storyGiftOffer: [() => storyGiftOffer, v => ((storyGiftOffer = v), provide({ storyGiftOffer }))],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
   storyState: [() => storyState],
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
+provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags, storyGiftOffer });
 /* to-module: end */
 function storyFlags() {
   return saveData.story || (saveData.story = {});
@@ -151,9 +155,55 @@ export function legendCheck() {
 }
 const storyState = { pending: null };
 provide({ storyState }); /* to-module */
+/* RL-S2: in the hub, with a Bean and none given them since the last run, a hub person (relations.json) is offered one
+   before the talk (logic/relations.js relGift; the level's wardrobe piece comes with it). Resolves once answered: true
+   when their thank-you (banter.json thanks_<who>) was said, which stands for this talk */
+function storyGiftOffer(/** @type {string} */ who) {
+  const M = saveData.meta;
+  if (saveData.run || !M || relGiftBlock(M, who, RELATIONS)) return Promise.resolve(false);
+  const P = /** @type {any} */ (PEOPLE || {})[who],
+    name = (P && P.look && P.look.name) || who,
+    C = CURRENCIES.beans || { name: 'Beans', one: 'Bean' };
+  return new Promise(done =>
+    modal({
+      title: `A ${C.one} for ${name}?`,
+      html: `<p>You have ${plural(M.beans, C.one)}.</p>`,
+      btns: [
+        {
+          l: `Give a ${C.one}`,
+          c: 'primary',
+          f: () => {
+            closeModal();
+            const step = relGift(M, who, RELATIONS);
+            if (!step) return done(false);
+            for (const L of relReached(who, step, RELATIONS))
+              if (L.wardrobe && saveData.wardrobe) saveData.wardrobe.owned[L.wardrobe] = 1;
+            save();
+            if (step.to > step.from) toast(`${name}: level ${step.to}`);
+            /* RL-S2 part B: their thank-you (banter.json thanks_<who>, a level's line first) is this talk */
+            storyPickPlay('thanks_' + who).then(said => {
+              if (!said && step.to === step.from) toast(`${name} liked that.`);
+              done(said);
+            });
+          },
+        },
+        {
+          l: 'Not now',
+          c: 'quiet',
+          f: () => {
+            closeModal();
+            done(false);
+          },
+        },
+      ],
+    })
+  );
+}
 /* someone who only talks (a map's people: Granny Juniper, Curator Nacre): their script */
 export async function personTalk(P) {
   if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  /* RL-S2: a Bean first, when you have one; their thank-you, if they have one, is this talk */
+  if (P.who && !P.quest && (await storyGiftOffer(P.who))) return;
   /* RL-S1: the first talk after a run: their line picked on the way home, once, in place of their own */
   const fresh = !P.quest && P.who && storyFreshTake(P.who);
   /* TW-3: a run town's quest giver offers the town's quest (quest-board.js) */

@@ -1,18 +1,19 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "currencies.schema.json",
- "title": "game/data/currencies.json: the game's four currencies (roguelite track RL-11; check-data refuses a fifth)",
+ "title": "game/data/currencies.json: the game's five currencies (roguelite track RL-11; RL-S2 added Beans, the gift currency; check-data refuses a sixth)",
  "type": "object",
  "propertyNames": {
   "enum": [
    "money",
    "research",
    "scrap",
-   "crests"
+   "crests",
+   "beans"
   ]
  },
- "minProperties": 4,
- "maxProperties": 4,
+ "minProperties": 5,
+ "maxProperties": 5,
  "additionalProperties": {
   "type": "object",
   "required": [

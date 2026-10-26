@@ -24,7 +24,8 @@
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { RELATIONS, provide } from '../hooks.js';
+import { relFxRows } from './relations.js';
 import { modFxRows } from './modifiers.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
@@ -78,13 +79,20 @@ export const FX_STAGES = 6;
 export const fxRows = (ids, perks) =>
   ids.flatMap(id => (perks[id] ? perks[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
 
-/** the effect rows of a run's Perks, its events' boons and its Expedition and challenges (null in the hub, or with
+/** the effect rows of a run's Perks, its events' boons, its Expedition and challenges and (RL-S2) the hub folk's level
+ * bonuses it took off with (null in the hub, or with
  * none) @param {{ perks: string[], expedition?: number, mods?: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
 export const fxOfRun = (run, perks) => {
   /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows; RL-13: the Expedition's and challenges' last */
   const rows = run
-    ? [...fxRows(run.perks, perks), ...encBoonRows(/** @type {any} */ (run)), .../** @type {Fx[]} */ (modFxRows(run))]
+    ? [
+        ...fxRows(run.perks, perks),
+        ...encBoonRows(/** @type {any} */ (run)),
+        .../** @type {Fx[]} */ (modFxRows(run)),
+        /* RL-S2: the hub folk's level bonuses (logic/relations.js) */
+        .../** @type {Fx[]} */ (relFxRows(/** @type {any} */ (run), RELATIONS)),
+      ]
     : [];
   return rows.length ? rows : null;
 };

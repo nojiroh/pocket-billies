@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
 import { CURRENCIES, RULES, UNLOCK_DATA } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
+import { META_CURRENCIES } from './logic/meta-state.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { incomeBank } from './logic/ranch-income.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
@@ -38,7 +39,7 @@ provide({ buildingLabel, buildingRowsHTML, labMilestones });
 /** what an unlock gives, in a few words: "+10 Scrap", or its name @param {any} R */
 function unlockGiftText(R) {
   const G = R.grant || {};
-  for (const c of ['research', 'scrap', 'crests'])
+  for (const c of META_CURRENCIES)
     if (G[c]) {
       const C = CURRENCIES[c] || { name: c, one: c };
       return `+${formatNumber(G[c])} ${G[c] === 1 ? C.one : C.name}`;
@@ -114,12 +115,9 @@ export function renderLabBoard() {
   const s = saveData,
     M = s.meta,
     rows = unlockRows(s, UNLOCK_DATA),
-    chips = ['research', 'scrap', 'crests']
-      .map(
-        c =>
-          `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
-      )
-      .join(' '),
+    chips = META_CURRENCIES.map(
+      c => `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
+    ).join(' '),
     owned = rows.filter(r => r.owned).length;
   const sections = Object.entries(UNLOCK_DATA.buildings).map(([b, B]) => {
     const mine = rows.filter(r => r.R.at === b),

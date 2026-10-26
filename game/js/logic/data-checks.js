@@ -74,6 +74,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
   // @ts-expect-error -- replaced on purpose
+  dataRelations: [() => dataRelations, v => (dataRelations = v)],
+  // @ts-expect-error -- replaced on purpose
   dataRewards: [() => dataRewards, v => (dataRewards = v)],
   // @ts-expect-error -- replaced on purpose
   dataRigs: [() => dataRigs, v => (dataRigs = v)],
@@ -148,7 +150,7 @@ export function dataRunPayout(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const pay = D.rules && D.rules.run && D.rules.run.payout,
-      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin'];
+      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin', 'beansWin'];
     if (!pay || typeof pay !== 'object') problem('rules.json', 'run.payout missing');
     else {
       for (const k of RATES)
@@ -157,7 +159,7 @@ export function dataRunPayout(D) {
       for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
       if (pay.itemShare > 1)
         problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
-      for (const k of ['winCrests', 'scrapNode', 'scrapWin'])
+      for (const k of ['winCrests', 'scrapNode', 'scrapWin', 'beansWin'])
         if (!Number.isInteger(pay[k])) problem('rules.json', `run.payout.${k} is not a whole number`);
     }
   }
@@ -334,6 +336,8 @@ export const RUN_RULE_KEYS = Object.freeze([
   'foes',
   'perks',
   'side',
+  'beans',
+  'rival',
   'trainers',
   'rewards',
   'town',
@@ -584,6 +588,40 @@ export function dataRunLoop(D) {
           problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
+    }
+    /* RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten, Blake beaten the first
+       time in a run (whole, 0-9) */
+    const BE = R.beans;
+    if (!rec(BE)) problem('rules.json', 'run.beans missing');
+    else {
+      only(BE, ['badge', 'side', 'rival'], 'run.beans');
+      for (const k of ['badge', 'side', 'rival'])
+        if (!whole(BE[k], 0, 9)) problem('rules.json', `run.beans.${k}: a whole number of Beans, 0-9`);
+    }
+    /* RL-S2: Blake's meetings and team (logic/run-map.js runMapRival, logic/rival.js) */
+    const RV = R.rival;
+    if (!rec(RV)) problem('rules.json', 'run.rival missing');
+    else {
+      only(RV, ['meet', 'on', 'bands', 'size', 'grow', 'max', 'up', 'reward'], 'run.rival');
+      if (!Array.isArray(RV.meet) || !RV.meet.length || !RV.meet.every(n => whole(n, 0, 4)))
+        problem('rules.json', 'run.rival.meet: meetings a run by Expedition, whole, 0-4');
+      if (!Array.isArray(RV.on) || !RV.on.length)
+        problem('rules.json', 'run.rival.on: the node types he can stand in for (a list)');
+      else
+        for (const t of RV.on)
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival'].includes(t))
+            problem('rules.json', `run.rival.on: "${t}" is not a filler node type (nodeTypes.json)`);
+      if (
+        !Array.isArray(RV.bands) ||
+        !RV.bands.every(b => Array.isArray(b) && b.length === 2 && b[0] >= 0 && b[1] > b[0] && b[1] <= 1)
+      )
+        problem('rules.json', 'run.rival.bands: [from, to) shares of the rows, 0-1');
+      else if (Array.isArray(RV.meet) && Math.max(...RV.meet) > RV.bands.length)
+        problem('rules.json', `run.rival.meet: ${Math.max(...RV.meet)} meetings but ${RV.bands.length} bands`);
+      if (!whole(RV.size, 1, 6) || !whole(RV.max, RV.size, 6) || !whole(RV.grow, 1, 20))
+        problem('rules.json', 'run.rival: size (1-6), max (size-6) and grow (1-20) are whole numbers');
+      if (!whole(RV.up, -20, 50) || !whole(RV.reward, 0, 1e6))
+        problem('rules.json', 'run.rival: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
     }
     /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
     const TR = R.trainers,
@@ -1190,6 +1228,37 @@ export function dataRewards(D, valid = () => true) {
   return out;
 }
 
+// RL-S2: the hub folk and you: the schema; each person is a person (people/<id>.json); their levels rise; a level's
+// effect rows are effects.js's kinds within its limits; its items, pyramids and wardrobe piece exist
+/** RL-S2: relations.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRelations(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['relations.json', what]),
+    RL = D.relations;
+  if (!RL) return [['relations.json', 'missing']];
+  if (!valid('relations.schema.json', RL, 'relations.json')) return out;
+  const wardrobe = (D.wardrobe && D.wardrobe.items) || {};
+  for (const [who, P] of Object.entries(/** @type {Record<string, any>} */ (RL.people))) {
+    if (!(D.people || {})[who]) problem(`${who}: no such person (people/${who}.json)`);
+    P.levels.forEach((/** @type {any} */ L, /** @type {number} */ n) => {
+      const at = `${who}.levels[${n}]`;
+      if (n && L.at <= P.levels[n - 1].at) problem(`${at}.at: ${L.at}, not more than the level before's`);
+      for (const [k, f] of (L.fx || []).entries()) {
+        if (!FX_KINDS.includes(f.kind)) problem(`${at}.fx[${k}]: no effect kind "${f.kind}" (effects.js FX_KINDS)`);
+        if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+          problem(`${at}.fx[${k}].mult: ${f.mult} is outside ${FX_LIMIT.lo} to ${FX_LIMIT.hi}`);
+      }
+      for (const i of Object.keys(L.items || {}))
+        if (!(D.items || {})[i]) problem(`${at}.items: no item "${i}" (items.json)`);
+      for (const i of Object.keys(L.pyramids || {}))
+        if (!(D.pyramids || {})[i]) problem(`${at}.pyramids: no catch item "${i}" (pyramids.json)`);
+      if (L.wardrobe && !wardrobe[L.wardrobe]) problem(`${at}.wardrobe: no piece "${L.wardrobe}" (wardrobe.json)`);
+    });
+  }
+  return out;
+}
+
 // RL-S1: the story director's lines: the schema; a leader and a Bureau agent always have a line to say (one with no
 // `when`); a line said once has no cooldown (its conditions and scripts are the story checks')
 /** RL-S1: banter.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -1205,6 +1274,12 @@ export function dataBanter(D, valid = () => true) {
   for (const who of ['leader', 'bureau'])
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
       problem(`no ${who} line without a when: a ${who} could have nothing to say`);
+  /* RL-S2 part B: Blake and the thank-yous, once they have lines, always have one to say */
+  for (const who of ['rival', 'thanks_chosen', 'thanks_hazel', 'thanks_juniper']) {
+    const mine = Object.values(B).filter((/** @type {any} */ b) => b.who === who);
+    if (mine.length && !mine.some((/** @type {any} */ b) => !b.when && !b.once))
+      problem(`no ${who} line without a when that is said more than once: ${who} could have nothing to say`);
+  }
   return out;
 }
 

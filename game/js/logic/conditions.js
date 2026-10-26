@@ -23,7 +23,9 @@
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { RELATIONS } from '../hooks.js';
 import { historyFacts, historyRematch } from './run-history.js';
+import { relLevels } from './relations.js';
 /* eslint-disable no-func-assign */
 expose({
   CONDITION_KINDS: [() => CONDITION_KINDS],
@@ -48,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   editDistance: [() => editDistance, v => (editDistance = v)],
   // @ts-expect-error -- replaced on purpose
+  lastTeamOf: [() => lastTeamOf, v => (lastTeamOf = v)],
+  // @ts-expect-error -- replaced on purpose
   parseCondition: [() => parseCondition, v => (parseCondition = v)],
   parsed: [() => parsed],
   // @ts-expect-error -- replaced on purpose
@@ -70,7 +74,8 @@ expose({
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
- *   history?: Record<string, number>, rematch?: number }} StoryState */
+ *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
+ *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number>, rival?: number }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -112,6 +117,25 @@ export const CONDITION_KINDS = {
     about: 'over the runs kept (the last 20): history:runs, wins, losses, quits, streak, lstreak, bureau',
   },
   rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
+  rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:hazel >= 2' },
+  beans: { id: false, count: true, about: 'Beans on hand, the gift currency (RL-S2): beans >= 1' },
+  gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:hazel' },
+  lastteam: {
+    id: true,
+    count: true,
+    about:
+      'the team the last run ended with (RL-S2): Billies of a type, a line or a species: lastteam:Grass, lastteam:musk',
+  },
+  rival: {
+    id: false,
+    count: true,
+    about: 'on a run, the meetings with Blake so far (RL-S2: before his battle, rival >= 1 means you met him already)',
+  },
+  chapter: {
+    id: false,
+    count: true,
+    about: 'the story’s chapter (RL-S2: 1 at the start, moved on only by the command chapter n): chapter >= 2',
+  },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -368,6 +392,18 @@ export function termValue(c, S) {
       return (S.history || {})[c.id] || 0;
     case 'rematch':
       return S.rematch || 0;
+    case 'rel':
+      return (S.rel || {})[c.id] || 0;
+    case 'beans':
+      return S.beans || 0;
+    case 'gifted':
+      return !!(S.gifted || {})[c.id];
+    case 'chapter':
+      return S.chapter || 1;
+    case 'rival':
+      return S.rival || 0;
+    case 'lastteam':
+      return (S.lastteam || {})[c.id] || (S.lastteam || {})[c.id.toLowerCase()] || 0;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -442,6 +478,17 @@ export function storyStateOf(save, o = {}) {
     lastby: facts.lastby,
     history: facts.history,
     rematch: historyRematch(meta.history, o.foe),
+    /* RL-S2: the hub folk's levels (relations.json, through the hooks: none without game data), the Beans, the gifts
+       given since the last run */
+    rel: RELATIONS && meta.rel ? relLevels(meta, RELATIONS) : {},
+    beans: meta.beans || 0,
+    chapter: meta.chapter || 1,
+    lastteam: lastTeamOf(meta.history, o.typesOf),
+    /* RL-S2 part B: this run's meetings with Blake (logic/rival.js run.rival) */
+    rival: save.run && save.run.rival ? save.run.rival.met || 0 : 0,
+    gifted: Object.fromEntries(
+      Object.entries(meta.gifted || {}).flatMap(([who, n]) => (n === (meta.runs || 0) ? [[who, 1]] : []))
+    ),
   };
 }
 
@@ -457,6 +504,23 @@ export function teamTypes(team, typesOf) {
       out[k] = (out[k] || 0) + 1;
     }
   }
+  return out;
+}
+/** RL-S2: the team the last run kept (meta.history's newest entry, species ids) counted three ways: by type (lower
+ * case, through `typesOf`), by line (the species id without its stage) and by species
+ * @param {any[] | undefined} history @param {(m: any) => string[]} [typesOf] */
+export function lastTeamOf(history, typesOf) {
+  const e = Array.isArray(history) ? history[history.length - 1] : null,
+    sps = e && Array.isArray(e.team) ? e.team.filter((/** @type {any} */ sp) => typeof sp === 'string') : [],
+    out = typesOf
+      ? teamTypes(
+          sps.map((/** @type {string} */ sp) => ({ sp })),
+          typesOf
+        )
+      : {};
+  for (const sp of sps)
+    for (const k of new Set([sp, sp.replace(/\d+$/, ''), sp.replace(/(?:_[a-z0-9]+)?\d+$/, '')]))
+      out[k] = (out[k] || 0) + 1;
   return out;
 }
 /** RL-12b: the types of the badges won (lower case): meta.badges (RL-R2), then the leaders' seats

@@ -1186,6 +1186,29 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   until Chapter 1's beats say more), `logic/story-pick.js storyPick` and the script command `pick <who>`, the hub's
   fresh lines (replacing the first talk after a run, the owner's choice), story.json `scripts.back-lost`, and the
   leaders' and Bureau agents' words in runs. "Hazel's mast lines" (RL-8) never existed in the code.
+- **RL-S2 as built, part A (2026-10-26; HANDOFF has the detail).** Where the row was wrong: a run has **no single
+  starter** since RL-13 (several Billies on starter points), so Blake counters **the lead you take off with**
+  (`run.rival.lead`), by type (`typeEffectiveness`), not by the opening's `rules.start.rival` table; Blake's opening
+  battle (`blake0`) was already dormant since RL-8 and he is in no hub; **favours had no system** (no
+  `things-to-do.js` on main); the hub has **three** people to relate to (Chosen, Hazel, Juniper); `chapter:` would
+  have clashed with story.json's map-variant chapters, so it is a count, `chapter >= n`. Built, every number a
+  placeholder (rules.json `run.rival`, `run.beans`, `run.payout.beansWin`, relations.json): the node type `rival`
+  (`runMapRival`, a post-pass on its own streams after the side area, so no other draw moves), `logic/rival.js`
+  (`rivalTeam`, `run.rival`, the history's `rival: {met, won}`, facts `last:rival`, `history:rivalmet` ...), Beans as
+  currencies.json's fifth row, `logic/relations.js` (`meta.rel`, `meta.gifted`, `run.rel` read by `fxOfRun`, items
+  at takeoff), conditions `rel:`, `beans`, `gifted:`, `chapter`, commands `beans`, `gift`, `rel`, `chapter`, the
+  gift offered before a hub person's talk. Waiting on the owner (9.6-style asks in the session's plan): Blake's
+  rules, the levels and what they bring, Beans' sources, Chapter 1's beats and every line. Part B: Chapter 1's beats
+  and the favours, in the owner's words.
+- **RL-S2 as built, part B (2026-10-26; HANDOFF has the detail).** The owner's answers: A Blake as built (the lead, 1/2/2/2/2
+  meetings, 2 Billies +1 per 2 meetings, a loss ends the run); B level 1 a line, 3 a second bonus (Chosen +5% XP,
+  Hazel a Hi-Potion, Juniper +10% catch), 4 a wardrobe piece, 5 a once-only line; C Beans as built plus 1 for Blake's
+  first defeat in a run; D every drafted line approved. Where part A's notes were wrong: Blake's lose line never
+  shows on a run (battle.js only shows it off a run: a `back_lost` pair says it); a chapter is not one an Expedition
+  (only `chapter n` moves it); part A's six beats were never written down; and two found in the build: an `xp` row
+  on a run did nothing (only held items' were read) and a `must` fresh line not talked to was lost for good (its
+  `once` marked at the pick). Built: favours as relations.json data (`relFavoursPay` on the way home), `thanks_<who>`
+  after a gift, conditions `lastteam:` and `rival`, Chapter 1's five beats and `scripts.chapter1-end` (for RL-14).
 
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 

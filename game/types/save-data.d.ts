@@ -91,6 +91,13 @@ export interface Meta {
   research: number;
   scrap: number;
   crests: number;
+  /** RL-S2: the gift currency for the hub's folk (rare finds on runs) */
+  beans: number;
+  /** RL-S2: the story's chapter (1 at the start; only the script command `chapter n` moves it on, never back, at most 9) */
+  chapter: number;
+  /** RL-S2: points with each hub person (relations.json), and meta.runs when each last had a gift */
+  rel: Record<string, number>;
+  gifted: Record<string, number>;
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
@@ -110,7 +117,7 @@ export interface Meta {
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
     Billie standing, and whether it was the Bureau's */
 export interface RunLostTo {
-  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'trainer';
+  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'rival' | 'trainer';
   id?: string;
   sp?: SpeciesId;
   bureau?: 1;
@@ -135,8 +142,18 @@ export interface HistoryEntry {
   perks: string[];
   /** the region's leaders (and a side area's), each beaten or not */
   leaders: { id: string; beat: 0 | 1 }[];
-  /** RL-S2: the rival's result (none yet) */
-  rival: null;
+  /** RL-S2: the rival's result: meetings and wins (null: you never met him that run) */
+  rival: { met: number; won: number } | null;
+}
+
+/** roguelite track RL-S2: what a run keeps of Blake (logic/rival.js) */
+export interface RunRival {
+  /** the species you led the run with (his ace counters it) */
+  lead: SpeciesId;
+  /** meetings in the runs kept before this one, this run's meetings and wins */
+  past: number;
+  met: number;
+  won: number;
 }
 
 /** roguelite track RL-3: the ranch, a hub building (logic/ranch-state.js; filled in RL-9 and RL-10) */
@@ -295,6 +312,12 @@ export interface Run {
   /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
       runHome reads a run saved before as the hub's team) */
   home?: string[];
+  /** RL-S2: Beans found on this run (they go into meta.beans at once; the payout shows them) */
+  beans?: number;
+  /** RL-S2: each hub person's level as the run took off (logic/relations.js: their run bonuses) */
+  rel?: Record<string, number>;
+  /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */
+  rival?: RunRival;
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
   pack?: { items: Record<DataId, number>; pyramids: Record<DataId, number> };
   /** RL-12b: its events and reward picks (logic/run-enc.js); missing on a run from before */

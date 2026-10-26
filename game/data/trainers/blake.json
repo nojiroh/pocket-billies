@@ -1,0 +1,15 @@
+{
+ "name": "Blake",
+ "who": "chad",
+ "battleStage": "grass",
+ "node": 0,
+ "blocks": false,
+ "tutorial": true,
+ "team": [
+  {"sp":"@rival","lvl":10}
+ ],
+ "reward": 0,
+ "win": "“Fine. FINE. Your lead is just statistically annoying.”",
+ "lose": "“Ha! Told you. Mine beats yours.”",
+ "script": ["battle blake"]
+}

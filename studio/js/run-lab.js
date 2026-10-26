@@ -164,7 +164,14 @@ function runLabPlan(D) {
 
 /** a biome's colour on the map: its look's haze @param {any} D @param {string} b */
 const runLabBiomeColour = (D, b) => ((D.biomes[b] || {}).look || {}).haze || '#ccc';
-const RUN_LAB_TYPE_COLOUR = { landing: '#2a7', route: '#557', town: '#c80', miniboss: '#c33', boss: '#909' };
+const RUN_LAB_TYPE_COLOUR = {
+  landing: '#2a7',
+  route: '#557',
+  town: '#c80',
+  miniboss: '#c33',
+  boss: '#909',
+  rival: '#e60',
+};
 
 /** the map as SVG @param {any} D @param {any} plan @param {boolean} pickable */
 function runLabSvg(D, plan, pickable) {

@@ -536,6 +536,89 @@ water effects; the `lake` biome's stage only noted. Tag to suggest: `wa-7-done` 
   start) and after, Pixel water on and off. Not run: the full quick check and its baseline (WA-8), the bench.
 - Next: the owner's phone: the world map (a run's coast and rivers, the hub's lagoon) with Pixel water on and off,
   and a battle by a pond or the coast (Settings > Debug log shows "facing the water"). Lane R's WA-5b, lane G's WA-9.
+### Roguelite track RL-S2 (part A) - Rival and relationships: Blake in runs, Beans, the hub folk, chapters - 2026-10-26
+Branch `track/story` (main 2314da82 merged in first: a fast-forward, everything on the branch was in main; PR #210).
+Plan approved in Plan Mode. **The "Ask me before" questions (A: Blake's rules, B: levels and what they bring, C: gifts
+and Beans, D: Chapter 1's beats and text) are not answered yet**: every number is a placeholder from the plan's
+recommendations, in data, and no character line was written. Part B (Chapter 1's beats, favours, every line) waits on
+the answers. Tag `rl-s2-done` is the owner's, after part B.
+- Where the plan and RL-S1's notes were wrong (checked in the code):
+  - **A run has no single starter** since RL-13 (several Billies on starter points; no `run.starter`/`meta.starter`).
+    Blake counters **the lead you take off with** (`run.rival.lead`), by type, not by the opening's
+    `rules.start.rival` table (6 opening starters only).
+  - **Blake was nowhere in play**: his opening battle (`blake0`, `@rival`) has been dormant since RL-8, and he is in
+    no hub. His person is `chad` (name Blake); the rival song already keys on `who === 'chad'`.
+  - Hooks that already existed: `battleSettleWin` gave a reward pick for `runFoe === 'rival'`; `historyEntry.rival`
+    existed but `validHistory` demanded `null`.
+  - **Favours had no system**: there is no `things-to-do.js` on main (only comments name it).
+  - The hub has **three** people to relate to: Chosen, Hazel (lab), Juniper (outdoors). The shops have no keepers.
+  - **Beans** (9.6 #29, already the owner's) touched more than check-data's four-row rule: the currency schema,
+    `unlockGrant`, `validMeta`, the Lab board and the economy view each had their own list (now one:
+    `META_CURRENCIES`). The hidden spots 9.6 names don't exist yet (RT-4b).
+  - `chapter:` would have clashed with story.json's map-variant chapters: it is a count, `chapter >= n`.
+  - The fast check takes `--only=`, not `--steps=` (that is check-quick's).
+- Changed (one cause per commit):
+  - **The rival node** (nodeTypes `rival`: pin "Rival", a shield marker, place "<Biome> Route", the Run Lab colour, a
+    first-run hint). **Placement** (`runMapRival`, run-map.js): a post-pass after the side area on streams of its own
+    (`map|rival|k`), so no other draw moves: rules.json `run.rival.meet` [1,2,2,2,2] meetings by Expedition, meeting k
+    in band k ([0,0.5), [0.5,1) of the rows) on a route, else a waystation (`on`), one a row, main path only.
+  - **His team** (new logic/rival.js, no imports): `rivalTeam`: `size` 2, +1 per `grow` 2 meetings kept, at most 6;
+    the ace of a type that beats the lead's, the region's dex first; one level down the line from the row's top wild
+    level + `up` 1; stages as a wild Billie's. `runFoes` puts him (trainers/blake.json: name, the approved lose line,
+    no win line) on each rival node, never blocking, `reward` 200; `pick rival` before the battle only once banter.json
+    has approved lines for him. `run.rival {lead, past, met, won}` (runBegin, from the history); `battleSettle` counts
+    meetings and wins; history `rival: {met, won}` or null; lost-to kind `rival`; facts `last:rival`, `last:rivalwon`,
+    `history:rivalmet`, `rivalwon`, `rivallost`. runPreview gives him the first starter as the lead.
+  - **Beans**, currencies.json's fifth row (`meta.beans`, the bean icon in build-ui-icons.py). Sources (`runBeans`,
+    counted on the run as `run.beans`, shown on the payout screen): rules.json `run.beans` (first badge of a type 1,
+    a side area's leader 1), `run.payout.beansWin` 1, the DO NOT OPEN: BEANS crate (`beans 2` on the good opening,
+    `beans 1` when a Steel Billie pries it).
+  - **The hub folk** (new logic/relations.js, relations.json + schema + `dataRelations`): `gift` (cost 1 Bean, 1
+    point; a favour 2) and Chosen's, Hazel's and Juniper's levels at 1, 2, 4, 6, 9 points; level 2: Chosen +5% Moneys
+    (an `fx` row), Hazel a Potion and Juniper a pyramid at each takeoff; levels 1 and 3-5 empty (lines, a cosmetic,
+    a scene: the owner's). `meta.rel`, `meta.gifted` (one gift a person each time home), `run.rel` (levels at
+    takeoff, `runStartOn` → `relTakeoff`, read by `fxOfRun`). In the hub, with a Bean, talking to one of them first
+    offers one (`storyGiftOffer`: "Give a Bean" / "Not now", a toast on a level; neutral words only).
+  - **Story**: conditions `rel:<who>`, `beans`, `gifted:<who>`, `chapter`; commands `beans n`, `gift who`, `rel who
+    n`, `chapter n` (never back); `meta.chapter`; the story checks refuse nobody in relations.json and bad counts.
+  - The debug log's meta line: Beans, points, gifts, chapter, Blake's last result and this run's record (numbers and
+    ids only).
+  - Fix: `gifted:` before the first run read as no gift (meta.runs 0); found by the in-game test.
+  - Tests: rival.test (placement, team, foes), relations.test, run-history (the rival), meta-state, battle-formats
+    (badge Beans), data-check plants (check-data's snapshot remade on purpose: 154 files, an RL-S2 case); the
+    route-trainer spots test keeps Blake off its runs (its five-seed shares were tuned on route places); check-fast
+    page "Blake on the run's map ... a Bean for Chosen (RL-S2)"; in-game test phase "Blake in a run, and a Bean for
+    Hazel".
+  - Docs: SCRIPTS.md (the rival and the hub folk), NAMING, roguelite-track 9.4 "RL-S2 as built", ROADMAP, BRANCHES,
+    CHANGELOG.
+- Verified:
+  - lint, typecheck, check:modules, format:check, check:data after each commit; `npm test` 1069/1069; `test:slow`
+    86/86.
+  - **check-fast 33/33** (1035 s, two browsers), the new page included: Blake on node 1 of the fixture run with 2
+    Billies against musk2, in his place's people, beaten to the rival song: a meeting, a win, a reward pick, stored;
+    a Bean for Chosen: level 1, not offered again. A picture at 390x760: Blake stands in "Thicket Route" with his "!".
+  - In-game test phase, alone in the browser: "Blake twice against Marsox: Cublet+Folklore Swiftlet, then
+    Cublet+Gosling; Hazel level 1".
+  - **Full quick check 35/40.** Known: song fingerprints (cave mid/late); RL-8 "Take off didn't start a run's
+    flight"; the Actions sheet (passes alone). **Two more, failing the same way on main 2314da82 (run there alone):**
+    "Terraces ... props in the air: copperleaf: sky_portal@231.2,103.6" (PR #205 raised the portal on purpose) and
+    "Walking left and right ... room light: day [...], night [0, ...]". Not this session's; for the hub track.
+  - Run sim, balance mode, level-20 party, 4 fights a place, 60 seeds, Blake on / off: Expedition I 2 / 1 wins
+    (Blake fought 23, beaten 19, ended 4 runs), Expedition II 0 / 0 (fought 20, beaten 14, ended 6). He takes a
+    route's place, so route losses fall about as much as his rise. (RL-13's table also used 6 at the ranch and 5
+    Potions, so the absolute numbers aren't comparable.)
+- Risky / open:
+  - **Not tried on the phone.** The gift offer comes before every talk with a hub person while you hold a Bean and
+    haven't given them one since the last run.
+  - At Expedition II the map often has only two free rows, so the second meeting lands in about a third of runs
+    (391 meetings in 300 runs); the bands and `on` are the owner's to tune.
+  - Blake in the fixture run takes node 1 (its only row-1 route); every browser check still passes.
+  - The Beans' "about" line in currencies.json and the gift sheet's words are mine, neutral, for the owner to change.
+  - The bean icon is a placeholder grid (tools/build-ui-icons.py `bean`).
+- Next: the owner's answers to A-D (they drop into rules.json `run.rival`, `run.beans`, `run.payout.beansWin`,
+  relations.json, banter.json `who: "rival"`); then part B on `track/story`: Chapter 1's beats as scripts and `once`
+  banter, the favours (a `once` line, a story quest, `rel who n` on the way home), Blake's and the folks' lines,
+  `scripts.chapter1-end` for RL-14's Voltron.
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The

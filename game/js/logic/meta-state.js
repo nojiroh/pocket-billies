@@ -14,6 +14,7 @@ import { expose } from '../test-globals.js';
 import { validHistory } from './run-history.js';
 /* eslint-disable no-func-assign */
 expose({
+  META_CURRENCIES: [() => META_CURRENCIES],
   META_EXPEDITIONS: [() => META_EXPEDITIONS],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
@@ -35,15 +36,21 @@ export function newMeta() {
     research: 0,
     scrap: 0,
     crests: 0,
+    beans: 0,
+    rel: {},
+    gifted: {},
     unlocks: {},
     buildings: {},
     runs: 0,
     wins: 0,
     expedition: 1,
+    chapter: 1,
     badges: {},
     history: [],
   };
 }
+/** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency) */
+export const META_CURRENCIES = /** @type {const} */ (['research', 'scrap', 'crests', 'beans']);
 export const META_MAX = 1e12,
   META_IDS = 200,
   META_EXPEDITIONS = 9;
@@ -62,13 +69,16 @@ export const recordOf = (v, most, ok) =>
 /** @param {any} o @returns {boolean} */
 export function validMeta(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o) || Object.hasOwn(o, '__proto__')) return false;
-  for (const k of ['research', 'scrap', 'crests', 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
+  for (const k of [...META_CURRENCIES, 'runs', 'wins']) if (!wholeIn(o[k], 0, META_MAX)) return false;
   return (
     o.wins <= o.runs &&
     wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
+    wholeIn(o.chapter, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
     recordOf(o.badges, 32, v => v === 1) &&
+    recordOf(o.rel, 32, v => wholeIn(v, 0, 9999)) &&
+    recordOf(o.gifted, 32, v => wholeIn(v, 0, META_MAX)) &&
     validHistory(o.history)
   );
 }
