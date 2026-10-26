@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
+  arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
+  one on the route props test map.
 - **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
   braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
   a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.

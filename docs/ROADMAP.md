@@ -57,8 +57,9 @@ town node needs it.
 - **Route props track** (docs/phases/route-props-track.md, the owner's brief 2026-10-26): more 3D props for the
   routes: RP-1 (the set pieces' last pictures as models, 20 new route props, the pieces use them, a wayside shrine
   and a solar garden; done 2026-10-26), RP-2 (bridges, jetties, rails and arches in the props' style, a hump on wood
-  bridges; done 2026-10-26), RP-3 (a GLB-to-recipe converter tried on 3 props, once CC0 files are uploaded). Tags
-  `rp-1-done`, `rp-2-done`. Branch `track/route-props`.
+  bridges; done 2026-10-26), RP-3 (a CC0 glTF-to-recipe converter, tools/glb-to-recipe.py, tried on the turbine, the
+  footbridge and the ruined arch from KayKit's CC0 packs, side by side with RP-1's on test_props_routes for the
+  owner's pick; done 2026-10-26). Tags `rp-1-done`, `rp-2-done`, `rp-3-done`. Branch `track/route-props`.
 - **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
   a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
   and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
