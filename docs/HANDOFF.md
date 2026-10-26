@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Merge batch: finished PRs and sessions into main - 2026-10-26
+Branch `ccr-ed7f65cb-dk7xqw` (one session, the owner's word: "merge finished PRs and finished sessions into main").
+Every open PR conflicted with main (HANDOFF at least), and a session pushes only to its own branch, so the branches
+were merged here one by one (merge commits, no rebase) and go to main in one PR. The owner chose the list:
+- PRs #212 (UI icons MONO), #208 (CAM-4, with #206's plan), #210 (RL-S2), #209 and #211 (through
+  `claude/sp-5-augments`, which holds SP-2..SP-6 and RL-14a); `track/renderer` (phase 20 round 1, with
+  `ccr-b88b77b2-96vhmr`'s docs), `track/water` (WA-10), `ccr-65e11839-9p92dx` (RS-2), `claude/happy-ramanujan-jiipux`
+  (RO-3a), and the leftovers `track/routes`, `art/hub-buildings`, `ccr-abb116a0-en5q2d`, `ccr-43750396-zjjv7v` (the
+  last already in main: no change).
+- Left out (not asked): `art/editable-trainer-sprite-sheets` (no PR, adds a CI workflow).
+- How the overlaps were settled (risky, check in play): **six currencies** now (RL-S2's Beans and SP-3's DNA; the
+  schema allowed five); `eventPool`/`eventAt` take SP-6's `holds` 4th and RS-2's `meet` 5th; node types `rival` and
+  `scrapyard` side by side; the payout keeps HB-8's train words and "Ride home" with RS-2's moving line and the Beans;
+  the history row keeps Blake's result and gains `res`; the Lab's reopen goes genebank, workshop, station.
+- Test changes from the merge: the ui-icons count 51; the rival test asks 80% of runs to meet Blake (was 85%):
+  scrapyards (RL-14) take free nodes before he is placed, Expedition I fell to 254 of 300. If Blake should also take
+  a scrapyard row, that is a rules.json `run.rival.on` choice for the owner.
+- A fix found on the way: tools/check-data-text.py reads a favour's `check` (relations.json) as a condition (RL-S2's
+  smoke job failed on it).
+- Verified: lint, typecheck, format, check:modules, check:data, the data text check, unit tests (1217 pass); the
+  smoke check (check-fast) result follows below. Main's own smoke was red before this ("Behind things": hidden where
+  the player starts, in the open); the owner said to leave it.
+- Next: delete the merged one-session branches the owner no longer needs (BRANCHES.md); the `track/*` branches stay.
+
 ### Hub track HB-8 - Departure and return: the sky train through the portal - 2026-10-26
 Branch `art/hub-departure` (the session's brief; from main 2314da8 after PR #205; the plan file's `Branch:` line says
 `track/hub`, and earlier HB sessions worked on their own branches the same way). Plan approved in Plan Mode. The owner's
