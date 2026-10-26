@@ -2,6 +2,36 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Route props track RP-2 - bridges, jetties, rails and arches in the props' style - 2026-10-26
+Branch `ccr-5d98165a-i1ustq` (as RP-1). The owner asked after RP-1 ("make it so bridges and similar things are in the
+current style") and chose: restyle in structures.js; bridges and jetties, rails, arches and tunnels (not escalators);
+a gentle hump on wood bridges; the ruins' cool grey stone. RP-3 (the converter) still waits for CC0 files.
+- What differed: the structures already shared the props' texture sheet and the buildings' shader; only their shapes
+  (half-metre deck slabs, posts without caps, smooth parapets) and colours differed. The walk height already follows
+  the drawn deck (walk-view.js `BRIDGE_ARCH`), so the hump is one number (wood 0.12 -> 0.35).
+- Changed: game/js/structures.js (the props' palette in STRUCTURE_MATERIALS; planks with gaps, edge beams, capped
+  posts and newels, braced trestles; a rope rail dipping between hangers; stone paving, a two-course staggered parapet
+  in three tones with coping and moss, a voussoir ring and the vault's underside; jetty mooring posts; wood, iron and
+  stone rails; arch piers in courses, voussoirs, keystone and coping; helpers `beam` and `cap`); walk-view.js
+  BRIDGE_ARCH; `test_props_routes` gained a structures row (stone and brick arches, three rails, props beside them).
+- Measured (headless, main -> RP-2): triangles of the structures a scene: Copperleaf 1040 -> 2296, test_bridges
+  1646 -> 3818, test_stairs 1130 -> 1904, test_hilltown 800 -> 1416; draws the same (one mesh, the same parts).
+- Verified: lint, type-check, prettier, check-data, check:modules, unit tests 1284 pass; pictures of test_bridges
+  (wood, stone, rope, low on the wood deck), the structures row and Copperleaf's jetty. Full quick check: 34 of 40.
+  Five failures are main's (the first four as listed before; run on main 2026-10-26 for the jingles): Terraces
+  (`sky_portal` in the air), RL-8 (the town's shop has no Perk), room light, song fingerprints (cave mid/late), Sound
+  effects and jingles (the payout jingles, fails on main b87b818d too). The sixth, Animals (a rabbit didn't bolt),
+  passed alone on this branch and on main: a timing flake under the full run's load.
+- Pictures change on purpose: remake the picture baseline (Actions -> Check -> Run workflow -> "Make the picture
+  baseline").
+- Risky: the hump changes the deck height you walk on over every wood bridge (Copperleaf's two, generated stream
+  crossings): up to 0.35 m in the middle of a 6 m bridge; trainers standing at a bridge's end are off the deck.
+  Stone arches and parapets read dark on their shaded sides, as the ruin props do.
+- Phone check wanted: Copperleaf's bridges and jetty, `test_bridges`, `test_props_routes` (the last row); walk over
+  a wood bridge; export the debug log.
+- Next: RP-3 once CC0 files are uploaded (`validation/cc0-src/`), or the "Ask me before" items in
+  docs/phases/route-props-track.md.
+
 ### Route props track RP-1 - more 3D props for the routes - 2026-10-26
 Branch `ccr-5d98165a-i1ustq` (the session's own: `track/route-props` didn't exist; the owner makes it from this
 branch, docs/BRANCHES.md). Plan in docs/phases/route-props-track.md, approved in Plan Mode with the owner's answers.
