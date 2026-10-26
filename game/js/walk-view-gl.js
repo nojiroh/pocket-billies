@@ -35,6 +35,7 @@ import {
   worldMapPrewarm,
 } from './hooks.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
+import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
 import { gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import {
@@ -118,6 +119,7 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
+import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -618,7 +620,21 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     walkRenderer.lastShadow = shadow;
   }
   gpuPass('other');
+  /* AIR-2: the fog grid round you (walk/fog-grid.js), kept up before the light so this frame's march and mist agree.
+     AIR-3: when the light-in-air march reads it, fogit's low mist steps aside inside the grid (X.mistBox) */
+  fogGridFrame(sc, P, BT, PHONE);
+  const FGS = fogGridState(),
+    fogK = engineSetting('air', 'fogVolume') ?? 1,
+    fogOn = fogMarchOn({ grid: !!FGS, battle: !!BT, qe: QE, k: fogK }) && !(walkRenderer.dbg || {}).noPost,
+    fogBox = fogOn ? fogGridBox(FGS.G) : null,
+    fogSteps = FOG_MARCH_STEPS[PHONE ? 'phone' : 'full'];
+  fogMarchNote(
+    fogOn,
+    fogOn ? 'on' : BT ? 'battle' : !FGS ? 'no grid' : QE >= 3 ? 'quality' : fogK <= 0.01 ? 'dial' : 'no post',
+    fogOn ? fogSteps : 0
+  );
   const X = walkLightContext(C, sun, dark, items, shadow, BT);
+  if (fogBox) X.mistBox = [fogBox.cx, fogBox.cz, fogBox.r, 1];
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
@@ -685,6 +701,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
+  /* AIR-2: the fog grid's blocks from the debug menu */
+  if (D.fogGrid) {
+    gpuPass('other');
+    drawFogGridBlocks(C);
+  }
   gpuPass('effects');
   effectsPass(C, items, X, dark, t, dt);
   gpuPass('post');
@@ -763,6 +784,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
       airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
+      fog: fogOn
+        ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
+        : null,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {

@@ -750,6 +750,9 @@ debugLog.more = () => {
     targets: typeof GAME.gpuState !== 'undefined' ? Object.keys(GAME.gpuState.fb || {}).length : null,
     prints: typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.prints ? GAME.walkRenderer.prints.length : 0,
   }));
+  /* air track AIR-2: the fog grid (walk/fog-grid.js): its size, how often it was built, refilled and rolled, and the
+     time per upload and per fill (ms; the uploads' CPU side) */
+  t('fogGrid', () => (typeof GAME.fogGridReport === 'function' ? GAME.fogGridReport() : null));
   /* phase 20 H3: the graphics card's memory by kind (engine/webgl.js gpuMemory: MB, objects, objects dropped without
      being freed, the sign of a leak), the picture cap's own count, and how many contexts this session made */
   t('gpuMemory', () =>

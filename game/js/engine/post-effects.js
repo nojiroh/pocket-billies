@@ -12,7 +12,7 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
+import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -170,25 +170,49 @@ void main(){vec2 dv=(uSun-vUV);if(uVirt>.5)dv=normalize(dv)*.32;dv*=uLen/24.;vec
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD,uAirN,uFollow;${LIGHT_GLSL}
+precision highp float;precision highp sampler3D;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD,uAirN,uFollow;${LIGHT_GLSL}${COMMON_GLSL}
+/* air track AIR-3: the low fog's density grid (walk/fog-grid.js, an R8 3D texture: repeat in x and z, clamp in y, in
+   flat world positions), its box, its scale (1/(nx cell), 1/(nz cell), 1/cell, its floor oy), its square (middle x, z,
+   half size, ny); how thick (uFogK, the Fog in the air dial; 0: no fog in the march), lamps in it, the steps */
+uniform sampler3D uFogT;uniform vec3 uFogLo,uFogHi;uniform vec4 uFogS,uFogC;uniform float uFogK,uFogLK,uSteps;
 /* v43: light in the air. From the camera to what each pixel shows, the ray is walked in twelve steps; at each the sun's
    shadow map says whether the air there is lit (the near map first, the far cascade beyond it), and the nearest lamps
    add their glow. Forward scattering (Henyey-Greenstein) makes rays toward the sun bright; the air is thickest low down. */
 float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
 float vis(vec3 p){if(uShadowOn<.5)return 1.;vec4 q=uShadowM*vec4(p,1.);vec3 c=q.xyz/q.w*.5+.5;if(c.x>.01&&c.y>.01&&c.x<.99&&c.y<.99&&c.z<=1.)return texture(uShadow,vec3(c.xy,c.z-.002));
  if(uShadow2On<.5)return 1.;vec4 q2=uShadowM2*vec4(p,1.);vec3 c2=q2.xyz/q2.w*.5+.5;if(c2.x<0.||c2.y<0.||c2.x>1.||c2.y>1.||c2.z>1.)return 1.;return texture(uShadow2,vec3(c2.xy,c2.z-.003));}
-void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.9999)*2.-1.,1.);vec3 P=wp.xyz/wp.w;vec3 ray=P-uEye;float L=length(ray);vec3 dir=ray/max(L,.001);L=min(L,uMaxD);
+/* the fog at a point: the grid read at the flat height (the world's curve put back), fading out toward the grid's edge,
+   where fogit's mist fades in (logic/fog-grid.js FOG_EDGE, fogGridInside) */
+float fogAt(vec3 p){vec3 q=vec3(p.x*uFogS.x,((p.y+curveY(p.xz))*uFogS.z-uFogS.w)/uFogC.w,p.z*uFogS.y);
+ return texture(uFogT,q).r*(1.-smoothstep(uFogC.z*.7,uFogC.z*.95,max(abs(p.x-uFogC.x),abs(p.z-uFogC.y))));}
+vec3 lampAt(vec3 p){vec3 a=vec3(0.);for(int l=0;l<6;l++){if(l>=uNL||float(l)>=uAirN)break;vec4 Lp=uLP[l];vec3 d=Lp.xyz-p;float r=abs(Lp.w),ll=length(d);float f=max(0.,1.-ll/(r*1.3));a+=uLC[l].rgb*f*f/(1.+ll*ll*.35);}return a;}
+void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.9999)*2.-1.,1.);vec3 P=wp.xyz/wp.w;vec3 ray=P-uEye;float L=length(ray);vec3 dir=ray/max(L,.001);float L0=d0>.9999?1e4:L;L=min(L,uMaxD);
  float j=lhash(gl_FragCoord.xy*.37);float cs=dot(dir,uSunDir);const float g=.45;float ph=(1.-g*g)/pow(1.+g*g-2.*g*cs,1.5);
  vec3 sun=vec3(0.),lamps=vec3(0.);
  /* alpha 0.4.1: seen from above, the air that matters is the last stretch above the ground, where trees, roofs and
     awnings stand in the light. The march covers only that stretch, the air is thickest near the ground, and the phase
     has a broad part as well as the forward peak, so beams through leaves and between houses read from the game's camera */
- float t0=max(0.,L-14.),dt=(L-t0)/14.;
- for(int i=0;i<14;i++){float t=t0+(float(i)+j)*dt;vec3 p=uEye+dir*t;float dens=exp(-max(0.,p.y-P.y)*.32)*.85+exp(-max(0.,p.y-uMistY)*.1)*.15;float dd=dens*dt*.045;sun+=vec3(vis(p)*dd,dd,0.);
-  for(int l=0;l<6;l++){if(l>=uNL||float(l)>=uAirN)break;vec4 Lp=uLP[l];vec3 d=Lp.xyz-p;float r=abs(Lp.w),ll=length(d);float f=max(0.,1.-ll/(r*1.3));lamps+=uLC[l].rgb*f*f/(1.+ll*ll*.35)*dt;}}
+ /* AIR-3: with the fog grid the march starts where the ray enters the grid's box (or the shafts' stretch, if nearer)
+    and runs to the surface or out of the box, in uSteps steps; the shafts still count only their last 14 m. Without
+    it, the old 14 steps over the last 14 m */
+ bool sh=uK>0.||uLK>0.;float s0=max(0.,L-14.),t0=s0,t1=L,N=14.,fa=0.,fb=-1.;
+ if(uFogK>0.){vec3 iv=mix(vec3(-1.),vec3(1.),step(0.,dir))/max(abs(dir),vec3(1e-6)),ta=(uFogLo-uEye)*iv,tb=(uFogHi-uEye)*iv,mn=min(ta,tb),mx=max(ta,tb);
+  fa=max(0.,max(max(mn.x,mn.y),mn.z));fb=min(L0,min(min(mx.x,mx.y),mx.z));
+  if(fa<fb){t0=sh?min(s0,fa):fa;t1=sh?max(L,fb):fb;N=uSteps;}else if(!sh){o=vec4(0.);return;}}
+ /* the fog: 0.22 per m at full density thins what is behind it (T) and adds the light it scatters: the sky's (the haze colour, dimmer in shade), the
+    sun's through the shadow maps with the forward phase (shafts in the fog), and the lamps' glow */
+ float dt=(t1-t0)/N,T=1.;vec3 fc=vec3(0.);
+ for(int i=0;i<14;i++){if(float(i)>=N)break;float t=t0+(float(i)+j)*dt;vec3 p=uEye+dir*t;
+  float w=sh&&t>=s0&&t<=L?1.:0.,fd=t>=fa&&t<=fb?fogAt(p)*uFogK:0.;if(w+fd<=0.)continue;
+  float v=vis(p);vec3 lp=(w>0.&&uLK>0.)||(fd>0.&&uFogLK>0.)?lampAt(p):vec3(0.);
+  if(w>0.){float dens=exp(-max(0.,p.y-P.y)*.32)*.85+exp(-max(0.,p.y-uMistY)*.1)*.15;float dd=dens*dt*.045;sun+=vec3(v*dd,dd,0.);lamps+=lp*dt;}
+  if(fd>0.){float a=1.-exp(-fd*.22*dt);fc+=T*a*(uFogCol*(.6+.4*v)+uSunCol*v*ph*.18+lp*uFogLK*.5);T*=1.-a;}}
  /* lit air brightens a little; air in the shadow of a canopy or a roof darkens what is behind it (alpha), so the beams
     show as light and dark columns, on any graphics chip (no negative light needed) */
- float pk=(ph*.6+.55)*uDens*step(d0,.9999)*(1.-smoothstep(26.,46.,length(ray)));/* not in the sky, and fading out with distance: the beams are a near thing */o=vec4(uSunCol*min(sun.x*pk*.4,1.2)*uK+lamps*uLK*.18,clamp((sun.y-sun.x)*pk*1.1*uK*mix(1.,min(1.,dot(uSunCol,vec3(.3,.59,.11))*1.25),uFollow),0.,.6));}`,
+ float pk=(ph*.6+.55)*uDens*step(d0,.9999)*(1.-smoothstep(26.,46.,length(ray)));/* not in the sky, and fading out with distance: the beams are a near thing */
+ vec3 sr=uSunCol*min(sun.x*pk*.4,1.2)*uK+lamps*uLK*.18;float sa=clamp((sun.y-sun.x)*pk*1.1*uK*mix(1.,min(1.,dot(uSunCol,vec3(.3,.59,.11))*1.25),uFollow),0.,.6);
+ /* AIR-3: the fog in front, premultiplied (the grade pass does c*(1-a)+rgb); T is 1 without fog, the old output */
+ o=vec4(sr*T+fc,1.-(1.-sa)*T);}`,
   ],
   grade: [
     `#version 300 es
@@ -458,8 +482,12 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   const X = o.X,
     gk = X && !o.noVol ? (engineSetting('air', 'godRays') ?? 0.6) * (X.sun && X.sun.indoor ? 0 : 1) : 0,
     lk = X && !o.noVol ? (engineSetting('air', 'lightsInAir') ?? 0.7) : 0;
+  /* AIR-3: the low fog (o.fog: the fog grid, its box, the dials and steps) has its own gate: it runs without a shadow
+     map and with the shafts at 0; the shafts still need the shadow map */
+  const FG = X ? o.fog : null,
+    sh = !!(X && (gk > 0.01 || lk > 0.01) && X.shadow);
   let VO = null;
-  if (X && (gk > 0.01 || lk > 0.01) && X.shadow) {
+  if (sh || FG) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1),
       V0 = renderTarget('vol0', qw, qh, { hdr: true });
@@ -470,8 +498,25 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     gl.uniformMatrix4fv(U.uIVP, false, o.ivp);
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
-    gl.uniform1f(U.uK, gk);
-    gl.uniform1f(U.uLK, lk);
+    gl.uniform1f(U.uK, sh ? gk : 0);
+    gl.uniform1f(U.uLK, sh ? lk : 0);
+    /* the 3D texture on its own unit (no other sampler of this program there), nothing bound when there is no fog */
+    gl.activeTexture(gl.TEXTURE0 + 4);
+    gl.bindTexture(gl.TEXTURE_3D, FG ? FG.tex : null);
+    gl.bindSampler(4, null);
+    gl.uniform1i(U.uFogT, 4);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1f(U.uFogK, FG ? FG.k : 0);
+    if (FG) {
+      const B = FG.B,
+        G = FG.G;
+      gl.uniform3f(U.uFogLo, B.x0, B.y0, B.z0);
+      gl.uniform3f(U.uFogHi, B.x1, B.y1, B.z1);
+      gl.uniform4f(U.uFogS, 1 / (G.nx * G.cell), 1 / (G.nz * G.cell), 1 / G.cell, G.oy);
+      gl.uniform4f(U.uFogC, B.cx, B.cz, B.r, G.ny);
+      gl.uniform1f(U.uFogLK, FG.lk);
+      gl.uniform1f(U.uSteps, FG.steps);
+    }
     gl.uniform1f(U.uDens, o.volDens ?? 1);
     gl.uniform1f(U.uMaxD, o.volMax || 48);
     /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone with
