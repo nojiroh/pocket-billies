@@ -7,6 +7,8 @@ import { expose } from './test-globals.js';
 import {
   closeModal,
   encounterOpen,
+  geneBankLevelled,
+  geneBankOpen,
   giveRobotKit,
   modal,
   perkPickOpen,
@@ -43,6 +45,7 @@ import {
   SPECIES,
   TRAINERS,
   TYPES,
+  UNLOCK_DATA,
   gameData,
 } from './game-data.js';
 import { GRAFT_SLOTS, graftDonors, graftKey, graftParse } from './logic/graft-art.js';
@@ -74,6 +77,7 @@ import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { perkOfferMake, perkTake } from './logic/perks.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
+import { buildingLevel, unlockGrant } from './logic/unlocks.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
@@ -203,7 +207,7 @@ function debugHTML() {
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
   <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>
-  <div class="dbg-row">${debugButtonHTML('graftlead', 'Graft the lead', 'gold')}${debugButtonHTML('graftenc', 'Add a grafted encounter')}${debugButtonHTML('graftwild', 'Battle a grafted one', 'red')}${debugButtonHTML('chimerawild', 'Battle a Chimera', 'red')}${debugButtonHTML('graftclear', 'Clear grafts')}</div><p class="note">Splicing: a random other species’ arm, leg or tail, baked on this device (the species above for an encounter), saved with the Billie. Each bake’s time goes to the debug log: open the team and a battle, then export it.</p>`;
+  <div class="dbg-row">${debugButtonHTML('graftlead', 'Graft the lead', 'gold')}${debugButtonHTML('graftenc', 'Add a grafted encounter')}${debugButtonHTML('graftwild', 'Battle a grafted one', 'red')}${debugButtonHTML('chimerawild', 'Battle a Chimera', 'red')}${debugButtonHTML('graftclear', 'Clear grafts')}</div><div class="dbg-row">${debugButtonHTML('bankopen', 'Open the Gene Bank', 'gold')}${debugButtonHTML('banklevel', 'Gene Bank level +1')}</div><p class="note">Splicing: a random other species’ arm, leg or tail, baked on this device (the species above for an encounter), saved with the Billie. Each bake’s time goes to the debug log: open the team and a battle, then export it.</p>`;
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
@@ -758,6 +762,23 @@ function debugAction(x) {
       said = `+50 Scrap: you have ${saveData.meta.scrap}.`;
       break;
     /* SP-3: DNA, for the Gene Bank (SP-4) to spend */
+    /* SP-4: the Gene Bank's sheet from anywhere in the hub, and its next level for free (its unlock row owned, so a reload
+       keeps it); your Billies are settled at the new limit */
+    case 'bankopen':
+      closeModal();
+      geneBankOpen();
+      return;
+    case 'banklevel': {
+      const s = saveData,
+        id = `genebank_${buildingLevel(s, 'genebank') + 1}`,
+        R = UNLOCK_DATA.unlocks[id];
+      if (!R) return toast('The Gene Bank is at its top level.');
+      s.meta.unlocks[id] = 1;
+      unlockGrant(s, R);
+      geneBankLevelled();
+      said = `Gene Bank Lv ${buildingLevel(s, 'genebank')}: Stability limit ${geneLimit(s)}.`;
+      break;
+    }
     case 'dna':
       saveData.meta.dna += 50;
       said = `+50 DNA: you have ${saveData.meta.dna}.`;

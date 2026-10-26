@@ -29,7 +29,10 @@ import {
   trainersAt,
 } from './game-data.js';
 import { rngFn } from './logic/rng.js';
+import { graftDonors, graftRecipe } from './logic/graft-art.js';
 import { wildSplice } from './logic/genes.js';
+import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
+import { isRobot } from './logic/fighters.js';
 import {
   canEnter,
   encountersHere,
@@ -52,6 +55,7 @@ import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
@@ -122,6 +126,7 @@ import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
@@ -1900,6 +1905,76 @@ async function runFullTest(mode) {
               throw new Error('no Gene Sample sheet');
             return `${SPECIES[sp].name} with ${words.join(', ')}: +${s.meta.dna} DNA, Gene ${gene} sampled`;
           } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* SP-4: the Gene Bank on a copy of the save: its sheet, sequencing the lead, a Gene spliced for its DNA (the sheet's
+       own buttons), the splice in a wild battle (its effect rows), then taken off for free */
+    if (typeof geneBankOpen === 'function' && !selfTest.stop)
+      await phase(
+        'Gene Bank: sequence, splice, see it in battle',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              D = geneData(),
+              m = s.team.find(b => !isRobot(b) && graftRecipe(D.kitBuilds, b.sp));
+            if (!m) throw new Error('no Billie on the team has a kit recipe');
+            delete m.graft;
+            delete m.unstable;
+            Object.assign(s.meta, { dna: 200, genes: [] });
+            s.meta.buildings.genebank = 3;
+            setSaveData(s);
+            uiState.modal = null;
+            uiState.mq = [];
+            geneBankOpen();
+            if (!uiState.modal || !/Gene Bank/.test(uiState.modal.title)) throw new Error('the sheet didn’t open');
+            geneBankDo('pick', m.uid);
+            geneBankDo('seq');
+            if (!s.meta.genes.length) throw new Error('sequencing read nothing');
+            const slot = bankSlots(D, bankLevel(s)).find(k => graftDonors(D.kitBuilds, D.partKits, m.sp, k).length);
+            if (!slot) throw new Error(`no Gene fits ${m.sp}`);
+            const id = graftDonors(D.kitBuilds, D.partKits, m.sp, slot)[0],
+              price = bankPrice(D, m.sp, slot, id);
+            s.meta.genes.push(id);
+            geneBankDo('slot', slot);
+            geneBankDo('gene', id);
+            if (!document.querySelector('#ov .gene-preview')) throw new Error('no preview for the Gene');
+            geneBankDo('splice');
+            if (!m.graft || m.graft[slot] !== id) throw new Error(`not spliced: ${JSON.stringify(m.graft || null)}`);
+            if (s.meta.dna !== 200 - price) throw new Error(`paid ${200 - s.meta.dna} DNA, the price is ${price}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            const q = { id: newUid(), sp: m.sp, lvl: 3, no: ++s.serial };
+            encountersHere().push(q);
+            startWild(q);
+            if (!activeBattle) throw new Error('the battle didn’t start');
+            const me = activeBattle.sides[0].team.find(b => b.uid === m.uid),
+              rows = me ? fxOfBillie(me, ITEMS).filter(f => /^gene:/.test(f.src)) : [];
+            if (!me || !me.graft) throw new Error('the spliced Billie isn’t spliced in battle');
+            stopTimers();
+            setActiveBattle(null);
+            uiState.modal = null;
+            geneBankOpen();
+            geneBankDo('pick', m.uid);
+            geneBankDo('slot', slot);
+            geneBankDo('off');
+            if (m.graft) throw new Error('Take off left a Gene');
+            if (s.meta.dna !== 200 - price) throw new Error('taking it off cost DNA');
+            return `${m.sp} ${slot}=${id}: ${price} DNA, ${rows.length} Gene row(s) in battle (${rows.map(f => f.src).join(', ') || 'none'}), taken off free`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();

@@ -10,7 +10,7 @@
    for DNA) at the foot. The rules are logic/gene-bank.js; every change is saved at once. A hub sheet only. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { buildingRowsHTML, closeModal, modal, render, renderOverlay, toast } from './hooks.js';
+import { buildingRowsHTML, closeModal, modal, provide, render, renderOverlay, toast } from './hooks.js';
 import { GENES, MOVES, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
 import { GRAFT_SLOTS, graftKey, graftOf } from './logic/graft-art.js';
 import { geneOf, geneWords, graftStability, graftTraits } from './logic/genes.js';
@@ -54,10 +54,11 @@ expose({
   bankPickNow: [() => bankPickNow, v => (bankPickNow = v)],
   bankPreviewHTML: [() => bankPreviewHTML, v => (bankPreviewHTML = v)],
   geneBankDo: [() => geneBankDo, v => (geneBankDo = v)],
-  geneBankLevelled: [() => geneBankLevelled, v => (geneBankLevelled = v)],
-  geneBankOpen: [() => geneBankOpen, v => (geneBankOpen = v)],
+  geneBankLevelled: [() => geneBankLevelled, v => ((geneBankLevelled = v), provide({ geneBankLevelled }))],
+  geneBankOpen: [() => geneBankOpen, v => ((geneBankOpen = v), provide({ geneBankOpen }))],
 });
 /* eslint-enable no-func-assign */
+provide({ geneBankLevelled, geneBankOpen });
 /* to-module: end */
 /** a Gene Bank refusal in words */
 const BANK_WHY = {
@@ -210,7 +211,7 @@ export function geneBankOpen() {
 }
 /** a button on the Gene Bank's sheet: pick a Billie, a slot or a Gene; sequence, splice or take off; saved, then
  * drawn again @param {string} what @param {string} [arg] */
-function geneBankDo(what, arg) {
+export function geneBankDo(what, arg) {
   const s = saveData,
     D = geneData(),
     P = bankPickNow(),
