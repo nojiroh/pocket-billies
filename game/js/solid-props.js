@@ -84,6 +84,7 @@ export function setDrawSolidProps(v) {
 }
 /* to-module: end */
 export const solidPropState = { meshes: new WeakMap(), live: new Map(), fail: '', drawn: 0 };
+provide({ solidPropState }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const SOLID_PROP_BODIES = {
   crate: ['block', 0.9],

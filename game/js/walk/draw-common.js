@@ -17,7 +17,9 @@ expose({
   ROCK_STATE: [() => ROCK_STATE],
   rockUniformsFor: [() => rockUniformsFor, v => (rockUniformsFor = v)],
   setRockUniforms: [() => setRockUniforms, v => (setRockUniforms = v)],
+  setSpriteGeometry: [() => setSpriteGeometry, v => (setSpriteGeometry = v)],
   setSpriteUniforms: [() => setSpriteUniforms, v => (setSpriteUniforms = v)],
+  spriteGeometry: [() => spriteGeometry, v => setSpriteGeometry(v)],
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
@@ -117,4 +119,35 @@ export function setSpriteUniforms(p, it, uv, z = it.z, rk = 1) {
   gl.uniform1f(U.uFlip, it.flip);
   if (U.uSlope) gl.uniform1f(U.uSlope, it.slope || 0);
   gl.uniform1f(U.uShear, it.shear || 0);
+}
+/* phase 20 E1: the same values into a sprite record (walk/sprites.js spriteRecord), and sent from one */
+export function spriteGeometry(r, it, z = it.z, rk = 1) {
+  const s = it.mpp,
+    oy = rk === 1 ? it.oy : it.oy * rk;
+  let h = rk === 1 ? it.h : it.h * rk;
+  r.uv[3] = 1;
+  if (it.cut > 0 && rk === 1 && it.cut < it.h) {
+    h = it.h - it.cut;
+    r.uv[3] = h / it.h;
+  }
+  r.x = it.x;
+  r.y = it.y;
+  r.z = z;
+  r.ox = it.ox * s;
+  r.oy = oy * s;
+  r.w = it.w * s;
+  r.h = h * s;
+  r.flip = it.flip;
+  r.slope = it.slope || 0;
+  r.shear = it.shear || 0;
+}
+export function setSpriteGeometry(p, r) {
+  const gl = gpuState.gl,
+    U = p.U;
+  gl.uniform3f(U.uBase, r.x, r.y, r.z);
+  gl.uniform4f(U.uOff, r.ox, r.oy, r.w, r.h);
+  gl.uniform4fv(U.uUV, r.uv);
+  gl.uniform1f(U.uFlip, r.flip);
+  if (U.uSlope) gl.uniform1f(U.uSlope, r.slope);
+  gl.uniform1f(U.uShear, r.shear);
 }
