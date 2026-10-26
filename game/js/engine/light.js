@@ -10,7 +10,7 @@ import { clamp } from '../util.js';
 import { FRAME_BLOCK_BYTES, packFrameBlock } from './frame-block.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { cross3, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
+import { cross3, gpuBuffer, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FRAME_BLOCK_SLOTS: [() => FRAME_BLOCK_SLOTS],
@@ -20,6 +20,7 @@ expose({
   bindFrameBlock: [() => bindFrameBlock, v => (bindFrameBlock = v)],
   endShadow: [() => endShadow, v => (endShadow = v)],
   frameBlock: [() => frameBlock],
+  frameBlockLost: [() => frameBlockLost, v => (frameBlockLost = v)],
   frameBlockStale: [() => frameBlockStale, v => (frameBlockStale = v)],
   lightContext: [() => lightContext, v => (lightContext = v)],
   pickPointLights: [() => pickPointLights, v => (pickPointLights = v)],
@@ -184,16 +185,17 @@ export function lightContext(o) {
    a context is packed and sent the first time a program is bound with it, and bound again only when another slot was
    in use (the reflection's copy of the frame's context takes a slot of its own) */
 const FRAME_BLOCK_SLOTS = 4;
-const frameBlock = { gl: null, buf: null, stride: 0, next: 0, bound: -1, owner: [], f: null, n: null };
+const frameBlock = { gl: null, gen: 0, buf: null, stride: 0, next: 0, bound: -1, owner: [], f: null, n: null };
 function bindFrameBlock(X) {
   const gl = gpuState.gl,
     B = frameBlock;
-  if (B.gl !== gl) {
+  if (B.gl !== gl || B.gen !== gpuState.gen) {
     const al = gl.getParameter(gl.UNIFORM_BUFFER_OFFSET_ALIGNMENT) || 256,
       raw = new ArrayBuffer(FRAME_BLOCK_BYTES);
     B.gl = gl;
+    B.gen = gpuState.gen;
     B.stride = Math.ceil(FRAME_BLOCK_BYTES / al) * al;
-    B.buf = gl.createBuffer();
+    B.buf = gpuBuffer('other', B.stride * FRAME_BLOCK_SLOTS);
     gl.bindBuffer(gl.UNIFORM_BUFFER, B.buf);
     gl.bufferData(gl.UNIFORM_BUFFER, B.stride * FRAME_BLOCK_SLOTS, gl.DYNAMIC_DRAW);
     B.f = new Float32Array(raw);
@@ -216,6 +218,12 @@ function bindFrameBlock(X) {
     gl.bindBufferRange(gl.UNIFORM_BUFFER, 0, B.buf, s * B.stride, FRAME_BLOCK_BYTES);
     B.bound = s;
   }
+}
+/* phase 20 H: a restored context is the same object with nothing on it, so the block's buffer is made again on the next
+   bind (walk-view-gl.js onGlContextRestored); without it every lit draw had no light buffer bound */
+export function frameBlockLost() {
+  frameBlock.gl = null;
+  frameBlock.buf = null;
 }
 /* a light context changed after it was packed (lampShadowMaps): packed again the next time it is bound */
 export function frameBlockStale(X) {

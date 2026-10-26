@@ -75,12 +75,32 @@ test('a sample Billie on each plan bakes inside the box, the same twice, with a 
   }
 });
 
-test('every plan fills the head and body slots (splicing maps parts by slot)', () => {
+test("RO-3b: a form's scale sizes the whole Billie, standing on the same ground", () => {
   for (const plan of PLANS) {
-    const slots = new Set(PA.placeholderBones(P, sample(plan)).map(b => b.slot));
-    for (const s of ['body', 'front', 'back', 'sig'])
-      if (plan !== 'octo' || s !== 'body') assert.ok(slots.has(s), `${plan}: no ${s} slot`);
-    assert.ok(slots.has('head') || plan === 'blob', `${plan}: no head slot`);
+    const full = PA.placeholderBake(P, sample(plan), D).rig.front.geo,
+      half = PA.placeholderBake(P, { ...sample(plan), scale: 0.5 }, D).rig.front.geo,
+      tall = full.base - full.top,
+      short = half.base - half.top;
+    assert.equal(half.base, full.base, plan);
+    assert.ok(Math.abs(short / tall - 0.5) < 0.15, `${plan}: ${short} of ${tall} high at scale 0.5`);
+    assert.ok(Math.abs(half.hw / full.hw - 0.5) < 0.2, `${plan}: ${half.hw} of ${full.hw} wide at scale 0.5`);
+  }
+});
+
+test('every plan fills every slot (splicing maps parts by slot); the octopus and blob share one bone', () => {
+  for (const plan of PLANS) {
+    const bones = PA.placeholderBones(P, sample(plan)),
+      own = new Set(bones.map(b => b.slot)),
+      slots = new Set(bones.flatMap(b => [b.slot, b.also]));
+    for (const s of ['head', 'body', 'front', 'back', 'sig']) assert.ok(slots.has(s), `${plan}: no ${s} slot`);
+    /* RO-3c (the owner): the octopus's mantle is its body and head, the blob's body its head; body wins */
+    if (plan === 'octo' || plan === 'blob') {
+      assert.ok(!own.has('head'), `${plan}: a head bone of its own`);
+      assert.deepEqual(
+        bones.filter(b => b.also).map(b => [b.n, b.slot, b.also]),
+        [['head', 'body', 'head']]
+      );
+    } else assert.ok(!bones.some(b => b.also), `${plan}: a shared bone`);
   }
 });
 

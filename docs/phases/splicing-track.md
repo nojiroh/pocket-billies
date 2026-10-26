@@ -59,7 +59,16 @@ below against main and report what differs.
   only (no DOM) and run in the Studio (`studio/js/kit-recipe.js`) and `npm run bake:kits`; the game itself never
   calls them. (SP-1, checked at 501b286: kit-assemble.js wasn't even on the game page; SP-1 put it there. Rebaking
   the whole recipe with a part swapped is exact and needs no `rigRefit`, which stays a Studio tool.) `skeleton-rig.js` scales pieces for sizes. Every Billie (40 species) is built from the kit parts on a
-  biped rig, so a part from one fits another's sockets (`partKits.json socketRules`).
+  biped rig, so a part from one fits another's sockets (`partKits.json socketRules`). **Roster track (RO-3a..c,
+  2026-10-26):** Billies move onto 14 body plans as placeholders (`bodyPlans.json`, `logic/placeholder-art.js`), and
+  a graft maps parts **by slot across plans** (RO-3c, `graft-art.js graftPlaceholder`, on the baked sheets and rigs):
+  a slot's bones form groups (a chain of bones is one group); the receiver's group i takes the donor's group i mod n;
+  one bone takes the donor's whole group, a chain the donor's bones spread along it; each picture is turned in
+  quarter turns to point the bone's way and made as long as it (inside its box when either is held at its middle),
+  pivot on the joint; mirrored twins follow; shrunk until the rest pose fits. The octopus's mantle and the blob's body
+  answer to both body and head (`also`), so no head grafts to or from them. Kit-to-kit grafts are unchanged; a kit
+  and a placeholder Billie don't graft. Donors: any other line with bones in the slot (no rule players see yet:
+  Stability and which grafts are allowed are SP-2's, asked there).
 - **Parts library:** `partKits.json parts`, 120 parts from 3 kits (beasts, birds, fish); no claws yet.
 - **Abominations** (`logic/breeding.js`, RL-10a): `m.mut` with a name, one stat up (`abomUp` 1.3), one down
   (`abomDown` 0.75); they wear one parent's art.

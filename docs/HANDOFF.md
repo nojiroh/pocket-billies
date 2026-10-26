@@ -2,6 +2,22 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
+Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
+they were merged here (merge commits) for one PR.
+- #219 `track/renderer` (phase 20 R2-R3: light shafts, the weather batch, the battle rigs' reuse, the frozen sprite and
+  reflection calls). Conflicts with WA-5b and CAM-4b were side-by-side additions: both kept.
+- #217 `claude/ro-3d-silkworm-and-plant`, which holds `track/roster` (RO-3a's last commit, RO-3b #218, RO-3c #215,
+  RO-3d). **Risky, check on the phone**: RO-3c was written on SP-1's graft-art (a session map, slot -> donor species),
+  main has SP-2's (Billy.graft, slot -> Gene id "part@donor"). Kept SP-2's model with RO-3c's placeholder grafting
+  added; skeleton-rig's placeholder bake reads each slot's donor from its Gene id (a bare species id, as RO-3c's debug
+  menu sets, still works). Not yet checked: wild splices and the Gene Bank on placeholder Billies (genes.json's Genes are
+  kit parts, so placeholders likely get none). RO-3c's `graftFit` (a picture fitted onto a bone) clashed with genes.js's
+  `graftFit` (SP-2): renamed `graftPicFit` in its own commit; the RO-3c HANDOFF lines above still say graftFit.
+- Verified: lint, typecheck, format, check:modules, check:data, the data text check, build, unit tests 1284 pass,
+  `test:slow` 88 of 89 (the WA-10 island test, left red at the owner's word); the smoke check's result is in the PR.
+- `track/renderer` and `track/roster` stay (BRANCHES.md); #217's base was `track/roster`, so it closes by hand.
+
 ### Merge batch: finished PRs and sessions into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (one session, the owner's word: "merge finished PRs and finished sessions into main").
 Every open PR conflicted with main (HANDOFF at least), and a session pushes only to its own branch, so the branches
@@ -29,6 +45,206 @@ were merged here one by one (merge commits, no rebase) and go to main in one PR.
   no longer matches its dials. build-island.mjs would undo them. The owner chose to merge with it red; it belongs to
   HB-10 (hub-track.md: the square's shape and why a town rebuild is not safe yet).
 - Next: delete the merged one-session branches the owner no longer needs (BRANCHES.md); the `track/*` branches stay.
+### Roster track RO-3d - The early bug and the early Grass plant: Ortega silkworm, Bloomberg plant - 2026-10-26
+Branch `claude/ro-3d-silkworm-and-plant`, from `track/roster` at RO-3a (#213); pull request into `track/roster`. Plan
+approved in Plan Mode. RO-3b (#218) and RO-3c (#215) ran beside it; both merged into track/roster mid-session and
+were merged in here (bodyPlans.json forms by hand: RO-3b's 51 and these 6; rigs-next.js rebaked). Tag `ro-3d-done` for the owner. The owner's picks (all Claude's recommendations, asked one by one):
+- **Ortega silkworm**, dex 41-43, common: **Threadling → Zaracoon → Ortegamoth**, Grass → Grass/Steel → Grass/Flying,
+  evolves at **7 and 10** (Caterpie and Metapod's levels; a run's wilds go from about 3 to 17), totals 205/225/400.
+  Body plans insect → shell (the cocoon) → flyer (the moth). Signature move Fast Fashion.
+- **Bloomberg plant**, dex 44-46, common: **Tickerbud → Bloomburst → Terminalia** (the legacy names), Grass → Grass →
+  Grass/Psychic (Psychic stands in for Oddish's Poison: Lullaby, Unnerve, Bewilder), evolves at **14 and 30**, totals
+  260/380/490. The plant plan at every stage. Terminal Fee (Electric, a status move) kept as its signature.
+- Where the plan and the code differed (checked): the legacy Ortega line was a spider (Spoolspider, Zaraknid,
+  Ortegaweaver), not a silkworm; the rig ids ortega0-2 and bloomberg0-2 already sat in rigs-next.js for the legacy
+  sheets, and the bake replaced them in place. RO-3b's bake change (a form's `scale`) was needed for stage sizes and is
+  not on track/roster when the art was made: its commit 960ff899 was cherry-picked here (the owner's call), and RO-3b's
+  merge brought the same code.
+- Changed:
+  - `game/data/lines/ortega.json`, `lines/bloomberg.json` (learnsets of existing moves, bios, notes, draft cries:
+    insect for the silkworm, slime and machine for the plant); `index.json` lines; roster.json rows 41-46 (`line3`).
+  - `bodyPlans.json` forms: six placeholder Billies in the lines' colours, scales 0.9 / 1.0 / 1.3 and 0.95 / 1.15 /
+    1.42. Threadling drops the insect's wings and carries a spool; Zaracoon drops the shell plan's legs and keeps its
+    arms as stubs (RO-3b's test: every placeholder gives every slot to a graft), a cocoon in a black garment bag with a
+    price tag; Ortegamoth has feathery antennae and big dark wings; Tickerbud a
+    pale stripe and a ticker-tape leaf; Bloomburst a ring of petals; Terminalia black with orange screen petals, a
+    screen on its face and a keyboard on its pot. Baked with `npm run bake:placeholders`; `check-data --fix`.
+  - The legacy `tickerbud.json`, `bloomburst.json`, `terminalia.json` layouts dropped (their PNGs are the placeholders
+    now); the spider sheets stay as reference.
+  - `pools.json`: Threadling in the meadow (30), thicket (28), jungle (24), autumn (22); Tickerbud in the meadow (24),
+    thicket (22), jungle (22), autumn (14).
+  - Snapshots: check-data (155 files), run-start (the seeds' regional dex draws from 17 lines now; over 400 seeds
+    Ortega is in 144 regions and Bloomberg in 128); the sound baseline's cries (the six new cries and their low ones).
+- Verified: lint, typecheck, check:modules, format:check, check:data; every unit test, quick and slow (1165 after the
+  RO-3b and RO-3c merges); the smoke check (6 steps, no problems); every stage drawn by the game's own renderer (rigParts,
+  rigFrame, drawRig on the town fixture) in idle, walk, attack, hurt and faint, front and back, before and after the
+  RO-3c merge: all stand on the ground and move.
+- Risky / open:
+  - **The sound baseline is missing the cave song's `mid` and `late` fingerprints on track/roster already** (the check
+    fails there without this branch). Left out of this branch on purpose; one `check-sound.py --baseline` adds them.
+  - The quick check runs with Python Playwright 1.63 here (the pinned 1.56 wants a Chromium this container does not
+    have); tools/requirements-check.txt is unchanged.
+  - Some placeholder labels read mirrored in one view (SHELL on Zaracoon's front): the RO-3a painter's flipping, the
+    same on every plan, not these forms.
+  - Not tried on a phone; names, bios and cries are drafts.
+- Next: RO-3e (the Knight frog and the fossil pair) and RO-3f (Satoshi and the cave bat), then RO-3g.
+
+### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
+Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
+#215 merged there meanwhile, and track/roster is merged in). Plan approved in Plan Mode. The owner's answers: a spliced Billie draws as its plain placeholder until
+RO-3c; the starters keep today's colours, a size per stage from today's scales and their horns, crest and tail colour
+as added bones, nothing more; no player-facing name changes; I trigger the picture baseline (held back, see Risky).
+Tag `ro-3b-done` for the owner.
+- Where the plan and the code differed (checked): `bake:kits` and `bake:placeholders` write the same files (the sheet
+  and the rig), and so does the Studio's kit recipe card; kit-bake-parity compared every recipe with the committed art
+  (its header said 24 recipes, there are 51); a placeholder form had no whole-Billie size (kit recipes have `scale`);
+  kit colours are hue/saturation/value shifts, not RGB; runtime grafts (SP-1) bake from the kit recipe; the only "kit
+  count" was pixel-density's 51; the quick-check picture baseline is not committed but one CI release per version.
+- Changed:
+  - **How `bake:kits` leaves the placeholders alone**: tools/bake-kit-billies.mjs skips every recipe whose rig a
+    bodyPlans.json form owns ("kept: on its placeholder") and writes nothing for it (sheet, rig, line parts). The
+    Studio's kit recipe card shows such a recipe as **kept, not baked** (no fields, no Write Billie); Repack refuses a
+    placeholder Billie. To bring a kit look back: take the Billie out of bodyPlans.json `forms`, `npm run bake:kits`.
+    **tools/test/kit-bake.json** keeps every recipe's bake as fingerprints (`--fingerprints`, written from the committed
+    kit art while `bake:kits --check` was clean); kit-bake-parity compares every recipe with them.
+  - **bodyPlans.json forms `scale`** (schema, baker, test): the whole Billie's size, middles and sizes, on the same
+    ground.
+  - **The 51 forms**: quad (Musk muskox, Gates goat, Woods tiger, Kamprad rat, Yiming ferret), bird (Hughes goose,
+    Swift, Altmowl, Peacouture), fish (Cuban), worm (Trump slug), octo (Zuckerberg), biped (Bezos otter, Kardashian
+    chameleon, Huang gecko-dragon). Colours measured from the kit sheets (body main, tail/wings/crest accent); each
+    stage's scale is its kit scale x 1.5 (all fit); added bones keep horns, ears, crests, manes, beards, packs, wings,
+    growing by stage (Facelet drops its tentacle tips, Metapus adds a visor, Tremendoslug a tie, Altmowl swaps its crest
+    for ear tufts); regional forms: their own colours plus one add or drop (Harbour a cap, Meatball no ears and a
+    rounder body, Courtside a headband, Livestream a ring light, Hazard a cap). The Swift line is kept plain (colours
+    and sizes only) for RO-3g. Baked with `npm run bake:placeholders`: 51 sheets and rigs.
+  - **Grafts**: RO-3b first drew a grafted placeholder Billie plain (the owner's call until RO-3c); RO-3c (#215)
+    merged into track/roster meanwhile and grafts placeholder Billies by slot, so the merge keeps RO-3c's graft path
+    whole. After the merge `npm run bake:placeholders` rebaked the three Zuckerberg rigs (the octopus mantle is slot
+    body, also head), and graft-placeholder.test.mjs runs RO-3c's graft over the 51 real forms (765 grafts: every
+    slot from a Billie of each other plan, inside the box, the same bones; head refused to and from the octopus).
+  - Studio: the Roster board's silhouettes treat a placeholder rig like a kit rig (no piece layout: it asked for 50
+    missing `<name>.json`); the Pixel density report shows a placeholder Billie's plan and scale.
+- Remade on purpose: kit-bake.json (new); data-rigs' planted fault names musk0's first bone `body` (the quad's, was
+  `torso`); rig-swap tries its swaps on musk0 and trump0 baked from their kept recipes (in memory); pixel-density: kit
+  rows 51 -> 0, placeholder rows 0 -> 51; check-studio-github.py: the stand-in serves emberox (musk0) off its
+  placeholder as its recipe bakes (bodyPlans.json without it, its sheet and rig; nothing on disk changes), so kit
+  write, library swap, repack's refusal and density still run on a kit Billie, plus a kept recipe shown as kept and a
+  placeholder refused by Repack. The check-data snapshot, the UI gallery (no Billie in it), the run-start and sound
+  baselines did not change.
+- Verified: lint, typecheck, check:modules, format, check:data; unit tests (1071 pass); `bake:kits --check` and
+  `bake:placeholders --check` clean; all 51 drawn by the game's renderer (idle, walk, attack, back) on a contact sheet;
+  tools/look-grafts.py (team, details, walk, a battle with two grafted Billies: drawn plain, no bakes, no errors);
+  smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the debug log: 112 KB, no
+  names); the Studio check up to density with the kit steps on the served kit Billie (IN PROGRESS: the rest).
+- Risky / open:
+  - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
+    `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check
+    would show 51 Billies as changed. Run "Make the picture baseline" once this is on main.
+  - RO-3c's grafts on the real forms are tested for fit and bones, not judged by eye on each pair.
+  - The labels on a back view read mirrored (RO-3a's design: the back cell is drawn as it shows and flipped).
+  - The kit recipes' native parts (lines/*.json `parts`) stay the kit's: splicing's slot data is RO-3c's.
+  - Looks judged on a contact sheet and on a phone-sized page in this container, not on a phone.
+- Next: RO-3d, RO-3e, RO-3f (side by side), RO-3g last; the picture baseline once this is on main.
+
+### Roster track RO-3c - Splicing by slot across body plans - 2026-10-26
+Branch `claude/ro-3c-splice-by-slot`, made from RO-3a's `claude/happy-ramanujan-jiipux` (PR #213, not merged yet);
+pull request into `track/roster` stacked on #213. Plan approved in Plan Mode. RO-3b ran at the same time: this session
+stayed out of bodyPlans.json `forms`, rigs-next.js, the baked sheets, kitBuilds.json and the quick-check baseline, and
+tested on sample placeholder Billies. The owner's answer: the octopus and the blob **share one bone** between body and
+head. Tag `ro-3c-done` for the owner.
+- Where the plan and the code differed (checked): only SP-1 is built, so there are **no Stability costs** yet and
+  grafts are reachable only from the debug buttons; no graft rule a player sees changed (SP-2 asks). After RO-3b every
+  species keeps a kitBuilds.json recipe (unused), so the graft picks its path by the rig's `placeholder` mark, not by
+  whether a recipe exists. RO-3c's "socket rules per plan pair" became one slot map for all plans, on the baked art.
+- Changed:
+  - **bodyPlans.json plans** (+ schema, check-data, placeholder-art.js `also`): the octopus's mantle is `slot: body,
+    also: head` (it was `head`), the blob's body `also: head`. A shared bone takes the body's size roll and is never
+    grafted; check-data: every plan has a bone for every slot. The octopus rig's `slot` changes on its next bake.
+  - **logic/graft-art.js `graftPlaceholder`**: a placeholder Billie grafted by slot from its donors' baked sheets and
+    rigs (drawings come along; nothing else is loaded). A slot's groups (`graftGroups`: its own bones, a chain is one
+    group, mirrors follow their twin); the receiver's group i takes the donor's group i mod n; one bone takes the
+    donor's whole group put together at rest (a tentacle for an arm); a chain takes the donor's bones spread along
+    it, bone for bone when as long, so every bone draws (a serpent's neck holds its head); `graftFit` turns each
+    picture in quarter turns (exact) to point the bone's way, makes it as long as the bone (inside the bone's box,
+    held where it holds its own, when either is held at its middle: a pot, a round foot), never past 1.5 times the
+    bone's longest side; mirrored twins wear it flipped; the grafted pictures shrink (to half) until the rest pose fits
+    the stage box, else refused. `graftPlaceholderDonors`: another line with bones in the slot. kit-pixels.js
+    `kitTurnRight`.
+  - **skeleton-rig.js graftBake**: placeholder Billies go through graftPlaceholder (bodyPlans.json forms by rig);
+    kit Billies as before (the shared tail moved into `graftKeep`, same code); a kit Billie with a placeholder donor,
+    or the other way round, isn't grafted (the plain Billie draws, the debug log says why). Debug log graft entries
+    name the plans (`quad<octo`). **game/index.html** loads logic/placeholder-art.js (no name clashes; modules and
+    check:modules clean). **debug-menu.js**: a placeholder Billie's random graft comes from any plan.
+  - Tests: tools/test/graft-placeholder.test.mjs (the groups per plan; every plan gives every plan front, back and
+    sig, 588 grafts, inside the box, donor colours on, every other bone's pixels kept; the same twice and several
+    slots at once; mirrors flipped; chains; refusals; donors; graftFit's turn, length, box and cap);
+    placeholder-art.test.mjs checks every slot is filled and the shared bone.
+- Verified: lint, typecheck, check:modules, format:check, check:data, unit tests (1077, quick tier) after each change;
+  kit-bake-parity, graft-art and graft-art-sweep untouched; on the game page, 8 sample grafts (octopus tentacle onto
+  a biped's arm, biped arm onto a quad's front legs, bird wing onto plant leaves, biped arm onto an octopus, crab leg
+  onto a serpent's neck, insect legs onto a shell, quad tail onto a fish, octopus tentacle onto a hopper's legs) baked
+  by graftBake (4-15 ms each, headless) and drawn by the game's renderer in idle, walk and attack, front and back;
+  tools/look-grafts.py (SP-1's kit grafts) still bakes and draws both battle sides grafted; the smoke subset
+  (`npm run check:smoke`, 6 steps) passed. Not the full quick check: RO-3b remakes its baseline.
+- Risky / open:
+  - Judged on samples only: RO-3b's real Billies may have form `size`s, `add`s and `drop`s the samples don't; the
+    test sweep should be run over the real roster once RO-3b merges (swap the samples for `P.forms`).
+  - The fit is mechanical: a part keeps the donor's look but not its size on the donor (the stage box rules). SP-2's
+    weights still use the donor's weight, as designed.
+  - A drawn picture that faces one way (a claw) may point oddly after a quarter turn; a rule per part can come later.
+  - Not tried on a phone. The debug log's bake times are the number to look at (SP-1's exit question).
+- Next: RO-3b merges (then remake the graft sweep on the real roster), then RO-3d..f.
+
+### Roster track RO-3a - Every body plan, placeholder Billies and drawing sheets - 2026-10-26
+Branch `claude/happy-ramanujan-jiipux` (a cloud session pushes only to its own branch; the owner's word: work here,
+pull request into `track/roster`, which had nothing main lacks). Plan approved in Plan Mode. The owner's answers: every
+body plan in the roster even where no kit has parts; new, very obvious placeholder art **for every Billie** (kit art
+too) with sprite sheets to export, draw on in an outside tool and import, **both** one per Billie and one per plan;
+the muskox and goat starters to quad; splicing maps by slot across plans; scope "everything"; then (mid-session) the
+**Swift line becomes the Eevee-style line**. The plan for RO-3b..g is in roguelite-track.md ("RO-3.. plan"), with
+which sessions can run side by side. Tag `ro-3a-done` for the owner.
+- Where the plan and the code differed (checked): every one of the 40 species and 11 form sheets is baked `biped`
+  (kit-assemble.js writes `plan: 'biped'`), while body-plan-animation.js animates 14 plans; `worm` and `octo` have
+  no art anywhere, the other 11 only legacy hand-drawn sheets. Online research (Pokémon's recurring archetypes and
+  its 14 shapes; page fetches were blocked here, search summaries only) gave the missing archetypes in the plan.
+  The Studio loads its data through GitHub (a stand-in in the checks), not from game/data.
+- Changed:
+  - **game/data/bodyPlans.json** (+ schema, `GameData.bodyPlans`, index.json, check-data): `plans`, a template per
+    plan whose bones are the ones its animation moves (or ride on one), each with its parent, rest middle, size,
+    pivot, shape, tone, z/zb, slot, turn; mirrored bones copy a twin; `sheet` and `paint` settings; `forms`, the
+    placeholder Billies (empty: RO-3b fills it). Every plan fills the five slots, except octo (no body) and blob
+    (its head is its body).
+  - **game/js/logic/placeholder-art.js**: the painter (flat shape, hatch, double outline, the part's name in a
+    3 x 5 font, eyes and a blink on a face), cells (the part with room round it, its pivot at a fixed spot; a back
+    cell is drawn as it shows on screen and flipped at bake, since the renderer mirrors the back view), the bake
+    (sheet and both views' rigs like the kit baker's, marked `placeholder`), the drawing sheets (a Billie's: a column
+    per picture, a row per view; a plan's: two rows per Billie under a name strip; magenta cells, label strips, pivot
+    ticks, any whole scale) and their cutting back (magenta and near-magenta clear, hard alpha, a size check that says
+    why). On the Studio page and in the logic worker; not on the game page yet (RO-3c's runtime grafts need it).
+  - **tools/bake-placeholders.mjs** (`npm run bake:placeholders`): bake what changed, `--check`, `--export=<name>` /
+    `--export=plan:<plan>` (`--scale`, `--out`), `--import=<file>`. A drawing is stored as
+    `game/art/next/placeholders/<name>.png` and laid over the painted cells at bake.
+  - **Studio** (studio/js/placeholder-sheets.js, Part mode beside the kit recipe): a placeholder Billie's Download /
+    Upload drawing sheet and Write Billie; Body plan sheets (plan, scale, Download, Upload); one undo step per upload.
+    docs/STUDIO.md has the how-to.
+  - Tests: tools/test/placeholder-art.test.mjs (every animated plan has a template; every bone moved or riding on a
+    moved one; a sample on each plan bakes inside the box, the same twice, with a readable rig; the slots; both
+    sheets cut back to the same cells at 1x and 3x; a wrong-size sheet refused; a drawn cell wins, an empty one keeps
+    the placeholder; no paint near magenta; committed placeholders bake as committed). The check-data snapshot is
+    remade (153 files).
+- Verified: lint, typecheck, check:modules, format:check, check:data; unit tests (see the commit); every plan's sample
+  drawn by the game's own renderer (rigFromMeta, rigFrame, drawRig on the game page) in idle, walk, attack, hurt and
+  faint, front and back: all stand on the ground and move; in a headless Studio (the GitHub stand-in of
+  studio-shots.py) the quad plan sheet downloaded at 4x, uploaded back, stored and baked to a quad rig.
+- Risky / open:
+  - Not one Billie uses it yet; the look is judged on samples. RO-3b moves all 51 sheets onto it and remakes the
+    quick-check baseline and kit counts.
+  - A drawing only cuts back while the Billie's plan and part sizes are as exported (the error says so).
+  - The octopus has no body slot and the blob no head slot: RO-3c's slot map has to say what those take.
+  - Swift as the Eevee-style line changes RO-3b's Swift (to bird) again in RO-3g: the eras, types and how a branch is
+    picked are the owner's call there.
+  - Not tried on a phone (nothing a player sees changed yet).
+- Next: RO-3b (every existing Billie onto its plan as a placeholder) and RO-3c (splicing by slot) can run side by side.
 
 ### Hub track HB-8 - Departure and return: the sky train through the portal - 2026-10-26
 Branch `art/hub-departure` (the session's brief; from main 2314da8 after PR #205; the plan file's `Branch:` line says
@@ -170,6 +386,429 @@ Details: docs/phases/camera-track.md, "CAM-4a as built". Not tagged yet: `cam-4a
   Play from here), so it is this container, not CAM-4a; its later steps and the Studio self-test didn't run. Full quick check: not run.
 - Next session starts with: CAM-4b (zoom stops, blur per stop, the pull to a stop, a scene's starting stop, the curve
   graph, camera looks) on `track/camera`, which the owner makes from this branch.
+### Phase 20 R3, lane shadows (stage 5) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved in Plan Mode; the owner's
+answers: E11 as option (a), the far map at rest (no sway in the shaders); F6-F7 merged casters only if the counts ask
+(they don't, below); lamp shadows unchanged on phones; "Models in the shadow cache" its own switch. Every switch is
+off by default.
+- Where the docs and the code differed (checked):
+  - The shadow maps keep depth only (colour writes off, LEQUAL, no blending, one polygon offset), so the order of
+    their pictures can't change them: they are grouped by picture over the whole pass, not in runs of neighbours as
+    the sprite pass must.
+  - The texture bind before the skip (E9's bug) did more than waste a bind: a still box layer whose picture wasn't
+    loaded counted as a miss, which dropped the far cache's key every frame (fixed in both loops; no look change).
+  - The far map's moving list held every model whose tree has `sway`, though only its leaf pictures sway (34 of the
+    jungle stop's far models, 41 in the run town); and the other way round, `still` ignored a model's own `M.bob`
+    and its turning parts, so the moored airship, its propellers and windmill sails were frozen into the far cache.
+  - The far map's picture loop was a copy of drawShadowSprites (now one function).
+  - F6's alpha-mask test has nothing to test: solid props aren't in the game flow (the run town's `solid` pass is 6
+    draws). Building walls and structures are ~10 shadow draws a map, in files no lane owns: left.
+  - Lamp maps at night in Copperleaf: 4 + 5 draws. Nothing to save on phones.
+  - The query warnings headless ("a query is already active") come from the diagnostics' timers with every switch
+    off too: not this lane's.
+- Changed (one cause per commit):
+  - Tests first: tools/test/shadow-passes.test.mjs freezes every call of the sun's near and far maps (cache missed
+    and hit) and the lamps' maps; fixture in tools/test/shadow-fixture.mjs.
+  - Fix: a box's layer skipped before its picture is looked up (the frozen record: the second frame now hits).
+  - No change: the far map's loop is drawShadowSprites.
+  - **E9** `quality.shadowInstances` ("Shadows in batches"): every shadow map's pictures one draw per picture
+    (program `shadowI`: the shadow program with its uniforms `#define`d to instance attributes 1-4 and 11; packed by
+    `packShadowInstance`, an addition to engine/sprite-instances.js, uploaded with its buffer). A 3D building's front
+    and a box's six slices are instances too.
+  - **Model shadows** behind the same switch: `voxSI` (voxI's placing, depth only, five instance attributes), one
+    draw per mesh part through `buildModelBatches`, its own record buffer and vertex arrays (`modelInstanceVao`'s new
+    key argument, `'sivao'`; freed on a flush).
+  - **F8** `quality.modelShadowCache` ("Models in the shadow cache"): models whose mesh holds still in the far cache
+    (trees whose leaves sway too); ones that bob (frame-items.js's new `bobs`), tumble, turn a part or move, out. The
+    far key carries `shadowCasterSignature` (the cached items' places, in order, and which are models).
+  - **E11 (a)** `quality.farShadowsStill` ("Far shadows hold still"): what only the wind sways goes into the far
+    map's cached part at its rest shear (frame-items.js `rest` on props and layers, prop-models.js `rest` on a
+    model's leaf pictures; undefined when anything else moves it). The near map (13 m) sways as before.
+  - Graphics test: "Shadows in batches" at the Shadow court, the Lamp square, the Depth corridor; "Models in the
+    shadow cache" at the Depth corridor; "Far shadows hold still" at the Meadow and the Depth corridor; each alone.
+  - Settings defaults, Studio labels, the precompile list (`shadowI`, `voxSI` while the switch is on), CHANGELOG.
+- Headless counts (390 x 760 at DPR 1, the game's own values, clear summer noon; frames on which the far cache held,
+  6 frames averaged, counts only): shadows near + far, and the frame's draws.
+
+  | Stop | All off | Shadows in batches | + both cache switches | + Models and Pictures in batches |
+  |---|---|---|---|---|
+  | Jungle run place | 143 + 215, 653 | 61 + 60, 415 | 61 + 13, 368 | 61 + 14, 255 |
+  | Run town | 154 + 206, 610 | 76 + 77, 402 | 77 + 32, 357 | 77 + 33, 261 |
+  | Copperleaf by night | 36 + 34, 1,162 | 34 + 28, 1,154 | 34 + 28, 1,153 | 34 + 28, 452 |
+
+  The baseline tour (4 s a stop, ~3 frames headless) agrees but weighs one cache miss heavily; a miss costs the
+  cached part again (~60 draws in the jungle). Battle (far map only, no cache): 75 -> 55 with batches (its camera
+  moves, so the tour's battle numbers wander, 75-151 off). What's left in the shadows: near-map pictures at ~one draw
+  per distinct picture (47 in the jungle) and models at one per mesh part (12 near in the jungle, 22 in the town).
+  Merged casters (F6-F7) would save at most those model draws, ~10-20 a map: not worth a second model path now. The
+  near map's pictures could only drop further with atlases (phase 21).
+- Edits outside my files (additions only): engine/sprite-instances.js (`packShadowInstance`),
+  engine/model-instances.js (`modelInstanceVao`'s key, default as before), prop-models.js (the leaf pictures' `rest`;
+  the flush frees the shadows' buffer and `sivao`), walk/frame-items.js (`bobs`, `rest`), walk-view-gl.js's
+  precompile list, settings.js, graphics-bench-test.js.
+- Risky:
+  - Shadows in batches: right vectors and shear go as halves (2^-11): a 10 m building front's shadow edge moves by
+    millimetres. A device whose driver mishandles `uvec4` attributes would drop the picture shadows' flips.
+  - Models in the shadow cache: a model that moves in a way none of bob, spin, turning parts or `moving` says would
+    have a frozen far shadow.
+  - Far shadows hold still: past ~13 m grass and leaf shadows stop swaying; at the near map's edge a swaying shadow
+    meets a still one. The cache is drawn again when the sun moves a step or the view moves 3 m, as before.
+  - frame-items.js and the leaf pictures carry two new fields; nothing else reads them.
+- Verified: after every commit lint, typecheck, unit tests (1,101 -> 1,119), check:modules, format; smoke "no
+  problems" on every commit touching game/ and after the merge with the context lane. Node tests: the frozen calls;
+  the instanced pictures draw the same quads in every pass (halves within half precision) with everything else in
+  place; the model shadows draw every (item, part) once with the old values; the cache lists, signature and rest
+  shear on both paths. Planted bugs (flip, turned box slices, a lamp's turn, extra parts, layouts, vertex arrays,
+  turning parts, the bob, the signature) each fail them. `shadowI` and `voxSI` compile and link in headless Chromium;
+  the tour ran headless with each set of switches, no page errors. No look or speed judged headless.
+- **Your phone run** (Android first, then the iPad), at a full charge:
+  1. Debug menu > **Graphics test**: "Shadows in batches" (Shadow court, Lamp square, Depth corridor) should look
+     exactly the same; "Models in the shadow cache" (Depth corridor): the same, except moving models' far shadows;
+     "Far shadows hold still" (Meadow, Depth corridor): far grass and leaf shadows still. Save the report.
+  2. Studio > Engine > Quality: turn on **Shadows in batches**, **Models in the shadow cache** and **Far shadows hold
+     still**, run the **Diagnostics test** (Renderer baseline), save the report, export the debug log. Then once more
+     with "Models in batches" and "Pictures in batches" on too. Send all four files.
+  3. Walk a run route and Copperleaf by day with all three on: do shadows flicker, vanish or jump? Does the line
+     where swaying shadows meet still ones (about 13 m out) show? Is the airship's and the windmill's far shadow
+     moving again?
+- **Ask me before** (after your run): which switches go on by default (old paths deleted in round 4, one commit
+  each).
+- Next: your round 3 phone run; round 4 (D2, defaults, deletions).
+
+### Phase 20 R3, lane battle (stage 8: battle rigs, by the numbers) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved in Plan Mode; the owner's
+answer after the numbers: fix the measure, report the rigs, and a small reuse switch (off) instead of full G; full G
+only if the phone still says the rigs matter.
+- Where the docs and the code differed (checked):
+  - **Why the battle's CPU read 1 ms (Android) and 0.2 ms (iPad):** the baseline (and the full test's three battle
+    steps) timed the scheduler task `scene` only, battle-stage.js `battleStageFrame`: tweens, particles and the 2D
+    effects canvas. The battle's 3D frame (the world, the rigs, every draw) is the walk view's own task `dio`
+    (battle-3d.js `battle3dFrame` through `walkView.battle.frame`). Headless: scene 0.9 ms, dio 12-22 ms.
+  - The rig buffer is `actorBuffer`, battle-stage.js ~1076 (not 1086-1113); the re-upload is webgl.js
+    `imageTexture`'s `__v` branch (~693, not 585-596).
+  - "16 ms steps" is only the input: `rigFrame` steps again by the rig's clock, and every rig has `clock: 12` (a pose
+    every 167 ms, attack and hurt every 83 ms, the face every 250 ms). Yet each rig was redrawn and uploaded on every
+    frame: at 34 fps about 5 of 6 redraws repeated the last.
+  - Full G is bigger than it reads: rig parts are cut into separate canvases (no atlas UVs), robots and grafts have
+    their own sheets, tints are `source-atop` fills, positions snap to whole pixels.
+  - Found, **not fixed** (not mine to change in a measure round): battle-stage.js `drawSelectionRing` divides by
+    `R.k2`, which no rig has, so its radius is NaN and the 2D gold/target rings likely never draw (the 3D warm light
+    still marks the one choosing). Worth a look: does a ring show round the one choosing on your phone?
+- Changed (one cause per commit):
+  - self-test.js: `selfTestFrameStats(..., { plus: 'dio' })` adds the walk view's ms; the baseline's battle stop and the
+    full test's battle steps use it, with `cpuTasks: { scene, dio }` in each entry.
+  - The baseline's battle stop reports `rigs` (ms redrawing, calls and redraws a frame, KB redrawn, `uploadMs`: one
+    rig canvas sent 20 times and waited for), every stop `uploadKB` (the counters' `up`). battle-stage.js keeps the
+    sums in `rigStats` (counting only). Done with a counter instead of wrapping `actorBuffer` through the debug log's
+    `GAME` (it has no entry there).
+  - **G-lite** `quality.rigReuse` ("Reuse battle rigs", off): `actorBuffer` keeps a key per canvas (the rig, the key of
+    skeleton-rig.js's new `rigFrameKey`, which is rigFrame's own stepping, the view, build, faint parts, white and dark
+    tints); same key, so the canvas and its `__v` stay and nothing is uploaded. Same pixels. `rigFrameKey` lives next
+    to `rigFrame` in skeleton-rig.js (a new logic file would have needed the Studio's worker list); no other lane
+    touches it. Node test tools/test/rig-frame-key.test.mjs: same key, same pose, for every action, clock 12 and none.
+  - The baseline measures the battle a third time, `ownRigReuse` (the game's own resolution, the switch on), so one
+    diagnostics run gives the before and after. Not added to the graphics test: its stations have no battle.
+- Headless (390 x 760, DPR 1, counts and rough times only, software drawing at ~3 fps):
+
+  | Battle stop | CPU ms (scene + dio) | Rigs ms | Rig redraws / calls a frame | Upload KB (pictures) |
+  |---|---|---|---|---|
+  | own (was reported as 0.6 ms) | 13.4 (0.6 + 12.8) | 0.42 | 2.18 / 2.18 | 128 |
+  | ownRigReuse | 12.0 (0.6 + 11.4) | 0.26 | 1.18 / 2.24 | 70 |
+
+  At 3 fps nearly every frame lands on a new pose step, so headless halves the redraws; at 34 fps on the phone it
+  should skip about 5 in 6. The rigs are ~3-6 % of the CPU frame; the phone is pixel-bound (20 fps at resolution 1,
+  14.5 at its own), so expect a small gain at most.
+- Risky:
+  - Reuse trusts that a rig's picture only changes with its pose, face, build, faint parts and tints. Something
+    drawing into a rig's parts in place (none found) would show late. A robot rig still loading pictures is a new
+    object each frame, so it's never reused.
+  - The diagnostics test is ~15 s longer (the battle's third measurement).
+- Verified: lint, typecheck, unit tests (1,122), check:modules after every change; smoke on each game commit; the
+  diagnostics' baseline headless twice (no errors; battle entries carry cpuTasks, rigs, uploadKB).
+- **Your phone run** (Android, then the iPad; full charge, nothing else open):
+  1. Debug menu > **Diagnostics test**, leave it (~5 min). **Save the report**, then **Export debug log**. Send both.
+  2. Look at the baseline's three battle lines in the debug log: `baseline battle own: ... ms CPU ... rigs X ms, Y KB`
+     and the same for `ownRigReuse`.
+  3. Optional: in a battle, does a gold ring show round the Billie choosing a move? (the `R.k2` question above).
+- **Ask me before** (once your numbers are in): full G. My suggestion: build it only if on Android `rigs.ms` plus
+  `uploadMs` x redraws exceeds ~3 ms a frame, or `ownRigReuse` shows a clearly higher fps than `own`; otherwise close
+  G and, after your verdict, turn `rigReuse` on by default.
+- Next: the round 3 phone run covering every lane's switches.
+
+### Phase 20 R3, lane context (H1-H3, H5) - in progress, 2026-10-26: the resource registry's API, for the other lanes
+The full entry replaces this one at the end of the lane. Pushed now so the shadows and battle lanes can make their GPU
+objects through it (engine/webgl.js, "resources"):
+- `gpuBuffer(kind, bytes)`, `gpuTexture(kind, bytes)`, `gpuVao(kind)`, `gpuFramebuffer(kind)`, `gpuMake(type, kind,
+  bytes)` for the rest (renderbuffer, sampler, query, program); kinds: programs, pictures, targets, ground, ring,
+  meshes, instances, canvases, other. `gpuSized(h, bytes)` after a bufferData or texImage at a new size.
+- `gpuFree(h)` instead of `gl.deleteX(h)` (null-safe; a handle of an older context is only forgotten).
+  `gpuRetire(h)` frees it two frame ticks later (a replaced object the frames in flight may still read).
+- A cache checks `x.gen !== gpuState.gen` (with or instead of `x.gl !== gl`): a restored context is the same object.
+- `gpuOnRestore(name, fn)`: fn drops what that owner holds on a restore (it is made again on next use).
+- I moved the create line of the shadow maps' model record buffer (prop-models.js, `MODEL_SHADOW_INSTANCES`) onto it.
+
+### Phase 20 R2, lane pixels (stage 6 without D2) - 2026-10-26
+Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
+answers: phones (Android, iPhone; not the iPad) get 1.2 MP and the automatic quality starts at 0.9; 8 lamps lit at
+once on phones, 4 of them in the god-ray pass; I may take buildings.js (only the solid/fronts split) and
+walk/fountains-weather.js (only the rain batch); D7's shafts both automatic and from a map's list. Every switch is
+off by default (they change the look or haven't been seen on a phone yet).
+- Where the docs and the code differed (checked):
+  - walk-view-gl.js is 703 lines, not 6,000: the pixel cap is in drawWalkFrame, the draw order in drawWalkFrameInner.
+  - The sky's 0.9999 depth didn't matter: the depth test is off while it draws. `uMirror` was dead, as the phase
+    file says (nothing drew a mirrored sky).
+  - Building fronts are blended inside drawBuildings (buildings.js), and a room's front (walk/rooms.js) is blended
+    over the ground before anything opaque: both had to stay after (or, for the room, before) the sky.
+  - **The A8 phone numbers were taken at fewer pixels than the game draws**: the graphics test pins resolution 1,
+    so your phone (411 x 727 at DPR 3.5) drew 720 x 1272 (0.92 MP) there, while the game's own 1.5 hits the 1.6 MP
+    cap (951 x 1681). At your real values the phone draws 75% more pixels than A8 measured.
+  - The walk camera looks down, so the sky is rarely in the picture (docs/graphics-bench.md, Open sky), yet it was
+    drawn over the whole screen first: its clouds (4 noise layers) ran on every pixel at full resolution. Sky last
+    should save most of that.
+  - D6 was half there: every lit pixel already loops only over the picked lights (`quality.lights`); the god-ray
+    pass checks at most 6 lamps (its comment says 12 steps, not the 14 the phase file has).
+  - Rain is not in effects.js but in walk/fountains-weather.js: every drop and splash its own draw (a picture bind
+    and 5-6 uniform calls each).
+  - The counters count draws, not pixels: D5 can only be judged by your phone's frame rate.
+  - Your round 1 baseline (relayed from the coordinating session, 2026-10-26) agrees. Android at resolution 1 vs
+    the game's own 1.5, automatic quality off: Copperleaf day 17 vs 12.5 fps, night 15 vs 11.5, jungle 20.7 vs 15.7,
+    run town 24 vs 17, battle 20 vs 14.5, with CPU flat (~28 ms, which on Android Chrome includes graphics waits):
+    the extra pixels cost 25-30% everywhere (D4). With automatic quality on it settled at resolution 0.6, level 4,
+    ~25 fps, and rain cost nothing there (rain is drawn at half strength below 0.75 resolution). iPad: Copperleaf
+    30 fps at a 33 ms frame, CPU ~5 ms, so it waits on its GPU just over a 60 fps frame; a GPU saving there (sky,
+    overdraw, post) could double it through vsync.
+- Changed (one cause per commit):
+  - Prep, no look change: the sky at depth exactly 1.0; the dead `uMirror` gone; `drawBuildings(..., part)` draws
+    `'solid'` (walls, roofs, windows) or `'fronts'` (the blended front pictures), both by default.
+  - **D1** `quality.skyLast` ("Sky last"): the sky after the models, walls and structures, depth test LEQUAL with no
+    writes, so it fills only what is still at the cleared depth; the building fronts, water and effects after it. A
+    frame showing a room's front keeps the sky first.
+  - **D5 (a)** `quality.solidFirst` ("Solid things first"): models, buildings' walls and structures before the
+    sprites. The box faces stay right after the sprites (they meet their pictures' edges).
+  - **D4** `quality.phonePixels` ("Phone pixel budget"): on Android and iPhone 1.2 MP instead of 1.6, and the
+    automatic resolution starts at 0.9 once (it climbs back when frames have room). At your values: 823 x 1456.
+  - **D6** `quality.phoneLamps` ("Phone lamps"): on phones at most 8 lights picked (one line in walk/lighting.js
+    pickLights, the R1 light lane's file), and the god-ray pass takes 4 of them (a new `uAirN`, 6 elsewhere).
+  - **D3** `quality.invalidate` ("Drop spent pictures"): post passes that cover their whole target drop its old
+    content first (blur, cheap blur, bloom's bright and down passes, AO, shafts, vol, the grade on the screen); the
+    reflection's depth is dropped after its pass. The table of every render target is in the phase file under D3.
+  - **Rain** `quality.rainBatch` ("Rain in one go"): rain, snow, ash and splashes in one instanced draw (new program
+    `fxW`, the fx maths with each quad's values per instance, same order). Headless counts in Copperleaf (counts
+    only): rain added about 150 draws and 1,100 uniform calls a frame, a storm 230 and 1,600; with it on the weather
+    is one draw and the uniform calls stay at the clear day's. Rain also costs pixels I did not touch: the wet ground
+    and denser air in the god-ray pass.
+  - **D7** `air.cheapShafts` (Studio > Engine > Air "Cheap light shafts", 0 = none): up to 6 soft additive beams
+    (the glow disc stretched) from the crowns of about half the trees within 26 m, down along the sun's light, coloured
+    by the sun; strongest with the sun low, gone at night, in grey weather, in rain and close to the camera. Only when
+    the god-ray pass won't draw (quality step 3, Sun rays 0, or no shadow map). A place can list its own:
+    scene `shafts: [[x, z, top above the ground (6), width (1.2)], ...]` (no map has one yet).
+  - Graphics test: the six switches above (each alone, out of "everything") and two stations, "Sun gap, no god
+    rays" and "Meadow in the rain". 145 steps over 28 settings now (with the models and sprites lanes).
+  - Settings.js defaults, the Studio labels, the precompile list (fxW only while its switch is on), CHANGELOG.
+- Edits outside my lane's files (for the owning lanes): walk/lighting.js pickLights (the phone cap, one statement);
+  buildings.js (the part argument); walk/fountains-weather.js (the batch); graphics-bench-test.js has three small
+  edits besides additions (a station's `spot`, `weather` and `fixed`), and tools/check-quick.py's spot check reads
+  `st.spot` (so the test map needed no new spots and gamedata.js no rebuild).
+- Risky:
+  - Sky last: anything blended that is drawn before the sky would show black where only sky is behind it. I found
+    the building fronts and the room front; something I missed would show as black fringes against the sky.
+  - Solid things first: where a picture lies exactly on a model's face, which one wins can flip.
+  - Drop spent pictures: a driver that drops more than asked would show garbage in the blur or glow.
+  - Phone pixel budget: softer on the phone (about 13% fewer pixels across, 25% fewer in all).
+  - Cheap light shafts: the strength (0.22 of the sun's colour per beam at 0.6) and the 26 m range are my guess.
+- Verified: after every commit lint, typecheck, unit tests (1,074, then 1,098 after the merges), check:modules,
+  format:check; check:data once; smoke "no problems" on every commit touching game/ and on each merge. A headless
+  crash check (errors and gl.getError only, no pictures) in Copperleaf, a room and a battle with every new switch
+  on at once, the models and sprites lanes' too: frames drawn, no errors. No speed or look judged headless.
+- **Your phone run** (Android phone, then the iPad), at a full charge, nothing else open:
+  1. Settings > Help > **Graphics test** (now longer: 145 steps). Save the report and send it. It measures each
+     switch off and on at its station. Look at the screen while "Sky last", "Solid things first" and "Drop spent
+     pictures" step: the picture should not change at all; tell me if anything flickers, goes black or loses leaves.
+  2. **Phone pixel budget** isn't in the graphics test (it pins resolution 1). In Studio > Engine > Quality turn
+     "Ease off when slow" off, walk Copperleaf by day for a minute, export the debug log; turn "Phone pixel budget"
+     on, walk again, export again. Send both. Say whether the picture is too soft.
+  3. Rain: the debug menu's **Diagnostics test** has a "Rain and night" step (clear, rain, night in fps). Run it
+     with "Rain in one go" off and again on, save both reports. Watch the rain once: does it look the same?
+  4. Shafts: in the Studio's Engine page set the hour bar to golden hour, Sun rays (Air) to 0 and "Cheap light
+     shafts" to 0.6, and look at a grove (the graphics test's "Sun gap, no god rays" station shows them too): do
+     the beams look right, too strong, too many?
+- **Ask me before** (after your run): which switches go on by default (old paths deleted in their own commits in
+  round 4), whether D5 needs options (b) or (c), and the shafts' strength.
+- Next: your round 2 phone run; D2 (`mediump`) alone in round 4.
+
+### Phase 20 R2, lane sprites (stage 4: sprites instanced) - 2026-10-26
+Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
+answers: E3 fixed fully (reflections take the main pass's values); the reflection grouped by picture like the main
+pass; E5's split in engine/webgl.js as a no-op; the setting `quality.spriteInstances` ("Pictures in batches").
+- Where the docs and the code differed (checked):
+  - The sprite pass is walk/sprites.js `drawSprites`, the reflection walk/water.js `reflectionPass` (not
+    walk-view-gl.js); the precompile list is walk-view-gl.js's loop, not engine/webgl.js.
+  - "`uUV` is always 0,0,1,1" is wrong since WA-6a: someone wading has their bottom rows cut (`it.cut`). E4's layout
+    also had no room for the CPU sway (`uShear`), `uSlope` or the pull toward the eye (`uDZ`), and its single
+    rotation could not describe a tree's crossing picture (right 0,0,+-1 with back -1,0,0).
+  - `LOOK_GLSL` and `uFol` (`seasonal`, `snowOn`) live in engine/webgl.js, not the walk shaders.
+  - E3 was wider than written: with no shadow map the reflection's shadow lookup is the clouds' shade, so the stale
+    `uNoRecv` (the last picture of the frame before) decided whether leaf clumps took it.
+  - Every catalogue camera's right and back lie flat (y 0); the instanced program relies on it.
+- Changed (one cause per commit):
+  - Tests first: tools/test/sprite-records.test.mjs freezes everything the sprite pass and the reflection send to a
+    stand-in context, for a fixture taking every branch (vox, bld3, flag, cross, far, layer, glow, person, a turned
+    picture, noRecv, flip -1, town rise, wading, blades, clock hands, flat things).
+  - **E1-E2**, no change: `spriteDrawList`, `spriteRecord` (each picture's uniform values in a record kept from frame
+    to frame, size and place by draw-common.js `spriteGeometry`), `spriteSideEffects` (hit targets, blades, hands, a
+    3D front's fade, in the old order). The frozen record is identical.
+  - **E4** engine/sprite-instances.js (script tags on both pages): 92 bytes an instance (place and size as floats, the
+    rest halves, the tint bytes, flags and material as integer bytes), a half packer (no Float16Array), the buffer.
+  - **E5**, no change: `lookOnP`, `seasonalF`, `snowOnF` take their values as parameters; the old names wrap them.
+  - **E6-E8** behind `quality.spriteInstances` (off; Studio > Engine > Quality "Pictures in batches"): program
+    `spriteI` (walk-shaders.js; its fragment shader is the sprite one with each per-picture uniform `#define`d to a
+    flat varying, 15 varyings at most; `spriteInstanceFragment` throws if the sprite text changes shape). One buffer
+    a frame (orphaned, refilled); one `drawArraysInstanced` per run of pictures next to each other in today's order
+    with one texture; a crossing picture is the instance after its tree. A flag and a picture with blades or clock
+    hands end a run; the title town's rise is packed too. Compiled while the setting is on (precompile list) or on
+    first use; if it fails the pass keeps one draw a picture and the debug log says "pictures in batches off".
+  - **E3** (a look change, its own commit): the reflection sends `uFol`, `uSelf` and `uNoRecv` per picture as the main
+    pass does. Then (its own commit) the reflection's pictures in the main pass's order (by picture).
+  - **E10**: the reflection's pictures instanced too, behind the same setting (its fixed lighting as every material).
+  - Graphics test: "Pictures in batches" off and on at the Pond and the Depth corridor, out of "everything lowest /
+    highest" (128 steps over 23 settings).
+- Headless counts (the diagnostics tour from a scratch script, 390 x 760 at DPR 1, the game's own values and
+  resolution, setting off then on; counts only, never speed):
+
+  | Stop | Draws | Sprite pass (model pictures) | Distinct textures in it | Uniform calls | Texture binds |
+  |---|---|---|---|---|---|
+  | Copperleaf by day | 1,164 -> 595 | 710 (643) -> 142 (94) | 239 (~120 pictures) | 21,658 -> 4,846 | 1,712 -> 585 |
+  | Copperleaf by night | 1,173 -> 603 | 710 (642) -> 142 (94) | 244 | 21,714 -> 4,905 | 1,714 -> 585 |
+  | Jungle run place | 650 -> 532 | 232 (123) -> 114 (53) | 177 | 8,694 -> 3,194 | 841 -> 617 |
+  | Run town | 608 -> 523 | 181 (53) -> 95 (23) | 155 | 7,454 -> 3,283 | 726 -> 560 |
+  | Battle | 584 -> 486 | 205 (174) -> 97 (74) | 182 | 7,421 -> 2,678 | 676 -> 474 |
+
+  What it says: Copperleaf's sprite pass comes down 5x, to 142 runs against a floor of ~120 pictures (texKinds 239
+  counts picture and normal map): runs in today's order get within ~20% of grouping by picture alone. Uniform calls
+  fall 4.5x (the per-picture uniforms are gone; what's left is the other passes). The reflection barely changes (16
+  -> 14 draws in Copperleaf; it was near its floor). With the models lane's switch too, Copperleaf should be near
+  ~460 draws, close to the 400 budget before the shadow maps are counted (round 3).
+  Your round 1 phone baseline (Android, from the coordinating session): Copperleaf by day 1,130 draws, sprite pass
+  697 (654 model pictures) from 236 textures, 20,857 uniform calls, 1,592 texture binds, 17 / 12.5 fps, CPU ~28 ms;
+  so on your phone expect the sprite pass near 140 and about 550 fewer draws. The iPad (sprite pass 71) gains little:
+  landscape sees few copies of each picture, and it waits on its GPU.
+- E12 (by the counters): the player-overlap fade already travels per instance, and caching packed bytes per prop
+  is not needed by the counts; whether packing costs CPU on the phone shows in your CPU ms (step 2 below). Left out.
+- **For round 3's shadows lane** (walk/shadows.js untouched): `packSpriteInstance(i, record, cam)` and the buffer
+  (`uploadSpriteInstances`, `bindSpriteInstances(first)` per run, as WebGL2 has no base instance) serve shadow
+  sprites. A shadow program reads only locations 1-4 (base, offset, axes, slope / shear / dz / shown height) with the
+  sun's or a lamp's right as a uniform for camera-facing ones; records come from `spriteRecord` (or a reflection-like
+  record function for the shadow maps' own values), runs by texture as `drawSpriteRuns` does.
+- Risky:
+  - The instanced fragment shader is made from the sprite one by `#define`s: a sprite shader edit that renames a
+    per-picture uniform or `main` still builds but then reads a uniform never set (the Node test lists them).
+  - Positions as floats, axes and look values as halves (2^-11): far from the origin a turned picture's edge moves
+    well under a millimetre.
+  - A camera whose right or back is not flat would light camera-facing pictures slightly differently instanced.
+  - Shared buffer: the reflection uploads before the main pass in the same frame (orphaned between).
+- Verified: lint, typecheck, unit tests (1,072 -> 1,098), check:modules, format after every commit; smoke "no
+  problems" for every commit touching game/ and after merges with the models and pixels lanes. The program compiles
+  and links in headless Chromium (compile only). No headless graphics judged.
+- **Your phone run** (Android first, then the iPad), at a full charge:
+  1. Open the debug menu, **Graphics test**: compare "Pictures in batches" off and on at the Pond and the Depth
+     corridor. Does anything look different (leaf clumps, trees' crossing pictures, signs and windows on models,
+     people wading, the reflections)? Is it faster?
+  2. Studio > Engine > Quality: turn **Pictures in batches** on, then run the **Diagnostics test** (about 5 minutes)
+     and **Save the report**; walk Copperleaf by day and night for a minute; **Export debug log**. Send both files.
+  3. Look at the pond at the hub with the setting off: reflections now show autumn colours and snow on leaves, and
+     trees in the water shade their crowns (E3, the owner's fix); the order of pictures in the water changed (by
+     picture), which only shows where two pictures share one plane.
+  - The verdict decides E13: on by default, then the old path deleted (one commit each).
+- Next: E13 after your verdict; E9 (shadow sprites) and E11 (sway in the shader, needs your approval) in round 3;
+  **ask the owner** (with the models lane's question): a far version of models' leaf pictures on phones.
+
+### Phase 20 R2, lane models (stage 3: models instanced) - 2026-10-26
+Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
+answers: the jungle broadleaf far version (phase 09 task 10) skipped for now; the reflection uses the same switch;
+thrown pyramids instanced too; the setting `quality.modelInstances` ("Models in batches").
+- Where the docs and the code differed (checked):
+  - The round 1 counts said "185 model draws from 50 distinct meshes": the 50 are distinct vertex arrays (mesh parts:
+    extra parts and turning parts count apart), which is exactly what instancing reaches: 185 -> 50 headless.
+  - Voxel meshes never have extra parts (`more`); only prebuilt and low-poly models do. A turning part's turn
+    replaces the item's own (a propeller on a tumbling thing doesn't tumble with it): kept as it was.
+  - The tests' Node renderer (tools/test/walk-renderer.mjs) doesn't load prop-models.js; tests import it themselves.
+- Changed (one cause per commit):
+  - prop-models.js, no change: the per-item loops in their own functions (`drawVoxItems`, `drawLowPolyItems`), the
+    mesh layouts as data (`VOX_ATTRIBS`, `MDL_ATTRIBS`), a turning part's angle in `spinPartAngle`.
+  - **engine/model-instances.js** (new, script tags on both pages after light-pick.js): an item's record of 36 floats
+    (place with the bob, scale, turn, flip, fade, cel or emit, base point, window seed, its own spin and pivot, the
+    window bits as an integer, the look: wear, hue shift, tint, mask, the windows' light); `buildModelBatches` (by
+    mesh, first-met order); F5's `boxInFrustum` and `splitPieces` (pure, not used yet); two GL helpers (a part's own
+    instanced vertex array; pointing the attributes at a batch's first record, as WebGL2 has no base instance).
+  - **Instanced voxel props and low-poly models** behind `quality.modelInstances` (off; Studio > Engine > Quality
+    "Models in batches"): one draw per mesh part for all items with that mesh, extra parts and turning parts over the
+    same records (`uPart`: the part's turn instead of the item's). Programs `voxI` and `mdlI` are compiled only once
+    the setting is on; their fragment shaders are the plain ones with the per-item uniforms as flat values under the
+    same names (`asFlatInputs` throws if buildings.js's text stops matching). `mdlI` uses 15 of the 16 attributes.
+    A flush (scene dropped, context restored) frees the instanced arrays and the record buffer.
+  - Graphics test: "Models in batches" off and on at the Lamp square and the Depth corridor, out of "everything
+    lowest / highest" (124 steps over 22 settings).
+- Headless counts (390 x 760 at DPR 1, the game's full values, the game's own resolution; the baseline tour run
+  twice from a scratch script, off then on; counts only, never speed):
+
+  | Stop | Draws off -> on | Model draws (models pass) | Uniform calls |
+  |---|---|---|---|
+  | Copperleaf by night | 1,171 -> 1,036 | 185 -> 50 | 21,623 -> 18,652 |
+  | Copperleaf by day | (off mis-measured) -> 1,027 | -> 50 | -> 18,574 |
+  | Jungle run place | 652 -> 631 | 31 -> 9 | 8,685 -> 8,171 |
+  | Run town | 609 -> 600 | 29 -> 20 | 7,454 -> 7,062 |
+  | Battle | 688 -> 648 | 107 -> 75 | 9,784 -> 8,578 |
+
+  Your round 1 phone baseline (Android, Adreno 750, diagnostics 2026-10-26 15:33, setting off), the models pass:
+  Copperleaf 172 draws from 49 vertex arrays by day, 173 / 49 at night; jungle 28 / 8; run town 25 / 20; battle
+  97 / 72 (Copperleaf by day 17 fps at resolution 1, 12.5 at the game's own, CPU ~28 ms, 1,130 draws). With the
+  setting on, the models pass should come down to about those vertex-array counts (49, 8, 20, 72): about 123 fewer
+  draws a frame in Copperleaf. The shadow maps' model draws stay as they are this round (Copperleaf near 23 + far 11;
+  jungle 31 + 36; run town 39 + 37; battle far 48.5: round 3's).
+  The iPad (Apple GPU, 1366 x 886 landscape at DPR 2, diagnostics 15:41; GPU-bound, CPU ~5 ms, Copperleaf by day
+  30 fps): models pass 82 draws from 76 vertex arrays in Copperleaf, jungle 53 / 17, run town 48 / 25, battle
+  152 / 124. Landscape sees fewer copies of each model, so the setting saves little there (82 -> ~76) and most on the
+  upright phone; it can't help a GPU-bound frame much anyway.
+  **Ask the owner** (the far version, from these numbers): the upright Android phone draws ~650 model leaf pictures in
+  Copperleaf against the iPad's ~44, so a cheap far version of models' picture layers (leaf clumps past some distance
+  on phones, e.g. merged into fewer cards or dropped into the trunk's model) may be worth far more than the jungle
+  broadleaf's, which no run shows. It touches the sprite pass (the sprites lane's files) and the leaf art.
+
+  What it says: about 11% fewer draws in Copperleaf, little elsewhere. The rest is the sprites lane (642 model
+  pictures in Copperleaf) and the shadow maps (round 3: over half the run places' draws). The reflection's model
+  draws are instanced too (2 there). The "off" day stop was measured while its pictures loaded (623 draws, 17 models)
+  in a fresh page opened at the town fixture: **for the measure lane**, the first stop's settle may still be short
+  outside the diagnostics test.
+- **For round 3's shadows lane** (drawPropModelShadows and `voxS` are untouched): the same `buildModelBatches` and
+  record store serve the shadow maps. `voxS` needs only the first five instance attributes (locations 5-9: place,
+  scale, turn and flip, the item's spin and pivot), so a `voxSI` program is `voxInstancedShaders()`'s vertex shader
+  without its flat outputs plus the white fragment shader, drawn with `drawModelInstances(p, 'vox', L)`'s loop per
+  map (low-poly parts take `MDL_ATTRIBS` as their mesh layout, as now). For the casters: `splitPieces(items,
+  {maxCount, maxExtent}, boxOf)` gives the pieces with boxes, `boxInFrustum(planes, box)` culls them (the planes as
+  walk/quality-cull.js `computeFrustum` lays them out; a shadow map's own matrix works the same way).
+- Risky:
+  - Draw order is by mesh now, not by item: with depth testing and no blending the picture is the same, except where
+    two identical models overlap on the same surface (z-fighting may pick the other one).
+  - `mdlI`'s fragment shader is made by replacing four declarations in the buildings' shader text; a change there
+    turns the setting into an error the model guard catches (models stop drawing with the setting on).
+  - Window bits for window 31 go through a uint attribute and `int()` in the shader (bit pattern kept).
+  - The jungle broadleaf far version is not done (no run reaches the jungle); phase 09 task 10 stays open for it.
+- Verified: lint, typecheck, unit tests (1,084 -> 1,093), check:modules after every change; smoke "no problems" for
+  every commit touching game/. Node tests: the pure parts (6), and old == new on a stand-in context (5): every
+  (item, part) the old loops draw is drawn once by the instanced path with the same values as 32-bit floats,
+  including window bits up to 31, the bob, a tumbling pyramid, propellers and a swing; planted bugs in flip, window
+  bits, part turns, extra parts and emit each fail it. The four model programs compile and link in headless Chromium
+  (compile only). The baseline tour ran headless both ways with no page errors. No look or speed judged headless.
+- **On your phone** (this round's run), Android then iPad:
+  1. Studio > Engine > Quality: switch **Models in batches** on. Walk Copperleaf by day and at night (lit windows,
+     the moored airship bobbing with its propellers, trees), a run route and a run town, and start a battle. Anything
+     missing, flickering, in the wrong place or the wrong colour (windows lit differently, wear or tints gone)?
+  2. The graphics test: "Models in batches" off and on at the Lamp square and the Depth corridor.
+  3. The diagnostics test with the setting on, then the debug log; I compare the `model` draws and frame times with
+     round 1's.
+  That decides "Models in batches" on by default (the one-at-a-time loops deleted in R4).
+- Next: the shadows lane (round 3) instances the shadow maps' models; the far version when runs reach the jungle.
+
 ### Phase 20 round 1, lane context (H-early): listeners once, the world map rebuilt on restore, a forced loss - 2026-10-26
 Branch `track/renderer` (from 33115c7). Plan approved in Plan Mode. The owner's answers: the Studio is tested through a
 URL flag; the button loses and restores by itself; the world map rebuilds only its GPU parts; the Frame block's stale

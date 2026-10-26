@@ -19,7 +19,8 @@ export function skyColors(sc) {
   const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexToRgb(c).map(v => v / 255));
   return typeof environmentSky === 'function' && engineContext.env ? environmentSky(s, !!sc.indoor) : s;
 }
-export function drawSky(C, sun, mirror) {
+/* last (phase 20 R2, quality.skyLast): drawn after the opaque things, only where the depth is still the cleared 1.0 */
+export function drawSky(C, sun, last) {
   const gl = gpuState.gl,
     sc = walkView.sc,
     p = gpuState.P.sky,
@@ -42,7 +43,6 @@ export function drawSky(C, sun, mirror) {
   gl.uniform1f(U.uIndoor, sc.indoor ? 1 : 0);
   gl.uniform1f(U.uTime, walkView.t);
   gl.uniform1f(U.uSunPulse, sun.pulse);
-  gl.uniform1f(U.uMirror, mirror);
   gl.uniform1f(U.uClouds, engineSetting('sun', 'clouds'));
   gl.uniform1f(U.uCloudSpd, engineSetting('sun', 'cloudSpeed'));
   /* phase 10: the bowl's far wall round the horizon, as seen from this place (world-bowl.js) */
@@ -52,7 +52,11 @@ export function drawSky(C, sun, mirror) {
   gl.uniform1i(U.uWorld, 0);
   gl.uniform1f(U.uWallOn, wall ? 1 : 0);
   gl.depthMask(false);
-  gl.disable(gl.DEPTH_TEST);
+  if (last) {
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.disable(gl.BLEND);
+  } else gl.disable(gl.DEPTH_TEST);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.depthMask(true);
   gl.enable(gl.DEPTH_TEST);

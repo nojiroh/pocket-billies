@@ -7,11 +7,15 @@ import { expose } from '../test-globals.js';
 import {
   ambientLife,
   drawPropModels,
+  drawReflectionRuns,
   provide,
   reducedMotion,
   roomHole,
   setPropLookUniforms,
+  setSpriteShadeUniforms,
+  sortByPicture,
   soundEffectAt,
+  spriteFrame,
 } from '../hooks.js';
 import { pictureRight } from '../logic/prop-turn.js';
 import { gpuTag } from '../engine/gpu-counters.js';
@@ -26,6 +30,7 @@ import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
 expose({
   KIND_ROWS: [() => KIND_ROWS],
+  REFLECTION_PICTURES: [() => REFLECTION_PICTURES],
   addRipple: [() => addRipple, v => ((addRipple = v), provide({ addRipple }))],
   addWakeRipple: [() => addWakeRipple, v => ((addWakeRipple = v), provide({ addWakeRipple }))],
   drawWater: [() => drawWater, v => setDrawWater(v)],
@@ -95,6 +100,8 @@ function mirrorInView(F, it, L) {
     cy = (it.y || 0) + h * 0.5;
   return inFrustum(F, it.x, 2 * L - cy, it.z, r);
 }
+/* phase 20: the reflection's pictures, kept from frame to frame */
+const REFLECTION_PICTURES = [];
 export function reflectionPass(items, C, rw, rh, X) {
   const gl = gpuState.gl,
     w = Math.max(32, rw >> 1),
@@ -132,9 +139,12 @@ export function reflectionPass(items, C, rw, rh, X) {
   gl.disable(gl.BLEND);
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
-  const FR = computeFrustum(C.vp),
+  const SF = spriteFrame(C, X.sun),
+    FR = computeFrustum(C.vp),
     cut = engineSetting('quality', 'cull') ?? true,
-    models = [];
+    models = [],
+    pics = REFLECTION_PICTURES;
+  pics.length = 0;
   for (const it of items) {
     if (it.flat || it.far) continue;
     if (!waterNear(it.x, it.z)) continue;
@@ -145,6 +155,14 @@ export function reflectionPass(items, C, rw, rh, X) {
       models.push(it);
       continue;
     }
+    pics.push(it);
+  }
+  /* phase 20 (the owner's choice): grouped by picture as the main pass is (walk/sprites.js), so runs of one picture
+     can be one draw */
+  sortByPicture(pics);
+  /* phase 20 E10: as instances while Engine > Quality "Pictures in batches" is on (walk/sprites.js) */
+  if (drawReflectionRuns(RC, C, Object.assign({}, X, { shadow: null }), pics, SF)) pics.length = 0;
+  for (const it of pics) {
     gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);
     if (!T) continue;
@@ -152,6 +170,10 @@ export function reflectionPass(items, C, rw, rh, X) {
     gl.uniform3fv(U.uRight, pictureRight(it, C.right));
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
     setPropLookUniforms(U, it.lk);
+    /* phase 20 E3 (the owner: fixed, as the main pass has them): the season on leaves, a crown's self-shade and whether
+       the picture takes the clouds' shade (the pass sent none of them: no season, and the last picture's self-shade
+       and noRecv of the frame before) */
+    setSpriteShadeUniforms(U, it, SF);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);

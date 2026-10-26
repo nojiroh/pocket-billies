@@ -23,7 +23,10 @@ import {
   LOOK_GLSL,
   bindQuad,
   ensurePrograms,
+  gpuBuffer,
+  gpuFree,
   gpuState,
+  gpuVao,
   imageTexture,
   normalize3,
 } from './engine/webgl.js';
@@ -379,14 +382,11 @@ function buildingMesh(it) {
   return E;
 }
 function freeBuildingMesh(E) {
-  const gl = gpuState.gl;
   for (const m of [E.walls, E.wins])
     if (m) {
-      try {
-        gl.deleteVertexArray(m.vao);
-        gl.deleteBuffer(m.vb);
-        gl.deleteBuffer(m.ib);
-      } catch (e) {}
+      gpuFree(m.vao);
+      gpuFree(m.vb);
+      gpuFree(m.ib);
     }
 }
 /* alpha 0.4: p.rot, a building turned a few degrees (along a curved street, toward its square): it turns about its
@@ -1468,12 +1468,12 @@ function makeBuildingModel(it) {
   const gl = gpuState.gl,
     mk = (Vs, Is, attrs, stride) => {
       if (!Is.length) return null;
-      const vao = gl.createVertexArray();
+      const vao = gpuVao('meshes');
       gl.bindVertexArray(vao);
-      const vb = gl.createBuffer();
+      const vb = gpuBuffer('meshes', Vs.length * 4);
       gl.bindBuffer(gl.ARRAY_BUFFER, vb);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Vs), gl.STATIC_DRAW);
-      const ib = gl.createBuffer();
+      const ib = gpuBuffer('meshes', Is.length * 4);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(Is), gl.STATIC_DRAW);
       let off = 0;
@@ -1555,10 +1555,12 @@ export function buildingItems(items) {
     if (it.bld3 && !(walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p))) out.push(it);
   return out;
 }
-export function drawBuildings(C, X, items, fades) {
-  buildingGuard(() => drawBuildingsUnguarded(C, X, items, fades));
+/* phase 20 R2 (pixels): part 'solid' draws the walls, roofs and windows, 'fronts' the blended front pictures (so the
+   sky, drawn last, can go between them); anything else draws both, as before */
+export function drawBuildings(C, X, items, fades, part) {
+  buildingGuard(() => drawBuildingsUnguarded(C, X, items, fades, part));
 }
-function drawBuildingsUnguarded(C, X, items, fades) {
+function drawBuildingsUnguarded(C, X, items, fades, part) {
   const L = buildingItems(items).filter(it => it.vis !== false);
   buildingState.drawn = L.length;
   if (!L.length) return;
@@ -1573,56 +1575,60 @@ function drawBuildingsUnguarded(C, X, items, fades) {
     lift = it => [it.x, it.z];
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
-  gl.disable(gl.BLEND);
-  let p = useWalkProgram('bld', C, X);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, det.t);
-  gl.uniform1i(p.U.uDet, 0);
-  gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
-  for (const it of L) {
-    const E = buildingMesh(it);
-    if (!E || !E.walls) continue;
-    gl.uniform2fv(p.U.uLift, lift(it));
-    gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
-    gl.uniform1f(p.U.uBaseY, E.y0);
-    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
-    gl.bindVertexArray(E.walls.vao);
-    gl.drawElements(gl.TRIANGLES, E.walls.n, gl.UNSIGNED_INT, 0);
-  }
-  p = useWalkProgram('bwin', C, X);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, rm.t);
-  gl.uniform1i(p.U.uRooms, 0);
-  const sky = (sc.sky || ['#8CC6E6', '#BFE3EE'])[1];
-  gl.uniform3fv(
-    p.U.uSkyR,
-    hexToRgb(sky).map(v => v / 255)
-  );
-  /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
-    p.U.uDay,
-    sc.indoor
-      ? 0.7
-      : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && engineContext.env ? environment.night : 0)
-  );
-  gl.uniform1f(
-    p.U.uNight,
-    (dark ? 1 : engineSetting('lights', 'windowsDay') * 2.2) * engineSetting('lights', 'brightness')
-  );
-  gl.uniform1f(p.U.uInt, engineSetting('world', 'interiors') === false ? 0 : 1);
-  if (p.U.uLitF)
+  let p;
+  if (part !== 'fronts') {
+    gl.disable(gl.BLEND);
+    p = useWalkProgram('bld', C, X);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, det.t);
+    gl.uniform1i(p.U.uDet, 0);
+    gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
+    for (const it of L) {
+      const E = buildingMesh(it);
+      if (!E || !E.walls) continue;
+      gl.uniform2fv(p.U.uLift, lift(it));
+      gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
+      gl.uniform1f(p.U.uBaseY, E.y0);
+      if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
+      gl.bindVertexArray(E.walls.vao);
+      gl.drawElements(gl.TRIANGLES, E.walls.n, gl.UNSIGNED_INT, 0);
+    }
+    p = useWalkProgram('bwin', C, X);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, rm.t);
+    gl.uniform1i(p.U.uRooms, 0);
+    const sky = (sc.sky || ['#8CC6E6', '#BFE3EE'])[1];
+    gl.uniform3fv(
+      p.U.uSkyR,
+      hexToRgb(sky).map(v => v / 255)
+    );
+    /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
+      p.U.uDay,
+      sc.indoor
+        ? 0.7
+        : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && engineContext.env ? environment.night : 0)
+    );
     gl.uniform1f(
-      p.U.uLitF,
-      litWindowFraction()
-    ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
-  for (const it of L) {
-    const E = buildingState.mesh.get(it.p);
-    if (!E || !E.wins) continue;
-    gl.uniform2fv(p.U.uLift, lift(it));
-    gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
-    gl.bindVertexArray(E.wins.vao);
-    gl.drawElements(gl.TRIANGLES, E.wins.n, gl.UNSIGNED_INT, 0);
+      p.U.uNight,
+      (dark ? 1 : engineSetting('lights', 'windowsDay') * 2.2) * engineSetting('lights', 'brightness')
+    );
+    gl.uniform1f(p.U.uInt, engineSetting('world', 'interiors') === false ? 0 : 1);
+    if (p.U.uLitF)
+      gl.uniform1f(
+        p.U.uLitF,
+        litWindowFraction()
+      ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
+    for (const it of L) {
+      const E = buildingState.mesh.get(it.p);
+      if (!E || !E.wins) continue;
+      gl.uniform2fv(p.U.uLift, lift(it));
+      gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
+      gl.bindVertexArray(E.wins.vao);
+      gl.drawElements(gl.TRIANGLES, E.wins.n, gl.UNSIGNED_INT, 0);
+    }
+    gl.bindVertexArray(null);
   }
-  gl.bindVertexArray(null);
+  if (part === 'solid') return;
   /* fronts last, blended, so the glass shows the rooms behind it */
   p = useWalkProgram('bfac', C, X);
   bindQuad();

@@ -5,14 +5,21 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL } from '../engine/webgl.js';
+/* eslint-disable no-func-assign */
 expose({
   FALL_GLSL: [() => FALL_GLSL],
   PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
   RING_AT_GLSL: [() => RING_AT_GLSL],
   ROCK_GLSL: [() => ROCK_GLSL],
+  SPRITE_INSTANCE_DEFINES: [() => SPRITE_INSTANCE_DEFINES],
+  SPRITE_INSTANCE_SHADERS: [() => SPRITE_INSTANCE_SHADERS],
+  SPRITE_INSTANCE_VARYINGS: [() => SPRITE_INSTANCE_VARYINGS],
+  SPRITE_INSTANCE_VS: [() => SPRITE_INSTANCE_VS],
   TIDE_GLSL: [() => TIDE_GLSL],
   WALK_SHADERS: [() => WALK_SHADERS],
+  spriteInstanceFragment: [() => spriteInstanceFragment, v => (spriteInstanceFragment = v)],
 });
+/* eslint-enable no-func-assign */
 /* to-module: end */
 /* ---------- shaders ---------- */
 /* terrain TR-3: rock between the camera and you thins out: a spot nearer the camera than you, half a metre above your
@@ -198,13 +205,13 @@ precision highp float;in vec2 vH;uniform vec4 uHole;out vec4 o;void main(){if(vH
   ],
   sky: [
     `#version 300 es
-precision highp float;in vec2 aC;out vec2 vP;void main(){vP=aC*2.-1.;gl_Position=vec4(vP,.9999,1.);}`,
+precision highp float;in vec2 aC;out vec2 vP;void main(){vP=aC*2.-1.;gl_Position=vec4(vP,1.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uMirror,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform float uWallOn;uniform vec4 uEnv;uniform vec3 uMoon;
+precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform float uWallOn;uniform vec4 uEnv;uniform vec3 uMoon;
 float hsh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hsh(i),hsh(i+vec2(1,0)),f.x),mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x),f.y);}
 float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*vn(p);p*=2.03;a*=.5;}return s;}
-void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b.xyz/b.w-a.xyz/a.w);if(uMirror>.5)d.y=-d.y;float e=d.y;
+void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b.xyz/b.w-a.xyz/a.w);float e=d.y;
  vec3 c=e<.18?mix(uSky2,uSky1,smoothstep(-.05,.18,e)):mix(uSky1,uSky0,smoothstep(.18,.75,e));
  if(uIndoor<.5){vec2 q=d.xz/max(.12,d.y+.25);float cl=smoothstep(1.-uClouds*.5,1.3-uClouds*.5,fbm(q*.9+vec2(uTime,uTime*.5)*.000012*uCloudSpd)+.25);
   /* v26: clouds take the light of the hour: grey in bad weather, dark at night */
@@ -465,3 +472,50 @@ void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discar
   ],
 };
 provide({ WALK_SHADERS }); /* to-module */
+/* ---------- phase 20 E6: the standing pictures as instances (engine/sprite-instances.js lays them out) ----------
+   One draw per run of the same picture. The vertex shader is the sprite one with each picture's values read from its
+   instance (no flag waves, no silhouette: those keep the sprite program); the fragment shader is the sprite one with
+   those values read from flat varyings instead of uniforms (#defines put in before its main, so its lighting stays
+   the very same text). A picture's own axes lie flat (right.y = back.y = 0, as every camera's do); one facing the
+   camera takes the camera's (uCamRight, uCamBack). */
+const SPRITE_INSTANCE_VARYINGS = `flat {io} vec4 vAxes,vBaseF,vLight,vMat,vSelfS,vWear,vHsv,vTint,vMaskFol;flat {io} vec3 vFlags;`;
+const SPRITE_INSTANCE_VS = `#version 300 es
+precision highp float;layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;
+layout(location=5) in vec4 iHsv;layout(location=6) in vec4 iWear;layout(location=7) in vec4 iTint;layout(location=8) in vec4 iMaskFol;layout(location=9) in vec4 iSelfFade;layout(location=10) in vec4 iLight;layout(location=11) in uvec4 iFlags;
+uniform mat4 uVP;uniform vec3 uCamRight,uCamBack,uFwd;uniform float uCurveOn;uniform vec4 uMats[8];out vec2 vUV;out vec3 vW;out float vH;out float vPx;out float vRip;${SPRITE_INSTANCE_VARYINGS.replace(/\{io\}/g, 'out')}${COMMON_GLSL}
+void main(){uint fl=iFlags.x;bool cam=(fl&16u)!=0u;vec2 R=cam?uCamRight.xz:iAxes.xy,B=cam?uCamBack.xz:iAxes.zw;float flip=(fl&8u)!=0u?-1.:1.;vec3 r=vec3(R.x,0.,R.y);
+ vRip=0.;float px=(iOff.x+aC.x*iOff.z),py=(iOff.y+aC.y*iOff.w);float h=-py;float fh=clamp(h/max(.01,-iOff.y),0.,1.),sh=iBend.y*h*(.25+.75*fh);vec3 p=iBase+uFwd*iBend.z+r*(px*flip+sh)+vec3(0.,h+iBend.x*px*flip-abs(sh)*.35*fh,0.);
+ p.y+=curveY(iBase.xz)*uCurveOn;vW=p;vPx=px*flip+sh;vH=fh;vUV=vec2(aC.x,aC.y*iBend.w);
+ vAxes=vec4(R,B);vBaseF=vec4(iBase,iSelfFade.w);vLight=iLight;vMat=uMats[int(min(iFlags.y,7u))];vSelfS=vec4(iSelfFade.xyz,iBend.w);vWear=iWear;vHsv=iHsv;vTint=iTint;vMaskFol=iMaskFol;
+ vFlags=vec3((fl&4u)!=0u?-1.:1.,float(fl&1u),float((fl>>1)&1u));gl_Position=uVP*vec4(p,1.);}`;
+/* each per-picture uniform of the sprite fragment shader and the varying it reads instead */
+const SPRITE_INSTANCE_DEFINES = [
+  ['uRight', 'vec3(vAxes.x,0.,vAxes.y)'],
+  ['uBack', 'vec3(vAxes.z,0.,vAxes.w)'],
+  ['uBaseP', 'vBaseF.xyz'],
+  ['uFade', 'vBaseF.w'],
+  ['uEmit', 'vLight.x'],
+  ['uLit', 'vLight.y'],
+  ['uRim', 'vLight.z'],
+  ['uShade', 'vLight.w'],
+  ['uMat', 'vMat'],
+  ['uSelf', 'vSelfS.xyz'],
+  ['uUV', 'vec4(0.,0.,1.,vSelfS.w)'],
+  ['uFlipN', 'vFlags.x'],
+  ['uFixed', 'vFlags.y'],
+  ['uNoRecv', 'vFlags.z'],
+  ['lookOn(c,px,h,bp)', 'lookOnP(c,px,h,bp,vWear,vHsv,vTint,vMaskFol.xy)'],
+  ['seasonal(c,p)', 'seasonalF(c,p,vMaskFol.zw)'],
+  ['snowOn(c,p,u)', 'snowOnF(c,p,u,vMaskFol.zw)'],
+];
+function spriteInstanceFragment(fs) {
+  const at = fs.indexOf('\nvoid main(){');
+  if (at < 0 || fs.indexOf('\nvoid main(){', at + 1) >= 0)
+    throw new Error('spriteI: the sprite fragment shader changed');
+  const head = SPRITE_INSTANCE_VARYINGS.replace(/\{io\}/g, 'in'),
+    defs = SPRITE_INSTANCE_DEFINES.map(([a, b]) => `#define ${a} ${b}`).join('\n');
+  return fs.slice(0, at) + '\n' + head + '\n' + defs + fs.slice(at);
+}
+export const SPRITE_INSTANCE_SHADERS = {
+  spriteI: [SPRITE_INSTANCE_VS, spriteInstanceFragment(WALK_SHADERS.sprite[1])],
+};
