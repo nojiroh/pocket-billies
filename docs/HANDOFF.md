@@ -2,6 +2,29 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-0 and VFX-1 - The plan (smears, with research), the eased throw and its afterimages - 2026-10-26
+Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't exist yet; later sessions start on
+`track/vfx`, made from this branch). Plan approved in Plan Mode; the owner's answers in docs/phases/vfx-track.md.
+- VFX-0: docs/phases/vfx-track.md (the brief, the research and its sources, how smears fit the art, sessions VFX-1..6),
+  ROADMAP and BRANCHES.
+- VFX-1: game/js/logic/smear.js (`throwArcEase`, `smearHistory`/`smearRecord`/`smearGhosts`, `smearCount`) and
+  tools/test/smear.test.mjs. battle-stage.js `pyramidArc` eases its progress (1.45x the mean speed at both ends, 0.55x
+  at the top, the same path and duration) and records `C.trail` on a 24 fps grid; battle-3d.js draws up to three
+  copies of the pyramid model at its older places (the models' Bayer-dithered fade 0.6/0.4/0.25, brighter through
+  the low-poly shader's look: value x1.45..1.95), `it.ghost` skips their shadows (prop-models.js, both paths). The 2D
+  fallback icon draws them too. None under Reduced motion or at battle quality 3, two at level 2, none within 2 m of
+  the camera (a throw leaves the lens: the first copies filled the screen). The send-out and the mail move's coin use
+  the same arc, so they ease and leave copies too.
+- Found on the way: the pyramid is a low-poly model (its recipe has `cel`), so a voxel prop's `glow` doesn't brighten
+  it; the copies are brightened through `it.lk` instead (walk/prop-look.js's look). The trailing copies mostly show the
+  pyramid's shaded faces, so they read darker than the plan's "own colours, brighter"; the white core comes with
+  VFX-2's ribbon. The logic worker's module list (studio/js/logic-worker-modules.js) needs every new logic module.
+- Risky, check on the phone: the throw's feel (the hang at the top); in a landscape window the arc's top leaves the
+  frame (as before), and now spends longer there; in a phone's portrait view it stays in frame.
+- Verified: lint, typecheck, format, check:modules, unit tests 1291 pass; a headless film of a slowed throw (landscape
+  and phone): the copies trail the pyramid and run out after the hit. Smoke check: see below.
+- Next: VFX-2 (the motion-line ribbon with the white core) on `track/vfx`.
+
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
 they were merged here (merge commits) for one PR.
