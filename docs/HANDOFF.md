@@ -44,11 +44,18 @@ Tag `ro-3b-done` for the owner.
   write, library swap, repack's refusal and density still run on a kit Billie, plus a kept recipe shown as kept and a
   placeholder refused by Repack. The check-data snapshot, the UI gallery (no Billie in it), the run-start and sound
   baselines did not change.
-- Verified: lint, typecheck, check:modules, format, check:data; unit tests (1071 pass); `bake:kits --check` and
-  `bake:placeholders --check` clean; all 51 drawn by the game's renderer (idle, walk, attack, back) on a contact sheet;
-  tools/look-grafts.py (team, details, walk, a battle with two grafted Billies: drawn plain, no bakes, no errors);
-  smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the debug log: 112 KB, no
-  names); the Studio check up to density with the kit steps on the served kit Billie (IN PROGRESS: the rest).
+- Verified (after the RO-3c merge): lint, typecheck, check:modules, format:check, check:data; unit tests (1079
+  pass) and the slow kit graft sweep; `bake:kits --check` and `bake:placeholders --check` clean; all 51 drawn by the
+  game's renderer (idle, walk, attack, back) on a contact sheet; on a phone-sized page every species in the grass, in
+  a battle (yours from behind, the foe in front) and in its Guide entry, no page errors; tools/look-grafts.py: RO-3c's
+  grafts on real placeholders (Marsox with the otter's arms, Versewift with the muskox's legs) in a battle, 2 bakes,
+  38 ms median, none failed; smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the
+  debug log: no names); CI on #218 green (smoke's tall-ground step flaked once, as on #215, passed alone here and on
+  its re-run). The Studio check: every step through the kit ones passes; the later ones fail with the same 10
+  problems on track/roster without RO-3b (8 404s, two run-lab ones). The full quick check: 6 problems; 4 also fail on
+  track/roster (sky_portal floating, RL-8, room light, two cave songs not in the sound baseline); the rest vary from
+  run to run (autumn drawing, the Actions sheet's day chip, the lost payout's jingle just past its 90 s wait): the
+  payout timed alone takes the same on both (3 s, then 29-35 s on a second loss).
 - Risky / open:
   - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
     `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check
