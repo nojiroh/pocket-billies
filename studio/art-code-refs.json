@@ -149,15 +149,15 @@
   {
    "p": "scene/build/detail.png",
    "at": [
-    "game/js/buildings.js:167",
-    "game/js/prop-models.js:2161",
+    "game/js/buildings.js:170",
+    "game/js/prop-models.js:2163",
     "game/js/walk-view.js:740"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
-    "game/js/buildings.js:167",
+    "game/js/buildings.js:170",
     "game/js/walk-view.js:740"
    ]
   },
@@ -192,7 +192,7 @@
    "p": "scene/fx/*.png",
    "at": [
     "game/js/walk-view.js:719",
-    "game/js/walk/effects.js:183"
+    "game/js/walk/effects.js:190"
    ]
   },
   {

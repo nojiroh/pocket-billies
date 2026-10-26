@@ -57,6 +57,7 @@ import '../../game/js/logic/island.js';
 import '../../game/js/logic/kit-assemble.js';
 import '../../game/js/logic/kit-pixels.js';
 import '../../game/js/logic/lens-focus.js';
+import '../../game/js/logic/lite-tile.js';
 import '../../game/js/logic/mapgen.js';
 import '../../game/js/logic/messages.js';
 import '../../game/js/logic/meta-state.js';
