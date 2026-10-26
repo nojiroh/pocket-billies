@@ -45,6 +45,8 @@ expose({
   bankUnsplice: [() => bankUnsplice, v => (bankUnsplice = v)],
   // @ts-expect-error -- replaced on purpose
   bankWhy: [() => bankWhy, v => (bankWhy = v)],
+  // @ts-expect-error -- replaced on purpose
+  bankWhyAt: [() => bankWhyAt, v => (bankWhyAt = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -124,7 +126,11 @@ export function bankTry(D, m, slot, id, limit) {
  * would be refused, not enough DNA @param {BankData} D @param {any} s @param {any} m @param {string} slot
  * @param {string} id @returns {BankWhy} */
 export function bankWhy(D, s, m, slot, id) {
-  if (s.run) return 'run';
+  return s.run ? 'run' : bankWhyAt(D, s, m, slot, id);
+}
+/** SP-6: bankWhy's rules but the first (a run's Bureau field lab splices by them during a run; logic/gene-events.js)
+ * @param {BankData} D @param {any} s @param {any} m @param {string} slot @param {string} id @returns {BankWhy} */
+export function bankWhyAt(D, s, m, slot, id) {
   if (!bankSlots(D, bankLevel(s)).includes(slot)) return 'slot';
   if (!s.meta.genes.includes(id)) return 'unknown';
   if (!bankGenes(D, s, m, slot).includes(id)) return 'fit';
