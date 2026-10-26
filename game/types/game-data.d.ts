@@ -1006,7 +1006,11 @@ export interface Rules {
       /** RL-9: Scrap per node cleared, and for a win */
       scrapNode: number;
       scrapWin: number;
+      /** RL-S2: Beans for a win */
+      beansWin: number;
     };
+    /** RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten */
+    beans: { badge: number; side: number };
     /** RL-6: the run's node map (logic/run-map.js) */
     map: RunMapRules;
     /** RL-6: the clock (owner, 8.10): the forecast keeps `ahead` days after today (RL-R2: no deadline) */

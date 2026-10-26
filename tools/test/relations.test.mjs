@@ -100,3 +100,20 @@ function minimalRun() {
   s.run = null;
   return modules['run-state'].runBegin(s, { seed: 'RELSEED', expedition: 1, mapgenV: 1, se: 0, items: {} });
 }
+
+test('Beans found: into meta at once, counted on the run; a won run pays beansWin; the crate event gives some', () => {
+  const s = { meta: { ...newMeta() }, run: { beans: 0 } };
+  R.runBeans(s, 2);
+  R.runBeans(s, 0);
+  assert.deepEqual([s.meta.beans, s.run.beans], [2, 2]);
+  const hub = { meta: { ...newMeta() } };
+  R.runBeans(hub, 1);
+  assert.equal(hub.meta.beans, 1, 'in the hub: no run to count on');
+  const { payoutOf } = modules['run-state'],
+    P = GAME_DATA.rules.run.payout,
+    end = { se: 0, items: {}, released: 0, cleared: 3 };
+  assert.equal(payoutOf({ ...end, won: true }, P, () => 0).beans, P.beansWin);
+  assert.equal(payoutOf({ ...end, won: false }, P, () => 0).beans, 0);
+  const crate = JSON.stringify(GAME_DATA.events.events.beans_crate);
+  assert.match(crate, /"\s*beans \d"/, 'the crate holds Beans');
+});

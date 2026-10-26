@@ -310,6 +310,8 @@ export interface Run {
   /** RL-9b: the uids of the Billies from home (picked at the mast, from the team or storage; logic/run-state.js
       runHome reads a run saved before as the hub's team) */
   home?: string[];
+  /** RL-S2: Beans found on this run (they go into meta.beans at once; the payout shows them) */
+  beans?: number;
   /** RL-S2: each hub person's level as the run took off (logic/relations.js: their run bonuses) */
   rel?: Record<string, number>;
   /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */

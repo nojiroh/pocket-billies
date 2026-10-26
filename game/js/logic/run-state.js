@@ -233,6 +233,8 @@ export function validRun(o) {
   /* RL-9b: the Billies from home (uids) and what was packed (missing on a run saved before) */
   if (o.home !== undefined && (!list(o.home, 6) || !o.home.every(u => typeof u === 'string' && u.length <= 60)))
     return false;
+  /* RL-S2: the Beans found on it */
+  if (o.beans !== undefined && !wholeIn(o.beans, 0, 99)) return false;
   /* RL-S2: the hub folk's levels as it took off (missing on a run from before) */
   if (o.rel !== undefined && !recordOf(o.rel, 32, v => wholeIn(v, 0, 10))) return false;
   /* RL-S2: Blake in the run (missing on a run from before) */
@@ -457,14 +459,15 @@ export function runBegin(s, give) {
 /** what a run pays when it ends, as Research and Crests, with the lines the payout screen lists: the money at a
     rate, the items at a share of their price (then at the money rate; RL-9b: on a loss only, a win takes the bag
     home), each released Billie, each node cleared, a win bonus; crests for a win; Scrap (RL-9, the ranch's material)
-    for each node cleared and a win. Rates are rules.json run.payout (placeholders until the first play) */
+    for each node cleared and a win; RL-S2: Beans for a win. Rates are rules.json run.payout (placeholders until the first play) */
 /**
  * @param {{ se: number, items: Record<string, number>, released: number, cleared: number, won: boolean }} end
  * @param {{ money: number, itemShare: number, released: number, node: number, win: number, winCrests: number,
- *   scrapNode?: number, scrapWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
+ *   scrapNode?: number, scrapWin?: number, beansWin?: number, research?: number }} rates research (RL-12, a Perk's): the Research times
  *   this, the difference as a line of its own
  * @param {(id: string) => number} itemPrice an item's shop price (Moneys), 0 for none
- * @returns {{ research: number, crests: number, scrap: number, lines: { what: string, n: number, research: number }[] }}
+ * @returns {{ research: number, crests: number, scrap: number, beans: number,
+ *   lines: { what: string, n: number, research: number }[] }}
  */
 export function payoutOf(end, rates, itemPrice) {
   const itemValue = Object.entries(end.won ? {} : end.items || {}).reduce(
@@ -488,6 +491,8 @@ export function payoutOf(end, rates, itemPrice) {
     research: lines.reduce((sum, l) => sum + l.research, 0),
     crests: end.won ? rates.winCrests : 0,
     scrap: Math.max(0, end.cleared) * (rates.scrapNode || 0) + (end.won ? rates.scrapWin || 0 : 0),
+    /* RL-S2: Beans for a win */
+    beans: end.won ? rates.beansWin || 0 : 0,
     lines,
   };
 }
@@ -536,6 +541,7 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.research += pay.research;
   s.meta.crests += pay.crests;
   s.meta.scrap += pay.scrap;
+  s.meta.beans = (s.meta.beans || 0) + pay.beans;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
   /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */

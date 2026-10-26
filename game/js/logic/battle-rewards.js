@@ -12,6 +12,7 @@ import { ITEMS, PERKS, RULES } from '../game-data.js';
 import { speciesOf } from './fighters.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { runLostTo } from './run-history.js';
+import { runBeans } from './relations.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop } from './run-loop.js';
 import { fxMoney, fxOfBillie } from './effects.js';
@@ -151,8 +152,13 @@ export function battleSettleWin(b, s, pay, run) {
       if (!badges[key]) {
         badges[key] = 1;
         pay.badge = b.T.type;
+        /* RL-S2: the first badge of a type finds Beans */
+        runBeans(s, (RULES.run.beans || {}).badge, run);
       }
     }
+    /* RL-S2: a side area's leader beaten finds Beans */
+    if (run && b.T && run.map && run.map.side && b.T.from && b.T.from === run.map.side.leader)
+      runBeans(s, (RULES.run.beans || {}).side, run);
     if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
     /* RL-12b: a route trainer (or the rival) leaves a reward pick (logic/rewards.js), saved with the battle's end */
     if (run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))

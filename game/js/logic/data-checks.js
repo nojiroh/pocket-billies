@@ -147,7 +147,7 @@ export function dataRunPayout(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const pay = D.rules && D.rules.run && D.rules.run.payout,
-      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin'];
+      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin', 'beansWin'];
     if (!pay || typeof pay !== 'object') problem('rules.json', 'run.payout missing');
     else {
       for (const k of RATES)
@@ -156,7 +156,7 @@ export function dataRunPayout(D) {
       for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
       if (pay.itemShare > 1)
         problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
-      for (const k of ['winCrests', 'scrapNode', 'scrapWin'])
+      for (const k of ['winCrests', 'scrapNode', 'scrapWin', 'beansWin'])
         if (!Number.isInteger(pay[k])) problem('rules.json', `run.payout.${k} is not a whole number`);
     }
   }
@@ -333,6 +333,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'foes',
   'perks',
   'side',
+  'beans',
   'rival',
   'trainers',
   'rewards',
@@ -584,6 +585,14 @@ export function dataRunLoop(D) {
           problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
+    }
+    /* RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten (whole, 0-9) */
+    const BE = R.beans;
+    if (!rec(BE)) problem('rules.json', 'run.beans missing');
+    else {
+      only(BE, ['badge', 'side'], 'run.beans');
+      for (const k of ['badge', 'side'])
+        if (!whole(BE[k], 0, 9)) problem('rules.json', `run.beans.${k}: a whole number of Beans, 0-9`);
     }
     /* RL-S2: Blake's meetings and team (logic/run-map.js runMapRival, logic/rival.js) */
     const RV = R.rival;

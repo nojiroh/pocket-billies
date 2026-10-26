@@ -11,8 +11,7 @@ test('economy: each line reads its value from its path, in currencies.json order
   const L = economyLines(GAME_DATA);
   assert.ok(L.length > 20);
   for (const l of L) assert.equal(at(GAME_DATA, l.path), l.value, l.path);
-  /* RL-S2: Beans have lines once their run sources exist (rules.json run.beans) */
-  const order = Object.keys(GAME_DATA.currencies).filter(c => L.some(l => l.currency === c));
+  const order = Object.keys(GAME_DATA.currencies);
   assert.deepEqual([...new Set(L.map(l => l.currency))], order);
   for (const c of order) {
     const sides = L.filter(l => l.currency === c).map(l => l.side);

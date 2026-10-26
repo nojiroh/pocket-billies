@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, renderOverlay } from './hooks.js';
-import { PERKS, RULES } from './game-data.js';
+import { CURRENCIES, PERKS, RULES } from './game-data.js';
 import { graftOf } from './logic/graft-art.js';
 import { billyName } from './logic/rules.js';
 import { payoutOf } from './logic/run-state.js';
@@ -45,6 +45,9 @@ function runPayoutOpen() {
   if (!run || run.at.phase !== 'payout') return;
   const won = !!run.at.won,
     pay = runPayoutNow(),
+    /* RL-S2: the Beans found on the run (already kept) and a win's */
+    beans = (run.beans || 0) + pay.beans,
+    B = CURRENCIES.beans || { name: 'Beans', one: 'Bean' },
     rows = runPayoutRows(pay, RULES.run.payout),
     keep = uiState.runKeep,
     cards = won
@@ -59,7 +62,7 @@ function runPayoutOpen() {
     title: won ? 'You beat the run' : 'The run is over',
     cls: 'run-payout',
     lock: true,
-    html: `<p>${won ? 'The boss is down. The airship takes everyone home, with all they learned, and your bag goes into Copperleaf’s.' : 'The airship comes for you. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${pay.crests || pay.scrap ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.crests ? `<pb-coin kind="crests" value="${pay.crests}" label="Crest"></pb-coin>` : ''}</p>` : ''}${cards}`,
+    html: `<p>${won ? 'The boss is down. The airship takes everyone home, with all they learned, and your bag goes into Copperleaf’s.' : 'The airship comes for you. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.crests ? `<pb-coin kind="crests" value="${pay.crests}" label="Crest"></pb-coin> ` : ''}${beans ? `<pb-coin kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-coin>` : ''}</p>` : ''}${cards}`,
     btns: [{ l: 'Fly home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));

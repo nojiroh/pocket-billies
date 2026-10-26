@@ -28,6 +28,8 @@ expose({
   relReached: [() => relReached],
   // @ts-expect-error -- replaced on purpose
   relTakeoff: [() => relTakeoff, v => (relTakeoff = v)],
+  // @ts-expect-error -- replaced on purpose
+  runBeans: [() => runBeans, v => (runBeans = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -104,4 +106,14 @@ export function relTakeoff(s, RL) {
         got[kind][k] = (got[kind][k] || 0) + n;
       }
   return got;
+}
+
+/** Beans found (an event, a badge, a side area's leader; the script command `beans`): into meta.beans at once, and on a
+ * run counted as its finds (run.beans, for the payout screen) @param {{ meta?: Meta, run?: any }} s @param {number} n
+ * @param {any} [run] the run on (the save's) */
+export function runBeans(s, n, run = s.run) {
+  const k = Math.max(0, Math.floor(n || 0));
+  if (!k || !s.meta) return;
+  s.meta.beans = Math.min(1e12, (s.meta.beans || 0) + k);
+  if (run) run.beans = Math.min(99, (run.beans || 0) + k);
 }

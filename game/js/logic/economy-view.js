@@ -37,6 +37,7 @@ export const ECONOMY_PAYOUT = {
   winCrests: ['crests', 'Crests for a win'],
   scrapNode: ['scrap', 'Scrap per place cleared'],
   scrapWin: ['scrap', 'Scrap for a win'],
+  beansWin: ['beans', 'Beans for a win'],
 };
 
 /**

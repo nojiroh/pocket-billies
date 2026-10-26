@@ -125,6 +125,7 @@
       "if wager = win",
       "  There is a gift inside, and a sound like someone saying oh no, very far away.",
       "  perk rare",
+      "  beans 2",
       "else",
       "  Your team looks inside. They all lie down for a bit.",
       "  status slp"
@@ -133,7 +134,7 @@
     {
      "text": "Let Alloy pry it open",
      "need": "type:Steel",
-     "then": ["Your Steel Billie pries the lid up a crack, takes something out and shuts it again without looking.","perk"]
+     "then": ["Your Steel Billie pries the lid up a crack, takes something out and shuts it again without looking.","perk","beans 1"]
     },
     {
      "text": "File it as Found",
