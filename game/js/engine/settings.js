@@ -294,7 +294,7 @@ export const ENGINE_DEFAULTS = {
     shadowInstances: true,
     /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
        ones that bob or turn out of it */
-    modelShadowCache: false,
+    modelShadowCache: true,
     /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
        in its cache; within the near map (13 m) shadows sway as before */
     farShadowsStill: false,
