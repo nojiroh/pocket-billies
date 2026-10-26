@@ -59,6 +59,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.scene.road.shape.zigzag = 1;
         run.scene.size = 3;
         run.wild.lv = [5, 3];
+        run.wild.rare.myth = { chance: 0.5, list: ['hastings0'] };
         run.seamIn = 0;
         run.start.pyramids.nosuchcoin = 1;
         run.start.extra = 1;

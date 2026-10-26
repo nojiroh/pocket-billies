@@ -1,0 +1,39 @@
+{
+ "id": "satoshi",
+ "names": ["Pseudonymph"],
+ "types": [["Steel"]],
+ "prof": [1,1,1,1,1,1],
+ "rar": "mythical",
+ "learn": [
+  [1,"handshake"],
+  [1,"fork"],
+  [6,"pump"],
+  [11,"interest"],
+  [16,"spill"],
+  [21,"snub"],
+  [26,"disrupt"],
+  [31,"liftoff"],
+  [36,"bouldertoss"],
+  [41,"wyrmbreath"],
+  [46,"gentrify"],
+  [52,"giveaway"]
+ ],
+ "cat": ["Pseudonym Billie"],
+ "ht": [0.5],
+ "wt": [21],
+ "hab": ["Nobody knows. Nobody has a forwarding address"],
+ "diet": ["Spare processing power"],
+ "bio": [
+  "A smooth grey blob with no face that nobody has ever seen arrive. It copies whatever stands in front of it, then forks off and is gone, leaving a note that says it was never here."
+ ],
+ "note": ["Signed its only letter with a name nobody can find."],
+ "parody": "Satoshi Nakamoto",
+ "cry": [
+  {
+   "base": "slime",
+   "pitch": 62,
+   "length": 1.1,
+   "name": "placeholder: a hum that echoes your Billie's cry, wrong (Claude's draft)"
+  }
+ ]
+}

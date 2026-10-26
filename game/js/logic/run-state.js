@@ -241,6 +241,8 @@ export function validRun(o) {
   /* RL-S1: what beat you (to the payout) and the leaders beaten (logic/run-history.js) */
   if (o.lostTo !== undefined && !validLostTo(o.lostTo)) return false;
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
+  /* RO-3f: a mythical met this run */
+  if (o.myth !== undefined && o.myth !== 1) return false;
   /* TW-3: its quests (missing until the first is taken) */
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */

@@ -69,6 +69,9 @@ test("a run's region: its map follows the zones over the open biomes, real speci
         G.dex.every(sp => SPECIES.has(sp)),
         `${seed}: real species`
       );
+      /* RO-3f: a mythical is in no regional dex */
+      const myth = GAME_DATA.lines.filter(L => L.rar === 'mythical').map(L => L.id + '0');
+      assert.ok(myth.length && !G.dex.some(sp => myth.includes(sp)), `${seed}: no mythical`);
       assert.equal(G.leaders.length, GAME_DATA.rules.run.map.minibosses + 1, seed);
       // each theme leans to 4 types with a leader each: all three leaders are of its types
       for (const id of G.leaders) assert.ok(T.types[LEADER_TYPE[id]] > 0, `${seed}: ${id} for ${G.theme}`);

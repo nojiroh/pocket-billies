@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Three new Billies (roster RO-3f, placeholder art)**: Pseudonymph, a faceless mythical Steel blob whose move Fork
+  takes the foe's types for 5 turns; it stands in for a route's rarer one in 2% of routes, at most once a run, and is
+  in no pool or regional dex. Pilotbat evolves into Bingebat at 18 (Flying, then Flying/Psychic), the cave bat, in
+  the cave, thicket and jungle.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing
