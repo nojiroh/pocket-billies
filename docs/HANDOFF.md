@@ -16,6 +16,23 @@ answered: soft volumetric (no visible cubes), its own track, all four parts in s
 - Next: the owner makes `track/air`; AIR-1 (haze) and AIR-2 (fog grid) can run at the same time. Tag `air-0-done`
   for the owner.
 
+### Studio art track - the plan (SA) - 2026-10-26
+Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
+Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a
+more intuitive Studio, and what no longer fits the Vision taken out.
+- Changed: docs/phases/studio-art-track.md (findings, research with sources, five sessions SA-1..SA-5, the owner's
+  decisions); ROADMAP's tracks list; BRANCHES' `track/studio-art` row.
+- Risky or unfinished: nothing built. The orphan lists in the plan come from greps of game/js and studio/js; SA-5
+  checks them again before deleting.
+- Verified: the main claims by grep and ls (Art files' four empty tabs and missing folders; tiles47 read only by
+  walk-view.js and built by tools/build-terrain-v47.py; `addEgg`/`hatchEgg` with no caller; `starterEgg`,
+  `dropTiers`, `restCost`, `endText` unread; portraits and art/people read by nothing; the Workbench's disabled modes).
+- Decisions (the owner, every recommendation): tiles47 PNGs are the source and the builder retires; orphans deleted,
+  legacy art parked; the clean-up reaches the game (Jobs, Town shops, walk eggs); `track/studio-art`, SA-1 first.
+- Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
+  is on it).
+- Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
+
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
 they were merged here (merge commits) for one PR.
