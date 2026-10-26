@@ -2,7 +2,7 @@
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
-import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
+import { encountersHere, setSetTrip, setTrip, spliceReport } from './logic/rules.js';
 import { ranchSkew } from './logic/ranch-clock.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
@@ -34,6 +34,8 @@ import {
 import {
   ensurePrograms,
   finishProgramCompile,
+  gpuMemory,
+  gpuRes,
   gpuState,
   makeNormalMap,
   normalMapWorkerState,
@@ -143,6 +145,8 @@ Object.defineProperties(GAME, {
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   gpuCountSummary: { get: () => gpuCountSummary },
   gpuCounters: { get: () => gpuCounters },
+  gpuMemory: { get: () => gpuMemory },
+  gpuRes: { get: () => gpuRes },
   gpuState: { get: () => gpuState },
   graftReport: { get: () => graftReport },
   grassWork: { get: () => grassWork, set: setGrassWork },
@@ -177,6 +181,7 @@ Object.defineProperties(GAME, {
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },
   soundEngine: { get: () => soundEngine },
+  spliceReport: { get: () => spliceReport },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   toast: { get: () => toast },
   uiState: { get: () => uiState },

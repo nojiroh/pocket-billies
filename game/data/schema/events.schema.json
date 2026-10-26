@@ -50,7 +50,9 @@
      "intro": {"description": "what you see first: lines of a script (docs/SCRIPTS.md), no commands", "type": "array", "minItems": 1, "maxItems": 6, "items": {"type": "string", "minLength": 1, "maxLength": 200}},
      "weight": {"description": "how often it is drawn against the others (0: never)", "type": "number", "minimum": 0, "maximum": 100},
      "repeat": {"description": "true: may come again in the same run (else once a run)", "type": "boolean"},
+     "resident": {"description": "residents track RS-2: only drawn while the run's resident can be met at an event (logic/residents.js); its options' `invite` invites them", "const": true},
      "biomes": {"description": "only in these biomes (biomes.json); every biome when left out", "type": "array", "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "minItems": 1},
+     "when": {"description": "SP-6: a condition (docs/SCRIPTS.md) read once, when a waystation's event is drawn: only then may it be this one", "type": "string", "minLength": 1, "maxLength": 120},
      "options": {
       "type": "array",
       "minItems": 2,
@@ -64,6 +66,7 @@
         "need": {"description": "a condition (docs/SCRIPTS.md): the option is shown greyed out until it holds", "type": "string", "minLength": 1, "maxLength": 120},
         "needText": {"description": "what the greyed-out option says it needs (else made from the condition)", "type": "string", "minLength": 1, "maxLength": 40},
         "cost": {"description": "Moneys paid when it is picked; greyed out without them", "type": "integer", "minimum": 1, "maximum": 100000},
+        "dna": {"description": "SP-6: DNA (meta.dna) paid when it is picked; greyed out without it", "type": "integer", "minimum": 1, "maximum": 100000},
         "then": {"description": "what happens: a script (docs/SCRIPTS.md), with the event commands", "type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "string", "maxLength": 200}}
        }
       }

@@ -151,19 +151,19 @@ test('a slot one side lacks is refused; donors are other lines with the slot', (
   assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'nobody', 'front'), []);
 });
 
-test('graftFit: turned to point the way of the bone it lands on and as long as it; a round one inside its box', () => {
+test('graftPicFit: turned to point the way of the bone it lands on and as long as it; a round one inside its box', () => {
   const pic = (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4).fill(255) });
   /* a part hanging down from its top (an arm) onto one sticking out left from its right edge (a leaf) */
-  const f = G.graftFit({ pic: pic(4, 16), pv: [2, 0] }, { pic: pic(12, 6), pv: [12, 3] });
+  const f = G.graftPicFit({ pic: pic(4, 16), pv: [2, 0] }, { pic: pic(12, 6), pv: [12, 3] });
   assert.deepEqual([f.pic.width, f.pic.height], [12, 3], 'lies down, as long as the leaf');
   assert.ok(f.pv[0] >= f.pic.width - 1 && Math.abs(f.pv[1] - f.pic.height / 2) <= 1, 'held at its right end');
   /* onto a bone held at its middle (a round foot): along it, inside its box, held where it holds its own */
-  const r = G.graftFit({ pic: pic(4, 16), pv: [2, 0] }, { pic: pic(20, 6), pv: [10, 3] });
+  const r = G.graftPicFit({ pic: pic(4, 16), pv: [2, 0] }, { pic: pic(20, 6), pv: [10, 3] });
   assert.deepEqual([r.pic.width, r.pic.height, ...r.pv], [20, 5, 10, 2.5]);
   /* scaled by k, never past 1.5 times the bone's longest side */
-  assert.equal(G.graftFit({ pic: pic(4, 16), pv: [2, 0] }, { pic: pic(4, 16), pv: [2, 0] }, 0.5).pic.height, 8);
+  assert.equal(G.graftPicFit({ pic: pic(4, 16), pv: [2, 0] }, { pic: pic(4, 16), pv: [2, 0] }, 0.5).pic.height, 8);
   /* a wide part on a short bone: as long as it would be 12 wide, held to 9 (1.5 times the bone's 6) */
-  assert.equal(G.graftFit({ pic: pic(8, 4), pv: [4, 0] }, { pic: pic(4, 6), pv: [2, 0] }).pic.width, 9);
+  assert.equal(G.graftPicFit({ pic: pic(8, 4), pv: [4, 0] }, { pic: pic(4, 6), pv: [2, 0] }).pic.width, 9);
 });
 
 test('RO-3b: every real placeholder Billie takes every slot from a Billie of each other plan, inside the box', () => {

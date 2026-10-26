@@ -9,6 +9,7 @@
 /** @typedef {{ width: number, height: number, data: Uint8ClampedArray }} Pixels */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { roundHalfEven, sheetBoxResize } from './sheet-slice.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -21,19 +22,19 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitFaceMask: [() => kitFaceMask, v => (kitFaceMask = v)],
   // @ts-expect-error -- replaced on purpose
-  kitFlipX: [() => kitFlipX, v => (kitFlipX = v)],
+  kitFlipX: [() => kitFlipX, v => ((kitFlipX = v), provide({ kitFlipX }))],
   // @ts-expect-error -- replaced on purpose
   kitFlipY: [() => kitFlipY, v => (kitFlipY = v)],
   // @ts-expect-error -- replaced on purpose
   kitHsvToRgb: [() => kitHsvToRgb, v => (kitHsvToRgb = v)],
   // @ts-expect-error -- replaced on purpose
-  kitNearest: [() => kitNearest, v => (kitNearest = v)],
+  kitNearest: [() => kitNearest, v => ((kitNearest = v), provide({ kitNearest }))],
   // @ts-expect-error -- replaced on purpose
   kitOpaqueWidth: [() => kitOpaqueWidth, v => (kitOpaqueWidth = v)],
   // @ts-expect-error -- replaced on purpose
   kitPartScale: [() => kitPartScale, v => (kitPartScale = v)],
   // @ts-expect-error -- replaced on purpose
-  kitPaste: [() => kitPaste, v => (kitPaste = v)],
+  kitPaste: [() => kitPaste, v => ((kitPaste = v), provide({ kitPaste }))],
   // @ts-expect-error -- replaced on purpose
   kitPilSatVal: [() => kitPilSatVal, v => (kitPilSatVal = v)],
   // @ts-expect-error -- replaced on purpose
@@ -47,13 +48,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitSquashFrames: [() => kitSquashFrames, v => (kitSquashFrames = v)],
   // @ts-expect-error -- replaced on purpose
-  kitTurnRight: [() => kitTurnRight, v => (kitTurnRight = v)],
+  kitTurnRight: [() => kitTurnRight, v => ((kitTurnRight = v), provide({ kitTurnRight }))],
   pyMod1: [() => pyMod1],
 });
 /* eslint-enable no-func-assign */
+provide({ kitFlipX, kitNearest, kitPaste, kitTurnRight });
 /* to-module: end */
 /** a clear picture @param {number} w @param {number} h @returns {Pixels} */
 export const kitBlank = (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) });
+provide({ kitBlank }); /* to-module */
 /** a copy @param {Pixels} p @returns {Pixels} */
 export const kitCopy = p => ({ width: p.width, height: p.height, data: new Uint8ClampedArray(p.data) });
 

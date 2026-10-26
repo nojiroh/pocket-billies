@@ -124,7 +124,7 @@ function camZoneToolBarHTML() {
     )
     .join('');
   const form = Z
-    ? `${num('zoom', 'Zoom', Z.zoom ?? 1, 0.01, 'The zoom’s share in the zone (below 1: closer).')}${num('tilt', 'Tilt (°)', Z.tilt ?? 0, 0.5, 'Degrees added to the tilt.')}${num('atx', 'Aim → (m)', Z.at ? Z.at[0] : 0, 0.25, 'The aim moved from you, metres east.')}${num('atz', 'Aim ↑ (m)', Z.at ? Z.at[1] : 0, 0.25, 'The aim moved from you, metres north.')}${num('priority', 'Priority', Z.priority ?? 0, 1, 'Where zones overlap the highest wins.')}${num('blend', 'Blend (s)', Z.blend ?? '', 0.05, 'How long it takes to come in and go (empty: Engine > Camera > Camera goals blend).')}<button class="btn sm subtle" data-act="scCzDel">Remove this zone</button>`
+    ? `${num('zoom', 'Zoom', Z.zoom ?? 1, 0.01, 'The zoom’s share in the zone (below 1: closer).')}${num('tilt', 'Tilt (°)', Z.tilt ?? 0, 0.5, 'Degrees added to the tilt.')}${num('atx', 'Aim → (m)', Z.at ? Z.at[0] : 0, 0.25, 'The aim moved from you, metres east.')}${num('atz', 'Aim ↑ (m)', Z.at ? Z.at[1] : 0, 0.25, 'The aim moved from you, metres north.')}${num('priority', 'Priority', Z.priority ?? 0, 1, 'Where zones overlap the highest wins.')}${num('blend', 'Blend (s)', Z.blend ?? '', 0.05, 'How long it takes to come in and go (empty: Camera > Follow > Camera goals blend).')}<button class="btn sm subtle" data-act="scCzDel">Remove this zone</button>`
     : `<span class="muted">${L.length ? 'Click a zone to set its numbers.' : 'No camera zones in this scene.'}</span>`;
   return `<div class="sc-hbar">${shapes}${form}</div>`;
 }

@@ -24,10 +24,10 @@ The single source of truth for what the game is becoming. Phase files implement 
 - The story reacts to your runs, as in Hades: hub characters pick lines from your run history, relationships unlock lines and small bonuses, Blake returns as a rival whose team counters yours, and each bracket is a chapter of the organization's mystery. After a loss Professor Chosen takes credit for bringing you back; Hazel finds the organization's portal did it.
 - Losing a run: you keep one Billy of your choice and lose the rest with your money and items; money and items convert to unlock currency. Winning pays the unlock currency plus the rare boss currency and opens the next tier.
 - The ranch, a hub building: stores Billies, trains them between runs (ranch-trained levels persist), hatches eggs and breeds (a safe mode and a risky mode with "abominations"), and earns passive income on real-time timers (capped, safe against clock rollback, working offline).
-- Hub upgrades are paid with four currencies in all (run money, unlock currency, a building material, a rare boss currency), one per building.
+- Hub upgrades are paid with five currencies in all (run money, unlock currency, a building material, a rare boss currency, and DNA for splicing: splicing track SP-3), one per building.
 - Bots (robots) are an enemy faction first and playable much later.
 - Modular: nodes, relics, modifiers, currencies, factions, buildings, unlocks and bosses are data sections with schemas, so new systems and, later, content packs by others are added without editing core files.
-- Online: friends' ghost teams (a friend's last run as a rival fight) and daily shared seeds. Nothing else.
+- Online (docs/phases/online-track.md, the owner 2026-10-26; replaces "ghosts and daily seeds, nothing else"): friends' ghost teams (a friend's last run as a rival fight), daily and weekly shared seeds with friends' leaderboards, a Showcase to share Billies and vote on them, trading Billies, eggs and robot parts with friends and with random players (GTS and Surprise Trade, on trust: Firebase stays on Spark, no server code), and live battles with friends and random players (casual, level 50). Every part is optional; the game plays the same offline.
 - World map: always 3D. In the hub it shows Copperleaf's island floating in open sky (the owner, 2026-10-23: no bowl, no sea round it; the time of day's sky, an orbit camera round the island, its buildings as low-poly models at life size). During a run it is still the inside of a half sphere, like a bowl, with the run's node map and the forecast. (Phase 10, RL-7, then the floating island.)
 - The fitness step tracking stays REMOVED: real-world steps never drive the game.
 - Locations and maps keep the retro-futuristic solarpunk vibe.
@@ -41,4 +41,4 @@ The single source of truth for what the game is becoming. Phase files implement 
 - Art targets: terrain textures and the airship style (low-poly, 32 px/m). Flat props stay flat. (Phase 09.)
 
 ## Keeps
-Walking maps, seamless joins and rooms that are bigger on the inside than the outside (kept and improved), friends (ghost teams and daily seeds in the roguelite track, RL-15; trading later), the Studio (extended), Firebase accounts, the debug tools and my phone-testing workflow.
+Walking maps, seamless joins and rooms that are bigger on the inside than the outside (kept and improved), friends (ghost teams, daily seeds, trading, live battles and the Showcase in the online track), the Studio (extended), Firebase accounts, the debug tools and my phone-testing workflow.

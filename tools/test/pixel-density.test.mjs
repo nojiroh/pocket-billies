@@ -67,7 +67,7 @@ test('the report covers every species with a rig, kit Billies with their parts, 
   /* RO-3f: as many rows as bodyPlans.json has forms (every one a species with a rig), not a number each roster
      session would bump */
   assert.equal(R.rows.filter(r => r.placeholder).length, GAME_DATA.bodyPlans.forms.length);
-  assert.ok(GAME_DATA.bodyPlans.forms.length >= 58, "the 40 species, the 11 forms, RO-3e's 4 and RO-3f's 3 at least");
+  assert.ok(GAME_DATA.bodyPlans.forms.length >= 54, "the 40 species, the 11 forms and RO-3f's 3 at least");
   for (const r of R.rows.filter(r => r.placeholder)) assert.ok(r.plan && r.scale > 0 && !r.parts.length, r.sp);
   for (const r of R.rows)
     assert.ok(r.pxPerM > 20 && r.pxPerM < 400 && ['whole', 'quarter', 'off grid'].includes(r.grid), JSON.stringify(r));

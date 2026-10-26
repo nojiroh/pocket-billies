@@ -2,9 +2,10 @@
 /* ================= ENGINE FRAME BLOCK =================
    Phase 20 (stage C3): the frame's light values (sun, sky, fog, shadow maps, lamps, contact shadows) as one std140
    uniform block, packed once per frame and read by every lit program, instead of about 40 uniform calls each time a
-   lit program is bound (light.js setLightUniforms). Used when quality.frameBlock is on. The offsets are worked out from
+   lit program is bound (light.js setLightUniforms; on for every lit program since phase 20 C3's close-out). The offsets are worked out from
    the block's own GLSL by the std140 rules, so the text is the one place the layout is written. Nothing here touches
-   WebGL; Node tests check the packing against setLightUniforms. */
+   WebGL; Node tests check the packing against what the old setLightUniforms sent one uniform at a time (kept in
+   tools/test/frame-block.test.mjs as the reference). */
 /* uCurve stays a plain uniform: the vertex shaders read it, and the shadow passes set it before the frame's light
    context exists */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -17,6 +18,7 @@ expose({
   FRAME_OFFSETS: [() => FRAME_OFFSETS],
   STD140: [() => STD140],
   packFrameBlock: [() => packFrameBlock, v => (packFrameBlock = v)],
+  poolLampMap: [() => poolLampMap, v => (poolLampMap = v)],
   put: [() => put],
   std140Layout: [() => std140Layout, v => (std140Layout = v)],
 });
@@ -29,7 +31,7 @@ vec3 uEye;float uTime;vec3 uSunDir;float uFogStart;vec3 uSunCol;float uFogD;vec3
 vec3 uAmbBot;float uSHK;vec3 uFogCol;float uFogSun;vec3 uTint;float uTintAmt;vec3 uShTint;float uShStr;
 vec3 uShLift;float uShPx;vec4 uRoomB;vec4 uSeason;vec2 uValley;float uMist,uMistY;
 float uCloudSh,uCloudSpd,uCloudCov,uContact;float uShadowOn,uShadow2On,uShPen,uShPen2;
-vec2 uShadowTexel,uShadowTexel2;float uRoomDim,uShLite,uShSteps,uFramePad;int uNL,uNLS,uNAO,uFramePadI;
+vec2 uShadowTexel,uShadowTexel2;float uRoomDim,uShLite,uShSteps,uShFix;int uNL,uNLS,uNAO,uFramePadI;
 };`;
 /* std140: a member's size and alignment in bytes; an array element and a matrix column take a whole vec4 */
 const STD140 = { float: [4, 4], int: [4, 4], vec2: [8, 8], vec3: [12, 16], vec4: [16, 16], mat4: [64, 16] };
@@ -95,7 +97,9 @@ export function packFrameBlock(X, f, n) {
     f[c] = l.c[0];
     f[c + 1] = l.c[1];
     f[c + 2] = l.c[2];
-    f[c + 3] = 1;
+    /* a window light that knows its way out (lights.windowFacing): that direction as an angle past 10; else 1 */
+    f[c + 3] =
+      l.front && l.fn ? 10 + Math.atan2(l.fn[1], l.fn[0]) : l.pool && X.shFix & 2 ? poolLampMap(L, l, LS.length) : 1;
   }
   n[FRAME_OFFSETS.uNL] = L.length;
   for (let i = 0; i < X.ao.length; i++) put(f, FRAME_OFFSETS.uAO + i * 4, X.ao[i], 4);
@@ -131,5 +135,13 @@ export function packFrameBlock(X, f, n) {
   f[FRAME_OFFSETS.uContact] = X.contact;
   f[FRAME_OFFSETS.uShPx] = X.shPx || 0;
   f[FRAME_OFFSETS.uShSteps] = X.shSteps ?? 2;
+  /* the shadow fixes as bits: 1 Steady shadow edges (the soft edge's blocker search), 2 Lamp shadows hold */
+  f[FRAME_OFFSETS.uShFix] = X.shFix || 0;
   if (X.shLift) put(f, FRAME_OFFSETS.uShLift, X.shLift, 3);
+}
+/* Lamp shadows hold: a lamp's pool of light uses the shadow map of its lamp when that lamp has one (-1 or -2 in uLC.w,
+   the map's index + 1, negated); else 1 */
+function poolLampMap(L, pool, nLS) {
+  for (let j = 0; j < nLS; j++) if (L[j].src != null && L[j].src === pool.src && !L[j].pool) return -(j + 1);
+  return 1;
 }

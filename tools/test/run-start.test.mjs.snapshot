@@ -34,7 +34,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 17,
+      "mapgenV": 18,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -52,7 +52,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 0
           },
           {
-            "type": "route",
+            "type": "rival",
             "row": 1,
             "lane": 0,
             "to": [
@@ -132,7 +132,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "scrapyard",
             "row": 6,
             "lane": 0,
             "to": [
@@ -306,23 +306,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "cuban_courtside0",
-          "cuban_courtside1",
           "yiming_livestream0",
-          "yiming_livestream1"
+          "yiming_livestream1",
+          "woods0",
+          "woods1",
+          "arnault0"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "cuban0": "cuban_courtside0",
-          "cuban1": "cuban_courtside1",
           "yiming0": "yiming_livestream0",
-          "yiming1": "yiming_livestream1"
+          "yiming1": "yiming_livestream1",
+          "woods_hazard0": "woods0",
+          "woods_hazard1": "woods1"
         },
         "forms": {
           "swift": "folklore",
-          "cuban": "courtside",
           "yiming": "livestream"
         },
         "leaders": [
@@ -365,7 +365,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 17,
+      "mapgenV": 18,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
@@ -389,7 +389,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 0
           },
           {
-            "type": "route",
+            "type": "rival",
             "row": 1,
             "lane": 0,
             "to": [
@@ -469,7 +469,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2
           },
           {
-            "type": "route",
+            "type": "scrapyard",
             "row": 6,
             "lane": 0,
             "to": [
@@ -632,10 +632,10 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           }
         ],
         "dex": [
-          "musk0",
-          "musk1",
-          "musk2",
-          "musk3",
+          "bezos0",
+          "bezos1",
+          "bezos2",
+          "bezos3",
           "gates0",
           "gates1",
           "gates2",
@@ -643,21 +643,19 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "hughes0",
-          "hughes1",
-          "hughes2",
-          "kamprad0",
-          "kamprad1"
+          "yiming0",
+          "yiming1",
+          "woods0",
+          "woods1"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "hughes_harbour0": "hughes0",
-          "hughes_harbour1": "hughes1",
-          "hughes_harbour2": "hughes2",
-          "kamprad_meatball0": "kamprad0",
-          "kamprad_meatball1": "kamprad1"
+          "yiming_livestream0": "yiming0",
+          "yiming_livestream1": "yiming1",
+          "woods_hazard0": "woods0",
+          "woods_hazard1": "woods1"
         },
         "forms": {
           "swift": "folklore"
@@ -702,7 +700,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 17,
+      "mapgenV": 18,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -720,7 +718,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 0
           },
           {
-            "type": "route",
+            "type": "rival",
             "row": 1,
             "lane": 0,
             "to": [
@@ -863,23 +861,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore0",
           "swift_folklore1",
           "swift_folklore2",
-          "cuban_courtside0",
-          "cuban_courtside1",
           "yiming_livestream0",
-          "yiming_livestream1"
+          "yiming_livestream1",
+          "woods0",
+          "woods1",
+          "arnault0"
         ],
         "swap": {
           "swift0": "swift_folklore0",
           "swift1": "swift_folklore1",
           "swift2": "swift_folklore2",
-          "cuban0": "cuban_courtside0",
-          "cuban1": "cuban_courtside1",
           "yiming0": "yiming_livestream0",
-          "yiming1": "yiming_livestream1"
+          "yiming1": "yiming_livestream1",
+          "woods_hazard0": "woods0",
+          "woods_hazard1": "woods1"
         },
         "forms": {
           "swift": "folklore",
-          "cuban": "courtside",
           "yiming": "livestream"
         },
         "leaders": [
@@ -889,6 +887,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "a6ea8bb6d98920d14449280cfcde7ce9c4f6b4eaf5c8570f7c0530e7515ea7b9"
+  "all": "77cc1fa6f62f041c7e41fa02d574636bb669b827a41ead358a2f93aa32b65f9a"
 }
 `;

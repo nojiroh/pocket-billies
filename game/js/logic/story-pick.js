@@ -16,6 +16,7 @@ import { expose } from '../test-globals.js';
 expose({
   BANTER_HUB: [() => BANTER_HUB],
   BANTER_WHO: [() => BANTER_WHO],
+  banterOwner: [() => banterOwner],
   // @ts-expect-error -- replaced on purpose
   pickHash: [() => pickHash, v => (pickHash = v)],
   // @ts-expect-error -- replaced on purpose
@@ -26,8 +27,27 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** who a line can be for (banter.schema.json's list); the first three are the hub characters picked on the way home */
-export const BANTER_WHO = ['chosen', 'hazel', 'juniper', 'back_lost', 'leader', 'bureau'],
+export const BANTER_WHO = [
+    'chosen',
+    'hazel',
+    'juniper',
+    'back_lost',
+    'leader',
+    'bureau',
+    'rival',
+    /* RL-S2 part B: a hub person's thank-you for a gift (story.js storyGiftOffer) */
+    'thanks_chosen',
+    'thanks_hazel',
+    'thanks_juniper',
+  ],
   BANTER_HUB = ['chosen', 'hazel', 'juniper'];
+
+/** whose line it is when it names nobody: a hub person's own lines and their thank-yous are theirs, the others name
+ * their speakers @param {string} who @returns {string | null} */
+export const banterOwner = who => {
+  const w = who.startsWith('thanks_') ? who.slice(7) : who;
+  return BANTER_HUB.includes(w) ? w : null;
+};
 
 /** a small, steady string hash (FNV-1a) for the tie's draw @param {string} s */
 export function pickHash(s) {

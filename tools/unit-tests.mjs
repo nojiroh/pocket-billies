@@ -27,6 +27,7 @@ export const SLOW_TESTS = [
   'route-trainer-spots.test.mjs',
   'run-sim-scenes.test.mjs',
   'run-world-real.test.mjs',
+  'resident-towns.test.mjs',
   'weather-before.test.mjs',
 ];
 

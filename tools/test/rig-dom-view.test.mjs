@@ -22,7 +22,7 @@ for (const sp of ['testBilly', 'bot:volt.vane.tesla.auger.striders']) {
       globalThis.drawRig = (...args) => drawn.push(args);
       const ctx = { setTransform() {}, clearRect() {} };
       const c = {
-        dataset: { sp, v: view, coat: 'midnight', g: 'front=swift1', still: '1' },
+        dataset: { sp, v: view, coat: 'midnight', g: 'front=hawk_wing@swift1', still: '1' },
         width: 224,
         height: 208,
         getContext: () => ctx,
@@ -30,7 +30,7 @@ for (const sp of ['testBilly', 'bot:volt.vane.tesla.auger.striders']) {
       };
       try {
         globalThis.drawDomRig(c, 1000);
-        assert.deepEqual(calls, [[sp, view === 'back' ? rig.RIG_BACK_VIEW : 1, 'midnight', 'front=swift1']]);
+        assert.deepEqual(calls, [[sp, view === 'back' ? rig.RIG_BACK_VIEW : 1, 'midnight', 'front=hawk_wing@swift1']]);
         assert.equal(drawn[0][1], selected);
         assert.equal(drawn[0][3], view);
       } finally {

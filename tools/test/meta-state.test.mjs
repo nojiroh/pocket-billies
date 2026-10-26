@@ -12,13 +12,20 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     research: 0,
     scrap: 0,
     crests: 0,
+    beans: 0,
+    rel: {},
+    gifted: {},
+    dna: 0,
+    genes: [],
     unlocks: {},
     buildings: {},
     runs: 0,
     wins: 0,
     expedition: 1,
+    chapter: 1,
     badges: {},
     history: [],
+    residents: {},
   });
   assert.equal(validMeta(m), true);
   assert.notEqual(newMeta(), m, 'a fresh object each time');
@@ -34,6 +41,10 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, research: -1 },
     { ...ok, scrap: 1.5 },
     { ...ok, crests: '3' },
+    { ...ok, beans: -1 },
+    { ...ok, chapter: 0 },
+    { ...ok, rel: { hazel: -1 } },
+    { ...ok, gifted: { hazel: 1.5 } },
     { ...ok, research: 1e13 },
     { ...ok, wins: 4 }, // more wins than runs
     { ...ok, expedition: 0 },
@@ -48,6 +59,11 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, badges: { water: 2 } },
     { ...ok, badges: { Water: 1 } },
     { ...ok, badges: ['water'] },
+    { ...ok, residents: undefined }, // RS-1: metaFill gives an old one {}
+    { ...ok, residents: { dottie: 0 } },
+    { ...ok, residents: { dottie: 1.5 } },
+    { ...ok, residents: { Dottie: 1 } },
+    { ...ok, residents: ['dottie'] },
   ])
     assert.equal(validMeta(bad), false, JSON.stringify(bad));
   assert.equal(validMeta(JSON.parse(JSON.stringify(ok).replace('"unlocks":{', '"unlocks":{"__proto__":1,'))), false);
@@ -70,4 +86,13 @@ test('meta: RL-R2: a meta from before badges gets none; badges are kept by type'
   assert.deepEqual(metaFill(old).badges, {});
   assert.equal(metaFill(old).research, 7);
   assert.deepEqual(newMeta().badges, {});
+});
+
+test('meta: RS-1: a meta from before residents gets none; residents are kept with their run', () => {
+  const old = { ...newMeta(), runs: 4 };
+  delete (/** @type {any} */ (old).residents);
+  assert.deepEqual(metaFill(old).residents, {});
+  const kept = { ...newMeta(), runs: 4, residents: { dottie: 1, mo: 4 } };
+  assert.equal(validMeta(kept), true);
+  assert.deepEqual(metaFill(JSON.parse(JSON.stringify(kept))), kept);
 });

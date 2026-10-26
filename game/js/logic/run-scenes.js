@@ -72,6 +72,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
   // @ts-expect-error -- replaced on purpose
+  runTownResident: [() => runTownResident, v => (runTownResident = v)],
+  // @ts-expect-error -- replaced on purpose
   runWildLevels: [() => runWildLevels, v => (runWildLevels = v)],
   // @ts-expect-error -- replaced on purpose
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
@@ -188,6 +190,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(layout ? { layout } : {}),
     /* RT-3: and its set pieces (setPieces.json perPlace) */
     ...(pieces ? { pieces } : {}),
+    /* RL-14: a scrapyard's set pieces lean to its own (setPieces.json sites) */
+    ...(node.type === 'scrapyard' ? { site: 'scrapyard' } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
     biome: node.biome || Object.keys(data.biomes)[0],
@@ -313,15 +317,18 @@ export function runAlongBack(path, d) {
   }
   return path[0].slice();
 }
-/** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route")
+/** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route"; RL-S2: the type's
+ * `place` word when it has one)
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
   const node = map.nodes[i],
     B = data.biomes[node.biome || ''],
     T = data.nodeTypes[node.type];
+  /* RL-S2: a type's own word for its place, when it has one (a rival's place is a Route) */
+  const word = T ? T.place || T.name : 'Route';
   /* RL-R2: a side area's places carry its name ("Bramble Grove Town") */
-  if (node.side && map.side) return `${map.side.name} ${T ? T.name : 'Route'}`;
-  return `${B ? B.name : 'Wild'} ${T ? T.name : 'Route'}`;
+  if (node.side && map.side) return `${map.side.name} ${word}`;
+  return `${B ? B.name : 'Wild'} ${word}`;
 }
 /** node i's scene, made from its parents' (see runSceneParams), with what the game reads off a place's scene: its
  * place, name, colour grade (mood) and climate (its biome's: environment.js reads a scene's climate first)
@@ -353,7 +360,7 @@ export function runSceneMake(run, i, scenes, data) {
  * @param {string} [aim] @returns {number} */
 export function runTownFolkCap(T, q, aim) {
   if (q >= 2) return T.cap.busy;
-  return aim === 'smooth' ? T.cap.balanced : T.cap.best;
+  return aim === 'smooth' || aim === 'off' ? T.cap.balanced : T.cap.best;
 }
 /** TW-2: a run town's own life, from its node's stream ('town|life'): its region's chat lines after its biome's
  * (rules.json run.town.chat by the region's theme), and its named locals (scene.people), run.town.locals of them on
@@ -406,6 +413,24 @@ export function runTownQuest(run, i, scene, data) {
   const name = names[rnd.int(0, names.length - 1)];
   scene.people = (scene.people || []).concat([
     { id: 'quest', who: 'folk:' + rnd.int(1000, 99999), name, x: at.x, z: at.z, dir: 'down', lines: [], quest: 1 },
+  ]);
+}
+/** RS-2: a run's resident standing in a town (scene.people id 'resident', `resident: <id>`: quest-board.js offers
+ * their favour or their invite), on the first of the town's local spots nobody stands on (mapgen.js: the square's
+ * first, then the houses' gates), else beside the square's. Their look is their own (RS-3: people/<id>.json), the same
+ * in every run @param {any} scene @param {string} id @param {string} name */
+export function runTownResident(scene, id, name) {
+  if (!scene) return;
+  const people = scene.people || [],
+    spots = (scene.spots || []).filter((/** @type {any} */ s) => s.kind === 'local'),
+    free = spots.find(
+      (/** @type {any} */ s) => !people.some((/** @type {any} */ p) => Math.hypot(p.x - s.x, p.z - s.z) < 1)
+    ),
+    at = free || (spots[0] ? { x: spots[0].x + 1.2, z: spots[0].z } : null);
+  if (!at) return;
+  /* RS-3: their look is the person of their id (people/<id>.json, the data check asks for one) */
+  scene.people = people.concat([
+    { id: 'resident', who: id, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id },
   ]);
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run

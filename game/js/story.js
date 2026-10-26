@@ -14,40 +14,46 @@ import {
   selfTest,
   showPendingWindows,
   storyFreshTake,
+  storyPickId,
+  storyPickPlay,
   storyRun,
   storyWorldOK,
+  toast,
 } from './hooks.js';
-import { RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
-import { encountersHere, today } from './logic/rules.js';
+import { CURRENCIES, PEOPLE, RELATIONS, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
+import { encountersHere, plural, today } from './logic/rules.js';
+import { relGift, relGiftBlock, relReached } from './logic/relations.js';
 import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
-import { baseMapId, walkView } from './walk-view.js';
+import { baseMapId, turnToPlayer, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { music } from './sound.js';
 import { talk, talkBox } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreClue, loreData } from './lore.js';
-import { questGiverTalk } from './quest-board.js';
+import { questGiverTalk, residentTalk } from './quest-board.js';
 /* eslint-disable no-func-assign */
 expose({
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
   personTalk: [() => personTalk, v => (personTalk = v)],
+  residentHomeTalk: [() => residentHomeTalk, v => ((residentHomeTalk = v), provide({ residentHomeTalk }))],
   storyAfterRival: [() => storyAfterRival, v => ((storyAfterRival = v), provide({ storyAfterRival }))],
   storyAfterWin: [() => storyAfterWin, v => ((storyAfterWin = v), provide({ storyAfterWin }))],
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
   storyEnding: [() => storyEnding, v => (storyEnding = v)],
   storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
+  storyGiftOffer: [() => storyGiftOffer, v => ((storyGiftOffer = v), provide({ storyGiftOffer }))],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
   storyState: [() => storyState],
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
+provide({ openingDone, residentHomeTalk, storyAfterRival, storyAfterWin, storyFlags, storyGiftOffer });
 /* to-module: end */
 function storyFlags() {
   return saveData.story || (saveData.story = {});
@@ -151,13 +157,61 @@ export function legendCheck() {
 }
 const storyState = { pending: null };
 provide({ storyState }); /* to-module */
+/* RL-S2: in the hub, with a Bean and none given them since the last run, a hub person (relations.json) is offered one
+   before the talk (logic/relations.js relGift; the level's wardrobe piece comes with it). Resolves once answered: true
+   when their thank-you (banter.json thanks_<who>) was said, which stands for this talk */
+function storyGiftOffer(/** @type {string} */ who) {
+  const M = saveData.meta;
+  if (saveData.run || !M || relGiftBlock(M, who, RELATIONS)) return Promise.resolve(false);
+  const P = /** @type {any} */ (PEOPLE || {})[who],
+    name = (P && P.look && P.look.name) || who,
+    C = CURRENCIES.beans || { name: 'Beans', one: 'Bean' };
+  return new Promise(done =>
+    modal({
+      title: `A ${C.one} for ${name}?`,
+      html: `<p>You have ${plural(M.beans, C.one)}.</p>`,
+      btns: [
+        {
+          l: `Give a ${C.one}`,
+          c: 'primary',
+          f: () => {
+            closeModal();
+            const step = relGift(M, who, RELATIONS);
+            if (!step) return done(false);
+            for (const L of relReached(who, step, RELATIONS))
+              if (L.wardrobe && saveData.wardrobe) saveData.wardrobe.owned[L.wardrobe] = 1;
+            save();
+            if (step.to > step.from) toast(`${name}: level ${step.to}`);
+            /* RL-S2 part B: their thank-you (banter.json thanks_<who>, a level's line first) is this talk */
+            storyPickPlay('thanks_' + who).then(said => {
+              if (!said && step.to === step.from) toast(`${name} liked that.`);
+              done(said);
+            });
+          },
+        },
+        {
+          l: 'Not now',
+          c: 'quiet',
+          f: () => {
+            closeModal();
+            done(false);
+          },
+        },
+      ],
+    })
+  );
+}
 /* someone who only talks (a map's people: Granny Juniper, Curator Nacre): their script */
 export async function personTalk(P) {
   if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  /* RL-S2: a Bean first, when you have one; their thank-you, if they have one, is this talk */
+  if (P.who && !P.quest && (await storyGiftOffer(P.who))) return;
   /* RL-S1: the first talk after a run: their line picked on the way home, once, in place of their own */
-  const fresh = !P.quest && P.who && storyFreshTake(P.who);
+  const fresh = !P.quest && !P.resident && P.who && storyFreshTake(P.who);
   /* TW-3: a run town's quest giver offers the town's quest (quest-board.js) */
   if (P.quest && typeof questGiverTalk === 'function') await questGiverTalk(P);
+  /* RS-2: the run's resident asks to come to Copperleaf, or offers their favour (quest-board.js) */
+  else if (P.resident && typeof residentTalk === 'function') await residentTalk(P);
   else if (fresh) await playStoryScript('banter:' + fresh);
   else if (P.script) await playStoryScript('person:' + P.id);
   else if (P.lines && P.lines.length)
@@ -166,6 +220,24 @@ export async function personTalk(P) {
       P.lines.map((/** @type {string} */ l) => [P.who, l]),
       { name: P.name }
     );
+}
+
+/* RS-3: a resident of Copperleaf (one of its townsfolk, walk-view.js hubResidentWalkers) stops and says the line the
+   story director picks for them (banter.json, their id as `who`; every resident has one that always holds) */
+export async function residentHomeTalk(f) {
+  if (talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  f.wait = 99;
+  f.route = null;
+  f.walk = 0;
+  /* from their room card (Talk) there is nobody to turn: only the line */
+  if (f.x != null) turnToPlayer(f);
+  if (f.x != null && typeof walkRenderer !== 'undefined') {
+    walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
+    walkRenderer.talkAt = { x: f.x, z: f.z, t: walkView.t };
+  }
+  const k = storyPickId(f.res, null);
+  if (!k || !(await playStoryScript('banter:' + k))) await talk([[f.res, 'Hello again.']]);
+  f.wait = 2;
 }
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================

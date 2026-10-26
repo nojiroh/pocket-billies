@@ -13,8 +13,35 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, rewardPickOpen, toast } from './hooks.js';
-import { EVENTS, ITEMS, PERKS, PYRAMIDS, RULES, SPECIES, worldAddTrainers } from './game-data.js';
-import { addBilly, billyName, feedLevels, healAll, makeBilly, maxHp, teamSize, xpFor } from './logic/rules.js';
+import { EVENTS, ITEMS, PERKS, PYRAMIDS, QUESTS, RESIDENTS, RULES, SPECIES, worldAddTrainers } from './game-data.js';
+import { rngFrom } from './logic/rng.js';
+import { geneWords } from './logic/genes.js';
+import { bankTry } from './logic/gene-bank.js';
+import {
+  geneEventDraw,
+  geneEventLab,
+  geneEventLearn,
+  geneEventRecall,
+  geneEventSlots,
+  geneEventSplice,
+  geneEventWild,
+} from './logic/gene-events.js';
+import {
+  addBilly,
+  billyGraft,
+  billyName,
+  billyUnstable,
+  feedLevels,
+  geneData,
+  geneLimit,
+  healAll,
+  makeBilly,
+  maxHp,
+  teamSize,
+  xpFor,
+} from './logic/rules.js';
+import { META_MAX } from './logic/meta-state.js';
+import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
 import { runMapNode } from './logic/run-map.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
@@ -45,13 +72,18 @@ import { perkPickOpen } from './perk-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   ENC_STOP: [() => ENC_STOP],
+  encChoose: [() => encChoose, v => (encChoose = v)],
+  encDna: [() => encDna],
   encFight: [() => encFight, v => (encFight = v)],
+  encGeneLog: [() => encGeneLog],
+  encGeneRng: [() => encGeneRng],
   encHere: [() => encHere],
   encHolds: [() => encHolds],
   encLineHTML: [() => encLineHTML],
   encLines: [() => encLines, v => (encLines = v)],
   encNote: [() => encNote],
   encPlaying: [() => encPlaying, v => (encPlaying = v)],
+  encRegion: [() => encRegion],
   encSheet: [() => encSheet, v => (encSheet = v)],
   encSheetClose: [() => encSheetClose, v => (encSheetClose = v)],
   encStep: [() => encStep, v => (encStep = v)],
@@ -101,6 +133,8 @@ const encHere = () => {
 };
 /** the story state for an option's need, read now */
 const encHolds = (/** @type {string} */ cond) => storyHolds(cond);
+/** SP-6: DNA on hand (meta.dna), for an option's DNA price and the summary */
+const encDna = () => (saveData.meta && saveData.meta.dna) || 0;
 
 /* ---------- the intro and the options ---------- */
 /** open an event: the one at map node i (drawn and kept the first time), or the one given (the debug menu)
@@ -108,7 +142,9 @@ const encHolds = (/** @type {string} */ cond) => storyHolds(cond);
 export function encounterOpen(i, id) {
   const run = saveData.run;
   if (!run || encPlaying || activeBattle) return;
-  const ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS) : '');
+  /* RS-2: a resident event only while the run's resident can be met at one */
+  const meet = !!residentCandidate(saveData, RESIDENTS, 'event'),
+    ev = id || (i != null && i >= 0 ? eventAt(run, i, EVENTS, encHolds, meet) : '');
   if (!ev || !EVENTS.events[ev]) {
     toast('Nothing happens here. Not today.');
     return;
@@ -123,9 +159,9 @@ export function encounterOpen(i, id) {
     lock: true,
     html: `<div class="ev-lines">${intro.map(encLineHTML).join('')}</div>`,
     btns: E.options.map((o, k) => {
-      const st = eventOptionState(o, encHolds, saveData.se, ITEMS);
+      const st = eventOptionState(o, encHolds, saveData.se, ITEMS, encDna());
       return {
-        l: `${escapeHtml(o.text)}${o.cost ? ` <small>${moneyHTML(o.cost, 12)}</small>` : ''}${st.ok ? '' : ` <small class="ev-why">${escapeHtml(st.why)}</small>`}`,
+        l: `${escapeHtml(o.text)}${o.cost ? ` <small>${moneyHTML(o.cost, 12)}</small>` : ''}${o.dna ? ` <small><pb-coin kind="dna" value="${o.dna}" label="DNA"></pb-coin></small>` : ''}${st.ok ? '' : ` <small class="ev-why">${escapeHtml(st.why)}</small>`}`,
         c: k === E.options.length - 1 ? 'quiet' : 'dark',
         dis: !st.ok,
         f: () => encounterPick(ev, i, k),
@@ -140,15 +176,17 @@ function encounterPick(id, i, k) {
     E = EVENTS.events[id],
     o = E && E.options[k];
   if (!run || !o || encPlaying) return;
-  const st = eventOptionState(o, encHolds, saveData.se, ITEMS);
+  const st = eventOptionState(o, encHolds, saveData.se, ITEMS, encDna());
   if (!st.ok) return;
   if (o.cost) encMoney(saveData, -o.cost);
+  if (o.dna) saveData.meta.dna = Math.max(0, encDna() - o.dna);
   eventPlayed(run, id, i != null && i >= 0 ? i : null);
   encOf(run).play = { id, i: i != null && i >= 0 ? i : -1, opt: k, at: [] };
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `event ${id}: option ${k + 1}`);
   encounterPlay(null, {
     se: saveData.se + (o.cost || 0),
+    dna: encDna() + (o.dna || 0),
     items: { ...saveData.items },
     pyramids: { ...saveData.pyramids },
   });
@@ -156,7 +194,8 @@ function encounterPick(id, i, k) {
 
 /* ---------- the option's script ---------- */
 /** play the option run.enc.play names, from the start or from its last checkpoint
- * @param {number[] | null} resume @param {{ se: number, items: Record<string, number>, pyramids: Record<string, number> }} before */
+ * @param {number[] | null} resume
+ * @param {{ se: number, dna?: number, items: Record<string, number>, pyramids: Record<string, number> }} before */
 async function encounterPlay(resume, before) {
   const run = saveData.run,
     P = run && run.enc && run.enc.play;
@@ -201,13 +240,15 @@ async function encounterPlay(resume, before) {
 }
 /** the end: what changed, and back to walking */
 function encounterEnd(title, before) {
-  const ch = encChanges(before, { se: saveData.se, items: saveData.items, pyramids: saveData.pyramids }),
+  const ch = encChanges(before, { se: saveData.se, dna: encDna(), items: saveData.items, pyramids: saveData.pyramids }),
     name = (/** @type {string} */ k) =>
       k === 'money'
         ? 'Moneys'
-        : k.startsWith('coin:')
-          ? (PYRAMIDS[k.slice(5)] || { n: k }).n
-          : (ITEMS[k] || { n: k }).n;
+        : k === 'dna'
+          ? 'DNA'
+          : k.startsWith('coin:')
+            ? (PYRAMIDS[k.slice(5)] || { n: k }).n
+            : (ITEMS[k] || { n: k }).n;
   encSheet({
     title: escapeHtml(title),
     cls: 'event-sheet',
@@ -285,6 +326,18 @@ function encounterStage(id, i) {
     },
     fx: ([n, ...row]) => {
       encBoon(saveData.run, [fxRowOf(row)], +n, id);
+    },
+    invite: () => {
+      /* RS-2: the run's resident, met at this event; a favour of theirs held from a town goes (it's done with) */
+      const run = saveData.run,
+        rid = residentCandidate(saveData, RESIDENTS, 'event'),
+        r = rid ? RESIDENTS[rid] : null;
+      if (!run || !r || !residentInvite(saveData, rid, RESIDENTS)) return;
+      if (run.quests) run.quests.held = run.quests.held.filter(q => !q.res);
+      saveNow();
+      if (typeof debugLog !== 'undefined') debugLog.add('run', `resident invited at an event: ${rid}`);
+      encNote(`The traveller is ${r.name}, ${/^[aeiou]/i.test(r.role) ? 'an' : 'a'} ${r.role.toLowerCase()}.`);
+      encNote(QUESTS.invite.moving.replace(/\{name\}/g, r.name));
     },
     wager: ([n]) => {
       (saveData.story || (saveData.story = {})).wager = encRng(saveData.run).chance(+n / 100) ? 'win' : 'lose';
@@ -373,7 +426,7 @@ function encounterStage(id, i) {
     },
     /* RO-3e: a revived fossil joins you at the place's level (plus n); a full party picks who stays behind (not one
        from home, as recall), or leaves the fossil where it is */
-    gift: async ([sp, up]) => {
+    revive: async ([sp, up]) => {
       const run = saveData.run,
         lvl = Math.max(1, Math.min(100, encPlaceLevel(run, at(), RULES.run) + (up == null ? 0 : +up))),
         nb = makeBilly(sp, lvl, { wild: true });
@@ -449,7 +502,136 @@ function encounterStage(id, i) {
       encSheetClose();
       await new Promise(res => rewardPickOpen(res));
     },
+    /* SP-6: the splice events' (logic/gene-events.js). Their draws come from a stream of the event and the place, so a
+       reload in the middle draws the same Gene again */
+    dna: ([n]) => {
+      saveData.meta.dna = Math.max(0, Math.min(META_MAX, encDna() + +n));
+    },
+    gene: async ([n]) => {
+      const D = geneData(),
+        g = encGeneRng(id, at());
+      let got = 0;
+      for (let k = 0; k < (n == null ? 1 : +n); k++) {
+        const o = geneEventDraw(D, saveData, encRegion(), g.next);
+        if (!o || !geneEventLearn(saveData, o.id)) break;
+        got++;
+        encNote(`A Gene Sample for the Gene Bank’s library: ${geneWords(D, o.slot, o.id)}.`);
+        encGeneLog(`gene ${o.id}`);
+      }
+      if (!got) encNote('There was no Gene here you don’t have.');
+      saveNow();
+      await encStep(title, 'Go on');
+    },
+    splice: async ([how]) => {
+      const D = geneData(),
+        g = encGeneRng(id, at()),
+        limit = geneLimit(),
+        L = team().filter(m => m.kind !== 'robot' && geneEventSlots(D, m).length);
+      if (!L.length) {
+        encNote('None of your Billies can take a Gene.');
+        await encStep(title, 'Go on');
+        return;
+      }
+      /* the back alley is paid for when picked, so it splices someone; the lab charges at the splice, so you can go */
+      const lab = how === 'lib',
+        uid = await encChoose(
+          lab ? 'Who gets a Gene?' : 'Who goes in the chair?',
+          L.map(m => ({ l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`, v: m.uid })),
+          lab
+        );
+      const m = uid && team().find(x => x.uid === uid);
+      if (!m) return;
+      const name = billyName(m);
+      let o = /** @type {{ slot: string, id: string, price?: number } | null} */ (null);
+      if (lab) {
+        const offers = geneEventLab(D, saveData, m);
+        if (!offers.length) {
+          encNote(`No Gene in your library fits ${name} at the lab’s bench.`);
+          await encStep(title, 'Go on');
+          return;
+        }
+        o = await encChoose(
+          `Which Gene for ${escapeHtml(name)}?`,
+          offers.map(x => {
+            const st = bankTry(D, m, x.slot, x.id, limit).st;
+            return {
+              l: `${escapeHtml(geneWords(D, x.slot, x.id))} <small>${x.price} DNA · Stability ${st.cost} of ${limit}${st.unstable ? ' · Unstable' : ''}</small>`,
+              v: x,
+              dis: x.why === 'dna',
+            };
+          }),
+          true
+        );
+        if (!o) return;
+      } else o = geneEventWild(D, m, encRegion(), limit, g.next);
+      if (!o) {
+        encNote(`Nothing in the splicer’s cooler fits ${name}.`);
+        await encStep(title, 'Go on');
+        return;
+      }
+      geneEventSplice(D, saveData, m, o.slot, o.id, g.next, o.price || 0);
+      encNote(
+        `${name} has ${geneWords(D, o.slot, o.id)} now.${billyUnstable(m) ? ` Its cells don’t agree: it is Unstable, and goes by ${billyName(m)}.` : ''}`
+      );
+      encGeneLog(
+        `splice ${m.sp} ${o.slot}=${o.id}${o.price ? `, ${o.price} DNA` : ''}${m.unstable ? ', unstable' : ''}`
+      );
+      await encStep(title, 'Go on');
+    },
+    unsplice: async ([n]) => {
+      const D = geneData(),
+        L = team().flatMap(m =>
+          Object.entries(billyGraft(m) || {}).map(([slot, gene]) => ({
+            l: `${escapeHtml(billyName(m))}: ${escapeHtml(geneWords(D, slot, gene))}`,
+            v: { uid: m.uid, slot },
+          }))
+        );
+      if (!L.length) {
+        encNote('None of your Billies wears a Gene to hand in.');
+        await encStep(title, 'Go on');
+        return;
+      }
+      const o = await encChoose('Which Gene goes back?', L, true),
+        m = o && team().find(x => x.uid === o.uid);
+      if (!o || !m) return;
+      const name = billyName(m),
+        words = geneWords(D, o.slot, (billyGraft(m) || {})[o.slot]);
+      geneEventRecall(D, saveData, m, o.slot, encGeneRng(id, at()).next);
+      if (n != null && +n > 0) saveData.meta.dna = Math.min(META_MAX, encDna() + +n);
+      encNote(`${name} gave back ${words}. The Gene Bank keeps the sequence on file.`);
+      encGeneLog(`unsplice ${m.sp} ${o.slot}`);
+      await encStep(title, 'Go on');
+    },
   };
+}
+/** SP-6: the stream a splice event draws from at a place (the same after a reload) @param {string} id
+ * @param {number} i */
+const encGeneRng = (id, i) => rngFrom(saveData.run.seed, `event|gene|${id}|${i}`);
+/** SP-6: the region's dex, for the Genes an event draws */
+const encRegion = () => (saveData.run && saveData.run.region && saveData.run.region.dex) || [];
+/** SP-6: a splice event's line in the debug log (data ids only) @param {string} text */
+const encGeneLog = text => {
+  if (typeof debugLog !== 'undefined') debugLog.add('event', text);
+};
+/** SP-6: a pick on the event's sheet: the lines so far, a question, one button an option (greyed out with dis), and
+ * "Not now" when one may go; resolves to the option's value (null for Not now)
+ * @template T @param {string} ask @param {{ l: string, v: T, dis?: boolean }[]} options @param {boolean} leave
+ * @returns {Promise<T | null>} */
+function encChoose(ask, options, leave) {
+  const title =
+    saveData.run && saveData.run.enc && saveData.run.enc.play ? EVENTS.events[saveData.run.enc.play.id].title : '';
+  return new Promise(res =>
+    encSheet({
+      title: escapeHtml(title),
+      cls: 'event-sheet',
+      lock: true,
+      html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">${ask}</p>`,
+      btns: [
+        ...options.map(o => ({ l: o.l, c: 'dark', dis: !!o.dis, f: () => res(o.v) })),
+        ...(leave ? [{ l: 'Not now', c: 'quiet', f: () => res(null) }] : []),
+      ],
+    })
+  );
 }
 
 /** a reload in the middle of an event: it opens again where it was (after the battle, if one was on); the debug
@@ -461,6 +643,7 @@ export function encounterResume() {
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `event ${P.id} resumed`);
   encounterPlay(P.at && P.at.length ? P.at : null, {
     se: saveData.se,
+    dna: encDna(),
     items: { ...saveData.items },
     pyramids: { ...saveData.pyramids },
   });

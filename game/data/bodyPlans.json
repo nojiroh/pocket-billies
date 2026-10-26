@@ -3161,6 +3161,204 @@
    ]
   },
   {
+   "name": "threadling",
+   "rig": "ortega0",
+   "line": "ortega",
+   "stage": 0,
+   "plan": "insect",
+   "colours": {"main":"#ebe5d4","accent":"#d9b648"},
+   "scale": 0.9,
+   "size": {"antL":0.6,"head":1.1},
+   "drop": ["wingL","wingR"],
+   "add": [
+    {
+     "n": "spool",
+     "par": "abdomen",
+     "c": [6,-34],
+     "size": [10,8],
+     "pv": [0.5,0.9],
+     "shape": "box",
+     "tone": "dark",
+     "z": 7,
+     "zb": 3,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "zaracoon",
+   "rig": "ortega1",
+   "line": "ortega",
+   "stage": 1,
+   "plan": "shell",
+   "colours": {"main":"#e9e3d1","accent":"#2d2b33"},
+   "scale": 1,
+   "size": {"shell":1.35,"head":0.85,"armL":0.6},
+   "drop": ["l1","l2"],
+   "add": [
+    {
+     "n": "tag",
+     "par": "shell",
+     "c": [14,-30],
+     "size": [6,9],
+     "pv": [0.5,0.05],
+     "shape": "box",
+     "tone": "light",
+     "z": 8,
+     "zb": 4,
+     "slot": null,
+     "rr": 0.2
+    }
+   ]
+  },
+  {
+   "name": "ortegamoth",
+   "rig": "ortega2",
+   "line": "ortega",
+   "stage": 2,
+   "plan": "flyer",
+   "colours": {"main":"#ece4cf","accent":"#2f2a35"},
+   "scale": 1.3,
+   "size": {"wingL":1.35,"tail":0.7},
+   "add": [
+    {
+     "n": "antL",
+     "par": "head",
+     "c": [-5,-55],
+     "size": [6,12],
+     "pv": [0.5,0.95],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 10,
+     "zb": 10,
+     "slot": null,
+     "rr": -0.35
+    },
+    {
+     "n": "antR",
+     "par": "head",
+     "c": [5,-55],
+     "size": [6,12],
+     "pv": [0.5,0.95],
+     "shape": "leaf",
+     "tone": "dark",
+     "z": 10,
+     "zb": 10,
+     "slot": null,
+     "rr": 0.35
+    },
+    {
+     "n": "ruff",
+     "par": "torso",
+     "c": [0,-37],
+     "size": [16,6],
+     "pv": [0.5,0.5],
+     "shape": "round",
+     "tone": "light",
+     "z": 8,
+     "zb": 8,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "tickerbud",
+   "rig": "bloomberg0",
+   "line": "bloomberg",
+   "stage": 0,
+   "plan": "plant",
+   "colours": {"main":"#8dbf6a","accent":"#3f7b3b"},
+   "scale": 0.95,
+   "size": {"head":0.8,"crown":0.7},
+   "add": [
+    {
+     "n": "stripe",
+     "par": "head",
+     "c": [0,-41],
+     "size": [4,14],
+     "pv": [0.5,0.5],
+     "shape": "box",
+     "tone": "light",
+     "z": 10,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "tape",
+     "par": "leafL1",
+     "c": [-19,-31],
+     "size": [12,4],
+     "pv": [0.95,0.5],
+     "shape": "box",
+     "tone": "light",
+     "z": 7,
+     "zb": 3,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "bloomburst",
+   "rig": "bloomberg1",
+   "line": "bloomberg",
+   "stage": 1,
+   "plan": "plant",
+   "colours": {"main":"#ef8a26","accent":"#3d7639"},
+   "scale": 1.15,
+   "size": {"leafL0":1.2},
+   "add": [
+    {
+     "n": "petals",
+     "par": "head",
+     "c": [0,-43],
+     "size": [36,30],
+     "pv": [0.5,0.5],
+     "shape": "fan",
+     "tone": "dark",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    }
+   ]
+  },
+  {
+   "name": "terminalia",
+   "rig": "bloomberg2",
+   "line": "bloomberg",
+   "stage": 2,
+   "plan": "plant",
+   "colours": {"main":"#2c2e35","accent":"#f08a24"},
+   "scale": 1.42,
+   "size": {"head":1.15,"leafL0":1.3,"leafL1":1.2},
+   "add": [
+    {
+     "n": "petals",
+     "par": "head",
+     "c": [0,-44],
+     "size": [40,34],
+     "pv": [0.5,0.5],
+     "shape": "fan",
+     "tone": "accent",
+     "z": 8,
+     "zb": 10,
+     "slot": null
+    },
+    {
+     "n": "screen",
+     "par": "head",
+     "c": [0,-43],
+     "size": [16,10],
+     "pv": [0.5,0.5],
+     "shape": "box",
+     "tone": "light",
+     "z": 10,
+     "zb": 8,
+     "slot": null
+    },
+    {"n":"keys","par":"pot","c":[0,-9],"size":[16,4],"pv":[0.5,0.5],"shape":"box","tone":"light","z":2,"zb":0,"slot":null}
+   ]
+  },
+  {
    "name": "swooshpole",
    "rig": "knight0",
    "line": "knight",

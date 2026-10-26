@@ -24,8 +24,19 @@ import {
   UNLOCK_DATA,
   hubRoadCost,
 } from '../game-data.js';
-import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
-import { cleanName, movesAt, refreshRobot, teamSize } from './rules.js';
+import { graftStability } from './genes.js';
+import { isRobot, robotGemDef, robotPartDef, robotRules, speciesById, speciesOf } from './fighters.js';
+import {
+  billyAug,
+  billyGraft,
+  cleanName,
+  geneData,
+  geneLimit,
+  movesAt,
+  refreshRobot,
+  teamSize,
+  unstableTidy,
+} from './rules.js';
 import { metaFill, newMeta, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
 import { ranchTidy } from './ranch.js';
@@ -36,7 +47,15 @@ expose({
   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
   SAVE_VERSION: [() => SAVE_VERSION],
   // @ts-expect-error -- replaced on purpose
+  augShapeOk: [() => augShapeOk, v => (augShapeOk = v)],
+  // @ts-expect-error -- replaced on purpose
+  augTidy: [() => augTidy, v => (augTidy = v)],
+  // @ts-expect-error -- replaced on purpose
   billiesOk: [() => billiesOk, v => (billiesOk = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftShapeOk: [() => graftShapeOk, v => (graftShapeOk = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftTidy: [() => graftTidy, v => (graftTidy = v)],
   // @ts-expect-error -- replaced on purpose
   loadSave: [() => loadSave, v => (loadSave = v)],
   // @ts-expect-error -- replaced on purpose
@@ -128,7 +147,7 @@ export function saveFill(o) {
     o.preferences || {}
   ));
   if (![30, 60, 90, 120].includes(+p.fps)) p.fps = 60;
-  if (p.aim !== 'smooth') p.aim = 'sharp';
+  if (p.aim !== 'smooth' && p.aim !== 'off') p.aim = 'sharp';
   p.effects = 'full';
   p.fps = +p.fps;
   if (!Array.isArray(s.eggs)) s.eggs = [];
@@ -139,6 +158,8 @@ export function saveFill(o) {
   const start = s.run && s.run.start;
   if (start) start.team = start.team.filter(m => speciesOf(m));
   s.ranch.nursery = s.ranch.nursery.filter(n => !isRobot(n.egg) && speciesOf(n.egg));
+  /* SP-4: your Billies are held to your Gene Bank's limit (meta is filled above), a wild list to the default */
+  const ownLimit = geneLimit(s);
   /* every Billie the save holds: the team, the box, the nursery's eggs (RL-10) and, during a run, the hub's team as
      the run started */
   const members = () => [...s.team, ...s.box, ...s.ranch.nursery.map(n => n.egg), ...(start ? start.team : [])];
@@ -154,7 +175,23 @@ export function saveFill(o) {
     if (m.mut && m.mut.name != null) m.mut.name = cleanName(m.mut.name, 24) || speciesOf(m).name;
     /* RL-12c: a held item the data no longer has as one is dropped */
     if (m.held != null && !(ITEMS[m.held] && ITEMS[m.held].hold)) delete m.held;
+    /* SP-5: Augments keep the slots that still fit and a known part, upgrades within the rules */
+    augTidy(m);
+    /* SP-2: a splice keeps the slots that still fit; one with none left, or past what Stability ever allows, goes */
+    graftTidy(m, ownLimit);
   });
+  /* SP-5: a part is worn by one Billie at most, and a worn part isn't a spare too */
+  const worn = new Set();
+  members().forEach(m => {
+    if (!m.aug) return;
+    for (const slot of Object.keys(m.aug)) {
+      const p = m.aug[slot];
+      if (worn.has(p.uid)) delete m.aug[slot];
+      else worn.add(p.uid);
+    }
+    if (!Object.keys(m.aug).length) delete m.aug;
+  });
+  s.parts = s.parts.filter(p => !worn.has(p.uid));
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
   members().forEach(m => {
@@ -164,7 +201,14 @@ export function saveFill(o) {
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
-  for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
+  /* RL-14: a wild one may be a bot (a robot's sp, built from parts the data still has) */
+  for (const w of Object.values(s.wild)) {
+    w.list = (w.list || []).filter(q => speciesById(q.sp));
+    w.list.forEach(q => {
+      augTidy(q);
+      graftTidy(q);
+    });
+  }
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   /* RL-9: a trainee whose Billie isn't in storage any more stops training */
   ranchTidy(s);
@@ -258,7 +302,9 @@ export function validSave(o) {
         !num(w.at, 0, 1e13) ||
         !Array.isArray(w.list) ||
         w.list.length > 12 ||
-        w.list.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
+        w.list.some(
+          q => !q || !speciesById(q.sp) || !num(q.lvl, 1, 100) || !graftShapeOk(q.graft) || !augShapeOk(q.aug)
+        )
     )
   )
     return false;
@@ -273,6 +319,72 @@ export function validSave(o) {
     return false;
   if (!num(o.serial, 0, 1e12)) return false;
   return true;
+}
+/** SP-2: a splice as a save holds it: none, or a few slot -> Gene id ("part@donor") pairs of short strings
+ * @param {unknown} g */
+export function graftShapeOk(g) {
+  if (g == null) return true;
+  if (typeof g !== 'object' || Array.isArray(g) || Object.hasOwn(g, '__proto__')) return false;
+  const pairs = Object.entries(g);
+  return pairs.length <= 8 && pairs.every(([k, v]) => k.length <= 12 && typeof v === 'string' && v.length <= 64);
+}
+/** SP-2: a loaded Billie's or encounter's splice: the slots that still fit it; none left, or a splice past what
+ * Stability allows, and it goes. SP-4: at the owner's limit (the default for a wild one) @param {{ sp: string,
+ *   graft?: Record<string, string>, aug?: any, unstable?: { up: string, down: string, name: string } }} m
+ * @param {number} [limit] */
+export function graftTidy(m, limit) {
+  /* SP-5: an Augment alone can be Unstable too */
+  if (m.graft == null && m.aug == null) {
+    delete m.unstable;
+    return;
+  }
+  const g = billyGraft(m);
+  if (!g || graftStability(geneData(), m.sp, g, limit, billyAug(m)).refused) delete m.graft;
+  else m.graft = g;
+  /* an Unstable roll keeps two different stats and a clean name, and goes with a splice that is stable again */
+  const u = m.unstable;
+  if (u && (!STAT_IDS.includes(u.up) || !STAT_IDS.includes(u.down) || u.up === u.down)) delete m.unstable;
+  else if (u) u.name = cleanName(u.name, 24) || speciesOf(m).name;
+  unstableTidy(m, random, limit);
+}
+/** SP-5: Augments as a save holds them: none, or front / back -> a part instance { uid, id, up } of short strings
+ * @param {unknown} a */
+export function augShapeOk(a) {
+  if (a == null) return true;
+  if (typeof a !== 'object' || Array.isArray(a) || Object.hasOwn(a, '__proto__')) return false;
+  const pairs = Object.entries(a);
+  return (
+    pairs.length <= 2 &&
+    pairs.every(
+      ([k, p]) =>
+        (k === 'front' || k === 'back') &&
+        p &&
+        typeof p === 'object' &&
+        typeof p.uid === 'string' &&
+        p.uid.length <= 40 &&
+        typeof p.id === 'string' &&
+        p.id.length <= 40 &&
+        Number.isFinite(p.up ?? 0)
+    )
+  );
+}
+/** SP-5: a loaded Billie's or encounter's Augments: the slots that still fit it, a robots.json part of the slot's
+ * kind, upgrades within rules.json robots.maxUpgrade; a robot has none, and none left takes the field off
+ * @param {{ sp: string, kind?: string, aug?: any }} m */
+export function augTidy(m) {
+  if (m.aug == null) return;
+  const a = billyAug(m);
+  if (!a) {
+    delete m.aug;
+    return;
+  }
+  const max = robotRules().maxUpgrade;
+  m.aug = Object.fromEntries(
+    Object.entries(a).map(([s, p]) => [
+      s,
+      { uid: p.uid, id: p.id, up: Math.max(0, Math.min(max, Math.floor(+p.up || 0))) },
+    ])
+  );
 }
 /** a list of Billies a save holds: each one well formed, no uid twice */
 export function billiesOk(list) {
@@ -306,6 +418,35 @@ export function billiesOk(list) {
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   /* RL-12c: a held item is an item id (saveFill drops one the data doesn't have) */
   for (const m of list) if (m.held != null && (typeof m.held !== 'string' || m.held.length > 40)) return false;
+  /* SP-2: a splice is a few slot -> Gene id pairs (saveFill drops what the data no longer fits) */
+  for (const m of list) if (!graftShapeOk(m.graft)) return false;
+  /* SP-5: Augments are one or two part instances (saveFill drops what the data no longer fits) */
+  for (const m of list) if (!augShapeOk(m.aug)) return false;
+  for (const m of list)
+    if (m.partDmg != null && (typeof m.partDmg !== 'object' || Object.values(m.partDmg).some(n => !num(n, 0, 1e6))))
+      return false;
+  for (const m of list) {
+    const u = m.unstable;
+    if (u == null) continue;
+    if (typeof u !== 'object' || Array.isArray(u)) return false;
+    if ([u.up, u.down, u.name].some(v => typeof v !== 'string' || v.length > 24)) return false;
+  }
+  /* ON-1: its original trainer (uid and name) and, once traded, when and from whom */
+  const ref = (v, a, b) => v == null || (typeof v === 'object' && !Array.isArray(v) && a(v) && b(v));
+  for (const m of list)
+    if (
+      !ref(
+        m.ot,
+        o => typeof o.u === 'string' && o.u.length <= 128,
+        o => typeof o.n === 'string' && o.n.length <= 40
+      ) ||
+      !ref(
+        m.traded,
+        o => num(o.at, 0, 1e13),
+        o => typeof o.from === 'string' && o.from.length <= 128
+      )
+    )
+      return false;
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {
     const u = m.mut;

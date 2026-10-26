@@ -9,7 +9,7 @@ import { clamp } from '../util.js';
 import { pointInProp, turnedBounds } from '../logic/prop-turn.js';
 import { GROUND_BORDER_M, imageReady, stepGrid, stepRaiseAt, walkData, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { gpuState, setTextureParams, smooth01 } from '../engine/webgl.js';
+import { gpuSized, gpuState, gpuTexture, setTextureParams, smooth01 } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -250,7 +250,8 @@ export function groundNormalTexture(G, old, sc = walkView.sc) {
     rows = sc.tiles || [];
   let d;
   if (G._nrm) {
-    const t = old && old !== gpuState.flatN ? old : gl.createTexture();
+    const t = old && old !== gpuState.flatN ? old : gpuTexture('ground');
+    gpuSized(t, Math.round(w * h * 4 * 1.34));
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, G._nrm);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
@@ -294,7 +295,8 @@ export function groundNormalTexture(G, old, sc = walkView.sc) {
       out[i * 4 + 3] = m[1] * 255;
     }
   }
-  const t = old && old !== gpuState.flatN ? old : gl.createTexture();
+  const t = old && old !== gpuState.flatN ? old : gpuTexture('ground');
+  gpuSized(t, Math.round(w * h * 4 * 1.34));
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
@@ -307,7 +309,8 @@ export function groundNormalTexture(G, old, sc = walkView.sc) {
 export function repeatingTexture(im, old) {
   const gl = gpuState.gl;
   if (!imageReady(im)) return gpuState.white;
-  const t = old && old !== gpuState.white ? old : gl.createTexture();
+  const t = old && old !== gpuState.white ? old : gpuTexture('ground');
+  gpuSized(t, (im.naturalWidth || im.width) * (im.naturalHeight || im.height) * 4);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
   setTextureParams({ repeat: true });

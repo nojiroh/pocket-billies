@@ -28,7 +28,7 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { ITEMS, MODIFIERS, PERKS, PYRAMIDS, RULES, SPECIES, TRAINERS, TYPES, UNLOCK_DATA } from './game-data.js';
-import { graftOf } from './logic/graft-art.js';
+import { graftLook } from './logic/graft-art.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { pointBudget, pointPick, pointSpend, pointStartable } from './logic/starter-points.js';
@@ -106,7 +106,7 @@ function runReleaseSheet() {
   if (!m || !saveData.run) return null;
   const all = saveData.team.concat([m]),
     row = (o, i) =>
-      `<button class="pickrow" data-a="mact" data-i="${i}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat, graft: graftOf(o) })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${o === m ? ', just caught' : ''}${runReleasePays(saveData.run, o) ? '' : ', from Copperleaf: comes home at the end'}</small></span></button>`;
+      `<button class="pickrow" data-a="mact" data-i="${i}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat, graft: graftLook(o) })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${o === m ? ', just caught' : ''}${runReleasePays(saveData.run, o) ? '' : ', from Copperleaf: comes home at the end'}</small></span></button>`;
   return {
     title: 'Your party is full',
     lock: true,
@@ -362,7 +362,7 @@ export function runStartSheet() {
         can = pointStartable(m, picked, SPECIES, RULES.run.points, P.budget, { mods }),
         where = saveData.team.includes(m) ? 'team' : trains(m.uid) ? 'training' : 'storage',
         sub = `Lv ${m.lvl} · ${where} · ${plural(can.cost, 'point')}${!on && can.why ? ` · ${can.why}` : ''}`;
-      return `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}${on || can.ok ? '' : ' disabled'}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span></pb-pick-card>`;
+      return `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}${on || can.ok ? '' : ' disabled'}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`;
     },
     /* RL-13: the Expedition (those open) and the challenges (those the save may take) as chips */
     expChips = MODIFIERS.expeditions
@@ -661,7 +661,9 @@ const RUN_HINTS = {
   event: () => 'A waystation: someone at the stand wants a word. Tap it to see what they offer.',
   stall: () => 'A stall: a shop with new stock every day, but no clinic.',
   miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
+  scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
+  rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',
   relic: () =>
     `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
 };
@@ -676,6 +678,6 @@ export function runHint(id) {
 export function runArrivedHint() {
   const run = saveData.run,
     node = run && run.map && run.map.nodes[runMapNode(saveData.trip.node)];
-  if (node && ['town', 'event', 'stall', 'miniboss', 'boss'].includes(node.type))
+  if (node && ['town', 'event', 'stall', 'miniboss', 'boss', 'rival', 'scrapyard'].includes(node.type))
     runHint(/** @type {any} */ (node.type));
 }

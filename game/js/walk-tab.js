@@ -15,6 +15,7 @@ import { artURL, moneyHTML, uiIconHTML } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
+import { residentCardHTML } from './lab-board.js';
 import { trainerTalk } from './story.js';
 import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
@@ -159,9 +160,11 @@ function roomHero() {
         house: 'Tap whoever lives here to chat.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
       }[I.kind] || '',
+    /* RS-3: a resident's home: who they are, Talk, and their upgrades */
+    res = I.res && typeof residentCardHTML === 'function' ? residentCardHTML(I.res) : '',
     /* towns track TW-0: with the card closed its "Go outside" goes too, so the way out stays on screen */
     shut = !!(saveData.preferences && saveData.preferences.cardClosed);
-  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
+  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), res || `<p class="wh-gate">${escapeHtml(what)}</p>`, `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>${res ? `<button class="pb small" data-a="restalk" data-r="${escapeHtml(I.res)}">Talk</button>` : ''}`)}
  <div class="wh-foot"><div class="wh-row">${shut ? `<button class="pb small glass" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>` : ''}<button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
@@ -210,6 +213,8 @@ function walkSheetHTML() {
 const HUB_MARKS = [
   ['ranch', 'Ranch', 'Train and breed your Billies'],
   ['lab', 'Hazel’s lab', 'Talk to the professor'],
+  ['genebank', 'Gene Bank', 'Splice Genes onto your Billies'],
+  ['workshop', 'Workshop', 'Fit bot parts on your Billies'],
 ];
 /** in the hub: start a run (the mast's sheet, opened here), and the ranch and the lab, marked in the world to walk to */
 function hubHTML() {

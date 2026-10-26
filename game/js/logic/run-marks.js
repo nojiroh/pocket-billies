@@ -2,7 +2,7 @@
 'use strict';
 /* ================= RUN MARKS (UI track UI-4) =================
    The run map's node markers as data: one outline per node type on a 100 x 100 box (ui-track.md "Meaning, lightly":
-   diamond boss, hexagon town, chevron route, slanted event), the colour role each type and state takes, and a canvas
+   diamond boss, hexagon town, chevron route, slanted event; RL-14 a cog for a scrapyard), the colour role each type and state takes, and a canvas
    painter for the bowl, which draws its pins on a 2D canvas (world-bowl.js worldBowlPin), not in the page. The kit's
    <pb-node> (js/ui-run-kit.js) draws the same outlines as SVG, so a marker reads the same on the bowl and in a list.
    Logic only: no DOM, runs in Node (tools/test/run-marks.test.mjs). Nothing calls the painter yet (RL-7 does). */
@@ -88,6 +88,37 @@ export const RUN_MARK_SHAPES = {
     [98, 90],
     [22, 90],
   ],
+  // RL-S2: the rival: a shield, point down
+  rival: [
+    [6, 6],
+    [94, 6],
+    [94, 56],
+    [50, 98],
+    [6, 56],
+  ],
+  // RL-14: a scrapyard: a cog, its four teeth square
+  scrapyard: [
+    [38, 4],
+    [62, 4],
+    [62, 18],
+    [82, 18],
+    [82, 38],
+    [96, 38],
+    [96, 62],
+    [82, 62],
+    [82, 82],
+    [62, 82],
+    [62, 96],
+    [38, 96],
+    [38, 82],
+    [18, 82],
+    [18, 62],
+    [4, 62],
+    [4, 38],
+    [18, 38],
+    [18, 18],
+    [38, 18],
+  ],
   // not yet seen ("?" pins, two rows ahead): a small diamond
   unknown: [
     [50, 14],
@@ -109,6 +140,8 @@ export const RUN_MARK_TONES = {
   boss: 'danger',
   event: 'gold',
   shop: 'gold',
+  rival: 'danger',
+  scrapyard: 'danger',
   unknown: 'muted',
 };
 

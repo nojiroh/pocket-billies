@@ -13,6 +13,7 @@
   "partKits",
   "kitBuilds",
   "bodyPlans",
+  "genes",
   "worldmap",
   "biomes",
   "nodeTypes",
@@ -30,7 +31,9 @@
   "fieldMoves",
   "setPieces",
   "modifiers",
+  "factions",
   "quests",
+  "residents",
   "pools",
   "eggs",
   "pyramids",
@@ -52,6 +55,7 @@
   "lore",
   "story",
   "banter",
+  "relations",
   "cutscenes"
  ],
  "split": {
@@ -73,6 +77,8 @@
     "woods",
     "arnault",
     "huang",
+    "ortega",
+    "bloomberg",
     "knight",
     "carnegie",
     "vanderbilt",
@@ -116,10 +122,18 @@
     "cass",
     "vinylla",
     "juniper",
-    "nacre"
+    "nacre",
+    "dottie",
+    "mo",
+    "bertha",
+    "gus",
+    "hayden",
+    "rosa",
+    "seamus",
+    "helix"
    ]
   },
-  "trainers": {"ids":["crude","markdown","alta","marina","blake0","poppy","vault","morel","carat","tinker"]},
+  "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
   "maps": {
    "ids": [
     "copperleaf",
@@ -163,7 +177,8 @@
     "int_inn",
     "int_library",
     "int_workshop",
-    "int_gene_bank"
+    "int_gene_bank",
+    "test_props_routes"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}

@@ -11,6 +11,7 @@
 /** @typedef {(schema: string, value: unknown, where: string) => boolean} DataValid */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { ZOOM_STOPS, stopsProblems } from '../hooks.js';
 import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
@@ -30,10 +31,12 @@ import {
 import { fxRowOf } from './run-enc.js';
 import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
+  GENE_KINDS: [() => GENE_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
@@ -49,13 +52,19 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
+  dataCameraStops: [() => dataCameraStops, v => (dataCameraStops = v)],
+  // @ts-expect-error -- replaced on purpose
   dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
+  dataFactions: [() => dataFactions, v => (dataFactions = v)],
+  // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataGenes: [() => dataGenes, v => (dataGenes = v)],
   // @ts-expect-error -- replaced on purpose
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -70,6 +79,10 @@ expose({
   dataRanchRules: [() => dataRanchRules, v => (dataRanchRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataRegions: [() => dataRegions, v => (dataRegions = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataRelations: [() => dataRelations, v => (dataRelations = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataResidents: [() => dataResidents, v => (dataResidents = v)],
   // @ts-expect-error -- replaced on purpose
   dataRewards: [() => dataRewards, v => (dataRewards = v)],
   // @ts-expect-error -- replaced on purpose
@@ -102,6 +115,8 @@ expose({
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnlocks: [() => dataUnlocks, v => (dataUnlocks = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   runMapProblems: [() => runMapProblems, v => (runMapProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -145,7 +160,7 @@ export function dataRunPayout(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const pay = D.rules && D.rules.run && D.rules.run.payout,
-      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin'];
+      RATES = ['money', 'itemShare', 'released', 'node', 'win', 'winCrests', 'scrapNode', 'scrapWin', 'beansWin'];
     if (!pay || typeof pay !== 'object') problem('rules.json', 'run.payout missing');
     else {
       for (const k of RATES)
@@ -154,7 +169,7 @@ export function dataRunPayout(D) {
       for (const k of Object.keys(pay)) if (!RATES.includes(k)) problem('rules.json', `run.payout.${k}: no such rate`);
       if (pay.itemShare > 1)
         problem('rules.json', 'run.payout.itemShare is more than 1 (items would pay over their price)');
-      for (const k of ['winCrests', 'scrapNode', 'scrapWin'])
+      for (const k of ['winCrests', 'scrapNode', 'scrapWin', 'beansWin'])
         if (!Number.isInteger(pay[k])) problem('rules.json', `run.payout.${k} is not a whole number`);
     }
   }
@@ -331,6 +346,8 @@ export const RUN_RULE_KEYS = Object.freeze([
   'foes',
   'perks',
   'side',
+  'beans',
+  'rival',
   'trainers',
   'rewards',
   'town',
@@ -564,7 +581,7 @@ export function dataRunLoop(D) {
     const PT = R.points;
     if (!rec(PT)) problem('rules.json', 'run.points: the starter points (budget, rarity, stage, most, ...) are needed');
     else {
-      only(PT, ['budget', 'rarity', 'stage', 'most', 'levelsFrom', 'perLevels', 'team'], 'run.points');
+      only(PT, ['budget', 'rarity', 'stage', 'most', 'levelsFrom', 'perLevels', 'perStability', 'team'], 'run.points');
       if (!rec(PT.rarity) || !Object.keys(D.rarities || {}).every(r => whole(PT.rarity[r], 0, 20)))
         problem('rules.json', 'run.points.rarity: a whole cost from 0 to 20 for each rarity (rarities.json)');
       for (const r of Object.keys(PT.rarity || {}))
@@ -573,6 +590,8 @@ export function dataRunLoop(D) {
         problem('rules.json', 'run.points.stage (0-20) and most (1-40) are not whole costs');
       if (!whole(PT.levelsFrom, 1, 100) || !whole(PT.perLevels, 1, 100))
         problem('rules.json', 'run.points.levelsFrom and perLevels are not whole levels from 1 to 100');
+      if (PT.perStability != null && !whole(PT.perStability, 1, 20))
+        problem('rules.json', 'run.points.perStability (SP-4) is not a whole Stability from 1 to 20');
       if (!whole(PT.team, 1, 6)) problem('rules.json', 'run.points.team is not a whole number of Billies from 1 to 6');
     }
     if (!whole(R.healCost, 0, 100000))
@@ -599,6 +618,40 @@ export function dataRunLoop(D) {
           problem('rules.json', `run.foes.${k}: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed`);
         else only(f, ['up', 'reward'], `run.foes.${k}`);
       }
+    }
+    /* RL-S2: Beans found on a run: the first badge of a type, a side area's leader beaten, Blake beaten the first
+       time in a run (whole, 0-9) */
+    const BE = R.beans;
+    if (!rec(BE)) problem('rules.json', 'run.beans missing');
+    else {
+      only(BE, ['badge', 'side', 'rival'], 'run.beans');
+      for (const k of ['badge', 'side', 'rival'])
+        if (!whole(BE[k], 0, 9)) problem('rules.json', `run.beans.${k}: a whole number of Beans, 0-9`);
+    }
+    /* RL-S2: Blake's meetings and team (logic/run-map.js runMapRival, logic/rival.js) */
+    const RV = R.rival;
+    if (!rec(RV)) problem('rules.json', 'run.rival missing');
+    else {
+      only(RV, ['meet', 'on', 'bands', 'size', 'grow', 'max', 'up', 'reward'], 'run.rival');
+      if (!Array.isArray(RV.meet) || !RV.meet.length || !RV.meet.every(n => whole(n, 0, 4)))
+        problem('rules.json', 'run.rival.meet: meetings a run by Expedition, whole, 0-4');
+      if (!Array.isArray(RV.on) || !RV.on.length)
+        problem('rules.json', 'run.rival.on: the node types he can stand in for (a list)');
+      else
+        for (const t of RV.on)
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival'].includes(t))
+            problem('rules.json', `run.rival.on: "${t}" is not a filler node type (nodeTypes.json)`);
+      if (
+        !Array.isArray(RV.bands) ||
+        !RV.bands.every(b => Array.isArray(b) && b.length === 2 && b[0] >= 0 && b[1] > b[0] && b[1] <= 1)
+      )
+        problem('rules.json', 'run.rival.bands: [from, to) shares of the rows, 0-1');
+      else if (Array.isArray(RV.meet) && Math.max(...RV.meet) > RV.bands.length)
+        problem('rules.json', `run.rival.meet: ${Math.max(...RV.meet)} meetings but ${RV.bands.length} bands`);
+      if (!whole(RV.size, 1, 6) || !whole(RV.max, RV.size, 6) || !whole(RV.grow, 1, 20))
+        problem('rules.json', 'run.rival: size (1-6), max (size-6) and grow (1-20) are whole numbers');
+      if (!whole(RV.up, -20, 50) || !whole(RV.reward, 0, 1e6))
+        problem('rules.json', 'run.rival: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
     }
     /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
     const TR = R.trainers,
@@ -705,6 +758,28 @@ export function dataUiTheme(D, valid = () => true) {
         'uiTheme.json',
         `${f.where || 'defaults'} ${f.side}: ${f.fg} on ${f.bg} reads at ${f.ratio.toFixed(2)}:1, under ${f.min}`
       );
+  return out;
+}
+// camera track CAM-4b: the zoom stops are the whole game's (engine.json defaults.camera.stops): 3-5 in zoom order,
+// never a scene's own (look.camera.stops); a scene's starting stop (cam.stop) names one of them
+/** CAM-4b: the zoom stops @param {any} D @returns {DataProblem[]} */
+export function dataCameraStops(D) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    own = (((D.engine || {}).defaults || {}).camera || {}).stops,
+    S = own === undefined ? ZOOM_STOPS : own;
+  if (own !== undefined) for (const p of stopsProblems(own)) out.push(['engine.json', `defaults.camera.stops: ${p}`]);
+  const ids = new Set(Array.isArray(S) ? S.map(s => s && s.id) : []);
+  for (const [id, sc] of Object.entries(D.maps || {})) {
+    if (!sc || typeof sc !== 'object') continue;
+    if (sc.look && sc.look.camera && 'stops' in sc.look.camera)
+      out.push([
+        `maps/${id}`,
+        'look.camera.stops: the zoom stops are the whole game’s (Camera section), not a scene’s',
+      ]);
+    const st = sc.cam && sc.cam.stop;
+    if (st != null && !ids.has(st)) out.push([`maps/${id}`, `cam.stop "${st}" is not a zoom stop`]);
+  }
   return out;
 }
 // map generator MG-1: the biome recipes: the schema, then the ground letters, prop kinds and life they name
@@ -948,6 +1023,40 @@ export function dataSetPieces(D, valid = () => true) {
   if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
   return out;
 }
+// RL-14: factions.json: the schema; each bot is a gem and the right kind of part in each slot (robots.json); its
+// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order
+/** RL-14: factions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFactions(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['factions.json', what]),
+    F = D.factions;
+  if (!F) return [['factions.json', 'missing']];
+  if (!valid('factions.schema.json', F, 'factions.json')) return out;
+  const R = D.robots || { parts: {}, gems: {} },
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' },
+    classes = (D.events && D.events.classes) || {},
+    biomes = D.biomes || {};
+  for (const [k, C] of Object.entries(/** @type {Record<string, any>} */ (F.factions))) {
+    for (const [b, B] of Object.entries(/** @type {Record<string, any>} */ (C.bots))) {
+      if (!R.gems[B.gem]) problem(`${k}.bots.${b}.gem: no gem "${B.gem}" (robots.json)`);
+      for (const [slot, kind] of Object.entries(fits)) {
+        const P = R.parts[B[slot]];
+        if (!P) problem(`${k}.bots.${b}.${slot}: no part "${B[slot]}" (robots.json)`);
+        else if (P.slot !== kind) problem(`${k}.bots.${b}.${slot}: "${B[slot]}" is a ${P.slot}, not a ${kind}`);
+      }
+    }
+    if (!Object.values(/** @type {Record<string, any>} */ (C.bots)).some(B => B.weight > 0))
+      problem(`${k}.bots: none has a weight, so no bot can be drawn`);
+    for (const id of [...C.agents.classes, ...C.scrapyard.classes])
+      if (!classes[id]) problem(`${k}: no class "${id}" (events.json classes)`);
+    for (const id of C.wild.biomes) if (!biomes[id]) problem(`${k}.wild.biomes: no biome "${id}" (biomes.json)`);
+    if (C.agents.bots[0] > C.agents.bots[1]) problem(`${k}.agents.bots: the fewest is more than the most`);
+    if (C.scrapyard.trainers[0] > C.scrapyard.trainers[1])
+      problem(`${k}.scrapyard.trainers: the fewest is more than the most`);
+  }
+  return out;
+}
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
 // regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down
 /** RL-13: modifiers.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -972,7 +1081,7 @@ export function dataModifiers(D, valid = () => true) {
 }
 // TW-3: quests.json: the schema; every kind has a text; a goal's fewest is no more than its most; a line names only
 // what its kind fills in ({type} a catch's, {n} a goal of more than one, {title} the board's and a failure's lines);
-// no text id twice
+// no text id twice; RS-2: a favour for every resident (residents.json), with a kind but the free first one's
 /** TW-3: quests.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataQuests(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1002,11 +1111,55 @@ export function dataQuests(D, valid = () => true) {
   });
   for (const [k, line] of Object.entries(Q.say))
     fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
+  /* RS-2: every resident has a favour with a kind, but the free first one (whose talk is the invite) */
+  const R = D.residents || {};
+  for (const [k, f] of Object.entries(Q.favours)) {
+    const fav = /** @type {any} */ (f);
+    if (!R[k]) problem(`favours.${k}: no such resident (residents.json)`);
+    else if (!fav.kind && !R[k].first) problem(`favours.${k}: no kind (only the free first resident needs none)`);
+    else if (fav.kind && R[k].first) problem(`favours.${k}: the free first resident asks no favour`);
+    fills(`favours.${k}`, fav.ask, fav.kind ? mayOf(fav.kind) : []);
+  }
+  for (const k of Object.keys(R)) if (!Q.favours[k]) problem(`favours: none for the resident "${k}"`);
+  for (const [k, line] of Object.entries(Q.invite))
+    fills(
+      `invite.${k}`,
+      /** @type {string} */ (line),
+      k === 'done' || k === 'title' ? ['{title}', '{name}'] : k === 'moving' ? ['{name}'] : []
+    );
+  return out;
+}
+// RS-1: residents.json: the schema; a home is a hub building (buildings.json) or one of Copperleaf's (a prop's k),
+// or a cottage; at most one free first resident; a level is an unlocks.json row sold at the resident's home
+/** RS-1: residents.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataResidents(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['residents.json', what]),
+    R = D.residents;
+  if (!R) return [['residents.json', 'missing']];
+  if (!valid('residents.schema.json', R, 'residents.json')) return out;
+  const hub = ((D.maps || {}).copperleaf || {}).props || [],
+    B = D.buildings || {},
+    U = D.unlocks || {},
+    people = D.people || {},
+    firsts = Object.keys(R).filter(k => R[k].first);
+  if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
+  for (const [k, r] of Object.entries(R)) {
+    const at = /** @type {any} */ (r).home;
+    if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
+      problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    /* RS-3: their look is a person of the same id (people/<id>.json), in a run town and in Copperleaf */
+    if (!people[k]) problem(`${k}: no look (people/${k}.json)`);
+    for (const u of /** @type {any} */ (r).levels)
+      if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
+      else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
+  }
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
 // as a script; what they name is there (items, pyramids, loot tables, classes, types, statuses, Perks, biomes, people)
-// and the event commands' arguments make sense
+// and the event commands' arguments make sense; RS-2: `invite` only in a resident event, and every one has one
 /** RL-12b: events.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataEvents(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1022,7 +1175,7 @@ export function dataEvents(D, valid = () => true) {
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
     statuses = new Set((D.statuses || []).map((/** @type {any} */ t) => t.id)),
     biomes = new Set(Object.keys(D.biomes || {})),
-    /* RO-3e: the species a gift may name (every stage of every line) */
+    /* RO-3e: the species a revive may name (every stage of every line) */
     species = new Set(
       (D.lines || []).flatMap((/** @type {any} */ L) => (L.names || []).map((/** @type {any} */ _, st) => L.id + st))
     ),
@@ -1056,6 +1209,9 @@ export function dataEvents(D, valid = () => true) {
     for (const id of [...(N.type || []), ...(N.badge || [])])
       if (types.size && !types.has(id)) problem(`${where}: no type "${id}" (types.json)`);
   };
+  /* RS-2: the event being checked is a resident one, and its invites so far */
+  let inviting = false,
+    invites = 0;
   /** @param {string} where @param {any} n a command */
   const command = (where, n) => {
     const [a, b] = n.args,
@@ -1079,7 +1235,7 @@ export function dataEvents(D, valid = () => true) {
         if (a != null && !(Number.isInteger(num(a)) && Math.abs(num(a)) <= 20))
           problem(`${at}: levels up of -20 to 20`);
         return;
-      case 'gift':
+      case 'revive':
         if (!species.has(a)) problem(`${at}: no species "${a}" (lines/)`);
         if (b != null && !(Number.isInteger(num(b)) && Math.abs(num(b)) <= 20))
           problem(`${at}: levels up of -20 to 20`);
@@ -1104,6 +1260,25 @@ export function dataEvents(D, valid = () => true) {
         return;
       case 'money':
         if (!(Number.isInteger(num(a)) && num(a) !== 0)) problem(`${at}: a whole number of Moneys, not 0`);
+        return;
+      case 'invite':
+        if (!inviting) problem(`${at}: only a resident event (resident: true) invites`);
+        invites++;
+        return;
+      /* SP-6: the splice events' */
+      case 'dna':
+        if (!(Number.isInteger(num(a)) && num(a) !== 0 && Math.abs(num(a)) <= 1000))
+          problem(`${at}: a whole number of DNA, not 0, at most 1000 either way`);
+        return;
+      case 'gene':
+        if (a != null && !(Number.isInteger(num(a)) && num(a) >= 1 && num(a) <= 5)) problem(`${at}: 1-5 Genes`);
+        return;
+      case 'splice':
+        if (!['wild', 'lib'].includes(a)) problem(`${at}: wild (the back alley's) or lib (from the library)`);
+        return;
+      case 'unsplice':
+        if (a != null && !(Number.isInteger(num(a)) && num(a) >= 0 && num(a) <= 1000))
+          problem(`${at}: 0-1000 DNA for the Gene handed in`);
         return;
       case 'reward':
         if (a != null && !['item', 'tutor', 'candy', 'evo'].includes(a))
@@ -1130,6 +1305,12 @@ export function dataEvents(D, valid = () => true) {
   for (const [k, V] of Object.entries(E.events)) {
     const ev = /** @type {any} */ (V);
     for (const b of ev.biomes || []) if (biomes.size && !biomes.has(b)) problem(`events.${k}.biomes: no biome "${b}"`);
+    /* SP-6: when it may be drawn, a condition like an option's need */
+    if (ev.when) {
+      const cp = conditionProblem(ev.when);
+      if (cp) problem(`events.${k}.when: ${cp.message}`);
+      else names(`events.${k}.when`, ev.when);
+    }
     const ip = scriptProblem(ev.intro);
     if (ip) problem(`events.${k}.intro, line ${(ip.line || 0) + 1}: ${ip.message}`);
     else
@@ -1137,6 +1318,8 @@ export function dataEvents(D, valid = () => true) {
         parseScript(ev.intro),
         n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
       );
+    inviting = !!ev.resident;
+    invites = 0;
     ev.options.forEach((/** @type {any} */ o, i) => {
       const where = `events.${k}.options[${i}]`;
       if (o.need) {
@@ -1154,6 +1337,7 @@ export function dataEvents(D, valid = () => true) {
         else if (n.k === 'if') n.clauses.forEach((/** @type {any} */ c) => c.cond && names(`${where}.then`, c.cond));
       });
     });
+    if (inviting && !invites) problem(`events.${k}: a resident event with no option that invites ("invite")`);
   }
   return out;
 }
@@ -1192,6 +1376,37 @@ export function dataRewards(D, valid = () => true) {
   return out;
 }
 
+// RL-S2: the hub folk and you: the schema; each person is a person (people/<id>.json); their levels rise; a level's
+// effect rows are effects.js's kinds within its limits; its items, pyramids and wardrobe piece exist
+/** RL-S2: relations.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataRelations(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['relations.json', what]),
+    RL = D.relations;
+  if (!RL) return [['relations.json', 'missing']];
+  if (!valid('relations.schema.json', RL, 'relations.json')) return out;
+  const wardrobe = (D.wardrobe && D.wardrobe.items) || {};
+  for (const [who, P] of Object.entries(/** @type {Record<string, any>} */ (RL.people))) {
+    if (!(D.people || {})[who]) problem(`${who}: no such person (people/${who}.json)`);
+    P.levels.forEach((/** @type {any} */ L, /** @type {number} */ n) => {
+      const at = `${who}.levels[${n}]`;
+      if (n && L.at <= P.levels[n - 1].at) problem(`${at}.at: ${L.at}, not more than the level before's`);
+      for (const [k, f] of (L.fx || []).entries()) {
+        if (!FX_KINDS.includes(f.kind)) problem(`${at}.fx[${k}]: no effect kind "${f.kind}" (effects.js FX_KINDS)`);
+        if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+          problem(`${at}.fx[${k}].mult: ${f.mult} is outside ${FX_LIMIT.lo} to ${FX_LIMIT.hi}`);
+      }
+      for (const i of Object.keys(L.items || {}))
+        if (!(D.items || {})[i]) problem(`${at}.items: no item "${i}" (items.json)`);
+      for (const i of Object.keys(L.pyramids || {}))
+        if (!(D.pyramids || {})[i]) problem(`${at}.pyramids: no catch item "${i}" (pyramids.json)`);
+      if (L.wardrobe && !wardrobe[L.wardrobe]) problem(`${at}.wardrobe: no piece "${L.wardrobe}" (wardrobe.json)`);
+    });
+  }
+  return out;
+}
+
 // RL-S1: the story director's lines: the schema; a leader and a Bureau agent always have a line to say (one with no
 // `when`); a line said once has no cooldown (its conditions and scripts are the story checks')
 /** RL-S1: banter.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -1207,6 +1422,22 @@ export function dataBanter(D, valid = () => true) {
   for (const who of ['leader', 'bureau'])
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
       problem(`no ${who} line without a when: a ${who} could have nothing to say`);
+  /* RL-S2 part B: Blake and the thank-yous, once they have lines, always have one to say */
+  for (const who of ['rival', 'thanks_chosen', 'thanks_hazel', 'thanks_juniper']) {
+    const mine = Object.values(B).filter((/** @type {any} */ b) => b.who === who);
+    if (mine.length && !mine.some((/** @type {any} */ b) => !b.when && !b.once))
+      problem(`no ${who} line without a when that is said more than once: ${who} could have nothing to say`);
+  }
+  /* RS-3: a line is for a listed speaker or a resident (residents.json), and every resident has one that always holds */
+  const R = D.residents || {};
+  for (const [k, b] of Object.entries(B)) {
+    const who = /** @type {any} */ (b).who;
+    if (!BANTER_WHO.includes(who) && !R[who])
+      problem(`${k}.who: "${who}" is no speaker and no resident (residents.json)`);
+  }
+  for (const id of Object.keys(R))
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
+      problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
   return out;
 }
 
@@ -1268,6 +1499,35 @@ export function dataPerks(D, valid = () => true) {
   }
   return out;
 }
+/** RL-12c, SP-2: one effect row a Billie has (a held item's or a Gene's): one of `kinds`, its numbers within the code's
+ * limits @param {any} f @param {string} at @param {string[]} kinds @param {any} D
+ * @param {(what: string) => void} problem */
+export function fxRowProblems(f, at, kinds, D, problem) {
+  const types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    share = (/** @type {any} */ v) => typeof v === 'number' && v > 0 && v <= 1;
+  if (!f || !kinds.includes(f.kind))
+    return problem(`${at}: no effect kind "${f && f.kind}" here (${kinds.join(', ')})`);
+  if ('mult' in f || ['money', 'damage', 'xp'].includes(f.kind))
+    if (!(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+      problem(
+        `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
+      );
+  if (f.kind === 'stat') {
+    if (f.stat === 'hp' || !stats.has(f.stat))
+      problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+    if (!(Number.isInteger(f.stages) && f.stages !== 0 && Math.abs(f.stages) <= FX_STAGES))
+      problem(`${at}.stages: a whole number of stages from -${FX_STAGES} to ${FX_STAGES}, not 0`);
+  }
+  if (f.kind === 'damage') {
+    if (!['deal', 'take'].includes(f.side)) problem(`${at}.side: deal or take`);
+    if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+    if (f.type != null && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
+  }
+  if (['turnHeal', 'pinchHeal', 'turnHurt'].includes(f.kind) && !share(f.share))
+    problem(`${at}.share: a share of HP above 0, at most 1`);
+  if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
+}
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up)
 export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
@@ -1275,10 +1535,7 @@ export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHe
 export function dataHeldItems(D) {
   /** @type {DataProblem[]} */
   const out = [],
-    problem = (/** @type {string} */ what) => out.push(['items.json', what]),
-    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
-    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
-    share = (/** @type {any} */ v) => typeof v === 'number' && v > 0 && v <= 1;
+    problem = (/** @type {string} */ what) => out.push(['items.json', what]);
   for (const [k, I] of Object.entries(D.items || {})) {
     const H = /** @type {any} */ (I).hold;
     if (H === undefined) continue;
@@ -1288,31 +1545,110 @@ export function dataHeldItems(D) {
     }
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
-    H.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
-      const at = `${k}.hold[${n}]`;
-      if (!f || !HOLD_KINDS.includes(f.kind))
-        return problem(`${at}: no held effect kind "${f && f.kind}" (${HOLD_KINDS.join(', ')})`);
-      if ('mult' in f || ['money', 'damage', 'xp'].includes(f.kind))
-        if (!(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
-          problem(
-            `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
-          );
-      if (f.kind === 'stat') {
-        if (f.stat === 'hp' || !stats.has(f.stat))
-          problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
-        if (!(Number.isInteger(f.stages) && f.stages !== 0 && Math.abs(f.stages) <= FX_STAGES))
-          problem(`${at}.stages: a whole number of stages from -${FX_STAGES} to ${FX_STAGES}, not 0`);
-      }
-      if (f.kind === 'damage') {
-        if (!['deal', 'take'].includes(f.side)) problem(`${at}.side: deal or take`);
-        if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
-        if (f.type != null && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
-      }
-      if ((f.kind === 'turnHeal' || f.kind === 'pinchHeal') && !share(f.share))
-        problem(`${at}.share: a share of HP above 0, at most 1`);
-      if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
-    });
+    H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>
+      fxRowProblems(f, `${k}.hold[${n}]`, HOLD_KINDS, D, problem)
+    );
   }
+  return out;
+}
+// SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
+// recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are
+// of the kinds a Billie's own rows can be, Unstable's a turnHurt; Stability's costs rise from line to Augment
+export const GENE_KINDS = ['money', 'stat', 'damage'];
+/** SP-2: genes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataGenes(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['genes.json', what]),
+    G = D.genes;
+  if (!G) return out;
+  if (!valid('genes.schema.json', G, 'genes.json')) return out;
+  const parts = (D.partKits && D.partKits.parts) || {},
+    kinds = new Set(Object.values(parts).map((/** @type {any} */ p) => p.kind)),
+    types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    moves = D.moves || {},
+    traits = G.traits || {};
+  for (const [k, R] of Object.entries(G.kinds || {})) {
+    if (!kinds.has(k)) problem(`kinds.${k}: no part of that kind (partKits.json)`);
+    if (!traits[R.trait]) problem(`kinds.${k}.trait: no trait "${R.trait}"`);
+  }
+  const wordless = new Set();
+  for (const F of (D.kitBuilds && D.kitBuilds.forms) || [])
+    for (const bone of ['arm', 'leg', 'tail']) {
+      const P = F.parts && F.parts[bone] && parts[F.parts[bone][0]];
+      if (P && !(G.kinds || {})[P.kind]) problem(`kinds: no row for "${P.kind}" (${F.rig}'s ${bone} can be spliced)`);
+      else if (P && !G.kinds[P.kind].word) wordless.add(P.kind);
+    }
+  for (const k of wordless) problem(`kinds.${k}.word: a spliceable kind needs one (SP-3's battle line)`);
+  for (const [k, T] of Object.entries(traits))
+    (T.fx || []).forEach((/** @type {any} */ f, /** @type {number} */ n) =>
+      fxRowProblems(f, `traits.${k}.fx[${n}]`, GENE_KINDS, D, problem)
+    );
+  (G.unstable.fx || []).forEach((/** @type {any} */ f, /** @type {number} */ n) =>
+    fxRowProblems(f, `unstable.fx[${n}]`, ['turnHurt', ...GENE_KINDS], D, problem)
+  );
+  for (const [k, P] of Object.entries(G.parts || {})) {
+    if (!parts[k]) problem(`parts.${k}: no such part (partKits.json)`);
+    if (P.type != null && !types.has(P.type)) problem(`parts.${k}.type: no type "${P.type}" (types.json)`);
+    if (P.move != null && !moves[P.move]) problem(`parts.${k}.move: no move "${P.move}" (moves.json)`);
+  }
+  const W = G.wild;
+  if (W.graft + W.chimera + W.escaped >= 1)
+    problem('wild: graft, chimera and escaped must leave some wild Billies plain');
+  if (W.chimeraParts[0] > W.chimeraParts[1]) problem('wild.chimeraParts: the fewest first');
+  const S = G.stability;
+  if (!(S.line <= S.kit && S.kit <= S.other && S.other <= S.augment))
+    problem('stability: the costs must rise from line to kit, other and augment');
+  if (S.refuse < 1) problem('stability.refuse: at least 1 (a splice past the limit is Unstable before it is refused)');
+  /* SP-4: a field part names a field move; the Gene Bank's levels start at the default limit, never take a slot or
+     a point of limit back, and are as many as buildings.json sells */
+  const fields = (D.fieldMoves && D.fieldMoves.moves) || {};
+  for (const [where, rows] of [
+    ['kinds', G.kinds || {}],
+    ['parts', G.parts || {}],
+  ])
+    for (const [k, R] of Object.entries(rows))
+      if (R.field != null && !fields[R.field])
+        problem(`${where}.${k}.field: no field move "${R.field}" (fieldMoves.json)`);
+  const L = G.bank.levels;
+  if (L[0].limit !== S.limit) problem(`bank.levels[0].limit: ${L[0].limit}, but stability.limit is ${S.limit}`);
+  L.forEach((/** @type {any} */ R, /** @type {number} */ i) => {
+    const was = L[i - 1];
+    if (was && (R.limit < was.limit || was.slots.some((/** @type {string} */ k) => !R.slots.includes(k))))
+      problem(`bank.levels[${i}]: takes back a slot or some of the limit level ${i} had`);
+  });
+  const B = D.buildings && D.buildings.genebank;
+  if (B && B.levels !== L.length)
+    problem(`bank.levels: ${L.length}, but buildings.json genebank.levels is ${B.levels}`);
+  /* SP-5: Augments: a slot takes a robot part kind robots.json has; a field part is a robots.json arm or legs and
+     names a field move; the Workshop's levels never take a slot or an upgrade back, a price for each upgrade, and as
+     many levels as buildings.json sells (once the Workshop is open) */
+  const A = G.augment,
+    rparts = (D.robots && D.robots.parts) || {};
+  for (const [slot, R] of Object.entries(A.slots))
+    if (!Object.values(rparts).some((/** @type {any} */ p) => p.slot === R.part))
+      problem(`augment.slots.${slot}: robots.json has no ${R.part} part`);
+  for (const [id, f] of Object.entries(A.field)) {
+    const P = rparts[id];
+    if (!P || !Object.values(A.slots).some(R => R && R.part === P.slot))
+      problem(`augment.field.${id}: no robots.json part that a slot takes`);
+    if (!fields[f]) problem(`augment.field.${id}: no field move "${f}" (fieldMoves.json)`);
+  }
+  A.levels.forEach((/** @type {any} */ R, /** @type {number} */ i) => {
+    const was = A.levels[i - 1];
+    if (R.slots.some((/** @type {string} */ k) => !A.slots[/** @type {'front' | 'back'} */ (k)]))
+      problem(`augment.levels[${i}].slots: a slot augment.slots doesn't name`);
+    if (was && (R.maxUp < was.maxUp || was.slots.some((/** @type {string} */ k) => !R.slots.includes(k))))
+      problem(`augment.levels[${i}]: takes back a slot or an upgrade level ${i} had`);
+  });
+  const maxUp = Math.max(...A.levels.map((/** @type {any} */ R) => R.maxUp));
+  if (A.price.up.length < maxUp) problem(`augment.price.up: ${A.price.up.length} prices, but upgrades go to +${maxUp}`);
+  const robotMax = D.rules && D.rules.robots && D.rules.robots.maxUpgrade;
+  if (robotMax != null && maxUp > robotMax)
+    problem(`augment.levels: upgrades to +${maxUp}, past rules.json robots.maxUpgrade ${robotMax}`);
+  const W2 = D.buildings && D.buildings.workshop;
+  if (W2 && !W2.soon && W2.levels !== A.levels.length)
+    problem(`augment.levels: ${A.levels.length}, but buildings.json workshop.levels is ${W2.levels}`);
   return out;
 }
 // RF-2: every catch item (pyramids.json; the ids stay the pyramids' until RF-4) has its icons and the model it is thrown as
@@ -1410,9 +1746,14 @@ export function dataUnlocks(D, valid = () => true) {
       if (R.when) {
         const p = conditionProblem(R.when);
         if (p) problem('unlocks.json', `${k}.when: ${p.message}`);
-        else
-          for (const u of conditionNames(conditionTree(R.when)).unlock || [])
+        else {
+          const names = conditionNames(conditionTree(R.when));
+          for (const u of names.unlock || [])
             if (!U[u]) problem('unlocks.json', `${k}.when: unlock:${u}, no such unlock`);
+          /* RS-1: a resident it waits for is in residents.json */
+          for (const r of names.resident || [])
+            if (D.residents && !D.residents[r]) problem('unlocks.json', `${k}.when: resident:${r}, no such resident`);
+        }
       }
       for (const r of R.requires || [])
         if (!U[r] || r === k) problem('unlocks.json', `${k}.requires: no unlock "${r}"`);

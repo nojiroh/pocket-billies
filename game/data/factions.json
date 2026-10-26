@@ -1,0 +1,21 @@
+{
+ "about": "Roguelite track RL-14: the runs' enemy factions (logic/factions.js). The Bureau of Lost, Found and Beans fields bots built from robots.json parts: met wild on routes from the middle rows on, fielded by its agents beside their Billies, and gathered in scrapyards. A bot is never caught or taxed; beating one leaves a salvage pick (two of its parts or a stack of Scrap). Numbers are placeholders for the sim.",
+ "factions": {
+  "bureau": {
+   "name": "Bureau of Lost, Found and Beans",
+   "short": "the Bureau",
+   "bots": {
+    "courier": {"name":"Courier Unit","gem":"volt","torso":"vane","armL":"tesla","armR":"auger","legs":"striders","weight":3},
+    "repo": {"name":"Repossession Unit","gem":"ember","torso":"bulwark","armL":"clamp","armR":"cinder","legs":"treads","weight":3},
+    "shredder": {"name":"Shredder Unit","gem":"ember","torso":"kiln","armL":"cinder","armR":"piston","legs":"treads","weight":2},
+    "stamp": {"name":"Stamp Press","gem":"tide","torso":"bulwark","armL":"piston","armR":"hydrant","legs":"treads","weight":2},
+    "filing": {"name":"Filing Drone","gem":"tide","torso":"vane","armL":"hydrant","armR":"clamp","legs":"hover","weight":2},
+    "audit": {"name":"Audit Unit","gem":"volt","torso":"kiln","armL":"tesla","armR":"clamp","legs":"striders","weight":1}
+   },
+   "wild": {"chance":0.1,"fromRow":3,"biomes":["canyon","volcano","ridge","badlands","tundra","cave"]},
+   "agents": {"classes":["bureau_clerk","bureau_reclaimer"],"bots":[1,2]},
+   "scrapyard": {"trainers":[1,2],"classes":["bureau_reclaimer"]},
+   "salvage": {"parts":2,"scrap":3,"scrapPerBot":1}
+  }
+ }
+}

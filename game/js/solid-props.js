@@ -24,7 +24,10 @@ import {
   LOOK_GLSL,
   SURFACE_MATERIALS,
   ensurePrograms,
+  gpuBuffer,
+  gpuFree,
   gpuState,
+  gpuVao,
   imageTexture,
 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -84,6 +87,7 @@ export function setDrawSolidProps(v) {
 }
 /* to-module: end */
 export const solidPropState = { meshes: new WeakMap(), live: new Map(), fail: '', drawn: 0 };
+provide({ solidPropState }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const SOLID_PROP_BODIES = {
   crate: ['block', 0.9],
@@ -727,9 +731,9 @@ export function buildSolidProp(im, parts) {
 function uploadSolidPropMesh(V, extra) {
   if (!V.length) return null;
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao('meshes');
   gl.bindVertexArray(vao);
-  const vb = gl.createBuffer();
+  const vb = gpuBuffer('meshes', V.length * 4);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(V), gl.STATIC_DRAW);
   for (const [l, k, o] of [
@@ -755,8 +759,8 @@ function flushSolidPropMeshes() {
   /* (only those of the context in use: a lost one's are gone already) */
   for (const [m, g] of solidPropState.live)
     if (g === gl) {
-      gl.deleteVertexArray(m.vao);
-      gl.deleteBuffer(m.vb);
+      gpuFree(m.vao);
+      gpuFree(m.vb);
     }
   solidPropState.live.clear();
   solidPropState.meshes = new WeakMap();
@@ -1105,7 +1109,7 @@ export const SOLID_PROP_SHADERS = {
 precision highp float;${COMMON_GLSL}${SOLID_PROP_VERTEX_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;
 void main(){vec3 n;vec3 p=p3dPos(n);vW=p;vN=n;vUV=qUV;vFace=qFace;vId=qId;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot,uCoreK;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}
 float bay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=(vFace>.5&&uClump<.5)?texture(uTex,vUV):textureLod(uTex,vUV,0.);if(c.a<.5)discard;
  if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}
@@ -1127,7 +1131,7 @@ void main(){vec4 c=(vFace>.5&&uClump<.5)?texture(uTex,vUV):textureLod(uTex,vUV,0
  c.rgb=snowOn(seasonal(c.rgb,uBaseP),vW,n.y);float sh=shadowAtN(vW+n*.04,n,.0012),ao=mix(contactAO(vW),1.,clamp(hy*2.,0.,1.)),occ=min(sh,ao);if(vFace>2.5)occ*=.7;
  vec3 v=normalize(uEye-vW);float nl=dot(n,uSunDir),wr=(nl+uMat.w)/(1.+uMat.w);float spc=pow(max(dot(n,normalize(uSunDir+v)),0.),uMat.y)*uMat.x*occ,rim=pow(1.-max(dot(n,v),0.),3.)*uRim;
  float trn=uMat.z*(pow(max(dot(-v,uSunDir),0.),2.)*.8+max(-nl,0.)*.35)*sh;
- vec3 lit=shade(c.rgb,n,vW,sh,ao,vec4(uMat.x,uMat.y,0.,uMat.w),0.)+c.rgb*rim*uSunCol*sh;o=vec4(fogit(lit+c.rgb*uSunCol*trn+c.rgb*uEmit,vW),1.);}`,
+ vec3 lit=shade(c.rgb,n,vW,sh,vFace>2.5?ao*mix(1.,.7,uCoreK):ao,vec4(uMat.x,uMat.y,0.,uMat.w),0.)+c.rgb*rim*uSunCol*sh;o=vec4(fogit(lit+c.rgb*uSunCol*trn+c.rgb*uEmit,vW),1.);}`,
   ],
   p3dS: [
     `#version 300 es
@@ -1269,6 +1273,8 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
         p = useWalkProgram('p3d', C, X);
         gl.uniform1i(p.U.uTex, 0);
         gl.uniform1i(p.U.uNrm, 1);
+        /* Shaded tree cores (world.treeCoreShade): a solid tree's dark core (face 3) takes 30% less light */
+        if (p.U.uCoreK) gl.uniform1f(p.U.uCoreK, engineSetting('world', 'treeCoreShade') ? 1 : 0);
         gl.enable(gl.DEPTH_TEST);
         gl.depthMask(true);
         gl.disable(gl.BLEND);

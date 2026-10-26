@@ -14,6 +14,7 @@
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { roundHalfEven } from './sheet-slice.js';
 import { partForSide, partZ } from './part-joints.js';
 import {
@@ -40,17 +41,17 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitBakeWhole: [() => kitBakeWhole, v => (kitBakeWhole = v)],
   // @ts-expect-error -- replaced on purpose
-  kitBounds: [() => kitBounds, v => (kitBounds = v)],
+  kitBounds: [() => kitBounds, v => ((kitBounds = v), provide({ kitBounds }))],
   // @ts-expect-error -- replaced on purpose
   kitBuildView: [() => kitBuildView, v => (kitBuildView = v)],
   // @ts-expect-error -- replaced on purpose
-  kitDrawRest: [() => kitDrawRest, v => (kitDrawRest = v)],
+  kitDrawRest: [() => kitDrawRest, v => ((kitDrawRest = v), provide({ kitDrawRest }))],
   // @ts-expect-error -- replaced on purpose
   kitFitScale: [() => kitFitScale, v => (kitFitScale = v)],
   // @ts-expect-error -- replaced on purpose
   kitNativeParts: [() => kitNativeParts, v => (kitNativeParts = v)],
   // @ts-expect-error -- replaced on purpose
-  kitPack: [() => kitPack, v => (kitPack = v)],
+  kitPack: [() => kitPack, v => ((kitPack = v), provide({ kitPack }))],
   // @ts-expect-error -- replaced on purpose
   kitRestPose: [() => kitRestPose, v => (kitRestPose = v)],
   matMul: [() => matMul],
@@ -58,6 +59,7 @@ expose({
   socketsPx: [() => socketsPx, v => (socketsPx = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ kitBounds, kitDrawRest, kitPack });
 /* to-module: end */
 /**
  * @typedef {{ n: string, par: string, frames: Record<string, Pixels>, pivot: [number, number], at: [number, number],

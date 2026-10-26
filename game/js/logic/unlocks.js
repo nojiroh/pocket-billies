@@ -17,7 +17,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
-import { META_MAX } from './meta-state.js';
+import { META_CURRENCIES, META_MAX } from './meta-state.js';
 import { conditionHolds, storyStateOf } from './conditions.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -48,7 +48,7 @@ provide({ unlockOpen, unlockTidy });
  * @param {Unlock} R @returns {'board' | 'building' | 'earned'} */
 export const unlockDoor = R => (R.when ? 'earned' : R.at === 'lab' ? 'board' : 'building');
 /** the currency a sold row is paid in (its building's), null for an earned one
- * @param {Unlock} R @param {UnlockData} D @returns {'research' | 'scrap' | 'crests' | null} */
+ * @param {Unlock} R @param {UnlockData} D @returns {'research' | 'scrap' | 'crests' | 'beans' | 'dna' | null} */
 export const unlockCurrency = (R, D) => (R.at && D.buildings[R.at] ? D.buildings[R.at].currency : null);
 /** a building's level: 1 until an unlock raises it @param {SaveData} s @param {string} b */
 export const buildingLevel = (s, b) => Math.max(1, (s.meta && s.meta.buildings && s.meta.buildings[b]) || 1);
@@ -71,15 +71,14 @@ export function unlockReady(s, id, D) {
 export function unlockGrant(s, R) {
   const G = /** @type {any} */ (R.grant);
   if (G.building) s.meta.buildings[G.building] = Math.max(buildingLevel(s, G.building), G.level);
-  for (const c of /** @type {const} */ (['research', 'scrap', 'crests']))
-    if (G[c]) s.meta[c] = Math.min(META_MAX, s.meta[c] + G[c]);
+  for (const c of META_CURRENCIES) if (G[c]) s.meta[c] = Math.min(META_MAX, s.meta[c] + G[c]);
 }
 /** buy a sold row: pays its cost in its building's currency, owns it and grants it. Returns whether it was bought
  * @param {SaveData} s @param {string} id @param {UnlockData} D */
 export function unlockBuy(s, id, D) {
   if (unlockReady(s, id, D)) return false;
   const R = D.unlocks[id],
-    c = /** @type {'research' | 'scrap' | 'crests'} */ (unlockCurrency(R, D));
+    c = /** @type {'research' | 'scrap' | 'crests' | 'beans' | 'dna'} */ (unlockCurrency(R, D));
   s.meta[c] -= R.cost || 0;
   s.meta.unlocks[id] = 1;
   unlockGrant(s, R);

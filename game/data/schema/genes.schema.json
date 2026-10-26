@@ -1,0 +1,694 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "genes.schema.json",
+ "title": "game/data/genes.json: Genes, the parts a Billie can be spliced with: traits per part kind, dominant types, Stability (splicing track SP-2; logic/genes.js)",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "kinds",
+  "traits",
+  "parts",
+  "maxTraits",
+  "stability",
+  "unstable",
+  "wild",
+  "bank",
+  "augment"
+ ],
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "kinds": {
+   "description": "a part kind (partKits.json parts.kind) and the trait it brings",
+   "type": "object",
+   "propertyNames": {
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "trait"
+    ],
+    "properties": {
+     "word": {
+      "description": "the part's name in text, after the donor animal (\"a shark's tail\"; SP-3's battle line); a spliceable kind needs one",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16
+     },
+     "trait": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "a key of traits"
+     },
+     "field": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "SP-4: a field move (fieldMoves.json) a Billie wearing it can use as if it were of the move's type (the badge is still needed)"
+     }
+    }
+   }
+  },
+  "traits": {
+   "type": "object",
+   "minProperties": 1,
+   "propertyNames": {
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "d",
+     "fx"
+    ],
+    "properties": {
+     "name": {
+      "description": "what the player reads",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 24
+     },
+     "d": {
+      "description": "what it does, in one sentence",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+     },
+     "fx": {
+      "description": "its effects on the Billie that wears it (logic/effects.js fxOfBillie)",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+       "oneOf": [
+        {
+         "description": "money: what a won battle pays ($), times mult",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "money"
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "stat",
+          "stages"
+         ],
+         "properties": {
+          "kind": {
+           "const": "stat"
+          },
+          "stat": {
+           "type": "string",
+           "pattern": "^[a-z][a-z0-9_]*$",
+           "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"
+          },
+          "stages": {
+           "type": "integer",
+           "minimum": -6,
+           "maximum": 6
+          }
+         }
+        },
+        {
+         "description": "damage: what your Billies deal (deal) or take (take), times mult; only moves of a category (H physical, S special) or a type when given",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "side",
+          "mult"
+         ],
+         "properties": {
+          "kind": {
+           "const": "damage"
+          },
+          "side": {
+           "enum": [
+            "deal",
+            "take"
+           ]
+          },
+          "cat": {
+           "enum": [
+            "H",
+            "S"
+           ]
+          },
+          "type": {
+           "type": "string",
+           "minLength": 1
+          },
+          "mult": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 4
+          }
+         }
+        },
+        {
+         "description": "turnHurt (an Unstable splice's drawback): the Billie loses this share of its HP at each turn's end",
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "kind",
+          "share"
+         ],
+         "properties": {
+          "kind": {
+           "const": "turnHurt"
+          },
+          "share": {
+           "type": "number",
+           "exclusiveMinimum": 0,
+           "maximum": 0.5
+          }
+         }
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "parts": {
+   "description": "per part (partKits.json parts): its dominant type (it becomes the Billie's second type) and the move it teaches (SP-4)",
+   "type": "object",
+   "propertyNames": {
+    "pattern": "^[a-z][a-z0-9_]*$"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "minProperties": 1,
+    "properties": {
+     "type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "a type of types.json"
+     },
+     "move": {
+      "type": "string",
+      "minLength": 1,
+      "description": "a move of moves.json"
+     },
+     "field": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "SP-4: a field move (fieldMoves.json) a Billie wearing it can use as if it were of the move's type (the badge is still needed)"
+     }
+    }
+   }
+  },
+  "maxTraits": {
+   "description": "the most traits a Billie shows and has",
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 5
+  },
+  "wild": {
+   "description": "SP-3: the share of a run place's wild Billies spliced at spawn: graft (one foreign part from a Billie of the same place), chimera (chimeraParts of them), escaped (an Augment; unused until SP-5); and the DNA a beaten one pays",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "graft",
+    "chimera",
+    "escaped",
+    "chimeraParts",
+    "dna"
+   ],
+   "properties": {
+    "graft": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "chimera": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "escaped": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "chimeraParts": {
+     "description": "the fewest and most foreign parts on a Chimera",
+     "type": "array",
+     "minItems": 2,
+     "maxItems": 2,
+     "items": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 3
+     }
+    },
+    "dna": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "graft",
+      "chimera"
+     ],
+     "properties": {
+      "graft": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "chimera": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "escaped": {
+       "description": "SP-5: an Escaped specimen knocked out (the Graft's when missing)",
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      }
+     }
+    }
+   }
+  },
+  "stability": {
+   "description": "what a foreign part costs: from the Billie's own line, from another species whose part is of the same kit, from another kit, an Augment; the limit before a splice is Unstable, and how far past the limit a splice is refused",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "line",
+    "kit",
+    "other",
+    "augment",
+    "limit",
+    "refuse"
+   ],
+   "properties": {
+    "line": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "kit": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "other": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "augment": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "limit": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "refuse": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 20
+    }
+   }
+  },
+  "unstable": {
+   "description": "a splice past the Stability limit: one stat times up, another times down (picked from the Billie and its splice, never rolled again), and the drawback's rows",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "up",
+    "down",
+    "name",
+    "d",
+    "fx"
+   ],
+   "properties": {
+    "up": {
+     "type": "number",
+     "minimum": 1,
+     "maximum": 2
+    },
+    "down": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 1
+    },
+    "name": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 24
+    },
+    "d": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 120
+    },
+    "fx": {
+     "description": "its effects on the Billie that wears it (logic/effects.js fxOfBillie)",
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 4,
+     "items": {
+      "oneOf": [
+       {
+        "description": "money: what a won battle pays ($), times mult",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "kind",
+         "mult"
+        ],
+        "properties": {
+         "kind": {
+          "const": "money"
+         },
+         "mult": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+         }
+        }
+       },
+       {
+        "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "kind",
+         "stat",
+         "stages"
+        ],
+        "properties": {
+         "kind": {
+          "const": "stat"
+         },
+         "stat": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"
+         },
+         "stages": {
+          "type": "integer",
+          "minimum": -6,
+          "maximum": 6
+         }
+        }
+       },
+       {
+        "description": "damage: what your Billies deal (deal) or take (take), times mult; only moves of a category (H physical, S special) or a type when given",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "kind",
+         "side",
+         "mult"
+        ],
+        "properties": {
+         "kind": {
+          "const": "damage"
+         },
+         "side": {
+          "enum": [
+           "deal",
+           "take"
+          ]
+         },
+         "cat": {
+          "enum": [
+           "H",
+           "S"
+          ]
+         },
+         "type": {
+          "type": "string",
+          "minLength": 1
+         },
+         "mult": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+         }
+        }
+       },
+       {
+        "description": "turnHurt (an Unstable splice's drawback): the Billie loses this share of its HP at each turn's end",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "kind",
+         "share"
+        ],
+        "properties": {
+         "kind": {
+          "const": "turnHurt"
+         },
+         "share": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 0.5
+         }
+        }
+       }
+      ]
+     }
+    }
+   }
+  },
+  "bank": {
+   "description": "SP-4: the Gene Bank (buildings.json genebank; logic/gene-bank.js): per level its Stability limit and the slots it splices (level 1 first, its limit stability.limit), what a splice costs in DNA (base + perCost x the Gene's Stability cost), and the chance an egg keeps each parent's spliced slot",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "levels",
+    "price",
+    "inherit"
+   ],
+   "properties": {
+    "levels": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 9,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "limit",
+       "slots"
+      ],
+      "properties": {
+       "limit": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20
+       },
+       "slots": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 3,
+        "uniqueItems": true,
+        "items": {
+         "enum": [
+          "front",
+          "back",
+          "sig"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "price": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "base",
+      "perCost"
+     ],
+     "properties": {
+      "base": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "perCost": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      }
+     }
+    },
+    "inherit": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    }
+   }
+  },
+  "augment": {
+   "description": "SP-5: Augments, robots.json arms and legs fitted on a Billie at the Workshop (Billy.aug; logic/augments.js): which robot part each slot takes (an arm on one side, the side's share of the slot), the share of the part's stats it adds, the field moves a part counts for, its move (extra: beside the learned ones), the escaped odds' multiplier next to a scrapyard, what a knocked-out Escaped specimen leaves, the Workshop's levels (slots it fits, the highest upgrade) and the prices in Scrap",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "slots",
+    "statShare",
+    "field",
+    "move",
+    "escapedNear",
+    "knockout",
+    "levels",
+    "price"
+   ],
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "slots": {
+     "type": "object",
+     "propertyNames": {
+      "enum": [
+       "front",
+       "back"
+      ]
+     },
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "part",
+       "share"
+      ],
+      "properties": {
+       "part": {
+        "enum": [
+         "arm",
+         "legs"
+        ]
+       },
+       "side": {
+        "enum": [
+         "L",
+         "R"
+        ]
+       },
+       "share": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 1
+       }
+      }
+     }
+    },
+    "statShare": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "field": {
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[a-z][a-z0-9_]*$"
+     },
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "move": {
+     "enum": [
+      "extra",
+      "none"
+     ]
+    },
+    "escapedNear": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    },
+    "knockout": {
+     "enum": [
+      "part",
+      "none"
+     ]
+    },
+    "levels": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 9,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "slots",
+       "maxUp"
+      ],
+      "properties": {
+       "slots": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+         "enum": [
+          "front",
+          "back"
+         ]
+        }
+       },
+       "maxUp": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9
+       }
+      }
+     }
+    },
+    "price": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "fit",
+      "up"
+     ],
+     "properties": {
+      "fit": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
+      },
+      "up": {
+       "type": "array",
+       "maxItems": 9,
+       "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

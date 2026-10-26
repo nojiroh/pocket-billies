@@ -1110,11 +1110,13 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
   - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art). Done 2026-10-26 (HANDOFF): the
     slot map works on the baked sheets and rigs, not per plan pair; the octopus and blob share one bone (`also`).
-  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
+  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant). Done
+    2026-10-26 (HANDOFF): Threadling → Zaracoon → Ortegamoth (Grass → Grass/Steel → Grass/Flying, 7/10) and Tickerbud →
+    Bloomburst → Terminalia (Grass → Grass → Grass/Psychic, 14/30), both common, dex 41-46, placeholders only.
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
     (serpent). Done 2026-10-26 (HANDOFF): Swooshpole > Victoad (common, Water > Water/Flying, level 18), the fossils
     as two rare singles (Philanthrobite Steel/Water, Vanderbolt Fire/Ground, totals 490), `wild: false` lines given
-    only by the Dig Site event's new `gift` command (pick one of the two).
+    only by the Dig Site event's new `revive` command (`gift` on its branch, renamed in the merge: RL-S2 has a `gift`) (pick one of the two).
   - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer). Done 2026-10-26 (HANDOFF): the
     owner's picks: **Pseudonymph** (dex 51, Steel, mythical, one stage; **Fork**, a new move: takes the foe's types
     for 5 turns; met only as a route's rarer one, 2% of routes, once a run, at the rarer one's level; in no pool and
@@ -1204,6 +1206,52 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   until Chapter 1's beats say more), `logic/story-pick.js storyPick` and the script command `pick <who>`, the hub's
   fresh lines (replacing the first talk after a run, the owner's choice), story.json `scripts.back-lost`, and the
   leaders' and Bureau agents' words in runs. "Hazel's mast lines" (RL-8) never existed in the code.
+- **RL-S2 as built, part A (2026-10-26; HANDOFF has the detail).** Where the row was wrong: a run has **no single
+  starter** since RL-13 (several Billies on starter points), so Blake counters **the lead you take off with**
+  (`run.rival.lead`), by type (`typeEffectiveness`), not by the opening's `rules.start.rival` table; Blake's opening
+  battle (`blake0`) was already dormant since RL-8 and he is in no hub; **favours had no system** (no
+  `things-to-do.js` on main); the hub has **three** people to relate to (Chosen, Hazel, Juniper); `chapter:` would
+  have clashed with story.json's map-variant chapters, so it is a count, `chapter >= n`. Built, every number a
+  placeholder (rules.json `run.rival`, `run.beans`, `run.payout.beansWin`, relations.json): the node type `rival`
+  (`runMapRival`, a post-pass on its own streams after the side area, so no other draw moves), `logic/rival.js`
+  (`rivalTeam`, `run.rival`, the history's `rival: {met, won}`, facts `last:rival`, `history:rivalmet` ...), Beans as
+  currencies.json's fifth row, `logic/relations.js` (`meta.rel`, `meta.gifted`, `run.rel` read by `fxOfRun`, items
+  at takeoff), conditions `rel:`, `beans`, `gifted:`, `chapter`, commands `beans`, `gift`, `rel`, `chapter`, the
+  gift offered before a hub person's talk. Waiting on the owner (9.6-style asks in the session's plan): Blake's
+  rules, the levels and what they bring, Beans' sources, Chapter 1's beats and every line. Part B: Chapter 1's beats
+  and the favours, in the owner's words.
+- **RL-S2 as built, part B (2026-10-26; HANDOFF has the detail).** The owner's answers: A Blake as built (the lead, 1/2/2/2/2
+  meetings, 2 Billies +1 per 2 meetings, a loss ends the run); B level 1 a line, 3 a second bonus (Chosen +5% XP,
+  Hazel a Hi-Potion, Juniper +10% catch), 4 a wardrobe piece, 5 a once-only line; C Beans as built plus 1 for Blake's
+  first defeat in a run; D every drafted line approved. Where part A's notes were wrong: Blake's lose line never
+  shows on a run (battle.js only shows it off a run: a `back_lost` pair says it); a chapter is not one an Expedition
+  (only `chapter n` moves it); part A's six beats were never written down; and two found in the build: an `xp` row
+  on a run did nothing (only held items' were read) and a `must` fresh line not talked to was lost for good (its
+  `once` marked at the pick). Built: favours as relations.json data (`relFavoursPay` on the way home), `thanks_<who>`
+  after a gift, conditions `lastteam:` and `rival`, Chapter 1's five beats and `scripts.chapter1-end` (for RL-14).
+
+- **The bots sessions (RL-14a, RL-14b)** were meant for a branch of their own (`track/bots`); RL-14a was built on its
+  session's branch, `ccr-15fdd30c-5nfh0d`, at the owner's word (2026-10-26). RL-14b starts on `track/bots` once the
+  owner makes it from main.
+  Branch: track/bots
+- **RL-14 split (the owner, 2026-10-26).** RL-14a: the Bureau's bots, salvage, the scrapyard; RL-14b: the Voltron
+  (`bosses.json`, `alphaPhase` from data, the join intro, the story scene last, beside RL-S2). The owner's answers: the
+  build may start on the session branch; salvage is 2 parts + 1 Scrap stack (parts kept in `saveData.parts` for SP-5
+  and the Workshop); the Voltron is Expedition I's boss only (leaders stay the boss from II up); wild bots yes, rare;
+  the scrapyard built in RL-14a; the Voltron's four boss parts placeholders drawn by robot-art.js; phase 17's numbers
+  kept, tuned by the sim, the gem's story role left open.
+- **RL-14a as built (2026-10-26; HANDOFF has the detail).** `factions.json` (the Bureau: six bots, `wild` 10% from row
+  3 in six biomes, `agents` the Bureau Clerk and a new Reclamation Agent with 1-2 bots, `scrapyard`, `salvage`),
+  `logic/factions.js`; `rules.js spawnBot` (a wild bot is a wild entry with a robot's sp), `battle-engine.js
+  startWildBot` and `catchable`; `encounters.js encClassFoe` fields an agent's bots from a stream of their own;
+  `battle-rewards.js battleSalvage` and `rewards.js salvageOfferMake` (salvage in place of a reward pick, never
+  rerolled; a part into `saveData.parts`, Scrap into `meta.scrap`); a `scrapyard` node type by its own `chance` (12%)
+  from `fromRow` 3, not a weight (a weight moved every free node's draw), with its agents (`scrapyardAgents`) and set
+  pieces by a scene `site` dial (setPieces.json `sites`, the Scrap heap); bots' cries (`cries.js cryOfBot`); a broken
+  part drops off the battle stage. Where the plan was wrong: the robot prototype was already in main (not only on
+  `archive/phase-17-robots`), robots have no head slot, `trainerTeam` already took robot entries, the Bureau's agents
+  already existed (`bureau_clerk`, RL-S1), so "Collectors" are Bureau agents; wild bots are full builds, not
+  `'bot:<torso>'`.
 
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 

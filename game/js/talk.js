@@ -6,7 +6,7 @@
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapChatLines, playStoryScript, provide, storyFreshTake } from './hooks.js';
+import { mapChatLines, playStoryScript, provide, residentHomeTalk, storyFreshTake, storyGiftOffer } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { reducedMotion } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -296,6 +296,11 @@ const FOLK_TALK = [
 ];
 async function talkFolk(f) {
   if (talkBox.on) return;
+  /* RS-3: a resident of Copperleaf says their own line (story.js residentHomeTalk) */
+  if (f.res && typeof residentHomeTalk === 'function') {
+    await residentHomeTalk(f);
+    return;
+  }
   const sc = walkView.sc,
     L = typeof mapChatLines === 'function' ? mapChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
     who = 'folk:' + f.seed,
@@ -319,6 +324,8 @@ async function talkFolk(f) {
 /* Professor Chosen in his lab: his script (story.json scripts.chosen): your Index, your badges, where Blake went */
 export async function talkChosen() {
   if (talkBox.on) return;
+  /* RL-S2: a Bean for him first, when you have one */
+  if (await storyGiftOffer('chosen')) return;
   /* RL-S1: the first talk after a run: his line picked on the way home, once, in place of his own */
   const fresh = storyFreshTake('chosen');
   await playStoryScript(fresh ? 'banter:' + fresh : 'story:chosen');

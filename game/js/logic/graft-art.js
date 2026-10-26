@@ -3,16 +3,16 @@
 /* ================= GRAFT ART (splicing track SP-1) =================
    A grafted Billie's recipe: its species' kit recipe (game/data/kitBuilds.json) with one or more slots' parts taken
    from another species' recipe, ready for kitBakeWhole (logic/kit-assemble.js) to bake at runtime. A graft is
-   { slot: donor species id } (SP-1's art spike; SP-2's Genes resolve to the same part and donor). The donor's part
+   { slot: Gene id }, a Gene id "part@donor": a kit part and the donor rig whose colour and size it keeps (SP-2). The donor's part
    keeps its colour and its size on the donor (the fit scales the whole Billie down if it no longer fits the stage
    box). A slot is swapped only bone kind for bone kind (an arm for an arm or a wing, a leg for a leg or a foot, a tail
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
-   not grafted yet. Logic only: no DOM (tools/test/graft-art.test.mjs).
+   not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs).
    RO-3c: placeholder Billies (logic/placeholder-art.js, any of the 14 body plans) are grafted by slot across plans,
    on their baked sheets and rigs (graftPlaceholder, below; tools/test/graft-placeholder.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
-/** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> donor species id */
+/** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> Gene id, "part@donor" (SP-2) */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
 /** @typedef {import('./placeholder-art.js').BodyPlans} BodyPlans */
 /** @typedef {import('./placeholder-art.js').PlaceholderForm} PlaceholderForm */
@@ -24,16 +24,27 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
-import { roundHalfEven } from './sheet-slice.js';
-import { kitBlank, kitFlipX, kitNearest, kitPaste, kitTurnRight } from './kit-pixels.js';
-import { kitBounds, kitDrawRest, kitPack } from './kit-assemble.js';
-import { PLACEHOLDER_BOX, PLACEHOLDER_VIEWS, placeholderBones } from './placeholder-art.js';
+import {
+  PLACEHOLDER_BOX,
+  PLACEHOLDER_VIEWS,
+  kitBlank,
+  kitBounds,
+  kitDrawRest,
+  kitFlipX,
+  kitNearest,
+  kitPack,
+  kitPaste,
+  kitTurnRight,
+  placeholderBones,
+  roundHalfEven,
+} from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
-  GRAFTS: [() => GRAFTS],
+  BONE_OF_SLOT: [() => BONE_OF_SLOT],
   GRAFT_SHRINK: [() => GRAFT_SHRINK],
   GRAFT_SLOTS: [() => GRAFT_SLOTS],
+  // @ts-expect-error -- replaced on purpose
+  geneSplit: [() => geneSplit, v => (geneSplit = v)],
   // @ts-expect-error -- replaced on purpose
   graftAim: [() => graftAim, v => (graftAim = v)],
   // @ts-expect-error -- replaced on purpose
@@ -41,9 +52,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   graftDonors: [() => graftDonors, v => (graftDonors = v)],
   // @ts-expect-error -- replaced on purpose
-  graftFit: [() => graftFit, v => (graftFit = v)],
-  // @ts-expect-error -- replaced on purpose
-  graftForm: [() => graftForm, v => ((graftForm = v), provide({ graftForm }))],
+  graftForm: [() => graftForm, v => (graftForm = v)],
   // @ts-expect-error -- replaced on purpose
   graftGroupPic: [() => graftGroupPic, v => (graftGroupPic = v)],
   // @ts-expect-error -- replaced on purpose
@@ -51,13 +60,19 @@ expose({
   graftKey: [() => graftKey],
   // @ts-expect-error -- replaced on purpose
   graftKind: [() => graftKind, v => (graftKind = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftLook: [() => graftLook, v => (graftLook = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftLookSplit: [() => graftLookSplit, v => (graftLookSplit = v)],
   graftOf: [() => graftOf],
   // @ts-expect-error -- replaced on purpose
-  graftParse: [() => graftParse, v => ((graftParse = v), provide({ graftParse }))],
+  graftParse: [() => graftParse, v => (graftParse = v)],
   // @ts-expect-error -- replaced on purpose
   graftPic: [() => graftPic, v => (graftPic = v)],
   // @ts-expect-error -- replaced on purpose
-  graftPlaceholder: [() => graftPlaceholder, v => ((graftPlaceholder = v), provide({ graftPlaceholder }))],
+  graftPicFit: [() => graftPicFit, v => (graftPicFit = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftPlaceholder: [() => graftPlaceholder, v => (graftPlaceholder = v)],
   // @ts-expect-error -- replaced on purpose
   graftPlaceholderAt: [() => graftPlaceholderAt, v => (graftPlaceholderAt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -68,7 +83,6 @@ expose({
   graftTurn: [() => graftTurn],
 });
 /* eslint-enable no-func-assign */
-provide({ graftForm, graftParse, graftPlaceholder });
 /* to-module: end */
 /** the slots SP-1 grafts */
 export const GRAFT_SLOTS = ['front', 'back', 'sig'];
@@ -106,43 +120,90 @@ export function graftParse(key) {
   return Object.keys(g).length ? g : null;
 }
 
-/* SP-1: this session's grafts, by Billie object (or wild encounter), as graft codes. Never saved: saveFill keeps a
-   Billie's unknown fields, so a field would land in the save; SP-2 gives Billy a validated `graft` instead. */
-export const GRAFTS = new WeakMap();
-/** a Billie's graft code, '' for none @param {object | null | undefined} m */
-export const graftOf = m => (m && typeof m === 'object' && GRAFTS.get(m)) || '';
+/* SP-2: a Billie's (or wild encounter's) splice is its `graft` field (Billy.graft, kept by the save's validators) */
+/** a Billie's graft code, '' for none @param {{ graft?: Graft } | null | undefined} m */
+export const graftOf = m => (m && typeof m === 'object' ? graftKey(m.graft) : '');
+/** SP-5: how a Billie (or an encounter, a snapshot) looks: its graft code and, after it, each Augment as "+slot=part"
+ * ("sig=shark_tailfin@zuck2,+front=hydrant"); its graft code alone when it has none, so nothing else changes. Only the
+ * drawing reads it (skeleton-rig.js rigParts); the splice's own code stays graftOf @param {any} m */
+export function graftLook(m) {
+  const g = graftOf(m),
+    a = m && typeof m === 'object' && m.aug && typeof m.aug === 'object' ? m.aug : null,
+    more = a
+      ? Object.keys(a)
+          .sort()
+          .filter(s => a[s] && typeof a[s].id === 'string')
+          .map(s => `+${s}=${a[s].id}`)
+      : [];
+  return more.length ? [g, ...more].filter(Boolean).join(',') : g;
+}
+/** a look code (graftLook) as its graft code and its Augments ({ slot: robots.json part id }, null for none)
+ * @param {string | null | undefined} code @returns {{ graft: string, aug: Record<string, string> | null }} */
+export function graftLookSplit(code) {
+  if (!code || !code.includes('+')) return { graft: code || '', aug: null };
+  /** @type {Record<string, string>} */
+  const aug = {};
+  const own = [];
+  for (const pair of code.split(',')) {
+    if (pair[0] !== '+') own.push(pair);
+    else {
+      const [slot, id] = pair.slice(1).split('=');
+      if (slot && id) aug[slot] = id;
+    }
+  }
+  return { graft: own.join(','), aug: Object.keys(aug).length ? aug : null };
+}
 /** give a Billie (or an encounter) a graft code; '' takes it off @param {object} m @param {string} key */
 export function graftSet(m, key) {
-  if (key) GRAFTS.set(m, key);
-  else GRAFTS.delete(m);
+  const g = graftParse(key),
+    o = /** @type {{ graft?: Graft }} */ (m);
+  if (g) o.graft = g;
+  else delete o.graft;
 }
 
-/** the recipe of a species with its grafted slots' parts from their donors, or null when a donor or a slot doesn't fit
- * (no recipe, no part of that kind) @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp
- * @param {Graft} graft @returns {KitForm | null} */
+/** SP-2: a Gene id, "part@donor" (a kit part id and the donor rig it came from), as its two halves; null for
+ * anything else @param {unknown} id @returns {{ part: string, donor: string } | null} */
+export function geneSplit(id) {
+  if (typeof id !== 'string') return null;
+  const at = id.indexOf('@');
+  return at > 0 && at < id.length - 1 && id.indexOf('@', at + 1) < 0
+    ? { part: id.slice(0, at), donor: id.slice(at + 1) }
+    : null;
+}
+/** the bone a part goes on, from its kind's usual slot (partKits.json slots): front an arm, back a leg, sig a tail */
+export const BONE_OF_SLOT = /** @type {Record<string, string>} */ ({ front: 'arm', back: 'leg', sig: 'tail' });
+
+/** the recipe of a species with its grafted slots' parts (a Gene's part, at its donor's colour and size), or null
+ * when a Gene or a slot doesn't fit: no recipe, no such donor or part, a donor without that bone, a part that goes
+ * on another bone @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp @param {Graft} graft
+ * @returns {KitForm | null} */
 export function graftForm(B, K, sp, graft) {
   const base = graftRecipe(B, sp);
   if (!base) return null;
   const out = { ...base, parts: { ...base.parts }, name: `${base.name}~${graftKey(graft)}` };
-  for (const [slot, donorSp] of Object.entries(graft)) {
-    const donor = graftRecipe(B, donorSp),
+  for (const [slot, id] of Object.entries(graft)) {
+    const gene = geneSplit(id),
+      donor = gene && graftRecipe(B, gene.donor),
+      P = gene && K.parts[gene.part],
       kind = graftKind(K, base, slot);
-    if (!donor || !kind || graftKind(K, donor, slot) !== kind) return null;
-    const [pid, size, col] = donor.parts[kind];
-    out.parts[kind] = [pid, Math.round(((size * donor.scale) / base.scale) * 1e4) / 1e4, col];
+    if (!donor || !P || !kind || graftKind(K, donor, slot) !== kind) return null;
+    if (BONE_OF_SLOT[/** @type {Record<string, string>} */ (K.slots || {})[P.kind]] !== kind) return null;
+    const [, size, col] = donor.parts[kind];
+    out.parts[kind] = [gene.part, Math.round(((size * donor.scale) / base.scale) * 1e4) / 1e4, col];
   }
   return out;
 }
 
-/** the species that can give a species a part for a slot: another line, the same bone kind, a different part
- * @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp @param {string} slot @returns {string[]} */
+/** the Genes a species can take for a slot, one per donor ("part@donor"): another line, the same bone kind, a
+ * different part @param {{ forms: KitForm[] }} B @param {PartKits} K @param {string} sp @param {string} slot
+ * @returns {string[]} */
 export function graftDonors(B, K, sp, slot) {
   const base = graftRecipe(B, sp),
     kind = base && graftKind(K, base, slot);
   if (!base || !kind) return [];
   return B.forms
     .filter(f => f.line !== base.line && graftKind(K, f, slot) === kind && f.parts[kind][0] !== base.parts[kind][0])
-    .map(f => f.rig);
+    .map(f => `${f.parts[kind][0]}@${f.rig}`);
 }
 
 /* ---------- RO-3c: placeholder Billies, grafted by slot across body plans ----------
@@ -233,7 +294,7 @@ export const graftTurn = g => ({ pic: kitTurnRight(g.pic), pv: [g.pic.height - g
  * pivot on the bone's joint; when either is held at its middle, turned to lie along it, inside its box and held where
  * it holds its own; at most 1.5 times its longest side, then scaled by `k`
  * @param {GraftPic} d @param {GraftPic} r @param {number} k @returns {GraftPic} */
-export function graftFit(d, r, k = 1) {
+export function graftPicFit(d, r, k = 1) {
   const [ax, ay] = graftAim(r),
     [bx, by] = graftAim(d),
     aimed = (ax || ay) && (bx || by);
@@ -290,7 +351,7 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
         const d = theirs[slot][i % theirs[slot].length],
           fit = (/** @type {GraftPic | null} */ dp, /** @type {string} */ n) => {
             const rp = graftPic(recv, view, n);
-            return dp && rp ? graftFit(dp, rp, k) : null;
+            return dp && rp ? graftPicFit(dp, rp, k) : null;
           };
         if (g.length === 1) v[g[0]] = fit(graftGroupPic(donor, view, d), g[0]);
         else g.forEach((n, j) => (v[n] = fit(graftPic(donor, view, d[Math.floor((j * d.length) / g.length)]), n)));

@@ -486,6 +486,78 @@
   "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
  },
  {
+  "id": "threadling",
+  "name": "Threadling",
+  "no": 41,
+  "line": "ortega",
+  "stage": 1,
+  "kind": "line3",
+  "parody": "Amancio Ortega",
+  "types": ["Grass"],
+  "design": "Pale silkworm in a measuring-tape stripe, spinning thread from a spool",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "zaracoon",
+  "name": "Zaracoon",
+  "no": 42,
+  "line": "ortega",
+  "stage": 2,
+  "kind": "line3",
+  "parody": "Amancio Ortega",
+  "types": ["Grass","Steel"],
+  "design": "Cocoon wrapped like a garment bag, a price tag hanging off it, a sleepy face peeking out",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "ortegamoth",
+  "name": "Ortegamoth",
+  "no": 43,
+  "line": "ortega",
+  "stage": 3,
+  "kind": "line3",
+  "parody": "Amancio Ortega",
+  "types": ["Grass","Flying"],
+  "design": "Moth with this week's print on its wings and feathery antennae, camera-shy",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "tickerbud",
+  "name": "Tickerbud",
+  "no": 44,
+  "line": "bloomberg",
+  "stage": 1,
+  "kind": "line3",
+  "parody": "Michael Bloomberg",
+  "types": ["Grass"],
+  "design": "Flower bud with a pale stripe down its face and a ticker-tape leaf",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "bloomburst",
+  "name": "Bloomburst",
+  "no": 45,
+  "line": "bloomberg",
+  "stage": 2,
+  "kind": "line3",
+  "parody": "Michael Bloomberg",
+  "types": ["Grass"],
+  "design": "Opened bloom with orange-on-black petals full of numbers",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
+  "id": "terminalia",
+  "name": "Terminalia",
+  "no": 46,
+  "line": "bloomberg",
+  "stage": 3,
+  "kind": "line3",
+  "parody": "Michael Bloomberg",
+  "types": ["Grass","Psychic"],
+  "design": "Tall flower of glowing screen petals on a desk-like pot, a keyboard of leaves",
+  "state": {"silhouette":true,"sheet":true,"rig":true,"portrait":false}
+ },
+ {
   "id": "swooshpole",
   "name": "Swooshpole",
   "no": 47,

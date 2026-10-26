@@ -20,11 +20,13 @@ import {
   provide,
   render,
   renderOverlay,
+  residentNoteHTML,
+  residentsAt,
   toast,
   xpProgress,
 } from './hooks.js';
 import { COATS, RULES, SPECIES } from './game-data.js';
-import { graftOf } from './logic/graft-art.js';
+import { graftLook } from './logic/graft-art.js';
 import { billyName, teamSize, toTeam } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import {
@@ -116,7 +118,7 @@ function breedHTML(s, now, BR) {
     cards = home
       .map(
         m =>
-          `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="Lv ${m.lvl} · ${escapeHtml(SPECIES[m.sp].name)}${s.team.includes(m) ? ' · team' : ''}"${P.a === m.uid || P.b === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span></pb-pick-card>`
+          `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="Lv ${m.lvl} · ${escapeHtml(SPECIES[m.sp].name)}${s.team.includes(m) ? ' · team' : ''}"${P.a === m.uid || P.b === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
       )
       .join(''),
     why = breedCan(s, P.a, P.b, P.mode, BR),
@@ -128,7 +130,7 @@ function breedHTML(s, now, BR) {
   if (A && B && why !== 'same' && why !== 'line') {
     if (P.mode === 'safe') {
       const { m } = breedRoll(s, A, B, 'safe', BR);
-      preview = `<div class="bx k-card ranch-card breed-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl} · parts ${Object.values(m.build).join(' ')}</span><span class="bx-sub">${m.coat && COATS[m.coat] ? `${escapeHtml(COATS[m.coat].name)} coat · ` : ''}hatches in ${BR.hours} h</span></div></div>`;
+      preview = `<div class="bx k-card ranch-card breed-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl} · parts ${Object.values(m.build).join(' ')}</span><span class="bx-sub">${m.coat && COATS[m.coat] ? `${escapeHtml(COATS[m.coat].name)} coat · ` : ''}hatches in ${BR.hours} h</span></div></div>`;
     } else
       preview = `<p class="note breed-preview">Hatches in ${BR.hours} h: ${escapeHtml([...new Set([breedLine(A), breedLine(B)])].map(l => SPECIES[l + '0'].name).join(' or '))}. ${breedPct(O.safe)} plain, ${breedPct(O.quirk)} a quirk (a parent’s move, an odd size or coat), ${breedPct(O.abom)} an abomination (odd parts, its own name, one stat far up and one down).</p>`;
   }
@@ -138,7 +140,7 @@ function breedHTML(s, now, BR) {
 }
 /** one Billie's card on the ranch's sheet: its picture, name and level, a line under it and its buttons */
 function ranchCardHTML(m, sub, btns) {
-  return `<div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}${m.mut ? ` · ${breedMark(m)}` : ''}</span>${sub}</div>${btns}</div>`;
+  return `<div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}${m.mut ? ` · ${breedMark(m)}` : ''}</span>${sub}</div>${btns}</div>`;
 }
 /** RL-10b: the ranch's passive income: the pile, how long until it is full, Collect */
 function incomeHTML(s, now, R) {
@@ -195,7 +197,8 @@ export function ranchOpen() {
   const M = {
     title: `The ranch · Lv ${ranchLevel(s)}`,
     cls: 'ranch-sheet',
-    html: `<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap}" label="Scrap"></pb-coin> <span class="note">Ranch level ${ranchLevel(s)} · trains up to Lv ${cap} · ${R.levelsPerHour < 1 ? `a level every ${+(1 / R.levelsPerHour).toFixed(1)} h` : `${R.levelsPerHour} levels an hour`}, banking up to ${R.bankHours} h between visits</span></p>${back ? `<p class="note ranch-back">Your device’s clock is behind the ranch’s, so its timers wait until it catches up.</p>` : ''}${R.income ? incomeHTML(s, now, R) : ''}<section class="tpanel"><div class="sec-h"><h2>Training</h2><span class="count tnum">${training.length} of ${slots}</span></div>${trainHTML}</section><section class="tpanel"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${resting.length}</span></div>${restHTML}</section>${R.breed ? breedHTML(s, now, R.breed) : ''}${typeof buildingRowsHTML === 'function' && buildingRowsHTML('ranch', 'ranch') ? `<section class="tpanel"><div class="sec-h"><h2>Upgrades</h2></div>${buildingRowsHTML('ranch', 'ranch')}</section>` : ''}<p class="note">Runs bring Scrap home: a little for every place you reach.</p>`,
+    /* RS-3: a resident helping at the ranch (the Rancher's hand) */
+    html: `${typeof residentNoteHTML === 'function' ? residentNoteHTML(residentsAt('ranch'), 'helps here') : ''}<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap}" label="Scrap"></pb-coin> <span class="note">Ranch level ${ranchLevel(s)} · trains up to Lv ${cap} · ${R.levelsPerHour < 1 ? `a level every ${+(1 / R.levelsPerHour).toFixed(1)} h` : `${R.levelsPerHour} levels an hour`}, banking up to ${R.bankHours} h between visits</span></p>${back ? `<p class="note ranch-back">Your device’s clock is behind the ranch’s, so its timers wait until it catches up.</p>` : ''}${R.income ? incomeHTML(s, now, R) : ''}<section class="tpanel"><div class="sec-h"><h2>Training</h2><span class="count tnum">${training.length} of ${slots}</span></div>${trainHTML}</section><section class="tpanel"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${resting.length}</span></div>${restHTML}</section>${R.breed ? breedHTML(s, now, R.breed) : ''}${typeof buildingRowsHTML === 'function' && buildingRowsHTML('ranch', 'ranch') ? `<section class="tpanel"><div class="sec-h"><h2>Upgrades</h2></div>${buildingRowsHTML('ranch', 'ranch')}</section>` : ''}<p class="note">Runs bring Scrap home: a little for every place you reach.</p>`,
     btns: [{ l: 'Done', c: 'gold', f: closeModal }],
     after: () => {
       for (const b of document.querySelectorAll('#ov .ranch-sheet [data-r]'))

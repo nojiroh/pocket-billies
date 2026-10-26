@@ -10,7 +10,7 @@ import { clamp } from '../util.js';
 import { FRAME_BLOCK_BYTES, packFrameBlock } from './frame-block.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { cross3, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
+import { cross3, gpuBuffer, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FRAME_BLOCK_SLOTS: [() => FRAME_BLOCK_SLOTS],
@@ -20,6 +20,7 @@ expose({
   bindFrameBlock: [() => bindFrameBlock, v => (bindFrameBlock = v)],
   endShadow: [() => endShadow, v => (endShadow = v)],
   frameBlock: [() => frameBlock],
+  frameBlockLost: [() => frameBlockLost, v => (frameBlockLost = v)],
   frameBlockStale: [() => frameBlockStale, v => (frameBlockStale = v)],
   lightContext: [() => lightContext, v => (lightContext = v)],
   pickPointLights: [() => pickPointLights, v => (pickPointLights = v)],
@@ -170,6 +171,7 @@ export function lightContext(o) {
     shLift,
     shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 32) : 0,
     shSteps: engineSetting('shadows', 'pixelSteps') ?? 2,
+    shFix: (engineSetting('shadows', 'steadyEdges') ? 1 : 0) + (engineSetting('shadows', 'lampFix') ? 2 : 0),
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,
@@ -184,16 +186,17 @@ export function lightContext(o) {
    a context is packed and sent the first time a program is bound with it, and bound again only when another slot was
    in use (the reflection's copy of the frame's context takes a slot of its own) */
 const FRAME_BLOCK_SLOTS = 4;
-const frameBlock = { gl: null, buf: null, stride: 0, next: 0, bound: -1, owner: [], f: null, n: null };
+const frameBlock = { gl: null, gen: 0, buf: null, stride: 0, next: 0, bound: -1, owner: [], f: null, n: null };
 function bindFrameBlock(X) {
   const gl = gpuState.gl,
     B = frameBlock;
-  if (B.gl !== gl) {
+  if (B.gl !== gl || B.gen !== gpuState.gen) {
     const al = gl.getParameter(gl.UNIFORM_BUFFER_OFFSET_ALIGNMENT) || 256,
       raw = new ArrayBuffer(FRAME_BLOCK_BYTES);
     B.gl = gl;
+    B.gen = gpuState.gen;
     B.stride = Math.ceil(FRAME_BLOCK_BYTES / al) * al;
-    B.buf = gl.createBuffer();
+    B.buf = gpuBuffer('other', B.stride * FRAME_BLOCK_SLOTS);
     gl.bindBuffer(gl.UNIFORM_BUFFER, B.buf);
     gl.bufferData(gl.UNIFORM_BUFFER, B.stride * FRAME_BLOCK_SLOTS, gl.DYNAMIC_DRAW);
     B.f = new Float32Array(raw);
@@ -217,6 +220,12 @@ function bindFrameBlock(X) {
     B.bound = s;
   }
 }
+/* phase 20 H: a restored context is the same object with nothing on it, so the block's buffer is made again on the next
+   bind (walk-view-gl.js onGlContextRestored); without it every lit draw had no light buffer bound */
+export function frameBlockLost() {
+  frameBlock.gl = null;
+  frameBlock.buf = null;
+}
 /* a light context changed after it was packed (lampShadowMaps): packed again the next time it is bound */
 export function frameBlockStale(X) {
   const s = frameBlock.owner.indexOf(X);
@@ -225,62 +234,15 @@ export function frameBlockStale(X) {
 export function setLightUniforms(p, X) {
   const gl = gpuState.gl,
     U = p.U;
-  if (!U.uEye && !U.uCurve && !p.frame) return;
   if (U.uCurve) {
     gl.uniform3f(U.uCurve, X.curve[0], X.curve[1], X.curve[2]);
     gl.uniform1f(U.uCurveD0, X.curve[3]);
   }
-  /* phase 20 C3: a program with the Frame block takes the frame's light values from it (the samplers are set below) */
-  const blk = !!p.frame;
-  if (blk) {
-    bindFrameBlock(X);
-    if (U.uFol) gl.uniform2f(U.uFol, 0, 0);
-  } else if (!U.uEye) return;
-  if (!blk) {
-    if (U.uFogSun) gl.uniform1f(U.uFogSun, X.fogSun || 0);
-    if (U.uSH) {
-      if (X.sh) {
-        gl.uniform3fv(U.uSH, X.sh);
-        gl.uniform1f(U.uSHK, X.shK);
-      } else gl.uniform1f(U.uSHK, 0);
-    }
-    gl.uniform3fv(U.uEye, X.eye);
-    gl.uniform3fv(U.uSunDir, X.sun.dir);
-    gl.uniform3fv(U.uSunCol, X.sun.col);
-    gl.uniform3fv(U.uAmbTop, X.ambTop);
-    gl.uniform3fv(U.uAmbBot, X.ambBot);
-    if (U.uAmbK) gl.uniform1f(U.uAmbK, X.ambK);
-    gl.uniform3fv(U.uFogCol, X.fog);
-    gl.uniform1f(U.uFogStart, X.fogStart);
-    gl.uniform1f(U.uFogD, X.fogD);
-    if (U.uTint) {
-      gl.uniform3fv(U.uTint, X.tint);
-      gl.uniform1f(U.uTintAmt, X.tintAmt);
-    }
-    if (U.uRoomDim) {
-      gl.uniform4fv(U.uRoomB, X.roomB || [0, 0, 0, 0]);
-      gl.uniform1f(U.uRoomDim, X.roomDim || 0);
-    }
-    if (U.uMist) {
-      gl.uniform1f(U.uMist, X.mist);
-      gl.uniform1f(U.uMistY, X.mistY);
-    }
-    if (U.uValley) gl.uniform2fv(U.uValley, X.valley || [0, 0]);
-    if (U.uSeason) gl.uniform4fv(U.uSeason, X.season || [0, 0, 0, 0]);
-    if (U.uFol) gl.uniform2f(U.uFol, 0, 0);
-    if (U.uTime) gl.uniform1f(U.uTime, X.time);
-    if (U.uShStr) {
-      gl.uniform1f(U.uShStr, X.shStr);
-      gl.uniform3fv(U.uShTint, X.shTint);
-      gl.uniform1f(U.uCloudSh, X.cloudSh);
-      gl.uniform1f(U.uCloudSpd, X.cloudSpd);
-      if (U.uCloudCov) gl.uniform1f(U.uCloudCov, X.cloudCov ?? 0.45);
-      gl.uniform1f(U.uContact, X.contact);
-    }
-    if (U.uShPx) gl.uniform1f(U.uShPx, X.shPx || 0);
-    if (U.uShSteps) gl.uniform1f(U.uShSteps, X.shSteps ?? 2);
-    if (U.uShLift) gl.uniform3fv(U.uShLift, X.shLift || [0, 0, 0]);
-  }
+  /* phase 20 C3: a program with the light code takes the frame's light values from the Frame block; only the
+     per-thing foliage and the shadow samplers are set here */
+  if (!p.frame) return;
+  bindFrameBlock(X);
+  if (U.uFol) gl.uniform2f(U.uFol, 0, 0);
   /* the shadow samplers: every one of them is always given its own unit (a sampler left at unit 0 next to a plain
     sampler2D there makes the card refuse the draw), with the frame's maps or a stand-in depth texture */
   const S = X.shadow;
@@ -295,13 +257,6 @@ export function setLightUniforms(p, X) {
     bindD(7, D0, 0);
     gl.uniform1i(U.uShadow, 6);
     gl.uniform1i(U.uShadowD, 7);
-    if (!blk && S) {
-      gl.uniformMatrix4fv(U.uShadowM, false, S.vp);
-      gl.uniform1f(U.uShadowOn, 1);
-      if (U.uShLite) gl.uniform1f(U.uShLite, X.lite ? 1 : 0);
-      gl.uniform2f(U.uShadowTexel, 1 / S.size, 1 / S.size);
-      if (U.uShPen) gl.uniform1f(U.uShPen, S.pen);
-    } else if (!blk) gl.uniform1f(U.uShadowOn, 0);
     /* v43: the second cascade (the whole view at a coarser texel) on 10/11, the two lamps' maps on 12/13 */
     if (U.uShadow2 != null) {
       const F = S && S.far;
@@ -309,12 +264,6 @@ export function setLightUniforms(p, X) {
       bindD(11, F ? F.d : D0, 0);
       gl.uniform1i(U.uShadow2, 10);
       gl.uniform1i(U.uShadowD2, 11);
-      if (!blk && F) {
-        gl.uniformMatrix4fv(U.uShadowM2, false, F.vp);
-        gl.uniform1f(U.uShadow2On, 1);
-        gl.uniform2f(U.uShadowTexel2, 1 / F.size, 1 / F.size);
-        gl.uniform1f(U.uShPen2, F.pen);
-      } else if (!blk) gl.uniform1f(U.uShadow2On, 0);
     }
     if (U.uLampSh0 != null) {
       const LS = (S && X.lampSh) || [];
@@ -322,40 +271,11 @@ export function setLightUniforms(p, X) {
         const M = LS[i];
         bindD(12 + i, M ? M.d : D0, 1);
         gl.uniform1i(i ? U.uLampSh1 : U.uLampSh0, 12 + i);
-        if (M && !blk) gl.uniformMatrix4fv(i ? U.uLampM1 : U.uLampM0, false, M.vp);
       }
-      if (!blk) gl.uniform1i(U.uNLS, LS.length);
     }
     gl.activeTexture(
       gl.TEXTURE0
     ); /* back to unit 0: a texture made or uploaded later must not land on a shadow unit (v44) */
-  }
-  if (blk) return;
-  /* v30: the light and occlusion lists are packed once per frame, not once per program (fewer allocations on phones) */
-  if (U.uLP) {
-    if (!X._lp) {
-      const lp = new Float32Array(64),
-        lc = new Float32Array(64),
-        L = X.lights;
-      L.forEach((l, i) => {
-        lp.set([l.p[0], l.p[1], l.p[2], l.front ? -l.r : l.r], i * 4);
-        lc.set([l.c[0], l.c[1], l.c[2], 1], i * 4);
-      });
-      X._lp = lp;
-      X._lc = lc;
-    }
-    gl.uniform4fv(U.uLP, X._lp);
-    gl.uniform4fv(U.uLC, X._lc);
-    gl.uniform1i(U.uNL, X.lights.length);
-  }
-  if (U.uAO) {
-    if (!X._ao) {
-      const a = new Float32Array(256);
-      X.ao.forEach((b, i) => a.set(b, i * 4));
-      X._ao = a;
-    }
-    gl.uniform4fv(U.uAO, X._ao);
-    gl.uniform1i(U.uNAO, X.ao.length);
   }
 }
 /* a sun shadow map covering a rectangle of the world; returns what lightContext needs. Terrain TR-3: centred at height
@@ -383,7 +303,10 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow', cy = 0
     cx += dx + f[0] * t;
     cz += dz + f[2] * t;
   }
-  const eye = [cx - tr[0] * dist, cy - tr[1] * dist + 2, cz - tr[2] * dist];
+  /* Steady shadow edges (shadows.steadyEdges): the eye on the light's own line through the centre, the line the snapping
+     above assumes; 2 m higher (as before) tilts the view a little off it and the snapped grid drifts as you walk */
+  const lift = engineSetting('shadows', 'steadyEdges') ? 0 : 2,
+    eye = [cx - tr[0] * dist, cy - tr[1] * dist + lift, cz - tr[2] * dist];
   const view = matrix4.look(eye, [cx, cy, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
     depth = 140,
     proj = matrix4.ortho(-radius, radius, -radius, radius, 1, depth),

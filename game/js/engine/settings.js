@@ -7,14 +7,18 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ENVIRONMENT_ENGINE_MODIFIERS, gameData, provide, saveData } from '../hooks.js';
+import { ZOOM_STOPS } from '../logic/camera-zoom.js';
 import { TIME_OF_DAY_DEFAULTS, TIME_OF_DAY_GROUPS, TIME_OF_DAY_KEYS } from '../logic/time-of-day.js';
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
+  CAMERA_FOLDERS: [() => CAMERA_FOLDERS],
+  CAMERA_LOOKS: [() => CAMERA_LOOKS],
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
   FRAME_SETTINGS: [() => FRAME_SETTINGS],
+  OFF_LOOK: [() => OFF_LOOK],
   PLAIN_LOOK: [() => PLAIN_LOOK],
   TOD_NAMES: [() => TOD_NAMES],
   beginFrameSettings: [() => beginFrameSettings, v => (beginFrameSettings = v)],
@@ -25,7 +29,9 @@ expose({
   engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
+  graphicsOff: [() => graphicsOff, v => (graphicsOff = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
+  lookStop: [() => lookStop],
   playerBlur: [() => playerBlur, v => (playerBlur = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
   setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
@@ -59,11 +65,17 @@ export const ENGINE_DEFAULTS = {
     bloom: 0.55,
     bloomThreshold: 0.9,
     bloomSize: 1,
+    /* the bloom as strong at every quality step (it added one copy per level, so the slower steps' fewer levels made it
+       fainter) and its threshold read after the exposure (changing the exposure moved what blooms); off: as before */
+    bloomEven: false,
     grade: 'film',
     gradeAmount: 0.6,
     tone: 'soft',
     ink: 0.35,
     outlines: 1,
+    /* the ink outlines and the screen's occlusion follow the camera: blurred things lose their outlines with the blur,
+       and the outlines fade out past where the camera looks (they faded from 25 m, about where you stand) */
+    inkFollow: false,
   },
   sun: {
     angle: 35,
@@ -82,6 +94,9 @@ export const ENGINE_DEFAULTS = {
     shaftLength: 0.85,
     glare: 0.6,
     shAmbient: 1,
+    /* the shafts, the glare and the god rays take the light's own colour (warm at golden hour, the moon's at night) and
+       its strength (dim under the moon); off: always the sun's colour at full strength, as before */
+    followLight: false,
   },
   shadows: {
     selfShade: 0.7,
@@ -98,12 +113,39 @@ export const ENGINE_DEFAULTS = {
     hue: 0.6,
     fit: true,
     groundAO: 1,
+    /* the screen's occlusion is measured so a plane gives none (open ground, seen at a slant, no longer reads as a
+       crease); off: as before */
+    aoPlane: false,
+    /* the ground's baked shade at the feet of things dims only its sky light (sunlit ground at a wall's foot stays
+       sunlit); off: it dimmed the ground's colour and its sunlight too */
+    groundAOSky: false,
     cascades: true,
     nearRadius: 13,
     lampShadows: 2,
+    /* the sun's shadow maps look straight down the light, so the texel snapping holds and shadow edges stand still as you
+       walk; off: their eye sits 2 m higher than the light's line, which made the snapping miss and the edges crawl */
+    steadyEdges: false,
+    /* lamp shadows hold: their depth bias grows with distance as a perspective map needs (shadows stayed on the feet only
+       close to the lamp), the pool a lamp lays under itself takes the lamp's shadow (it lit over it), and a lamp counts
+       as hanging high by its height above the ground, not above sea level */
+    lampFix: false,
     aoKind: 'horizon',
   },
-  lights: { brightness: 1, glow: 1, flicker: 0.5, windowsDay: 0.15, roomLight: true, windowLight: 1, pools: 1 },
+  lights: {
+    brightness: 1,
+    glow: 1,
+    flicker: 0.5,
+    windowsDay: 0.15,
+    roomLight: true,
+    windowLight: 1,
+    pools: 1,
+    /* lamps, windows and fires light the water and the falls near them at night, as they light the ground; off: water
+       took no lamp light */
+    onWater: false,
+    /* a house's window light falls out of its front whichever way the house faces (soft at the wall); off: it is cut
+       off on the far side of a line through it, the same for every house (lit wrong when the house is turned) */
+    windowFacing: false,
+  },
   air: {
     haze: null,
     hazeStart: 0.95,
@@ -119,6 +161,11 @@ export const ENGINE_DEFAULTS = {
     sunFog: 0.4,
     godRays: 0.5,
     lightsInAir: 0.7,
+    /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
+    cheapShafts: 0,
+    /* smart light shafts: the cheap shafts placed where shade lies behind them, looking into the light, apart and never
+       over you (logic/shaft-pick.js); off: one at about every other tree near you */
+    shaftPick: false,
   },
   world: {
     hugSlopes: true,
@@ -129,6 +176,12 @@ export const ENGINE_DEFAULTS = {
     reliefShade: 1,
     groundBumps: 1,
     groundShine: 1,
+    /* bricks, planks and roof tiles on the 3D buildings and the low-poly models catch the light from their own texels
+       (buildings.js bldBump); 0: flat walls and roofs, as before */
+    buildingBumps: 0,
+    /* a 3D building's front picture takes the building material's shine and wrap (as its bumps are made with it), and its
+       bumps may face a little down; off: a hard-wired wrap of .6 and no bump below a quarter up */
+    frontMaterial: false,
     buildings3d: true,
     interiors: true,
     solidProps: true,
@@ -136,6 +189,9 @@ export const ENGINE_DEFAULTS = {
     voxelChunky: false,
     voxelLowPoly: true,
     solidTrees: true,
+    /* a solid tree's dark core (the crown's own picture in the middle) takes 30% less light, as its shader meant to (the
+       darkening was worked out and never used); off: lit like its clumps */
+    treeCoreShade: false,
     treeDetail: 20,
     treeCount: 40,
     mini3d: true,
@@ -198,16 +254,21 @@ export const ENGINE_DEFAULTS = {
     sway: 1,
     tilt: 1,
     turn: 35,
-    zoomMin: 0.55,
-    zoomMax: 1.7,
-    /* CAM-2: the zoom curve's ends (logic/camera-zoom.js); these match zoom before CAM-2 */
-    zoomNearPitch: -6.3,
-    zoomNearDist: 0.55,
-    zoomNearFov: 1,
-    zoomFarPitch: 9.8,
-    zoomFarDist: 1.7,
-    zoomFarFov: 1,
-    zoomCurve: 1,
+    /* CAM-4a: the zoom's feel (logic/camera-zoom.js); these keep the feel before CAM-4a (the ease's 0.2 s is its old
+       rate of 5 a second, now in log zoom) */
+    zoomSmooth: 0.2,
+    pinchSpeed: 1,
+    wheelSpeed: 1,
+    zoomBand: 0,
+    zoomToPoint: false,
+    zoomPointMax: 3,
+    /* CAM-4b: the zoom stops (logic/camera-zoom.js), set for the whole game only; the defaults give the zoom before
+       CAM-4b. Pull to stops 0 keeps a pinch where you let go, as before. A two-finger tap (both fingers down and up
+       within the time, moving less than the pixels) goes to the next stop */
+    stops: ZOOM_STOPS.map(s => ({ ...s })),
+    stopPull: 0,
+    stopTapTime: 0.3,
+    stopTapMove: 12,
     /* CAM-2: the encounter shot and the pull back out after a battle */
     encZoom: 0.5,
     encMin: 400,
@@ -263,12 +324,50 @@ export const ENGINE_DEFAULTS = {
     phonePropDistance: 0,
     sharpTex: true,
     edgeBleed: true,
+    /* pictures' bump maps get smaller sizes too, so a far prop's light doesn't flicker as it moves (its colour already
+       had them); off: one size */
+    normalMips: false,
     /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
        false) */
     keepScenes: 3,
     paintWorker: true,
-    /* phase 20 C3: the frame's light values in one uniform block (off: each lit program is sent them, as before) */
-    frameBlock: false,
+    /* phase 20 C5: lights picked with stable keys and fades (off: the nearest each frame, as before), and how many may
+       be lit at once (the shaders hold 16) */
+    stableLights: false,
+    /* on a graphics chip that can draw to half-float pictures but not to full-float ones (some phones), the scene and the
+       bloom keep their bright parts above white (HDR) as on the others; read when the 3D view starts */
+    hdrHalf: false,
+    lights: 16,
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1); models, buildings and structures before the
+       sprites (D5) */
+    skyLast: false,
+    solidFirst: false,
+    /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
+    phonePixels: false,
+    /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
+    phoneLamps: true,
+    /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
+       (D3) */
+    invalidate: false,
+    /* rain, snow, ash and their splashes in one draw */
+    rainBatch: true,
+    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
+    spriteInstances: false,
+    /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
+    modelInstances: true,
+    /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
+    shadowInstances: true,
+    /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
+       ones that bob or turn out of it */
+    modelShadowCache: true,
+    /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
+       in its cache; within the near map (13 m) shadows sway as before */
+    farShadowsStill: true,
+    /* phase 20 R3 (battle): a battle rig's canvas drawn and uploaded again only when its pose, face or tint changes */
+    rigReuse: true,
+    /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
+       first draws compile and upload out of sight; a restored context fades back in the same way */
+    warmUp: true,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -400,9 +499,21 @@ export const ENGINE_SPEC = [
         0.05,
         'v47: black outlines in older pictures take a deep shade of the colour beside them, as the newer art draws them. 0: as painted.',
       ],
+      [
+        'inkFollow',
+        'Outlines follow the camera',
+        'bool',
+        'Ink outlines and contact shading melt away with the depth-of-field blur, and stay on you and what is near you at every zoom (on). Off: crisp outlines on blurred things, and fading from 25 m.',
+      ],
       ['bloom', 'Bloom', 0, 2, 0.02, 'Glow around bright lights.'],
       ['bloomThreshold', 'Bloom threshold', 0.5, 2, 0.02],
       ['bloomSize', 'Bloom size', 0.3, 2, 0.05],
+      [
+        'bloomEven',
+        'Even bloom',
+        'bool',
+        'The glow round bright things is as strong at every quality step, and its threshold follows the exposure (on). Off: as before.',
+      ],
       [
         'grade',
         'Colour grade',
@@ -482,6 +593,12 @@ export const ENGINE_SPEC = [
         'A soft halo and lens ghosts when the sun is in view and nothing blocks it.',
       ],
       ['shaftLength', 'Shaft length', 0.2, 1.5, 0.05],
+      [
+        'followLight',
+        'Rays follow the light',
+        'bool',
+        'Light shafts, glare and god rays take the colour of the light (warm at golden hour, the moon at night) and fade with it at night (on). Off: always the sun’s colour at full strength.',
+      ],
     ],
   ],
   [
@@ -547,6 +664,18 @@ export const ENGINE_SPEC = [
         'At night the nearest lamps get a shadow map of their own, so people and trees throw shadows away from them (v43).',
       ],
       [
+        'steadyEdges',
+        'Steady shadow edges',
+        'bool',
+        'The sun’s shadow maps look straight down the light, so shadow edges stand still while you walk, and wide soft edges don’t end in a lit band (on). Off: as before.',
+      ],
+      [
+        'lampFix',
+        'Lamp shadows hold',
+        'bool',
+        'Shadows from lamps stay on the feet of what casts them farther from the lamp, aren’t washed out by the lamp’s own pool of light, and work on high ground (on). Off: as before.',
+      ],
+      [
         'aoKind',
         'Ambient occlusion',
         'sel',
@@ -575,6 +704,18 @@ export const ENGINE_SPEC = [
         0.05,
         'Soft darkening on the ground round buildings, trees, rocks and the foot of walls, worked out once per scene.',
       ],
+      [
+        'groundAOSky',
+        'Feet shade on sky light only',
+        'bool',
+        'The shade at the feet of things dims only the light from the sky, so sunlit ground stays sunlit (on). Off: it also dims the ground’s colour and its sunlight.',
+      ],
+      [
+        'aoPlane',
+        'Occlusion follows the slope',
+        'bool',
+        'The screen’s occlusion darkens creases, not open ground seen at a slant (on). Off: as before.',
+      ],
     ],
   ],
   [
@@ -598,9 +739,21 @@ export const ENGINE_SPEC = [
         0.05,
         'After dark, street lamps lay a pool of light on the ground under them.',
       ],
+      [
+        'onWater',
+        'Lamp light on water',
+        'bool',
+        'Lamps, windows and fires near water light its surface and the falls at night, as they light the ground (on). Off: water takes no lamp light.',
+      ],
       ['glow', 'Glow size', 0, 3, 0.05],
       ['flicker', 'Flicker', 0, 1, 0.05],
       ['windowsDay', 'Window light in daytime', 0, 1, 0.01],
+      [
+        'windowFacing',
+        'Window light faces out',
+        'bool',
+        'The pool of light from a house’s windows falls out of its front whichever way the house is turned, fading softly at the wall (on). Off: the same cut-off line for every house.',
+      ],
       [
         'roomLight',
         'Light through room windows',
@@ -627,6 +780,20 @@ export const ENGINE_SPEC = [
         'Sunlight in the air, shadowed by what stands in it: beams between trees and buildings (v43). A march through the air at half resolution.',
       ],
       ['lightsInAir', 'Lamps in the air', 0, 2, 0.05, 'A glow in the air round lamps and fires at night (v43).'],
+      [
+        'cheapShafts',
+        'Cheap light shafts',
+        0,
+        1.5,
+        0.05,
+        'When God rays are off (or the automatic quality turns them off): a few soft beams of sunlight from the trees near you, strongest at dawn and golden hour. Cheap; 0 for none.',
+      ],
+      [
+        'shaftPick',
+        'Smart light shafts',
+        'bool',
+        'The cheap light shafts go where they show best: through gaps between crowns and past roofs, with shade behind them, looking into the light, a few apart and never over you, fading in and out (on). Off: one at about every other tree near you.',
+      ],
       ['mistHeight', 'Mist height (m)', 0, 2, 0.05],
       [
         'valleyMist',
@@ -693,6 +860,20 @@ export const ENGINE_SPEC = [
       ['groundBumps', 'Ground bumpiness', 0, 3, 0.05, 'Cobbles, rock and paths catch the light from their own pixels.'],
       ['groundShine', 'Ground shine', 0, 3, 0.05, 'How much smooth floors and plazas gleam in the sun.'],
       [
+        'buildingBumps',
+        'Building bumpiness',
+        0,
+        3,
+        0.05,
+        'Bricks, planks and roof tiles on buildings and low-poly models catch the light from their own pixels. 0: flat.',
+      ],
+      [
+        'frontMaterial',
+        'Fronts lit as their material',
+        'bool',
+        'A 3D building’s painted front takes the light as its material says (its shine, how far light wraps round), and ledges can face down into shade (on). Off: as before.',
+      ],
+      [
         'buildings3d',
         '3D buildings',
         'bool',
@@ -715,6 +896,12 @@ export const ENGINE_SPEC = [
         'Solid trees',
         'bool',
         'Trees and bushes with round trunks and crowns of separate leaf clumps that sway on their own. Off: their layered pictures.',
+      ],
+      [
+        'treeCoreShade',
+        'Shaded tree cores',
+        'bool',
+        'The dark middle of a solid tree’s crown takes less light than its clumps, so the crown looks deep (on). Off: lit like the clumps.',
       ],
       ['treeDetail', 'Solid trees within (m)', 8, 40, 1, 'Farther trees are drawn as pictures.'],
       ['treeCount', 'Most solid trees at once', 5, 120, 1],
@@ -890,7 +1077,14 @@ export const ENGINE_SPEC = [
         0.05,
         'How far back the camera stands. Farther looks flatter and less distorted; the view stays the same width. Indoor scenes keep the camera close, inside their walls.',
       ],
-      ['fov', 'Zoom', 0.5, 2, 0.02],
+      [
+        'fov',
+        'View width',
+        0.5,
+        2,
+        0.02,
+        'Above 1 the scene shows less across, so it looks closer (the width shown divided by this). Not your pinch zoom: that is under Zoom.',
+      ],
       [
         'lead',
         'Look-ahead (m)',
@@ -960,36 +1154,62 @@ export const ENGINE_SPEC = [
       ['sway', 'Walk bob', 0, 2, 0.05],
       ['tilt', 'Phone tilt', 0, 3, 0.05],
       ['turn', 'Turn limit (degrees)', 0, 80, 1],
-      ['zoomMin', 'Closest zoom', 0.3, 1, 0.05],
-      ['zoomMax', 'Farthest zoom', 1, 3, 0.05],
       [
-        'zoomNearPitch',
-        'Zoom curve: tilt up close (degrees)',
-        -20,
-        10,
-        0.1,
-        'CAM-2: one zoom drives tilt, distance and field of view. At the closest zoom (pinching in, or a moment like talking) the tilt changes by this much.',
-      ],
-      ['zoomNearDist', 'Zoom curve: distance up close', 0.2, 1, 0.01, 'The distance’s factor at the closest zoom.'],
-      [
-        'zoomNearFov',
-        'Zoom curve: field of view up close',
-        0.5,
-        1.5,
+        'zoomSmooth',
+        'Zoom smoothing (s)',
+        0,
+        1,
         0.01,
-        'The field of view’s factor at the closest zoom (above 1: wider).',
+        'CAM-4a: how long a pinch or the wheel takes to arrive, eased in log zoom so zooming in and out feel alike. 0: at once.',
       ],
-      ['zoomFarPitch', 'Zoom curve: tilt far out (degrees)', -10, 25, 0.1, 'The tilt change at the farthest zoom.'],
-      ['zoomFarDist', 'Zoom curve: distance far out', 1, 3, 0.01],
-      ['zoomFarFov', 'Zoom curve: field of view far out', 0.5, 1.5, 0.01],
       [
-        'zoomCurve',
-        'Zoom curve: shape',
+        'pinchSpeed',
+        'Pinch sensitivity',
         0.3,
+        2,
+        0.05,
+        '1: the picture follows your fingers. Above 1 a pinch zooms further.',
+      ],
+      [
+        'wheelSpeed',
+        'Wheel sensitivity',
+        0.2,
         3,
         0.05,
-        '1: straight. Above 1 the tilt, distance and field of view change little near the scene’s framing and more toward the ends; below 1 the other way.',
+        'How far a turn of the mouse wheel (Ctrl+wheel in the game) zooms.',
       ],
+      [
+        'zoomBand',
+        'Rubber band past the limits',
+        0,
+        0.4,
+        0.01,
+        'A pinch may stretch a little past the closest and farthest zoom and springs back when you let go. 0: a hard stop.',
+      ],
+      [
+        'zoomToPoint',
+        'Zoom toward the pinch',
+        'bool',
+        'While you pinch, the camera leans toward the point between your fingers so it stays put; it eases back when you let go.',
+      ],
+      ['zoomPointMax', 'Zoom toward the pinch: most lean (m)', 0, 8, 0.1],
+      [
+        'stopPull',
+        'Pull to stops',
+        0,
+        0.5,
+        0.01,
+        'CAM-4b: letting go of a pinch this share of the way from a zoom stop (toward its neighbour) eases the zoom to that stop. 0: it stays where you let go; 0.5: always the nearest stop.',
+      ],
+      [
+        'stopTapTime',
+        'Two-finger tap: longest (s)',
+        0.1,
+        0.8,
+        0.01,
+        'Two fingers down and up within this time, hardly moving, go to the next zoom stop (Z on a keyboard).',
+      ],
+      ['stopTapMove', 'Two-finger tap: most movement (px)', 2, 40, 1, 'More spread or slide than this is a pinch.'],
       [
         'encZoom',
         'Encounter shot: zoom',
@@ -1200,10 +1420,102 @@ export const ENGINE_SPEC = [
         'Shadows of things that never move are drawn once and kept; only moving things are drawn each frame.',
       ],
       [
-        'frameBlock',
-        'One light block per frame',
+        'hdrHalf',
+        'Half-float HDR',
         'bool',
-        'Everything lit reads the frame’s light (sun, sky, fog, shadow maps, lamps) from one block sent once a frame, instead of being sent it again for each kind of thing drawn. A test switch (phase 20): it should look the same.',
+        'On graphics chips that can only draw to half-float pictures (some phones), keep bright parts above white for bloom and lamps, as other chips do (on). Read when the 3D view starts. Off: such chips clip at white.',
+      ],
+      [
+        'stableLights',
+        'Steady lamps',
+        'bool',
+        'The lamps, windows and fires that light the scene are chosen five times a second instead of every frame, a lit one stays lit until another is clearly nearer, ones out of view are skipped, and each fades in and out instead of popping. A test switch (phase 20).',
+      ],
+      [
+        'lights',
+        'Lamps lit at once',
+        1,
+        16,
+        1,
+        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+      ],
+      [
+        'skyLast',
+        'Sky last',
+        'bool',
+        'The sky is drawn after the ground, props and buildings, only where it shows, instead of over the whole screen first. Same picture, fewer pixels drawn.',
+      ],
+      [
+        'phonePixels',
+        'Phone pixel budget',
+        'bool',
+        'On a phone (Android, iPhone) the scene is drawn at most 1.2 million pixels instead of 1.6, and the automatic quality starts one step lower. Softer, faster; tablets and computers are unchanged.',
+      ],
+      [
+        'phoneLamps',
+        'Phone lamps',
+        'bool',
+        'On a phone (Android, iPhone) at most 8 lamps, windows and fires light the scene at once (fewer if Lamps lit at once says so), and 4 of them glow in the air. Tablets and computers are unchanged.',
+      ],
+      [
+        'invalidate',
+        'Drop spent pictures',
+        'bool',
+        'Tells the graphics card which in-between pictures (blur, glow, shading, the reflection’s depth) need not be kept or read back. Same picture; it saves memory traffic on phones.',
+      ],
+      [
+        'rainBatch',
+        'Rain in one go',
+        'bool',
+        'Rain, snow and ash (and the splashes) are drawn in one go instead of one drop at a time: the same drops, far less work for the processor in bad weather.',
+      ],
+      [
+        'solidFirst',
+        'Solid things first',
+        'bool',
+        'Models, buildings and structures are drawn before the leaf and prop pictures, so leaves hidden behind a trunk or a wall are skipped by the graphics card. Faster in groves; a picture lying flat on a model may show differently.',
+      ],
+      [
+        'spriteInstances',
+        'Pictures in batches',
+        'bool',
+        'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
+      ],
+      [
+        'modelInstances',
+        'Models in batches',
+        'bool',
+        'Every tree, house or lamp post of one kind is drawn in one go instead of one at a time: fewer draws, the same look. The shadows still draw them one at a time.',
+      ],
+      [
+        'shadowInstances',
+        'Shadows in batches',
+        'bool',
+        'The shadows of grass, bushes, leaves, people and models are drawn in batches, one draw for all the copies of a picture or a model, instead of one draw each. The same shadows; fewer calls to the graphics card.',
+      ],
+      [
+        'modelShadowCache',
+        'Models in the shadow cache',
+        'bool',
+        'The far shadows of trees and other models that stand still are kept from frame to frame instead of drawn again each frame (a tree whose leaves sway still counts: its trunk doesn’t move). Boats, the airship, windmill sails and propellers are drawn each frame, so their far shadows move again.',
+      ],
+      [
+        'farShadowsStill',
+        'Far shadows hold still',
+        'bool',
+        'Past the sharp shadows round you (about 13 m) the shadows of grass, bushes and leaves stop swaying in the wind and are kept from frame to frame instead of drawn again each frame. Close by they sway as before.',
+      ],
+      [
+        'rigReuse',
+        'Reuse battle rigs',
+        'bool',
+        'In a battle each Billie’s picture is drawn and sent to the graphics card again only when its pose, face or tint changes (about 6 times a second), not on every frame. Same picture, less work.',
+      ],
+      [
+        'warmUp',
+        'Warm up before showing',
+        'bool',
+        'A place fades in only once its first two frames are drawn (never more than 1.5 s later), so the hitch of their first draws, getting shaders ready and pictures onto the graphics card, happens out of sight. After the graphics card is lost and comes back, the place fades back in the same way.',
       ],
       [
         'gpuTimer',
@@ -1217,11 +1529,64 @@ export const ENGINE_SPEC = [
         'bool',
         'Far-off props keep their colour at the edges instead of a dark fringe.',
       ],
+      [
+        'normalMips',
+        'Steady light on far props',
+        'bool',
+        'The bumps that catch the light on pictures get smaller sizes for far-off props, so their lighting doesn’t flicker as they move (on). Off: one size.',
+      ],
     ],
   ],
   ...TIME_OF_DAY_KEYS.map(k => [TIME_OF_DAY_GROUPS[k], 'Time of day: ' + TOD_NAMES[k], todFields(k)]),
 ];
 provide({ ENGINE_SPEC }); /* to-module */
+/* CAM-4a: the Studio's Camera section shows the Camera group's dials in these folders, each dial in exactly one
+   (tools/test/camera-readout.test.mjs); the data stays engine.camera */
+export const CAMERA_FOLDERS = [
+  ['framing', 'Framing', ['pitch', 'pitchAdd', 'height', 'distance', 'fov', 'turn', 'tilt', 'sway', 'pixelGrid']],
+  ['zoom', 'Zoom stops', ['stopPull', 'stopTapTime', 'stopTapMove']],
+  ['feel', 'Zoom feel', ['zoomSmooth', 'pinchSpeed', 'wheelSpeed', 'zoomBand', 'zoomToPoint', 'zoomPointMax']],
+  [
+    'follow',
+    'Follow',
+    ['lead', 'leadSmooth', 'leadSide', 'smooth', 'deadW', 'deadH', 'softW', 'softH', 'band', 'blend'],
+  ],
+  [
+    'moments',
+    'Moments',
+    [
+      'encZoom',
+      'encMin',
+      'encMax',
+      'leaveZoom',
+      'intOn',
+      'intPull',
+      'talkOn',
+      'talkZoom',
+      'talkBlend',
+      'bossOn',
+      'bossNear',
+      'bossTime',
+      'bossZoom',
+      'bossLean',
+      'idleOn',
+      'idleDelay',
+      'idleZoom',
+      'idleBlend',
+      'runOn',
+      'runZoom',
+      'runBlend',
+      'turnHold',
+      'turnAngle',
+    ],
+  ],
+  [
+    'visibility',
+    'Visibility',
+    ['rise', 'rockFade', 'silhouette', 'outline', 'outlineFill', 'hideFade', 'hideSize', 'hideAmount', 'coverFade'],
+  ],
+  ['island', 'Island orbit', ['orbit', 'sunTurns']],
+];
 /* ready-made looks; a preset only lists what it changes */
 /* phase 09 batch 1: the plain look, for judging props (a scene with plain: 1, the props test map and the Studio's
    prop turntable): no depth of field, bloom, colour grade, film grain, vignette, haze, mist, clouds, sun shafts or
@@ -1241,6 +1606,79 @@ export const PLAIN_LOOK = {
     godRays: 0,
     lightsInAir: 0,
     hazeDistance: 900,
+  },
+};
+/* the Graphics preset Off (Settings → Display): the plain look and also no shadows, grass, far things, water
+   reflections or lamp glow. It stands in for the player's dials (their expert dials wait untouched), and the walk view
+   leaves out the time of day, the weather and the blur while it is on */
+const OFF_LOOK = {
+  ...PLAIN_LOOK,
+  lens: { ...PLAIN_LOOK.lens, blurFar: 0, blurNear: 0, edgeBlur: 0, miniature: 0 },
+  sun: { ...PLAIN_LOOK.sun, shafts: 0, innerSun: 0 },
+  air: { ...PLAIN_LOOK.air, cheapShafts: 0 },
+  shadows: { strength: 0, selfShade: 0, contact: 0, ao: 0, groundAO: 0, lampShadows: 0 },
+  lights: { glow: 0, pools: 0, flicker: 0 },
+  grass: { density: 0 },
+  world: { farProps: 0, farHills: 0 },
+  water: { reflection: 0, caustics: 0, glints: 0, foam: 0 },
+};
+export function graphicsOff() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
+  return !!p && p.aim === 'off';
+}
+/* CAM-4b: camera looks (the Studio's Camera section): presets of camera dials only, each setting the same dials so one
+   swaps cleanly for another. Their stops stay on the straight line the default stops lie on (14 degrees of tilt a
+   unit of zoom, the distance times the zoom), so the pull and the cycle feel the same; they differ in the tilt, the
+   stops' zooms and their blur. The ids are always close, normal and far, so a scene's starting stop still names one */
+const lookStop = (id, name, zoom, blur, lead = 1) => ({
+  id,
+  name,
+  zoom,
+  pitch: Math.round((zoom - 1) * 140) / 10,
+  dist: zoom,
+  fov: 1,
+  blur,
+  lead,
+});
+export const CAMERA_LOOKS = {
+  diorama: {
+    name: 'Diorama',
+    camera: {
+      pitchAdd: 0,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.6, 1.4, 0.8),
+        lookStop('normal', 'Normal', 1, 1.25),
+        lookStop('far', 'Far', 1.6, 1.1, 1.1),
+      ],
+    },
+  },
+  classic: {
+    name: 'Classic RPG',
+    camera: {
+      pitchAdd: 8,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.6, 0.4, 0.8),
+        lookStop('normal', 'Normal', 1, 0.4),
+        lookStop('far', 'Far', 1.6, 0.4, 1.1),
+      ],
+    },
+  },
+  closeup: {
+    name: 'Close-up',
+    camera: {
+      pitchAdd: -12,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.45, 1.2, 0.6),
+        lookStop('normal', 'Normal', 0.75, 1),
+        lookStop('far', 'Wide', 1.4, 0.8, 1.1),
+      ],
+    },
   },
 };
 export const ENGINE_PRESETS = {
@@ -1318,11 +1756,13 @@ function gameDataDials() {
 export function playerBlur() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
     v = p ? p.blur : null;
+  if (graphicsOff()) return 0;
   return typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(1.5, v)) : 1;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
 function playerDials() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
+  if (graphicsOff()) return OFF_LOOK;
   return p && p.expert && p.eng ? p.eng : null;
 }
 /* phase 20 C1: while a walk frame draws, each dial is looked up once (beginFrameSettings, after the environment update)

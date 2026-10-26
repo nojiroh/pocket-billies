@@ -1,6 +1,7 @@
 // Phase 20 C3: the frame's light values in one uniform block (game/js/engine/frame-block.js). The packed block must
-// hold, at the offsets the GLSL's std140 layout gives, exactly the values setLightUniforms sends one uniform at a time
-// today (recorded on a stand-in WebGL context). No graphics.
+// hold, at the offsets the GLSL's std140 layout gives, exactly the values the old path sent one uniform at a time
+// (recorded on a stand-in WebGL context). The old path left the game at C3's close-out (2026-10-26); its uniform
+// declarations and its sender are kept below as the reference. No graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeProgram, recordingGL } from './walk-renderer.mjs';
@@ -11,10 +12,22 @@ const { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT, packFrameBlock,
 const { setLightUniforms, LIGHT_GLSL, gpuState } = G;
 
 const SAMPLERS = ['uShadow', 'uShadowD', 'uShadow2', 'uShadowD2', 'uLampSh0', 'uLampSh1'];
-// every uniform LIGHT_GLSL declares without the block (its #else branch), by name: [type, array length]
-function lightUniforms() {
+// the light uniforms LIGHT_GLSL declared before the block (its old #else branch)
+const OLD_LIGHT_UNIFORMS = `
+uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
+uniform vec4 uRoomB;uniform float uRoomDim;
+uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx,uShSteps;uniform vec3 uShLift;
+uniform mat4 uShadowM;uniform float uShadowOn;uniform vec2 uShadowTexel;
+uniform mat4 uShadowM2;uniform float uShadow2On,uShPen2;uniform vec2 uShadowTexel2;
+uniform vec4 uLP[16];uniform vec4 uLC[16];uniform int uNL;
+uniform mat4 uLampM0,uLampM1;uniform int uNLS;
+uniform vec4 uAO[64];uniform int uNAO;
+uniform vec4 uSeason;
+uniform vec3 uSH[9];uniform float uSHK,uFogSun;`;
+// the plain uniforms a GLSL text declares, by name: [type, array length]
+function declared(glsl) {
   const out = {},
-    plain = LIGHT_GLSL.replace(/\/\*[\s\S]*?\*\//g, '').replace(/#ifdef PB_FRAME_BLOCK[\s\S]*?#else/, '');
+    plain = glsl.replace(/\/\*[\s\S]*?\*\//g, '').replace(/layout\(std140\) uniform Frame\{[\s\S]*?\};/, '');
   for (const m of plain.matchAll(/uniform\s+(?:highp\s+)?(\w+)\s+([^;]+);/g))
     for (const part of m[2].split(',')) {
       const [, name, n] = part.trim().match(/^(\w+)(?:\[(\d+)\])?$/);
@@ -22,6 +35,7 @@ function lightUniforms() {
     }
   return out;
 }
+const lightUniforms = () => declared(OLD_LIGHT_UNIFORMS);
 const mat = k => Array.from({ length: 16 }, (_, i) => k + i * 0.125);
 // a light context with every part filled, odd numbers so a wrong offset shows
 function fixture(o = {}) {
@@ -82,14 +96,97 @@ function fixture(o = {}) {
     ...o,
   };
 }
-// what setLightUniforms sends to a program that uses every light uniform: { name: [numbers] }
+// the old path's sender (light.js setLightUniforms before C3's close-out, the part a program without the block took)
+function oldLightUniforms(p, X) {
+  const gl = gpuState.gl,
+    U = p.U;
+  if (U.uCurve) {
+    gl.uniform3f(U.uCurve, X.curve[0], X.curve[1], X.curve[2]);
+    gl.uniform1f(U.uCurveD0, X.curve[3]);
+  }
+  if (!U.uEye) return;
+  if (U.uFogSun) gl.uniform1f(U.uFogSun, X.fogSun || 0);
+  if (U.uSH) {
+    if (X.sh) {
+      gl.uniform3fv(U.uSH, X.sh);
+      gl.uniform1f(U.uSHK, X.shK);
+    } else gl.uniform1f(U.uSHK, 0);
+  }
+  gl.uniform3fv(U.uEye, X.eye);
+  gl.uniform3fv(U.uSunDir, X.sun.dir);
+  gl.uniform3fv(U.uSunCol, X.sun.col);
+  gl.uniform3fv(U.uAmbTop, X.ambTop);
+  gl.uniform3fv(U.uAmbBot, X.ambBot);
+  if (U.uAmbK) gl.uniform1f(U.uAmbK, X.ambK);
+  gl.uniform3fv(U.uFogCol, X.fog);
+  gl.uniform1f(U.uFogStart, X.fogStart);
+  gl.uniform1f(U.uFogD, X.fogD);
+  if (U.uTint) {
+    gl.uniform3fv(U.uTint, X.tint);
+    gl.uniform1f(U.uTintAmt, X.tintAmt);
+  }
+  if (U.uRoomDim) {
+    gl.uniform4fv(U.uRoomB, X.roomB || [0, 0, 0, 0]);
+    gl.uniform1f(U.uRoomDim, X.roomDim || 0);
+  }
+  if (U.uMist) {
+    gl.uniform1f(U.uMist, X.mist);
+    gl.uniform1f(U.uMistY, X.mistY);
+  }
+  if (U.uValley) gl.uniform2fv(U.uValley, X.valley || [0, 0]);
+  if (U.uSeason) gl.uniform4fv(U.uSeason, X.season || [0, 0, 0, 0]);
+  if (U.uTime) gl.uniform1f(U.uTime, X.time);
+  if (U.uShStr) {
+    gl.uniform1f(U.uShStr, X.shStr);
+    gl.uniform3fv(U.uShTint, X.shTint);
+    gl.uniform1f(U.uCloudSh, X.cloudSh);
+    gl.uniform1f(U.uCloudSpd, X.cloudSpd);
+    if (U.uCloudCov) gl.uniform1f(U.uCloudCov, X.cloudCov ?? 0.45);
+    gl.uniform1f(U.uContact, X.contact);
+  }
+  if (U.uShPx) gl.uniform1f(U.uShPx, X.shPx || 0);
+  if (U.uShSteps) gl.uniform1f(U.uShSteps, X.shSteps ?? 2);
+  if (U.uShLift) gl.uniform3fv(U.uShLift, X.shLift || [0, 0, 0]);
+  const S = X.shadow;
+  if (S) {
+    gl.uniformMatrix4fv(U.uShadowM, false, S.vp);
+    gl.uniform1f(U.uShadowOn, 1);
+    if (U.uShLite) gl.uniform1f(U.uShLite, X.lite ? 1 : 0);
+    gl.uniform2f(U.uShadowTexel, 1 / S.size, 1 / S.size);
+    if (U.uShPen) gl.uniform1f(U.uShPen, S.pen);
+  } else gl.uniform1f(U.uShadowOn, 0);
+  const F = S && S.far;
+  if (F) {
+    gl.uniformMatrix4fv(U.uShadowM2, false, F.vp);
+    gl.uniform1f(U.uShadow2On, 1);
+    gl.uniform2f(U.uShadowTexel2, 1 / F.size, 1 / F.size);
+    gl.uniform1f(U.uShPen2, F.pen);
+  } else gl.uniform1f(U.uShadow2On, 0);
+  const LS = (S && X.lampSh) || [];
+  for (let i = 0; i < 2; i++) if (LS[i]) gl.uniformMatrix4fv(i ? U.uLampM1 : U.uLampM0, false, LS[i].vp);
+  gl.uniform1i(U.uNLS, LS.length);
+  const lp = new Float32Array(64),
+    lc = new Float32Array(64);
+  X.lights.forEach((l, i) => {
+    lp.set([l.p[0], l.p[1], l.p[2], l.front ? -l.r : l.r], i * 4);
+    lc.set([l.c[0], l.c[1], l.c[2], 1], i * 4);
+  });
+  gl.uniform4fv(U.uLP, lp);
+  gl.uniform4fv(U.uLC, lc);
+  gl.uniform1i(U.uNL, X.lights.length);
+  const a = new Float32Array(256);
+  X.ao.forEach((b, i) => a.set(b, i * 4));
+  gl.uniform4fv(U.uAO, a);
+  gl.uniform1i(U.uNAO, X.ao.length);
+}
+// what the old path sent to a program that used every light uniform: { name: [numbers] }
 function sent(X) {
   const gl = recordingGL();
   gpuState.gl = gl;
   gpuState.samp = { cmp: 'cmp', raw: 'raw' };
   gpuState.fb = {};
   gpuState.depthStub = 'stub';
-  setLightUniforms(fakeProgram([...Object.keys(lightUniforms()), 'uCurve', 'uCurveD0']), X);
+  oldLightUniforms(fakeProgram([...Object.keys(lightUniforms()), 'uCurve', 'uCurveD0']), X);
   const out = {};
   for (const [fn, loc, ...a] of gl.calls) {
     if (!/^uniform/.test(fn)) continue;
@@ -118,7 +215,7 @@ function compare(X) {
   let n = 0;
   for (const [name, v] of Object.entries(S)) {
     if (SAMPLERS.includes(name) || ['uFol', 'uCurve', 'uCurveD0'].includes(name)) continue;
-    assert.ok(FRAME_BLOCK_LAYOUT.members[name], name + ' is set by setLightUniforms but is not in the block');
+    assert.ok(FRAME_BLOCK_LAYOUT.members[name], name + ' was set by the old path but is not in the block');
     const want = Float32Array.from(v),
       got = get(name, ['uLP', 'uLC', 'uAO'].includes(name) ? v.length : undefined);
     assert.deepEqual(Array.from(got).slice(0, want.length), Array.from(want), name);
@@ -127,7 +224,14 @@ function compare(X) {
   return n;
 }
 
-test('the block declares every light value LIGHT_GLSL has (uSH as vec4 slots), and nothing else but padding', () => {
+test('LIGHT_GLSL declares only the block, the shadow samplers and uFol', () => {
+  assert.deepEqual(Object.keys(declared(LIGHT_GLSL)).sort(), [...SAMPLERS, 'uFol'].sort());
+  assert.ok(LIGHT_GLSL.includes(FRAME_BLOCK_GLSL));
+});
+
+// added to the block after C3 (in a padding slot, so its size and offsets stay): the shadow fixes' bits
+const NEW_MEMBERS = ['uShFix'];
+test('the block declares every light value the old path had (uSH as vec4 slots), and nothing else but padding and the new members', () => {
   const L = lightUniforms(),
     B = FRAME_BLOCK_LAYOUT.members;
   for (const [name, [type, len]] of Object.entries(L)) {
@@ -135,7 +239,8 @@ test('the block declares every light value LIGHT_GLSL has (uSH as vec4 slots), a
     assert.ok(B[name], name + ' missing from the block');
     assert.deepEqual([B[name][1], B[name][2]], name === 'uSH' ? ['vec4', 9] : [type, len], name);
   }
-  for (const name of Object.keys(B)) assert.ok(L[name] || /Pad/.test(name), name + ' is not a light uniform');
+  for (const name of Object.keys(B))
+    assert.ok(L[name] || /Pad/.test(name) || NEW_MEMBERS.includes(name), name + ' is not a light uniform');
 });
 
 test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints at the end; 2208 bytes', () => {
@@ -229,4 +334,43 @@ test('a program with the block: packed and sent once per light context, bound ag
   X.lampSh = [];
   setLightUniforms(B, X);
   assert.equal(calls('bufferSubData').length, 3);
+});
+
+test('packing: a window light that knows its way out (lights.windowFacing) carries it as an angle past 10 in uLC.w', () => {
+  const fn = [0.6, -0.8],
+    X = fixture({
+      lights: [
+        { p: [1, 2, 3], r: 4, c: [1, 0.8, 0.5], front: true, fn },
+        { p: [0, 1, 0], r: 3, c: [1, 1, 1] },
+      ],
+    }),
+    buf = new ArrayBuffer(FRAME_BLOCK_BYTES),
+    f = new Float32Array(buf),
+    n = new Int32Array(buf);
+  packFrameBlock(X, f, n);
+  const w0 = f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + 3],
+    w1 = f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + 7];
+  assert.ok(Math.abs(Math.cos(w0 - 10) - fn[0]) < 1e-6 && Math.abs(Math.sin(w0 - 10) - fn[1]) < 1e-6);
+  assert.equal(w1, 1, 'any other light keeps 1');
+  assert.ok(f[FRAME_BLOCK_LAYOUT.members.uLP[0] / 4 + 3] < 0, 'a window light is still marked by a negative range');
+});
+
+test('packing: the shadow fixes as bits, and a lamp’s pool takes its lamp’s shadow map with Lamp shadows hold', () => {
+  const lamp = { p: [0, 3, 0], r: 6, c: [1, 1, 1], src: 'L1' },
+    pool = { p: [0, 0.35, 0], r: 4, c: [1, 1, 1], pool: 1, src: 'L1' },
+    other = { p: [5, 0.35, 5], r: 4, c: [1, 1, 1], pool: 1, src: 'L2' },
+    pack = shFix => {
+      const buf = new ArrayBuffer(FRAME_BLOCK_BYTES),
+        f = new Float32Array(buf),
+        n = new Int32Array(buf);
+      packFrameBlock(fixture({ lights: [lamp, pool, other], lampSh: [{ d: 'lamp0', vp: mat(3) }], shFix }), f, n);
+      return f;
+    },
+    w = (f, i) => f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + i * 4 + 3];
+  const on = pack(3),
+    off = pack(1);
+  assert.equal(on[FRAME_BLOCK_LAYOUT.members.uShFix[0] / 4], 3);
+  assert.equal(w(on, 1), -1, 'the pool uses lamp map 0');
+  assert.equal(w(on, 2), 1, 'a pool whose lamp has no map: plain');
+  assert.equal(w(off, 1), 1, 'without the fix the pool is plain, as before');
 });

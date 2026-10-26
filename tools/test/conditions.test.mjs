@@ -159,6 +159,18 @@ test('RL-11: unlock:, runs and wins read what lasts between runs (saveData.meta)
     assert.equal(conditionHolds(c, none), true, `no meta: ${c}`);
 });
 
+test('RS-1: resident: and residents read who lives in Copperleaf (saveData.meta), in the hub and on a run', () => {
+  for (const run of [null, { seed: 'x' }]) {
+    const S = storyStateOf({ meta: { unlocks: {}, runs: 2, wins: 0, residents: { dottie: 1, mo: 2 } }, run });
+    for (const c of ['resident:dottie', '!resident:gus', 'residents >= 2', 'residents', 'residents < 3'])
+      assert.equal(conditionHolds(c, S), true, c);
+    for (const c of ['resident:gus', 'residents >= 3']) assert.equal(conditionHolds(c, S), false, c);
+  }
+  assert.equal(conditionHolds('residents', storyStateOf({ meta: {} })), false, 'a meta from before: nobody');
+  assert.equal(conditionProblem('resident:dottie and residents >= 3'), null);
+  assert.deepEqual([...conditionNames(conditionTree('resident:a or resident:b')).resident], ['a', 'b']);
+});
+
 test('RL-12b: type:, money and badge: read the team, the Moneys on hand and the badges won', () => {
   const save = {
     se: 250,
@@ -187,6 +199,18 @@ test('RL-12b: type:, money and badge: read the team, the Moneys on hand and the 
   assert.ok(conditionProblem('badge: and money'), 'badge: needs a type');
   assert.ok(conditionProblem('badge:Water >= 1'), 'badge: is yes or no');
   assert.ok(conditionProblem('money:gold'), 'money takes no name');
+});
+
+test('SP-6: dna, genes and spliced read meta.dna, the Gene library and the team’s splices', () => {
+  const S = storyStateOf({
+    meta: { dna: 12, genes: ['eagle_wing@hughes2', 'shark_tailfin@bezos0'] },
+    team: [{ sp: 'a', graft: { front: 'eagle_wing@hughes2' } }, { sp: 'b' }, { sp: 'c', graft: {} }],
+  });
+  for (const c of ['dna >= 12', 'dna < 13', 'genes >= 2', 'genes', 'spliced = 1', 'spliced'])
+    assert.equal(conditionHolds(c, S), true, c);
+  const none = storyStateOf({});
+  for (const c of ['dna', 'genes', 'spliced']) assert.equal(conditionHolds(c, none), false, c);
+  assert.ok(conditionProblem('dna:x'), 'dna takes no name');
 });
 
 test("RL-12b: the game reads a team Billie's types from its species, and the leaders' types from their files", () => {
@@ -239,4 +263,77 @@ test('RL-S1: last:, lastby:, history: and rematch read the runs kept (meta.histo
   assert.match(conditionProblem('lastby:boss >= 1').message, /yes or no/);
   assert.match(conditionProblem('rematch:marina').message, /takes no name/);
   assert.equal(conditionProblem('history:runs >= 5'), null);
+});
+
+test('RL-S2: lastteam: reads the team the last run ended with, by type, line and species', () => {
+  const entry = team => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end: 'won',
+    by: null,
+    row: 3,
+    days: 9,
+    team,
+    perks: [],
+    leaders: [],
+    rival: null,
+  });
+  const typesOf = m => ({ musk0: ['Steel'], musk1: ['Steel', 'Fire'], bezos0: ['Grass'] })[m.sp] || [];
+  const S = storyStateOf(
+    { team: [{ sp: 'bezos0' }], meta: { history: [entry(['bezos0']), entry(['musk0', 'musk1'])] } },
+    { typesOf }
+  );
+  for (const [c, want] of [
+    ['lastteam:Steel = 2', true],
+    ['lastteam:steel = 2', true],
+    ['lastteam:Fire', true],
+    ['lastteam:musk >= 2', true],
+    ['lastteam:musk1', true],
+    ['lastteam:Grass', false],
+    ['lastteam:bezos', false],
+    ['type:Grass', true],
+  ])
+    assert.equal(conditionHolds(c, S), want, c);
+  assert.equal(conditionHolds('lastteam:Steel', storyStateOf({ meta: {} }, { typesOf })), false, 'no runs yet');
+  assert.equal(conditionProblem('lastteam:Grass >= 1'), null);
+});
+
+test('RL-S2 part B: rival reads the meetings with Blake on the run so far (0 off a run)', () => {
+  assert.equal(conditionHolds('rival', storyStateOf({ meta: {} })), false);
+  const S = storyStateOf({ meta: {}, run: { rival: { lead: 'musk0', past: 3, met: 1, won: 0 } } });
+  assert.equal(conditionHolds('rival >= 1', S), true);
+  assert.equal(conditionHolds('rival >= 2', S), false);
+  assert.equal(
+    conditionHolds('rival0 = win', storyStateOf({ story: { rival0: 'win' }, meta: {} })),
+    true,
+    'the flag rival0 is still a flag'
+  );
+});
+
+test('RS-3: lastres: reads who the last run brought to Copperleaf (its history entry’s res)', () => {
+  const run = (end, res) => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end,
+    by: null,
+    row: 3,
+    days: 9,
+    team: ['musk0'],
+    perks: [],
+    leaders: [],
+    rival: null,
+    ...(res ? { res } : {}),
+  });
+  const S = storyStateOf({ meta: { history: [run('won', 'mo'), run('lost', 'dottie')] } });
+  assert.equal(conditionHolds('lastres:dottie', S), true);
+  assert.equal(conditionHolds('lastres:mo', S), false, 'only the last run');
+  const T = storyStateOf({ meta: { history: [run('lost', 'dottie'), run('won')] } });
+  assert.equal(conditionHolds('lastres:dottie', T), false, 'a run since brought nobody');
+  assert.equal(conditionHolds('lastres:dottie', storyStateOf({ meta: {} })), false, 'no runs yet');
+  assert.match(conditionProblem('lastres:dottie >= 1').message, /yes or no/);
+  assert.equal(conditionProblem('lastres:dottie and last:lost'), null);
 });

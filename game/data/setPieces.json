@@ -27,7 +27,7 @@
     {"k":"fence_gate","x":-1.1,"z":1},
     {"k":"fence_wood","x":1.1,"z":1},
     {"k":"fence_wood","x":-1.1,"z":5.2},
-    {"k":"fence_wood","x":1.1,"z":5.2},
+    {"k":"stile","x":1.1,"z":5.2},
     {"k":"fence_wood","x":-2.2,"z":2.1,"rot":90},
     {"k":"fence_wood","x":-2.2,"z":4.2,"rot":90},
     {"k":"fence_wood","x":2.45,"z":2.1,"rot":90},
@@ -35,7 +35,9 @@
     {"k":"hay_round","x":-0.7,"z":3.8},
     {"k":"water_trough","x":0.9,"z":2.6},
     {"k":"scarecrow","x":-3.2,"z":1.6},
-    {"k":"haybale","x":3.4,"z":1.4}
+    {"k":"haybale","x":3.4,"z":1.4},
+    {"k":"water_pump","x":-3.4,"z":3.6},
+    {"k":"haystack","x":4,"z":3.6}
    ]
   },
   "rest_stop": {
@@ -45,9 +47,10 @@
    "biomes": {"default":2},
    "props": [
     {"k":"bench_wood","x":0,"z":1.2},
-    {"k":"lantern","x":-1.6,"z":1},
+    {"k":"solar_post_light","x":-1.6,"z":1},
     {"k":"mailbox_red","x":1.5,"z":0.8},
-    {"k":"barrel_wood","x":1.6,"z":2.4}
+    {"k":"barrel_wood","x":1.6,"z":2.4},
+    {"k":"seed_library_box","x":-1.5,"z":2.4}
    ]
   },
   "woodcutter": {
@@ -63,18 +66,20 @@
     {"k":"log","x":-0.6,"z":4.2,"rot":15},
     {"k":"firewood_b","x":2.3,"z":1},
     {"k":"firewood","x":-2.6,"z":0.6},
-    {"k":"wheelbarrow","x":1.2,"z":4.6}
+    {"k":"wheelbarrow","x":1.2,"z":4.6},
+    {"k":"tool_shed","x":-3.1,"z":3.2}
    ]
   },
   "fishing_jetty": {
    "name": "Fishing jetty",
    "on": ["jetty"],
-   "r": 5,
+   "r": 5.5,
    "biomes": {"lake":4,"sea":3,"meadow":2,"default":1},
    "props": [
     {"k":"net_rack","x":-2.8,"z":0},
     {"k":"barrels","x":2.8,"z":-0.2},
-    {"k":"rowboat","x":2.4,"z":4.2,"water":true}
+    {"k":"rowboat","x":-2.4,"z":4.6,"water":true},
+    {"k":"pier_deck","x":2.6,"z":3.8,"water":true}
    ]
   },
   "ruins": {
@@ -83,13 +88,29 @@
    "r": 5,
    "biomes": {"ridge":3,"canyon":3,"badlands":3,"volcano":2,"thicket":1,"default":1},
    "props": [
-    {"k":"stone_wall","x":-1.3,"z":2.8},
-    {"k":"stone_wall","x":1.2,"z":3.1,"rot":14},
-    {"k":"stone_wall","x":-2.8,"z":1,"rot":78},
-    {"k":"statue","x":0.6,"z":1.3},
-    {"k":"cairn","x":2.8,"z":1},
-    {"k":"rocks_mossy","x":-2.2,"z":4},
-    {"k":"rocks_mossy","x":2.4,"z":4.2}
+    {"k":"arch_ruin","x":0,"z":3.6},
+    {"k":"statue","x":0,"z":1.4},
+    {"k":"stone_wall","x":-2.7,"z":3.2,"rot":10},
+    {"k":"wall_ruin_corner","x":2.6,"z":2.6},
+    {"k":"pillar_broken","x":-3.2,"z":0.9},
+    {"k":"pillar_broken","x":3.3,"z":0.6,"rot":120},
+    {"k":"cairn","x":-1.6,"z":4.4},
+    {"k":"rocks_mossy","x":1.8,"z":4.6}
+   ]
+  },
+  "scrap_heap": {
+   "name": "Scrap heap",
+   "on": ["clearing","roadside"],
+   "r": 4.2,
+   "biomes": {"default":0},
+   "sites": {"scrapyard":6},
+   "props": [
+    {"k":"scrap","x":-1.6,"z":2.4},
+    {"k":"scrap","x":1.8,"z":3.2},
+    {"k":"tires","x":-3.2,"z":1},
+    {"k":"barrels","x":3.1,"z":1.2},
+    {"k":"crate","x":0.2,"z":4.1},
+    {"k":"signpost","x":0.4,"z":0.4,"say":"Bureau of Lost, Found and Beans. Unclaimed property. Claims in triplicate."}
    ]
   },
   "bureau_checkpoint": {
@@ -97,16 +118,46 @@
    "on": ["roadside"],
    "r": 3.8,
    "biomes": {"default":1},
+   "sites": {"scrapyard":2},
    "props": [
     {"k":"tollbooth","x":-2.5,"z":1.2},
     {"k":"bollard","x":-0.9,"z":0.3},
     {"k":"bollard","x":1.7,"z":0.3},
     {"k":"flag_pole","x":2.6,"z":2.2},
     {"k":"crates","x":-1.2,"z":3},
-    {"k":"signpost","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."}
+    {"k":"signpost","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."},
+    {"k":"bureau_barrier","x":1.2,"z":3.3},
+    {"k":"bureau_crate","x":-0.1,"z":2}
    ],
    "people": [
     {"who":"clerk","x":0.4,"z":0.9,"event":"bureau_checkpoint","say":"Agent: You've been processed. Move along."}
+   ]
+  },
+  "wayside_shrine": {
+   "name": "Wayside shrine",
+   "on": ["roadside","clearing"],
+   "r": 3,
+   "biomes": {"ridge":2,"thicket":2,"autumn":2,"tundra":2,"default":1},
+   "props": [
+    {"k":"shrine_small","x":0,"z":1.4},
+    {"k":"milestone","x":-1.7,"z":0.7},
+    {"k":"waymarker_post","x":1.6,"z":0.6},
+    {"k":"bush_roses","x":1.7,"z":2.3}
+   ]
+  },
+  "solar_garden": {
+   "name": "Solar garden",
+   "on": ["clearing","roadside"],
+   "r": 5,
+   "biomes": {"meadow":2,"lake":2,"sea":2,"autumn":1,"badlands":1,"canyon":1,"default":1},
+   "plans": {"farmland":2},
+   "props": [
+    {"k":"wind_turbine_small","x":-3,"z":3.4},
+    {"k":"veg_patch_frame","x":0.4,"z":2.2},
+    {"k":"rain_barrel","x":2,"z":1.4},
+    {"k":"beehive_stand","x":2.6,"z":3.8},
+    {"k":"seed_library_box","x":-1.4,"z":0.8},
+    {"k":"solar_post_light","x":-0.3,"z":0.5}
    ]
   }
  }

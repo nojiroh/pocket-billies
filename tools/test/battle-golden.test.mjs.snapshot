@@ -1,3 +1,981 @@
+exports[`golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augment’s move, aimed at a limb) 1`] = `
+{
+  "fmt": "single",
+  "kind": "trainer",
+  "over": "win",
+  "turns": 2,
+  "mine": [
+    {
+      "sp": "musk0",
+      "lvl": 30,
+      "hp": 74,
+      "xp": 22178,
+      "status": null,
+      "aug": {
+        "front": {
+          "uid": "golden-arm",
+          "id": "hydrant",
+          "up": 0
+        }
+      },
+      "partDmg": {}
+    }
+  ],
+  "foes": [
+    {
+      "sp": "bot:ember.bulwark.auger.clamp.treads",
+      "lvl": 18,
+      "hp": 0,
+      "xp": 4665,
+      "status": null,
+      "partDmg": {
+        "armL": 64
+      }
+    }
+  ],
+  "se": 600,
+  "said": [
+    "playTurnEvents",
+    "playTurnEvents"
+  ],
+  "log": [
+    {
+      "turn": 0,
+      "events": []
+    },
+    {
+      "turn": 1,
+      "events": [
+        {
+          "t": "Emberox used Jet Blast.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "jetblast",
+            "dmg": 64,
+            "te": 2,
+            "crit": true,
+            "part": "armL"
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark’s left arm broke!",
+          "an": {
+            "k": "break",
+            "si": 1,
+            "part": "armL"
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "A critical hit!",
+          "an": {
+            "k": "crit",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark held on with Bedrock!",
+          "an": {
+            "k": "block",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark used Flare Core.",
+          "an": {
+            "k": "move",
+            "si": 1,
+            "ti": 0,
+            "mid": "flarecore",
+            "miss": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark missed.",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 1,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "events": [
+        {
+          "t": "Emberox used Jet Blast.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "jetblast",
+            "dmg": 88,
+            "te": 2,
+            "crit": false
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "It’s super effective!",
+          "an": null,
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Ember Bulwark fainted.",
+          "an": {
+            "k": "faint",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox gained 578 XP.",
+          "an": {
+            "k": "xp",
+            "si": 0
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 30,
+              "hp": 74,
+              "max": 70,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "graft": "+front=hydrant",
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire",
+                "Water"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [],
+                "ph": {
+                  "armR": 1
+                }
+              }
+            },
+            {
+              "k": 1,
+              "sp": "bot:ember.bulwark.auger.clamp.treads",
+              "name": "Ember Bulwark",
+              "lvl": 18,
+              "hp": 0,
+              "max": 65,
+              "st": null,
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Steel",
+                "Ground"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": {
+                "brk": [
+                  "armL"
+                ],
+                "ph": {
+                  "armL": 0,
+                  "armR": 1,
+                  "legs": 1
+                }
+              }
+            },
+            null,
+            null,
+            null
+          ],
+          "mk": null
+        }
+      ]
+    }
+  ]
+}
+`;
+
 exports[`golden: a double trainer battle 1`] = `
 {
   "tid": "crude",
@@ -32,21 +1010,21 @@ exports[`golden: a double trainer battle 1`] = `
     {
       "sp": "zuck0",
       "lvl": 12,
-      "hp": 28,
+      "hp": 27,
       "xp": 1382,
       "status": null
     },
     {
       "sp": "carnegie0",
       "lvl": 13,
-      "hp": 48,
+      "hp": 45,
       "xp": 1757,
       "status": null
     },
     {
       "sp": "zuck1",
       "lvl": 15,
-      "hp": 48,
+      "hp": 46,
       "xp": 2700,
       "status": null
     }
@@ -73,8 +1051,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -103,8 +1081,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -133,8 +1111,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -163,8 +1141,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -204,8 +1182,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -234,8 +1212,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -264,8 +1242,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -294,8 +1272,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -340,8 +1318,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -370,8 +1348,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -400,8 +1378,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -430,8 +1408,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -476,8 +1454,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -506,8 +1484,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -536,8 +1514,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -566,8 +1544,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -612,8 +1590,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -642,8 +1620,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -672,8 +1650,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -702,8 +1680,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -748,8 +1726,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -778,8 +1756,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -808,8 +1786,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -838,8 +1816,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -883,7 +1861,7 @@ exports[`golden: a double trainer battle 1`] = `
             "si": 1,
             "ti": 0,
             "mid": "disrupt",
-            "dmg": 23,
+            "dmg": 22,
             "te": 1,
             "crit": false
           },
@@ -894,7 +1872,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 3,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -923,8 +1901,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -953,8 +1931,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 7,
-              "hp": 26,
-              "max": 26,
+              "hp": 25,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -983,8 +1961,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1023,7 +2001,7 @@ exports[`golden: a double trainer battle 1`] = `
             "si": 3,
             "ti": 2,
             "mid": "gripcrush",
-            "dmg": 27,
+            "dmg": 26,
             "te": 1,
             "crit": false
           },
@@ -1034,7 +2012,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 3,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1063,8 +2041,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1094,7 +2072,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1123,8 +2101,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1169,7 +2147,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 3,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1198,8 +2176,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 36,
-              "max": 36,
+              "hp": 35,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1229,7 +2207,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1258,8 +2236,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1309,7 +2287,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 3,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1338,8 +2316,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 30,
-              "max": 36,
+              "hp": 29,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1369,7 +2347,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1398,8 +2376,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1446,7 +2424,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1475,8 +2453,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 30,
-              "max": 36,
+              "hp": 29,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1506,7 +2484,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1535,8 +2513,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1583,7 +2561,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1612,8 +2590,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1643,7 +2621,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1672,8 +2650,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 51,
-              "max": 51,
+              "hp": 48,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1720,7 +2698,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1749,8 +2727,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1780,7 +2758,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1809,8 +2787,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1860,7 +2838,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1889,8 +2867,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -1920,7 +2898,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Kidling",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -1949,8 +2927,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -1995,7 +2973,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2024,8 +3002,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2054,8 +3032,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 7,
-              "hp": 28,
-              "max": 28,
+              "hp": 26,
+              "max": 26,
               "st": null,
               "build": {
                 "head": "M",
@@ -2085,8 +3063,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2125,7 +3103,7 @@ exports[`golden: a double trainer battle 1`] = `
             "si": 1,
             "ti": 2,
             "mid": "disrupt",
-            "dmg": 37,
+            "dmg": 35,
             "te": 2,
             "crit": false
           },
@@ -2136,7 +3114,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2165,8 +3143,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2196,7 +3174,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Versewift",
               "lvl": 7,
               "hp": 0,
-              "max": 28,
+              "max": 26,
               "st": null,
               "build": {
                 "head": "M",
@@ -2226,8 +3204,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2269,7 +3247,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2298,8 +3276,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2329,7 +3307,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Versewift",
               "lvl": 7,
               "hp": 0,
-              "max": 28,
+              "max": 26,
               "st": null,
               "build": {
                 "head": "M",
@@ -2359,8 +3337,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2405,7 +3383,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 2,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2434,8 +3412,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2465,7 +3443,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Versewift",
               "lvl": 7,
               "hp": 0,
-              "max": 28,
+              "max": 26,
               "st": null,
               "build": {
                 "head": "M",
@@ -2495,8 +3473,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2535,7 +3513,7 @@ exports[`golden: a double trainer battle 1`] = `
             "si": 3,
             "ti": 0,
             "mid": "interest",
-            "dmg": 34,
+            "dmg": 33,
             "te": 2,
             "crit": false
           },
@@ -2546,7 +3524,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2575,8 +3553,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2606,8 +3584,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2649,7 +3627,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2678,8 +3656,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2709,8 +3687,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2755,7 +3733,7 @@ exports[`golden: a double trainer battle 1`] = `
               "name": "Emberox",
               "lvl": 7,
               "hp": 0,
-              "max": 26,
+              "max": 25,
               "st": null,
               "build": {
                 "head": "M",
@@ -2784,8 +3762,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "zuck0",
               "name": "Facelet",
               "lvl": 12,
-              "hp": 28,
-              "max": 36,
+              "hp": 27,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -2815,8 +3793,8 @@ exports[`golden: a double trainer battle 1`] = `
               "sp": "carnegie0",
               "name": "Philanthrobite",
               "lvl": 13,
-              "hp": 48,
-              "max": 51,
+              "hp": 45,
+              "max": 48,
               "st": null,
               "build": {
                 "head": "M",
@@ -2864,11 +3842,11 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
     {
       "sp": "bot:ember.bulwark.auger.clamp.treads",
       "lvl": 20,
-      "hp": 21,
+      "hp": 24,
       "xp": 7068,
       "status": null,
       "partDmg": {
-        "legs": 50
+        "legs": 47
       }
     }
   ],
@@ -2901,7 +3879,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
             "si": 1,
             "ti": 0,
             "mid": "post3am",
-            "dmg": 50,
+            "dmg": 47,
             "te": 1,
             "crit": false,
             "part": "legs"
@@ -2912,7 +3890,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -2945,8 +3923,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 77,
-              "max": 77,
+              "hp": 74,
+              "max": 74,
               "st": null,
               "build": {
                 "head": "M",
@@ -2989,7 +3967,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3022,8 +4000,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 77,
-              "max": 77,
+              "hp": 74,
+              "max": 74,
               "st": null,
               "build": {
                 "head": "M",
@@ -3066,7 +4044,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3099,8 +4077,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 77,
-              "max": 77,
+              "hp": 74,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3137,7 +4115,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
             "si": 0,
             "ti": 1,
             "mid": "augerbore",
-            "dmg": 45,
+            "dmg": 47,
             "te": 2,
             "crit": false
           },
@@ -3147,7 +4125,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3180,8 +4158,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 32,
-              "max": 77,
+              "hp": 27,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3220,7 +4198,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3253,8 +4231,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 32,
-              "max": 77,
+              "hp": 27,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3298,7 +4276,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3331,8 +4309,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 28,
-              "max": 77,
+              "hp": 23,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3382,7 +4360,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3415,8 +4393,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 28,
-              "max": 77,
+              "hp": 23,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3455,7 +4433,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3488,8 +4466,8 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "musk1",
               "name": "Boostox",
               "lvl": 26,
-              "hp": 28,
-              "max": 77,
+              "hp": 23,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3526,7 +4504,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
             "si": 0,
             "ti": 1,
             "mid": "augerbore",
-            "dmg": 46,
+            "dmg": 49,
             "te": 2,
             "crit": false
           },
@@ -3536,7 +4514,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3570,7 +4548,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "name": "Boostox",
               "lvl": 26,
               "hp": 0,
-              "max": 77,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3609,7 +4587,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3643,7 +4621,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "name": "Boostox",
               "lvl": 26,
               "hp": 0,
-              "max": 77,
+              "max": 74,
               "st": "brn",
               "build": {
                 "head": "M",
@@ -3685,7 +4663,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3719,7 +4697,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "name": "Boostox",
               "lvl": 26,
               "hp": 0,
-              "max": 77,
+              "max": 74,
               "st": null,
               "build": {
                 "head": "M",
@@ -3761,7 +4739,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "sp": "bot:ember.bulwark.auger.clamp.treads",
               "name": "Ember Bulwark",
               "lvl": 20,
-              "hp": 21,
+              "hp": 24,
               "max": 71,
               "st": null,
               "alpha": false,
@@ -3795,7 +4773,7 @@ exports[`golden: a robot against a Billie (aimed moves, parts that break) 1`] = 
               "name": "Boostox",
               "lvl": 26,
               "hp": 0,
-              "max": 77,
+              "max": 74,
               "st": null,
               "build": {
                 "head": "M",
@@ -3841,7 +4819,7 @@ exports[`golden: a single wild battle 1`] = `
     {
       "sp": "musk0",
       "lvl": 10,
-      "hp": 19,
+      "hp": 18,
       "xp": 894,
       "status": null
     }
@@ -3877,8 +4855,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -3951,8 +4929,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4026,8 +5004,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4110,8 +5088,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4181,8 +5159,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4260,8 +5238,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 25,
-              "max": 33,
+              "hp": 24,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4342,8 +5320,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 25,
-              "max": 33,
+              "hp": 24,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4417,8 +5395,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 25,
-              "max": 33,
+              "hp": 24,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4486,7 +5464,7 @@ exports[`golden: a single wild battle 1`] = `
             "si": 0,
             "ti": 1,
             "mid": "handshake",
-            "dmg": 8,
+            "dmg": 7,
             "te": 1,
             "crit": false
           },
@@ -4496,8 +5474,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 25,
-              "max": 33,
+              "hp": 24,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4526,7 +5504,7 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 7,
+              "hp": 8,
               "max": 31,
               "st": null,
               "build": {
@@ -4580,8 +5558,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 19,
-              "max": 33,
+              "hp": 18,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4610,7 +5588,7 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 7,
+              "hp": 8,
               "max": 31,
               "st": null,
               "build": {
@@ -4659,8 +5637,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 19,
-              "max": 33,
+              "hp": 18,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4733,8 +5711,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 19,
-              "max": 33,
+              "hp": 18,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4807,8 +5785,8 @@ exports[`golden: a single wild battle 1`] = `
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 19,
-              "max": 33,
+              "hp": 18,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4918,8 +5896,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -4948,8 +5926,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 34,
-              "max": 34,
+              "hp": 33,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5002,8 +5980,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5032,8 +6010,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5079,8 +6057,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5109,8 +6087,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5154,8 +6132,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5184,8 +6162,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5228,7 +6206,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
             "si": 1,
             "ti": 0,
             "mid": "pump",
-            "dmg": 17,
+            "dmg": 16,
             "te": 1,
             "crit": true
           },
@@ -5239,7 +6217,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Emberox",
               "lvl": 10,
               "hp": 16,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5268,8 +6246,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5313,7 +6291,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Emberox",
               "lvl": 10,
               "hp": 16,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5342,8 +6320,8 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 12,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5381,7 +6359,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
             "si": 0,
             "ti": 1,
             "mid": "handshake",
-            "dmg": 9,
+            "dmg": 8,
             "te": 1,
             "crit": false
           },
@@ -5392,7 +6370,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Emberox",
               "lvl": 10,
               "hp": 16,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5422,7 +6400,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Swiftlet",
               "lvl": 12,
               "hp": 17,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5465,7 +6443,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
             "si": 1,
             "ti": 0,
             "mid": "pump",
-            "dmg": 26,
+            "dmg": 25,
             "te": 1,
             "crit": true
           },
@@ -5476,7 +6454,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Emberox",
               "lvl": 10,
               "hp": 0,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5506,7 +6484,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Swiftlet",
               "lvl": 12,
               "hp": 17,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5550,7 +6528,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Emberox",
               "lvl": 10,
               "hp": 0,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5580,7 +6558,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Swiftlet",
               "lvl": 12,
               "hp": 17,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5624,7 +6602,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Emberox",
               "lvl": 10,
               "hp": 0,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5654,7 +6632,7 @@ exports[`golden: a single wild battle holding Loopholes (RL-12: stages at the st
               "name": "Swiftlet",
               "lvl": 12,
               "hp": 17,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -5764,8 +6742,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5794,8 +6772,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 23,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -5835,8 +6813,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 10,
-              "hp": 33,
-              "max": 33,
+              "hp": 32,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5865,8 +6843,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 23,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -5904,7 +6882,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
             "si": 1,
             "ti": 0,
             "mid": "charlimit",
-            "dmg": 18,
+            "dmg": 17,
             "te": 1,
             "crit": false
           },
@@ -5915,7 +6893,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 15,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -5944,8 +6922,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 23,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -5990,7 +6968,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 17,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6019,8 +6997,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 23,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6074,7 +7052,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 8,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6103,8 +7081,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 24,
-              "max": 36,
+              "hp": 23,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6153,7 +7131,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 8,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6182,8 +7160,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6228,7 +7206,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 10,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6257,8 +7235,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6301,7 +7279,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
             "si": 1,
             "ti": 0,
             "mid": "pump",
-            "dmg": 25,
+            "dmg": 24,
             "te": 1,
             "crit": false
           },
@@ -6312,7 +7290,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 0,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6341,8 +7319,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6386,7 +7364,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 0,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6415,8 +7393,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6465,7 +7443,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Emberox",
               "lvl": 10,
               "hp": 0,
-              "max": 33,
+              "max": 32,
               "st": null,
               "build": {
                 "head": "M",
@@ -6494,8 +7472,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6538,8 +7516,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 10,
-              "hp": 34,
-              "max": 34,
+              "hp": 33,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -6568,8 +7546,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6607,7 +7585,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
             "si": 1,
             "ti": 0,
             "mid": "charlimit",
-            "dmg": 40,
+            "dmg": 41,
             "te": 2,
             "crit": false
           },
@@ -6618,7 +7596,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Kidling",
               "lvl": 10,
               "hp": 0,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -6647,8 +7625,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6689,7 +7667,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Kidling",
               "lvl": 10,
               "hp": 0,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -6718,8 +7696,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6763,7 +7741,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Kidling",
               "lvl": 10,
               "hp": 0,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -6792,8 +7770,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6842,7 +7820,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Kidling",
               "lvl": 10,
               "hp": 0,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -6871,8 +7849,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6915,8 +7893,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 10,
-              "hp": 34,
-              "max": 34,
+              "hp": 33,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -6946,8 +7924,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -6995,8 +7973,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 10,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7026,8 +8004,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 15,
-              "max": 36,
+              "hp": 14,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7080,8 +8058,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 10,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7111,8 +8089,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 13,
-              "max": 36,
+              "hp": 12,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7152,8 +8130,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 10,
-              "hp": 26,
-              "max": 34,
+              "hp": 25,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7183,8 +8161,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 13,
-              "max": 36,
+              "hp": 12,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7222,7 +8200,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
             "si": 1,
             "ti": 0,
             "mid": "liftoff",
-            "dmg": 14,
+            "dmg": 15,
             "te": 1,
             "crit": false
           },
@@ -7232,8 +8210,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 10,
-              "hp": 12,
-              "max": 34,
+              "hp": 10,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7263,8 +8241,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 13,
-              "hp": 13,
-              "max": 36,
+              "hp": 12,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7307,7 +8285,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
             "si": 0,
             "ti": 1,
             "mid": "liftoff",
-            "dmg": 7,
+            "dmg": 6,
             "te": 1,
             "crit": false
           },
@@ -7317,8 +8295,8 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 10,
-              "hp": 12,
-              "max": 34,
+              "hp": 10,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7349,7 +8327,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Swiftlet",
               "lvl": 13,
               "hp": 6,
-              "max": 36,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7398,7 +8376,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Versewift",
               "lvl": 10,
               "hp": 0,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7429,7 +8407,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Swiftlet",
               "lvl": 13,
               "hp": 6,
-              "max": 36,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7473,7 +8451,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Versewift",
               "lvl": 10,
               "hp": 0,
-              "max": 34,
+              "max": 33,
               "st": null,
               "build": {
                 "head": "M",
@@ -7504,7 +8482,7 @@ exports[`golden: a single wild battle with held items (RL-12c: a turn-end heal, 
               "name": "Swiftlet",
               "lvl": 13,
               "hp": 6,
-              "max": 36,
+              "max": 35,
               "st": null,
               "build": {
                 "head": "M",
@@ -7551,21 +8529,21 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
     {
       "sp": "musk0",
       "lvl": 14,
-      "hp": 42,
+      "hp": 40,
       "xp": 2454,
       "status": null
     },
     {
       "sp": "gates0",
       "lvl": 14,
-      "hp": 17,
+      "hp": 11,
       "xp": 2454,
       "status": null
     },
     {
       "sp": "swift1",
       "lvl": 14,
-      "hp": 44,
+      "hp": 42,
       "xp": 2454,
       "status": null
     }
@@ -7608,8 +8586,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -7669,8 +8647,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -7700,8 +8678,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -7741,8 +8719,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -7802,8 +8780,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -7833,8 +8811,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -7871,8 +8849,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -7932,8 +8910,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -7963,8 +8941,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8005,8 +8983,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8066,8 +9044,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8097,8 +9075,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8139,8 +9117,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8200,8 +9178,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8231,8 +9209,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8273,8 +9251,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8334,8 +9312,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8365,8 +9343,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8406,7 +9384,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 4,
             "ti": 1,
             "mid": "charlimit",
-            "dmg": 20,
+            "dmg": 19,
             "te": 1,
             "crit": false
           },
@@ -8416,8 +9394,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8446,7 +9424,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 67,
+              "hp": 68,
               "max": 87,
               "st": null,
               "build": {
@@ -8477,8 +9455,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 43,
-              "max": 43,
+              "hp": 41,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8508,8 +9486,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8544,7 +9522,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 1,
             "ti": 2,
             "mid": "liftoff",
-            "dmg": 25,
+            "dmg": 26,
             "te": 2,
             "crit": false
           },
@@ -8554,8 +9532,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8584,7 +9562,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 67,
+              "hp": 68,
               "max": 87,
               "st": null,
               "build": {
@@ -8615,8 +9593,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 18,
-              "max": 43,
+              "hp": 15,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8646,8 +9624,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8684,8 +9662,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8714,7 +9692,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 67,
+              "hp": 68,
               "max": 87,
               "st": null,
               "build": {
@@ -8745,8 +9723,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 18,
-              "max": 43,
+              "hp": 15,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8776,8 +9754,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8822,8 +9800,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8852,7 +9830,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 55,
+              "hp": 56,
               "max": 87,
               "st": null,
               "build": {
@@ -8883,8 +9861,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 18,
-              "max": 43,
+              "hp": 15,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -8914,8 +9892,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -8957,8 +9935,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -8987,7 +9965,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 55,
+              "hp": 56,
               "max": 87,
               "st": null,
               "build": {
@@ -9018,8 +9996,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 18,
-              "max": 43,
+              "hp": 15,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9049,8 +10027,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9091,8 +10069,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9121,7 +10099,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 55,
+              "hp": 56,
               "max": 87,
               "st": "par",
               "build": {
@@ -9152,8 +10130,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 18,
-              "max": 43,
+              "hp": 15,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9183,8 +10161,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9225,8 +10203,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9255,7 +10233,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 55,
+              "hp": 56,
               "max": 87,
               "st": "par",
               "build": {
@@ -9286,8 +10264,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 18,
-              "max": 43,
+              "hp": 15,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9317,8 +10295,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9359,8 +10337,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9389,7 +10367,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 55,
+              "hp": 56,
               "max": 87,
               "st": "par",
               "build": {
@@ -9420,8 +10398,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9451,8 +10429,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9492,7 +10470,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 4,
             "ti": 1,
             "mid": "charlimit",
-            "dmg": 25,
+            "dmg": 24,
             "te": 1,
             "crit": false
           },
@@ -9502,8 +10480,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9532,7 +10510,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 55,
+              "hp": 56,
               "max": 87,
               "st": "par",
               "build": {
@@ -9563,8 +10541,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9594,8 +10572,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9635,8 +10613,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9665,7 +10643,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 30,
+              "hp": 32,
               "max": 87,
               "st": "par",
               "build": {
@@ -9696,8 +10674,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9727,8 +10705,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9769,8 +10747,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9799,7 +10777,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 30,
+              "hp": 32,
               "max": 87,
               "st": "par",
               "build": {
@@ -9830,8 +10808,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9861,8 +10839,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -9903,8 +10881,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -9933,7 +10911,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 30,
+              "hp": 32,
               "max": 87,
               "st": "par",
               "build": {
@@ -9964,8 +10942,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -9995,8 +10973,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10031,7 +11009,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 0,
             "ti": 1,
             "mid": "spill",
-            "dmg": 6,
+            "dmg": 5,
             "te": 1,
             "crit": false
           },
@@ -10041,8 +11019,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10071,7 +11049,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10102,8 +11080,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10133,8 +11111,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10174,8 +11152,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10204,7 +11182,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10235,8 +11213,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10266,8 +11244,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10310,8 +11288,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10340,7 +11318,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10371,8 +11349,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 20,
-              "max": 43,
+              "hp": 17,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10402,8 +11380,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10436,7 +11414,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "an": {
             "k": "heal",
             "si": 2,
-            "amt": 21
+            "amt": 20
           },
           "s": [
             {
@@ -10444,8 +11422,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10474,7 +11452,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10505,8 +11483,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 41,
-              "max": 43,
+              "hp": 37,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10536,8 +11514,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10572,7 +11550,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 1,
             "ti": 2,
             "mid": "liftoff",
-            "dmg": 32,
+            "dmg": 33,
             "te": 2,
             "crit": false
           },
@@ -10582,8 +11560,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10612,7 +11590,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10643,8 +11621,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 9,
-              "max": 43,
+              "hp": 4,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10674,8 +11652,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10712,8 +11690,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10742,7 +11720,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10773,8 +11751,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 9,
-              "max": 43,
+              "hp": 4,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10804,8 +11782,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10846,8 +11824,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -10876,7 +11854,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -10907,8 +11885,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 9,
-              "max": 43,
+              "hp": 4,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -10938,8 +11916,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -10980,8 +11958,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11010,7 +11988,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 24,
+              "hp": 27,
               "max": 87,
               "st": "par",
               "build": {
@@ -11041,8 +12019,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11072,8 +12050,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11113,7 +12091,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 0,
             "ti": 1,
             "mid": "movefast",
-            "dmg": 11,
+            "dmg": 10,
             "te": 2,
             "crit": false
           },
@@ -11123,8 +12101,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11153,7 +12131,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 13,
+              "hp": 17,
               "max": 87,
               "st": "par",
               "build": {
@@ -11184,8 +12162,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11215,8 +12193,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11256,8 +12234,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11286,7 +12264,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 13,
+              "hp": 17,
               "max": 87,
               "st": "par",
               "build": {
@@ -11317,8 +12295,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11348,8 +12326,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11386,8 +12364,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11416,7 +12394,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 13,
+              "hp": 17,
               "max": 87,
               "st": "par",
               "build": {
@@ -11447,8 +12425,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11478,8 +12456,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11524,8 +12502,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11554,7 +12532,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -11585,8 +12563,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11616,8 +12594,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11657,8 +12635,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11687,7 +12665,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -11718,8 +12696,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11749,8 +12727,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11793,8 +12771,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11823,7 +12801,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -11854,8 +12832,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 11,
-              "max": 43,
+              "hp": 6,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -11885,8 +12863,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -11919,7 +12897,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
           "an": {
             "k": "heal",
             "si": 2,
-            "amt": 21
+            "amt": 20
           },
           "s": [
             {
@@ -11927,8 +12905,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -11957,7 +12935,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -11988,8 +12966,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 32,
-              "max": 43,
+              "hp": 26,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12019,8 +12997,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12061,8 +13039,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12091,7 +13069,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -12122,8 +13100,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 32,
-              "max": 43,
+              "hp": 26,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12153,8 +13131,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12199,8 +13177,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12229,7 +13207,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -12260,8 +13238,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 15,
-              "max": 43,
+              "hp": 9,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12291,8 +13269,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12329,8 +13307,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12359,7 +13337,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -12390,8 +13368,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 15,
-              "max": 43,
+              "hp": 9,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12421,8 +13399,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12463,8 +13441,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12493,7 +13471,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -12524,8 +13502,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12555,8 +13533,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12597,8 +13575,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12627,7 +13605,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift0",
               "name": "Swiftlet",
               "lvl": 11,
-              "hp": 10,
+              "hp": 14,
               "max": 87,
               "st": "par",
               "build": {
@@ -12658,8 +13636,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12689,8 +13667,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12730,7 +13708,7 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
             "si": 4,
             "ti": 1,
             "mid": "charlimit",
-            "dmg": 10,
+            "dmg": 9,
             "te": 1,
             "crit": false
           },
@@ -12740,8 +13718,146 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
+              "hp": 40,
+              "max": 40,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 11,
+              "hp": 5,
+              "max": 87,
+              "st": "par",
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "S",
+                "back": "M",
+                "sig": "S"
+              },
+              "alpha": true,
+              "boss": true,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 1,
+                "law": 0,
+                "lob": 1,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 2,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 14,
+              "hp": 11,
+              "max": 41,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            {
+              "k": 4,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 14,
               "hp": 42,
               "max": 42,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            }
+          ],
+          "mk": null
+        },
+        {
+          "t": "Emberox used Cinders on Swiftlet.",
+          "an": {
+            "k": "move",
+            "si": 0,
+            "ti": 1,
+            "mid": "spill",
+            "dmg": 17,
+            "te": 1,
+            "crit": true
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 14,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12801,8 +13917,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12832,8 +13948,141 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            }
+          ],
+          "mk": null
+        },
+        {
+          "t": "A critical hit!",
+          "an": {
+            "k": "crit",
+            "si": 1
+          },
+          "s": [
+            {
+              "k": 0,
+              "sp": "musk0",
+              "name": "Emberox",
+              "lvl": 14,
+              "hp": 40,
+              "max": 40,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Fire"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 1,
+              "sp": "swift0",
+              "name": "Swiftlet",
+              "lvl": 11,
+              "hp": 0,
+              "max": 87,
+              "st": "par",
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "S",
+                "back": "M",
+                "sig": "S"
+              },
+              "alpha": true,
+              "boss": true,
+              "ty": [
+                "Flying",
+                "Psychic"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 1,
+                "law": 0,
+                "lob": 1,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            {
+              "k": 2,
+              "sp": "gates0",
+              "name": "Kidling",
+              "lvl": 14,
+              "hp": 11,
+              "max": 41,
+              "st": null,
+              "build": {
+                "head": "M",
+                "body": "M",
+                "front": "M",
+                "back": "M",
+                "sig": "M"
+              },
+              "alpha": false,
+              "boss": false,
+              "ty": [
+                "Grass"
+              ],
+              "xp": 0,
+              "stg": {
+                "lev": 0,
+                "law": 0,
+                "lob": 0,
+                "pr": 0,
+                "hus": 0
+              },
+              "bot": null
+            },
+            null,
+            {
+              "k": 4,
+              "sp": "swift1",
+              "name": "Versewift",
+              "lvl": 14,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -12873,8 +14122,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -12934,8 +14183,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -12965,8 +14214,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -13006,8 +14255,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -13067,8 +14316,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -13098,8 +14347,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -13139,8 +14388,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -13200,8 +14449,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -13231,8 +14480,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",
@@ -13272,8 +14521,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "musk0",
               "name": "Emberox",
               "lvl": 14,
-              "hp": 42,
-              "max": 42,
+              "hp": 40,
+              "max": 40,
               "st": null,
               "build": {
                 "head": "M",
@@ -13333,8 +14582,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "gates0",
               "name": "Kidling",
               "lvl": 14,
-              "hp": 17,
-              "max": 43,
+              "hp": 11,
+              "max": 41,
               "st": null,
               "build": {
                 "head": "M",
@@ -13364,8 +14613,8 @@ exports[`golden: an Alpha battle (three of yours against one that acts twice) 1`
               "sp": "swift1",
               "name": "Versewift",
               "lvl": 14,
-              "hp": 44,
-              "max": 44,
+              "hp": 42,
+              "max": 42,
               "st": null,
               "build": {
                 "head": "M",

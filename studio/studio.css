@@ -4770,6 +4770,12 @@ body.wb-dropping::after {
   border: 2px dashed #e23d6e;
   box-shadow: none;
 }
+/* RS-3: where each resident lives (the spot by their building's or cottage's door) */
+.hub-legend .hub-res {
+  border-radius: 50%;
+  background: #9b6bff;
+  box-shadow: 0 0 0 2px #1e1a34;
+}
 .hub-note,
 .hub-locked {
   padding: 8px 12px;
@@ -5032,4 +5038,136 @@ body.wb-dropping::after {
   font-size: 11px;
   color: var(--text2);
   text-transform: uppercase;
+}
+
+/* CAM-4a: the Camera section (camera-editor.js): the preview's frames, the readout, the scene's own camera */
+.cam-bar {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cam-zoom input {
+  width: 100%;
+}
+.cam-pv.frame-portrait {
+  aspect-ratio: 393/852;
+  width: min(100%, calc(min(72vh, 820px) * 393 / 852));
+  margin: 0 auto;
+}
+.cam-pv.frame-landscape {
+  aspect-ratio: 852/393;
+}
+.cam-pv.frame-desktop {
+  aspect-ratio: 16/9;
+}
+.cam-read {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+.cam-read b {
+  color: var(--text);
+}
+.cam-read b.cam-crisp {
+  color: var(--ok, #2e9d5b);
+}
+#camCmp.on {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #fff;
+}
+.cam-scene h4 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+}
+/* CAM-4b: the zoom stops (camera-editor.js): the table, the curve graph, the looks */
+.cam-stops h4,
+.cam-h {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+}
+.cam-h {
+  margin-top: 0;
+}
+.cam-stops {
+  min-width: 0;
+}
+.cam-stab {
+  overflow-x: auto;
+}
+.cam-stab table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cam-stab th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text2);
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.cam-stab td {
+  padding: 2px;
+  white-space: nowrap;
+}
+.cam-stab tbody th {
+  font-weight: 400;
+}
+.cam-stab input {
+  width: 100%;
+  min-width: 52px;
+  box-sizing: border-box;
+}
+.cam-err {
+  color: var(--red);
+  font-size: 12px;
+}
+.cam-gsel {
+  margin-top: 10px;
+}
+.cam-graph {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  touch-action: none;
+}
+.cam-gax {
+  stroke: var(--line2);
+}
+.cam-gline {
+  fill: none;
+  stroke: var(--acc);
+  stroke-width: 2;
+}
+.cam-gcur {
+  stroke: var(--gold);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.cam-gpt {
+  fill: var(--panel);
+  stroke: var(--acc);
+  stroke-width: 2;
+  cursor: grab;
+}
+.cam-graph.ro .cam-gpt {
+  cursor: default;
+}
+.cam-gt,
+.cam-gn {
+  font-size: 9px;
+  fill: var(--text2);
+}
+.cam-gn {
+  text-anchor: middle;
 }

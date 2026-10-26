@@ -111,8 +111,14 @@ import { engineSetting } from './engine/settings.js';
 import {
   bindQuad,
   ensurePrograms,
+  gpuBuffer,
+  gpuFramebuffer,
+  gpuFree,
   gpuLoading,
+  gpuOnRestore,
   gpuState,
+  gpuTexture,
+  gpuVao,
   initWebgl,
   renderTarget,
   uploadMesh,
@@ -161,8 +167,13 @@ expose({
   worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
   worldBowlClumpsInto: [() => worldBowlClumpsInto, v => (worldBowlClumpsInto = v)],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
+  worldBowlContextRestored: [
+    () => worldBowlContextRestored,
+    v => ((worldBowlContextRestored = v), provide({ worldBowlContextRestored })),
+  ],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
+  worldBowlDropGpu: [() => worldBowlDropGpu, v => (worldBowlDropGpu = v)],
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
@@ -257,7 +268,7 @@ expose({
   worldMapZoom: [() => worldMapZoom, v => (worldMapZoom = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ bowlWallTexture, worldMapPrewarm });
+provide({ bowlWallTexture, worldBowlContextRestored, worldMapPrewarm });
 export function setWorldBowlRender(v) {
   worldBowlRender = v; // eslint-disable-line no-func-assign
   provide({ worldBowlRender });
@@ -527,8 +538,20 @@ precision highp float;in vec3 aPos;layout(location=2) in vec2 aUV;uniform mat4 u
 void main(){vW=aPos;vUV=aUV;gl_Position=uVP*vec4(aPos,1.);}`,
   `#version 300 es
 precision highp float;in vec3 vW;in vec2 vUV;out vec4 o;uniform vec3 uC,uHaze,uRimCol;uniform float uT,uLight,uNight;
+${BOWL_PIXEL_GLSL}
 float hs(float x){return fract(sin(x*127.1)*43758.5453);}
-void main(){float u=vUV.x,v=vUV.y,col=floor(u*14.),sp=.55+hs(col)*.5;
+/* WA-7, pixel water on: the streaks step down their columns in stepped time with hard ends, the sheet in three tones,
+   a hard white lip, and the fade into the clouds and its edges dithered on a grid fixed to the sheet */
+void fallPixel(){float u=vUV.x,v=vUV.y,col=floor(u*14.),sp=.55+hs(col)*.5;vec2 cl=floor(vec2(u*56.,v*90.));
+ float st=fract(floor(v*90.)/90.*(3.+hs(col+7.)*2.)-pwStep(uT)*sp+hs(col+3.)),streak=step(.72,st)*step(st,.96);
+ vec3 c=mix(vec3(.33,.78,.8),vec3(.12,.5,.7),pwQ(.35+.3*hs(col+11.),3.,cl));
+ c=mix(c,vec3(.93,.97,1.),max(streak*.65,step(v,.05)));
+ c=mix(c,uRimCol,pwQ(smoothstep(.35,1.,v),4.,cl));
+ c*=mix(.95,.32,uNight)*mix(.8,1.08,uLight);
+ float edge=pwQ(smoothstep(0.,.18,u)*smoothstep(1.,.82,u),3.,cl),a=edge*pwQ(1.-smoothstep(.45,1.,v),4.,cl)*(.78+.2*streak);
+ if(a<.01)discard;float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(c,uHaze,clamp(fk,0.,.5)),a);}
+void main(){if(uPixW.x>.5){fallPixel();return;}
+ float u=vUV.x,v=vUV.y,col=floor(u*14.),sp=.55+hs(col)*.5;
  float st=fract(v*(3.+hs(col+7.)*2.)-uT*sp+hs(col+3.)),streak=smoothstep(.55,.95,st)*(1.-smoothstep(.95,1.,st));
  vec3 c=mix(vec3(.33,.78,.8),vec3(.12,.5,.7),.35+.3*hs(col+11.));
  c=mix(c,vec3(.93,.97,1.),max(streak*.65,1.-smoothstep(0.,.08,v)));
@@ -569,12 +592,15 @@ void bowlWaterPixel(){vec2 q0=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t
  float fr=.04+.96*pow(1.-max(0.,dot(n,v)),5.);col=mix(col,sky,clamp(fr,0.,.85));
  float sp=step(.35,pow(max(0.,dot(reflect(-l,n),v)),120.))*(1.-smoothstep(2.,10.,px));col+=mix(vec3(1.,.95,.8),vec3(.9,.35,.2),uNight)*sp*.9*sh*uLight;
  col=mix(col,mix(vec3(.82,.85,.88),vec3(.2,.22,.3),uNight),wx.b*.35);
- /* the foam: stepped bands rolling in over the shallows and a hard line at the land, both in whole texels */
- float fb=1.-smoothstep(.0,.0035,dep),fw=.5+.5*sin(dep*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
+ /* the foam: stepped bands rolling in over the shallows and a hard line at the land, both in whole texels
+    (HB-3's lagoon, uRim: its foam reads three times the depth, fd, so it stays by the beach and on the sill; at the
+    rim it fades into the clouds' colour in dithered steps) */
+ float fd=dep*(uRim>.5?3.:1.),fb=1.-smoothstep(.0,.0035,fd),fw=.5+.5*sin(fd*2600.-t*2.2+wv(q,vec2(.6,.8),.4,0.,0.)*1.5);
  fw=mix(fw,.55,smoothstep(.3,1.5,pk));
- float foam=max(step(.5,fb*smoothstep(.35,.75,fw))*.9,step(dep,.0008)*.8);
- foam=max(foam,step(dep,.0016)*step(.5,pwBayer(cl))*.5);col=mix(col,vec3(.95,.98,1.),foam*.85);
+ float foam=max(step(.5,fb*smoothstep(.35,.75,fw))*.9,step(fd,.0008)*.8);
+ foam=max(foam,step(fd,.0016)*step(.5,pwBayer(cl))*.5);col=mix(col,vec3(.95,.98,1.),foam*.85);
  float a=mix(.45,.92,pwQ(smoothstep(.0,.006,dep),3.,cl));a=max(a,foam*.9);
+ if(uRim>.5){float f=pwQ(smoothstep(0.,1.,vS.y),4.,cl);col=mix(col,uRimCol,f);a=mix(a,.97,f);}
  float d=length(vW-uC),fk=1.-exp(-max(0.,d-.7)*.32);o=vec4(mix(col,uHaze,clamp(fk,0.,.6)),a);}
 void main(){if(uPixW.x>.5){bowlWaterPixel();return;}
 vec2 q=vec2(vW.x,-vW.z)*${BOWL_METRES.toFixed(1)};float t=uT;
@@ -612,6 +638,44 @@ export function worldBowlReset() {
   worldBowl.ground = null;
   if (worldBowl.wall) worldBowl.wall.node = -1;
   worldBowl.dirty = true;
+}
+/* phase 20 H: a restored GPU context is the same object with nothing on it, so every `x.gl === gl` check below would
+   still pass: each part's GPU copy is dropped (the old ones went with the context) and made again on the next frame;
+   the work behind them (spots, ground, terrain pictures, clouds) stays. Run by the resource registry on every restore
+   (engine/webgl.js gpuOnRestore), before worldBowlContextRestored */
+function worldBowlDropGpu() {
+  const g = worldBowl.ground;
+  if (g) {
+    g.gl = null;
+    g.mesh = null;
+    g.water = null;
+    g.shadow = null;
+    g.lines = null;
+    if (g.terrain) g.terrain.gl = null;
+    const F = g.float;
+    if (F) F.gpu = F.fineGpu = F.fallsGpu = F.waterGpu = null;
+    const W = g.things;
+    if (W) {
+      W.gpu = null;
+      if (W.atlas) W.atlas.gl = null;
+      W.dirty = true;
+    }
+  }
+  worldBowl.wall = null;
+  const S = worldBowl.skyState;
+  if (S) S.tex = S.gpu = null;
+  worldBowl.dirty = true;
+}
+gpuOnRestore('world map', worldBowlDropGpu);
+/* the context came back (engine/webgl.js watchContextLoss): with the map showing, its programs are made again on the
+   new context (worldMapCanvasGl) and it draws again; else it is rebuilt when it next opens */
+function worldBowlContextRestored() {
+  if (!worldBowl.on) return;
+  if (!worldMapCanvasGl()) {
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'world map: not back after the context was restored');
+    return;
+  }
+  worldMapSize();
 }
 /* ---------- the places and the ground ---------- */
 /* the world map's look from worldmap.json (the Studio edits it), each part falling back to the values in code */
@@ -811,8 +875,8 @@ export function worldBowlFloatFrame(F) {
 function worldBowlFloatGpu(F) {
   const gl = gpuState.gl;
   if (F.gpu && F.gpu.gl === gl) return F.gpu;
-  const vao = gl.createVertexArray(),
-    vb = gl.createBuffer(),
+  const vao = gpuVao('meshes'),
+    vb = gpuBuffer('meshes', F.data.byteLength),
     B = FLOAT_STRIDE * 4;
   gl.bindVertexArray(vao);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
@@ -1309,10 +1373,10 @@ function worldBowlShadows(g) {
     (g.shadow.ver === ver || performance.now() - g.shadow.at < 2000)
   )
     return g.shadow;
-  if (g.shadow && g.shadow.gl === gl && g.shadow.t) gl.deleteTexture(g.shadow.t);
+  if (g.shadow && g.shadow.gl === gl && g.shadow.t) gpuFree(g.shadow.t);
   const t0 = performance.now(),
     Z = BOWL_SHADOW_SIZE,
-    tex = gl.createTexture();
+    tex = gpuTexture('targets', Z * Z * 4);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, Z, Z, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
@@ -1322,7 +1386,7 @@ function worldBowlShadows(g) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
-  const fb = gl.createFramebuffer();
+  const fb = gpuFramebuffer('targets');
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
   gl.drawBuffers([gl.NONE]);
@@ -1357,8 +1421,8 @@ function worldBowlShadows(g) {
     gl.disable(gl.POLYGON_OFFSET_FILL);
   }
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.deleteFramebuffer(fb);
-  if (!ok) gl.deleteTexture(tex);
+  gpuFree(fb);
+  if (!ok) gpuFree(tex);
   g.shadow = {
     gl,
     t: ok ? tex : null,
@@ -1818,9 +1882,9 @@ function worldBowlThingsTick(g) {
       waiting = true;
       continue;
     }
-    const vao = gl.createVertexArray(),
-      vb = gl.createBuffer(),
-      ib = gl.createBuffer();
+    const vao = gpuVao('meshes'),
+      vb = gpuBuffer('meshes', shape.byteLength),
+      ib = gpuBuffer('meshes');
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, vb);
     gl.bufferData(gl.ARRAY_BUFFER, shape, gl.STATIC_DRAW);
@@ -1857,7 +1921,7 @@ function worldBowlThingsTick(g) {
   if (at) {
     if (at.gl !== gl) {
       at.gl = gl;
-      at.t = gl.createTexture();
+      at.t = gpuTexture('pictures', Math.round(at.c.width * at.c.height * 4 * 1.34));
       gl.bindTexture(gl.TEXTURE_2D, at.t);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, at.c);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -1884,8 +1948,8 @@ function worldBowlThingsTick(g) {
         V.push(...b, cx, cy, w, h, u.u0, u.v0, u.u1, u.v1, q.g);
     }
     if (!G.svao) {
-      G.svao = gl.createVertexArray();
-      G.sb = gl.createBuffer();
+      G.svao = gpuVao('instances');
+      G.sb = gpuBuffer('instances');
       gl.bindVertexArray(G.svao);
       gl.bindBuffer(gl.ARRAY_BUFFER, G.sb);
       for (const [loc, size, off] of [
@@ -2097,7 +2161,7 @@ function worldBowlTerrainGpu(T) {
   if (!T.pix) return false;
   if (T.gl !== gl) {
     T.gl = gl;
-    T.tIdx = gl.createTexture();
+    T.tIdx = gpuTexture('ground', BOWL_INDEX * BOWL_INDEX);
     gl.bindTexture(gl.TEXTURE_2D, T.tIdx);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, BOWL_INDEX, BOWL_INDEX, 0, gl.RED, gl.UNSIGNED_BYTE, null);
     for (const [k, v] of [
@@ -2107,13 +2171,13 @@ function worldBowlTerrainGpu(T) {
       [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE],
     ])
       gl.texParameteri(gl.TEXTURE_2D, k, v);
-    T.tLay = gl.createTexture();
+    T.tLay = gpuTexture('ground', Math.round(16 * 16 * 4 * T.K.keys.length * 1.34));
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, T.tLay);
     gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, 16, 16, T.K.keys.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, T.pix.data);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-    T.tMix = gl.createTexture();
+    T.tMix = gpuTexture('ground');
     T.dirty = true;
   }
   /* new squares go up at most twice a second (the terrain fills and the maps come in a bit at a time) */
@@ -2304,7 +2368,7 @@ function worldBowlGpu() {
   g.ok = T.ready && worldBowlTerrainGpu(T);
   if (g.ok && (!g.lines || g.lines.gl !== gpuState.gl)) {
     const gl = gpuState.gl,
-      t = gl.createTexture(),
+      t = gpuTexture('ground', BOWL_MIX * BOWL_MIX * 4),
       t0 = performance.now();
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, BOWL_MIX, BOWL_MIX, 0, gl.RGBA, gl.UNSIGNED_BYTE, worldBowlLineMap());
@@ -2365,8 +2429,8 @@ function bowlWallTexture() {
       px[o + 3] = Math.round(Math.min(1, top / 0.6) * 255);
     }
   }
-  if (worldBowl.wall && worldBowl.wall.gl === gl) gl.deleteTexture(worldBowl.wall.t);
-  const t = gl.createTexture();
+  if (worldBowl.wall && worldBowl.wall.gl === gl) gpuFree(worldBowl.wall.t);
+  const t = gpuTexture('pictures', BOWL_WALL_W * 16);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, BOWL_WALL_W, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -2856,6 +2920,7 @@ export function worldBowlRender(t) {
     p = gpuState.P.mfallw;
     U = p.U;
     gl.useProgram(p.p);
+    setPixelWaterUniform(U);
     gl.uniformMatrix4fv(U.uVP, false, VP);
     gl.uniform3fv(U.uC, v.C);
     gl.uniform3fv(U.uHaze, haze);
@@ -2885,6 +2950,7 @@ export function worldBowlRender(t) {
     gl.uniform1f(U.uT, reducedMotion ? 0 : (t % 600000) / 1000);
     gl.uniform1f(U.uRim, 1);
     gl.uniform3fv(U.uRimCol, FL ? FL.cloud : haze);
+    setPixelWaterUniform(U);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.depthMask(false);
@@ -3001,7 +3067,7 @@ function worldBowlSkyUniforms(U, S, sun) {
   gl.uniform4fv(U.uCs, S.shadows || new Float32Array(160));
   gl.uniform1i(U.uCn, S.shadowN || 0);
   if (!S.tex || S.tex.gl !== gl) {
-    S.tex = { gl, t: gl.createTexture() };
+    S.tex = { gl, t: gpuTexture('pictures') };
     gl.bindTexture(gl.TEXTURE_2D, S.tex.t);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -3083,13 +3149,13 @@ function worldBowlSkyGpu(S) {
   if (S.gpu && S.gpu.gl === gl) return S.gpu;
   const G = {
     gl,
-    vao: gl.createVertexArray(),
-    inst: gl.createBuffer(),
-    fvao: gl.createVertexArray(),
-    fall: gl.createBuffer(),
+    vao: gpuVao('instances'),
+    inst: gpuBuffer('instances'),
+    fvao: gpuVao('instances'),
+    fall: gpuBuffer('instances'),
   };
   const puff = worldBowlPuffMesh(),
-    vb = gl.createBuffer();
+    vb = gpuBuffer('meshes', puff.byteLength);
   gl.bindVertexArray(G.vao);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, puff, gl.STATIC_DRAW);

@@ -19,11 +19,15 @@
      last:lost, last:row <= 3      the last run (RL-S1: logic/run-history.js LAST_FACTS)
      lastby:boss, lastby:bureau    what ended the last run: its kind, a leader's or class's id, a Billie, the Bureau
      history:losses >= 2   over the runs kept (HISTORY_FACTS)   rematch >= 1   runs this foe ended (a leader's lines)
+     resident:dottie       someone lives in Copperleaf  residents >= 3   how many do (RS-1: meta.residents)
+     lastres:dottie        the last run brought them to Copperleaf (RS-3: its history entry's res)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { RELATIONS } from '../hooks.js';
 import { historyFacts, historyRematch } from './run-history.js';
+import { relLevels } from './relations.js';
 /* eslint-disable no-func-assign */
 expose({
   CONDITION_KINDS: [() => CONDITION_KINDS],
@@ -48,6 +52,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   editDistance: [() => editDistance, v => (editDistance = v)],
   // @ts-expect-error -- replaced on purpose
+  lastTeamOf: [() => lastTeamOf, v => (lastTeamOf = v)],
+  // @ts-expect-error -- replaced on purpose
   parseCondition: [() => parseCondition, v => (parseCondition = v)],
   parsed: [() => parsed],
   // @ts-expect-error -- replaced on purpose
@@ -69,8 +75,12 @@ expose({
  *   visited: Record<string, any>, lines: Record<string, any>, robots: number, badges: number, caught: number,
  *   unlocks: Record<string, any>, runs: number, wins: number, expedition?: number, questStages?: Record<string, string[]>,
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
- *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
- *   history?: Record<string, number>, rematch?: number }} StoryState */
+ *   opened?: Record<string, number>, dna?: number, genes?: number, spliced?: number,
+ *   last?: Record<string, number>, lastby?: Record<string, number>,
+ *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
+ *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number>, rival?: number,
+ *   residents?: Record<string, number>,
+ *   lastres?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -94,6 +104,9 @@ export const CONDITION_KINDS = {
   team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
   badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
   opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
+  dna: { id: false, count: true, about: 'DNA on hand (SP-6): dna >= 10' },
+  genes: { id: false, count: true, about: 'Genes in the Gene Bank’s library (SP-6): genes >= 1' },
+  spliced: { id: false, count: true, about: 'spliced Billies in your team (SP-6): spliced >= 1' },
   last: {
     id: true,
     count: true,
@@ -112,6 +125,28 @@ export const CONDITION_KINDS = {
     about: 'over the runs kept (the last 20): history:runs, wins, losses, quits, streak, lstreak, bureau',
   },
   rematch: { id: false, count: true, about: 'in a leader’s or agent’s lines: runs this foe has ended: rematch >= 1' },
+  rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:hazel >= 2' },
+  beans: { id: false, count: true, about: 'Beans on hand, the gift currency (RL-S2): beans >= 1' },
+  gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:hazel' },
+  lastteam: {
+    id: true,
+    count: true,
+    about:
+      'the team the last run ended with (RL-S2): Billies of a type, a line or a species: lastteam:Grass, lastteam:musk',
+  },
+  rival: {
+    id: false,
+    count: true,
+    about: 'on a run, the meetings with Blake so far (RL-S2: before his battle, rival >= 1 means you met him already)',
+  },
+  chapter: {
+    id: false,
+    count: true,
+    about: 'the story’s chapter (RL-S2: 1 at the start, moved on only by the command chapter n): chapter >= 2',
+  },
+  resident: { id: true, count: false, about: 'someone lives in Copperleaf (residents.json, RS-1): resident:dottie' },
+  residents: { id: false, count: true, about: 'how many live in Copperleaf (RS-1): residents >= 3' },
+  lastres: { id: true, count: false, about: 'the last run brought them to Copperleaf (RS-3): lastres:dottie' },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -358,8 +393,20 @@ export function termValue(c, S) {
       return S.team || 0;
     case 'badge':
       return !!(S.badgeTypes || {})[c.id.toLowerCase()];
+    case 'resident':
+      return !!(S.residents || {})[c.id];
+    case 'residents':
+      return Object.keys(S.residents || {}).length;
+    case 'lastres':
+      return !!(S.lastres || {})[c.id];
     case 'opened':
       return !!(S.opened || {})[c.id];
+    case 'dna':
+      return S.dna || 0;
+    case 'genes':
+      return S.genes || 0;
+    case 'spliced':
+      return S.spliced || 0;
     case 'last':
       return (S.last || {})[c.id] || 0;
     case 'lastby':
@@ -368,6 +415,18 @@ export function termValue(c, S) {
       return (S.history || {})[c.id] || 0;
     case 'rematch':
       return S.rematch || 0;
+    case 'rel':
+      return (S.rel || {})[c.id] || 0;
+    case 'beans':
+      return S.beans || 0;
+    case 'gifted':
+      return !!(S.gifted || {})[c.id];
+    case 'chapter':
+      return S.chapter || 1;
+    case 'rival':
+      return S.rival || 0;
+    case 'lastteam':
+      return (S.lastteam || {})[c.id] || (S.lastteam || {})[c.id.toLowerCase()] || 0;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -438,10 +497,29 @@ export function storyStateOf(save, o = {}) {
     /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
     opened:
       save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
+    /* SP-6: DNA, the Gene library and the team's splices (a Billie with a graft) */
+    dna: meta.dna || 0,
+    genes: (meta.genes || []).length,
+    spliced: (save.team || []).filter(m => m && m.graft && Object.keys(m.graft).length).length,
     last: facts.last,
     lastby: facts.lastby,
     history: facts.history,
     rematch: historyRematch(meta.history, o.foe),
+    /* RL-S2: the hub folk's levels (relations.json, through the hooks: none without game data), the Beans, the gifts
+       given since the last run */
+    rel: RELATIONS && meta.rel ? relLevels(meta, RELATIONS) : {},
+    beans: meta.beans || 0,
+    chapter: meta.chapter || 1,
+    lastteam: lastTeamOf(meta.history, o.typesOf),
+    /* RL-S2 part B: this run's meetings with Blake (logic/rival.js run.rival) */
+    rival: save.run && save.run.rival ? save.run.rival.met || 0 : 0,
+    gifted: Object.fromEntries(
+      Object.entries(meta.gifted || {}).flatMap(([who, n]) => (n === (meta.runs || 0) ? [[who, 1]] : []))
+    ),
+    /* RS-1: who lives in Copperleaf (logic/residents.js) */
+    residents: meta.residents || {},
+    /* RS-3: who the last run brought */
+    lastres: facts.lastres,
   };
 }
 
@@ -457,6 +535,23 @@ export function teamTypes(team, typesOf) {
       out[k] = (out[k] || 0) + 1;
     }
   }
+  return out;
+}
+/** RL-S2: the team the last run kept (meta.history's newest entry, species ids) counted three ways: by type (lower
+ * case, through `typesOf`), by line (the species id without its stage) and by species
+ * @param {any[] | undefined} history @param {(m: any) => string[]} [typesOf] */
+export function lastTeamOf(history, typesOf) {
+  const e = Array.isArray(history) ? history[history.length - 1] : null,
+    sps = e && Array.isArray(e.team) ? e.team.filter((/** @type {any} */ sp) => typeof sp === 'string') : [],
+    out = typesOf
+      ? teamTypes(
+          sps.map((/** @type {string} */ sp) => ({ sp })),
+          typesOf
+        )
+      : {};
+  for (const sp of sps)
+    for (const k of new Set([sp, sp.replace(/\d+$/, ''), sp.replace(/(?:_[a-z0-9]+)?\d+$/, '')]))
+      out[k] = (out[k] || 0) + 1;
   return out;
 }
 /** RL-12b: the types of the badges won (lower case): meta.badges (RL-R2), then the leaders' seats

@@ -5,7 +5,7 @@
    One engine state object, gpuState, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { artCacheVersion, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
+import { artCacheVersion, onGlContextRestored, provide, walkRenderer, worldBowlContextRestored } from '../hooks.js';
 import { clamp } from '../util.js';
 import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
@@ -15,6 +15,8 @@ import { engineSetting } from './settings.js';
 expose({
   ATTRIBUTE_LOCATIONS: [() => ATTRIBUTE_LOCATIONS],
   COMMON_GLSL: [() => COMMON_GLSL],
+  GPU_KINDS: [() => GPU_KINDS],
+  GPU_MAKE: [() => GPU_MAKE],
   LIGHT_GLSL: [() => LIGHT_GLSL],
   LOOK_GLSL: [() => LOOK_GLSL],
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
@@ -24,19 +26,45 @@ expose({
   beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
   bindGridQuad: [() => bindGridQuad, v => (bindGridQuad = v)],
   bindQuad: [() => bindQuad, v => (bindQuad = v)],
+  bleedEdges: [() => bleedEdges, v => (bleedEdges = v)],
   compileProgram: [() => compileProgram, v => ((compileProgram = v), provide({ compileProgram }))],
   cross3: [() => cross3],
+  dropProgramCompile: [() => dropProgramCompile, v => (dropProgramCompile = v)],
   endGpuTimer: [() => endGpuTimer, v => (endGpuTimer = v)],
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
+  forceContextLoss: [() => forceContextLoss, v => (forceContextLoss = v)],
+  forcedLoss: [() => forcedLoss, v => (forcedLoss = v)],
   frameBlockBinding: [() => frameBlockBinding, v => (frameBlockBinding = v)],
   frameBlockCheck: [() => frameBlockCheck, v => (frameBlockCheck = v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
+  glLoseArmed: [() => glLoseArmed, v => (glLoseArmed = v)],
+  gpuBuffer: [() => gpuBuffer],
+  gpuCountsReset: [() => gpuCountsReset, v => (gpuCountsReset = v)],
+  gpuEntry: [() => gpuEntry],
+  gpuFrame: [() => gpuFrame, v => ((gpuFrame = v), provide({ gpuFrame }))],
+  gpuFramebuffer: [() => gpuFramebuffer],
+  gpuFree: [() => gpuFree, v => (gpuFree = v)],
   gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
+  gpuMake: [() => gpuMake, v => (gpuMake = v)],
+  gpuMemory: [() => gpuMemory, v => (gpuMemory = v)],
+  gpuNewGeneration: [() => gpuNewGeneration, v => (gpuNewGeneration = v)],
+  gpuOnRestore: [() => gpuOnRestore, v => (gpuOnRestore = v)],
+  gpuRes: [() => gpuRes],
+  gpuRestoreOwners: [() => gpuRestoreOwners, v => (gpuRestoreOwners = v)],
+  gpuRetire: [() => gpuRetire, v => (gpuRetire = v)],
+  gpuShader: [() => gpuShader, v => (gpuShader = v)],
+  gpuSized: [() => gpuSized, v => (gpuSized = v)],
   gpuState: [() => gpuState],
+  gpuTexture: [() => gpuTexture],
+  gpuTrack: [() => gpuTrack, v => (gpuTrack = v)],
+  gpuTypeOf: [() => gpuTypeOf, v => (gpuTypeOf = v)],
+  gpuVao: [() => gpuVao],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  lateCompile: [() => lateCompile, v => (lateCompile = v)],
+  lossWatched: [() => lossWatched],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
   normalMapWorkerState: [() => normalMapWorkerState],
@@ -44,10 +72,8 @@ expose({
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
-  programSource: [() => programSource],
   renderTarget: [() => renderTarget, v => (renderTarget = v)],
   runNormalMapJobs: [() => runNormalMapJobs, v => setRunNormalMapJobs(v)],
-  setFrameBlockMode: [() => setFrameBlockMode, v => (setFrameBlockMode = v)],
   setTextureParams: [() => setTextureParams, v => (setTextureParams = v)],
   smooth01: [() => smooth01],
   startProgramCompile: [() => startProgramCompile, v => (startProgramCompile = v)],
@@ -55,12 +81,13 @@ expose({
   trackTexture: [() => trackTexture, v => (trackTexture = v)],
   trimTextures: [() => trimTextures, v => (trimTextures = v)],
   uploadMesh: [() => uploadMesh, v => (uploadMesh = v)],
+  watchContextLoss: [() => watchContextLoss, v => (watchContextLoss = v)],
   webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
   windBendAt: [() => windBendAt, v => (windBendAt = v)],
   windGustAt: [() => windGustAt, v => (windGustAt = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ attributeClashes, compileProgram });
+provide({ attributeClashes, compileProgram, gpuFrame });
 export function setEnsurePrograms(v) {
   ensurePrograms = v; // eslint-disable-line no-func-assign
   provide({ ensurePrograms });
@@ -98,6 +125,9 @@ export const gpuState = {
   loaded: false,
   loadAt: 0,
   pcl: [0, 0],
+  pclNames: [],
+  /* phase 20 H1: the context's generation, one more for every context made (a restored one too): gpuRes */
+  gen: 0,
 };
 provide({ gpuState }); /* to-module */
 export function webgl2Supported() {
@@ -237,24 +267,10 @@ export function windBendAt(x, z, t, g) {
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
 export const LIGHT_GLSL = `
 uniform highp sampler2DShadow uShadow,uShadow2,uLampSh0,uLampSh1;uniform highp sampler2D uShadowD,uShadowD2;uniform vec2 uFol;
-/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3); with
-   quality.frameBlock on (phase 20 C3), one uniform block sent once per frame (engine/frame-block.js) */
-#ifdef PB_FRAME_BLOCK
+/* the frame's light values, the same for every lit program in a frame (SHV: one of the nine sky terms as a vec3): one
+   uniform block sent once per frame (phase 20 C3, engine/frame-block.js) */
 ${FRAME_BLOCK_GLSL}
 #define SHV(i) uSH[i].rgb
-#else
-uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
-uniform vec4 uRoomB;uniform float uRoomDim;
-uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx,uShSteps;uniform vec3 uShLift;
-uniform mat4 uShadowM;uniform float uShadowOn;uniform vec2 uShadowTexel;
-uniform mat4 uShadowM2;uniform float uShadow2On,uShPen2;uniform vec2 uShadowTexel2;
-uniform vec4 uLP[16];uniform vec4 uLC[16];uniform int uNL;
-uniform mat4 uLampM0,uLampM1;uniform int uNLS;
-uniform vec4 uAO[64];uniform int uNAO;
-uniform vec4 uSeason;
-uniform vec3 uSH[9];uniform float uSHK,uFogSun;
-#define SHV(i) uSH[i]
-#endif
 const vec2 PD[12]=vec2[12](vec2(-.326,-.406),vec2(-.840,-.074),vec2(-.696,.457),vec2(-.203,.621),vec2(.962,-.195),vec2(.473,-.480),vec2(.519,.767),vec2(.185,-.893),vec2(.507,.064),vec2(.896,.412),vec2(-.322,-.933),vec2(-.792,-.598));
 float lhash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float lnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(lhash(i),lhash(i+vec2(1,0)),f.x),mix(lhash(i+vec2(0,1)),lhash(i+vec2(1,1)),f.x),f.y);}
@@ -271,7 +287,7 @@ float shadowAtN(vec3 p,vec3 n,float bias){if(uShadowOn<.5)return cloudShade(p);v
  if(c.x<.01||c.y<.01||c.x>.99||c.y>.99||c.z>1.){if(uShadow2On<.5)return cloudShade(p);vec4 q2=uShadowM2*vec4(p,1.);vec3 c2=q2.xyz/q2.w*.5+.5;if(c2.x<0.||c2.y<0.||c2.x>1.||c2.y>1.||c2.z>1.)return cloudShade(p);
   float rot2=lhash(c2.xy*913.)*6.283;mat2 R2=mat2(cos(rot2),sin(rot2),-sin(rot2),cos(rot2));float s2=0.;for(int i=0;i<6;i++){s2+=texture(uShadow2,vec3(c2.xy+R2*PD[i]*uShadowTexel2*2.2,c2.z-bias*1.5));}s2/=6.;if(uShPx>0.&&uShSteps>0.)s2=clamp(floor(s2*uShSteps+shBayer(cell)),0.,uShSteps)/uShSteps;return mix(1.,s2,uShStr)*cloudShade(p);}
  float rot=lhash(c.xy*913.)*6.283;mat2 R=mat2(cos(rot),sin(rot),-sin(rot),cos(rot));
- int nb=uShLite>.5?4:8,np=uShLite>.5?6:12;float bs=0.,bn=0.;for(int i=0;i<8;i++){if(i>=nb)break;float d=texture(uShadowD,c.xy+R*PD[i]*uShadowTexel*7.).r;if(d<c.z-bias){bs+=d;bn+=1.;}}
+ int nb=uShLite>.5?4:8,np=uShLite>.5?6:12;float bs=0.,bn=0.;for(int i=0;i<8;i++){if(i>=nb)break;float d=texture(uShadowD,c.xy+R*PD[i]*uShadowTexel*(mod(uShFix,2.)>.5?(uShPx>0.?8.:14.):7.)).r;if(d<c.z-bias){bs+=d;bn+=1.;}}
  if(bn<.5)return cloudShade(p);
  float r=clamp((c.z-bs/bn)*uShPen,1.2,uShPx>0.?8.:14.);float s=0.;for(int i=0;i<12;i++){if(i>=np)break;s+=texture(uShadow,vec3(c.xy+R*PD[i]*uShadowTexel*r,c.z-bias));}
  s/=float(np);if(uShPx>0.&&uShSteps>0.)s=clamp(floor(s*uShSteps+shBayer(cell)),0.,uShSteps)/uShSteps;
@@ -279,9 +295,11 @@ float shadowAtN(vec3 p,vec3 n,float bias){if(uShadowOn<.5)return cloudShade(p);v
 float shadowAt(vec3 p,float bias){return shadowAtN(p,vec3(0.,1.,0.),bias);}
 float contactAO(vec3 p){float a=1.;for(int i=0;i<64;i++){if(i>=uNAO)break;vec4 b=uAO[i];vec2 d=(p.xz-b.xy)/b.zw;float e=dot(d,d);if(e<1.){float k=1.-e;a=min(a,1.-k*k*uContact);}}return a;}
 /* v43: the two nearest lamps have shadow maps of their own (light.js beginLampShadow) */
-float lampVis(int i,vec3 p){vec4 q=(i==0?uLampM0:uLampM1)*vec4(p,1.);if(q.w<=.01)return 1.;vec3 c=q.xyz/q.w*.5+.5;if(c.x<0.||c.y<0.||c.x>1.||c.y>1.||c.z>1.)return 1.;float s=i==0?texture(uLampSh0,vec3(c.xy,c.z-.0025)):texture(uLampSh1,vec3(c.xy,c.z-.0025));return .25+.75*s;}
+float lampVis(int i,vec3 p){vec4 q=(i==0?uLampM0:uLampM1)*vec4(p,1.);if(q.w<=.01)return 1.;vec3 c=q.xyz/q.w*.5+.5;if(c.x<0.||c.y<0.||c.x>1.||c.y>1.||c.z>1.)return 1.;/* Lamp shadows hold (bit 2): the bias as 5 cm + 1.2% of the distance in metres, turned into this perspective map's depth (near .25, far 24: light.js) */
+ float b=.0025;if(mod(floor(uShFix*.5),2.)>.5){float z=12./(24.25-(c.z*2.-1.)*23.75);b=(.05+.012*z)*.25263/(z*z);}
+ float s=i==0?texture(uLampSh0,vec3(c.xy,c.z-b)):texture(uLampSh1,vec3(c.xy,c.z-b));return .25+.75*s;}
 vec3 points(vec3 p,vec3 n){vec3 a=vec3(0.);for(int i=0;i<16;i++){if(i>=uNL)break;vec4 L=uLP[i];vec3 d=L.xyz-p;float l=length(d),r=abs(L.w),x=clamp(l/r,0.,1.);float f=1.-x*x;f=f*f/(1.+l*l*.6);
- if(L.w<0.&&p.z>L.z+.3)f=0.;if(i<uNLS&&f>0.)f*=lampVis(i,p);a+=uLC[i].rgb*f*(.3+.7*max(dot(n,d/max(l,.001)),0.));}return a;}
+ if(L.w<0.){if(uLC[i].w>5.){float an=uLC[i].w-10.;f*=smoothstep(-.5,.2,dot(p.xz-L.xz,vec2(cos(an),sin(an))));}else if(p.z>L.z+.3)f=0.;}if(i<uNLS&&f>0.)f*=lampVis(i,p);else if(uLC[i].w<-.5&&f>0.){int k=int(-uLC[i].w-.5);if(k<uNLS)f*=lampVis(k,p);}a+=uLC[i].rgb*f*(.3+.7*max(dot(n,d/max(l,.001)),0.));}return a;}
 /* in shadow the light takes the shadow colour, with a little coloured bounce so shade never turns to mud */
 /* v43: the ambient light as nine spherical-harmonic terms of the sky, the ground's bounce and a broad warm lobe on the
    sun's side (light.js skyHarmonics): a face turned to the sky is sky-coloured, one turned down takes the ground's bounce,
@@ -299,15 +317,18 @@ vec3 shade(vec3 a,vec3 n,vec3 p,float sh,float ao,vec4 mat,float cel){float occ=
  return a*(amb+uSunCol*dif*occ+points(p+n*.1,n))+uSunCol*spc;}
 /* v26: the season on living green (uFol.x: how much this surface is leaves or grass): autumn gold and red, fresh spring
    green, pale winter; uFol.y lets snow lie on what faces up */
-vec3 seasonal(vec3 c,vec3 p){if(uFol.x<=0.||uSeason.x+uSeason.y+uSeason.z<=0.)return c;float g=clamp((c.g-max(c.r,c.b))*5.,0.,1.);if(g<=0.)return c;float l=dot(c,vec3(.3,.59,.11));
- /* v31: grass on the ground (uFol.x below .9) only dries a little in autumn; leaves (uFol.x 1) turn gold, orange or red,
+vec3 seasonalF(vec3 c,vec3 p,vec2 fol){if(fol.x<=0.||uSeason.x+uSeason.y+uSeason.z<=0.)return c;float g=clamp((c.g-max(c.r,c.b))*5.,0.,1.);if(g<=0.)return c;float l=dot(c,vec3(.3,.59,.11));
+ /* v31: grass on the ground (fol.x below .9) only dries a little in autumn; leaves (fol.x 1) turn gold, orange or red,
     one mix per tree (p is the tree's own position) with a little variety across its crown */
- if(uFol.x<.9){float k=g*uFol.x;vec3 au=mix(c,vec3(l*1.16,l*1.07,l*.62),.42);vec3 wi=mix(c,vec3(l*1.0,l*1.04,l*1.02)*1.04,.5);vec3 sp=c*vec3(1.02,1.07,.95);
+ if(fol.x<.9){float k=g*fol.x;vec3 au=mix(c,vec3(l*1.16,l*1.07,l*.62),.42);vec3 wi=mix(c,vec3(l*1.0,l*1.04,l*1.02)*1.04,.5);vec3 sp=c*vec3(1.02,1.07,.95);
   vec3 r=mix(c,sp,uSeason.y);r=mix(r,au,uSeason.x);r=mix(r,wi,uSeason.z);return mix(c,r,k);}
  float v=fract(sin(dot(floor(p.xz*1.7),vec2(12.9898,78.233)))*43758.5453),w=clamp(v*.85+(l-.35)*.6,0.,1.);
  vec3 au=(w<.4?mix(vec3(1.62,1.18,.34),vec3(1.66,.92,.3),w/.4):mix(vec3(1.66,.92,.3),vec3(1.5,.5,.3),(w-.4)/.6))*l*1.06;vec3 wi=vec3(l*.98,l*1.04,l*1.02)*1.08;vec3 sp=c*vec3(1.03,1.1,.92);
  vec3 r=mix(c,sp,uSeason.y);r=mix(r,au,uSeason.x);r=mix(r,wi,uSeason.z);return mix(c,r,g);}
-vec3 snowOn(vec3 c,vec3 p,float up){if(uSeason.w<=0.||uFol.y<=0.)return c;float s=uSeason.w*uFol.y*smoothstep(.45,.85,up)*smoothstep(.25,.65,lnoise(p.xz*1.9)+uSeason.w*.55);return mix(c,vec3(.9,.93,.98)*(.94+.06*lnoise(p.xz*11.)),clamp(s,0.,1.));}
+vec3 snowOnF(vec3 c,vec3 p,float up,vec2 fol){if(uSeason.w<=0.||fol.y<=0.)return c;float s=uSeason.w*fol.y*smoothstep(.45,.85,up)*smoothstep(.25,.65,lnoise(p.xz*1.9)+uSeason.w*.55);return mix(c,vec3(.9,.93,.98)*(.94+.06*lnoise(p.xz*11.)),clamp(s,0.,1.));}
+/* phase 20 E5: the same with the surface's foliage and snow as a parameter (the instanced sprites feed it per picture) */
+vec3 seasonal(vec3 c,vec3 p){return seasonalF(c,p,uFol);}
+vec3 snowOn(vec3 c,vec3 p,float up){return snowOnF(c,p,up,uFol);}
 vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);float f=1.-exp(-max(0.,d-uFogStart)/uFogD*1.6);
  float m=uMist*exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
  /* v23: mist lying in a gorge or valley */
@@ -327,28 +348,25 @@ export const LOOK_GLSL = `
 uniform vec4 uWear,uHsv,uLkTint;uniform vec2 uMaskH;
 vec3 lkHsv(vec3 c){vec4 K=vec4(0.,-1./3.,2./3.,-1.);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);return vec3(abs(q.z+(q.w-q.y)/(6.*d+1e-10)),d/(q.x+1e-10),q.x);}
 vec3 lkRgb(vec3 c){vec3 p=abs(fract(c.xxx+vec3(1.,2./3.,1./3.))*6.-3.);return c.z*mix(vec3(1.),clamp(p-1.,0.,1.),c.y);}
-vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
- if(uHsv.w>.5){vec3 h=lkHsv(c);float m=smoothstep(.14,.3,h.y)*smoothstep(.06,.18,h.z);if(uMaskH.y>0.){float dh=abs(fract(h.x-uMaskH.x+.5)-.5);m*=1.-smoothstep(uMaskH.y,uMaskH.y+.05,dh);}
-  h.x=fract(h.x+uHsv.x*m);h.y=clamp(h.y*(1.+uHsv.y*m),0.,1.);h.z=clamp(h.z*(1.+uHsv.z*m),0.,1.);c=lkRgb(h);}
+vec3 lookOnP(vec3 c,vec2 px,float hgt,vec3 bp,vec4 wear,vec4 hsv,vec4 tint,vec2 maskH){
+ if(hsv.w>.5){vec3 h=lkHsv(c);float m=smoothstep(.14,.3,h.y)*smoothstep(.06,.18,h.z);if(maskH.y>0.){float dh=abs(fract(h.x-maskH.x+.5)-.5);m*=1.-smoothstep(maskH.y,maskH.y+.05,dh);}
+  h.x=fract(h.x+hsv.x*m);h.y=clamp(h.y*(1.+hsv.y*m),0.,1.);h.z=clamp(h.z*(1.+hsv.z*m),0.,1.);c=lkRgb(h);}
  float l=dot(c,vec3(.3,.59,.11)),paint=smoothstep(.09,.2,l)*(1.-smoothstep(.88,.98,l));
- if(uLkTint.w>0.)c=mix(c,c*uLkTint.rgb*1.7,uLkTint.w*paint);
- if(uWear.x+uWear.y+uWear.z+uWear.w>.001){float sd=fract(dot(bp,vec3(1.7,3.1,2.3)))*97.;
-  c=mix(c,mix(vec3(l),c,.5)*1.06+.05,uWear.z*paint*.75);
+ if(tint.w>0.)c=mix(c,c*tint.rgb*1.7,tint.w*paint);
+ if(wear.x+wear.y+wear.z+wear.w>.001){float sd=fract(dot(bp,vec3(1.7,3.1,2.3)))*97.;
+  c=mix(c,mix(vec3(l),c,.5)*1.06+.05,wear.z*paint*.75);
   float col=fract(sin(floor(px.x*.5)*91.7+sd)*43758.5),streak=smoothstep(.62,1.,col)*smoothstep(.25,.9,lnoise(vec2(px.x*.5,px.y*.07)+sd))*(.45+.55*(1.-hgt));
-  float foot=1.-smoothstep(0.,.16,hgt);c*=1.-uWear.x*(.34*streak+.3*foot)*paint;
-  float mn=lnoise(px*.11+sd)*.7+lnoise(px*.31+sd*2.)*.3,moss=smoothstep(.56,.72,mn+foot*.45-hgt*.15)*uWear.y*paint;c=mix(c,vec3(.3,.42,.16)*(.75+.5*l),clamp(moss,0.,1.)*.8);
-  float cr=abs(lnoise(px*vec2(.09,.13)+sd*3.)-.5);c*=1.-uWear.w*(1.-smoothstep(0.,.022,cr))*.6*paint;}
+  float foot=1.-smoothstep(0.,.16,hgt);c*=1.-wear.x*(.34*streak+.3*foot)*paint;
+  float mn=lnoise(px*.11+sd)*.7+lnoise(px*.31+sd*2.)*.3,moss=smoothstep(.56,.72,mn+foot*.45-hgt*.15)*wear.y*paint;c=mix(c,vec3(.3,.42,.16)*(.75+.5*l),clamp(moss,0.,1.)*.8);
+  float cr=abs(lnoise(px*vec2(.09,.13)+sd*3.)-.5);c*=1.-wear.w*(1.-smoothstep(0.,.022,cr))*.6*paint;}
  return c;}
+/* phase 20 E5: the look from the prop's uniforms (the instanced sprites pass it per picture to lookOnP) */
+vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){return lookOnP(c,px,hgt,bp,uWear,uHsv,uLkTint,uMaskH);}
 `;
 /* ---------- programs ---------- */
 /* v32: compiling is split in two: start (the GPU driver can work on it in the background) and finish (read the result).
    Shader sets that are needed later (buildings, solid props, the map) are started when a scene opens and finished a
    few at a time, so the first frame with a building in it no longer stalls while they compile. */
-/* phase 20 C3: with quality.frameBlock on, a program with the light code reads the frame's light from the Frame block */
-const programSource = src =>
-  gpuState.frameBlock && src.includes('PB_FRAME_BLOCK')
-    ? src.replace('#version 300 es', '#version 300 es\n#define PB_FRAME_BLOCK')
-    : src;
 /* the Frame block on binding point 0 (light.js bindFrameBlock fills it); false when the program has none */
 function frameBlockBinding(gl, p) {
   const i = gl.getUniformBlockIndex(p, 'Frame');
@@ -356,33 +374,25 @@ function frameBlockBinding(gl, p) {
   gl.uniformBlockBinding(p, i, 0);
   return true;
 }
-/* the mode the programs are compiled in; on a change, every program with the light code is deleted, to be compiled
-   again in the new mode (true when it changed) */
-export function setFrameBlockMode(on) {
-  on = !!on;
-  if (!!gpuState.frameBlock === on) return false;
-  gpuState.frameBlock = on;
-  const gl = gpuState.gl;
-  for (const [k, P] of Object.entries(gpuState.P || {}))
-    if (P.lit) {
-      if (gl) gl.deleteProgram(P.p);
-      delete gpuState.P[k];
-    }
-  for (const [k, j] of gpuState.pend || []) if (j.lit) gpuState.pend.delete(k);
-  return true;
+/* phase 20 H5: a program compiled after a place has settled (pcl), and its name (the last few, for the debug log) */
+function lateCompile(i, name) {
+  gpuState.pcl[i]++;
+  const L = gpuState.pclNames;
+  if (!L.includes(name)) L.push(name);
+  if (L.length > 12) L.shift();
 }
 function startProgramCompile([vs, fs], name) {
-  if (gpuState.loaded) gpuState.pcl[1]++;
+  if (gpuState.loaded) lateCompile(1, name);
   const gl = gpuState.gl,
     mk = (t, src) => {
-      const s = gl.createShader(t);
+      const s = gpuShader(t);
       gl.shaderSource(s, src);
       gl.compileShader(s);
       return s;
     };
-  const p = gl.createProgram(),
-    a = mk(gl.VERTEX_SHADER, programSource(vs)),
-    b = mk(gl.FRAGMENT_SHADER, programSource(fs));
+  const p = gpuMake('program', 'programs'),
+    a = mk(gl.VERTEX_SHADER, vs),
+    b = mk(gl.FRAGMENT_SHADER, fs);
   gl.attachShader(p, a);
   gl.attachShader(p, b);
   [
@@ -401,7 +411,7 @@ function startProgramCompile([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  return { p, a, b, name, gl, lit: fs.includes('PB_FRAME_BLOCK') };
+  return { p, a, b, name, gl, gen: gpuState.gen };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
@@ -410,8 +420,10 @@ export function finishProgramCompile(j) {
     const e =
       (gl.getShaderParameter(j.a, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.a)) +
         (gl.getShaderParameter(j.b, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.b)) || gl.getProgramInfoLog(p);
+    dropProgramCompile(j, true);
     throw new Error(j.name + ': ' + e);
   }
+  dropProgramCompile(j, false);
   const U = {},
     n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < n; i++) {
@@ -419,7 +431,19 @@ export function finishProgramCompile(j) {
       nm = u.name.replace(/\[0\]$/, '');
     U[nm] = gl.getUniformLocation(p, u.name);
   }
-  return { p, U, name: j.name, lit: j.lit, frame: frameBlockBinding(gl, p) };
+  return { p, U, name: j.name, frame: frameBlockBinding(gl, p) };
+}
+/* phase 20 H2: a linked program no longer needs its shaders (freed with it by the driver); a failed or unused one goes
+   whole. A compile started on an older context is only forgotten (gpuFree knows its generation). */
+function dropProgramCompile(j, whole) {
+  for (const s of [j.a, j.b]) {
+    if (!whole && j.gl === gpuState.gl && !gpuState.lost)
+      try {
+        gpuState.gl.detachShader(j.p, s);
+      } catch (e) {}
+    gpuFree(s);
+  }
+  if (whole) gpuFree(j.p);
 }
 export function precompilePrograms(defs) {
   if (!gpuState.gl || !defs) return;
@@ -437,31 +461,42 @@ export function pollPendingPrograms(max = 2) {
     X = gpuState.pcx === undefined ? (gpuState.pcx = gl.getExtension('KHR_parallel_shader_compile')) : gpuState.pcx;
   let n = 0;
   for (const [k, j] of M) {
-    if (j.gl !== gl) {
+    if (j.gl !== gl || j.gen !== gpuState.gen) {
       M.delete(k);
       continue;
     }
     if (X && !gl.getProgramParameter(j.p, X.COMPLETION_STATUS_KHR)) continue;
     M.delete(k);
-    try {
-      if (!gpuState.P[k]) gpuState.P[k] = finishProgramCompile(j);
-    } catch (e) {}
+    /* made already (ensurePrograms compiled it on the spot): this copy is deleted */
+    if (gpuState.P[k]) dropProgramCompile(j, true);
+    else
+      try {
+        gpuState.P[k] = finishProgramCompile(j);
+      } catch (e) {}
     if (++n >= max) break;
   }
 }
 function compileProgram([vs, fs], name) {
-  if (gpuState.loaded) gpuState.pcl[0]++;
+  if (gpuState.loaded) lateCompile(0, name);
   const gl = gpuState.gl,
+    made = [],
     mk = (t, src) => {
-      const s = gl.createShader(t);
+      const s = gpuShader(t);
+      made.push(s);
       gl.shaderSource(s, src);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(name + ': ' + gl.getShaderInfoLog(s));
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        const e = new Error(name + ': ' + gl.getShaderInfoLog(s));
+        made.forEach(gpuFree);
+        throw e;
+      }
       return s;
     };
-  const p = gl.createProgram();
-  gl.attachShader(p, mk(gl.VERTEX_SHADER, programSource(vs)));
-  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, programSource(fs)));
+  const a = mk(gl.VERTEX_SHADER, vs),
+    b = mk(gl.FRAGMENT_SHADER, fs),
+    p = gpuMake('program', 'programs');
+  gl.attachShader(p, a);
+  gl.attachShader(p, b);
   /* standard locations for the engine's own inputs; an input that declares layout(location=…) keeps its own (some
     GPUs, Adreno for one, refuse to link when a bound location clashes with another input's) */
   [
@@ -480,7 +515,13 @@ function compileProgram([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(name + ': ' + gl.getProgramInfoLog(p));
+  const ok = gl.getProgramParameter(p, gl.LINK_STATUS);
+  if (!ok) {
+    const e = new Error(name + ': ' + gl.getProgramInfoLog(p));
+    dropProgramCompile({ p, a, b, gl }, true);
+    throw e;
+  }
+  dropProgramCompile({ p, a, b, gl }, false);
   const U = {},
     n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
   for (let i = 0; i < n; i++) {
@@ -488,21 +529,20 @@ function compileProgram([vs, fs], name) {
       nm = u.name.replace(/\[0\]$/, '');
     U[nm] = gl.getUniformLocation(p, u.name);
   }
-  return { p, U, name, lit: fs.includes('PB_FRAME_BLOCK'), frame: frameBlockBinding(gl, p) };
+  return { p, U, name, frame: frameBlockBinding(gl, p) };
 }
 /* phase 20 C3, for the in-game test: every program with the light code compiles and links with the Frame block, and
    on this device the block's size and each member's offset are the ones engine/frame-block.js packs to. The test
    programs are deleted again and don't count as compiled after load. */
 export function frameBlockCheck(defs) {
   const gl = gpuState.gl,
-    was = gpuState.frameBlock,
     pcl = gpuState.pcl[0],
+    names = gpuState.pclNames.slice(),
     bad = [];
   let n = 0;
-  gpuState.frameBlock = true;
   try {
     for (const [k, v] of Object.entries(defs)) {
-      if (!Array.isArray(v) || !v[1].includes('PB_FRAME_BLOCK')) continue;
+      if (!Array.isArray(v) || !v[1].includes(FRAME_BLOCK_GLSL)) continue;
       let P;
       try {
         P = compileProgram(v, k);
@@ -524,11 +564,11 @@ export function frameBlockCheck(defs) {
           if (!m || m[0] !== at[j]) bad.push(`${k}: ${nm} at ${at[j]}, packed at ${m ? m[0] : 'nowhere'}`);
         });
       }
-      gl.deleteProgram(P.p);
+      gpuFree(P.p);
     }
   } finally {
-    gpuState.frameBlock = was;
     gpuState.pcl[0] = pcl;
+    gpuState.pclNames = names;
   }
   return { n, bad };
 }
@@ -555,7 +595,7 @@ export function ensurePrograms(defs) {
   for (const [k, v] of Object.entries(defs))
     if (!gpuState.P[k]) {
       const j = gpuState.pend && gpuState.pend.get(k);
-      if (j && j.gl === gpuState.gl) {
+      if (j && j.gl === gpuState.gl && j.gen === gpuState.gen) {
         gpuState.pend.delete(k);
         try {
           gpuState.P[k] = finishProgramCompile(j);
@@ -584,8 +624,9 @@ export function initWebgl(cv) {
     if (!gl) return false;
     gpuState.gl = gl;
     gpuState.cv = cv;
+    gpuState.made = (gpuState.made || 0) + 1;
+    gpuNewGeneration();
     gpuState.P = {};
-    gpuState.frameBlock = false;
     gpuState.texL = new Map();
     gpuState.texB = 0;
     gpuState.gpuX = undefined;
@@ -600,11 +641,16 @@ export function initWebgl(cv) {
     gpuState.fb = {};
     gpuState.tex = new WeakMap();
     gpuState.normQ = [];
-    gpuState.hdr = !!gl.getExtension('EXT_color_buffer_float');
+    /* Half-float HDR (quality.hdrHalf): a chip that can draw to RGBA16F through EXT_color_buffer_half_float only (the
+       render targets are RGBA16F either way) gets HDR too */
+    gpuState.hdr =
+      !!gl.getExtension('EXT_color_buffer_float') ||
+      (!!(typeof engineSetting === 'function' && engineSetting('quality', 'hdrHalf')) &&
+        !!gl.getExtension('EXT_color_buffer_half_float'));
     gpuState.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     gpuState.anisoMax = gpuState.aniso ? gl.getParameter(gpuState.aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1;
     gl.getExtension('OES_texture_float_linear');
-    const q = gl.createBuffer();
+    const q = gpuBuffer('meshes', 48);
     gl.bindBuffer(gl.ARRAY_BUFFER, q);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]), gl.STATIC_DRAW);
     gpuState.quad = q;
@@ -613,34 +659,24 @@ export function initWebgl(cv) {
     /* one depth texture read two ways: compared (soft shadow taps) and raw (blocker search) */
     /* a 1x1 "lit everywhere" depth map stands in on every shadow unit while no real map exists (shadows off, the first
      frames): a shadow sampler must always see a depth texture, or the whole draw is refused (v44) */
-    gpuState.depthStub = gl.createTexture();
+    gpuState.depthStub = gpuTexture('targets', 2);
     gl.bindTexture(gl.TEXTURE_2D, gpuState.depthStub);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT16, 1, 1);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gpuState.samp.cmp = gl.createSampler();
+    gpuState.samp.cmp = gpuMake('sampler');
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gpuState.samp.raw = gl.createSampler();
+    gpuState.samp.raw = gpuMake('sampler');
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    cv.addEventListener('webglcontextlost', e => {
-      e.preventDefault();
-      gpuState.lost = 1;
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
-    });
-    cv.addEventListener('webglcontextrestored', () => {
-      gpuState.lost = 0;
-      gpuState.cv = null;
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
-      if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
-    });
+    watchContextLoss(cv);
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
     return true;
   } catch (e) {
@@ -650,10 +686,225 @@ export function initWebgl(cv) {
     return false;
   }
 }
+/* phase 20 H: the lost and restored listeners, once per canvas (initWebgl runs again on the same canvas after every
+   restore, and each pair it added used to stay: the second loss remounted the walk view twice) */
+const lossWatched = new WeakSet();
+/* H4: a loss forced on purpose (forceContextLoss), which comes back by itself; and whether ?glLose was armed */
+let forcedLoss = null,
+  glLoseArmed = false;
+function watchContextLoss(cv) {
+  if (lossWatched.has(cv)) return false;
+  lossWatched.add(cv);
+  cv.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    gpuState.lost = 1;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
+    const F = forcedLoss;
+    if (F && F.cv === cv) setTimeout(() => F.ext.restoreContext(), F.ms);
+  });
+  cv.addEventListener('webglcontextrestored', () => {
+    gpuState.lost = 0;
+    gpuState.cv = null;
+    forcedLoss = null;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
+    gpuNewGeneration();
+    gpuRestoreOwners();
+    if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
+    if (typeof worldBowlContextRestored === 'function') worldBowlContextRestored();
+  });
+  /* H4 where there is no debug menu (the Studio): ?glLose=8 forces a loss 8 s after the first context is made */
+  const q =
+    typeof location !== 'undefined' && location.search ? new URLSearchParams(location.search).get('glLose') : null;
+  if (q != null && !glLoseArmed) {
+    glLoseArmed = true;
+    setTimeout(() => forceContextLoss(), Math.max(1, +q || 8) * 1000);
+  }
+  return true;
+}
+/* H4: loses the GPU context on purpose (WEBGL_lose_context) and gets it back ms later, so every screen's recovery can be
+   tried on a phone (the debug menu's button, ?glLose) */
+export function forceContextLoss(ms = 1500) {
+  const gl = gpuState.gl,
+    ext = gl && gpuState.cv && !gpuState.lost && !forcedLoss ? gl.getExtension('WEBGL_lose_context') : null;
+  if (!ext) {
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context loss not forced (no context, or lost already)');
+    return false;
+  }
+  forcedLoss = { cv: gpuState.cv, ext, ms };
+  /* lost at once: the lost event comes a frame or more later, and a frame drawn meanwhile on the dead context turned
+     the buildings, models and solid props off for good (their guards) */
+  gpuState.lost = 1;
+  if (typeof debugLog !== 'undefined') debugLog.add('webgl', `context loss forced (back in ${ms} ms)`);
+  ext.loseContext();
+  return true;
+}
+/* ---------- resources (phase 20 H1-H3) ---------- */
+/* Every GPU object is made through gpuMake (or its short forms) with the kind of thing it holds, so the debug log can
+   say how much memory each kind takes (H3) and a replaced one can be freed once its replacement has drawn (H2).
+   The registry never keeps an object alive: entries sit in a WeakMap, and one dropped without gpuFree is counted off
+   when it is collected (and counted as "dropped", the sign of a leak). A context is one generation (gpuState.gen):
+   a restored context is the same object with nothing on it, so caches check the generation, not `gl`.
+   On a restore, each owner's drop (gpuOnRestore) runs: it forgets its dead handles and makes them again lazily. */
+const GPU_KINDS = ['programs', 'pictures', 'targets', 'ground', 'ring', 'meshes', 'instances', 'canvases', 'other'];
+const GPU_MAKE = {
+  buffer: ['createBuffer', 'deleteBuffer'],
+  texture: ['createTexture', 'deleteTexture'],
+  vao: ['createVertexArray', 'deleteVertexArray'],
+  framebuffer: ['createFramebuffer', 'deleteFramebuffer'],
+  renderbuffer: ['createRenderbuffer', 'deleteRenderbuffer'],
+  sampler: ['createSampler', 'deleteSampler'],
+  query: ['createQuery', 'deleteQuery'],
+  program: ['createProgram', 'deleteProgram'],
+  shader: ['createShader', 'deleteShader'],
+};
+export const gpuRes = {
+  /* handle -> { type, kind, bytes, gen } */
+  at: new WeakMap(),
+  flat: new Map(),
+  /* per kind, this generation: live objects, their bytes, objects collected without being freed */
+  n: {},
+  bytes: {},
+  dropped: {},
+  /* [frame to free it in, handle]: gpuRetire */
+  retired: [],
+  fr: 0,
+  /* name -> what that owner drops on a restore */
+  restore: new Map(),
+  gone: null,
+};
+function gpuCountsReset() {
+  for (const k of GPU_KINDS) gpuRes.n[k] = gpuRes.bytes[k] = gpuRes.dropped[k] = 0;
+}
+gpuCountsReset();
+if (typeof FinalizationRegistry === 'function')
+  gpuRes.gone = new FinalizationRegistry(e => {
+    if (e.freed || e.gen !== gpuState.gen) return;
+    gpuRes.n[e.kind]--;
+    gpuRes.bytes[e.kind] -= e.bytes;
+    gpuRes.dropped[e.kind]++;
+  });
+/* a new GPU object of a type (GPU_MAKE) holding a kind of thing (GPU_KINDS), and its size in bytes if known */
+export function gpuMake(type, kind = 'other', bytes = 0) {
+  return gpuTrack(gpuState.gl[GPU_MAKE[type][0]](), type, kind, bytes);
+}
+/* a shader of a program (deleted once its program has linked) */
+function gpuShader(t) {
+  return gpuTrack(gpuState.gl.createShader(t), 'shader', 'programs', 0);
+}
+function gpuTrack(h, type, kind, bytes) {
+  if (!h) return h;
+  if (gpuRes.n[kind] === undefined) kind = 'other';
+  const e = { type, kind, bytes, gen: gpuState.gen, freed: false };
+  if (typeof h === 'object') {
+    gpuRes.at.set(h, e);
+    if (gpuRes.gone) gpuRes.gone.register(h, e, h);
+  } else gpuRes.flat.set(h, e);
+  gpuRes.n[kind]++;
+  gpuRes.bytes[kind] += bytes;
+  return h;
+}
+/* a handle's entry (a test's stand-in context hands out strings: those are kept apart) */
+const gpuEntry = h => (typeof h === 'object' ? gpuRes.at.get(h) : gpuRes.flat.get(h));
+/* the type of a handle made before (or outside) the registry */
+function gpuTypeOf(gl, h) {
+  for (const [t, f] of [
+    ['buffer', 'isBuffer'],
+    ['texture', 'isTexture'],
+    ['vao', 'isVertexArray'],
+    ['framebuffer', 'isFramebuffer'],
+    ['renderbuffer', 'isRenderbuffer'],
+    ['program', 'isProgram'],
+    ['shader', 'isShader'],
+    ['query', 'isQuery'],
+    ['sampler', 'isSampler'],
+  ])
+    if (gl[f] && gl[f](h)) return t;
+  return null;
+}
+export const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
+export const gpuTexture = (kind, bytes) => gpuMake('texture', kind, bytes);
+export const gpuVao = kind => gpuMake('vao', kind);
+export const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
+/* the object was filled again (bufferData, texImage2D): its new size */
+export function gpuSized(h, bytes) {
+  const e = h && gpuEntry(h);
+  if (!e || e.freed || e.gen !== gpuState.gen) return;
+  gpuRes.bytes[e.kind] += bytes - e.bytes;
+  e.bytes = bytes;
+}
+/* deleted now (an object of a lost or older context is only forgotten: deleting it does nothing) */
+export function gpuFree(h) {
+  if (!h) return;
+  const e = gpuEntry(h),
+    gl = gpuState.gl;
+  if (e) {
+    if (e.freed) return;
+    e.freed = true;
+    gpuRes.at.delete(h);
+    gpuRes.flat.delete(h);
+    if (gpuRes.gone && typeof h === 'object') gpuRes.gone.unregister(h);
+    if (e.gen !== gpuState.gen) return;
+    gpuRes.n[e.kind]--;
+    gpuRes.bytes[e.kind] -= e.bytes;
+  }
+  if (!gl || gpuState.lost) return;
+  try {
+    const T = e ? e.type : gpuTypeOf(gl, h);
+    if (T) gl[GPU_MAKE[T][1]](h);
+  } catch (err) {}
+}
+/* H2: freed a couple of frames from now, once whatever replaced it has drawn (the frames in flight may still read it) */
+function gpuRetire(h, frames = 2) {
+  if (h) gpuRes.retired.push([gpuRes.fr + frames, h]);
+}
+/* once per frame tick (frame-scheduler.js): the retired objects due are freed, and a context that died before its
+   lost event is noticed at once (frames drawn on it in between turned things off for good). False while lost. */
+function gpuFrame() {
+  const gl = gpuState.gl;
+  if (!gl) return false;
+  if (!gpuState.lost && gl.isContextLost && gl.isContextLost()) {
+    gpuState.lost = 1;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost (seen before its event)');
+  }
+  if (gpuState.lost) return false;
+  gpuRes.fr++;
+  const R = gpuRes.retired;
+  while (R.length && R[0][0] <= gpuRes.fr) gpuFree(R.shift()[1]);
+  return true;
+}
+/* an owner's drop on a restore: forgets its handles (they died with the context) so it makes them again on next use */
+export function gpuOnRestore(name, fn) {
+  gpuRes.restore.set(name, fn);
+}
+/* a new context (initWebgl): a new generation, nothing on it yet */
+function gpuNewGeneration() {
+  gpuState.gen = (gpuState.gen || 0) + 1;
+  gpuRes.retired = [];
+  gpuRes.flat.clear();
+  gpuCountsReset();
+}
+/* the restored event: every owner drops what it held */
+function gpuRestoreOwners() {
+  for (const [name, fn] of gpuRes.restore)
+    try {
+      fn();
+    } catch (e) {
+      console.error('restore ' + name, e);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', `restore ${name} failed: ${e.message || e}`);
+    }
+}
+/* H3: the memory by kind for the debug log: MB, objects, objects dropped without being freed */
+export function gpuMemory() {
+  const o = {};
+  for (const k of GPU_KINDS)
+    if (gpuRes.n[k] || gpuRes.dropped[k])
+      o[k] = { mb: Math.round((gpuRes.bytes[k] / 1048576) * 10) / 10, n: gpuRes.n[k], dropped: gpuRes.dropped[k] };
+  return o;
+}
 /* ---------- textures ---------- */
 function textureFromData(w, h, data, o = {}) {
   const gl = gpuState.gl,
-    t = gl.createTexture();
+    t = gpuTexture('other', w * h * 4);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   setTextureParams(o);
@@ -683,7 +934,8 @@ export function imageTexture(im, o = {}) {
   /* a canvas redrawn every frame (a billionaire mid-animation) carries a counter in __v: re-uploaded when it changes, no mipmaps or normal map */
   if (dv !== undefined) {
     const gl = gpuState.gl,
-      t = e ? e.t : gl.createTexture();
+      t = e ? e.t : gpuTexture('canvases');
+    gpuSized(t, im.width * im.height * 4);
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
@@ -696,8 +948,10 @@ export function imageTexture(im, o = {}) {
     w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   const tU = performance.now(),
-    t = e ? e.t : gl.createTexture(),
+    t = e ? e.t : gpuTexture('pictures'),
     src = im;
+  /* with its mip levels */
+  gpuSized(t, Math.round(w * h * 4 * 1.34));
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
@@ -759,7 +1013,67 @@ export const SURFACE_MATERIALS = {
 /* v32: normal maps are worked out on a helper thread (a big picture took seconds and froze the game when a scene
    opened); only reading the pixels and uploading the result happen here. Without workers it falls back to here. */
 export const normalMapWorkerState = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
-const NORMAL_MAP_WORKER_SOURCE = `const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
+/* v32: a picture's colours bled into the see-through pixels round its outline, so far-off (smaller) copies keep their
+   colour at the edges instead of a dark fringe: four rings outward from the outline, the rest the picture's average.
+   Self-contained: the helper thread gets its source text as well */
+function bleedEdges(d, w, h) {
+  const col = new Uint8ClampedArray(d),
+    ok = new Uint8Array(w * h);
+  let ar = 0,
+    ag = 0,
+    ab = 0,
+    an = 0;
+  for (let i = 0; i < w * h; i++)
+    if (d[i * 4 + 3] > 0) {
+      ok[i] = 1;
+      ar += d[i * 4];
+      ag += d[i * 4 + 1];
+      ab += d[i * 4 + 2];
+      an++;
+    }
+  for (let pass = 0; pass < 4; pass++) {
+    const nk = ok.slice();
+    for (let y = 0; y < h; y++)
+      for (let X = 0; X < w; X++) {
+        const i = y * w + X;
+        if (ok[i]) continue;
+        let r2 = 0,
+          g2 = 0,
+          b2 = 0,
+          k = 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = X + dx,
+              yy = y + dy;
+            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            const j = yy * w + xx;
+            if (ok[j]) {
+              r2 += col[j * 4];
+              g2 += col[j * 4 + 1];
+              b2 += col[j * 4 + 2];
+              k++;
+            }
+          }
+        if (k) {
+          col[i * 4] = r2 / k;
+          col[i * 4 + 1] = g2 / k;
+          col[i * 4 + 2] = b2 / k;
+          nk[i] = 1;
+        }
+      }
+    ok.set(nk);
+  }
+  if (an)
+    for (let i = 0; i < w * h; i++)
+      if (!ok[i]) {
+        col[i * 4] = ar / an;
+        col[i * 4 + 1] = ag / an;
+        col[i * 4 + 2] = ab / an;
+      }
+  return col;
+}
+const NORMAL_MAP_WORKER_SOURCE = `${bleedEdges}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
 /* v33: the picture can come as a bitmap and be read here, so the main thread never waits for its pixels */
 if(!d&&bm){if(typeof OffscreenCanvas==='undefined'){postMessage({id,retry:1});return}try{const oc=new OffscreenCanvas(w,h),ox=oc.getContext('2d');ox.drawImage(bm,0,0);d=ox.getImageData(0,0,w,h).data;bm.close&&bm.close()}catch(e){postMessage({id,retry:1});return}}const A=new Float32Array(w*h),Lm=new Float32Array(w*h);for(let i=0;i<w*h;i++){A[i]=d[i*4+3]>127?1:0;Lm[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11)/255}
 const blur=(src,r)=>{const t=new Float32Array(w*h),o=new Float32Array(w*h);for(let y=0;y<h;y++){let s=0;for(let k=-r;k<=r;k++)s+=src[y*w+clamp(k,0,w-1)];for(let X=0;X<w;X++){t[y*w+X]=s/(2*r+1);s+=src[y*w+clamp(X+r+1,0,w-1)]-src[y*w+clamp(X-r,0,w-1)]}}
@@ -768,11 +1082,8 @@ const r=Math.max(2,Math.round(Math.min(w,h)/14)),B=blur(blur(A,r),r),out=new Uin
 for(let y=0;y<h;y++)for(let X=0;X<w;X++){const i=y*w+X,gx=(B[y*w+Math.min(w-1,X+1)]-B[y*w+Math.max(0,X-1)])*.5,gy=(B[Math.min(h-1,y+1)*w+X]-B[Math.max(0,y-1)*w+X])*.5;let lx=0,ly=0;
 if(A[i]&&detail){const L=(X2,Y2)=>{X2=clamp(X2,0,w-1);Y2=clamp(Y2,0,h-1);const k=Y2*w+X2;return A[k]?Lm[k]:Lm[i]};lx=(L(X+1,y)-L(X-1,y))*.5;ly=(L(X,y+1)-L(X,y-1))*.5}
 const nx=-gx*r*1.6*pillow-lx*detail*1.6,ny=(-gy*r*1.6+.18)*pillow-ly*detail*1.6,l=Math.hypot(nx,ny,1);out[i*4]=(nx/l*.5+.5)*255;out[i*4+1]=(ny/l*.5+.5)*255;out[i*4+2]=(1/l*.5+.5)*255;out[i*4+3]=255}
-/* v32: colours bled into the see-through pixels round the outline, so far-off (smaller) copies of the picture keep their colour at the edges instead of a dark fringe */
-const col=new Uint8ClampedArray(d),ok=new Uint8Array(w*h);let ar=0,ag=0,ab=0,an=0;for(let i=0;i<w*h;i++)if(d[i*4+3]>0){ok[i]=1;ar+=d[i*4];ag+=d[i*4+1];ab+=d[i*4+2];an++}
-for(let pass=0;pass<4;pass++){const nk=ok.slice();for(let y=0;y<h;y++)for(let X=0;X<w;X++){const i=y*w+X;if(ok[i])continue;let r2=0,g2=0,b2=0,k=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=X+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const j=yy*w+xx;if(ok[j]){r2+=col[j*4];g2+=col[j*4+1];b2+=col[j*4+2];k++}}
- if(k){col[i*4]=r2/k;col[i*4+1]=g2/k;col[i*4+2]=b2/k;nk[i]=1}}ok.set(nk)}
-if(an)for(let i=0;i<w*h;i++)if(!ok[i]){col[i*4]=ar/an;col[i*4+1]=ag/an;col[i*4+2]=ab/an}
+/* v32: colours bled into the see-through pixels round the outline (bleedEdges, below) */
+const col=bleedEdges(d,w,h);
 postMessage({id,out,col},[out.buffer,col.buffer])}`;
 function ensureNormalMapWorker() {
   if (normalMapWorkerState.w || normalMapWorkerState.bad) return normalMapWorkerState.w;
@@ -795,10 +1106,12 @@ function ensureNormalMapWorker() {
       }
       /* no OffscreenCanvas in workers here: read the pixels on this side instead */ const tU = performance.now();
       try {
-        const t = e.n && e.n !== gpuState.flatN ? e.n : gl.createTexture();
+        const t = e.n && e.n !== gpuState.flatN ? e.n : gpuTexture('pictures');
+        gpuSized(t, j.w * j.h * 4);
         gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
-        setTextureParams({ linear: true });
+        /* Steady light on far props (quality.normalMips): the bump map's smaller sizes too */
+        setTextureParams({ linear: true, mip: !!engineSetting('quality', 'normalMips') });
         e.n = t;
         if (col && e.t && engineSetting('quality', 'edgeBleed') !== false) {
           gl.bindTexture(gl.TEXTURE_2D, e.t);
@@ -875,7 +1188,8 @@ export function runNormalMapJobs(budget) {
         normalMapWorkerState.fly++;
         W.postMessage({ id, w, h, d, pillow: M.pillow, detail: M.detail }, [d.buffer]);
       } else {
-        e.n = makeNormalMap(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n);
+        e.n = makeNormalMap(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n, e.t);
+        if (e.t && engineSetting('quality', 'edgeBleed') !== false) e.bled = 1;
         e.nDone = true;
       }
     } catch (err) {
@@ -883,7 +1197,7 @@ export function runNormalMapJobs(budget) {
     }
   }
 }
-export function makeNormalMap(im, w, h, old) {
+export function makeNormalMap(im, w, h, old, bleed = null) {
   const M = SURFACE_MATERIALS[im.__mat] || SURFACE_MATERIALS.plain,
     c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
@@ -946,10 +1260,27 @@ export function makeNormalMap(im, w, h, old) {
       out[i * 4 + 3] = 255;
     }
   const gl = gpuState.gl,
-    t = old && old !== gpuState.flatN ? old : gl.createTexture();
+    t = old && old !== gpuState.flatN ? old : gpuTexture('pictures');
+  gpuSized(t, w * h * 4);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
-  setTextureParams({ linear: true });
+  setTextureParams({ linear: true, mip: !!engineSetting('quality', 'normalMips') });
+  /* without the helper thread, the colours bled round the outline here too (the helper sends them with its map) */
+  if (bleed && engineSetting('quality', 'edgeBleed') !== false) {
+    gl.bindTexture(gl.TEXTURE_2D, bleed);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      w,
+      h,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array(bleedEdges(d, w, h).buffer)
+    );
+    gl.generateMipmap(gl.TEXTURE_2D);
+  }
   return t;
 }
 /* ---------- render targets ---------- */
@@ -958,18 +1289,18 @@ export function renderTarget(name, w, h, o = {}) {
     F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
   if (F) {
-    gl.deleteFramebuffer(F.f);
-    if (F.c) gl.deleteTexture(F.c);
-    if (F.d) gl.deleteTexture(F.d);
+    gpuFree(F.f);
+    gpuFree(F.c);
+    gpuFree(F.d);
   }
-  const f = gl.createFramebuffer();
+  const f = gpuFramebuffer('targets');
   gl.bindFramebuffer(gl.FRAMEBUFFER, f);
   let c = null,
     d = null;
   if (!o.depthOnly) {
-    c = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, c);
     const hdr = o.hdr && gpuState.hdr;
+    c = gpuTexture('targets', w * h * (hdr ? 8 : 4));
+    gl.bindTexture(gl.TEXTURE_2D, c);
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -985,7 +1316,7 @@ export function renderTarget(name, w, h, o = {}) {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, c, 0);
   }
   if (o.depth || o.depthOnly) {
-    d = gl.createTexture();
+    d = gpuTexture('targets', w * h * 4);
     gl.bindTexture(gl.TEXTURE_2D, d);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, w, h, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -1003,7 +1334,7 @@ export function renderTarget(name, w, h, o = {}) {
 /* v43: a quad split into a grid (for cloth that waves); the same aC attribute as the quad */
 export function bindGridQuad(nx = 16, ny = 4) {
   const gl = gpuState.gl;
-  if (!gpuState.grid || gpuState.gridGL !== gl) {
+  if (!gpuState.grid || gpuState.gridGen !== gpuState.gen) {
     const a = [];
     for (let j = 0; j < ny; j++)
       for (let i = 0; i < nx; i++) {
@@ -1013,11 +1344,11 @@ export function bindGridQuad(nx = 16, ny = 4) {
           y1 = (j + 1) / ny;
         a.push(x0, y0, x1, y0, x0, y1, x0, y1, x1, y0, x1, y1);
       }
-    gpuState.grid = gl.createBuffer();
+    gpuState.grid = gpuBuffer('meshes', a.length * 4);
     gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.grid);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.STATIC_DRAW);
     gpuState.gridN = nx * ny * 6;
-    gpuState.gridGL = gl;
+    gpuState.gridGen = gpuState.gen;
   }
   gl.bindVertexArray(null);
   gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.grid);
@@ -1039,14 +1370,14 @@ export function bindQuad() {
     gl.vertexAttribDivisor(i, 0);
   }
 }
-export function uploadMesh(V, I, attrs, stride) {
+export function uploadMesh(V, I, attrs, stride, kind = 'meshes') {
   const gl = gpuState.gl,
-    vao = gl.createVertexArray();
+    vao = gpuVao(kind);
   gl.bindVertexArray(vao);
-  const vb = gl.createBuffer();
+  const vb = gpuBuffer(kind, V.byteLength);
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
   gl.bufferData(gl.ARRAY_BUFFER, V, gl.STATIC_DRAW);
-  const ib = gl.createBuffer();
+  const ib = gpuBuffer(kind, I.byteLength);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, I, gl.STATIC_DRAW);
   const locs = { aPos: 0, aNrm: 1, aShore: 1, aUV: 2, aDK: 3 };
@@ -1060,12 +1391,9 @@ export function uploadMesh(V, I, attrs, stride) {
 }
 export function freeMesh(m) {
   if (!m) return;
-  const gl = gpuState.gl;
-  try {
-    gl.deleteVertexArray(m.vao);
-    gl.deleteBuffer(m.vb);
-    if (m.ib) gl.deleteBuffer(m.ib);
-  } catch (e) {}
+  gpuFree(m.vao);
+  gpuFree(m.vb);
+  gpuFree(m.ib);
 }
 
 /* v34: how long the graphics card itself takes for a frame (EXT_disjoint_timer_query_webgl2, where the browser has
@@ -1086,7 +1414,7 @@ export function beginGpuTimer() {
   if (!X) return null;
   pollGpuTimers();
   if (gpuState.gpuQ.length >= 4 || gpuState.gpuOpen) return null;
-  const q = gl.createQuery();
+  const q = gpuMake('query');
   gl.beginQuery(X.TIME_ELAPSED_EXT, q);
   gpuState.gpuOpen = true;
   return q;
@@ -1112,7 +1440,7 @@ function pollGpuTimers() {
     if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
     Q.shift();
     const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
-    gl.deleteQuery(q);
+    gpuFree(q);
     if (dis) continue;
     const ms = ns / 1e6;
     gpuState.gpuLast = ms;
@@ -1144,8 +1472,8 @@ export function trimTextures(force) {
     if (gpuState.texB <= cap * 0.85) break;
     try {
       if (gpuState.tex.get(im) === e) {
-        gl.deleteTexture(e.t);
-        if (e.n && e.n !== gpuState.flatN) gl.deleteTexture(e.n);
+        gpuFree(e.t);
+        if (e.n && e.n !== gpuState.flatN) gpuFree(e.n);
         gpuState.tex.delete(im);
       }
     } catch (err) {}

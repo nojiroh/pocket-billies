@@ -22,6 +22,7 @@ import { SKY_RAIL } from '../game/js/logic/island-gen.js';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
+import { squareEdgeProps } from './square-props.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
 const D = readGameData(),
@@ -157,17 +158,18 @@ const pairs = [
   /* HB-4b: the inn and the library (the archive) on their plots; hub placing: HB-5's Workshop and Gene Bank on theirs,
      the lighthouse on the cove, the windmill by the farm. The inn's, the library's, the Workshop's and the Gene Bank's
      doors open their rooms (HB-5's act enter: the room named on the model; the Gene Bank's machines wait for the
-     splicing track); the lighthouse and the windmill are scenery */
+     splicing track); the lighthouse and the windmill are scenery. SP-4: the Gene Bank's door (and its console) open the
+     splice screen (act genebank); SP-5: the Workshop's (and its Upgrade bench) the Augment screen (act workshop) */
   ...[
     ['inn', 'inn', 'Inn'],
     ['library', 'library', 'Library'],
-    ['workshop', 'workshop', 'Workshop'],
-    ['genebank', 'gene_bank', 'Gene Bank'],
+    ['workshop', 'workshop', 'Workshop', 'workshop'],
+    ['genebank', 'gene_bank', 'Gene Bank', 'genebank'],
     ['lighthouse', 'lighthouse'],
     ['windmill', 'windmill'],
   ]
     .filter(([L]) => plotOf(L))
-    .map(([L, k, label]) => [{ k, x: 0, z: 0, ...(label ? { act: 'enter', label } : {}) }, plotOf(L)]),
+    .map(([L, k, label, act]) => [{ k, x: 0, z: 0, ...(label ? { act: act || 'enter', label } : {}) }, plotOf(L)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new cottages: the two kinds and their looks taken in turn */
   ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [
@@ -206,6 +208,11 @@ function place(B, L) {
   if (B.k === 'well') q.z = r2(L.z);
   if (Math.abs(rot) > 0.05) q.rot = rot;
   else delete q.rot;
+  /* HB-10a: the fountain in the middle of the square, where the old town's well stood (round: no turn) */
+  if (B.k === 'well') {
+    q.k = 'fountain';
+    delete q.rot;
+  }
   if (bx && (bx[0] * s > L.w + 0.01 || bx[1] * s > L.d + 0.01))
     throw new Error(`${B.k} (${bx[0] * s} x ${bx[1] * s} m) doesn't fit its ${L.k} plot (${L.w} x ${L.d} m)`);
   return q;
@@ -310,7 +317,8 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
     dx = well.x - lab.x,
     dz = well.z - lab.z,
     l = Math.hypot(dx, dz) || 1;
-  props.push({ ...S, x: r2(well.x + (dx / l) * 4.5), z: r2(well.z + (dz / l) * 4.5 + 2.5) });
+  /* HB-10a: 4.5 m out, clear of the fountain's basin (tools/patch-copperleaf-square.mjs puts it there too) */
+  props.push({ ...S, x: r2(well.x + (dx / l) * 4.5), z: r2(well.z + (dz / l) * 4.5) });
 }
 /* a few of the old town's trees on open ground in the town, away from its plots and streets */
 {
@@ -577,6 +585,8 @@ Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npc
 const fenced = pastureProps(sc, D.scenery);
 sc.props = fenced.props;
 pastureGround(sc, fenced.gap);
+/* HB-10b: the market, lamps, planters and benches round the square's rim (tools/square-props.mjs) */
+sc.props = squareEdgeProps(sc);
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
    where a building now stands (the barn's zone's middle) ends at its door instead */

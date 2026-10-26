@@ -108,7 +108,7 @@
   "attackExp": 0.5,
   "speedExp": -0.6,
   "cap": 0.2,
-  "primeBonus": 0.1
+  "primeBonus": 0.05
  },
  "robots": {
   "slots": ["torso","armL","armR","legs"],
@@ -128,7 +128,7 @@
   "xpYield": 150
  },
  "run": {
-  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winCrests":1,"scrapNode":2,"scrapWin":10},
+  "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winCrests":1,"scrapNode":2,"scrapWin":10,"beansWin":1},
   "map": {
    "rows": 9,
    "minibosses": 2,
@@ -191,6 +191,7 @@
    "most": 5,
    "levelsFrom": 5,
    "perLevels": 5,
+   "perStability": 2,
    "team": 6
   },
   "pack": [5],
@@ -238,6 +239,17 @@
   "foes": {
    "miniboss": {"up":2,"reward":300},
    "boss": {"up":3,"reward":600}
+  },
+  "beans": {"badge":1,"side":1,"rival":1},
+  "rival": {
+   "meet": [1,2,2,2,2],
+   "on": ["route","event"],
+   "bands": [[0,0.5],[0.5,1]],
+   "size": 2,
+   "grow": 2,
+   "max": 6,
+   "up": 1,
+   "reward": 200
   },
   "trainers": {
    "perRoute": [[4,4],[4,5],[5,6]],

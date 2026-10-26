@@ -136,7 +136,7 @@ function robotHeadCanvas(P, gemColor) {
   return c;
 }
 /** an arm: an upper arm, then the tool its shape names @returns {HTMLCanvasElement} */
-function robotArmCanvas(P) {
+export function robotArmCanvas(P) {
   const A = P.art,
     w = A.w || 10,
     h = A.h || 20,
@@ -188,7 +188,7 @@ function robotArmCanvas(P) {
   return c;
 }
 /** one leg (drawn for each side), or for treads and hover the whole undercarriage @returns {HTMLCanvasElement} */
-function robotLegsCanvas(P) {
+export function robotLegsCanvas(P) {
   const A = P.art,
     col = A.color,
     w = A.w || 26,

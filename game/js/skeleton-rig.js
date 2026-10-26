@@ -3,28 +3,19 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import {
-  COATS,
-  ROBOTS,
-  RULES,
-  SPECIES,
-  activeBattle,
-  gameData,
-  graftForm,
-  graftParse,
-  graftPlaceholder,
-  provide,
-  reducedMotion,
-} from './hooks.js';
+import { COATS, GENES, ROBOTS, RULES, SPECIES, activeBattle, gameData, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
 import { kitBakeWhole } from './logic/kit-assemble.js';
+import { geneSplit, graftForm, graftLookSplit, graftParse, graftPlaceholder } from './logic/graft-art.js';
+import { robotJoint, robotSingleLegs } from './logic/robot-joints.js';
 import { coatArt, coatColorMap, coatRecolor } from './logic/coats.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
-import { robotArtFiles, robotRig } from './robot-art.js';
+import { robotArmCanvas, robotArtFiles, robotLegsCanvas, robotRig } from './robot-art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
+  AUG_BONES: [() => AUG_BONES],
   BONE_SLOT_RULES: [() => BONE_SLOT_RULES],
   COAT_ATLASES: [() => COAT_ATLASES],
   GRAFT_BAKES: [() => GRAFT_BAKES],
@@ -39,6 +30,9 @@ expose({
   affineRotate: [() => affineRotate],
   affineScale: [() => affineScale],
   affineTranslate: [() => affineTranslate],
+  augPicture: [() => augPicture, v => (augPicture = v)],
+  augRigParts: [() => augRigParts, v => (augRigParts = v)],
+  augScaled: [() => augScaled, v => (augScaled = v)],
   boneSlot: [() => boneSlot, v => (boneSlot = v)],
   buildCode: [() => buildCode, v => (buildCode = v)],
   buildFromCode: [() => buildFromCode, v => (buildFromCode = v)],
@@ -67,6 +61,7 @@ expose({
   rigCanvasAnimator: [() => rigCanvasAnimator],
   rigCanvasHTML: [() => rigCanvasHTML, v => (rigCanvasHTML = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
+  rigFrameKey: [() => rigFrameKey, v => (rigFrameKey = v)],
   rigFromMeta: [() => rigFromMeta, v => (rigFromMeta = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
   rigParts: [() => rigParts, v => setRigParts(v)],
@@ -439,6 +434,16 @@ export function rigFrame(R, act, tau, t, seed) {
   if (R.lag) P.prev = rigPose(act, Math.max(0, qt - tk), qT - tk, seed);
   return P;
 }
+/* phase 20 R3 (the battle lane): rigFrame's stepping as one string. Two frames with the same key get the same pose and
+   face, so the battle keeps the canvas it drew instead of drawing and uploading it again (battle-stage.js actorBuffer,
+   quality.rigReuse). Every rig has a clock today (12: a pose every 167 ms, attack and hurt every 83 ms, the face every
+   250 ms); one without is posed at the time it's given, so its key holds that time. tools/test/rig-frame-key.test.mjs */
+export function rigFrameKey(R, act, tau, t, seed) {
+  if (!R || !R.clock) return `${act}|${tau}|${t}|${seed}`;
+  const tk = 1000 / R.clock,
+    q = act === 'attack' || act === 'hurt' ? tk : tk * 2;
+  return `${act}|${Math.floor(tau / q)}|${Math.floor(t / q)}|${Math.floor(t / 250)}|${seed}`;
+}
 /* v36c: an audit of a rig's motion: for every pose, which pieces move and by how much (pixels of pivot travel plus
    rotation in pixels at the piece's size) over its run. The Studio shows it beside the skeleton; the quick check
    fails a species whose legs, head or tail never move. */
@@ -535,6 +540,8 @@ export function rigParts(sp, k = 1, coat, graft) {
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   /* phase 17: a robot is drawn from its parts */
   if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, k);
+  /* SP-5: a look code with Augments: its rig, then the bot parts on their bones */
+  if (graft && graft.includes('+')) return augRigParts(sp, k, coat, graft, key);
   if (graft) return graftRigParts(sp, view, coat, graft, key);
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
@@ -604,13 +611,23 @@ export function rigPreload(list) {
   const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
   /* SP-1: a grafted Billie is baked (its parts' pictures loaded first), so a battle bakes while it loads */
   const bakes = list
-    .filter(([sp, , , graft]) => graft && !String(sp).startsWith('bot:'))
-    .map(([sp, , , graft]) => graftBake(sp, graft));
+    .map(([sp, , , graft]) => [sp, graftLookSplit(graft).graft])
+    .filter(([sp, graft]) => graft && !String(sp).startsWith('bot:'))
+    .map(([sp, graft]) => graftBake(sp, graft));
+  /* SP-5: and the pictures of the Augments it wears */
+  const augArt = list.flatMap(([, , , graft]) =>
+    Object.values(graftLookSplit(graft).aug || {}).flatMap(id => {
+      const P = D && D.parts[id];
+      return P && P.art ? [P.art.img, P.art.imgB].filter(Boolean) : [];
+    })
+  );
   return Promise.all([
     artLoad(
-      list.flatMap(([sp, k, coat]) =>
-        String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, k === 1 ? 'front' : 'back', coat)]
-      )
+      list
+        .flatMap(([sp, k, coat]) =>
+          String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, k === 1 ? 'front' : 'back', coat)]
+        )
+        .concat(augArt)
     ),
     ...bakes,
   ]).then(([loaded]) => loaded);
@@ -671,9 +688,11 @@ function graftBake(sp, graft) {
       graftStats.bad++;
       if (typeof debugLog !== 'undefined') debugLog.add('graft', `bake failed: ${sp} ${graft}: ${err}`);
     };
-  /* RO-3c: a placeholder Billie is grafted by slot from its donors' baked sheets (logic/graft-art.js) */
-  if ([sp, ...Object.values(g)].some(graftPlaceholderRig))
-    return (e.wait = graftBakePlaceholder(id, e, sp, graft, g, fail));
+  /* RO-3c: a placeholder Billie is grafted by slot from its donors' baked sheets (logic/graft-art.js); SP-2: a slot
+     holds a Gene id ("part@donor"), the donor its rig (a bare species id, as the debug menu sets, is the donor too) */
+  const donors = Object.fromEntries(Object.entries(g).map(([slot, v]) => [slot, (geneSplit(v) || { donor: v }).donor]));
+  if ([sp, ...Object.values(donors)].some(graftPlaceholderRig))
+    return (e.wait = graftBakePlaceholder(id, e, sp, graft, donors, fail));
   const K = gameData.partKits,
     form = graftForm(gameData.kitBuilds, K, sp, g);
   if (!form) {
@@ -784,6 +803,75 @@ function graftRigParts(sp, view, coat, graft, key) {
   const atlas = coatAtlas(e.sheet, `graft:${sp}~${graft}`, sp, view, coat);
   e.keys.push(key);
   return (RIG_PARTS_CACHE[key] = rigFromMeta(e.rig[view], atlas));
+}
+/* ---- SP-5: Augments drawn on a Billie ----
+   A Billie wearing a bot part keeps its own rig (plain or grafted); the bone the Augment's slot is (the front's arm
+   on its side, the back's legs) takes the part's picture instead (robots.json art.img, art.imgB for the back; a
+   stand-in from its colour while it has none), scaled to the Billie's own limb and hung from the part's joint
+   (logic/robot-joints.js), so it moves as the limb did. Treads and a hover skirt are one piece under both hips. The
+   battle stage dims a broken one as it dims a robot's (ROBOT_PART_BONES). */
+/** the bones an Augment's slot is drawn on @param {string} slot */
+const AUG_BONES = slot =>
+  slot === 'back'
+    ? ['legL', 'legR']
+    : [
+        (typeof GENES !== 'undefined' && GENES.augment.slots.front && GENES.augment.slots.front.side) === 'L'
+          ? 'armL'
+          : 'armR',
+      ];
+/** a part's picture for a view, null while it loads (a stand-in when it has none) @param {any} P @param {string} view */
+function augPicture(P, view) {
+  const path = (view === 'back' && P.art.imgB) || P.art.img;
+  if (!path) return P.slot === 'legs' ? robotLegsCanvas(P) : robotArmCanvas(P);
+  artImg(path);
+  return artReady(path) ? ART_CACHE.img[path] : null;
+}
+/** a picture scaled by s, pixel for pixel @param {any} im @param {number} s */
+function augScaled(im, s) {
+  const c = makeCanvas(Math.max(1, Math.round(im.width * s)), Math.max(1, Math.round(im.height * s))),
+    x = c.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  x.drawImage(im, 0, 0, c.width, c.height);
+  return c;
+}
+function augRigParts(sp, k, coat, code, key) {
+  const view = k === 1 ? 'front' : 'back',
+    { graft, aug } = graftLookSplit(code),
+    base = rigParts(sp, k, coat, graft || undefined),
+    D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
+  if (!base || !aug || !D) return base;
+  const bones = base.bones.map(b => ({ ...b })),
+    by = Object.fromEntries(bones.map(b => [b.n, b]));
+  for (const [slot, id] of Object.entries(aug)) {
+    const P = D.parts[id],
+      names = AUG_BONES(slot).filter(n => by[n]);
+    if (!P || !names.length) continue;
+    const pic = augPicture(P, view);
+    if (!pic) return base; /* drawn plain until its picture loads, then asked for again (not kept) */
+    const legs = P.slot === 'legs',
+      own = names.map(n => by[n].img && by[n].img.c).find(Boolean),
+      /* the size of the limb it replaces: the Billie's own picture's height, a little more */
+      s = own ? Math.max(0.2, (own.height * 1.15) / pic.height) : 1,
+      c = augScaled(pic, s),
+      size = /** @type {[number, number]} */ ([pic.width, pic.height]),
+      J = robotJoint(
+        legs ? 'legs' : 'arm',
+        P.art.joints,
+        view,
+        { front: size, back: size },
+        { front: true, back: true }
+      ),
+      img = { ox: -Math.round(J.pivot[0] * s), oy: -Math.round(J.pivot[1] * s), c };
+    if (legs && robotSingleLegs(P) && names.length > 1) {
+      /* one piece under both hips: on the left leg's bone, moved to the middle; the right leg drawn by it */
+      const L = by[names[0]],
+        R = by[names[1]];
+      L.img = { ...img, ox: img.ox + Math.round((R.at[0] - L.at[0]) / 2) };
+      R.img = null;
+    } else for (const n of names) by[n].img = img;
+  }
+  const out = { ...base, bones };
+  return (RIG_PARTS_CACHE[key] = out);
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
 const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };

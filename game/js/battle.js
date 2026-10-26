@@ -32,9 +32,23 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
-import { graftOf } from './logic/graft-art.js';
-import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
-import { billyName, healAll, maxHp, moveUsable, partBroken, partHpLeft, partMaxHp, plural } from './logic/rules.js';
+import { graftLook } from './logic/graft-art.js';
+import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
+import {
+  billyName,
+  billyTypes,
+  formatNumber,
+  healAll,
+  limbKeys,
+  limbsOf,
+  maxHp,
+  moveUsable,
+  movesOf,
+  partBroken,
+  partHpLeft,
+  partMaxHp,
+  plural,
+} from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import {
   ACTOR_SIDE,
@@ -47,6 +61,7 @@ import {
   catchKeep,
   catchOdds,
   catchRoll,
+  catchable,
   effectiveStat,
   enemyOnly,
   fighter,
@@ -226,8 +241,8 @@ export function openBattle() {
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = activeBattle.area || 'grass',
     list = saveData.team
-      .map(m => [m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)])
-      .concat(activeBattle.sides[1].team.map(m => [m.sp, 1, m.coat, graftOf(m)]));
+      .map(m => [m.sp, RIG_BACK_VIEW, m.coat, graftLook(m)])
+      .concat(activeBattle.sides[1].team.map(m => [m.sp, 1, m.coat, graftLook(m)]));
   const b = activeBattle;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
@@ -684,18 +699,19 @@ function effectivenessLabel(mid, tk) {
       ? '<em class="nve">Not very effective</em>'
       : '';
 }
-/* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing) */
+/* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing; SP-5:
+   or at a Billie's Augment) */
 function needsPart(mid, tk) {
   const M = MOVES[mid],
     t = fighter(tk);
-  return !!(M.fx && M.fx.aim && t && isRobot(t) && ROBOT_LIMBS.some(q => !partBroken(t, q)));
+  return !!(M.fx && M.fx.aim && t && limbKeys(t).some(q => !partBroken(t, q)));
 }
 function hpMini(m) {
   const p = Math.max(0, m.hp / maxHp(m));
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { coat: m.coat })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { coat: m.coat })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${billyTypes(m).map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -724,7 +740,8 @@ export const itemIcon = (k, size = 30) => {
 };
 /* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming */
 function moveTilesHTML(m) {
-  return `<div class="moves">${m.moves
+  /* SP-5: and the moves its Augments bring */
+  return `<div class="moves">${movesOf(m)
     .map((id, n) => {
       const M = MOVES[id],
         c = TYPE_COLORS[M.t],
@@ -754,19 +771,25 @@ export function paintActions() {
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
+    /* RL-14: a bot is never caught */
+    const bot = wild && !catchable(fighter(1));
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first && !bot ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${bot ? 'Not a Billie' : wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'part') {
     const t = fighter(activeBattle.tk);
-    h = `<div class="plist">${ROBOT_LIMBS.map(q => {
-      const left = partHpLeft(t, q),
-        mx = partMaxHp(t, q),
-        P = t.fit && robotPartDef(t.fit[q].id);
-      return `<button class="pick part-pick" data-a="bpart" data-p="${q}" ${left <= 0 ? 'disabled' : ''}><span class="pk-t"><b>${escapeHtml(ROBOT_SLOT_NAMES[q][0].toUpperCase() + ROBOT_SLOT_NAMES[q].slice(1))}</b><small>${escapeHtml(P ? P.name : '')}${P && P.move && MOVES[P.move] ? ` · gives ${escapeHtml(MOVES[P.move].n)}` : ''}</small><span class="hpmini"><i class="${left / mx < 0.34 ? 'low' : ''}" style="width:${(left / mx) * 100}%"></i></span></span><span class="pk-s tnum">${left <= 0 ? 'Broken' : `${left}/${mx}`}</span></button>`;
-    }).join('')}</div>${backButtonHTML()}`;
+    /* SP-5: a Billie's Augments are its limbs */
+    const L = limbsOf(t) || {};
+    h = `<div class="plist">${limbKeys(t)
+      .map(q => {
+        const left = partHpLeft(t, q),
+          mx = partMaxHp(t, q),
+          P = L[q] && robotPartDef(L[q].id);
+        return `<button class="pick part-pick" data-a="bpart" data-p="${q}" ${left <= 0 ? 'disabled' : ''}><span class="pk-t"><b>${escapeHtml(ROBOT_SLOT_NAMES[q][0].toUpperCase() + ROBOT_SLOT_NAMES[q].slice(1))}</b><small>${escapeHtml(P ? P.name : '')}${P && P.move && MOVES[P.move] ? ` · gives ${escapeHtml(MOVES[P.move].n)}` : ''}</small><span class="hpmini"><i class="${left / mx < 0.34 ? 'low' : ''}" style="width:${(left / mx) * 100}%"></i></span></span><span class="pk-s tnum">${left <= 0 ? 'Broken' : `${left}/${mx}`}</span></button>`;
+      })
+      .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'fight') {
     h = `${moveTilesHTML(fighter(activeBattle.cur))}${backButtonHTML()}`;
   } else if (ph === 'target') {
@@ -885,10 +908,15 @@ export function showAim() {
 function runCatchFits() {
   if (!activeBattle || !saveData.run) return true;
   const e = fighter(1);
-  return !e || modTypeFits(saveData.run, speciesOf(e).types);
+  return !e || modTypeFits(saveData.run, billyTypes(e));
 }
 export function doThrow(spin) {
   if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;
+  /* RL-14: a bot is never caught (logic/battle-engine.js catchable) */
+  if (!catchable(fighter(1))) {
+    toast('Bots can’t be caught. Pyramids are for Billies.');
+    return;
+  }
   /* RL-13: a mono-type run never catches another type (logic/modifiers.js) */
   if (!runCatchFits()) {
     toast(`Only ${modMonoType(saveData.run, TYPES)} Billies can join this run.`);
@@ -981,6 +1009,20 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* SP-3: a spliced wild Billie knocked out: its DNA, and a sheet for a Gene sampled for the first time */
+  const spliced =
+    /** @type {{ dna?: number, sampled?: { gene: string, words: string }[], parts?: { id: string, words: string }[] }} */ (
+      pay
+    );
+  /* SP-5: an Escaped specimen's Augment went into your spare parts; the Gene Bank's text as it stands now (SP-4) */
+  if ((spliced.sampled && spliced.sampled.length) || (spliced.parts && spliced.parts.length))
+    after.push({
+      title: spliced.sampled && spliced.sampled.length ? 'Gene Sample' : 'Salvaged Augment',
+      html: `${spliced.sampled && spliced.sampled.length ? `<p>You took a sample from what it wore: ${escapeHtml(spliced.sampled.map(x => x.words).join(', '))}.</p>` : ''}${spliced.parts && spliced.parts.length ? `<p>You pried off ${escapeHtml(spliced.parts.map(x => x.words).join(' and '))}: it’s in your spare parts.</p>` : ''}<p><pb-coin kind="dna" value="${saveData.meta.dna}" label="DNA"></pb-coin> +${formatNumber(spliced.dna || 0)} DNA</p><p class="note">${spliced.parts && spliced.parts.length ? 'Copperleaf’s Workshop fits bot parts on your own Billies.' : 'Copperleaf’s Gene Bank splices Genes into your own Billies.'}</p>`,
+      btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
+    });
+  else if (spliced.dna)
+    toast(`+${formatNumber(spliced.dna)} DNA from the splice. You have ${formatNumber(saveData.meta.dna)}.`);
   /* RL-13: the "Fainted is gone" challenge took them out of the run (logic/run-loop.js runFragileDrop) */
   if (gone && gone.length) toast(`${gone.map(m => billyName(m)).join(' and ')} fainted and left the run.`);
   if (kind === 'trainer' && o === 'win') {
@@ -1015,7 +1057,9 @@ export function endBattle() {
                 : run && run.offer
                   ? 'Pick a Perk'
                   : run && run.enc && run.enc.reward
-                    ? 'Pick a reward'
+                    ? run.enc.reward.kind === 'salvage'
+                      ? 'Look at the salvage'
+                      : 'Pick a reward'
                     : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
@@ -1057,6 +1101,8 @@ export function endBattle() {
     after.forEach(m => modal(m));
     /* RL-8: the run's party fainted: the run is over */
     if (run && o === 'lose') runOver(false);
+    /* RL-14: a wild bot beaten leaves its salvage pick (logic/battle-rewards.js battleSalvage) */
+    else if (kind === 'wild' && o === 'win' && run && run.enc && run.enc.reward) rewardPickOpen();
     else if (!after.length) showPendingWindows();
   });
 }

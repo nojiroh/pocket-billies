@@ -8,15 +8,19 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
-import { CURRENCIES, RULES, UNLOCK_DATA } from './game-data.js';
+import { CURRENCIES, RESIDENTS, RULES, UNLOCK_DATA } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
+import { META_CURRENCIES } from './logic/meta-state.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { incomeBank } from './logic/ranch-income.js';
+import { residentsHere } from './logic/residents.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { stationMenu } from './airship.js';
 import { ranchOpen } from './ranch-screen.js';
+import { geneBankLevelled, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsLevelled, augmentsOpen } from './augment-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   LAB_WHERE: [() => LAB_WHERE],
@@ -30,15 +34,18 @@ expose({
   labPrice: [() => labPrice, v => (labPrice = v)],
   labRowHTML: [() => labRowHTML, v => (labRowHTML = v)],
   renderLabBoard: [() => renderLabBoard, v => (renderLabBoard = v)],
+  residentCardHTML: [() => residentCardHTML, v => (residentCardHTML = v)],
+  residentNoteHTML: [() => residentNoteHTML, v => ((residentNoteHTML = v), provide({ residentNoteHTML }))],
+  residentsAt: [() => residentsAt, v => ((residentsAt = v), provide({ residentsAt }))],
   unlockGiftText: [() => unlockGiftText, v => (unlockGiftText = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ buildingLabel, buildingRowsHTML, labMilestones });
+provide({ buildingLabel, buildingRowsHTML, labMilestones, residentNoteHTML, residentsAt });
 /* to-module: end */
 /** what an unlock gives, in a few words: "+10 Scrap", or its name @param {any} R */
 function unlockGiftText(R) {
   const G = R.grant || {};
-  for (const c of ['research', 'scrap', 'crests'])
+  for (const c of META_CURRENCIES)
     if (G[c]) {
       const C = CURRENCIES[c] || { name: c, one: c };
       return `+${formatNumber(G[c])} ${G[c] === 1 ? C.one : C.name}`;
@@ -71,7 +78,12 @@ const LAB_WHY = {
   unknown: 'Gone',
 };
 /** where a building's rows are bought, for its section */
-const LAB_WHERE = { station: 'at Skyline Station', ranch: 'at the ranch' };
+const LAB_WHERE = {
+  station: 'at Skyline Station',
+  ranch: 'at the ranch',
+  genebank: 'at the Gene Bank',
+  workshop: 'at the Workshop',
+};
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
@@ -101,6 +113,30 @@ function buildingRowsHTML(b, then) {
   const rows = unlockRows(saveData, UNLOCK_DATA).filter(r => r.R.at === b && !r.owned);
   return rows.length ? `<div class="lab-list">${rows.map(r => labRowHTML(r, then)).join('')}</div>` : '';
 }
+/** RS-3: the residents who live at a hub building (residents.json home; a cottage's by its resident): a line naming
+ * them, for its room card or sheet @param {string[]} ids @param {string} [verb] */
+function residentNoteHTML(ids, verb = 'lives here') {
+  return ids
+    .filter(id => RESIDENTS[id])
+    .map(
+      id =>
+        `<p class="note"><b>${escapeHtml(RESIDENTS[id].name)}</b>, the ${escapeHtml(RESIDENTS[id].role.toLowerCase())}, ${verb}.</p>`
+    )
+    .join('');
+}
+/** RS-3: who lives at a hub building (residents.json home), in the order they moved in @param {string} b */
+function residentsAt(b) {
+  return residentsHere(saveData).filter(id => RESIDENTS[id] && RESIDENTS[id].home === b);
+}
+/** RS-3: a resident's room card: who they are, Talk, and the upgrades sold at their home (unlocks.json rows `at` it,
+ * RS-4 adds them); with none yet, that they come soon @param {string} id */
+export function residentCardHTML(id) {
+  const r = RESIDENTS[id];
+  if (!r) return '';
+  const all = unlockRows(saveData, UNLOCK_DATA).filter(x => x.R.at === r.home),
+    first = r.name.split(' ')[0];
+  return `${residentNoteHTML([id])}${all.length ? buildingRowsHTML(r.home, 'room') : `<p class="note">${escapeHtml(first)}’s first upgrades come soon.</p>`}`;
+}
 /** a hub building's label with its level ("Ranch · Lv 2"): a building of buildings.json with levels, in Copperleaf
  * (not in a room, not on a run) @param {string} label @param {string} act */
 function buildingLabel(label, act) {
@@ -114,7 +150,7 @@ export function renderLabBoard() {
   const s = saveData,
     M = s.meta,
     rows = unlockRows(s, UNLOCK_DATA),
-    chips = ['research', 'scrap', 'crests']
+    chips = META_CURRENCIES.filter(c => c !== 'dna' || M.dna)
       .map(
         c =>
           `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
@@ -180,7 +216,15 @@ export function labAction(a, d) {
   if (a !== 'lab-buy' || !d.k || !labBuy(d.k)) return;
   /* bought on a building's sheet: that sheet again, with its new level */
   if (d.then === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
-  else if (d.then === 'station' && typeof stationMenu === 'function') {
+  else if (d.then === 'genebank' && typeof geneBankOpen === 'function') {
+    /* SP-4: your Billies held to the new level's limit, then the sheet again */
+    geneBankLevelled();
+    geneBankOpen();
+  } else if (d.then === 'workshop' && typeof augmentsOpen === 'function') {
+    /* SP-5: the Workshop's sheet again, at its new level */
+    if (typeof augmentsLevelled === 'function') augmentsLevelled();
+    augmentsOpen();
+  } else if (d.then === 'station' && typeof stationMenu === 'function') {
     /* in place of the open sheet (a second one would wait behind it) */
     uiState.modal = null;
     stationMenu(uiState.stationAt);

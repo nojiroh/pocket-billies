@@ -38,6 +38,7 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { roundHalfEven } from './sheet-slice.js';
 import { kitBlank, kitCopy, kitFlipX, kitPaste, kitSquashFrames } from './kit-pixels.js';
 import { kitBounds, kitDrawRest, kitPack } from './kit-assemble.js';
@@ -49,7 +50,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   placeholderBake: [() => placeholderBake, v => (placeholderBake = v)],
   // @ts-expect-error -- replaced on purpose
-  placeholderBones: [() => placeholderBones, v => (placeholderBones = v)],
+  placeholderBones: [() => placeholderBones, v => ((placeholderBones = v), provide({ placeholderBones }))],
   placeholderCellLabel: [() => placeholderCellLabel],
   // @ts-expect-error -- replaced on purpose
   placeholderCellSpecs: [() => placeholderCellSpecs, v => (placeholderCellSpecs = v)],
@@ -90,10 +91,13 @@ expose({
   placeholderTrim: [() => placeholderTrim, v => (placeholderTrim = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ placeholderBones });
 /* to-module: end */
 /** the stage box, the torso pad and squash shapes every Billie shares with the kit Billies (kitBuilds.json bake) */
 export const PLACEHOLDER_BOX = { w: 128, h: 128, cx: 64, base: 120 };
+provide({ PLACEHOLDER_BOX }); /* to-module */
 export const PLACEHOLDER_VIEWS = /** @type {const} */ (['front', 'back']);
+provide({ PLACEHOLDER_VIEWS }); /* to-module */
 
 /* ---------- the bones ---------- */
 /** a plan's bones for one form: mirrors filled in (middle, pivot and turn mirrored, the parent mirrored too when it

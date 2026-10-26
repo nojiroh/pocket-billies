@@ -70,7 +70,9 @@ expose({
   gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
   personItem: [() => personItem, v => (personItem = v)],
   propBaseHeight: [() => propBaseHeight, v => ((propBaseHeight = v), provide({ propBaseHeight }))],
+  reedPush: [() => reedPush, v => (reedPush = v)],
   wadeItem: [() => wadeItem, v => (wadeItem = v)],
+  wadeItemLift: [() => wadeItemLift, v => (wadeItemLift = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ propBaseHeight });
@@ -107,7 +109,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       h = im.naturalHeight || im.height;
     const S = far ? null : stillPropState(p, M, im, sc);
     const y = far ? standingHeightAt(p.x, p.z) : S.y,
-      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, reducedMotion ? 0 : t, sc, wind);
+      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, reducedMotion ? 0 : t, sc, wind) + reedPush(p, M);
     const mat = S ? S.mat : propMaterial(p.k, M);
     im.__mat = mat;
     /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
@@ -127,6 +129,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     out.push({
       k: far ? 'farp' : 'prop',
       still: !far && !M.sway && !S.bob && !S.flag && !p.moving,
+      /* phase 20 R3: it rocks on the water (its model moves with it; walk/shadows.js keeps it out of the far cache) */
+      bobs: !far && !!S.bob,
       lk,
       p,
       M,
@@ -141,6 +145,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
       h,
       flip: p.f ? -1 : 1,
       shear: sw2 + (lk && !M.box && !M.build && !M.flat ? lk.lean : 0),
+      /* phase 20 R3: a prop whose only motion is the wind: its shear at rest (walk/shadows.js, "Far shadows hold still") */
+      rest:
+        !far && M.sway && !S.bob && !S.flag && !p.moving
+          ? lk && !M.box && !M.build && !M.flat
+            ? lk.lean
+            : 0
+          : undefined,
       flat: M.flat,
       sh: (p.lift || 0) > 3 ? 0 : (M.shadow || 0) * (p.s || 1),
       far,
@@ -238,6 +249,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
           h: li.naturalHeight || li.height,
           flip: p.f ? -1 : 1,
           shear: lsh,
+          rest: M.sway && !S.bob && !S.flag && !l.swing && !p.moving ? 0 : undefined,
           flat: LM.flat,
           sh: l.glow || M.box || l.shadow === 0 ? 0 : (M.shadow || 0) * (p.s || 1),
           fixed: l.face !== 'billboard',
@@ -371,9 +383,11 @@ export function gatherFrameItems(st, C, PPU, C0) {
   });
   if (!st.battle)
     for (const f of walkView.folk) {
-      const fr = folkFrames(f.seed);
+      /* RS-3: a resident wears their own look (people/<id>.json) */
+      const who = f.who || 'folk:' + f.seed,
+        fr = f.who ? personWalkFrames(f.who) : folkFrames(f.seed);
       if (!fr) continue;
-      warmPerson('folk:' + f.seed);
+      warmPerson(who);
       const set = fr[f.dir] || fr.down;
       let fim =
         typeof pickWalkFrame === 'function'
@@ -384,7 +398,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
               : set[1 + (Math.floor(t / 150) % 2)]
             : set[0];
       /* v47: a wave hello */ if (f.waveT > 0 && typeof personBattlePose === 'function') {
-        const w = personBattlePose('folk:' + f.seed, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
+        const w = personBattlePose(who, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
         if (w) fim = w;
       }
       if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));
@@ -496,6 +510,34 @@ export function wadeItem(it) {
     base = surf + 0.12 - (0.12 + WADE_DEPTH) * (d / WADE_DEPTH),
     under = surf - base;
   it.y = base;
+  if (under > 0) {
+    const c = Math.round(under / it.mpp);
+    it.y = surf - c * it.mpp;
+    it.cut = c + it.h + it.oy;
+  }
+  return it;
+}
+/* water track WA-5b: reeds, cattails and bulrushes bend away from you as you pass through them (wading by them),
+   most when you brush them, none past 0.9 m */
+function reedPush(p, M) {
+  const P = walkView.pl;
+  if (!P || reducedMotion || !/reed|cattail|bulrush/.test((M.group || '') + ' ' + p.k)) return 0;
+  const dx = p.x - P.x,
+    d = Math.hypot(dx, p.z - P.z);
+  return d < 0.9 ? Math.sign(dx || 1) * 0.22 * (1 - d / 0.9) : 0;
+}
+/* water track WA-5b: a wild Billy waiting in shallows (logic/water-gen.js lets them, walk-view.js encounterCandidates)
+   is cut at the waterline as a wader is, lifted by its hop and bob (the cut shrinking as it rises); null on dry ground,
+   where it keeps sinking into the grass */
+export function wadeItemLift(it, lift) {
+  const d = typeof wadeDepthHere === 'function' ? wadeDepthHere(it.x, it.z) : 0;
+  if (!(d > 0) || !(it.mpp > 0)) return null;
+  wadeItem(it);
+  const surf = standingHeightAt(it.x, it.z),
+    y = it.y + lift,
+    under = surf - y;
+  delete it.cut;
+  it.y = y;
   if (under > 0) {
     const c = Math.round(under / it.mpp);
     it.y = surf - c * it.mpp;

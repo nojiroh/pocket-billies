@@ -227,6 +227,16 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
         !species.has(b)
       )
         problems.push(at, `lastby:${b}, not a kind of foe, a trainer, a class nor a Billie`);
+    /* RL-S2: the team the last run ended with: a type, a line or a species */
+    const typeIds = new Set((G.types || []).map((/** @type {any} */ t) => String(t.id).toLowerCase()));
+    for (const t of N.lastteam || [])
+      if (!typeIds.has(t.toLowerCase()) && !lines.has(t) && !species.has(t))
+        problems.push(at, `lastteam:${t}, not a type, a line nor a Billie`);
+    /* RL-S2: the hub folk (relations.json people) */
+    const folk = (G.relations || {}).people || {};
+    for (const k of ['rel', 'gifted'])
+      for (const w of N[k] || [])
+        if (!folk[w]) problems.push(at, `${k}:${w}, nobody in relations.json people (${Object.keys(folk).join(', ')})`);
   };
   const who = (w, at) => {
     if (w && !(w in speakers) && !(G.people || {})[w] && w !== 'me')
@@ -338,6 +348,13 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
           else if (n.name === 'pick' && !Object.values(G.banter || {}).some(B => B.who === a))
             problems.push(at, `pick ${a}, no banter.json line is for ${a}`);
           else if (n.name === 'go' && !places.has(a)) problems.push(at, `go ${a}, no such place`);
+          /* RL-S2: the hub folk (relations.json people), whole counts */
+          else if ((n.name === 'gift' || n.name === 'rel') && !((G.relations || {}).people || {})[a])
+            problems.push(at, `${n.name} ${a}, nobody in relations.json people`);
+          else if ((n.name === 'rel' && !/^-?\d+$/.test(b || '')) || (n.name === 'beans' && !/^\d+$/.test(a || '')))
+            problems.push(at, `${n.name}: ${n.name === 'rel' ? b : a} is not a whole number`);
+          else if (n.name === 'chapter' && !/^[1-9]$/.test(a || ''))
+            problems.push(at, `chapter ${a}: a chapter from 1 to 9`);
           else if (n.name === 'quest') {
             if (!quests[a]) problems.push(at, `quest ${a}, no such quest (story.json quests)`);
             else if (!quests[a].stages.includes(b)) problems.push(at, `quest ${a} has no stage ${b}`);
@@ -360,6 +377,20 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
   for (const [k, B] of Object.entries(G.banter || {}))
     if (B.when)
       condition(B.when, spot(`banter.json ${k} when`, { file: 'banter.json', thing: 'banter:' + k, field: 'when' }));
+  /* RL-S2 part B: a hub person's favour: its quest has the stages asked and done, its check reads; the way home
+     (logic/relations.js relFavoursPay) moves it to done */
+  for (const [w, P] of Object.entries((G.relations || {}).people || {})) {
+    const F = P.favour;
+    if (!F) continue;
+    const at = spot(`relations.json ${w} favour`, { file: 'relations.json', thing: 'favour:' + w, field: 'check' }),
+      Q = quests[F.quest];
+    if (!Q) problems.push(at, `quest ${F.quest}, no such quest (story.json quests)`);
+    else
+      for (const st of ['asked', 'done'])
+        if (!Q.stages.includes(st)) problems.push(at, `quest ${F.quest} has no stage ${st}`);
+    (questSet.get(F.quest) || questSet.set(F.quest, new Set()).get(F.quest)).add('done');
+    condition(F.check, at);
+  }
   for (const [mid, M] of Object.entries(G.maps || {})) {
     for (const P of M.people || [])
       for (const k of ['when', 'unless'])

@@ -28,12 +28,13 @@
   },
   "chat": {"type": "array", "items": {"type": "string"}},
   "cam": {
-   "description": "the walking camera: tilt (degrees), height (m), field of view; island track: orbit",
+   "description": "the walking camera: tilt (degrees), height (m), field of view; CAM-4b: stop, the zoom stop it starts at (an id of engine.json defaults.camera.stops; none: the stop nearest zoom 1); island track: orbit",
    "type": "object",
    "properties": {
     "pitch": {"type": "number"},
     "h": {"type": "number"},
     "fov": {"type": "number"},
+    "stop": {"type": "string", "minLength": 1},
     "orbit": {
      "description": "island track: the camera sits out over the sea and looks in at c; inside dead metres of c the yaw holds; lag: seconds the yaw takes to follow; turn: degrees the player may still turn it",
      "type": "object",

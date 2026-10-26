@@ -78,5 +78,29 @@
   "fx": [
    {"kind":"payout","what":"itemShare","mult":2}
   ]
+ },
+ "petri_dish": {
+  "name": "Petri Dish",
+  "d": "Spliced wild Billies you knock out pay 50% more DNA.",
+  "rarity": "common",
+  "fx": [
+   {"kind":"dna","mult":1.5}
+  ]
+ },
+ "gene_lure": {
+  "name": "Gene Lure",
+  "d": "Wild Billies of the places you reach next are spliced twice as often.",
+  "rarity": "uncommon",
+  "fx": [
+   {"kind":"splice","mult":2}
+  ]
+ },
+ "stabilizer_gel": {
+  "name": "Stabilizer Gel",
+  "d": "Your Unstable Billies lose half as much HP at each turn’s end.",
+  "rarity": "rare",
+  "fx": [
+   {"kind":"unstable","mult":0.5}
+  ]
  }
 }

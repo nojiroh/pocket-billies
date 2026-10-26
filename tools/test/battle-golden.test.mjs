@@ -1,4 +1,4 @@
-// RL-2: the battle golden record. Four seeded fights on the game's own data (a single wild battle, a double trainer
+// RL-2: the battle golden record. Seeded fights on the game's own data (a single wild battle, a double trainer
 // battle, an Alpha, a robot against a Billie), both sides played by the computer, written down event by event with
 // the end state of every fighter. RL-4 rewires the engine (the battle as an argument, its own random stream); this
 // record must stay the same through every commit of that work, so a change in how battles play shows at once.
@@ -32,6 +32,8 @@ const wildSpecies = () =>
 function fighterState(m) {
   const o = { sp: m.sp || m.gem, lvl: m.lvl, hp: m.hp, xp: m.xp, status: m.status || null };
   if (m.kind === 'robot') o.partDmg = m.partDmg;
+  /* SP-5: a Billie's Augments and their damage */
+  if (m.aug) Object.assign(o, { aug: m.aug, partDmg: m.partDmg || {} });
   if (m.boss) o.boss = m.boss;
   return o;
 }
@@ -113,6 +115,19 @@ test('golden: a robot against a Billie (aimed moves, parts that break)', t => {
   s.team[0] = fn('makeRobot')(bot.gem, fn('fitFromIds')(bot), 20);
   fn('newBattle')('trainer', [fn('makeBilly')(starter().replace(/\d+$/, '1'), 26)]);
   t.assert.snapshot(play());
+});
+
+test('golden: a Billie with a Hydrant Arm against a robot (SP-5: the Augment’s move, aimed at a limb)', t => {
+  reseed(521);
+  const s = startedSave(starter(), 30);
+  s.team[0].aug = { front: { uid: 'golden-arm', id: 'hydrant', up: 0 } };
+  const bot = { gem: 'ember', torso: 'bulwark', armL: 'auger', armR: 'clamp', legs: 'treads' };
+  fn('newBattle')('trainer', [fn('makeRobot')(bot.gem, fn('fitFromIds')(bot), 18)]);
+  const out = play(),
+    lines = out.log.flatMap(x => x.events.map(e => e.t || '')).join('\n');
+  assert.match(lines, /used Jet Blast/, 'the Augment’s move');
+  assert.match(lines, /left arm broke/, 'its jet aimed at a limb');
+  t.assert.snapshot(out);
 });
 
 test('golden: a single wild battle holding Loopholes (RL-12: stages at the start, damage dealt and taken)', t => {

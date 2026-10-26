@@ -296,6 +296,39 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
     /* the same visit rolled again (a reload, another device) meets the same Billies */
     delete s.wild.run_0;
     assert.deepEqual(seen(stock()), seen(first));
+    /* SP-3: its wild splices come from a stream of their own: the same on a reload, and with none at all (or every
+       Billie spliced) the stock's species, levels, sizes and coats are the same */
+    const whole = (/** @type {any[]} */ L) =>
+        L.map(({ sp, lvl, build, coat, alpha }) => ({ sp, lvl, build, coat, alpha })),
+      grafts = (/** @type {any[]} */ L) => L.map(q => [q.graft || null, q.unstable || null]),
+      G = data.GENES.wild,
+      odds = { ...G },
+      kept = { whole: whole(stock()), grafts: grafts(stock()) };
+    delete s.wild.run_0;
+    assert.deepEqual(grafts(stock()), kept.grafts, 'the same splices on a reload');
+    try {
+      Object.assign(G, { graft: 0, chimera: 0 });
+      delete s.wild.run_0;
+      assert.deepEqual(whole(stock()), kept.whole);
+      assert.ok(
+        stock().every(q => !q.graft),
+        'no odds, no splices'
+      );
+      Object.assign(G, { graft: 0.5, chimera: 0.49 });
+      delete s.wild.run_0;
+      assert.deepEqual(whole(stock()), kept.whole);
+      assert.ok(
+        stock().some(q => q.graft),
+        'nearly every Billie spliced'
+      );
+      /* an Unstable one carries its roll (the stream's): its foe in battle keeps it */
+      for (const q of stock())
+        assert.equal(!!q.unstable, !!q.graft && fn('graftStability')(fn('geneData')(), q.sp, q.graft).unstable);
+    } finally {
+      Object.assign(G, odds);
+      delete s.wild.run_0;
+      stock();
+    }
     /* no top-up by play time in a run */
     fn('dropEncounter')(stock()[0].id);
     s.playMs = (s.playMs || 0) + 10 * E.refillMs;
@@ -340,6 +373,94 @@ test("RT-4: a run route's first visit keeps the last of its stock for a rarer on
     runArrive(s, runNext(run.map, 0)[0], MAP_DATA);
     runArrive(s, 0, MAP_DATA);
     assert.ok(!fn('encountersHere')(1).some(q => q.rare), 'none on a return visit');
+  } finally {
+    data.worldHubBack();
+  }
+});
+
+test("RL-14: a run place's wild ones are now and then the Bureau's bots: from their row on, in their biomes", () => {
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+    run = runOf('RL14BOTS'),
+    made = runScenesMake(run, WORLD_DATA),
+    W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
+    B = GAME_DATA.factions.factions.bureau,
+    node = run.map.nodes[0],
+    was = { type: node.type, row: node.row, biome: node.biome };
+  s.run = run;
+  s.trip = { node: 0, plan: [] };
+  runArrive(s, 0, MAP_DATA);
+  data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+  try {
+    /* place 1 stands in for a route deep enough in a bot biome: many draws, about the chance of them bots */
+    Object.assign(node, { type: 'route', row: B.wild.fromRow, biome: B.wild.biomes[0] });
+    let n = 0,
+      bots = 0;
+    for (let k = 0; k < 400; k++) {
+      const rnd = modules.rng.rngFn('RL14BOTS', 'wild|' + k),
+        q = fn('spawn')(false, null, 1, rnd);
+      n++;
+      if (!q.sp.startsWith('bot:')) continue;
+      bots++;
+      const found = modules.factions.factionBotOf(GAME_DATA.factions.factions, q.sp);
+      assert.ok(found, `${q.sp} is a Bureau bot`);
+      assert.ok(q.lvl >= W.pools.run_0.lv[0] && q.lvl <= W.pools.run_0.lv[1], `level ${q.lvl}`);
+      assert.ok(!q.alpha && !q.hab && !q.coat, 'never an Alpha, in the grass, no coat');
+    }
+    assert.ok(bots / n > B.wild.chance / 2 && bots / n < B.wild.chance * 2, `${bots} bots of ${n}`);
+    /* the save keeps a wild bot (saves.js validSave and saveFill) */
+    const list = fn('wildList')(1),
+      keep = list.filter(q => q.sp.startsWith('bot:')).slice(0, 2);
+    list.splice(0, list.length, ...keep);
+    assert.equal(fn('validSave')(JSON.parse(JSON.stringify(s))), true);
+    const back = fn('saveFill')(JSON.parse(JSON.stringify(s)));
+    assert.deepEqual(back.wild.run_0.list, keep, 'kept on a reload');
+    /* a row too early, or a biome without bots: none */
+    for (const at of [
+      { row: B.wild.fromRow - 1, biome: B.wild.biomes[0] },
+      { row: 8, biome: Object.keys(GAME_DATA.biomes).find(b => !B.wild.biomes.includes(b)) },
+    ]) {
+      Object.assign(node, at);
+      for (let k = 0; k < 100; k++)
+        assert.ok(!fn('spawn')(false, null, 1, modules.rng.rngFn('RL14NONE', 'wild|' + k)).sp.startsWith('bot:'));
+    }
+  } finally {
+    Object.assign(node, was);
+    data.worldHubBack();
+  }
+});
+
+test('RL-14: a scrapyard is a laid-out place with scrap heaps, its scenes join, and every wild one is a bot', () => {
+  let run = null;
+  for (let k = 0; k < 60 && !run; k++) {
+    const r = runOf('RL14YARD' + k);
+    if (r.map.nodes.some(n => n.type === 'scrapyard')) run = r;
+  }
+  assert.ok(run, 'a seed with a scrapyard');
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+    i = run.map.nodes.findIndex(n => n.type === 'scrapyard'),
+    made = runScenesMake(run, WORLD_DATA),
+    sc = made[i],
+    W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA);
+  assert.equal(runSceneParams(run, i, made, WORLD_DATA).site, 'scrapyard');
+  assert.ok(sc.layout, 'laid out');
+  /* its set pieces are the ones made for it (setPieces.json sites): a scrap heap, now and then a checkpoint */
+  assert.ok((sc.pieces || []).some(p => p.id === 'scrap_heap') && sc.props.some(p => p.k === 'scrap'), 'a scrap heap');
+  for (const p of sc.pieces) assert.ok(GAME_DATA.setPieces.pieces[p.id].sites.scrapyard > 0, p.id);
+  assert.deepEqual(mapgenUnreachable(sc, GAME_DATA.scenery), [], 'all ground reachable');
+  assert.ok(
+    !made.some((m, j) => run.map.nodes[j].type !== 'scrapyard' && (m.pieces || []).some(p => p.id === 'scrap_heap')),
+    'heaps in scrapyards only'
+  );
+  s.run = run;
+  s.trip = { node: 0, plan: [] };
+  runArrive(s, 0, MAP_DATA);
+  data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, j) => [p.mapId, made[j]])) });
+  try {
+    W.locations[i + 1].trainerCount = 2;
+    run.path.push(i);
+    const list = fn('encountersHere')(i + 1);
+    assert.ok(list.length > 0);
+    for (const q of list) assert.ok(q.sp.startsWith('bot:') && !q.rare, q.sp);
   } finally {
     data.worldHubBack();
   }

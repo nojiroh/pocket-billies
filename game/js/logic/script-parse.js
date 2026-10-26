@@ -71,7 +71,19 @@ export const SCRIPT_COMMANDS = {
   pick: {
     args: ['who'],
     about:
-      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau; nothing if none fits',
+      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau, rival (RL-S2); nothing if none fits',
+  },
+  /* RL-S2: the hub folk and you (logic/relations.js) */
+  beans: { args: ['n'], about: 'give Beans, the gift currency, kept between runs (RL-S2): beans 1' },
+  gift: {
+    args: ['who'],
+    about:
+      'give a hub person a gift (RL-S2, relations.json): a Bean, points with them; nothing when you have too few Beans or gave them one since the last run (gate it with "[if beans >= 1 and not gifted:hazel]")',
+  },
+  rel: { args: ['who', 'n'], about: 'points with a hub person, as for a favour done (RL-S2): rel hazel 2' },
+  chapter: {
+    args: ['n'],
+    about: 'move the story on to chapter n (RL-S2; never back): an Expedition’s boss scene, "chapter 2"',
   },
   end: { args: [], about: 'stop the script here' },
   /* a cutscene's own (game/data/cutscenes, docs/CUTSCENES.md: logic/cutscene-set.js reads them) */
@@ -143,8 +155,9 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'you pick a Billie to give up; a Billie of the region’s dex takes its place, n levels up',
   },
-  /* RO-3e: a fossil revived (the Dig Site): a Billie by species, not drawn from the region */
-  gift: {
+  /* RO-3e: a fossil revived (the Dig Site): a Billie by species, not drawn from the region (named revive, not gift:
+     gift is RL-S2's, a gift to a hub person) */
+  revive: {
     args: ['species', 'n?'],
     group: 'event',
     checkpoint: true,
@@ -163,11 +176,37 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'a wild battle with a Billie of the region, n levels up',
   },
+  invite: {
+    args: [],
+    group: 'event',
+    about:
+      'RS-2: the run’s resident (an event with resident: true) is invited to Copperleaf, and moves in when the run ends',
+  },
   reward: {
     args: ['kind?', 'n?'],
     group: 'event',
     checkpoint: true,
     about: 'a reward pick (rewards.json): of every kind, or of one (item, tutor, candy, evo), n cards',
+  },
+  /* SP-6: the splice events' (logic/gene-events.js) */
+  dna: { args: ['n'], group: 'event', about: 'DNA gained or lost (never below 0)' },
+  gene: {
+    args: ['n?'],
+    group: 'event',
+    about: 'n Genes (1 if no count) into the Gene Bank’s library, of the region’s lines, none it has',
+  },
+  splice: {
+    args: ['how'],
+    group: 'event',
+    checkpoint: true,
+    about:
+      'you pick a Billie and it gets a Gene: wild, one drawn for it (the back alley: any slot); lib, one of your library on a slot the Gene Bank opens, for its DNA',
+  },
+  unsplice: {
+    args: ['n?'],
+    group: 'event',
+    checkpoint: true,
+    about: 'you pick a spliced Billie’s Gene to hand in (it stays in the library), for n DNA',
   },
   /* the opening's own (cutscene/opening.js) */
   'dressing-room': {

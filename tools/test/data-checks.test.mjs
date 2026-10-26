@@ -38,6 +38,7 @@ const FAMILIES = [
   'dataBiomes',
   'dataNodeTypes',
   'dataQuests',
+  'dataResidents',
   'dataPerks',
   'dataEvents',
   'dataBanter',
@@ -111,6 +112,18 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [E => (E.events.form_27b.intro[0] = 'money 5'), 'lines only'],
     [E => (E.loot.common.nosuchitem = 1), 'loot.common: no item "nosuchitem"'],
     [E => (E.classes.intern.who = 'nobody'), 'no person "nobody"'],
+    /* RS-2: invite only in a resident event, and every resident event invites */
+    [E => (E.events.form_27b.options[0].then[0] = 'invite'), 'only a resident event'],
+    [
+      E => E.events.stranded_cart.options.forEach(o => (o.then = o.then.filter(l => l !== 'invite'))),
+      'no option that invites',
+    ],
+    /* SP-6: the splice events' commands and an event's when */
+    [E => (E.events.form_27b.options[0].then[0] = 'splice somehow'), 'wild (the back alley'],
+    [E => (E.events.form_27b.options[0].then[0] = 'dna 0'), 'a whole number of DNA'],
+    [E => (E.events.form_27b.options[0].then[0] = 'gene 9'), '1-5 Genes'],
+    [E => (E.events.form_27b.options[0].then[0] = 'unsplice -1'), '0-1000 DNA'],
+    [E => (E.events.form_27b.when = 'genez:x'), 'events.form_27b.when'],
   ]) {
     D = copy();
     plant(D.events);
@@ -137,6 +150,9 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [B => (B.chosen_first.cooldown = 2), 'said once, so no cooldown'],
     [B => (B.leader_badge.when = 'wins >= 1'), 'no leader line without a when'],
     [B => delete B.bureau_lost, 'no bureau line without a when'],
+    /* RL-S2 part B: Blake and a thank-you, once they have lines, have one they can always say */
+    [B => (B.rival_built.when = 'last:won'), 'no rival line without a when that is said more than once'],
+    [B => (B.thanks_hazel.once = true), 'no thanks_hazel line without a when'],
   ]) {
     D = copy();
     plant(D.banter);

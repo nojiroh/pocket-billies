@@ -12,7 +12,7 @@ const TOOL = join(ROOT, 'tools/build-ui-icons.py');
 const NAMES = [...readFileSync(TOOL, 'utf8').matchAll(/^ {4}'([a-z-]+)': \[$/gm)].map(m => m[1]);
 
 test('every icon file is what its grid in tools/build-ui-icons.py makes', () => {
-  assert.equal(NAMES.length, 49);
+  assert.equal(NAMES.length, 51);
   const r = spawnSync('python3', [TOOL, '--check'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
