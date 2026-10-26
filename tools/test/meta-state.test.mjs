@@ -12,6 +12,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     research: 0,
     scrap: 0,
     crests: 0,
+    beans: 0,
     unlocks: {},
     buildings: {},
     runs: 0,
@@ -34,6 +35,7 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, research: -1 },
     { ...ok, scrap: 1.5 },
     { ...ok, crests: '3' },
+    { ...ok, beans: -1 },
     { ...ok, research: 1e13 },
     { ...ok, wins: 4 }, // more wins than runs
     { ...ok, expedition: 0 },

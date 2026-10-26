@@ -27,5 +27,12 @@
   "icon": "crest",
   "kept": "meta",
   "about": "Rare: one for beating a run's boss. Spent at the airship."
+ },
+ "beans": {
+  "name": "Beans",
+  "one": "Bean",
+  "icon": "bean",
+  "kept": "meta",
+  "about": "Rare finds on runs. Hub folk love them as gifts; nobody says why."
  }
 }

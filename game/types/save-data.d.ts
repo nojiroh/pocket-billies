@@ -91,6 +91,8 @@ export interface Meta {
   research: number;
   scrap: number;
   crests: number;
+  /** RL-S2: the gift currency for the hub's folk (rare finds on runs) */
+  beans: number;
   /** unlock ids: 1 (unlocks.json, RL-11) */
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */

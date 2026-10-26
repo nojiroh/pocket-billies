@@ -1950,8 +1950,8 @@ export interface Perk {
   fx: FxRow[];
 }
 
-/** currencies.json: one of the game's four currencies (roguelite track RL-11) */
-export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests';
+/** currencies.json: one of the game's five currencies (roguelite track RL-11; RL-S2: Beans) */
+export type CurrencyId = 'money' | 'research' | 'scrap' | 'crests' | 'beans';
 export interface Currency {
   /** what the player reads; `long` where the short name is a sign ($); `one` for a count of one */
   name: string;
@@ -1984,7 +1984,8 @@ export type UnlockGrant =
   | { biome: string }
   | { research: number }
   | { scrap: number }
-  | { crests: number };
+  | { crests: number }
+  | { beans: number };
 /** unlocks.json: one row of the unlock table (roguelite track RL-11): sold at a building (at + cost, in its currency;
  * the Lab's rows are its board) or earned when a condition holds (when) */
 export interface Unlock {
