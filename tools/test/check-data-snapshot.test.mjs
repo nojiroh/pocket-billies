@@ -262,3 +262,19 @@ test('check-data: planted factions (RL-14)', t => {
     })
   );
 });
+
+test('check-data: planted fossils (RO-3e)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'pools.json': P => {
+        P.cave.list.push(['carnegie0', 1]);
+      },
+      'eggs.json': E => {
+        E['2'].list.push(['vanderbilt0', 5]);
+      },
+      'events.json': E => {
+        E.events.dig_site.options[0].then[1] = 'revive carnegie9 30';
+      },
+    })
+  );
+});

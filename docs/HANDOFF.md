@@ -144,6 +144,62 @@ were merged in here (bodyPlans.json forms by hand: RO-3b's 51 and these 6; rigs-
     same on every plan, not these forms.
   - Not tried on a phone; names, bios and cries are drafts.
 - Next: RO-3e (the Knight frog and the fossil pair) and RO-3f (Satoshi and the cave bat), then RO-3g.
+### Roster track RO-3e - The Knight frog and the fossil pair (dex 47-50) - 2026-10-26
+Branch `claude/ro-3e-knight-fossils` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d (#217,
+41-46) and RO-3f (51-53) ran beside it. Plan approved in Plan Mode. The owner's answers: a 2-stage frog plus two single
+fossils; the fossils come from an event, **the Dig Site** (pick one of the two); types Water > Water/Flying (frog),
+Steel/Water (Carnegie), Fire/Ground (Vanderbilt); names Swooshpole > Victoad, Philanthrobite, Vanderbolt; the frog
+common at level 18 with 265/470, the fossils rare at about 490. Tag `ro-3e-done` for the owner (local only: the proxy
+refuses tag pushes).
+- Where the brief and the code differed (checked): the 9 types also lack Ghost, Ice, Dark, Normal and Fairy; no event
+  could give a chosen Billie (`give` gives items, `wild` and `recall` draw from the region), and no reward card gives
+  one; events **can** be held to biomes (`biomes`, unused until now); every line could land in a regional dex (so
+  `recall` could have handed out a fossil); the wild-pools test asked every line to be in some pool; Leader Rocco's team
+  and the 2 km egg named the legacy id `carnegie0` (a stand-in until now), Leader Alta's `knight1`; the moves Just Do
+  It, Library Slam and Full Steam already carried `sig` knight, carnegie and vanderbilt (Full Steam is Electric).
+- Changed:
+  - **Lines** `lines/knight.json`, `carnegie.json`, `vanderbilt.json` (learnsets of existing moves with each line's
+    signature; cries, bios and notes are drafts), `index.json` lines, roster rows 47-50.
+  - **Placeholders** (bodyPlans.json forms, `npm run bake:placeholders`): the frog on the hopper (ears dropped, eye
+    bumps, an orange tick; Swooshpole a long tail at scale 0.9, Victoad a headband, winged feet, stronger thighs at
+    1.3); Philanthrobite on the crab (back plates, a white beard, small claws and short eye stalks, 1.2); Vanderbolt on
+    the serpent (top hat and brim, a sideburn, a cow-catcher, a funnel, two wheels, 1.3). The legacy vanderbolt.json
+    layout left the sheets folder.
+  - **Never met wild**: line schema `wild: false` (the two fossils). `runRegionData` leaves such a line out of every
+    region (dex, side areas, sim, preview), so `recall` can't give one and it takes no dex room; check-data: such a line
+    is in no pool and no egg (the 2 km egg's `carnegie0` is gone).
+  - **The Dig Site** (events.json `dig_site`, weight 1, ridge, canyon, badlands and cave, once a run): revive the
+    trilobite, the rail snake, or neither. New event command **`gift species [up]`** (script-parse, data-checks,
+    encounter-screen.js, docs/SCRIPTS.md): the species joins you at the place's level plus up; a full party picks one
+    (not from home, as `recall`) to stay behind, or leaves the gift.
+  - **Pools**: Swooshpole in the lake (26), sea (24) and jungle (20).
+  - Tests: wild-pools (every line met wild is in a pool and no other; every `wild: false` line is gifted by an event);
+    check-data planted fossils (new snapshot case); pixel-density 55 placeholder rows; graft-placeholder runs over the
+    new forms (it found Swooshpole at 0.83 too small for a bird's or octopus's back legs: 0.9 fits); the in-game test's
+    new phase **The Dig Site's fossils** (a party with room, then a full one).
+- Remade on purpose: the check-data snapshot (153 -> 156 files, the planted case), run-start (the regional dex draws
+  one more line), battle-golden's double (Leader Rocco's `carnegie0` is the real Philanthrobite now, not a stand-in),
+  the sound baseline (the 8 new cries with their low variants, and the cave biome's run songs `mid` and `late`, which
+  were missing from the baseline on track/roster too).
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; unit tests (1080 pass); the
+  graft sweep over all 55 forms; `bake:placeholders` clean; all four drawn by the game's renderer (rigParts,
+  rigFrame, drawRig on the game page) in idle, walk, attack and hurt, front and back, beside Pupfin: all stand on the
+  ground and move; the smoke subset (`npm run check:smoke`: 6 of 6, Start-Game on a phone, the debug log 103 KB with no
+  names); the in-game test's waystation phase and the new Dig Site phase run alone headless (`selfTest.only`), both
+  pass. Not the full quick check: its picture baseline waits for the roster sessions on main (as RO-3b).
+- Risky / open:
+  - **Merges with RO-3d and RO-3f**: rebuild rigs-next.js and the sheets (`npm run bake:placeholders`), the check-data
+    and run-start snapshots, battle-golden if a team changes, the sound baseline; merge roster rows, index lines,
+    bodyPlans forms, pools and pixel-density's count (51 + 6 + 4 + RO-3f's) by hand.
+  - **The picture baseline** (quick check) is not remade here: it needs remaking once the roster sessions are on main.
+  - A fossil only appears on a run that reaches a rocky biome's waystation and draws the Dig Site (weight 1 of about
+    20): rare by design, not measured with the run sim yet. Fossils at about 490 from the place's level are strong early;
+    RO-3g's balance pass may tune them.
+  - A mono-type challenge doesn't check a gifted Billie's type (the same as `recall`).
+  - Leader Rocco (Ground) fields Philanthrobite (Steel/Water): the legacy id's choice, not retuned.
+  - Swooshpole's lace tail sits behind its torso from the front (the hopper's tail spot); a drawing can fix it.
+  - Not tried on a phone. Looks judged on a contact sheet drawn by the game's renderer in this container.
+- Next: RO-3d and RO-3f merge into track/roster (then merge it in here, rebuild and remake as above), RO-3g last.
 
 ### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
 Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
