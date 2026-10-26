@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Residents live in Copperleaf** (residents track RS-3): whoever you bring home now lives in town. Each has their
+  own look and walks Copperleaf with the townsfolk: out of their door in the morning, at work, on the square around
+  noon, about the streets in the afternoon and indoors at night. Dottie keeps the library, Mo the General store,
+  Bertha the inn, Gus the Workshop, Hayden helps at the ranch, Rosa works at Skyline Station, Seamus sews from a
+  cottage of his own and Dr. Helix keeps the Gene Bank. Tap one for a word: the first time it's about moving in, then
+  about your last run. Walk into their building and its card says who lives there, with a Talk button and their
+  upgrades (the first ones come next). The station's and the ranch's sheets name theirs too.
 - **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
   Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
   a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**
