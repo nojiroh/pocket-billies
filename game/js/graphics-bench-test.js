@@ -83,7 +83,6 @@ const GRAPHICS_TEST_HIDDEN = [
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
-  ['quality.invalidate', 'Drop spent pictures', { values: [false, true], alone: true }],
   ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
   ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
   ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
@@ -100,7 +99,7 @@ const GRAPHICS_TEST_STATIONS = [
   {
     id: 'control',
     name: 'Control pad',
-    dials: ['quality.resolution', 'lens.vignette', 'lens.grain', 'quality.invalidate'],
+    dials: ['quality.resolution', 'lens.vignette', 'lens.grain'],
   },
   {
     id: 'shadows',
@@ -143,7 +142,6 @@ const GRAPHICS_TEST_STATIONS = [
       'quality.lights',
       'quality.modelInstances',
       'quality.phoneLamps',
-      'quality.invalidate',
       'quality.shadowInstances',
     ],
   },

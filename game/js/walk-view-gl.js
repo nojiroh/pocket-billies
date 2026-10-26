@@ -616,14 +616,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl)) {
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
     reflectionPass(items, C, rw, rh, X);
-    /* phase 20 R2 (D3): only the reflection's colour is read (by the water), so its depth needn't be kept */
-    if (engineSetting('quality', 'invalidate') && gpuState.fb.refl) {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, gpuState.fb.refl.f);
-      gl.invalidateFramebuffer(gl.FRAMEBUFFER, [gl.DEPTH_ATTACHMENT]);
-    }
-  }
   gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
