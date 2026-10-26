@@ -275,6 +275,8 @@ export const ENGINE_DEFAULTS = {
        sprites (D5) */
     skyLast: false,
     solidFirst: false,
+    /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
+    phonePixels: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1224,6 +1226,12 @@ export const ENGINE_SPEC = [
         'Sky last',
         'bool',
         'The sky is drawn after the ground, props and buildings, only where it shows, instead of over the whole screen first. Same picture, fewer pixels drawn.',
+      ],
+      [
+        'phonePixels',
+        'Phone pixel budget',
+        'bool',
+        'On a phone (Android, iPhone) the scene is drawn at most 1.2 million pixels instead of 1.6, and the automatic quality starts one step lower. Softer, faster; tablets and computers are unchanged.',
       ],
       [
         'solidFirst',

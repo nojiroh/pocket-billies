@@ -119,6 +119,7 @@ import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
+  PHONE: [() => PHONE],
   baseStopWalkView: [() => baseStopWalkView],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
@@ -129,6 +130,7 @@ expose({
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   worldToScreen2d: [() => worldToScreen2d],
@@ -243,6 +245,9 @@ export function mountWalkView(cv, id, opt = {}) {
    2 s on a phone, 3 s on a laptop and 12 s on an iPad. Now the page keeps answering while it is built, and the first
    frame only swaps it in (swapMapCache). A room's floor is small and is built as before; so is a view whose job is
    dropped (it failed), or one still not ready after 30 s. */
+/* phase 20 R2 (D4): a phone, as the automatic quality has it (walk/quality-cull.js); the iPad is not one */
+const PHONE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+let phoneStarted = false;
 const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
 function groundBuiltBeforeShow(id, sc) {
   if (!walkRenderer.on || !walkView.ground || sc.groundOf || sc.roomScene) return Promise.resolve();
@@ -444,8 +449,15 @@ function drawWalkFrame(ts, dtm) {
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
+  /* phase 20 R2 (D4): with quality.phonePixels a phone (Android, iPhone) draws at most 1.2 million pixels (1.6
+     elsewhere), and its automatic resolution starts a step lower (0.9; it climbs back when frames have room) */
+  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels');
+  if (phoneK && !phoneStarted) {
+    phoneStarted = true;
+    if (walkView.R >= 1) walkView.R = 0.9;
+  }
   const R0 = Math.min(devicePixelRatio || 1, 1.75) * engineSetting('quality', 'resolution'),
-    R = R0 * Math.min(1, Math.sqrt(1.6e6 / (cssW * cssH * R0 * R0))) * walkView.R,
+    R = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))) * walkView.R,
     rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
     rh = Math.max(64, Math.round((cssH * rw) / cssW));
   if (cv.width !== rw || cv.height !== rh) {
