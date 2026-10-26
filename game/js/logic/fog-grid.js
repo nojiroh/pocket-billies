@@ -27,7 +27,7 @@ expose({
   FOG_NOISE_M: [() => FOG_NOISE_M],
   FOG_NOISE_TOP: [() => FOG_NOISE_TOP],
   FOG_RING: [() => FOG_RING],
-  FOG_RING_N: [() => FOG_RING_N],
+  FOG_RING_AT: [() => FOG_RING_AT],
   // @ts-expect-error -- replaced on purpose
   fogAmount: [() => fogAmount, v => (fogAmount = v)],
   fogClamp: [() => fogClamp],
@@ -60,9 +60,19 @@ expose({
 /* to-module: end */
 export const FOG_GRID_SIZES = { full: [48, 12, 48], phone: [32, 8, 32] };
 export const FOG_GRID_BELOW = { full: 4, phone: 3 };
-/* the ring round a column whose mean ground sets the fog's top (m), and how many samples on it */
+/* the ring round a column whose mean ground sets the fog's top: 8 samples about 6 m out, on whole metres so that on
+   a grid of 1 m cells they fall on cell middles and the columns share them (fogGridColumns keeps each cell's height) */
 export const FOG_RING = 6;
-export const FOG_RING_N = 8;
+export const FOG_RING_AT = [
+  [6, 0],
+  [-6, 0],
+  [0, 6],
+  [0, -6],
+  [4, 4],
+  [4, -4],
+  [-4, 4],
+  [-4, -4],
+];
 /* the fog's layer over the smoothed ground (m): thin when calm, deep in fog weather */
 export const FOG_LAYER = [0.5, 2];
 /* how fast the density falls above the fog's top (per m), as fogit's mist */
@@ -130,22 +140,15 @@ export function fogAmount(F) {
 }
 
 /**
- * A column's ground and its fog top before the noise (m).
- * @param {FogInputs} F @param {number} x @param {number} z
+ * A column's ground and its fog top before the noise (m): the mean ground on the ring round it, so a hollow fills to
+ * about its rim and a hilltop's top lies below its ground.
+ * @param {FogInputs} F @param {number} x @param {number} z @param {(x: number, z: number) => number} [h] the heights
  * @returns {[number, number]}
  */
-export function fogColumn(F, x, z) {
-  const g = F.heightAt(x, z);
+export function fogColumn(F, x, z, h = F.heightAt) {
   let m = 0;
-  for (let i = 0; i < FOG_RING_N; i++) {
-    const a = (i / FOG_RING_N) * Math.PI * 2;
-    m += F.heightAt(x + Math.cos(a) * FOG_RING, z + Math.sin(a) * FOG_RING);
-  }
-  m /= FOG_RING_N;
-  /* the ground's mean round the column, but never above the ground and its ring's highest pull: a hollow fills to
-     about its rim, a slope or a hilltop gets the thin layer at most */
-  const top = Math.min(m, g + FOG_RING);
-  return [g, top];
+  for (const [dx, dz] of FOG_RING_AT) m += h(x + dx, z + dz);
+  return [h(x, z), m / FOG_RING_AT.length];
 }
 
 /**
@@ -178,7 +181,9 @@ export function fogDensityAt(F, x, y, z, g, top0) {
  * @property {Uint8Array} data the density, 0-255, at texel x + nx * (y + ny * z)
  * @property {Float32Array} ground each ring column's ground (m), at x + nx * z
  * @property {Float32Array} top each ring column's fog top before the noise (m)
- * @property {number} cols columns measured (heights read) since made
+ * @property {Map<number, number>} hc the heights read, by cell middle (fogGridColumns)
+ * @property {number} cols columns measured since made
+ * @property {number} reads heights read since made
  * @property {number} cells cells filled since made
  */
 
@@ -198,7 +203,9 @@ export function fogGridMake(nx, ny, nz, cell = 1) {
     data: new Uint8Array(nx * ny * nz),
     ground: new Float32Array(nx * nz),
     top: new Float32Array(nx * nz),
+    hc: new Map(),
     cols: 0,
+    reads: 0,
     cells: 0,
   };
 }
@@ -224,11 +231,26 @@ export function fogGridOrigin(G, x, z, ground, below) {
  * @param {FogGrid} G @param {FogInputs} F @param {number} ix0 @param {number} ix1 @param {number} iz0 @param {number} iz1
  */
 export function fogGridColumns(G, F, ix0, ix1, iz0, iz1) {
-  const c = G.cell;
+  const c = G.cell,
+    H = G.hc;
+  /* the kept heights: more than the grid and its ring hold, and the oldest go */
+  const most = (G.nx + 16) * (G.nz + 16) * 2;
+  if (H.size > most) for (const k of [...H.keys()].slice(0, H.size - (most >> 1))) H.delete(k);
+  /** @param {number} x @param {number} z */
+  const h = (x, z) => {
+    const k = Math.round(x * 2) * 1048576 + Math.round(z * 2);
+    let v = H.get(k);
+    if (v === undefined) {
+      v = F.heightAt(x, z);
+      H.set(k, v);
+      G.reads++;
+    }
+    return v;
+  };
   for (let iz = iz0; iz < iz1; iz++)
     for (let ix = ix0; ix < ix1; ix++) {
       const k = ringIndex(ix, G.nx) + G.nx * ringIndex(iz, G.nz),
-        [g, t] = fogColumn(F, (ix + 0.5) * c, (iz + 0.5) * c);
+        [g, t] = fogColumn(F, (ix + 0.5) * c, (iz + 0.5) * c, h);
       G.ground[k] = g;
       G.top[k] = t;
       G.cols++;

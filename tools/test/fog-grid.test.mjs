@@ -87,9 +87,12 @@ test('a step of one cell refills one slab, and the rolled grid matches one built
     G = fogGridMake(nx, ny, nz);
   fogGridBuild(G, F, fogGridOrigin(G, 0, 0, 0, 3));
   const cols = G.cols,
-    cells = G.cells;
+    cells = G.cells,
+    reads = G.reads;
+  assert.ok(reads < nx * nz * 2.5, `the columns share their ring's heights: ${reads} read for ${nx * nz} columns`);
   assert.deepEqual(fogGridRoll(G, F, G.ox + 1, G.oz), [['x', G.ox + nx - 1]]);
   assert.equal(G.cols - cols, nz, 'one slab of columns measured');
+  assert.ok(G.reads - reads <= nz + 16, `one strip of new heights read: ${G.reads - reads}`);
   assert.equal(G.cells - cells, ny * nz, 'one slab of cells filled');
   assert.deepEqual(fogGridRoll(G, F, G.ox - 1, G.oz - 2).length, 3, 'a diagonal: one x slab and two z slabs');
   assert.equal(fogGridRoll(G, F, G.ox + 40, G.oz), null, 'too far for slabs');
