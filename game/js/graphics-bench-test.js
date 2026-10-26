@@ -77,6 +77,8 @@ const GRAPHICS_TEST_HIDDEN = [
      the scene (8 is the phone limit stage D6 may take) */
   ['quality.stableLights', 'Steady lamps', { values: [false, true], alone: true }],
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
+  /* phase 20 R2: the models drawn one draw per mesh; the same look, so left out of "everything lowest / highest" */
+  ['quality.modelInstances', 'Models in batches', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
@@ -93,13 +95,13 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'lamps',
     name: 'Lamp square',
     time: 22,
-    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights'],
+    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights', 'quality.modelInstances'],
   },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: ['lens.blur', 'world.farProps', 'quality.stableLights'],
+    dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.modelInstances'],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
   { id: 'everything', name: 'Everything', all: true },
