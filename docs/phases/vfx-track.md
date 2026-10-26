@@ -50,7 +50,10 @@ VFX-1 were built on `ccr-a98cc267-eqso1d` at the owner's word (`track/vfx` didn'
   cast no shadows and run out one by one after the throw lands. The 2D fallback draws them too.
 - **VFX-2** the motion-line ribbon: a tapered strip along the last part of the arc, the pyramid's colour with a white
   core, eroded away in dithered steps in about 150 ms; spin throws twist it about the tumble axis. A new pass beside
-  the `fx` pass in walk/effects.js.
+  the `fx` pass in walk/effects.js. Done 2026-10-26 (the owner's answers: six places, about 250 ms; the 2D fallback
+  too; the catch, the send-out and the mail coin, gold). Built as planned, three changes after a headless film: half
+  width 0.24 m (about half the pyramid's side; 0.13 m read as a thin line), the twist a third of the tumble (the
+  whole turned the strip nearly twice along its length, so it mostly showed its edge), the colour's value x1.35.
 - **VFX-3** the stretched pyramid: the vertex stretch in the voxel shader (a lagged position, the trailing side
   pushed back, a little noise), on the pyramid only, on its fastest one or two frames (the release and before impact).
 - **VFX-4** the impact frame: one or two frames of a two-tone flash with radial lines from the hit point, on the

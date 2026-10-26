@@ -2,6 +2,37 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-2 - The motion-line ribbon - 2026-10-26
+Branch `track/vfx` (main merged in first; HANDOFF and BRANCHES conflicted, both sides kept). Plan approved in Plan
+Mode; the owner's answers: the 2D fallback draws it too; the catch, the send-out and the mail coin all leave it;
+six places long (about 250 ms).
+- logic/smear.js: `smearRibbon` (a Catmull-Rom curve through the last kept places, up to where the pyramid is now
+  while it flies; tapered to nothing at the tail; erosion in quarter steps, the tail frayed to 0.75 in flight, then one
+  more step a 24 fps cell once it stops, gone in four cells, about 167 ms), `ribbonEdges` (faces the camera; a spin
+  throw turns it about its tumble axis by a third of the tumble), `ribbonCells` (6, 4 at quality level 2, none under
+  Reduced motion or at level 3), `ribbonTone` (the colour's value x1.35). A history now keeps `SMEAR_KEEP` (6)
+  places; the afterimages read the first ones as before. Tests in tools/test/smear.test.mjs.
+- walk/effects.js `RIBBON_SHADERS`/`ribbonPass`: one triangle strip, unlit, no blending, a 4x4 Bayer dither on the
+  screen's pixels for the erosion, a white core in the middle 40%, fogged; precompiled with the walk programs.
+  walk-view-gl.js calls it after the effects pass when the battle's frame has a ribbon; battle-3d.js builds it while
+  the pyramid's model is drawn (`ribbonVertices`; `ribbonColour`: the recipe's first layer colour, the mail coin the
+  gold pyramid's). battle-stage.js: `C.arc` (on its arc: the ribbon reaches it), `C.rax` (a spin throw's axis, kept
+  when the catch's hit changes `C.ax`), `battleRibbonCells`, and the 2D fallback's `drawRibbon2d` (4x4 dither
+  patterns, a colour and step each, made once).
+- Changed after a headless film: the half width 0.24 m (0.13 m read as a thin line next to the 0.54 m pyramid), the
+  twist a third of the tumble (the whole of it turned the strip nearly twice along its length: mostly edge-on).
+- Found on the way: the UI lint's raw-colour ceiling counts hex in game JS, so the ribbon has no hex of its own (the
+  coin takes the gold pyramid's recipe colour; the 2D core is `'white'`). A pyramid whose recipe hasn't loaded yet
+  draws no ribbon for that moment. In a slow headless browser the battle's adaptive quality reaches level 3 and the
+  smears switch off (the gate working); the films lock quality at 0.
+- Risky, check on the phone: the look (width, the core's share, the twist) and the cost (one strip, a few dozen
+  vertices). At the check's third resolution the white core is about a pixel and barely shows; at full resolution it
+  reads. The ribbon starts only once the pyramid is 2 m from the camera (the first ~130 ms of a catch), as the copies.
+- Verified: lint, typecheck, format, check:modules, unit tests 1316 pass; headless films (landscape, phone portrait,
+  spin and plain catches, the 2D fallback): the strip trails the pyramid, frays at its tail and erodes out in four
+  steps after the hit. Smoke check (check-quick --smoke): 6 of 6 passed in 170 s. Tag `vfx-2-done` for the owner (the git proxy refuses tag pushes).
+- Next: VFX-3 (the stretched pyramid) on `track/vfx`, in Plan Mode.
+
 ### VFX track VFX-0 and VFX-1 - The plan (smears, with research), the eased throw and its afterimages - 2026-10-26
 Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't exist yet; later sessions start on
 `track/vfx`, made from this branch). Plan approved in Plan Mode; the owner's answers in docs/phases/vfx-track.md.
