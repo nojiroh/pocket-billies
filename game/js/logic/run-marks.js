@@ -88,6 +88,14 @@ export const RUN_MARK_SHAPES = {
     [98, 90],
     [22, 90],
   ],
+  // RL-S2: the rival: a shield, point down
+  rival: [
+    [6, 6],
+    [94, 6],
+    [94, 56],
+    [50, 98],
+    [6, 56],
+  ],
   // not yet seen ("?" pins, two rows ahead): a small diamond
   unknown: [
     [50, 14],
@@ -109,6 +117,7 @@ export const RUN_MARK_TONES = {
   boss: 'danger',
   event: 'gold',
   shop: 'gold',
+  rival: 'danger',
   unknown: 'muted',
 };
 
