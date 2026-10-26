@@ -38,19 +38,12 @@ import { drawRoomEffects, roomSkyLight, windowLightShare } from './rooms.js';
 import { waterAt } from './water.js';
 import { lampLit } from './lighting.js';
 import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
-/* eslint-disable no-func-assign */
 expose({
-  SHAFT_MAX: [() => SHAFT_MAX],
-  SHAFT_RANGE: [() => SHAFT_RANGE],
   WEATHER_FLOATS: [() => WEATHER_FLOATS],
   WEATHER_FX_SHADERS: [() => WEATHER_FX_SHADERS],
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
-  lightShafts: [() => lightShafts, v => (lightShafts = v)],
-  shaftList: [() => shaftList],
-  volumeAirOn: [() => volumeAirOn, v => (volumeAirOn = v)],
   weatherBatch: [() => weatherBatch],
 });
-/* eslint-enable no-func-assign */
 export function setEffectsPass(v) {
   effectsPass = v; // eslint-disable-line no-func-assign
   provide({ effectsPass });
@@ -718,113 +711,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
     gl.uniform4f(U.uCol, c[0], c[1], c[2], a);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
-  /* phase 20 R2 (D7): cheap light shafts while the light in the air (the vol pass) is off */
-  const sk = engineSetting('air', 'cheapShafts') || 0;
-  if (sk > 0.01 && !sc.indoor && !volumeAirOn(X)) {
-    const S = lightShafts(items, C, walkRenderer.sun, sk);
-    for (const h of S) {
-      gl.uniform3fv(U.uRight, h.right);
-      gl.uniform3fv(U.uUp, h.up);
-      gl.uniform3f(U.uP, h.p[0], h.p[1] + worldCurveDrop(h.p[0], h.p[2]), h.p[2]);
-      gl.uniform2f(U.uS, h.w, h.len);
-      gl.uniform4f(U.uCol, h.col[0], h.col[1], h.col[2], h.a);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    if (S.length) {
-      gl.uniform3fv(U.uRight, R);
-      gl.uniform3fv(U.uUp, Up);
-    }
-  }
   gl.uniform1f(U.uGlow, 0);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
-}
-/* whether the post chain's light in the air will draw the sun's beams this frame (engine/post-effects.js: off at
-   quality step 3, with god rays at 0, or with no shadow map) */
-function volumeAirOn(X) {
-  return (walkRenderer.qe || 0) < 3 && (engineSetting('air', 'godRays') ?? 0.6) > 0.01 && !!(X && X.shadow);
-}
-/* phase 20 R2 (D7): a few soft beams of sunlight, each one additive quad (the glow disc stretched), from a tree's
-   crown down along the sun's light, turned about its own line to face the camera. Placed at about half the trees
-   whose leaf pictures stand within 26 m of you (by a hash of the tree's place, so the same trees every frame), plus
-   a place's own list (scene `shafts`: [x, z, top above the ground (6 m), width (1.2 m)]). Strongest with the sun low
-   (dawn, golden hour), fading as it climbs, at night, in grey weather and close to the camera. */
-const SHAFT_MAX = 6,
-  SHAFT_RANGE = 26;
-const shaftList = [];
-function lightShafts(items, C, sun, k) {
-  shaftList.length = 0;
-  if (!sun || !C.eye) return shaftList;
-  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
-    e = sun.dir[1],
-    tk =
-      k *
-      clamp((e - 0.03) / 0.12, 0, 1) *
-      (1 - clamp((e - 0.4) / 0.35, 0, 1)) *
-      (E ? (1 - E.night) * (1 - E.grey * 0.85) * (1 - Math.min(1, E.rain)) : 1);
-  if (tk < 0.01) return shaftList;
-  const P = walkRenderer.bt ? { x: walkRenderer.bt.center[0], z: walkRenderer.bt.center[1] } : walkView.pl,
-    byTree = new Map(),
-    cand = [];
-  /* candidates [distance, x, z, crown's y (a tree) or top above the ground (the list), width, a tree]; a tree's crown is
-     the highest of its leaf pictures (their y is where each stands) */
-  for (const it of items) {
-    if (!it.voxImg || !it.layer || it.vis === false) continue;
-    const c = byTree.get(it.p);
-    if (c) {
-      c[3] = Math.max(c[3], it.y);
-      continue;
-    }
-    const d = Math.hypot(it.x - P.x, it.z - P.z),
-      hs = Math.abs(Math.sin(Math.round(it.x * 10) * 12.9898 + Math.round(it.z * 10) * 78.233) * 43758.5453) % 1;
-    const e = [d, it.x, it.z, it.y, 0, true];
-    byTree.set(it.p, e);
-    if (d <= SHAFT_RANGE && hs < 0.5) cand.push(e);
-  }
-  for (const f of walkView.sc.shafts || []) {
-    const d = Math.hypot(f[0] - P.x, f[1] - P.z);
-    if (d <= SHAFT_RANGE) cand.push([d, f[0], f[1], f[2] || 6, f[3] || 1.2, false]);
-  }
-  cand.sort((a, b) => a[0] - b[0]);
-  const t = sun.travel,
-    up = [-t[0], -t[1], -t[2]];
-  for (let i = 0; i < cand.length && shaftList.length < SHAFT_MAX; i++) {
-    const c = cand[i],
-      tree = c[5],
-      x = c[1],
-      z = c[2],
-      g = standingHeightAt(x, z),
-      top = tree ? Math.min(9, Math.max(3, c[3] - g)) : c[3],
-      len = Math.min(14, top / Math.max(0.25, up[1])),
-      d = c[0],
-      /* the middle of the beam: from the crown halfway down along the light */
-      cx = x + t[0] * len * 0.5,
-      cy = g + top + t[1] * len * 0.5,
-      cz = z + t[2] * len * 0.5,
-      tx = C.eye[0] - cx,
-      ty = C.eye[1] - cy,
-      tz = C.eye[2] - cz,
-      de = Math.hypot(tx, ty, tz);
-    /* the beam's right: across its line, square to the way to the camera */
-    let rx = up[1] * tz - up[2] * ty,
-      ry = up[2] * tx - up[0] * tz,
-      rz = up[0] * ty - up[1] * tx;
-    const rl = Math.hypot(rx, ry, rz);
-    if (rl < 1e-4) continue;
-    rx /= rl;
-    ry /= rl;
-    rz /= rl;
-    const a = tk * 0.22 * clamp((de - 3) / 5, 0, 1) * clamp((SHAFT_RANGE - d) / 6, 0, 1);
-    if (a < 0.005) continue;
-    shaftList.push({
-      p: [cx, cy, cz],
-      right: [rx, ry, rz],
-      up,
-      w: c[4] || 1.4,
-      len,
-      col: sun.col,
-      a,
-    });
-  }
-  return shaftList;
 }

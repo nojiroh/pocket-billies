@@ -85,7 +85,6 @@ const GRAPHICS_TEST_HIDDEN = [
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
   ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
   ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
-  ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
   /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
@@ -120,16 +119,6 @@ const GRAPHICS_TEST_STATIONS = [
     name: 'Sun gap',
     sun: { angle: -90, height: 18 },
     dials: ['air.godRays', 'quality.skyLast'],
-  },
-  /* phase 20 R2 (D7): the Sun gap with God rays off, where the cheap shafts stand in (a station may borrow another's
-     spot, and fix values of its own under every step) */
-  {
-    id: 'shafts',
-    name: 'Sun gap, no god rays',
-    spot: 'sun',
-    sun: { angle: -90, height: 18 },
-    fixed: { 'air.godRays': 0 },
-    dials: ['air.cheapShafts'],
   },
   {
     id: 'lamps',
@@ -239,7 +228,7 @@ const graphicsTestWaterNote = set =>
 function graphicsTestPrefs(st, set) {
   const eng = { quality: { auto: false, resolution: 1 } };
   if (st.sun) eng.sun = Object.assign({}, st.sun);
-  for (const [gk, v] of Object.entries({ ...(st.fixed || {}), ...(set || {}) })) {
+  for (const [gk, v] of Object.entries(set || {})) {
     const [g, k] = gk.split('.');
     (eng[g] = eng[g] || {})[k] = v;
   }
