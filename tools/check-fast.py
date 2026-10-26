@@ -1194,8 +1194,12 @@ def train_ride(pg, base):
     if not until(pg, "!document.getElementById('loader')&&walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});0")
     if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
-    if not until(pg, "trainRide.W&&trainRide.W.train.lift>5", 30): raise Exception('the train never climbed the rail')
-    if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 40): raise Exception('the departure didn’t end in the white veil')
+    # the ride runs on the clock: on a slow page a frame can fall either side of the climb, so one moment of it is held
+    # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end
+    pg.evaluate("trainRide.hold=7300;0")
+    if not until(pg, "trainRide.W&&trainRide.W.train.lift>5&&trainRide.W.train.x>200", 90): raise Exception(f'the train never climbed the rail: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
+    pg.evaluate("trainRide.hold=null;0")
+    if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 90): raise Exception('the departure didn’t end in the white veil')
     line = pg.evaluate("(debugLog.ev.filter(e=>e.msg.startsWith('train ride departure')).pop()||{}).msg||''")
     if not line.startswith('train ride departure train_harvest ') or 'skipped' in line: raise Exception(f'the departure’s log line: {line!r}')
     if pg.evaluate("walkView.sc.props.some(p=>p.trainRide)"): raise Exception('the train stayed in the hub after the portal')
@@ -1208,8 +1212,8 @@ def train_ride(pg, base):
     homes = []
     for won, want in (('true', 1), ('false', 2)):
         pg.evaluate(f"window._home=0;trainRideHome('train_harvest',{won},()=>{{window._home=1}});0")
-        if not until(pg, "!!trainRide.W", 20): raise Exception('the ride home never started')
-        if not until(pg, "window._home===1&&!trainRide.on", 40): raise Exception('the ride home never ended')
+        if not until(pg, "!!trainRide.W", 45): raise Exception('the ride home never started')
+        if not until(pg, "window._home===1&&!trainRide.on", 90): raise Exception('the ride home never ended')
         got = pg.evaluate("""(()=>{const p=walkView.sc.props.find(p=>p.trainRide),P=walkView.sc.props.find(p=>p.k==='sky_portal'),
           M=propWithVariant(p,walkData().sc.props[p.k]);return [p.k,p.v||0,!!p.moving,P.v||0,P.s||1,(M.fx||[]).filter(e=>e.k==='smoke').length]})()""")
         if got[:5] != ['train_harvest', want, False, 0, 1] or (want == 2) != (got[5] > 0): raise Exception(f'home ({"won" if won == "true" else "lost"}): the train and tear {got}')
