@@ -724,8 +724,8 @@ debugLog.more = () => {
     };
   });
   /* CAM-3: the blur this frame: its path (full, fast, cheap, off), what the focus is on (you, tap, talk, encounter,
-     boss, battle), the focus distance, how far the focus leans from you, the tilt, the blur in use and the player's
-     slider (no names, no places) */
+     boss, battle), the focus distance, how far the focus leans from you, the tilt, the blur in use, the player's
+     slider and whether the blur in front spread (lens.nearSpread) (no names, no places) */
   t('lens', () => {
     const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
       L = W && W.lensInfo;
@@ -740,6 +740,7 @@ debugLog.more = () => {
       tilt: r(L.tilt),
       blur: r(L.blur),
       slider: r(L.slider),
+      spread: !!L.spread,
     };
   });
   t('caches', () => ({

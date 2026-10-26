@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
+  blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
+  what is behind it instead of stopping at a hard outline against the sharp ground.
 - **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
   the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
   landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a
