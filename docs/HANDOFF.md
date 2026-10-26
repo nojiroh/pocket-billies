@@ -43,6 +43,258 @@ code. Tag to suggest: `on-0-done` (the owner pushes tags).
   ON-4 proves it on the emulator before any screen is built. Spark's 50k reads a day for GTS and Showcase browsing.
 - Next: the owner makes `track/online` from main; ON-1 there (it can start before RL-14b; ON-2 replaces RL-15).
 
+### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
+Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
+question round and a clickable mockup (docs/phases/ui-track.md, UI-8). Then the owner asked, mid-session: "merge all
+currently open PRs and anything sessions that are done haven't pushed yet".
+- **UI-8 changed:** `<pb-nav-bar>` puts Map as a raised minimap tile in the middle and the other tabs two to a side
+  (Team, Guide | Bag, Perks or Lab; the Guide joins both sets); js/minimap.js draws the ground, roofs, facility icons,
+  unbeaten trainers, wild Billies and you, north up, about 5 times a second; the bar goes compact after 2.5 s of
+  walking; `--nav-h` moves what sat at 96 px above the old bar; uiTheme.json gains a `minimap` group (the Studio's
+  Minimap dials). Tests: the fast check's bar step expects `team,guide,map,bag,lab` and opens the Guide; the
+  gallery's run-hud pictures remade on purpose.
+- **UI-8 risky:** the frame cost on a phone (a 2D canvas at 5 Hz, the ground painted once per view; software
+  drawing here says nothing about it); the compact timing; what else sat over the old bar's spot that `--nav-h` missed
+  (looked at: the town and a run, light and dark, standing and walking). Check on the phone.
+- **Merge batch 3:** merged on GitHub: #223 (the Studio art plan) into main, #222 (RO-3e) into track/roster. Merged
+  here (one PR into main): track/hub (HB-10a and HB-10b, holds `ccr-144f3c08`), `ccr-5d98165a` (route props RP-1),
+  `claude/ro-3b-placeholder-billies` (its HANDOFF note), `art/editable-trainer-sprite-sheets` (adds a CI workflow),
+  track/story (RL-S2 part B's HANDOFF), track/renderer (#219), `ccr-65e11839` (RS-3), track/roster with RO-3e,
+  RO-3f (#221, which conflicts with #222 on track/roster), and `ccr-6f3a4696` (#224).
+- **How the overlaps were settled (check in play):** RS-3 on top of main's RS-2 resolution: banter's `who` takes
+  RL-S2's names and a resident's id; the payout keeps main's Beans chip; a story line's owner is `banterOwner`'s or a
+  resident's. The rosters (RO-3d in main, RO-3e, RO-3f): every list keeps all three; the placeholder rigs rebaked; the
+  cry baseline keeps both sides'. **RO-3e's event command `gift species` is now `revive`**: main's RL-S2 already has
+  `gift who` in the one script table. Snapshots remade on purpose: battle-golden and run-start (the merged roster
+  changes the fixed-seed battles), check-data (the file count). scenery.json keeps HB-10b's string lights and RP-1's
+  route props.
+- **Left out:** `claude/sp-2-rules` and `claude/sp-3-wild-splices` (earlier copies of SP-2 and SP-3: main has them
+  through `sp-5-augments`, merge batch 1; merging them would undo that resolution); `ccr-a073cfde` (the same plan as
+  #223); the old 1000+-commit branches (archive and pre-fresh-base). Unpushed work in other sessions' containers can't
+  be reached from here.
+- **Verified:** lint, typecheck, format:check, check:modules, check:data, bake:placeholders --check, unit tests 1314 pass; `test:slow` 89 of 90 (the WA-10
+  island test, red on main, left at the owner's word). The fast check (check-fast.py, 2 browsers): 35 of 37; the two
+  reds ("A battle plays to the end" stuck at choose, "Every screen opens with its parts" missing the inbox) pass when
+  run again, alone and paired (battle and screens side by side, twice), and every merge commit passes the screens
+  check alone: flaky under load here, not a code change. The battle check's time is noisy on this machine (main 50-80 s,
+  UI-8 alone 47-49 s, the merged head 63-75 s).
+- **Next:** the owner's phone check of the bar; close #221 by hand (its commits reach main with this PR, not its base);
+  the one-session branches merged here can go (BRANCHES.md), the `track/*` ones stay.
+
+### Roster track RO-3e - The Knight frog and the fossil pair (dex 47-50) - 2026-10-26
+Branch `claude/ro-3e-knight-fossils` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d (#217,
+41-46) and RO-3f (51-53) ran beside it. Plan approved in Plan Mode. The owner's answers: a 2-stage frog plus two single
+fossils; the fossils come from an event, **the Dig Site** (pick one of the two); types Water > Water/Flying (frog),
+Steel/Water (Carnegie), Fire/Ground (Vanderbilt); names Swooshpole > Victoad, Philanthrobite, Vanderbolt; the frog
+common at level 18 with 265/470, the fossils rare at about 490. Tag `ro-3e-done` for the owner (local only: the proxy
+refuses tag pushes).
+- Where the brief and the code differed (checked): the 9 types also lack Ghost, Ice, Dark, Normal and Fairy; no event
+  could give a chosen Billie (`give` gives items, `wild` and `recall` draw from the region), and no reward card gives
+  one; events **can** be held to biomes (`biomes`, unused until now); every line could land in a regional dex (so
+  `recall` could have handed out a fossil); the wild-pools test asked every line to be in some pool; Leader Rocco's team
+  and the 2 km egg named the legacy id `carnegie0` (a stand-in until now), Leader Alta's `knight1`; the moves Just Do
+  It, Library Slam and Full Steam already carried `sig` knight, carnegie and vanderbilt (Full Steam is Electric).
+- Changed:
+  - **Lines** `lines/knight.json`, `carnegie.json`, `vanderbilt.json` (learnsets of existing moves with each line's
+    signature; cries, bios and notes are drafts), `index.json` lines, roster rows 47-50.
+  - **Placeholders** (bodyPlans.json forms, `npm run bake:placeholders`): the frog on the hopper (ears dropped, eye
+    bumps, an orange tick; Swooshpole a long tail at scale 0.9, Victoad a headband, winged feet, stronger thighs at
+    1.3); Philanthrobite on the crab (back plates, a white beard, small claws and short eye stalks, 1.2); Vanderbolt on
+    the serpent (top hat and brim, a sideburn, a cow-catcher, a funnel, two wheels, 1.3). The legacy vanderbolt.json
+    layout left the sheets folder.
+  - **Never met wild**: line schema `wild: false` (the two fossils). `runRegionData` leaves such a line out of every
+    region (dex, side areas, sim, preview), so `recall` can't give one and it takes no dex room; check-data: such a line
+    is in no pool and no egg (the 2 km egg's `carnegie0` is gone).
+  - **The Dig Site** (events.json `dig_site`, weight 1, ridge, canyon, badlands and cave, once a run): revive the
+    trilobite, the rail snake, or neither. New event command **`gift species [up]`** (script-parse, data-checks,
+    encounter-screen.js, docs/SCRIPTS.md): the species joins you at the place's level plus up; a full party picks one
+    (not from home, as `recall`) to stay behind, or leaves the gift.
+  - **Pools**: Swooshpole in the lake (26), sea (24) and jungle (20).
+  - Tests: wild-pools (every line met wild is in a pool and no other; every `wild: false` line is gifted by an event);
+    check-data planted fossils (new snapshot case); pixel-density 55 placeholder rows; graft-placeholder runs over the
+    new forms (it found Swooshpole at 0.83 too small for a bird's or octopus's back legs: 0.9 fits); the in-game test's
+    new phase **The Dig Site's fossils** (a party with room, then a full one).
+- Remade on purpose: the check-data snapshot (153 -> 156 files, the planted case), run-start (the regional dex draws
+  one more line), battle-golden's double (Leader Rocco's `carnegie0` is the real Philanthrobite now, not a stand-in),
+  the sound baseline (the 8 new cries with their low variants, and the cave biome's run songs `mid` and `late`, which
+  were missing from the baseline on track/roster too).
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; unit tests (1080 pass); the
+  graft sweep over all 55 forms; `bake:placeholders` clean; all four drawn by the game's renderer (rigParts,
+  rigFrame, drawRig on the game page) in idle, walk, attack and hurt, front and back, beside Pupfin: all stand on the
+  ground and move; the smoke subset (`npm run check:smoke`: 6 of 6, Start-Game on a phone, the debug log 103 KB with no
+  names); the in-game test's waystation phase and the new Dig Site phase run alone headless (`selfTest.only`), both
+  pass. Not the full quick check: its picture baseline waits for the roster sessions on main (as RO-3b).
+- Risky / open:
+  - **Merges with RO-3d and RO-3f**: rebuild rigs-next.js and the sheets (`npm run bake:placeholders`), the check-data
+    and run-start snapshots, battle-golden if a team changes, the sound baseline; merge roster rows, index lines,
+    bodyPlans forms, pools and pixel-density's count (51 + 6 + 4 + RO-3f's) by hand.
+  - **The picture baseline** (quick check) is not remade here: it needs remaking once the roster sessions are on main.
+  - A fossil only appears on a run that reaches a rocky biome's waystation and draws the Dig Site (weight 1 of about
+    20): rare by design, not measured with the run sim yet. Fossils at about 490 from the place's level are strong early;
+    RO-3g's balance pass may tune them.
+  - A mono-type challenge doesn't check a gifted Billie's type (the same as `recall`).
+  - Leader Rocco (Ground) fields Philanthrobite (Steel/Water): the legacy id's choice, not retuned.
+  - Swooshpole's lace tail sits behind its torso from the front (the hopper's tail spot); a drawing can fix it.
+  - Not tried on a phone. Looks judged on a contact sheet drawn by the game's renderer in this container.
+- Next: RO-3d and RO-3f merge into track/roster (then merge it in here, rebuild and remake as above), RO-3g last.
+### Roster track RO-3f - Pseudonymph (the mythical copycat) and the Pilotbat line (the cave bat) - 2026-10-26
+Branch `claude/ro-3f-satoshi-hastings` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d
+(#217) and RO-3e ran beside it; neither had landed on track/roster when this was pushed. Plan approved in Plan Mode.
+The owner's answers: **Pseudonymph** (not Nakamorph), Steel alone, mythical, one stage; its mechanic is **Fork**
+(takes the foe's types); it is met as **a route's rarer one, 2% a route, any biome, once a run, at the rarer one's
+usual level**; **Pilotbat → Bingebat**, Flying → Flying/Psychic, common, evolves at 18, in cave, thicket and jungle.
+Tag `ro-3f-done` for the owner (local only: the proxy refuses tag pushes).
+- Where the brief and the code differed (checked): Hastings already had its signature move (`autoplay`, Psychic, 80)
+  and the game already had a `mythical` rarity (560 total, 0.03 catch, 5 starter points, "Does not evolve."); pools
+  have no time of day, so "night-leaning" means dark and misty biomes; the event script's `wild N` can't name a
+  species; a route's rarer one is the lowest weight of its pool, so a mythical in a pool would be almost every
+  route's rarer one; the blob's face is on its one shared bone, so faceless is an added mask, not a dropped face; the
+  legacy Bingebat sheet was still at `billionaires/bingebat.png`, the name the placeholder bakes to. The regional
+  dex draws from every line, so a mythical could have taken a dex slot: it is left out (below).
+- Changed:
+  - **Lines**: `lines/satoshi.json` (Pseudonymph: prof all 1, a move of each of the 9 types, Fork at 1) and
+    `lines/hastings.json` (Pilotbat, Bingebat: Lullaby, Bewilder, Sap Drain, Autoplay at 18, Mind Wipe, Premonition);
+    index.json lines; roster.json rows 51-53 (kind `mythical` for Pseudonymph). No kit `parts` (optional; no kit
+    art). Bios, notes and cries are Claude's drafts.
+  - **Fork** (moves.json `fork`, Steel status, never misses, sig `satoshi`): `fx.copyTypes` in battle-engine.js
+    useMove sets the user's type override (`ov`, as Soak does on the target) to the target's types for
+    `rules.json battle.forkTurns` (5) turns, marked `ovBy: 'fork'` so it wears off with its own line; fails ("But it
+    failed.") when the target has no type to take or the user already has those types; aiScore 20, or 0 when it
+    would fail. Soak on a forked Billie wins (Water, its own line). The copied types are everything `actorTypes`
+    feeds: the same-type bonus, weaknesses and the **type passives** (a Fork into Grass regrows). battle.js and the
+    Studio's battle preview pick its target in doubles; the Studio's move editor and battle rules have its fields.
+  - **The mythical roll**: `rules.json run.wild.rare.myth {chance: 0.02, list: ["satoshi0"]}`; rules.js `spawnMyth`
+    is asked by `spawnRare` for a run route's rarer one, on its own stream (`rngFn(node seed, 'myth')`), so every
+    other draw is unchanged; none while a mythical waits in any place's list; `dropEncounter` (battled or fled
+    from) sets `run.myth = 1` (validated in run-state.js, typed in save-data.d.ts) and none comes after. It skips the
+    regional dex on purpose. check-data checks the rule (a 0-1 chance, mythical lines' `<line>0`), with a planted
+    fault in the check-data snapshot.
+  - **No mythical in a regional dex**: run-region.js runRegionData leaves mythical lines out of the lines a region's
+    (and a side area's) dex draws from.
+  - **Placeholders** (bodyPlans.json forms, `npm run bake:placeholders`): Pseudonymph on the blob (scale 1.1, steel
+    grey, a gold tuft, a light `mask` over where its eyes are drawn); Pilotbat (0.83) and Bingebat (1.3) on the
+    flyer (ears and a fang added; Bingebat red with dark wings x1.3, tail x1.2 and a `screen` on its chest, hidden from
+    behind). The legacy Bingebat's sheet, layout and rig (`hastings0`) moved into `billionaires/hand`
+    (rigs-hand.json) first, as RO-2 did with the legacy lines.
+  - **Pools**: `hastings0` in cave 30, thicket 12, jungle 6. Pseudonymph in none.
+- Remade on purpose: the check-data snapshot (155 files, the planted myth fault); the run-start snapshot (the
+  regional dex draws from the line list, which grew; one commit's message blamed the pools, the next one corrects
+  it); the sound baseline (the 3 cries and low-HP cries, and `cave mid`/`cave late`, which were already missing from
+  the baseline on track/roster: check-sound said so on the untouched branch); pixel-density counts bodyPlans.json's
+  forms instead of a hard-coded 51 (one number fewer for the parallel sessions to fight over); wild-pools expects
+  every mythical outside every pool and in `run.wild.rare.myth`.
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; unit tests quick (1083 pass)
+  and slow (87 pass); new tests: battle-fork.test.mjs (4), run-world-real's mythical roll (chance 0 and 1, the level,
+  the rest of the stock unchanged, met, one waiting), run-region-real's no mythical in a dex on every seed;
+  graft-placeholder's real-forms sweep now takes Pseudonymph and Pilotbat as the blob and flyer donors (head refused
+  to and from the blob); `bake:placeholders --check` and `bake:kits --check` clean; every stage drawn by the game's
+  renderer (rigParts, rigFrame, drawRig on the game page) front and back, idle, attack, hurt and faint, on a contact
+  sheet (the faint frame leaves the box like every Billie's does). Smoke (`npm run check:smoke`): 6 steps, 6 passed (241 s; Start-Game on a phone with a battle, the actions sheet, the in-game full test's step: nothing saved).  Not the full quick check: its picture baseline waits for the roster on main (RO-3b).
+- Risky / open:
+  - Fork copies the type passives too (Kindling, Regrowth, Bedrock...). The owner may want types only.
+  - A 2% chance per route is about 1 run in 10; nothing in the run sim or preview counts it yet. To test on the phone,
+    set `run.wild.rare.myth.chance` to 1 in rules.json (or the Studio's rules once a field exists; there is none yet).
+  - Pseudonymph's catch rate is the mythical 0.03, so a run that meets it will often lose it.
+  - Satoshi's placeholder head/body is the blob's shared bone: never grafted, as RO-3c designed.
+  - Python Playwright 1.56 wants Chromium 1194 and this container has 1243: the browser checks ran through a
+    scratchpad folder that maps one onto the other (PLAYWRIGHT_BROWSERS_PATH), not on CI's browser.
+  - Looks judged on a contact sheet in this container, not on a phone.
+- Next: RO-3d and RO-3e merge (rebuild rigs-next.js, the sheets, the snapshots and the sound baseline after each;
+  merge forms, rows, lines and pools by hand); RO-3g last; the picture baseline once the roster reaches main.
+
+### Roguelite track RL-S2 (part B) - Chapter 1's beats, the favours, every line - 2026-10-26
+Branch `track/story` (main had nothing new: no merge; PR #210). Plan approved in Plan Mode; the four asks answered in
+the session (2026-10-26): **A** Blake as built (the lead you take off with, 1/2/2/2/2 meetings, 2 Billies +1 per 2
+meetings at most 6, **losing to him ends the run**); **B** level 1 a line, 2 as built, 3 a second bonus (Chosen +5% XP,
+Hazel a Hi-Potion at takeoff, Juniper +10% catch), 4 a wardrobe piece (`glasses_sun`, `labcoat`, `hat_bucket`), 5 a
+once-only line; **C** Beans as built plus 1 for Blake's first defeat in a run; **D** every drafted line approved as
+written. Tag `rl-s2-done` is the owner's.
+- Where part A's notes were wrong (checked in the code):
+  - **Blake's lose line never shows on a run**: battle.js shows `T.lose` only off a run. A `back_lost` pair
+    (`lastby:rival`) now carries his last word.
+  - **A chapter is not "one an Expedition"** and no boss scene moves it: only `chapter n` (at most 9). Wording fixed in
+    SCRIPTS, conditions.js and save-data.d.ts.
+  - **Part A's "six beats" were never written down**; proposed again and approved.
+  - The "always a plain line" banter rule covered only leaders and agents; Blake and the thank-yous joined it.
+- Found while building (each its own commit):
+  - **An `xp` effect row on a run did nothing**: `heldXp` read only the held item's rows. It now reads the run's too
+    (no Perk had an xp row, so nothing else changes; golden record unchanged).
+  - **A `must` fresh line not talked to was lost for good**: its `once` is marked at the pick on the way home, its
+    script (a beat's flag, a favour's quest) runs only when said, and the next return picked over it. It now waits
+    for the next talk.
+  - Blake's line at a second meeting in a run needed this run's meetings: the condition `rival`.
+- Changed:
+  - **Favours as data**: relations.json `people.<who>.favour {quest, check, points?}`, story.json quests `fav_<who>`
+    (`asked`, `done`), `relFavoursPay` (relations.js) on the way home before the lines are picked (`storyHomeArrive`:
+    quest done, points, wardrobe, a toast). Chosen: a leader beaten; Hazel: row six; Juniper: a Grass Billie home (the
+    new condition `lastteam:`, the last run's team by type, line or species). Asks and thanks are once + must banter.
+  - **Thank-yous**: banter who `thanks_<who>`; after a gift story.js plays `pick thanks_<who>` (the level just reached
+    first) and the talk ends there; the old toast when no line fits. Level lines 1-5 for each.
+  - **Blake**: five lines before his battle (`pick rival` is on), his win line, the `back_lost` pair; the Bean.
+  - **Chapter 1**: five once + must beats on Hazel and Chosen chained by flags `ch1_drop`, `ch1_blake`, `ch1_beans`,
+    `ch1_number`, `ch1_signal`; story.json `scripts.chapter1-end` (Hazel, Chosen, `chapter 2`). **Nothing calls it
+    yet**: RL-14's Voltron win sets `saveData.story.pending = 'chapter1-end'` after `storyHomeArrive` (which clears
+    `pending` on a won run).
+  - relations.json levels 3 and 4 as B says. Story checks: a favour's quest and stages, its check, `lastteam:` ids.
+  - Docs: SCRIPTS, NAMING, roguelite-track 9.4 "RL-S2 as built, part B", ROADMAP (RL-S2 done), BRANCHES, CHANGELOG.
+- Verified:
+  - lint, typecheck, check:modules, format:check, check:data after each commit; `npm test` 1077/1077; `test:slow` 86/86.
+  - **check-fast's RL-S2 page** (`--only=Blake`) passes: Blake says his first line and his battle starts, beaten: a
+    meeting, a win, his Bean, a reward pick; a Bean for Chosen: level 1 and his level-1 thank-you as the talk, no
+    second offer; home with Hazel's favour asked from a row-7 run: quest done, +2 points, her thanks next.
+  - **In-game test phase** alone: "Blake twice against Marsox ...; Hazel level 1, her favour +2; chapter 2".
+  - **Full check-fast: 23/33** with the slow tests running beside it. Run again alone, all pass but **"A room opens
+    and draws (the lab)"** and the ranch checks' **"not in the ranch"** (Breeding, Income), which **fail the same way
+    on part A's commit 7caf8d2d** run here (entering a room in this container); not this session's.
+  - **Full quick check: 32/40.** Known: song fingerprints (cave mid/late), RL-8 "Take off", the Actions sheet,
+    Terraces sky_portal, room light. RT-2, Battle music and Sound effects failed in the full run and **pass alone**.
+- Risky / open:
+  - **Not tried on the phone.** Read the lines in play; the beats come one a return, so Chapter 1 takes at least six
+    returns (five beats need Blake met, a Bean, a Bureau loss or 3 runs, a boss reached or a win).
+  - A favour reached by points (not a gift) speaks its level line only at the next gift.
+  - The thank-you replaces the talk: that return's fresh line waits for the next talk.
+  - Room entering fails in this container on both commits: worth a look on main before trusting it.
+- Next: RL-14 (bots, salvage, the Voltron) calls `chapter1-end`; then RL-15.
+
+### Residents track RS-3 - living in Copperleaf: residents walk the town, their looks, lines and room cards - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (`track/residents` still doesn't exist; pushed there, named in BRANCHES). Plan Mode, plan
+approved. Owner's answers: wardrobe looks; residents near their house or walking round town (not standing still); merge
+main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS-3". CHANGELOG line added.
+- Where the plan and the code differed: no door acts needed switching (HB-5 already opens every resident's room), so
+  `copperleaf.json` is untouched; banter's `who` was a closed list; nothing read the history's `res`; Copperleaf's
+  townsfolk already keep a day (walk-view.js `initFolk`), so residents join it instead of standing at a spot.
+- Changed (one cause per commit): main (HB-8) merged in (conflicts in run-payout.js, self-test.js, HANDOFF kept both
+  sides); `propDoor` (doorOf's maths, pure, no-op); `residentHomes` (logic/residents.js); people/<id>.json looks for the
+  eight, worn in run towns too, check-data asks for one; residents walking as townsfolk of their own
+  (`hubResidentWalkers`, `talkFolk` -> story.js `residentHomeTalk`); the condition `lastres:<id>`; 39 lines in
+  banter.json with a resident's id as `who` (schema, check-data); the room card (walk-tab.js) and the station's and
+  ranch's sheets; the Studio's hub editor (Map marks, a Residents preview); the in-game full test's home step; docs.
+  The check-data snapshot was remade on purpose twice (161 files; planted residents and lines).
+- Risky or unfinished: the lines are Claude's drafts. Residents have no portraits (the talk box shows an empty face)
+  until RS-5. No upgrades yet (the card says they come soon; RS-4), and Seamus's home is `house`, which no row uses:
+  RS-4 decides where his are sold. Phone fps not measured: software drawing runs under 1 fps here, the same with 0 and
+  8 residents; the hub goes from 6 people to 14 at most. `track/story` (RL-S2 part B) also edits banter.json, its
+  schema, story-pick.js and run-history.js: small hand-resolved conflicts when both merge. Not played on a phone.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1079 at
+  the end); check-data-text; `npm run test:slow` 87/87; smoke 6/6. Headless probes: all eight walking Copperleaf at
+  noon in their looks, Dottie's moving-in line under her name, the library's card naming her, the Studio's preview (8
+  walk, off back to 5) and Map marks, no page errors. The in-game test's run step alone: passed ("Dottie invited and
+  moved in, walking Copperleaf, her moving-in line said"). The full quick check twice: the first 34/40 (RT-2 "the pair
+  talked but no battle started" and, on the same page right after, "Granny Juniper didn't say anything"; both pass
+  alone, after RL-8, and in the second run), the second 36/40 with only the 4 known failures. main bc106c4's own full
+  run: 36/40, the same 4. RL-8 fails at a different point each run on main too ("the town's shop has no Perk", "the
+  landing's loading screen never lifted", "crossed into Lakeside Town but its view..."), so its known failure changed
+  wording with HB-8, not with RS-3. No validation/quick-baseline in this container, so no pictures compared: if you
+  keep one, remake it on purpose (people walk the hub now).
+- Decisions I made (and why): a building resident sleeps and works at their own door (the folk day gives everyone a
+  home and a work spot); the room card keeps "Go outside" as its main button (TW-0) with Talk beside it; a resident's
+  line waits for open windows like any story line; Dr. Helix has lines though nobody can meet her yet (the check asks
+  every resident for one).
+- Questions waiting for the owner: the drafted lines (banter.json `*_moved`, `*_won`, ... and RS-2's); the looks (a
+  phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
+  tag `rs-3-done`.
+- Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+
 ### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
 Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
 `art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D
@@ -347,11 +599,18 @@ Tag `ro-3b-done` for the owner.
   write, library swap, repack's refusal and density still run on a kit Billie, plus a kept recipe shown as kept and a
   placeholder refused by Repack. The check-data snapshot, the UI gallery (no Billie in it), the run-start and sound
   baselines did not change.
-- Verified: lint, typecheck, check:modules, format, check:data; unit tests (1071 pass); `bake:kits --check` and
-  `bake:placeholders --check` clean; all 51 drawn by the game's renderer (idle, walk, attack, back) on a contact sheet;
-  tools/look-grafts.py (team, details, walk, a battle with two grafted Billies: drawn plain, no bakes, no errors);
-  smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the debug log: 112 KB, no
-  names); the Studio check up to density with the kit steps on the served kit Billie (IN PROGRESS: the rest).
+- Verified (after the RO-3c merge): lint, typecheck, check:modules, format:check, check:data; unit tests (1079
+  pass) and the slow kit graft sweep; `bake:kits --check` and `bake:placeholders --check` clean; all 51 drawn by the
+  game's renderer (idle, walk, attack, back) on a contact sheet; on a phone-sized page every species in the grass, in
+  a battle (yours from behind, the foe in front) and in its Guide entry, no page errors; tools/look-grafts.py: RO-3c's
+  grafts on real placeholders (Marsox with the otter's arms, Versewift with the muskox's legs) in a battle, 2 bakes,
+  38 ms median, none failed; smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the
+  debug log: no names); CI on #218 green (smoke's tall-ground step flaked once, as on #215, passed alone here and on
+  its re-run). The Studio check: every step through the kit ones passes; the later ones fail with the same 10
+  problems on track/roster without RO-3b (8 404s, two run-lab ones). The full quick check: 6 problems; 4 also fail on
+  track/roster (sky_portal floating, RL-8, room light, two cave songs not in the sound baseline); the rest vary from
+  run to run (autumn drawing, the Actions sheet's day chip, the lost payout's jingle just past its 90 s wait): the
+  payout timed alone takes the same on both (3 s, then 29-35 s on a second loss).
 - Risky / open:
   - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
     `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check

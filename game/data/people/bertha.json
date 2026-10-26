@@ -1,0 +1,27 @@
+{
+ "look": {
+  "name": "Bertha Brew",
+  "body": {"height":0.98,"body":1.16,"chest":0.6,"hips":1.16},
+  "skin": "#E8B48E",
+  "hair": "#B84A2A",
+  "eyes": "#3F7A5A",
+  "wear": {
+   "hair": "hair_curly",
+   "eyes": "eyes_lashes",
+   "brows": "brows_arched",
+   "mouth": "mouth_open",
+   "top": "polo",
+   "outer": "apron",
+   "bottom": "skirt",
+   "shoes": "boots",
+   "neck": "scarf"
+  },
+  "colors": {
+   "polo": ["#E9B83C","#C8902A"],
+   "apron": ["#F2EEE2","#8A5A2A"],
+   "skirt": ["#6A3A2A"],
+   "boots": ["#5A3A24","#3A2214"],
+   "scarf": ["#3E8FB0","#F2EEE2"]
+  }
+ }
+}

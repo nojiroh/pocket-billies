@@ -59,6 +59,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.scene.road.shape.zigzag = 1;
         run.scene.size = 3;
         run.wild.lv = [5, 3];
+        run.wild.rare.myth = { chance: 0.5, list: ['hastings0'] };
         run.seamIn = 0;
         run.start.pyramids.nosuchcoin = 1;
         run.start.extra = 1;
@@ -172,6 +173,9 @@ test('check-data: planted story director lines (RL-S1)', t => {
         B.chosen_won.when = 'last:victory';
         B.hazel_file.when = 'lastby:nobody';
         B.chosen_first.cooldown = 2;
+        /* RS-3: a line for nobody; a resident left with only lines that may not hold */
+        B.mo_won.who = 'nobody';
+        B.gus_rattle.when = 'last:won';
       },
     })
   );
@@ -220,6 +224,8 @@ test('check-data: planted residents (RS-1)', t => {
         R.bertha.first = true;
         R.gus.levels = ['nosuchunlock'];
         R.rosa.levels = ['ranch_2'];
+        /* RS-3: a resident with no look (people/<id>.json) */
+        R.zed = { ...R.seamus, name: 'Zed' };
       },
       'unlocks.json': U => {
         U.caught_15.when = 'resident:nosuchresident';
@@ -253,6 +259,22 @@ test('check-data: planted factions (RL-14)', t => {
         B.agents.classes.push('auditor');
         B.wild.biomes.push('moon');
         B.agents.bots = [2, 1];
+      },
+    })
+  );
+});
+
+test('check-data: planted fossils (RO-3e)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'pools.json': P => {
+        P.cave.list.push(['carnegie0', 1]);
+      },
+      'eggs.json': E => {
+        E['2'].list.push(['vanderbilt0', 5]);
+      },
+      'events.json': E => {
+        E.events.dig_site.options[0].then[1] = 'revive carnegie9 30';
       },
     })
   );

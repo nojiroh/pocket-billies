@@ -39,7 +39,25 @@ test('every biome has its own pool of real first stages; every line is met somew
     assert.equal(lines.size, P.list.length, `${b}: a line once (base or form)`);
     lines.forEach(id => met.add(id));
   }
-  assert.deepEqual([...met].sort(), LINES.map(L => L.id).sort(), 'every line is in some biome pool');
+  /* RO-3e: a line never met wild (the fossils) is in no pool; an event gives it. RO-3f: nor is a mythical: it stands
+     in for a route's rarer one now and then (rules.json run.wild.rare.myth) */
+  const notWild = LINES.filter(L => L.wild === false).map(L => L.id);
+  const myth = LINES.filter(L => L.rar === 'mythical').map(L => L.id);
+  for (const id of myth) assert.ok(!met.has(id), `${id}: a mythical, in no pool`);
+  assert.deepEqual(
+    myth.map(id => id + '0').sort(),
+    [...RAW.rules.run.wild.rare.myth.list].sort(),
+    'every mythical is met as a rarer one'
+  );
+  assert.deepEqual(
+    [...met].sort(),
+    LINES.filter(L => L.wild !== false && !myth.includes(L.id))
+      .map(L => L.id)
+      .sort(),
+    'every line met wild is in some biome pool, and no other'
+  );
+  const gifts = JSON.stringify(RAW.events.events);
+  for (const id of notWild) assert.ok(gifts.includes(`"revive ${id}0"`), `${id}: an event gives it`);
 });
 
 test('RO-2: a rare line is met less often than every common line in the same pool', () => {
