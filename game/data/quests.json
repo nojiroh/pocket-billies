@@ -1,0 +1,83 @@
+{
+ "about": "Towns track TW-3: a run's quests (logic/run-quests.js). Each run town's quest giver offers one, drawn from the town's own stream; at most the rules' held count are held; a done quest is handed in at a later town's notice board for a reward pick. Texts drafted by Claude, approved by the owner (2026-10-25). {type} is a Billie type, {n} the goal.",
+ "held": 3,
+ "kinds": {
+  "catch": {"weight":3,"goal":[1,1],"title":"Catch a {type} Billie"},
+  "trainers": {"weight":3,"goal":[2,3],"title":"Beat {n} route trainers"},
+  "parcel": {"weight":2,"goal":[1,1],"title":"Carry a parcel to the next town"},
+  "miniboss": {"weight":2,"goal":[1,1],"title":"Beat the next mini-boss, nobody fainting"}
+ },
+ "texts": [
+  {
+   "id": "grandson",
+   "kind": "catch",
+   "ask": "My grandson wants a {type} Billie for his birthday. I can’t catch one. My knees can’t either."
+  },
+  {
+   "id": "book",
+   "kind": "catch",
+   "ask": "I’m writing a book on {type} Billies. Chapter one is still blank. Catch me one to look at?"
+  },
+  {
+   "id": "garden",
+   "kind": "catch",
+   "ask": "A {type} Billie used to visit my garden. Catch one, just so I know they’re still about."
+  },
+  {"id":"bet","kind":"catch","ask":"Bet you can’t catch a {type} Billie before the next town. Go on, prove me wrong."},
+  {
+   "id": "showoffs",
+   "kind": "trainers",
+   "ask": "The road’s full of show-offs with Billies. Beat {n} of them and they’ll keep it down."
+  },
+  {
+   "id": "club",
+   "kind": "trainers",
+   "ask": "I run the town’s battle club. Beat {n} trainers on the road and you’re in, no fee."
+  },
+  {
+   "id": "nephew",
+   "kind": "trainers",
+   "ask": "My nephew says he’s the best trainer on the road. Beat {n} and he’ll have to share the title."
+  },
+  {
+   "id": "deliveries",
+   "kind": "trainers",
+   "ask": "Trainers keep stopping my deliveries for a battle. Beat {n} of them and maybe they’ll learn."
+  },
+  {"id":"jam","kind":"parcel","ask":"This parcel’s for the next town you reach. It’s mostly jam. Mind the jam."},
+  {"id":"letter","kind":"parcel","ask":"Take this letter to the next town? It’s an apology. It’s quite long."},
+  {"id":"seeds","kind":"parcel","ask":"Seeds for the next town’s gardener. Don’t plant them on the way, they’ll know."},
+  {"id":"scarf","kind":"parcel","ask":"My sister lives in the next town. Take her this scarf. I knitted it twice."},
+  {
+   "id": "owe",
+   "kind": "miniboss",
+   "ask": "Someone big waits up the road. Beat them without a single Billie fainting and I’ll owe you."
+  },
+  {
+   "id": "style",
+   "kind": "miniboss",
+   "ask": "Anyone can win ugly. Beat the next mini-boss and keep your whole team standing. That’s style."
+  },
+  {
+   "id": "baker",
+   "kind": "miniboss",
+   "ask": "I bet the baker you’d beat the next mini-boss with nobody fainting. Don’t make me pay for bread."
+  },
+  {
+   "id": "pride",
+   "kind": "miniboss",
+   "ask": "My old team lost to that mini-boss. Beat them clean, nobody fainting. For my pride."
+  }
+ ],
+ "say": {
+  "take": "Take it on?",
+  "yes": "Thank you! Come back to any town’s notice board once it’s done.",
+  "no": "No worries. I’ll be here.",
+  "full": "You’ve got your hands full. Come back with fewer quests.",
+  "taken": "Good luck out there!",
+  "none": "Nothing needs doing today. Safe travels!",
+  "done": "Notice board: {title}. Done! Pick a reward.",
+  "empty": "Nothing to hand in yet.",
+  "fail": "Quest failed: {title}."
+ }
+}

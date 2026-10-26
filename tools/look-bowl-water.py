@@ -94,12 +94,17 @@ def page(b, fixture, errs):
     return ctx, pg
 
 
-# the battle: on the first of the run's places with water in its scene, you put 6 m west of a water tile (the water
-# to your side: a battle facing north alone would not show it), a wild battle begun there (as the fast check's run
-# battle does), the whole screen taken after the intro (the battle's HUD with it)
-BATTLE_GO = """(()=>{const wt=walkView.water||[];if(!wt.length)return null;const P=walkView.pl;let best=null,bd=1e9;
- for(const w of wt){const p=walkablePointNear(w[0]-6,w[1]);if(!p||Math.abs(p[0]-(w[0]-6))+Math.abs(p[1]-w[1])>1.5)continue;const d=Math.hypot(p[0]-P.x,p[1]-P.z);if(d<bd){bd=d;best=p}}
- if(!best)return null;P.x=best[0];P.z=best[1];P.route=null;return [+best[0].toFixed(2),+best[1].toFixed(2),walkView.id]})()"""
+# the battle: on the first of the run's places with water in its scene, you put where water lies 7-11 m away (8 tiles of it within 12 m with no tree or house in the way) but
+# none ahead (north from the camera 4 m behind you, where a battle looked before WA-7; you stand at the middle of the
+# action), a wild battle begun there (as the fast check's run battle
+# does), the whole screen taken after the intro (the battle's HUD with it)
+BATTLE_GO = """(()=>{const wt=walkView.water||[],sc=walkView.sc,M=walkData().sc.props;if(!wt.length)return null;
+ const B=(sc.props||[]).filter(p=>M[p.k]&&!M[p.k].flat&&M[p.k].box).map(p=>[p.x,p.z,M[p.k].box[0]*(p.s||1)/2]);
+ const clear=(x,z,w)=>{const dx=w[0]-x,dz=w[1]-z,L=Math.hypot(dx,dz);return !B.some(b=>{const t=((b[0]-x)*dx+(b[1]-z)*dz)/(L*L);return t*L>3.5&&t*L<L-.5&&Math.hypot(x+dx*t-b[0],z+dz*t-b[1])<b[2]+.3})};
+ for(let z=6;z<sc.h-12;z+=1.5)for(let x=6;x<sc.w-6;x+=1.5){if(!isWalkable(x,z))continue;let nd=1e9,ahead=0;
+  for(const w of wt){const dx=w[0]-x,dz=w[1]-z,dc=dz+4.15;nd=Math.min(nd,Math.hypot(dx,dz));if(dc>6.5&&dc<30&&Math.abs(dx)<dc*.62)ahead++}
+  if(nd>=7&&nd<=11&&!ahead&&wt.filter(w=>Math.hypot(w[0]-x,w[1]-z)<=12&&clear(x,z,w)).length>=8){const P=walkView.pl;P.x=x;P.z=z;P.route=null;return [x,z,walkView.id]}}
+ return null})()"""
 
 
 def battle(pg, notes):
@@ -119,7 +124,7 @@ def battle(pg, notes):
         f0 = pg.evaluate('walkRenderer.frames'); CF.until(pg, f'walkRenderer.frames>={f0 + 4}', 120)
         n = f"battle-water-{'pixel' if on else 'smooth'}"
         pg.screenshot(path=str(OUT / f'{n}.png'))
-        notes['shots'].append({'name': n, 'at': at, 'face': pg.evaluate("typeof battle3d!=='undefined'?+(battle3d.yaw||0).toFixed(3):0")})
+        notes['shots'].append({'name': n, 'at': at, 'face': pg.evaluate("typeof battle3d!=='undefined'?+(battle3d.yaw||0).toFixed(3):0"), 'wetInView': pg.evaluate('(battleStage.wet||[]).length'), 'wetFeet': pg.evaluate('battleStage.wetFeet||[]')})
         print(f'  {n}', flush=True)
     pixel(pg, True)
 

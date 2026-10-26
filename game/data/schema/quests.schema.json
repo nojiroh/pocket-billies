@@ -1,0 +1,170 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "quests.schema.json",
+ "title": "game/data/quests.json: a run's quests, offered by a run town's quest giver and handed in at a later town's notice board (towns track TW-3; logic/run-quests.js)",
+ "type": "object",
+ "required": [
+  "held",
+  "kinds",
+  "texts",
+  "say"
+ ],
+ "additionalProperties": false,
+ "$defs": {
+  "line": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 160
+  },
+  "kind": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "weight",
+    "goal",
+    "title"
+   ],
+   "properties": {
+    "weight": {
+     "description": "how often a town offers this kind, against the others that can be finished from there",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    },
+    "goal": {
+     "description": "[fewest, most]: how many to do ({n})",
+     "type": "array",
+     "minItems": 2,
+     "maxItems": 2,
+     "items": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9
+     }
+    },
+    "title": {
+     "description": "the quest list's line",
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 60
+    }
+   }
+  }
+ },
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "held": {
+   "description": "the most quests held at once (the owner: three)",
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 9
+  },
+  "kinds": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "catch",
+    "trainers",
+    "parcel",
+    "miniboss"
+   ],
+   "properties": {
+    "catch": {
+     "description": "catch a Billie of a type ({type}) found in the run's region",
+     "$ref": "#/$defs/kind"
+    },
+    "trainers": {
+     "description": "beat {n} route trainers",
+     "$ref": "#/$defs/kind"
+    },
+    "parcel": {
+     "description": "carry a parcel to a later town",
+     "$ref": "#/$defs/kind"
+    },
+    "miniboss": {
+     "description": "beat the next mini-boss with nobody fainting",
+     "$ref": "#/$defs/kind"
+    }
+   }
+  },
+  "texts": {
+   "description": "what a giver says when offering, by kind (one drawn per town)",
+   "type": "array",
+   "minItems": 4,
+   "maxItems": 64,
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "kind",
+     "ask"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{1,24}$"
+     },
+     "kind": {
+      "enum": [
+       "catch",
+       "trainers",
+       "parcel",
+       "miniboss"
+      ]
+     },
+     "ask": {
+      "$ref": "#/$defs/line"
+     }
+    }
+   }
+  },
+  "say": {
+   "description": "the giver's and the board's other lines ({title}: the quest list's line)",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "take",
+    "yes",
+    "no",
+    "full",
+    "taken",
+    "none",
+    "done",
+    "empty",
+    "fail"
+   ],
+   "properties": {
+    "take": {
+     "$ref": "#/$defs/line"
+    },
+    "yes": {
+     "$ref": "#/$defs/line"
+    },
+    "no": {
+     "$ref": "#/$defs/line"
+    },
+    "full": {
+     "$ref": "#/$defs/line"
+    },
+    "taken": {
+     "$ref": "#/$defs/line"
+    },
+    "none": {
+     "$ref": "#/$defs/line"
+    },
+    "done": {
+     "$ref": "#/$defs/line"
+    },
+    "empty": {
+     "$ref": "#/$defs/line"
+    },
+    "fail": {
+     "$ref": "#/$defs/line"
+    }
+   }
+  }
+ }
+}

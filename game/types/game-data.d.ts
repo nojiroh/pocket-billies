@@ -58,6 +58,8 @@ export interface GameData {
   perks?: Record<DataId, Perk>;
   /** RL-12b: events.json */
   events?: EventsData;
+  /** RL-S1: the story director's lines */
+  banter?: Record<DataId, BanterLine>;
   /** RL-12b: rewards.json */
   rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -75,8 +77,12 @@ export interface GameData {
   regions: RegionsData;
   /** RL-R2: the field moves that open a run's side areas */
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove>; waterfall?: FieldClimb };
+  /** RT-3: set pieces, prop groups placed as a unit on a laid-out place */
+  setPieces?: SetPiecesData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
+  /** TW-3: a run's quests */
+  quests?: QuestsData;
   pools: Record<DataId, Pool>;
   /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
   eggs: Record<string, EggTier>;
@@ -411,6 +417,10 @@ export interface LocationData {
   noFly?: number;
   /** roguelite track RL-7: a run's place: its node on the run's map (logic/run-scenes.js; world node runNode + 1) */
   runNode?: number;
+  /** RT-2: a run route's trainers (a pair is two; logic/route-trainers.js routeTrainerTally): its wild stock is less */
+  trainerCount?: number;
+  /** RT-4: where a run route's rarer one waits (a free pocket or dead end: logic/route-trainers.js routeRareSpots) */
+  rareAt?: [number, number];
   /** RL-R2: a side area's first place: closed until the run's field move obstacle (this move) is open */
   field?: DataId;
   /** RL-R2: 1 on a side area's place */
@@ -467,6 +477,14 @@ export interface RoadEnds {
   from: DataId;
   to: DataId;
   name: string;
+}
+
+/** TW-2: rules.json run.town */
+export interface RunTownRules {
+  cap: { busy: number; balanced: number; best: number };
+  locals: [number, number];
+  names: string[];
+  chat: Record<DataId, string[]>;
 }
 
 /** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
@@ -811,6 +829,8 @@ export interface TrainerEntry extends Trainer {
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
   hpMult?: number;
+  /** RT-2: a route pair's second trainer (logic/route-trainers.js runRouteTrainers): its class, look and name */
+  mate?: { cls: DataId; who: DataId; name: string };
 }
 
 /** a trainer's Billie: a species, or '@rival' ('@rival1', '@rival2': evolved) for the starter that beats yours */
@@ -998,8 +1018,19 @@ export interface Rules {
     layouts?: Record<string, Record<string, number>>;
     /** RL-7: a run node's wild Billies: levels `lv` on the landing's row, `perRow` more on each row after; a node
         walked back to rolls `back` of them again (the hub's stock on a first visit); a waystation (an event or a
-        stall: RL-12b) holds `waystation` */
-    wild: { lv: [number, number]; perRow: number; back: number; waystation: number };
+        stall: RL-12b) holds `waystation`; RT-2: a run route's first visit holds `route` less its trainers, `routeMin`
+        at least; RT-4: `habitats`, the types whose Billies wait by the water and in the woods (the rest: tall grass) */
+    wild: {
+      lv: [number, number];
+      perRow: number;
+      back: number;
+      waystation: number;
+      route: number;
+      routeMin: number;
+      habitats?: Record<string, string[]>;
+      /** RT-4: a run route's rarer one, `up` levels above the rest (rules.js spawnRare) */
+      rare?: { up: number };
+    };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
@@ -1021,9 +1052,17 @@ export interface Rules {
     shop: { always: string[]; more: number; pick: Record<string, number> };
     /** RL-8: a mini-boss's and the boss's levels: `up` over the top wild level of their row; their reward in $ */
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
-    /** RL-12b: route trainers: how many a route (fewest, most), levels over the place's top wild level, what each
-     * pays, how far they see (m) */
-    trainers: { perRoute: [number, number]; up: number; reward: number; sight: number };
+    /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
+     * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
+     * a double, levels over the place's top wild level, what each pays, how far they see (m) */
+    trainers: {
+      perRoute: [number, number][];
+      required: number;
+      pair: number;
+      up: number;
+      reward: number;
+      sight: number;
+    };
     /** RL-12b: the reward pick after a trainer battle: cards, a reroll's first price, how it grows each time */
     rewards: { pick: number; reroll: number; grow: number };
     /** RL-12: Perks: at most `cap` held, a pick of `pick` after a mini-boss, offered by `rarity` weight, sold in a
@@ -1036,6 +1075,10 @@ export interface Rules {
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
+    /** TW-2: a run town's life: how many folk are drawn at most (busy: the game stepped its quality down; balanced
+        and best: the Graphics presets), how many named locals (fewest, most) and their names, and each region
+        theme's chat lines (added to the biome's) */
+    town: RunTownRules;
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
@@ -1703,6 +1746,10 @@ export interface Biome {
     square?: string;
     lamp?: string;
     bench?: string;
+    /** TW-2: its own animals, kept to the town's ground (houses: only with that many houses; square: on the square) */
+    life?: { k: string; n: number; houses?: number; square?: 1 }[];
+    /** TW-2: what its folk and named locals say (with the region's: rules.json run.town.chat) */
+    chat?: string[];
   };
   from?: string;
 }
@@ -1813,6 +1860,29 @@ export interface ModifiersData {
   expeditions: Modifier[];
   challenges: Partial<Record<ChallengeId, Modifier>>;
 }
+/** TW-3: quests.json: a run's quests (logic/run-quests.js) */
+export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';
+export interface QuestKindRule {
+  weight: number;
+  /** [fewest, most] to do ({n}) */
+  goal: [number, number];
+  /** the quest list's line ({type}, {n}) */
+  title: string;
+}
+export interface QuestText {
+  id: string;
+  kind: QuestKind;
+  /** the giver's offer ({type}, {n}) */
+  ask: string;
+}
+export interface QuestsData {
+  about?: string;
+  /** the most held at once */
+  held: number;
+  kinds: Record<QuestKind, QuestKindRule>;
+  texts: QuestText[];
+  say: Record<'take' | 'yes' | 'no' | 'full' | 'taken' | 'none' | 'done' | 'empty' | 'fail', string>;
+}
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
   loot: Record<DataId, Record<DataId, number>>;
@@ -1827,6 +1897,16 @@ export interface RewardRow {
   n?: number;
   weight: number;
 }
+/** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
+export interface BanterLine {
+  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau';
+  when?: string;
+  priority: number;
+  once?: boolean;
+  cooldown?: number;
+  must?: boolean;
+  script: string[];
+}
 /** events.json classes: a kind of trainer (route trainers, the `foe` command) */
 export interface TrainerClass {
   name: string;
@@ -1834,6 +1914,10 @@ export interface TrainerClass {
   team: [number, number];
   sight: string;
   lose: string;
+  /** RL-S1: one of the Bureau's agents */
+  bureau?: 1;
+  /** RT-2: the spot kinds a route trainer of the class stands on first (logic/route-trainers.js ROUTE_SPOTS) */
+  likes?: ('roadside' | 'pinch' | 'bridge' | 'pocket' | 'clearing' | 'deadend')[];
 }
 /** events.json events: one event, its intro and 2-3 options */
 export interface RunEvent {
@@ -2008,6 +2092,47 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** RT-3: setPieces.json: small groups of existing props placed as a unit on a laid-out place's spots
+ * (logic/mapgen.js mapgenStagePieces), in the piece's own metres (x across its front, z back from it) */
+export interface SetPiecesData {
+  about?: string;
+  /** how many a laid-out place gets, at least and at most (logic/run-scenes.js runPiecesOf) */
+  perPlace: [number, number];
+  pieces: Record<DataId, SetPiece>;
+}
+export interface SetPiece {
+  name: string;
+  /** the spot kinds it may take (scene.spots) */
+  on: ('roadside' | 'clearing' | 'jetty')[];
+  /** every prop lies within this many metres of its origin (the middle of its front) */
+  r: number;
+  /** draw weights by biome, `default` for one not listed */
+  biomes: Record<string, number>;
+  /** a layout plan's multiplier on its weight */
+  plans?: Record<string, number>;
+  props: SetPieceProp[];
+  people?: SetPiecePerson[];
+}
+export interface SetPieceProp {
+  /** a scenery.json prop */
+  k: string;
+  x: number;
+  z: number;
+  /** degrees, on top of the piece's own turn (models only: a picture stays facing you) */
+  rot?: number;
+  /** a sign's words */
+  say?: string;
+  /** stands on water (a boat) */
+  water?: boolean;
+}
+/** someone who stands in a piece: tapped, opens an event once a run, then says `say` */
+export interface SetPiecePerson {
+  who: string;
+  x: number;
+  z: number;
+  event?: string;
+  say?: string;
 }
 /** WA-6b: the Waterfall climb (fieldMoves.json waterfall): a field move used in the walk on a fall marked climb: 1 */
 export interface FieldClimb {

@@ -47,6 +47,35 @@ test('a double battle: two a side, and each move hits the foe it was aimed at', 
   for (const h of hits) assert.ok(h.endsWith(` on ${name}.`), h);
 });
 
+test('RT-2: a route pair (one entry, double) starts a double on its own, even against a single Billie of yours', () => {
+  const T = TRAINERS[doubleTrainer()],
+    id = 'run_9_t0';
+  TRAINERS[id] = { ...T, id, name: 'Unpaid Intern & Lifestyle Vlogger', double: true, mate: { cls: 'vlogger' } };
+  try {
+    teamOfThree();
+    fn('startTrainer')(id, { talked: true });
+    let B = hooks.activeBattle;
+    assert.equal(B.fmt, 'double');
+    assert.ok(
+      B.events.some(e => e.t === 'Unpaid Intern & Lifestyle Vlogger want a double battle!'),
+      B.events.map(e => e.t).join(' / ')
+    );
+    hooks.provide({ activeBattle: null });
+    const s = startedSave(
+      Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0]),
+      12
+    );
+    assert.equal(s.team.length, 1);
+    fn('startTrainer')(id, { talked: true });
+    B = hooks.activeBattle;
+    assert.equal(B.fmt, 'double');
+    assert.equal(liveActors(0).length, 1, 'yours: the one you have');
+    assert.equal(liveActors(1).length, 2, 'theirs: one each');
+  } finally {
+    delete TRAINERS[id];
+  }
+});
+
 test('an Alpha battle: your team against one; below half it raises its shield', () => {
   const s = teamOfThree();
   const sp = Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line));

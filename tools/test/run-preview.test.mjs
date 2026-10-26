@@ -31,6 +31,7 @@ const worldData = () => ({
   rules: RULES.run,
   region: modules['run-region'].runRegionData(gameData, TRAINERS),
   fieldMoves: data.FIELD_MOVES,
+  setPieces: data.SET_PIECES,
 });
 
 /** what the game shows for a seed: the run on a save, then each part as the page asks for it */
