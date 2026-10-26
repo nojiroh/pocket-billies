@@ -31,6 +31,7 @@ import {
 import { fxRowOf } from './run-enc.js';
 import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
@@ -1123,12 +1124,15 @@ export function dataResidents(D, valid = () => true) {
   const hub = ((D.maps || {}).copperleaf || {}).props || [],
     B = D.buildings || {},
     U = D.unlocks || {},
+    people = D.people || {},
     firsts = Object.keys(R).filter(k => R[k].first);
   if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
   for (const [k, r] of Object.entries(R)) {
     const at = /** @type {any} */ (r).home;
     if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
       problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    /* RS-3: their look is a person of the same id (people/<id>.json), in a run town and in Copperleaf */
+    if (!people[k]) problem(`${k}: no look (people/${k}.json)`);
     for (const u of /** @type {any} */ (r).levels)
       if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
       else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
@@ -1397,6 +1401,16 @@ export function dataBanter(D, valid = () => true) {
     if (mine.length && !mine.some((/** @type {any} */ b) => !b.when && !b.once))
       problem(`no ${who} line without a when that is said more than once: ${who} could have nothing to say`);
   }
+  /* RS-3: a line is for a listed speaker or a resident (residents.json), and every resident has one that always holds */
+  const R = D.residents || {};
+  for (const [k, b] of Object.entries(B)) {
+    const who = /** @type {any} */ (b).who;
+    if (!BANTER_WHO.includes(who) && !R[who])
+      problem(`${k}.who: "${who}" is no speaker and no resident (residents.json)`);
+  }
+  for (const id of Object.keys(R))
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
+      problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
   return out;
 }
 

@@ -1459,6 +1459,45 @@ the answers. Tag `rl-s2-done` is the owner's, after part B.
   relations.json, banter.json `who: "rival"`); then part B on `track/story`: Chapter 1's beats as scripts and `once`
   banter, the favours (a `once` line, a story quest, `rel who n` on the way home), Blake's and the folks' lines,
   `scripts.chapter1-end` for RL-14's Voltron.
+### Residents track RS-3 - living in Copperleaf: residents walk the town, their looks, lines and room cards - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (`track/residents` still doesn't exist; pushed there, named in BRANCHES). Plan Mode, plan
+approved. Owner's answers: wardrobe looks; residents near their house or walking round town (not standing still); merge
+main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS-3". CHANGELOG line added.
+- Where the plan and the code differed: no door acts needed switching (HB-5 already opens every resident's room), so
+  `copperleaf.json` is untouched; banter's `who` was a closed list; nothing read the history's `res`; Copperleaf's
+  townsfolk already keep a day (walk-view.js `initFolk`), so residents join it instead of standing at a spot.
+- Changed (one cause per commit): main (HB-8) merged in (conflicts in run-payout.js, self-test.js, HANDOFF kept both
+  sides); `propDoor` (doorOf's maths, pure, no-op); `residentHomes` (logic/residents.js); people/<id>.json looks for the
+  eight, worn in run towns too, check-data asks for one; residents walking as townsfolk of their own
+  (`hubResidentWalkers`, `talkFolk` -> story.js `residentHomeTalk`); the condition `lastres:<id>`; 39 lines in
+  banter.json with a resident's id as `who` (schema, check-data); the room card (walk-tab.js) and the station's and
+  ranch's sheets; the Studio's hub editor (Map marks, a Residents preview); the in-game full test's home step; docs.
+  The check-data snapshot was remade on purpose twice (161 files; planted residents and lines).
+- Risky or unfinished: the lines are Claude's drafts. Residents have no portraits (the talk box shows an empty face)
+  until RS-5. No upgrades yet (the card says they come soon; RS-4), and Seamus's home is `house`, which no row uses:
+  RS-4 decides where his are sold. Phone fps not measured: software drawing runs under 1 fps here, the same with 0 and
+  8 residents; the hub goes from 6 people to 14 at most. `track/story` (RL-S2 part B) also edits banter.json, its
+  schema, story-pick.js and run-history.js: small hand-resolved conflicts when both merge. Not played on a phone.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1079 at
+  the end); check-data-text; `npm run test:slow` 87/87; smoke 6/6. Headless probes: all eight walking Copperleaf at
+  noon in their looks, Dottie's moving-in line under her name, the library's card naming her, the Studio's preview (8
+  walk, off back to 5) and Map marks, no page errors. The in-game test's run step alone: passed ("Dottie invited and
+  moved in, walking Copperleaf, her moving-in line said"). The full quick check twice: the first 34/40 (RT-2 "the pair
+  talked but no battle started" and, on the same page right after, "Granny Juniper didn't say anything"; both pass
+  alone, after RL-8, and in the second run), the second 36/40 with only the 4 known failures. main bc106c4's own full
+  run: 36/40, the same 4. RL-8 fails at a different point each run on main too ("the town's shop has no Perk", "the
+  landing's loading screen never lifted", "crossed into Lakeside Town but its view..."), so its known failure changed
+  wording with HB-8, not with RS-3. No validation/quick-baseline in this container, so no pictures compared: if you
+  keep one, remake it on purpose (people walk the hub now).
+- Decisions I made (and why): a building resident sleeps and works at their own door (the folk day gives everyone a
+  home and a work spot); the room card keeps "Go outside" as its main button (TW-0) with Talk beside it; a resident's
+  line waits for open windows like any story line; Dr. Helix has lines though nobody can meet her yet (the check asks
+  every resident for one).
+- Questions waiting for the owner: the drafted lines (banter.json `*_moved`, `*_won`, ... and RS-2's); the looks (a
+  phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
+  tag `rs-3-done`.
+- Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+
 ### Residents track RS-2 - meeting residents in a run: Dottie free, favours, the Stranded Cart, the payout's line - 2026-10-26
 Branch `ccr-65e11839-9p92dx` (the owner's word: `track/residents` doesn't exist yet; pushed there). Plan Mode, plan
 approved. Owner's answers: one invite a run; the event's favour done on the spot; a favour held over the quest cap;
@@ -1536,6 +1575,52 @@ half and half (one capped power level per resident, the rest options); the exist
 - Questions waiting for the owner: the roster's names and looks; one invite per run and no cottage cap (rec); the
   word "residents" (rec). Please make `track/residents` from main and push the tag `rs-0-done`.
 - Next session starts with: RS-1 (data and save) on `track/residents`, in Plan Mode.
+### Hub track HB-8 - Departure and return: the sky train through the portal - 2026-10-26
+Branch `art/hub-departure` (the session's brief; from main 2314da8 after PR #205; the plan file's `Branch:` line says
+`track/hub`, and earlier HB sessions worked on their own branches the same way). Plan approved in Plan Mode. The owner's
+answers: **climb, white-out, load** (the ride in the hub, the carriage screen behind the white-out while the run's
+places are made, landing straight in, no airship flight); **payout, then return** ("Ride home", then the train home,
+then the toasts and the lost run's scene); the words as proposed. Tag `hb-8-done` for the owner. Details:
+docs/phases/hub-track.md, "Done in HB-8".
+- Where the brief and the code differed (checked): a prop could already move along a path (the cutscene director's
+  traffic, the walk view's director hook); **the sea past the east edge is drawn** (the sea skirt runs 400 m on a
+  `flatFar` map, `GROUND_BORDER_M` is the land's): what showed was the haze (`hazeD` 40) and the walk camera's lens
+  blur, so the fix is the ride's own focus and a stretched haze on the shots out to sea, not a wider sea; HB-2's cap
+  could have gone off before the run had a world once the places are made behind the screen; the run's region (its
+  train) isn't known on the start sheet; the self-test and three check steps waited on `airshipFlight`. CLAUDE.md's
+  "gamedata.js ~13 MB" is stale (0.69 MB, generated, not in git).
+- Changed (one cause per commit where the generated module blocks allow):
+  - Engine: a director frame's `hazeK` (walk/lighting.js).
+  - Art: each train's v 1 gold trim and v 2 battered (soot and rust, smoke fx); the carriage colours and the portal's
+    tunnel colours in the catalogue (build-station-trains.py, rerun).
+  - Logic: run-load.js `hard` stages (never late; the cap counts from when they're ready); logic/train-path.js (the
+    way: track bed, `landmarks.rail`, the tear; the glide in; the placement), both with unit tests.
+  - The ride (train-ride.js), the carriage (train-carriage.js), the take-off and the ride home rewired (run.js,
+    run-loading.js: the `places` stage, `runLoadLanding`, the carriage in the screen's `view`); postcards, the update
+    check and the story's waiting scene hold off while the train rides; one debug log line a ride (key and ms only).
+  - Airship: `flyMenu`'s hub branch out (and the Lab board's 'fly' sheet path), flyLand's run landing; the flight
+    engine stays (check-fast flies it).
+  - Words: "A sky train flies you through the portal…", "Skyline Station adds…", the payout's train lines, "Ride
+    home"; beyond the list: Chosen's after-a-win line "came home by train", the Crest "spent at Skyline Station".
+  - Checks: check-fast "The train ride" (new, played out), run_pack and run_loop through the ride (skipped), check-quick's
+    RL-8, the self-test's run phase ("A run: the train, nodes, payout"). tools/look-train-ride.py (pictures).
+- Risky:
+  - The ride's cost on a phone (one moving model, the tear swelling, a light) is not measured: HB-9.
+  - Looking level at the horizon from up high (the glide-in shot, the way down) shows a pale band across the sky: the
+    walk view's far sea and world curve, with the walk's own haze too (not from `hazeK`). Worth a look in HB-9.
+  - The ride home's step-off shot doesn't always frame you (you walk to where `standByMast` stands you, off to the
+    side); the train stays parked at the platform until the hub's view is made again.
+  - A save swapped in mid-ride isn't handled specially (the ride's done callback checks the save is the same one).
+  - The tear's gold look and the train's looks are colour swaps: their far pictures (flat) are the base look.
+- Verified: after each change lint, typecheck, check:modules, check:data, check-data-text, `npm test` (1061/1061 at
+  the end); `npm run test:slow` 86/86; check-fast in full 32/33 ("Behind things" timed out under two browsers and
+  passed alone, 122 s; the new "The train ride" played out in 55 s: departure 9278 ms, the carriage moving, home gold
+  then battered with 3 smoke trails); `check:smoke` 6/6 (190 s: the phone flow at the station, the in-game test step,
+  the debug log export); the in-game full test's run phases alone, 5/5 (81 s). Pictures (not committed):
+  validation/look-train-ride/ (the departure at 7 moments, the carriage screen, both rides home at 5 moments, no page
+  errors).
+- Next: the owner's look at the pictures and a phone test of a take-off and both returns (the debug log's
+  `train ride` and `load` lines); HB-9 (the phone look pass: the ride's frame times, the sky band).
 
 ### Splicing track SP-5 - Augments: the Workshop, bot arms and legs on Billies, breaking and mending, Escaped specimens (built, waiting on the owner's prices) - 2026-10-26
 Branch `claude/sp-5-augments`, **made from SP-6's branch `claude/sp-6-run-events` (1c59e9e) with RL-14a's branch

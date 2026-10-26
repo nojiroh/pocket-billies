@@ -24,6 +24,7 @@ import {
   mapById,
   mapHub,
   openingHoursKind,
+  residentAt,
   startClimb,
   stopWalkView,
   walkData,
@@ -156,6 +157,8 @@ export function enterRoom(a, p) {
     node: saveData.trip.node,
     shop: a === 'shop' ? p.shop || here.shop || null : null,
     p,
+    /* RS-3: the resident who lives here (their room card) */
+    res: residentAt(p),
     name: p.label || (a === 'shop' && SHOPS[p.shop || here.shop] ? SHOPS[p.shop || here.shop].name : null),
     back: (() => {
       const o = (walkView.sc && walkView.sc.baseOff) || [0, 0];

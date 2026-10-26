@@ -57,6 +57,13 @@ kept aside in the browser).
   many may light the scene (1-16). Both are in the graphics test.
 - **One light block per frame** is now the only way the renderer sends the frame's light (the old switch and path are
   gone); it looks the same.
+- **Residents live in Copperleaf** (residents track RS-3): whoever you bring home now lives in town. Each has their
+  own look and walks Copperleaf with the townsfolk: out of their door in the morning, at work, on the square around
+  noon, about the streets in the afternoon and indoors at night. Dottie keeps the library, Mo the General store,
+  Bertha the inn, Gus the Workshop, Hayden helps at the ranch, Rosa works at Skyline Station, Seamus sews from a
+  cottage of his own and Dr. Helix keeps the Gene Bank. Tap one for a word: the first time it's about moving in, then
+  about your last run. Walk into their building and its card says who lives there, with a Talk button and their
+  upgrades (the first ones come next). The station's and the ranch's sheets name theirs too.
 - **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
   Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
   a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**

@@ -172,6 +172,9 @@ test('check-data: planted story director lines (RL-S1)', t => {
         B.chosen_won.when = 'last:victory';
         B.hazel_file.when = 'lastby:nobody';
         B.chosen_first.cooldown = 2;
+        /* RS-3: a line for nobody; a resident left with only lines that may not hold */
+        B.mo_won.who = 'nobody';
+        B.gus_rattle.when = 'last:won';
       },
     })
   );
@@ -220,6 +223,8 @@ test('check-data: planted residents (RS-1)', t => {
         R.bertha.first = true;
         R.gus.levels = ['nosuchunlock'];
         R.rosa.levels = ['ranch_2'];
+        /* RS-3: a resident with no look (people/<id>.json) */
+        R.zed = { ...R.seamus, name: 'Zed' };
       },
       'unlocks.json': U => {
         U.caught_15.when = 'resident:nosuchresident';

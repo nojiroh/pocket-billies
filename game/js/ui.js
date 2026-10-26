@@ -33,7 +33,7 @@ import { renderTitle, titleMount } from './title.js';
 import { renderPerks } from './perk-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
-import { storyRivalBattle } from './story.js';
+import { residentHomeTalk, storyRivalBattle } from './story.js';
 import { minimapCanvas } from './minimap.js';
 import { workshopAction } from './workshop.js';
 import { closeModal, modal, openInbox } from './overlay.js';
@@ -289,6 +289,10 @@ document.addEventListener('click', ev => {
       break;
     case 'leaveroom':
       leaveRoom();
+      break;
+    /* RS-3: a resident's room card's Talk */
+    case 'restalk':
+      if (d.r && typeof residentHomeTalk === 'function') residentHomeTalk({ res: d.r });
       break;
     case 'walkdown':
       walkSheetOpen();

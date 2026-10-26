@@ -118,6 +118,7 @@ import {
   actionSpot,
   climbEnds,
   findPath,
+  hubResidentWalkers,
   mapBridges,
   mapById,
   mapHub,
@@ -163,7 +164,8 @@ import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
-import { storyPickTree } from './story-stage.js';
+import { residentHomeTalk } from './story.js';
+import { storyPickTree, storyRun } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
@@ -1948,7 +1950,44 @@ async function runFullTest(mode) {
             if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
             if (!saveData.meta.residents.dottie || H.res !== 'dottie')
               throw new Error('Dottie didn’t move in (or the history lost her)');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in; home with ${saveData.meta.research} Research; in the history`;
+            /* RS-3: home again, Dottie walks Copperleaf as one of its townsfolk (her own look), from the library's
+               door; talking to her (her line tapped through), her first word is her moving-in line, said once */
+            if (
+              !(await wait(
+                () =>
+                  walkView.ready &&
+                  (walkView.folkAll || []).some(f => f.res === 'dottie' && f.who === 'dottie') &&
+                  hubResidentWalkers(walkView.sc).some(w => w.id === 'dottie' && w.prop.k === 'library'),
+                20000
+              ))
+            )
+              throw new Error('Dottie isn’t walking Copperleaf from the library');
+            /* a story line waits for open windows (the way home's) to close */
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            let homeTalk = false;
+            residentHomeTalk({ res: 'dottie' }).then(() => (homeTalk = true));
+            if (
+              !(await wait(() => {
+                if (talkBox.cur) talkBox.cur.tap();
+                return homeTalk;
+              }, 15000))
+            )
+              throw new Error(
+                'talking to Dottie at home never ended DBG ' +
+                  JSON.stringify([
+                    talkBox.on,
+                    !!talkBox.cur,
+                    storyRun.on,
+                    storyRun.id,
+                    typeof cutscene !== 'undefined' && cutscene.on,
+                    !!uiState.modal,
+                  ])
+              );
+            if (!saveData.story.once || !saveData.story.once['banter:dottie_moved'])
+              throw new Error('Dottie’s first word at home isn’t her moving-in line');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in, walking Copperleaf, her moving-in line said; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();
