@@ -2362,7 +2362,11 @@ export function sceneryPixelCardHTML() {
           })
         ) +
         `<p class="help">Base point: ${-M.ox}, ${-M.oy}. Pick “Set the base point” and click where the prop touches the ground.</p>${M.glow ? '' : '<button class="btn sm subtle" data-act="scGlowAdd">Add a light glow</button>'}${M.glow ? grid(colorField('Glow color', `${base}.glow.c`), numberField('Glow size (m)', `${base}.glow.r`, { step: 0.1, min: 0.2, max: 6 }), numberField('Glow height (m)', `${base}.glow.y`, { step: 0.1, min: 0, max: 8 })) : ''}`
-      : '<p class="help">The tile repeats in every direction, so keep the edges matching.</p>'
+      : `<p class="help">The tile repeats in every direction, so keep the edges matching. This 16 px tile is Lite mode’s; the full-mode ground is the kind’s twelve 32 px tiles.</p><button class="btn sm" data-act="tsOpen" data-name="${escapeHtml(
+          String((C.terrains[pe.c] || {}).tile || '')
+            .replace(/^.*\//, '')
+            .replace(/\.png$/, '')
+        )}" data-from="scenes">Paint the 32 px set</button>`
   }</div></div></div>`
   );
 }

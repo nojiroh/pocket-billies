@@ -1,0 +1,1680 @@
+{
+ "about": "The art paths the game code names (made by tools/art-code-refs.mjs; * is a name the code fills in)",
+ "refs": [
+  {
+   "p": "app/icon-192.png",
+   "at": [
+    "game/index.html:12",
+    "game/index.html:13",
+    "game/manifest.webmanifest:11"
+   ]
+  },
+  {
+   "p": "app/icon-512.png",
+   "at": [
+    "game/manifest.webmanifest:12"
+   ]
+  },
+  {
+   "p": "battle/cloud_0.png",
+   "at": [
+    "game/js/walk-view.js:718"
+   ]
+  },
+  {
+   "p": "battle/cloud_1.png",
+   "at": [
+    "game/js/walk-view.js:719"
+   ]
+  },
+  {
+   "p": "battle/cloud_2.png",
+   "at": [
+    "game/js/walk-view.js:720"
+   ]
+  },
+  {
+   "p": "coins/*_*.png",
+   "at": [
+    "game/js/art.js:206",
+    "game/js/art.js:209"
+   ]
+  },
+  {
+   "p": "coins/*_16.png",
+   "at": [
+    "game/js/art.js:204",
+    "game/js/art.js:206",
+    "game/js/logic/data-checks.js:1663"
+   ]
+  },
+  {
+   "p": "coins/*_32.png",
+   "at": [
+    "game/js/art.js:204",
+    "game/js/logic/data-checks.js:1663"
+   ]
+  },
+  {
+   "p": "coins/*.json",
+   "at": [
+    "game/js/battle-3d.js:399",
+    "game/js/logic/data-checks.js:1665"
+   ]
+  },
+  {
+   "p": "coins/pyramid_32.png",
+   "at": [
+    "game/js/cutscene/opening.js:152",
+    "game/js/cutscene/opening.js:425"
+   ]
+  },
+  {
+   "p": "coins/pyramid.json",
+   "at": [
+    "game/js/cutscene/opening.js:154"
+   ]
+  },
+  {
+   "p": "eggs/egg_*_cracked.png",
+   "at": [
+    "game/js/art.js:214"
+   ]
+  },
+  {
+   "p": "eggs/egg_*.png",
+   "at": [
+    "game/js/art.js:214",
+    "game/js/art.js:216"
+   ]
+  },
+  {
+   "p": "icons/icons.png",
+   "at": [
+    "game/index.html:18",
+    "game/js/art.js:154"
+   ]
+  },
+  {
+   "p": "map/airship.png",
+   "at": [
+    "game/js/airship.js:167",
+    "game/js/airship.js:245"
+   ]
+  },
+  {
+   "p": "next/*/*_*.png",
+   "at": [
+    "game/js/walk-view.js:486"
+   ]
+  },
+  {
+   "p": "next/billionaires/*.png",
+   "at": [
+    "game/js/logic/kit-assemble.js:445",
+    "game/js/logic/placeholder-art.js:517"
+   ]
+  },
+  {
+   "p": "next/palette.js",
+   "at": [
+    "game/index.html:82"
+   ]
+  },
+  {
+   "p": "next/parts/*/*_*.png",
+   "at": [
+    "game/js/logic/part-joints.js:276"
+   ]
+  },
+  {
+   "p": "next/parts/*/*.png",
+   "at": [
+    "game/js/logic/part-joints.js:272",
+    "game/js/logic/sheet-slice.js:740"
+   ]
+  },
+  {
+   "p": "next/rigs-next.js",
+   "at": [
+    "game/index.html:81"
+   ]
+  },
+  {
+   "p": "postcards/*",
+   "at": [
+    "game/js/postcards.js:45"
+   ]
+  },
+  {
+   "p": "scene/build/detail.png",
+   "at": [
+    "game/js/buildings.js:170",
+    "game/js/prop-models.js:2196",
+    "game/js/walk-view.js:742"
+   ]
+  },
+  {
+   "p": "scene/build/rooms.png",
+   "at": [
+    "game/js/buildings.js:170",
+    "game/js/walk-view.js:742"
+   ]
+  },
+  {
+   "p": "scene/build/walls.png",
+   "at": [
+    "game/js/walk-view.js:717",
+    "game/js/walk/ground-draw.js:71"
+   ]
+  },
+  {
+   "p": "scene/far/*.png",
+   "at": [
+    "game/js/walk-view.js:754"
+   ]
+  },
+  {
+   "p": "scene/flags/*.png",
+   "at": [
+    "game/js/walk-view.js:502"
+   ]
+  },
+  {
+   "p": "scene/flags/default.png",
+   "at": [
+    "game/js/postcards.js:49",
+    "game/js/walk-view.js:752",
+    "game/js/walk/frame-items.js:189"
+   ]
+  },
+  {
+   "p": "scene/fx/*.png",
+   "at": [
+    "game/js/walk-view.js:721",
+    "game/js/walk/effects.js:253"
+   ]
+  },
+  {
+   "p": "ui/*.svg",
+   "at": [
+    "game/js/art.js:172",
+    "game/js/art.js:173",
+    "game/js/boot.js:585",
+    "game/js/ui-run-kit.js:58"
+   ]
+  }
+ ],
+ "recipes": [
+  {
+   "p": "next/billionaires/bingebat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/cublet.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/gigajenzard.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/altmowl.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/aviatorgoose.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/billgoat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/boostox.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/cartotter.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/emberox.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/everyotter.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/flatpackrat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/gosling.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/harvestgoat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/kamprat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/kidling.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/marsox.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/memeox.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/orbitotter.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/primotter.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/pupfin.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/sharktank.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/sprucegoose.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/hand/windowgoat.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/jenzard.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/siliclet.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/tigerwoods.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "next/billionaires/tiktokferret.png",
+   "at": [
+    "game/art/next/billionaires/hand/rigs-hand.json"
+   ]
+  },
+  {
+   "p": "scene/build/detail.png",
+   "at": [
+    "game/art/scene/build.json"
+   ]
+  },
+  {
+   "p": "scene/build/rooms.png",
+   "at": [
+    "game/art/scene/build.json"
+   ]
+  },
+  {
+   "p": "scene/life/car_blue.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/car_mint.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/car_red.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/car_yellow.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/cat.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/chicken.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/crab.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/duck.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/frog.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/goat.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/gull.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/lizard.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/pigeon.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/rabbit.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/sheep.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/life/squirrel.png",
+   "at": [
+    "game/art/scene/life.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_billboard_holo.png",
+   "at": [
+    "game/art/scene/next/models/city_billboard.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_flying_car_head.png",
+   "at": [
+    "game/art/scene/next/models/city_flying_car.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_flying_car_hover.png",
+   "at": [
+    "game/art/scene/next/models/city_flying_car.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_flying_car_tail.png",
+   "at": [
+    "game/art/scene/next/models/city_flying_car.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_sign_bar_neon.png",
+   "at": [
+    "game/art/scene/next/models/city_sign_bar.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_sign_hotel_neon.png",
+   "at": [
+    "game/art/scene/next/models/city_sign_hotel.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_sign_open_arrow.png",
+   "at": [
+    "game/art/scene/next/models/city_sign_open.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_sign_open_word.png",
+   "at": [
+    "game/art/scene/next/models/city_sign_open.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_streetlight_bar.png",
+   "at": [
+    "game/art/scene/next/models/city_streetlight.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_air_light.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_crown_strip.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_holo_band.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_ledge_14_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_ledge_14_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_lower_windows_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_lower_windows_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_needle_windows_0.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_needle_windows_1.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_hero_shop_strip.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_hero.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_air_light.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_glass_30_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_glass_30_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_glass_66_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_glass_66_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_ledge_30_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_ledge_30_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_ledge_66_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_ledge_66_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_lower_windows_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_lower_windows_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_pad_light.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_mega_shop_strip.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_mega.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_air_light.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_crown_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_crown_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_glass_20_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_glass_20_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_ledge_20_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_ledge_20_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_lower_windows_fb.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_lower_windows_lr.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_tower_slab_shop_strip.png",
+   "at": [
+    "game/art/scene/next/models/city_tower_slab.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/city_vending_front.png",
+   "at": [
+    "game/art/scene/next/models/city_vending.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/portal_door_void.png",
+   "at": [
+    "game/art/scene/next/models/portal_door.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/portal_gate_status.png",
+   "at": [
+    "game/art/scene/next/models/portal_gate.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/portal_gate_void.png",
+   "at": [
+    "game/art/scene/next/models/portal_gate.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/portal_hole_beam_void.png",
+   "at": [
+    "game/art/scene/next/models/portal_hole.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/portal_rift_void.png",
+   "at": [
+    "game/art/scene/next/models/portal_rift.json"
+   ]
+  },
+  {
+   "p": "scene/next/city/portal_ring_void.png",
+   "at": [
+    "game/art/scene/next/models/portal_ring.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/bakery_word.png",
+   "at": [
+    "game/art/scene/next/models/bakery.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/blackboard_chalk.png",
+   "at": [
+    "game/art/scene/next/models/blackboard.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/campfire_flames.png",
+   "at": [
+    "game/art/scene/next/models/campfire.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/clinic_word.png",
+   "at": [
+    "game/art/scene/next/models/clinic.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/cottage_sign.png",
+   "at": [
+    "game/art/scene/next/models/cottage_juniper.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/fridge_drinks_glass.png",
+   "at": [
+    "game/art/scene/next/models/fridge_drinks.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/gene_bank_word.png",
+   "at": [
+    "game/art/scene/next/models/gene_bank.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/giant_autumn_knot.png",
+   "at": [
+    "game/art/scene/next/models/tree_giant_autumn.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/giant_knot.png",
+   "at": [
+    "game/art/scene/next/models/tree_giant_swing.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/globe_lamp.png",
+   "at": [
+    "game/art/scene/next/models/clinic.json",
+    "game/art/scene/next/models/market_hall.json",
+    "game/art/scene/next/models/sign_clinic.json",
+    "game/art/scene/next/models/sign_shop.json",
+    "game/art/scene/next/models/solar_canopy.json",
+    "game/art/scene/next/models/solar_tree.json",
+    "game/art/scene/next/models/stall.json",
+    "game/art/scene/next/models/streetlamp.json",
+    "game/art/scene/next/models/streetlamp_b.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/inn_word.png",
+   "at": [
+    "game/art/scene/next/models/inn.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/lab_desk_screen.png",
+   "at": [
+    "game/art/scene/next/models/lab_desk.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/lab_machine_tube.png",
+   "at": [
+    "game/art/scene/next/models/lab_machine.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/lab_window.png",
+   "at": [
+    "game/art/scene/next/models/lab.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/lantern_glass.png",
+   "at": [
+    "game/art/scene/next/models/barn.json",
+    "game/art/scene/next/models/cottage_juniper.json",
+    "game/art/scene/next/models/cottage_moss.json",
+    "game/art/scene/next/models/cottage_solar.json",
+    "game/art/scene/next/models/gene_bank.json",
+    "game/art/scene/next/models/house_blue.json",
+    "game/art/scene/next/models/house_large.json",
+    "game/art/scene/next/models/house_red.json",
+    "game/art/scene/next/models/inn.json",
+    "game/art/scene/next/models/lantern.json",
+    "game/art/scene/next/models/shrine_small.json",
+    "game/art/scene/next/models/solar_post_light.json",
+    "game/art/scene/next/models/train_greenbelt.json",
+    "game/art/scene/next/models/train_harvest.json",
+    "game/art/scene/next/models/train_highland.json",
+    "game/art/scene/next/models/train_lakeland.json",
+    "game/art/scene/next/models/train_station.json",
+    "game/art/scene/next/models/train_wildwood.json",
+    "game/art/scene/next/models/workshop.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/library_word.png",
+   "at": [
+    "game/art/scene/next/models/library.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/market_word.png",
+   "at": [
+    "game/art/scene/next/models/market_hall.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/pennant_0.png",
+   "at": [
+    "game/art/scene/next/models/banner_bunting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/pennant_1.png",
+   "at": [
+    "game/art/scene/next/models/banner_bunting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/pennant_2.png",
+   "at": [
+    "game/art/scene/next/models/banner_bunting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/pennant_3.png",
+   "at": [
+    "game/art/scene/next/models/banner_bunting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/pennant_4.png",
+   "at": [
+    "game/art/scene/next/models/banner_bunting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/pennant_5.png",
+   "at": [
+    "game/art/scene/next/models/banner_bunting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/rose_flower.png",
+   "at": [
+    "game/art/scene/next/models/bush_roses.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/shop_word.png",
+   "at": [
+    "game/art/scene/next/models/shop.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_tear.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/station_departures.png",
+   "at": [
+    "game/art/scene/next/models/train_station.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/station_name.png",
+   "at": [
+    "game/art/scene/next/models/train_station.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/station_tickets.png",
+   "at": [
+    "game/art/scene/next/models/train_station.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/tollbooth_sign.png",
+   "at": [
+    "game/art/scene/next/models/tollbooth.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/train_greenbelt_name.png",
+   "at": [
+    "game/art/scene/next/models/train_greenbelt.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/train_harvest_name.png",
+   "at": [
+    "game/art/scene/next/models/train_harvest.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/train_highland_name.png",
+   "at": [
+    "game/art/scene/next/models/train_highland.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/train_lakeland_name.png",
+   "at": [
+    "game/art/scene/next/models/train_lakeland.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/train_rocket_flame.png",
+   "at": [
+    "game/art/scene/next/models/train_greenbelt.json",
+    "game/art/scene/next/models/train_harvest.json",
+    "game/art/scene/next/models/train_highland.json",
+    "game/art/scene/next/models/train_lakeland.json",
+    "game/art/scene/next/models/train_wildwood.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/train_wildwood_name.png",
+   "at": [
+    "game/art/scene/next/models/train_wildwood.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/wall_painting_canvas.png",
+   "at": [
+    "game/art/scene/next/models/wall_painting.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/wall_window_view.png",
+   "at": [
+    "game/art/scene/next/models/wall_window.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/washing_0.png",
+   "at": [
+    "game/art/scene/next/models/laundry_line.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/washing_1.png",
+   "at": [
+    "game/art/scene/next/models/laundry_line.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/washing_2.png",
+   "at": [
+    "game/art/scene/next/models/laundry_line.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/washing_3.png",
+   "at": [
+    "game/art/scene/next/models/laundry_line.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/washing_4.png",
+   "at": [
+    "game/art/scene/next/models/laundry_line.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/workshop_word.png",
+   "at": [
+    "game/art/scene/next/models/workshop.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/beech.png",
+   "at": [
+    "game/art/scene/next/models/tree_beech.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/birch_b.png",
+   "at": [
+    "game/art/scene/next/models/tree_birch_b.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/birch_gold.png",
+   "at": [
+    "game/art/scene/next/models/tree_birch_gold.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/birch.png",
+   "at": [
+    "game/art/scene/next/models/tree_birch.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/blossom.png",
+   "at": [
+    "game/art/scene/next/models/tree_blossom.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_berry.png",
+   "at": [
+    "game/art/scene/next/models/bush_berry.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_bramble.png",
+   "at": [
+    "game/art/scene/next/models/bush_bramble.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_hawthorn.png",
+   "at": [
+    "game/art/scene/next/models/bush_hawthorn.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_holly.png",
+   "at": [
+    "game/art/scene/next/models/bush_holly.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_juniper.png",
+   "at": [
+    "game/art/scene/next/models/bush_juniper.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_rhododendron.png",
+   "at": [
+    "game/art/scene/next/models/bush_rhododendron.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_rosemary.png",
+   "at": [
+    "game/art/scene/next/models/bush_rosemary.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_round_b.png",
+   "at": [
+    "game/art/scene/next/models/bush_round_b.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_round_c.png",
+   "at": [
+    "game/art/scene/next/models/bush_round_c.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/bush_round.png",
+   "at": [
+    "game/art/scene/next/models/bush_round.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/chestnut.png",
+   "at": [
+    "game/art/scene/next/models/tree_chestnut.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/cypress.png",
+   "at": [
+    "game/art/scene/next/models/tree_cypress.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/elm.png",
+   "at": [
+    "game/art/scene/next/models/tree_elm.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/fruit.png",
+   "at": [
+    "game/art/scene/next/models/tree_fruit.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/giant_autumn.png",
+   "at": [
+    "game/art/scene/next/models/tree_giant_autumn.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/giant.png",
+   "at": [
+    "game/art/scene/next/models/tree_giant_swing.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/hazel.png",
+   "at": [
+    "game/art/scene/next/models/tree_hazel.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/jungle_back.png",
+   "at": [
+    "game/art/scene/next/models/tree_jungle.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/jungle_vines_back.png",
+   "at": [
+    "game/art/scene/next/models/tree_jungle.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/jungle_vines_front.png",
+   "at": [
+    "game/art/scene/next/models/tree_jungle.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/jungle.png",
+   "at": [
+    "game/art/scene/next/models/tree_jungle.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/larch.png",
+   "at": [
+    "game/art/scene/next/models/tree_larch.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/maple.png",
+   "at": [
+    "game/art/scene/next/models/tree_maple.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/oak_b.png",
+   "at": [
+    "game/art/scene/next/models/tree_oak_b.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/oak_small.png",
+   "at": [
+    "game/art/scene/next/models/tree_oak_small.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/oak.png",
+   "at": [
+    "game/art/scene/next/models/tree_oak.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/olive.png",
+   "at": [
+    "game/art/scene/next/models/tree_olive.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/pine_b.png",
+   "at": [
+    "game/art/scene/next/models/tree_pine_b.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/pine_small.png",
+   "at": [
+    "game/art/scene/next/models/tree_pine_small.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/pine_snow_b.png",
+   "at": [
+    "game/art/scene/next/models/tree_pine_snow_b.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/pine_snow_small.png",
+   "at": [
+    "game/art/scene/next/models/tree_pine_snow_small.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/pine_snow.png",
+   "at": [
+    "game/art/scene/next/models/tree_pine_snow.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/pine.png",
+   "at": [
+    "game/art/scene/next/models/tree_pine.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/poplar.png",
+   "at": [
+    "game/art/scene/next/models/tree_poplar.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/rowan.png",
+   "at": [
+    "game/art/scene/next/models/tree_rowan.json"
+   ]
+  },
+  {
+   "p": "scene/next/leaves/willow.png",
+   "at": [
+    "game/art/scene/next/models/tree_willow.json"
+   ]
+  },
+  {
+   "p": "scene/props/clock_tower_hh.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/clock_tower_hm.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/flag_mast.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_berry_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_berry_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_flower_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_flower_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_round_b_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_round_b_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_round_c_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_round_c_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_round_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/bush_round_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/dry_bush_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/dry_bush_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/hedge_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/hedge_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/neon_sign_lit.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/street_tree_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/street_tree_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_birch_b_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_birch_b_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_birch_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_birch_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_blossom_great_lb.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_blossom_great_lf.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_blossom_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_blossom_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_fruit_b_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_fruit_b_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_fruit_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_fruit_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_giant_autumn_lb.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_giant_autumn_lf.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_giant_lb.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_giant_lf.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_jungle_lb.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_jungle_lf.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_mangrove_lb.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_mangrove_lf.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_maple_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_maple_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_autumn_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_autumn_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_b_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_b_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_small_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_oak_small_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_pine_b_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_pine_b_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_pine_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_pine_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_pine_small_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_pine_small_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_willow_lb.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_willow_lean_lb.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_willow_lean_lf.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  },
+  {
+   "p": "scene/props/layers/tree_willow_lf.png",
+   "at": [
+    "game/art/scene/layers.json"
+   ]
+  },
+  {
+   "p": "scene/props/windmill_blades.png",
+   "at": [
+    "game/art/scene/props.json"
+   ]
+  }
+ ]
+}
