@@ -186,6 +186,7 @@ function chaseShot(at, y0) {
     eye: [T[0] - at.dx * 20, Math.max(y0 + 2.5, T[1] + 6), T[2] + 16],
     tgt: [T[0] + at.dx * 4, T[1] + 1.2, T[2] - 1],
     fov: 50,
+    hazeK: 1.8,
   };
 }
 
@@ -211,6 +212,7 @@ function trainRideFrame() {
     eye: [W.tear[0] - 19, W.tear[2] - 1.5, rz + 15],
     tgt: [W.tear[0] - 1, W.tear[2] - 0.5, rz],
     fov: 46,
+    hazeK: 1.8,
   };
   if (R.kind === 'depart') {
     const D = DEPART;
@@ -288,8 +290,9 @@ function trainRideFrame() {
     blur: 0.12,
     center: [look.tgt[0], look.tgt[2]],
     cut: 2.6,
-    /* out over the sea the shots see further than a walk: the far rail and the tear stand clear of the haze */
-    hazeK: 1.8,
+    /* the shots out over the sea see further than a walk: the far rail and the tear stand clear of the haze (not the
+       level ones over the town: the far sea would show the world's curve) */
+    hazeK: look.hazeK || 1,
   };
 }
 /** you on the platform, walking from a to b (k of the way) @param {number[]} a @param {number[]} b @param {number} k
