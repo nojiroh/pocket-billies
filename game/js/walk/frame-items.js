@@ -109,7 +109,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       h = im.naturalHeight || im.height;
     const S = far ? null : stillPropState(p, M, im, sc);
     const y = far ? standingHeightAt(p.x, p.z) : S.y,
-      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, reducedMotion ? 0 : t, sc, wind);
+      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, reducedMotion ? 0 : t, sc, wind) + reedPush(p, M);
     const mat = S ? S.mat : propMaterial(p.k, M);
     im.__mat = mat;
     /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
@@ -502,6 +502,15 @@ export function wadeItem(it) {
     it.cut = c + it.h + it.oy;
   }
   return it;
+}
+/* water track WA-5b: reeds, cattails and bulrushes bend away from you as you pass through them (wading by them),
+   most when you brush them, none past 0.9 m */
+function reedPush(p, M) {
+  const P = walkView.pl;
+  if (!P || reducedMotion || !/reed|cattail|bulrush/.test((M.group || '') + ' ' + p.k)) return 0;
+  const dx = p.x - P.x,
+    d = Math.hypot(dx, p.z - P.z);
+  return d < 0.9 ? Math.sign(dx || 1) * 0.22 * (1 - d / 0.9) : 0;
 }
 /* water track WA-5b: a wild Billy waiting in shallows (logic/water-gen.js lets them, walk-view.js encounterCandidates)
    is cut at the waterline as a wader is, lifted by its hop and bob (the cut shrinking as it rises); null on dry ground,
