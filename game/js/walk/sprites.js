@@ -79,6 +79,7 @@ expose({
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   easeHidden: [() => easeHidden, v => (easeHidden = v)],
   flushSpriteRun: [() => flushSpriteRun, v => (flushSpriteRun = v)],
+  hideQueriesLost: [() => hideQueriesLost, v => (hideQueriesLost = v)],
   hideQuery: [() => hideQuery],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
@@ -656,6 +657,12 @@ function outlineColourOf(who) {
 }
 /* the occlusion queries in flight, oldest first (made on gpuState.gl; a lost context drops them) */
 const hideQuery = { gl: null, q: /** @type {WebGLQuery[]} */ ([]), at: 0 };
+/* phase 20 H: a restored context is the same object, so the old context's queries are dropped by hand
+   (walk-view-gl.js onGlContextRestored); asking them gave getQueryParameter warnings */
+export function hideQueriesLost() {
+  hideQuery.gl = null;
+  hideQuery.q = [];
+}
 function readHideQueries(gl) {
   if (hideQuery.gl !== gl) ((hideQuery.gl = gl), (hideQuery.q = []));
   const Q = hideQuery.q;
