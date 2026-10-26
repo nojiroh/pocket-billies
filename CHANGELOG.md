@@ -16,6 +16,13 @@ kept aside in the browser).
   pixels, starting a step lower) and "Phone lamps" (8 lamps lit at once on phones, 4 of them glowing in the air).
   Studio > Engine > Air "Cheap light shafts" adds a few soft sunbeams from the trees when God rays are off. They are
   in the graphics test, with two new stations (the Sun gap without god rays, the meadow in the rain).
+- **Pictures in batches** (phase 20, a test switch, off for now): Studio > Engine > Quality "Pictures in batches"
+  draws the trees, leaf clumps, people and other standing pictures (and their reflections) in batches, one draw for
+  all the copies of a picture next to each other (Copperleaf's pictures from about 700 draws a frame to about 140),
+  with the same look. It is in the graphics test.
+- **Reflections show the seasons**: trees and leaves in the water now turn with autumn and carry snow as the trees
+  themselves do, crowns shade themselves in the water too, and a reflection no longer borrows the shading of the last
+  picture drawn the frame before.
 - **Models in batches** (phase 20, a test switch, off for now): Studio > Engine > Quality "Models in batches" draws
   every tree, house or lamp post of one kind in one go instead of one at a time (about 130 fewer draws a frame in
   Copperleaf), with the same look. It is in the graphics test.
