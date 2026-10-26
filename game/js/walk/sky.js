@@ -19,7 +19,7 @@ export function skyColors(sc) {
   const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexToRgb(c).map(v => v / 255));
   return typeof environmentSky === 'function' && engineContext.env ? environmentSky(s, !!sc.indoor) : s;
 }
-export function drawSky(C, sun, mirror) {
+export function drawSky(C, sun) {
   const gl = gpuState.gl,
     sc = walkView.sc,
     p = gpuState.P.sky,
@@ -42,7 +42,6 @@ export function drawSky(C, sun, mirror) {
   gl.uniform1f(U.uIndoor, sc.indoor ? 1 : 0);
   gl.uniform1f(U.uTime, walkView.t);
   gl.uniform1f(U.uSunPulse, sun.pulse);
-  gl.uniform1f(U.uMirror, mirror);
   gl.uniform1f(U.uClouds, engineSetting('sun', 'clouds'));
   gl.uniform1f(U.uCloudSpd, engineSetting('sun', 'cloudSpeed'));
   /* phase 10: the bowl's far wall round the horizon, as seen from this place (world-bowl.js) */

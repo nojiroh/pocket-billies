@@ -575,7 +575,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const D = walkRenderer.dbg || {};
-  drawSky(C, sun, 0);
+  drawSky(C, sun);
   gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
