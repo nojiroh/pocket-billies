@@ -113,12 +113,12 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-6 | Natural fence | The bending post-and-rail fence | HB-4b | 1 |
 | HB-7 | Station and trains | The station, platform and sky rail models; one train per region theme; the station's sheet takes "Start a run" and the Crest upgrades; the airship scenery only | HB-4b | 1-2 |
 | HB-8 | Departure and return | Board, climb the rail, the portal opens, the train flies in, the carriage loading screen; the return out of the portal (win and loss) | HB-2, HB-7 | 1-2 |
-| HB-10a | Square: shape and fountain | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
+| HB-10a | Square: shape and fountain (done 2026-10-26) | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
 | HB-10b | Square: edges and market | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
 | HB-10c | Square: people | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
 | HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
 | HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
-| HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera | HB-10a | 1-2 |
+| HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera; the pinwheel street entries (moved from HB-10a) | HB-10a | 1-2 |
 | HB-9 | Look pass on the phone | Headless phone pictures each round, then the owner's play test and debug log | all | 1 |
 
 About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 beside HB-4b; then HB-5, HB-6 and HB-7.
@@ -521,6 +521,29 @@ and the front plots here (the old HB-10 row).
 **Risks**: phone cost of 6-10 people and the night lights (HB-10c measures); positions (hub, npcSpots, fixtures,
 checks, the fall's landing) when the square or buildings move; the locked town zone (hand patches only until
 HB-10f); one owner per file (`copperleaf.json` with the water track's patches).
+
+**Done in HB-10a** (2026-10-26, on `ccr-144f3c08-vf09lo` at the owner's word, the planning session's branch; merge
+into `track/hub`). The owner's answer: about 10 m. Checked against the code:
+- The generator's old 12 m square was paved and level out to 12 m (1683 of 1789 corner heights 1.14 m; the rest are
+  where streets slope in), so a rim inside 12 m changes ground letters only.
+- `tools/patch-copperleaf-square.mjs` (rerunnable): `--outline` paves to `squareRim(a)` (mean 10 m, a bulge toward the
+  portal's north-east, three soft lobes, 8.2-11.8 m), grass outside, streets carried to the rim; `--fountain` puts the
+  fountain where the well stood and the signpost 4.5 m out (it stood 2.2 m from the middle, against the basin).
+  WA-10's `patch-copperleaf-water.mjs --square` (8 m) is gone, so a rerun can't shrink it again.
+- `build-copperleaf.mjs` places the fountain and the signpost the same way (a rebuild keeps them); the world map draws
+  a fountain on the well plot (`BOWL_PLOT_PROPS`). The plot kind stays `well` (an internal name; a rename is its own
+  commit if wanted).
+- **Model fix**: the fountain's three waters and its lily pads sat just under their bowls' solid tops, so the fountain
+  looked dry; lifted (tools/build-props-batch6.py). Rebuilding batch 6 also rewrote `clock_tower` and
+  `test_props_marigold` (old drift between the script and later edits): not taken, left for whoever owns them.
+- The view: from the square's south-west edge the sky rail and the portal stand open to the north-east (no tall thing on
+  the line); HB-10b frames it with the edge props.
+- Tests: tools/test/hub-square.test.mjs (quick tier: the rim, paved to it, no plot on it, the fountain, the signpost
+  and the hub spot clear). Pictures: `python3 tools/island-shots.py OUT --only=town-square,town,square-portal,square-near`
+  (two new shots; fountain shots stand you 3 m east, not in the basin).
+- **Not done, moved to HB-10f**: the pinwheel street entries. The streets come in from the north-west, west and east
+  inside the locked town zone; turning them means re-routing streets, which is the reproducible rebuild's work.
+- The hub spot [151.63, 59.36] stays (1.25 m from the basin's edge): every hub position is unchanged.
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
