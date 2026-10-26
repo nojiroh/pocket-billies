@@ -169,3 +169,65 @@ test('RL-S2 part B: a favour asked is paid on the way home once its check holds:
   assert.deepEqual(R.relFavoursPay(s, holds, FL), [{ who: 'chosen', quest: 'fav_chosen', points: 3, from: 0, to: 2 }]);
   assert.ok(conditionHolds('quest:fav_chosen = done', storyStateOf(s)));
 });
+
+test("RL-S2 part B: Chapter 1's beats come one a return, in order, each once; chapter1-end moves the story to chapter 2", async () => {
+  const B = GAME_DATA.banter,
+    { storyPick, storyPickSaid } = modules['story-pick'];
+  const save = /** @type {any} */ ({ story: {}, items: {}, pyramids: {}, meta: { ...newMeta() } });
+  const entry = (o = {}) => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end: 'lost',
+    by: null,
+    row: 2,
+    days: 4,
+    team: [],
+    perks: [],
+    leaders: [],
+    rival: null,
+    ...o,
+  });
+  /** a return as story-stage.js storyHomeArrive plays it: the run kept, each hub person's line picked (a must line
+   * not yet heard kept), then the talks (skipping who is in `skip`), each playing its script (a beat's `set`) */
+  let fresh = {};
+  const home = async (e, o = {}, skip = []) => {
+    save.meta.history.push(e);
+    save.meta.runs = save.meta.history.length;
+    Object.assign(save.meta, o);
+    const was = fresh;
+    fresh = {};
+    for (const who of ['chosen', 'hazel']) {
+      const S = storyStateOf(save),
+        keep = was[who] && B[was[who]].must ? was[who] : null,
+        k = keep || storyPick(who, B, c => conditionHolds(c, S), save.story, save.meta.runs);
+      if (!k) continue;
+      if (!keep) storyPickSaid(k, B, save.story, save.meta.runs);
+      fresh[who] = k;
+    }
+    const said = [];
+    for (const [who, k] of Object.entries(fresh)) {
+      if (skip.includes(who)) continue;
+      delete fresh[who];
+      await runScript(parseScript(B[k].script), { say: () => {}, choose: () => 0 }, { save, id: 'banter:' + k });
+      said.push(k);
+    }
+    return said.filter(k => k.startsWith('ch1_'));
+  };
+  assert.deepEqual(await home(entry(), {}, ['hazel']), [], 'Hazel not talked to: her beat waits');
+  assert.deepEqual(await home(entry()), ['ch1_drop'], 'and is said the next time');
+  assert.deepEqual(await home(entry()), [], 'Blake not met yet');
+  assert.deepEqual(await home(entry({ rival: { met: 1, won: 0 } }), { beans: 1 }), ['ch1_blake']);
+  assert.deepEqual(await home(entry()), ['ch1_beans']);
+  assert.deepEqual(await home(entry({ by: { kind: 'route', id: 'bureau_clerk', bureau: 1 } })), ['ch1_number']);
+  assert.deepEqual(await home(entry({ by: { kind: 'boss', id: 'x' } })), ['ch1_signal']);
+  assert.deepEqual(await home(entry({ by: { kind: 'boss', id: 'x' } })), [], 'each once');
+  assert.equal(save.meta.chapter || 1, 1);
+  await runScript(
+    parseScript(GAME_DATA.story.scripts['chapter1-end'].script),
+    { say: () => {}, choose: () => 0 },
+    { save, id: 'story:chapter1-end' }
+  );
+  assert.equal(save.meta.chapter, 2);
+});

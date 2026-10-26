@@ -4,6 +4,11 @@
   "rival0": "how Blake's first battle went: win, lose or skip (story.js storyAfterRival; read by scripts.blake-first-battle)",
   "firstLoss": "RL-S1: the first lost run's scene has played (story.json scripts.back-lost); later losses get a picked pair (banter.json back_lost)",
   "ending": "the last clue: the story's last stage (story.js storyEnding, lore.js loreStage)",
+  "ch1_drop": "RL-S2: Chapter 1's first beat said (banter.json ch1_drop, Hazel: you keep falling, on a schedule)",
+  "ch1_blake": "RL-S2: Chapter 1's second beat said (banter.json ch1_blake, Chosen on Blake)",
+  "ch1_beans": "RL-S2: Chapter 1's third beat said (banter.json ch1_beans, Hazel on the Bureau's Beans)",
+  "ch1_number": "RL-S2: Chapter 1's fourth beat said (banter.json ch1_number, Hazel found your number on their forms)",
+  "ch1_signal": "RL-S2: Chapter 1's fifth beat said (banter.json ch1_signal, Chosen: something big on Hazel's instruments); the sixth is scripts.chapter1-end, after the Voltron (RL-14)",
   "flights": "airship flights taken, a count (airship.js)",
   "clueLanyard": "the lanyard clue found (lore.json clues: lanyard)",
   "clueVoice": "the voicemail clue found (lore.json clues: voicemail)",
@@ -42,6 +47,16 @@
   "You": "me"
  },
  "scripts": {
+  "chapter1-end": {
+   "about": "RL-S2: Chapter 1's last beat, after the Voltron is beaten (RL-14 calls it: storyState.pending = 'chapter1-end', as back-lost); it moves the story on to chapter 2",
+   "who": "hazel",
+   "script": [
+    "Hazel: That thing was retrieving. It was built to bring things back. #l:6616",
+    "Chosen: Like me. With you. Constantly. #l:85a4",
+    "Hazel: ...Yes. Exactly like that. Which is the problem. #l:af32",
+    "chapter 2"
+   ]
+  },
   "back-lost": {
    "about": "RL-S1: home after a lost run, by the mast (run.js runEndHome, story-stage.js storyPendingCheck): the first time Chosen takes the credit and Hazel has her doubts; later a pair picked by the run history (banter.json back_lost)",
    "who": "chosen",

@@ -87,7 +87,8 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   const T = storyStateOf({ meta: { runs: 1, history: [first] }, story: { met_juniper: 1 } });
   const h = c => conditionHolds(c, T);
   assert.equal(storyPick('chosen', G, h, {}, 1), 'chosen_first');
-  assert.equal(storyPick('hazel', G, h, {}, 1), 'hazel_rounder');
+  assert.equal(storyPick('hazel', G, h, {}, 1), 'ch1_drop', "RL-S2: Chapter 1's first beat");
+  assert.equal(storyPick('hazel', G, h, { once: { 'banter:ch1_drop': 1 } }, 1), 'hazel_rounder');
   assert.equal(storyPick('juniper', G, h, {}, 1), 'juniper_lost');
   assert.ok(['lost_rescued', 'lost_reflexes'].includes(storyPick('back_lost', G, h, {}, 1)));
 });

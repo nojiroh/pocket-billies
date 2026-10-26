@@ -43,6 +43,49 @@
    "Hazel: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
   ]
  },
+ "ch1_drop": {
+  "who": "hazel",
+  "when": "history:runs >= 1",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["You fell out of the sky once. Fine. Now you do it on a schedule. #l:44ee","set ch1_drop"]
+ },
+ "ch1_blake": {
+  "who": "chosen",
+  "when": "ch1_drop and history:rivalmet >= 1",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. #l:8d8e","set ch1_blake"]
+ },
+ "ch1_beans": {
+  "who": "hazel",
+  "when": "ch1_blake and (beans >= 1 or rel:chosen or rel:hazel or rel:juniper)",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": [
+   "These Beans. Every crate the Bureau loses has them. Nobody eats them. Nobody throws them out. #l:c6c3",
+   "set ch1_beans"
+  ]
+ },
+ "ch1_number": {
+  "who": "hazel",
+  "when": "ch1_beans and (history:bureau >= 1 or history:runs >= 3)",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["Their forms number lost things. I found yours. You’re item four hundred and something. #l:a7b4","set ch1_number"]
+ },
+ "ch1_signal": {
+  "who": "chosen",
+  "when": "ch1_number and (lastby:boss or history:wins >= 1)",
+  "priority": 10,
+  "once": true,
+  "must": true,
+  "script": ["Something big walked across Hazel’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
+ },
  "chosen_first": {
   "who": "chosen",
   "when": "history:runs = 1",
