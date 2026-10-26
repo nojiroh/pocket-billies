@@ -686,6 +686,19 @@ TRAIN_SMOKE = [{'k': 'smoke', 'x': -176, 'y': -48, 'z': 1.3}, {'k': 'smoke', 'x'
                {'k': 'smoke', 'x': 90, 'y': -88, 'z': 1.3}]
 
 
+# HB-8: each train's carriage as the run's loading screen draws it (train-carriage.js): its wall, the trim round the
+# windows and the rack, its seats, the shade under them; the bags on the rack; the portal's tunnel past the windows
+CARRIAGES = {
+    'train_lakeland': {'wall': '#E8E4D6', 'trim': '#2E9AA0', 'seat': '#1E6E78', 'dark': '#B8B2A0'},
+    'train_greenbelt': {'wall': '#4E8A4A', 'trim': A['brass'], 'seat': '#8A3A2A', 'dark': '#3A6A3A'},
+    'train_wildwood': {'wall': A['wood'], 'trim': A['brass'], 'seat': '#5E8A4A', 'dark': A['dwood']},
+    'train_highland': {'wall': '#D6DCE6', 'trim': '#C8383C', 'seat': '#3A4660', 'dark': '#9AA2B2'},
+    'train_harvest': {'wall': A['copper'], 'trim': A['cream'], 'seat': '#6A3A20', 'dark': '#9A5A34'},
+}
+CARRIAGE_BAGS = ['#8A5A34', '#3A4E7A', '#A04A3A', '#5E7C4E', '#6A4A70']
+TUNNEL = ['#1A1240', '#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF']  # the tear's colours, darkest first
+
+
 def train_variants(key, name):
     gold, bad = TRAIN_LOOKS[key]
     return [{'swap': gold, 'name': f'{name} (gold trim)'}, {'swap': bad, 'fx': TRAIN_SMOKE, 'name': f'{name} (battered)'}]
@@ -709,7 +722,7 @@ def add_props(C):
     C['sky_portal'] = ISL.new_prop('sky_portal', 'Sky portal', sky_portal(blue), shadow=1.2, tags=('hub', 'station'), solid=1.2,
                                    vary=FIXED, glow={'c': '#7FD8FF', 'r': 6, 'y': r2(Z_TOP + 2), 'day': 0.5},
                                    variants=[{'swap': {blue: gold}, 'glow': {'c': '#FFC94A', 'r': 6, 'y': r2(Z_TOP + 2), 'day': 0.5},
-                                              'name': 'Sky portal (gold)'}],
+                                              'name': 'Sky portal (gold)'}], tunnel=TUNNEL,
                                    about='The tear in the sky at the sky rail\'s top (HB-7): the rail climbs into it from -x and '
                                    'stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way '
                                    'home after a win')
@@ -717,7 +730,8 @@ def add_props(C):
         r = fn()
         B1.shift_y(r['layers'], TRAIN_HALF)
         C[key] = ISL.new_prop(key, name, r, group='sky_train', shadow=1.0, tags=('hub', 'station', 'train'), box_=(11.8, 2.6),
-                              vary=FIXED, bob=0.04, variants=train_variants(key, name), about=f'The {name} (HB-7), a sky '
+                              vary=FIXED, bob=0.04, variants=train_variants(key, name),
+                              carriage={**CARRIAGES[key], 'bags': CARRIAGE_BAGS}, about=f'The {name} (HB-7), a sky '
                               "train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, "
                               'facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)')
 

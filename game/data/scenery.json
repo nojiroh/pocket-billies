@@ -11821,6 +11821,7 @@
      "name": "Sky portal (gold)"
     }
    ],
+   "tunnel": ["#1A1240","#2A1E5A","#5A3AC8","#3A8AE8","#8FE4FF","#F4FCFF"],
    "about": "The tear in the sky at the sky rail's top (HB-7): the rail climbs into it from -x and stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way home after a win"
   },
   "train_lakeland": {
@@ -11853,6 +11854,13 @@
      "name": "Lakeland Clipper (battered)"
     }
    ],
+   "carriage": {
+    "wall": "#E8E4D6",
+    "trim": "#2E9AA0",
+    "seat": "#1E6E78",
+    "dark": "#B8B2A0",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
    "about": "The Lakeland Clipper (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_greenbelt": {
@@ -11885,6 +11893,13 @@
      "name": "Greenbelt Sunrunner (battered)"
     }
    ],
+   "carriage": {
+    "wall": "#4E8A4A",
+    "trim": "#E8C060",
+    "seat": "#8A3A2A",
+    "dark": "#3A6A3A",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
    "about": "The Greenbelt Sunrunner (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_wildwood": {
@@ -11917,6 +11932,13 @@
      "name": "Wildwood Zephyr (battered)"
     }
    ],
+   "carriage": {
+    "wall": "#B27648",
+    "trim": "#E8C060",
+    "seat": "#5E8A4A",
+    "dark": "#84543C",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
    "about": "The Wildwood Zephyr (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_highland": {
@@ -11949,6 +11971,13 @@
      "name": "Highland Arrow (battered)"
     }
    ],
+   "carriage": {
+    "wall": "#D6DCE6",
+    "trim": "#C8383C",
+    "seat": "#3A4660",
+    "dark": "#9AA2B2",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
    "about": "The Highland Arrow (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "train_harvest": {
@@ -11981,6 +12010,13 @@
      "name": "Harvest Comet (battered)"
     }
    ],
+   "carriage": {
+    "wall": "#CE7C4C",
+    "trim": "#F2DCA0",
+    "seat": "#6A3A20",
+    "dark": "#9A5A34",
+    "bags": ["#8A5A34","#3A4E7A","#A04A3A","#5E7C4E","#6A4A70"]
+   },
    "about": "The Harvest Comet (HB-7), a sky train for its region theme (regions.json, its theme's train): it rides the sky rail on its skids, facing +x. HB-8: v 1 gold-trimmed (home from a won run), v 2 battered and smoking (a lost one)"
   },
   "workshop": {
