@@ -13,7 +13,7 @@
   justify-content: center;
   align-items: center;
   gap: 18px;
-  padding: 20px 4px;
+  padding: 20px var(--s1);
   text-align: center;
 }
 @keyframes float {
@@ -39,8 +39,8 @@
 }
 .starters {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
+  gap: var(--s3);
+  margin-top: var(--s4);
 }
 .starter .sn {
   font: 400 24px/1.05 var(--font-voice);
@@ -211,7 +211,7 @@ body.ttl-live .ttl-bg {
 .ttl-bottom {
   width: min(420px, 100%);
   display: grid;
-  gap: 12px;
+  gap: var(--s3);
   animation: ldIn 0.9s 0.25s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 .ttl-cont {
@@ -283,7 +283,7 @@ body.ttl-auto .ttl-ring circle {
 }
 .ttl-ct small {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--s1);
   font-size: var(--fs-caption);
   color: var(--text2);
 }
@@ -471,8 +471,8 @@ body.ld-on #app {
 .acc-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 6px;
+  gap: var(--s2);
+  padding: 6px var(--s3) 6px 6px;
   border: 0;
   border-radius: 999px;
   background: rgba(20, 14, 40, 0.55);
@@ -489,7 +489,7 @@ body.ld-on #app {
 }
 .acc-chip.quiet {
   opacity: 0.75;
-  padding: 6px 12px;
+  padding: 6px var(--s3);
   cursor: default;
 }
 .acc-g {
@@ -512,9 +512,9 @@ body.ld-on #app {
 .acc-box {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  margin: 0 0 12px;
+  gap: var(--s3);
+  padding: var(--s3);
+  margin: 0 0 var(--s3);
   border-radius: 14px;
   background: var(--panel2, rgba(0, 0, 0, 0.04));
   flex-wrap: wrap;
@@ -533,7 +533,7 @@ body.ld-on #app {
 .acc-gbtn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   background: #fff !important;
   color: #2a2238 !important;
 }

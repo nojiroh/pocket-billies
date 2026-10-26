@@ -147,7 +147,7 @@ canvas {
   z-index: 1;
   max-width: 480px;
   margin: 0 auto;
-  padding: 8px 16px calc(104px + env(safe-area-inset-bottom, 0px));
+  padding: var(--s2) var(--s4) calc(104px + env(safe-area-inset-bottom, 0px));
 }
 h1,
 h2,
@@ -163,7 +163,7 @@ h2 {
 }
 h3 {
   font-size: 19px;
-  margin-top: 16px;
+  margin-top: var(--s4);
 }
 p {
   margin: 0;
@@ -376,8 +376,8 @@ section {
   #app {
     min-height: 100vh;
     background: var(--panel);
-    padding-left: 24px;
-    padding-right: 24px;
+    padding-left: var(--s5);
+    padding-right: var(--s5);
     border-left: 1px solid var(--lo);
     border-right: 1px solid var(--lo);
   }
@@ -416,8 +416,8 @@ section {
 }
 @media (max-width: 370px) {
   #app {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: var(--s3);
+    padding-right: var(--s3);
   }
 }
 @media (min-width: 960px) {

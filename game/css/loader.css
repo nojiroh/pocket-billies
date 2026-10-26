@@ -176,8 +176,8 @@
 #loader .ld-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  margin: 20px 4px 0;
+  gap: var(--s3);
+  margin: 20px var(--s1) 0;
   font-size: 15px;
 }
 #loader .ld-phase {
@@ -218,7 +218,7 @@
 }
 #loader .ld-tip {
   min-height: 3em;
-  margin: 22px 8px 0;
+  margin: 22px var(--s2) 0;
   font-size: 14px;
   line-height: 1.45;
   color: #ffe9d6;
@@ -238,7 +238,7 @@
   font-size: 14px;
 }
 #loader .ld-fail ul {
-  margin: 8px 0 12px;
+  margin: var(--s2) 0 var(--s3);
   padding-left: 18px;
   max-height: 7.5em;
   overflow: auto;
@@ -283,10 +283,10 @@
   }
 }
 #loader .ld-row {
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 #loader .ld-tip {
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 /* alpha 0.4.1: the town itself loads in behind the logo (js/boot.js mountLoaderTown): the sky goes, the island isn't needed,
    the same shading top and bottom as the title keeps the words readable */
@@ -343,7 +343,7 @@ body.ld-on #dio {
 #nogl .nogl-btns {
   display: flex;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: var(--s4);
 }
 #nogl button {
   flex: 1;

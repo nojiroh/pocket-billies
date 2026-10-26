@@ -1,12 +1,12 @@
 /* UI-5: the dialogue box's older rules (the talk layer, its box and speaker), moved as they were from the old layers (style, polish, screens, v05), in the order the page loaded them. They load right after those layers and before the kit; a rule a later old rule overrode at equal specificity stays where it was, so the cascade is as before (tools/style-diff.py) */
 /* ---------- UI-6: from style.css, polish.css, as it was ---------- */
 .dlg {
-  padding: 16px;
+  padding: var(--s4);
 }
 .line {
   font-size: 19px;
   line-height: 1.4;
-  margin: 8px 0 16px;
+  margin: var(--s2) 0 var(--s4);
   font-weight: 600;
   animation: type 0.7s steps(28);
 }
@@ -72,7 +72,7 @@
 /* ---------- UI-5: from polish.css, as it was ---------- */
 .speaker {
   display: inline-block;
-  padding: 4px 9px 5px;
+  padding: var(--s1) 9px 5px;
   background: var(--gold);
   color: #3a2408;
   box-shadow:
@@ -107,9 +107,9 @@
   width: min(620px, calc(100% - 24px));
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
+  gap: var(--s3);
   align-items: end;
-  padding: 12px 14px 14px;
+  padding: var(--s3) 14px 14px;
   border-radius: 16px;
   background: var(--panel-s);
   box-shadow: 0 10px 30px var(--shadow);

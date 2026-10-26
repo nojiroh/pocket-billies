@@ -66,7 +66,7 @@ body.dressing #nav {
 }
 .dr-tog {
   min-height: 34px;
-  padding: 0 12px;
+  padding: 0 var(--s3);
   border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
@@ -90,7 +90,7 @@ body.dressing #nav {
   display: flex;
   gap: 10px;
   align-items: center;
-  padding: 8px 12px;
+  padding: var(--s2) var(--s3);
   border-radius: 16px;
 }
 .dr-keeper p {
@@ -99,9 +99,9 @@ body.dressing #nav {
 }
 .dr-top {
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
   align-items: end;
-  padding: 12px 14px 8px;
+  padding: var(--s3) 14px var(--s2);
 }
 .dr-name {
   flex: 1;
@@ -149,17 +149,17 @@ body.dressing #nav {
 .dr-body {
   flex: 1;
   overflow: auto;
-  padding: 4px 14px 16px;
+  padding: var(--s1) 14px var(--s4);
   overscroll-behavior: contain;
 }
 .dr-sec h3 {
   font: 400 15px var(--font-voice);
-  margin: 14px 0 8px;
+  margin: 14px 0 var(--s2);
 }
 .dr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 8px;
+  gap: var(--s2);
 }
 .dr-it {
   position: relative;
@@ -167,7 +167,7 @@ body.dressing #nav {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 6px 4px 7px;
+  padding: 6px var(--s1) 7px;
   border: 2px solid color-mix(in srgb, var(--line) 30%, transparent);
   border-radius: 10px;
   background: var(--hi);
@@ -234,7 +234,7 @@ body.dressing #nav {
 .dr-sl {
   display: grid;
   grid-template-columns: 110px 1fr 28px;
-  gap: 8px;
+  gap: var(--s2);
   align-items: center;
   font-size: 13px;
   font-weight: 600;
@@ -254,7 +254,7 @@ body.dressing #nav {
 .dr-outfits {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: var(--s2);
 }
 .dr-out {
   display: flex;
@@ -283,7 +283,7 @@ body.dressing #nav {
 }
 .dr-foot {
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
   align-items: center;
   padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
   border-top: 2px solid color-mix(in srgb, var(--line) 25%, transparent);
@@ -321,7 +321,7 @@ body.dressing #nav {
   display: grid;
   place-items: end center;
   height: 84px;
-  padding: 4px;
+  padding: var(--s1);
   border-radius: 10px;
   cursor: pointer;
   border: 2px solid transparent;
@@ -354,10 +354,10 @@ body.dressing #nav {
 }
 .dr-more {
   border-top: 1px dashed rgba(0, 0, 0, 0.12);
-  padding-top: 8px;
+  padding-top: var(--s2);
 }
 .dr-moreb {
-  margin-bottom: 8px;
+  margin-bottom: var(--s2);
 }
 .dr-outgrid {
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
@@ -374,7 +374,7 @@ body.dressing #nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px 4px 2px;
+  padding: 6px var(--s1) 2px;
 }
 .dr-outfit[aria-pressed='true'] {
   outline: 2px solid var(--gold, #d9a441);
@@ -383,6 +383,6 @@ body.dressing #nav {
 .dr-ways {
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: var(--s1);
   padding: 2px 0 6px;
 }

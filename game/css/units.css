@@ -595,7 +595,7 @@
 }
 .u-part {
   display: grid;
-  gap: 4px;
+  gap: var(--s1);
   min-width: 0;
 }
 .u-part b {
@@ -610,7 +610,7 @@
   color: var(--text2);
 }
 .u-brk {
-  padding: 1px 8px;
+  padding: 1px var(--s2);
   border-radius: var(--r-pill);
   font: 700 var(--fs-caption) / 1.4 var(--font-voice);
   color: #fff;

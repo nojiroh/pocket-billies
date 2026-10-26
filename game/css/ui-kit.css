@@ -239,7 +239,7 @@ hr.pb-rule::after {
   display: inline-block;
   width: 8px;
   height: 8px;
-  margin-right: 4px;
+  margin-right: var(--s1);
   vertical-align: 0;
   background: currentColor;
   -webkit-mask: var(--glyph) center / contain no-repeat;

@@ -3,7 +3,7 @@
 .ls-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: var(--s2);
   margin-bottom: 10px;
 }
 .ls-k {
@@ -14,12 +14,12 @@
 }
 .fchips {
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
   overflow-x: auto;
-  padding: 14px 3px 8px;
+  padding: 14px 3px var(--s2);
   margin: 0 -16px;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--s4);
+  padding-right: var(--s4);
   scrollbar-width: none;
 }
 .fchips::-webkit-scrollbar {
@@ -28,7 +28,7 @@
 .fchip {
   flex: none;
   border: 0;
-  padding: 7px 12px;
+  padding: 7px var(--s3);
   font: 600 13.5px/1 var(--font-voice);
   background: var(--panel-s);
   color: var(--text);
@@ -90,7 +90,7 @@
   text-transform: uppercase;
   color: #fff;
   background: rgba(14, 10, 26, 0.62);
-  padding: 6px 8px;
+  padding: 6px var(--s2);
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
 }
 @keyframes stampIn {
@@ -113,7 +113,7 @@
 }
 .dexname {
   font-size: 36px;
-  margin-top: 16px;
+  margin-top: var(--s4);
 }
 .rar {
   margin: 0 0 0 6px;
@@ -167,7 +167,7 @@
 
 /* ---------- UI-5: from style.css, as it was ---------- */
 .dex {
-  padding: 6px 6px 8px;
+  padding: 6px 6px var(--s2);
   text-align: center;
   border: 0;
   position: relative;
@@ -213,7 +213,7 @@
   color: var(--ink2);
   transform: rotate(-1.2deg);
   transform-origin: left;
-  margin-top: 8px;
+  margin-top: var(--s2);
 }
 .hand.red {
   color: var(--redink);
@@ -238,10 +238,10 @@
   display: grid;
   grid-template-columns: 38px 58px 1fr auto 30px;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   border: 0;
   background: none;
-  padding: 4px 10px 4px 0;
+  padding: var(--s1) 10px var(--s1) 0;
   text-align: left;
   color: var(--ink);
   min-height: 64px;
@@ -313,7 +313,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
 }
 .dexnav {
   display: flex;
@@ -342,7 +342,7 @@
   color: #2e5ea8;
 }
 .vit {
-  padding: 8px 10px;
+  padding: var(--s2) 10px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -360,8 +360,8 @@
   line-height: 1.3;
 }
 .dexpage section {
-  padding: 12px 14px 12px 50px;
-  margin-top: 16px;
+  padding: var(--s3) 14px var(--s3) 50px;
+  margin-top: var(--s4);
 }
 .dexpage section p {
   line-height: 28px;
@@ -379,7 +379,7 @@
   font-size: 14.5px;
 }
 .bsheet td {
-  padding: 4px 0;
+  padding: var(--s1) 0;
   height: 28px;
 }
 .bsheet td:first-child {
@@ -417,7 +417,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--s1);
 }
 .evnode {
   display: flex;
@@ -426,7 +426,7 @@
   gap: 2px;
   border: 0;
   background: none;
-  padding: 4px;
+  padding: var(--s1);
   color: var(--ink);
   min-width: 70px;
 }
@@ -455,7 +455,7 @@
   line-height: 1.2;
 }
 .sig {
-  margin: 22px 4px 10px;
+  margin: 22px var(--s1) 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -468,7 +468,7 @@
   border-bottom: 2px solid var(--ink2);
 }
 .sig small {
-  margin-top: 8px;
+  margin-top: var(--s2);
   color: var(--text2);
   font-size: 12.5px;
 }
@@ -597,19 +597,19 @@
 }
 .lore-tabs button {
   font-size: 12.5px;
-  padding: 6px 8px;
+  padding: 6px var(--s2);
 }
 .lore {
   display: grid;
-  gap: 12px;
-  margin: 12px 3px 18px;
+  gap: var(--s3);
+  margin: var(--s3) 3px 18px;
 }
 .lore-card {
   display: block;
   width: 100%;
   text-align: left;
   position: relative;
-  padding: 12px 14px 13px;
+  padding: var(--s3) 14px 13px;
   background: var(--panel-s);
   color: var(--text);
   border: 0;
@@ -625,7 +625,7 @@
   margin: 3px;
 }
 .lore-card h3 {
-  margin: 0 0 4px;
+  margin: 0 0 var(--s1);
   font: 400 16px/1.1 var(--font-voice);
   letter-spacing: 0.02em;
   color: var(--text);
@@ -644,12 +644,12 @@
 .lore-card p b {
   font: 400 12px/1 var(--font-voice);
   letter-spacing: 0.03em;
-  margin-right: 4px;
+  margin-right: var(--s1);
   color: var(--text2);
 }
 .lore-card .hand {
   font-size: 19px;
-  margin-top: 8px;
+  margin-top: var(--s2);
 }
 .lore-card.locked {
   opacity: 0.55;
@@ -660,7 +660,7 @@
 .lore-card.person {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
+  gap: var(--s3);
   align-items: start;
 }
 .lore-face {
@@ -676,7 +676,7 @@
   transform: translateY(-1px);
 }
 .lore-more {
-  margin: 2px 6px 8px;
+  margin: 2px 6px var(--s2);
 }
 .book-sheet .book-by {
   font: 400 12px/1 var(--font-voice);
@@ -685,7 +685,7 @@
   margin-bottom: 6px;
 }
 .book-page {
-  padding: 16px 18px;
+  padding: var(--s4) 18px;
   min-height: 8em;
   font-size: 15px;
   line-height: 1.55;
@@ -694,13 +694,13 @@
   text-align: center;
   font: 400 12px/1 var(--font-voice);
   opacity: 0.7;
-  margin: 8px 0 0;
+  margin: var(--s2) 0 0;
 }
 .clue-sheet .clue-k {
   font: 400 22px/1.1 var(--font-voice);
   letter-spacing: 0.02em;
   text-align: center;
-  padding: 14px 8px 4px;
+  padding: 14px var(--s2) var(--s1);
   color: var(--gold, #c99a1e);
 }
 

@@ -11,7 +11,7 @@
 .row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--s1);
   align-items: center;
 }
 .d {
@@ -43,9 +43,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--s2);
   min-height: 46px;
-  padding: 10px 12px;
+  padding: 10px var(--s3);
   border: 0;
   background: var(--pb);
   color: var(--text);
@@ -191,8 +191,8 @@ canvas.rig.sil {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
-  padding: 10px 0 4px;
+  gap: var(--s3);
+  padding: 10px 0 var(--s1);
 }
 .where {
   font-size: 34px;
@@ -217,7 +217,7 @@ section > h2,
 .sub {
   font-size: 13px;
   color: var(--text2);
-  margin-bottom: 4px;
+  margin-bottom: var(--s1);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -243,7 +243,7 @@ section > h2,
   height: 10px;
   background: var(--panel2);
   box-shadow: 0 0 0 2px var(--line);
-  margin: 8px 2px 4px;
+  margin: var(--s2) 2px var(--s1);
   overflow: hidden;
 }
 .pbar i {
@@ -282,7 +282,7 @@ section > h2,
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
 }
 .count {
   font-family: var(--font-voice);
@@ -292,7 +292,7 @@ section > h2,
 .racts {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--s1);
   margin-top: 10px;
 }
 .enc {
@@ -300,7 +300,7 @@ section > h2,
   scroll-snap-align: start;
   position: relative;
   text-align: left;
-  padding: 10px 10px 12px;
+  padding: 10px 10px var(--s3);
   border: 0;
   display: flex;
   flex-direction: column;
@@ -311,7 +311,7 @@ section > h2,
   background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.16), transparent 40%);
 }
 .empty {
-  padding: 16px;
+  padding: var(--s4);
   color: var(--text2);
   font-size: 14.5px;
   margin-top: 10px;
@@ -330,9 +330,9 @@ section > h2,
 /* buddy */
 .buddy {
   display: flex;
-  gap: 12px;
+  gap: var(--s3);
   align-items: center;
-  padding: 12px;
+  padding: var(--s3);
   margin-top: 10px;
   cursor: pointer;
 }
@@ -343,7 +343,7 @@ section > h2,
 .chip {
   display: inline-block;
   font: 400 12px/1 var(--font-voice);
-  padding: 3px 7px 4px;
+  padding: 3px 7px var(--s1);
   background: var(--tc);
   color: var(--tf);
   box-shadow: 0 0 0 2px var(--line);
@@ -353,7 +353,7 @@ section > h2,
   font: 400 12px/1 var(--font-voice);
   padding: 3px 6px;
   box-shadow: 0 0 0 2px currentColor;
-  margin-left: 4px;
+  margin-left: var(--s1);
 }
 .st-par {
   color: #c27c0e;
@@ -379,7 +379,7 @@ section > h2,
 .mons {
   display: grid;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 .mon {
   display: grid;
@@ -387,7 +387,7 @@ section > h2,
   gap: 10px;
   align-items: center;
   text-align: left;
-  padding: 8px 12px 8px 6px;
+  padding: var(--s2) var(--s3) var(--s2) 6px;
   border: 0;
   width: calc(100% - 6px);
   color: var(--text);
@@ -410,7 +410,7 @@ section > h2,
   display: none;
 }
 .mon .pbar {
-  margin: 4px 2px 0;
+  margin: var(--s1) 2px 0;
 }
 /* ledger */
 .grid {
@@ -424,8 +424,8 @@ section > h2,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 8px 12px;
+  gap: var(--s2);
+  padding: var(--s4) var(--s2) var(--s3);
   font: 400 20px var(--font-voice);
   color: var(--text);
   transform: perspective(500px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
@@ -438,7 +438,7 @@ section > h2,
   align-items: center;
   text-align: left;
   border: 0;
-  padding: 8px 12px 8px 4px;
+  padding: var(--s2) var(--s3) var(--s2) var(--s1);
   color: var(--text);
   animation: rise 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
   animation-delay: var(--d);
@@ -448,7 +448,7 @@ section > h2,
 .starter > span:last-child {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--s1);
   min-width: 0;
 }
 .starter .sd {
@@ -468,7 +468,7 @@ section > h2,
 .stats {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
+  margin-top: var(--s3);
   font-size: 15px;
 }
 .stats td {
@@ -491,7 +491,7 @@ section > h2,
   margin-top: 6px;
   font: inherit;
   font-size: 16px;
-  padding: 10px 12px;
+  padding: 10px var(--s3);
   border: 0;
   background: var(--bg);
   color: var(--text);
@@ -533,8 +533,8 @@ section > h2,
 .vitals {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--s2);
+  margin-top: var(--s3);
 }
 /* a UI icon: fixed-colour pixel art (tools/build-ui-icons.py), shown as it is on both themes */
 .uico {
@@ -609,7 +609,7 @@ section > h2,
   font-size: 25px;
 }
 .title .tag {
-  margin: 16px auto 24px;
+  margin: var(--s4) auto var(--s5);
   max-width: 340px;
 }
 .swatch span {
@@ -629,7 +629,7 @@ section > h2,
   cursor: pointer;
 }
 .option {
-  padding: 9px 12px;
+  padding: 9px var(--s3);
   min-height: 42px;
   border: 2px solid var(--lo);
   border-radius: 4px;
@@ -663,7 +663,7 @@ section > h2,
 }
 .help p {
   font-size: 13px;
-  margin: 12px 0;
+  margin: var(--s3) 0;
 }
 .sheet {
   max-height: calc(100dvh - 30px);
@@ -761,7 +761,7 @@ section > h2,
 .dbg input[type='search'] {
   font: inherit;
   font-size: 14px;
-  padding: 8px;
+  padding: var(--s2);
   border: 2px solid var(--lo);
   border-radius: 6px;
   background: var(--panel-s);
@@ -847,7 +847,7 @@ section > h2::before,
   flex: none;
   width: 4px;
   height: 4px;
-  margin: 0 12px 0 5px;
+  margin: 0 var(--s3) 0 5px;
   background: var(--orn);
   box-shadow:
     0 -4px 0 var(--orn2),
@@ -870,7 +870,7 @@ section > h2::before,
   order: 2;
 }
 .sec-h .count {
-  padding: 4px 9px 5px;
+  padding: var(--s1) 9px 5px;
   border-radius: 999px;
   background: var(--panel-s);
   color: var(--text);
@@ -886,7 +886,7 @@ section > h2::before,
   display: block;
   width: 58px;
   height: 4px;
-  margin-top: 8px;
+  margin-top: var(--s2);
   background: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 14px);
   filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--line) 35%, transparent));
 }
@@ -1111,7 +1111,7 @@ section > h2::before,
 .tpanel {
   position: relative;
   margin: 18px 3px 0;
-  padding: 14px 14px 16px;
+  padding: 14px 14px var(--s4);
   border-radius: 14px;
   background: color-mix(in srgb, var(--panel-s) 92%, transparent);
   box-shadow:
@@ -1123,7 +1123,7 @@ section > h2::before,
   backdrop-filter: var(--blur-panel, blur(14px) saturate(1.2));
 }
 .tpanel > .note {
-  margin-top: 4px;
+  margin-top: var(--s1);
 }
 .tpanel .sec-h > h2,
 .tpanel .sec-h .count,
@@ -1134,16 +1134,16 @@ section > h2::before,
 .list {
   display: grid;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 .pickrow,
 .pickrow.px {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--s3);
   width: calc(100% - 4px);
   margin: 2px;
-  padding: 8px 12px;
+  padding: var(--s2) var(--s3);
   border: 0;
   border-radius: 10px;
   background: var(--panel-s);
@@ -1203,7 +1203,7 @@ section > h2::before,
     font-size: 12.5px;
   }
   .dr-foot .pb {
-    padding: 0 12px;
+    padding: 0 var(--s3);
   }
   .dr-panel {
     border-left: 0;
@@ -1232,7 +1232,7 @@ section > h2::before,
 .seg {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--s1);
   padding: 3px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--text) 7%, transparent);
@@ -1353,7 +1353,7 @@ html[data-contrast='high'] .px {
   font-family: var(--font-voice) !important;
   font-weight: 600;
   font-size: 12.5px !important;
-  padding: 3px 8px 4px !important;
+  padding: 3px var(--s2) var(--s1) !important;
   box-shadow:
     inset 0 -2px 0 rgba(0, 0, 0, 0.16),
     0 2px 4px -1px rgba(46, 33, 64, 0.3) !important;
