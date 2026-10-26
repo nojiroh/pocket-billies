@@ -137,6 +137,7 @@ expose({
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
   pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
+  rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
@@ -1069,6 +1070,9 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   c.drawImage(sm, 0, 0, sw + 2 * P, sh + 2 * P, x - P * kx, y - P * ky, (sw + 2 * P) * kx, (sh + 2 * P) * ky);
   c.imageSmoothingEnabled = prev;
 }
+/* phase 20 R3: what the rigs cost, summed until the diagnostics read and clear it: calls that got to a rig, the
+   canvases redrawn (each one an upload for the 3D stage), their bytes and the processor's time drawing them */
+export const rigStats = { calls: 0, redraws: 0, bytes: 0, ms: 0 };
 /* one billionaire's current frame, drawn into its buffer (the 2D stage draws the buffer; the 3D stage uploads it) */
 export function actorBuffer(i) {
   const s = battleStage.s[i];
@@ -1079,6 +1083,8 @@ export function actorBuffer(i) {
     view = actorTeam(i) === 0 ? 'back' : 'front',
     buf = battleStage.buf[i] || (battleStage.buf[i] = makeCanvas(10, 10));
   if (!R) return null;
+  const t0 = performance.now();
+  rigStats.calls++;
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
     buf.height = R.BH;
@@ -1097,6 +1103,9 @@ export function actorBuffer(i) {
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
+  rigStats.redraws++;
+  rigStats.bytes += buf.width * buf.height * 4;
+  rigStats.ms += performance.now() - t0;
   return { s, k, R, P, ak, buf };
 }
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */

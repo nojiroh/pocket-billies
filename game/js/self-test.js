@@ -69,7 +69,7 @@ import { frameScheduler, userFps } from './frame-scheduler.js';
 import { ART_CACHE } from './art.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
-import { battleStage, battleStageStop } from './battle-stage.js';
+import { battleStage, battleStageStop, rigStats } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
@@ -135,9 +135,11 @@ expose({
   baselineHub: [() => baselineHub, v => (baselineHub = v)],
   baselineMeasure: [() => baselineMeasure, v => (baselineMeasure = v)],
   baselineNote: [() => baselineNote, v => (baselineNote = v)],
+  baselineRigs: [() => baselineRigs, v => (baselineRigs = v)],
   baselineRun: [() => baselineRun, v => (baselineRun = v)],
   baselineSettle: [() => baselineSettle, v => (baselineSettle = v)],
   baselineStand: [() => baselineStand, v => (baselineStand = v)],
+  baselineUploadProbe: [() => baselineUploadProbe, v => (baselineUploadProbe = v)],
   diagnosticsMaps: [() => diagnosticsMaps, v => (diagnosticsMaps = v)],
   diagnosticsReport: [() => diagnosticsReport, v => (diagnosticsReport = v)],
   diagnosticsSummary: [() => diagnosticsSummary, v => (diagnosticsSummary = v)],
@@ -2713,6 +2715,8 @@ async function baselineSettle(task, sec) {
 async function baselineMeasure(task, sec) {
   const t0 = debugLog.now(),
     T = diagnosticsTimersOn();
+  /* phase 20 R3: a battle's rigs, from battle-stage.js's own sums */
+  if (task === 'scene') Object.assign(rigStats, { calls: 0, redraws: 0, bytes: 0, ms: 0 });
   let r = null;
   try {
     await selfTestSleep(sec * 1000);
@@ -2737,8 +2741,46 @@ async function baselineMeasure(task, sec) {
     passDraws: c ? c.dcp : null,
     tagged: c ? c.dct : null,
     kinds: c ? c.dcu : null,
+    /* phase 20 R3: KB a frame sent to the graphics chip: [pictures, buffers] */
+    uploadKB: c ? c.up : null,
     frames: c ? c.frames : 0,
+    ...(task === 'scene' && { rigs: baselineRigs(r.frames) }),
   };
+}
+/* phase 20 R3: what the battle's rigs cost a frame: the processor's ms redrawing their canvases, how many got to a
+   rig and how many were redrawn (each redraw is one upload), the KB redrawn, and an upload probe */
+function baselineRigs(frames) {
+  const n = Math.max(1, frames),
+    r = v => Math.round((v / n) * 100) / 100;
+  return {
+    ms: r(rigStats.ms),
+    calls: r(rigStats.calls),
+    redraws: r(rigStats.redraws),
+    kb: Math.round(rigStats.bytes / n / 1024),
+    uploadMs: baselineUploadProbe(),
+  };
+}
+/* one rig canvas sent to a scratch texture 20 times, the graphics chip waited for (gl.finish): ms per upload, its own
+   side included. Between frames, so the counters never see it; the texture is deleted, the binding put back */
+function baselineUploadProbe() {
+  const gl = typeof gpuState !== 'undefined' && !gpuState.lost ? gpuState.gl : null,
+    cv = (battleStage.buf || []).find(b => b && b.width > 10);
+  if (!gl || !cv) return null;
+  const was = gl.getParameter(gl.TEXTURE_BINDING_2D),
+    t = gl.createTexture();
+  try {
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    gl.finish();
+    const t0 = performance.now();
+    for (let i = 0; i < 20; i++) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    gl.finish();
+    return Math.round(((performance.now() - t0) / 20) * 100) / 100;
+  } finally {
+    gl.bindTexture(gl.TEXTURE_2D, was);
+    gl.deleteTexture(t);
+  }
 }
 /* a run on a copy of the save from a fixed seed, its first place forced, arrived at as the mast's start does */
 async function baselineRun(R) {
@@ -2836,7 +2878,8 @@ async function rendererBaseline(o) {
           debugLog.add(
             'bench',
             `baseline ${st.id} ${res}: ${m.fps} fps, ${m.cpuMs} ms CPU, ${m.draws} draws` +
-              (m.tagged && m.tagged.sprites ? `, model pictures ${m.tagged.sprites.modelPic || 0}` : '')
+              (m.tagged && m.tagged.sprites ? `, model pictures ${m.tagged.sprites.modelPic || 0}` : '') +
+              (m.rigs ? `, rigs ${m.rigs.ms} ms, ${m.rigs.kb} KB (${m.rigs.redraws} of ${m.rigs.calls} redrawn)` : '')
           );
         }
       } finally {
