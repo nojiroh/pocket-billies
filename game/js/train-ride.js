@@ -209,9 +209,9 @@ function trainRideFrame() {
     h0 = stop[2],
     rz = stop[1];
   const portalCam = {
-    eye: [W.tear[0] - 19, W.tear[2] - 1.5, rz + 15],
-    tgt: [W.tear[0] - 1, W.tear[2] - 0.5, rz],
-    fov: 46,
+    eye: [W.tear[0] - 27, W.tear[2] - 3, rz + 22],
+    tgt: [W.tear[0] - 2, W.tear[2] + 0.5, rz],
+    fov: 48,
     hazeK: 1.8,
   };
   if (R.kind === 'depart') {
@@ -240,7 +240,7 @@ function trainRideFrame() {
     } else if ((s -= D.climb) < D.open) {
       const k = s / D.open;
       placeTrain(p, trainPathAt(W.R, W.lip), W.y0);
-      portalLook(W, 1 + 0.6 * easeInOut(k), 0);
+      portalLook(W, 1 + 0.35 * easeInOut(k), 0);
       lights.push({ p: [W.tear[0], W.tear[2], W.tear[1]], r: 9, c: [0.6 + k, 0.9 + k, 1.6 + k] });
       look = portalCam;
     } else if ((s -= D.open) < D.enter) {
@@ -254,7 +254,7 @@ function trainRideFrame() {
     let s = t;
     if (s < H.open) {
       const k = s / H.open;
-      portalLook(W, 1 + 0.6 * easeInOut(k), R.won ? 1 : 0);
+      portalLook(W, 1 + 0.35 * easeInOut(k), R.won ? 1 : 0);
       W.train.s = 0.01;
       placeTrain(p, trainPathAt(W.B, 0), W.y0, 0.01);
       lights.push({ p: [W.tear[0], W.tear[2], W.tear[1]], r: 9, c: [1 + k, 1 + k * 0.8, 1.4] });
@@ -263,7 +263,7 @@ function trainRideFrame() {
       const k = s / H.out,
         back = W.R.len - W.lip;
       placeTrain(p, trainPathAt(W.B, back * easeOut(k)), W.y0, 0.08 + 0.92 * easeOut(k));
-      portalLook(W, 1.6 - 0.6 * k, R.won ? 1 : 0);
+      portalLook(W, 1.35 - 0.35 * k, R.won ? 1 : 0);
       look = portalCam;
     } else if ((s -= H.out) < H.down) {
       const back = W.R.len - W.lip,
