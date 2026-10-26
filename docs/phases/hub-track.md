@@ -115,7 +115,7 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-8 | Departure and return | Board, climb the rail, the portal opens, the train flies in, the carriage loading screen; the return out of the portal (win and loss) | HB-2, HB-7 | 1-2 |
 | HB-10a | Square: shape and fountain (done 2026-10-26) | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
 | HB-10b | Square: edges and market (done 2026-10-26) | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
-| HB-10c | Square: people | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
+| HB-10c | Square: people (done 2026-10-26) | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
 | HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
 | HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
 | HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera; the pinwheel street entries (moved from HB-10a) | HB-10a | 1-2 |
@@ -566,6 +566,37 @@ into `track/hub`). The owner's answer: about 10 m. Checked against the code:
   hub position is unchanged" no longer holds: the walking checks start from the new spot.
 - Left out: cafe_table and crates (voxel models, not the airship style; remakes later). The pasture test's rerun check
   leaves out the `sq` props (laid after the pasture).
+
+**Done in HB-10c** (2026-10-26, on `track/hub`). The owner's answers: 6-10 is how many are drawn at once; the morning
+market every day; up to 2 ranch Billies by day; one cap for the hub and the run towns. Checked against the code first:
+- The phase file's "no day schedules found" was wrong: walk-view.js already gave each townsfolk a day (folkPhase: in,
+  out, work, noon, about, home; a home, a workplace and a hang-out each; an hour's offset; a night owl in six), and
+  folkAnchors already took benches, the fountain and npcSpots as hang-outs. HB-10c builds on it.
+- `game/js/logic/square-day.js` (Node-tested: tools/test/square-day.test.mjs): the square's stops from HB-10b's `sq`
+  props (behind and in front of the stalls and the cart, by the benches and under the canopy, under the lamps and
+  string lights, round the fountain at 2.6 m but not on the hub's side: where you arrive and the stick's run, HB-10b),
+  the slots of the day, who goes (a hash of the slot and the person: the same people each day) and to which stop,
+  `folkCap`, and the visits. Data: rules.json `square` {day, visit} (checked by dataSquareRules).
+- The day (rules.json square.day): market 7-11 (0.6 of the folk: the stalls kept and shopped at), midday 11.5-14
+  (0.8: fountain, benches, stalls), afternoon 14-17.5 (0.3), lantern evening 18-21.5 (0.3: lamps and benches).
+  Headless at the hub with 10 folk: 6 on the square at 8:00, 8 at 12:30, 4 at 15:00, 4 at 20:00, 1 night owl at 23:00.
+- Copperleaf's folk 10 (was 5): `patch-copperleaf-square.mjs --folk` (`SQUARE_FOLK`; build-copperleaf.mjs keeps it).
+- The Engine's `quality.townFolk` (its Quality dials, "Townsfolk at once", 0-12, default 10): the most drawn at once,
+  0.8 of it on Balanced, 0.6 once frames come late; the rest keep their day unseen. Run towns use it too:
+  rules.json `run.town.cap` and `runTownFolkCap` are gone (a slow phone draws up to 6 in a run town, was 3).
+- The ranch's Billies visit (rules.json square.visit; world-billies.js): in each 10-minute block from 8 to 18, 1-2 of
+  the pasture's Billies (never a trainee or the buddy) leave by the gate, walk the streets (about 115 m, 1 m/s) to a
+  bench or the fountain, stay 1-2.5 minutes and walk back; where each is comes from the clock alone. Away, they aren't
+  in the pasture; each one drawn takes one off the townsfolk drawn; a tap opens the ranch's sheet.
+- Fixed on the way (own commits): folk out about the streets (14:00-17:30) when a town loaded started indoors until
+  17:30; folk trimmed by the cap never came back when it rose again.
+- Frame cost (`python3 tools/island-perf.py --square [--low]`): with the low graphics 10 folk add about 39 draw calls
+  to about 878 (+4.5%) at midday; headless milliseconds are SwiftShader's (noise). At full graphics headless the game
+  stepped its quality down (frames of seconds), so the cap drew 0.6; the night lights cost more than the people (about
+  1035 draws at 21:00 against 878 at midday). The phone's debug log has the real frame times (scene: folk, folkAll,
+  onSquare, visitors).
+- Not done: people don't sit (no sitting pose; they stand by the benches); visitors walk through people and props on
+  their road only as findPath allows (no avoidance); sounds (chatter) left to the sound track.
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
