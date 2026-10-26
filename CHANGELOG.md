@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Steadier lamps at night** (phase 20, a test switch, off for now): Studio > Engine > Quality "Steady lamps" keeps
+  the lamps, windows and fires that light the scene from popping and flickering as you walk (each fades in and out,
+  a lit one stays lit until another is clearly nearer, lamp shadows stop swapping), and "Lamps lit at once" sets how
+  many may light the scene (1-16). Both are in the graphics test.
+- **One light block per frame** is now the only way the renderer sends the frame's light (the old switch and path are
+  gone); it looks the same.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing

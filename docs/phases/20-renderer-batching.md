@@ -15,9 +15,9 @@ detailed task list (task ids A1...I3) and their "what the renderer does today" n
 | A8 | Budgets set (400 draws a frame on phones, 60 fps in towns); the baseline is stale (picture props, legacy towns). Redone in R1. |
 | B | Done (walk/, now 25 files with the water track's sea-tide.js and water-flow.js). |
 | C1, C2 | Done; C2's item pool, `matrix4` and basin key left on purpose (HANDOFF C-1). |
-| C3 | Built behind `quality.frameBlock`, **off by default**, waiting on the owner's phone verdict. |
+| C3 | Done (R1 light lane, 2026-10-26): the owner's verdict "same look, not slower"; the Frame block is the only path, `quality.frameBlock` deleted. |
 | C4 | Done. |
-| C5 | Built on `archive/phase-20-c3-lamp-shadows`, never merged. That branch has **no merge base** with today's history: port it, don't merge it. |
+| C5 | Ported (R1 light lane, 2026-10-26) behind `quality.stableLights` (off) and `quality.lights` (16); waiting on the owner's phone verdict. |
 | D1-D7 | Not done (the sky draws first, no `mediump`, no `invalidateFramebuffer`, pixel cap 1.75 DPR / 1.6 MP; the automatic quality can drop phones to 0.6 resolution since 2026-10-23). |
 | E1-E13 | Not started; the E3 bug (reflection never sets `uSelf` / `uFol`, walk/water.js) is still there. |
 | F1-F9 | Not started. Retargeted: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |

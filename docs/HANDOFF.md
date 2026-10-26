@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R1, lane light (stage 1: close-out) - 2026-10-26
+Branch `track/renderer` (one of three R1 lanes: light, measure, context). Plan approved in Plan Mode; the owner's
+answers: port C5 as planned (off by default, 16 lights everywhere for now); C3 "the same look, not slower", so on by
+default and the old path deleted; tags `phase-20a-done` and `phase-20b-done` now, `phase-20c-done` once C5 is approved.
+- Where the docs and the code differed (checked):
+  - `archive/phase-20-c3-lamp-shadows` does have a merge base with today's history (fe52cce, PR #51): the cloud
+    checkout was shallow, which is why it looked unrelated. I ported the six commits by hand anyway, as planned.
+  - The game's own engine values (game/data/engine.json) already had `quality.frameBlock: true`, so the phone has
+    been drawing with the Frame block at the game's values; only the code default was off.
+  - Still no phone test at walk-view-gl.js 475 (the only device check is the texture cache's user-agent test in
+    engine/webgl.js); with 16 lights everywhere none was needed.
+  - Only `sky` and `grade` declare light-like uniforms outside LIGHT_GLSL, and neither gets a light context, so the
+    old per-program light path could go whole.
+- Changed (one cause per commit):
+  - **C5** engine/light-pick.js (no WebGL) with tools/test/light-pick.test.mjs: a picker with stable keys, re-ranked
+    every 200 ms by a partial top-k (no sort, nothing made), a lit light held 1.5 m nearer, 250 ms fades, a jump of
+    more than 20 m resets. Script tags on both pages after engine/light.js.
+  - **C5** Stable keys on every point light (walk/lighting.js): a prop's fires, windows' light (picture windows and
+    the low-poly buildings' model windows alike), glow, lamp and their pools; the lantern; the battle stage's lights.
+    Room lamps, their pools and room windows are keyed in walk/rooms.js (no R1 lane owns it; key fields only).
+  - **C5** `quality.stableLights` (off; Studio Quality "Steady lamps") and `quality.lights` (1-16, default 16; "Lamps
+    lit at once") through `pickLights`. Lights whose reach is out of view are skipped (not when "Skip what's off
+    screen" is off, nor when the camera has no view matrix). Off and at 16 the lights are exactly the old ones.
+  - **C5** Lamp shadows: `pickShadowLamps` (walk/shadows.js) holds last frame's shadowed lamps 1.5 m nearer; it only
+    bites with Steady lamps on (the same light objects frame to frame).
+  - Graphics test: "Steady lamps" off/on at the Lamp square and the Depth corridor; "Lamps lit at once" 8/16 at the
+    Lamp square; both out of "everything lowest / highest". After C3's deletion: 120 steps over 21 settings.
+  - **C3** `quality.frameBlock` on by default (one commit), then the old path deleted (its own commit): LIGHT_GLSL
+    declares only the block, `setFrameBlockMode`, `ensureLitPrograms`, programs' `lit` and `PB_FRAME_BLOCK` gone,
+    setLightUniforms sets the curve, uFol and the shadow samplers and binds the block; the setting left settings.js,
+    the Studio, engine.json and the graphics test. The in-game Frame block check stays (every program that includes
+    the block). tools/test/frame-block.test.mjs keeps the old declarations and sender as the packing's reference.
+- Risky:
+  - With the old path gone there is no fallback: a device whose driver rejects the Frame block shows nothing lit. The
+    in-game full test's Shaders step reports it ("14 with the Frame block"); your phone already drew with the block at
+    the game's own values.
+  - Steady lamps on: a lamp coming into range lights up to 450 ms later, one leaving shines up to 450 ms longer; a
+    move of less than 20 m (a door into a room laid into the place) fades the outside lamps instead of cutting them.
+  - The picker's output light objects are reused frame to frame (nothing keeps a frame's list into the next today).
+  - Not done: walkLightContext still makes its light objects new each frame (left so the off path stays identical).
+- Verified: after every commit lint, typecheck, unit tests (1063 -> 1069), check:modules, format; check:data and
+  `npm run data` for the engine.json change; smoke "no problems" for every commit touching game/ and after each merge
+  with the measure lane. Off, `pickLights` and the lamp-shadow choice equal the old code (Node tests); settled with
+  nothing out of view the stable picker lights the old set in the old order; a to-and-fro walk between two equal
+  lamps never swaps. The Frame block packing still matches the old sender, field by field. No headless graphics test.
+- Questions waiting for the owner:
+  - **On your phone** (this round's run): the graphics test's "Steady lamps" off/on at the Lamp square and the Depth
+    corridor, and "Lamps lit at once" 8 vs 16; then walk Copperleaf at night with Steady lamps on (Studio > Engine >
+    Quality): do lamps still pop at the edge, does anything flicker between two lamps, do lamp shadows stop swapping,
+    and does 8 look acceptable? That decides Steady lamps on by default (old picker deleted in its own commit) and
+    the phone limit.
+  - Also check nothing looks different at the game's own values now that the old light path is gone (it should be
+    identical: your engine values already used the block). The Shaders line in the in-game full test should pass.
+  - Tags: `phase-20a-done` (786334ca, the A8 decisions) and `phase-20b-done` (8670828c, stage B's last commit) are
+    made, but this session's git proxy refused to push tags. Push them from your machine:
+    `git tag -a phase-20a-done 786334ca -m "Phase 20 stage A done"`,
+    `git tag -a phase-20b-done 8670828c -m "Phase 20 stage B done"`, `git push origin phase-20a-done phase-20b-done`.
+    `phase-20c-done` waits for your verdict on Steady lamps.
+- Next session starts with: Steady lamps default and the old picker's deletion (after your verdict), the phone light
+  limit, then tag `phase-20c-done`; R2's lanes otherwise.
+
 ### Phase 20 R1, lane measure (stage 2: measure again) - 2026-10-26
 Branch `track/renderer` (one of three R1 lanes: light, measure, context). Plan approved in Plan Mode; the owner's
 answers: the tour in the diagnostics test; each stop at resolution 1 and at the game's own; one tag line in each of
