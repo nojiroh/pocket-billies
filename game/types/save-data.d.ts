@@ -500,6 +500,10 @@ export interface Billy {
   fit?: RobotFit;
   /** phase 17: damage each limb has taken; a limb at or past its HP is broken until healed */
   partDmg?: Partial<Record<'armL' | 'armR' | 'legs', number>>;
+  /** ON-1: its original trainer, stamped the first time it goes online (logic/online-legal.js onlineCopy) */
+  ot?: { u: string; n: string };
+  /** ON-4: when it was last traded, and from whom (a player's uid) */
+  traded?: { at: number; from: string };
 }
 
 /** phase 17: a robot part you own (in saveData.parts, or fitted to a robot) */

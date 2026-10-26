@@ -136,3 +136,19 @@ test('every egg the ranch makes, safe or risky (quirks and abominations), is leg
   assert.deepEqual(bad, []);
   assert.ok(seen.has('quirk') && seen.has('abom'), [...seen].join());
 });
+
+test('the original trainer: stamped once, kept wherever it goes; the save refuses a bad mark', () => {
+  const m = makeBilly(Object.keys(SPECIES)[0], 9),
+    c = L.onlineCopy(m, { u: 'uid-a', n: 'Ana<' });
+  assert.deepEqual(c.ot, { u: 'uid-a', n: 'Ana' });
+  assert.deepEqual(L.onlineCopy(c, { u: 'uid-b', n: 'Ben' }).ot, { u: 'uid-a', n: 'Ana' }, 'traded on: still Ana’s');
+  assert.equal(L.onlineCopy(m).ot, undefined, 'none without a trainer');
+  assert.equal(L.legalBilly(c), '');
+  assert.equal(L.legalBilly({ ...c, traded: { at: 5, from: 'uid-a' } }), '');
+  const billiesOk = fn('billiesOk');
+  assert.equal(billiesOk([{ ...m, ot: { u: 'x', n: 7 } }]), false);
+  assert.equal(billiesOk([{ ...m, traded: { at: -1, from: 'x' } }]), false);
+  assert.equal(billiesOk([{ ...m, ot: { u: 'x', n: 'Ana' }, traded: { at: 1, from: 'x' } }]), true);
+  assert.equal(L.legalBilly({ ...c, ot: { u: 'x', n: 7 } }), 'trainer');
+  assert.equal(L.legalBilly({ ...c, partDmg: 1 }), 'keys');
+});

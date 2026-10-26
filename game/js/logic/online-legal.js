@@ -30,7 +30,7 @@ import { augFit, augMoves } from './augments.js';
 import { graftFit, graftStability } from './genes.js';
 import { robotRules } from './fighters.js';
 import { billyTypes, cleanName, geneData, maxHp, maxLevel, moveSlotCount, partSlots, xpFor } from './rules.js';
-import { augShapeOk, graftShapeOk } from './saves.js';
+import { augShapeOk, billiesOk, graftShapeOk } from './saves.js';
 /* eslint-disable no-func-assign */
 expose({
   LEGAL_NAME_MOST: [() => LEGAL_NAME_MOST],
@@ -88,8 +88,9 @@ export const legalPlain = v => !!v && typeof v === 'object' && !Array.isArray(v)
 export const legalText = (v, n) => typeof v === 'string' && v.length <= n;
 export const legalWhole = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 
-/** a Billie as it goes online (onlineCopy's rules above); a robot gets none @param {any} m @returns {any} */
-export function onlineCopy(m) {
+/** a Billie as it goes online (onlineCopy's rules above), stamped with its original trainer `me` when it has none;
+ * a robot gets none @param {any} m @param {{ u: string, n: string }} [me] @returns {any} */
+export function onlineCopy(m, me) {
   if (!m || m.kind === 'robot') return null;
   /** @type {any} */
   const c = {};
@@ -98,6 +99,9 @@ export function onlineCopy(m) {
   c.status = null;
   c.sTurns = 0;
   c.hp = maxHp(c);
+  /* its original trainer: the first player it went online from, kept wherever it goes */
+  if (!c.ot && me && me.u)
+    c.ot = { u: String(me.u).slice(0, LEGAL_UID_MOST), n: cleanName(me.n || '', LEGAL_NAME_MOST) };
   return c;
 }
 
@@ -215,7 +219,8 @@ export function legalBilly(m) {
     (!legalPlain(m.traded) || !Number.isFinite(m.traded.at) || !legalText(m.traded.from, LEGAL_UID_MOST))
   )
     return 'traded';
-  return '';
+  /* and never looser than the save's own check: what arrives must load */
+  return billiesOk([m]) ? '' : 'save';
 }
 
 /** '' when a nursery egg (ranch.nursery's { a, b, mode, at, ready, egg }) could come from the ranch, else why not;
