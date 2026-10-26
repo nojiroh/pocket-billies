@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
+  arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
+  one on the route props test map.
 - **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
   blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
   what is behind it instead of stopping at a hard outline against the sharp ground.

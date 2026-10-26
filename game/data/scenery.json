@@ -12466,6 +12466,54 @@
    "ppm": 32,
    "vary": {"rot":0,"lean":0},
    "solid": 0.5
+  },
+  "wind_turbine_small_cc0": {
+   "name": "Wind turbine (converted)",
+   "img": "scene/next/routes/wind_turbine_small_cc0.png",
+   "ox": -43,
+   "oy": -141,
+   "shadow": 0.5,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","tech"],
+   "group": "turbine",
+   "model": "scene/next/models/wind_turbine_small_cc0.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.35
+  },
+  "footbridge_wood_cc0": {
+   "name": "Footbridge (converted)",
+   "img": "scene/next/routes/footbridge_wood_cc0.png",
+   "ox": -56,
+   "oy": -59,
+   "shadow": 0.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","water"],
+   "group": "bridge",
+   "model": "scene/next/models/footbridge_wood_cc0.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "box": [3.4,2.4]
+  },
+  "arch_ruin_cc0": {
+   "name": "Ruined arch (converted)",
+   "img": "scene/next/routes/arch_ruin_cc0.png",
+   "ox": -46,
+   "oy": -99,
+   "shadow": 1,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","ruins"],
+   "group": "ruins",
+   "model": "scene/next/models/arch_ruin_cc0.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "posts": [
+    {"x":-37,"r":0.2},
+    {"x":37,"r":0.2}
+   ]
   }
  },
  "person": 1.75,

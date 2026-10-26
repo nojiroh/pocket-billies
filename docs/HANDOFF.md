@@ -2,6 +2,38 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Route props track RP-3 - the CC0 converter test - 2026-10-26
+Branch `track/route-props` (made by the owner from `ccr-5d98165a-i1ustq`; main merged in first, a merge commit).
+Plan approved in Plan Mode: KayKit's CC0 models from GitHub (no upload needed), the tall turbine, RP-1's and RP-2's
+tags made again.
+- What differed from the docs: github.com's pages and API answer 403 here, but `git clone` and
+  raw.githubusercontent.com work. Kenney's GitHub starter kits are MIT, not CC0, and have no turbine, bridge or arch.
+  KayKit's own repositories are CC0 (each pack's LICENSE.txt) and had all three: Space Base Bits `windturbine_tall`,
+  Halloween Bits `arch`, Medieval Hexagon `building_bridge_A`. They are .gltf with .bin and a palette texture, not GLB.
+  The tags `rp-1-done` and `rp-2-done` were gone; RP-3 made them again (e7954859, b9cb51f9), but the git proxy refuses
+  tag pushes from this session, so they and `rp-3-done` are local only: **please add the three tags on GitHub**.
+- Changed: tools/glb-to-recipe.py (new; reads glTF/GLB, colours from the texture snapped to the props' palette,
+  each piece fitted with the closest box, cyl, cone, dome, sphere or limb, else voxel boxes, else cut in two; cut at
+  the ground; `--selftest`, `--preview`); tools/build-props-routes.py (`CC0_PALETTE`, the `CONVERTED` table, a
+  "converter" row on test_props_routes); validation/cc0-src/ (the 3 models, their textures, LICENSES.md); new props
+  wind_turbine_small_cc0, arch_ruin_cc0, footbridge_wood_cc0 with baked pictures (test map only).
+- Measured (RP-1 recipe -> converted, triangles as the game builds them; one draw each either way): turbine 216 ->
+  1052, arch 572 -> 1196, footbridge 428 -> 796. The rerun of build-props-routes.py rewrites RP-1's files unchanged.
+- How they look (headless pictures of the row; the owner picks): the turbine is close to its source (blades as
+  limbs, the shroud ring as boxes; KayKit's sci-fi turbine, one blade tip lost its gold); the arch is a whole arch
+  in stepped stone blocks, not a ruin; the footbridge is wrong (the hex tile's stone bridge cut at the ground is a
+  low stone lump on stubby piers), so RP-1's stays. Set pieces still use RP-1's recipes for all three.
+- Verified: lint, type-check, check-data (161 files), check:modules, unit tests 1304 pass (after the merge and after
+  the props), the converter's self-test, headless pictures of the row (no page errors), the smoke check 6 of 6 (298 s; its unused-art note, detail-a04.png and airship_mast,
+  predates this). The full quick check was not run.
+- Local set-up: the checks pin Python Playwright 1.56 (chromium 1194); this container has chromium 1243, so this
+  session ran Python Playwright 1.63 (matching the container's Node Playwright), not committed.
+- Risky: the converted models are 2-2.5x RP-1's triangles; the converter's fits depend on per-model settings
+  (`tol`, `vox`, `use`, `ground`) found by eye; KayKit's art style (sci-fi turbine, intact graveyard arch) is not ours.
+- Phone check wanted: `test_props_routes`, the last props row ("converter": each RP-1 prop, then its conversion);
+  export the debug log.
+- Next: the owner's pick per prop ("Ask me before" 4 in the plan file), or the other "Ask me before" items.
+
 ### Camera track, CAM-3 follow-up - Spread blur in front - 2026-10-26
 Branch `ccr-831c6196-cnlx4w` (a one-session fix; BRANCHES.md would name it `fix/blur-spill`, but a session pushes only
 to its own branch). The owner asked why the blur on 3D props looks weird ("like the blur stops at its edges"); plan
@@ -122,6 +154,8 @@ branch, docs/BRANCHES.md). Plan in docs/phases/route-props-track.md, approved in
   rest stop at dusk (the solar light, the shrine's seed and the seed library glow); export the debug log.
 - Next: the bridges, rails and arches in the props' style (the owner asked 2026-10-26), then RP-2 (the converter)
   once CC0 files are uploaded.
+<<<<<<< HEAD
+=======
 ### Air track AIR-0 - the plan: volumetric low fog and better haze - 2026-10-26
 Branch `ccr-c0505a05-bzef90` (`track/air` doesn't exist yet: the owner makes it, and AIR-1 on starts there). Plan Mode;
 the owner asked whether the low fog could be volumetric with simple voxels, then for the same research on haze, then
@@ -402,6 +436,7 @@ main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS
   phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
   tag `rs-3-done`.
 - Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+>>>>>>> origin/main
 
 ### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
 Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
