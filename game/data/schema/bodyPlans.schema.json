@@ -96,6 +96,7 @@
       "properties": {"main": {"$ref": "#/$defs/colour"}, "accent": {"$ref": "#/$defs/colour"}}
      },
      "size": {"description": "a bone's (and its mirror's) size against the plan's", "type": "object", "additionalProperties": {"type": "number", "exclusiveMinimum": 0, "maximum": 4}},
+     "scale": {"description": "the whole Billie's size against the plan's (middles and sizes; RO-3b: a stage's size, as a kit recipe's scale)", "type": "number", "exclusiveMinimum": 0, "maximum": 2},
      "add": {"description": "bones of its own", "type": "array", "items": {"$ref": "#/$defs/bone"}},
      "drop": {"description": "the plan's bones it leaves out", "type": "array", "items": {"$ref": "#/$defs/boneName"}},
      "q": {"type": "object", "additionalProperties": {"type": "number"}}
