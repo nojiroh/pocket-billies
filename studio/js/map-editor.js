@@ -344,6 +344,7 @@ SECTIONS.scenes = () => {
         ['home', 'Granny Juniper’s cottage (no room)'],
         ['ranch', 'The ranch (walk in; training and storage)'],
         ['genebank', 'The Gene Bank (walk in; the splice screen)'],
+        ['workshop', 'The Workshop (walk in; the Augment screen)'],
         ['enter', 'Walk in (the room set on it or its kind)'],
         ['pasture', 'The pasture’s gate (opens the ranch’s sheet)'],
         ['board', 'The Lab’s unlock board (opens the Lab tab)'],

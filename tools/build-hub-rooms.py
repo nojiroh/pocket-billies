@@ -3,7 +3,8 @@
 
   int_shop       the General store: the room it already has (a door with act 'shop')
   int_inn        the inn, int_library the library (the Bureau's archive): brought back from game/data/legacy/maps
-  int_workshop   the Workshop (Scrap upgrades): workbenches, parts shelves, a machine, crates
+  int_workshop   the Workshop: workbenches, parts shelves, an Upgrade bench (SP-5: act 'workshop' opens the Augment
+                 screen), crates
   int_gene_bank  the Gene Bank: sample racks, a splice console (SP-4: act 'genebank' opens the splice screen), desks
 
 A door with act 'enter' walks into its kind's room (scenery.json `room`, data-files.js doorRooms). The new rooms take
@@ -40,7 +41,7 @@ def workshop(base):
         {'k': 'wall_clock', 'x': 6, 'z': 8.45},
         {'k': 'wall_window', 'x': 3.6, 'z': 8.45},
         {'k': 'wall_window', 'x': 8.4, 'z': 8.45},
-        {'k': 'lab_machine', 'x': 6, 'z': 7.55, 'label': 'Upgrade bench'},
+        {'k': 'lab_machine', 'x': 6, 'z': 7.55, 'act': 'workshop', 'label': 'Upgrade bench'},
         {'k': 'shop_shelf', 'x': 1.99, 'z': 7.72, 'label': 'Parts'},
         {'k': 'shop_shelf', 'x': 10.01, 'z': 7.72, 'label': 'Parts'},
         {'k': 'lab_desk', 'x': 2.49, 'z': 5.6, 'label': 'Workbench'},

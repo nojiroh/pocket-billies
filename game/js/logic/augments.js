@@ -22,7 +22,9 @@
  *   uid: string, wt: number, name: string }} AugGene */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { graftKind, graftRecipe } from './graft-art.js';
+import { META_GENES, billyAug, billyGraft, geneLimit, graftStability, maxHp, unstableTidy } from '../hooks.js';
+import { random } from '../util.js';
+import { graftKey, graftKind, graftRecipe, graftSet } from './graft-art.js';
 /* eslint-disable no-func-assign */
 expose({
   AUG_SLOTS: [() => AUG_SLOTS],
@@ -36,14 +38,36 @@ expose({
   augFits: [() => augFits, v => (augFits = v)],
   // @ts-expect-error -- replaced on purpose
   augGenes: [() => augGenes, v => (augGenes = v)],
+  augKey: [() => augKey],
   // @ts-expect-error -- replaced on purpose
   augLimb: [() => augLimb, v => (augLimb = v)],
   // @ts-expect-error -- replaced on purpose
   augMoves: [() => augMoves, v => (augMoves = v)],
+  augOf: [() => augOf],
   // @ts-expect-error -- replaced on purpose
   augRel: [() => augRel, v => (augRel = v)],
   // @ts-expect-error -- replaced on purpose
   augWords: [() => augWords, v => (augWords = v)],
+  // @ts-expect-error -- replaced on purpose
+  workFit: [() => workFit, v => (workFit = v)],
+  workLevel: [() => workLevel],
+  // @ts-expect-error -- replaced on purpose
+  workOff: [() => workOff, v => (workOff = v)],
+  // @ts-expect-error -- replaced on purpose
+  workOpensAt: [() => workOpensAt, v => (workOpensAt = v)],
+  workRow: [() => workRow],
+  // @ts-expect-error -- replaced on purpose
+  workSet: [() => workSet, v => (workSet = v)],
+  workSpares: [() => workSpares],
+  // @ts-expect-error -- replaced on purpose
+  workTry: [() => workTry, v => (workTry = v)],
+  workUpPrice: [() => workUpPrice],
+  // @ts-expect-error -- replaced on purpose
+  workUpWhy: [() => workUpWhy, v => (workUpWhy = v)],
+  // @ts-expect-error -- replaced on purpose
+  workUpgrade: [() => workUpgrade, v => (workUpgrade = v)],
+  // @ts-expect-error -- replaced on purpose
+  workWhy: [() => workWhy, v => (workWhy = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -157,6 +181,20 @@ export function augWords(D, id) {
   if (!P) return '';
   return `${/^[AEIOU]/.test(P.name) ? 'an' : 'a'} ${P.name}`;
 }
+/** Augments as a short, stable code for caches and the battle's snapshot ("back=treads+0,front=hydrant+1"); '' for
+ * none @param {Aug | null | undefined} a */
+export const augKey = a =>
+  a
+    ? Object.keys(a)
+        .sort()
+        .map(s => {
+          const p = /** @type {PartInstance} */ (a[/** @type {'front' | 'back'} */ (s)]);
+          return `${s}=${p.id}+${p.up || 0}`;
+        })
+        .join(',')
+    : '';
+/** a Billie's (or a snapshot's) Augments' code, '' for none @param {any} m */
+export const augOf = m => (m && typeof m === 'object' && m.aug ? augKey(m.aug) : '');
 /** the robot parts an Escaped specimen of this species could wear (a slot that fits, a part of its kind), as
  * [slot, part id] pairs in slot and robots.json order @param {GeneData} D @param {string} sp
  * @returns {[string, string][]} */
@@ -167,4 +205,135 @@ export function augChoices(D, sp) {
     for (const id of Object.keys((D.robots && D.robots.parts) || {}))
       if (augFits(D, sp, slot, id)) out.push([slot, id]);
   return out;
+}
+
+/* ---------- the Workshop (SP-5): fitting, taking off and upgrading Augments for Scrap ----------
+   A hub building (buildings.json workshop; its levels are unlocks.json rows, meta.buildings.workshop). Its levels
+   (genes.json augment.levels) open the slots it fits and how far a fitted part is upgraded; the prices are Scrap
+   (augment.price). A fitted part comes from your spare parts (saveData.parts: RL-14a's salvage) and goes back there
+   when taken off (free) or swapped. A slot with a Gene takes an Augment only once the Gene is off: fitting takes it
+   off for you and keeps it in the Gene library. Your Billies are held to your Gene Bank's Stability limit (rules.js
+   geneLimit): past it Unstable, past it + refuse refused. Never during a run. */
+/** @typedef {'' | 'run' | 'robot' | 'slot' | 'unknown' | 'fit' | 'same' | 'refused' | 'scrap' | 'none' | 'max'} WorkWhy */
+/** the Workshop's level (1 with none bought) @param {any} s */
+export const workLevel = s => Math.max(1, (s && s.meta && s.meta.buildings && s.meta.buildings.workshop) || 1);
+/** a level's row of genes.json augment.levels (the last for a level past them) @param {GeneData} D @param {number} lv */
+export const workRow = (D, lv) => {
+  const L = D.genes.augment.levels;
+  return L[Math.max(0, Math.min(lv, L.length) - 1)];
+};
+/** the level that first fits a slot (0 for none) @param {GeneData} D @param {string} slot */
+export function workOpensAt(D, slot) {
+  const i = D.genes.augment.levels.findIndex(R => R.slots.includes(/** @type {'front' | 'back'} */ (slot)));
+  return i + 1;
+}
+/** your spare parts that fit a Billie's slot, in the order you have them @param {GeneData} D @param {any} s
+ * @param {any} m @param {string} slot @returns {PartInstance[]} */
+export const workSpares = (D, s, m, slot) =>
+  (s.parts || []).filter((/** @type {PartInstance} */ p) => augFits(D, m.sp, slot, p.id));
+/** a Billie's Augments with one slot changed (a part, or null to take it off), its splice without a Gene on that slot,
+ * and the Stability of the two at a limit @param {GeneData} D @param {any} m @param {string} slot
+ * @param {PartInstance | null} p @param {number} limit */
+export function workTry(D, m, slot, p, limit) {
+  /** @type {Aug} */
+  const a = { ...(billyAug(m) || {}) };
+  if (p) a[/** @type {'front' | 'back'} */ (slot)] = p;
+  else delete a[/** @type {'front' | 'back'} */ (slot)];
+  /** @type {Record<string, string>} */
+  const g = { ...(billyGraft(m) || {}) };
+  if (p) delete g[slot];
+  const aug = Object.keys(a).length ? a : null,
+    graft = Object.keys(g).length ? g : null;
+  return { aug, graft, st: graftStability(D, m.sp, graft, limit, aug) };
+}
+/** why a spare part can't be fitted on this slot now ('' when it can): a run is on, a robot (refitted elsewhere), the
+ * slot isn't open at this level, no such spare, it doesn't fit, it is the one already there, Stability would refuse
+ * it, not enough Scrap @param {GeneData} D @param {any} s @param {any} m @param {string} slot @param {string} uid
+ * @returns {WorkWhy} */
+export function workWhy(D, s, m, slot, uid) {
+  if (s.run) return 'run';
+  if (!m || m.kind === 'robot') return 'robot';
+  if (!workRow(D, workLevel(s)).slots.includes(/** @type {'front' | 'back'} */ (slot))) return 'slot';
+  const p = (s.parts || []).find((/** @type {PartInstance} */ q) => q.uid === uid);
+  if (!p) return 'unknown';
+  if (!augFits(D, m.sp, slot, p.id)) return 'fit';
+  if (workTry(D, m, slot, p, geneLimit(s)).st.refused) return 'refused';
+  if ((s.meta.scrap || 0) < D.genes.augment.price.fit) return 'scrap';
+  return '';
+}
+/** fit a spare part on a Billie's slot: pays the Scrap, the part it replaces goes back to your parts, a Gene on the
+ * slot comes off (kept in the library), the limb's damage goes, Unstable settles at your limit; why not, or ''
+ * @param {GeneData} D @param {any} s @param {any} m @param {string} slot @param {string} uid
+ * @param {() => number} [rnd] @returns {WorkWhy} */
+export function workFit(D, s, m, slot, uid, rnd = random) {
+  const why = workWhy(D, s, m, slot, uid);
+  if (why) return why;
+  s.meta.scrap -= D.genes.augment.price.fit;
+  const i = s.parts.findIndex((/** @type {PartInstance} */ q) => q.uid === uid),
+    p = s.parts[i],
+    old = billyAug(m) && /** @type {any} */ (billyAug(m))[slot],
+    gene = (billyGraft(m) || {})[slot],
+    { aug, graft } = workTry(D, m, slot, p, geneLimit(s));
+  s.parts.splice(i, 1, ...(old ? [old] : []));
+  if (gene && Array.isArray(s.meta.genes) && !s.meta.genes.includes(gene) && s.meta.genes.length < META_GENES)
+    s.meta.genes.push(gene);
+  workSet(D, m, aug, graft, slot);
+  unstableTidy(m, rnd, geneLimit(s));
+  return '';
+}
+/** take a slot's Augment off (free): back to your parts, its limb's damage gone, Unstable settled; why not, or ''
+ * @param {GeneData} D @param {any} s @param {any} m @param {string} slot @returns {WorkWhy} */
+export function workOff(D, s, m, slot) {
+  if (s.run) return 'run';
+  const a = billyAug(m),
+    p = a && a[/** @type {'front' | 'back'} */ (slot)];
+  if (!p) return 'none';
+  const { aug } = workTry(D, m, slot, null, geneLimit(s));
+  s.parts.push(p);
+  workSet(D, m, aug, billyGraft(m), slot);
+  unstableTidy(m, random, geneLimit(s));
+  return '';
+}
+/** what the next upgrade of a fitted part costs (Infinity past the last price) @param {GeneData} D
+ * @param {PartInstance} p */
+export const workUpPrice = (D, p) => D.genes.augment.price.up[p.up || 0] ?? Infinity;
+/** why a slot's Augment can't be upgraded now ('' when it can): a run, none there, at the level's highest, not enough
+ * Scrap @param {GeneData} D @param {any} s @param {any} m @param {string} slot @returns {WorkWhy} */
+export function workUpWhy(D, s, m, slot) {
+  if (s.run) return 'run';
+  const a = billyAug(m),
+    p = a && a[/** @type {'front' | 'back'} */ (slot)];
+  if (!p) return 'none';
+  const max = Math.min(workRow(D, workLevel(s)).maxUp, (D.robotRules && D.robotRules.maxUpgrade) ?? 3);
+  if ((p.up || 0) >= max) return 'max';
+  if ((s.meta.scrap || 0) < workUpPrice(D, p)) return 'scrap';
+  return '';
+}
+/** upgrade a slot's Augment one level for its Scrap (its stats grow by rules.json robots.upgradeStat); why not, or ''
+ * @param {GeneData} D @param {any} s @param {any} m @param {string} slot @returns {WorkWhy} */
+export function workUpgrade(D, s, m, slot) {
+  const why = workUpWhy(D, s, m, slot);
+  if (why) return why;
+  const p = /** @type {PartInstance} */ (/** @type {any} */ (billyAug(m))[slot]),
+    was = m.hp > 0 ? m.hp / Math.max(1, maxHp(m)) : 0;
+  s.meta.scrap -= workUpPrice(D, p);
+  p.up = (p.up || 0) + 1;
+  m.aug[slot] = p;
+  m.hp = m.hp > 0 ? Math.max(1, Math.round(maxHp(m) * was)) : 0;
+  return '';
+}
+/** a Billie's Augments and splice set together: HP kept as the same share of the new most, the changed slot's limb
+ * whole again @param {GeneData} D @param {any} m @param {Aug | null} aug @param {Record<string, string> | null} graft
+ * @param {string} slot */
+export function workSet(D, m, aug, graft, slot) {
+  const was = m.hp > 0 ? m.hp / Math.max(1, maxHp(m)) : 0,
+    limb = augLimb(D, slot);
+  if (aug) m.aug = aug;
+  else delete m.aug;
+  graftSet(m, graftKey(graft));
+  if (limb && m.partDmg) {
+    delete m.partDmg[limb];
+    if (!Object.keys(m.partDmg).length) delete m.partDmg;
+  }
+  m.hp = m.hp > 0 ? Math.max(1, Math.round(maxHp(m) * was)) : 0;
 }

@@ -158,11 +158,11 @@ const pairs = [
      the lighthouse on the cove, the windmill by the farm. The inn's, the library's, the Workshop's and the Gene Bank's
      doors open their rooms (HB-5's act enter: the room named on the model; the Gene Bank's machines wait for the
      splicing track); the lighthouse and the windmill are scenery. SP-4: the Gene Bank's door (and its console) open the
-     splice screen (act genebank) */
+     splice screen (act genebank); SP-5: the Workshop's (and its Upgrade bench) the Augment screen (act workshop) */
   ...[
     ['inn', 'inn', 'Inn'],
     ['library', 'library', 'Library'],
-    ['workshop', 'workshop', 'Workshop'],
+    ['workshop', 'workshop', 'Workshop', 'workshop'],
     ['genebank', 'gene_bank', 'Gene Bank', 'genebank'],
     ['lighthouse', 'lighthouse'],
     ['windmill', 'windmill'],

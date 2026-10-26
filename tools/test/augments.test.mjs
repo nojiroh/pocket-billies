@@ -158,3 +158,52 @@ test('augments: a hit on a Billie with an Augment lands on its body or the Augme
   assert.ok(fn('actorSnapshot')(0).bot.ph.armR < 1, 'the snapshot shows the arm');
   hooks.provide({ activeBattle: null });
 });
+
+test('augments: the Workshop fits a spare for Scrap, takes it off for free, upgrades within its level', () => {
+  const s = startedSave('swift0', 30),
+    m = s.team[0],
+    GD = fn('geneData')(),
+    A = modules.augments,
+    P = GAME_DATA.genes.augment.price;
+  s.meta.scrap = 100;
+  s.parts = [part('hydrant', 0, 'h1'), part('treads', 0, 't1'), part('auger', 0, 'a1')];
+  assert.equal(A.workLevel(s), 1);
+  assert.equal(A.workWhy(GD, s, m, 'back', 't1'), 'slot', 'legs from Lv 2');
+  assert.equal(A.workWhy(GD, s, m, 'front', 't1'), 'fit');
+  assert.equal(A.workWhy(GD, s, m, 'front', 'nope'), 'unknown');
+  s.run = { seed: 'X' };
+  assert.equal(A.workWhy(GD, s, m, 'front', 'h1'), 'run');
+  s.run = null;
+  /* a Gene on the slot comes off and stays in the library */
+  m.graft = { front: 'bear_arm@musk3' };
+  s.meta.genes = [];
+  assert.equal(A.workFit(GD, s, m, 'front', 'h1'), '');
+  assert.equal(s.meta.scrap, 100 - P.fit);
+  assert.deepEqual(m.aug, { front: part('hydrant', 0, 'h1') });
+  assert.equal(m.graft, undefined);
+  assert.deepEqual(s.meta.genes, ['bear_arm@musk3']);
+  assert.deepEqual(
+    s.parts.map(p => p.uid),
+    ['t1', 'a1']
+  );
+  /* a swap puts the old part back */
+  m.partDmg = { armR: 5 };
+  assert.equal(A.workFit(GD, s, m, 'front', 'a1'), '');
+  assert.equal(m.aug.front.id, 'auger');
+  assert.equal(m.partDmg, undefined, 'the new arm is whole');
+  assert.deepEqual(s.parts.map(p => p.uid).sort(), ['h1', 't1']);
+  /* upgrades: Lv 1 goes to its maxUp, then 'max'; Scrap paid */
+  const max1 = GAME_DATA.genes.augment.levels[0].maxUp;
+  for (let i = 0; i < max1; i++) assert.equal(A.workUpgrade(GD, s, m, 'front'), '');
+  assert.equal(m.aug.front.up, max1);
+  assert.equal(A.workUpWhy(GD, s, m, 'front'), 'max');
+  s.meta.buildings = { ...(s.meta.buildings || {}), workshop: 2 };
+  assert.equal(A.workUpWhy(GD, s, m, 'front'), '');
+  s.meta.scrap = 0;
+  assert.equal(A.workUpWhy(GD, s, m, 'front'), 'scrap');
+  /* take off: free, back to the spares */
+  assert.equal(A.workOff(GD, s, m, 'front'), '');
+  assert.equal(m.aug, undefined);
+  assert.ok(s.parts.some(p => p.uid === 'a1' && p.up === max1));
+  assert.equal(A.workOff(GD, s, m, 'front'), 'none');
+});

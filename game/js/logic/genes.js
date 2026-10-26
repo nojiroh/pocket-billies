@@ -27,6 +27,7 @@
  *   trait: string | null, type: string | null, move: string | null, field: string | null }} Gene */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 import { GRAFT_SLOTS, geneSplit, graftDonors, graftForm, graftKind, graftRecipe } from './graft-art.js';
 import { augGenes, augRel } from './augments.js';
 /* eslint-disable no-func-assign */
@@ -48,7 +49,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   graftRel: [() => graftRel, v => (graftRel = v)],
   // @ts-expect-error -- replaced on purpose
-  graftStability: [() => graftStability, v => (graftStability = v)],
+  graftStability: [() => graftStability, v => ((graftStability = v), provide({ graftStability }))],
   // @ts-expect-error -- replaced on purpose
   graftTraits: [() => graftTraits, v => (graftTraits = v)],
   // @ts-expect-error -- replaced on purpose
@@ -59,6 +60,7 @@ expose({
   wildSplice: [() => wildSplice, v => (wildSplice = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ graftStability });
 /* to-module: end */
 /** a slot's Gene from its id ("part@donor"): the part, its kind and kit, the donor's species and line, the trait,
  * dominant type and move genes.json gives the part; null for an id with no such part or donor (graftFit says

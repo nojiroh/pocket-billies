@@ -62,8 +62,8 @@ test('hub placing: the new buildings on their plots, their doors open their room
     on(k, L);
   for (const k of ['inn', 'library', 'workshop', 'gene_bank']) {
     const p = M.props.find(q => q.k === k);
-    /* SP-4: the Gene Bank's door is its own act (genebank: ROOM_BY_USE opens its room) */
-    assert.equal(p.act, k === 'gene_bank' ? 'genebank' : 'enter', `${k}'s door`);
+    /* SP-4, SP-5: the Gene Bank's and the Workshop's doors are their own acts (ROOM_BY_USE opens their rooms) */
+    assert.equal(p.act, { gene_bank: 'genebank', workshop: 'workshop' }[k] || 'enter', `${k}'s door`);
     assert.ok(C[k].room && D.maps[C[k].room], `${k} has no room`);
   }
   const shop = M.props.find(q => q.k === 'shop');

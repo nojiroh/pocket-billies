@@ -1166,7 +1166,7 @@
   {"k":"shop","x":138.02,"z":84.03,"act":"shop","label":"General store","rot":90},
   {"k":"inn","x":130.72,"z":94.9,"act":"enter","label":"Inn","rot":90},
   {"k":"library","x":131.14,"z":70.45,"act":"enter","label":"Library","rot":90},
-  {"k":"workshop","x":165.36,"z":55.51,"act":"enter","label":"Workshop","rot":90},
+  {"k":"workshop","x":165.36,"z":55.51,"act":"workshop","label":"Workshop","rot":90},
   {"k":"gene_bank","x":117.8,"z":107.31,"act":"genebank","label":"Gene Bank","rot":90},
   {"k":"lighthouse","x":93.83,"z":19.61},
   {"k":"windmill","x":78.53,"z":62.39},

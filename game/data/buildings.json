@@ -30,8 +30,8 @@
  "workshop": {
   "name": "Workshop",
   "currency": "scrap",
-  "levels": 1,
-  "soon": true,
-  "about": "Where robots will be built and refitted. Coming later."
+  "act": "workshop",
+  "levels": 3,
+  "about": "Bot parts fitted on your Billies as Augments, and upgraded, for Scrap. Each level fits more and upgrades further."
  }
 }

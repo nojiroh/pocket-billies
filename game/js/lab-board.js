@@ -18,6 +18,7 @@ import { uiIconHTML } from './art.js';
 import { flyMenu, stationMenu } from './airship.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankLevelled, geneBankOpen } from './gene-bank-screen.js';
+import { augmentsLevelled, augmentsOpen } from './augment-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   LAB_WHERE: [() => LAB_WHERE],
@@ -72,7 +73,12 @@ const LAB_WHY = {
   unknown: 'Gone',
 };
 /** where a building's rows are bought, for its section */
-const LAB_WHERE = { station: 'at Skyline Station', ranch: 'at the ranch', genebank: 'at the Gene Bank' };
+const LAB_WHERE = {
+  station: 'at Skyline Station',
+  ranch: 'at the ranch',
+  genebank: 'at the Gene Bank',
+  workshop: 'at the Workshop',
+};
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
   const C = (c && CURRENCIES[c]) || { name: c || '', one: c || '' };
@@ -185,6 +191,10 @@ export function labAction(a, d) {
     /* SP-4: your Billies held to the new level's limit, then the sheet again */
     geneBankLevelled();
     geneBankOpen();
+  } else if (d.then === 'workshop' && typeof augmentsOpen === 'function') {
+    /* SP-5: the Workshop's sheet again, at its new level */
+    if (typeof augmentsLevelled === 'function') augmentsLevelled();
+    augmentsOpen();
   } else if (d.then === 'fly' && typeof flyMenu === 'function') {
     /* in place of the open sheet (a second one would wait behind it) */
     uiState.modal = null;

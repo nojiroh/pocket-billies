@@ -31,6 +31,7 @@ import {
   bankWhy,
 } from './logic/gene-bank.js';
 import {
+  billyAug,
   billyGraft,
   billyName,
   billyTypes,
@@ -150,7 +151,7 @@ function bankBillieHTML(D, s, m) {
       P.slot && !open.includes(P.slot)
         ? `<p class="note">The Bank splices this slot from Lv ${bankOpensAt(D, P.slot)}. You can still take a Gene off it.</p>`
         : '';
-  return `<section class="tpanel gene-billie"><div class="sec-h"><h2>${escapeHtml(billyName(m))}</h2><span class="count tnum">Stability ${graftStability(D, m.sp, billyGraft(m), geneLimit(s)).cost} of ${geneLimit(s)}</span></div><div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${fresh ? `${fresh} new Gene${fresh === 1 ? '' : 's'} to read` : 'Sequenced'}</b><span class="bx-sub">${escapeHtml(spliceWords(m).join(', ')) || 'All its own parts'}${billyUnstable(m) ? ' · Unstable' : ''}</span></div><button class="qk k-btn" data-g="seq"${fresh ? '' : ' disabled'}>Sequence · free</button></div>${slots.length ? `<div class="seg" role="radiogroup" aria-label="Slot">${seg}</div>${worn}${shutNote}<div class="list">${rows || '<p class="note">No Gene in the library fits this slot. Sequence other Billies, or knock out spliced wild Billies on runs for Gene Samples.</p>'}</div>${P.gene ? bankPreviewHTML(D, s, m, P.slot, P.gene) : ''}` : '<p class="note">This Billie’s form can’t be spliced yet.</p>'}</section>`;
+  return `<section class="tpanel gene-billie"><div class="sec-h"><h2>${escapeHtml(billyName(m))}</h2><span class="count tnum">Stability ${graftStability(D, m.sp, billyGraft(m), geneLimit(s), billyAug(m)).cost} of ${geneLimit(s)}</span></div><div class="bx k-card ranch-card"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftOf(m) })}</span><b>${fresh ? `${fresh} new Gene${fresh === 1 ? '' : 's'} to read` : 'Sequenced'}</b><span class="bx-sub">${escapeHtml(spliceWords(m).join(', ')) || 'All its own parts'}${billyUnstable(m) ? ' · Unstable' : ''}</span></div><button class="qk k-btn" data-g="seq"${fresh ? '' : ' disabled'}>Sequence · free</button></div>${slots.length ? `<div class="seg" role="radiogroup" aria-label="Slot">${seg}</div>${worn}${shutNote}<div class="list">${rows || '<p class="note">No Gene in the library fits this slot. Sequence other Billies, or knock out spliced wild Billies on runs for Gene Samples.</p>'}</div>${P.gene ? bankPreviewHTML(D, s, m, P.slot, P.gene) : ''}` : '<p class="note">This Billie’s form can’t be spliced yet.</p>'}</section>`;
 }
 /** the Gene Bank's sheet, opened (or drawn again in place after a button) */
 export function geneBankOpen() {
