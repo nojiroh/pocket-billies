@@ -13,6 +13,7 @@ import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
   CAMERA_FOLDERS: [() => CAMERA_FOLDERS],
+  CAMERA_LOOKS: [() => CAMERA_LOOKS],
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
@@ -28,6 +29,7 @@ expose({
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
+  lookStop: [() => lookStop],
   playerBlur: [() => playerBlur, v => (playerBlur = v)],
   playerDials: [() => playerDials, v => (playerDials = v)],
   setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
@@ -1328,6 +1330,61 @@ export const PLAIN_LOOK = {
     godRays: 0,
     lightsInAir: 0,
     hazeDistance: 900,
+  },
+};
+/* CAM-4b: camera looks (the Studio's Camera section): presets of camera dials only, each setting the same dials so one
+   swaps cleanly for another. Their stops stay on the straight line the default stops lie on (14 degrees of tilt a
+   unit of zoom, the distance times the zoom), so the pull and the cycle feel the same; they differ in the tilt, the
+   stops' zooms and their blur. The ids are always close, normal and far, so a scene's starting stop still names one */
+const lookStop = (id, name, zoom, blur, lead = 1) => ({
+  id,
+  name,
+  zoom,
+  pitch: Math.round((zoom - 1) * 140) / 10,
+  dist: zoom,
+  fov: 1,
+  blur,
+  lead,
+});
+export const CAMERA_LOOKS = {
+  diorama: {
+    name: 'Diorama',
+    camera: {
+      pitchAdd: 0,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.6, 1.4, 0.8),
+        lookStop('normal', 'Normal', 1, 1.25),
+        lookStop('far', 'Far', 1.6, 1.1, 1.1),
+      ],
+    },
+  },
+  classic: {
+    name: 'Classic RPG',
+    camera: {
+      pitchAdd: 8,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.6, 0.4, 0.8),
+        lookStop('normal', 'Normal', 1, 0.4),
+        lookStop('far', 'Far', 1.6, 0.4, 1.1),
+      ],
+    },
+  },
+  closeup: {
+    name: 'Close-up',
+    camera: {
+      pitchAdd: -12,
+      fov: 0.68,
+      stopPull: 0.25,
+      stops: [
+        lookStop('close', 'Close', 0.45, 1.2, 0.6),
+        lookStop('normal', 'Normal', 0.75, 1),
+        lookStop('far', 'Wide', 1.4, 0.8, 1.1),
+      ],
+    },
   },
 };
 export const ENGINE_PRESETS = {
