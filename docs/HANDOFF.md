@@ -2,6 +2,48 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-7 (lane B) - the world map's and battles' water - 2026-10-26
+Branch `track/water` (main already merged in at the start; main's HB-3 merged in mid-session on the parent session's
+heads-up, its lagoon and falls given the pixel look too). Plan approved in Plan Mode with the owner's answers: this
+lane exports `PIXEL_WATER_GLSL` (one word in walk-shaders.js); battles turn to face nearby water (battle-3d.js) plus
+water effects; the `lake` biome's stage only noted. Tag to suggest: `wa-7-done` (the owner pushes tags).
+- Changed (details in water-track.md, WA-7 notes):
+  - **World map** (world-bowl.js): `BOWL_PIXEL_GLSL` (the snippet plus the bowl's grid: 16 texels a metre close up,
+    coarser by powers of two so a texel stays ~2 screen pixels; `bwFix` steps a smooth value in whole texels). The sea
+    (`mwater`, new `bowlWaterPixel`), a place's own water tiles and the rivers' lines (`mground`), HB-3's lagoon (the
+    same program) and its falls (`mfallw`, new `fallPixel`): banded dithered tones, stepped waves and streaks, hard
+    foam lines, hard glints; the sky's mirror smooth. `setPixelWaterUniform(U)` on mground, mwater (the sea and the
+    lagoon) and mfallw. Pixel water off runs the old code unchanged (pictures: off vs before differs only in what
+    moves with the clock). No sea added round the hub's island. `BOWL_SEA_FAR` unchanged.
+  - **Battles**: new `logic/battle-facing.js` (on both pages and in the logic worker; unit tests) picks a turn that
+    puts the scene's water behind a battle (water within 12 m, not behind trees or houses, nobody in water or off the
+    map, never indoors); battle-3d.js turns the fighters, trainers, lights, particles, the pyramid and the camera with
+    it and finds the lane's hidden props in the turned battle; the debug log says when a battle faces the water.
+    battle-stage.js: glints on the water in view, rings round a fighter standing in water.
+  - bowl-map-test.js step 1 checks the water programs carry the pixel switch. New `tools/look-bowl-water.py`.
+- **For the hub track** (functions touched in world-bowl.js): the `mwater` and `mfallw` shader strings (a pixel path
+  each, before `main`, old code kept as the off path), the water and river parts of the `mground` fragment shader, a
+  new `BOWL_PIXEL_GLSL` constant before `WORLD_BOWL_SHADERS`, two imports, and one `setPixelWaterUniform(U)` line in
+  each of the ground, sea, lagoon and falls draw blocks of the draw function. Nothing in worldBowlThingsOfPlace,
+  worldBowlFloatIsland, the island's meshes or the prewarm. HB-3's lagoon foam (`fd`) and rim fade are carried into
+  the pixel path: a later lagoon change in the old path needs the same in `bowlWaterPixel`.
+- **For lane R**: `PIXEL_WATER_GLSL` is now `export const` (nothing else in walk-shaders.js or water-data.js touched).
+- **For whoever owns biomes.json**: the `lake` biome uses the `golf` battle stage though a `lake` stage exists.
+- **Found, not mine (please look)**: main's merge 904d6c4a (#194, PR #203's merge) committed `node_modules` as a
+  symlink to `/home/user/pocket-billies/node_modules` (itself). After pulling, node_modules is a broken self-link and
+  every npm tool fails (`npm run modules` printed nothing, exit 216) until `npm ci` replaces it; git then shows it as
+  deleted. I left it untouched (unstaged); the fix is `git rm --cached node_modules` in one commit on main.
+- Risky: the turned battle is new ground for the walk renderer's battle camera (only its yaw and place change; the
+  in-game full test and smoke pass); headless pictures can't judge how much water a turned battle shows: in the run's
+  pond scene it reads faintly (the pond 0.5 m under its banks, reeds, haze, the depth of field). On the hub zoom the
+  lagoon's dither between its first two tones shows as scattered dots. Phone cost: the sea's pixel path reads the
+  depth's derivatives (an inverse 2x2 a pixel); the ground's water reads 4 neighbours as before.
+- Verified: lint, typecheck, format, check:modules, check:data, `npm test` (1060 pass after the HB-3 merge),
+  `check:smoke` before every commit touching game/ (all passed); look-bowl-water before (a clean worktree at the
+  start) and after, Pixel water on and off. Not run: the full quick check and its baseline (WA-8), the bench.
+- Next: the owner's phone: the world map (a run's coast and rivers, the hub's lagoon) with Pixel water on and off,
+  and a battle by a pond or the coast (Settings > Debug log shows "facing the water"). Lane R's WA-5b, lane G's WA-9.
+
 ### Player visibility - you stay visible behind buildings and trees - 2026-10-25
 Branch `ccr-bdf253b3-4vm5w6` (the session's own: the owner chose to work here instead of `fix/player-visibility`,
 which didn't exist; one session's work, one PR). Not a phase: the owner asked for a system and approved the plan in
