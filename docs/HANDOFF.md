@@ -2,6 +2,34 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-10c: the square's people - 2026-10-26
+Branch `track/hub` (started while HB-10b was being finished; edits began at the owner's word, HB-10b merged in when it
+landed). Plan approved in Plan Mode with four answers: 6-10 drawn at once, the morning market daily, up to 2 ranch
+Billies by day, one cap for the hub and the run towns. Tag to suggest: `hb-10c-done` (the owner pushes tags).
+Details: docs/phases/hub-track.md, "Done in HB-10c".
+- Changed: `game/js/logic/square-day.js` (stops by HB-10b's edge props, the day's slots, who goes, `folkCap`, the
+  visits) and rules.json `square` {day, visit} (dataSquareRules). The townsfolk keep the square's day on top of their
+  own (walk-view.js): a market 7-11, a busy midday, a quiet afternoon, a lantern evening; none on the fountain's hub side
+  (HB-10b's run line). Copperleaf's folk 10 (`patch-copperleaf-square.mjs --folk`). New Engine dial
+  `quality.townFolk` (10; 0.8 on Balanced, 0.6 when slow) for the hub AND run towns: rules.json `run.town.cap` and
+  `runTownFolkCap` removed. The ranch's Billies visit by day (world-billies.js: 1-2 per 10 minutes, by the pasture's
+  gate along the streets to a bench or the fountain and back, by the clock). The debug log's scene: folkAll,
+  onSquare, visitors (counts). `tools/island-perf.py --square`.
+- Fixed (own commits): folk out about the streets at load (14:00-17:30) started indoors till 17:30; folk trimmed by
+  the cap never came back when it rose.
+- Risky / check on the phone: a run town on a slow phone now draws up to 6 folk (was 3); the frame times with 10
+  folk and the night lights (headless numbers are SwiftShader's: low graphics +39 draws on ~878 at midday; at full
+  graphics headless the game stepped down to the 0.6 cap; the night lights cost more than the people). A visitor
+  walks about 2 minutes each way and is gone from the pasture meanwhile. Nobody sits (no sitting pose).
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1304 of 1304 (new
+  square-day.test.mjs, data-checks), smoke all ok, headless probes (folk on the square by hour; a visit there, staying,
+  home), pictures at 8:00, 12:30 and 20:00 (town-square, square-near). Full quick check: 6 PROBLEMs:
+  - also red on main (HB-10b's entry): Terraces sky_portal, RL-8 shop Perk, room light, song fingerprints;
+  - "Sound effects and jingles" (payout): passed alone;
+  - "Actions sheet: a run's sheet has no day chip": failed twice beside other steps (boots 52-81 s; its wait is 5 s),
+    passed alone twice on this head and once on HB-10b's head: load, not this phase's code as far as these show.
+- Next: HB-10d (started in its own session, Plan Mode, waiting on this entry).
+
 ### Hub track HB-10b: the square's edges, market and night look - 2026-10-26
 Branch `track/hub` (merged `ccr-144f3c08-vf09lo` with a merge commit, then docs/plans/hb-10b-wip.patch applied and
 finished; the patch file is gone). Plan approved in Plan Mode. Tag to suggest: `hb-10b-done` (the owner pushes tags).
