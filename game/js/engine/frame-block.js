@@ -96,7 +96,8 @@ export function packFrameBlock(X, f, n) {
     f[c] = l.c[0];
     f[c + 1] = l.c[1];
     f[c + 2] = l.c[2];
-    f[c + 3] = 1;
+    /* a window light that knows its way out (lights.windowFacing): that direction as an angle past 10; else 1 */
+    f[c + 3] = l.front && l.fn ? 10 + Math.atan2(l.fn[1], l.fn[0]) : 1;
   }
   n[FRAME_OFFSETS.uNL] = L.length;
   for (let i = 0; i < X.ao.length; i++) put(f, FRAME_OFFSETS.uAO + i * 4, X.ao[i], 4);

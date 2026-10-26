@@ -332,3 +332,22 @@ test('a program with the block: packed and sent once per light context, bound ag
   setLightUniforms(B, X);
   assert.equal(calls('bufferSubData').length, 3);
 });
+
+test('packing: a window light that knows its way out (lights.windowFacing) carries it as an angle past 10 in uLC.w', () => {
+  const fn = [0.6, -0.8],
+    X = fixture({
+      lights: [
+        { p: [1, 2, 3], r: 4, c: [1, 0.8, 0.5], front: true, fn },
+        { p: [0, 1, 0], r: 3, c: [1, 1, 1] },
+      ],
+    }),
+    buf = new ArrayBuffer(FRAME_BLOCK_BYTES),
+    f = new Float32Array(buf),
+    n = new Int32Array(buf);
+  packFrameBlock(X, f, n);
+  const w0 = f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + 3],
+    w1 = f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + 7];
+  assert.ok(Math.abs(Math.cos(w0 - 10) - fn[0]) < 1e-6 && Math.abs(Math.sin(w0 - 10) - fn[1]) < 1e-6);
+  assert.equal(w1, 1, 'any other light keeps 1');
+  assert.ok(f[FRAME_BLOCK_LAYOUT.members.uLP[0] / 4 + 3] < 0, 'a window light is still marked by a negative range');
+});
