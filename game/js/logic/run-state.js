@@ -17,6 +17,7 @@ import { historyEntry, historyPush, validLostTo } from './run-history.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
 import { expeditionAfterWin } from './modifiers.js';
 import { heldAllOff } from './held.js';
+import { residentSettle } from './residents.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -521,6 +522,8 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
+  /* RS-1: the resident invited moves in, won or lost (logic/residents.js) */
+  residentSettle(s.meta, run);
   /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
   s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
   s.meta.history = historyPush(s.meta.history, entry);

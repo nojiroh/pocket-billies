@@ -222,6 +222,19 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   assert.throws(() => runEnd(u, { won: false, keep: [] }, RATES, PRICE), /no run/);
 });
 
+test('run: RS-1: the resident invited moves in when the run ends, won or lost', () => {
+  for (const won of [false, true]) {
+    const s = hubSave();
+    runBegin(s, GIVE).invited = 'dottie';
+    runEnd(s, { won, keep: [s.team[0].uid] }, RATES, PRICE);
+    assert.deepEqual(s.meta.residents, { dottie: 1 }, `won: ${won}`);
+  }
+  const t = hubSave();
+  runBegin(t, GIVE);
+  runEnd(t, { won: true, keep: [] }, RATES, PRICE);
+  assert.deepEqual(t.meta.residents, {}, 'nobody invited, nobody moves in');
+});
+
 test('run: restoring leaves the run without paying (a run that cannot be resumed)', () => {
   const s = hubSave(),
     hub = copy(s);
