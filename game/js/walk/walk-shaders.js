@@ -198,7 +198,7 @@ precision highp float;in vec2 vH;uniform vec4 uHole;out vec4 o;void main(){if(vH
   ],
   sky: [
     `#version 300 es
-precision highp float;in vec2 aC;out vec2 vP;void main(){vP=aC*2.-1.;gl_Position=vec4(vP,.9999,1.);}`,
+precision highp float;in vec2 aC;out vec2 vP;void main(){vP=aC*2.-1.;gl_Position=vec4(vP,1.,1.);}`,
     `#version 300 es
 precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uMirror,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform float uWallOn;uniform vec4 uEnv;uniform vec3 uMoon;
 float hsh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
