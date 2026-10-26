@@ -9,6 +9,10 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Kappi the Wise** replaces Hazel as Professor Chosen's assistant: a capybara (they/them) who does the real
+  research, calm and unhurried, with Billies asleep on their back and a hot yuzu bath in the lab. New lines in the
+  opening, the lab and the hub; their own talk-box portrait (it blinks and talks), a low soft voice, and a capybara
+  body in the lab and the opening. The gift, the favour and the Potion at level 2 are as Hazel's were.
 - **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
   Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
   (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
