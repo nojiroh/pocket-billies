@@ -54,7 +54,7 @@ Tag `ro-3f-done` for the owner (local only: the proxy refuses tag pushes).
   graft-placeholder's real-forms sweep now takes Pseudonymph and Pilotbat as the blob and flyer donors (head refused
   to and from the blob); `bake:placeholders --check` and `bake:kits --check` clean; every stage drawn by the game's
   renderer (rigParts, rigFrame, drawRig on the game page) front and back, idle, attack, hurt and faint, on a contact
-  sheet (the faint frame leaves the box like every Billie's does). Smoke (`npm run check:smoke`): running as this entry was written; the result follows in the next commit.
+  sheet (the faint frame leaves the box like every Billie's does). Smoke (`npm run check:smoke`): 6 steps, 6 passed (241 s; Start-Game on a phone with a battle, the actions sheet, the in-game full test's step: nothing saved).  Not the full quick check: its picture baseline waits for the roster on main (RO-3b).
 - Risky / open:
   - Fork copies the type passives too (Kindling, Regrowth, Bedrock...). The owner may want types only.
   - A 2% chance per route is about 1 run in 10; nothing in the run sim or preview counts it yet. To test on the phone,
