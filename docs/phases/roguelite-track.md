@@ -1081,6 +1081,40 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     `<name>.json` layouts from the sheets folder; the biome pools; then the counts in kit-bake-parity and
     pixel-density, the check-data and run-start snapshots, and `python3 tools/check-sound.py --baseline` for the new
     cries.
+- **RO-3.. plan (the owner, 2026-10-26): every skeleton, placeholder sheets, about 58 species.** Branch: track/roster
+  (sessions that can only push to their own branch work there and open a pull request into track/roster, the
+  owner's word). Checked at bc106c41: all 40 species and the 11 form sheets are baked `biped` (kit-assemble.js writes
+  `plan: 'biped'`), while body-plan-animation.js animates 14 plans (biped, quad, bird, flyer, fish, serpent, worm,
+  octo, blob, insect, crab, hopper, plant, shell). The owner's decisions:
+  - **Every plan is used** by the roster, whether or not a kit has parts for it.
+  - **Art: new, very obvious placeholders** (flat shapes in the Billie's colours, a thick outline, a diagonal hatch,
+    the part's name inside where it fits), **for every Billie**, kit art included: the kit recipes stay on disk,
+    unused, so the kit look can come back.
+  - **Sheets to draw on outside the game, both kinds:** one sheet per Billie (a column per drawn bone, a row per
+    view) and one sheet per body plan (a column per bone, a row per Billie), magenta cells with a label strip and
+    pivot ticks; export, draw in any tool, import, bake.
+  - **Starters:** the muskox and goat lines move to quad; the otter stays biped.
+  - **Splicing maps parts by slot across plans** (head, body, front, back, sig).
+  - **Scope: everything**: the core lines, the cave bat, two legendaries and an Eevee-style line.
+  - Research (Pokémon's recurring archetypes and its 14 body shapes): the roster had the starters, early bird,
+    early rodent, Electric mascot, joke fish and pseudo-legend; it lacked the early bug, a fossil pair, an early
+    Grass plant, a Water frog, a mythical, a cave bat, legendaries and a branching evolution. With 9 types, the Bug,
+    Rock, Ghost, Normal, Fighting, Poison, Ice, Dark and Fairy niches can only be met by look.
+  - **RO-3a** skeletons and the placeholder pipeline: `game/data/bodyPlans.json` (a template per plan whose bones are
+    the ones the animation moves, with slots, draw order and shapes; `forms`, the placeholder recipes),
+    `logic/placeholder-art.js` (paint, bake, both sheets and their cutting), `npm run bake:placeholders` (bake,
+    export, import). Tests: every bone an animation names exists; a bake is the same twice; export then import gives
+    the same pixels.
+  - **RO-3b** every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
+    ferret), bird (goose, Swift, owl, peacock), fish (Pupfin, Sharktank), worm (Trump slug), octo (Zuckerberg),
+    biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
+  - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art).
+  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
+  - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
+    (serpent).
+  - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
+  - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), an Eevee-style line (draft "Pivotlet"), pools
+    and a balance pass.
 - **The region sessions (RL-R1, RL-R2)** live on one branch. Branch: track/regions
 - **RL-R1** (done 2026-10-23; HANDOFF has what changed and where this shape was wrong). Files: new `game/data/regions.json` + schema, type, check, export; new `logic/run-region.js`;
   `logic/run-map.js` (rows from zones); `logic/run-bowl.js` (zone bands); the Map tab's header. Tests: same seed same

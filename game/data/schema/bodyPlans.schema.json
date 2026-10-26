@@ -1,0 +1,106 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "bodyPlans.schema.json",
+ "title": "game/data/bodyPlans.json: the body plans every Billie is built on and the placeholder Billies baked from them by game/js/logic/placeholder-art.js (roster track RO-3a)",
+ "type": "object",
+ "required": ["sheet", "paint", "plans", "forms"],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+  "boneName": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$"},
+  "pair": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+  "rgb": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}, "minItems": 3, "maxItems": 3},
+  "colour": {"anyOf": [{"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"}, {"$ref": "#/$defs/rgb"}]},
+  "bone": {
+   "type": "object",
+   "required": ["n"],
+   "additionalProperties": false,
+   "properties": {
+    "n": {"$ref": "#/$defs/boneName"},
+    "par": {"description": "the bone it hangs on (root: the ground's middle)", "type": "string"},
+    "c": {"description": "its middle at rest, from the middle of the ground line (y up is negative)", "$ref": "#/$defs/pair"},
+    "size": {"description": "its picture's width and height; null: no picture (a joint only)", "anyOf": [{"$ref": "#/$defs/pair"}, {"type": "null"}]},
+    "pv": {"description": "its joint, as fractions of its box", "$ref": "#/$defs/pair"},
+    "shape": {"enum": ["ellipse", "round", "capsule", "taper", "tri", "triDown", "leaf", "wing", "fan", "fin", "cup", "claw", "box"]},
+    "tone": {"enum": ["main", "dark", "accent", "light"]},
+    "z": {"description": "draw order from the front", "type": "number"},
+    "zb": {"description": "draw order from behind", "type": "number"},
+    "slot": {"description": "its part slot (rules.json parts.slots); null: none", "anyOf": [{"enum": ["head", "body", "front", "back", "sig"]}, {"type": "null"}]},
+    "rr": {"description": "its turn at rest (radians)", "type": "number"},
+    "face": {"description": "the head: eyes and a blink from the front", "type": "boolean"},
+    "squash": {"description": "gets squash and stretch frames", "type": "boolean"},
+    "lag": {"description": "drawn a tick late", "type": "number"},
+    "mirror": {"description": "copies this bone, mirrored", "$ref": "#/$defs/boneName"},
+    "label": {"description": "the word written on it (its name if none)", "type": "string"}
+   }
+  }
+ },
+ "properties": {
+  "note": {"type": "string"},
+  "sheet": {
+   "type": "object",
+   "required": ["bg", "grid", "label", "room", "min"],
+   "additionalProperties": false,
+   "properties": {
+    "bg": {"description": "a cell's ground (cleared when a sheet is read back)", "$ref": "#/$defs/rgb"},
+    "grid": {"description": "everything outside the cells", "$ref": "#/$defs/rgb"},
+    "label": {"description": "the label strip's height", "type": "integer", "minimum": 7, "maximum": 20},
+    "room": {"description": "room round a part in its cell, as a fraction of its size", "type": "number", "minimum": 0, "maximum": 3},
+    "min": {"description": "a cell's smallest side", "type": "integer", "minimum": 4, "maximum": 64}
+   }
+  },
+  "paint": {
+   "type": "object",
+   "required": ["ink", "hatch", "hatchDark", "dark", "light", "back", "eye", "glint"],
+   "additionalProperties": false,
+   "properties": {
+    "ink": {"description": "the outline", "$ref": "#/$defs/rgb"},
+    "hatch": {"description": "a hatch line every this many pixels", "type": "integer", "minimum": 2, "maximum": 16},
+    "hatchDark": {"description": "the hatch's shade of the fill", "type": "number", "minimum": 0, "maximum": 1},
+    "dark": {"description": "the dark tone's shade of the main colour", "type": "number", "minimum": 0, "maximum": 1},
+    "light": {"description": "how far the light tone is towards white", "type": "number", "minimum": 0, "maximum": 1},
+    "back": {"description": "the shade of everything seen from behind", "type": "number", "minimum": 0, "maximum": 1},
+    "eye": {"$ref": "#/$defs/rgb"},
+    "glint": {"$ref": "#/$defs/rgb"}
+   }
+  },
+  "plans": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "required": ["q", "bones"],
+    "additionalProperties": false,
+    "properties": {
+     "q": {"description": "the animation's numbers (body-plan-animation.js)", "type": "object", "additionalProperties": {"type": "number"}},
+     "bones": {"type": "array", "items": {"$ref": "#/$defs/bone"}, "minItems": 1}
+    }
+   }
+  },
+  "forms": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": ["name", "rig", "plan", "colours"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"description": "its sheet's name (game/art/next/billionaires/<name>.png) and drawing's (placeholders/<name>.png)", "$ref": "#/$defs/id"},
+     "rig": {"description": "its rig in rigs-next.js (the species id)", "$ref": "#/$defs/id"},
+     "line": {"$ref": "#/$defs/id"},
+     "stage": {"type": "integer", "minimum": 0},
+     "form": {"description": "a regional form's id (the look only)", "$ref": "#/$defs/id"},
+     "plan": {"$ref": "#/$defs/id"},
+     "colours": {
+      "type": "object",
+      "required": ["main"],
+      "additionalProperties": false,
+      "properties": {"main": {"$ref": "#/$defs/colour"}, "accent": {"$ref": "#/$defs/colour"}}
+     },
+     "size": {"description": "a bone's (and its mirror's) size against the plan's", "type": "object", "additionalProperties": {"type": "number", "exclusiveMinimum": 0, "maximum": 4}},
+     "add": {"description": "bones of its own", "type": "array", "items": {"$ref": "#/$defs/bone"}},
+     "drop": {"description": "the plan's bones it leaves out", "type": "array", "items": {"$ref": "#/$defs/boneName"}},
+     "q": {"type": "object", "additionalProperties": {"type": "number"}}
+    }
+   }
+  }
+ }
+}
