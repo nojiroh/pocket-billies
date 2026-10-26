@@ -240,3 +240,38 @@ test('RL-S1: last:, lastby:, history: and rematch read the runs kept (meta.histo
   assert.match(conditionProblem('rematch:marina').message, /takes no name/);
   assert.equal(conditionProblem('history:runs >= 5'), null);
 });
+
+test('RL-S2: lastteam: reads the team the last run ended with, by type, line and species', () => {
+  const entry = team => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end: 'won',
+    by: null,
+    row: 3,
+    days: 9,
+    team,
+    perks: [],
+    leaders: [],
+    rival: null,
+  });
+  const typesOf = m => ({ musk0: ['Steel'], musk1: ['Steel', 'Fire'], bezos0: ['Grass'] })[m.sp] || [];
+  const S = storyStateOf(
+    { team: [{ sp: 'bezos0' }], meta: { history: [entry(['bezos0']), entry(['musk0', 'musk1'])] } },
+    { typesOf }
+  );
+  for (const [c, want] of [
+    ['lastteam:Steel = 2', true],
+    ['lastteam:steel = 2', true],
+    ['lastteam:Fire', true],
+    ['lastteam:musk >= 2', true],
+    ['lastteam:musk1', true],
+    ['lastteam:Grass', false],
+    ['lastteam:bezos', false],
+    ['type:Grass', true],
+  ])
+    assert.equal(conditionHolds(c, S), want, c);
+  assert.equal(conditionHolds('lastteam:Steel', storyStateOf({ meta: {} }, { typesOf })), false, 'no runs yet');
+  assert.equal(conditionProblem('lastteam:Grass >= 1'), null);
+});

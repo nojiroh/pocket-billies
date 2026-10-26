@@ -50,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   editDistance: [() => editDistance, v => (editDistance = v)],
   // @ts-expect-error -- replaced on purpose
+  lastTeamOf: [() => lastTeamOf, v => (lastTeamOf = v)],
+  // @ts-expect-error -- replaced on purpose
   parseCondition: [() => parseCondition, v => (parseCondition = v)],
   parsed: [() => parsed],
   // @ts-expect-error -- replaced on purpose
@@ -73,7 +75,7 @@ expose({
  *   types?: Record<string, number>, money?: number, team?: number, badgeTypes?: Record<string, number>,
  *   opened?: Record<string, number>, last?: Record<string, number>, lastby?: Record<string, number>,
  *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
- *   gifted?: Record<string, number>, chapter?: number }} StoryState */
+ *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -118,6 +120,12 @@ export const CONDITION_KINDS = {
   rel: { id: true, count: true, about: 'your level with a hub person (RL-S2, relations.json): rel:hazel >= 2' },
   beans: { id: false, count: true, about: 'Beans on hand, the gift currency (RL-S2): beans >= 1' },
   gifted: { id: true, count: false, about: 'you gave them a gift since the last run (RL-S2): gifted:hazel' },
+  lastteam: {
+    id: true,
+    count: true,
+    about:
+      'the team the last run ended with (RL-S2): Billies of a type, a line or a species: lastteam:Grass, lastteam:musk',
+  },
   chapter: {
     id: false,
     count: true,
@@ -387,6 +395,8 @@ export function termValue(c, S) {
       return !!(S.gifted || {})[c.id];
     case 'chapter':
       return S.chapter || 1;
+    case 'lastteam':
+      return (S.lastteam || {})[c.id] || (S.lastteam || {})[c.id.toLowerCase()] || 0;
   }
 }
 /** whether a condition holds for the state @param {Cond | string} c @param {StoryState} S @returns {boolean} */
@@ -466,6 +476,7 @@ export function storyStateOf(save, o = {}) {
     rel: RELATIONS && meta.rel ? relLevels(meta, RELATIONS) : {},
     beans: meta.beans || 0,
     chapter: meta.chapter || 1,
+    lastteam: lastTeamOf(meta.history, o.typesOf),
     gifted: Object.fromEntries(
       Object.entries(meta.gifted || {}).flatMap(([who, n]) => (n === (meta.runs || 0) ? [[who, 1]] : []))
     ),
@@ -484,6 +495,23 @@ export function teamTypes(team, typesOf) {
       out[k] = (out[k] || 0) + 1;
     }
   }
+  return out;
+}
+/** RL-S2: the team the last run kept (meta.history's newest entry, species ids) counted three ways: by type (lower
+ * case, through `typesOf`), by line (the species id without its stage) and by species
+ * @param {any[] | undefined} history @param {(m: any) => string[]} [typesOf] */
+export function lastTeamOf(history, typesOf) {
+  const e = Array.isArray(history) ? history[history.length - 1] : null,
+    sps = e && Array.isArray(e.team) ? e.team.filter((/** @type {any} */ sp) => typeof sp === 'string') : [],
+    out = typesOf
+      ? teamTypes(
+          sps.map((/** @type {string} */ sp) => ({ sp })),
+          typesOf
+        )
+      : {};
+  for (const sp of sps)
+    for (const k of new Set([sp, sp.replace(/\d+$/, ''), sp.replace(/(?:_[a-z0-9]+)?\d+$/, '')]))
+      out[k] = (out[k] || 0) + 1;
   return out;
 }
 /** RL-12b: the types of the badges won (lower case): meta.badges (RL-R2), then the leaders' seats

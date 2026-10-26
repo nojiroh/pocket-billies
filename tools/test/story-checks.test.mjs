@@ -45,6 +45,12 @@ test('each planted fault is found', () => {
     ['an unknown script', G => G.trainers.crude.script.push('call story:nope'), 'problems', 'call story:nope'],
     ['a condition that names no trainer', G => (G.trainers.crude.when = 'beat:nobody'), 'problems', 'beat:nobody'],
     [
+      'a last team that names no type nor Billie (RL-S2)',
+      G => (G.trainers.crude.when = 'lastteam:Plaid'),
+      'problems',
+      'lastteam:Plaid, not a type',
+    ],
+    [
       'a stage the quest lacks',
       G => ((G.story.quests.q = { stages: ['a'] }), G.trainers.crude.script.push('quest q b')),
       'problems',

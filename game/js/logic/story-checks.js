@@ -227,6 +227,11 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
         !species.has(b)
       )
         problems.push(at, `lastby:${b}, not a kind of foe, a trainer, a class nor a Billie`);
+    /* RL-S2: the team the last run ended with: a type, a line or a species */
+    const typeIds = new Set((G.types || []).map((/** @type {any} */ t) => String(t.id).toLowerCase()));
+    for (const t of N.lastteam || [])
+      if (!typeIds.has(t.toLowerCase()) && !lines.has(t) && !species.has(t))
+        problems.push(at, `lastteam:${t}, not a type, a line nor a Billie`);
     /* RL-S2: the hub folk (relations.json people) */
     const folk = (G.relations || {}).people || {};
     for (const k of ['rel', 'gifted'])
