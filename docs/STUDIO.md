@@ -226,7 +226,7 @@ that species.
 
 ### A kit Billie's recipe (Studio plan Phase 5)
 
-The 24 kit Billies (game/data/kitBuilds.json) are baked from a recipe: which kit part sits on each bone, at what size
+The 51 kit Billies (game/data/kitBuilds.json: 40 species and 11 regional forms) are baked from a recipe: which kit part sits on each bone, at what size
 and colour, plus extras (horns, ears, a crest, a shell). On a kit Billie Part mode shows **Kit recipe** above the
 part's numbers (and when no part is picked): the stage scale, each bone kind's part, size and colour, and the extras
 (part, where it sits, size, colour, a mirrored pair; **Add an extra**, ✕ to take one off).
@@ -238,6 +238,11 @@ part's numbers (and when no part is picked): the stage scale, each bone kind's p
   Billie already is as baked it says so and changes nothing.
 - A recipe the baker can't make (a slot left empty, a missing picture) is not written; the card says why.
 - Edits by hand to a kit Billie's sheet or rig (pixels, pivots) are lost at its next bake: the recipe is the truth.
+- **Since roster track RO-3b every kit Billie is on its placeholder** (bodyPlans.json `forms`, below). Its recipe is
+  kept in kitBuilds.json but not baked: Part mode shows it as **kept, not baked**, with nothing to edit or write, and
+  `npm run bake:kits` skips it ("kept: on its placeholder"). To bring a kit look back, take the Billie out of
+  bodyPlans.json `forms` and run `npm run bake:kits`. tools/test/kit-bake.json keeps every recipe's bake as
+  fingerprints (`node tools/bake-kit-billies.mjs --fingerprints` writes it again), so the kit baker stays checked.
 
 ### Repack sheet (Studio plan Phase 5, T5.4)
 
@@ -265,7 +270,7 @@ Art workbench → Part mode, beside the kit recipe:
   they are, and the picture's size (or a whole multiple of it). **Upload drawing sheet** cuts it back by the same
   layout: a drawn cell replaces the placeholder, a cell left all magenta keeps it. The drawing is stored as
   `art/next/placeholders/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
-  **Write Billie** bakes it again as it is.
+  **Write Billie** bakes it again as it is. **Repack sheet** refuses a placeholder Billie (its plan packs the sheet).
 - **Body plan sheets**: pick a plan and a scale (1×, 2×, 4×, 8×: each pixel drawn as N × N, for drawing big),
   **Download**: every Billie on that plan, two rows each, a strip with its name above (a sample Billie while none is
   on the plan); **Upload** splits it back per Billie, stores and bakes each.
@@ -274,6 +279,9 @@ Art workbench → Part mode, beside the kit recipe:
   `<plan>-plan.png` is a plan's sheet), `-- --check`.
 - A sheet only cuts back while the Billie's plan and part sizes are what they were when it was exported; change them
   and export again.
+- RO-3b put every Billie on its plan: a form's `colours` (main, accent), `scale` (the whole Billie, a stage's size),
+  `size` (a bone and its mirror against the plan's), `add` (bones of its own: horns, ears, crests, packs...) and
+  `drop` (the plan's bones it leaves out). The Pixel density report shows a placeholder Billie's plan and scale.
 
 ## Pixel density (Studio plan Phase 5, T5.7)
 

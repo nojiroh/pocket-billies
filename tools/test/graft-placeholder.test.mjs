@@ -165,3 +165,32 @@ test('graftFit: turned to point the way of the bone it lands on and as long as i
   /* a wide part on a short bone: as long as it would be 12 wide, held to 9 (1.5 times the bone's 6) */
   assert.equal(G.graftFit({ pic: pic(8, 4), pv: [4, 0] }, { pic: pic(4, 6), pv: [2, 0] }).pic.width, 9);
 });
+
+test('RO-3b: every real placeholder Billie takes every slot from a Billie of each other plan, inside the box', () => {
+  const real = new Map(P.forms.map(f => [f.name, { form: f, ...PA.placeholderBake(P, f, D) }])),
+    byPlan = new Map();
+  for (const f of P.forms) if (!byPlan.has(f.plan)) byPlan.set(f.plan, real.get(f.name));
+  let n = 0;
+  for (const recv of real.values())
+    for (const [plan, donor] of byPlan)
+      for (const slot of G.GRAFT_SLOTS) {
+        if (plan === recv.form.plan) continue;
+        const at = `${donor.form.name} ${slot} -> ${recv.form.name}`,
+          /* the octopus's mantle is its body and head (one shared bone): no head to take or give */
+          headless = f => slot === 'head' && (f.plan === 'octo' || f.plan === 'blob');
+        if (headless(recv.form) || headless(donor.form)) {
+          assert.throws(() => G.graftPlaceholder(P, D, recv, { [slot]: donor }), /head/, at);
+          continue;
+        }
+        const made = G.graftPlaceholder(P, D, recv, { [slot]: donor });
+        for (const view of PA.PLACEHOLDER_VIEWS)
+          assert.deepEqual(
+            made.rig[view].bones.map(b => b.n),
+            recv.rig[view].bones.map(b => b.n),
+            `${at}: the same bones`
+          );
+        assert.ok(made.rig.front.geo.top >= D.margin, `${at}: too tall`);
+        n++;
+      }
+  assert.ok(n > 700, `${n} grafts`);
+});

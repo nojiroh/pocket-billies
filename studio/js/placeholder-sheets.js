@@ -41,7 +41,7 @@ const PH_DRAWN = name => `art/next/placeholders/${name}.png`;
 const PH_SHEET = name => `art/next/billionaires/${name}.png`;
 const placeholderUi = { plan: 'biped', scale: 1 };
 /** the placeholder recipe of a species' rig */
-function placeholderFormOf(sp) {
+export function placeholderFormOf(sp) {
   return (studioState.D?.bodyPlans?.forms || []).find(f => f.rig === sp) || null;
 }
 const phPixels = c => c.getContext('2d').getImageData(0, 0, c.width, c.height);

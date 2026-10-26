@@ -1,15 +1,19 @@
-// Studio plan Phase 5, T5.1: every kit Billie bakes as committed. Each of the 24 recipes in game/data/kitBuilds.json is
+// Studio plan Phase 5, T5.1: every kit Billie bakes as committed. Each of the 51 recipes in game/data/kitBuilds.json is
 // baked with game/js/logic/kit-assemble.js (kitBakeWhole, as `npm run bake:kits` and the Studio bake) and compared with
 // the repository: the sheet (game/art/next/billionaires/<name>.png, alpha exactly and colour where a pixel shows), the
 // rig (game/art/next/rigs-next.js, both views, values and key order) and the stage's native parts
 // (game/data/lines/<line>.json "parts"). The committed art was the Python builder's output byte for byte (Pillow
 // 12.3.0) when this test was written, and stayed equal until the builder retired (Phase 5, session 3), so the JS baker
 // is that builder. A recipe or a kit part's picture changed without a bake fails here.
+// Roster track RO-3b: a Billie on its placeholder (game/data/bodyPlans.json forms) keeps its recipe but not its kit
+// art, so its bake is compared with the fingerprints in tools/test/kit-bake.json instead (written from the committed
+// kit art before the move: `node tools/bake-kit-billies.mjs --fingerprints`); every recipe is compared with them.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import vm from 'node:vm';
+import { kitFingerprint } from '../bake-kit-billies.mjs';
 import { readPng } from './png.mjs';
 import { modules, ROOT } from './setup-real.mjs';
 
@@ -22,6 +26,10 @@ const RIGS = (() => {
   vm.runInNewContext(readFileSync(join(ROOT, 'game/art/next/rigs-next.js'), 'utf8'), box);
   return box.window.RIGS_NEXT;
 })();
+const PRINTS = JSON.parse(readFileSync(join(ROOT, 'tools/test/kit-bake.json'), 'utf8'));
+const PLACEHOLDER = new Set(
+  JSON.parse(readFileSync(join(ROOT, 'game/data/bodyPlans.json'), 'utf8')).forms.map(f => f.rig)
+);
 const cache = new Map();
 const pics = (id, view) => {
   const key = id + '|' + view;
@@ -80,12 +88,22 @@ test('every kit Billie bakes as committed (the retired Python builder, number fo
       problems.push(`${where}: ${e.stack.split('\n').slice(0, 3).join(' / ')}`);
       continue;
     }
-    const sheet = pixelDiff(made.sheet, readPng(join(ROOT, `game/art/next/billionaires/${form.name}.png`)));
-    if (sheet) problems.push(`${where} sheet: ${sheet}`);
-    for (const d of jsonDiff(JSON.parse(JSON.stringify(made.rig)), RIGS[form.rig], 'rig'))
-      problems.push(`${where} ${d}`);
+    const print = kitFingerprint(made);
+    for (const k of ['sheet', 'rig'])
+      if (print[k] !== PRINTS[form.name]?.[k])
+        problems.push(`${where} ${k}: fingerprint ${print[k]}, kit-bake.json has ${PRINTS[form.name]?.[k]}`);
+    if (!PLACEHOLDER.has(form.rig)) {
+      const sheet = pixelDiff(made.sheet, readPng(join(ROOT, `game/art/next/billionaires/${form.name}.png`)));
+      if (sheet) problems.push(`${where} sheet: ${sheet}`);
+      for (const d of jsonDiff(JSON.parse(JSON.stringify(made.rig)), RIGS[form.rig], 'rig'))
+        problems.push(`${where} ${d}`);
+    }
     const line = JSON.parse(readFileSync(join(ROOT, `game/data/lines/${form.line}.json`), 'utf8'));
     for (const d of jsonDiff(made.parts, line.parts[form.stage], 'parts')) problems.push(`${where} ${d}`);
   }
   assert.deepEqual(problems, []);
+  assert.deepEqual(
+    Object.keys(PRINTS),
+    B.forms.map(f => f.name)
+  );
 });
