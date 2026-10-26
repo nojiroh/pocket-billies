@@ -2,18 +2,32 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
-### Camera track - CAM-4 planned: a Camera section in the Studio, zoom stops and the zoom's feel - 2026-10-26
-Branch `ccr-6dfb9e06-vr4uwi` (from main 2314da8); the plan's branch is `track/camera`, which the owner makes (from
-this branch, or merge it in). A planning session: no code changed. Details: docs/phases/camera-track.md, "CAM-4".
-- Checked against main: every camera dial sits in Engine > Camera (about 65, one flat list); the zoom's ease (5 a
-  second, linear), the wheel's sensitivity and the pinch about the screen's middle are hard-coded; the dial labelled
-  "Zoom" is `fov` (the width shown), not the pinch zoom; the zoom is not kept between scenes.
-- The owner's answers: a top-level Camera section with all camera dials in folders; 3-5 named zoom stops; free pinch
-  that eases to a stop near where you let go, double-tap cycles; each scene's starting stop; blur per stop; the pixel
-  scale shown, not forced.
-- Changed: docs/phases/camera-track.md (CAM-4: facts, research, answers, CAM-4a and CAM-4b), ROADMAP.md.
-- Verified: nothing to run (docs only).
-- Next session starts with: CAM-4a on `track/camera` (check the branch, merge main, check the facts again).
+### Camera track - CAM-4a: the Studio's Camera section and the zoom's feel - 2026-10-26
+Branch `ccr-6dfb9e06-vr4uwi` (from main 2314da8), at the owner's word: `track/camera` didn't exist and a cloud session
+pushes only to its own branch. The same session wrote the CAM-4 plan (owner's answers in camera-track.md, "CAM-4").
+Details: docs/phases/camera-track.md, "CAM-4a as built". Not tagged yet: `cam-4a-done` once the owner approves.
+- Where the plan and the code differed: the Engine preview is one set of elements with fixed ids, so the Camera
+  section shows the same preview (one renderer, not two); no Engine preset sets a camera dial; the world map scope has
+  no camera (the Camera section offers the game and one scene); the Studio's free camera keeps its own zoom limits.
+- Changed (one cause per commit):
+  - Logic: logic/camera-zoom.js zoomEase (log zoom), pinchZoom, zoomBand (rubber band), pinchLean; new
+    logic/camera-readout.js (the camera's numbers, the game's drawing width for a screen, crisp scales);
+    settings.js CAMERA_FOLDERS.
+  - Game: the zoom eases in log zoom over Zoom smoothing (0.2 s = the old rate); pinch and wheel sensitivity; the
+    rubber band while pinching (clamped on release); the `pinch` goal leans toward the pinched point. Six new Camera
+    dials; their defaults keep today's feel (only the in-between of a zoom change differs: log, not linear).
+  - Studio: the Camera section (camera-editor.js, World & places); Engine shows no camera dials, a link instead;
+    Camera guides and Play moment moved to Camera; Find and Connections follow the camera dials there.
+  - Rename (own commit): the "Zoom" label (`fov`) reads "View width" (Camera section, Walk scenes).
+- Risky: check-fast gains a 54 s step (the preview's first frames in software drawing); the fast check's budget was
+  already missed. The pinch's lean and rubber band have no standing browser check (tried with synthetic fingers in
+  the game page: stretched to 0.457 under 0.55, back to 0.55 on release; the pinch goal at weight 0.9). Not tried on a
+  real phone: please pinch on yours with Zoom toward the pinch on and the rubber band at about 0.15.
+- Verified: lint, typecheck, unit tests (1064 passing, 8 new), check:modules, format:check, check:data, build;
+  check-fast --only=Studio (4/4) and --only=Camera (6/6: follow, moments, tall ground, debug log, island orbit and the
+  new Camera section); the Studio's GitHub-mode check with its self-test (opens every section): see the next commit. Full quick check: not run.
+- Next session starts with: CAM-4b (zoom stops, blur per stop, the pull to a stop, a scene's starting stop, the curve
+  graph, camera looks) on `track/camera`, which the owner makes from this branch.
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The

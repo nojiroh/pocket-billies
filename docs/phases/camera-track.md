@@ -243,8 +243,8 @@ below against main and report what differs.
   path, focus, tilt, strength) and Blur heatmap (the composite colours each pixel by its blur).
 
 ### CAM-4 - The Camera section: zoom stops and the feel (planned 2026-10-26)
-Branch: `track/camera` (the owner makes it; this plan was written on `ccr-6dfb9e06-vr4uwi`, so start `track/camera`
-from that branch, or merge it in, so the plan is there). CAM-4a and CAM-4b are one session each, tagged `cam-4a-done`
+Branch: `track/camera` (the owner makes it from `ccr-6dfb9e06-vr4uwi`, where this plan was written and CAM-4a was built
+at the owner's word). CAM-4a and CAM-4b are one session each, tagged `cam-4a-done`
 and `cam-4b-done`.
 
 The owner's brief (2026-10-26): a separate section in the Studio for the camera, for zooming in and out, to fully
@@ -301,6 +301,43 @@ dial in the look and feel.
 - Renames in their own commits (Studio labels): "Zoom" (`fov`) reads "View width".
 - Checks: unit tests for the log ease and the pinch anchor; check-fast "Camera section" (opens, a dial writes its
   key, the preview's readout moves; a planted fault caught); the existing camera checks stay green.
+
+#### CAM-4a as built (2026-10-26)
+Built on `ccr-6dfb9e06-vr4uwi` at the owner's word (`track/camera` didn't exist and this session can push only to its
+own branch); CAM-4b starts on `track/camera`, made from this branch.
+- **Corrections to the plan** (checked against main 2314da8 at the start of CAM-4a):
+  - The Engine section's preview, guides and Play moment are one set of page elements with fixed ids; the Camera
+    section shows the same preview (one renderer) rather than a second one. Its settings column comes from
+    camera-editor.js through `engineEditor.camHTML`, so engine-editor.js needs no import of it.
+  - No Engine preset sets a camera dial, so nothing had to move from the presets.
+  - The Studio's world map scope (`engine.map`) has no camera, so the Camera section offers the whole game and one
+    scene only.
+  - The free camera's own zoom limits (0.3-3.2) are left alone: the feel dials apply to the walking camera.
+- **Logic** (unit tested): logic/camera-zoom.js `zoomEase` (log zoom, exact at any frame rate), `pinchZoom`,
+  `zoomBand` (rubber band, in log zoom), `pinchLean` (zooming about the pinched point, capped); logic/camera-readout.js
+  `cameraReadout` (tilt, height above the aim, distance, fields of view, metres across, drawing pixels an art pixel
+  covers), `gameRenderWidth` (walk-view-gl.js's drawing size for a screen), `crispScale`. settings.js
+  `CAMERA_FOLDERS` (each Camera dial in exactly one folder; a unit test and the check hold it so).
+- **The game**: the zoom eases with `zoomEase` over Zoom smoothing (0.2 s, the old rate of 5 a second; only the way
+  between two zooms changes, never where it settles); a pinch is `pinchZoom` at Pinch sensitivity (1: as before)
+  through `stretchZoom` (walk/camera.js; the rubber band while the fingers are down, clamped on release); the wheel at
+  Wheel sensitivity (1: as before); with Zoom toward the pinch on, a `pinch` camera goal leans the aim (up to Zoom
+  toward the pinch: most lean, 3 m) while you pinch and ramps out after. New dials, defaults keeping today's feel:
+  `zoomSmooth` 0.2, `pinchSpeed` 1, `wheelSpeed` 1, `zoomBand` 0, `zoomToPoint` off, `zoomPointMax` 3. State:
+  `walkRenderer.pinch`.
+- **The Studio**: a Camera section (World & places, after Engine; studio/js/camera-editor.js): the folders Framing,
+  Zoom, Zoom feel, Follow, Moments, Visibility, Island orbit (the Framing folder also edits the preview scene's own
+  `cam`), scopes, ↺, Reset per folder, Clear, Use these for the whole game; the preview with Frame (Fill, phone
+  portrait 393x852 at 3x, phone landscape, desktop 1920x1080), Your zoom, Zoom 1, Snapshot / Hold (the snapshot's or
+  the built-in camera while held, nothing saved), Camera guides and Play moment (moved from Engine), and the readout
+  four times a second. Engine shows no camera dials, only a link. Find opens a camera dial in its folder; the
+  connections drawer works on camera dials. "Zoom" (`fov`) reads "View width" (the Camera section and Walk scenes).
+- **Checks**: unit tests (zoom feel 4, readout and folders 4); check-fast "The Studio's Camera section" (every dial
+  once and none in Engine, a planted missing dial caught; a dial writes its key and the readout's tilt follows by 10
+  degrees; the snapshot held and let go; about 54 s, most of it the preview's first frames). The pinch, the rubber
+  band and the lean were tried in the game page with two synthetic fingers (not a standing check).
+- **Not done (CAM-4b or later)**: zoom stops, blur per stop, the curve graph, camera looks; zoom about the mouse
+  pointer for Ctrl+wheel.
 
 #### CAM-4b - Zoom stops
 - `engine.camera.stops`: 3-5 named stops in zoom order (default Close, Normal, Far from today's ends, so no picture
