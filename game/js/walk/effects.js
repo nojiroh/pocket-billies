@@ -403,7 +403,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
       );
     }
   }
-  /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs */
+  /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs (WA-5b: a hot spring's
+     thicker, three puffs a cell) */
   if (
     walkRenderer.streamCells &&
     walkRenderer.streamCells.length &&
@@ -446,11 +447,11 @@ export function effectsPass(C, items, X, dark, t, dt) {
     gl.uniform3fv(U.uUp, Up);
   }
   if (walkRenderer.springCells && walkRenderer.springCells.length && engineSetting('water', 'steam')) {
-    walkRenderer.springCells.forEach(([x, z, dp], k) => {
+    walkRenderer.springCells.forEach(([x, z, dp, st], k) => {
       const g = waterAt(x, z),
         y = g ? g.y : standingHeightAt(x, z);
-      for (let n = 0; n < 2; n++) {
-        const ph = ((t * rm) / 5200 + n / 2 + k * 0.37) % 1,
+      for (let n = 0; n < (st > 1 ? 3 : 2); n++) {
+        const ph = ((t * rm) / 5200 + n / (st > 1 ? 3 : 2) + k * 0.37) % 1,
           sz = 0.5 + ph * 1.3;
         quad(
           'smoke',
@@ -460,7 +461,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
           z + 0.1,
           sz,
           sz,
-          0.16 * (1 - ph) * Math.min(1, ph * 4) * (0.6 + dp * 0.4),
+          0.16 * (1 - ph) * Math.min(1, ph * 4) * (0.6 + dp * 0.4) * (st > 1 ? 1.5 : 1),
           [0.94, 0.97, 1]
         );
       }

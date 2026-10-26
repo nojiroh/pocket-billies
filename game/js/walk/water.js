@@ -163,7 +163,7 @@ export function reflectionPass(items, C, rw, rh, X) {
 }
 /* v22: the kinds' colours and the water's small lives: fish circling their deep spots, rings from ducks, fish and insects */
 /* water track WA-5b: the kinds' looks in a small texture instead of fixed uniform arrays (they stopped at nine): a
-   column a kind (its index in WATER_KIND_LOOKS), a row a group: 0 deep, 1 shallow, 2 clarity caustics foam ripples,
+   column a kind (its index in WATER_KIND_LOOKS), a row a group: 0 deep and scum, 1 shallow, 2 clarity caustics foam ripples,
    3 glow murk weed mode, 4 the sea's family (swell, surf, tide), white water, coral, bubbles, 5 the glow's colour.
    Made once per context (unit 15, read with texelFetch) */
 const KIND_ROWS = 6;
@@ -175,7 +175,7 @@ function kindTexture() {
     d = new Float32Array(N * KIND_ROWS * 4);
   WATER_KIND_LOOKS.forEach((k, i) => {
     const row = (r, v) => d.set(v, (r * N + i) * 4);
-    row(0, [...k.deep, 0]);
+    row(0, [...k.deep, k.scum || 0]);
     row(1, [...k.shal, 0]);
     row(2, [k.clar, k.caus, k.foam, k.rip]);
     row(3, [k.glow, k.murk, k.weed, k.mode || 0]);

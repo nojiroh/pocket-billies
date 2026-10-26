@@ -706,7 +706,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       const b0 = wv.length / 8,
         fw = flowAt(cx, cz);
       if (KL.run && (i + j * 3) % 2 === 0) stream.push([cx, cz]);
-      if (KL.steam) spring.push([cx, cz, dep[q] * KL.steam]);
+      if (KL.steam) spring.push([cx, cz, dep[q], KL.steam]);
       /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level. WA-4: a
          tide pool is calm and brims at the level of the high tide's skin, so the two meet when the sea comes in */
       const pool = !!(tide && tide.pool[Math.floor(cz) * W + Math.floor(cx)]),
@@ -968,7 +968,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         32
       )
     : null;
-  /* fish live where the water is deep all round; leaves start on streams; springs steam */
+  /* fish live where the water is deep all round; leaves start on streams; springs steam (hot springs more) */
   const homes = [];
   /* IS-5: only the first four are kept, so the search stops there (it compared every deep cell of a sea with every
      home found so far: seconds on the island hub) */
@@ -983,7 +983,11 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     }
   T.fishHomes = homes.slice(0, 4);
   T.streamCells = stream;
-  T.springCells = spring.filter((_, i) => i % 3 === 0).slice(0, 10);
+  /* WA-5b: a hot spring's cells first (it steams the most), then the cool springs' as before */
+  T.springCells = [
+    ...spring.filter(s => s[3] > 1).filter((_, i) => i % 2 === 0),
+    ...spring.filter(s => s[3] <= 1).filter((_, i) => i % 3 === 0),
+  ].slice(0, 10);
   T.flowAt = flowAt;
   T.flowMap = flowMap;
   flowTexture(T, bare ? null : flowMap);

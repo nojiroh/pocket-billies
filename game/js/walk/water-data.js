@@ -173,6 +173,109 @@ export const WATER_KIND_LOOKS = [
     fish: 0,
     mode: 2,
   },
+  /* water track WA-5b: the six kinds of WA-5a (logic/water-kinds.js WATER_KINDS, appended in its order, never
+     reordered). The flags the water shader reads besides the colours: white (white water over the whole surface),
+     bub (bubbles rising, the rate), coral (coral on the bed of its shallows), scum (0 green duckweed, 1 brown scum),
+     glowC (the glow's own colour: lit from below, little sky in it, its light thrown up on walls) */
+  {
+    k: 'rapids',
+    run: 1,
+    white: 1,
+    r: 0.6,
+    top: 0.8,
+    deep: [0.9, 1.08, 1.05],
+    shal: [1.15, 1.16, 1.1],
+    clar: 0.5,
+    caus: 0.6,
+    foam: 2,
+    rip: 2.4,
+    glow: 0,
+    murk: 0.05,
+    weed: 0,
+    fish: 0,
+  },
+  {
+    k: 'hotspring',
+    steam: 2.2,
+    bub: 1,
+    r: 1.2,
+    top: 0.8,
+    deep: [0.62, 1.14, 1.12],
+    shal: [0.98, 1.34, 1.24],
+    clar: 0.72,
+    caus: 0.45,
+    foam: 0.3,
+    rip: 0.4,
+    glow: 0.12,
+    murk: 0.35,
+    weed: 0,
+    fish: 0,
+  },
+  {
+    k: 'oasis',
+    r: 1.4,
+    top: 0.9,
+    deep: [0.42, 1.08, 0.92],
+    shal: [0.92, 1.32, 1.02],
+    clar: 0.28,
+    caus: 1.35,
+    foam: 0.5,
+    rip: 0.55,
+    glow: 0,
+    murk: 0,
+    weed: 0.05,
+    fish: 1,
+  },
+  {
+    k: 'bog',
+    bub: 0.55,
+    scum: 1,
+    r: 2,
+    top: 0.6,
+    deep: [0.5, 0.44, 0.2],
+    shal: [0.62, 0.53, 0.28],
+    clar: 0.96,
+    caus: 0,
+    foam: 0.1,
+    rip: 0.22,
+    glow: 0,
+    murk: 0.95,
+    weed: 1,
+    fish: 0,
+  },
+  {
+    k: 'reef',
+    sea: 1,
+    coral: 1,
+    r: 2.6,
+    top: 0.9,
+    deep: [0.5, 0.95, 1.08],
+    shal: [0.82, 1.3, 1.16],
+    clar: 0.4,
+    caus: 1.15,
+    foam: 1.3,
+    rip: 1.6,
+    glow: 0,
+    murk: 0,
+    weed: 0,
+    fish: 1,
+  },
+  {
+    k: 'cave',
+    r: 1.2,
+    top: 0.9,
+    deep: [0.24, 0.42, 0.7],
+    shal: [0.4, 1.08, 1.25],
+    clar: 0.42,
+    caus: 0.9,
+    foam: 0.2,
+    rip: 0.3,
+    glow: 0.85,
+    glowC: [0.32, 0.88, 1],
+    murk: 0.1,
+    weed: 0,
+    fish: 0,
+  },
 ];
 const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k, i]));
 /* 0.1.0 alpha: in steps (a generator, drained with yield*), so building a place's ground a slice at a time (map-cache.js
@@ -285,6 +388,22 @@ export function setPixelWaterUniform(U) {
   );
 }
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
+/* water track WA-5b: the light a glowing water (cave water) throws up on the walls by it: the brightest glowing kind
+   in the scene's water, its colour times its glow; worked out once per built water grid */
+const NO_GLOW = [0, 0, 0];
+function waterGlow() {
+  const G = walkRenderer.wgrid;
+  if (!G) return NO_GLOW;
+  if (!G.glow) {
+    const seen = new Set(G.kind);
+    G.glow = NO_GLOW;
+    for (const i of seen) {
+      const K = WATER_KIND_LOOKS[i];
+      if (K && K.glowC && K.glow * Math.max(...K.glowC) > Math.max(...G.glow)) G.glow = K.glowC.map(v => v * K.glow);
+    }
+  }
+  return G.glow;
+}
 export function setShoreUniforms(U, sc) {
   setPixelWaterUniform(U);
   setFallUniforms(U);
@@ -296,6 +415,7 @@ export function setShoreUniforms(U, sc) {
   gl.bindSampler(5, null);
   gl.uniform1i(U.uShore, 5);
   gl.uniform3f(U.uShoreR, 1 / sc.w, 1 / sc.h, on ? 1 : 0);
+  if (U.uWGlow) gl.uniform3fv(U.uWGlow, waterGlow());
   /* island track IS-3: the sea all round: where its swell rolls in toward, and whether it is on */
   if (U.uSea) {
     const c = seaCentre(sc);
