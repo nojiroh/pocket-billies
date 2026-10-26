@@ -4,6 +4,7 @@
 //
 //   node tools/patch-copperleaf-square.mjs --outline   # the square paved to a lobed rim about SQUARE_R metres out
 //   node tools/patch-copperleaf-square.mjs --fountain  # the fountain in the middle in place of the well
+//   node tools/patch-copperleaf-square.mjs --edges     # HB-10b: the market, lamps, planters and benches round its rim
 //
 // --outline: the paved square (ground letter c) reaches squareRim(a) metres from its middle (the well plot): about
 // 10 m on average (the owner: between WA-10's 8 m and the generator's 12 m), bulging toward the sky rail and the portal
@@ -13,13 +14,14 @@
 // and props too. Replaces WA-10's `patch-copperleaf-water.mjs --square` (8 m).
 // --fountain: the fountain (a low-poly model, 1.75 m round) stands where the well stood; the signpost goes 4.5 m from
 // the middle on the side away from the lab, clear of the basin (build-copperleaf.mjs puts it there too).
+// --edges: what stands round the rim (tools/square-props.mjs, which build-copperleaf.mjs uses too), laid again.
 // Written through tools/write-data.mjs, as every build tool writes the data.
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandDress } from './island-dress.mjs';
-import { SQUARE_R, squareRim } from './square-props.mjs';
+import { SQUARE_R, squareEdgeProps, squareRim } from './square-props.mjs';
 
 const OLD_R = 12; /* the generator's square (paved and level out to here) */
 const STREET_HALF = 1.1; /* half a street's width (the island's paths are 2.2 m) */
@@ -30,8 +32,8 @@ const main = () => {
     M = D.maps.copperleaf,
     { w, h } = M,
     args = process.argv.slice(2);
-  if (!args.includes('--outline') && !args.includes('--fountain')) {
-    console.error('usage: node tools/patch-copperleaf-square.mjs --outline | --fountain');
+  if (!['--outline', '--fountain', '--edges'].some(a => args.includes(a))) {
+    console.error('usage: node tools/patch-copperleaf-square.mjs --outline | --fountain | --edges');
     process.exit(1);
   }
   const tile = (i, j) => (M.tiles[h - 1 - j] || '')[i],
@@ -90,6 +92,12 @@ const main = () => {
     S.x = Math.round((sx + (dx / l) * SIGN_OUT) * 100) / 100;
     S.z = Math.round((sz + (dz / l) * SIGN_OUT) * 100) / 100;
     notes.push(`the fountain at ${P.x}, ${P.z}; the signpost at ${S.x}, ${S.z}`);
+  }
+
+  if (args.includes('--edges')) {
+    const before = M.props.filter(p => p.sq).length;
+    M.props = squareEdgeProps(M);
+    notes.push(`round the square: ${M.props.filter(p => p.sq).length} props (${before} before)`);
   }
 
   /* the dressing reads the ground (a street, the square), so it is laid again as build-copperleaf.mjs lays it, last */

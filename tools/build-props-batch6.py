@@ -344,6 +344,14 @@ def clock_tower_fx():
     return [{'k': 'window', 'x': 0, 'y': -px(3.45)}, {'k': 'glow', 'x': 0, 'y': -px(CLOCK_Z)}]
 
 
+def fountain_fx():
+    """its spray; HB-10b: lit from below after dusk (three lamp glows round the basin) and fireflies round it"""
+    return [{'k': 'spray', 'x': 0, 'y': -px(2.5)},
+            {'k': 'glow', 'x': -px(1.0), 'y': -px(0.6), 'z': -0.5}, {'k': 'glow', 'x': px(1.0), 'y': -px(0.6), 'z': -0.5},
+            {'k': 'glow', 'x': 0, 'y': -px(0.6), 'z': 0.9},
+            {'k': 'fireflies', 'x': 0, 'y': 0, 'n': 7, 'r': 3.2}]
+
+
 # ---------------------------------------------------------------- the catalogue
 FIXED = {'rot': 0, 'lean': 0, 'size': 0}
 MADE = {
@@ -355,7 +363,7 @@ MADE = {
     'bike_rack': (bike_rack_recipe, None, FIXED),
     'bin': (bin_recipe, None, FIXED),
     'sign_shop': (sign_shop_recipe, None, FIXED),
-    'fountain': (fountain_recipe, lambda: [{'k': 'spray', 'x': 0, 'y': -px(2.5)}], FIXED),
+    'fountain': (fountain_recipe, fountain_fx, FIXED),
     'solar_canopy': (solar_canopy_recipe, lambda: [{'k': 'glow', 'x': 0, 'y': -px(2.3)}], FIXED),
     'solar_tree': (solar_tree_recipe, lambda: [{'k': 'glow', 'x': 0, 'y': -px(2.72)}], FIXED),
     'vertical_garden': (vertical_garden_recipe, None, FIXED),

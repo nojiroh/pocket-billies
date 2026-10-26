@@ -22,6 +22,7 @@ import { SKY_RAIL } from '../game/js/logic/island-gen.js';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
+import { squareEdgeProps } from './square-props.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
 const D = readGameData(),
@@ -584,6 +585,8 @@ Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npc
 const fenced = pastureProps(sc, D.scenery);
 sc.props = fenced.props;
 pastureGround(sc, fenced.gap);
+/* HB-10b: the market, lamps, planters and benches round the square's rim (tools/square-props.mjs) */
+sc.props = squareEdgeProps(sc);
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
    where a building now stands (the barn's zone's middle) ends at its door instead */
