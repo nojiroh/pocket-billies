@@ -86,6 +86,54 @@
   "must": true,
   "script": ["Something big walked across Hazel’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
  },
+ "fav_chosen_ask": {
+  "who": "chosen",
+  "when": "history:runs >= 2 and quest:fav_chosen = none",
+  "priority": 7,
+  "once": true,
+  "must": true,
+  "script": ["Beat a leader and tell them Professor Chosen sends his regards. Loudly. #l:7d69","quest fav_chosen asked"]
+ },
+ "fav_chosen_thanks": {
+  "who": "chosen",
+  "when": "quest:fav_chosen = done",
+  "priority": 8,
+  "once": true,
+  "must": true,
+  "script": ["They remembered me? Brand awareness. Have two points of my respect. #l:5363"]
+ },
+ "fav_hazel_ask": {
+  "who": "hazel",
+  "when": "ch1_drop and quest:fav_hazel = none",
+  "priority": 7,
+  "once": true,
+  "must": true,
+  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_hazel asked"]
+ },
+ "fav_hazel_thanks": {
+  "who": "hazel",
+  "when": "quest:fav_hazel = done",
+  "priority": 8,
+  "once": true,
+  "must": true,
+  "script": ["Readings. Real ones. The numbers hum near their crates. #l:e544"]
+ },
+ "fav_juniper_ask": {
+  "who": "juniper",
+  "when": "met_juniper and quest:fav_juniper = none",
+  "priority": 7,
+  "once": true,
+  "must": true,
+  "script": ["Bring a Grass Billie home, dear. The garden’s lonely. #l:c391","quest fav_juniper asked"]
+ },
+ "fav_juniper_thanks": {
+  "who": "juniper",
+  "when": "quest:fav_juniper = done",
+  "priority": 8,
+  "once": true,
+  "must": true,
+  "script": ["[happy] Oh, look at it. The bees have already filed a complaint. That’s love. #l:f356"]
+ },
  "chosen_first": {
   "who": "chosen",
   "when": "history:runs = 1",

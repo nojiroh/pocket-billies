@@ -121,7 +121,20 @@
    ]
   }
  },
- "quests": {},
+ "quests": {
+  "fav_chosen": {
+   "about": "RL-S2: Chosen's favour: beat a leader on a run (relations.json chosen.favour; asked by banter.json fav_chosen_ask, done on the way home)",
+   "stages": ["asked","done"]
+  },
+  "fav_hazel": {
+   "about": "RL-S2: Hazel's favour: reach row six on a run, for her readings (relations.json hazel.favour)",
+   "stages": ["asked","done"]
+  },
+  "fav_juniper": {
+   "about": "RL-S2: Juniper's favour: come home with a Grass Billie in the team (relations.json juniper.favour)",
+   "stages": ["asked","done"]
+  }
+ },
  "presets": {
   "after-opening": {
    "about": "Blake's first battle won, in Copperleaf, before anyone else is met",

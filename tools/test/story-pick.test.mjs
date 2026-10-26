@@ -89,7 +89,8 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   assert.equal(storyPick('chosen', G, h, {}, 1), 'chosen_first');
   assert.equal(storyPick('hazel', G, h, {}, 1), 'ch1_drop', "RL-S2: Chapter 1's first beat");
   assert.equal(storyPick('hazel', G, h, { once: { 'banter:ch1_drop': 1 } }, 1), 'hazel_rounder');
-  assert.equal(storyPick('juniper', G, h, {}, 1), 'juniper_lost');
+  assert.equal(storyPick('juniper', G, h, {}, 1), 'fav_juniper_ask', 'RL-S2: her favour, once');
+  assert.equal(storyPick('juniper', G, h, { once: { 'banter:fav_juniper_ask': 1 } }, 1), 'juniper_lost');
   assert.ok(['lost_rescued', 'lost_reflexes'].includes(storyPick('back_lost', G, h, {}, 1)));
 });
 

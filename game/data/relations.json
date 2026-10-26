@@ -2,6 +2,7 @@
  "gift": {"cost":1,"points":1,"favour":2},
  "people": {
   "chosen": {
+   "favour": {"quest":"fav_chosen","check":"last:leaders >= 1"},
    "levels": [
     {"at":1},
     {
@@ -21,6 +22,7 @@
    ]
   },
   "hazel": {
+   "favour": {"quest":"fav_hazel","check":"last:row >= 6"},
    "levels": [
     {"at":1},
     {
@@ -36,6 +38,7 @@
    ]
   },
   "juniper": {
+   "favour": {"quest":"fav_juniper","check":"lastteam:Grass"},
    "levels": [
     {"at":1},
     {
