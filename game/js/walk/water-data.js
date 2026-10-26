@@ -8,7 +8,7 @@ import { clamp } from '../util.js';
 import { seaCentre } from '../logic/sea.js';
 import { valueNoise2d, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { gpuState } from '../engine/webgl.js';
+import { gpuFree, gpuSized, gpuState, gpuTexture } from '../engine/webgl.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { tideLevel } from './sea-tide.js';
@@ -195,7 +195,7 @@ export function* shoreField(sc, isW, T = walkRenderer, tide = null) {
   T.shoreF = null;
   if (!any || !(engineSetting('water', 'shore') ?? true)) {
     if (T.shoreTex) {
-      gl.deleteTexture(T.shoreTex);
+      gpuFree(T.shoreTex);
       T.shoreTex = null;
     }
     return;
@@ -259,7 +259,8 @@ export function* shoreField(sc, isW, T = walkRenderer, tide = null) {
       }
     }
   }
-  if (!T.shoreTex) T.shoreTex = gl.createTexture();
+  if (!T.shoreTex) T.shoreTex = gpuTexture('ground');
+  gpuSized(T.shoreTex, FW * FH * (dt ? 4 : 1));
   gl.bindTexture(gl.TEXTURE_2D, T.shoreTex);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   if (dt) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, FW, FH, 0, gl.RGBA, gl.UNSIGNED_BYTE, dt);
@@ -364,10 +365,10 @@ function setFallUniforms(U) {
    its stream in alpha, one texel a half metre, half floats so still water reads exactly 0 */
 export function flowTexture(T, F) {
   const gl = gpuState.gl;
-  if (T.flowTex) gl.deleteTexture(T.flowTex);
+  gpuFree(T.flowTex);
   T.flowTex = null;
   if (!F || !F.d.some(v => v !== 0)) return;
-  T.flowTex = gl.createTexture();
+  T.flowTex = gpuTexture('ground', F.W2 * F.H2 * 8);
   gl.bindTexture(gl.TEXTURE_2D, T.flowTex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, F.W2, F.H2, 0, gl.RGBA, gl.FLOAT, F.d);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);

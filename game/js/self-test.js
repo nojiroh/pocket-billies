@@ -69,7 +69,7 @@ import { frameScheduler, userFps } from './frame-scheduler.js';
 import { ART_CACHE } from './art.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
-import { battleStage, battleStageStop } from './battle-stage.js';
+import { battleStage, battleStageStop, rigStats } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
@@ -128,6 +128,7 @@ import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
+  BASELINE_RIG_REUSE: [() => BASELINE_RIG_REUSE],
   BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
   baselineBattle: [() => baselineBattle, v => (baselineBattle = v)],
@@ -135,9 +136,11 @@ expose({
   baselineHub: [() => baselineHub, v => (baselineHub = v)],
   baselineMeasure: [() => baselineMeasure, v => (baselineMeasure = v)],
   baselineNote: [() => baselineNote, v => (baselineNote = v)],
+  baselineRigs: [() => baselineRigs, v => (baselineRigs = v)],
   baselineRun: [() => baselineRun, v => (baselineRun = v)],
   baselineSettle: [() => baselineSettle, v => (baselineSettle = v)],
   baselineStand: [() => baselineStand, v => (baselineStand = v)],
+  baselineUploadProbe: [() => baselineUploadProbe, v => (baselineUploadProbe = v)],
   diagnosticsMaps: [() => diagnosticsMaps, v => (diagnosticsMaps = v)],
   diagnosticsReport: [() => diagnosticsReport, v => (diagnosticsReport = v)],
   diagnosticsSummary: [() => diagnosticsSummary, v => (diagnosticsSummary = v)],
@@ -167,25 +170,31 @@ export function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
 /* frame rate of one scheduler task between two moments of the debug log; whole: only the seconds that start after t0;
-   trim: drop the task's first and last second (it starts and stops partway through them, so they read low) */
+   trim: drop the task's first and last second (it starts and stops partway through them, so they read low); plus: a
+   task that runs in the same ticks, its time added to cpuMs (phase 20 R3: a battle's 3D frame is the walk view's 'dio'
+   task, while 'scene' only moves the tweens and draws the effects canvas; cpuTasks then has each task's own ms) */
 export function selfTestFrameStats(t0, t1, task, o) {
   const whole = o && o.whole,
     S = [];
   for (const s of debugLog.samples) {
     if (s.t < t0 || s.t > t1) continue;
     if (whole && s.t - (s.dt || 1000) < t0) continue;
-    if (s.tasks[task]) S.push(s.tasks[task]);
+    if (s.tasks[task]) S.push(o && o.plus ? { ...s.tasks[task], also: s.tasks[o.plus] } : s.tasks[task]);
   }
   if (o && o.trim && S.length >= 3) {
     S.pop();
     S.shift();
   }
   const f = S.map(v => v.fps),
-    m = S.map(v => v.ms),
+    own = S.map(v => v.ms),
+    also = S.map(v => (v.also ? v.also.ms : 0)),
+    m = own.map((v, i) => v + also[i]),
     slow = S.reduce((a, v) => a + v.long, 0);
   if (!f.length) return { fpsAvg: null, fpsWorst: null, cpuMs: null, slow: 0, seconds: 0 };
-  const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10;
-  return { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
+  const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10,
+    out = { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
+  if (o && o.plus) out.cpuTasks = { [task]: avg(own), [o.plus]: avg(also) };
+  return out;
 }
 /* v20: the test scenes, and their walking checks (from, to, reach) worked out from the scene data without drawing */
 function testMaps() {
@@ -400,7 +409,11 @@ async function runFullTest(mode) {
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
       if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
       const m0 = Math.max(t0, measureFrom),
-        st = selfTestFrameStats(m0, debugLog.now(), task, measureFrom ? { whole: true } : { trim: true }),
+        st = selfTestFrameStats(m0, debugLog.now(), task, {
+          ...(measureFrom ? { whole: true } : { trim: true }),
+          /* phase 20 R3: a battle step's CPU is its 3D frame too (the walk view's task) */
+          ...(task === 'scene' && { plus: 'dio' }),
+        }),
         ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
@@ -2659,6 +2672,8 @@ const BASELINE_RESOLUTIONS = [
   ['r1', { auto: false, resolution: 1 }],
   ['own', { auto: false }],
 ];
+/* phase 20 R3: the battle measured a third time, at the game's own resolution with its rigs reused (quality.rigReuse) */
+const BASELINE_RIG_REUSE = ['ownRigReuse', { auto: false, rigReuse: true }];
 /* the player on the place's arrival spot, the camera straight and at its own zoom */
 function baselineStand() {
   const sc = walkView.sc;
@@ -2703,19 +2718,22 @@ async function baselineSettle(task, sec) {
 async function baselineMeasure(task, sec) {
   const t0 = debugLog.now(),
     T = diagnosticsTimersOn();
+  /* phase 20 R3: a battle's rigs, from battle-stage.js's own sums */
+  if (task === 'scene') Object.assign(rigStats, { calls: 0, redraws: 0, bytes: 0, ms: 0 });
   let r = null;
   try {
     await selfTestSleep(sec * 1000);
   } finally {
     r = await diagnosticsTimersOff(T);
   }
-  const s = selfTestFrameStats(t0, debugLog.now(), task, { whole: true }),
+  const s = selfTestFrameStats(t0, debugLog.now(), task, { whole: true, ...(task === 'scene' && { plus: 'dio' }) }),
     c = r.calls;
   return {
     fps: s.fpsAvg,
     worstFps: s.fpsWorst,
     frameMs: s.fpsAvg ? Math.round((1000 / s.fpsAvg) * 10) / 10 : null,
     cpuMs: s.cpuMs,
+    cpuTasks: s.cpuTasks,
     gpuMs: r.gpu ? Math.round(Object.values(r.gpu).reduce((a, v) => a + v, 0) * 100) / 100 : null,
     slow: s.slow,
     draws: c ? c.dc[0] : null,
@@ -2726,8 +2744,46 @@ async function baselineMeasure(task, sec) {
     passDraws: c ? c.dcp : null,
     tagged: c ? c.dct : null,
     kinds: c ? c.dcu : null,
+    /* phase 20 R3: KB a frame sent to the graphics chip: [pictures, buffers] */
+    uploadKB: c ? c.up : null,
     frames: c ? c.frames : 0,
+    ...(task === 'scene' && { rigs: baselineRigs(r.frames) }),
   };
+}
+/* phase 20 R3: what the battle's rigs cost a frame: the processor's ms redrawing their canvases, how many got to a
+   rig and how many were redrawn (each redraw is one upload), the KB redrawn, and an upload probe */
+function baselineRigs(frames) {
+  const n = Math.max(1, frames),
+    r = v => Math.round((v / n) * 100) / 100;
+  return {
+    ms: r(rigStats.ms),
+    calls: r(rigStats.calls),
+    redraws: r(rigStats.redraws),
+    kb: Math.round(rigStats.bytes / n / 1024),
+    uploadMs: baselineUploadProbe(),
+  };
+}
+/* one rig canvas sent to a scratch texture 20 times, the graphics chip waited for (gl.finish): ms per upload, its own
+   side included. Between frames, so the counters never see it; the texture is deleted, the binding put back */
+function baselineUploadProbe() {
+  const gl = typeof gpuState !== 'undefined' && !gpuState.lost ? gpuState.gl : null,
+    cv = (battleStage.buf || []).find(b => b && b.width > 10);
+  if (!gl || !cv) return null;
+  const was = gl.getParameter(gl.TEXTURE_BINDING_2D),
+    t = gl.createTexture();
+  try {
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    gl.finish();
+    const t0 = performance.now();
+    for (let i = 0; i < 20; i++) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    gl.finish();
+    return Math.round(((performance.now() - t0) / 20) * 100) / 100;
+  } finally {
+    gl.bindTexture(gl.TEXTURE_2D, was);
+    gl.deleteTexture(t);
+  }
 }
 /* a run on a copy of the save from a fixed seed, its first place forced, arrived at as the mast's start does */
 async function baselineRun(R) {
@@ -2811,9 +2867,11 @@ async function rendererBaseline(o) {
         environment.force = { time: st.time, weather: 'clear', season: 'summer' };
         baselineStand();
         if (st.battle) await baselineBattle(o.foeSp);
-        for (const [res, quality] of BASELINE_RESOLUTIONS) {
+        for (const [res, quality] of st.battle ? [...BASELINE_RESOLUTIONS, BASELINE_RIG_REUSE] : BASELINE_RESOLUTIONS) {
           if (selfTest.stop) break;
-          o.show(`${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}`);
+          o.show(
+            `${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}${quality.rigReuse ? ', rigs reused' : ''}`
+          );
           saveData.preferences.expert = true;
           saveData.preferences.eng = { quality: { ...quality } };
           if (!st.battle) baselineStand();
@@ -2825,7 +2883,8 @@ async function rendererBaseline(o) {
           debugLog.add(
             'bench',
             `baseline ${st.id} ${res}: ${m.fps} fps, ${m.cpuMs} ms CPU, ${m.draws} draws` +
-              (m.tagged && m.tagged.sprites ? `, model pictures ${m.tagged.sprites.modelPic || 0}` : '')
+              (m.tagged && m.tagged.sprites ? `, model pictures ${m.tagged.sprites.modelPic || 0}` : '') +
+              (m.rigs ? `, rigs ${m.rigs.ms} ms, ${m.rigs.kb} KB (${m.rigs.redraws} of ${m.rigs.calls} redrawn)` : '')
           );
         }
       } finally {

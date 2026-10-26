@@ -62,6 +62,7 @@ expose({
   rigCanvasAnimator: [() => rigCanvasAnimator],
   rigCanvasHTML: [() => rigCanvasHTML, v => (rigCanvasHTML = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
+  rigFrameKey: [() => rigFrameKey, v => (rigFrameKey = v)],
   rigFromMeta: [() => rigFromMeta, v => (rigFromMeta = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
   rigParts: [() => rigParts, v => setRigParts(v)],
@@ -433,6 +434,16 @@ export function rigFrame(R, act, tau, t, seed) {
   P.face = rigPose(act, qt, fq, seed).face;
   if (R.lag) P.prev = rigPose(act, Math.max(0, qt - tk), qT - tk, seed);
   return P;
+}
+/* phase 20 R3 (the battle lane): rigFrame's stepping as one string. Two frames with the same key get the same pose and
+   face, so the battle keeps the canvas it drew instead of drawing and uploading it again (battle-stage.js actorBuffer,
+   quality.rigReuse). Every rig has a clock today (12: a pose every 167 ms, attack and hurt every 83 ms, the face every
+   250 ms); one without is posed at the time it's given, so its key holds that time. tools/test/rig-frame-key.test.mjs */
+export function rigFrameKey(R, act, tau, t, seed) {
+  if (!R || !R.clock) return `${act}|${tau}|${t}|${seed}`;
+  const tk = 1000 / R.clock,
+    q = act === 'attack' || act === 'hurt' ? tk : tk * 2;
+  return `${act}|${Math.floor(tau / q)}|${Math.floor(t / q)}|${Math.floor(t / 250)}|${seed}`;
 }
 /* v36c: an audit of a rig's motion: for every pose, which pieces move and by how much (pixels of pivot travel plus
    rotation in pixels at the piece's size) over its run. The Studio shows it beside the skeleton; the quick check

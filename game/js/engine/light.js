@@ -10,7 +10,7 @@ import { clamp } from '../util.js';
 import { FRAME_BLOCK_BYTES, packFrameBlock } from './frame-block.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { cross3, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
+import { cross3, gpuBuffer, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FRAME_BLOCK_SLOTS: [() => FRAME_BLOCK_SLOTS],
@@ -185,16 +185,17 @@ export function lightContext(o) {
    a context is packed and sent the first time a program is bound with it, and bound again only when another slot was
    in use (the reflection's copy of the frame's context takes a slot of its own) */
 const FRAME_BLOCK_SLOTS = 4;
-const frameBlock = { gl: null, buf: null, stride: 0, next: 0, bound: -1, owner: [], f: null, n: null };
+const frameBlock = { gl: null, gen: 0, buf: null, stride: 0, next: 0, bound: -1, owner: [], f: null, n: null };
 function bindFrameBlock(X) {
   const gl = gpuState.gl,
     B = frameBlock;
-  if (B.gl !== gl) {
+  if (B.gl !== gl || B.gen !== gpuState.gen) {
     const al = gl.getParameter(gl.UNIFORM_BUFFER_OFFSET_ALIGNMENT) || 256,
       raw = new ArrayBuffer(FRAME_BLOCK_BYTES);
     B.gl = gl;
+    B.gen = gpuState.gen;
     B.stride = Math.ceil(FRAME_BLOCK_BYTES / al) * al;
-    B.buf = gl.createBuffer();
+    B.buf = gpuBuffer('other', B.stride * FRAME_BLOCK_SLOTS);
     gl.bindBuffer(gl.UNIFORM_BUFFER, B.buf);
     gl.bufferData(gl.UNIFORM_BUFFER, B.stride * FRAME_BLOCK_SLOTS, gl.DYNAMIC_DRAW);
     B.f = new Float32Array(raw);

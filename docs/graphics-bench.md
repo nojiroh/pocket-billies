@@ -120,7 +120,14 @@ step of the diagnostics test (Settings → Help → Diagnostics), "Renderer base
 - Each entry in the report's `baseline`: fps, worst fps, frame ms, CPU ms, GPU ms (where the chip has timers), draws,
   instances, program switches, texture binds, uniform calls, `passDraws` (draws per pass), `tagged` (per pass, the
   draws of low-poly models `model` and of models' picture layers `modelPic`: leaf clumps, vines, a clock's hands) and
-  `kinds` (per pass, [distinct textures, distinct vertex arrays]: the fewest draws grouping could reach).
+  `kinds` (per pass, [distinct textures, distinct vertex arrays]: the fewest draws grouping could reach), and
+  (phase 20 R3) `uploadKB` ([pictures, buffers] sent to the chip a frame).
+- The battle (phase 20 R3): its CPU ms is the walk view's frame (`dio`, the world and the rigs) plus the battle
+  stage's own (`scene`, the tweens and the effects canvas), each in `cpuTasks`; before R3 it was `scene` alone, which
+  is why round 1 read 1 ms. Its `rigs`: ms redrawing the rig canvases, `calls` and `redraws` a frame (each redraw is
+  one upload), `kb` redrawn a frame, `uploadMs` (one rig canvas sent 20 times and waited for: ms per upload). The
+  battle is measured a third time, `ownRigReuse`: the game's own resolution with `quality.rigReuse` on. The full
+  test's battle steps count `dio` in their CPU too.
 - Numbers only. It saves nothing and sends nothing; the report is shared only when you export it.
 
 ## Findings so far (format 1 reports, 2026-10-19)

@@ -298,6 +298,8 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
        in its cache; within the near map (13 m) shadows sway as before */
     farShadowsStill: false,
+    /* phase 20 R3 (battle): a battle rig's canvas drawn and uploaded again only when its pose, face or tint changes */
+    rigReuse: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1315,6 +1317,12 @@ export const ENGINE_SPEC = [
         'Far shadows hold still',
         'bool',
         'Past the sharp shadows round you (about 13 m) the shadows of grass, bushes and leaves stop swaying in the wind and are kept from frame to frame instead of drawn again each frame. Close by they sway as before.',
+      ],
+      [
+        'rigReuse',
+        'Reuse battle rigs',
+        'bool',
+        'In a battle each Billie’s picture is drawn and sent to the graphics card again only when its pose, face or tint changes (about 6 times a second), not on every frame. Same picture, less work.',
       ],
       [
         'gpuTimer',
