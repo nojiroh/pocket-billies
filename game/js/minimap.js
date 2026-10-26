@@ -21,15 +21,13 @@ import { walkData, walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
 /* eslint-disable no-func-assign */
 expose({
-  MINIMAP_COMPACT_AFTER: [() => MINIMAP_COMPACT_AFTER],
-  MINIMAP_FULL_AFTER: [() => MINIMAP_FULL_AFTER],
   MINIMAP_ICONS: [() => MINIMAP_ICONS],
   MINIMAP_KIND_BY_TILE: [() => MINIMAP_KIND_BY_TILE],
-  MINIMAP_SPAN_M: [() => MINIMAP_SPAN_M],
   minimap: [() => minimap],
   minimapCanvas: [() => minimapCanvas, v => (minimapCanvas = v)],
   minimapCompact: [() => minimapCompact, v => (minimapCompact = v)],
   minimapCss: [() => minimapCss],
+  minimapDials: [() => minimapDials, v => (minimapDials = v)],
   minimapDraw: [() => minimapDraw, v => (minimapDraw = v)],
   minimapIcon: [() => minimapIcon, v => (minimapIcon = v)],
   minimapMix: [() => minimapMix],
@@ -56,11 +54,24 @@ const minimap = {
   draws: 0,
 };
 
-/** metres across the tile: the same in both sizes, so going compact only scales the picture */
-const MINIMAP_SPAN_M = 44;
-/** how long you walk before the bar goes compact, and stand before it comes back (ms) */
-const MINIMAP_COMPACT_AFTER = 2500;
-const MINIMAP_FULL_AFTER = 700;
+/** the dials (uiTheme.json minimap, written as --minimap-* by the theme; tokens.css holds the defaults): metres
+ * across the tile (the same in both sizes, so going compact only scales the picture), ms of walking before the bar
+ * goes compact and of standing before it comes back, and which marks show */
+function minimapDials() {
+  const cs = getComputedStyle(/** @type {HTMLCanvasElement} */ (minimap.cv)),
+    num = (/** @type {string} */ k, /** @type {number} */ d) => {
+      const v = parseFloat(cs.getPropertyValue(k));
+      return Number.isFinite(v) ? v : d;
+    };
+  return {
+    span: Math.max(8, num('--minimap-span', 44)),
+    compactAfter: num('--minimap-compact-after', 2500),
+    fullAfter: num('--minimap-full-after', 700),
+    facilities: num('--minimap-facilities', 1) > 0,
+    trainers: num('--minimap-trainers', 1) > 0,
+    billies: num('--minimap-billies', 1) > 0,
+  };
+}
 /** a facility's icon (art/ui) by what its door does (scenery props' act) */
 const MINIMAP_ICONS = {
   clinic: 'heart',
@@ -239,7 +250,7 @@ function minimapOK() {
 }
 
 /** the bar compact while you walk (a few seconds in), full again once you stop */
-function minimapCompact(/** @type {number} */ now) {
+function minimapCompact(/** @type {number} */ now, /** @type {ReturnType<typeof minimapDials>} */ D) {
   const nav = /** @type {any} */ (minimap.cv && minimap.cv.parentElement);
   if (!nav) return;
   const walking = uiState.tab === 'walk' && !!walkView.pl && !!walkView.pl.walk;
@@ -251,14 +262,16 @@ function minimapCompact(/** @type {number} */ now) {
     if (!minimap.stopT) minimap.stopT = now;
   }
   const want = nav.compact
-    ? !(minimap.stopT && now - minimap.stopT >= MINIMAP_FULL_AFTER)
-    : !!(minimap.walkT && now - minimap.walkT >= MINIMAP_COMPACT_AFTER);
+    ? !(minimap.stopT && now - minimap.stopT >= D.fullAfter)
+    : !!(minimap.walkT && now - minimap.walkT >= D.compactAfter);
   if (want !== !!nav.compact) nav.compact = want;
 }
 
 /** one picture: the ground round you, then the facilities, trainers, wild Billies and you */
 function minimapDraw(now = performance.now()) {
-  minimapCompact(now);
+  if (!minimap.cv || !minimap.cv.isConnected) return false;
+  const D = minimapDials();
+  minimapCompact(now, D);
   if (!minimapOK()) return false;
   const cv = /** @type {HTMLCanvasElement} */ (minimap.cv),
     dpr = Math.min(2, window.devicePixelRatio || 1),
@@ -284,7 +297,7 @@ function minimapDraw(now = performance.now()) {
   const c = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')),
     W = cv.width,
     H = cv.height,
-    s = W / MINIMAP_SPAN_M,
+    s = W / D.span,
     Pl = walkView.pl,
     P = minimap.pal,
     /* a place's metres on the canvas (north up: z grows upward) */
@@ -308,7 +321,7 @@ function minimapDraw(now = performance.now()) {
     inView = (/** @type {number} */ x, /** @type {number} */ y, m = 8 * unit) =>
       x > -m && y > -m && x < W + m && y < H + m;
   /* the facilities' icons, upright and the same size at any zoom */
-  if (!RR) {
+  if (!RR && D.facilities) {
     const icon = Math.round((W >= 100 * dpr ? 16 : 11) * dpr);
     for (const m of minimap.marks || []) {
       const x = toX(m.x),
@@ -319,7 +332,7 @@ function minimapDraw(now = performance.now()) {
   }
   /* trainers you haven't beaten: a diamond in the danger colour */
   const dot = Math.max(5, 6 * unit);
-  for (const id of Object.keys(walkView.npcAt || {})) {
+  for (const id of D.trainers ? Object.keys(walkView.npcAt || {}) : []) {
     const base = id.replace(/~b$/, '');
     if (!TRAINERS[base] || saveData.flags[base]) continue;
     const at = walkView.npcAt[id],
@@ -336,7 +349,7 @@ function minimapDraw(now = performance.now()) {
     c.restore();
   }
   /* the wild Billies out in the world: a round dot (pins stay round) */
-  for (const e of walkRenderer.encPos || []) {
+  for (const e of D.billies ? walkRenderer.encPos || [] : []) {
     const x = toX(e[0]),
       y = toY(e[1]);
     if (!inView(x, y)) continue;

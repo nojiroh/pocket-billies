@@ -107,7 +107,8 @@
     "shape": {"$ref": "#/$defs/shape"},
     "space": {"$ref": "#/$defs/space"},
     "type": {"$ref": "#/$defs/type"},
-    "motion": {"$ref": "#/$defs/motion"}
+    "motion": {"$ref": "#/$defs/motion"},
+    "minimap": {"$ref": "#/$defs/minimap"}
    }
   },
   "surfaceSide": {
@@ -176,6 +177,19 @@
     "easeOut": {"$ref": "#/$defs/ease"},
     "easeIn": {"$ref": "#/$defs/ease"},
     "spring": {"$ref": "#/$defs/ease"}
+   }
+  },
+  "minimap": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "UI-8: the bottom bar's minimap (js/minimap.js): how much it shows, when the bar goes compact, its marks",
+   "properties": {
+    "span": {"type": "number", "minimum": 16, "maximum": 160, "description": "--minimap-span, metres across the tile"},
+    "compactAfter": {"type": "number", "minimum": 0, "maximum": 10000, "description": "--minimap-compact-after, ms of walking before the bar goes compact"},
+    "fullAfter": {"type": "number", "minimum": 0, "maximum": 5000, "description": "--minimap-full-after, ms standing before it comes back"},
+    "facilities": {"type": "boolean", "description": "--minimap-facilities: an icon on each facility"},
+    "trainers": {"type": "boolean", "description": "--minimap-trainers: trainers not yet beaten"},
+    "billies": {"type": "boolean", "description": "--minimap-billies: the wild Billies out in the world"}
    }
   }
  },
