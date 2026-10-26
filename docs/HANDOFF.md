@@ -2,6 +2,55 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-3c - Splicing by slot across body plans - 2026-10-26
+Branch `claude/ro-3c-splice-by-slot`, made from RO-3a's `claude/happy-ramanujan-jiipux` (PR #213, not merged yet);
+pull request into `track/roster` stacked on #213. Plan approved in Plan Mode. RO-3b ran at the same time: this session
+stayed out of bodyPlans.json `forms`, rigs-next.js, the baked sheets, kitBuilds.json and the quick-check baseline, and
+tested on sample placeholder Billies. The owner's answer: the octopus and the blob **share one bone** between body and
+head. Tag `ro-3c-done` for the owner.
+- Where the plan and the code differed (checked): only SP-1 is built, so there are **no Stability costs** yet and
+  grafts are reachable only from the debug buttons; no graft rule a player sees changed (SP-2 asks). After RO-3b every
+  species keeps a kitBuilds.json recipe (unused), so the graft picks its path by the rig's `placeholder` mark, not by
+  whether a recipe exists. RO-3c's "socket rules per plan pair" became one slot map for all plans, on the baked art.
+- Changed:
+  - **bodyPlans.json plans** (+ schema, check-data, placeholder-art.js `also`): the octopus's mantle is `slot: body,
+    also: head` (it was `head`), the blob's body `also: head`. A shared bone takes the body's size roll and is never
+    grafted; check-data: every plan has a bone for every slot. The octopus rig's `slot` changes on its next bake.
+  - **logic/graft-art.js `graftPlaceholder`**: a placeholder Billie grafted by slot from its donors' baked sheets and
+    rigs (drawings come along; nothing else is loaded). A slot's groups (`graftGroups`: its own bones, a chain is one
+    group, mirrors follow their twin); the receiver's group i takes the donor's group i mod n; one bone takes the
+    donor's whole group put together at rest (a tentacle for an arm); a chain takes the donor's bones spread along
+    it, bone for bone when as long, so every bone draws (a serpent's neck holds its head); `graftFit` turns each
+    picture in quarter turns (exact) to point the bone's way, makes it as long as the bone (inside the bone's box,
+    held where it holds its own, when either is held at its middle: a pot, a round foot), never past 1.5 times the
+    bone's longest side; mirrored twins wear it flipped; the grafted pictures shrink (to half) until the rest pose fits
+    the stage box, else refused. `graftPlaceholderDonors`: another line with bones in the slot. kit-pixels.js
+    `kitTurnRight`.
+  - **skeleton-rig.js graftBake**: placeholder Billies go through graftPlaceholder (bodyPlans.json forms by rig);
+    kit Billies as before (the shared tail moved into `graftKeep`, same code); a kit Billie with a placeholder donor,
+    or the other way round, isn't grafted (the plain Billie draws, the debug log says why). Debug log graft entries
+    name the plans (`quad<octo`). **game/index.html** loads logic/placeholder-art.js (no name clashes; modules and
+    check:modules clean). **debug-menu.js**: a placeholder Billie's random graft comes from any plan.
+  - Tests: tools/test/graft-placeholder.test.mjs (the groups per plan; every plan gives every plan front, back and
+    sig, 588 grafts, inside the box, donor colours on, every other bone's pixels kept; the same twice and several
+    slots at once; mirrors flipped; chains; refusals; donors; graftFit's turn, length, box and cap);
+    placeholder-art.test.mjs checks every slot is filled and the shared bone.
+- Verified: lint, typecheck, check:modules, format:check, check:data, unit tests (1077, quick tier) after each change;
+  kit-bake-parity, graft-art and graft-art-sweep untouched; on the game page, 8 sample grafts (octopus tentacle onto
+  a biped's arm, biped arm onto a quad's front legs, bird wing onto plant leaves, biped arm onto an octopus, crab leg
+  onto a serpent's neck, insect legs onto a shell, quad tail onto a fish, octopus tentacle onto a hopper's legs) baked
+  by graftBake (4-15 ms each, headless) and drawn by the game's renderer in idle, walk and attack, front and back;
+  tools/look-grafts.py (SP-1's kit grafts) still bakes and draws both battle sides grafted; the smoke subset
+  (`npm run check:smoke`, 6 steps) passed. Not the full quick check: RO-3b remakes its baseline.
+- Risky / open:
+  - Judged on samples only: RO-3b's real Billies may have form `size`s, `add`s and `drop`s the samples don't; the
+    test sweep should be run over the real roster once RO-3b merges (swap the samples for `P.forms`).
+  - The fit is mechanical: a part keeps the donor's look but not its size on the donor (the stage box rules). SP-2's
+    weights still use the donor's weight, as designed.
+  - A drawn picture that faces one way (a claw) may point oddly after a quarter turn; a rule per part can come later.
+  - Not tried on a phone. The debug log's bake times are the number to look at (SP-1's exit question).
+- Next: RO-3b merges (then remake the graft sweep on the real roster), then RO-3d..f.
+
 ### Roster track RO-3a - Every body plan, placeholder Billies and drawing sheets - 2026-10-26
 Branch `claude/happy-ramanujan-jiipux` (a cloud session pushes only to its own branch; the owner's word: work here,
 pull request into `track/roster`, which had nothing main lacks). Plan approved in Plan Mode. The owner's answers: every

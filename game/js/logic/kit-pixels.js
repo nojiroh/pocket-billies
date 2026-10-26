@@ -46,6 +46,8 @@ expose({
   kitRoundDigits: [() => kitRoundDigits, v => (kitRoundDigits = v)],
   // @ts-expect-error -- replaced on purpose
   kitSquashFrames: [() => kitSquashFrames, v => (kitSquashFrames = v)],
+  // @ts-expect-error -- replaced on purpose
+  kitTurnRight: [() => kitTurnRight, v => (kitTurnRight = v)],
   pyMod1: [() => pyMod1],
 });
 /* eslint-enable no-func-assign */
@@ -203,6 +205,18 @@ export function kitFlipY(p) {
   const o = kitBlank(p.width, p.height),
     row = p.width * 4;
   for (let y = 0; y < p.height; y++) o.data.set(p.data.subarray(y * row, (y + 1) * row), (p.height - 1 - y) * row);
+  return o;
+}
+/** RO-3c: a quarter turn clockwise as seen (y down): the pixel at (x, y) goes to (h - 1 - y, x) @param {Pixels} p
+ * @returns {Pixels} */
+export function kitTurnRight(p) {
+  const o = kitBlank(p.height, p.width);
+  for (let y = 0; y < p.height; y++)
+    for (let x = 0; x < p.width; x++)
+      o.data.set(
+        p.data.subarray((y * p.width + x) * 4, (y * p.width + x) * 4 + 4),
+        (x * o.width + p.height - 1 - y) * 4
+      );
   return o;
 }
 /** the width of the columns that hold any pixel @param {Pixels} p */
