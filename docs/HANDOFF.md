@@ -25,6 +25,13 @@ off by default (they change the look or haven't been seen on a phone yet).
   - Rain is not in effects.js but in walk/fountains-weather.js: every drop and splash its own draw (a picture bind
     and 5-6 uniform calls each).
   - The counters count draws, not pixels: D5 can only be judged by your phone's frame rate.
+  - Your round 1 baseline (relayed from the coordinating session, 2026-10-26) agrees. Android at resolution 1 vs
+    the game's own 1.5, automatic quality off: Copperleaf day 17 vs 12.5 fps, night 15 vs 11.5, jungle 20.7 vs 15.7,
+    run town 24 vs 17, battle 20 vs 14.5, with CPU flat (~28 ms, which on Android Chrome includes graphics waits):
+    the extra pixels cost 25-30% everywhere (D4). With automatic quality on it settled at resolution 0.6, level 4,
+    ~25 fps, and rain cost nothing there (rain is drawn at half strength below 0.75 resolution). iPad: Copperleaf
+    30 fps at a 33 ms frame, CPU ~5 ms, so it waits on its GPU just over a 60 fps frame; a GPU saving there (sky,
+    overdraw, post) could double it through vsync.
 - Changed (one cause per commit):
   - Prep, no look change: the sky at depth exactly 1.0; the dead `uMirror` gone; `drawBuildings(..., part)` draws
     `'solid'` (walls, roofs, windows) or `'fronts'` (the blended front pictures), both by default.
