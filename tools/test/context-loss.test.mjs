@@ -93,6 +93,22 @@ test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js 
   }
 });
 
+test("a restore makes the light block's buffer again on its next bind (engine/light.js frameBlockLost)", () => {
+  const { walkView, frameBlock, gpuState } = G,
+    id = walkView.id;
+  walkView.id = null;
+  /* the restored context is the same object as before: the old `gl === gl` check passed with a dead buffer */
+  frameBlock.gl = gpuState.gl || { same: true };
+  frameBlock.buf = { dead: true };
+  try {
+    G.onGlContextRestored({});
+    assert.equal(frameBlock.gl, null);
+    assert.equal(frameBlock.buf, null);
+  } finally {
+    walkView.id = id;
+  }
+});
+
 test('a restore drops every GPU copy the world map keeps and keeps the work behind them (world-bowl.js)', async () => {
   /* the world map's module reads the game data when it loads (game-data.js), put together as the Node tools do */
   globalThis.GAMEDATA ??= (await import('../data-files.mjs')).readGameData();

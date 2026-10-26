@@ -85,7 +85,7 @@ import {
   trimTextures,
   webgl2Supported,
 } from './engine/webgl.js';
-import { sunLight } from './engine/light.js';
+import { frameBlockLost, sunLight } from './engine/light.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition } from './engine/post-effects.js';
 import { environment, environmentFrame } from './environment.js';
 import { PREP_BUDGET_MS, walkRenderer } from './walk/walk-state.js';
@@ -374,6 +374,7 @@ function dropWalkGpuCaches() {
 }
 function onGlContextRestored(cv) {
   dropWalkGpuCaches();
+  frameBlockLost();
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;

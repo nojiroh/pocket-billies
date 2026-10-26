@@ -20,6 +20,7 @@ expose({
   bindFrameBlock: [() => bindFrameBlock, v => (bindFrameBlock = v)],
   endShadow: [() => endShadow, v => (endShadow = v)],
   frameBlock: [() => frameBlock],
+  frameBlockLost: [() => frameBlockLost, v => (frameBlockLost = v)],
   frameBlockStale: [() => frameBlockStale, v => (frameBlockStale = v)],
   lightContext: [() => lightContext, v => (lightContext = v)],
   pickPointLights: [() => pickPointLights, v => (pickPointLights = v)],
@@ -216,6 +217,12 @@ function bindFrameBlock(X) {
     gl.bindBufferRange(gl.UNIFORM_BUFFER, 0, B.buf, s * B.stride, FRAME_BLOCK_BYTES);
     B.bound = s;
   }
+}
+/* phase 20 H: a restored context is the same object with nothing on it, so the block's buffer is made again on the next
+   bind (walk-view-gl.js onGlContextRestored); without it every lit draw had no light buffer bound */
+export function frameBlockLost() {
+  frameBlock.gl = null;
+  frameBlock.buf = null;
 }
 /* a light context changed after it was packed (lampShadowMaps): packed again the next time it is bound */
 export function frameBlockStale(X) {
