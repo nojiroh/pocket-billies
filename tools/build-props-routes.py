@@ -638,6 +638,18 @@ def showcase(C):
     M = B1.test_map(C)
     B1.ROWS = saved
     M['name'] = 'Test: route props (route props track)'
+    # RP-2: a row of structures (game/js/structures.js) in the props' style: a stone and a brick arch, stone, wood and
+    # iron rails
+    z = 9.0 + 15 * len(ROWS)
+    M['h'] += 15
+    M['tiles'] += [M['tiles'][-1]] * 15
+    M['arches'] = [{'x': 14, 'z': z, 'w': 2.6, 'd': 0.8, 'h': 3, 'dir': 'z', 'kind': 'stone'},
+                   {'x': 21, 'z': z, 'w': 2.6, 'd': 0.8, 'h': 3, 'dir': 'z', 'kind': 'brick'}]
+    M['rails'] = [{'pts': [[27, z], [31, z], [32.5, z + 1.5]], 'kind': 'stone'},
+                  {'pts': [[34, z], [38, z]], 'kind': 'wood'},
+                  {'pts': [[40, z], [44, z]], 'kind': 'iron'}]
+    M['props'] += [{'k': 'arch_ruin', 'x': 7, 'z': z}, {'k': 'fence_wood', 'x': 36, 'z': z + 3}]  # props beside them
+    M['shots'].append({'x': 28, 'z': z - 4, 'yaw': 0, 'label': 'structures'})
     return M
 
 
