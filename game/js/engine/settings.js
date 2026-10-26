@@ -125,6 +125,9 @@ export const ENGINE_DEFAULTS = {
     lightsInAir: 0.7,
     /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
     cheapShafts: 0,
+    /* smart light shafts: the cheap shafts placed where shade lies behind them, looking into the light, apart and never
+       over you (logic/shaft-pick.js); off: one at about every other tree near you */
+    shaftPick: false,
   },
   world: {
     hugSlopes: true,
@@ -674,6 +677,12 @@ export const ENGINE_SPEC = [
         1.5,
         0.05,
         'When God rays are off (or the automatic quality turns them off): a few soft beams of sunlight from the trees near you, strongest at dawn and golden hour. Cheap; 0 for none.',
+      ],
+      [
+        'shaftPick',
+        'Smart light shafts',
+        'bool',
+        'The cheap light shafts go where they show best: through gaps between crowns and past roofs, with shade behind them, looking into the light, a few apart and never over you, fading in and out (on). Off: one at about every other tree near you.',
       ],
       ['mistHeight', 'Mist height (m)', 0, 2, 0.05],
       [
