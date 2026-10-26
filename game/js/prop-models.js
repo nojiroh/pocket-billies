@@ -2023,7 +2023,8 @@ function drawPropModelShadows(SH, items) {
     let p = null;
     const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
     for (const it of items) {
-      if (!it.vox) continue;
+      /* VFX-1: an afterimage (battle-3d.js) casts no shadow */
+      if (!it.vox || it.ghost) continue;
       const m = propModelMesh(it.voxPath, it.vox);
       if (!m) continue;
       if (!p) {
@@ -2084,7 +2085,7 @@ function drawPropModelShadowsInstanced(SH, items) {
     t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
   L.length = 0;
   for (const it of items) {
-    if (!it.vox) continue;
+    if (!it.vox || it.ghost) continue;
     const m = propModelMesh(it.voxPath, it.vox);
     if (m) L.push([it, m]);
   }

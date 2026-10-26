@@ -35,6 +35,7 @@ import {
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
+import { smearCount, smearGhosts, smearHistory, smearRecord, throwArcEase } from './logic/smear.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
@@ -85,6 +86,7 @@ expose({
   actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
+  battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
@@ -809,6 +811,10 @@ function spawnAmbientParticles(dt) {
     }
   }
 }
+/* VFX-1: how many afterimages a thrown pyramid leaves (none under Reduced motion, fewer as the quality drops) */
+export function battleSmearCount() {
+  return smearCount(!!reducedMotion, battleStage.q.lvl);
+}
 /* adaptive quality: drop render detail if frames run long, restore when there's headroom */
 function adaptBattleStageQuality(work) {
   const Q = battleStage.q,
@@ -1339,6 +1345,22 @@ function battleStageDrawEffects(c, skip0) {
       /* the mail move's coin: the money icon (not a catch item) */
       const cc = C.kind === MONEY_ICON ? iconCanvas('coin', 3) : pyramidCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
+      /* VFX-1: its afterimages, oldest first (under the newer ones), at whole pixels like the icon */
+      const G = smearGhosts(C.trail, battleStage.t, battleSmearCount(), battleStage.V);
+      for (let i = G.length - 1; i >= 0; i--) {
+        const g = G[i],
+          gq = battleStageProject(g.s.x, g.s.y, g.s.z);
+        if (!gq) continue;
+        c.save();
+        c.translate(Math.round(gq.x), Math.round(gq.y));
+        c.rotate(g.s.rot || 0);
+        c.globalAlpha = g.fade;
+        c.drawImage(cc, -8 * k, -8 * k, 16 * k, 16 * k);
+        c.globalAlpha = g.fade * Math.min(1, g.glow);
+        c.drawImage(whiteCopy(cc), -8 * k, -8 * k, 16 * k, 16 * k);
+        c.restore();
+      }
+      c.globalAlpha = 1;
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
       c.rotate(C.rot || 0);
@@ -1506,16 +1528,21 @@ function pyramidArc(from, to, dur, kind, onLand, spin) {
     tum: 0,
     ax: spin ? [0.35, 0.3, 0.89] : [0.62, 0.45, 0.64],
     tip: false,
+    /* VFX-1: its places on the smear grid, for the afterimages (logic/smear.js) */
+    trail: smearHistory(),
   };
   battleStage.coin = C;
   const t0 = battleStage.t;
   const step = () => {
-    const k = Math.min(1, (battleStage.t - t0) / dur);
-    C.x = from.x + (to.x - from.x) * k;
-    C.z = from.z + (to.z - from.z) * k;
-    C.y = from.y + (to.y - from.y) * k + Math.sin(k * Math.PI) * 1.6;
+    const k = Math.min(1, (battleStage.t - t0) / dur),
+      /* VFX-1: fast from the hand, a hang at the top, fast into the hit; the same path and time */
+      u = throwArcEase(k);
+    C.x = from.x + (to.x - from.x) * u;
+    C.z = from.z + (to.z - from.z) * u;
+    C.y = from.y + (to.y - from.y) * u + Math.sin(u * Math.PI) * 1.6;
     C.rot = k * Math.PI * (spin ? 6 : 3);
     C.tum = k * Math.PI * (spin ? 7 : 4);
+    if (k < 1) smearRecord(C.trail, battleStage.t, { x: C.x, y: C.y, z: C.z, rot: C.rot, tum: C.tum });
     if (k < 1) scheduleAt(8, step);
     else {
       C.rot = 0;

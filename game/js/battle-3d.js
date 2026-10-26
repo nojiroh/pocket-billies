@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
+import { smearGhosts } from './logic/smear.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
@@ -25,6 +26,7 @@ import {
   actorMetersPerPixel,
   actorPositions,
   actorWorldPoint,
+  battleSmearCount,
   battleStage,
   particleSprite,
   trainerBattleFrame,
@@ -37,6 +39,7 @@ import { standingHeightAt } from './walk/heights.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
+  SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
@@ -48,6 +51,7 @@ expose({
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
+  smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battle3dLayout, battle3dStart, battle3dStop });
@@ -332,6 +336,18 @@ function battle3dFrame() {
   if (py) {
     items.push(py);
     if (py.light) lights.push(py.light);
+    /* VFX-1: its afterimages, the same model at its older places, dithered and brighter in its own colours (the
+       low-poly shader's look, walk/prop-look.js; a voxel recipe's emission), casting no shadow */
+    for (const g of smearGhosts(battleStage.coin.trail, battleStage.t, battleSmearCount(), battleStage.V)) {
+      const it = pyramidItem({ ...battleStage.coin, ...g.s, glow: 0 }, T);
+      if (!it) continue;
+      it.fade = g.fade;
+      it.glow = g.glow;
+      it.lk = smearLook(g.glow);
+      it.light = null;
+      it.ghost = true;
+      items.push(it);
+    }
   }
   const d = battleStage.dof;
   return {
@@ -391,6 +407,27 @@ function pyramidItem(C, T) {
   if (C.kind === 'capstone' || glow > 0.05)
     it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
   return it;
+}
+/* VFX-1: an afterimage's look (walk/prop-look.js's shape): its colours' value times 1 + glow, a little more
+   saturated, nothing else changed; one per glow, made once */
+const SMEAR_LOOKS = new Map();
+function smearLook(glow) {
+  let L = SMEAR_LOOKS.get(glow);
+  if (!L)
+    SMEAR_LOOKS.set(
+      glow,
+      (L = {
+        key: 'smear' + glow,
+        hsv: [0, glow * 0.25, glow, 1],
+        wear: [0, 0, 0, 0],
+        tint: [1, 1, 1, 0],
+        mask: [0, 0],
+        size: 1,
+        rot: 0,
+        lean: 0,
+      })
+    );
+  return L;
 }
 /* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
    included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
