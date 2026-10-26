@@ -273,6 +273,8 @@ export const ENGINE_DEFAULTS = {
     lights: 16,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
+    /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
+    modelInstances: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1222,6 +1224,12 @@ export const ENGINE_SPEC = [
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
+      ],
+      [
+        'modelInstances',
+        'Models in batches',
+        'bool',
+        'Every tree, house or lamp post of one kind is drawn in one go instead of one at a time: fewer draws, the same look. The shadows still draw them one at a time.',
       ],
       [
         'gpuTimer',

@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Models in batches** (phase 20, a test switch, off for now): Studio > Engine > Quality "Models in batches" draws
+  every tree, house or lamp post of one kind in one go instead of one at a time (about 130 fewer draws a frame in
+  Copperleaf), with the same look. It is in the graphics test.
 - **Steadier lamps at night** (phase 20, a test switch, off for now): Studio > Engine > Quality "Steady lamps" keeps
   the lamps, windows and fires that light the scene from popping and flickering as you walk (each fades in and out,
   a lit one stays lit until another is clearly nearer, lamp shadows stop swapping), and "Lamps lit at once" sets how

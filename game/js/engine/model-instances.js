@@ -34,11 +34,11 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const MODEL_INSTANCE_FLOATS = 36,
+export const MODEL_INSTANCE_FLOATS = 36,
   MODEL_INSTANCE_BYTES = MODEL_INSTANCE_FLOATS * 4;
 /* the instance attributes [location, size, first float, integer]: a voxel prop reads the first five (its mesh has
    locations 0-2), a low-poly model all ten (its mesh has 0-4); 15 of the 16 a WebGL2 vertex shader may have */
-const MODEL_INSTANCE_ATTRIBS = {
+export const MODEL_INSTANCE_ATTRIBS = {
   vox: [
     [5, 4, 0, 0],
     [6, 4, 4, 0],
@@ -60,7 +60,7 @@ const MODEL_INSTANCE_ATTRIBS = {
   ],
 };
 /* one item's values as the old path's uniforms had them (prop-models.js propModelInstanceValues fills it) */
-function modelInstanceValues() {
+export function modelInstanceValues() {
   return {
     pos: [0, 0, 0],
     s: 1,
@@ -81,10 +81,10 @@ function modelInstanceValues() {
   };
 }
 /* the records' memory, grown as needed and kept: floats, the same bytes as 32-bit integers, and as bytes (uploaded) */
-function modelInstanceStore() {
+export function modelInstanceStore() {
   return { F: new Float32Array(0), U: new Uint32Array(0), B: new Uint8Array(0), n: 0, buf: null, gl: null };
 }
-function reserveModelInstances(S, n) {
+export function reserveModelInstances(S, n) {
   if (S.F.length >= n * MODEL_INSTANCE_FLOATS) return S;
   const ab = new ArrayBuffer(Math.max(n, 64, (S.F.length / MODEL_INSTANCE_FLOATS) * 2) * MODEL_INSTANCE_BYTES);
   S.F = new Float32Array(ab);
@@ -92,7 +92,7 @@ function reserveModelInstances(S, n) {
   S.B = new Uint8Array(ab);
   return S;
 }
-function writeModelInstance(S, i, v) {
+export function writeModelInstance(S, i, v) {
   const F = S.F,
     o = i * MODEL_INSTANCE_FLOATS;
   F[o] = v.pos[0];
@@ -147,7 +147,7 @@ function readModelInstance(F, U, i) {
 }
 /* the items grouped by mesh, in the order each mesh is first met (L: [item, mesh] pairs); each batch's items keep
    their own order. `at` is the batch's first record once the records are written in batch order */
-function buildModelBatches(L) {
+export function buildModelBatches(L) {
   const by = new Map(),
     out = [];
   for (const e of L) {
@@ -223,7 +223,7 @@ function splitPieces(items, o, boxOf) {
 /* a mesh part's own vertex array for instanced draws (made once; its vertex and index buffers are the part's own, so
    the part's plain vertex array and the shadows' draws are untouched): the mesh layout A (prop-models.js
    VOX_ATTRIBS / MDL_ATTRIBS), the instance attributes I with a divisor of one */
-function modelInstanceVao(gl, q, A, I) {
+export function modelInstanceVao(gl, q, A, I) {
   if (q.ivao !== undefined) return q.ivao;
   const v = gl.createVertexArray();
   gl.bindVertexArray(v);
@@ -241,7 +241,7 @@ function modelInstanceVao(gl, q, A, I) {
   return v;
 }
 /* the instance attributes pointed at a batch's first record (the instance buffer bound as the array buffer) */
-function pointModelInstances(gl, I, at) {
+export function pointModelInstances(gl, I, at) {
   const o = at * MODEL_INSTANCE_BYTES;
   for (const [loc, n, f, int] of I)
     if (int) gl.vertexAttribIPointer(loc, n, gl.UNSIGNED_INT, MODEL_INSTANCE_BYTES, o + f * 4);
