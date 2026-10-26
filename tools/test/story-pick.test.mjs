@@ -56,8 +56,7 @@ test('the script command pick plays the picked line inline, with the speaker of 
 
 test("the game's lines: each who has lines, leaders and agents always have one, every when reads", () => {
   const G = GAME_DATA.banter;
-  /* RL-S2: the thank-yous go in with the hub folk's lines */
-  for (const who of BANTER_WHO.filter(w => !w.startsWith('thanks_')))
+  for (const who of BANTER_WHO)
     assert.ok(
       Object.values(G).some(b => b.who === who),
       who
@@ -132,4 +131,20 @@ test('RL-S2 part B: a thank-you is its hub person’s line; a leader’s, an age
     ['chosen', 'thanks_hazel', 'thanks_juniper', 'leader', 'rival', 'back_lost', 'thanks_blake'].map(banterOwner),
     ['chosen', 'hazel', 'juniper', null, null, null, null]
   );
+});
+
+test("RL-S2 part B: a gift's thank-you: the level just reached first, once; then their plain thanks", () => {
+  const G = GAME_DATA.banter,
+    story = {};
+  const pick = rel => {
+    const S = storyStateOf({ meta: { runs: 2, history: [], rel: { hazel: rel } }, story });
+    const k = storyPick('thanks_hazel', G, c => conditionHolds(c, S), story, 2);
+    if (k) storyPickSaid(k, G, story, 2);
+    return k;
+  };
+  assert.equal(pick(1), 'thanks_hazel_1');
+  assert.equal(pick(1), 'thanks_hazel');
+  assert.equal(pick(4), 'thanks_hazel_3', 'a jump of two levels: the higher one first');
+  assert.equal(pick(4), 'thanks_hazel_2');
+  assert.equal(pick(4), 'thanks_hazel');
 });

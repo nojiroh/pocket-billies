@@ -179,6 +179,134 @@
   "priority": 6,
   "script": ["“Our routes aren’t the same route. Stop following me.” #l:acbd"]
  },
+ "thanks_chosen": {
+  "who": "thanks_chosen",
+  "priority": 1,
+  "script": [
+   "cycle",
+   "  - A Bean. For me. Naturally. #l:12fd",
+   "  - I’ll add it to the collection. The collection is one Bean. #l:a3ac"
+  ]
+ },
+ "thanks_chosen_1": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 1",
+  "priority": 2,
+  "once": true,
+  "script": ["You’ve noticed me. Most people do. Eventually. #l:35e2"]
+ },
+ "thanks_chosen_2": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 2",
+  "priority": 3,
+  "once": true,
+  "script": ["Take this. Moneys, a little extra each trip. I’ll say I invented interest. #l:6c17"]
+ },
+ "thanks_chosen_3": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 3",
+  "priority": 4,
+  "once": true,
+  "script": ["You’re on my list of people I tolerate. It’s a short list. Mostly mirrors. #l:e0e4"]
+ },
+ "thanks_chosen_4": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 4",
+  "priority": 5,
+  "once": true,
+  "script": ["Wear these. Sunglasses. Now you look chosen. Adjacent. #l:5d53"]
+ },
+ "thanks_chosen_5": {
+  "who": "thanks_chosen",
+  "when": "rel:chosen >= 5",
+  "priority": 6,
+  "once": true,
+  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Hazel I said that. She knows. #l:608e"]
+ },
+ "thanks_hazel": {
+  "who": "thanks_hazel",
+  "priority": 1,
+  "script": [
+   "cycle",
+   "  - Thanks. I’ll test it. I mean that literally. #l:1c33",
+   "  - Another one. They’re warm. Why are they warm? #l:f5c6"
+  ]
+ },
+ "thanks_hazel_1": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 1",
+  "priority": 2,
+  "once": true,
+  "script": ["Oh. Thank you. People don’t usually give me things. They give me forms. #l:5db1"]
+ },
+ "thanks_hazel_2": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 2",
+  "priority": 3,
+  "once": true,
+  "script": ["Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. #l:355b"]
+ },
+ "thanks_hazel_3": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 3",
+  "priority": 4,
+  "once": true,
+  "script": ["I’m adding you to my notes. Under “reliable.” It’s a short section. #l:79b4"]
+ },
+ "thanks_hazel_4": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 4",
+  "priority": 5,
+  "once": true,
+  "script": ["My spare lab coat. It has pockets for evidence. Please don’t put snacks in them. #l:fbdf"]
+ },
+ "thanks_hazel_5": {
+  "who": "thanks_hazel",
+  "when": "rel:hazel >= 5",
+  "priority": 6,
+  "once": true,
+  "script": ["My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. #l:9a5c"]
+ },
+ "thanks_juniper": {
+  "who": "thanks_juniper",
+  "priority": 1,
+  "script": ["cycle","  - Oh, dear. For the jar. #l:e2c5","  - The bees will want to see this. #l:e107"]
+ },
+ "thanks_juniper_1": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 1",
+  "priority": 2,
+  "once": true,
+  "script": ["[happy] Aren’t you kind. Sit, dear. The kettle’s on. It’s always on. #l:74c8"]
+ },
+ "thanks_juniper_2": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 2",
+  "priority": 3,
+  "once": true,
+  "script": ["A pyramid for the road, each time. The bees made it. No, they didn’t. But imagine. #l:bf60"]
+ },
+ "thanks_juniper_3": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 3",
+  "priority": 4,
+  "once": true,
+  "script": ["You remind me of someone who used to visit. Before the drop point moved. #l:93b8"]
+ },
+ "thanks_juniper_4": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 4",
+  "priority": 5,
+  "once": true,
+  "script": ["A sun hat. It’s not much. The bees picked the colour. They have opinions. #l:2fda"]
+ },
+ "thanks_juniper_5": {
+  "who": "thanks_juniper",
+  "when": "rel:juniper >= 5",
+  "priority": 6,
+  "once": true,
+  "script": ["You’re not the first to fall here, dear. The bees remember the others. They don’t talk about them. #l:1f2a"]
+ },
  "leader_badge": {"who":"leader","priority":1,"script":["“I’m a leader. It says so on my badge. Let’s see yours.” #l:8ee4"]},
  "leader_again": {
   "who": "leader",
