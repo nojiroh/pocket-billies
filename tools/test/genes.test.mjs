@@ -64,6 +64,7 @@ test("genes: a Gene id gives its part, kind, kit, the donor's species, the trait
     trait: 'airborne',
     type: 'Flying',
     move: null,
+    field: null,
   });
   /* a regional form's rig is a donor too; its species is its line's stage */
   assert.equal(N.geneOf(D, 'front', 'eagle_wing@hughes_harbour2').sp, 'hughes2');
