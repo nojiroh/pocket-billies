@@ -2194,7 +2194,14 @@ export interface RivalRules {
 /** RL-S2: relations.json: what a gift costs and gives, and each hub person's levels (logic/relations.js) */
 export interface RelationsData {
   gift: { cost: number; points: number; favour: number };
-  people: Record<string, { levels: RelationLevel[] }>;
+  people: Record<string, { levels: RelationLevel[]; favour?: RelationFavour }>;
+}
+/** RL-S2 part B: what a hub person asks of you on a run: its quest (story.json quests, stages asked and done), the
+ * condition that says it is done (read on the way home), the points it gives (else gift.favour) */
+export interface RelationFavour {
+  quest: string;
+  check: string;
+  points?: number;
 }
 /** RL-S2: one level of a person's: the points it takes and what it brings */
 export interface RelationLevel {

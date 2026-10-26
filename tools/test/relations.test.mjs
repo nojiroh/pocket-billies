@@ -131,3 +131,41 @@ test('the chapter: chapter >= n reads meta.chapter; the command moves it on, nev
   assert.equal(holds('chapter >= 2'), true);
   assert.equal(validMeta(save.meta), true);
 });
+
+test('RL-S2 part B: a favour asked is paid on the way home once its check holds: the quest done, its points, once', () => {
+  const FL = {
+    ...RL,
+    people: {
+      hazel: { ...RL.people.hazel, favour: { quest: 'fav_hazel', check: 'last:row >= 6' } },
+      chosen: { ...RL.people.chosen, favour: { quest: 'fav_chosen', check: 'last:leaders >= 1', points: 3 } },
+    },
+  };
+  const s = { meta: { ...newMeta(), runs: 1 }, story: { quests: { fav_hazel: 'asked' } }, wardrobe: { owned: {} } };
+  const row = n => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end: 'lost',
+    by: null,
+    row: n,
+    days: 5,
+    team: [],
+    perks: [],
+    leaders: [{ id: 'marina', beat: 1 }],
+    rival: null,
+  });
+  const holds = c => conditionHolds(c, storyStateOf(s));
+  s.meta.history = [row(3)];
+  assert.deepEqual(R.relFavoursPay(s, holds, FL), [], 'not far enough: still asked');
+  assert.equal(s.story.quests.fav_hazel, 'asked');
+  s.meta.history.push(row(7));
+  s.meta.rel = { hazel: 3 };
+  assert.deepEqual(R.relFavoursPay(s, holds, FL), [{ who: 'hazel', quest: 'fav_hazel', points: 2, from: 2, to: 3 }]);
+  assert.deepEqual([s.story.quests.fav_hazel, s.meta.rel.hazel, s.wardrobe.owned.tee], ['done', 5, 1]);
+  assert.equal(s.meta.rel.chosen, undefined, 'a favour never asked is never paid, its check holding or not');
+  assert.deepEqual(R.relFavoursPay(s, holds, FL), [], 'paid once');
+  s.story.quests.fav_chosen = 'asked';
+  assert.deepEqual(R.relFavoursPay(s, holds, FL), [{ who: 'chosen', quest: 'fav_chosen', points: 3, from: 0, to: 2 }]);
+  assert.ok(conditionHolds('quest:fav_chosen = done', storyStateOf(s)));
+});

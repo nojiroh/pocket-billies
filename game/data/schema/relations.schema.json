@@ -27,6 +27,17 @@
     "required": ["levels"],
     "additionalProperties": false,
     "properties": {
+     "favour": {
+      "description": "what they ask of you on a run (RL-S2 part B): a quest of story.json (stages asked, done; their ask line, a banter line, moves it to asked), the condition read on the way home that says it is done (most often on the run just ended: last:, lastteam:), the points it gives (else gift.favour)",
+      "type": "object",
+      "required": ["quest", "check"],
+      "additionalProperties": false,
+      "properties": {
+       "quest": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+       "check": {"type": "string", "minLength": 1},
+       "points": {"type": "integer", "minimum": 0, "maximum": 99}
+      }
+     },
      "levels": {
       "type": "array",
       "minItems": 1,

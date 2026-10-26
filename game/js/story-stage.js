@@ -18,8 +18,9 @@
 import { expose } from './test-globals.js';
 import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { BANTER, LOCATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
+import { BANTER, LOCATIONS, PEOPLE, RELATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
+import { relFavoursPay } from './logic/relations.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
 import { BANTER_HUB, storyPick, storyPickSaid } from './logic/story-pick.js';
@@ -352,6 +353,19 @@ function storyPickId(who, id) {
 function storyHomeArrive(won) {
   const story = saveData.story || (saveData.story = {}),
     fresh = {};
+  /* RL-S2 part B: the favours the run just ended did are paid first (logic/relations.js), so a thank-you can be
+     picked below */
+  const state = storyStateOf(saveData, {
+    locations: LOCATIONS,
+    questStages: Object.fromEntries(Object.entries(STORY_DATA.quests || {}).map(([k, q]) => [k, q.stages])),
+    ...storyTeamLookups(),
+  });
+  for (const f of relFavoursPay(saveData, c => conditionHolds(conditionTree(c), state), RELATIONS)) {
+    const P = /** @type {any} */ (PEOPLE || {})[f.who],
+      name = (P && P.look && P.look.name) || f.who;
+    toast(f.to > f.from ? `${name}: favour done, level ${f.to}` : `${name}: favour done`);
+    if (typeof debugLog !== 'undefined') debugLog.add('story', `favour ${f.quest} done: ${f.who} +${f.points}`);
+  }
   for (const who of BANTER_HUB) {
     const k = storyPickId(who, null);
     if (k) fresh[who] = k;

@@ -17,6 +17,8 @@ import { expose } from '../test-globals.js';
 expose({
   // @ts-expect-error -- replaced on purpose
   relAdd: [() => relAdd, v => (relAdd = v)],
+  // @ts-expect-error -- replaced on purpose
+  relFavoursPay: [() => relFavoursPay, v => (relFavoursPay = v)],
   relFxRows: [() => relFxRows],
   // @ts-expect-error -- replaced on purpose
   relGift: [() => relGift, v => (relGift = v)],
@@ -116,4 +118,30 @@ export function runBeans(s, n, run = s.run) {
   if (!k || !s.meta) return;
   s.meta.beans = Math.min(1e12, (s.meta.beans || 0) + k);
   if (run) run.beans = Math.min(99, (run.beans || 0) + k);
+}
+
+/** the favours done on the run just ended: each person's relations.json `favour` whose quest is at `asked` (its ask
+ * line, a banter line, moved it there) and whose `check` holds now (a condition, most often on the run just kept in
+ * meta.history: `holds` reads it). Each is paid: the quest moves to `done`, the person gains its `points` (else
+ * gift.favour) and the wardrobe piece of a level reached. Run on the way home, before the hub's lines are picked, so a
+ * thank-you line (`when: quest:<id> = done`, once) is the person's first line. Returns what was paid
+ * @param {{ meta?: Meta, story?: Record<string, any>, wardrobe?: any }} s
+ * @param {(cond: string) => boolean} holds @param {RelationsData} RL
+ * @returns {{ who: string, quest: string, points: number, from: number, to: number }[]} */
+export function relFavoursPay(s, holds, RL) {
+  /** @type {{ who: string, quest: string, points: number, from: number, to: number }[]} */
+  const out = [];
+  if (!s.meta || !RL) return out;
+  const quests = (s.story || (s.story = {})).quests || (s.story.quests = {});
+  for (const [who, P] of Object.entries(RL.people)) {
+    const F = P.favour;
+    if (!F || quests[F.quest] !== 'asked' || !holds(F.check)) continue;
+    const points = F.points != null ? F.points : RL.gift.favour,
+      step = relAdd(s.meta, who, points, RL);
+    quests[F.quest] = 'done';
+    for (const L of relReached(who, step, RL))
+      if (L.wardrobe && s.wardrobe) (s.wardrobe.owned || (s.wardrobe.owned = {}))[L.wardrobe] = 1;
+    out.push({ who, quest: F.quest, points, ...step });
+  }
+  return out;
 }

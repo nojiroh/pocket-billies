@@ -45,6 +45,31 @@ test('each planted fault is found', () => {
     ['an unknown script', G => G.trainers.crude.script.push('call story:nope'), 'problems', 'call story:nope'],
     ['a condition that names no trainer', G => (G.trainers.crude.when = 'beat:nobody'), 'problems', 'beat:nobody'],
     [
+      'a favour whose quest story.json lacks (RL-S2)',
+      G =>
+        (G.relations = { gift: {}, people: { hazel: { levels: [], favour: { quest: 'nope', check: 'last:won' } } } }),
+      'problems',
+      'quest nope, no such quest',
+    ],
+    [
+      'a favour whose quest has no stage done, and a check that names no fact (RL-S2)',
+      G => (
+        (G.story.quests.q = { stages: ['asked'] }),
+        (G.relations = { gift: {}, people: { hazel: { levels: [], favour: { quest: 'q', check: 'last:wins' } } } })
+      ),
+      'problems',
+      'quest q has no stage done',
+    ],
+    [
+      'a favour check that names no fact (RL-S2)',
+      G => (
+        (G.story.quests.q = { stages: ['asked', 'done'] }),
+        (G.relations = { gift: {}, people: { hazel: { levels: [], favour: { quest: 'q', check: 'last:wins' } } } })
+      ),
+      'problems',
+      'last:wins, no such fact',
+    ],
+    [
       'a last team that names no type nor Billie (RL-S2)',
       G => (G.trainers.crude.when = 'lastteam:Plaid'),
       'problems',

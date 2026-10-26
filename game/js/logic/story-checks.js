@@ -377,6 +377,20 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
   for (const [k, B] of Object.entries(G.banter || {}))
     if (B.when)
       condition(B.when, spot(`banter.json ${k} when`, { file: 'banter.json', thing: 'banter:' + k, field: 'when' }));
+  /* RL-S2 part B: a hub person's favour: its quest has the stages asked and done, its check reads; the way home
+     (logic/relations.js relFavoursPay) moves it to done */
+  for (const [w, P] of Object.entries((G.relations || {}).people || {})) {
+    const F = P.favour;
+    if (!F) continue;
+    const at = spot(`relations.json ${w} favour`, { file: 'relations.json', thing: 'favour:' + w, field: 'check' }),
+      Q = quests[F.quest];
+    if (!Q) problems.push(at, `quest ${F.quest}, no such quest (story.json quests)`);
+    else
+      for (const st of ['asked', 'done'])
+        if (!Q.stages.includes(st)) problems.push(at, `quest ${F.quest} has no stage ${st}`);
+    (questSet.get(F.quest) || questSet.set(F.quest, new Set()).get(F.quest)).add('done');
+    condition(F.check, at);
+  }
   for (const [mid, M] of Object.entries(G.maps || {})) {
     for (const P of M.people || [])
       for (const k of ['when', 'unless'])
