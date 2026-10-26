@@ -2,6 +2,95 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R3, lane shadows (stage 5) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved in Plan Mode; the owner's
+answers: E11 as option (a), the far map at rest (no sway in the shaders); F6-F7 merged casters only if the counts ask
+(they don't, below); lamp shadows unchanged on phones; "Models in the shadow cache" its own switch. Every switch is
+off by default.
+- Where the docs and the code differed (checked):
+  - The shadow maps keep depth only (colour writes off, LEQUAL, no blending, one polygon offset), so the order of
+    their pictures can't change them: they are grouped by picture over the whole pass, not in runs of neighbours as
+    the sprite pass must.
+  - The texture bind before the skip (E9's bug) did more than waste a bind: a still box layer whose picture wasn't
+    loaded counted as a miss, which dropped the far cache's key every frame (fixed in both loops; no look change).
+  - The far map's moving list held every model whose tree has `sway`, though only its leaf pictures sway (34 of the
+    jungle stop's far models, 41 in the run town); and the other way round, `still` ignored a model's own `M.bob`
+    and its turning parts, so the moored airship, its propellers and windmill sails were frozen into the far cache.
+  - The far map's picture loop was a copy of drawShadowSprites (now one function).
+  - F6's alpha-mask test has nothing to test: solid props aren't in the game flow (the run town's `solid` pass is 6
+    draws). Building walls and structures are ~10 shadow draws a map, in files no lane owns: left.
+  - Lamp maps at night in Copperleaf: 4 + 5 draws. Nothing to save on phones.
+  - The query warnings headless ("a query is already active") come from the diagnostics' timers with every switch
+    off too: not this lane's.
+- Changed (one cause per commit):
+  - Tests first: tools/test/shadow-passes.test.mjs freezes every call of the sun's near and far maps (cache missed
+    and hit) and the lamps' maps; fixture in tools/test/shadow-fixture.mjs.
+  - Fix: a box's layer skipped before its picture is looked up (the frozen record: the second frame now hits).
+  - No change: the far map's loop is drawShadowSprites.
+  - **E9** `quality.shadowInstances` ("Shadows in batches"): every shadow map's pictures one draw per picture
+    (program `shadowI`: the shadow program with its uniforms `#define`d to instance attributes 1-4 and 11; packed by
+    `packShadowInstance`, an addition to engine/sprite-instances.js, uploaded with its buffer). A 3D building's front
+    and a box's six slices are instances too.
+  - **Model shadows** behind the same switch: `voxSI` (voxI's placing, depth only, five instance attributes), one
+    draw per mesh part through `buildModelBatches`, its own record buffer and vertex arrays (`modelInstanceVao`'s new
+    key argument, `'sivao'`; freed on a flush).
+  - **F8** `quality.modelShadowCache` ("Models in the shadow cache"): models whose mesh holds still in the far cache
+    (trees whose leaves sway too); ones that bob (frame-items.js's new `bobs`), tumble, turn a part or move, out. The
+    far key carries `shadowCasterSignature` (the cached items' places, in order, and which are models).
+  - **E11 (a)** `quality.farShadowsStill` ("Far shadows hold still"): what only the wind sways goes into the far
+    map's cached part at its rest shear (frame-items.js `rest` on props and layers, prop-models.js `rest` on a
+    model's leaf pictures; undefined when anything else moves it). The near map (13 m) sways as before.
+  - Graphics test: "Shadows in batches" at the Shadow court, the Lamp square, the Depth corridor; "Models in the
+    shadow cache" at the Depth corridor; "Far shadows hold still" at the Meadow and the Depth corridor; each alone.
+  - Settings defaults, Studio labels, the precompile list (`shadowI`, `voxSI` while the switch is on), CHANGELOG.
+- Headless counts (390 x 760 at DPR 1, the game's own values, clear summer noon; frames on which the far cache held,
+  6 frames averaged, counts only): shadows near + far, and the frame's draws.
+
+  | Stop | All off | Shadows in batches | + both cache switches | + Models and Pictures in batches |
+  |---|---|---|---|---|
+  | Jungle run place | 143 + 215, 653 | 61 + 60, 415 | 61 + 13, 368 | 61 + 14, 255 |
+  | Run town | 154 + 206, 610 | 76 + 77, 402 | 77 + 32, 357 | 77 + 33, 261 |
+  | Copperleaf by night | 36 + 34, 1,162 | 34 + 28, 1,154 | 34 + 28, 1,153 | 34 + 28, 452 |
+
+  The baseline tour (4 s a stop, ~3 frames headless) agrees but weighs one cache miss heavily; a miss costs the
+  cached part again (~60 draws in the jungle). Battle (far map only, no cache): 75 -> 55 with batches (its camera
+  moves, so the tour's battle numbers wander, 75-151 off). What's left in the shadows: near-map pictures at ~one draw
+  per distinct picture (47 in the jungle) and models at one per mesh part (12 near in the jungle, 22 in the town).
+  Merged casters (F6-F7) would save at most those model draws, ~10-20 a map: not worth a second model path now. The
+  near map's pictures could only drop further with atlases (phase 21).
+- Edits outside my files (additions only): engine/sprite-instances.js (`packShadowInstance`),
+  engine/model-instances.js (`modelInstanceVao`'s key, default as before), prop-models.js (the leaf pictures' `rest`;
+  the flush frees the shadows' buffer and `sivao`), walk/frame-items.js (`bobs`, `rest`), walk-view-gl.js's
+  precompile list, settings.js, graphics-bench-test.js.
+- Risky:
+  - Shadows in batches: right vectors and shear go as halves (2^-11): a 10 m building front's shadow edge moves by
+    millimetres. A device whose driver mishandles `uvec4` attributes would drop the picture shadows' flips.
+  - Models in the shadow cache: a model that moves in a way none of bob, spin, turning parts or `moving` says would
+    have a frozen far shadow.
+  - Far shadows hold still: past ~13 m grass and leaf shadows stop swaying; at the near map's edge a swaying shadow
+    meets a still one. The cache is drawn again when the sun moves a step or the view moves 3 m, as before.
+  - frame-items.js and the leaf pictures carry two new fields; nothing else reads them.
+- Verified: after every commit lint, typecheck, unit tests (1,101 -> 1,119), check:modules, format; smoke "no
+  problems" on every commit touching game/ and after the merge with the context lane. Node tests: the frozen calls;
+  the instanced pictures draw the same quads in every pass (halves within half precision) with everything else in
+  place; the model shadows draw every (item, part) once with the old values; the cache lists, signature and rest
+  shear on both paths. Planted bugs (flip, turned box slices, a lamp's turn, extra parts, layouts, vertex arrays,
+  turning parts, the bob, the signature) each fail them. `shadowI` and `voxSI` compile and link in headless Chromium;
+  the tour ran headless with each set of switches, no page errors. No look or speed judged headless.
+- **Your phone run** (Android first, then the iPad), at a full charge:
+  1. Debug menu > **Graphics test**: "Shadows in batches" (Shadow court, Lamp square, Depth corridor) should look
+     exactly the same; "Models in the shadow cache" (Depth corridor): the same, except moving models' far shadows;
+     "Far shadows hold still" (Meadow, Depth corridor): far grass and leaf shadows still. Save the report.
+  2. Studio > Engine > Quality: turn on **Shadows in batches**, **Models in the shadow cache** and **Far shadows hold
+     still**, run the **Diagnostics test** (Renderer baseline), save the report, export the debug log. Then once more
+     with "Models in batches" and "Pictures in batches" on too. Send all four files.
+  3. Walk a run route and Copperleaf by day with all three on: do shadows flicker, vanish or jump? Does the line
+     where swaying shadows meet still ones (about 13 m out) show? Is the airship's and the windmill's far shadow
+     moving again?
+- **Ask me before** (after your run): which switches go on by default (old paths deleted in round 4, one commit
+  each).
+- Next: your round 3 phone run; round 4 (D2, defaults, deletions).
+
 ### Phase 20 R2, lane pixels (stage 6 without D2) - 2026-10-26
 Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
 answers: phones (Android, iPhone; not the iPad) get 1.2 MP and the automatic quality starts at 0.9; 8 lamps lit at
