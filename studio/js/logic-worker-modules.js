@@ -113,6 +113,7 @@ import '../../game/js/logic/script-parse.js';
 import '../../game/js/logic/script.js';
 import '../../game/js/logic/sea.js';
 import '../../game/js/logic/seam-rules.js';
+import '../../game/js/logic/shaft-pick.js';
 import '../../game/js/logic/sheet-slice.js';
 import '../../game/js/logic/sim-compare.js';
 import '../../game/js/logic/starter-points.js';
