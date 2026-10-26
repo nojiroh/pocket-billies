@@ -29,6 +29,7 @@ expose({
   LAYER_PROPS: [() => LAYER_PROPS],
   LEAF_CUTS: [() => LEAF_CUTS],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
+  MDL_ATTRIBS: [() => MDL_ATTRIBS],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
@@ -37,8 +38,10 @@ expose({
   VOXEL_KEY_OFFSET: [() => VOXEL_KEY_OFFSET],
   VOXEL_KEY_SPAN: [() => VOXEL_KEY_SPAN],
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
+  VOX_ATTRIBS: [() => VOX_ATTRIBS],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
+  drawLowPolyItems: [() => drawLowPolyItems, v => (drawLowPolyItems = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
   drawPropModelMesh: [() => drawPropModelMesh, v => (drawPropModelMesh = v)],
   drawPropModelShadows: [
@@ -47,6 +50,7 @@ expose({
   ],
   drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
   drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
+  drawVoxItems: [() => drawVoxItems, v => (drawVoxItems = v)],
   flushPropModelMeshes: [
     () => flushPropModelMeshes,
     v => ((flushPropModelMeshes = v), provide({ flushPropModelMeshes })),
@@ -62,6 +66,7 @@ expose({
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
   lowPolyVertexShader: [() => lowPolyVertexShader],
+  meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
@@ -645,6 +650,34 @@ function greedyVoxelMesh(V, R) {
     box: [x0 / R, z0 / R, y0 / R, (x1 + 1) / R, (z1 + 1) / R, (y1 + 1) / R],
   };
 }
+/* phase 20 R2: a mesh's vertex layout, one row per attribute [location, size, type, normalised, offset] with its
+   stride: a voxel mesh (position in voxels, normal, colour) and a low-poly part (position in 1/256 m, normal, texture
+   coordinates, the sheet's cell, colour). The instanced draws (engine/model-instances.js) lay the same out again */
+const VOX_ATTRIBS = {
+    stride: 16,
+    rows: [
+      [0, 3, 'SHORT', false, 0],
+      [1, 3, 'BYTE', true, 8],
+      [2, 3, 'UNSIGNED_BYTE', true, 12],
+    ],
+  },
+  MDL_ATTRIBS = {
+    stride: 24,
+    rows: [
+      [0, 3, 'SHORT', false, 0],
+      [1, 3, 'BYTE', true, 8],
+      [2, 2, 'SHORT', false, 12],
+      [3, 3, 'UNSIGNED_BYTE', false, 16],
+      [4, 3, 'UNSIGNED_BYTE', true, 20],
+    ],
+  };
+/* a mesh's own attributes, into the vertex array and the buffer bound now */
+function meshAttribs(gl, A) {
+  for (const [loc, n, ty, nm, off] of A.rows) {
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, n, gl[ty], nm, A.stride, off);
+  }
+}
 /* the mesh of a recipe on the card (built once; the Studio asks for a rebuild after an edit) */
 function propModelMesh(path, rec) {
   let m = propModelState.meshes.get(path);
@@ -709,14 +742,7 @@ function propModelMesh(path, rec) {
     const vb = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vb);
     gl.bufferData(gl.ARRAY_BUFFER, D.vb, gl.STATIC_DRAW);
-    for (const [loc, n, ty, nm, off] of [
-      [0, 3, gl.SHORT, false, 0],
-      [1, 3, gl.BYTE, true, 8],
-      [2, 3, gl.UNSIGNED_BYTE, true, 12],
-    ]) {
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, n, ty, nm, 16, off);
-    }
+    meshAttribs(gl, VOX_ATTRIBS);
     const eb = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, eb);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, D.ib, gl.STATIC_DRAW);
@@ -793,16 +819,7 @@ function uploadLowPolyMesh(vb, ib) {
   const v = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, v);
   gl.bufferData(gl.ARRAY_BUFFER, vb, gl.STATIC_DRAW);
-  for (const [loc, n, ty, nm, off] of [
-    [0, 3, gl.SHORT, false, 0],
-    [1, 3, gl.BYTE, true, 8],
-    [2, 2, gl.SHORT, false, 12],
-    [3, 3, gl.UNSIGNED_BYTE, false, 16],
-    [4, 3, gl.UNSIGNED_BYTE, true, 20],
-  ]) {
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, n, ty, nm, 24, off);
-  }
+  meshAttribs(gl, MDL_ATTRIBS);
   const e = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, e);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ib, gl.STATIC_DRAW);
@@ -1377,6 +1394,11 @@ function drawLowPolyModels(C, X, L) {
   gl.uniform1i(p.U.uDet, 0);
   gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
+  drawLowPolyItems(p, L);
+}
+/* the models one at a time: each item's own uniforms, then its mesh, its extra parts and its turning parts */
+function drawLowPolyItems(p, L) {
+  const gl = gpuState.gl;
   for (const [it, m] of L) {
     gl.uniform1f(p.U.uFade, it.fade ?? 1);
     gl.uniform1f(p.U.uBaseY, it.y);
@@ -1739,6 +1761,21 @@ function setPropModelUniforms(p, it) {
   gl.uniform1f(U.uRot, propTurn(it) + (bo ? bo[1] : 0)); /* phase 09 batch 9: and the placement's turn */
   gl.uniform1f(U.uFlip, it.flip || 1);
 }
+/* the voxel props one at a time (L is [item, mesh]): each item's own uniforms, then its mesh and its turning parts */
+function drawVoxItems(p, L) {
+  const gl = gpuState.gl;
+  for (const [it, m] of L) {
+    gl.uniform3f(p.U.uBaseP, it.x, it.y, it.z);
+    gl.uniform1f(p.U.uFade, it.fade ?? 1);
+    gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
+    setPropModelUniforms(p, it);
+    gl.uniform1f(p.U.uQ, m.q || 1);
+    setItemSpin(p, it);
+    drawPropModelMesh(m);
+    drawSpinningParts(p, m);
+    propModelState.drawn++;
+  }
+}
 export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   propModelState.lowPoly = 0;
@@ -1748,35 +1785,23 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(PROP_MODEL_SHADERS);
-    let p = null;
-    const ML = [];
+    const VL = [],
+      ML = [];
     for (const it of items) {
       if (!it.vox || it.vis === false) continue;
       const m = propModelMesh(it.voxPath, it.vox);
-      if (!m) continue;
-      if (m.model) {
-        ML.push([it, m]);
-        continue;
-      }
-      if (!p) {
-        p = useWalkProgram('vox', C, X);
-        gl.enable(gl.DEPTH_TEST);
-        gl.depthMask(true);
-        gl.disable(gl.BLEND);
-        gl.disable(gl.CULL_FACE);
-      }
-      gl.uniform3f(p.U.uBaseP, it.x, it.y, it.z);
-      gl.uniform1f(p.U.uFade, it.fade ?? 1);
-      gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
-      setPropModelUniforms(p, it);
-      gl.uniform1f(p.U.uQ, m.q || 1);
-      setItemSpin(p, it);
-      drawPropModelMesh(m);
-      drawSpinningParts(p, m);
-      propModelState.drawn++;
-      if (hits && !it.far) addHitTarget(it, C, hits, labels, PPU);
+      if (m) (m.model ? ML : VL).push([it, m]);
+    }
+    if (VL.length) {
+      const p = useWalkProgram('vox', C, X);
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+      gl.disable(gl.CULL_FACE);
+      drawVoxItems(p, VL);
     }
     gl.bindVertexArray(null);
+    if (hits) for (const [it] of VL) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
     drawLowPolyModels(C, X, ML);
     if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
