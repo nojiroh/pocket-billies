@@ -671,6 +671,11 @@ debugLog.more = () => {
       props: (sc.props || []).length,
       life: typeof GAME.ambientLife !== 'undefined' ? GAME.ambientLife.list.map(c => c.k).join(' ') : '',
       folk: (GAME.walkView.folk || []).length,
+      /* HB-10c (counts only): the town's folk in all, how many stand at the square's stops, the ranch's Billies
+         visiting it now */
+      folkAll: (GAME.walkView.folkAll || []).length,
+      onSquare: (GAME.walkView.folkAll || []).filter(f => f.sq).length,
+      visitors: typeof GAME.worldBillies !== 'undefined' ? GAME.worldBillies.visitors || 0 : 0,
       water: (GAME.walkView.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,
       resolution: GAME.walkView.R,
