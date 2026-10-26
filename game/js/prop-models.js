@@ -824,6 +824,11 @@ function drawSpinningParts(p, m) {
 }
 function flushPropModelMeshes() {
   for (const k of [...propModelState.meshes.keys()]) invalidatePropModel(k, true);
+  /* phase 20 R2: the instanced models' record buffer too (a restored context may hand back the same context object) */
+  const S = MODEL_INSTANCES;
+  if (S.buf && S.gl && S.gl === gpuState.gl) S.gl.deleteBuffer(S.buf);
+  S.buf = null;
+  S.gl = null;
 }
 export function invalidatePropModel(path, keep) {
   const m = propModelState.meshes.get(path);

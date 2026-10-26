@@ -293,3 +293,17 @@ test('the instanced shaders: flat values passed under the old uniform names, att
     );
   }
 });
+
+test('a flush (a scene dropped, a restored context) drops the record buffer and the parts’ instanced arrays', () => {
+  const L = items().mdl;
+  newDraws('mdl', L);
+  const S = G.MODEL_INSTANCES;
+  assert.ok(S.buf);
+  for (const [, m] of L) G.propModelState.meshes.set('test:' + m.vao, m);
+  const gl = gpuState.gl;
+  G.flushPropModelMeshes();
+  assert.equal(S.buf, null);
+  const deleted = gl.calls.filter(c => c[0] === 'deleteVertexArray').map(c => c[1]);
+  for (const [, m] of L) for (const q of [m, ...(m.more || []), ...m.spins]) assert.ok(deleted.includes(q.ivao), q.vao);
+  assert.ok(gl.calls.some(c => c[0] === 'deleteBuffer'));
+});
