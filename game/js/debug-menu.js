@@ -45,7 +45,7 @@ import {
   TYPES,
   gameData,
 } from './game-data.js';
-import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftSet } from './logic/graft-art.js';
+import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftPlaceholderDonors, graftSet } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -354,14 +354,18 @@ function debugFps() {
   const m = frameScheduler.meter;
   el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
 }
-/* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits */
+/* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits; RO-3c:
+   a placeholder Billie takes a slot from any placeholder Billie of another line, whatever its body plan */
 function debugGraftFor(sp) {
-  const B = gameData.kitBuilds,
-    K = gameData.partKits,
-    slots = GRAFT_SLOTS.filter(slot => graftDonors(B, K, sp, slot).length);
+  const ph = s => !!(RIGS[s] && RIGS[s].front && RIGS[s].front.placeholder),
+    donors = slot =>
+      ph(sp)
+        ? graftPlaceholderDonors(gameData.bodyPlans, gameData.bodyPlans.forms, sp, slot).filter(ph)
+        : graftDonors(gameData.kitBuilds, gameData.partKits, sp, slot).filter(s => !ph(s)),
+    slots = GRAFT_SLOTS.filter(slot => donors(slot).length);
   if (!slots.length) return '';
   const slot = slots[Math.floor(Math.random() * slots.length)],
-    list = graftDonors(B, K, sp, slot);
+    list = donors(slot);
   return graftKey({ [slot]: list[Math.floor(Math.random() * list.length)] });
 }
 const debugGraftWords = g =>

@@ -87,12 +87,20 @@ test("RO-3b: a form's scale sizes the whole Billie, standing on the same ground"
   }
 });
 
-test('every plan fills the head and body slots (splicing maps parts by slot)', () => {
+test('every plan fills every slot (splicing maps parts by slot); the octopus and blob share one bone', () => {
   for (const plan of PLANS) {
-    const slots = new Set(PA.placeholderBones(P, sample(plan)).map(b => b.slot));
-    for (const s of ['body', 'front', 'back', 'sig'])
-      if (plan !== 'octo' || s !== 'body') assert.ok(slots.has(s), `${plan}: no ${s} slot`);
-    assert.ok(slots.has('head') || plan === 'blob', `${plan}: no head slot`);
+    const bones = PA.placeholderBones(P, sample(plan)),
+      own = new Set(bones.map(b => b.slot)),
+      slots = new Set(bones.flatMap(b => [b.slot, b.also]));
+    for (const s of ['head', 'body', 'front', 'back', 'sig']) assert.ok(slots.has(s), `${plan}: no ${s} slot`);
+    /* RO-3c (the owner): the octopus's mantle is its body and head, the blob's body its head; body wins */
+    if (plan === 'octo' || plan === 'blob') {
+      assert.ok(!own.has('head'), `${plan}: a head bone of its own`);
+      assert.deepEqual(
+        bones.filter(b => b.also).map(b => [b.n, b.slot, b.also]),
+        [['head', 'body', 'head']]
+      );
+    } else assert.ok(!bones.some(b => b.also), `${plan}: a shared bone`);
   }
 });
 

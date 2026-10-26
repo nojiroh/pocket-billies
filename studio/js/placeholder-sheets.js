@@ -8,14 +8,14 @@
    the same way. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { makeCanvas } from '../../game/js/art.js';
-import { escapeHtml } from './game-stand-ins.js';
 import {
   placeholderBake,
   placeholderCellsWith,
   placeholderSheet,
   placeholderSheetCut,
 } from '../../game/js/logic/placeholder-art.js';
+import { makeCanvas } from '../../game/js/art.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, changed, commit, render, snapshotParts, studioState, toast } from './studio-app.js';
 import { artSteps, pictureImage } from './pixel-canvas.js';
 import { atlasGet, downloadCanvas, fileToCanvas, markArt, pickFile } from './sprites.js';

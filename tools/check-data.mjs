@@ -427,6 +427,13 @@ if (D.bodyPlans && check('bodyPlans.schema.json', D.bodyPlans, 'bodyPlans.json')
   for (const [id, plan] of Object.entries(B.plans)) {
     if (!known.includes(id)) problem(at, `plans.${id}: body-plan-animation.js has no such plan (${known.join(', ')})`);
     bonesOk(`plans.${id}`, plan.bones);
+    // RO-3c: splicing maps parts by slot, so every slot has a bone (its own, or one that answers to it as `also`)
+    const has = new Set(plan.bones.flatMap(b => [b.slot, b.also]));
+    for (const s of (D.rules && D.rules.parts && D.rules.parts.slots) || [])
+      if (!has.has(s)) problem(at, `plans.${id}: no bone for the ${s} slot (give one, or \`also\` on another)`);
+    for (const b of plan.bones)
+      if (b.also && (b.also === b.slot || !b.slot))
+        problem(at, `plans.${id}: ${b.n}: also ${b.also} needs a slot of its own, a different one`);
   }
   for (const id of known) if (!B.plans[id]) problem(at, `plans: no ${id} (body-plan-animation.js animates it)`);
   const seen = { name: new Set(), rig: new Set() };
