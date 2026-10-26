@@ -271,6 +271,8 @@ export const ENGINE_DEFAULTS = {
        be lit at once (the shaders hold 16) */
     stableLights: false,
     lights: 16,
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
+    skyLast: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1214,6 +1216,12 @@ export const ENGINE_SPEC = [
         16,
         1,
         'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+      ],
+      [
+        'skyLast',
+        'Sky last',
+        'bool',
+        'The sky is drawn after the ground, props and buildings, only where it shows, instead of over the whole screen first. Same picture, fewer pixels drawn.',
       ],
       [
         'gpuTimer',

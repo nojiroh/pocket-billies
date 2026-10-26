@@ -575,7 +575,23 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const D = walkRenderer.dbg || {};
-  drawSky(C, sun);
+  /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
+     drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
+     the ground, so a frame that shows one keeps the sky first */
+  const skyLast =
+      !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+    bpart = skyLast ? 'solid' : undefined;
+  const drawSolids = () => {
+    gpuPass('models');
+    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+    gpuPass('box');
+    drawBoxFaces(C, items, X);
+    gpuPass('buildings');
+    if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
+    gpuPass('structures');
+    if (typeof drawStructures === 'function') drawStructures(C, X);
+  };
+  if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
@@ -585,14 +601,15 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   drawSprites(C, items, X, hits, labels, PPU);
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
-  gpuPass('models');
-  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
-  gpuPass('box');
-  drawBoxFaces(C, items, X);
-  gpuPass('buildings');
-  if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
-  gpuPass('structures');
-  if (typeof drawStructures === 'function') drawStructures(C, X);
+  drawSolids();
+  if (skyLast) {
+    gpuPass('sky');
+    drawSky(C, sun, true);
+  }
+  if (bpart && typeof drawBuildings === 'function') {
+    gpuPass('buildings');
+    drawBuildings(C, X, items, walkRenderer.bfade, 'fronts');
+  }
   gpuPass('silhouette');
   drawPlayerSilhouette(C, items, X);
   gpuPass('water');
