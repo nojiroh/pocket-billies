@@ -31,6 +31,7 @@
    ["trump0",16],
    ["hughes0",16],
    ["cuban0",12],
+   ["hastings0",12],
    ["gates0",5],
    ["altman0",4],
    ["musk0",3],
@@ -182,6 +183,7 @@
    ["cuban0",16],
    ["hughes0",14],
    ["woods0",14],
+   ["hastings0",6],
    ["gates0",5],
    ["bezos0",3],
    ["altman0",3],
@@ -192,6 +194,7 @@
   "lv": [3,6],
   "list": [
    ["trump0",32],
+   ["hastings0",30],
    ["zuck_cloud0",26],
    ["hughes0",24],
    ["swift0",20],
