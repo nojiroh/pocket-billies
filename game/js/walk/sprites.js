@@ -9,6 +9,7 @@ import { clamp } from '../util.js';
 import { pictureFacing } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
+import { gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { makeCanvas } from '../art.js';
 import { lookOf, wardrobeData } from '../person-art.js';
@@ -175,6 +176,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   const L = filterInto(items, spriteDrawn, SPRITE_LIST);
   L.sort(byImageId);
   for (const it of L) {
+    /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
+    gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
     if (it.vox) {
       if (!it.far) addHitTarget(it, C, hits, labels, PPU);
       /* phase 09: a modelled clock tower keeps its moving hands (pictures on its modelled face) */
@@ -281,6 +284,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     if (it.far || it.layer) continue;
     addHitTarget(it, C, hits, labels, PPU);
   }
+  gpuTag(0);
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
   gl.uniform1f(U.uEmit, 0);

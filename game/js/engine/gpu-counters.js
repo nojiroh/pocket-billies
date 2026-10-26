@@ -119,10 +119,11 @@ export const gpuCounters = {
 /* which pass the calls that follow belong to (one store; free while counting is off) */
 export function gpuPass(name) {
   gpuCounters.pass = PASS_INDEX[name] ?? 0;
+  gpuCounters.tag = 0;
 }
 /* what the draws that follow belong to: a tag name, its index (an item's `mp`), or nothing (one store, free while
    counting is off) */
-function gpuTag(t) {
+export function gpuTag(t) {
   gpuCounters.tag = typeof t === 'number' ? t : TAG_INDEX[t] || 0;
 }
 const countInPass = (f, n) => {
