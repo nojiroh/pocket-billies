@@ -9,7 +9,7 @@
    Studio's undo), Replace, Download and Open in its editor. Ctrl K finds art files (find.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide } from '../../game/js/hooks.js';
+import { provide, tileSetOpen } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -109,6 +109,8 @@ export const artBrowser = {
   q: '',
   sel: '',
   edit: '',
+  /* SA-2a: the ground tile set (tile-set.js) shows in this section's place */
+  tiles: false,
   more: 0,
   /** @type {Map<string, { w: number, h: number }>} sizes read this session, by path */
   sizes: new Map(),
@@ -339,6 +341,8 @@ function artEditorsFor(path) {
         openSection('billionaires', { line: L.id, stage: L.names.findIndex(n => n.toLowerCase() === name) })
       );
   }
+  const t47 = /^art\/next\/tiles\d*\/([\w-]+)_(\d+)\.png$/.exec(path);
+  if (t47) add('Ground tile set', () => tileSetOpen(t47[1], +t47[2]));
   if (/^next\/parts(\/|$)/.test(f)) add('Art workbench', () => openSection('workbench'));
   if (/^scene\/(tiles|flags|far)(\/|$)/.test(f)) add('Walk scenes', () => openSection('scenes'));
   if (/^scene\/props(\/|$)/.test(f)) add('Props', () => openSection('props'));
@@ -461,6 +465,7 @@ SECTIONS.art = () => {
   <div class="ab-bar"><input type="search" id="abQ" class="ab-q" placeholder="Search: names, dir:scene/props, w:>32, h:16-64, unused, legacy" value="${escapeHtml(artBrowser.q)}" autocomplete="off" spellcheck="false">
   <label class="ab-size">Size <input type="range" id="abSize" min="32" max="256" step="8" value="${sz}"></label></div>
   ${Q.chips.length ? `<div class="seg-row ab-chips">${Q.chips.map((c, i) => `<button class="chip ab-chip" data-act="abChip" data-i="${i}" title="Take it off">${escapeHtml(c.text)} ✕</button>`).join('')}</div>` : ''}
+  ${/^next\/tiles\d*$/.test(artBrowser.at) && artQueryEmpty(Q) ? '<div class="seg-row ab-note"><span class="help">The full-mode ground: twelve 32 px tiles a kind.</span><button class="btn sm primary" data-act="tsOpen">Open as a ground tile set</button></div>' : ''}
   <div class="ab-wrap"><div class="ab-main"><div class="ab-crumbs">${G.head}</div><div class="ab-grid" id="abGrid" style="--ab-size:${sz}px">${G.body || '<p class="help">Nothing here.</p>'}</div></div>
   <aside class="ab-side">${card('Picture', detailHTML(artBrowser.sel, ix))}</aside></div></div>`;
 };
@@ -538,6 +543,7 @@ async function artDetailNotes(path) {
 
 /* ---------- actions ---------- */
 ACTIONS.abGo = d => {
+  artBrowser.tiles = false;
   artBrowser.at = d.at || '';
   artBrowser.more = 0;
   render();
@@ -603,6 +609,7 @@ function artBrowserShow(path) {
   artBrowser.q = '';
   artBrowser.sel = path;
   artBrowser.edit = '';
+  artBrowser.tiles = false;
   openSection('art');
 }
 

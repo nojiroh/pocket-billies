@@ -31,6 +31,8 @@ VIEWS = {
     'split': ('billionaires', "ACTIONS.openBeside({ s: 'moves' })", '#main2 .split'),
     'genes': ('genes', "studioState.sel.genes = { sp: 'swift0', slot: 'sig', gene: 'shark_tailfin@zuck2', aug: 'front:hydrant' }; render()", '#genesCanvas'),
     'art': ('art', "artBrowserShow('art/scene/props/house.png')", '#abGrid .ab-tile'),
+    'tiles': ('art', "void tileSetOpen('granite', 2)", '#tsStage .pc-art'),
+    'strips': ('art', "artBrowserShow('art/scene/life/duck.png')", '.ab-side canvas.sp-cv'),
     'workbench': ('workbench', """(async () => { const fs = []; for (const n of ['beasts-front.png', 'beasts-back.png']) {
       const r = await fetch('/tools/art-source/part-kit/' + n); fs.push(new File([await r.blob()], n)); } await wbAddFiles(fs); })()""", '#wbCv'),
 }

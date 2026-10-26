@@ -1039,7 +1039,7 @@ export function scaleColor(c, k) {
    ones (0, 6, 7) over the rest (v47: picked evenly, plainTileIndex). The ground painter and the Studio's tile set
    preview (studio/js/tile-set.js, SA-2a) both pick with it */
 const GROUND_DETAIL_TILES = [1, 2, 3, 4, 5, 8, 9];
-function groundTileRole(sx, sz, sa, worn, t47) {
+export function groundTileRole(sx, sz, sa, worn, t47) {
   const r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
   if (worn) return r < 0.5 ? 10 : 11;
   if (valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31) > 0.63) return GROUND_DETAIL_TILES[Math.floor(r * 7)];

@@ -30,6 +30,8 @@ Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can'
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
 Studio art track SA-1: the Art browser: folders, search tokens and chips, Used by, Edit pixels and its undo, Ctrl K.
+Studio art track SA-2a: the ground tile set (a stroke, its Lite tile and the preview in one undo step) and a frame strip
+played in the Art browser.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -2328,12 +2330,80 @@ def art_browser_steps(pg, errs):
     print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, Used by, Edit pixels and its undo, Ctrl K', flush=True)
 
 
+def tile_set_steps(pg, errs):
+    """Studio art track SA-2a: the ground tile set. The tiles47 folder opens it; a pen click on tile 1 of a kind whose
+    Lite tiles are made from its set paints the tile, makes its Lite tile again and redraws the preview, all one step of
+    the undo; undo puts both back. A kind drawn by hand at 16 px keeps its Lite tile."""
+    pg.set_default_timeout(120000)
+    pg.evaluate("artBrowser.q = ''; artBrowser.sel = ''; artBrowser.edit = ''; artBrowser.tiles = false; artBrowser.at = 'next/tiles47'; openSection('art')")
+    pg.wait_for_selector('[data-act="tsOpen"]')
+    pg.click('[data-act="tsOpen"]')
+    pg.wait_for_selector('#tsStage .pc-art')
+    kinds = pg.evaluate("tileSetKinds().length")
+    if kinds < 70: errs.append(f'tile set: {kinds} kinds')
+    def paint(name, n=1):
+        pg.evaluate(f"tileSetOpen({json.dumps(name)}, {n})"); time.sleep(0.4)
+        pg.wait_for_selector('#tsStage .pc-art'); time.sleep(0.3)
+        big = f'art/next/tiles47/{name}_{n}.png'
+        lite = pg.evaluate(f"'art/' + tileSetKinds().find(k => k.name === {json.dumps(name)}).t.tile")
+        h0, l0 = pg.evaluate(f"{PIXELS}({json.dumps(big)})"), pg.evaluate(f"{PIXELS}({json.dumps(lite)})")
+        prev0 = pg.evaluate("document.querySelector('#tsPrev').toDataURL()")
+        pg.locator('#tsStage .pc-art').scroll_into_view_if_needed()
+        box = pg.locator('#tsStage .pc-art').bounding_box()
+        Z = pg.evaluate('tileSet.pc.zoom')
+        pg.evaluate("pixelCanvasTool(tileSet.pc, 'pen'); pixelCanvasColor(tileSet.pc, '#FF0000')")
+        steps0 = pg.evaluate('studioState.undo.length')
+        pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+        time.sleep(0.3)
+        out = dict(painted=pg.evaluate(f"{PIXEL_AT}({json.dumps(big)}, 0, 0)") == [255, 0, 0, 255],
+                   steps=pg.evaluate('studioState.undo.length') - steps0,
+                   lite=pg.evaluate(f"{PIXELS}({json.dumps(lite)})") != l0,
+                   prev=pg.evaluate("document.querySelector('#tsPrev').toDataURL()") != prev0)
+        pg.evaluate('undo()'); time.sleep(0.3)
+        out['back'] = pg.evaluate(f"{PIXELS}({json.dumps(big)})") == h0 and pg.evaluate(f"{PIXELS}({json.dumps(lite)})") == l0
+        pg.evaluate(f"studioState.artDirty.delete({json.dumps(big)}); studioState.artDirty.delete({json.dumps(lite)}); updateTopBar()")
+        return out
+    o = paint('granite')
+    if o != dict(painted=True, steps=1, lite=True, prev=True, back=True): errs.append(f'tile set: a stroke on a made kind gave {o}')
+    if not pg.evaluate("tileSet.linked.granite === true"): errs.append('tile set: granite is not told as made from its set')
+    o = paint('grass')
+    if o != dict(painted=True, steps=1, lite=False, prev=True, back=True): errs.append(f'tile set: a stroke on a hand-drawn kind gave {o}')
+    if pg.evaluate("tileSet.linked.grass") is not False: errs.append('tile set: grass is not told as drawn by hand')
+    pg.evaluate("ACTIONS.tsClose()"); time.sleep(0.3)
+    if pg.evaluate("artBrowser.tiles || !document.querySelector('#abGrid')"): errs.append('tile set: Back did not go back to the Art browser')
+    pg.set_default_timeout(30000)
+    print('tile set: the folder opens it, a stroke paints the tile, its Lite tile (made kinds only) and the preview in one undo step', flush=True)
+
+
+def strips_steps(pg, errs):
+    """Studio art track SA-2a: a frame strip (an animal) plays in the Art browser's picture panel; Step pauses it and
+    shows the next frame."""
+    pg.evaluate("artBrowserShow('art/scene/life/duck.png')")
+    pg.wait_for_selector('.ab-side canvas.sp-cv')
+    time.sleep(1.2)
+    n = pg.evaluate("document.querySelector('.ab-side canvas.sp-cv')._sp.frames || 0")
+    if n < 3: errs.append(f'strips: the duck showed {n} frames in 1.2 s')
+    pg.evaluate("ACTIONS.spStep()"); time.sleep(0.2)
+    a = pg.evaluate("document.querySelector('.sp-frame').textContent")
+    pg.evaluate("ACTIONS.spStep()"); time.sleep(0.2)
+    b = pg.evaluate("document.querySelector('.sp-frame').textContent")
+    if a == b or not stripPlayingOff(pg): errs.append(f'strips: Step showed {a!r} then {b!r}')
+    pg.evaluate("stripPlayer.playing = true")
+    print('strips: a strip plays in the picture panel; Step pauses and steps', flush=True)
+
+
+def stripPlayingOff(pg):
+    return pg.evaluate("stripPlayer.playing === false")
+
+
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
 STEPS = [
     ('story', story_steps),
     ('free_camera', free_camera_steps),
     ('tiles', tile_painter_steps),
     ('art_browser', art_browser_steps),
+    ('tile_set', tile_set_steps),
+    ('strips', strips_steps),
     ('split', split_steps),
     ('workbench', workbench_steps),
     ('part_mode', part_mode_steps),

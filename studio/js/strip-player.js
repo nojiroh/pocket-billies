@@ -5,7 +5,6 @@
    pixel canvas while it is painted (it draws from the canvas being edited, so a stroke shows on the next frame).
    One requestAnimationFrame loop for every player on the page, as sprites.js's previews; Play/Pause, a step, the
    speed (frames a second, kept in this browser) and the scale. */
-/* the players on the page, and their shared state */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -26,6 +25,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/* the players on the page, and their shared state */
 const STRIP_PLAYERS = new Set();
 const STRIP_FPS_KEY = 'pb-strip-fps';
 const stripPlayer = { playing: true, fps: stripFpsKept(), scale: 4, step: 0, running: false };

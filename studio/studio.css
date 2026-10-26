@@ -1061,6 +1061,49 @@ canvas.spr-prev.big {
   align-items: center;
   gap: 4px;
 }
+.ab-note {
+  align-items: center;
+  margin: 6px 0;
+}
+.ts-bar {
+  align-items: end;
+  margin-bottom: 8px;
+}
+.ts-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ts-tile {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.ts-tile.on {
+  border-color: var(--acc);
+}
+.ts-thumb {
+  width: 64px;
+  height: 64px;
+}
+.ts-prev {
+  width: 100%;
+  max-width: 512px;
+  image-rendering: pixelated;
+}
+.ts-lite {
+  align-items: center;
+}
+.ts-lite4 {
+  width: 64px;
+  height: 64px;
+}
 .ab-folder .ab-thumb {
   background: var(--acc2);
   color: var(--acc);
