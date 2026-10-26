@@ -10,8 +10,10 @@
      stored  whatever the fixture saved last in this browser (the save round trip)
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
      mountains   the same run with the debug menu's mountains mod (TR-3: mountains north and south, for the camera)
+     layout  the same run with every laid-out place a forest trail (RT-1: forest masses, for measuring their cost);
+             &plan=<id> another plan (logic/mapgen.js MAPGEN_LAYOUTS; none: the open field as before RT-1)
      ranch   inside Copperleaf's ranch (RL-9): three Billies in storage (one two levels under the cap), 50 Scrap
-     pasture the ranch's save, standing outside the pasture's gate by the barn (IS-8: the three wander inside)
+     pasture the ranch's save, standing outside the pasture's gate (IS-8: the three wander inside)
      relics  the run, holding five Perks (RL-12: one under the cap), 2,000 Moneys, a mini-boss's pick waiting
      lab     Copperleaf after a run (RL-11): 500 Research, 60 Scrap, 2 Crests, one run ended (a milestone met)
      island  the test island (island track IS-0: test_island, the map with the island contract's fields)
@@ -28,7 +30,7 @@ import { LOCATIONS, PERKS, RULES, SPECIES, START_NODE, TRAINERS, UNLOCK_DATA } f
 import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
-import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { perkOfferMake } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
@@ -48,6 +50,7 @@ expose({
   FIXTURE_NAMES: [() => FIXTURE_NAMES],
   FIXTURE_PERKS: [() => FIXTURE_PERKS],
   FIXTURE_PLACES: [() => FIXTURE_PLACES],
+  FIXTURE_PLAN: [() => FIXTURE_PLAN],
   FIXTURE_RUN_SEED: [() => FIXTURE_RUN_SEED],
   fixtureLook: [() => fixtureLook, v => (fixtureLook = v)],
   fixtureSave: [() => fixtureSave, v => (fixtureSave = v)],
@@ -66,6 +69,7 @@ const FIXTURE_PLACES = {
   talk: 'copperleaf',
   run: 'copperleaf',
   mountains: 'copperleaf',
+  layout: 'copperleaf',
   relics: 'copperleaf',
   ranch: 'copperleaf',
   pasture: 'copperleaf',
@@ -75,6 +79,14 @@ const FIXTURE_PLACES = {
 /** RL-12: the Perks the relics fixture holds (a shop's and a clinic's price rows, a catch row, a battle's stage, a
  * heal on arrival) */
 const FIXTURE_PERKS = ['clinic_card', 'coupon_book', 'steady_hand', 'running_shoes', 'trail_snacks'];
+/** RT-1: the layout fixture's plan (?plan=, forest when not given) */
+const FIXTURE_PLAN = (() => {
+  try {
+    return (new URLSearchParams(location.search).get('plan') || 'forest').replace(/[^a-z]/g, '');
+  } catch (e) {
+    return 'forest';
+  }
+})();
 /** RL-7: the run fixture's seed */
 const FIXTURE_RUN_SEED = 'RL7FIXTURE';
 function fixtureSave() {
@@ -120,14 +132,18 @@ function fixtureSave() {
   for (const T of Object.values(TRAINERS)) if (T.runsUp) s.story['met_' + T.id] = 1;
   /* RL-7: a run from the mast (RL-8 does this at the airship) that has landed: its map, day 1 on the landing; its
      world goes in at boot (run-world.js) */
-  if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'relics') {
+  if (FIXTURE === 'run' || FIXTURE === 'mountains' || FIXTURE === 'layout' || FIXTURE === 'relics') {
     const data = runWorldData();
-    /* RL-9b: one Billie from home at Expedition I, the lead (the second stays in Copperleaf). Studio plan T2.1: started
+    /* RL-9b, RL-13: the lead travels (the second stays in Copperleaf); Expedition I, no challenges. Studio plan T2.1: started
        as the mast starts a run (logic/run-start.js), with a fresh save's unlocks (none: no ridge or autumn) */
     const plan = runStartPlan(
       FIXTURE_RUN_SEED,
       { ...data, unlockData: UNLOCK_DATA },
-      { unlocks: runUnlocks(s, UNLOCK_DATA), mods: FIXTURE === 'mountains' ? [RUN_MOD_MOUNTAINS] : [] }
+      {
+        unlocks: runUnlocks(s, UNLOCK_DATA),
+        mods:
+          FIXTURE === 'mountains' ? [RUN_MOD_MOUNTAINS] : FIXTURE === 'layout' ? [RUN_LAYOUT_MOD + FIXTURE_PLAN] : [],
+      }
     );
     runStartOn(s, plan, { home: [lead.uid] });
     runArrive(s, 0, data);

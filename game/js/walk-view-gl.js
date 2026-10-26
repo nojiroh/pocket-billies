@@ -22,6 +22,7 @@ import {
   noWebGL,
   propModelShaders,
   provide,
+  runWaterWeatherSync,
   seamlessLookTick,
   seamlessPrepareAhead,
   worldBillyLabels,
@@ -99,7 +100,7 @@ import {
   swapMapCache,
   updateNearRing,
 } from './walk/map-cache.js';
-import { adaptQuality, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
+import { adaptQuality, coverItems, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
@@ -392,6 +393,8 @@ function drawWalkFrame(ts, dtm) {
     return;
   }
   if (!walkView.ready || gpuState.lost) return;
+  /* WA-5a: a new run day lays its weather on the places' water (run-world.js; nothing to do on the same day) */
+  if (typeof runWaterWeatherSync === 'function') runWaterWeatherSync();
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;
@@ -516,6 +519,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     for (const it of BT.items) items.push(it);
   } else walkView.hits = hits;
   cullItems(items, C);
+  coverItems(items, C, dt);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = engineContext.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);

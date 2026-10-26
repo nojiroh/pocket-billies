@@ -15,7 +15,8 @@ const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
 const { seamRulesLinks } = modules['seam-rules'];
 const { MAPGEN_VERSION, mapgenSeamAgreement, mapgenUnreachable } = modules.mapgen;
-const { runSceneExits, runSceneMake, runSceneParams, runScenesMake, runWorldTables } = modules['run-scenes'];
+const { runSceneExits, runSceneMake, runSceneParams, runScenesMake, runScenesSlices, runWorldTables } =
+  modules['run-scenes'];
 
 const START = {
   team: [],
@@ -37,6 +38,8 @@ const R = GAME_DATA.rules.run,
     pools: data.POOLS,
     scenery: GAME_DATA.scenery,
     rules: R,
+    /* RT-3: laid-out places get their set pieces, as the game's do */
+    setPieces: GAME_DATA.setPieces,
   },
   HUB = GAME_DATA.locations[0];
 /** a run with its map, as the mast gives it (RL-8) */
@@ -153,6 +156,20 @@ test('the same seed makes the same scenes; every node its own', () => {
   assert.deepEqual(a, b);
   assert.equal(new Set(a.map(sc => sc.gen.seed)).size, a.length);
   assert.notDeepEqual(runScenesMake(runOf('RL7OTHER'), WORLD_DATA)[0].tiles, a[0].tiles);
+});
+
+test('HB-2: the scenes made one a step are the scenes made at once, each step counting up to the last', () => {
+  const run = runOf('HB2SLICES'),
+    it = runScenesSlices(run, WORLD_DATA),
+    steps = [];
+  let r = it.next();
+  for (; !r.done; r = it.next()) steps.push(r.value);
+  const n = run.map.nodes.length;
+  assert.deepEqual(
+    steps,
+    Array.from({ length: n - 1 }, (_, i) => [i + 1, n])
+  );
+  assert.deepEqual(r.value, runScenesMake(runOf('HB2SLICES'), WORLD_DATA));
 });
 
 test("a node's dials are frozen: a change to how they are drawn changes every run's scenes", t => {
@@ -292,6 +309,37 @@ test("a run's place is stocked once a visit from its own stream at its row's lev
     hooks.provide({ environmentOdds: pageOdds });
     /* a hub place is stocked as before */
     assert.equal(fn('encounterRunVisits')(0), 0);
+  } finally {
+    data.worldHubBack();
+  }
+});
+
+test("RT-4: a run route's first visit keeps the last of its stock for a rarer one, of the rarest, levels up", () => {
+  const s = startedSave(GAME_DATA.rules.start.starters[0] + '0', 5),
+    run = runOf('RT4RARE'),
+    made = runScenesMake(run, WORLD_DATA),
+    W = runWorldTables(run, data.LOCATIONS[0], WORLD_DATA),
+    Wr = R.wild;
+  s.run = run;
+  s.trip = { node: 0, plan: [] };
+  runArrive(s, 0, MAP_DATA);
+  W.locations[1].trainerCount = 4;
+  data.worldPut({ ...W, maps: Object.fromEntries(W.locations.slice(1).map((p, i) => [p.mapId, made[i]])) });
+  try {
+    const list = fn('encountersHere')(1),
+      P = W.pools.run_0,
+      rarest = modules['wild-pool'].wildRareList(P.list).map(e => e[0]);
+    assert.equal(list.length, Wr.route - 4);
+    const rare = list.filter(q => q.rare);
+    assert.equal(rare.length, 1, 'one rarer one');
+    assert.equal(list[list.length - 1], rare[0], 'the last of the stock');
+    assert.ok(rarest.includes(rare[0].sp), `${rare[0].sp} is of the rarest (${rarest})`);
+    assert.ok(rare[0].lvl >= P.lv[0] + Wr.rare.up && rare[0].lvl <= P.lv[1] + Wr.rare.up, `level ${rare[0].lvl}`);
+    assert.ok(!rare[0].alpha, 'never an Alpha');
+    /* walked on and back: no rarer one again */
+    runArrive(s, runNext(run.map, 0)[0], MAP_DATA);
+    runArrive(s, 0, MAP_DATA);
+    assert.ok(!fn('encountersHere')(1).some(q => q.rare), 'none on a return visit');
   } finally {
     data.worldHubBack();
   }

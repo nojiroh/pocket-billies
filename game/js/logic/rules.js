@@ -31,6 +31,9 @@ import {
   storyHolds,
   toast,
   uiState,
+  waterWildOdds,
+  wildHabitat,
+  wildRareList,
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
@@ -144,7 +147,7 @@ expose({
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
   // @ts-expect-error -- replaced on purpose
-  healAll: [() => healAll, v => (healAll = v)],
+  healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
   // @ts-expect-error -- replaced on purpose
@@ -190,6 +193,9 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
   // @ts-expect-error -- replaced on purpose
+  spawnRare: [() => spawnRare, v => (spawnRare = v)],
+  speciesStep: [() => speciesStep],
+  // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   // @ts-expect-error -- replaced on purpose
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
@@ -212,7 +218,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, makeBilly, makeRobot, riderOf });
+provide({ addWalked, healAll, makeBilly, makeRobot, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -257,6 +263,11 @@ export function pickWeighted(list, rnd = random) {
 
 /* ---------- state ---------- */
 export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
+/** RL-13: how far along its line a species is: 0 a first stage, 1 a middle one, 2 a final form whatever its stage
+ * number (a two-stage line's final is stage 1 and a Billie with no evolutions stage 0, yet both have a final form's
+ * stats: game-data.js). What a level may field and what a Billie costs read this @param {any} S a species (SPECIES) */
+export const speciesStep = S => (!S ? 0 : S.next ? Math.min(1, S.stage) : 2);
+provide({ speciesStep }); /* to-module */
 export const maxLevel = () => RULES.progression.maxLevel,
   moveSlotCount = () => RULES.progression.moveSlots,
   teamSize = () => RULES.progression.teamSize;
@@ -501,6 +512,7 @@ export function upgradePart(p) {
   return true;
 }
 export const billyName = m => m.nick || (m.mut && m.mut.name) || speciesOf(m).name;
+provide({ billyName }); /* to-module */
 /* RL-8: during a run storage stays in Copperleaf (the box isn't a run field): only the party counts, so nothing in a run
    reads, heals, merges or moves a Billie that is resting at home */
 export const allBillies = () => (saveData.run ? saveData.team.slice() : saveData.team.concat(saveData.box));
@@ -667,8 +679,8 @@ export function gateText(n) {
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }
   if (n.ride && !canRide()) {
-    const R = RULES.ride || { minHeight: 1.5 };
-    return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
+    const R = RULES.ride || {};
+    return `To cross ${n.name} you need a Water Billie${R.minHeight ? ` at least ${R.minHeight} m tall` : ''} in your team to ride on.`;
   }
   if (n.gateText) return n.gateText;
   const T = gateOwner(n.gate);
@@ -678,14 +690,17 @@ export function blockerAt(i) {
   return trainersAt(i).find(T => T.blocks && !saveData.flags[T.id]) || null;
 }
 /* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
-/* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
+/* v24: lake and sea roads need a Water billionaire to ride (rules.ride: types, an optional minHeight in metres); WA-6b:
+   the owner dropped the 1.5 m floor (any Water Billie carries you, as RL-R2's Surf), and only one still standing
+   (hp > 0, as field-moves.js fieldTeam) does. The tallest rides */
 export function riderOf() {
-  const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
+  const R = RULES.ride || { types: ['Water'] };
   /** @type {Billy | null} */
   let best = null;
   for (const m of saveData.team) {
     const sp = speciesOf(m);
-    if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
+    if (!sp || !(m.hp > 0) || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 0))
+      continue;
     if (!best || sp.ht > speciesOf(best).ht) best = m;
   }
   return best;
@@ -695,6 +710,7 @@ export const riderName = () => {
   const m = riderOf();
   return m ? m.nick || speciesOf(m).name : '';
 };
+provide({ riderName }); /* to-module */
 /** RL-R2: whether the run's side area is open (its field move used; logic/run-side.js runSideOpen) */
 export const fieldOpen = () => {
   const run = saveData.run;
@@ -770,6 +786,8 @@ export function encounterStock(node) {
   if (encounterRunVisits(node) > 1) return RULES.run.wild.back;
   /* RL-12b: a waystation (an event's or a stall's place) holds fewer */
   if (L.waystation) return RULES.run.wild.waystation;
+  /* RT-2: a run route's trainers stand in for some of its wild Billies */
+  if (L.trainerCount) return Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - L.trainerCount);
   if (!isTown(node)) return R.route;
   const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
     tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';
@@ -801,7 +819,10 @@ export function encountersHere(node = saveData.trip.node) {
     if (!w || w.v !== visit) {
       const rnd = rngFn(runNodeSeed(saveData.run.seed, L.runNode), 'wild|' + visit);
       W[L.id] = { at: now, list: [], v: visit };
-      while (W[L.id].list.length < cap) spawn(false, null, node, rnd);
+      /* RT-4: a run route's first visit keeps the last of its stock for a rarer one (rules.json run.wild.rare) */
+      const rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0;
+      while (W[L.id].list.length < cap - (rare ? 1 : 0)) spawn(false, null, node, rnd);
+      if (rare) spawnRare(node, rnd);
     }
     return W[L.id].list;
   }
@@ -830,6 +851,16 @@ export function dropEncounter(id) {
     if (full) w.at = saveData.playMs || 0;
   }
 }
+/** RT-4: a run route's rarer one: of the rarest of its list (wild-pool.js wildRareList), `up` levels above the rest,
+ * never an Alpha; it waits in a hard pocket (route-trainers.js routeRareSpots, the place's rareAt)
+ * @param {number} node @param {() => number} rnd */
+export function spawnRare(node, rnd) {
+  const P = encounterPoolHere(node),
+    q = spawn(false, pickWeighted(wildRareList(P.list), rnd), node, rnd);
+  q.lvl = Math.min(100, q.lvl + (RULES.run.wild.rare ? RULES.run.wild.rare.up : 0));
+  q.rare = 1;
+  return q;
+}
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
   const P = encounterPoolHere(node),
@@ -846,6 +877,8 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
       : typeof environmentOdds === 'function'
         ? environmentOdds(P.list)
         : P.list;
+  /* WA-5a: a place with marsh or bog water draws more of the Billies that like it (logic/water-play.js) */
+  if (L && L.marsh) list = waterWildOdds(list, L.marsh, typesOf);
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
@@ -860,6 +893,11 @@ export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
     no: ++saveData.serial,
     build: rollBuild(rnd),
   };
+  /* RT-4: a run place's Billie waits in its habitat (by its types): by the water, in the woods, else the tall grass */
+  if (L && L.runNode != null) {
+    const hab = wildHabitat(SPECIES[sp].types, RULES.run.wild.habitats);
+    if (hab !== 'grass') q.hab = hab;
+  }
   /* studio track ST-0: a coat, once in its odds (none: never) */
   const coat = coatRoll(COATS, 'wild', rnd) || SPECIES[sp].coat;
   if (coat) q.coat = coat;

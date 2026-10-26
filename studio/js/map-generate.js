@@ -17,9 +17,13 @@ import { $ } from '../../game/js/util.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
+  MAPGEN_LAYOUTS,
+  MAPGEN_LAYOUT_DIALS,
   MAPGEN_MASSIF,
   MAPGEN_MOUNTAIN_DIALS,
   MAPGEN_OPPOSITE,
+  MAPGEN_PIECES_DIALS,
+  MAPGEN_PIECES_MOST,
   MAPGEN_SHAPES,
   MAPGEN_SIZES,
   MAPGEN_WATER,
@@ -189,6 +193,27 @@ const GEN_DIALS = [
     ],
   ],
   ['feature', 'Feature', [['feature', 'Feature', 'sel', MAPGEN_FEATURES]]],
+  /* RT-1: a run route's plan: blockers (forest masses, fences and hedges, outcrops, water) to 55-65% walkable */
+  [
+    'layout',
+    'Route layout',
+    [['layout', 'Layout', 'sel', Object.fromEntries(Object.entries(MAPGEN_LAYOUTS).map(([k, L]) => [k, L.name]))]],
+  ],
+  /* RT-3: set pieces (setPieces.json) on a laid-out route's spare spots */
+  [
+    'pieces',
+    'Set pieces',
+    [
+      [
+        'pieces',
+        'Set pieces',
+        0,
+        MAPGEN_PIECES_MOST,
+        1,
+        'Campsites, farm pens, rest stops and the like (setPieces.json), on spare roadside spots and clearings of a laid-out route',
+      ],
+    ],
+  ],
   [
     'props',
     'Props',
@@ -213,6 +238,8 @@ const GEN_REROLL = [
   ['feature', 'Feature'],
   ['props', 'Props'],
   ['lots', 'Buildings'],
+  ['layout', 'Layout'],
+  ['pieces', 'Set pieces'],
 ];
 const genGet = (o, path) => path.split('.').reduce((v, k) => (v == null ? v : v[k]), o);
 function genSet(o, path, v) {
@@ -222,8 +249,13 @@ function genSet(o, path, v) {
   for (const k of ks) t = t[k] == null ? (t[k] = {}) : t[k];
   t[last] = v;
 }
-/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored) */
-const genDefault = path => genGet(MAPGEN_DEFAULTS, path) ?? genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path);
+/* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored); nor are
+   RT-1's layout and RT-3's pieces */
+const genDefault = path =>
+  genGet(MAPGEN_DEFAULTS, path) ??
+  genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path) ??
+  genGet(MAPGEN_LAYOUT_DIALS, path) ??
+  genGet(MAPGEN_PIECES_DIALS, path);
 const genDialValue = (v, step) => (typeof v === 'number' ? +v.toFixed(step < 0.1 ? 2 : 1) : v);
 function genDialHTML(f) {
   const [path, label] = f,
@@ -294,7 +326,19 @@ function genBasicsHTML() {
   const P = mapGen.params,
     B = studioState.D.biomes || {};
   return `<section class="card eng-g open"><header><h3 style="padding:6px">Basics</h3></header><div class="card-b eng-fields">
- <div class="eng-f"><span class="eng-lab">Kind</span><div class="seg-row"><button class="seg on">Route</button><button class="seg" disabled title="Towns come in the next session of the map generator track (MG-3)">Town</button></div></div>
+ <div class="eng-f"><span class="eng-lab">Kind</span><div class="seg-row">${[
+   ['route', 'Route', 'A road from exit to exit'],
+   [
+     'town',
+     'Town',
+     "A street off the road to a square (the clinic and the shop on it when their dials are on), and houses with gardens (towns track TW-1; the run's towns)",
+   ],
+ ]
+   .map(
+     ([k, n, tip]) =>
+       `<button class="seg ${P.kind === k ? 'on' : ''}" data-act="genKind" data-k="${k}" title="${escapeHtml(tip)}">${n}</button>`
+   )
+   .join('')}</div></div>
  <div class="eng-f ${P.biome !== MAPGEN_DEFAULTS.biome ? 'own' : ''}"><span class="eng-lab">Biome</span><select data-gen="biome" data-k="sel">${Object.entries(
    B
  )
@@ -388,7 +432,10 @@ function genRun() {
     joined.push({ ...J, strip });
   }
   const t = performance.now(),
-    r = mapgenScene({ ...P, edges }, { scenery: sceneryCatalog(), biomes: D.biomes || {} });
+    r = mapgenScene(
+      { ...P, edges },
+      { scenery: sceneryCatalog(), biomes: D.biomes || {}, setPieces: D.setPieces || null }
+    );
   mapGen.ms = performance.now() - t;
   mapGen.notes = r.notes;
   const d = r.scene;
@@ -594,6 +641,12 @@ ACTIONS.genResetG = d => {
 ACTIONS.genSize = d => {
   const s = MAPGEN_SIZES[d.k];
   Object.assign(mapGen.params, { w: s.w, h: s.h });
+  render();
+  genRun();
+};
+/* TW-1: a route or a town (mapgen.js mapgenStageTown) */
+ACTIONS.genKind = d => {
+  mapGen.params.kind = d.k === 'town' ? 'town' : 'route';
   render();
   genRun();
 };

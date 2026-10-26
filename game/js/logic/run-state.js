@@ -12,7 +12,11 @@
 /** @import { Run, RunStart, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
+import { historyEntry, historyPush, validLostTo } from './run-history.js';
 import { META_IDS, META_MAX, recordOf, wholeIn } from './meta-state.js';
+import { expeditionAfterWin } from './modifiers.js';
+import { heldAllOff } from './held.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_DAYS: [() => RUN_DAYS],
@@ -43,6 +47,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
   // @ts-expect-error -- replaced on purpose
+  validRunQuests: [() => validRunQuests, v => (validRunQuests = v)],
+  // @ts-expect-error -- replaced on purpose
   validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
 });
 /* eslint-enable no-func-assign */
@@ -67,10 +73,11 @@ export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
   RUN_LIST = 5000,
   RUN_EXPEDITIONS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
-/** RL-9b: a rule by Expedition (rules.json run.home, run.pack): the expedition's entry, past the list's end its last */
+/** RL-9b: a rule by Expedition (rules.json run.pack, run.points.budget): the expedition's entry, past the list's end its last */
 /** @param {number[]} list @param {number} expedition */
 export const runByExpedition = (list, expedition) =>
   list[Math.max(0, Math.min(list.length, Math.floor(expedition) || 1) - 1)];
+provide({ runByExpedition }); /* to-module */
 /** RL-9b: the uids of the Billies that came from home (picked at the mast); a run saved before RL-9b took the hub's
     whole team */
 /** @param {Run} run @returns {string[]} */
@@ -231,6 +238,11 @@ export function validRun(o) {
   if (o.pack !== undefined && !(packed(o.pack.items || {}) && packed(o.pack.pyramids || {}))) return false;
   /* RL-12b: its events and reward picks (missing on a run from before) */
   if (o.enc !== undefined && !validRunEnc(o.enc)) return false;
+  /* RL-S1: what beat you (to the payout) and the leaders beaten (logic/run-history.js) */
+  if (o.lostTo !== undefined && !validLostTo(o.lostTo)) return false;
+  if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
+  /* TW-3: its quests (missing until the first is taken) */
+  if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -317,6 +329,35 @@ export function validRunEnc(e) {
         e.reward.from.length <= 60))
   );
 }
+/** TW-3: a run's quests (logic/run-quests.js): shapes only @param {any} e @returns {boolean} */
+export function validRunQuests(e) {
+  const plain = (/** @type {any} */ v) =>
+      !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
+    id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
+    quest = (/** @type {any} */ q) =>
+      plain(q) &&
+      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done'].includes(k)) &&
+      id(q.id) &&
+      ['catch', 'trainers', 'parcel', 'miniboss'].includes(q.kind) &&
+      id(q.text) &&
+      wholeIn(q.at, 0, RUN_NODES - 1) &&
+      wholeIn(q.goal, 1, 9) &&
+      wholeIn(q.n, 0, q.goal) &&
+      (q.type === undefined || (typeof q.type === 'string' && /^[A-Za-z]{1,20}$/.test(q.type))) &&
+      (q.done === 0 || q.done === 1);
+  return (
+    plain(e) &&
+    Object.keys(e).every(k => ['held', 'took', 'n', 'paid'].includes(k)) &&
+    Array.isArray(e.held) &&
+    e.held.length <= 9 &&
+    e.held.every(quest) &&
+    Array.isArray(e.took) &&
+    e.took.length <= RUN_NODES &&
+    e.took.every((/** @type {any} */ n) => wholeIn(n, 0, RUN_NODES - 1)) &&
+    wholeIn(e.n, 0, RUN_NODES) &&
+    wholeIn(e.paid, 0, RUN_NODES)
+  );
+}
 /** RL-8: a run battle's foe as it began, kept in run.at so a reload starts the same battle again: its kind and
     format, the foe's Billies (1-6, each with a species and a level), and what the page gave it (an encounter's id, a
     trainer's id, the stage, a fish). Shapes only: the Billies are made by the game's own code */
@@ -380,6 +421,8 @@ export function runBegin(s, give) {
   run.home = travel.map(m => m.uid);
   run.pack = copyOf(pack);
   s.team = /** @type {Billy[]} */ (copyOf(travel));
+  /* RL-12c: a traveller leaves its held item at home (the hub's Billie keeps it), so a run's end can't bring it twice */
+  for (const m of s.team) delete m.held;
   s.buddy = travel[0].uid;
   s.se = give.se;
   s.items = add(Object.assign(zero(start.items), give.items || {}), pack.items);
@@ -444,6 +487,8 @@ export function payoutOf(end, rates, itemPrice) {
 export function runEnd(s, how, rates, itemPrice) {
   const run = s.run;
   if (!run) throw new Error('runEnd: no run is on');
+  /* RL-12c: held items last one run: they go back into the bag first, so the payout counts them like the rest */
+  heldAllOff(s, [...s.team, ...s.box]);
   const pay = payoutOf(
     /* nodes cleared: each node once (the path counts every arrival, backtracking included) */
     { se: s.se, items: s.items, released: run.released.length, cleared: new Set(run.path).size, won: how.won },
@@ -451,11 +496,16 @@ export function runEnd(s, how, rates, itemPrice) {
     itemPrice
   );
   const kept = how.keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m),
-    bag = how.won ? { items: copyOf(s.items || {}), pyramids: copyOf(s.pyramids || {}) } : null;
+    bag = how.won ? { items: copyOf(s.items || {}), pyramids: copyOf(s.pyramids || {}) } : null,
+    /* RL-S1: the run as the story remembers it, read while the team and the run's records are the run's */
+    entry = historyEntry(s, how.won);
   runRestore(s);
   for (const m of /** @type {Billy[]} */ (copyOf(kept))) {
     const inTeam = s.team.findIndex(t => t.uid === m.uid),
       inBox = s.box.findIndex(t => t.uid === m.uid);
+    /* RL-12c: the hub's Billie kept its held item at home (runBegin), so its kept self holds it again */
+    const home = inTeam >= 0 ? s.team[inTeam] : inBox >= 0 ? s.box[inBox] : null;
+    if (home && home.held) m.held = home.held;
     if (inTeam >= 0) s.team[inTeam] = m;
     else if (inBox >= 0) s.box[inBox] = m;
     else if (s.team.length < 6) s.team.push(m);
@@ -469,6 +519,9 @@ export function runEnd(s, how, rates, itemPrice) {
   s.meta.scrap += pay.scrap;
   s.meta.runs += 1;
   if (how.won) s.meta.wins += 1;
+  /* RL-13: winning the highest Expedition open opens the next (logic/modifiers.js) */
+  s.meta.expedition = expeditionAfterWin(s.meta.expedition || 1, run.expedition || 1, how.won);
+  s.meta.history = historyPush(s.meta.history, entry);
   return pay;
 }
 /** put the hub's working fields back from run.start and leave the run, paying nothing (runEnd's last step; also a

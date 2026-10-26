@@ -76,3 +76,92 @@ test('a picture that stays put faces the placement turn; a camera-facing one nev
   assert.deepEqual(fn('pictureRight')({ fixed: false, p }, [9, 9, 9]), [9, 9, 9]);
   near(fn('propTurn')({ p, lk: { rot: 0.5 } }), Math.PI / 2 + 0.3, 'model with a little random turn');
 });
+
+/* HB-1: a model's point as its shaders place it (prop-models.js: x mirrored, times the size, turned, then the base
+   and the bob's rise) and a face's outward way (a decal's yaw 0 faces the front, -z) */
+const modelPoint = (at, q, m) => {
+  const f = m.f || 1,
+    ro = m.turn + (m.bob ? m.bob[1] : 0),
+    x = q[0] * f * m.s,
+    y = q[1] * m.s,
+    z = q[2] * m.s;
+  return [
+    at.x + x * Math.cos(ro) - z * Math.sin(ro),
+    at.y + y + (m.bob ? m.bob[0] : 0),
+    at.z + x * Math.sin(ro) + z * Math.cos(ro),
+  ];
+};
+const faceOut = (yaw, m) => {
+  const ro = m.turn + (m.bob ? m.bob[1] : 0),
+    nx = Math.sin(yaw) * (m.f || 1),
+    nz = -Math.cos(yaw);
+  return [nx * Math.cos(ro) - nz * Math.sin(ro), nx * Math.sin(ro) + nz * Math.cos(ro)];
+};
+
+test('HB-1: a decal stays on its model: size and wobble, turn, mirror and bob as the shaders draw the model', () => {
+  const at = { x: 3, y: 0.5, z: -2 },
+    L = { k: 'img', x: 0.8, y: -0.1, z: 1.6, face: 'fixed', yaw: Math.PI / 2 };
+  for (const s of [1, 1.06 * 1.2, 0.92])
+    for (const f of [1, -1])
+      for (const turn of [0, 0.4, -2.1])
+        for (const bob of [null, [0.07, 0.02]]) {
+          const m = { s, f, turn, bob },
+            d = fn('decalPlace')(at, L, m),
+            w = modelPoint(at, [L.x, L.z, L.y], m),
+            tag = `s ${s} f ${f} turn ${turn} bob ${!!bob}`;
+          near(d.x, w[0], tag + ' x');
+          near(d.y, w[1], tag + ' y');
+          near(d.z, w[2], tag + ' z');
+          near(d.s, s, tag + ' size');
+          /* it faces the way the model's face does (pictureRight's angle a: its outward way is (sin a, -cos a)) */
+          const o = faceOut(L.yaw, m);
+          near(Math.sin(d.yaw), o[0], tag + ' facing x');
+          near(-Math.cos(d.yaw), o[1], tag + ' facing z');
+        }
+});
+
+test('HB-1: a mirrored model never mirrors its lettering; a camera-facing layer mirrors with it', () => {
+  const at = { x: 0, y: 0, z: 0 },
+    m = { s: 1, f: -1, turn: 0 };
+  assert.equal(fn('decalPlace')(at, { face: 'fixed' }, m).flip, 1);
+  assert.equal(fn('decalPlace')(at, { face: 'fixed', flip: 1 }, m).flip, -1, 'a layer drawn mirrored on purpose');
+  assert.equal(fn('decalPlace')(at, {}, m).flip, -1);
+  assert.equal(fn('decalPlace')(at, {}, { s: 1, turn: 0 }).flip, 1);
+  near(fn('decalPlace')(at, { face: 'fixed', yaw: 1 }, m).yaw, -1, 'the side decal faces the other side');
+  assert.equal(fn('decalPlace')(at, { yaw: 1 }, m).yaw, 0, 'a camera-facing layer has no yaw');
+});
+
+/* the model shaders' spin (prop-models.js SPIN_GLSL): Rodrigues' turn of d about the unit axis k by an */
+const spun = (S, d) => {
+  const [kx, ky, kz] = S.a,
+    c = Math.cos(S.an),
+    s = Math.sin(S.an),
+    dot = kx * d[0] + ky * d[1] + kz * d[2],
+    cr = [ky * d[2] - kz * d[1], kz * d[0] - kx * d[2], kx * d[1] - ky * d[0]];
+  return [0, 1, 2].map(i => d[i] * c + cr[i] * s + S.a[i] * dot * (1 - c));
+};
+
+test('HB-6: a rail spanning two posts meets the ground at both ends, mirrored or not', () => {
+  const F = fn('spanFit')(2, 1.1, 1.3);
+  near(F.y, 1.2, 'its base at the mean');
+  /* its ends (the model's x = -1 and +1, up as y) after the spin, from the base */
+  near(F.y + spun(F.spin, [1, 0, 0])[1], 1.3, 'the right-hand end on its ground');
+  near(F.y + spun(F.spin, [-1, 0, 0])[1], 1.1, 'the left-hand end on its ground');
+  /* mirrored, the shader flips x after the spin: the model's -x end is drawn on the right */
+  const M = fn('spanFit')(2, 1.1, 1.3, -1);
+  near(M.y + spun(M.spin, [-1, 0, 0])[1], 1.3, 'mirrored: the end drawn on the right');
+  assert.equal(fn('spanFit')(2, 1.2, 1.2).spin, null, 'level: no spin');
+});
+
+test('HB-6: a tilt leans the top its own way by its own degrees', () => {
+  assert.equal(fn('tiltSpin')(undefined), null);
+  assert.equal(fn('tiltSpin')([0, 0]), null);
+  const x = spun(fn('tiltSpin')([3, 0]), [0, 1, 0]);
+  near(x[0], Math.sin((3 * Math.PI) / 180), 'toward +x');
+  near(x[2], 0, 'not toward z');
+  const z = spun(fn('tiltSpin')([0, -2]), [0, 1, 0]);
+  near(z[2], -Math.sin((2 * Math.PI) / 180), 'toward its front');
+  const b = spun(fn('tiltSpin')([1.5, 2]), [0, 1, 0]);
+  near(Math.acos(b[1]), (2.5 * Math.PI) / 180, 'the two together: 2.5 degrees');
+  near(Math.atan2(b[2], b[0]), Math.atan2(2, 1.5), 'toward their sum');
+});

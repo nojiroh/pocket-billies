@@ -37,8 +37,10 @@ const FAMILIES = [
   'dataUiTheme',
   'dataBiomes',
   'dataNodeTypes',
+  'dataQuests',
   'dataPerks',
   'dataEvents',
+  'dataBanter',
   'dataRewards',
   'dataCurrencies',
   'dataBuildings',
@@ -121,7 +123,7 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [R => (R.step_pyramids.pyramid = 'nosuch'), 'no pyramid "nosuch"'],
     [R => (R.protein_bar.item = 'potion'), 'gives levels'],
     [R => (R.shining_stone.item = 'potion'), 'evoItem'],
-    [R => (R.held.weight = 1), 'RL-12c'],
+    [R => (R.held.item = 'potion'), 'a held card names no item'],
     [R => (R.tutor.item = 'potion'), 'names no item'],
     [R => Object.values(R).forEach(r => r.kind === 'item' && (r.weight = 0)), 'could be empty'],
   ]) {
@@ -130,6 +132,16 @@ test('a planted fault is found by its family, in the file check-data names', () 
     found('dataRewards', D, text);
   }
   assert.deepEqual(C.dataRewards(copy()), []);
+  // RL-S1: the story director's lines
+  for (const [plant, text] of [
+    [B => (B.chosen_first.cooldown = 2), 'said once, so no cooldown'],
+    [B => (B.leader_badge.when = 'wins >= 1'), 'no leader line without a when'],
+    [B => delete B.bureau_lost, 'no bureau line without a when'],
+  ]) {
+    D = copy();
+    plant(D.banter);
+    found('dataBanter', D, text);
+  }
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
   D.perks.lucky_charm.fx[0].mult = 0.05;

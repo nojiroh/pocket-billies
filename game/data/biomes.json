@@ -50,8 +50,29 @@
   },
   "rocks": {"molehill":4,"boulder_lichen":3,"stones_flat":2,"rocks_mossy":1,"rocks_snow":1,"rocks_c":1,"rock_flat":1,"roots":1},
   "waterPlants": {"iris_yellow":4,"iris_purple":2,"water_mint":1,"marsh_marigold":1},
+  "canopy": {"forest_canopy":1},
+  "fences": {"fence_wood":3,"hedge":2,"stone_wall":1},
   "tall": {"tallgrass":4,"tallgrass_c":4,"tallgrass_b":3},
   "look": {"sky":["#8CC6E6","#BFE3EE","#F4E8C8"],"haze":"#EAD9C0","hazeD":34,"amb":"pollen","far":"hills","farH":8},
+  "town": {
+   "houses": {"house_red":3,"house_blue":2,"house_green":2,"house_cottage":3,"cottage_solar":2},
+   "centre": "well",
+   "fence": "picket_fence",
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":3},
+    {"k":"cat","n":1},
+    {"k":"pigeon","n":3,"houses":5,"square":1}
+   ],
+   "chat": [
+    "The wind out here has never once been late.",
+    "Rabbits ate my lettuce again. I’ve started growing two lettuces.",
+    "You can see the next town from the hill. It’s further than it looks.",
+    "A Billie tried to buy the meadow last spring. The meadow said no.",
+    "Mind the tall grass by the road. Something in there owns a lot of shares.",
+    "Best picnic spot in the region, and I’ve checked every one."
+   ]
+  },
   "life": [
    {"k":"rabbit","n":4}
   ],
@@ -108,8 +129,28 @@
   },
   "rocks": {"roots":4,"rocks_mossy":1,"boulder_mossy":1,"stones_flat":1,"molehill":1,"scree":1},
   "waterPlants": {"bulrush":4},
+  "canopy": {"forest_canopy":1},
+  "fences": {"hedge":2,"fence_wood":2},
   "tall": {"tallgrass":4,"tallgrass_b":4,"tallgrass_c":3},
   "look": {"sky":["#7FB8D8","#B3D9E6","#E2E8C8"],"haze":"#C9D8B8","hazeD":28,"amb":"spore","rays":1,"far":"forest","farH":8},
+  "town": {
+   "houses": {"cottage_moss":4,"house_cottage":3,"house_green":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "u",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "Stay on the path. The thicket keeps whatever wanders off it.",
+    "The squirrels here hoard acorns like it’s a pension plan.",
+    "I cut the hedge back on Monday. By Wednesday it had a hedge of its own.",
+    "Something rustled at my window last night. It left a business card.",
+    "Moss on the north side of the trees. Moss on the south side too, sadly.",
+    "We don’t get many visitors. The brambles see to that."
+   ]
+  },
   "life": [
    {"k":"squirrel","n":3},
    {"k":"frog","n":2},
@@ -168,8 +209,29 @@
   },
   "rocks": {"rocks":4,"roots":4,"stones_flat":4,"molehill":3,"rocks_snow":3,"rocks_c":1,"rocks_mossy":1,"rock_flat":1},
   "waterPlants": {"iris_yellow":4,"marsh_marigold":4,"water_mint":2,"bulrush":2,"iris_purple":2,"lotus_pink":1,"lilypad":1},
+  "canopy": {"forest_canopy":1},
+  "fences": {"fence_wood":2,"hedge":2},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":2},
   "look": {"sky":["#88C4E4","#BEE2EC","#F2EACB"],"haze":"#DCE6D0","hazeD":34,"amb":"pollen","rays":1,"far":"forest","farH":8},
+  "town": {
+   "houses": {"house_blue":3,"cottage_solar":3,"house_cottage":2,"townhouse_yellow":1},
+   "centre": "fountain",
+   "fence": "picket_fence",
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1},
+    {"k":"pigeon","n":3,"houses":5,"square":1}
+   ],
+   "chat": [
+    "The ducks run this town. We just live here.",
+    "Caught a fish this big once. It caught me back.",
+    "Skimming stones? My record is four. The lake’s record is all of them.",
+    "Don’t feed the frogs bread. They expect a dividend.",
+    "The water’s calm today. Too calm, if you ask the ducks.",
+    "On a clear morning you can see your face in the lake. I try not to."
+   ]
+  },
   "life": [
    {"k":"duck","n":6},
    {"k":"frog","n":4},
@@ -208,8 +270,27 @@
    "seedheads": 1
   },
   "rocks": {"stones_flat":4,"scree":4,"boulder_lichen":2,"rocks":2,"rocks_b":2,"rocks_c":1,"rocks_snow":1,"boulder":1},
+  "fences": {"stone_wall":1},
   "tall": {"tallgrass_c":4,"tallgrass":3,"tallgrass_b":2},
   "look": {"sky":["#8CC2E2","#D6E6E4","#F6E2BE"],"haze":"#F0D9B2","hazeD":42,"amb":"sand","far":"canyon","farH":8},
+  "town": {
+   "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "Y",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "Shout your name off the edge and the canyon shouts it back, slightly wrong.",
+    "The lizards sunbathe on the rocks all day. Nice work if you can get it.",
+    "Our well goes down a long way. Nobody’s sure how far. We’ve stopped asking.",
+    "The walls glow orange at sunset. Free show, every night.",
+    "Watch for falling rocks. And falling Billies. Mostly rocks.",
+    "Dad says the river carved all this. Must’ve been a busy river."
+   ]
+  },
   "life": [
    {"k":"lizard","n":4}
   ],
@@ -246,6 +327,7 @@
    "tussock_rust": 1
   },
   "rocks": {"lava_rock":4,"boulder_basalt":3,"basalt_columns":3,"rocks_basalt":2,"stones_flat":2,"scree":1,"boulder_lichen":1},
+  "fences": {"stone_wall":1},
   "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
   "look": {
    "sky": ["#3A2230","#8A4A3A","#E6A060"],
@@ -257,6 +339,24 @@
    "rays": 1,
    "far": "volcano",
    "farH": 10
+  },
+  "town": {
+   "houses": {"townhouse_red":3,"house_large":2,"house_red":1},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "j",
+   "life": [
+    {"k":"cat","n":1},
+    {"k":"crow","n":2}
+   ],
+   "chat": [
+    "The ground’s warm here all year round. My slippers are retired.",
+    "Rumble last night. Just the mountain clearing its throat.",
+    "We bake bread on the rocks. Comes out a bit crunchy.",
+    "Ash on the washing again. Grey is a colour too.",
+    "Fire-type Billies love it here. The rent is cheap and the floors are heated.",
+    "If the mountain smokes, go indoors. If it hums, go further indoors."
+   ]
   },
   "life": [
    {"k":"lizard","n":4}
@@ -295,6 +395,8 @@
    "lavender": 1
   },
   "rocks": {"rocks_snow":4,"scree":4,"boulder_snow":1,"stones_flat":1},
+  "canopy": {"forest_canopy_pine":1},
+  "fences": {"stone_wall":2,"fence_wood":1},
   "tall": {"tallgrass":4},
   "look": {
    "sky": ["#8AB0D6","#C8DCEC","#EEF2F6"],
@@ -305,6 +407,23 @@
    "grassCol": ["#6A8A8A","#D8E8E4"],
    "far": "mountains",
    "farH": 10
+  },
+  "town": {
+   "houses": {"cottage_juniper":3,"house_large":2,"house_blue":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "K",
+   "life": [
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "Cold enough for you? It’s cold enough for me.",
+    "My nose froze in the shape of a sneeze once.",
+    "Snow again. We’ll dig the shop out by lunch.",
+    "The rabbits turn white in winter. I turn blue.",
+    "Keep moving and you stay warm. That’s the whole plan.",
+    "A Billie came through selling ice. Didn’t stay long."
+   ]
   },
   "life": [
    {"k":"rabbit","n":2}
@@ -332,6 +451,7 @@
   "shrubs": {"bush_rosemary":4},
   "plants": {"dry_grass":4,"lavender":4},
   "rocks": {"stones_flat":4,"scree":4,"rocks":1,"boulder_lichen":1},
+  "fences": {"fence_wood":1},
   "tall": {"tallgrass":4},
   "look": {
    "sky": ["#5E9EE0","#A6D2F2","#F2F0E0"],
@@ -342,6 +462,24 @@
    "far": "sea",
    "farH": 5,
    "flatFar": 1
+  },
+  "town": {
+   "houses": {"house_blue":3,"townhouse_yellow":3,"cottage_solar":2},
+   "centre": "fountain",
+   "fence": "picket_fence",
+   "square": "c",
+   "life": [
+    {"k":"cat","n":2},
+    {"k":"chicken","n":1}
+   ],
+   "chat": [
+    "The gulls will take anything. Hold on to your hat, and your lunch.",
+    "Tide’s out. You can walk to the rocks, but the crabs have opinions.",
+    "Salt in the air, sand in the boots. That’s home.",
+    "A message in a bottle washed up yesterday. It was a receipt.",
+    "The lighthouse keeper waves at every boat. Even the ones going away.",
+    "Crabs walk sideways so they can keep an eye on you."
+   ]
   },
   "life": [
    {"k":"gull","n":4},
@@ -399,8 +537,28 @@
    "bluebells": 1
   },
   "rocks": {"rocks_snow":4,"boulder_lichen":3,"rocks":3,"rocks_b":3,"rocks_mossy":3,"scree":2,"rocks_c":1,"molehill":1},
+  "canopy": {"forest_canopy_pine":1},
+  "fences": {"stone_wall":3,"fence_wood":1},
   "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
   "look": {"sky":["#7FBCE8","#BFE0F0","#EEF2EA"],"haze":"#DCE6EE","hazeD":48,"amb":"dust","wind":1.6,"far":"mountains","farH":9},
+  "town": {
+   "houses": {"house_large":2,"cottage_juniper":3,"cottage_moss":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "K",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "The goats know every path up here. Follow them, not the signs.",
+    "Thin air. Makes your laugh go further.",
+    "You can see three biomes from the top. Bring a coat for all of them.",
+    "The wind up here has never met a door it couldn’t open.",
+    "My legs are strong, my patience is short. Ridge life.",
+    "The view’s free. The climb back down is extra."
+   ]
+  },
   "life": [
    {"k":"goat","n":3},
    {"k":"rabbit","n":1}
@@ -449,6 +607,8 @@
   },
   "rocks": {"roots":4,"rocks":2,"rocks_b":1,"rocks_snow":1,"rocks_mossy":1,"rocks_c":1,"stones_flat":1},
   "waterPlants": {"iris_yellow":4,"iris_purple":2},
+  "canopy": {"forest_canopy_autumn":3,"forest_canopy":1},
+  "fences": {"fence_wood":2,"hedge":2,"stone_wall":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":4,"tallgrass":2},
   "look": {
    "sky": ["#8CB8E0","#D8D8D0","#F4DCC0"],
@@ -459,6 +619,25 @@
    "grassCol": ["#6A6A30","#D8A850"],
    "far": "forest",
    "farH": 9
+  },
+  "town": {
+   "houses": {"house_red":3,"cottage_juniper":2,"house_cottage":3,"house_green":1},
+   "centre": "well",
+   "fence": "picket_fence",
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1},
+    {"k":"pigeon","n":3,"houses":5,"square":1}
+   ],
+   "chat": [
+    "Every leaf in this town has been raked twice. They keep coming back.",
+    "Squirrels are busy. They know something we don’t.",
+    "Smell that? Woodsmoke and wet leaves. Best smell there is.",
+    "The trees here go red, then gold, then they lose interest.",
+    "I’m drying mushrooms for the winter. Don’t ask which ones.",
+    "A Billie bought every pumpkin in town. Then left them on our doorsteps."
+   ]
   },
   "life": [
    {"k":"squirrel","n":4},
@@ -497,6 +676,7 @@
    "horsetail": 1
   },
   "rocks": {"rocks_b":4,"stones_flat":4,"rocks_mossy":3,"rocks_c":2,"rocks":2,"scree":1,"rocks_snow":1,"boulder_lichen":1},
+  "fences": {"stone_wall":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":3},
   "look": {
    "sky": ["#86BEE6","#D6DCD8","#F2D8B8"],
@@ -507,6 +687,24 @@
    "grassCol": ["#7A6A30","#C8A860"],
    "far": "canyon",
    "farH": 9
+  },
+  "town": {
+   "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "Y",
+   "life": [
+    {"k":"chicken","n":1},
+    {"k":"crow","n":2}
+   ],
+   "chat": [
+    "Nothing grows here, and it grows a lot of it.",
+    "Drink water. Then drink some more. Then a bit more.",
+    "The lizards run fast because the ground is hot. So do I.",
+    "We had rain once. Everyone came out to look.",
+    "The rocks out there look like faces if you stare long enough. Don’t.",
+    "A tumbleweed rolled through the square this morning. Biggest news all week."
+   ]
   },
   "life": [
    {"k":"lizard","n":4}
@@ -555,6 +753,8 @@
   },
   "rocks": {"roots":4,"stones_flat":1,"molehill":1},
   "waterPlants": {"iris_purple":4},
+  "canopy": {"forest_canopy":1},
+  "fences": {"hedge":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":3},
   "look": {
    "sky": ["#7EB8D8","#C4E0D8","#E8EED4"],
@@ -566,9 +766,76 @@
    "far": "forest",
    "farH": 11
   },
+  "town": {
+   "houses": {"cottage_moss":3,"house_green":3,"cottage_solar":2},
+   "centre": "fountain",
+   "fence": "fence_wood",
+   "square": "c",
+   "life": [
+    {"k":"chicken","n":2},
+    {"k":"cat","n":1}
+   ],
+   "chat": [
+    "It rained twice before breakfast. Normal day.",
+    "The frogs sing all night. You get used to it. Then you need it.",
+    "Don’t lean on the vines. Some of them lean back.",
+    "Everything here is green, damp, or both.",
+    "I lost my hat in the canopy. A monkey wears it better.",
+    "The trees grow so fast, we give the houses new addresses every spring."
+   ]
+  },
   "life": [
    {"k":"frog","n":4}
   ],
   "from": "tanglewild"
+ },
+ "cave": {
+  "name": "Cave",
+  "climate": "dry",
+  "pool": "cave",
+  "battleStage": "grotto",
+  "mood": "cave",
+  "ground": {
+   "base": "k",
+   "patches": {"r":0.3,"v":0.2},
+   "verge": "v",
+   "floor": "k",
+   "bank": "r",
+   "rock": "r",
+   "tall": "X"
+  },
+  "road": "v",
+  "water": "spring",
+  "trees": {"stalagmite":4,"stalagmite_b":4,"crystal_cluster":1,"crystal_spire":1},
+  "shrubs": {"crystal":2,"crystal_purple":1,"mushroom_blue":2,"mushroom":2},
+  "plants": {"mushroom_blue":3,"mushroom":3,"mushroom_brown":2},
+  "rocks": {"boulder":3,"boulder_b":3,"rocks":3,"rocks_b":3,"rocks_c":2,"scree":2,"boulder_granite":1},
+  "tall": {"mushroom_blue":3,"mushroom":2,"mushroom_brown":2},
+  "look": {
+   "sky": ["#221C36","#342C50","#54486E"],
+   "haze": "#463E62",
+   "hazeD": 30,
+   "amb": "drip",
+   "tint": "#2A2446",
+   "far": "cave",
+   "farH": 9,
+   "dark": 1,
+   "wind": 0
+  },
+  "town": {
+   "houses": {"cave_house":1},
+   "centre": "well",
+   "fence": "fence_wood",
+   "square": "k",
+   "chat": [
+    "Your eyes get used to the dark. Mine got used to it before I was born.",
+    "The well water comes up cold and tastes of stone. Lovely.",
+    "We tell the time by the drips. It’s about three drips past noon.",
+    "Mind your head. Everyone who lives here has a dent.",
+    "Echoes are just the cave agreeing with you.",
+    "Someone saw daylight once. We don’t talk about it."
+   ]
+  },
+  "from": "glimmershaft"
  }
 }

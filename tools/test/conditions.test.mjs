@@ -149,7 +149,11 @@ test('RL-11: unlock:, runs and wins read what lasts between runs (saveData.meta)
   assert.deepEqual([...conditionNames(conditionTree('unlock:a or unlock:b and runs')).unlock], ['a', 'b']);
   const save = { meta: { unlocks: { shop_revive: 1 }, runs: 2, wins: 1 }, run: { seed: 'x' } };
   const M = storyStateOf(save);
-  for (const c of ['unlock:shop_revive', 'runs = 2', 'wins >= 1']) assert.equal(conditionHolds(c, M), true, c);
+  for (const c of ['unlock:shop_revive', 'runs = 2', 'wins >= 1', 'expedition = 1'])
+    assert.equal(conditionHolds(c, M), true, c);
+  /* RL-13: the highest Expedition open */
+  assert.equal(conditionHolds('expedition >= 3', storyStateOf({ meta: { expedition: 3 } })), true);
+  assert.equal(conditionHolds('expedition >= 2', storyStateOf({})), false);
   const none = storyStateOf({});
   for (const c of ['!unlock:shop_revive', '!runs', '!wins'])
     assert.equal(conditionHolds(c, none), true, `no meta: ${c}`);
@@ -191,4 +195,48 @@ test("RL-12b: the game reads a team Billie's types from its species, and the lea
   assert.equal(L.badgeTypes.marina, 'Water');
   assert.ok(Object.values(L.badgeTypes).includes('Water'));
   assert.deepEqual(L.typesOf({ sp: 'zuck1' }), ['Electric', 'Water']);
+});
+
+test('RL-S1: last:, lastby:, history: and rematch read the runs kept (meta.history)', () => {
+  const run = (end, by = null, o = {}) => ({
+    seed: 'S',
+    theme: '',
+    region: '',
+    exp: 1,
+    end,
+    by,
+    row: 3,
+    days: 9,
+    team: ['musk0'],
+    perks: [],
+    leaders: [],
+    rival: null,
+    ...o,
+  });
+  const history = [
+    run('won'),
+    run('lost', { kind: 'miniboss', id: 'marina' }),
+    run('lost', { kind: 'route', id: 'bureau_clerk', sp: 'musk0', bureau: 1 }, { row: 2 }),
+  ];
+  const S = storyStateOf({ meta: { history } }, { foe: 'marina' });
+  for (const [c, want] of [
+    ['last:lost', true],
+    ['last:won', false],
+    ['last:row <= 2', true],
+    ['last:days = 9', true],
+    ['lastby:bureau', true],
+    ['lastby:route and lastby:musk0', true],
+    ['lastby:boss', false],
+    ['history:losses >= 2', true],
+    ['history:lstreak = 2', true],
+    ['history:streak', false],
+    ['history:bureau = 1', true],
+    ['rematch = 1', true],
+  ])
+    assert.equal(conditionHolds(c, S), want, c);
+  const none = storyStateOf({ meta: {} });
+  assert.equal(conditionHolds('last:won or last:lost or history:runs or rematch', none), false, 'no runs yet');
+  assert.match(conditionProblem('lastby:boss >= 1').message, /yes or no/);
+  assert.match(conditionProblem('rematch:marina').message, /takes no name/);
+  assert.equal(conditionProblem('history:runs >= 5'), null);
 });

@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import { FIXTURE, activeBattle, saveHeld, saveNow, uiState } from './game-state.js';
 import { cutscene } from './cutscene/director.js';
 import { airshipFlight } from './airship.js';
+import { trainRide } from './train-ride.js';
 import { toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -41,12 +42,13 @@ const updateState = { latest: '', at: 0, told: false, waiting: false };
 /** the build this page runs ('' without one: not the built site) */
 const updateBuild = () => String((typeof self !== 'undefined' && /** @type {any} */ (self).PB_BUILD) || '');
 
-/** may the page load again now: no battle, cutscene, airship flight or window on, the save not held by a battle */
+/** may the page load again now: no battle, cutscene, airship flight, train ride or window on, the save not held by a battle */
 function updateSafe() {
   return (
     !(typeof activeBattle !== 'undefined' && activeBattle) &&
     !(typeof cutscene !== 'undefined' && cutscene.on) &&
     !(typeof airshipFlight !== 'undefined' && airshipFlight.on) &&
+    !(typeof trainRide !== 'undefined' && trainRide.on) &&
     !(typeof uiState !== 'undefined' && uiState.modal) &&
     !(typeof saveHeld === 'function' && saveHeld())
   );

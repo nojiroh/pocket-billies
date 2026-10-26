@@ -7,6 +7,7 @@ import { provide, render, roomState } from './hooks.js';
 import { $, $$ } from './util.js';
 import { LOCATIONS, NODE_TYPES, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
 import { encounterStock, encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
+import { modHas } from './logic/modifiers.js';
 import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -78,6 +79,11 @@ export function clinicHeal(say) {
   }
   const { hurt, cost } = runHealCost(saveData.team, runClinicEach()),
     each = formatNumber(runClinicEach());
+  /* RL-13: the "No healing" challenge (logic/modifiers.js): the clinic is shut for the whole run */
+  if (modHas(saveData.run, 'noheal')) {
+    toast('The clinic is shut. No healing on this run.');
+    return;
+  }
   if (!hurt) {
     toast('Everyone is in good shape. Nothing to pay.');
     return;
@@ -152,9 +158,11 @@ function roomHero() {
         lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Research.',
         house: 'Tap whoever lives here to chat.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
-      }[I.kind] || '';
+      }[I.kind] || '',
+    /* towns track TW-0: with the card closed its "Go outside" goes too, so the way out stays on screen */
+    shut = !!(saveData.preferences && saveData.preferences.cardClosed);
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
+ <div class="wh-foot"><div class="wh-row">${shut ? `<button class="pb small glass" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>` : ''}<button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */

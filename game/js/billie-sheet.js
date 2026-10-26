@@ -6,6 +6,7 @@ import { expose } from './test-globals.js';
 import { billyUnit, render, unitBotBuildHTML, unitBuildHTML } from './hooks.js';
 import { $ } from './util.js';
 import { ITEMS, LINE_BY_ID, LOCATIONS, MOVES, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
+import { graftOf } from './logic/graft-art.js';
 import { isRobot, speciesOf } from './logic/fighters.js';
 import {
   allBillies,
@@ -23,6 +24,7 @@ import {
   toBox,
   toTeam,
 } from './logic/rules.js';
+import { heldGive, heldIds, heldTake } from './logic/held.js';
 import { applyItem, canUse } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -39,6 +41,7 @@ expose({
   billySheet: [() => billySheet, v => (billySheet = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
   healPick: [() => healPick, v => (healPick = v)],
+  heldPick: [() => heldPick, v => (heldPick = v)],
   swapPick: [() => swapPick, v => (swapPick = v)],
 });
 /* eslint-enable no-func-assign */
@@ -158,6 +161,31 @@ function billySheet(m) {
       },
     });
   }
+  /* RL-12c: the held-item slot: give one from the bag (swapping the one held), or take it off */
+  const heldBag = heldIds(ITEMS).filter(k => saveData.items[k] > 0 && k !== m.held);
+  if (heldBag.length)
+    acts.push({
+      ic: 'bag',
+      l: m.held ? 'Swap held item' : 'Give a held item',
+      f: () => {
+        uiState.modal = null;
+        heldPick(m);
+      },
+    });
+  if (m.held)
+    acts.push({
+      ic: 'bag',
+      l: `Take off ${escapeHtml((ITEMS[m.held] || { n: 'item' }).n)}`,
+      f: () => {
+        const n = (ITEMS[m.held || ''] || { n: 'item' }).n;
+        heldTake(saveData, m);
+        save();
+        uiState.modal = null;
+        render();
+        billySheet(m);
+        toast(`${n} went back in your bag.`);
+      },
+    });
   /* RL-12b: a level item (the Protein Bar), never in battle */
   for (const ik of Object.keys(ITEMS).filter(k => ITEMS[k].lvlUp && saveData.items[k] > 0 && !isRobot(m)))
     acts.push({
@@ -242,6 +270,11 @@ function billySheet(m) {
         return `<div class="ms-met">${uiIconHTML('flag', 14)}<span>Joined you in <b>${escapeHtml(r ? r.name : 'a place that’s gone')}</b> · ${new Date(m.met.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>`;
       })()
     : '';
+  /* RL-12c: what it holds */
+  const HI = m.held ? ITEMS[m.held] : null,
+    heldR = HI
+      ? `<div class="ms-met">${itemIcon(m.held || '', 14)}<span>Holding <b>${escapeHtml(HI.n)}</b> · ${escapeHtml(HI.d.replace(/^Held: /, ''))}</span></div>`
+      : '';
   const line = LINE_BY_ID[s.line],
     evo = line
       ? line.names
@@ -263,11 +296,11 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftOf(m) })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
-   <div class="ms-chart">${st}</div>${metR}
+   <div class="ms-chart">${st}</div>${metR}${heldR}
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
@@ -315,11 +348,29 @@ function healPick(m, back) {
     ],
   });
 }
+/* RL-12c: pick a held item from the bag for a Billie (back to its sheet afterwards) */
+function heldPick(m) {
+  const its = heldIds(ITEMS).filter(k => saveData.items[k] > 0 && k !== m.held);
+  modal({
+    title: `Give ${escapeHtml(billyName(m))} an item to hold`,
+    html: `${m.held ? `<p class="note">It gives back its ${escapeHtml(ITEMS[m.held].n)}.</p>` : ''}<div class="list">${its.map(k => `<button class="pickrow" data-a="mheldgive" data-u="${m.uid}" data-it="${k}">${itemIcon(k, 34)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`,
+    btns: [
+      {
+        l: 'Cancel',
+        c: 'quiet',
+        f: () => {
+          uiState.modal = null;
+          billySheet(m);
+        },
+      },
+    ],
+  });
+}
 /* the team is full: pick who goes to storage so another can join */
 function swapPick(m) {
   modal({
     title: `Swap in ${escapeHtml(billyName(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { build: o.build, coat: o.coat, graft: graftOf(o) })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -331,7 +382,7 @@ function addPick() {
       free
         .map(
           m =>
-            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { build: m.build, coat: m.coat })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
+            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { build: m.build, coat: m.coat, graft: graftOf(m) })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
               m
             )
               .types.map(t => (t === 'None' ? 'Normal' : t))
@@ -391,6 +442,17 @@ export function billieSheetAction(a, d) {
         render();
         if (d.b) billySheet(m);
         else nextModal();
+      }
+      break;
+    }
+    case 'mheldgive': {
+      const m = findBilly(d.u);
+      if (m && heldGive(saveData, m, d.it, ITEMS)) {
+        save();
+        uiState.modal = null;
+        render();
+        billySheet(m);
+        toast(`${billyName(m)} is holding the ${ITEMS[d.it].n}.`);
       }
       break;
     }

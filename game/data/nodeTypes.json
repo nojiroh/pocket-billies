@@ -1,9 +1,9 @@
 {
- "landing": {"name":"Landing","engine":"scene"},
- "route": {"name":"Route","engine":"scene","weight":4},
+ "landing": {"name":"Landing","engine":"scene","layout":true},
+ "route": {"name":"Route","engine":"scene","weight":4,"layout":true},
  "town": {"name":"Town","engine":"scene","weight":1,"shop":true},
  "event": {"name":"Waystation","engine":"scene","weight":2,"mark":"event"},
  "stall": {"name":"Stall","engine":"scene","weight":1,"mark":"shop","shop":true},
- "miniboss": {"name":"Mini-boss","engine":"scene"},
- "boss": {"name":"Boss","engine":"scene"}
+ "miniboss": {"name":"Mini-boss","engine":"scene","layout":true},
+ "boss": {"name":"Boss","engine":"scene","layout":true}
 }

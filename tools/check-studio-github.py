@@ -1059,7 +1059,7 @@ RUN_LAB_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-re
 const U = { unlocks: D.unlocks, buildings: D.buildings }, out = {};
 for (const [k, ids] of [['none', []], ['all', Object.keys(D.unlocks)]]) {
   const un = modules.unlocks.runUnlocks({ meta: { unlocks: Object.fromEntries(ids.map(i => [i, 1])) } }, U);
-  const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U }, { unlocks: un });
+  const p = modules['run-start'].runStartPlan('LABCHECK7', { nodeTypes: D.nodeTypes, biomes: D.biomes, rules: D.rules.run, unlockData: U, region: D.regions && D.regions.themes ? modules['run-region'].runRegionData(D, D.trainers || {}) : undefined, fieldMoves: D.fieldMoves && D.fieldMoves.moves }, { unlocks: un });
   out[k] = p.map.nodes.map(n => n.type + ':' + n.biome);
 }
 /* T2.4: what the logic worker's panel must show: runPreview with no unlocks, for the first mini-boss and town */
@@ -1097,13 +1097,14 @@ def run_lab_steps(pg, errs):
     pg.select_option('#rlUnlocks', 'all')
     every = settle(none) if want['all'] != want['none'] else got()
     if every != want['all']: errs.append(f"run lab: with all unlocks it drew {every}, the game's start makes {want['all']}")
-    # an edit made elsewhere (a field of another section) redraws the map: no route weight, so no routes
+    # an edit made elsewhere (a field of another section) redraws the map: no route weight, so no routes (on the main
+    # path: RL-R2b's side area keeps its own routes, data-side)
     ms = pg.evaluate("""(async()=>{const T=studioState.D.nodeTypes,was=T.route.weight;T.route.weight=0;
       const f=document.createElement('input');f.dataset.p='nodeTypes.route.weight';document.body.appendChild(f);
       const before=document.querySelector('#main .rl-figures').textContent,t0=performance.now();
       f.dispatchEvent(new Event('input',{bubbles:true}));
       while(document.querySelector('#main .rl-figures').textContent===before&&performance.now()-t0<2000)await new Promise(r=>setTimeout(r,5));
-      const ms=performance.now()-t0;window.__rlRoutes=document.querySelectorAll('#main .rl-map .rl-node[data-type=route]').length;
+      const ms=performance.now()-t0;window.__rlRoutes=document.querySelectorAll('#main .rl-map .rl-node[data-type=route]:not([data-side])').length;
       T.route.weight=was;f.dispatchEvent(new Event('input',{bubbles:true}));f.remove();return ms})()""")
     routes = pg.evaluate('window.__rlRoutes')
     if ms > 100 or routes: errs.append(f'run lab: a nodeTypes edit (no route weight) redrew in {ms:.0f} ms with {routes} routes (want under 100 ms and none)')
@@ -1207,7 +1208,8 @@ def run_lab_rules_steps(pg, errs):
     send (rules.json, nodeTypes.json), the shop's always-stocked box edits the list, a value the game can't lay out
     shows its error beside the map, every rule in code finds its line, and putting the values back leaves nothing to
     propose in those files."""
-    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node circle')].map(c=>c.getAttribute('cx'))).size})()")
+    # the main path's rows (RL-R2b: a side area's places, data-side, sit in a band of their own)
+    rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node:not([data-side]) circle')].map(c=>c.getAttribute('cx'))).size})()")
     pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
     if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
     was = pg.evaluate('studioState.D.rules.run.map.rows')
@@ -1605,11 +1607,14 @@ def library_swap_steps(pg, errs):
 
 
 def repack_steps(pg, errs):
-    """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn species (huang0): the sheet gets smaller, both views are
+    """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn rig (the first rig that is not a kit Billie: since RO-2c
+    every game species is one, so a legacy rig): the sheet gets smaller, both views are
     drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
     back; on a kit Billie it refuses (the recipe packs its sheet)."""
     n = len(errs)
-    sp = 'huang0'
+    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
+    if not sp:
+        errs.append('repack: no hand-drawn rig left to repack'); return
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")
     pg.wait_for_selector('[data-act=wbsRepack]', timeout=20000); time.sleep(0.8)
     drawn = f"""(async () => {{ const out = []; for (const v of ['front', 'back']) {{ await atlasGet(atlasPath({json.dumps(sp)}, v));
@@ -1652,7 +1657,8 @@ def density_steps(pg, errs):
       return { rows: rows.length, kit: rows.filter(t => t.children[6].textContent.includes('×')).length, text: document.querySelector('#dlg .dlg-body').textContent }; })()""")
     want = pg.evaluate("Object.keys(densityHeights(studioState.D.lines)).filter(sp => studioState.rigs[sp]).length")
     if r['rows'] != want: errs.append(f"the report has {r['rows']} rows, not one per Billie with a rig ({want})")
-    if r['kit'] != 24: errs.append(f"the report shows {r['kit']} kit Billies, not 24")
+    kits = pg.evaluate("Object.keys(densityHeights(studioState.D.lines)).filter(sp => studioState.rigs[sp] && kitFormOf(sp)).length")
+    if r['kit'] != kits: errs.append(f"the report shows {r['kit']} kit Billies, not {kits}")
     if 'S 0.85 and L 1.2' not in r['text']: errs.append('the report does not name the S and L sizes')
     pg.locator('#dlg button', has_text='Close').click()
     if len(errs) > n: errs[n:] = [f'density: {e}' for e in errs[n:]]
@@ -1930,7 +1936,7 @@ def unlocks_steps(pg, errs):
     want_nodes = pg.evaluate("Object.keys(studioState.D.unlocks).length")
     if nodes != want_nodes: errs.append(f'unlocks: the graph has {nodes} nodes, the table {want_nodes} rows')
     edges = pg.evaluate("[...document.querySelectorAll('#main .ug-map [data-edge]')].map(e=>e.dataset.edge)")
-    for e in ['ranch_2>ranch_3', 'airship_2>biome_ridge', 'airship_2>biome_autumn']:
+    for e in ['ranch_2>ranch_3', 'station_2>biome_ridge', 'station_2>biome_autumn']:
         if e not in edges: errs.append(f'unlocks: no edge {e} in the graph ({edges})')
     owned = pg.evaluate("document.querySelector('#main .ug-save').dataset.owned")
     if owned != ','.join(W['fresh']['owned']): errs.append(f"unlocks: a new save owns {owned!r}, the game's {W['fresh']['owned']}")

@@ -15,7 +15,8 @@ const CASES = [];
 {
   const biomes = Object.keys(GAME_DATA.biomes),
     shapes = Object.keys(G.MAPGEN_SHAPES),
-    water = Object.keys(G.MAPGEN_WATER),
+    /* RL-R2b: the islet has its own test below (adding it here would move every case's water) */
+    water = Object.keys(G.MAPGEN_WATER).filter(k => k !== 'islet'),
     feats = Object.keys(G.MAPGEN_FEATURES),
     surf = Object.keys(G.MAPGEN_SURFACES);
   const exits = [
@@ -148,7 +149,7 @@ test('a road runs straight in from each exit, on its surface', () => {
   }
 });
 
-test('nothing grows on a path, on a bridge, or in water it does not grow in', () => {
+test('nothing grows on a path, on a bridge, or in water it does not grow in (rocks in shallows, WA-5a)', () => {
   for (const { c, scene: sc } of MADE) {
     for (const p of sc.props) {
       const M = P[p.k];
@@ -156,7 +157,9 @@ test('nothing grows on a path, on a bridge, or in water it does not grow in', ()
       const ch = at(sc, p.x, p.z),
         where = `${c.biome} seed ${c.seed}: ${p.k} at ${p.x},${p.z} on ${ch}`;
       assert.ok(!(T[ch] && T[ch].paved) && !'pvKqb'.includes(ch), where);
-      if ('wd'.includes(ch)) assert.ok(M.grow && /[wd]/.test(M.grow), where);
+      /* WA-5a: rocks may stand in shallows you wade, never in deep water */
+      const rockInShallows = ch === 'w' && modules['water-gen'].WATERGEN_SHALLOW_PROP.test(p.k);
+      if ('wd'.includes(ch) && !rockInShallows) assert.ok(M.grow && /[wd]/.test(M.grow), where);
       for (const b of sc.bridges || []) {
         const vx = b.b[0] - b.a[0],
           vz = b.b[1] - b.a[1],
@@ -217,4 +220,51 @@ test('the variant pick follows the weights, the prop as drawn counting 1', () =>
   assert.equal(n[3], 0, 'a weight of 0 is never picked');
   assert.ok(Math.abs(n[2] / 4000 - 0.5) < 0.04 && Math.abs(n[0] / 4000 - 0.25) < 0.04, n.join(','));
   assert.equal(G.mapgenPickVariant(W, { name: 'no variants' }), 0);
+});
+
+test("RT-1: the walk grid turns a turned prop's footprint as the game's navGrid does", () => {
+  const C = GAME_DATA.scenery,
+    sc = { w: 10, h: 10, edge: 'g', tiles: Array(10).fill('g'.repeat(10)), props: [] },
+    blocked = (/** @type {any} */ W, /** @type {number} */ x, /** @type {number} */ z) =>
+      !!W.blk[Math.floor(z * W.N) * W.gw + Math.floor(x * W.N)];
+  /* a hedge (box 3.4 x 0.7) unturned runs east-west; turned 90 degrees it runs north-south from its base point */
+  sc.props = [{ k: 'hedge', x: 5, z: 5 }];
+  let W = G.mapgenWalkGrid(sc, C);
+  assert.ok(blocked(W, 6.4, 5.2) && !blocked(W, 5.2, 6.4));
+  sc.props = [{ k: 'hedge', x: 5, z: 5, rot: 90 }];
+  W = G.mapgenWalkGrid(sc, C);
+  assert.ok(!blocked(W, 6.4, 5.2) && blocked(W, 4.8, 6.4));
+});
+
+test('RL-R2b: an islet is the sea round a round of land on the hub, its exits reached on foot by causeways', () => {
+  for (const seed of [7, 8, 9]) {
+    const { scene: sc, notes } = G.mapgenScene(
+      {
+        biome: 'lake',
+        seed,
+        w: 112,
+        h: 64,
+        pin: 'EW',
+        land: { water: 'islet', waterAmount: 0.8 },
+        road: {
+          exits: [
+            { side: 'E', t: 0.5, width: 2 },
+            { side: 'W', t: 0.5, width: 2 },
+          ],
+        },
+      },
+      ctx
+    );
+    assert.deepEqual(notes, [], `seed ${seed}`);
+    assert.equal(sc.waterKind, 'sea');
+    const wet = (/** @type {string} */ c) => c === 'd' || c === 'w',
+      rim = [...sc.tiles[0], ...sc.tiles[sc.h - 1]];
+    assert.ok(rim.filter(wet).length > rim.length * 0.7, `seed ${seed}: the sea along the north and south`);
+    assert.ok(!wet(sc.tiles[Math.floor(sc.hub[1])][Math.floor(sc.hub[0])]), `seed ${seed}: the hub on land`);
+    assert.deepEqual(
+      G.mapgenUnreachable(sc, GAME_DATA.scenery),
+      [],
+      `seed ${seed}: the hub reaches every exit on foot`
+    );
+  }
 });

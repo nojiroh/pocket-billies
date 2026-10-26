@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import { provide, ranchOpen, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
+import { graftOf } from './logic/graft-art.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
 import {
   pastureBillies,
@@ -24,13 +25,15 @@ import {
 } from './logic/pasture.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { densityWorldMpp } from './logic/pixel-density.js';
-import { save, saveData, uiState } from './game-state.js';
+import { reducedMotion, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { walkData, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
+import { addRipple } from './walk/water.js';
+import { wadeItem } from './walk/frame-items.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_FRAME_CACHE_MAX: [() => BILLY_FRAME_CACHE_MAX],
@@ -82,33 +85,47 @@ export const worldBillies = {
 };
 provide({ worldBillies }); /* to-module */
 const BILLY_FRAME_CACHE_MAX = 320;
-function worldBillyRig(sp, view, coat) {
+function worldBillyRig(sp, view, coat, graft) {
   if (!SPECIES[sp] || typeof rigParts !== 'function') return null;
   const k = view === 'back' ? RIG_BACK_VIEW : 1;
   let R = null;
   try {
-    R = rigParts(sp, k, coat);
+    R = rigParts(sp, k, coat, graft);
   } catch (e) {
     R = null;
   }
   if (R) return R;
-  const key = sp + view + (coat || '');
+  const key = sp + view + (coat || '') + (graft ? '~' + graft : '');
   if (!worldBillies.req.has(key) && typeof rigPreload === 'function') {
     worldBillies.req.add(key);
-    rigPreload([[sp, k, coat]]).catch(() => {});
+    rigPreload([[sp, k, coat, graft]]).catch(() => {});
   }
   return null;
 }
 /* a frame: pose null = idle loop (8 frames over 1.6 s); a named pose plays once over ~0.9 s */
-function worldBillyFrame(sp, view, pose, t, seed, build, coat) {
-  const R = worldBillyRig(sp, view, coat);
+function worldBillyFrame(sp, view, pose, t, seed, build, coat, graft) {
+  const R = worldBillyRig(sp, view, coat, graft);
   if (!R) return null;
   const wk = pose === 'walk',
     n = wk ? 8 : pose ? 9 : 8,
     dur = wk ? 560 : pose ? 900 : 1600,
     fi = pose && !wk ? clamp(Math.floor(t / 100), 0, n - 1) : Math.floor(((((t % dur) + dur) % dur) / dur) * n);
   const bc = build ? buildCode(build) : '',
-    key = sp + '|' + (coat || '') + '|' + view + '|' + (pose || '') + '|' + fi + '|' + ((seed % 4) | 0) + '|' + bc;
+    key =
+      sp +
+      '|' +
+      (coat || '') +
+      '|' +
+      view +
+      '|' +
+      (pose || '') +
+      '|' +
+      fi +
+      '|' +
+      ((seed % 4) | 0) +
+      '|' +
+      bc +
+      (graft ? '~' + graft : '');
   let c = worldBillies.cache.get(key);
   if (c) {
     worldBillies.cache.delete(key);
@@ -142,12 +159,13 @@ function worldBillyMetersPerPixel(sp, R, big = 1) {
   return densityWorldMpp(SPECIES[sp].ht, R.geo, R.BH, big);
 }
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
-  const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat);
+  const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat, o.graft);
   if (!im) return null;
   const R = im.__R,
     mpp = worldBillyMetersPerPixel(sp, R, o.big || 1),
     gy = standingHeightAt(x, z);
-  return Object.assign(
+  /* WA-6a: a Billie in the shallows stands on the bed, cut at the waterline (walk/frame-items.js wadeItem) */
+  const it = Object.assign(
     {
       k,
       im,
@@ -168,6 +186,7 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
     },
     o.extra || {}
   );
+  return o.dy || typeof wadeItem !== 'function' ? it : wadeItem(it);
 }
 /* ---------- the buddy ---------- */
 /* your buddy (the one you made buddy on its sheet; it earns XP as you walk), or your lead if you haven't picked one */
@@ -237,6 +256,14 @@ function buddyItems(out, t, dt) {
       break;
     }
   }
+  /* WA-6b: while you Surf (or climb a waterfall) your buddy rides along out of sight, and comes ashore beside you */
+  if (P.surf || (P.climb && P.climb.fall)) {
+    b.x = P.x;
+    b.z = P.z;
+    b.tx = null;
+    worldBillies.trail = [[P.x, P.z]];
+    return;
+  }
   const moving = !!P.route || P.walk > 0;
   if (!moving) {
     /* pottering about while you stand: a short wander now and then, never far */
@@ -303,9 +330,14 @@ function buddyItems(out, t, dt) {
       b.seed,
       b.x,
       b.z,
-      { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, extra: { mon: m } }
+      { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, graft: graftOf(m), extra: { mon: m } }
     );
   if (it) out.push(it);
+  /* WA-6a: your buddy leaves rings behind it as it wades (walk/water.js addRipple) */
+  if (it && it.cut && walk && !reducedMotion && typeof addRipple === 'function' && t - (b.wakeT || 0) > 450) {
+    b.wakeT = t;
+    addRipple(b.x, b.z - 0.05, 0.6);
+  }
   if (worldBillies.sayT > 0) worldBillies.sayT = Math.max(0, worldBillies.sayT - dt);
 }
 /* tapping your buddy: it reacts, and says how it's doing */
@@ -454,7 +486,14 @@ function pastureItems(out, t, dt) {
         b.seed,
         b.x,
         b.z,
-        { flip: b.flip, big: m.alpha ? 1.12 : 1, build: m.build, coat: m.coat, extra: { mon: m, uid: m.uid } }
+        {
+          flip: b.flip,
+          big: m.alpha ? 1.12 : 1,
+          build: m.build,
+          coat: m.coat,
+          graft: graftOf(m),
+          extra: { mon: m, uid: m.uid },
+        }
       );
     if (it) out.push(it);
   }
@@ -538,7 +577,8 @@ function wildBillyItem(out, e, s, t, dt) {
     w.popT > 0 ? (0.9 - w.popT) * 1000 : t + w.seed * 53,
     w.seed,
     e.build,
-    e.coat
+    e.coat,
+    graftOf(e)
   );
   if (!im) return;
   const R = im.__R,
@@ -557,7 +597,15 @@ function wildBillyItem(out, e, s, t, dt) {
     w.seed,
     s.x,
     s.z + 0.05,
-    { flip: w.flip, big, dy: -H * sink + hop * 0.32 + bob, build: e.build, coat: e.coat, extra: { e } }
+    {
+      flip: w.flip,
+      big,
+      dy: -H * sink + hop * 0.32 + bob,
+      build: e.build,
+      coat: e.coat,
+      graft: graftOf(e),
+      extra: { e },
+    }
   );
   if (it) {
     it.sh = hop > 0.3 ? it.sh * 0.6 : 0;
@@ -600,11 +648,11 @@ function worldBillyLabels(C, labels) {
 function warmWorldBillies() {
   try {
     const L = [];
-    for (const q of encountersHere()) L.push([q.sp, 1, q.coat]);
+    for (const q of encountersHere()) L.push([q.sp, 1, q.coat, graftOf(q)]);
     const m = buddyBilly();
     if (m) {
-      L.push([m.sp, 1, m.coat]);
-      L.push([m.sp, RIG_BACK_VIEW, m.coat]);
+      L.push([m.sp, 1, m.coat, graftOf(m)]);
+      L.push([m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)]);
     }
     if (typeof trainersAt === 'function')
       for (const T of trainersAt(saveData.trip.node)) {
@@ -616,15 +664,15 @@ function warmWorldBillies() {
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */
-    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW, m.coat]);
+    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, RIG_BACK_VIEW, m.coat, graftOf(m)]);
     if (L.length && typeof rigPreload === 'function')
       setTimeout(
         () =>
           rigPreload(L)
             .then(() => {
-              for (const [sp, k, coat] of L)
+              for (const [sp, k, coat, graft] of L)
                 try {
-                  rigParts(sp, k, coat);
+                  rigParts(sp, k, coat, graft);
                 } catch (e) {}
             })
             .catch(() => {}),

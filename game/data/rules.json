@@ -76,7 +76,7 @@
   "luxuryPyramid": 0.5,
   "alpha": 0.4
  },
- "ride": {"minHeight":1.5,"types":["Water"]},
+ "ride": {"types":["Water"]},
  "fishing": {"biteMin":2.5,"biteMax":8,"reactTime":0.9,"reelTime":7},
  "legends": [
   {
@@ -155,15 +155,76 @@
    "nature": {"growth":[0.6,1],"tall":[0.4,0.8],"clearings":[0.2,0.5],"trees":[0.3,0.7]},
    "feature": {"none":4,"bridge":1,"glade":1,"lookout":1}
   },
-  "wild": {"lv":[3,5],"perRow":1,"back":2,"waystation":2},
+  "layouts": {
+   "default": {"forest":2,"farmland":2,"lakeside":1,"ledges":1,"lanes":2},
+   "meadow": {"farmland":3,"forest":2,"lanes":2,"lakeside":1,"ledges":1},
+   "lake": {"lakeside":4,"forest":2,"lanes":1,"farmland":1},
+   "thicket": {"forest":4,"lanes":2,"ledges":1,"farmland":1},
+   "ridge": {"ledges":3,"forest":2,"lanes":1},
+   "autumn": {"forest":3,"farmland":2,"lanes":2,"lakeside":1}
+  },
+  "wild": {
+   "lv": [3,5],
+   "perRow": 1,
+   "back": 2,
+   "waystation": 2,
+   "route": 10,
+   "routeMin": 4,
+   "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
+   "rare": {"up":2}
+  },
   "seamIn": 6,
+  "load": {"capMs":20000},
   "start": {
    "se": 600,
    "pyramids": {"pyramid":5},
    "items": {"potion":2}
   },
-  "home": [1],
+  "points": {
+   "budget": [20,22,24,26,28],
+   "rarity": {"common":1,"uncommon":2,"starter":2,"rare":3,"mythical":5},
+   "stage": 1,
+   "most": 5,
+   "levelsFrom": 5,
+   "perLevels": 5,
+   "team": 6
+  },
   "pack": [5],
+  "town": {
+   "cap": {"busy":3,"balanced":5,"best":6},
+   "locals": [1,2],
+   "names": [
+    "Old Tam",
+    "Auntie Rue",
+    "Farmer Bryn",
+    "Nell the Baker",
+    "Pip",
+    "Grandpa Oak",
+    "Mo",
+    "Widow Ash",
+    "Little Fen",
+    "Captain Rook",
+    "Dot",
+    "Uncle Hal",
+    "Bee",
+    "Sister Wren",
+    "Kip",
+    "Mags"
+   ],
+   "chat": {
+    "lakeland": ["Lakeland has more water than land. The ducks voted for it.","Every town in Lakeland has a jetty, even the dry ones."],
+    "greenbelt": [
+     "Greenbelt grows the best hedges in the land. We have the trophies.",
+     "They say the whole Greenbelt was a golf course once. A Billie lost a ball."
+    ],
+    "wildwood": ["Wildwood doesn’t do straight roads. Ask anyone who’s tried.","In Wildwood we don’t get lost. We get found later."],
+    "highland": ["In the Highland, every walk is uphill. Both ways.","Highland folk are tough. We have to be, the sheep are tougher."],
+    "harvest": [
+     "Harvest Country feeds half the land and the Billies eat the other half.",
+     "Ask a farmer in Harvest Country for the time and they’ll tell you the season."
+    ]
+   }
+  },
   "healCost": 60,
   "shop": {
    "always": ["coin:pyramid","potion"],
@@ -171,10 +232,17 @@
    "pick": {"pretzel":3,"hi_potion":2,"trailmix":2,"full_remedy":2,"burn_salve":1,"nerve_tonic":1,"wake_tea":1,"revive":1}
   },
   "foes": {
-   "miniboss": {"up":3,"reward":300},
-   "boss": {"up":5,"reward":600}
+   "miniboss": {"up":2,"reward":300},
+   "boss": {"up":3,"reward":600}
   },
-  "trainers": {"perRoute":[1,2],"up":0,"reward":150,"sight":6},
+  "trainers": {
+   "perRoute": [[4,4],[4,5],[5,6]],
+   "required": 0.5,
+   "pair": 0.33,
+   "up": 0,
+   "reward": 150,
+   "sight": 6
+  },
   "rewards": {"pick":3,"reroll":50,"grow":2},
   "perks": {
    "cap": 6,

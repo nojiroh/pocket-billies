@@ -13,6 +13,8 @@
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
      <pb-nav-bar set="run|hub" value="map" badges="perks:2">   the bottom bar (pb-change)
+     <pb-loading heading="..." sub="..." tip="..." value="0.4" stages='[{"id":"map","label":"...","state":"ready"}]'>
+                                                       HB-2: the run's loading screen; slot "view" for its picture
    The motions here repeat css/motion.css's reward motions (m-slam, m-flip), as a component's styles can't see the
    page's; with reduced motion each one is a fade and numbers jump to their end. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -24,6 +26,7 @@ expose({
   PbCoin: [() => PbCoin],
   PbDayChip: [() => PbDayChip],
   PbForecast: [() => PbForecast],
+  PbLoading: [() => PbLoading],
   PbNavBar: [() => PbNavBar],
   PbNode: [() => PbNode],
   PbPayout: [() => PbPayout],
@@ -991,6 +994,134 @@ const PbNavBar = class extends LitElement {
   }
 };
 
+/* ---------- HB-2: the run's loading screen ---------- */
+/* The whole screen while a run's world comes in: the region's name, a tip, the bar and the stages (waiting, working,
+   ready, late). The picture is a slot (`view`): empty, the theme's own backdrop; HB-8 puts the carriage there. With
+   `contained` it fills its box instead of the screen (the UI gallery). */
+const PbLoading = class extends LitElement {
+  static properties = {
+    heading: {},
+    sub: {},
+    tip: {},
+    value: { type: Number },
+    stages: { type: Array },
+    contained: { type: Boolean, reflect: true },
+  };
+  static styles = [
+    runKitBase,
+    runKitMotion,
+    css`
+      :host {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: block;
+        background: var(--g-solid);
+        color: var(--text);
+      }
+      :host([contained]) {
+        position: relative;
+        inset: auto;
+        z-index: auto;
+        min-height: 420px;
+      }
+      .view {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--gold-b) 26%, transparent), transparent 62%),
+          var(--g-solid);
+      }
+      .box {
+        position: absolute;
+        inset: auto 0 0 0;
+        display: grid;
+        gap: var(--s2);
+        padding: var(--s4) calc(var(--s3) + 16px) calc(var(--s4) + env(safe-area-inset-bottom, 0px));
+        animation: m-fade var(--m-slow) var(--ease-out, ease-out);
+      }
+      small {
+        font-size: 15px;
+        color: var(--text2);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h2 {
+        margin: 0;
+        font: 400 30px / 1.1 var(--font-voice);
+      }
+      .tip {
+        margin: 0;
+        max-width: 34em;
+        font: 15px / var(--lh-prose) var(--font-prose);
+        color: var(--text2);
+      }
+      ol {
+        margin: var(--s1) 0 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s1) var(--s3);
+        font-size: 15px;
+      }
+      li {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s1);
+        color: var(--text2);
+      }
+      li::before {
+        content: '';
+        width: 9px;
+        height: 9px;
+        clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+        background: color-mix(in srgb, var(--text) 25%, transparent);
+      }
+      li[data-s='working']::before {
+        background: var(--gold-b);
+      }
+      li[data-s='ready'] {
+        color: var(--text);
+      }
+      li[data-s='ready']::before {
+        background: var(--c-primary);
+      }
+      li[data-s='late']::before {
+        background: var(--c-danger);
+      }
+    `,
+  ];
+  constructor() {
+    super();
+    this.heading = '';
+    this.sub = '';
+    this.tip = '';
+    this.value = 0;
+    /** @type {{ id: string, label: string, state?: string }[]} */
+    this.stages = [];
+    this.contained = false;
+  }
+  render() {
+    const p = Math.round(Math.max(0, Math.min(1, this.value || 0)) * 100);
+    return html`<div class="view" part="view"><slot name="view"></slot></div>
+      <div class="box" role="status" aria-live="polite" aria-label=${`${this.heading || 'Loading'}, ${p}%`}>
+        ${this.sub ? html`<small>${this.sub}</small>` : nothing}
+        ${this.heading ? html`<h2>${this.heading}</h2>` : nothing}
+        <pb-stat-bar kind="stat" .value=${p} .max=${100} label="Loading"></pb-stat-bar>
+        ${
+          this.stages.length
+            ? html`<ol>
+              ${this.stages.map(s => html`<li data-s=${s.state || 'waiting'}>${s.label}</li>`)}
+            </ol>`
+            : nothing
+        }
+        ${this.tip ? html`<p class="tip">${this.tip}</p>` : nothing}
+      </div>`;
+  }
+};
+
 for (const [tag, cls] of /** @type {const} */ ([
   ['pb-day-chip', PbDayChip],
   ['pb-forecast', PbForecast],
@@ -999,5 +1130,6 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-pick-card', PbPickCard],
   ['pb-payout', PbPayout],
   ['pb-nav-bar', PbNavBar],
+  ['pb-loading', PbLoading],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);

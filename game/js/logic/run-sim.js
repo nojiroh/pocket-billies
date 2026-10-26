@@ -13,13 +13,15 @@
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
- *   policy?: string, scenes?: 'make' | 'skip' }} SimOptions
+ *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number,
+ *   badges?: 'none' | 'all' }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   MAX_TURNS: [() => MAX_TURNS],
+  SIM_CLOCK: [() => SIM_CLOCK],
   SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
   SIM_NOTE: [() => SIM_NOTE],
   SIM_POLICIES: [() => SIM_POLICIES],
@@ -41,8 +43,8 @@ export const MAX_TURNS = 60;
 /**
  * Studio plan T3.2: the player's part, the bot policy. Every number the simulation uses that isn't the game's own rule is
  * here, by name, and every report names the policy and its settings: the results measure this bot, not a player.
- * - home: who comes from home: the highest-level Billies, as many as rules.json run.home lets (the page's start
- *   sheet picks the buddy by default)
+ * - home: who comes from home: the dearest Billies the starter-point budget affords (RL-13, logic/starter-points.js
+ *   pointPick, as the start sheet's default pick), out of the `team` at the ranch
  * - fights: wild Billies fought in a place, at most (the first of its stock; `fights` in the options)
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
  * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
@@ -52,6 +54,9 @@ export const MAX_TURNS = 60;
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
  * - lane: the next place drawn from the run's seed among the ones linked ahead (never back)
  * - keep: on a loss, the highest-level Billie comes home
+ * - trainers: RT-2's route trainers: 'required+healthy' fights the ones by the road (you can't pass them unseen) and
+ *   an optional one while the party is above `fightAbove`; 'required' only the ones by the road
+ * - rewards: the pick after a route trainer: 'first-item' takes its first card that isn't a move to learn, else none
  * - perks: Perks (Studio plan T3.3). 'greedy': the pick after a mini-boss takes the rarest offered (the lowest
  *   rules.json run.perks.rarity weight, then in perks.json's order), and a town shop's Perk is bought when the money is there
  *   beyond `reserve`; past the cap only for a rarer one than the plainest held, which is let go. 'never': none taken
@@ -70,8 +75,15 @@ export const SIM_POLICY = Object.freeze({
   ring: 0.5,
   lane: 'seeded',
   keep: 'top-level',
+  trainers: 'required+healthy',
+  rewards: 'first-item',
   perks: 'greedy',
 });
+/**
+ * RT-2: what a run's length is estimated from (a guess at a phone's pace, to compare data before and after, not a
+ * measurement): seconds a place takes to walk, a battle's own (its start, its end and its pick), and each turn's
+ */
+export const SIM_CLOCK = Object.freeze({ placeS: 60, battleS: 15, turnS: 6 });
 /** the named policies a report can be asked for (`policy` in the options; greedy-forward by default) */
 export const SIM_POLICIES = Object.freeze({
   'greedy-forward': SIM_POLICY,
@@ -125,6 +137,8 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
+    { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
+    MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { eventAt } = modules.encounters,
@@ -133,12 +147,18 @@ export function runSimOn(env) {
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
-    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks;
+    { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
+    { rewardDataGame, rewardTake } = modules.rewards,
+    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
+    { pointBudget, pointPick } = modules['starter-points'],
+    { modTypeFits } = modules.modifiers;
   const MAP_DATA = {
       nodeTypes: GAME_DATA.nodeTypes,
       biomes: GAME_DATA.biomes,
       rules: R,
       region: runRegionData(GAME_DATA, TRAINERS),
+      /* RL-R2b: the field moves, so a run has its side area as the game's does */
+      fieldMoves: MOVES,
     },
     UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings };
   const worldData = () => ({
@@ -147,6 +167,9 @@ export function runSimOn(env) {
     pools: data.POOLS,
     scenery: GAME_DATA.scenery,
     rules: R,
+    fieldMoves: MOVES,
+    /* RT-3: the set pieces, so a run's places are the game's */
+    setPieces: GAME_DATA.setPieces || null,
   });
   /* a battle's host in the simulation: shows and saves nothing, and plays the battle's own weather (b.wx, as the page's
      battleWeatherMultiplier does once a run battle has its forecast's weather) */
@@ -191,7 +214,8 @@ export function runSimOn(env) {
    * run's numbers. What the player does is a fixed policy: walk forward along a lane drawn from the seed, fight up to
    * `fights` of a place's wild Billies while the party is above 70% of its HP (a Potion on a Billie below 60%; catch the
    * first ones while the party is small), heal in towns when hurt, keep a few Pyramids, beat the mini-boss, then
-   * the boss. It starts as the mast does: the highest-level Billies from home (rules.json run.home at Expedition I;
+   * the boss. It starts as the mast does: the Billies the starter points afford (RL-13: rules.json run.points at the
+   * run's Expedition, logic/starter-points.js pointPick;
    * `team` is how many starters wait at home) and a bag packed with Potions from home (`pack` of them at home, as many
    * as run.pack lets).
    * @param {string} seed @param {SimOptions} [o]
@@ -203,27 +227,46 @@ export function runSimOn(env) {
     s.started = true;
     s.starter = RULES.start.starters[0];
     hooks.provide({ saveData: s, activeBattle: null });
-    s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
-    for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', RULES.start.starterLevel));
+    /* RL-13: `lvl` is the level the ranch has trained them to (it costs starter points); the starter's own level
+       by default */
+    const lvl = Math.max(1, Math.floor(o.lvl || RULES.start.starterLevel));
+    s.team.push(fn('makeBilly')(s.starter + '0', lvl));
+    for (let k = 1; k < (o.team ?? 1); k++) s.team.push(fn('makeBilly')(s.starter + '0', lvl));
     s.items.potion = o.pack ?? 0;
-    const home = s.team
-        .slice()
-        .sort((/** @type {any} */ a, /** @type {any} */ b) => b.lvl - a.lvl)
-        .slice(0, runByExpedition(R.home, 1))
-        .map((/** @type {any} */ m) => m.uid),
+    const expedition = Math.max(1, Math.floor(o.expedition || 1)),
+      /* RL-13: the starter points the Expedition's budget buys, the dearest first (the start sheet's default pick) */
+      home = pointPick(
+        [...s.team, ...(s.box || [])],
+        data.SPECIES,
+        R.points,
+        pointBudget(R.points, expedition),
+        { mods: o.mods || [] },
+        s.buddy
+      ).map((/** @type {any} */ m) => m.uid),
       pack = { items: { potion: Math.min(o.pack ?? 0, runByExpedition(R.pack, 1)) }, pyramids: {} };
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
+    /* RL-R2b: the badges kept: none (a fresh save, the default: the side area stays shut) or every field move's
+       (badges: 'all') */
+    if (o.badges === 'all') for (const M of Object.values(MOVES)) s.meta.badges[fieldBadgeKey(M.type)] = 1;
     const run = runStartOn(
       s,
-      runStartPlan(seed, { ...MAP_DATA, unlockData: UNLOCK_DATA }, { unlocks: runUnlocks(s, UNLOCK_DATA) }),
+      runStartPlan(
+        seed,
+        { ...MAP_DATA, unlockData: UNLOCK_DATA },
+        { unlocks: runUnlocks(s, UNLOCK_DATA), expedition, mods: o.mods || [] }
+      ),
       { home, pack }
     );
     const balance = o.scenes === 'skip',
       scenes = balance ? null : runScenesMake(run, worldData()),
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),
-      foes = runFoes(run, { leaders: Object.values(TRAINERS).filter((/** @type {any} */ T) => T.miniboss), rules: R });
+      foes = runFoes(run, { leaders: Object.values(TRAINERS).filter((/** @type {any} */ T) => T.miniboss), rules: R }),
+      /* RT-2: the route trainers, and the wild Billies they stand in for (as run-world.js puts them) */
+      route = runRouteTrainers(run, { classes: data.EVENTS.classes, species: data.SPECIES, rules: R }),
+      tally = routeTrainerTally(route);
+    for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];
     data.worldPut({
       ...W,
       maps: Object.fromEntries(
@@ -234,7 +277,7 @@ export function runSimOn(env) {
             scenes ? scenes[i] : { _lite: { ...SIM_LITE_PLACE } },
           ])
       ),
-      trainers: foes,
+      trainers: { ...foes, ...route },
     });
     /** @type {any} */
     const log = {
@@ -248,6 +291,8 @@ export function runSimOn(env) {
       },
       stats = {
         battles: 0,
+        /** RT-2: route trainers fought (a pair is one battle) */
+        trainers: 0,
         turns: 0,
         caught: 0,
         healed: 0,
@@ -317,6 +362,52 @@ export function runSimOn(env) {
             stats.moneyOut.shop += price;
           }
         }
+        /* RT-2: its route trainers, in the order they stand: the required ones always, an optional one as the policy
+           says; their pick answered as the policy says (rewards.js rewardTake) */
+        for (const T of Object.values(route)
+          .filter((/** @type {any} */ F) => F.runNode === i && !s.flags[F.id])
+          .sort((/** @type {any} */ a, /** @type {any} */ b) => a.route.k - b.route.k)) {
+          if (T.route.opt) {
+            const hp = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + m.hp, 0),
+              full = s.team.reduce((/** @type {number} */ a, /** @type {any} */ m) => a + fn('maxHp')(m), 0);
+            if (P.trainers === 'required' || hp < full * P.fightAbove) continue;
+          }
+          if (!s.team.some((/** @type {any} */ m) => m.hp > 0)) return lose(node);
+          const k = run.battleN;
+          fn('startTrainer')(T.id, {
+            host: SIM_HOST,
+            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
+          });
+          if (!hooks.activeBattle) continue;
+          run.battleN = k + 1;
+          const team = hooks.activeBattle.sides[1].team,
+            res = playOut(),
+            B = hooks.activeBattle;
+          B.over = res.over;
+          const { pay } = fn('battleSettle')(B, s);
+          hooks.provide({ activeBattle: null });
+          hooks.uiState.learnQ.length = 0;
+          stats.battles++;
+          stats.trainers++;
+          stats.turns += res.turns;
+          at.battles.push({
+            k,
+            trainer: T.cls + (T.mate ? '+' + T.mate.cls : ''),
+            foe: team.map(brief).join(','),
+            over: res.over,
+            turns: res.turns,
+            team: s.team.map(brief),
+          });
+          if (pay.o !== 'win') return lose(node);
+          fn('battleSettleWin')(B, s, pay, run);
+          stats.moneyIn.reward += pay.reward;
+          const pick = run.enc && run.enc.reward,
+            c =
+              pick && P.rewards === 'first-item'
+                ? pick.cards.findIndex((/** @type {any} */ x) => x.kind !== 'tutor')
+                : -1;
+          if (pick) rewardTake(run, s, c >= 0 ? c : null, rewardDataGame(s.team));
+        }
         /* the place's wild Billies, up to `fights` of them */
         const stock = fn('encountersHere')(wn).slice(0, P.fights);
         at.stock = stock.map((/** @type {any} */ q) => `${q.sp}:${q.lvl}${q.alpha ? 'A' : ''}`);
@@ -341,7 +432,13 @@ export function runSimOn(env) {
           const B = hooks.activeBattle;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
-          if (s.team.length < P.catchWhileBelow && (s.pyramids.pyramid || 0) > 0 && !q.alpha) {
+          if (
+            s.team.length < P.catchWhileBelow &&
+            (s.pyramids.pyramid || 0) > 0 &&
+            !q.alpha &&
+            /* RL-13: a mono-type run takes only its own type (logic/modifiers.js) */
+            modTypeFits(run, data.SPECIES[q.sp] ? data.SPECIES[q.sp].types : [])
+          ) {
             s.pyramids.pyramid--;
             const c = fn('catchRoll')('pyramid', 1 + logic.CATCH_RULES.ring * P.ring, false); /* doThrow's T */
             if (c.caught) {
@@ -411,16 +508,30 @@ export function runSimOn(env) {
             return finish();
           }
         }
-        /* on: a lane drawn from the seed */
-        const next = runNext(run.map, i);
-        if (!next.length) return finish();
-        i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
+        /* on: into the side area when its field move can be used here (the policy takes it), out by its way out
+           at its last place, else a lane drawn from the seed */
+        const next = runNext(run.map, i),
+          side = simSideNext(run.map, i, s.meta.badges, simTypes());
+        if (side) {
+          if (side.open) {
+            runSideOpen(run.map);
+            log.side = { move: run.map.side.move, kind: run.map.side.kind };
+          }
+          i = side.to;
+        } else if (!next.length) return finish();
+        else i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
         fxHealed = runArriveFx(s, data.PERKS);
       }
     } finally {
       data.worldHubBack();
+    }
+    /** the team's Billies standing, as the field moves read them (field-moves.js fieldTeam) */
+    function simTypes() {
+      return s.team
+        .filter((/** @type {any} */ m) => m.hp > 0 && fn('speciesOf')(m))
+        .map((/** @type {any} */ m) => ({ name: m.uid, types: fn('speciesOf')(m).types }));
     }
     /** the run lost at this node @param {any} node */
     function lose(node) {
@@ -478,6 +589,10 @@ export function runSimOn(env) {
       days: avg(x => x.days),
       places: avg(x => x.places),
       battles: avg(x => x.battles),
+      trainers: avg(x => x.trainers || 0),
+      /* RT-2: the estimated minutes a run takes (SIM_CLOCK: a guess, to compare before and after) */
+      minutes: avg(x => (x.places * SIM_CLOCK.placeS + x.battles * SIM_CLOCK.battleS + x.turns * SIM_CLOCK.turnS) / 60),
+      clock: { ...SIM_CLOCK },
       turnsPerBattle:
         Math.round(
           (all.reduce((a, x) => a + x.turns, 0) /
@@ -517,5 +632,19 @@ export function runSimOn(env) {
     };
   }
 
-  return { runSim, runStats, runReport };
+  /**
+   * RL-R2b: the policy at a side area: from the obstacle's place into the side when its field move can be used (the
+   * badge kept and a Billie of the type standing: `open`), from its last place out by its way out; else null (the
+   * lane as usual) @param {any} map @param {number} i @param {Record<string, number>} badges
+   * @param {{ name: string, types: string[] }[]} team @returns {{ to: number, open?: boolean } | null}
+   */
+  function simSideNext(map, i, badges, team) {
+    const S = map.side;
+    if (!S) return null;
+    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team).state === 'ask')
+      return { to: S.nodes[0], open: true };
+    if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) return { to: S.to };
+    return null;
+  }
+  return { runSim, runStats, runReport, simSideNext };
 }

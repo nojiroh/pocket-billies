@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA, data, fn, modules, reseed, startedSave } from './setup-real.mjs';
+import { rngFrom } from '../../game/js/logic/rng.js';
 
 const L = modules['run-loop'],
   { runMapStart } = modules['run-map'],
@@ -114,8 +115,10 @@ test("the run's foes: a leader on every mini-boss node and the boss's, none twic
       assert.equal(F.node, i + 1);
       assert.equal(Math.max(...F.team.map(e => e.lvl)), top);
       assert.ok(F.team.every(e => e.lvl >= 1 && e.lvl <= 100));
-      for (const k of ['script', 'seat', 'egg', 'runsUp', 'after', 'when', 'unless', 'hint', 'miniboss'])
+      for (const k of ['seat', 'egg', 'runsUp', 'after', 'when', 'unless', 'hint', 'miniboss'])
         assert.ok(!(k in F), `a run foe has no ${k}`);
+      /* RL-S1: not its file's script: a word the story director picks, then the battle */
+      assert.deepEqual(F.script, ['pick leader', `battle ${F.id}`]);
       assert.ok(!/Badge/.test(F.win), F.win);
       if (node.type === 'miniboss') {
         assert.deepEqual([F.blocks, F.double, F.alpha], [true, true, undefined]);
@@ -269,4 +272,100 @@ test("on a run new ids come from the run's counter, so a run made again gives th
   assert.deepEqual([fn('newUid')(), fn('newUid')(), fn('makeBilly')('musk0', 5).uid], ['r3-0', 'r3-1', 'r3-2']);
   assert.equal(s.run.uidN, 3);
   s.run = null;
+});
+
+test("RL-13: a higher Expedition's foes: wild Billies and leaders its levels up, the boss's HP times its row", () => {
+  const E = modules.modifiers,
+    W = modules['run-scenes'];
+  for (let k = 0; k < 20; k++) {
+    const run = runOf(`EXP${k}`),
+      at1 = L.runFoes(run, { leaders: LEADERS, rules: R });
+    run.expedition = 3;
+    const up = E.modFoeLevels(run),
+      at3 = L.runFoes(run, { leaders: LEADERS, rules: R });
+    assert.equal(up, 4);
+    for (const id of Object.keys(at1)) {
+      assert.deepEqual(
+        at3[id].team.map(e => e.lvl),
+        at1[id].team.map(e => Math.min(100, e.lvl + up))
+      );
+      assert.equal(at3[id].hpMult, at1[id].alpha ? 1.3 : undefined);
+      assert.equal(at1[id].hpMult, undefined, 'Expedition I: no change');
+    }
+    for (let i = 0; i < run.map.nodes.length; i++)
+      assert.deepEqual(
+        W.runWildLevels(run.map, i, { rules: R }, up),
+        W.runWildLevels(run.map, i, { rules: R }).map(v => Math.min(100, v + up))
+      );
+  }
+  const boss = fn('bossAlpha')({ sp: 'musk0', lvl: 20 }, 1.5),
+    plain = fn('makeAlpha')('musk0', 20);
+  assert.equal(boss.hp, fn('maxHp')(boss));
+  assert.ok(boss.hp > plain.hp * 1.4 && boss.hp < plain.hp * 1.6, `${boss.hp} vs ${plain.hp}`);
+});
+
+test('RL-13: a leader fields its own type, as many Billies and the same level spread as its file', () => {
+  const SPECIES = data.SPECIES;
+  for (const T of LEADERS) {
+    const levels = [8, 9, 10, 11].slice(0, T.team.length),
+      team = L.runLeaderTeam(rngFrom('LEADERS', 'team'), T, levels, SPECIES, null);
+    assert.equal(team.length, T.team.length, T.id);
+    assert.deepEqual(
+      team.map(e => e.lvl),
+      levels,
+      T.id
+    );
+    for (const e of team) {
+      assert.ok(SPECIES[e.sp], `${T.id}: ${e.sp} is a species`);
+      assert.ok(SPECIES[e.sp].types.includes(T.type), `${T.id} (${T.type}) fields ${e.sp} (${SPECIES[e.sp].types})`);
+      /* the stage fits the level (no final form under 32, a Billie with no evolutions included), unless its type
+         has nothing younger */
+      const step = fn('speciesStep'),
+        young = Math.min(
+          ...Object.keys(SPECIES)
+            .filter(id => SPECIES[id].types.includes(T.type))
+            .map(id => step(SPECIES[id]))
+        );
+      assert.ok(e.lvl >= 32 || step(SPECIES[e.sp]) <= Math.max(1, young), `${T.id}: ${e.sp} at ${e.lvl}`);
+    }
+    /* the same seed, the same team */
+    assert.deepEqual(L.runLeaderTeam(rngFrom('LEADERS', 'team'), T, levels, SPECIES, null), team);
+  }
+  /* a leader with no type keeps its own team (the data's stand-ins) */
+  const noType = { id: 'x', team: [{ sp: 'musk0', lvl: 5 }] };
+  assert.deepEqual(L.runLeaderTeam(rngFrom('X', 'team'), noType, [12], SPECIES, null), [{ sp: 'musk0', lvl: 12 }]);
+  /* a type no line has: its own team again */
+  const odd = { id: 'y', type: 'Nosuchtype', team: [{ sp: 'musk0', lvl: 5 }] };
+  assert.deepEqual(L.runLeaderTeam(rngFrom('Y', 'team'), odd, [12], SPECIES, null), [{ sp: 'musk0', lvl: 12 }]);
+  /* the region's dex comes first when it has the type */
+  const water = LEADERS.find(T => T.type === 'Water'),
+    dexed = L.runLeaderTeam(rngFrom('D', 'team'), water, [40, 41], data.SPECIES, ['bezos2']);
+  assert.deepEqual(
+    dexed.map(e => e.sp),
+    ['bezos2', 'bezos2']
+  );
+});
+
+test('RL-13: a Billie with no evolutions is a final form: no leader fields one under level 32', () => {
+  const flying = LEADERS.find(T => T.type === 'Flying');
+  for (let k = 0; k < 40; k++) {
+    const team = L.runLeaderTeam(rngFrom(`SINGLE${k}`, 'team'), flying, [11, 11, 12, 12], data.SPECIES, [
+      'arnault0',
+      'hughes0',
+      'swift0',
+    ]);
+    assert.ok(!team.some(e => e.sp === 'arnault0'), `a level-11 Peacouture (${team.map(e => e.sp)})`);
+  }
+  /* from 32 it may */
+  const late = L.runLeaderTeam(rngFrom('SINGLE', 'team'), flying, [40], data.SPECIES, ['arnault0']);
+  assert.deepEqual(
+    late.map(e => e.sp),
+    ['arnault0']
+  );
+});
+
+test("RL-13: a region whose dex has only a type's final forms: the leader looks past its dex before fielding one", () => {
+  const flying = LEADERS.find(T => T.type === 'Flying'),
+    team = L.runLeaderTeam(rngFrom('FINALS', 'team'), flying, [11, 12], data.SPECIES, ['arnault0', 'bezos2']);
+  for (const e of team) assert.equal(fn('speciesStep')(data.SPECIES[e.sp]), 0, `${e.sp} at ${e.lvl}`);
 });

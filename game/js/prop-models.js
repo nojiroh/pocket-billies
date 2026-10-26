@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
-import { propTurn } from './logic/prop-turn.js';
+import { decalPlace, propTurn } from './logic/prop-turn.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -20,10 +20,11 @@ import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
-import { lampLit } from './walk/lighting.js';
+import { lampLit, modelWindowLight } from './walk/lighting.js';
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
+  GLASS_GLSL: [() => GLASS_GLSL],
   LAYER_PROPS: [() => LAYER_PROPS],
   LEAF_CUTS: [() => LEAF_CUTS],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
@@ -656,7 +657,16 @@ function propModelMesh(path, rec) {
     const L = rec.layers || [],
       M = lowPolyFromRecipe({ ...rec, layers: L.filter(l => !l.spin) });
     m = M
-      ? { ...uploadLowPolyMesh(M.vb, M.ib), model: 1, lowpoly: 1, tris: M.tris, q: 1 / 256, box: M.box, spins: [] }
+      ? {
+          ...uploadLowPolyMesh(M.vb, M.ib),
+          model: 1,
+          lowpoly: 1,
+          tris: M.tris,
+          q: 1 / 256,
+          box: M.box,
+          spins: [],
+          wins: M.wins.length ? M.wins : null,
+        }
       : null;
     if (m)
       for (const l of L)
@@ -867,8 +877,18 @@ export function lowPolyFromRecipe(rec) {
     I = [];
   let nv = 0;
   const T = (t, round) => (t === 'stone' && round ? 0 : (LOW_POLY_TEXTURE_CELLS[t || 'plain'] ?? 15));
+  /* a window's glass (a layer's glass number, 1-31): its vertices carry the number, and each window its bounds */
+  let gw = 0;
+  const GB = {};
   const vert = (p, n, uv, tex, c) => {
-      V.push(p, n, uv, tex, c);
+      V.push(p, n, uv, tex, c, gw);
+      if (gw) {
+        const b = GB[gw] || (GB[gw] = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]);
+        for (let q = 0; q < 3; q++) {
+          b[q] = Math.min(b[q], p[q]);
+          b[q + 3] = Math.max(b[q + 3], p[q]);
+        }
+      }
       return nv++;
     },
     poly = (P, N, UV, tex, c) => {
@@ -879,6 +899,7 @@ export function lowPolyFromRecipe(rec) {
   for (const L of rec.layers || []) {
     li3 += 31;
     if (L.k === 'img' || L.hide || L.k === 'raw') continue;
+    gw = L.glass > 0 ? Math.min(31, L.glass | 0) : 0;
     const c = hexToRgb(L.col || '#888888'),
       t = L.tex || 'plain',
       x0 = L.x || 0,
@@ -1234,11 +1255,12 @@ export function lowPolyFromRecipe(rec) {
     y1 = -1e9,
     z1 = -1e9;
   for (let i = 0; i < nv; i++) {
-    const p = V[i * 5],
-      nn = V[i * 5 + 1],
-      uv = V[i * 5 + 2],
-      tx = V[i * 5 + 3],
-      c = V[i * 5 + 4],
+    const p = V[i * 6],
+      nn = V[i * 6 + 1],
+      uv = V[i * 6 + 2],
+      tx = V[i * 6 + 3],
+      c = V[i * 6 + 4],
+      g = V[i * 6 + 5],
       o = i * 24,
       l = Math.hypot(nn[0], nn[1], nn[2]) || 1;
     i16[o / 2] = Math.round(p[0] * 256);
@@ -1257,18 +1279,33 @@ export function lowPolyFromRecipe(rec) {
     i16[o / 2 + 7] = Math.round(uv[1] * 64);
     u8[o + 16] = tx % 8;
     u8[o + 17] = (tx / 8) | 0;
-    u8[o + 18] = 0;
+    /* 0 the building ramp, 1 its flat colour (a building's own mesh), 2-32 window glass 1-31 */
+    u8[o + 18] = g ? g + 1 : 0;
     u8[o + 20] = c[0];
     u8[o + 21] = c[1];
     u8[o + 22] = c[2];
     u8[o + 23] = 255;
   }
+  /* each window: its number, its middle and which way it looks out (x, up, depth: along its thin side, away from the
+     model's middle) */
+  const mx = (x0 + x1) / 2,
+    mz = (z0 + z1) / 2,
+    wins = Object.entries(GB).map(([id, b]) => {
+      const c = [(b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2],
+        side = b[3] - b[0] < b[5] - b[2];
+      return {
+        id: +id,
+        p: c,
+        n: side ? [Math.sign(c[0] - mx) || 1, 0, 0] : [0, 0, Math.sign(c[2] - mz) || -1],
+      };
+    });
   return {
     vb,
     ib: nv > 65535 ? new Uint32Array(I) : new Uint16Array(I),
     n: I.length,
     tris: I.length / 3,
     box: [x0, y0, z0, x1, y1, z1],
+    wins,
   };
 }
 function lowPolyOn(rec) {
@@ -1290,17 +1327,29 @@ precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3
 uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
+/* a window's glass (vTex.z 2-32: window 1-31): by day the sky in it, more of it at a grazing look, and a glint of the
+   sun; lit from its room when its bit of uWinOn is set, as strongly as uWinK says (1 after dark), a warm lamp, a cooler
+   kitchen or now and then a TV's blue, each window its own (uWinSeed: the building's), rolled off softly so it glows
+   and blooms the window's own shape */
+const GLASS_GLSL = `uniform int uWinOn;uniform float uWinK,uWinSeed;
+vec3 glassLit(vec3 lit,vec3 n,vec3 v,float sh){float id=floor(vTex.z+.5)-1.;if(id<.5)return lit;
+ float ct=abs(dot(n,v)),fr=.15+.5*pow(1.-ct,3.);
+ vec3 g=mix(lit,uAmbTop*(.6+.4*sh),fr)+uSunCol*pow(max(dot(reflect(-v,n),uSunDir),0.),80.)*sh;
+ if(uWinK<.001||((uWinOn>>int(id))&1)==0)return g;
+ float h=fract(id*.6180339+uWinSeed);vec3 lc=h<.18?vec3(.62,.78,1.25)*(.85+.25*sin(uTime*.009+id)):h<.45?vec3(1.15,1.05,.85):vec3(1.25,1.,.7);
+ vec3 e=lc*(.62+.6*fract(h*7.31))*uWinK;e=(1.-exp(-e*1.15))*1.6;
+ return g*(1.-.75*min(uWinK,1.))+e*mix(.55,1.,ct);}`;
 /* the model's light: the buildings' look and textures, with the props' cel shading (three tones of sun, as the voxel
    props and the painted props have) as much as the model asks (uCel; a recipe's "cel", else .75) */
 function lowPolyFragmentShader() {
   const f = BUILDING_SHADERS.bld[1],
     a = 'shade(c,n,vW,sh,ao,vec4(.1,30.,0.,.3),0.)';
   if (!f.includes(a)) return f;
-  /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock */
+  /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock
+     (the buildings' shader has ROCK_GLSL since player visibility) */
   return f
-    .replace(a, 'shade(c,n,vW,sh,ao,vec4(.06,20.,0.,.22),uCel)')
-    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + ROCK_GLSL)
-    .replace('void main(){', 'void main(){if(rockHides(vW))discard;');
+    .replace(a, 'glassLit(shade(c,n,vW,sh,ao,vec4(.06,20.,0.,.22),uCel),n,v,sh)')
+    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + GLASS_GLSL);
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl) */
@@ -1334,6 +1383,12 @@ function drawLowPolyModels(C, X, L) {
     if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     setPropModelUniforms(p, it);
     setItemSpin(p, it);
+    if (p.U.uWinK) {
+      const W = it.wins ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null;
+      gl.uniform1f(p.U.uWinK, W ? W.k : 0);
+      gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
+      gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
+    }
     drawPropModelMesh(m);
     for (const q of m.more || []) drawPropModelMesh(q);
     drawSpinningParts(p, m);
@@ -1383,8 +1438,10 @@ function swappedRecipe(path, rec, swap) {
         const n = { ...L };
         if (n.col && S.has(up(n.col))) n.col = S.get(up(n.col));
         if (n.img && S.has(up(n.img))) n.img = S.get(up(n.img));
-        /* phase 09: a roof style (the walk view's propWithVariant) on the model's roof parts */
-        if (n.roof && rf) {
+        /* phase 09: a roof style (the walk view's propWithVariant) on the model's roof parts; HB-5: roof 2 is dressing
+           that fits only the model's own roof (a cottage's moss tufts and roof flowers), gone under another style */
+        if (n.roof === 2 && rf) n.hide = 1;
+        else if (n.roof && rf) {
           n.col = rf.col;
           n.tex = rf.tex;
         }
@@ -1444,9 +1501,12 @@ function tagPropModel(it) {
       im = A && typeof artImage === 'function' ? artImage(A.detail) : null;
     if (!im || !(im.naturalWidth || im.width)) return;
   }
-  if (!propModelGuard(() => propModelMesh(path, rec))) return;
+  const m = propModelGuard(() => propModelMesh(path, rec));
+  if (!m) return;
   it.vox = rec;
   it.voxPath = path;
+  /* a low-poly building's window glass (walk/lighting.js modelWindowLight lights it; its picture's window glows stay off) */
+  if (m.wins) it.wins = m.wins;
 }
 /* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base). Phase 09
    batch 1, for trees with a modelled trunk and drawn leaf clumps: a layer may say shadow (1: it casts its cut-out
@@ -1457,11 +1517,14 @@ function tagPropModel(it) {
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
-  const s = it.p.s || 1,
-    f = it.flip || 1,
-    ro = propTurn(it) /* phase 09 batch 9: the placement's turn too (logic/prop-turn.js) */,
-    cr = Math.cos(ro),
-    sr = Math.sin(ro);
+  /* HB-1: on the model as its shaders draw it (logic/prop-turn.js decalPlace): its size with the look's wobble, its
+     turn (phase 09 batch 9: the placement's too), its mirror (lettering never mirrored) and its bob */
+  const m = {
+    s: (it.p.s || 1) * (it.lk ? it.lk.size : 1),
+    f: it.flip || 1,
+    turn: propTurn(it),
+    bob: mooredBob(it),
+  };
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
@@ -1471,8 +1534,8 @@ function propModelImageItems(it, out) {
     }
     const im = L.clip || L.shade ? leafCut(im0, L) : im0;
     if (!im) continue;
-    const lx = (L.x || 0) * s * f,
-      lz = (L.y || 0) * s,
+    const d = decalPlace(it, L, m),
+      s = d.s,
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       mpp =
@@ -1482,15 +1545,15 @@ function propModelImageItems(it, out) {
       p: it.p,
       M: layerProp(it.M),
       im,
-      x: it.x + lx * cr - lz * sr,
-      z: it.z + lx * sr + lz * cr,
-      y: it.y + (L.z || 0) * s,
+      x: d.x,
+      z: d.z,
+      y: d.y,
       mpp: mpp * s,
       ox: -(w / 2),
       oy: -(h - 1),
       w,
       h,
-      flip: L.flip ? -f : f,
+      flip: d.flip,
       shear: (it.shear || 0) * (L.sway ?? 1),
       sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
       glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
@@ -1500,7 +1563,7 @@ function propModelImageItems(it, out) {
       eyeward: L.front && L.face !== 'fixed' ? L.front * s : 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
-      yaw: L.face === 'fixed' ? (+L.yaw || 0) + ro : 0 /* phase 09 batch 9: a decal turns with its model */,
+      yaw: d.yaw /* phase 09 batch 9: a decal turns with its model */,
       mat: it.mat,
       layer: L,
       still: it.still,

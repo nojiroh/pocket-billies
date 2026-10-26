@@ -1,8 +1,9 @@
 'use strict';
 /* ================= ENGINE POST =================
    After a view draws its world into an HDR target: depth of field from real distance (round highlights for bright
-   spots), bloom from bright pixels (this is what makes lamps and windows glow; there are no halo discs), then exposure,
-   a soft highlight roll-off instead of clipping, contrast, saturation, warmth, vignette, chromatic aberration, grain
+   spots), bloom from bright pixels (this is what makes windows glow: their lit glass; lamps, fires and signs also get a
+   small glow disc in the effects pass, walk/effects.js), then exposure, a soft highlight roll-off instead of clipping,
+   contrast, saturation, warmth, vignette, chromatic aberration, grain
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';

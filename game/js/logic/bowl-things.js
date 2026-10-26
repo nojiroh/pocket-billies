@@ -18,9 +18,17 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlArtSize: [() => bowlArtSize, v => (bowlArtSize = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlAverageColour: [() => bowlAverageColour, v => (bowlAverageColour = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlBridgeShape: [() => bowlBridgeShape, v => (bowlBridgeShape = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlClumps: [() => bowlClumps, v => (bowlClumps = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlHexColour: [() => bowlHexColour, v => (bowlHexColour = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlLandmarkPick: [() => bowlLandmarkPick, v => (bowlLandmarkPick = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlLeafHash: [() => bowlLeafHash, v => (bowlLeafHash = v)],
   // @ts-expect-error -- replaced on purpose
   bowlMapPoint: [() => bowlMapPoint, v => (bowlMapPoint = v)],
   // @ts-expect-error -- replaced on purpose
@@ -30,7 +38,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bowlThingHash: [() => bowlThingHash, v => (bowlThingHash = v)],
   // @ts-expect-error -- replaced on purpose
+  bowlTreeFromRecipe: [() => bowlTreeFromRecipe, v => (bowlTreeFromRecipe = v)],
+  // @ts-expect-error -- replaced on purpose
   bowlTreeStyle: [() => bowlTreeStyle, v => (bowlTreeStyle = v)],
+  // @ts-expect-error -- replaced on purpose
+  bowlYouPoint: [() => bowlYouPoint, v => (bowlYouPoint = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -50,6 +62,19 @@ export function bowlMapPoint(spot, map, mx, mz, metres = 1000) {
     u = (mx - map.w / 2) / metres,
     v = (mz - map.h / 2) / metres;
   return [spot.x + east[0] * u + north[0] * v, spot.y + east[1] * u + north[1] * v];
+}
+/** where you are on a walk map shown on the bowl (HB-1: the floating island's pin was drawn at the map's middle):
+ * your own spot when the walk is on that map, else the map's hub (where you stand on arrival), else its middle
+ * @param {{ x: number, y: number, up?: number }} spot @param {{ w: number, h: number, hub?: number[] }} map
+ * @param {{ x: number, z: number } | null | undefined} pl @param {number} [metres] @returns {[number, number]} */
+export function bowlYouPoint(spot, map, pl, metres = 1000) {
+  const [mx, mz] =
+    pl && Number.isFinite(pl.x) && Number.isFinite(pl.z)
+      ? [pl.x, pl.z]
+      : map.hub && map.hub.length > 1
+        ? map.hub
+        : [map.w / 2, map.h / 2];
+  return bowlMapPoint(spot, map, mx, mz, metres);
 }
 /** the turn of a walk map on the bowl (radians, counter-clockwise from the bowl's own east to the map's east)
  * @param {{ x: number, y: number, up?: number }} spot */
@@ -219,4 +244,187 @@ export function bowlClumps(G, places, roads, relAt, spacing = 0.026, trees = BOW
       }
     }
   return out;
+}
+
+/* ---------- HB-3: a tree as its own model on the floating island's map ----------
+   A tree's walk model (scene/next/models/tree_*.json) is limbs (tapered tubes along points [x, y, z up, radius]) and
+   leaf cards (pictures standing up, each with its bottom at x, y, z: a circle cut [cx, cy, r] in the leaf picture's
+   pixels, a rectangle [x, y, w, h] for a conifer's tier, or the whole picture for the crown's core). The map draws only
+   flat-faced coloured triangles, so it is made again from the recipe: the trunk and the main limbs as prisms, each
+   leaf card as a low-poly blob where the card stands, as big as it, in the leaf picture's average colour. */
+/** @typedef {{ col: number[], w: number, h: number }} BowlLeafLook a leaf picture's average colour (0-1) and size */
+/**
+ * @param {{ ppm?: number, layers?: any[] }} rec the tree's model recipe
+ * @param {(img: string) => BowlLeafLook | null} leafOf a leaf picture's look (null: not in yet)
+ * @returns {Float32Array | null} triangles, per corner [x, y up, z, normal, colour]; null while a picture is not in
+ */
+export function bowlTreeFromRecipe(rec, leafOf) {
+  const ppm = rec.ppm || 32,
+    out = /** @type {number[]} */ ([]),
+    /** @param {number[]} a @param {number[]} b @param {number[]} c @param {number[]} col */
+    tri = (a, b, c, col) => {
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]],
+        v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]],
+        n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]],
+        l = Math.hypot(n[0], n[1], n[2]) || 1;
+      for (const p of [a, b, c]) out.push(p[0], p[1], p[2], n[0] / l, n[1] / l, n[2] / l, col[0], col[1], col[2]);
+    },
+    /* the recipe's x, y (depth), z (up) as the map's x, y up, z */
+    at = (/** @type {number[]} */ p) => [p[0], p[2], p[1]];
+  for (const L of rec.layers || []) {
+    if (L.hide) continue;
+    if (L.k === 'limb' && Array.isArray(L.pts) && L.pts.length > 1 && L.pts[0][3] >= 0.1) {
+      /* a tube from its first point to its last through its middle one, five sides */
+      const P = L.pts,
+        keep = P.length > 2 ? [P[0], P[Math.floor(P.length / 2)], P[P.length - 1]] : P,
+        /* bark brown when the limb names no colour */
+        col = L.col ? bowlHexColour(L.col) : [0.48, 0.35, 0.24];
+      for (let s = 0; s + 1 < keep.length; s++) {
+        const A = at(keep[s]),
+          B = at(keep[s + 1]),
+          ax = [B[0] - A[0], B[1] - A[1], B[2] - A[2]],
+          al = Math.hypot(ax[0], ax[1], ax[2]) || 1,
+          d = ax.map(v => v / al),
+          /* two directions square to the tube */
+          e = Math.abs(d[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0],
+          p1 = [d[1] * e[2] - d[2] * e[1], d[2] * e[0] - d[0] * e[2], d[0] * e[1] - d[1] * e[0]],
+          pl = Math.hypot(p1[0], p1[1], p1[2]) || 1,
+          q1 = p1.map(v => v / pl),
+          q2 = [d[1] * q1[2] - d[2] * q1[1], d[2] * q1[0] - d[0] * q1[2], d[0] * q1[1] - d[1] * q1[0]],
+          ring = (/** @type {number[]} */ c, /** @type {number} */ r) =>
+            Array.from({ length: 5 }, (_, i) => {
+              const a = (i / 5) * Math.PI * 2;
+              return [0, 1, 2].map(k => c[k] + (q1[k] * Math.cos(a) + q2[k] * Math.sin(a)) * r);
+            }),
+          R0 = ring(A, keep[s][3]),
+          R1 = ring(B, Math.max(0.02, keep[s + 1][3]));
+        for (let i = 0; i < 5; i++) {
+          const j = (i + 1) % 5;
+          tri(R0[i], R0[j], R1[j], col);
+          tri(R0[i], R1[j], R1[i], col);
+        }
+      }
+    } else if (L.k === 'img' && L.img && /leaves\//.test(L.img)) {
+      const look = leafOf(L.img);
+      if (!look) return null;
+      const C = L.clip,
+        /* half its width and its height, metres */
+        [hw, hh] =
+          Array.isArray(C) && C.length >= 4
+            ? [C[2] / 2 / ppm, C[3] / ppm]
+            : Array.isArray(C) && C.length === 3
+              ? [C[2] / ppm, (C[2] * 2) / ppm]
+              : [look.w / 2 / ppm, look.h / ppm],
+        k = (L.s || 1) * 0.92,
+        base = at([L.x || 0, L.y || 0, L.z || 0]),
+        cy = base[1] + (hh * k) / 2,
+        rx = hw * k,
+        ry = (hh * k) / 2,
+        h = bowlLeafHash(base[0], base[2], cy),
+        /* a little lighter than the picture's average, which counts its dark outline */
+        col = look.col.map(v => Math.min(1, v * 1.12 * (L.shade || 1) * (0.92 + h * 0.16))),
+        /* an octahedron squashed to the card's size and turned by its place: eight faces, lit facet by facet */
+        top = [base[0], cy + ry, base[2]],
+        bot = [base[0], cy - ry, base[2]],
+        M = Array.from({ length: 4 }, (_, i) => {
+          const a = h * 1.6 + (i / 4) * Math.PI * 2;
+          return [base[0] + Math.cos(a) * rx, cy, base[2] + Math.sin(a) * rx];
+        });
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        tri(top, M[j], M[i], col);
+        tri(
+          bot,
+          M[i],
+          M[j],
+          col.map(v => v * 0.85)
+        );
+      }
+    }
+  }
+  return new Float32Array(out);
+}
+/** a hash in 0-1 of a place @param {number} x @param {number} y @param {number} z */
+export function bowlLeafHash(x, y, z) {
+  const v = Math.sin(x * 91.7 + y * 47.3 + z * 13.1) * 43758.5453;
+  return v - Math.floor(v);
+}
+/** '#rrggbb' as [r, g, b] in 0-1 @param {string} h */
+export function bowlHexColour(h) {
+  const n = parseInt(String(h).slice(1, 7), 16) || 0;
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+/** a picture's average colour over its opaque pixels (packed RGBA words, as art.js artPixels gives them), 0-1
+ * @param {Uint32Array} px @returns {number[]} */
+export function bowlAverageColour(px) {
+  let r = 0,
+    g = 0,
+    b = 0,
+    n = 0;
+  for (let i = 0; i < px.length; i++) {
+    const v = px[i];
+    if (v >>> 24 < 128) continue;
+    r += v & 255;
+    g += (v >>> 8) & 255;
+    b += (v >>> 16) & 255;
+    n++;
+  }
+  return n ? [r / n / 255, g / n / 255, b / n / 255] : [0.3, 0.5, 0.25];
+}
+
+/**
+ * HB-3: a bridge on the floating island's map (a map's `bridges` entry, not a prop): a plank deck from its start
+ * along x, its width across z, side rails, and posts under it down to the water for a pier. Metres, per corner
+ * [x, y up, z, normal, colour].
+ * @param {number} len @param {number} w @param {{ pier?: boolean, drop?: number }} [o] drop: how far the posts go down
+ * @returns {Float32Array}
+ */
+export function bowlBridgeShape(len, w, o = {}) {
+  const out = /** @type {number[]} */ ([]),
+    deck = [0.55, 0.4, 0.26],
+    rail = [0.45, 0.32, 0.2],
+    /** @param {number} x0 @param {number} x1 @param {number} y0 @param {number} y1 @param {number} z0 @param {number} z1
+     * @param {number[]} col */
+    box = (x0, x1, y0, y1, z0, z1, col) => {
+      const P = (/** @type {number} */ i) => [i & 1 ? x1 : x0, i & 2 ? y1 : y0, i & 4 ? z1 : z0];
+      /* each face: four corners (counter-clockwise from outside) and its normal */
+      for (const [f, n] of /** @type {[number[], number[]][]} */ ([
+        [
+          [0, 4, 6, 2],
+          [-1, 0, 0],
+        ],
+        [
+          [1, 3, 7, 5],
+          [1, 0, 0],
+        ],
+        [
+          [0, 1, 5, 4],
+          [0, -1, 0],
+        ],
+        [
+          [2, 6, 7, 3],
+          [0, 1, 0],
+        ],
+        [
+          [0, 2, 3, 1],
+          [0, 0, -1],
+        ],
+        [
+          [4, 5, 7, 6],
+          [0, 0, 1],
+        ],
+      ]))
+        for (const i of [f[0], f[1], f[2], f[0], f[2], f[3]]) out.push(...P(i), ...n, ...col);
+    };
+  box(0, len, -0.18, 0, -w / 2, w / 2, deck);
+  if (!o.pier)
+    for (const z of [-w / 2, w / 2 - 0.1]) {
+      box(0, len, 0.8, 0.9, z, z + 0.1, rail);
+      for (let x = 0; x <= len + 1e-6; x += Math.max(1, len / Math.max(1, Math.round(len / 1.6))))
+        box(Math.min(x, len - 0.12), Math.min(x, len - 0.12) + 0.12, 0, 0.9, z, z + 0.1, rail);
+    }
+  else
+    for (let x = 0.2; x < len; x += 1.8)
+      for (const z of [-w / 2 + 0.05, w / 2 - 0.2]) box(x, x + 0.15, -(o.drop ?? 1.5), 0, z, z + 0.15, rail);
+  return new Float32Array(out);
 }

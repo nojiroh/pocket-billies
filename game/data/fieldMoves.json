@@ -7,26 +7,31 @@
    "obstacle": "shore",
    "biome": "lake",
    "ride": true,
+   "land": {"water":"coast","waterAmount":0.6},
+   "townLand": {"water":"islet","waterAmount":0.8},
    "areas": ["Sunken Cove","Lost Lagoon","Unsubscribed Shallows"],
    "look": "The water is calm and deep. Something glints on the far side.",
    "needBadge": "The water is calm and deep. With the {badge}, a Water Billie could carry you across.",
    "needType": "The water is calm and deep. You have the {badge}, but no Water Billie in your team to ride.",
    "ask": "The water is calm and deep. Would you like to Surf?",
    "used": "{billie} used Surf!",
-   "out": "A current pulls you along the shore and sets you down on the main path."
+   "out": "A current pulls you along the shore and sets you down on the main path.",
+   "travel": "Swept along by the current…"
   },
   "smash": {
    "name": "Rock Smash",
    "type": "Ground",
    "obstacle": "boulder",
-   "biome": "ridge",
+   "biome": "cave",
+   "land": {"mountains":1,"massif":"NS","cliffs":0.5,"terraces":0.5,"ledges":1},
    "areas": ["Rumble Gorge","Pending Pit","Under Construction Cave"],
    "look": "A cracked boulder blocks a gap in the rock face. A cold draught comes through.",
    "needBadge": "A cracked boulder blocks the way. With the {badge}, a Ground Billie could smash it.",
    "needType": "A cracked boulder blocks the way. You have the {badge}, but no Ground Billie in your team to smash it.",
    "ask": "A cracked boulder blocks the way. Would you like to use Rock Smash?",
    "used": "{billie} used Rock Smash!",
-   "out": "A tunnel slopes up into daylight, back on the main path."
+   "out": "A tunnel slopes up into daylight, back on the main path.",
+   "travel": "Up the tunnel, toward the daylight…"
   },
   "cut": {
    "name": "Cut",
@@ -39,7 +44,19 @@
    "needType": "A thorny little tree blocks the path. You have the {badge}, but no Grass Billie in your team to cut it.",
    "ask": "This tree looks like it can be cut down! Would you like to use Cut?",
    "used": "{billie} used Cut!",
-   "out": "A trail through the undergrowth leads back to the main path."
+   "out": "A trail through the undergrowth leads back to the main path.",
+   "travel": "Through the undergrowth…"
   }
+ },
+ "waterfall": {
+  "name": "Waterfall",
+  "type": "Water",
+  "badges": ["Water","Steel"],
+  "look": "A wall of water crashes down from above.",
+  "needBadge": "A wall of water crashes down from above. With {badges}, a Water Billie could climb it.",
+  "needType": "A wall of water crashes down from above. You have {badges}, but no Water Billie in your team to climb it.",
+  "ask": "It's a large waterfall. Would you like to use Waterfall?",
+  "used": "{billie} used Waterfall!",
+  "top": "The water at the top is too rough to come out on."
  }
 }

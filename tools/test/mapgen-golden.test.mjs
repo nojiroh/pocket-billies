@@ -38,6 +38,8 @@ const SCENES = {
       ],
     },
   },
+  /* RT-1: a run route laid out as a forest trail (forest masses, deep forest ground, spots, sc.layout) */
+  laidOut: { seed: 41, biome: 'meadow', layout: 'forest', pin: 'EW' },
 };
 
 const hash = v => hashString(JSON.stringify(v ?? null));

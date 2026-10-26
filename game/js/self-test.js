@@ -2,7 +2,7 @@
 /* ================= FULL TEST =================
    Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
    the hub and every room the game's doors open (walking, turning and zooming the camera), night, weather and seasons,
-   a run's road, its airship, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
+   a run's road, its train, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
    battle on the 3D stage (double and Alpha too), the opening's fall, Billies in the world, the world map, then a
    stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
    keeps up. Your save is not changed: saving is paused and everything is put back
@@ -14,9 +14,14 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
   EVENTS,
+  FIELD_MOVES,
+  ITEMS,
   LOCATIONS,
   MOVES,
+  PERKS,
+  QUESTS,
   RULES,
+  SET_PIECES,
   SHOPS,
   SPECIES,
   START_NODE,
@@ -25,18 +30,24 @@ import {
   gameData,
   trainersAt,
 } from './game-data.js';
-import { canEnter, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { canEnter, encounterStock, encountersHere, gateText, makeBilly, maxHp, plural, spawn } from './logic/rules.js';
+import { modBossHp, modFoeLevels, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
-import { runRestore } from './logic/run-state.js';
+import { runRestore, validRun } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
-import { runHealCost } from './logic/run-loop.js';
+import { wildHabitat } from './logic/wild-pool.js';
+import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
+import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
+import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { questOffer, questTake } from './logic/run-quests.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { loadAllMaps } from './map-files.js';
@@ -61,7 +72,6 @@ import { battleStage, battleStageStop } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
-  ROOM_BY_USE,
   actionSpot,
   climbEnds,
   findPath,
@@ -97,14 +107,17 @@ import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { trainRide, trainRideSkip } from './train-ride.js';
+import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
+import { questData } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
+import { storyPickTree } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
@@ -183,7 +196,8 @@ function testMapChecks(id) {
       hc = navCellAt(hub[0], hub[1]);
     out.push({ what: 'where you arrive is open ground', reach: true, ok: hc >= 0 && !G.blk[hc] });
     for (const c of sc.checks || []) {
-      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], c.noHop ? { noHop: true } : {}), c.to);
+      /* WA-6b: a check with `surf` walks as the player with Surf on (deep water open, logic/surf.js) */
+      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], { noHop: !!c.noHop, surf: !!c.surf }), c.to);
       out.push({ what: c.what, reach: c.reach, got, ok: got === !!c.reach });
     }
   } finally {
@@ -1047,6 +1061,66 @@ async function runFullTest(mode) {
         8,
         180
       );
+    /* RL-13: an Expedition and its challenges, on a copy of the save: a run started at Expedition III has more zones
+       and foes its levels up (modifiers.json), its boss's HP multiplied; with "No healing" and "No Perks" the clinic
+       is shut, no run shop stocks a healing ware and no Perk is ever offered. Then the save as it was */
+    if (typeof runStartPlan === 'function' && typeof modsMake === 'function' && !selfTest.stop)
+      await phase(
+        'A run at Expedition III, with challenges',
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            seed = 'SELFTESTEXP',
+            plan = (expedition, mods) =>
+              runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [], mods, expedition });
+          try {
+            if (s.run) runRestore(s);
+            const one = plan(1, []),
+              three = plan(3, modsMake(['noheal', 'noperks']));
+            if (three.map.nodes.length <= one.map.nodes.length)
+              throw new Error(`Expedition III is ${three.map.nodes.length} places, I is ${one.map.nodes.length}`);
+            runStartOn(s, three);
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const run = s.run,
+              up = modFoeLevels(run);
+            if (run.expedition !== 3 || up !== 4) throw new Error(`Expedition ${run.expedition}, foes +${up}`);
+            if (modBossHp(run) <= 1) throw new Error('the boss is no tougher at Expedition III');
+            /* its foes: the leaders of its own types, at the Expedition's levels */
+            const foes = Object.values(
+                runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
+              ),
+              boss = foes.find(F => F.runFoe === 'boss');
+            if (!foes.length || !boss) throw new Error('the run has no leaders');
+            if (!boss.hpMult || boss.hpMult <= 1) throw new Error('the boss carries no HP multiplier');
+            for (const F of foes) {
+              const T = TRAINERS[F.from];
+              if (T && T.type)
+                for (const e of F.team)
+                  if (!SPECIES[e.sp].types.includes(T.type))
+                    throw new Error(`${T.name} (${T.type}) fields ${SPECIES[e.sp].name}`);
+            }
+            /* the challenges: the clinic shut, no healing ware on sale, no Perk offered */
+            s.team[0].hp = 1;
+            const money = s.se;
+            if (runClinic(s, RULES.run.healCost).paid || s.se !== money || s.team[0].hp !== 1)
+              throw new Error('the clinic healed on a "No healing" run');
+            for (let day = 1; day <= 10; day++)
+              for (const w of runShopOpen(run, 1, day, RULES.run.shop, UNLOCK_DATA))
+                if (w.item && runWareHeals(w.item, ITEMS)) throw new Error(`a shop sells ${w.item} on day ${day}`);
+            if (perkOfferMake(run, PERKS, RULES.run.perks)) throw new Error('a Perk was offered on a "No Perks" run');
+            return `Expedition III: ${three.map.nodes.length} places (I: ${one.map.nodes.length}), foes +${up}, the boss x${modBossHp(run).toFixed(2)}; the clinic shut, no healing ware, no Perk`;
+          } finally {
+            setSaveData(was);
+            render();
+          }
+        },
+        4,
+        60
+      );
     /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
        both; at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
        the place's shop with the day's wares; both hold rules.json run.wild.waystation wild Billies. Then the save as
@@ -1132,14 +1206,309 @@ async function runFullTest(mode) {
         8,
         180
       );
-    /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
-       run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
-       airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
+    /* RT-2: a run route's trainers, on a copy of the save: the first seed (SELFTESTRT0, 1, ...) whose map has a route
+       with a pair; on its place every trainer stands on its spot (a pair's second beside it), facing the way it
+       looks; the place's wild Billies are fewer for them; the pair starts a double and, beaten, leaves one reward
+       pick. Route sight is off while the test runs, so the battle is started as the walk-up would. Then the save as
+       it was */
+    if (typeof runWorldSync === 'function' && !selfTest.stop)
+      await phase(
+        "A route's trainers: on their spots, a pair as a double",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                if (activeBattle && activeBattle.phase === 'playing') tapMessage();
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 40 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTRT${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const pair = Object.values(
+                runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run })
+              ).find(T => T.mate && !(t.run.map.nodes[T.runNode] || {}).side);
+              if (pair) [seed, node] = [`SELFTESTRT${k}`, pair.runNode];
+            }
+            if (node < 0) throw new Error('no seed of the first 40 has a route with a pair');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.team.forEach(m => {
+              m.hp = maxHp(m);
+              m.status = null;
+            });
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const here = Object.values(TRAINERS).filter(T => T.route && T.runNode === node),
+              count = here.reduce((a, T) => a + (T.mate ? 2 : 1), 0),
+              o = walkView.sc.baseOff || [0, 0];
+            if (!here.length || !here.every(T => T.route.at && T.route.spot))
+              throw new Error('a route trainer has no spot');
+            if (!(await wait(() => here.every(T => walkView.npcAt[T.id]), 10000)))
+              throw new Error('a route trainer isn’t on the map');
+            for (const T of here) {
+              const p = walkView.npcAt[T.id],
+                d = Math.hypot(p[0] - T.route.at[0] - o[0], p[1] - T.route.at[1] - o[1]);
+              if (d > 1.5) throw new Error(`${T.name} stands ${d.toFixed(1)} m off its ${T.route.spot}`);
+              if (!walkView.npcLook[T.id]) throw new Error(`${T.name} faces nowhere`);
+            }
+            const P = here.find(T => T.mate);
+            if (!P || !walkView.npcAt[P.id + '~b']) throw new Error('the pair’s second isn’t on the map');
+            const stock = encounterStock(n);
+            if (stock !== Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - count))
+              throw new Error(`the route holds ${stock} wild Billies with ${count} trainers`);
+            const picks = (saveData.run.enc && saveData.run.enc.rewardN) || 0;
+            startTrainer(P.id, { talked: true });
+            if (!activeBattle || activeBattle.fmt !== 'double') throw new Error('the pair didn’t start a double');
+            stopTimers();
+            activeBattle.over = 'win';
+            endBattle();
+            if (!(await wait(() => !activeBattle && saveData.flags[P.id], 15000)))
+              throw new Error('the pair’s battle didn’t end');
+            if (((saveData.run.enc && saveData.run.enc.rewardN) || 0) !== picks + 1)
+              throw new Error('the pair left no reward pick (or two)');
+            return `${seed}: ${LOCATIONS[n].name}, ${count} trainers (${here.map(T => T.route.spot + (T.route.opt ? '?' : '') + (T.mate ? '+2' : '')).join(', ')}), ${stock} wild; the pair a double, one pick`;
+          } finally {
+            if (activeBattle) {
+              stopTimers();
+              setActiveBattle(null);
+            }
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-4: a run route's wild Billies, on a copy of the save: the first seed (SELFTESTWH0, 1, ...) with a route place
+       (trainers on it, a spot for its rarer one) whose scene has points for a habitat its pool has Billies of; there the stock is 10 less its
+       trainers (4 at least), one of them the rarer one, standing on the place's rareAt, and every water or woods
+       Billie on one of its habitat's points. Then the save as it was */
+    if (typeof runWorldSync === 'function' && RULES.run.wild.habitats && !selfTest.stop)
+      await phase(
+        "A route's wild Billies: in their habitats, the rarer one in its pocket",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            H = RULES.run.wild.habitats,
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 20 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTWH${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const T = runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+                routes = new Set(Object.values(T).map(q => q.runNode)),
+                made = runScenesMake(t.run, data),
+                W = runWorldTables(t.run, LOCATIONS[0], data);
+              routeTrainersPlace(t.run, T, made, EVENTS.classes);
+              const rareAt = routeRareSpots(t.run, T, made);
+              node = made.findIndex((sc, i) => {
+                if (!routes.has(i) || !rareAt[i] || (t.run.map.nodes[i] || {}).side || !sc.habitats) return false;
+                const P = W.pools[W.locations[i + 1].pool];
+                return P.list.some(([sp]) => !!sc.habitats[wildHabitat(SPECIES[sp].types, H)]);
+              });
+              if (node >= 0) seed = `SELFTESTWH${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 20 has a route whose pool fits its habitats');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const L = LOCATIONS[n],
+              list = encountersHere(n),
+              want = Math.max(RULES.run.wild.routeMin, RULES.run.wild.route - (L.trainerCount || 0));
+            if (list.length !== want)
+              throw new Error(`${list.length} wild Billies with ${L.trainerCount} trainers (want ${want})`);
+            if (!(await wait(() => list.every(q => walkView.enc[q.id]), 10000)))
+              throw new Error('a wild Billie isn’t on the map');
+            const sc = walkView.sc,
+              o = sc.baseOff || [0, 0],
+              near = (/** @type {any} */ e, /** @type {number[]} */ p) => Math.hypot(e.x - p[0], e.z - p[1]) < 0.6,
+              rare = list.filter(q => q.rare);
+            if (rare.length !== 1) throw new Error(`${rare.length} rarer ones`);
+            if (!L.rareAt) throw new Error('the place has no spot for its rarer one');
+            if (!near(walkView.enc[rare[0].id], [L.rareAt[0] + o[0], L.rareAt[1] + o[1]]))
+              throw new Error('the rarer one isn’t in its pocket');
+            const by = /** @type {Record<string, number>} */ ({});
+            for (const q of list) {
+              if (q.rare) continue;
+              const k = q.hab || 'grass';
+              by[k] = (by[k] || 0) + 1;
+              const pts = q.hab && sc.habitats && sc.habitats[q.hab];
+              if (pts && !pts.some(p => near(walkView.enc[q.id], p)))
+                throw new Error(`a ${q.hab} Billie (${q.sp}) isn’t on its habitat's points`);
+            }
+            return `${seed}: ${L.name}, ${list.length} wild with ${L.trainerCount} trainers (${Object.entries(by)
+              .map(([k, v]) => k + ' ' + v)
+              .join(
+                ', '
+              )}, the rarer one ${rare[0].sp} lv ${rare[0].lvl} in its ${(mapById(L.mapId).spots || []).find(p => p.x === L.rareAt[0] && p.z === L.rareAt[1]).kind})`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-3: a run route's set pieces, on a copy of the save: the first seed (SELFTESTSP0, 1, ...) whose map has a
+       Bureau checkpoint on a main place; on that place every piece has all its props round it, the agent stands in
+       the checkpoint, tapping it opens the bureau_checkpoint event, walking on plays it, and tapping again only
+       talks. Then the save as it was */
+    if (typeof runWorldSync === 'function' && SET_PIECES && !selfTest.stop)
+      await phase(
+        "A route's set pieces: whole, the Bureau's agent opens its event once",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 12 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTSP${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const made = runScenesMake(t.run, data);
+              node = made.findIndex(
+                (sc, i) => !(t.run.map.nodes[i] || {}).side && (sc.pieces || []).some(L => L.id === 'bureau_checkpoint')
+              );
+              if (node >= 0) seed = `SELFTESTSP${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 12 has a Bureau checkpoint on a main place');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const sc = mapById(LOCATIONS[n].mapId),
+              L = sc.pieces || [];
+            for (const P of L) {
+              const S = SET_PIECES.pieces[P.id];
+              for (const q of S.props)
+                if (!sc.props.some(o => o.k === q.k && Math.hypot(o.x - P.x, o.z - P.z) <= S.r + 0.5))
+                  throw new Error(`the ${S.name} has no ${q.k}`);
+            }
+            /* an exit's signpost reads the place's name */
+            const sign = sc.props.find(o => o.k === 'signpost' && o.act === 'sign' && !o.say),
+              toasts = () =>
+                [uiState.toastOn, ...(uiState.toastQ || [])]
+                  .map(t => (t && typeof t === 'object' ? t.text : t))
+                  .join(' | ');
+            if (!sign) throw new Error('the route has no signpost you can read');
+            walkPick({ k: 'act', act: 'sign', p: sign });
+            if (!(await wait(() => toasts().includes(LOCATIONS[n].name), 3000)))
+              throw new Error(`the signpost says “${toasts()}”, not the place’s name`);
+            const agent = walkState().npcs.find(m => m.piece && m.piece.event === 'bureau_checkpoint');
+            if (!agent) throw new Error('the Bureau checkpoint has no agent');
+            if (!(await wait(() => walkView.npcAt[agent.id], 10000))) throw new Error('the agent isn’t on the map');
+            walkPick({ k: 'npc', n: agent });
+            if (!(await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000)))
+              throw new Error('tapping the agent opened no event');
+            const go = uiState.modal.btns[uiState.modal.btns.length - 1];
+            go.f();
+            if (!(await wait(() => saveData.run.enc && saveData.run.enc.seen.includes('bureau_checkpoint'), 15000)))
+              throw new Error('walking on didn’t play the event');
+            /* its lines, each with a Go on */
+            for (let k = 0; k < 10 && saveData.run.enc.play; k++) {
+              await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000);
+              const b = uiState.modal && uiState.modal.btns;
+              if (b && b.length === 1) b[0].f();
+              await selfTestSleep(200);
+            }
+            if (saveData.run.enc.play) throw new Error('walking on didn’t end the event');
+            uiState.modal = null;
+            renderOverlay();
+            walkPick({ k: 'npc', n: agent });
+            await selfTestSleep(300);
+            if (uiState.modal && uiState.modal.cls === 'event-sheet')
+              throw new Error('the agent opened the event twice');
+            return `${seed}: ${LOCATIONS[n].name}, ${L.map(P => P.id + '@' + P.spot).join(', ')}; the signpost reads its name; the agent's event once`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RL-8: a run from the station to the payout, on a copy of the save (nothing is written while the test runs): a
+       short run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       sky train to the landing (HB-8: its ride skipped), a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
        Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
        Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
     if (typeof runTakeOff === 'function' && !selfTest.stop)
       await phase(
-        'A run: airship, nodes, payout',
+        'A run: the train, nodes, payout',
         'dio',
         async () => {
           const was = saveData,
@@ -1170,31 +1539,45 @@ async function runFullTest(mode) {
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
-            if (!saveData.run || !(await wait(() => airshipFlight.on, 5000)))
+            /* HB-8: the sky train's ride (skipped), then the run's world made over several frames behind the carriage's
+               loading screen */
+            if (!saveData.run || !(await wait(() => trainRide.on || runLoad.on, 30000)))
               throw new Error('the run didn’t take off');
-            /* RL-9b: one Billie from home at Expedition I; the hub's team waits in Copperleaf as it was */
+            trainRideSkip();
+            /* RL-13: the starter points' default pick travels; the hub's team waits in Copperleaf as it was */
             if (
-              saveData.team.length !== RULES.run.home[0] ||
+              !saveData.team.length ||
+              saveData.team.length > RULES.run.points.team ||
               saveData.run.start.team.map(m => m.uid).join() !== hubTeam
             )
               throw new Error(
                 `took off with ${saveData.team.length} Billies, the hub's team ${hubTeam ? 'changed' : 'empty'}`
               );
+            const t0 = performance.now();
+            if (!(await wait(() => !trainRide.on && saveData.run.at.phase === 'walk' && runLoad.node >= 0, 30000)))
+              throw new Error('the run never landed');
             const made = [runWorld.scenes, runWorld.ms],
-              t0 = performance.now();
-            if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
-              throw new Error('the flight never landed');
-            const flew = Math.round(performance.now() - t0),
+              flew = Math.round(performance.now() - t0),
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
-            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome, its name on
-               the Map tab */
-            const G = saveData.run.region;
+            /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
+            if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
+              throw new Error('the landing’s loading screen never lifted');
+            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
+               side area's its field move's), its name on the Map tab */
+            const G = saveData.run.region,
+              side = saveData.run.map.side,
+              sideBiome = side && FIELD_MOVES[side.move] ? FIELD_MOVES[side.move].biome : '';
             if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
               throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
-            const off = saveData.run.map.nodes.find(n => !G.zones[n.zone] || G.zones[n.zone].biome !== n.biome);
-            if (off) throw new Error(`a place on row ${off.row + 1} isn't its zone's biome`);
+            const off = saveData.run.map.nodes.find(
+              n => !G.zones[n.zone] || (n.side ? sideBiome : G.zones[n.zone].biome) !== n.biome
+            );
+            if (off)
+              throw new Error(
+                `a place on row ${off.row + 1} isn't its ${off.side ? "side area's move's" : "zone's"} biome`
+              );
             if (!renderWorldMapTab().includes(escapeHtml(G.name)))
               throw new Error('the Map tab doesn’t name the region');
             measureFromHere();
@@ -1224,6 +1607,17 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (saveData.se !== se - cost)
               throw new Error(`the clinic took ${plural(se - saveData.se, 'Money')}, not ${cost}`);
+            /* TW-3: the town has a notice board and a quest giver; its quest (when it has one) is taken and kept
+               by the save's check */
+            const townScene = mapById(LOCATIONS[town].mapId) || {};
+            if (!(townScene.props || []).some((/** @type {any} */ p) => p.act === 'notice'))
+              throw new Error('the town has no notice board');
+            if (!(townScene.people || []).some((/** @type {any} */ p) => p.quest))
+              throw new Error('the town has no quest giver');
+            const offer = questOffer(saveData.run, town - 1, questData());
+            if (offer && !questTake(saveData.run, town - 1, offer, QUESTS)) throw new Error('the quest wasn’t taken');
+            if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
+              throw new Error('a run with a quest fails validRun');
             /* RL-12: the town's shop sells the day's Perk; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;
@@ -1245,6 +1639,9 @@ async function runFullTest(mode) {
             if (!MB || MB.runFoe !== 'miniboss') throw new Error('no mini-boss on its place');
             if (MB.from !== G.leaders[0])
               throw new Error(`the mini-boss is ${MB.from}, not the region's ${G.leaders[0]}`);
+            /* RL-S1: the leader's word before the battle is picked by the story director (banter.json leader) */
+            if (!MB.script || MB.script[0] !== 'pick leader') throw new Error('the mini-boss has no picked word');
+            if (!storyPickTree('leader', 'trainer:' + MB.id)) throw new Error('no leader line could be picked');
             startTrainer(MB.id, { talked: true });
             if (!activeBattle) throw new Error('the mini-boss battle didn’t start');
             stopTimers();
@@ -1264,7 +1661,8 @@ async function runFullTest(mode) {
               throw new Error('the pick wasn’t taken');
             uiState.modal = null;
             uiState.mq = [];
-            const boss = map.nodes.length;
+            /* RL-R2: a side area's places come after the main path's, so the boss is the main path's, not the last */
+            const boss = runWorldNode(map.nodes.findIndex(n => n.type === 'boss' && !n.side));
             runJump(boss);
             const B = trainersAt(boss)[0];
             if (!B || !B.alpha) throw new Error('no Alpha boss on the boss’s place');
@@ -1286,15 +1684,19 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research`;
+            /* RL-S1: the run is in the history, its mini-boss beaten; the hub characters' lines picked, no scene */
+            const H = saveData.meta.history[saveData.meta.history.length - 1];
+            if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
+            if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
+            if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();
               setActiveBattle(null);
               battleStageStop();
             }
-            airshipFlight.on = false;
-            document.body.classList.remove('flying');
+            trainRideSkip();
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();
@@ -2184,8 +2586,8 @@ function selfTestWalkScenes() {
     },
     roomOf = (p, act) => PB_DATA.doorRooms(p, p && P[p.k], act).find(id => sc[id] && sc[id].kind === 'room');
   add(hub);
-  for (const p of (sc[hub] && sc[hub].props) || []) if (ROOM_BY_USE[p.act]) add(roomOf(p, p.act));
-  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (ROOM_BY_USE[act]) add(roomOf(null, act));
+  for (const p of (sc[hub] && sc[hub].props) || []) if (PB_DATA.opensRoom(p.act)) add(roomOf(p, p.act));
+  for (const [, , act] of MAPGEN_HUB_BUILDINGS) if (PB_DATA.opensRoom(act)) add(roomOf(null, act));
   return out;
 }
 /* the diagnostics' walk: the hub and its busiest room (a run's generated scene is the "A run's road" phase) */

@@ -184,7 +184,12 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   const pay = runEnd(s, { won: false, keep: [s.team[0].uid] }, RATES, PRICE);
   assert.equal(s.run, null);
   assert.equal(pay.research, 50 + 20 + 15 + 30);
-  assert.deepEqual(s.meta, { ...newMeta(), research: pay.research, scrap: 3 * 2, runs: 1 });
+  const history = s.meta.history;
+  assert.deepEqual(s.meta, { ...newMeta(), research: pay.research, scrap: 3 * 2, runs: 1, history });
+  /* RL-S1: the run as the story remembers it (no battle lost: given up) */
+  assert.equal(history.length, 1);
+  assert.equal(history[0].end, 'quit');
+  assert.deepEqual(history[0].team, ['sparky0', 'drip0', 'sprout0']);
   for (const k of RUN_FIELDS.filter(k => k !== 'team')) assert.deepEqual(s[k], hub[k], `${k} is the hub's again`);
   assert.equal(s.team.length, 2, 'the Billie caught in the run is gone');
   assert.equal(s.team[0].lvl, 14, 'the kept traveller keeps its gains');
@@ -196,6 +201,9 @@ test('run: ending one pays into meta, puts the hub back and keeps the chosen Bil
   t.team.push(fresh);
   runEnd(t, { won: true, keep: [fresh.uid] }, RATES, PRICE);
   assert.deepEqual([t.meta.runs, t.meta.wins, t.meta.crests], [1, 1, 1]);
+  /* RL-13: winning Expedition I opens II (the fixture's data may have only one) */
+  assert.equal(t.meta.expedition, Math.min(2, modules.modifiers.expeditionCount()));
+  assert.equal(s.meta.expedition, 1, 'a loss opens nothing');
   assert.equal(t.team.length, 3);
   assert.equal(t.team[2].uid, fresh.uid);
   const u = hubSave();

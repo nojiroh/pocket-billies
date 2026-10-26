@@ -33,6 +33,10 @@
      "menu"
     ]
    },
+   "layout": {
+    "description": "RT-1: its place is laid out as a route (logic/mapgen.js MAPGEN_LAYOUTS, a plan drawn from rules.json run.layouts by its biome); a town, a waystation and a stall keep their open ground",
+    "type": "boolean"
+   },
    "shop": {
     "description": "RL-12b: it sells things (a town, a stall): never two of them one after the other on a run's map",
     "type": "boolean"

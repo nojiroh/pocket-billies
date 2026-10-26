@@ -4822,6 +4822,14 @@ body.wb-dropping::after {
   stroke: var(--line2);
   stroke-width: 3;
 }
+/* RL-R2b: a side area's way in (behind its field move) and its one-way way out */
+.rl-map .rl-side-in,
+.rl-map .rl-side-out {
+  stroke-dasharray: 5 4;
+}
+.rl-map .rl-side-out {
+  stroke-opacity: 0.6;
+}
 .rl-map .rl-node {
   cursor: pointer;
 }

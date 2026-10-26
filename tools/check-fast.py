@@ -10,7 +10,7 @@ browsers). Its budget, three minutes, is missed: each page boots once (25-65 s i
 The data check and the unit tests (the world-map graph's snapshot among them) run in CI's lint job, not here. In a
 browser, each check opens its own page straight where it needs to be (?fixture=<name>,
 game/js/fixture.js), never through the opening and never waiting for every map: the game boots with no console or page
-errors; a town and a room each open and draw frames (RL-5: the hub, Copperleaf; the route and the cave were parked
+errors; a town and a room each open and draw frames, and the room is left by walking out of its door (TW-0) (RL-5: the hub, Copperleaf; the route and the cave were parked
 with their places); a run's world (RL-7) opens on its landing, its places on the bowl, and a walk over a seam arrives
 at the next node a day later; a battle plays to the end; a save round-trips; the Studio loads; the exported debug
 log holds no names; the world map opens as the bowl, a tap opens a card, Home comes back; every screen opens with its parts (UI-5);
@@ -98,7 +98,7 @@ def walk_over(pg, n1, past, sec=60):
 
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
-    per node, the landing's view drawing; the Map tab opens as the bowl with every place on it; a walk over the
+    per node, the landing's view drawing; HB-2: its loading screen lifts and logs a resume line (no seed); the Map tab opens as the bowl with every place on it; a walk over the
     landing's west seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
     drawing(pg)
     seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
@@ -106,6 +106,11 @@ def run_world(pg, base):
     if node != 1 or day != 1: raise Exception(f'not on the landing on day 1: node {node}, day {day}')
     if view != pg.evaluate("'w:' + LOCATIONS[1].mapId + '*'"): raise Exception(f'the landing’s view isn’t open: {view}')
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    # HB-2: a boot on a run is a resume: the landing's loading ends (ready, or lifted by the cap) and logs its stages,
+    # milliseconds only
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the run's loading screen never lifted")
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run resume ')).pop()||{}).msg||''")
+    if not line or 'RL7FIXTURE' in line or ' map ' not in line + ' ': raise Exception(f"the resume's load line is {line!r}")
     bar = pg.evaluate("document.querySelector('#nav').set")
     if bar != 'run': raise Exception(f"the bottom bar shows the {bar} tabs on a run")
     if not pg.evaluate(nav_tap('map')): raise Exception('no Map tab on the bottom bar')
@@ -117,7 +122,7 @@ def run_world(pg, base):
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
     if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
-    return f'{scenes} scenes made in {ms} ms; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
+    return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
 def bowl_map(pg, base):
@@ -153,6 +158,21 @@ def bowl_map(pg, base):
     # its own sky (a run's world keeps the bowl's sea: look session 1)
     if pg.evaluate("!!worldBowl.ground.islandMap&&!worldExtra.look"):
         if not until(pg, "!!(worldBowl.ground.float&&worldBowl.ground.float.gpu&&!worldBowl.ground.water&&gpuState.P.mrock&&gpuState.P.mskyf)", 10): raise Exception('the hub’s island doesn’t float (a sea, or no rock under it)')
+        # HB-1: you are drawn where you stand on the island (its pin was at the map's middle, ~50 m off)
+        off = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me;if(!m||!m.isle)return -1;const w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],walkView.pl,1000);return Math.hypot(m.x-w[0],m.y-w[1])*1000})()")
+        if off < 0 or off > 0.5: raise Exception('you aren’t drawn on the island' if off < 0 else f'you are drawn {off:.1f} m from where you stand')
+        # and you follow when you stand somewhere else (40 m west of the hub)
+        pg.evaluate("(()=>{const P=walkView.pl;worldBowl.hb1=[P.x,P.z];P.x-=40;worldBowl.dirty=true;return 0})()")
+        f0 = pg.evaluate("worldBowl.frames"); until(pg, f"worldBowl.frames>={f0 + 2}", 10)
+        off2 = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,m=worldBowl.me,P=walkView.pl,w=bowlYouPoint(worldBowl.spots[F.i],gameData.maps[g.islandMap],P,1000);[P.x,P.z]=worldBowl.hb1;return m?Math.hypot(m.x-w[0],m.y-w[1])*1000:-1})()")
+        if off2 < 0 or off2 > 0.5: raise Exception(f'you don’t follow on the island: drawn {off2:.1f} m from where you stand')
+        # HB-3: real height, its lagoon and three falls (the World map settings' defaults), no bowl clumps and no
+        # landmark picture at the map's middle
+        if not until(pg, "!!(worldBowl.ground.float.waterGpu&&worldBowl.ground.float.fallsGpu&&gpuState.P.mfallw)", 10): raise Exception('the floating island has no lagoon or falls')
+        hb3 = pg.evaluate("(()=>{const g=worldBowl.ground,F=g.float,W=g.things;return {lift:worldBowlIslandLift(),falls:F.falls.n,clumps:W?W.clumps:-1,stands:W?W.stand.length:-1,ring:F.lr/F.r}})()")
+        if hb3['lift'] != 1: raise Exception(f"the floating island is drawn {hb3['lift']} times its height")
+        if hb3['falls'] != 3 or hb3['clumps'] != 0 or hb3['stands'] != 0: raise Exception(f'the floating island: {hb3}')
+        if not 1.15 < hb3['ring'] < 1.5: raise Exception(f"the lagoon's ring is {hb3['ring']:.2f} times the island's radius")
     elif not pg.evaluate("!!(worldBowl.ground.water&&gpuState.P.mwater)"): raise Exception('the sea isn’t drawn')
     # look session 2: the shadow map, the routes' and rivers' line map and the rivers
     # RL-8b: the hub is an island (worldmap.json sea.island): a river or two, not four; IS-7: none on an island drawn
@@ -292,6 +312,23 @@ def room(pg, base):
     return f'{pg.evaluate("walkView.id")} drew {pg.evaluate("walkRenderer.frames")} frames'
 
 
+def room_walk_out(pg, base):
+    """towns track TW-0: with the card closed a room still shows "Go outside"; holding the stick out of the door (down,
+    once you have walked in) takes you outside, as tapping "Outside" does"""
+    if not until(pg, "!!uiState.inside&&walkView.ready&&walkView.sc.roomOf===uiState.inside.id", 60): raise Exception('not in the room')
+    pg.evaluate("saveData.preferences.cardClosed=true;render();0")
+    btn = pg.evaluate("!!document.querySelector('[data-a=leaveroom]')")
+    pg.evaluate("saveData.preferences.cardClosed=false;render();0")
+    if not btn: raise Exception('no "Go outside" button with the card closed')
+    pg.evaluate("walkView.keys.u=true;0")
+    until(pg, "walkView.doorArmed", 10)
+    pg.evaluate("walkView.keys.u=false;walkView.keys.d=true;0")
+    out = until(pg, "!uiState.inside&&walkView.ready&&!walkView.sc.roomRect", 30)
+    pg.evaluate("walkView.keys.d=false;0")
+    if not out: raise Exception(f'held the stick out of the door and stayed in: at {pg.evaluate("[walkView.pl.x,walkView.pl.z]")}')
+    return f'walked out to {pg.evaluate("walkView.id")}'
+
+
 def battle(pg, base):
     """a trainer battle on the default stage, animations at four times the speed, played to the end"""
     if not until(pg, '!!activeBattle', 90): raise Exception('the battle never started')
@@ -314,7 +351,7 @@ def run_loop(pg, base):
     """RL-8: on the run fixture's landing, a wild battle begins and the save holds it (phase 'battle', stored at once);
     a reload (?fixture=stored) starts the same battle again from its seed; lost, the run ends: the payout screen with
     its rows and a keep-one card per Billie; a reload there opens it again (the run still on the save, nothing paid
-    yet); one card picked, "Fly home": back in Copperleaf by the mast, the hub's world in, the run's Research in meta"""
+    yet); one card picked, "Ride home": back in Copperleaf by the station, the hub's world in, the run's Research in meta"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     seed = pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);activeBattle&&activeBattle.seed")
@@ -334,12 +371,30 @@ def run_loop(pg, base):
     again = pg.evaluate("[document.querySelector('#ov pb-payout').rows.length,document.querySelectorAll('#ov pb-pick-card').length,saveData.run&&saveData.run.at.phase,saveData.meta.runs]")
     if again != [rows, cards, 'payout', 0]: raise Exception(f'after a reload at the payout: rows, cards, phase, runs {again}')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
-    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Ride home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
-    if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
+    if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Ride home didn’t end the run')
+    # HB-8: the train comes home battered; the lost run's scene waits for it
+    parked = ride_home(pg)
+    if not parked or parked[1] != 2: raise Exception(f'the train home after the loss: {parked}')
     home = pg.evaluate("[saveData.meta.research, !!uiState.roam, saveData.trip.node]")
     if home[0] <= 0 or not home[1] or home[2] != 0: raise Exception(f'home: research {home[0]}, by the mast {home[1]}, node {home[2]}')
-    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research'
+    # RL-S1: the run is in the history (lost to a wild Billie), the lost run's scene plays by the mast, and the first
+    # talk with Chosen plays the line picked for him on the way home instead of his own
+    hist = pg.evaluate("(h=>[h.length,h[0]&&h[0].end,h[0]&&h[0].by&&h[0].by.kind])(saveData.meta.history)")
+    if hist != [1, 'lost', 'wild']: raise Exception(f'the run history: {hist}')
+    fresh = pg.evaluate("Object.assign({},saveData.story.fresh)")
+    if fresh.get('chosen') != 'chosen_first' or not fresh.get('hazel'): raise Exception(f'the hub characters’ lines picked on the way home: {fresh}')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")  # an evolution sheet, a milestone: the scene waits for them
+    if not until(pg, "storyRun.on&&storyRun.id==='story:back-lost'", 20): raise Exception('the lost run’s scene didn’t play by the mast: ' + str(pg.evaluate("[saveData.story.pending,!!saveData.run,storyRun.on,storyRun.id,!!activeBattle,uiState.modal&&(uiState.modal.cls||uiState.modal.title),talkBox.on,walkView.ready,uiState.tab,typeof cutscene!=='undefined'&&cutscene.on,typeof selfTest!=='undefined'&&selfTest.on]")))
+    SKIP = "storyRun.control&&(storyRun.control.skipping=true),talkBox.cur&&talkBox.cur.done(),0"
+    pg.evaluate(SKIP)
+    if not until(pg, "!storyRun.on&&saveData.story.firstLoss===1&&!saveData.story.pending", 10): raise Exception('the lost run’s scene didn’t end, or wasn’t marked')
+    pg.evaluate("talkChosen();0")
+    if not until(pg, "storyRun.on&&storyRun.id==='banter:chosen_first'", 10): raise Exception(f'Chosen’s first talk: {pg.evaluate("storyRun.id")}')
+    pg.evaluate(SKIP)
+    if not until(pg, "!storyRun.on&&!saveData.story.fresh.chosen", 10): raise Exception('Chosen’s fresh line wasn’t taken')
+    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research; the history, the lost run’s scene and Chosen’s line ({fresh["hazel"]} for Hazel)'
 
 
 # TR-3: the reachable spot with the most ground above the player's head on the camera's side (smaller z), 3-14 m off
@@ -365,24 +420,83 @@ def tall_ground(pg, base):
     """TR-3: the mountains fixture (the run fixture with the debug menu's mountains mod: mountains north and south) at
     its landing; at the reachable spot with the most rock on the camera's side the camera tilts down further (rise),
     the rock between it and the player thins out (the rock fade's circle is on) and the player's silhouette is drawn;
-    back where the player started (flat ground) none of it. No pictures: tools/look-tall-ground.py takes those"""
+    back where the player started (flat ground) no rise and no rock fade (the silhouette may still show there: since
+    player visibility it shows wherever anything covers you, and the landing's bushes can). No pictures:
+    tools/look-tall-ground.py takes those"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
     if pg.evaluate("(((mapById(walkView.sc.baseId||walkView.id).gen||{}).params||{}).land||{}).mountains||0") != 1: raise Exception('the landing has no mountains: the mod isn’t on')
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     spot = pg.evaluate(TALL_SPOT)
     if not spot: raise Exception('no reachable spot with rock on the camera’s side')
-    pg.evaluate("(()=>{const f=drawPlayerSilhouette;window.__sil=0;drawPlayerSilhouette=(...a)=>{const r=f(...a);window.__sil+=r;return r};return 0})()")
+    pg.evaluate("(()=>{const f=drawPlayerSilhouette;window.__sil=0;window.__silCalls=0;drawPlayerSilhouette=(...a)=>{const r=f(...a);window.__silCalls++;window.__sil+=r;return r};return 0})()")
+    f0 = pg.evaluate('walkRenderer.frames')
     stand(pg, spot['x'], spot['z'])
+    # the silhouette counts once the GPU's occlusion query says you're hidden (walk/sprites.js readHideQueries): its
+    # results come back a number of frames later, more on a busy machine's software drawing, so wait for it
+    until(pg, "window.__sil>0", 20)
     rise, k, circle, sil = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
     if not (rise > 1): raise Exception(f'the camera didn’t rise at the foot of {spot["up"]} m of rock: {rise}')
     if not (k > 0.9 and circle > 0): raise Exception(f'the rock fade isn’t on there: rockK {k}, circle {circle}')
-    if not sil: raise Exception('no silhouette was drawn there')
+    if not sil: raise Exception('no silhouette was drawn there: ' + str(pg.evaluate(f"({{frames:walkRenderer.frames-{f0},calls:window.__silCalls,hidT:walkRenderer.hidT,hidK:walkRenderer.hidK,bt:!!walkRenderer.bt,me:!!(walkView.st&&walkView.st.who!==null),setting:engineSetting('camera','silhouette'),loading:!!document.getElementById('runload')}})")))
     stand(pg, home[0], home[1], 60)
-    rise2, k2, circle2, sil0 = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
-    stand(pg, home[0], home[1], 5)
-    if pg.evaluate('window.__sil') != sil0 or circle2 != 0 or rise2 > 0.05: raise Exception(f'on flat ground: rise {rise2}, rockK {k2}, circle {circle2}, silhouettes still drawn')
-    return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground off'
+    rise2, k2 = pg.evaluate("[walkRenderer.occT, walkView.C.rockK]")
+    if k2 > 0.01 or rise2 > 0.05: raise Exception(f'on flat ground: rise {rise2}, rockK {k2}')
+    return f'at the foot of {spot["up"]} m of rock: the camera rose {rise:.1f} degrees, the rock fade and the silhouette on; on flat ground no rise or rock fade'
+
+
+# player visibility: reachable spots just behind trees and buildings (on the side away from the camera), each with
+# what stands in front of it
+BEHIND_SPOTS = """(() => {
+  const sc = walkView.sc, P = walkView.pl, C = walkView.C, D = walkData().sc.props, fl = Math.hypot(C.fwd[0], C.fwd[2]) || 1,
+    f = [C.fwd[0] / fl, C.fwd[2] / fl], out = [];
+  for (const p of sc.props || []) {
+    const M = D[p.k] || {}, bld = !!(M.build || M.door);
+    if (!(bld || /tree|oak|pine|birch|beech/.test(p.k))) continue;
+    for (let d = 1.5; d <= (bld ? 12 : 4); d += 0.5) {
+      const x = p.x + f[0] * d, z = p.z + f[1] * d;
+      if (!isWalkable(x, z)) continue;
+      if (findPath(P.x, P.z, x, z, { max: 1e6 })) { out.push({ k: p.k, x, z, bld }); break; }
+    }
+  }
+  return out.filter(s => s.bld).slice(0, 3).concat(out.filter(s => !s.bld).slice(0, 3));
+})()"""
+
+
+def behind_things(pg, base):
+    """Player visibility: in Copperleaf, standing just behind trees and buildings (away from the camera), something
+    covers you at most of them: the occlusion query says so (walkRenderer.hidT), the hidden amount comes on, the
+    silhouette is shown and the see-through circle is on, frame after frame; back where you started, in the open,
+    none of it"""
+    drawing(pg)
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
+    stand(pg, home[0], home[1], 30)
+    if pg.evaluate('walkRenderer.hidK || 0') > 0.05: raise Exception('hidden where the player starts, in the open')
+    spots = pg.evaluate(BEHIND_SPOTS)
+    if len(spots) < 3: raise Exception(f'only {len(spots)} reachable spots behind trees or buildings')
+    hid = []
+    for s in spots:
+        stand(pg, s['x'], s['z'], 30)
+        # hidden over several frames in a row: the circle and the fades together must never take every pixel in
+        # front of you (the query would see nothing and the circle would flicker off)
+        ok = True
+        for _ in range(4):
+            f0 = pg.evaluate('walkRenderer.frames')
+            until(pg, f'walkRenderer.frames>={f0 + 3}', 30)
+            ok = ok and pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9 && rockUniformsFor(walkView.C).rock[2] > 0.5')
+        if ok: hid.append(s['k'])
+    if len(hid) * 2 < len(spots): raise Exception(f'hidden behind only {hid} of {[s["k"] for s in spots]}')
+    f0 = pg.evaluate('walkRenderer.frames')
+    stand(pg, home[0], home[1], 60)
+    # the hidden amount follows the occlusion query, whose answers come back frames later (more on a busy machine's
+    # software drawing): wait for it to clear, with a cap, then say what was seen if it didn't
+    until(pg, '(walkRenderer.hidK||0)<=0.05&&rockUniformsFor(walkView.C).rock[2]<=0', 30)
+    k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')
+    if k > 0.05 or circle > 0:
+        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,near=(walkView.folkAll||walkView.folk||[]).map(f=>Math.hypot(f.x-P.x,f.z-P.z)).sort((a,b)=>a-b)[0];
+          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},nearestFolk:near}}}})()""")
+        raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle}): {seen}')
+    return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
 
 def camera_follow(pg, base):
@@ -503,6 +617,7 @@ def blur_focus(pg, base):
     spot; tilted fully the plane of focus stands upright; the player's slider at Off stops the blur pass; the slowest
     quality setting takes the cheap blur instead of none"""
     drawing(pg)
+    home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     sp = pg.evaluate(MOMENT_SPOTS)
     if not sp['quiet']: raise Exception('no reachable spot without a point of interest near the hub')
     pg.evaluate("(()=>{const D=gameData.engine.defaults;D.lens=Object.assign({},D.lens,{blur:2,focusTilt:1});return 0})()")
@@ -538,6 +653,7 @@ def blur_focus(pg, base):
     e = pg.evaluate(info)
     pg.evaluate("(()=>{gameData.engine.defaults.quality.auto=false;walkRenderer.adaptT=0;walkRenderer.q=0;const D=gameData.engine.defaults;D.lens=Object.assign({},D.lens,{blur:0,focusTilt:0});return 0})()")
     if e['path'] != 'cheap': raise Exception(f'on the slowest setting the blur isn’t the cheap one: {e}')
+    stand(pg, home[0], home[1], 5)   # back where it started: the page's next check (Behind things) starts there, in the open
     return f'on you, upright at tilt 1; talking {b["d"][0]:.2f} m toward them (the middle); the encounter {c["d"][1]:.2f} m ahead; Off: no blur pass; slowest: the cheap blur'
 
 
@@ -745,7 +861,7 @@ def breed(pg, base):
 def lab(pg, base):
     """RL-11: the lab fixture stands in Copperleaf after a run (500 Research, 60 Scrap, 2 Crests, one run ended). The
     first milestone was granted on load; the bottom bar's Lab tab opens the board with every row; a board row bought
-    pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the mast's sheet sells Airship Lv 2
+    pays its Research; the ranch's sheet sells Ranch Lv 2 for Scrap (its slots rise); the station's sheet sells Station Lv 2
     for a Crest and then offers the ridge lands; a run would carry the shop unlock; a reload (?fixture=stored) keeps it all"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta.unlocks.first_run&&walkView.ready", 60): raise Exception(f'no first milestone on load: {pg.evaluate("JSON.stringify(saveData.meta)")}')
     if pg.evaluate("saveData.meta.scrap") != 70: raise Exception(f'the milestone paid {pg.evaluate("saveData.meta.scrap") - 60} Scrap, not 10')
@@ -762,16 +878,16 @@ def lab(pg, base):
     pg.click("#ov .ranch-sheet [data-a=lab-buy][data-k=ranch_2]")
     st = pg.evaluate("[saveData.meta.scrap,ranchLevel(saveData),ranchSlots(saveData,RULES.ranch),uiState.modal&&uiState.modal.title]")
     if st[:3] != [70 - pg.evaluate("UNLOCK_DATA.unlocks.ranch_2.cost"), 2, pg.evaluate("RULES.ranch.slots[1]")] or 'Lv 2' not in (st[3] or ''): raise Exception(f'Ranch Lv 2: Scrap, level, slots, title {st}')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];flyMenu(walkView.sc.props.find(q=>q.act==='fly'));0")
-    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=airship_2]")
-    if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Airship Lv 2 didn’t open the ridge lands on the mast’s sheet')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];stationMenu(walkView.sc.props.find(q=>q.act==='station'));0")
+    pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=station_2]")
+    if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Station Lv 2 didn’t open the ridge lands on the station’s sheet')
     if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_revive': raise Exception('a run wouldn’t carry the shop unlock')
     keep = pg.evaluate("JSON.stringify(saveData.meta)")
     pg.goto(base + '/index.html?fixture=stored')
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.meta&&!document.getElementById('loader')", 90): raise Exception('the reload never booted')
     back = pg.evaluate("JSON.stringify(saveData.meta)")
     if back != keep: raise Exception(f'after a reload {back}, not {keep}')
-    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Research; Ranch Lv 2 (3 slots); Airship Lv 2 opened the ridge lands; a reload kept it'
+    return f'the first milestone on load (+10 Scrap); {rows} rows on the board; Revives for {cost} Research; Ranch Lv 2 (3 slots); Station Lv 2 opened the ridge lands; a reload kept it'
 
 
 def save_round_trip(pg, base):
@@ -879,6 +995,111 @@ def run_shop(pg, base):
     return f'{n} wares'
 
 
+def held_items(pg, base):
+    """RL-12c: a pick of held items opens with three cards; one taken asks who holds it; the lead holds it and it is
+    stored; its sheet shows it and gives it back with Take off (the item in the bag again); a battle's fighter holding
+    it has its rows"""
+    pick = "!!uiState.modal&&uiState.modal.cls==='reward-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+                "rewardOfferMake(saveData.run,'check',rewardDataGame(saveData.team),{kind:'held',n:3});saveNow();rewardPickOpen();0")
+    if not until(pg, pick, 10):
+        raise Exception('the pick of held items didn’t open with three cards: ' + str(pg.evaluate(
+            "JSON.stringify([uiState.modal&&uiState.modal.cls,saveData.run.enc&&saveData.run.enc.reward,typeof rewardOfferMake,document.querySelectorAll('#ov pb-pick-card').length])")))
+    item = pg.evaluate("saveData.run.enc.reward.cards[0].item")
+    pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[0].shadowRoot.querySelector('button').click();0")
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, "!!document.querySelector('#ov .pickrow[data-u]')", 10): raise Exception('no “Who holds it?”')
+    pg.evaluate("document.querySelector('#ov .pickrow[data-u]').click();0")
+    if not until(pg, f"saveData.team[0].held==='{item}'&&!saveData.run.enc.reward", 10): raise Exception(f'the lead doesn’t hold {item}')
+    if pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).team[0].held") != item: raise Exception('the held item wasn’t stored')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];billySheet(saveData.team[0]);0")
+    if not until(pg, f"[...document.querySelectorAll('#ov .ms-met')].some(e=>e.textContent.includes('Holding')&&e.textContent.includes(ITEMS['{item}'].n))", 10):
+        raise Exception('the sheet doesn’t show what it holds')
+    rows = pg.evaluate("fxOfBillie(saveData.team[0],ITEMS).length")
+    bag = pg.evaluate(f"saveData.items['{item}']||0")
+    pg.evaluate("uiState.modal.acts.find(a=>a.l.startsWith('Take off')).f();0")
+    if not until(pg, f"!saveData.team[0].held&&(saveData.items['{item}']||0)==={bag}+1", 10): raise Exception('Take off didn’t put it back in the bag')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    return f'{item} held by the lead ({rows} effect rows), shown on its sheet, taken off into the bag'
+
+
+def run_town_life(pg, base):
+    """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (2-6), drawn no more
+    than the graphics cap; they walk, and sent home (their hour moved to the evening) at least one goes indoors; its
+    animals, chat and a named local who talks by their own name"""
+    i = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='town')")
+    if i < 0: raise Exception("the run fixture's map has no town")
+    node = pg.evaluate(f"runWorldNode({i})")
+    go_scene(pg, node, 90)
+    want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
+    if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
+    if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
+    cap = pg.evaluate("runTownFolkCap(RULES.run.town,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
+    if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
+    pg.evaluate("walkView.folkAll.forEach(f=>{f.x0=f.x;f.z0=f.z});0")
+    if not until(pg, "walkView.folkAll.some(f=>Math.hypot(f.x-f.x0,f.z-f.z0)>1)", 90): raise Exception('nobody walked in 90 s')
+    # the evening: each one's own hours moved to 19:00, so the day sends them home and in at their door. Each first
+    # steps to 3 m from its own door (on the way it would walk), so the walk home is short: folk walk in game time,
+    # which a slow runner draws slower than the clock, and from across the town 150 s was not always enough on CI
+    pg.evaluate("(()=>{const h=folkHour();walkView.folkAll.forEach(f=>{if(f.A&&!f.in){const H=f.A.home,d=Math.hypot(f.x-H[0],f.z-H[1]),x=H[0]+(f.x-H[0])/d*3,z=H[1]+(f.z-H[1])/d*3;if(d>3&&isWalkable(x,z)){f.x=x;f.z=z;f.route=null}}f.off=19-h;f.owl=false});return 0})()")
+    if not until(pg, "walkView.folkAll.some(f=>f.in)", 150): raise Exception('sent home, nobody went indoors in 150 s')
+    life = pg.evaluate(f"(mapById(LOCATIONS[{node}].mapId).life||[]).filter(l=>l.area).map(l=>l.k)")
+    if not life and pg.evaluate(f"!!((gameData.biomes[mapById(LOCATIONS[{node}].mapId).biome]||{{}}).town||{{}}).life"): raise Exception('the town has none of its biome\'s town animals')
+    if not pg.evaluate(f"(()=>{{const k={json.dumps(life)};return ambientLife.list.some(a=>k.includes(a.k))}})()"): raise Exception(f'none of the town animals {life} is about')
+    chat = pg.evaluate("mapChatLines([]).length")
+    if chat < 6: raise Exception(f'the town says {chat} lines, not its biome\'s 6 and more')
+    n = pg.evaluate("(walkState().npcs||[]).filter(n=>String(n.id).startsWith('_talk:local')).length")
+    if not n: raise Exception('no named local in the town')
+    name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>String(n.id).startsWith('_talk:local'));walkPick({k:'npc',n});return n.talk.name})()")
+    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who')&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+        raise Exception(f'tapping {name} didn’t open the talk box with their name')
+    pg.evaluate("talkHide();0")
+    return f'{want} folk ({pg.evaluate("walkView.folk.length")} drawn, cap {cap}), walked and went indoors; animals {life}; {chat} lines; {n} local(s), {name} talked'
+
+
+def run_town_quests(pg, base):
+    """TW-3: the run fixture's first town with a quest: its giver has a gold "!", talks by name, offers the town's
+    quest, Yes takes it (the "!" goes, the Map tab lists it); made done, another town's notice board hands it in for a
+    reward pick, and a reload keeps what is held"""
+    i = pg.evaluate("(()=>{const r=saveData.run,D=questData();return r.map.nodes.findIndex((n,i)=>!!questOffer(r,i,D))})()")
+    if i < 0: raise Exception("no town on the run fixture's map offers a quest")
+    node = pg.evaluate(f"runWorldNode({i})")
+    go_scene(pg, node, 90)
+    if not until(pg, "(walkState().npcs||[]).some(n=>n.id==='_talk:quest')", 20): raise Exception('no quest giver in the town')
+    if not pg.evaluate("questMarked(walkState().npcs.find(n=>n.id==='_talk:quest').talk)"): raise Exception('the giver has no "!"')
+    name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>n.id==='_talk:quest');walkPick({k:'npc',n});return n.talk.name})()")
+    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+        raise Exception(f'tapping {name} didn’t open the talk box with their name')
+    # through the offer: Yes at the choice, every line tapped on
+    if not until(pg, "!talkBox.on", 30, "if(talkBox.choice)talkBox.choice.pick(0);else if(talkBox.cur)talkBox.cur.done()"):
+        raise Exception('the giver’s talk never ended')
+    held = pg.evaluate("(saveData.run.quests||{held:[]}).held.map(q=>q.kind)")
+    if len(held) != 1: raise Exception(f'Yes took {held}, not one quest')
+    if pg.evaluate("questMarked(walkState().npcs.find(n=>n.id==='_talk:quest').talk)"): raise Exception('the "!" stayed after taking the quest')
+    pg.evaluate("uiState.tab='map';render();0")
+    if not until(pg, "!!document.querySelector('.map-quests li')", 10): raise Exception('the Map tab lists no quest')
+    # a reload keeps it
+    pg.evaluate("saveNow();0")
+    if not pg.evaluate("validRun(JSON.parse(JSON.stringify(saveData.run)))"): raise Exception('the run with a quest fails validRun')
+    # done, then another town's board
+    pg.evaluate("(()=>{const q=saveData.run.quests.held[0];q.n=q.goal;q.done=1;return 0})()")
+    j = pg.evaluate(f"questData().boards.find(j=>j!=={i})")
+    if j is None: raise Exception('no other town with a notice board')
+    node2 = pg.evaluate(f"runWorldNode({j})")
+    go_scene(pg, node2, 90)
+    pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='notice');walkPick({k:'act',p,act:'notice'});return 0})()")
+    if not until(pg, "uiState.modal&&uiState.modal.cls==='reward-pick'", 20): raise Exception('the notice board opened no reward pick')
+    if not until(pg, "document.querySelector('#ov p')&&/quest/.test(document.querySelector('#ov p').textContent)", 10):
+        raise Exception('the reward pick doesn’t say it is the quest’s')
+    q = pg.evaluate("[saveData.run.quests.held.length,saveData.run.quests.paid]")
+    if q != [0, 1]: raise Exception(f'after the hand-in: {q[0]} held, {q[1]} paid (want 0, 1)')
+    pg.evaluate("rewardAnswer(null);0")
+    if not until(pg, "!(uiState.modal&&uiState.modal.cls==='reward-pick')", 10): raise Exception('the pick didn’t close')
+    pg.evaluate("uiState.tab='walk';render();0")
+    return f'{name} gave a {held[0]} quest in town {i}; handed in at town {j}'
+
+
 def waystations(pg, base):
     """RL-12b: the in-game test's own phase, "A run's waystation and stall" (self-test.js), on a copy of the save: the
     first seed with both, the stand tapped (its event's sheet), the stall tapped (its shop's wares), the wild stock"""
@@ -948,13 +1169,79 @@ def screens(pg, base):
     return 'opened: ' + ', '.join(seen)
 
 
+def take_off_ride(pg):
+    """HB-8: after Take off: the sky train's ride starts (skipped), the carriage's loading screen comes up with the run's
+    places as its first stage, and you land on the run's first place. Returns the train's key"""
+    if not until(pg, "!!saveData.run&&(trainRide.on&&trainRide.kind==='depart'||!!document.getElementById('runload'))", 20): raise Exception('Take off didn’t start the train’s ride')
+    train = pg.evaluate("trainRide.key")
+    until(pg, "!!trainRide.W||!trainRide.on", 10)
+    pg.evaluate("trainRideSkip();0")
+    if not until(pg, "!!document.querySelector('#runload .train-carriage canvas')||runLoad.node>=0", 20): raise Exception('no carriage loading screen after the ride')
+    first = pg.evaluate("runLoad.L&&runLoad.L.stages[0].id")
+    if first != 'places': raise Exception(f'the take-off’s loading starts with {first}, not the run’s places')
+    if not until(pg, "saveData.run.at.phase==='walk'&&runLoad.node>=0&&walkView.ready", 90): raise Exception('never landed')
+    return train
+
+
+def ride_home(pg):
+    """HB-8: after Ride home: the train's ride home (skipped once it plays) ends; [the train at the platform, its look]"""
+    if not until(pg, "!trainRide.on||!!trainRide.W", 45): raise Exception('the ride home never started')
+    pg.evaluate("trainRideSkip();0")
+    if not until(pg, "!trainRide.on", 10): raise Exception('the ride home never ended')
+    # the train stays at the platform (put in as soon as the hub's view is up, if that came after the ride)
+    until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.trainRide)", 30)
+    return pg.evaluate("(p=>p?[p.k,p.v||0]:null)(walkView.sc.props.find(p=>p.trainRide))")
+
+
+def train_ride(pg, base):
+    """HB-8: in Copperleaf, the sky train's ride played out (not skipped): the departure glides in, climbs and ends in
+    the white veil with its log line (the train's key and ms, nothing else); the carriage's canvas draws in the train's
+    colours and moves; the ride home after a win leaves the gold-trimmed train at the platform and the tear as it was,
+    after a loss the battered one with its smoke"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')&&walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});0")
+    if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
+    # the ride runs on the clock: on a slow page a frame can fall either side of the climb, so one moment of it is held
+    # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end
+    pg.evaluate("trainRide.hold=7300;0")
+    if not until(pg, "trainRide.W&&trainRide.W.train.lift>5&&trainRide.W.train.x>200", 90): raise Exception(f'the train never climbed the rail: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
+    pg.evaluate("trainRide.hold=null;0")
+    if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 90): raise Exception('the departure didn’t end in the white veil')
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.msg.startsWith('train ride departure')).pop()||{}).msg||''")
+    if not line.startswith('train ride departure train_harvest ') or 'skipped' in line: raise Exception(f'the departure’s log line: {line!r}')
+    if pg.evaluate("walkView.sc.props.some(p=>p.trainRide)"): raise Exception('the train stayed in the hub after the portal')
+    pg.evaluate("trainVeil(false,0);0")
+    # the carriage: drawn in the train's colours, moving
+    look = pg.evaluate("""new Promise(r=>{const b=trainCarriage('train_harvest',false),cv=b.querySelector('canvas');document.body.appendChild(b);
+      const px=()=>Array.from(cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data.filter((v,i)=>i%4!==3));
+      const a=px();setTimeout(()=>{const c=px();b.remove();r([new Set(a).size,a.some((v,i)=>v!==c[i])])},400)})""")
+    if look[0] < 8 or not look[1]: raise Exception(f'the carriage: {look[0]} colour values, moving {look[1]}')
+    homes = []
+    for won, want in (('true', 1), ('false', 2)):
+        pg.evaluate(f"window._home=0;trainRideHome('train_harvest',{won},()=>{{window._home=1}});0")
+        if not until(pg, "!!trainRide.W", 45): raise Exception('the ride home never started')
+        if not until(pg, "window._home===1&&!trainRide.on", 90): raise Exception('the ride home never ended')
+        got = pg.evaluate("""(()=>{const p=walkView.sc.props.find(p=>p.trainRide),P=walkView.sc.props.find(p=>p.k==='sky_portal'),
+          M=propWithVariant(p,walkData().sc.props[p.k]);return [p.k,p.v||0,!!p.moving,P.v||0,P.s||1,(M.fx||[]).filter(e=>e.k==='smoke').length]})()""")
+        if got[:5] != ['train_harvest', want, False, 0, 1] or (want == 2) != (got[5] > 0): raise Exception(f'home ({"won" if won == "true" else "lost"}): the train and tear {got}')
+        homes.append(got[5])
+    lines = pg.evaluate("debugLog.ev.filter(e=>e.msg.startsWith('train ride')).map(e=>e.msg)")
+    if len(lines) != 3 or any(not l.startswith('train ride ') or 'train_harvest' not in l for l in lines): raise Exception(f'the ride lines: {lines}')
+    return f'{line}; the carriage moved; home gold, then battered with {homes[1]} smoke trails; {len(lines)} log lines'
+
+
 def run_pack(pg, base):
     """RL-9b: from the ranch fixture (three Billies in storage), one of them training: the mast's start sheet picks it
     (a pick card tapped) and packs two Potions (+ tapped twice); "Take off": the party is that Billie alone, healed,
     its training stopped, the hub's team and storage left as they were, the bag the gift and the pack, Copperleaf's
     two Potions fewer. Given up, keeping it: back in storage once (no second copy) with its run's levels, the team and
     buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
-    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all"""
+    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all. HB-2, HB-8: Take off
+    starts the sky train's ride (skipped here), then the carriage's loading screen while the scenes are made over
+    several frames (no task as long as their work; the places its first stage), it lifts and logs a take-off line
+    without the seed; each ride home leaves the train at the platform in its look (battered after the loss, gold after
+    the win)"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
     pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.potion=3;saveData.pyramids.pyramid=2;0")
     who = pg.evaluate("saveData.box[1].uid")
@@ -969,36 +1256,42 @@ def run_pack(pg, base):
     for _ in range(2): pg.click("#ov [data-pk=items][data-k=potion][data-d='1']")
     packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
     if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
+    # HB-2: the long tasks from the tap to the landing: the run's scenes are made over several frames (one scene the
+    # longest task), never in one (the take-off's work in one task, as before HB-2)
+    pg.evaluate("window._lt=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window._lt.push(e.duration)}).observe({type:'longtask'});0")
     pg.click('#ov [data-a=mb][data-i="0"]')
-    # the flight is 2-3 s: on a slow page (CI's software drawing) it may have landed already when the wait first looks
-    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('“Take off” didn’t start a run')
+    train = take_off_ride(pg)
+    work, wall, longest = pg.evaluate("[runWorld.ms,runWorld.wall,Math.round(Math.max(0,...window._lt))]")
+    if not wall or longest >= work: raise Exception(f'the take-off froze the page: its longest task {longest} ms, the scenes {work} ms of work over {wall} ms')
     got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.potion,saveData.items.potion,saveData.buddy])")
     want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
     if got != want: raise Exception(f'at take-off {got}, not {want}')
-    pg.evaluate("flySkip();0")
-    if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('never landed')
+    # HB-2: the landing's loading screen lifts (every stage ready, or the cap) and logs a take-off line, ms only
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
+    line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run take-off ')).pop()||{}).msg||''")
+    if not line or 'places ' not in line or pg.evaluate("saveData.run.seed") in line: raise Exception(f"the take-off's load line is {line!r}")
     lv = pg.evaluate("saveData.team[0].lvl+=3")
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(false);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-pick-card')", 30): raise Exception('no payout after giving up')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
-    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
+    if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Ride home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
-    if not until(pg, "!saveData.run&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
+    if not until(pg, "!saveData.run&&saveData.meta.runs===1", 30): raise Exception('Ride home didn’t end the run')
+    if ride_home(pg) != [train, 2]: raise Exception(f'after the loss the train at the platform is {ride_home(pg)}, not the battered {train}')
     back = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.buddy,saveData.box.find(m=>m.uid==='{who}').lvl,saveData.items.potion])")
     H = json.loads(hub)
     if back != json.dumps([H[0], H[1], H[2], lv, 1], separators=(',', ':')): raise Exception(f'home after a loss {back}: team, storage, buddy as before, Lv {lv} kept, 1 Potion')
     lead = H[0][0]
     pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{potion:1}},pyramids:{{}}}}}});0")
-    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('the second run didn’t start')
-    pg.evaluate("flySkip();0")
-    if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('the second run never landed')
+    take_off_ride(pg)
     bag = pg.evaluate("saveData.items.potion")
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(true);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 30): raise Exception('no payout after the win')
     labels = pg.evaluate("document.querySelector('#ov pb-payout').rows.map(r=>r.label)")
     if 'Items in the bag' in labels: raise Exception(f'a win paid the bag: {labels}')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
-    if not until(pg, "!saveData.run&&saveData.meta.wins===1", 30): raise Exception('Fly home didn’t end the won run')
+    if not until(pg, "!saveData.run&&saveData.meta.wins===1", 30): raise Exception('Ride home didn’t end the won run')
+    if ride_home(pg)[1] != 1: raise Exception(f'after the win the train at the platform is {ride_home(pg)}, not gold-trimmed')
     keep = pg.evaluate("JSON.stringify([saveData.items.potion,saveData.box.map(m=>[m.uid,m.lvl]),saveData.team.map(m=>m.uid)])")
     if json.loads(keep)[0] != bag: raise Exception(f'after the win Copperleaf has {json.loads(keep)[0]} Potions, not {bag} (none at home + the run’s)')
     pg.goto(base + '/index.html?fixture=stored')
@@ -1133,19 +1426,24 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus),
+              ('Behind things: at most spots behind a tree or building something hides you (the query, the silhouette, the circle); in the open nothing', behind_things),
               ("Encounters: a run's waystation stand opens its event, a stall its shop; both hold fewer wild Billies (RL-12b)", waystations)]),
     ('ranch', [('The ranch trains: Train, a level with time, the cap, a clock turned back and forward, a reload (RL-9, RL-10b)', ranch)]),
     ('pasture', [('The pasture: Billies wander inside the fence, a tap on one or the gate opens the ranch (IS-8)', pasture)]),
     ('relics', [("Perks: the pick (again after a reload), the tab, a battle's and a walk's effects, a town's prices, buying at the cap (RL-12)", relics)]),
     ('ranch', [('Breeding: a safe egg shown and hatched, a risky pair, a clock turned back, a reload (RL-10)', breed)]),
     ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
-    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the mast, a reload (RL-11)', lab)]),
+    ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the station, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
+    ('town', [('The train ride: the departure to the white veil, the carriage, the ride home gold and battered (HB-8)', train_ride)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
-             ("A run town's shop opens (UI-5)", run_shop)]),
-    ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home", run_loop)]),
-    ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; none on flat ground', tall_ground)]),
+             ("A run town's shop opens (UI-5)", run_shop),
+             ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
+             ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
+             ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
+    ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
+    ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
     ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),

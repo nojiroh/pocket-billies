@@ -9,14 +9,12 @@ import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, traine
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
-import { routeTrainerSpot } from './logic/route-trainers.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
 import {
-  ROOM_BY_USE,
   closedText,
   directionOf,
   doorLinkOf,
@@ -53,17 +51,18 @@ import { runArriveSound, soundEffect } from './sound.js';
 import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
-import { flyMenu, rideGlassLift } from './airship.js';
+import { flyMenu, rideGlassLift, stationMenu } from './airship.js';
 import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
+import { questBoardOpen } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBoardOpen } from './lab-board.js';
 import { postcardCheck } from './postcards.js';
 import { legendCheck, personTalk, storyCheck, trainerTalk } from './story.js';
 import { routeSight } from './route-sight.js';
-import { storyResumeCheck } from './story-stage.js';
+import { storyPendingCheck, storyResumeCheck } from './story-stage.js';
 import { toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
 /* eslint-disable no-func-assign */
@@ -71,10 +70,11 @@ expose({
   doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
-  leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
+  leaveRoom: [() => leaveRoom, v => ((leaveRoom = v), provide({ leaveRoom }))],
   mapExits: [() => mapExits, v => (mapExits = v)],
   mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
   mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
+  piecePersonTalk: [() => piecePersonTalk, v => (piecePersonTalk = v)],
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
@@ -91,7 +91,7 @@ expose({
   walkState: [() => walkState, v => (walkState = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ mapIdAt, mapOffsetInView, roomState });
+provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState });
 /* to-module: end */
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {
@@ -225,7 +225,7 @@ function roomRefresh() {
   walkView.nav = null;
 }
 function roomAim(h) {
-  if (!h || h.k !== 'act' || !ROOM_BY_USE[h.act] || uiState.inside) return;
+  if (!h || h.k !== 'act' || !PB_DATA.opensRoom(h.act) || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
   const q = doorBuildingOf(h.act, h.p),
     id = roomFor(h.act, q);
@@ -473,29 +473,29 @@ export function walkState() {
         const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
-      /* RL-12b: a route trainer stands by the road, facing it (logic/route-trainers.js); it sees you from there */
-      if (T.route) {
-        const bid = sc.baseId || v.id,
-          base = mapById(bid) || sc,
-          o = sc.baseOff || [0, 0],
-          S = routeTrainerSpot(mapHub(base), base.exits || [], T.route.k, T.route.n);
-        if (S) {
-          const at = /** @type {[number, number]} */ ([S.at[0] + o[0], S.at[1] + o[1]]),
-            look = /** @type {[number, number]} */ ([S.road[0] + o[0], S.road[1] + o[1]]);
-          walkView.npcLook[T.id] = look;
-          return {
-            who: T.who,
-            id: T.id,
-            done: !!saveData.flags[T.id],
-            exit: null,
-            dir: directionOf(look[0] - at[0], look[1] - at[1]),
-            route: true,
-            at,
-          };
-        }
+      /* RL-12b: a route trainer stands on its spot, facing the way the spot faces (RT-2, logic/route-trainers.js
+         routeTrainersPlace: in its place's own metres); it sees you from there */
+      if (T.route && T.route.at) {
+        const o = sc.baseOff || [0, 0],
+          at = /** @type {[number, number]} */ ([T.route.at[0] + o[0], T.route.at[1] + o[1]]),
+          look = /** @type {[number, number]} */ ([T.route.look[0] + o[0], T.route.look[1] + o[1]]),
+          dir = directionOf(look[0] - at[0], look[1] - at[1]);
+        walkView.npcLook[T.id] = look;
+        const me = { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit: null, dir, route: true, at };
+        /* RT-2: a pair's second trainer stands beside the first; talking to either is talking to the pair */
+        if (!T.mate || !T.route.mate) return me;
+        const mate = {
+          ...me,
+          who: T.mate.who,
+          id: T.id + '~b',
+          talkAs: T.id,
+          at: /** @type {[number, number]} */ ([T.route.mate[0] + o[0], T.route.mate[1] + o[1]]),
+        };
+        return [me, mate];
       }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
-    });
+    })
+    .flat();
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
   {
     const bid = sc.baseId || v.id,
@@ -503,7 +503,8 @@ export function walkState() {
       o = sc.baseOff || [0, 0];
     if (base && bid === mapIdAt(v.node))
       for (const P of base.people || [])
-        if (PEOPLE[P.who] && ((!P.when && !P.unless) || storyAllows(P)))
+        /* TW-2: a run town's named local has a townsfolk look ('folk:<seed>') and lines of their own */
+        if ((PEOPLE[P.who] || (P.lines && /^folk:/.test(P.who))) && ((!P.when && !P.unless) || storyAllows(P)))
           v.npcs.push({
             who: P.who,
             id: '_talk:' + P.id,
@@ -513,6 +514,21 @@ export function walkState() {
             dir: P.dir || 'down',
             at: [P.x + o[0], P.z + o[1]],
           });
+    /* RT-3: a set piece's people (the Bureau checkpoint's agent), facing the road; tapped, piecePersonTalk */
+    if (base && bid === mapIdAt(v.node))
+      (base.pieces || []).forEach((/** @type {any} */ L, /** @type {number} */ n) =>
+        (L.people || []).forEach((/** @type {any} */ q, /** @type {number} */ m) =>
+          v.npcs.push({
+            who: q.who,
+            id: `_piece:${n}:${m}`,
+            piece: q,
+            done: true,
+            exit: null,
+            dir: directionOf(Math.cos((q.face * Math.PI) / 180), Math.sin((q.face * Math.PI) / 180)),
+            at: [q.x + o[0], q.z + o[1]],
+          })
+        )
+      );
   }
   v.who = 'me';
   v.enc = encountersHere().map(q => ({
@@ -521,8 +537,21 @@ export function walkState() {
     sp: q.sp,
     alpha: !!q.alpha,
     build: encounterBuild(q),
+    /* RT-4: where it waits (walk/frame-items.js: its habitat's points, the rarer one's pocket) */
+    hab: q.hab,
+    rare: q.rare,
   }));
   return v;
+}
+/** RT-3: a set piece's person: its event (encounter-screen.js) the first time this run, then what they say
+ * @param {{ who: string, event?: string, say?: string }} q */
+function piecePersonTalk(q) {
+  const run = saveData.run;
+  if (q.event && run && !(run.enc && run.enc.seen.includes(q.event))) {
+    encounterOpen(null, q.event);
+    return;
+  }
+  toast(q.say || '…');
 }
 export function walkPick(h) {
   const node = saveData.trip.node,
@@ -551,7 +580,11 @@ export function walkPick(h) {
       personTalk(h.n.talk);
       return;
     }
-    trainerTalk(h.n.id);
+    if (h.n && h.n.piece) {
+      piecePersonTalk(h.n.piece);
+      return;
+    }
+    trainerTalk(h.n.talkAs || h.n.id);
   } else if (h.k === 'act') {
     const p = h.p,
       a = h.act;
@@ -566,6 +599,11 @@ export function walkPick(h) {
     }
     if (a === 'lift' && typeof rideGlassLift === 'function') {
       rideGlassLift(p);
+      return;
+    }
+    /* HB-7: Skyline Station, where runs start */
+    if (a === 'station' && typeof stationMenu === 'function') {
+      stationMenu(p);
       return;
     }
     /* RL-R2: a field move's obstacle (Cut, Rock Smash, Surf) and a side area's way out (field-moves.js) */
@@ -601,7 +639,7 @@ export function walkPick(h) {
       ranchOpen();
       return;
     }
-    if (ROOM_BY_USE[a] && enterRoom(a, p)) return;
+    if (PB_DATA.opensRoom(a) && enterRoom(a, p)) return;
     if (a === 'shop') {
       const id = p.shop || here.shop;
       if (id && SHOPS[id]) openShop(id);
@@ -611,6 +649,11 @@ export function walkPick(h) {
     else if (a === 'read' && typeof loreBook === 'function') loreBook(p.book);
     else if (a === 'ranch' && typeof ranchOpen === 'function') ranchOpen();
     else if (a === 'board' && typeof labBoardOpen === 'function') labBoardOpen();
+    /* TW-3: a run town's notice board hands in the quests that are done (quest-board.js) */ else if (
+      a === 'notice' &&
+      typeof questBoardOpen === 'function'
+    )
+      questBoardOpen();
     else
       toast(
         p.say ||
@@ -618,6 +661,7 @@ export function walkPick(h) {
             lab: 'The lab is busy with research.',
             house: 'Nobody answers the door.',
             home: 'Nobody answers the door.',
+            enter: 'The door is locked.',
             sign: `You’re in ${here.name}.`,
           }[a] ||
           'Nothing happens.'
@@ -655,6 +699,7 @@ function exitPrompt(e) {
 setInterval(() => {
   try {
     if (typeof storyResumeCheck === 'function') storyResumeCheck();
+    if (typeof storyPendingCheck === 'function') storyPendingCheck();
     if (typeof storyCheck === 'function') storyCheck();
     if (typeof legendCheck === 'function') legendCheck();
     if (typeof postcardCheck === 'function') postcardCheck();

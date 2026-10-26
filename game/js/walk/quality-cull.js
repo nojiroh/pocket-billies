@@ -5,19 +5,23 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { gameData, provide, saveData } from '../hooks.js';
+import { coverTarget, fadeEase, pictureCovers } from '../logic/occlude.js';
 import { propDrawFade, qualityStep } from '../logic/quality-step.js';
 import { frameScheduler } from '../frame-scheduler.js';
-import { mapMoodName, walkView } from '../walk-view.js';
+import { mapMoodName, walkView, worldToScreen } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { worldCurveDrop } from './draw-common.js';
 /* eslint-disable no-func-assign */
 expose({
+  COVER_FADES: [() => COVER_FADES],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   NEUTRAL_MOOD: [() => NEUTRAL_MOOD],
   adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
   computeFrustum: [() => computeFrustum, v => (computeFrustum = v)],
+  coverFrame: [() => coverFrame, v => (coverFrame = v)],
+  coverItems: [() => coverItems, v => (coverItems = v)],
   cullItems: [() => cullItems, v => (cullItems = v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
@@ -102,6 +106,48 @@ export function cullItems(items, C) {
   }
   walkRenderer.culled = n;
   walkRenderer.cullOf = k;
+}
+/* player visibility: a tall picture standing nearer the camera that covers your feet, middle or head thins out
+   (logic/occlude.js: to Engine > Camera > coverFade, milder while the see-through circle is on), eased in and out per
+   placement so walking past doesn't pop it. All of a placement's pictures (its layers, its model) fade together.
+   Sprites, solid props, models, voxel props and buildings all read the result from it.fade. None in battle. */
+const COVER_FADES = new Map();
+let coverFrame = 0;
+export function coverItems(items, C, dt) {
+  coverFrame++;
+  const P = walkView.pl;
+  if (walkRenderer.bt || !P || !C) {
+    COVER_FADES.clear();
+    return;
+  }
+  const pts = [0.1, 0.9, 1.6].map(h => worldToScreen(C, P.x, h, P.z)).filter(Boolean),
+    target = coverTarget(+(engineSetting('camera', 'coverFade') ?? 0.4), walkRenderer.hidK || 0),
+    want = new Map();
+  if (pts.length)
+    for (const it of items) {
+      if (it.person || it.k !== 'prop' || it.vis === false || !it.mpp) continue;
+      const s = it.mpp,
+        hM = -it.oy * s;
+      if (!(hM > 1.6)) continue;
+      const key = it.p || it;
+      if (want.get(key) === target) continue;
+      const q = worldToScreen(C, it.x, 0, it.z);
+      if (q && pts.some(me => pictureCovers(me, q, it.w * s * 0.5, hM))) want.set(key, target);
+      else if (!want.has(key)) want.set(key, 1);
+    }
+  for (const [key, w] of want) {
+    const e = COVER_FADES.get(key);
+    if (!e && w === 1) continue;
+    const v = fadeEase(e ? e.v : 1, w, dt);
+    if (v === 1 && w === 1) COVER_FADES.delete(key);
+    else COVER_FADES.set(key, { v, f: coverFrame });
+  }
+  for (const [key, e] of COVER_FADES) if (e.f !== coverFrame) COVER_FADES.delete(key);
+  if (COVER_FADES.size)
+    for (const it of items) {
+      const e = COVER_FADES.get(it.p || it);
+      if (e && e.v < 1) it.fade = (it.fade ?? 1) * e.v;
+    }
 }
 /* v32: a per-frame time budget for one-off work (solid bodies, outlines of buildings): past it, things stay pictures
    for a frame or two instead of freezing the scene while they are worked out */

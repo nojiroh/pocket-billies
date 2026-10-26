@@ -1,7 +1,7 @@
 // Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (debug-log.js, a classic
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
-import { LOCATIONS, gameData } from './game-data.js';
+import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { ranchSkew } from './logic/ranch-clock.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
@@ -12,6 +12,7 @@ import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
 import { openDressingRoom, setOpenDressingRoom } from './dressing-room.js';
+import { graftReport } from './skeleton-rig.js';
 import {
   battleStage,
   battleStageResize,
@@ -101,6 +102,7 @@ import { render, setRender } from './ui.js';
 Object.defineProperties(GAME, {
   LOCATIONS: { get: () => LOCATIONS },
   PERSON_ART_CACHE: { get: () => PERSON_ART_CACHE },
+  TRAINERS: { get: () => TRAINERS },
   account: { get: () => account },
   activeBattle: { get: () => activeBattle },
   ambience: { get: () => ambience },
@@ -142,6 +144,7 @@ Object.defineProperties(GAME, {
   gpuCountSummary: { get: () => gpuCountSummary },
   gpuCounters: { get: () => gpuCounters },
   gpuState: { get: () => gpuState },
+  graftReport: { get: () => graftReport },
   grassWork: { get: () => grassWork, set: setGrassWork },
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },
   lifeStep: { get: () => lifeStep, set: setLifeStep },

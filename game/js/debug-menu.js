@@ -36,13 +36,16 @@ import {
   FIELD_MOVES,
   ITEMS,
   LOCATIONS,
+  MODIFIERS,
   PERKS,
   PYRAMIDS,
   RULES,
   SPECIES,
   TRAINERS,
   TYPES,
+  gameData,
 } from './game-data.js';
+import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftSet } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
@@ -57,9 +60,12 @@ import {
   spawn,
   xpFor,
 } from './logic/rules.js';
+import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { ranchNow } from './logic/ranch-clock.js';
+import { heldIds } from './logic/held.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
-import { RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
+import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { perkOfferMake, perkTake } from './logic/perks.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
@@ -68,7 +74,7 @@ import { frameCount, frameScheduler, frameTask, userFps } from './frame-schedule
 import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave, settingsReset } from './settings-screen.js';
 import { battleStage, battleStageResize } from './battle-stage.js';
-import { mapById } from './walk-view.js';
+import { mapById, walkTo, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
@@ -80,6 +86,8 @@ expose({
   debugButtonHTML: [() => debugButtonHTML],
   debugFind: [() => debugFind, v => (debugFind = v)],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
+  debugGraftFor: [() => debugGraftFor, v => (debugGraftFor = v)],
+  debugGraftWords: [() => debugGraftWords],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   debugMenu: [() => debugMenu],
   debugOpenKeep: [() => debugOpenKeep, v => (debugOpenKeep = v)],
@@ -188,7 +196,8 @@ function debugHTML() {
   const billies = `<div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level">${debugSelectHTML('dbgCoat', [['', 'No coat'], ...Object.entries(COATS).map(([k, c]) => [k, c.name])], uiState.dbgCoat || '')}</div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels', 'gold')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide', 'gold')}</div>
-  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>`;
+  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Places and test scenes) for a mixed team.</p>
+  <div class="dbg-row">${debugButtonHTML('graftlead', 'Graft the lead', 'gold')}${debugButtonHTML('graftenc', 'Add a grafted encounter')}${debugButtonHTML('graftwild', 'Battle a grafted one', 'red')}${debugButtonHTML('graftclear', 'Clear grafts')}</div><p class="note">Splicing art spike: a random other species’ arm, leg or tail, baked on this device (the species above for an encounter). Until a reload only, never saved. Each bake’s time goes to the debug log: open the team and a battle, then export it.</p>`;
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
@@ -200,12 +209,32 @@ function debugHTML() {
         'dbgEvent',
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
-      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
+      )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('routetrainer', 'Walk into a route trainer’s sight')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
     : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
         uiState.dbgRunSide || ''
-      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times).</p>`;
+      )}${debugSelectHTML(
+        'dbgRunLayout',
+        [
+          ['', 'Route layout: as the seed rolls'],
+          ...Object.entries(MAPGEN_LAYOUTS)
+            .filter(([k]) => k !== 'none')
+            .map(([k, L]) => [k, `Every route: ${L.name}`]),
+        ],
+        uiState.dbgRunLayout || ''
+      )}${debugButtonHTML('badgesall', 'Keep every badge', 'gold')}${debugButtonHTML('badgesnone', 'No badges')}</div><div class="dbg-row">${debugSelectHTML(
+        'dbgExpedition',
+        MODIFIERS.expeditions.map((E, i) => [i + 1, E.name]),
+        uiState.dbgExpedition || 1
+      )}${CHALLENGE_IDS.filter(id => MODIFIERS.challenges[id])
+        .map(
+          id =>
+            `<label><input id="dbgChal_${id}" type="checkbox"${(uiState.dbgChal || []).includes(id) ? ' checked' : ''}> ${escapeHtml(/** @type {any} */ (MODIFIERS.challenges[id]).name)}</label>`
+        )
+        .join(
+          ''
+        )}${debugButtonHTML('expopen', 'Open every Expedition', 'gold')}</div><p class="note">RL-13: the Expedition and challenges the next run starts at (a mono-type run takes the lead's first type). Open: ${escapeHtml(expeditionNumeral(saveData.meta.expedition || 1))}.</p><p class="note">RL-R2: a side area forced on the run (a detour or an alternate path behind Surf, Rock Smash or Cut); badges kept: ${escapeHtml(Object.keys((saveData.meta || {}).badges || {}).join(', ') || 'none')}.</p><p class="note">From Copperleaf, as the mast does (Expedition I). Short: one mini-boss, a town before it, the boss. Mountains and ledges: every place gets mountains of 15-20 m on its north and south sides with trails up, and terraces with ledges (for measuring on a phone; the debug log has the frame times). Route layout (RT-1): every laid-out place (routes, the landing, the mini-bosses' and the boss's) gets that plan.</p>`;
   const places = `<div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
@@ -325,6 +354,23 @@ function debugFps() {
   const m = frameScheduler.meter;
   el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
 }
+/* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits */
+function debugGraftFor(sp) {
+  const B = gameData.kitBuilds,
+    K = gameData.partKits,
+    slots = GRAFT_SLOTS.filter(slot => graftDonors(B, K, sp, slot).length);
+  if (!slots.length) return '';
+  const slot = slots[Math.floor(Math.random() * slots.length)],
+    list = graftDonors(B, K, sp, slot);
+  return graftKey({ [slot]: list[Math.floor(Math.random() * list.length)] });
+}
+const debugGraftWords = g =>
+  Object.entries(graftParse(g) || {})
+    .map(
+      ([slot, d]) =>
+        `${SPECIES[d] ? SPECIES[d].name : d}’s ${{ front: 'arms', back: 'legs', sig: 'tail' }[slot] || slot}`
+    )
+    .join(' and ');
 function debugAction(x) {
   const v = id => {
       const e = $('#' + id);
@@ -415,6 +461,36 @@ function debugAction(x) {
       startWild(q);
       return;
     }
+    case 'graftlead': {
+      const m = saveData.team[0],
+        g = m ? debugGraftFor(m.sp) : '';
+      if (!g) return toast(m ? 'No other species has a part that fits your lead.' : 'No lead to graft.');
+      graftSet(m, g);
+      if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: lead ${m.sp} ${g}`);
+      said = `Your lead now wears ${debugGraftWords(g)}.`;
+      break;
+    }
+    case 'graftenc':
+    case 'graftwild': {
+      if (x === 'graftwild' && activeBattle) return toast('Finish the current battle first.');
+      const g = debugGraftFor(sp);
+      if (!g) return toast(`No other species has a part that fits ${SPECIES[sp].name}.`);
+      const q = { id: newUid(), sp, lvl: lv, coat: $('#dbgCoat').value || undefined, no: ++saveData.serial };
+      graftSet(q, g);
+      encountersHere().push(q);
+      if (typeof debugLog !== 'undefined') debugLog.add('graft', `debug: wild ${sp} ${g}`);
+      if (x === 'graftenc') {
+        said = `A ${SPECIES[sp].name} wearing ${debugGraftWords(g)} added to the encounters here.`;
+        break;
+      }
+      closeModal();
+      startWild(q);
+      return;
+    }
+    case 'graftclear':
+      for (const m of [...saveData.team, ...encountersHere()]) graftSet(m, '');
+      said = 'Grafts taken off the team and the encounters here.';
+      break;
     case 'heal':
       healAll();
       said = `Healed: ${saveData.team.length} on your team.`;
@@ -531,20 +607,42 @@ function debugAction(x) {
           .slice(0, 20),
         short = !!($('#dbgRunShort') || {}).checked,
         mountains = !!($('#dbgRunMountains') || {}).checked,
-        side = v('dbgRunSide') || '';
+        side = v('dbgRunSide') || '',
+        layout = v('dbgRunLayout') || '';
       uiState.dbgRunSeed = sd;
       uiState.dbgRunSide = side;
+      uiState.dbgRunLayout = layout;
       uiState.dbgRunShort = short;
       uiState.dbgRunMountains = mountains;
       if (!runStartable())
         return refreshDebugMenu('A run can’t start now (on a run, in a battle, or no Billie can fight).');
       uiState.modal = null;
-      runTakeOff(sd || undefined, short ? { rows: 5, minibosses: 1 } : undefined, [
-        ...(mountains ? [RUN_MOD_MOUNTAINS] : []),
-        ...(side ? [RUN_SIDE_MOD + side] : []),
-      ]);
+      /* RL-13: the Expedition and the challenges picked here (a mono-type run takes the lead's first type) */
+      const expedition = Math.max(1, Math.min(MODIFIERS.expeditions.length, Number(v('dbgExpedition')) || 1)),
+        chal = CHALLENGE_IDS.filter(id => MODIFIERS.challenges[id] && ($(`#dbgChal_${id}`) || {}).checked),
+        lead = saveData.team[0],
+        monoType = (lead && SPECIES[lead.sp] && SPECIES[lead.sp].types[0]) || TYPES[0];
+      uiState.dbgExpedition = expedition;
+      uiState.dbgChal = chal;
+      runTakeOff(
+        sd || undefined,
+        short ? { rows: 5, minibosses: 1 } : undefined,
+        [
+          ...modsMake(chal, monoType),
+          ...(mountains ? [RUN_MOD_MOUNTAINS] : []),
+          ...(side ? [RUN_SIDE_MOD + side] : []),
+          ...(layout ? [RUN_LAYOUT_MOD + layout] : []),
+        ],
+        undefined,
+        expedition
+      );
       return;
     }
+    /* RL-13: every Expedition open, to try the harder ones */
+    case 'expopen':
+      saveData.meta.expedition = MODIFIERS.expeditions.length;
+      saveNow();
+      return refreshDebugMenu(`Expeditions I-${expeditionNumeral(saveData.meta.expedition)} open.`);
     /* RL-R2: badges kept for good, every type's or none (field moves need them) */
     case 'badgesall':
     case 'badgesnone': {
@@ -583,6 +681,45 @@ function debugAction(x) {
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
       uiState.modal = null;
       encounterOpen(null, id);
+      return;
+    }
+    /* RL-12c: a pick of held items only (the reward pick's held cards), and one of each into the bag */
+    case 'heldpick':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      if (!rewardOfferMake(saveData.run, 'debug', rewardDataGame(saveData.team), { kind: 'held', n: 3 }))
+        return refreshDebugMenu('Every held item is held.');
+      saveNow();
+      uiState.modal = null;
+      rewardPickOpen();
+      return;
+    case 'heldall':
+      for (const k of heldIds(ITEMS)) saveData.items[k] = (saveData.items[k] || 0) + 1;
+      saveNow();
+      return refreshDebugMenu('One of each held item is in the bag: give them from a Billie’s details.');
+    /* RT-2: this place's route trainers (spot kind, required or optional, a pair), and a walk into the nearest
+       unbeaten one's line of sight, 3 m in front of it */
+    case 'routetrainer': {
+      if (!saveData.run || activeBattle || !walkView.pl) return refreshDebugMenu('No run, or a battle is on.');
+      const here = Object.values(TRAINERS).filter(T => T.route && T.runNode === saveData.trip.node - 1),
+        list = here
+          .map(
+            T =>
+              `${T.name} (${T.route.spot || '?'}, ${T.route.opt ? 'optional' : 'by the road'}${saveData.flags[T.id] ? ', beaten' : ''})`
+          )
+          .join('; '),
+        P = walkView.pl,
+        near = here
+          .filter(T => !saveData.flags[T.id] && walkView.npcAt[T.id] && walkView.npcLook[T.id])
+          .map(T => ({ T, at: walkView.npcAt[T.id], look: walkView.npcLook[T.id] }))
+          .sort((a, b) => Math.hypot(a.at[0] - P.x, a.at[1] - P.z) - Math.hypot(b.at[0] - P.x, b.at[1] - P.z))[0];
+      if (!near) return refreshDebugMenu(here.length ? `None left unbeaten here: ${list}.` : 'No route trainer here.');
+      const fx = near.look[0] - near.at[0],
+        fz = near.look[1] - near.at[1],
+        l = Math.hypot(fx, fz) || 1;
+      uiState.modal = null;
+      render();
+      walkTo([near.at[0] + (fx / l) * 3, near.at[1] + (fz / l) * 3]);
+      toast(`Route trainers here: ${list}.`);
       return;
     }
     case 'rewardpick':

@@ -9,6 +9,51 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
+  your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
+  and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing
+  changes. The one you are talking to shows through the same way. Engine > Camera has the dials: "Your outline when
+  hidden" (was "Your silhouette through rock"), the outline's width and fill, the circle's switch, size and strength,
+  and how far things covering you fade.
+- **The story reacts to your runs** (roguelite track RL-S1, the story director): the game remembers your last 20
+  runs (where, how far, what beat you, who you brought, the Perks and leaders). Back in Copperleaf, **Professor
+  Chosen, Hazel and Granny Juniper** each have a fresh word about your last run the first time you talk to them. After
+  a **lost run** Chosen loudly takes the credit for bringing you back, and Hazel isn't so sure it was him. On a run,
+  **leaders** say something before the battle (they remember beating you), and the **Bureau's clerks** have started
+  keeping a file on you.
+- **Held items** (roguelite track RL-12c): every Billie has one held-item slot. Eight to start with: Leftover
+  Sandwich (heals a little each turn), Snack Pack (a quarter of its HP once a battle, when low), Lucky Coin (wins pay
+  25% more), Study Notes (50% more XP), Iron Vest (15% less damage taken), Quick Laces (Speed up as it comes in), Brass
+  Knuckles and Smart Specs (physical or special moves 20% harder). A trainer's reward pick can offer one; you choose
+  who holds it, or put it in the bag. Give, swap or take off held items from a Billie's details. They last one run: at
+  the end they go back into the bag (paid as Research on a loss, taken home on a win).
+- **Expeditions, challenges and starter points** (roguelite track RL-13): runs now have difficulty tiers.
+  **Expedition I** is the game as it was; winning the highest one open unlocks the next, up to **V**. Each one above I
+  sends foes out 2 levels higher, makes the final boss tougher (+15% HP a step), raises run shop and clinic prices by
+  10%, and (from the region generator) adds a zone or two to the run. Once you have won a run you can also take
+  **challenges** on: **Mono-type** (pick a type; only Billies of it may start the run or be caught), **No healing**
+  (clinics shut, no healing items sold or packed), **No Perks** and **Fainted is gone** (a Billie that faints leaves
+  the run). Each pays 25% more Research.
+  **Starter points** replace "one Billie from home": every Billie at the ranch has a price in points (by how rare and
+  how evolved it is, and 1 more per 5 levels), and the mast gives you a budget to spend (20 at Expedition I, more
+  later). Bring six fresh ones or three trained ones. A Billie that is already fully evolved, or never evolves, is
+  priced as a final form. The start sheet shows each card's price and why one can't come.
+  **Leaders now field their own type**: the Water leader brings Water Billies from the region, not whatever the old
+  data said.
+- Leaders and trainers on a run no longer field a fully evolved Billie before level 32: a Flying leader could send out
+  four Peacoutures at level 11.
+- Run towns look like towns (towns track TW-1): a short street leads off the road to a little square with a well or a
+  fountain, benches and lamps, the clinic and the shop facing it, and a row of houses with gardens and fences along
+  the road. The houses are for show; only the clinic and the shop open. Each biome builds with its own houses.
+- Run towns have people in them (towns track TW-2): 2 to 5 townsfolk by the town's size go to work, sit on the
+  square, wander the street and go home at dusk; chickens and cats (pigeons on a bigger town's square, crows in the
+  volcano and the badlands) keep to the town. Folk talk about their biome and the run's region, and one or two named
+  locals stand about with something to say. Beautiful draws up to 6 folk, Balanced 5, and 3 while the game is
+  softening the picture to keep up.
+- Run towns give quests (towns track TW-3): a townsperson with a gold "!" by the notice board on each town's square
+  offers one quest (catch a Billie of a type, beat route trainers, carry a parcel to the next town, or beat the next
+  mini-boss with nobody fainting), only ever one you can finish on this run. Hold up to three; the Map tab lists them.
+  Hand a finished quest in at another town's notice board for a reward pick. Quests end with the run.
 - Three new Billies and five regional forms (roster track RO-2c): **Siliclet**, a black gecko with one glowing scale,
   evolving at level 20 into **Jenzard** and at 40 into **Gigajenzard**, a rare Electric/Dragon data-centre dragon
   whose keynote dims the lights. Five Billies you already know now have a regional form, met in the biomes it suits:
@@ -54,6 +99,15 @@ kept aside in the browser).
   leader of its own) with Billies the region doesn't have, and a one-way way out back to the main path. A rarer
   **alternate path** runs beside the main one with its own mini-boss, and now and then ends at a boss of its own.
   **Badges are kept for good**: the first win over a leader of a type keeps its badge, shown on the trainer card.
+- **Caves, an islet and the way back** (roguelite track RL-R2, part 2): behind Rock Smash's boulder is now a real
+  **cave**: rock walls all round, a rock and crystal floor, stalagmites, glowing crystals and mushrooms, dripping water
+  and the cave song, dark enough that you carry a lantern (the dark eases in as you walk through the cave mouth).
+  Surf's town is an **islet**: the sea all round, crossed by sandy causeways. Taking a side area's one-way way out now
+  plays a short moment, Pokémon's way: the picture dips to dark with a few words ("Swept along by the current…") and
+  you are back on the main path.
+- **The Studio's Run Lab** shows a run's side area in a band above the main path, with its way in and its one-way way
+  out, and says what it is; the run preview and the run simulator have it too (the simulator's `--badges=all` lets its
+  bot open it). The map generator has a new **Islet** water.
 - **No more deadline on a run**: the day still counts (the forecast, the shops' stock) but nothing is late. The day
   chip shows the day alone and the run songs lose their deadline version.
 - Encounters on a run (roguelite track RL-12b, part 1):

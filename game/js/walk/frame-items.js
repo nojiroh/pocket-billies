@@ -4,6 +4,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
+  LOCATIONS,
   buddyItems,
   buildingFrontPicture,
   buildingGuard,
@@ -16,6 +17,7 @@ import {
   propModelImageItems,
   provide,
   reducedMotion,
+  saveData,
   solidPropLevelOfDetail,
   soundEffectAt,
   tagPropModel,
@@ -26,6 +28,7 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
+import { WADE_DEPTH } from '../logic/wading.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
 import {
   WALK_FRAME_M,
@@ -42,6 +45,7 @@ import {
   propWithVariant,
   stepLevelAt,
   tallGrassProps,
+  wadeDepthHere,
   walkView,
   walkablePointNear,
 } from '../walk-view.js';
@@ -66,6 +70,7 @@ expose({
   gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
   personItem: [() => personItem, v => (personItem = v)],
   propBaseHeight: [() => propBaseHeight, v => ((propBaseHeight = v), provide({ propBaseHeight }))],
+  wadeItem: [() => wadeItem, v => (wadeItem = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ propBaseHeight });
@@ -145,6 +150,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       cross: !far && S.cross,
       bld3: !far && !!(M.build && M.box) && typeof buildingsOn === 'function' && buildingsOn(),
     });
+    if (S && S.spin) out[out.length - 1].spin = S.spin;
     if (!far) hugSlope(out[out.length - 1], C);
     /* v46: a building whose solid or front isn't made yet (a few are made per frame) shows as its picture meanwhile, never as nothing */
     if (!far) {
@@ -304,7 +310,10 @@ export function gatherFrameItems(st, C, PPU, C0) {
   (st.enc || []).forEach(e => {
     let s = walkView.enc[e.id];
     if (!s || s.sc !== walkView.id) {
-      const sp = encounterSpot(sc, e.id, used);
+      /* RT-4: a route's rarer one waits in its hard pocket (the place's rareAt, in its scene's metres) */
+      const R = e.rare ? LOCATIONS[saveData.trip.node] : null,
+        O = sc.baseOff || [0, 0],
+        sp = R && R.rareAt ? [R.rareAt[0] + O[0], R.rareAt[1] + O[1]] : encounterSpot(sc, e.id, used, e.hab);
       s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
     }
     /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,
@@ -425,6 +434,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       { shear: reducedMotion ? 0 : P.lean || 0 }
     );
     if (P.yv != null && P.yId === walkView.id) me.y = P.yv;
+    if (!P.hop) wadeItem(me);
     const mt = rideMountItem(P, t);
     if (mt) {
       out.push(mt.it);
@@ -436,11 +446,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
   }
   return out;
 }
-/* a prop's base height: on a slope the lowest point under it on its own terrace (so it never floats on the downhill
+/* a prop's base height (its placement's y, else the ground's): on a slope the lowest point under it on its own terrace (so it never floats on the downhill
    side), rocks and boulders sunk a little into the ground */
 /* alpha 0.2: a rock formation or a hill-built thing with a footprint stands at the lowest point under it (it sinks into the slope, it never hangs over it) */
 const SUNKEN_FOOTPRINT_PROPS = /mesa|vault_door|mine_entrance|shipwreck|stilt|spore_mill/;
 function propBaseHeight(p, M) {
+  /* hub placing: a placement's own height (the sky rail out over the sea, level with its station) */
+  if (typeof p.y === 'number') return p.y;
   const y0 = standingHeightAt(p.x, p.z);
   if (M.box && SUNKEN_FOOTPRINT_PROPS.test(p.k)) {
     const s = p.s || 1,
@@ -473,6 +485,23 @@ function propBaseHeight(p, M) {
   }
   const g = (M.group || '') + ' ' + p.k;
   return y - (M.sink ?? (/rock|boulder|stone_|pebble|stalag/.test(g) ? 0.07 : 0));
+}
+/* WA-6a: someone in the shallows stands on the bed and is cut at the waterline (walk/draw-common.js setSpriteUniforms
+   leaves off its bottom it.cut rows). The water lies 0.12 m under the bank's ground (walk/heights.js); from the bank you
+   sink smoothly from the ground to WADE_DEPTH under the surface, and the cut starts once your feet are under it. */
+export function wadeItem(it) {
+  const d = typeof wadeDepthHere === 'function' ? wadeDepthHere(it.x, it.z) : 0;
+  if (!(d > 0) || !(it.mpp > 0)) return it;
+  const surf = standingHeightAt(it.x, it.z),
+    base = surf + 0.12 - (0.12 + WADE_DEPTH) * (d / WADE_DEPTH),
+    under = surf - base;
+  it.y = base;
+  if (under > 0) {
+    const c = Math.round(under / it.mpp);
+    it.y = surf - c * it.mpp;
+    it.cut = c + it.h + it.oy;
+  }
+  return it;
 }
 export function personItem(k, im, x, z, C0, extra) {
   const mpp = (C0.person || 1.75) / 1.75 / (im.ppm || 42);

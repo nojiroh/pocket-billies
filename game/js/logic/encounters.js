@@ -19,6 +19,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { speciesStep } from './rules.js';
+import { modFoeLevels } from './modifiers.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
@@ -216,12 +218,14 @@ export function encPerk(run, arg, perks, rule) {
 }
 
 /** species to meet at a level: the region's dex (else every species given), the stages that fit the level (a first
- * stage under 16, no final under 32), by id @param {Run} run @param {Record<string, any>} species @param {number} lvl */
+ * stage under 16, no final form under 32), by id @param {Run} run @param {Record<string, any>} species @param {number} lvl */
 export function encDexAt(run, species, lvl) {
   const dex = (run.region && run.region.dex) || Object.keys(species),
     fits = (/** @type {string} */ id) => {
       const S = species[id];
-      return !!S && (lvl < 16 ? S.stage === 0 : lvl < 32 ? S.stage <= 1 : true);
+      /* RL-13: a final form is one whatever its stage number (rules.js speciesStep): a Billie with no evolutions
+         (Altmowl, Peacouture) waits for 32 like any final */
+      return !!S && (lvl < 16 ? speciesStep(S) === 0 : lvl < 32 ? speciesStep(S) <= 1 : true);
     },
     L = dex.filter(fits);
   return (L.length ? L : dex.filter(id => species[id])).slice().sort();
@@ -229,7 +233,9 @@ export function encDexAt(run, species, lvl) {
 
 /** a place's top wild level @param {Run} run @param {number} i @param {{ wild: { lv: [number, number], perRow: number } }} rules */
 export const encPlaceLevel = (run, i, rules) =>
-  run.map ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }))[1] : Math.max(1, rules.wild.lv[1]);
+  run.map
+    ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }), modFoeLevels(run))[1]
+    : Math.max(1, rules.wild.lv[1]);
 
 /**
  * A trainer of a class at a map node, as a trainer entry (the shape runFoes makes): its Billies drawn from `salt`'s
@@ -256,6 +262,8 @@ export function encClassFoe(run, i, id, cls, o) {
     win: `“${C.lose}”`,
     lose: '',
     sight: C.sight,
+    /* RL-S1: the Bureau's agents (logic/run-history.js, banter's `bureau` lines) */
+    ...(C.bureau ? { bureau: 1 } : {}),
     reward: o.reward,
     team,
     node: runWorldNode(i),

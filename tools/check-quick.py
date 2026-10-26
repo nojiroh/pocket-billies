@@ -210,6 +210,10 @@ def report_unused(P=None):
     # copied back into the game brings its props with it)
     for f in (GAME / 'data' / 'legacy' / 'maps').glob('*.json'):
         placed |= {p['k'] for p in json.loads(f.read_text(encoding='utf-8')).get('props', [])}
+    # RT-1: what a biome's pools name, the map generator places on run scenes (trees, canopy, fences and the rest)
+    for B in (D.get('biomes') or {}).values():
+        for v in B.values():
+            if isinstance(v, dict) and all(isinstance(w, (int, float)) for w in v.values()): placed |= set(v) & set(SY.get('props', {}))
     code = '\n'.join(f.read_text(encoding='utf-8', errors='ignore') for f in list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
@@ -337,7 +341,10 @@ def walk_in(pg, act, k):
 # phase 08b: prep_ms gives the ground a phone's share of work for each 0.8 m step (about 0.24 s of walking at 4 ms a
 # frame; headless software drawing manages two frames a second, so the next view would otherwise take minutes), and
 # meter['waits'] counts those steps' worth spent waiting at the seam for the next view
-def cross(pg, n1, sec=90, look=None, prep_ms=None, meter=None):
+# RT-1: 150 s, not 90: a laid-out run place draws about 1.5 times slower in software than the open field (canopy
+# pieces, tools/route-perf.py); in the full check's paired browsers a frame took up to 10 s, and the view's preparation
+# is spread over frames. On a phone it is a second or two
+def cross(pg, n1, sec=150, look=None, prep_ms=None, meter=None):
     if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
     r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),ee=(sc.edgeExits||(sc.baseId&&mapById(sc.baseId)||{{}}).edgeExits||[])[e.i],sv=ee&&SIDE_VECTORS[ee.side],dx=sv?sv[0]:pt[0]-hub[0],dz=sv?sv[1]:pt[1]-hub[1],l=Math.hypot(dx,dz)||1,past=6+(saveData.run?RULES.run.seamIn:0),tg=[pt[0]+dx/l*past,pt[1]+dz/l*past];/* phase 08b: straight out of the edge the exit is on */
       const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
@@ -822,7 +829,9 @@ def sound_effects_step(P):
     clear(); pg.evaluate("closeModal();runOver(true);0")
     # TC-3: 40 s, not 15: the coins come a row at a time and run_won after the last; in the full check's run the
     # jingle came just after 15 s (it was in the log the failure printed), the check's wait, not the game
-    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 40): raise Exception(f'the payout, won: {log()}')
+    # RT-1: 90 s, not 40: the laid-out landing behind the sheet draws slower in software (see cross); measured 51 s for
+    # the lost payout in the paired run (3 s alone)
+    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_won')", 90): raise Exception(f'the payout, won: {log()}')
     L = log(); coins = [e for e in L if e.startswith('jingle payout_coin')]
     rows = pg.evaluate("JSON.parse(document.querySelector('#ov pb-payout').getAttribute('rows')||'[]').length")
     if len(coins) != rows: raise Exception(f'{len(coins)} coins for {rows} payout rows: {L}')
@@ -830,7 +839,7 @@ def sound_effects_step(P):
     clear(); pg.evaluate("closeModal();saveData.run.at={phase:'walk',battle:-1};uiState.runPayoutPlayed=false;uiState.runPayoutSung=false;runOver(false);0")
     # TC-4: 40 s, as for the won payout: the coins come a row at a time and run_lost after the last (the before run's
     # failure had four coins in its log and no jingle yet at 15 s)
-    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 40): raise Exception(f'the payout, lost: {log()}')
+    if not until(pg, "soundEngine.log.some(e=>e.e==='jingle run_lost')", 90): raise Exception(f'the payout, lost: {log()}')
     out.append(f'payout: {len(coins)} coins ({coins[-1].split(" ", 2)[-1] if coins else ""} last), run_won; lost: run_lost')
     return '; '.join(out)
 
@@ -891,7 +900,7 @@ def in_game_test_whole(P):
     return '; '.join(out)
 
 
-@step('Phone: opening, the airship mast, screens and a battle', 260)
+@step('Phone: opening, the station, screens and a battle', 260)
 def phone_flow(P):
     pg, R = P.pg, P.R
     pg.click('[data-a=intro]')
@@ -911,11 +920,12 @@ def phone_flow(P):
     if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
     R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
     pg.evaluate("closeModal();0")
-    # RL-8: Copperleaf's airship mast offers a run: tapped (walkPick, as a tap on it does), its sheet has "Start a
-    # run"; a real tap on that row opens the run's sheet (left there: the fast check and the full check fly it)
-    if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 60): raise Exception('Copperleaf has no airship mast')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
-    if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the mast’s sheet has no “Start a run”')
+    # RL-8: Copperleaf's station offers a run (HB-7: Skyline Station, act 'station'; the airship is scenery): tapped
+    # (walkPick, as a tap on it does), its sheet has "Start a run"; a real tap on that row opens the run's sheet (left
+    # there: the fast check and the full check fly it)
+    if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 60): raise Exception('Copperleaf has no station')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();(p=>walkPick({k:'act',p,act:'station'}))(walkView.sc.props.find(p=>p.act==='station'));0")
+    if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 30): raise Exception('the station’s sheet has no “Start a run”')
     shot(pg, 'phone-mast')
     pg.click('#ov [data-a=runstart]')
     if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('“Start a run” didn’t open the run’s sheet')
@@ -1543,6 +1553,77 @@ def terraces_and_floating(P):
 
 # RL-5: 'phase 08b: walking across seams — the next view ready ahead, no wait, no jump in the picture' retired: every seam it walked (and --seams=all) joined two parked places (RL-7 walks a run's roads, below)
 
+@step('RT-2: route trainers — on their spots, a pair as a double (the in-game step), and a pair that spots you walks up, both say their line, the double starts', 600)
+def route_trainers_step(P):
+    """The in-game test's route trainers step (its own seed search: a route with a pair; every trainer on its spot,
+    the wild stock less them, the pair a double leaving one pick). Then, out of the self-test (route sight is off while
+    it runs), the same run on a copy of the save, walking (as landed): stood 3 m in front of the pair, it sees you ("!"), walks up, each of
+    the two says its line under its own class's name, and the double battle starts. The hub's save is put back after"""
+    pg = P.pg
+    if not pg.evaluate("typeof routeSight!=='undefined'&&typeof runWorldSync==='function'"): return 'not in this build'
+    name = "A route's trainers: on their spots, a pair as a double"
+    r = run_in_game_test(pg, [name], False, 420)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no route trainers step')
+    pg.evaluate("window.rt2Hub=JSON.parse(JSON.stringify(saveData));0")
+    try:
+        found = pg.evaluate("""(()=>{const s=JSON.parse(JSON.stringify(saveData)),data=runWorldData();if(s.run)runRestore(s);
+          for(let k=0;k<40;k++){const t=JSON.parse(JSON.stringify(s)),seed='SELFTESTRT'+k;runStartOn(t,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));
+            const p=Object.values(runRouteTrainers(t.run,{classes:EVENTS.classes,species:SPECIES,rules:RULES.run})).find(T=>T.mate&&!(t.run.map.nodes[T.runNode]||{}).side);
+            if(p){runStartOn(s,runStartPlan(seed,{...data,unlockData:UNLOCK_DATA},{unlocks:[]}));runArrive(s,0,data);s.visited[s.trip.node]=1;s.run.at.phase='walk';s.team.forEach(m=>{m.hp=maxHp(m);m.status=null});
+              uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';setSaveData(s);const n=runWorldNode(p.runNode);
+              if(!runJump(n))return null;uiState.roam=null;render();return [n,p.id]}}return null})()""")
+        if not found: raise Exception('no seed of the first 40 has a route with a pair to walk to')
+        n, tid = found
+        if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n}].mapId+'*'&&!!walkView.npcAt['{tid}']&&!!walkView.npcAt['{tid}~b']", 120): raise Exception('the route with the pair isn’t shown, or the pair isn’t on it')
+        pg.evaluate(f"""(()=>{{const a=walkView.npcAt['{tid}'],l=walkView.npcLook['{tid}'],fx=l[0]-a[0],fz=l[1]-a[1],d=Math.hypot(fx,fz)||1;
+          walkView.pl.route=null;walkView.pl.goal=null;walkView.pl.x=a[0]+fx/d*3;walkView.pl.z=a[1]+fz/d*3}})();0""")
+        if not until(pg, f"routeSight.busy==='{tid}'&&!!walkView.spotted['{tid}']", 30): raise Exception(f'stood in front of the pair, it never saw you ({pg.evaluate(f"JSON.stringify({{busy:routeSight.busy,phase:saveData.run.at.phase,tab:uiState.tab,modal:uiState.modal&&(uiState.modal.title||uiState.modal.cls||1),talk:talkBox.on,ready:walkView.ready,dir:!!walkView.director,pl:[walkView.pl.x,walkView.pl.z],at:walkView.npcAt['{tid}'],look:walkView.npcLook['{tid}']}})")})')
+        names = []
+        for _ in range(120):
+            st = pg.evaluate("[!!activeBattle,talkBox.on?document.querySelector('#talk .talk-who').textContent:'']")
+            if st[0]: break
+            if st[1] and (not names or names[-1] != st[1]): names.append(st[1])
+            pg.evaluate("talkBox.on&&document.getElementById('talk').click();0")
+            time.sleep(0.25)
+        if not pg.evaluate("!!activeBattle"): raise Exception(f'the pair talked ({names}) but no battle started')
+        fmt = pg.evaluate("activeBattle.fmt")
+        if fmt != 'double': raise Exception(f'the pair’s battle is {fmt}')
+        want = pg.evaluate(f"[TRAINERS['{tid}'].name.split(' & ')[0],TRAINERS['{tid}'].mate.name]")
+        if names[:2] != want: raise Exception(f'the pair’s lines were said by {names}, not {want}')
+        return f'{ph["why"] or "in-game step passed"}; walked up by {" and ".join(want)}, a double'
+    finally:
+        pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}if(talkBox.on)talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rt2Hub);render();0")
+
+
+@step("RT-3: set pieces — a route's pieces whole, its signpost reads the place's name, the Bureau's agent opens its event once (the in-game step)", 420)
+def set_pieces_step(P):
+    """The in-game test's set pieces step (its own seed search: a run with a Bureau checkpoint on a main place): every
+    piece there has all its props round it, an exit's signpost tapped says the place's name, the agent tapped opens
+    the bureau_checkpoint event, Walk on plays it, and tapped again it only talks"""
+    pg = P.pg
+    if not pg.evaluate("typeof SET_PIECES!=='undefined'&&!!SET_PIECES&&typeof runWorldSync==='function'"): return 'not in this build'
+    name = "A route's set pieces: whole, the Bureau's agent opens its event once"
+    r = run_in_game_test(pg, [name], False, 360)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no set pieces step')
+    return ph['why'] or 'in-game step passed'
+
+
+@step("RT-4a: wild Billies — a route's stock with its trainers, water and woods Billies on their habitats, the rarer one in its pocket (the in-game step)", 420)
+def route_wild_step(P):
+    """The in-game test's route wild Billies step (its own seed search: a route whose pool fits its habitats): the
+    stock is 10 less the place's trainers (4 at least), one rarer one stands on the place's rareAt, every water or
+    woods Billie on one of its habitat's points"""
+    pg = P.pg
+    if not pg.evaluate("typeof runWorldSync==='function'&&!!RULES.run.wild.habitats"): return 'not in this build'
+    name = "A route's wild Billies: in their habitats, the rarer one in its pocket"
+    r = run_in_game_test(pg, [name], False, 360)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no route wild Billies step')
+    return ph['why'] or 'in-game step passed'
+
+
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
@@ -1551,23 +1632,29 @@ def rl8_run_from_mast(P):
     town: the clinic charges 60 Moneys a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Perk;
     on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Perk" opens
     the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
-    Perk): "On to the payout", the payout as won, "Fly home": Copperleaf with Research, no run. The hub's save is
+    Perk): "On to the payout", the payout as won, "Ride home" (HB-8: the train home skipped): Copperleaf with Research, no run. The hub's save is
     put back after"""
     pg = P.pg
     if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
     pg.evaluate("window.rl8Hub=JSON.parse(JSON.stringify(saveData));uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});render();0")
     try:
-        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='fly')", 90): raise Exception('Copperleaf’s mast isn’t in the view')
-        pg.evaluate("(p=>walkPick({k:'act',p,act:'fly'}))(walkView.sc.props.find(p=>p.act==='fly'));0")
-        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 20): raise Exception('the mast’s sheet has no “Start a run”')
+        if not until(pg, "walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
+        pg.evaluate("(p=>walkPick({k:'act',p,act:'station'}))(walkView.sc.props.find(p=>p.act==='station'));0")
+        if not until(pg, "!!document.querySelector('#ov [data-a=runstart]')", 20): raise Exception('the station’s sheet has no “Start a run”')
         pg.click('#ov [data-a=runstart]')
         if not until(pg, "uiState.modal&&uiState.modal.title==='Start a run'", 10): raise Exception('no run sheet')
         pg.click('#ov [data-a=mb][data-i="0"]')
         # TC-4: tapped again while the sheet is still there: once on a busy machine the tap was lost (the sheet still
-        # drawing itself); the take-off closes the sheet, so nothing is tapped twice
-        if not until(pg, "!!saveData.run&&airshipFlight.on", 30, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
-        pg.evaluate("flySkip();0")
-        if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+        # drawing itself); the take-off closes the sheet, so nothing is tapped twice (HB-2: the sheet stays while the
+        # world is made, inert, and a second runTakeOff on a run does nothing)
+        # RT-1: 60 s, not 30: the take-off makes the run's world (laid-out places: 1.1 s here alone, more in the paired run)
+        if not until(pg, "!!saveData.run&&(trainRide.on||!!document.getElementById('runload'))", 60, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start the train’s ride')
+        # HB-8: the sky train's ride skipped once it plays, then the carriage's loading screen and the landing
+        until(pg, "!!trainRide.W||!trainRide.on", 10)
+        pg.evaluate("trainRideSkip();0")
+        if not until(pg, "!trainRide.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+        # HB-2: the landing's loading screen lifts (every stage ready, or the cap)
+        if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
         if land[1] != 1 or land[2] != 1: raise Exception(f'landed at node {land[1]} on day {land[2]}')
         # a wild battle, won
@@ -1620,7 +1707,8 @@ def rl8_run_from_mast(P):
         B = pg.evaluate(f"(T=>T&&T.id)(trainersAt({boss})[0])")
         if not B: raise Exception('no boss stands on the boss’s place')
         pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{B}',{{talked:true}});0")
-        if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 20): raise Exception('the boss isn’t an Alpha battle')
+        # RT-1: 45 s, not 20: the boss's place is laid out, and drawn slower in software (see cross)
+        if not until(pg, "!!activeBattle&&activeBattle.fmt==='alpha'&&!!activeBattle.sides[1].team[0].boss", 45): raise Exception('the boss isn’t an Alpha battle')
         if pg.evaluate("(activeBattle.fx||[]).map(f=>f.src).join()") != relic: raise Exception('the boss’s battle doesn’t carry the Perk')
         pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
         if not until(pg, "uiState.modal&&uiState.modal.btns&&uiState.modal.btns[0].l==='On to the payout'", 30): raise Exception('no “On to the payout” after the boss')
@@ -1628,12 +1716,14 @@ def rl8_run_from_mast(P):
         if not until(pg, "uiState.modal&&uiState.modal.cls==='run-payout'&&saveData.run.at.won===1", 20): raise Exception('no payout as won')
         shot(pg, 'rl8-payout')
         pg.click('#ov [data-a=mb][data-i="0"]')
-        if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Fly home didn’t bring you back to Copperleaf')
+        if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Ride home didn’t bring you back to Copperleaf')
+        until(pg, "!!trainRide.W||!trainRide.on", 30)
+        pg.evaluate("trainRideSkip();0")
         home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.research, saveData.meta.crests]")
         if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
         return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for {heal[0]} Moneys; {wares} wares and a Perk; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Research, {home[3]} Seal'
     finally:
-        pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
+        pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}trainRideSkip();uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
 
 @step('Copperleaf: Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
 def juniper_and_lab(P):
@@ -1672,7 +1762,7 @@ def airship_moored(P):
     out = []; cl = pg.evaluate("LOCATION_BY_ID.copperleaf.node")   # RL-5: no Marigold Town to fly to
     pg.evaluate("uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:11,weather:'clear',season:'summer'};0")   # RL-5: no visit to Marigold or money for a fare
     go_scene(pg, cl)
-    pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='fly');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
+    pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.k==='airship_station');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
     until(pg, "propModelState.meshes.has('scene/models/airship.json')&&!!propModelState.meshes.get('scene/models/airship.json')", 60); look_at_me(pg)
     v = pg.evaluate("(()=>{const m=propModelState.meshes.get('scene/models/airship.json');return m?{spins:(m.spins||[]).length,model:!!m.model,tris:m.n/3,drawn:propModelState.drawn}:null})()")
     if not v or not v['model'] or v['spins'] != 2: raise Exception(f'the airship isn’t drawn as a low-poly model with two turning propellers: {v}')
@@ -1902,10 +1992,10 @@ def pages():
         L = [('town', {}, [in_game_test_step, test_checks] + ([test_draw] if '--tests' in ARGS else []) +
                           [nature_growth_exits, views_flags_wind_light, terraces_and_floating, name_caught_room_windows]),
              ('town', low, [battles_and_world_billies, starter_rigs, battle_weather]),
-             ('town', low, [rl8_run_from_mast, juniper_and_lab, airship_moored]),
+             ('town', low, [rl8_run_from_mast, route_trainers_step, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
-             ('town', low, [postcard_visit, run_speeds, settings]),
+             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),

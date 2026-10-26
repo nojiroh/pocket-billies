@@ -422,6 +422,8 @@ debugLog.glInfo = () => {
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
     if (typeof GAME.paintWorkerReport === 'function') o.groundPainter = GAME.paintWorkerReport();
+    /* SP-1: the grafted Billies baked on this device (skeleton-rig.js graftReport): bake times and memory */
+    if (typeof GAME.graftReport === 'function') o.grafts = GAME.graftReport();
     if (typeof GAME.normalMapWorkerState !== 'undefined')
       o.bumpHelper = GAME.normalMapWorkerState.w ? 'on' : GAME.normalMapWorkerState.bad ? 'off' : 'not started';
   } catch (e) {}
@@ -468,6 +470,9 @@ debugLog.state = () => {
                party's size and the run's money (numbers only) */
             phase: run.at.phase,
             battles: run.battleN,
+            /* RL-13: the run's Expedition and the highest one open (its challenges are in `mods`) */
+            expedition: run.expedition || 1,
+            expeditionOpen: (GAME.saveData.meta && GAME.saveData.meta.expedition) || 1,
             held: typeof GAME.saveHeld === 'function' ? GAME.saveHeld() : null,
             party: GAME.saveData.team ? GAME.saveData.team.length : 0,
             money: GAME.saveData.se,
@@ -506,6 +511,28 @@ debugLog.state = () => {
                 }
               : null,
             spottedBy: GAME.routeSight ? GAME.routeSight.busy || null : null,
+            /* RT-2: this place's route trainers: id, the spot kind it stands on, r(equired) or o(ptional), a pair,
+               beaten (ids and kinds only) */
+            routeTrainers: Object.values(GAME.TRAINERS || {})
+              .filter(T => T.route && T.runNode === GAME.saveData.trip.node - 1)
+              .map(
+                T =>
+                  `${T.id}:${T.route.spot || '?'}:${T.route.opt ? 'o' : 'r'}${T.mate ? ':pair' : ''}${GAME.saveData.flags[T.id] ? ':beaten' : ''}`
+              ),
+            /* RT-3: this place's set pieces (setPieces.json ids) and the spot kind each took */
+            pieces: ((placeMap && placeMap.pieces) || []).map((/** @type {any} */ L) => `${L.id}:${L.spot}`),
+            /* RT-4: how many habitat points this place has (water, woods), and its wild Billies by habitat (species
+               ids, levels, the rarer one marked; read, never stocked here) and where its rarer one waits */
+            habitats:
+              placeMap && placeMap.habitats
+                ? Object.fromEntries(
+                    Object.entries(placeMap.habitats).map(([k, L]) => [k, /** @type {any[]} */ (L).length])
+                  )
+                : null,
+            wild: (
+              ((GAME.saveData.wild || {})[((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).id] || {}).list || []
+            ).map((/** @type {any} */ q) => `${q.sp}:${q.lvl}:${q.rare ? 'rare' : q.hab || 'grass'}`),
+            rareAt: ((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).rareAt || null,
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */
@@ -520,6 +547,15 @@ debugLog.state = () => {
           /* RL-11: the unlock ids owned (game data ids, no names) and the buildings' levels */
           unlocks: Object.keys(meta.unlocks || {}).sort(),
           buildings: Object.assign({}, meta.buildings || {}),
+          /* RL-S1: the run history (game data ids and numbers, no names) and the story director's picks */
+          history: (meta.history || []).length,
+          last: (meta.history || []).length
+            ? (h => ({ end: h.end, by: h.by ? [h.by.kind, h.by.id || ''].join(':') : null, row: h.row }))(
+                meta.history[meta.history.length - 1]
+              )
+            : null,
+          fresh: Object.assign({}, (GAME.saveData.story && GAME.saveData.story.fresh) || {}),
+          pending: (GAME.saveData.story && GAME.saveData.story.pending) || null,
         }
       : null;
     /* RL-9: the ranch (numbers only): its level, how many train, how long since each started (hours), storage's size */
@@ -630,7 +666,7 @@ debugLog.more = () => {
      tall ground, the goals in play with their weights, the look-ahead and how far the aim is from its goal (metres).
      CAM-2: the zoom the camera uses (yours times the goals'), the moment (talk, boss, interest, idle, run, or none),
      the points of interest in reach and the strongest's weight, the camera zone you stand in (its index, -1 for none)
-     and how long you have stood still (seconds). Only numbers and ids, no names */
+     and how long you have stood still (seconds). Player visibility: how hidden you are. Only numbers and ids, no names */
   t('camera', () => {
     const W = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
       I = W && W.camInfo,
@@ -644,6 +680,8 @@ debugLog.more = () => {
       yaw: C && C.yaw != null ? r((C.yaw * 180) / Math.PI) : null,
       pitch: C && C.sp != null ? r((Math.asin(C.sp) * 180) / Math.PI) : null,
       rise: W.occT != null ? r(W.occT) : null,
+      /* player visibility: how hidden you are (0-1: something nearer the camera covers you) */
+      hidden: W.hidK != null ? r(W.hidK) : null,
       goals: I.goals.map(([id, w]) => [id, r(w)]),
       lead: [r(I.lead[0]), r(I.lead[1])],
       off: [r(I.goal[0] - T[0]), r(I.goal[1] - T[1])],

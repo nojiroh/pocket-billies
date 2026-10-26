@@ -152,6 +152,8 @@ export function saveFill(o) {
   members().forEach(m => {
     if (m.nick != null) m.nick = cleanName(m.nick, 16);
     if (m.mut && m.mut.name != null) m.mut.name = cleanName(m.mut.name, 24) || speciesOf(m).name;
+    /* RL-12c: a held item the data no longer has as one is dropped */
+    if (m.held != null && !(ITEMS[m.held] && ITEMS[m.held].hold)) delete m.held;
   });
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
@@ -302,6 +304,8 @@ export function billiesOk(list) {
       return false;
   for (const m of list)
     if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
+  /* RL-12c: a held item is an item id (saveFill drops one the data doesn't have) */
+  for (const m of list) if (m.held != null && (typeof m.held !== 'string' || m.held.length > 40)) return false;
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {
     const u = m.mut;

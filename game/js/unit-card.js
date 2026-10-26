@@ -8,8 +8,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { MOVES } from './game-data.js';
+import { ITEMS, MOVES } from './game-data.js';
 import { weightClass } from './logic/parts.js';
+import { graftOf } from './logic/graft-art.js';
 import {
   ROBOT_LIMBS,
   ROBOT_SLOTS,
@@ -100,13 +101,15 @@ function billyUnit(m) {
     types: s.types,
     hp: m.hp,
     max: maxHp(m),
-    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat }),
+    art: px => rigCanvasHTML(m.sp, px, { build: m.build, coat: m.coat, graft: graftOf(m) }),
     plate: plateVars(m),
     down: m.hp <= 0,
     lead: saveData.team[0] === m,
     buddy: saveData.buddy === m.uid,
     coat: coatPrefix(m.coat).trim(),
     prime: !bot && isPrime(b),
+    /* RL-12c: the name of the item it holds */
+    held: m.held && ITEMS[m.held] ? ITEMS[m.held].n : '',
     care: needsCare(m),
     build: b,
     kg,
@@ -138,7 +141,7 @@ function unitHpHTML(u) {
   return `<span class="u-hp${p < 0.25 ? ' low' : p < 0.5 ? ' mid' : ''}" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="${u.max}" aria-valuenow="${u.hp}"><i style="width:${p * 100}%"></i></span><span class="u-hpn tnum">${u.hp}/${u.max}</span>`;
 }
 function unitTagsHTML(u) {
-  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}</span>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}`;
+  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}</span>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}${u.held ? `<span class="u-tag">${uiIconHTML('bag', 11)} ${escapeHtml(u.held)}</span>` : ''}`;
 }
 
 /** the lead's big card at the top of a team */
@@ -153,7 +156,7 @@ function unitHeroHTML(u) {
 /** one row in a team or a list: tap for details */
 function unitRowHTML(u, i, act = 'mon', label = 'details') {
   return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}${u.kind === 'bot' ? ' bot' : ''}" style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
-  <span class="u-mid"><span class="u-head"><b>${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}</span>${u.limbs ? limbPipsHTML(u.limbs) : ''}</span>
+  <span class="u-mid"><span class="u-head"><b>${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}${u.held ? `<i class="u-heart" title="Holding ${escapeHtml(u.held)}">${uiIconHTML('bag', 12)}</i>` : ''}</span>${u.limbs ? limbPipsHTML(u.limbs) : ''}</span>
   <span class="u-right">${unitHpHTML(u)}</span></button>`;
 }
 

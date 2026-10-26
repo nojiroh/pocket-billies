@@ -86,6 +86,8 @@ const BIOME_SONGS = {
   tundra: 'crystal',
   ridge: 'crystal',
   autumn: 'spire',
+  /* RL-R2b: the cave (Rock Smash's side area, a region never draws it) plays the cave song, its town too */
+  cave: 'cave',
 };
 const BIOMES = JSON.parse(readFileSync(new URL('../../game/data/biomes.json', import.meta.url), 'utf8'));
 
@@ -98,6 +100,7 @@ test("a run: a route, mini-boss or boss node plays its biome's song; a town node
   assert.equal(pick(out({ nodeType: 'town', biome: 'lake', placeKind: 'town' })), 'town');
   assert.equal(pick(out({ nodeType: 'town', biome: 'lake' })), 'town');
   assert.equal(pick(out({ nodeType: 'landing', biome: 'meadow' })), 'route');
+  assert.equal(pick(out({ nodeType: 'town', biome: 'cave' })), 'cave');
   // a battle, the map tab and a room still win over the biome
   assert.equal(pick(out({ nodeType: 'route', biome: 'lake', battle: 'wild' })), 'wild');
   assert.equal(pick(out({ nodeType: 'route', biome: 'lake', tab: 'map' })), 'map');

@@ -3,7 +3,7 @@
 // command does to the save, and the foes an event or a route meets (the region's Billies, at the place's level).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fn, GAME_DATA, hooks, modules, reseed } from './setup-real.mjs';
+import { data, fn, GAME_DATA, hooks, modules, reseed } from './setup-real.mjs';
 
 const X = modules.encounters,
   { runStartOn, runStartPlan } = modules['run-start'],
@@ -51,7 +51,8 @@ test('encounters: a place holds the same event for the same run, kept; a played 
   const E2 = structuredClone(E);
   for (const ev of Object.values(E2.events)) ev.biomes = ['lake'];
   assert.deepEqual(X.eventPool(b, E2, 'meadow'), []);
-  assert.equal(X.eventPool(b, E2, 'lake').length, Object.keys(E.events).length);
+  /* RT-3: weight 0 is never drawn (the Bureau checkpoint's event, opened by its agent) */
+  assert.equal(X.eventPool(b, E2, 'lake').length, Object.values(E.events).filter(ev => ev.weight > 0).length);
 });
 
 test('encounters: an option is open when its need holds and the Moneys are there; a closed one says why', () => {
@@ -158,4 +159,15 @@ test('encounters: the summary of what changed', () => {
       ['coin:pyramid', 3],
     ]
   );
+});
+
+test('RL-13: a route trainer never fields a final form under level 32, a Billie with no evolutions included', () => {
+  const E = modules.encounters,
+    S = data.SPECIES,
+    at8 = E.encDexAt({}, S, 8),
+    at40 = E.encDexAt({}, S, 40);
+  for (const sp of ['altman0', 'arnault0', 'cuban1', 'hughes2']) {
+    assert.ok(!at8.includes(sp), `${sp} at level 8`);
+    assert.ok(at40.includes(sp), `${sp} at level 40`);
+  }
 });

@@ -154,7 +154,7 @@ function perkDropOpen(id, then, back) {
 export function renderPerks() {
   const run = saveData.run,
     cap = RULES.run.perks.cap;
-  if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at the airship mast.</p>`;
+  if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at Skyline Station.</p>`;
   const held = run.perks.filter(id => PERKS[id]);
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
     held.length

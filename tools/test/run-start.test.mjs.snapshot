@@ -16,7 +16,15 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "pretzel": 0,
         "full_remedy": 0,
         "max_revive": 0,
-        "repairkit": 0
+        "repairkit": 0,
+        "leftover_sandwich": 0,
+        "snack_pack": 0,
+        "lucky_coin": 0,
+        "study_notes": 0,
+        "iron_vest": 0,
+        "quick_laces": 0,
+        "brass_knuckles": 0,
+        "smart_specs": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -26,7 +34,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 6,
+      "mapgenV": 17,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -339,7 +347,15 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "pretzel": 0,
         "full_remedy": 0,
         "max_revive": 0,
-        "repairkit": 0
+        "repairkit": 0,
+        "leftover_sandwich": 0,
+        "snack_pack": 0,
+        "lucky_coin": 0,
+        "study_notes": 0,
+        "iron_vest": 0,
+        "quick_laces": 0,
+        "brass_knuckles": 0,
+        "smart_specs": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -349,7 +365,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 6,
+      "mapgenV": 17,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
@@ -671,7 +687,15 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "pretzel": 0,
         "full_remedy": 0,
         "max_revive": 0,
-        "repairkit": 0
+        "repairkit": 0,
+        "leftover_sandwich": 0,
+        "snack_pack": 0,
+        "lucky_coin": 0,
+        "study_notes": 0,
+        "iron_vest": 0,
+        "quick_laces": 0,
+        "brass_knuckles": 0,
+        "smart_specs": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -681,7 +705,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 6,
+      "mapgenV": 17,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -868,6 +892,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "309b91414461268628d4a0e9c76577c95f46e733ce9362afd6cb9493fefcbe3f"
+  "all": "5765f6be3530c7d4b9af55cbb0aac02b3a032903b285e584b5bff5a6e835cf77"
 }
 `;

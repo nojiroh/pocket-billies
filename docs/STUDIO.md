@@ -250,6 +250,31 @@ today's sheets 122 of 129 would get smaller; nothing is repacked until someone p
 The skeleton builder zooms by whole steps (+, −, 0 to fit, 1 to 6 for 1x to 32x, as on the pixel canvas; O for the
 onion), fits its window when opened, and **Paint pixels** opens the sheet with the part picked in focus.
 
+## Placeholder Billies and their drawing sheets (roster track RO-3a)
+
+A placeholder Billie (game/data/bodyPlans.json `forms`) is built on one of the 14 body plans the game animates
+(biped, quad, bird, flyer, fish, serpent, worm, octo, blob, insect, crab, hopper, plant, shell) and painted as an
+obvious placeholder: flat shapes in its colours, a thick outline, a diagonal hatch, each part's name written on it.
+Art workbench → Part mode, beside the kit recipe:
+
+- **Placeholder Billie** (when the open species is one): **Download drawing sheet**: a PNG with a column per picture
+  (`head`, `head blink`, `torso`, `legL`...; a mirrored bone such as `legR` uses its twin's picture, flipped) and a row
+  per view (front, back, the back drawn as it shows on screen). Each cell is magenta with room round the part; the
+  label strip says which part and view; yellow ticks on the cell's edge mark the pivot (where the part hangs).
+  Draw over the cells in any app; magenta stays clear, so leave it round the drawing; keep the grid and labels where
+  they are, and the picture's size (or a whole multiple of it). **Upload drawing sheet** cuts it back by the same
+  layout: a drawn cell replaces the placeholder, a cell left all magenta keeps it. The drawing is stored as
+  `art/next/placeholders/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
+  **Write Billie** bakes it again as it is.
+- **Body plan sheets**: pick a plan and a scale (1×, 2×, 4×, 8×: each pixel drawn as N × N, for drawing big),
+  **Download**: every Billie on that plan, two rows each, a strip with its name above (a sample Billie while none is
+  on the plan); **Upload** splits it back per Billie, stores and bakes each.
+- The same from the command line: `npm run bake:placeholders` (bake what changed), `-- --export=<name>` or
+  `-- --export=plan:<plan>` (to tools/art-source/placeholders; `--scale=4`), `-- --import=<file.png>` (a
+  `<plan>-plan.png` is a plan's sheet), `-- --check`.
+- A sheet only cuts back while the Billie's plan and part sizes are what they were when it was exported; change them
+  and export again.
+
 ## Pixel density (Studio plan Phase 5, T5.7)
 
 The Roster board's **Pixel density** lists, per Billie of the game's lines, how many of its rig pixels go into a metre in

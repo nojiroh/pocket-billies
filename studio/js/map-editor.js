@@ -24,6 +24,7 @@ import {
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { turnedPoint } from '../../game/js/logic/prop-turn.js';
+import { roomTurnOf } from '../../game/js/logic/room-turn.js';
 import {
   storyNamesIn,
   storyPreviewAllows,
@@ -325,8 +326,10 @@ SECTIONS.scenes = () => {
     ? `<div class="sc-sel"><b>${escapeHtml((sceneryCatalog().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }), numberField('Turn', `${p}.props.${mapEditor.sel}.rot`, { step: 15, min: -180, max: 180, opt: 1, ph: '0', unit: '°' }))}
   <div class="seg-row sc-turn"><button class="btn sm" data-act="scxTurn" data-by="-15" title="Turn left 15° ([)">⟲ 15°</button><button class="btn sm" data-act="scxTurn" data-by="15" title="Turn right 15° (])">⟳ 15°</button><button class="btn sm" data-act="scxTurn" data-by="90" title="A quarter turn (Shift+])">⟳ 90°</button>${sel.rot ? '<button class="btn sm subtle" data-act="scxTurn" data-to="0">Straight</button>' : ''}<small class="help">[ and ] turn it 15°, with Shift 90°, with Alt 1°. It turns about its base point, the middle of its front.${(() => {
     const P0 = sceneryCatalog().props[sel.k] || {};
-    return (P0.door || sel.room) && Math.abs(sel.rot || 0) > 15
-      ? ' <b>Its room inside stays square to the map:</b> keep buildings you walk into to a few degrees.'
+    /* rooms face four ways (IS-5, logic/room-turn.js): the room is laid by the quarter turn nearest the building's */
+    const off = Math.abs((sel.rot || 0) - roomTurnOf(sel.rot) * 90 + 540) % 360;
+    return (P0.door || sel.room) && Math.abs(off - 180) > 15
+      ? ' <b>Its room inside is laid square to the nearest quarter turn:</b> keep buildings you walk into within a few degrees of 0, 90, 180 or 270.'
       : '';
   })()}</small></div>
   ${grid(
@@ -340,6 +343,7 @@ SECTIONS.scenes = () => {
         ['house', 'Show a message (house)'],
         ['home', 'Granny Juniper’s cottage (no room)'],
         ['ranch', 'The ranch (walk in; training and storage)'],
+        ['enter', 'Walk in (the room set on it or its kind)'],
         ['pasture', 'The pasture’s gate (opens the ranch’s sheet)'],
         ['board', 'The Lab’s unlock board (opens the Lab tab)'],
         ['climb', 'A ladder to climb'],
@@ -2907,6 +2911,13 @@ const PAINTED_WATER_KINDS = [
   ['spring', 'Spring', '#3FD6D0'],
   ['swamp', 'Swamp', '#6B7A34'],
   ['lake', 'Lake', '#2E6FB0'],
+  /* water track WA-5a: the appended kinds (logic/water-kinds.js; drawn with an old kind's look until WA-5b) */
+  ['rapids', 'Rapids', '#D8F0F4'],
+  ['hotspring', 'Hot spring', '#7FD8C8'],
+  ['oasis', 'Oasis', '#3FB8A8'],
+  ['bog', 'Bog', '#5A5A2A'],
+  ['reef', 'Reef', '#3FD0C8'],
+  ['cave', 'Cave', '#2A5A70'],
 ];
 function waterToolBarHTML(p) {
   const sc = currentMap();

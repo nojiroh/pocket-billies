@@ -5,12 +5,13 @@
    unlock currency; Scrap, the building material; Crests, the rare boss currency), the unlocks, each hub
    building's level, how many runs were played and won, the highest Expedition (the difficulty) open, and (RL-R2) the
    badges kept for good, by type (`{ water: 1 }`: the first win over a leader of a type opens that type's field move,
-   logic/run-side.js). Money ($,
+   logic/run-side.js), and (RL-S1) the newest runs' history (logic/run-history.js). Money ($,
    saveData.se) is not here: it is the run's working field. Logic only: no DOM, runs in Node
    (tools/test/meta-state.test.mjs). The sections that spend these (unlocks.json, buildings.json) come in RL-11. */
 /** @import { Meta } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { validHistory } from './run-history.js';
 /* eslint-disable no-func-assign */
 expose({
   META_EXPEDITIONS: [() => META_EXPEDITIONS],
@@ -40,6 +41,7 @@ export function newMeta() {
     wins: 0,
     expedition: 1,
     badges: {},
+    history: [],
   };
 }
 export const META_MAX = 1e12,
@@ -66,7 +68,8 @@ export function validMeta(o) {
     wholeIn(o.expedition, 1, META_EXPEDITIONS) &&
     recordOf(o.unlocks, META_IDS, v => v === 1) &&
     recordOf(o.buildings, META_IDS, v => wholeIn(v, 0, 99)) &&
-    recordOf(o.badges, 32, v => v === 1)
+    recordOf(o.badges, 32, v => v === 1) &&
+    validHistory(o.history)
   );
 }
 /** a stored meta filled out with anything new (fields a later version adds); one that still fails the check is
@@ -74,5 +77,7 @@ export function validMeta(o) {
 /** @param {any} o @returns {Meta} */
 export function metaFill(o) {
   const filled = Object.assign(newMeta(), o && typeof o === 'object' && !Array.isArray(o) ? o : {});
+  /* RL-S1: a broken history is dropped on its own, not the whole meta with it */
+  if (!validHistory(filled.history)) filled.history = [];
   return validMeta(filled) ? filled : newMeta();
 }

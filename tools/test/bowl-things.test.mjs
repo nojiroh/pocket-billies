@@ -11,6 +11,7 @@ import {
   bowlMapTurn,
   bowlPropClass,
   bowlTreeStyle,
+  bowlYouPoint,
 } from '../../game/js/logic/bowl-things.js';
 import {
   bowlCoastAt,
@@ -90,6 +91,19 @@ test('a walk map lies on the bowl as the terrain stamps it: its middle on the pl
   assert.ok(Math.abs(Math.atan2(east[1] - mid[1], east[0] - mid[0]) - t) < 1e-9);
 });
 
+test('HB-1: you are drawn where you stand on the map, else at its hub, never at its middle', () => {
+  const M = GAME_DATA.maps.copperleaf,
+    s = { x: 0.2, y: -0.1 },
+    at = (mx, mz) => bowlMapPoint(s, M, mx, mz, 1000),
+    near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-12;
+  assert.ok(M.hub && M.hub.length > 1, 'Copperleaf has a hub point');
+  assert.ok(near(bowlYouPoint(s, M, { x: 30, z: 120 }, 1000), at(30, 120)), 'your own spot');
+  assert.ok(near(bowlYouPoint(s, M, null, 1000), at(M.hub[0], M.hub[1])), 'no walk on the map: its hub');
+  assert.ok(near(bowlYouPoint(s, M, { x: NaN, z: 3 }, 1000), at(M.hub[0], M.hub[1])), 'a bad spot: its hub');
+  assert.ok(near(bowlYouPoint(s, { w: 40, h: 20 }, null, 1000), [s.x, s.y]), 'no hub either: the middle');
+  assert.ok(!near(bowlYouPoint(s, M, null, 1000), [s.x, s.y]), 'the hub is not the map’s middle');
+});
+
 test('what props are on the map: trees, buildings, nothing', () => {
   assert.equal(bowlPropClass('tree_oak', ART.tree_oak), 'tree');
   assert.equal(bowlPropClass('house_red', ART.house_red), 'building');
@@ -162,4 +176,100 @@ test('clumps grow on dry land between places, off the routes, in their region’
       data.worldHubBack();
     }
   }
+});
+
+// HB-3: a tree's walk model made again for the map: its trunk, its crown where its leaf cards stand
+const B = modules['bowl-things'];
+test('a tree from its recipe: the trunk up to its top, the crown blobs where the leaf cards stand, in the leaves’ colour', () => {
+  const rec = {
+      ppm: 32,
+      layers: [
+        {
+          k: 'limb',
+          pts: [
+            [0, 0, 0, 0.3],
+            [0, 0, 1, 0.25],
+            [0, 0, 2, 0.2],
+          ],
+          col: '#806040',
+          name: 'trunk',
+        },
+        {
+          k: 'limb',
+          pts: [
+            [0, 0, 1.5, 0.05],
+            [1, 0, 2.5, 0.03],
+          ],
+          col: '#806040',
+          name: 'branch',
+        },
+        { k: 'img', img: 'scene/next/leaves/oak.png', shade: 0.5, x: 0, y: 0, z: 1.5 },
+        { k: 'img', img: 'scene/next/leaves/oak.png', clip: [10, 10, 32], x: 1, y: 0.5, z: 3 },
+        { k: 'img', img: 'scene/next/leaves/oak.png', clip: [0, 0, 64, 32], x: 0, y: 0, z: 4 },
+      ],
+    },
+    look = { col: [0.2, 0.6, 0.3], w: 128, h: 96 },
+    T = B.bowlTreeFromRecipe(rec, () => look);
+  assert.ok(T && T.length % 27 === 0);
+  const V = [];
+  for (let i = 0; i < T.length; i += 9) V.push(Array.from(T.slice(i, i + 9)));
+  // the trunk: 2 segments x 5 sides x 2 triangles; the thin branch left out; 3 blobs of 8 faces
+  assert.equal(V.length / 3, 20 + 24);
+  const top = Math.max(...V.map(v => v[1]));
+  // the rect tier: its bottom at 4 m, 1 m tall (x 0.92)
+  assert.ok(Math.abs(top - (4 + 0.92)) < 1e-6, `top ${top}`);
+  // the circle clump: 1 m round (32 px), its bottom at 3 m, at x 1, z (the recipe's y) 0.5
+  const clump = V.filter(v => v[1] > 3 - 1e-6 && v[1] < 3 + 1.84 + 1e-6 && Math.abs(v[0] - 1) < 1.01 && v[2] > -0.5);
+  assert.ok(clump.length > 0);
+  // the trunk's colour from its hex, the crown's from the leaf picture's look
+  assert.ok(
+    V.some(v => Math.abs(v[6] - 0x80 / 255) < 1e-6 && Math.abs(v[7] - 0x60 / 255) < 1e-6),
+    'the trunk’s colour'
+  );
+  assert.ok(V.filter(v => v[7] > 0.4).length >= 48, 'green crown faces');
+  // every normal unit long
+  for (const v of V) assert.ok(Math.abs(Math.hypot(v[3], v[4], v[5]) - 1) < 1e-5);
+});
+
+test('a tree waits for its leaf picture; the same recipe makes the same tree', () => {
+  const rec = { layers: [{ k: 'img', img: 'scene/next/leaves/x.png', clip: [1, 1, 20], x: 0, y: 0, z: 1 }] };
+  assert.equal(
+    B.bowlTreeFromRecipe(rec, () => null),
+    null
+  );
+  const look = { col: [0.3, 0.5, 0.2], w: 64, h: 64 };
+  assert.deepEqual(
+    B.bowlTreeFromRecipe(rec, () => look),
+    B.bowlTreeFromRecipe(rec, () => look)
+  );
+});
+
+test('a picture’s average colour over its opaque pixels', () => {
+  // packed RGBA little-endian: 0xAABBGGRR
+  const px = new Uint32Array([0xff0000ff, 0xff00ff00, 0x00ffffff]);
+  assert.deepEqual(B.bowlAverageColour(px), [0.5, 0.5, 0]);
+  assert.deepEqual(B.bowlHexColour('#ff8000'), [1, 128 / 255, 0]);
+});
+
+test('a bridge on the map: its deck from 0 to its length and across its width, rails on a bridge, posts under a pier', () => {
+  const S = B.bowlBridgeShape(5, 2),
+    P = B.bowlBridgeShape(6, 1.7, { pier: true, drop: 2 }),
+    pts = T => {
+      const V = [];
+      for (let i = 0; i < T.length; i += 9) V.push(Array.from(T.slice(i, i + 9)));
+      return V;
+    };
+  for (const [T, len, w] of [
+    [S, 5, 2],
+    [P, 6, 1.7],
+  ]) {
+    assert.equal(T.length % 27, 0);
+    const V = pts(T);
+    assert.ok(Math.abs(Math.min(...V.map(v => v[0]))) < 1e-6 && Math.abs(Math.max(...V.map(v => v[0])) - len) < 1e-6);
+    assert.ok(Math.abs(Math.max(...V.map(v => v[2])) - w / 2) < 1e-6);
+  }
+  assert.ok(Math.max(...pts(S).map(v => v[1])) > 0.8, 'rails');
+  assert.ok(Math.abs(Math.min(...pts(P).map(v => v[1])) + 2) < 1e-6, 'posts down to the drop');
+  // faces turned outward: each normal points away from its box's middle (the deck's top up)
+  assert.ok(pts(S).some(v => v[4] === 1));
 });

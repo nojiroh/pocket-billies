@@ -62,7 +62,8 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         run.seamIn = 0;
         run.start.pyramids.nosuchcoin = 1;
         run.start.extra = 1;
-        run.home = [2, 1];
+        run.points.budget = [2, 1];
+        run.points.most = 'five';
         run.healCost = -5;
         run.shop.always.push('nosuchware');
         run.shop.pick['coin:nosuch'] = 1;
@@ -124,11 +125,67 @@ test('check-data: planted field moves and side areas (RL-R2)', t => {
       'fieldMoves.json': F => {
         F.moves.surf.type = 'Plasma';
         F.moves.smash.biome = 'nosuchbiome';
+        // RL-R2b: a side area's biome may be one no region draws (the cave), so any biomes.json biome is fine
         F.moves.cut.biome = 'volcano';
       },
       'rules.json': R => {
         Object.assign(R.run.side, { detour: 0.9, alt: 0.2, places: [1, 9], lean: -1, extra: 1 });
         R.run.side.moves = { surf: 0, nosuchmove: 1 };
+      },
+    })
+  );
+});
+
+test('check-data: planted set pieces (RT-3)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'setPieces.json': S => {
+        S.perPlace = [3, 1];
+        S.pieces.campsite.props[0].k = 'nosuchprop';
+        S.pieces.campsite.props[1].x = 9;
+        S.pieces.campsite.biomes.nosuchbiome = 1;
+        S.pieces.rest_stop.props[0].water = true;
+        S.pieces.ruins.plans = { nosuchplan: 2 };
+        S.pieces.bureau_checkpoint.people[0].event = 'nosuchevent';
+        S.pieces.bureau_checkpoint.people[0].who = 'nosuchperson';
+      },
+    })
+  );
+});
+
+test('check-data: planted Expeditions and challenges (RL-13)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'modifiers.json': M => {
+        M.challenges.mono.when = 'wins >=';
+        M.expeditions[2].fx = [{ kind: 'level', n: 1 }];
+      },
+    })
+  );
+});
+
+test('check-data: planted story director lines (RL-S1)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'banter.json': B => {
+        B.leader_badge.when = 'wins >= 1';
+        B.chosen_won.when = 'last:victory';
+        B.hazel_file.when = 'lastby:nobody';
+        B.chosen_first.cooldown = 2;
+      },
+    })
+  );
+});
+
+test('check-data: planted quests (TW-3)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'quests.json': Q => {
+        Q.kinds.trainers.goal = [3, 2];
+        Q.texts = Q.texts.filter(x => x.kind !== 'parcel');
+        Q.texts[0].ask = 'Catch me {n} of them.';
+        Q.texts[1].id = Q.texts[0].id;
+        Q.say.done = 'Done: {what}.';
       },
     })
   );

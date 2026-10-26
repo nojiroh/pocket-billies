@@ -8,6 +8,7 @@ import { GAME_DATA, modules } from './setup-real.mjs';
 const G = modules.mapgen;
 const ctx = { scenery: GAME_DATA.scenery, biomes: GAME_DATA.biomes };
 const P = GAME_DATA.scenery.props;
+const SHALLOW = modules['water-gen'].WATERGEN_SHALLOW_PROP;
 const at = (sc, x, z) => (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)];
 
 test('40 random dial sets: each reaches every exit, with nothing in water it does not grow in', () => {
@@ -44,7 +45,8 @@ test('40 random dial sets: each reaches every exit, with nothing in water it doe
     assert.deepEqual(G.mapgenUnreachable(sc, GAME_DATA.scenery), [], where);
     for (const p of [sc.hub, ...sc.exits]) assert.ok(!'wd'.includes(at(sc, ...p)), `${where}: ${p} in water`);
     for (const p of sc.props)
-      if ('wd'.includes(at(sc, p.x, p.z)) && p.k !== 'dock_post')
+      /* WA-5a: rocks may stand in shallows you wade, never in deep water */
+      if ('wd'.includes(at(sc, p.x, p.z)) && p.k !== 'dock_post' && !(at(sc, p.x, p.z) === 'w' && SHALLOW.test(p.k)))
         assert.ok(/[wd]/.test(P[p.k].grow || ''), `${where}: ${p.k} in water`);
   }
 });

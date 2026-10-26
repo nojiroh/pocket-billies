@@ -10,6 +10,8 @@ JSON array of lines in the data, next to the thing that owns it:
   person in the lab room's map (`person:hazel_lab`, maps/int_lab.json): a room may hold talking people besides its keeper.
 - a cutscene, `game/data/cutscenes/<id>.json` `script` (id `cutscene:<id>`): the opening. A cutscene has commands of
   its own (people, named shots and spots, captions): docs/CUTSCENES.md.
+- RL-S1: a line of the story director's, `game/data/banter.json` `script` (id `banter:<id>`): below, "The story
+  director".
 
 A line or a choice waits until the windows on screen (a battle's result) are closed. Each talk with a person or a
 trainer counts one visit (`visits:<id>`).
@@ -93,11 +95,15 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `visited:copperleaf` | you have been there |
 | `billie:musk` | a Billie of that line caught (`billie:musk1`: that one) |
 | `robot`, `badges >= 2`, `caught >= 15` | you have a robot; badges won; kinds of Billie caught (the Index) |
-| `unlock:ranch_2`, `runs >= 3`, `wins >= 1` | an unlock is owned (unlocks.json); runs ended; runs won (RL-11: what lasts between runs, the same in a run and in the hub) |
+| `unlock:ranch_2`, `runs >= 3`, `wins >= 1`, `expedition >= 2` | an unlock is owned (unlocks.json); runs ended; runs won; the highest Expedition open (RL-11, RL-13: what lasts between runs, the same in a run and in the hub) |
 | `type:Water`, `type:Fire >= 2` | Billies of that type in the team, fainted ones too (RL-12b) |
 | `money >= 200` | Moneys on hand (RL-12b) |
 | `team >= 2` | Billies in the team (RL-12b) |
 | `badge:Water` | a badge of that type is won: `meta.badges` (RL-R2) or a leader's seat (RL-12b) |
+| `last:lost`, `last:row <= 3` | the last run (RL-S1, `meta.history`): `won`, `lost`, `quit` (1 or 0), `row` (the furthest reached), `days`, `perks`, `team`, `leaders` (beaten), `expedition`; all 0 before the first run |
+| `lastby:bureau`, `lastby:boss`, `lastby:marina` | what ended the last run: its kind (`wild`, `route`, `event`, `miniboss`, `boss`, `trainer`), a leader's or class's id, the Billie standing, or `bureau` (a Bureau agent) |
+| `history:losses >= 2` | over the runs kept (the last 20): `runs`, `wins`, `losses`, `quits`, `streak` (wins in a row, newest back), `lstreak` (losses in a row), `bureau` (runs a Bureau agent ended) |
+| `rematch >= 1` | in a leader's or agent's line: how many runs kept that foe ended |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own
 (`item:honey`, `badges`) means more than 0. Conditions are parsed once and never run as code. A mistake says where:
@@ -115,6 +121,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `wait s` | waits, in seconds |
 | `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
+| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`; nothing if no line fits |
 | `end` | stops the script |
 | `camera run-up` | someone runs up to you: the walk scene you stand in becomes a scene, with you and the one who talks (out of sight beyond you) on it; a battle, or the script's end, ends it |
 | `walk who beside me` | the one who ran up comes over to stand beside you |
@@ -153,11 +160,34 @@ The command table is `SCRIPT_COMMANDS` in logic/script-parse.js (with the parser
 the Studio's command reference is built from it, the keywords (`KEYWORD_ABOUT`), the slots and the condition terms
 (`CONDITION_KINDS`) by `scriptReference()`, so it can't drift from what the parser reads.
 
+## The story director (RL-S1)
+
+The hub characters, the scene after a lost run, a run's leaders and the Bureau's agents react to your runs, the way
+Hades' characters do. `game/data/banter.json` holds their lines, by id: `who` it is for, a `when` (a condition, most
+often on the run history), a `priority`, `once`, a `cooldown` (runs that must end before it is said again), `must`,
+and a `script` (most often one line). `logic/story-pick.js storyPick` takes the lines for `who` that can be said
+(`when` holds, not said if `once`, past the cooldown); a `must` line comes first, then the highest priority, and a tie
+is drawn from the runs ended and who, so the same save picks the same line. What was said is in story `said` and
+`once`.
+
+- **Home from a run** (run.js `runEndHome` → story-stage.js `storyHomeArrive`): Chosen, Hazel and Juniper each get a
+  line for this return (story `fresh`); the first talk after it plays that line once instead of their own script.
+- **A lost run** leaves story `pending` = `back-lost`: story.json `scripts.back-lost` plays by the mast once nothing
+  else is open (the first time in full, flag `firstLoss`; later `pick back_lost`).
+- **In a run**: a leader's script is `pick leader`, then its battle; a Bureau agent's (a class with `"bureau": 1` in
+  events.json) `pick bureau` in place of its sight line.
+
+The run history is `meta.history` (logic/run-history.js): the newest 20 runs, each with its seed, region, Expedition,
+end (`won`, `lost`, `quit`), what beat you, the furthest row, days, the team's species, Perks, the region's leaders
+beaten or not, and the rival's result (RL-S2). The checks: banter.json's schema, a line for every who a script picks,
+a leader and an agent always have a line with no `when`, a `once` line has no cooldown, and every fact a condition
+names exists.
+
 ## Flags
 
 Every story flag is listed in `game/data/story.json` with what it means: `flags` by name, `patterns` for flags made
 from an id (`met_<id>`, `read_<book>`, `legend_<species>`, `clue_<clue>`), and `kept` for the
-story's own records (`talks`, `quests`, `once`, `cycles`, `resume`). The game sets flags through `setStoryFlag`; one
+story's own records (`talks`, `quests`, `once`, `cycles`, `resume`; RL-S1 `said`, `fresh`, `pending`). The game sets flags through `setStoryFlag`; one
 story.json doesn't list is a warning in the debug log's data list. Trainers beaten stay in `saveData.flags` (read as
 `beat:<id>`).
 
