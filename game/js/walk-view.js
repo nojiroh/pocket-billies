@@ -224,6 +224,7 @@ expose({
   propClock: [() => propClock, v => (propClock = v)],
   propShown: [() => propShown, v => (propShown = v)],
   propWithVariant: [() => propWithVariant, v => (propWithVariant = v)],
+  residentAt: [() => residentAt, v => (residentAt = v)],
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   screenToGround: [() => screenToGround, v => setScreenToGround(v)],
@@ -4089,6 +4090,16 @@ function hubResidentWalkers(sc) {
     .filter(id => H[id])
     .map(id => ({ id, name: RESIDENTS[id].name, at: [H[id].at[0] + o[0], H[id].at[1] + o[1]], prop: H[id].prop }));
   return hubWalkers.list;
+}
+/* RS-3: the resident who lives in a building of the view (a prop of it), or null */
+export function residentAt(p) {
+  const sc = walkView.sc,
+    o = (sc && sc.baseOff) || [0, 0];
+  if (!p || !sc) return null;
+  const w = hubResidentWalkers(sc).find(
+    w => w.prop.k === p.k && Math.hypot(w.prop.x + o[0] - p.x, w.prop.z + o[1] - p.z) < 0.5
+  );
+  return w ? w.id : null;
 }
 /* somewhere on the streets: another home, a place of work, the square */
 function folkStreetSpot(f) {

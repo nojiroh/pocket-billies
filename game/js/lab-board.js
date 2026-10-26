@@ -8,10 +8,11 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, render, toast } from './hooks.js';
-import { CURRENCIES, RULES, UNLOCK_DATA } from './game-data.js';
+import { CURRENCIES, RESIDENTS, RULES, UNLOCK_DATA } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { incomeBank } from './logic/ranch-income.js';
+import { residentsHere } from './logic/residents.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -30,10 +31,13 @@ expose({
   labPrice: [() => labPrice, v => (labPrice = v)],
   labRowHTML: [() => labRowHTML, v => (labRowHTML = v)],
   renderLabBoard: [() => renderLabBoard, v => (renderLabBoard = v)],
+  residentCardHTML: [() => residentCardHTML, v => (residentCardHTML = v)],
+  residentNoteHTML: [() => residentNoteHTML, v => ((residentNoteHTML = v), provide({ residentNoteHTML }))],
+  residentsAt: [() => residentsAt, v => ((residentsAt = v), provide({ residentsAt }))],
   unlockGiftText: [() => unlockGiftText, v => (unlockGiftText = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ buildingLabel, buildingRowsHTML, labMilestones });
+provide({ buildingLabel, buildingRowsHTML, labMilestones, residentNoteHTML, residentsAt });
 /* to-module: end */
 /** what an unlock gives, in a few words: "+10 Scrap", or its name @param {any} R */
 function unlockGiftText(R) {
@@ -100,6 +104,30 @@ function labRowHTML(r, then) {
 function buildingRowsHTML(b, then) {
   const rows = unlockRows(saveData, UNLOCK_DATA).filter(r => r.R.at === b && !r.owned);
   return rows.length ? `<div class="lab-list">${rows.map(r => labRowHTML(r, then)).join('')}</div>` : '';
+}
+/** RS-3: the residents who live at a hub building (residents.json home; a cottage's by its resident): a line naming
+ * them, for its room card or sheet @param {string[]} ids @param {string} [verb] */
+function residentNoteHTML(ids, verb = 'lives here') {
+  return ids
+    .filter(id => RESIDENTS[id])
+    .map(
+      id =>
+        `<p class="note"><b>${escapeHtml(RESIDENTS[id].name)}</b>, the ${escapeHtml(RESIDENTS[id].role.toLowerCase())}, ${verb}.</p>`
+    )
+    .join('');
+}
+/** RS-3: who lives at a hub building (residents.json home), in the order they moved in @param {string} b */
+function residentsAt(b) {
+  return residentsHere(saveData).filter(id => RESIDENTS[id] && RESIDENTS[id].home === b);
+}
+/** RS-3: a resident's room card: who they are, Talk, and the upgrades sold at their home (unlocks.json rows `at` it,
+ * RS-4 adds them); with none yet, that they come soon @param {string} id */
+export function residentCardHTML(id) {
+  const r = RESIDENTS[id];
+  if (!r) return '';
+  const all = unlockRows(saveData, UNLOCK_DATA).filter(x => x.R.at === r.home),
+    first = r.name.split(' ')[0];
+  return `${residentNoteHTML([id])}${all.length ? buildingRowsHTML(r.home, 'room') : `<p class="note">${escapeHtml(first)}’s first upgrades come soon.</p>`}`;
 }
 /** a hub building's label with its level ("Ranch · Lv 2"): a building of buildings.json with levels, in Copperleaf
  * (not in a room, not on a run) @param {string} label @param {string} act */

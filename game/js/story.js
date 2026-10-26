@@ -174,13 +174,14 @@ export async function personTalk(P) {
 
 /* RS-3: a resident of Copperleaf (one of its townsfolk, walk-view.js hubResidentWalkers) stops and says the line the
    story director picks for them (banter.json, their id as `who`; every resident has one that always holds) */
-async function residentHomeTalk(f) {
+export async function residentHomeTalk(f) {
   if (talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   f.wait = 99;
   f.route = null;
   f.walk = 0;
-  turnToPlayer(f);
-  if (typeof walkRenderer !== 'undefined') {
+  /* from their room card (Talk) there is nobody to turn: only the line */
+  if (f.x != null) turnToPlayer(f);
+  if (f.x != null && typeof walkRenderer !== 'undefined') {
     walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
     walkRenderer.talkAt = { x: f.x, z: f.z, t: walkView.t };
   }
