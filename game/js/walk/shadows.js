@@ -146,8 +146,6 @@ export function lampShadowMaps(items, X, dark) {
     cand = pickShadowLamps(L, P.x, P.z, n);
   if (!cand.length) return;
   X.lights = cand.concat(L.filter(l => !cand.includes(l)));
-  X._lp = null;
-  X._lc = null;
   frameBlockStale(X);
   X.lampSh = [];
   const gl = gpuState.gl,

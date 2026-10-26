@@ -73,10 +73,8 @@ const GRAPHICS_TEST_HIDDEN = [
   ['shadows.contact', 'Contact shadows', { range: [0, 1, 0.01] }],
   /* water track WA-1: pixel water's extra shore reads and steps */
   ['water.pixel', 'Pixel water', { values: [false, true] }],
-  /* phase 20 C3: the same look either way, so it is left out of "everything lowest / highest" */
-  ['quality.frameBlock', 'One light block per frame', { values: [false, true], alone: true }],
-  /* phase 20 C5: the same look when standing still, so left out too; how many lamps light the scene (8 is the phone
-     limit stage D6 may take) */
+  /* phase 20 C5: the same look when standing still, so left out of "everything lowest / highest"; how many lamps light
+     the scene (8 is the phone limit stage D6 may take) */
   ['quality.stableLights', 'Steady lamps', { values: [false, true], alone: true }],
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
 ];
@@ -95,13 +93,13 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'lamps',
     name: 'Lamp square',
     time: 22,
-    dials: ['color.bloom', 'lights.brightness', 'quality.frameBlock', 'quality.stableLights', 'quality.lights'],
+    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights'],
   },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: ['lens.blur', 'world.farProps', 'quality.frameBlock', 'quality.stableLights'],
+    dials: ['lens.blur', 'world.farProps', 'quality.stableLights'],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
   { id: 'everything', name: 'Everything', all: true },
