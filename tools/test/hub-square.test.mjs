@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { SQUARE_R, squareRim } from '../patch-copperleaf-square.mjs';
+import { SQUARE_R, squareRim } from '../square-props.mjs';
 
 const D = readGameData(),
   C = D.scenery.props,

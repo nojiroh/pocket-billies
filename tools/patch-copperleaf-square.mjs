@@ -19,19 +19,11 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandDress } from './island-dress.mjs';
+import { SQUARE_R, squareRim } from './square-props.mjs';
 
-export const SQUARE_R = 10; /* the square's mean radius (m) */
 const OLD_R = 12; /* the generator's square (paved and level out to here) */
 const STREET_HALF = 1.1; /* half a street's width (the island's paths are 2.2 m) */
 const SIGN_OUT = 4.5; /* the signpost's distance from the middle (m) */
-
-/** the square's rim, metres from its middle at angle a (radians, 0 east, 90 degrees north): a bulge toward the
- * north-east (the sky rail and the portal), three soft lobes and a little wobble, kept between 8.2 and 11.8 m */
-export const squareRim = a =>
-  Math.max(
-    8.2,
-    Math.min(11.8, SQUARE_R + 1.2 * Math.cos(a - 0.6) + 0.6 * Math.sin(3 * a + 0.9) + 0.3 * Math.sin(7 * a + 2.3))
-  );
 
 const main = () => {
   const D = readGameData(),
