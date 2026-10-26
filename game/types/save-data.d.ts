@@ -93,7 +93,7 @@ export interface Meta {
   crests: number;
   /** RL-S2: the gift currency for the hub's folk (rare finds on runs) */
   beans: number;
-  /** RL-S2: the story's chapter (one an Expedition: its boss's scene moves it on with the script command `chapter`) */
+  /** RL-S2: the story's chapter (1 at the start; only the script command `chapter n` moves it on, never back, at most 9) */
   chapter: number;
   /** RL-S2: points with each hub person (relations.json), and meta.runs when each last had a gift */
   rel: Record<string, number>;

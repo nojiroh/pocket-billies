@@ -107,7 +107,7 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `rel:hazel >= 2` | your level with a hub person (RL-S2, relations.json: the levels their points reach) |
 | `beans >= 1` | Beans on hand, the gift currency (RL-S2) |
 | `gifted:hazel` | you gave them a gift since the last run (RL-S2) |
-| `chapter >= 2` | the story's chapter (RL-S2: `meta.chapter`, one an Expedition, moved on by the command `chapter`) |
+| `chapter >= 2` | the story's chapter (RL-S2: `meta.chapter`, 1 at the start, moved on only by the command `chapter n`, at most 9) |
 
 Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than `or`. A count on its own
 (`item:honey`, `badges`) means more than 0. Conditions are parsed once and never run as code. A mistake says where:

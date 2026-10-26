@@ -121,7 +121,7 @@ export const CONDITION_KINDS = {
   chapter: {
     id: false,
     count: true,
-    about: 'the story’s chapter (RL-S2: one an Expedition, moved on by its boss’s scene): chapter >= 2',
+    about: 'the story’s chapter (RL-S2: 1 at the start, moved on only by the command chapter n): chapter >= 2',
   },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
