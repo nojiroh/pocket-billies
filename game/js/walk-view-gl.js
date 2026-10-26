@@ -117,6 +117,7 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
+import { drawFogGridBlocks, fogGridFrame } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -683,6 +684,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
+  /* AIR-2: the fog grid round you (walk/fog-grid.js; nothing reads it until AIR-3), its blocks from the debug menu */
+  gpuPass('other');
+  fogGridFrame(sc, P, BT, PHONE);
+  if (D.fogGrid) drawFogGridBlocks(C);
   gpuPass('effects');
   effectsPass(C, items, X, dark, t, dt);
   gpuPass('post');
