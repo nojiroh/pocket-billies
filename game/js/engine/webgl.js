@@ -30,9 +30,12 @@ expose({
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
+  forceContextLoss: [() => forceContextLoss, v => (forceContextLoss = v)],
+  forcedLoss: [() => forcedLoss, v => (forcedLoss = v)],
   frameBlockBinding: [() => frameBlockBinding, v => (frameBlockBinding = v)],
   frameBlockCheck: [() => frameBlockCheck, v => (frameBlockCheck = v)],
   freeMesh: [() => freeMesh, v => (freeMesh = v)],
+  glLoseArmed: [() => glLoseArmed, v => (glLoseArmed = v)],
   gpuLoading: [() => gpuLoading, v => (gpuLoading = v)],
   gpuState: [() => gpuState],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
@@ -645,6 +648,9 @@ export function initWebgl(cv) {
 /* phase 20 H: the lost and restored listeners, once per canvas (initWebgl runs again on the same canvas after every
    restore, and each pair it added used to stay: the second loss remounted the walk view twice) */
 const lossWatched = new WeakSet();
+/* H4: a loss forced on purpose (forceContextLoss), which comes back by itself; and whether ?glLose was armed */
+let forcedLoss = null,
+  glLoseArmed = false;
 function watchContextLoss(cv) {
   if (lossWatched.has(cv)) return false;
   lossWatched.add(cv);
@@ -652,14 +658,41 @@ function watchContextLoss(cv) {
     e.preventDefault();
     gpuState.lost = 1;
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
+    const F = forcedLoss;
+    if (F && F.cv === cv) setTimeout(() => F.ext.restoreContext(), F.ms);
   });
   cv.addEventListener('webglcontextrestored', () => {
     gpuState.lost = 0;
     gpuState.cv = null;
+    forcedLoss = null;
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
     if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
     if (typeof worldBowlContextRestored === 'function') worldBowlContextRestored();
   });
+  /* H4 where there is no debug menu (the Studio): ?glLose=8 forces a loss 8 s after the first context is made */
+  const q =
+    typeof location !== 'undefined' && location.search ? new URLSearchParams(location.search).get('glLose') : null;
+  if (q != null && !glLoseArmed) {
+    glLoseArmed = true;
+    setTimeout(() => forceContextLoss(), Math.max(1, +q || 8) * 1000);
+  }
+  return true;
+}
+/* H4: loses the GPU context on purpose (WEBGL_lose_context) and gets it back ms later, so every screen's recovery can be
+   tried on a phone (the debug menu's button, ?glLose) */
+export function forceContextLoss(ms = 1500) {
+  const gl = gpuState.gl,
+    ext = gl && gpuState.cv && !gpuState.lost && !forcedLoss ? gl.getExtension('WEBGL_lose_context') : null;
+  if (!ext) {
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context loss not forced (no context, or lost already)');
+    return false;
+  }
+  forcedLoss = { cv: gpuState.cv, ext, ms };
+  /* lost at once: the lost event comes a frame or more later, and a frame drawn meanwhile on the dead context turned
+     the buildings, models and solid props off for good (their guards) */
+  gpuState.lost = 1;
+  if (typeof debugLog !== 'undefined') debugLog.add('webgl', `context loss forced (back in ${ms} ms)`);
+  ext.loseContext();
   return true;
 }
 /* ---------- textures ---------- */

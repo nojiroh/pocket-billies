@@ -127,3 +127,29 @@ test('a restore drops every GPU copy the world map keeps and keeps the work behi
     Object.assign(worldBowl, was);
   }
 });
+
+test('a forced loss (H4) loses the context once and asks for it back after the given time', async () => {
+  const cv = fakeCanvas(),
+    ran = [],
+    ext = {
+      loseContext: () => (ran.push('lose'), cv.fire('webglcontextlost')),
+      restoreContext: () => ran.push('restore'),
+    },
+    was = { gl: G.gpuState.gl, cv: G.gpuState.cv, lost: G.gpuState.lost, back: G.onGlContextRestored };
+  G.watchContextLoss(cv);
+  Object.assign(G.gpuState, { gl: { getExtension: k => (k === 'WEBGL_lose_context' ? ext : null) }, cv, lost: 0 });
+  G.onGlContextRestored = () => {};
+  try {
+    assert.equal(G.forceContextLoss(5), true);
+    assert.equal(G.gpuState.lost, 1);
+    assert.equal(G.forceContextLoss(5), false, 'not twice while lost');
+    await new Promise(r => setTimeout(r, 30));
+    assert.deepEqual(ran, ['lose', 'restore']);
+    cv.fire('webglcontextrestored');
+    assert.equal(G.gpuState.lost, 0);
+    assert.equal(G.forceContextLoss(5), false, 'no context made again yet (gpuState.cv is null)');
+  } finally {
+    Object.assign(G.gpuState, { gl: was.gl, cv: was.cv, lost: was.lost });
+    G.onGlContextRestored = was.back;
+  }
+});
