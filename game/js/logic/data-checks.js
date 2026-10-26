@@ -1022,6 +1022,10 @@ export function dataEvents(D, valid = () => true) {
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
     statuses = new Set((D.statuses || []).map((/** @type {any} */ t) => t.id)),
     biomes = new Set(Object.keys(D.biomes || {})),
+    /* RO-3e: the species a gift may name (every stage of every line) */
+    species = new Set(
+      (D.lines || []).flatMap((/** @type {any} */ L) => (L.names || []).map((/** @type {any} */ _, st) => L.id + st))
+    ),
     people = new Set(
       Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
     ),
@@ -1073,6 +1077,11 @@ export function dataEvents(D, valid = () => true) {
       case 'wild':
       case 'recall':
         if (a != null && !(Number.isInteger(num(a)) && Math.abs(num(a)) <= 20))
+          problem(`${at}: levels up of -20 to 20`);
+        return;
+      case 'gift':
+        if (!species.has(a)) problem(`${at}: no species "${a}" (lines/)`);
+        if (b != null && !(Number.isInteger(num(b)) && Math.abs(num(b)) <= 20))
           problem(`${at}: levels up of -20 to 20`);
         return;
       case 'level':

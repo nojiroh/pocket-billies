@@ -308,7 +308,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore2",
           "cuban_courtside0",
           "cuban_courtside1",
-          "altman0",
           "yiming_livestream0",
           "yiming_livestream1"
         ],
@@ -866,7 +865,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "swift_folklore2",
           "cuban_courtside0",
           "cuban_courtside1",
-          "altman0",
           "yiming_livestream0",
           "yiming_livestream1"
         ],
@@ -891,6 +889,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "252910bf232192d62537826f41724b852d28dc67d908d302bb69d4db2a718240"
+  "all": "a6ea8bb6d98920d14449280cfcde7ce9c4f6b4eaf5c8570f7c0530e7515ea7b9"
 }
 `;
