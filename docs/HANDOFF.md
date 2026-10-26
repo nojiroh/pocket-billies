@@ -40,266 +40,6 @@ currently open PRs and anything sessions that are done haven't pushed yet".
 - **Next:** the owner's phone check of the bar; close #221 by hand (its commits reach main with this PR, not its base);
   the one-session branches merged here can go (BRANCHES.md), the `track/*` ones stay.
 
-### Studio art track - the plan (SA) - 2026-10-26
-Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
-Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a
-more intuitive Studio, and what no longer fits the Vision taken out.
-- Changed: docs/phases/studio-art-track.md (findings, research with sources, five sessions SA-1..SA-5, the owner's
-  decisions); ROADMAP's tracks list; BRANCHES' `track/studio-art` row.
-- Risky or unfinished: nothing built. The orphan lists in the plan come from greps of game/js and studio/js; SA-5
-  checks them again before deleting.
-- Verified: the main claims by grep and ls (Art files' four empty tabs and missing folders; tiles47 read only by
-  walk-view.js and built by tools/build-terrain-v47.py; `addEgg`/`hatchEgg` with no caller; `starterEgg`,
-  `dropTiers`, `restCost`, `endText` unread; portraits and art/people read by nothing; the Workbench's disabled modes).
-- Decisions (the owner, every recommendation): tiles47 PNGs are the source and the builder retires; orphans deleted,
-  legacy art parked; the clean-up reaches the game (Jobs, Town shops, walk eggs); `track/studio-art`, SA-1 first.
-- Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
-  is on it).
-- Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
-### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
-Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
-Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
-- Changed: Copperleaf's square paved to a lobed rim about 10 m out (mean 10, 8.2-11.8, bulging north-east toward the
-  sky rail and the portal) by `tools/patch-copperleaf-square.mjs --outline`; the fountain in place of the well and the
-  signpost 4.5 m out (`--fountain`; build-copperleaf.mjs does the same on a rebuild; the world map draws a fountain on
-  the well plot). WA-10's `patch-copperleaf-water.mjs --square` removed (it would shrink the square back to 8 m).
-  `squareRim` lives in tools/square-props.mjs. The fountain model's waters and lily pads were hidden under its solid
-  bowl tops (it looked dry): lifted (build-props-batch6.py). island-shots.py: `square-portal`, `square-near`.
-- Risky: the plot kind stays `well` (internal). Rebuilding batch 6 rewrites `clock_tower.json` and
-  `test_props_marigold.json` (old drift between the script and later edits): reverted here, so the next batch 6 run
-  must revert them again or their owner settles it. The pinwheel street entries moved to HB-10f.
-- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1288 pass (one after-edit hook
-  run reported a failure that two reruns didn't show), smoke 6 of 6 (Python Playwright 1.63.0; the pinned 1.56 wants a
-  browser this container lacks), tools/test/hub-square.test.mjs, headless pictures before and after. The full quick
-  check was still running at the session's end: 13 of 37 steps ok, 2 PROBLEMs that look unrelated, not yet checked on
-  main: "Terraces ... props in the air: copperleaf: sky_portal" (the portal floats by design, HB-7) and "RL-8 ... the
-  town's shop has no Perk (RL-12)". **Next session: run the quick check again and run both steps on main.**
-- **HB-10b started, not committed**: docs/plans/hb-10b-wip.patch (`git apply` it; it applies on 7c41fad6). It holds
-  the edge layout (tools/square-props.mjs `SQUARE_EDGE`: three stalls, a cart, crates, sacks, six planters at the
-  street mouths, five streetlamps, a solar canopy, three benches, two string lights; nothing nearer the middle than
-  4.6 m, only planters in the portal view, a reach test that nothing is shut in), `--edges` on the patch tool, the
-  call in build-copperleaf.mjs, tools/build-props-square.py (the new `string_lights` model, its bulbs lamp glows), the
-  fountain's night fx in build-props-batch6.py (three glows round the basin, `fireflies`), and the edge tests. Not
-  yet done: the `fireflies` effect in game/js/walk/effects.js (and the Studio's PROP_EFFECT_KINDS), running
-  build-props-square.py, batch 6 (revert the drift above) and `--edges`, the pictures by day and night, and checking
-  that the 3D buildings' windows already light at night (they should: prop-models.js glassLit). A dry run of the
-  layout passed every test. cafe_table and crates are voxel models (not the airship style): left out, remakes later.
-- Next: HB-10b on `track/hub` (or this branch at the owner's word) from the patch above.
-
-### Hub track HB-10 planned: the square alive - 2026-10-26
-Branch `ccr-144f3c08-vf09lo` (a planning session; the owner: "make a plan to make the hub island feel more alive",
-with online research and questions). Docs only, no code.
-- docs/phases/hub-track.md: HB-10 split into HB-10a-f with the verified facts, the research, the owner's answers
-  and the Ask me befores; ROADMAP's hub line.
-- Found: the square holds 8 props within 18 m and no building fronts it (store 27 m, inn 41 m); 17 town furniture
-  models exist unused on the hub.
-- The square's size: the owner settled on about 10 m (between WA-10's ~8 m and the generator's 12 m).
-- Next: HB-10a on `track/hub` (shape and fountain).
-### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
-Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
-`art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D
-effects already in the game (three code reviews and a headless on/off run of 14 effects in Copperleaf), then a fix plan
-and smart, cheap god rays. **Every look change is behind its own switch, off by default** (phase 20's rule), so nothing
-changes until the owner turns them on after a phone check.
-- What the audit measured (headless, Copperleaf, 640x480, the share of pixels each effect changes): vignette 51%, bloom
-  26%, ink 26%, outlines 20%, lamps at night 20%, shafts 13%, AO 12%, ground bumps 6%, contact shadows 6%, DOF blur 5%,
-  lamp shadows 4%, ground AO 4%; **god rays 0: engine.json sets `air.godRays` 0 and `air.cheapShafts` defaults to 0, so
-  the game has no light shafts at all today**.
-- Smart light shafts (`air.shaftPick`, Engine > Air, off): `logic/shaft-pick.js` (pure, `tools/test/shaft-pick.test.mjs`)
-  picks the cheap shafts every 0.4 s from tree crowns, the gaps between them, the two sides of houses (old 3D buildings
-  and low-poly models with windows) and a place's `shafts` list; scored by shade behind the beam's foot (crowns and
-  houses as circles seen toward the sun), forward scattering (looking into the light), distance from you (the walk
-  camera stands 36-58 m back; the range counts from you), never over you; at most 3/5/8 by quality step and a quarter of
-  the screen together; a showing shaft holds unless another scores 1.3x; fades in and out over 1.2 s. Drawn as a soft
-  streaked beam (the fx program's uGlow 2). Needs `air.cheapShafts` > 0 and god rays off (as D7). Graphics test: "Sun
-  gap, smart shafts".
-- The fixes, each with its switch (all off): Rays follow the light (`sun.followLight`: the walk view never passed the
-  light's colour, and the moon kept a full-strength warm glare); Window light faces out (`lights.windowFacing`: window
-  pools were cut on a fixed +z line, wrong for every turned house; the facing rides in uLC.w); Steady shadow edges
-  (`shadows.steadyEdges`: the sun maps' eye sat 2 m off the light's line, so the texel snapping drifted, test in
-  tall-ground-draw.test.mjs; and the soft edge's blocker search now reaches its filter); Lamp shadows hold
-  (`shadows.lampFix`: distance-scaled bias for the perspective lamp maps, a lamp's pool takes its lamp's map, lamps
-  high by height above the ground); Shaded tree cores (`world.treeCoreShade`: the 30% darkening solid-props.js worked
-  out and never used); Occlusion follows the slope (`shadows.aoPlane`: both ways along a line in a harmonic mean, so a
-  plane gives none); Feet shade on sky light only (`shadows.groundAOSky`); Lamp light on water (`lights.onWater`);
-  Outlines follow the camera (`color.inkFollow`: ink melts with the blur and fades past the focus, it faded from 25 m:
-  half strength on you at zoom 1); Even bloom (`color.bloomEven`); Half-float HDR (`quality.hdrHalf`, read at start);
-  Steady light on far props (`quality.normalMips`); Fronts lit as their material (`world.frontMaterial`); Building
-  bumpiness (`world.buildingBumps`, 0..3, 0 = off: bricks, planks and roof tiles from the sheet's own texels, on the
-  old 3D buildings and the low-poly models; the hub's houses are models now).
-- Fixed without a switch (artefacts, no look intended): the near ring's bump lookup stays inside its 16 m square (seams);
-  the no-worker fallback bleeds picture edges too (`bleedEdges`, shared with the helper thread).
-- The light block: its float padding slot is now `uShFix` (the shadow fix bits); the size and offsets are unchanged
-  (frame-block.test.mjs knows the new member).
-- **Risky**: the AO slope fix went through two wrong tries (a one-pixel slope was all depth steps at 40 m; a plain mean
-  misreads planes) before the harmonic mean; headless it is within noise at zoom 1, brighter close up. Building bumps at
-  the usual zoom read the sheet's half size (a texel is half a screen pixel there), so they are subtle; 1.5 shows on
-  roofs and planks. Lamp shadows hold and Lamp light on water showed no change in Copperleaf at night (no case near the
-  player); they compile and run.
-- **Found, not changed (the owner's call)**: the screen AO fades out by 36 m, nearer than you stand at zoom 1 (reaching
-  further darkened every grass blade's foot); props without `ppm` are at 34 px/m (scenery.json `ppu`), people at 42 and
-  66.5, Billies on a 68 grid: an art rebake to reach 32; the sprite bump's +0.18 upward tilt may be meant.
-- Verified: lint, typecheck, format, check:modules, unit tests 1297 pass, the smoke check 6 of 6, `check-fast --only=town` 4 of
-  5 ("A run town's shop opens (UI-5): no shop with wares" fails on main 0ba64f10 too, not this branch's), every switch on at once in Copperleaf and a
-  forest trail (no errors, every lit program builds with the light block), and headless on/off pictures for each
-  switch. Not judged headless (phase 20's rule): how any of it looks or costs on the phone.
-- Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
-  Meadow and Depth corridor now hold the new switches) and a debug log; then one commit per switch to turn on what
-  stays. After that: cavity darkening from the same sheet, short self-shadows on the ground.
-### Phase 20 R3, lane context (H1-H3, H5: the resource registry, freeing, memory by kind, warm-up) - 2026-10-26
-Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved ("Continue") with my
-recommendations: each owner drops its own handles on a restore and makes them again lazily (no stored rebuild per
-object, which would have kept every mesh's and texture's data twice); the warm-up is on by default behind its own
-switch (it doesn't change the look); the other lanes may create through the registry.
-- Where the phase file, R1's notes and the code differed (checked):
-  - Nothing needs deleting after a loss: the old handles died with the context (a delete on them does nothing). The
-    real gaps were caches fooled by the restored context being the same object, and objects dropped without delete.
-  - Already fine after a restore: the sprite instance buffer (keyed on `gpuState.quad`, new with each context), the
-    rain batch's arrays (kept on the program; `gpuState.P` is emptied), the models' record buffer (flushed).
-  - Not fine, found here: the cloth grid (`gpuState.gridGL === gl`) kept its dead buffer after a restore.
-  - No program was ever replaced within a context, but a background compile whose program had been made on the spot
-    meanwhile was dropped undeleted, a failed compile left its shaders and program, and no shader was ever deleted.
-  - The walk set (WALK_SHADERS, POST_EFFECT_SHADERS) compiles in one blocking go in `ensureWalkGl`; the debug log
-    already blames compiles ("compiling shaders", "finishing a shader"), and your Copperleaf hitches were blamed on
-    the ground setup, not compiles: H5 doesn't touch the ground setup.
-  - The precompile list (walk-view-gl.js `ensureWalkGl`, not webgl.js) already had every new instanced and batched
-    program, the shadows lane's two included.
-- Changed (one kind per commit; files of other lanes: create and delete lines only):
-  - The known bugs: engine/light.js `frameBlockLost()` and walk/sprites.js `hideQueriesLost()`, run on every restore.
-  - The registry (engine/webgl.js, "resources"): `gpuBuffer/gpuTexture/gpuVao/gpuFramebuffer/gpuMake(type, kind,
-    bytes)`, `gpuSized`, `gpuFree` (a handle of an older context is only forgotten; one made outside it is deleted by
-    its type), `gpuRetire` (freed two frame ticks later), `gpuOnRestore(name, fn)`, `gpuMemory()`. Entries sit in a
-    WeakMap and never keep an object alive; one collected without `gpuFree` counts as "dropped" (a leak's sign).
-    `gpuState.gen` goes up with every context and restore; caches compare it. The frame scheduler's tick calls
-    `gpuFrame()`: retired objects freed, and a context that died before its lost event is marked lost at once.
-  - Moved onto it: the engine's own objects (quad, stand-ins, samplers, pictures, canvases, normal maps, render
-    targets, meshes, GPU timers); programs and shaders (shaders deleted once linked; duplicates and failures
-    deleted); buffers and vertex arrays in prop-models.js (both halves: I moved the shadow maps' record buffer's
-    create line, `MODEL_SHADOW_INSTANCES`), model-instances.js, sprite-instances.js, buildings.js, structures.js,
-    solid-props.js, walk/effects.js (rain), walk/grass-build.js, engine/light.js, walk/sprites.js (queries); the
-    ground (ground-textures.js, map-cache.js, ground-mesh.js, water-data.js: kinds ground and ring); the world map
-    (world-bowl.js). Left on purpose: self-test.js's probes (they delete their own).
-  - Restore: the walk view's drop (`walkViewGpuLost`) and the world map's (`worldBowlDropGpu`) registered with
-    `gpuOnRestore`; the registry runs every drop first, then the walk view and the map are handed back.
-  - H3, debug log: `gpuMemory` in the report (MB, objects and dropped objects by kind, the picture cap's own count,
-    pictures trimmed, contexts made, `lateCompiles`: the names behind `pcl`), `gmb` (total MB) in every sample.
-  - H5: `quality.warmUp` ("Warm up before showing", on): a place fades in once two frames have drawn behind its fade
-    (at most 1.5 s), `mountWalkView`'s promise waits for it; a restore fades out and back in the same way.
-  - Debug menu: the diagnostics test's note says 4-5 min on a phone (the R1 measure lane's note for this lane).
-- Verified: lint, typecheck, `npm test` (1132), check:modules after every commit; the smoke check on every commit
-  touching game/ (run from a worktree of the commit). New tests: tools/test/gpu-registry.test.mjs (counts, sizes,
-  free, retire, generations, the early loss, owners' drops, render targets, meshes, programs). One headless crash check
-  at low graphics (scratch script, no pictures compared), the town fixture: two forced losses, the world map with a
-  loss, back to walk, a wild battle with a loss: every one restored and faded back in, **0 console warnings and 0 page
-  errors after each loss** (R1's run had hundreds of "used but unbound" and getQueryParameter warnings), 0 objects
-  dropped without being freed, `pcl` 0. Memory there (low graphics, 800 x 500): Copperleaf about 9 MB targets, 66 MB
-  ground, 27 MB near ring, 15 MB pictures, 4 MB meshes; the world map adds about 20 MB pictures and 20 MB targets.
-- Risky:
-  - Shaders are now detached and deleted once their program links. It is the standard practice and passed the
-    in-game shader test headless, but an old driver that misbehaves would show as a shader error in the log.
-  - The warm-up holds a place's fade-in for up to 1.5 s on a device that draws slower than two frames in that time;
-    turn "Warm up before showing" off if opening a place feels slower.
-  - For the shadows lane: `shadowInstanceState.bad === gl` and `modelShadowState.bad === gl` (walk/shadows.js,
-    prop-models.js) still compare the context, so a failure before a restore stays after it; compare `gpuState.gen`.
-  - H2's `gpuRetire` is in place but no site needed it: WebGL keeps a deleted object alive until the commands using
-    it are done, and no replacement found here was read after its old one was freed.
-- To test on your phone (debug menu → "Lose the GPU context", wait 2 s, each one; send the debug log after):
-  - Copperleaf by day: the town comes back whole and lit (buildings, trees, ground, water, shadows, lamps), fading
-    back in; tap the button twice in a row, a few seconds apart.
-  - Copperleaf at night (lamps and windows lit after the loss), and in the rain.
-  - The world map (Map tab), then back to the walk view.
-  - A battle at its move menu, and again with "Reuse battle rigs" on.
-  - A run place (jungle) and a run town, with "Shadows in batches" and "Models in batches" on.
-  - The Studio with `?glLose=12`: the battle preview with a walk scene open before 12 s pass.
-  - In each debug log: `gpuMemory` (what each kind holds; `dropped` should stay 0), `lateCompiles` empty after a tour
-    of the town, a route and a room (`pcl` 0), and whether opening a place feels slower with the warm-up.
-- Next: round 4 (D2 `mediump`, old paths deleted after your verdicts, the `phase-20-done` tag).
-### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
-Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
-they were merged here (merge commits) for one PR.
-- #219 `track/renderer` (phase 20 R2-R3: light shafts, the weather batch, the battle rigs' reuse, the frozen sprite and
-  reflection calls). Conflicts with WA-5b and CAM-4b were side-by-side additions: both kept.
-- #217 `claude/ro-3d-silkworm-and-plant`, which holds `track/roster` (RO-3a's last commit, RO-3b #218, RO-3c #215,
-  RO-3d). **Risky, check on the phone**: RO-3c was written on SP-1's graft-art (a session map, slot -> donor species),
-  main has SP-2's (Billy.graft, slot -> Gene id "part@donor"). Kept SP-2's model with RO-3c's placeholder grafting
-  added; skeleton-rig's placeholder bake reads each slot's donor from its Gene id (a bare species id, as RO-3c's debug
-  menu sets, still works). Not yet checked: wild splices and the Gene Bank on placeholder Billies (genes.json's Genes are
-  kit parts, so placeholders likely get none). RO-3c's `graftFit` (a picture fitted onto a bone) clashed with genes.js's
-  `graftFit` (SP-2): renamed `graftPicFit` in its own commit; the RO-3c HANDOFF lines above still say graftFit.
-- Verified: lint, typecheck, format, check:modules, check:data, the data text check, build, unit tests 1284 pass,
-  `test:slow` 88 of 89 (the WA-10 island test, left red at the owner's word); the smoke check's result is in the PR.
-- `track/renderer` and `track/roster` stay (BRANCHES.md); #217's base was `track/roster`, so it closes by hand.
-
-### Merge batch: finished PRs and sessions into main - 2026-10-26
-Branch `ccr-ed7f65cb-dk7xqw` (one session, the owner's word: "merge finished PRs and finished sessions into main").
-Every open PR conflicted with main (HANDOFF at least), and a session pushes only to its own branch, so the branches
-were merged here one by one (merge commits, no rebase) and go to main in one PR. The owner chose the list:
-- PRs #212 (UI icons MONO), #208 (CAM-4, with #206's plan), #210 (RL-S2), #209 and #211 (through
-  `claude/sp-5-augments`, which holds SP-2..SP-6 and RL-14a); `track/renderer` (phase 20 round 1, with
-  `ccr-b88b77b2-96vhmr`'s docs), `track/water` (WA-10), `ccr-65e11839-9p92dx` (RS-2), `claude/happy-ramanujan-jiipux`
-  (RO-3a), and the leftovers `track/routes`, `art/hub-buildings`, `ccr-abb116a0-en5q2d`, `ccr-43750396-zjjv7v` (the
-  last already in main: no change).
-- Left out (not asked): `art/editable-trainer-sprite-sheets` (no PR, adds a CI workflow).
-- How the overlaps were settled (risky, check in play): **six currencies** now (RL-S2's Beans and SP-3's DNA; the
-  schema allowed five); `eventPool`/`eventAt` take SP-6's `holds` 4th and RS-2's `meet` 5th; node types `rival` and
-  `scrapyard` side by side; the payout keeps HB-8's train words and "Ride home" with RS-2's moving line and the Beans;
-  the history row keeps Blake's result and gains `res`; the Lab's reopen goes genebank, workshop, station.
-- Test changes from the merge: the ui-icons count 51; the rival test asks 80% of runs to meet Blake (was 85%):
-  scrapyards (RL-14) take free nodes before he is placed, Expedition I fell to 254 of 300. If Blake should also take
-  a scrapyard row, that is a rules.json `run.rival.on` choice for the owner.
-- A fix found on the way: tools/check-data-text.py reads a favour's `check` (relations.json) as a condition (RL-S2's
-  smoke job failed on it).
-- Verified: lint, typecheck, format, check:modules, check:data, the data text check, unit tests (1217 pass); the
-  smoke check (check-fast): 37 of 37 passed locally (Playwright 1.56, 1320 s), "Behind things" too, though it was red
-  on main's last CI run; the owner said to leave that one. `npm run test:slow`: 88 of 89; the one red, "the game's
-  island is the generator's own output for its stored dials and seed" (island-gen.test.mjs), is WA-10's (red on
-  `track/water` alone too): its hand patches to Copperleaf's square, the town locked, at the owner's word, so the ground
-  no longer matches its dials. build-island.mjs would undo them. The owner chose to merge with it red; it belongs to
-  HB-10 (hub-track.md: the square's shape and why a town rebuild is not safe yet).
-- Next: delete the merged one-session branches the owner no longer needs (BRANCHES.md); the `track/*` branches stay.
-### Roster track RO-3d - The early bug and the early Grass plant: Ortega silkworm, Bloomberg plant - 2026-10-26
-Branch `claude/ro-3d-silkworm-and-plant`, from `track/roster` at RO-3a (#213); pull request into `track/roster`. Plan
-approved in Plan Mode. RO-3b (#218) and RO-3c (#215) ran beside it; both merged into track/roster mid-session and
-were merged in here (bodyPlans.json forms by hand: RO-3b's 51 and these 6; rigs-next.js rebaked). Tag `ro-3d-done` for the owner. The owner's picks (all Claude's recommendations, asked one by one):
-- **Ortega silkworm**, dex 41-43, common: **Threadling → Zaracoon → Ortegamoth**, Grass → Grass/Steel → Grass/Flying,
-  evolves at **7 and 10** (Caterpie and Metapod's levels; a run's wilds go from about 3 to 17), totals 205/225/400.
-  Body plans insect → shell (the cocoon) → flyer (the moth). Signature move Fast Fashion.
-- **Bloomberg plant**, dex 44-46, common: **Tickerbud → Bloomburst → Terminalia** (the legacy names), Grass → Grass →
-  Grass/Psychic (Psychic stands in for Oddish's Poison: Lullaby, Unnerve, Bewilder), evolves at **14 and 30**, totals
-  260/380/490. The plant plan at every stage. Terminal Fee (Electric, a status move) kept as its signature.
-- Where the plan and the code differed (checked): the legacy Ortega line was a spider (Spoolspider, Zaraknid,
-  Ortegaweaver), not a silkworm; the rig ids ortega0-2 and bloomberg0-2 already sat in rigs-next.js for the legacy
-  sheets, and the bake replaced them in place. RO-3b's bake change (a form's `scale`) was needed for stage sizes and is
-  not on track/roster when the art was made: its commit 960ff899 was cherry-picked here (the owner's call), and RO-3b's
-  merge brought the same code.
-- Changed:
-  - `game/data/lines/ortega.json`, `lines/bloomberg.json` (learnsets of existing moves, bios, notes, draft cries:
-    insect for the silkworm, slime and machine for the plant); `index.json` lines; roster.json rows 41-46 (`line3`).
-  - `bodyPlans.json` forms: six placeholder Billies in the lines' colours, scales 0.9 / 1.0 / 1.3 and 0.95 / 1.15 /
-    1.42. Threadling drops the insect's wings and carries a spool; Zaracoon drops the shell plan's legs and keeps its
-    arms as stubs (RO-3b's test: every placeholder gives every slot to a graft), a cocoon in a black garment bag with a
-    price tag; Ortegamoth has feathery antennae and big dark wings; Tickerbud a
-    pale stripe and a ticker-tape leaf; Bloomburst a ring of petals; Terminalia black with orange screen petals, a
-    screen on its face and a keyboard on its pot. Baked with `npm run bake:placeholders`; `check-data --fix`.
-  - The legacy `tickerbud.json`, `bloomburst.json`, `terminalia.json` layouts dropped (their PNGs are the placeholders
-    now); the spider sheets stay as reference.
-  - `pools.json`: Threadling in the meadow (30), thicket (28), jungle (24), autumn (22); Tickerbud in the meadow (24),
-    thicket (22), jungle (22), autumn (14).
-  - Snapshots: check-data (155 files), run-start (the seeds' regional dex draws from 17 lines now; over 400 seeds
-    Ortega is in 144 regions and Bloomberg in 128); the sound baseline's cries (the six new cries and their low ones).
-- Verified: lint, typecheck, check:modules, format:check, check:data; every unit test, quick and slow (1165 after the
-  RO-3b and RO-3c merges); the smoke check (6 steps, no problems); every stage drawn by the game's own renderer (rigParts,
-  rigFrame, drawRig on the town fixture) in idle, walk, attack, hurt and faint, front and back, before and after the
-  RO-3c merge: all stand on the ground and move.
-- Risky / open:
-  - **The sound baseline is missing the cave song's `mid` and `late` fingerprints on track/roster already** (the check
-    fails there without this branch). Left out of this branch on purpose; one `check-sound.py --baseline` adds them.
-  - The quick check runs with Python Playwright 1.63 here (the pinned 1.56 wants a Chromium this container does not
-    have); tools/requirements-check.txt is unchanged.
-  - Some placeholder labels read mirrored in one view (SHELL on Zaracoon's front): the RO-3a painter's flipping, the
-    same on every plan, not these forms.
-  - Not tried on a phone; names, bios and cries are drafts.
-- Next: RO-3e (the Knight frog and the fossil pair) and RO-3f (Satoshi and the cave bat), then RO-3g.
 ### Roster track RO-3e - The Knight frog and the fossil pair (dex 47-50) - 2026-10-26
 Branch `claude/ro-3e-knight-fossils` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d (#217,
 41-46) and RO-3f (51-53) ran beside it. Plan approved in Plan Mode. The owner's answers: a 2-stage frog plus two single
@@ -420,6 +160,361 @@ Tag `ro-3f-done` for the owner (local only: the proxy refuses tag pushes).
   - Looks judged on a contact sheet in this container, not on a phone.
 - Next: RO-3d and RO-3e merge (rebuild rigs-next.js, the sheets, the snapshots and the sound baseline after each;
   merge forms, rows, lines and pools by hand); RO-3g last; the picture baseline once the roster reaches main.
+
+### Roguelite track RL-S2 (part B) - Chapter 1's beats, the favours, every line - 2026-10-26
+Branch `track/story` (main had nothing new: no merge; PR #210). Plan approved in Plan Mode; the four asks answered in
+the session (2026-10-26): **A** Blake as built (the lead you take off with, 1/2/2/2/2 meetings, 2 Billies +1 per 2
+meetings at most 6, **losing to him ends the run**); **B** level 1 a line, 2 as built, 3 a second bonus (Chosen +5% XP,
+Hazel a Hi-Potion at takeoff, Juniper +10% catch), 4 a wardrobe piece (`glasses_sun`, `labcoat`, `hat_bucket`), 5 a
+once-only line; **C** Beans as built plus 1 for Blake's first defeat in a run; **D** every drafted line approved as
+written. Tag `rl-s2-done` is the owner's.
+- Where part A's notes were wrong (checked in the code):
+  - **Blake's lose line never shows on a run**: battle.js shows `T.lose` only off a run. A `back_lost` pair
+    (`lastby:rival`) now carries his last word.
+  - **A chapter is not "one an Expedition"** and no boss scene moves it: only `chapter n` (at most 9). Wording fixed in
+    SCRIPTS, conditions.js and save-data.d.ts.
+  - **Part A's "six beats" were never written down**; proposed again and approved.
+  - The "always a plain line" banter rule covered only leaders and agents; Blake and the thank-yous joined it.
+- Found while building (each its own commit):
+  - **An `xp` effect row on a run did nothing**: `heldXp` read only the held item's rows. It now reads the run's too
+    (no Perk had an xp row, so nothing else changes; golden record unchanged).
+  - **A `must` fresh line not talked to was lost for good**: its `once` is marked at the pick on the way home, its
+    script (a beat's flag, a favour's quest) runs only when said, and the next return picked over it. It now waits
+    for the next talk.
+  - Blake's line at a second meeting in a run needed this run's meetings: the condition `rival`.
+- Changed:
+  - **Favours as data**: relations.json `people.<who>.favour {quest, check, points?}`, story.json quests `fav_<who>`
+    (`asked`, `done`), `relFavoursPay` (relations.js) on the way home before the lines are picked (`storyHomeArrive`:
+    quest done, points, wardrobe, a toast). Chosen: a leader beaten; Hazel: row six; Juniper: a Grass Billie home (the
+    new condition `lastteam:`, the last run's team by type, line or species). Asks and thanks are once + must banter.
+  - **Thank-yous**: banter who `thanks_<who>`; after a gift story.js plays `pick thanks_<who>` (the level just reached
+    first) and the talk ends there; the old toast when no line fits. Level lines 1-5 for each.
+  - **Blake**: five lines before his battle (`pick rival` is on), his win line, the `back_lost` pair; the Bean.
+  - **Chapter 1**: five once + must beats on Hazel and Chosen chained by flags `ch1_drop`, `ch1_blake`, `ch1_beans`,
+    `ch1_number`, `ch1_signal`; story.json `scripts.chapter1-end` (Hazel, Chosen, `chapter 2`). **Nothing calls it
+    yet**: RL-14's Voltron win sets `saveData.story.pending = 'chapter1-end'` after `storyHomeArrive` (which clears
+    `pending` on a won run).
+  - relations.json levels 3 and 4 as B says. Story checks: a favour's quest and stages, its check, `lastteam:` ids.
+  - Docs: SCRIPTS, NAMING, roguelite-track 9.4 "RL-S2 as built, part B", ROADMAP (RL-S2 done), BRANCHES, CHANGELOG.
+- Verified:
+  - lint, typecheck, check:modules, format:check, check:data after each commit; `npm test` 1077/1077; `test:slow` 86/86.
+  - **check-fast's RL-S2 page** (`--only=Blake`) passes: Blake says his first line and his battle starts, beaten: a
+    meeting, a win, his Bean, a reward pick; a Bean for Chosen: level 1 and his level-1 thank-you as the talk, no
+    second offer; home with Hazel's favour asked from a row-7 run: quest done, +2 points, her thanks next.
+  - **In-game test phase** alone: "Blake twice against Marsox ...; Hazel level 1, her favour +2; chapter 2".
+  - **Full check-fast: 23/33** with the slow tests running beside it. Run again alone, all pass but **"A room opens
+    and draws (the lab)"** and the ranch checks' **"not in the ranch"** (Breeding, Income), which **fail the same way
+    on part A's commit 7caf8d2d** run here (entering a room in this container); not this session's.
+  - **Full quick check: 32/40.** Known: song fingerprints (cave mid/late), RL-8 "Take off", the Actions sheet,
+    Terraces sky_portal, room light. RT-2, Battle music and Sound effects failed in the full run and **pass alone**.
+- Risky / open:
+  - **Not tried on the phone.** Read the lines in play; the beats come one a return, so Chapter 1 takes at least six
+    returns (five beats need Blake met, a Bean, a Bureau loss or 3 runs, a boss reached or a win).
+  - A favour reached by points (not a gift) speaks its level line only at the next gift.
+  - The thank-you replaces the talk: that return's fresh line waits for the next talk.
+  - Room entering fails in this container on both commits: worth a look on main before trusting it.
+- Next: RL-14 (bots, salvage, the Voltron) calls `chapter1-end`; then RL-15.
+
+### Residents track RS-3 - living in Copperleaf: residents walk the town, their looks, lines and room cards - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (`track/residents` still doesn't exist; pushed there, named in BRANCHES). Plan Mode, plan
+approved. Owner's answers: wardrobe looks; residents near their house or walking round town (not standing still); merge
+main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS-3". CHANGELOG line added.
+- Where the plan and the code differed: no door acts needed switching (HB-5 already opens every resident's room), so
+  `copperleaf.json` is untouched; banter's `who` was a closed list; nothing read the history's `res`; Copperleaf's
+  townsfolk already keep a day (walk-view.js `initFolk`), so residents join it instead of standing at a spot.
+- Changed (one cause per commit): main (HB-8) merged in (conflicts in run-payout.js, self-test.js, HANDOFF kept both
+  sides); `propDoor` (doorOf's maths, pure, no-op); `residentHomes` (logic/residents.js); people/<id>.json looks for the
+  eight, worn in run towns too, check-data asks for one; residents walking as townsfolk of their own
+  (`hubResidentWalkers`, `talkFolk` -> story.js `residentHomeTalk`); the condition `lastres:<id>`; 39 lines in
+  banter.json with a resident's id as `who` (schema, check-data); the room card (walk-tab.js) and the station's and
+  ranch's sheets; the Studio's hub editor (Map marks, a Residents preview); the in-game full test's home step; docs.
+  The check-data snapshot was remade on purpose twice (161 files; planted residents and lines).
+- Risky or unfinished: the lines are Claude's drafts. Residents have no portraits (the talk box shows an empty face)
+  until RS-5. No upgrades yet (the card says they come soon; RS-4), and Seamus's home is `house`, which no row uses:
+  RS-4 decides where his are sold. Phone fps not measured: software drawing runs under 1 fps here, the same with 0 and
+  8 residents; the hub goes from 6 people to 14 at most. `track/story` (RL-S2 part B) also edits banter.json, its
+  schema, story-pick.js and run-history.js: small hand-resolved conflicts when both merge. Not played on a phone.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1079 at
+  the end); check-data-text; `npm run test:slow` 87/87; smoke 6/6. Headless probes: all eight walking Copperleaf at
+  noon in their looks, Dottie's moving-in line under her name, the library's card naming her, the Studio's preview (8
+  walk, off back to 5) and Map marks, no page errors. The in-game test's run step alone: passed ("Dottie invited and
+  moved in, walking Copperleaf, her moving-in line said"). The full quick check twice: the first 34/40 (RT-2 "the pair
+  talked but no battle started" and, on the same page right after, "Granny Juniper didn't say anything"; both pass
+  alone, after RL-8, and in the second run), the second 36/40 with only the 4 known failures. main bc106c4's own full
+  run: 36/40, the same 4. RL-8 fails at a different point each run on main too ("the town's shop has no Perk", "the
+  landing's loading screen never lifted", "crossed into Lakeside Town but its view..."), so its known failure changed
+  wording with HB-8, not with RS-3. No validation/quick-baseline in this container, so no pictures compared: if you
+  keep one, remake it on purpose (people walk the hub now).
+- Decisions I made (and why): a building resident sleeps and works at their own door (the folk day gives everyone a
+  home and a work spot); the room card keeps "Go outside" as its main button (TW-0) with Talk beside it; a resident's
+  line waits for open windows like any story line; Dr. Helix has lines though nobody can meet her yet (the check asks
+  every resident for one).
+- Questions waiting for the owner: the drafted lines (banter.json `*_moved`, `*_won`, ... and RS-2's); the looks (a
+  phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
+  tag `rs-3-done`.
+- Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+
+### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
+Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
+`art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D
+effects already in the game (three code reviews and a headless on/off run of 14 effects in Copperleaf), then a fix plan
+and smart, cheap god rays. **Every look change is behind its own switch, off by default** (phase 20's rule), so nothing
+changes until the owner turns them on after a phone check.
+- What the audit measured (headless, Copperleaf, 640x480, the share of pixels each effect changes): vignette 51%, bloom
+  26%, ink 26%, outlines 20%, lamps at night 20%, shafts 13%, AO 12%, ground bumps 6%, contact shadows 6%, DOF blur 5%,
+  lamp shadows 4%, ground AO 4%; **god rays 0: engine.json sets `air.godRays` 0 and `air.cheapShafts` defaults to 0, so
+  the game has no light shafts at all today**.
+- Smart light shafts (`air.shaftPick`, Engine > Air, off): `logic/shaft-pick.js` (pure, `tools/test/shaft-pick.test.mjs`)
+  picks the cheap shafts every 0.4 s from tree crowns, the gaps between them, the two sides of houses (old 3D buildings
+  and low-poly models with windows) and a place's `shafts` list; scored by shade behind the beam's foot (crowns and
+  houses as circles seen toward the sun), forward scattering (looking into the light), distance from you (the walk
+  camera stands 36-58 m back; the range counts from you), never over you; at most 3/5/8 by quality step and a quarter of
+  the screen together; a showing shaft holds unless another scores 1.3x; fades in and out over 1.2 s. Drawn as a soft
+  streaked beam (the fx program's uGlow 2). Needs `air.cheapShafts` > 0 and god rays off (as D7). Graphics test: "Sun
+  gap, smart shafts".
+- The fixes, each with its switch (all off): Rays follow the light (`sun.followLight`: the walk view never passed the
+  light's colour, and the moon kept a full-strength warm glare); Window light faces out (`lights.windowFacing`: window
+  pools were cut on a fixed +z line, wrong for every turned house; the facing rides in uLC.w); Steady shadow edges
+  (`shadows.steadyEdges`: the sun maps' eye sat 2 m off the light's line, so the texel snapping drifted, test in
+  tall-ground-draw.test.mjs; and the soft edge's blocker search now reaches its filter); Lamp shadows hold
+  (`shadows.lampFix`: distance-scaled bias for the perspective lamp maps, a lamp's pool takes its lamp's map, lamps
+  high by height above the ground); Shaded tree cores (`world.treeCoreShade`: the 30% darkening solid-props.js worked
+  out and never used); Occlusion follows the slope (`shadows.aoPlane`: both ways along a line in a harmonic mean, so a
+  plane gives none); Feet shade on sky light only (`shadows.groundAOSky`); Lamp light on water (`lights.onWater`);
+  Outlines follow the camera (`color.inkFollow`: ink melts with the blur and fades past the focus, it faded from 25 m:
+  half strength on you at zoom 1); Even bloom (`color.bloomEven`); Half-float HDR (`quality.hdrHalf`, read at start);
+  Steady light on far props (`quality.normalMips`); Fronts lit as their material (`world.frontMaterial`); Building
+  bumpiness (`world.buildingBumps`, 0..3, 0 = off: bricks, planks and roof tiles from the sheet's own texels, on the
+  old 3D buildings and the low-poly models; the hub's houses are models now).
+- Fixed without a switch (artefacts, no look intended): the near ring's bump lookup stays inside its 16 m square (seams);
+  the no-worker fallback bleeds picture edges too (`bleedEdges`, shared with the helper thread).
+- The light block: its float padding slot is now `uShFix` (the shadow fix bits); the size and offsets are unchanged
+  (frame-block.test.mjs knows the new member).
+- **Risky**: the AO slope fix went through two wrong tries (a one-pixel slope was all depth steps at 40 m; a plain mean
+  misreads planes) before the harmonic mean; headless it is within noise at zoom 1, brighter close up. Building bumps at
+  the usual zoom read the sheet's half size (a texel is half a screen pixel there), so they are subtle; 1.5 shows on
+  roofs and planks. Lamp shadows hold and Lamp light on water showed no change in Copperleaf at night (no case near the
+  player); they compile and run.
+- **Found, not changed (the owner's call)**: the screen AO fades out by 36 m, nearer than you stand at zoom 1 (reaching
+  further darkened every grass blade's foot); props without `ppm` are at 34 px/m (scenery.json `ppu`), people at 42 and
+  66.5, Billies on a 68 grid: an art rebake to reach 32; the sprite bump's +0.18 upward tilt may be meant.
+- Verified: lint, typecheck, format, check:modules, unit tests 1297 pass, the smoke check 6 of 6, `check-fast --only=town` 4 of
+  5 ("A run town's shop opens (UI-5): no shop with wares" fails on main 0ba64f10 too, not this branch's), every switch on at once in Copperleaf and a
+  forest trail (no errors, every lit program builds with the light block), and headless on/off pictures for each
+  switch. Not judged headless (phase 20's rule): how any of it looks or costs on the phone.
+- Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
+  Meadow and Depth corridor now hold the new switches) and a debug log; then one commit per switch to turn on what
+  stays. After that: cavity darkening from the same sheet, short self-shadows on the ground.
+### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
+Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
+Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
+- Changed: Copperleaf's square paved to a lobed rim about 10 m out (mean 10, 8.2-11.8, bulging north-east toward the
+  sky rail and the portal) by `tools/patch-copperleaf-square.mjs --outline`; the fountain in place of the well and the
+  signpost 4.5 m out (`--fountain`; build-copperleaf.mjs does the same on a rebuild; the world map draws a fountain on
+  the well plot). WA-10's `patch-copperleaf-water.mjs --square` removed (it would shrink the square back to 8 m).
+  `squareRim` lives in tools/square-props.mjs. The fountain model's waters and lily pads were hidden under its solid
+  bowl tops (it looked dry): lifted (build-props-batch6.py). island-shots.py: `square-portal`, `square-near`.
+- Risky: the plot kind stays `well` (internal). Rebuilding batch 6 rewrites `clock_tower.json` and
+  `test_props_marigold.json` (old drift between the script and later edits): reverted here, so the next batch 6 run
+  must revert them again or their owner settles it. The pinwheel street entries moved to HB-10f.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1288 pass (one after-edit hook
+  run reported a failure that two reruns didn't show), smoke 6 of 6 (Python Playwright 1.63.0; the pinned 1.56 wants a
+  browser this container lacks), tools/test/hub-square.test.mjs, headless pictures before and after. The full quick
+  check was still running at the session's end: 13 of 37 steps ok, 2 PROBLEMs that look unrelated, not yet checked on
+  main: "Terraces ... props in the air: copperleaf: sky_portal" (the portal floats by design, HB-7) and "RL-8 ... the
+  town's shop has no Perk (RL-12)". **Next session: run the quick check again and run both steps on main.**
+- **HB-10b started, not committed**: docs/plans/hb-10b-wip.patch (`git apply` it; it applies on 7c41fad6). It holds
+  the edge layout (tools/square-props.mjs `SQUARE_EDGE`: three stalls, a cart, crates, sacks, six planters at the
+  street mouths, five streetlamps, a solar canopy, three benches, two string lights; nothing nearer the middle than
+  4.6 m, only planters in the portal view, a reach test that nothing is shut in), `--edges` on the patch tool, the
+  call in build-copperleaf.mjs, tools/build-props-square.py (the new `string_lights` model, its bulbs lamp glows), the
+  fountain's night fx in build-props-batch6.py (three glows round the basin, `fireflies`), and the edge tests. Not
+  yet done: the `fireflies` effect in game/js/walk/effects.js (and the Studio's PROP_EFFECT_KINDS), running
+  build-props-square.py, batch 6 (revert the drift above) and `--edges`, the pictures by day and night, and checking
+  that the 3D buildings' windows already light at night (they should: prop-models.js glassLit). A dry run of the
+  layout passed every test. cafe_table and crates are voxel models (not the airship style): left out, remakes later.
+- Next: HB-10b on `track/hub` (or this branch at the owner's word) from the patch above.
+
+### Hub track HB-10 planned: the square alive - 2026-10-26
+Branch `ccr-144f3c08-vf09lo` (a planning session; the owner: "make a plan to make the hub island feel more alive",
+with online research and questions). Docs only, no code.
+- docs/phases/hub-track.md: HB-10 split into HB-10a-f with the verified facts, the research, the owner's answers
+  and the Ask me befores; ROADMAP's hub line.
+- Found: the square holds 8 props within 18 m and no building fronts it (store 27 m, inn 41 m); 17 town furniture
+  models exist unused on the hub.
+- The square's size: the owner settled on about 10 m (between WA-10's ~8 m and the generator's 12 m).
+- Next: HB-10a on `track/hub` (shape and fountain).
+### Phase 20 R3, lane context (H1-H3, H5: the resource registry, freeing, memory by kind, warm-up) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved ("Continue") with my
+recommendations: each owner drops its own handles on a restore and makes them again lazily (no stored rebuild per
+object, which would have kept every mesh's and texture's data twice); the warm-up is on by default behind its own
+switch (it doesn't change the look); the other lanes may create through the registry.
+- Where the phase file, R1's notes and the code differed (checked):
+  - Nothing needs deleting after a loss: the old handles died with the context (a delete on them does nothing). The
+    real gaps were caches fooled by the restored context being the same object, and objects dropped without delete.
+  - Already fine after a restore: the sprite instance buffer (keyed on `gpuState.quad`, new with each context), the
+    rain batch's arrays (kept on the program; `gpuState.P` is emptied), the models' record buffer (flushed).
+  - Not fine, found here: the cloth grid (`gpuState.gridGL === gl`) kept its dead buffer after a restore.
+  - No program was ever replaced within a context, but a background compile whose program had been made on the spot
+    meanwhile was dropped undeleted, a failed compile left its shaders and program, and no shader was ever deleted.
+  - The walk set (WALK_SHADERS, POST_EFFECT_SHADERS) compiles in one blocking go in `ensureWalkGl`; the debug log
+    already blames compiles ("compiling shaders", "finishing a shader"), and your Copperleaf hitches were blamed on
+    the ground setup, not compiles: H5 doesn't touch the ground setup.
+  - The precompile list (walk-view-gl.js `ensureWalkGl`, not webgl.js) already had every new instanced and batched
+    program, the shadows lane's two included.
+- Changed (one kind per commit; files of other lanes: create and delete lines only):
+  - The known bugs: engine/light.js `frameBlockLost()` and walk/sprites.js `hideQueriesLost()`, run on every restore.
+  - The registry (engine/webgl.js, "resources"): `gpuBuffer/gpuTexture/gpuVao/gpuFramebuffer/gpuMake(type, kind,
+    bytes)`, `gpuSized`, `gpuFree` (a handle of an older context is only forgotten; one made outside it is deleted by
+    its type), `gpuRetire` (freed two frame ticks later), `gpuOnRestore(name, fn)`, `gpuMemory()`. Entries sit in a
+    WeakMap and never keep an object alive; one collected without `gpuFree` counts as "dropped" (a leak's sign).
+    `gpuState.gen` goes up with every context and restore; caches compare it. The frame scheduler's tick calls
+    `gpuFrame()`: retired objects freed, and a context that died before its lost event is marked lost at once.
+  - Moved onto it: the engine's own objects (quad, stand-ins, samplers, pictures, canvases, normal maps, render
+    targets, meshes, GPU timers); programs and shaders (shaders deleted once linked; duplicates and failures
+    deleted); buffers and vertex arrays in prop-models.js (both halves: I moved the shadow maps' record buffer's
+    create line, `MODEL_SHADOW_INSTANCES`), model-instances.js, sprite-instances.js, buildings.js, structures.js,
+    solid-props.js, walk/effects.js (rain), walk/grass-build.js, engine/light.js, walk/sprites.js (queries); the
+    ground (ground-textures.js, map-cache.js, ground-mesh.js, water-data.js: kinds ground and ring); the world map
+    (world-bowl.js). Left on purpose: self-test.js's probes (they delete their own).
+  - Restore: the walk view's drop (`walkViewGpuLost`) and the world map's (`worldBowlDropGpu`) registered with
+    `gpuOnRestore`; the registry runs every drop first, then the walk view and the map are handed back.
+  - H3, debug log: `gpuMemory` in the report (MB, objects and dropped objects by kind, the picture cap's own count,
+    pictures trimmed, contexts made, `lateCompiles`: the names behind `pcl`), `gmb` (total MB) in every sample.
+  - H5: `quality.warmUp` ("Warm up before showing", on): a place fades in once two frames have drawn behind its fade
+    (at most 1.5 s), `mountWalkView`'s promise waits for it; a restore fades out and back in the same way.
+  - Debug menu: the diagnostics test's note says 4-5 min on a phone (the R1 measure lane's note for this lane).
+- Verified: lint, typecheck, `npm test` (1132), check:modules after every commit; the smoke check on every commit
+  touching game/ (run from a worktree of the commit). New tests: tools/test/gpu-registry.test.mjs (counts, sizes,
+  free, retire, generations, the early loss, owners' drops, render targets, meshes, programs). One headless crash check
+  at low graphics (scratch script, no pictures compared), the town fixture: two forced losses, the world map with a
+  loss, back to walk, a wild battle with a loss: every one restored and faded back in, **0 console warnings and 0 page
+  errors after each loss** (R1's run had hundreds of "used but unbound" and getQueryParameter warnings), 0 objects
+  dropped without being freed, `pcl` 0. Memory there (low graphics, 800 x 500): Copperleaf about 9 MB targets, 66 MB
+  ground, 27 MB near ring, 15 MB pictures, 4 MB meshes; the world map adds about 20 MB pictures and 20 MB targets.
+- Risky:
+  - Shaders are now detached and deleted once their program links. It is the standard practice and passed the
+    in-game shader test headless, but an old driver that misbehaves would show as a shader error in the log.
+  - The warm-up holds a place's fade-in for up to 1.5 s on a device that draws slower than two frames in that time;
+    turn "Warm up before showing" off if opening a place feels slower.
+  - For the shadows lane: `shadowInstanceState.bad === gl` and `modelShadowState.bad === gl` (walk/shadows.js,
+    prop-models.js) still compare the context, so a failure before a restore stays after it; compare `gpuState.gen`.
+  - H2's `gpuRetire` is in place but no site needed it: WebGL keeps a deleted object alive until the commands using
+    it are done, and no replacement found here was read after its old one was freed.
+- To test on your phone (debug menu → "Lose the GPU context", wait 2 s, each one; send the debug log after):
+  - Copperleaf by day: the town comes back whole and lit (buildings, trees, ground, water, shadows, lamps), fading
+    back in; tap the button twice in a row, a few seconds apart.
+  - Copperleaf at night (lamps and windows lit after the loss), and in the rain.
+  - The world map (Map tab), then back to the walk view.
+  - A battle at its move menu, and again with "Reuse battle rigs" on.
+  - A run place (jungle) and a run town, with "Shadows in batches" and "Models in batches" on.
+  - The Studio with `?glLose=12`: the battle preview with a walk scene open before 12 s pass.
+  - In each debug log: `gpuMemory` (what each kind holds; `dropped` should stay 0), `lateCompiles` empty after a tour
+    of the town, a route and a room (`pcl` 0), and whether opening a place feels slower with the warm-up.
+- Next: round 4 (D2 `mediump`, old paths deleted after your verdicts, the `phase-20-done` tag).
+### Studio art track - the plan (SA) - 2026-10-26
+Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
+Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a
+more intuitive Studio, and what no longer fits the Vision taken out.
+- Changed: docs/phases/studio-art-track.md (findings, research with sources, five sessions SA-1..SA-5, the owner's
+  decisions); ROADMAP's tracks list; BRANCHES' `track/studio-art` row.
+- Risky or unfinished: nothing built. The orphan lists in the plan come from greps of game/js and studio/js; SA-5
+  checks them again before deleting.
+- Verified: the main claims by grep and ls (Art files' four empty tabs and missing folders; tiles47 read only by
+  walk-view.js and built by tools/build-terrain-v47.py; `addEgg`/`hatchEgg` with no caller; `starterEgg`,
+  `dropTiers`, `restCost`, `endText` unread; portraits and art/people read by nothing; the Workbench's disabled modes).
+- Decisions (the owner, every recommendation): tiles47 PNGs are the source and the builder retires; orphans deleted,
+  legacy art parked; the clean-up reaches the game (Jobs, Town shops, walk eggs); `track/studio-art`, SA-1 first.
+- Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
+  is on it).
+- Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
+
+### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
+Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so
+they were merged here (merge commits) for one PR.
+- #219 `track/renderer` (phase 20 R2-R3: light shafts, the weather batch, the battle rigs' reuse, the frozen sprite and
+  reflection calls). Conflicts with WA-5b and CAM-4b were side-by-side additions: both kept.
+- #217 `claude/ro-3d-silkworm-and-plant`, which holds `track/roster` (RO-3a's last commit, RO-3b #218, RO-3c #215,
+  RO-3d). **Risky, check on the phone**: RO-3c was written on SP-1's graft-art (a session map, slot -> donor species),
+  main has SP-2's (Billy.graft, slot -> Gene id "part@donor"). Kept SP-2's model with RO-3c's placeholder grafting
+  added; skeleton-rig's placeholder bake reads each slot's donor from its Gene id (a bare species id, as RO-3c's debug
+  menu sets, still works). Not yet checked: wild splices and the Gene Bank on placeholder Billies (genes.json's Genes are
+  kit parts, so placeholders likely get none). RO-3c's `graftFit` (a picture fitted onto a bone) clashed with genes.js's
+  `graftFit` (SP-2): renamed `graftPicFit` in its own commit; the RO-3c HANDOFF lines above still say graftFit.
+- Verified: lint, typecheck, format, check:modules, check:data, the data text check, build, unit tests 1284 pass,
+  `test:slow` 88 of 89 (the WA-10 island test, left red at the owner's word); the smoke check's result is in the PR.
+- `track/renderer` and `track/roster` stay (BRANCHES.md); #217's base was `track/roster`, so it closes by hand.
+
+### Merge batch: finished PRs and sessions into main - 2026-10-26
+Branch `ccr-ed7f65cb-dk7xqw` (one session, the owner's word: "merge finished PRs and finished sessions into main").
+Every open PR conflicted with main (HANDOFF at least), and a session pushes only to its own branch, so the branches
+were merged here one by one (merge commits, no rebase) and go to main in one PR. The owner chose the list:
+- PRs #212 (UI icons MONO), #208 (CAM-4, with #206's plan), #210 (RL-S2), #209 and #211 (through
+  `claude/sp-5-augments`, which holds SP-2..SP-6 and RL-14a); `track/renderer` (phase 20 round 1, with
+  `ccr-b88b77b2-96vhmr`'s docs), `track/water` (WA-10), `ccr-65e11839-9p92dx` (RS-2), `claude/happy-ramanujan-jiipux`
+  (RO-3a), and the leftovers `track/routes`, `art/hub-buildings`, `ccr-abb116a0-en5q2d`, `ccr-43750396-zjjv7v` (the
+  last already in main: no change).
+- Left out (not asked): `art/editable-trainer-sprite-sheets` (no PR, adds a CI workflow).
+- How the overlaps were settled (risky, check in play): **six currencies** now (RL-S2's Beans and SP-3's DNA; the
+  schema allowed five); `eventPool`/`eventAt` take SP-6's `holds` 4th and RS-2's `meet` 5th; node types `rival` and
+  `scrapyard` side by side; the payout keeps HB-8's train words and "Ride home" with RS-2's moving line and the Beans;
+  the history row keeps Blake's result and gains `res`; the Lab's reopen goes genebank, workshop, station.
+- Test changes from the merge: the ui-icons count 51; the rival test asks 80% of runs to meet Blake (was 85%):
+  scrapyards (RL-14) take free nodes before he is placed, Expedition I fell to 254 of 300. If Blake should also take
+  a scrapyard row, that is a rules.json `run.rival.on` choice for the owner.
+- A fix found on the way: tools/check-data-text.py reads a favour's `check` (relations.json) as a condition (RL-S2's
+  smoke job failed on it).
+- Verified: lint, typecheck, format, check:modules, check:data, the data text check, unit tests (1217 pass); the
+  smoke check (check-fast): 37 of 37 passed locally (Playwright 1.56, 1320 s), "Behind things" too, though it was red
+  on main's last CI run; the owner said to leave that one. `npm run test:slow`: 88 of 89; the one red, "the game's
+  island is the generator's own output for its stored dials and seed" (island-gen.test.mjs), is WA-10's (red on
+  `track/water` alone too): its hand patches to Copperleaf's square, the town locked, at the owner's word, so the ground
+  no longer matches its dials. build-island.mjs would undo them. The owner chose to merge with it red; it belongs to
+  HB-10 (hub-track.md: the square's shape and why a town rebuild is not safe yet).
+- Next: delete the merged one-session branches the owner no longer needs (BRANCHES.md); the `track/*` branches stay.
+### Roster track RO-3d - The early bug and the early Grass plant: Ortega silkworm, Bloomberg plant - 2026-10-26
+Branch `claude/ro-3d-silkworm-and-plant`, from `track/roster` at RO-3a (#213); pull request into `track/roster`. Plan
+approved in Plan Mode. RO-3b (#218) and RO-3c (#215) ran beside it; both merged into track/roster mid-session and
+were merged in here (bodyPlans.json forms by hand: RO-3b's 51 and these 6; rigs-next.js rebaked). Tag `ro-3d-done` for the owner. The owner's picks (all Claude's recommendations, asked one by one):
+- **Ortega silkworm**, dex 41-43, common: **Threadling → Zaracoon → Ortegamoth**, Grass → Grass/Steel → Grass/Flying,
+  evolves at **7 and 10** (Caterpie and Metapod's levels; a run's wilds go from about 3 to 17), totals 205/225/400.
+  Body plans insect → shell (the cocoon) → flyer (the moth). Signature move Fast Fashion.
+- **Bloomberg plant**, dex 44-46, common: **Tickerbud → Bloomburst → Terminalia** (the legacy names), Grass → Grass →
+  Grass/Psychic (Psychic stands in for Oddish's Poison: Lullaby, Unnerve, Bewilder), evolves at **14 and 30**, totals
+  260/380/490. The plant plan at every stage. Terminal Fee (Electric, a status move) kept as its signature.
+- Where the plan and the code differed (checked): the legacy Ortega line was a spider (Spoolspider, Zaraknid,
+  Ortegaweaver), not a silkworm; the rig ids ortega0-2 and bloomberg0-2 already sat in rigs-next.js for the legacy
+  sheets, and the bake replaced them in place. RO-3b's bake change (a form's `scale`) was needed for stage sizes and is
+  not on track/roster when the art was made: its commit 960ff899 was cherry-picked here (the owner's call), and RO-3b's
+  merge brought the same code.
+- Changed:
+  - `game/data/lines/ortega.json`, `lines/bloomberg.json` (learnsets of existing moves, bios, notes, draft cries:
+    insect for the silkworm, slime and machine for the plant); `index.json` lines; roster.json rows 41-46 (`line3`).
+  - `bodyPlans.json` forms: six placeholder Billies in the lines' colours, scales 0.9 / 1.0 / 1.3 and 0.95 / 1.15 /
+    1.42. Threadling drops the insect's wings and carries a spool; Zaracoon drops the shell plan's legs and keeps its
+    arms as stubs (RO-3b's test: every placeholder gives every slot to a graft), a cocoon in a black garment bag with a
+    price tag; Ortegamoth has feathery antennae and big dark wings; Tickerbud a
+    pale stripe and a ticker-tape leaf; Bloomburst a ring of petals; Terminalia black with orange screen petals, a
+    screen on its face and a keyboard on its pot. Baked with `npm run bake:placeholders`; `check-data --fix`.
+  - The legacy `tickerbud.json`, `bloomburst.json`, `terminalia.json` layouts dropped (their PNGs are the placeholders
+    now); the spider sheets stay as reference.
+  - `pools.json`: Threadling in the meadow (30), thicket (28), jungle (24), autumn (22); Tickerbud in the meadow (24),
+    thicket (22), jungle (22), autumn (14).
+  - Snapshots: check-data (155 files), run-start (the seeds' regional dex draws from 17 lines now; over 400 seeds
+    Ortega is in 144 regions and Bloomberg in 128); the sound baseline's cries (the six new cries and their low ones).
+- Verified: lint, typecheck, check:modules, format:check, check:data; every unit test, quick and slow (1165 after the
+  RO-3b and RO-3c merges); the smoke check (6 steps, no problems); every stage drawn by the game's own renderer (rigParts,
+  rigFrame, drawRig on the town fixture) in idle, walk, attack, hurt and faint, front and back, before and after the
+  RO-3c merge: all stand on the ground and move.
+- Risky / open:
+  - **The sound baseline is missing the cave song's `mid` and `late` fingerprints on track/roster already** (the check
+    fails there without this branch). Left out of this branch on purpose; one `check-sound.py --baseline` adds them.
+  - The quick check runs with Python Playwright 1.63 here (the pinned 1.56 wants a Chromium this container does not
+    have); tools/requirements-check.txt is unchanged.
+  - Some placeholder labels read mirrored in one view (SHELL on Zaracoon's front): the RO-3a painter's flipping, the
+    same on every plan, not these forms.
+  - Not tried on a phone; names, bios and cries are drafts.
+- Next: RO-3e (the Knight frog and the fossil pair) and RO-3f (Satoshi and the cave bat), then RO-3g.
 
 ### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
 Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
@@ -1530,60 +1625,6 @@ water effects; the `lake` biome's stage only noted. Tag to suggest: `wa-7-done` 
   start) and after, Pixel water on and off. Not run: the full quick check and its baseline (WA-8), the bench.
 - Next: the owner's phone: the world map (a run's coast and rivers, the hub's lagoon) with Pixel water on and off,
   and a battle by a pond or the coast (Settings > Debug log shows "facing the water"). Lane R's WA-5b, lane G's WA-9.
-### Roguelite track RL-S2 (part B) - Chapter 1's beats, the favours, every line - 2026-10-26
-Branch `track/story` (main had nothing new: no merge; PR #210). Plan approved in Plan Mode; the four asks answered in
-the session (2026-10-26): **A** Blake as built (the lead you take off with, 1/2/2/2/2 meetings, 2 Billies +1 per 2
-meetings at most 6, **losing to him ends the run**); **B** level 1 a line, 2 as built, 3 a second bonus (Chosen +5% XP,
-Hazel a Hi-Potion at takeoff, Juniper +10% catch), 4 a wardrobe piece (`glasses_sun`, `labcoat`, `hat_bucket`), 5 a
-once-only line; **C** Beans as built plus 1 for Blake's first defeat in a run; **D** every drafted line approved as
-written. Tag `rl-s2-done` is the owner's.
-- Where part A's notes were wrong (checked in the code):
-  - **Blake's lose line never shows on a run**: battle.js shows `T.lose` only off a run. A `back_lost` pair
-    (`lastby:rival`) now carries his last word.
-  - **A chapter is not "one an Expedition"** and no boss scene moves it: only `chapter n` (at most 9). Wording fixed in
-    SCRIPTS, conditions.js and save-data.d.ts.
-  - **Part A's "six beats" were never written down**; proposed again and approved.
-  - The "always a plain line" banter rule covered only leaders and agents; Blake and the thank-yous joined it.
-- Found while building (each its own commit):
-  - **An `xp` effect row on a run did nothing**: `heldXp` read only the held item's rows. It now reads the run's too
-    (no Perk had an xp row, so nothing else changes; golden record unchanged).
-  - **A `must` fresh line not talked to was lost for good**: its `once` is marked at the pick on the way home, its
-    script (a beat's flag, a favour's quest) runs only when said, and the next return picked over it. It now waits
-    for the next talk.
-  - Blake's line at a second meeting in a run needed this run's meetings: the condition `rival`.
-- Changed:
-  - **Favours as data**: relations.json `people.<who>.favour {quest, check, points?}`, story.json quests `fav_<who>`
-    (`asked`, `done`), `relFavoursPay` (relations.js) on the way home before the lines are picked (`storyHomeArrive`:
-    quest done, points, wardrobe, a toast). Chosen: a leader beaten; Hazel: row six; Juniper: a Grass Billie home (the
-    new condition `lastteam:`, the last run's team by type, line or species). Asks and thanks are once + must banter.
-  - **Thank-yous**: banter who `thanks_<who>`; after a gift story.js plays `pick thanks_<who>` (the level just reached
-    first) and the talk ends there; the old toast when no line fits. Level lines 1-5 for each.
-  - **Blake**: five lines before his battle (`pick rival` is on), his win line, the `back_lost` pair; the Bean.
-  - **Chapter 1**: five once + must beats on Hazel and Chosen chained by flags `ch1_drop`, `ch1_blake`, `ch1_beans`,
-    `ch1_number`, `ch1_signal`; story.json `scripts.chapter1-end` (Hazel, Chosen, `chapter 2`). **Nothing calls it
-    yet**: RL-14's Voltron win sets `saveData.story.pending = 'chapter1-end'` after `storyHomeArrive` (which clears
-    `pending` on a won run).
-  - relations.json levels 3 and 4 as B says. Story checks: a favour's quest and stages, its check, `lastteam:` ids.
-  - Docs: SCRIPTS, NAMING, roguelite-track 9.4 "RL-S2 as built, part B", ROADMAP (RL-S2 done), BRANCHES, CHANGELOG.
-- Verified:
-  - lint, typecheck, check:modules, format:check, check:data after each commit; `npm test` 1077/1077; `test:slow` 86/86.
-  - **check-fast's RL-S2 page** (`--only=Blake`) passes: Blake says his first line and his battle starts, beaten: a
-    meeting, a win, his Bean, a reward pick; a Bean for Chosen: level 1 and his level-1 thank-you as the talk, no
-    second offer; home with Hazel's favour asked from a row-7 run: quest done, +2 points, her thanks next.
-  - **In-game test phase** alone: "Blake twice against Marsox ...; Hazel level 1, her favour +2; chapter 2".
-  - **Full check-fast: 23/33** with the slow tests running beside it. Run again alone, all pass but **"A room opens
-    and draws (the lab)"** and the ranch checks' **"not in the ranch"** (Breeding, Income), which **fail the same way
-    on part A's commit 7caf8d2d** run here (entering a room in this container); not this session's.
-  - **Full quick check: 32/40.** Known: song fingerprints (cave mid/late), RL-8 "Take off", the Actions sheet,
-    Terraces sky_portal, room light. RT-2, Battle music and Sound effects failed in the full run and **pass alone**.
-- Risky / open:
-  - **Not tried on the phone.** Read the lines in play; the beats come one a return, so Chapter 1 takes at least six
-    returns (five beats need Blake met, a Bean, a Bureau loss or 3 runs, a boss reached or a win).
-  - A favour reached by points (not a gift) speaks its level line only at the next gift.
-  - The thank-you replaces the talk: that return's fresh line waits for the next talk.
-  - Room entering fails in this container on both commits: worth a look on main before trusting it.
-- Next: RL-14 (bots, salvage, the Voltron) calls `chapter1-end`; then RL-15.
-
 ### Roguelite track RL-S2 (part A) - Rival and relationships: Blake in runs, Beans, the hub folk, chapters - 2026-10-26
 Branch `track/story` (main 2314da82 merged in first: a fast-forward, everything on the branch was in main; PR #210).
 Plan approved in Plan Mode. **The "Ask me before" questions (A: Blake's rules, B: levels and what they bring, C: gifts
@@ -1667,45 +1708,6 @@ the answers. Tag `rl-s2-done` is the owner's, after part B.
   relations.json, banter.json `who: "rival"`); then part B on `track/story`: Chapter 1's beats as scripts and `once`
   banter, the favours (a `once` line, a story quest, `rel who n` on the way home), Blake's and the folks' lines,
   `scripts.chapter1-end` for RL-14's Voltron.
-### Residents track RS-3 - living in Copperleaf: residents walk the town, their looks, lines and room cards - 2026-10-26
-Branch `ccr-65e11839-9p92dx` (`track/residents` still doesn't exist; pushed there, named in BRANCHES). Plan Mode, plan
-approved. Owner's answers: wardrobe looks; residents near their house or walking round town (not standing still); merge
-main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS-3". CHANGELOG line added.
-- Where the plan and the code differed: no door acts needed switching (HB-5 already opens every resident's room), so
-  `copperleaf.json` is untouched; banter's `who` was a closed list; nothing read the history's `res`; Copperleaf's
-  townsfolk already keep a day (walk-view.js `initFolk`), so residents join it instead of standing at a spot.
-- Changed (one cause per commit): main (HB-8) merged in (conflicts in run-payout.js, self-test.js, HANDOFF kept both
-  sides); `propDoor` (doorOf's maths, pure, no-op); `residentHomes` (logic/residents.js); people/<id>.json looks for the
-  eight, worn in run towns too, check-data asks for one; residents walking as townsfolk of their own
-  (`hubResidentWalkers`, `talkFolk` -> story.js `residentHomeTalk`); the condition `lastres:<id>`; 39 lines in
-  banter.json with a resident's id as `who` (schema, check-data); the room card (walk-tab.js) and the station's and
-  ranch's sheets; the Studio's hub editor (Map marks, a Residents preview); the in-game full test's home step; docs.
-  The check-data snapshot was remade on purpose twice (161 files; planted residents and lines).
-- Risky or unfinished: the lines are Claude's drafts. Residents have no portraits (the talk box shows an empty face)
-  until RS-5. No upgrades yet (the card says they come soon; RS-4), and Seamus's home is `house`, which no row uses:
-  RS-4 decides where his are sold. Phone fps not measured: software drawing runs under 1 fps here, the same with 0 and
-  8 residents; the hub goes from 6 people to 14 at most. `track/story` (RL-S2 part B) also edits banter.json, its
-  schema, story-pick.js and run-history.js: small hand-resolved conflicts when both merge. Not played on a phone.
-- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1079 at
-  the end); check-data-text; `npm run test:slow` 87/87; smoke 6/6. Headless probes: all eight walking Copperleaf at
-  noon in their looks, Dottie's moving-in line under her name, the library's card naming her, the Studio's preview (8
-  walk, off back to 5) and Map marks, no page errors. The in-game test's run step alone: passed ("Dottie invited and
-  moved in, walking Copperleaf, her moving-in line said"). The full quick check twice: the first 34/40 (RT-2 "the pair
-  talked but no battle started" and, on the same page right after, "Granny Juniper didn't say anything"; both pass
-  alone, after RL-8, and in the second run), the second 36/40 with only the 4 known failures. main bc106c4's own full
-  run: 36/40, the same 4. RL-8 fails at a different point each run on main too ("the town's shop has no Perk", "the
-  landing's loading screen never lifted", "crossed into Lakeside Town but its view..."), so its known failure changed
-  wording with HB-8, not with RS-3. No validation/quick-baseline in this container, so no pictures compared: if you
-  keep one, remake it on purpose (people walk the hub now).
-- Decisions I made (and why): a building resident sleeps and works at their own door (the folk day gives everyone a
-  home and a work spot); the room card keeps "Go outside" as its main button (TW-0) with Talk beside it; a resident's
-  line waits for open windows like any story line; Dr. Helix has lines though nobody can meet her yet (the check asks
-  every resident for one).
-- Questions waiting for the owner: the drafted lines (banter.json `*_moved`, `*_won`, ... and RS-2's); the looks (a
-  phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
-  tag `rs-3-done`.
-- Next session starts with: RS-4 (services and upgrades), in Plan Mode.
-
 ### Residents track RS-2 - meeting residents in a run: Dottie free, favours, the Stranded Cart, the payout's line - 2026-10-26
 Branch `ccr-65e11839-9p92dx` (the owner's word: `track/residents` doesn't exist yet; pushed there). Plan Mode, plan
 approved. Owner's answers: one invite a run; the event's favour done on the spot; a favour held over the quest cap;
@@ -1783,6 +1785,7 @@ half and half (one capped power level per resident, the rest options); the exist
 - Questions waiting for the owner: the roster's names and looks; one invite per run and no cottage cap (rec); the
   word "residents" (rec). Please make `track/residents` from main and push the tag `rs-0-done`.
 - Next session starts with: RS-1 (data and save) on `track/residents`, in Plan Mode.
+
 ### Splicing track SP-5 - Augments: the Workshop, bot arms and legs on Billies, breaking and mending, Escaped specimens (built, waiting on the owner's prices) - 2026-10-26
 Branch `claude/sp-5-augments`, **made from SP-6's branch `claude/sp-6-run-events` (1c59e9e) with RL-14a's branch
 `ccr-15fdd30c-5nfh0d` (1d4c58f) merged in once** (the owner's answer: a merge, never a rebase). That merge brought main
