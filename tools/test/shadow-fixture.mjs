@@ -97,7 +97,6 @@ export function shadowSetup() {
     quality: {
       shadowMap: 2048,
       shadowCache: true,
-      modelShadowCache: false,
       farShadowsStill: false,
     },
     world: { curve: 0.002 },

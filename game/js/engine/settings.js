@@ -277,9 +277,6 @@ export const ENGINE_DEFAULTS = {
     phonePixels: false,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
-    /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
-       ones that bob or turn out of it */
-    modelShadowCache: true,
     /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
        in its cache; within the near map (13 m) shadows sway as before */
     farShadowsStill: true,
@@ -1247,12 +1244,6 @@ export const ENGINE_SPEC = [
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
-      ],
-      [
-        'modelShadowCache',
-        'Models in the shadow cache',
-        'bool',
-        'The far shadows of trees and other models that stand still are kept from frame to frame instead of drawn again each frame (a tree whose leaves sway still counts: its trunk doesn’t move). Boats, the airship, windmill sails and propellers are drawn each frame, so their far shadows move again.',
       ],
       [
         'farShadowsStill',

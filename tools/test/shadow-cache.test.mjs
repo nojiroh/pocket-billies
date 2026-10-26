@@ -1,7 +1,6 @@
-// Phase 20 R3 (shadows lane, F8): Engine > Quality "Models in the shadow cache": the far sun map's cache holds the
-// models whose mesh holds still (a tree whose leaves sway among them), never one that bobs, tumbles, turns a part or
-// moves; pictures as before; the cache key changes with which items it holds. Off, the lists are as they were. No
-// graphics.
+// Phase 20 R3 (shadows lane, F8): models in the shadow cache (the only path since R4): the far sun map's cache holds
+// the models whose mesh holds still (a tree whose leaves sway among them), never one that bobs, tumbles, turns a part
+// or moves; pictures as before; the cache key changes with which items it holds. No graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { shadowSetup, withOldShadowSprites } from './shadow-fixture.mjs';
@@ -47,9 +46,8 @@ function items() {
     { ...it('man', 12), k: 'npc' },
   ];
 }
-function lists(on) {
+function lists() {
   shadowSetup();
-  engineContext.look.quality.modelShadowCache = on;
   provide({ propModelMesh: (path, rec) => rec.mesh });
   G.fittedShadowPass(items(), SUN, null);
   return {
@@ -58,15 +56,10 @@ function lists(on) {
     key: walkRenderer.shKey,
   };
 }
-test('on: still meshes cached (swaying leaves or not), moving models drawn each frame, pictures as before', () => {
-  const L = lists(true);
+test('still meshes cached (swaying leaves or not), moving models drawn each frame, pictures as before', () => {
+  const L = lists();
   assert.deepEqual(L.stat, ['oak', 'swayingOak', 'rock']);
   assert.deepEqual(L.dyn, ['mill', 'airship', 'boat', 'pyramid', 'cart', 'loading', 'grass', 'cloud', 'man']);
-});
-test('off: the lists as they were (the prop’s still flag alone)', () => {
-  const L = lists(false);
-  assert.deepEqual(L.stat, ['oak', 'mill', 'airship', 'pyramid', 'loading', 'rock']);
-  assert.equal(L.key.split('|').at(-1), '', 'no signature in the key');
 });
 test('the casters’ signature: the same items the same, a model loaded, an item moved, added or gone a new one', () => {
   const sig = G.shadowCasterSignature,
@@ -84,9 +77,8 @@ test('the casters’ signature: the same items the same, a model loaded, an item
   [d[0], d[1]] = [d[1], d[0]];
   assert.notEqual(sig(d), sig(a), 'in another order');
 });
-test('on: the cache key carries the signature of what the cache holds', () => {
+test('the cache key carries the signature of what the cache holds', () => {
   shadowSetup();
-  engineContext.look.quality.modelShadowCache = true;
   provide({ propModelMesh: (path, rec) => rec.mesh });
   const L = items();
   G.fittedShadowPass(L, SUN, null);
@@ -148,7 +140,7 @@ test('far shadows hold still: what only the wind sways is cached; anything else 
     assert.equal(A.key.split('|').at(-1), G.shadowCasterSignature(G.SHADOW_LISTS.stat));
     const B = farLists(false, on);
     assert.deepEqual(B.stat, ['rock']);
-    assert.equal(B.key.split('|').at(-1), '');
+    assert.equal(B.key.split('|').at(-1), G.shadowCasterSignature(G.SHADOW_LISTS.stat));
   }
 });
 // the shear each picture is drawn with, one at a time (the last uShear before its draw) and as instances

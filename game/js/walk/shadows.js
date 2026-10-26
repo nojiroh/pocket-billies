@@ -228,9 +228,9 @@ function fittedShadowPass(items0, sun, C) {
     };
   const solid = engineSetting('shadows', 'buildings'),
     tr = sun.travel;
-  const mc = engineSetting('quality', 'modelShadowCache'),
-    fs = cache && !!engineSetting('quality', 'farShadowsStill'),
-    held = mc ? shadowHoldsStill : it => it.k === 'prop' && it.still && !it.vol,
+  /* phase 20 R3 (F8): models whose mesh holds still are cached too (shadowHoldsStill) */
+  const fs = cache && !!engineSetting('quality', 'farShadowsStill'),
+    held = shadowHoldsStill,
     still = fs ? it => held(it) || (it.k === 'prop' && !it.vol && !it.vox && it.rest !== undefined) : held,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
@@ -254,7 +254,7 @@ function fittedShadowPass(items0, sun, C) {
         sc.heights ? sc.heights.length : 0,
         typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
-        mc || fs ? shadowCasterSignature(stat) : '',
+        shadowCasterSignature(stat),
       ].join('|')
     : '';
   const SF = gpuState.fb.shadow;
