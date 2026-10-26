@@ -286,7 +286,9 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           own: it.p,
           src: it.p,
           kind: LIGHT_KIND.glow,
-          c: [1.3, 1.05, 0.7].map(v => v * Math.min(1.6, n) * fl * k * lb),
+          c: (M.glowCol ? hexToRgb(M.glowCol).map(v => (v / 255) * 1.3) : [1.3, 1.05, 0.7]).map(
+            v => v * Math.min(1.6, n) * fl * k * lb
+          ),
         });
         if (p[1] - it.y > 1.2 && pk > 0)
           L.push({
