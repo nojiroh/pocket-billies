@@ -40,6 +40,7 @@ import {
   RIBBON_CORE,
   ribbonCells,
   ribbonEdges,
+  ribbonTone,
   smearCount,
   smearGhosts,
   smearHistory,
@@ -1411,7 +1412,13 @@ function battleStageDrawEffects(c, skip0) {
       /* VFX-2: its ribbon under everything (as walk/effects.js ribbonPass draws it) */
       const RB = smearRibbon(C.trail, battleStage.t, battleRibbonCells(), battleStage.V, C.arc ? C : null),
         rc = ribbonColour(C.kind);
-      if (RB.length > 1 && rc) drawRibbon2d(c, RB, ribbonEdges(RB, battleStage.V, C.rax), rc);
+      if (RB.length > 1 && rc)
+        drawRibbon2d(
+          c,
+          RB,
+          ribbonEdges(RB, battleStage.V, C.rax),
+          `rgb(${ribbonTone(rc).map(v => Math.round(v * 255))})`
+        );
       /* VFX-1: its afterimages, oldest first (under the newer ones), at whole pixels like the icon */
       const G = smearGhosts(C.trail, battleStage.t, battleSmearCount(), battleStage.V);
       for (let i = G.length - 1; i >= 0; i--) {

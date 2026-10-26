@@ -11,6 +11,7 @@ import {
   SMEAR_STEP,
   ribbonCells,
   ribbonEdges,
+  ribbonTone,
   smearCount,
   smearGhosts,
   smearHistory,
@@ -175,4 +176,11 @@ test('the edges face the camera; a spinning throw twists them about the tumble a
   const turned = spun.slice(0, -1).map(side),
     spread = Math.max(...turned.map(s => s[2])) - Math.min(...turned.map(s => s[2]));
   assert.ok(spread > 0.5, 'it twists along its length');
+});
+
+test("the ribbon's colour is the object's own, brighter, never past white", () => {
+  const [r, g, b] = ribbonTone('#d47a3e');
+  assert.ok(r > 0xd4 / 255 && r <= 1);
+  assert.ok(Math.abs(r / g - 0xd4 / 0x7a) < 1e-9 && Math.abs(g / b - 0x7a / 0x3e) < 1e-9, 'the same hue');
+  assert.deepEqual(ribbonTone('#ffffff'), [1, 1, 1]);
 });

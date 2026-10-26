@@ -14,12 +14,14 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  RIBBON_BRIGHT: [() => RIBBON_BRIGHT],
   RIBBON_CELLS: [() => RIBBON_CELLS],
   RIBBON_CORE: [() => RIBBON_CORE],
   RIBBON_FRAY: [() => RIBBON_FRAY],
   RIBBON_HALF: [() => RIBBON_HALF],
   RIBBON_STEPS: [() => RIBBON_STEPS],
   RIBBON_SUB: [() => RIBBON_SUB],
+  RIBBON_TWIST: [() => RIBBON_TWIST],
   SMEAR_GHOSTS: [() => SMEAR_GHOSTS],
   SMEAR_KEEP: [() => SMEAR_KEEP],
   SMEAR_MIN_GAP: [() => SMEAR_MIN_GAP],
@@ -30,6 +32,8 @@ expose({
   ribbonCells: [() => ribbonCells, v => (ribbonCells = v)],
   // @ts-expect-error -- replaced on purpose
   ribbonEdges: [() => ribbonEdges, v => (ribbonEdges = v)],
+  // @ts-expect-error -- replaced on purpose
+  ribbonTone: [() => ribbonTone, v => (ribbonTone = v)],
   // @ts-expect-error -- replaced on purpose
   smearCount: [() => smearCount, v => (smearCount = v)],
   // @ts-expect-error -- replaced on purpose
@@ -64,8 +68,14 @@ export const SMEAR_NEAR = 2;
 export const RIBBON_CELLS = 6;
 /** how many places a history keeps: what the afterimages and the ribbon need */
 export const SMEAR_KEEP = Math.max(SMEAR_GHOSTS.length + 1, RIBBON_CELLS);
-/** the ribbon's half width at its head (metres), tapered to nothing at its tail */
-export const RIBBON_HALF = 0.13;
+/** the ribbon's half width at its head (metres), tapered to nothing at its tail: about half the thrown pyramid's side
+ * (battle-stage.js PYRAMID_SIDE x PYRAMID_SCALE) */
+export const RIBBON_HALF = 0.24;
+/** how much of the tumble the ribbon twists by: the whole of it turned the strip nearly twice along its length, so it
+ * mostly showed its edge (a thin line) */
+export const RIBBON_TWIST = 0.35;
+/** its colour's value, times this: the object's own colour, brighter (as the afterimages are) */
+export const RIBBON_BRIGHT = 1.35;
 /** the white core's share of its width (the rest is the object's own colour) */
 export const RIBBON_CORE = 0.4;
 /** how much of the ribbon's tail is eroded in flight (0 at the head, this at the tail) */
@@ -193,7 +203,7 @@ export function smearRibbon(H, t, cells, eye = null, head = null) {
 
 /** the ribbon's two edges at each point, [left, right] (the same metres): across the curve and toward the eye, so it
  * faces the camera; a spinning throw (ax, its tumble axis) turns that about the axis by each point's tumble, so the
- * ribbon twists and at times shows its edge
+ * ribbon twists (RIBBON_TWIST of the tumble) and at times shows its edge
  * @param {RibbonPoint[]} R @param {{ x: number, y: number, z: number }} eye
  * @param {number[] | null} [ax] @returns {number[][][]} */
 export function ribbonEdges(R, eye, ax = null) {
@@ -213,8 +223,8 @@ export function ribbonEdges(R, eye, ax = null) {
     let s = nrm(cross(tg, [eye.x - p.x, eye.y - p.y, eye.z - p.z])) || nrm(cross(tg, [0, 1, 0])) || last;
     if (A) {
       /* Rodrigues: s turned about the axis by the tumble, then made square to the curve again */
-      const c = Math.cos(p.tum),
-        n = Math.sin(p.tum),
+      const c = Math.cos(p.tum * RIBBON_TWIST),
+        n = Math.sin(p.tum * RIBBON_TWIST),
         k = A[0] * s[0] + A[1] * s[1] + A[2] * s[2],
         x = cross(A, s),
         r = [0, 1, 2].map(j => s[j] * c + x[j] * n + A[j] * k * (1 - c)),
@@ -228,4 +238,13 @@ export function ribbonEdges(R, eye, ax = null) {
     ]);
   }
   return out;
+}
+
+/** the ribbon's colour for a '#rrggbb' colour: [r, g, b] 0..1, its value RIBBON_BRIGHT times (capped at white's)
+ * @param {string} hex @returns {number[]} */
+export function ribbonTone(hex) {
+  const n = parseInt(hex.slice(1, 7), 16),
+    c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => v / 255),
+    k = Math.min(RIBBON_BRIGHT, 1 / Math.max(...c, 1e-6));
+  return c.map(v => v * k);
 }

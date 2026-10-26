@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
-import { RIBBON_CORE, ribbonEdges, smearGhosts, smearRibbon } from './logic/smear.js';
+import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
@@ -429,7 +429,7 @@ function ribbonVertices(C, T) {
       const [x, z] = T(E[i][s][0], E[i][s][2]);
       v.push(x, battle3d.gy + E[i][s][1], z, s ? 1 : -1, R[i].e);
     }
-  return { v, col: hexToRgb(col).map(c => c / 255), core: RIBBON_CORE };
+  return { v, col: ribbonTone(col), core: RIBBON_CORE };
 }
 /* VFX-2: a pyramid's own colour for its ribbon (its recipe's first layer); the mail move's coin takes the gold
    pyramid's. null while the recipe isn't loaded (no ribbon for that moment) */
