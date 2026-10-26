@@ -486,9 +486,16 @@ def behind_things(pg, base):
             ok = ok and pg.evaluate('walkRenderer.hidT === 1 && walkRenderer.hidK > 0.9 && rockUniformsFor(walkView.C).rock[2] > 0.5')
         if ok: hid.append(s['k'])
     if len(hid) * 2 < len(spots): raise Exception(f'hidden behind only {hid} of {[s["k"] for s in spots]}')
+    f0 = pg.evaluate('walkRenderer.frames')
     stand(pg, home[0], home[1], 60)
+    # the hidden amount follows the occlusion query, whose answers come back frames later (more on a busy machine's
+    # software drawing): wait for it to clear, with a cap, then say what was seen if it didn't
+    until(pg, '(walkRenderer.hidK||0)<=0.05&&rockUniformsFor(walkView.C).rock[2]<=0', 30)
     k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')
-    if k > 0.05 or circle > 0: raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle})')
+    if k > 0.05 or circle > 0:
+        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,near=(walkView.folkAll||walkView.folk||[]).map(f=>Math.hypot(f.x-P.x,f.z-P.z)).sort((a,b)=>a-b)[0];
+          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},nearestFolk:near}}}})()""")
+        raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle}): {seen}')
     return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
 
