@@ -1023,7 +1023,9 @@ export function endBattle() {
                 : run && run.offer
                   ? 'Pick a Perk'
                   : run && run.enc && run.enc.reward
-                    ? 'Pick a reward'
+                    ? run.enc.reward.kind === 'salvage'
+                      ? 'Look at the salvage'
+                      : 'Pick a reward'
                     : 'Keep walking',
             f:
               /* RL-8: the run's boss beaten: the run is won */
@@ -1065,6 +1067,8 @@ export function endBattle() {
     after.forEach(m => modal(m));
     /* RL-8: the run's party fainted: the run is over */
     if (run && o === 'lose') runOver(false);
+    /* RL-14: a wild bot beaten leaves its salvage pick (logic/battle-rewards.js battleSalvage) */
+    else if (kind === 'wild' && o === 'win' && run && run.enc && run.enc.reward) rewardPickOpen();
     else if (!after.length) showPendingWindows();
   });
 }

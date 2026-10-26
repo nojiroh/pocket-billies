@@ -356,7 +356,8 @@ export interface RunReward {
   cards: RewardCard[];
   rolls: number;
   from: string;
-  /** an event's pick of one kind, and of how many cards (a reroll keeps them) */
+  /** an event's pick of one kind, and of how many cards (a reroll keeps them); RL-14: 'salvage', a bot's parts and
+   * Scrap (never rerolled) */
   kind?: string;
   n?: number;
 }
@@ -364,7 +365,8 @@ export interface RunReward {
  * too), or a move a Billie of the team may learn */
 export interface RewardCard {
   id: string;
-  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held';
+  /** RL-14: a salvage pick's `part` (item: a robots.json part, into saveData.parts) and `scrap` (n: Scrap) */
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap';
   item?: string;
   n?: number;
   move?: string;

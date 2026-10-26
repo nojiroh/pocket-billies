@@ -9,6 +9,7 @@
    never caught or taxed (battle-engine.js catchable).
    Logic only: no DOM, no Date, no Math.random (tools/test/factions.test.mjs). */
 /** @import { Faction, FactionBot } from '../../types/game-data' */
+/** @import { RewardCard } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
@@ -24,6 +25,10 @@ expose({
   factionOfClass: [() => factionOfClass, v => (factionOfClass = v)],
   // @ts-expect-error -- replaced on purpose
   factionWildChance: [() => factionWildChance, v => ((factionWildChance = v), provide({ factionWildChance }))],
+  // @ts-expect-error -- replaced on purpose
+  salvageCards: [() => salvageCards, v => (salvageCards = v)],
+  // @ts-expect-error -- replaced on purpose
+  salvageParts: [() => salvageParts, v => (salvageParts = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ factionWildChance });
@@ -80,4 +85,27 @@ export function factionWildChance(F, node) {
   if (node.type === 'scrapyard') return 1;
   if (node.type !== 'route' && node.type !== 'miniboss' && node.type !== 'boss') return 0;
   return node.row >= F.wild.fromRow && F.wild.biomes.includes(node.biome || '') ? F.wild.chance : 0;
+}
+/** the parts of beaten bots (robots: { fit }), each id once, in order: what a salvage pick draws from
+ * @param {{ fit?: Record<string, { id: string }> }[]} bots @returns {string[]} */
+export function salvageParts(bots) {
+  const ids = new Set();
+  for (const m of bots) for (const k of ['torso', 'armL', 'armR', 'legs']) if (m.fit && m.fit[k]) ids.add(m.fit[k].id);
+  return [...ids].sort();
+}
+
+/** a salvage pick's cards: up to S.parts of the beaten bots' parts (none twice, drawn from g), then a stack of Scrap
+ * (S.scrap, and S.scrapPerBot for each bot after the first; none when that is 0)
+ * @param {{ int: (lo: number, hi: number) => number }} g @param {string[]} parts salvageParts
+ * @param {number} bots how many were beaten @param {Faction['salvage']} S @returns {RewardCard[]} */
+export function salvageCards(g, parts, bots, S) {
+  const left = parts.slice(),
+    out = /** @type {RewardCard[]} */ ([]);
+  while (out.length < S.parts && left.length) {
+    const id = left.splice(g.int(0, left.length - 1), 1)[0];
+    out.push({ id: 'part_' + id, kind: 'part', item: id });
+  }
+  const n = Math.min(99, S.scrap + S.scrapPerBot * Math.max(0, bots - 1));
+  if (n > 0) out.push({ id: 'scrap', kind: 'scrap', n });
+  return out;
 }

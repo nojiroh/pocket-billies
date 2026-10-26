@@ -281,7 +281,7 @@ export function validRunEnc(e) {
       plain(c) &&
       Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move'].includes(k)) &&
       id(c.id) &&
-      ['item', 'candy', 'evo', 'tutor', 'held'].includes(c.kind) &&
+      ['item', 'candy', 'evo', 'tutor', 'held', 'part', 'scrap'].includes(c.kind) &&
       (c.item === undefined || id(c.item)) &&
       (c.move === undefined || id(c.move)) &&
       (c.n === undefined || wholeIn(c.n, 1, 99));
@@ -323,7 +323,7 @@ export function validRunEnc(e) {
         e.reward.cards.every(card) &&
         wholeIn(e.reward.rolls, 0, 99) &&
         Object.keys(e.reward).every(k => ['cards', 'rolls', 'from', 'kind', 'n'].includes(k)) &&
-        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held'].includes(e.reward.kind)) &&
+        (e.reward.kind === undefined || ['item', 'candy', 'evo', 'tutor', 'held', 'salvage'].includes(e.reward.kind)) &&
         (e.reward.n === undefined || wholeIn(e.reward.n, 1, 5)) &&
         typeof e.reward.from === 'string' &&
         e.reward.from.length <= 60))

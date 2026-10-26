@@ -458,6 +458,9 @@ export function runSimOn(env) {
           const { pay } = fn('battleSettle')(B, s);
           fn('battleSettleWin')(B, s, pay, run);
           if (pay.o === 'win' && pay.prize > 0) stats.moneyIn.prize += pay.prize;
+          /* RL-14: a wild bot's salvage, answered as a trainer's pick is */
+          const salvage = run.enc && run.enc.reward;
+          if (salvage) rewardTake(run, s, P.rewards === 'first-item' ? 0 : null, rewardDataGame(s.team));
           hooks.provide({ activeBattle: null });
           hooks.uiState.learnQ.length = 0;
           stats.battles++;

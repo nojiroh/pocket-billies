@@ -8,15 +8,16 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ITEMS, PERKS, RULES } from '../game-data.js';
-import { speciesOf } from './fighters.js';
+import { FACTIONS, ITEMS, PERKS, RULES } from '../game-data.js';
+import { isRobot, speciesOf } from './fighters.js';
 import { dropEncounter, findBilly, wildPrize } from './rules.js';
 import { runLostTo } from './run-history.js';
+import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop } from './run-loop.js';
 import { fxMoney, fxOfBillie } from './effects.js';
 import { perkOfferMake } from './perks.js';
-import { rewardDataGame, rewardOfferMake } from './rewards.js';
+import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
 import { battleRoll } from './battle-engine.js';
 import { questCatch, questWin } from './run-quests.js';
 /* eslint-disable no-func-assign */
@@ -26,6 +27,8 @@ expose({
   battleOutcome: [() => battleOutcome],
   // @ts-expect-error -- replaced on purpose
   battleRewards: [() => battleRewards, v => (battleRewards = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleSalvage: [() => battleSalvage, v => (battleSalvage = v)],
   // @ts-expect-error -- replaced on purpose
   battleSettle: [() => battleSettle, v => (battleSettle = v)],
   // @ts-expect-error -- replaced on purpose
@@ -138,6 +141,8 @@ export function battleSettle(b, s) {
 export function battleSettleWin(b, s, pay, run) {
   if (pay.o !== 'win') return;
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
+  /* RL-14: on a run, beating bots leaves a salvage pick (their parts or Scrap) in place of a reward pick */
+  const salvage = run ? battleSalvage(b, run) : false;
   if (b.kind === 'trainer') {
     s.se += pay.reward;
     if (run && b.T && (b.T.runFoe === 'miniboss' || b.T.runFoe === 'boss') && b.T.type && s.meta) {
@@ -150,8 +155,21 @@ export function battleSettleWin(b, s, pay, run) {
     }
     if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
     /* RL-12b: a route trainer (or the rival) leaves a reward pick (logic/rewards.js), saved with the battle's end */
-    if (run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))
+    if (!salvage && run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))
       rewardOfferMake(run, b.tid, rewardDataGame(s.team));
     s.flags[b.tid] = 1;
   }
+}
+
+/** RL-14: the bots of a won run battle (robots on the foe's side) leave a salvage pick (logic/rewards.js), by their
+ * faction's rules: the agent's class's faction, else the first bot's build's (factions.json); true when one was made
+ * @param {any} b @param {any} run */
+export function battleSalvage(b, run) {
+  const bots = ((b.sides && b.sides[1] && b.sides[1].team) || []).filter((/** @type {any} */ m) => isRobot(m));
+  if (!bots.length) return false;
+  const byClass = b.T && b.T.cls ? factionOfClass(FACTIONS, b.T.cls) : null,
+    byBot = byClass ? null : bots.map((/** @type {any} */ m) => factionBotOf(FACTIONS, m.sp)).find(Boolean),
+    F = byClass ? byClass.F : byBot ? FACTIONS[byBot.faction] : null;
+  if (!F) return false;
+  return !!salvageOfferMake(run, b.kind === 'wild' ? 'wild' : b.tid || 'trainer', bots, F.salvage);
 }
