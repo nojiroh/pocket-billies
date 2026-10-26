@@ -2,6 +2,65 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Splicing track SP-6 - Run events: the back alley, the Bureau's field lab, the Gene auction, the recall; three Perks (built, waiting on the owner's prices) - 2026-10-26
+Branch `claude/sp-6-run-events`, **on top of SP-4's branch `claude/sp-4-gene-bank`** (itself on SP-3's, SP-2's and
+SP-1's; none merged or tagged, `track/splicing` doesn't exist), started from its d560baf. It merges SP-4's branch when
+it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, SP-4, then this. Plan approved in Plan Mode. Tag
+`sp-6-done` for the owner.
+- Where the track was wrong: written into the track file's "Corrections found by SP-6". The ones that changed the
+  plan: RL-12b already had a recall (`recall_notice`) and an auction (`lost_property_auction`), so SP-6's are
+  `gene_recall` and `gene_auction`; an option could only cost Moneys and no condition read DNA, Genes or splices;
+  events could not be placed by condition; no effect kind touched splicing and the run's rows never reached the
+  Unstable drawback; a run's splice lasts only on the Billie kept at the end. SP-3's "a trainer and two event texts"
+  for the Bureau: a trainer class and four events.
+- Decided in the plan (the owner's go): A the **Bureau field lab is an ordinary waystation event** placed by a new
+  event field `when` (`genes >= 1`; the recall `spliced >= 1`), not a node type; B the back alley splices any slot,
+  the lab only the Bank's open slots; C both held to your Bank's Stability limit (Unstable past it, a refused splice
+  never offered); D a Gene spliced on a run joins the library; E every price and Perk number a placeholder.
+- Changed (one cause per commit):
+  - Conditions `dna`, `genes`, `spliced` (conditions.js, needWords, SCRIPTS.md).
+  - An option's `dna` price (schema, type, eventOptionState, paid when picked, the sheet's DNA chip, the summary's
+    DNA change).
+  - An event's `when`: a condition read once, when a waystation's event is drawn (eventPool/eventAt take the game's
+    conditions; the run sim and the Studio's preview read none and leave such an event out, as for a new save).
+  - gene-bank.js `bankWhyAt` (bankWhy's rules without "a run is on"; no change in behaviour).
+  - logic/gene-events.js (on the page and in the Studio's logic worker): geneEventSlots, geneEventWildList and
+    geneEventWild (the back alley's Gene: the region's lines first, any slot the form has, never worn or refused),
+    geneEventLab (library Genes on the Bank's open slots at bankPrice), geneEventSplice (DNA, the splice, Unstable at
+    your limit, the Gene into the library), geneEventLearn, geneEventDraw (the auction's Gene), geneEventRecall.
+  - Event commands `dna n`, `gene [n]`, `splice wild|lib` (checkpoint), `unsplice [n]` (checkpoint), with
+    data-checks' argument checks and SCRIPTS.md. Their draws come from a stream of the event and the place
+    (`event|gene|<id>|<node>`), so a reload in the middle draws the same Gene. The back alley's pick has no "Not now"
+    (the option was paid); the lab's and the recall's have one.
+  - events.json: `back_alley_splicer` (150 Moneys or 8 DNA), `bureau_field_lab` (the Bank's price; or swipe a sample:
+    a Bureau Clerk battle, then a Gene), `gene_auction` (250 Moneys for a Gene, 15 DNA for two), `gene_recall` (hand a
+    Gene in for 15 DNA, or refuse: a Bureau Clerk battle and a Perk). **Placeholders.**
+  - Effect kinds `dna` (spliceSample, from the battle's run rows), `splice` (wildSplice's new `odds`: the same
+    draws, both chances times it, together at most 1; rules.js stocking passes the run's rows) and `unstable` (the
+    drawback on your side, times the battle's run rows). With no rows every number is as before.
+  - The Studio's Perks section: the three kinds' fields and the preview's rows (content-preview.js perkPreview).
+  - perks.json: Petri Dish (common, Samples x1.5 DNA), Gene Lure (uncommon, splice odds x2), Stabilizer Gel (rare,
+    the Unstable hurt x0.5: FX_LIMIT keeps a product at 0.1 or more, so "none" isn't possible with a mult).
+    **Placeholders.**
+  - The in-game full test: "Splice events: the back alley splices, the recall takes it back" (on a copy of the save
+    on a run). The debug menu's event list already lists every event (no change). Debug log: 'event' lines with data
+    ids only (`splice musk2 back=cat_leg@bezos1`, `gene ...`, `unsplice ...`).
+- Verified: lint, typecheck, check:modules, unit tests after every commit (1038 quick, all pass; new:
+  tools/test/gene-events.test.mjs, the conditions, needWords, the DNA price, `when`, the commands' data checks, the
+  Unstable hurt with a run row); check:data; golden battles unchanged (snapshot not remade); smoke 6 of 6. Headless on
+  the page (town fixture, a run on a copy of the save): the full test's new step passes (musk2 back=cat_leg@bezos1
+  for 150 Moneys, spliced in battle, recalled for 15 DNA); the field lab (Lv 2 Bank: an eagle's wings and a shark's
+  tail offered at 15 DNA, Stability 2 of 4; the tail spliced, 15 DNA paid), the auction in DNA (two Genes, 15 DNA) and
+  the back alley in DNA (8 DNA) all play through their sheets with no errors; the lab's pick read well at 400 px. The
+  in-game steps "A run's waystation and stall", "Wild splice", "Gene Bank" pass alone.
+  Full quick check: running when this entry was written; its result follows in the next commit.
+- Risky: adding four events and three Perks changes which event a waystation holds and which Perks are offered for
+  a given seed (no test pinned one). A splice made on a run bakes at runtime (SP-1's path), like the Bank's preview: if
+  the owner takes SP-1's offline fallback, events still need the runtime bake. `when` is read when the event is drawn
+  (the first time a waystation's stand is opened), not when it is played: the option's own `need` is what guards the
+  play. battle.js's Gene Sample sheet still says the Gene Bank is "Coming later" (SP-3's text, older than SP-4).
+- Next: the owner's answers (Ask me before): the events' prices and the Perks' numbers and rarities; Gene moves
+  (still with the owner); SP-3's odds and DNA. Then tag `sp-6-done`. SP-5 waits for RL-14; SP-7 is next to plan.
 ### Splicing track SP-4 - The Gene Bank: the building, the library, splicing for DNA, its levels (built, waiting on the owner's numbers) - 2026-10-26
 Branch `claude/sp-4-gene-bank`, **on top of SP-3's branch `claude/sp-3-wild-splices`** (itself on SP-2's and SP-1's;
 none merged or tagged, `track/splicing` doesn't exist), started from its e24e882, with **main merged in once** (the
