@@ -2097,9 +2097,10 @@ function drawPropModelShadowsInstanced(SH, items) {
       propModelInstanceValues(it, 'vox', MODEL_VALUES);
       writeModelInstance(S, i++, MODEL_VALUES);
     }
-  if (!S.buf || S.gl !== gl) {
-    S.buf = gl.createBuffer();
+  if (!S.buf || S.gl !== gl || S.gen !== gpuState.gen) {
+    S.buf = gpuBuffer('instances');
     S.gl = gl;
+    S.gen = gpuState.gen;
   }
   gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
   gl.bufferData(gl.ARRAY_BUFFER, S.B.subarray(0, i * MODEL_INSTANCE_BYTES), gl.STREAM_DRAW);
