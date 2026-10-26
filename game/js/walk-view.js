@@ -26,6 +26,7 @@ import {
   cachedBuildingSignature,
   currentLocationMap,
   defaultWallMaterial,
+  engineSetting,
   environment,
   environmentSeason,
   environmentState,
@@ -71,6 +72,7 @@ import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
+import { folkCap } from './logic/square-day.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
@@ -4232,6 +4234,15 @@ export function updateFolk(n, dt) {
   const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;
   if (b && b.gen && b.kind === 'town' && RULES.run.town) {
     const cap = runTownFolkCap(RULES.run.town, walkRenderer.q, saveData.preferences && saveData.preferences.aim);
+    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+  } else if (folkTown(walkView.sc)) {
+    /* HB-10c: the hub's townsfolk drawn at once, by the Engine's quality.townFolk and the graphics; the first ones
+       (the rest keep their day) */
+    const cap = folkCap(
+      engineSetting('quality', 'townFolk') ?? 10,
+      walkRenderer.q,
+      saveData.preferences && saveData.preferences.aim
+    );
     if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
   }
 }

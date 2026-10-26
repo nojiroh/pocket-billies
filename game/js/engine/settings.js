@@ -272,6 +272,9 @@ export const ENGINE_DEFAULTS = {
        0: no limit) */
     minPropPx: 0,
     phonePropDistance: 0,
+    /* HB-10c: the most townsfolk drawn at once in a town (the hub and a run's towns), fewer on Balanced and once
+       frames come late (logic/square-day.js folkCap) */
+    townFolk: 10,
     sharpTex: true,
     edgeBleed: true,
     /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
@@ -1264,6 +1267,14 @@ export const ENGINE_SPEC = [
         120,
         2,
         'On a phone, small props (flowers, tufts, pebbles, crates) fade out before this many metres; buildings, trees and anything big stay. 0: no limit.',
+      ],
+      [
+        'townFolk',
+        'Townsfolk at once',
+        0,
+        12,
+        1,
+        'The most townsfolk drawn at once in a town; on Balanced graphics 0.8 of it, once frames come late 0.6. The rest keep their day unseen.',
       ],
       [
         'battleLite',
