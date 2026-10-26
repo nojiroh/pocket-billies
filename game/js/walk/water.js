@@ -294,7 +294,7 @@ export function addRipple(x, z, k) {
   if (walkRenderer.rings.length > 16) walkRenderer.rings.shift();
 }
 /* water track WA-2a: rings of your wake as you wade, kept apart (4 at most) so they never push out the scene's own */
-function addWakeRipple(x, z, k) {
+export function addWakeRipple(x, z, k) {
   (walkRenderer.wake = walkRenderer.wake || []).push([x, z, 0, k]);
   if (walkRenderer.wake.length > 4) walkRenderer.wake.shift();
 }
