@@ -15,6 +15,13 @@ kept aside in the browser).
   changes. The one you are talking to shows through the same way. Engine > Camera has the dials: "Your outline when
   hidden" (was "Your silhouette through rock"), the outline's width and fill, the circle's switch, size and strength,
   and how far things covering you fade.
+- **Blake is your rival on runs** (roguelite track RL-S2): he waits on a run's map (a "Rival" pin), once a run at
+  Expedition I and up to twice later, with a team built to beat the Billie you set off with. It grows with every
+  meeting. Beat him for a reward pick and Moneys; lose and the run is over. On a two-place row you can go round him.
+- **Beans and the hub folk** (RL-S2): a fifth currency, **Beans**, found now and then on runs (a certain crate, your
+  first badge of a type, a side area's leader, a won run). Back home, Professor Chosen, Hazel and Granny Juniper each
+  take one Bean each time you are home. Gifts raise your level with them, and levels bring small things: a few more
+  Moneys from battles, a Potion or a pyramid at takeoff. (The numbers and their thank-you lines are still to come.)
 - **The story reacts to your runs** (roguelite track RL-S1, the story director): the game remembers your last 20
   runs (where, how far, what beat you, who you brought, the Perks and leaders). Back in Copperleaf, **Professor
   Chosen, Hazel and Granny Juniper** each have a fresh word about your last run the first time you talk to them. After
