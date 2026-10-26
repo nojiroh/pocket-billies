@@ -276,8 +276,10 @@ export const ENGINE_DEFAULTS = {
        false) */
     keepScenes: 3,
     paintWorker: true,
-    /* phase 20 C3: the frame's light values in one uniform block (off: each lit program is sent them, as before) */
-    frameBlock: false,
+    /* phase 20 C5: lights picked with stable keys and fades (off: the nearest each frame, as before), and how many may
+       be lit at once (the shaders hold 16) */
+    stableLights: false,
+    lights: 16,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1242,10 +1244,18 @@ export const ENGINE_SPEC = [
         'Shadows of things that never move are drawn once and kept; only moving things are drawn each frame.',
       ],
       [
-        'frameBlock',
-        'One light block per frame',
+        'stableLights',
+        'Steady lamps',
         'bool',
-        'Everything lit reads the frame’s light (sun, sky, fog, shadow maps, lamps) from one block sent once a frame, instead of being sent it again for each kind of thing drawn. A test switch (phase 20): it should look the same.',
+        'The lamps, windows and fires that light the scene are chosen five times a second instead of every frame, a lit one stays lit until another is clearly nearer, ones out of view are skipped, and each fades in and out instead of popping. A test switch (phase 20).',
+      ],
+      [
+        'lights',
+        'Lamps lit at once',
+        1,
+        16,
+        1,
+        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
       ],
       [
         'gpuTimer',

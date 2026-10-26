@@ -190,7 +190,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
 | 18 | 18-friend-trading-and-battles | not started | absorbed: RL-15 (ghosts, daily seeds); trading out of scope |
 | 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
-| 20 | 20-renderer-batching | stages A, B, C-1, C-2 done; C5 and stage D not | parked: when the phone numbers ask for it |
+| 20 | 20-renderer-batching (branch `track/renderer`) | A, B, C1-C4 done (C3 off by default); restructured 2026-10-26 into lanes and rounds; round 1 (light, measure, context) started | active: rounds R1-R4 in the phase file |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
 
 ## If the scope is too big

@@ -54,7 +54,7 @@ My firm art commitments: terrain textures and the airship style (low-poly models
 7. One pipeline: recipe -> baked compact binary mesh (GLB or similar, quantized vertices) sharing one texture atlas at 32 px/m. Replace the base64 JSON format.
 8. Rebuild picture-based props as models in order: most-seen props, landmarks, then the long tail. List the props that stay flat and ask me.
 9. Build the cyberpunk opening set (tall buildings, neon signs, street furniture, flying cars) in the airship style and the solarpunk Hollow Earth set (garden towers, wind turbines, solar sails, ranch items).
-10. Add instancing for repeated props and a cheap far version (LOD). Report draw calls and frame times on a phone before and after.
+10. Add instancing for repeated props and a cheap far version (LOD). Report draw calls and frame times on a phone before and after. (2026-10-26: moved to phase 20, round R2's models lane.)
 11. Delete the picture-extrusion and volumetric code. Make the Studio's Prop builder the single prop editor (3D turntable, variant tools).
 
 ## Ask me before

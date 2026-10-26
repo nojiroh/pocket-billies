@@ -169,3 +169,80 @@ test('a test gets the average per counted frame, and the scheduler counts every 
   assert.deepEqual(s.dcp, { ground: 3 });
   assert.equal(gpuCounters.want, 0);
 });
+
+test('tagged draws count apart in their pass, and an untagged summary has none', () => {
+  const gl = new FakeGL(),
+    { gpuTag } = G;
+  countersOn(gl);
+  gpuPass('sprites');
+  gl.drawArrays(4, 0, 6); /* untagged: a plain sprite */
+  gpuTag(2); /* an item's `mp`: a model's picture */
+  gl.drawArrays(4, 0, 6);
+  gl.drawArrays(4, 0, 6);
+  gpuTag(0);
+  gl.drawArrays(4, 0, 6);
+  gpuPass('shadowFar');
+  gpuTag('model');
+  gl.drawElements(4, 6, 5123, 0);
+  gl.drawElementsInstanced(4, 6, 5123, 0, 5);
+  gpuTag('modelPic');
+  gl.drawArrays(4, 0, 6);
+  countersOff();
+  assert.equal(gpuCounters.tag, 0, 'off clears the tag');
+  gpuFrameDone(10000);
+  const s = gpuCountSummary();
+  assert.deepEqual(s.dcp, { sprites: 4, shadowFar: 3 });
+  assert.deepEqual(s.dct, { sprites: { modelPic: 2 }, shadowFar: { model: 2, modelPic: 1 } });
+  /* a sum read without its tags (an older caller) has no tagged draws */
+  assert.deepEqual(gpuCountSummary(gpuCounters.last, 1, null).dct, {});
+});
+
+test('each pass counts the distinct textures and vertex arrays it bound', () => {
+  const gl = new FakeGL();
+  countersOn(gl);
+  gpuPass('sprites');
+  for (const t of ['a', 'b', 'a', 'c', 'a']) {
+    gl.bindTexture(1, t);
+    gl.drawArrays(4, 0, 6);
+  }
+  gl.bindTexture(1, null); /* unbinding is not a texture */
+  gpuPass('models');
+  for (const v of ['m', 'm', 'n']) {
+    gl.bindVertexArray(v);
+    gl.drawElements(4, 6, 5123, 0);
+  }
+  gl.bindVertexArray(null);
+  countersOff();
+  gpuFrameDone(11000);
+  const s = gpuCountSummary();
+  assert.deepEqual(s.dcu, { sprites: [3, 0], models: [0, 2] });
+  assert.equal(sumOf('sprites', 'textures'), 6);
+  /* the next counted frame starts from nothing */
+  countersOn(gl);
+  gpuPass('sprites');
+  gl.bindTexture(1, 'a');
+  gl.drawArrays(4, 0, 6);
+  countersOff();
+  gpuFrameDone(12000);
+  assert.deepEqual(gpuCountSummary().dcu, { sprites: [1, 0] });
+});
+
+test('a test averages the tagged draws and the kinds over its frames', () => {
+  const gl = new FakeGL(),
+    { gpuTag } = G;
+  gpuCountBegin();
+  for (const n of [1, 3]) {
+    countersOn(gl);
+    gpuPass('reflection');
+    gpuTag('model');
+    for (let i = 0; i < n; i++) {
+      gl.bindVertexArray('v' + i);
+      gl.drawElements(4, 6, 5123, 0);
+    }
+    countersOff();
+    gpuFrameDone(13000);
+  }
+  const s = gpuCountEnd();
+  assert.deepEqual(s.dct, { reflection: { model: 2 } });
+  assert.deepEqual(s.dcu, { reflection: [0, 2] });
+});
