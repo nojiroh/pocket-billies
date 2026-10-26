@@ -492,7 +492,6 @@ export interface RoadEnds {
 
 /** TW-2: rules.json run.town */
 export interface RunTownRules {
-  cap: { busy: number; balanced: number; best: number };
   locals: [number, number];
   names: string[];
   chat: Record<DataId, string[]>;

@@ -715,15 +715,12 @@ export function dataRunLoop(D) {
       if (!(typeof RW.grow === 'number' && RW.grow >= 1 && RW.grow <= 10))
         problem('rules.json', 'run.rewards.grow: 1-10');
     }
-    /* TW-2: a run town's life: the folk drawn at most by graphics, the named locals (fewest, most) and their names,
+    /* TW-2: a run town's life: the named locals (fewest, most) and their names,
        the region themes' chat lines */
     const TN = R.town;
     if (!rec(TN)) problem('rules.json', 'run.town missing');
     else {
-      only(TN, ['cap', 'locals', 'names', 'chat'], 'run.town');
-      if (!rec(TN.cap) || !['busy', 'balanced', 'best'].every(k => whole(TN.cap[k], 0, 12)))
-        problem('rules.json', 'run.town.cap: busy, balanced and best, whole, 0-12 folk');
-      else only(TN.cap, ['busy', 'balanced', 'best'], 'run.town.cap');
+      only(TN, ['locals', 'names', 'chat'], 'run.town');
       const L = TN.locals;
       if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
         problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');

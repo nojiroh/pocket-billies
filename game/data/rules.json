@@ -192,7 +192,6 @@
   },
   "pack": [5],
   "town": {
-   "cap": {"busy":3,"balanced":5,"best":6},
    "locals": [1,2],
    "names": [
     "Old Tam",
