@@ -169,14 +169,15 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
  if(uFogK>0.){vec3 iv=mix(vec3(-1.),vec3(1.),step(0.,dir))/max(abs(dir),vec3(1e-6)),ta=(uFogLo-uEye)*iv,tb=(uFogHi-uEye)*iv,mn=min(ta,tb),mx=max(ta,tb);
   fa=max(0.,max(max(mn.x,mn.y),mn.z));fb=min(L0,min(min(mx.x,mx.y),mx.z));
   if(fa<fb){t0=sh?min(s0,fa):fa;t1=sh?max(L,fb):fb;N=uSteps;}else if(!sh){o=vec4(0.);return;}}
- /* the fog: 0.22 per m at full density thins what is behind it (T) and adds the light it scatters: the sky's (the haze colour, dimmer in shade), the
-    sun's through the shadow maps with the forward phase (shafts in the fog), and the lamps' glow */
- float dt=(t1-t0)/N,T=1.;vec3 fc=vec3(0.);
+ /* the fog: 0.22 per m at full density thins what is behind it (T) and adds the light it scatters: the sky's (the
+    haze colour, dimmer in shade and with the sun's brightness sl, so it is dark under the moon and the lamps carry it),
+    the sun's through the shadow maps with the forward phase (shafts in the fog), and the lamps' glow */
+ float dt=(t1-t0)/N,T=1.,sl=min(1.,dot(uSunCol,vec3(.3,.59,.11)));vec3 fc=vec3(0.);
  for(int i=0;i<14;i++){if(float(i)>=N)break;float t=t0+(float(i)+j)*dt;vec3 p=uEye+dir*t;
   float w=sh&&t>=s0&&t<=L?1.:0.,fd=t>=fa&&t<=fb?fogAt(p)*uFogK:0.;if(w+fd<=0.)continue;
   float v=vis(p);vec3 lp=(w>0.&&uLK>0.)||(fd>0.&&uFogLK>0.)?lampAt(p):vec3(0.);
   if(w>0.){float dens=exp(-max(0.,p.y-P.y)*.32)*.85+exp(-max(0.,p.y-uMistY)*.1)*.15;float dd=dens*dt*.045;sun+=vec3(v*dd,dd,0.);lamps+=lp*dt;}
-  if(fd>0.){float a=1.-exp(-fd*.22*dt);fc+=T*a*(uFogCol*(.6+.4*v)+uSunCol*v*ph*.18+lp*uFogLK*.5);T*=1.-a;}}
+  if(fd>0.){float a=1.-exp(-fd*.22*dt);fc+=T*a*(uFogCol*(.45+.55*sl*(.4+.6*v))+uSunCol*v*ph*.18+lp*uFogLK*.5);T*=1.-a;}}
  /* lit air brightens a little; air in the shadow of a canopy or a roof darkens what is behind it (alpha), so the beams
     show as light and dark columns, on any graphics chip (no negative light needed) */
  float pk=(ph*.6+.55)*uDens*step(d0,.9999)*(1.-smoothstep(26.,46.,length(ray)));/* not in the sky, and fading out with distance: the beams are a near thing */
