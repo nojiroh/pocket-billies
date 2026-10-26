@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Smart light shafts and the HD-2D fixes** (all off until tested on the phone): cheap sunbeams placed where they
+  show best (through gaps between trees and past houses, with shade behind them, looking into the light, never over
+  you, fading in and out); and switches that fix what the audit found: rays that follow the light's colour and fade
+  under the moon, window light that falls out of a turned house's front, shadow edges that stand still, lamp shadows
+  that hold, shaded tree cores, occlusion that leaves open ground alone, lamp light on water, outlines that follow the
+  camera, even bloom, half-float HDR, steady light on far props, fronts lit as their material, and Building bumpiness
+  (bricks, planks and roof tiles catching the light). Engine > Air, Sun, Lights, Shadows, Colour, World and Quality.
 - **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
   Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
   (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
