@@ -271,6 +271,8 @@ export const ENGINE_DEFAULTS = {
        be lit at once (the shaders hold 16) */
     stableLights: false,
     lights: 16,
+    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
+    spriteInstances: false,
     /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
     modelInstances: false,
   },
@@ -1216,6 +1218,12 @@ export const ENGINE_SPEC = [
         16,
         1,
         'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+      ],
+      [
+        'spriteInstances',
+        'Pictures in batches',
+        'bool',
+        'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
       ],
       [
         'modelInstances',

@@ -27,9 +27,25 @@ import {
   worldToScreen,
 } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
-import { SURFACE_MATERIALS, bindGridQuad, bindQuad, gpuState, imageTexture, normalize3 } from '../engine/webgl.js';
+import {
+  SURFACE_MATERIALS,
+  bindGridQuad,
+  bindQuad,
+  ensurePrograms,
+  gpuState,
+  imageTexture,
+  normalize3,
+} from '../engine/webgl.js';
+import {
+  SPRITE_INSTANCE_STRIDE,
+  bindSpriteInstances,
+  packSpriteInstance,
+  spriteMaterialTable,
+  uploadSpriteInstances,
+} from '../engine/sprite-instances.js';
 import { FIXED_BACK, FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
+import { SPRITE_INSTANCE_SHADERS } from './walk-shaders.js';
 import { setSpriteGeometry, setSpriteUniforms, spriteGeometry, useWalkProgram, worldCurveDrop } from './draw-common.js';
 import { frameBudgetLeft } from './quality-cull.js';
 import { foliageAmount, setPropLookUniforms } from './prop-look.js';
@@ -45,6 +61,7 @@ expose({
   SPRITE_FRAME: [() => SPRITE_FRAME],
   SPRITE_LIST: [() => SPRITE_LIST],
   SPRITE_RECORDS: [() => SPRITE_RECORDS],
+  SPRITE_RUN: [() => SPRITE_RUN],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
   byImageId: [() => byImageId],
@@ -54,8 +71,11 @@ expose({
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
+  drawSpriteRuns: [() => drawSpriteRuns, v => (drawSpriteRuns = v)],
+  drawSpriteWave: [() => drawSpriteWave, v => (drawSpriteWave = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   easeHidden: [() => easeHidden, v => (easeHidden = v)],
+  flushSpriteRun: [() => flushSpriteRun, v => (flushSpriteRun = v)],
   hideQuery: [() => hideQuery],
   imageId: [() => imageId, v => (imageId = v)],
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
@@ -70,6 +90,9 @@ expose({
   spriteDrawList: [() => spriteDrawList, v => (spriteDrawList = v)],
   spriteDrawn: [() => spriteDrawn],
   spriteFrame: [() => spriteFrame, v => (spriteFrame = v)],
+  spriteHasParts: [() => spriteHasParts],
+  spriteInstanceProgram: [() => spriteInstanceProgram, v => (spriteInstanceProgram = v)],
+  spriteInstanceState: [() => spriteInstanceState],
   spriteRecord: [() => spriteRecord, v => setSpriteRecord(v)],
   spriteRecordAt: [() => spriteRecordAt, v => (spriteRecordAt = v)],
   spriteSideEffects: [() => spriteSideEffects, v => (spriteSideEffects = v)],
@@ -204,6 +227,7 @@ function newSpriteRecord(cross) {
     rk: 1,
     crossOn: false,
     cr: cross ? newSpriteRecord(false) : null,
+    inst: 0,
   };
 }
 const SPRITE_RECORDS = [];
@@ -381,6 +405,120 @@ function spriteSideEffects(p, r, C, X, hits, labels, PPU, sc) {
   if (it.far || it.layer) return;
   addHitTarget(it, C, hits, labels, PPU);
 }
+/* a flag: cloth that ripples (the sprite program's grid quad, uWave) */
+function drawSpriteWave(p, r) {
+  const gl = gpuState.gl,
+    U = p.U;
+  setSpriteRecord(p, r);
+  gl.uniform3fv(U.uWave, r.wave);
+  bindGridQuad();
+  gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
+  gl.uniform3f(U.uWave, 0, 0, 0);
+  if (r.dz) gl.uniform1f(U.uDZ, 0);
+  bindQuad();
+}
+/* ---------- phase 20 E7-E8: the pictures as instances (Engine > Quality "Pictures in batches") ----------
+   The same records, packed into one buffer a frame (engine/sprite-instances.js), drawn as runs: each run is the
+   pictures next to each other in the pass's order that share a texture, a tree's crossing picture the instance after
+   its tree, so the pictures are drawn in the order they always were. A flag (the sprite program's grid quad) and a
+   picture with turning blades or clock hands (drawn right after it) end a run. If the program does not build on this
+   device the pass keeps one draw a picture (the debug log says so). */
+const spriteInstanceState = { bad: null };
+function spriteInstanceProgram(C, X, sh) {
+  if (!engineSetting('quality', 'spriteInstances')) return null;
+  const gl = gpuState.gl;
+  if (spriteInstanceState.bad === gl) return null;
+  if (!gpuState.P.spriteI)
+    try {
+      ensurePrograms(SPRITE_INSTANCE_SHADERS);
+    } catch (e) {
+      spriteInstanceState.bad = gl;
+      console.error(e);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'pictures in batches off: ' + e.message);
+      return null;
+    }
+  const ip = useWalkProgram('spriteI', C, X),
+    U = ip.U;
+  gl.uniform3fv(U.uCamRight, C.right);
+  gl.uniform3fv(U.uCamBack, C.back);
+  gl.uniform3fv(U.uFwd, C.fwd);
+  gl.uniform3fv(U.uSunH, sh);
+  gl.uniform1i(U.uTex, 0);
+  gl.uniform1i(U.uNrm, 1);
+  gl.uniform1f(U.uAlpha, 1);
+  gl.uniform1f(U.uCurveOn, 1);
+  if (U.uSelOut) gl.uniform1f(U.uSelOut, engineSetting('color', 'outlines') ?? 1);
+  gl.uniform4fv(U.uMats, spriteMaterialTable());
+  return ip;
+}
+/* the run being gathered: its texture, first instance, instance count, counter tag; on: the instanced program is the
+   one in use */
+const SPRITE_RUN = { T: null, first: 0, n: 0, tag: 0, on: false };
+function flushSpriteRun(ip) {
+  const R = SPRITE_RUN;
+  if (!R.n) return;
+  const gl = gpuState.gl;
+  if (!R.on) {
+    gl.useProgram(ip.p);
+    R.on = true;
+  }
+  gpuTag(R.tag);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, R.T.t);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, R.T.n);
+  bindSpriteInstances(R.first);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, R.n);
+  gl.bindVertexArray(null);
+  R.n = 0;
+}
+/* a picture whose blades or clock hands are drawn right after it */
+const spriteHasParts = it => !!(it.M && (it.M.blades || (it.M.hands && !it.far && !it.layer)));
+function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
+  const gl = gpuState.gl,
+    R = SPRITE_RUN;
+  let k = 0;
+  for (let i = 0; i < L.length; i++) {
+    const r = spriteRecordAt(i);
+    spriteRecord(L[i], F, r);
+    r.inst = k;
+    if (r.mode !== 'quad') continue;
+    packSpriteInstance(k++, r, !r.it.fixed);
+    if (r.crossOn) packSpriteInstance(k++, r.cr, false);
+  }
+  uploadSpriteInstances(k * SPRITE_INSTANCE_STRIDE);
+  R.n = 0;
+  R.on = true;
+  for (let i = 0; i < L.length; i++) {
+    const r = spriteRecordAt(i),
+      it = r.it,
+      tag = it.voxImg || it.vox ? 'modelPic' : 0;
+    if (r.mode === 'quad') {
+      if (R.n && R.T !== r.T) flushSpriteRun(ip);
+      if (!R.n) {
+        R.T = r.T;
+        R.first = r.inst;
+        R.tag = tag;
+      }
+      R.n += r.crossOn ? 2 : 1;
+      if (spriteHasParts(it)) flushSpriteRun(ip);
+    } else if (r.mode === 'wave') {
+      flushSpriteRun(ip);
+      if (R.on) gl.useProgram(p.p);
+      R.on = false;
+      gpuTag(tag);
+      drawSpriteWave(p, r);
+    } else if (r.mode === 'model' && spriteHasParts(it)) flushSpriteRun(ip);
+    gpuTag(tag);
+    /* blades and hands leave the sprite program in use */
+    if (spriteHasParts(it) && r.mode !== 'none' && r.mode !== 'front' && r.mode !== 'wave') R.on = false;
+    spriteSideEffects(p, r, C, X, hits, labels, PPU, sc);
+  }
+  flushSpriteRun(ip);
+  /* the pass ends on the sprite program (its uniforms are put back after the pictures) */
+  if (R.on) gl.useProgram(p.p);
+  R.on = false;
+}
 export function drawSprites(C, items, X, hits, labels, PPU) {
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
@@ -409,32 +547,28 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.depthMask(true);
   gl.disable(gl.BLEND);
   const F = spriteFrame(C, sun),
-    L = spriteDrawList(items);
-  for (let i = 0; i < L.length; i++) {
-    const it = L[i],
-      r = spriteRecordAt(i);
-    /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
-    gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
-    const mode = spriteRecord(it, F, r);
-    if (mode === 'wave') {
-      setSpriteRecord(p, r);
-      gl.uniform3fv(U.uWave, r.wave);
-      bindGridQuad();
-      gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
-      gl.uniform3f(U.uWave, 0, 0, 0);
-      if (r.dz) gl.uniform1f(U.uDZ, 0);
-      bindQuad();
-    } else if (mode === 'quad') {
-      setSpriteRecord(p, r);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      if (r.dz) gl.uniform1f(U.uDZ, 0);
-      if (r.crossOn) {
-        setSpriteCrossRecord(p, r.cr);
+    L = spriteDrawList(items),
+    ip = spriteInstanceProgram(C, X, sh);
+  if (ip) drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc);
+  else
+    for (let i = 0; i < L.length; i++) {
+      const it = L[i],
+        r = spriteRecordAt(i);
+      /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
+      gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
+      const mode = spriteRecord(it, F, r);
+      if (mode === 'wave') drawSpriteWave(p, r);
+      else if (mode === 'quad') {
+        setSpriteRecord(p, r);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+        if (r.dz) gl.uniform1f(U.uDZ, 0);
+        if (r.crossOn) {
+          setSpriteCrossRecord(p, r.cr);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
       }
+      spriteSideEffects(p, r, C, X, hits, labels, PPU, sc);
     }
-    spriteSideEffects(p, r, C, X, hits, labels, PPU, sc);
-  }
   gpuTag(0);
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);

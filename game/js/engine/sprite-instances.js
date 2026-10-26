@@ -15,7 +15,7 @@
    the base, the offset, the axes, the sway and the UV (locations 1-4). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { SURFACE_MATERIALS } from './webgl.js';
+import { SURFACE_MATERIALS, gpuState } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   HALF_F32: [() => HALF_F32],
@@ -26,15 +26,21 @@ expose({
   SPRITE_INSTANCE_LAYOUT: [() => SPRITE_INSTANCE_LAYOUT],
   SPRITE_INSTANCE_STRIDE: [() => SPRITE_INSTANCE_STRIDE],
   SPRITE_MATERIALS: [() => SPRITE_MATERIALS],
+  SPRITE_MATERIAL_TABLE: [() => SPRITE_MATERIAL_TABLE],
+  bindSpriteInstances: [() => bindSpriteInstances, v => (bindSpriteInstances = v)],
   growSpriteInstances: [() => growSpriteInstances, v => (growSpriteInstances = v)],
   halfBits: [() => halfBits, v => (halfBits = v)],
   halfValue: [() => halfValue, v => (halfValue = v)],
   materialIndex: [() => materialIndex, v => (materialIndex = v)],
   packSpriteInstance: [() => packSpriteInstance, v => (packSpriteInstance = v)],
   packSpriteInstances: [() => packSpriteInstances, v => (packSpriteInstances = v)],
+  spriteInstanceBuffer: [() => spriteInstanceBuffer, v => (spriteInstanceBuffer = v)],
   spriteInstanceBytes: [() => spriteInstanceBytes],
+  spriteInstanceGL: [() => spriteInstanceGL],
+  spriteMaterialTable: [() => spriteMaterialTable, v => (spriteMaterialTable = v)],
   unitByte: [() => unitByte],
   unpackSpriteInstance: [() => unpackSpriteInstance, v => (unpackSpriteInstance = v)],
+  uploadSpriteInstances: [() => uploadSpriteInstances, v => (uploadSpriteInstances = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -53,7 +59,7 @@ const SPRITE_INSTANCE_LAYOUT = [
   [10, 'light', 4, 'f16', 80] /* emit, lit, rim, shade */,
   [11, 'flags', 4, 'u8i', 88] /* flags, material, spare, spare */,
 ];
-const SPRITE_INSTANCE_STRIDE = 92;
+export const SPRITE_INSTANCE_STRIDE = 92;
 /* the flags byte */
 const SPRITE_FLAG = { fixed: 1, noRecv: 2, flipN: 4, flip: 8, cam: 16 };
 /* the materials by index (the instanced programs' uniform table holds them in this order) */
@@ -122,7 +128,7 @@ function growSpriteInstances(n) {
 const NO_LOOK = { hsv: [0, 0, 0, 0], wear: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
 const unitByte = v => (v <= 0 ? 0 : v >= 1 ? 255 : Math.round(v * 255));
 /* record r into instance i (cam: the picture faces the camera; its axes are then the camera's) */
-function packSpriteInstance(i, r, cam) {
+export function packSpriteInstance(i, r, cam) {
   const B = growSpriteInstances(i + 1),
     f = B.f32,
     h = B.u16,
@@ -219,4 +225,75 @@ function unpackSpriteInstance(i) {
     cam: !!(fl & SPRITE_FLAG.cam),
     mat: SPRITE_MATERIALS[B.u8[o + 89]],
   };
+}
+/* ---------- the buffer (phase 20 E7) ---------- */
+/* one vertex array: the corner quad (location 0) and the instances (1-11, one step per instance), remade with the
+   context (initWebgl makes a new quad); the buffer is orphaned and refilled every frame */
+const spriteInstanceGL = { quad: null, vao: null, buf: null, size: 0, at: -1 };
+function spriteInstanceBuffer() {
+  const gl = gpuState.gl,
+    S = spriteInstanceGL;
+  if (S.quad === gpuState.quad && S.vao) return S;
+  S.quad = gpuState.quad;
+  S.vao = gl.createVertexArray();
+  S.buf = gl.createBuffer();
+  S.size = 0;
+  S.at = -1;
+  gl.bindVertexArray(S.vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.quad);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
+  for (const [loc] of SPRITE_INSTANCE_LAYOUT) {
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribDivisor(loc, 1);
+  }
+  gl.bindVertexArray(null);
+  return S;
+}
+/* the first bytes of spriteInstanceBytes into the buffer */
+export function uploadSpriteInstances(bytes) {
+  const gl = gpuState.gl,
+    S = spriteInstanceBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
+  if (bytes > S.size) S.size = Math.max(bytes, S.size * 2, 64 * SPRITE_INSTANCE_STRIDE);
+  gl.bufferData(gl.ARRAY_BUFFER, S.size, gl.DYNAMIC_DRAW);
+  if (bytes) gl.bufferSubData(gl.ARRAY_BUFFER, 0, spriteInstanceBytes.u8, 0, bytes);
+  S.at = -1;
+  return S;
+}
+/* the vertex array bound with its instance attributes starting at instance first (WebGL2 has no base instance, so the
+   attributes are pointed again for each run) */
+export function bindSpriteInstances(first) {
+  const gl = gpuState.gl,
+    S = spriteInstanceGL;
+  gl.bindVertexArray(S.vao);
+  if (S.at === first) return;
+  S.at = first;
+  gl.bindBuffer(gl.ARRAY_BUFFER, S.buf);
+  const o = first * SPRITE_INSTANCE_STRIDE;
+  for (const [loc, , n, fmt, off] of SPRITE_INSTANCE_LAYOUT)
+    if (fmt === 'u8i') gl.vertexAttribIPointer(loc, n, gl.UNSIGNED_BYTE, SPRITE_INSTANCE_STRIDE, o + off);
+    else
+      gl.vertexAttribPointer(
+        loc,
+        n,
+        fmt === 'f32' ? gl.FLOAT : fmt === 'f16' ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE,
+        fmt === 'u8n',
+        SPRITE_INSTANCE_STRIDE,
+        o + off
+      );
+}
+/* the materials' table for the instanced programs (uMats: specular, shininess, translucency, wrap) */
+const SPRITE_MATERIAL_TABLE = new Float32Array(32);
+export function spriteMaterialTable() {
+  const T = SPRITE_MATERIAL_TABLE;
+  for (let i = 0; i < SPRITE_MATERIALS.length; i++) {
+    const m = SURFACE_MATERIALS[SPRITE_MATERIALS[i]];
+    T[i * 4] = m.spec;
+    T[i * 4 + 1] = m.shin;
+    T[i * 4 + 2] = m.transl;
+    T[i * 4 + 3] = m.wrap;
+  }
+  return T;
 }
