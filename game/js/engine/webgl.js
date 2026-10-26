@@ -37,6 +37,7 @@ expose({
   gpuState: [() => gpuState],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  lossWatched: [() => lossWatched],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
   normalMapWorkerState: [() => normalMapWorkerState],
@@ -55,6 +56,7 @@ expose({
   trackTexture: [() => trackTexture, v => (trackTexture = v)],
   trimTextures: [() => trimTextures, v => (trimTextures = v)],
   uploadMesh: [() => uploadMesh, v => (uploadMesh = v)],
+  watchContextLoss: [() => watchContextLoss, v => (watchContextLoss = v)],
   webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
   windBendAt: [() => windBendAt, v => (windBendAt = v)],
   windGustAt: [() => windGustAt, v => (windGustAt = v)],
@@ -630,17 +632,7 @@ export function initWebgl(cv) {
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    cv.addEventListener('webglcontextlost', e => {
-      e.preventDefault();
-      gpuState.lost = 1;
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
-    });
-    cv.addEventListener('webglcontextrestored', () => {
-      gpuState.lost = 0;
-      gpuState.cv = null;
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
-      if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
-    });
+    watchContextLoss(cv);
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
     return true;
   } catch (e) {
@@ -649,6 +641,25 @@ export function initWebgl(cv) {
     gpuState.fail = 1;
     return false;
   }
+}
+/* phase 20 H: the lost and restored listeners, once per canvas (initWebgl runs again on the same canvas after every
+   restore, and each pair it added used to stay: the second loss remounted the walk view twice) */
+const lossWatched = new WeakSet();
+function watchContextLoss(cv) {
+  if (lossWatched.has(cv)) return false;
+  lossWatched.add(cv);
+  cv.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    gpuState.lost = 1;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
+  });
+  cv.addEventListener('webglcontextrestored', () => {
+    gpuState.lost = 0;
+    gpuState.cv = null;
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
+    if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
+  });
+  return true;
 }
 /* ---------- textures ---------- */
 function textureFromData(w, h, data, o = {}) {
