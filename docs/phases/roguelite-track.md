@@ -1108,7 +1108,8 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   - **RO-3b** every existing Billie (40 and 11 forms) to placeholders on its plan: quad (muskox, goat, tiger, rat,
     ferret), bird (goose, Swift, owl, peacock), fish (Pupfin, Sharktank), worm (Trump slug), octo (Zuckerberg),
     biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
-  - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art).
+  - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art). Done 2026-10-26 (HANDOFF): the
+    slot map works on the baked sheets and rigs, not per plan pair; the octopus and blob share one bone (`also`).
   - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
     (serpent).
