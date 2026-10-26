@@ -114,7 +114,7 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-7 | Station and trains | The station, platform and sky rail models; one train per region theme; the station's sheet takes "Start a run" and the Crest upgrades; the airship scenery only | HB-4b | 1-2 |
 | HB-8 | Departure and return | Board, climb the rail, the portal opens, the train flies in, the carriage loading screen; the return out of the portal (win and loss) | HB-2, HB-7 | 1-2 |
 | HB-10a | Square: shape and fountain (done 2026-10-26) | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
-| HB-10b | Square: edges and market | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
+| HB-10b | Square: edges and market (done 2026-10-26) | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
 | HB-10c | Square: people | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
 | HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
 | HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
@@ -544,7 +544,25 @@ into `track/hub`). The owner's answer: about 10 m. Checked against the code:
 - **Not done, moved to HB-10f**: the pinwheel street entries. The streets come in from the north-west, west and east
   inside the locked town zone; turning them means re-routing streets, which is the reproducible rebuild's work.
 - The hub spot [151.63, 59.36] stays (1.25 m from the basin's edge): every hub position is unchanged.
-- **HB-10b started**: its work so far is docs/plans/hb-10b-wip.patch (see HANDOFF's HB-10a entry for what's left).
+- **HB-10b started then**: its work so far is docs/plans/hb-10b-wip.patch (see HANDOFF's HB-10a entry for what's left).
+
+**Done in HB-10b** (2026-10-26, on `track/hub` after merging `ccr-144f3c08-vf09lo`; the WIP patch applied, then finished):
+- The edge layout: `tools/square-props.mjs` `SQUARE_EDGE`, 24 props by angle round the middle and an inset from the rim
+  (each marked `sq: 1`, laid again on a rerun): the market on the north rim (three stalls, a cart, crates, sacks, a
+  barrel), six planters at the street mouths, five streetlamps, two string lights, a solar canopy, three benches.
+  Nothing nearer the middle than 4.6 m (`WALK_R`); only planters in the portal view (`VIEW`). Laid by
+  `node tools/patch-copperleaf-square.mjs --edges` and by `build-copperleaf.mjs` (after the pasture, like the dressing).
+- `string_lights` (tools/build-props-square.py): a new low-poly model, two verdigris posts 6 m apart, a sagging wire of
+  nine bulbs, each a lamp glow (lit after dusk, `lampLit`). Its baked picture is scene/next/hub/string_lights.png.
+- The fountain at night (build-props-batch6.py): three glows round the basin (lit from below) and `fireflies`.
+- The `fireflies` effect (game/js/walk/effects.js): `{k:'fireflies', n, r}`, n small yellow-green glows drifting
+  within r metres, each blinking on its own beat, only after dusk (`lampLit`); reduced motion holds them still. The
+  Studio's prop editor lists it (PROP_EFFECT_KINDS).
+- Lit windows: already there; the 3D buildings' glass lights at night (prop-models.js glassLit), seen in the pictures.
+- Pictures by day and night: `python3 tools/island-shots.py OUT --hour=22 --only=town-square,town,square-portal,square-near`
+  (`--hour=H` is new: clear summer weather at that hour).
+- Left out: cafe_table and crates (voxel models, not the airship style; remakes later). The pasture test's rerun check
+  leaves out the `sq` props (laid after the pasture).
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
