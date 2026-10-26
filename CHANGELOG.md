@@ -22,7 +22,7 @@ kept aside in the browser).
   frame in its CPU time (it counted only the battle's own part, about 1 ms) and reports what the rigs cost.
 - **Lighter shadows** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Shadows in batches"
   draws the shadows of grass, bushes, leaves, people and models in batches, one draw for all the copies of a picture
-  or a model (in a jungle route the shadows from about 360 draws a frame to about 120), with the same look. "Models
+  or a model (in a jungle route the shadows from about 360 draws a frame to about 120, and to about 75 with the next two), with the same look. "Models
   in the shadow cache" keeps the far shadows of trees and other standing models from frame to frame (boats, the
   airship, windmill sails and propellers are drawn each frame, so their far shadows move again). "Far shadows hold
   still" stops the shadows of grass and leaves swaying past the sharp shadows round you (about 13 m) and keeps them
