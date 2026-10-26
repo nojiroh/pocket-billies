@@ -242,6 +242,90 @@ below against main and report what differs.
 - **Studio** (Engine preview): Blur guides (ground cells the blur keeps sharp, tinted; the focus point; a line with
   path, focus, tilt, strength) and Blur heatmap (the composite colours each pixel by its blur).
 
+### CAM-4 - The Camera section: zoom stops and the feel (planned 2026-10-26)
+Branch: `track/camera` (the owner makes it; this plan was written on `ccr-6dfb9e06-vr4uwi`, so start `track/camera`
+from that branch, or merge it in, so the plan is there). CAM-4a and CAM-4b are one session each, tagged `cam-4a-done`
+and `cam-4b-done`.
+
+The owner's brief (2026-10-26): a separate section in the Studio for the camera, for zooming in and out, to fully
+dial in the look and feel.
+
+#### Verified facts (main 2314da8, 2026-10-26)
+- Every camera dial is in one flat group, Engine > Camera (engine/settings.js `ENGINE_SPEC` 'camera', about 65
+  dials): framing, follow, zoom curve, encounter, moments, rise, silhouette, see-through circle, orbit. Engine's
+  presets and Hold to compare mix the camera with light and colour.
+- Zoom: CAM-2's one zoom (logic/camera-zoom.js `zoomShape`) with two ends (`zoomMin` 0.55, `zoomMax` 1.7) and one
+  curve shape; moments multiply it (`blendGoals`).
+- Hard-coded, so not tunable: the zoom eases at a rate of 5 a second, linearly (walk/camera.js:217); the wheel's
+  sensitivity `0.0012` (walk/input.js:90); the pinch is a plain distance ratio about the middle of the screen, not
+  the fingers; R sets zoom 1. The zoom is not kept between scenes or sessions (only across a room's door).
+- Names that mislead: the dial labelled "Zoom" is `fov`, the width of the scene shown (engine.json 0.68), not the
+  pinch zoom; "Distance" moves the camera back with the width kept, a dolly-zoom (a lens look). A scene's own `cam`
+  (pitch, h, fov) sits under both.
+- The camera guides draw the zones, but nothing shows the real tilt, height, field of view, metres across, or how
+  big an art pixel is on screen.
+
+#### Research (outside sources, 2026-10-26)
+- Linear zoom eases feel uneven (fast up close, slow far out); ease in log space: `z *= (zT/z)^(dt/T)` (Game
+  Developer, "Logarithmic interpolation"; GameDev.net; Factorio and GIMP threads).
+- Pinch should zoom about the point between the fingers, so it stays under them (Godot forum).
+- Cinemachine Group Framing: zoom only (field of view), dolly only (distance), or dolly then zoom, with a field of
+  view range; Follow Zoom keeps a shot width with damping.
+- Named framings (close, standard, wide) that a tap steps through while a hold zooms freely (camera mods).
+- Link's Awakening (2019): a fixed high camera with a strong tilt-shift; players split on the blur. Octopath keeps a
+  fixed camera. Neither publishes its field of view: tune by eye, with real numbers on screen.
+
+#### The owner's answers (2026-10-26)
+- A new top-level **Camera** section in the Studio (World & places, beside Engine), with its own preview.
+- **All** camera dials move there, in folders; one home per dial (Engine keeps a link only).
+- **3-5 named zoom stops** instead of two ends.
+- The player pinches freely; let go near a stop and it **eases to that stop**; double-tap cycles the stops.
+- Each **scene sets its starting stop**; the pinch lasts until the next scene.
+- **Blur per stop**, still times the player's Blur slider.
+- Pixel scale: **shown, not forced** (a readout marks crisp scales; stops are chosen by eye).
+- The branch: `track/camera`, made by the owner.
+
+#### CAM-4a - The section, the readouts and the feel
+- `SECTIONS.camera` (studio/js/camera-editor.js): its own live preview of any walk scene, the scopes (whole game,
+  one scene), ↺ per dial, Reset per folder. The Camera group's dials leave `ENGINE_SPEC` for a camera spec of their
+  own in folders: Framing, Zoom, Feel, Follow, Moments, Visibility, Island. The data keys stay `engine.camera` (game,
+  scene `look.camera`, map) and a scene's `cam`: no data change. The camera guides and Play moment move with it;
+  Engine keeps the blur guides and a link "Camera dials are in Camera".
+- Readouts on the preview: tilt (degrees), camera height and distance (m), vertical field of view (degrees), metres
+  across, screen pixels per art pixel at 32 px/m (whole scales marked), the zoom in use and the stop nearest.
+- Frames: phone portrait, phone landscape, desktop (the preview at that shape). Snapshot and hold to compare, the
+  camera only.
+- Feel (new dials; the defaults keep today's feel): zoom smoothing in seconds, eased in log space (`logic/` helper,
+  unit tested, frame-rate exact); pinch and wheel sensitivity; zoom about the pinch point (on/off); a soft rubber
+  band past the limits. Input reads them instead of the hard-coded numbers.
+- Renames in their own commits (Studio labels): "Zoom" (`fov`) reads "View width".
+- Checks: unit tests for the log ease and the pinch anchor; check-fast "Camera section" (opens, a dial writes its
+  key, the preview's readout moves; a planted fault caught); the existing camera checks stay green.
+
+#### CAM-4b - Zoom stops
+- `engine.camera.stops`: 3-5 named stops in zoom order (default Close, Normal, Far from today's ends, so no picture
+  moves), each `{name, zoom, pitch, dist, fov, blur, lead}`; `zoomShape` interpolates between neighbours, smooth and in
+  log zoom, carrying on past the end stops as now. `zoomMin`/`zoomMax` become the end stops (read once, then dropped
+  with the old ends, one commit).
+- Player zoom: free pinch; on release within a share of the gap (dial, "Pull to stops") it eases to the nearest
+  stop; double-tap (and R) cycles the stops; reduced motion: no pull animation, a plain ease. Moments still multiply
+  the zoom.
+- A scene's starting stop (`cam.stop`, map.schema.json; Walk scenes > camera), used on entering a scene.
+- Blur per stop: times the lens blur and the player's slider (walk-view-gl.js), eased with the zoom.
+- Studio: the curve graph (tilt, distance, view width, blur against zoom; drag a stop's point), a zoom slider that
+  scrubs the preview, add/rename/remove a stop (3-5), and camera looks (presets of camera dials only: Diorama, Classic
+  RPG, Close-up, plus your own).
+- Debug log: the `camera` section adds `stop` and the stop pulled to. Checks: unit tests for the stops' curve and
+  the pull; check-fast "Zoom stops" (a pinch released near Far settles on Far; a scene's start stop; a planted fault
+  caught).
+
+#### Risks
+- Moving the dials out of Engine touches the Studio's self-test, the scope counts and Engine's presets (a camera key
+  in a preset must still apply, or move to the camera looks).
+- Stops change `zoomShape`; every check and the graphics bench that set `zoomT` must keep their pictures at the
+  default stops.
+- The pull to a stop must not fight a moment's zoom or the room's saved camera at a door.
+
 ## Ideas for later (not planned)
 - Screen shake from trauma (hits, boss slams, landings), scaled by a setting, off with reduced motion.
 - Walk bob off by default (Nesky #44).

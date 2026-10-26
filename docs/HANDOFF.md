@@ -2,6 +2,19 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Camera track - CAM-4 planned: a Camera section in the Studio, zoom stops and the zoom's feel - 2026-10-26
+Branch `ccr-6dfb9e06-vr4uwi` (from main 2314da8); the plan's branch is `track/camera`, which the owner makes (from
+this branch, or merge it in). A planning session: no code changed. Details: docs/phases/camera-track.md, "CAM-4".
+- Checked against main: every camera dial sits in Engine > Camera (about 65, one flat list); the zoom's ease (5 a
+  second, linear), the wheel's sensitivity and the pinch about the screen's middle are hard-coded; the dial labelled
+  "Zoom" is `fov` (the width shown), not the pinch zoom; the zoom is not kept between scenes.
+- The owner's answers: a top-level Camera section with all camera dials in folders; 3-5 named zoom stops; free pinch
+  that eases to a stop near where you let go, double-tap cycles; each scene's starting stop; blur per stop; the pixel
+  scale shown, not forced.
+- Changed: docs/phases/camera-track.md (CAM-4: facts, research, answers, CAM-4a and CAM-4b), ROADMAP.md.
+- Verified: nothing to run (docs only).
+- Next session starts with: CAM-4a on `track/camera` (check the branch, merge main, check the facts again).
+
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
 owner's answers: the station side-on, its rail straight out to sea (no new art); the Gene Bank's door opens its room
