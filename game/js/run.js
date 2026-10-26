@@ -1,6 +1,6 @@
 'use strict';
 /* ================= THE RUN ON THE PAGE (roguelite track RL-8) =================
-   The run loop as the player meets it: starting a run at Copperleaf's airship mast, the checkpoints it saves, a
+   The run loop as the player meets it: starting a run at Skyline Station (HB-8: on its sky train, train-ride.js), the checkpoints it saves, a
    reload picking it up where it was, giving up, and the end (the payout screen is run-payout.js). The rules it plays
    by are logic/run-loop.js, logic/run-map.js and logic/run-state.js; the run's world is run-world.js.
    RL-9b, RL-13: the start sheet picks who comes from home (the team or storage, for starter points: rules.json
@@ -27,18 +27,7 @@ import {
   toast,
   typeBadgeHTML,
 } from './hooks.js';
-import {
-  ITEMS,
-  MODIFIERS,
-  PERKS,
-  PYRAMIDS,
-  RULES,
-  SPECIES,
-  START_NODE,
-  TRAINERS,
-  TYPES,
-  UNLOCK_DATA,
-} from './game-data.js';
+import { ITEMS, MODIFIERS, PERKS, PYRAMIDS, RULES, SPECIES, TRAINERS, TYPES, UNLOCK_DATA } from './game-data.js';
 import { graftOf } from './logic/graft-art.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
@@ -67,9 +56,10 @@ import { pyramidHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { JINGLES, jingle } from './sound.js';
-import { standByMast, startAirshipFlight } from './airship.js';
+import { standByMast } from './airship.js';
 import { runWorld, runWorldData, runWorldMake, runWorldSync } from './run-world.js';
-import { runLoadBegin } from './run-loading.js';
+import { trainOfRun, trainRideDepart, trainRideHome, trainVeil } from './train-ride.js';
+import { runLoadBegin, runLoadLanding, runLoadPlaces, runLoadShow } from './run-loading.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_HINTS: [() => RUN_HINTS],
@@ -84,8 +74,9 @@ expose({
   runExpNow: [() => runExpNow],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
-  runHint: [() => runHint, v => ((runHint = v), provide({ runHint }))],
+  runHint: [() => runHint, v => (runHint = v)],
   runHomeList: [() => runHomeList],
+  runHomeTold: [() => runHomeTold, v => (runHomeTold = v)],
   runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
   runModsNow: [() => runModsNow, v => (runModsNow = v)],
   runOver: [() => runOver, v => ((runOver = v), provide({ runOver }))],
@@ -100,21 +91,10 @@ expose({
   runStartSheet: [() => runStartSheet, v => ((runStartSheet = v), provide({ runStartSheet }))],
   runStartable: [() => runStartable, v => ((runStartable = v), provide({ runStartable }))],
   runTakeOff: [() => runTakeOff, v => ((runTakeOff = v), provide({ runTakeOff }))],
-  runTakeOffBar: [() => runTakeOffBar, v => (runTakeOffBar = v)],
   runTakeOffGo: [() => runTakeOffGo, v => (runTakeOffGo = v)],
 });
 /* eslint-enable no-func-assign */
-provide({
-  runBattleStart,
-  runGiveUp,
-  runHint,
-  runJump,
-  runOver,
-  runReleaseSheet,
-  runStartSheet,
-  runStartable,
-  runTakeOff,
-});
+provide({ runBattleStart, runGiveUp, runJump, runOver, runReleaseSheet, runStartSheet, runStartable, runTakeOff });
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
@@ -184,11 +164,15 @@ export function runGiveUp() {
     ],
   });
 }
-/** the payout screen's "Fly home": the run pays out and ends (logic/run-state.js runEnd: the hub's working fields
- * back, the kept Billies with their gains), the hub's world goes back in, everyone is healed and you stand by
- * Copperleaf's mast @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
+/** the payout screen's "Ride home": the run pays out and ends (logic/run-state.js runEnd: the hub's working fields
+ * back, the kept Billies with their gains), the hub's world goes back in behind a white veil, everyone is healed and
+ * (HB-8) the run's train comes home out of the portal and down the sky rail to Skyline Station (train-ride.js, gold
+ * after a win, battered after a loss), where you step off; then what the run brought home is told
+ * @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
+  const train = trainOfRun(saveData.run);
+  trainVeil(true, 0);
   /* RL-12: the Perks' payout rows, read before the run ends */
   const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
     opened = saveData.meta.expedition,
@@ -213,6 +197,11 @@ export function runEndHome(won, keep, itemPrice) {
   render();
   if (typeof debugLog !== 'undefined')
     debugLog.add('scene', `back in the hub: +${pay.research} Research, +${pay.crests} Crests, +${pay.scrap} Scrap`);
+  trainRideHome(train, won, () => runHomeTold(pay, opened));
+}
+/** home, off the train: what the run brought home, a newly opened Expedition, the milestones, a lost run's scene
+ * @param {{ research: number, crests: number, scrap: number }} pay @param {number} opened the Expedition before */
+function runHomeTold(pay, opened) {
   toast(
     `+${formatNumber(pay.research)} Research${pay.scrap ? `, ${formatNumber(pay.scrap)} Scrap` : ''}${pay.crests ? ` and ${plural(pay.crests, 'Crest')}` : ''}. You have ${formatNumber(saveData.meta.research)} Research.`
   );
@@ -247,7 +236,7 @@ export function runResume() {
   }
 }
 
-/* ---------- the start, at Copperleaf's airship mast ---------- */
+/* ---------- the start, at Skyline Station ---------- */
 /** may a run start now: a game under way, no run on, someone at home (the team or storage: the travellers leave
     healed), no battle */
 function runStartable() {
@@ -350,7 +339,7 @@ function runPackStep(kind, k, d) {
   uiState.runPack[kind][k] = next;
   runStartSheet();
 }
-/** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the airship adds, how it
+/** the sheet before a run: who comes from home, what you pack from Copperleaf's bag, what the station adds, how it
  * ends. Opened again in place on every tap (the same sheet: no new scrim, the scroll kept) */
 export function runStartSheet() {
   if (!runStartable()) return;
@@ -410,7 +399,7 @@ export function runStartSheet() {
     trained = P.home.filter(trains);
   const E = MODIFIERS.expeditions[expedition - 1],
     chal = runChallengesOpen().filter(c => mods.includes(c.id));
-  const html = `<p>The airship flies you out to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>The airship adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
+  const html = `<p>A sky train flies you through the portal to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>Skyline Station adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),
@@ -473,20 +462,21 @@ export function runStartSheet() {
   renderOverlay();
 }
 /**
- * Take off on a run: the run on the save with its map (logic/run-start.js runStartPlan, runStartOn) at once, then its
- * world (HB-2: run-world.js runWorldMake, the scenes made over several frames while the start sheet's Take off shows
- * how far it is; a world that can't be made leaves the run), then runTakeOffGo: day 1 on the landing (runArrive) in
- * phase 'fly', saved with the account at once, the airship's free flight from Copperleaf (it starts after the world
- * goes in, which would stop it, and is told where from: runArrive has moved the trip already) and the landing's
- * loading (run-loading.js: its screen shows at the landing if it isn't ready by then). A reload mid-flight is on the
- * landing; a reload before the world went in finds the run with no arrival yet (runResume finishes the take-off).
+ * Take off on a run: the run on the save with its map (logic/run-start.js runStartPlan, runStartOn) at once, the start
+ * sheet closed, then (HB-8) the run's sky train from Skyline Station (train-ride.js: it glides in, you board, it climbs
+ * the sky rail into the portal; the short white fade with reduced motion or no hub view to film in). Behind its
+ * white-out the run's loading screen comes up, the carriage's inside (run-loading.js), while the run's world is made
+ * (run-world.js runWorldMake, the scenes over several frames: the screen's first stage; a world that can't be made
+ * leaves the run), then runTakeOffGo: day 1 on the landing (runArrive), saved with the account, you standing there and
+ * the landing's own stages. A reload before the world went in finds the run with no arrival yet (runResume finishes
+ * the take-off).
  * RL-9b: `pick` is who comes from home and what is packed (the start sheet's runPickNow); left out (the debug menu, the
  * tests), the default pick alone and nothing packed. A Billie training at the ranch stops (its bank collected) and
  * everyone at home is healed first (the hub's healing is free), so the travellers leave healed.
  * @param {string} [seed] @param {Partial<import('../types/game-data').RunMapRules>} [map] the map's rules changed (the
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
  * @param {{ home: string[], pack: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
- * @param {number} [expedition] RL-13: the Expedition picked at the mast (I by default)
+ * @param {number} [expedition] RL-13: the Expedition picked at the station (I by default)
  */
 export function runTakeOff(seed, map, mods, pick, expedition) {
   if (!runStartable()) return;
@@ -510,41 +500,40 @@ export function runTakeOff(seed, map, mods, pick, expedition) {
   runStartOn(s, plan, { home: P.home, pack: P.pack });
   uiState.learnQ = [];
   runCatch.m = null;
-  /* HB-2: the start sheet stays while the world is made, its Take off a bar (nothing else on it can be tapped) */
-  runTakeOffBar(0, 0);
-  runWorldMake(runTakeOffBar).then(() => {
-    const sheet = uiState.modal && uiState.modal.cls === 'fly-sheet run-start';
-    if (sheet) closeModal();
-    if (saveData !== s || !s.run || runWorld.seed !== sd) return;
-    runTakeOffGo(s, data);
+  if (uiState.modal && uiState.modal.cls === 'fly-sheet run-start') closeModal();
+  /* SND-4: the run's first bookend, the title's motif as the train leaves the station (the payout is the other) */
+  if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
+  const train = trainOfRun(s.run);
+  trainRideDepart(train, () => {
+    if (saveData !== s || !s.run) return trainVeil(false);
+    /* HB-8: behind the white-out, the carriage; the run's places made while it shows */
+    runLoadBegin('take-off', -1, train);
+    runLoadShow();
+    trainVeil(false);
+    runWorldMake(runLoadPlaces).then(() => {
+      if (saveData !== s || !s.run || runWorld.seed !== sd) return;
+      runTakeOffGo(s, data);
+    });
   });
 }
-/** HB-2: the start sheet's Take off counts the run's scenes as they are made (made of `of`); the sheet can't be
- * tapped meanwhile. Nothing when the sheet isn't open (the debug menu, the tests) @param {number} made
- * @param {number} of */
-function runTakeOffBar(made, of) {
-  const sheet = /** @type {HTMLElement | null} */ (document.querySelector('#ov .sheet'));
-  if (!sheet || !uiState.modal || uiState.modal.cls !== 'fly-sheet run-start') return;
-  sheet.inert = true;
-  const b = /** @type {HTMLElement | null} */ (sheet.querySelector('[data-a=mb][data-i="0"]'));
-  if (!b) return;
-  b.classList.add('run-takeoff');
-  b.textContent = of ? `Readying the airship… ${made}/${of}` : 'Readying the airship…';
-}
-/** the take-off once the run's world is in: day 1 on the landing (runArrive) in phase 'fly', saved with the account,
- * the flight and the landing's loading. runResume finishes a take-off a reload stopped before this with it too
- * @param {any} s the save @param {any} data runWorldData() @param {boolean} [fly] false: no flight (a resume) */
-function runTakeOffGo(s, data, fly = true) {
+/** the take-off once the run's world is in: day 1 on the landing (runArrive), saved with the account; then (not on a
+ * resume, which stands you there itself) you stand on the landing and its loading's own stages begin.
+ * runResume finishes a take-off a reload stopped before this with it too
+ * @param {any} s the save @param {any} data runWorldData() @param {boolean} [land] false: a resume */
+function runTakeOffGo(s, data, land = true) {
   runArrive(s, 0, data);
   s.visited[s.trip.node] = 1;
-  s.run.at.phase = 'fly';
+  s.run.at.phase = land ? 'walk' : 'fly';
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `a run starts: ${s.run.map.nodes.length} places`);
-  if (!fly) return;
-  startAirshipFlight(s.trip.node, { free: true, from: START_NODE });
-  runLoadBegin('take-off', s.trip.node);
-  /* SND-4: the run's first bookend, the title's motif as the airship leaves the mast (the payout is the other) */
-  if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
+  if (!land) return;
+  uiState.inside = uiState.goingIn = uiState.backAt = uiState.roam = uiState.mapSel = null;
+  const node = s.trip.node;
+  standByMast(node);
+  uiState.tab = 'walk';
+  runHint('landing');
+  runLoadLanding(node);
+  render();
 }
 
 /* ---------- arrivals ---------- */

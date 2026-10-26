@@ -110,6 +110,7 @@ import '../../game/js/logic/studio-layout.js';
 import '../../game/js/logic/studio-test-report.js';
 import '../../game/js/logic/surf.js';
 import '../../game/js/logic/time-of-day.js';
+import '../../game/js/logic/train-path.js';
 import '../../game/js/logic/type-rename.js';
 import '../../game/js/logic/ui-dials.js';
 import '../../game/js/logic/ui-inspect.js';
