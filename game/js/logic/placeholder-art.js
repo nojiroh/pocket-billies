@@ -13,10 +13,10 @@
 /** @typedef {[number, number, number]} Rgb */
 /**
  * @typedef {{ n: string, par?: string, c?: [number, number], size?: [number, number] | null, pv?: [number, number],
- *   shape?: string, tone?: string, z?: number, zb?: number, slot?: string | null, rr?: number, face?: boolean,
+ *   shape?: string, tone?: string, z?: number, zb?: number, slot?: string | null, also?: string, rr?: number, face?: boolean,
  *   squash?: boolean, lag?: number, mirror?: string, label?: string }} PlanBone a bone as bodyPlans.json writes it
  * @typedef {{ n: string, par: string, c: [number, number], size: [number, number] | null, pv: [number, number],
- *   shape: string, tone: string, z: number, zb: number, slot: string | null, rr: number, face: boolean,
+ *   shape: string, tone: string, z: number, zb: number, slot: string | null, also: string | null, rr: number, face: boolean,
  *   squash: boolean, lag: number, label: string, src: string, flip: boolean }} PlaceholderBone a bone worked out:
  *   mirrors applied, the form's sizes on; `src` names the bone whose picture it draws (flipped when `flip`)
  * @typedef {{ name: string, rig: string, line?: string, stage?: number, form?: string, plan: string,
@@ -135,6 +135,7 @@ export function placeholderBones(P, form) {
       z: o.z ?? 5,
       zb: o.zb ?? o.z ?? 5,
       slot: o.slot === undefined ? null : o.slot,
+      also: o.also || null,
       rr: o.rr || 0,
       face: !!o.face,
       squash: !!o.squash,
