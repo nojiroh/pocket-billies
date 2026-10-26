@@ -106,7 +106,7 @@ Guides and forum posts, not design papers: read as examples, not facts.
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
 | RS-0 | The plan (done 2026-10-26) | this file, ROADMAP, BRANCHES, HANDOFF | none | in the planning session |
-| RS-1 | Data and save | `residents.json` + schema, type, `check-data.mjs` rule (home and level rows exist); `meta.residents` and `run.invited` in the validators; `logic/residents.js` (pure: the run's candidate from its seed, invite, settle at the run's end); the `resident:` condition kind; Node tests | none | 1 |
+| RS-1 | Data and save (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | `residents.json` + schema, type, `check-data.mjs` rule (home and level rows exist); `meta.residents` and `run.invited` in the validators; `logic/residents.js` (pure: the run's candidate from its seed, invite, settle at the run's end); the `resident:` condition kind; Node tests | none | 1 |
 | RS-2 | Meeting in a run | the favour from a run town's named local and one event; quest payout = invite; the payout screen's line; candidates in the Run Lab and the sim; an in-game test step | RS-1 | 1 |
 | RS-3 | Living in Copperleaf | residents as people at their buildings or cottages, door acts switched, the room card's upgrades, banter lines; the Studio's hub editor shows them | RS-1 | 1-2 |
 | RS-4 | Services and upgrades | the first four residents' unlock rows and effects (`run.fx`, shops.json stock), the headcount milestones; balance by the run sim | RS-2, RS-3 | 1-2 |
@@ -130,11 +130,32 @@ About 5-7 sessions. RS-2 and RS-3 can run side by side after RS-1 (different fil
 - **RS-4/5.** Files: `unlocks.json`, `buildings.json` (`soon` off the Workshop), `shops.json`, `logic/effects.js`
   rows. Tests: each grant's effect; caps; the sim's win rates move by no more than the owner allows.
 
+**Done in RS-1** (2026-10-26, from main 2314da82; the owner's answers: build on the session's branch since
+`track/residents` doesn't exist yet, the drafted names, the word "residents"):
+- `game/data/residents.json`: Dottie Filewell (Archivist, library, the free first one), Mo Stockley (Shopkeeper,
+  `shop`), Bertha Brew (Innkeeper, inn), Gus Gasket (Mechanic, Workshop), Hayden Bales (Rancher's hand, ranch),
+  Compass Rosa (Cartographer, station), Seamus Stitch (Tailor, a cottage), Dr. Helix (Geneticist, Gene Bank, weight 0
+  until the splicing track). Rows: `name, role, home, first?, meet {where: town|event, weight}, levels, about`;
+  `levels` empty until RS-4. Its schema, the `Resident` type, `RESIDENTS` (game-data.js), `dataResidents` (a home is
+  a buildings.json key, a Copperleaf prop's `k` or `house`; one `first` at most; a level is a row sold at the home),
+  wired into check-data and the Studio's check.
+- The save: `meta.residents` (id -> the run, by `meta.runs`, they moved in after; `metaFill` gives an older meta `{}`)
+  and `run.invited` (one id), in `validMeta`, `validRun` and the types.
+- `game/js/logic/residents.js`: `residentCandidate(s, R, where)` (the `first` one while nobody lives there, else the
+  run's 'resident' stream by weight among those left; null once someone is invited), `residentInvite(s, id, R)`,
+  `residentSettle(meta, run)` (called in `runEnd` after `meta.runs` counts the run, won or lost),
+  `residentsHere(s)`. Loaded before run-state.js on both pages and in the Studio's logic worker.
+- Conditions `resident:<id>` and `residents` (a count); unlocks.json's check refuses a `resident:` nobody has.
+- The debug log lists the residents' ids (no names).
+- **For RS-2**: `runEnd` doesn't return who moved in (the payout's line needs it): read `run.invited` before
+  `runEnd`, or return it with the payout. The unlock rows of RS-4 need buildings.json rows for the store, inn and
+  library (today an unlock is sold only `at` a buildings.json key).
+
 ## Ask me before (recommendation first)
-1. The roster's names, looks and lines (Claude drafts in RS-1, the owner approves).
+1. The roster's looks and lines (names approved in RS-1).
 2. Pace: one invite per run (rec) / two; residents capped by the 10 cottages (rec: no cap, the building residents
    don't need one).
-3. The player-facing word: "residents" (rec) / "islanders" / "neighbours".
+3. The player-facing word: **answered in RS-1: "residents"**.
 4. The power level's size per resident (RS-4 proposes numbers from the sim).
 
 ## Risks
