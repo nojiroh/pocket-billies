@@ -92,7 +92,14 @@ export function shadowSetup() {
   walkRenderer.itemGen = 1;
   engineContext.look = {
     shadows: { cascades: true, nearRadius: 13, buildings: true, fit: false, lampShadows: 2 },
-    quality: { shadowMap: 2048, shadowCache: true },
+    /* the frozen calls are the old paths' (phase 20 R4: the R3 switches on by default; each test turns its own on) */
+    quality: {
+      shadowMap: 2048,
+      shadowCache: true,
+      shadowInstances: false,
+      modelShadowCache: false,
+      farShadowsStill: false,
+    },
     world: { curve: 0.002 },
   };
   G.imageTexture = im => (im && im.T) || null;
