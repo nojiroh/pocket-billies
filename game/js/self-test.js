@@ -171,6 +171,7 @@ import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-contr
 import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
+  BASELINE_LABELS: [() => BASELINE_LABELS],
   BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
   BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
@@ -2436,8 +2437,9 @@ async function runFullTest(mode) {
             throw new Error(`measured ${B.length} of ${BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length}`);
           return baselineNote(B);
         },
-        150,
-        600
+        /* phase 20 R4: four measures a stop (was two) */
+        300,
+        1200
       );
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
@@ -3196,11 +3198,22 @@ const BASELINE_STOPS = [
   { id: 'town', name: 'A run town', time: 12.5, run: { seed: 'BASELINE2', type: 'town', biome: 'meadow' } },
   { id: 'battle', name: 'A battle', time: 12.5, battle: true },
 ];
-/* the two resolutions: [name, the engine's quality group for it] */
+/* the measures at each stop: [name, the engine's quality group for it]. The two resolutions; then (phase 20 R4) the
+   game's own resolution with the phone pixel budget on (1.2 MP on Android and iPhone; the graphics test pins
+   resolution 1, so only this measures it; other devices draw as 'own'), and with every renderer switch still off by
+   default on: the baseline sets the player's dials aside, so it never saw them */
 const BASELINE_RESOLUTIONS = [
   ['r1', { auto: false, resolution: 1 }],
   ['own', { auto: false }],
+  ['ownPhonePixels', { auto: false, phonePixels: true }],
+  ['ownAllOn', { auto: false, phonePixels: true, spriteInstances: true, skyLast: true, stableLights: true }],
 ];
+const BASELINE_LABELS = {
+  r1: 'resolution 1',
+  own: 'the game’s own resolution',
+  ownPhonePixels: 'the game’s own resolution, phone pixel budget',
+  ownAllOn: 'the game’s own resolution, every switch on',
+};
 /* the player on the place's arrival spot, the camera straight and at its own zoom */
 function baselineStand() {
   const sc = walkView.sc;
@@ -3396,7 +3409,7 @@ async function rendererBaseline(o) {
         if (st.battle) await baselineBattle(o.foeSp);
         for (const [res, quality] of BASELINE_RESOLUTIONS) {
           if (selfTest.stop) break;
-          o.show(`${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}`);
+          o.show(`${st.name}, ${BASELINE_LABELS[res]}`);
           saveData.preferences.expert = true;
           saveData.preferences.eng = { quality: { ...quality } };
           if (!st.battle) baselineStand();
