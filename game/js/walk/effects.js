@@ -342,6 +342,28 @@ export function effectsPass(C, items, X, dark, t, dt) {
             [1, 0.9, 0.62],
             (0.5 + 0.8 * on) * share * k * fl * lb * (it.M.glowK ?? 1),
           ]);
+      } else if (e.k === 'fireflies') {
+        /* HB-10b: n fireflies drifting within r metres of the point after dusk, each blinking on its own slow beat;
+        none by day. Reduced motion holds them still (they still blink, more slowly) */
+        const on = lampLit(it.x, it.z, dark);
+        if (on > 0.02)
+          for (let n = 0, N = e.n || 6, r = e.r || 2; n < N; n++) {
+            const q = sd * 0.7 + n * 2.39,
+              w = (t * (rm || 0.3)) / 1000,
+              ph = (w / (3.1 + (n % 3) * 0.7) + n / N) % 1,
+              blink = Math.max(0, Math.sin(ph * Math.PI * 2)) ** 2,
+              d = r * (0.35 + ((0.65 * (((n * 0.618) % 1) + 0.15 * Math.sin(rm * w * 0.31 + q))) % 1)),
+              a = q + rm * w * (0.12 + (n % 4) * 0.03) * (n % 2 ? 1 : -1);
+            if (blink > 0.03)
+              glows.push([
+                x + Math.cos(a) * d,
+                y + 0.5 + 0.6 * ((n * 0.37) % 1) + rm * 0.15 * Math.sin(w * 0.9 + q),
+                z + Math.sin(a) * d,
+                0.11 * gk,
+                [0.78, 1, 0.42],
+                (0.4 + 1.6 * blink) * on * lb,
+              ]);
+          }
       }
     });
     /* alpha 0.4: a 3D building's front windows glow when its window shader lights them (the same seed), not by a second guess */
