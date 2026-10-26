@@ -30,7 +30,7 @@ import { engineSetting } from '../engine/settings.js';
 import { SURFACE_MATERIALS, bindGridQuad, bindQuad, gpuState, imageTexture, normalize3 } from '../engine/webgl.js';
 import { FIXED_BACK, FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
-import { setSpriteUniforms, useWalkProgram, worldCurveDrop } from './draw-common.js';
+import { setSpriteGeometry, setSpriteUniforms, spriteGeometry, useWalkProgram, worldCurveDrop } from './draw-common.js';
 import { frameBudgetLeft } from './quality-cull.js';
 import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 /* eslint-disable no-func-assign */
@@ -42,12 +42,13 @@ expose({
   SILHOUETTE_AMOUNT: [() => SILHOUETTE_AMOUNT],
   SILHOUETTE_PULL: [() => SILHOUETTE_PULL],
   SILHOUETTE_TINT: [() => SILHOUETTE_TINT],
+  SPRITE_FRAME: [() => SPRITE_FRAME],
   SPRITE_LIST: [() => SPRITE_LIST],
-  TURNED_BACK: [() => TURNED_BACK],
-  TURNED_RIGHT: [() => TURNED_RIGHT],
+  SPRITE_RECORDS: [() => SPRITE_RECORDS],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
   byImageId: [() => byImageId],
+  copySpriteLook: [() => copySpriteLook, v => (copySpriteLook = v)],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
@@ -60,10 +61,18 @@ expose({
   imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
+  newSpriteRecord: [() => newSpriteRecord, v => (newSpriteRecord = v)],
   outlineColourOf: [() => outlineColourOf, v => (outlineColourOf = v)],
   personWho: [() => personWho, v => (personWho = v)],
   readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
+  setSpriteCrossRecord: [() => setSpriteCrossRecord, v => (setSpriteCrossRecord = v)],
+  setSpriteRecord: [() => setSpriteRecord, v => (setSpriteRecord = v)],
+  spriteDrawList: [() => spriteDrawList, v => (spriteDrawList = v)],
   spriteDrawn: [() => spriteDrawn],
+  spriteFrame: [() => spriteFrame, v => (spriteFrame = v)],
+  spriteRecord: [() => spriteRecord, v => setSpriteRecord(v)],
+  spriteRecordAt: [() => spriteRecordAt, v => (spriteRecordAt = v)],
+  spriteSideEffects: [() => spriteSideEffects, v => (spriteSideEffects = v)],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   talkPartner: [() => talkPartner, v => (talkPartner = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
@@ -132,12 +141,246 @@ function townRiseAmount(it) {
     c = 1.7;
   return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
 }
-/* phase 20 C2: the sprite pass's list and a turned picture's axes, kept from frame to frame (engine/frame-lists.js) */
+/* phase 20 C2: the sprite pass's list, kept from frame to frame (engine/frame-lists.js) */
 const SPRITE_LIST = [],
-  TURNED_RIGHT = new Float32Array(3),
-  TURNED_BACK = new Float32Array(3),
   spriteDrawn = it => !(it.flat || it.vol || it.vis === false),
   byImageId = (a, b) => imageId(a.im) - imageId(b.im);
+/* phase 20 E1: the pictures the sprite pass draws, grouped by picture (v32: fewer texture switches; depth decides what
+   is in front, so order matters only where two pictures share a plane): imageId's first-seen order, then item order */
+function spriteDrawList(items) {
+  return filterInto(items, spriteDrawn, SPRITE_LIST).sort(byImageId);
+}
+/* phase 20 E1: what the pass works out once a frame: the camera, how much a crown shades itself and toward where (the
+   sun across the picture), and how much a tree's crossing picture shows (by the camera's turn) */
+const SPRITE_FRAME = { C: null, selfK: 0, selfD: [0, 0], crossK: 0 };
+function spriteFrame(C, sun) {
+  const F = SPRITE_FRAME,
+    sd = sun.dir,
+    sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
+    ss = engineSetting('shadows', 'selfShade') ?? 0.7;
+  F.C = C;
+  F.selfD[0] = (sd[0] * C.right[0] + sd[2] * C.right[2]) / sl;
+  F.selfD[1] = -sd[1] / sl;
+  F.selfK = sd[1] > 0.05 && ss > 0 ? ss * engineSetting('shadows', 'strength') * Math.min(1, sd[1] * 4) : 0;
+  F.crossK = Math.abs(Math.sin(C.yaw || 0));
+  return F;
+}
+/* phase 20 E1: one picture's draw as values, the uniforms it is drawn with, in a record kept from frame to frame. mode:
+   'model' (a model: no picture; its hit target and clock hands), 'front' (a 3D building's front, drawn with its walls),
+   'none' (no texture yet, or not risen yet), 'wave' (a flag, on the grid quad), 'quad'. A tree's crossing picture is
+   its own record (cr, drawn when crossOn) */
+function newSpriteRecord(cross) {
+  return {
+    it: null,
+    mode: 'none',
+    T: null,
+    x: 0,
+    y: 0,
+    z: 0,
+    ox: 0,
+    oy: 0,
+    w: 0,
+    h: 0,
+    uv: new Float32Array([0, 0, 1, 1]),
+    flip: 1,
+    slope: 0,
+    shear: 0,
+    right: new Float32Array(3),
+    back: new Float32Array(3),
+    fixed: 0,
+    noRecv: 0,
+    flipN: 1,
+    lk: null,
+    mt: null,
+    fol: [0, 0],
+    self: [0, 0, 0],
+    emit: 0,
+    fade: 1,
+    rim: 0,
+    lit: 1,
+    shade: 0,
+    dz: 0,
+    wave: null,
+    rk: 1,
+    crossOn: false,
+    cr: cross ? newSpriteRecord(false) : null,
+  };
+}
+const SPRITE_RECORDS = [];
+function spriteRecordAt(i) {
+  return SPRITE_RECORDS[i] || (SPRITE_RECORDS[i] = newSpriteRecord(true));
+}
+function spriteRecord(it, F, r) {
+  r.it = it;
+  r.crossOn = false;
+  if (it.vox) return (r.mode = 'model');
+  const T = (r.T = imageTexture(it.im));
+  if (!T) return (r.mode = 'none');
+  const s = it.mpp,
+    hM = -it.oy * s;
+  /* player visibility: a picture covering you is thinned out already (walk/quality-cull.js coverItems) */
+  const fade = (r.fade = it.fade ?? 1),
+    rk = (r.rk = walkRenderer.rise ? townRiseAmount(it) : 1);
+  if (rk < 0.002 && !it.person) return (r.mode = 'none');
+  if (it.bld3) return (r.mode = 'front');
+  const C = F.C;
+  /* phase 09 batch 8: a model's picture layer may face another way than the front (yaw, radians: pi/2 the right side,
+     pi the back), a tower's windows on every face; phase 09 batch 9: and the placement's turn (logic/prop-turn.js) */
+  if (it.fixed) {
+    const ro = pictureFacing(it);
+    if (ro) {
+      const cr = Math.cos(ro),
+        sr = Math.sin(ro);
+      r.right[0] = cr;
+      r.right[1] = 0;
+      r.right[2] = sr;
+      r.back[0] = sr;
+      r.back[1] = 0;
+      r.back[2] = -cr;
+    } else {
+      r.right.set(FIXED_RIGHT);
+      r.back.set(FIXED_BACK);
+    }
+  } else {
+    r.right.set(C.right);
+    r.back.set(C.back);
+  }
+  r.fixed = it.fixed && it.plane ? 1 : 0;
+  /* phase 09 batch 1: a tree's leaf clumps take no shadows from the shadow map (their crown's own shadow would stripe
+     them); the crown shades itself instead (self) */
+  r.noRecv = it.noRecv ? 1 : 0;
+  r.flipN = it.flip || 1;
+  r.lk = it.lk;
+  r.mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS[it.person ? 'cloth' : 'plain'];
+  const f = foliageAmount(it);
+  r.fol[0] = f[0];
+  r.fol[1] = f[1];
+  r.self[0] = F.selfK > 0 && it.k === 'prop' && !it.fixed && !it.far && hM > 1.2 && f[0] > 0 ? F.selfK : 0;
+  r.self[1] = F.selfD[0] * (it.flip || 1);
+  r.self[2] = F.selfD[1];
+  r.emit = it.glow ? it.glow * 1.6 : 0;
+  r.rim = it.person ? 0.4 : 0.12;
+  r.lit = it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1;
+  r.shade = it.person ? 0.45 : it.far ? 0.3 : 0.55;
+  spriteGeometry(r, it, it.z, rk);
+  /* phase 09 batch 10: a model's picture layer may be pulled toward the eye (prop-models.js eyeward) */
+  r.dz = it.eyeward ? -it.eyeward : 0;
+  r.wave = it.wave || null;
+  if (it.wave) return (r.mode = 'wave');
+  /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge (IS-1: by the
+     sine of the turn, so a camera looking south, as an orbiting one does, sees the first picture face on again and the
+     second edge-on fades out). It keeps the first's look, at its full height and with no pull toward the eye */
+  if (it.cross && F.crossK > 0.04) {
+    const c = r.cr;
+    r.crossOn = true;
+    copySpriteLook(c, r);
+    c.right[0] = 0;
+    c.right[1] = 0;
+    c.right[2] = it.flip > 0 ? 1 : -1;
+    c.back[0] = -1;
+    c.back[1] = 0;
+    c.back[2] = 0;
+    c.fixed = 0;
+    c.fade = fade * Math.min(1, F.crossK * 4);
+    c.dz = 0;
+    spriteGeometry(c, it);
+  }
+  return (r.mode = 'quad');
+}
+/* the values a crossing picture keeps from its tree's record */
+function copySpriteLook(c, r) {
+  c.it = r.it;
+  c.mode = 'quad';
+  c.T = r.T;
+  c.noRecv = r.noRecv;
+  c.flipN = r.flipN;
+  c.lk = r.lk;
+  c.mt = r.mt;
+  c.fol[0] = r.fol[0];
+  c.fol[1] = r.fol[1];
+  c.self[0] = r.self[0];
+  c.self[1] = r.self[1];
+  c.self[2] = r.self[2];
+  c.emit = r.emit;
+  c.rim = r.rim;
+  c.lit = r.lit;
+  c.shade = r.shade;
+  c.rk = 1;
+  c.wave = null;
+}
+/* phase 20 E1: a record's uniforms, in the order the pass sent them before the records */
+function setSpriteRecord(p, r) {
+  const gl = gpuState.gl,
+    U = p.U,
+    it = r.it,
+    mt = r.mt;
+  gl.uniform3fv(U.uRight, r.right);
+  gl.uniform3fv(U.uBack, r.back);
+  gl.uniform1f(U.uFixed, r.fixed);
+  if (U.uNoRecv) gl.uniform1f(U.uNoRecv, r.noRecv);
+  gl.uniform1f(U.uFlipN, r.flipN);
+  setPropLookUniforms(U, r.lk);
+  gl.uniform4f(U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
+  if (U.uFol) gl.uniform2f(U.uFol, r.fol[0], r.fol[1]);
+  if (U.uSelf) gl.uniform3f(U.uSelf, r.self[0], r.self[1], r.self[2]);
+  gl.uniform1f(U.uEmit, r.emit);
+  gl.uniform1f(U.uFade, r.fade);
+  gl.uniform1f(U.uRim, r.rim);
+  gl.uniform1f(U.uLit, r.lit);
+  gl.uniform1f(U.uShade, r.shade);
+  gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, r.T.t);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, r.T.n);
+  setSpriteGeometry(p, r);
+  if (r.dz) gl.uniform1f(U.uDZ, r.dz);
+}
+/* a crossing picture's: only what differs from its tree's */
+function setSpriteCrossRecord(p, c) {
+  const gl = gpuState.gl,
+    U = p.U;
+  gl.uniform3f(U.uRight, c.right[0], c.right[1], c.right[2]);
+  gl.uniform3f(U.uBack, c.back[0], c.back[1], c.back[2]);
+  gl.uniform1f(U.uFixed, c.fixed);
+  gl.uniform1f(U.uFade, c.fade);
+  setSpriteGeometry(p, c);
+}
+/* phase 20 E2: what the pass does for a picture besides drawing it, in the order it always did: a model's hit target
+   and clock hands, a 3D building front's fade (its walls are drawn with it, drawBoxFaces) and hit target, a picture's
+   turning blades, clock hands and hit target (not for far pictures or a model's layers). A flag does none of these */
+function spriteSideEffects(p, r, C, X, hits, labels, PPU, sc) {
+  const it = r.it;
+  if (r.mode === 'model') {
+    if (!it.far) addHitTarget(it, C, hits, labels, PPU);
+    /* phase 09: a modelled clock tower keeps its moving hands (pictures on its modelled face) */
+    if (it.M && it.M.hands && !it.far && !it.layer) drawClockHands(p, it, C, X);
+    return;
+  }
+  if (r.mode === 'front') {
+    walkRenderer.bfade.set(it, r.fade * Math.min(1, r.rk));
+    addHitTarget(it, C, hits, labels, PPU);
+    return;
+  }
+  if (r.mode !== 'quad') return;
+  if (it.M && it.M.blades) {
+    const b = it.M.blades,
+      BT = imageTexture(artImage(b.img));
+    if (BT)
+      drawRotatingBlades(
+        p,
+        it,
+        b,
+        BT,
+        (reducedMotion ? 0 : walkView.t / 1100) * (sc.wind || 1) * engineSetting('grass', 'wind'),
+        C,
+        X
+      );
+  }
+  if (it.M && it.M.hands && !it.far && !it.layer) drawClockHands(p, it, C, X);
+  if (it.far || it.layer) return;
+  addHitTarget(it, C, hits, labels, PPU);
+}
 export function drawSprites(C, items, X, hits, labels, PPU) {
   const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
@@ -162,127 +405,35 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uFixed, 0);
   if (walkRenderer.bfade) walkRenderer.bfade.clear();
   else walkRenderer.bfade = new Map();
-  const sd = sun.dir,
-    sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
-    selfD = [(sd[0] * C.right[0] + sd[2] * C.right[2]) / sl, -sd[1] / sl],
-    selfK =
-      sd[1] > 0.05 && (engineSetting('shadows', 'selfShade') ?? 0.7) > 0
-        ? (engineSetting('shadows', 'selfShade') ?? 0.7) * engineSetting('shadows', 'strength') * Math.min(1, sd[1] * 4)
-        : 0;
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
-  /* v32: drawn grouped by picture (fewer texture switches); depth decides what is in front, so order doesn't matter */
-  const L = filterInto(items, spriteDrawn, SPRITE_LIST);
-  L.sort(byImageId);
-  for (const it of L) {
+  const F = spriteFrame(C, sun),
+    L = spriteDrawList(items);
+  for (let i = 0; i < L.length; i++) {
+    const it = L[i],
+      r = spriteRecordAt(i);
     /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
     gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
-    if (it.vox) {
-      if (!it.far) addHitTarget(it, C, hits, labels, PPU);
-      /* phase 09: a modelled clock tower keeps its moving hands (pictures on its modelled face) */
-      if (it.M && it.M.hands && !it.far && !it.layer) drawClockHands(p, it, C, X);
-      continue;
-    }
-    const T = imageTexture(it.im);
-    if (!T) continue;
-    const s = it.mpp,
-      hM = -it.oy * s;
-    /* player visibility: a picture covering you is thinned out already (walk/quality-cull.js coverItems) */
-    const fade = it.fade ?? 1;
-    const rk = walkRenderer.rise ? townRiseAmount(it) : 1;
-    if (rk < 0.002 && !it.person) continue;
-    if (it.bld3) {
-      walkRenderer.bfade.set(it, fade * Math.min(1, rk));
-      addHitTarget(it, C, hits, labels, PPU);
-      continue;
-    }
-    {
-      /* phase 09 batch 8: a model's picture layer may face another way than the front (yaw, radians: pi/2 the right
-         side, pi the back), a tower's windows on every face */
-      const ro = pictureFacing(it) /* phase 09 batch 9: and the placement's turn (logic/prop-turn.js) */,
-        cr = Math.cos(ro),
-        sr = Math.sin(ro);
-      if (ro) {
-        TURNED_RIGHT[0] = cr;
-        TURNED_RIGHT[2] = sr;
-        TURNED_BACK[0] = sr;
-        TURNED_BACK[2] = -cr;
-      }
-      gl.uniform3fv(U.uRight, it.fixed ? (ro ? TURNED_RIGHT : FIXED_RIGHT) : C.right);
-      gl.uniform3fv(U.uBack, it.fixed ? (ro ? TURNED_BACK : FIXED_BACK) : C.back);
-    }
-    gl.uniform1f(U.uFixed, it.fixed && it.plane ? 1 : 0);
-    /* phase 09 batch 1: a tree's leaf clumps take no shadows from the shadow map (their crown's own shadow would
-       stripe them); the crown shades itself instead (uSelf) */
-    if (U.uNoRecv) gl.uniform1f(U.uNoRecv, it.noRecv ? 1 : 0);
-    gl.uniform1f(U.uFlipN, it.flip || 1);
-    setPropLookUniforms(U, it.lk);
-    const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS[it.person ? 'cloth' : 'plain'];
-    gl.uniform4f(U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
-    if (U.uFol) {
-      const f = foliageAmount(it);
-      gl.uniform2f(U.uFol, f[0], f[1]);
-    }
-    if (U.uSelf) {
-      const k =
-        selfK > 0 && it.k === 'prop' && !it.fixed && !it.far && hM > 1.2 && foliageAmount(it)[0] > 0 ? selfK : 0;
-      gl.uniform3f(U.uSelf, k, selfD[0] * (it.flip || 1), selfD[1]);
-    }
-    gl.uniform1f(U.uEmit, it.glow ? it.glow * 1.6 : 0);
-    gl.uniform1f(U.uFade, fade);
-    gl.uniform1f(U.uRim, it.person ? 0.4 : 0.12);
-    gl.uniform1f(U.uLit, it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1);
-    gl.uniform1f(U.uShade, it.person ? 0.45 : it.far ? 0.3 : 0.55);
-    gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, T.t);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, T.n);
-    setSpriteUniforms(p, it, null, it.z, rk);
-    /* phase 09 batch 10: a model's picture layer may be pulled toward the eye (prop-models.js eyeward); uFwd points
-       away from the eye */
-    if (it.eyeward) gl.uniform1f(U.uDZ, -it.eyeward);
-    if (it.wave) {
-      gl.uniform3fv(U.uWave, it.wave);
+    const mode = spriteRecord(it, F, r);
+    if (mode === 'wave') {
+      setSpriteRecord(p, r);
+      gl.uniform3fv(U.uWave, r.wave);
       bindGridQuad();
       gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
       gl.uniform3f(U.uWave, 0, 0, 0);
-      if (it.eyeward) gl.uniform1f(U.uDZ, 0);
+      if (r.dz) gl.uniform1f(U.uDZ, 0);
       bindQuad();
-      continue;
-    }
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    if (it.eyeward) gl.uniform1f(U.uDZ, 0);
-    /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge (IS-1: by
-       the sine of the turn, so a camera looking south, as an orbiting one does, sees the first picture face on again
-       and the second edge-on fades out) */
-    const crossK = Math.abs(Math.sin(C.yaw || 0));
-    if (it.cross && crossK > 0.04) {
-      gl.uniform3f(U.uRight, 0, 0, it.flip > 0 ? 1 : -1);
-      gl.uniform3f(U.uBack, -1, 0, 0);
-      gl.uniform1f(U.uFixed, 0);
-      gl.uniform1f(U.uFade, fade * Math.min(1, crossK * 4));
-      setSpriteUniforms(p, it);
+    } else if (mode === 'quad') {
+      setSpriteRecord(p, r);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+      if (r.dz) gl.uniform1f(U.uDZ, 0);
+      if (r.crossOn) {
+        setSpriteCrossRecord(p, r.cr);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
     }
-    if (it.M && it.M.blades) {
-      const b = it.M.blades,
-        BT = imageTexture(artImage(b.img));
-      if (BT)
-        drawRotatingBlades(
-          p,
-          it,
-          b,
-          BT,
-          (reducedMotion ? 0 : walkView.t / 1100) * (sc.wind || 1) * engineSetting('grass', 'wind'),
-          C,
-          X
-        );
-    }
-    if (it.M && it.M.hands && !it.far && !it.layer) drawClockHands(p, it, C, X);
-    if (it.far || it.layer) continue;
-    addHitTarget(it, C, hits, labels, PPU);
+    spriteSideEffects(p, r, C, X, hits, labels, PPU, sc);
   }
   gpuTag(0);
   gl.uniform3fv(U.uRight, C.right);

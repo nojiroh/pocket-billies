@@ -169,3 +169,44 @@ test("the reflection's pictures: every call, in order", t => {
   G.reflectionPass(fixture(), camera(), 400, 300, X);
   t.assert.snapshot(record(gl));
 });
+
+// a record as plain numbers (its item by id, its texture by name)
+const plainRecord = r => ({
+  id: r.it.id,
+  mode: r.mode,
+  ...(r.mode === 'quad' || r.mode === 'wave'
+    ? {
+        tex: r.T.t,
+        at: round([r.x, r.y, r.z]),
+        off: round([r.ox, r.oy, r.w, r.h]),
+        uv: round([...r.uv]),
+        flip: r.flip,
+        slope: r.slope,
+        shear: r.shear,
+        right: round([...r.right]),
+        back: round([...r.back]),
+        fixed: r.fixed,
+        noRecv: r.noRecv,
+        flipN: r.flipN,
+        mat: Object.keys(G.SURFACE_MATERIALS).find(k => G.SURFACE_MATERIALS[k] === r.mt),
+        fol: round(r.fol),
+        self: round(r.self),
+        emit: round(r.emit),
+        fade: round(r.fade),
+        rim: r.rim,
+        lit: round(r.lit),
+        shade: r.shade,
+        dz: r.dz,
+        wave: r.wave,
+        cross: r.crossOn ? plainRecord(r.cr) : null,
+      }
+    : {}),
+});
+
+test('spriteDrawList and spriteRecord: the list grouped by picture, and each record', t => {
+  setup();
+  const C = camera(),
+    F = G.spriteFrame(C, X.sun),
+    L = G.spriteDrawList(fixture());
+  t.assert.snapshot(L.map((it, i) => plainRecord((G.spriteRecord(it, F, G.spriteRecordAt(i)), G.spriteRecordAt(i)))));
+});
