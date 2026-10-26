@@ -19,7 +19,7 @@ detailed task list (task ids A1...I3) and their "what the renderer does today" n
 | C4 | Done. |
 | C5 | Ported (R1 light lane, 2026-10-26) behind `quality.stableLights` (off) and `quality.lights` (16); waiting on the owner's phone verdict. |
 | D1-D7 | Not done (the sky draws first, no `mediump`, no `invalidateFramebuffer`, pixel cap 1.75 DPR / 1.6 MP; the automatic quality can drop phones to 0.6 resolution since 2026-10-23). |
-| E1-E13 | Not started; the E3 bug (reflection never sets `uSelf` / `uFol`, walk/water.js) is still there. |
+| E1-E8, E10 | Done (R2 sprites lane, 2026-10-26) behind `quality.spriteInstances` (off); E3 fixed (the owner's choice), the reflection grouped by picture. E12 left out by the counters. E13 waits on the owner's phone verdict; E9, E11 round 3. |
 | F1-F9 | Not started. Retargeted: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
 | G | Not done (battle-stage.js still draws each rig on a canvas). Only if R1's battle numbers ask for it. |
 | H | Not done. Restore re-mounts the walk view only; the world map is now world-bowl.js, which also calls `initWebgl`, so the listener pile-up holds. |

@@ -2,6 +2,92 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R2, lane sprites (stage 4: sprites instanced) - 2026-10-26
+Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
+answers: E3 fixed fully (reflections take the main pass's values); the reflection grouped by picture like the main
+pass; E5's split in engine/webgl.js as a no-op; the setting `quality.spriteInstances` ("Pictures in batches").
+- Where the docs and the code differed (checked):
+  - The sprite pass is walk/sprites.js `drawSprites`, the reflection walk/water.js `reflectionPass` (not
+    walk-view-gl.js); the precompile list is walk-view-gl.js's loop, not engine/webgl.js.
+  - "`uUV` is always 0,0,1,1" is wrong since WA-6a: someone wading has their bottom rows cut (`it.cut`). E4's layout
+    also had no room for the CPU sway (`uShear`), `uSlope` or the pull toward the eye (`uDZ`), and its single
+    rotation could not describe a tree's crossing picture (right 0,0,+-1 with back -1,0,0).
+  - `LOOK_GLSL` and `uFol` (`seasonal`, `snowOn`) live in engine/webgl.js, not the walk shaders.
+  - E3 was wider than written: with no shadow map the reflection's shadow lookup is the clouds' shade, so the stale
+    `uNoRecv` (the last picture of the frame before) decided whether leaf clumps took it.
+  - Every catalogue camera's right and back lie flat (y 0); the instanced program relies on it.
+- Changed (one cause per commit):
+  - Tests first: tools/test/sprite-records.test.mjs freezes everything the sprite pass and the reflection send to a
+    stand-in context, for a fixture taking every branch (vox, bld3, flag, cross, far, layer, glow, person, a turned
+    picture, noRecv, flip -1, town rise, wading, blades, clock hands, flat things).
+  - **E1-E2**, no change: `spriteDrawList`, `spriteRecord` (each picture's uniform values in a record kept from frame
+    to frame, size and place by draw-common.js `spriteGeometry`), `spriteSideEffects` (hit targets, blades, hands, a
+    3D front's fade, in the old order). The frozen record is identical.
+  - **E4** engine/sprite-instances.js (script tags on both pages): 92 bytes an instance (place and size as floats, the
+    rest halves, the tint bytes, flags and material as integer bytes), a half packer (no Float16Array), the buffer.
+  - **E5**, no change: `lookOnP`, `seasonalF`, `snowOnF` take their values as parameters; the old names wrap them.
+  - **E6-E8** behind `quality.spriteInstances` (off; Studio > Engine > Quality "Pictures in batches"): program
+    `spriteI` (walk-shaders.js; its fragment shader is the sprite one with each per-picture uniform `#define`d to a
+    flat varying, 15 varyings at most; `spriteInstanceFragment` throws if the sprite text changes shape). One buffer
+    a frame (orphaned, refilled); one `drawArraysInstanced` per run of pictures next to each other in today's order
+    with one texture; a crossing picture is the instance after its tree. A flag and a picture with blades or clock
+    hands end a run; the title town's rise is packed too. Compiled while the setting is on (precompile list) or on
+    first use; if it fails the pass keeps one draw a picture and the debug log says "pictures in batches off".
+  - **E3** (a look change, its own commit): the reflection sends `uFol`, `uSelf` and `uNoRecv` per picture as the main
+    pass does. Then (its own commit) the reflection's pictures in the main pass's order (by picture).
+  - **E10**: the reflection's pictures instanced too, behind the same setting (its fixed lighting as every material).
+  - Graphics test: "Pictures in batches" off and on at the Pond and the Depth corridor, out of "everything lowest /
+    highest" (128 steps over 23 settings).
+- Headless counts (the diagnostics tour from a scratch script, 390 x 760 at DPR 1, the game's own values and
+  resolution, setting off then on; counts only, never speed):
+
+  | Stop | Draws | Sprite pass (model pictures) | Distinct textures in it | Uniform calls | Texture binds |
+  |---|---|---|---|---|---|
+  | Copperleaf by day | 1,164 -> 595 | 710 (643) -> 142 (94) | 239 (~120 pictures) | 21,658 -> 4,846 | 1,712 -> 585 |
+  | Copperleaf by night | 1,173 -> 603 | 710 (642) -> 142 (94) | 244 | 21,714 -> 4,905 | 1,714 -> 585 |
+  | Jungle run place | 650 -> 532 | 232 (123) -> 114 (53) | 177 | 8,694 -> 3,194 | 841 -> 617 |
+  | Run town | 608 -> 523 | 181 (53) -> 95 (23) | 155 | 7,454 -> 3,283 | 726 -> 560 |
+  | Battle | 584 -> 486 | 205 (174) -> 97 (74) | 182 | 7,421 -> 2,678 | 676 -> 474 |
+
+  What it says: Copperleaf's sprite pass comes down 5x, to 142 runs against a floor of ~120 pictures (texKinds 239
+  counts picture and normal map): runs in today's order get within ~20% of grouping by picture alone. Uniform calls
+  fall 4.5x (the per-picture uniforms are gone; what's left is the other passes). The reflection barely changes (16
+  -> 14 draws in Copperleaf; it was near its floor). With the models lane's switch too, Copperleaf should be near
+  ~460 draws, close to the 400 budget before the shadow maps are counted (round 3).
+  Your round 1 phone baseline (Android, from the coordinating session): Copperleaf by day 1,130 draws, sprite pass
+  697 (654 model pictures) from 236 textures, 20,857 uniform calls, 1,592 texture binds, 17 / 12.5 fps, CPU ~28 ms;
+  so on your phone expect the sprite pass near 140 and about 550 fewer draws. The iPad (sprite pass 71) gains little:
+  landscape sees few copies of each picture, and it waits on its GPU.
+- E12 (by the counters): the player-overlap fade already travels per instance, and caching packed bytes per prop
+  is not needed by the counts; whether packing costs CPU on the phone shows in your CPU ms (step 2 below). Left out.
+- **For round 3's shadows lane** (walk/shadows.js untouched): `packSpriteInstance(i, record, cam)` and the buffer
+  (`uploadSpriteInstances`, `bindSpriteInstances(first)` per run, as WebGL2 has no base instance) serve shadow
+  sprites. A shadow program reads only locations 1-4 (base, offset, axes, slope / shear / dz / shown height) with the
+  sun's or a lamp's right as a uniform for camera-facing ones; records come from `spriteRecord` (or a reflection-like
+  record function for the shadow maps' own values), runs by texture as `drawSpriteRuns` does.
+- Risky:
+  - The instanced fragment shader is made from the sprite one by `#define`s: a sprite shader edit that renames a
+    per-picture uniform or `main` still builds but then reads a uniform never set (the Node test lists them).
+  - Positions as floats, axes and look values as halves (2^-11): far from the origin a turned picture's edge moves
+    well under a millimetre.
+  - A camera whose right or back is not flat would light camera-facing pictures slightly differently instanced.
+  - Shared buffer: the reflection uploads before the main pass in the same frame (orphaned between).
+- Verified: lint, typecheck, unit tests (1,072 -> 1,098), check:modules, format after every commit; smoke "no
+  problems" for every commit touching game/ and after merges with the models and pixels lanes. The program compiles
+  and links in headless Chromium (compile only). No headless graphics judged.
+- **Your phone run** (Android first, then the iPad), at a full charge:
+  1. Open the debug menu, **Graphics test**: compare "Pictures in batches" off and on at the Pond and the Depth
+     corridor. Does anything look different (leaf clumps, trees' crossing pictures, signs and windows on models,
+     people wading, the reflections)? Is it faster?
+  2. Studio > Engine > Quality: turn **Pictures in batches** on, then run the **Diagnostics test** (about 5 minutes)
+     and **Save the report**; walk Copperleaf by day and night for a minute; **Export debug log**. Send both files.
+  3. Look at the pond at the hub with the setting off: reflections now show autumn colours and snow on leaves, and
+     trees in the water shade their crowns (E3, the owner's fix); the order of pictures in the water changed (by
+     picture), which only shows where two pictures share one plane.
+  - The verdict decides E13: on by default, then the old path deleted (one commit each).
+- Next: E13 after your verdict; E9 (shadow sprites) and E11 (sway in the shader, needs your approval) in round 3;
+  **ask the owner** (with the models lane's question): a far version of models' leaf pictures on phones.
+
 ### Phase 20 R2, lane models (stage 3: models instanced) - 2026-10-26
 Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's
 answers: the jungle broadleaf far version (phase 09 task 10) skipped for now; the reflection uses the same switch;
