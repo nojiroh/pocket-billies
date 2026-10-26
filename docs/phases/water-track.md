@@ -153,7 +153,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 3 | WA-5a | G | (**done** 2026-10-25, notes below) **New kinds' play and weather on water.** Hot springs heal the party, oases, marsh and bog slow you (their encounter pools, hidden items in reeds), rapids block, floods in storms keep the main path open, ponds freeze in snow, rain rings (exist). | unit tests (a flooded path keeps the main path open; heal once a run), smoke |
 | 3 | WA-7 | B | (**done** 2026-10-26, notes below) **World map and battles.** The bowl's rivers and seas in the same tones and steps (the shared snippet); water backdrops on battle stages by a node's biome. | bowl map test, battle stage pictures, smoke |
 | 4 | WA-5b | R | (**done** 2026-10-26, notes below) **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
-| 4 | WA-9 | G | **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
+| 4 | WA-9 | G | (**done** 2026-10-26, notes below) **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
 ## Ask me before
@@ -483,3 +483,30 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   test_water's hot spring and rapids and on Copperleaf's beach (the reef shallows) with Pixel water on and off, and in
   a run's cave with cave water.
 
+## WA-9 notes (2026-10-26)
+- The owner's answers (Plan Mode): "survives a regenerate" means the Generate card's remakes of a draft, with the hand
+  water kept in its dials (`params.hand`) and in a scene's `gen` when added (no regenerate of a saved scene: MG-4's);
+  a brushed river is an **extra** river; the hub island refuses the whole Kinds of water tool.
+- **Found**: MG-4 and TR-7 (regenerate only what was generated, a ground mask, the keep lock) were never built, so
+  there was no hand edit that survives a regenerate to copy. The map editor's painter lacked `sea`, `lava` and `ice`
+  (its own list; now `WATER_KINDS`). The hub island's water rectangles were free (IS-6a locked only the ground).
+- **Generation** (`logic/water-gen.js`, no mapgen.js edit: `mapgenParams` keeps unknown keys and every hook has `G.P`):
+  `waterGenHand` checks the dials' hand water (at most 8 rivers and 8 falls, inside the map, known kinds);
+  `waterGenHandRivers` (first in `waterGenRiver`) shapes each drawn line through `waterGenShape` (no meanders) and
+  `waterGenPaint`; the scene's rivers are a list (`G.rivers`; carve, step with the land, river falls and rapids loop
+  over it; `G.river` the first); `waterGenHandFalls` (last in `waterGenFalls`) writes `falls` entries with their pools
+  (`waterGenPlungePool`, carve on, refused where it cuts ground off) and replaces a generated fall within 2 m;
+  `waterGenClimbs` keeps a hand climb only where WA-2b's rule passes and never adds one to a fall placed without;
+  hand kinds are laid last in `waterGenKinds`. A scene without hand water is made exactly as before (unit test, whole
+  scenes): **no MAPGEN_VERSION bump** (still 17), rng.test's hash, the run-start snapshot and the golden scenes
+  unchanged.
+- `waterGenSceneRiver` (the map editor's Carve the bed): the same shaping, painting and carving on a saved scene's
+  tiles and heights, its level read from the banks (wet corners filled from the dry ground first); carved again, its
+  bed moves 0.12 m at most on test_water.
+- **Studio** (`studio/js/water-tools.js`, new; hooks in map-generate.js's From above card and map-editor.js's water
+  tool): the Generate card's river brush, waterfall placer and kind painter with an overlay (lines, lips, the way they
+  fall, pools, climbs, rectangles), the picked item's fields and what the draft made of it, Look at it; the map
+  editor's Rivers and Falls modes and Carve the bed (one undo step each). STUDIO.md, "Water tools".
+- Numbers (Node, five seeds of a 112 x 64 m meadow): 64 ms a scene without hand water, 74 ms with one hand river.
+- Not done here: a regenerate of a saved scene (MG-4); several rivers joining (a hand river ending in another is a
+  `lake` mouth); the hub island's fall (HB-4b).
