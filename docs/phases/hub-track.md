@@ -419,6 +419,45 @@ Checked against the code:
   smoking carriage after a loss. Then the payout as now.
 - Reduced motion: a short fade version. Checks: check-fast's run start and return steps.
 
+**Done in HB-8** (2026-10-26, on `art/hub-departure` at the owner's word, from main after PR #205). The owner's
+answers: **climb, white-out, load** (Take off closes the sheet, the ride plays in the hub, the carriage screen comes up
+behind the white-out while the run's places are made, you land straight on the first place: no airship flight for
+runs); **payout, then return** (the payout screen as before, its button "Ride home", then the train home, then the
+toasts and the lost run's scene); the words as proposed. Checked against the code:
+- A prop could already move along a path: the cutscene director's traffic (`cutsceneTraffic`: a placement with `lift`
+  and `moving`) and the walk view's director hook (`walkView.director.frame`: its own camera, items and lights). The
+  ride uses both patterns (train-ride.js), not the cutscene system (its teardown stops the walk view).
+- "The walk view draws the sea only 8 m past the edge" was not so: on a `flatFar` map the sea skirt runs to 400 m
+  (ground-mesh.js `seaSkirt`); `GROUND_BORDER_M` is the land's border. What stood "over haze" was the map's haze
+  (`hazeD` 40) and the walk camera's lens blur focused on the player. The ride's frames focus on their own target, and
+  the shots out over the sea see further (`hazeK` 1.8, a director frame's new haze factor: walk/lighting.js). The
+  level shots over the town keep the walk's haze: stretched there, the far sea shows the world's curve as a band in
+  the sky.
+- The 20 s cap started with the loading: with the places made behind the screen it could have gone off before the run
+  had a world. logic/run-load.js has `hard` stages now (never late; the cap counts from when they are ready).
+- The run's region, and so its train, isn't known on the start sheet (the seed is rolled at Take off): the sheet says
+  "A sky train flies you…"; the payout names the run's train.
+- The self-test, check-fast's run_pack and run_loop and check-quick's RL-8 waited on `airshipFlight`.
+- Built: `logic/train-path.js` (the way: the station's track bed, `landmarks.rail`, the tear; the glide in; the
+  placement: in front of the rail by half the train's width, turned, lifted, nose up), tools/test/train-path.test.mjs;
+  `train-ride.js` (departure ~9.4 s: glide in over the town, you board, the chase up the rail, the tear swells and
+  flashes, the train shrinks into it, the white veil; home ~7 s: the tear opens (gold after a win), the train out of it
+  facing west and down the rail, you step off where `standByMast` stands you; the train stays at the platform, still;
+  a tap skips; reduced motion or no hub view: a 400 ms white fade, the train parked); `train-carriage.js` (a ~144 px
+  pixel canvas: seat backs, the rack and its bags, windows with the tunnel's streaks and rings, faded into the screen's
+  colour under its text); the trains' looks v 1 gold trim and v 2 battered with smoke fx, their carriage colours and
+  the portal's tunnel colours (build-station-trains.py); the take-off's `places` stage; postcards, the update check and
+  the story's waiting scene hold off while the train rides; one debug log line a ride (`train ride departure
+  train_greenbelt 9440 ms`, `(skipped)` when tapped).
+- Removed: `flyMenu`'s hub branch (tickets, Start a run, its upgrades), flyLand's run landing, the Take off button's
+  "Readying the airship" count. The airship flight itself stays (nothing in the game starts one; check-fast flies it).
+- Words beyond the list: Chosen's line after a win "came home by train", the Crest "spent at Skyline Station".
+- Checks: check-fast "The train ride" (played out, both returns), run_pack/run_loop through the ride (skipped), the
+  self-test's run phase "A run: the train, nodes, payout". Pictures: `python3 tools/look-train-ride.py`
+  (validation/look-train-ride/).
+- Not done: the station's own door/boarding animation (you walk to the train and vanish); the train has no sound of
+  its own (the take-off motif and a whoosh at the tear); a save swapped in mid-ride is not handled specially.
+
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
 screen, the world map at a few hours) and plays it on the phone; the debug log carries the loading screen's timings.

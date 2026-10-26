@@ -1632,7 +1632,7 @@ def rl8_run_from_mast(P):
     town: the clinic charges 60 Moneys a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Perk;
     on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Perk" opens
     the pick, a card tapped and "Take it" holds it; on to the boss, an Alpha (won, its battle carrying the
-    Perk): "On to the payout", the payout as won, "Fly home": Copperleaf with Research, no run. The hub's save is
+    Perk): "On to the payout", the payout as won, "Ride home" (HB-8: the train home skipped): Copperleaf with Research, no run. The hub's save is
     put back after"""
     pg = P.pg
     if not pg.evaluate("typeof runTakeOff==='function'"): return 'not in this build'
@@ -1648,9 +1648,11 @@ def rl8_run_from_mast(P):
         # drawing itself); the take-off closes the sheet, so nothing is tapped twice (HB-2: the sheet stays while the
         # world is made, inert, and a second runTakeOff on a run does nothing)
         # RT-1: 60 s, not 30: the take-off makes the run's world (laid-out places: 1.1 s here alone, more in the paired run)
-        if not until(pg, "!!saveData.run&&airshipFlight.on", 60, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start a run’s flight')
-        pg.evaluate("flySkip();0")
-        if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
+        if not until(pg, "!!saveData.run&&(trainRide.on||!!document.getElementById('runload'))", 60, "uiState.modal&&uiState.modal.title==='Start a run'&&document.querySelector('#ov [data-a=mb][data-i=\"0\"]').click()"): raise Exception('“Take off” didn’t start the train’s ride')
+        # HB-8: the sky train's ride skipped once it plays, then the carriage's loading screen and the landing
+        until(pg, "!!trainRide.W||!trainRide.on", 10)
+        pg.evaluate("trainRideSkip();0")
+        if not until(pg, "!trainRide.on&&saveData.run.at.phase==='walk'&&walkView.ready&&walkView.id==='w:'+LOCATIONS[1].mapId+'*'", 90): raise Exception(f'never landed on the landing ({pg.evaluate("saveData.run&&saveData.run.at.phase")}, {pg.evaluate("walkView.id")})')
         # HB-2: the landing's loading screen lifts (every stage ready, or the cap)
         if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
@@ -1714,12 +1716,14 @@ def rl8_run_from_mast(P):
         if not until(pg, "uiState.modal&&uiState.modal.cls==='run-payout'&&saveData.run.at.won===1", 20): raise Exception('no payout as won')
         shot(pg, 'rl8-payout')
         pg.click('#ov [data-a=mb][data-i="0"]')
-        if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Fly home didn’t bring you back to Copperleaf')
+        if not until(pg, "!saveData.run&&LOCATIONS.length===gameData.locations.length&&walkView.ready&&walkView.id==='w:'+mapIdAt(saveData.trip.node)+'*'", 90): raise Exception('Ride home didn’t bring you back to Copperleaf')
+        until(pg, "!!trainRide.W||!trainRide.on", 30)
+        pg.evaluate("trainRideSkip();0")
         home = pg.evaluate("[saveData.meta.runs, saveData.meta.wins, saveData.meta.research, saveData.meta.crests]")
         if home[0] < 1 or home[1] < 1 or home[2] <= 0: raise Exception(f'home: {home}')
         return f'seed {land[0]}: {land[4]} scenes, landed day 1 by the mast; a battle won; day 2 over the seam; healed for {heal[0]} Moneys; {wares} wares and a Perk; {foe[1]} beaten (doubles), {relic} picked; the boss (an Alpha) beaten; payout; home: {home[2]} Research, {home[3]} Seal'
     finally:
-        pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}airshipFlight.on=false;uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
+        pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop()}trainRideSkip();uiState.modal=null;uiState.mq=[];renderOverlay();setSaveData(window.rl8Hub);render();0")
 
 @step('Copperleaf: Granny Juniper in her garden, the lab', 240)   # RL-5: the lane down to Marigold Town is parked
 def juniper_and_lab(P):

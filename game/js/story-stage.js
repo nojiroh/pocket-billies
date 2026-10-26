@@ -44,6 +44,7 @@ import {
   cutsceneWait,
   cutsceneWalk,
 } from './cutscene/director.js';
+import { trainRide } from './train-ride.js';
 /* eslint-disable no-func-assign */
 expose({
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
@@ -373,6 +374,8 @@ export function storyPendingCheck() {
   const story = saveData.story,
     p = story && story.pending;
   if (!p || saveData.run || storyRun.on || activeBattle || uiState.modal || talkBox.on || !walkView.ready) return;
+  /* HB-8: not while the train comes home (train-ride.js tells it once you've stepped off) */
+  if (typeof trainRide !== 'undefined' && trainRide.on) return;
   if (uiState.tab !== 'walk' || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   if (typeof selfTest !== 'undefined' && selfTest.on) return;
   delete story.pending;
