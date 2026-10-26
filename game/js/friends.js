@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
+import { friendListFrom } from './logic/online.js';
 import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -129,16 +130,8 @@ function friendsError(e) {
 }
 /* the two sides of each request decide who is a friend */
 function syncFriends() {
-  let L = new Set(friends.list);
-  for (const r of friends.inc) {
-    if (r.status === 'accepted') L.add(r.from);
-    else if (r.status === 'removed') L.delete(r.from);
-  }
-  for (const r of friends.out) {
-    if (r.status === 'accepted') L.add(r.to);
-    else if (r.status === 'removed' || r.status === 'declined') L.delete(r.to);
-  }
-  const nl = [...L].filter(u => u && u !== friends.uid).slice(0, 50);
+  /* ON-1: each pair's newest request decides (logic/online.js) */
+  const nl = friendListFrom(friends.list, friends.uid, friends.inc, friends.out);
   if (nl.join() !== friends.list.join()) {
     friends.list = nl;
     friendsDb().collection('users').doc(friends.uid).set({ friends: nl }, { merge: true }).catch(friendsError);
