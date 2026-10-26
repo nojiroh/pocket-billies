@@ -230,3 +230,62 @@ test('augments: the look code carries the Augments after the graft; split back; 
     'the splice code stays'
   );
 });
+
+test('augments: Escaped specimens: a band after the Grafts and Chimeras (their draws unchanged), likelier near a yard', () => {
+  const pool = Object.keys(data.SPECIES),
+    seq = xs => {
+      let i = 0;
+      return () => xs[i++ % xs.length];
+    },
+    W = D.genes.wild;
+  /* a first draw in the Graft band: the same Graft wildSplice gives */
+  const g1 = N.wildSplice(D, 'swift0', pool, seq([0.01, 0.3, 0.6])),
+    r1 = N.wildRoll(D, 'swift0', pool, seq([0.01, 0.3, 0.6]));
+  assert.deepEqual(r1, { graft: g1 });
+  /* just past the Chimeras: an Escaped specimen, one Augment that fits */
+  const x = W.graft + W.chimera + W.escaped / 2,
+    r2 = N.wildRoll(D, 'swift0', pool, seq([x, 0]));
+  assert.ok(r2 && r2.aug && !r2.graft, JSON.stringify(r2));
+  const [[slot, p]] = Object.entries(r2.aug);
+  assert.equal(A.augFits(D, 'swift0', slot, p.id), true);
+  /* past the band: plain, unless next to a scrapyard (escapedNear) */
+  const y = W.graft + W.chimera + W.escaped * 1.5;
+  assert.equal(N.wildRoll(D, 'swift0', pool, seq([y, 0])), null);
+  assert.ok(N.wildRoll(D, 'swift0', pool, seq([y, 0]), 1, D.genes.augment.escapedNear).aug);
+  /* next to a scrapyard: a road either way */
+  const run = {
+    map: {
+      nodes: [
+        { type: 'route', to: [1] },
+        { type: 'scrapyard', to: [2] },
+        { type: 'town', to: [] },
+        { type: 'town', to: [] },
+      ],
+    },
+  };
+  assert.equal(fn('runNearYard')(run, 0), true);
+  assert.equal(fn('runNearYard')(run, 2), true);
+  assert.equal(fn('runNearYard')(run, 3), false);
+});
+
+test('augments: an Escaped specimen in battle says so; knocked out it leaves DNA and its part', () => {
+  const s = startedSave('swift0', 30),
+    q = { id: 'esc-1', sp: 'swift0', lvl: 5, no: 1, aug: { front: { uid: '', id: 'hydrant', up: 0 } } };
+  fn('encountersHere')().push(q);
+  fn('startWild')(q);
+  const B = hooks.activeBattle,
+    foe = B.sides[1].team[0],
+    said = B.events.map(e => e.t || '').join('\n');
+  assert.match(said, /has a Hydrant Arm!/);
+  assert.match(said, /escaped/);
+  assert.ok(foe.aug.front.uid, 'a part of its own');
+  hooks.provide({ activeBattle: null });
+  const parts = s.parts.length,
+    dna = s.meta.dna || 0,
+    out = modules['battle-rewards'].spliceSample([foe], s, null);
+  assert.equal(out.dna, GAME_DATA.genes.wild.dna.escaped);
+  assert.equal(s.meta.dna, dna + out.dna);
+  assert.equal(s.parts.length, parts + 1);
+  assert.equal(s.parts[s.parts.length - 1].id, 'hydrant');
+  assert.deepEqual(out.parts, [{ id: 'hydrant', words: 'a Hydrant Arm' }]);
+});

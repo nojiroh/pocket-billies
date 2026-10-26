@@ -36,6 +36,7 @@ test('run sim: the report has its numbers', () => {
     'splices',
     'dna',
     'genes',
+    'escaped',
   ])
     assert.ok(R[k] >= 0, k);
   assert.deepEqual(R.clock, { placeS: 60, battleS: 15, turnS: 6 }, 'RT-2: what the minutes are guessed from');

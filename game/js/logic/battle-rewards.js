@@ -9,9 +9,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { FACTIONS, GENES, ITEMS, PERKS, RULES } from '../game-data.js';
+import { augWords } from './augments.js';
 import { geneWords } from './genes.js';
-import { isRobot, speciesOf } from './fighters.js';
-import { billyGraft, dropEncounter, findBilly, geneData, wildPrize } from './rules.js';
+import { isRobot, newPart, speciesOf } from './fighters.js';
+import { billyAug, billyGraft, dropEncounter, findBilly, geneData, newUid, wildPrize } from './rules.js';
 import { runLostTo } from './run-history.js';
 import { META_GENES, META_MAX } from './meta-state.js';
 import { factionBotOf, factionOfClass } from './factions.js';
@@ -171,13 +172,28 @@ export function battleSettleWin(b, s, pay, run) {
  * or a Chimera's: meta, kept even if the run is lost), and each of its Genes not in s.meta.genes yet joins it (the
  * library SP-4's Gene Bank opens; a Gene is its id, "shark_tailfin@zuck2"). Returns the DNA and the new Genes in words
  * for the sheet. SP-6: a run's dna rows (Perks) multiply the DNA @param {any[]} foes @param {any} s
- * @param {any[] | null} [fx] the battle's run rows (logic/effects.js) @returns {{ dna: number, sampled: { gene: string, words: string }[] }} */
+ * @param {any[] | null} [fx] the battle's run rows (logic/effects.js)
+ * @returns {{ dna: number, sampled: { gene: string, words: string }[], parts?: { id: string, words: string }[] }} */
 export function spliceSample(foes, s, fx) {
   const W = GENES.wild.dna,
     /** @type {{ gene: string, words: string }[]} */
-    sampled = [];
+    sampled = [],
+    /** @type {{ id: string, words: string }[]} */
+    parts = [];
   let dna = 0;
   for (const m of foes) {
+    /* SP-5: an Escaped specimen knocked out: its DNA (wild.dna.escaped) and, by genes.json augment.knockout, its
+       Augment into your spare parts (kept whatever the run's end, as salvage is) */
+    const a = billyAug(m);
+    if (a) {
+      dna += W.escaped ?? W.graft;
+      if (GENES.augment.knockout === 'part' && Array.isArray(s.parts))
+        for (const p of Object.values(a))
+          if (p && s.parts.length < 5000) {
+            s.parts.push(newPart(p.id, newUid()));
+            parts.push({ id: p.id, words: augWords(geneData(), p.id) });
+          }
+    }
     const g = billyGraft(m);
     if (!g) continue;
     dna += Object.keys(g).length > 1 ? W.chimera : W.graft;
@@ -190,7 +206,7 @@ export function spliceSample(foes, s, fx) {
   }
   if (dna && fx) dna = Math.round(dna * fxSplice(fx, 'dna'));
   if (dna) s.meta.dna = Math.min(META_MAX, (s.meta.dna || 0) + dna);
-  return { dna, sampled };
+  return parts.length ? { dna, sampled, parts } : { dna, sampled };
 }
 /** RL-14: the bots of a won run battle (robots on the foe's side) leave a salvage pick (logic/rewards.js), by their
  * faction's rules: the agent's class's faction, else the first bot's build's (factions.json); true when one was made

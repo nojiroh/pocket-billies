@@ -280,6 +280,12 @@
        "type": "integer",
        "minimum": 0,
        "maximum": 1000
+      },
+      "escaped": {
+       "description": "SP-5: an Escaped specimen knocked out (the Graft's when missing)",
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 1000
       }
      }
     }

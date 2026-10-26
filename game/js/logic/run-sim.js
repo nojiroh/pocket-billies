@@ -312,6 +312,8 @@ export function runSimOn(env) {
         caughtSpliced: 0,
         dna: 0,
         genes: 0,
+        /** SP-5: Escaped specimens fought */
+        escaped: 0,
       };
     try {
       runArrive(s, 0, MAP_DATA);
@@ -436,6 +438,7 @@ export function runSimOn(env) {
           const foe = hooks.activeBattle.sides[1].team[0];
           const B = hooks.activeBattle;
           if (q.graft) stats.splices++;
+          if (q.aug) stats.escaped++;
           let res;
           /* catch it while the party is small and there are pyramids: one throw, then fight on */
           if (
@@ -627,6 +630,8 @@ export function runSimOn(env) {
       caughtSpliced: avg(x => x.caughtSpliced || 0),
       dna: avg(x => x.dna || 0),
       genes: avg(x => x.genes || 0),
+      /* SP-5: Escaped specimens fought a run */
+      escaped: avg(x => x.escaped || 0),
     };
   }
 

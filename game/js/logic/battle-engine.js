@@ -71,6 +71,7 @@ import {
   moveSourceLimbs,
   moveUsable,
   movesOf,
+  newUid,
   partBroken,
   partHpLeft,
   partMaxHp,
@@ -1119,6 +1120,15 @@ export function startWild(q, o = {}) {
     if (q.unstable) foe.unstable = { ...q.unstable };
     unstableTidy(foe);
   }
+  /* SP-5: an Escaped specimen wears its Augment (a part of its own from now on: caught, it keeps it) */
+  if (q.aug && typeof q.aug === 'object') {
+    foe.aug = Object.fromEntries(
+      Object.entries(q.aug).map(([slot, p]) => [slot, { uid: newUid(), id: p.id, up: p.up || 0 }])
+    );
+    if (q.unstable) foe.unstable = { ...q.unstable };
+    unstableTidy(foe);
+    foe.hp = maxHp(foe);
+  }
   if (
     !newBattle('wild', [foe], {
       qid: q.id,
@@ -1143,6 +1153,8 @@ export function startWild(q, o = {}) {
   if (parts.length === 1) battleSay(`This ${nm} has ${parts[0]}!`);
   else if (parts.length)
     battleSay(`This ${nm} is a patchwork: ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}!`);
+  /* SP-5: an Escaped specimen */
+  if (foe.aug) battleSay('It must have escaped from a Bureau lab.');
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${PYRAMIDS.pyramid ? 'a ' + PYRAMIDS.pyramid.n : 'cheap pyramids'}.`);
   const K = liveActors(0);

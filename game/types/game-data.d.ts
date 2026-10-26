@@ -1881,7 +1881,8 @@ export interface Genes {
     chimera: number;
     escaped: number;
     chimeraParts: [number, number];
-    dna: { graft: number; chimera: number };
+    /** SP-5: escaped, an Escaped specimen's (the Graft's when missing) */
+    dna: { graft: number; chimera: number; escaped?: number };
   };
   /** SP-4: the Gene Bank: per level its Stability limit and the slots it splices, a splice's DNA price (base + perCost x
    * the Gene's Stability cost), the chance an egg keeps each parent's spliced slot */

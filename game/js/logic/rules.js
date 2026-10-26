@@ -71,7 +71,7 @@ import { rngFn } from './rng.js';
 import { wildOddsBy } from './weather.js';
 import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 import { graftKey, graftSet } from './graft-art.js';
-import { augBase, augFit, augLimb, augMoves } from './augments.js';
+import { augBase, augFit, augLimb, augMoves, augWords } from './augments.js';
 import {
   geneWords,
   graftFields,
@@ -81,7 +81,7 @@ import {
   graftTraits,
   graftTypes,
   graftUnstable,
-  wildSplice,
+  wildRoll,
 } from './genes.js';
 import {
   ROBOT_LIMBS,
@@ -236,6 +236,8 @@ expose({
   rollBuild: [() => rollBuild, v => (rollBuild = v)],
   // @ts-expect-error -- replaced on purpose
   rollPartSize: [() => rollPartSize, v => (rollPartSize = v)],
+  // @ts-expect-error -- replaced on purpose
+  runNearYard: [() => runNearYard, v => (runNearYard = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
@@ -429,15 +431,20 @@ export function billyFieldTypes(m) {
     .filter(t => t && !own.includes(t));
   return more.length ? [...own, ...new Set(more)] : own;
 }
-/** SP-3: a spliced Billie's foreign parts in words, in slot order ("a shark’s tail"); [] with no splice
- * @param {{ sp: string, kind?: string, graft?: Record<string, string> } | null | undefined} m @returns {string[]} */
+/** SP-3: a spliced Billie's foreign parts in words, in slot order ("a shark’s tail"), then (SP-5) its Augments; [] with
+ * no splice @param {{ sp: string, kind?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
+ * @returns {string[]} */
 export function spliceWords(m) {
-  const g = billyGraft(m);
-  return g
-    ? Object.entries(g)
-        .map(([slot, donor]) => geneWords(geneData(), slot, donor))
-        .filter(Boolean)
-    : [];
+  const g = billyGraft(m),
+    a = m && m.aug ? billyAug(m) : null,
+    out = g
+      ? Object.entries(g)
+          .map(([slot, donor]) => geneWords(geneData(), slot, donor))
+          .filter(Boolean)
+      : [];
+  /* SP-5: and its Augments ("a Hydrant Arm") */
+  if (a) for (const p of Object.values(a)) if (p) out.push(augWords(geneData(), p.id));
+  return out.filter(Boolean);
 }
 /** SP-2: the debug log's splices: per spliced Billie on the team, its place, species, splice code, Stability, traits
  * and types (data ids only: no names) */
@@ -1083,6 +1090,13 @@ export function encounterRunVisits(node) {
     run = saveData.run;
   return L && L.runNode != null && run ? run.path.filter(i => i === L.runNode).length : 0;
 }
+/** SP-5: is this run map node one step from a scrapyard (a road either way)? @param {any} run @param {number} i */
+export function runNearYard(run, i) {
+  const N = run && run.map && run.map.nodes;
+  if (!N || !N[i]) return false;
+  const yard = (/** @type {number} */ j) => !!N[j] && N[j].type === 'scrapyard';
+  return N[i].to.some(yard) || N.some((/** @type {any} */ n, /** @type {number} */ j) => yard(j) && n.to.includes(i));
+}
 export function encountersHere(node = saveData.trip.node) {
   const L = LOCATIONS[node];
   if (!L) return [];
@@ -1107,12 +1121,15 @@ export function encountersHere(node = saveData.trip.node) {
       /* RL-14: none in a scrapyard, where every wild one is a bot */
       const yard = !!saveData.run.map && saveData.run.map.nodes[/** @type {number} */ (L.runNode)].type === 'scrapyard',
         rare = visit === 1 && !!L.trainerCount && !!RULES.run.wild.rare && cap > 0 && !yard;
+      /* SP-5: Escaped specimens are likelier one step from a scrapyard (genes.json augment.escapedNear) */
+      const near = runNearYard(saveData.run, /** @type {number} */ (L.runNode)) ? GENES.augment.escapedNear : 1;
       while (W[L.id].list.length < cap - (rare ? 1 : 0)) {
         const q = spawn(false, null, node, rnd);
         /* SP-3: a bot (RL-14) is never spliced and draws nothing from the splice stream */
-        const g = isRobotSp(q.sp) ? null : wildSplice(geneData(), q.sp, pool, spl, odds);
+        const g = isRobotSp(q.sp) ? null : wildRoll(geneData(), q.sp, pool, spl, odds, near);
         if (!g) continue;
-        q.graft = g;
+        if (g.graft) q.graft = g.graft;
+        if (g.aug) q.aug = g.aug;
         unstableTidy(q, spl); /* SP-2: past the limit, its Unstable roll, from the same stream (the same on a reload) */
       }
       if (rare) spawnRare(node, rnd);

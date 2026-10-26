@@ -29,7 +29,7 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { GRAFT_SLOTS, geneSplit, graftDonors, graftForm, graftKind, graftRecipe } from './graft-art.js';
-import { augGenes, augRel } from './augments.js';
+import { augChoices, augGenes, augRel } from './augments.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -56,6 +56,8 @@ expose({
   graftTypes: [() => graftTypes, v => (graftTypes = v)],
   // @ts-expect-error -- replaced on purpose
   graftUnstable: [() => graftUnstable, v => (graftUnstable = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildRoll: [() => wildRoll, v => (wildRoll = v)],
   // @ts-expect-error -- replaced on purpose
   wildSplice: [() => wildSplice, v => (wildSplice = v)],
 });
@@ -245,6 +247,28 @@ export function wildSplice(D, sp, pool, rnd, odds = 1) {
   const order = Object.keys(g);
   while (order.length > 1 && graftStability(D, sp, g).refused) delete g[/** @type {string} */ (order.pop())];
   return graftStability(D, sp, g).refused ? null : g;
+}
+
+/** SP-5: a wild Billie's splice roll with Escaped specimens: wildSplice's Graft or Chimera when its first draw falls
+ * there (the very same draws), else an Escaped specimen (genes.json wild.escaped, times `near`: augment.escapedNear
+ * next to a scrapyard) in the band after them: one Augment, a robots.json arm or legs that fits it (augments.js
+ * augChoices; uid '' until it is caught), drawn only then; never one Stability refuses at the default limit. Draws
+ * only on rnd @param {GeneData} D @param {string} sp @param {string[]} pool @param {() => number} rnd
+ * @param {number} [odds] @param {number} [near] @returns {{ graft?: Graft, aug?: Aug } | null} */
+export function wildRoll(D, sp, pool, rnd, odds = 1, near = 1) {
+  const W = D.genes.wild,
+    k = odds === 1 ? 1 : Math.min(odds, 1 / (W.graft + W.chimera));
+  let first = -1;
+  const graft = wildSplice(D, sp, pool, () => (first < 0 ? (first = rnd()) : rnd()), odds);
+  if (graft) return { graft };
+  const lo = (W.graft + W.chimera) * k,
+    hi = Math.min(1, lo + W.escaped * near * k);
+  if (first < lo || first >= hi || !D.robots) return null;
+  const choices = augChoices(D, sp);
+  if (!choices.length) return null;
+  const [slot, id] = choices[Math.floor(rnd() * choices.length)],
+    aug = /** @type {Aug} */ ({ [slot]: { uid: '', id, up: 0 } });
+  return graftStability(D, sp, null, undefined, aug).refused ? null : { aug };
 }
 
 /** a Gene in words, for the battle's lines: "a shark’s tail", "an eagle’s wings" (its part's animal, then its kind's

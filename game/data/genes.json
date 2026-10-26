@@ -117,7 +117,7 @@
   "chimera": 0.025,
   "escaped": 0.005,
   "chimeraParts": [2,3],
-  "dna": {"graft":5,"chimera":12}
+  "dna": {"graft":5,"chimera":12,"escaped":8}
  },
  "bank": {
   "levels": [
