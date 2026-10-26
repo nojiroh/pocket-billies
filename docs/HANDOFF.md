@@ -2,6 +2,40 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Air track AIR-1 - haze: follows the sky, RGB fade, height falloff, ray mist, sky glow - 2026-10-26
+Branch `track/air` (main merged in first; a HANDOFF conflict with the Studio art plan: both kept). Plan Mode, approved.
+The owner's answer to the plan's AIR-1 question: **keep a place's own `haze`, shaped by the sky**.
+- Changed: `fogit` (engine/webgl.js) reads new Frame block values (engine/frame-block.js, after the ints, 2272 bytes):
+  the sky's three colours, `uHazeSky` (the place's haze below the horizon, leaning to the sky's gradient above it:
+  `uFogCol + skyGrad(view) - uSkyLow`), `uHazeTint` (red lost a little faster, blue slower), `uHazeFall` (height
+  falloff from where you stand, Quilez's exact integral along the ray: `airAvg`, capped at 3), `uMistRay` (the low
+  mist from the same integral along the view, mixed with the point mist) and `uSkyGlow` (a broad lobe on the sun's
+  side; `sunFog` stays the tight lobe). One GLSL `skyGrad` (`SKY_GLSL`) is used by the sky shader and `fogit`.
+- New `air` settings with Studio/expert dials after Sunlit haze, all **0 by default = today's look**: `hazeSky`,
+  `hazeTint`, `hazeFalloff`, `mistRay`, `skyGlow`; zeroed in PLAIN_LOOK. None indoors (`hazeSky`, `hazeFalloff`,
+  `skyGlow`); `hazeSky` scaled down in caves. Every lit shader, battles included, gets it through LIGHT_GLSL.
+- Tests: tools/test/haze-twin.mjs is the JS twin (in tools/test, not game/js: the tests require every game/js file to
+  be loaded by the pages); haze.test.mjs checks every dial at 0 gives the old `fogit` (1e-12), the integral against a
+  numerical sum, the fade order, the sky colour, the ray mist, the glow, and that the sky shader and `fogit` read the
+  one `skyGrad`. frame-block.test.mjs: the new members, offsets and packing.
+- Claims corrected: `sunFog` defaults to 0.4 (0.6 is only light.js's fallback). Pushback confirmed by the screenshots:
+  the walk camera looks down, so nearly everything is below the horizon, where the sky is flat at its low colour;
+  "follows the sky" shows on tall things, low tilts and director frames, not on the ground at your feet. In
+  Copperleaf (short view distances) the proposed look is subtle; it should show more on runs' longer views.
+- Screenshots (Copperleaf, fixture town, software drawing): dawn, noon, dusk, fog and a low tilt, before / after at
+  the defaults / after with the proposed look `{hazeSky: 1, hazeFalloff: 0.06, hazeTint: 0.5, mistRay: 0.6,
+  skyGlow: 0.5}` (set as expert dials). Before and after at the defaults differ only by a sub-pixel camera shift and
+  moving characters (no tone change). Not committed (the contact sheet went to the owner in the session).
+- Verified: lint, typecheck, format, check:modules, unit tests 1294 pass; the smoke check (check-quick --smoke): 6 of 6 passed in 189 s (the in-game
+  test's shader step: 35 shaders, 14 with the Frame block, all compiled).
+- Risky: every lit shader's `fogit` changed (identity at 0 is proved in the twin, not on GPUs: check on the phone);
+  a few more ALU ops per pixel (two `exp`s, `skyGrad`, one `pow`) on every lit surface, even at 0: watch the phone's
+  frame times in the debug log. Rooms, caves, the bowl (its own shaders, untouched) and the train ride (`BT.hazeK`
+  still scales `fogD`) were not looked at with the dials up.
+- Asks: whether the proposed values become the defaults (engine.json `air`; that moves the quick-check baseline).
+- Next: AIR-2 (fog grid) runs in its own session on this branch (started 2026-10-26); AIR-3 needs both. Tag
+  `air-1-done` for the owner.
+
 ### Air track AIR-0 - the plan: volumetric low fog and better haze - 2026-10-26
 Branch `ccr-c0505a05-bzef90` (`track/air` doesn't exist yet: the owner makes it, and AIR-1 on starts there). Plan Mode;
 the owner asked whether the low fog could be volumetric with simple voxels, then for the same research on haze, then
