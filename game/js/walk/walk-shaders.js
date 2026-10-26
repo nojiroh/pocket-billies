@@ -296,7 +296,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  /* light on the bed, brightest in the clear shallows */
  float cz=far>.5?0.:caust(wp*1.5,ts*(.6+.4*rk));cz=(pix>.5?step(.3,cz)*.8*pwQ(1.-depC,3.,pc)*(1.+reef*.6):cz*(1.-dep))*ka.y*uCaus;base+=uSunCol*cz*.32*sh;
  /* WA-5b: water with a glow of its own colour (cave water) is lit from below, brightest in its shallows, in stepped tones */
- {float g0=.6+.4*sin(ts*1.3+wp.x*1.7+wp.y);base+=glowC?kg*kb.x*pwQ(g0*(.45+.55*(1.-depC)),4.,pc)*1.4:shal*kb.x*g0;}
+ {float g0=.6+.4*sin(ts*1.3+wp.x*1.7+wp.y);base+=glowC?kg*kb.x*pwQ(g0*(.4+.6*(1.-depC)),4.,pc)*1.05:shal*kb.x*g0;}
  vec3 refl=mix(uSkyR,rf.rgb,rf.a);vec3 c=mix(base,refl,clamp(fr,0.,1.));c=mix(c,kelpC,kelp*.45);
  float foam=(pwHard(.75,1.,vS2+(r1-.5)*.35)*(.6+.4*sin(ts*2.+wp.x*3.))+flowing*pwHard(.6,.9,r2)*.5)*uFoam*ka.z;
  /* WA-2a: white water from the flow map: rapids, a river's churn into still water, a fall's foot; it boils in place, in steps */
