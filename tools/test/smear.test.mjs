@@ -1,14 +1,21 @@
-// VFX track VFX-1: the throw's pace and its afterimages (game/js/logic/smear.js)
+// VFX track VFX-1 and VFX-2: the throw's pace, its afterimages and its ribbon (game/js/logic/smear.js)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  RIBBON_CELLS,
+  RIBBON_HALF,
+  RIBBON_STEPS,
   SMEAR_GHOSTS,
+  SMEAR_KEEP,
   SMEAR_NEAR,
   SMEAR_STEP,
+  ribbonCells,
+  ribbonEdges,
   smearCount,
   smearGhosts,
   smearHistory,
   smearRecord,
+  smearRibbon,
   throwArcEase,
 } from '../../game/js/logic/smear.js';
 
@@ -30,10 +37,11 @@ const fly = (ms = 480) => {
   return { H, kept };
 };
 
-test('places are kept on the 24 fps grid, never more than the afterimages need', () => {
+test('places are kept on the 24 fps grid, never more than the afterimages and the ribbon need', () => {
   const { H, kept } = fly();
   assert.equal(kept, Math.floor(480 / SMEAR_STEP) + 1);
-  assert.equal(H.list.length, SMEAR_GHOSTS.length + 1);
+  assert.equal(SMEAR_KEEP, Math.max(SMEAR_GHOSTS.length + 1, RIBBON_CELLS));
+  assert.equal(H.list.length, SMEAR_KEEP);
   for (let i = 1; i < H.list.length; i++) assert.ok(H.list[i - 1].t > H.list[i].t, 'newest first');
 });
 
@@ -85,4 +93,86 @@ test('Reduced motion and the lowest quality draw none; level 2 draws two', () =>
   const { H } = fly();
   assert.equal(smearGhosts(H, 480, 2).length, 2);
   assert.deepEqual(smearGhosts(null, 0), []);
+});
+
+/* VFX-2: the ribbon */
+const len = R =>
+  R.reduce((a, p, i) => (i ? a + Math.hypot(p.x - R[i - 1].x, p.y - R[i - 1].y, p.z - R[i - 1].z) : 0), 0);
+
+test('in flight the ribbon runs from the pyramid back along its last places, tapered and frayed at its tail', () => {
+  const { H } = fly(),
+    head = { x: 4.8, y: 1, z: 0 },
+    R = smearRibbon(H, 480, RIBBON_CELLS, null, head);
+  assert.deepEqual([R[0].x, R[0].y, R[0].z], [4.8, 1, 0], 'it reaches the pyramid');
+  assert.ok(Math.abs(R[R.length - 1].x - H.list[RIBBON_CELLS - 1].x) < 1e-9, 'its tail is the oldest place it uses');
+  assert.equal(R[0].w, RIBBON_HALF);
+  assert.equal(R[R.length - 1].w, 0);
+  for (let i = 1; i < R.length; i++) {
+    assert.ok(R[i].x < R[i - 1].x, 'head first');
+    assert.ok(R[i].w < R[i - 1].w, 'narrower toward the tail');
+    assert.ok(R[i].e >= R[i - 1].e, 'more eroded toward the tail');
+  }
+  assert.equal(R[0].e, 0, 'the head is whole');
+  assert.ok(R[R.length - 1].e > 0 && R[R.length - 1].e < 1, 'the tail is frayed, not gone');
+  for (const p of R) assert.equal(p.e * RIBBON_STEPS, Math.round(p.e * RIBBON_STEPS), 'erosion moves in steps');
+});
+
+test('once the pyramid stops the ribbon erodes away in its steps, one a grid cell, and never comes back', () => {
+  const { H } = fly(),
+    end = H.list[0].t,
+    worn = t => {
+      const R = smearRibbon(H, t, RIBBON_CELLS);
+      return R.length ? R.reduce((a, p) => a + p.e, 0) / R.length : 1;
+    };
+  let last = worn(end);
+  const seen = new Set();
+  for (let t = end; t < end + (RIBBON_STEPS + 2) * SMEAR_STEP; t += 4) {
+    assert.ok(worn(t) >= last, 'never comes back');
+    last = worn(t);
+    seen.add(last.toFixed(6));
+  }
+  assert.ok(seen.size <= RIBBON_STEPS + 1, 'held between steps');
+  assert.equal(smearRibbon(H, end + RIBBON_STEPS * SMEAR_STEP + 1, RIBBON_CELLS).length, 0, 'gone in about 150 ms');
+  assert.ok(smearRibbon(H, (H.cell + RIBBON_STEPS) * SMEAR_STEP - 1, RIBBON_CELLS).length > 0, 'not sooner');
+});
+
+test('the ribbon ends before the camera, and the quality sets its length', () => {
+  const { H } = fly(),
+    far = smearRibbon(H, 480, RIBBON_CELLS),
+    eye = { x: H.list[3].x - 1.9, y: 1, z: 0 },
+    cut = smearRibbon(H, 480, RIBBON_CELLS, eye);
+  assert.ok(cut.length > 1 && len(cut) < len(far), 'shorter');
+  assert.ok(cut.every(p => Math.hypot(p.x - eye.x, p.y - eye.y, p.z - eye.z) >= 1.9 - 1e-9));
+  assert.equal(ribbonCells(true, 0), 0);
+  assert.equal(ribbonCells(false, 3), 0);
+  assert.equal(ribbonCells(false, 2), 4);
+  assert.equal(ribbonCells(false, 0), RIBBON_CELLS);
+  assert.ok(len(smearRibbon(H, 480, 4)) < len(far));
+  assert.deepEqual(smearRibbon(H, 480, 0), []);
+  assert.deepEqual(smearRibbon(null, 0, RIBBON_CELLS), []);
+});
+
+test('the edges face the camera; a spinning throw twists them about the tumble axis', () => {
+  const H = smearHistory();
+  for (let t = 0; t <= 300; t += 8) smearRecord(H, t, { x: t / 100, y: 1, z: 0, tum: t / 40 });
+  const R = smearRibbon(H, 300, RIBBON_CELLS),
+    eye = { x: 1, y: 1, z: 10 },
+    side = E => {
+      const d = [0, 1, 2].map(j => E[1][j] - E[0][j]),
+        l = Math.hypot(...d);
+      return d.map(v => v / l);
+    },
+    flat = ribbonEdges(R, eye),
+    spun = ribbonEdges(R, eye, [0.35, 0.3, 0.89]);
+  assert.equal(flat.length, R.length);
+  for (let i = 0; i < R.length - 1; i++) {
+    const s = side(flat[i]);
+    assert.ok(Math.abs(s[2]) < 1e-6 && Math.abs(s[0]) < 1e-6, 'square to the curve and to the eye: up');
+    const w = Math.hypot(...[0, 1, 2].map(j => spun[i][1][j] - spun[i][0][j]));
+    assert.ok(Math.abs(w - 2 * R[i].w) < 1e-9, 'the same width');
+    assert.ok(Math.abs(side(spun[i])[0]) < 1e-6, 'still square to the curve');
+  }
+  const turned = spun.slice(0, -1).map(side),
+    spread = Math.max(...turned.map(s => s[2])) - Math.min(...turned.map(s => s[2]));
+  assert.ok(spread > 0.5, 'it twists along its length');
 });

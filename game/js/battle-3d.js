@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
-import { smearGhosts } from './logic/smear.js';
+import { RIBBON_CORE, ribbonEdges, smearGhosts, smearRibbon } from './logic/smear.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
@@ -26,6 +26,7 @@ import {
   actorMetersPerPixel,
   actorPositions,
   actorWorldPoint,
+  battleRibbonCells,
   battleSmearCount,
   battleStage,
   particleSprite,
@@ -51,10 +52,12 @@ expose({
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
+  ribbonColour: [() => ribbonColour, v => ((ribbonColour = v), provide({ ribbonColour }))],
+  ribbonVertices: [() => ribbonVertices, v => (ribbonVertices = v)],
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dStart, battle3dStop });
+provide({ battle3dLayout, battle3dStart, battle3dStop, ribbonColour });
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -333,7 +336,10 @@ function battle3dFrame() {
   }
   /* RF-2: the thrown pyramid, a lit 3D model; battle-stage.js draws its flat icon instead while it can't be */
   const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, T) : null;
+  let ribbon = null;
   if (py) {
+    /* VFX-2: its motion lines along the last of its arc (walk/effects.js ribbonPass) */
+    ribbon = ribbonVertices(battleStage.coin, T);
     items.push(py);
     if (py.light) lights.push(py.light);
     /* VFX-1: its afterimages, the same model at its older places, dithered and brighter in its own colours (the
@@ -358,6 +364,7 @@ function battle3dFrame() {
     off: O,
     gy: battle3d.gy,
     items,
+    ribbon,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
@@ -407,6 +414,30 @@ function pyramidItem(C, T) {
   if (C.kind === 'capstone' || glow > 0.05)
     it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
   return it;
+}
+/* VFX-2: a thrown pyramid's ribbon as the ribbon pass takes it (two vertices a point: the walk scene's place, the
+   side, the erosion), or null when there is none (Reduced motion, the lowest quality, landed and eroded away) */
+function ribbonVertices(C, T) {
+  const V = battleStage.V,
+    R = smearRibbon(C.trail, battleStage.t, battleRibbonCells(), V, C.arc ? C : null);
+  const col = ribbonColour(C.kind);
+  if (R.length < 2 || !col) return null;
+  const E = ribbonEdges(R, V, C.rax),
+    v = [];
+  for (let i = 0; i < E.length; i++)
+    for (let s = 0; s < 2; s++) {
+      const [x, z] = T(E[i][s][0], E[i][s][2]);
+      v.push(x, battle3d.gy + E[i][s][1], z, s ? 1 : -1, R[i].e);
+    }
+  return { v, col: hexToRgb(col).map(c => c / 255), core: RIBBON_CORE };
+}
+/* VFX-2: a pyramid's own colour for its ribbon (its recipe's first layer); the mail move's coin takes the gold
+   pyramid's. null while the recipe isn't loaded (no ribbon for that moment) */
+function ribbonColour(kind) {
+  const k = PYRAMIDS && PYRAMIDS[kind] ? kind : 'gold_pyramid',
+    rec = PYRAMIDS && PYRAMIDS[k] ? loadPropModelRecipe(pyramidModelPath(k)) : null,
+    col = rec && rec.layers && rec.layers[0] && rec.layers[0].col;
+  return typeof col === 'string' && col[0] === '#' ? col : null;
 }
 /* VFX-1: an afterimage's look (walk/prop-look.js's shape): its colours' value times 1 + glow, a little more
    saturated, nothing else changed; one per glow, made once */
