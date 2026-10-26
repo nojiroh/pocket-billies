@@ -111,7 +111,7 @@ import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, walkCamera } from './walk/camera.js';
 import { mapSun, walkLightContext } from './walk/lighting.js';
-import { lampShadowMaps, shadowPass } from './walk/shadows.js';
+import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
@@ -313,6 +313,8 @@ export function ensureWalkGl(cv) {
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
       /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
       engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* phase 20 R3: the instanced shadow pictures' program, while Engine > Quality "Shadows in batches" is on */
+      engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
     ])
       if (d)
         precompilePrograms(
