@@ -191,9 +191,11 @@ function rosterSpeciesId(id) {
 async function silhouetteOf(id, size = 24) {
   if (SILHOUETTE_CACHE.has(id + size)) return SILHOUETTE_CACHE.get(id + size);
   let src = null;
-  /* Studio plan Phase 5: a kit Billie has no piece layout (its rig says kit: kitBuilds.json); it is drawn by its rig */
-  const kit = studioState.rigs?.[rosterSpeciesId(id)]?.front?.kit;
-  if (!kit)
+  /* Studio plan Phase 5: a kit Billie has no piece layout (its rig says kit: kitBuilds.json); it is drawn by its rig.
+     RO-3b: nor has a placeholder Billie (placeholder: bodyPlans.json) */
+  const F = studioState.rigs?.[rosterSpeciesId(id)]?.front,
+    baked = F?.kit || F?.placeholder;
+  if (!baked)
     try {
       const im = await loadImage('../game/art/next/billionaires/' + id + '.png');
       const lay = await fetch('../game/art/next/billionaires/' + id + '.json')
