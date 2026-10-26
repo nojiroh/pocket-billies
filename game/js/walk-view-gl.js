@@ -86,7 +86,7 @@ import {
   trimTextures,
   webgl2Supported,
 } from './engine/webgl.js';
-import { sunLight } from './engine/light.js';
+import { frameBlockLost, sunLight } from './engine/light.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition } from './engine/post-effects.js';
 import { environment, environmentFrame } from './environment.js';
 import { PREP_BUDGET_MS, walkRenderer } from './walk/walk-state.js';
@@ -109,7 +109,7 @@ import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { gatherFrameItems } from './walk/frame-items.js';
-import { drawBoxFaces, drawPlayerSilhouette, drawSprites } from './walk/sprites.js';
+import { drawBoxFaces, drawPlayerSilhouette, drawSprites, hideQueriesLost } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, walkCamera } from './walk/camera.js';
 import { mapSun, walkLightContext } from './walk/lighting.js';
 import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shadows.js';
@@ -381,6 +381,8 @@ function dropWalkGpuCaches() {
 }
 function onGlContextRestored(cv) {
   dropWalkGpuCaches();
+  frameBlockLost();
+  hideQueriesLost();
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
