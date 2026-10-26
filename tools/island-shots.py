@@ -9,6 +9,7 @@ lighthouse, the windmill and the town from a free camera, and a flat ground map 
     python3 tools/island-shots.py OUT_DIR --scene=test_island
     python3 tools/island-shots.py OUT_DIR --only=top-down,summit   # only these (the others in OUT_DIR stay)
     python3 tools/island-shots.py OUT_DIR --hud          # the whole page, the HUD too (default: the game's canvas alone)
+    python3 tools/island-shots.py OUT_DIR --hour=22      # at this hour, clear summer weather (HB-10b: the square by night)
 
 Run `npm run data` first (the page reads game/data/gamedata.js). Writes OUT_DIR/<name>.png and OUT_DIR/shots.json
 (the names, where you stood, the frame count). Nothing is sent anywhere."""
@@ -25,6 +26,7 @@ LOW = '--low' in ARGS
 CANVAS = '--hud' not in ARGS
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
 want = lambda name: not ONLY or name in ONLY
+HOUR = next((float(a.split('=', 1)[1]) for a in ARGS if a.startswith('--hour=')), None)
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'copperleaf')
 W, H = 390, 760
 COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
@@ -100,6 +102,7 @@ def main():
         pg.goto(url)
         if not fast.until(pg, f"typeof walkView!=='undefined'&&walkView.ready&&walkRenderer.on&&(walkView.sc.baseId||walkView.id)==='{SCENE}'", 240):
             raise Exception('the island never opened')
+        if HOUR is not None: pg.evaluate(f"environment.force={{time:{HOUR},weather:'clear',season:'summer'}};0")
         settle(pg, 10)
 
         def shot(name, label, where=None):
