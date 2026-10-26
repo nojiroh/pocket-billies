@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-3 - The stretched pyramid - 2026-10-26
+Branch `track/vfx` (main merged in first; HANDOFF conflicted, both sides kept). Plan approved in Plan Mode; the
+owner's answers: the 2 m rule near the camera stays (a catch's release is within it, so a catch stretches only before
+the hit; the send-out and the mail coin stretch at both ends); the 2D fallback's icon stretches too.
+- logic/smear.js: `throwArcPace` (the ease's slope) and `smearStretch`: on a cell whose kept place has a pace of 1.3x
+  the mean or more (`STRETCH_PACE`: one or two cells at each end of a 380-480 ms throw), the drag toward the place one
+  cell ago, x0.6 (`STRETCH_K`), at most 0.8 m (`STRETCH_MAX`), and a seed a cell; held for the cell, none once landed,
+  near the camera, under Reduced motion or at quality 3 (the afterimages' gate). Kept places now carry the arc's `k`.
+  Tests in tools/test/smear.test.mjs.
+- prop-models.js `SMEAR_GLSL`/`smearDrag` in both one-at-a-time vertex shaders (low-poly `mdl` and voxel `vox`):
+  from the spin's pivot, a vertex facing away from the motion is pushed back by the drag x clamp(dot) x noise
+  (0.7..1, hashed from its model place and the seed); `setItemSmear` sets `uSmear` for every item (0 unless
+  `it.smear`). "Models in batches" (on by default) has no room for it in the instance record, so a stretched item
+  leaves the batch (`splitSmeared`) and is drawn one at a time. Shadows stay unstretched.
+- battle-stage.js `battleStretch(C)`, used by battle-3d.js (the main pyramid only, not its copies; the drag turned
+  into the walk scene's metres) and the 2D icon (scaled along the projected drag, its front edge kept).
+- Checked: the plan said "the voxel shader"; the pyramid is low-poly by default (`world.voxelLowPoly`), voxel when that
+  is off; both were filmed.
+- Risky, check on the phone: the look (an arrow-like wedge for a cell or two; 0.6/0.8 m are first guesses for VFX-6's
+  dials). At a send-out's release the pyramid is at the top edge, partly under the top bar. In headless films a
+  catch's foe sometimes reads white in the noon sun's glare, in frames before the stretch too (not this change).
+- Verified: lint, typecheck, format, check:modules, unit tests 1329 pass; headless films (landscape catch and
+  send-out, phone portrait, voxel path, batching on, the 2D fallback): the wedge shows on the fast cells only, no
+  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Tag `vfx-3-done` for the owner (the git proxy
+  refuses tag pushes).
+- Next: VFX-4 (the impact frame) on `track/vfx`, in Plan Mode.
+
 ### VFX track VFX-2 - The motion-line ribbon - 2026-10-26
 Branch `track/vfx` (main merged in first; HANDOFF and BRANCHES conflicted, both sides kept). Plan approved in Plan
 Mode; the owner's answers: the 2D fallback draws it too; the catch, the send-out and the mail coin all leave it;

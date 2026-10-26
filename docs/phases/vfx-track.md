@@ -56,6 +56,12 @@ VFX-1 were built on `ccr-a98cc267-eqso1d` at the owner's word (`track/vfx` didn'
   whole turned the strip nearly twice along its length, so it mostly showed its edge), the colour's value x1.35.
 - **VFX-3** the stretched pyramid: the vertex stretch in the voxel shader (a lagged position, the trailing side
   pushed back, a little noise), on the pyramid only, on its fastest one or two frames (the release and before impact).
+  Done 2026-10-26 (the owner's answers: the 2 m rule near the camera stays, so a catch stretches only before the hit;
+  the 2D fallback's icon stretches too). The pyramid is a low-poly model by default, so the stretch is in both
+  one-at-a-time vertex shaders (low-poly and voxel, prop-models.js `SMEAR_GLSL`); "Models in batches" is on by
+  default, so a stretched pyramid leaves the batch and is drawn one at a time. A cell is stretched when the throw's
+  pace there is 1.3x its mean or more (`throwArcPace`): one or two cells at each end; the trailing side is dragged
+  0.6 of the way back to the place one cell ago, at most 0.8 m. Shadows stay unstretched.
 - **VFX-4** the impact frame: one or two frames of a two-tone flash with radial lines from the hit point, on the
   pyramid's impact and on crits. The crit speed lines move from the 2D canvas into GL.
 - **VFX-5** attack lunges: the lean (`uShear`) driven by the lunge's speed, one or two afterimages of the rig's
