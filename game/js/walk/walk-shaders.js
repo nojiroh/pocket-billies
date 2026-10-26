@@ -251,7 +251,7 @@ void main(){vec3 p=aPos;
   p.y+=(.5+.5*sin(length(r)*.55+uTide.w*1.3))*.2*uTide.y*smoothstep(.45,.9,aDK.x)*(1.-smoothstep(4.,14.,ou));}
  p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
+precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform float uLampW;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
 /* water track WA-5b: the kinds' looks in a small texture (walk/water.js kindTexture: a column a kind, a row a group), no cap on the kinds */
 uniform highp sampler2D uKinds;float gEst=0.;
 /* water track WA-10: in an estuary (the flow map's alpha) the river's look (the stream's column) is mixed into the body's; what a kind does (row 4) stays the body's */
@@ -383,6 +383,8 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,depC));a=mix(a,max(a,.8),reef);a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);a=mix(a,min(a,.42),flo);
  /* IS-3: the sea past the scene's edge has no land under it beyond the 8 m border: there it is opaque */
  {vec2 sz=1./max(uShoreR.xy,vec2(1e-4));float ou=max(max(-vW.x,vW.x-sz.x),max(-vW.z,vW.z-sz.y));a=mix(a,1.,smoothstep(3.,7.,ou));}
+ /* Lamp light on water (uLampW): the near lamps light the surface as they light the ground */
+ if(uLampW>0.)c+=c*points(vW,vec3(0.,1.,0.))*uLampW;
  o=vec4(fogit(c,vW),a);}`,
   ],
   fall: [
@@ -390,7 +392,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
 precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;layout(location=3) in vec2 aBig;uniform mat4 uVP;out vec3 vW;out vec2 vT;out vec2 vB;${COMMON_GLSL}
 out float vH;void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vT=vec2(aFl.y,aShore*aFl.x);vH=aFl.x;vB=aBig;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec2 vT;in float vH;in vec2 vB;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
+precision highp float;in vec3 vW;in vec2 vT;in float vH;in vec2 vB;out vec4 o;uniform float uLampW;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
 void main(){if(rockHides(vW))discard;
  float pr=pwRes(),pix=uPixW.x,t=pwStep(uTime*.001),sh=shadowAt(vW,.002);vec3 Lt=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;
  if(pix<.5){/* pixel water off: the sheet of before */float x=vT.x*7.,y=vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
@@ -405,7 +407,7 @@ void main(){if(rockHides(vW))discard;
  float q=pwQ(v,4.,fc);vec3 c=q<.2?uShallow*.9:q<.5?mix(uShallow,vec3(.9,.96,1.),.38):q<.8?mix(uShallow,vec3(.93,.97,1.),.7):vec3(.95,.98,1.);
  float e=min(ax,wM-ax)*pr,rag=step(e,1.+2.*step(.55,lnoise(vec2(y*2.-t*2.,fc.x*.3))));
  /* falling water stays bright in the cliff's shade (it catches the sky), and a little of its own at night */
- Lt=ambient(vec3(0,0,-1),1.,sh)*1.3+uSunCol*(.3+.4*sh);Lt=mix(Lt,vec3(dot(Lt,vec3(.3,.59,.11))),.6);c+=c*.08*(1.-uAmbK);o=vec4(fogit(c*Lt,vW),mix(.9+q*.08,.62,rag*(1.-ft)));}`,
+ Lt=ambient(vec3(0,0,-1),1.,sh)*1.3+uSunCol*(.3+.4*sh);if(uLampW>0.)Lt+=points(vW,vec3(0,0,-1))*uLampW;Lt=mix(Lt,vec3(dot(Lt,vec3(.3,.59,.11))),.6);c+=c*.08*(1.-uAmbK);o=vec4(fogit(c*Lt,vW),mix(.9+q*.08,.62,rag*(1.-ft)));}`,
   ],
   /* 0.1.0 alpha: the grass in the 32 px a metre pixel style, coloured by the ground it grows from. A blade is a quad
      on the pixel grid (vP: its pixels across and up); the fragment shader draws it in whole pixels: a staircase that
