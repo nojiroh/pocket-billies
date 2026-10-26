@@ -21,7 +21,7 @@ const D = readGameData(),
   M = D.maps.copperleaf,
   S = D.rules.square,
   well = M.plots.find(L => L.k === 'well'),
-  stops = squareStops(M.props),
+  stops = squareStops(M.props, M.hub),
   count = k => stops.filter(s => s.k === k).length;
 
 test('Copperleaf has SQUARE_FOLK townsfolk, the most the Engine draws at once by default', () => {
@@ -37,7 +37,7 @@ test('the middle is the fountain; a map without a square has no stops', () => {
 test('the stops: behind and in front of each stall and the cart, by the benches, under the lamps, round the fountain', () => {
   assert.deepEqual(
     ['keep', 'shop', 'sit', 'lamp', 'fountain'].map(count),
-    [4, 4, 4, 7, 6],
+    [4, 4, 4, 7, 3],
     JSON.stringify(stops.map(s => s.k))
   );
 });
@@ -49,6 +49,21 @@ test('the middle stays walkable: only the fountain stops are nearer than the edg
     if (s.k === 'fountain') assert.ok(r >= basin + 0.6 && r <= 3, `fountain stop ${r}`);
     else assert.ok(r >= WALK_R, `${s.k} stop at ${s.x}, ${s.z}: ${r.toFixed(1)} m from the middle`);
   }
+});
+
+test('nobody stands in the stick’s run from the hub (HB-10b) or within 2 m of where you arrive', () => {
+  const O = M.cam.orbit.c,
+    L = Math.hypot(O[0] - M.hub[0], O[1] - M.hub[1]),
+    u = [(O[0] - M.hub[0]) / L, (O[1] - M.hub[1]) / L];
+  for (const s of stops) {
+    assert.ok(Math.hypot(s.x - M.hub[0], s.z - M.hub[1]) >= 2, `${s.k} stop at ${s.x}, ${s.z} by the hub`);
+    for (let t = -4; t <= 4; t += 0.25)
+      assert.ok(
+        Math.hypot(M.hub[0] + t * u[0] - s.x, M.hub[1] + t * u[1] - s.z) >= 1.5,
+        `${s.k} stop at ${s.x}, ${s.z} in the run`
+      );
+  }
+  assert.equal(squareStops(M.props).filter(s => s.k === 'fountain').length, 6);
 });
 
 test('every stop can be walked to from the hub', () => {

@@ -4004,7 +4004,7 @@ function folkAnchors(sc) {
 function folkSquare(sc, n) {
   let S = walkView.square;
   if (!S || S.id !== walkView.id || S.n !== n) {
-    const stops = folkTown(sc) && RULES.square ? squareStops(sc.props || []) : [];
+    const stops = folkTown(sc) && RULES.square ? squareStops(sc.props || [], mapHub(sc)) : [];
     S = walkView.square = {
       id: walkView.id,
       n,

@@ -24,6 +24,7 @@ import { hashString, rngFrom } from './rng.js';
 expose({
   SQUARE_FOUNTAIN_N: [() => SQUARE_FOUNTAIN_N],
   SQUARE_FOUNTAIN_R: [() => SQUARE_FOUNTAIN_R],
+  SQUARE_HUB_OPEN: [() => SQUARE_HUB_OPEN],
   SQUARE_STANDS: [() => SQUARE_STANDS],
   // @ts-expect-error -- replaced on purpose
   folkCap: [() => folkCap, v => (folkCap = v)],
@@ -61,9 +62,11 @@ export const SQUARE_STANDS = Object.freeze({
   streetlamp: [['lamp', -0.7]],
   string_lights: [['lamp', -0.5]],
 });
-/** the stops round the fountain: how far from its middle (its basin is 1.75 m round) and how many */
+/** the stops round the fountain: how far from its middle (its basin is 1.75 m round) and how many; none within
+ * SQUARE_HUB_OPEN degrees of the hub's side (where you arrive, and the stick's run from there: HB-10b) */
 export const SQUARE_FOUNTAIN_R = 2.6,
-  SQUARE_FOUNTAIN_N = 6;
+  SQUARE_FOUNTAIN_N = 6,
+  SQUARE_HUB_OPEN = 75;
 
 export const squareRound = (/** @type {number} */ v) => Math.round(v * 100) / 100;
 
@@ -85,9 +88,9 @@ export function squareMiddle(props) {
   return best ? [best.x, best.z] : [squareRound(mx), squareRound(mz)];
 }
 
-/** the square's stops, from its props (in their order), then round the fountain
- * @param {any[]} props @returns {SquareStop[]} */
-export function squareStops(props) {
+/** the square's stops, from its props (in their order), then round the fountain (its side toward the hub left open)
+ * @param {any[]} props @param {Pt} [hub] @returns {SquareStop[]} */
+export function squareStops(props, hub) {
   const mid = squareMiddle(props);
   if (!mid) return [];
   const [cx, cz] = mid,
@@ -108,8 +111,14 @@ export function squareStops(props) {
       out.push(k === 'shop' ? { k, x, z, fx: p.x, fz: p.z } : { k, x, z, fx: cx, fz: cz });
     }
   }
+  const toHub = hub ? Math.atan2(hub[1] - cz, hub[0] - cx) : null;
   for (let i = 0; i < SQUARE_FOUNTAIN_N; i++) {
     const a = ((i + 0.5) * 2 * Math.PI) / SQUARE_FOUNTAIN_N;
+    if (
+      toHub != null &&
+      Math.abs(Math.atan2(Math.sin(a - toHub), Math.cos(a - toHub))) < (SQUARE_HUB_OPEN * Math.PI) / 180
+    )
+      continue;
     out.push({
       k: 'fountain',
       x: squareRound(cx + Math.cos(a) * SQUARE_FOUNTAIN_R),
