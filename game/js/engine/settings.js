@@ -899,7 +899,14 @@ export const ENGINE_SPEC = [
         0.05,
         'How far back the camera stands. Farther looks flatter and less distorted; the view stays the same width. Indoor scenes keep the camera close, inside their walls.',
       ],
-      ['fov', 'Zoom', 0.5, 2, 0.02],
+      [
+        'fov',
+        'View width',
+        0.5,
+        2,
+        0.02,
+        'Above 1 the scene shows less across, so it looks closer (the width shown divided by this). Not your pinch zoom: that is under Zoom.',
+      ],
       [
         'lead',
         'Look-ahead (m)',
