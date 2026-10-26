@@ -10,14 +10,25 @@
      curve 1 is a straight line, which with the default ends is how zoom worked before CAM-2 (14 degrees of tilt a
      unit of zoom, the distance times the zoom, the same field of view);
    - past an end (a moment zooming in further than you can pinch) each value carries on along the curve's slope there.
-   The zoom itself is your pinch zoom times the camera goals' zoom (logic/camera-follow.js blendGoals). */
+   The zoom itself is your pinch zoom times the camera goals' zoom (logic/camera-follow.js blendGoals).
+   CAM-4a, the zoom's feel (Camera > Feel): the zoom eases in log space (each second takes the same share of the way
+   at any zoom, so pinching in and out feels alike), the pinch's sensitivity, a soft rubber band past the limits and
+   the lean toward the point you pinch. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   ZOOM_ENDS: [() => ZOOM_ENDS],
   // @ts-expect-error -- replaced on purpose
+  pinchLean: [() => pinchLean, v => (pinchLean = v)],
+  // @ts-expect-error -- replaced on purpose
+  pinchZoom: [() => pinchZoom, v => (pinchZoom = v)],
+  // @ts-expect-error -- replaced on purpose
+  zoomBand: [() => zoomBand, v => (zoomBand = v)],
+  // @ts-expect-error -- replaced on purpose
   zoomBend: [() => zoomBend, v => (zoomBend = v)],
+  // @ts-expect-error -- replaced on purpose
+  zoomEase: [() => zoomEase, v => (zoomEase = v)],
   // @ts-expect-error -- replaced on purpose
   zoomShape: [() => zoomShape, v => (zoomShape = v)],
 });
@@ -71,4 +82,68 @@ export function zoomShape(z, E) {
     dist = 1 + ((close ? E.nearDist : E.farDist) - 1) * k,
     fov = 1 + ((close ? E.nearFov : E.farFov) - 1) * k;
   return { pitch, dist: Math.max(0.15, dist), fov: Math.max(0.2, fov) };
+}
+/**
+ * CAM-4a: the zoom eased toward its target in log space, exact at any frame rate: after `smooth` seconds it has gone
+ * 63% of the way, whether it is zooming in or out (a linear ease seems to rush up close and crawl far out).
+ * @param {number} z the zoom now
+ * @param {number} zT the zoom it goes to
+ * @param {number} smooth seconds (0: at once)
+ * @param {number} dt seconds since the last frame
+ */
+export function zoomEase(z, zT, smooth, dt) {
+  if (!(smooth > 0) || !(z > 0) || !(zT > 0)) return zT;
+  return z * Math.pow(zT / z, 1 - Math.exp(-Math.max(0, dt) / smooth));
+}
+/**
+ * CAM-4a: the zoom a pinch asks for: the zoom when the fingers went down times how far they have spread, raised to the
+ * pinch's sensitivity (1: the picture follows the fingers; 2: twice as quick).
+ * @param {number} z0 the zoom when the pinch began
+ * @param {number} d0 the fingers' distance then (pixels)
+ * @param {number} d their distance now (pixels; under 20 counts as 20)
+ * @param {number} speed the sensitivity
+ */
+export function pinchZoom(z0, d0, d, speed) {
+  return z0 * Math.pow(d0 / Math.max(20, d), speed > 0 ? speed : 1);
+}
+/**
+ * CAM-4a: a zoom kept between the limits; with a band, past a limit it gives a little (in log zoom, never more than
+ * `band` past it), as a rubber band does, and lets go back to the limit on release (the caller clamps then).
+ * @param {number} v the zoom asked for
+ * @param {number} lo the closest zoom
+ * @param {number} hi the farthest zoom
+ * @param {number} band how far past a limit it may stretch, in log zoom (0: a hard stop)
+ */
+export function zoomBand(v, lo, hi, band) {
+  if (!(band > 0) || !(v > 0)) return Math.min(hi, Math.max(lo, v));
+  const L = Math.log(v),
+    a = Math.log(lo),
+    b = Math.log(hi);
+  if (L < a) return Math.exp(a - band * (1 - Math.exp((L - a) / band)));
+  if (L > b) return Math.exp(b + band * (1 - Math.exp(-(L - b) / band)));
+  return v;
+}
+/**
+ * CAM-4a: zooming about the point you pinch. Zooming by z/z0 about a point A keeps A still if the aim moves by
+ * (A - aim) * (1 - z/z0); the walking camera keeps you in view, so the lean is capped and eases back when you let go.
+ * @param {number} ax the pinched point on the ground (m)
+ * @param {number} az
+ * @param {number} px the aim's point when the pinch began (m)
+ * @param {number} pz
+ * @param {number} z0 the zoom when the pinch began
+ * @param {number} z the zoom now
+ * @param {number} cap the most lean (m)
+ * @returns {number[]} the lean [x, z] (m)
+ */
+export function pinchLean(ax, az, px, pz, z0, z, cap) {
+  const k = z0 > 0 && z > 0 ? 1 - z / z0 : 0;
+  let x = (ax - px) * k,
+    y = (az - pz) * k;
+  const n = Math.hypot(x, y),
+    m = Math.max(0, cap);
+  if (n > m) {
+    x *= m / n;
+    y *= m / n;
+  }
+  return [x, y];
 }

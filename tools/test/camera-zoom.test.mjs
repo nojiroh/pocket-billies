@@ -91,3 +91,59 @@ test('camera goals carry a zoom that ramps in with their weight and multiplies',
   const G3 = blendGoals(st3, [], 10, 0.4);
   near(G3.zoom, 1);
 });
+
+// CAM-4a: the zoom's feel (Camera > Feel)
+const { zoomEase, pinchZoom, zoomBand, pinchLean } = await import('../../game/js/logic/camera-zoom.js');
+
+test('the zoom eases in log space: the same share of the way in and out, exact at any frame rate', () => {
+  /* after `smooth` seconds 63% of the way in log zoom, whichever way */
+  const share = (z, zT) => Math.log(zoomEase(z, zT, 0.2, 0.2) / z) / Math.log(zT / z);
+  near(share(1, 0.5), 1 - Math.exp(-1), 1e-12);
+  near(share(1, 2), 1 - Math.exp(-1), 1e-12);
+  /* 30, 60 and 144 frames a second land on the same zoom after half a second */
+  const run = fps => {
+    let z = 1.6;
+    for (let i = 0; i < fps / 2; i++) z = zoomEase(z, 0.6, 0.25, 1 / fps);
+    return z;
+  };
+  near(run(30), run(144), 1e-9);
+  near(run(60), run(144), 1e-9);
+  /* never passes its target; 0 seconds is at once */
+  assert.ok(zoomEase(1, 0.5, 0.2, 5) >= 0.5);
+  assert.equal(zoomEase(1, 0.7, 0, 0.016), 0.7);
+});
+
+test('a pinch follows the fingers at sensitivity 1, as before CAM-4a, and quicker above it', () => {
+  near(pinchZoom(1, 200, 400, 1), 0.5);
+  near(pinchZoom(0.8, 300, 150, 1), 1.6);
+  near(pinchZoom(1, 200, 400, 2), 0.25);
+  /* fingers closer than 20 px count as 20 */
+  near(pinchZoom(1, 200, 5, 1), 10);
+});
+
+test('the rubber band: a hard stop at 0, and past a limit it gives no more than the band', () => {
+  assert.equal(zoomBand(0.2, 0.55, 1.7, 0), 0.55);
+  assert.equal(zoomBand(3, 0.55, 1.7, 0), 1.7);
+  near(zoomBand(1.1, 0.55, 1.7, 0.15), 1.1);
+  const lo = zoomBand(0.4, 0.55, 1.7, 0.15),
+    far = zoomBand(0.01, 0.55, 1.7, 0.15),
+    hi = zoomBand(2.5, 0.55, 1.7, 0.15);
+  assert.ok(lo < 0.55 && lo > 0.55 * Math.exp(-0.15));
+  assert.ok(far < lo && far > 0.55 * Math.exp(-0.15));
+  assert.ok(hi > 1.7 && hi < 1.7 * Math.exp(0.15));
+  /* smooth at the limit: just past it, it gives as much as it is asked */
+  near(Math.log(zoomBand(0.55 * Math.exp(-1e-4), 0.55, 1.7, 0.15) / 0.55), -1e-4, 1e-7);
+});
+
+test('the pinch lean keeps the pinched point still, capped', () => {
+  /* zooming in to half about a point 4 m east leans the aim 2 m east */
+  const [x, z] = pinchLean(14, 10, 10, 10, 1, 0.5, 9);
+  near(x, 2);
+  near(z, 0);
+  /* that point stays put: its offset from the new aim is half the old one, as the view is half as wide */
+  near((14 - (10 + x)) / 4, 0.5);
+  /* capped, and nothing at the starting zoom */
+  const c = pinchLean(30, 10, 10, 10, 1, 0.5, 3);
+  near(Math.hypot(c[0], c[1]), 3);
+  assert.deepEqual(pinchLean(14, 10, 10, 10, 1, 1, 9), [0, 0]);
+});
