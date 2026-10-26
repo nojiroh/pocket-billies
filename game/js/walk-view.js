@@ -66,7 +66,7 @@ import {
   walkRenderer,
 } from './hooks.js';
 import { clamp } from './util.js';
-import { pointInProp, turnedBounds, turnedPoint } from './logic/prop-turn.js';
+import { pointInProp, propDoor, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
@@ -669,15 +669,8 @@ export function doorLinkOf(p, act, mapId) {
 }
 export function doorOf(p) {
   if (!p || p.x == null) return null;
-  const C = walkData().sc,
-    M = C.props[p.k],
-    s = p.s || 1,
-    f = p.f ? -1 : 1,
-    dx = (((M && M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f,
-    r = ((p.rot || 0) * Math.PI) / 180,
-    c = Math.cos(r),
-    sn = Math.sin(r); /* a turned building turns about the middle of its front (buildings.js buildingRotation) */
-  return { at: [p.x + dx * c, p.z + dx * sn], out: [sn, -c], mid: [+p.x, +p.z] };
+  const C = walkData().sc;
+  return propDoor(p, C.props[p.k], C.ppu);
 }
 /* v47: the kind a door keeps hours as (not game-data.js locationKind(id), the kind of a place) */
 export function openingHoursKind(a, p) {
