@@ -187,3 +187,43 @@ test('walk lighting: off, the nearest each frame as before; on, the stable picke
     Object.assign(Q, keep);
   }
 });
+
+test('lamp shadows: the lamps the old code shadowed; with steady lights, a shadowed lamp keeps its map', () => {
+  const pick = G.pickShadowLamps,
+    oldPick = (L, x, z, n) =>
+      L.filter(l => !l.front && l.p[1] > 1.6 && l.r >= 3 && Math.hypot(l.p[0] - x, l.p[2] - z) < 22).slice(0, n);
+  // lights made new each frame (the old picker): the same choice as before, whatever was shadowed last frame
+  for (const [x, z, n] of [
+    [0, 0, 2],
+    [5, -8, 1],
+    [-12, 3, 2],
+    [0, 0, 0],
+  ]) {
+    const L = pickPointLights(
+      street(50, 3).concat([lamp(x + 1, z, { r: 2 }), lamp(x, z + 1, { front: true })]),
+      x,
+      z,
+      16
+    );
+    L.push({ ...L[0], p: [x, 1, z] });
+    assert.deepEqual(pick(copy(L), x, z, n).map(at), oldPick(copy(L), x, z, n).map(at), `${x},${z} ${n}`);
+  }
+  // the same lamp objects frame to frame (the stable picker): walking to and fro between two, one keeps the map
+  const A = lamp(-1, 2),
+    B = lamp(1, 2);
+  let swaps = 0,
+    last = null;
+  for (let i = 0; i < 600; i++) {
+    const x = 0.4 * Math.sin(i / 9),
+      got = pick(
+        [A, B].sort((a, b) => Math.abs(a.p[0] - x) - Math.abs(b.p[0] - x)),
+        x,
+        0,
+        1
+      )[0];
+    if (last && got !== last) swaps++;
+    last = got;
+  }
+  assert.equal(swaps, 0);
+  assert.equal(pick([A, B], 3, 0, 1)[0], B);
+});

@@ -24,16 +24,19 @@ import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, imageTexture, normalize3, renderTarget } from '../engine/webgl.js';
 import { beginLampShadow, beginSunShadow, endShadow, frameBlockStale } from '../engine/light.js';
+import { LIGHT_HOLD_M } from '../engine/light-pick.js';
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { setSpriteUniforms, worldCurveArgs } from './draw-common.js';
 import { screenRay } from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
+  LAMP_SHADOWED: [() => LAMP_SHADOWED],
   SHADOW_LISTS: [() => SHADOW_LISTS],
   drawShadowSprites: [() => drawShadowSprites, v => (drawShadowSprites = v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
+  pickShadowLamps: [() => pickShadowLamps, v => (pickShadowLamps = v)],
   shadowMapArea: [() => shadowMapArea, v => (shadowMapArea = v)],
   shadowPass: [() => shadowPass, v => setShadowPass(v)],
 });
@@ -118,17 +121,29 @@ export function shadowPass(items0, sun, C) {
   SH.far = far;
   return SH;
 }
+/* phase 20 C5: the lamps shadowed last frame. With quality.stableLights on a lit lamp is the same object from frame to
+   frame (engine/light-pick.js), so one shadowed counts LIGHT_HOLD_M nearer and two equal lamps don't trade the shadow
+   maps; off, the lights are made new each frame and none ever matches. */
+const LAMP_SHADOWED = [];
+/* the n lamps of L that throw shadows (hanging high, not a window's light, within 22 m of (x, z)), nearest first */
+function pickShadowLamps(L, x, z, n) {
+  const dist = l => Math.hypot(l.p[0] - x, l.p[2] - z) - (LAMP_SHADOWED.includes(l) ? LIGHT_HOLD_M : 0),
+    cand = n
+      ? L.filter(l => !l.front && l.p[1] > 1.6 && l.r >= 3 && Math.hypot(l.p[0] - x, l.p[2] - z) < 22)
+          .sort((a, b) => dist(a) - dist(b))
+          .slice(0, n)
+      : [];
+  LAMP_SHADOWED.length = 0;
+  for (const l of cand) LAMP_SHADOWED.push(l);
+  return cand;
+}
 /* v43: shadow maps for the two nearest lamps after dark (the ones that hang high: street lamps, lanterns, windows don't
    count). The lamps are moved to the front of the light list so the shader knows which they are. */
 export function lampShadowMaps(items, X, dark) {
-  const n = Math.min(2, engineSetting('shadows', 'lampShadows') ?? 2);
-  if (!n) return;
-  const L = X.lights,
+  const n = Math.min(2, engineSetting('shadows', 'lampShadows') ?? 2),
+    L = X.lights,
     P = walkView.pl,
-    cand = L.filter(l => !l.front && l.p[1] > 1.6 && l.r >= 3 && Math.hypot(l.p[0] - P.x, l.p[2] - P.z) < 22).slice(
-      0,
-      n
-    );
+    cand = pickShadowLamps(L, P.x, P.z, n);
   if (!cand.length) return;
   X.lights = cand.concat(L.filter(l => !cand.includes(l)));
   X._lp = null;
