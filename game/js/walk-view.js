@@ -57,6 +57,7 @@ import {
   soundEffect,
   soundEffectAt,
   speciesOf,
+  squareVisitorsOut,
   standingHeightAt,
   storyAllows,
   talkFolk,
@@ -3944,7 +3945,7 @@ function movePlayer(st, dt) {
 const FOLK_WORK =
   /shop|clinic|lab\b|lab_|bakery|inn\b|inn_|bank|library|school|station|market|stall|cafe|mart|boutique|barn|greenhouse|windmill|office|city_hall|kiosk|ski_lodge/;
 const FOLK_HOME = /house|cottage|townhouse|apartment|cave_house|chalet|villa|cabin|hut/;
-function folkHour() {
+export function folkHour() {
   if (typeof environmentState !== 'function') return 13;
   try {
     const st = environmentState(typeof currentLocationMap === 'function' ? currentLocationMap() : null);
@@ -4303,11 +4304,13 @@ export function updateFolk(n, dt) {
   /* TW-2, HB-10c: a town (the hub, a run's) draws only its first few folk, by the Engine's quality.townFolk and the
      graphics; the rest keep their day */
   if (folkTown(walkView.sc)) {
-    const cap = folkCap(
-      engineSetting('quality', 'townFolk') ?? 10,
-      walkRenderer.q,
-      saveData.preferences && saveData.preferences.aim
-    );
+    /* HB-10c: the ranch's Billies visiting count toward it */
+    const cap =
+      folkCap(
+        engineSetting('quality', 'townFolk') ?? 10,
+        walkRenderer.q,
+        saveData.preferences && saveData.preferences.aim
+      ) - (typeof squareVisitorsOut === 'function' ? squareVisitorsOut() : 0);
     if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
   }
 }
