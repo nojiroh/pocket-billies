@@ -478,7 +478,7 @@ export function bigTilePaths(path, set) {
     f = set || groundTileFolder();
   return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => `next/${f}/${b}_${i}.png`);
 } /* v46: twelve per kind (tools/build-terrain.py) */
-/* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
+/* v47: which set of twelve: the catalogue's tileSet ('tiles47', painted in the Studio's ground tile set; tools/art-source/terrain-v47), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
 export function groundTileFolder() {
   const C = typeof walkData === 'function' && walkData();
@@ -984,7 +984,7 @@ export function pathWearFn(sc, wx0, wy0) {
 /* v47: the soft patches of light and shade, laid across the whole ground in world metres (in the v46 tiles they were
    cut at every tile's edge and repeated with the tile): a quarter of natural ground half a step darker and a touch
    richer, a fifth lighter and a touch paler, a checker where they meet. A kind's `tone` scales them (paved: none).
-   The same sums as tools/build-terrain-v47.py (tone_at, tone_px), so its sheets show what the game lays */
+   The retired tools/build-terrain-v47.py had the same sums; logic/lite-tile.js bakes them into the Lite tiles */
 export const TONE_DIRECTIONS = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
   TONE_DARK = [0.895, 0.905, 0.935],
   TONE_LIGHT = [1.05, 1.05, 1.04],

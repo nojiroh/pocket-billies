@@ -33,7 +33,7 @@ every tier ran. 285 tests passed before RL-1 (290 after). PR #78 left `check:mod
 the smoke check's one red step was older than #78 (the world map's `mthing` shader, aCol on location 7, from phase
 10; fixed). `CLAUDE.md:30` had already been corrected in RL-0. The "16 version-stamped tools" are **not** dead weight:
 `build-scene-props.py` execs the five `scene_props_v*.py`, `build-props-a04.py` imports `build-buildings-v46.py`,
-`build-terrain-v47.py` is the ground generator the game's painter mirrors, and 03-audit-notes lists most of the rest
+`build-terrain-v47.py` was the ground generator the game's painter mirrors (retired in SA-2a), and 03-audit-notes lists most of the rest
 as live generators; only a few are one-off migrations (owner's decision pending, HANDOFF RL-1). Direct `Math.random`
 calls: 172, not 177.
 
