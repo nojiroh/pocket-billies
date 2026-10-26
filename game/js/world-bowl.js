@@ -161,8 +161,13 @@ expose({
   worldBowlCloudsNow: [() => worldBowlCloudsNow, v => (worldBowlCloudsNow = v)],
   worldBowlClumpsInto: [() => worldBowlClumpsInto, v => (worldBowlClumpsInto = v)],
   worldBowlColorAt: [() => worldBowlColorAt, v => (worldBowlColorAt = v)],
+  worldBowlContextRestored: [
+    () => worldBowlContextRestored,
+    v => ((worldBowlContextRestored = v), provide({ worldBowlContextRestored })),
+  ],
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
+  worldBowlDropGpu: [() => worldBowlDropGpu, v => (worldBowlDropGpu = v)],
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
@@ -257,7 +262,7 @@ expose({
   worldMapZoom: [() => worldMapZoom, v => (worldMapZoom = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ bowlWallTexture, worldMapPrewarm });
+provide({ bowlWallTexture, worldBowlContextRestored, worldMapPrewarm });
 export function setWorldBowlRender(v) {
   worldBowlRender = v; // eslint-disable-line no-func-assign
   provide({ worldBowlRender });
@@ -612,6 +617,43 @@ export function worldBowlReset() {
   worldBowl.ground = null;
   if (worldBowl.wall) worldBowl.wall.node = -1;
   worldBowl.dirty = true;
+}
+/* phase 20 H: a restored GPU context is the same object with nothing on it, so every `x.gl === gl` check below would
+   still pass: each part's GPU copy is dropped (the old ones went with the context) and made again on the next frame;
+   the work behind them (spots, ground, terrain pictures, clouds) stays */
+function worldBowlDropGpu() {
+  const g = worldBowl.ground;
+  if (g) {
+    g.gl = null;
+    g.mesh = null;
+    g.water = null;
+    g.shadow = null;
+    g.lines = null;
+    if (g.terrain) g.terrain.gl = null;
+    const F = g.float;
+    if (F) F.gpu = F.fineGpu = F.fallsGpu = F.waterGpu = null;
+    const W = g.things;
+    if (W) {
+      W.gpu = null;
+      if (W.atlas) W.atlas.gl = null;
+      W.dirty = true;
+    }
+  }
+  worldBowl.wall = null;
+  const S = worldBowl.skyState;
+  if (S) S.tex = S.gpu = null;
+  worldBowl.dirty = true;
+}
+/* the context came back (engine/webgl.js watchContextLoss): with the map showing, its programs are made again on the
+   new context (worldMapCanvasGl) and it draws again; else it is rebuilt when it next opens */
+function worldBowlContextRestored() {
+  worldBowlDropGpu();
+  if (!worldBowl.on) return;
+  if (!worldMapCanvasGl()) {
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'world map: not back after the context was restored');
+    return;
+  }
+  worldMapSize();
 }
 /* ---------- the places and the ground ---------- */
 /* the world map's look from worldmap.json (the Studio edits it), each part falling back to the values in code */

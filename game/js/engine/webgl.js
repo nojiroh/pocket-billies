@@ -5,7 +5,7 @@
    One engine state object, gpuState, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { artCacheVersion, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
+import { artCacheVersion, onGlContextRestored, provide, walkRenderer, worldBowlContextRestored } from '../hooks.js';
 import { clamp } from '../util.js';
 import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
@@ -658,6 +658,7 @@ function watchContextLoss(cv) {
     gpuState.cv = null;
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
     if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
+    if (typeof worldBowlContextRestored === 'function') worldBowlContextRestored();
   });
   return true;
 }

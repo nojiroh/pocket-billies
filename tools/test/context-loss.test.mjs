@@ -88,3 +88,42 @@ test("a restore drops the walk view's GPU caches, shown or not (walk-view-gl.js 
     walkView.id = id;
   }
 });
+
+test('a restore drops every GPU copy the world map keeps and keeps the work behind them (world-bowl.js)', async () => {
+  /* the world map's module reads the game data when it loads (game-data.js), put together as the Node tools do */
+  globalThis.GAMEDATA ??= (await import('../data-files.mjs')).readGameData();
+  globalThis.PB_VERSION ??= 'test';
+  await import('../../game/js/world-bowl.js');
+  const { worldBowl } = G,
+    dead = { dead: true },
+    was = { ground: worldBowl.ground, wall: worldBowl.wall, skyState: worldBowl.skyState, on: worldBowl.on },
+    terrain = { gl: dead, pix: dead },
+    atlas = { gl: dead, c: dead },
+    float = { gpu: dead, fineGpu: dead, fallsGpu: dead, waterGpu: dead, fine: dead },
+    things = { gpu: dead, atlas, stand: [dead] };
+  Object.assign(worldBowl, {
+    on: false,
+    ground: { gl: dead, mesh: dead, water: dead, shadow: dead, lines: dead, terrain, float, things, G: dead },
+    wall: { gl: dead, t: dead },
+    skyState: { tex: dead, gpu: dead, clouds: [dead] },
+  });
+  try {
+    G.worldBowlContextRestored();
+    const g = worldBowl.ground;
+    assert.deepEqual([g.gl, g.mesh, g.water, g.shadow, g.lines], [null, null, null, null, null]);
+    assert.equal(terrain.gl, null);
+    assert.equal(atlas.gl, null);
+    assert.deepEqual([float.gpu, float.fineGpu, float.fallsGpu, float.waterGpu], [null, null, null, null]);
+    assert.equal(things.gpu, null);
+    assert.equal(worldBowl.wall, null);
+    assert.deepEqual([worldBowl.skyState.tex, worldBowl.skyState.gpu], [null, null]);
+    /* kept: what the CPU worked out */
+    assert.deepEqual(
+      [terrain.pix, atlas.c, float.fine, things.stand[0], worldBowl.skyState.clouds[0]],
+      Array(5).fill(dead)
+    );
+    assert.ok(worldBowl.dirty);
+  } finally {
+    Object.assign(worldBowl, was);
+  }
+});
