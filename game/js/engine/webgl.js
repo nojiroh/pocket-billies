@@ -853,7 +853,7 @@ function gpuFrame() {
   return true;
 }
 /* an owner's drop on a restore: forgets its handles (they died with the context) so it makes them again on next use */
-function gpuOnRestore(name, fn) {
+export function gpuOnRestore(name, fn) {
   gpuRes.restore.set(name, fn);
 }
 /* a new context (initWebgl): a new generation, nothing on it yet */

@@ -115,6 +115,7 @@ import {
   gpuFramebuffer,
   gpuFree,
   gpuLoading,
+  gpuOnRestore,
   gpuState,
   gpuTexture,
   gpuVao,
@@ -625,7 +626,8 @@ export function worldBowlReset() {
 }
 /* phase 20 H: a restored GPU context is the same object with nothing on it, so every `x.gl === gl` check below would
    still pass: each part's GPU copy is dropped (the old ones went with the context) and made again on the next frame;
-   the work behind them (spots, ground, terrain pictures, clouds) stays */
+   the work behind them (spots, ground, terrain pictures, clouds) stays. Run by the resource registry on every restore
+   (engine/webgl.js gpuOnRestore), before worldBowlContextRestored */
 function worldBowlDropGpu() {
   const g = worldBowl.ground;
   if (g) {
@@ -649,10 +651,10 @@ function worldBowlDropGpu() {
   if (S) S.tex = S.gpu = null;
   worldBowl.dirty = true;
 }
+gpuOnRestore('world map', worldBowlDropGpu);
 /* the context came back (engine/webgl.js watchContextLoss): with the map showing, its programs are made again on the
    new context (worldMapCanvasGl) and it draws again; else it is rebuilt when it next opens */
 function worldBowlContextRestored() {
-  worldBowlDropGpu();
   if (!worldBowl.on) return;
   if (!worldMapCanvasGl()) {
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'world map: not back after the context was restored');

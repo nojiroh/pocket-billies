@@ -76,6 +76,7 @@ import {
   endGpuTimer,
   ensurePrograms,
   gpuLoading,
+  gpuOnRestore,
   gpuState,
   initWebgl,
   normalize3,
@@ -134,6 +135,7 @@ expose({
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
+  walkViewGpuLost: [() => walkViewGpuLost, v => (walkViewGpuLost = v)],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
@@ -341,8 +343,8 @@ export function ensureWalkGl(cv) {
 }
 /* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
    texture is dropped (not freed: the old ones are gone with the context), whether or not the walk view shows: the world
-   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. What still keeps
-   dead handles waits for the resource registry (HANDOFF, phase 20 round 1 context lane) */
+   map may make the context again first, and the walk view then skips ensureWalkGl's own clearing. Run by the resource
+   registry on every restore (engine/webgl.js gpuOnRestore), before the walk view is mounted again */
 function dropWalkGpuCaches() {
   walkRenderer.gkey = '';
   walkRenderer.farKey = '';
@@ -379,10 +381,13 @@ function dropWalkGpuCaches() {
     structureState.key = '';
   }
 }
-function onGlContextRestored(cv) {
+function walkViewGpuLost() {
   dropWalkGpuCaches();
   frameBlockLost();
   hideQueriesLost();
+}
+gpuOnRestore('walk view', walkViewGpuLost);
+function onGlContextRestored(cv) {
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
