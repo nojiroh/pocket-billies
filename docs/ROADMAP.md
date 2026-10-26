@@ -124,6 +124,11 @@ town node needs it.
   deadline version, the map song's forecast) done 2026-10-22; SND-6 (a cry per Billie from eight kinds with a low-HP
   cry, four UI sounds, jingles for the run's beats, the mix as data; every new sound a placeholder) done 2026-10-23.
   The track's planned sessions are done; what's next is the owner's listening pass.
+- **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
+  art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the
+  stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
+  VFX-0 (the plan, with research) and VFX-1 built 2026-10-26 on `ccr-a98cc267-eqso1d` at the owner's word; VFX-2
+  next. Tags `vfx-N-done`. Branch `track/vfx` (the owner makes it from that branch).
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
