@@ -271,8 +271,10 @@ export const ENGINE_DEFAULTS = {
        be lit at once (the shaders hold 16) */
     stableLights: false,
     lights: 16,
-    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1); models, buildings and structures before the
+       sprites (D5) */
     skyLast: false,
+    solidFirst: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1222,6 +1224,12 @@ export const ENGINE_SPEC = [
         'Sky last',
         'bool',
         'The sky is drawn after the ground, props and buildings, only where it shows, instead of over the whole screen first. Same picture, fewer pixels drawn.',
+      ],
+      [
+        'solidFirst',
+        'Solid things first',
+        'bool',
+        'Models, buildings and structures are drawn before the leaf and prop pictures, so leaves hidden behind a trunk or a wall are skipped by the graphics card. Faster in groves; a picture lying flat on a model may show differently.',
       ],
       [
         'gpuTimer',
