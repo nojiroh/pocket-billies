@@ -972,6 +972,53 @@ def studio_worldmap(pg, base):
     return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
 
 
+# CAM-4a: the camera dials the Camera section shows, by key, and how many times each (after opening every folder)
+CAMERA_DIALS_SHOWN = """(()=>{for(const f of CAMERA_FOLDERS)engineEditor.camOpen[f[0]]=1;refreshEngineSettings();
+ const n={};document.querySelectorAll('#engSet .eng-f[data-path*=".camera."]').forEach(e=>{const k=e.dataset.path.split('.').pop();n[k]=(n[k]||0)+1});
+ const spec=ENGINE_SPEC.find(g=>g[0]==='camera')[2].map(f=>f[0]);return {missing:spec.filter(k=>!n[k]),twice:spec.filter(k=>n[k]>1)}})()"""
+
+
+def studio_camera(pg, base):
+    """camera track CAM-4a: the Studio's Camera section shows every camera dial once, in its folders (and Engine none);
+    a dial writes its key and the preview's readout follows it; holding the compare button shows the snapshot's camera
+    and letting go brings yours back, nothing saved. A dial left out of the folders is caught"""
+    if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
+    pg.evaluate(STUDIO_DATA)
+    pg.evaluate("(document.getElementById('ghLogin')||{remove(){}}).remove();engineEditor.scope='game';openSection('camera');0")
+    if not until(pg, "document.querySelectorAll('#engSet [data-cam-folder]').length===CAMERA_FOLDERS.length", 30): raise Exception('the Camera section drew no folders')
+    shown = pg.evaluate(CAMERA_DIALS_SHOWN)
+    if shown['missing'] or shown['twice']: raise Exception(f'camera dials not shown once: {shown}')
+    # a planted fault: a dial left out of its folder must be caught
+    pg.evaluate("window.CAM_KEPT=CAMERA_FOLDERS[0][2].pop();0")
+    planted = pg.evaluate(CAMERA_DIALS_SHOWN)
+    pg.evaluate("CAMERA_FOLDERS[0][2].push(window.CAM_KEPT);refreshEngineSettings();0")
+    if not planted['missing']: raise Exception('a dial left out of the folders wasn’t caught')
+    pg.evaluate("openSection('engine');0")
+    if not until(pg, "!!document.querySelector('[data-act=\"openCamera\"]')", 20): raise Exception('Engine has no way to the Camera section')
+    if pg.evaluate("document.querySelectorAll('#engSet .eng-f[data-path*=\".camera.\"]').length"): raise Exception('Engine still shows camera dials')
+    pg.evaluate("openSection('camera');0")
+    if not until(pg, "typeof walkRenderer!=='undefined'&&walkRenderer.on&&walkView.C&&walkView.C.gl&&document.getElementById('camRead').textContent.includes('Tilt')", 120):
+        raise Exception('the preview’s readout never showed')
+    t0 = pg.evaluate("cameraReadout(walkView.C).tilt")
+    was = pg.evaluate("studioState.D.engine.defaults.camera.pitchAdd")
+    # a dial writes its key (as typing in it does) and the readout follows: 10 degrees more tilt
+    p = 'engine.defaults.camera.pitchAdd'
+    pg.evaluate(f"""(()=>{{const v=engineSetting('camera','pitchAdd')+10,el=document.querySelector('input[data-p="{p}"]');el.value=String(v);
+      el.dispatchEvent(new Event('input',{{bubbles:true}}));return 0}})()""")
+    want = pg.evaluate("studioState.D.engine.defaults.camera.pitchAdd")
+    pg.evaluate("walkRenderer.camT=null;0")  # a cut: no glide to wait for in software drawing
+    if pg.evaluate("engineSetting('camera','pitchAdd')") != want: raise Exception('the dial didn’t reach the camera')
+    if not until(pg, f"Math.abs(cameraReadout(walkView.C).tilt-{t0}-10)<1", 90): raise Exception(f'the readout’s tilt didn’t follow the dial: {t0} then {pg.evaluate("cameraReadout(walkView.C).tilt")}')
+    # the snapshot holds the camera as it was: hold shows it, letting go brings yours back
+    pg.evaluate("ACTIONS.camSnap();studioState.D.engine.defaults.camera.pitchAdd+=3;0")
+    mine = pg.evaluate("engineSetting('camera','pitchAdd')")
+    held = pg.evaluate("cameraHold(true);engineSetting('camera','pitchAdd')")
+    back = pg.evaluate("cameraHold(false);engineSetting('camera','pitchAdd')")
+    if held != want or back != mine: raise Exception(f'hold to compare: {want} wanted while held, got {held}; {mine} after, got {back}')
+    pg.evaluate(f"studioState.D.engine.defaults.camera.pitchAdd={json.dumps(was)};0")
+    return f'{pg.evaluate("CAMERA_FOLDERS.length")} folders, every camera dial once (a dial left out caught), none in Engine; a dial moved the readout’s tilt {t0:.1f} → {t0 + 10:.1f} degrees; the snapshot held and let go'
+
+
 def run_shop(pg, base):
     """UI-5: a run town's shop opens with the day's wares (the hub has no shop since RL-5)"""
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop(Object.keys(SHOPS)[0]);0")
@@ -1371,7 +1418,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
 
