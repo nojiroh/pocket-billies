@@ -20,7 +20,6 @@ import {
   battle3dStop,
   battleFreeArea,
   battleLayoutChanged,
-  engineSetting,
   fighter,
   hudHit,
   hudPop,
@@ -1090,17 +1089,14 @@ export function actorBuffer(i) {
     tau = a ? battleStage.t - a.t0 : 0,
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
     t16 = Math.floor(battleStage.t / 16) * 16;
-  /* phase 20 R3 (quality.rigReuse): the same rig, pose, face, build, faint parts and tints as the last frame drawn here
-     is the same picture: the canvas stays, its counter too, so nothing is uploaded again */
-  let key = null;
-  if (engineSetting('quality', 'rigReuse')) {
-    key =
-      rigFrameKey(R, ak, tau, t16, s.seed) +
-      `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
-    if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
-      rigStats.ms += performance.now() - t0;
-      return { s, k, R, P: buf.__P, ak, buf };
-    }
+  /* phase 20 R3: the same rig, pose, face, build, faint parts and tints as the last frame drawn here is the same
+     picture: the canvas stays, its counter too, so nothing is uploaded again */
+  const key =
+    rigFrameKey(R, ak, tau, t16, s.seed) +
+    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
+  if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
+    rigStats.ms += performance.now() - t0;
+    return { s, k, R, P: buf.__P, ak, buf };
   }
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
@@ -1117,7 +1113,7 @@ export function actorBuffer(i) {
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
-  buf.__R = key ? R : null;
+  buf.__R = R;
   buf.__key = key;
   buf.__P = P;
   rigStats.redraws++;

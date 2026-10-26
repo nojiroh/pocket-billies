@@ -128,7 +128,6 @@ import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
-  BASELINE_RIG_REUSE: [() => BASELINE_RIG_REUSE],
   BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
   baselineBattle: [() => baselineBattle, v => (baselineBattle = v)],
@@ -2672,8 +2671,6 @@ const BASELINE_RESOLUTIONS = [
   ['r1', { auto: false, resolution: 1 }],
   ['own', { auto: false }],
 ];
-/* phase 20 R3: the battle measured a third time, at the game's own resolution with its rigs reused (quality.rigReuse) */
-const BASELINE_RIG_REUSE = ['ownRigReuse', { auto: false, rigReuse: true }];
 /* the player on the place's arrival spot, the camera straight and at its own zoom */
 function baselineStand() {
   const sc = walkView.sc;
@@ -2867,11 +2864,9 @@ async function rendererBaseline(o) {
         environment.force = { time: st.time, weather: 'clear', season: 'summer' };
         baselineStand();
         if (st.battle) await baselineBattle(o.foeSp);
-        for (const [res, quality] of st.battle ? [...BASELINE_RESOLUTIONS, BASELINE_RIG_REUSE] : BASELINE_RESOLUTIONS) {
+        for (const [res, quality] of BASELINE_RESOLUTIONS) {
           if (selfTest.stop) break;
-          o.show(
-            `${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}${quality.rigReuse ? ', rigs reused' : ''}`
-          );
+          o.show(`${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}`);
           saveData.preferences.expert = true;
           saveData.preferences.eng = { quality: { ...quality } };
           if (!st.battle) baselineStand();

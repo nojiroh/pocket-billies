@@ -436,8 +436,8 @@ export function rigFrame(R, act, tau, t, seed) {
   return P;
 }
 /* phase 20 R3 (the battle lane): rigFrame's stepping as one string. Two frames with the same key get the same pose and
-   face, so the battle keeps the canvas it drew instead of drawing and uploading it again (battle-stage.js actorBuffer,
-   quality.rigReuse). Every rig has a clock today (12: a pose every 167 ms, attack and hurt every 83 ms, the face every
+   face, so the battle keeps the canvas it drew instead of drawing and uploading it again (battle-stage.js
+   actorBuffer). Every rig has a clock today (12: a pose every 167 ms, attack and hurt every 83 ms, the face every
    250 ms); one without is posed at the time it's given, so its key holds that time. tools/test/rig-frame-key.test.mjs */
 export function rigFrameKey(R, act, tau, t, seed) {
   if (!R || !R.clock) return `${act}|${tau}|${t}|${seed}`;
