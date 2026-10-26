@@ -316,7 +316,7 @@ export interface RunQuest {
   /** 'q' + its number in the run */
   id: string;
   kind: import('./game-data').QuestKind;
-  /** its text's id (quests.json texts) */
+  /** its text's id (quests.json texts; RS-2: a favour's, the resident's id) */
   text: string;
   /** the map node of the town it came from */
   at: number;
@@ -326,6 +326,8 @@ export interface RunQuest {
   /** a catch quest's type */
   type?: string;
   done: 0 | 1;
+  /** residents track RS-2: a resident's favour (their id): held over the cap, handed in for their invite */
+  res?: string;
 }
 /** TW-3: a run's quests */
 export interface RunQuests {

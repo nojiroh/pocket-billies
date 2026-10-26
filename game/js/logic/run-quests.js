@@ -11,9 +11,12 @@
    - miniboss: beat the next mini-boss with nobody fainting (dropped when one does).
    A done quest is handed in at the notice board of any town but its own, for a reward pick (logic/rewards.js). What is
    held is run.quests; it ends with the run.
+   RS-2 (residents track): a resident's favour (quests.json favours) is a quest of theirs, offered by them in one town
+   (favourAt, from the run's own stream) where it can be finished and handed in, as a town's offer can; it is held over
+   the cap and handed in at a notice board for their invite (logic/residents.js) in place of the reward pick.
    Logic only: no DOM, no Date, no Math.random (tools/test/run-quests.test.mjs). */
 /** @import { Run, RunMap, RunQuest, RunQuests } from '../../types/save-data' */
-/** @import { QuestKind, QuestsData } from '../../types/game-data' */
+/** @import { QuestFavour, QuestKind, QuestsData } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
@@ -24,11 +27,25 @@ expose({
   // @ts-expect-error -- replaced on purpose
   ahead: [() => ahead, v => (ahead = v)],
   // @ts-expect-error -- replaced on purpose
+  favourAt: [() => favourAt, v => (favourAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  favourHeld: [() => favourHeld, v => (favourHeld = v)],
+  // @ts-expect-error -- replaced on purpose
+  favourOffer: [() => favourOffer, v => (favourOffer = v)],
+  // @ts-expect-error -- replaced on purpose
+  favourTake: [() => favourTake, v => (favourTake = v)],
+  // @ts-expect-error -- replaced on purpose
+  favourTowns: [() => favourTowns, v => (favourTowns = v)],
+  // @ts-expect-error -- replaced on purpose
   questArrive: [() => questArrive, v => (questArrive = v)],
+  // @ts-expect-error -- replaced on purpose
+  questCan: [() => questCan, v => (questCan = v)],
   // @ts-expect-error -- replaced on purpose
   questCatch: [() => questCatch, v => (questCatch = v)],
   // @ts-expect-error -- replaced on purpose
   questFill: [() => questFill, v => (questFill = v)],
+  // @ts-expect-error -- replaced on purpose
+  questGoal: [() => questGoal, v => (questGoal = v)],
   // @ts-expect-error -- replaced on purpose
   questOffer: [() => questOffer, v => (questOffer = v)],
   // @ts-expect-error -- replaced on purpose
@@ -39,6 +56,8 @@ expose({
   questTake: [() => questTake, v => (questTake = v)],
   // @ts-expect-error -- replaced on purpose
   questWin: [() => questWin, v => (questWin = v)],
+  // @ts-expect-error -- replaced on purpose
+  questsHeld: [() => questsHeld, v => (questsHeld = v)],
   // @ts-expect-error -- replaced on purpose
   questsOf: [() => questsOf, v => (questsOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -63,7 +82,8 @@ export function questsOf(run) {
  *   trainersAt: (i: number) => number }} QuestData
  * boards: the map nodes whose town has a notice board; trainersAt: how many route trainers a map node has
  */
-/** @typedef {{ kind: QuestKind, text: string, goal: number, type?: string }} QuestOffer */
+/** @typedef {{ kind: QuestKind, text: string, goal: number, type?: string, res?: string }} QuestOffer */
+/** @typedef {{ towns: number[], types: string[], most: number, can: Record<QuestKind, boolean> }} QuestCan */
 
 /** the most route trainers on a way from node i's next places to a town with a board (-1: no such way). The map runs
  * row by row, so the links never loop @param {RunMap} map @param {number} i @param {QuestData} data */
@@ -104,35 +124,112 @@ export function regionTypes(run, data) {
 }
 
 /**
+ * what town i could offer: the later towns with a board, the region's types, the most route trainers on a way to a
+ * board, and which kinds can be finished and handed in from there. Null when the town has no board or no board is
+ * ahead @param {Run} run @param {number} i @param {QuestData} data @returns {QuestCan | null}
+ */
+export function questCan(run, i, data) {
+  const map = run.map;
+  if (!map || !map.nodes[i] || map.nodes[i].type !== 'town' || !data.boards.includes(i)) return null;
+  const next = ahead(map, i),
+    towns = data.boards.filter(j => j !== i && next.has(j));
+  if (!towns.length) return null;
+  const types = regionTypes(run, data),
+    most = trainersAhead(map, i, data),
+    T = data.quests.kinds.trainers,
+    afterBoss = [...next].some(m => map.nodes[m].type === 'miniboss' && towns.some(j => ahead(map, m).has(j)));
+  return {
+    towns,
+    types,
+    most,
+    can: { catch: types.length > 0, trainers: most >= T.goal[0], parcel: true, miniboss: afterBoss },
+  };
+}
+/** a kind's goal and type from a stream: the goal in its range (a trainers quest's at most the trainers ahead), a
+ * catch's type among the region's @param {ReturnType<typeof rngFrom>} g @param {QuestKind} kind @param {QuestCan} c
+ * @param {QuestsData} Q */
+export function questGoal(g, kind, c, Q) {
+  const R = Q.kinds[kind],
+    goal = g.int(R.goal[0], kind === 'trainers' ? Math.min(R.goal[1], c.most) : R.goal[1]),
+    type = c.types[g.int(0, c.types.length - 1)];
+  return { goal, type };
+}
+/**
  * Town i's quest offer, or null: none when the town has no board, its offer was taken, or nothing it could offer can
  * be finished and handed in on this run. The same run and town always offer the same (the node's 'quest' stream:
  * the kind, its text, its goal, its type, in that order)
  * @param {Run} run @param {number} i @param {QuestData} data @returns {QuestOffer | null}
  */
 export function questOffer(run, i, data) {
-  const map = run.map,
-    Q = data.quests;
-  if (!map || !map.nodes[i] || map.nodes[i].type !== 'town' || !data.boards.includes(i)) return null;
+  const Q = data.quests;
   if (run.quests && run.quests.took.includes(i)) return null;
-  const next = ahead(map, i),
-    towns = data.boards.filter(j => j !== i && next.has(j)),
-    types = regionTypes(run, data),
-    most = trainersAhead(map, i, data),
-    T = Q.kinds.trainers,
-    afterBoss = [...next].some(m => map.nodes[m].type === 'miniboss' && towns.some(j => ahead(map, m).has(j)));
-  if (!towns.length) return null;
-  /** @type {Record<QuestKind, boolean>} */
-  const can = { catch: types.length > 0, trainers: most >= T.goal[0], parcel: true, miniboss: afterBoss },
-    weights = Object.fromEntries(QUEST_KINDS.map(k => [k, can[k] ? Q.kinds[k].weight : 0]));
+  const c = questCan(run, i, data);
+  if (!c) return null;
+  const weights = Object.fromEntries(QUEST_KINDS.map(k => [k, c.can[k] ? Q.kinds[k].weight : 0]));
   if (!Object.values(weights).some(w => w > 0)) return null;
   const g = rngFrom(runNodeSeed(run.seed, i), 'quest'),
     kind = /** @type {QuestKind} */ (g.pick(weights)),
     texts = Q.texts.filter(t => t.kind === kind),
     text = texts[g.int(0, texts.length - 1)].id,
-    R = Q.kinds[kind],
-    goal = g.int(R.goal[0], kind === 'trainers' ? Math.min(R.goal[1], most) : R.goal[1]),
-    type = types[g.int(0, types.length - 1)];
+    { goal, type } = questGoal(g, kind, c, Q);
   return kind === 'catch' ? { kind, text, goal, type } : { kind, text, goal };
+}
+/** RS-2: the towns where a favour of this kind can be offered, finished and handed in, by map node
+ * @param {Run} run @param {QuestKind} kind @param {QuestData} data @returns {number[]} */
+export function favourTowns(run, kind, data) {
+  const nodes = (run.map && run.map.nodes) || [];
+  return nodes.flatMap((_, i) => {
+    const c = questCan(run, i, data);
+    return c && c.can[kind] ? [i] : [];
+  });
+}
+/** RS-2: the one town a resident offers their favour in (-1: none can), drawn from the run's own stream
+ * ('resident|town') among favourTowns @param {Run} run @param {QuestKind} kind @param {QuestData} data */
+export function favourAt(run, kind, data) {
+  const towns = favourTowns(run, kind, data);
+  return towns.length ? towns[rngFrom(run.seed, 'resident|town').int(0, towns.length - 1)] : -1;
+}
+/** RS-2: the resident's favour held on this run (done or not), or null @param {Run | null | undefined} run */
+export function favourHeld(run) {
+  return (run && run.quests && run.quests.held.find(q => q.res)) || null;
+}
+/** RS-2: resident `id`'s favour offered in town i, or null: none once they are invited or their favour is held, or
+ * when it can't be finished and handed in from there. Its goal and type from the node's 'favour' stream
+ * @param {Run} run @param {number} i @param {string} id @param {QuestFavour} F @param {QuestData} data
+ * @returns {QuestOffer | null} */
+export function favourOffer(run, i, id, F, data) {
+  if (!F.kind || run.invited || favourHeld(run)) return null;
+  const c = questCan(run, i, data);
+  if (!c || !c.can[F.kind]) return null;
+  const { goal, type } = questGoal(rngFrom(runNodeSeed(run.seed, i), 'favour'), F.kind, c, data.quests);
+  return F.kind === 'catch'
+    ? { kind: F.kind, text: id, goal, type, res: id }
+    : { kind: F.kind, text: id, goal, res: id };
+}
+/** RS-2: take a favour offered in town i: held over the cap, and the town's own offer stays open
+ * @param {Run} run @param {number} i @param {QuestOffer} offer @returns {RunQuest | null} */
+export function favourTake(run, i, offer) {
+  if (!offer.res || favourHeld(run)) return null;
+  const R = questsOf(run);
+  /** @type {RunQuest} */
+  const q = {
+    id: 'q' + R.n,
+    kind: offer.kind,
+    text: offer.res,
+    at: i,
+    goal: offer.goal,
+    n: 0,
+    done: 0,
+    res: offer.res,
+  };
+  if (offer.type) q.type = offer.type;
+  R.n++;
+  R.held.push(q);
+  return q;
+}
+/** how many quests count towards the cap (RS-2: not a favour) @param {Run | null | undefined} run */
+export function questsHeld(run) {
+  return run && run.quests ? run.quests.held.filter(q => !q.res).length : 0;
 }
 /** a quest line with its blanks filled ({type}, {n}, {title}) @param {string} line
  * @param {{ kind: QuestKind, goal: number, type?: string }} q @param {QuestsData} Q */
@@ -144,7 +241,7 @@ export function questFill(line, q, Q) {
  * @param {QuestOffer} offer @param {QuestsData} Q @returns {RunQuest | null} */
 export function questTake(run, i, offer, Q) {
   const R = questsOf(run);
-  if (R.held.length >= Q.held || R.took.includes(i)) return null;
+  if (questsHeld(run) >= Q.held || R.took.includes(i)) return null;
   /** @type {RunQuest} */
   const q = { id: 'q' + R.n, kind: offer.kind, text: offer.text, at: i, goal: offer.goal, n: 0, done: 0 };
   if (offer.type) q.type = offer.type;

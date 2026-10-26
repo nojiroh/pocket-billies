@@ -332,14 +332,15 @@ export function validRunEnc(e) {
         e.reward.from.length <= 60))
   );
 }
-/** TW-3: a run's quests (logic/run-quests.js): shapes only @param {any} e @returns {boolean} */
+/** TW-3: a run's quests (logic/run-quests.js; RS-2: a favour's `res`): shapes only @param {any} e @returns {boolean} */
 export function validRunQuests(e) {
   const plain = (/** @type {any} */ v) =>
       !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__'),
     id = (/** @type {any} */ v) => typeof v === 'string' && /^[a-z0-9_]{1,40}$/.test(v),
     quest = (/** @type {any} */ q) =>
       plain(q) &&
-      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done'].includes(k)) &&
+      Object.keys(q).every(k => ['id', 'kind', 'text', 'at', 'goal', 'n', 'type', 'done', 'res'].includes(k)) &&
+      (q.res === undefined || id(q.res)) &&
       id(q.id) &&
       ['catch', 'trainers', 'parcel', 'miniboss'].includes(q.kind) &&
       id(q.text) &&
