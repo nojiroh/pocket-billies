@@ -191,6 +191,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
 | UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
 | UI-7c (done 2026-10-23) | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
+| UI-8 (built 2026-10-26, phone check next) | Bottom bar with the minimap | Map becomes the minimap tile in the middle of the bar, two buttons on each side (Team, Guide; Bag, Perks or Lab); the bar compact while walking; what sits above the bar on `--nav-h`; the minimap's dials in the Studio | the new bar | fast check's bar step (team,guide,map,bag,lab); gallery run-hud remade; phone check by the owner |
 
 UI-2 is the biggest; if it runs long, split it: shapes, edge line, wipes and battle cards first, then icons, glyphs,
 portraits and the bot plate. About 6-8 sessions of Claude's working time, plus the owner's phone checks after UI-2,
@@ -240,6 +241,32 @@ starts a battle (Battle it now, As an Alpha, trainers, Clear encounters, Lose th
 says so. Phase and track codes went from labels and notes; test scene names lose a bracketed phase note in the menu
 only (the map data keeps it for the Studio). The quick check's new Debug menu step checks it.
 Found while reading, not changed: the trainer list still offers the legacy leaders (Rocco and the rest).
+
+## UI-8: the bottom bar with the minimap (owner's brief and answers, 2026-10-26)
+The owner asked for a new bottom bar: a big, roughly square map in the middle that is also a minimap, two buttons on
+each side, under each other, in the current look. Online research (thumb reach: Hoober's field study; Roblox's
+mobile UI guide: the bottom corners belong to movement; minimap rotation and shape surveys) and a clickable mockup (a
+private Design canvas the owner holds, "Bottom bar + minimap mockup") came first. The owner's answers: the Guide is the
+fourth button (both sets), north up, trainers and wild Billies shown, facilities in the hub and towns as one small icon
+on the roof (no labels, never on plain houses), no doors, exits or next-node arrow, and the bar compact while walking.
+
+As built (branch `ccr-30c007a6-eol40p`; `track/ui` didn't exist):
+- `<pb-nav-bar>` (ui-run-kit.js): the set's Map tab is a raised tile (card family: four cuts, the edge line, gold
+  edge and notch when open) holding slot "map"; the rest go two to a side. The outline is the tab family's stepped up
+  round the tile with 45° shoulders (`navStep`, clip-path polygons on `--rise` and `--tw`). `compact`: a 72 px tile,
+  icon-only buttons side by side. A container query keeps the labels on a 320 px phone.
+- js/minimap.js: a canvas in that slot, drawn about five times a second on frame-scheduler.js: the ground by kind
+  painted once per view at a pixel a metre (tiles' row 0 is north) and scaled up unsmoothed, the roofs, facility
+  icons by the door's act (`p.act || M.act`), trainers not beaten (`walkView.npcAt`, TRAINERS, flags), the wild ones
+  placed (`walkRenderer.encPos`) and you (a chevron by `pl.dir`). Indoors the room's floor alone. Colours are the
+  theme's roles mixed (no colours of its own: the lint's ceilings hold). Skips a frame a battle or a cutscene borrows.
+- `--nav-h` (shell.css): the dialogue box, the hint and Actions, sticky rows, the map's controls, the d-pad and the
+  debug button clear the bar: 172 px with it, 102 px compact, the old 96 px with no bar.
+- uiTheme.json `minimap` (schema, defaults, the Studio's Minimap group): metres across (44), compact after 2.5 s of
+  walking, full 0.7 s after stopping, and which marks show; written as `--minimap-*`, read where the canvas sits.
+
+Left for later: the full quick check's pictures (the bar changed on purpose); a minimap step in the fast check beyond
+the bar's tabs; the owner's phone check (the compact timing, the icon size, the frame cost on a phone).
 
 ## Risks
 - Clip-path shapes plus blur on many surfaces can cost frames on phones: measure with the Graphics bench after UI-2.

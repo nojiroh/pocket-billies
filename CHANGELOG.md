@@ -12,9 +12,16 @@ kept aside in the browser).
 - **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
   arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
   one on the route props test map.
+- **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
+  blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
+  what is behind it instead of stopping at a hard outline against the sharp ground.
 - **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
   braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
   a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.
+- **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
+  no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
+  hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
+  dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
 - **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
   the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
   landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a
@@ -70,6 +77,13 @@ kept aside in the browser).
   many may light the scene (1-16). Both are in the graphics test.
 - **One light block per frame** is now the only way the renderer sends the frame's light (the old switch and path are
   gone); it looks the same.
+- **Residents live in Copperleaf** (residents track RS-3): whoever you bring home now lives in town. Each has their
+  own look and walks Copperleaf with the townsfolk: out of their door in the morning, at work, on the square around
+  noon, about the streets in the afternoon and indoors at night. Dottie keeps the library, Mo the General store,
+  Bertha the inn, Gus the Workshop, Hayden helps at the ranch, Rosa works at Skyline Station, Seamus sews from a
+  cottage of his own and Dr. Helix keeps the Gene Bank. Tap one for a word: the first time it's about moving in, then
+  about your last run. Walk into their building and its card says who lives there, with a Talk button and their
+  upgrades (the first ones come next). The station's and the ranch's sheets name theirs too.
 - **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
   Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
   a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**
@@ -127,6 +141,10 @@ kept aside in the browser).
   they leave **salvage**: pick one of two of their parts (kept for the Workshop) or a stack of **Scrap** sent home.
   About a third of runs now have a **Scrapyard**: a place where every wild one is a bot, Reclamation Agents stand guard
   and scrap heaps line the way.
+- **Three new Billies (roster RO-3f, placeholder art)**: Pseudonymph, a faceless mythical Steel blob whose move Fork
+  takes the foe's types for 5 turns; it stands in for a route's rarer one in 2% of routes, at most once a run, and is
+  in no pool or regional dex. Pilotbat evolves into Bingebat at 18 (Flying, then Flying/Psychic), the cave bat, in
+  the cave, thicket and jungle.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing

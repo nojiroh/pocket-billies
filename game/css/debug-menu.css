@@ -61,7 +61,7 @@
   position: fixed;
   z-index: 59;
   right: 12px;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -89,7 +89,7 @@
 .nw-bench {
   position: fixed;
   left: 50%;
-  bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + 14px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 60;
   display: grid;

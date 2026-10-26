@@ -69,6 +69,7 @@ import {
   endFrameSettings,
   engineContext,
   engineSetting,
+  graphicsOff,
   playerBlur,
 } from './engine/settings.js';
 import {
@@ -518,7 +519,8 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  engineContext.env = !sc.plain && typeof environment !== 'undefined' && (environment.on || !!environment.force);
+  engineContext.env =
+    !sc.plain && !graphicsOff() && typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
   else if (typeof environment !== 'undefined') environment.look = null; /* no time-of-day look left over */
   const gq = beginGpuTimer();
@@ -736,8 +738,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
       /* CAM-4b: times the zoom stops' blur at the zoom (walk/camera.js), not in battles */
       blur:
-        (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) *
-        playerBlur(),
+        (BT
+          ? BT.blur
+          : sc.plain || graphicsOff()
+            ? 0
+            : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) * playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
@@ -768,6 +773,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     tilt,
     blur: LF ? Math.round(LF.scale * 100) / 100 : 0,
     slider: playerBlur(),
+    spread: !!(LF && LF.nearSpread) /* lens.nearSpread: the blur in front spread over what is behind it */,
   };
   gpuPass('other');
   /* labels and markers stay sharp on the layer above */

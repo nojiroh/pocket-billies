@@ -309,7 +309,7 @@ body.on-walk .wh-foot > * {
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  padding: 2px 0 calc(92px + env(safe-area-inset-bottom, 0px));
+  padding: 2px 0 calc(var(--nav-h) - 4px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
 }
 .wh-card {
@@ -501,7 +501,7 @@ html:has(> body.on-walk) {
 @media (max-height: 520px) {
   .walk-hero {
     min-height: 0;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--nav-h) - 26px + env(safe-area-inset-bottom, 0px));
   }
   .wh-card {
     padding: 6px 10px 8px;
