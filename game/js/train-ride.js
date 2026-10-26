@@ -404,7 +404,7 @@ export function trainRideHome(key, won, done) {
   go();
 }
 /** skip the ride (a tap, the checks) */
-function trainRideSkip() {
+export function trainRideSkip() {
   if (trainRide.on && trainRide.W) trainRideEnd(true);
 }
 

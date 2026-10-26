@@ -1,6 +1,6 @@
 // RL-R1/RL-R2: each place of a run is its zone's biome, except a side area's, which are its field move's (Cut's
 // thicket, Surf's lake, Rock Smash's cave: fieldMoves.json `biome`, roguelite track RL-R2a/RL-R2b) in the zone of
-// their row. The in-game full test's run phase checks the same rule (self-test.js "A run: airship"); it once asked
+// their row. The in-game full test's run phase checks the same rule (self-test.js "A run: the train"); it once asked
 // every place for its zone's biome and failed on any run with a side area, as on its own seed SELFTESTRUN8.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';

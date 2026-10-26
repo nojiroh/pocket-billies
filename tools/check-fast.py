@@ -373,7 +373,10 @@ def run_loop(pg, base):
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
-    if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
+    if not until(pg, "!saveData.run&&LOCATIONS.length===1&&saveData.meta.runs===1", 30): raise Exception('Ride home didn’t end the run')
+    # HB-8: the train comes home battered; the lost run's scene waits for it
+    parked = ride_home(pg)
+    if not parked or parked[1] != 2: raise Exception(f'the train home after the loss: {parked}')
     home = pg.evaluate("[saveData.meta.research, !!uiState.roam, saveData.trip.node]")
     if home[0] <= 0 or not home[1] or home[2] != 0: raise Exception(f'home: research {home[0]}, by the mast {home[1]}, node {home[2]}')
     # RL-S1: the run is in the history (lost to a wild Billie), the lost run's scene plays by the mast, and the first
@@ -1155,15 +1158,39 @@ def screens(pg, base):
     return 'opened: ' + ', '.join(seen)
 
 
+def take_off_ride(pg):
+    """HB-8: after Take off: the sky train's ride starts (skipped), the carriage's loading screen comes up with the run's
+    places as its first stage, and you land on the run's first place. Returns the train's key"""
+    if not until(pg, "!!saveData.run&&(trainRide.on&&trainRide.kind==='depart'||!!document.getElementById('runload'))", 20): raise Exception('Take off didn’t start the train’s ride')
+    train = pg.evaluate("trainRide.key")
+    until(pg, "!!trainRide.W||!trainRide.on", 10)
+    pg.evaluate("trainRideSkip();0")
+    if not until(pg, "!!document.querySelector('#runload .train-carriage canvas')||runLoad.node>=0", 20): raise Exception('no carriage loading screen after the ride')
+    first = pg.evaluate("runLoad.L&&runLoad.L.stages[0].id")
+    if first != 'places': raise Exception(f'the take-off’s loading starts with {first}, not the run’s places')
+    if not until(pg, "saveData.run.at.phase==='walk'&&runLoad.node>=0&&walkView.ready", 90): raise Exception('never landed')
+    return train
+
+
+def ride_home(pg):
+    """HB-8: after Ride home: the train's ride home (skipped once it plays) ends; [the train at the platform, its look]"""
+    if not until(pg, "!trainRide.on||!!trainRide.W", 40): raise Exception('the ride home never started')
+    pg.evaluate("trainRideSkip();0")
+    if not until(pg, "!trainRide.on", 10): raise Exception('the ride home never ended')
+    return pg.evaluate("(p=>p?[p.k,p.v||0]:null)(walkView.sc.props.find(p=>p.trainRide))")
+
+
 def run_pack(pg, base):
     """RL-9b: from the ranch fixture (three Billies in storage), one of them training: the mast's start sheet picks it
     (a pick card tapped) and packs two Potions (+ tapped twice); "Take off": the party is that Billie alone, healed,
     its training stopped, the hub's team and storage left as they were, the bag the gift and the pack, Copperleaf's
     two Potions fewer. Given up, keeping it: back in storage once (no second copy) with its run's levels, the team and
     buddy the hub's, the packed Potions gone. A second run (the default pick, one Potion packed), won: no items row on
-    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all. HB-2: Take off counts
-    the scenes as they are made over several frames (no task as long as their work), the landing's loading screen
-    lifts and logs a take-off line without the seed"""
+    the payout, the run's bag added to Copperleaf's. A reload (?fixture=stored) keeps it all. HB-2, HB-8: Take off
+    starts the sky train's ride (skipped here), then the carriage's loading screen while the scenes are made over
+    several frames (no task as long as their work; the places its first stage), it lifts and logs a take-off line
+    without the seed; each ride home leaves the train at the platform in its look (battered after the loss, gold after
+    the win)"""
     if not until(pg, "typeof saveData!=='undefined'&&!!saveData.ranch&&!document.getElementById('loader')&&walkView.ready", 90): raise Exception('the ranch fixture never booted')
     pg.evaluate("uiState.inside=null;uiState.modal=null;uiState.mq=[];renderOverlay();saveData.items.potion=3;saveData.pyramids.pyramid=2;0")
     who = pg.evaluate("saveData.box[1].uid")
@@ -1178,46 +1205,42 @@ def run_pack(pg, base):
     for _ in range(2): pg.click("#ov [data-pk=items][data-k=potion][data-d='1']")
     packed = pg.evaluate("document.querySelector('#ov h3 small').textContent")
     if not packed.startswith('2 of '): raise Exception(f'the pack says “{packed}”')
-    # HB-2: the long tasks from the tap to the flight: the run's scenes are made over several frames (one scene the
+    # HB-2: the long tasks from the tap to the landing: the run's scenes are made over several frames (one scene the
     # longest task), never in one (the take-off's work in one task, as before HB-2)
     pg.evaluate("window._lt=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window._lt.push(e.duration)}).observe({type:'longtask'});0")
     pg.click('#ov [data-a=mb][data-i="0"]')
-    if not until(pg, "!!document.querySelector('#ov .run-takeoff')&&/Readying the airship/.test(document.querySelector('#ov .run-takeoff').textContent)||airshipFlight.on", 10): raise Exception('Take off didn’t count the scenes')
-    # the flight is 2-3 s: on a slow page (CI's software drawing) it may have landed already when the wait first looks
-    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 60): raise Exception('“Take off” didn’t start a run')
+    train = take_off_ride(pg)
     work, wall, longest = pg.evaluate("[runWorld.ms,runWorld.wall,Math.round(Math.max(0,...window._lt))]")
     if not wall or longest >= work: raise Exception(f'the take-off froze the page: its longest task {longest} ms, the scenes {work} ms of work over {wall} ms')
     got = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.team[0].hp===maxHp(saveData.team[0]),saveData.ranch.trainees.some(t=>t.uid==='{who}'),saveData.run.start.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.run.start.items.potion,saveData.items.potion,saveData.buddy])")
     want = json.dumps([[who], True, False, json.loads(hub)[0], json.loads(hub)[1], 1, gift + 2, who], separators=(',', ':'))
     if got != want: raise Exception(f'at take-off {got}, not {want}')
-    pg.evaluate("flySkip();0")
-    if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('never landed')
     # HB-2: the landing's loading screen lifts (every stage ready, or the cap) and logs a take-off line, ms only
     if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
     line = pg.evaluate("(debugLog.ev.filter(e=>e.kind==='load'&&e.msg.startsWith('run take-off ')).pop()||{}).msg||''")
-    if not line or pg.evaluate("saveData.run.seed") in line: raise Exception(f"the take-off's load line is {line!r}")
+    if not line or 'places ' not in line or pg.evaluate("saveData.run.seed") in line: raise Exception(f"the take-off's load line is {line!r}")
     lv = pg.evaluate("saveData.team[0].lvl+=3")
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(false);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-pick-card')", 30): raise Exception('no payout after giving up')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('picking a card didn’t enable Fly home')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
-    if not until(pg, "!saveData.run&&saveData.meta.runs===1", 30): raise Exception('Fly home didn’t end the run')
+    if not until(pg, "!saveData.run&&saveData.meta.runs===1", 30): raise Exception('Ride home didn’t end the run')
+    if ride_home(pg) != [train, 2]: raise Exception(f'after the loss the train at the platform is {ride_home(pg)}, not the battered {train}')
     back = pg.evaluate(f"JSON.stringify([saveData.team.map(m=>m.uid),saveData.box.map(m=>m.uid),saveData.buddy,saveData.box.find(m=>m.uid==='{who}').lvl,saveData.items.potion])")
     H = json.loads(hub)
     if back != json.dumps([H[0], H[1], H[2], lv, 1], separators=(',', ':')): raise Exception(f'home after a loss {back}: team, storage, buddy as before, Lv {lv} kept, 1 Potion')
     lead = H[0][0]
     pg.evaluate(f"runTakeOff(undefined,undefined,undefined,{{home:['{lead}'],pack:{{items:{{potion:1}},pyramids:{{}}}}}});0")
-    if not until(pg, "!!saveData.run&&(airshipFlight.on||saveData.run.at.phase==='walk')", 30): raise Exception('the second run didn’t start')
-    pg.evaluate("flySkip();0")
-    if not until(pg, "!airshipFlight.on&&saveData.run.at.phase==='walk'&&walkView.ready", 90): raise Exception('the second run never landed')
+    take_off_ride(pg)
     bag = pg.evaluate("saveData.items.potion")
     pg.evaluate("uiState.modal=null;uiState.mq=[];runOver(true);0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 30): raise Exception('no payout after the win')
     labels = pg.evaluate("document.querySelector('#ov pb-payout').rows.map(r=>r.label)")
     if 'Items in the bag' in labels: raise Exception(f'a win paid the bag: {labels}')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
-    if not until(pg, "!saveData.run&&saveData.meta.wins===1", 30): raise Exception('Fly home didn’t end the won run')
+    if not until(pg, "!saveData.run&&saveData.meta.wins===1", 30): raise Exception('Ride home didn’t end the won run')
+    if ride_home(pg)[1] != 1: raise Exception(f'after the win the train at the platform is {ride_home(pg)}, not gold-trimmed')
     keep = pg.evaluate("JSON.stringify([saveData.items.potion,saveData.box.map(m=>[m.uid,m.lvl]),saveData.team.map(m=>m.uid)])")
     if json.loads(keep)[0] != bag: raise Exception(f'after the win Copperleaf has {json.loads(keep)[0]} Potions, not {bag} (none at home + the run’s)')
     pg.goto(base + '/index.html?fixture=stored')

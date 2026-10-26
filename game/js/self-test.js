@@ -2,7 +2,7 @@
 /* ================= FULL TEST =================
    Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
    the hub and every room the game's doors open (walking, turning and zooming the camera), night, weather and seasons,
-   a run's road, its airship, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
+   a run's road, its train, nodes and payout, the ranch and the Lab, a room that opens in place, the light lab, a
    battle on the 3D stage (double and Alpha too), the opening's fall, Billies in the world, the world map, then a
    stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
    keeps up. Your save is not changed: saving is paused and everything is put back
@@ -107,8 +107,8 @@ import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { airshipFlight } from './airship.js';
 import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { trainRide, trainRideSkip } from './train-ride.js';
 import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
@@ -1501,14 +1501,14 @@ async function runFullTest(mode) {
         8,
         180
       );
-    /* RL-8: a run from the mast to the payout, on a copy of the save (nothing is written while the test runs): a short
-       run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
-       airship's flight to the landing, a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
+    /* RL-8: a run from the station to the payout, on a copy of the save (nothing is written while the test runs): a
+       short run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       sky train to the landing (HB-8: its ride skipped), a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
        Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
        Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
     if (typeof runTakeOff === 'function' && !selfTest.stop)
       await phase(
-        'A run: airship, nodes, payout',
+        'A run: the train, nodes, payout',
         'dio',
         async () => {
           const was = saveData,
@@ -1539,9 +1539,11 @@ async function runFullTest(mode) {
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
             runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
-            /* HB-2: the run's world is made over several frames before the flight */
-            if (!saveData.run || !(await wait(() => airshipFlight.on, 30000)))
+            /* HB-8: the sky train's ride (skipped), then the run's world made over several frames behind the carriage's
+               loading screen */
+            if (!saveData.run || !(await wait(() => trainRide.on || runLoad.on, 30000)))
               throw new Error('the run didn’t take off');
+            trainRideSkip();
             /* RL-13: the starter points' default pick travels; the hub's team waits in Copperleaf as it was */
             if (
               !saveData.team.length ||
@@ -1551,11 +1553,11 @@ async function runFullTest(mode) {
               throw new Error(
                 `took off with ${saveData.team.length} Billies, the hub's team ${hubTeam ? 'changed' : 'empty'}`
               );
+            const t0 = performance.now();
+            if (!(await wait(() => !trainRide.on && saveData.run.at.phase === 'walk' && runLoad.node >= 0, 30000)))
+              throw new Error('the run never landed');
             const made = [runWorld.scenes, runWorld.ms],
-              t0 = performance.now();
-            if (!(await wait(() => !airshipFlight.on && saveData.run.at.phase === 'walk', 20000)))
-              throw new Error('the flight never landed');
-            const flew = Math.round(performance.now() - t0),
+              flew = Math.round(performance.now() - t0),
               landing = 'w:' + LOCATIONS[1].mapId + '*';
             if (!(await wait(() => walkView.ready && walkView.id === landing, 15000)))
               throw new Error(`landed but the view is ${walkView.id}`);
@@ -1687,15 +1689,14 @@ async function runFullTest(mode) {
             if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
             if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
             if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research; in the history`;
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();
               setActiveBattle(null);
               battleStageStop();
             }
-            airshipFlight.on = false;
-            document.body.classList.remove('flying');
+            trainRideSkip();
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();
