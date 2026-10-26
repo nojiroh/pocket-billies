@@ -1412,8 +1412,9 @@ html[data-contrast='high'] .px {
   border-radius: 10px !important;
   font: 600 14px/1 var(--font-voice) !important;
 }
+/* UI-6b: the surface, not white (white under dark mode's light text read 1.03:1) */
 .seg button.on {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: var(--panel-s) !important;
   color: var(--text) !important;
   box-shadow: 0 4px 10px -4px rgba(46, 33, 64, 0.45) !important;
 }
