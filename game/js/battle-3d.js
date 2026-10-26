@@ -9,8 +9,10 @@
 import { expose } from './test-globals.js';
 import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
+import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
+  AREAS,
   FOCAL_LENGTH,
   PYRAMID_HIGH,
   PYRAMID_LIFT,
@@ -41,6 +43,7 @@ expose({
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
+  battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
@@ -49,7 +52,17 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ battle3dLayout, battle3dStart, battle3dStop });
 /* to-module: end */
-export const battle3d = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
+export const battle3d = {
+  on: false,
+  off: [0, 0],
+  /* WA-7: the battle's turn (radians, 0 north; logic/battle-facing.js) and its turned camera */
+  yaw: 0,
+  cam: /** @type {any} */ (null),
+  gy: 0,
+  hide: null,
+  items: [],
+  lights: [],
+};
 export function battle3dWanted() {
   if (
     typeof walkRenderer === 'undefined' ||
@@ -80,13 +93,37 @@ export function battle3dAttach(o = {}) {
     az = clamp(P.z, 2.5, Math.max(2.5, sc.h - 3));
   battle3d.off = [ax - actionCenter.x, az - actionCenter.z];
   battle3d.gy = standingHeightAt(ax, az);
+  /* water track WA-7: by a lake, a river or the coast the whole battle turns round the middle of the action so the
+     scene's own water lies behind it (logic/battle-facing.js); everyone and the camera stay on dry ground in the map */
+  const spots = [{ x: 0, z: 0 }];
+  for (let i = 0; i < battleStage.s.length; i++) spots.push(actorWorldPoint(i));
+  for (let i = 0; i < 2; i++) spots.push({ x: actorPositions[i].x + (i === 0 ? -1.15 : 1.25), z: actorPositions[i].z });
+  battle3d.yaw =
+    AREAS[battleStage.area] && AREAS[battleStage.area].indoor
+      ? 0
+      : battleWaterFacing({
+          water: walkView.water || [],
+          w: sc.w,
+          h: sc.h,
+          c: actionCenter,
+          off: battle3d.off,
+          spots,
+          blockers: (sc.props || [])
+            .filter(p => C0.props[p.k] && !C0.props[p.k].flat && C0.props[p.k].box)
+            .map(p => [p.x, p.z, (C0.props[p.k].box[0] * (p.s || 1)) / 2]),
+        });
+  const cy = Math.cos(battle3d.yaw),
+    sy = Math.sin(battle3d.yaw);
   /* clear the lane between the camera and the two billionaires */
   const hide = new Set();
   for (const p of sc.props || []) {
     const M = C0.props[p.k];
     if (!M || M.flat) continue;
-    const bx = p.x - battle3d.off[0],
-      bz = p.z - battle3d.off[1],
+    /* the prop in battle space (the turn undone) */
+    const dx = p.x - battle3d.off[0] - actionCenter.x,
+      dz = p.z - battle3d.off[1] - actionCenter.z,
+      bx = actionCenter.x + dx * cy - dz * sy,
+      bz = actionCenter.z + dx * sy + dz * cy,
       bw = M.box ? (M.box[0] * (p.s || 1)) / 2 : 0,
       bd = M.box ? M.box[1] * (p.s || 1) : 0;
     const zMax = Math.max(...actorPositions.map(q => q.z)) + 1.6,
@@ -105,7 +142,13 @@ export function battle3dAttach(o = {}) {
   if (typeof PYRAMIDS !== 'undefined') for (const k of Object.keys(PYRAMIDS)) loadPropModelRecipe(pyramidModelPath(k));
   walkView.battle = { frame: battle3dFrame };
   battle3d.on = true;
-  if (typeof debugLog !== 'undefined') debugLog.add('battle', '3D stage in ' + walkView.id);
+  if (typeof debugLog !== 'undefined')
+    debugLog.add(
+      'battle',
+      '3D stage in ' +
+        walkView.id +
+        (battle3d.yaw ? ` facing the water (${Math.round((battle3d.yaw * 180) / Math.PI)} degrees)` : '')
+    );
   return true;
 }
 export function battle3dLayout() {
@@ -143,6 +186,11 @@ export function battle3dStop() {
 function battle3dFrame() {
   if (!battleStage.on || !battleStage.L) return null;
   const O = battle3d.off,
+    T = (/** @type {number} */ x, /** @type {number} */ z) => battleTurnPoint(x, z, battle3d.yaw || 0, actionCenter, O),
+    at3 = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) => {
+      const q = T(x, z);
+      return [q[0], y, q[1]];
+    },
     items = battle3d.items,
     lights = battle3d.lights;
   items.length = 0;
@@ -151,8 +199,7 @@ function battle3dFrame() {
     const B = actorBuffer(i);
     if (!B) continue;
     const w = actorWorldPoint(i),
-      x = w.x + O[0],
-      z = w.z + O[1],
+      [x, z] = T(w.x, w.z),
       gy = standingHeightAt(x, z),
       mpp = (actorMetersPerPixel[i] * B.s.sc * (B.s.big || 1) * (B.s.fs || 1)) / B.R.k,
       G = B.R.geo;
@@ -176,12 +223,14 @@ function battle3dFrame() {
     });
   }
   for (let i = 0; i < 2; i++) {
-    const T = battleStage.tr[i];
-    if (!T.show || !T.who || T.a <= 0) continue;
+    const Tr = battleStage.tr[i];
+    if (!Tr.show || !Tr.who || Tr.a <= 0) continue;
     const f = trainerBattleFrame(i);
     if (!f) continue;
-    const x = actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + T.x * actorMetersPerPixel[i] + O[0],
-      z = actorPositions[i].z + (i === 0 ? 0.25 : 0.4) + O[1],
+    const [x, z] = T(
+        actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + Tr.x * actorMetersPerPixel[i],
+        actorPositions[i].z + (i === 0 ? 0.25 : 0.4)
+      ),
       mpp = trainerMetersPerPixel(i);
     items.push({
       k: 'rig',
@@ -198,7 +247,7 @@ function battle3dFrame() {
       shear: 0,
       sh: 0.38,
       aoR: 0.34,
-      fade: T.a,
+      fade: Tr.a,
       person: 1,
     });
   }
@@ -206,7 +255,7 @@ function battle3dFrame() {
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show) {
     const w = actorWorldPoint(battleStage.sel),
       k = 0.5 + 0.12 * Math.sin(battleStage.t / 300);
-    lights.push({ p: [w.x + O[0], battle3d.gy + 1.4, w.z + O[1]], r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
+    lights.push({ p: at3(w.x, battle3d.gy + 1.4, w.z), r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
   }
   /* v33: an Alpha glows from below */
   for (let i = 0; i < battleStage.s.length; i++) {
@@ -214,7 +263,7 @@ function battle3dFrame() {
     if (!s.boss || !s.show || s.a < 0.4) continue;
     const w = actorWorldPoint(i),
       k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
-    lights.push({ p: [w.x + O[0], battle3d.gy + 0.5, w.z + O[1]], r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
+    lights.push({ p: at3(w.x, battle3d.gy + 0.5, w.z), r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
       typeof fieldState === 'function' && typeof activeBattle !== 'undefined' && activeBattle
         ? (() => {
@@ -226,7 +275,7 @@ function battle3dFrame() {
           })()
         : null;
     if (fv && fv.shield > 0)
-      lights.push({ p: [w.x + O[0], battle3d.gy + 1.2, w.z + O[1] - 0.6], r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
+      lights.push({ p: at3(w.x, battle3d.gy + 1.2, w.z - 0.6), r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
   }
   /* glowing move effects light what's around them */
   for (let i = battleStage.parts.length - 1; i >= 0 && lights.length < 6; i--) {
@@ -235,7 +284,7 @@ function battle3dFrame() {
     const k = Math.max(0, 1 - p.age / p.life),
       c = hexToRgb(p.col);
     lights.push({
-      p: [p.x + O[0], battle3d.gy + Math.max(0.1, p.y), p.z + O[1]],
+      p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
       r: 2.4,
       c: [(c[0] / 255) * 1.1 * k, (c[1] / 255) * 1.1 * k, (c[2] / 255) * 1.1 * k],
     });
@@ -250,11 +299,12 @@ function battle3dFrame() {
     const im = particleSprite(p.spr);
     if (!im || a <= 0.01) continue;
     const s = (p.k || 1) / 30;
+    const [px, pz] = T(p.x, p.z);
     parts.push({
       im,
-      x: p.x + O[0],
+      x: px,
       y: battle3d.gy + p.y,
-      z: p.z + O[1],
+      z: pz,
       w: im.width * s,
       h: im.height * s,
       a: clamp(a, 0, 1),
@@ -262,7 +312,7 @@ function battle3dFrame() {
     });
   }
   /* RF-2: the thrown pyramid, a lit 3D model; battle-stage.js draws its flat icon instead while it can't be */
-  const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, O) : null;
+  const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, T) : null;
   if (py) {
     items.push(py);
     if (py.light) lights.push(py.light);
@@ -270,7 +320,7 @@ function battle3dFrame() {
   const d = battleStage.dof;
   return {
     parts,
-    cam: battleStage.V,
+    cam: battle3d.yaw ? battle3dTurnedCam() : battleStage.V,
     L: battleStage.L,
     foc: FOCAL_LENGTH,
     off: O,
@@ -283,6 +333,13 @@ function battle3dFrame() {
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
 }
+/* WA-7: the battle camera turned with the battle (walk/camera.js battleCamera adds battle3d.off to its place) */
+function battle3dTurnedCam() {
+  const V = battleStage.V,
+    C = battle3d.cam || (battle3d.cam = {}),
+    [x, z] = battleTurnPoint(V.x, V.z, battle3d.yaw, actionCenter, [0, 0]);
+  return Object.assign(C, V, { x, z, yaw: V.yaw + battle3d.yaw });
+}
 /* ================= RF-2: THE THROWN PYRAMID =================
    battleStage.coin (battle-stage.js pyramidArc and the catch) says where it is and how it lies:
    - in the air (C.fly): it tumbles about a tilted axis through its middle (C.tum radians, C.ax the axis);
@@ -292,9 +349,8 @@ function battle3dFrame() {
    lower. C.y is its middle's height in the battle, the ground at 0 (as the particles'); on the ground that is
    PYRAMID_REST. The sizes are battle-stage.js's PYRAMID_* (its catch animation uses them too). */
 const pyramidModelPath = kind => `coins/${kind}.json`;
-function pyramidItem(C, O) {
-  const x = C.x + O[0],
-    z = C.z + O[1],
+function pyramidItem(C, T) {
+  const [x, z] = T(C.x, C.z),
     k = PYRAMID_SCALE,
     mid = PYRAMID_LIFT + PYRAMID_HIGH / 2;
   let y, spin;
