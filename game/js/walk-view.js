@@ -4311,7 +4311,8 @@ export function updateFolk(n, dt) {
         walkRenderer.q,
         saveData.preferences && saveData.preferences.aim
       ) - (typeof squareVisitorsOut === 'function' ? squareVisitorsOut() : 0);
-    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+    /* from everyone each frame, so a cap raised again (or frames back on time) brings them back */
+    walkView.folk = walkView.folkAll.filter((f, i) => !f.in && i < cap);
   }
 }
 export function tallGrassProps(C0) {
