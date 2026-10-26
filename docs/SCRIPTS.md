@@ -129,7 +129,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 ### Event commands (RL-12b)
 
 An event (game/data/events.json) has an intro (lines only) and 2-3 options; an option's `need` is a condition (the
-option shows greyed out with what it needs until it holds), its `cost` Moneys paid when it is picked, and its `then` a
+option shows greyed out with what it needs until it holds), its `cost` Moneys (SP-6: and its `dna`, DNA) paid when it is picked, and its `then` a
 script with these commands besides the usual ones. Every chance comes from the run's own stream, so a run made again
 plays the same.
 

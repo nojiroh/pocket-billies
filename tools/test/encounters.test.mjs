@@ -69,6 +69,20 @@ test('encounters: an option is open when its need holds and the Moneys are there
     { ok: false, why: 'Needs 200 Moneys' }
   );
   assert.equal(st({ text: 'a', cost: 200, then: [] }, () => true, 200).ok, true);
+  /* SP-6: a DNA price, after the Moneys */
+  assert.deepEqual(
+    X.eventOptionState({ text: 'a', dna: 8, then: [] }, () => true, 0, items, 7),
+    {
+      ok: false,
+      why: 'Needs 8 DNA',
+    }
+  );
+  assert.equal(X.eventOptionState({ text: 'a', dna: 8, then: [] }, () => true, 0, items, 8).ok, true);
+  assert.equal(X.eventOptionState({ text: 'a', dna: 8, then: [] }, () => true, 0, items).ok, false);
+  assert.deepEqual(
+    X.encChanges({ se: 5, dna: 10, items: {}, pyramids: {} }, { se: 5, dna: 2, items: {}, pyramids: {} }),
+    [['dna', -8]]
+  );
   for (const [need, words] of [
     ['badges', 'Needs a badge'],
     ['badge:Water', 'Needs the Water Badge'],

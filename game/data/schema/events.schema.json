@@ -62,6 +62,7 @@
         "need": {"description": "a condition (docs/SCRIPTS.md): the option is shown greyed out until it holds", "type": "string", "minLength": 1, "maxLength": 120},
         "needText": {"description": "what the greyed-out option says it needs (else made from the condition)", "type": "string", "minLength": 1, "maxLength": 40},
         "cost": {"description": "Moneys paid when it is picked; greyed out without them", "type": "integer", "minimum": 1, "maximum": 100000},
+        "dna": {"description": "SP-6: DNA (meta.dna) paid when it is picked; greyed out without it", "type": "integer", "minimum": 1, "maximum": 100000},
         "then": {"description": "what happens: a script (docs/SCRIPTS.md), with the event commands", "type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "string", "maxLength": 200}}
        }
       }

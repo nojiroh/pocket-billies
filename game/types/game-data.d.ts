@@ -1890,6 +1890,8 @@ export interface RunEventOption {
   need?: string;
   needText?: string;
   cost?: number;
+  /** SP-6: DNA paid when it is picked */
+  dna?: number;
   then: string[];
 }
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */

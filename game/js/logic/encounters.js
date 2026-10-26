@@ -130,12 +130,13 @@ export function needWords(need, items) {
   return 'Not now';
 }
 
-/** whether an option can be picked: its need holds (holds(need)) and the Moneys are there; why not, in words
- * @param {RunEventOption} o @param {(cond: string) => boolean} holds @param {number} money
- * @param {Record<string, Item>} items @returns {{ ok: boolean, why: string }} */
-export function eventOptionState(o, holds, money, items) {
+/** whether an option can be picked: its need holds (holds(need)) and the Moneys (SP-6: and the DNA) are there; why
+ * not, in words @param {RunEventOption} o @param {(cond: string) => boolean} holds @param {number} money
+ * @param {Record<string, Item>} items @param {number} [dna] meta.dna @returns {{ ok: boolean, why: string }} */
+export function eventOptionState(o, holds, money, items, dna = 0) {
   if (o.need && !holds(o.need)) return { ok: false, why: o.needText || needWords(o.need, items) };
   if (o.cost && money < o.cost) return { ok: false, why: `Needs ${o.cost} Moneys` };
+  if (o.dna && dna < o.dna) return { ok: false, why: `Needs ${o.dna} DNA` };
   return { ok: true, why: '' };
 }
 
@@ -298,13 +299,15 @@ export function encWildFoe(run, i, species, rules, up) {
   return dex.length ? { sp: dex[encRng(run).int(0, dex.length - 1)], lvl } : null;
 }
 
-/** what an option's script changed, for the sheet's summary: Moneys, items and pyramids gained (+) or lost (−), as
- * [what, n] in order @param {{ se: number, items: Record<string, number>, pyramids: Record<string, number> }} a
- * before @param {{ se: number, items: Record<string, number>, pyramids: Record<string, number> }} b after */
+/** what an option's script changed, for the sheet's summary: Moneys, (SP-6) DNA, items and pyramids gained (+) or
+ * lost (−), as [what, n] in order
+ * @param {{ se: number, dna?: number, items: Record<string, number>, pyramids: Record<string, number> }} a before
+ * @param {{ se: number, dna?: number, items: Record<string, number>, pyramids: Record<string, number> }} b after */
 export function encChanges(a, b) {
   /** @type {[string, number][]} */
   const out = [];
   if (b.se !== a.se) out.push(['money', b.se - a.se]);
+  if ((b.dna || 0) !== (a.dna || 0)) out.push(['dna', (b.dna || 0) - (a.dna || 0)]);
   for (const [pre, A, B] of /** @type {const} */ ([
     ['', a.items, b.items],
     ['coin:', a.pyramids, b.pyramids],

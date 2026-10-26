@@ -45,6 +45,7 @@ import { perkPickOpen } from './perk-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   ENC_STOP: [() => ENC_STOP],
+  encDna: [() => encDna],
   encFight: [() => encFight, v => (encFight = v)],
   encHere: [() => encHere],
   encHolds: [() => encHolds],
@@ -101,6 +102,8 @@ const encHere = () => {
 };
 /** the story state for an option's need, read now */
 const encHolds = (/** @type {string} */ cond) => storyHolds(cond);
+/** SP-6: DNA on hand (meta.dna), for an option's DNA price and the summary */
+const encDna = () => (saveData.meta && saveData.meta.dna) || 0;
 
 /* ---------- the intro and the options ---------- */
 /** open an event: the one at map node i (drawn and kept the first time), or the one given (the debug menu)
@@ -123,9 +126,9 @@ export function encounterOpen(i, id) {
     lock: true,
     html: `<div class="ev-lines">${intro.map(encLineHTML).join('')}</div>`,
     btns: E.options.map((o, k) => {
-      const st = eventOptionState(o, encHolds, saveData.se, ITEMS);
+      const st = eventOptionState(o, encHolds, saveData.se, ITEMS, encDna());
       return {
-        l: `${escapeHtml(o.text)}${o.cost ? ` <small>${moneyHTML(o.cost, 12)}</small>` : ''}${st.ok ? '' : ` <small class="ev-why">${escapeHtml(st.why)}</small>`}`,
+        l: `${escapeHtml(o.text)}${o.cost ? ` <small>${moneyHTML(o.cost, 12)}</small>` : ''}${o.dna ? ` <small><pb-coin kind="dna" value="${o.dna}" label="DNA"></pb-coin></small>` : ''}${st.ok ? '' : ` <small class="ev-why">${escapeHtml(st.why)}</small>`}`,
         c: k === E.options.length - 1 ? 'quiet' : 'dark',
         dis: !st.ok,
         f: () => encounterPick(ev, i, k),
@@ -140,15 +143,17 @@ function encounterPick(id, i, k) {
     E = EVENTS.events[id],
     o = E && E.options[k];
   if (!run || !o || encPlaying) return;
-  const st = eventOptionState(o, encHolds, saveData.se, ITEMS);
+  const st = eventOptionState(o, encHolds, saveData.se, ITEMS, encDna());
   if (!st.ok) return;
   if (o.cost) encMoney(saveData, -o.cost);
+  if (o.dna) saveData.meta.dna = Math.max(0, encDna() - o.dna);
   eventPlayed(run, id, i != null && i >= 0 ? i : null);
   encOf(run).play = { id, i: i != null && i >= 0 ? i : -1, opt: k, at: [] };
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `event ${id}: option ${k + 1}`);
   encounterPlay(null, {
     se: saveData.se + (o.cost || 0),
+    dna: encDna() + (o.dna || 0),
     items: { ...saveData.items },
     pyramids: { ...saveData.pyramids },
   });
@@ -156,7 +161,8 @@ function encounterPick(id, i, k) {
 
 /* ---------- the option's script ---------- */
 /** play the option run.enc.play names, from the start or from its last checkpoint
- * @param {number[] | null} resume @param {{ se: number, items: Record<string, number>, pyramids: Record<string, number> }} before */
+ * @param {number[] | null} resume
+ * @param {{ se: number, dna?: number, items: Record<string, number>, pyramids: Record<string, number> }} before */
 async function encounterPlay(resume, before) {
   const run = saveData.run,
     P = run && run.enc && run.enc.play;
@@ -201,13 +207,15 @@ async function encounterPlay(resume, before) {
 }
 /** the end: what changed, and back to walking */
 function encounterEnd(title, before) {
-  const ch = encChanges(before, { se: saveData.se, items: saveData.items, pyramids: saveData.pyramids }),
+  const ch = encChanges(before, { se: saveData.se, dna: encDna(), items: saveData.items, pyramids: saveData.pyramids }),
     name = (/** @type {string} */ k) =>
       k === 'money'
         ? 'Moneys'
-        : k.startsWith('coin:')
-          ? (PYRAMIDS[k.slice(5)] || { n: k }).n
-          : (ITEMS[k] || { n: k }).n;
+        : k === 'dna'
+          ? 'DNA'
+          : k.startsWith('coin:')
+            ? (PYRAMIDS[k.slice(5)] || { n: k }).n
+            : (ITEMS[k] || { n: k }).n;
   encSheet({
     title: escapeHtml(title),
     cls: 'event-sheet',
@@ -419,6 +427,7 @@ export function encounterResume() {
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `event ${P.id} resumed`);
   encounterPlay(P.at && P.at.length ? P.at : null, {
     se: saveData.se,
+    dna: encDna(),
     items: { ...saveData.items },
     pyramids: { ...saveData.pyramids },
   });
