@@ -47,6 +47,7 @@ const AIR_MEMBERS = [
   'uSkyGlow',
   'uHazeY',
   'uMistRay',
+  'uMistBox',
 ];
 const mat = k => Array.from({ length: 16 }, (_, i) => k + i * 0.125);
 // a light context with every part filled, odd numbers so a wrong offset shows
@@ -258,10 +259,11 @@ test('the block declares every light value the old path had (uSH as vec4 slots),
     );
 });
 
-test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints, then the haze; 2272 bytes', () => {
+test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints, then the haze, then the fog grid box; 2288 bytes', () => {
   const B = FRAME_BLOCK_LAYOUT.members,
     at = k => B[k][0];
-  assert.equal(FRAME_BLOCK_BYTES, 2272);
+  assert.equal(FRAME_BLOCK_BYTES, 2288);
+  assert.equal(at('uMistBox'), 2272);
   assert.deepEqual([at('uShadowM'), at('uShadowM2'), at('uLampM0'), at('uLampM1')], [0, 64, 128, 192]);
   assert.deepEqual([at('uLP'), at('uLC'), at('uAO'), at('uSH')], [256, 512, 768, 1792]);
   assert.deepEqual([at('uEye'), at('uTime'), at('uSunDir'), at('uFogStart')], [1936, 1948, 1952, 1964]);
@@ -383,6 +385,12 @@ test('packing: the haze (AIR-1): the sky colours and dials at their offsets; wit
     [0, 0, 0, 0, 0, 0]
   );
   assert.deepEqual(none('uSkyLow'), F(fixture().fog));
+});
+
+test('packing: the fog grid box for the mist in fogit (AIR-3), zeros when the march is off', () => {
+  const F = v => Array.from(Float32Array.from(v));
+  assert.deepEqual(packed(fixture({ mistBox: [12.5, -3, 24, 1] }))('uMistBox'), F([12.5, -3, 24, 1]));
+  assert.deepEqual(packed(fixture())('uMistBox'), [0, 0, 0, 0]);
 });
 
 test('packing: a window light that knows its way out (lights.windowFacing) carries it as an angle past 10 in uLC.w', () => {

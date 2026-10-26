@@ -58,7 +58,9 @@ expose({
   fogGrid: [() => fogGrid],
   fogGridFrame: [() => fogGridFrame, v => (fogGridFrame = v)],
   fogGridReport: [() => fogGridReport, v => (fogGridReport = v)],
+  fogGridState: [() => fogGridState, v => (fogGridState = v)],
   fogInputs: [() => fogInputs, v => (fogInputs = v)],
+  fogMarchNote: [() => fogMarchNote, v => (fogMarchNote = v)],
   fogRefillRow: [() => fogRefillRow, v => (fogRefillRow = v)],
   fogScratch: [() => fogScratch],
   fogUpload: [() => fogUpload, v => (fogUpload = v)],
@@ -92,6 +94,8 @@ const fogGrid = {
   ver: 0,
   stats: { builds: 0, refills: 0, slabs: 0, rows: 0, uploads: 0, bytes: 0, upMs: 0, upMax: 0, fillMs: 0, fillMax: 0 },
   blocks: null,
+  /* AIR-3: the light-in-air march's use of the grid (fogMarchNote) */
+  march: { on: false, why: 'none yet', steps: 0, frames: 0, changes: 0 },
 };
 const fogScratch = { a: new Uint8Array(0) };
 /* what the fog is made of now (logic/fog-grid.js FogInputs), from the scene, the weather and the Air dials */
@@ -301,6 +305,19 @@ export function fogGridFrame(sc, P, BT, phone) {
     fogGrid.next = (fogGrid.next + 1) % G.nz;
   }
 }
+/* AIR-3: what the light-in-air march reads (tex, G), or null: indoors, before the first build, after a lost context */
+export function fogGridState() {
+  return fogGrid.tex && fogGrid.G && fogGrid.gen === gpuState.gen ? fogGrid : null;
+}
+/* the march's last state for the debug log: on, or why not; its steps; the frames it ran and how often it changed */
+export function fogMarchNote(on, why, steps) {
+  const M = fogGrid.march;
+  if (M.on !== on || M.why !== why || M.steps !== steps) M.changes++;
+  M.on = on;
+  M.why = why;
+  M.steps = steps;
+  if (on) M.frames++;
+}
 /* the debug log's numbers: sizes, counts and the time per upload and per fill (ms) */
 export function fogGridReport() {
   const G = fogGrid.G,
@@ -323,6 +340,7 @@ export function fogGridReport() {
     fillMs: r(S.fillMs),
     fillMaxMs: r(S.fillMax),
     fills,
+    march: { ...fogGrid.march },
   };
 }
 /* ---------- the debug view: the cells as see-through blocks (debug menu only) ---------- */

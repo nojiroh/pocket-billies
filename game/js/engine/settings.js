@@ -165,6 +165,10 @@ export const ENGINE_DEFAULTS = {
     skyGlow: 0,
     godRays: 0.5,
     lightsInAir: 0.7,
+    /* air track AIR-3: the low fog lit in the air (the march reads the fog grid; 0: fogit's flat mist as before), and
+       how much lamps glow in it at night */
+    fogVolume: 1,
+    fogLamps: 1,
     /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
     cheapShafts: 0,
     /* smart light shafts: the cheap shafts placed where shade lies behind them, looking into the light, apart and never
@@ -824,6 +828,15 @@ export const ENGINE_SPEC = [
         'Sunlight in the air, shadowed by what stands in it: beams between trees and buildings (v43). A march through the air at half resolution.',
       ],
       ['lightsInAir', 'Lamps in the air', 0, 2, 0.05, 'A glow in the air round lamps and fires at night (v43).'],
+      [
+        'fogVolume',
+        'Fog in the air',
+        0,
+        2,
+        0.05,
+        'The low fog as a lit volume: banks in hollows, sun shafts and shade in it (AIR-3). 0: the flat mist as before.',
+      ],
+      ['fogLamps', 'Lamps in the fog', 0, 2, 0.05, 'How much lamps and fires glow in the low fog at night (AIR-3).'],
       [
         'cheapShafts',
         'Cheap light shafts',
@@ -1654,6 +1667,8 @@ export const PLAIN_LOOK = {
     mistRay: 0,
     godRays: 0,
     lightsInAir: 0,
+    fogVolume: 0,
+    fogLamps: 0,
     hazeDistance: 900,
   },
 };

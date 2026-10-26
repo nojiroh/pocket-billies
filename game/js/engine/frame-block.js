@@ -33,6 +33,7 @@ vec3 uShLift;float uShPx;vec4 uRoomB;vec4 uSeason;vec2 uValley;float uMist,uMist
 float uCloudSh,uCloudSpd,uCloudCov,uContact;float uShadowOn,uShadow2On,uShPen,uShPen2;
 vec2 uShadowTexel,uShadowTexel2;float uRoomDim,uShLite,uShSteps,uShFix;int uNL,uNLS,uNAO,uFramePadI;
 vec3 uSkyTop;float uHazeSky;vec3 uSkyMid;float uHazeTint;vec3 uSkyLow;float uHazeFall;float uSkyGlow,uHazeY,uMistRay,uFramePad2;
+vec4 uMistBox;
 };`;
 /* std140: a member's size and alignment in bytes; an array element and a matrix column take a whole vec4 */
 const STD140 = { float: [4, 4], int: [4, 4], vec2: [8, 8], vec3: [12, 16], vec4: [16, 16], mat4: [64, 16] };
@@ -150,6 +151,9 @@ export function packFrameBlock(X, f, n) {
   f[FRAME_OFFSETS.uSkyGlow] = X.skyGlow || 0;
   f[FRAME_OFFSETS.uHazeY] = X.hazeY || 0;
   f[FRAME_OFFSETS.uMistRay] = X.mistRay || 0;
+  /* AIR-3: where the lit march holds the low fog (the fog grid's middle x, z, its half size, 1 when on); fogit's mist
+     and valley mist fade out inside it so the fog isn't counted twice. All 0: the mist everywhere, as before */
+  put(f, FRAME_OFFSETS.uMistBox, X.mistBox || [0, 0, 0, 0], 4);
 }
 /* Lamp shadows hold: a lamp's pool of light uses the shadow map of its lamp when that lamp has one (-1 or -2 in uLC.w,
    the map's index + 1, negated); else 1 */

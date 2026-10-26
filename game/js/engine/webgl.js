@@ -345,9 +345,12 @@ vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);vec3 vd=(p-uEye)/max(d,.001);
  vec3 f=1.-exp(-tau*vec3(1.+.3*uHazeTint,1.,1.-.12*uHazeTint));
  /* the low mist where the surface is, or (uMistRay) thickening along the view over low ground */
  float mp=exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d),mr=min(1.,max(0.,d-4.)/18.*airAvg(uEye.y+vd.y*min(4.,d),p.y,uMistY,1.4,1.));
- float m=uMist*mix(mp,mr,uMistRay)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
+ /* AIR-3: inside the fog grid the lit march holds the low fog, so the mist steps aside there (uMistBox: its middle, half
+    size, on), fading back in toward its edge (logic/fog-grid.js FOG_EDGE, fogGridInside) */
+ float mo=uMistBox.w>0.?smoothstep(uMistBox.z*.7,uMistBox.z*.95,max(abs(p.x-uMistBox.x),abs(p.z-uMistBox.y))):1.;
+ float m=uMist*mo*mix(mp,mr,uMistRay)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
  /* v23: mist lying in a gorge or valley */
- if(uValley.y>0.){float v=uValley.y*smoothstep(0.,1.4,uValley.x-p.y)*smoothstep(1.5,9.,d)*(.62+.38*sin(p.x*.33+uTime*.00015)*sin(p.z*.27-uTime*.00011));f=clamp(f+v*.6*(1.-f),0.,1.);}
+ if(uValley.y>0.){float v=mo*uValley.y*smoothstep(0.,1.4,uValley.x-p.y)*smoothstep(1.5,9.,d)*(.62+.38*sin(p.x*.33+uTime*.00015)*sin(p.z*.27-uTime*.00011));f=clamp(f+v*.6*(1.-f),0.,1.);}
  c=mix(c,c*uTint,uTintAmt);
  /* v46: inside a building the town around the room is seen dimly (the room box, x0 z0 x1 z1) */
  if(uRoomDim>.001){float ob=max(max(uRoomB.x-p.x,p.x-uRoomB.z),max(uRoomB.y-p.z,p.z-uRoomB.w));float k=smoothstep(.05,.9,ob);float l=dot(c,vec3(.3,.59,.11));c=mix(c,mix(c,vec3(l)*vec3(.92,.95,1.08),.4*uRoomDim)*(1.-uRoomDim),k);}

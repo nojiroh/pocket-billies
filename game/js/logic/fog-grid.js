@@ -19,10 +19,12 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  FOG_EDGE: [() => FOG_EDGE],
   FOG_FALL: [() => FOG_FALL],
   FOG_GRID_BELOW: [() => FOG_GRID_BELOW],
   FOG_GRID_SIZES: [() => FOG_GRID_SIZES],
   FOG_LAYER: [() => FOG_LAYER],
+  FOG_MARCH_STEPS: [() => FOG_MARCH_STEPS],
   FOG_NOISE_K: [() => FOG_NOISE_K],
   FOG_NOISE_M: [() => FOG_NOISE_M],
   FOG_NOISE_TOP: [() => FOG_NOISE_TOP],
@@ -38,11 +40,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fogGridAt: [() => fogGridAt, v => (fogGridAt = v)],
   // @ts-expect-error -- replaced on purpose
+  fogGridBox: [() => fogGridBox, v => (fogGridBox = v)],
+  // @ts-expect-error -- replaced on purpose
   fogGridBuild: [() => fogGridBuild, v => (fogGridBuild = v)],
   // @ts-expect-error -- replaced on purpose
   fogGridColumns: [() => fogGridColumns, v => (fogGridColumns = v)],
   // @ts-expect-error -- replaced on purpose
   fogGridFill: [() => fogGridFill, v => (fogGridFill = v)],
+  // @ts-expect-error -- replaced on purpose
+  fogGridInside: [() => fogGridInside, v => (fogGridInside = v)],
   // @ts-expect-error -- replaced on purpose
   fogGridMake: [() => fogGridMake, v => (fogGridMake = v)],
   // @ts-expect-error -- replaced on purpose
@@ -52,7 +58,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fogHash: [() => fogHash, v => (fogHash = v)],
   // @ts-expect-error -- replaced on purpose
+  fogMarchOn: [() => fogMarchOn, v => (fogMarchOn = v)],
+  // @ts-expect-error -- replaced on purpose
   fogNoise: [() => fogNoise, v => (fogNoise = v)],
+  // @ts-expect-error -- replaced on purpose
+  fogRayBox: [() => fogRayBox, v => (fogRayBox = v)],
   fogSmooth: [() => fogSmooth],
   ringIndex: [() => ringIndex],
 });
@@ -336,4 +346,72 @@ export function fogGridAt(G, x, y, z) {
     iz = Math.floor(z / G.cell);
   if (ix < G.ox || ix >= G.ox + G.nx || iz < G.oz || iz >= G.oz + G.nz || iy < 0 || iy >= G.ny) return 0;
   return G.data[ringIndex(ix, G.nx) + G.nx * (iy + G.ny * ringIndex(iz, G.nz))] / 255;
+}
+
+/* ---------- AIR-3: what the light-in-air march needs from the grid ---------- */
+/* the march's steps when it reads the grid (desktop, phone); without the grid it keeps its 14 */
+export const FOG_MARCH_STEPS = { full: 14, phone: 10 };
+/* the grid's edge: the march's fog fades out and fogit's mist fades in between these fractions of its half size, so
+   the fog has no seam where the grid ends */
+export const FOG_EDGE = [0.7, 0.95];
+
+/**
+ * Whether the march reads the grid this frame: a grid, not a battle (the grid stays where you walked), below quality
+ * step 3 (the ladder drops the march there) and the Fog in the air dial up. Not gated on the light shafts' dials or a
+ * shadow map: the fog must not vanish with them. When it is off, fogit's low mist works as before.
+ * @param {{ grid: boolean, battle: boolean, qe: number, k: number }} s
+ */
+export function fogMarchOn(s) {
+  return !!s.grid && !s.battle && s.qe < 3 && s.k > 0.01;
+}
+
+/**
+ * The grid's box in the world (m), its square's middle and half size.
+ * @param {FogGrid} G
+ */
+export function fogGridBox(G) {
+  const c = G.cell;
+  return {
+    x0: G.ox * c,
+    y0: G.oy * c,
+    z0: G.oz * c,
+    x1: (G.ox + G.nx) * c,
+    y1: (G.oy + G.ny) * c,
+    z1: (G.oz + G.nz) * c,
+    cx: (G.ox + G.nx / 2) * c,
+    cz: (G.oz + G.nz / 2) * c,
+    r: (Math.min(G.nx, G.nz) * c) / 2,
+  };
+}
+
+/**
+ * How much of the low fog the grid holds at (x, z), 1 well inside, 0 past its edge (FOG_EDGE); fogit's mist takes
+ * 1 minus this. JS twin of the march's and fogit's GLSL.
+ * @param {{ cx: number, cz: number, r: number }} B fogGridBox @param {number} x @param {number} z
+ */
+export function fogGridInside(B, x, z) {
+  const d = Math.max(Math.abs(x - B.cx), Math.abs(z - B.cz));
+  return 1 - fogSmooth(B.r * FOG_EDGE[0], B.r * FOG_EDGE[1], d);
+}
+
+/**
+ * Where a ray from e along unit direction v runs inside the box, clipped to [0, L]; null when it misses. JS twin of
+ * the march's GLSL (engine/post-effects.js).
+ * @param {{ x0: number, y0: number, z0: number, x1: number, y1: number, z1: number }} B
+ * @param {number[]} e @param {number[]} v @param {number} L
+ * @returns {[number, number] | null}
+ */
+export function fogRayBox(B, e, v, L) {
+  const lo = [B.x0, B.y0, B.z0],
+    hi = [B.x1, B.y1, B.z1];
+  let a = 0,
+    b = L;
+  for (let i = 0; i < 3; i++) {
+    const iv = 1 / (Math.abs(v[i]) < 1e-6 ? (v[i] < 0 ? -1e-6 : 1e-6) : v[i]),
+      t0 = (lo[i] - e[i]) * iv,
+      t1 = (hi[i] - e[i]) * iv;
+    a = Math.max(a, Math.min(t0, t1));
+    b = Math.min(b, Math.max(t0, t1));
+  }
+  return a < b ? [a, b] : null;
 }
