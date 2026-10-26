@@ -176,7 +176,9 @@ Genes (`breeding.js`), starter-point cost (+1 per 2 Stability spent), field move
 Parts section gets the Gene fields and a splice preview. The in-game full test gets a step (sequence, splice, see it
 in battle).
 
-**SP-5 Augments.** After RL-14's salvage: the Workshop built, fitting arms and legs on Billies for Scrap, breaking in
+**SP-5 Augments.** Unblocked 2026-10-26: RL-14a (bots, salvage into `saveData.parts`, the scrapyard) is done on
+`ccr-15fdd30c-5nfh0d`; SP-5 starts in a new session from `claude/sp-6-run-events` with that branch merged in once (the
+owner's answer). After RL-14's salvage: the Workshop built, fitting arms and legs on Billies for Scrap, breaking in
 battle and repair in towns, upgrades, the Augment art on the Billie's sockets, Escaped specimens wearing them
 (genes.json `wild.escaped` is in the data since SP-3, unused; "more near the Bureau" needs a Bureau tag on places).
 Depends on RL-14.

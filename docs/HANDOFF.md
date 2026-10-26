@@ -66,6 +66,13 @@ it moves (a merge, never a rebase). Merge SP-1, SP-2, SP-3, SP-4, then this. Pla
 - The owner's answers (2026-10-26, after the entry above): the events' prices and the three Perks' numbers and
   rarities **stay placeholders** for now (to tune after playing on the phone); the back alley's pick keeps **no "Not
   now"** (it was paid for); the back alley stays **unlicensed** (any slot its form has, whatever the Bank's level).
+- Later the same day: **RL-14a is done** (bots, salvage into `saveData.parts`, the scrapyard) on its branch
+  `ccr-15fdd30c-5nfh0d`, not merged into main; RL-14b (the Voltron) is still to do. SP-5 needs only RL-14a's salvage,
+  so it is unblocked. The owner's answers: **SP-5 runs in a new session**, on a branch made from this one
+  (`claude/sp-6-run-events`) with **RL-14a's branch merged in once** (which also brings main up to 2314da8, PR #205
+  included: the checks RL-14a found failing on main, the hub's doors and RL-8's take-off, will fail there too). Also
+  found: SP-1's branch was merged into main (PR #198); SP-2, SP-3, SP-4 and SP-6 are not. The Workshop is still
+  `soon` on RL-14a's branch, and its scrapyards are where "more Escaped specimens near the Bureau" could go.
 ### Splicing track SP-4 - The Gene Bank: the building, the library, splicing for DNA, its levels (built, waiting on the owner's numbers) - 2026-10-26
 Branch `claude/sp-4-gene-bank`, **on top of SP-3's branch `claude/sp-3-wild-splices`** (itself on SP-2's and SP-1's;
 none merged or tagged, `track/splicing` doesn't exist), started from its e24e882, with **main merged in once** (the
