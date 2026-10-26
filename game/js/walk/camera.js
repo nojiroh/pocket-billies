@@ -9,7 +9,15 @@ import { clamp } from '../util.js';
 import { roomToLocal, roomToWorld, roomYaw } from '../logic/room-turn.js';
 import { cameraRiseNeeded } from '../logic/camera-rise.js';
 import { blendGoals, followNew, followStep, leadStep, zoneMetres } from '../logic/camera-follow.js';
-import { pinchLean, zoomBand, zoomEase, zoomShape } from '../logic/camera-zoom.js';
+import {
+  nearestStop,
+  nextStop,
+  pinchLean,
+  stopShape,
+  stopsOrDefault,
+  zoomBand,
+  zoomEase,
+} from '../logic/camera-zoom.js';
 import { interestPick, zoneAt } from '../logic/camera-interest.js';
 import { MOMENT_DIALS, momentNew, momentStep } from '../logic/camera-moments.js';
 import { orbitStart, orbitStep, wrapAngle } from '../logic/camera-orbit.js';
@@ -25,15 +33,20 @@ expose({
   cameraTurnLimit: [() => cameraTurnLimit],
   clampZoom: [() => clampZoom],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
+  cycleZoomStop: [() => cycleZoomStop],
   ease: [() => ease],
   followDirection: [() => followDirection, v => (followDirection = v)],
   freeCameraOn: [() => freeCameraOn],
+  goToZoomStop: [() => goToZoomStop],
   moments: [() => moments, v => (moments = v)],
   orbitOf: [() => orbitOf],
+  sceneStartStop: [() => sceneStartStop],
   screenRay: [() => screenRay, v => (screenRay = v)],
+  startSceneZoom: [() => startSceneZoom],
   stretchZoom: [() => stretchZoom],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
-  zoomEnds: [() => zoomEnds, v => (zoomEnds = v)],
+  zoomLimits: [() => zoomLimits],
+  zoomStops: [() => zoomStops],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -76,38 +89,44 @@ export const orbitOf = sc =>
     const O = orbitOf(walkView.sc);
     return ((O && O.turn != null ? +O.turn : engineSetting('camera', 'turn')) * Math.PI) / 180;
   },
-  clampZoom = v =>
-    freeCameraOn()
-      ? clamp(v, 0.3, 3.2)
-      : clamp(v, engineSetting('camera', 'zoomMin'), engineSetting('camera', 'zoomMax')),
+  /* CAM-4b: the zoom stops (Camera > Zoom stops; the whole game's), the defaults if they are broken */
+  zoomStops = () => stopsOrDefault(engineSetting('camera', 'stops')),
+  /* the closest and farthest zoom you can pinch to: the end stops */
+  zoomLimits = () => {
+    const S = zoomStops();
+    return [S[0].zoom, S[S.length - 1].zoom];
+  },
+  clampZoom = v => (freeCameraOn() ? clamp(v, 0.3, 3.2) : clamp(v, ...zoomLimits())),
   /* CAM-4a: while pinching, a zoom past a limit gives a little (Camera > Feel > Rubber band); clampZoom on release */
   stretchZoom = v =>
-    freeCameraOn()
-      ? clampZoom(v)
-      : zoomBand(
-          v,
-          engineSetting('camera', 'zoomMin'),
-          engineSetting('camera', 'zoomMax'),
-          engineSetting('camera', 'zoomBand')
-        );
+    freeCameraOn() ? clampZoom(v) : zoomBand(v, ...zoomLimits(), engineSetting('camera', 'zoomBand')),
+  /* CAM-4b: the stop a scene starts at (its `cam.stop`, else the stop nearest zoom 1) */
+  sceneStartStop = sc => {
+    const S = zoomStops(),
+      id = sc && sc.cam && sc.cam.stop;
+    return S.find(s => s.id === id) || S[nearestStop(1, S)];
+  },
+  /* CAM-4b: a fresh scene starts at its stop (walk-view-gl.js mountWalkView); a room's door and the world map put
+     your zoom back after it */
+  startSceneZoom = sc => {
+    const s = sceneStartStop(sc);
+    walkRenderer.zoomT = walkRenderer.zoom = s.zoom;
+    walkRenderer.stopAt = s.id;
+  },
+  /* CAM-4b: to the next stop (a two-finger tap, Z); with reduced motion at once */
+  cycleZoomStop = () => {
+    const s = nextStop(walkRenderer.zoomT, zoomStops());
+    goToZoomStop(s);
+    return s;
+  },
+  goToZoomStop = s => {
+    walkRenderer.zoomT = s.zoom;
+    if (reducedMotion) walkRenderer.zoom = s.zoom;
+    walkRenderer.stopAt = s.id;
+  };
 /* ---------- camera ---------- */
 /* CAM-1: an exact ease toward a value at `rate` a second, the same at any frame rate */
 const ease = (rate, dt) => 1 - Math.exp(-rate * dt);
-/* CAM-2: the zoom curve's ends (Engine > Camera > Zoom curve; logic/camera-zoom.js) */
-function zoomEnds() {
-  const set = k => engineSetting('camera', k);
-  return {
-    min: set('zoomMin'),
-    max: set('zoomMax'),
-    nearPitch: set('zoomNearPitch'),
-    nearDist: set('zoomNearDist'),
-    nearFov: set('zoomNearFov'),
-    farPitch: set('zoomFarPitch'),
-    farDist: set('zoomFarDist'),
-    farFov: set('zoomFarFov'),
-    curve: set('zoomCurve'),
-  };
-}
 /* CAM-1: the way you push, on the ground (x, z; length 0-1): the joystick or d-pad, else the arrow keys, else the way
    you walk (tapping somewhere, the Studio's preview); none when standing, or moving faster than walking or running can
    (a jump to somewhere else) */
@@ -238,7 +257,10 @@ export function walkCamera(rw, rh, st, dt) {
     R = [Math.cos(turn), -Math.sin(turn)],
     F = [-R[1], R[0]],
     push = followDirection(P, R, F, vx, vz, sp),
-    lead = leadStep(fol, push, set('lead'), R, set('leadSide'), rh > rw, snap ? 0 : set('leadSmooth'), dt);
+    stops = zoomStops(),
+    /* CAM-4b: the look-ahead's factor at your zoom's stop curve */
+    leadK = freeCameraOn() ? 1 : stopShape(walkRenderer.zoom, stops).lead,
+    lead = leadStep(fol, push, set('lead') * leadK, R, set('leadSide'), rh > rw, snap ? 0 : set('leadSmooth'), dt);
   const tk = set('tilt'),
     tilt = [
       (walkRenderer.tiltX + (walkRenderer.mouse ? walkRenderer.mouse[0] * 0.35 : 0)) * tk,
@@ -334,13 +356,15 @@ export function walkCamera(rw, rh, st, dt) {
     goals.push({ id: 'pinch', w: 1, blend: 0.1, at: upAt(P.x + L[0], P.z + L[1]) });
   }
   const G = blendGoals(fol, goals, dt, set('blend'), snap);
-  /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves */
+  /* CAM-2: one zoom (your pinch times the goals') drives the tilt, distance and field of view along their curves;
+     CAM-4b: the curves through the zoom stops, which also carry the blur (walk-view-gl.js) */
   const zoomEff = clamp(
       walkRenderer.zoom * G.zoom,
       Math.min(0.3, walkRenderer.zoom),
-      Math.max(walkRenderer.zoom, set('zoomMax') * 1.25)
+      Math.max(walkRenderer.zoom, stops[stops.length - 1].zoom * 1.25)
     ),
-    Z = zoomShape(zoomEff, zoomEnds());
+    Z = stopShape(zoomEff, stops);
+  walkRenderer.zoomBlur = Z.blur;
   const pitchDeg0 = pe + Z.pitch + G.pitch,
     yaw = wrapAngle(turn + G.yaw);
   let df = (he / Math.sin((pe * Math.PI) / 180)) * Z.dist * G.dist;
@@ -427,6 +451,8 @@ export function walkCamera(rw, rh, st, dt) {
               ? 'indoor'
               : 'walk',
     zoom: zoomEff,
+    /* CAM-4b: the stop nearest your zoom */
+    stop: stops[nearestStop(walkRenderer.zoom, stops)].id,
     interest: I ? [I.n, I.w, I.at[0], I.at[1]] : null,
     moment: M.id,
     zone: zi,

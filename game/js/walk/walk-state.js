@@ -28,6 +28,11 @@ export const walkRenderer = {
   /* CAM-4a: a pinch going on ({ax, az}: the point between the fingers on the ground, {px, pz}: the aim then, z0: the
      zoom then), for the lean toward it (logic/camera-zoom.js pinchLean) */
   pinch: null,
+  /* CAM-4b: the blur's factor at the zoom (its stop curve), the stop last gone to or pulled to (its id; the debug log)
+     and when two fingers last left the screen (a tap of theirs never walks) */
+  zoomBlur: 1,
+  stopAt: null,
+  twoAt: 0,
   tiltX: 0,
   tiltY: 0,
   /* CAM-1: the camera's follow (logic/camera-follow.js) and what it is doing (the debug log, the Studio's guides) */

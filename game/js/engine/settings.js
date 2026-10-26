@@ -7,6 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ENVIRONMENT_ENGINE_MODIFIERS, gameData, provide, saveData } from '../hooks.js';
+import { ZOOM_STOPS } from '../logic/camera-zoom.js';
 import { TIME_OF_DAY_DEFAULTS, TIME_OF_DAY_GROUPS, TIME_OF_DAY_KEYS } from '../logic/time-of-day.js';
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
@@ -217,6 +218,13 @@ export const ENGINE_DEFAULTS = {
     zoomBand: 0,
     zoomToPoint: false,
     zoomPointMax: 3,
+    /* CAM-4b: the zoom stops (logic/camera-zoom.js), set for the whole game only; the defaults give the zoom before
+       CAM-4b. Pull to stops 0 keeps a pinch where you let go, as before. A two-finger tap (both fingers down and up
+       within the time, moving less than the pixels) goes to the next stop */
+    stops: ZOOM_STOPS.map(s => ({ ...s })),
+    stopPull: 0,
+    stopTapTime: 0.3,
+    stopTapMove: 12,
     /* CAM-2: the encounter shot and the pull back out after a battle */
     encZoom: 0.5,
     encMin: 400,
@@ -1046,6 +1054,23 @@ export const ENGINE_SPEC = [
       ],
       ['zoomPointMax', 'Zoom toward the pinch: most lean (m)', 0, 8, 0.1],
       [
+        'stopPull',
+        'Pull to stops',
+        0,
+        0.5,
+        0.01,
+        'CAM-4b: letting go of a pinch this share of the way from a zoom stop (toward its neighbour) eases the zoom to that stop. 0: it stays where you let go; 0.5: always the nearest stop.',
+      ],
+      [
+        'stopTapTime',
+        'Two-finger tap: longest (s)',
+        0.1,
+        0.8,
+        0.01,
+        'Two fingers down and up within this time, hardly moving, go to the next zoom stop (Z on a keyboard).',
+      ],
+      ['stopTapMove', 'Two-finger tap: most movement (px)', 2, 40, 1, 'More spread or slide than this is a pinch.'],
+      [
         'encZoom',
         'Encounter shot: zoom',
         0.3,
@@ -1296,7 +1321,21 @@ export const CAMERA_FOLDERS = [
       'zoomCurve',
     ],
   ],
-  ['feel', 'Zoom feel', ['zoomSmooth', 'pinchSpeed', 'wheelSpeed', 'zoomBand', 'zoomToPoint', 'zoomPointMax']],
+  [
+    'feel',
+    'Zoom feel',
+    [
+      'zoomSmooth',
+      'pinchSpeed',
+      'wheelSpeed',
+      'zoomBand',
+      'zoomToPoint',
+      'zoomPointMax',
+      'stopPull',
+      'stopTapTime',
+      'stopTapMove',
+    ],
+  ],
   [
     'follow',
     'Follow',
