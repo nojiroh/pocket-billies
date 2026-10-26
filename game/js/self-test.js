@@ -66,6 +66,7 @@ import {
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
+import { ART_CACHE } from './art.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -101,6 +102,7 @@ import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelShaders, propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
+import { paintWorkerState } from './ground-paint-worker.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { WORLD_BOWL_SHADERS, worldBowl, worldBowlReset, worldMap, worldMapReset } from './world-bowl.js';
 import { openShop } from './shop.js';
@@ -125,7 +127,17 @@ import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-contr
 import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
+  BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
+  BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
+  baselineBattle: [() => baselineBattle, v => (baselineBattle = v)],
+  baselineBattleEnd: [() => baselineBattleEnd, v => (baselineBattleEnd = v)],
+  baselineHub: [() => baselineHub, v => (baselineHub = v)],
+  baselineMeasure: [() => baselineMeasure, v => (baselineMeasure = v)],
+  baselineNote: [() => baselineNote, v => (baselineNote = v)],
+  baselineRun: [() => baselineRun, v => (baselineRun = v)],
+  baselineSettle: [() => baselineSettle, v => (baselineSettle = v)],
+  baselineStand: [() => baselineStand, v => (baselineStand = v)],
   diagnosticsMaps: [() => diagnosticsMaps, v => (diagnosticsMaps = v)],
   diagnosticsReport: [() => diagnosticsReport, v => (diagnosticsReport = v)],
   diagnosticsSummary: [() => diagnosticsSummary, v => (diagnosticsSummary = v)],
@@ -133,6 +145,7 @@ expose({
   diagnosticsTimersOn: [() => diagnosticsTimersOn, v => (diagnosticsTimersOn = v)],
   emptyDiagnosticsReport: [() => emptyDiagnosticsReport],
   exportDiagnosticsReport: [() => exportDiagnosticsReport, v => (exportDiagnosticsReport = v)],
+  rendererBaseline: [() => rendererBaseline, v => (rendererBaseline = v)],
   runDiagnostics: [() => runDiagnostics, v => ((runDiagnostics = v), provide({ runDiagnostics }))],
   runFullTest: [() => runFullTest, v => ((runFullTest = v), provide({ runFullTest }))],
   selfTest: [() => selfTest],
@@ -268,6 +281,8 @@ async function runFullTest(mode) {
       'Device',
       'Frame budget',
       'Rain and night',
+      /* phase 20 R1: the renderer's baseline tour */
+      'Renderer baseline',
       'Battle on the 3D stage',
       /* 0.1.0 alpha: the map's first open, timed (the owner finds it slow) */
       'World map',
@@ -275,7 +290,7 @@ async function runFullTest(mode) {
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 6 + 8 + 1
+    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 150 + 6 + 8 + 1
     : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
   let done = 0;
   const tick = s => {
@@ -2159,6 +2174,27 @@ async function runFullTest(mode) {
         6,
         120
       );
+    /* phase 20 R1: the renderer's baseline (diagnostics only): five stops at two resolutions */
+    if (diag)
+      await phase(
+        'Renderer baseline: Copperleaf by day and night, a jungle run place, a run town, a battle',
+        'dio',
+        async () => {
+          const B = await rendererBaseline({
+            foeSp,
+            show: t => {
+              stepEl.textContent = 'Renderer baseline: ' + t;
+            },
+          });
+          diagnosticsReport.baseline = B;
+          if (selfTest.stop) return 'stopped';
+          if (B.length < BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length)
+            throw new Error(`measured ${B.length} of ${BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length}`);
+          return baselineNote(B);
+        },
+        150,
+        600
+      );
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
@@ -2567,7 +2603,14 @@ expose({ runQuickTest: [() => runFullTest] });
    over a seam), where a frame's time goes, memory after,
    a battle's start, what rain and night cost, and any errors. It saves a compact report made to be read (not the whole
    debug log). Like the full test it leaves your save alone and waits for you if the app goes to the background. */
-const emptyDiagnosticsReport = () => ({ device: null, busiest: null, places: [], passes: null, weather: null });
+const emptyDiagnosticsReport = () => ({
+  device: null,
+  busiest: null,
+  places: [],
+  passes: null,
+  weather: null,
+  baseline: null,
+});
 let diagnosticsReport = emptyDiagnosticsReport();
 function runDiagnostics() {
   return runFullTest('diag');
@@ -2598,6 +2641,222 @@ function diagnosticsMaps() {
   diagnosticsReport.busiest = hub;
   diagnosticsReport.places = pick;
   return pick;
+}
+/* phase 20 R1 (measure): the renderer's baseline on what the game loads, in the diagnostics test. Five stops, each
+   measured twice: at resolution 1 (as A8's graphics test stations were) and at the game's own resolution; automatic
+   quality off both times, the game's own values otherwise (the player's dials set aside), the light forced, the
+   camera still on the place's arrival spot. A run's places come from fixed seeds on a copy of the save, their first
+   place forced to the jungle (no run reaches it yet) or to a town, so every run of the test sees the same places */
+const BASELINE_STOPS = [
+  { id: 'hubDay', name: 'Copperleaf by day', time: 12.5 },
+  { id: 'hubNight', name: 'Copperleaf by night', time: 23 },
+  { id: 'jungle', name: 'A jungle run place', time: 12.5, run: { seed: 'BASELINE1', type: 'route', biome: 'jungle' } },
+  { id: 'town', name: 'A run town', time: 12.5, run: { seed: 'BASELINE2', type: 'town', biome: 'meadow' } },
+  { id: 'battle', name: 'A battle', time: 12.5, battle: true },
+];
+/* the two resolutions: [name, the engine's quality group for it] */
+const BASELINE_RESOLUTIONS = [
+  ['r1', { auto: false, resolution: 1 }],
+  ['own', { auto: false }],
+];
+/* the player on the place's arrival spot, the camera straight and at its own zoom */
+function baselineStand() {
+  const sc = walkView.sc;
+  if (!sc) return;
+  const base = (sc.baseId && mapById(sc.baseId)) || sc,
+    at = mapHub(base),
+    o = sc.baseOff || [0, 0];
+  walkView.pl.x = at[0] + o[0];
+  walkView.pl.z = at[1] + o[1];
+  walkView.pl.route = null;
+  walkView.pl.fresh = false;
+  if (typeof walkRenderer !== 'undefined') {
+    walkRenderer.yawT = 0;
+    walkRenderer.zoomT = 1;
+  }
+}
+/* nothing left to prepare, plant, paint or load, then two seconds in a row whose frame times agree within 10 % (`sec` at most) */
+async function baselineSettle(task, sec) {
+  const t0 = performance.now(),
+    left = () => sec * 1000 * (selfTest.slow || 1) - (performance.now() - t0),
+    busy = () =>
+      !walkView.ready ||
+      !!(typeof walkRenderer !== 'undefined' && (walkRenderer.prep || walkRenderer.grassJob)) ||
+      !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size) ||
+      /* a picture still loading (a model's leaf clumps are skipped until theirs is in) */
+      Object.values(ART_CACHE.img).some(im => !im.complete);
+  while (busy() && left() > 0 && !selfTest.stop) await selfTestSleep(100);
+  const a = debugLog.now();
+  while (left() > 0 && !selfTest.stop) {
+    await selfTestSleep(250);
+    const S = debugLog.samples
+      .filter(s => s.t - (s.dt || 1000) >= a && s.tasks[task] && s.tasks[task].fps)
+      .map(s => 1000 / s.tasks[task].fps);
+    if (S.length < 2 || busy()) continue;
+    const [x, y] = S.slice(-2);
+    if (Math.abs(x - y) <= Math.max(0.5, y * 0.1)) break;
+  }
+  return Math.round(performance.now() - t0);
+}
+/* one measurement: frames from the debug log's seconds, the graphics chip's time where it has timers, and every
+   frame's calls counted (draws, the passes, the models' and their pictures' draws, the distinct pictures and meshes) */
+async function baselineMeasure(task, sec) {
+  const t0 = debugLog.now(),
+    T = diagnosticsTimersOn();
+  let r = null;
+  try {
+    await selfTestSleep(sec * 1000);
+  } finally {
+    r = await diagnosticsTimersOff(T);
+  }
+  const s = selfTestFrameStats(t0, debugLog.now(), task, { whole: true }),
+    c = r.calls;
+  return {
+    fps: s.fpsAvg,
+    worstFps: s.fpsWorst,
+    frameMs: s.fpsAvg ? Math.round((1000 / s.fpsAvg) * 10) / 10 : null,
+    cpuMs: s.cpuMs,
+    gpuMs: r.gpu ? Math.round(Object.values(r.gpu).reduce((a, v) => a + v, 0) * 100) / 100 : null,
+    slow: s.slow,
+    draws: c ? c.dc[0] : null,
+    instances: c ? c.dc[1] : null,
+    programs: c ? c.dc[2] : null,
+    textureBinds: c ? c.dc[3] : null,
+    uniforms: c ? c.dc[4] : null,
+    passDraws: c ? c.dcp : null,
+    tagged: c ? c.dct : null,
+    kinds: c ? c.dcu : null,
+    frames: c ? c.frames : 0,
+  };
+}
+/* a run on a copy of the save from a fixed seed, its first place forced, arrived at as the mast's start does */
+async function baselineRun(R) {
+  const s = JSON.parse(JSON.stringify(saveData)),
+    data = runWorldData();
+  uiState.bench = null;
+  uiState.inside = null;
+  uiState.goingIn = null;
+  uiState.tab = 'walk';
+  if (s.run) runRestore(s);
+  const plan = runStartPlan(R.seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }),
+    n0 = plan.map.nodes[0];
+  n0.type = R.type;
+  n0.biome = R.biome;
+  runStartOn(s, plan);
+  runArrive(s, 0, data);
+  s.visited[s.trip.node] = 1;
+  setSaveData(s);
+  render();
+  const id = 'w:' + LOCATIONS[runWorldNode(0)].mapId + '*';
+  for (let i = 0; i < 600 && !(walkView.ready && walkView.id === id) && !selfTest.stop; i++) await selfTestSleep(100);
+  if (walkView.id !== id) throw new Error(`the run's place isn't shown (still ${walkView.id})`);
+}
+/* the hub, on a copy of the save with any run set aside (a player mid-run stands in the run's world) */
+async function baselineHub() {
+  const s = JSON.parse(JSON.stringify(saveData));
+  uiState.bench = null;
+  uiState.inside = null;
+  uiState.goingIn = null;
+  uiState.tab = 'walk';
+  if (s.run) runRestore(s);
+  s.trip = { node: START_NODE, plan: [] };
+  setSaveData(s);
+  render();
+  const id = mapIdAt(START_NODE),
+    open = () => walkView.ready && (walkView.id === id || (walkView.sc && walkView.sc.baseId === id));
+  for (let i = 0; i < 300 && !open() && !selfTest.stop; i++) await selfTestSleep(100);
+  if (!open()) throw new Error(`the hub isn't shown (still ${walkView.id})`);
+}
+/* a wild battle at the hub, held at the move menu */
+async function baselineBattle(foeSp) {
+  saveData.team.forEach(m => {
+    m.hp = maxHp(m);
+  });
+  const q = { id: 'selftest', sp: foeSp, lvl: 5, no: 1 };
+  encountersHere().unshift(q);
+  startWild(q);
+  const end = performance.now() + 45000 * (selfTest.slow || 1);
+  while (performance.now() < end && !selfTest.stop) {
+    if (!activeBattle) break;
+    if (activeBattle.phase === 'choose') return;
+    if (activeBattle.phase === 'playing') tapMessage();
+    await selfTestSleep(150);
+  }
+  throw new Error(`the battle never got to the move menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+}
+function baselineBattleEnd() {
+  stopTimers();
+  setActiveBattle(null);
+  battleStageStop();
+  render();
+}
+/** the tour itself: { foeSp, show(text) } -> one entry per stop and resolution, in order */
+async function rendererBaseline(o) {
+  const out = [],
+    was = saveData,
+    prefs0 = JSON.stringify(saveData.preferences || {}),
+    f0 = environment.force,
+    on0 = environment.on;
+  try {
+    for (const st of BASELINE_STOPS) {
+      if (selfTest.stop) break;
+      o.show(st.name);
+      /* each stop starts from the player's save, and changes only a copy of it */
+      if (saveData !== was) setSaveData(was);
+      if (st.run) await baselineRun(st.run);
+      else await baselineHub();
+      const task = st.battle ? 'scene' : 'dio';
+      try {
+        environment.on = true;
+        environment.force = { time: st.time, weather: 'clear', season: 'summer' };
+        baselineStand();
+        if (st.battle) await baselineBattle(o.foeSp);
+        for (const [res, quality] of BASELINE_RESOLUTIONS) {
+          if (selfTest.stop) break;
+          o.show(`${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}`);
+          saveData.preferences.expert = true;
+          saveData.preferences.eng = { quality: { ...quality } };
+          if (!st.battle) baselineStand();
+          await selfTestSleep(800);
+          const settleMs = await baselineSettle(task, 10);
+          if (!st.battle) baselineStand();
+          const m = await baselineMeasure(task, 4);
+          out.push(Object.assign({ stop: st.id, place: st.name, res, where: walkView.id, settleMs }, m));
+          debugLog.add(
+            'bench',
+            `baseline ${st.id} ${res}: ${m.fps} fps, ${m.cpuMs} ms CPU, ${m.draws} draws` +
+              (m.tagged && m.tagged.sprites ? `, model pictures ${m.tagged.sprites.modelPic || 0}` : '')
+          );
+        }
+      } finally {
+        if (st.battle && activeBattle) baselineBattleEnd();
+      }
+    }
+  } finally {
+    environment.force = f0;
+    environment.on = on0;
+    if (saveData !== was) setSaveData(was);
+    saveData.preferences = JSON.parse(prefs0);
+    render();
+    /* the player's world again (the hub's, or their run's) */
+    if (typeof runWorldSync === 'function') runWorldSync();
+  }
+  return out;
+}
+/* the tour's line in the test's list: each stop's fps at both resolutions, its draws and model pictures */
+function baselineNote(B) {
+  return BASELINE_STOPS.map(st => {
+    const L = B.filter(b => b.stop === st.id);
+    if (!L.length) return null;
+    const one = b =>
+      `${b.fps ?? '?'} fps, ${b.draws ?? '?'} draws` +
+      (b.tagged && b.tagged.sprites && b.tagged.sprites.modelPic
+        ? ` (${b.tagged.sprites.modelPic} model pictures)`
+        : '');
+    return `${st.name}: ${L.map(b => `${b.res} ${one(b)}`).join(' / ')}`;
+  })
+    .filter(Boolean)
+    .join('; ');
 }
 /* timers round the render passes: the processor's time for each, and the graphics chip's own (EXT_disjoint_timer_query_webgl2) */
 const DIAGNOSTICS_PASSES = {
@@ -2740,6 +2999,8 @@ function diagnosticsSummary() {
     places: pl,
     frame: (R.diag || diagnosticsReport).passes,
     rainAndNight: (R.diag || diagnosticsReport).weather,
+    /* phase 20 R1: the renderer's baseline tour (rendererBaseline) */
+    baseline: (R.diag || diagnosticsReport).baseline,
     battle: one('Battle on the 3D stage'),
     worldMap: one('World map'),
     memory: one('Memory'),

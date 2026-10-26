@@ -15,8 +15,8 @@ buffer goes to the light lane (asked again once it turned out to be on in the ga
     handles (all of the world map's, light.js's Frame block, sprites.js's `hideQuery`).
   - The world map broke after a restore: its loop drew on `gpuState.cv`, null by then.
   - `buildingState.fac` holds canvases, not GPU objects (not tied to the context).
-  - **`quality.frameBlock` is on in the game**: game/data/engine.json sets it `true` (settings.js's code default is
-    false). The Restructure's "C3 off by default" holds for the code only.
+  - `quality.frameBlock` was on in the game at 33115c7 (game/data/engine.json set it `true`; settings.js's code
+    default was false). Since the light lane's 73838b9 the switch is gone and the Frame block is always on.
   - A loss starts before its event: a frame drawn in between turned the buildings, models and solid props off for the
     rest of the session (their guards' fail flags). Found by the crash check below.
 - Changed (one cause per commit):
@@ -59,9 +59,135 @@ buffer goes to the light lane (asked again once it turned out to be on in the ga
   - The world map (Map tab), then back to the walk view.
   - A battle (debug menu → Battle it now), at the move menu.
   - The Studio: open it with `?glLose=12`, open the battle preview with a walk scene before 12 s pass.
-  - With `quality.frameBlock` on (the game's data), lit things may look wrong after a loss until the light lane's fix
-    lands; that is the known leftover, not this lane's regression. Send the debug log of each.
+  - The Frame block is always on now, so lit things may look wrong after a loss until the light lane's fix lands;
+    that is the known leftover, not this lane's regression. Send the debug log of each.
 - Next: the light lane's one-line fix; round 3 (H1-H3, H5).
+
+### Phase 20 R1, lane light (stage 1: close-out) - 2026-10-26
+Branch `track/renderer` (one of three R1 lanes: light, measure, context). Plan approved in Plan Mode; the owner's
+answers: port C5 as planned (off by default, 16 lights everywhere for now); C3 "the same look, not slower", so on by
+default and the old path deleted; tags `phase-20a-done` and `phase-20b-done` now, `phase-20c-done` once C5 is approved.
+- Where the docs and the code differed (checked):
+  - `archive/phase-20-c3-lamp-shadows` does have a merge base with today's history (fe52cce, PR #51): the cloud
+    checkout was shallow, which is why it looked unrelated. I ported the six commits by hand anyway, as planned.
+  - The game's own engine values (game/data/engine.json) already had `quality.frameBlock: true`, so the phone has
+    been drawing with the Frame block at the game's values; only the code default was off.
+  - Still no phone test at walk-view-gl.js 475 (the only device check is the texture cache's user-agent test in
+    engine/webgl.js); with 16 lights everywhere none was needed.
+  - Only `sky` and `grade` declare light-like uniforms outside LIGHT_GLSL, and neither gets a light context, so the
+    old per-program light path could go whole.
+- Changed (one cause per commit):
+  - **C5** engine/light-pick.js (no WebGL) with tools/test/light-pick.test.mjs: a picker with stable keys, re-ranked
+    every 200 ms by a partial top-k (no sort, nothing made), a lit light held 1.5 m nearer, 250 ms fades, a jump of
+    more than 20 m resets. Script tags on both pages after engine/light.js.
+  - **C5** Stable keys on every point light (walk/lighting.js): a prop's fires, windows' light (picture windows and
+    the low-poly buildings' model windows alike), glow, lamp and their pools; the lantern; the battle stage's lights.
+    Room lamps, their pools and room windows are keyed in walk/rooms.js (no R1 lane owns it; key fields only).
+  - **C5** `quality.stableLights` (off; Studio Quality "Steady lamps") and `quality.lights` (1-16, default 16; "Lamps
+    lit at once") through `pickLights`. Lights whose reach is out of view are skipped (not when "Skip what's off
+    screen" is off, nor when the camera has no view matrix). Off and at 16 the lights are exactly the old ones.
+  - **C5** Lamp shadows: `pickShadowLamps` (walk/shadows.js) holds last frame's shadowed lamps 1.5 m nearer; it only
+    bites with Steady lamps on (the same light objects frame to frame).
+  - Graphics test: "Steady lamps" off/on at the Lamp square and the Depth corridor; "Lamps lit at once" 8/16 at the
+    Lamp square; both out of "everything lowest / highest". After C3's deletion: 120 steps over 21 settings.
+  - **C3** `quality.frameBlock` on by default (one commit), then the old path deleted (its own commit): LIGHT_GLSL
+    declares only the block, `setFrameBlockMode`, `ensureLitPrograms`, programs' `lit` and `PB_FRAME_BLOCK` gone,
+    setLightUniforms sets the curve, uFol and the shadow samplers and binds the block; the setting left settings.js,
+    the Studio, engine.json and the graphics test. The in-game Frame block check stays (every program that includes
+    the block). tools/test/frame-block.test.mjs keeps the old declarations and sender as the packing's reference.
+- Risky:
+  - With the old path gone there is no fallback: a device whose driver rejects the Frame block shows nothing lit. The
+    in-game full test's Shaders step reports it ("14 with the Frame block"); your phone already drew with the block at
+    the game's own values.
+  - Steady lamps on: a lamp coming into range lights up to 450 ms later, one leaving shines up to 450 ms longer; a
+    move of less than 20 m (a door into a room laid into the place) fades the outside lamps instead of cutting them.
+  - The picker's output light objects are reused frame to frame (nothing keeps a frame's list into the next today).
+  - Not done: walkLightContext still makes its light objects new each frame (left so the off path stays identical).
+- Verified: after every commit lint, typecheck, unit tests (1063 -> 1069), check:modules, format; check:data and
+  `npm run data` for the engine.json change; smoke "no problems" for every commit touching game/ and after each merge
+  with the measure lane. Off, `pickLights` and the lamp-shadow choice equal the old code (Node tests); settled with
+  nothing out of view the stable picker lights the old set in the old order; a to-and-fro walk between two equal
+  lamps never swaps. The Frame block packing still matches the old sender, field by field. No headless graphics test.
+- Questions waiting for the owner:
+  - **On your phone** (this round's run): the graphics test's "Steady lamps" off/on at the Lamp square and the Depth
+    corridor, and "Lamps lit at once" 8 vs 16; then walk Copperleaf at night with Steady lamps on (Studio > Engine >
+    Quality): do lamps still pop at the edge, does anything flicker between two lamps, do lamp shadows stop swapping,
+    and does 8 look acceptable? That decides Steady lamps on by default (old picker deleted in its own commit) and
+    the phone limit.
+  - Also check nothing looks different at the game's own values now that the old light path is gone (it should be
+    identical: your engine values already used the block). The Shaders line in the in-game full test should pass.
+  - Tags: `phase-20a-done` (786334ca, the A8 decisions) and `phase-20b-done` (8670828c, stage B's last commit) are
+    made, but this session's git proxy refused to push tags. Push them from your machine:
+    `git tag -a phase-20a-done 786334ca -m "Phase 20 stage A done"`,
+    `git tag -a phase-20b-done 8670828c -m "Phase 20 stage B done"`, `git push origin phase-20a-done phase-20b-done`.
+    `phase-20c-done` waits for your verdict on Steady lamps.
+- Next session starts with: Steady lamps default and the old picker's deletion (after your verdict), the phone light
+  limit, then tag `phase-20c-done`; R2's lanes otherwise.
+
+### Phase 20 R1, lane measure (stage 2: measure again) - 2026-10-26
+Branch `track/renderer` (one of three R1 lanes: light, measure, context). Plan approved in Plan Mode; the owner's
+answers: the tour in the diagnostics test; each stop at resolution 1 and at the game's own; one tag line in each of
+walk/shadows.js's two picture loops (the light lane's file this round); the jungle forced on a fixed seed.
+- Where the docs and the code differed (checked):
+  - No run reaches the jungle: rules.json run.map.biomes and regions.json's graph and themes hold only meadow, lake,
+    thicket, ridge and autumn. Phase 09's jungle numbers came from a fixture with the biomes forced.
+  - Model pictures are not only the sprite pass: leaf layers with `shadow: 1` draw again in the near, far and lamp
+    shadow maps, and the reflection draws them through its picture loop (the models themselves as models).
+  - One model can make several draws (its extra parts, spinning parts) and draws again in each shadow map.
+  - The graphics test pins resolution 1, not the phone's game value 1.5; A8's stations were at 1.
+- Changed (one cause per commit):
+  - engine/gpu-counters.js: `gpuTag('model' | 'modelPic')` marks the draws that follow (gpuPass clears it); each pass
+    keeps its tagged draws and instances, and counts its distinct textures and vertex arrays (`texKinds`,
+    `vaoKinds`: the fewest draws grouping by picture or mesh could reach). `gpuCountSummary` gives `dct` and `dcu`;
+    the debug log's second samples carry both (docs/TESTING.md). Node tests (9, was 6).
+  - Marks: drawPropModels and drawPropModelShadows tag `model`; drawSprites, both picture loops of walk/shadows.js
+    and the reflection's picture loop (walk/water.js) tag a model's picture layer (`voxImg`, and a modelled clock's
+    hands) `modelPic`. Counting only.
+  - self-test.js: the diagnostics test's new step "Renderer baseline" (docs/graphics-bench.md has the details): five
+    stops, Copperleaf 12:30 and 23:00, a jungle route (seed BASELINE1, its first place forced), a meadow run town
+    (seed BASELINE2), a wild battle at the hub held at its move menu; each at `r1` and `own`, automatic quality off,
+    the game's own values, clear summer, the player on the arrival spot, settled (pictures loaded) then 4 s measured.
+    The run places and the hub stops use copies of the save (a player mid-run is set back in their run after). The
+    report's `baseline` lists each: fps, worst fps, frame, CPU and GPU ms, draws, instances, programs, texture binds,
+    uniform calls, `passDraws`, `tagged`, `kinds`.
+  - Fixed on the way: the first stop was measured while its leaf pictures loaded (4 model pictures, then 645).
+- Headless counts (390 x 760 at DPR 1, the game's full values, `own`; counts only, never speed):
+
+  | Stop | Draws | Sprites (model pictures) | Models | Shadow maps (models / model pictures) | Uniform calls |
+  |---|---|---|---|---|---|
+  | Copperleaf by day | 1,167 | 710 (642) | 185 | near 36, far 34 (33 / 11) | 21,630 |
+  | Copperleaf by night | 1,171 | 712 (645) | 181 | near 36, far 35, lamps 9 (38 / 15) | 21,692 |
+  | Jungle run place | 652 | 232 (123) | 31 | near 143, far 216 (65 / 49) | 8,706 |
+  | Run town | 632 | 178 (52) | 27 | near 154, far 206 (80 / 28) | 7,398 |
+  | Battle | 595 | 211 (174) | 98 | far 90 (58 / 14) | 7,603 |
+
+  What it says:
+  - Copperleaf is all model pictures: 642 of its 710 sprite draws, from about 166 distinct textures (picture and
+    normal map each, so ~85 pictures). Sprite instancing (round 2) is the big win there; Copperleaf is ~2.9x the
+    400-draw budget before the shadows are counted big.
+  - Models: 185 draws from 50 meshes in Copperleaf, 98 from 73 in the battle: instancing models (round 2) halves them
+    at most in town.
+  - In the run places the shadow maps are over half the draws (359 of 652 in the jungle), mostly plain pictures
+    (grass tufts, bushes), not models: round 3's casters.
+  - Uniform calls stay ~18 a draw in Copperleaf (C3's frame block is still off by default).
+- Risky:
+  - The diagnostics test now takes about 4-5 minutes on a phone (was 2). debug-menu.js's note still says "2 min"
+    (**for the context lane**, its file this round).
+  - walk/shadows.js (light lane) has two `gpuTag` lines, one at the top of each picture loop, one after each.
+  - The battle's camera moves on its own, so its two resolutions see slightly different things.
+  - Forcing the first place's biome and type makes a run no real seed makes; its names and pool may read odd.
+- Verified: lint, typecheck, unit tests (1,066), check:modules after every commit; smoke 6/6 on each game commit;
+  the tour headless twice (low graphics and the full values): 10 of 10 measured, no errors, the hub's world back
+  after. No speed judged headless.
+- **Your phone run** (Android phone, then the iPad), at a full charge, nothing else open:
+  1. Open the debug menu, tap **Diagnostics test**; leave the phone alone for about 5 minutes (screen on; the step
+     "Renderer baseline: ..." shows each stop).
+  2. At the end tap **Save the report** (pocket-billies-diagnostics-....json).
+  3. In the debug menu tap **Export debug log**. Send me both files.
+  - Optional: walk Copperleaf at night for a minute first, then export the log, for the `dct` per second.
+- **Ask me before** (once your numbers are in): whether the A8 budgets (400 draws a frame on phones, 60 fps in towns)
+  still stand.
+- Next: the round 1 phone run covering every lane's switches; then round 2 (models, sprites, pixels).
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The
