@@ -3,8 +3,8 @@
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
 ### Roster track RO-3b - Every Billie on its body plan as a placeholder - 2026-10-26
-Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`, #213 merged there
-meanwhile). Plan approved in Plan Mode. The owner's answers: a spliced Billie draws as its plain placeholder until
+Branch `claude/ro-3b-placeholder-billies` (from RO-3a's branch; pull request into `track/roster`; #213 and RO-3c's
+#215 merged there meanwhile, and track/roster is merged in). Plan approved in Plan Mode. The owner's answers: a spliced Billie draws as its plain placeholder until
 RO-3c; the starters keep today's colours, a size per stage from today's scales and their horns, crest and tail colour
 as added bones, nothing more; no player-facing name changes; I trigger the picture baseline (held back, see Risky).
 Tag `ro-3b-done` for the owner.
@@ -30,8 +30,11 @@ Tag `ro-3b-done` for the owner.
     for ear tufts); regional forms: their own colours plus one add or drop (Harbour a cap, Meatball no ears and a
     rounder body, Courtside a headband, Livestream a ring light, Hazard a cap). The Swift line is kept plain (colours
     and sizes only) for RO-3g. Baked with `npm run bake:placeholders`: 51 sheets and rigs.
-  - **Grafts**: skeleton-rig.js draws a grafted placeholder Billie plain (no kit bake); the debug log says "graft not
-    drawn" once per graft. **RO-3c (#215) supersedes this with its graft path**: keep RO-3c's when they meet.
+  - **Grafts**: RO-3b first drew a grafted placeholder Billie plain (the owner's call until RO-3c); RO-3c (#215)
+    merged into track/roster meanwhile and grafts placeholder Billies by slot, so the merge keeps RO-3c's graft path
+    whole. After the merge `npm run bake:placeholders` rebaked the three Zuckerberg rigs (the octopus mantle is slot
+    body, also head), and graft-placeholder.test.mjs runs RO-3c's graft over the 51 real forms (765 grafts: every
+    slot from a Billie of each other plan, inside the box, the same bones; head refused to and from the octopus).
   - Studio: the Roster board's silhouettes treat a placeholder rig like a kit rig (no piece layout: it asked for 50
     missing `<name>.json`); the Pixel density report shows a placeholder Billie's plan and scale.
 - Remade on purpose: kit-bake.json (new); data-rigs' planted fault names musk0's first bone `body` (the quad's, was
@@ -50,13 +53,11 @@ Tag `ro-3b-done` for the owner.
   - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
     `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check
     would show 51 Billies as changed. Run "Make the picture baseline" once this is on main.
-  - RO-3c (#215) changes `plans` (octo mantle and blob body take `also: head`) and adds the graft path: after it is in
-    track/roster, merge it in, bake again (`npm run bake:placeholders`: Zuckerberg picks up the slot), remake what
-    depends on it and run its graft test over the 51 forms.
+  - RO-3c's grafts on the real forms are tested for fit and bones, not judged by eye on each pair.
   - The labels on a back view read mirrored (RO-3a's design: the back cell is drawn as it shows and flipped).
   - The kit recipes' native parts (lines/*.json `parts`) stay the kit's: splicing's slot data is RO-3c's.
   - Looks judged on a contact sheet and on a phone-sized page in this container, not on a phone.
-- Next: merge RO-3c when #215 is in; then RO-3d, RO-3e, RO-3f (side by side), RO-3g last.
+- Next: RO-3d, RO-3e, RO-3f (side by side), RO-3g last; the picture baseline once this is on main.
 
 ### Roster track RO-3c - Splicing by slot across body plans - 2026-10-26
 Branch `claude/ro-3c-splice-by-slot`, made from RO-3a's `claude/happy-ramanujan-jiipux` (PR #213, not merged yet);
