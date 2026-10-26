@@ -34,6 +34,8 @@ import {
 import {
   ensurePrograms,
   finishProgramCompile,
+  gpuMemory,
+  gpuRes,
   gpuState,
   makeNormalMap,
   normalMapWorkerState,
@@ -143,6 +145,8 @@ Object.defineProperties(GAME, {
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   gpuCountSummary: { get: () => gpuCountSummary },
   gpuCounters: { get: () => gpuCounters },
+  gpuMemory: { get: () => gpuMemory },
+  gpuRes: { get: () => gpuRes },
   gpuState: { get: () => gpuState },
   graftReport: { get: () => graftReport },
   grassWork: { get: () => grassWork, set: setGrassWork },

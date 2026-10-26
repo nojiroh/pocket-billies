@@ -737,7 +737,7 @@ const GPU_MAKE = {
   program: ['createProgram', 'deleteProgram'],
   shader: ['createShader', 'deleteShader'],
 };
-const gpuRes = {
+export const gpuRes = {
   /* handle -> { type, kind, bytes, gen } */
   at: new WeakMap(),
   flat: new Map(),
@@ -874,7 +874,7 @@ function gpuRestoreOwners() {
     }
 }
 /* H3: the memory by kind for the debug log: MB, objects, objects dropped without being freed */
-function gpuMemory() {
+export function gpuMemory() {
   const o = {};
   for (const k of GPU_KINDS)
     if (gpuRes.n[k] || gpuRes.dropped[k])

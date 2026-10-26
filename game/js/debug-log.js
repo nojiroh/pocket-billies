@@ -238,6 +238,12 @@ debugLog.ctx = () => {
       c.pcl = GAME.gpuState.pcl.slice();
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gpuMs)
       c.gpu = [Math.round(GAME.gpuState.gpuMs * 10) / 10, Math.round(GAME.gpuState.gpuMax || 0)];
+    /* phase 20 H3: the graphics card's memory in all, MB (what it holds by kind is in the report's gpuMemory) */
+    if (typeof GAME.gpuRes !== 'undefined') {
+      let b = 0;
+      for (const k in GAME.gpuRes.bytes) b += GAME.gpuRes.bytes[k];
+      if (b) c.gmb = Math.round(b / 1048576);
+    }
     if (debugLog.bench && debugLog.bench.step) c.bench = debugLog.bench.step;
   } catch (e) {}
   return c;
@@ -723,6 +729,18 @@ debugLog.more = () => {
     targets: typeof GAME.gpuState !== 'undefined' ? Object.keys(GAME.gpuState.fb || {}).length : null,
     prints: typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.prints ? GAME.walkRenderer.prints.length : 0,
   }));
+  /* phase 20 H3: the graphics card's memory by kind (engine/webgl.js gpuMemory: MB, objects, objects dropped without
+     being freed, the sign of a leak), the picture cap's own count, and how many contexts this session made */
+  t('gpuMemory', () =>
+    typeof GAME.gpuMemory === 'function'
+      ? {
+          kinds: GAME.gpuMemory(),
+          picturesCapMB: GAME.gpuState.texB ? Math.round(GAME.gpuState.texB / 1048576) : 0,
+          trimmed: GAME.gpuState.texTrimmed || 0,
+          contexts: GAME.gpuState.gen || 0,
+        }
+      : null
+  );
   /* phase 08b: the walking world: map files (loaded, time, failed, whole of all), the views kept, and how crossings
      went (waited for the next view, built on the spot, made ready ahead) */
   t('world', () => {
