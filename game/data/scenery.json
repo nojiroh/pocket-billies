@@ -12165,6 +12165,29 @@
     {"x":-83,"r":0.1},
     {"x":83,"r":0.1}
    ]
+  },
+  "fountain_ch2": {
+   "name": "Fountain (Chapter 2)",
+   "img": "scene/next/hub/fountain_ch2.png",
+   "ox": -58,
+   "oy": -82,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "fountain_ch2",
+   "model": "scene/next/models/fountain_ch2.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 1.6,
+   "fx": [
+    {"k":"spray","x":0,"y":-80},
+    {"k":"glow","x":-32,"y":-19,"z":-0.5},
+    {"k":"glow","x":32,"y":-19,"z":-0.5},
+    {"k":"glow","x":0,"y":-19,"z":0.9},
+    {"k":"fireflies","x":0,"y":0,"n":7,"r":3.2}
+   ],
+   "glowCol": "#B494FF"
   }
  },
  "person": 1.75,

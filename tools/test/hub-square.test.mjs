@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { SQUARE_EDGE, SQUARE_R, VIEW, WALK_R, squareHubSpot, squareRim } from '../square-props.mjs';
+import { FOUNTAIN_LOOKS, SQUARE_EDGE, SQUARE_R, VIEW, WALK_R, squareHubSpot, squareRim } from '../square-props.mjs';
 import { mapgenReach } from '../../game/js/logic/mapgen.js';
 import { turnedPoint } from '../../game/js/logic/prop-turn.js';
 import { squareStops } from '../../game/js/logic/square-day.js';
@@ -100,6 +100,24 @@ test('the win bunting (HB-10d): only after a won run, its posts on grass, 1.8 m 
       assert.ok(near >= 1.8, `${p.k} foot at ${x.toFixed(1)}, ${z.toFixed(1)}: ${near.toFixed(2)} m from the nearest`);
     }
   }
+});
+
+test("the fountain's looks (HB-10d): one per chapter on the same spot, exactly one shown at any chapter", () => {
+  const F = M.props.filter(p => FOUNTAIN_LOOKS.some(([k]) => k === p.k));
+  assert.deepEqual(
+    F.map(p => p.k),
+    FOUNTAIN_LOOKS.map(([k]) => k)
+  );
+  for (const p of F) {
+    assert.ok(C[p.k] && C[p.k].model, `${p.k} has a model`);
+    assert.deepEqual([p.x, p.z], [F[0].x, F[0].z]);
+  }
+  /* the conditions here are all "chapter >= n": read them by hand */
+  const shown = (p, ch) => {
+    const ge = c => ch >= +c.match(/chapter >= (\d)/)[1];
+    return (!p.when || ge(p.when)) && (!p.unless || !ge(p.unless));
+  };
+  for (let ch = 1; ch <= 9; ch++) assert.equal(F.filter(p => shown(p, ch)).length, 1, `chapter ${ch}`);
 });
 
 test('round the edge shuts nothing in: every cell walkable from the hub without it still is', () => {

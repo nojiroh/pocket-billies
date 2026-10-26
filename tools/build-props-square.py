@@ -7,6 +7,10 @@ verdigris and brass, tools/build-props-hub.py).
   pennant_line   HB-10d: the win bunting, two posts 5.2 m apart with a sagging line of cloth pennants (three-sided
                  cones, point down) in the town's cream, brass, verdigris and copper. Shown on the square after a won
                  run (`when: "last:won"` on the placed prop, tools/square-props.mjs). Only the posts block
+  fountain_ch2   HB-10d: the square's fountain from Chapter 2 on (rules.json square.fountain): batch 6's fountain with
+                 the portal tear's violet in its water and its night glows (`glowCol`), a crack glowing violet up the
+                 upper pedestal and the top bowl, and a brass Bureau plaque on the basin's front (made from batch 6's
+                 recipe here, so batch 6 needn't run again: its run drifts other models)
 
 The new kinds get a picture baked from the model (scene/next/hub/<key>.png: the fallback when models are off).
 
@@ -108,6 +112,33 @@ def pennant_line():
     return B5.rec(L)
 
 
+B6 = load('batch6', 'build-props-batch6.py')
+TEAR = '#6A4AD8'  # the portal tear's violet (sky_portal's #5A3AC8, lifted to read as water)
+TEAR_GLOW = '#B494FF'
+CRACK = '#9A78FF'
+PLATE, PLATE_INK = BRASS, '#5A4422'
+
+
+def fountain_ch2():
+    L = [dict(l) for l in B6.fountain_recipe()['layers']]
+    for l in L:
+        if l.get('name', '').endswith('water'):
+            l['col'] = TEAR
+    # the crack: up the front of the upper pedestal (0.12 m round) and across the top bowl (0.1 to 0.32 m round)
+    pts = [(0.02, 1.70, 0.12), (-0.03, 1.82, 0.12), (0.03, 1.95, 0.12), (-0.02, 2.08, 0.11), (0.05, 2.15, 0.2),
+           (-0.04, 2.21, 0.3)]
+    L.append({'k': 'limb', 'pts': [[r2(x), r2(-r - 0.01), r2(z), 0.024] for x, z, r in pts], 'sides': 4,
+              'col': CRACK, 'tex': 'plain', 'name': 'crack'})
+    # the plaque on the basin wall's front (the wall is 1.68 m round, the viewer looks from -y)
+    fy = -1.69
+    L += [B1.box(0, fy, 0.16, 0.56, 0.03, 0.26, PLATE, 'metal', 'plaque'),
+          B1.box(0, fy - 0.016, 0.33, 0.4, 0.01, 0.025, PLATE_INK, 'metal', 'plaque line'),
+          B1.box(0, fy - 0.016, 0.27, 0.44, 0.01, 0.025, PLATE_INK, 'metal', 'plaque line'),
+          B1.box(-0.08, fy - 0.016, 0.21, 0.28, 0.01, 0.025, PLATE_INK, 'metal', 'plaque line'),
+          cyl(0.17, fy - 0.02, 0.2, 0.045, 0.01, PLATE_INK, 'metal', 'plaque stamp', 10)]
+    return B5.rec(L, 0.75)
+
+
 def main():
     ISL.PICS.mkdir(parents=True, exist_ok=True)
     D = gamedata.load()
@@ -116,8 +147,11 @@ def main():
                                       fx=string_lights_fx(), posts=[{'x': -px(SPAN), 'r': 0.1}, {'x': px(SPAN), 'r': 0.1}])
     C['pennant_line'] = ISL.new_prop('pennant_line', 'Pennant line', pennant_line(), shadow=0.3, tags=('town',),
                                      posts=[{'x': -px(PEN_SPAN), 'r': 0.1}, {'x': px(PEN_SPAN), 'r': 0.1}])
+    F = C['fountain']
+    C['fountain_ch2'] = ISL.new_prop('fountain_ch2', 'Fountain (Chapter 2)', fountain_ch2(), shadow=F['shadow'],
+                                     tags=('town',), solid=F['solid'], fx=B6.fountain_fx(), glowCol=TEAR_GLOW)
     gamedata.save(D)
-    print('square props: string_lights, pennant_line')
+    print('square props: string_lights, pennant_line, fountain_ch2')
 
 
 if __name__ == '__main__':

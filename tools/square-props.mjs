@@ -40,6 +40,30 @@ export function moveHub(M, to) {
   return M;
 }
 
+/* HB-10d: the fountain's look per chapter (the owner: Chapter 1 as built; from Chapter 2 the portal tear's violet, a
+   crack up its top bowl, a Bureau plaque; tools/build-props-square.py): each look a fountain of its own on the same
+   spot, shown while its chapter holds (`when` / `unless`, the story's `chapter` condition), so the square changes the
+   moment the story moves on. A later chapter adds a row and narrows the one before. */
+export const FOUNTAIN_LOOKS = [
+  ['fountain', { unless: 'chapter >= 2' }],
+  ['fountain_ch2', { when: 'chapter >= 2' }],
+];
+
+/** the map's props with the fountain's looks on the fountain's spot (the first look is the fountain itself; the
+ * others are laid again) */
+export function fountainLooks(M) {
+  const F = M.props.find(p => p.k === FOUNTAIN_LOOKS[0][0] && !p.dress);
+  if (!F) throw new Error('no fountain on the map');
+  const later = FOUNTAIN_LOOKS.slice(1).map(([k]) => k),
+    out = M.props.filter(p => !later.includes(p.k));
+  delete F.when;
+  delete F.unless;
+  Object.assign(F, FOUNTAIN_LOOKS[0][1]);
+  const at = out.indexOf(F);
+  out.splice(at + 1, 0, ...FOUNTAIN_LOOKS.slice(1).map(([k, c]) => ({ k, x: F.x, z: F.z, ...c })));
+  return out;
+}
+
 export const WALK_R = 4.6; /* nothing stands nearer the square's middle than this (m) */
 export const VIEW = [15, 45]; /* degrees round the square kept low toward the portal */
 /* [kind, degrees round the middle (0 east, 90 north), metres in from the rim, 'in' (its front to the fountain) or a
