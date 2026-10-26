@@ -1040,7 +1040,8 @@ function ensureNormalMapWorker() {
         gpuSized(t, j.w * j.h * 4);
         gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
-        setTextureParams({ linear: true });
+        /* Steady light on far props (quality.normalMips): the bump map's smaller sizes too */
+        setTextureParams({ linear: true, mip: !!engineSetting('quality', 'normalMips') });
         e.n = t;
         if (col && e.t && engineSetting('quality', 'edgeBleed') !== false) {
           gl.bindTexture(gl.TEXTURE_2D, e.t);
@@ -1192,7 +1193,23 @@ export function makeNormalMap(im, w, h, old) {
   gpuSized(t, w * h * 4);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
-  setTextureParams({ linear: true });
+  setTextureParams({ linear: true, mip: !!engineSetting('quality', 'normalMips') });
+  /* without the helper thread, the colours bled round the outline here too (the helper sends them with its map) */
+  if (bleed && engineSetting('quality', 'edgeBleed') !== false) {
+    gl.bindTexture(gl.TEXTURE_2D, bleed);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      w,
+      h,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array(bleedEdges(d, w, h).buffer)
+    );
+    gl.generateMipmap(gl.TEXTURE_2D);
+  }
   return t;
 }
 /* ---------- render targets ---------- */
