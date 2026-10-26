@@ -91,6 +91,7 @@ expose({
     () => setSpriteShadeUniforms,
     v => ((setSpriteShadeUniforms = v), provide({ setSpriteShadeUniforms })),
   ],
+  sortByPicture: [() => sortByPicture, v => ((sortByPicture = v), provide({ sortByPicture }))],
   spriteDrawList: [() => spriteDrawList, v => (spriteDrawList = v)],
   spriteDrawn: [() => spriteDrawn],
   spriteFrame: [() => spriteFrame, v => ((spriteFrame = v), provide({ spriteFrame }))],
@@ -107,7 +108,7 @@ expose({
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ setSpriteShadeUniforms, spriteFrame });
+provide({ setSpriteShadeUniforms, sortByPicture, spriteFrame });
 export function setDrawBoxFaces(v) {
   drawBoxFaces = v; // eslint-disable-line no-func-assign
   provide({ drawBoxFaces });
@@ -178,6 +179,10 @@ const SPRITE_LIST = [],
    is in front, so order matters only where two pictures share a plane): imageId's first-seen order, then item order */
 function spriteDrawList(items) {
   return filterInto(items, spriteDrawn, SPRITE_LIST).sort(byImageId);
+}
+/* a list of pictures in the same order (the reflection's) */
+function sortByPicture(L) {
+  return L.sort(byImageId);
 }
 /* phase 20 E1: what the pass works out once a frame: the camera, how much a crown shades itself and toward where (the
    sun across the picture), and how much a tree's crossing picture shows (by the camera's turn) */

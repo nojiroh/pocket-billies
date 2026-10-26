@@ -12,6 +12,7 @@ import {
   roomHole,
   setPropLookUniforms,
   setSpriteShadeUniforms,
+  sortByPicture,
   soundEffectAt,
   spriteFrame,
 } from '../hooks.js';
@@ -27,6 +28,7 @@ import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
 expose({
+  REFLECTION_PICTURES: [() => REFLECTION_PICTURES],
   WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
   addRipple: [() => addRipple, v => ((addRipple = v), provide({ addRipple }))],
   addWakeRipple: [() => addWakeRipple, v => ((addWakeRipple = v), provide({ addWakeRipple }))],
@@ -95,6 +97,8 @@ function mirrorInView(F, it, L) {
     cy = (it.y || 0) + h * 0.5;
   return inFrustum(F, it.x, 2 * L - cy, it.z, r);
 }
+/* phase 20: the reflection's pictures, kept from frame to frame */
+const REFLECTION_PICTURES = [];
 export function reflectionPass(items, C, rw, rh, X) {
   const gl = gpuState.gl,
     w = Math.max(32, rw >> 1),
@@ -135,7 +139,9 @@ export function reflectionPass(items, C, rw, rh, X) {
   const SF = spriteFrame(C, X.sun),
     FR = computeFrustum(C.vp),
     cut = engineSetting('quality', 'cull') ?? true,
-    models = [];
+    models = [],
+    pics = REFLECTION_PICTURES;
+  pics.length = 0;
   for (const it of items) {
     if (it.flat || it.far) continue;
     if (!waterNear(it.x, it.z)) continue;
@@ -146,6 +152,12 @@ export function reflectionPass(items, C, rw, rh, X) {
       models.push(it);
       continue;
     }
+    pics.push(it);
+  }
+  /* phase 20 (the owner's choice): grouped by picture as the main pass is (walk/sprites.js), so runs of one picture
+     can be one draw */
+  sortByPicture(pics);
+  for (const it of pics) {
     gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
     const T = imageTexture(it.im);
     if (!T) continue;
