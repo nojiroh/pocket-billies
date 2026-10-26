@@ -69,6 +69,79 @@ were picked in chat: one colour each for the bottom bar, the controls and the st
   pale on the light bar. The nightly full quick check will show icon diffs wherever these icons are drawn (the
   bottom bar, battle's Team button, the run HUD, shop +/-, settings, money) until its baseline is remade.
 - Next: the owner's verdict on the Team icon's colours on the selected tab; the weather icons if wanted.
+### Camera track - CAM-4b: zoom stops, the curve graph and camera looks - 2026-10-26
+Branch `track/camera` (made by the owner from `ccr-6dfb9e06-vr4uwi`; main 2314da8 already in it, the merge a no-op).
+Plan approved in Plan Mode; the owner's answers at the start: a two-finger tap cycles the stops (not a double-tap), R
+goes to the scene's starting stop and Z cycles, the curve is smooth in plain zoom, the stops are the whole game's.
+Details: docs/phases/camera-track.md, "CAM-4b as built". Not tagged yet: `cam-4b-done` once the owner approves.
+- Where the plan and the code differed: a curve "in log zoom" would have moved every zoomed picture (the default zoom
+  is a straight line in zoom), so the curve is a monotone cubic in zoom, exact on the default stops; the zoom *was*
+  kept between scenes (only not between sessions), so a scene's starting stop applies on a fresh load only, never
+  across a seam, and doors and the world map still put your zoom back; no data set the old zoom ends, so they were
+  simply dropped (with `zoomCurve`); the Studio's slider already scrubbed the preview.
+- Changed (one cause per commit):
+  - Logic: logic/camera-zoom.js zoom stops (`ZOOM_STOPS`, `stopShape`, `stopPull`, `nextStop`, `nearestStop`,
+    `stopsProblems`, `stopsOrDefault`); `zoomShape`/`zoomBend`/`ZOOM_ENDS` gone.
+  - Game: the camera follows the stops (tilt, distance, field of view, blur times the player's slider, look-ahead);
+    the limits are the end stops; Pull to stops on letting go of a pinch (default 0: as before); a two-finger tap and
+    Z go to the next stop (its click doesn't walk); R to the scene's starting stop; a fresh scene starts at `cam.stop`.
+    With reduced motion a stop is reached at once.
+  - Removed: the nine zoom-end dials (`zoomMin`, `zoomMax`, `zoomNear*`, `zoomFar*`, `zoomCurve`).
+  - Data: `cam.stop` (map.schema.json; Walk scenes > Starting zoom stop); `dataCameraStops` in check:data and the
+    Studio's Check.
+  - Studio: Camera > Zoom stops (a column per stop, add in the widest gap without moving the picture, remove, the
+    curve graph with draggable points), stop marks and buttons by the zoom slider, the nearest stop in the readout,
+    camera looks (Diorama, Classic RPG, Close-up, your own in `engine.cameraLooks`).
+  - Debug log: the camera line's `stop` and `pulled` (ids only).
+  - Checks: check-fast "Zoom stops" (new) and the Studio's Camera section (the stops' table, graph and add).
+- Risky:
+  - Entering a scene fresh now resets your zoom to its starting stop (before, a pinch carried over until the next
+    reload). Walking across a seam, a room's door and the world map are unchanged.
+  - A two-finger tap is judged by time (0.3 s) and movement (12 px), both dials; not tried on a real phone. Please try
+    a quick two-finger tap, a slow small pinch, and Pull to stops at about 0.25 on yours.
+  - The camera looks' numbers are a first guess by eye in software drawing; Diorama and Close-up change the tilt
+    (pitchAdd 0 and -12 against the game's -8).
+  - The pull after Ctrl+wheel isn't done (the wheel has no "let go").
+- Verified: lint, typecheck, unit tests (1067 passing), check:modules, format:check, check:data (a planted bad
+  `cam.stop` caught); check-fast --only=camera (6/6 before the new step), "Zoom stops" and the Studio's Camera section
+  pass; the Studio's stops editor, graph drag and a look tried in a browser (screenshots, no page errors). check-fast
+  --only=studio,debug,camera,zoom 10/10 at the end. Full quick check (no local picture baseline, so no picture
+  compare): 35 of 40 steps. Four failures are the same on main 2314da8 (run there too): Terraces (`sky_portal` in the
+  air past Copperleaf's edge, HB-5/HB-7), RL-8 (the town's shop has no Perk), room light at night, Song fingerprints
+  (cave mid and cave late not in validation/sound-baseline). The fifth, Sound settings (0.09 against 0.09, a float),
+  passes alone on this branch, which touches no sound code: timing under load. The Python checks ran with Playwright
+  1.56 pointed at the container's newer Chromium through a symlinked browsers folder (no install).
+- Next session starts with: the owner's review of CAM-4b on a phone (the two-finger tap, the pull, the looks), then the
+  tag `cam-4b-done` and a pull request from `track/camera` to main.
+
+### Camera track - CAM-4a: the Studio's Camera section and the zoom's feel - 2026-10-26
+Branch `ccr-6dfb9e06-vr4uwi` (from main 2314da8), at the owner's word: `track/camera` didn't exist and a cloud session
+pushes only to its own branch. The same session wrote the CAM-4 plan (owner's answers in camera-track.md, "CAM-4").
+Details: docs/phases/camera-track.md, "CAM-4a as built". Not tagged yet: `cam-4a-done` once the owner approves.
+- Where the plan and the code differed: the Engine preview is one set of elements with fixed ids, so the Camera
+  section shows the same preview (one renderer, not two); no Engine preset sets a camera dial; the world map scope has
+  no camera (the Camera section offers the game and one scene); the Studio's free camera keeps its own zoom limits.
+- Changed (one cause per commit):
+  - Logic: logic/camera-zoom.js zoomEase (log zoom), pinchZoom, zoomBand (rubber band), pinchLean; new
+    logic/camera-readout.js (the camera's numbers, the game's drawing width for a screen, crisp scales);
+    settings.js CAMERA_FOLDERS.
+  - Game: the zoom eases in log zoom over Zoom smoothing (0.2 s = the old rate); pinch and wheel sensitivity; the
+    rubber band while pinching (clamped on release); the `pinch` goal leans toward the pinched point. Six new Camera
+    dials; their defaults keep today's feel (only the in-between of a zoom change differs: log, not linear).
+  - Studio: the Camera section (camera-editor.js, World & places); Engine shows no camera dials, a link instead;
+    Camera guides and Play moment moved to Camera; Find and Connections follow the camera dials there.
+  - Rename (own commit): the "Zoom" label (`fov`) reads "View width" (Camera section, Walk scenes).
+- Risky: check-fast gains a 54 s step (the preview's first frames in software drawing); the fast check's budget was
+  already missed. The pinch's lean and rubber band have no standing browser check (tried with synthetic fingers in
+  the game page: stretched to 0.457 under 0.55, back to 0.55 on release; the pinch goal at weight 0.9). Not tried on a
+  real phone: please pinch on yours with Zoom toward the pinch on and the rubber band at about 0.15.
+- Verified: lint, typecheck, unit tests (1064 passing, 8 new), check:modules, format:check, check:data, build;
+  check-fast --only=Studio (4/4) and --only=Camera (6/6: follow, moments, tall ground, debug log, island orbit and the
+  new Camera section); tools/check-studio-github.py opened all 33 sections (the Camera section among them) with no error, then stopped at
+  Play from here (the second tab never opened): main 2314da8 stops at the same step here (32 sections, then the same
+  Play from here), so it is this container, not CAM-4a; its later steps and the Studio self-test didn't run. Full quick check: not run.
+- Next session starts with: CAM-4b (zoom stops, blur per stop, the pull to a stop, a scene's starting stop, the curve
+  graph, camera looks) on `track/camera`, which the owner makes from this branch.
 
 ### Hub track - the placing half of HB-5 and HB-7: Skyline Station on its headland, the new buildings on their plots - 2026-10-25
 Branch `props/hub-placing` (the session's brief; from main aea7a48 after PR #201). Plan approved in Plan Mode. The

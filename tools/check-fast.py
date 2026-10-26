@@ -18,7 +18,8 @@ on tall ground (TR-3, the mountains fixture) the camera rises, rock fades and th
 none of it on flat ground; the camera follow (CAM-1, in Copperleaf) settles on you standing, leads the way the stick
 pushes while you stay inside its soft zone, and settles again when you let go; the camera's moments (CAM-2, read from
 its state) drift in standing still, frame a talk as a two-shot, play a boss, lean by a door and zoom the encounter's
-swoop without touching your own zoom; the diorama blur (CAM-3, read from the renderer's state) focuses on you, between
+swoop without touching your own zoom; zoom stops (CAM-4b) pull a pinch let go near one, a two-finger tap goes to the
+next and a scene opens at its starting stop; the diorama blur (CAM-3, read from the renderer's state) focuses on you, between
 you and who you talk to, on an encounter, stands upright when fully tilted, stops at the player's Off and takes the
 cheap blur on the slowest setting; the Lab's unlock board (RL-11) grants, sells and keeps; Copperleaf, the island (IS-5), has its contract fields, its sea skirt draws from 8 angles (IS-3), and its orbit camera (IS-1) looks at the middle from 8 places, holds on the summit and walks a circle when you hold right (the Studio's Hub island editor, IS-6a/IS-6b, is in check-studio-github.py). The page is small (400x300) with every costly graphics dial
 off before it loads; nothing waits a fixed time, only for frames or the game's state. No pictures are taken.
@@ -548,6 +549,48 @@ MOMENT_SPOTS = """(() => {
 })()"""
 
 
+# CAM-4b: two synthetic fingers on the walk view's canvas: down at d0 pixels apart about the middle, spread or pinched
+# to d, then up (both); `tap` keeps them still (a two-finger tap)
+FINGERS = """((d0,d)=>{const c=walkView.cv,r=c.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,
+  ev=(t,id,x)=>c.dispatchEvent(new PointerEvent(t,{pointerId:id,clientX:x,clientY:cy,button:0,buttons:t==='pointerup'?0:1,pointerType:'touch',isPrimary:id===1,bubbles:true}));
+  ev('pointerdown',1,cx-d0/2);ev('pointerdown',2,cx+d0/2);if(d!==d0){ev('pointermove',1,cx-d/2);ev('pointermove',2,cx+d/2)}
+  ev('pointerup',2,cx+d/2);ev('pointerup',1,cx-d/2);return {zoomT:walkRenderer.zoomT,stop:walkRenderer.stopAt,yaw:walkRenderer.yawT}})"""
+
+
+def zoom_stops(pg, base):
+    """CAM-4b: in Copperleaf, with the default stops (Close 0.55, Normal 1, Far 1.7) and Pull to stops at 0.25: a
+    pinch let go at zoom 1.6 settles on Far (and with the pull at 0, the planted fault, it stays at 1.6); a two-finger
+    tap goes from Normal to the next stop and its click doesn't walk; a scene whose starting stop is Close starts there
+    when it opens fresh"""
+    drawing(pg)
+    pg.evaluate("(()=>{const E=gameData.engine||(gameData.engine={}),D=E.defaults||(E.defaults={});(D.camera||(D.camera={})).stopPull=0.25;walkRenderer.zoomT=walkRenderer.zoom=1;walkRenderer.yawT=0;return 0})()")
+    try:
+        if pg.evaluate("zoomStops().map(s=>s.id).join()") != 'close,normal,far': raise Exception('the stops aren’t the default ones')
+        a = pg.evaluate(f"{FINGERS}(200,125)")
+        if a['stop'] != 'far' or abs(a['zoomT'] - 1.7) > 1e-9: raise Exception(f'a pinch let go at zoom 1.6 didn’t settle on Far: {a}')
+        # the planted fault: no pull, so it must stay where it was let go
+        pg.evaluate("gameData.engine.defaults.camera.stopPull=0;walkRenderer.zoomT=walkRenderer.zoom=1;walkRenderer.stopAt=null;0")
+        b = pg.evaluate(f"{FINGERS}(200,125)")
+        if abs(b['zoomT'] - 1.6) > 1e-6 or b['stop']: raise Exception(f'with the pull off a pinch still moved to a stop: {b}')
+        # a two-finger tap from Normal: to Far, the turn kept; the click it leaves behind doesn't walk
+        pg.evaluate("walkRenderer.zoomT=walkRenderer.zoom=1;walkView.pl.route=null;walkView.pl.goal=null;0")
+        c = pg.evaluate(f"{FINGERS}(160,160)")
+        if c['stop'] != 'far' or abs(c['zoomT'] - 1.7) > 1e-9 or c['yaw'] != 0: raise Exception(f'a two-finger tap from Normal didn’t go to Far: {c}')
+        click = "(()=>{const c=walkView.cv,r=c.getBoundingClientRect();walkView.pl.route=null;walkView.pl.goal=null;handleCanvasClick(new MouseEvent('click',{clientX:r.left+r.width/2,clientY:r.top+r.height*0.7}));return !!(walkView.pl.route||walkView.pl.goal)})()"
+        if pg.evaluate(click): raise Exception('the click after a two-finger tap walked')
+        # the control: the same click with no two-finger touch just before walks
+        if not pg.evaluate(f"walkRenderer.twoAt=0;{click}"): raise Exception('a plain click on the ground didn’t walk (the tap check proves nothing)')
+        pg.evaluate("walkView.pl.route=null;walkView.pl.goal=null;0")
+        # a scene that starts at Close, opened fresh
+        pg.evaluate("(()=>{const sc=mapById(walkView.id);(sc.cam||(sc.cam={})).stop='close';walkRenderer.zoomT=walkRenderer.zoom=1;window.ZS_ID=walkView.id;walkView.id=null;render();return 0})()")
+        if not until(pg, "walkView.id===window.ZS_ID&&walkView.ready", 90): raise Exception('the scene didn’t open again')
+        d = pg.evaluate("[walkRenderer.zoomT,walkRenderer.stopAt]")
+        if d != [0.55, 'close']: raise Exception(f'a scene starting at Close opened at {d}')
+    finally:
+        pg.evaluate("(()=>{const sc=mapById(walkView.id||window.ZS_ID);if(sc&&sc.cam)delete sc.cam.stop;delete gameData.engine.defaults.camera.stopPull;walkRenderer.zoomT=1;return 0})()")
+    return f'a pinch let go at 1.6 settled on Far (1.6 kept with the pull off: the planted fault caught); a two-finger tap went Normal → Far and its click didn’t walk (a plain click did); a scene starting at Close opened at 0.55'
+
+
 def camera_moments(pg, base):
     """CAM-2: in Copperleaf, read from the camera's state (headless walking is slow): standing still a few seconds the
     camera drifts in, and moving it goes at once; someone talking to you gives a two-shot, zoomed in, aimed between you;
@@ -984,6 +1027,63 @@ def studio_worldmap(pg, base):
     if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Great oak'))", 10):
         raise Exception('the landmark field doesn’t offer Auto (the great oak) for Copperleaf')
     return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
+
+
+# CAM-4a: the camera dials the Camera section shows, by key, and how many times each (after opening every folder)
+CAMERA_DIALS_SHOWN = """(()=>{for(const f of CAMERA_FOLDERS)engineEditor.camOpen[f[0]]=1;refreshEngineSettings();
+ const n={};document.querySelectorAll('#engSet .eng-f[data-path*=".camera."]').forEach(e=>{const k=e.dataset.path.split('.').pop();n[k]=(n[k]||0)+1});
+ const spec=ENGINE_SPEC.find(g=>g[0]==='camera')[2].map(f=>f[0]);return {missing:spec.filter(k=>!n[k]),twice:spec.filter(k=>n[k]>1)}})()"""
+
+
+def studio_camera(pg, base):
+    """camera track CAM-4a: the Studio's Camera section shows every camera dial once, in its folders (and Engine none);
+    a dial writes its key and the preview's readout follows it; holding the compare button shows the snapshot's camera
+    and letting go brings yours back, nothing saved. A dial left out of the folders is caught. CAM-4b: the Zoom stops
+    folder shows the stops and the curve graph; a stop added keeps the picture"""
+    if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
+    pg.evaluate(STUDIO_DATA)
+    pg.evaluate("(document.getElementById('ghLogin')||{remove(){}}).remove();engineEditor.scope='game';openSection('camera');0")
+    if not until(pg, "document.querySelectorAll('#engSet [data-cam-folder]').length===CAMERA_FOLDERS.length", 30): raise Exception('the Camera section drew no folders')
+    shown = pg.evaluate(CAMERA_DIALS_SHOWN)
+    if shown['missing'] or shown['twice']: raise Exception(f'camera dials not shown once: {shown}')
+    # a planted fault: a dial left out of its folder must be caught
+    pg.evaluate("window.CAM_KEPT=CAMERA_FOLDERS[0][2].pop();0")
+    planted = pg.evaluate(CAMERA_DIALS_SHOWN)
+    pg.evaluate("CAMERA_FOLDERS[0][2].push(window.CAM_KEPT);refreshEngineSettings();0")
+    if not planted['missing']: raise Exception('a dial left out of the folders wasn’t caught')
+    pg.evaluate("openSection('engine');0")
+    if not until(pg, "!!document.querySelector('[data-act=\"openCamera\"]')", 20): raise Exception('Engine has no way to the Camera section')
+    if pg.evaluate("document.querySelectorAll('#engSet .eng-f[data-path*=\".camera.\"]').length"): raise Exception('Engine still shows camera dials')
+    pg.evaluate("openSection('camera');0")
+    if not until(pg, "typeof walkRenderer!=='undefined'&&walkRenderer.on&&walkView.C&&walkView.C.gl&&document.getElementById('camRead').textContent.includes('Tilt')", 120):
+        raise Exception('the preview’s readout never showed')
+    t0 = pg.evaluate("cameraReadout(walkView.C).tilt")
+    was = pg.evaluate("studioState.D.engine.defaults.camera.pitchAdd")
+    # a dial writes its key (as typing in it does) and the readout follows: 10 degrees more tilt
+    p = 'engine.defaults.camera.pitchAdd'
+    pg.evaluate(f"""(()=>{{const v=engineSetting('camera','pitchAdd')+10,el=document.querySelector('input[data-p="{p}"]');el.value=String(v);
+      el.dispatchEvent(new Event('input',{{bubbles:true}}));return 0}})()""")
+    want = pg.evaluate("studioState.D.engine.defaults.camera.pitchAdd")
+    pg.evaluate("walkRenderer.camT=null;0")  # a cut: no glide to wait for in software drawing
+    if pg.evaluate("engineSetting('camera','pitchAdd')") != want: raise Exception('the dial didn’t reach the camera')
+    if not until(pg, f"Math.abs(cameraReadout(walkView.C).tilt-{t0}-10)<1", 90): raise Exception(f'the readout’s tilt didn’t follow the dial: {t0} then {pg.evaluate("cameraReadout(walkView.C).tilt")}')
+    # the snapshot holds the camera as it was: hold shows it, letting go brings yours back
+    pg.evaluate("ACTIONS.camSnap();studioState.D.engine.defaults.camera.pitchAdd+=3;0")
+    mine = pg.evaluate("engineSetting('camera','pitchAdd')")
+    held = pg.evaluate("cameraHold(true);engineSetting('camera','pitchAdd')")
+    back = pg.evaluate("cameraHold(false);engineSetting('camera','pitchAdd')")
+    if held != want or back != mine: raise Exception(f'hold to compare: {want} wanted while held, got {held}; {mine} after, got {back}')
+    pg.evaluate(f"studioState.D.engine.defaults.camera.pitchAdd={json.dumps(was)};0")
+    # CAM-4b: the Zoom stops folder: a column per stop and the curve graph; a stop added in the widest gap keeps the
+    # picture (the curve at its zoom as before); taken out again
+    pg.evaluate("engineEditor.camOpen.zoom=1;refreshEngineSettings();0")
+    n = pg.evaluate("[document.querySelectorAll('#engSet input[data-stop][data-f=\"zoom\"]').length,document.querySelectorAll('#camGraph .cam-gpt').length]")
+    if n != [3, 3]: raise Exception(f'the Zoom stops folder shows {n[0]} stops and {n[1]} graph points, not 3')
+    add = pg.evaluate("""(()=>{const before=clone(zoomStops());ACTIONS.camStopAdd();const S=zoomStops(),t=S.find(s=>!before.some(b=>b.id===s.id)),
+      a=stopShape(t.zoom,before),b=stopShape(t.zoom,S);delete studioState.D.engine.defaults.camera.stops;refreshEngineSettings();
+      return {n:S.length,zoom:t.zoom,moved:Math.max(...STOP_VALUES.map(k=>Math.abs(a[k]-b[k])))}})()""")
+    if add['n'] != 4 or add['moved'] > 0.02: raise Exception(f'adding a stop: {add}')
+    return f'{pg.evaluate("CAMERA_FOLDERS.length")} folders, every camera dial once (a dial left out caught), none in Engine; a dial moved the readout’s tilt {t0:.1f} → {t0 + 10:.1f} degrees; the snapshot held and let go; the zoom stops’ table and graph, a stop added at {add["zoom"]} keeping the picture'
 
 
 def run_shop(pg, base):
@@ -1423,6 +1523,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
               ('The world map opens as the bowl', bowl_map)]),
     ('town', [('Camera follow: settled standing, the look-ahead from the stick, the soft zone, settled again (CAM-1)', camera_follow),
               ('Camera moments: a drift in standing, a two-shot talking, a boss, a door, the encounter shot (CAM-2)', camera_moments),
+              ('Zoom stops: a pinch let go near Far settles there, a two-finger tap, a scene’s starting stop (CAM-4b)', zoom_stops),
               ('Copperleaf is the island: the sea skirt from 8 angles; the orbit camera from 8 places, on the summit, holding right (IS-1, IS-3)', hub_orbit)]),
     ('room', [('A room opens and draws (the lab)', room), ('A save round-trips', save_round_trip)]),
     ('town', [('Blur focus: on you, between you in a talk, on the encounter; the slider at Off; the cheap blur (CAM-3)', blur_focus),
@@ -1446,7 +1547,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap)]),
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
 

@@ -106,7 +106,7 @@ import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites } from './walk/sprites.js';
-import { battleCamera, cutsceneCamera, screenRay, walkCamera } from './walk/camera.js';
+import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
 import { mapSun, walkLightContext } from './walk/lighting.js';
 import { lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
@@ -179,7 +179,8 @@ export function mountWalkView(cv, id, opt = {}) {
   }
   walkView.cv = cv;
   walkView.opt = opt;
-  if (walkView.id !== id) {
+  const fresh = walkView.id !== id;
+  if (fresh) {
     walkView.id = id;
     walkView.cam = null;
     Object.assign(walkView.pl, { t: -1, fresh: true, route: null, goal: null, walk: 0 });
@@ -198,6 +199,8 @@ export function mountWalkView(cv, id, opt = {}) {
     walkRenderer.farKey = '';
   }
   walkView.sc = mapById(id);
+  /* CAM-4b: a fresh scene starts at its zoom stop (walk/camera.js) */
+  if (fresh) startSceneZoom(walkView.sc);
   walkView.ready = false;
   walkView.err = null;
   gpuLoading();
@@ -619,7 +622,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   } else
     LF = drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
       /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
-      blur: (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1)) * playerBlur(),
+      /* CAM-4b: times the zoom stops' blur at the zoom (walk/camera.js), not in battles */
+      blur:
+        (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) *
+        playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,

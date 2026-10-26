@@ -110,7 +110,11 @@ town node needs it.
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
   CAM-1 (the follow) done 2026-10-22 (PR #127); CAM-2 (moments of interest) done 2026-10-22 (PR #132); CAM-3 (the
-  diorama blur) done 2026-10-22 (PR #134): the track is done. Tags `cam-N-done`.
+  diorama blur) done 2026-10-22 (PR #134). Tags `cam-N-done`. CAM-4 planned 2026-10-26 (branch `track/camera`):
+  a Camera section of its own in the Studio with every camera dial, readouts and the zoom's feel (CAM-4a), then 3-5
+  named zoom stops with blur per stop and a pull to the nearest (CAM-4b). CAM-4a done 2026-10-26 (built on
+  `ccr-6dfb9e06-vr4uwi` at the owner's word); CAM-4b (zoom stops, the curve graph, camera looks) done 2026-10-26 on
+  `track/camera`.
 - **Test cleanup track** (docs/phases/test-cleanup-track.md, planned 2026-10-23): make every check and test fit the
   roguelite game. TC-1 delete the outdated and useless ones, TC-2 rewrite the rest onto the hub and run worlds (off
   the parked old world), TC-3 rename and fix what stays in check-quick, TC-4 speed (shared helpers, fixtures, the

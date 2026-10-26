@@ -21,6 +21,7 @@ import '../../game/js/logic/camera-follow.js';
 import '../../game/js/logic/camera-interest.js';
 import '../../game/js/logic/camera-moments.js';
 import '../../game/js/logic/camera-orbit.js';
+import '../../game/js/logic/camera-readout.js';
 import '../../game/js/logic/camera-rise.js';
 import '../../game/js/logic/camera-zoom.js';
 import '../../game/js/logic/chosen.js';

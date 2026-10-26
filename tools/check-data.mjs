@@ -26,9 +26,12 @@ import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js'
 import { islandProblems } from '../game/js/logic/island.js';
 import { POSES_BY_PLAN } from '../game/js/body-plan-animation.js';
 import { formProblems, lineSpeciesIds } from '../game/js/logic/forms.js';
+// CAM-4b: the zoom stops reach data-checks.js through hooks.js (the page's load order), so they are loaded first
+import '../game/js/logic/camera-zoom.js';
 import {
   dataBattleRules,
   dataBiomes,
+  dataCameraStops,
   dataBuildings,
   dataCatchArt,
   dataCurrencies,
@@ -296,6 +299,7 @@ for (const family of [
   dataRunLoop,
   dataRobots,
   dataUiTheme,
+  dataCameraStops,
   dataBiomes,
   dataRegions,
   dataFieldMoves,
