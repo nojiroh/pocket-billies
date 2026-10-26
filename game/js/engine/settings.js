@@ -268,7 +268,7 @@ export const ENGINE_DEFAULTS = {
     keepScenes: 3,
     paintWorker: true,
     /* phase 20 C3: the frame's light values in one uniform block (off: each lit program is sent them, as before) */
-    frameBlock: false,
+    frameBlock: true,
     /* phase 20 C5: lights picked with stable keys and fades (off: the nearest each frame, as before), and how many may
        be lit at once (the shaders hold 16) */
     stableLights: false,
