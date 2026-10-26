@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roster track RO-3d - The early bug and the early Grass plant: Ortega silkworm, Bloomberg plant - 2026-10-26
+Branch `claude/ro-3d-silkworm-and-plant`, from `track/roster` at RO-3a (#213); pull request into `track/roster`. Plan
+approved in Plan Mode. RO-3b (no pull request yet) and RO-3c (#215, merged mid-session and merged in here) ran beside
+it. Tag `ro-3d-done` for the owner. The owner's picks (all Claude's recommendations, asked one by one):
+- **Ortega silkworm**, dex 41-43, common: **Threadling → Zaracoon → Ortegamoth**, Grass → Grass/Steel → Grass/Flying,
+  evolves at **7 and 10** (Caterpie and Metapod's levels; a run's wilds go from about 3 to 17), totals 205/225/400.
+  Body plans insect → shell (the cocoon) → flyer (the moth). Signature move Fast Fashion.
+- **Bloomberg plant**, dex 44-46, common: **Tickerbud → Bloomburst → Terminalia** (the legacy names), Grass → Grass →
+  Grass/Psychic (Psychic stands in for Oddish's Poison: Lullaby, Unnerve, Bewilder), evolves at **14 and 30**, totals
+  260/380/490. The plant plan at every stage. Terminal Fee (Electric, a status move) kept as its signature.
+- Where the plan and the code differed (checked): the legacy Ortega line was a spider (Spoolspider, Zaraknid,
+  Ortegaweaver), not a silkworm; the rig ids ortega0-2 and bloomberg0-2 already sat in rigs-next.js for the legacy
+  sheets, and the bake replaced them in place. RO-3b's bake change (a form's `scale`) was needed for stage sizes and is
+  not on track/roster yet: its commit 960ff899 is cherry-picked here (the owner's call), so RO-3b's merge brings the
+  same change twice and merges clean.
+- Changed:
+  - `game/data/lines/ortega.json`, `lines/bloomberg.json` (learnsets of existing moves, bios, notes, draft cries:
+    insect for the silkworm, slime and machine for the plant); `index.json` lines; roster.json rows 41-46 (`line3`).
+  - `bodyPlans.json` forms: six placeholder Billies in the lines' colours, scales 0.9 / 1.0 / 1.3 and 0.95 / 1.15 /
+    1.42. Threadling drops the insect's wings and carries a spool; Zaracoon drops the shell plan's arms and legs (a
+    cocoon in a black garment bag with a price tag); Ortegamoth has feathery antennae and big dark wings; Tickerbud a
+    pale stripe and a ticker-tape leaf; Bloomburst a ring of petals; Terminalia black with orange screen petals, a
+    screen on its face and a keyboard on its pot. Baked with `npm run bake:placeholders`; `check-data --fix`.
+  - The legacy `tickerbud.json`, `bloomburst.json`, `terminalia.json` layouts dropped (their PNGs are the placeholders
+    now); the spider sheets stay as reference.
+  - `pools.json`: Threadling in the meadow (30), thicket (28), jungle (24), autumn (22); Tickerbud in the meadow (24),
+    thicket (22), jungle (22), autumn (14).
+  - Snapshots: check-data (155 files), run-start (the seeds' regional dex draws from 17 lines now; over 400 seeds
+    Ortega is in 144 regions and Bloomberg in 128); the sound baseline's cries (the six new cries and their low ones).
+- Verified: lint, typecheck, check:modules, format:check, check:data; every unit test, quick and slow (1164 after the
+  RO-3c merge); the smoke check (6 steps, no problems); every stage drawn by the game's own renderer (rigParts,
+  rigFrame, drawRig on the town fixture) in idle, walk, attack, hurt and faint, front and back, before and after the
+  RO-3c merge: all stand on the ground and move.
+- Risky / open:
+  - **The sound baseline is missing the cave song's `mid` and `late` fingerprints on track/roster already** (the check
+    fails there without this branch). Left out of this branch on purpose; one `check-sound.py --baseline` adds them.
+  - The quick check runs with Python Playwright 1.63 here (the pinned 1.56 wants a Chromium this container does not
+    have); tools/requirements-check.txt is unchanged.
+  - Some placeholder labels read mirrored in one view (SHELL on Zaracoon's front): the RO-3a painter's flipping, the
+    same on every plan, not these forms.
+  - Merging RO-3b: forms merge by hand (its 51 and these 6), then bake, check-data --fix, the snapshots and the sound
+    baseline again; the quick-check baseline is RO-3b's to remake.
+  - Not tried on a phone; names, bios and cries are drafts.
+- Next: RO-3e (the Knight frog and the fossil pair) and RO-3f (Satoshi and the cave bat), then RO-3g.
+
 ### Roster track RO-3c - Splicing by slot across body plans - 2026-10-26
 Branch `claude/ro-3c-splice-by-slot`, made from RO-3a's `claude/happy-ramanujan-jiipux` (PR #213, not merged yet);
 pull request into `track/roster` stacked on #213. Plan approved in Plan Mode. RO-3b ran at the same time: this session

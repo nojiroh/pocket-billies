@@ -1110,7 +1110,9 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     biped (otter, chameleon, gecko). Remakes the quick-check baseline and kit counts on purpose.
   - **RO-3c** splicing by slot across plans (socket rules per plan pair, graft-art). Done 2026-10-26 (HANDOFF): the
     slot map works on the baked sheets and rigs, not per plan pair; the octopus and blob share one bone (`also`).
-  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant).
+  - **RO-3d** Ortega silkworm (insect, then shell, then flyer; the early bug) and the Bloomberg plant (plant). Done
+    2026-10-26 (HANDOFF): Threadling → Zaracoon → Ortegamoth (Grass → Grass/Steel → Grass/Flying, 7/10) and Tickerbud →
+    Bloomburst → Terminalia (Grass → Grass → Grass/Psychic, 14/30), both common, dex 41-46, placeholders only.
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
     (serpent).
   - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
