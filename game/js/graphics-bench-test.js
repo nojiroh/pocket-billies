@@ -79,10 +79,22 @@ const GRAPHICS_TEST_HIDDEN = [
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
   /* phase 20 R2: the models drawn one draw per mesh; the same look, so left out of "everything lowest / highest" */
   ['quality.modelInstances', 'Models in batches', { values: [false, true], alone: true }],
+  /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
+     test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
+  ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
+  ['quality.solidFirst', 'Solid things first', { values: [false, true], alone: true }],
+  ['quality.invalidate', 'Drop spent pictures', { values: [false, true], alone: true }],
+  ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
+  ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
+  ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
-  { id: 'control', name: 'Control pad', dials: ['quality.resolution', 'lens.vignette', 'lens.grain'] },
+  {
+    id: 'control',
+    name: 'Control pad',
+    dials: ['quality.resolution', 'lens.vignette', 'lens.grain', 'quality.invalidate'],
+  },
   {
     id: 'shadows',
     name: 'Shadow court',
@@ -90,12 +102,35 @@ const GRAPHICS_TEST_STATIONS = [
     dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel'] },
-  { id: 'sun', name: 'Sun gap', sun: { angle: -90, height: 18 }, dials: ['air.godRays'] },
+  {
+    id: 'sun',
+    name: 'Sun gap',
+    sun: { angle: -90, height: 18 },
+    dials: ['air.godRays', 'quality.solidFirst', 'quality.skyLast'],
+  },
+  /* phase 20 R2 (D7): the Sun gap with God rays off, where the cheap shafts stand in (a station may borrow another's
+     spot, and fix values of its own under every step) */
+  {
+    id: 'shafts',
+    name: 'Sun gap, no god rays',
+    spot: 'sun',
+    sun: { angle: -90, height: 18 },
+    fixed: { 'air.godRays': 0 },
+    dials: ['air.cheapShafts'],
+  },
   {
     id: 'lamps',
     name: 'Lamp square',
     time: 22,
-    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights', 'quality.modelInstances'],
+    dials: [
+      'color.bloom',
+      'lights.brightness',
+      'quality.stableLights',
+      'quality.lights',
+      'quality.modelInstances',
+      'quality.phoneLamps',
+      'quality.invalidate',
+    ],
   },
   { id: 'meadow', name: 'Meadow', dials: ['grass.density', 'air.particles', 'air.mist'] },
   {
@@ -103,7 +138,9 @@ const GRAPHICS_TEST_STATIONS = [
     name: 'Depth corridor',
     dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.modelInstances'],
   },
-  { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows'] },
+  { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
+  /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise) */
+  { id: 'rain', name: 'Meadow in the rain', spot: 'meadow', weather: 'rain', dials: ['quality.rainBatch'] },
   { id: 'everything', name: 'Everything', all: true },
 ];
 const GRAPHICS_TEST_MAP = 'test_graphics';
@@ -170,7 +207,7 @@ function graphicsTestPlan() {
 function graphicsTestPrefs(st, set) {
   const eng = { quality: { auto: false, resolution: 1 } };
   if (st.sun) eng.sun = Object.assign({}, st.sun);
-  for (const [gk, v] of Object.entries(set || {})) {
+  for (const [gk, v] of Object.entries({ ...(st.fixed || {}), ...(set || {}) })) {
     const [g, k] = gk.split('.');
     (eng[g] = eng[g] || {})[k] = v;
   }
@@ -178,7 +215,7 @@ function graphicsTestPrefs(st, set) {
   saveData.preferences.eng = eng;
 }
 function graphicsTestStand(sc, st) {
-  const at = (sc.bench || {})[st.id] || [...mapHub(sc), 0, 1],
+  const at = (sc.bench || {})[st.spot || st.id] || [...mapHub(sc), 0, 1],
     o = (walkView.sc && walkView.sc.baseOff) || [0, 0];
   walkView.pl.x = at[0] + o[0];
   walkView.pl.z = at[1] + o[1];
@@ -281,7 +318,7 @@ async function runGraphicsBench() {
         }
         const h0 = hid,
           got = [];
-        environment.force = { time: st.time || 14, weather: 'clear', season: 'summer' };
+        environment.force = { time: st.time || 14, weather: st.weather || 'clear', season: 'summer' };
         let rebuilt = false;
         for (const p of mine) {
           if (graphicsTest.stop) break;

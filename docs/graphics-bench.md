@@ -28,6 +28,8 @@ one at its low settings.
 | Everything | 10, 32.5 · zoom 1.3 | A small grove, a pond, a grass patch, four lamps, a house | All settings at their lowest, at the game's own values and at their highest |
 | Depth corridor | 30, 35.5 · zoom 1.3 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
 | Open sky | 50, 33 · zoom 1.7 | A wide, empty plain (the walk camera looks down, so no sky is in the picture: the clouds show as their light and shadows on the plain) | Clouds, Cloud shadows |
+| Sun gap, no god rays | the Sun gap's spot and sun | The grove with Sun rays at 0 for every step (phase 20 R2) | Cheap light shafts (`air.cheapShafts`) |
+| Meadow in the rain | the Meadow's spot | The meadow with the weather forced to rain (phase 20 R2) | Rain in one go (`quality.rainBatch`) |
 
 The map's own light is a mid sun (angle 35, height 40). A station that needs another light sets it for its steps:
 the shadow court a side sun (angle 30, height 30), the sun gap a low sun ahead (angle -90, height 18), the lamp
@@ -47,6 +49,14 @@ The 15 Expert dials (Settings → Display → Expert) and four hidden ones that 
 - Hidden: Shadow detail (`quality.shadowMap`: 1024, 2048, 4096), Near shadow map (`shadows.cascades`: off, on),
   Ambient occlusion (`shadows.ao`), Contact shadows (`shadows.contact`). Glow size (`color.bloomSize`) was
   measured until 2026-10-19; it barely changes the picture even at full Glow, so it was dropped.
+
+- Phase 20 R2 (pixels lane), each measured alone (off, on) and left out of "everything": Sky last
+  (`quality.skyLast`: Sun gap, Open sky), Solid things first (`quality.solidFirst`: Sun gap), Drop spent pictures
+  (`quality.invalidate`: Control pad, Lamp square), Phone lamps (`quality.phoneLamps`: Lamp square; only a phone
+  changes), Rain in one go (Meadow in the rain), Cheap light shafts (0, 0.6; Sun gap, no god rays). Phone pixel
+  budget (`quality.phonePixels`) is not here: the test pins resolution 1, which is under the phone's 1.2 MP either
+  way; the diagnostics' Renderer baseline (`own`) shows it. A station may borrow another's spot (`spot`), force a
+  weather (`weather`) and hold values under all its steps (`fixed`).
 
 A dial with a range is measured at 5 steps: its lowest, 25 %, 50 %, 75 % and its highest. A choice is measured at
 each of its values.
