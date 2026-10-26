@@ -66,6 +66,7 @@ import {
 } from './game-state.js';
 import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
+import { ART_CACHE } from './art.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -2674,14 +2675,16 @@ function baselineStand() {
     walkRenderer.zoomT = 1;
   }
 }
-/* nothing left to prepare, plant or paint, then two seconds in a row whose frame times agree within 10 % (`sec` at most) */
+/* nothing left to prepare, plant, paint or load, then two seconds in a row whose frame times agree within 10 % (`sec` at most) */
 async function baselineSettle(task, sec) {
   const t0 = performance.now(),
-    left = () => sec * 1000 - (performance.now() - t0),
+    left = () => sec * 1000 * (selfTest.slow || 1) - (performance.now() - t0),
     busy = () =>
       !walkView.ready ||
       !!(typeof walkRenderer !== 'undefined' && (walkRenderer.prep || walkRenderer.grassJob)) ||
-      !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size);
+      !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size) ||
+      /* a picture still loading (a model's leaf clumps are skipped until theirs is in) */
+      Object.values(ART_CACHE.img).some(im => !im.complete);
   while (busy() && left() > 0 && !selfTest.stop) await selfTestSleep(100);
   const a = debugLog.now();
   while (left() > 0 && !selfTest.stop) {
