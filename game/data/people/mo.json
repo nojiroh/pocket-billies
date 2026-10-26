@@ -1,0 +1,28 @@
+{
+ "look": {
+  "name": "Mo Stockley",
+  "body": {"height":1,"body":1.14,"chest":0.3,"hips":1.08,"shoulders":1.06},
+  "skin": "#C98B62",
+  "hair": "#2A2220",
+  "eyes": "#4A3020",
+  "wear": {
+   "hair": "hair_short",
+   "eyes": "eyes_wide",
+   "brows": "brows_thick",
+   "mouth": "mouth_grin",
+   "facial": "facial_stache",
+   "top": "tee_stripe",
+   "outer": "apron",
+   "bottom": "chinos",
+   "shoes": "sneakers",
+   "hat": "hat_cap"
+  },
+  "colors": {
+   "tee_stripe": ["#F2EEE2","#D9434B"],
+   "apron": ["#3E7A5A","#E9D8B0"],
+   "chinos": ["#8A7A5A"],
+   "hat_cap": ["#D9434B","#F2EEE2"],
+   "facial_stache": ["#2A2220"]
+  }
+ }
+}

@@ -491,11 +491,12 @@ function settingsHTML() {
       ) +
       `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
-    const gp = p.aim === 'smooth' ? 'balanced' : 'best';
+    const gp = p.aim === 'off' ? 'off' : p.aim === 'smooth' ? 'balanced' : 'best';
     body =
       `<div class="gfx-presets" role="radiogroup" aria-label="Graphics">${[
         ['balanced', 'Balanced', 'Everything on; softens a little when busy'],
         ['best', 'Beautiful', 'Everything at full detail'],
+        ['off', 'Off', 'Every effect off; plain and fast'],
       ]
         .map(
           ([k, n, h]) =>
@@ -568,7 +569,7 @@ function changePreference(k, v) {
     return;
   }
   if (k === 'graphics') {
-    saveData.preferences.aim = v === 'best' ? 'sharp' : 'smooth';
+    saveData.preferences.aim = v === 'best' ? 'sharp' : v === 'off' ? 'off' : 'smooth';
     return changePreference('effects', 'full');
   }
   if (k === 'fps') v = +v;
