@@ -206,3 +206,18 @@ test('check-data: planted residents (RS-1)', t => {
     })
   );
 });
+
+test('check-data: planted favours (RS-2)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'quests.json': Q => {
+        delete Q.favours.mo;
+        delete Q.favours.bertha.kind;
+        Q.favours.dottie.kind = 'parcel';
+        Q.favours.nobody = { kind: 'parcel', ask: 'Who am I?' };
+        Q.favours.hayden.ask = 'Beat {n} of them.';
+        Q.invite.moving = '{title} moves in.';
+      },
+    })
+  );
+});

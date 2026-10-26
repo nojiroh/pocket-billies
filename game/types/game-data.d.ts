@@ -1887,6 +1887,19 @@ export interface QuestsData {
   kinds: Record<QuestKind, QuestKindRule>;
   texts: QuestText[];
   say: Record<'take' | 'yes' | 'no' | 'full' | 'taken' | 'none' | 'done' | 'empty' | 'fail', string>;
+  /** residents track RS-2: each resident's favour (no kind: the free first one, whose talk is the invite) */
+  favours: Record<string, QuestFavour>;
+  /** RS-2: a resident's lines in a run ({name}, {title}) */
+  invite: Record<
+    'come' | 'take' | 'yes' | 'taking' | 'no' | 'held' | 'thanks' | 'none' | 'done' | 'moving' | 'title',
+    string
+  >;
+}
+/** quests.json favours: what a resident asks before moving to Copperleaf (residents track RS-2) */
+export interface QuestFavour {
+  kind?: QuestKind;
+  /** their offer ({type}, {n}) */
+  ask: string;
 }
 /** residents.json: someone a run can invite to Copperleaf (residents track RS-1) */
 export interface Resident {

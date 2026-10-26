@@ -956,7 +956,7 @@ export function dataModifiers(D, valid = () => true) {
 }
 // TW-3: quests.json: the schema; every kind has a text; a goal's fewest is no more than its most; a line names only
 // what its kind fills in ({type} a catch's, {n} a goal of more than one, {title} the board's and a failure's lines);
-// no text id twice
+// no text id twice; RS-2: a favour for every resident (residents.json), with a kind but the free first one's
 /** TW-3: quests.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataQuests(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -986,6 +986,22 @@ export function dataQuests(D, valid = () => true) {
   });
   for (const [k, line] of Object.entries(Q.say))
     fills(`say.${k}`, /** @type {string} */ (line), k === 'done' || k === 'fail' ? ['{title}'] : []);
+  /* RS-2: every resident has a favour with a kind, but the free first one (whose talk is the invite) */
+  const R = D.residents || {};
+  for (const [k, f] of Object.entries(Q.favours)) {
+    const fav = /** @type {any} */ (f);
+    if (!R[k]) problem(`favours.${k}: no such resident (residents.json)`);
+    else if (!fav.kind && !R[k].first) problem(`favours.${k}: no kind (only the free first resident needs none)`);
+    else if (fav.kind && R[k].first) problem(`favours.${k}: the free first resident asks no favour`);
+    fills(`favours.${k}`, fav.ask, fav.kind ? mayOf(fav.kind) : []);
+  }
+  for (const k of Object.keys(R)) if (!Q.favours[k]) problem(`favours: none for the resident "${k}"`);
+  for (const [k, line] of Object.entries(Q.invite))
+    fills(
+      `invite.${k}`,
+      /** @type {string} */ (line),
+      k === 'done' || k === 'title' ? ['{title}', '{name}'] : k === 'moving' ? ['{name}'] : []
+    );
   return out;
 }
 // RS-1: residents.json: the schema; a home is a hub building (buildings.json) or one of Copperleaf's (a prop's k),
