@@ -27,6 +27,7 @@ import {
   geneEventWild,
 } from './logic/gene-events.js';
 import {
+  addBilly,
   billyGraft,
   billyName,
   billyUnstable,
@@ -36,6 +37,7 @@ import {
   healAll,
   makeBilly,
   maxHp,
+  teamSize,
   xpFor,
 } from './logic/rules.js';
 import { META_MAX } from './logic/meta-state.js';
@@ -97,7 +99,7 @@ expose({
 provide({ encounterOpen });
 /* to-module: end */
 /** the script is playing in this page now (a reload clears it: then run.enc.play says what to resume) */
-let encPlaying = false;
+export let encPlaying = false;
 /** the sheet's lines so far, and the button that moves it on */
 let encLines = /** @type {string[]} */ ([]);
 /** an event foe's battle ended in a loss, or the run ended: the script stops */
@@ -421,6 +423,48 @@ function encounterStage(id, i) {
       if (saveData.buddy === uid) saveData.buddy = saveData.team[0].uid;
       encNote(`${billyName(gone)} went back. ${billyName(nb)} (Lv ${nb.lvl}) joined you.`);
       saveNow();
+    },
+    /* RO-3e: a revived fossil joins you at the place's level (plus n); a full party picks who stays behind (not one
+       from home, as recall), or leaves the fossil where it is */
+    revive: async ([sp, up]) => {
+      const run = saveData.run,
+        lvl = Math.max(1, Math.min(100, encPlaceLevel(run, at(), RULES.run) + (up == null ? 0 : +up))),
+        nb = makeBilly(sp, lvl, { wild: true });
+      nb.hp = maxHp(nb);
+      if (team().length >= teamSize()) {
+        const home = new Set(runHome(run)),
+          L = team().filter(m => m.kind !== 'robot' && !home.has(m.uid)),
+          uid = await new Promise(res =>
+            encSheet({
+              title: escapeHtml(title),
+              cls: 'event-sheet',
+              lock: true,
+              html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">Your party is full. Who stays behind? It won’t come home.</p>`,
+              btns: [
+                ...L.map(m => ({
+                  l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`,
+                  c: 'dark',
+                  f: () => res(m.uid),
+                })),
+                { l: `Leave ${escapeHtml(SPECIES[sp].name)}`, c: 'quiet', f: () => res(null) },
+              ],
+            })
+          );
+        if (!uid) {
+          encNote(`${SPECIES[sp].name} stays at the dig.`);
+          await encStep(title, 'Go on');
+          return;
+        }
+        const i = team().findIndex(m => m.uid === uid),
+          gone = team()[i];
+        saveData.team.splice(i, 1);
+        if (saveData.buddy === uid) saveData.buddy = saveData.team[0].uid;
+        encNote(`${billyName(gone)} stays behind.`);
+      }
+      addBilly(nb);
+      encNote(`${billyName(nb)} (Lv ${nb.lvl}) joined you.`);
+      saveNow();
+      await encStep(title, 'Go on');
     },
     foe: async ([cls, up]) => {
       const run = saveData.run,

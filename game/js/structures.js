@@ -42,13 +42,22 @@ export function setDrawStructures(v) {
 /* to-module: end */
 export const structureState = { key: '', mesh: null, parts: [] };
 provide({ structureState }); /* to-module */
+/* route props track RP-2: the props' palette (tools/build-props-batch1.py AIR, the ruins' stones of
+   tools/build-props-routes.py), so a bridge, a rail or an arch reads like the models beside it */
 const STRUCTURE_MATERIALS = {
-  iron: { tex: 15, col: [0.27, 0.3, 0.38] },
-  wood: { tex: 14, col: [0.6, 0.42, 0.28] },
-  stone: { tex: 3, col: [0.68, 0.66, 0.62] },
+  iron: { tex: 12, col: [0.275, 0.329, 0.439] },
+  wood: { tex: 14, col: [0.698, 0.463, 0.282] },
+  woodD: { tex: 14, col: [0.518, 0.329, 0.235] },
+  plank: { tex: 14, col: [0.8, 0.588, 0.376] },
+  plankL: { tex: 14, col: [0.839, 0.635, 0.424] },
+  stone: { tex: 3, col: [0.667, 0.651, 0.706] },
+  stoneL: { tex: 3, col: [0.784, 0.769, 0.831] },
+  stoneD: { tex: 3, col: [0.549, 0.525, 0.596] },
+  moss: { tex: 16, col: [0.463, 0.667, 0.314] },
   rock: { tex: 0, col: [0.52, 0.49, 0.46] },
   brick: { tex: 2, col: [0.7, 0.4, 0.32] },
-  rope: { tex: 14, col: [0.66, 0.5, 0.32] },
+  brickD: { tex: 2, col: [0.58, 0.32, 0.27] },
+  rope: { tex: 18, col: [0.784, 0.627, 0.376] },
   glass: { tex: 15, col: [0.62, 0.78, 0.84] },
   metal: { tex: 12, col: [0.6, 0.62, 0.66] },
 };
@@ -170,10 +179,89 @@ function buildStructures(sc) {
       );
     }
   };
+  /* RP-2: a square beam of side t between two points [x, y, z] at any slant (a brace, a rope, a hanger) */
+  const beam = (p, q, t, K) => {
+    const d = unitVector3([q[0] - p[0], q[1] - p[1], q[2] - p[2]]),
+      r = Math.abs(d[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0],
+      u = unitVector3([d[1] * r[2] - d[2] * r[1], d[2] * r[0] - d[0] * r[2], d[0] * r[1] - d[1] * r[0]]),
+      v = [d[1] * u[2] - d[2] * u[1], d[2] * u[0] - d[0] * u[2], d[0] * u[1] - d[1] * u[0]],
+      L = Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]),
+      c = [
+        [1, 1],
+        [-1, 1],
+        [-1, -1],
+        [1, -1],
+      ].map(([a, b]) => [
+        (u[0] * a + v[0] * b) * (t / 2),
+        (u[1] * a + v[1] * b) * (t / 2),
+        (u[2] * a + v[2] * b) * (t / 2),
+      ]),
+      at = (o, k) => [o[0] + c[k][0], o[1] + c[k][1], o[2] + c[k][2]];
+    for (let k = 0; k < 4; k++) {
+      const k2 = (k + 1) % 4,
+        n = unitVector3([c[k][0] + c[k2][0], c[k][1] + c[k2][1], c[k][2] + c[k2][2]]);
+      poly(
+        [at(p, k), at(q, k), at(q, k2), at(p, k2)],
+        n,
+        [
+          [0, 0],
+          [L, 0],
+          [L, t],
+          [0, t],
+        ],
+        K
+      );
+    }
+  };
+  /* RP-2: a pyramid cap on a post (its top at y, s across, h high), as the props' fence and gate posts have */
+  const cap = (x, z, y, s, h, K) => {
+    const c = [
+      [x - s / 2, z - s / 2],
+      [x + s / 2, z - s / 2],
+      [x + s / 2, z + s / 2],
+      [x - s / 2, z + s / 2],
+    ];
+    for (let k = 0; k < 4; k++) {
+      const A = c[k],
+        B = c[(k + 1) % 4],
+        mx = (A[0] + B[0]) / 2 - x,
+        mz = (A[1] + B[1]) / 2 - z;
+      poly(
+        [
+          [A[0], y, A[1]],
+          [B[0], y, B[1]],
+          [x, y + h, z],
+        ],
+        unitVector3([mx * h, (s * s) / 4, mz * h]),
+        [
+          [0, 0],
+          [s, 0],
+          [s / 2, h],
+        ],
+        K,
+        1.03
+      );
+    }
+  };
+  /* RP-2: a light and a dark look of a material for alternate planks, stones and courses */
+  const alt = (K, i) =>
+    K === 'stone'
+      ? ['stone', 'stoneL'][i % 2]
+      : K === 'brick'
+        ? ['brick', 'brickD'][i % 2]
+        : ['plank', 'plankL'][i % 2];
+  /* a hash of a number to 0..1, for the moss and the odd darker plank (the same on every build of the scene) */
+  const h01 = n => {
+    const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  };
   const G = (x, z) => groundHeightAt(x, z),
     Hh = (x, z) => standingHeightAt(x, z);
-  /* railings: posts and a top rail following the ground (or the deck) */
+  /* railings: posts and a top rail following the ground (or the deck). RP-2: in the props' style: wooden posts with
+     pyramid caps and two rails, slim iron posts with finials, a coursed stone wall with a coping and moss, a rope
+     that the deck hangs from */
   const railing = (pts, K, yf, hgt = 0.95) => {
+    let seed = pts.length ? pts[0][0] * 7.3 + pts[0][1] * 3.1 : 0;
     for (let k = 0; k < pts.length - 1; k++) {
       const a = pts[k],
         b = pts[k + 1],
@@ -181,60 +269,98 @@ function buildStructures(sc) {
       if (L < 0.05) continue;
       const ux = (b[0] - a[0]) / L,
         uz = (b[1] - a[1]) / L,
-        n = Math.max(1, Math.round(L / 0.9));
-      for (let i = 0; i <= n; i++) {
-        if (i === n && k < pts.length - 2) continue;
-        const x = a[0] + (ux * L * i) / n,
-          z = a[1] + (uz * L * i) / n,
-          y = yf(x, z);
-        if (K === 'stone') continue;
-        obox(x - ux * 0.035, z - uz * 0.035, ux, uz, 0.07, 0.07, y - 0.05, y + hgt, K);
-      }
-      for (let i = 0; i < n; i++) {
-        const xa = a[0] + (ux * L * i) / n,
-          za = a[1] + (uz * L * i) / n,
-          xb = a[0] + (ux * L * (i + 1)) / n,
-          zb = a[1] + (uz * L * (i + 1)) / n;
-        if (K === 'stone') {
-          obox(
-            xa,
-            za,
-            ux,
-            uz,
-            L / n,
-            0.22,
-            Math.min(yf(xa, za), yf(xb, zb)) - 0.1,
-            yf(xa, za) + 0.62,
-            K,
-            yf(xb, zb) + 0.62
-          );
-        } else {
-          obox(
-            xa,
-            za,
-            ux,
-            uz,
-            L / n,
-            0.06,
-            yf(xa, za) + hgt - 0.05,
-            yf(xa, za) + hgt + 0.02,
-            K,
-            yf(xb, zb) + hgt + 0.02
-          );
-          if (K === 'wood')
+        n = Math.max(1, Math.round(L / 0.9)),
+        at = f => [a[0] + ux * L * f, a[1] + uz * L * f];
+      if (K === 'stone') {
+        /* two courses of blocks about 0.55 m long, the upper laid half a block along, in three tones; a coping laid
+           over them; moss here and there */
+        const nb = Math.max(1, Math.round(L / 0.55)),
+          tone = v => (v < 0.33 ? 'stoneD' : v < 0.7 ? 'stone' : 'stoneL');
+        for (const r of [0, 1])
+          for (let i = 0; i <= nb; i++) {
+            const f0 = clamp((i - r * 0.5) / nb, 0, 1),
+              f1 = clamp((i + 1 - r * 0.5) / nb, 0, 1);
+            if (f1 - f0 < 1e-3) continue;
+            const [xa, za] = at(f0),
+              [xb, zb] = at(f1),
+              ya = yf(xa, za),
+              yb = yf(xb, zb),
+              lo = r ? Math.min(ya, yb) + 0.27 : Math.min(ya, yb) - 0.1,
+              hi = r ? 0.55 : 0.28;
             obox(
               xa,
               za,
               ux,
               uz,
-              L / n,
-              0.04,
-              yf(xa, za) + hgt * 0.5 - 0.03,
-              yf(xa, za) + hgt * 0.5 + 0.02,
-              K,
-              yf(xb, zb) + hgt * 0.5 + 0.02
+              (f1 - f0) * L - 0.02,
+              r ? 0.23 : 0.24,
+              lo,
+              ya + hi,
+              tone(h01(seed + i * 2 + r)),
+              yb + hi
             );
+          }
+        for (let i = 0; i < nb; i++) {
+          const [xa, za] = at(i / nb),
+            [xb, zb] = at((i + 1) / nb),
+            ya = yf(xa, za),
+            yb = yf(xb, zb);
+          obox(xa, za, ux, uz, L / nb, 0.32, ya + 0.55, ya + 0.63, i % 3 ? 'stoneL' : 'stone', yb + 0.63);
+          if (h01(seed + i) < 0.18) {
+            const [mx, mz] = at((i + 0.3) / nb);
+            obox(mx, mz, ux, uz, 0.22, 0.3, yf(mx, mz) + 0.63, yf(mx, mz) + 0.68, 'moss');
+          }
         }
+        seed += nb;
+        continue;
+      }
+      for (let i = 0; i <= n; i++) {
+        if (i === n && k < pts.length - 2) continue;
+        const [x, z] = at(i / n),
+          y = yf(x, z);
+        if (K === 'rope') continue;
+        const s = K === 'iron' ? 0.05 : 0.1;
+        obox(x - ux * (s / 2), z - uz * (s / 2), ux, uz, s, s, y - 0.05, y + hgt, K === 'iron' ? 'iron' : 'woodD');
+        cap(x, z, y + hgt, s + 0.03, K === 'iron' ? 0.07 : 0.06, K === 'iron' ? 'iron' : 'woodD');
+      }
+      for (let i = 0; i < n; i++) {
+        const [xa, za] = at(i / n),
+          [xb, zb] = at((i + 1) / n),
+          ya = yf(xa, za),
+          yb = yf(xb, zb);
+        if (K === 'rope') {
+          /* the hand rope dips between the hangers; a hanger every 0.6 m down to the deck's edge */
+          const m = Math.max(2, Math.round(L / n / 0.3));
+          for (let j = 0; j < m; j++) {
+            const f0 = (i + j / m) / n,
+              f1 = (i + (j + 1) / m) / n,
+              [x0, z0] = at(f0),
+              [x1, z1] = at(f1),
+              d0 = 0.12 * Math.sin((Math.PI * j) / m),
+              d1 = 0.12 * Math.sin((Math.PI * (j + 1)) / m);
+            beam([x0, yf(x0, z0) + hgt - d0, z0], [x1, yf(x1, z1) + hgt - d1, z1], 0.04, 'rope');
+            if (j % 2 === 0) beam([x0, yf(x0, z0) + hgt - d0, z0], [x0, yf(x0, z0) + 0.02, z0], 0.02, 'rope');
+          }
+          continue;
+        }
+        if (K === 'iron') {
+          obox(xa, za, ux, uz, L / n, 0.05, ya + hgt - 0.04, ya + hgt + 0.02, 'iron', yb + hgt + 0.02);
+          obox(
+            xa,
+            za,
+            ux,
+            uz,
+            L / n,
+            0.03,
+            ya + hgt * 0.45 - 0.02,
+            ya + hgt * 0.45 + 0.01,
+            'iron',
+            yb + hgt * 0.45 + 0.01
+          );
+          continue;
+        }
+        obox(xa, za, ux, uz, L / n, 0.07, ya + hgt - 0.12, ya + hgt - 0.04, 'woodD', yb + hgt - 0.04);
+        obox(xa, za, ux, uz, L / n, 0.05, ya + hgt * 0.5 - 0.04, ya + hgt * 0.5 + 0.03, 'wood', yb + hgt * 0.5 + 0.03);
       }
     }
   };
@@ -247,7 +373,9 @@ function buildStructures(sc) {
     railing(P, r.kind || 'iron', Hh, r.kind === 'wood' ? 0.85 : 0.95);
     end();
   }
-  /* bridges */
+  /* bridges. RP-2, in the props' style: a deck of planks across in two tones (now and then a darker one) with small
+     gaps, beams under its edges, rails with capped posts, cross-braced trestles; stone: paving in two tones, a coursed
+     parapet, a ring of darker voussoirs under each face and the vault's underside */
   for (const b of mapBridges(sc) || []) {
     const K = b.kind || 'wood',
       ux = b.ux,
@@ -256,27 +384,53 @@ function buildStructures(sc) {
       pz = ux,
       w = b.w,
       deck = t => b.ha + (b.hb - b.ha) * t + b.arc * Math.sin(Math.PI * t),
-      seg = Math.max(4, Math.round(b.len / 0.5));
+      seg = Math.max(4, Math.round(b.len / 0.5)),
+      pt = (t, off = 0) => [b.a[0] + ux * b.len * t + px * off, b.a[1] + uz * b.len * t + pz * off],
+      seed = b.a[0] * 3.7 + b.a[1] * 1.3;
     begin('bridge', [
       Math.min(b.a[0], b.b[0]) - w,
       Math.min(b.a[1], b.b[1]) - w,
       Math.max(b.a[0], b.b[0]) + w,
       Math.max(b.a[1], b.b[1]) + w,
     ]);
-    for (let i = 0; i < seg; i++) {
-      const t0 = i / seg,
-        t1 = (i + 1) / seg,
-        ax = b.a[0] + ux * b.len * t0,
-        az = b.a[1] + uz * b.len * t0,
-        gap = K === 'rope' ? 0.06 : 0.01,
-        dk = K === 'stone' ? 'stone' : 'wood';
-      obox(ax, az, ux, uz, b.len / seg - gap, w, deck(t0) - 0.14, deck(t0) + 0.02, dk, deck(t1) + 0.02);
+    if (K === 'stone')
+      for (let i = 0; i < seg; i++) {
+        const t0 = i / seg,
+          t1 = (i + 1) / seg,
+          [ax, az] = pt(t0);
+        obox(ax, az, ux, uz, b.len / seg - 0.01, w, deck(t0) - 0.14, deck(t0) + 0.02, alt('stone', i), deck(t1) + 0.02);
+      }
+    else {
+      const np = Math.max(4, Math.round(b.len / (K === 'rope' ? 0.3 : 0.24))),
+        gap = K === 'rope' ? 0.08 : 0.03;
+      for (let i = 0; i < np; i++) {
+        const t0 = i / np,
+          t1 = (i + 1) / np - gap / b.len,
+          [ax, az] = pt(t0),
+          k2 = h01(seed + i) < 0.12 ? 'wood' : alt('wood', i);
+        obox(
+          ax,
+          az,
+          ux,
+          uz,
+          (t1 - t0) * b.len,
+          K === 'rope' ? w - 0.1 : w + 0.06,
+          deck(t0) - 0.06,
+          deck(t0) + 0.02,
+          k2,
+          deck(t1) + 0.02
+        );
+      }
+      /* a beam under each edge of the deck */
+      for (const s2 of [-1, 1])
+        for (let i = 0; i < seg; i++) {
+          const t0 = i / seg,
+            t1 = (i + 1) / seg,
+            [ax, az] = pt(t0, s2 * (w / 2 - 0.1));
+          obox(ax, az, ux, uz, b.len / seg, 0.12, deck(t0) - 0.26, deck(t0) - 0.06, 'woodD', deck(t1) - 0.06);
+        }
     }
-    const side = s2 =>
-        [0, 0.25, 0.5, 0.75, 1].map(t => [
-          b.a[0] + ux * b.len * t + px * s2 * (w / 2 - 0.05),
-          b.a[1] + uz * b.len * t + pz * s2 * (w / 2 - 0.05),
-        ]),
+    const side = s2 => [0, 0.25, 0.5, 0.75, 1].map(t => pt(t, s2 * (w / 2 - 0.05))),
       yAt = (x, z) => {
         const t = clamp(((x - b.a[0]) * ux + (z - b.a[1]) * uz) / b.len, 0, 1);
         return deck(t);
@@ -286,84 +440,133 @@ function buildStructures(sc) {
         if (K === 'stone') railing(side(s2), 'stone', yAt);
         else if (K === 'rope') {
           railing(side(s2), 'rope', yAt, 0.9);
-        } else railing(side(s2), 'wood', yAt, 0.85);
+        } else {
+          railing(side(s2), 'wood', yAt, 0.85);
+          /* a stout newel post at each end */
+          for (const t of [0, 1]) {
+            const [x, z] = pt(t, s2 * (w / 2 - 0.05));
+            obox(x - ux * 0.08, z - uz * 0.08, ux, uz, 0.16, 0.16, G(x, z) - 0.1, deck(t) + 1.0, 'woodD');
+            cap(x, z, deck(t) + 1.0, 0.2, 0.1, 'woodD');
+          }
+        }
       }
-    /* alpha 0.4: a jetty: a beam under each edge of the deck and a pair of posts every metre and a half, down into the water */
+    /* alpha 0.4: a jetty: a beam under each edge of the deck and a pair of posts every metre and a half, down into the
+       water; RP-2: the last pair stands up past the deck as mooring posts with caps */
     if (b.pier) {
       const y = deck(0);
-      for (const s2 of [-1, 1])
-        obox(
-          b.a[0] + px * s2 * (w / 2 - 0.06),
-          b.a[1] + pz * s2 * (w / 2 - 0.06),
-          ux,
-          uz,
-          b.len,
-          0.12,
-          y - 0.3,
-          y - 0.12,
-          'wood'
-        );
+      for (const s2 of [-1, 1]) {
+        const [x, z] = pt(0, s2 * (w / 2 - 0.06));
+        obox(x, z, ux, uz, b.len, 0.12, y - 0.3, y - 0.12, 'woodD');
+      }
       const n = Math.max(2, Math.round(b.len / 1.5));
       for (let i = 0; i <= n; i++) {
         const t = Math.min(1 - 0.04 / b.len, Math.max(0.25 / b.len, i / n));
         for (const s2 of [-1, 1]) {
-          const x = b.a[0] + ux * b.len * t + px * s2 * (w / 2 - 0.08),
-            z = b.a[1] + uz * b.len * t + pz * s2 * (w / 2 - 0.08);
-          obox(x - ux * 0.08, z - uz * 0.08, ux, uz, 0.16, 0.16, G(x, z) - 0.6, y - 0.1, 'wood');
+          const [x, z] = pt(t, s2 * (w / 2 - 0.08)),
+            top = i === n ? y + 0.5 : y - 0.1;
+          obox(x - ux * 0.08, z - uz * 0.08, ux, uz, 0.16, 0.16, G(x, z) - 0.6, top, 'woodD');
+          if (i === n) cap(x, z, top, 0.2, 0.08, 'woodD');
         }
       }
     }
-    /* what holds it up: posts into the water for wood and rope, an arched wall each side for stone */
+    /* what holds it up: braced posts into the water for wood and rope, an arched wall each side for stone */
     if (K === 'stone') {
+      const bot = t => {
+        const [gx, gz] = pt(t),
+          g = G(gx, gz) - 0.3;
+        return g + (deck(t) - 0.4 - g) * Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2));
+      };
       for (const s2 of [-1, 1]) {
         const n = [px * s2, 0, pz * s2];
         for (let i = 0; i < seg; i++) {
           const t0 = i / seg,
             t1 = (i + 1) / seg,
-            xa = b.a[0] + ux * b.len * t0 + (px * s2 * w) / 2,
-            za = b.a[1] + uz * b.len * t0 + (pz * s2 * w) / 2,
-            xb = b.a[0] + ux * b.len * t1 + (px * s2 * w) / 2,
-            zb = b.a[1] + uz * b.len * t1 + (pz * s2 * w) / 2;
-          const bot = t => {
-            const gx = b.a[0] + ux * b.len * t,
-              gz = b.a[1] + uz * b.len * t,
-              g = G(gx, gz) - 0.3;
-            return g + (deck(t) - 0.4 - g) * Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2));
-          };
+            [xa, za] = pt(t0, (s2 * w) / 2),
+            [xb, zb] = pt(t1, (s2 * w) / 2),
+            r0 = Math.min(bot(t0) + 0.34, deck(t0) - 0.1),
+            r1 = Math.min(bot(t1) + 0.34, deck(t1) - 0.1);
+          /* the ring of voussoirs along the arch, then the spandrel wall up to the deck */
           poly(
             [
               [xa, bot(t0), za],
               [xb, bot(t1), zb],
-              [xb, deck(t1) - 0.1, zb],
-              [xa, deck(t0) - 0.1, za],
+              [xb, r1, zb],
+              [xa, r0, za],
             ],
             n,
             [
               [0, 0],
               [b.len / seg, 0],
-              [b.len / seg, 1],
-              [0, 1],
+              [b.len / seg, 0.34],
+              [0, 0.34],
             ],
-            'stone'
+            i % 2 ? 'stoneD' : 'stone'
           );
+          if (deck(t0) - 0.1 > r0 + 0.01 || deck(t1) - 0.1 > r1 + 0.01)
+            poly(
+              [
+                [xa, r0, za],
+                [xb, r1, zb],
+                [xb, deck(t1) - 0.1, zb],
+                [xa, deck(t0) - 0.1, za],
+              ],
+              n,
+              [
+                [0, 0],
+                [b.len / seg, 0],
+                [b.len / seg, 1],
+                [0, 1],
+              ],
+              'stone'
+            );
         }
+      }
+      /* the vault's underside */
+      for (let i = 0; i < seg; i++) {
+        const t0 = i / seg,
+          t1 = (i + 1) / seg,
+          [xa, za] = pt(t0, -w / 2),
+          [xb, zb] = pt(t1, -w / 2),
+          [xc, zc] = pt(t1, w / 2),
+          [xd, zd] = pt(t0, w / 2);
+        poly(
+          [
+            [xa, bot(t0), za],
+            [xb, bot(t1), zb],
+            [xc, bot(t1), zc],
+            [xd, bot(t0), zd],
+          ],
+          [0, -1, 0],
+          [
+            [0, 0],
+            [b.len / seg, 0],
+            [b.len / seg, w],
+            [0, w],
+          ],
+          'stoneD'
+        );
       }
     } else if (!b.pier) {
       const n = Math.max(1, Math.floor(b.len / 2));
       for (let i = 1; i < n; i++) {
-        const t = i / n;
+        const t = i / n,
+          ends = [];
         for (const s2 of [-1, 1]) {
-          const x = b.a[0] + ux * b.len * t + px * s2 * (w / 2 - 0.1),
-            z = b.a[1] + uz * b.len * t + pz * s2 * (w / 2 - 0.1);
-          obox(x - ux * 0.07, z - uz * 0.07, ux, uz, 0.14, 0.14, G(x, z) - 0.5, deck(t) - 0.1, 'wood');
+          const [x, z] = pt(t, s2 * (w / 2 - 0.1));
+          obox(x - ux * 0.07, z - uz * 0.07, ux, uz, 0.14, 0.14, G(x, z) - 0.5, deck(t) - 0.1, 'woodD');
+          ends.push([x, z]);
         }
+        /* a cross brace between the pair, down to the water or a metre below the deck */
+        const [[xl, zl], [xr, zr]] = ends,
+          lo = Math.max(G(xr, zr), deck(t) - 1.2);
+        if (deck(t) - 0.25 - lo > 0.3) beam([xl, deck(t) - 0.25, zl], [xr, lo, zr], 0.06, 'wood');
       }
       if (K === 'rope')
         for (const t of [0, 1])
           for (const s2 of [-1, 1]) {
-            const x = b.a[0] + ux * b.len * t + px * s2 * (w / 2),
-              z = b.a[1] + uz * b.len * t + pz * s2 * (w / 2);
-            obox(x - ux * 0.08, z - uz * 0.08, ux, uz, 0.16, 0.16, G(x, z) - 0.1, deck(t) + 1.3, 'wood');
+            const [x, z] = pt(t, (s2 * w) / 2);
+            obox(x - ux * 0.08, z - uz * 0.08, ux, uz, 0.16, 0.16, G(x, z) - 0.1, deck(t) + 1.3, 'woodD');
+            cap(x, z, deck(t) + 1.3, 0.2, 0.1, 'woodD');
           }
     }
     end();
@@ -393,11 +596,15 @@ function buildStructures(sc) {
     for (const s2 of [-1, 1]) {
       const ox = a.x + px * s2 * (w / 2 + pier / 2),
         oz = a.z + pz * s2 * (w / 2 + pier / 2);
-      obox(ox, oz, ux, uz, d, pier, y0 - 0.4, y0 + spring, K);
+      /* RP-2: a built pier in courses of two tones; a rock one stays whole */
+      const nc = K === 'rock' ? 1 : Math.max(1, Math.round((spring + 0.4) / 0.42)),
+        hc = (spring + 0.4) / nc;
+      for (let c = 0; c < nc; c++)
+        obox(ox, oz, ux, uz, d, pier, y0 - 0.4 + c * hc, y0 - 0.4 + (c + 1) * hc, K === 'rock' ? K : alt(K, c));
     }
     /* the vault: segments of a half circle, each a slab along the passage */
     const R = w / 2,
-      segs = 10;
+      segs = 11;
     for (let i = 0; i < segs; i++) {
       const a0 = (Math.PI * i) / segs,
         a1 = (Math.PI * (i + 1)) / segs,
@@ -414,7 +621,9 @@ function buildStructures(sc) {
           -Math.sin((a0 + a1) / 2),
           -(pz * Math.cos((a0 + a1) / 2)),
         ]),
-        nOut = [-nIn[0], -nIn[1], -nIn[2]];
+        nOut = [-nIn[0], -nIn[1], -nIn[2]],
+        /* RP-2: voussoirs in two tones round a lighter keystone (stone), two brick tones */
+        vk = K === 'rock' ? K : K === 'brick' ? alt('brick', i) : i === 5 ? 'stoneL' : i % 2 ? 'stoneD' : 'stone';
       poly(
         [i0, i1, add(i1, dd), add(i0, dd)],
         nIn,
@@ -424,7 +633,7 @@ function buildStructures(sc) {
           [0.3, d],
           [0, d],
         ],
-        K,
+        K === 'stone' ? 'stoneD' : K,
         0.82
       );
       poly(
@@ -436,7 +645,7 @@ function buildStructures(sc) {
           [0.3, d],
           [0, d],
         ],
-        K
+        vk
       );
       for (const [face, off] of [
         [
@@ -454,7 +663,7 @@ function buildStructures(sc) {
             [pier, 0.3],
             [0, 0.3],
           ],
-          K
+          vk
         );
     }
     /* built arches get square shoulders and a flat top; a rock arch stays a bare curve */
@@ -464,7 +673,19 @@ function buildStructures(sc) {
         wd = R + pier - R * 0.7,
         c = R * 0.7 + wd / 2;
       for (const s2 of [-1, 1]) obox(a.x + px * s2 * c, a.z + pz * s2 * c, ux, uz, d, wd, lo, top, K);
-      obox(a.x, a.z, ux, uz, d, 2 * (R + pier) + 0.1, y0 + spring + R + pier - 0.08, top, K);
+      obox(a.x, a.z, ux, uz, d, 2 * (R + pier) + 0.1, y0 + spring + R + pier - 0.08, top - 0.1, K);
+      /* RP-2: a coping a little wider than the wall */
+      obox(
+        a.x - ux * 0.05,
+        a.z - uz * 0.05,
+        ux,
+        uz,
+        d + 0.1,
+        2 * (R + pier) + 0.2,
+        top - 0.1,
+        top,
+        K === 'stone' ? 'stoneL' : K
+      );
     }
     end();
   }

@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Gus Gasket",
+  "body": {"height":1.06,"body":1.1,"chest":0.3,"hips":1,"shoulders":1.12},
+  "skin": "#8A5A3E",
+  "hair": "#1E1A18",
+  "eyes": "#3A2A1C",
+  "wear": {
+   "hair": "hair_buzz",
+   "eyes": "eyes_sharp",
+   "brows": "brows_stern",
+   "mouth": "mouth_smirk",
+   "facial": "facial_beard",
+   "top": "tee",
+   "outer": "denim_jacket",
+   "bottom": "work_pants",
+   "shoes": "boots",
+   "hat": "hat_hardhat",
+   "bag": "fannypack"
+  },
+  "colors": {
+   "tee": ["#4A5260"],
+   "denim_jacket": ["#3E5A8A"],
+   "work_pants": ["#5A4A3A"],
+   "boots": ["#4A3020","#22160E"],
+   "hat_hardhat": ["#E9B83C"],
+   "fannypack": ["#2A2A2A","#4A4A4A"],
+   "facial_beard": ["#1E1A18"]
+  }
+ }
+}

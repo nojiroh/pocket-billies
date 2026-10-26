@@ -147,7 +147,7 @@ export function saveFill(o) {
     o.preferences || {}
   ));
   if (![30, 60, 90, 120].includes(+p.fps)) p.fps = 60;
-  if (p.aim !== 'smooth') p.aim = 'sharp';
+  if (p.aim !== 'smooth' && p.aim !== 'off') p.aim = 'sharp';
   p.effects = 'full';
   p.fps = +p.fps;
   if (!Array.isArray(s.eggs)) s.eggs = [];

@@ -793,7 +793,7 @@
 }
 .bag-act {
   position: sticky;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   z-index: 2;
   margin-top: var(--s4);
   padding: var(--s4) !important;

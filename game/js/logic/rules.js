@@ -244,6 +244,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spawnBot: [() => spawnBot, v => (spawnBot = v)],
   // @ts-expect-error -- replaced on purpose
+  spawnMyth: [() => spawnMyth, v => (spawnMyth = v)],
+  // @ts-expect-error -- replaced on purpose
   spawnRare: [() => spawnRare, v => (spawnRare = v)],
   speciesStep: [() => speciesStep],
   // @ts-expect-error -- replaced on purpose
@@ -1154,6 +1156,11 @@ export function encountersHere(node = saveData.trip.node) {
 export const wildPrize = lvl => Math.max(0, Math.round(lvl * (RULES.encounters.prizePerLevel || 0)));
 /* a battled (or fled-from) encounter leaves the map it was on; a map that was full starts its minute from now */
 export function dropEncounter(id) {
+  /* RO-3f: a mythical battled or fled from is met: it does not come back this run */
+  const M = RULES.run && RULES.run.wild.rare && RULES.run.wild.rare.myth;
+  if (M && saveData.run)
+    for (const w of Object.values(saveData.wild || {}))
+      if (w.list.some(q => q.id === id && M.list.includes(q.sp))) saveData.run.myth = 1;
   for (const [k, w] of Object.entries(saveData.wild || {})) {
     const L = LOCATION_BY_ID[k],
       full = !!L && w.list.length >= encounterStock(L.node);
@@ -1166,7 +1173,7 @@ export function dropEncounter(id) {
  * @param {number} node @param {() => number} rnd */
 export function spawnRare(node, rnd) {
   const P = encounterPoolHere(node),
-    q = spawn(false, pickWeighted(wildRareList(P.list), rnd), node, rnd);
+    q = spawn(false, spawnMyth(node) || pickWeighted(wildRareList(P.list), rnd), node, rnd);
   q.lvl = Math.min(100, q.lvl + (RULES.run.wild.rare ? RULES.run.wild.rare.up : 0));
   q.rare = 1;
   return q;
@@ -1198,6 +1205,19 @@ export function spawnBot(where, rnd) {
     return q;
   }
   return null;
+}
+/** RO-3f: now and then a mythical (rules.json run.wild.rare.myth: its chance and list) stands in for a run route's
+ * rarer one, in any biome and past the regional dex; never while one is waiting in a run place, nor once one was met
+ * (run.myth). Its roll has a stream of its own (the node's 'myth'), so every other draw stays as it was
+ * @param {number} node @returns {string | null} the species, or none */
+export function spawnMyth(node) {
+  const M = RULES.run.wild.rare && RULES.run.wild.rare.myth,
+    run = saveData.run,
+    L = LOCATIONS[node];
+  if (!M || !M.list.length || !run || run.myth || !L || L.runNode == null) return null;
+  if (Object.values(saveData.wild || {}).some(w => w.list.some(q => M.list.includes(q.sp)))) return null;
+  const rnd = rngFn(runNodeSeed(run.seed, L.runNode), 'myth');
+  return rnd() < M.chance ? M.list[Math.floor(rnd() * M.list.length)] : null;
 }
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
