@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
+  braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
+  a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.
 - **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
   no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
   hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert

@@ -1,7 +1,7 @@
 {
  "name": "Test: route props (route props track)",
  "w": 56,
- "h": 98,
+ "h": 113,
  "edge": "g",
  "sky": ["#8CC6E6","#BFE3EE","#F4E8C8"],
  "haze": "#EAD9C0",
@@ -30,7 +30,8 @@
   {"x":28,"z":66,"yaw":0,"label":"junk"},
   {"x":32,"z":67,"yaw":0.9,"label":"junk-turned"},
   {"x":28,"z":81,"yaw":0,"label":"bureau"},
-  {"x":32,"z":82,"yaw":0.9,"label":"bureau-turned"}
+  {"x":32,"z":82,"yaw":0.9,"label":"bureau-turned"},
+  {"x":28,"z":95,"yaw":0,"label":"structures"}
  ],
  "hub": [28,2.5],
  "tiles": [
@@ -38,6 +39,21 @@
   "pppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
   "pppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
   "pppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
@@ -160,7 +176,27 @@
   {"k":"tollbooth","x":21.1,"z":84},
   {"k":"bureau_barrier","x":25.7,"z":84},
   {"k":"bureau_crate","x":30.3,"z":84},
-  {"k":"bollard","x":34.9,"z":84}
+  {"k":"bollard","x":34.9,"z":84},
+  {"k":"arch_ruin","x":7,"z":99},
+  {"k":"fence_wood","x":36,"z":102}
  ],
- "kind": "test"
+ "kind": "test",
+ "arches": [
+  {"x":14,"z":99,"w":2.6,"d":0.8,"h":3,"dir":"z","kind":"stone"},
+  {"x":21,"z":99,"w":2.6,"d":0.8,"h":3,"dir":"z","kind":"brick"}
+ ],
+ "rails": [
+  {
+   "pts": [[27,99],[31,99],[32.5,100.5]],
+   "kind": "stone"
+  },
+  {
+   "pts": [[34,99],[38,99]],
+   "kind": "wood"
+  },
+  {
+   "pts": [[40,99],[44,99]],
+   "kind": "iron"
+  }
+ ]
 }
