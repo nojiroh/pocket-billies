@@ -8,7 +8,7 @@
    levels as the run took off) and its `items` and `pyramids` go into the bag at each takeoff (relTakeoff); its
    `wardrobe` piece is given once, when the level is reached (the page's part). The story reads the level as
    `rel:<who>`, the Beans as `beans`, a gift given since the last run as `gifted:<who>` (conditions.js). The numbers
-   are placeholders until the owner answers. Logic only: no DOM, no Date, no Math.random (tools/test/relations.test.mjs). */
+   are the owner's (2026-10-26). Logic only: no DOM, no Date, no Math.random (tools/test/relations.test.mjs). */
 /** @import { Meta, SaveData } from '../../types/save-data' */
 /** @import { FxRow, RelationsData, RelationLevel } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

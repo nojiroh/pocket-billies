@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "relations.schema.json",
- "title": "game/data/relations.json: the hub's folk and you (roguelite track RL-S2; logic/relations.js): what a gift costs and gives, each person's levels and what each level brings (placeholders until the owner answers)",
+ "title": "game/data/relations.json: the hub's folk and you (roguelite track RL-S2; logic/relations.js): what a gift costs and gives, each person's levels and what each level brings, and the favour each asks (the owner's numbers, 2026-10-26)",
  "type": "object",
  "required": ["gift", "people"],
  "additionalProperties": false,

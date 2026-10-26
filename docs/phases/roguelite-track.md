@@ -1166,6 +1166,15 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   gift offered before a hub person's talk. Waiting on the owner (9.6-style asks in the session's plan): Blake's
   rules, the levels and what they bring, Beans' sources, Chapter 1's beats and every line. Part B: Chapter 1's beats
   and the favours, in the owner's words.
+- **RL-S2 as built, part B (2026-10-26; HANDOFF has the detail).** The owner's answers: A Blake as built (the lead, 1/2/2/2/2
+  meetings, 2 Billies +1 per 2 meetings, a loss ends the run); B level 1 a line, 3 a second bonus (Chosen +5% XP,
+  Hazel a Hi-Potion, Juniper +10% catch), 4 a wardrobe piece, 5 a once-only line; C Beans as built plus 1 for Blake's
+  first defeat in a run; D every drafted line approved. Where part A's notes were wrong: Blake's lose line never
+  shows on a run (battle.js only shows it off a run: a `back_lost` pair says it); a chapter is not one an Expedition
+  (only `chapter n` moves it); part A's six beats were never written down; and two found in the build: an `xp` row
+  on a run did nothing (only held items' were read) and a `must` fresh line not talked to was lost for good (its
+  `once` marked at the pick). Built: favours as relations.json data (`relFavoursPay` on the way home), `thanks_<who>`
+  after a gift, conditions `lastteam:` and `rival`, Chapter 1's five beats and `scripts.chapter1-end` (for RL-14).
 
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 

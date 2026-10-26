@@ -5,7 +5,7 @@
    with, and it grows with every meeting you have had (meta.history's rival entries, then this run's). What a run
    keeps of him is run.rival: the lead's species at takeoff, the meetings before this run, this run's meetings and wins
    (battle-rewards.js counts them, run-state.js runEnd writes them into the history). The numbers are rules.json
-   run.rival (placeholders until the owner answers). No imports: the data comes in as arguments (species, the
+   run.rival (kept as built at the owner's word, 2026-10-26). No imports: the data comes in as arguments (species, the
    region's dex, a type chart), so the run sim and the tests play the same rules. Logic only: no DOM, no Date, no
    Math.random (tools/test/rival.test.mjs). */
 /** @import { HistoryEntry, RunRival } from '../../types/save-data' */

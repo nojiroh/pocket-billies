@@ -48,7 +48,7 @@
  },
  "scripts": {
   "chapter1-end": {
-   "about": "RL-S2: Chapter 1's last beat, after the Voltron is beaten (RL-14 calls it: storyState.pending = 'chapter1-end', as back-lost); it moves the story on to chapter 2",
+   "about": "RL-S2: Chapter 1's last beat, after the Voltron is beaten (RL-14 calls it: saveData.story.pending = 'chapter1-end' after storyHomeArrive, as back-lost); it moves the story on to chapter 2",
    "who": "hazel",
    "script": [
     "Hazel: That thing was retrieving. It was built to bring things back. #l:6616",

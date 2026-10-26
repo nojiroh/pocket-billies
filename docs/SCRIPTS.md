@@ -127,7 +127,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `wait s` | waits, in seconds |
 | `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
-| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`; nothing if no line fits |
+| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`, RL-S2 `thanks_chosen`, `thanks_hazel`, `thanks_juniper`; nothing if no line fits |
 | `beans n` | Beans found (RL-S2): into `meta.beans` at once, counted on the run for its payout screen |
 | `gift who` | a gift for a hub person (RL-S2): a Bean, `gift.points` with them; nothing with too few Beans or one given since the last run (gate it: `> [if beans >= 1 and not gifted:hazel] ...`) |
 | `rel who n` | points with a hub person, as for a favour done (RL-S2) |
@@ -187,7 +187,9 @@ is drawn from the runs ended and who, so the same save picks the same line. What
 - **In a run**: a leader's script is `pick leader`, then its battle; a Bureau agent's (a class with `"bureau": 1` in
   events.json) `pick bureau` in place of its sight line.
 
-- **Blake** (RL-S2, below) says `pick rival` before his battle once banter.json has lines with `who: "rival"`.
+- **Blake** (RL-S2, below) says `pick rival` before his battle (banter.json has lines with `who: "rival"`).
+- **A `must` line not yet heard** (a Chapter beat, a favour's ask or thanks) waits for the next talk instead of
+  being picked over on the next return: its `once` is marked when it is picked, its script runs when it is said.
 
 The run history is `meta.history` (logic/run-history.js): the newest 20 runs, each with its seed, region, Expedition,
 end (`won`, `lost`, `quit`), what beat you, the furthest row, days, the team's species, Perks, the region's leaders
@@ -204,8 +206,11 @@ the rows) of the first type in `on` the band has (a route, else a waystation), o
 trainers/blake.json's name and words (person `chad`, his music): `size` Billies at the first meeting, one more for every
 `grow` meetings kept (`meta.history` entries' `rival.met`, then this run's), at most `max`; the ace of a type that hits
 the lead's types for more than normal damage (the lead: `run.rival.lead`, the Billie you took off with), the region's
-dex first; each a level below the one before from the row's top wild level + `up`. Never blocking; a reward pick and
-`reward` Moneys when beaten; losing to him ends the run like any trainer battle. `run.rival` counts the meetings and
+dex first; each a level below the one before from the row's top wild level + `up`. Never blocking; a reward pick,
+`reward` Moneys and, the first win in a run, `run.beans.rival` Beans when beaten; losing to him ends the run like any
+trainer battle (the owner's answer, 2026-10-26). His words: banter.json `who: "rival"` before the battle (his first
+meeting ever, a plain line, after you beat him, after he ended a run, a second meeting in a run: the condition
+`rival`), his win line in trainers/blake.json, and a `back_lost` pair with `lastby:rival`. `run.rival` counts the meetings and
 wins; the history keeps them as `rival: {met, won}` (null when you never met him).
 
 **The hub folk.** game/data/relations.json: `gift` (`cost` in Beans, `points`, `favour`) and `people` (Chosen, Hazel,
@@ -213,12 +218,26 @@ Juniper), each with `levels` (`at` points). While you hold a level its `fx` rows
 Perk's, tagged `rel:<who>`), its `items` and `pyramids` go into the bag at each takeoff, and its `wardrobe` piece is
 given once when reached. Points are `meta.rel`; one gift a person each time home (`meta.gifted`). In the hub, with a
 Bean and none given them since the last run, talking to one of them offers a Bean first (story.js `storyGiftOffer`).
-Beans (currencies.json's fifth row) come from rules.json `run.beans` (the first badge of a type, a side area's leader),
-`run.payout.beansWin` and events' `beans n`. **Every number is a placeholder** until the owner answers; their lines
-(thank-yous, Blake's words, favours) wait for the owner's approval.
+Beans (currencies.json's fifth row) come from rules.json `run.beans` (the first badge of a type, a side area's leader,
+Blake's first defeat in a run), `run.payout.beansWin` and events' `beans n`. A gift's thank-you is the talk: story.js
+plays `pick thanks_<who>` after it (the level just reached first, a `once` line with `rel:<who> >= n`; else their
+plain `cycle`), and the talk ends there. The levels (the owner's answers, 2026-10-26): 1 a line, 2 and 3 a takeoff
+bonus each, 4 a wardrobe piece, 5 a once-only line.
+
+**Favours.** A person's relations.json `favour`: `quest` (story.json `quests`, stages `asked` and `done`), `check` (a
+condition) and `points` (else `gift.favour`). Their ask is a `once` + `must` banter line whose script ends `quest
+<id> asked`; on the way home (story-stage.js `storyHomeArrive` → relations.js `relFavoursPay`, before the lines are
+picked) a favour at `asked` whose `check` holds is paid: the quest `done`, the points, a toast, and their thanks
+(`when: quest:<id> = done`, once, must) is their next line. Chosen: a leader beaten (`last:leaders >= 1`); Hazel: row
+six (`last:row >= 6`); Juniper: a Grass Billie home (`lastteam:Grass`). The story checks: the quest exists with both
+stages, the check reads.
 
 **Chapters.** `meta.chapter` (1 at the start); `chapter n` moves it on; `chapter >= n` reads it. It is not story.json's
-`chapters` (map variants), which can read it in their own conditions.
+`chapters` (map variants), which can read it in their own conditions. **Chapter 1's beats** are five `once` + `must`
+banter lines on Hazel and Chosen (`ch1_drop`, `ch1_blake`, `ch1_beans`, `ch1_number`, `ch1_signal`), each setting its
+flag, each needing the one before; its end is story.json `scripts.chapter1-end` (Hazel and Chosen, then `chapter 2`).
+Nothing plays it yet: RL-14's Voltron win sets story `pending = 'chapter1-end'` after `storyHomeArrive` (which clears it on a won run), as a lost run sets `back-lost`;
+until then the debug menu's Story scripts row plays it.
 
 ## Flags
 
