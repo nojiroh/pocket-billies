@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-S2 (part B) - Chapter 1's beats, the favours, every line - 2026-10-26
+Branch `track/story` (main had nothing new: no merge; PR #210). Plan approved in Plan Mode; the four asks answered in
+the session (2026-10-26): **A** Blake as built (the lead you take off with, 1/2/2/2/2 meetings, 2 Billies +1 per 2
+meetings at most 6, **losing to him ends the run**); **B** level 1 a line, 2 as built, 3 a second bonus (Chosen +5% XP,
+Hazel a Hi-Potion at takeoff, Juniper +10% catch), 4 a wardrobe piece (`glasses_sun`, `labcoat`, `hat_bucket`), 5 a
+once-only line; **C** Beans as built plus 1 for Blake's first defeat in a run; **D** every drafted line approved as
+written. Tag `rl-s2-done` is the owner's.
+- Where part A's notes were wrong (checked in the code):
+  - **Blake's lose line never shows on a run**: battle.js shows `T.lose` only off a run. A `back_lost` pair
+    (`lastby:rival`) now carries his last word.
+  - **A chapter is not "one an Expedition"** and no boss scene moves it: only `chapter n` (at most 9). Wording fixed in
+    SCRIPTS, conditions.js and save-data.d.ts.
+  - **Part A's "six beats" were never written down**; proposed again and approved.
+  - The "always a plain line" banter rule covered only leaders and agents; Blake and the thank-yous joined it.
+- Found while building (each its own commit):
+  - **An `xp` effect row on a run did nothing**: `heldXp` read only the held item's rows. It now reads the run's too
+    (no Perk had an xp row, so nothing else changes; golden record unchanged).
+  - **A `must` fresh line not talked to was lost for good**: its `once` is marked at the pick on the way home, its
+    script (a beat's flag, a favour's quest) runs only when said, and the next return picked over it. It now waits
+    for the next talk.
+  - Blake's line at a second meeting in a run needed this run's meetings: the condition `rival`.
+- Changed:
+  - **Favours as data**: relations.json `people.<who>.favour {quest, check, points?}`, story.json quests `fav_<who>`
+    (`asked`, `done`), `relFavoursPay` (relations.js) on the way home before the lines are picked (`storyHomeArrive`:
+    quest done, points, wardrobe, a toast). Chosen: a leader beaten; Hazel: row six; Juniper: a Grass Billie home (the
+    new condition `lastteam:`, the last run's team by type, line or species). Asks and thanks are once + must banter.
+  - **Thank-yous**: banter who `thanks_<who>`; after a gift story.js plays `pick thanks_<who>` (the level just reached
+    first) and the talk ends there; the old toast when no line fits. Level lines 1-5 for each.
+  - **Blake**: five lines before his battle (`pick rival` is on), his win line, the `back_lost` pair; the Bean.
+  - **Chapter 1**: five once + must beats on Hazel and Chosen chained by flags `ch1_drop`, `ch1_blake`, `ch1_beans`,
+    `ch1_number`, `ch1_signal`; story.json `scripts.chapter1-end` (Hazel, Chosen, `chapter 2`). **Nothing calls it
+    yet**: RL-14's Voltron win sets `saveData.story.pending = 'chapter1-end'` after `storyHomeArrive` (which clears
+    `pending` on a won run).
+  - relations.json levels 3 and 4 as B says. Story checks: a favour's quest and stages, its check, `lastteam:` ids.
+  - Docs: SCRIPTS, NAMING, roguelite-track 9.4 "RL-S2 as built, part B", ROADMAP (RL-S2 done), BRANCHES, CHANGELOG.
+- Verified:
+  - lint, typecheck, check:modules, format:check, check:data after each commit; `npm test` 1077/1077; `test:slow` 86/86.
+  - **check-fast's RL-S2 page** (`--only=Blake`) passes: Blake says his first line and his battle starts, beaten: a
+    meeting, a win, his Bean, a reward pick; a Bean for Chosen: level 1 and his level-1 thank-you as the talk, no
+    second offer; home with Hazel's favour asked from a row-7 run: quest done, +2 points, her thanks next.
+  - **In-game test phase** alone: "Blake twice against Marsox ...; Hazel level 1, her favour +2; chapter 2".
+  - **Full check-fast: 23/33** with the slow tests running beside it. Run again alone, all pass but **"A room opens
+    and draws (the lab)"** and the ranch checks' **"not in the ranch"** (Breeding, Income), which **fail the same way
+    on part A's commit 7caf8d2d** run here (entering a room in this container); not this session's.
+  - **Full quick check: 32/40.** Known: song fingerprints (cave mid/late), RL-8 "Take off", the Actions sheet,
+    Terraces sky_portal, room light. RT-2, Battle music and Sound effects failed in the full run and **pass alone**.
+- Risky / open:
+  - **Not tried on the phone.** Read the lines in play; the beats come one a return, so Chapter 1 takes at least six
+    returns (five beats need Blake met, a Bean, a Bureau loss or 3 runs, a boss reached or a win).
+  - A favour reached by points (not a gift) speaks its level line only at the next gift.
+  - The thank-you replaces the talk: that return's fresh line waits for the next talk.
+  - Room entering fails in this container on both commits: worth a look on main before trusting it.
+- Next: RL-14 (bots, salvage, the Voltron) calls `chapter1-end`; then RL-15.
+
 ### Roguelite track RL-S2 (part A) - Rival and relationships: Blake in runs, Beans, the hub folk, chapters - 2026-10-26
 Branch `track/story` (main 2314da82 merged in first: a fast-forward, everything on the branch was in main; PR #210).
 Plan approved in Plan Mode. **The "Ask me before" questions (A: Blake's rules, B: levels and what they bring, C: gifts
