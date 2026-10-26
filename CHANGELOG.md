@@ -9,6 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
+  Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
+  a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**
+  (catch a Billie of a type, beat route trainers, carry something to the next town, or beat the mini-boss with nobody
+  fainting). The favour doesn't count towards your three quests; hand it in at another town's notice board and they
+  agree to come. A few of them can also turn up stuck on the road at a waystation (**Stranded Cart**). Whoever you
+  invite moves in when the run ends, **won or lost**, and the payout screen says so. What they do in Copperleaf comes
+  next.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing

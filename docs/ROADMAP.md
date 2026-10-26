@@ -70,7 +70,8 @@ town node needs it.
   inn, library, Workshop, station, ranch, a cottage) with up to 3 levels in the existing currencies, one capped power
   level each, the rest options. RS-0 (the plan, with research) and RS-1 (residents.json with 8 residents, the save's
   `meta.residents` and `run.invited`, logic/residents.js, `resident:`/`residents` conditions) done 2026-10-26 on
-  `ccr-65e11839-9p92dx`; RS-2 (meeting them in a run) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
+  `ccr-65e11839-9p92dx`; RS-2 (meeting them in a run: Dottie free in the first town row, favours from quests.json, the
+  Stranded Cart event, the payout's line, the Run Lab and sim) done 2026-10-26 on the same branch; RS-3 (living in Copperleaf) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals)

@@ -107,7 +107,7 @@ Guides and forum posts, not design papers: read as examples, not facts.
 |---|---|---|---|---|
 | RS-0 | The plan (done 2026-10-26) | this file, ROADMAP, BRANCHES, HANDOFF | none | in the planning session |
 | RS-1 | Data and save (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | `residents.json` + schema, type, `check-data.mjs` rule (home and level rows exist); `meta.residents` and `run.invited` in the validators; `logic/residents.js` (pure: the run's candidate from its seed, invite, settle at the run's end); the `resident:` condition kind; Node tests | none | 1 |
-| RS-2 | Meeting in a run | the favour from a run town's named local and one event; quest payout = invite; the payout screen's line; candidates in the Run Lab and the sim; an in-game test step | RS-1 | 1 |
+| RS-2 | Meeting in a run (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | the favour from a run town's named local and one event; quest payout = invite; the payout screen's line; candidates in the Run Lab and the sim; an in-game test step | RS-1 | 1 |
 | RS-3 | Living in Copperleaf | residents as people at their buildings or cottages, door acts switched, the room card's upgrades, banter lines; the Studio's hub editor shows them | RS-1 | 1-2 |
 | RS-4 | Services and upgrades | the first four residents' unlock rows and effects (`run.fx`, shops.json stock), the headcount milestones; balance by the run sim | RS-2, RS-3 | 1-2 |
 | RS-5 | The rest of the roster | the other residents, request gates, the look pass on the phone | RS-4 | 1 |
@@ -151,10 +151,51 @@ About 5-7 sessions. RS-2 and RS-3 can run side by side after RS-1 (different fil
   `runEnd`, or return it with the payout. The unlock rows of RS-4 need buildings.json rows for the store, inn and
   library (today an unlock is sold only `at` a buildings.json key).
 
+**Done in RS-2** (2026-10-26, on `ccr-65e11839-9p92dx` from RS-1's c3677eb; the owner's answers: one invite a run;
+the event's favour done on the spot; a favour held over the quest cap; anyone after the first in one seeded town;
+Dottie in every town of the first all-town row):
+- **Where RS-1 and the code differed:** `residentCandidate(s, R, where)` drew among those met *there*, so a town and
+  an event could offer two different people in one run. Now `residentDrawn` draws once among everyone left (the same
+  stream, 'resident') and `where` only says whether they can be met there. `runEnd` needs no change for the payout's
+  line: the payout screen is drawn while `run.at.phase` is 'payout', before `runEnd`, and reads `run.invited`.
+- `logic/residents.js`: `residentDrawn` (the run's one, invited or not, so a reload still places them),
+  `residentFirstTowns` (the first map row made only of towns: rules.json `rest`, so every way walks into one).
+- `quests.json`: `favours` (one per resident, a kind each but the free first one's; lines drafted, for the owner) and
+  `invite` (the lines when met, the board's, the payout's); schema, type, `dataQuests` (a favour for every resident).
+- `logic/run-quests.js`: `questCan` (questOffer's checks, the same draws), `favourTowns`, `favourAt` (the run's
+  'resident|town' stream), `favourOffer` (the node's 'favour' stream), `favourTake` (held over the cap, the town's own
+  offer untouched), `favourHeld`, `questsHeld` (the cap's count), `questDataOf` (boards from scenes, trainers by
+  node), `residentPlan` (who, which towns). `RunQuest.res`, in `validRunQuests`.
+- The page: `run-world.js runWorldPutRun` places the resident (`run-scenes.js runTownResident`: scene.people id
+  `resident`, on a free local spot, a look seeded by their id) once the route trainers are placed. `quest-board.js
+  residentTalk` (Dottie: her line, "Is there room for me in Copperleaf?", Yes invites; anyone else: their favour,
+  Yes takes it); the gold "!" while they can be met; the notice board hands a favour in for the invite in place of
+  the reward pick; the Map tab's list names a favour and counts only the capped quests. `story.js personTalk` routes
+  to it. Debug log: ids only.
+- **The event** `stranded_cart` (`resident: true`, weight 2): `eventPool`/`eventAt` take `meet`, so it is drawn only
+  while the run's resident can be met at an event (Bertha, Gus, Rosa); a Ground Billie digs the cart out, or 150
+  Moneys for a wheel, then `invite` (a new event command: SCRIPT_COMMANDS, docs/SCRIPTS.md, the events check: only in
+  a resident event, and every resident event has one). It names them ("The traveller is Bertha Brew, an innkeeper.")
+  and drops a favour of theirs held from a town.
+- **The payout** says "<name> is moving to Copperleaf."; the run's history entry keeps `res` (for RS-3's banter).
+- **Run Lab**: `runPreview` returns `residents: { first, next }` (on a first run, and once the first one lives there):
+  who, the favour's kind, their towns (every town counted as having its board), the waystations whose event would be
+  theirs. **Run sim**: the log's `resident` and each place's, stats `resident`/`metResident`, the Simulate card's
+  "Walked into their resident's town" (SIM_METRICS). The bot does no favour: win rates don't move.
+- **In-game full test** ("A run: airship, nodes, payout"): the copy's `meta.residents` emptied, Dottie stands in the
+  first town row with her "!", talking to her (lines tapped, Yes) invites her, the payout names her, she moves in and
+  the history keeps her.
+- Tests: residents (one draw whatever the place, `residentDrawn`, `residentFirstTowns`), run-quests (favour towns,
+  offers, over the cap, a reload, a parcel favour handed in, `residentPlan`), new slow `resident-towns.test.mjs` (real
+  scenes: a free local spot, nobody else on it, the same run the same place), encounters, data-checks, check-data's
+  planted favours, run-state (history `res`), run-preview, run-sim.
+- **For RS-3**: the resident's look is a seeded townsfolk one (`folk:<n>` from their id) until the owner picks looks.
+  A failed mini-boss favour (Gus) is dropped like any quest; walking back to their town offers it again.
+
 ## Ask me before (recommendation first)
 1. The roster's looks and lines (names approved in RS-1).
 2. Pace: one invite per run (rec) / two; residents capped by the 10 cottages (rec: no cap, the building residents
-   don't need one).
+   don't need one). **Answered in RS-2: one invite per run.** (The cottage cap is still open.)
 3. The player-facing word: **answered in RS-1: "residents"**.
 4. The power level's size per resident (RS-4 proposes numbers from the sim).
 
