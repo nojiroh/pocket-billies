@@ -63,11 +63,17 @@ export const ENGINE_DEFAULTS = {
     bloom: 0.55,
     bloomThreshold: 0.9,
     bloomSize: 1,
+    /* the bloom as strong at every quality step (it added one copy per level, so the slower steps' fewer levels made it
+       fainter) and its threshold read after the exposure (changing the exposure moved what blooms); off: as before */
+    bloomEven: false,
     grade: 'film',
     gradeAmount: 0.6,
     tone: 'soft',
     ink: 0.35,
     outlines: 1,
+    /* the ink outlines and the screen's occlusion follow the camera: blurred things lose their outlines with the blur,
+       and the outlines fade out past where the camera looks (they faded from 25 m, about where you stand) */
+    inkFollow: false,
   },
   sun: {
     angle: 35,
@@ -105,12 +111,22 @@ export const ENGINE_DEFAULTS = {
     hue: 0.6,
     fit: true,
     groundAO: 1,
+    /* the screen's occlusion is measured so a plane gives none (open ground, seen at a slant, no longer reads as a
+       crease); off: as before */
+    aoPlane: false,
+    /* the ground's baked shade at the feet of things dims only its sky light (sunlit ground at a wall's foot stays
+       sunlit); off: it dimmed the ground's colour and its sunlight too */
+    groundAOSky: false,
     cascades: true,
     nearRadius: 13,
     lampShadows: 2,
     /* the sun's shadow maps look straight down the light, so the texel snapping holds and shadow edges stand still as you
        walk; off: their eye sits 2 m higher than the light's line, which made the snapping miss and the edges crawl */
     steadyEdges: false,
+    /* lamp shadows hold: their depth bias grows with distance as a perspective map needs (shadows stayed on the feet only
+       close to the lamp), the pool a lamp lays under itself takes the lamp's shadow (it lit over it), and a lamp counts
+       as hanging high by its height above the ground, not above sea level */
+    lampFix: false,
     aoKind: 'horizon',
   },
   lights: {
@@ -121,6 +137,9 @@ export const ENGINE_DEFAULTS = {
     roomLight: true,
     windowLight: 1,
     pools: 1,
+    /* lamps, windows and fires light the water and the falls near them at night, as they light the ground; off: water
+       took no lamp light */
+    onWater: false,
     /* a house's window light falls out of its front whichever way the house faces (soft at the wall); off: it is cut
        off on the far side of a line through it, the same for every house (lit wrong when the house is turned) */
     windowFacing: false,
@@ -155,6 +174,12 @@ export const ENGINE_DEFAULTS = {
     reliefShade: 1,
     groundBumps: 1,
     groundShine: 1,
+    /* bricks, planks and roof tiles on the 3D buildings and the low-poly models catch the light from their own texels
+       (buildings.js bldBump); 0: flat walls and roofs, as before */
+    buildingBumps: 0,
+    /* a 3D building's front picture takes the building material's shine and wrap (as its bumps are made with it), and its
+       bumps may face a little down; off: a hard-wired wrap of .6 and no bump below a quarter up */
+    frontMaterial: false,
     buildings3d: true,
     interiors: true,
     solidProps: true,
@@ -297,6 +322,9 @@ export const ENGINE_DEFAULTS = {
     phonePropDistance: 0,
     sharpTex: true,
     edgeBleed: true,
+    /* pictures' bump maps get smaller sizes too, so a far prop's light doesn't flicker as it moves (its colour already
+       had them); off: one size */
+    normalMips: false,
     /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
        false) */
     keepScenes: 3,
@@ -304,6 +332,9 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 C5: lights picked with stable keys and fades (off: the nearest each frame, as before), and how many may
        be lit at once (the shaders hold 16) */
     stableLights: false,
+    /* on a graphics chip that can draw to half-float pictures but not to full-float ones (some phones), the scene and the
+       bloom keep their bright parts above white (HDR) as on the others; read when the 3D view starts */
+    hdrHalf: false,
     lights: 16,
     /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1); models, buildings and structures before the
        sprites (D5) */
@@ -463,9 +494,21 @@ export const ENGINE_SPEC = [
         0.05,
         'v47: black outlines in older pictures take a deep shade of the colour beside them, as the newer art draws them. 0: as painted.',
       ],
+      [
+        'inkFollow',
+        'Outlines follow the camera',
+        'bool',
+        'Ink outlines and contact shading melt away with the depth-of-field blur, and stay on you and what is near you at every zoom (on). Off: crisp outlines on blurred things, and fading from 25 m.',
+      ],
       ['bloom', 'Bloom', 0, 2, 0.02, 'Glow around bright lights.'],
       ['bloomThreshold', 'Bloom threshold', 0.5, 2, 0.02],
       ['bloomSize', 'Bloom size', 0.3, 2, 0.05],
+      [
+        'bloomEven',
+        'Even bloom',
+        'bool',
+        'The glow round bright things is as strong at every quality step, and its threshold follows the exposure (on). Off: as before.',
+      ],
       [
         'grade',
         'Colour grade',
@@ -619,7 +662,13 @@ export const ENGINE_SPEC = [
         'steadyEdges',
         'Steady shadow edges',
         'bool',
-        'The sun’s shadow maps look straight down the light, so shadow edges stand still while you walk (on). Off: as before, the edges crawl a little.',
+        'The sun’s shadow maps look straight down the light, so shadow edges stand still while you walk, and wide soft edges don’t end in a lit band (on). Off: as before.',
+      ],
+      [
+        'lampFix',
+        'Lamp shadows hold',
+        'bool',
+        'Shadows from lamps stay on the feet of what casts them farther from the lamp, aren’t washed out by the lamp’s own pool of light, and work on high ground (on). Off: as before.',
       ],
       [
         'aoKind',
@@ -650,6 +699,18 @@ export const ENGINE_SPEC = [
         0.05,
         'Soft darkening on the ground round buildings, trees, rocks and the foot of walls, worked out once per scene.',
       ],
+      [
+        'groundAOSky',
+        'Feet shade on sky light only',
+        'bool',
+        'The shade at the feet of things dims only the light from the sky, so sunlit ground stays sunlit (on). Off: it also dims the ground’s colour and its sunlight.',
+      ],
+      [
+        'aoPlane',
+        'Occlusion follows the slope',
+        'bool',
+        'The screen’s occlusion darkens creases, not open ground seen at a slant (on). Off: as before.',
+      ],
     ],
   ],
   [
@@ -672,6 +733,12 @@ export const ENGINE_SPEC = [
         2,
         0.05,
         'After dark, street lamps lay a pool of light on the ground under them.',
+      ],
+      [
+        'onWater',
+        'Lamp light on water',
+        'bool',
+        'Lamps, windows and fires near water light its surface and the falls at night, as they light the ground (on). Off: water takes no lamp light.',
       ],
       ['glow', 'Glow size', 0, 3, 0.05],
       ['flicker', 'Flicker', 0, 1, 0.05],
@@ -787,6 +854,20 @@ export const ENGINE_SPEC = [
       ['farHills', 'Distant hilliness', 0, 3, 0.05],
       ['groundBumps', 'Ground bumpiness', 0, 3, 0.05, 'Cobbles, rock and paths catch the light from their own pixels.'],
       ['groundShine', 'Ground shine', 0, 3, 0.05, 'How much smooth floors and plazas gleam in the sun.'],
+      [
+        'buildingBumps',
+        'Building bumpiness',
+        0,
+        3,
+        0.05,
+        'Bricks, planks and roof tiles on buildings and low-poly models catch the light from their own pixels. 0: flat.',
+      ],
+      [
+        'frontMaterial',
+        'Fronts lit as their material',
+        'bool',
+        'A 3D building’s painted front takes the light as its material says (its shine, how far light wraps round), and ledges can face down into shade (on). Off: as before.',
+      ],
       [
         'buildings3d',
         '3D buildings',
@@ -1334,6 +1415,12 @@ export const ENGINE_SPEC = [
         'Shadows of things that never move are drawn once and kept; only moving things are drawn each frame.',
       ],
       [
+        'hdrHalf',
+        'Half-float HDR',
+        'bool',
+        'On graphics chips that can only draw to half-float pictures (some phones), keep bright parts above white for bloom and lamps, as other chips do (on). Read when the 3D view starts. Off: such chips clip at white.',
+      ],
+      [
         'stableLights',
         'Steady lamps',
         'bool',
@@ -1430,6 +1517,12 @@ export const ENGINE_SPEC = [
         'Clean edges far off',
         'bool',
         'Far-off props keep their colour at the edges instead of a dark fringe.',
+      ],
+      [
+        'normalMips',
+        'Steady light on far props',
+        'bool',
+        'The bumps that catch the light on pictures get smaller sizes for far-off props, so their lighting doesn’t flicker as they move (on). Off: one size.',
       ],
     ],
   ],
