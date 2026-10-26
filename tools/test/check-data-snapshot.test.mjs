@@ -199,6 +199,8 @@ test('check-data: planted residents (RS-1)', t => {
         R.bertha.first = true;
         R.gus.levels = ['nosuchunlock'];
         R.rosa.levels = ['ranch_2'];
+        /* RS-3: a resident with no look (people/<id>.json) */
+        R.zed = { ...R.seamus, name: 'Zed' };
       },
       'unlocks.json': U => {
         U.caught_15.when = 'resident:nosuchresident';

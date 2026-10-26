@@ -1,0 +1,29 @@
+{
+ "look": {
+  "name": "Compass Rosa",
+  "body": {"height":1,"body":0.96,"chest":0.5,"hips":1.04},
+  "skin": "#B87A52",
+  "hair": "#3A2A3A",
+  "eyes": "#5A3A2A",
+  "wear": {
+   "hair": "hair_pony",
+   "eyes": "eyes_wide",
+   "brows": "brows_straight",
+   "mouth": "mouth_smile",
+   "top": "tunic",
+   "outer": "trench",
+   "bottom": "cargo",
+   "shoes": "boots",
+   "hat": "hat_bucket",
+   "bag": "backpack"
+  },
+  "colors": {
+   "tunic": ["#3F8A63"],
+   "trench": ["#C8A870","#8A6A3A"],
+   "cargo": ["#6A6A4A"],
+   "boots": ["#5A3A24","#2A1A10"],
+   "hat_bucket": ["#E9D8B0","#3F8A63"],
+   "backpack": ["#B8423A","#6A2A22"]
+  }
+ }
+}

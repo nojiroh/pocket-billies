@@ -1017,12 +1017,15 @@ export function dataResidents(D, valid = () => true) {
   const hub = ((D.maps || {}).copperleaf || {}).props || [],
     B = D.buildings || {},
     U = D.unlocks || {},
+    people = D.people || {},
     firsts = Object.keys(R).filter(k => R[k].first);
   if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
   for (const [k, r] of Object.entries(R)) {
     const at = /** @type {any} */ (r).home;
     if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
       problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    /* RS-3: their look is a person of the same id (people/<id>.json), in a run town and in Copperleaf */
+    if (!people[k]) problem(`${k}: no look (people/${k}.json)`);
     for (const u of /** @type {any} */ (r).levels)
       if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
       else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);

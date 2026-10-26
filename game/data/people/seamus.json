@@ -1,0 +1,28 @@
+{
+ "look": {
+  "name": "Seamus Stitch",
+  "body": {"height":1.02,"body":0.92,"chest":0.3,"hips":0.96,"shoulders":0.98},
+  "skin": "#F0C8A8",
+  "hair": "#E0DCD4",
+  "eyes": "#3A5A8A",
+  "wear": {
+   "hair": "hair_sidepart",
+   "eyes": "eyes_round",
+   "brows": "brows_arched",
+   "mouth": "mouth_neutral",
+   "top": "dress_shirt",
+   "outer": "blazer",
+   "bottom": "trousers",
+   "shoes": "oxfords",
+   "glasses": "glasses_monocle",
+   "neck": "bowtie"
+  },
+  "colors": {
+   "dress_shirt": ["#F2EEE2","#D8D0BC"],
+   "blazer": ["#6A3A6A","#4A2A4A"],
+   "trousers": ["#3A3A4A","#8A6A3A"],
+   "oxfords": ["#2A1A10","#1A0E08"],
+   "bowtie": ["#E9B83C"]
+  }
+ }
+}
