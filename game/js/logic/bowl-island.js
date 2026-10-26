@@ -163,7 +163,8 @@ export const BOWL_PLOT_PROPS = {
   lab: ['lab'],
   mast: ['airship_station'],
   shop: ['shop'],
-  well: ['well'],
+  /* HB-10a: the fountain in the middle of Copperleaf's square */
+  well: ['well', 'fountain'],
   farmhouse: ['house_cottage'],
   barn: ['barn'],
   /* HB-4b: the inn and the library; hub placing: the Workshop, the Gene Bank (HB-5), Skyline Station (HB-7), the

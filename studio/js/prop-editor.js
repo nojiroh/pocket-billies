@@ -82,6 +82,7 @@ const PROP_EFFECT_KINDS = [
   ['smoke', 'Smoke', '#B9B4C8'],
   ['spray', 'Water spray', '#62C6F0'],
   ['sparkle', 'Sparkle', '#F6F0FF'],
+  ['fireflies', 'Fireflies', '#C8F06A'],
 ];
 export const editedProp = () => (mapEditor.ped ? sceneryCatalog().props[mapEditor.ped] : null);
 /* the turntable scene: a patch of grass with the prop in the middle */
