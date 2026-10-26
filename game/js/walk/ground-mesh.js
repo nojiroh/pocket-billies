@@ -725,7 +725,9 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       }
   }
   const stream = [],
-    spring = [];
+    spring = [],
+    /* WA-10: the automatic sheets' edges [x, z, di, dj, lip, foot], drawn once all are known (their lips meet) */
+    sheets = [];
   for (let j = 0; j < H2; j++) {
     if (j % 12 === 11) yield;
     for (let i = 0; i < W2; i++) {
@@ -830,31 +832,75 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
         if (dryT && (fl[q] || fl[nq2])) continue;
         let yt = y,
           y2 = i + di >= 0 && j + dj >= 0 && i + di < W2 && j + dj < H2 ? wy[nq2] : wlev(nx2, nz2);
-        /* WA-10: a river's cells lie at its levels, so its steps are read like still water's */
-        if (run && !flowMap.lev) {
+        /* WA-10: a river's cells lie at its levels, so its steps are read like still water's; where it has none (no
+           profile, or down a cliff, where it follows its bed) the steps of the land as before */
+        const noLev = (/** @type {number} */ k) => !flowMap.lev || isNaN(flowMap.lev[k]);
+        if (
+          run &&
+          (noLev(q) || (i + di >= 0 && j + dj >= 0 && i + di < W2 && j + dj < H2 && runQ(nq2) && noLev(nq2)))
+        ) {
           if (sc0 - stp(nx2, nz2) < 0.15) continue;
           const eh = rawHeightAt(sc, cx + di * 0.25, cz + dj * 0.25);
           yt = eh + sc0 - 0.12;
           y2 = eh + stp(nx2, nz2) - 0.12;
         } else if (y - y2 < 0.15) continue;
+        /* WA-10: where a river is in the step, a sheet only where the step runs across its flow (down it), never on
+           its sides nor where still water spills into its side (a pond's edge against its head made a staircase of
+           slabs facing three ways); none under 0.25 m where it meets the sea (it ends at the sea's level) */
+        if (flowMap.cls) {
+          const inG = i + di >= 0 && j + dj >= 0 && i + di < W2 && j + dj < H2,
+            rn = inG && runQ(nq2);
+          if (run || rn) {
+            const f = run ? fw : flowAt(nx2, nz2),
+              fl = Math.hypot(f[0], f[1]);
+            if (!fl || (di * f[0] + dj * f[1]) / fl < 0.7) continue;
+          }
+          if (run && !rn && inG && isSea[wk[nq2]] && yt - y2 < 0.25) continue;
+        }
         const ex = cx + di * 0.25,
-          ez = cz + dj * 0.25,
-          px = -dj,
-          pz = di,
-          fb0 = fv.length / 8;
+          ez = cz + dj * 0.25;
         /* WA-2a: a falls entry replaces the automatic sheets across its width */
         if (fallSets.some(f => fallCovers(f, ex, ez))) continue;
-        for (const [s2, t2] of [
-          [-1, 0],
-          [1, 0],
-          [-1, 1],
-          [1, 1],
-        ]) {
-          fv.push(ex + px * 0.25 * s2, t2 ? y2 : yt + 0.02, ez + pz * 0.25 * s2, t2, yt - y2, s2 * 0.5 + 0.5, 0.5, 0);
-        }
-        fi.push(fb0, fb0 + 2, fb0 + 1, fb0 + 1, fb0 + 2, fb0 + 3);
+        sheets.push([ex, ez, di, dj, yt, y2]);
         T.falls.push([ex + di * 0.12, y2 + 0.05, ez + dj * 0.12, yt - y2, di, dj]);
       }
+    }
+  }
+  /* WA-10: the automatic sheets along one lip meet: each end takes the mean lip and foot of the sheets facing the same
+     way that share it, so a cascade across a stream is one continuous lip, not half-metre blocks at their own heights */
+  {
+    const endKey = (
+        /** @type {number} */ x,
+        /** @type {number} */ z,
+        /** @type {number} */ di,
+        /** @type {number} */ dj
+      ) => Math.round(x * 4) + ',' + Math.round(z * 4) + ',' + di + ',' + dj,
+      ends = new Map();
+    for (const [ex, ez, di, dj, yt, y2] of sheets)
+      for (const s2 of [-1, 1]) {
+        const k = endKey(ex - dj * 0.25 * s2, ez + di * 0.25 * s2, di, dj),
+          a = ends.get(k) || [0, 0, 0];
+        a[0] += yt;
+        a[1] += y2;
+        a[2]++;
+        ends.set(k, a);
+      }
+    for (const [ex, ez, di, dj] of sheets) {
+      const px = -dj,
+        pz = di,
+        fb0 = fv.length / 8;
+      for (const [s2, t2] of [
+        [-1, 0],
+        [1, 0],
+        [-1, 1],
+        [1, 1],
+      ]) {
+        const a = ends.get(endKey(ex + px * 0.25 * s2, ez + pz * 0.25 * s2, di, dj)),
+          yt = a[0] / a[2],
+          y2 = a[1] / a[2];
+        fv.push(ex + px * 0.25 * s2, t2 ? y2 : yt + 0.02, ez + pz * 0.25 * s2, t2, yt - y2, s2 * 0.5 + 0.5, 0.5, 0);
+      }
+      fi.push(fb0, fb0 + 2, fb0 + 1, fb0 + 1, fb0 + 2, fb0 + 3);
     }
   }
   /* v31: the half-metre land cells around the water get a skin at their neighbour's level, so a rounded shoreline can

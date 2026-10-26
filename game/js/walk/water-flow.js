@@ -24,6 +24,7 @@ expose({
   FLOW_RAPIDS: [() => FLOW_RAPIDS],
   FLOW_REACH: [() => FLOW_REACH],
   OPEN_SEA_LAKE: [() => OPEN_SEA_LAKE],
+  PROFILE_DROP: [() => PROFILE_DROP],
   PROFILE_HALF: [() => PROFILE_HALF],
   // @ts-expect-error -- replaced on purpose
   flowChannels: [() => flowChannels, v => (flowChannels = v)],
@@ -239,11 +240,14 @@ const ESTUARY_OUT = 7;
 const ESTUARY_COAST = 0.65;
 /* the river's level is a moving average over this many metres either way (between the land's steps) */
 const PROFILE_HALF = 3;
+/* a drop between two points of the line this big (m) is a cliff the river falls over, never smoothed into a ramp */
+const PROFILE_DROP = 0.15;
 
 /**
  * A river's water level along its line (water track WA-10): never rising, smoothed, and never under the water it
  * runs into. beds: the level the ground under the line would give at each point (bed - 0.12, by the walk view's
- * rule), steps: the land's step raise at each (a terrace's drop is kept, not smoothed into a ramp), end: the level of
+ * rule), steps: the land's step raise at each (a terrace's drop is kept, not smoothed into a ramp; so is any drop of
+ * PROFILE_DROP or more between two points, a cliff in the ground), end: the level of
  * the body it ends in (null: none), half: points either way in the moving average, ease: the last points that come
  * down to the end's level.
  * @param {ArrayLike<number>} beds @param {ArrayLike<number>} steps @param {number | null} end @param {number} half
@@ -255,11 +259,15 @@ function waterRiverProfile(beds, steps, end, half, ease = 0) {
     b = new Float64Array(n);
   let m = Infinity;
   for (let k = 0; k < n; k++) a[k] = m = Math.min(m, beds[k]);
+  /* the stretches smoothed on their own: a new one at each step of the land and each drop */
+  const run = new Int32Array(n);
+  for (let k = 1; k < n; k++)
+    run[k] = run[k - 1] + (Math.abs(steps[k] - steps[k - 1]) >= 0.05 || a[k - 1] - a[k] >= PROFILE_DROP ? 1 : 0);
   for (let k = 0; k < n; k++) {
     let s = 0,
       c = 0;
-    for (let i = k; i >= Math.max(0, k - half) && Math.abs(steps[i] - steps[k]) < 0.05; i--) ((s += a[i]), c++);
-    for (let i = k + 1; i <= Math.min(n - 1, k + half) && Math.abs(steps[i] - steps[k]) < 0.05; i++) ((s += a[i]), c++);
+    for (let i = k; i >= Math.max(0, k - half) && run[i] === run[k]; i--) ((s += a[i]), c++);
+    for (let i = k + 1; i <= Math.min(n - 1, k + half) && run[i] === run[k]; i++) ((s += a[i]), c++);
     b[k] = s / c;
   }
   m = Infinity;
@@ -349,7 +357,7 @@ function flowChannels(sc, F, si, sa, o) {
       return (cov[q] = best);
     };
   /* each stream's line every half metre: where it leaves its head's body, where it reaches its mouth's, its level */
-  const lines = (sc.streams || []).map(st => {
+  const lines = (sc.streams || []).map((st, sn) => {
     const p = st.pts || [];
     if (p.length < 2) return null;
     const P = [],
@@ -375,20 +383,34 @@ function flowChannels(sc, F, si, sa, o) {
     let ih = 0,
       im = P.length - 1;
     if (body[0]) while (ih < P.length - 1 && body[ih]) ih++;
-    const mouth = body[P.length - 1];
+    const mouth = body[P.length - 1],
+      qe = at(P[P.length - 1][0], P[P.length - 1][1]),
+      /* a line that ends in water too small to be a body (a little pool): the cells past its end lie still, and the
+         river comes down to their level */
+      pool = !mouth && qe >= 0 && !!wet[qe];
     if (mouth) while (im > ih && body[im]) im--;
-    /* the level of the body it ends in: its water's own level (the bed's rule) over the last metres of the line */
+    /* the level of the body it ends in: its water's own level (the bed's rule) over the last metres of the line, or
+       a little pool's past the line's end */
     let end = /** @type {number | null} */ (null);
-    if (mouth) {
+    {
       let s = 0,
         c = 0;
-      for (let k = im + 1; k < Math.min(P.length, im + 1 + 6 * C); k++) {
-        if (at(P[k][0], P[k][1]) < 0) continue;
-        s += o.bed(P[k][0], P[k][1]);
-        c++;
-      }
+      if (mouth)
+        for (let k = im + 1; k < Math.min(P.length, im + 1 + 6 * C); k++) {
+          if (at(P[k][0], P[k][1]) < 0) continue;
+          s += o.bed(P[k][0], P[k][1]);
+          c++;
+        }
+      else if (pool)
+        for (let q = 0; q < n; q++)
+          if (wet[q] && si[q] === sn && sa[q] >= acc - 0.01) {
+            s += o.bed(((q % W2) + 0.5) / C, (Math.floor(q / W2) + 0.5) / C);
+            c++;
+          }
       if (c) end = s / c;
     }
+    /* the line's dry points (it may start or cross on a bank) take the nearest wet point's level: they must not
+       lift the river's head through the average */
     const beds = [],
       steps = [];
     let last = NaN;
@@ -396,22 +418,36 @@ function flowChannels(sc, F, si, sa, o) {
       const [x, z] = P[k],
         q = at(x, z);
       if (q >= 0 && wet[q]) last = o.bed(x, z);
-      beds.push(isNaN(last) ? o.bed(x, z) : last);
+      beds.push(last);
       steps.push(o.step(x, z));
     }
+    const first = beds.findIndex(v => !isNaN(v));
+    for (let k = 0; k < (first < 0 ? beds.length : first); k++)
+      beds[k] = first < 0 ? o.bed(P[ih + k][0], P[ih + k][1]) : beds[first];
     const prof = waterRiverProfile(beds, steps, end, PROFILE_HALF * C, ESTUARY_IN * C),
+      /* down a cliff in the ground (a drop of PROFILE_DROP or more that is no step of the land) the river keeps
+         following its bed, as before: a falls entry draws the fall there, and levels would make a stair of sheets */
+      cliff = new Uint8Array(prof.length);
+    for (let k = 1; k < prof.length; k++)
+      if (beds[k - 1] - beds[k] >= PROFILE_DROP && Math.abs(steps[k] - steps[k - 1]) < 0.05)
+        cliff[k - 1] = cliff[k] = 1;
+    const at0 = (/** @type {number} */ s) => Math.max(0, Math.min(prof.length - 1, Math.round(s * C) - ih)),
       k1 = Math.min(P.length - 1, im + 1),
       k0 = Math.max(0, im - 1),
       dl = Math.hypot(P[k1][0] - P[k0][0], P[k1][1] - P[k0][1]) || 1;
     return {
       sh: Sx[ih],
       sm: Sx[im],
+      len: acc,
+      pool,
       mouth,
       m: P[im],
       dir: [(P[k1][0] - P[k0][0]) / dl, (P[k1][1] - P[k0][1]) / dl],
       speed: st.speed || 1,
       th,
-      levAt: (/** @type {number} */ s) => prof[Math.max(0, Math.min(prof.length - 1, Math.round(s * C) - ih))],
+      /* the level at s, carried onto a cell's own step of the land (a terrace's edge stays where the land has it) */
+      levAt: (/** @type {number} */ s, /** @type {number} */ step) =>
+        cliff[at0(s)] ? NaN : prof[at0(s)] - steps[at0(s)] + step,
     };
   });
   /* the channel: running cells between the two bodies; the estuary's last metres */
@@ -420,12 +456,12 @@ function flowChannels(sc, F, si, sa, o) {
     const L = si[q] >= 0 ? lines[si[q]] : null;
     if (!L || (d[q * 4] === 0 && d[q * 4 + 1] === 0)) continue;
     const s = sa[q];
-    if (!wet[q] || s < L.sh - 0.25 || s > L.sm + 0.25 || cover(q) > L.th) {
+    if (!wet[q] || s < L.sh - 0.25 || s > L.sm + 0.25 || cover(q) > L.th || (L.pool && s >= L.len - 0.01)) {
       d[q * 4] = d[q * 4 + 1] = 0;
       continue;
     }
     cls[q] = 1;
-    lev[q] = L.levAt(s);
+    lev[q] = L.levAt(s, o.step(((q % W2) + 0.5) / C, (Math.floor(q / W2) + 0.5) / C));
     if (L.mouth && s > L.sm - ESTUARY_IN) {
       const f = Math.min(1, (s - (L.sm - ESTUARY_IN)) / ESTUARY_IN),
         sh = 1 - (1 - ESTUARY_COAST) * f * f * (3 - 2 * f);
