@@ -333,3 +333,36 @@ test('the instanced fragment shader: every per-picture uniform read from a varyi
   assert.ok(outs.length <= 15, `${outs.length} varyings`);
   for (const v of ['vUV', 'vW', 'vH', 'vPx', 'vRip']) assert.ok(outs.includes(v), v);
 });
+
+test('the reflection as instances: the runs are its old draws grouped by picture, with the old values', t => {
+  let gl = setup();
+  G.reflectionPass(fixture(), camera(), 400, 300, X);
+  const old = draws(gl.calls),
+    // the old loop's per-picture values, in order: right (as sent), uSelf, uFol, uNoRecv
+    sent = [];
+  for (const c of gl.calls) {
+    if (c[0] === 'uniform3fv' && c[1] === 'uRight') sent.push({ right: c[2] });
+    else if (c[0] === 'uniform3f' && c[1] === 'uSelf') sent[sent.length - 1].self = c.slice(2);
+    else if (c[0] === 'uniform2f' && c[1] === 'uFol') sent[sent.length - 1].fol = c.slice(2);
+    else if (c[0] === 'uniform1f' && c[1] === 'uNoRecv') sent[sent.length - 1].noRecv = c[2];
+  }
+  sent.shift(); // the pass's own uRight before the pictures
+  gl = setupInstanced();
+  G.reflectionPass(fixture(), camera(), 400, 300, X);
+  const now = draws(gl.calls);
+  assert.deepEqual(now.out, runs(old.out));
+  assert.equal(sent.length, old.out.filter(d => d[1] === 1).length);
+  const C = camera(),
+    H = 2 ** -10;
+  sent.forEach((v, i) => {
+    const u = G.unpackSpriteInstance(i),
+      R = u.cam ? C.right : u.right;
+    for (const j of [0, 2]) assert.ok(Math.abs(R[j] - v.right[j]) <= H, `right of ${i}`);
+    if (!u.cam) for (const j of [0, 2]) assert.ok(Math.abs(u.back[j] - C.back[j]) <= H, `back of ${i}`);
+    for (let j = 0; j < 3; j++) assert.ok(Math.abs(u.self[j] - v.self[j]) <= H, `self of ${i}`);
+    assert.deepEqual([...u.fol.map(round), u.noRecv], [...v.fol.map(round), v.noRecv]);
+    assert.deepEqual([u.fade, u.rim, u.emit, u.lit, u.flipN, u.fixed, u.dz], [1, 0, 0, 1, 1, 0, 0]);
+    assert.ok(Math.abs(u.shade - 0.3) < H);
+  });
+  t.assert.snapshot(record(gl).filter(c => !c.startsWith('bufferSubData')));
+});
