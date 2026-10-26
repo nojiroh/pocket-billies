@@ -23,7 +23,7 @@ import { healAll } from './logic/rules.js';
 import { relFavoursPay } from './logic/relations.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
-import { BANTER_HUB, storyPick, storyPickSaid } from './logic/story-pick.js';
+import { BANTER_HUB, banterOwner, storyPick, storyPickSaid } from './logic/story-pick.js';
 import { parseScript } from './logic/script-parse.js';
 import { runBase, runScript, saveDuringRun, storyTeamLookups } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
@@ -57,6 +57,7 @@ expose({
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
   storyPendingCheck: [() => storyPendingCheck, v => ((storyPendingCheck = v), provide({ storyPendingCheck }))],
   storyPickId: [() => storyPickId, v => (storyPickId = v)],
+  storyPickPlay: [() => storyPickPlay, v => ((storyPickPlay = v), provide({ storyPickPlay }))],
   storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
@@ -75,7 +76,15 @@ expose({
   storyWorldOK: [() => storyWorldOK, v => ((storyWorldOK = v), provide({ storyWorldOK }))],
 });
 /* eslint-enable no-func-assign */
-provide({ playStoryScript, storyFreshTake, storyHomeArrive, storyPendingCheck, storyScriptIds, storyWorldOK });
+provide({
+  playStoryScript,
+  storyFreshTake,
+  storyHomeArrive,
+  storyPendingCheck,
+  storyPickPlay,
+  storyScriptIds,
+  storyWorldOK,
+});
 /* to-module: end */
 function storyScriptLines(id) {
   const i = id.indexOf(':'),
@@ -108,7 +117,7 @@ function storyOwner(id) {
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
   if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
   /* a hub character's line is theirs (their person id is their `who`); the others name their speakers */
-  if (id.startsWith('banter:')) return (BANTER[key] && BANTER_HUB.includes(BANTER[key].who) && BANTER[key].who) || null;
+  if (id.startsWith('banter:')) return (BANTER[key] && banterOwner(BANTER[key].who)) || null;
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;
@@ -328,6 +337,12 @@ const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 export function storyPickTree(who, id) {
   const k = storyPickId(who, id);
   return k ? storyTree('banter:' + k) : null;
+}
+/* RL-S2 part B: the story director's line for who, picked and played (a thank-you after a gift); false when no line
+   fits */
+async function storyPickPlay(who) {
+  const k = storyPickId(who, null);
+  return k ? playStoryScript('banter:' + k) : false;
 }
 /* the line picked for who (marked said), or null */
 function storyPickId(who, id) {

@@ -320,7 +320,7 @@ async function talkFolk(f) {
 export async function talkChosen() {
   if (talkBox.on) return;
   /* RL-S2: a Bean for him first, when you have one */
-  await storyGiftOffer('chosen');
+  if (await storyGiftOffer('chosen')) return;
   /* RL-S1: the first talk after a run: his line picked on the way home, once, in place of his own */
   const fresh = storyFreshTake('chosen');
   await playStoryScript(fresh ? 'banter:' + fresh : 'story:chosen');

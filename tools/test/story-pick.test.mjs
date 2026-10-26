@@ -56,8 +56,8 @@ test('the script command pick plays the picked line inline, with the speaker of 
 
 test("the game's lines: each who has lines, leaders and agents always have one, every when reads", () => {
   const G = GAME_DATA.banter;
-  /* RL-S2: Blake's lines go in once the owner approves them */
-  for (const who of BANTER_WHO.filter(w => w !== 'rival'))
+  /* RL-S2: Blake's lines and the thank-yous go in once the owner approves them */
+  for (const who of BANTER_WHO.filter(w => w !== 'rival' && !w.startsWith('thanks_')))
     assert.ok(
       Object.values(G).some(b => b.who === who),
       who
@@ -122,4 +122,12 @@ test('the lost run scene: the first time in full (and marked), later a picked pa
   assert.equal(later.length, 2);
   assert.match(later[0], /^Chosen: /);
   assert.match(later[1], /^Hazel: /);
+});
+
+test('RL-S2 part B: a thank-you is its hub person’s line; a leader’s, an agent’s and Blake’s name their speakers', () => {
+  const { banterOwner } = modules['story-pick'];
+  assert.deepEqual(
+    ['chosen', 'thanks_hazel', 'thanks_juniper', 'leader', 'rival', 'back_lost', 'thanks_blake'].map(banterOwner),
+    ['chosen', 'hazel', 'juniper', null, null, null, null]
+  );
 });

@@ -14,6 +14,7 @@ import {
   selfTest,
   showPendingWindows,
   storyFreshTake,
+  storyPickPlay,
   storyRun,
   storyWorldOK,
   toast,
@@ -155,7 +156,8 @@ export function legendCheck() {
 const storyState = { pending: null };
 provide({ storyState }); /* to-module */
 /* RL-S2: in the hub, with a Bean and none given them since the last run, a hub person (relations.json) is offered one
-   before the talk (logic/relations.js relGift; the level's wardrobe piece comes with it). Resolves once answered */
+   before the talk (logic/relations.js relGift; the level's wardrobe piece comes with it). Resolves once answered: true
+   when their thank-you (banter.json thanks_<who>) was said, which stands for this talk */
 function storyGiftOffer(/** @type {string} */ who) {
   const M = saveData.meta;
   if (saveData.run || !M || relGiftBlock(M, who, RELATIONS)) return Promise.resolve(false);
@@ -173,13 +175,16 @@ function storyGiftOffer(/** @type {string} */ who) {
           f: () => {
             closeModal();
             const step = relGift(M, who, RELATIONS);
-            if (step) {
-              for (const L of relReached(who, step, RELATIONS))
-                if (L.wardrobe && saveData.wardrobe) saveData.wardrobe.owned[L.wardrobe] = 1;
-              toast(step.to > step.from ? `${name}: level ${step.to}` : `${name} liked that.`);
-              save();
-            }
-            done(!!step);
+            if (!step) return done(false);
+            for (const L of relReached(who, step, RELATIONS))
+              if (L.wardrobe && saveData.wardrobe) saveData.wardrobe.owned[L.wardrobe] = 1;
+            save();
+            if (step.to > step.from) toast(`${name}: level ${step.to}`);
+            /* RL-S2 part B: their thank-you (banter.json thanks_<who>, a level's line first) is this talk */
+            storyPickPlay('thanks_' + who).then(said => {
+              if (!said && step.to === step.from) toast(`${name} liked that.`);
+              done(said);
+            });
           },
         },
         {
@@ -197,7 +202,8 @@ function storyGiftOffer(/** @type {string} */ who) {
 /* someone who only talks (a map's people: Granny Juniper, Curator Nacre): their script */
 export async function personTalk(P) {
   if (!P || talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
-  if (P.who && !P.quest) await storyGiftOffer(P.who);
+  /* RL-S2: a Bean first, when you have one; their thank-you, if they have one, is this talk */
+  if (P.who && !P.quest && (await storyGiftOffer(P.who))) return;
   /* RL-S1: the first talk after a run: their line picked on the way home, once, in place of their own */
   const fresh = !P.quest && P.who && storyFreshTake(P.who);
   /* TW-3: a run town's quest giver offers the town's quest (quest-board.js) */
