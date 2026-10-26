@@ -65,7 +65,7 @@ expose({
   rigFromMeta: [() => rigFromMeta, v => (rigFromMeta = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
   rigParts: [() => rigParts, v => setRigParts(v)],
-  rigPose: [() => rigPose, v => (rigPose = v)],
+  rigPose: [() => rigPose, v => ((rigPose = v), provide({ rigPose }))],
   rigPreload: [() => rigPreload, v => (rigPreload = v)],
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
@@ -77,7 +77,7 @@ expose({
   smoothStepUnclamped: [() => smoothStepUnclamped],
 });
 /* eslint-enable no-func-assign */
-provide({ drawRig });
+provide({ drawRig, rigParts, rigPose });
 /* to-module: end */
 const affineMultiply = (m, n) => [
   m[0] * n[0] + m[2] * n[1],

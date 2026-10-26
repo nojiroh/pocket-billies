@@ -764,6 +764,8 @@ export interface Shop {
 /** people/<id>.json (person.schema.json): how a person looks (the old colour keys beside it are ignored) */
 export interface Person {
   look: PersonLook;
+  /** a creature person (Kappi): drawn from this rig instead of the look, ht metres tall */
+  creature?: { rig: string; ht?: number };
   style?: string;
   hair?: Color;
   hat?: Color;

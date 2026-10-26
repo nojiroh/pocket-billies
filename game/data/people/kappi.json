@@ -27,5 +27,6 @@
    "neck": "nametag"
   },
   "colors": {"sweater":["#3F8A63"],"trousers":["#4A5260"],"oxfords":["#5A3A24"]}
- }
+ },
+ "creature": {"rig":"kappi","ht":0.8}
 }
