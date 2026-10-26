@@ -171,6 +171,7 @@ export function lightContext(o) {
     shLift,
     shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 32) : 0,
     shSteps: engineSetting('shadows', 'pixelSteps') ?? 2,
+    shFix: (engineSetting('shadows', 'steadyEdges') ? 1 : 0) + (engineSetting('shadows', 'lampFix') ? 2 : 0),
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,

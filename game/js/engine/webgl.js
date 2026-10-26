@@ -284,7 +284,7 @@ float shadowAtN(vec3 p,vec3 n,float bias){if(uShadowOn<.5)return cloudShade(p);v
  if(c.x<.01||c.y<.01||c.x>.99||c.y>.99||c.z>1.){if(uShadow2On<.5)return cloudShade(p);vec4 q2=uShadowM2*vec4(p,1.);vec3 c2=q2.xyz/q2.w*.5+.5;if(c2.x<0.||c2.y<0.||c2.x>1.||c2.y>1.||c2.z>1.)return cloudShade(p);
   float rot2=lhash(c2.xy*913.)*6.283;mat2 R2=mat2(cos(rot2),sin(rot2),-sin(rot2),cos(rot2));float s2=0.;for(int i=0;i<6;i++){s2+=texture(uShadow2,vec3(c2.xy+R2*PD[i]*uShadowTexel2*2.2,c2.z-bias*1.5));}s2/=6.;if(uShPx>0.&&uShSteps>0.)s2=clamp(floor(s2*uShSteps+shBayer(cell)),0.,uShSteps)/uShSteps;return mix(1.,s2,uShStr)*cloudShade(p);}
  float rot=lhash(c.xy*913.)*6.283;mat2 R=mat2(cos(rot),sin(rot),-sin(rot),cos(rot));
- int nb=uShLite>.5?4:8,np=uShLite>.5?6:12;float bs=0.,bn=0.;for(int i=0;i<8;i++){if(i>=nb)break;float d=texture(uShadowD,c.xy+R*PD[i]*uShadowTexel*7.).r;if(d<c.z-bias){bs+=d;bn+=1.;}}
+ int nb=uShLite>.5?4:8,np=uShLite>.5?6:12;float bs=0.,bn=0.;for(int i=0;i<8;i++){if(i>=nb)break;float d=texture(uShadowD,c.xy+R*PD[i]*uShadowTexel*(mod(uShFix,2.)>.5?(uShPx>0.?8.:14.):7.)).r;if(d<c.z-bias){bs+=d;bn+=1.;}}
  if(bn<.5)return cloudShade(p);
  float r=clamp((c.z-bs/bn)*uShPen,1.2,uShPx>0.?8.:14.);float s=0.;for(int i=0;i<12;i++){if(i>=np)break;s+=texture(uShadow,vec3(c.xy+R*PD[i]*uShadowTexel*r,c.z-bias));}
  s/=float(np);if(uShPx>0.&&uShSteps>0.)s=clamp(floor(s*uShSteps+shBayer(cell)),0.,uShSteps)/uShSteps;
@@ -292,9 +292,11 @@ float shadowAtN(vec3 p,vec3 n,float bias){if(uShadowOn<.5)return cloudShade(p);v
 float shadowAt(vec3 p,float bias){return shadowAtN(p,vec3(0.,1.,0.),bias);}
 float contactAO(vec3 p){float a=1.;for(int i=0;i<64;i++){if(i>=uNAO)break;vec4 b=uAO[i];vec2 d=(p.xz-b.xy)/b.zw;float e=dot(d,d);if(e<1.){float k=1.-e;a=min(a,1.-k*k*uContact);}}return a;}
 /* v43: the two nearest lamps have shadow maps of their own (light.js beginLampShadow) */
-float lampVis(int i,vec3 p){vec4 q=(i==0?uLampM0:uLampM1)*vec4(p,1.);if(q.w<=.01)return 1.;vec3 c=q.xyz/q.w*.5+.5;if(c.x<0.||c.y<0.||c.x>1.||c.y>1.||c.z>1.)return 1.;float s=i==0?texture(uLampSh0,vec3(c.xy,c.z-.0025)):texture(uLampSh1,vec3(c.xy,c.z-.0025));return .25+.75*s;}
+float lampVis(int i,vec3 p){vec4 q=(i==0?uLampM0:uLampM1)*vec4(p,1.);if(q.w<=.01)return 1.;vec3 c=q.xyz/q.w*.5+.5;if(c.x<0.||c.y<0.||c.x>1.||c.y>1.||c.z>1.)return 1.;/* Lamp shadows hold (bit 2): the bias as 5 cm + 1.2% of the distance in metres, turned into this perspective map's depth (near .25, far 24: light.js) */
+ float b=.0025;if(mod(floor(uShFix*.5),2.)>.5){float z=12./(24.25-(c.z*2.-1.)*23.75);b=(.05+.012*z)*.25263/(z*z);}
+ float s=i==0?texture(uLampSh0,vec3(c.xy,c.z-b)):texture(uLampSh1,vec3(c.xy,c.z-b));return .25+.75*s;}
 vec3 points(vec3 p,vec3 n){vec3 a=vec3(0.);for(int i=0;i<16;i++){if(i>=uNL)break;vec4 L=uLP[i];vec3 d=L.xyz-p;float l=length(d),r=abs(L.w),x=clamp(l/r,0.,1.);float f=1.-x*x;f=f*f/(1.+l*l*.6);
- if(L.w<0.){if(uLC[i].w>5.){float an=uLC[i].w-10.;f*=smoothstep(-.5,.2,dot(p.xz-L.xz,vec2(cos(an),sin(an))));}else if(p.z>L.z+.3)f=0.;}if(i<uNLS&&f>0.)f*=lampVis(i,p);a+=uLC[i].rgb*f*(.3+.7*max(dot(n,d/max(l,.001)),0.));}return a;}
+ if(L.w<0.){if(uLC[i].w>5.){float an=uLC[i].w-10.;f*=smoothstep(-.5,.2,dot(p.xz-L.xz,vec2(cos(an),sin(an))));}else if(p.z>L.z+.3)f=0.;}if(i<uNLS&&f>0.)f*=lampVis(i,p);else if(uLC[i].w<-.5&&f>0.){int k=int(-uLC[i].w-.5);if(k<uNLS)f*=lampVis(k,p);}a+=uLC[i].rgb*f*(.3+.7*max(dot(n,d/max(l,.001)),0.));}return a;}
 /* in shadow the light takes the shadow colour, with a little coloured bounce so shade never turns to mud */
 /* v43: the ambient light as nine spherical-harmonic terms of the sky, the ground's bounce and a broad warm lobe on the
    sun's side (light.js skyHarmonics): a face turned to the sky is sky-coloured, one turned down takes the ground's bounce,

@@ -73,7 +73,7 @@ function lightEntry(S, src, kind) {
       want: false,
       fade: 0,
       base: [0, 0, 0],
-      out: { p: [0, 0, 0], r: 0, c: [0, 0, 0], front: false, fn: null, pool: 0, own: null },
+      out: { p: [0, 0, 0], r: 0, c: [0, 0, 0], front: false, fn: null, pool: 0, own: null, src: null },
     })
   );
 }
@@ -167,6 +167,7 @@ export function pickStableLights(S, L, cx, cz, now, max = 16, inView = null) {
       o.fn = l.fn || null;
       o.pool = l.pool || 0;
       o.own = l.own || null;
+      o.src = l.src ?? null;
       e.base[0] = l.c[0];
       e.base[1] = l.c[1];
       e.base[2] = l.c[2];

@@ -229,7 +229,9 @@ test('LIGHT_GLSL declares only the block, the shadow samplers and uFol', () => {
   assert.ok(LIGHT_GLSL.includes(FRAME_BLOCK_GLSL));
 });
 
-test('the block declares every light value the old path had (uSH as vec4 slots), and nothing else but padding', () => {
+// added to the block after C3 (in a padding slot, so its size and offsets stay): the shadow fixes' bits
+const NEW_MEMBERS = ['uShFix'];
+test('the block declares every light value the old path had (uSH as vec4 slots), and nothing else but padding and the new members', () => {
   const L = lightUniforms(),
     B = FRAME_BLOCK_LAYOUT.members;
   for (const [name, [type, len]] of Object.entries(L)) {
@@ -237,7 +239,8 @@ test('the block declares every light value the old path had (uSH as vec4 slots),
     assert.ok(B[name], name + ' missing from the block');
     assert.deepEqual([B[name][1], B[name][2]], name === 'uSH' ? ['vec4', 9] : [type, len], name);
   }
-  for (const name of Object.keys(B)) assert.ok(L[name] || /Pad/.test(name), name + ' is not a light uniform');
+  for (const name of Object.keys(B))
+    assert.ok(L[name] || /Pad/.test(name) || NEW_MEMBERS.includes(name), name + ' is not a light uniform');
 });
 
 test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints at the end; 2208 bytes', () => {
@@ -350,4 +353,24 @@ test('packing: a window light that knows its way out (lights.windowFacing) carri
   assert.ok(Math.abs(Math.cos(w0 - 10) - fn[0]) < 1e-6 && Math.abs(Math.sin(w0 - 10) - fn[1]) < 1e-6);
   assert.equal(w1, 1, 'any other light keeps 1');
   assert.ok(f[FRAME_BLOCK_LAYOUT.members.uLP[0] / 4 + 3] < 0, 'a window light is still marked by a negative range');
+});
+
+test('packing: the shadow fixes as bits, and a lamp’s pool takes its lamp’s shadow map with Lamp shadows hold', () => {
+  const lamp = { p: [0, 3, 0], r: 6, c: [1, 1, 1], src: 'L1' },
+    pool = { p: [0, 0.35, 0], r: 4, c: [1, 1, 1], pool: 1, src: 'L1' },
+    other = { p: [5, 0.35, 5], r: 4, c: [1, 1, 1], pool: 1, src: 'L2' },
+    pack = shFix => {
+      const buf = new ArrayBuffer(FRAME_BLOCK_BYTES),
+        f = new Float32Array(buf),
+        n = new Int32Array(buf);
+      packFrameBlock(fixture({ lights: [lamp, pool, other], lampSh: [{ d: 'lamp0', vp: mat(3) }], shFix }), f, n);
+      return f;
+    },
+    w = (f, i) => f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + i * 4 + 3];
+  const on = pack(3),
+    off = pack(1);
+  assert.equal(on[FRAME_BLOCK_LAYOUT.members.uShFix[0] / 4], 3);
+  assert.equal(w(on, 1), -1, 'the pool uses lamp map 0');
+  assert.equal(w(on, 2), 1, 'a pool whose lamp has no map: plain');
+  assert.equal(w(off, 1), 1, 'without the fix the pool is plain, as before');
 });
