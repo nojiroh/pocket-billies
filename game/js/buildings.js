@@ -21,6 +21,7 @@ import {
   COMMON_GLSL,
   LIGHT_GLSL,
   LOOK_GLSL,
+  SURFACE_MATERIALS,
   bindQuad,
   ensurePrograms,
   gpuBuffer,
@@ -237,13 +238,13 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW)
 precision highp float;layout(location=0) in vec2 bCIn;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec2 uLift;out vec2 vUV;out vec3 vW;${COMMON_GLSL}
 void main(){vec3 p=uO+uA*bCIn.x+uB*bCIn.y;p.y+=curveY(uLift);vW=p;vUV=vec2(bCIn.x,1.-bCIn.y);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform vec4 uFMat;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;${ROCK_GLSL}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  if(c.a>.99)c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),1.-vUV.y,uBP);
  vec3 nn=texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uR*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uN*max(nn.z,.2));
  float sh=shadowAtN(vW+uN*.06,uN,.001),ao=mix(contactAO(vW),1.,clamp((vW.y-uBaseY)/.7,0.,1.)),occ=min(sh,ao);
  float nl=dot(n,uSunDir),dif=mix(1.,max((nl+.1)/1.1,0.)*.75+.45,.55);vec3 v=normalize(uEye-vW);float sp=pow(max(dot(n,normalize(uSunDir+v)),0.),36.)*.2*occ;
- vec3 lit=shade(c.rgb,normalize(vec3(n.x,max(n.y,.25),n.z)),vW,sh,ao,vec4(.2,36.,0.,.6),0.);
+ vec3 lit=shade(c.rgb,normalize(vec3(n.x,max(n.y,uFMat.z),n.z)),vW,sh,ao,vec4(uFMat.xy,0.,uFMat.w),0.);
  vec3 col=c.a<.99?mix(c.rgb*.55,lit,.45)*(1.-.45*uGlassN)+uSunCol*sp*2.:lit;o=vec4(fogit(col,vW),c.a<.99?c.a*(1.-.5*uGlassN):1.);}`,
   ],
   bshadow: [
@@ -1646,6 +1647,14 @@ function drawBuildingsUnguarded(C, X, items, fades, part) {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.uniform1i(p.U.uTex, 0);
   gl.uniform1i(p.U.uNrm, 1);
+  /* Fronts lit as their material (world.frontMaterial): the building material's shine and wrap (SURFACE_MATERIALS), and
+     bumps may face a little downward; off: as before (wrap .6, and no bump facing below a quarter up). [spec, shininess,
+     lowest normal y, wrap] */
+  {
+    const M = SURFACE_MATERIALS.building;
+    if (engineSetting('world', 'frontMaterial')) gl.uniform4f(p.U.uFMat, M.spec, M.shin, -0.2, M.wrap);
+    else gl.uniform4f(p.U.uFMat, 0.2, 36, 0.25, 0.6);
+  }
   gl.uniform3f(p.U.uN, 0, 0, -1);
   gl.uniform3f(p.U.uR, 1, 0, 0);
   for (const it of L) {
