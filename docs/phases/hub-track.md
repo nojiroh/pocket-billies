@@ -113,7 +113,7 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-6 | Natural fence | The bending post-and-rail fence | HB-4b | 1 |
 | HB-7 | Station and trains | The station, platform and sky rail models; one train per region theme; the station's sheet takes "Start a run" and the Crest upgrades; the airship scenery only | HB-4b | 1-2 |
 | HB-8 | Departure and return | Board, climb the rail, the portal opens, the train flies in, the carriage loading screen; the return out of the portal (win and loss) | HB-2, HB-7 | 1-2 |
-| HB-10a | Square: shape and fountain | The lobed ~12 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
+| HB-10a | Square: shape and fountain | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
 | HB-10b | Square: edges and market | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
 | HB-10c | Square: people | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
 | HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
@@ -497,7 +497,7 @@ and the front plots here (the old HB-10 row).
 **Decided** (the owner, 2026-10-26)
 - Mood: a busy solarpunk market. Bureau: hints only (a notice, a closed kiosk, a watcher).
 - The middle: a **fountain** (the well goes), lit from below at night, changing per chapter.
-- About **12 m with a lobed outline** (WA-10 had made it ~8 m at the owner's earlier word; confirm in HB-10a).
+- About **10 m with a lobed outline** (the owner, 2026-10-26: between WA-10's ~8 m and the generator's 12 m).
 - Layout in two steps: hand patches now (the square moves toward the buildings), then HB-10f's reproducible rebuild
   brings the store, inn and library to front it.
 - A framed view from the square to the sky rail and the portal.
@@ -513,7 +513,6 @@ and the front plots here (the old HB-10 row).
 - Order: look first (HB-10a, b), then people, then reactions, festivals, and the rebuild.
 
 **Ask me before** (recommendation first, in the session that needs it)
-- HB-10a: the square's size, 12 m (rec, as chosen) / ~8 m (WA-10's).
 - HB-10d: the coin gamble's cost, odds and effects (rec: a small stake, mostly small boons or a joke, a rare big win
   or a small curse, once per return).
 - HB-10d: the fountain's look per chapter.

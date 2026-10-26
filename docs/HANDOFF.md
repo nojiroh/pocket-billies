@@ -9,7 +9,7 @@ with online research and questions). Docs only, no code.
   and the Ask me befores; ROADMAP's hub line.
 - Found: the square holds 8 props within 18 m and no building fronts it (store 27 m, inn 41 m); 17 town furniture
   models exist unused on the hub.
-- Open: the owner chose a ~12 m square, while WA-10 made it ~8 m at their earlier word: HB-10a confirms first.
+- The square's size: the owner settled on about 10 m (between WA-10's ~8 m and the generator's 12 m).
 - Next: HB-10a on `track/hub` (shape and fountain).
 
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26

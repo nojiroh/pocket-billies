@@ -163,7 +163,7 @@ town node needs it.
   the run's sky train glides into Skyline Station, climbs the sky rail into the tear, a white-out into the carriage's
   loading screen while the run's places are made; home out of the tear, gold after a win, battered after a loss; no
   airship flight for runs) done 2026-10-26 on `art/hub-departure`, waiting on the owner's phone test. HB-9 next. HB-10
-  (the square alive: a lobed 12 m market square round a fountain, edges, people by time of day, reactions,
+  (the square alive: a lobed 10 m market square round a fountain, edges, people by time of day, reactions,
   festivals, then a reproducible town rebuild) planned 2026-10-26 as HB-10a-f. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
