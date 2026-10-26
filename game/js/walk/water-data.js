@@ -467,17 +467,23 @@ export function waterKindLookup(sc, F = walkRenderer.flowMap) {
     },
     open =
       WATER_KIND_LOOKS[def].sea && T.length
-        ? waterOpenSea(w, sc.h, (i, j) => {
-            if (!wet(i, j)) return false;
-            if (!F || F.W2 !== w * 2) return true;
-            /* WA-10: a channel's running cells join nothing (an estuary's plume is the sea's own water) */
-            if (F.cls) {
-              const c = F.cls[(j * 2 + 1) * F.W2 + i * 2 + 1];
-              return c !== 1 && c !== 2;
-            }
-            const f = flowMapAt(F, i + 0.5, j + 0.5);
-            return f[0] === 0 && f[1] === 0;
-          })
+        ? waterOpenSea(
+            w,
+            sc.h,
+            (i, j) => {
+              if (!wet(i, j)) return false;
+              if (!F || F.W2 !== w * 2) return true;
+              /* WA-10: a channel's running cells join nothing (an estuary's plume is the sea's own water) */
+              if (F.cls) {
+                const c = F.cls[(j * 2 + 1) * F.W2 + i * 2 + 1];
+                return c !== 1 && c !== 2;
+              }
+              const f = flowMapAt(F, i + 0.5, j + 0.5);
+              return f[0] === 0 && f[1] === 0;
+            },
+            /* WA-10: wet sand the tide covers (WA-4's tide pools stay the sea's) */
+            (i, j) => (T[sc.h - 1 - j] || '')[i] === 'S'
+          )
         : null,
     POND = WATER_KIND_INDEX.pond,
     LAKE = WATER_KIND_INDEX.lake;

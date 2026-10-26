@@ -177,11 +177,13 @@ const OPEN_SEA_LAKE = 600;
  * Which still water joins the open sea (water track WA-10): on a coast, only water that reaches the map's edge through
  * still water is the sea; a pond or a lake behind the beach is not (it took the sea's swell and surf before). Running
  * water (a river) does not join two bodies, so a pond a river drains into the sea stays a pond. Per 1 m tile: 1 the
- * open sea, 2 an enclosed pond, 3 an enclosed lake (over OPEN_SEA_LAKE tiles), 0 dry or running.
+ * open sea, 2 an enclosed pond, 3 an enclosed lake (over OPEN_SEA_LAKE tiles), 0 dry or running. Wet sand the tide
+ * covers joins water as the sea does at high tide, so a tide pool on a flat (WA-4) stays the sea's.
  * @param {number} w @param {number} h tiles across and down (j counted from the south, as the walk view's z)
  * @param {(i: number, j: number) => boolean} still tile i, j holds still water
+ * @param {(i: number, j: number) => boolean} [tidal] tile i, j is wet sand (joins, but is not water)
  */
-export function waterOpenSea(w, h, still) {
+export function waterOpenSea(w, h, still, tidal = () => false) {
   const n = w * h,
     out = new Uint8Array(n),
     seen = new Uint8Array(n),
@@ -196,9 +198,11 @@ export function waterOpenSea(w, h, still) {
     const i0 = q0 % w,
       j0 = (q0 - i0) / w;
     if (!still(i0, j0)) continue;
-    const comp = [q0];
+    const comp = [q0],
+      join = (/** @type {number} */ i, /** @type {number} */ j) => still(i, j) || tidal(i, j);
     seen[q0] = 1;
-    let edge = false;
+    let edge = false,
+      nw = 0;
     for (let k = 0; k < comp.length; k++) {
       const q = comp[k],
         i = q % w,
@@ -209,13 +213,14 @@ export function waterOpenSea(w, h, still) {
           jj = j + b;
         if (ii < 0 || jj < 0 || ii >= w || jj >= h) continue;
         const m = jj * w + ii;
-        if (seen[m] || !still(ii, jj)) continue;
+        if (seen[m] || !join(ii, jj)) continue;
         seen[m] = 1;
         comp.push(m);
       }
     }
-    const v = edge ? 1 : comp.length > OPEN_SEA_LAKE ? 3 : 2;
-    for (const q of comp) out[q] = v;
+    for (const q of comp) if (still(q % w, Math.floor(q / w))) nw++;
+    const v = edge ? 1 : nw > OPEN_SEA_LAKE ? 3 : 2;
+    for (const q of comp) if (still(q % w, Math.floor(q / w))) out[q] = v;
   }
   return out;
 }

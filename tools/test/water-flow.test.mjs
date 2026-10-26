@@ -163,6 +163,15 @@ test('WA-10: only still water joined to the edge is the open sea; a pond behind 
   /* the same pond with no river between: still water all the way, so it is the sea's */
   const joined = waterOpenSea(w, h, wet);
   assert.equal(joined[12 * w + 15], 1);
+  /* a tide pool joined to the sea over wet sand stays the sea's; the sand itself is not water */
+  const pool = waterOpenSea(
+    w,
+    h,
+    (i, j) => j < 4 || Math.hypot(i - 5, j - 8) < 2,
+    (i, j) => i < 9 && j >= 4 && j < 11 && !(Math.hypot(i - 5, j - 8) < 2)
+  );
+  assert.equal(pool[8 * w + 5], 1, 'the tide pool');
+  assert.equal(pool[5 * w + 1], 0, 'the wet sand');
   /* a big enclosed body is a lake */
   const lake = waterOpenSea(60, 60, (i, j) => i > 5 && j > 5 && i < 54 && j < 54);
   assert.equal(lake[30 * 60 + 30], 3);
