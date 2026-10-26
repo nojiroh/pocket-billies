@@ -329,7 +329,12 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h, true);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
-    gl.uniform1f(U.uT, engineSetting('color', 'bloomThreshold'));
+    /* Even bloom (color.bloomEven): the threshold as it reads after the exposure */
+    const ev = !!engineSetting('color', 'bloomEven');
+    gl.uniform1f(
+      U.uT,
+      engineSetting('color', 'bloomThreshold') / (ev ? Math.max(0.2, engineSetting('color', 'exposure') || 1) : 1)
+    );
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     chain.push(gpuState.fb.b0);
     for (let i = 1; i < (o.bloomN || 5); i++) {
@@ -434,7 +439,8 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
   gl.uniform4f(U.uDofB, F.band[0], F.band[1], F.band[2], F.band[3]);
   gl.uniform1f(U.uDofView, o.dofView ? 1 : 0);
-  gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
+  /* Even bloom: each level the chain adds is one more copy, so fewer levels (the slower quality steps) scale up to five's */
+  gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 * (engineSetting('color', 'bloomEven') ? 5 / (o.bloomN || 5) : 1) : 0);
   gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));
   if (U.uTone) {
     const tm = engineSetting('color', 'tone') || 'soft';
