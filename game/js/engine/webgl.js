@@ -41,6 +41,7 @@ expose({
   glLoseArmed: [() => glLoseArmed, v => (glLoseArmed = v)],
   gpuBuffer: [() => gpuBuffer],
   gpuCountsReset: [() => gpuCountsReset, v => (gpuCountsReset = v)],
+  gpuEntry: [() => gpuEntry],
   gpuFrame: [() => gpuFrame, v => ((gpuFrame = v), provide({ gpuFrame }))],
   gpuFramebuffer: [() => gpuFramebuffer],
   gpuFree: [() => gpuFree, v => (gpuFree = v)],
@@ -57,6 +58,7 @@ expose({
   gpuState: [() => gpuState],
   gpuTexture: [() => gpuTexture],
   gpuTrack: [() => gpuTrack, v => (gpuTrack = v)],
+  gpuTypeOf: [() => gpuTypeOf, v => (gpuTypeOf = v)],
   gpuVao: [() => gpuVao],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
@@ -738,6 +740,7 @@ const GPU_MAKE = {
 const gpuRes = {
   /* handle -> { type, kind, bytes, gen } */
   at: new WeakMap(),
+  flat: new Map(),
   /* per kind, this generation: live objects, their bytes, objects collected without being freed */
   n: {},
   bytes: {},
@@ -772,11 +775,31 @@ function gpuTrack(h, type, kind, bytes) {
   if (!h) return h;
   if (gpuRes.n[kind] === undefined) kind = 'other';
   const e = { type, kind, bytes, gen: gpuState.gen, freed: false };
-  gpuRes.at.set(h, e);
+  if (typeof h === 'object') {
+    gpuRes.at.set(h, e);
+    if (gpuRes.gone) gpuRes.gone.register(h, e, h);
+  } else gpuRes.flat.set(h, e);
   gpuRes.n[kind]++;
   gpuRes.bytes[kind] += bytes;
-  if (gpuRes.gone) gpuRes.gone.register(h, e, h);
   return h;
+}
+/* a handle's entry (a test's stand-in context hands out strings: those are kept apart) */
+const gpuEntry = h => (typeof h === 'object' ? gpuRes.at.get(h) : gpuRes.flat.get(h));
+/* the type of a handle made before (or outside) the registry */
+function gpuTypeOf(gl, h) {
+  for (const [t, f] of [
+    ['buffer', 'isBuffer'],
+    ['texture', 'isTexture'],
+    ['vao', 'isVertexArray'],
+    ['framebuffer', 'isFramebuffer'],
+    ['renderbuffer', 'isRenderbuffer'],
+    ['program', 'isProgram'],
+    ['shader', 'isShader'],
+    ['query', 'isQuery'],
+    ['sampler', 'isSampler'],
+  ])
+    if (gl[f] && gl[f](h)) return t;
+  return null;
 }
 const gpuBuffer = (kind, bytes) => gpuMake('buffer', kind, bytes);
 const gpuTexture = (kind, bytes) => gpuMake('texture', kind, bytes);
@@ -784,7 +807,7 @@ const gpuVao = kind => gpuMake('vao', kind);
 const gpuFramebuffer = kind => gpuMake('framebuffer', kind);
 /* the object was filled again (bufferData, texImage2D): its new size */
 function gpuSized(h, bytes) {
-  const e = h && gpuRes.at.get(h);
+  const e = h && gpuEntry(h);
   if (!e || e.freed || e.gen !== gpuState.gen) return;
   gpuRes.bytes[e.kind] += bytes - e.bytes;
   e.bytes = bytes;
@@ -792,22 +815,22 @@ function gpuSized(h, bytes) {
 /* deleted now (an object of a lost or older context is only forgotten: deleting it does nothing) */
 function gpuFree(h) {
   if (!h) return;
-  const e = gpuRes.at.get(h),
+  const e = gpuEntry(h),
     gl = gpuState.gl;
   if (e) {
     if (e.freed) return;
     e.freed = true;
     gpuRes.at.delete(h);
-    if (gpuRes.gone) gpuRes.gone.unregister(h);
+    gpuRes.flat.delete(h);
+    if (gpuRes.gone && typeof h === 'object') gpuRes.gone.unregister(h);
     if (e.gen !== gpuState.gen) return;
     gpuRes.n[e.kind]--;
     gpuRes.bytes[e.kind] -= e.bytes;
   }
   if (!gl || gpuState.lost) return;
-  const T = e ? e.type : null,
-    del = T ? GPU_MAKE[T][1] : null;
   try {
-    if (del) gl[del](h);
+    const T = e ? e.type : gpuTypeOf(gl, h);
+    if (T) gl[GPU_MAKE[T][1]](h);
   } catch (err) {}
 }
 /* H2: freed a couple of frames from now, once whatever replaced it has drawn (the frames in flight may still read it) */
@@ -837,6 +860,7 @@ function gpuOnRestore(name, fn) {
 function gpuNewGeneration() {
   gpuState.gen = (gpuState.gen || 0) + 1;
   gpuRes.retired = [];
+  gpuRes.flat.clear();
   gpuCountsReset();
 }
 /* the restored event: every owner drops what it held */
