@@ -207,6 +207,11 @@ function place(B, L) {
   if (B.k === 'well') q.z = r2(L.z);
   if (Math.abs(rot) > 0.05) q.rot = rot;
   else delete q.rot;
+  /* HB-10a: the fountain in the middle of the square, where the old town's well stood (round: no turn) */
+  if (B.k === 'well') {
+    q.k = 'fountain';
+    delete q.rot;
+  }
   if (bx && (bx[0] * s > L.w + 0.01 || bx[1] * s > L.d + 0.01))
     throw new Error(`${B.k} (${bx[0] * s} x ${bx[1] * s} m) doesn't fit its ${L.k} plot (${L.w} x ${L.d} m)`);
   return q;
@@ -311,7 +316,8 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
     dx = well.x - lab.x,
     dz = well.z - lab.z,
     l = Math.hypot(dx, dz) || 1;
-  props.push({ ...S, x: r2(well.x + (dx / l) * 4.5), z: r2(well.z + (dz / l) * 4.5 + 2.5) });
+  /* HB-10a: 4.5 m out, clear of the fountain's basin (tools/patch-copperleaf-square.mjs puts it there too) */
+  props.push({ ...S, x: r2(well.x + (dx / l) * 4.5), z: r2(well.z + (dz / l) * 4.5) });
 }
 /* a few of the old town's trees on open ground in the town, away from its plots and streets */
 {

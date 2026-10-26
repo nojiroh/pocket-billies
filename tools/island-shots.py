@@ -138,12 +138,17 @@ def main():
                 ('station-near', 'Skyline Station and the rail out of its right-hand end, close', 'train_station', [4, 9, -22], [8, 2, 3]),
                 ('lighthouse', 'The lighthouse on the cove', 'lighthouse', [-14, 10, -18], [0, 4, 0]),
                 ('windmill', 'The windmill by the farm', 'windmill', [-12, 8, -16], [0, 3, 0]),
-                ('town', 'The town round the square, from above', 'well', [-10, 34, -40], [0, 0, 4])):
+                ('town', 'The town round the square, from above', 'fountain', [-10, 34, -40], [0, 0, 4]),
+                # HB-10a: the framed view from the square's south-west edge to the sky rail and the portal (north-east)
+                ('square-portal', 'From the square toward the sky rail and the portal', 'fountain', [-7, 1.7, -5], [60, 12, 40]),
+                ('square-near', 'The square and its fountain, close', 'fountain', [-6, 5, -10], [0, 0.5, 0])):
             p = pg.evaluate(f"(walkView.sc.props.find(p=>p.k==='{k}')||null)")
             if not p or not want(name): continue
             # stand beside it (the walk view draws what is near you), then the free camera
             pg.evaluate('delete walkView.opt.look')
-            fast.stand(pg, *pg.evaluate(f"walkablePointNear({p['x']},{p['z']})"), frames=4)
+            # beside a fountain, not in its basin (HB-10a: the hub's own spot is 3 m east of it)
+            sx = p['x'] + (3 if k == 'fountain' else 0)
+            fast.stand(pg, *pg.evaluate(f"walkablePointNear({sx},{p['z']})"), frames=4)
             y = pg.evaluate(f"standingHeightAt({p['x']},{p['z']})")
             pg.evaluate(f"walkView.opt.look=()=>({{eye:[{p['x'] + eye[0]},{y + eye[1]},{p['z'] + eye[2]}],tgt:[{p['x'] + tgt[0]},{y + tgt[1]},{p['z'] + tgt[2]}],fov:55}})")
             shot(name, label, [p['x'], p['z']])
