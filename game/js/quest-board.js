@@ -78,7 +78,7 @@ function questOfferHere() {
 }
 /** whether the giver shows a "!" (their offer is open); RS-2: the resident, while they can be met (not invited, their
  * favour not held, and offered here) @param {any} P the person */
-function questMarked(P) {
+export function questMarked(P) {
   const run = saveData.run;
   if (P && P.resident && run) {
     const F = QUESTS.favours[P.resident];

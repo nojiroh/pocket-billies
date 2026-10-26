@@ -20,6 +20,7 @@ import {
   MOVES,
   PERKS,
   QUESTS,
+  RESIDENTS,
   RULES,
   SET_PIECES,
   SHOPS,
@@ -36,6 +37,7 @@ import { ranchNow } from './logic/ranch-clock.js';
 import { ranchLevel, ranchSlots, ranchTrainStart } from './logic/ranch.js';
 import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
+import { residentFirstTowns } from './logic/residents.js';
 import { runRestore, validRun } from './logic/run-state.js';
 import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
@@ -114,7 +116,7 @@ import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encounterOpen } from './encounter-screen.js';
-import { questData } from './quest-board.js';
+import { questData, questMarked, residentTalk } from './quest-board.js';
 import { ranchOpen } from './ranch-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
 import { storyPickTree } from './story-stage.js';
@@ -1530,6 +1532,8 @@ async function runFullTest(mode) {
             uiState.mq = [];
             uiState.tab = 'walk';
             if (s.run) runRestore(s);
+            /* RS-2: nobody lives in Copperleaf on the copy, so the run's resident is the free first one */
+            s.meta.residents = {};
             s.trip = { node: START_NODE, plan: [] };
             s.team.forEach(m => {
               m.hp = maxHp(m);
@@ -1616,6 +1620,28 @@ async function runFullTest(mode) {
             if (offer && !questTake(saveData.run, town - 1, offer, QUESTS)) throw new Error('the quest wasn’t taken');
             if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
               throw new Error('a run with a quest fails validRun');
+            /* RS-2: Dottie, the free first resident, stands in every town of the first all-town row with a gold "!";
+               talking to her (her lines tapped through, Yes picked) invites her, and the save's check keeps it */
+            const firstTowns = residentFirstTowns(saveData.run.map),
+              dottieScene = firstTowns.length ? mapById(LOCATIONS[runWorldNode(firstTowns[0])].mapId) || {} : {},
+              dottie = (dottieScene.people || []).find((/** @type {any} */ p) => p.resident);
+            if (!dottie || dottie.resident !== 'dottie' || dottie.name !== RESIDENTS.dottie.name)
+              throw new Error('Dottie isn’t in the first town row');
+            if (typeof questMarked !== 'function' || !questMarked(dottie)) throw new Error('Dottie has no "!"');
+            let talked = false;
+            residentTalk(dottie).then(() => (talked = true));
+            if (
+              !(await wait(() => {
+                if (talkBox.choice) talkBox.choice.pick(0);
+                else if (talkBox.cur) talkBox.cur.tap();
+                return talked;
+              }, 15000))
+            )
+              throw new Error('talking to Dottie never ended');
+            if (saveData.run.invited !== 'dottie') throw new Error('Yes didn’t invite Dottie');
+            if (questMarked(dottie)) throw new Error('Dottie still has her "!" once invited');
+            if (!validRun(JSON.parse(JSON.stringify(saveData.run))))
+              throw new Error('a run with a resident invited fails validRun');
             /* RL-12: the town's shop sells the day's Perk; the mini-boss leaves a pick; the boss's battle carries
                both */
             uiState.modal = null;
@@ -1679,6 +1705,9 @@ async function runFullTest(mode) {
             uiState.modal.btns[0].f();
             if (!(await wait(() => uiState.modal && uiState.modal.cls === 'run-payout', 5000)))
               throw new Error('no payout screen');
+            /* RS-2: the payout says who is moving to Copperleaf */
+            if (!uiState.modal.html.includes(escapeHtml(`${RESIDENTS.dottie.name} is moving to Copperleaf`)))
+              throw new Error('the payout doesn’t say Dottie is moving in');
             uiState.modal.btns[0].f();
             if (!(await wait(() => !saveData.run && LOCATIONS.length === gameData.locations.length, 10000)))
               throw new Error('the run didn’t end');
@@ -1687,7 +1716,9 @@ async function runFullTest(mode) {
             if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
             if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
             if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; home with ${saveData.meta.research} Research; in the history`;
+            if (!saveData.meta.residents.dottie || H.res !== 'dottie')
+              throw new Error('Dottie didn’t move in (or the history lost her)');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; flew in ${flew} ms; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();
