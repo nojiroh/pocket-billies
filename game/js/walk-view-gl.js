@@ -773,6 +773,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     tilt,
     blur: LF ? Math.round(LF.scale * 100) / 100 : 0,
     slider: playerBlur(),
+    spread: !!(LF && LF.nearSpread) /* lens.nearSpread: the blur in front spread over what is behind it */,
   };
   gpuPass('other');
   /* labels and markers stay sharp on the layer above */

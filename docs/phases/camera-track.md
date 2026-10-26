@@ -227,6 +227,20 @@ below against main and report what differs.
   it (the alpha carries only that spill). The composite works out each pixel's blur at full size from full-size
   depth with the same plane, so the sharp/blur edge follows the real edges. Quality step 4: two dual-Kawase steps
   down and one up (the bloom's own passes), blended by the same full-size amount (`cheapDof`, path "cheap").
+- **Spread blur in front** (follow-up, 2026-10-26, `lens.nearSpread`, Engine > Lens, **off** until the phone check):
+  the owner saw the blur on 3D props stop at their outline. Measured on the Workshop's roof in front of the focus
+  (lens blur 2.5): the probes found the roof but the gather counted no roof sample, so the spill alpha was 0 on every
+  cobble beside it. A front sample reached only as far as its own blur, and a thing's outline is its least blurred part
+  (0.12 at the roof's edge, 0.33 in its middle, with the tilted plane), a band the 28 taps all but missed; the full-size
+  composite then cut sharp at the depth edge. With the switch: two small passes (`dofnear`: the most blur in front of
+  the focus in each 16 x 16 tile, every other pixel each way; `dofgrow`: that grown 1-4 tiles, as far as the widest
+  blur reaches) give each pixel the blur of the nearest thing in front; the blur pass reads it instead of the four
+  probes, a sample in front and more blurred than the pixel reaches that far, what isn't in front counts only within
+  the pixel's own blur, the alpha is the share of taps on the thing in front (the cover), and the spiral turns per
+  pixel (noise, not bands). Measured after: the spill fades from about 0.45 at the roof's outline to 0 over about 12
+  half-size pixels, on both sides of the chimney. `walkRenderer.lensInfo.spread` and the debug log's `lens.spread`
+  say whether it ran; tools/look-blur.py `--only=10` takes the pair. The cheap blur (quality 4) has no spill and is
+  unchanged.
 - **Dials** (Engine > Lens): Tilt of the sharp zone (built-in 0), Edge blur (0), Miniature look (0: up to +25%
   saturation, +12% contrast, +0.2 vignette, times the blur in use), Focus moves in (0.35 s). Preset "Miniature" (tilt
   1, band 0.35, far 1.8, near 0.7, blur 2.2, miniature 0.8). The game's look (engine.json): tilt 0.7, chosen from tools/look-blur.py's pictures (at 1 a little

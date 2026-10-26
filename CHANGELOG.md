@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
+  blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
+  what is behind it instead of stopping at a hard outline against the sharp ground.
 - **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
   braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
   a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.

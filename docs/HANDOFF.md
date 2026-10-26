@@ -2,6 +2,29 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Camera track, CAM-3 follow-up - Spread blur in front - 2026-10-26
+Branch `ccr-831c6196-cnlx4w` (a one-session fix; BRANCHES.md would name it `fix/blur-spill`, but a session pushes only
+to its own branch). The owner asked why the blur on 3D props looks weird ("like the blur stops at its edges"); plan
+approved: the fix behind a switch, off until the phone check.
+- **Found (measured, not guessed):** not the ink outlines (my first answer; turning ink and AO off changed nothing).
+  On the Workshop's roof in front of the focus the blur pass's probes found the roof, but its gather counted no roof
+  sample, so the spill alpha was 0 on the cobbles beside it and the full-size composite cut sharp at the depth edge. A
+  front sample reached only as far as its own blur, and an outline is a thing's least blurred part (0.12 at the roof's
+  edge, 0.33 in its middle, with tilt 0.7).
+- **Changed:** `lens.nearSpread` (Studio Engine > Lens "Spread blur in front", default **off**): two small passes
+  (`dofnear` per 16 x 16 tile, `dofgrow` 1-4 tiles) and the `dof` shader's spread path (engine/post-effects.js; the
+  details in camera-track.md under CAM-3). Off is the old shader path. `walkRenderer.lensInfo.spread` and the debug
+  log's `lens.spread`; the graphics test measures it on its own (Depth corridor); tools/look-blur.py `--only=10`.
+- **Risky:** the cost on a phone (two passes on a 1/256-size target; the blur's gather now runs wherever a blurred
+  thing in front is within reach); the look of the per-pixel noise in the spill (static, at half size) and how strong
+  the spill reads at the default blur (subtle) against Strong (clear). Battles get it too when on.
+- **Verified:** the spill measured on the roof: about 0.45 at its outline fading to 0 over about 12 half-size pixels,
+  both sides of the chimney even (a first try doubled the cover and left a ghost band; fixed). lint, typecheck,
+  format:check, check:modules, unit tests 1314 pass, smoke (no problems), the fast check 37 of 37. Here the checks ran
+  with Python playwright 1.63 (the container's browser build), not the pinned 1.56.
+- **Next:** turn it on in the Studio on the phone (Copperleaf, the Workshop near the bottom of the screen, Blur
+  Strong) and send a debug log with the graphics test's Depth corridor; if it looks right and costs little, make it
+  the default in engine.json.
 ### Online track ON-1: the base (legality, block, report, Online play) - 2026-10-26
 Branch `ccr-0b8e3c38-gt7t6a` (`track/online` doesn't exist; the owner: build here). Tag to suggest: `on-1-done`.
 Details: docs/phases/online-track.md, "Done in ON-1". The owner's answers: hide after 3 reports, a placeholder
