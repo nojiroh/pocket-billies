@@ -57,7 +57,10 @@ six places long (about 250 ms).
   reads. The ribbon starts only once the pyramid is 2 m from the camera (the first ~130 ms of a catch), as the copies.
 - Verified: lint, typecheck, format, check:modules, unit tests 1316 pass; headless films (landscape, phone portrait,
   spin and plain catches, the 2D fallback): the strip trails the pyramid, frays at its tail and erodes out in four
-  steps after the hit. Smoke check (check-quick --smoke): 6 of 6 passed in 170 s. Tag `vfx-2-done` for the owner (the git proxy refuses tag pushes).
+  steps after the hit. Smoke check (check-quick --smoke): 6 of 6 passed in 170 s. Full quick check: 35 of 40, none in
+  battles: the four known main failures (terraces `sky_portal`, RL-8's shop Perk, room light, song fingerprints' cave
+  mid/late) and "Running" (the gait grew too little on a walk; run alone it fails the same way on main 715cf860, the
+  measures vary run to run: a slow headless machine, not this session's). Tag `vfx-2-done` for the owner (the git proxy refuses tag pushes).
 - Next: VFX-3 (the stretched pyramid) on `track/vfx`, in Plan Mode.
 
 ### VFX track VFX-0 and VFX-1 - The plan (smears, with research), the eased throw and its afterimages - 2026-10-26
