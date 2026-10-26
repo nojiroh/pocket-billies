@@ -114,7 +114,7 @@ import { mapSun, walkLightContext } from './walk/lighting.js';
 import { lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
-import { effectsPass } from './walk/effects.js';
+import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -309,6 +309,8 @@ export function ensureWalkGl(cv) {
       typeof propModelShaders === 'function' && propModelShaders(),
       /* 0.1.0 alpha: the world map's too: its first open compiled its eight programs on the spot */
       typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
+      /* phase 20 R2: the weather in one draw (quality.rainBatch) */
+      WEATHER_FX_SHADERS,
     ])
       if (d)
         precompilePrograms(

@@ -282,6 +282,8 @@ export const ENGINE_DEFAULTS = {
     /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
        (D3) */
     invalidate: false,
+    /* rain, snow, ash and their splashes in one draw */
+    rainBatch: false,
   },
 };
 provide({ ENGINE_DEFAULTS }); /* to-module */
@@ -1249,6 +1251,12 @@ export const ENGINE_SPEC = [
         'Drop spent pictures',
         'bool',
         'Tells the graphics card which in-between pictures (blur, glow, shading, the reflection’s depth) need not be kept or read back. Same picture; it saves memory traffic on phones.',
+      ],
+      [
+        'rainBatch',
+        'Rain in one go',
+        'bool',
+        'Rain, snow and ash (and the splashes) are drawn in one go instead of one drop at a time: the same drops, far less work for the processor in bad weather.',
       ],
       [
         'solidFirst',

@@ -271,6 +271,15 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     n = nR + nS + nA,
     wind = (walkView.sc.wind || 1) * (0.35 + E.storm * 0.9),
     sp = rm ? 1 : 0.2;
+  /* phase 20 R2 (pixels): with quality.rainBatch every quad below goes into one draw (walk/effects.js), each with the
+     up axis it would have set */
+  const B = engineSetting('quality', 'rainBatch') && quad.batch ? quad.batch('spray') : null;
+  let up = Up;
+  const setUp = v => {
+      if (B) up = v;
+      else gl.uniform3f(U.uUp, v[0], v[1], v[2]);
+    },
+    put = B ? (k, fr, x, y, z, sw, sh, a, col) => B.put(fr, x, y, z, sw, sh, a, col, up) : quad;
   const home = q => {
     for (let t = 0; t < 6; t++) {
       q.x = P.x + (Math.random() - 0.5) * 22;
@@ -305,8 +314,8 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
         home(q);
         continue;
       }
-      gl.uniform3f(U.uUp, lean[0], lean[1], lean[2]);
-      quad('spray', 0, q.x, q.y, q.z, 0.04, 0.5, 0.55, [0.8, 0.86, 1]);
+      setUp(lean);
+      put('spray', 0, q.x, q.y, q.z, 0.04, 0.5, 0.55, [0.8, 0.86, 1]);
     } else {
       const fall = kd === 1 ? 1.05 : 0.7;
       q.y -= fall * dt * sp;
@@ -316,13 +325,13 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
         home(q);
         continue;
       }
-      gl.uniform3f(U.uUp, Up[0], Up[1], Up[2]);
-      if (kd === 1) quad('spray', 1, q.x, q.y, q.z, 0.075, 0.075, 0.9, [0.98, 0.99, 1]);
+      setUp(Up);
+      if (kd === 1) put('spray', 1, q.x, q.y, q.z, 0.075, 0.075, 0.9, [0.98, 0.99, 1]);
       else if (i % 7 === 0) glows.push([q.x, q.y, q.z, 0.045, [1, 0.5, 0.18], 1.4]);
-      else quad('spray', 1, q.x, q.y, q.z, 0.065, 0.065, 0.75, [0.3, 0.27, 0.26]);
+      else put('spray', 1, q.x, q.y, q.z, 0.065, 0.065, 0.75, [0.3, 0.27, 0.26]);
     }
   }
-  gl.uniform3f(U.uUp, Up[0], Up[1], Up[2]);
+  setUp(Up);
   for (let i = W.sp.length - 1; i >= 0; i--) {
     const s = W.sp[i];
     s.a += dt;
@@ -331,7 +340,11 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
       continue;
     }
     const f = s.a / 0.28;
-    quad('spray', 2, s.x, s.y + 0.04 + f * 0.06, s.z, 0.1 + f * 0.14, 0.05 + f * 0.05, (1 - f) * 0.45, [0.85, 0.9, 1]);
+    put('spray', 2, s.x, s.y + 0.04 + f * 0.06, s.z, 0.1 + f * 0.14, 0.05 + f * 0.05, (1 - f) * 0.45, [0.85, 0.9, 1]);
+  }
+  if (B) {
+    B.flush();
+    gl.uniform3f(U.uUp, Up[0], Up[1], Up[2]);
   }
   if (rain > 0 && walkRenderer.wgrid && !reducedMotion && Math.random() < dt * rain * 18) {
     const x = P.x + (Math.random() - 0.5) * 16,
