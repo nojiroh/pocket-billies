@@ -2,6 +2,22 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Graphics preset Off - 2026-10-26
+Branch `ccr-5d6955bf-muk1fs`. Asked: "Add a Graphics option that turns everything off". Not a phase; plan and a
+question round first (name Off, full sharpness, time of day and weather off too, Expert dials ignored while on).
+- **Changed:** Settings → Display gets a third card, Off (`preferences.aim = 'off'`; saves.js keeps it).
+  engine/settings.js: `OFF_LOOK` (PLAIN_LOOK plus no shadows, AO, grass, far props/hills, water reflections, lamp
+  glow) answers in place of the player's dials while `graphicsOff()`; `playerBlur()` is 0. walk-view-gl.js leaves out
+  the environment (time of day, weather, season) and the scene blur while Off. Map clouds on Auto → off; run towns
+  draw Balanced's folk count. The preset grid is three columns.
+- **Risky:** Off only zeroes dials; the post pass still runs (it also does tone mapping and the ink outlines, so the
+  `noPost` blit would change the art), so the saving on a phone is whatever the zeroed dials buy. Untested on a phone.
+  No grass blades also means tall grass reads only from the ground texture.
+- **Verified:** lint, typecheck, unit tests (1314 pass; new cases for map clouds and folk cap), check:modules, the
+  smoke check (6/6). Headless: Copperleaf on Beautiful vs Off (engine dials read 0, env off, no page errors) and the
+  cards at 420 px; tapping Beautiful then Off sets `aim` sharp then off. Full quick check not run (not a phase).
+- **Next:** try Off on the phone; if it isn't fast enough, a lighter post pass (tone map and ink only) is the step.
+
 ### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
 Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
 question round and a clickable mockup (docs/phases/ui-track.md, UI-8). Then the owner asked, mid-session: "merge all

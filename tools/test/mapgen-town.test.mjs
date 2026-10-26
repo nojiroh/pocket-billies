@@ -68,6 +68,7 @@ test('a run town draws 3 folk when busy, 5 on Balanced, 6 on Beautiful', () => {
   assert.equal(runTownFolkCap(R.town, 1, 'smooth'), 5);
   assert.equal(runTownFolkCap(R.town, 2, 'sharp'), 3);
   assert.equal(runTownFolkCap(R.town, 4, 'smooth'), 3);
+  assert.equal(runTownFolkCap(R.town, 0, 'off'), 5); /* Off keeps Balanced's count */
 });
 
 test('every run town has a street, a square with the clinic and the shop on it, and 4-7 shut houses', () => {
