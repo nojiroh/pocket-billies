@@ -7,12 +7,23 @@ rules_version = '2';
 //   users/<uid>             what friends see of a player: name, look, partner, last place, friend list, code
 //   codes/<CODE>            { uid }: a friend code finds a player, and nothing else does
 //   requests/<from>_<to>    a friend request: { from, to, fromName, status, t }
+//   blocks/<uid>            ON-1: the players this one blocked: { list }, read by nobody else
+//   reports/<target>        ON-1: { n, ok }: how many accounts reported a target ('user_<uid>'), each once
+//                           (reports/<target>/by/<uid>: { reason, t }), and up to which count the moderator cleared
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
     function shortText(v, n) { return v is string && v.size() <= n; }
+    // ON-1: the moderator reads reports and clears them. Paste your own Firebase uid here before you publish (the debug
+    // menu shows it: Debug > Account); the rules tests read whatever stands here.
+    function moderator() { return signedIn() && me() in ['PASTE-YOUR-UID-HERE']; }
+    // ON-1: `who` is on `by`'s block list
+    function blocked(by, who) {
+      return exists(/databases/$(database)/documents/blocks/$(by))
+        && who in get(/databases/$(database)/documents/blocks/$(by)).data.list;
+    }
 
     // RL-10b: only the keys the game writes, and t is the server's time of this write (serverTimestamp()), the ranch
     // clock's anchor (js/logic/ranch-clock.js): a phone clock behind the last save's t is a clock turned back.
@@ -56,12 +67,53 @@ service cloud.firestore {
       allow create: if signedIn() && validRequest(request.resource.data)
         && request.resource.data.from == me() && request.resource.data.to != me()
         && id == me() + '_' + request.resource.data.to
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && !blocked(request.resource.data.to, me());
       allow update: if signedIn() && party(resource.data) && validRequest(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 't', 'fromName'])
         && ((me() == resource.data.to && request.resource.data.status in ['accepted', 'declined', 'removed'])
-          || (me() == resource.data.from && request.resource.data.status in ['pending', 'removed']));
+          || (me() == resource.data.from && request.resource.data.status == 'removed')
+          || (me() == resource.data.from && request.resource.data.status == 'pending' && !blocked(resource.data.to, me())));
     }
+    // ON-1: the owner's block list. Only its owner reads it; the request rules above read it to refuse a blocked player.
+    match /blocks/{uid} {
+      allow get, delete: if signedIn() && me() == uid;
+      allow create, update: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['list'])
+        && request.resource.data.list is list && request.resource.data.list.size() <= 200;
+    }
+
+    // ON-1: reports. A target's count goes up by exactly one with each account's first report (the count and the
+    // reporter's own document in one batch, each checking the other); anyone signed in reads the count (the game hides
+    // a target 3 reports past `ok`), only the moderator reads who reported and why, and only the moderator raises `ok`.
+    match /reports/{target} {
+      function count() { return get(/databases/$(database)/documents/reports/$(target)).data.n; }
+      function firstReport() {
+        return !exists(/databases/$(database)/documents/reports/$(target)/by/$(me()))
+          && existsAfter(/databases/$(database)/documents/reports/$(target)/by/$(me()));
+      }
+      allow get: if signedIn();
+      allow list: if moderator();
+      allow create: if signedIn() && target.matches('^user_[A-Za-z0-9]{1,128}$') && target != 'user_' + me()
+        && request.resource.data.keys().hasOnly(['n', 'ok'])
+        && request.resource.data.n == 1 && request.resource.data.ok == 0 && firstReport();
+      allow update: if signedIn() && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['n'])
+          && request.resource.data.n == resource.data.n + 1 && firstReport())
+        || (moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ok'])
+          && request.resource.data.ok is int && request.resource.data.ok >= resource.data.ok
+          && request.resource.data.ok <= resource.data.n));
+      match /by/{uid} {
+        allow get, list: if moderator();
+        allow create: if signedIn() && uid == me()
+          && request.resource.data.keys().hasOnly(['reason', 't'])
+          && request.resource.data.reason in ['name', 'picture', 'cheating', 'other']
+          && request.resource.data.t is number
+          && getAfter(/databases/$(database)/documents/reports/$(target)).data.n
+            == (exists(/databases/$(database)/documents/reports/$(target)) ? count() + 1 : 1);
+      }
+    }
+
     function validRequest(d) {
       return d.keys().hasOnly(['from', 'to', 'fromName', 'status', 't'])
         && d.from is string && d.to is string && shortText(d.fromName, 40) && d.t is number;

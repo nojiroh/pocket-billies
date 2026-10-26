@@ -3,7 +3,7 @@
 import { test, before, after, beforeEach } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 
 let env;
 const db = uid => env.authenticatedContext(uid).firestore();
@@ -130,4 +130,71 @@ test('requests cannot be forged, rerouted, read by others or listed', async () =
   await assertFails(updateDoc(doc(db('eve'), 'requests/ann_bob'), { status: 'declined' }));
   await assertFails(deleteDoc(doc(db('eve'), 'requests/ann_bob')));
   await assertFails(getDocs(collection(db('eve'), 'requests')));
+});
+
+/* ---------- ON-1: blocks ---------- */
+test('a player keeps their own block list, and nobody else reads it', async () => {
+  await assertSucceeds(setDoc(doc(db('ann'), 'blocks/ann'), { list: ['eve'] }));
+  await assertSucceeds(getDoc(doc(db('ann'), 'blocks/ann')));
+  await assertFails(getDoc(doc(db('eve'), 'blocks/ann')));
+  await assertFails(setDoc(doc(db('eve'), 'blocks/ann'), { list: [] }));
+  await assertFails(getDocs(collection(db('ann'), 'blocks')));
+  await assertFails(setDoc(doc(db('ann'), 'blocks/ann'), { list: ['eve'], why: 'x' }));
+  await assertFails(setDoc(doc(db('ann'), 'blocks/ann'), { list: Array.from({ length: 201 }, (_, i) => 'u' + i) }));
+});
+test('a blocked player cannot send a friend request, or ask again', async () => {
+  await seed('blocks/ann', { list: ['eve'] });
+  await assertFails(setDoc(doc(db('eve'), 'requests/eve_ann'), req('eve', 'ann')));
+  await assertSucceeds(setDoc(doc(db('bob'), 'requests/bob_ann'), req('bob', 'ann')));
+  await seed('requests/eve_ann', req('eve', 'ann', 'removed'));
+  await assertFails(updateDoc(doc(db('eve'), 'requests/eve_ann'), { status: 'pending', t: 2 }));
+  await assertSucceeds(updateDoc(doc(db('ann'), 'requests/eve_ann'), { status: 'declined', t: 2 }));
+});
+
+/* ---------- ON-1: reports ---------- */
+const MOD = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8').match(/function moderator\(\) \{[^[]*\['([^']+)'\]/)[1];
+/* what the game writes for a report: the count and the reporter's own document, in one batch */
+const peek = async path => {
+  let v;
+  await env.withSecurityRulesDisabled(async c => { v = (await getDoc(doc(c.firestore(), path))).data(); });
+  return v;
+};
+const report = async (uid, target, reason = 'name') => {
+  const d = db(uid), cur = await peek('reports/' + target);
+  const b = writeBatch(d);
+  b.set(doc(d, 'reports/' + target), cur ? { ...cur, n: cur.n + 1 } : { n: 1, ok: 0 });
+  b.set(doc(d, `reports/${target}/by/${uid}`), { reason, t: 1 });
+  return b.commit();
+};
+test('each account reports a target once, and the count goes up by one each time', async () => {
+  await assertSucceeds(report('bob', 'user_eve'));
+  await assertFails(report('bob', 'user_eve'));
+  await assertSucceeds(report('cat', 'user_eve'));
+  const r = await peek('reports/user_eve');
+  if (r.n !== 2) throw new Error('count ' + r.n);
+  await assertSucceeds(getDoc(doc(db('ann'), 'reports/user_eve')));
+});
+test('a report cannot be faked: no count without a reporter, no jump, no self-report, no odd reason', async () => {
+  await assertFails(setDoc(doc(db('bob'), 'reports/user_eve'), { n: 1, ok: 0 }));
+  await assertFails(setDoc(doc(db('bob'), 'reports/user_eve/by/bob'), { reason: 'name', t: 1 }));
+  await assertFails(report('eve', 'user_eve'));
+  await assertFails(report('bob', 'user_eve', 'boring'));
+  await seed('reports/user_eve', { n: 1, ok: 0 });
+  await seed('reports/user_eve/by/cat', { reason: 'name', t: 1 });
+  const bob = db('bob'), b = writeBatch(bob);
+  b.set(doc(bob, 'reports/user_eve'), { n: 5, ok: 0 });
+  b.set(doc(bob, 'reports/user_eve/by/bob'), { reason: 'name', t: 1 });
+  await assertFails(b.commit());
+  await assertFails(updateDoc(doc(db('bob'), 'reports/user_eve'), { ok: 1 }));
+  await assertFails(setDoc(doc(db('bob'), 'reports/bad target'), { n: 1, ok: 0 }));
+});
+test('only the moderator reads who reported and clears a target', async () => {
+  await assertSucceeds(report('bob', 'user_eve', 'cheating'));
+  await assertFails(getDoc(doc(db('ann'), 'reports/user_eve/by/bob')));
+  await assertFails(getDocs(collection(db('ann'), 'reports')));
+  await assertSucceeds(getDoc(doc(db(MOD), 'reports/user_eve/by/bob')));
+  await assertSucceeds(getDocs(collection(db(MOD), 'reports')));
+  await assertSucceeds(updateDoc(doc(db(MOD), 'reports/user_eve'), { ok: 1 }));
+  await assertFails(updateDoc(doc(db(MOD), 'reports/user_eve'), { ok: 2 }), 'not past the count');
+  await assertFails(updateDoc(doc(db(MOD), 'reports/user_eve'), { ok: 0 }), 'never back');
 });
