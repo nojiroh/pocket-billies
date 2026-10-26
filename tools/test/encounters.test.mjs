@@ -146,6 +146,30 @@ test('encounters: a class foe and a wild one are the region’s Billies at the p
   assert.equal(SPECIES[w.sp].stage, 0, 'a first stage under level 16');
 });
 
+test("encounters: RL-14: a Bureau agent fields its bots after its Billies, at the place's level, named", () => {
+  const s = onRun(),
+    run = s.run,
+    i = run.map.nodes.findIndex(n => n.row === 2),
+    FA = GAME_DATA.factions.factions,
+    o = { classes: E.classes, species: SPECIES, rules: RUN, up: 1, salt: 'route|0', reward: 300, foe: 'route' },
+    F = X.encClassFoe(run, i, 'run_x', 'bureau_clerk', o),
+    [lo, hi] = FA.bureau.agents.bots,
+    bots = F.team.filter(b => b.sp === 'robot');
+  assert.deepEqual(F, X.encClassFoe(onRun().run, i, 'run_x', 'bureau_clerk', o));
+  assert.ok(bots.length >= lo && bots.length <= hi, `${bots.length} bots`);
+  assert.deepEqual(F.team.slice(-bots.length), bots, 'last');
+  for (const b of bots) {
+    assert.equal(b.lvl, X.encPlaceLevel(run, i, RUN) + 1);
+    assert.ok(Object.values(FA.bureau.bots).some(B => B.name === b.nick && B.gem === b.robot.gem));
+    const m = fn('trainerTeam')({ team: [b] })[0];
+    assert.equal(m.kind, 'robot');
+    assert.equal(fn('billyName')(m), b.nick);
+  }
+  /* its Billies are the ones it had before it had bots: a faction of none fields none */
+  const none = X.encClassFoe(run, i, 'run_x', 'bureau_clerk', { ...o, factions: {} });
+  assert.deepEqual(none.team, F.team.slice(0, F.team.length - bots.length));
+});
+
 test('encounters: the summary of what changed', () => {
   assert.deepEqual(
     X.encChanges(

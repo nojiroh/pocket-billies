@@ -661,6 +661,11 @@ function warmWorldBillies() {
         for (const e of T.team || []) {
           const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSpecies === 'function' ? rivalSpecies(e.sp) : e.sp;
           if (SPECIES[s2]) L.push([s2, 1]);
+          /* RL-14: a Bureau agent's bot (its parts' pictures) */
+          else if (e.sp === 'robot' && e.robot) {
+            const R = e.robot;
+            L.push(['bot:' + [R.gem, R.torso, R.armL, R.armR, R.legs].join('.'), 1]);
+          }
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */

@@ -614,7 +614,10 @@ export function trainerTeam(T) {
     if (e.sp === 'robot' && e.robot) {
       const R = e.robot,
         fit = Object.fromEntries(['torso', 'armL', 'armR', 'legs'].map(k => [k, { uid: '', id: R[k], up: 0 }]));
-      return makeRobot(R.gem, fit, e.lvl);
+      const m = makeRobot(R.gem, fit, e.lvl);
+      /* RL-14: a faction's bot goes by its name (factions.json) */
+      if (e.nick) m.nick = e.nick;
+      return m;
     }
     const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSpecies(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];

@@ -42,7 +42,8 @@ test('route trainers: perRoute by row on every route, of different classes, the 
   let routes = 0,
     pairs = 0,
     opt = 0,
-    all = 0;
+    all = 0,
+    bots_ = 0;
   for (let k = 0; k < 30; k++) {
     const seed = 'ROUTE' + k.toString(36).toUpperCase().padStart(5, '0'),
       a = run(seed),
@@ -68,7 +69,20 @@ test('route trainers: perRoute by row on every route, of different classes, the 
         if (t.route.opt) opt += t.mate ? 2 : 1;
         assert.equal(t.runFoe, 'route');
         assert.equal(t.team.at(-1).lvl, Math.min(100, X.encPlaceLevel(a, i, RUN) + RUN.trainers.up));
-        for (const b of t.team) assert.ok(a.region.dex.includes(b.sp), b.sp);
+        /* RL-14: a Bureau agent's bots (factions.json) come after its Billies; nobody else fields one */
+        for (const b of t.team) assert.ok(b.sp === 'robot' || a.region.dex.includes(b.sp), b.sp);
+        const bots = t.team.filter(b => b.sp === 'robot').length;
+        if (!t.bureau && !(t.mate && GAME_DATA.events.classes[t.mate.cls].bureau))
+          assert.equal(bots, 0, `${t.id}: no bots`);
+        else if (!t.mate) {
+          bots_++;
+          assert.ok(bots >= 1 && bots <= 2, `${t.id}: ${bots} bots`);
+          assert.deepEqual(
+            t.team.map(b => b.sp === 'robot'),
+            t.team.map((_, k) => k >= t.team.length - bots),
+            'its bots last'
+          );
+        }
         assert.ok(!t.blocks, 'they never block the way');
         if (!t.mate) {
           assert.equal(t.reward, RUN.trainers.reward);
@@ -93,6 +107,7 @@ test('route trainers: perRoute by row on every route, of different classes, the 
   assert.ok(pairs / routes > 0.15 && pairs / routes < 0.55, `pairs on ${pairs} of ${routes} places`);
   /* about half optional */
   assert.ok(opt / all > 0.35 && opt / all < 0.6, `optional ${opt} of ${all}`);
+  assert.ok(bots_ > 0, 'some Bureau agent fields bots');
 });
 
 test('route trainers: on the spots, the liked kinds first, by the road if required, facing the way the spot faces', () => {
