@@ -240,3 +240,23 @@ test('run quests: RS-2: a favour’s town, its offer, held over the cap, kept by
   }
   assert.ok(met > SEEDS.length * 3, `favours are met in most runs (${met})`);
 });
+
+test('run quests: RS-2: the run’s resident stands in the first town row while nobody lives there, then one town', () => {
+  const R = GAME_DATA.residents,
+    first = modules.residents.residentFirstTowns;
+  for (const seed of SEEDS.slice(0, 12)) {
+    const s = start(seed),
+      D = qdata(s.run),
+      plan = Q.residentPlan(s, R, D);
+    assert.deepEqual(plan, { id: 'dottie', towns: first(s.run.map) }, `${seed}: Dottie in every first-row town`);
+    assert.ok(plan.towns.length >= 1);
+    s.meta.residents = { dottie: 1 };
+    const next = Q.residentPlan(s, R, D);
+    assert.ok(next && next.id !== 'dottie' && R[next.id].meet.weight > 0, `${seed}: someone else`);
+    assert.ok(next.towns.length <= 1, 'in one town at most');
+    if (next.towns.length)
+      assert.ok(Q.favourOffer(s.run, next.towns[0], next.id, QD.favours[next.id], D), 'offering their favour there');
+    assert.deepEqual(Q.residentPlan(s, R, D), next, 'the same run, the same plan');
+  }
+  assert.equal(Q.residentPlan({ meta: {}, run: null }, R, qdata(start('X').run)), null);
+});

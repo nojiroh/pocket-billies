@@ -15,11 +15,12 @@
    (favourAt, from the run's own stream) where it can be finished and handed in, as a town's offer can; it is held over
    the cap and handed in at a notice board for their invite (logic/residents.js) in place of the reward pick.
    Logic only: no DOM, no Date, no Math.random (tools/test/run-quests.test.mjs). */
-/** @import { Run, RunMap, RunQuest, RunQuests } from '../../types/save-data' */
-/** @import { QuestFavour, QuestKind, QuestsData } from '../../types/game-data' */
+/** @import { Run, RunMap, RunQuest, RunQuests, SaveData } from '../../types/save-data' */
+/** @import { QuestFavour, QuestKind, QuestsData, Resident } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { residentDrawn, residentFirstTowns } from './residents.js';
 import { runNext, runNodeSeed } from './run-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -43,6 +44,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   questCatch: [() => questCatch, v => (questCatch = v)],
   // @ts-expect-error -- replaced on purpose
+  questDataOf: [() => questDataOf, v => (questDataOf = v)],
+  // @ts-expect-error -- replaced on purpose
   questFill: [() => questFill, v => (questFill = v)],
   // @ts-expect-error -- replaced on purpose
   questGoal: [() => questGoal, v => (questGoal = v)],
@@ -62,6 +65,8 @@ expose({
   questsOf: [() => questsOf, v => (questsOf = v)],
   // @ts-expect-error -- replaced on purpose
   regionTypes: [() => regionTypes, v => (regionTypes = v)],
+  // @ts-expect-error -- replaced on purpose
+  residentPlan: [() => residentPlan, v => (residentPlan = v)],
   step: [() => step],
   // @ts-expect-error -- replaced on purpose
   trainersAhead: [() => trainersAhead, v => (trainersAhead = v)],
@@ -313,4 +318,33 @@ export function questPay(run, q) {
   R.held = R.held.filter(x => x !== q);
   R.paid++;
   return true;
+}
+/** a run's quest data from its scenes (a town's board: a `board` spot) and its trainers (the route trainers' places);
+ * quest-board.js questData reads the same from the world put in @param {Run} run @param {any[]} scenes
+ * @param {Record<string, any>} trainers @param {QuestsData} quests @param {QuestData['species']} species
+ * @returns {QuestData} */
+export function questDataOf(run, scenes, trainers, quests, species) {
+  const at = /** @type {Record<number, number>} */ ({});
+  for (const T of Object.values(trainers)) if (T && T.runFoe === 'route') at[T.runNode] = (at[T.runNode] || 0) + 1;
+  const boards = ((run.map && run.map.nodes) || []).flatMap((n, i) =>
+    n.type === 'town' && ((scenes[i] && scenes[i].spots) || []).some((/** @type {any} */ s) => s.kind === 'board')
+      ? [i]
+      : []
+  );
+  return { quests, species, boards, trainersAt: i => at[i] || 0 };
+}
+/** RS-2: who this run's resident is (logic/residents.js residentDrawn, invited or not) and the towns they stand in: the
+ * free first one in every town of the first all-town row (every way walks through one), anyone else in the one town
+ * their favour is offered in (favourAt; none when no town can, or they are met at an event only). Null with nobody
+ * @param {SaveData} s @param {Record<string, Resident>} R @param {QuestData} data
+ * @returns {{ id: string, towns: number[] } | null} */
+export function residentPlan(s, R, data) {
+  const run = s.run,
+    id = run && run.map ? residentDrawn(s, R) : null;
+  if (!run || !run.map || !id) return null;
+  const F = data.quests.favours[id];
+  if (!R[id].meet.where.includes('town') || !F) return { id, towns: [] };
+  if (!F.kind) return { id, towns: residentFirstTowns(run.map) };
+  const at = favourAt(run, F.kind, data);
+  return { id, towns: at < 0 ? [] : [at] };
 }
