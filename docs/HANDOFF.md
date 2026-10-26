@@ -22,8 +22,12 @@ were merged here one by one (merge commits, no rebase) and go to main in one PR.
 - A fix found on the way: tools/check-data-text.py reads a favour's `check` (relations.json) as a condition (RL-S2's
   smoke job failed on it).
 - Verified: lint, typecheck, format, check:modules, check:data, the data text check, unit tests (1217 pass); the
-  smoke check (check-fast) result follows below. Main's own smoke was red before this ("Behind things": hidden where
-  the player starts, in the open); the owner said to leave it.
+  smoke check (check-fast): 37 of 37 passed locally (Playwright 1.56, 1320 s), "Behind things" too, though it was red
+  on main's last CI run; the owner said to leave that one. `npm run test:slow`: 88 of 89; the one red, "the game's
+  island is the generator's own output for its stored dials and seed" (island-gen.test.mjs), is WA-10's (red on
+  `track/water` alone too): its hand patches to Copperleaf's square, the town locked, at the owner's word, so the ground
+  no longer matches its dials. build-island.mjs would undo them. The owner chose to merge with it red; it belongs to
+  HB-10 (hub-track.md: the square's shape and why a town rebuild is not safe yet).
 - Next: delete the merged one-session branches the owner no longer needs (BRANCHES.md); the `track/*` branches stay.
 
 ### Hub track HB-8 - Departure and return: the sky train through the portal - 2026-10-26
