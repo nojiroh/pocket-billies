@@ -87,14 +87,19 @@ expose({
   readHideQueries: [() => readHideQueries, v => (readHideQueries = v)],
   setSpriteCrossRecord: [() => setSpriteCrossRecord, v => (setSpriteCrossRecord = v)],
   setSpriteRecord: [() => setSpriteRecord, v => (setSpriteRecord = v)],
+  setSpriteShadeUniforms: [
+    () => setSpriteShadeUniforms,
+    v => ((setSpriteShadeUniforms = v), provide({ setSpriteShadeUniforms })),
+  ],
   spriteDrawList: [() => spriteDrawList, v => (spriteDrawList = v)],
   spriteDrawn: [() => spriteDrawn],
-  spriteFrame: [() => spriteFrame, v => (spriteFrame = v)],
+  spriteFrame: [() => spriteFrame, v => ((spriteFrame = v), provide({ spriteFrame }))],
   spriteHasParts: [() => spriteHasParts],
   spriteInstanceProgram: [() => spriteInstanceProgram, v => (spriteInstanceProgram = v)],
   spriteInstanceState: [() => spriteInstanceState],
   spriteRecord: [() => spriteRecord, v => setSpriteRecord(v)],
   spriteRecordAt: [() => spriteRecordAt, v => (spriteRecordAt = v)],
+  spriteSelfShade: [() => spriteSelfShade, v => (spriteSelfShade = v)],
   spriteSideEffects: [() => spriteSideEffects, v => (spriteSideEffects = v)],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   talkPartner: [() => talkPartner, v => (talkPartner = v)],
@@ -102,6 +107,7 @@ expose({
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ setSpriteShadeUniforms, spriteFrame });
 export function setDrawBoxFaces(v) {
   drawBoxFaces = v; // eslint-disable-line no-func-assign
   provide({ drawBoxFaces });
@@ -188,6 +194,21 @@ function spriteFrame(C, sun) {
   F.crossK = Math.abs(Math.sin(C.yaw || 0));
   return F;
 }
+/* alpha 0.4.1: how much a tree's crown shades itself (props over 1.2 m that are leaves, facing the camera, not far) */
+function spriteSelfShade(it, F) {
+  return F.selfK > 0 && it.k === 'prop' && !it.fixed && !it.far && -it.oy * it.mpp > 1.2 && foliageAmount(it)[0] > 0
+    ? F.selfK
+    : 0;
+}
+/* phase 20 E3: the season on leaves, a crown's self-shade and noRecv for a picture drawn outside the pass (the
+   reflection's) */
+function setSpriteShadeUniforms(U, it, F) {
+  const gl = gpuState.gl,
+    f = foliageAmount(it);
+  if (U.uFol) gl.uniform2f(U.uFol, f[0], f[1]);
+  if (U.uSelf) gl.uniform3f(U.uSelf, spriteSelfShade(it, F), F.selfD[0] * (it.flip || 1), F.selfD[1]);
+  if (U.uNoRecv) gl.uniform1f(U.uNoRecv, it.noRecv ? 1 : 0);
+}
 /* phase 20 E1: one picture's draw as values, the uniforms it is drawn with, in a record kept from frame to frame. mode:
    'model' (a model: no picture; its hit target and clock hands), 'front' (a 3D building's front, drawn with its walls),
    'none' (no texture yet, or not risen yet), 'wave' (a flag, on the grid quad), 'quad'. A tree's crossing picture is
@@ -240,8 +261,6 @@ function spriteRecord(it, F, r) {
   if (it.vox) return (r.mode = 'model');
   const T = (r.T = imageTexture(it.im));
   if (!T) return (r.mode = 'none');
-  const s = it.mpp,
-    hM = -it.oy * s;
   /* player visibility: a picture covering you is thinned out already (walk/quality-cull.js coverItems) */
   const fade = (r.fade = it.fade ?? 1),
     rk = (r.rk = walkRenderer.rise ? townRiseAmount(it) : 1);
@@ -279,7 +298,7 @@ function spriteRecord(it, F, r) {
   const f = foliageAmount(it);
   r.fol[0] = f[0];
   r.fol[1] = f[1];
-  r.self[0] = F.selfK > 0 && it.k === 'prop' && !it.fixed && !it.far && hM > 1.2 && f[0] > 0 ? F.selfK : 0;
+  r.self[0] = spriteSelfShade(it, F);
   r.self[1] = F.selfD[0] * (it.flip || 1);
   r.self[2] = F.selfD[1];
   r.emit = it.glow ? it.glow * 1.6 : 0;
