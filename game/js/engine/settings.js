@@ -108,6 +108,9 @@ export const ENGINE_DEFAULTS = {
     cascades: true,
     nearRadius: 13,
     lampShadows: 2,
+    /* the sun's shadow maps look straight down the light, so the texel snapping holds and shadow edges stand still as you
+       walk; off: their eye sits 2 m higher than the light's line, which made the snapping miss and the edges crawl */
+    steadyEdges: false,
     aoKind: 'horizon',
   },
   lights: {
@@ -608,6 +611,12 @@ export const ENGINE_SPEC = [
           [2, 'The two nearest'],
         ],
         'At night the nearest lamps get a shadow map of their own, so people and trees throw shadows away from them (v43).',
+      ],
+      [
+        'steadyEdges',
+        'Steady shadow edges',
+        'bool',
+        'The sun’s shadow maps look straight down the light, so shadow edges stand still while you walk (on). Off: as before, the edges crawl a little.',
       ],
       [
         'aoKind',
