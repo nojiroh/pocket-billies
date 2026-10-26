@@ -178,9 +178,11 @@ export const WATER_KIND_LOOKS = [
   /* water track WA-5b: the six kinds of WA-5a (logic/water-kinds.js WATER_KINDS, appended in its order, never
      reordered). The flags the water shader reads besides the colours: white (white water over the whole surface),
      bub (bubbles rising, the rate), coral (coral on the bed of its shallows), scum (0 green duckweed, 1 brown scum),
-     glowC (the glow's own colour: lit from below, little sky in it, its light thrown up on walls) */
+     glowC (the glow's own colour: lit from below, little sky in it, its light thrown up on walls), swim 0 (no duck
+     swims on it, no frog dives in: ambient-life.js) */
   {
     k: 'rapids',
+    swim: 0,
     run: 1,
     white: 1,
     r: 0.6,
@@ -198,6 +200,7 @@ export const WATER_KIND_LOOKS = [
   },
   {
     k: 'hotspring',
+    swim: 0,
     steam: 2.2,
     bub: 1,
     r: 1.2,
