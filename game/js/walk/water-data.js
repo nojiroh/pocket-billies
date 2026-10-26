@@ -470,6 +470,11 @@ export function waterKindLookup(sc, F = walkRenderer.flowMap) {
         ? waterOpenSea(w, sc.h, (i, j) => {
             if (!wet(i, j)) return false;
             if (!F || F.W2 !== w * 2) return true;
+            /* WA-10: a channel's running cells join nothing (an estuary's plume is the sea's own water) */
+            if (F.cls) {
+              const c = F.cls[(j * 2 + 1) * F.W2 + i * 2 + 1];
+              return c !== 1 && c !== 2;
+            }
             const f = flowMapAt(F, i + 0.5, j + 0.5);
             return f[0] === 0 && f[1] === 0;
           })
@@ -517,8 +522,9 @@ function setFallUniforms(U) {
     gl.uniform4fv(U.uFallB, FALL_B);
   }
 }
-/* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, how far into
-   its stream in alpha, one texel a half metre, half floats so still water reads exactly 0 */
+/* water track WA-2a: the flow map on the card (walk/water-flow.js): flow in red and green, foam in blue, the river's
+   share in an estuary in alpha (WA-10; it was how far into its stream, which nothing read), one texel a half metre,
+   half floats so still water reads exactly 0 */
 export function flowTexture(T, F) {
   const gl = gpuState.gl;
   if (T.flowTex) gl.deleteTexture(T.flowTex);

@@ -242,16 +242,18 @@ void main(){vec3 p=aPos;
     `#version 300 es
 precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
 /* water track WA-5b: the kinds' looks in a small texture (walk/water.js kindTexture: a column a kind, a row a group), no cap on the kinds */
-uniform highp sampler2D uKinds;vec4 kdT(int K,int r){return texelFetch(uKinds,ivec2(K,r),0);}
+uniform highp sampler2D uKinds;float gEst=0.;
+/* water track WA-10: in an estuary (the flow map's alpha) the river's look (the stream's column) is mixed into the body's; what a kind does (row 4) stays the body's */
+vec4 kdT(int K,int r){vec4 a=texelFetch(uKinds,ivec2(K,r),0);return gEst>.004&&r!=4?mix(a,texelFetch(uKinds,ivec2(1,r),0),gEst):a;}
 uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;uniform vec4 uHole;uniform vec4 uSea;uniform sampler2D uFlowTex;uniform vec3 uFlowR;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
 /* sunlight focused by the ripples onto the bed: thin bright lines that wander */
 float caust(vec2 p,float t){vec2 q=p+vec2(lnoise(p*.7+t*.21),lnoise(p.yx*.7-t*.17))*1.6;float a=sin(q.x*4.1+t*.9)+sin(q.y*3.7-t*.7)+sin((q.x+q.y)*2.9+t*.5);return pow(clamp(1.-abs(a)*.42,0.,1.),5.);}
 void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;float t=uTime*.001;int K=int(vDK.y+.5);
  /* water track WA-1: pc the world texel (32 a metre with pixel water), ts the stepped time of the small motions; t stays smooth for the swell and the level */
- float ts=pwStep(t),pr=pwRes(),pix=uPixW.x;vec2 pc=pwCell(vW.xz);vec4 ka=kdT(K,2),kb=kdT(K,3),kc=kdT(K,4);vec3 kg=kdT(K,5).rgb;float scum=kdT(K,0).w;bool glowC=kg.r+kg.g+kg.b>.01;float dep=clamp(vDK.x,0.,1.),flo=step(vDK.x,-.5);
+ float ts=pwStep(t),pr=pwRes(),pix=uPixW.x;vec2 pc=pwCell(vW.xz);gEst=uFlowR.z>.5&&K!=1?texture(uFlowTex,(pix>.5?pc/pr+.5/pr:vW.xz)*uFlowR.xy).w:0.;vec4 ka=kdT(K,2),kb=kdT(K,3),kc=kdT(K,4);vec3 kg=kdT(K,5).rgb;float scum=kdT(K,0).w;bool glowC=kg.r+kg.g+kg.b>.01;float dep=clamp(vDK.x,0.,1.),flo=step(vDK.x,-.5);
  /* island track IS-3: on a sea all round (uSea: the swell's centre, on), a cove's calm rides in the kind (kind + calm * .4);
     far out the small things (fish, rings, light on the bed) aren't worked out */
- float calm=clamp((vDK.y-float(K))*2.5,0.,1.),seaK=(kc.x>.5&&uSea.z>.5)?1.-calm*.85:0.,far=step(140.,length(vW-uEye));vec2 rd=normalize(vW.xz-uSea.xy+vec2(1e-3));
+ float calm=max(clamp((vDK.y-float(K))*2.5,0.,1.),gEst),seaK=(kc.x>.5&&uSea.z>.5)?1.-calm*.85:0.,far=step(140.,length(vW-uEye));vec2 rd=normalize(vW.xz-uSea.xy+vec2(1e-3));
  vec2 wp=pc/pr,wq=pix>.5?wp+.5/pr:wp;
  /* water track WA-2a: the flow map (walk/water-flow.js: flow, foam, how far into the stream), read per texel; the pattern is carried down the flow in two
     phases half a loop apart, blended so its restart never shows (it drifted without end before, and still does with pixel water off) */

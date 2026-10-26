@@ -479,13 +479,22 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     },
     wlev = (x, z) => rawHeightAt(sc, x, z) + stp(x, z) - 0.12,
     /* water track WA-2a: the scene's waterfalls (the contract's falls entries) placed on the ground, and which way the
-       water runs and where it foams, a half-metre grid built once (walk/water-flow.js) */
+       water runs and where it foams, a half-metre grid built once (walk/water-flow.js). WA-10: a river runs only in
+       its channel, from the body it leaves to the body it reaches (`cls`: 1 running, 2 running in its estuary, 3 the
+       plume past its mouth, still but drifting) */
     fallSets = bare ? [] : placeFalls(sc, isW, wlev, stp),
     flowMap = waterFlowMap(
       sc,
-      fallSets.map(f => [f.fx, f.fz, Math.max(f.pool, f.w * 0.6)])
+      fallSets.map(f => [f.fx, f.fz, Math.max(f.pool, f.w * 0.6)]),
+      bare ? undefined : { wet: isW, bed: wlev, step: stp, sea: !!sc.flatFar }
     ),
-    flowAt = (x, z) => flowMapAt(flowMap, x, z);
+    flowAt = (x, z) => flowMapAt(flowMap, x, z),
+    runQ = (/** @type {number} */ q) => {
+      if (flowMap.cls) return flowMap.cls[q] === 1 || flowMap.cls[q] === 2;
+      const i = q % (W * 2),
+        f = flowAt((i + 0.5) * 0.5, ((q - i) / (W * 2) + 0.5) * 0.5);
+      return f[0] !== 0 || f[1] !== 0;
+    };
   const W2 = W * 2,
     H2 = H * 2,
     wd = new Float32Array(W2 * H2).fill(-2),
@@ -514,8 +523,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           wy[q] += 0.15;
         }
       }
-      const fw = flowAt(cx, cz);
-      wk[q] = kindAt(cx, cz, fw[0] !== 0 || fw[1] !== 0);
+      /* WA-10: the river's own kind only up to its estuary; past that the body's (the shader mixes the river in) */
+      wk[q] = kindAt(cx, cz, flowMap.cls ? flowMap.cls[q] === 1 : runQ(q));
       let edge = false;
       for (const [a, b] of [
         [1, 0],
@@ -540,13 +549,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   /* v31: still water on one terrace lies at one level (cells at their own height left hairline seams on sloping beds) */
   {
     const seen = new Uint8Array(W2 * H2),
-      still = q => {
-        if (dryT && fl[q]) return false;
-        const i = q % W2,
-          j = (q - i) / W2,
-          f = flowAt((i + 0.5) * 0.5, (j + 0.5) * 0.5);
-        return f[0] === 0 && f[1] === 0;
-      };
+      still = q => !(dryT && fl[q]) && !runQ(q);
     for (let q0 = 0; q0 < wd.length; q0++) {
       if (wd[q0] === -2 || seen[q0] || !still(q0)) continue;
       const comp = [q0],
@@ -730,7 +733,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       /* running water follows the slope of its bed (one smooth surface down a stream); still water lies level. WA-4: a
          tide pool is calm and brims at the level of the high tide's skin, so the two meet when the sea comes in */
       const pool = !!(tide && tide.pool[Math.floor(cz) * W + Math.floor(cx)]),
-        run = fw[0] !== 0 || fw[1] !== 0,
+        run = runQ(q),
         sc0 = stp(cx, cz);
       for (const [a, c] of [
         [0, 0],
@@ -896,7 +899,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           s0 = stp(ncx, ncz);
         if (stp(cx, cz) < s0 - 0.05) continue;
         const fw = flowAt(ncx, ncz),
-          run = fw[0] !== 0 || fw[1] !== 0,
+          run = runQ(nq),
           b0 = wv.length / 8;
         for (const [a, c] of [
           [0, 0],
