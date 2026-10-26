@@ -2,6 +2,58 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Water track WA-9 (lane G) - the Studio's water tools - 2026-10-26
+Branch `track/water` (main merged in at the start: #205, the hub's placing half; HANDOFF kept both sides). Plan
+approved in Plan Mode. The owner's answers: "survives a regenerate" means the Generate card's remakes, the hand water
+kept in the draft's dials (`params.hand`) and in a scene's `gen`; a brushed river is an **extra** river; the hub
+island refuses the whole Kinds of water tool. Tag to suggest: `wa-9-done` (the owner pushes tags).
+- Changed:
+  - `logic/water-gen.js` (no mapgen.js edit): `waterGenHand` (the dials' hand water, checked), `waterGenHandRivers`
+    (first in `waterGenRiver`: each drawn line shaped, painted and carved as WA-3a's rivers, no meanders; source and
+    mouth from its ends), `waterGenHandFalls` (last in `waterGenFalls`: `falls` entries with their pools, a generated
+    fall within 2 m replaced), hand kinds laid last in `waterGenKinds`, `waterGenClimbs` keeping a hand climb only
+    where WA-2b's rule passes. The scene's rivers are a list (`G.rivers`; carve, step with the land, river falls and
+    rapids loop over it). `waterGenSceneRiver`: a saved scene's bed carved from its line (the map editor).
+    **A scene without hand water is made exactly as before: MAPGEN_VERSION stays 17**; rng.test's hash, the
+    run-start snapshot and the golden scenes unchanged.
+  - `studio/js/water-tools.js` (new, after map-generate.js on the Studio page): the Generate card's river brush,
+    waterfall placer and kind painter over the From above map (overlay, the picked item's fields and what the draft
+    made of it, Look at it; the draft remade as you edit); the map editor's Kinds of water tool gains Rivers and Falls
+    modes and Carve the bed (one undo step each). Hooks: map-generate.js (the card's bar, the map's pointer),
+    map-editor.js (the water tool's modes, pointer, overlay; its kind list is now `WATER_KINDS`; the hub island's
+    refusal).
+  - Tests: water-gen.test.mjs (no hand water, the same scene; a hand river from the west side to a pool downhill,
+    kept to its line, after a new seed, a dial and a reroll; an extra river beside the scene's own; a hand fall with
+    its pool, replacing the generated one, climbed only where walked; hand kinds last, nonsense left out; the saved
+    scene's carve, again without sinking); the Studio check's `water_tools` step; the self-test's Water tools row.
+  - Docs: STUDIO.md "Water tools", water-track.md (row done, WA-9 notes), ROADMAP.
+- Found (where the brief or the docs were wrong):
+  - **MG-4 and TR-7 were never built**: no regenerate of a saved scene, no ground mask, no keep lock, so no hand edit
+    survived a regenerate to copy. The hand water rides in the dials instead; a later MG-4 regenerate reads it from
+    `gen.params.hand`.
+  - The map editor's water painter lacked `sea`, `lava` and `ice` (its own list); the hub island's water rectangles
+    were free (IS-6a locked only its ground).
+  - A tool bar redrawn on the pointer's press moved the map under a drag: the bars are drawn again on release.
+- Risky:
+  - `waterGenCarve`, `waterGenFalls` and `waterGenRapids` now loop over a list; with no hand water it holds the one
+    river as before (whole scenes compared in the tests, goldens unchanged), but any other track's change to those
+    functions must keep the loop.
+  - A hand river ending in another river counts as a `lake` mouth (the contract has no confluence); a hand fall on
+    flat ground drops under 0.3 m and is left to the automatic sheets (a note says so).
+  - Scenes added from the card carry `gen.params.hand`; nothing else reads it yet.
+- Verified: lint, typecheck, check:modules, check:data; `npm test` 1068/1068; `check:smoke` before each game/ commit
+  (all passed, Playwright 1.63.0); the Studio check: `water_tools`, `generate` and `studio_test` pass; the whole
+  chain stops at story's Play from here (waits for a second tab, the container stall the script's own note names),
+  so the other steps ran with `--only`: all pass but the music step in the chain (passes alone), run lab's "rows 7
+  typed: the map has 8 rows" and eight 404s in the last steps (**both the same on the commit before WA-9**), and run
+  lab's 100 ms redraw once at 109-167 ms (passed on a rerun: a timing threshold). A look at the Generate card (the
+  river carved with its bridge, the fall and the bog in the 3D preview and on the map). Not run: the quick-check
+  baseline (WA-8). `npm run test:slow` 86/86.
+- For lane R and the owner: nothing to change; hand rivers and falls use the contract's `streams` and `falls` as they
+  are. For a later MG-4: regenerate a saved scene from `gen.params` and its hand water comes back.
+- Next: WA-8 (alone: phone pass, sounds, baseline); the hub island's fall after HB-4b (the falls placer can then be
+  let onto it).
+
 ### Water track WA-5b (lane R) - kinds as a texture, the six new kinds drawn, water life - 2026-10-26
 Branch `track/water` (main merged in at the start: only the #203 merge commit, #201 and #202 were already in; lane B's
 WA-7 and main's #194 merges came in before the pushes). Plan approved in Plan Mode. The owner's answers: the small
