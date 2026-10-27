@@ -1020,13 +1020,22 @@ body.battle-3d #camFg {
   font: inherit;
   pointer-events: none;
   transition:
-    opacity 0.25s,
+    opacity var(--m-base),
+    visibility 0s var(--m-base),
     box-shadow 0.2s;
   will-change: transform;
 }
+/* UI-15: a plate is a button, disabled unless you are aiming at it; it stays solid (base.css fades a disabled button
+   to 42%) */
+.bplate:disabled {
+  opacity: 1;
+  cursor: default;
+}
+/* hidden plates also leave the page's count of what is on screen (uiElementCount), after their fade */
 .bplate.off,
 .bplate.gone {
   opacity: 0;
+  visibility: hidden;
 }
 .bplate .pl-top {
   display: flex;
