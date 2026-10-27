@@ -200,7 +200,8 @@ The 7-line roster; the weight formula and caps; the Prime bonus; how the split i
 ## Decided (2026-10-21): every Billie from the kits
 - All 24 Billies, starters included, are built from the part kits (the kit style wins: straight-on, upright,
   softer shading). Recipes live in tools/art-source/part-kit/builds.json, built by tools/build-kit-billies.py; the
-  starters follow the sample's recipes (docs/samples/kit-starters.json), the four new lines the table in section 4.
+  starters follow the sample's recipes (docs/samples/kit-starters.json, deleted 2026-10-27: its recipes are
+  game/data/kitBuilds.json's forms), the four new lines the table in section 4.
 - Every rig is a biped (Musk and Gates were quads). Gear is gone with the clothing (boosters, boxes, tractor collar:
   ASK 1.6 answered by the kit having no such parts).
 - Each line names its stages' native parts (`parts` in game/data/lines/<id>.json: a kit part per slot); this is the

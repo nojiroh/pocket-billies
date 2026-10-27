@@ -6,8 +6,9 @@ checked before deletion and the logic-only tsconfig went in. See the phase 04e e
 Prepared during the phase 05 session (2026-10-18), alongside the renames. You asked me to make the recommended
 choices, and the work to start in a new session once phase 05 is closed. The phase itself is
 [04-modernize-codebase.md](04-modernize-codebase.md) (tasks 4 and 6). This file says what is ready, how to land it,
-and what is still to do. The ready part is 22 commits as patch files in [04e/patches/](04e/patches/), made on the
-phase 05 head (70b0872), plus [04e/files/](04e/files/) for what is not committed yet.
+and what is still to do. The ready part was 22 commits as patch files in docs/phases/04e/patches/, made on the
+phase 05 head (70b0872), plus docs/phases/04e/files/ for what was not committed yet. They landed as
+5d235e08..0379fb8e; the folder was deleted on 2026-10-27 (git history keeps it), so the commands below are a record.
 
 ## Decisions (made, as you asked; listed again in HANDOFF)
 
