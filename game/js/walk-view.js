@@ -3142,7 +3142,7 @@ function waterPlayStep(P, wd) {
 }
 /** RT-4b: a route's find (logic/route-finds.js): walking onto the pyramid on the ground gives its card, once a run (its
  * flag in the run's flags); the pyramid goes once its flag is set (its `unless: opened:find.<node>.<k>`) */
-function routeFindStep(P) {
+export function routeFindStep(P) {
   const sc = walkView.sc;
   if (!sc || !saveData || !saveData.run || !(sc.props || []).some(p => p.find)) return;
   const F = saveData.flags || (saveData.flags = {}),

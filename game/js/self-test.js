@@ -24,6 +24,7 @@ import {
   QUESTS,
   RELATIONS,
   RESIDENTS,
+  REWARDS,
   ROBOTS,
   RULES,
   SET_PIECES,
@@ -46,6 +47,7 @@ import { geneEventSlots } from './logic/gene-events.js';
 import { isRobot, robotRules } from './logic/fighters.js';
 import {
   addBilly,
+  billyFieldTypes,
   billyName,
   canEnter,
   encounterStock,
@@ -76,7 +78,7 @@ import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { residentFirstTowns } from './logic/residents.js';
 import { runRestore, validRun } from './logic/run-state.js';
-import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
+import { RUN_SIDE_MOD, fieldMoveState, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { wildHabitat } from './logic/wild-pool.js';
@@ -87,6 +89,7 @@ import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
+import { routeFindsPlace } from './logic/route-finds.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { questOffer, questTake } from './logic/run-quests.js';
 import { conditionHolds, storyStateOf } from './logic/conditions.js';
@@ -128,6 +131,7 @@ import {
   navCellAt,
   navGrid,
   propShown,
+  routeFindStep,
   stepGrid,
   stopWalkView,
   walkData,
@@ -1710,6 +1714,102 @@ async function runFullTest(mode) {
               .join(
                 ', '
               )}, the rarer one ${rare[0].sp} lv ${rare[0].lvl} in its ${(mapById(L.mapId).spots || []).find(p => p.x === L.rareAt[0] && p.z === L.rareAt[1]).kind})`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
+    /* RT-4b: a run route's finds and Cut bramble row, on a copy of the save: the first seed (SELFTESTFB0, 1, ...) with
+       a main route place that has both; there each find stands as a pyramid and the row blocks the walk; walking
+       onto a find puts its card in the bag once and the pyramid goes; without the Grass Badge Cut is refused; cut,
+       the row goes and the walk opens. Then the save as it was */
+    if (typeof runWorldSync === 'function' && RULES.run.finds && !selfTest.stop)
+      await phase(
+        "A route's finds and Cut brambles: picked up once, the row refused without the badge, then cut",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 20 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTFB${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const T = runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+                made = runScenesMake(t.run, data);
+              routeTrainersPlace(t.run, T, made, EVENTS.classes);
+              const got = routeFindsPlace(t.run, T, made, routeRareSpots(t.run, T, made), {
+                rules: RULES.run.finds,
+                cards: REWARDS,
+              });
+              node = made.findIndex(
+                (_, i) => !!got[i] && got[i].finds.length > 0 && !!got[i].cut && !(t.run.map.nodes[i] || {}).side
+              );
+              if (node >= 0) seed = `SELFTESTFB${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 20 has a route with a find and a bramble row');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.meta.badges = {};
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const sc = walkView.sc,
+              finds = (sc.props || []).filter(p => p.find),
+              row = (sc.props || []).filter(p => p.cut);
+            if (!finds.length || !row.length) throw new Error(`${finds.length} finds, ${row.length} brambles here`);
+            if (!finds.every(p => propShown(p))) throw new Error('a find isn’t shown');
+            if (!row.every(p => propShown(p))) throw new Error('a bramble isn’t shown');
+            const blocked = () => row.some(p => navGrid().blk[navCellAt(p.x, p.z + 0.1)]);
+            if (!blocked()) throw new Error('the bramble row doesn’t block the walk');
+            /* a find: walked onto, its card in the bag once */
+            const p = finds[0],
+              c = REWARDS[p.card],
+              key = c.pyramid || c.item,
+              bag = () => ((c.pyramid ? saveData.pyramids : saveData.items) || {})[key] || 0,
+              had = bag();
+            routeFindStep({ x: p.x, z: p.z });
+            if (bag() !== had + (c.n || 1)) throw new Error(`walking onto the find gave ${bag() - had} ${key}`);
+            routeFindStep({ x: p.x, z: p.z });
+            if (bag() !== had + (c.n || 1)) throw new Error('the find was given twice');
+            await selfTestSleep(400);
+            if (propShown(p)) throw new Error('the find still lies there once taken');
+            /* Cut: refused without the badge; cut, the row goes and the walk opens */
+            const M = FIELD_MOVES.cut,
+              team = saveData.team.map(m => ({ name: billyName(m), types: billyFieldTypes(m) }));
+            if (fieldMoveState(M, saveData.meta.badges, team).state !== 'needBadge')
+              throw new Error('Cut isn’t refused without the Grass Badge');
+            saveData.flags[row[0].cut] = 1;
+            await selfTestSleep(400);
+            if (row.some(p => propShown(p))) throw new Error('a bramble still stands once cut');
+            if (blocked()) throw new Error('the walk is still blocked once cut');
+            return `${seed}: ${LOCATIONS[n].name}, ${finds.length} find(s) (${finds.map(q => q.card).join(', ')}), a row of ${row.length} brambles (${row[0].cut})`;
           } finally {
             uiState.modal = null;
             uiState.mq = [];

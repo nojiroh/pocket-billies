@@ -1653,6 +1653,20 @@ def route_wild_step(P):
     return ph['why'] or 'in-game step passed'
 
 
+@step("RT-4b: finds and Cut brambles — a route's find picked up once, its bramble row refused without the badge, then cut (the in-game step)", 420)
+def route_finds_step(P):
+    """The in-game test's route finds step (its own seed search: a main route place with a find and a bramble row):
+    each find stands and the row blocks the walk; walking onto a find puts its card in the bag once and the pyramid
+    goes; Cut is refused without the Grass Badge; cut, the row goes and the walk opens"""
+    pg = P.pg
+    if not pg.evaluate("typeof runWorldSync==='function'&&!!RULES.run.finds"): return 'not in this build'
+    name = "A route's finds and Cut brambles: picked up once, the row refused without the badge, then cut"
+    r = run_in_game_test(pg, [name], False, 360)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no route finds step')
+    return ph['why'] or 'in-game step passed'
+
+
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
@@ -2024,7 +2038,7 @@ def pages():
              ('town', low, [rl8_run_from_mast, route_trainers_step, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
-             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step]),
+             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step, route_finds_step]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),
