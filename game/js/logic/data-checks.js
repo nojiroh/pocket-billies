@@ -399,6 +399,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'scene',
   'layouts',
   'wild',
+  'finds',
   'seamIn',
   'load',
   'start',
@@ -581,6 +582,36 @@ export function dataRunScene(D) {
               had.add(t);
             }
         }
+    }
+    /* RT-4b: a route's finds (logic/route-finds.js): how many a place, the rare share, the rare cards (rewards.json
+       cards), how many bramble rows a place */
+    const FD = R.finds;
+    if (FD !== undefined) {
+      const cards = D.rewards || {};
+      if (
+        !FD ||
+        typeof FD !== 'object' ||
+        !Array.isArray(FD.perRoute) ||
+        FD.perRoute.length !== 2 ||
+        !whole(FD.perRoute[0], 0, 6) ||
+        !whole(FD.perRoute[1], FD.perRoute[0], 6) ||
+        typeof FD.rare !== 'number' ||
+        !(FD.rare >= 0 && FD.rare <= 1) ||
+        !Array.isArray(FD.rareCards) ||
+        !whole(FD.brambles, 0, 3)
+      )
+        problem(
+          'rules.json',
+          'run.finds is not { perRoute [fewest, most] (0-6), rare (0-1), rareCards (rewards.json ids), brambles (0-3) }'
+        );
+      else {
+        for (const k of Object.keys(FD))
+          if (!['perRoute', 'rare', 'rareCards', 'brambles'].includes(k))
+            problem('rules.json', `run.finds.${k}: no such rule`);
+        for (const k of FD.rareCards)
+          if (Object.keys(cards).length && !cards[k])
+            problem('rules.json', `run.finds.rareCards: no card "${k}" (rewards.json)`);
+      }
     }
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
     /* HB-2: the loading screen's cap (logic/run-load.js), 1-120 s */

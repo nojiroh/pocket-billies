@@ -154,6 +154,7 @@
    "ridge": {"ledges":3,"forest":2,"lanes":1},
    "autumn": {"forest":3,"farmland":2,"lanes":2,"lakeside":1}
   },
+  "finds": {"perRoute":[1,2],"rare":0.083,"rareCards":["max_revive","gold_pyramid","shining_stone"],"brambles":1},
   "wild": {
    "lv": [3,5],
    "perRow": 1,
