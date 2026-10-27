@@ -2,6 +2,46 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-11 - the colour code as data (signals, --sig-* tokens, the checks, the Studio) - 2026-10-27
+Branch `ccr-dab4e0cd-6re1eb` (the session's own: a cloud session pushes only there), from main at 07c9b284, which
+already holds `track/ui`; its PR goes to main, as UI-10's did. No Plan Mode (the owner's standing instruction); the
+plan is in ui-track.md, "UI-11: the colour code as data". No visible change.
+- Changed:
+  - **uiTheme.json `defaults.signals`**: `fill`, `light`, `dark` for 15 ids (good, bad, caution, value, special,
+    growth, machine, bio; brn, par, slp; common, uncommon, rare, mythical), the hexes of Part 2's tables. Schema
+    (required in the defaults; a preset may not set it; overrides already can't), types (`UiSignals`).
+  - **game/js/logic/signals.js** (new, on both pages and in the logic worker): the ids, the screens' sets, OKLab
+    distance, Machado 2009 colour-blind simulation, the sheet lines.
+  - **ui-theme.js**: `--sig-<id>` (fills, :root) and `--sig-<id>-text` (each side); `paletteFor`: a palette
+    without `danger` takes the red family's shade (the defaults keep theirs, so nothing changes now);
+    `uiSignalProblems`, used by check-data and the Studio's Check. tokens.css holds the same values as a fallback.
+  - **The Studio**: a "Colour code" group (whole game only): fill and both shades a row, contrast badges, a
+    colour-blind preview (as it is, protan, deutan, tritan) with each screen's closest pair. Save as preset drops it.
+  - Tests: tools/test/ui-signals.test.mjs (8); the Studio check's `ui` step (a fill in the preview and undone, the
+    colour-blind preview, a planted clash the Check finds and points at its dial).
+- Decided for the owner, to review:
+  - The checks' minimums: shades 4.5:1 on the surface and 3:1 on the ground; dark text (the dark ground) 4.5:1 on
+    fills; OKLab 5 within a set. Presets are held only to the shades on their surface, as the old contrast check does
+    (alpha05's dark ground puts magenta's fill at 4.46:1); UI-12 should check the player palettes in full.
+  - Rarity is its own set (common is 1.9 from Machine's gunmetal, as Part 2 accepts). Sets: battle (good, bad,
+    caution, special, growth, the statuses, the types), pickups (the families, the types), map (the families).
+  - The PR goes to main, not `track/ui` (that would carry 220 of main's commits).
+- Found (figures checked):
+  - Part 2's "each text shade 4.5:1" holds on surfaces only: on today's light ground teal reads 4.34:1 and sky
+    4.49:1, so the ground gets 3:1 (words sit on cards).
+  - Part 2's retuned types put Water (#2C78C5) and Flying (#5973BE) 4.2 apart, under its own "5.5 at the lowest":
+    UI-13 must move one of them, or this check fails. With today's types the nearest pair is amber and Electric,
+    5.5, as written.
+  - "Dark text on every fill 5:1" holds on Field Guide's dark ground (5.2 lowest); on today's it is 4.6 (red, bio).
+- Risky: little; nothing reads the tokens yet. A preset with `signals` now fails check-data.
+- Verified: lint, typecheck, format, `npm test` (1577; one timing flake in run-map-checks passed on re-run),
+  check:data, check:modules; the Studio check `--only=ui` passes and the section was looked at in a screenshot.
+  `check-fast` boot, screens, debug log and Studio checks pass, except "The Studio's world map look" and "The Studio's
+  Camera section", and the Studio check's `ui_tools` step (a UI rule warning it wants as an error): all three fail the
+  same way on main without this change (missing game/art/billionaires art, a tilt readout).
+- Next: UI-12 (the palettes): Field Guide as the defaults without its own `danger`, the Settings Palette row.
+- Tag to suggest: `ui-11-done` on this entry's commit.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
