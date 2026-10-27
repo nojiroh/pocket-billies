@@ -196,8 +196,7 @@ export function runCheck() {
   (D.locations || []).forEach((r, i) => {
     const M = D.maps && D.maps[r.mapId];
     if (r.landmark && M && M.props && !M.props.some(q => q.k === r.landmark))
-      warn(`Stop ${i + 1}, ${r.name}: its landmark ${r.landmark} isn’t in its walk scene (it still shows).`, 'world', {
-        wtab: 'route',
+      warn(`Stop ${i + 1}, ${r.name}: its landmark ${r.landmark} isn’t in its walk scene (it still shows).`, 'hub', {
         stop: i,
       });
     if (WM && r.region && !WM.regions[r.region])
@@ -236,12 +235,12 @@ export function runCheck() {
       .map(T => T.seat.id)
   );
   D.locations.forEach((r, i) => {
-    const g = { wtab: 'route', stop: i };
-    if (!D.pools[r.pool]) (r.pool ? err : warn)(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
-    if (r.battleStage && !D.battleStages[r.battleStage]) warn(`${r.name} uses an unknown battle backdrop.`, 'world', g);
-    if (r.shop && !(D.shops || {})[r.shop]) warn(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
+    const g = { stop: i };
+    if (!D.pools[r.pool]) (r.pool ? err : warn)(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'hub', g);
+    if (r.battleStage && !D.battleStages[r.battleStage]) warn(`${r.name} uses an unknown battle backdrop.`, 'hub', g);
+    if (r.shop && !(D.shops || {})[r.shop]) warn(`${r.name} uses a shop that doesn’t exist.`, 'hub', g);
     if (r.gate && !seats.has(r.gate))
-      warn(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);
+      warn(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'hub', g);
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
@@ -442,8 +441,8 @@ const CHECK_FILE_SECTIONS = {
   'robots.json': ['robots'],
   'uiTheme.json': ['ui'],
   'pools.json': ['world', { wtab: 'pools' }],
-  'locations.json': ['world', { wtab: 'route' }],
-  'roads.json': ['world', { wtab: 'route' }],
+  'locations.json': ['hub'],
+  'roads.json': ['hub'],
 };
 /** @param {string} where a file as check-data names it @returns {[string?, object?]} */
 function checkFilePlace(where) {

@@ -672,11 +672,7 @@ export const SECTION_LIST = [
   ['types', 'Types', 'Colors, matchups and type abilities'],
   ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
   ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
-  [
-    'world',
-    'World & encounters',
-    'Who appears where (runs read the pools their biomes name); route stops, eggs, map: legacy',
-  ],
+  ['world', 'World & encounters', 'Who appears where (runs read the pools their biomes name); eggs, map: legacy'],
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
   ['hub', 'Hub island', 'The hub’s island: an orbit view, its ground, coast, zones and pivot, and the ground lock'],
   ['props', 'Props', 'Every prop: its picture, 3D model, leaves, variants, and where it stands'],

@@ -147,7 +147,7 @@ function connectionsTarget() {
     }
     return { kind: 'scene', id: currentMapId() };
   }
-  if (s === 'world' && studioState.sel.stop != null && D.locations[studioState.sel.stop])
+  if (s === 'hub' && studioState.sel.stop != null && D.locations[studioState.sel.stop])
     return { kind: 'stop', id: studioState.sel.stop };
   const m = f.match(/^(items|pyramids)\.([^.]+)\./);
   if (s === 'items' && m) return { kind: m[1] === 'items' ? 'item' : 'coin', id: m[2] };
@@ -229,8 +229,8 @@ function connectionNode(kind, id) {
         kind,
         id,
         label: (D.locations[id] || {}).name || 'Stop ' + (+id + 1),
-        sub: 'Route stop ' + (+id + 1),
-        go: () => openSection('world', { wtab: 'route', stop: +id }),
+        sub: 'Place (Hub island)',
+        go: () => openSection('hub', { stop: +id }),
       };
     case 'pool':
       return { kind, id, label: id, sub: 'Wild encounters', go: () => openSection('world', { wtab: 'pools' }) };
