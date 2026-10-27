@@ -79,7 +79,7 @@ below against main and report what differs.
 | WM-2 | The region grid (logic) (done 2026-10-27) | a coarse grid (about 64 m cells) replaces the rows: nodes get footprints, links go east, north or south; the landing's exits north and east; at least 2 routes between towns; leader then town; 2-3 towns; 8-12 places a path; the data checks, sim and the Run Lab's 2D preview | WM-1 | 1-2 |
 | WM-3 | Shapes and sizes | mapgen takes a footprint: any width and height, L-masks walled by mountain or forest, exits on any edge (more than 2 on long edges), roads that bend to a north exit; seam rules for north/south joins; a phone-time measurement | WM-2 | 1-2 |
 | WM-4 | The seamless region on the world map | places stamped at their grid positions, region filler between, the run's real roads, fogged outlines for unreached places; ends the crowding | WM-3 | 1-2 |
-| WM-5 | Town streets | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 1-2 |
+| WM-5 | Town streets (planned 2026-10-27: WM-5a the streets in mapgen, WM-5b sizes, services and names) | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 2 |
 | WM-6 | A region's look | districts (square, homes, park or pond, farm edge), a landmark per town from existing props, route numbers and town names on signposts at seams and on the world map | WM-4, WM-5 | 1 |
 | WM-7 | Leader arenas (done 2026-10-27, `claude/wm-7-leader-arenas`) | a raised, fenced ring by the leader's type on the road, a gate or Bureau barrier opening after the win, a line of trainers before it, the camera framing it; the final boss's own arena place | WM-2 | 1 |
 | WM-8 | Ledges and loops | one-way ledges and shortcuts that loop between routes | WM-3 | 1 |
@@ -101,6 +101,28 @@ mapgen-golden, mapgen-town) and check-fast's run pages.
   have about three times the route places they had (more route trainers).
 - Until WM-3: `row` is a node's step from the landing (every link to the next step) and the scenes and the bowl
   read rows and lanes as before; `at`, `size` and `runLinkDir` are for WM-3 and WM-4.
+
+## WM-5's answers and what it found (2026-10-27)
+
+Planned in Plan Mode on `claude/wm-5-town-streets` (from `track/worldmap`, PR into it). Two sessions: **WM-5a** the
+streets in mapgen (every size, runs still 2x1 hamlets), **WM-5b** the sizes on the grid, the services, the names and
+the in-game checks. MAPGEN_VERSION 24 (22 is RT-4b's on `track/routes`, 23 left for WM-3b).
+
+| Question | Answer |
+|---|---|
+| Services | Grow with size: a village adds a market stall (a second, smaller shop); a town (3x2) the stall and a second quest giver; the cap of three quests held stays |
+| The stall's wares | Held items, 2 a day, at their prices, no Perk |
+| Sizes | By order and Expedition: the last town a village at Expedition I, a town (3x2) from II; before it, of three towns hamlet then village, of two a hamlet at I-III and a village at IV-V |
+| South of the through road | Streets and houses may grow there when the road runs through the upper half of a 2-cell-tall place; a band by the south edge stays gardens, plots and tall grass (amends TW-1's answer) |
+| Facing | Every house faces the camera; north-south streets pass house sides, gardens and fences |
+| Townsfolk | 2 and 1 for every 2 houses, at most 10 (was 6); the Engine's townFolk setting still trims them |
+| Names | The size shows: "Meadow Hamlet", "Meadow Village", "Meadow Town" |
+
+- Found: towns are 2x1 only because `town` has no `shapes`; the grid's 2x1 fallback would shrink the last town in about
+  40% of rows holding two towns (strict sizes: no failures in 1,000 maps at I, III and V), so towns get none; the
+  Expedition doesn't reach the grid; a ghost that replaces a town keeps its footprint; water-gen keeps rivers out of a
+  fixed box round a town's road; nothing kept a tall-grass patch at a town's edge.
+- Measured in Node: a run's town 34 ms; the TW-1 stage at 128 x 128 57 ms and 192 x 128 73 ms; a run's places 1.2-4.3 s.
 
 ## Risks
 

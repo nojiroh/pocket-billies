@@ -82,7 +82,8 @@ below against main and report what differs.
 
 1. TW-1: towns bigger than a route (better towns, but the seams and the bowl layout would need work). Recommendation:
    keep the route size. **Answered 2026-10-24: the route size. Also: every house faces the camera (not turned to its
-   street); south of the through road stays gardens and grass; a well or a fountain by biome.**
+   street); south of the through road stays gardens and grass; a well or a fountain by biome.** Since WM-5
+   (worldmap-track.md, 2026-10-27): towns of three sizes, and streets may grow south of a through road that runs high.
 2. TW-3: hand-in at a notice board (recommended) or by talking to any quest giver. **Answered 2026-10-25: the notice
    board (a new low-poly prop); the quest list on the Map tab.**
 3. TW-3: the first quests' texts (Claude drafts 12-16, the owner approves). **Answered 2026-10-25: the 16 drafted,
