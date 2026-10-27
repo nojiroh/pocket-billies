@@ -21,7 +21,9 @@ import {
   AMBIENCE_BEDS,
   AMBIENCE_FIXED,
   ambienceBuckets,
+  ambienceChirp,
   ambienceCrackles,
+  ambienceCrickets,
   ambienceDrift,
   ambienceLiveStep,
   ambienceNearest,
@@ -896,34 +898,6 @@ function initAmbience() {
     m.connect(dest);
     b.parts.push({ buffer: ambience.noise[L.noise], rate: L.rate || 1, head: head || m });
   };
-  /* crickets: a high tone chopped fast, then gated in slow pulses; two of them, slightly apart */
-  const cricket = (f, r1, r2, dest, t) => {
-    const o = c.createOscillator();
-    o.frequency.value = f;
-    const a = c.createGain(),
-      b = c.createGain();
-    a.gain.value = 0.5;
-    b.gain.value = 0.5;
-    const l1 = c.createOscillator();
-    l1.type = 'square';
-    l1.frequency.value = r1;
-    const g1 = c.createGain();
-    g1.gain.value = 0.5;
-    l1.connect(g1);
-    g1.connect(a.gain);
-    const l2 = c.createOscillator();
-    l2.type = 'square';
-    l2.frequency.value = r2;
-    const g2 = c.createGain();
-    g2.gain.value = 0.5;
-    l2.connect(g2);
-    g2.connect(b.gain);
-    o.connect(a);
-    a.connect(b);
-    b.connect(dest);
-    for (const x of [o, l1, l2]) x.start(t);
-    return [o, l1, l2];
-  };
   /* SND-8a: each bed is a level (g), a pan and its trim, its layers' filters and the drifts; its sources are made
      when it starts and stopped when it stops (ambienceLiveStep), so a silent bed costs nothing */
   for (const [name, B] of Object.entries(AMBIENCE_BEDS)) {
@@ -942,6 +916,27 @@ function initAmbience() {
     } else g.connect(bus);
     for (const L of B.layers) layer(L, tr, b);
     /* SND-8a: a bed's events (ambienceEvents) play at a few places around it */
+    if (B.events === 'crickets') {
+      /* two crickets in different places, chirping in groups (no endless tone), through a low-pass */
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 5000;
+      lp.Q.value = 0.5;
+      lp.connect(tr);
+      b.events = B.events;
+      b.ev = [
+        { next: 0, left: 0 },
+        { next: 1.3, left: 0 },
+      ];
+      b.chirps = [buffer(ambienceChirp(c.sampleRate, 3600, 1)), buffer(ambienceChirp(c.sampleRate, 3850, 2))];
+      b.chirpGain = [1, 0.65];
+      b.evOut = [-0.45, 0.35].map(v => {
+        const q = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+        if (q.pan) q.pan.value = v;
+        q.connect(lp);
+        return q;
+      });
+    }
     if (B.events === 'crackles') {
       b.events = B.events;
       b.ev = { next: 0 };
@@ -953,7 +948,7 @@ function initAmbience() {
       });
     }
     b.osc = t => {
-      const out = name === 'crickets' ? [...cricket(4300, 26, 0.9, tr, t), ...cricket(4650, 23, 0.7, tr, t)] : [];
+      const out = [];
       if (B.tone) {
         const o = c.createOscillator();
         o.frequency.value = B.tone;
@@ -1008,10 +1003,21 @@ function ambienceBedStart(b, t) {
   }
   b.srcs.push(...b.osc(t));
 }
-/* SND-8a: a live bed's events due in the next 0.3 s: a fire's crackles (logic/ambience-sound.js) */
+/* SND-8a: a live bed's events due in the next 0.3 s: crickets' chirps, a fire's crackles (logic/ambience-sound.js) */
 function ambienceEvents(b, t) {
   const c = soundEngine.ctx,
     r = ambience.rng;
+  if (b.events === 'crickets')
+    for (const e of ambienceCrickets(b.ev, t, t + 0.3, r)) {
+      const s = c.createBufferSource(),
+        g = c.createGain();
+      s.buffer = b.chirps[e.who];
+      g.gain.value = e.gain * b.chirpGain[e.who];
+      s.connect(g);
+      g.connect(b.evOut[e.who]);
+      s.start(e.t);
+      s.onended = () => g.disconnect();
+    }
   if (b.events === 'crackles')
     for (const e of ambienceCrackles(b.ev, t, t + 0.3, r)) {
       /* a few milliseconds of noise, band-passed at a random pitch, snapping in and dying away */

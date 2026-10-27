@@ -159,8 +159,8 @@ export function ambienceDrift(D, r) {
  */
 /** @type {Record<string, AmbienceBed>} */
 export const AMBIENCE_BEDS = {
-  /* crickets: two high tones chopped fast and gated in slow pulses (oscillators in sound.js until re-voiced) */
-  crickets: { bus: 'amb', trim: 1, layers: [] },
+  /* crickets: chirps in groups with pauses (ambienceCrickets), two of them at different places, lower than before */
+  crickets: { bus: 'amb', trim: 1, layers: [], events: 'crickets' },
   /* leaves: a soft rustle that comes and goes in gusts */
   leaves: {
     bus: 'amb',

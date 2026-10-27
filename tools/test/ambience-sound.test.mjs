@@ -89,7 +89,7 @@ test('every bed recipe is sound: a known bus, layers of pink or brown with filte
   for (const [k, B] of Object.entries(AMBIENCE_BEDS)) {
     assert.ok(['world', 'amb'].includes(B.bus), k);
     assert.ok(B.trim > 0 && B.trim <= 4, `${k} trim ${B.trim}`);
-    assert.ok(B.layers.length || B.events || k === 'crickets', `${k} makes no sound`);
+    assert.ok(B.layers.length || B.events, `${k} makes no sound`);
     for (const L of B.layers) {
       assert.ok(['pink', 'brown'].includes(L.noise), `${k}: ${L.noise} (no white noise in a bed)`);
       assert.ok(
