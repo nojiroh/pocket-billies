@@ -58,8 +58,17 @@ Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game c
 - Risky (the bar): the wide tile uses about 25% of the screen standing (20% today) and 16% walking (11%), the home-bar
   strip counted; the sizes are proposals for the phone check after UI-8b. The minimap draws 5 times a second at about
   2.8 times today's pixels (unmeasured on a phone), and its marks grow with the tile's width.
+- The owner's third note: "I also want you to give the world map icons on the run more the style of all the others."
+  Examples: "Run Map Icons" (private artifact, nothing committed): https://claude.ai/artifact/KjBa67X4gcVLGynRjj79dL.
+  The run's map captured in the real game in Field Guide, light and dark, today and with a scratch pixel painter put in
+  through the test hooks (`window.runMarkDraw`, run-marks.js's own setter), the buttons restyled and the label font
+  swapped in the page; a key of every place in every state. Answers (Part 2, "The run map's icons", answers 15-17):
+  Badges (UI-4's outlines as pixel plates with a glyph each, the icon set's palette by family), the map's buttons as
+  44 px kit chips with the set's icons, the names in Jersey 15; a new session UI-8c right after UI-8b.
+- Found on the way: the map's look-around buttons are 28 px (under the 40 px tap rule) and overlap the place card's
+  last line; the names and the hidden place's "?" are drawn in system-ui; the map's buttons keep the old dark look.
 - Next: UI-8b (the wide tile) on `track/ui`, started 2026-10-27 in a new session at the owner's word (#266 merged);
-  then UI-11 (the colour code as data).
+  then UI-8c (the run map's icons) and UI-11 (the colour code as data).
 - Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
 
 ### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
