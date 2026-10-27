@@ -34,7 +34,8 @@ centre, the ground generated from region terrain, seen from above like a diorama
 
 ## E-map-1 result (2026-10-19): owner chose layout 1; the proposed links are kept as notes
 Copperleaf also gets proposed special links (canal to Kelpport, sky lift to Nimbus); see `10-proposed-links.md`.
-Sketches and data in `docs/phases/10-bowl/` (made by `tools/layout/`).
+Sketches and data in `docs/phases/10-bowl/` (made by `tools/layout/`, deleted on 2026-10-27 with the pictures nothing
+linked; both are in git history).
 - **Layout 1, spiral (recommended).** On the bowl a map's north faces the centre and its east runs counter-clockwise.
   Today's order rolls round the bowl and rises up the wall; the Inner Sun ends high at the rim. All 56 seams point
   within 30 degrees of their exits; no roads cross. Frostcrown and Hornpass sit beside the start, so the floor gets a

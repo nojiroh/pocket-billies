@@ -19,6 +19,8 @@ session is tagged `mg-N-done`.
   trees, the look keys (sky, haze, far, amb...), default water kind.
 - Named generator presets are game data (saved like the Engine presets), not localStorage.
 - tools/build-places-v46.py stays, with a header warning (below); the batch tool becomes a Node CLI on mapgen.js.
+  (2026-10-27, the owner: it was deleted in the repo clean-up with the other legacy-era generators whose inputs
+  exist only on the `legacy` tag, which keeps them runnable.)
 - Linking to a neighbour with no free exit is refused, unless "add an exit to the neighbour" is ticked: that adds an
   edgeExit (and a short path stub) to the neighbour and touches nothing else of it.
 
