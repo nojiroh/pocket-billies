@@ -18,8 +18,8 @@ The game vision is in docs/VISION.md. Read it before any design or art work.
 ## Workflow
 - Start every session in Plan Mode. Reply with a plan and wait for my approval before editing anything.
 - One phase per session. Read docs/ROADMAP.md, docs/VISION.md, docs/HANDOFF.md, then only the phase file I name (docs/phases/).
-- The quick check (tools/check-quick.py) drives a headless browser (Python + Playwright, tools/requirements-check.txt); verify the command on first use. Its pictures are compared with the picture baseline as notes, never failures.
-- Test speed: the edit hook runs lint, type-check and unit tests for what you edit; run `npm run check:smoke` before a commit that touches game/; run the full quick check at the end of a phase. Tiers and budgets are in docs/TESTING.md.
+- Run the quick check (tools/check-quick.py) after every change. Verify the exact command and requirements on first use; it drives a headless browser (Python + Playwright) and compares screenshots to validation/quick-baseline. After the scope reset (phase 03) the baseline is regenerated and tests for removed systems are replaced.
+- Test speed: after each change run lint, type-check and unit tests (seconds), then the smoke subset once it exists (phase 01); run the full quick check at the end of a phase. Tiers and budgets are in docs/phases/13.
 - Branches follow docs/BRANCHES.md. A plan that takes several sessions lives on one `track/<plan>` branch, named in its plan file's `Branch:` line; every session of it starts on that branch, checks it before any edit and pushes only there. The branch stays after its PRs merge.
 - Commit often. When a track or phase plan is finished, its branch gets a `<plan>-done` tag and is deleted (docs/BRANCHES.md); sessions don't ask for per-session tags (older lines in ROADMAP.md, BRANCHES.md and the track plans that ask for them are out of date). Start from the plan's branch with main merged in.
 - Anything marked "Ask me before" in a phase file is a decision I want to make myself. Offer options and a recommendation, then wait.
@@ -31,5 +31,5 @@ Numbers and file names in the numbered phase briefs 00-18 (docs/phases/, docs/ar
 ## Known gotchas (verify)
 - The page's modules share names through the generated game/js/hooks.js (tools/to-module.mjs): a new module-level value needs a `setX` setter that calls `provide`, then `npm run modules`; check:modules also checks the load order. Check for name clashes before and after any move.
 - Many source lines exceed 300 characters. Reformat only in separate no-op commits.
-- gamedata.js is generated (`npm run data`, not in git): one `window.GAMEDATA=` line with every section in game/data/index.json. Read game/data/*.json and game/data/schema/ instead of opening it.
+- gamedata.js is a ~13 MB `window.GAMEDATA=` file, ~8 MB of it `scenes`. Never open it whole; search it or read the schema.
 - Debug and self-test code must never send save data, names or step history anywhere.
