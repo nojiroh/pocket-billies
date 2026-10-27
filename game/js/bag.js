@@ -6,8 +6,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
-import { ITEMS, PYRAMIDS, STATUS_NAMES } from './game-data.js';
+import { ITEMS, PYRAMIDS } from './game-data.js';
 import { billyName, formatNumber, maxHp } from './logic/rules.js';
+import { fxTagsHTML, rarityPillHTML, rarityRowAttr, statusTagHTML } from './ui-marks-kit.js';
 import { applyItem, canUse, teamNeedsHp } from './logic/battle-engine.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { pyramidHTML, uiIconHTML } from './art.js';
@@ -52,8 +53,10 @@ export function renderBag() {
       ? `<div class="bag-list px">${L.map(k => {
           const I = p === 'pyramids' ? PYRAMIDS[k] : ITEMS[k],
             n = p === 'pyramids' ? saveData.pyramids[k] : saveData.items[k],
-            on = sel === k;
-          return `<button class="bag-row k-card ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'pyramids' ? pyramidHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
+            on = sel === k,
+            /* UI-14b: a held item's tier (row frame, name colour, pill) and its stat rows as tags */
+            held = p !== 'pyramids' && I.hold;
+          return `<button class="bag-row k-card${held ? ' rar-row' : ''} ${on ? 'on' : ''}"${held ? rarityRowAttr(I.rarity) : ''} data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'pyramids' ? pyramidHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}${held ? fxTagsHTML(I.hold) : ''}</small></span>${held ? rarityPillHTML(I.rarity) : ''}<b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
       : `<p class="note bag-empty">${p === 'pyramids' ? 'No pyramids. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   /* what the chosen thing can do */
@@ -108,7 +111,7 @@ document.addEventListener('click', ev => {
     }
     modal({
       title: `Use ${escapeHtml(I.n)} on…`,
-      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { coat: m.coat })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + escapeHtml(STATUS_NAMES[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
+      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { coat: m.coat })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)} ${statusTagHTML(m.status)}</small></span></button>`).join('')}</div>`,
       btns: [{ l: 'Never mind', c: 'quiet', f: closeModal }],
     });
     return;

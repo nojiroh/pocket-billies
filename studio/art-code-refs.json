@@ -1762,7 +1762,7 @@
    "game/js/world-bowl.js:4163"
   ],
   "heart": [
-   "game/js/bag.js:26",
+   "game/js/bag.js:27",
    "game/js/billie-sheet.js:109",
    "game/js/billie-sheet.js:310",
    "game/js/boot.js:151",
@@ -1856,7 +1856,7 @@
    "game/js/ui-kit.js:531"
   ],
   "spark": [
-   "game/js/bag.js:28",
+   "game/js/bag.js:29",
    "game/js/battle-stage.js:776",
    "game/js/battle-stage.js:790",
    "game/js/battle-stage.js:809",
