@@ -1029,6 +1029,10 @@ section > h2,
   box-shadow: 0 0 0 2px currentColor;
   margin-left: var(--s1);
 }
+/* UI-13: the status's glyph before its name */
+.stb .ugl {
+  margin-right: var(--s1);
+}
 .st-par {
   color: #c27c0e;
 }

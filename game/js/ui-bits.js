@@ -8,6 +8,7 @@ import { clamp } from './util.js';
 import { STATUS_NAMES, TYPE_COLORS } from './game-data.js';
 import { readableBg } from './logic/colors.js';
 import { typeGlyphHTML } from './ui-kit.js';
+import { glyphHTML } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
   PILL_COLORS: [() => PILL_COLORS],
@@ -26,7 +27,9 @@ provide({ pillColor }); /* to-module */
 export const typeBadgeHTML = t =>
   `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${typeGlyphHTML(t)}${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
-export const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
+/* UI-13: the status's own glyph before its name, in the badge's colour (paralysis has its own: the bolt is the storm's) */
+export const statusBadgeHTML = st =>
+  st ? `<span class="stb st-${st}">${glyphHTML('status', st, 11, 'current')}${STATUS_NAMES[st]}</span>` : '';
 provide({ statusBadgeHTML }); /* to-module */
 export function progressBarHTML(p, cls = '') {
   return `<div class="pbar ${cls}"><i style="width:${clamp(p, 0, 1) * 100}%"></i></div>`;

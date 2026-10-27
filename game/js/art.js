@@ -182,12 +182,14 @@ export function uiIconHTML(key, size = 22) {
   return iconTag('uico', key, size);
 }
 /** UI-13: a mark's glyph (logic/signals.js UI_GLYPHS: a status, a short effect, a family, a pickup's kind), its SVG
- * as a mask filled with its colour code: the side's text shade (light and dark screens), or with `fill` the fill (on dark
- * glass); a neutral one takes the text's colour. '' for an unknown mark @param {string} group @param {string} id */
-function glyphHTML(group, id, size = 14, fill = false) {
+ * as a mask filled with its colour code. `tint`: 'text' the side's text shade (light and dark screens), 'fill' the
+ * fill (on dark glass), 'current' the text's colour (inside a tag that has its own); a neutral one always takes the
+ * text's colour. '' for an unknown mark
+ * @param {string} group @param {string} id @param {number} [size] @param {'text' | 'fill' | 'current'} [tint] */
+export function glyphHTML(group, id, size = 14, tint = 'text') {
   const G = glyphOf(group, id);
   if (!G) return '';
-  return iconTag('ugl', G[0], size, G[1] ? `;--tone:var(${sigVar(G[1], !fill)})` : '');
+  return iconTag('ugl', G[0], size, G[1] && tint !== 'current' ? `;--tone:var(${sigVar(G[1], tint === 'text')})` : '');
 }
 /** RF-1: a run's money on screen: the coin icon and the number, read aloud as "120 Moneys" (plain text: plural(n, 'Money')) */
 export function moneyHTML(n, size = 14) {

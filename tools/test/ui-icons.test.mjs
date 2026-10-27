@@ -70,3 +70,16 @@ test('UI-13: the marks’ glyphs: each in UI_GLYPHS exists, is one colour (a mas
     UI_SIGNAL_IDS.filter(id => modules.signals.UI_SIGNALS.find(s => s[0] === id)[2] === 'family').sort()
   );
 });
+
+test('UI-13: the bolt icon is the storm weather’s alone (Sandstorm and paralysis have their own glyphs)', () => {
+  const files = readdirSync(join(ROOT, 'game/js'), { recursive: true }).filter(f => String(f).endsWith('.js'));
+  for (const f of files) {
+    if (String(f) === 'hooks.js') continue;
+    const text = readFileSync(join(ROOT, 'game/js', String(f)), 'utf8');
+    assert.doesNotMatch(text, /(?:uiIconHTML|runIcon|runIconURL|uiIconURL)\('bolt'/, String(f));
+    // a weather table names it for storms only
+    for (const m of text.matchAll(/(\w+): 'bolt'/g)) assert.equal(m[1], 'storm', `${f}: ${m[0]}`);
+  }
+  assert.deepEqual(modules.signals.glyphOf('effect', 'sandstorm'), ['g-sand', 'caution']);
+  assert.equal(modules.signals.glyphOf('status', 'par')[0], 'g-par');
+});
