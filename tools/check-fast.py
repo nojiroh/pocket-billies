@@ -1329,6 +1329,17 @@ def waystations(pg, base):
     if len(ph) != 1 or not ph[0]['ok']: raise Exception(f'the phase failed: {ph}')
     return ph[0]['why']
 
+def voltron(pg, base):
+    """RL-14b: the in-game test's own phase, "The Voltron" (self-test.js), on the page's save: the Retrieval Unit as a
+    run boss: its join intro (its four bots fly in), an Alpha robot never caught, a hit past both its phases (a shield,
+    then an arm-bot torn loose and dropped)"""
+    pg.evaluate("uiState.inside=null;uiState.mq=[];uiState.modal=null;renderOverlay();"
+                "selfTest.slow=3;selfTest.only=['voltron'];runFullTest();0")
+    if not until(pg, '!selfTest.on&&!!(debugLog.bench&&debugLog.bench.result)', 240): raise Exception('the phase didn’t finish in 240 s')
+    ph = pg.evaluate("debugLog.bench.result.phases.map(p=>({name:p.name,ok:p.ok,why:p.why||p.note||''}))")
+    if len(ph) != 1 or not ph[0]['ok']: raise Exception(f'the phase failed: {ph}')
+    return ph[0]['why']
+
 def screens(pg, base):
     """UI-5: every screen opens with its parts, through the buttons a player taps: the bottom bar's Map, Team, Bag and Lab, the
     world again (the open tab tapped again, and Esc), the Trainer card from the portrait and the Guide from it,
@@ -1658,7 +1669,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the station, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
     ('town', [('The train ride: up on its engines into the portal, the white veil, the carriage, the ride home gold and battered (HB-8, cutscenes A)', train_ride)]),
-    ('battle', [('A battle plays to the end', battle)]),
+    ('battle', [('A battle plays to the end', battle),
+                ("The Voltron: its bots join, an Alpha robot never caught, its phases (a shield, an arm-bot torn loose) (RL-14b)", voltron)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
              ("The run's places from the helper thread: equal to the page's (LD-4)", run_helper),
              ("A run town's shop opens (UI-5)", run_shop),
