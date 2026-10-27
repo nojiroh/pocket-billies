@@ -107,6 +107,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `design/expedition-punk-prototype` | Standalone UI prototype ("Hollow Signal" shell), PR #76 closed unmerged. Not wired into the game. |
 | `ccr-03a15a70-nd3yqu` | UI track UI-10 (docs only): Part 2 of docs/phases/ui-track.md, Living Semigloss (the owner's brief 2026-10-27; research, the colour code, palettes, sessions UI-11..UI-18) and a palette sampler artifact, written here at the owner's word (a cloud session pushes only to its own branch). Later UI sessions work on `track/ui`. To main by pull request. |
 | `ccr-dab4e0cd-6re1eb` | UI track UI-11: the colour code as data (uiTheme.json `defaults.signals`, `--sig-*` tokens, the checks, the Studio's Colour code group), built here since a cloud session pushes only to its own branch. To main by pull request. |
+| `claude/ui-13-glyphs-types` | UI track UI-13: glyphs and types (the marks' glyphs as masks of one-colour SVGs, the nine types at one lightness, HP's heart teal, Sandstorm and paralysis off the bolt), made from UI-11's `ccr-dab4e0cd-6re1eb`. To main by pull request (it carries UI-11's commits until #280 merges). |
 
 ## Archive (unmerged work from before the roguelite pivot, kept but parked)
 

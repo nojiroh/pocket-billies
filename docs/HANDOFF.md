@@ -2,6 +2,62 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-13 - glyphs and types (the marks' glyphs, the types at one lightness, the teal heart, the bolt for storms) - 2026-10-27
+Branch `claude/ui-13-glyphs-types`, made from UI-11's `ccr-dab4e0cd-6re1eb` (main plus UI-11, draft PR #280); main
+merged in first (nothing new). Its PR goes to main and shows UI-11's commits until #280 merges. No Plan Mode (the
+owner's standing instruction); the plan was written as a message and carried out.
+- Changed:
+  - **Types at one lightness** (types.json `color`): Part 2's hexes, OKLCH L 0.55-0.59, white text 4.5-4.6:1 on all
+    eight; Electric keeps #E2B92C with dark ink. Water is **#1577D0**, not Part 2's #2C78C5 (same hue and lightness, a
+    little more chroma), since #2C78C5 sat 4.2 from Flying, under the colour code's 5 (UI-11's finding); now 5.6.
+    Normal (untyped.json) #7A7764, its hue at the same lightness. Move tiles, plates (`plateVars`), the Guide and the
+    pills all read `color`, so they follow without markup changes; `readableBg` on pills now has nothing to darken.
+  - **The 3D rings checked:** battle-stage.js drew rings and beams in the type colour, and the darker colours would
+    dim them on the dark stage (the beams add light). types.json `glow` keeps each type's old colour; game-data.js
+    `TYPE_GLOW` (and the Studio's stand-in) feeds the rings and beams, so battle looks as before.
+  - **A check for it** (logic/ui-theme.js `uiSignalProblems`, check-data and the Studio's Check): every type's text on
+    its colour at 4.5:1, and every light-text type within OKLab L 0.03 of the others' middle; a test plants alpha 0.5's
+    Flying, which fails both.
+  - **HP's heart teal:** heart.svg's red ramp swapped for the icon set's teal (`t`, "healthy HP"), same mixes; the
+    builder-grid fixture follows (mono `teal`). It marks Heal, the Bag's Healing, the clinic and the Buddy tag.
+  - **26 glyphs** (art/ui/g-*.svg, one colour each, 12 x 12 drawn and tripled to 36 x 36 in the editor's pixel
+    format): statuses (burn, paralysis, sleep), short effects (Protect, the shield, confusion, Soaked, Fork, the
+    delayed hit, stones, Sandstorm), the eight families, pickup kinds (Perk, held item, item, candy, evolution item,
+    move tutor, bot part, Scrap). logic/signals.js `UI_GLYPHS` and `glyphOf` name each with its colour code id;
+    art.js `glyphHTML(group, id, size, tint)` draws it as a mask (`.ugl`, `-webkit-mask` and `mask`) filled with
+    `--sig-<id>-text` ('text'), `--sig-<id>` ('fill', on dark glass) or the text's colour ('current'); it shares one
+    tag builder with `uiIconHTML`.
+  - **The bolt for storms only:** the battle's Sandstorm chip shows g-sand (caution fill); status badges start with
+    their glyph in the badge's colour, so paralysis has its own. The weather tables keep `storm: 'bolt'`.
+  - ui-icons test: 77 icons; every glyph exists, is one colour and has a colour code; the heart's colours; no code
+    names the bolt but a storm.
+- Decided for the owner, to review:
+  - Water #1577D0 (above), and Normal retuned too (Part 2 names the nine types only).
+  - `glow` keeps battle's effects on the old colours rather than dimming them (no picture to judge by, checks skipped).
+  - The glyphs' tints where Part 2 names none: confusion and Fork violet (special), Soaked sky (growth), the delayed
+    hit amber (caution), the item kind neutral, the move tutor sky. The glyph art is a first pass for the owner to
+    repaint in the Studio's icon editor (names `g-*`).
+  - The heart turns teal everywhere it is used, the Buddy tag included (one icon, one meaning: HP).
+  - Status badges keep today's colours (`.st-*`) with the glyph in the badge's colour; the colour code's status
+    colours on angled tags are UI-14a/b's `pb-tag`. battle-stage.js's paralysis particles still use the VFX bolt
+    sprite (a particle, not an icon; the VFX track's).
+- Found (figures checked): Part 2's old types: OKLCH L 0.52-0.80 and white text 2.7:1 (Flying) to 5.9:1 (Dragon), as
+  written; 51 icons before this; the bolt was the storm weather's (ui-run-kit.js, run-loading.js) and Sandstorm's
+  (battle.js); paralysis had no icon, only the 3D bolt particle. The UI lint's colour ceiling counts hexes in logic
+  files too (the first version of the check went 3 over; fixed in its own commit).
+- Risky: the type colours change every type pill, tile and Guide screen at once; the masks are new to the page
+  (Safari takes `-webkit-mask`; no filter on `.ugl`). The ui-icons test and UI-8c's new place icons both raise the
+  icon count: expect a one-line merge.
+- Verified: lint, typecheck, format, `npm test` (1580 pass; the known 1,000-maps timing test went over 1 s on one earlier run),
+  check:data, check:modules.
+- Skipped until UI-18 (the owner's instruction), needed later: check-fast and check-quick (type colours in battle,
+  Team and the Guide; the status badges; the Sandstorm chip), the Studio check (its `ui` step, the icon editor opening a
+  `g-*` glyph, the Check's types rule), the gallery (pills, `pb-pill` types, `pb-node`), the picture baselines (every
+  screen with a type colour), and the owner's phone check (the types' look, the glyphs at 11-14 px, the teal heart).
+- Next: UI-14a (the marks kit: `pb-tag`, `pb-chip`, `pb-proc`, `pb-info`, rarity), which can use `glyphHTML` and
+  `UI_GLYPHS`.
+- Tag to suggest: `ui-13-done` on this entry's commit.
+
 ### UI track UI-11 - the colour code as data (signals, --sig-* tokens, the checks, the Studio) - 2026-10-27
 Branch `ccr-dab4e0cd-6re1eb` (the session's own: a cloud session pushes only there), from main at 07c9b284, which
 already holds `track/ui`; its PR goes to main, as UI-10's did. No Plan Mode (the owner's standing instruction); the
