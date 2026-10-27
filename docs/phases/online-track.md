@@ -57,8 +57,8 @@ Every figure is a claim from a read of the code: check it again at the start of 
 - **Billies, eggs and parts have ids:** `newUid()` (logic/rules.js:303); robot parts `{uid, id, up}`
   (saves.js ~169); the ranch (logic/ranch-state.js) keeps `pens` (Billie uids), `trainees`, `nursery` (`{a, b, mode,
   at, ready, egg}`), checked by `validRanch`.
-- **Not built yet:** `logic/run-record.js`, `daily.js`, the `rival` node's ghost source (RL-15 planned them;
-  roguelite-track.md section 3 "Online" and section 4 "RL-15"). RL-S2's `logic/rival.js` exists (Blake's team).
+- **Built in ON-2** (2026-10-27): `logic/run-record.js`, `logic/daily.js`, the `ghost` node and `ghosts/<uid>`
+  (below, "Done in ON-2"); RL-15's ghost became a node of its own beside Blake's `rival` (the owner's choice).
 
 ## Research (2026-10-26)
 - **Pokémon Scarlet/Violet:** link trades by a shared 8-digit code; Surprise Trade sends one Pokémon to a random
@@ -145,6 +145,50 @@ owner's answers: hide after 3 reports, a placeholder moderator uid, Online play 
 - The record keeps each run's seed and choices in a shape a server could replay later (if Blaze ever comes).
 - Rules: score and days within caps, the board id matching the date, one daily entry.
 - Open on Spark: a friend could post a faked score. Friends only, so accepted.
+
+**Facts corrected at ON-2's start** (2026-10-26, main at 36bca3b4): a seed alone doesn't make the same run: the map
+also follows the player's unlocks (run-start.js: the biomes they open), the Expedition and the generator version, and
+Blake (his team grows with your own history) and the hub folk's bonuses (`relTakeoff`) differ per save. There was no
+"score" anywhere; `run.path`, `run.perks` (cap 6), `run.clock` and `run.beat` hold the rest. Battle choices are kept
+nowhere, and wouldn't fit 8 KB. The friend-list pattern allows a friend's `get`, never a friends-only list query, so
+`boards/{board}/entries` would cost a read per friend per board. `dailySeed` existed (rng.js) but nothing called it.
+
+**Done in ON-2** (2026-10-27, on `track/online`, made by this session from `ccr-0b8e3c38-gt7t6a` with main merged in;
+one session for both halves at the owner's word). The owner's answers: one document per player; no score (won, then
+places cleared, leaders beaten, fewest days); dailies and weeklies with every unlock open, Blake reset and no hub bonus,
+normal payout, open to anyone; the ghost on its own node, one per run, paying as Blake does.
+- `game/js/logic/run-record.js`: `runRecord` (`{v, seed, kind r/d/w, n, exp, mods, mapgenV, unlocks, won, cleared,
+  leaders, days, party ≤ 6 online copies, perks ≤ 6, path ≤ 64, name, t}`, under 8 KB: the unlocks go first, then the
+  path's oldest), `validRunRecord` (every Billie through `legalBilly`; a nickname is cleaned, not dropped),
+  `boardEntry`, `boardOrder`, `ghostDocNext` (the last run always; a daily's or weekly's first attempt only, and only
+  for that day or week or the one before; best per Expedition and the fastest win from runs of your own),
+  `ghostDocRead`, `boardRows`, `ghostPick` (from the run's seed among friends, by uid; never a blocked player).
+- `game/js/logic/daily.js`: UTC day numbers and weeks from Monday (the rules' own sums), `boardSeed` (`d2026-10-26`,
+  `w` and the Monday), `boardPlan` (rules.json `run.boards`: the daily Expedition I with no challenge; the weekly
+  Expedition II-III and 1-2 of No healing, No Perks, Fainted is gone, from the week's stream), `boardPlayed`.
+  `meta.boards {d, w}` marks the one attempt at take-off; giving up is a loss.
+- Firestore `ghosts/<uid>` `{name, last, day, week, x, fast}`: `last` is the record as JSON text (the rules cap it at
+  8192 characters). Rules: the owner writes, friends on the owner's list get, nobody lists; entries within caps; a
+  daily's or weekly's entry only for the server's day or week or the one before, never changed. 7 emulator tests
+  (`firebase/test/ghosts.test.mjs`, its own emulator project).
+- The ghost: node type `ghost` (nodeTypes.json, Blake's marker), rules.json `run.ghost` (`on` route/event, `spare`
+  town, `band` 0.1-0.95, `up` 1, `reward` 200, `who` hiker). `run-map.js runMapGhost` places it after Blake on a
+  stream of its own, so a run without a ghost has the same map; it may share a row with Blake, and when no route or
+  waystation fits it takes a town on a row that keeps another (the road through it skips that town). `run.ghost
+  {u, n, party, won}` is kept at take-off, so a reload fights the same team. `rival.js ghostTeam`: the strongest at
+  the row's top wild level + 1, the others in proportion; `trainerTeam`'s `whole` entries keep moves, coat, nickname,
+  sizes, splice, Augments and OT. A win marks `run.ghost.won` and gives a reward pick.
+- Board runs (`run.board {k, n}`): every shop and biome unlock, Blake's past meetings 0, no `relTakeoff`.
+- The page: the start sheet's "Which run: Your own / Daily / Weekly" (shown once a run has ended, so a new player's
+  first sheet stays as it was; a played daily or weekly can't take off again); `game/js/boards.js` reads my and my
+  friends' documents (one read each, kept 10 minutes; never during the self-test), posts the record at Ride home
+  (offline or refused, it waits in this browser, at most 5, and goes at the next start), the Trainer screen's
+  "Friends' boards" (Today, This week, Expedition I-V, Fastest), and a daily's or weekly's friends on its payout
+  screen.
+- Tests: `daily.test.mjs`, `run-record.test.mjs`, `ghost-run.test.mjs` (the ghost's place on 60 seeds, its foe and
+  team, a daily's start), the meta check; the quick check's Safety step covers the boards and the payout board.
+- Changed from the plan above: one `ghosts/<uid>` document instead of `boards/{board}/entries/{uid}` (the owner's
+  choice); no score; boards and ghosts need no Online play (friends only).
 
 ### ON-3 Showcase (1-2 sessions)
 - Share a Billie as a snapshot (`showcase/{id}`: species, coat, graft, augments, level, nickname, OT name, theme,
