@@ -522,8 +522,6 @@ body.on-scene #dioui {
 /* ---------- tokens ---------- */
 :root {
   --r-s: 6px;
-  --r-m: 10px;
-  --r-l: 16px;
   --focus: #8a5a0c; /* focus ring, ≥3:1 on light panels */
   --dither: rgba(53, 68, 85, 0.055); /* faint pixel texture on cards */
   --sheen: rgba(255, 255, 255, 0.55);
@@ -631,9 +629,6 @@ html[data-targets='big'] .set-tabs button {
   --g-sh: 0 10px 28px -10px rgba(46, 33, 64, 0.42), 0 2px 6px rgba(46, 33, 64, 0.14);
   --g-sh2: 0 16px 34px -10px rgba(46, 33, 64, 0.5), 0 3px 8px rgba(46, 33, 64, 0.16);
   --g-blur: blur(16px) saturate(1.5);
-  --r1: 12px;
-  --r2: 16px;
-  --r3: 22px;
   --gold-a: #ffda7a;
   --gold-b: #f2b84b;
   --gold-sh: rgba(196, 130, 44, 0.6);
@@ -1702,7 +1697,7 @@ section > h2::before,
   -webkit-backdrop-filter: var(--g-blur);
   backdrop-filter: var(--g-blur);
   border: 1px solid var(--g-bd);
-  border-radius: var(--r2) !important;
+  border-radius: var(--r-md) !important;
   box-shadow: var(--g-in), var(--g-sh) !important;
   margin: 0 0 2px;
 }
@@ -1768,7 +1763,7 @@ html[data-contrast='high'] .px {
 }
 .pb.big {
   font-size: 21px;
-  border-radius: var(--r3);
+  border-radius: var(--r-lg);
 }
 /* ---------- small things ---------- */
 .pbar {
@@ -1785,7 +1780,7 @@ html[data-contrast='high'] .px {
   box-shadow: 0 3px 8px -4px rgba(46, 33, 64, 0.45);
 }
 .seg {
-  border-radius: var(--r1);
+  border-radius: var(--r-sm);
   background: var(--seg-bg, rgba(46, 33, 64, 0.07));
   box-shadow: inset 0 1px 3px rgba(46, 33, 64, 0.12);
   padding: 3px;

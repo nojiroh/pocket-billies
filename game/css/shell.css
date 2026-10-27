@@ -383,7 +383,7 @@ button.tb-where.shut {
 /* ---------- UI-5: from v05.css, as it was ---------- */
 .sheet,
 .sheet.px {
-  border-radius: var(--r3) var(--r3) 0 0 !important;
+  border-radius: var(--r-lg) var(--r-lg) 0 0 !important;
   background: var(--g-bg) !important;
   -webkit-backdrop-filter: var(--g-blur);
   backdrop-filter: var(--g-blur);
@@ -413,7 +413,7 @@ button.tb-where.shut {
   display: none !important;
 }
 .tb-chip {
-  border-radius: var(--r1) !important;
+  border-radius: var(--r-sm) !important;
   background: var(--g-bg2) !important;
   border: 1px solid var(--g-bd);
   font: 600 15px/1 var(--font-voice) !important;
@@ -421,7 +421,7 @@ button.tb-where.shut {
   padding: 6px 10px !important;
 }
 .tb-btn {
-  border-radius: var(--r1) !important;
+  border-radius: var(--r-sm) !important;
   background: var(--g-bg2) !important;
   border: 1px solid var(--g-bd) !important;
   box-shadow: 0 4px 10px -5px rgba(46, 33, 64, 0.4);
