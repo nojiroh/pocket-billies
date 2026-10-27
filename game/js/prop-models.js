@@ -11,6 +11,7 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
+import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
@@ -39,6 +40,7 @@ import {
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
@@ -95,7 +97,6 @@ expose({
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
   layerProp: [() => layerProp, v => (layerProp = v)],
   leafCut: [() => leafCut, v => (leafCut = v)],
-  leafOutlineColour: [() => leafOutlineColour, v => (leafOutlineColour = v)],
   limbPoints: [() => limbPoints, v => (limbPoints = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
@@ -1587,14 +1588,15 @@ function tagPropModel(it) {
     if (propModelState.res) flushPropModelMeshes();
     propModelState.res = R;
   }
-  /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
+  /* a few new meshes a frame: the first always, the rest while the frame's one-off budget lasts (LD-5: it was 12 ms
+     of their own); the rest draw as their pictures a frame or two longer */
   if (rec && !propModelState.meshes.has(path)) {
     const fr = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
     if (propModelState.fr !== fr) {
       propModelState.fr = fr;
       propModelState.bt = 0;
     }
-    if (propModelState.bt > 12) return;
+    if (propModelState.bt > 0 && typeof frameBudgetLeft === 'function' && !frameBudgetLeft()) return;
     const t0 = performance.now();
     propModelGuard(() => propModelMesh(path, rec));
     propModelState.bt += performance.now() - t0;
@@ -1630,14 +1632,25 @@ function propModelImageItems(it, out) {
     turn: propTurn(it),
     bob: mooredBob(it),
   };
+  const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
-    if (!im0 || !(im0.naturalWidth || im0.width)) {
+    /* LD-1: a leaf clump's baked cut (tools/bake-pixel-facts.mjs), so its crown picture is never read (or even
+       loaded) in the page; the Studio painting the crown (_ver) or moving the clump (a key with no bake) cuts it here */
+    const baked = F && (L.clip || L.shade) && !(im0 && im0._ver) ? F.cuts[leafCutKey(L.img, L)] : null;
+    if (baked) {
+      const b = artImage(baked);
+      if (!b || !(b.naturalWidth || b.width)) {
+        artImg(baked);
+        continue;
+      }
+    }
+    if (!baked && (!im0 || !(im0.naturalWidth || im0.width))) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;
     }
-    const im = L.clip || L.shade ? leafCut(im0, L) : im0;
+    const im = baked ? artImage(baked) : L.clip || L.shade ? leafCut(im0, L) : im0;
     if (!im) continue;
     const d = decalPlace(it, L, m),
       s = d.s,
@@ -1684,25 +1697,6 @@ function propModelImageItems(it, out) {
    picture's darkest colour as an outline, as a drawn clump has. shade darkens the whole picture (the crown's core,
    behind the clumps). Cuts are kept per picture and made again when the picture changes (the Studio's _ver). */
 const LEAF_CUTS = new WeakMap();
-function leafOutlineColour(d) {
-  const n = new Map();
-  for (let i = 0; i < d.length; i += 4)
-    if (d[i + 3] > 127) {
-      const k = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
-      n.set(k, (n.get(k) || 0) + 1);
-    }
-  let best = 0,
-    bl = 1e9;
-  for (const [k, c] of n)
-    if (c > 15) {
-      const l = 0.299 * (k >> 16) + 0.587 * ((k >> 8) & 255) + 0.114 * (k & 255);
-      if (l < bl) {
-        bl = l;
-        best = k;
-      }
-    }
-  return [best >> 16, (best >> 8) & 255, best & 255];
-}
 function leafCut(im, L) {
   const ver = im._ver || 0;
   let C = LEAF_CUTS.get(im);
@@ -1710,7 +1704,7 @@ function leafCut(im, L) {
     const W = im.naturalWidth || im.width,
       H = im.naturalHeight || im.height,
       src = makeCanvas(W, H),
-      x = src.getContext('2d');
+      x = src.getContext('2d', { willReadFrequently: true });
     x.drawImage(im, 0, 0);
     const data = x.getImageData(0, 0, W, H).data;
     C = { ver, W, H, data, outline: leafOutlineColour(data), cuts: new Map() };
@@ -1719,77 +1713,13 @@ function leafCut(im, L) {
   const key = (L.clip || []).join(',') + '|' + (L.shade || 1);
   let out = C.cuts.get(key);
   if (out) return out;
-  const { W, H, data } = C,
-    sh = L.shade || 1;
-  if (!L.clip) {
-    out = makeCanvas(W, H);
-    const X = out.getContext('2d'),
-      o = X.createImageData(W, H);
-    for (let i = 0; i < data.length; i += 4) {
-      o.data[i] = data[i] * sh;
-      o.data[i + 1] = data[i + 1] * sh;
-      o.data[i + 2] = data[i + 2] * sh;
-      o.data[i + 3] = data[i + 3];
-    }
-    X.putImageData(o, 0, 0);
-  } else if (L.clip.length >= 4) {
-    /* phase 09 batch 10: a box [left, top, right, bottom] (picture pixels, right and bottom excluded), a pine's tier:
-       a wide, short band with its own drawn hem, so no outline is added; the layer stands on the box's bottom middle
-       as a circle's clump stands on its circle's */
-    const [x0, y0, x1, y1] = L.clip.map(Math.round),
-      w = Math.max(1, x1 - x0),
-      h = Math.max(1, y1 - y0);
-    out = makeCanvas(w, h);
-    const X = out.getContext('2d'),
-      o = X.createImageData(w, h);
-    for (let y = 0; y < h; y++)
-      for (let x = 0; x < w; x++) {
-        const px = x0 + x,
-          py = y0 + y;
-        if (px < 0 || py < 0 || px >= W || py >= H) continue;
-        const i = (py * W + px) * 4,
-          j = (y * w + x) * 4;
-        if (data[i + 3] <= 127) continue;
-        o.data[j] = data[i] * sh;
-        o.data[j + 1] = data[i + 1] * sh;
-        o.data[j + 2] = data[i + 2] * sh;
-        o.data[j + 3] = 255;
-      }
-    X.putImageData(o, 0, 0);
-  } else {
-    const [cx, cy, r] = L.clip,
-      R = Math.max(1, Math.ceil(r)),
-      S = 2 * R,
-      x0 = Math.round(cx) - R,
-      y0 = Math.round(cy) - R,
-      inC = (px, py) => (px + 0.5 - cx) ** 2 + (py + 0.5 - cy) ** 2 <= r * r,
-      op = (px, py) => px >= 0 && py >= 0 && px < W && py < H && data[(py * W + px) * 4 + 3] > 127;
-    out = makeCanvas(S, S);
-    const X = out.getContext('2d'),
-      o = X.createImageData(S, S);
-    for (let y = 0; y < S; y++)
-      for (let x = 0; x < S; x++) {
-        const px = x0 + x,
-          py = y0 + y;
-        if (!op(px, py) || !inC(px, py)) continue;
-        const i = (py * W + px) * 4,
-          j = (y * S + x) * 4,
-          rim =
-            py > cy - r * 0.25 &&
-            [
-              [1, 0],
-              [-1, 0],
-              [0, 1],
-              [0, -1],
-            ].some(([a, b]) => op(px + a, py + b) && !inC(px + a, py + b));
-        const c = rim ? C.outline : [data[i], data[i + 1], data[i + 2]];
-        o.data[j] = c[0] * sh;
-        o.data[j + 1] = c[1] * sh;
-        o.data[j + 2] = c[2] * sh;
-        o.data[j + 3] = 255;
-      }
-    X.putImageData(o, 0, 0);
-  }
+  /* LD-1: the cut's maths in logic/pixel-facts.js, shared with the bake (tools/bake-pixel-facts.mjs) */
+  const P = leafCutPixels(C.W, C.H, C.data, C.outline, L);
+  out = makeCanvas(P.w, P.h);
+  const X = out.getContext('2d'),
+    o = X.createImageData(P.w, P.h);
+  o.data.set(P.data);
+  X.putImageData(o, 0, 0);
   C.cuts.set(key, out);
   return out;
 }
@@ -2176,20 +2106,23 @@ function drawModelShadowPart(q, A, I, buf, at, n) {
 }
 /* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
 function propModelArtPaths(sc, C) {
-  const L = [];
+  const L = [],
+    F = typeof gameData !== 'undefined' && gameData.pixelFacts,
+    /* LD-1: a leaf clump comes as its baked cut (propModelImageItems), not its crown */
+    art = l => (F && (l.clip || l.shade) && F.cuts[leafCutKey(l.img, l)]) || l.img;
   let any = false;
   for (const p of sc.props || (sc._lite && sc._lite.props) || []) {
     const M = C.props[p.k];
     if (!M || !M.model) continue;
     any = true;
     const rec = propModelState.recipes.get(M.model);
-    if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(art(l));
     /* phase 09 batch 1: a variant's own model and swapped pictures (the autumn oak's leaves) load with the place too */
     const V = p.v && M.variants ? M.variants[p.v - 1] : null;
     if (V && V.swap) for (const v of Object.values(V.swap)) if (/\.png$/i.test(v)) L.push(v);
     if (V && typeof V.model === 'string') {
       const r2 = propModelState.recipes.get(V.model);
-      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(art(l));
     }
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */

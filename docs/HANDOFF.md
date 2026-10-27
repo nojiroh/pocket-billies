@@ -2,6 +2,144 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
+pictures into solids in a busy frame.
+- walk/quality-cull.js: `FRAME_WORK_MS` (8 ms phones, 10 elsewhere) and `frameBudgetRemaining`; walk-view-gl.js stamps
+  `walkRenderer.budT` at the frame's start (it was after the near ring); `groundPrepWork` and `updateNearRing` get at most
+  what is left (still at most 4 ms); prop-models.js meshes and buildings.js `buildingBudgetLeft` use the shared budget
+  past their first of a frame.
+- tools/check-load.py `--only=moves`: a seam, the Map tab, back, a battle on the run fixture, each with its held frames
+  (it waits for the boot's last shaders first).
+- Measured headless: no shader in any move; the held frames left are GPU-side (main thread idle) and the Map tab's first
+  draw. Candidates for after the phone's hitch list are in the plan (the walk grid, the world map's prewarm, meshes in
+  a worker, uploads).
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
+  `--only=town,room,world,island,behind,battle,tall,pasture,screens` 17 of 17, smoke 6 of 6 (152 s).
+- Next: **the owner's phone** (LD-6): Export debug log after a cold start, after a run's take-off and after walking
+  over a seam; the log's `boot` and `hitches` say what is left. Tag `ld-5-done` for the owner once the candidates are
+  decided.
+
+### Load track LD-4 - the run's places on a helper thread, from the pick - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- New game/js/run-worker.js and run-worker-modules.js (on no page; the build bundles the modules). The worker fetches
+  data/gamedata.js itself (no cost on the page), loads the logic and makes a run's places; the page gets progress and
+  then each place as a message of its own.
+- Moved: `runWorldData` to game/js/logic/run-world-data.js (a move commit; the imports regenerated).
+- run-world.js: `runWorldAhead` (the thread, its job, `off` with why), `runWorldAheadStart` (run.js `runTakeOff` calls
+  it right after the run is made, while the train leaves), `runWorldMake` takes the thread's places or makes them as
+  before. `runWorld.how` ('helper' or 'page'); the debug log's run state has `madeOn` and `helperOff`. Off in a test
+  run and once the Studio's edits are showing (boot.js `studioLive`), since the thread reads the site's data.
+- ui-lint leaves the two worker files out (on no page, nothing drawn).
+- New check: check-fast "The run's places from the helper thread: made there at boot, equal to the page's (LD-4)".
+- Measured headless: a reload mid-run made 12 places on the thread (wall 1.5 s with the page free); a take-off from the
+  hub had them ready before the white-out (places stage 9 ms, swap 7 ms).
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
+  `--only=world,helper,train,packing,blake,perks,encounters,quest` 11 of 11, smoke 6 of 6 (160 s).
+- Risky: a phone without module workers (Safari before 15) makes the places on the page as before; a Studio session
+  that changes run data without live edits showing (none known) would differ from the page.
+- Next: LD-5 (moving between places: the world map's prewarm in a worker first). Tag `ld-4-done` for the owner.
+
+### Load track LD-3 - booting: the island off the main thread, pictures per place, a smaller bundle, the precache - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- boot.js: the loader's island is drawn by a worker on an OffscreenCanvas (`loaderIslandWorker`, the same drawing
+  functions as source text, progress posted by `loaderIslandProgress`); the page draws it where that isn't possible.
+  **Claim corrected**: after the first second the loader shows the WebGL title town, not the island, so the loader
+  can't be kept moving by CSS; only by cutting main-thread stalls.
+- boot.js `loadList`: no map, prop or ground pictures (they come with their place); walk/frame-items.js asks once for a
+  prop picture nobody loaded; prop-models.js `propModelArtPaths` names baked leaf cuts.
+- vite.config.js: page bundles minified without renaming (`PAGE_MINIFY`), 2.64 MB (3.57), gzip 862 KB (1086).
+  **For future workers**: never turn on mangle or compress: the ground painter's, normal maps' and island's workers
+  are built from `Function.toString` and call functions by name.
+- game/sw.js: `PRECACHE` (the build's bundle, written by `stampBuild`) fetched on install; hashed bundles cache-first,
+  other builds' bundles dropped on activate.
+- debug-log.js: 3000 file timings kept.
+- Not done, with reasons in the plan: test code behind `import()`, `JSON.parse` for gamedata.js, stylesheets after the
+  title, Firebase later; `createImageBitmap` and an upload queue moved to LD-5.
+- Measured headless: the boot's pictures 889 files, done at 2.1 s; both load-check boots run on the minified bundle
+  with no page errors; the service worker served the bundle from its cache on a reload.
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, the whole fast check (every check passed) and smoke 6 of 6 (155 s).
+- Risky: a place's first visit fetches its pictures behind its fade (before, they were all in at boot; the service
+  worker's art cache keeps them after); a prop picture outside its place's list pops in a frame late.
+- Next: LD-4 (the run's places in a worker from the pick). Tag `ld-3-done` for the owner.
+
+### Load track LD-2 - shaders: started together, read once, finished behind the loader - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- engine/webgl.js: `compileProgram` compiles both shaders and links before reading anything (`beginProgramCompile`),
+  then `finishProgramCompile` (the link status once; the shaders' logs only when the link failed). A failed program
+  now deletes both shaders and the program (tools/test/gpu-registry.test.mjs says so). `pollPendingPrograms(max,
+  budget)`: with a budget, as many as fit; `pendingPrograms()`.
+- walk-view-gl.js: `ensureWalkGl` starts every list (walk, post and the rest) before finishing the walk and post
+  programs; the frame finishes background programs 12 ms a frame while the boot's loader (`ld-on`) or a run's loading
+  screen (`#runload`) is up, one a frame otherwise.
+- boot.js `programsWarmup`: after `walkViewWarmup`, for new players too, waits (at most 8 s) until no program is left
+  compiling; debug log "N of M shaders ready in T ms", stage "shaders ready".
+- Measured headless: a new player's 26 programs ready in 2.4 s behind the loader; held frames after the loader 3
+  (13 at LD-0), none a shader. In software a run's reload hits the 8 s cap (programs take seconds there).
+- Tried and dropped: a warm-up draw per program; the driver refuses a draw without the program's inputs.
+- Found: with every shader done, software drawing still holds a frame for 2-5 s every few seconds on the title with an
+  idle main thread (the GPU side of periodic redraws). Only the phone's hitch list can size it.
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast `--only=boots,world,room,battle,debug`
+  10 of 10 and smoke 6 of 6 (192 s), both on a tree that also had LD-3's loader island worker.
+- Risky: a slow phone waits up to 8 s more behind the loader when its shaders are slow (it shows "Setting the scene").
+- Next: LD-3. Tag `ld-2-done` for the owner.
+
+### Load track LD-1 - the quick wins: no timed picture, pixel facts baked, canvases in memory - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq` (the owner's word: continue without input). No look changes.
+- The debug log's picture is taken only when the log is exported (debug-log.js: the 60 s timer gone).
+- New game/js/logic/pixel-facts.js (the leaf cut, outline colour and lightness maths, moved from prop-models.js and
+  walk/sprites.js; on both pages and in the Studio's logic worker), tools/bake-pixel-facts.mjs (`npm run bake:pixels`,
+  `--check`), game/data/pixelFacts.json (a new data section, in index.json after scenery) and
+  game/art/scene/next/cuts/ (260 PNGs, 456 KB). The game draws a clump from its baked cut and never loads or reads its
+  crown for it; the moss and clover lightness come from the file. The Studio's painted pictures (`_ver`) and moved
+  clumps (a key with no bake) still cut in the page.
+- **For artists and the Studio**: after painting a crown, moving a clump or painting moss or clover, run
+  `npm run bake:pixels`; tools/test/pixel-facts-real.test.mjs (npm test, CI) fails until then. The Studio's
+  "Propose changes" doesn't bake: a PR from it that touches those pictures needs the bake added.
+- `willReadFrequently` on the canvases that lacked it (both fallbacks, `coatAtlas`, the portrait canvas before its
+  `toDataURL`).
+- Verified: lint, typecheck, format, check:modules, check:data (175 files; the data check's snapshot remade for the
+  count), unit tests 1371 pass; in a headless page all 260 baked cuts equal the page's own (no channel off by more than
+  1); the load check: a new player's boot 17 held frames (28 at LD-0), 7 after the loader; "reading the picture back",
+  "drawing items" and "warming up a scene" gone; what's left is "finishing a shader" (LD-2).
+- Risky: 456 KB more art on the site (fetched per tree kind as it's drawn, as before for the crowns); a crown painted
+  without a re-bake shows the old clumps in the game until baked (the test catches it).
+- Next: LD-2 (shaders). Tag `ld-1-done` for the owner.
+
+### Load track LD-0 - the plan, the hitch list, the boot timeline, the load check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq` (`track/load` doesn't exist yet: the owner makes it from this branch or main). The
+owner's brief: loading without hitches, especially at the start, with online research. Planned, the owner's answers
+taken (docs/phases/load-track.md: a 33 ms goal on every screen once the title shows, loading screens included;
+debug-log pictures on export; test code loaded on use and a minified bundle; picture facts baked at build time;
+pictures per place; the run made in a worker from the pick), then LD-0 built.
+- **Claim corrected**: CLAUDE.md's "gamedata.js is a ~13 MB file, ~8 MB of it scenes" is out of date: 0.79 MB now;
+  the maps' ground and props are in data/maps/<id>.json (Copperleaf's 703 KB). CLAUDE.md is the owner's to change.
+  Also run-world.js's "about 30 ms" a scene: 18-600 ms in Node.
+- New: `debugLog.stage(name)` and the boot timeline (`debugLog.boot`, times since the page was asked for); the hitch
+  list (`debugLog.hitch`: every frame held over 36 ms, from a requestAnimationFrame of the log's own that starts
+  before the modules, with its blame, screen, scene and the last stage); Chrome's long animation frames
+  (`debugLog.loaf`: the scripts that held a frame, matched to the hitches). The export has `boot` (stages, page
+  timings, files by kind with counts, KB and cache hits: no addresses) and `hitches`. GAME has `titleScreen` now.
+- Changed: `debugLog.hook()` runs before the loader instead of after it (boot.js), so the loader's stalls are named
+  (opening a scene, compiling shaders...) instead of "outside the marked steps".
+- New tool: tools/check-load.py, on the built site (dist/, built when missing): a new player's boot and a run's
+  reload, phone-sized, the game's own graphics; prints the timeline and the longest held frames; reports in
+  validation/load/ (gitignored). A note, not a gate (LD-6).
+- Measured (software drawing; ranks causes, not phone times): a new player, title out of the loader at about 6 s,
+  28 held frames, 13 after the loader went: finishing a shader 8.1 s, finishing a shader plus reading the picture back
+  (the debug log's timed picture) 4.9 s, warming up a scene 3.6 s. A run's reload: 39 held frames; drawing items
+  (`leafCut`) plus the picture 7.4 s, finishing shaders 3-6.6 s a frame; the run's loading hit its 20 s cap. CPU
+  profile of a boot: `screenSnapshot` 5.2 s, `finishProgramCompile` 5.2 s, `pictureLightness` 4.6 s; on a run
+  `leafCut` 5.7 s and `portraitURL` 2.2 s.
+- Verified: lint, typecheck, format, check:modules, check:data, unit tests 1366 pass; the load check runs both boots
+  with no page errors; check-fast `--only=debug,boots` 3 of 3 (the exported log holds no names); smoke 6 of 6 (159 s).
+- In this container: the checks' Python Playwright (1.56) runs against the preinstalled Chromium through
+  `PLAYWRIGHT_BROWSERS_PATH` pointing at a folder of links named for revision 1194 (nothing installed in the repo).
+- Risky: the hitch list's own requestAnimationFrame runs on every page with the debug log (a few comparisons a
+  frame); a 30 Hz display (iOS Low Power Mode) gives 33.3 ms frames, under the 36 ms line, so it isn't flooded.
+- Next: the owner's phone baseline (Export debug log after a cold start and after a run's start: `boot` and
+  `hitches`), then LD-1 and LD-2 on `track/load`. Tag `ld-0-done` for the owner.
+
 ### Air track AIR-2 - the fog grid: a density grid round the player as an R8 3D texture, unread - 2026-10-26
 Branch `track/air` (main merged in first: a conflict in AIR-1's Frame block, main's `uShFix` in the pad slot AIR-1
 kept and both test blocks: resolved side by side, 2272 bytes; AIR-1's work merged before each push). Plan Mode,

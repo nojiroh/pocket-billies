@@ -24,12 +24,12 @@ import { billyFieldTypes, billyName } from './logic/rules.js';
 import { fieldMoveState, fieldMoveText, runSideOpen } from './logic/run-side.js';
 import { climbState, climbText, fallTop } from './logic/surf.js';
 import { runArrive } from './logic/run-map.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { reducedMotion, saveData, saveNow, uiState } from './game-state.js';
 import { playerOpenAt, startFallClimb, walkView } from './walk-view.js';
 import { addRipple } from './walk/water.js';
 import { soundEffect } from './sound.js';
 import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
-import { runWorldData } from './run-world.js';
 /* eslint-disable no-func-assign */
 expose({
   FIELD_CLIMB_AGAIN: [() => FIELD_CLIMB_AGAIN],

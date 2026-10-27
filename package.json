@@ -10,6 +10,7 @@
     "check:data": "node tools/check-data.mjs",
     "bake:kits": "node tools/bake-kit-billies.mjs",
     "bake:placeholders": "node tools/bake-placeholders.mjs",
+    "bake:pixels": "node tools/bake-pixel-facts.mjs",
     "lint:ui": "node tools/ui-lint.mjs",
     "story:ids": "node tools/story-ids.mjs",
     "modules": "node tools/to-module.mjs",
