@@ -62,7 +62,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `track/route-props` | Route props track (docs/phases/route-props-track.md) from RP-3 on: made from `ccr-5d98165a-i1ustq` (RP-1, RP-2), main merged in 2026-10-26. RP-3 (the CC0 converter test) built here. |
 | `ccr-6dfb9e06-vr4uwi` | Camera track CAM-4 plan and CAM-4a (the Studio's Camera section, the zoom's feel), built here at the owner's word because `track/camera` didn't exist yet. CAM-4b starts on `track/camera`, made from this branch. Until its PR merges. |
 | `ccr-a98cc267-eqso1d` | VFX track VFX-0 (the plan, docs/phases/vfx-track.md) and VFX-1 (the eased throw, afterimages), built here at the owner's word because `track/vfx` didn't exist yet. VFX-2 starts on `track/vfx`, made from this branch. Until its PR merges. |
-| `track/vfx` | VFX track (docs/phases/vfx-track.md): made by the owner from `ccr-a98cc267-eqso1d`; every VFX session from VFX-2 on works here. VFX-2 (the motion-line ribbon) built 2026-10-26, VFX-3 (the stretched pyramid) 2026-10-26, VFX-4 (the impact frame) 2026-10-27. |
+| `track/vfx` | VFX track (docs/phases/vfx-track.md): made by the owner from `ccr-a98cc267-eqso1d`; every VFX session from VFX-2 on works here. VFX-2 (the motion-line ribbon) built 2026-10-26, VFX-3 (the stretched pyramid) 2026-10-26, VFX-4 (the impact frame) 2026-10-27. Part 2's build sessions (VFX-8..VFX-20, battle effects) work here too, after VFX-5. |
 | `track/studio-art` | Studio art track (docs/phases/studio-art-track.md): planned 2026-10-26 on `ccr-a073cfde-ab64xh`; the owner makes this branch from main, and SA-1 starts here. |
 | `track/studio` | Studio track (docs/phases/studio-track.md) from ST-7 on: made by the owner from main 2026-10-27. ST-7 (Model mode import) works here; ST-8 and ST-9 follow on it. |
 | `track/camera` | Camera track (docs/phases/camera-track.md) from CAM-4b on: made by the owner from `ccr-6dfb9e06-vr4uwi` (2026-10-26). CAM-4b (zoom stops) built here. |
@@ -106,6 +106,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `tools/rl-1-renames` | RL-1 tools follow-up: version-stamped tools renamed, legacy generators moved to tools/legacy/. Not merged; far behind main. |
 | `design/expedition-punk-prototype` | Standalone UI prototype ("Hollow Signal" shell), PR #76 closed unmerged. Not wired into the game. |
 | `ccr-03a15a70-nd3yqu` | UI track UI-10 (docs only): Part 2 of docs/phases/ui-track.md, Living Semigloss (the owner's brief 2026-10-27; research, the colour code, palettes, sessions UI-11..UI-18) and a palette sampler artifact, written here at the owner's word (a cloud session pushes only to its own branch). Later UI sessions work on `track/ui`. To main by pull request. |
+| `ccr-7526d712-gliikp` | VFX track VFX-7 (docs only): Part 2 of docs/phases/vfx-track.md, battle effects (the owner's brief and answers 2026-10-27, research, sessions VFX-8..VFX-20), written here because a cloud session pushes only to its own branch. Later VFX sessions work on `track/vfx`. To main by pull request. |
 
 ## Archive (unmerged work from before the roguelite pivot, kept but parked)
 
