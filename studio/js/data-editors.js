@@ -1464,7 +1464,7 @@ SECTIONS.trainers = () => {
     .join('');
   const seat = T.seat
     ? grid(
-        textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
+        textField('Badge id', `${p}.seat.id`, { help: 'Saved when they are beaten; the profile shows the badge.' }),
         textField('Title', `${p}.seat.title`),
         selectField('Pyramid shown', `${p}.seat.coin`, pyramidOptions())
       ) +
