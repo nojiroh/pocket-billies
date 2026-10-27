@@ -58,9 +58,10 @@ the recommendation: **no split** (all of SA-2b in one session, done so). Tag `sa
   - Unit tests: 1358 pass.
   - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,icons,atlas,scene_art,studio_test`:
     every step ok; the self-test round-trips 51 icons in about 11 ms and finds the atlas's 119 rectangles fine.
-    CHECKS_NOTE
-  - SMOKE_NOTE
-  - SHOTS_NOTE
+    The publish checks (`--only=publish`) still time out at their first click in this container, with or without this
+    session's changes (the page stops painting frames); the SVG case is written but couldn't be seen through here.
+  - Smoke 6 of 6 (237 s). The Studio needs `npm run data` first in a fresh container (gamedata.js is generated).
+  - Screenshots at 1920, 1024 and 390 (views icons, atlas, walls, flags): fine at 1920 and 1024; wider than 390 px, like every section.
 - For the owner on the phone:
   - Art browser → ui → an icon → Edit icon: paint a pixel, watch the previews; clear it, paint a flat shape, Shade as a
     block (try One colour).
