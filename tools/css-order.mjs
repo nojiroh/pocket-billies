@@ -260,18 +260,26 @@ for (const list of byProp.values()) {
   }
 }
 
-/* a declaration that is gone changes nothing only when one that stays, on the same selector, already beat it */
+/* a declaration that is gone changes nothing only when one that stays already beat it on every element it reached: one
+   on the same selector, or an !important one (still !important) on classes alone, outside any at-rule, whose classes
+   the gone one's last compound all names */
+const killer = (e, d) =>
+  !e.ctx &&
+  e.imp &&
+  !d.imp &&
+  /^(\.[\w-]+)+$/.test(e.sel) &&
+  e.t.pe === d.t.pe &&
+  e.t.keys.every(k => d.t.keys.includes(k)) &&
+  now.get(e.key)?.imp;
 const unsafe = changed.filter(
   c =>
     c.kind === 'gone' &&
     !before.some(
       e =>
         e !== c.d &&
-        e.ctx === c.d.ctx &&
-        e.sel === c.d.sel &&
         covers(e.prop, c.d.prop) &&
         now.has(e.key) &&
-        beats(e, c.d)
+        ((e.ctx === c.d.ctx && e.sel === c.d.sel && beats(e, c.d)) || killer(e, c.d))
     )
 );
 const at = d => `${d.file}:${d.line}`;
@@ -292,4 +300,4 @@ else {
     `css-order against ${REF}: ${flips.length} fights change winner; ${n('changed')} declarations changed, ${n('gone')} gone (${unsafe.length} that were in force), ${n('new')} new`
   );
 }
-process.exit(flips.length || unsafe.length ? 1 : 0);
+process.exitCode = flips.length || unsafe.length ? 1 : 0;
