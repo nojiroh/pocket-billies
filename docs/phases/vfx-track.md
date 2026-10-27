@@ -63,7 +63,13 @@ VFX-1 were built on `ccr-a98cc267-eqso1d` at the owner's word (`track/vfx` didn'
   pace there is 1.3x its mean or more (`throwArcPace`): one or two cells at each end; the trailing side is dragged
   0.6 of the way back to the place one cell ago, at most 0.8 m. Shadows stay unstretched.
 - **VFX-4** the impact frame: one or two frames of a two-tone flash with radial lines from the hit point, on the
-  pyramid's impact and on crits. The crit speed lines move from the 2D canvas into GL.
+  pyramid's impact and on crits. The crit speed lines move from the 2D canvas into GL. Done 2026-10-27 (the plan's
+  recommendations approved: the catch's hit, the mail move's coin and crits, not the send-out or super-effective
+  hits; ink and white, the crit's warm yellow as paper on crits; the negative, then the positive). Drawn in the grade
+  pass (engine/post-effects.js), no new pass: two cells on the 24 fps grid (one at quality 2, none at 3 or under
+  Reduced motion), on real time so it plays through the hit-stop; the flashes it would be washed out by wait for it.
+  Checked: there is no non-GL battle picture (battleStageDraw draws nothing without GL), so "the 2D fallback" is the
+  flat pyramid icon over a GL battle, and the post pass covers it.
 - **VFX-5** attack lunges: the lean (`uShear`) driven by the lunge's speed, one or two afterimages of the rig's
   billboard (its texture exists already); dash moves reuse the ribbon.
 - **VFX-6** tuning and docs: Studio dials (ghost count, colours, ribbon length, stretch), a debug-log line saying

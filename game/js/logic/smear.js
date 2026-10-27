@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ========== SMEARS: THE THROW'S PACE, ITS AFTERIMAGES, ITS RIBBON AND ITS STRETCH (VFX track VFX-1..VFX-3) ==========
+/* ===== SMEARS: THE THROW'S PACE, AFTERIMAGES, RIBBON, STRETCH AND IMPACT FRAME (VFX track VFX-1..VFX-4) =====
    A thrown pyramid leaves "multiples" behind it, the classic smear of hand-drawn animation: copies of itself at the
    places it just was, held, not blurred. Its places are kept on a 24 fps grid (the rigs' "on ones",
    skeleton-rig.js rigFrame), so the copies step like the rest of the animation; each copy is drawn dithered (the
@@ -12,6 +12,7 @@
    VFX-3: the elongated in-between, on the throw's fastest cells only (the release and before the hit): the side of
    the object facing away from its motion is dragged back toward its place one grid cell ago, broken up a little by
    noise (the vertex shader does the dragging: prop-models.js SMEAR_GLSL), held for the cell like everything else.
+   VFX-4: the impact frame (below).
    Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
