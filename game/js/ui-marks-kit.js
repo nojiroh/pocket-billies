@@ -492,7 +492,7 @@ export const statusTagHTML = (st, o = {}) =>
 const statTagHTML = (stat, stages) =>
   `<pb-tag kind="stat" stat="${markAttr(stat)}" stages="${Number(stages) || 0}"></pb-tag>`;
 /** an effect's stat rows as tags (logic/marks.js fxTags): "Quick Laces ▲Spe" @param {any[] | undefined} fx */
-const fxTagsHTML = fx =>
+export const fxTagsHTML = fx =>
   fxTags(fx)
     .map(t => statTagHTML(String(t.stat), Number(t.stages)))
     .join('');

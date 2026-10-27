@@ -28,7 +28,7 @@ export const typeBadgeHTML = t =>
   `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${typeGlyphHTML(t)}${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
 /* UI-13: the status's own glyph before its name, in the badge's colour (paralysis has its own: the bolt is the storm's) */
-export const statusBadgeHTML = st =>
+const statusBadgeHTML = st =>
   st ? `<span class="stb st-${st}">${glyphHTML('status', st, 11, 'current')}${STATUS_NAMES[st]}</span>` : '';
 provide({ statusBadgeHTML }); /* to-module */
 export function progressBarHTML(p, cls = '') {

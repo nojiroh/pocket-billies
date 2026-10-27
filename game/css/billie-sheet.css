@@ -251,3 +251,11 @@
 .ms-about {
   margin: var(--s3) 2px;
 }
+
+/* UI-14b: the held item's row: its tier (data-rarity: the name's colour and the pill) and its stat rows as tags */
+.ms-held {
+  flex-wrap: wrap;
+}
+.ms-held pb-rarity {
+  margin-left: auto;
+}

@@ -109,6 +109,11 @@
 .tm-ribbon + .tm-ribbon + .tm-ribbon {
   top: 58px;
 }
+/* UI-14b: Lead is neutral (the family table): the panel's glass, not gold */
+.tm-ribbon.lead {
+  background: var(--g-solid);
+  color: var(--text);
+}
 .tm-ribbon.bud {
   background: var(--rose);
   color: #fff;
@@ -272,9 +277,13 @@
   background: rgba(242, 184, 75, 0.25);
 }
 /* phase 16: a Billie's parts (details, Stats) */
+/* UI-14b: Prime is the good family's teal ★ tag (gold keeps only value and your choice) */
 .tm-ribbon.prime {
-  background: linear-gradient(180deg, #f6d36b, #d39b22);
-  color: #3a2603;
+  background: var(--sig-good);
+  color: var(--c-ink);
+}
+.tm-ribbon.prime b {
+  font-weight: 400;
 }
 /* RL-9: the ranch's sheet (ranch-screen.js) reuses storage's cards; a trainee's way to its next level spans the card */
 .ranch-card pb-stat-bar {
