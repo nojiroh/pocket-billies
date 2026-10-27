@@ -293,8 +293,6 @@ export function runCheck() {
     if (!sp.has(l + '0')) warn(`Starter ${l} doesn’t exist.`, 'rules');
     if (!sp.has(R.start.rival[l])) warn(`The rival has no valid pick for starter ${l}.`, 'rules');
   });
-  if (!sp.has(R.eggs.mythSpecies) && !isLegacyRef(R.eggs.mythSpecies))
-    warn('The mythical egg species doesn’t exist.', 'rules');
   /* phase 16: parts */
   const PR = R.parts;
   if (!PR) warn('Rules have no part sizes (parts); every Billie is drawn at its normal size.', 'parts');

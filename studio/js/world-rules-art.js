@@ -354,7 +354,6 @@ SECTIONS.rules = () => {
     R = D.rules,
     s = 'rules.start',
     pg = 'rules.progression',
-    eg = 'rules.eggs',
     bt = 'rules.battle',
     ca = 'rules.catching';
   const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`;
@@ -472,15 +471,6 @@ SECTIONS.rules = () => {
      xpPrev +
      '<h4>Stat totals by rarity</h4>' +
      totals
- )}
- ${card(
-   'Eggs',
-   grid(
-     numberField('Eggs carried', `${eg}.capacity`, { min: 1, max: 30, step: 1 }),
-     numberField('Incubators', `${eg}.slots`, { min: 1, max: 6, step: 1 }),
-     numberField('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
-     selectField('The mythical', `${eg}.mythSpecies`, speciesOptions())
-   )
  )}
  ${card(
    'Time and weather',
