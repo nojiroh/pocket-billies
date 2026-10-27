@@ -2,6 +2,24 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
+pictures into solids in a busy frame.
+- walk/quality-cull.js: `FRAME_WORK_MS` (8 ms phones, 10 elsewhere) and `frameBudgetRemaining`; walk-view-gl.js stamps
+  `walkRenderer.budT` at the frame's start (it was after the near ring); `groundPrepWork` and `updateNearRing` get at most
+  what is left (still at most 4 ms); prop-models.js meshes and buildings.js `buildingBudgetLeft` use the shared budget
+  past their first of a frame.
+- tools/check-load.py `--only=moves`: a seam, the Map tab, back, a battle on the run fixture, each with its held frames
+  (it waits for the boot's last shaders first).
+- Measured headless: no shader in any move; the held frames left are GPU-side (main thread idle) and the Map tab's first
+  draw. Candidates for after the phone's hitch list are in the plan (the walk grid, the world map's prewarm, meshes in
+  a worker, uploads).
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
+  `--only=town,room,world,island,behind,battle,tall,pasture,screens` 17 of 17, smoke 6 of 6 (152 s).
+- Next: **the owner's phone** (LD-6): Export debug log after a cold start, after a run's take-off and after walking
+  over a seam; the log's `boot` and `hitches` say what is left. Tag `ld-5-done` for the owner once the candidates are
+  decided.
+
 ### Load track LD-4 - the run's places on a helper thread, from the pick - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes.
 - New game/js/run-worker.js and run-worker-modules.js (on no page; the build bundles the modules). The worker fetches

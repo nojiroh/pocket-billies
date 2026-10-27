@@ -194,6 +194,17 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   (voxelise, greedy mesh) in a worker, the buffers transferred. The next place's pictures, programs and meshes warmed
   before you reach its seam. The world map's terrain (2048x2048) built in a worker. Anything still over the budget
   in the hitch list after this gets its own fix here.
+  **Done 2026-10-27, in part** on `ccr-3df446bb-9jvdvq`: one frame budget for the one-off work
+  (walk/quality-cull.js `FRAME_WORK_MS`, 8 ms on phones, 10 elsewhere, stamped at the frame's start): the ground's
+  preparing and the near ring take at most what is left (4 ms each at most, as before), model meshes and buildings past
+  their first of a frame only while it lasts (12 and 5 ms of their own before; the queues could pass 35 ms together).
+  tools/check-load.py `--only=moves` measures a seam crossed, the Map tab and a battle on the run fixture. Headless
+  after it: no move holds a frame for a shader; what holds frames in software is the GPU's side of drawing (main
+  thread idle) and the Map tab's first draw ("drawing the map" 1.8 s in software). **Left for the phone's hitch list
+  to confirm** (each a measured main-thread cost here, not yet proven on the phone): the walk grid (`navGrid`, 100-280
+  ms of plain JavaScript where a place opens; on a seam it is prepared ahead), the world map's prewarm in a worker (the
+  longest stage of a take-off, about 7 s in software, sliced 12 ms a frame), model meshes in a worker (a first mesh of
+  a frame 20-70 ms in software), `createImageBitmap` and an upload queue, the next place's warm-up.
 - **LD-6 the phone check.** The owner's phone runs (cold start, a run's start, a walk across seams, a battle, the Map
   tab); the hitch list empty or explained; the settings on by default; the load check a gate in CI; the quick check's
   baseline updated; HANDOFF; tag `load-done`.
