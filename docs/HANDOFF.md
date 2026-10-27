@@ -2,6 +2,49 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
+Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
+good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
+in AIR-3 (fogit as before; a grid round the battle stage is a later item); **over budget on phones, cut in this
+order**: fewer steps (10 to 8), then no lamps in fog, then a smaller grid; fogit's mist **steps aside inside the grid
+only** (pushback on the plan's "`uMist` 0": the grid reaches 24 m, 16 on phones, and the camera sees about 36).
+- The march (engine/post-effects.js `vol`) with the grid: it starts where the ray enters the grid's box (or the shafts'
+  last 14 m, if nearer) and runs to the surface or out of the box, 14 steps (10 on phones). It reads the R8 3D texture
+  at flat heights (`curveY` put back; repeat x/z, clamp y). Fog: 0.22 a metre at full density; the light it scatters is
+  the haze colour (dimmer in shade and with the sun's brightness, so dark under the moon) + the sun through the
+  shadow maps with the HG phase (shafts in the fog) + the lamps (`fogLamps`). Out: premultiplied, composited by the
+  grade pass's existing `c*(1-a)+rgb` (the shafts' output in front of the fog's T). **Without the grid the march is
+  the old one exactly** (same segment, steps and sums; checked by reading, the fog terms are 0).
+- Its own gate (`fogMarchOn`, logic/fog-grid.js): a grid, not `BT` (battles, director frames: the train ride's
+  `BT.hazeK` untouched), quality step < 3, `air.fogVolume` > 0.01, and not the debug "no post". It runs with no shadow
+  map (`vis` returns 1, the stand-in depth bound) and with God rays / Lamps in the air at 0; the shafts themselves
+  still need the shadow map. Rooms, caves and the bowl have no grid (the bowl calls the post with no `fog`): fogit as
+  before.
+- No double fog: the Frame block's new `vec4 uMistBox` (the grid's middle x, z, half size, on; 2288 bytes). Inside it
+  fogit's low mist and valley mist fade out between 0.7 and 0.95 of the half size, and the march fades out over the same
+  band (`FOG_EDGE`, `fogGridInside`). `fogGridFrame` moved before the light context, so a frame's mist and march agree.
+- New `air` settings and dials (Air section, after Lamps in the air): `fogVolume` 1 ("Fog in the air"; 0 = the flat
+  mist as before) and `fogLamps` 1 ("Lamps in the fog"); both 0 in PLAIN_LOOK.
+- Debug log: `fogGrid.march`: on, or why not (battle, no grid, quality, dial, no post), steps, frames run, changes.
+- Tests (fog-grid.test.mjs): the gate (off in battles, quality 3, no grid, dial 0; nothing about shadows or shafts), the
+  box and the edge blend (the march's and the mist's shares add to 1), the ray/box twin (from above, clipped by the
+  surface, missing, from inside, slanted), and the shader sources (`precision highp sampler3D`, flat heights, the
+  edges, the mist stepping aside only when the march reads the grid). frame-block.test.mjs: `uMistBox` at 2272.
+- Pictures: new tools/look-air.py (looks by hour, weather and `fogVolume`; `--phone`). Copperleaf, software drawing,
+  in the session's scratchpad (not committed): clear noon matches the dial at 0 but for a faint near haze; dawn fog:
+  banks over the low ground with sun shafts and shadowed columns through them; dusk and night fog: lamps and the
+  fountain glow in it, the fog dark under the moon; phone (32 grid, 10 steps) the same look, a little softer.
+  The first density (0.6 a metre) buried the square in fog weather: cut to 0.22.
+- Verified: lint, typecheck, format, check:modules, unit tests 1335 pass; the smoke check 6 of 6 in 160 s (the in-game
+  test's shader step: 35 shaders, 16 with the Frame block, all compiled); no page errors in the look-air runs.
+- Risky: **the phone's frame times are not measured** (software drawing here says nothing): the owner's exported debug
+  log after walking in fog (GPU `post`, and `fogGrid.march`) decides; over budget, the cut order above. The fog sits at
+  quarter size with the plain blur, so it bleeds round edges (AIR-4's depth-aware blur). The grid's edge may show as a
+  soft band where the march hands over to fogit (seen faintly on the phone shot, behind the square). In fog weather
+  the look is heavy at dawn: the dial `fogVolume` tunes it. The shafts outdoors now step with the fog's spacing
+  (same sums, noisier).
+- Next: AIR-4 (edges and shadowed haze). Tag `air-3-done` for the owner.
+
 ### Air track AIR-2 - the fog grid: a density grid round the player as an R8 3D texture, unread - 2026-10-26
 Branch `track/air` (main merged in first: a conflict in AIR-1's Frame block, main's `uShFix` in the pad slot AIR-1
 kept and both test blocks: resolved side by side, 2272 bytes; AIR-1's work merged before each push). Plan Mode,
