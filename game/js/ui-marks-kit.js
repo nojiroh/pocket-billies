@@ -21,8 +21,10 @@
    ui-kit.js patternVars. No host-context selectors (Safari ignores them). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { i18nText } from './hooks.js';
+import { STATUS_NAMES } from './game-data.js';
 import { glyphOf, sigVar } from './logic/signals.js';
-import { MARK_RARITY, chipLook, rarityTier, tagLook } from './logic/marks.js';
+import { MARK_RARITY, chipLook, fxTags, rarityTier, tagLook } from './logic/marks.js';
 import { LitElement, css, html, nothing, patternVars } from './ui-kit.js';
 import { PbCoin, runIconURL, runKitMotion, runNumber } from './ui-run-kit.js';
 expose({
@@ -31,9 +33,16 @@ expose({
   PbProc: [() => PbProc],
   PbRarity: [() => PbRarity],
   PbTag: [() => PbTag],
+  fxTagsHTML: [() => fxTagsHTML],
+  kindChipHTML: [() => kindChipHTML],
+  markAttr: [() => markAttr],
   markGlyph: [() => markGlyph],
   markIcon: [() => markIcon],
   marksBase: [() => marksBase],
+  rarityPillHTML: [() => rarityPillHTML],
+  rarityRowAttr: [() => rarityRowAttr],
+  statTagHTML: [() => statTagHTML],
+  statusTagHTML: [() => statusTagHTML],
 });
 /* to-module: end */
 /* shared: the voice font, a mark's glyph as a mask (base.css .ugl, which can't reach a shadow root), the icon */
@@ -463,9 +472,46 @@ const PbRarity = class extends LitElement {
     this.tier = '';
   }
   render() {
-    const t = rarityTier(this.tier);
-    return t ? html`<span class="pill" style=${`--fill:var(${sigVar(t)})`}>${MARK_RARITY[t]}</span>` : nothing;
+    const t = rarityTier(this.tier),
+      /* UI-14b: the tier's name in the player's language (text in a shadow root isn't swapped by i18n.js) */
+      say = typeof i18nText === 'function' ? i18nText : (/** @type {string} */ x) => x;
+    return t ? html`<span class="pill" style=${`--fill:var(${sigVar(t)})`}>${say(MARK_RARITY[t])}</span>` : nothing;
   }
+};
+
+/* ---------- UI-14b: the marks in a screen's markup (strings, as the screens build their HTML) ---------- */
+/** an attribute's value, escaped */
+const markAttr = (/** @type {unknown} */ v) => String(v ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+/** a status as its angled tag (BRN, PAR, SLP in their colours; its word the game's, statuses.json); '' for none
+ * @param {string | null | undefined} st @param {{ big?: boolean }} [o] */
+const statusTagHTML = (st, o = {}) =>
+  st
+    ? `<pb-tag kind="status" mark="${markAttr(st)}" word="${markAttr(STATUS_NAMES[st] || st)}"${o.big ? ' big' : ''}></pb-tag>`
+    : '';
+/** a boost or drop as its tag: ▲ teal or ▼ red first, Atk..Spe, pips @param {string} stat @param {number} stages */
+const statTagHTML = (stat, stages) =>
+  `<pb-tag kind="stat" stat="${markAttr(stat)}" stages="${Number(stages) || 0}"></pb-tag>`;
+/** an effect's stat rows as tags (logic/marks.js fxTags): "Quick Laces ▲Spe" @param {any[] | undefined} fx */
+const fxTagsHTML = fx =>
+  fxTags(fx)
+    .map(t => statTagHTML(String(t.stat), Number(t.stages)))
+    .join('');
+/** a small label chip in a kind's family (a node type, a currency, a family by name): its icon or glyph, the
+ * family's tint, the label @param {string} kind @param {string} label
+ * @param {{ family?: string, icon?: string, value?: number }} [o] */
+const kindChipHTML = (kind, label, o = {}) =>
+  `<pb-chip small kind="${markAttr(kind)}" label="${markAttr(label)}"${o.family ? ` family="${markAttr(o.family)}"` : ''}${
+    o.icon ? ` icon="${markAttr(o.icon)}"` : ''
+  }${o.value != null ? ` value="${Number(o.value) || 0}"` : ''}></pb-chip>`;
+/** a tier's pill; '' for none (rarities.json's starter shows as common) @param {string | undefined} tier */
+const rarityPillHTML = tier => {
+  const t = rarityTier(tier);
+  return t ? `<pb-rarity tier="${t}"></pb-rarity>` : '';
+};
+/** a list row's rarity: ' data-rarity="rare"' for the row's element (with .rar-row: the bar and thin frame), or '' */
+const rarityRowAttr = (/** @type {string | undefined} */ tier) => {
+  const t = rarityTier(tier);
+  return t ? ` data-rarity="${t}"` : '';
 };
 
 for (const [tag, cls] of /** @type {const} */ ([
