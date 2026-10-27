@@ -33,6 +33,12 @@ plan is in ui-track.md, "UI-11: the colour code as data". No visible change.
     UI-13 must move one of them, or this check fails. With today's types the nearest pair is amber and Electric,
     5.5, as written.
   - "Dark text on every fill 5:1" holds on Field Guide's dark ground (5.2 lowest); on today's it is 4.6 (red, bio).
+- From a second UI-11 session the planning session started by mistake (stopped, nothing pushed), checked here:
+  rarities.json has a fifth tier, `starter`, which the four-step ladder doesn't cover (UI-14a/b: give it a colour or
+  treat it as common, the owner's call); Electric sits at OKLCH L 0.80, so "types at one lightness" (UI-13) must leave
+  out the type with dark ink; that session darkened the ground-failing shades in OKLCH for 4.6:1 on every ground
+  (teal #007263, sky #056C9B, burn #AC4600, dusk #62608D, uncommon #00762C), an option if the owner wants 4.5:1 on the
+  ground too (not taken: it changes the owner's hexes).
 - Risky: little; nothing reads the tokens yet. A preset with `signals` now fails check-data.
 - Verified: lint, typecheck, format, `npm test` (1577; one timing flake in run-map-checks passed on re-run),
   check:data, check:modules; the Studio check `--only=ui` passes and the section was looked at in a screenshot.
