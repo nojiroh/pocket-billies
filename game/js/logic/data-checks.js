@@ -19,7 +19,17 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
-import { runGridOverlap, runLinkDir, runMapLength, runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
+import {
+  RUN_GRID,
+  runGridExits,
+  runGridOverlap,
+  runGridShared,
+  runLinkDir,
+  runMapLength,
+  runMapMake,
+  runMapRows,
+  runMapRowsFit,
+} from './run-map.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
@@ -2292,6 +2302,34 @@ export function runMapProblems(map, rules, nodeTypes) {
     const exits = nodes[0].to.map((/** @type {number} */ j) => runLinkDir(map, 0, j)).sort();
     if (exits.join() !== 'E,N')
       out.push(`the landing’s ways on go ${exits.join(' and ') || 'nowhere'}, not north and east`);
+    /* WM-3: each link crosses its edge on the cells both places share, a corner's RUN_GRID.edge in at least; an L's cut
+       is one of its corners with no exit; the exits on a side RUN_GRID.gap apart */
+    nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
+      if (!n.ways || n.ways.length !== n.to.length) return out.push(`place ${i} has no exit spot for each link`);
+      n.to.forEach((/** @type {number} */ j, /** @type {number} */ k) => {
+        const s = nodes[j] ? runGridShared(n, nodes[j]) : null,
+          u = n.ways[k];
+        if (s && (u < s[0] * RUN_GRID.cell + RUN_GRID.edge || u > s[1] * RUN_GRID.cell - RUN_GRID.edge))
+          out.push(`place ${i}’s exit to place ${j} is off the edge they share`);
+      });
+      const E = runGridExits(map, i) || [];
+      if (n.cut) {
+        const corner =
+          n.size[0] === 2 &&
+          n.size[1] === 2 &&
+          [n.at[0], n.at[0] + 1].includes(n.cut[0]) &&
+          [n.at[1], n.at[1] + 1].includes(n.cut[1]);
+        if (!corner) out.push(`place ${i}’s cut cell isn’t a corner of its two by two`);
+      }
+      for (const side of ['N', 'S', 'E', 'W']) {
+        const len = (side === 'N' || side === 'S' ? n.size[0] : n.size[1]) * RUN_GRID.cell,
+          xs = E.filter(e => e.side === side)
+            .map(e => e.t * len)
+            .sort((a, b) => a - b);
+        for (let k = 1; k < xs.length; k++)
+          if (xs[k] - xs[k - 1] < RUN_GRID.gap) out.push(`two exits on place ${i}’s ${side} side closer than 44 m`);
+      }
+    });
   } else out.push('a place has no footprint on the grid');
   /* WM-2: two route-like places at least before each town, from the landing or the town before it, on every path */
   if (nodeTypes) {

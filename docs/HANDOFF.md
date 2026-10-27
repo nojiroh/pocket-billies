@@ -2,6 +2,45 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-3a - shapes and sizes in the logic and mapgen (in part) - 2026-10-27
+Branch `claude/wm-3-shapes` (from WM-2's head). The owner's answers: routes 2 x 1 40%, 3 x 1 20%, 1 x 2 15%, L 20%,
+1 x 3 5%; events and stalls 1 x 1; landing, leaders, boss and towns 2 x 1; an L's missing cell reserved and walled;
+exits drawn along the shared edge; the bowl left to WM-4; WM-3 merges before WM-7; per-place times in the debug log
+(WM-3b); two sessions.
+- run-map.js: nodeTypes.json `shapes` (runShapeSize), drawn on 'map|size|row|lane', tried at every spot before 2 x 1;
+  `ways` beside `to` (runGridWays: a whole metre on the shared cells, 12 m from their ends, 44 m from other exits; a
+  bend's way out from the far half of its edge, a town's way in to suit its turn); an L's `cut` (runGridCut) only where
+  the road comes in and leaves by diagonal cells (about a third of the 2 x 2 draws; the rest stay square); runGridExits;
+  towns and the place after them lean east (x8). No two shops is settled before the grid. validRun checks cut and ways.
+- run-scenes.js: places at their footprint's size (runPlaceSize; a side area's 128 x 64; a run from before WM-3 keeps
+  112 x 64 and east/west exits), exits where links cross (ids by side: east, east2, north, ...), pin on every linked
+  side, `ahead` the first way on's side, `cut` (runCutRect); the side door (runSideDoor) on a free spot of the
+  obstacle's north side, else its south.
+- mapgen.js (MAPGEN_VERSION 20): the `cut` dial (a forest mass on the corner, nothing built there, the walkable share
+  measured without it); a pinned north/south side is a seam for the layout; exits may sit 12 m from a corner on a side
+  over 150 m (mapgenExitEnd), the edge strip's spot snapped to a whole metre; tall grass across the next longest way
+  when the way on is short; a lot further back when none fits by the road; the lookout off the cut, more tries on big
+  places. water-gen.js: **fixed** the river note's main cause: a bridge's river that no road lets cross falls back to a
+  river with no bridge instead of the line across the map. Notes on run places: 7 in about 830 (0.8%) vs 13 in 411
+  (3.2%) before. seam-rules.js: seamSideMost (2 up to 64 m, one more each 44 m).
+- Studio Run Lab: L outlines, the ways on as dots, the place's exits listed.
+- Tests: mapgen-shapes.test.mjs (slow tier: the L, north strips, a north/south seam at the grid's offset), run-map
+  (shapes, ways, cuts), run-scenes (a grid map's exits), run-world-real (the walk lays every link at the grid's offset;
+  RL7WORLD3 back), seam-rules; snapshots remade on purpose (run-map, run-start, run-world-real); rng's scene hash (the
+  same scene but gen.v, checked against WM-2's tree); mapgen-mountains TR2MTN2 -> TR2MTN1 (the known one-way ledge, the
+  same 2%); run-map-checks' planted west place given a size.
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests: quick tier all pass; slow tier all
+  but two: "the game's island is the generator's own output" (fails on main too) and **mapgen-town's "a vegetable plot
+  south of the road" on TW1E node 10** (the plot is there but the test wants it 8 m south of the square, which a road
+  bending from the south doesn't give; open). The 1,000-maps sweep takes about 580 ms alone (410 before) and missed its
+  1 s once under the full parallel run. **Not run**: check-fast, smoke, the Studio's GitHub check (the owner asked for
+  the PR first).
+- Measured in Node: 128 x 64 places mean about 210 ms, 192 x 64 about 440, 128 x 128 about 510, an L about 530 (max
+  about 2 s on a retry); 64 x 64 about 30.
+- Risky: places are bigger (more walking, more generation time); WM-7's arenas must follow `ahead` north or south.
+- Next: WM-3b (route layouts and trainers on any side, the trainer facing a wall, per-place times in the debug log, the
+  town plot test, check-fast, smoke, the full quick check), then tag `wm-3-done`.
+
 ### Region map track WM-2 - the region grid (logic only) - 2026-10-27
 Branch `claude/wm-2-region-grid` (from WM-1's branch). The owner's answers: places a path by Expedition (I 9-10, II
 9-11, III 10-11, IV 10-12, V 11-12), a free place before the boss, so 2 towns at 9-11 places and 3 at 12; no filler
