@@ -361,6 +361,8 @@
   /* shapes: end */
   /* the edge line: light on top, dark below; the drop shadows follow a cut outline (a box-shadow can't) */
   --c-shadow: #2e2140;
+  /* UI-12: dark text on gold and on the colour code's fills (the theme: the dark side's ground) */
+  --c-ink: #2e2140;
   --edge-hi: rgba(255, 255, 255, 0.9);
   --edge-lo: color-mix(in srgb, var(--c-shadow) 30%, transparent);
   --edge: linear-gradient(180deg, var(--edge-hi), var(--edge-lo));

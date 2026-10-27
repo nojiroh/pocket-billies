@@ -17,7 +17,7 @@
   overflow: hidden;
   border: 0;
   background:
-    radial-gradient(60% 14% at 50% 92%, rgba(46, 33, 64, 0.22), transparent 70%),
+    radial-gradient(60% 14% at 50% 92%, color-mix(in srgb, var(--c-shadow) 22%, transparent), transparent 70%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--c1, var(--gold-b)) 22%, var(--g-solid)) 0%,

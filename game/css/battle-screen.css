@@ -1036,16 +1036,17 @@ body.battle-3d #camFg {
   transition: width 0.65s cubic-bezier(0.4, 0.1, 0.3, 1);
 }
 .bplate .pl-hp .fill {
-  background: linear-gradient(180deg, var(--c-hp-ok-hi, #a6ffb2), var(--c-hp-ok, #3fc456));
+  /* UI-12: the plate is always dark glass, so the colour code's fills (teal, amber, red) */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sig-good) 55%, #ffffff), var(--sig-good));
   transition:
     width 0.38s cubic-bezier(0.2, 0.9, 0.3, 1),
     background 0.3s;
 }
 .bplate .pl-hp .fill.mid {
-  background: linear-gradient(var(--c-hp-mid-hi, #ffeb94), var(--c-hp-mid, #f0b43a));
+  background: linear-gradient(color-mix(in srgb, var(--sig-caution) 55%, #ffffff), var(--sig-caution));
 }
 .bplate .pl-hp .fill.low {
-  background: linear-gradient(var(--c-hp-low-hi, #ffa0a0), var(--c-hp-low, #e84848));
+  background: linear-gradient(color-mix(in srgb, var(--sig-bad) 55%, #ffffff), var(--sig-bad));
   animation: low 0.7s steps(2) infinite;
 }
 .bplate .pl-bot {
@@ -1074,7 +1075,8 @@ body.battle-3d #camFg {
   display: block;
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #5ba8f0, #a8e8ff);
+  /* UI-12: XP is the Growth family; the plate is always dark glass, so its fill */
+  background: linear-gradient(90deg, var(--sig-growth), color-mix(in srgb, var(--sig-growth) 55%, #ffffff));
   transition: width 0.8s;
 }
 .bplate.me {
