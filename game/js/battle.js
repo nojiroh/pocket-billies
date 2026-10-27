@@ -106,6 +106,7 @@ import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
   FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
+  PLATE_TAGS: [() => PLATE_TAGS],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
@@ -1131,6 +1132,8 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
+/* UI-15: the most tags a plate shows (a status and stat changes); more fold into "+N" */
+const PLATE_TAGS = 3;
 /* phase 06-3: always the plates in the scene (the classic corner cards and their setting are gone) */
 const stagePlatesOn = () => !!activeBattle;
 function plateElement(k) {
@@ -1198,10 +1201,25 @@ function paintPlates(s, anim) {
     }
     /* phase 06-4: what the corner cards used to show: stat changes, a robot's limbs, the party's dots (on the first
        plate of each side) */
-    e.querySelector('.pl-sg').innerHTML = Object.entries(x.stg || {})
-      .filter(([q, v]) => v)
-      .map(([q, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${statShortName(q)} ${v > 0 ? '+' : ''}${v}</span>`)
-      .join('');
+    /* UI-15: at most 3 tags on a plate (the status first, then the biggest stat changes), the rest as "+N" with
+       their words on it */
+    const stg = Object.entries(x.stg || {})
+        .filter(([q, v]) => v)
+        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+        .map(([q, v]) => [`${statShortName(q)} ${v > 0 ? '+' : ''}${v}`, v > 0 ? 'up' : 'dn']),
+      room = PLATE_TAGS - (x.hp <= 0 || x.st ? 1 : 0),
+      rest = stg
+        .slice(room)
+        .map(t => t[0])
+        .join(', ');
+    e.querySelector('.pl-sg').innerHTML =
+      stg
+        .slice(0, room)
+        .map(([t, c]) => `<span class="stg ${c}">${t}</span>`)
+        .join('') +
+      (rest
+        ? `<span class="stg more" title="${escapeHtml(rest)}" aria-label="${escapeHtml('Also ' + rest)}">+${stg.length - room}</span>`
+        : '');
     const pr = e.querySelector('.pl-parts');
     pr.hidden = !x.bot;
     /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
