@@ -388,8 +388,10 @@ export const MAPGEN_PEAK = 20;
 export const MAPGEN_MOUNTAIN_SMOOTH = 0.25;
 export const MAPGEN_SIZES = {
   route: { name: 'Route', w: 112, h: 64 },
-  small_town: { name: 'Small town', w: 80, h: 60 },
-  big_town: { name: 'Big town', w: 128, h: 96 },
+  /* WM-5: a run's three town sizes (MAPGEN_TOWN_SIZES), for the Studio's Generate card */
+  hamlet: { name: 'Hamlet', w: 128, h: 64 },
+  village: { name: 'Village', w: 128, h: 128 },
+  town: { name: 'Town', w: 192, h: 128 },
 };
 /* grow-wild.py's share of each plant family */
 export const MAPGEN_FAMILY_SHARE = {

@@ -332,7 +332,7 @@ function genBasicsHTML() {
    [
      'town',
      'Town',
-     "A street off the road to a square (the clinic and the shop on it when their dials are on), and houses with gardens (towns track TW-1; the run's towns)",
+     "Streets grown from the road: a square at the main junction (the clinic and the shop on it when their dials are on), side streets and houses with gardens; a hamlet, a village or a town by the size (towns track TW-1, region map track WM-5; the run's towns)",
    ],
  ]
    .map(
