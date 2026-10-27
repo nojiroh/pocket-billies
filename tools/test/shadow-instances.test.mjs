@@ -1,11 +1,11 @@
-// Phase 20 R3 (shadows lane, E9): with Engine > Quality "Shadows in batches" on, every shadow map (the sun's near and
-// far maps, the far map's cache missed and hit, the lamps') draws the very quads the one-at-a-time path draws, the
+// Phase 20 R3 (shadows lane, E9): with the shadow pictures as instances (the only path since R4), every shadow map (the sun's near and
+// far maps, the far map's cache missed and hit, the lamps') draws the very quads the one-at-a-time path drew (shadow-loops-ref.mjs), the
 // same pictures skipped and missed, one instanced draw per picture; everything else the passes do (the ground,
 // buildings, structures, solid props, models, the cache's copies) stays in its place. A shadow map keeps depth only,
 // so the order of its pictures can't change it: the quads are compared as sets per pass. No graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shadowFixture, shadowSetup } from './shadow-fixture.mjs';
+import { shadowFixture, shadowSetup, withOldShadowSprites } from './shadow-fixture.mjs';
 
 const G = globalThis;
 const { engineContext, SPRITE_INSTANCE_STRIDE, halfValue } = G;
@@ -94,10 +94,9 @@ function sameQuads(A, B, what) {
 }
 function both(run) {
   const a = shadowSetup();
-  run();
+  withOldShadowSprites(run);
   const old = split(a.calls);
   const b = shadowSetup();
-  engineContext.look.quality.shadowInstances = true;
   run();
   return { old, inst: split(b.calls), calls: b.calls };
 }

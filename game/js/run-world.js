@@ -22,6 +22,7 @@ import {
   LOCATION_BY_ID,
   QUESTS,
   RESIDENTS,
+  REWARDS,
   RULES,
   SPECIES,
   START_NODE,
@@ -42,6 +43,7 @@ import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
 import { routeRareSpots, routeTrainerTally, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
+import { routeFindsPlace } from './logic/route-finds.js';
 import { questDataOf, residentPlan } from './logic/run-quests.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
@@ -328,6 +330,12 @@ function runWorldPutRun(run, scenes, data) {
   /* RT-4: where each route's rarer one waits (logic/rules.js spawnRare) */
   const rare = routeRareSpots(run, route, scenes);
   for (const L of W.locations) if (L.runNode != null && rare[L.runNode]) L.rareAt = rare[L.runNode];
+  /* RT-4b: finds on the routes' free dead ends and pockets, a Cut bramble row in front of one (logic/route-finds.js) */
+  const finds = routeFindsPlace(run, route, scenes, rare, {
+    rules: /** @type {any} */ (RULES.run).finds,
+    cards: /** @type {any} */ (REWARDS),
+  });
+  for (const L of W.locations) if (L.runNode != null && finds[L.runNode]) L.finds = finds[L.runNode];
   /* WA-5a: a place with marsh or bog water has the marsh's own wild Billies (rules.js spawn, logic/water-play.js) */
   W.locations.slice(1).forEach((L, i) => {
     const m = waterMarshOf(scenes[i]);

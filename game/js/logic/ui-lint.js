@@ -23,6 +23,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   findingsOf: [() => findingsOf, v => (findingsOf = v)],
   folderOfPath: [() => folderOfPath],
+  hairline: [() => hairline],
   // @ts-expect-error -- replaced on purpose
   joinPath: [() => joinPath, v => (joinPath = v)],
   // @ts-expect-error -- replaced on purpose
@@ -54,6 +55,11 @@ expose({
 /* to-module: end */
 export const COLOUR = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/g;
 export const LENGTH = /(?<![\w.#-])-?\d*\.?\d+(?:px|rem|em)\b/g;
+/* UI-9b: 0, and 1-2 px (a hairline: an edge, a nudge), are not off the space or radius scale */
+export const hairline = (/** @type {string} */ len) => {
+  const n = Math.abs(parseFloat(len));
+  return n === 0 || (/px$/.test(len) && n <= 2);
+};
 
 export const UI_LINT_RULES = [
   { id: 'radius', name: 'Corners on the radius tokens', token: /var\(--r-/g },
@@ -78,8 +84,8 @@ export const UI_LINT_RULES = [
    from tools/build-ui-icons.py when the SVG files became the source. */
 // ceiling: start
 export const UI_LINT_CEILING = {
-  radius: 99,
-  space: 616,
+  radius: 0,
+  space: 39,
   shadow: 161,
   keyframes: 53,
   duration: 249,
@@ -157,7 +163,7 @@ export function lintCssAll(text, file = '') {
   for (const { prop, value, at } of declarations(css.replace(/@font-face\s*\{[^{}]*\}/g, blank))) {
     // what's left once vars are taken out (each var as spaces, so places hold)
     const v = value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, blank);
-    const lengths = () => [...v.matchAll(LENGTH)].filter(m => parseFloat(m[0]) !== 0).map(m => at + m.index);
+    const lengths = () => [...v.matchAll(LENGTH)].filter(m => !hairline(m[0])).map(m => at + m.index);
     if (/radius$/.test(prop)) lengths().forEach(i => add('radius', i));
     if (/^(padding|margin|gap|row-gap|column-gap)(-|$)/.test(prop)) lengths().forEach(i => add('space', i));
     if (prop === 'box-shadow' && !/^\s*(none|inherit|initial|unset)?\s*$/.test(v.replace(/,/g, ''))) add('shadow', at);

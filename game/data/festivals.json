@@ -1,0 +1,127 @@
+{
+ "about": "Copperleaf's festivals and market days (hub track HB-10e, the owner's answers 2026-10-27): four seasonal festivals by the real date (a week each, by the ranch clock: logic/ranch-clock.js), two milestones and a market day every few returns. At most one is on: a milestone first, then a date, then a market day. Each brings its decorations (Copperleaf's props whose when names the festival), the square's folk out longer (its day, in place of rules.json square.day), its folk's lines (banter.json square_fest) and a festival market at the middle stall, paid in cur (each ware n per festival). Hub only: a run sees none.",
+ "cur": "scrap",
+ "festivals": {
+  "homecoming": {
+   "name": "Homecoming Parade",
+   "kind": "milestone",
+   "when": "wins = 1 and last:won",
+   "about": "Your first win! Copperleaf has put its flags out and its feet up.",
+   "day": [
+    {"k":"fest_morning","from":7,"to":12,"share":0.8,"stops":["keep","shop","fountain"]},
+    {"k":"fest_noon","from":12,"to":17.5,"share":0.9,"stops":["fountain","sit","shop"]},
+    {"k":"fest_evening","from":17.5,"to":23,"share":0.7,"stops":["lamp","sit","fountain"]}
+   ],
+   "stock": [
+    {"item":"hi_potion","n":2,"price":3},
+    {"item":"revive","n":1,"price":4},
+    {"coin":"step_pyramid","n":2,"price":4}
+   ]
+  },
+  "tenth_departure": {
+   "name": "Tenth Departure",
+   "kind": "milestone",
+   "when": "runs = 10",
+   "about": "Ten trains out, ten trains home. The station master has baked a cake shaped like a timetable.",
+   "day": [
+    {"k":"fest_morning","from":7,"to":12,"share":0.8,"stops":["keep","shop","fountain"]},
+    {"k":"fest_noon","from":12,"to":17.5,"share":0.9,"stops":["fountain","sit","shop"]},
+    {"k":"fest_evening","from":17.5,"to":23,"share":0.7,"stops":["lamp","sit","fountain"]}
+   ],
+   "stock": [
+    {"item":"protein_bar","n":1,"price":4},
+    {"item":"max_revive","n":1,"price":8},
+    {"coin":"step_pyramid","n":2,"price":4}
+   ]
+  },
+  "sprout_fair": {
+   "name": "Sprout Fair",
+   "kind": "date",
+   "from": "03-20",
+   "days": 7,
+   "about": "The spring seed swap: seed packets, seedlings and far too much elderflower cordial.",
+   "day": [
+    {"k":"fest_morning","from":7,"to":13,"share":0.9,"stops":["keep","shop","fountain"]},
+    {"k":"fest_noon","from":13,"to":18,"share":0.8,"stops":["fountain","sit","shop"]},
+    {"k":"fest_evening","from":18,"to":21.5,"share":0.4,"stops":["lamp","sit"]}
+   ],
+   "stock": [
+    {"item":"potion","n":3,"price":2},
+    {"item":"wake_tea","n":2,"price":2},
+    {"item":"trailmix","n":2,"price":3},
+    {"coin":"pyramid","n":3,"price":2}
+   ]
+  },
+  "longest_light": {
+   "name": "Longest Light",
+   "kind": "date",
+   "from": "06-20",
+   "days": 7,
+   "about": "Midsummer: the solar roofs drink all day, and nobody goes to bed while it's light.",
+   "day": [
+    {"k":"fest_morning","from":6,"to":12,"share":0.7,"stops":["keep","shop","fountain"]},
+    {"k":"fest_noon","from":12,"to":18,"share":0.9,"stops":["fountain","sit","shop"]},
+    {"k":"fest_evening","from":18,"to":23.5,"share":0.8,"stops":["lamp","sit","fountain"]}
+   ],
+   "stock": [
+    {"item":"hi_potion","n":2,"price":4},
+    {"item":"protein_bar","n":1,"price":5},
+    {"item":"quick_laces","n":1,"price":8},
+    {"coin":"step_pyramid","n":2,"price":5}
+   ]
+  },
+  "spire_supper": {
+   "name": "Spire Supper",
+   "kind": "date",
+   "from": "09-22",
+   "days": 7,
+   "about": "The harvest supper: hay bales for chairs, the whole town at one table, and somebody always brings soup.",
+   "day": [
+    {"k":"fest_morning","from":7,"to":12,"share":0.6,"stops":["keep","shop"]},
+    {"k":"fest_noon","from":12,"to":17,"share":0.8,"stops":["fountain","sit","shop"]},
+    {"k":"fest_evening","from":17,"to":23,"share":0.9,"stops":["lamp","sit","fountain"]}
+   ],
+   "stock": [
+    {"item":"potion","n":3,"price":2},
+    {"item":"full_remedy","n":2,"price":3},
+    {"item":"snack_pack","n":1,"price":7},
+    {"item":"leftover_sandwich","n":1,"price":7}
+   ]
+  },
+  "lantern_walk": {
+   "name": "Lantern Walk",
+   "kind": "date",
+   "from": "12-21",
+   "days": 7,
+   "about": "Midwinter: lanterns from the square to the station and back, to light the trains home.",
+   "day": [
+    {"k":"fest_morning","from":9,"to":13,"share":0.5,"stops":["keep","shop"]},
+    {"k":"fest_noon","from":13,"to":16.5,"share":0.6,"stops":["fountain","sit","shop"]},
+    {"k":"fest_evening","from":16.5,"to":23.5,"share":0.9,"stops":["lamp","fountain","sit"]}
+   ],
+   "stock": [
+    {"item":"revive","n":2,"price":5},
+    {"item":"burn_salve","n":2,"price":2},
+    {"item":"lucky_coin","n":1,"price":8},
+    {"coin":"gold_pyramid","n":1,"price":8}
+   ]
+  },
+  "market_day": {
+   "name": "Market day",
+   "kind": "market",
+   "every": 3,
+   "about": "Market day: the stalls stay out till afternoon, and the middle one has something good under the counter.",
+   "day": [
+    {"k":"fest_morning","from":7,"to":14,"share":0.8,"stops":["keep","shop","fountain"]},
+    {"k":"mkt_afternoon","from":14,"to":17.5,"share":0.4,"stops":["sit","fountain","shop"]},
+    {"k":"mkt_evening","from":18,"to":21.5,"share":0.3,"stops":["lamp","sit"]}
+   ],
+   "stock": [
+    {"item":"potion","n":3,"price":2},
+    {"item":"pretzel","n":3,"price":1},
+    {"item":"trailmix","n":2,"price":2},
+    {"coin":"pyramid","n":2,"price":2}
+   ]
+  }
+ }
+}

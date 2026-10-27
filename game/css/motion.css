@@ -284,7 +284,7 @@
   }
 }
 
-/* UI-9a: the old shared parts' entrances and loops, from parts.css (v05, polish, style), names kept */
+/* UI-9a: the old shared parts' entrances and loops, from parts.css (v05, polish, style; the rest of it is base.css's end since UI-9b), names kept */
 @keyframes sheen {
   0%,
   62% {
@@ -449,7 +449,10 @@
     transform: translateX(-18px);
   }
 }
-/* UI-9a: its one declaration was v05's width: 0 !important, and a keyframe ignores an !important declaration, so the
-   Billie sheet's stat bars (billie-sheet.css .ms-bar b) never grew in: emptied, so nothing changes */
+/* the Billie sheet's stat bars (billie-sheet.css .ms-bar b) grow in from nothing to their width. v05 wrote it
+   width: 0 !important, which a keyframe ignores, so they never did until UI-9b (the owner's answer) */
 @keyframes v05Grow {
+  from {
+    width: 0;
+  }
 }

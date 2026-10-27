@@ -26,6 +26,7 @@ import {
   actorMetersPerPixel,
   actorPositions,
   actorWorldPoint,
+  battleImpact,
   battleRibbonCells,
   battleSmearCount,
   battleStage,
@@ -364,6 +365,15 @@ function battle3dFrame() {
       items.push(it);
     }
   }
+  /* VFX-4: the impact frame now (battle-stage.js impactFx), its hit point in the walk scene (walk-view-gl.js projects
+     it for the grade pass) */
+  const IS = battleImpact();
+  let impact = null;
+  if (IS) {
+    const I = IS.I,
+      [ix, iz] = T(I.P.x, I.P.z);
+    impact = { p: [ix, battle3d.gy + I.P.y, iz], mode: IS.mode, age: IS.age, n: I.lines, seed: I.seed, warm: I.warm };
+  }
   const d = battleStage.dof;
   return {
     parts,
@@ -374,6 +384,7 @@ function battle3dFrame() {
     gy: battle3d.gy,
     items,
     ribbon,
+    impact,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
@@ -470,7 +481,7 @@ function smearLook(glow) {
   return L;
 }
 /* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
-   included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
+   included), spin its turn (it.spin, as prop-models.js propModelInstanceValues reads it); null while it can't be drawn (3D props off, the GPU
    lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
 export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
   if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind])

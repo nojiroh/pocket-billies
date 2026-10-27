@@ -234,7 +234,7 @@ hr.pb-rule::after {
     linear-gradient(#000, #000) top / 100% calc(100% - var(--por, 64px) * 0.43) no-repeat;
 }
 
-/* UI-9a: the type pill (ui-bits.js typeBadgeHTML), from parts.css: its colours from --tc/--tf, v05's size and depth */
+/* UI-9a: the type pill (ui-bits.js typeBadgeHTML), from parts.css (now base.css's end): its colours from --tc/--tf, v05's size and depth */
 .chip {
   display: inline-block;
   font: 400 12px/1 var(--font-voice);
@@ -242,11 +242,11 @@ hr.pb-rule::after {
   color: var(--tf);
 }
 .chip {
-  border-radius: 8px;
+  border-radius: var(--r-xs);
   font-family: var(--font-voice);
   font-weight: 600;
   font-size: 12.5px;
-  padding: 3px var(--s2) var(--s1);
+  padding: var(--s1) var(--s2) var(--s1);
   box-shadow:
     inset 0 -2px 0 rgba(0, 0, 0, 0.16),
     0 2px 4px -1px rgba(46, 33, 64, 0.3);
@@ -274,14 +274,14 @@ hr.pb-rule::after {
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  padding: 2px 7px 2px 6px;
+  padding: 2px var(--s2) 2px var(--s2);
   clip-path: var(--clip-chip);
   background: var(--limb-bg, color-mix(in srgb, var(--text) 10%, transparent));
   color: var(--limb-ink, var(--text2));
   font: 400 11px/1 var(--font-voice);
 }
 .pb-limb b {
-  margin-right: 3px;
+  margin-right: var(--s1);
   font-weight: 400;
 }
 .pb-limb i {
@@ -409,8 +409,8 @@ hr.pb-rule::after {
   .ms-tabs,
   .pickrow
 ):not(#k) {
-  /* !important only against the old .px and .pb.big corners (!important themselves, v05's, now in parts.css); goes
-     when parts.css's corners do */
+  /* !important only against the old .px and .pb.big corners (!important themselves, v05's, now at base.css's end); goes
+     when those corners do */
   border-radius: 0 !important;
   clip-path: var(--k-clip);
 }

@@ -28,6 +28,9 @@ const SEAMS = new Set([
   'battleWeatherMultiplier',
   /* RL-8: a run's battle: its seed, weather and checkpoint from the page (run.js), optional like the two above */
   'runBattleStart',
+  /* HB-10e: the festival on in Copperleaf (town-square.js: it needs the ranch clock and the phone's calendar), for the
+     story's festival: condition; optional (none in Node) */
+  'festivalToday',
 ]);
 
 test('every logic module loads in plain Node, with no browser globals made up for it', () => {

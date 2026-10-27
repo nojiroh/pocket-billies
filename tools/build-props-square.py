@@ -4,6 +4,15 @@ verdigris and brass, tools/build-props-hub.py).
 
   string_lights  two verdigris posts 6 m apart with a sagging wire of warm bulbs; each bulb a lamp glow, lit after
                  dusk (walk/effects.js glow, lampLit). Walk under it: only the posts block (`posts`)
+  pennant_line   HB-10d: the win bunting, two posts 5.2 m apart with a sagging line of cloth pennants (three-sided
+                 cones, point down) in the town's cream, brass, verdigris and copper. Shown on the square after a won
+                 run (`when: "last:won"` on the placed prop, tools/square-props.mjs). Only the posts block
+  fountain_ch2   HB-10d: the square's fountain from Chapter 2 on (rules.json square.fountain): batch 6's fountain with
+                 the portal tear's violet in its water and its night glows (`glowCol`), a crack glowing violet up the
+                 upper pedestal and the top bowl, and a brass Bureau plaque on the basin's front (made from batch 6's
+                 recipe here, so batch 6 needn't run again: its run drifts other models)
+  busker_case    HB-10d: the busker's slot on the square: an open instrument case on the paving, red velvet inside, a
+                 few coins in it, its lid standing open behind; empty until a resident who busks moves in (RS-5)
 
 The new kinds get a picture baked from the model (scene/next/hub/<key>.png: the fallback when models are off).
 
@@ -74,14 +83,96 @@ def string_lights_fx():
     return [{'k': 'glow', 'x': px(x), 'y': -px(wire_z(x) - 0.13)} for x in bulb_xs()]
 
 
+PEN_SPAN = 2.6  # half the distance between the pennant line's posts (m)
+PEN_TOP = 3.1
+PEN_SAG = 0.4
+PENNANTS = 11
+PEN_COLS = ('#F2DCA0', BRASS, VERD, '#CE7C4C')  # cream, brass, verdigris, copper (the hub's buildings)
+
+
+def pen_z(x):
+    return PEN_TOP - PEN_SAG * (1 - (x / PEN_SPAN) ** 2)
+
+
+def pennant_line():
+    L = []
+    for sx in (-1, 1):
+        x = sx * PEN_SPAN
+        L += [cyl(x, 0, 0, 0.12, 0.12, IRON, 'metal', 'post foot', 8),
+              limb((x, 0, 0.12), (x, 0, PEN_TOP + 0.2), 0.045, 0.035, VERD, 'metal', 'post', 8),
+              sphere(x, 0, PEN_TOP + 0.24, 0.07, BRASS, 'metal', 'post cap', 8, 4)]
+    n = 15
+    pts = [[r2(-PEN_SPAN + 2 * PEN_SPAN * i / (n - 1)), 0, 0, 0.008] for i in range(n)]
+    for p in pts:
+        p[2] = r2(pen_z(p[0]))
+    L.append({'k': 'limb', 'pts': pts, 'sides': 4, 'col': '#D6C08A', 'tex': 'cloth', 'name': 'line'})
+    for i in range(PENNANTS):
+        x = r2(-PEN_SPAN + 0.45 + (2 * PEN_SPAN - 0.9) * i / (PENNANTS - 1))
+        z = pen_z(x)
+        L.append(cyl(x, 0, r2(z - 0.32), 0.012, 0.31, PEN_COLS[i % len(PEN_COLS)], 'cloth', 'pennant', 3, k='cone',
+                     r1=0.15))
+    return B5.rec(L)
+
+
+B6 = load('batch6', 'build-props-batch6.py')
+TEAR = '#6A4AD8'  # the portal tear's violet (sky_portal's #5A3AC8, lifted to read as water)
+TEAR_GLOW = '#B494FF'
+CRACK = '#9A78FF'
+PLATE, PLATE_INK = BRASS, '#5A4422'
+
+
+def fountain_ch2():
+    L = [dict(l) for l in B6.fountain_recipe()['layers']]
+    for l in L:
+        if l.get('name', '').endswith('water'):
+            l['col'] = TEAR
+    # the crack: up the front of the upper pedestal (0.12 m round) and across the top bowl (0.1 to 0.32 m round)
+    pts = [(0.02, 1.70, 0.12), (-0.03, 1.82, 0.12), (0.03, 1.95, 0.12), (-0.02, 2.08, 0.11), (0.05, 2.15, 0.2),
+           (-0.04, 2.21, 0.3)]
+    L.append({'k': 'limb', 'pts': [[r2(x), r2(-r - 0.01), r2(z), 0.024] for x, z, r in pts], 'sides': 4,
+              'col': CRACK, 'tex': 'plain', 'name': 'crack'})
+    # the plaque on the basin wall's front (the wall is 1.68 m round, the viewer looks from -y)
+    fy = -1.69
+    L += [B1.box(0, fy, 0.16, 0.56, 0.03, 0.26, PLATE, 'metal', 'plaque'),
+          B1.box(0, fy - 0.016, 0.33, 0.4, 0.01, 0.025, PLATE_INK, 'metal', 'plaque line'),
+          B1.box(0, fy - 0.016, 0.27, 0.44, 0.01, 0.025, PLATE_INK, 'metal', 'plaque line'),
+          B1.box(-0.08, fy - 0.016, 0.21, 0.28, 0.01, 0.025, PLATE_INK, 'metal', 'plaque line'),
+          cyl(0.17, fy - 0.02, 0.2, 0.045, 0.01, PLATE_INK, 'metal', 'plaque stamp', 10)]
+    return B5.rec(L, 0.75)
+
+
+LEATHER, LEATHER_D, VELVET = '#5A3A2A', '#3E281E', '#A83A4A'
+
+
+def busker_case():
+    """an open case, 0.95 m long, lying across the view (x), its lid up behind it (+y, away from the viewer)"""
+    L = [B1.box(0, 0, 0, 0.95, 0.36, 0.1, LEATHER, 'cloth', 'case'),
+         B1.box(0, 0, 0.1, 0.87, 0.28, 0.005, VELVET, 'cloth', 'lining'),
+         B1.box(-0.3, 0, 0.1, 0.22, 0.2, 0.012, VELVET, 'cloth', 'neck well'),
+         B1.box(0, 0.19, 0.1, 0.95, 0.03, 0.34, LEATHER, 'cloth', 'lid'),
+         B1.box(0, 0.175, 0.13, 0.87, 0.005, 0.28, VELVET, 'cloth', 'lid lining'),
+         B1.box(0, -0.185, 0.04, 0.95, 0.01, 0.02, LEATHER_D, 'cloth', 'seam'),
+         B1.box(0.47, -0.1, 0.04, 0.03, 0.08, 0.04, BRASS, 'metal', 'clasp'),
+         B1.box(0.47, 0.08, 0.04, 0.03, 0.08, 0.04, BRASS, 'metal', 'clasp')]
+    for x, y in ((0.12, -0.04), (0.2, 0.05), (0.28, -0.07)):
+        L.append(cyl(x, y, 0.105, 0.03, 0.008, BRASS, 'metal', 'coin', 8))
+    return B5.rec(L)
+
+
 def main():
     ISL.PICS.mkdir(parents=True, exist_ok=True)
     D = gamedata.load()
     C = D['scenery']['props']
     C['string_lights'] = ISL.new_prop('string_lights', 'String lights', string_lights(), shadow=0.3, tags=('town',),
                                       fx=string_lights_fx(), posts=[{'x': -px(SPAN), 'r': 0.1}, {'x': px(SPAN), 'r': 0.1}])
+    C['pennant_line'] = ISL.new_prop('pennant_line', 'Pennant line', pennant_line(), shadow=0.3, tags=('town',),
+                                     posts=[{'x': -px(PEN_SPAN), 'r': 0.1}, {'x': px(PEN_SPAN), 'r': 0.1}])
+    F = C['fountain']
+    C['fountain_ch2'] = ISL.new_prop('fountain_ch2', 'Fountain (Chapter 2)', fountain_ch2(), shadow=F['shadow'],
+                                     tags=('town',), solid=F['solid'], fx=B6.fountain_fx(), glowCol=TEAR_GLOW)
+    C['busker_case'] = ISL.new_prop('busker_case', 'Busker\'s case', busker_case(), shadow=0.3, tags=('town',))
     gamedata.save(D)
-    print('square props: string_lights')
+    print('square props: string_lights, pennant_line, fountain_ch2, busker_case')
 
 
 if __name__ == '__main__':

@@ -18,6 +18,7 @@ import { formSpeciesOf } from './logic/forms.js';
 expose({
   BANTER: [() => BANTER],
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
   CURRENCIES: [() => CURRENCIES],
@@ -27,6 +28,7 @@ expose({
   DEX_ORDER: [() => DEX_ORDER],
   EVENTS: [() => EVENTS],
   FACTIONS: [() => FACTIONS],
+  FESTIVALS: [() => FESTIVALS],
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
@@ -59,6 +61,7 @@ expose({
   SEATS: [() => SEATS],
   SET_PIECES: [() => SET_PIECES],
   SHOPS: [() => SHOPS],
+  SHOWCASE: [() => SHOWCASE],
   SPECIES: [() => SPECIES],
   SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
@@ -433,9 +436,17 @@ export const RELATIONS = /** @type {import('../types/game-data').RelationsData} 
   gameData.relations || { gift: { cost: 1, points: 1, favour: 0 }, people: {} }
 );
 provide({ RELATIONS }); /* to-module */
+/* the online track ON-3: the Showcase's weekly themes and ribbons (showcase.json; logic/showcase.js) */
+export const SHOWCASE = /** @type {import('../types/game-data').ShowcaseData} */ (
+  gameData.showcase || { ribbons: ['Gold'], themes: [{ id: 'any', name: 'Best Billie', d: '', need: 'any' }] }
+);
 /* roguelite track RL-14: the runs' enemy factions and their bots (factions.json; logic/factions.js) */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}
+);
+/* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; battle-engine.js makeBossRobot) */
+export const BOSSES = /** @type {Record<string, import('../types/game-data').BossDef>} */ (
+  (gameData.bosses && gameData.bosses.bosses) || {}
 );
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
@@ -444,10 +455,13 @@ export const RESIDENTS = /** @type {Record<string, import('../types/game-data').
   gameData.residents || {}
 );
 provide({ RESIDENTS }); /* to-module */
+/* hub track HB-10e: Copperleaf's festivals and market days (festivals.json; logic/festival.js, town-square.js) */
+export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData | null} */ (gameData.festivals || null);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
+provide({ REWARDS }); /* to-module */
 /** RL-12b: a run's events, loot tables and trainer classes */
 export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
   gameData.events || { loot: {}, classes: {}, events: {} }

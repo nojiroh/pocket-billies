@@ -26,14 +26,52 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     badges: {},
     history: [],
     residents: {},
+    wish: null,
     boards: { d: 0, w: 0 },
+    show: { s: [], v: [], rw: 0, rib: [] },
+    bosses: {},
+    fest: null,
   });
   assert.equal(validMeta(m), true);
+  /* ON-3: the Showcase record */
+  const slot = { i: 0, k: 1700000000000, w: 2913, th: 'splice', b: 'b1' },
+    rib = { w: 2912, th: 'abom', p: 0, sp: 'bezos0', nick: 'Jeff' };
+  assert.equal(validMeta({ ...m, show: { s: [slot], v: ['ann_0_1'], rw: 2912, rib: [rib] } }), true);
+  assert.equal(validMeta({ ...m, show: { s: [slot, slot], v: [], rw: 0, rib: [] } }), false);
+  assert.equal(validMeta({ ...m, show: { s: [{ ...slot, i: 3 }], v: [], rw: 0, rib: [] } }), false);
+  assert.equal(validMeta({ ...m, show: { s: [], v: [], rw: 0, rib: [{ ...rib, p: 10 }] } }), false);
+  assert.equal(validMeta({ ...m, show: { s: [], v: [1], rw: 0, rib: [] } }), false);
+  assert.equal(metaFill({ ...m, show: 'junk' }).show.s.length, 0, 'a broken Showcase record goes alone');
+  assert.equal(metaFill({ ...m, runs: 4, show: 'junk' }).runs, 4);
+  /* RL-14b: the bosses.json bosses beaten, how many times */
+  assert.equal(validMeta({ ...m, bosses: { retrieval: 3 } }), true);
+  assert.equal(validMeta({ ...m, bosses: { retrieval: 1.5 } }), false);
+  /* a meta saved before RL-14b is filled out */
+  const { bosses, ...old } = m;
+  assert.deepEqual(metaFill(old).bosses, {});
   /* ON-2: the last daily and weekly taken off on */
   assert.equal(validMeta({ ...m, boards: { d: 20387, w: 2913 } }), true);
   assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);
   assert.equal(validMeta({ ...m, boards: { d: 0, w: 0, x: 1 } }), false);
   assert.notEqual(newMeta(), m, 'a fresh object each time');
+});
+
+test("meta.fest (HB-10e): null, or a festival market's sales on one occasion", () => {
+  const m = newMeta();
+  assert.equal(validMeta({ ...m, fest: { id: 'sprout_fair', at: 2026, got: { 0: 2, 3: 1 } } }), true);
+  assert.equal(validMeta({ ...m, fest: { id: 'market_day', at: 6, got: {} } }), true);
+  for (const fest of [
+    { id: 'Sprout', at: 2026, got: {} },
+    { id: 'sprout_fair', at: -1, got: {} },
+    { id: 'sprout_fair', at: 2026, got: { 8: 1 } },
+    { id: 'sprout_fair', at: 2026, got: { 0: 100 } },
+    { id: 'sprout_fair', at: 2026, got: {}, x: 1 },
+    [],
+  ])
+    assert.equal(validMeta({ ...m, fest }), false, JSON.stringify(fest));
+  /* a save from before HB-10e has none: filled in */
+  const { fest: _, ...old } = m;
+  assert.equal(metaFill(old).fest, null);
 });
 
 test('meta: broken or tampered shapes are refused', () => {

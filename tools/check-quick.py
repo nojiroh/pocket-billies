@@ -528,6 +528,22 @@ def safety_step(P):
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();modal({title:'Payout',html:boardsPayoutHTML({k:'d',n:boardDay(Date.now())})});0"); ui(pg); check('payout board')
     pg.evaluate("friends.on=false;friends.uid=null;boards.docs={};boards.at=0;uiState.modal=null;uiState.mq=[];renderOverlay();0")
     shown.append('boards')
+    # ON-3: the Showcase (every tab, a hidden entry's moderation row, the share sheet, the ribbons), names as stored
+    pg.evaluate("""(()=>{const X=window.__X,now=Date.now(),w=boardWeek(now),sp=saveData.team[0].sp;
+      friends.on=true;friends.uid='me';saveData.preferences.online=true;
+      const e=(id,o)=>({id,u:id.split('_')[0],name:'Owner'+X,sp,abom:false,lvl:5,nick:'Nick'+X,ot:'OT'+X,th:SHOWCASE.themes[0].id,w,k:1,v:2,wv:w*1e6+2,r:0,ok:0,...o});
+      const page=list=>({list,at:now,end:null,done:true});
+      showcase.pages={new:page([e('u1_0'),e('me_1',{u:'me'})]),theme:page([e('u1_0')]),last:page([e('u1_1',{w:w-1,wv:(w-1)*1e6+2})]),friends:page([e('u1_0')]),mine:page([e('me_1',{u:'me'})])};
+      showcase.mod={list:[{id:'show_u1_0_1',n:3,ok:0},{id:'user_u1',n:1,ok:0}],entries:{u1_0:e('u1_0')},hidden:[e('u1_2',{hid:true})],err:'',busy:false};
+      saveData.meta.show.rib=[{w:w-1,th:SHOWCASE.themes[0].id,p:0,sp,nick:'Rib'+X}];saveData.meta.show.rw=w-1;
+      saveData.team[0].ribbons=[{w:w-1,th:SHOWCASE.themes[0].id,p:1}];0})()""")
+    for b in ['new', 'theme', 'last', 'friends', 'mine']:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';render();document.querySelector('[data-a=sc-tab][data-b={b}]')?.click();0"); ui(pg); check('showcase ' + b)
+    if not pg.evaluate("document.querySelectorAll('[data-a=sc-vote],[data-a=sc-down]').length"): raise Exception('the Showcase showed no entries')
+    for name, js in [('showcase entry sheet', "document.querySelector('[data-a=sc-more]')?.click()"), ('share sheet', "showShareSheet(saveData.team[0])"), ('moderation', "modal({title:'Moderation',html:showModHTML()})"), ('ribbons on the details', "billySheet(saveData.team[0])")]:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';showcase.tab='new';render();{js};0"); ui(pg); check(name)
+    pg.evaluate("friends.on=false;friends.uid=null;showcase.pages={};showcase.mod={list:null,entries:{},hidden:null,err:'',busy:false};saveData.preferences.online=false;delete saveData.team[0].ribbons;saveData.meta.show=newShowMeta();uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    shown.append('showcase')
     for k in ['sum', 'build', 'moves', 'evo']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); ui(pg); check('details ' + k)
     shown.append('details')
@@ -542,7 +558,7 @@ def safety_step(P):
     if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
     ui(pg); check('battle'); shown.append('battle')
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-    return f'a payload in the trainer, nicknames, a friend, a request, the friend code and friends\' boards stayed text on {len(shown)} screens: ' + ', '.join(shown)
+    return f'a payload in the trainer, nicknames, a friend, a request, the friend code, friends\' boards and the Showcase stayed text on {len(shown)} screens: ' + ', '.join(shown)
 
 
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
@@ -645,16 +661,16 @@ def sound_step(P):
         except Exception: pass
 
 
-@step('Debug menu: nine sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
+@step('Debug menu: ten sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
 def debug_menu_step(P):
-    """UI-7c: the debug menu on a 390 px phone: the nine sections in their order, no phase or track code in what it
+    """UI-7c: the debug menu on a 390 px phone: the ten sections in their order (ON-3 added Moderation), no phase or track code in what it
     says, one copy of each test, the search box narrowing the buttons and putting the sections back, the open sections
     kept across closing and opening, and a button saying what it changed (not "Done.")"""
     pg = P.pg
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
     pg.evaluate("localStorage.removeItem('pb-debug-open');uiState.modal=null;uiState.mq=[];renderOverlay();openDebug();0"); until(pg, "!!document.querySelector('.dbg details[data-k]')", 10); ui(pg)
     keys = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].map(d=>d.dataset.k)")
-    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save']
+    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save', 'mod']
     if keys != want: raise Exception(f'sections {keys}, wanted {want}')
     text = pg.evaluate("document.querySelector('.dbg').textContent")
     codes = sorted(set(re.findall(r'\b(?:[Pp]hase \d+|(?:RL|UI|TR|ST|MG|IS|SND|CAM)-\d+|v\d{2}\b|S\d\b)', text)))
@@ -677,7 +693,7 @@ def debug_menu_step(P):
     said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
     if 'Moneys.' not in said or 'Done.' in said: raise Exception(f'+1,000 Moneys said {said[:160]}')
     if pg.evaluate("saveData.se") != se + 1000: raise Exception('+1,000 Moneys didn’t add 1,000')
-    return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
+    return 'ten sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
 
 
 @step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
@@ -1658,6 +1674,20 @@ def route_wild_step(P):
     return ph['why'] or 'in-game step passed'
 
 
+@step("RT-4b: finds and Cut brambles — a route's find picked up once, its bramble row refused without the badge, then cut (the in-game step)", 420)
+def route_finds_step(P):
+    """The in-game test's route finds step (its own seed search: a main route place with a find and a bramble row):
+    each find stands and the row blocks the walk; walking onto a find puts its card in the bag once and the pyramid
+    goes; Cut is refused without the Grass Badge; cut, the row goes and the walk opens"""
+    pg = P.pg
+    if not pg.evaluate("typeof runWorldSync==='function'&&!!RULES.run.finds"): return 'not in this build'
+    name = "A route's finds and Cut brambles: picked up once, the row refused without the badge, then cut"
+    r = run_in_game_test(pg, [name], False, 360)
+    ph = next((p for p in r['phases'] if p['name'] == name), None)
+    if not ph: raise Exception('the in-game test has no route finds step')
+    return ph['why'] or 'in-game step passed'
+
+
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
@@ -2029,7 +2059,7 @@ def pages():
              ('town', low, [rl8_run_from_mast, route_trainers_step, juniper_and_lab, airship_moored]),
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
-             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step]),
+             ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step, route_finds_step]),
              ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),

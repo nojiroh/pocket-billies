@@ -406,8 +406,8 @@ same phase:
   `gain.value` for this: Chrome stops working out a gain no sound goes through, so an idle bus's value stops part
   way. A browser that won't start audio is reported, not failed.
 - **Debug menu** (UI-7c): the full check's "Debug menu" step (alone with `--steps="debug menu"`, under a minute)
-  opens the menu on a 390 px phone page in the town and checks: the nine sections in order (keys `tests`, `give`,
-  `billies`, `battle`, `run`, `places`, `story`, `ranch`, `save`), no phase or track code in anything it says, each
+  opens the menu on a 390 px phone page in the town and checks: the ten sections in order (keys `tests`, `give`,
+  `billies`, `battle`, `run`, `places`, `story`, `ranch`, `save`, `mod`: ON-3's Moderation), no phase or track code in anything it says, each
   button once, the search box narrowing "scrap" to +50 Scrap and putting the sections back when cleared, an opened
   section kept across closing and opening (localStorage `pb-debug-open`), and +$1,000 saying what it changed.
   SND-2: **song fingerprints**. `python3 tools/check-sound.py` (about 1 min; `--only=meadow,victory` for some) renders

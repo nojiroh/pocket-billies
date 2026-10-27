@@ -38,8 +38,9 @@ export const DRAFT_VERSION = 1;
 /* a data file's path in game/data (index.json, uiTheme.json, maps/copperleaf.json) and an art path as Save takes it */
 export const DRAFT_FILE = /^[\w-]+(\/[\w-]+)?\.json$/;
 export const DRAFT_ART = /^art\/[\w\-./]+\.(png|webp)$/i;
-/* SA-2b: the text files the Studio saves: an SVG under art/ and the atlas rectangles' file */
-export const DRAFT_TEXT = /^art\/([\w\-./]+\.svg|manifest\.js)$/i;
+/* SA-2b: the text files the Studio saves: an SVG under art/ and the atlas rectangles' file; studio track ST-7: a mesh
+   model Model mode writes (art/scene/models/<key>.json) */
+export const DRAFT_TEXT = /^art\/([\w\-./]+\.svg|manifest\.js|scene\/models\/[\w-]+\.json)$/i;
 
 /** a draft from what is pending @param {Omit<Draft, 'v' | 'texts'> & { texts?: DraftText[] }} d @returns {Draft} */
 export function draftRecord(d) {

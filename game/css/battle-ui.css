@@ -178,7 +178,7 @@
 .bplate .pl-parts {
   display: flex;
   gap: var(--s1);
-  margin-top: 3px;
+  margin-top: var(--s1);
 }
 .bplate .pl-parts[hidden],
 .bplate .pl-pips[hidden] {
@@ -186,8 +186,8 @@
 }
 .bplate .pl-pips {
   display: flex;
-  gap: 3px;
-  margin-top: 3px;
+  gap: var(--s1);
+  margin-top: var(--s1);
 }
 
 /* UI-2: the plates over the fighters: dark glass with four small cuts and an edge line; the chosen one's edge is gold.

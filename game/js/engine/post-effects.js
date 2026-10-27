@@ -12,18 +12,19 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
+import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuFree, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
   COLOR_GRADES: [() => COLOR_GRADES],
-  DROP_COLOR: [() => DROP_COLOR],
-  DROP_SCREEN: [() => DROP_SCREEN],
   POST_EFFECT_SHADERS: [() => POST_EFFECT_SHADERS],
+  POST_MEDIUMP: [() => POST_MEDIUMP],
+  VOLZ_GLSL: [() => VOLZ_GLSL],
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
   drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
   drawPostRest: [() => drawPostRest, v => setDrawPostRest(v)],
+  postPrecisionFollow: [() => postPrecisionFollow, v => (postPrecisionFollow = v)],
   postTex: [() => postTex, v => (postTex = v)],
   postUse: [() => postUse, v => (postUse = v)],
   projectToScreenUv: [() => projectToScreenUv, v => (projectToScreenUv = v)],
@@ -48,6 +49,9 @@ export function setScreenSnapshot(v) {
   provide({ screenSnapshot });
 }
 /* to-module: end */
+/* air track AIR-4: the march-size depth (vdep) read back in metres: red the coarse step (rounded, as a half-float
+   target holds k/255 only nearly), green the fine; f the far plane it was written against */
+const VOLZ_GLSL = `float volZ(sampler2D t,ivec2 p,float f){vec2 v=texelFetch(t,p,0).rg;return (floor(v.r*255.+.5)+v.g)/255.*f;}`;
 export const POST_EFFECT_SHADERS = {
   dof: [
     `#version 300 es
@@ -166,11 +170,37 @@ vec3 src(vec2 q){if(q.x<0.||q.y<0.||q.x>1.||q.y>1.)return vec3(0.);float sky=ste
 void main(){vec2 dv=(uSun-vUV);if(uVirt>.5)dv=normalize(dv)*.32;dv*=uLen/24.;vec2 q=vUV+dv*h(gl_FragCoord.xy);vec3 acc=vec3(0.);float w=1.,tw=0.;for(int i=0;i<24;i++){acc+=src(q)*w;tw+=w;w*=.93;q+=dv;}
  o=vec4(acc/tw,1.);}`,
   ],
+  /* air track AIR-4: the depth at the light-in-air march's size. Each of its pixels covers about 4 x 4 of the screen's;
+     of the four corner pixels the nearest wins (a thin thing in front is kept, so the air behind it doesn't bleed over
+     it), as metres from the camera over the far plane in two 8-bit steps (red the coarse, green the fine), so it reads
+     the same in a half-float or an 8-bit target. The sky is the far plane. Read with texelFetch only. */
+  vdep: [
+    `#version 300 es
+precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
+    `#version 300 es
+precision highp float;in vec2 vUV;out vec4 o;uniform highp sampler2D uDep;uniform float uN,uF;uniform vec2 uQ;
+float lin(float d){float z=d*2.-1.;return 2.*uN*uF/(uF+uN-z*(uF-uN));}
+void main(){ivec2 s=textureSize(uDep,0);vec2 c=vUV*vec2(s),f=max(vec2(0.),vec2(s)/uQ*.5-.5);float d=1.;
+ for(int i=0;i<4;i++){vec2 e=vec2(i&1,i>>1)*2.-1.;d=min(d,texelFetch(uDep,clamp(ivec2(floor(c+e*f)),ivec2(0),s-1),0).r);}
+ float z=d>.9999?uF:min(uF,lin(d)),zn=z/uF*255.,hi=floor(zn);o=vec4(hi/255.,zn-hi,0.,1.);}`,
+  ],
+  /* AIR-4: the march's soft blur that keeps to its own depth: the plain blur's five taps, each weighted by how near its
+     depth is to the middle's, so fog and shafts don't smear across a tree, a roof or the player */
+  vblur: [
+    `#version 300 es
+precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
+    `#version 300 es
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uZ;
+uniform float uZF;${VOLZ_GLSL}
+void main(){ivec2 s=textureSize(uCol,0),p=ivec2(gl_FragCoord.xy);float z0=volZ(uZ,p,uZF),r=z0*.04+.08;vec4 a=texelFetch(uCol,p,0)*4.;float w=4.;
+ for(int i=0;i<4;i++){ivec2 q=clamp(p+ivec2(i&1,i>>1)*2-1,ivec2(0),s-1);float e=(volZ(uZ,q,uZF)-z0)/r,k=exp(-e*e);a+=texelFetch(uCol,q,0)*k;w+=k;}
+ o=a/w;}`,
+  ],
   vol: [
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;precision highp sampler3D;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD,uAirN,uFollow;${LIGHT_GLSL}${COMMON_GLSL}
+precision highp float;precision highp sampler3D;in vec2 vUV;out vec4 o;uniform sampler2D uZ,uBN;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD,uAirN,uFollow,uHS;${LIGHT_GLSL}${COMMON_GLSL}${VOLZ_GLSL}
 /* air track AIR-3: the low fog's density grid (walk/fog-grid.js, an R8 3D texture: repeat in x and z, clamp in y, in
    flat world positions), its box, its scale (1/(nx cell), 1/(nz cell), 1/cell, its floor oy), its square (middle x, z,
    half size, ny); how thick (uFogK, the Fog in the air dial; 0: no fog in the march), lamps in it, the steps */
@@ -186,8 +216,11 @@ float vis(vec3 p){if(uShadowOn<.5)return 1.;vec4 q=uShadowM*vec4(p,1.);vec3 c=q.
 float fogAt(vec3 p){vec3 q=vec3(p.x*uFogS.x,((p.y+curveY(p.xz))*uFogS.z-uFogS.w)/uFogC.w,p.z*uFogS.y);
  return texture(uFogT,q).r*(1.-smoothstep(uFogC.z*.7,uFogC.z*.95,max(abs(p.x-uFogC.x),abs(p.z-uFogC.y))));}
 vec3 lampAt(vec3 p){vec3 a=vec3(0.);for(int l=0;l<6;l++){if(l>=uNL||float(l)>=uAirN)break;vec4 Lp=uLP[l];vec3 d=Lp.xyz-p;float r=abs(Lp.w),ll=length(d);float f=max(0.,1.-ll/(r*1.3));a+=uLC[l].rgb*f*f/(1.+ll*ll*.35);}return a;}
-void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.9999)*2.-1.,1.);vec3 P=wp.xyz/wp.w;vec3 ray=P-uEye;float L=length(ray);vec3 dir=ray/max(L,.001);float L0=d0>.9999?1e4:L;L=min(L,uMaxD);
- float j=lhash(gl_FragCoord.xy*.37);float cs=dot(dir,uSunDir);const float g=.45;float ph=(1.-g*g)/pow(1.+g*g-2.*g*cs,1.5);
+/* AIR-4: the depth from the march-size target (vdep: the nearest of each pixel's corners), back to the depth buffer's
+   value so the old sums hold; the sky is 1 */
+void main(){float zq=volZ(uZ,ivec2(gl_FragCoord.xy),uF),d0=zq>=uF*.9995?1.:((uF+uN-2.*uN*uF/zq)/(uF-uN))*.5+.5;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.9999)*2.-1.,1.);vec3 P=wp.xyz/wp.w;vec3 ray=P-uEye;float L=length(ray);vec3 dir=ray/max(L,.001);float L0=d0>.9999?1e4:L;L=min(L,uMaxD);
+ /* AIR-4: each pixel's steps start at the blue-noise tile's value (logic/blue-noise.js), even grain the blur takes away */
+ float j=(texelFetch(uBN,ivec2(gl_FragCoord.xy)&63,0).r*255.+.5)/256.;float cs=dot(dir,uSunDir);const float g=.45;float ph=(1.-g*g)/pow(1.+g*g-2.*g*cs,1.5);
  vec3 sun=vec3(0.),lamps=vec3(0.);
  /* alpha 0.4.1: seen from above, the air that matters is the last stretch above the ground, where trees, roofs and
     awnings stand in the light. The march covers only that stretch, the air is thickest near the ground, and the phase
@@ -195,32 +228,49 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
  /* AIR-3: with the fog grid the march starts where the ray enters the grid's box (or the shafts' stretch, if nearer)
     and runs to the surface or out of the box, in uSteps steps; the shafts still count only their last 14 m. Without
     it, the old 14 steps over the last 14 m */
+ /* AIR-4: shade in the haze (uHS, the Shade in the haze dial): fogit's haze builds up past its start as
+    1-exp(-k(t-start)); the march sums the part of that built in the sun's shadow over the haze's first 26 m
+    (the near haze: it starts about at the camera's distance, so a fixed 14-40 m would miss it) */
  bool sh=uK>0.||uLK>0.;float s0=max(0.,L-14.),t0=s0,t1=L,N=14.,fa=0.,fb=-1.;
+ float hk=1.6/max(uFogD,.001),h0=uFogStart,h1=min(L,h0+26.),hsh=0.;bool hz=uHS>0.&&uShadowOn>.5&&d0<=.9999&&h0<h1;
  if(uFogK>0.){vec3 iv=mix(vec3(-1.),vec3(1.),step(0.,dir))/max(abs(dir),vec3(1e-6)),ta=(uFogLo-uEye)*iv,tb=(uFogHi-uEye)*iv,mn=min(ta,tb),mx=max(ta,tb);
   fa=max(0.,max(max(mn.x,mn.y),mn.z));fb=min(L0,min(min(mx.x,mx.y),mx.z));
-  if(fa<fb){t0=sh?min(s0,fa):fa;t1=sh?max(L,fb):fb;N=uSteps;}else if(!sh){o=vec4(0.);return;}}
+  if(fa<fb){t0=sh?min(s0,fa):fa;t1=sh?max(L,fb):fb;N=uSteps;}else if(!sh&&!hz){o=vec4(0.);return;}}
+ if(hz){bool an=sh||fa<fb;t0=an?min(t0,h0):h0;t1=an?max(t1,h1):h1;}
  /* the fog: 0.22 per m at full density thins what is behind it (T) and adds the light it scatters: the sky's (the
     haze colour, dimmer in shade and with the sun's brightness sl, so it is dark under the moon and the lamps carry it),
     the sun's through the shadow maps with the forward phase (shafts in the fog), and the lamps' glow */
  float dt=(t1-t0)/N,T=1.,sl=min(1.,dot(uSunCol,vec3(.3,.59,.11)));vec3 fc=vec3(0.);
  for(int i=0;i<14;i++){if(float(i)>=N)break;float t=t0+(float(i)+j)*dt;vec3 p=uEye+dir*t;
-  float w=sh&&t>=s0&&t<=L?1.:0.,fd=t>=fa&&t<=fb?fogAt(p)*uFogK:0.;if(w+fd<=0.)continue;
+  float w=sh&&t>=s0&&t<=L?1.:0.,fd=t>=fa&&t<=fb?fogAt(p)*uFogK:0.,wh=hz&&t>=h0&&t<=h1?1.:0.;if(w+fd+wh<=0.)continue;
   float v=vis(p);vec3 lp=(w>0.&&uLK>0.)||(fd>0.&&uFogLK>0.)?lampAt(p):vec3(0.);
   if(w>0.){float dens=exp(-max(0.,p.y-P.y)*.32)*.85+exp(-max(0.,p.y-uMistY)*.1)*.15;float dd=dens*dt*.045;sun+=vec3(v*dd,dd,0.);lamps+=lp*dt;}
+  if(wh>0.)hsh+=(1.-v)*hk*exp(-hk*(t-h0))*dt*(1.-smoothstep(h0+18.,h0+26.,t));
   if(fd>0.){float a=1.-exp(-fd*.22*dt);fc+=T*a*(uFogCol*(.45+.55*sl*(.4+.6*v))+uSunCol*v*ph*.18+lp*uFogLK*.5);T*=1.-a;}}
  /* lit air brightens a little; air in the shadow of a canopy or a roof darkens what is behind it (alpha), so the beams
     show as light and dark columns, on any graphics chip (no negative light needed) */
  float pk=(ph*.6+.55)*uDens*step(d0,.9999)*(1.-smoothstep(26.,46.,length(ray)));/* not in the sky, and fading out with distance: the beams are a near thing */
  vec3 sr=uSunCol*min(sun.x*pk*.4,1.2)*uK+lamps*uLK*.18;float sa=clamp((sun.y-sun.x)*pk*1.1*uK*mix(1.,min(1.,dot(uSunCol,vec3(.3,.59,.11))*1.25),uFollow),0.,.6);
  /* AIR-3: the fog in front, premultiplied (the grade pass does c*(1-a)+rgb); T is 1 without fog, the old output */
- o=vec4(sr*T+fc,1.-(1.-sa)*T);}`,
+ /* AIR-4: the haze in shade darkens what is behind the fog (x3: the walk camera's near haze is thin, so at x1 it
+    hardly showed in the low-sun pictures; at most .35) */
+ float ah=hz?min(.35,hsh*uHS*3.):0.;
+ o=vec4(sr*T+fc,1.-(1.-sa)*(1.-ah)*T);}`,
   ],
   grade: [
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol,uVolZ;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
+uniform vec4 uImp,uImpL;
+${VOLZ_GLSL}
+/* air track AIR-4: the light in the air back to full size by depth (nearest-depth upsampling): where the four
+   march-size depths round this pixel all lie near its own, the smooth bilinear read; at an edge, the one of the four
+   whose depth is nearest this pixel's, so the fog behind a tree doesn't spill onto it, nor the tree's onto the fog */
+vec4 volUp(){ivec2 qs=textureSize(uVolZ,0),b=ivec2(floor(vUV*vec2(qs)-.5)),bi=clamp(b,ivec2(0),qs-1);float d=texture(uDep,vUV).r,z=d>.9999?uFar:linz(d),best=1e9,md=0.;
+ for(int i=0;i<4;i++){ivec2 q=clamp(b+ivec2(i&1,i>>1),ivec2(0),qs-1);float e=abs(volZ(uVolZ,q,uFar)-z);md=max(md,e);if(e<best){best=e;bi=q;}}
+ return md<z*.05+.1?texture(uVol,vUV):texelFetch(uVol,bi,0);}
 /* film grain (2026-10): a hash without sine (Dave Hoskins), steady on phone graphics chips where the sine one makes
    patterns; soft grains about 1.5 pixels across, a new field 24 times a second, mostly brightness with a little colour,
    strongest in the midtones and faint in deep shade and bright highlights, as on film */
@@ -229,6 +279,13 @@ float gv(vec2 q,float f){vec2 i=floor(q),u=fract(q);u=u*u*(3.-2.*u);return mix(m
 vec3 grain(vec3 c){float f=mod(floor(uTime*.024),997.),l=clamp(dot(c,vec3(.3,.59,.11)),0.,1.);vec2 q=gl_FragCoord.xy/1.5;
  float m=gv(q,f)-.5;vec3 k=vec3(gh(vec3(q,f+1.)),gh(vec3(q,f+2.)),gh(vec3(q,f+3.)))-.5;
  return c+(m*1.6*.85+k*.15)*uGrain*mix(1.,4.*l*(1.-l),.8);}
+/* VFX-4: the impact frame's radial lines (uImpL.x of them, turned by the seed uImpL.y), r in screen heights from the
+   hit point, th its angle: 1 on a line. The frame's lines are wedges from the edges in toward the hit, thicker outside,
+   some missing; a crit's speed lines after it (mode 3) are short and thin, moving out with age. Whole pixels */
+float impLine(float r,float th,float age){float n=uImpL.x,f=(th/6.2831853+uImpL.y)*n,i=floor(f),h=gh(vec3(i,uImpL.y*97.,7.)),h2=gh(vec3(i,uImpL.y*97.,11.)),
+ dp=abs(fract(f)-.5)/n*6.2831853*r/uPx.y;
+ if(uImp.z>2.5){float r0=.07+age*.2+h*.05,r1=r0+.06+h2*.06;return step(r0,r)*step(r,r1)*step(dp,.75);}
+ float r0=.13+h*.2;return h2<.2?0.:step(r0,r)*step(dp,.6+(r-r0)*.02/uPx.y);}
 vec3 roll(vec3 c){float t=uShoulder;vec3 x=max(c-t,0.);return min(c,vec3(t))+(1.-t)*(1.-exp(-x/(1.-t)));}
 /* v32: a film curve (ACES, fitted): deeper darks, a long soft shoulder, colours that hold in bright light */
 vec3 film(vec3 c){c*=.82;return clamp((c*(2.51*c+.03))/(c*(2.43*c+.59)+.14),0.,1.);}
@@ -248,7 +305,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  /* v33: ink outlines where depth jumps (silhouettes of props, people and billionaires), thinner with distance */
  if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];zs[0]=linz(texture(uDep,vUV+vec2(q.x,0)).r);zs[1]=linz(texture(uDep,vUV-vec2(q.x,0)).r);zs[2]=linz(texture(uDep,vUV+vec2(0,q.y)).r);zs[3]=linz(texture(uDep,vUV-vec2(0,q.y)).r);
   for(int i=0;i<4;i++)e=max(e,(zs[i]-z0)/z0);/* v47: one outline rule: a darker shade of the thing's own colour on props, buildings and characters; the ground (alpha 0) gets none *//* Outlines follow the camera (uInkF): fading past where the camera looks, and melting with the blur */c*=1.-uInk*step(.5,texture(uCol,vUV).a)*smoothstep(.06,.22,e)*.62*(1.-smoothstep(uInkF.x,uInkF.y,z0))*(1.-uInkF.z*smoothstep(.02,.4,kb));}}
- c+=texture(uBloom,vUV).rgb*uBloomK;if(uRaysK>0.)c+=texture(uRays,vUV).rgb*uRayC*uRaysK*.4;if(uVolK>0.){vec4 va=texture(uVol,vUV);c=c*(1.-va.a*uVolK)+va.rgb*uVolK;}
+ c+=texture(uBloom,vUV).rgb*uBloomK;if(uRaysK>0.)c+=texture(uRays,vUV).rgb*uRayC*uRaysK*.4;if(uVolK>0.){vec4 va=volUp();c=c*(1.-va.a*uVolK)+va.rgb*uVolK;}
  /* v33: sun glare: a soft halo round the sun and a few ghosts along the line through the middle, only when the sun is in the open */
  if(uGlare>0.&&uSunP.z>0.){float vis=texture(uDep,clamp(uSunP.xy,.002,.998)).r>.9999?1.:0.;if(vis>0.){vec2 a=vec2(uPx.y/uPx.x,1.);vec2 sp=uSunP.xy,dv=(vUV-sp)*a;float r=length(dv);
   vec3 g=uRayC*(exp(-r*7.)*.55+exp(-r*26.)*.6)*uSunP.z;vec2 ax=(vec2(.5)-sp);for(int i=1;i<=4;i++){float f=float(i)*.42;vec2 gp=sp+ax*f*2.;float rr=length((vUV-gp)*a),sz=.025+.02*float(i);g+=uRayC*vec3(.6+.1*float(i),.75,1.)*smoothstep(sz,sz*.6,rr)*.07*uSunP.z;}
@@ -257,24 +314,108 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  c=uTone>.5?mix(roll(c*uExp),film(c*uExp*1.25),uTone>1.5?1.:.85):roll(c*uExp);if(uTone>1.5)c=(c-.5)*1.08+.5;c.r*=1.+uWarm*.08;c.b*=1.-uWarm*.1;float l=dot(c,vec3(.3,.59,.11));c=mix(vec3(l),c,uSat);c=(c-.5)*uCon+.5;
  c=pow(max(c*uGain+uLift*(1.-c),0.),1./uGam);float lg=clamp(dot(c,vec3(.3,.59,.11)),0.,1.);c+=uShT*(1.-lg)*(1.-lg)+uHiT*lg*lg;
  c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);if(uGrain>0.)c=grain(c);/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}
+ /* VFX-4: the impact frame (mode uImp.z): 1 the negative and 2 the positive two-tone, ink and paper split hard on the
+    graded brightness, the lines in the other tone; 3 a crit's speed lines alone over the picture */
+ if(uImp.z>0.){vec2 dv=(floor(gl_FragCoord.xy)+.5)*uPx-uImp.xy;dv.x*=uPx.y/uPx.x;float ln=impLine(length(dv),atan(dv.y,dv.x)+3.1415927,uImp.w);
+  if(uImp.z>2.5)c=mix(c,vec3(1.),ln*.85);
+  else{float t=step(.42,dot(c,vec3(.3,.59,.11)));if(uImp.z<1.5)t=1.-t;t=abs(t-ln);c=mix(vec3(.06,.05,.09),uImpL.z>.5?vec3(1.,.95,.66):vec3(1.),t);}}
  /* CAM-3: the Studio's blur heatmap (Engine > Blur heatmap): sharp green, then yellow, then red at full blur */
  if(uDofView>.5){vec3 hm=kb<.02?vec3(.1,.85,.3):kb<.5?mix(vec3(.95,.9,.15),vec3(1.,.55,.1),kb*2.):mix(vec3(1.,.55,.1),vec3(.9,.1,.1),kb*2.-1.);c=mix(c,hm,.55);}
  o=vec4(c,1.);}`,
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
-/* phase 20 R2 (D3): what a pass that draws over all of its target may drop first, so a tiled graphics chip (the
-   phones') doesn't load the old picture: a target's colour, or the screen's colour, depth and stencil */
-const DROP_COLOR = [0x8ce0 /* COLOR_ATTACHMENT0 */],
-  DROP_SCREEN = [0x1800, 0x1801, 0x1802 /* COLOR, DEPTH, STENCIL */];
-/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms. fresh: the pass draws every
-   pixel of F with no blending, so with quality.invalidate its old content is dropped */
-function postUse(name, F, w, h, fresh) {
+/* phase 20 D2 (Engine > Quality "Medium precision", quality.mediump; engine/shader-precision.js): the post passes
+   whose maths is mostly colour, with highp kept on the screen places (vUV, uPx, offsets and taps), depth and its
+   linear distance (the blur's plane, the outlines), time, the sun's place on screen and every hash (grain, dither,
+   the rays' jitter). The colour samplers are mediump (16-bit floats hold the HDR range), depth highp. Left highp: dof,
+   dofnear and ao (depth maths nearly throughout), vol (world-space positions, the shadow maps and the fog grid),
+   dofgrow (integers and one read) */
+const POST_MEDIUMP = {
+  bright: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;',
+    ],
+  ],
+  down: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;',
+    ],
+  ],
+  up: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;uniform float uR;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;uniform highp float uR;',
+    ],
+    ['void main(){vec2 d=uPx*uR;', 'void main(){highp vec2 d=uPx*uR;'],
+  ],
+  rays: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uSun;uniform float uLen,uVirt;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp sampler2D uDep;uniform highp vec2 uSun;uniform highp float uLen;uniform float uVirt;',
+    ],
+    ['float h(vec2 p){', 'highp float h(highp vec2 p){'],
+    ['vec3 src(vec2 q){', 'vec3 src(highp vec2 q){'],
+    ['void main(){vec2 dv=(uSun-vUV);', 'void main(){highp vec2 dv=(uSun-vUV);'],
+    ['vec2 q=vUV+dv*h(gl_FragCoord.xy);', 'highp vec2 q=vUV+dv*h(gl_FragCoord.xy);'],
+  ],
+  grade: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol,uVolZ;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol,uDof,uBloom,uAO,uRays,uVol;uniform highp sampler2D uDep;uniform highp sampler2D uVolZ;uniform highp vec2 uPx;uniform highp vec4 uHeatS[6];uniform float uHeatN;uniform highp vec4 uDofPl,uDofB;',
+    ],
+    ['uniform vec3 uInkF;', 'uniform highp vec3 uInkF;'],
+    ['uSharp,uBloomK,uTime,uDofOn,', 'uSharp,uBloomK,uDofOn,'],
+    ['uInk,uNear,uFar,uGlare;', 'uInk,uGlare;uniform highp float uTime,uNear,uFar;'],
+    ['uHiT,uRayC,uSunP;', 'uHiT,uRayC;uniform highp vec3 uSunP;'],
+    ['float linz(float d){float z=d*2.-1.;', 'highp float linz(highp float d){highp float z=d*2.-1.;'],
+    ['float gh(vec3 p){', 'highp float gh(highp vec3 p){'],
+    [
+      'float gv(vec2 q,float f){vec2 i=floor(q),u=fract(q);',
+      'highp float gv(highp vec2 q,highp float f){highp vec2 i=floor(q),u=fract(q);',
+    ],
+    ['vec3 grain(vec3 c){float f=', 'vec3 grain(vec3 c){highp float f='],
+    ['vec2 q=gl_FragCoord.xy/1.5;', 'highp vec2 q=gl_FragCoord.xy/1.5;'],
+    ['void main(){vec2 uv=vUV;', 'void main(){highp vec2 uv=vUV;'],
+    ['vec4 hs=uHeatS[i];', 'highp vec4 hs=uHeatS[i];'],
+    ['if(uDofOn>.5){float dz=linz(', 'if(uDofOn>.5){highp float dz=linz('],
+    [
+      'if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];',
+      'if(uInk>0.){highp float d0=texture(uDep,vUV).r;if(d0<.9999){highp float z0=linz(d0),e=0.;highp vec2 q=uPx*1.;highp float zs[4];',
+    ],
+    ['{vec2 q=floor(gl_FragCoord.xy);', '{highp vec2 q=floor(gl_FragCoord.xy);'],
+    /* AIR-4's upscale by depth (volUp, VOLZ_GLSL): depth stays highp */
+    [
+      'float volZ(sampler2D t,ivec2 p,float f){vec2 v=',
+      'highp float volZ(highp sampler2D t,ivec2 p,highp float f){highp vec2 v=',
+    ],
+    [
+      'float d=texture(uDep,vUV).r,z=d>.9999?uFar:linz(d),best=1e9,md=0.;',
+      'highp float d=texture(uDep,vUV).r,z=d>.9999?uFar:linz(d),best=1e9,md=0.;',
+    ],
+    ['float e=abs(volZ(uVolZ,q,uFar)-z);', 'highp float e=abs(volZ(uVolZ,q,uFar)-z);'],
+  ],
+};
+for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
+/* Medium precision switched (the Studio, the graphics test): the passes with a list are made again in the new
+   precision (once, on the spot), and any of them still compiling in the background is dropped */
+function postPrecisionFollow() {
+  const mp = !!engineSetting('quality', 'mediump');
+  if (mp === gpuState.mp) return;
+  gpuState.mp = mp;
+  for (const k of Object.keys(POST_MEDIUMP)) {
+    if (gpuState.P[k]) gpuFree(gpuState.P[k].p);
+    delete gpuState.P[k];
+    if (gpuState.pend) gpuState.pend.delete(k);
+  }
+}
+/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
+function postUse(name, F, w, h) {
   const gl = gpuState.gl,
     p = gpuState.P[name];
   gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
-  if (fresh && engineSetting('quality', 'invalidate'))
-    gl.invalidateFramebuffer(gl.FRAMEBUFFER, F ? DROP_COLOR : DROP_SCREEN);
   gl.viewport(0, 0, w, h);
   gl.useProgram(p.p);
   return p.U;
@@ -288,6 +429,7 @@ function postTex(U, name, unit, t) {
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
+  postPrecisionFollow();
   ensurePrograms(POST_EFFECT_SHADERS);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
@@ -325,15 +467,15 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
       qh = Math.max(8, hh >> 1),
       K0 = renderTarget('dofk0', hw, hh, { hdr: true }),
       K1 = renderTarget('dofk1', qw, qh, { hdr: true });
-    let U = use('down', K0, hw, hh, true);
+    let U = use('down', K0, hw, hh);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    U = use('down', K1, qw, qh, true);
+    U = use('down', K1, qw, qh);
     tex(U, 'uCol', 0, K0.c);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    U = use('up', D, hw, hh, true);
+    U = use('up', D, hw, hh);
     tex(U, 'uCol', 0, K1.c);
     gl.uniform2f(U.uPx, 1 / qw, 1 / qh);
     gl.uniform1f(U.uR, Math.min(3, 0.5 + blur));
@@ -348,7 +490,7 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
         th = Math.ceil(rh / 16),
         T0 = renderTarget('dofnear0', tw, th),
         T1 = renderTarget('dofnear1', tw, th);
-      let V = use('dofnear', T0, tw, th, true);
+      let V = use('dofnear', T0, tw, th);
       tex(V, 'uDep', 0, S.d);
       gl.uniform1f(V.uN, C.near);
       gl.uniform1f(V.uF, C.far);
@@ -356,14 +498,14 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
       gl.uniform1f(V.uBand, band[0]);
       gl.uniform1f(V.uRampN, band[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      V = use('dofgrow', T1, tw, th, true);
+      V = use('dofgrow', T1, tw, th);
       tex(V, 'uT', 0, T0.c);
       /* (maxR is in half-size pixels, a tile is 8 of them) */
       gl.uniform1i(V.uGrow, Math.min(4, Math.max(1, Math.ceil(maxR / 8))));
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       N = T1;
     }
-    const U = use('dof', D, hw, hh, true);
+    const U = use('dof', D, hw, hh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
@@ -408,7 +550,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     w = hw,
     h = hh;
   if (bk > 0.01) {
-    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h, true);
+    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     /* Even bloom (color.bloomEven): the threshold as it reads after the exposure */
@@ -425,7 +567,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
       w = Math.max(4, w >> 1);
       h = Math.max(4, h >> 1);
       const F = renderTarget('b' + i, w, h, { hdr: true });
-      U = use('down', F, w, h, true);
+      U = use('down', F, w, h);
       tex(U, 'uCol', 0, chain[i - 1].c);
       gl.uniform2f(U.uPx, 1 / pw, 1 / ph);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -448,7 +590,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   let AO = null;
   if (aoK > 0.01) {
     AO = renderTarget('ao', hw, hh);
-    const U = use('ao', AO, hw, hh, true);
+    const U = use('ao', AO, hw, hh);
     tex(U, 'uDep', 0, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.uniform1f(U.uN, C.near);
@@ -470,7 +612,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1);
     RY = renderTarget('rays', qw, qh, { hdr: true });
-    const U = use('rays', RY, qw, qh, true);
+    const U = use('rays', RY, qw, qh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uSun, o.sun[0], o.sun[1]);
@@ -485,17 +627,33 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     lk = X && !o.noVol ? (engineSetting('air', 'lightsInAir') ?? 0.7) : 0;
   /* AIR-3: the low fog (o.fog: the fog grid, its box, the dials and steps) has its own gate: it runs without a shadow
      map and with the shafts at 0; the shafts still need the shadow map */
+  /* AIR-4: shade in the haze (o.hazeShade, 0 in battles and indoors) needs the sun's shadow map */
   const FG = X ? o.fog : null,
-    sh = !!(X && (gk > 0.01 || lk > 0.01) && X.shadow);
-  let VO = null;
-  if (sh || FG) {
+    sh = !!(X && (gk > 0.01 || lk > 0.01) && X.shadow),
+    hs = X && !o.noVol && X.shadow ? o.hazeShade || 0 : 0;
+  let VO = null,
+    VZ = null;
+  /* for the debug log (walk/fog-grid.js fogGridReport): the light in the air blurred and upscaled by depth, the haze shade */
+  gpuState.air = { edges: !!(sh || FG || hs > 0.01), hazeShade: hs > 0.01 ? Math.round(hs * 100) / 100 : 0 };
+  if (sh || FG || hs > 0.01) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1),
       V0 = renderTarget('vol0', qw, qh, { hdr: true });
-    const U = use('vol', V0, qw, qh, true);
+    /* AIR-4: the depth at the march's size, the nearest of each pixel's corners (vdep) */
+    VZ = renderTarget('volz', qw, qh, {});
+    const UZ = use('vdep', VZ, qw, qh);
+    tex(UZ, 'uDep', 0, S.d);
+    gl.uniform1f(UZ.uN, C.near);
+    gl.uniform1f(UZ.uF, C.far);
+    gl.uniform2f(UZ.uQ, qw, qh);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    const U = use('vol', V0, qw, qh);
     const p = gpuState.P.vol;
     setLightUniforms(p, X);
-    tex(U, 'uDep', 0, S.d);
+    tex(U, 'uZ', 0, VZ.c);
+    tex(U, 'uBN', 1, gpuState.blueNoise);
+    gl.bindSampler(1, null);
+    gl.uniform1f(U.uHS, hs > 0.01 ? hs : 0);
     gl.uniformMatrix4fv(U.uIVP, false, o.ivp);
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
@@ -520,20 +678,21 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     }
     gl.uniform1f(U.uDens, o.volDens ?? 1);
     gl.uniform1f(U.uMaxD, o.volMax || 48);
-    /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone with
-       quality.phoneLamps) */
+    /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone) */
     gl.uniform1f(U.uAirN, o.airLamps ?? 6);
     /* Rays follow the light (sun.followLight): the shade in the air is as deep as the light is bright (shallow under the moon) */
     gl.uniform1f(U.uFollow, engineSetting('sun', 'followLight') ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+    /* AIR-4: softened along its own depth (vblur), not across edges */
     VO = renderTarget('vol1', qw, qh, { hdr: true });
-    const U2 = use('down', VO, qw, qh, true);
+    const U2 = use('vblur', VO, qw, qh);
     tex(U2, 'uCol', 0, V0.c);
-    gl.uniform2f(U2.uPx, 1 / qw, 1 / qh);
+    tex(U2, 'uZ', 1, VZ.c);
+    gl.uniform1f(U2.uZF, C.far);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* grade to the screen */
-  const U = use('grade', null, rw, rh, true);
+  const U = use('grade', null, rw, rh);
   tex(U, 'uCol', 0, S.c);
   tex(U, 'uDof', 1, D.c);
   tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : gpuState.white);
@@ -542,6 +701,12 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
   gl.uniform4f(U.uDofB, F.band[0], F.band[1], F.band[2], F.band[3]);
   gl.uniform1f(U.uDofView, o.dofView ? 1 : 0);
+  /* VFX-4: the battle's impact frame (walk-view-gl.js impactOnScreen), off when none */
+  const IM = o.impact;
+  if (U.uImp) {
+    gl.uniform4fv(U.uImp, IM ? IM.a : [0, 0, 0, 0]);
+    if (IM) gl.uniform4fv(U.uImpL, IM.b);
+  }
   /* Even bloom: each level the chain adds is one more copy, so fewer levels (the slower quality steps) scale up to five's */
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 * (engineSetting('color', 'bloomEven') ? 5 / (o.bloomN || 5) : 1) : 0);
   gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));
@@ -569,6 +734,9 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   gl.uniform1f(U.uTime, typeof walkView !== 'undefined' ? walkView.t : 0);
   tex(U, 'uVol', 12, VO ? VO.c : gpuState.white);
   gl.bindSampler(12, null);
+  /* AIR-4: the march-size depth for the upscale by depth */
+  tex(U, 'uVolZ', 13, VZ ? VZ.c : gpuState.white);
+  gl.bindSampler(13, null);
   gl.uniform1f(U.uVolK, VO ? 1 : 0);
   tex(U, 'uAO', 3, AO ? AO.c : gpuState.white);
   if (U.uDep) {

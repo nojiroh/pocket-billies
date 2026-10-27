@@ -42,14 +42,17 @@ import {
   dataSetPieces,
   dataModifiers,
   dataFactions,
+  dataBosses,
   dataHeldItems,
   dataGenes,
   dataQuests,
   dataResidents,
+  dataFestivals,
   dataPerks,
   dataEvents,
   dataBanter,
   dataRelations,
+  dataShowcase,
   dataRewards,
   dataRoadFindings,
   dataRobotProblems,
@@ -318,15 +321,18 @@ for (const family of [
   dataSetPieces,
   dataModifiers,
   dataFactions,
+  dataBosses,
   dataHeldItems,
   dataGenes,
   dataQuests,
   dataResidents,
+  dataFestivals,
   dataNodeTypes,
   dataPerks,
   dataEvents,
   dataBanter,
   dataRelations,
+  dataShowcase,
   dataRewards,
   dataCurrencies,
   dataBuildings,
@@ -440,7 +446,8 @@ if (D.bodyPlans && check('bodyPlans.schema.json', D.bodyPlans, 'bodyPlans.json')
         const src = b.mirror ? bones.find(x => x.n === b.mirror) : b;
         if (b.mirror && !src) problem(at, `${where}: ${b.n} mirrors ${b.mirror}, which isn't there`);
         else if (!b.mirror && (!b.par || !b.c)) problem(at, `${where}: ${b.n} needs par and c`);
-        else if (!b.mirror && !names.has(b.par)) problem(at, `${where}: ${b.n} hangs on ${b.par}, not a bone before it`);
+        else if (!b.mirror && !names.has(b.par))
+          problem(at, `${where}: ${b.n} hangs on ${b.par}, not a bone before it`);
         names.add(b.n);
       }
     };
@@ -459,7 +466,11 @@ if (D.bodyPlans && check('bodyPlans.schema.json', D.bodyPlans, 'bodyPlans.json')
   const seen = { name: new Set(), rig: new Set() };
   for (const f of B.forms) {
     if (!B.plans[f.plan]) problem(at, `form ${f.name}: no plan ${f.plan}`);
-    else bonesOk(`form ${f.name}`, [...B.plans[f.plan].bones, ...(f.add || [])].filter(b => !(f.drop || []).includes(b.n)));
+    else
+      bonesOk(
+        `form ${f.name}`,
+        [...B.plans[f.plan].bones, ...(f.add || [])].filter(b => !(f.drop || []).includes(b.n))
+      );
     for (const k of ['name', 'rig']) {
       if (seen[k].has(f[k])) problem(at, `${k} ${f[k]} twice`);
       seen[k].add(f[k]);

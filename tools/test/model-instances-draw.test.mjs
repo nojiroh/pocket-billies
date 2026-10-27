@@ -1,5 +1,6 @@
-// Phase 20 R2 (models lane): the instanced models (game/js/prop-models.js drawModelInstances, "Models in batches")
-// send the card exactly what the one-at-a-time loops (drawVoxItems, drawLowPolyItems) send: on a stand-in WebGL
+// Phase 20 R2 (models lane): the instanced models (game/js/prop-models.js drawModelInstances, the only path since R4)
+// send the card exactly what the one-at-a-time loops (drawVoxItems, drawLowPolyItems; kept in model-loops-ref.mjs)
+// sent: on a stand-in WebGL
 // context, every (item, mesh part) the old loops draw with a set of uniforms is drawn once by the new path, from a
 // record whose decoded values equal those uniforms (as 32-bit floats), with the same turning parts' turns; the
 // instanced shaders' flat values and attributes line up with the records. No graphics.
@@ -7,6 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import './walk-renderer.mjs';
 await import('../../game/js/prop-models.js');
+const { drawVoxItems, drawLowPolyItems } = await import('./model-loops-ref.mjs');
 
 const G = globalThis;
 const {
@@ -14,8 +16,6 @@ const {
   walkView,
   walkRenderer,
   propModelState,
-  drawVoxItems,
-  drawLowPolyItems,
   drawModelInstances,
   propModelShaders,
   voxInstancedShaders,

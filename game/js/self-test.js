@@ -13,8 +13,11 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
+  BANTER,
+  BOSSES,
   EVENTS,
   FACTIONS,
+  FESTIVALS,
   FIELD_MOVES,
   GENES,
   ITEMS,
@@ -24,6 +27,7 @@ import {
   QUESTS,
   RELATIONS,
   RESIDENTS,
+  REWARDS,
   ROBOTS,
   RULES,
   SET_PIECES,
@@ -46,6 +50,7 @@ import { geneEventSlots } from './logic/gene-events.js';
 import { isRobot, robotRules } from './logic/fighters.js';
 import {
   addBilly,
+  billyFieldTypes,
   billyName,
   canEnter,
   encounterStock,
@@ -76,24 +81,27 @@ import { incomeRate } from './logic/ranch-income.js';
 import { pastureBillies, pastureIn, pastureZone } from './logic/pasture.js';
 import { residentFirstTowns } from './logic/residents.js';
 import { runRestore, validRun } from './logic/run-state.js';
-import { RUN_SIDE_MOD, runSideOpen } from './logic/run-side.js';
+import { RUN_SIDE_MOD, fieldMoveState, runSideOpen } from './logic/run-side.js';
 import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { wildHabitat } from './logic/wild-pool.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runWorldData } from './logic/run-world-data.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { wishCan } from './logic/fountain-wish.js';
 import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
-import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { routeFindsPlace } from './logic/route-finds.js';
+import { catchable, fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { questOffer, questTake } from './logic/run-quests.js';
 import { conditionHolds, storyStateOf } from './logic/conditions.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { parseScript } from './logic/script-parse.js';
-import { runScript } from './logic/script.js';
+import { squareMood, squareTalk } from './logic/square-talk.js';
+import { runScript, storyAllows } from './logic/script.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -128,6 +136,7 @@ import {
   navCellAt,
   navGrid,
   propShown,
+  routeFindStep,
   stepGrid,
   stopWalkView,
   walkData,
@@ -135,13 +144,14 @@ import {
   walkView,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { attributeClashes, frameBlockCheck, gpuState } from './engine/webgl.js';
+import { attributeClashes, frameBlockCheck, gpuState, mediumpCheck } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { WALK_SHADERS } from './walk/walk-shaders.js';
 import { roomDimming } from './walk/lighting.js';
+import { fogGridReport } from './walk/fog-grid.js';
 import { BUILDING_SHADERS, buildingState } from './buildings.js';
 import { hasStructures, structureState } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
@@ -163,6 +173,14 @@ import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encPlaying, encounterOpen } from './encounter-screen.js';
 import { questData, questMarked, residentTalk } from './quest-board.js';
+import {
+  festivalForce,
+  festivalMarketOpen,
+  festivalToday,
+  fountainWishOpen,
+  setFestivalForce,
+  squareDayNow,
+} from './town-square.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { augmentsDo, augmentsOpen } from './augment-screen.js';
@@ -176,8 +194,8 @@ import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-contr
 import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
+  BASELINE_LABELS: [() => BASELINE_LABELS],
   BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
-  BASELINE_RIG_REUSE: [() => BASELINE_RIG_REUSE],
   BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
   baselineBattle: [() => baselineBattle, v => (baselineBattle = v)],
@@ -339,6 +357,8 @@ async function runFullTest(mode) {
       'Device',
       'Frame budget',
       'Rain and night',
+      /* air track AIR-4: the fog in the air */
+      'Fog in the air',
       /* phase 20 R1: the renderer's baseline tour */
       'Renderer baseline',
       'Battle on the 3D stage',
@@ -348,8 +368,8 @@ async function runFullTest(mode) {
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 150 + 6 + 8 + 1
-    : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
+    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 6 + 150 + 6 + 8 + 1
+    : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40 + 6;
   let done = 0;
   const tick = s => {
     done += s;
@@ -590,6 +610,10 @@ async function runFullTest(mode) {
           );
           if (r.bad.length) throw new Error('Frame block: ' + r.bad.slice(0, 4).join('; '));
           fb = `; ${r.n} with the Frame block`;
+          /* phase 20 D2: the medium-precision versions build too, whether or not the switch is on */
+          const m = mediumpCheck(all);
+          if (m.bad.length) throw new Error('Medium precision: ' + m.bad.slice(0, 4).join('; '));
+          fb += `; ${m.n} in medium precision`;
         }
         if (typeof buildingState !== 'undefined' && buildingState.fail)
           throw new Error('3D buildings are off on this device: ' + String(buildingState.fail).slice(0, 90));
@@ -743,6 +767,46 @@ async function runFullTest(mode) {
         },
         10
       );
+    /* air track AIR-4: fog weather at dawn in the open walk scene: the light-in-air march with the fog grid (on, or
+       why not), the frame rate, the post chain's graphics-chip time where there are timers, and no graphics error */
+    await phase(
+      'Fog in the air: dawn fog',
+      'dio',
+      async () => {
+        if (!(typeof walkRenderer !== 'undefined' && walkRenderer.on && walkView.ready))
+          return 'skipped: no 3D walk scene open';
+        if (walkView.sc && walkView.sc.indoor) return 'skipped: indoors (no fog there)';
+        const f0 = environment.force,
+          on0 = environment.on,
+          gl = typeof gpuState !== 'undefined' ? gpuState.gl : null;
+        try {
+          environment.on = true;
+          environment.force = { time: 6.6, weather: 'fog', season: 'autumn' };
+          await selfTestSleep(1000);
+          if (gl) gl.getError();
+          const fr = walkRenderer.frames,
+            T = diagnosticsTimersOn(),
+            t0 = debugLog.now();
+          await walkAbout(3);
+          const st = selfTestFrameStats(t0, debugLog.now(), 'dio'),
+            r = await diagnosticsTimersOff(T),
+            ge = gl ? gl.getError() : 0;
+          if (walkRenderer.frames === fr) throw new Error('the scene isn’t drawing in fog: no frames in 3 s');
+          if (ge) throw new Error(`a graphics error in fog (${ge})`);
+          const rep = typeof fogGridReport === 'function' ? fogGridReport() : null,
+            M = rep && rep.march,
+            post = r && r.gpu && r.gpu.post != null ? `, post ${r.gpu.post} ms on the graphics chip` : '';
+          return (
+            `march ${M ? (M.on ? `on, ${M.steps} steps` : `off (${M.why})`) : 'not reported'}` +
+            `${rep && rep.size ? `, grid ${rep.size.join(' x ')}` : ''}, ${st.fpsAvg} fps (${st.cpuMs} ms)${post}`
+          );
+        } finally {
+          environment.force = f0;
+          environment.on = on0;
+        }
+      },
+      6
+    );
     function stGeometry() {
       const sc = walkView.sc;
       if (!sc || (!sc.steps && !sc.bridges)) return;
@@ -1059,6 +1123,93 @@ async function runFullTest(mode) {
       await selfTestSleep(600);
       if (broke && !dropped && !reducedMotion) throw new Error('a part broke but nothing dropped off the stage');
       return `${B.name}, not catchable; ${broke ? `${broke} part(s) broke, ${dropped} dropped` : 'the hit landed on its torso'}; the turn in ${(turnMs / 1000).toFixed(1)} s`;
+    };
+    /* RL-14b: the Voltron (bosses.json retrieval) as a run's boss fights it: its join intro (its four bots fly in),
+       an Alpha robot, never caught; one hit past both its phases: a shield, then an arm-bot torn loose and dropped */
+    const voltronBattle = async () => {
+      uiState.bench = null;
+      uiState.tab = 'walk';
+      saveData.trip.node = back.node;
+      render();
+      await selfTestSleep(1200);
+      saveData.team.forEach(m => {
+        m.hp = maxHp(m);
+        m.status = null;
+      });
+      const V = BOSSES.retrieval,
+        id = 'selftest-voltron';
+      TRAINERS[id] = {
+        id,
+        name: V.name,
+        who: V.who,
+        team: [{ sp: 'robot', lvl: Math.min(95, fighterLead().lvl + 2), boss: 'retrieval' }],
+        alpha: true,
+        boss: 'retrieval',
+        reward: 0,
+        win: V.win || '',
+        lose: '',
+      };
+      let flew = 0,
+        dropped = 0,
+        turn = false;
+      /* part pictures on the stage: its bots flying in (the intro), then the torn-off arm falling (the turn) */
+      const watch = setInterval(() => {
+        const n = battleStage.parts.filter(p => p.img).length;
+        if (turn) dropped = Math.max(dropped, n);
+        else flew = Math.max(flew, n);
+      }, 50);
+      const g0 = selfTest.gen || 0;
+      const want = async (ph, ms) => {
+        const end = performance.now() + ms * (selfTest.slow || 1);
+        while (performance.now() < end) {
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMessage();
+          await selfTestSleep(120);
+        }
+        return false;
+      };
+      try {
+        startTrainer(id, { talked: true });
+        if (!activeBattle) throw new Error('the boss battle never started');
+        const joined = activeBattle.events.some(e => e.an && e.an.k === 'join');
+        /* let the intro play before tapping through it */
+        await selfTestSleep(1700);
+        if (!(await want(['choose'], 45000)))
+          throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+        const foe = fighter(1);
+        if (!foe || foe.kind !== 'robot' || !foe.boss || !foe.boss.phases) throw new Error('the boss is no boss robot');
+        if (!joined) throw new Error('no join intro');
+        if (!flew && !reducedMotion) throw new Error('its bots never flew in');
+        if (catchable(foe)) throw new Error('the boss can be caught');
+        /* just over 30%: the next hit passes both phases (a 60% shield, then the arm-bot tears loose) */
+        foe.hp = Math.floor(maxHp(foe) * 0.3) + 1;
+        turn = true;
+        /* a turn at a time (a move can miss) until a hit lands, at most four */
+        const hp0 = foe.hp;
+        for (let t = 0; t < 4 && foe.hp === hp0 && activeBattle && activeBattle.phase === 'choose'; t++) {
+          const m = fighter(activeBattle.cur),
+            mid = m.moves.find(k => MOVES[k] && MOVES[k].c !== 'X' && (MOVES[k].p || 0) > 0) || m.moves[0];
+          pickMove(mid);
+          if (activeBattle.phase === 'target') pickTarget(1);
+          if (!(await want(['choose', 'end', 'switch'], 60000)))
+            throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
+        }
+        const done = foe.boss.done || 0,
+          torn = partBroken(foe, 'armR');
+        stopTimers();
+        setActiveBattle(null);
+        battleStageStop();
+        render();
+        await selfTestSleep(600);
+        if (foe.hp > 0 && done < 2) throw new Error(`only ${done} of its phases fired at ${foe.hp} HP`);
+        if (foe.hp > 0 && !torn) throw new Error('its arm-bot never tore loose');
+        if (foe.hp > 0 && !dropped && !reducedMotion) throw new Error('the arm-bot tore loose but nothing dropped');
+        return `${V.name}: joined (${flew ? 'its bots flew in' : 'reduced motion'}), not catchable; ${foe.hp > 0 ? `${done} phases, the ${V.bots && V.bots.armR} torn loose` : 'fainted from the hit'}`;
+      } finally {
+        clearInterval(watch);
+        delete TRAINERS[id];
+      }
     };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
        with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
@@ -1721,6 +1872,103 @@ async function runFullTest(mode) {
         8,
         180
       );
+    /* RT-4b: a run route's finds and Cut bramble row, on a copy of the save: the first seed (SELFTESTFB0, 1, ...) with
+       a main route place that has both; there each find stands as a pyramid and the row blocks the walk; walking
+       onto a find puts its card in the bag once and the pyramid goes; without the Grass Badge Cut is refused; cut,
+       the row goes and the walk opens. Then the save as it was */
+    if (typeof runWorldSync === 'function' && RULES.run.finds && !selfTest.stop)
+      await phase(
+        "A route's finds and Cut brambles: picked up once, the row refused without the badge, then cut",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            wait = async (/** @type {() => any} */ f, /** @type {number} */ ms) => {
+              const end = performance.now() + ms * (selfTest.slow || 1);
+              while (performance.now() < end) {
+                if (f()) return true;
+                await selfTestSleep(100);
+              }
+              return !!f();
+            };
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            let seed = '',
+              node = -1;
+            for (let k = 0; k < 20 && node < 0; k++) {
+              const t = JSON.parse(JSON.stringify(s));
+              runStartOn(t, runStartPlan(`SELFTESTFB${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+              const T = runRouteTrainers(t.run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+                made = runScenesMake(t.run, data);
+              routeTrainersPlace(t.run, T, made, EVENTS.classes);
+              const got = routeFindsPlace(t.run, T, made, routeRareSpots(t.run, T, made), {
+                rules: RULES.run.finds,
+                cards: REWARDS,
+              });
+              node = made.findIndex(
+                (_, i) => !!got[i] && got[i].finds.length > 0 && !!got[i].cut && !(t.run.map.nodes[i] || {}).side
+              );
+              if (node >= 0) seed = `SELFTESTFB${k}`;
+            }
+            if (node < 0) throw new Error('no seed of the first 20 has a route with a find and a bramble row');
+            runStartOn(s, runStartPlan(seed, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.meta.badges = {};
+            setSaveData(s);
+            const n = runWorldNode(node);
+            if (!runJump(n)) throw new Error('couldn’t walk to the route');
+            uiState.roam = null;
+            render();
+            const id = 'w:' + LOCATIONS[n].mapId + '*';
+            if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
+              throw new Error(`the route isn't shown (still ${walkView.id})`);
+            const sc = walkView.sc,
+              /* this place's own (a joined view shows its neighbours' too) */
+              finds = (sc.props || []).filter(p => p.find && p.find.startsWith(`find.${node}.`)),
+              row = (sc.props || []).filter(p => p.cut && p.cut.startsWith(`cut.${node}.`));
+            if (!finds.length || !row.length) throw new Error(`${finds.length} finds, ${row.length} brambles here`);
+            if (!finds.every(p => propShown(p))) throw new Error('a find isn’t shown');
+            if (!row.every(p => propShown(p))) throw new Error('a bramble isn’t shown');
+            const blocked = () => row.some(p => navGrid().blk[navCellAt(p.x, p.z + 0.1)]);
+            if (!blocked()) throw new Error('the bramble row doesn’t block the walk');
+            /* a find: walked onto, its card in the bag once */
+            const p = finds[0],
+              c = REWARDS[p.card],
+              key = c.pyramid || c.item,
+              bag = () => ((c.pyramid ? saveData.pyramids : saveData.items) || {})[key] || 0,
+              had = bag();
+            routeFindStep({ x: p.x, z: p.z });
+            if (bag() !== had + (c.n || 1)) throw new Error(`walking onto the find gave ${bag() - had} ${key}`);
+            routeFindStep({ x: p.x, z: p.z });
+            if (bag() !== had + (c.n || 1)) throw new Error('the find was given twice');
+            await selfTestSleep(400);
+            if (propShown(p)) throw new Error('the find still lies there once taken');
+            /* Cut: refused without the badge; cut, the row goes and the walk opens */
+            const M = FIELD_MOVES.cut,
+              team = saveData.team.map(m => ({ name: billyName(m), types: billyFieldTypes(m) }));
+            if (fieldMoveState(M, saveData.meta.badges, team).state !== 'needBadge')
+              throw new Error('Cut isn’t refused without the Grass Badge');
+            saveData.flags[row[0].cut] = 1;
+            await selfTestSleep(400);
+            if (row.some(p => propShown(p))) throw new Error('a bramble still stands once cut');
+            if (blocked()) throw new Error('the walk is still blocked once cut');
+            return `${seed}: ${LOCATIONS[n].name}, ${finds.length} find(s) (${finds.map(q => q.card).join(', ')}), a row of ${row.length} brambles (${row[0].cut})`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        180
+      );
     /* RT-3: a run route's set pieces, on a copy of the save: the first seed (SELFTESTSP0, 1, ...) whose map has a
        Bureau checkpoint on a main place; on that place every piece has all its props round it, the agent stands in
        the checkpoint, tapping it opens the bureau_checkpoint event, walking on plays it, and tapping again only
@@ -2017,6 +2265,11 @@ async function runFullTest(mode) {
             startTrainer(B.id, { talked: true });
             if (!activeBattle || activeBattle.fmt !== 'alpha') throw new Error('the boss isn’t an Alpha battle');
             if (!activeBattle.fx || !activeBattle.fx.length) throw new Error('the boss’s battle has no Perks');
+            /* RL-14b: on Expedition I the boss is the Voltron; its first win plays Chapter 1's end at home */
+            const volt = B.boss && BOSSES[B.boss],
+              firstWin = !!volt && !(saveData.meta.bosses || {})[B.boss] && (saveData.meta.chapter || 1) === 1;
+            if ((saveData.run.expedition || 1) === 1 && !(volt && fighter(1).kind === 'robot'))
+              throw new Error('Expedition I’s boss isn’t the Voltron');
             stopTimers();
             activeBattle.over = 'win';
             endBattle();
@@ -2037,7 +2290,10 @@ async function runFullTest(mode) {
             const H = saveData.meta.history[saveData.meta.history.length - 1];
             if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
             if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
-            if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
+            if (!saveData.story.fresh || (saveData.story.pending || '') !== (firstWin ? volt.story : ''))
+              throw new Error(`home from a win: the story’s picks (waiting: ${saveData.story.pending || 'nothing'})`);
+            /* the Voltron's scene is the story phase's to play, not this one's */
+            delete saveData.story.pending;
             if (!saveData.meta.residents.dottie || H.res !== 'dottie')
               throw new Error('Dottie didn’t move in (or the history lost her)');
             /* RS-3: home again, Dottie walks Copperleaf as one of its townsfolk (her own look), from the library's
@@ -2259,6 +2515,179 @@ async function runFullTest(mode) {
             if (s.ranch.income.lastAt !== s.ranch.seen) throw new Error('the income’s time moved back');
             return `three hours showed and paid ${want} Scrap (${rate} an hour); a clock two hours behind paid nothing and said so`;
           } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* HB-10d: the square reacts to your runs and gives you things to do, on a copy of the save (nothing is written
+       while the test runs): after a won run the bunting is up, after a lost one it is down and the square gossips; the
+       fountain takes a coin once per return; the notice board shows the run. Then the save as it was */
+    if (
+      typeof fountainWishOpen === 'function' &&
+      !saveData.run &&
+      !selfTest.stop &&
+      walkView.sc &&
+      (walkView.sc.baseId || walkView.id) === 'copperleaf'
+    )
+      await phase(
+        'The square: bunting, gossip, the fountain’s coin, the notice board',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              run = (/** @type {string} */ end, /** @type {any} */ by) => ({
+                seed: 'selftest' + s.meta.history.length,
+                theme: 'lakeland',
+                region: 'Selftest Shore',
+                exp: 1,
+                end,
+                by,
+                row: 4,
+                days: 5,
+                team: [],
+                perks: [],
+                leaders: [],
+                rival: null,
+              }),
+              bunting = () => walkView.sc.props.filter((/** @type {any} */ p) => p.when === 'last:won'),
+              talk = () =>
+                squareTalk(BANTER, squareMood(s.meta.history), (/** @type {string} */ c) => storyAllows({ when: c }));
+            s.meta.history = [...s.meta.history.slice(-18), run('won', null)];
+            s.meta.runs += 1;
+            s.meta.wins += 1;
+            setSaveData(s);
+            if (bunting().length !== 4 || !bunting().every(propShown))
+              throw new Error(
+                `after a win ${bunting().filter(propShown).length} of ${bunting().length} bunting props up`
+              );
+            if (!talk().some(l => /gold/.test(l))) throw new Error('nobody on the square cheers a win');
+            s.meta.history.push(run('lost', { kind: 'trainer', bureau: 1 }));
+            s.meta.runs += 1;
+            if (bunting().some(propShown)) throw new Error('the bunting stays up after a loss');
+            const gossip = talk();
+            if (!/clerk|stamp/.test(gossip[0] || ''))
+              throw new Error(`a loss to the Bureau: the square says “${gossip[0]}”`);
+            /* the fountain: 3 Scrap, once per return */
+            const F = walkView.sc.props.find((/** @type {any} */ p) => p.act === 'wish' && propShown(p)),
+              R = RULES.square.wish;
+            if (!F) throw new Error('no fountain to toss a coin into');
+            s.meta.scrap = 5;
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({ k: 'act', act: 'wish', p: F });
+            const toss = /** @type {HTMLButtonElement | null} */ (
+              [...document.querySelectorAll('#ov .sheet button')].find(b => /Toss/.test(b.textContent || ''))
+            );
+            if (!toss) throw new Error('the fountain’s sheet has no Toss button');
+            toss.click();
+            const W = s.meta.wish,
+              out = W && R.outcomes.find((/** @type {any} */ o) => o.id === W.out);
+            if (!W || W.at !== s.meta.runs || !out) throw new Error(`the toss wasn’t kept: ${JSON.stringify(W)}`);
+            if (s.meta.scrap !== 2 + ((out.pay && out.pay.scrap) || 0))
+              throw new Error(`the toss cost ${5 - s.meta.scrap} Scrap, not ${R.cost.n}`);
+            if (wishCan(s.meta, R) !== 'done') throw new Error('a second coin could be tossed on the same return');
+            /* the notice board */
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({
+              k: 'act',
+              act: 'hubnotice',
+              p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'hubnotice'),
+            });
+            const board = (document.querySelector('#ov .sheet') || { textContent: '' }).textContent || '';
+            if (!/Town news/.test(board) || !/Selftest Shore: lost to the Bureau/.test(board))
+              throw new Error('the notice board doesn’t show the last run');
+            return `a win put up ${bunting().length} bunting props and cheers, a loss to the Bureau took them down and started the gossip (${gossip.length} lines); the coin: ${W.out}, once; the board shows the run`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* HB-10e: the festivals, on a copy of the save (nothing is written while the test runs): each festival forced on
+       shows its own decorations and no other's, gives the square its own day and lines; on a market day the middle
+       stall sells a ware for Scrap into the bag, counted on the occasion, and the notice board names it; with none
+       forced, what today and the runs give. Then the save and the festival as they were */
+    if (
+      typeof festivalMarketOpen === 'function' &&
+      !saveData.run &&
+      !selfTest.stop &&
+      walkView.sc &&
+      (walkView.sc.baseId || walkView.id) === 'copperleaf'
+    )
+      await phase(
+        'The square: festivals, their decorations, lines and market',
+        'dio',
+        async () => {
+          const was = saveData,
+            F0 = festivalForce;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData));
+            s.meta.scrap = 20;
+            s.meta.fest = null;
+            setSaveData(s);
+            const FS = /** @type {any} */ (FESTIVALS).festivals,
+              dress = () => walkView.sc.props.filter((/** @type {any} */ p) => p.sq && /festival:/.test(p.when || '')),
+              its = (/** @type {string} */ id) =>
+                dress().filter((/** @type {any} */ p) => new RegExp(`festival:${id}\\b`).test(p.when));
+            if (!dress().length) throw new Error('no festival decorations round the square');
+            for (const id of Object.keys(FS)) {
+              setFestivalForce({ id, at: 1 });
+              const up = dress().filter(propShown);
+              if (up.length !== its(id).length || !its(id).every(propShown))
+                throw new Error(`${id}: ${up.length} decorations up, ${its(id).length} of them its own`);
+              if (squareDayNow() !== FS[id].day) throw new Error(`${id}: the square keeps its usual day`);
+              if (!squareTalk(BANTER, 'fest', (/** @type {string} */ c) => storyAllows({ when: c })).length)
+                throw new Error(`${id}: the square has nothing to say`);
+            }
+            /* the market at the middle stall */
+            setFestivalForce({ id: 'market_day', at: s.meta.runs });
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({ k: 'act', act: 'fest', p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'fest') });
+            const buy = /** @type {HTMLElement | null} */ (
+              document.querySelector('#ov .sheet [data-a="festbuy"]:not([disabled])')
+            );
+            if (!buy) throw new Error('the festival market has nothing to buy');
+            const i = +(buy.dataset.i || 0),
+              w = FS.market_day.stock[i],
+              had = w.item ? s.items[w.item] || 0 : s.pyramids[w.coin] || 0;
+            buy.click();
+            const got = w.item ? s.items[w.item] || 0 : s.pyramids[w.coin] || 0;
+            if (s.meta.scrap !== 20 - w.price || got !== had + 1)
+              throw new Error(`the ware cost ${20 - s.meta.scrap} Scrap (not ${w.price}) and gave ${got - had}`);
+            if (!s.meta.fest || s.meta.fest.id !== 'market_day' || s.meta.fest.got[i] !== 1)
+              throw new Error(`the sale wasn’t counted: ${JSON.stringify(s.meta.fest)}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({
+              k: 'act',
+              act: 'hubnotice',
+              p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'hubnotice'),
+            });
+            const board = (document.querySelector('#ov .sheet') || { textContent: '' }).textContent || '';
+            if (!/Today: Market day/.test(board)) throw new Error('the notice board doesn’t name the market day');
+            /* none forced: what today and the runs give, and only its decorations */
+            setFestivalForce(null);
+            const today = festivalToday(),
+              up = dress().filter(propShown).length;
+            if (up !== (today ? its(today.id).length : 0))
+              throw new Error(`today (${today ? today.id : 'no festival'}): ${up} decorations up`);
+            return `${Object.keys(FS).length} festivals, each with only its own decorations, day and lines; the market day sold a ${w.item || w.coin} for ${w.price} Scrap; today: ${today ? today.id + '@' + today.at : 'none'}`;
+          } finally {
+            setFestivalForce(F0);
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();
@@ -2566,8 +2995,9 @@ async function runFullTest(mode) {
             throw new Error(`measured ${B.length} of ${BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length}`);
           return baselineNote(B);
         },
-        150,
-        600
+        /* phase 20 R4: four measures a stop (was two) */
+        300,
+        1200
       );
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
@@ -2870,6 +3300,9 @@ async function runFullTest(mode) {
     /* RL-14: the Bureau's bot in the grass: it can't be caught, its limbs break and drop off, it cries */
     if (typeof FACTIONS !== 'undefined' && FACTIONS.bureau)
       await phase('A wild bot: never caught, its parts break off', 'scene', () => botBattle(), 8, 150);
+    /* RL-14b: the Voltron: its join intro, its phases, an arm-bot torn loose */
+    if (typeof BOSSES !== 'undefined' && BOSSES.retrieval && !selfTest.stop)
+      await phase('The Voltron: its bots join, its phases fire', 'scene', () => voltronBattle(), 8, 150);
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
@@ -3326,13 +3759,22 @@ const BASELINE_STOPS = [
   { id: 'town', name: 'A run town', time: 12.5, run: { seed: 'BASELINE2', type: 'town', biome: 'meadow' } },
   { id: 'battle', name: 'A battle', time: 12.5, battle: true },
 ];
-/* the two resolutions: [name, the engine's quality group for it] */
+/* the measures at each stop: [name, the engine's quality group for it]. The two resolutions; then (phase 20 R4) the
+   game's own resolution with the phone pixel budget on (1.2 MP on Android and iPhone; the graphics test pins
+   resolution 1, so only this measures it; other devices draw as 'own'), and with every renderer switch still off by
+   default on: the baseline sets the player's dials aside, so it never saw them */
 const BASELINE_RESOLUTIONS = [
   ['r1', { auto: false, resolution: 1 }],
   ['own', { auto: false }],
+  ['ownPhonePixels', { auto: false, phonePixels: true }],
+  ['ownAllOn', { auto: false, phonePixels: true, spriteInstances: true, skyLast: true, stableLights: true }],
 ];
-/* phase 20 R3: the battle measured a third time, at the game's own resolution with its rigs reused (quality.rigReuse) */
-const BASELINE_RIG_REUSE = ['ownRigReuse', { auto: false, rigReuse: true }];
+const BASELINE_LABELS = {
+  r1: 'resolution 1',
+  own: 'the game’s own resolution',
+  ownPhonePixels: 'the game’s own resolution, phone pixel budget',
+  ownAllOn: 'the game’s own resolution, every switch on',
+};
 /* the player on the place's arrival spot, the camera straight and at its own zoom */
 function baselineStand() {
   const sc = walkView.sc;
@@ -3526,11 +3968,9 @@ async function rendererBaseline(o) {
         environment.force = { time: st.time, weather: 'clear', season: 'summer' };
         baselineStand();
         if (st.battle) await baselineBattle(o.foeSp);
-        for (const [res, quality] of st.battle ? [...BASELINE_RESOLUTIONS, BASELINE_RIG_REUSE] : BASELINE_RESOLUTIONS) {
+        for (const [res, quality] of BASELINE_RESOLUTIONS) {
           if (selfTest.stop) break;
-          o.show(
-            `${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}${quality.rigReuse ? ', rigs reused' : ''}`
-          );
+          o.show(`${st.name}, ${BASELINE_LABELS[res]}`);
           saveData.preferences.expert = true;
           saveData.preferences.eng = { quality: { ...quality } };
           if (!st.battle) baselineStand();

@@ -1,5 +1,5 @@
-// Phase 20 R3 (shadows lane): the shadow maps' models instanced (game/js/prop-models.js drawPropModelShadows with
-// Engine > Quality "Shadows in batches" on) send what the one-at-a-time voxS loop sends: on a stand-in WebGL context,
+// Phase 20 R3 (shadows lane): the shadow maps' models instanced (game/js/prop-models.js drawPropModelShadows, the only
+// path since R4) send what the one-at-a-time voxS loop sent (kept in shadow-loops-ref.mjs): on a stand-in WebGL context,
 // every (item, mesh part) the old loop draws is drawn once by voxSI, from a record whose decoded values equal the old
 // uniforms (as 32-bit floats), turning parts with the same turns, voxel props and low-poly models each in their own
 // mesh layout, in vertex arrays of the shadows' own. No graphics.
@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import './walk-renderer.mjs';
 await import('../../game/js/prop-models.js');
+const REF = await import('./shadow-loops-ref.mjs');
 
 const G = globalThis;
 const { gpuState, walkView, engineContext, MODEL_INSTANCE_ATTRIBS, MODEL_INSTANCE_BYTES, readModelInstance } = G;
@@ -93,16 +94,18 @@ function items() {
   ];
 }
 const NAMES = ['uVP', 'uCurve', 'uCurveD0', 'uBase', 'uS', 'uRot', 'uFlip', 'uQ', 'uSpin', 'uSpinC', 'uPart'];
-function setup(on) {
+function setup() {
   const gl = namingGL();
   gpuState.gl = gl;
   // every model program there already (nothing compiles on a stand-in)
-  gpuState.P = Object.fromEntries(Object.keys(G.PROP_MODEL_SHADERS).map(k => [k, prog(k, NAMES)]));
+  gpuState.P = Object.fromEntries(
+    Object.keys({ ...G.PROP_MODEL_SHADERS, ...G.propModelShaders() }).map(k => [k, prog(k, NAMES)])
+  );
   gpuState.P.voxSI = prog('voxSI', NAMES);
   G.propModelState.fail = 0;
   walkView.t = 98765;
   walkView.sc = { w: 64, h: 64, wind: 1 };
-  engineContext.look = { quality: { shadowInstances: on }, world: { curve: 0.001, voxelProps: true } };
+  engineContext.look = { world: { curve: 0.001, voxelProps: true } };
   G.propModelMesh = (path, rec) => rec.mesh;
   return gl;
 }
@@ -111,8 +114,8 @@ const f32 = v => (Array.isArray(v) ? v.map(Math.fround) : Math.fround(v));
 const SH = { vp: 'sun' };
 
 function oldDraws(L) {
-  const gl = setup(false);
-  G.drawPropModelShadows(SH, L);
+  const gl = setup();
+  REF.drawPropModelShadows(SH, L);
   const st = {},
     out = new Map();
   let vao = null;
@@ -136,7 +139,7 @@ function oldDraws(L) {
   return { out, gl };
 }
 function newDraws(L) {
-  const gl = setup(true);
+  const gl = setup();
   G.drawPropModelShadows(SH, L);
   const parts = new Map();
   for (const it of L)

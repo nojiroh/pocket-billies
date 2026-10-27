@@ -173,6 +173,55 @@
    "stats": {"hus":50,"pr":15,"hp":5,"law":5},
    "art": {"color":"#7AC9C4","shape":"hover","w":28,"h":10,"img":"robots/hover.png","imgB":"robots/hover_back.png"},
    "d": "A fan skirt that floats. Light loads only."
+  },
+  "intake": {
+   "name": "Intake Frame",
+   "short": "Intake",
+   "slot": "torso",
+   "type": "Steel",
+   "rar": "boss",
+   "wt": 70,
+   "dur": 1.4,
+   "stats": {"hp":55,"law":45,"pr":40,"lev":10},
+   "art": {"color":"#4F5A6E","shape":"block","w":34,"h":30},
+   "d": "RL-14b: the Retrieval Unit's leader bot, a filing cabinet that walks. Placeholder art."
+  },
+  "seizer": {
+   "name": "Seizure Arm",
+   "slot": "arm",
+   "type": "Steel",
+   "rar": "boss",
+   "wt": 18,
+   "dur": 1.2,
+   "move": "gripcrush",
+   "stats": {"lev":40,"law":20},
+   "art": {"color":"#6E6A8C","shape":"claw","w":14,"h":24},
+   "d": "RL-14b: one of the Retrieval Unit's arm-bots. It takes things into custody. Placeholder art."
+  },
+  "franker": {
+   "name": "Franking Cannon",
+   "slot": "arm",
+   "type": "Fire",
+   "rar": "boss",
+   "wt": 16,
+   "dur": 1,
+   "move": "cindershot",
+   "stats": {"lob":40,"hus":10},
+   "art": {"color":"#B5473A","shape":"cannon","w":13,"h":24},
+   "d": "RL-14b: the Retrieval Unit's other arm-bot. It stamps everything it hits. Placeholder art."
+  },
+  "conveyor": {
+   "name": "Conveyor Treads",
+   "slot": "legs",
+   "type": "Ground",
+   "rar": "boss",
+   "wt": 34,
+   "dur": 1.3,
+   "carry": 170,
+   "move": "anchor",
+   "stats": {"hp":25,"law":30,"pr":25,"hus":10},
+   "art": {"color":"#3F4A3E","shape":"treads","w":34,"h":14},
+   "d": "RL-14b: the Retrieval Unit's leg-bot, a conveyor belt that walks. Placeholder art."
   }
  },
  "gems": {

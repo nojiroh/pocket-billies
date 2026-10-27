@@ -50,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBosses: [() => dataBosses, v => (dataBosses = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
   dataCameraStops: [() => dataCameraStops, v => (dataCameraStops = v)],
@@ -61,6 +63,8 @@ expose({
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
   dataFactions: [() => dataFactions, v => (dataFactions = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataFestivals: [() => dataFestivals, v => (dataFestivals = v)],
   // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
   // @ts-expect-error -- replaced on purpose
@@ -108,6 +112,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSetPieces: [() => dataSetPieces, v => (dataSetPieces = v)],
   // @ts-expect-error -- replaced on purpose
+  dataShowcase: [() => dataShowcase, v => (dataShowcase = v)],
+  // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
@@ -125,6 +131,8 @@ expose({
   runMapSweep: [() => runMapSweep, v => (runMapSweep = v)],
   // @ts-expect-error -- replaced on purpose
   runMapTownsPerPath: [() => runMapTownsPerPath, v => (runMapTownsPerPath = v)],
+  // @ts-expect-error -- replaced on purpose
+  squareDayProblems: [() => squareDayProblems, v => (squareDayProblems = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -292,6 +300,32 @@ export function dataRanchRules(D) {
 // HB-10c: the town square's day (logic/square-day.js): slots in order and apart within 0-24 hours, each a name of its
 // own, a share 0-1 and stops of the kinds the square has; the visits: 0-4 Billies a block of 1-60 minutes, leaving
 // between two hours, walking 0.3-3 m/s, staying [fewest, most] seconds, at stops of those kinds; nothing else
+/** the square's day (rules.json square.day; HB-10e: a festival's `day`): slots in order within 0-24 hours, each with a
+ * name of its own, a share of the folk and the kinds of stop it sends them to
+ * @param {any} day @param {string} at where it is @param {(what: string) => void} problem */
+export function squareDayProblems(day, at, problem) {
+  const KINDS = ['keep', 'shop', 'sit', 'lamp', 'fountain'],
+    hour = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 24;
+  if (!Array.isArray(day) || !day.length) return problem(`${at}: a list of slots`);
+  day.forEach((/** @type {any} */ T, /** @type {number} */ i) => {
+    const w = `${at}[${i}]`;
+    if (!T || typeof T !== 'object') return problem(`${w}: not a slot`);
+    for (const k of Object.keys(T))
+      if (!['k', 'from', 'to', 'share', 'stops'].includes(k)) problem(`${w}.${k}: no such rule`);
+    if (typeof T.k !== 'string' || !T.k || day.findIndex((/** @type {any} */ o) => o && o.k === T.k) !== i)
+      problem(`${w}.k: a name of its own`);
+    if (!hour(T.from) || !hour(T.to) || T.from >= T.to || (i && day[i - 1] && T.from < day[i - 1].to))
+      problem(`${w}: from before to, within 0-24 hours, after the slot before`);
+    if (!(typeof T.share === 'number' && T.share >= 0 && T.share <= 1)) problem(`${w}.share: 0-1`);
+    if (!(
+      Array.isArray(T.stops) &&
+      T.stops.length > 0 &&
+      T.stops.every((/** @type {any} */ k) => KINDS.includes(k)) &&
+      new Set(T.stops).size === T.stops.length
+    ))
+      problem(`${w}.stops: kinds of stop (${KINDS.join(', ')}), each once`);
+  });
+}
 /** HB-10c: rules.json square @param {any} D @returns {DataProblem[]} */
 export function dataSquareRules(D) {
   /** @type {DataProblem[]} */
@@ -306,22 +340,9 @@ export function dataSquareRules(D) {
     problem('square missing');
     return out;
   }
-  for (const k of Object.keys(S)) if (!['day', 'visit'].includes(k)) problem(`square.${k}: no such rule`);
-  const day = S.day;
-  if (!Array.isArray(day) || !day.length) problem('square.day: a list of slots');
-  else
-    day.forEach((/** @type {any} */ T, /** @type {number} */ i) => {
-      const at = `square.day[${i}]`;
-      if (!T || typeof T !== 'object') return problem(`${at}: not a slot`);
-      for (const k of Object.keys(T))
-        if (!['k', 'from', 'to', 'share', 'stops'].includes(k)) problem(`${at}.${k}: no such rule`);
-      if (typeof T.k !== 'string' || !T.k || day.findIndex((/** @type {any} */ o) => o && o.k === T.k) !== i)
-        problem(`${at}.k: a name of its own`);
-      if (!hour(T.from) || !hour(T.to) || T.from >= T.to || (i && day[i - 1] && T.from < day[i - 1].to))
-        problem(`${at}: from before to, within 0-24 hours, after the slot before`);
-      if (!(typeof T.share === 'number' && T.share >= 0 && T.share <= 1)) problem(`${at}.share: 0-1`);
-      if (!kinds(T.stops)) problem(`${at}.stops: kinds of stop (${KINDS.join(', ')}), each once`);
-    });
+  for (const k of Object.keys(S))
+    if (!['day', 'visit', 'wish', 'busk'].includes(k)) problem(`square.${k}: no such rule`);
+  squareDayProblems(S.day, 'square.day', problem);
   const V = S.visit;
   if (!V || typeof V !== 'object' || Array.isArray(V)) problem('square.visit missing');
   else {
@@ -336,6 +357,72 @@ export function dataSquareRules(D) {
     if (!Array.isArray(T) || T.length !== 2 || !(T[0] >= 5 && T[1] >= T[0] && T[1] <= 3600))
       problem('square.visit.stay: [fewest, most] seconds, 5-3,600');
     if (!kinds(V.stops)) problem(`square.visit.stops: kinds of stop (${KINDS.join(', ')}), each once`);
+  }
+  /* HB-10d: the busker's slot: how near you hear the busker, and the song for each region theme (regions.json themes,
+     music.json songs) */
+  const K = S.busk,
+    themes = Object.keys((D.regions && D.regions.themes) || {}),
+    songs = (D.music && D.music.songs) || {};
+  if (!K || typeof K !== 'object' || Array.isArray(K)) problem('square.busk missing');
+  else {
+    for (const k of Object.keys(K)) if (!['near', 'songs'].includes(k)) problem(`square.busk.${k}: no such rule`);
+    if (!(typeof K.near === 'number' && K.near >= 2 && K.near <= 30)) problem('square.busk.near: 2-30 m');
+    if (!K.songs || typeof K.songs !== 'object') problem('square.busk.songs: theme -> song');
+    else
+      for (const [t, g] of Object.entries(K.songs)) {
+        if (!themes.includes(t)) problem(`square.busk.songs.${t}: no region theme ${t} (regions.json themes)`);
+        if (typeof g !== 'string' || !songs[g]) problem(`square.busk.songs.${t}: no song "${g}" (music.json songs)`);
+      }
+  }
+  /* HB-10d: the fountain's coin (logic/fountain-wish.js): a cost in a kept currency, outcomes by weight, each a line or
+     more to show and what it does (a boon or curse for the next run's first places, an item in the bag, a payout) */
+  const W = S.wish,
+    whole = (/** @type {any} */ v, /** @type {number} */ lo, /** @type {number} */ hi) =>
+      Number.isInteger(v) && v >= lo && v <= hi,
+    kept = ['research', 'scrap', 'crests', 'beans', 'dna'];
+  if (!W || typeof W !== 'object' || Array.isArray(W)) problem('square.wish missing');
+  else {
+    for (const k of Object.keys(W)) if (!['cost', 'outcomes'].includes(k)) problem(`square.wish.${k}: no such rule`);
+    const C = W.cost;
+    if (!C || !kept.includes(C.cur) || !whole(C.n, 1, 99))
+      problem(`square.wish.cost: {cur, n}: a kept currency (${kept.join(', ')}) and 1-99 of it`);
+    const O = W.outcomes;
+    if (!Array.isArray(O) || !O.length) problem('square.wish.outcomes: a list');
+    else
+      O.forEach((/** @type {any} */ o, /** @type {number} */ i) => {
+        const at = `square.wish.outcomes[${i}]`;
+        if (!o || typeof o !== 'object') return problem(`${at}: not an outcome`);
+        for (const k of Object.keys(o))
+          if (!['id', 'w', 'say', 'fx', 'places', 'give', 'pay'].includes(k)) problem(`${at}.${k}: no such rule`);
+        if (!/^[a-z0-9_]{1,32}$/.test(o.id || '') || O.findIndex((/** @type {any} */ q) => q && q.id === o.id) !== i)
+          problem(`${at}.id: an id of its own (a-z, 0-9, _)`);
+        if (!(typeof o.w === 'number' && o.w > 0)) problem(`${at}.w: a weight above 0`);
+        if (
+          !Array.isArray(o.say) ||
+          !o.say.length ||
+          !o.say.every((/** @type {any} */ l) => typeof l === 'string' && l.length > 0 && l.length <= 160)
+        )
+          problem(`${at}.say: lines to show, 1-160 letters each`);
+        if (o.fx != null) {
+          if (!Array.isArray(o.fx) || !o.fx.length) problem(`${at}.fx: effect rows`);
+          else
+            o.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+              fxRowProblems(f, `${at}.fx[${n}]`, ['money', 'catch', 'price'], D, problem);
+              if (f && f.kind === 'catch' && !(typeof f.mult === 'number' && f.mult > 0 && f.mult <= 3))
+                problem(`${at}.fx[${n}].mult: above 0, at most 3`);
+              if (f && f.kind === 'price' && !['shop', 'heal'].includes(f.what))
+                problem(`${at}.fx[${n}].what: shop or heal`);
+            });
+          if (!whole(o.places, 1, 12)) problem(`${at}.places: how many places its rows last, 1-12`);
+        } else if (o.places != null) problem(`${at}.places: only with fx`);
+        if (o.give != null)
+          for (const [k, n] of Object.entries(o.give))
+            if (!(D.items && D.items[k]) || !whole(n, 1, 9))
+              problem(`${at}.give.${k}: an item (items.json), 1-9 of it`);
+        if (o.pay != null)
+          for (const [k, n] of Object.entries(o.pay))
+            if (!kept.includes(k) || !whole(n, 1, 999)) problem(`${at}.pay.${k}: a kept currency, 1-999 of it`);
+      });
   }
   return out;
 }
@@ -399,6 +486,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'scene',
   'layouts',
   'wild',
+  'finds',
   'seamIn',
   'load',
   'start',
@@ -581,6 +669,36 @@ export function dataRunScene(D) {
               had.add(t);
             }
         }
+    }
+    /* RT-4b: a route's finds (logic/route-finds.js): how many a place, the rare share, the rare cards (rewards.json
+       cards), how many bramble rows a place */
+    const FD = R.finds;
+    if (FD !== undefined) {
+      const cards = D.rewards || {};
+      if (
+        !FD ||
+        typeof FD !== 'object' ||
+        !Array.isArray(FD.perRoute) ||
+        FD.perRoute.length !== 2 ||
+        !whole(FD.perRoute[0], 0, 6) ||
+        !whole(FD.perRoute[1], FD.perRoute[0], 6) ||
+        typeof FD.rare !== 'number' ||
+        !(FD.rare >= 0 && FD.rare <= 1) ||
+        !Array.isArray(FD.rareCards) ||
+        !whole(FD.brambles, 0, 3)
+      )
+        problem(
+          'rules.json',
+          'run.finds is not { perRoute [fewest, most] (0-6), rare (0-1), rareCards (rewards.json ids), brambles (0-3) }'
+        );
+      else {
+        for (const k of Object.keys(FD))
+          if (!['perRoute', 'rare', 'rareCards', 'brambles'].includes(k))
+            problem('rules.json', `run.finds.${k}: no such rule`);
+        for (const k of FD.rareCards)
+          if (Object.keys(cards).length && !cards[k])
+            problem('rules.json', `run.finds.rareCards: no card "${k}" (rewards.json)`);
+      }
     }
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
     /* HB-2: the loading screen's cap (logic/run-load.js), 1-120 s */
@@ -1164,6 +1282,45 @@ export function dataFactions(D, valid = () => true) {
   }
   return out;
 }
+// RL-14b: bosses.json: the schema; its fighter is a gem and the right kind of part in each slot (robots.json); its
+// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's
+/** RL-14b: bosses.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBosses(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['bosses.json', what]),
+    B = D.bosses;
+  if (!B) return [['bosses.json', 'missing']];
+  if (!valid('bosses.schema.json', B, 'bosses.json')) return out;
+  const R = D.robots || { parts: {}, gems: {} },
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' },
+    scripts = (D.story && D.story.scripts) || {},
+    exps = ((D.modifiers && D.modifiers.expeditions) || []).length,
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    /** @type {Record<number, string>} */
+    taken = {};
+  for (const [k, X] of Object.entries(/** @type {Record<string, any>} */ (B.bosses))) {
+    const F = X.fighter;
+    if (!R.gems[F.gem]) problem(`${k}.fighter.gem: no gem "${F.gem}" (robots.json)`);
+    for (const [slot, kind] of Object.entries(fits)) {
+      const P = R.parts[F[slot]];
+      if (!P) problem(`${k}.fighter.${slot}: no part "${F[slot]}" (robots.json)`);
+      else if (P.slot !== kind) problem(`${k}.fighter.${slot}: "${F[slot]}" is a ${P.slot}, not a ${kind}`);
+    }
+    X.phases.forEach((/** @type {any} */ p, /** @type {number} */ i) => {
+      if (i && p.at >= X.phases[i - 1].at) problem(`${k}.phases[${i}].at: not below the phase before it`);
+      for (const s of Object.keys(p.stages || {}))
+        if (stats.size && !stats.has(s)) problem(`${k}.phases[${i}].stages: no stat "${s}" (stats.json)`);
+    });
+    if (X.story && !scripts[X.story]) problem(`${k}.story: no script "${X.story}" (story.json scripts)`);
+    for (const n of X.expeditions) {
+      if (exps && n > exps) problem(`${k}.expeditions: no Expedition ${n} (modifiers.json)`);
+      if (taken[n]) problem(`${k}.expeditions: Expedition ${n} is already ${taken[n]}'s`);
+      taken[n] = k;
+    }
+  }
+  return out;
+}
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
 // regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down
 /** RL-13: modifiers.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -1294,6 +1451,78 @@ export function dataResidents(D, valid = () => true) {
       if (row && row.grant && row.grant.resident === k && !(/** @type {any} */ (r).levels.includes(u)))
         problem(`${k}.levels: ${u} raises their service but isn't listed`);
   }
+  return out;
+}
+// HB-10e: festivals.json: the schema; paid in a currency kept between runs; a milestone has a condition (no
+// festival: in it: a festival can't wait on another), a date its first day and days, a market day its `every`, and
+// nothing of another kind's; no two date festivals' weeks overlap; the square's day as rules.json's, with keys of its
+// own; the market's wares are an item or a coin that exists, each once; the square's folk have a line for each
+/** HB-10e: festivals.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFestivals(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['festivals.json', what]),
+    FS = D.festivals;
+  if (!FS) return [['festivals.json', 'missing']];
+  if (!valid('festivals.schema.json', FS, 'festivals.json')) return out;
+  const C = (D.currencies || {})[FS.cur];
+  if (!C || C.kept !== 'meta')
+    problem(`cur: "${FS.cur}" is no currency kept between runs (currencies.json kept: meta)`);
+  const base = new Set(((D.rules && D.rules.square && D.rules.square.day) || []).map((/** @type {any} */ T) => T.k)),
+    items = D.items || {},
+    coins = D.pyramids || {},
+    /** @type {[string, number, number][]} */
+    weeks = [],
+    OWN = /** @type {Record<string, string[]>} */ ({ milestone: ['when'], date: ['from', 'days'], market: ['every'] });
+  for (const [id, F] of Object.entries(/** @type {Record<string, any>} */ (FS.festivals))) {
+    for (const [kind, keys] of Object.entries(OWN))
+      for (const k of keys)
+        if (kind === F.kind && F[k] == null) problem(`${id}: a ${kind} needs ${k}`);
+        else if (kind !== F.kind && F[k] != null) problem(`${id}.${k}: only a ${kind} has one`);
+    if (F.kind === 'milestone' && F.when) {
+      const p = conditionProblem(F.when);
+      if (p) problem(`${id}.when: ${p.message}`);
+      else if (conditionNames(conditionTree(F.when)).festival) problem(`${id}.when: a festival can't wait on another`);
+    }
+    if (F.kind === 'date' && F.from) {
+      const [m, d] = F.from.split('-').map(Number),
+        t = Date.UTC(2025, m - 1, d);
+      if (new Date(t).getUTCDate() !== d) problem(`${id}.from: no such day (${F.from})`);
+      else weeks.push([id, Math.round((t - Date.UTC(2025, 0, 1)) / 864e5), F.days || 1]);
+    }
+    squareDayProblems(F.day, `${id}.day`, problem);
+    for (const T of F.day || [])
+      if (T && base.has(T.k))
+        problem(`${id}.day: "${T.k}" is rules.json square.day's: a festival's slots have keys of their own`);
+    const seen = new Set();
+    (F.stock || []).forEach((/** @type {any} */ w, /** @type {number} */ i) => {
+      const at = `${id}.stock[${i}]`;
+      if (!!w.item === !!w.coin) return problem(`${at}: an item or a coin`);
+      if (w.item && !items[w.item]) problem(`${at}: no item "${w.item}" (items.json)`);
+      if (w.coin && !coins[w.coin]) problem(`${at}: no coin "${w.coin}" (pyramids.json)`);
+      const key = w.item ? 'item:' + w.item : 'coin:' + w.coin;
+      if (seen.has(key)) problem(`${at}: ${key} twice`);
+      seen.add(key);
+    });
+  }
+  /* the square's folk have something to say on each (banter.json square_fest), and a square_fest line names one */
+  const lines = Object.entries(/** @type {Record<string, any>} */ (D.banter || {})).filter(
+    ([, b]) => b.who === 'square_fest'
+  );
+  for (const [k, b] of lines)
+    if (!b.when || conditionProblem(b.when) || !conditionNames(conditionTree(b.when)).festival)
+      problem(`banter.json ${k}: a square_fest line's when names its festival (festival:<id>)`);
+  for (const id of Object.keys(FS.festivals))
+    if (!lines.some(([, b]) => b.when && new RegExp(`\\bfestival:${id}\\b`).test(b.when)))
+      problem(`${id}: no square_fest line in banter.json (the square would have nothing to say)`);
+  /* weeks on a 365-day circle (a week that runs into January wraps round) */
+  for (let a = 0; a < weeks.length; a++)
+    for (let b = a + 1; b < weeks.length; b++) {
+      const [x, s1, n1] = weeks[a],
+        [y, s2, n2] = weeks[b],
+        gap = (((s2 - s1) % 365) + 365) % 365;
+      if (gap < n1 || 365 - gap < n2) problem(`${x} and ${y}: their weeks overlap`);
+    }
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
@@ -1546,6 +1775,27 @@ export function dataRelations(D, valid = () => true) {
   return out;
 }
 
+/** ON-3: showcase.json: the schema, theme ids once each, a type theme's type @param {any} D @param {DataValid} [valid]
+ * @returns {DataProblem[]} */
+export function dataShowcase(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['showcase.json', what]),
+    S = D.showcase;
+  if (!S) return [['showcase.json', 'missing']];
+  if (!valid('showcase.schema.json', S, 'showcase.json')) return out;
+  const seen = new Set(),
+    types = new Set((Array.isArray(D.types) ? D.types : []).map((/** @type {any} */ t) => t.id));
+  for (const T of S.themes) {
+    if (seen.has(T.id)) problem(`themes: "${T.id}" twice`);
+    seen.add(T.id);
+    if (T.need === 'type' && !types.has(T.type)) problem(`themes.${T.id}.type: no type "${T.type}" (types.json)`);
+    if (T.need !== 'type' && T.type !== undefined)
+      problem(`themes.${T.id}.type: only a theme of need "type" names one`);
+  }
+  return out;
+}
+
 // RL-S1: the story director's lines: the schema; a leader and a Bureau agent always have a line to say (one with no
 // `when`); a line said once has no cooldown (its conditions and scripts are the story checks')
 /** RL-S1: banter.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -1558,9 +1808,16 @@ export function dataBanter(D, valid = () => true) {
   if (!valid('banter.schema.json', B, 'banter.json')) return out;
   for (const [k, b] of Object.entries(B))
     if (/** @type {any} */ (b).once && /** @type {any} */ (b).cooldown) problem(`${k}: said once, so no cooldown`);
-  for (const who of ['leader', 'bureau'])
+  for (const who of ['leader', 'bureau', 'square_won', 'square_lost'])
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
       problem(`no ${who} line without a when: a ${who} could have nothing to say`);
+  /* HB-10d: the square's folk say a line in a speech bubble: one line, no speaker, no commands */
+  for (const [k, b] of Object.entries(B))
+    if (/^square_/.test(/** @type {any} */ (b).who)) {
+      const S = /** @type {any} */ (b).script;
+      if (S.length !== 1 || /^[A-Z][\w .'-]{0,24}:\s/.test(S[0]) || S[0].replace(/\s+#l:\w+$/, '').length > 70)
+        problem(`${k}: a square line is one line of 70 letters or fewer with no speaker`);
+    }
   /* RL-S2 part B: Blake and the thank-yous, once they have lines, always have one to say */
   for (const who of ['rival', 'thanks_chosen', 'thanks_kappi', 'thanks_juniper']) {
     const mine = Object.values(B).filter((/** @type {any} */ b) => b.who === who);

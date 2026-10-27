@@ -60,6 +60,8 @@ expose({
   MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
   MODEL_VALUES: [() => MODEL_VALUES],
   NEUTRAL_MODEL_LOOK: [() => NEUTRAL_MODEL_LOOK],
+  OWN_UNIT: [() => OWN_UNIT],
+  PROP_MODEL_PROGRAMS: [() => PROP_MODEL_PROGRAMS],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
@@ -74,6 +76,7 @@ expose({
   VOX_FLAT: [() => VOX_FLAT],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
+  bindOwnTexture: [() => bindOwnTexture, v => (bindOwnTexture = v)],
   decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
   drawLowPolyItems: [() => drawLowPolyItems, v => (drawLowPolyItems = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
@@ -105,7 +108,6 @@ expose({
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
   lowPolyVertexShader: [() => lowPolyVertexShader],
   meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
-  modelInstancesOn: [() => modelInstancesOn, v => (modelInstancesOn = v)],
   modelShadowInstancesReady: [() => modelShadowInstancesReady, v => (modelShadowInstancesReady = v)],
   modelShadowState: [() => modelShadowState],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
@@ -829,7 +831,7 @@ function spinPartAngle(s, t) {
   const ph = t * s.rps * Math.PI * 2;
   return s.sw ? Math.sin(ph) * s.sw : ph;
 }
-/* the turning parts of a voxel prop, drawn after its still mesh (p: the program, its uniforms set for the item) */
+/* a mesh's turning parts (the one-at-a-time path, VFX-3's stretched items): each turned by its own angle now */
 function drawSpinningParts(p, m) {
   if (!m.spins || !m.spins.length) return;
   const gl = gpuState.gl,
@@ -890,7 +892,15 @@ function uploadPrebuiltModel(rec) {
     if (!P.n || b.length < P.n * 24 + P.ni * 2) return null;
     return uploadLowPolyMesh(b.subarray(0, P.n * 24), new Uint16Array(b.buffer, P.n * 24, P.ni));
   };
-  const parts = (rec.parts || []).map(mk).filter(Boolean);
+  /* studio track ST-7: a v2 part that spins (logic/model-mesh.js) is drawn as v1's spins are, about its pivot */
+  const v2 = rec.v === 2,
+    still = v2 ? (rec.parts || []).filter(P => !(P.spin && P.spin.rps)) : rec.parts || [],
+    turning = v2
+      ? (rec.parts || [])
+          .filter(P => P.spin && P.spin.rps)
+          .map(P => ({ ...P, c: P.pivot, a: P.spin.a, rps: P.spin.rps }))
+      : [];
+  const parts = still.map(mk).filter(Boolean);
   if (!parts.length) return null;
   const ax = a => {
     const l = Math.hypot(a[0], a[1], a[2]) || 1;
@@ -902,7 +912,10 @@ function uploadPrebuiltModel(rec) {
     model: 1,
     q: 1 / 256,
     box: rec.box || [-1, 0, -1, 1, 2, 1],
-    spins: (rec.spins || [])
+    /* ST-7: the model's own texture (art path; null: the building sheet only) and whether it repeats */
+    own: v2 && rec.tex ? rec.tex : null,
+    wrap: !!rec.wrap,
+    spins: [...(rec.spins || []), ...turning]
       .map(s => {
         const m = mk(s);
         return m && { ...m, c: s.c || [0, 0, 0], a: ax(s.a || [1, 0, 0]), rps: s.rps ?? 1.5 };
@@ -1390,6 +1403,7 @@ function lowPolyOn(rec) {
     !(rec.layers || []).some(l => l.k === 'raw' && !l.hide)
   );
 }
+/* one mesh part drawn once (the one-at-a-time path) */
 function drawPropModelMesh(m) {
   const gl = gpuState.gl;
   gl.bindVertexArray(m.vao);
@@ -1422,27 +1436,39 @@ function lowPolyFragmentShader() {
   if (!f.includes(a)) return f;
   /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock
      (the buildings' shader has ROCK_GLSL since player visibility) */
+  /* studio track ST-7: a v2 model's vertex marks its own texture (vTex.x 255; logic/model-mesh.js): the picture's
+     colour times the vertex colour in place of a building-sheet cell, cut out where it is clear, no sheet bumps */
+  const ownC = 'vec3 c=vTex.z>.5?vCol:rampC(vCol,floor(lv+.5));',
+    bump = 'n=bldBump(n,g);';
   return f
     .replace(a, 'glassLit(shade(c,n,vW,sh,ao,vec4(.06,20.,0.,.22),uCel),n,v,sh)')
-    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + GLASS_GLSL);
+    .replace(
+      ownC,
+      ownC + 'bool own=vTex.x>254.5;if(own&&vTex.z<.5){vec4 tx=texture(uOwn,vUV/64.);if(tx.a<.5)discard;c=tx.rgb*vCol;}'
+    )
+    .replace(bump, 'if(!own)' + bump)
+    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;uniform sampler2D uOwn;' + GLASS_GLSL);
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
-/* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl) */
+/* alpha 0.4: the props' programs, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl). Phase 20
+   R4: the instanced pair (made from the plain vox and mdl texts, which are no longer compiled themselves); the shadows'
+   voxSI is MODEL_SHADOW_SHADERS */
+const PROP_MODEL_PROGRAMS = {};
 export function propModelShaders() {
   if (!PROP_MODEL_SHADERS.mdl && typeof BUILDING_SHADERS !== 'undefined')
     PROP_MODEL_SHADERS.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
-  /* phase 20 R2: the instanced pair, only once "Models in batches" is on (nothing more to compile while it's off) */
-  if (modelInstancesOn()) {
-    if (!PROP_MODEL_SHADERS.voxI) PROP_MODEL_SHADERS.voxI = voxInstancedShaders();
-    if (!PROP_MODEL_SHADERS.mdlI && PROP_MODEL_SHADERS.mdl) PROP_MODEL_SHADERS.mdlI = lowPolyInstancedShaders();
-  }
-  return PROP_MODEL_SHADERS;
+  const P = PROP_MODEL_PROGRAMS;
+  if (!P.voxI) P.voxI = voxInstancedShaders();
+  if (!P.mdlI && PROP_MODEL_SHADERS.mdl) P.mdlI = lowPolyInstancedShaders();
+  return P;
 }
-function drawLowPolyModels(C, X, L, inst) {
+/* VFX-3: inst false for the stretched models (it.smear), drawn one at a time with the plain program, compiled on the
+   first stretch */
+function drawLowPolyModels(C, X, L, inst = true) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = gpuState.gl;
-  propModelShaders();
-  ensurePrograms(PROP_MODEL_SHADERS);
+  ensurePrograms(propModelShaders());
+  if (!inst) ensurePrograms({ mdl: PROP_MODEL_SHADERS.mdl });
   const A = buildingArt(),
     det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
@@ -1461,7 +1487,10 @@ function drawLowPolyModels(C, X, L, inst) {
   if (!inst) drawLowPolyItems(p, L);
   else {
     /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
-    const [one, many] = splitSmeared(L);
+    /* ST-7: a model with its own texture is drawn on its own (the batches share the building sheet) */
+    const own = L.filter(e => e[1].own),
+      [one, many] = splitSmeared(own.length ? L.filter(e => !e[1].own) : L);
+    if (own.length) one.push(...own);
     if (many.length) drawModelInstances(p, 'mdl', many);
     if (one.length) drawLowPolyModels(C, X, one, false);
   }
@@ -1490,6 +1519,7 @@ function drawLowPolyItems(p, L) {
       gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
       gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
     }
+    if (m.own && !bindOwnTexture(p, m)) continue;
     drawPropModelMesh(m);
     for (const q of m.more || []) drawPropModelMesh(q);
     drawSpinningParts(p, m);
@@ -1497,6 +1527,27 @@ function drawLowPolyItems(p, L) {
     propModelState.lowPoly++;
   }
   gl.bindVertexArray(null);
+}
+/* studio track ST-7: a v2 model's own texture on unit 5 (uOwn): its picture as the game loads it (the Studio's: the
+   canvas being painted). False while it loads: the model waits a frame, its picture stands in */
+const OWN_UNIT = 5;
+function bindOwnTexture(p, m) {
+  if (!p.U.uOwn) return false;
+  const im =
+      (typeof artImage === 'function' && artImage(m.own)) || (typeof artImg === 'function' ? artImg(m.own) : null),
+    t =
+      im &&
+      imageTexture(im, {
+        noNormal: true,
+        repeat: true,
+      }); /* nearest texels, no mip levels: a pixel-art texture stays itself, and a palette's swatches or a baked texture's empty margins never blend in */
+  if (!t) return false;
+  const gl = gpuState.gl;
+  gl.activeTexture(gl.TEXTURE0 + OWN_UNIT);
+  gl.bindTexture(gl.TEXTURE_2D, t.t);
+  gl.uniform1i(p.U.uOwn, OWN_UNIT);
+  gl.activeTexture(gl.TEXTURE0);
+  return true;
 }
 /* alpha 0.4: a part that turns (a propeller): its own mesh, turned uSpin.w radians about the axis uSpin.xyz (a unit
    vector, up as y) through its pivot uSpinC (the model's metres, up as y) */
@@ -1803,10 +1854,8 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
   /* R1 measure: every draw a model makes counted apart, in whichever pass draws it (engine/gpu-counters.js) */
   gpuTag('model');
   propModelGuard(() => {
-    const gl = gpuState.gl,
-      inst = modelInstancesOn();
-    if (inst) propModelShaders();
-    ensurePrograms(PROP_MODEL_SHADERS);
+    const gl = gpuState.gl;
+    ensurePrograms(propModelShaders());
     const VL = [],
       ML = [];
     for (const it of items) {
@@ -1815,36 +1864,36 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
       if (m) (m.model ? ML : VL).push([it, m]);
     }
     if (VL.length) {
-      const p = useWalkProgram(inst ? 'voxI' : 'vox', C, X);
+      const p = useWalkProgram('voxI', C, X);
       gl.enable(gl.DEPTH_TEST);
       gl.depthMask(true);
       gl.disable(gl.BLEND);
       gl.disable(gl.CULL_FACE);
-      if (!inst) drawVoxItems(p, VL);
-      else {
-        /* VFX-3: a stretched item has no place in the instance record: drawn one at a time */
-        const [one, many] = splitSmeared(VL);
-        if (many.length) drawModelInstances(p, 'vox', many);
-        if (one.length) drawVoxItems(useWalkProgram('vox', C, X), one);
+      /* VFX-3: a stretched item has no place in the instance record: drawn one at a time, with the plain program
+         (compiled on the first stretch) */
+      const [one, many] = splitSmeared(VL);
+      if (many.length) drawModelInstances(p, 'vox', many);
+      if (one.length) {
+        ensurePrograms({ vox: PROP_MODEL_SHADERS.vox });
+        drawVoxItems(useWalkProgram('vox', C, X), one);
       }
     }
     gl.bindVertexArray(null);
     if (hits) for (const [it] of VL) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
-    drawLowPolyModels(C, X, ML, inst);
+    drawLowPolyModels(C, X, ML);
     if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
   gpuTag(0);
 }
-/* ---------- phase 20 R2: the models instanced (Engine > Quality > "Models in batches", quality.modelInstances) ----------
+/* ---------- phase 20 R2: the models instanced (the only path since R4) ----------
    One draw per mesh part for every item with that mesh (engine/model-instances.js): each item's values, the ones the
-   one-at-a-time loops above set as uniforms, are one record in a buffer uploaded once a pass; extra parts draw over
-   the same records, turning parts too (their turn, the same for every item, replacing the item's own as it does
-   above: uPart). The shadow maps still draw one at a time (round 3's shadows lane). */
-function modelInstancesOn() {
-  return typeof engineSetting === 'function' && !!engineSetting('quality', 'modelInstances');
-}
+   plain vox and mdl programs took as uniforms, are one record in a buffer uploaded once a pass; extra parts draw over
+   the same records, turning parts too (their turn, the same for every item, replacing the item's own: uPart). The
+   one-at-a-time loops live on in tools/test/model-loops-ref.mjs as the tests' reference. */
 /* a voxel prop's or a low-poly model's values (kind 'vox' or 'mdl') into v (engine/model-instances.js
-   modelInstanceValues), exactly as drawVoxItems and drawLowPolyItems set them */
+   modelInstanceValues), exactly as the old one-at-a-time loops set them (tools/test/model-loops-ref.mjs). RF-2: a whole
+   model turned about any axis (a thrown pyramid tumbling, rocking on a base edge): it.spin {a: a unit axis, up as y;
+   an: radians; c: the pivot in the model's metres, up as y}; else not turned */
 const NEUTRAL_MODEL_LOOK = { wear: [0, 0, 0, 0], hsv: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
 function propModelInstanceValues(it, kind, v) {
   const bo = mooredBob(it),
@@ -1978,43 +2027,16 @@ function drawPropModelShadows(SH, items) {
   if (!propModelsOn()) return;
   gpuTag('model');
   propModelGuard(() => {
-    const gl = gpuState.gl;
-    ensurePrograms(PROP_MODEL_SHADERS);
-    if (modelShadowInstancesReady()) {
-      drawPropModelShadowsInstanced(SH, items);
-      return;
-    }
-    let p = null;
-    const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
-    for (const it of items) {
-      /* VFX-1: an afterimage (battle-3d.js) casts no shadow */
-      if (!it.vox || it.ghost) continue;
-      const m = propModelMesh(it.voxPath, it.vox);
-      if (!m) continue;
-      if (!p) {
-        p = gpuState.P.voxS;
-        gl.useProgram(p.p);
-        gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-        gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
-        gl.uniform1f(p.U.uCurveD0, ca[3]);
-      }
-      setPropModelUniforms(p, it);
-      gl.uniform1f(p.U.uQ, m.q || 1);
-      setItemSpin(p, it);
-      drawPropModelMesh(m);
-      for (const q of m.more || []) drawPropModelMesh(q);
-      drawSpinningParts(p, m);
-    }
-    gl.bindVertexArray(null);
+    if (modelShadowInstancesReady()) drawPropModelShadowsInstanced(SH, items);
   });
   gpuTag(0);
 }
-/* ---------- phase 20 R3: the shadow maps' models instanced (Engine > Quality "Shadows in batches") ----------
+/* ---------- phase 20 R3: the shadow maps' models instanced (the only path since R4) ----------
    One draw per mesh part for every item with that mesh, as the main pass's "Models in batches" does: each item's
    record (the same values: its place with the bob, scale, turn, flip, its own spin) in a buffer of the shadows' own,
    drawn by voxSI (voxI's placing, depth only). Voxel props and low-poly models alike, each with its own mesh layout,
-   as voxS draws them; extra parts and turning parts over the same records. If voxSI does not build the maps keep
-   one draw an item (the debug log says so). */
+   as the old voxS loop drew them (tools/test/shadow-loops-ref.mjs); extra parts and turning parts over the same
+   records. If voxSI does not build the maps draw no model shadows (the debug log says so). */
 const MODEL_SHADOW_SHADERS = {
   voxSI: [
     `#version 300 es
@@ -2027,7 +2049,6 @@ provide({ MODEL_SHADOW_SHADERS }); /* to-module */
 const modelShadowState = { bad: null, list: [] },
   MODEL_SHADOW_INSTANCES = modelInstanceStore();
 function modelShadowInstancesReady() {
-  if (typeof engineSetting !== 'function' || !engineSetting('quality', 'shadowInstances')) return false;
   const gl = gpuState.gl;
   if (modelShadowState.bad === gl) return false;
   if (!gpuState.P.voxSI)
@@ -2036,7 +2057,7 @@ function modelShadowInstancesReady() {
     } catch (e) {
       modelShadowState.bad = gl;
       console.error(e);
-      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'model shadows in batches off: ' + e.message);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'model shadows off: ' + e.message);
       return false;
     }
   return true;

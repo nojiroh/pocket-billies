@@ -26,6 +26,7 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
+  BOSSES,
   FACTIONS,
   ITEMS,
   MOVES,
@@ -145,6 +146,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bossAlpha: [() => bossAlpha, v => (bossAlpha = v)],
   // @ts-expect-error -- replaced on purpose
+  bossPhase: [() => bossPhase, v => (bossPhase = v)],
+  // @ts-expect-error -- replaced on purpose
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
   canUse: [() => canUse],
   // @ts-expect-error -- replaced on purpose
@@ -184,6 +187,8 @@ expose({
   liveActors: [() => liveActors],
   // @ts-expect-error -- replaced on purpose
   makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
+  // @ts-expect-error -- replaced on purpose
+  makeBossRobot: [() => makeBossRobot, v => (makeBossRobot = v)],
   // @ts-expect-error -- replaced on purpose
   movePower: [() => movePower, v => (movePower = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
@@ -964,15 +969,46 @@ export function checkFaints() {
 }
 /* how much a move is worth against one target, for the computer's choices */
 /* v34: an Alpha has two phases. Brought below half its HP it raises a shield (half damage for a couple of turns),
-   its eyes go red and it hits harder from then on (RULES.battle.alphaShield*) */
+   its eyes go red and it hits harder from then on (RULES.battle.alphaShield*). RL-14b: a boss with phases of its own
+   (m.boss.phases, bosses.json) fires each of them once, in order, as its HP falls to their `at`: a shield, stat
+   stages, a limb that tears loose and its line */
 export function alphaPhase(k) {
   const m = fighter(k);
-  if (!m || !m.boss || m.hp <= 0 || m.boss.ph2 || m.hp > maxHp(m) * (BATTLE_RULES.alphaPhaseAt ?? 0.5)) return;
+  if (!m || !m.boss || m.hp <= 0) return;
+  const P = m.boss.phases;
+  if (P) {
+    while ((m.boss.done || 0) < P.length && m.hp <= maxHp(m) * P[m.boss.done || 0].at)
+      bossPhase(k, P[(m.boss.done = (m.boss.done || 0) + 1) - 1]);
+    return;
+  }
+  if (m.boss.ph2 || m.hp > maxHp(m) * (BATTLE_RULES.alphaPhaseAt ?? 0.5)) return;
   m.boss.ph2 = true;
   const v = fieldState(k);
   v.shield = BATTLE_RULES.alphaShieldTurns ?? 2;
   battleSay(`${billyName(m)} is furious! A golden shield rises around it.`, { k: 'alphaPhase', si: k });
   applyStatStages(k, { lev: 1, lob: 1 });
+}
+/** RL-14b: one of a boss's phases (bosses.json): its line, its shield, its stages, then the limb that tears loose
+ * (broken outright: its move is gone and the stage drops it) @param {number} k
+ * @param {import('../../types/game-data').BossPhase} ph */
+export function bossPhase(k, ph) {
+  const m = fighter(k),
+    bots = (m.boss && m.boss.bots) || {},
+    slot = ph.breaks && limbKeys(m).includes(ph.breaks) && !partBroken(m, ph.breaks) ? ph.breaks : null,
+    part = ph.breaks ? bots[ph.breaks] || ROBOT_SLOT_NAMES[ph.breaks] : '';
+  if (ph.shield) fieldState(k).shield = ph.shield;
+  battleSay((ph.say || '{name} is furious!').replace(/\{name\}/g, billyName(m)).replace(/\{part\}/g, part), {
+    k: 'alphaPhase',
+    si: k,
+    shield: !!ph.shield,
+  });
+  if (ph.stages) applyStatStages(k, ph.stages);
+  if (slot) {
+    m.partDmg = m.partDmg || {};
+    m.partDmg[slot] = partMaxHp(m, slot);
+    refreshLastSnapshot();
+    battleSay('', { k: 'break', si: k, part: slot });
+  }
 }
 /* a rough damage figure for the AI (no rolls): how much of the target's HP a move would take */
 export function aiDamage(k, id, tk) {
@@ -1123,6 +1159,21 @@ export function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
+/** RL-14b: a boss that is a robot (bosses.json): its fighter built from new parts at lvl + its own levels, fought as
+ * an Alpha with its HP and stats multiplied, its phases and its bots' names; hpMult the Expedition's (as bossAlpha)
+ * @param {import('../../types/game-data').BossDef} def @param {number} lvl @param {number} [hpMult] */
+export function makeBossRobot(def, lvl, hpMult) {
+  const F = def.fighter,
+    m = makeRobot(F.gem, fitFromIds(F), Math.max(1, Math.min(100, lvl + (def.boss.levels || 0))), { nick: def.name });
+  m.boss = {
+    hp: def.boss.hp * (hpMult && hpMult > 0 ? hpMult : 1),
+    st: def.boss.st,
+    phases: JSON.parse(JSON.stringify(def.phases || [])),
+    bots: { ...(def.bots || {}) },
+  };
+  m.hp = maxHp(m);
+  return m;
+}
 /** RL-13: a run boss's Alpha, its HP times hpMult (the Expedition's, run-loop.js runFoes) when given
  * @param {{ sp: string, lvl: number }} e @param {number} [hpMult] */
 export function bossAlpha(e, hpMult) {
@@ -1226,7 +1277,13 @@ export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
   /* RL-8: a run's boss is its leader's top Billie alone, as an Alpha (logic/run-loop.js runFoes) */
-  const team = T.alpha ? T.team.slice(0, 1).map(e => bossAlpha(e, T.hpMult)) : trainerTeam(T);
+  /* RL-14b: a bosses.json boss (the Voltron) is a robot built as an Alpha (makeBossRobot) */
+  const BD = T.boss ? BOSSES[T.boss] : null,
+    team = BD
+      ? T.team.slice(0, 1).map(e => makeBossRobot(BD, e.lvl, T.hpMult))
+      : T.alpha
+        ? T.team.slice(0, 1).map(e => bossAlpha(e, T.hpMult))
+        : trainerTeam(T);
   if (!team.length) {
     battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
@@ -1248,12 +1305,14 @@ export function startTrainer(id, o = {}) {
   )
     return;
   battleSay(
-    T.alpha
-      ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
-      : dbl
-        ? /* RT-2: a route pair is two trainers */
-          `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
-        : `${T.name} wants to battle.`,
+    BD
+      ? (BD.call || '{name} closes in! It acts twice a turn. Your team steps up together.').replace(/\{name\}/g, T.name)
+      : T.alpha
+        ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
+        : dbl
+          ? /* RT-2: a route pair is two trainers */
+            `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
+          : `${T.name} wants to battle.`,
     { k: 'trainerIn', who: T.who }
   );
   if (T.market) {
@@ -1261,7 +1320,11 @@ export function startTrainer(id, o = {}) {
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
   }
   const F = liveActors(1);
-  F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
+  /* RL-14b: a bosses.json boss comes in as its bots joining together (battle-stage.js 'join') */
+  if (BD)
+    battleSay((BD.join || '{name} assembles!').replace(/\{name\}/g, T.name), { k: 'join', si: F[0], glow: BD.glow });
+  else
+    F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   sayBattleFx();
