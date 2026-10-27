@@ -192,7 +192,7 @@ export function augmentsOpen() {
   const M = {
     title: `The Workshop · Lv ${level}`,
     cls: 'ranch-sheet gene-sheet aug-sheet',
-    html: `<p class="ranch-head"><pb-coin kind="scrap" value="${s.meta.scrap || 0}" label="Scrap"></pb-coin> <span class="note">fits ${row.slots
+    html: `<p class="ranch-head"><pb-chip kind="scrap" value="${s.meta.scrap || 0}" label="Scrap"></pb-chip> <span class="note">fits ${row.slots
       .map(k => (WORK_SLOT[k] || k).toLowerCase())
       .join(
         ' and '
