@@ -55,8 +55,15 @@ sight, the boss's place a big ring of its leader's type (a scrap `bureau` theme 
 - Risky: the barrier crosses the whole place, so a side area's north exit east of the line opens only after the leader;
   a ring on a place where the road hugs water can end up off the road by up to 4.5 m (still crossed by it); wadeable
   shallows on the barrier's line hold a fence (it stands in them on purpose).
-- Next: the owner looks at a leader place on the phone (Settings → Engine → Camera has the arena dials), tags
-  `wm-7-done`; WM-2 merges first or after, then the snapshots and MAPGEN_VERSION are remade once.
+- **From the WM-2 and WM-3 sessions (their messages, after this was built)**: WM-3 merges before WM-7 and takes
+  MAPGEN_VERSION 20, so WM-7 takes 21 and remakes its snapshots after merging it. Since WM-2 the leader comes before
+  its town. With WM-3 a place's way on may be north or south, `ahead` is the first forward exit's side, exit ids go by
+  side, and leaders' and the boss's places are 2x1 cells (128 x 64 m). To do at that merge: `routeArenaLine` looks for
+  the exits `west` and `east` (take the way-in exit and the `ahead` one instead); `arenaMainRoad` and the ring's spot
+  assume road[0] runs from the way in to the way on; the hint and the intro line say "east"; recheck
+  arena-gen.test.mjs, route-trainer-spots and run-world-real on the new shapes.
+- Next: the owner looks at a leader place on the phone (Settings → Engine → Camera has the arena dials) and tags
+  `wm-7-done`; after WM-3 merges, merge it in, take MAPGEN_VERSION 21 and do the follow-ups above.
 
 ### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
 Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
