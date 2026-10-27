@@ -131,6 +131,7 @@ function decls(read) {
         seen.set(key, n);
         out.push({
           key: `${key}#${n}`,
+          id: key,
           loose: `${ctx}|${s}|${prop}`,
           file,
           line: d.source.start.line,
@@ -151,22 +152,41 @@ function decls(read) {
 
 const before = decls(readRef);
 const after = decls(readTree);
-/* the same declaration in both trees by selector, context, property and value; what is left pairs by selector,
-   context and property (a value or importance changed); the rest is gone or new */
-const exact = new Map(after.map(d => [d.key, d]));
+/* the same declaration in both trees: first aligned file by file like a text diff (so of two equal declarations the
+   one deleted is the one that went), then, for moves between files, by selector, context, property and value; what
+   is left pairs by selector, context and property (a value or importance changed); the rest is gone or new */
 const now = new Map();
 const changed = [];
+const taken = new Set();
+const byFile = list => list.reduce((m, d) => (m.get(d.file) || m.set(d.file, []).get(d.file)).push(d) && m, new Map());
+const afterFiles = byFile(after);
+for (const [file, a] of byFile(before)) {
+  const b = afterFiles.get(file) || [];
+  const w = b.length + 1;
+  const L = new Uint32Array((a.length + 1) * w);
+  for (let i = a.length - 1; i >= 0; i--)
+    for (let j = b.length - 1; j >= 0; j--)
+      L[i * w + j] = a[i].id === b[j].id ? L[(i + 1) * w + j + 1] + 1 : Math.max(L[(i + 1) * w + j], L[i * w + j + 1]);
+  for (let i = 0, j = 0; i < a.length && j < b.length;) {
+    if (a[i].id === b[j].id) {
+      now.set(a[i++].key, b[j]);
+      taken.add(b[j++]);
+    } else if (L[(i + 1) * w + j] >= L[i * w + j + 1]) i++;
+    else j++;
+  }
+}
 const left = new Map();
-for (const d of after) left.set(d.key, d);
+for (const d of after) if (!taken.has(d)) (left.get(d.id) || left.set(d.id, []).get(d.id)).push(d);
 for (const d of before) {
-  const n = exact.get(d.key);
+  if (now.has(d.key)) continue;
+  const n = left.get(d.id)?.shift();
   if (n) {
     now.set(d.key, n);
-    left.delete(n.key);
+    taken.add(n);
   }
 }
 const loose = new Map();
-for (const d of left.values()) (loose.get(d.loose) || loose.set(d.loose, []).get(d.loose)).push(d);
+for (const d of after) if (!taken.has(d)) (loose.get(d.loose) || loose.set(d.loose, []).get(d.loose)).push(d);
 for (const d of before) {
   if (now.has(d.key)) continue;
   const n = loose.get(d.loose)?.shift();
