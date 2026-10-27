@@ -178,19 +178,31 @@ export const AMBIENCE_BEDS = {
       },
     ],
   },
+  /* the town: a low hum of people, two layers that move on their own */
   town: {
     bus: 'amb',
     trim: 1,
     layers: [
       {
         noise: 'pink',
-        rate: 0.9,
         gain: 1,
         filters: [
-          ['bandpass', 420, 0.7],
-          ['lowpass', 900],
+          ['bandpass', 380, 0.7],
+          ['lowpass', 1000],
         ],
-        drift: [{ on: 'gain', base: 1, depth: 0.4, min: 1.5, max: 4, tau: 0.8 }],
+        drift: [{ on: 'gain', base: 0.8, depth: 0.3, min: 1.5, max: 4, tau: 0.8 }],
+      },
+      {
+        noise: 'pink',
+        gain: 0.35,
+        filters: [
+          ['bandpass', 850, 1.4],
+          ['highshelf', 2500, 0.7, -9],
+        ],
+        drift: [
+          { on: 'gain', base: 0.7, depth: 0.6, min: 0.4, max: 1.6, tau: 0.25 },
+          { on: 0, base: 850, depth: 0.35, min: 0.5, max: 2, tau: 0.3, oct: true },
+        ],
       },
     ],
   },
