@@ -50,6 +50,7 @@ import {
   plural,
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
+import { popSize } from './logic/hit-numbers.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -130,6 +131,7 @@ expose({
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
+  koThisEvent: [() => koThisEvent, v => (koThisEvent = v)],
   logLine: [() => logLine, v => (logLine = v)],
   moveTilesHTML: [() => moveTilesHTML, v => (moveTilesHTML = v)],
   needsPart: [() => needsPart, v => (needsPart = v)],
@@ -562,8 +564,14 @@ function tickerUpdate(s, mk) {
   const h = items.join('<i>•</i>');
   el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
 }
-/* floating numbers and tags over the billionaires */
-function hudPop(si, text, kind) {
+/* SY-2: did this event's hit knock fighter si out? (the event's state after it: activeBattle.events[ev].s) */
+function koThisEvent(si) {
+  const ev = activeBattle && activeBattle.events && activeBattle.events[activeBattle.ev];
+  return !!(ev && ev.s && ev.s[si] && ev.s[si].hp <= 0);
+}
+/* floating numbers and tags over the billionaires. w: a damage number's hit weight (battle-stage.js hitWeight); its
+   size follows the hit, the largest on a KO (SY-2, logic/hit-numbers.js), the kind's colour on top */
+function hudPop(si, text, kind, w) {
   const L = $('#pops');
   if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
@@ -571,15 +579,17 @@ function hudPop(si, text, kind) {
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
   e.textContent = text;
+  if (typeof w === 'number') e.style.fontSize = popSize(w, koThisEvent(si)) + 'px';
   e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
   e.style.setProperty('--dx', ((random() - 0.5) * 36).toFixed(0) + 'px');
   L.appendChild(e);
   setTimeout(() => e.remove(), 1500);
 }
-function hudHit(ti, an) {
+function hudHit(ti, an, w = 0.3) {
   if (!an.dmg) return;
-  hudPop(ti, '−' + an.dmg, 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : ''));
+  const kind = 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : '');
+  hudPop(ti, '−' + an.dmg, kind, w);
   if (an.crit) setTimeout(() => hudPop(ti, 'Critical hit', 'tag crit'), 90);
   else if (an.te > 1) setTimeout(() => hudPop(ti, 'Super effective', 'tag se'), 90);
   else if (an.te < 1) setTimeout(() => hudPop(ti, 'Not very effective', 'tag nve'), 90);

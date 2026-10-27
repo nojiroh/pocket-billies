@@ -1603,7 +1603,7 @@ function hitFx(ti, an, imp0 = null) {
   }
   if (an.crit || an.te > 1) handheld(520, an.crit && an.te > 1 ? 1.3 : 1);
   burst(T, an.t || 'None', an.te > 1 ? 16 : 10, an.te > 1 ? 3.2 : 2.2, 1);
-  if (typeof hudHit === 'function') hudHit(ti, an);
+  if (typeof hudHit === 'function') hudHit(ti, an, w);
 }
 export function camHome(d = 420, delay = 0) {
   camTo(homeCamera, d, 'io', delay);
@@ -2106,7 +2106,8 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, 'hurt', 600);
       blinkActor(an.si, 360);
       battleStage.shk = 2.5;
-      if (an.dmg && typeof hudPop === 'function') scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
+      if (an.dmg && typeof hudPop === 'function')
+        scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg', hitWeight(an.si, an)));
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           addParticle({
