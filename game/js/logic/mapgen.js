@@ -40,6 +40,7 @@ expose({
   MAPGEN_DEEP: [() => MAPGEN_DEEP],
   MAPGEN_DEFAULTS: [() => MAPGEN_DEFAULTS],
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
+  MAPGEN_FACE_OPEN: [() => MAPGEN_FACE_OPEN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
   MAPGEN_FOREST: [() => MAPGEN_FOREST],
@@ -264,6 +265,8 @@ expose({
   mapgenSimplify: [() => mapgenSimplify, v => (mapgenSimplify = v)],
   mapgenSmooth: [() => mapgenSmooth],
   // @ts-expect-error -- replaced on purpose
+  mapgenSpotsFaceOpen: [() => mapgenSpotsFaceOpen, v => (mapgenSpotsFaceOpen = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenSpur: [() => mapgenSpur, v => (mapgenSpur = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStageEdgeGround: [() => mapgenStageEdgeGround, v => (mapgenStageEdgeGround = v)],
@@ -319,7 +322,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 21; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7) */
+export const MAPGEN_VERSION = 23; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: kept for RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -4622,6 +4625,8 @@ export function mapgenBuild(P, ctx, aim) {
     /* RT-3: set pieces on spare spots (they change what you can walk, so the share is measured after them) */
     const walk =
       P.pieces > 0 && ctx.setPieces ? mapgenStagePieces(G, sc, ctx.scenery, ctx.setPieces) || L.walk : L.walk;
+    /* WM-3b: no spot looks into a bush a piece or the plants put in front of it */
+    mapgenSpotsFaceOpen(sc, walk);
     sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(walk, P.cut) * 1000) / 1000 };
     /* RT-4: where wild Billies of each habitat wait (after the pieces, on what they leave) */
     const hab = mapgenHabitats(G, sc, walk);
@@ -5170,6 +5175,31 @@ export function mapgenTraps(sc, scenery) {
       if (at.length < 5) at.push([((q % gw) + 0.5) / N, (Math.floor(q / gw) + 0.5) / N]);
     }
   return { n, at, R, back };
+}
+/** WM-3b: how far ahead of a spot (m) its `face` must find ground you walk (route-trainer-spots' test looks there) */
+export const MAPGEN_FACE_OPEN = 1;
+/** WM-3b: a spot whose `face` looks into something you can't walk MAPGEN_FACE_OPEN ahead (a bush a set piece or the
+ * plants put there after the spot was found) turns to the nearest open way, 15 degrees at a time and at most 90 either
+ * side (a roadside spot still looks across its road); none open, it keeps its face. From where a trainer stands (a
+ * pinch's `stand`). R: mapgenReach's on the finished scene */
+export function mapgenSpotsFaceOpen(sc, R) {
+  const open = (x, z, a) =>
+    mapgenReached(
+      R,
+      x + Math.cos((a * Math.PI) / 180) * MAPGEN_FACE_OPEN,
+      z + Math.sin((a * Math.PI) / 180) * MAPGEN_FACE_OPEN
+    );
+  for (const p of sc.spots || []) {
+    if (!Number.isFinite(p.face)) continue;
+    const [x, z] = p.stand || [p.x, p.z];
+    if (open(x, z, p.face)) continue;
+    turn: for (let d = 15; d <= 90; d += 15)
+      for (const a of [p.face - d, p.face + d])
+        if (open(x, z, a)) {
+          p.face = ((((a + 180) % 360) + 360) % 360) - 180;
+          break turn;
+        }
+  }
 }
 /** was the cell at (x, z) reached (R: from mapgenReach) */
 export const mapgenReached = (R, x, z) =>

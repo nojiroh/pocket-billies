@@ -1,6 +1,6 @@
 // Routes track RT-2: route trainers on real runs' places (logic/route-trainers.js routeTrainersPlace on the scenes
 // logic/run-scenes.js makes from the run's seed, the game's own data): every trainer stands where you can walk to and
-// faces ground you can walk on (WM-2: all but a few, mapgen's to fix); the required ones' sight crosses the road (you can't pass them unseen); a required
+// faces ground you can walk on; the required ones' sight crosses the road (you can't pass them unseen); a required
 // one stands by the road, an optional one aside, with few left to fall back on; a pair's second stands where you can
 // walk too; the same run, the same spots.
 import assert from 'node:assert/strict';
@@ -85,10 +85,9 @@ test('RT-2: route trainers on real runs stand where you walk, face open ground, 
     }
   }
   assert.ok(n > 20, `${n} trainers`);
-  /* WM-2: a few face a wall: mapgen's spot points its `face` at one (3 of 179 trainers over 25 seeds before WM-2, 7 of
-     540 after: the same share; WM-2's runs have three times the route places, so 5 seeds now meet one or two). A
-     mapgen session's to fix (HANDOFF WM-2); until then the share is held */
-  assert.ok(walls / n <= 0.03, `${walls} of ${n} trainers face a wall`);
+  /* WM-3b: none faces a wall (WM-2 met 7 of 540 looking into a bush a set piece put in front of their spot after it
+     was found; mapgen.js mapgenSpotsFaceOpen turns them) */
+  assert.equal(walls, 0, `${walls} of ${n} trainers face a wall`);
   assert.ok(off / n < 0.1, `${off} of ${n} not on their own kind of spot`);
   /* the game stands the second at the walkable point nearest (walk/frame-items.js walkablePointNear) */
   assert.ok(!mates || matesOK / mates >= 0.75, `${matesOK} of ${mates} pairs' seconds stand where you walk`);
