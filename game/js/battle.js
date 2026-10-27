@@ -50,7 +50,7 @@ import {
   plural,
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
-import { popSize } from './logic/hit-numbers.js';
+import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -150,6 +150,7 @@ expose({
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
+  rollPlateNumber: [() => rollPlateNumber, v => (rollPlateNumber = v)],
   runCatchFits: [() => runCatchFits, v => (runCatchFits = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
@@ -1209,7 +1210,9 @@ function paintPlates(s, anim) {
     if (party)
       pips.innerHTML = party.map(m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`).join('');
     const num = e.querySelector('.pl-num');
-    num.textContent = ACTOR_SIDE[k] ? (x.boss ? Math.round(p) + '%' : '') : `${Math.max(0, x.hp)}/${x.max}`;
+    if (ACTOR_SIDE[k] && !x.boss) rollPlateNumber(num, null, '', x.uid, false);
+    else if (ACTOR_SIDE[k]) rollPlateNumber(num, Math.round(p), '%', x.uid, anim);
+    else rollPlateNumber(num, Math.max(0, x.hp), '/' + x.max, x.uid, anim);
     const xp = e.querySelector('.pl-xp i');
     if (xp) xp.style.width = x.xp * 100 + '%';
     if (battleStage.s[k] && battleStage.s[k].sp === x.sp) battleStage.s[k].st = x.hp > 0 ? x.st : null;
@@ -1219,6 +1222,33 @@ function paintPlates(s, anim) {
     }
   }
   turnBar();
+}
+/* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
+   (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without
+   a hit and Reduced motion set it at once. v null: no number (a foe that isn't a boss) */
+function rollPlateNumber(el, v, tail, uid, anim) {
+  const R = el._roll || (el._roll = { v: null, uid: null, raf: 0 });
+  if (R.raf) cancelAnimationFrame(R.raf);
+  R.raf = 0;
+  const from = R.v,
+    same = R.uid === uid;
+  R.v = v;
+  R.uid = uid;
+  if (v == null) {
+    el.textContent = '';
+    return;
+  }
+  if (!anim || reducedMotion || !same || from == null || from === v) {
+    el.textContent = v + tail;
+    return;
+  }
+  const t0 = performance.now();
+  const step = () => {
+    const t = performance.now() - t0;
+    el.textContent = rollValue(from, v, t) + tail;
+    R.raf = t < ROLL_MS ? requestAnimationFrame(step) : 0;
+  };
+  step();
 }
 /* v34: the turn order bar: who moves first this turn (by speed; a fast move or a switch can still jump the queue).
    Only with more than two fighters on the field, where it's hard to keep in your head. */

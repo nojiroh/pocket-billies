@@ -1541,7 +1541,7 @@
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:788",
+   "game/js/battle.js:789",
    "game/js/billie-sheet.js:118",
    "game/js/billie-sheet.js:170",
    "game/js/billie-sheet.js:179",
@@ -1575,13 +1575,13 @@
   "bolt": [
    "game/js/battle-stage.js:816",
    "game/js/battle-stage.js:2196",
-   "game/js/battle.js:517",
+   "game/js/battle.js:518",
    "game/js/boot.js:142",
    "game/js/run-loading.js:396",
    "game/js/ui-run-kit.js:76"
   ],
   "box": [
-   "game/js/battle.js:960",
+   "game/js/battle.js:961",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
@@ -1770,7 +1770,7 @@
    "game/js/unit-card.js:164"
   ],
   "leaf": [
-   "game/js/battle.js:312",
+   "game/js/battle.js:313",
    "game/js/boot.js:137",
    "game/js/field-moves.js:146",
    "game/js/logic/placeholder-art.js:270",
@@ -1810,8 +1810,8 @@
   "pick": [
    "game/js/augment-screen.js:202",
    "game/js/augment-screen.js:224",
-   "game/js/battle.js:724",
-   "game/js/battle.js:840",
+   "game/js/battle.js:725",
+   "game/js/battle.js:841",
    "game/js/gene-bank-screen.js:199",
    "game/js/gene-bank-screen.js:221",
    "game/js/logic/data-checks.js:797",
@@ -1864,7 +1864,7 @@
    "game/js/battle-stage.js:2362",
    "game/js/battle-stage.js:2385",
    "game/js/battle-stage.js:2484",
-   "game/js/battle.js:1143",
+   "game/js/battle.js:1144",
    "game/js/billie-sheet.js:82",
    "game/js/billie-sheet.js:156",
    "game/js/billie-sheet.js:213",
@@ -1894,7 +1894,7 @@
    "game/js/game-data.js:160"
   ],
   "tag": [
-   "game/js/battle.js:576",
+   "game/js/battle.js:577",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:205",
    "game/js/ui.js:206"
@@ -1904,8 +1904,8 @@
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
    "game/js/battle-stage.js:2183",
-   "game/js/battle.js:535",
-   "game/js/battle.js:1199",
+   "game/js/battle.js:536",
+   "game/js/battle.js:1200",
    "game/js/cutscene/director.js:163",
    "game/js/engine/post-effects.js:478",
    "game/js/engine/post-effects.js:580",
