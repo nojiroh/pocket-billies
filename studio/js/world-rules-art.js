@@ -386,7 +386,7 @@ SECTIONS.rules = () => {
         .join('')
     )
     .join('')}</div>`;
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Rules</h2><p class="sub">Every number here changes how the game plays. Defaults match the original game.</p></div>
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Rules</h2><p class="sub">The game-wide numbers: starting out, encounters, levels, weather, battles, catching and riding. A run’s own numbers are in the Runs workspace (Run Lab, Perks, Unlocks &amp; hub, Economy).</p></div>
  ${card(
    'What’s new',
    grid(textField('Version', 'meta.whatsNew.0.version', { opt: 1, ph: '0.1.0 alpha' })) +

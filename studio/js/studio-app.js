@@ -681,7 +681,7 @@ export const SECTION_LIST = [
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
   ['people', 'Looks', 'Looks for trainers and shopkeepers'],
-  ['rules', 'Rules', 'Every number that tunes the game'],
+  ['rules', 'Rules', 'What’s new and the game-wide numbers (a run’s own are in Runs)'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art browser', 'Every picture in the game: search, see what uses it, paint, replace'],
   ['music', 'Music & sound', 'Play and edit the songs, where each one plays, and the jingles'],

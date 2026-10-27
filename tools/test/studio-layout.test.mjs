@@ -73,8 +73,8 @@ const appText = readFileSync(join(ROOT, 'studio', 'js', 'studio-app.js'), 'utf8'
     appText.indexOf('export const SECTION_LIST'),
     appText.indexOf('];', appText.indexOf('export const SECTION_LIST'))
   ),
-  KEYS = [...listText.matchAll(/^\s*\['(\w+)', '([^']*)'/gm)].map(m => m[1]),
-  NAMES = Object.fromEntries([...listText.matchAll(/^\s*\['(\w+)', '([^']*)'/gm)].map(m => [m[1], m[2]]));
+  KEYS = [...listText.matchAll(/\[\s*'(\w+)',\s*'([^']*)'/g)].map(m => m[1]),
+  NAMES = Object.fromEntries([...listText.matchAll(/\[\s*'(\w+)',\s*'([^']*)'/g)].map(m => [m[1], m[2]]));
 
 test('every section is in exactly one workspace, and every workspace key is a section', () => {
   assert.ok(KEYS.length >= 30, `read ${KEYS.length} sections from SECTION_LIST`);
