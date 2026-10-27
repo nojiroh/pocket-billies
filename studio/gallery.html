@@ -70,6 +70,10 @@
   .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
+  /* UI-14a: a dark box's tags read light text (a plate's glass); the patterns always on in the Colour shapes section */
+  .g-dark { color: #f6f2ff; }
+  .g-shapes { --pat-ink: var(--pat-ink-on); }
+  .g-note { margin: 0; font: 500 var(--fs-caption)/1.4 var(--font-prose); color: var(--text2); }
   /* UI-3: inside the Studio's UI section the Studio holds the switches */
   .g-studio .g-bar { display: none; }
   .g-studio body { padding-top: var(--s2); }
@@ -80,7 +84,7 @@
   <h1>UI gallery</h1>
   <button data-g="theme" data-v="light" aria-pressed="true">Light</button><button data-g="theme" data-v="dark" aria-pressed="false">Dark</button>
   <button data-g="w" data-v="320px" aria-pressed="false">320</button><button data-g="w" data-v="390px" aria-pressed="true">390</button><button data-g="w" data-v="760px" aria-pressed="false">Wide</button>
-  <button data-g="motion" data-v="reduced" aria-pressed="false">Reduced motion</button>
+  <button data-g="motion" data-v="reduced" aria-pressed="false">Reduced motion</button><button data-g="shapes" data-v="on" aria-pressed="false">Colour shapes</button>
   <button data-g="look" data-v="" aria-pressed="true">Field Guide</button><button data-g="look" data-v="copper_grove" aria-pressed="false">Copper Grove+</button><button data-g="look" data-v="bureau_night" aria-pressed="false">Bureau Night</button><button data-g="look" data-v="brass_plum" aria-pressed="false">Brass &amp; Plum</button><button data-g="look" data-v="sunpunk_day" aria-pressed="false">Sunpunk Day</button><button data-g="look" data-v="alpha05" aria-pressed="false">alpha 0.5</button><button data-g="look" data-v="stepped" aria-pressed="false">Stepped</button>
 </div>
 <main class="g-wrap">
@@ -218,6 +222,74 @@
     <div class="g-picks"><pb-pick-card heading="Lucky Charm" sub="Perk"><span slot="art" class="g-relic"></span>Shop prices are 15% lower.</pb-pick-card><pb-pick-card heading="Emberox" sub="Lv 30 · Fire" selected><span slot="art" class="g-sprite" style="--c1:#c4502e"></span>Keeps its levels and its moves.</pb-pick-card><pb-pick-card heading="Golden Parachute" facedown id="gPickDown">When a Billie faints, gain $40.</pb-pick-card></div>
     <div class="g-picks"><pb-pick-card heading="Sir Reginald Taxworth the Third of the Long Lunch" sub="Lv 12 · Steel"><span slot="art" class="g-sprite" style="--c1:#6b7f91"></span>A long name that wraps.</pb-pick-card></div>
     <div class="g-row"><button class="pb small" id="gPickFlip">Flip the face-down card</button></div>
+  </div>
+</section>
+
+<!-- UI-14a: the marks kit (game/js/ui-marks-kit.js, logic/marks.js); UI-14b puts them on the game's screens -->
+<section class="g-sec" data-shot="marks-tags"><h2>Tags</h2><p>pb-tag, sized for a battle plate's tag row: the three statuses (glyph and code in their colours); boosts and drops, the arrow first (▲ teal, ▼ red), the stat and its pips (1 to 6); the short effects with their turns left (none: no count); "+N" and a stat back at 0. Every tag says its word to a screen reader.</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-tag kind="status" mark="brn"></pb-tag><pb-tag kind="status" mark="par"></pb-tag><pb-tag kind="status" mark="slp"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="stat" stat="lev" stages="1"></pb-tag><pb-tag kind="stat" stat="law" stages="2"></pb-tag><pb-tag kind="stat" stat="lob" stages="3"></pb-tag><pb-tag kind="stat" stat="pr" stages="4"></pb-tag><pb-tag kind="stat" stat="hus" stages="6"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="stat" stat="lev" stages="-1"></pb-tag><pb-tag kind="stat" stat="law" stages="-2"></pb-tag><pb-tag kind="stat" stat="lob" stages="-3"></pb-tag><pb-tag kind="stat" stat="pr" stages="-5"></pb-tag><pb-tag kind="stat" stat="hus" stages="-6"></pb-tag><pb-tag kind="stat" stat="hus" stages="0"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="effect" mark="protect" turns="1"></pb-tag><pb-tag kind="effect" mark="shield" turns="3"></pb-tag><pb-tag kind="effect" mark="confused" turns="2"></pb-tag><pb-tag kind="effect" mark="soaked" turns="4"></pb-tag><pb-tag kind="effect" mark="fork" turns="2"></pb-tag><pb-tag kind="effect" mark="delayed" turns="1"></pb-tag><pb-tag kind="effect" mark="stones"></pb-tag><pb-tag kind="effect" mark="sandstorm" turns="5"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="more" n="2"></pb-tag><pb-tag kind="more" n="5"></pb-tag><pb-tag big kind="status" mark="brn"></pb-tag><pb-tag big kind="stat" stat="hus" stages="2"></pb-tag><pb-tag big kind="effect" mark="protect" turns="2"></pb-tag></div>
+    <p class="g-note">On a plate's dark glass, as UI-15's row will hold them (up to 3, then "+N"):</p>
+    <div class="g-dark g-stack">
+      <div class="g-row"><pb-tag kind="status" mark="par"></pb-tag><pb-tag kind="stat" stat="hus" stages="-1"></pb-tag><pb-tag kind="more" n="3"></pb-tag></div>
+      <div class="g-row"><pb-tag kind="status" mark="slp"></pb-tag><pb-tag kind="stat" stat="lev" stages="2"></pb-tag><pb-tag kind="effect" mark="protect" turns="1"></pb-tag></div>
+      <div class="g-row"><pb-tag kind="effect" mark="sandstorm" turns="4"></pb-tag><pb-tag kind="effect" mark="stones"></pb-tag></div>
+    </div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-chips"><h2>Chips</h2><p>pb-chip, on pb-coin's API (kind, value, label; it counts as pb-coin does): the six currencies in their families, then map nodes and messages as label chips (the family's glyph), and the small size.</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-chip kind="money" value="340" label="Moneys"></pb-chip><pb-chip kind="research" value="12400" label="Research"></pb-chip><pb-chip kind="scrap" value="86" label="Scrap"></pb-chip><pb-chip kind="dna" value="14" label="DNA"></pb-chip><pb-chip kind="crests" value="2" label="Crests"></pb-chip><pb-chip kind="beans" value="3" label="Beans"></pb-chip></div>
+    <div class="g-row"><pb-chip kind="town" label="Marrow Town"></pb-chip><pb-chip kind="boss" label="Boss"></pb-chip><pb-chip kind="event" label="Waystation"></pb-chip><pb-chip kind="stall" label="Stall"></pb-chip><pb-chip kind="scrapyard" label="Scrapyard"></pb-chip><pb-chip kind="ghost" label="Friend's ghost"></pb-chip><pb-chip kind="route" label="Route"></pb-chip></div>
+    <div class="g-row"><pb-chip small kind="good" label="Healed"></pb-chip><pb-chip small kind="bad" label="Lost 40 HP"></pb-chip><pb-chip small kind="caution" label="Costs $120"></pb-chip><pb-chip small kind="growth" label="Level up"></pb-chip><pb-chip small kind="special" label="New Perk"></pb-chip><pb-chip small kind="info" label="Saved"></pb-chip><pb-chip small kind="money" value="40" label="Moneys"></pb-chip></div>
+    <div class="g-row"><button class="pb small" id="gChipUp">Add 25 Scrap to the chip above</button></div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-procs"><h2>Blips</h2><p>pb-proc, when a Perk, held item, trait or type passive fires: its glyph in its family's colour and a short line, on the battle's dark glass (the look only: UI-16b shows them by the plates).</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-proc mark="held" text="Quick Laces" stat="hus" stages="1"></pb-proc><pb-proc mark="perk" text="Bubble Wrap −10%"></pb-proc><pb-proc mark="perk" text="Kindling" stat="lev" stages="1"></pb-proc></div>
+    <div class="g-row"><pb-proc group="effect" mark="sandstorm" text="Sandstorm −6"></pb-proc><pb-proc mark="part" text="Spare Limb"></pb-proc><pb-proc group="family" mark="bio" text="Unstable" stat="law" stages="-1"></pb-proc><pb-proc mark="item" text="Berry: +20 HP"></pb-proc></div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-info"><h2>Explainers</h2><p>pb-info, what a tap on a mark opens (long-press in battle): the mark, its word and one line. A tap on it or Escape closes it. Tap the tag to open one.</p>
+  <div class="g-stack">
+    <pb-info open kind="status" mark="brn" line="Loses a little HP each turn, and its physical moves hit for half."></pb-info>
+    <pb-info open kind="stat" stat="hus" stages="2" line="Moves first more often. Resets when it leaves the field."></pb-info>
+    <pb-info open kind="effect" mark="protect" turns="1" line="Blocks the next move aimed at it."></pb-info>
+    <pb-info open word="Research" line="What a run brings home. Spent on the Lab's unlock board."><pb-chip slot="mark" small kind="research" value="12400"></pb-chip></pb-info>
+    <div class="g-row"><button class="pb small" id="gInfoTag" aria-label="Paralyzed: tap to explain"><pb-tag kind="status" mark="par" aria-hidden="true"></pb-tag></button></div>
+    <pb-info id="gInfo" kind="status" mark="par" line="May not move this turn, and is slower."></pb-info>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-rarity"><h2>Rarity</h2><p>The loot ladder as frame, pill and name: common, uncommon, rare, mythical (rarities.json's starter shows as common). On pb-pick-card (rarity="..."; selected keeps its gold edge) and on list rows (.rar-row, data-rarity, .rar-name and pb-rarity).</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-rarity tier="common"></pb-rarity><pb-rarity tier="uncommon"></pb-rarity><pb-rarity tier="rare"></pb-rarity><pb-rarity tier="mythical"></pb-rarity><pb-rarity tier="starter"></pb-rarity></div>
+    <div class="g-picks"><pb-pick-card heading="Lucky Charm" sub="Perk" rarity="common"><span slot="art" class="g-relic"></span>Shop prices are 15% lower.</pb-pick-card><pb-pick-card heading="Quick Laces" sub="Held item" rarity="uncommon"><span slot="art" class="g-relic"></span>Speed +1 at the start.</pb-pick-card><pb-pick-card heading="Golden Parachute" sub="Perk" rarity="rare" selected><span slot="art" class="g-relic"></span>When a Billie faints, gain $40.</pb-pick-card></div>
+    <div class="g-picks"><pb-pick-card heading="Emberox" sub="Lv 30 · Fire" rarity="mythical"><span slot="art" class="g-sprite" style="--c1:#c4502e"></span>Keeps its levels and its moves.</pb-pick-card><pb-pick-card heading="Sproutle" sub="Starter" rarity="starter"><span slot="art" class="g-sprite" style="--c1:#418623"></span>Shows as common.</pb-pick-card><pb-pick-card heading="Mystery" rarity="rare" facedown id="gPickRareDown">Face down: no tier shows.</pb-pick-card></div>
+    <div class="g-list">
+      <div class="bag-row k-card rar-row" data-rarity="common"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Lucky Charm</b><small>Shop prices are 15% lower.</small></span><pb-rarity tier="common"></pb-rarity></div>
+      <div class="bag-row k-card rar-row" data-rarity="uncommon"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Quick Laces</b><small>Speed +1 at the start.</small></span><pb-rarity tier="uncommon"></pb-rarity></div>
+      <div class="bag-row k-card rar-row on" data-rarity="rare"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Golden Parachute</b><small>Chosen: the row's own highlight stays.</small></span><pb-rarity tier="rare"></pb-rarity></div>
+      <div class="bag-row k-card rar-row" data-rarity="mythical"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Crown of the Long Lunch</b><small>A mythical row.</small></span><pb-rarity tier="mythical"></pb-rarity></div>
+    </div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-shapes"><h2>Colour shapes</h2><p>The Accessibility switch's patterns (UI-14b adds the switch; the bar's Colour shapes button turns it on for the whole page). Here always on: statuses striped, dotted and barred, drops cross-hatched, HP striped under half and cross-hatched under a quarter.</p>
+  <div class="g-stack g-shapes">
+    <div class="g-row"><pb-tag kind="status" mark="brn"></pb-tag><pb-tag kind="status" mark="par"></pb-tag><pb-tag kind="status" mark="slp"></pb-tag><pb-tag kind="stat" stat="lev" stages="2"></pb-tag><pb-tag kind="stat" stat="hus" stages="-2"></pb-tag><pb-tag kind="effect" mark="confused" turns="2"></pb-tag><pb-tag kind="effect" mark="soaked" turns="3"></pb-tag><pb-tag kind="effect" mark="stones"></pb-tag></div>
+    <div class="g-row"><pb-tag big kind="status" mark="brn"></pb-tag><pb-tag big kind="status" mark="par"></pb-tag><pb-tag big kind="status" mark="slp"></pb-tag><pb-tag big kind="stat" stat="lev" stages="-1"></pb-tag></div>
+    <pb-stat-bar kind="hp" value="80" max="100" label="HP 80 of 100"></pb-stat-bar>
+    <pb-stat-bar kind="hp" value="40" max="100" label="HP 40 of 100"></pb-stat-bar>
+    <pb-stat-bar kind="hp" value="15" max="100" label="HP 15 of 100"></pb-stat-bar>
   </div>
 </section>
 

@@ -4,6 +4,8 @@ import { pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
 // UI-4: the run parts (pb-day-chip, pb-forecast, pb-node, pb-coin, pb-pick-card, pb-payout, pb-nav-bar; HB-2 pb-loading)
 import '../game/js/ui-run-kit.js';
+// UI-14a: the marks (pb-tag, pb-chip, pb-proc, pb-info, pb-rarity)
+import '../game/js/ui-marks-kit.js';
 
 const root = document.documentElement;
 const press = (group, value) =>
@@ -13,7 +15,7 @@ const press = (group, value) =>
 
 document.addEventListener('click', ev => {
   const b = /** @type {HTMLElement} */ (ev.target).closest(
-    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp'
+    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp,#gChipUp,#gInfoTag'
   );
   if (!b) return;
   const d = b.dataset;
@@ -27,6 +29,12 @@ document.addEventListener('click', ev => {
   } else if (d.g === 'w') {
     document.querySelector('.g-wrap').style.setProperty('--g-w', d.v);
     press('w', d.v);
+  } else if (d.g === 'shapes') {
+    // UI-14a: the Colour shapes switch, as the game's Accessibility row will set it (UI-14b)
+    const on = root.dataset.shapes !== 'on';
+    if (on) root.dataset.shapes = 'on';
+    else delete root.dataset.shapes;
+    b.setAttribute('aria-pressed', String(on));
   } else if (d.g === 'motion') {
     const on = root.dataset.motion !== 'reduced';
     if (on) root.dataset.motion = 'reduced';
@@ -48,6 +56,12 @@ document.addEventListener('click', ev => {
     const c = /** @type {any} */ (document.getElementById('gPickDown'));
     if (c.facedown) c.reveal();
     else c.facedown = true;
+  } else if (b.id === 'gChipUp') {
+    const c = /** @type {any} */ (document.querySelector('pb-chip[kind="scrap"]'));
+    c.value += 25;
+  } else if (b.id === 'gInfoTag') {
+    const i = /** @type {any} */ (document.getElementById('gInfo'));
+    i.open = !i.open;
   } else if (b.id === 'gCoinUp') {
     const c = /** @type {any} */ (document.querySelector('pb-coin[kind="research"]'));
     c.value += 1000;
