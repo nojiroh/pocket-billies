@@ -207,7 +207,7 @@
     "game/js/art.js:175",
     "game/js/art.js:176",
     "game/js/boot.js:627",
-    "game/js/ui-run-kit.js:62"
+    "game/js/ui-run-kit.js:63"
    ]
   }
  ],
@@ -1552,8 +1552,8 @@
    "game/js/fixture.js:206",
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
-   "game/js/ui-run-kit.js:100",
-   "game/js/ui-run-kit.js:107",
+   "game/js/ui-run-kit.js:101",
+   "game/js/ui-run-kit.js:108",
    "game/js/ui.js:70",
    "game/js/ui.js:118",
    "game/js/ui.js:196"
@@ -1566,7 +1566,7 @@
   ],
   "bean": [
    "game/js/logic/marks.js:184",
-   "game/js/ui-run-kit.js:91"
+   "game/js/ui-run-kit.js:92"
   ],
   "bit": [
    "game/js/opening-fall.js:922"
@@ -1576,7 +1576,7 @@
    "game/js/battle-stage.js:2188",
    "game/js/boot.js:142",
    "game/js/run-loading.js:396",
-   "game/js/ui-run-kit.js:80"
+   "game/js/ui-run-kit.js:81"
   ],
   "box": [
    "game/js/battle.js:952",
@@ -1590,7 +1590,7 @@
    "game/js/prop-models.js:349",
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:950",
-   "game/js/ui-run-kit.js:1417",
+   "game/js/ui-run-kit.js:1452",
    "game/js/walk-view-gl.js:685"
   ],
   "brick": [
@@ -1645,8 +1645,8 @@
    "game/js/sound.js:1550",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:642",
-   "game/js/ui-run-kit.js:87",
-   "game/js/ui-run-kit.js:483",
+   "game/js/ui-run-kit.js:88",
+   "game/js/ui-run-kit.js:484",
    "game/js/ui.js:75",
    "game/js/walk-view.js:3161"
   ],
@@ -1655,7 +1655,7 @@
   ],
   "crest": [
    "game/js/logic/marks.js:183",
-   "game/js/ui-run-kit.js:90"
+   "game/js/ui-run-kit.js:91"
   ],
   "crown": [
    "game/js/logic/shaft-pick.js:40",
@@ -1752,7 +1752,7 @@
   "glass": [
    "game/js/logic/ui-dials.js:133",
    "game/js/structures.js:724",
-   "game/js/ui-run-kit.js:1215",
+   "game/js/ui-run-kit.js:1250",
    "game/js/walk/rooms.js:273",
    "game/js/walk/rooms.js:286",
    "game/js/walk/rooms.js:299"
@@ -1877,7 +1877,7 @@
    "game/js/lab-board.js:107",
    "game/js/map-tab.js:84",
    "game/js/showcase.js:286",
-   "game/js/ui-run-kit.js:108",
+   "game/js/ui-run-kit.js:109",
    "game/js/walk-tab.js:196"
   ],
   "sparkle": [

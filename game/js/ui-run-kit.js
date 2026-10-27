@@ -22,6 +22,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
+import { glyphOf, sigVar } from './logic/signals.js';
 import { rarityTier } from './logic/marks.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
@@ -499,6 +500,7 @@ const PbPickCard = class extends LitElement {
     selected: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
     rarity: { reflect: true },
+    kind: { reflect: true },
   };
   static styles = [
     runKitBase,
@@ -548,6 +550,30 @@ const PbPickCard = class extends LitElement {
       }
       :host([rarity]) h3 {
         color: var(--rar-t, inherit);
+      }
+      /* UI-14b: what kind of pickup (the colour code's "family colour + frame shape: the card's ribbon"): kind="..." (a
+         UI_GLYPHS.kind id: perk, held, item, candy, evo, tutor, part, scrap) draws the sub line as a slanted ribbon
+         in its family's tint with a bar of its fill and its glyph in its text shade; a neutral kind (item) stays
+         plain grey */
+      .sub.rib {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s1);
+        margin-top: var(--s1);
+        padding: 1px var(--s2) 1px calc(var(--s2) + 3px);
+        clip-path: var(--clip-chip);
+        background:
+          linear-gradient(90deg, var(--kind, var(--text2)) 0 3px, transparent 3px),
+          color-mix(in srgb, var(--kind, var(--c-text)) 14%, transparent);
+        color: var(--kind-t, var(--text2));
+      }
+      .sub .gl {
+        flex: none;
+        width: 12px;
+        height: 12px;
+        background-color: currentColor;
+        -webkit-mask: var(--ico) center / contain no-repeat;
+        mask: var(--ico) center / contain no-repeat;
       }
       button {
         position: relative;
@@ -673,6 +699,7 @@ const PbPickCard = class extends LitElement {
     this.selected = false;
     this.disabled = false;
     this.rarity = '';
+    this.kind = '';
   }
   /** turns it face up (the flip); with reduced motion it fades instead */
   reveal() {
@@ -686,6 +713,14 @@ const PbPickCard = class extends LitElement {
     if (this.disabled) return;
     if (this.facedown) return this.reveal();
     this.dispatchEvent(new CustomEvent('pb-pick', { bubbles: true, composed: true }));
+  }
+  /** the sub line, as the kind's ribbon when it has a kind (UI-14b) */
+  _sub() {
+    const K = this.kind ? glyphOf('kind', this.kind) : null;
+    if (!K) return html`<p class="sub">${this.sub}</p>`;
+    return html`<p class="sub rib" style=${K[1] ? `--kind:var(${sigVar(K[1])});--kind-t:var(${sigVar(K[1], true)})` : nothing}>
+      <i class="gl" style=${`--ico:url('${runIconURL(K[0])}')`} aria-hidden="true"></i>${this.sub}
+    </p>`;
   }
   render() {
     const t = rarityTier(this.rarity),
@@ -707,7 +742,7 @@ const PbPickCard = class extends LitElement {
           <span class="art"><slot name="art"></slot></span>
           <span>
             <h3>${this.heading}</h3>
-            ${this.sub ? html`<p class="sub">${this.sub}</p>` : nothing}
+            ${this.sub ? this._sub() : nothing}
             <span class="text"><slot></slot></span>
           </span>
         </span>
