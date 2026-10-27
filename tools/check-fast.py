@@ -1332,9 +1332,12 @@ def waystations(pg, base):
 def voltron(pg, base):
     """RL-14b: the in-game test's own phase, "The Voltron" (self-test.js), on the page's save: the Retrieval Unit as a
     run boss: its join intro (its four bots fly in), an Alpha robot never caught, a hit past both its phases (a shield,
-    then an arm-bot torn loose and dropped)"""
-    pg.evaluate("uiState.inside=null;uiState.mq=[];uiState.modal=null;renderOverlay();"
+    then an arm-bot torn loose and dropped). The page's battle check leaves its finished battle open, and the full
+    test won't start beside a battle: it is closed first"""
+    pg.evaluate("if(activeBattle){stopTimers();setActiveBattle(null);battleStageStop();uiState.tab='walk';render()}"
+                "uiState.inside=null;uiState.mq=[];uiState.modal=null;renderOverlay();"
                 "selfTest.slow=3;selfTest.only=['voltron'];runFullTest();0")
+    if not until(pg, 'selfTest.on||!!(debugLog.bench&&debugLog.bench.result)', 20): raise Exception('the full test didn’t start')
     if not until(pg, '!selfTest.on&&!!(debugLog.bench&&debugLog.bench.result)', 240): raise Exception('the phase didn’t finish in 240 s')
     ph = pg.evaluate("debugLog.bench.result.phases.map(p=>({name:p.name,ok:p.ok,why:p.why||p.note||''}))")
     if len(ph) != 1 or not ph[0]['ok']: raise Exception(f'the phase failed: {ph}')
