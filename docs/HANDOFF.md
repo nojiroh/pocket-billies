@@ -858,13 +858,21 @@ WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until 
 - Tests: mapgen-town.test.mjs rewritten by size (8 tests: the run towns as before with the size's houses; 72 fixed-size
   towns, exits east, north or south at either cell; south growth; the same seed; the dial). Snapshots remade on purpose:
   rng's scene hash (a route: only gen.v), run-start (mapgenV), run-world-real's frozen dials (the town road's shape).
-- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1476 pass; slow tier all pass but
-  "the game's island is the generator's own output" (fails on the track's head too); check-fast's run pages 10 of 11
-  (the town's life, quest and shop, the helper thread's places equal to the page's); smoke 6 of 6 (156 s). Headless
-  pictures from the Studio's Generate card at each size (the preview and top-down plans).
-- **Not mine, found failing on the track's head too**: check-fast "A leader's arena" (the fixture's mini-boss place has
-  no gates: `gates: []`; WM-7 after WM-3) and the Studio check's `--only=generate` (a fixed 0.8 s wait races the
-  draft under software drawing: 2 of 3 runs fail on the track's head; with a longer wait it passes here).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1476 pass; slow tier 99 of 99;
+  check-fast's run pages 11 of 11 (the town's life, quest and shop, the helper thread's places equal to the page's, the
+  leader's arena); smoke 6 of 6 (156 s). Headless pictures from the Studio's Generate card at each size (the preview
+  and top-down plans).
+- **Not mine, found failing on the track's head too**:
+  - Ported, so they pass here (each does nothing once the track has it): main's island test fix (PR #253, 62bc12f8:
+    the hand patches marked in `islandGen.patched`; the slow tier's "the game's island is the generator's own
+    output") and WM-3b's pick for a leader's ring (PR #263, aebaa60e: check-fast's "A leader's arena", where the
+    fixture's mini-boss place had no gate, `gates: []`).
+  - Still failing: check-fast's "The Studio's world map look" and "The Studio's Camera section" (404s for
+    `game/art/billionaires/*0.png`, legacy art SA-5 deleted; main's own fast check fails both the same way, no fix
+    yet), and the Studio check's `--only=generate` (a fixed 0.8 s wait races the draft under software drawing: 2 of 3
+    runs fail on the track's head; with a longer wait it passes here).
+  - CI's smoke on a slow runner (every step 1.5-2 times slower) once also failed "Behind things" (Copperleaf) and "A
+    run's world" (the walk from the landing into a route); both passed on the same commit in the other run and here.
 - Measured in Node: over 205 run towns the square fits in all but 1 (20 before: the dogleg); generator notes the same
   (2); a run town about 30 ms as before. Fixed sizes: hamlet about 55 ms, village 60-70, town 80-100 (max about 230),
   so a run gains roughly 0.1-0.3 s with its sizes in WM-5b (a phone about 3-5 times that, on LD-4's helper thread).
