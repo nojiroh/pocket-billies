@@ -1248,10 +1248,10 @@ html[data-contrast='high'] .px {
   }
 }
 .pbar {
-  border-radius: 6px !important;
-  box-shadow: inset 0 1px 2px rgba(46, 33, 64, 0.25) !important;
-  background: rgba(46, 33, 64, 0.12) !important;
-  border: 0 !important;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 2px rgba(46, 33, 64, 0.25);
+  background: rgba(46, 33, 64, 0.12);
+  border: 0;
 }
 .pbar i {
   border-radius: 6px !important;
@@ -1267,10 +1267,10 @@ html[data-contrast='high'] .px {
   }
 }
 .seg {
-  border-radius: var(--r1) !important;
-  background: var(--seg-bg, rgba(46, 33, 64, 0.07)) !important;
-  box-shadow: inset 0 1px 3px rgba(46, 33, 64, 0.12) !important;
-  padding: 3px !important;
+  border-radius: var(--r1);
+  background: var(--seg-bg, rgba(46, 33, 64, 0.07));
+  box-shadow: inset 0 1px 3px rgba(46, 33, 64, 0.12);
+  padding: 3px;
   gap: 3px;
 }
 .seg button {
@@ -1279,9 +1279,9 @@ html[data-contrast='high'] .px {
 }
 /* UI-6b: the surface, not white (white under dark mode's light text read 1.03:1) */
 .seg button.on {
-  background: var(--panel-s) !important;
-  color: var(--text) !important;
-  box-shadow: 0 4px 10px -4px rgba(46, 33, 64, 0.45) !important;
+  background: var(--panel-s);
+  color: var(--text);
+  box-shadow: 0 4px 10px -4px rgba(46, 33, 64, 0.45);
 }
 .c-low {
   background: rgba(78, 154, 74, 0.18);
