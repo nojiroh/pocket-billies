@@ -235,6 +235,14 @@ town node needs it.
   precache) done 2026-10-27; LD-4 (the run's places on a helper thread from the pick) done 2026-10-27; LD-5 in part (one frame budget, the
   moves measured) done 2026-10-27, its other items wait on the owner's phone log; next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
   `ld-N-done`. Branch `track/load`.
+- **Characters track** (docs/phases/characters-track.md, the owner's brief 2026-10-27): people that look like they
+  belong and move like they're alive. People are 66.5 px/m and drawn at 0.74 of a screen pixel per art pixel at the
+  Normal zoom (blurred), so higher resolution would not help in the world; the recommendation is "3D-driven pixel
+  puppets" (jointed low-poly figures rendered into pixel sprites at 32 px/m in the world, 64 in battle), proven first
+  by a spike beside today's people on the owner's phone, with a classic 2D redraw as the fallback. CH-0 (the plan, with
+  research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
+  and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
+  `track/characters` (the owner makes it).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
