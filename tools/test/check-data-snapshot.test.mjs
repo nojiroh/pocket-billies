@@ -154,6 +154,20 @@ test('check-data: planted set pieces (RT-3)', t => {
   );
 });
 
+test('check-data: planted arenas (WM-7)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'arenas.json': A => {
+        A.themes.Nosuchtype = { ...A.themes.plain };
+        A.themes.Water.ground = '\u00a7';
+        A.themes.Grass.fence = 'lantern';
+        A.themes.Fire.dress = ['nosuchprop'];
+        delete A.sizes.leader.back;
+      },
+    })
+  );
+});
+
 test('check-data: planted Expeditions and challenges (RL-13)', t => {
   t.assert.snapshot(
     checkDataOn({
