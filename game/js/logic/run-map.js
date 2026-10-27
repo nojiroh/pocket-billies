@@ -1,16 +1,25 @@
 // @ts-check
 'use strict';
-/* ================= THE RUN MAP AND ITS CLOCK (roguelite track RL-6) =================
-   A run's node map, made from its seed (roguelite-track.md 2e): rows from the landing (row 0, where the airship sets
-   you down) to the boss (the last row), one or two nodes a row, links only to the next row, so every path is as long
-   as the map has rows. Mini-boss rows and the boss row hold one node, so every path meets them, and the row before
-   each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json); RL-14:
-   a type with a chance instead (a scrapyard) takes a free node by it, from its fromRow on.
-   A link leaves its node by the east side and arrives by the next node's west (the owner, WM-1: runs go west to east,
-   reversing TR-2's east to west): one
+/* ================= THE RUN MAP AND ITS CLOCK (roguelite track RL-6; region map track WM-2) =================
+   A run's node map, made from its seed (roguelite-track.md 2e; worldmap-track.md WM-2): steps (`row`) from the landing
+   (row 0, where the airship sets you down) to the boss (the last row), one or two nodes a step, links only to the next
+   step, so every path is as long as the map has rows. WM-2: how long that is comes from the rules (rules.json
+   run.map.path by Expedition, runMapLength), and so do the leaders: as many mini-bosses as fit within run.map.towns,
+   each with a town right after it (the town is the reward), at least one free step before each mini-boss and before
+   the boss. The free step right before a mini-boss is route-like on every lane (nodeTypes.json routeLike: a route,
+   the rival's, a scrapyard; a mini-boss counts too), so every path has at least two route-like places between towns.
+   Mini-boss rows and the boss row hold one node, so every path meets them. The other rows take a filler type by
+   weight (nodeTypes.json; WM-2: towns weigh nothing, they come after leaders only); RL-14: a type with a chance
+   instead (a scrapyard) takes a free node by it, from its fromRow on.
+   WM-2, the region grid: every main node also has a footprint on a coarse grid (RUN_GRID: cells about 64 m, x east, y
+   north), `at` its south-west cell and `size` its cells (every place 2 x 1, a route's, until WM-3). A link joins two
+   footprints that share an edge, going east, north or south from the node to the one it leads to, never west
+   (runLinkDir); the landing's two links go one north (up) and one east (right). Links can't cross, as footprints
+   don't overlap. Until WM-3 the scenes and the bowl don't read the grid: a link still leaves its node by the east side
+   and arrives by the next node's west (the owner, WM-1: runs go west to east), one
    link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
    east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way east,
-   `back` the way west. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
+   `back` the way west. Two lanes run straight, split, merge, or switch once (one diagonal, never two).
    On the bowl (RUN_BOWL) the rows run straight across from the landing near the west rim to the boss near the east,
    every place's map facing the bowl's north (up 90), lane 0 the southern, and each node's exits run south to north
    in the order of its neighbours.
@@ -36,6 +45,7 @@ import { runSideAdd, runSideLinked, runSideMain } from './run-side.js';
 expose({
   RUN_BOWL: [() => RUN_BOWL],
   RUN_EXIT_T: [() => RUN_EXIT_T],
+  RUN_GRID: [() => RUN_GRID],
   // @ts-expect-error -- replaced on purpose
   runArrive: [() => runArrive, v => (runArrive = v)],
   runBack: [() => runBack],
@@ -43,6 +53,15 @@ expose({
   runExits: [() => runExits, v => (runExits = v)],
   // @ts-expect-error -- replaced on purpose
   runForecastFill: [() => runForecastFill, v => (runForecastFill = v)],
+  runGridOverlap: [() => runGridOverlap],
+  // @ts-expect-error -- replaced on purpose
+  runGridSide: [() => runGridSide, v => (runGridSide = v)],
+  // @ts-expect-error -- replaced on purpose
+  runLinkDir: [() => runLinkDir, v => (runLinkDir = v)],
+  // @ts-expect-error -- replaced on purpose
+  runMapGrid: [() => runMapGrid, v => (runMapGrid = v)],
+  // @ts-expect-error -- replaced on purpose
+  runMapLength: [() => runMapLength, v => (runMapLength = v)],
   // @ts-expect-error -- replaced on purpose
   runMapMake: [() => runMapMake, v => (runMapMake = v)],
   // @ts-expect-error -- replaced on purpose
@@ -67,34 +86,163 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** what a row holds: the landing ('first'), the boss ('last'), a mini-boss ('guard'), the town before one ('rest'), or
- * a filler ('') @param {RunMapRules} M @returns {string[]} */
+/** what a row holds: the landing ('first'), the boss ('last'), a mini-boss ('guard'), the town right after one
+ * ('rest'; WM-2: the leader first, the town its reward), or a filler (''). The free rows are shared out evenly between
+ * the gaps before each mini-boss and before the boss, one at least each (runMapRowsFit says whether they can be)
+ * @param {RunMapRules} M @returns {string[]} */
 export function runMapRows(M) {
-  const rows = /** @type {string[]} */ (Array(M.rows).fill(''));
-  for (let k = 1; k <= M.minibosses; k++) rows[Math.round((k * M.rows) / (M.minibosses + 1))] = 'guard';
-  rows.forEach((role, g) => {
-    if (role === 'guard' && g >= 2 && rows[g - 1] === '') rows[g - 1] = 'rest';
-  });
+  const rows = /** @type {string[]} */ (Array(M.rows).fill('')),
+    T = M.minibosses,
+    free = M.rows - 2 - 2 * T;
+  if (T > 0 && free >= T + 1)
+    for (let k = 0, at = 0; k < T; k++) {
+      at += Math.round(((k + 1) * free) / (T + 1)) - Math.round((k * free) / (T + 1));
+      rows[at + 1] = 'guard';
+      rows[at + 2] = 'rest';
+      at += 2;
+    }
   rows[0] = 'first';
   rows[M.rows - 1] = 'last';
   return rows;
 }
-/** whether the rows can be laid out: every mini-boss on a row of its own with a town before it, after the landing's
- * row and before the boss's @param {RunMapRules} M @returns {boolean} */
+/** whether the rows can be laid out: every mini-boss on a row of its own with its town right after, a free row at
+ * least after the landing's, before each mini-boss and before the boss @param {RunMapRules} M @returns {boolean} */
 export function runMapRowsFit(M) {
-  const rows = runMapRows(M);
   return (
-    rows.length === M.rows &&
-    rows.filter(r => r === 'guard').length === M.minibosses &&
-    rows.every((r, g) => r !== 'guard' || rows[g - 1] === 'rest')
+    Number.isInteger(M.rows) &&
+    Number.isInteger(M.minibosses) &&
+    M.minibosses >= 0 &&
+    M.rows >= 3 &&
+    M.rows - 2 - 2 * M.minibosses >= M.minibosses + 1
   );
+}
+/** WM-2: a run's places a path and its mini-bosses: the rows drawn from run.map.path's range for the Expedition
+ * (index 0 = Expedition I; past the end, the last) on the stream 'map|path', unless the rules give them (the debug
+ * menu's short map); as many mini-bosses (each with its town) as fit them, within run.map.towns, unless given
+ * @param {string} seed @param {RunMapRules} M @param {number} [expedition] @returns {{ rows: number, minibosses: number }} */
+export function runMapLength(seed, M, expedition) {
+  const P = M.path || [],
+    span = P[Math.min(Math.max(1, expedition || 1), P.length) - 1],
+    rows = M.rows || (span ? rngFrom(seed, 'map|path').int(span[0], span[1]) : 0),
+    [lo, hi] = M.towns || [0, 0],
+    minibosses = M.minibosses !== undefined ? M.minibosses : Math.max(lo, Math.min(hi, Math.floor((rows - 3) / 3)));
+  return { rows, minibosses };
+}
+/** WM-2: the region grid: cells `cell` metres square (x east, y north), a place's footprint `place` cells (every one
+ * a route's 2 x 1 until WM-3), the main path within `half` cells north and south of the landing's row; `tries`, how
+ * many footprints the layout search may try before it gives up on a map's lane switches */
+export const RUN_GRID = { cell: 64, place: [2, 1], half: 3, tries: 4000 };
+/** the side footprint b lies on from footprint a: 'E', 'W', 'N' or 'S' when they share an edge (a cell of it at
+ * least), '' when they don't touch @param {{ at: number[], size: number[] }} a @param {{ at: number[], size: number[] }} b */
+export function runGridSide(a, b) {
+  const [ax, ay] = a.at,
+    [aw, ah] = a.size,
+    [bx, by] = b.at,
+    [bw, bh] = b.size,
+    xs = bx < ax + aw && ax < bx + bw,
+    ys = by < ay + ah && ay < by + bh;
+  if (ys && bx === ax + aw) return 'E';
+  if (ys && bx + bw === ax) return 'W';
+  if (xs && by === ay + ah) return 'N';
+  if (xs && by + bh === ay) return 'S';
+  return '';
+}
+/** whether two footprints overlap @param {{ at: number[], size: number[] }} a @param {{ at: number[], size: number[] }} b */
+export const runGridOverlap = (a, b) =>
+  a.at[0] < b.at[0] + b.size[0] &&
+  b.at[0] < a.at[0] + a.size[0] &&
+  a.at[1] < b.at[1] + b.size[1] &&
+  b.at[1] < a.at[1] + a.size[1];
+/** the way a link leaves node i for node j on the grid ('E', 'N' or 'S'; '' for a place with no footprint: a side
+ * area's, or a run's from before WM-2) @param {RunMap} map @param {number} i @param {number} j */
+export function runLinkDir(map, i, j) {
+  const a = map.nodes[i],
+    b = map.nodes[j];
+  return a && b && a.at && a.size && b.at && b.size ? runGridSide(/** @type {any} */ (a), /** @type {any} */ (b)) : '';
+}
+/** WM-2: lay the main path's nodes out on the grid: the landing at (0, 0), then each node, row by row and lane by
+ * lane, on a footprint by every node that leads to it (east, north or south of each, never west of its west edge),
+ * on none already taken, within RUN_GRID.half of the landing's row, lane 0 south of lane 1; the landing's two links
+ * one east (lane 0) and one north (lane 1). A seeded search: each node tries its spots in an order drawn on the stream
+ * 'map|grid|row|lane|spot' (east twice as likely as north or south, half as likely again away from the landing's row)
+ * and steps back when the next can't be placed.
+ * Sets `at` and `size` on the nodes and returns true, or false (nothing set) when the search gives up
+ * @param {string} seed @param {RunNode[]} nodes @returns {boolean} */
+export function runMapGrid(seed, nodes) {
+  const size = RUN_GRID.place,
+    H = RUN_GRID.half,
+    from = nodes.map((_, i) => nodes.flatMap((p, k) => (p.to.includes(i) ? [k] : []))),
+    /** @type {({ at: number[], size: number[] } | null)[]} */
+    put = nodes.map(() => null),
+    W = { E: 2, N: 1, S: 1 };
+  let tries = 0;
+  /** the spots node i can take, best first @param {number} i */
+  const spots = i => {
+    const n = nodes[i];
+    if (!from[i].length) return [[0, 0]];
+    const p = /** @type {{ at: number[], size: number[] }} */ (put[from[i][0]]),
+      [px, py] = p.at,
+      [pw, ph] = p.size,
+      [w, h] = size,
+      /** @type {[string, number, number][]} */
+      can = [];
+    for (let y = py - h + 1; y <= py + ph - 1; y++) can.push(['E', px + pw, y]);
+    for (let x = px; x <= px + pw - 1; x++) can.push(['N', x, py + ph], ['S', x, py - h]);
+    return can
+      .map(([d, x, y]) => ({
+        x,
+        y,
+        k:
+          rngFrom(seed, `map|grid|${n.row}|${n.lane}|${d}|${x - px}|${y - py}`).next() **
+          (1 / (W[/** @type {'E'} */ (d)] * (d === 'N' && py > 0 ? 0.5 : d === 'S' && py < 0 ? 0.5 : 1))),
+      }))
+      .sort((a, b) => b.k - a.k)
+      .map(c => [c.x, c.y]);
+  };
+  /** whether node i may stand on f @param {number} i @param {{ at: number[], size: number[] }} f */
+  const fits = (i, f) => {
+    const n = nodes[i];
+    if (f.at[1] < -H || f.at[1] + f.size[1] - 1 > H) return false;
+    for (let j = 0; j < i; j++) if (put[j] && runGridOverlap(/** @type {any} */ (put[j]), f)) return false;
+    for (const k of from[i]) {
+      const p = /** @type {{ at: number[], size: number[] }} */ (put[k]),
+        side = runGridSide(p, f);
+      if (!side || side === 'W' || f.at[0] < p.at[0]) return false;
+      if (nodes[k].row === 0 && side !== (n.lane === 0 ? 'E' : 'N')) return false;
+    }
+    const south = nodes.findIndex((m, j) => j < i && m.row === n.row && m.lane === n.lane - 1);
+    return !(south >= 0 && put[south] && /** @type {any} */ (put[south]).at[1] >= f.at[1]);
+  };
+  /** @param {number} i @returns {boolean} */
+  const place = i => {
+    if (i >= nodes.length) return true;
+    for (const [x, y] of spots(i)) {
+      if (++tries > RUN_GRID.tries) return false;
+      const f = { at: [x, y], size: size.slice() };
+      if (!fits(i, f)) continue;
+      put[i] = f;
+      if (place(i + 1)) return true;
+      put[i] = null;
+    }
+    return false;
+  };
+  if (!place(0)) return false;
+  nodes.forEach((n, i) => {
+    const f = /** @type {{ at: number[], size: number[] }} */ (put[i]);
+    n.at = /** @type {[number, number]} */ (f.at);
+    n.size = /** @type {[number, number]} */ (f.size);
+  });
+  return true;
 }
 /** the map for a seed. Each choice draws from a stream of its own (a row's shape, a node's type, a node's biome, keyed
  * by row and lane), so changing one rule moves only what it rules. RL-R1: with the region's zones in the rules (M.zones,
  * logic/run-region.js), each row is its zone's biome on both lanes and each node knows its zone; the links are the same
- * across a zone's edge as inside it, so every place of a zone's last row leads into the next zone
- * @param {string} seed @param {Record<string, NodeType>} nodeTypes @param {RunMapRules} M @returns {RunMap} */
-export function runMapMake(seed, nodeTypes, M) {
+ * across a zone's edge as inside it, so every place of a zone's last row leads into the next zone. WM-2: every main
+ * node's footprint on the grid (runMapGrid). M.rows and M.minibosses are the run's (runMapLength); rules without rows
+ * (rules.json's own) draw them as Expedition I's
+ * @param {string} seed @param {Record<string, NodeType>} nodeTypes @param {RunMapRules} rules @returns {RunMap} */
+export function runMapMake(seed, nodeTypes, rules) {
+  const M = rules.rows ? rules : { ...rules, ...runMapLength(seed, rules, 1) };
   if (!runMapRowsFit(M)) throw new Error(`runMapMake: ${M.rows} rows can't hold ${M.minibosses} mini-bosses`);
   /* RL-R1: the region's zones, when it has them, give each row its biome (and the rows add up to the map's) */
   const zones = M.zones && M.zones.length ? M.zones : null;
@@ -115,8 +263,12 @@ export function runMapMake(seed, nodeTypes, M) {
       wide = g.next() < M.wide,
       cross = g.next() < M.cross,
       west = g.next() < 0.5;
-    return { width: (role === '' || role === 'rest') && wide ? 2 : 1, cross, west };
+    /* WM-2: the row after the landing has both lanes (the landing's two exits, north and east) */
+    return { width: (role === '' || role === 'rest') && (wide || row === 1) ? 2 : 1, cross, west };
   });
+  /* WM-2: the types that count as a route between towns, by weight (every lane of the free row before a mini-boss
+     is one) */
+  const road = Object.fromEntries(Object.entries(fill).filter(([k]) => nodeTypes[k].routeLike));
   /** @type {number[][]} */
   const at = [];
   /** @type {RunNode[]} */
@@ -138,34 +290,52 @@ export function runMapMake(seed, nodeTypes, M) {
                 rngFrom(seed, `map|${k}|${row}|${lane}`).chance(/** @type {number} */ (nodeTypes[k].chance))
             )) ||
           drawn,
+        /* WM-2: on the free row before a mini-boss, a type that isn't route-like is drawn again from those that
+           are (its own stream), so every path has two route-like places at least between towns */
+        kind =
+          !role &&
+          roles[row + 1] === 'guard' &&
+          !(nodeTypes[type] || {}).routeLike &&
+          Object.values(road).some(w => w > 0)
+            ? rngFrom(seed, `map|road|${row}|${lane}`).pick(road)
+            : type,
         zone = zones ? runZoneOf(zones, row) : -1,
         biome = zones ? zones[zone].biome : rngFrom(seed, `map|biome|${row}|${lane}`).pick(M.biomes);
       at[row].push(nodes.length);
       nodes.push(
-        zones ? { type, row, lane, to: [], seen: 0, biome, zone } : { type, row, lane, to: [], seen: 0, biome }
+        zones
+          ? { type: kind, row, lane, to: [], seen: 0, biome, zone }
+          : { type: kind, row, lane, to: [], seen: 0, biome }
       );
     }
   });
-  for (let row = 0; row + 1 < at.length; row++) {
-    const here = at[row],
-      next = at[row + 1],
-      link = (/** @type {number} */ a, /** @type {number} */ b) => nodes[here[a]].to.push(next[b]);
-    if (here.length === 1) next.forEach((_, b) => link(0, b));
-    else if (next.length === 1) here.forEach((_, a) => link(a, 0));
-    else {
-      link(0, 0);
-      link(1, 1);
-      if (shape[row].cross) shape[row].west ? link(1, 0) : link(0, 1);
+  /* the links, then their layout on the grid (WM-2); when the grid can't hold the map's lane switches, the map is
+     linked again without them (nothing else changes) */
+  for (const switches of [true, false]) {
+    for (const n of nodes) n.to = [];
+    for (let row = 0; row + 1 < at.length; row++) {
+      const here = at[row],
+        next = at[row + 1],
+        link = (/** @type {number} */ a, /** @type {number} */ b) => nodes[here[a]].to.push(next[b]);
+      if (here.length === 1) next.forEach((_, b) => link(0, b));
+      else if (next.length === 1) here.forEach((_, a) => link(a, 0));
+      else {
+        link(0, 0);
+        link(1, 1);
+        if (switches && shape[row].cross) shape[row].west ? link(1, 0) : link(0, 1);
+      }
     }
+    for (const n of nodes) n.to.sort((a, b) => a - b);
+    if (runMapGrid(seed, nodes)) break;
+    if (!switches) throw new Error(`runMapMake: seed ${seed}'s map doesn't fit the grid`);
   }
-  for (const n of nodes) n.to.sort((a, b) => a - b);
   runMapNoTwoShops(seed, nodeTypes, roles, nodes);
   return { nodes };
 }
 /** RL-12b: never two places that sell things (nodeTypes' `shop`: a town, a stall) one after the other. Going row by row,
  * a shop led to from a shop is drawn again from the types that don't sell (its own stream, 'map|calm|row|lane'); when
- * it is a role row's town (before a mini-boss), the free row's shop before it is drawn again instead. Role rows' shops
- * never meet (a town row is followed by its mini-boss) @param {string} seed @param {Record<string, NodeType>} nodeTypes
+ * it is a role row's town, the free row's shop before it is drawn again instead (WM-2: a town comes after its
+ * mini-boss, so that is a free row's shop after it). Role rows' shops never meet (a town row follows a mini-boss) @param {string} seed @param {Record<string, NodeType>} nodeTypes
  * @param {string[]} roles @param {RunNode[]} nodes */
 export function runMapNoTwoShops(seed, nodeTypes, roles, nodes) {
   const shop = (/** @type {string} */ k) => !!(nodeTypes[k] && nodeTypes[k].shop),

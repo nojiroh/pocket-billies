@@ -76,7 +76,7 @@ below against main and report what differs.
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
 | WM-1 | Direction and map facing (done 2026-10-27) | runs go west to east (exits, the bowl line, wording); the world map opens centred on you looking north like the walk camera, and Home resets to it | none | 1 |
-| WM-2 | The region grid (logic) | a coarse grid (about 64 m cells) replaces the rows: nodes get footprints, links go east, north or south; the landing's exits north and east; at least 2 routes between towns; leader then town; 2-3 towns; 8-12 places a path; the data checks, sim and the Run Lab's 2D preview | WM-1 | 1-2 |
+| WM-2 | The region grid (logic) (done 2026-10-27) | a coarse grid (about 64 m cells) replaces the rows: nodes get footprints, links go east, north or south; the landing's exits north and east; at least 2 routes between towns; leader then town; 2-3 towns; 8-12 places a path; the data checks, sim and the Run Lab's 2D preview | WM-1 | 1-2 |
 | WM-3 | Shapes and sizes | mapgen takes a footprint: any width and height, L-masks walled by mountain or forest, exits on any edge (more than 2 on long edges), roads that bend to a north exit; seam rules for north/south joins; a phone-time measurement | WM-2 | 1-2 |
 | WM-4 | The seamless region on the world map | places stamped at their grid positions, region filler between, the run's real roads, fogged outlines for unreached places; ends the crowding | WM-3 | 1-2 |
 | WM-5 | Town streets | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 1-2 |
@@ -86,6 +86,21 @@ below against main and report what differs.
 
 About 9-11 sessions. Most change test snapshots (run-map, run-scenes, run-world-real, run-bowl, bowl-camera,
 mapgen-golden, mapgen-town) and check-fast's run pages.
+
+## WM-2's answers and what it found (2026-10-27)
+
+- The owner's answers: places a path by Expedition, I 9-10, II 9-11, III 10-11, IV 10-12, V 11-12 (rules.json
+  run.map.path), a free place at least before the boss, so 2 towns at 9-11 places and 3 at 12 (run.map.towns [2, 3]);
+  no filler towns (a town comes only after its leader); the scrapyard counts as a route; side areas flipped too
+  (leader, then town); the grid in the logic only until WM-3; cells 64 m square, every place 2 x 1 cells, so WM-3
+  makes places at their footprint's size (a route 128 x 64 m, 16 m longer than today's).
+- Corrected facts: paths were 6-15 places (6-9 at Expeditions I-II, 8-12 at III-IV, 10-15 at V), not 8-12; side
+  areas already had north/south joins (the obstacle's north exit), the main path none.
+- What follows from the rules: at 9-10 places (Expedition I) every free step is right before a leader (route-like)
+  or right after a town (no stall: never two shops in a row), so short runs have no stalls and few waystations; runs
+  have about three times the route places they had (more route trainers).
+- Until WM-3: `row` is a node's step from the landing (every link to the next step) and the scenes and the bowl
+  read rows and lanes as before; `at`, `size` and `runLinkDir` are for WM-3 and WM-4.
 
 ## Risks
 

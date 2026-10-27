@@ -1357,7 +1357,7 @@ async function runFullTest(mode) {
         60
       );
     /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
-       both; at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
+       both (WM-2: at Expedition V, as a shorter path's free rows hold no stall); at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
        the place's shop with the day's wares; both hold rules.json run.wild.waystation wild Billies. Then the save as
        it was */
     if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
@@ -1390,7 +1390,11 @@ async function runFullTest(mode) {
             let plan = null,
               seed = '';
             for (let k = 0; k < 60 && !plan; k++) {
-              const p = runStartPlan(`SELFTESTWAY${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }),
+              const p = runStartPlan(
+                  `SELFTESTWAY${k}`,
+                  { ...data, unlockData: UNLOCK_DATA },
+                  { unlocks: [], expedition: 5 }
+                ),
                 types = p.map.nodes.filter(n => !n.side).map(n => n.type);
               if (types.includes('event') && types.includes('stall')) [plan, seed] = [p, `SELFTESTWAY${k}`];
             }
@@ -1820,7 +1824,7 @@ async function runFullTest(mode) {
         180
       );
     /* RL-8: a run from the station to the payout, on a copy of the save (nothing is written while the test runs): a
-       short run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       short run (6 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
        sky train to the landing (HB-8: its ride skipped), a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
        Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
        Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
@@ -1858,7 +1862,7 @@ async function runFullTest(mode) {
             setSaveData(s);
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
-            runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
+            runTakeOff('SELFTESTRUN8', { rows: 6, minibosses: 1 });
             /* HB-8: the sky train's ride (skipped), then the run's world made over several frames behind the carriage's
                loading screen */
             if (!saveData.run || !(await wait(() => trainRide.on || runLoad.on, 30000)))
@@ -1884,13 +1888,13 @@ async function runFullTest(mode) {
             /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
             if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
               throw new Error('the landing’s loading screen never lifted');
-            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
+            /* RL-R1: the run's region: the short map’s 6 rows in its zones, each place its zone's biome (RL-R2: a
                side area's its field move's), its name on the Map tab */
             const G = saveData.run.region,
               side = saveData.run.map.side,
               sideBiome = side && FIELD_MOVES[side.move] ? FIELD_MOVES[side.move].biome : '';
-            if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
-              throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
+            if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 6)
+              throw new Error(`the run's region doesn’t fit its 6 rows: ${JSON.stringify(G && G.zones)}`);
             const off = saveData.run.map.nodes.find(
               n => !G.zones[n.zone] || (n.side ? sideBiome : G.zones[n.zone].biome) !== n.biome
             );

@@ -9,7 +9,10 @@ import { test } from 'node:test';
 import { runReport, runSim, runStats, simSideNext } from './sim/run-sim.mjs';
 import { data, GAME_DATA, modules } from './setup-real.mjs';
 
-const B = { team: 3, scenes: 'skip' };
+const B = { team: 3, scenes: 'skip' },
+  /* WM-2: every town comes after a mini-boss, which the bot's untrained party rarely beats: the tests that need a town
+     or the rows past the first leader take a party trained at the ranch */
+  T = { ...B, team: 6, lvl: 20 };
 
 test('run sim: a seed played twice is the same run, whatever util.js random draws meanwhile (balance mode)', () => {
   for (const seed of ['SIMREPLAY0', 'SIMREPLAY1']) {
@@ -75,7 +78,7 @@ test("run sim: a run town's shop stocks only what the run has unlocked (Studio p
   const locked = ['nerve_tonic', 'wake_tea', 'revive'];
   let towns = 0;
   for (let k = 0; k < 12; k++)
-    for (const at of runSim(`SIMSHOP${k}`, B).log.places)
+    for (const at of runSim(`SIMSHOP${k}`, T).log.places)
       if (at.shop) {
         towns++;
         assert.ok(!at.shop.some(w => locked.includes(w)), `SIMSHOP${k} node ${at.i}: ${at.shop}`);
@@ -128,8 +131,8 @@ test('run sim: a town shop’s Perk is bought under greedy-forward and never und
   let bought = 0,
     shelves = 0;
   for (let k = 0; k < 12; k++) {
-    const g = runSim(`SIMSHOP${k}`, B),
-      n = runSim(`SIMSHOP${k}`, { ...B, policy: 'never-pick' });
+    const g = runSim(`SIMSHOP${k}`, T),
+      n = runSim(`SIMSHOP${k}`, { ...T, policy: 'never-pick' });
     for (const at of g.log.places) if (at.relic) (shelves++, at.relic.bought && bought++);
     assert.ok(!n.log.places.some(at => at.relic && at.relic.bought), 'never-pick buys none');
   }
@@ -163,7 +166,7 @@ test('run sim: money in and out add up to what is left; a loss names its row; fo
     sum = o => Object.values(o).reduce((a, x) => a + x, 0);
   let towns = 0;
   for (let k = 0; k < 10; k++) {
-    const { stats: x, log } = runSim(`SIMMONEY${k}`, B);
+    const { stats: x, log } = runSim(`SIMMONEY${k}`, T);
     assert.equal(start + sum(x.moneyIn) - sum(x.moneyOut), x.se, `SIMMONEY${k}`);
     assert.equal(x.spent, x.moneyOut.shop + x.moneyOut.perks);
     assert.equal(x.healed, x.moneyOut.heal);
@@ -180,7 +183,8 @@ test('run sim: money in and out add up to what is left; a loss names its row; fo
 test('run sim: a report over a seed list; the same data compares as the same runs, a dearer clinic as a paired difference (T3.4)', () => {
   const C = modules['sim-compare'],
     seeds = C.simSeeds(40),
-    o = { team: 3, scenes: 'skip' },
+    /* WM-2: a party trained at the ranch, which gets past the first mini-boss to its town's clinic */
+    o = { team: 6, lvl: 20, scenes: 'skip' },
     base = runReport(seeds, o);
   assert.equal(base.kind, 'pb-sim-report');
   assert.deepEqual(base.seeds, seeds);
@@ -226,10 +230,10 @@ test('run sim: the side area (RL-R2b): shut with no badge kept; the policy goes 
 });
 
 test('run sim: a stall sells without healing and a waystation notes its event (RL-12b)', () => {
-  // the bot rarely gets past the first rows, and stalls are rare there: a stall is checked when one is reached
+  // stalls are rare on the first rows: a stall is checked when one is reached
   let stands = 0;
   for (let k = 0; k < 40; k++)
-    for (const at of runSim(`SIMWAY${k}`, B).log.places) {
+    for (const at of runSim(`SIMWAY${k}`, T).log.places) {
       if (at.type === 'stall') assert.ok(Array.isArray(at.shop) && at.healed === undefined, `SIMWAY${k} node ${at.i}`);
       if (at.type === 'event') {
         stands++;

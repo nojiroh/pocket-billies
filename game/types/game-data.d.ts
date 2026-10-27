@@ -1209,10 +1209,16 @@ export type RunSceneRules = {
 
 /** rules.json run.map: how a run's node map is laid out (logic/run-map.js runMapMake; placeholders, 8.18) */
 export interface RunMapRules {
-  /** rows from the landing (0) to the boss (the last): the nodes on every path */
+  /** rows (steps) from the landing (0) to the boss (the last): the places on every path. WM-2: the run's own, drawn
+      from `path` (logic/run-map.js runMapLength) unless given (the debug menu's short map) */
   rows: number;
-  /** mini-bosses on rows round(k * rows / (minibosses + 1)), each with a town's row before it */
+  /** mini-bosses, each on a row of its own with its town right after it (WM-2), the free rows shared out between
+      them: the run's own, as many as fit `rows` within `towns`, unless given */
   minibosses: number;
+  /** WM-2: the places a path by Expedition (index 0 = Expedition I; past the end, the last): [fewest, most] */
+  path?: [number, number][];
+  /** WM-2: the fewest and most towns (each after a mini-boss) a run */
+  towns?: [number, number];
   /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
   first: DataId;
   rest: DataId;
@@ -1824,6 +1830,9 @@ export interface NodeType {
   /** RL-14: instead of a weight, the chance a free node becomes it (on its own stream), from map row fromRow on */
   chance?: number;
   fromRow?: number;
+  /** WM-2: it counts as a route between towns (a route, the rival's, a mini-boss's, a scrapyard; not a waystation, a
+      stall or the landing): the map puts one on every lane of the free row before each mini-boss */
+  routeLike?: boolean;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */

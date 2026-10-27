@@ -2,6 +2,64 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-2 - the region grid (logic only) - 2026-10-27
+Branch `claude/wm-2-region-grid` (from WM-1's branch). The owner's answers: places a path by Expedition (I 9-10, II
+9-11, III 10-11, IV 10-12, V 11-12), a free place before the boss, so 2 towns at 9-11 places and 3 at 12; no filler
+towns; the scrapyard counts as a route; side areas flipped too; the grid in the logic only until WM-3; 64 m cells.
+- logic/run-map.js: `runMapRows` puts each mini-boss's town right after it (the leader first, the town its reward), a
+  free row at least before each mini-boss and before the boss; `runMapLength` draws the run's places a path from
+  rules.json `run.map.path` by Expedition and as many mini-bosses as fit within `run.map.towns` (runStartPlan calls it
+  before the region, whose zones are fitted to those rows); rules without rows (rules.json's own) draw Expedition I's.
+  The row after the landing always has two lanes. Every lane of the free row before a mini-boss is route-like
+  (nodeTypes.json `routeLike`: route, rival, mini-boss, scrapyard), redrawn on 'map|road|row|lane' when not.
+- The region grid: `RUN_GRID` (64 m cells, every place 2 x 1, within 3 cells of the landing's row), `runMapGrid` (a
+  seeded layout search with backtracking; the landing's links east, lane 0, and north, lane 1; east, north or south,
+  never west; no overlaps), each main node's `at` and `size`; `runGridSide`, `runGridOverlap`, `runLinkDir`. When the
+  grid can't hold a map's lane switches, the map is linked again without them. About 0.2 ms a map. validRun checks
+  `at` and `size`.
+- **Playable until WM-3**: `row` stays a node's step (every link goes to the next step); runExits, the scenes and the
+  bowl read rows and lanes as before, so a north link still leaves by the east side in the walk. mapgen.js, run-loop.js
+  and the arenas untouched (WM-7 can run alongside).
+- nodeTypes.json: town weight 0 (towns only after leaders), `routeLike`. rules.json run.map: `path`, `towns` for
+  `rows`, `minibosses`. The short map (debug menu, Run Lab, self-test, run-test.js, check-fast) is 6 rows: landing,
+  route, leader, town, route, boss.
+- run-side.js: a side area's leader comes before its town too (`runSideTypes`, `runSideProblems`).
+- data-checks.js: `dataRunMapRules` checks `path` and `towns` (every length fits); the region check uses the drawn
+  lengths; `runMapProblems` adds overlapping footprints, a link across no shared edge or going west, the landing's
+  ways on not north and east, a path with fewer than 2 route-like places before a town, places a path or towns on a
+  walk outside the rules; `runMapSweep` takes `expedition` and reports places a path, the grid's size and links by way.
+  run-rules-code.js lists the new rules in code. content-preview's leader values use the longest run (12, 3 leaders).
+- Studio Run Lab: a region-grid view (the default; footprints on cells, north up, north and south links dashed), a
+  Steps view (the old picture), an Expedition picker (map, sweep and logic panel; Play this seed plays Expedition I),
+  the place's cells and its links' ways, the sweep's new figures, the path and towns fields for rows and mini-bosses.
+  The Studio's GitHub check (run lab and rules card steps) moved to the new view and fields; the perks editor's picks
+  read `towns`.
+- **What follows from the rules**: at 9-10 places every free step is right before a leader or right after a town, so
+  Expedition I runs have no stalls and few waystations (the waystation tests use Expedition V); runs hold about three
+  times the route places they did, so more route trainers.
+- Sim (100 runs, balance mode, before -> after): trained party (level 40, 3 at home) Expedition I won 90 -> 68, places
+  7.4 -> 9.2, battles 19 -> 27, route trainers 1.7 -> 8.1, the estimate 15 -> 22 minutes; III 34 -> 32 won; V 19 -> 17.
+  The untrained bot never reaches a town now (each is behind a leader); the town and stall sim tests use a party
+  trained to 20.
+- **Found, not fixed** (mapgen's, before WM-2 as after, at the same rates): about 1 run place in 25 gets a river note
+  ("no way downhill"; old maps 11 of 256 places, new 12 of 320); about 1 route trainer in 75 faces a wall (mapgen's
+  spot `face`; 3 of 179 before, 7 of 540 after). New maps met them on fixed test seeds: run-side-world's SIDEW1 ->
+  SIDEW2 and run-world-real's RL7WORLD3 -> RL7WORLD6 (with comments), and route-trainer-spots' "faces a wall" is now a
+  share (at most 3%) instead of none. A mapgen session should fix both.
+- The paths sit a little north of the landing's row on average (the second lane is always the northern one); WM-4
+  can centre the region on the bowl.
+- Snapshots remade on purpose: run-map, run-start, run-world-real (the maps changed), check-data's planted rules (the
+  planted `rows` became a bad `path`).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1416 pass; slow tests all pass but
+  "the game's island is the generator's own output" (fails on main too); check-fast's run pages 15 of 16 (the world
+  map's bowl check failed once under load with "debug log: no function render to wrap" and passed alone); smoke 6 of
+  6 on the third run (the first two each failed one step with the same debug-log message; the old tree passed twice:
+  a race between boot.js's `debugLog.hook()` at 'maps ahead' and debug-log-names.js, the page's last module, worth a
+  look); check-studio-github `--only=run_lab` passes (it found the Run Lab sweep keeping the plan's zones, fixed). The
+  full quick check was not run this session.
+- Next: WM-3 (mapgen takes a footprint; north and south seams; then the scenes read `runLinkDir`). Tag `wm-2-done`
+  for the owner.
+
 ### Cutscenes and run screens (C, A, B), then loading (LD-5 in part) - 2026-10-27
 Branch `ccr-517fcc1e-p1asai` (one session at the owner's word; the plan was C, then A, then B, then loading). It merges
 the load track's `ccr-3df446bb-9jvdvq` (LD-0 to LD-5 in part). The only conflict was `run.js`'s generated imports.
