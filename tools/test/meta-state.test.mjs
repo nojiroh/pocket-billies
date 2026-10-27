@@ -26,6 +26,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     badges: {},
     history: [],
     residents: {},
+    wish: null,
   });
   assert.equal(validMeta(m), true);
   assert.notEqual(newMeta(), m, 'a fresh object each time');

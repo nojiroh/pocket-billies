@@ -49,8 +49,11 @@ export const FOUNTAIN_LOOKS = [
   ['fountain_ch2', { when: 'chapter >= 2' }],
 ];
 
+/* HB-10d: a tap on the fountain tosses a coin (game/js/town-square.js, logic/fountain-wish.js) */
+export const FOUNTAIN_ACT = { act: 'wish', label: 'Fountain' };
+
 /** the map's props with the fountain's looks on the fountain's spot (the first look is the fountain itself; the
- * others are laid again) */
+ * others are laid again), each tapped to toss a coin */
 export function fountainLooks(M) {
   const F = M.props.find(p => p.k === FOUNTAIN_LOOKS[0][0] && !p.dress);
   if (!F) throw new Error('no fountain on the map');
@@ -58,9 +61,9 @@ export function fountainLooks(M) {
     out = M.props.filter(p => !later.includes(p.k));
   delete F.when;
   delete F.unless;
-  Object.assign(F, FOUNTAIN_LOOKS[0][1]);
+  Object.assign(F, FOUNTAIN_ACT, FOUNTAIN_LOOKS[0][1]);
   const at = out.indexOf(F);
-  out.splice(at + 1, 0, ...FOUNTAIN_LOOKS.slice(1).map(([k, c]) => ({ k, x: F.x, z: F.z, ...c })));
+  out.splice(at + 1, 0, ...FOUNTAIN_LOOKS.slice(1).map(([k, c]) => ({ k, x: F.x, z: F.z, ...FOUNTAIN_ACT, ...c })));
   return out;
 }
 

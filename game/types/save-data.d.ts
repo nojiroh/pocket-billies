@@ -119,6 +119,9 @@ export interface Meta {
   history: HistoryEntry[];
   /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
   residents: Record<string, number>;
+  /** HB-10d: the last coin tossed into the square's fountain (logic/fountain-wish.js): meta.runs then, the outcome's
+      id (rules.json square.wish), and `used` once its boon joined a run; null before the first */
+  wish: { at: number; out: string; used?: 1 } | null;
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the

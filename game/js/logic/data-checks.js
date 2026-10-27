@@ -305,7 +305,7 @@ export function dataSquareRules(D) {
     problem('square missing');
     return out;
   }
-  for (const k of Object.keys(S)) if (!['day', 'visit'].includes(k)) problem(`square.${k}: no such rule`);
+  for (const k of Object.keys(S)) if (!['day', 'visit', 'wish'].includes(k)) problem(`square.${k}: no such rule`);
   const day = S.day;
   if (!Array.isArray(day) || !day.length) problem('square.day: a list of slots');
   else
@@ -335,6 +335,56 @@ export function dataSquareRules(D) {
     if (!Array.isArray(T) || T.length !== 2 || !(T[0] >= 5 && T[1] >= T[0] && T[1] <= 3600))
       problem('square.visit.stay: [fewest, most] seconds, 5-3,600');
     if (!kinds(V.stops)) problem(`square.visit.stops: kinds of stop (${KINDS.join(', ')}), each once`);
+  }
+  /* HB-10d: the fountain's coin (logic/fountain-wish.js): a cost in a kept currency, outcomes by weight, each a line or
+     more to show and what it does (a boon or curse for the next run's first places, an item in the bag, a payout) */
+  const W = S.wish,
+    whole = (/** @type {any} */ v, /** @type {number} */ lo, /** @type {number} */ hi) =>
+      Number.isInteger(v) && v >= lo && v <= hi,
+    kept = ['research', 'scrap', 'crests', 'beans', 'dna'];
+  if (!W || typeof W !== 'object' || Array.isArray(W)) problem('square.wish missing');
+  else {
+    for (const k of Object.keys(W)) if (!['cost', 'outcomes'].includes(k)) problem(`square.wish.${k}: no such rule`);
+    const C = W.cost;
+    if (!C || !kept.includes(C.cur) || !whole(C.n, 1, 99))
+      problem(`square.wish.cost: {cur, n}: a kept currency (${kept.join(', ')}) and 1-99 of it`);
+    const O = W.outcomes;
+    if (!Array.isArray(O) || !O.length) problem('square.wish.outcomes: a list');
+    else
+      O.forEach((/** @type {any} */ o, /** @type {number} */ i) => {
+        const at = `square.wish.outcomes[${i}]`;
+        if (!o || typeof o !== 'object') return problem(`${at}: not an outcome`);
+        for (const k of Object.keys(o))
+          if (!['id', 'w', 'say', 'fx', 'places', 'give', 'pay'].includes(k)) problem(`${at}.${k}: no such rule`);
+        if (!/^[a-z0-9_]{1,32}$/.test(o.id || '') || O.findIndex((/** @type {any} */ q) => q && q.id === o.id) !== i)
+          problem(`${at}.id: an id of its own (a-z, 0-9, _)`);
+        if (!(typeof o.w === 'number' && o.w > 0)) problem(`${at}.w: a weight above 0`);
+        if (
+          !Array.isArray(o.say) ||
+          !o.say.length ||
+          !o.say.every((/** @type {any} */ l) => typeof l === 'string' && l.length > 0 && l.length <= 160)
+        )
+          problem(`${at}.say: lines to show, 1-160 letters each`);
+        if (o.fx != null) {
+          if (!Array.isArray(o.fx) || !o.fx.length) problem(`${at}.fx: effect rows`);
+          else
+            o.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+              fxRowProblems(f, `${at}.fx[${n}]`, ['money', 'catch', 'price'], D, problem);
+              if (f && f.kind === 'catch' && !(typeof f.mult === 'number' && f.mult > 0 && f.mult <= 3))
+                problem(`${at}.fx[${n}].mult: above 0, at most 3`);
+              if (f && f.kind === 'price' && !['shop', 'heal'].includes(f.what))
+                problem(`${at}.fx[${n}].what: shop or heal`);
+            });
+          if (!whole(o.places, 1, 12)) problem(`${at}.places: how many places its rows last, 1-12`);
+        } else if (o.places != null) problem(`${at}.places: only with fx`);
+        if (o.give != null)
+          for (const [k, n] of Object.entries(o.give))
+            if (!(D.items && D.items[k]) || !whole(n, 1, 9))
+              problem(`${at}.give.${k}: an item (items.json), 1-9 of it`);
+        if (o.pay != null)
+          for (const [k, n] of Object.entries(o.pay))
+            if (!kept.includes(k) || !whole(n, 1, 999)) problem(`${at}.pay.${k}: a kept currency, 1-999 of it`);
+      });
   }
   return out;
 }

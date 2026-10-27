@@ -1121,6 +1121,20 @@ export interface SquareRules {
     stay: [number, number];
     stops: string[];
   };
+  /** HB-10d: the fountain's coin (logic/fountain-wish.js): what a toss costs, and its outcomes by weight, each lines
+   * to show and what it does (effect rows for the next run's first `places`, items into the bag, a payout at once) */
+  wish: {
+    cost: { cur: string; n: number };
+    outcomes: {
+      id: string;
+      w: number;
+      say: string[];
+      fx?: FxRow[];
+      places?: number;
+      give?: Record<string, number>;
+      pay?: Record<string, number>;
+    }[];
+  };
 }
 
 /** RL-13: rules.json run.points: a Billie's cost in starter points and the budget a run has (logic/starter-points.js) */

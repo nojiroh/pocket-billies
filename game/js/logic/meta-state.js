@@ -28,6 +28,8 @@ expose({
   recordOf: [() => recordOf],
   // @ts-expect-error -- replaced on purpose
   validMeta: [() => validMeta, v => (validMeta = v)],
+  // @ts-expect-error -- replaced on purpose
+  validWish: [() => validWish, v => (validWish = v)],
   wholeIn: [() => wholeIn],
 });
 /* eslint-enable no-func-assign */
@@ -53,6 +55,7 @@ export function newMeta() {
     badges: {},
     history: [],
     residents: {},
+    wish: null,
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
@@ -92,7 +95,22 @@ export function validMeta(o) {
     o.genes.length <= META_GENES &&
     o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
     new Set(o.genes).size === o.genes.length &&
-    validHistory(o.history)
+    validHistory(o.history) &&
+    validWish(o.wish)
+  );
+}
+/** HB-10d: meta.wish as stored (logic/fountain-wish.js): null, or the last coin tossed into the square's fountain
+ * (meta.runs then, the outcome's id, `used` once its boon joined a run) @param {any} w @returns {boolean} */
+export function validWish(w) {
+  if (w == null) return true;
+  return (
+    typeof w === 'object' &&
+    !Array.isArray(w) &&
+    Object.keys(w).every(k => ['at', 'out', 'used'].includes(k)) &&
+    wholeIn(w.at, 0, META_MAX) &&
+    typeof w.out === 'string' &&
+    /^[a-z0-9_]{1,32}$/.test(w.out) &&
+    (w.used === undefined || w.used === 1)
   );
 }
 /** a stored meta filled out with anything new (fields a later version adds); one that still fails the check is

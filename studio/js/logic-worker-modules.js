@@ -42,6 +42,7 @@ import '../../game/js/logic/factions.js';
 import '../../game/js/logic/fighters.js';
 import '../../game/js/logic/float-island.js';
 import '../../game/js/logic/forms.js';
+import '../../game/js/logic/fountain-wish.js';
 import '../../game/js/logic/free-camera.js';
 import '../../game/js/logic/gene-bank.js';
 import '../../game/js/logic/gene-events.js';

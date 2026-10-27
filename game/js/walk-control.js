@@ -57,6 +57,7 @@ import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
 import { questBoardOpen } from './quest-board.js';
+import { fountainWishOpen } from './town-square.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankOpen } from './gene-bank-screen.js';
 import { augmentsOpen } from './augment-screen.js';
@@ -670,6 +671,11 @@ export function walkPick(h) {
       typeof questBoardOpen === 'function'
     )
       questBoardOpen();
+    /* HB-10d: the square's fountain: toss a coin (town-square.js) */ else if (
+      a === 'wish' &&
+      typeof fountainWishOpen === 'function'
+    )
+      fountainWishOpen(p);
     else
       toast(
         p.say ||

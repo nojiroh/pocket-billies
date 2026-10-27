@@ -1549,7 +1549,7 @@ function testVolume(k) {
   }, 60);
 }
 /* a one-off sound somewhere in the scene: animals calling, scurrying off, a frog's plop */
-function soundEffectAt(name, x, z, o = {}) {
+export function soundEffectAt(name, x, z, o = {}) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running' || typeof walkView === 'undefined' || !walkView.ready)
     return;
   const w = soundPlacement(x, z, 14);
