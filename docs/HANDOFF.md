@@ -20,8 +20,9 @@ Tag `sy-0-done` (for the owner to push) on this session's last commit.
 - Risky: nothing ships.
 - Verified: each code claim traced by read-only searches; `git diff` reviewed. No game checks apply to a docs-only
   change.
-- Next: the owner makes `track/style`; SY-1 (the flashes) starts there in Plan Mode. Ask me before 1, 2 and 4 are
-  needed before SY-3 and SY-9.
+- The owner's answers (2026-10-27, after the PR): the emblem is a bean on a lost-property tag; Laminated not now;
+  the foil shows in battle too; the placeholder stamp words stay. Recorded in the track file.
+- Next: the owner makes `track/style`; SY-1 (the flashes) starts there in Plan Mode.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in

@@ -13,6 +13,12 @@ the current game") and then "Make this a plan for the game":
 SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` doesn't exist yet. Later sessions start on
 `track/style`, which the owner makes from main or from that branch.
 
+## The owner's answers (2026-10-27)
+- Emblem: a bean on a lost-property tag (SY-3 draws it; the owner may repaint it in the Studio).
+- Laminated (SY-9): not now. Foil means "has a coat"; revisit after SY-6 ships.
+- The coat's foil shows in battle too, not only on the maps and in menus.
+- Stamp words: the placeholders (RETRIEVED, VOID, DENIED, PENDING, FILED), editable later in factions.json.
+
 ## What the game has (checked in the code, 2026-10-27; verify)
 
 ### The Bureau
@@ -112,8 +118,8 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
   - Builds on UI-16a's tick-up and UI-16b's pops; runs after them, or lands its sizes in their component if they come
     later.
 - **SY-3** the Bureau's mark, as data and kit:
-  - The emblem: three options drawn as SVG in the Studio's icon editor for the owner to pick (recommended: a bean on a
-    lost-property tag, with a string hole).
+  - The emblem: a bean on a lost-property tag, with a string hole (the owner's pick), drawn as SVG in the Studio's
+    icon editor.
   - `bureau.look` in factions.json (schema, types, data check): `emblem`, `stamps` (the words: RETRIEVED, DENIED,
     PENDING, FILED, VOID; the owner's to edit), `forms` (form numbers for events: "Form 7B", ...).
   - `pb-stamp`: a word in a rough red border, slammed on at a small slant with UI-16b's stamp motion, a thunk (a
@@ -167,13 +173,11 @@ Each session: lint, type-check, unit tests and the smoke check after each change
 - Satire that tips into noise: one stamp per event, the Bureau's style only where the Bureau is.
 
 ## Ask me before
-1. The emblem (SY-3 draws three; you pick or repaint).
-2. The stamp words and the form numbers (placeholders until you edit them).
+1. A different emblem than the bean on a tag (answered 2026-10-27).
+2. Form numbers (the stamp words are answered: the placeholders).
 3. The Notice of Retrieval, if it can't fit inside the join intro's time.
-4. Laminated (SY-9): a rare finish on top of coats. Recommended: no for now; the coat's foil gives every coat a sheen
-   and keeps foil meaning "has a coat". If yes: how it is given (an event, a prize), and whether it ever rolls at
-   random (you dropped Golden).
-5. Foil in battle as well as on the maps (recommended: yes, as coats already show in battle).
+4. Reopening Laminated (SY-9; answered "not now" 2026-10-27).
+5. Turning the foil off in battle (answered: it shows in battle).
 6. Any change that makes a battle or an event longer.
 
 ## Sources
