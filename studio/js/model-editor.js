@@ -13,6 +13,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { artImage } from '../../game/js/walk-view.js';
 import { PROP_MODEL_TEXTURES, invalidatePropModel, loadPropModelRecipe } from '../../game/js/prop-models.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { voxParse, voxRawLayer } from '../../game/js/logic/model-vox.js';
 import {
   ACTIONS,
   ask,
@@ -406,64 +407,23 @@ ACTIONS.vxeImgPick = async d => {
   modelChanged(M);
   render();
 };
-/* MagicaVoxel import: SIZE + XYZI + RGBA chunks of the first model; the voxels become one raw layer, centred on the base point */
+/* MagicaVoxel import: SIZE + XYZI + RGBA chunks of the first model (logic/model-vox.js voxParse); the voxels become one
+   raw layer, centred on the base point */
 ACTIONS.vxeImport = async () => {
   const M = editedProp();
   if (!M) return;
   const f = await pickFile('.vox');
   if (!f) return;
-  const buf = new Uint8Array(await f.arrayBuffer()),
-    dv = new DataView(buf.buffer);
-  if (String.fromCharCode(...buf.slice(0, 4)) !== 'VOX ') return toast('That is not a .vox file.', 'err');
-  let i = 8,
-    size = null,
-    xyzi = null,
-    pal = null;
-  while (i + 12 <= buf.length) {
-    const tag = String.fromCharCode(...buf.slice(i, i + 4)),
-      n = dv.getInt32(i + 4, true),
-      body = i + 12;
-    if (tag === 'SIZE' && !size)
-      size = [dv.getInt32(body, true), dv.getInt32(body + 4, true), dv.getInt32(body + 8, true)];
-    else if (tag === 'XYZI' && !xyzi) {
-      const cnt = dv.getInt32(body, true);
-      xyzi = [];
-      for (let j = 0; j < cnt; j++)
-        xyzi.push([buf[body + 4 + j * 4], buf[body + 5 + j * 4], buf[body + 6 + j * 4], buf[body + 7 + j * 4]]);
-    } else if (tag === 'RGBA') {
-      pal = [];
-      for (let j = 0; j < 256; j++) pal.push([buf[body + j * 4], buf[body + j * 4 + 1], buf[body + j * 4 + 2]]);
-    }
-    i = body + n;
+  let V;
+  try {
+    V = voxParse(new Uint8Array(await f.arrayBuffer()));
+  } catch (e) {
+    return toast(e.message, 'err');
   }
-  if (!xyzi) return toast('No voxels found in that file.', 'err');
-  if (!pal) {
-    pal = [];
-    for (let j = 0; j < 256; j++) pal.push([200, 200, 200]);
-  }
-  const cx = Math.round((size ? size[0] : 0) / 2),
-    cy = Math.round((size ? size[1] : 0) / 2);
-  let s = '';
-  for (const [x, y, z, c] of xyzi) {
-    const col = pal[c - 1] || [200, 200, 200];
-    s += String.fromCharCode(x, y, z, col[0], col[1], col[2]);
-  }
+  const { size, voxels: xyzi } = V;
   const rec =
     M.model && typeof M.model === 'object' ? M.model : ownModelRecipe(M) || (M.model = { vpm: 32, layers: [] });
-  rec.layers.push({
-    k: 'raw',
-    name: f.name.replace(/\.vox$/i, ''),
-    src: f.name,
-    n: xyzi.length,
-    vpm: 32,
-    x: 0,
-    y: 0,
-    z: 0,
-    ox: -cx,
-    oy: -cy,
-    oz: 0,
-    data: btoa(s),
-  });
+  rec.layers.push(voxRawLayer(V, f.name));
   modelEditor.sel = rec.layers.length - 1;
   modelChanged(M);
   render();
