@@ -161,6 +161,7 @@ export function ambienceDrift(D, r) {
 export const AMBIENCE_BEDS = {
   /* crickets: two high tones chopped fast and gated in slow pulses (oscillators in sound.js until re-voiced) */
   crickets: { bus: 'amb', trim: 1, layers: [] },
+  /* leaves: a soft rustle that comes and goes in gusts */
   leaves: {
     bus: 'amb',
     trim: 1,
@@ -169,10 +170,11 @@ export const AMBIENCE_BEDS = {
         noise: 'pink',
         gain: 1,
         filters: [
-          ['bandpass', 3200, 0.5],
-          ['highpass', 1200],
+          ['bandpass', 2400, 0.5],
+          ['highpass', 800],
+          ['highshelf', 5000, 0.7, -9],
         ],
-        drift: [{ on: 'gain', base: 1, depth: 0.6, min: 2, max: 6, tau: 1.2 }],
+        drift: [{ on: 'gain', base: 0.7, depth: 0.6, min: 1, max: 4, tau: 0.7 }],
       },
     ],
   },
