@@ -43,6 +43,7 @@ import {
   spliceWords,
   stat,
 } from './logic/rules.js';
+import { rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -54,6 +55,7 @@ expose({
   bankLog: [() => bankLog, v => (bankLog = v)],
   bankPickNow: [() => bankPickNow, v => (bankPickNow = v)],
   bankPreviewHTML: [() => bankPreviewHTML, v => (bankPreviewHTML = v)],
+  bankTier: [() => bankTier, v => (bankTier = v)],
   geneBankDo: [() => geneBankDo, v => (geneBankDo = v)],
   geneBankLevelled: [() => geneBankLevelled, v => ((geneBankLevelled = v), provide({ geneBankLevelled }))],
   geneBankOpen: [() => geneBankOpen, v => ((geneBankOpen = v), provide({ geneBankOpen }))],
@@ -89,6 +91,12 @@ function bankGeneLine(D, m, slot, id) {
     .filter(Boolean)
     .join(' · ');
 }
+/** UI-14b: a Gene's tier: its trait's (genes.json traits' rarity), and a row's attribute for it @param {any} D
+ * @param {string} slot @param {string} id */
+function bankTier(D, slot, id) {
+  const g = geneOf(D, slot, id);
+  return (g && g.trait && GENES.traits[g.trait] && GENES.traits[g.trait].rarity) || '';
+}
 /** the picked Gene's preview: the Billie drawn with it, its weight and stats before and after, its traits, types,
  * move, and Stability against the Bank's limit @param {any} D @param {any} s @param {any} m @param {string} slot
  * @param {string} id */
@@ -116,7 +124,7 @@ function bankPreviewHTML(D, s, m, slot, id) {
       : st.unstable
         ? `Stability ${st.cost} of ${st.limit}: past the limit, so it turns Unstable (one stat ×${GENES.unstable.up}, one ×${GENES.unstable.down}, ${GENES.unstable.d.replace(/\.$/, '').toLowerCase()})`
         : `Stability ${st.cost} of ${st.limit}`;
-  return `<div class="bx k-card ranch-card gene-preview"><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b>${escapeHtml(geneWords(D, slot, id))}</b><span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(types.join(' / '))}</span><span class="bx-sub">${traits.length ? `Traits: ${traits.map(t => `<b>${escapeHtml(GENES.traits[t].name)}</b> (${escapeHtml(GENES.traits[t].d)})`).join(', ')}` : 'No trait'}</span>${move ? `<span class="bx-sub">Teaches ${escapeHtml(move.name)}</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-g="splice"${why ? ' disabled' : ''}>Splice · ${price} DNA</button></div>${why && why !== 'same' ? `<p class="note">${BANK_WHY[why]}.</p>` : ''}`;
+  return `<div class="bx k-card ranch-card gene-preview rar-row"${rarityRowAttr(bankTier(D, slot, id))}><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b class="rar-name">${escapeHtml(geneWords(D, slot, id))}</b>${rarityPillHTML(bankTier(D, slot, id))}<span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(types.join(' / '))}</span><span class="bx-sub">${traits.length ? `Traits: ${traits.map(t => `<b>${escapeHtml(GENES.traits[t].name)}</b> (${escapeHtml(GENES.traits[t].d)})`).join(', ')}` : 'No trait'}</span>${move ? `<span class="bx-sub">Teaches ${escapeHtml(move.name)}</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-g="splice"${why ? ' disabled' : ''}>Splice · ${price} DNA</button></div>${why && why !== 'same' ? `<p class="note">${BANK_WHY[why]}.</p>` : ''}`;
 }
 /** the picked Billie's part of the sheet @param {any} D @param {any} s @param {any} m */
 function bankBillieHTML(D, s, m) {
@@ -137,14 +145,14 @@ function bankBillieHTML(D, s, m) {
       .join(''),
     now = P.slot && g[P.slot],
     worn = now
-      ? `<div class="bx k-card ranch-card"><div class="bx-main"><b>Now: ${escapeHtml(geneWords(D, P.slot, now))}</b><span class="bx-sub">${escapeHtml(bankGeneLine(D, m, P.slot, now)) || 'Its trait'}</span></div><button class="qk k-btn" data-g="off">Take off · free</button></div>`
+      ? `<div class="bx k-card ranch-card rar-row"${rarityRowAttr(bankTier(D, P.slot, now))}><div class="bx-main"><b>Now: <span class="rar-name">${escapeHtml(geneWords(D, P.slot, now))}</span></b>${rarityPillHTML(bankTier(D, P.slot, now))}<span class="bx-sub">${escapeHtml(bankGeneLine(D, m, P.slot, now)) || 'Its trait'}</span></div><button class="qk k-btn" data-g="off">Take off · free</button></div>`
       : '',
     list = P.slot ? bankGenes(D, s, m, P.slot).filter(id => id !== now) : [];
   if (P.gene && !list.includes(P.gene)) P.gene = '';
   const rows = list
       .map(
         id =>
-          `<button class="pickrow${P.gene === id ? ' on' : ''}" data-g="gene" data-k="${escapeHtml(id)}"><span class="pr-t"><b>${escapeHtml(geneWords(D, P.slot, id))}</b><small>${escapeHtml(bankGeneLine(D, m, P.slot, id))}</small></span><span class="pr-n tnum">${bankPrice(D, m.sp, P.slot, id)} DNA</span></button>`
+          `<button class="pickrow rar-row${P.gene === id ? ' on' : ''}"${rarityRowAttr(bankTier(D, P.slot, id))} data-g="gene" data-k="${escapeHtml(id)}"><span class="pr-t"><b class="rar-name">${escapeHtml(geneWords(D, P.slot, id))}</b><small>${escapeHtml(bankGeneLine(D, m, P.slot, id))}</small></span><span class="pr-n tnum">${bankPrice(D, m.sp, P.slot, id)} DNA</span></button>`
       )
       .join(''),
     shutNote =
