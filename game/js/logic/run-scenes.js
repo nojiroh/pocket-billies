@@ -265,8 +265,9 @@ export function runSceneParams(run, i, scenes, data) {
     ...(layout ? { layout } : {}),
     /* RT-3: and its set pieces (setPieces.json perPlace) */
     ...(pieces ? { pieces } : {}),
-    /* WM-7: a mini-boss's ring on the road and the boss's arena (logic/arena-gen.js) */
-    ...(arena ? { arena } : {}),
+    /* WM-7: a mini-boss's ring on the road and the boss's arena (logic/arena-gen.js); WM-3: which of its exits lead
+       on (`on`, by their order here), so the barrier stands between them and the ways in */
+    ...(arena ? { arena: { ...arena, on: exits.flatMap((e, k) => (node.to.includes(e.node) ? [k] : [])) } } : {}),
     /* RL-14: a scrapyard's set pieces lean to its own (setPieces.json sites) */
     ...(node.type === 'scrapyard' ? { site: 'scrapyard' } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */

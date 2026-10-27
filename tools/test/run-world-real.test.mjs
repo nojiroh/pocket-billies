@@ -232,7 +232,8 @@ test("WM-7: a mini-boss's place has a leader's ring of its leader's type, gated 
     assert.ok(gates.length >= 1, `${where}: a gate`);
     for (const p of gates) assert.equal(p.unless, `beat:${foe.id}`, where);
     /* shut, the way on is not reached from the hub; open (beaten), it is */
-    assert.ok(mapgenUnreachable(sc, scenery).includes('east'), `${where}: shut`);
+    /* WM-3: the way on is the scene's second exit, on any side (runSceneExits) */
+    assert.ok(mapgenUnreachable(sc, scenery).includes(sc.edgeExits[1].id), `${where}: shut`);
     const open = { ...sc, props: sc.props.filter((/** @type {any} */ p) => p.act !== 'arenagate') };
     assert.deepEqual(mapgenUnreachable(open, scenery), [], `${where}: open`);
   });
