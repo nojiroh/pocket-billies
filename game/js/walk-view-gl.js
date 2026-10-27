@@ -800,6 +800,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       X,
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
+      /* air track AIR-4: shade in the near haze, outdoors and not in battles (they keep fogit as it is) */
+      hazeShade: BT || sc.indoor ? 0 : (engineSetting('air', 'hazeShade') ?? 0),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
       airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
       fog: fogOn

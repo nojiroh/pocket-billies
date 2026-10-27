@@ -172,6 +172,8 @@ export const ENGINE_DEFAULTS = {
        how much lamps glow in it at night */
     fogVolume: 1,
     fogLamps: 1,
+    /* air track AIR-4: the near haze (to 40 m) darker where it lies in the sun's shadow, from the light-in-air march */
+    hazeShade: 0.5,
     /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
     cheapShafts: 0,
     /* smart light shafts: the cheap shafts placed where shade lies behind them, looking into the light, apart and never
@@ -856,6 +858,14 @@ export const ENGINE_SPEC = [
         'The low fog as a lit volume: banks in hollows, sun shafts and shade in it (AIR-3). 0: the flat mist as before.',
       ],
       ['fogLamps', 'Lamps in the fog', 0, 2, 0.05, 'How much lamps and fires glow in the low fog at night (AIR-3).'],
+      [
+        'hazeShade',
+        'Shade in the haze',
+        0,
+        2,
+        0.05,
+        'The near haze darker where it lies in the shadow of trees and houses (AIR-4). Needs shadows; 0: the haze as before.',
+      ],
       [
         'cheapShafts',
         'Cheap light shafts',
@@ -1714,6 +1724,7 @@ export const PLAIN_LOOK = {
     lightsInAir: 0,
     fogVolume: 0,
     fogLamps: 0,
+    hazeShade: 0,
     hazeDistance: 900,
   },
 };
