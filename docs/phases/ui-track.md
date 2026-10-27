@@ -689,6 +689,36 @@ its PR goes to main, as UI-10's did (a PR into `track/ui` would carry main's 220
 - **Tests:** unit tests for the data, the sheet, the fallback, the checks (a planted clash fails); the Studio check's
   `ui` step changes a fill and sees it in the preview, plants a clash for the Check, then undoes.
 
+## UI-12: the palettes (the plan, 2026-10-27)
+Built on the session's own branch `claude/ui-12-palettes`, from UI-11's (`ccr-dab4e0cd-6re1eb`, PR #280 not merged
+yet); its PR goes to main and carries UI-11's commits until #280 merges. No Plan Mode, no browser checks (the
+owner's rules above).
+- **Field Guide is `defaults`:** every role of the table above, light and dark; `line` the text at 18% (light) and
+  white at 14% (dark); `danger` and the HP colours left out, so they come from the colour code (`paletteFor`: danger
+  and hpLow from bad, hpMid from caution, hpOk from good; each side's text shade, as the table says for bars on light
+  and dark screens). `defaults.name` "Field Guide".
+- **Presets:** `copper_grove` (Copper Grove+) and `bureau_night` with `player: true` (a new look field: offered in
+  Settings); `brass_plum` and `sunpunk_day` for the Studio only. Each sets every role but danger and HP. alpha05 and
+  stepped stay.
+- **Settings:** a Palette row at the top of the Display tab (Field Guide, Copper Grove+, Bureau Night, read from the
+  data); `preferences.palette` (a preset id; none is the defaults); `applyPreferences` re-applies the theme sheet with
+  it (theme-sheet.js `setUiPalette`), and so do the Studio's live draft and the fixtures. The debug log's state gets
+  `palette` and the resolved `side` (light or dark), never save data.
+- **The minimap's ground per palette:** two new optional roles, `mapGrass` and `mapWater` (UI_ROLES, the schema,
+  tokens.css's fallback, a Studio dial), which minimap.js mixes into the surface instead of primary and the HP teal;
+  without them it falls back as today. Bureau Night's cyan primary would otherwise paint blue grass.
+- **The literals:** the alpha 0.5 purple `rgba(46, 33, 64, a)` shadows and tints become `--c-shadow` mixes; dark text
+  on gold (`#2e2140`) becomes a new `--c-ink` (the dark side's ground, the colour code's "dark text"); `.pb.dark`'s
+  purple gradient becomes ink. The three XP blues become the Growth family: `--sig-growth-text` on the theme's
+  screens, `--sig-growth` on the always-dark battle plate.
+- **Reduced transparency:** `prefers-reduced-transparency: reduce` makes the glass solid and drops its blur, as High
+  contrast does (base.css).
+- **Checks:** a preset with `player: true` is checked in full, like the defaults (contrast and the colour code on
+  ground and surface, dark text on fills); the Studio-only presets as before. Unit tests for the data, the fallbacks,
+  the Settings row and the preference.
+- **Skipped for now (the owner's rule):** the gallery and quick-check pictures, the smoke step that opens the three
+  palettes, the phone check. Listed in HANDOFF for the session after UI-18.
+
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
   39), and edits this file, ROADMAP, BRANCHES and HANDOFF; whichever of the two PRs merges second takes a small merge.
