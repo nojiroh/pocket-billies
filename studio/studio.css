@@ -5479,3 +5479,42 @@ body.wb-dropping::after {
   color: #b23a24;
   font-size: 13px;
 }
+/* SA-2b: scene art previews (scene-art-preview.js) */
+.sp-scene {
+  margin: 8px 0;
+}
+.sp-wall {
+  width: 100%;
+  max-width: 384px;
+  aspect-ratio: 3 / 2;
+}
+.sp-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.sp-rooms figure {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+.sp-rooms figcaption {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+.sp-room {
+  width: 100%;
+}
+.sp-flag {
+  width: 320px;
+  max-width: 100%;
+  background: linear-gradient(#9ccbe9, #e3eef1);
+}
+.sp-stamp {
+  width: 48px;
+  height: 32px;
+}
+.sp-far {
+  width: 100%;
+}

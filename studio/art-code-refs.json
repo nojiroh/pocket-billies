@@ -1734,6 +1734,8 @@
    "game/js/walk-view-gl.js:670"
   ],
   "brick": [
+   "game/js/logic/wall-ramp.js:40",
+   "game/js/logic/wall-ramp.js:53",
    "game/js/prop-models.js:203",
    "game/js/structures.js:7"
   ],

@@ -9,7 +9,15 @@
    Studio's undo), Replace, Download and Open in its editor. Ctrl K finds art files (find.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { atlasOverlay, iconReplace, provide, tileSetOpen } from '../../game/js/hooks.js';
+import {
+  atlasOverlay,
+  iconReplace,
+  mountScenePreviews,
+  provide,
+  scenePreviewHTML,
+  scenePreviewOverlay,
+  tileSetOpen,
+} from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { artURL } from '../../game/js/art.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
@@ -412,7 +420,7 @@ function detailHTML(path, ix) {
         : '';
   const pal = artBrowser.pal && artBrowser.pal.path === path ? artBrowser.pal.text : '';
   return `<div class="ab-big"><img src="${escapeHtml(thumbSrc(path))}" alt=""></div>
-  ${strip ? stripPlayerHTML(path, strip) : ''}
+  ${strip ? stripPlayerHTML(path, strip) : ''}${scenePreviewHTML(path)}
   <p class="mono ab-path">${escapeHtml(path)}</p>
   <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
   ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}
@@ -510,6 +518,7 @@ function mountArtBrowser() {
   if (artBrowser.edit) mountArtPixels();
   else artDetailNotes(artBrowser.sel);
   mountStripPlayers();
+  mountScenePreviews();
 }
 /* a file of game/ is in the repository's tree (the file list keeps pictures only; the tree has every file) */
 let treeFiles = null;
@@ -555,6 +564,7 @@ async function artDetailNotes(path) {
     if (side) {
       side.innerHTML = detailHTML(path, artBrowser.ix);
       mountStripPlayers(side);
+      mountScenePreviews(side);
     }
   }
 }
@@ -647,7 +657,7 @@ function editCardHTML() {
   return card(
     `Edit pixels: ${escapeHtml(p.split('/').pop())}`,
     `<div class="sc-pe" id="abPe"><div class="sc-pe-bar">${pixelCanvasToolsHTML()}<span class="colw"><input type="color" id="abPeColor" value="${artBrowser.color}"></span><span class="grow"></span><button class="btn sm primary" data-act="abEditDone">${artBrowser.from ? 'Done, back to ' + escapeHtml(artBrowser.from.label) : 'Done'}</button></div>
-  <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${strip ? stripPlayerHTML(p, strip) : ''}${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p>${artMadeByHTML(p)}<p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
+  <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${strip ? stripPlayerHTML(p, strip) : ''}${scenePreviewHTML(p)}${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p>${artMadeByHTML(p)}<p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
   );
 }
 ACTIONS.abEdit = async d => {
@@ -695,7 +705,7 @@ export async function artPaint(path, back = null) {
 }
 /** SA-2a: a picture's src for an <img>: the unsaved canvas when it has been edited, else the game's file
  * @param {string} rel a path under game/art (robots/vane.png) */
-const artPicSrc = rel => (studioState.artDirty.has('art/' + rel) ? thumbSrc('art/' + rel) : artURL(rel));
+export const artPicSrc = rel => (studioState.artDirty.has('art/' + rel) ? thumbSrc('art/' + rel) : artURL(rel));
 provide({ artPicSrc }); /* to-module */
 function mountArtPixels() {
   const st = $('#abPeStage');
@@ -704,8 +714,8 @@ function mountArtPixels() {
   const P = pixelCanvas(st, {
     get: () => loadedAtlas(path),
     path: () => path,
-    /* SA-2b: the icon atlas's rectangles over its sheet */
-    overlay: path === 'art/icons/icons.png' ? () => atlasOverlay() : undefined,
+    /* SA-2b: the icon atlas's rectangles over its sheet; a cell sheet's cells (scene-art-preview.js) */
+    overlay: () => (path === 'art/icons/icons.png' ? atlasOverlay() : scenePreviewOverlay(path)),
     tool: artBrowser.tool,
     color: artBrowser.color,
     changed: () => markArt(path, loadedAtlas(path)),
