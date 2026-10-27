@@ -29,6 +29,10 @@ docs/phases/ui-track.md, "UI-8b as built".
 - Risky: the minimap canvas is 2.8 times today's pixels standing (drawn 5 times a second), unmeasured on a phone; at
   320 px the tile rises only 13 px; `cqw` on the host and `max()`/`min()` in custom properties need a 2023+ browser
   (Safari 16, Chrome 105).
+- Decided for the owner, to review: the bar 128 px tall (a 4 px gap under the tile, as before); the marks sized
+  from the tile's shorter side (same size in metres, so 1.53x on screen standing); `--nav-h` keeps its 26 px gap over
+  the bar; a narrow phone's side column floor 60 px; the gallery's loading pictures left as main's (they differ run
+  to run on main too).
 - Next: the owner's phone check (size, compact timing, the marks at 232 px, frame cost); then UI-11 (the colour code
   as data) on `track/ui`.
 - Tag to suggest (sessions can't push tags): `ui-8b-done` on this entry's commit.
