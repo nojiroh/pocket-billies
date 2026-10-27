@@ -252,8 +252,9 @@ void main(){float zq=volZ(uZ,ivec2(gl_FragCoord.xy),uF),d0=zq>=uF*.9995?1.:((uF+
  float pk=(ph*.6+.55)*uDens*step(d0,.9999)*(1.-smoothstep(26.,46.,length(ray)));/* not in the sky, and fading out with distance: the beams are a near thing */
  vec3 sr=uSunCol*min(sun.x*pk*.4,1.2)*uK+lamps*uLK*.18;float sa=clamp((sun.y-sun.x)*pk*1.1*uK*mix(1.,min(1.,dot(uSunCol,vec3(.3,.59,.11))*1.25),uFollow),0.,.6);
  /* AIR-3: the fog in front, premultiplied (the grade pass does c*(1-a)+rgb); T is 1 without fog, the old output */
- /* AIR-4: the haze in shade darkens what is behind the fog (at most .35) */
- float ah=hz?min(.35,hsh*uHS):0.;
+ /* AIR-4: the haze in shade darkens what is behind the fog (x3: the walk camera's near haze is thin, so at x1 it
+    hardly showed in the low-sun pictures; at most .35) */
+ float ah=hz?min(.35,hsh*uHS*3.):0.;
  o=vec4(sr*T+fc,1.-(1.-sa)*(1.-ah)*T);}`,
   ],
   grade: [

@@ -81,7 +81,7 @@ test('the shaders: the air reads the shrunk depth and the blue noise, blurs and 
   assert.doesNotMatch(post, /float j=lhash\(/, 'no hash jitter');
   assert.match(post, /texelFetch\(uBN,ivec2\(gl_FragCoord\.xy\)&63,0\)/);
   assert.match(post, /vec4 va=volUp\(\);/);
-  assert.match(post, /float ah=hz\?min\(\.35,hsh\*uHS\):0\.;/, 'the haze in shade, at most .35');
+  assert.match(post, /float ah=hz\?min\(\.35,hsh\*uHS\*3\.\):0\.;/, 'the haze in shade, at most .35');
   assert.match(post, /1\.-\(1\.-sa\)\*\(1\.-ah\)\*T/);
   assert.match(gl, /gl\.R8, 64, 64, 0, gl\.RED, gl\.UNSIGNED_BYTE, blueNoiseTable\(\)/);
   /* VOLZ_GLSL is the twin's unpack */
