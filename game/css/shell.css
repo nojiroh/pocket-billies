@@ -40,17 +40,17 @@
   font-size: 15.5px;
 }
 .sheet .body p + p {
-  margin-top: 8px;
+  margin-top: var(--s2);
 }
 .sheet .btns {
   display: grid;
-  gap: 4px;
-  margin-top: 16px;
+  gap: var(--s1);
+  margin-top: var(--s4);
 }
 .sheet-art {
   display: flex;
   justify-content: center;
-  margin: 0 auto 8px;
+  margin: 0 auto var(--s2);
   position: relative;
 }
 .sheet-art::before {
@@ -65,7 +65,7 @@
   z-index: -1;
 }
 .sheet .row .lv {
-  margin-left: 8px;
+  margin-left: var(--s2);
 }
 .toast {
   position: fixed;
@@ -73,7 +73,7 @@
   top: calc(12px + env(safe-area-inset-top, 0px));
   transform: translateX(-50%);
   z-index: 40;
-  padding: 10px 16px;
+  padding: 10px var(--s4);
   font: 600 14.5px/1.35 var(--font-voice);
   width: max-content;
   max-width: calc(100vw - 32px);
@@ -83,7 +83,7 @@
   background: var(--panel-s);
 }
 .sheet .btns {
-  padding-top: 12px;
+  padding-top: var(--s3);
 }
 /* sticky status bar */
 .topbar {
@@ -92,10 +92,10 @@
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   margin: 0 3px 6px;
-  padding: 6px 6px 6px 12px;
-  border-radius: 999px;
+  padding: 6px 6px 6px var(--s3);
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--panel-s) 78%, transparent);
   box-shadow:
     0 0 0 2px var(--line),
@@ -115,7 +115,7 @@
   align-items: center;
   gap: 5px;
   padding: 5px 9px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--panel2);
   font: 400 14px/1 var(--font-voice);
 }
@@ -159,7 +159,7 @@
   height: 5px;
   border-radius: 3px;
   background: var(--lo);
-  margin: -8px auto 12px;
+  margin: -8px auto var(--s3);
 }
 @media (min-width: 700px) {
   .scrim {
@@ -170,7 +170,7 @@
   }
 }
 .toast {
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--panel-s) 84%, transparent);
   -webkit-backdrop-filter: var(--blur-chip, blur(12px));
   backdrop-filter: var(--blur-chip, blur(12px));
@@ -193,7 +193,7 @@
 .tb-where {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
 }
 .tb-where::before {
   content: '';
@@ -255,24 +255,7 @@ body:has(.topbar) .toast {
 .scrim {
   background: radial-gradient(140% 95% at 50% 105%, var(--scrim), color-mix(in srgb, var(--scrim) 50%, transparent));
 }
-.sheet.px {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 25%) 0, var(--panel-s) 90px), var(--panel-s);
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 4px 0 var(--gold),
-    inset 0 6px 0 color-mix(in srgb, var(--gold) 30%, transparent),
-    0 -10px 40px -14px rgba(0, 0, 0, 0.45);
-}
-:root[data-theme='dark'] .sheet.px {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 5%) 0, var(--panel-s) 90px), var(--panel-s);
-}
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .sheet.px {
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 5%) 0, var(--panel-s) 90px), var(--panel-s);
-  }
 }
 .sheet::before {
   background: color-mix(in srgb, var(--line) 30%, transparent);
@@ -285,7 +268,7 @@ body:has(.topbar) .toast {
       transparent 6px 12px
     )
     top/100% 2px no-repeat;
-  padding-top: 16px;
+  padding-top: var(--s4);
 }
 @media (prefers-reduced-motion: no-preference) {
   .tb-chip[title='Money'] .pxi {
@@ -309,7 +292,7 @@ body:has(.topbar) .toast {
   }
   /* toasts and modals */
   .toast {
-    animation: nwToast 0.42s var(--spring);
+    animation: nwToast var(--m-slow) var(--spring);
   }
   .toast::before {
     animation: nwFlip 0.5s ease-out 0.12s backwards;
@@ -318,7 +301,7 @@ body:has(.topbar) .toast {
     animation: fade 0.22s ease-out;
   }
   .scrim:not(.still) .sheet {
-    animation: nwSheet 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.05);
+    animation: nwSheet var(--m-slow) cubic-bezier(0.2, 0.9, 0.3, 1.05);
   }
   .scrim:not(.still) .sheet > :is(h2, .body, .btns) {
     animation: nwFadeUp 0.34s var(--out) backwards;
@@ -330,7 +313,7 @@ body:has(.topbar) .toast {
     animation-delay: 100ms;
   }
   .scrim:not(.still) .sheet > .btns {
-    animation-delay: 140ms;
+    animation-delay: var(--m-fast);
   }
   .scrim:not(.still) .sheet > h2::before {
     animation: nwSpark 0.45s var(--spring) 0.18s backwards;
@@ -347,7 +330,7 @@ body:has(.topbar) .toast {
 /* ---------- UI-5: from screens.css, as it was ---------- */
 /* page titles get their own glass plate when the scene shows behind them */
 body.on-scene .screen > .bar > div:first-child:has(> .where) {
-  padding: 10px 16px 12px;
+  padding: 10px var(--s4) var(--s3);
   border-radius: 14px;
   background: color-mix(in srgb, var(--panel-s) 88%, transparent);
   box-shadow:
@@ -365,7 +348,7 @@ body.on-scene .screen > .bar .where {
 }
 /* loose notes on scene screens (Field Guide) sit on a small glass strip */
 body.on-scene .screen > p.note {
-  padding: 6px 12px;
+  padding: 6px var(--s3);
   border-radius: 10px;
   background: color-mix(in srgb, var(--panel-s) 88%, transparent);
   box-shadow: 0 0 0 2px var(--line);
@@ -374,7 +357,7 @@ body.on-scene .screen > p.note {
 button.tb-where {
   border: 0;
   background: none;
-  padding: 4px 6px;
+  padding: var(--s1) 6px;
   margin: -4px 0 -4px -6px;
   border-radius: 8px;
   cursor: pointer;
@@ -418,7 +401,7 @@ button.tb-where.shut {
 }
 /* ---------- top bar: place · your portrait · money and settings ---------- */
 .topbar {
-  padding: 6px 8px 6px 12px !important;
+  padding: 6px var(--s2) 6px var(--s3) !important;
   min-height: 56px;
   position: sticky;
 }

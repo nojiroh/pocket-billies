@@ -12,7 +12,7 @@
 .pipe {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   margin-top: 10px;
   flex-wrap: wrap;
 }
@@ -143,10 +143,10 @@
 /* encounters */
 .queue {
   display: flex;
-  gap: 12px;
+  gap: var(--s3);
   overflow-x: auto;
-  padding: 10px 18px 16px;
-  margin: 4px -16px 0;
+  padding: 10px 18px var(--s4);
+  margin: var(--s1) -16px 0;
   scroll-snap-type: x mandatory;
   scroll-padding: 0 18px;
   scrollbar-width: none;
@@ -178,7 +178,7 @@
 }
 .enc canvas.rig {
   align-self: center;
-  margin: 4px 0 0;
+  margin: var(--s1) 0 0;
 }
 .enc b {
   font-family: var(--font-voice);
@@ -209,7 +209,7 @@
   margin-top: 10px;
 }
 .slot {
-  padding: 12px 10px 8px;
+  padding: var(--s3) 10px var(--s2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -249,7 +249,7 @@
   opacity: 0.45;
 }
 .queue {
-  gap: 12px;
+  gap: var(--s3);
 }
 @media (min-width: 960px) {
   .s-walk .cols {
@@ -262,11 +262,11 @@
     display: block;
   }
   .s-walk .col > section:first-child {
-    margin-top: 12px;
+    margin-top: var(--s3);
   }
   .queue {
-    margin: 4px 0 0;
-    padding: 10px 4px 16px;
+    margin: var(--s1) 0 0;
+    padding: 10px var(--s1) var(--s4);
     flex-wrap: wrap;
   }
 }
@@ -308,14 +308,14 @@ body.on-walk .wh-foot > * {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
-  padding: 2px 0 calc(var(--nav-h) - 4px + env(safe-area-inset-bottom, 0px));
+  gap: var(--s3);
+  padding: 2px 0 calc(var(--nav-h) - var(--s1) + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
 }
 .wh-card {
   align-self: flex-start;
   max-width: min(420px, 100%);
-  padding: 10px 14px 12px;
+  padding: 10px 14px var(--s3);
   border-radius: 14px;
   background: color-mix(in srgb, var(--panel-s) 82%, transparent);
   box-shadow:
@@ -330,7 +330,7 @@ body.on-walk .wh-foot > * {
 }
 .wh-card .where {
   font-size: 30px;
-  margin: 2px 0 4px;
+  margin: 2px 0 var(--s1);
 }
 .wh-gate {
   margin: 0;
@@ -341,12 +341,12 @@ body.on-walk .wh-foot > * {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
 }
 .wh-hint {
   margin: 0;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 6px var(--s3);
+  border-radius: var(--r-pill);
   font-size: 13px;
   background: color-mix(in srgb, var(--panel-s) 82%, transparent);
   box-shadow: 0 0 0 2px var(--line);
@@ -355,15 +355,13 @@ body.on-walk .wh-foot > * {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--s2);
   width: 100%;
 }
 .wh-row .pb.small {
   min-height: 38px;
   padding: 0 14px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 2px var(--line);
-  background: color-mix(in srgb, var(--panel-s) 86%, transparent);
+  border-radius: var(--r-pill);
 }
 .wh-down {
   display: flex;
@@ -371,8 +369,8 @@ body.on-walk .wh-foot > * {
   align-items: center;
   gap: 0;
   border: 0;
-  border-radius: 999px;
-  padding: 6px 16px 7px;
+  border-radius: var(--r-pill);
+  padding: 6px var(--s4) 7px;
   font: 400 13px/1 var(--font-voice);
   color: var(--text);
   background: var(--gold);
@@ -504,7 +502,7 @@ html:has(> body.on-walk) {
     padding-bottom: calc(var(--nav-h) - 26px + env(safe-area-inset-bottom, 0px));
   }
   .wh-card {
-    padding: 6px 10px 8px;
+    padding: 6px 10px var(--s2);
   }
   .wh-card .where {
     font-size: 20px;
@@ -520,7 +518,7 @@ html:has(> body.on-walk) {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: var(--s2);
 }
 .wh-acts .pb.small {
   min-height: 34px;
@@ -545,7 +543,7 @@ body.on-walk #dio {
 /* ---------- UI-5: from screens.css, as it was ---------- */
 /* v26: the hour, the weather and the season on the walk card */
 .wh-env {
-  margin: 2px 0 4px;
+  margin: 2px 0 var(--s1);
   font-size: 12px;
   color: var(--text2);
   display: flex;
@@ -562,12 +560,12 @@ body.on-walk #dio {
 /* v31: the compact place card, closable; the place name in the top bar opens it again */
 .wh-card.compact {
   max-width: min(340px, 100%);
-  padding: 8px 12px 10px;
+  padding: var(--s2) var(--s3) 10px;
 }
 .wh-card.compact .wh-top {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
 }
 .wh-card.compact .wh-top .sub {
   flex: 1;
@@ -598,7 +596,7 @@ body.on-walk #dio {
   margin: 0 0 2px;
 }
 .wh-card.compact .wh-env {
-  margin: 0 0 4px;
+  margin: 0 0 var(--s1);
   font-size: 12px;
 }
 .wh-card.compact .wh-env span {
@@ -622,8 +620,8 @@ body.on-walk #dio {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 6px var(--s3);
+  border-radius: var(--r-pill);
   font: 600 13px/1 var(--font-voice);
   color: var(--text2);
   cursor: pointer;

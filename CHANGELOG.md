@@ -40,6 +40,10 @@ kept aside in the browser).
   no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
   hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
   dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
+- **Easier to read and tap** (UI-6): the Field Guide's tabs have a panel behind them, so Lore and Postcards read over
+  the world; in dark mode a chosen option (the Guide's tabs, segmented choices) is no longer white text on white; the
+  Field Guide's arrows, Settings Help's sections, the dressing room's toggles and the title's links are 40 px tap
+  targets, and the settings switches have the small icons' larger tap area.
 - **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
   the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
   landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a

@@ -236,14 +236,16 @@
 .mbtn,
 .swatch,
 .tb-btn,
-.qb {
+.qb,
+.sw {
   position: relative;
 }
 .wh-x::before,
 .mbtn::before,
 .swatch::before,
 .tb-btn::before,
-.qb::before {
+.qb::before,
+.sw::before {
   content: '';
   position: absolute;
   inset: -7px;

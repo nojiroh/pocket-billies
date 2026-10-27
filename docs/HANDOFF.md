@@ -2,6 +2,74 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-9a - parts.css shrunk in place: dead rules, most of its !important, the pill and keyframes out - 2026-10-27
+Branch `ccr-30c007a6-eol40p` (the owner's answer: stay here; UI-6b on it isn't in main yet, PR #230 merged; `track/ui`
+doesn't exist). Main merged in first (CHANGELOG and HANDOFF keep both sides, settings.css's Graphics presets take
+main's three columns with the branch's `var(--s2)`, art-code-refs remade). Plan approved in Plan Mode after a question
+round: UI-9 split (UI-9a parts.css now, UI-9b the snapping), snap rule nearest step with ties up and 1-2 px as
+hairlines, tap targets stay 40 px.
+- **Found first: the move as planned can't keep the screens the same.** parts.css loads 3rd, before all 27 screen
+  files; the kit loads after them. A new tool, `tools/css-order.mjs` (below), counted the fights a move would hand to
+  the other side: all of parts.css at the top of ui-kit.css, 619; per family .px 56, .pb 48, .pbar 73, .seg 44,
+  .mon/.row 63, .chip 0. And nearly every one of the 48 !important really beat a screen rule. The owner chose (second
+  question round): shrink it in place, move what moves cleanly, leave the rest for UI-9b.
+- **Changed (one cause per commit, no change on screen):**
+  - `tools/css-order.mjs`: the page's stylesheets in index.html order at a revision and now; lists each pair of
+    declarations that can meet on one element and set the same property whose winner changed (!important,
+    specificity, order), and each removed declaration nothing still beats (one on its own selector, or an !important
+    on classes alone naming every class of its last compound). Matches declarations by a per-file alignment, then
+    across files. Wary on purpose: a class meets a bare tag only where the code writes it on that tag or sets it
+    unseen. Seen working on planted faults (.pb moved: 16 fights; a live .sec-h declaration removed: flagged; a dead
+    .px one: passes).
+  - parts.css: 70 declarations a later one on the same selector always beat; 14 (in parts, shell, walk-tab,
+    battle-screen) that an !important on `.pb`, `.px`, `.chip` always beat; the `.badge` rules (and team.css's
+    `.badge.bud`): the game's only `.badge` is inside `<pb-nav-bar>`'s shadow tree, so no page CSS reaches it (the
+    unused-CSS tool counts the word in JS and never listed them); guide.css's `.lore-tabs button` font-size (the Lore
+    tabs are always `seg lore-tabs`).
+  - !important dropped where every fight css-order lists can't happen (each checked against the markup, listed in
+    its commit): `.pbar`, `.seg`, `.seg button.on` (11), `.chip`, `.pbar i`, `.sec-h .count` (8), `.pb` and its
+    colours and `.pb.big` (19), `.seg button` (2). parts.css 48 -> 7; the game 194 -> 153.
+  - `v05Grow`'s keyframe emptied: its one declaration was `!important`, which a keyframe ignores, so the Billie
+    sheet's stat bars never grew in (see Ask).
+  - The type pill's `.chip` rules into ui-kit.css beside its glyph (0 fights); parts.css's 24 `@keyframes` into
+    motion.css (no name is defined twice), and three nothing names (nwIdle, nwGlint, v05Card) removed.
+  - The Studio's tap overlay marks under 40 px, the game's rule (the owner's answer); `--tap` (44 px, real controls'
+    size) unchanged.
+- **Left in parts.css for UI-9b (measured on the final tree):** 1,049 lines, 165 rules. 7 !important: `.px` 5 (219
+  fights; `px` is also set from code where the tag isn't seen, and many are real: `.sheet`, `.mapcard`, `.ledger`,
+  `.pickrow.px`... lose their own background and corners to it today), `.pb:active` 1 (real: it beats the pixel
+  button's hover and press transforms) and `.spr img`'s reduced-motion `animation: none` 1 (real: it stops
+  `.spr.slow/.fast img`; it should stay). Moving the rest now: .px 25 fights, .pb 47, .sheet/.pickrow 21, .pbar 70,
+  .seg 28, .sec-h 9, .note 19, .mon/.spr/.row 41. The way through is the one used here, per family: remove what an
+  !important or a later rule always beats, then move. UI-9b's per-screen commits touch those screen rules anyway.
+- **ui-lint (start -> end):** !important 194 -> 153, keyframes outside motion.css 77 -> 53, radius 103 -> 99,
+  space 626 -> 616, shadows 178 -> 161, times 255 -> 249, CSS colours 667 -> 650; the rest unchanged.
+- **Verified:** the fast tier at every commit (lint with the ratchet, typecheck, unit tests, modules, format). css-order
+  at every CSS commit (its findings judged in each message). style-diff `--workers=1` over every CSS commit, in four
+  runs against the commit before each batch: the views the full runs called different (guide, settings-graphics,
+  -save, -help, sheet-build, heal-pick, bag) matched when run again alone; map (the fade layer), title (the live
+  class), the battle views and dressing (the canvases' aspect-ratio) differ by timing, as on the clean tree at the
+  start (28 of 36 the same there). Smoke 6 of 6 after the first removal. The UI gallery at the end against a run on
+  066f970e (this session's start): all 132 pictures pixel-identical (both differ from the committed baseline in the
+  same 38, UI-8's bar and this container, so the baseline was not remade). check-studio-github `--only=ui_tools`: the
+  overlay steps pass with the 40 px note; its one problem (a rule over its ceiling shows as a warning in the Check, the
+  step wants an error) is the same on 066f970e, not this session's. The unused-CSS list stays empty.
+  Full quick check: 37 of 40; the 3 reds are the known ones (Terraces' `sky_portal`, RL-8's shop with no Perk, room
+  light); "Running" passed this time.
+- **Where the plan was wrong:** "move into the kit and delete parts.css" assumed a move is cheap; it isn't while the
+  screen files sit between the two (above). The unused-CSS list was already empty, so the Ask-me-before on deleting a
+  file didn't apply (parts.css isn't deleted anyway).
+- **Risky:** the !important drops rest on markup readings (which classes sit together, which containers hold what);
+  a screen built later that puts a `.pb` in a `.seg`, or a type pill in `.ws-stats`, would now be styled by the
+  screen's rule. style-diff covers 36 views, not the opening, the joystick or photo mode (none of them use the parts
+  touched here).
+- **Ask me (owner):** the Billie sheet's stat bars were meant to grow in (v05Grow) and never did: switch it on?
+- **Phone check wanted:** nothing should look different: Team and the Billie sheet, a shop, Settings, a battle, the
+  Field Guide's tabs, the title, in light and dark.
+- **Tags to push (sessions can't):** `ui-9a-done` on this entry's commit.
+- **Next:** UI-9b: the families above out of parts.css the same way, and the off-scale values snapped one screen per
+  commit (nearest step, ties up, 1-2 px kept as hairlines), with a phone check.
+
 ### Studio art track SA-4 - navigation - 2026-10-27
 Branch `track/studio-art`. The container's HEAD was detached at origin's tip and the local branch was 195 commits behind
 with 6 stale SA-1 commits (their work is on origin under other hashes): the branch was checked out again from origin.
@@ -845,6 +913,62 @@ Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't
   passed in 195 s. Tags `vfx-0-done` (e437c6f4) and `vfx-1-done` for the owner: the session's git proxy
   refuses tag pushes.
 - Next: VFX-2 (the motion-line ribbon with the white core) on `track/vfx`.
+### UI track UI-6 (UI-6a written up, UI-6b) - Old layers gone: lint down, the blur budget, accessibility - 2026-10-26
+Branch `ccr-30c007a6-eol40p` (the owner's answer: work here, so it rides PR #230 with UI-8; `track/ui` doesn't exist).
+Main merged in first (#219, #224, #225, #226; HANDOFF and CHANGELOG entries placed on both sides kept once), then the
+branch's own new commits (another session's main merge, Bingebat's cry). Plan approved in Plan Mode with my
+recommendations: swaps that change nothing on screen only, blur frozen per screen at today's count, accessibility fixed
+now, main merged first.
+- **Found first: half of UI-6 was done.** UI-6a (2026-10-22, branch `ccr-1099b25a-7iznp7`, PR #112 and #113, merged)
+  deleted style, polish, screens, v05 and battle.css (screen rules to their files, legacy parts to a file each, the
+  rest to base.css and parts.css) and put the ui-lint ratchet in `npm run lint`, but left no HANDOFF entry, row or
+  ROADMAP note. Written up in ui-track.md ("UI-6a found"); this session is UI-6b. No other UI-6 work on any branch.
+- **Changed (one cause per commit):**
+  - Raw values equal to a token now read it, the same computed values with uiTheme.json's defaults: spacing 369
+    (4/8/12/16/24/32/48 px -> `--s1..s7`), radii 43 (12/16/22 px -> `--r-sm/md/lg`, 999px -> `--r-pill`), times 14
+    (140/240/420 ms -> `--m-fast/base/slow`). The Studio's Space and Motion dials now reach them.
+  - ui-lint: an `@font-face` block's family is its definition, not a raw font (8 in base.css; unit test).
+  - check-quick: smoke's phone flow fails above 3 blurred surfaces a screen, or above `BLUR_CEILING` (map 10, shop
+    5) for the two screens over it today.
+  - Tap targets to the game's 40 px: the Field Guide entry's arrows (28 px wide), Settings Help's sections (32 px),
+    the dressing room's toggles, the title's links; the settings switches keep their look and get the icons'
+    invisible 7 px margin. The tap step also opens a Guide entry, Settings Display and Help, and counts `<summary>`.
+  - Contrast: the Field Guide's tabs got the panel's surface behind them (they sat on the bare scene: 2.2:1 light,
+    1.4:1 dark); a chosen segment's background is the surface, not v05's white (dark mode: white on white, 1.03:1).
+  - The dressing room's custom colour picker has a name ("Any colour").
+  - tools/style-diff.py: the four sheet views had failed since UI-8 (they tapped a Billie card Walk no longer has);
+    both pages wait for the place's fade-in.
+  - Docs: ui-track.md (UI-6a and UI-6b rows and "found" notes, a proposed UI-9), ROADMAP (UI-6 and phase 06 done),
+    TESTING (the enforced lint, blur and tap steps), CHANGELOG.
+- **ui-lint (start -> end):** radius 146 -> 103, space 995 -> 626, times 269 -> 255, fonts 18 -> 10, CSS colours
+  669 -> 667; shadows 178, keyframes 77, !important 194, layers 60, blur rules 29, JS colours 591, innerHTML 55,
+  style= 41 unchanged. Not "near zero": what is left is mostly off the scale (spacing 6 px x146, 10 px x123, 3 px
+  x67...), and snapping it moves things 1-2 px: UI-9 with a phone check.
+- **Where the plan was wrong:** the row's "lint at or near zero" and "no visible change" can't both hold (above). The
+  Studio's contrast overlay misreads the kit's clipped pseudo-element fills (white on dark called 1.9:1), and a
+  pixel reading over glass and a moving scene is muddled too: findings were judged on pictures, and only the two
+  confirmed failures were fixed. The game's tap rule is 40 px, the Studio overlay's 44 px (see "Ask").
+- **Verified:** the fast tier at every commit (lint with the ratchet, typecheck, 1314 unit tests, modules, format,
+  data); smoke before every game commit (6 of 6; blur walk 3, map 10, team 2, guide 3, profile 2, shop 5, battle 3);
+  the blur check seen failing on a planted ceiling (map 9) and the tap step on the old CSS (dex 28x40, SUMMARY
+  310x32); style-diff after the swaps against the commit before them: 29 of 36 the same, the other 7 by timing only
+  (map's fade layer, the title's live class, the battle canvases' size), the same kinds an unchanged tree showed; the
+  UI gallery: the same 38 pictures differ from the committed baseline before and after this session's changes, with
+  the same shares (UI-8's bar and this container), so the baseline was not remade; pictures of the fixed tabs in light
+  and dark. Full quick check: 32 of 40. Known reds
+  (earlier entries): Terraces (`sky_portal` floats, HB-7), RL-8 (never landed), room light; Time and weather, Animals,
+  RT-4a and Sound effects pass alone (one browser). "Running" (the joystick, walked 2.23 m) fails the same way on
+  b7da6013, the commit before this session's changes: not this session's, for whoever owns walking.
+- **Risky:** the swaps tie hundreds of values to the Space and Motion dials: a dial moved in the Studio now moves them
+  too (as intended, but more than before). The settings switch's tap margin reaches 7 px past it. The chosen segment
+  in dark is a dark chip with its edge line, quieter than light's white chip.
+- **Ask me (owner):** 40 px (the game's 06-4 rule, the quick check) or 44 px (WCAG 2.5.5, the Studio overlay) for tap
+  targets; 44 would grow every `.pb.small`, segment and tab. And whether UI-9 (proposed in ui-track.md) is next.
+- **Phone check wanted:** the Field Guide's tabs and a dex entry's arrows, light and dark; Settings' Display switches
+  and Help sections; the dressing room's toggles.
+- **Tags to push (sessions can't):** `ui-6-done` and `phase-06-done` on this entry's commit.
+- **Next:** UI-9 (off-scale values snapped per screen, parts.css into the kit and deleted, its 48 !important), in a
+  new session, as the owner asked.
 
 ### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
 Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
