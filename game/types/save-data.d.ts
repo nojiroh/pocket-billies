@@ -348,6 +348,8 @@ export interface Run {
   rel?: Record<string, number>;
   /** RS-4: each resident's service level as the run took off (logic/residents.js resTakeoff) */
   res?: Record<string, number>;
+  /** RS-4: a resident's rumour (Bertha's service): whose, the map place it showed, the place hiding the side area */
+  rumour?: { who: string; node?: number; side?: number };
   /** RS-4: the run shops asked for a fresh stock, as 'node:day' (Mo's service; logic/run-loop.js runShopReroll) */
   reshop?: string[];
   /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */

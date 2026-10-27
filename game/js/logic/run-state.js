@@ -247,6 +247,20 @@ export function validRun(o) {
   /* RS-4: the residents' service levels as it took off, and the shops asked for a fresh stock ('node:day'; missing on a
      run from before) */
   if (o.res !== undefined && !recordOf(o.res, 64, v => wholeIn(v, 1, 10))) return false;
+  /* RS-4: a resident's rumour: whose, the place it shows and the place hiding the side area */
+  const RU = o.rumour;
+  if (
+    RU !== undefined &&
+    (!RU ||
+      typeof RU !== 'object' ||
+      Array.isArray(RU) ||
+      typeof RU.who !== 'string' ||
+      !/^[a-z][a-z0-9_]{0,63}$/.test(RU.who) ||
+      Object.keys(RU).some(k => !['who', 'node', 'side'].includes(k)) ||
+      (RU.node !== undefined && !wholeIn(RU.node, 0, 999)) ||
+      (RU.side !== undefined && !wholeIn(RU.side, 0, 999)))
+  )
+    return false;
   if (
     o.reshop !== undefined &&
     (!list(o.reshop, 9) || !o.reshop.every(k => typeof k === 'string' && /^\d{1,3}:\d{1,3}$/.test(k)))

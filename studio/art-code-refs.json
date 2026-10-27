@@ -1856,7 +1856,7 @@
    "game/js/logic/perks.js:104",
    "game/js/logic/perks.js:112",
    "game/js/logic/ui-dials.js:134",
-   "game/js/map-tab.js:117"
+   "game/js/map-tab.js:127"
   ],
   "flame": [
    "game/js/battle-stage.js:800",
@@ -2025,6 +2025,7 @@
    "game/js/billie-sheet.js:234",
    "game/js/boot.js:159",
    "game/js/lab-board.js:107",
+   "game/js/map-tab.js:84",
    "game/js/ui-run-kit.js:104",
    "game/js/walk-tab.js:196"
   ],

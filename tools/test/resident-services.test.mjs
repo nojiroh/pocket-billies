@@ -133,3 +133,47 @@ test('residents: RS-4: Mo’s Lv 3 asks a run shop for a fresh stock, once a run
     'the next day as before'
   );
 });
+
+test('residents: RS-4: Bertha’s rumours show one hidden place, the same for the same seed, and name the side path', () => {
+  const { runStartOn, runStartPlan } = modules['run-start'],
+    { runUnlocks } = modules.unlocks,
+    D = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings },
+    DATA = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      pools: GAME_DATA.pools,
+      scenery: GAME_DATA.scenery,
+      rules: GAME_DATA.rules.run,
+      unlockData: D,
+      region: modules['run-region'].runRegionData(GAME_DATA, GAME_DATA.trainers),
+      fieldMoves: GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves,
+    };
+  const go = (seed, owned) => {
+    const s = startedSave('musk0', 5);
+    s.meta = { ...newMeta(), residents: { bertha: 1 }, unlocks: { ...owned } };
+    s.run = null;
+    const plan = runStartPlan(seed, DATA, { unlocks: runUnlocks(s, D) }),
+      seen = plan.map.nodes.map(n => n.seen || 0);
+    runStartOn(s, plan, { home: [s.team[0].uid] });
+    return { s, seen };
+  };
+  const { s, seen } = go('RUMOUR1', {}),
+    R = s.run.rumour,
+    n = s.run.map.nodes[R.node];
+  assert.equal(R.who, 'bertha');
+  assert.ok(seen[R.node] < 2 && n.seen === 2, 'a hidden place, shown');
+  assert.ok(n.row >= 2 && !n.side && n.type !== 'boss');
+  assert.equal(R.side, undefined, 'the side path is Lv 3');
+  assert.equal(go('RUMOUR1', {}).s.run.rumour.node, R.node, 'the same seed, the same rumour');
+  assert.equal(validRun(s.run), true);
+  assert.equal(validRun({ ...s.run, rumour: { who: 'bertha', nope: 1 } }), false);
+  /* Lv 3: a seed with a side area names its obstacle's place */
+  let k = 0,
+    t;
+  do t = go('RUMSIDE' + k++, { bertha_2: 1, bertha_3: 1 }).s;
+  while (!t.run.map.side && k < 60);
+  assert.ok(t.run.map.side, 'a seed with a side area');
+  assert.equal(t.run.rumour.side, t.run.map.side.from);
+  assert.equal(t.run.map.nodes[t.run.map.side.from].seen, 2);
+  assert.ok(!t.run.map.side.open, 'nothing opened');
+});

@@ -20,11 +20,14 @@ import { rngFrom } from './rng.js';
 import { propDoor } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUMOUR_TYPES: [() => RUMOUR_TYPES],
   resFxRows: [() => resFxRows],
   resHeld: [() => resHeld],
   // @ts-expect-error -- replaced on purpose
   resLevel: [() => resLevel, v => (resLevel = v)],
   resRerolls: [() => resRerolls],
+  // @ts-expect-error -- replaced on purpose
+  resRumour: [() => resRumour, v => (resRumour = v)],
   resStock: [() => resStock],
   // @ts-expect-error -- replaced on purpose
   resTakeoff: [() => resTakeoff, v => (resTakeoff = v)],
@@ -104,12 +107,41 @@ export function resTakeoff(s, R, U) {
     if (lv) res[id] = lv;
   }
   if (Object.keys(res).length) s.run.res = res;
-  for (const [, L] of resHeld(res, R))
+  for (const [id, L] of resHeld(res, R)) {
     for (const [k, n] of Object.entries(L.items || {})) {
       s.items[k] = (s.items[k] || 0) + n;
       got.items[k] = (got.items[k] || 0) + n;
     }
+    if (L.rumour) resRumour(s.run, id, L.rumour);
+  }
   return got;
+}
+/** RS-4: the kinds of place a rumour is about, the likeliest first (anything hidden but the boss when none is left) */
+export const RUMOUR_TYPES = ['event', 'stall', 'scrapyard', 'rival', 'miniboss'];
+/** RS-4: a rumour as a run takes off (Bertha's service): 'node' shows one hidden main place two rows on or more, drawn
+ * from the run's own stream ('rumour') among the kinds above (any hidden place but the boss with none), its type on
+ * the map at once; 'side' names (and shows) the place whose obstacle hides the run's side area (map.side.from), opening
+ * nothing.
+ * Kept in run.rumour for the map card @param {Run} run @param {string} who @param {'node' | 'side'} kind */
+export function resRumour(run, who, kind) {
+  const map = run.map;
+  if (!map || !map.nodes) return;
+  const rumour = run.rumour || (run.rumour = { who });
+  if (kind === 'side') {
+    if (map.side && map.nodes[map.side.from]) {
+      rumour.side = map.side.from;
+      map.nodes[map.side.from].seen = 2;
+    }
+    return;
+  }
+  const last = Math.max(...map.nodes.map(n => n.row)),
+    hidden = map.nodes.flatMap((n, i) => (!n.side && (n.seen || 0) < 2 && n.row >= 2 && n.row < last ? [i] : [])),
+    liked = hidden.filter(i => RUMOUR_TYPES.includes(map.nodes[i].type)),
+    from = liked.length ? liked : hidden;
+  if (!from.length) return;
+  const i = from[rngFrom(run.seed, 'rumour').int(0, from.length - 1)];
+  map.nodes[i].seen = 2;
+  rumour.node = i;
 }
 /** RS-2: this run's one resident to meet, whatever has happened on it (invited or not): the free first one while
  * nobody lives in Copperleaf, else one drawn from the run's own stream ('resident') among those left with a weight.
