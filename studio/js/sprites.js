@@ -366,7 +366,7 @@ export const loadedText = path =>
       ? TEXT_LOADED.get(path)
       : null;
 /** the text as the game has it ('' for a file the Studio made), or null when not read yet */
-const textAsLoaded = path => (TEXT_LOADED.has(path) ? TEXT_LOADED.get(path) : null);
+export const textAsLoaded = path => (TEXT_LOADED.has(path) ? TEXT_LOADED.get(path) : null);
 export function markText(path, text) {
   const was = studioState.textDirty.get(path);
   if (TEXT_LOADED.get(path) === text) studioState.textDirty.delete(path);

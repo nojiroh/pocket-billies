@@ -37,7 +37,7 @@ import {
   pixelCanvasToolsHTML,
   textStep,
 } from './pixel-canvas.js';
-import { loadedText, pickFile, svgDataUrl, textGet } from './sprites.js';
+import { loadedText, pickFile, svgDataUrl, textAsLoaded, textGet } from './sprites.js';
 import { artBrowser, artPictures } from './art-browser.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -261,6 +261,16 @@ document.addEventListener('studio-text', ev => {
   const p = ev.detail && ev.detail.path,
     m = p && /^art\/ui\/([\w-]+)\.svg$/.exec(p);
   if (m) iconShowUnsaved(m[1]);
+  /* an icon made here and taken back (undo of New icon): nothing to show, and no file to ask the site for */
+  if (p && !studioState.textDirty.has(p) && textAsLoaded(p) == null) {
+    if (artBrowser.sel === p) artBrowser.sel = '';
+    if (m && artBrowser.icon === m[1]) {
+      artBrowser.icon = '';
+      iconEd.pc = null;
+      if (studioState.sec === 'art') render();
+    }
+    return;
+  }
   if (!artBrowser.icon || studioState.sec !== 'art' || p !== iconPath(artBrowser.icon)) return;
   iconEd.draft = null;
   const ta = $('#icText'),
