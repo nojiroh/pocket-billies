@@ -19,8 +19,10 @@ import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
   AMBIENCE_BEDS,
+  ambienceBuckets,
   ambienceDrift,
   ambienceLiveStep,
+  ambienceNearest,
   ambienceNoiseLoop,
   ambiencePreview,
   ambienceRandom,
@@ -84,6 +86,7 @@ expose({
   musicSync: [() => musicSync, v => (musicSync = v)],
   musicVariant: [() => musicVariant, v => (musicVariant = v)],
   nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
+  nearestWaterSound: [() => nearestWaterSound, v => (nearestWaterSound = v)],
   playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
@@ -96,6 +99,7 @@ expose({
   soundLog: [() => soundLog, v => (soundLog = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
+  soundWaterBuckets: [() => soundWaterBuckets],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
@@ -1027,6 +1031,16 @@ function nearestSoundSource(list, get, range) {
   }
   return best;
 }
+/* SND-8a: the nearest of many water cells (the scene's water, its streams: 14,010 in Copperleaf, scanned every 200 ms
+   before), found in buckets made once per list (logic/ambience-sound.js); the same answer as nearestSoundSource */
+const soundWaterBuckets = new WeakMap();
+function nearestWaterSound(list, range) {
+  if (!list || !list.length || !walkView.pl) return null;
+  let B = soundWaterBuckets.get(list);
+  if (!B || B.n !== list.length) soundWaterBuckets.set(list, (B = ambienceBuckets(list)));
+  const w = ambienceNearest(B, walkView.pl.x, walkView.pl.z, range);
+  return w ? soundPlacement(w.cell[0], w.cell[1], range) : null;
+}
 function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   if (!ambience.bus && !initAmbience()) return;
@@ -1050,11 +1064,7 @@ function updateAmbience() {
         pans[k] = w.pan;
       }
     };
-    put(
-      'stream',
-      nearestSoundSource(walkRenderer.streamCells, q => q, 10),
-      0.5
-    );
+    put('stream', nearestWaterSound(walkRenderer.streamCells, 10), 0.5);
     put(
       'falls',
       nearestSoundSource(walkRenderer.falls, q => [q[0], q[2]], 14),
@@ -1063,23 +1073,9 @@ function updateAmbience() {
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
       T.sea = 0.35;
       pans.sea = 0;
-      put(
-        'sea',
-        nearestSoundSource(walkView.water, q => q, 8),
-        0.6
-      );
-    } else
-      put(
-        'pond',
-        nearestSoundSource(walkView.water, q => q, 6),
-        0.22
-      );
-    if (sc.waterKind === 'lava')
-      put(
-        'lava',
-        nearestSoundSource(walkView.water, q => q, 10),
-        0.5
-      );
+      put('sea', nearestWaterSound(walkView.water, 8), 0.6);
+    } else put('pond', nearestWaterSound(walkView.water, 6), 0.22);
+    if (sc.waterKind === 'lava') put('lava', nearestWaterSound(walkView.water, 10), 0.5);
     const C0 = walkData().sc,
       props = sc.props || [];
     put(
