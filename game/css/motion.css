@@ -383,28 +383,6 @@
     opacity: 0;
   }
 }
-@keyframes nwIdle {
-  0%,
-  70%,
-  100% {
-    transform: translateY(0);
-  }
-  80% {
-    transform: translateY(-2px);
-  }
-  90% {
-    transform: translateY(0) scaleY(0.94);
-  }
-}
-@keyframes nwGlint {
-  0%,
-  82% {
-    background-position: 150% 0;
-  }
-  100% {
-    background-position: -60% 0;
-  }
-}
 @keyframes nwToast {
   0% {
     opacity: 0;
@@ -469,12 +447,6 @@
   from {
     opacity: 0;
     transform: translateX(-18px);
-  }
-}
-@keyframes v05Card {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.97);
   }
 }
 /* UI-9a: its one declaration was v05's width: 0 !important, and a keyframe ignores an !important declaration, so the
