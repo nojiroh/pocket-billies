@@ -37,7 +37,6 @@ export const FIXTURE = {
       trainerXpMult: 1.5,
       teamXpShare: 0.5,
     },
-    eggs: { capacity: 8, slots: 2, mythOdds: 1000, mythSpecies: 'sparky0' },
     battle: {
       stab: 1.5,
       critChances: [0.0625, 0.125, 0.25, 0.5],
@@ -162,12 +161,9 @@ export const FIXTURE = {
     { kind: 'seam', a: { map: 'home' }, b: { map: 'meadow' } },
     { kind: 'seam', a: { map: 'meadow' }, b: { map: 'lake' } },
   ],
-  eggs: { 2: { need: 100, lv: 5, list: [['sprout0', 1]] } },
   pyramids: { pyramid: { n: 'Copper Coin', m: 1 }, capstone: { n: 'Platinum Coin', m: 0 } },
   items: { potion: { n: 'Potion', hp: 20 }, revive: { n: 'Revive', revive: 0.5 } },
-  jobs: { barista: { n: 'Barista', out: ['item', 'potion', 1], quip: 'made forty lattes.' } },
   people: { chosen: {} },
-  shops: {},
   trainers: { ray: { name: 'Rival Ray', who: 'chosen', node: 1, blocks: true, team: [{ sp: '@rival', lvl: 5 }] } },
 };
 

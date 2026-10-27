@@ -40,13 +40,11 @@ import {
   clone,
   colorField,
   dialog,
-  formatThousands,
   grid,
   itemOptions,
   moveOptions,
   numberField,
   openSection,
-  pathPrefix,
   peopleOptions,
   pyramidOptions,
   rangeField,
@@ -347,17 +345,8 @@ function whereCard(L, li) {
           `<tr><td>Wild · ${escapeHtml(poolName(pk))}</td><td>${escapeHtml(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
         );
     });
-  for (const [ek, E] of Object.entries(D.eggs))
-    E.list.forEach(([id, w], j) => {
-      if (ids.includes(id))
-        rows.push(
-          `<tr><td>Egg · ${ek} km</td><td>${escapeHtml(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
-        );
-    });
   const add = `<div class="seg-row"><select id="whereTo">${Object.keys(D.pools)
     .map(k => `<option value="pools:${k}">Wild · ${escapeHtml(poolName(k))}</option>`)
-    .join('')}${Object.keys(D.eggs)
-    .map(k => `<option value="eggs:${k}">Egg · ${k} km</option>`)
     .join(
       ''
     )}</select><select id="whereSp">${ids.map((id, i) => `<option value="${id}">${escapeHtml(L.names[i])}</option>`).join('')}</select><button class="btn" data-act="whereAdd">Add</button></div>`;
@@ -469,8 +458,6 @@ function refsTo(ids) {
   const D = studioState.D,
     out = [];
   for (const [k, P] of Object.entries(D.pools)) if (P.list.some(([id]) => ids.includes(id))) out.push('wild pool ' + k);
-  for (const [k, E] of Object.entries(D.eggs))
-    if (E.list.some(([id]) => ids.includes(id))) out.push(D.eggs[k].need / 1000 + ' km egg');
   for (const [k, T] of Object.entries(D.trainers || {}))
     if (T.team.some(e => ids.includes(e.sp))) out.push('trainer ' + T.name);
   if (Object.values(D.rules.start.rival).some(v => ids.includes(v))) out.push('rival picks');
@@ -479,7 +466,6 @@ function refsTo(ids) {
 function removeRefs(ids) {
   const D = studioState.D;
   for (const P of Object.values(D.pools)) P.list = P.list.filter(([id]) => !ids.includes(id));
-  for (const E of Object.values(D.eggs)) E.list = E.list.filter(([id]) => !ids.includes(id));
   for (const T of Object.values(D.trainers || {})) T.team = T.team.filter(e => !ids.includes(e.sp));
   for (const k in D.rules.start.rival) if (ids.includes(D.rules.start.rival[k])) delete D.rules.start.rival[k];
   D.rules.start.starters = D.rules.start.starters.filter(l => !ids.includes(l + '0'));
@@ -1109,10 +1095,8 @@ ACTIONS.itemNew = () => {
 };
 ACTIONS.itemDel = async d => {
   const D = studioState.D;
-  if (!(await ask(`Delete ${escapeHtml(D.items[d.k].n)}? It’s removed from shops and starting items.`, 'Delete')))
-    return;
+  if (!(await ask(`Delete ${escapeHtml(D.items[d.k].n)}? It’s removed from the starting items.`, 'Delete'))) return;
   delete D.items[d.k];
-  Object.values(D.shops || {}).forEach(s => (s.stock = s.stock.filter(w => w.item !== d.k)));
   delete D.rules.start.items[d.k];
   changed();
   render();
@@ -1131,181 +1115,6 @@ ACTIONS.itemImg = async d => {
 };
 ACTIONS.itemImgOff = d => {
   delete studioState.D.items[d.k].img;
-  changed();
-  render();
-};
-/* ================= SHOPS ================= */
-SECTIONS.shops = () => {
-  const D = studioState.D,
-    S = (D.shops = D.shops || {});
-  const ks = Object.keys(S);
-  if (!S[studioState.sel.shop]) studioState.sel.shop = ks[0];
-  const k = studioState.sel.shop,
-    sh = S[k];
-  const list = ks
-    .map(
-      x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickShop" data-id="${x}"><span class="lt"><b>${escapeHtml(S[x].name)}</b><small>${S[x].kind === 'wardrobe' ? 'Boutique · ' : ''}${escapeHtml(
-          D.locations
-            .filter(r => r.shop === x || r.boutique === x)
-            .map(r => r.name)
-            .join(', ') || 'Not placed on the route'
-        )}</small></span></button>`
-    )
-    .join('');
-  if (!sh)
-    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet. Legacy: shops.json is the old world’s town shops; a run’s towns stock from the run rules (rules.json run.shop, in the Run Lab).</p></div></div>`;
-  const wardrobe = sh.kind === 'wardrobe',
-    p = `shops.${k}`,
-    stock = (sh.stock || [])
-      .map((w, i) => {
-        const isC = !!w.coin,
-          key = w.coin || w.item,
-          base = isC ? (D.pyramids[key] || {}).price : (D.items[key] || {}).price;
-        return `<tr><td><select data-act-sel="stockKind" data-i="${i}">${[
-          ['item', 'Item'],
-          ['coin', 'Pyramid'],
-        ]
-          .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
-          .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? pyramidOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
-  <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
-      })
-      .join('');
-  return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under Looks.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@thanks.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
- ${
-   wardrobe
-     ? card(
-         'Clothes and hair',
-         `<div class="wd-shoplist">${
-           Object.entries((D.wardrobe || {}).items || {})
-             .filter(([i, it]) => it.shop === k)
-             .map(
-               ([i, it]) =>
-                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · ${formatThousands(it.price || 0)} Moneys</button>`
-             )
-             .join('') || '<span class="help">Nothing yet.</span>'
-         }</div>`,
-         {
-           sub: 'A boutique sells wardrobe items: pick “Sold at” for an item under Wardrobe. Players try things on in the dressing room and buy what they wear.',
-         }
-       )
-     : card(
-         'Stock',
-         `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price (Moneys)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
-         { sub: 'Leave the price empty to use the normal Shop price. Pyramids that need badges stay locked here too.' }
-       )
- }
- ${card(
-   'Where it is',
-   `<p class="help">Open on: ${escapeHtml(
-     D.locations
-       .filter(r => r.shop === k || r.boutique === k)
-       .map(r => r.name)
-       .join(', ') || 'nowhere yet'
-   )}. Choose a shop or boutique for a stop under World & encounters.</p>`
- )}</div></div>`;
-};
-/* thank-you lines are stored as an array; edit them as text (Studio plan F20: their own prefix, @thanks.; lore's
-   lists of lines have @lines.) */
-pathPrefix(
-  '@thanks.',
-  k => {
-    const s = studioState.D.shops[k];
-    return s && s.thanks ? s.thanks.join('\n') : '';
-  },
-  (k, v) => {
-    const s = studioState.D.shops[k];
-    const a = String(v || '')
-      .split('\n')
-      .map(x => x.trim())
-      .filter(Boolean);
-    if (a.length) s.thanks = a;
-    else delete s.thanks;
-  }
-);
-document.addEventListener('change', ev => {
-  const el = ev.target;
-  if (el.dataset.actSel === 'stockKind') {
-    const w = studioState.D.shops[studioState.sel.shop].stock[+el.dataset.i];
-    if (el.value === 'coin') {
-      delete w.item;
-      w.coin = Object.keys(studioState.D.pyramids)[0];
-    } else {
-      delete w.coin;
-      w.item = Object.keys(studioState.D.items)[0];
-    }
-    delete w.price;
-    changed();
-    render();
-  }
-});
-ACTIONS.pickShop = d => {
-  studioState.sel.shop = d.id;
-  render();
-};
-ACTIONS.stockAdd = () => {
-  studioState.D.shops[studioState.sel.shop].stock.push({ item: Object.keys(studioState.D.items)[0] });
-  changed();
-  render();
-};
-ACTIONS.stockDel = d => {
-  studioState.D.shops[studioState.sel.shop].stock.splice(+d.i, 1);
-  changed();
-  render();
-};
-ACTIONS.stockMove = d => {
-  const a = studioState.D.shops[studioState.sel.shop].stock,
-    i = +d.i,
-    j = i - 1;
-  if (j < 0) return;
-  [a[i], a[j]] = [a[j], a[i]];
-  changed();
-  render();
-};
-ACTIONS.boutiqueNew = () => {
-  const D = studioState.D,
-    k = uniqueKey('boutique', x => !!(D.shops || {})[x]);
-  D.shops = D.shops || {};
-  D.shops[k] = {
-    name: 'New Boutique',
-    keeper: 'Shopkeeper',
-    who: Object.keys(D.people)[0],
-    kind: 'wardrobe',
-    greeting: 'Try anything on!',
-  };
-  studioState.sel.shop = k;
-  changed();
-  render();
-};
-ACTIONS.shopNew = () => {
-  const D = studioState.D,
-    k = uniqueKey('shop', x => !!(D.shops || {})[x]);
-  D.shops = D.shops || {};
-  D.shops[k] = {
-    name: 'New Shop',
-    keeper: 'Shopkeeper',
-    who: Object.keys(D.people)[0],
-    greeting: 'Welcome in!',
-    stock: [{ item: Object.keys(D.items)[0] }],
-  };
-  studioState.sel.shop = k;
-  changed();
-  render();
-};
-ACTIONS.shopDel = async () => {
-  const D = studioState.D,
-    k = studioState.sel.shop;
-  if (!(await ask(`Delete ${escapeHtml(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete')))
-    return;
-  delete D.shops[k];
-  D.locations.forEach(r => {
-    if (r.shop === k) delete r.shop;
-    if (r.boutique === k) delete r.boutique;
-  });
-  studioState.sel.shop = null;
   changed();
   render();
 };
@@ -1351,9 +1160,6 @@ SECTIONS.people = () => {
     ...Object.values(D.trainers || {})
       .filter(T => T.who === k)
       .map(T => 'trainer ' + T.name),
-    ...Object.values(D.shops || {})
-      .filter(s => s.who === k)
-      .map(s => s.keeper),
   ];
   const list = ks
     .map(
@@ -1432,58 +1238,6 @@ ACTIONS.wdGo = d => {
   wardrobeEditor.sel = d.k;
   openSection('wardrobe');
 };
-/* ================= JOBS ================= */
-SECTIONS.jobs = () => {
-  const D = studioState.D;
-  const rows = Object.entries(D.jobs)
-    .map(([k, J]) => {
-      const p = `jobs.${k}`,
-        kind = J.out[0];
-      return `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(
-        textField('Job title', `${p}.n`),
-        textField('Where', `${p}.where`),
-        `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
-          ['item', 'Items'],
-          ['coin', 'Pyramids'],
-          ['se', 'Moneys'],
-        ]
-          .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
-          .join('')}</select></label>`,
-        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : pyramidOptions()),
-        numberField('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
-        textField('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
-      )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
-    })
-    .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Legacy: kept for the ranch (phase 12). The game has no jobs, so nothing here is used.' })}</div>`;
-};
-document.addEventListener('change', ev => {
-  const el = ev.target;
-  if (el.dataset.actSel === 'jobKind') {
-    const J = studioState.D.jobs[el.dataset.k];
-    const v = el.value;
-    J.out = [
-      v,
-      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.pyramids)[0],
-      J.out[2] || 1,
-    ];
-    changed();
-    render();
-  }
-});
-ACTIONS.jobNew = () => {
-  const D = studioState.D,
-    k = uniqueKey('job', x => !!D.jobs[x]);
-  D.jobs[k] = { n: 'New job', where: 'Somewhere', out: ['se', 'se', 100], pay: '$100', quip: 'worked a full shift.' };
-  changed();
-  render();
-};
-ACTIONS.jobDel = async d => {
-  if (!(await ask('Delete this job? Anyone working it keeps working until the shift ends.', 'Delete'))) return;
-  delete studioState.D.jobs[d.k];
-  changed();
-  render();
-};
 /* ================= TRAINERS ================= */
 SECTIONS.trainers = () => {
   const D = studioState.D,
@@ -1516,7 +1270,7 @@ SECTIONS.trainers = () => {
     .join('');
   const seat = T.seat
     ? grid(
-        textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
+        textField('Badge id', `${p}.seat.id`, { help: 'Saved when they are beaten; the profile shows the badge.' }),
         textField('Title', `${p}.seat.title`),
         selectField('Pyramid shown', `${p}.seat.coin`, pyramidOptions())
       ) +
@@ -1537,14 +1291,6 @@ SECTIONS.trainers = () => {
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
      textField('Name', `${p}.name`),
      selectField('Look', `${p}.who`, peopleOptions(), { rr: 1 }),
-     T.miniboss
-       ? ''
-       : selectField(
-           'Stands at',
-           `${p}.node`,
-           D.locations.map((r, i) => [i, `${i + 1}. ${r.name}`]),
-           { num: 1, rr: 1 }
-         ),
      selectField(
        'Battle backdrop',
        `${p}.battleStage`,
@@ -1553,13 +1299,7 @@ SECTIONS.trainers = () => {
      numberField(T.miniboss ? 'Reward (Moneys), outside runs only' : 'Reward (Moneys)', `${p}.reward`, {
        min: 0,
        step: 50,
-     }),
-     selectField(
-       'First-win egg',
-       `${p}.egg`,
-       Object.keys(D.eggs).map(e => [e, e + ' km']),
-       { num: 1, none: 'None', opt: 1 }
-     )
+     })
    )}
   ${checkboxField('Double battle: two of theirs against two of yours', `${p}.double`, { help: 'Needs at least two Billies on their team.' })}${selectField(
     'Companion beside them in the world',
@@ -1586,7 +1326,7 @@ SECTIONS.trainers = () => {
      grid(
        conditionField('Only there when', `${p}.when`, 'trainer:' + k, 'when', {
          ph: 'always',
-         help: 'A condition (docs/SCRIPTS.md), e.g. met_hazel and !rival0',
+         help: 'A condition (docs/SCRIPTS.md), e.g. met_juniper and !rival0',
        }),
        conditionField('Gone when', `${p}.unless`, 'trainer:' + k, 'unless', { ph: 'never' })
      ) +

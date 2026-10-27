@@ -14,12 +14,14 @@ import {
   runCheck,
   scheduleCheck,
   spriteCacheClear,
+  textSaved,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { navJoined, navRows } from '../../game/js/logic/studio-layout.js';
 import {
   HISTORY_ORDER,
   historyBytes,
@@ -39,9 +41,7 @@ expose({
   RANGE_FORMATS: [() => RANGE_FORMATS],
   SAVE_REPLACER: [() => SAVE_REPLACER],
   SECTIONS: [() => SECTIONS],
-  SECTION_GROUPS: [() => SECTION_GROUPS],
   SECTION_LIST: [() => SECTION_LIST],
-  STUDIO_SERVER_KEY: [() => STUDIO_SERVER_KEY],
   TEXT_ONLY_DATA: [() => TEXT_ONLY_DATA],
   afterRender: [() => afterRender],
   api: [() => api, v => setApi(v)],
@@ -70,6 +70,9 @@ expose({
   grid: [() => grid],
   helpHTML: [() => helpHTML],
   itemOptions: [() => itemOptions],
+  joinedLast: [() => joinedLast],
+  joinedSwitch: [() => joinedSwitch, v => (joinedSwitch = v)],
+  joinedTarget: [() => joinedTarget, v => (joinedTarget = v)],
   keepAside: [() => keepAside, v => (keepAside = v)],
   keepPutBack: [() => keepPutBack, v => (keepPutBack = v)],
   keptElements: [() => keptElements],
@@ -107,6 +110,7 @@ expose({
   statOptions: [() => statOptions],
   statusOptions: [() => statusOptions],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
+  studioPending: [() => studioPending],
   studioProbe: [() => studioProbe],
   studioState: [() => studioState],
   textField: [() => textField, v => (textField = v)],
@@ -132,6 +136,8 @@ export const studioState = {
   dirty: false,
   rigsDirty: false,
   artDirty: new Map(),
+  /** SA-2b: unsaved text files (an SVG icon, art/manifest.js) by path: { text, _ver } @type {Map<string, { text: string, _ver: number }>} */
+  textDirty: new Map(),
   undo: [],
   redo: [],
   snapT: null,
@@ -147,12 +153,9 @@ provide({ studioState }); /* to-module */
 /* studio track ST-T: the Studio self-test's timings of the Studio's own work (studio/js/studio-test.js). `on` is the
    test's recorder while it runs and null otherwise, so a normal session pays one check per draw or edit */
 export const studioProbe = { on: null };
-const STUDIO_SERVER_KEY = window.STUDIO_KEY;
+/* a stand-in until github.js sets the GitHub route (SA-3: local mode's server and its X-Studio-Key are gone) */
 export async function api(path, opt = {}) {
-  const r = await fetch('/api/' + path, {
-    ...opt,
-    headers: { 'X-Studio-Key': STUDIO_SERVER_KEY, ...(opt.headers || {}) },
-  });
+  const r = await fetch('/api/' + path, opt);
   let j = null;
   try {
     j = await r.json();
@@ -402,8 +405,11 @@ function restoreParts(put) {
   scheduleCheck();
   if (P) P('restore', { parseMs: b - a, parts: Object.keys(put).length, ms: performance.now() - a });
 }
+/** anything not saved yet: data, rigs, pictures or (SA-2b) text files */
+export const studioPending = () =>
+  !!(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size || studioState.textDirty.size);
 export function updateTopBar() {
-  $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
+  $('#dirty').hidden = !studioPending();
   /* an edit whose commit is pending can be undone too */
   $('#undoBtn').disabled = !studioState.undo.length && studioState.snapT == null;
   $('#redoBtn').disabled = !studioState.redo.length;
@@ -436,14 +442,16 @@ export async function checkBeforeSave() {
   if (go === 'show') openSection('check');
   return false;
 }
-/** what a save will send, without marking anything saved: each unsaved picture with its version, the rigs' text, the
+/** what a save will send, without marking anything saved: each unsaved picture and text file with its version, the rigs' text, the
  * data's text (with meta.artVersion one up when pictures go too; the data itself changes only on confirm) */
 export function stageChanges() {
   const S = studioState,
     art = [...S.artDirty].map(([path, c]) => ({ path, c, ver: c._ver || 0 })),
-    artVersion = art.length ? (S.D.meta.artVersion || 0) + 1 : null;
+    texts = [...S.textDirty].map(([path, t]) => ({ path, text: t.text, ver: t._ver })),
+    /* SA-2b: a text file under art/ sits in the game's art cache too */
+    artVersion = art.length || texts.length ? (S.D.meta.artVersion || 0) + 1 : null;
   let dataText = null;
-  if (S.dirty || art.length) {
+  if (S.dirty || art.length || texts.length) {
     const meta = S.D.meta;
     if (artVersion != null) S.D.meta = { ...meta, artVersion };
     try {
@@ -452,7 +460,7 @@ export function stageChanges() {
       S.D.meta = meta;
     }
   }
-  return { art, artVersion, dataText, rigsText: S.rigsDirty ? JSON.stringify(S.rigs) : null };
+  return { art, texts, artVersion, dataText, rigsText: S.rigsDirty ? JSON.stringify(S.rigs) : null };
 }
 /** sends a stage through api(): pictures, rigs, data. Throws on the first failure (on GitHub nothing has left yet) */
 export async function writeStaged(staged) {
@@ -461,6 +469,8 @@ export async function writeStaged(staged) {
     if (!blob) throw new Error(`${a.path} could not be turned into a picture.`);
     await api('file?path=' + encodeURIComponent(a.path), { method: 'POST', body: blob });
   }
+  for (const t of staged.texts || [])
+    await api('file?path=' + encodeURIComponent(t.path), { method: 'POST', body: t.text });
   if (staged.rigsText != null) await api('rigs', { method: 'POST', body: staged.rigsText });
   if (staged.dataText != null) await api('gamedata', { method: 'POST', body: staged.dataText });
 }
@@ -472,10 +482,17 @@ export function confirmStaged(staged) {
     dataText: staged.dataText != null ? JSON.stringify(S.D, SAVE_REPLACER) : null,
     rigsText: staged.rigsText != null ? JSON.stringify(S.rigs) : null,
     art: Object.fromEntries(staged.art.map(a => [a.path, S.artDirty.get(a.path) === a.c ? a.c._ver || 0 : null])),
+    texts: Object.fromEntries(
+      (staged.texts || []).map(t => [t.path, S.textDirty.has(t.path) ? S.textDirty.get(t.path)._ver : null])
+    ),
   });
   if (ok.data) S.dirty = false;
   if (ok.rigs) S.rigsDirty = false;
   for (const p of ok.art) S.artDirty.delete(p);
+  for (const p of ok.texts) {
+    textSaved(p, S.textDirty.get(p).text);
+    S.textDirty.delete(p);
+  }
   updateTopBar();
   draftNow(); /* T1.1: the draft goes (or keeps only what is still unsaved) at once, not 2 s later */
   return ok;
@@ -644,21 +661,16 @@ const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v)
 export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
-  ['parts', 'Part sizes', 'Part sizes, weight and Prime Billies'],
+  ['parts', 'Part rules', 'How big a part can turn out, its weight and Prime Billies'],
   ['genes', 'Genes', 'Splicing: Stability, traits, wild splices, the Gene Bank and a splice preview'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
-  ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere); parts, pixels and models next'],
+  ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere), then their pivots and sockets'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
   ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
-  ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
-  [
-    'world',
-    'World & encounters',
-    'Who appears where (runs read the pools their biomes name); route stops, eggs, map: legacy',
-  ],
+  ['world', 'World & encounters', 'Who appears where (runs read the pools their biomes name); map: legacy'],
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
   ['hub', 'Hub island', 'The hub’s island: an orbit view, its ground, coast, zones and pivot, and the ground lock'],
   ['props', 'Props', 'Every prop: its picture, 3D model, leaves, variants, and where it stands'],
@@ -669,8 +681,7 @@ export const SECTION_LIST = [
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
   ['people', 'Looks', 'Looks for trainers and shopkeepers'],
-  ['jobs', 'Jobs', 'Legacy: what working Billies earn (the game has no jobs)'],
-  ['rules', 'Rules', 'Every number that tunes the game'],
+  ['rules', 'Rules', 'What’s new and the game-wide numbers (a run’s own are in Runs)'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art browser', 'Every picture in the game: search, see what uses it, paint, replace'],
   ['music', 'Music & sound', 'Play and edit the songs, where each one plays, and the jingles'],
@@ -681,25 +692,9 @@ export const SECTION_LIST = [
   ['unlocks', 'Unlocks & hub', 'The unlock graph, the hub’s buildings and currencies, and what a new save has'],
   ['relics', 'Perks', 'A run’s Perks: effects by kind, the code’s limits, a sample build, the offer order for a seed'],
 ];
-/* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
-   a tooltip and under the section you're in, so the list is short enough to see at once */
-const SECTION_GROUPS = [
-  [
-    'Billies & battles',
-    ['billionaires', 'parts', 'genes', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
-  ],
-  ['World & places', ['scenes', 'hub', 'props', 'engine', 'camera', 'world']],
-  ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
-  ['Moneys', ['items']],
-  ['Game', ['rules', 'ui', 'art', 'check']],
-  /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
-  ['Sound', ['music']],
-  /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
-  ['Runs', ['runlab', 'relics', 'unlocks', 'economy']],
-  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); Studio plan T4.5: Town shops and
-     Jobs edit shops.json and jobs.json, both {} (run shops come from rules.json run.shop; the game has no jobs) */
-  ['Legacy', ['legacy', 'shops', 'jobs']],
-];
+/* SA-4: the sections in workspaces that fold away (logic/studio-layout.js STUDIO_WORKSPACES); the one you're in
+   always shows. The descriptions show as a tooltip and under the section you're in, so the list is short enough to see
+   at once. The folds are kept by workspace name */
 const foldedSectionGroups = (() => {
   try {
     return JSON.parse(localStorage.getItem('studio-fold') || '{}');
@@ -707,26 +702,48 @@ const foldedSectionGroups = (() => {
     return {};
   }
 })();
+/* SA-4: the section of a joined row last opened on the left, by row name */
+const joinedLast = {};
+function joinedTarget(keys) {
+  const j = navJoined(keys[0]),
+    last = j && joinedLast[j.name];
+  return last && keys.includes(last) ? last : keys[0];
+}
+/* SA-4: the switch at the top of a joined row's section (Looks | Wardrobe), in the pane it is drawn in */
+function joinedSwitch(sec, pane2) {
+  const j = navJoined(sec);
+  if (!j) return '';
+  if (!pane2) joinedLast[j.name] = sec;
+  const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n[1]]));
+  return `<div class="seg-row nav-switch" role="group" aria-label="${escapeHtml(j.name)}"><b>${escapeHtml(j.name)}</b>${j.keys
+    .filter(k => N[k])
+    .map(
+      k =>
+        `<button class="seg sm ${k === sec ? 'on' : ''}" data-act="navSwitch" data-s="${k}" ${pane2 ? 'data-pane="2"' : ''} aria-pressed="${k === sec}">${escapeHtml(N[k])}</button>`
+    )
+    .join('')}</div>`;
+}
 export function renderSide() {
   const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n])),
-    used = new Set(SECTION_GROUPS.flatMap(g => g[1])),
-    G = SECTION_GROUPS.concat([['More', SECTION_LIST.map(n => n[0]).filter(k => !used.has(k))]]).filter(g =>
-      g[1].some(k => N[k])
-    );
+    G = navRows(SECTION_LIST.map(n => n[0]));
   $('#side').innerHTML =
-    G.map(([t, L]) => {
-      const has = L.includes(studioState.sec),
+    G.map(([t, R]) => {
+      const has = R.some(r => r.keys.includes(studioState.sec)),
         shut = foldedSectionGroups[t] && !has;
       return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${escapeHtml(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${escapeHtml(t)}</button>${
         shut
           ? ''
-          : L.filter(k => N[k])
-              .map(k => {
-                const [, n, d] = N[k],
-                  why = besideRefusal(k);
-                return `<div class="nav-row"><button class="nav ${studioState.sec === k ? 'on' : studioState.sec2 === k ? 'on2' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(n)} beside this section"`}>⇥</button></div>`;
-              })
-              .join('')
+          : R.map(r => {
+              /* SA-4: a joined row (Characters) opens the one of its sections last open, and beside it the other */
+              const k = joinedTarget(r.keys),
+                here = r.keys.includes(studioState.sec),
+                k2 = here ? r.keys.find(x => x !== studioState.sec) || k : k,
+                j = r.name ? navJoined(k) : null,
+                n = j ? j.name : N[k][1],
+                d = j ? j.d : N[k][2],
+                why = besideRefusal(k2);
+              return `<div class="nav-row"><button class="nav ${here ? 'on' : r.keys.includes(studioState.sec2) ? 'on2' : ''}" data-act="go" data-s="${here ? studioState.sec : k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${escapeHtml(n)}</b>${here ? `<small>${escapeHtml(d)}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k2}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(j ? N[k2][1] : n)} beside this section"`}>⇥</button></div>`;
+            }).join('')
       }</div>`;
     }).join('') +
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.</small></div>`;
@@ -755,6 +772,12 @@ export function openSection(s, sel) {
 }
 export const SECTIONS = {};
 export const ACTIONS = {};
+/* SA-4: the switch at the top of a joined row's section; in the second pane it changes that pane */
+ACTIONS.navSwitch = d => {
+  if (d.pane === '2') {
+    if (d.s !== studioState.sec2 && ACTIONS.openBeside) ACTIONS.openBeside(d);
+  } else if (d.s !== studioState.sec) openSection(d.s);
+};
 ACTIONS.navFold = d => {
   foldedSectionGroups[d.g] = !foldedSectionGroups[d.g];
   try {
@@ -818,7 +841,7 @@ export function renderPane(m, sec) {
     const html = S();
     const t1 = P ? performance.now() : 0;
     keepAside(m);
-    m.innerHTML = html;
+    m.innerHTML = joinedSwitch(sec, m.id === 'main2') + html;
     keepPutBack(m);
     const t2 = P ? performance.now() : 0;
     studioState.after.forEach(f => f());
@@ -904,7 +927,7 @@ document.addEventListener('keydown', ev => {
   }
 });
 addEventListener('beforeunload', e => {
-  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
+  if (studioPending()) {
     e.preventDefault();
     e.returnValue = '';
   }

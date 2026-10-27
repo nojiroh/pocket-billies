@@ -53,7 +53,6 @@ export interface SaveData {
   visited: Record<LocationNode, number>;
   /** the last encounter number */
   serial: number;
-  eggs: Egg[];
   /** Date.now() at the last save */
   savedAt: number;
   /** the trainer card: ID number, start date (0: unknown) and eggs hatched */
@@ -79,7 +78,7 @@ export interface SaveData {
   /** clothes owned and saved outfits (dressing-room.js) */
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
   /** roguelite track RL-3 (save format 4): what lasts between runs, the run in progress (null in the hub; while it is
-      on, team, se, items, pyramids, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
+      on, team, se, items, pyramids, trip, wild, flags, seats and visited are the run's), the ranch */
   meta: Meta;
   run: Run | null;
   ranch: Ranch;
@@ -202,6 +201,10 @@ export interface RunNode {
   zone?: number;
   /** RL-R2: 1 on a side area's place (run.map.side) */
   side?: 1;
+  /** WM-2: its footprint on the region grid (logic/run-map.js RUN_GRID): its south-west cell (x east, y north) and its
+      size in cells; a main place's only (none on a side area's or a run's from before WM-2) */
+  at?: [number, number];
+  size?: [number, number];
 }
 
 /** roguelite track RL-R2: a run's side area (logic/run-side.js runSideAdd) */
@@ -264,7 +267,6 @@ export interface RunStart {
   pyramids: Record<DataId, number>;
   trip: Trip;
   wild: Record<string, WildStock>;
-  eggs: Egg[];
   flags: Record<string, number>;
   seats: string[];
   visited: Record<LocationNode, number>;
@@ -562,15 +564,4 @@ export interface Encounter {
   unstable?: { up: string; down: string; name: string };
   /** SP-5: an Escaped specimen's Augment, as a Billie's (Billy.aug) */
   aug?: Partial<Record<'front' | 'back', PartInstance>>;
-}
-
-/** an egg (game-state.js addEgg) */
-export interface Egg {
-  id: string;
-  /** its km, a key of gameData.eggs (a number: hatchEgg compares it with EGG_TIERS) */
-  tier: number;
-  /** steps toward hatching */
-  prog: number;
-  /** the incubator slot it is in, or null */
-  slot: number | null;
 }

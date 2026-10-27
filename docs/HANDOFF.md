@@ -70,6 +70,362 @@ hairlines, tap targets stay 40 px.
 - **Next:** UI-9b: the families above out of parts.css the same way, and the off-scale values snapped one screen per
   commit (nearest step, ties up, 1-2 px kept as hairlines), with a phone check.
 
+### Studio art track SA-4 - navigation - 2026-10-27
+Branch `track/studio-art`. The container's HEAD was detached at origin's tip and the local branch was 195 commits behind
+with 6 stale SA-1 commits (their work is on origin under other hashes): the branch was checked out again from origin.
+Main had nothing new, so there was nothing to merge. Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): workspaces as the sidebar's folding groups; Characters as one row with a Looks | Wardrobe switch;
+a "Game" workspace on top for Rules and Check; Items & pyramids in Runs. Labels only: no section key, data key or
+player-facing word changed. 7 commits. Tag `sa-4-done` (made here, for the owner to push).
+- Changed:
+  - **Workspaces**: Game (Rules, Check), Art (Art browser, Art workbench), Creatures (Billies, Roster board, Part
+    rules, Genes, Coats, Moves, Types, Battle preview), World (Walk scenes, Hub island, Props, World & encounters,
+    Engine, Camera), People & story (Trainers, Characters, Lore & story, Story scripts), Runs (Run Lab, Perks, Unlocks
+    & hub, Economy, Robots, Items & pyramids), Sound & UI (Music & sound, UI look), Legacy. The Moneys group is gone.
+    The table is `STUDIO_WORKSPACES` in `game/js/logic/studio-layout.js` (was `SECTION_GROUPS` in studio-app.js), with
+    `navRows`, `navJoined`, `workspaceOf`.
+  - **Characters**: one sidebar row for Looks (`people`) and Wardrobe (`wardrobe`); it opens the one last opened, its
+    ⇥ opens the other beside. A switch on top of both sections (`.nav-switch`) changes the section in the pane it is
+    in. `#people` and `#wardrobe` links, Find and the checks work as before.
+  - **Part rules**: the label of Part sizes (nav, heading, the Check's three messages).
+  - **Rules** says what it holds: What's new and the game-wide numbers; a run's own are in Runs.
+  - **Find** shows each section's workspace (Looks and Wardrobe settings say "Characters › …") and finds Characters.
+  - Checks: `studio-layout.test.mjs` +3 tests (every SECTION_LIST section in exactly one workspace, the rows, the
+    labels); the Studio self-test's Find step fails if Find misses a section or a section is in no workspace;
+    `studio-shots.py` views `looks` and `wardrobe`.
+  - Docs: STUDIO.md (a Workspaces note under Layout; Perks, `perks.json`, `run.perks` for Loopholes and relics; the
+    workspace paths; Characters); the improvement plan's T4.5 and T6.8 marked done here; the plan's "Found in SA-4".
+- Where the plan was wrong: T4.5 was mostly done already (Runs existed, Jobs and Town shops removed in SA-3);
+  STUDIO.md named `relics.json` and `run.relics` (the data is `perks.json`, `run.perks`); nothing tested the nav before.
+- Decisions I made:
+  - Rules and Check: not in the plan's list; a Game workspace (the owner's pick), put first.
+  - Robots sit in Runs after the run pages, Items & pyramids last.
+  - The folds are stored by workspace name, so a fold saved under an old group name is forgotten once (harmless).
+  - Left as they are: the battle-golden test's name "holding Loopholes" (a test name; its snapshot key would change),
+    the run URL's `relics=` and the section key `relics` (internal).
+- Risky:
+  - The switch is put above the section's own HTML in `renderPane`; a section that one day reads its pane's first
+    child would see the switch. None does today (grepped).
+  - Shift-clicking the Characters row while one of the two is open on the left says "Already open on the left"; its
+    ⇥ button opens the other one beside.
+- Verified:
+  - lint (with art-code-refs), typecheck, format, check:modules after each commit; unit tests 1431 pass.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections opened, the self-test with the new Find
+    check: 21 edits undone, proposal made). `--only=polish,checks`: ok (the second pane by a Shift-click on a nav row).
+  - Smoke: 6 of 6 (286 s), run alone.
+  - In a browser (scratch script): the row, the ⇥ button and the switch in both panes; Find for every section's name
+    and for Characters, Part rules and "shopkeeper"; no page errors. Screenshots at 1024 and 1920 (looks, wardrobe).
+  - Not run: the full quick check, the publish checks (they time out here).
+  - Noticed, not SA-4's: the polish step's line still says "shop thank-you lines" (Town shops went in SA-3).
+- For the owner on the phone:
+  - The section list: the eight workspaces; fold one and reopen the Studio.
+  - People & story → Characters: Looks and Wardrobe with the switch on top; Shift-click or ⇥ to put one beside.
+  - Ctrl K: "characters", "part rules", "perks": each result says its workspace.
+- Next: SA-5 (unused art), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-3 - the clean-up - 2026-10-27
+Branch `track/studio-art` (main merged first, a merge commit: HANDOFF and art-code-refs.json conflicted; SA-2b kept on
+top, main's entries below, SA-2a and SA-1 once; the container's local branch was 165 commits stale, so the merge's
+first parent is main and its second the track branch: no history rewritten). Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): Copperleaf's place as a card in Hub island; What's new at the top of Rules; the save's empty `eggs`
+list removed; the boutiques' names only into the wardrobe. One cause per commit (33), each removal grepped before and
+checked after (lint, typecheck, check:modules, check:data, unit tests). Tag `sa-3-done` for the owner.
+- Changed (Studio):
+  - **Jobs** gone, with its Find entries and checks. The self-test's and check-studio-github.py's quiet section is
+    Types now.
+  - **World & encounters** opens on Wild encounters; **Route stops** and **Eggs** are gone. Copperleaf's own place
+    (name, route label, wild encounters, backdrop, mood, music, description) is a card in **Hub island**; Check,
+    Connections, Story scripts and data-checks' findings open Hub island for a place. Find lists no route stops.
+  - **What's new** is the first card of Rules; the dead End of the road (`meta.endText`) is gone, from meta.json too.
+  - **Rules**: the Free egg, the wild drop chance and weights, the Eggs card, the rest stop price gone.
+  - **Trainers**: the km First-win egg (and the 8 mini-bosses' `egg`), the Stands at picker gone; the badge id's help
+    says the save and the profile keep it (not route gates).
+  - **Art workbench**: the always-disabled Pixels and Model buttons gone. **Roster board**: no count or version in
+    its words.
+  - **Local mode**: `window.STUDIO_KEY`, github.js's key check, the `X-Studio-Key` header, its global type and
+    STUDIO.md's "Saving in local mode" gone.
+  - **Town shops** gone, with its Find entries, Connections' shop kind, its checks, the Looks list's keepers, Walk
+    scenes' Which shop picker (a door opens its place's shop) and check-studio-github.py's shop thank-you step.
+- Changed (game):
+  - **The walk eggs**: `addEgg`, `hatchEgg`, `hatchable`, `autoSlot`, `eggSlotCount`, `eggKm` (logic/rules.js);
+    `saveData.eggs` (a new save has none, an old one's is dropped; no SAVE_VERSION change); the run's working field;
+    `rules.eggs`; `EGGS`/`EGG_TIERS`; **eggs.json**. Ranch eggs (breeding.js), `saveData.hatched` and the egg
+    pictures stay.
+  - **jobs.json** and **shops.json** gone. `SHOPS` starts empty; a run's world fills it as before. The boutiques'
+    names are in `wardrobe.json shops`: the dressing room names them, the Wardrobe's Sold at lists them.
+  - Types, the test fixture, check-data's snapshot (file count 175 to 172; the planted egg line gone) and
+    art-code-refs.json follow.
+- Where the plan was wrong: see the plan's "Found in SA-3" (the shops were the legacy world's; the badge and `node`
+  are live; Route stops was Copperleaf's only editor; the save held the walk eggs; the roster has 53).
+- Decisions I made:
+  - The quiet section of the two Studio checks is Types (no 3D view); Types now skips the second-pane step.
+  - The path-prefix test's floor is 2 claims (lore's, the story editor's): the shop's `@thanks.` went with its section.
+  - The landmark picker went with Route stops; `landmark` is still read and checked.
+  - A regional form's preview in the Studio uses its base stage's rig in the form's coat (sprites.js), as the game
+    does: Wild encounters, now the first tab, drew four forms (Trump, Zuckerberg, Swift, Kardashian) that asked for
+    missing pictures about 100 times each. Not saved into rigs.js.
+- Risky:
+  - The hub card edits `locations.json` from a 3D section; a field change redraws the section.
+  - The dressing room's inside-a-boutique mode can't be reached any more (no shop has `kind: 'wardrobe'`): left.
+  - `egg_5.png` is only preloaded now (SA-5).
+- Verified:
+  - lint, typecheck, format, check:modules, check:data after every commit; unit tests 1428 pass.
+  - Smoke: 5 of 6 in the full run (208 s). The Actions sheet step failed there with "debug log: no function render
+    to wrap" (the debug log's hook ran before the page's functions, with two browsers busy); alone it passed (57 s).
+    One re-run, as the rules allow; noted in case it comes back.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections, 21 edits undone, no problems). Its first
+    run found my Wardrobe bug (it read `D.shops`, gone with shops.json) and the forms' 404s: both fixed, then ok.
+  - `--only=wardrobe,workbench,leaders,checks,story,polish`: ok except `story: the reference didn't put heal in the
+    script`, which fails the same way on the merge commit before SA-3 (main's or SA-2b's; not looked into).
+  - Not run: the publish checks (they time out here, as in SA-2b) and the full quick check.
+  - In this container Python Playwright must be 1.63.0 to match the installed Chromium (tools/requirements-check.txt
+    pins 1.56.0, which can't find its browser; smoke then skips the browser steps and still says exit 0).
+- For the owner on the phone:
+  - Studio → Hub island: the Copperleaf card at the bottom; change the music or mood and play.
+  - Rules → What's new at the top; the title shows it.
+  - Wardrobe → an item sold at a boutique: Sold at lists the four; in the game's dressing room an item you don't own
+    says "sold at Second Chance Threads" (was "a boutique").
+  - An old save loads (its walk eggs dropped); a run starts and ends.
+- Next: SA-4 (navigation as workspaces), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-2b - the missing editors, part 2 - 2026-10-27
+Branch `track/studio-art` (SA-2a pulled first, then main merged: a merge commit, only HANDOFF conflicted, both top
+entries kept; art-code-refs.json made again for main's moved lines). Plan approved in Plan Mode. The owner's picks
+(Claude's recommendations): icons get text **and** Edit pixels; the builder's block shading ported as a button. Not
+the recommendation: **no split** (all of SA-2b in one session, done so). Tag `sa-2-done` for the owner.
+- Changed:
+  - **A text-file save.** An SVG under `art/` and `art/manifest.js` are kept unsaved (`studioState.textDirty`), sent by
+    Propose as text (github.js `file` takes them; anything else is still refused), kept in drafts (draft-record.js
+    `texts`, a draft without them still reads), one undo step each (history.js text steps, also grouped with a data
+    change). They raise `meta.artVersion` like pictures (the game's art cache holds them too).
+  - **UI icons** (`studio/js/icon-editor.js`): pixels on the shared canvas, written back as the icons' own SVG format
+    (`logic/svg-pixels.js`); **Shade as a block** (`logic/icon-block.js`, the builder's rules); the text checked as
+    typed (`svgProblem` + the browser's parse); New icon; previews at 14-108 px on light and dark panels and beside the
+    others; unsaved icons in the Studio's own menu previews (`window.NW_ART`). Edit icon and Replace… (SVG) in the Art
+    browser.
+  - **tools/build-ui-icons.py deleted** (decision 6). `ui-icons.test.mjs` keeps the names, the count (51), the size and
+    format, and the code's uses; its grids kept as `tools/test/fixtures/ui-icon-grids.json` for the shading test.
+  - **Icon atlas** (`studio/js/atlas-editor.js`, `logic/atlas-rects.js`): the sheet with every rectangle; pick, drag,
+    resize, arrow keys, numbers; Add (a free place), Rename (items' icons and types' particles follow, one undo step),
+    Delete (refused while the data uses it); problems listed; the rectangles over the sheet in the painter; the Studio's
+    icons follow at once. `art-code-refs.json` gains `atlas`: keys the code names as words (a hint).
+  - **Scene art previews** (`studio/js/scene-art-preview.js`, `logic/wall-ramp.js`): walls and the building sheet
+    coloured as the shaders do (6 × 4 m of a cell, a colour to pick, off-level pixels counted, the cells outlined in the
+    painter), rooms behind a window by day and at night, a flag waving by the game's ripple with its postcard stamp, a
+    far backdrop over a sky wrapped at its seam.
+  - `ART_BUILDERS`: the icons' builder out; the far backdrops (build-scene-props.py) and `detail-a04b.png`
+    (build-airship.py and build-props-batch1.py) in.
+  - Walk scenes' far list has sea and volcano (two places use sea and showed None).
+  - Fixed on the way: the pixel canvas's side panel closed one element too many without the onion skin (the tile set's
+    help sat outside its column); the publish check waited for every picture's load event (over 30 s here).
+  - Checks: `check-studio-github.py` steps `icons`, `atlas`, `scene_art` and an SVG in the publish checks; the self-test's
+    "Icons" row; `studio-shots.py` views `icons`, `atlas`, `walls`, `flags`; unit tests svg-pixels, icon-block,
+    atlas-rects, wall-ramp (+ publish-plan, draft-record, history, art-search cases).
+  - STUDIO.md: UI icons; Icon atlas; Scene art previews; Propose and drafts carry text files.
+- Where the plan was wrong:
+  - **Far backdrops aren't drawn by the game** (only preloaded; `farH` does nothing). The Studio shows and paints them
+    with that note; bringing them back or retiring them is yours to decide (SA-5's report?).
+  - Only `detail-a04b.png` is the live building sheet; `detail.png` and `detail-a04.png` are builder inputs. Nothing in
+    the game reads `manifest.js`'s `battle` layout. Both noted for SA-5.
+  - The icon sheet is 254 × 48 (not 256 wide), 119 rectangles.
+- Decisions I made:
+  - The UI lint's raw-colour ceiling rose by exactly 47 (the icon palette moved from Python into
+    `logic/icon-block.js`): art colours, not UI styling; the reason is in the ceiling's comment.
+  - A new icon keeps the unit test's count at 51 on purpose: the owner raises it with the new icon.
+  - Renaming an atlas key changes the data, not the code; the code's uses are listed as a hint.
+- Risky:
+  - The atlas's "the code names it" list matches words (`up`, `box`): it can show false uses.
+  - The wall preview is flat light: the shaders' sun, bumps and the room skirting aren't drawn.
+  - Text steps reuse the picture steps' shape (empty patches + texts); a later change to history.js's art steps
+    should keep `text` steps working (history.test.mjs covers it).
+  - The Studio is still wider than a 390 px phone in every section (not new).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data.
+  - Unit tests: 1358 pass.
+  - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,icons,atlas,scene_art,studio_test`:
+    every step ok; the self-test round-trips 51 icons in about 11 ms and finds the atlas's 119 rectangles fine.
+    The publish checks (`--only=publish`) still time out at their first click in this container, with or without this
+    session's changes (the page stops painting frames); the SVG case is written but couldn't be seen through here.
+  - Smoke 6 of 6 (237 s). The Studio needs `npm run data` first in a fresh container (gamedata.js is generated).
+  - Screenshots at 1920, 1024 and 390 (views icons, atlas, walls, flags): fine at 1920 and 1024; wider than 390 px, like every section.
+- For the owner on the phone:
+  - Art browser → ui → an icon → Edit icon: paint a pixel, watch the previews; clear it, paint a flat shape, Shade as a
+    block (try One colour).
+  - icons → icons.png → Edit the rectangles: drag one, Shift + an arrow, Rename an item icon and see the item.
+  - scene/build/walls.png → pick a cell and a colour; Edit pixels and paint: the preview follows. A flag waving.
+- Next: SA-3 (clean-up in the Studio and the game), in a new session on `track/studio-art`, in Plan Mode.
+
+### Region map track WM-2 - the region grid (logic only) - 2026-10-27
+Branch `claude/wm-2-region-grid` (from WM-1's branch). The owner's answers: places a path by Expedition (I 9-10, II
+9-11, III 10-11, IV 10-12, V 11-12), a free place before the boss, so 2 towns at 9-11 places and 3 at 12; no filler
+towns; the scrapyard counts as a route; side areas flipped too; the grid in the logic only until WM-3; 64 m cells.
+- logic/run-map.js: `runMapRows` puts each mini-boss's town right after it (the leader first, the town its reward), a
+  free row at least before each mini-boss and before the boss; `runMapLength` draws the run's places a path from
+  rules.json `run.map.path` by Expedition and as many mini-bosses as fit within `run.map.towns` (runStartPlan calls it
+  before the region, whose zones are fitted to those rows); rules without rows (rules.json's own) draw Expedition I's.
+  The row after the landing always has two lanes. Every lane of the free row before a mini-boss is route-like
+  (nodeTypes.json `routeLike`: route, rival, mini-boss, scrapyard), redrawn on 'map|road|row|lane' when not.
+- The region grid: `RUN_GRID` (64 m cells, every place 2 x 1, within 3 cells of the landing's row), `runMapGrid` (a
+  seeded layout search with backtracking; the landing's links east, lane 0, and north, lane 1; east, north or south,
+  never west; no overlaps), each main node's `at` and `size`; `runGridSide`, `runGridOverlap`, `runLinkDir`. When the
+  grid can't hold a map's lane switches, the map is linked again without them. About 0.2 ms a map. validRun checks
+  `at` and `size`.
+- **Playable until WM-3**: `row` stays a node's step (every link goes to the next step); runExits, the scenes and the
+  bowl read rows and lanes as before, so a north link still leaves by the east side in the walk. mapgen.js, run-loop.js
+  and the arenas untouched (WM-7 can run alongside).
+- nodeTypes.json: town weight 0 (towns only after leaders), `routeLike`. rules.json run.map: `path`, `towns` for
+  `rows`, `minibosses`. The short map (debug menu, Run Lab, self-test, run-test.js, check-fast) is 6 rows: landing,
+  route, leader, town, route, boss.
+- run-side.js: a side area's leader comes before its town too (`runSideTypes`, `runSideProblems`).
+- data-checks.js: `dataRunMapRules` checks `path` and `towns` (every length fits); the region check uses the drawn
+  lengths; `runMapProblems` adds overlapping footprints, a link across no shared edge or going west, the landing's
+  ways on not north and east, a path with fewer than 2 route-like places before a town, places a path or towns on a
+  walk outside the rules; `runMapSweep` takes `expedition` and reports places a path, the grid's size and links by way.
+  run-rules-code.js lists the new rules in code. content-preview's leader values use the longest run (12, 3 leaders).
+- Studio Run Lab: a region-grid view (the default; footprints on cells, north up, north and south links dashed), a
+  Steps view (the old picture), an Expedition picker (map, sweep and logic panel; Play this seed plays Expedition I),
+  the place's cells and its links' ways, the sweep's new figures, the path and towns fields for rows and mini-bosses.
+  The Studio's GitHub check (run lab and rules card steps) moved to the new view and fields; the perks editor's picks
+  read `towns`.
+- **What follows from the rules**: at 9-10 places every free step is right before a leader or right after a town, so
+  Expedition I runs have no stalls and few waystations (the waystation tests use Expedition V); runs hold about three
+  times the route places they did, so more route trainers.
+- Sim (100 runs, balance mode, before -> after): trained party (level 40, 3 at home) Expedition I won 90 -> 68, places
+  7.4 -> 9.2, battles 19 -> 27, route trainers 1.7 -> 8.1, the estimate 15 -> 22 minutes; III 34 -> 32 won; V 19 -> 17.
+  The untrained bot never reaches a town now (each is behind a leader); the town and stall sim tests use a party
+  trained to 20.
+- **Found, not fixed** (mapgen's, before WM-2 as after, at the same rates): about 1 run place in 25 gets a river note
+  ("no way downhill"; old maps 11 of 256 places, new 12 of 320); about 1 route trainer in 75 faces a wall (mapgen's
+  spot `face`; 3 of 179 before, 7 of 540 after). New maps met them on fixed test seeds: run-side-world's SIDEW1 ->
+  SIDEW2 and run-world-real's RL7WORLD3 -> RL7WORLD6 (with comments), and route-trainer-spots' "faces a wall" is now a
+  share (at most 3%) instead of none. A mapgen session should fix both.
+- The paths sit a little north of the landing's row on average (the second lane is always the northern one); WM-4
+  can centre the region on the bowl.
+- Snapshots remade on purpose: run-map, run-start, run-world-real (the maps changed), check-data's planted rules (the
+  planted `rows` became a bad `path`).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1416 pass; slow tests all pass but
+  "the game's island is the generator's own output" (fails on main too); check-fast's run pages 15 of 16 (the world
+  map's bowl check failed once under load with "debug log: no function render to wrap" and passed alone); smoke 6 of
+  6 on the third run (the first two each failed one step with the same debug-log message; the old tree passed twice:
+  a race between boot.js's `debugLog.hook()` at 'maps ahead' and debug-log-names.js, the page's last module, worth a
+  look); check-studio-github `--only=run_lab` passes (it found the Run Lab sweep keeping the plan's zones, fixed). The
+  full quick check was not run this session.
+- Next: WM-3 (mapgen takes a footprint; north and south seams; then the scenes read `runLinkDir`). Tag `wm-2-done`
+  for the owner.
+
+### Cutscenes and run screens (C, A, B), then loading (LD-5 in part) - 2026-10-27
+Branch `ccr-517fcc1e-p1asai` (one session at the owner's word; the plan was C, then A, then B, then loading). It merges
+the load track's `ccr-3df446bb-9jvdvq` (LD-0 to LD-5 in part). The only conflict was `run.js`'s generated imports.
+The load session was told.
+
+**What changed**
+- **C, the run's screens:**
+  - Ride home no longer turns the screen instantly white for up to 30 s. It shows `runHomeScreen` instead: the
+    carriage, "Heading home", and the run summary from `logic/run-card.js` `runCardHome`.
+  - `trainRideHome`'s `cover` lifts when the ride can film, on any stop, and after an error.
+  - `trainVeil` no longer flashes back on.
+  - A run's evolution waits while `trainRide.on` or `trainRide.cover` is set, and opens at the ride's end, before the
+    way home's story scene. It used to land on top of that scene and hold the save.
+  - The take-off's `pb-loading` has a dark `night` look, `tips` that turn over, a `card` slot with the region card
+    (`runCardOut`), and the stages folded into one line.
+  - `tools/look-run-screens.py` takes pictures of both screens.
+- **A, the station, track and portal:**
+  - Skyline Station faces out to sea, where the orbit camera looks in at it (`STATION_TURN` 0). It sits on the
+    headland's length, with its ground levelled (`tools/patch-station.mjs`, then a `build-copperleaf` rerun, which
+    re-rolled 18 dressing props).
+  - The track is a plain one: sleepers and two rails under the skids. One causeway piece (look `end`) has the buffer.
+  - `sky_portal` floats out at sea (prop `y`), with glowing layers stacked for depth and rings turning at their own
+    speeds. One ring must stay still: a model whose solid parts all spin draws as its flat picture. It has a gold look.
+  - `logic/train-path.js` was rewritten in the station's frame (glide, board, lift, turn, dash; home: open, out, turn,
+    down, off).
+  - `tools/station-place.mjs` is shared by the builder and the patch.
+  - `clear-windows --fix` was run after the rebuild.
+- **B, the opening:**
+  - The floating-island fall is now a dive onto `opening.json`'s `me`, with clouds and streaks drawn over it.
+  - The last picture is held, dazed (`#csHold`), while Copperleaf mounts. Its new first shot, `drop`, is on the same
+    spot. `copperleaf-town.json` holds that shot.
+  - The pick camera looks across the starters from the coins' side, aimed so the starter stands above the card.
+    Starters are no longer flipped, and the card is shorter.
+  - `tools/look-opening.py` takes pictures of the opening.
+- **Loading:**
+  - `bowl-worker.js` works out the world map's ground squares (`logic/bowl-terrain.js` `bowlTerrainRows`, moved out of
+    `world-bowl.js`). The ground's hash is unchanged.
+  - Headless take-off: the bowl stage went from 7.5 s to 6.3 s; Copperleaf's squares take 77 ms on the thread.
+  - The walking grid went from about 250 ms to 80 ms. The heights and bridges are held while it is built
+    (`walkView.navBuilding`), and `rawHeightAt` no longer makes closures. The grid's hash is unchanged.
+  - `debugLog.hook` now waits for `debug-log-names.js`. LD-0's early call sometimes logged "no function render to
+    wrap", which failed checks.
+
+**Risky**
+- The dive and its held frame were only seen headless. On a phone the hold should be short; the swap from the world
+  map's picture to the walk view is covered by the flash and the blur.
+- The portal's halo is dithered. Seen from the side it looks grainy.
+- Copperleaf was rebuilt: the dressing re-rolled (beach grass, one birch by the track's cutting).
+- The square's view of the old sky rail (HB-10a) now shows the portal instead.
+
+**Verified**
+- After each change: lint, typecheck, `check:modules`, `check:data`, `npm test` (1401 at the end).
+- `check-fast` steps: the train ride, packing, the lost run's scene, the world map, rooms, seams, tall ground.
+- `check:smoke` (before the loading work): 5 of 6. The sixth (Windows) was fixed and then passed run alone.
+- Pictures (not committed): the ride, the screens, the opening, the station from the walk.
+- `check-fast` "The run's places from the helper thread" fails on the load branch alone too ("made on the ?").
+  Reported to the load session.
+
+**Next**
+- The owner's phone test: a take-off, both ways home, New game's fall and the starter pick.
+- The load track's own LD-5 items: model meshes, uploads, and the next place's warm-up.
+### Load track fixes - the early debug-log hook, the helper-thread check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. Both found by the cutscenes session (ccr-517fcc1e-p1asai), which merged this branch and
+took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan's LD-5 say how).
+- boot.js: LD-0's early `debugLog.hook()` could run before debug-log-names.js had filled GAME (unbundled, each module
+  script is a task of its own), logging "no function render to wrap" and failing check-fast steps under two
+  browsers. It now hooks only once `render` is in GAME, else at DOMContentLoaded (after every module script), and again
+  (a no-op when done) when the loader is ready.
+- check-fast "The run's places from the helper thread": the boot's places may be made at once (`runWorldSync`, when the
+  fixture's save is swapped in) rather than on the thread, so the step now asks that the thread is on and makes places
+  equal to the page's, and reports where the boot's came from. `runWorld.how` says 'page at once' for that path.
+- Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
+  smoke 6 of 6.
+
+### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
+Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
+owner's brief: a better world map, routes and towns for runs, with online research and many questions; planned and
+answered in docs/phases/worldmap-track.md (WM-1..WM-8), then WM-1 built in the same session.
+- **Reverses TR-2**: logic/run-scenes.js `runSceneExits` gives `west`/`west2` back and `east`/`east2` ahead (a side
+  area's places too); run-map.js `runSpot` puts the landing near the bowl's west rim and the boss near the east (a
+  detour's places east of their obstacle); route-trainers.js `routeWaySpot` stands a spare trainer on the way east.
+- mapgen.js: a new dial `ahead` (the side the way on leaves by; west when not given, so the Studio's and every other
+  map are unchanged); a run's scenes give `E`. The first tall-grass patch lies across the way on and the pinches run
+  along it (`mapgenAhead`, `mapgenToward`). MAPGEN_VERSION 19.
+- logic/bowl-camera.js `bowlCamHome(x, y, yaw, up)`: with a place's `up` it looks the way the place's map north faces
+  (a run place: north), so the run reads west to east, left to right; world-bowl.js passes the spot's `up` on opening,
+  in the flight and on Home, and a run's map now opens over you that way whatever the camera did last (from the walk
+  it still pulls back from above you). Places with no `up` look outward as before.
+- Words: the landing's hint "Walk east into the next place", the mini-boss's "blocks the way east"; comments that said
+  north/south or east to west.
+- Tests: run-map, run-scenes, route-trainers and bowl-camera (a new one: a run place's opening view looks north, west
+  on the left, north up); snapshots remade on purpose (run-world-real's frozen dials: the sides and `ahead`;
+  run-start's mapgenV; rng's scene hash, the same scene but for gen.v).
+- **Found, not fixed** (before and after WM-1): about 1 place in 50 of the debug menu's mountains run has a north
+  summit you can walk down from but not up to (a one-way ledge across its trail). mapgen-mountains.test.mjs's second
+  seed moved from TR2MTN1 to TR2MTN2, with a comment; a terrain session's to fix.
+- **Watch**: route places with a spot for their rarer Billie went from 0.95 to 0.90 over 90 seeds (the same spots a
+  place on average); route-trainer-spots.test.mjs now samples 15 seeds with a 0.75 floor (5 seeds swung 0.67-0.78).
+  WM-3 reworks how routes are made; look again there. mapgen-town.test.mjs's pinned-edge check allows a river bank's
+  corner a cell on (1 cm off at TW1D's west edge).
+- Also: studio/art-code-refs.json regenerated in its own commit (its line numbers were out of date on main since LD-5,
+  so `npm run lint` failed before this session).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1412 pass; slow tests all pass but
+  "the game's island is the generator's own output", which fails on main too; check-fast's run pages (the run's world,
+  the helper thread, the town's shop, life and quest, the battle held, Blake, the bowl, Play this seed, waystations)
+  10 of 10; smoke 6 of 6 (159 s). A headless picture of the run fixture: the landing's "Thicket Route →" sign points
+  right in the walk, and the world map opens over the landing looking north with the road going right to the next pin.
+- The container's Python Playwright 1.56 (tools/requirements-check.txt) doesn't match its Chromium (build 1243); the
+  checks ran with Playwright 1.63 installed in the container only. The pin may need moving.
+- Risky: a run saved mid-way before WM-1 is remade from its seed going the new way (its places' exits flip, you stand
+  where you were); old saves don't matter (CLAUDE.md).
+- Next: WM-2 (the region grid, logic only). Tag `wm-1-done` for the owner.
+
 ### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
 pictures into solids in a busy frame.
@@ -1224,6 +1580,60 @@ more intuitive Studio, and what no longer fits the Vision taken out.
 - Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
   is on it).
 - Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
+
+### Side session - Kappi the Wise, a capybara, replaces Hazel - 2026-10-26
+Branch `ccr-5f47d3ef-j66nm0`, from main b87b818d (no pull request yet). Plan approved in Plan Mode. The owner's answers:
+the exact swap (Hazel's role, gift, favour and Potion bonus); name tag "Kappi", "the Wise" in lore and their
+introduction; they/them; a quad rig and a pixel portrait that blinks and talks; Kappi inherits S4 (a former Bureau
+researcher) and S6 (Kappi vs Blake); lines lean on Billies napping on them, the yuzu bath, unhurried calm and grazing;
+a low soft click for a voice; Hazel's unused sprites deleted; the drafted lines approved as written; the lab tab says
+"Chosen's lab"; a yuzu bath tub in the lab. Research online: no "Kappi" capybara exists; the nearest is Bandai's
+Kapibara-san (onsen, "at your own pace"), so nothing of its look or motto is used. project-story.md has the decisions.
+- Changed (one cause per commit):
+  - Renames: person `hazel` -> `kappi` (with `thanks_hazel` -> `thanks_kappi`: banterOwner reads the person from
+    `thanks_<id>`), `hazel_lab` -> `kappi_lab`, quest `fav_hazel` -> `fav_kappi`, banter ids `hazel_*`/`fav_hazel_*` ->
+    `kappi_*`/`fav_kappi_*`. Kept: the song `hazel`, the opening's spot `hazel` and shot `hazelRuns`, the hazel tree,
+    the history in HANDOFF, CHANGELOG's old lines, meta.json's release notes.
+  - Deleted game/art/people/hazel_*.png (nothing loaded them; the unused-art report missed them because the song and
+    the tree are also named hazel).
+  - Names (speaker, name tags, lore, Field Guide, the lab's text and tab, others' mentions in they/them), then Kappi's
+    lines (the approved drafts; two new lab lines, ids ba82 and ba1a).
+  - Voice: sound.js blip, a soft click then a low falling filtered note.
+  - Body: bodyPlans.json form `kappi` (quad, a stub tail) with a new `talk` flag (a mouth-open face frame; no Billie
+    has it, so their bakes are unchanged); tools/paint-kappi.mjs paints its drawing sheet (placeholders/kappi.png) and
+    bakes it (billionaires/kappi.png, rigs-next.js `kappi`); `--preview=dir` writes both views and the faces.
+  - Creature people: people/<id>.json `creature: {rig, ht}` (person.schema.json, game-data.d.ts). person-art.js lookOf
+    gives a creature look; personFrame draws the rig (walk cycle, front/back, mirrored right, acts mapped to rig poses,
+    ppm from ht), so the walk world, rooms, cutscenes and battle poses use it unchanged; drawPortrait shows its head
+    at twice its size in the people's portrait box. Frames drawn before the rig's sheet loads are not cached
+    (`personArtMissing`). npm run modules routed rigParts and rigPose through hooks.js.
+  - The yuzu bath: tools/build-props-kappi.py (scenery `yuzu_bath`, a low-poly tub with water, yuzu, a step and a
+    wisp of steam), placed in int_lab beside Kappi.
+  - Docs: VISION, ROADMAP, project-story.md (owner decisions 2026-10-26), SCRIPTS, CUTSCENES, STUDIO, TESTING, BRANCHES,
+    CHANGELOG.
+- Risky or unfinished:
+  - Kappi's art is a first pass painted by a script; edit tools/paint-kappi.mjs (or export/import the sheet with
+    tools/bake-placeholders.mjs) to redraw it.
+  - A creature person in a battle (personBattleFrames/Pose: throw, cheer, react) is untried: nobody fights as Kappi
+    until S6, which needs a creature trainer's battle art anyway.
+  - The rig's sheet loads on first use: Kappi may be missing for a moment the very first time; watch for a blank.
+  - The Studio's People editor still edits kappi.json's `look` (kept, unused while `creature` is set).
+  - The tub's picture went into scene/next/island/ (build-props-island.py's bake folder).
+  - tools/check-quick.py --smoke printed "no problems" when Chromium could not start (its browser steps never ran):
+    not fixed here. Locally the pinned Playwright (1.56) wants Chromium 1194; ran through a scratch
+    PLAYWRIGHT_BROWSERS_PATH with links to /opt/pw-browsers' 1243 (chrome-linux -> chrome-linux64, headless_shell).
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data, the data text check, unit tests (1284),
+    smoke 6 of 6 (code and data commits).
+  - In the game, headless: the lab with Kappi beside the tub, Kappi's talk box (portrait, name), the walk frames in
+    every direction next to the Chosen's (68.8 against 66.5 px/m).
+  - Full quick check on adb3df82: 2065 s, 45 steps, 37 passed. Problems: "Time, weather and rooms" (autumn stopped
+    drawing) passes alone here and on the base; "room light" fails the same on the base b87b818d. Of the other six, on the base: sky_portal floating, the payout
+    jingles and the two cave song fingerprints fail the same; the run from the mast fails there too (never landed);
+    "Run map music" and "Actions sheet" (a run's day chip) pass alone on this branch. None is this branch's.
+- Next: the owner's phone test (a new game: Kappi in the opening; the lab: tap Kappi, the voice, the tub's steam; a
+  lost run's return; a Bean for Kappi) and a debug log; a pull request into main when the owner says; then S4
+  (Kappi's past) and S6 (Kappi vs Blake).
 
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so

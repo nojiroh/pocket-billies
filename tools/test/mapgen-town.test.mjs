@@ -25,7 +25,6 @@ const C = GAME_DATA.scenery,
     pyramids: {},
     trip: { node: 0, plan: [] },
     wild: {},
-    eggs: [],
     flags: {},
     seats: [],
     visited: {},
@@ -137,9 +136,10 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
       /* a run's scenes meet any neighbour at height 0 on their east and west edges, but where a river crosses (WA-3a:
-         its bed keeps its height, the neighbour takes it from the edge strip) */
+         its bed keeps its height, the neighbour takes it from the edge strip; WM-1: and a bank's corner a cell on,
+         a centimetre off, as TW1D's west edge since runs go west to east) */
       const wetBy = (x, r) =>
-        [r - 1, r].some(k => k >= 0 && k < sc.h && 'wd'.includes(sc.tiles[k][Math.min(sc.w - 1, x)]));
+        [r - 2, r - 1, r, r + 1].some(k => k >= 0 && k < sc.h && 'wd'.includes(sc.tiles[k][Math.min(sc.w - 1, x)]));
       sc.heights.forEach((row, r) => {
         for (const x of [0, sc.w]) assert.ok(row[x] === 0 || wetBy(x, r), `${where}: the edges pinned`);
       });

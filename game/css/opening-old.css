@@ -258,3 +258,22 @@ body.cs-dazed #dio.gl {
   display: inline-flex;
   margin-top: 6px;
 }
+/* cutscenes track B: the dive's rush over the picture, and its last picture held while Copperleaf is made */
+.cs-streaks,
+.cs-hold {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.cs-streaks {
+  image-rendering: pixelated;
+}
+.cs-streaks[hidden] {
+  display: none;
+}
+body.cs-dazed .cs-hold {
+  filter: blur(6px) brightness(1.12) saturate(0.8);
+}

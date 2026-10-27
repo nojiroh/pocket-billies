@@ -54,7 +54,7 @@
    "id": "prologue",
    "stage": 0,
    "title": "The fall",
-   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one guitar pick in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Hazel made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
+   "text": "You were walking somewhere on the surface, late, with a lanyard round your neck and one guitar pick in your pocket. The pavement opened. You fell through the crust, past the inner sky, with the Inner Sun blazing ahead, and woke in Copperleaf, a hamlet of round doors and beehives, with no memory of who you were. The Chosen, Copperleaf’s self-appointed professor, found you and gave you a Billie; his assistant Kappi made sure you were in one piece. Blake, his other student, picked the one that beats yours. Granny Juniper, the beekeeper, gave you a room."
   },
   {
    "id": "road1",
@@ -142,16 +142,16 @@
    "who": "chosen",
    "role": "Billie professor (self-appointed), Copperleaf Town",
    "unlock": "start",
-   "text": "A boy who is certain he’s the main character of the Hollow Earth, and Copperleaf’s professor because he said so first. He wears a lab coat over a wolf shirt and talks about his katana, which is at the cleaners. The lab at the top of the green, down the lane from Granny Juniper’s hives, is his; the work in it is mostly Hazel’s.",
+   "text": "A boy who is certain he’s the main character of the Hollow Earth, and Copperleaf’s professor because he said so first. He wears a lab coat over a wolf shirt and talks about his katana, which is at the cleaners. The lab at the top of the green, down the lane from Granny Juniper’s hives, is his; the work in it is mostly Kappi’s.",
    "voice": "Loud, sure and wrong. “Amnesia. Classic origin story. I’d be jealous, but I already have one.”"
   },
-  "hazel": {
-   "name": "Hazel",
-   "who": "hazel",
+  "kappi": {
+   "name": "Kappi",
+   "who": "kappi",
    "role": "The Chosen’s assistant, Copperleaf Town",
    "unlock": "start",
-   "text": "An outsider who came down from the surface to study the clones, and stayed because the clones turned out to be the honest part. She does the real research in the Chosen’s lab and translates him for visitors.",
-   "voice": "Dry, kind and tired. “Fall-related amnesia. Very common down here.”"
+   "text": "A capybara everyone but the Chosen calls Kappi the Wise. Kappi came down to study the clones and stayed because the clones turned out to be the honest part; wild Billies leave them alone and nap on their back. They do the real research in the Chosen’s lab, think best in a hot bath with a yuzu in it, and can read a Bureau form number at a glance. They don’t say how.",
+   "voice": "Calm, unhurried and dry. “It comes back slowly. Most good things do.”"
   },
   "blake": {
    "name": "Blake",
@@ -284,7 +284,7 @@
  "books": {
   "fieldguide": {
    "title": "A Field Guide to the Hollow Earth",
-   "by": "Hazel (Prof. Chosen on the cover)",
+   "by": "Kappi (Prof. Chosen on the cover)",
    "pages": [
     "Billies are not dangerous unless you are holding a phone, are standing between them and a camera, or are a camera.",
     "They live everywhere: tall grass, caves, canyons, malls and the bottom of the sea. Each kind keeps to what its original loved most.",
@@ -370,7 +370,7 @@
   "Lost something on the surface? The Bureau of Lost, Found and Beans has it. Probably. Do not ask about the beans.",
   "Aurumansa gives its gold away. The collectors call it a disaster.",
   "The soup of the day in Pepperpot Town has been the same soup since 1971.",
-  "Hazel has a map of the sinkholes. Every one of them has a Bureau form number.",
+  "Kappi has a map of the sinkholes. Every one of them has a Bureau form number.",
   "Billies are not dangerous unless you are holding a camera, or are a camera.",
   "Blake picked the one that beats yours. No offence. Well, a little offence.",
   "The Hollow Earth’s file has been reassigned eleven times. Nobody who lives here was asked.",

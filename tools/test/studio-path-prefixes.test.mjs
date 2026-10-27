@@ -15,7 +15,8 @@ const claims = readdirSync(dir)
   );
 
 test('the Studio claims each path prefix once, and none starts another', () => {
-  assert.ok(claims.length >= 3, `found ${claims.length} claims`);
+  // SA-3: 2 since Town shops (and its @thanks. claim) went: lore's and the story editor's
+  assert.ok(claims.length >= 2, `found ${claims.length} claims`);
   const all = [['@rigs.', 'studio-app.js (built in)'], ...claims];
   for (const [i, [a, fa]] of all.entries())
     for (const [b, fb] of all.slice(i + 1))

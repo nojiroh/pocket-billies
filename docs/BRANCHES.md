@@ -53,6 +53,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `sound` | Sound track. SND-6 (cries, UI sounds, jingles, the mix, the Studio's Sounds tab) is here, 13 commits, **not merged into main** and with no pull request. |
 | `RL-10b` | RL-10b, Ranch B second half (PR #144, open). |
 | `ccr-9023a485-qr0fhf` | Project Story: Professor Chosen replaces Hazel (PR #142, open). |
+| `ccr-5f47d3ef-j66nm0` | Project Story: Kappi the Wise, a capybara, replaces Hazel (2026-10-26, no pull request yet). |
 | `ccr-305ae8d3-6ivodu` | UI track UI-7b (14 commits, no pull request yet). |
 | `track/encounters` | Encounter sessions of the roguelite track (RL-12b's two parts, then RL-12c held items; roguelite-track.md 9.4): RL-12b part 1 (events, reward picks, route trainers) done 2026-10-23; part 2 (waystations, stalls, no two shops) done 2026-10-24. RL-12c (held items) was built on `claude/project-thread-ka73c4` from main (2026-10-25, the owner's answer: a cloud session pushes only to its own branch; this one was merged into main). |
 | `claude/hub-island-revamp-4fskxy` | Hub track: the plan (docs/phases/hub-track.md) and HB-1 (the world map's pin, decals), built here at the owner's word because `track/hub` didn't exist yet. Later HB sessions start on `track/hub` (the owner makes it). |

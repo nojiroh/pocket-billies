@@ -281,15 +281,18 @@ export const bowlCamZoom = (s, f) => bowlCamClamp({ ...s, dist: s.dist * f });
  * @returns {BowlCamState} */
 export const bowlCamTurn = (s, dYaw, dTilt) => bowlCamClamp({ ...s, yaw: s.yaw + dYaw, tilt: s.tilt + dTilt });
 
-/** the view of a place: centred on it, looking outward (towards the wall that rises behind it), at the opening tilt
- * and zoom @param {number} x @param {number} y @param {number} [yaw] the current yaw, kept near the centre
- * @returns {BowlCamState} */
-export function bowlCamHome(x, y, yaw = 0) {
-  const r = Math.hypot(x, y);
+/** the view of a place: centred on it, at the opening tilt and zoom, looking the way its map's north faces (`up`,
+ * degrees as logic/bowl.js bowlCompass; WM-1, the owner: the map opens the way the walk camera looks, north, so a
+ * run reads west to east, left to right) or, for a place with no `up`, outward (towards the wall that rises behind
+ * it) @param {number} x @param {number} y @param {number} [yaw] the current yaw, kept near the centre
+ * @param {number} [up] @returns {BowlCamState} */
+export function bowlCamHome(x, y, yaw = 0, up) {
+  const r = Math.hypot(x, y),
+    u = typeof up === 'number' ? (up * Math.PI) / 180 : null;
   return bowlCamClamp({
     tx: x,
     ty: y,
-    yaw: r > 0.05 ? Math.atan2(x, y) : yaw,
+    yaw: u !== null ? Math.atan2(Math.cos(u), Math.sin(u)) : r > 0.05 ? Math.atan2(x, y) : yaw,
     tilt: BOWL_CAMERA.tilt,
     dist: BOWL_CAMERA.dist,
   });

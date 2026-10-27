@@ -73,7 +73,9 @@ export const UI_LINT_RULES = [
 
 /* UI-6: the ratchet. The most raw values each rule may have in the whole game (game CSS and JS, as lintGame counts
    them). A rise fails `npm run lint` and the Studio's Check; a fall is kept by `node tools/ui-lint.mjs --save`, which
-   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here. */
+   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here.
+   jsColour rose by 47 in SA-2b, on purpose: the UI icons' palette (logic/icon-block.js), art colours that moved in
+   from tools/build-ui-icons.py when the SVG files became the source. */
 // ceiling: start
 export const UI_LINT_CEILING = {
   radius: 99,
@@ -86,7 +88,7 @@ export const UI_LINT_CEILING = {
   important: 153,
   zindex: 60,
   blur: 27,
-  jsColour: 591,
+  jsColour: 638,
   innerHtml: 55,
   styleAttr: 41,
 };
@@ -277,8 +279,8 @@ export const uiLintReads = (/** @type {string} */ f) =>
   !/\/vendor\//.test(f) &&
   !f.endsWith('/hooks.js') &&
   !f.endsWith('logic/ui-lint.js') &&
-  /* LD-4: the run's helper thread is on no page and draws nothing */
-  !/\/run-worker(-modules)?\.js$/.test(f);
+  /* LD-4: the run's helper thread is on no page and draws nothing; LD-5: nor the world map's (bowl-worker.js) */
+  !/\/(run|bowl)-worker(-modules)?\.js$/.test(f);
 
 /** every file the lint reads, by following the pages: read(path) gives a file's text (fetch or fs) */
 export async function uiLintCrawl(/** @type {(path: string) => Promise<string>} */ read) {

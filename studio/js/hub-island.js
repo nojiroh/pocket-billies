@@ -66,9 +66,12 @@ import {
   card,
   changed,
   commit,
+  grid,
   openSection,
   render,
+  selectField,
   studioState,
+  textField,
   toast,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
@@ -116,6 +119,7 @@ expose({
   hubMap: [() => hubMap],
   hubMapId: [() => hubMapId],
   hubPivotMove: [() => hubPivotMove, v => (hubPivotMove = v)],
+  hubPlaceHTML: [() => hubPlaceHTML, v => (hubPlaceHTML = v)],
   hubPointer: [() => hubPointer, v => (hubPointer = v)],
   hubPointsDown: [() => hubPointsDown, v => (hubPointsDown = v)],
   hubPolyOf: [() => hubPolyOf],
@@ -245,8 +249,54 @@ ${why ? '' : hubToolBarHTML(sc)}
 </div>
 ${card('Dials', `<div id="hubGen">${hubGenHTML(sc)}</div>`)}
 ${card('Ground lock', `<div id="hubLock">${hubLockHTML(sc)}</div>`)}
+${hubPlaceHTML(id)}
 </div>`;
 };
+/* SA-3: the hub's own place in locations.json (its name, wild Billies, backdrop, mood and music), edited here now that
+   World & encounters has no route stops */
+function hubPlaceHTML(id) {
+  const D = studioState.D,
+    L = D.locations || [],
+    i = Math.max(
+      0,
+      L.findIndex(r => r.mapId === id)
+    ),
+    r = L[i];
+  if (!r) return '';
+  studioState.sel.stop = i;
+  const p = `locations.${i}`;
+  return card(
+    `${escapeHtml(r.name)} (the hub’s place)`,
+    grid(
+      textField('Name', `${p}.name`),
+      textField('Route label', `${p}.route`, { help: 'Shown above the name, like “Town”.' }),
+      selectField(
+        'Wild encounters',
+        `${p}.pool`,
+        Object.keys(D.pools).map(k => [k, k]),
+        { help: 'Edit the pool under World & encounters → Wild encounters.' }
+      ),
+      selectField(
+        'Battle backdrop',
+        `${p}.battleStage`,
+        Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k])
+      ),
+      selectField(
+        'Mood',
+        `${p}.mood`,
+        Object.entries(D.moods || {}).map(([k, v]) => [k, v.name || k]),
+        { none: 'None (the plain look)', opt: 1, help: 'The colour mood: saturation, contrast, warmth and tints.' }
+      ),
+      selectField(
+        'Music',
+        `${p}.music`,
+        Object.keys((D.music && D.music.songs) || {}).map(k => [k, k]),
+        { none: 'By the rules (Music & sound)', opt: 1 }
+      )
+    ) + textField('Description', `${p}.blurb`, { area: 1, rows: 2 }),
+    { sub: `<code>locations.json</code>, place ${escapeHtml(r.id)}. The hub has no roads: a run starts from the mast.` }
+  );
+}
 
 function hubViewBarHTML() {
   const side = hubEd.goal ? hubSideOf(hubEd.goal.yaw) : 'S';

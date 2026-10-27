@@ -36,6 +36,7 @@ import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
+import { runCardHome } from './logic/run-card.js';
 import { runWorldData } from './logic/run-world-data.js';
 import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
@@ -59,8 +60,8 @@ import { itemIcon } from './battle.js';
 import { JINGLES, jingle } from './sound.js';
 import { standByMast } from './airship.js';
 import { runWorld, runWorldAheadStart, runWorldMake, runWorldSync } from './run-world.js';
-import { trainOfRun, trainRideDepart, trainRideHome, trainVeil } from './train-ride.js';
-import { runLoadBegin, runLoadLanding, runLoadPlaces, runLoadShow } from './run-loading.js';
+import { trainOfRun, trainRide, trainRideDepart, trainRideHome, trainVeil } from './train-ride.js';
+import { runHomeScreen, runLoadBegin, runLoadLanding, runLoadPlaces, runLoadShow } from './run-loading.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_HINTS: [() => RUN_HINTS],
@@ -72,6 +73,7 @@ expose({
   runChallengesOpen: [() => runChallengesOpen],
   runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
+  runEndHomeGo: [() => runEndHomeGo, v => (runEndHomeGo = v)],
   runExpNow: [() => runExpNow],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
@@ -166,18 +168,45 @@ export function runGiveUp() {
   });
 }
 /** the payout screen's "Ride home": the run pays out and ends (logic/run-state.js runEnd: the hub's working fields
- * back, the kept Billies with their gains), the hub's world goes back in behind a white veil, everyone is healed and
- * (HB-8) the run's train comes home out of the portal and down the sky rail to Skyline Station (train-ride.js, gold
- * after a win, battered after a loss), where you step off; then what the run brought home is told
+ * back, the kept Billies with their gains), the hub's world goes back in behind the way home's loading screen (the
+ * carriage, "Heading home", what the run came to: run-loading.js runHomeScreen), everyone is healed and (HB-8) the
+ * run's train comes home out of the portal to Skyline Station (train-ride.js, gold after a win, battered after a
+ * loss), where you step off; then what the run brought home is told. Whatever goes wrong on the way, the screen lifts
  * @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice */
 export function runEndHome(won, keep, itemPrice) {
   if (!saveData.run) return;
-  const train = trainOfRun(saveData.run);
-  trainVeil(true, 0);
+  const run = saveData.run,
+    train = trainOfRun(run),
+    names = keep
+      .map(uid => saveData.team.find(m => m.uid === uid))
+      .filter(m => !!m)
+      .map(m => billyName(m));
+  /** @type {HTMLElement | null} */
+  let cover = null;
+  try {
+    runEndHomeGo(won, keep, itemPrice, train, pay => {
+      cover = runHomeScreen(train, runCardHome(run, won, pay, names));
+      /* the ride home is under way from here (the windows a run brings wait for it: pending-windows.js) */
+      trainRide.cover = cover;
+      return cover;
+    });
+  } catch (e) {
+    /* never a screen left over the hub */
+    if (cover) cover.remove();
+    trainRide.cover = null;
+    trainVeil(false, 0);
+    throw e;
+  }
+}
+/** runEndHome's steps, the screen up (show) as soon as the payout is known, in the same frame
+ * @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice @param {string} train
+ * @param {(pay: any) => HTMLElement} show */
+function runEndHomeGo(won, keep, itemPrice, train, show) {
   /* RL-12: the Perks' payout rows, read before the run ends */
   const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
     opened = saveData.meta.expedition,
-    pay = runEnd(saveData, { won, keep }, rates, itemPrice);
+    pay = runEnd(saveData, { won, keep }, rates, itemPrice),
+    cover = show(pay);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
   runCatch.m = null;
@@ -198,7 +227,7 @@ export function runEndHome(won, keep, itemPrice) {
   render();
   if (typeof debugLog !== 'undefined')
     debugLog.add('scene', `back in the hub: +${pay.research} Research, +${pay.crests} Crests, +${pay.scrap} Scrap`);
-  trainRideHome(train, won, () => runHomeTold(pay, opened));
+  trainRideHome(train, won, () => runHomeTold(pay, opened), cover);
 }
 /** home, off the train: what the run brought home, a newly opened Expedition, the milestones, a lost run's scene
  * @param {{ research: number, crests: number, scrap: number }} pay @param {number} opened the Expedition before */
@@ -657,13 +686,13 @@ export function runArrivedFx() {
 /** the first run's hints, each shown once (run.hints) as a toast */
 const RUN_HINTS = {
   landing: run =>
-    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end.`,
+    `Day 1 of the run. Walk east into the next place: each place you walk into takes a day. The boss waits at the far end.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
   town: () =>
     `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,
   event: () => 'A waystation: someone at the stand wants a word. Tap it to see what they offer.',
   stall: () => 'A stall: a shop with new stock every day, but no clinic.',
-  miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
+  miniboss: () => 'A mini-boss blocks the way east. Beat them to go on.',
   scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
   rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',

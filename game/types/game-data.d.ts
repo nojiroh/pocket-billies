@@ -95,13 +95,9 @@ export interface GameData {
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
   residents?: Record<DataId, Resident>;
   pools: Record<DataId, Pool>;
-  /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
-  eggs: Record<string, EggTier>;
   pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
-  jobs: Record<DataId, Job>;
   people: Record<DataId, Person>;
-  shops?: Record<DataId, Shop>;
   trainers?: Record<DataId, Trainer>;
   rules: Rules;
   battleStages: Record<DataId, BattleStage>;
@@ -185,7 +181,6 @@ export interface Meta {
   version: number;
   dataVersion: number;
   notes: string;
-  endText: string;
   worldV24?: number;
 }
 
@@ -420,7 +415,7 @@ export interface LocationData {
   bowl: BowlSpot;
   region?: string;
   music?: string;
-  /** a key of gameData.shops */
+  /** a key of SHOPS */
   shop?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
@@ -691,19 +686,11 @@ export interface MapProp {
   [key: string]: any;
 }
 
-/* ---------- encounters, eggs, money, items, jobs ---------- */
+/* ---------- encounters, money, items ---------- */
 
 /** pools.json (and fishing.json): a level range and weighted species */
 export interface Pool {
   lv: [min: number, max: number];
-  list: WeightedSpecies[];
-}
-
-/** eggs.json: an egg tier */
-export interface EggTier {
-  /** steps to hatch */
-  need: number;
-  lv: number;
   list: WeightedSpecies[];
 }
 
@@ -739,17 +726,7 @@ export interface Item {
   hold?: FxRow[];
 }
 
-/** jobs.json: a day job a boxed Billie can take */
-export interface Job {
-  n: string;
-  where: string;
-  /** what a shift pays: ['item', item id, n], ['coin', coin id, n] or ['se', 'se', dollars] */
-  out: [kind: 'item' | 'coin' | 'se', key: string, amount: number];
-  pay: string;
-  quip: string;
-}
-
-/** shops.json */
+/** a shop: a run town's or stall's (logic/run-scenes.js), in SHOPS while the run's world is in */
 export interface Shop {
   name: string;
   keeper: string;
@@ -768,6 +745,8 @@ export interface Shop {
 /** people/<id>.json (person.schema.json): how a person looks (the old colour keys beside it are ignored) */
 export interface Person {
   look: PersonLook;
+  /** a creature person (Kappi): drawn from this rig instead of the look, ht metres tall */
+  creature?: { rig: string; ht?: number };
   style?: string;
   hair?: Color;
   hat?: Color;
@@ -805,8 +784,6 @@ export interface Trainer {
   blocks?: boolean;
   team: TrainerBilly[];
   reward: number;
-  /** an egg tier they hand out */
-  egg?: number;
   market?: { k: string; n: number } | null;
   marketText?: string;
   win: string;
@@ -884,7 +861,6 @@ export interface Rules {
     /** the starters' line ids */
     starters: DataId[];
     starterLevel: number;
-    starterEgg: number;
     starterEncounters: number;
     /** your starter's line -> the rival's species */
     rival: Record<DataId, SpeciesId>;
@@ -914,14 +890,6 @@ export interface Rules {
     trainerXpMult: number;
     teamXpShare: number;
   };
-  eggs: {
-    capacity: number;
-    slots: number;
-    mythOdds: number;
-    mythSpecies: SpeciesId;
-    dropChance: number;
-    dropTiers: Record<string, number>;
-  };
   battle: {
     stab: number;
     critChances: number[];
@@ -947,8 +915,6 @@ export interface Rules {
     stageMax: number;
     aiSmart: number;
     loseFee: number;
-    /** what a rest stop costs (it heals the team) */
-    restCost: number;
     /** roguelite track RL-4: a battle still going after this many turns ends as a draw ('draw': a wild battle as if
      * you walked away, a trainer's or a ghost's as a loss) */
     turnCap: number;
@@ -1207,10 +1173,16 @@ export type RunSceneRules = {
 
 /** rules.json run.map: how a run's node map is laid out (logic/run-map.js runMapMake; placeholders, 8.18) */
 export interface RunMapRules {
-  /** rows from the landing (0) to the boss (the last): the nodes on every path */
+  /** rows (steps) from the landing (0) to the boss (the last): the places on every path. WM-2: the run's own, drawn
+      from `path` (logic/run-map.js runMapLength) unless given (the debug menu's short map) */
   rows: number;
-  /** mini-bosses on rows round(k * rows / (minibosses + 1)), each with a town's row before it */
+  /** mini-bosses, each on a row of its own with its town right after it (WM-2), the free rows shared out between
+      them: the run's own, as many as fit `rows` within `towns`, unless given */
   minibosses: number;
+  /** WM-2: the places a path by Expedition (index 0 = Expedition I; past the end, the last): [fewest, most] */
+  path?: [number, number][];
+  /** WM-2: the fewest and most towns (each after a mini-boss) a run */
+  towns?: [number, number];
   /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
   first: DataId;
   rest: DataId;
@@ -1561,6 +1533,8 @@ export interface Engine {
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */
 export interface Wardrobe {
   version: number;
+  /** studio art track SA-3: the boutiques an item's `shop` names (moved here from the old Town shops) */
+  shops?: Record<DataId, { name: string }>;
   [key: string]: any;
 }
 
@@ -1822,6 +1796,9 @@ export interface NodeType {
   /** RL-14: instead of a weight, the chance a free node becomes it (on its own stream), from map row fromRow on */
   chance?: number;
   fromRow?: number;
+  /** WM-2: it counts as a route between towns (a route, the rival's, a mini-boss's, a scrapyard; not a waystation, a
+      stall or the landing): the map puts one on every lane of the free row before each mini-boss */
+  routeLike?: boolean;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */
@@ -2069,7 +2046,7 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
+  who: 'chosen' | 'kappi' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
   when?: string;
   priority: number;
   once?: boolean;

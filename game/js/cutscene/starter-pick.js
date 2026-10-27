@@ -92,13 +92,26 @@ function starterPickerFocus() {
   if (!s) return;
   s.act = 'cheer';
   s.actT = cutsceneNow();
-  /* framed from in front of the middle one (star2), leaning towards the one you look at */
-  const mid = cutscenePoint(cutscene.set.spots.star2, cutscene.off);
+  /* cutscenes track B: framed from the side the coins were thrown from (the coins shot), so the three stand side by
+     side across the picture, leaning a little towards the middle; aimed a little under its feet, so it stands in the
+     picture's upper half, clear of the card */
+  const P = cutscene.stars.map(q => [q.x, q.z]),
+    mx = P.reduce((a, q) => a + q[0], 0) / P.length,
+    mz = P.reduce((a, q) => a + q[1], 0) / P.length,
+    from = cutscene.set.shots.coins
+      ? cutscenePoint([cutscene.set.shots.coins.eye[0], cutscene.set.shots.coins.eye[2]], cutscene.off)
+      : [mx, mz - 3],
+    dl = Math.hypot(from[0] - mx, from[1] - mz) || 1,
+    dx = (from[0] - mx) / dl,
+    dz = (from[1] - mz) / dl,
+    h = standingHeightAt(s.x, s.z),
+    bx = s.x * 0.75 + mx * 0.25,
+    bz = s.z * 0.75 + mz * 0.25;
   cutsceneShot(
     {
-      eye: [s.x * 0.6 + mid[0] * 0.4 + 0.1, standingHeightAt(s.x, s.z) + 0.85, s.z - 3.6],
-      tgt: [s.x, standingHeightAt(s.x, s.z) + 0.05, s.z + 0.2],
-      fov: 36,
+      eye: [bx + dx * 3.4, h + 1.05, bz + dz * 3.4],
+      tgt: [s.x, h - 0.1, s.z],
+      fov: 38,
       w: 2.6,
       abs: 1,
     },

@@ -282,7 +282,8 @@ function owns(id) {
   return !!it && (!!it.starter || !!wardrobeState().owned[id]);
 }
 const wardrobeItemsInSlot = slot => Object.entries(wardrobeData().items).filter(([k, it]) => it.slot === slot);
-const shopName = id => (SHOPS[id] && SHOPS[id].name) || 'a boutique';
+/* SA-3: a boutique's name is the wardrobe's (wardrobe.json shops); a shop the player stands in is SHOPS's */
+const shopName = id => (((wardrobeData() || {}).shops || {})[id] || SHOPS[id] || {}).name || 'a boutique';
 /* does the open boutique sell this item? its own stock, or (an outlet) the stock of the shops it lists in "sells" */
 const boutiqueSells = it =>
   !!(
