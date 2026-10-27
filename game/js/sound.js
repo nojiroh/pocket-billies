@@ -17,7 +17,7 @@ import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
-import { AMBIENCE_BEDS, ambienceNoiseLoop } from './logic/ambience-sound.js';
+import { AMBIENCE_BEDS, ambienceDrift, ambienceNoiseLoop, ambienceRandom } from './logic/ambience-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -46,6 +46,7 @@ expose({
   SONGS: [() => SONGS],
   ambience: [() => ambience],
   ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
+  ambienceDriftTick: [() => ambienceDriftTick, v => (ambienceDriftTick = v)],
   ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
@@ -851,34 +852,29 @@ function initAmbience() {
     brown: buffer(ambienceNoiseLoop('brown', c.sampleRate, 8, 0x50d2)),
   };
   ambience.noiseMs = Math.round(performance.now() - t0);
+  ambience.rng = ambienceRandom(0x50d3);
   /* a layer of a bed (AMBIENCE_BEDS): its noise from a random point, through its filters, at its gain */
-  const layer = (L, dest) => {
-    const s = c.createBufferSource();
+  const layer = (L, dest, drifts) => {
+    const s = c.createBufferSource(),
+      F = [];
     s.buffer = ambience.noise[L.noise];
     s.loop = true;
     s.playbackRate.value = L.rate || 1;
     let n = s;
     for (const [type, f, q, gain] of L.filters) {
-      const F = c.createBiquadFilter();
-      F.type = type;
-      F.frequency.value = f;
-      F.Q.value = q || 0.7;
-      if (gain) F.gain.value = gain;
-      n.connect(F);
-      n = F;
+      const bq = c.createBiquadFilter();
+      bq.type = type;
+      bq.frequency.value = f;
+      bq.Q.value = q || 0.7;
+      if (gain) bq.gain.value = gain;
+      n.connect(bq);
+      n = bq;
+      F.push(bq);
     }
     const m = c.createGain();
     m.gain.value = L.gain;
-    if (L.lfo) {
-      m.gain.value = L.gain * (1 - L.lfo[1]);
-      const o = c.createOscillator();
-      o.frequency.value = L.lfo[0];
-      const og = c.createGain();
-      og.gain.value = L.gain * L.lfo[1];
-      o.connect(og);
-      og.connect(m.gain);
-      o.start();
-    }
+    /* SND-8a: what wanders (its gain, or a filter's frequency), moved by ambienceDriftTick */
+    for (const D of L.drift || []) drifts.push({ D, param: D.on === 'gain' ? m.gain : F[D.on].frequency, next: 0 });
     n.connect(m);
     m.connect(dest);
     s.start(0, Math.random() * s.buffer.duration);
@@ -886,13 +882,14 @@ function initAmbience() {
   const bed = (name, make, bus = ambience.lpW) => {
     const g = c.createGain();
     g.gain.value = 0;
-    const p = c.createStereoPanner ? c.createStereoPanner() : null;
-    make(g);
+    const p = c.createStereoPanner ? c.createStereoPanner() : null,
+      drifts = [];
+    make(g, drifts);
     if (p) {
       g.connect(p);
       p.connect(bus);
     } else g.connect(bus);
-    ambience.beds[name] = { g, p };
+    ambience.beds[name] = { g, p, drifts };
   };
   /* crickets: a high tone chopped fast, then gated in slow pulses; two of them, slightly apart */
   const cricket = (f, r1, r2) => dest => {
@@ -926,7 +923,7 @@ function initAmbience() {
   for (const [name, B] of Object.entries(AMBIENCE_BEDS))
     bed(
       name,
-      d => {
+      (d, drifts) => {
         /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
         const tr = c.createGain();
         tr.gain.value = B.trim;
@@ -935,7 +932,7 @@ function initAmbience() {
           cricket(4300, 26, 0.9)(tr);
           cricket(4650, 23, 0.7)(tr);
         }
-        for (const L of B.layers) layer(L, tr);
+        for (const L of B.layers) layer(L, tr, drifts);
         if (B.tone) {
           const o = c.createOscillator();
           o.frequency.value = B.tone;
@@ -949,6 +946,19 @@ function initAmbience() {
       B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW
     );
   return true;
+}
+/* SND-8a: random drift instead of the regular wobbles (logic/ambience-sound.js ambienceDrift): each wandering level or
+   filter of a bed gets a new random value every few seconds, scheduled a little ahead; no oscillator, and a level
+   never swings below 0 */
+function ambienceDriftTick(b, t) {
+  for (const w of b.drifts) {
+    if (w.next < t) w.next = t;
+    while (w.next < t + 0.3) {
+      const { value, wait } = ambienceDrift(w.D, ambience.rng);
+      w.param.setTargetAtTime(value, w.next, w.D.tau);
+      w.next += wait;
+    }
+  }
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
 function soundPlacement(x, z, range) {
@@ -1078,6 +1088,7 @@ function updateAmbience() {
   for (const [k, b] of Object.entries(ambience.beds)) {
     b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
     if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
+    if (T[k] > 0) ambienceDriftTick(b, t);
   }
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
   const night = E ? (E.raw || E).night : 0,

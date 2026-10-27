@@ -151,9 +151,8 @@ export function ambienceDrift(D, r) {
 }
 
 /**
- * @typedef {{noise: 'pink' | 'brown', rate?: number, gain: number, filters: Array<['lowpass' | 'highpass' | 'bandpass' | 'highshelf', number, number?, number?]>, drift?: AmbienceDriftSpec[], lfo?: [number, number]}} AmbienceLayer
- *   a layer: a noise loop (at a playback rate), through filters [type, frequency, Q, gain dB], at a gain; lfo, today's
- *   regular wobble [Hz, depth], until drift takes its place
+ * @typedef {{noise: 'pink' | 'brown', rate?: number, gain: number, filters: Array<['lowpass' | 'highpass' | 'bandpass' | 'highshelf', number, number?, number?]>, drift?: AmbienceDriftSpec[]}} AmbienceLayer
+ *   a layer: a noise loop (at a playback rate), through filters [type, frequency, Q, gain dB], at a gain
  * @typedef {{bus: 'world' | 'amb', trim: number, layers: AmbienceLayer[], tone?: number, events?: 'crickets' | 'crackles'}} AmbienceBed
  *   a bed: where it plays (the World or Ambience slider), its trim (from tools/check-sound.py --loudness), its layers,
  *   a low tone (Hz) under it, its events
@@ -173,7 +172,7 @@ export const AMBIENCE_BEDS = {
           ['bandpass', 3200, 0.5],
           ['highpass', 1200],
         ],
-        lfo: [0.13, 0.8],
+        drift: [{ on: 'gain', base: 1, depth: 0.6, min: 2, max: 6, tau: 1.2 }],
       },
     ],
   },
@@ -189,7 +188,7 @@ export const AMBIENCE_BEDS = {
           ['bandpass', 420, 0.7],
           ['lowpass', 900],
         ],
-        lfo: [0.21, 0.5],
+        drift: [{ on: 'gain', base: 1, depth: 0.4, min: 1.5, max: 4, tau: 0.8 }],
       },
     ],
   },
@@ -197,7 +196,15 @@ export const AMBIENCE_BEDS = {
     bus: 'amb',
     trim: 1,
     tone: 49,
-    layers: [{ noise: 'brown', rate: 0.5, gain: 1, filters: [['lowpass', 140]], lfo: [0.05, 0.4] }],
+    layers: [
+      {
+        noise: 'brown',
+        rate: 0.5,
+        gain: 1,
+        filters: [['lowpass', 140]],
+        drift: [{ on: 'gain', base: 1, depth: 0.3, min: 3, max: 8, tau: 2 }],
+      },
+    ],
   },
   room: {
     bus: 'amb',
@@ -225,7 +232,7 @@ export const AMBIENCE_BEDS = {
           ['bandpass', 1500, 0.9],
           ['highpass', 500],
         ],
-        lfo: [2.7, 0.4],
+        drift: [{ on: 'gain', base: 1, depth: 0.25, min: 0.2, max: 0.9, tau: 0.12 }],
       },
     ],
   },
@@ -256,29 +263,58 @@ export const AMBIENCE_BEDS = {
           ['lowpass', 650],
           ['highpass', 60],
         ],
-        lfo: [0.09, 0.8],
+        drift: [{ on: 'gain', base: 1, depth: 0.55, min: 4, max: 9, tau: 2.2 }],
       },
     ],
   },
   pond: {
     bus: 'world',
     trim: 1,
-    layers: [{ noise: 'pink', gain: 1, filters: [['bandpass', 520, 1.4]], lfo: [0.35, 0.6] }],
+    layers: [
+      {
+        noise: 'pink',
+        gain: 1,
+        filters: [['bandpass', 520, 1.4]],
+        drift: [{ on: 'gain', base: 1, depth: 0.35, min: 2, max: 5, tau: 1 }],
+      },
+    ],
   },
   fountain: {
     bus: 'world',
     trim: 1,
-    layers: [{ noise: 'pink', gain: 1, filters: [['bandpass', 2400, 0.8]], lfo: [5.5, 0.3] }],
+    layers: [
+      {
+        noise: 'pink',
+        gain: 1,
+        filters: [['bandpass', 2400, 0.8]],
+        drift: [{ on: 'gain', base: 1, depth: 0.15, min: 0.3, max: 1.5, tau: 0.3 }],
+      },
+    ],
   },
   fire: {
     bus: 'world',
     trim: 1,
-    layers: [{ noise: 'pink', gain: 1, filters: [['bandpass', 3000, 1.6]], lfo: [11, 0.9] }],
+    layers: [
+      {
+        noise: 'pink',
+        gain: 1,
+        filters: [['bandpass', 3000, 1.6]],
+        drift: [{ on: 'gain', base: 1, depth: 0.35, min: 0.4, max: 1.6, tau: 0.35 }],
+      },
+    ],
   },
   lava: {
     bus: 'world',
     trim: 1,
-    layers: [{ noise: 'brown', rate: 0.6, gain: 1, filters: [['lowpass', 260]], lfo: [0.6, 0.7] }],
+    layers: [
+      {
+        noise: 'brown',
+        rate: 0.6,
+        gain: 1,
+        filters: [['lowpass', 260]],
+        drift: [{ on: 'gain', base: 1, depth: 0.4, min: 1, max: 3, tau: 0.6 }],
+      },
+    ],
   },
   rain: {
     bus: 'world',
@@ -297,7 +333,14 @@ export const AMBIENCE_BEDS = {
   wind: {
     bus: 'world',
     trim: 1,
-    layers: [{ noise: 'pink', gain: 1, filters: [['bandpass', 360, 0.6]], lfo: [0.06, 0.85] }],
+    layers: [
+      {
+        noise: 'pink',
+        gain: 1,
+        filters: [['bandpass', 360, 0.6]],
+        drift: [{ on: 'gain', base: 1, depth: 0.6, min: 1.5, max: 5, tau: 1 }],
+      },
+    ],
   },
 };
 
