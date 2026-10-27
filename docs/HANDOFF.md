@@ -2,6 +2,58 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Phase 20 R4, D2 alone: Medium precision (`mediump` in the post passes), and main merged in - 2026-10-27
+Branch `track/renderer`. The plan was approved in Plan Mode with my recommendations: the post passes first, Smart light
+shafts kept (off), and stretched models drawn one at a time. PR #256 (draft) takes R4 and the merge to main.
+- **Main merged in** (c9e78567): 21 conflict spots in 7 files.
+  - Kept: AIR-3's fog dials and lamp fog, VFX-2's ribbon (precompiled), the audit's dials, Spread blur in front
+    (without D3's deleted argument), RF-2 spin and the ghost skip.
+  - Smart light shafts (`air.shaftPick`) are back with the cheap shafts they need. Both stay off. Judge them at
+    "Sun gap, smart shafts"; the stations' `fixed` values came back for that station.
+  - VFX-3's stretched models (`it.smear`) have no slot in the instance record. They are drawn one at a time with the
+    plain `vox` / `mdl` programs, which compile on the first stretch. Everything else stays instanced.
+- **D2 built**, behind Studio > Engine > Quality "Medium precision" (`quality.mediump`, off). Four commits: the
+  mechanism with bloom, then rays, then grade, then a live switch.
+  - The passes in `mediump`: bloom (bright, down, up), light rays and the colour grade.
+  - Each pass carries a list of edits that put `highp` back on screen places, depth, time, the sun's place and every
+    hash. The phase file has the per-pass table.
+  - Left `highp`: dof, dofnear and ao (depth maths), vol (world space) and dofgrow (integers).
+  - Not touched: the lit programs (ground, pictures, models, buildings).
+  - It takes effect on the next frame after a change (those five passes are recompiled once, a short stall), so the
+    graphics test steps it at the Control pad and the Sun gap.
+  - A program the driver refuses in `mediump` is made in `highp`, and the debug log's `graphics.mediump` names it.
+  - The in-game full test's Shaders step now builds every `mediump` version, whether or not the switch is on.
+- **Where the claims were off:** in GLSL ES 3.00 a fragment `sampler2D` is `lowp` by default, so today's depth reads
+  were formally `lowp`; drivers give full precision anyway. With the switch on, colour samplers are `mediump` and
+  depth samplers `highp`, stated in the shader.
+- **Tests:** tools/test/shader-precision.test.mjs is new. It checks that every edit is found exactly once, that off
+  leaves the texts as they were, and that what must stay `highp` does.
+- **Verified**
+  - Fast checks: lint, typecheck, format and check:modules are clean; `npm test` 1,468 pass.
+  - The smoke check: no problems. The Shaders step builds all 5 medium versions headless.
+  - Crash check, headless, low settings, counts only: Copperleaf with Medium precision, bloom and rays on, switched
+    off and on live, night, then a forced context loss. 0 GL errors, 0 refusals, 0 page errors.
+  - The full quick check (on the merge): 37 of 40 pass. On their own, the 3 problems fail the same way on main's tip
+    a8c60bbc, so none is this lane's. **For main's owners:**
+    - "Terraces": the train_station floats.
+    - "Walking left and right": the settings tabs.
+    - RL-8: the town's shop has no Perk.
+  - In the full run (two workers), RL-8 and the room light stopped earlier. Run alone, they match main.
+- **CI on PR #256:** "export" (Trainer Editable Sprite Sheets) is red on main and every track too. The workflow
+  never builds the gitignored game/data/gamedata.js. The proposed patch is in a comment on the PR.
+- **Risky:**
+  - The look in `mediump` is judged only on your phone. Watch for banding in sky and fog gradients, the grain or the
+    dither turning into patterns, heat shimmer, and outline or blur edges.
+  - The live switch recompiles five programs on the spot once.
+- **Your phone run** (Android first; the iPad ignores `mediump`):
+  1. The graphics test's "Medium precision" steps at the Control pad and the Sun gap: fps on and off.
+  2. Walk Copperleaf at dusk and at night with it on. Is any sky, fog or bloom banding new?
+  3. Then the debug log: `graphics.mediump` should read "on" with nothing refused.
+  4. Still open from R4: the water check (Pictures in batches, Sky last), Steady lamps, the phone pixel budget, and
+     now Smart light shafts.
+- **Ask me before:** Medium precision on (and its old path deleted); the lit programs in `mediump` as a next step.
+- Next: your verdicts on the five switches, then tag `phase-20-done`.
+
 ### Phase 20 R4, lane defaults (the owner's verdicts: switches on, old paths and losers deleted) - 2026-10-26
 Branch `track/renderer` (the only lane this round; D2 `mediump` follows alone). Plan approved in Plan Mode. The owner's
 answers this session: where the water looked weird: "not sure"; Steady lamps stays off for now; the phone pixel

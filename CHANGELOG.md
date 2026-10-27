@@ -64,6 +64,11 @@ kept aside in the browser).
   that hold, shaded tree cores, occlusion that leaves open ground alone, lamp light on water, outlines that follow the
   camera, even bloom, half-float HDR, steady light on far props, fronts lit as their material, and Building bumpiness
   (bricks, planks and roof tiles catching the light). Engine > Air, Sun, Lights, Shadows, Colour, World and Quality.
+- **Medium precision** (phase 20, a test switch, off for now): Studio > Engine > Quality "Medium precision" works the
+  bloom, the light rays and the final colour grade in medium precision, which Android phones' graphics chips run
+  faster (iPhones and iPads ignore it). Screen places, depth, time and noise stay in full precision. Meant to look the
+  same; the graphics test compares it on and off. A chip that refuses it gets the full-precision version, and the
+  debug log says so.
 - **Sturdier after the graphics card is lost** (phase 20): when the browser takes the graphics card away and gives it
   back (a phone under memory pressure, a driver reset, the debug menu's "Lose the GPU context"), every part of the
   walk view, the world map and a battle is made again, with none of the hundreds of warnings and the unlit things of
