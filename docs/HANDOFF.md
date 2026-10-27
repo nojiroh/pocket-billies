@@ -51,6 +51,15 @@ questions. Docs only: no game code, data or art changed; plus a private listenin
   music's rain low-pass (soften to ~4 kHz); levels by internal trims, keeping your sliders; footsteps on the World bus.
 - Next session starts with: the owner listens to the page on the phone (silent switch off) and answers those four;
   makes `track/sound` from main (or this branch before PR #285 merges); SND-8a starts there.
+- **The owner afterwards** (2026-10-27): asked whether the jingles improve too. They didn't (Part 2 only moved their
+  echo and tuned their duck), so **SND-17, jingles and stingers**, joins the plan after SND-11. Then: "Continue with
+  next steps in this plan automatically in new sessions. Automatically approve plans." Part 2's "How the sessions run"
+  says how, as the UI track's Part 2 does: this session starts each step in a new cloud session on `track/sound`; a
+  step takes the recommended option for every open choice and "Ask me before" item and lists it under "Decided for
+  the owner, to review"; phone checks are listed, not waited for; merges to main stay the owner's. So the four asks
+  above are taken as recommended unless the owner says otherwise.
+- `track/sound` made by this session at that word, from this branch's head (so it carries Part 2 before PR #285
+  merges); SND-8a started in a new session on it.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
