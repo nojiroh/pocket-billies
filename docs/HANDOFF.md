@@ -35,7 +35,9 @@ the plan's recommendation taken: **Shade in the haze on by default** (`hazeShade
   silhouette is crisp. Haze shade: at noon nearly nothing (short shadows); at low sun the haze darkens in the trees'
   and houses' shadow wedges (subtle at 0.5, ~1-3/255 on average, more in the wedges).
 - Verified: lint, typecheck, format, check:modules, unit tests 1471 pass; smoke 6 of 6 in 203 s (39 shaders, 16 with
-  the Frame block); the full quick check: running at the time of writing (result in the next commit); no page errors in the look-air runs; vdep/vblur/vol/grade compiled, no GL error.
+  the Frame block); the full quick check: 35 of 40 in 1799 s; the 5 steps that failed were re-run on main
+  (6a482152) and on this branch: the same 3 fail on both (a train-station prop in the air, the settings tabs, the run
+  seam's view; also red in main's CI), the postcards and the lab's room passed on both (load timing in the full run); no page errors in the look-air runs; vdep/vblur/vol/grade compiled, no GL error.
 - Risky: **phone frame times unmeasured** (AIR-3's too): the owner's debug log after the new full-test step decides;
   over budget, AIR-3's cut order, then the upscale's depth taps. The depth compare thresholds (5% + 10 cm) are tuned on
   software drawing only. Haze shade is subtle in Copperleaf's short views; the dial tunes it. The look changes
