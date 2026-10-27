@@ -1485,14 +1485,6 @@ SECTIONS.trainers = () => {
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
      textField('Name', `${p}.name`),
      selectField('Look', `${p}.who`, peopleOptions(), { rr: 1 }),
-     T.miniboss
-       ? ''
-       : selectField(
-           'Stands at',
-           `${p}.node`,
-           D.locations.map((r, i) => [i, `${i + 1}. ${r.name}`]),
-           { num: 1, rr: 1 }
-         ),
      selectField(
        'Battle backdrop',
        `${p}.battleStage`,
