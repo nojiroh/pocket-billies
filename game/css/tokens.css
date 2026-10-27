@@ -48,6 +48,10 @@
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   /* --spring is v05's cubic-bezier(0.3, 1.6, 0.5, 1) */
   --stagger: 35ms;
+  /* UI-15: a place's arrival title before it folds into the top bar, and a walking hint before it fades (walk-tab.js
+     PLACE_TITLE_MS and WALK_HINT_MS hold the same numbers) */
+  --m-title: 4500ms;
+  --m-linger: 6000ms;
   /* UI-8: the minimap (uiTheme.json minimap): metres across, ms of walking before the bar goes compact and standing
      before it comes back, which marks show (1 shown, 0 hidden) */
   --minimap-span: 44;

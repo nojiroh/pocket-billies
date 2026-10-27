@@ -379,6 +379,11 @@ button.tb-where.shut {
   color: var(--text);
   font-weight: 600;
 }
+/* UI-15: today's weather by the place's name (the folded place card) */
+button.tb-where .uico:first-child {
+  flex: none;
+  margin-right: var(--s1);
+}
 
 /* ---------- UI-5: from v05.css, as it was ---------- */
 .sheet,

@@ -126,6 +126,7 @@ expose({
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
+  cmdButtonHTML: [() => cmdButtonHTML, v => (cmdButtonHTML = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
