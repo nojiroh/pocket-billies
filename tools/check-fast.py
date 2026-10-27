@@ -100,7 +100,7 @@ def walk_over(pg, n1, past, sec=60):
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
     per node, the landing's view drawing; HB-2: its loading screen lifts and logs a resume line (no seed); the Map tab opens as the bowl with every place on it; a walk over the
-    landing's west seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
+    landing's east seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
     drawing(pg)
     seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
     if seed != 'RL7FIXTURE' or places != want: raise Exception(f"the run's world isn't in: {places} places for {want}, made from {seed!r}")
@@ -409,7 +409,7 @@ def run_loop(pg, base):
     hist = pg.evaluate("(h=>[h.length,h[0]&&h[0].end,h[0]&&h[0].by&&h[0].by.kind])(saveData.meta.history)")
     if hist != [1, 'lost', 'wild']: raise Exception(f'the run history: {hist}')
     fresh = pg.evaluate("Object.assign({},saveData.story.fresh)")
-    if fresh.get('chosen') != 'chosen_first' or not fresh.get('hazel'): raise Exception(f'the hub characters’ lines picked on the way home: {fresh}')
+    if fresh.get('chosen') != 'chosen_first' or not fresh.get('kappi'): raise Exception(f'the hub characters’ lines picked on the way home: {fresh}')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")  # an evolution sheet, a milestone: the scene waits for them
     if not until(pg, "storyRun.on&&storyRun.id==='story:back-lost'", 20): raise Exception('the lost run’s scene didn’t play by the mast: ' + str(pg.evaluate("[saveData.story.pending,!!saveData.run,storyRun.on,storyRun.id,!!activeBattle,uiState.modal&&(uiState.modal.cls||uiState.modal.title),talkBox.on,walkView.ready,uiState.tab,typeof cutscene!=='undefined'&&cutscene.on,typeof selfTest!=='undefined'&&selfTest.on]")))
     SKIP = "storyRun.control&&(storyRun.control.skipping=true),talkBox.cur&&talkBox.cur.done(),0"
@@ -419,7 +419,7 @@ def run_loop(pg, base):
     if not until(pg, "storyRun.on&&storyRun.id==='banter:chosen_first'", 10): raise Exception(f'Chosen’s first talk: {pg.evaluate("storyRun.id")}')
     pg.evaluate(SKIP)
     if not until(pg, "!storyRun.on&&!saveData.story.fresh.chosen", 10): raise Exception('Chosen’s fresh line wasn’t taken')
-    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research; the history, the lost run’s scene and Chosen’s line ({fresh["hazel"]} for Hazel)'
+    return f'a battle held as it began ({seed}), started again after a reload, lost: the payout ({rows} rows, {cards} cards), again after a reload, home with {home[0]} Research; the history, the lost run’s scene and Chosen’s line ({fresh["kappi"]} for Kappi)'
 
 
 
@@ -429,7 +429,7 @@ def run_rival(pg, base):
     meeting); walked there, he is in the place's people; talked to, he says his first line (banter.json rival_first,
     RL-S2 part B) and his battle starts; won, the run counts a meeting and a win, finds Beans and leaves a reward
     pick; in the hub, a Bean offered to Chosen before his talk: given, his points go up, the Bean is spent and his
-    level-1 thank-you is the talk; not offered again until the next run. Part B: home with Hazel's favour asked and a
+    level-1 thank-you is the talk; not offered again until the next run. Part B: home with Kappi's favour asked and a
     run that reached row 7, the way home pays her favour (quest done, points) and her thanks is her next line"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
@@ -473,18 +473,18 @@ def run_rival(pg, base):
     if pg.evaluate("!!uiState.modal&&(uiState.modal.btns||[]).some(b=>/^Give a /.test(b.l))"): raise Exception('a second Bean offered before the next run')
     pg.evaluate("storyRun.control&&(storyRun.control.skipping=true),talkBox.cur&&talkBox.cur.done(),0")
     until(pg, "!storyRun.on&&!talkBox.on", 10)
-    # part B: home with Hazel's favour asked (her first beat said), from a run that reached row 7
+    # part B: home with Kappi's favour asked (their first beat said), from a run that reached row 7
     fav = pg.evaluate("""(() => {
       const S = saveData.story, M = saveData.meta, h = M.history || (M.history = []);
-      S.ch1_drop = 1; (S.once || (S.once = {}))['banter:ch1_drop'] = 1; (S.quests || (S.quests = {})).fav_hazel = 'asked';
+      S.ch1_drop = 1; (S.once || (S.once = {}))['banter:ch1_drop'] = 1; (S.quests || (S.quests = {})).fav_kappi = 'asked';
       h.push({ seed: 'FAV', theme: '', region: '', exp: 1, end: 'lost', by: null, row: 7, days: 5, team: [], perks: [], leaders: [], rival: null });
-      M.runs = h.length; const had = (M.rel || {}).hazel || 0;
+      M.runs = h.length; const had = (M.rel || {}).kappi || 0;
       storyHomeArrive(false);
-      return [S.quests.fav_hazel, (M.rel.hazel || 0) - had, (S.fresh || {}).hazel];
+      return [S.quests.fav_kappi, (M.rel.kappi || 0) - had, (S.fresh || {}).kappi];
     })()""")
-    if fav != ['done', pg.evaluate("RELATIONS.gift.favour"), 'fav_hazel_thanks']: raise Exception(f'Hazel’s favour on the way home: quest, points, her line {fav}')
+    if fav != ['done', pg.evaluate("RELATIONS.gift.favour"), 'fav_kappi_thanks']: raise Exception(f'Kappi’s favour on the way home: quest, points, their line {fav}')
     pg.evaluate("delete saveData.story.pending;0")
-    return f'Blake on node {n} with {size} Billies against {rv["lead"]}, said his first line, beaten ({song} music): a meeting, a win, Beans, a reward pick; a Bean for Chosen: level 1, his thank-you, not offered again; Hazel’s favour paid on the way home, her thanks next'
+    return f'Blake on node {n} with {size} Billies against {rv["lead"]}, said his first line, beaten ({song} music): a meeting, a win, Beans, a reward pick; a Bean for Chosen: level 1, his thank-you, not offered again; Kappi’s favour paid on the way home, their thanks next'
 
 # TR-3: the reachable spot with the most ground above the player's head on the camera's side (smaller z), 3-14 m off
 TALL_SPOT = """(() => {
@@ -1254,7 +1254,7 @@ def run_town_life(pg, base):
     want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
     if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
     if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
-    cap = pg.evaluate("runTownFolkCap(RULES.run.town,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
+    cap = pg.evaluate("folkCap(engineSetting('quality','townFolk')??10,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
     if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
     pg.evaluate("walkView.folkAll.forEach(f=>{f.x0=f.x;f.z0=f.z});0")
     if not until(pg, "walkView.folkAll.some(f=>Math.hypot(f.x-f.x0,f.z-f.z0)>1)", 90): raise Exception('nobody walked in 90 s')
@@ -1667,7 +1667,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
-    ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Hazel's favour paid on the way home (RL-S2)", run_rival)]),
+    ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),

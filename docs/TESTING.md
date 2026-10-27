@@ -218,7 +218,7 @@ same phase:
 - The Road phase was removed in RL-5 (the hub has no road); RL-7 brought it back as "A run's road" (a run put on a
   copy of the save, its world made, the landing's north seam walked a step at a time, the next place on day 2, the
   save and the hub's world put back). RL-8 added "A run: airship, nodes, payout" (a short run taken off from the mast
-  on a copy of the save, the flight, a battle, a paid heal, the Alpha boss, the payout, home). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
+  on a copy of the save, the flight, a battle, a paid heal, the Alpha boss, the payout, home). The Room phase walks into Kappi's lab; the night, Billies-in-the-world and
   Stress phases run on the hub's map. The scenes of a run's world are not in the "Walk:" list.
 - The test never writes the save: it pauses saving (`pauseSaving`/`resumeSaving`, game-state.js) and puts the save
   back. Don't call `writeStoredSave` or the account directly from a step.
@@ -371,7 +371,7 @@ same phase:
   and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
   in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
-  (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
+  (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Kappi's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
   were retired with their places (each change is marked RL-5 in tools/check-quick.py). RL-7 brought a run's world
   back into the checks: the `run` fixture (the fixture's team on a run with the seed RL7FIXTURE, landed on day 1; its

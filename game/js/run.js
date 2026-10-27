@@ -686,13 +686,13 @@ export function runArrivedFx() {
 /** the first run's hints, each shown once (run.hints) as a toast */
 const RUN_HINTS = {
   landing: run =>
-    `Day 1 of the run. Walk north into the next place: each place you walk into takes a day. The boss waits at the far end.`,
+    `Day 1 of the run. Walk east into the next place: each place you walk into takes a day. The boss waits at the far end.`,
   map: () => 'The map shows the places ahead and their weather. A ? is further on. The boss is always shown.',
   town: () =>
     `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,
   event: () => 'A waystation: someone at the stand wants a word. Tap it to see what they offer.',
   stall: () => 'A stall: a shop with new stock every day, but no clinic.',
-  miniboss: () => 'A mini-boss blocks the way north. Beat them to go on.',
+  miniboss: () => 'A mini-boss blocks the way east. Beat them to go on.',
   scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
   rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',

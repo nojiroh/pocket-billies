@@ -171,7 +171,7 @@ test('check-data: planted story director lines (RL-S1)', t => {
       'banter.json': B => {
         B.leader_badge.when = 'wins >= 1';
         B.chosen_won.when = 'last:victory';
-        B.hazel_file.when = 'lastby:nobody';
+        B.kappi_file.when = 'lastby:nobody';
         B.chosen_first.cooldown = 2;
         /* RS-3: a line for nobody; a resident left with only lines that may not hold */
         B.mo_won.who = 'nobody';
@@ -186,7 +186,7 @@ test('check-data: planted relations, the rival and the hub folk in the story (RL
     checkDataOn({
       'relations.json': R => {
         R.people.nobody = { levels: [{ at: 1 }] };
-        R.people.hazel.levels[2].at = 1;
+        R.people.kappi.levels[2].at = 1;
         R.people.chosen.levels[1].fx = [{ kind: 'luck', mult: 9 }];
         R.people.juniper.levels[1].pyramids = { gold_brick: 1 };
         R.people.juniper.levels[3].wardrobe = 'no_such_hat';
@@ -196,7 +196,7 @@ test('check-data: planted relations, the rival and the hub folk in the story (RL
         R.run.rival.meet = [3];
       },
       'banter.json': B => {
-        B.hazel_file.when = 'rel:blake >= 1 or gifted:nobody';
+        B.kappi_file.when = 'rel:blake >= 1 or gifted:nobody';
       },
     })
   );

@@ -1586,7 +1586,7 @@ SECTIONS.trainers = () => {
      grid(
        conditionField('Only there when', `${p}.when`, 'trainer:' + k, 'when', {
          ph: 'always',
-         help: 'A condition (docs/SCRIPTS.md), e.g. met_hazel and !rival0',
+         help: 'A condition (docs/SCRIPTS.md), e.g. met_juniper and !rival0',
        }),
        conditionField('Gone when', `${p}.unless`, 'trainer:' + k, 'unless', { ph: 'never' })
      ) +

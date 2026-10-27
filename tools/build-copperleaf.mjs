@@ -22,7 +22,7 @@ import { stationProps } from './station-place.mjs';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
-import { squareEdgeProps } from './square-props.mjs';
+import { moveHub, squareEdgeProps, squareHubSpot } from './square-props.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
 const D = readGameData(),
@@ -587,6 +587,8 @@ sc.checks = (G.checks || []).map(c => {
     what: c.what.replace(/(\(\d+ of \d+\))?$/, "'s door $1").replace(/ +$/, ''),
   };
 });
+/* HB-10b: the hub's spot clear of the fountain (tools/square-props.mjs), the checks starting from it with it */
+moveHub(sc, squareHubSpot(sc));
 /* IS-9: the dressing, last (tools/island-dress.mjs): the forest and its floor, the shore, the mountain, the heath and
    meadows; never the pasture or the barn's zone (IS-8's), the town, its plots, streets or doors. --no-dress leaves it
    off. Its dials are the input file's `dress` (trees: the share of the forest's trees kept, 0-1; each tree is 4-5 draw

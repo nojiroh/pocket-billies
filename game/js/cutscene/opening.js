@@ -1,7 +1,7 @@
 'use strict';
 /* ================= CUTSCENES: THE OPENING =================
    Starts with New game on the title screen: first the fall (opening-fall.js), then Copperleaf, filmed with the walk-scene
-   engine: you wake in the dust outside Professor Chosen's lab and he comes running, his assistant Hazel behind him; you make yourself up in the dressing
+   engine: you wake in the dust outside Professor Chosen's lab and he comes running, his assistant Kappi behind him; you make yourself up in the dressing
    room; Blake barges in and the Chosen fights him himself; three coins pop open into the starters; you pick one, Blake takes
    the one that beats it and battles you on the spot (opening-fall.js battleTutor, story.js storyAfterRival). If it can't
    run or stops, a Try again screen (ui.js renderIntro). What happens and in which order is the cutscene's file,

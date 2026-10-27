@@ -23,7 +23,10 @@ kept aside in the browser).
 - **Loading** (load track LD-5, in part, from the same session):
   - The world map's ground is worked out on a helper thread.
   - The walking grid is built in about a third of the time.
-
+- **Kappi the Wise** replaces Hazel as Professor Chosen's assistant: a capybara (they/them) who does the real
+  research, calm and unhurried, with Billies asleep on their back and a hot yuzu bath in the lab. New lines in the
+  opening, the lab and the hub; their own talk-box portrait (it blinks and talks), a low soft voice, and a capybara
+  body in the lab and the opening. The gift, the favour and the Potion at level 2 are as Hazel's were.
 - **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
   arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
   one on the route props test map.

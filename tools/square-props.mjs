@@ -8,6 +8,8 @@
 // fountain; a solar canopy on the south-east. Kept clear: the view toward the sky rail and the portal (VIEW), a walk
 // round the fountain (nothing nearer its middle than WALK_R), the hub spot.
 
+const r2 = v => Math.round(v * 100) / 100;
+
 export const SQUARE_R = 10; /* the square's mean radius (m) */
 
 /** the square's rim, metres from its middle at angle a (radians, 0 east, 90 degrees north): a bulge toward the
@@ -18,10 +20,32 @@ export const squareRim = a =>
     Math.min(11.8, SQUARE_R + 1.2 * Math.cos(a - 0.6) + 0.6 * Math.sin(3 * a + 0.9) + 0.3 * Math.sin(7 * a + 2.3))
   );
 
+/* HB-10b: the hub's spot (where you start and land), from the square's middle. The island's orbit camera points the
+   stick's up toward its middle (cam.orbit.c, to the north-west), so from here a push up runs past the fountain (it
+   stands 2.7 m ahead, to the left), not into its basin; HB-10a's spot 1.25 m from the basin ran into it */
+export const HUB_OFF = [3.75, 1.5];
+
+/** the hub's spot for a map whose square's middle is the well plot */
+export const squareHubSpot = M => {
+  const well = M.plots.find(L => L.k === 'well');
+  return [r2(well.x + HUB_OFF[0]), r2(well.z + HUB_OFF[1])];
+};
+
+/** the map with its hub moved to `to`: every walking check that started at the old spot starts there too */
+export function moveHub(M, to) {
+  const was = M.hub;
+  M.hub = to;
+  for (const c of M.checks || []) if (c.from && c.from[0] === was[0] && c.from[1] === was[1]) c.from = [...to];
+  return M;
+}
+
 export const WALK_R = 4.6; /* nothing stands nearer the square's middle than this (m) */
 export const VIEW = [15, 45]; /* degrees round the square kept low toward the portal */
 /* [kind, degrees round the middle (0 east, 90 north), metres in from the rim, 'in' (its front to the fountain) or a
    rot] */
+/** HB-10c: Copperleaf's folk (the map's `folk`): 10, the most drawn at once (the Engine's quality.townFolk) */
+export const SQUARE_FOLK = 10;
+
 export const SQUARE_EDGE = [
   /* the market on the north rim */
   ['market_cart', 58, 1.3, 'in'],
@@ -54,7 +78,6 @@ export const SQUARE_EDGE = [
   ['bench_wood', 192, 1.1, 'in'],
 ];
 
-const r2 = v => Math.round(v * 100) / 100;
 
 /** the edge props for a map whose square's middle is the well plot: the map's props without the old ones, then the
  * new ones */

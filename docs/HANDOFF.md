@@ -76,6 +76,45 @@ took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan'
 - Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
   smoke 6 of 6.
 
+### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
+Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
+owner's brief: a better world map, routes and towns for runs, with online research and many questions; planned and
+answered in docs/phases/worldmap-track.md (WM-1..WM-8), then WM-1 built in the same session.
+- **Reverses TR-2**: logic/run-scenes.js `runSceneExits` gives `west`/`west2` back and `east`/`east2` ahead (a side
+  area's places too); run-map.js `runSpot` puts the landing near the bowl's west rim and the boss near the east (a
+  detour's places east of their obstacle); route-trainers.js `routeWaySpot` stands a spare trainer on the way east.
+- mapgen.js: a new dial `ahead` (the side the way on leaves by; west when not given, so the Studio's and every other
+  map are unchanged); a run's scenes give `E`. The first tall-grass patch lies across the way on and the pinches run
+  along it (`mapgenAhead`, `mapgenToward`). MAPGEN_VERSION 19.
+- logic/bowl-camera.js `bowlCamHome(x, y, yaw, up)`: with a place's `up` it looks the way the place's map north faces
+  (a run place: north), so the run reads west to east, left to right; world-bowl.js passes the spot's `up` on opening,
+  in the flight and on Home, and a run's map now opens over you that way whatever the camera did last (from the walk
+  it still pulls back from above you). Places with no `up` look outward as before.
+- Words: the landing's hint "Walk east into the next place", the mini-boss's "blocks the way east"; comments that said
+  north/south or east to west.
+- Tests: run-map, run-scenes, route-trainers and bowl-camera (a new one: a run place's opening view looks north, west
+  on the left, north up); snapshots remade on purpose (run-world-real's frozen dials: the sides and `ahead`;
+  run-start's mapgenV; rng's scene hash, the same scene but for gen.v).
+- **Found, not fixed** (before and after WM-1): about 1 place in 50 of the debug menu's mountains run has a north
+  summit you can walk down from but not up to (a one-way ledge across its trail). mapgen-mountains.test.mjs's second
+  seed moved from TR2MTN1 to TR2MTN2, with a comment; a terrain session's to fix.
+- **Watch**: route places with a spot for their rarer Billie went from 0.95 to 0.90 over 90 seeds (the same spots a
+  place on average); route-trainer-spots.test.mjs now samples 15 seeds with a 0.75 floor (5 seeds swung 0.67-0.78).
+  WM-3 reworks how routes are made; look again there. mapgen-town.test.mjs's pinned-edge check allows a river bank's
+  corner a cell on (1 cm off at TW1D's west edge).
+- Also: studio/art-code-refs.json regenerated in its own commit (its line numbers were out of date on main since LD-5,
+  so `npm run lint` failed before this session).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1412 pass; slow tests all pass but
+  "the game's island is the generator's own output", which fails on main too; check-fast's run pages (the run's world,
+  the helper thread, the town's shop, life and quest, the battle held, Blake, the bowl, Play this seed, waystations)
+  10 of 10; smoke 6 of 6 (159 s). A headless picture of the run fixture: the landing's "Thicket Route →" sign points
+  right in the walk, and the world map opens over the landing looking north with the road going right to the next pin.
+- The container's Python Playwright 1.56 (tools/requirements-check.txt) doesn't match its Chromium (build 1243); the
+  checks ran with Playwright 1.63 installed in the container only. The pin may need moving.
+- Risky: a run saved mid-way before WM-1 is remade from its seed going the new way (its places' exits flip, you stand
+  where you were); old saves don't matter (CLAUDE.md).
+- Next: WM-2 (the region grid, logic only). Tag `wm-1-done` for the owner.
+
 ### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
 pictures into solids in a busy frame.
@@ -987,6 +1026,70 @@ changes until the owner turns them on after a phone check.
 - Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
   Meadow and Depth corridor now hold the new switches) and a debug log; then one commit per switch to turn on what
   stays. After that: cavity darkening from the same sheet, short self-shadows on the ground.
+### Hub track HB-10c: the square's people - 2026-10-26
+Branch `track/hub` (started while HB-10b was being finished; edits began at the owner's word, HB-10b merged in when it
+landed). Plan approved in Plan Mode with four answers: 6-10 drawn at once, the morning market daily, up to 2 ranch
+Billies by day, one cap for the hub and the run towns. Tag to suggest: `hb-10c-done` (the owner pushes tags).
+Details: docs/phases/hub-track.md, "Done in HB-10c".
+- Changed: `game/js/logic/square-day.js` (stops by HB-10b's edge props, the day's slots, who goes, `folkCap`, the
+  visits) and rules.json `square` {day, visit} (dataSquareRules). The townsfolk keep the square's day on top of their
+  own (walk-view.js): a market 7-11, a busy midday, a quiet afternoon, a lantern evening; none on the fountain's hub side
+  (HB-10b's run line). Copperleaf's folk 10 (`patch-copperleaf-square.mjs --folk`). New Engine dial
+  `quality.townFolk` (10; 0.8 on Balanced, 0.6 when slow) for the hub AND run towns: rules.json `run.town.cap` and
+  `runTownFolkCap` removed. The ranch's Billies visit by day (world-billies.js: 1-2 per 10 minutes, by the pasture's
+  gate along the streets to a bench or the fountain and back, by the clock). The debug log's scene: folkAll,
+  onSquare, visitors (counts). `tools/island-perf.py --square`.
+- Fixed (own commits): folk out about the streets at load (14:00-17:30) started indoors till 17:30; folk trimmed by
+  the cap never came back when it rose.
+- Risky / check on the phone: a run town on a slow phone now draws up to 6 folk (was 3); the frame times with 10
+  folk and the night lights (headless numbers are SwiftShader's: low graphics +39 draws on ~878 at midday; at full
+  graphics headless the game stepped down to the 0.6 cap; the night lights cost more than the people). A visitor
+  walks about 2 minutes each way and is gone from the pasture meanwhile. Nobody sits (no sitting pose).
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1304 of 1304 (new
+  square-day.test.mjs, data-checks), smoke all ok, headless probes (folk on the square by hour; a visit there, staying,
+  home), pictures at 8:00, 12:30 and 20:00 (town-square, square-near). Full quick check: 6 PROBLEMs:
+  - also red on main (HB-10b's entry): Terraces sky_portal, RL-8 shop Perk, room light, song fingerprints;
+  - "Sound effects and jingles" (payout): passed alone;
+  - "Actions sheet: a run's sheet has no day chip": failed twice beside other steps (boots 52-81 s; its wait is 5 s),
+    passed alone twice on this head and once on HB-10b's head: load, not this phase's code as far as these show.
+- Next: HB-10d (started in its own session, Plan Mode, waiting on this entry).
+
+### Hub track HB-10b: the square's edges, market and night look - 2026-10-26
+Branch `track/hub` (merged `ccr-144f3c08-vf09lo` with a merge commit, then docs/plans/hb-10b-wip.patch applied and
+finished; the patch file is gone). Plan approved in Plan Mode. Tag to suggest: `hb-10b-done` (the owner pushes tags).
+Details: docs/phases/hub-track.md, "Done in HB-10b".
+- Changed: 24 props round Copperleaf's square (`SQUARE_EDGE` in tools/square-props.mjs, laid by
+  `patch-copperleaf-square.mjs --edges` and by build-copperleaf.mjs): the market on the north rim, planters at the
+  street mouths, five streetlamps, two string lights, a solar canopy, three benches. New model `string_lights`
+  (tools/build-props-square.py, its bulbs lamp glows). The fountain lit from below at night and fireflies round it
+  (build-props-batch6.py). New prop effect `fireflies` (walk/effects.js; listed in the Studio's prop editor).
+  tools/island-shots.py `--hour=H` for night pictures. Lit windows needed nothing (the 3D buildings' glass already
+  lights at night: seen in the pictures).
+- Risky: batch 6's drift in clock_tower.json and test_props_marigold.json reverted again (each batch 6 run brings it
+  back until its owner settles it). The pasture test's rerun check now leaves out `sq` props, as it leaves out the
+  dressing. Phone cost not measured yet (HB-10c measures): at night the square adds about 9 x 2 string bulbs, 5 lamps,
+  3 fountain glows and 7 fireflies to the glow list. In the `square-portal` picture (a free camera 1.7 m up) the
+  south-west string light hangs in front of the lens; the walk camera sits higher.
+- **The hub's spot moved** (the owner chose it over fixing only the test): the quick check's "Running" step was red
+  since HB-10a. At the hub the orbit camera points the stick's up toward the island's middle (north-west), which
+  from HB-10a's spot (1.25 m from the basin) ran into the fountain after about 2 m; the player slid round it and the
+  gait counted more than the metres moved (green before the HB-10a merge, 09de1e25, and on main). The spot is now
+  [152.38, 60.86] (`squareHubSpot`, 1.7 m from the old one): the fountain 2.7 m ahead to the left, the run line clear
+  on paving. `patch-copperleaf-square.mjs --hub` and build-copperleaf.mjs set it and move the walking checks' starts
+  with it; hub-square.test.mjs keeps the line clear. Only the hub and the checks' `from` changed in copperleaf.json.
+  **Check on the phone**: Start-Game and coming home land you there.
+- Verified: lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings, the same before),
+  build, `npm test` 1291 of 1291, tools/test/hub-square.test.mjs, smoke 6 of 6 (Python Playwright 1.63.0), headless
+  pictures by day (13:00) and night (22:00). Full quick check: 40 steps, 34 passed, 6 PROBLEMs:
+  - also red on main (b87b818d), not this track's: Terraces "props in the air: sky_portal" (the portal floats by
+    design, HB-7: the step needs it on its list), RL-8 "the town's shop has no Perk", "room light" (Walking left and
+    right), Song fingerprints (cave mid and late not in the baseline);
+  - "Run map music hears the forecast": passed alone on track/hub and on main (load);
+  - "Running": red, HB-10a's (above); green after the hub's spot moved (rerun with In-game full test, Terraces,
+    Walking left and right, RL-8, Animals: only the three main has too stayed red), smoke 6 of 6 again.
+  The HB-10a run's rabbit and payout jingle PROBLEMs passed here and on main.
+- Next: HB-10c (started in its own session; it should pull the new hub spot).
+
 ### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
 Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
 Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
@@ -1110,6 +1213,60 @@ more intuitive Studio, and what no longer fits the Vision taken out.
 - Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
   is on it).
 - Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
+
+### Side session - Kappi the Wise, a capybara, replaces Hazel - 2026-10-26
+Branch `ccr-5f47d3ef-j66nm0`, from main b87b818d (no pull request yet). Plan approved in Plan Mode. The owner's answers:
+the exact swap (Hazel's role, gift, favour and Potion bonus); name tag "Kappi", "the Wise" in lore and their
+introduction; they/them; a quad rig and a pixel portrait that blinks and talks; Kappi inherits S4 (a former Bureau
+researcher) and S6 (Kappi vs Blake); lines lean on Billies napping on them, the yuzu bath, unhurried calm and grazing;
+a low soft click for a voice; Hazel's unused sprites deleted; the drafted lines approved as written; the lab tab says
+"Chosen's lab"; a yuzu bath tub in the lab. Research online: no "Kappi" capybara exists; the nearest is Bandai's
+Kapibara-san (onsen, "at your own pace"), so nothing of its look or motto is used. project-story.md has the decisions.
+- Changed (one cause per commit):
+  - Renames: person `hazel` -> `kappi` (with `thanks_hazel` -> `thanks_kappi`: banterOwner reads the person from
+    `thanks_<id>`), `hazel_lab` -> `kappi_lab`, quest `fav_hazel` -> `fav_kappi`, banter ids `hazel_*`/`fav_hazel_*` ->
+    `kappi_*`/`fav_kappi_*`. Kept: the song `hazel`, the opening's spot `hazel` and shot `hazelRuns`, the hazel tree,
+    the history in HANDOFF, CHANGELOG's old lines, meta.json's release notes.
+  - Deleted game/art/people/hazel_*.png (nothing loaded them; the unused-art report missed them because the song and
+    the tree are also named hazel).
+  - Names (speaker, name tags, lore, Field Guide, the lab's text and tab, others' mentions in they/them), then Kappi's
+    lines (the approved drafts; two new lab lines, ids ba82 and ba1a).
+  - Voice: sound.js blip, a soft click then a low falling filtered note.
+  - Body: bodyPlans.json form `kappi` (quad, a stub tail) with a new `talk` flag (a mouth-open face frame; no Billie
+    has it, so their bakes are unchanged); tools/paint-kappi.mjs paints its drawing sheet (placeholders/kappi.png) and
+    bakes it (billionaires/kappi.png, rigs-next.js `kappi`); `--preview=dir` writes both views and the faces.
+  - Creature people: people/<id>.json `creature: {rig, ht}` (person.schema.json, game-data.d.ts). person-art.js lookOf
+    gives a creature look; personFrame draws the rig (walk cycle, front/back, mirrored right, acts mapped to rig poses,
+    ppm from ht), so the walk world, rooms, cutscenes and battle poses use it unchanged; drawPortrait shows its head
+    at twice its size in the people's portrait box. Frames drawn before the rig's sheet loads are not cached
+    (`personArtMissing`). npm run modules routed rigParts and rigPose through hooks.js.
+  - The yuzu bath: tools/build-props-kappi.py (scenery `yuzu_bath`, a low-poly tub with water, yuzu, a step and a
+    wisp of steam), placed in int_lab beside Kappi.
+  - Docs: VISION, ROADMAP, project-story.md (owner decisions 2026-10-26), SCRIPTS, CUTSCENES, STUDIO, TESTING, BRANCHES,
+    CHANGELOG.
+- Risky or unfinished:
+  - Kappi's art is a first pass painted by a script; edit tools/paint-kappi.mjs (or export/import the sheet with
+    tools/bake-placeholders.mjs) to redraw it.
+  - A creature person in a battle (personBattleFrames/Pose: throw, cheer, react) is untried: nobody fights as Kappi
+    until S6, which needs a creature trainer's battle art anyway.
+  - The rig's sheet loads on first use: Kappi may be missing for a moment the very first time; watch for a blank.
+  - The Studio's People editor still edits kappi.json's `look` (kept, unused while `creature` is set).
+  - The tub's picture went into scene/next/island/ (build-props-island.py's bake folder).
+  - tools/check-quick.py --smoke printed "no problems" when Chromium could not start (its browser steps never ran):
+    not fixed here. Locally the pinned Playwright (1.56) wants Chromium 1194; ran through a scratch
+    PLAYWRIGHT_BROWSERS_PATH with links to /opt/pw-browsers' 1243 (chrome-linux -> chrome-linux64, headless_shell).
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data, the data text check, unit tests (1284),
+    smoke 6 of 6 (code and data commits).
+  - In the game, headless: the lab with Kappi beside the tub, Kappi's talk box (portrait, name), the walk frames in
+    every direction next to the Chosen's (68.8 against 66.5 px/m).
+  - Full quick check on adb3df82: 2065 s, 45 steps, 37 passed. Problems: "Time, weather and rooms" (autumn stopped
+    drawing) passes alone here and on the base; "room light" fails the same on the base b87b818d. Of the other six, on the base: sky_portal floating, the payout
+    jingles and the two cave song fingerprints fail the same; the run from the mast fails there too (never landed);
+    "Run map music" and "Actions sheet" (a run's day chip) pass alone on this branch. None is this branch's.
+- Next: the owner's phone test (a new game: Kappi in the opening; the lab: tap Kappi, the voice, the tub's steam; a
+  lost run's return; a Bean for Kappi) and a debug log; a pull request into main when the owner says; then S4
+  (Kappi's past) and S6 (Kappi vs Blake).
 
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so

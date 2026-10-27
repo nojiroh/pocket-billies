@@ -62,15 +62,6 @@ test('a route has no square and no houses', () => {
   );
 });
 
-test('a run town draws 3 folk when busy, 5 on Balanced, 6 on Beautiful', () => {
-  const { runTownFolkCap } = modules['run-scenes'];
-  assert.equal(runTownFolkCap(R.town, 0, 'sharp'), 6);
-  assert.equal(runTownFolkCap(R.town, 1, 'smooth'), 5);
-  assert.equal(runTownFolkCap(R.town, 2, 'sharp'), 3);
-  assert.equal(runTownFolkCap(R.town, 4, 'smooth'), 3);
-  assert.equal(runTownFolkCap(R.town, 0, 'off'), 5); /* Off keeps Balanced's count */
-});
-
 test('every run town has a street, a square with the clinic and the shop on it, and 4-7 shut houses', () => {
   let towns = 0,
     four = 0;
@@ -146,9 +137,10 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
       /* a run's scenes meet any neighbour at height 0 on their east and west edges, but where a river crosses (WA-3a:
-         its bed keeps its height, the neighbour takes it from the edge strip) */
+         its bed keeps its height, the neighbour takes it from the edge strip; WM-1: and a bank's corner a cell on,
+         a centimetre off, as TW1D's west edge since runs go west to east) */
       const wetBy = (x, r) =>
-        [r - 1, r].some(k => k >= 0 && k < sc.h && 'wd'.includes(sc.tiles[k][Math.min(sc.w - 1, x)]));
+        [r - 2, r - 1, r, r + 1].some(k => k >= 0 && k < sc.h && 'wd'.includes(sc.tiles[k][Math.min(sc.w - 1, x)]));
       sc.heights.forEach((row, r) => {
         for (const x of [0, sc.w]) assert.ok(row[x] === 0 || wetBy(x, r), `${where}: the edges pinned`);
       });

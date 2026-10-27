@@ -156,7 +156,7 @@ function roomHero() {
       {
         shop: 'Tap the counter to shop.',
         clinic: 'Tap the desk and your team is patched up, free.',
-        lab: 'Tap Professor Chosen or Hazel to talk, or the unlock board to spend Research.',
+        lab: 'Tap Professor Chosen or Kappi to talk, or the unlock board to spend Research.',
         house: 'Tap whoever lives here to chat.',
         ranch: 'Tap the training board or the rancher to train your Billies.',
       }[I.kind] || '',
@@ -212,7 +212,7 @@ function walkSheetHTML() {
 /* the hub's buildings the sheet can point you to (a marker in the world: walkMarkTo), by their act */
 const HUB_MARKS = [
   ['ranch', 'Ranch', 'Train and breed your Billies'],
-  ['lab', 'Hazel’s lab', 'Talk to the professor'],
+  ['lab', 'Chosen’s lab', 'Talk to the professor'],
   ['genebank', 'Gene Bank', 'Splice Genes onto your Billies'],
   ['workshop', 'Workshop', 'Fit bot parts on your Billies'],
 ];

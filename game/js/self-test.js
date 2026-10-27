@@ -1089,7 +1089,7 @@ async function runFullTest(mode) {
             for (let i = 0; i < 150 && !(walkView.ready && walkView.id === landing); i++) await selfTestSleep(100);
             if (walkView.id !== landing) throw new Error(`the run's landing isn't shown (still ${walkView.id})`);
             measureFromHere();
-            /* the way to the exit ahead (west) and on past where a run's crossing counts (rules.json run.seamIn) */
+            /* the way to the exit ahead (east) and on past where a run's crossing counts (rules.json run.seamIn) */
             const to = runWorldNode(runNext(s.run.map, 0)[0]),
               e = (walkState().exits || []).find(x => x.to === to);
             if (!e) throw new Error(`no exit from the landing to ${LOCATIONS[to].name}`);
@@ -1101,7 +1101,7 @@ async function runFullTest(mode) {
               R = findPath(walkView.pl.x, walkView.pl.z, pt[0] + side[0] * past, pt[1] + side[1] * past, {
                 max: 1e6,
               });
-            if (!R) throw new Error('no path out of the landing to its west exit');
+            if (!R) throw new Error('no path out of the landing to its east exit');
             let crossed = false;
             for (let k = 1; k < R.length && !crossed; k++) {
               const [ax, az] = R[k - 1],
@@ -1270,11 +1270,11 @@ async function runFullTest(mode) {
       );
     /* RL-S2: Blake and the hub folk, on a copy of the save: a run at Expedition II knows the lead he counters, each of
        his places has his foe (person chad, never blocking), his team one Billie bigger by meetings as rules.json
-       run.rival says, his ace of a type that beats the lead's; a Bean for Hazel raises her level and the story reads it
-       (rel:hazel); the run takes off with the levels' bonuses. Then the save as it was */
+       run.rival says, his ace of a type that beats the lead's; a Bean for Kappi raises their level and the story reads it
+       (rel:kappi); the run takes off with the levels' bonuses. Then the save as it was */
     if (typeof rivalSize === 'function' && typeof relGift === 'function' && !selfTest.stop)
       await phase(
-        'Blake in a run, and a Bean for Hazel',
+        'Blake in a run, and a Bean for Kappi',
         'dio',
         async () => {
           const was = saveData,
@@ -1294,15 +1294,15 @@ async function runFullTest(mode) {
             }
             if (!plan) throw new Error('no seed of 20 met Blake twice at Expedition II');
             s.meta.beans = 1;
-            if (!relGift(s.meta, 'hazel', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
+            if (!relGift(s.meta, 'kappi', RELATIONS)) throw new Error('the Bean for Kappi wasn’t given');
             const holds = (/** @type {string} */ c) => conditionHolds(c, storyStateOf(s));
-            if (!holds('rel:hazel >= 1 and gifted:hazel and beans = 0'))
+            if (!holds('rel:kappi >= 1 and gifted:kappi and beans = 0'))
               throw new Error('the story doesn’t read the gift: ' + JSON.stringify(storyStateOf(s).rel));
             runStartOn(s, plan);
             const run = s.run,
               lead = SPECIES[run.rival.lead];
             if (!lead || run.rival.lead !== s.team[0].sp) throw new Error(`the lead: ${run.rival.lead}`);
-            if (!run.rel || run.rel.hazel !== 1)
+            if (!run.rel || run.rel.kappi !== 1)
               throw new Error(`the levels it took off with: ${JSON.stringify(run.rel)}`);
             const blakes = Object.values(
               runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
@@ -1318,10 +1318,10 @@ async function runFullTest(mode) {
               if (!ace.types.some(t => typeEffectiveness(t, lead.types) > 1))
                 throw new Error(`his ace ${ace.name} doesn't beat ${lead.name}`);
             });
-            /* RL-S2 part B: Hazel's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
+            /* RL-S2 part B: Kappi's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
                moves the story to chapter 2 */
             const story = s.story || (s.story = {});
-            (story.quests || (story.quests = {})).fav_hazel = 'asked';
+            (story.quests || (story.quests = {})).fav_kappi = 'asked';
             s.meta.history.push({
               seed: 'SELFTESTFAV',
               theme: '',
@@ -1337,8 +1337,8 @@ async function runFullTest(mode) {
               rival: null,
             });
             const paid = relFavoursPay(s, c => conditionHolds(c, storyStateOf(s)), RELATIONS);
-            if (paid.length !== 1 || paid[0].who !== 'hazel' || story.quests.fav_hazel !== 'done')
-              throw new Error(`Hazel's favour: ${JSON.stringify(paid)}`);
+            if (paid.length !== 1 || paid[0].who !== 'kappi' || story.quests.fav_kappi !== 'done')
+              throw new Error(`Kappi's favour: ${JSON.stringify(paid)}`);
             const end = STORY_DATA.scripts && STORY_DATA.scripts['chapter1-end'];
             if (!end) throw new Error('no story.json scripts.chapter1-end');
             await runScript(
@@ -1347,7 +1347,7 @@ async function runFullTest(mode) {
               { save: s, id: 'story:chapter1-end' }
             );
             if (s.meta.chapter !== 2) throw new Error(`chapter1-end left the chapter at ${s.meta.chapter}`);
-            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Hazel level 1, her favour +${paid[0].points}; chapter 2`;
+            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Kappi level 1, their favour +${paid[0].points}; chapter 2`;
           } finally {
             setSaveData(was);
             render();

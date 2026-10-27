@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:720"
+    "game/js/walk-view.js:725"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:721"
+    "game/js/walk-view.js:726"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:722"
+    "game/js/walk-view.js:727"
    ]
   },
   {
@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:204",
     "game/js/art.js:206",
-    "game/js/logic/data-checks.js:1663"
+    "game/js/logic/data-checks.js:1712"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:204",
-    "game/js/logic/data-checks.js:1663"
+    "game/js/logic/data-checks.js:1712"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:399",
-    "game/js/logic/data-checks.js:1665"
+    "game/js/logic/data-checks.js:1714"
    ]
   },
   {
@@ -105,14 +105,14 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:488"
+    "game/js/walk-view.js:493"
    ]
   },
   {
    "p": "next/billionaires/*.png",
    "at": [
     "game/js/logic/kit-assemble.js:445",
-    "game/js/logic/placeholder-art.js:517"
+    "game/js/logic/placeholder-art.js:521"
    ]
   },
   {
@@ -151,47 +151,47 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2129",
-    "game/js/walk-view.js:744"
+    "game/js/walk-view.js:749"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:744"
+    "game/js/walk-view.js:749"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:719",
+    "game/js/walk-view.js:724",
     "game/js/walk/ground-draw.js:71"
    ]
   },
   {
    "p": "scene/far/*.png",
    "at": [
-    "game/js/walk-view.js:756"
+    "game/js/walk-view.js:761"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:504"
+    "game/js/walk-view.js:509"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:754",
+    "game/js/walk-view.js:759",
     "game/js/walk/frame-items.js:195"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:723",
+    "game/js/walk-view.js:728",
     "game/js/walk/effects.js:253"
    ]
   },
