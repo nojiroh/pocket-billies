@@ -736,7 +736,11 @@ export interface Item {
   /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
       never used up, never used in battle */
   hold?: FxRow[];
+  /** UI-14b: a held item's tier on the loot ladder (frame, pill and name colour), by price and effect size */
+  rarity?: RarityTier;
 }
+/** UI-14b: the loot ladder's four tiers (logic/marks.js MARK_RARITY; the owner's answer 9) */
+export type RarityTier = 'common' | 'uncommon' | 'rare' | 'mythical';
 
 /** a shop: a run town's or stall's (logic/run-scenes.js), in SHOPS while the run's world is in */
 export interface Shop {
