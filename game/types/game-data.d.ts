@@ -2005,7 +2005,11 @@ export interface BossDef {
   bots?: Partial<Record<'torso' | 'armL' | 'armR' | 'legs', string>>;
   boss: { hp: number; st: number; levels: number };
   phases: BossPhase[];
+  /** the battle's first line ({name}) */
+  call?: string;
   join?: string;
+  /** the join intro's glow (else its gem's colour) */
+  glow?: string;
   win?: string;
   rewards?: { parts?: number };
   story?: string;

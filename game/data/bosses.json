@@ -22,7 +22,9 @@
      "say": "The {part} tears loose! {name} runs lighter and faster."
     }
    ],
+   "call": "The Bureau calls in {name}! It acts twice a turn. Your team steps up together.",
    "join": "Four Bureau bots roll in... and lock together into {name}!",
+   "glow": "#FF5A7A",
    "win": "Retrieval suspended. Claim filed as pending.",
    "rewards": {"parts":1},
    "story": "chapter1-end",

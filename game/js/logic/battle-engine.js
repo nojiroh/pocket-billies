@@ -1305,12 +1305,14 @@ export function startTrainer(id, o = {}) {
   )
     return;
   battleSay(
-    T.alpha
-      ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
-      : dbl
-        ? /* RT-2: a route pair is two trainers */
-          `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
-        : `${T.name} wants to battle.`,
+    BD
+      ? (BD.call || '{name} closes in! It acts twice a turn. Your team steps up together.').replace(/\{name\}/g, T.name)
+      : T.alpha
+        ? `${T.name} sends out an Alpha! It acts twice a turn. Your team steps up together.`
+        : dbl
+          ? /* RT-2: a route pair is two trainers */
+            `${T.name} ${T.mate ? 'want' : 'wants'} a double battle!`
+          : `${T.name} wants to battle.`,
     { k: 'trainerIn', who: T.who }
   );
   if (T.market) {
@@ -1318,7 +1320,11 @@ export function startTrainer(id, o = {}) {
     battleSay(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
   }
   const F = liveActors(1);
-  F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
+  /* RL-14b: a bosses.json boss comes in as its bots joining together (battle-stage.js 'join') */
+  if (BD)
+    battleSay((BD.join || '{name} assembles!').replace(/\{name\}/g, T.name), { k: 'join', si: F[0], glow: BD.glow });
+  else
+    F.forEach((k, n) => battleSay(n ? '' : `${T.name} sent out ${joinNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
   const K = liveActors(0);
   K.forEach((k, n) => battleSay(n ? '' : `Go, ${joinNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   sayBattleFx();
