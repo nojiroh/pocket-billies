@@ -189,7 +189,7 @@ test('footsteps: soft on the natural grounds, hollow on boards, a click on stone
     lawn.map(s => s.pan),
     [-0.08, 0.08, -0.08, 0.08]
   );
-  for (const s of lawn) for (const h of s.hits) assert.ok(h.vol > 0 && h.vol < 0.12);
+  for (const s of lawn) for (const h of s.hits) assert.ok(h.vol > 0 && h.vol < 0.3);
   assert.ok(ambienceStep('b', r, 0).hits[0].bp < 600);
   assert.equal(ambienceStep('n', r, 0).hits.length, 2);
   assert.equal(ambienceStep('wet', r, 0).hits.length, 2);

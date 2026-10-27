@@ -544,8 +544,8 @@ export function ambienceStep(ter, r, foot) {
     return {
       pan,
       hits: [
-        { at: 0, dur: 0.07, vol: 0.09 * v, lp: 380 * k, q: 0.7 },
-        { at: 0.008, dur: 0.045, vol: 0.035 * v, bp: 1100 * k, q: 0.9 },
+        { at: 0, dur: 0.07, vol: 0.14 * v, lp: 380 * k, q: 0.7 },
+        { at: 0.008, dur: 0.05, vol: 0.22 * v, bp: 1100 * k, q: 0.9 },
       ],
     };
   return { pan, hits: [{ at: 0, dur: 0.035, vol: 0.07 * v, bp: 2200 * k, q: 1.4 }] };
