@@ -158,51 +158,6 @@ and 8 px), finish every file this session, switch v05Grow on. A second question 
 - **Next:** the owner's phone check; then the old parts (now base.css's end) onto the kit screen by screen, and the
   39 layout values named, as later UI sessions.
 
-### Characters track CH-0 - the plan, with research - 2026-10-27
-Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
-Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
-last commit.
-- Changed:
-  - **docs/phases/characters-track.md** (new): the brief; the numbers; what the game has; the research with links;
-    the directions (A: classic 2D redrawn, B: 3D figurines, C: 3D-driven pixel puppets, recommended); C's risks; the
-    art direction; the animation set; sessions CH-0..CH-14 with a two-session spike (CH-2, CH-3) before the owner's
-    pick; Ask me before; key files; verification.
-  - ROADMAP (the track under "Tracks alongside"), BRANCHES (this branch).
-- The arithmetic (a 390×844 CSS phone, DPR 3, portrait; engine.json and Copperleaf's `cam {pitch 34, h 9, fov 1}`):
-  - Scene buffer: R = min(DPR, 1.75) × `quality.resolution` 1.5 = 2.625, cut by the 1.6 MP cap to 2.205, so
-    860×1861 (0.73 of the device grid), stretched to the screen with `image-rendering: auto` (walk-view-gl.js:513-524).
-  - Camera at Normal: tilt 34 − 8 = 26°; height 9 × 2.1 = 18.9 m; distance 18.9 / sin 26° = 43.1 m; width at the
-    aim max(11, 15 × 390/844) / 0.68 = 16.18 m (camera.js:269-306).
-  - 390 / 16.18 = 24.1 CSS px a metre; a 1.75 m upright person × cos 26° (0.899) = 37.9 CSS px, 39.3 with the
-    perspective (the feet nearer than the aim) = 118 device px = 86.5 buffer px.
-  - Today's art is 116.4 px tall (66.5 px/m): 86.5 / 116.4 = 0.74 buffer px per art px (0.80 across). The ground (32
-    px/m) is 1.66, props (34 px/m) 1.56. At 32 px/m a person is 56 px tall: 86.5 / 56 = 1.55.
-  - Close (0.55): 77 CSS px, 169 buffer px: 1.45 today, 3.0 at 32 px/m. Far (1.7): 20.5 CSS px, 45 buffer px: 0.39
-    today, 0.8 at 32 px/m.
-  - Battle: the player's trainer (1.42 m at 2.85 m, focal 170 stage px, about 1.74 CSS px per stage px) is about 147
-    CSS px = 442 device px: 3.8 device px per art px today; about 4.9 at 64 px/m.
-- Found, not changed (for CH-1):
-  - `leaveRoom` sets `P.dir` to `'right'`/`'left'` (walk-control.js:306): not frame keys, so the player faces down
-    after leaving a room.
-  - Facing ignores the camera's yaw: `directionOf` (walk-view.js:3508) works in world space, and frame-items.js
-    picks the view from it, so the orbit camera and turned rooms can show the wrong side.
-  - The director's dark and mirrored copies lose `ax`/`ay`/`ppm` (director.js:172-199), falling back to anchor
-    (16, 40) and 42 px/m.
-  - tools/export-trainer-sprite-sheets.py reads `game/data/gamedata.js` (gone) and `game/art/people/` (deleted in
-    SA-5), so its workflow will fail; docs/EDIT-TRAINER-SPRITES.md is stale.
-  - Stale leftovers: `ppm || 42` (person-art.js:790) and the "~20 KB" frame comment (person-art.js:370; a frame is
-    about 55 KB now).
-- Claims checked: ART-NOTES' 116 px figures, 3.4 heads and 66.5 px/m are right. The HD-2D audit's "people at 42"
-  is only that fallback.
-- The Studio's rule "spinning and jointed parts; no skinning" (studio-track.md, 2026-10-19) shapes C: figures are
-  rigid jointed parts.
-- Risky: nothing ships. The recommendation rests on CH-3's pictures and the owner's phone; the track file says when
-  A is the better choice.
-- Verified: each figure above traced to its code line by read-only searches; the research links opened or returned
-  by search; `git diff` reviewed. No game checks apply to a docs-only change.
-- Next: the owner makes `track/characters` (from main, or from this branch before its PR merges). CH-1 (the bench and
-  the facing fixes) starts there. Answer "Ask me before" 10 (mend or retire the sprite-sheet exporter) before CH-1.
-
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
 owner's picks: delete all seven orphan groups; delete the loader's PNG copies too; retire the far backdrops; leave
