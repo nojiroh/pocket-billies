@@ -1241,8 +1241,8 @@ html[data-contrast='high'] .px {
   gap: 3px;
 }
 .seg button {
-  border-radius: 10px !important;
-  font: 600 14px/1 var(--font-voice) !important;
+  border-radius: 10px;
+  font: 600 14px/1 var(--font-voice);
 }
 /* UI-6b: the surface, not white (white under dark mode's light text read 1.03:1) */
 .seg button.on {
