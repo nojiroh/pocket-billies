@@ -179,7 +179,8 @@
     "int_library",
     "int_workshop",
     "int_gene_bank",
-    "test_props_routes"
+    "test_props_routes",
+    "test_people"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}
