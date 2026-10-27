@@ -2,6 +2,27 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-0 - the plan, with research - 2026-10-27
+Branch `ccr-86dc9cb1-odx2za`, made from main at 07c9b284 (`track/style` doesn't exist yet). Written at the owner's word
+("Make this a plan for the game") after two research answers in chat. Docs only: no game code, data or art changed.
+Tag `sy-0-done` (for the owner to push) on this session's last commit.
+- Changed:
+  - **docs/phases/style-track.md** (new): the brief; what the game has (the Bureau, battle numbers, coats and the
+    sprite shader); the research with links; how it fits (red family for the stamp ink, data in factions.json,
+    stepped foil, the settings); sessions SY-0..SY-8, optional SY-9; fits with other tracks; risks; Ask me before.
+  - ROADMAP (the track after the characters track), BRANCHES (this branch).
+- Found, not changed (for SY-1): `battleStageFlash` (battle-stage.js 577) ignores Flashes and Reduced motion; only
+  the evolution and hatch CSS read `data-flash` (battle-screen.css 1263-1264).
+- Corrected in chat: the first research answer said battles had no damage numbers; they do (`hudPop`, battle.js
+  566-586), with a ghost HP trail. The plan builds only what the UI track (UI-16a, UI-16b, UI-17) doesn't own.
+- Overlap settled in the plan: the UI track already gives Coats a prism foil in menus, so SY-6 carries that same
+  foil onto the sprite (one meaning: foil = has a coat); a separate rare finish (SY-9, Laminated) waits for the owner.
+- Risky: nothing ships.
+- Verified: each code claim traced by read-only searches; `git diff` reviewed. No game checks apply to a docs-only
+  change.
+- Next: the owner makes `track/style`; SY-1 (the flashes) starts there in Plan Mode. Ask me before 1, 2 and 4 are
+  needed before SY-3 and SY-9.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's

@@ -255,6 +255,13 @@ town node needs it.
   research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
   and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
   `track/characters` (the owner makes it).
+- **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
+  picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
+  events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in
+  the world), numbers you feel beyond the UI track's (your HP rolls down, damage numbers sized by the hit), and the
+  coat's prism foil carried onto Billies in battle and on the maps. First, battle flashes obey Flashes and Reduced
+  motion (they don't today). SY-0 (the plan, with research) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; next SY-1 (the
+  flashes). About 8 sessions. Tags `sy-N-done`. Branch `track/style` (the owner makes it).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
