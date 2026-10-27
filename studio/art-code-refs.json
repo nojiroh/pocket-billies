@@ -1764,7 +1764,7 @@
    "game/js/billie-sheet.js:108",
    "game/js/billie-sheet.js:309",
    "game/js/boot.js:151",
-   "game/js/minimap.js:77",
+   "game/js/minimap.js:78",
    "game/js/unit-card.js:149",
    "game/js/unit-card.js:158",
    "game/js/unit-card.js:164"
@@ -1774,8 +1774,8 @@
    "game/js/boot.js:137",
    "game/js/field-moves.js:146",
    "game/js/logic/placeholder-art.js:270",
-   "game/js/minimap.js:81",
    "game/js/minimap.js:82",
+   "game/js/minimap.js:83",
    "game/js/self-test.js:3499",
    "game/js/walk-view.js:395",
    "game/js/walk-view.js:4015",
