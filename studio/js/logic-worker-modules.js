@@ -17,6 +17,7 @@ import '../../game/js/logic/battle-rewards.js';
 import '../../game/js/logic/battle-state.js';
 import '../../game/js/logic/bowl-camera.js';
 import '../../game/js/logic/bowl-island.js';
+import '../../game/js/logic/bowl-terrain.js';
 import '../../game/js/logic/bowl-things.js';
 import '../../game/js/logic/bowl-weather.js';
 import '../../game/js/logic/bowl.js';

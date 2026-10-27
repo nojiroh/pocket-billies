@@ -39,6 +39,7 @@ import {
   bowlWetAt,
   bowlXY,
 } from './logic/bowl.js';
+import { BOWL_BAYER, bowlHash, bowlNoise } from './logic/bowl-terrain.js';
 import {
   BOWL_CAMERA,
   FLOAT_CAMERA,
@@ -133,7 +134,6 @@ import { clampZoom } from './walk/camera.js';
 import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
-  BOWL_BAYER: [() => BOWL_BAYER],
   BOWL_HAZE: [() => BOWL_HAZE],
   BOWL_INDEX: [() => BOWL_INDEX],
   BOWL_KIND_GROUND: [() => BOWL_KIND_GROUND],
@@ -157,8 +157,6 @@ expose({
   BOWL_WALL_W: [() => BOWL_WALL_W],
   WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
-  bowlHash: [() => bowlHash],
-  bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
@@ -1057,25 +1055,6 @@ function worldBowlTerrainKinds() {
     keys = Object.keys(T);
   return { T, keys, layer: Object.fromEntries(keys.map((k, n) => [k, n])) };
 }
-/* a hash in 0-1 for a square, and a smooth value noise (patches of ground) */
-const bowlHash = (i, j) => {
-  const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
-  return v - Math.floor(v);
-};
-function bowlNoise(x, y) {
-  const i = Math.floor(x),
-    j = Math.floor(y),
-    u = x - i,
-    v = y - j,
-    a = bowlHash(i, j),
-    b = bowlHash(i + 1, j),
-    c = bowlHash(i, j + 1),
-    d = bowlHash(i + 1, j + 1),
-    su = u * u * (3 - 2 * u),
-    sv = v * v * (3 - 2 * v);
-  return (a * (1 - su) + b * su) * (1 - sv) + (c * (1 - su) + d * su) * sv;
-}
-const BOWL_BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
 /* the terrain between places, worked out in rows a frame at a time (the map shows its colours meanwhile) */
 function worldBowlTerrainStart() {
   const g = worldBowl.ground;
