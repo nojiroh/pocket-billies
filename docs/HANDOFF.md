@@ -49,9 +49,9 @@ Kapibara-san (onsen, "at your own pace"), so nothing of its look or motto is use
   - In the game, headless: the lab with Kappi beside the tub, Kappi's talk box (portrait, name), the walk frames in
     every direction next to the Chosen's (68.8 against 66.5 px/m).
   - Full quick check on adb3df82: 2065 s, 45 steps, 37 passed. Problems: "Time, weather and rooms" (autumn stopped
-    drawing) passes alone here and on the base; "room light" fails the same on the base b87b818d; the other six (sky_portal floating, the town shop's Perk, the run map
-    music, the payout jingles, the run sheet's day chip, two cave song fingerprints) are outside this diff; their run on
-    the base was still going at this commit.
+    drawing) passes alone here and on the base; "room light" fails the same on the base b87b818d. Of the other six, on the base: sky_portal floating, the payout
+    jingles and the two cave song fingerprints fail the same; the run from the mast fails there too (never landed);
+    "Run map music" and "Actions sheet" (a run's day chip) pass alone on this branch. None is this branch's.
 - Next: the owner's phone test (a new game: Kappi in the opening; the lab: tap Kappi, the voice, the tub's steam; a
   lost run's return; a Bean for Kappi) and a debug log; a pull request into main when the owner says; then S4
   (Kappi's past) and S6 (Kappi vs Blake).
