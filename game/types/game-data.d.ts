@@ -95,8 +95,6 @@ export interface GameData {
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
   residents?: Record<DataId, Resident>;
   pools: Record<DataId, Pool>;
-  /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
-  eggs: Record<string, EggTier>;
   pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
   people: Record<DataId, Person>;
@@ -689,19 +687,11 @@ export interface MapProp {
   [key: string]: any;
 }
 
-/* ---------- encounters, eggs, money, items ---------- */
+/* ---------- encounters, money, items ---------- */
 
 /** pools.json (and fishing.json): a level range and weighted species */
 export interface Pool {
   lv: [min: number, max: number];
-  list: WeightedSpecies[];
-}
-
-/** eggs.json: an egg tier */
-export interface EggTier {
-  /** steps to hatch */
-  need: number;
-  lv: number;
   list: WeightedSpecies[];
 }
 

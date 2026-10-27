@@ -161,7 +161,6 @@ export const FIXTURE = {
     { kind: 'seam', a: { map: 'home' }, b: { map: 'meadow' } },
     { kind: 'seam', a: { map: 'meadow' }, b: { map: 'lake' } },
   ],
-  eggs: { 2: { need: 100, lv: 5, list: [['sprout0', 1]] } },
   pyramids: { pyramid: { n: 'Copper Coin', m: 1 }, capstone: { n: 'Platinum Coin', m: 0 } },
   items: { potion: { n: 'Potion', hp: 20 }, revive: { n: 'Revive', revive: 0.5 } },
   people: { chosen: {} },
