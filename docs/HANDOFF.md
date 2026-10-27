@@ -4,8 +4,9 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 
 ### UI track UI-8c - the run map's icons: pixel badges, 44 px chips, the voice font - 2026-10-27
 Branch `claude/ui-8c-map-markers`, made from the UI-10 planning branch (main plus the UI-8c plan, PR #275); main merged
-first (already up to date). Run beside UI-8b at the owner's word, a draft PR into `track/ui` (as WM-4b, WM-5 and WM-7
-took PRs into `track/worldmap`). The plan was approved in advance (the owner's standing word for the UI plan). One
+first (already up to date). Run beside UI-8b at the owner's word. First meant as a PR into `track/ui`; then the owner's UI sessions moved to main
+(the planning session's note), so it is draft PR #281 into main, with main merged in (cleanly) and not `track/ui`:
+UI-8b's commits stay on `track/ui` for its own PR. The plan was approved in advance (the owner's standing word for the UI plan). One
 cause per commit. Details: docs/phases/ui-track.md, "The run map's icons", "Built".
 - Changed:
   - **The art** (art/ui, 51 -> 63 icons): `node-landing`, `node-route`, `node-town`, `node-miniboss`, `node-boss`,
@@ -54,13 +55,28 @@ cause per commit. Details: docs/phases/ui-track.md, "The run map's icons", "Buil
     merge of this PR and UI-8b will meet in map-tab.css and maybe ui-lint.js's ceilings.
   - world-bowl.js is shared with the world map track (WM-6): the edits are the run pin, the rings, the flag, the
     label font and worldMapChrome's buttons.
-- Verified: `npm run lint`, `npm run typecheck`, `npm test` (1572 of 1572 before the buttons), the gallery check
-  (run-nodes remade on purpose; the rest unchanged), the fast check, smoke and the full quick check (results below).
-  The run's map captured headless at 390 x 844, 2x, light and dark, before and after the buttons: no page errors.
+- Verified: `npm run lint`, `npm run typecheck`, `npm test` 1572 of 1572, `npm run check:data` (its one warning,
+  test_props_island's bridge, is main's), `npm run check:modules`, on the final merge with main. Before the owner's
+  rule to skip browser checks came in: the gallery check (run-nodes remade on purpose; the rest unchanged); smoke (no
+  problems, 258 s); the fast check (63 steps fine; this change's map steps passed; of the 6 problems, the 2 Studio
+  steps are main's 404s, the run's seam walk fails the same on the commit before this work, and Behind things, the
+  island orbit, Tall ground and the pasture passed when re-run with fewer pages or alone: load on this container); the
+  full quick check was stopped after 14 minutes under the new rule (15 steps fine; 4 problems, none on the map: a
+  floating train station prop on the terraces, the run's seam walk again, a route trainer pair that talked but didn't
+  battle, Granny Juniper silent). The run's map captured headless at 390 x 844, 2x, light and dark: no page errors.
+- Browser checks this change needs after UI-18 (skipped under the owner's rule): the gallery check (run-nodes is
+  remade here; once UI-8b is in too, remake run-nodes on the merged code, and picks and payout, which the run-nodes
+  section's new height moves a pixel down: seen on a trial merge with `track/ui`); the fast check (the map steps: the
+  44 px chips, the look-around group clear of the card, the run's icons and the voice font); smoke; the full quick
+  check (the 4 problems above, to see whether they hold); the tap-target step; the owner's phone check.
+- Merges to expect: UI-8b (`track/ui`) meets this in map-tab.css (`.mapview` on `--nav-h`), the gallery's run-nodes
+  pictures, ui-lint.js's ceilings and the docs. UI-13 (`claude/ui-13-glyphs-types`) also adds art/ui SVGs: the names
+  here all start `node-`, and the ui-icons test's count (63) will need the sum of both.
 - For the owner's phone: the markers' sizes (28 and 34) and sharpness, the glyphs (repaint in the Studio: Art ->
   UI icons -> node-*), the gold rim and glow where you stand, the names in Jersey 15 at 13-14 px, the chips' tap feel
   and the look-around group above the card, the done check on a visited place.
-- Next: UI-8b's and this PR's merge into `track/ui`; then UI-11 (the colour code as data).
+- Next: the planning session starts the next steps (UI-11 is PR #280); after UI-18, one session runs the skipped
+  browser checks above.
 - Tag to suggest (sessions can't push tags): `ui-8c-done` on this entry's last commit.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
