@@ -136,7 +136,12 @@ export function runPreview(seed, o = {}) {
  * towns, and the waystations whose event would be theirs (encounters.js eventAt with them to meet, none played yet)
  * @param {Run} run */
 function runPreviewResidents(run) {
-  const trainers = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+  const trainers = runRouteTrainers(run, {
+      classes: EVENTS.classes,
+      species: SPECIES,
+      rules: RULES.run,
+      arenas: ARENAS,
+    }),
     at = /** @type {Record<number, number>} */ ({});
   for (const T of Object.values(trainers)) at[T.runNode] = (at[T.runNode] || 0) + 1;
   const nodes = /** @type {RunMap} */ (run.map).nodes,

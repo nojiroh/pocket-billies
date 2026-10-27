@@ -284,7 +284,12 @@ export function runSimOn(env) {
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),
       foes = runFoes(run, { leaders: Object.values(TRAINERS).filter((/** @type {any} */ T) => T.miniboss), rules: R }),
       /* RT-2: the route trainers, and the wild Billies they stand in for (as run-world.js puts them) */
-      route = runRouteTrainers(run, { classes: data.EVENTS.classes, species: data.SPECIES, rules: R }),
+      route = runRouteTrainers(run, {
+        classes: data.EVENTS.classes,
+        species: data.SPECIES,
+        rules: R,
+        arenas: GAME_DATA.arenas || null,
+      }),
       tally = routeTrainerTally(route);
     for (const L of W.locations) if (L.runNode != null && tally[L.runNode]) L.trainerCount = tally[L.runNode];
     data.worldPut({

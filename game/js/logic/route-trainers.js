@@ -21,12 +21,17 @@ import { expose } from '../test-globals.js';
 import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { runNodeSeed } from './run-map.js';
+import { mapgenResample } from './mapgen.js';
 import { encClassFoe } from './encounters.js';
 /* eslint-disable no-func-assign */
 expose({
+  ROUTE_ARENA_GAP: [() => ROUTE_ARENA_GAP],
+  ROUTE_ARENA_OFF: [() => ROUTE_ARENA_OFF],
   ROUTE_RARE_SPOTS: [() => ROUTE_RARE_SPOTS],
   ROUTE_SIGHT_HALF: [() => ROUTE_SIGHT_HALF],
   ROUTE_SPOTS: [() => ROUTE_SPOTS],
+  // @ts-expect-error -- replaced on purpose
+  routeArenaLine: [() => routeArenaLine, v => (routeArenaLine = v)],
   // @ts-expect-error -- replaced on purpose
   routeInSight: [() => routeInSight, v => (routeInSight = v)],
   // @ts-expect-error -- replaced on purpose
@@ -76,9 +81,10 @@ export function routeTrainerCount(node, R, g) {
  * ('route|pair') the first entry is two trainers fought together as a double (its own two classes, at most two
  * Billies each, paying both rewards; the second class is `mate`). Each carries its line(s) and a script (the lines,
  * then the battle) for trainerTalk and `route` {k, n, opt}; where it stands comes later, from the place's scene
- * (routeTrainersPlace).
- * @param {Run} run @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any }} data rules:
- *   rules.json run (its trainers and wild)
+ * (routeTrainersPlace). WM-7: on each `miniboss` node, arenas.json trainers of them, all required, no pair (with
+ * data.arenas).
+ * @param {Run} run @param {{ classes: EventsData['classes'], species: Record<string, any>, rules: any,
+ *   arenas?: import('../../types/game-data').ArenasData | null }} data rules: rules.json run (its trainers and wild)
  * @returns {Record<string, any>}
  */
 export function runRouteTrainers(run, data) {
@@ -90,13 +96,16 @@ export function runRouteTrainers(run, data) {
   run.map.nodes.forEach((node, i) => {
     /* RL-14: a scrapyard's agents (factions.json scrapyard) */
     if (node.type === 'scrapyard') return Object.assign(out, scrapyardAgents(run, i, data));
-    if (node.type !== 'route') return;
+    /* WM-7: a mini-boss's place has a line of them before its leader's ring (arenas.json trainers), all by the road,
+       no pair, from a stream of their own ('arena|trainers') */
+    const arena = node.type === 'miniboss' && data.arenas ? data.arenas.trainers : 0;
+    if (node.type !== 'route' && !arena) return;
     const seed = runNodeSeed(run.seed, i),
-      g = rngFrom(seed, 'route|trainers'),
-      total = Math.min(classes.length, routeTrainerCount(node, R, g)),
-      pair = total >= 2 && rngFrom(seed, 'route|pair').chance(R.pair || 0),
+      g = rngFrom(seed, arena ? 'arena|trainers' : 'route|trainers'),
+      total = Math.min(classes.length, arena || routeTrainerCount(node, R, g)),
+      pair = !arena && total >= 2 && rngFrom(seed, 'route|pair').chance(R.pair || 0),
       n = pair ? total - 1 : total,
-      need = Math.max(1, Math.round(total * (R.required ?? 1)));
+      need = arena ? total : Math.max(1, Math.round(total * (R.required ?? 1)));
     let left = classes.slice();
     const draw = () => {
       const c = left[g.int(0, left.length - 1)];
@@ -216,6 +225,19 @@ export function routeTrainersPlace(run, trainers, scenes, classes) {
     const i = +ni,
       sc = scenes[i];
     if (!sc) continue;
+    /* WM-7: before a leader's ring they stand in a line on the road (routeArenaLine) */
+    if (sc.arena && sc.arena.mode === 'leader') {
+      list.sort((a, b) => a.route.k - b.route.k);
+      list.forEach((T, k) => {
+        const S = routeArenaLine(sc, k, list.length);
+        if (!S) return;
+        const r2 = (/** @type {number} */ v) => Math.round(v * 100) / 100;
+        T.route.at = [r2(S.at[0]), r2(S.at[1])];
+        T.route.look = [r2(S.road[0]), r2(S.road[1])];
+        T.route.spot = 'arena';
+      });
+      continue;
+    }
     const g = rngFrom(runNodeSeed(run.seed, i), 'route|spots'),
       taken = /** @type {[number, number][]} */ ([]),
       spots = (sc.spots || []).filter(p => Number.isFinite(p.face) && (p.kind !== 'pinch' || p.stand)),
@@ -333,6 +355,54 @@ export function routeWaySpot(sc, k, n) {
     side = k % 2 ? 1 : -1;
   return {
     at: [road[0] + (-(b[1] - a[1]) / l) * 3 * side, road[1] + ((b[0] - a[0]) / l) * 3 * side],
+    road,
+  };
+}
+
+/** WM-7: how far apart the trainers before a leader's ring stand, along the road (m) */
+export const ROUTE_ARENA_GAP = 8;
+/** WM-7: how far off the road's middle they stand (m: their sight, ROUTE_SIGHT_HALF wide, crosses all of it) */
+export const ROUTE_ARENA_OFF = 2.8;
+/** WM-7: where trainer k of n stands before a scene's leader's ring: on its main road (the west exit's path back to
+ * the hub, then the east one's on), the last 3 m before the road comes within ROUTE_ARENA_OFF and a metre of the ring's
+ * apron, each ROUTE_ARENA_GAP before the next (closer when the road is short, never nearer the way in than 10 m), on alternate sides ROUTE_ARENA_OFF
+ * off it, facing it; null without a ring or a main road
+ * @param {any} sc @param {number} k @param {number} n @returns {{ at: [number, number], road: [number, number] } | null} */
+export function routeArenaLine(sc, k, n) {
+  const A = sc.arena,
+    E = sc.edgeExits || [],
+    W = E.find((/** @type {any} */ e) => e.id === 'west'),
+    F = E.find((/** @type {any} */ e) => e.id === 'east');
+  if (!A || !W || !F || !W.path || !F.path) return null;
+  /* every half metre (a path's points can lie metres apart) */
+  const P = mapgenResample([...W.path.slice().reverse(), ...F.path.slice(1)], 0.5),
+    acc = [0];
+  for (let j = 1; j < P.length; j++) acc.push(acc[j - 1] + Math.hypot(P[j][0] - P[j - 1][0], P[j][1] - P[j - 1][1]));
+  /* the road's first point within the ring's apron (an octagon's distance, as logic/arena-gen.js arenaOct) */
+  const oct = (/** @type {number[]} */ p) => {
+      const dx = Math.abs(p[0] - A.x),
+        dz = Math.abs(p[1] - A.z);
+      return Math.max(dx, dz, (dx + dz) * Math.SQRT1_2);
+    },
+    /* (as near as standing ROUTE_ARENA_OFF to the side keeps them off the apron) */
+    j0 = P.findIndex(p => oct(p) <= A.r + 1.5 + ROUTE_ARENA_OFF + 1);
+  if (j0 < 1) return null;
+  const end = acc[j0] - 3,
+    gap = Math.min(ROUTE_ARENA_GAP, (end - 10) / Math.max(1, n - 1)),
+    want = Math.max(10, end - gap * (n - 1 - k));
+  let j = 1;
+  while (j < P.length - 1 && acc[j] < want) j++;
+  const a = P[j - 1],
+    b = P[j],
+    l = acc[j] - acc[j - 1] || 1,
+    t = Math.min(1, Math.max(0, (want - acc[j - 1]) / l)),
+    road = /** @type {[number, number]} */ ([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]),
+    side = k % 2 ? 1 : -1;
+  return {
+    at: [
+      road[0] + (-(b[1] - a[1]) / l) * ROUTE_ARENA_OFF * side,
+      road[1] + ((b[0] - a[0]) / l) * ROUTE_ARENA_OFF * side,
+    ],
     road,
   };
 }
