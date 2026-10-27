@@ -214,8 +214,8 @@ town node needs it.
 - **Load track** (docs/phases/load-track.md, the owner's brief and answers 2026-10-26/27): no frame over 33 ms once
   the title shows, loading screens included. LD-0 (the plan with research, the hitch list, the boot timeline, the load
   check) done 2026-10-27 on `ccr-3df446bb-9jvdvq`; LD-1 (the debug log's picture on export, picture facts baked at
-  build time, canvases read back kept in memory) done 2026-10-27 on the same branch; LD-2 (shaders compiled at boot,
-  checked once) next, then LD-3 (booting:
+  build time, canvases read back kept in memory) done 2026-10-27 on the same branch; LD-2 (shaders started together, read once, finished behind
+  the loader) done 2026-10-27; LD-3 next, then LD-3 (booting:
   pictures per place, the bundle minified with test code loaded on use, precache), LD-4 (the run's scenes in a worker
   from the pick), LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
   `ld-N-done`. Branch `track/load`.

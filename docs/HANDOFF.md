@@ -2,6 +2,27 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-2 - shaders: started together, read once, finished behind the loader - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- engine/webgl.js: `compileProgram` compiles both shaders and links before reading anything (`beginProgramCompile`),
+  then `finishProgramCompile` (the link status once; the shaders' logs only when the link failed). A failed program
+  now deletes both shaders and the program (tools/test/gpu-registry.test.mjs says so). `pollPendingPrograms(max,
+  budget)`: with a budget, as many as fit; `pendingPrograms()`.
+- walk-view-gl.js: `ensureWalkGl` starts every list (walk, post and the rest) before finishing the walk and post
+  programs; the frame finishes background programs 12 ms a frame while the boot's loader (`ld-on`) or a run's loading
+  screen (`#runload`) is up, one a frame otherwise.
+- boot.js `programsWarmup`: after `walkViewWarmup`, for new players too, waits (at most 8 s) until no program is left
+  compiling; debug log "N of M shaders ready in T ms", stage "shaders ready".
+- Measured headless: a new player's 26 programs ready in 2.4 s behind the loader; held frames after the loader 3
+  (13 at LD-0), none a shader. In software a run's reload hits the 8 s cap (programs take seconds there).
+- Tried and dropped: a warm-up draw per program; the driver refuses a draw without the program's inputs.
+- Found: with every shader done, software drawing still holds a frame for 2-5 s every few seconds on the title with an
+  idle main thread (the GPU side of periodic redraws). Only the phone's hitch list can size it.
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast `--only=boots,world,room,battle,debug`
+  10 of 10 and smoke 6 of 6 (192 s), both on a tree that also had LD-3's loader island worker.
+- Risky: a slow phone waits up to 8 s more behind the loader when its shaders are slow (it shows "Setting the scene").
+- Next: LD-3. Tag `ld-2-done` for the owner.
+
 ### Load track LD-1 - the quick wins: no timed picture, pixel facts baked, canvases in memory - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq` (the owner's word: continue without input). No look changes.
 - The debug log's picture is taken only when the log is exported (debug-log.js: the 60 s timer gone).

@@ -135,6 +135,18 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   read only after the link and only if it failed; finished one a frame behind the loader; the opening fall's and the
   world map's programs join the list. Each finished program drawn once off screen. Goal: `pcl` stays 0 on a tour of
   the hub, a run, a battle and the Map tab.
+  **Done 2026-10-27** on `ccr-3df446bb-9jvdvq`: `compileProgram` = `beginProgramCompile` + `finishProgramCompile`
+  (the link status read once; the shaders' logs only on a failure); `ensureWalkGl` starts every list first, then
+  finishes the walk and post programs; `pollPendingPrograms(max, budget)` finishes as many as fit in 12 ms while
+  `ld-on` or `#runload` is up; boot.js `programsWarmup` (after `walkViewWarmup`, for every player) waits at most 8 s
+  for `pendingPrograms()` to reach 0, logged as "N of M shaders ready in T ms" and the stage "shaders ready". Headless,
+  a new player: 26 of 26 ready in 2.4 s behind the loader; after the loader 3 held frames (13 at LD-0), none of them a
+  shader. A run's reload in software takes about 3 s a program and hits the 8 s cap (2 of 9); a phone takes
+  milliseconds. **Tried and dropped**: drawing each program once into a tiny target (three.js-style warm-up) is refused
+  by the driver without the program's own inputs (an unbound uniform block, samplers of two types on unit 0), so it
+  warmed nothing and logged warnings. **Found**: on the title, with every shader done, software drawing still holds a
+  frame for 2-5 s every few seconds with the main thread idle (the GPU's side of periodic redraws); headless can't
+  size that, the phone's hitch list will (phase 20's if so).
 - **LD-3 booting.** The loader's animation becomes compositor-only CSS (it can't freeze), its bar counts copperleaf.json
   too. Pictures: the hub's and the UI's only at boot, decoded with `createImageBitmap`; every other place's pictures
   load during its fade and are fetched ahead (the seams' and the run's next nodes); GPU uploads from one queue with a
