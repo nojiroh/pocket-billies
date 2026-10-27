@@ -30,6 +30,8 @@ const C = GAME_DATA.scenery,
     visited: {},
   };
 const HOUSE = /house|cottage/,
+  /* the road's tiles, whichever surface (mapgen.js MAPGEN_SURFACES) */
+  ROAD_TILES = Object.values(G.MAPGEN_SURFACES),
   /* half the deepest square's depth (MAPGEN_TOWN.squares) */
   SQUARE_HALF_DEPTH = 4;
 
@@ -132,18 +134,14 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, p.x + dx, p.z - 0.55), `${where}: ${p.k}'s door step can't be walked to`);
       }
       assert.ok(sc.tiles.join('').includes(B.ground.tall), `${where}: tall grass`);
-      /* south of the road (the camera's side): a fenced vegetable plot in farm soil. WM-3b: south of the road where
-         the plot stands, not of the square: a road that comes in from the south (WM-3) can leave no room 8 m south
-         of the square, and the plot goes beside the road further on (TW1E node 10) */
-      const road = (sc.edgeExits || []).flatMap(e => (e.path ? G.mapgenResample(e.path, 0.5) : [])),
-        roadBy = (/** @type {any} */ p) =>
-          road.reduce((a, q) => (Math.hypot(q[0] - p.x, q[1] - p.z) < Math.hypot(a[0] - p.x, a[1] - p.z) ? q : a));
+      /* south of the road (the camera's side): a fenced vegetable plot in farm soil, the road a few metres north of it
+         at its own x (WM-3: a road may bend, so not by the square's z) */
+      const roadNorth = (/** @type {any} */ p) => {
+        for (let dz = 1; dz <= 12; dz++) if (ROAD_TILES.includes(tile(p.x, p.z + dz))) return true;
+        return false;
+      };
       assert.ok(
-        sc.props.some(p => {
-          if (p.k !== 'planter_box' || tile(p.x, p.z) !== 'o') return false;
-          const q = roadBy(p);
-          return q[1] - p.z >= 3 && Math.abs(q[0] - p.x) < q[1] - p.z;
-        }),
+        sc.props.some(p => p.k === 'planter_box' && tile(p.x, p.z) === 'o' && roadNorth(p)),
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
