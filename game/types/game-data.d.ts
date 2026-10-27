@@ -1991,6 +1991,8 @@ export interface GeneTrait {
   name: string;
   d: string;
   fx: FxRow[];
+  /** UI-14b: its tier on the loot ladder, by effect size (a Gene that brings it shows it) */
+  rarity: RarityTier;
 }
 /** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
 export interface Modifier {
