@@ -609,6 +609,19 @@ SECTIONS.scenes = () => {
         ['mall', 'Mall interior'],
         ['town', 'Distant town'],
         ['farm', 'Farmland'],
+        ['sea', 'Sea'],
+        ['volcano', 'Volcano'],
+        /* SA-2b: any other backdrop in art/scene/far (the list missed sea and volcano, which places use) */
+        ...(studioState.files || [])
+          .map(f => /^art\/scene\/far\/([\w-]+)\.png$/.exec(f.path))
+          .filter(
+            m =>
+              m &&
+              !['hills', 'forest', 'mountains', 'canyon', 'cave', 'mall', 'town', 'farm', 'sea', 'volcano'].includes(
+                m[1]
+              )
+          )
+          .map(m => [m[1], m[1]]),
       ],
       { none: 'None', opt: 1 }
     ),
