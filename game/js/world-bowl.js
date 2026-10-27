@@ -17,7 +17,7 @@ import { airshipFlight, flyDraw, flySkip, flyTick, paintWorldMapCard, provide, r
 import { $ } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle, worldExtra } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
-import { runMarkDraw } from './logic/run-marks.js';
+import { RUN_MARK_ART, runMarkDraw, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { RUN_GRID, runSpotBoxes, runSpotOutline } from './logic/run-map.js';
 import { mapgenExitPoint } from './logic/mapgen.js';
 import {
@@ -106,7 +106,7 @@ import { orbitYawAt } from './logic/camera-orbit.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask } from './frame-scheduler.js';
-import { ART_CACHE, artLoad, artPixels, makeCanvas, uiIconHTML } from './art.js';
+import { ART_CACHE, artLoad, artPixels, makeCanvas, uiIconHTML, uiIconURL } from './art.js';
 import { personWalkFrames } from './person-art.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -148,6 +148,7 @@ expose({
   BOWL_RIVER_FIELD: [() => BOWL_RIVER_FIELD],
   BOWL_ROUTE_FIELD: [() => BOWL_ROUTE_FIELD],
   BOWL_RUN_FOG: [() => BOWL_RUN_FOG],
+  BOWL_RUN_PIN: [() => BOWL_RUN_PIN],
   BOWL_SEA_FAR: [() => BOWL_SEA_FAR],
   BOWL_SHADOW_GLSL: [() => BOWL_SHADOW_GLSL],
   BOWL_SHADOW_SIZE: [() => BOWL_SHADOW_SIZE],
@@ -161,6 +162,7 @@ expose({
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   bowlWorker: [() => bowlWorker],
+  runPinArt: [() => runPinArt],
   runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
   worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
@@ -216,9 +218,11 @@ expose({
   worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
+  worldBowlRunArt: [() => worldBowlRunArt, v => (worldBowlRunArt = v)],
   worldBowlRunColors: [() => worldBowlRunColors, v => (worldBowlRunColors = v)],
   worldBowlRunFog: [() => worldBowlRunFog, v => (worldBowlRunFog = v)],
   worldBowlRunMark: [() => worldBowlRunMark, v => (worldBowlRunMark = v)],
+  worldBowlRunPic: [() => worldBowlRunPic, v => (worldBowlRunPic = v)],
   worldBowlRunPin: [() => worldBowlRunPin, v => (worldBowlRunPin = v)],
   worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
   worldBowlShadows: [() => worldBowlShadows, v => (worldBowlShadows = v)],
@@ -3508,7 +3512,7 @@ function worldBowlOverlay(t) {
     /* RL-7: a run's place the map doesn't show yet has no pin at all */
     if (!base || s.off || (rm && !rm.seen)) return;
     let top = { x: base.x, y: base.y - BOWL_PIN, z: base.z };
-    if (rm) worldBowlRunPin(c, base.x, base.y, rm, i === sel);
+    if (rm) top.y = worldBowlRunPin(c, base.x, base.y, rm, i === sel);
     else if (s.under) {
       /* reached by lift: a small marker just under its parent, a dashed line up to it */
       const y = base.y + 26;
@@ -3722,9 +3726,14 @@ function worldBowlRunColors() {
   }
   return runPinColors.colors;
 }
-/* RL-7: a run's place's pin: the stalk, and its node's marker for a head (a '?' while the map shows only its row) */
+/* RL-7: a run's place's pin: the stalk, and its node's marker for a head (a '?' while the map shows only its row).
+   UI-8c: the head is the place's pixel icon (art/ui/node-<shape>.svg, Badges) for its state, 28 px, 34 where you
+   stand, a soft gold glow round the rim there; the flat shape until the icon has loaded. Returns the head's top, where
+   the name and the marks above it go */
+const BOWL_RUN_PIN = BOWL_PIN + 4;
 function worldBowlRunPin(c, x, y, rm, picked) {
-  const head = y - BOWL_PIN;
+  const head = y - BOWL_RUN_PIN,
+    look = runMarkLook(rm.type, rm.state);
   c.fillStyle = 'rgba(20,10,40,.3)';
   c.beginPath();
   c.ellipse(x, y, 5, 2, 0, 0, 7);
@@ -3735,14 +3744,62 @@ function worldBowlRunPin(c, x, y, rm, picked) {
   c.moveTo(x, y);
   c.lineTo(x, head + 6);
   c.stroke();
-  const look = runMarkDraw(c, x, head, rm.state === 'current' ? 22 : 18, rm.type, rm.state, worldBowlRunColors());
-  if (look.glyph === '?') {
-    c.font = '700 10px system-ui, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillStyle = worldBowlRunColors().surface.fill;
-    c.fillText('?', x, head + 0.5);
+  const d = worldMap.dpr || 1,
+    pic = worldBowlRunPic(look, rm.state, d);
+  if (!pic) {
+    runMarkDraw(c, x, head, look.size, rm.type, rm.state, worldBowlRunColors());
+    return head - look.size / 2 + 10;
   }
+  /* the picture is made at the canvas's own pixels: put it on whole ones */
+  const w = pic.width / d,
+    x0 = Math.round((x - w / 2) * d) / d,
+    y0 = Math.round((head - w / 2) * d) / d;
+  c.save();
+  c.imageSmoothingEnabled = false;
+  if (look.glow) {
+    c.shadowColor = `rgba(${RUN_MARK_ART.rimFill},.8)`;
+    c.shadowBlur = (look.size / 4) * d;
+  }
+  c.drawImage(pic, x0, y0, w, w);
+  c.restore();
+  return head - look.size / 2 + 10;
+}
+/* UI-8c: the icons' pixels (art/ui, 36 x 36), loaded once each; null while one loads */
+const runPinArt = {
+  px: /** @type {Record<string, Uint8ClampedArray | null>} */ ({}),
+  pics: /** @type {Record<string, HTMLCanvasElement>} */ ({}),
+};
+function worldBowlRunArt(name) {
+  if (name in runPinArt.px) return runPinArt.px[name];
+  runPinArt.px[name] = null;
+  const im = new Image();
+  im.onload = () => {
+    const cv = makeCanvas(36, 36),
+      x = cv.getContext('2d');
+    x.drawImage(im, 0, 0, 36, 36);
+    runPinArt.px[name] = x.getImageData(0, 0, 36, 36).data;
+    worldBowl.dirty = true;
+  };
+  im.src = uiIconURL(name);
+  return null;
+}
+/* UI-8c: a place's picture for its state (logic/run-marks.js runMarkPixels: the rim, faded, grey, the badge), blown
+   up without smoothing to the size it is drawn at on the canvas, made once per icon, state and size */
+function worldBowlRunPic(look, state, d) {
+  const icon = worldBowlRunArt(look.icon),
+    badge = look.badge ? worldBowlRunArt(look.badge) : null;
+  if (!icon || (look.badge && !badge)) return null;
+  const p = runMarkPixels(icon, badge, state),
+    D = Math.round((look.size * d * p.w) / 36),
+    key = `${look.icon}|${state}|${D}`;
+  if (runPinArt.pics[key]) return runPinArt.pics[key];
+  const small = makeCanvas(p.w, p.h);
+  small.getContext('2d').putImageData(new ImageData(p.data, p.w, p.h), 0, 0);
+  const big = makeCanvas(D, D),
+    x = big.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  x.drawImage(small, 0, 0, D, D);
+  return (runPinArt.pics[key] = big);
 }
 /* a place's pin: a stalk standing on its spot and a round head, a house for a town; locked grey, here gold, picked
    white */
