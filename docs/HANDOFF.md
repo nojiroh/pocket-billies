@@ -115,6 +115,11 @@ Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game c
 - Next: UI-8b (the wide tile) on `track/ui`, started 2026-10-27 in a new session at the owner's word (#266 merged);
   UI-8c (the run map's icons, the markers first: "I meant especially the map markers") started beside it at the owner's
   word on `claude/ui-8c-map-markers` (a PR into `track/ui`); then UI-11 (the colour code as data).
+- The owner's standing instruction for the rest of the plan: "Start each next step of the ui plan in a new session and
+  automatically approve the plans. The choices are made and I want it done." The planning session starts each step in
+  a new session (no Plan Mode; open choices take the recommended option and are listed under "Decided for the owner,
+  to review"; phone checks listed, not waited for); each step reports done with a one-shot scheduled task, and an
+  hourly check covers a missed one. UI-8c was restarted that way (its first, Plan Mode session stopped before any edit).
 - Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
 
 ### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
