@@ -2,6 +2,38 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Online track ON-3: the Showcase (share a Billie's look, votes, weekly themes, ribbons) - 2026-10-27
+Branch `track/online` (main a8c60bbc merged in first, a fast-forward). PR #255. Tag to suggest: `on-3-done`. Details:
+docs/phases/online-track.md, "Facts corrected at ON-3's start" and "Done in ON-3".
+- The owner's answers: three themes to start (Best abomination, Most Bureau, Best splice); ribbons on the Billie sheet
+  and the Trainer card, never in battle; moderation in the game's Debug menu (not the Studio); the top 3 win.
+- Facts that were wrong: the compat SDK the game loads has no `count()` (each entry keeps its vote count, changed in one
+  batch with the vote); sorting a week by votes needed a console index (one sort key `wv` instead); the Studio has no
+  Firebase sign-in.
+- Changed: `logic/showcase.js`, `game/js/showcase.js` (new); `game/data/showcase.json` (+ schema, `dataShowcase`, the
+  Studio's check); `meta.show` and `Billy.ribbons` (validMeta, billiesOk; the Showcase's save checks live in
+  meta-state.js because the Studio loads it without the Showcase); the Billie sheet (Share to the Showcase, its
+  ribbons), the Trainer screen (the Showcase panel), Debug > Moderation (a tenth section); firestore.rules
+  `showcase/<uid>_<slot>`, `votes/...`, reports on `show_<entry>_<k>`; the quick check's Safety step and the Debug menu
+  step (ten sections; TESTING.md).
+- Ported: PR #253's hub island test fix (62bc12f8, without its HANDOFF note): `island-gen.test.mjs` was red on main.
+- **For the owner**: paste your uid into `moderator()` and publish the rules (SECURITY.md "ON-3 for the owner to do").
+  Until then sharing says the Showcase isn't open yet, and Moderation says only the moderator reads reports.
+- **Risky**: never tried with real accounts (stand-in entries in the page, the rules on the emulator). Several accounts
+  of one person can vote several times, or hide an entry with 3 reports until the moderator shows it again; ribbons
+  are given by the winner's own game (SECURITY.md: all cosmetic). A refused read retries after a minute, so with the
+  rules unpublished the Showcase reads at most once a minute while the Trainer screen is open. Ribbons are looked up
+  only for weeks whose entries are still in a slot. `onlineCopy` drops ribbons (ON-4 decides for trades).
+- Verified: lint, typecheck, format:check, check:modules, check:data, build; `npm test` 1470 pass; slow tier 89 pass
+  with the port; rules emulator tests 33 pass (7 new, one with entries the game makes); headless pictures of every
+  tab, the share sheet, the ribbon on the Billie sheet and Moderation, no page errors. Full quick check: 33 of 40 ok;
+  run alone after, RT-2, Granny Juniper, the rooms and the Debug menu (fixed for the tenth section) pass. Still
+  failing, and failing the same on main a8c60bbc in a worktree: Terraces (train_station floats), the settings tabs
+  7 px wider than the phone, RL-8's shop Perk. CI's smoke: the Studio's world map look and Camera section (404 art),
+  red on main too (PR comment).
+- Next: the owner publishes the rules and shares, votes and reports between two accounts; ON-4 (friend trades) waits
+  for the Billie format to settle.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
