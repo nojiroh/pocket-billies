@@ -957,7 +957,10 @@ the hit; the send-out and the mail coin stretch at both ends); the 2D fallback's
   catch's foe sometimes reads white in the noon sun's glare, in frames before the stretch too (not this change).
 - Verified: lint, typecheck, format, check:modules, unit tests 1329 pass; headless films (landscape catch and
   send-out, phone portrait, voxel path, batching on, the 2D fallback): the wedge shows on the fast cells only, no
-  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Tag `vfx-3-done` for the owner (the git proxy
+  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Full quick check: 35 of 40, none in battles:
+  terraces `sky_portal`, room light and "Running" as in VFX-2; RL-8's run (this time a crossing into Lakeside Town
+  whose view never showed: the slow headless machine); new, RT-4a "the rarer wild Billie isn't in its pocket" (route
+  generation, untouched here; likely from the main merge, not checked on main). Tag `vfx-3-done` for the owner (the git proxy
   refuses tag pushes).
 - Next: VFX-4 (the impact frame) on `track/vfx`, in Plan Mode.
 
