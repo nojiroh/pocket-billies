@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **The Retrieval Unit, Expedition I's boss** (roguelite track RL-14, second half): at the end of an Expedition I
+  run the Bureau calls in its first big retrieval unit. Four bots (a filing-cabinet leader, two arm-bots and a
+  conveyor leg-bot) fly in and lock together into one giant robot, fought as an Alpha by your team. It fights in two
+  phases: below 60% it raises a shield and hits harder; below 30% its Franking Unit arm tears loose and it speeds up.
+  It can't be caught. The first win salvages one of its boss parts for your spares and brings Chapter 1 to its end
+  at home. From Expedition II on, the region's leaders stay the boss.
 - **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
   and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
   meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the
