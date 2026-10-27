@@ -39,9 +39,24 @@ Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game c
 - The owner's answers (after the sampler; Part 2, "The owner's answers"): Field Guide by default, with Field Guide,
   Copper Grove+ and Bureau Night in a Settings Palette row; Brass & Plum and Sunpunk Day as Studio presets; angled
   status tags; the family table, tinted glyphs and one-lightness types; all four battle changes; the icon fixes; Full
-  motion by default with Calm added, no Follow the sky; rarity as the loot colour ladder on the card's edge, not metal
-  frames; the new UI sounds; the Colour shapes switch.
-- Next: #266 merges, then UI-11 (the colour code as data) on `track/ui`.
+  motion by default with Calm added, no Follow the sky; rarity as the loot colour ladder, not metal frames (its look
+  settled below); the new UI sounds; the Colour shapes switch.
+- The owner's second brief, the same day: "I want you to rethink the bottom nav bar. I want the map to be bigger. Ask
+  questions and give me examples. Rarities for perks and stuff should also be clearly color codes." Examples: "Bottom
+  Bar Options" (private artifact, nothing committed): https://claude.ai/artifact/RnTqYhcn9KbPrThvY6uZ8A. Four layouts
+  (a bigger tile, a Pocket screen, a corner map, a pull-up map) at true phone size over a real run screen, with the
+  real minimap captured headless in Field Guide (light and dark, 44 m and 72 m) and today's bar standing and walking;
+  four rarity looks and three top-tier colours on real Perks.
+- Answers (Part 2, "The bottom bar, rethought" and answers 9, 12-14): the bigger tile, 176 px standing and 112 px
+  walking, the same 44 m drawn larger, the bar shrinking a little while walking: a new session, UI-8b, first after
+  #266. Rarity as frame, pill and name colour: common grey #A5ACB2, uncommon green #4AB962, rare blue #629BFF,
+  mythical orange #F77036 (text shades checked 5:1 or more on the three player palettes), on Perks, held items,
+  Augments, Genes and Billie cards (UI-14a/b; the held items', Augments' and Genes' tiers are new, the owner's call).
+  The sampler's decided box and rarity cards were updated to match.
+- Risky (the bar): the bigger tile uses about 24% of the screen standing (20% today) and 16% walking (11%), the home-bar
+  strip counted; the sizes are proposals for the phone check after UI-8b, and the minimap's cost at 176 px (it draws at
+  its canvas size) is unmeasured.
+- Next: #266 merges, then UI-8b (the bigger tile) and UI-11 (the colour code as data) on `track/ui`.
 - Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
 
 ### Studio art track SA-5 - unused art - 2026-10-27
