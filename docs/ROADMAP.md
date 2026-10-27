@@ -98,8 +98,9 @@ town node needs it.
   `ccr-65e11839-9p92dx`; RS-2 (meeting them in a run: Dottie free in the first town row, favours from quests.json, the
   Stranded Cart event, the payout's line, the Run Lab and sim) done 2026-10-26 on the same branch; RS-3 (living in
   Copperleaf: residents walk the town as townsfolk of their own from their building or cottage, their looks, lines in
-  banter.json with `lastres:`, the room card, the Studio's hub editor) done 2026-10-26 on the same branch; RS-4
-  (services and upgrades) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
+  banter.json with `lastres:`, the room card, the Studio's hub editor) done 2026-10-26 on the same branch; RS-4a
+  (services, part 1: the machinery, Mo's store and restock, Bertha's rumours and lunch, the room card, the sim's
+  `--residents`) done 2026-10-27 on `track/residents`; RS-4b (Dottie, Gus, the milestones) next. Tags `rs-N-done`. Branch `track/residents`.
 - **Region map track** (docs/phases/worldmap-track.md, the owner's brief and answers 2026-10-27): runs as a small
   Pokémon region. WM-1 (runs go west to east, reversing TR-2; the world map opens like the walk camera; done
   2026-10-27), WM-2 (a

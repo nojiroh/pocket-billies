@@ -20,6 +20,17 @@ import { rngFrom } from './rng.js';
 import { propDoor } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUMOUR_TYPES: [() => RUMOUR_TYPES],
+  resFxRows: [() => resFxRows],
+  resHeld: [() => resHeld],
+  // @ts-expect-error -- replaced on purpose
+  resLevel: [() => resLevel, v => (resLevel = v)],
+  resRerolls: [() => resRerolls],
+  // @ts-expect-error -- replaced on purpose
+  resRumour: [() => resRumour, v => (resRumour = v)],
+  resStock: [() => resStock],
+  // @ts-expect-error -- replaced on purpose
+  resTakeoff: [() => resTakeoff, v => (resTakeoff = v)],
   // @ts-expect-error -- replaced on purpose
   residentCandidate: [() => residentCandidate, v => (residentCandidate = v)],
   // @ts-expect-error -- replaced on purpose
@@ -41,6 +52,96 @@ expose({
 export function residentsHere(s) {
   const here = (s.meta && s.meta.residents) || {};
   return Object.keys(here).sort((a, b) => here[a] - here[b] || (a < b ? -1 : 1));
+}
+/** RS-4: a resident's service level: 0 while they don't live in Copperleaf, else the highest level an owned
+ * unlocks.json row grants them (`{resident, level}`), 1 when none does (their Lv 1 comes free with moving in)
+ * @param {SaveData} s @param {string} id @param {Record<string, { grant: any }>} U unlocks.json */
+export function resLevel(s, id, U) {
+  const M = s.meta;
+  if (!M || !M.residents || !Object.hasOwn(M.residents, id)) return 0;
+  let lv = 1;
+  for (const u of Object.keys(M.unlocks || {})) {
+    const G = U[u] && U[u].grant;
+    if (G && G.resident === id && G.level > lv) lv = G.level;
+  }
+  return lv;
+}
+/** RS-4: the service levels a run holds (run.res: id -> level as it took off), each as [id, its service entry],
+ * Lv 1 first @param {Record<string, number> | undefined} res @param {ResidentsTable} R
+ * @returns {[string, import('../../types/game-data').ResidentService][]} */
+export const resHeld = (res, R) =>
+  Object.entries(res || {}).flatMap(([id, n]) =>
+    R[id] && R[id].service
+      ? /** @type {any[]} */ (R[id].service)
+          .slice(0, n)
+          .map(L => /** @type {[string, import('../../types/game-data').ResidentService]} */ ([id, L]))
+      : []
+  );
+/** RS-4: the effect rows a run gets from the services it took off with, each tagged `res:<id>`
+ * @param {{ res?: Record<string, number> } | null | undefined} run @param {ResidentsTable} R
+ * @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
+export const resFxRows = (run, R) =>
+  run && run.res && R
+    ? resHeld(run.res, R).flatMap(([id, L]) => (L.fx || []).map(f => ({ ...f, src: 'res:' + id })))
+    : [];
+/** RS-4: what a resident's hub shop sells now: the wares of every level they hold, Lv 1 first ([] while they don't
+ * live in Copperleaf) @param {SaveData} s @param {string} id @param {ResidentsTable} R
+ * @param {Record<string, { grant: any }>} U unlocks.json @returns {{ item?: string, coin?: string, price: number }[]} */
+export const resStock = (s, id, R, U) =>
+  resHeld({ [id]: resLevel(s, id, U) }, R).flatMap(([, L]) => (L.stock || []).map(w => ({ ...w })));
+/** RS-4: how many times a run may ask a run shop for a fresh stock (Mo's service: `reroll` on the levels it took off
+ * with) @param {{ res?: Record<string, number> } | null | undefined} run @param {ResidentsTable} R */
+export const resRerolls = (run, R) =>
+  run && run.res && R ? resHeld(run.res, R).reduce((n, [, L]) => n + (L.reroll || 0), 0) : 0;
+/** RS-4: a run takes off: run.res is each resident's service level now (those with a service), and their levels'
+ * items go into the bag. Returns what was given @param {SaveData} s @param {ResidentsTable} R
+ * @param {Record<string, { grant: any }>} U unlocks.json */
+export function resTakeoff(s, R, U) {
+  /** @type {{ items: Record<string, number> }} */
+  const got = { items: {} };
+  if (!s.run || !s.meta) return got;
+  /** @type {Record<string, number>} */
+  const res = {};
+  for (const id of residentsHere(s)) {
+    const lv = R[id] && R[id].service ? Math.min(resLevel(s, id, U), R[id].service.length) : 0;
+    if (lv) res[id] = lv;
+  }
+  if (Object.keys(res).length) s.run.res = res;
+  for (const [id, L] of resHeld(res, R)) {
+    for (const [k, n] of Object.entries(L.items || {})) {
+      s.items[k] = (s.items[k] || 0) + n;
+      got.items[k] = (got.items[k] || 0) + n;
+    }
+    if (L.rumour) resRumour(s.run, id, L.rumour);
+  }
+  return got;
+}
+/** RS-4: the kinds of place a rumour is about, the likeliest first (anything hidden but the boss when none is left) */
+export const RUMOUR_TYPES = ['event', 'stall', 'scrapyard', 'rival', 'miniboss'];
+/** RS-4: a rumour as a run takes off (Bertha's service): 'node' shows one hidden main place two rows on or more, drawn
+ * from the run's own stream ('rumour') among the kinds above (any hidden place but the boss with none), its type on
+ * the map at once; 'side' names (and shows) the place whose obstacle hides the run's side area (map.side.from), opening
+ * nothing.
+ * Kept in run.rumour for the map card @param {Run} run @param {string} who @param {'node' | 'side'} kind */
+export function resRumour(run, who, kind) {
+  const map = run.map;
+  if (!map || !map.nodes) return;
+  const rumour = run.rumour || (run.rumour = { who });
+  if (kind === 'side') {
+    if (map.side && map.nodes[map.side.from]) {
+      rumour.side = map.side.from;
+      map.nodes[map.side.from].seen = 2;
+    }
+    return;
+  }
+  const last = Math.max(...map.nodes.map(n => n.row)),
+    hidden = map.nodes.flatMap((n, i) => (!n.side && (n.seen || 0) < 2 && n.row >= 2 && n.row < last ? [i] : [])),
+    liked = hidden.filter(i => RUMOUR_TYPES.includes(map.nodes[i].type)),
+    from = liked.length ? liked : hidden;
+  if (!from.length) return;
+  const i = from[rngFrom(run.seed, 'rumour').int(0, from.length - 1)];
+  map.nodes[i].seen = 2;
+  rumour.node = i;
 }
 /** RS-2: this run's one resident to meet, whatever has happened on it (invited or not): the free first one while
  * nobody lives in Copperleaf, else one drawn from the run's own stream ('resident') among those left with a weight.

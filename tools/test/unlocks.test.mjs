@@ -149,3 +149,23 @@ test('unlocks: a loaded save (saves.js saveFill) is tidied: lost rows forgotten,
   assert.deepEqual(back.meta.unlocks, { ranch_2: 1, ranch_3: 1 });
   assert.equal(modules.ranch.ranchLevel(back), 3);
 });
+
+test('unlocks: RS-4: a resident’s service row is sold at their home only while they live in Copperleaf', () => {
+  const P = {
+    unlocks: {
+      mo_2: { name: 'a', about: 'a', at: 'shop', cost: 10, grant: { resident: 'mo', level: 2 } },
+      mo_3: { name: 'b', about: 'b', at: 'shop', cost: 20, requires: ['mo_2'], grant: { resident: 'mo', level: 3 } },
+    },
+    buildings: { shop: { name: 'Store', currency: 'research', levels: 1, about: 's' } },
+  };
+  const s = hubSave({ research: 100, residents: {} });
+  assert.equal(K.unlockReady(s, 'mo_2', P), 'resident');
+  s.meta.residents.mo = 1;
+  assert.equal(K.unlockReady(s, 'mo_3', P), 'requires');
+  assert.equal(K.unlockBuy(s, 'mo_2', P), true);
+  assert.equal(s.meta.research, 90);
+  assert.deepEqual(s.meta.buildings, {}, 'a service level is not a building level');
+  assert.equal(modules.residents.resLevel(s, 'mo', P.unlocks), 2);
+  K.unlockTidy(s, P);
+  assert.equal(s.meta.unlocks.mo_2, 1, 'kept by the tidy-up');
+});
