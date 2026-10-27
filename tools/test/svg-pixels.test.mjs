@@ -52,3 +52,20 @@ test('an SVG drawn another way is refused with a reason', () => {
     assert.ok(S.svgToPixels(bad).error, bad);
   assert.ok(!S.svgToPixels(head + '</svg>\n').error);
 });
+
+test('svgProblem: any drawing in the 36 x 36 box, nothing that runs or loads', () => {
+  const ok =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><circle cx="18" cy="18" r="9" fill="#C8492F"/></svg>\n';
+  assert.equal(S.svgProblem(ok), '');
+  for (const f of icons) assert.equal(S.svgProblem(readFileSync(join(UI, f), 'utf8')), '', f);
+  for (const bad of [
+    'hello',
+    ok.replace('0 0 36 36', '0 0 24 24'),
+    ok.replace('<circle', '<script>alert(1)</script><circle'),
+    ok.replace('<circle', '<circle onclick="x()"'),
+    ok.replace('<circle', '<a href="https://x"><circle').replace('</svg>', '</a></svg>'),
+    ok.replace('fill="#C8492F"', 'fill="url(https://x/y)"'),
+    ok.replace('<circle', '<image href="x.png"/><circle'),
+  ])
+    assert.ok(S.svgProblem(bad), bad);
+});

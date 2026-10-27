@@ -5350,3 +5350,75 @@ body.wb-dropping::after {
 .cam-gn {
   text-anchor: middle;
 }
+/* SA-2b: the UI icon editor (icon-editor.js) */
+.ic-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .ic-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ic-text {
+  width: 100%;
+  min-height: 9em;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.ic-panels {
+  display: grid;
+  gap: 6px;
+}
+.ic-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+}
+/* the game's light and dark panels (uiTheme.json's surfaces, as close as a fixed colour gets) */
+.ic-light {
+  background: #f3ecd9;
+  color: #2b3327;
+}
+.ic-dark {
+  background: #1d2620;
+  color: #e6ddc6;
+}
+.ic-size {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.ic-others {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ic-other {
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--bg2, none);
+  cursor: pointer;
+  line-height: 0;
+}
+.ic-other.on {
+  border-color: var(--acc);
+}
+.ic-swatches {
+  gap: 3px;
+}
+.ic-sw {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}

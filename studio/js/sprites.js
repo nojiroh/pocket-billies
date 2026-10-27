@@ -84,6 +84,7 @@ expose({
   spritePreviewHTML: [() => spritePreviewHTML, v => (spritePreviewHTML = v)],
   spritePreviewLoop: [() => spritePreviewLoop, v => (spritePreviewLoop = v)],
   spritePreviewsRunning: [() => spritePreviewsRunning, v => (spritePreviewsRunning = v)],
+  svgDataUrl: [() => svgDataUrl, v => (svgDataUrl = v)],
   textAsLoaded: [() => textAsLoaded],
   textGet: [() => textGet, v => (textGet = v)],
   textSaved: [() => textSaved, v => ((textSaved = v), provide({ textSaved }))],
@@ -336,7 +337,7 @@ function forgetArt(path) {
    ({ text, _ver }), sent by Save as pictures are. A text put back to what was loaded is saved again: nothing to send */
 const TEXT_LOADED = new Map(),
   TEXT_LOADS = new Map();
-function textGet(path) {
+export function textGet(path) {
   if (studioState.textDirty.has(path)) return Promise.resolve(studioState.textDirty.get(path).text);
   if (TEXT_LOADED.has(path)) return Promise.resolve(TEXT_LOADED.get(path));
   if (TEXT_LOADS.has(path)) return TEXT_LOADS.get(path);
@@ -358,7 +359,7 @@ function textGet(path) {
   return p;
 }
 /** the text now (unsaved, else as loaded), or null when it hasn't been read and isn't new */
-const loadedText = path =>
+export const loadedText = path =>
   studioState.textDirty.has(path)
     ? studioState.textDirty.get(path).text
     : TEXT_LOADED.has(path)
@@ -372,6 +373,10 @@ export function markText(path, text) {
   else studioState.textDirty.set(path, { text, _ver: ((was && was._ver) || 0) + 1 });
   updateTopBar();
   document.dispatchEvent(new CustomEvent('studio-text', { detail: { path } }));
+}
+/** an SVG's text as a URL an <img> or a CSS url() takes */
+export function svgDataUrl(text) {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text);
 }
 /* a text file saved: what the game has now */
 function textSaved(path, text) {

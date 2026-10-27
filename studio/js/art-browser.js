@@ -9,7 +9,7 @@
    Studio's undo), Replace, Download and Open in its editor. Ctrl K finds art files (find.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide, tileSetOpen } from '../../game/js/hooks.js';
+import { iconReplace, provide, tileSetOpen } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { artURL } from '../../game/js/art.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
@@ -60,6 +60,7 @@ import {
   loadedAtlas,
   markArt,
   pickFile,
+  svgDataUrl,
 } from './sprites.js';
 import { gameFilePath, githubMode } from './github.js';
 import { legacyLoad, legacyView } from './legacy-view.js';
@@ -114,6 +115,8 @@ export const artBrowser = {
   edit: '',
   /* SA-2a: the ground tile set (tile-set.js) shows in this section's place */
   tiles: false,
+  /* SA-2b: the icon being edited (icon-editor.js), shown in this section's place; '' none */
+  icon: '',
   /* SA-2a: where Done goes back to when another editor opened the painter: { label, fn } */
   from: null,
   more: 0,
@@ -362,6 +365,9 @@ function artEditorsFor(path) {
 
 /* ---------- the section ---------- */
 const thumbSrc = path => {
+  /* SA-2b: an unsaved SVG shows as its text */
+  const t = studioState.textDirty.get(path);
+  if (t) return svgDataUrl(t.text);
   const c = studioState.artDirty.get(path);
   if (!c) return `../game/${path}`;
   if (c._abUrl && c._abVer === c._ver) return c._abUrl;
@@ -373,7 +379,7 @@ function thumbHTML(path, ix) {
   const name = path.split('/').pop(),
     s = artSize(path),
     st = ix ? artRefState(ix.get(path)) : '',
-    dirty = studioState.artDirty.has(path);
+    dirty = studioState.artDirty.has(path) || studioState.textDirty.has(path);
   return `<button class="ab-tile${path === artBrowser.sel ? ' on' : ''}${st === 'unused' ? ' ab-unused' : ''}" data-act="abPick" data-p="${escapeHtml(path)}" title="${escapeHtml(path)}"><span class="ab-thumb"><img src="${escapeHtml(thumbSrc(path))}" alt="" loading="lazy"></span><span class="ab-name">${escapeHtml(name)}</span><small>${s ? s.w + '×' + s.h : ''}${dirty ? ' · edited' : ''}${st === 'legacy' ? ' · legacy' : ''}</small></button>`;
 }
 function detailHTML(path, ix) {
@@ -382,6 +388,7 @@ function detailHTML(path, ix) {
     s = artSize(path),
     refs = ix ? ix.get(path) || [] : null,
     png = /\.png$/i.test(path),
+    icon = /^art\/ui\/([\w-]+)\.svg$/.exec(path),
     eds = ix ? artEditorsFor(path) : [];
   const used =
     refs == null
@@ -405,9 +412,9 @@ function detailHTML(path, ix) {
   return `<div class="ab-big"><img src="${escapeHtml(thumbSrc(path))}" alt=""></div>
   ${strip ? stripPlayerHTML(path, strip) : ''}
   <p class="mono ab-path">${escapeHtml(path)}</p>
-  <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
+  <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
   ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}
-  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
+  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
 function gridHTML(ix) {
@@ -553,6 +560,7 @@ async function artDetailNotes(path) {
 /* ---------- actions ---------- */
 ACTIONS.abGo = d => {
   artBrowser.tiles = false;
+  artBrowser.icon = '';
   artBrowser.from = null;
   artBrowser.at = d.at || '';
   artBrowser.more = 0;
@@ -580,6 +588,12 @@ ACTIONS.abOpen = d => {
   if (E) E[1]();
 };
 ACTIONS.abDownload = async d => {
+  if (studioState.textDirty.has(d.p)) {
+    const a = document.createElement('a');
+    a.href = svgDataUrl(studioState.textDirty.get(d.p).text);
+    a.download = d.p.split('/').pop();
+    return a.click();
+  }
   if (/\.png$/i.test(d.p) || studioState.artDirty.has(d.p))
     return downloadCanvas(await atlasGet(d.p), d.p.split('/').pop());
   const a = document.createElement('a');
@@ -588,10 +602,7 @@ ACTIONS.abDownload = async d => {
   a.click();
 };
 ACTIONS.abReplace = async d => {
-  if (/\.svg$/i.test(d.p)) {
-    toast('SVG icons are edited as text in SA-2; replace the file in the repository for now.');
-    return;
-  }
+  if (/\.svg$/i.test(d.p)) return iconReplace(d.p);
   const f = await pickFile('image/png,image/webp');
   if (!f) return;
   const c = await fileToCanvas(f);
@@ -620,6 +631,7 @@ function artBrowserShow(path) {
   artBrowser.sel = path;
   artBrowser.edit = '';
   artBrowser.tiles = false;
+  artBrowser.icon = '';
   artBrowser.from = null;
   openSection('art');
 }
@@ -664,7 +676,15 @@ async function artPaint(path, back = null) {
     toast('Could not load ' + path, 'err');
     return;
   }
-  Object.assign(artBrowser, { tiles: false, edit: path, sel: path, at: artFolderOf(path), q: '', from: back });
+  Object.assign(artBrowser, {
+    tiles: false,
+    icon: '',
+    edit: path,
+    sel: path,
+    at: artFolderOf(path),
+    q: '',
+    from: back,
+  });
   if (studioState.sec !== 'art') openSection('art');
   else render();
 }

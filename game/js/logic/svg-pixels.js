@@ -19,6 +19,8 @@ expose({
   pixelsToSvg: [() => pixelsToSvg, v => (pixelsToSvg = v)],
   svgHex2: [() => svgHex2],
   // @ts-expect-error -- replaced on purpose
+  svgProblem: [() => svgProblem, v => (svgProblem = v)],
+  // @ts-expect-error -- replaced on purpose
   svgToPixels: [() => svgToPixels, v => (svgToPixels = v)],
 });
 /* eslint-enable no-func-assign */
@@ -96,4 +98,18 @@ export function svgToPixels(text) {
   }
   if (t.length !== at + '</svg>'.length) return { error: 'There is more after the closing </svg>.' };
   return { w, h, data };
+}
+
+/** what is wrong with an SVG the Studio would save as an icon, or '' (any SVG drawing is allowed; nothing that runs,
+ * loads other files or points outside it, and the icons' 36 x 36 box). The browser's parse is checked on top of this
+ * @param {string} text */
+export function svgProblem(text) {
+  const t = String(text || '');
+  if (!/^\s*<svg[\s>]/.test(t) || !/<\/svg>\s*$/.test(t)) return 'An SVG starts with <svg …> and ends with </svg>.';
+  if (!/\sviewBox="0 0 36 36"/.test(t.slice(0, t.indexOf('>') + 1))) return 'An icon’s box is viewBox="0 0 36 36".';
+  if (/<(script|foreignObject|iframe|image|use|style)\b/i.test(t))
+    return 'Scripts, styles, pictures and links aren’t allowed.';
+  if (/\son[a-z]+\s*=|href\s*=|url\s*\(|<!(DOCTYPE|ENTITY)|javascript:/i.test(t))
+    return 'Event handlers, links and outside files aren’t allowed.';
+  return '';
 }

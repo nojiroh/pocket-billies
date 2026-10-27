@@ -274,7 +274,7 @@ export function artSteps(list, parts) {
   updateTopBar();
 }
 /* SA-2b: a text file changed (from `before`, null when new, to `after`): marked unsaved and a step of the undo */
-function textStep(path, before, after) {
+export function textStep(path, before, after) {
   const step = historyTextStep(path, before, after);
   if (!step) return;
   markText(path, after);
