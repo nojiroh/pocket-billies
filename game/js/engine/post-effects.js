@@ -386,6 +386,16 @@ const POST_MEDIUMP = {
       'if(uInk>0.){highp float d0=texture(uDep,vUV).r;if(d0<.9999){highp float z0=linz(d0),e=0.;highp vec2 q=uPx*1.;highp float zs[4];',
     ],
     ['{vec2 q=floor(gl_FragCoord.xy);', '{highp vec2 q=floor(gl_FragCoord.xy);'],
+    /* AIR-4's upscale by depth (volUp, VOLZ_GLSL): depth stays highp */
+    [
+      'float volZ(sampler2D t,ivec2 p,float f){vec2 v=',
+      'highp float volZ(highp sampler2D t,ivec2 p,highp float f){highp vec2 v=',
+    ],
+    [
+      'float d=texture(uDep,vUV).r,z=d>.9999?uFar:linz(d),best=1e9,md=0.;',
+      'highp float d=texture(uDep,vUV).r,z=d>.9999?uFar:linz(d),best=1e9,md=0.;',
+    ],
+    ['float e=abs(volZ(uVolZ,q,uFar)-z);', 'highp float e=abs(volZ(uVolZ,q,uFar)-z);'],
   ],
 };
 for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
