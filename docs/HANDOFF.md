@@ -21,6 +21,11 @@ rock ground tile on every steep slope (about 29 px/m, the same in every biome) a
   the smoke check 6 of 6 (35 shaders build), headless pictures of the mountains fixture with each switch (biome, strata
   on the walls, the snow line moving with the data, scree at a cliff foot); the scree pass's cost in Node is within
   noise.
+- The full quick check (no local baseline, so no picture comparison): 31 of 40 the first time. Re-run side by side with
+  main da51c766: the same five fail on both (Terraces: Copperleaf's sky_portal in the air; RL-8 run from the mast, a
+  different stage each time; room light; Song fingerprints: cave mid/late not in the sound baseline; Running), so they
+  are not this branch's; route trainers, Granny Juniper and the weather/rooms step passed on the re-run (flaky in the
+  long run); the Debug menu step failed on a track code in my note, fixed.
 - Not done: a Graphics test station (its map has no cliffs).
 - Next: the owner on the phone: a mountains run, the three toggles in the debug menu, a debug log; then one commit per
   switch to turn on what stays, and the colours tuned in `biomes.json`. After that TR-2c part 2 or TR-5.
