@@ -113,6 +113,8 @@ if (args.includes('--river')) {
       }
     }
   M.islandGen.dials.stream = { ...(M.islandGen.dials.stream || { on: 1, pond: 4 }), fall: 0 };
+  /* marked as hand-patched, so island-gen.test does not ask for the generator's own ground */
+  M.islandGen.patched = [...new Set([...(M.islandGen.patched || []), 'water --river'])];
   const fall = M.spots.find(s => s.kind === 'fall');
   if (fall) fall.y = Math.round(lvl * 100) / 100;
   st.rapids = [[0, Math.round((RIVER_RAMP / acc) * 100) / 100]];

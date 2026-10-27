@@ -26,6 +26,8 @@
 //                                       the level the Billies at home are trained to (the ranch between runs)
 //   node tools/test/sim/run-sim.mjs --unlocks=all   runs with every unlock (default none: a fresh save's; Studio plan
 //                                       T2.1, the run starts through logic/run-start.js as the mast's does)
+//   node tools/test/sim/run-sim.mjs --residents=all   RS-4: every resident with a service lives in Copperleaf at
+//                                       their top level (default none), so their power levels ride along
 // Studio plan T3.3, T3.4:
 //   --balance                  balance mode: no scenes are made (the same outcomes, ~250 times faster)
 //   --badges=all               every field move's badge kept (default none: a fresh save's; RL-R2b), so the
@@ -67,6 +69,8 @@ if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
           fights: arg('fights', 2),
           pack: arg('pack', 0),
           unlocks: opt('unlocks') || 'none',
+          /* RS-4: every resident with a service moved in, at their top level */
+          ...(opt('residents') ? { residents: opt('residents') } : {}),
           /* RL-13: the run's Expedition, its challenges and the level the Billies at home are trained to */
           ...(opt('expedition') ? { expedition: arg('expedition', 1) } : {}),
           ...(opt('mods') ? { mods: opt('mods').split(',').filter(Boolean) } : {}),
