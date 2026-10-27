@@ -2546,12 +2546,11 @@ def atlas_steps(pg, errs):
 
 
 def scene_art_steps(pg, errs):
-    """Studio art track SA-2b: walls, the building sheet, rooms, a flag and a far backdrop each get their preview in
+    """Studio art track SA-2b: walls, the building sheet, rooms and a flag (SA-5: the far backdrops are retired) each get their preview in
     the picture panel; a stroke on walls.png in the painter redraws its preview (then undone)."""
     E = pg.evaluate
     for p, sel in [('art/scene/build/walls.png', 'canvas.sp-wall'), ('art/scene/build/detail-a04b.png', 'canvas.sp-wall'),
-                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/legacy/scene/flags/marigold.png', 'canvas.sp-flag'),
-                   ('art/scene/far/hills.png', 'canvas.sp-far')]:
+                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/legacy/scene/flags/marigold.png', 'canvas.sp-flag')]:
         E(f"artBrowserShow({json.dumps(p)})")
         try: pg.wait_for_selector('.ab-side ' + sel, timeout=15000)
         except Exception: errs.append(f'scene art: {p} has no preview'); continue
@@ -2568,7 +2567,7 @@ def scene_art_steps(pg, errs):
     E("undo()"); time.sleep(0.3)
     if E("loadedAtlas('art/scene/build/walls.png').toDataURL()") != sheet: errs.append('scene art: undo did not put walls.png back')
     E("ACTIONS.abEditDone()")
-    print('scene art: walls, building sheet, rooms, a flag and a far backdrop previewed; a wall stroke redraws it', flush=True)
+    print('scene art: walls, building sheet, rooms and a flag previewed; a wall stroke redraws it', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)

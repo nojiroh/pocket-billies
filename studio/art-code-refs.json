@@ -169,12 +169,6 @@
    ]
   },
   {
-   "p": "scene/far/*.png",
-   "at": [
-    "game/js/walk-view.js:762"
-   ]
-  },
-  {
    "p": "scene/flags/*.png",
    "at": [
     "game/js/walk-view.js:510"
@@ -1682,10 +1676,10 @@
    "game/js/walk-control.js:513",
    "game/js/walk-control.js:531",
    "game/js/walk-view.js:322",
-   "game/js/walk-view.js:3510",
-   "game/js/walk-view.js:3699",
-   "game/js/walk-view.js:3810",
-   "game/js/walk-view.js:4129",
+   "game/js/walk-view.js:3509",
+   "game/js/walk-view.js:3698",
+   "game/js/walk-view.js:3809",
+   "game/js/walk-view.js:4128",
    "game/js/walk/frame-items.js:310"
   ],
   "drop": [
@@ -1769,7 +1763,7 @@
    "game/js/minimap.js:82",
    "game/js/self-test.js:3066",
    "game/js/walk-view.js:385",
-   "game/js/walk-view.js:3984",
+   "game/js/walk-view.js:3983",
    "game/js/walk/effects.js:517",
    "game/js/walk/effects.js:671",
    "game/js/walk/effects.js:779",
@@ -1914,8 +1908,8 @@
    "game/js/unit-card.js:177",
    "game/js/unit-card.js:204",
    "game/js/walk-control.js:305",
-   "game/js/walk-view.js:3510",
-   "game/js/walk-view.js:3699",
+   "game/js/walk-view.js:3509",
+   "game/js/walk-view.js:3698",
    "game/js/walk/prop-look.js:151",
    "game/js/workshop.js:102"
   ],

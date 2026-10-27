@@ -7,8 +7,6 @@
      the painter, with a note of pixels between the five levels;
    - rooms (rooms.png): each room as the little box seen through a window, by day and lit at night;
    - flags (scene/flags, and the legacy towns' in legacy/scene/flags): waving on a mast by the game's ripple, the postcard stamp, and who flies it;
-   - far backdrops (scene/far): over a sky, wrapped so the seam shows. The game loads these but doesn't draw them
-     (walk-view.js only preloads scene/far/<far>.png; `far` still picks the sound, water and default walls).
    Lighting is flat: the shaders' sun, shadows and bumps are left out. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -39,7 +37,6 @@ expose({
   spBuildLive: [() => spBuildLive],
   spColour: [() => spColour, v => (spColour = v)],
   spDraw: [() => spDraw, v => (spDraw = v)],
-  spDrawFar: [() => spDrawFar, v => (spDrawFar = v)],
   spDrawFlag: [() => spDrawFlag, v => (spDrawFlag = v)],
   spDrawRoom: [() => spDrawRoom, v => (spDrawRoom = v)],
   spDrawWall: [() => spDrawWall, v => (spDrawWall = v)],
@@ -52,7 +49,7 @@ provide({ mountScenePreviews, scenePreviewHTML, scenePreviewOverlay });
 /* to-module: end */
 const scenePv = { cell: 0, col: {}, lean: 0.35, vers: new Map() };
 const SP_CELL = 64;
-/* what kind of preview a picture gets: 'walls', 'build', 'rooms', 'flag', 'far' or '' */
+/* what kind of preview a picture gets: 'walls', 'build', 'rooms', 'flag' or '' (SA-5: the far backdrops are retired) */
 function scenePreviewKind(path) {
   const S = studioState.D.scenery || {},
     p = String(path || '').replace(/^art\//, ''),
@@ -61,7 +58,6 @@ function scenePreviewKind(path) {
   if (/^scene\/build\/detail[\w-]*\.png$/.test(p)) return 'build';
   if (p === B.rooms) return 'rooms';
   if (/^(legacy\/)?scene\/flags\/[\w-]+\.png$/.test(p)) return 'flag'; /* SA-5: legacy towns' flags in art/legacy */
-  if (/^scene\/far\/[\w-]+\.png$/.test(p)) return 'far';
   return '';
 }
 const spBuildLive = p => p.replace(/^art\//, '') === ((studioState.D.scenery || {}).buildArt || {}).detail;
@@ -124,13 +120,7 @@ function scenePreviewHTML(path) {
     <div class="seg-row"><span class="help">Postcard stamp</span><img class="pix sp-stamp" alt="" src="${escapeHtml(artPicSrc(path.replace(/^art\//, '')))}"></div>
     <p class="help">${id === 'default' ? 'Flown where a place has no flag of its own.' : maps.length ? 'Flown by ' + maps.map(escapeHtml).join(', ') + '.' : towns ? 'A town’s flag (scenery.flags); no map here flies it now.' : 'No map flies it.'} The game waves it on the flag pole prop’s mast.</p></div>`;
   }
-  const id = path
-      .split('/')
-      .pop()
-      .replace(/\.png$/, ''),
-    maps = Object.keys(studioState.D.maps || {}).filter(m => studioState.D.maps[m].far === id);
-  return `<div class="sp-scene" data-sp="${P}" data-kind="far"><h4>Along the horizon</h4><p class="help warn">The game loads this backdrop but doesn’t draw it: <code>far</code> only picks a place’s sound, water and default walls now.</p>
-  <canvas class="pix sp-far" width="960" height="200"></canvas><p class="help">Drawn one and a half times across, so the seam shows. ${maps.length ? `Places with far: ${escapeHtml(id)}: ${maps.length}.` : 'No place has it as its far.'}</p></div>`;
+  return '';
 }
 
 /* ---------- drawing ---------- */
@@ -146,7 +136,6 @@ function spDraw(el) {
   }
   if (kind === 'walls' || kind === 'build') spDrawWall(el, src, kind);
   else if (kind === 'rooms') el.querySelectorAll('canvas.sp-room').forEach(c => spDrawRoom(c, src));
-  else if (kind === 'far') spDrawFar(el.querySelector('canvas.sp-far'), src);
   /* a flag animates (spLoop) */
 }
 function spDrawWall(el, src, kind) {
@@ -210,24 +199,6 @@ function spDrawRoom(c, src) {
     x.fillRect(0, 0, W, H);
     x.globalCompositeOperation = 'source-over';
   }
-}
-function spDrawFar(c, src) {
-  const x = c.getContext('2d'),
-    g = x.createLinearGradient(0, 0, 0, c.height);
-  g.addColorStop(0, '#8fc3e8');
-  g.addColorStop(1, '#e8f1f2');
-  x.fillStyle = g;
-  x.fillRect(0, 0, c.width, c.height);
-  x.imageSmoothingEnabled = false;
-  const y = c.height - src.height;
-  for (let at = 0; at < c.width; at += src.width) x.drawImage(src, at, y);
-  x.strokeStyle = 'rgba(200,40,40,.6)';
-  x.setLineDash([4, 4]);
-  x.beginPath();
-  x.moveTo(src.width + 0.5, 0);
-  x.lineTo(src.width + 0.5, c.height);
-  x.stroke();
-  x.setLineDash([]);
 }
 /* the flag, column by column, rippled as the game ripples it */
 function spDrawFlag(c, src, t) {

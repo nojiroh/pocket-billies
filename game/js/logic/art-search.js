@@ -235,7 +235,6 @@ export const ART_BUILDERS = [
   [/^scene\/build\/detail-a04\.png$/, 'tools/build-props-a04.py'],
   /* SA-2b: the live building sheet: the airship's textures, then bark and rock, written into it */
   [/^scene\/build\/detail-a04b\.png$/, 'tools/build-airship.py and tools/build-props-batch1.py'],
-  [/^scene\/far\/[\w-]+\.png$/, 'tools/build-scene-props.py'],
   [/^scene\/flags\/[\w-]+\.png$/, 'tools/build-flags.py'],
 ];
 /** the builder that draws a picture, or '' (a path under art/, with or without art/ in front)
