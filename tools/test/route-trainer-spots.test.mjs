@@ -155,11 +155,8 @@ test("WM-7: a mini-boss's place has a line of trainers on the road before its le
         R = sc.arena,
         mine = Object.values(T).filter((/** @type {any} */ t) => t.runNode === i),
         where = `${seed} node ${i}`,
-        west = M.mapgenExitPoint(
-          sc.w,
-          sc.h,
-          sc.edgeExits.find((/** @type {any} */ e) => e.id === 'west')
-        ),
+        /* WM-3: the way in is the scene's first exit, on any side (logic/run-scenes.js runSceneExits) */
+        west = M.mapgenExitPoint(sc.w, sc.h, sc.edgeExits[0]),
         /* the leader not yet beaten: its gate shut */
         reach = M.mapgenReach(sc, C, west, { slope: true }),
         road = (sc.edgeExits || []).flatMap((/** @type {any} */ e) => (e.path ? M.mapgenResample(e.path, 0.5) : []));

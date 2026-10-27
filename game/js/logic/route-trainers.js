@@ -21,11 +21,13 @@ import { expose } from '../test-globals.js';
 import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { runNodeSeed } from './run-map.js';
-import { mapgenResample } from './mapgen.js';
+import { MAPGEN_WET, mapgenResample } from './mapgen.js';
 import { encClassFoe } from './encounters.js';
 /* eslint-disable no-func-assign */
 expose({
   ROUTE_ARENA_GAP: [() => ROUTE_ARENA_GAP],
+  ROUTE_ARENA_IN: [() => ROUTE_ARENA_IN],
+  ROUTE_ARENA_MIN: [() => ROUTE_ARENA_MIN],
   ROUTE_ARENA_OFF: [() => ROUTE_ARENA_OFF],
   ROUTE_RARE_SPOTS: [() => ROUTE_RARE_SPOTS],
   ROUTE_SIGHT_HALF: [() => ROUTE_SIGHT_HALF],
@@ -361,18 +363,24 @@ export function routeWaySpot(sc, k, n) {
 
 /** WM-7: how far apart the trainers before a leader's ring stand, along the road (m) */
 export const ROUTE_ARENA_GAP = 8;
+/** WM-3: the closest the line's trainers stand (m), and the nearest the way in the first may (m: past where a seam's
+ * walk starts, 4 m in) */
+export const ROUTE_ARENA_MIN = 6;
+export const ROUTE_ARENA_IN = 5;
 /** WM-7: how far off the road's middle they stand (m: their sight, ROUTE_SIGHT_HALF wide, crosses all of it) */
 export const ROUTE_ARENA_OFF = 2.8;
-/** WM-7: where trainer k of n stands before a scene's leader's ring: on its main road (the west exit's path back to
- * the hub, then the east one's on), the last 3 m before the road comes within ROUTE_ARENA_OFF and a metre of the ring's
- * apron, each ROUTE_ARENA_GAP before the next (closer when the road is short, never nearer the way in than 10 m), on alternate sides ROUTE_ARENA_OFF
- * off it, facing it; null without a ring or a main road
+/** WM-7: where trainer k of n stands before a scene's leader's ring: on its main road (the way in's path back to
+ * the hub, then the way on's out: its first two exits, on any side since WM-3), the last 3 m before the road comes within ROUTE_ARENA_OFF and a metre of the ring's
+ * apron, each ROUTE_ARENA_GAP before the next (closer when the road is short, but ROUTE_ARENA_MIN at least; 10 m from the way in, ROUTE_ARENA_IN on a short road), on alternate sides ROUTE_ARENA_OFF
+ * off it, facing it (WM-3: out of the water: the other side, or a metre either way); null without a ring or a main road
  * @param {any} sc @param {number} k @param {number} n @returns {{ at: [number, number], road: [number, number] } | null} */
 export function routeArenaLine(sc, k, n) {
   const A = sc.arena,
     E = sc.edgeExits || [],
-    W = E.find((/** @type {any} */ e) => e.id === 'west'),
-    F = E.find((/** @type {any} */ e) => e.id === 'east');
+    /* the way in and the way on: a run scene's first two exits (logic/run-scenes.js runSceneExits: the first back,
+       the first ahead, the main road between them; WM-3: on any side) */
+    W = E[0],
+    F = E[1];
   if (!A || !W || !F || !W.path || !F.path) return null;
   /* every half metre (a path's points can lie metres apart) */
   const P = mapgenResample([...W.path.slice().reverse(), ...F.path.slice(1)], 0.5),
@@ -388,23 +396,52 @@ export function routeArenaLine(sc, k, n) {
     j0 = P.findIndex(p => oct(p) <= A.r + 1.5 + ROUTE_ARENA_OFF + 1);
   if (j0 < 1) return null;
   const end = acc[j0] - 3,
-    gap = Math.min(ROUTE_ARENA_GAP, (end - 10) / Math.max(1, n - 1)),
-    want = Math.max(10, end - gap * (n - 1 - k));
-  let j = 1;
-  while (j < P.length - 1 && acc[j] < want) j++;
-  const a = P[j - 1],
-    b = P[j],
-    l = acc[j] - acc[j - 1] || 1,
-    t = Math.min(1, Math.max(0, (want - acc[j - 1]) / l)),
-    road = /** @type {[number, number]} */ ([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]),
-    side = k % 2 ? 1 : -1;
-  return {
-    at: [
-      road[0] + (-(b[1] - a[1]) / l) * ROUTE_ARENA_OFF * side,
-      road[1] + ((b[0] - a[0]) / l) * ROUTE_ARENA_OFF * side,
-    ],
-    road,
-  };
+    /* WM-3: never closer than ROUTE_ARENA_MIN (a ring nearer the way in, where its barrier fits, leaves less road):
+       then the line reaches back to ROUTE_ARENA_IN from the way in instead of 10 m */
+    gap = Math.max(ROUTE_ARENA_MIN, Math.min(ROUTE_ARENA_GAP, (end - 10) / Math.max(1, n - 1))),
+    /* the spot `side` of the road at d metres along it */
+    stand = (/** @type {number} */ d, /** @type {number} */ side) => {
+      let j = 1;
+      while (j < P.length - 1 && acc[j] < d) j++;
+      const a = P[j - 1],
+        b = P[j],
+        l = acc[j] - acc[j - 1] || 1,
+        t = Math.min(1, Math.max(0, (d - acc[j - 1]) / l)),
+        road = /** @type {[number, number]} */ ([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      return {
+        at: /** @type {[number, number]} */ ([
+          road[0] + (-(b[1] - a[1]) / l) * ROUTE_ARENA_OFF * side,
+          road[1] + ((b[0] - a[0]) / l) * ROUTE_ARENA_OFF * side,
+        ]),
+        road,
+      };
+    },
+    /* WM-3: never in water (a stream by a bridge on the way): the other side, then a metre either way (the line
+       stays ROUTE_ARENA_GAP apart, give or take two) */
+    wet = (/** @type {number[]} */ p) =>
+      MAPGEN_WET.includes(((sc.tiles || [])[sc.h - 1 - Math.floor(p[1])] || '')[Math.floor(p[0])] || ''),
+    /* a trainer's spot near d along: out of the water if it can be */
+    dry = (/** @type {number} */ d, /** @type {number} */ side) => {
+      for (const e of [d, d - 1, d + 1])
+        for (const sg of [side, -side]) {
+          const S = stand(e, sg);
+          if (!wet(S.at)) return S;
+        }
+      return stand(d, side);
+    };
+  /* the line from the ring back: each `gap` before the next along the road, then further back while it stands
+     nearer than ROUTE_ARENA_MIN to one placed (a road that winds round the hub), never past ROUTE_ARENA_IN */
+  /** @type {{ at: [number, number], road: [number, number] }[]} */
+  const line = [];
+  for (let q = n - 1, d = end; q >= k; q--, d -= gap) {
+    let S = dry(Math.max(ROUTE_ARENA_IN, d), q % 2 ? 1 : -1);
+    while (d > ROUTE_ARENA_IN && line.some(o => Math.hypot(o.at[0] - S.at[0], o.at[1] - S.at[1]) < ROUTE_ARENA_MIN)) {
+      d = Math.max(ROUTE_ARENA_IN, d - 0.5);
+      S = dry(d, q % 2 ? 1 : -1);
+    }
+    line.push(S);
+  }
+  return line[line.length - 1];
 }
 
 /** whether a trainer at `at` facing `look` sees the point `p`: within `range` metres ahead of it, ROUTE_SIGHT_HALF to
