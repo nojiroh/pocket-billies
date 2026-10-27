@@ -649,6 +649,44 @@ WM-7 ran beside their track's sessions.
 - Not taken: Pins (one outline for every place, so places differ only by colour and the small glyph; the cream faces
   brighten a busy map).
 
+## UI-15 as built (2026-10-27, `claude/ui-15-less-clutter`, into `track/ui`)
+Run beside UI-11 and UI-8c (the owner's waves), the plan approved in advance. Battle and walk only; the battle engine
+and its golden record untouched.
+- **Measured:** `uiElementCount()` (theme-sheet.js, beside `uiBlurCount`): visible elements with words of their own,
+  icons and pictures, shadow trees included, opacity not read. Smoke logs it per screen and holds each at
+  `ELEMENT_CEILING` (check-quick.py). Before and after (smoke, 390 x 844): walk 27 to 14, battle 42 to 23, shop 73 to
+  66 (the walk screen under it folds its card); map 25, team 28, guide 39, profile 55 unchanged. Walk's ceiling is 18
+  (its hint shows for 6 s when a Billie wanders in).
+- **The field strip** (battle.js `fieldStripUpdate`) replaces the ticker and the gold storm chip: the weather's glyph,
+  the storm's bolt with turns left, sharp stones on each side (yours left, the foe's right). Stones show when their
+  event plays or when the turn is over, never a turn early (the battle runs ahead of the playback). A tap shows the
+  chip's words under the strip. Icons from the set (rain, snow, fog, ash, sun, moon, cloud, bolt; scrap for stones)
+  until UI-13. An empty strip keeps its 28 px box, so the stage frames the action as under the ticker.
+- **Plates:** name, level, HP with the trail, at most 3 tags (the status first, then the biggest stat changes) and
+  "+N" with the rest's words. The limb pips, the party's dots, your HP number and XP stay. Found: a plate is a
+  `<button>` disabled unless aimed at, so base.css faded it to 42% nearly all battle; fixed.
+- **Move tiles:** the type's glyph (ui-kit `typeGlyphHTML`), name, power (with the weather's ▲/▼) and effectiveness.
+  The type's word, the same-type ★, accuracy and the move's text are in a details panel over the tile grid: held
+  420 ms on touch (the press then doesn't pick the move), on hover with a mouse, on keyboard focus.
+- **Command buttons:** quiet chrome, an icon over a word, 52 px; the small lines (pyramids left, items, who can fight,
+  why one is off) are each button's title and spoken name. The plan's "parts.css `.pb.green/.blue/.dark`" was wrong:
+  the colours were battle-screen.css `.bt.coin/.items/.team` and battle-ui.css `.bt.run`.
+- **Dark glass:** `.battle`'s `--bt-glass` / `--bt-ink` / `--bt-ink2` (the night tokens; UI-12 can point them at each
+  palette's dark side) on the message, the menu, the plates, the turn bar, the strip and the details panel, in both
+  themes; inside the cards the theme's text roles read the dark side. Found: by day the team, items and pyramid lists
+  were white on the cream card. The plates' and turn bar's 6 px blurs went (ui-lint's blur rules 26 to 24).
+- **Walk:** the place card plays as a title on arrival at a place or room (motion.css `m-title`, 4.5 s), then folds;
+  the top bar keeps the name with today's weather glyph (not in rooms). The name unfolds the card, which then stays
+  (`preferences.cardClosed` false) until × or the name. A room's Go outside moves to the foot row while folded. The
+  hint shows on arrival or when more Billies hide than before, and fades after 6 s (`m-linger`). The Actions button
+  bobs only while its sheet holds something not yet opened (a new place, a Billie that wandered in). `walkAfterRender`
+  sets both animations to their age after each render, so a render never starts them over. Found: with the card gone
+  the hero's `space-between` put Actions at the top; `.wh-foot` keeps to the bottom.
+- **Gallery:** the battle and plates sections redrawn as the game draws them; their pictures remade, and the sections
+  under them (moved by a fraction of a pixel).
+- **Left for the owner's phone check:** the hold time (420 ms), the title's 4.5 s and the hint's 6 s, the glass's
+  opacity (86%) by day, the details panel's place, Run's disabled look.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
@@ -661,7 +699,7 @@ WM-7 ran beside their track's sessions.
 | UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
 | UI-14a | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), rarity as frame, pill and name colour on `pb-pick-card` and on list rows; every state in the gallery | gallery only | gallery pictures; smoke |
 | UI-14b | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
-| UI-15 | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
+| UI-15 (done 2026-10-27, `claude/ui-15-less-clutter`) | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
 | UI-16a | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
 | UI-16b | Alive: battle events | the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
