@@ -131,11 +131,14 @@ function minimapPalette() {
   const surface = minimapRole('--c-surface'),
     text = minimapRole('--c-text'),
     text2 = minimapRole('--c-text2'),
-    primary = minimapRole('--c-primary'),
     goldA = minimapRole('--c-gold-a'),
     goldB = minimapRole('--c-gold-b'),
     danger = minimapRole('--c-danger'),
-    teal = minimapRole('--c-hp-ok');
+    teal = minimapRole('--c-hp-ok'),
+    /* UI-12: the palette's own grass and water (uiTheme.json mapGrass, mapWater), so a blue or purple palette keeps a
+       green map; without them primary and the HP teal, as before */
+    grassHue = minimapRole('--c-map-grass, var(--c-primary)'),
+    waterHue = minimapRole('--c-map-water, var(--c-hp-ok)');
   minimap.pal = {
     surface,
     text,
@@ -143,15 +146,15 @@ function minimapPalette() {
     goldB,
     danger,
     teal,
-    grass: minimapMix(surface, primary, 0.34),
-    tall: minimapMix(surface, primary, 0.62),
+    grass: minimapMix(surface, grassHue, 0.34),
+    tall: minimapMix(surface, grassHue, 0.62),
     road: minimapMix(surface, goldA, 0.42),
-    water: minimapMix(surface, teal, 0.55),
+    water: minimapMix(surface, waterHue, 0.55),
     sand: minimapMix(surface, goldA, 0.22),
     rock: minimapMix(surface, text2, 0.38),
     snow: minimapMix(surface, text2, 0.06),
-    marsh: minimapMix(minimapMix(surface, primary, 0.4), text2, 0.3),
-    wall: minimapMix(minimapMix(surface, primary, 0.7), text, 0.35),
+    marsh: minimapMix(minimapMix(surface, grassHue, 0.4), text2, 0.3),
+    wall: minimapMix(minimapMix(surface, grassHue, 0.7), text, 0.35),
     roof: minimapMix(text, surface, 0.18),
   };
 }
@@ -282,7 +285,11 @@ function minimapDraw(now = performance.now()) {
     cv.width = Math.round(cw * dpr);
     cv.height = Math.round(ch * dpr);
   }
-  const look = getComputedStyle(cv).getPropertyValue('--c-surface') + document.documentElement.dataset.theme;
+  const cs = getComputedStyle(cv),
+    look =
+      cs.getPropertyValue('--c-surface') +
+      cs.getPropertyValue('--c-map-grass') +
+      document.documentElement.dataset.theme;
   if (look !== minimap.look) {
     minimap.look = look;
     minimapPalette();
