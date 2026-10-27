@@ -44,6 +44,11 @@ kept aside in the browser).
   Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a
   hidden place on the next run's map (Lv 1) and later the place that hides a side path (Lv 3); at Lv 2 she packs a
   Pretzel for every run. Prices are first guesses.
+- **Studio: Model mode** (studio track ST-7): the Art workbench imports 3D models from Blender, Blockbench,
+  MagicaVoxel or an AI generator (.glb, .gltf, .obj, .vox) as props: checked against the art's 32 pixels to the
+  metre and 2,000 triangles, shown on a turntable as the game draws them, with spinning and jointed parts, a texture
+  painted in the Studio, and "Bake to 32 px/m" to give a palette-coloured pack model the game's own look. The game
+  draws these models with their own texture.
 - **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
   and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
   meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the

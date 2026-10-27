@@ -1174,6 +1174,44 @@ def studio_camera(pg, base):
     return f'{pg.evaluate("CAMERA_FOLDERS.length")} folders, every camera dial once (a dial left out caught), none in Engine; a dial moved the readout’s tilt {t0:.1f} → {t0 + 10:.1f} degrees; the snapshot held and let go; the zoom stops’ table and graph, a stop added at {add["zoom"]} keeping the picture'
 
 
+def studio_model(pg, base):
+    """studio track ST-7: the Art workbench's Model mode. RP-3's CC0 KayKit turbine (validation/cc0-src: a .gltf, its .bin
+    and its palette texture) dropped in: read with its two parts (the fan hangs from the tower), shown on the turntable in
+    the game's renderer, found a palette texture; Bake to 32 px/m gives it a texture of its own near 32 px/m; Write to
+    game makes the model file (text), its texture, its picture and the catalogue entry; Props offers Model mode for it;
+    three undos take it all back"""
+    if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
+    pg.evaluate(STUDIO_DATA)
+    pg.evaluate("(document.getElementById('ghLogin')||{remove(){}}).remove();0")
+    got = pg.evaluate("""(async()=>{const L=[];for(const n of ['windturbine_tall.gltf','windturbine_tall.bin','spacebits_texture.png']){
+      const r=await fetch('../validation/cc0-src/'+n);L.push(new File([await r.arrayBuffer()],n))}
+      await wbModelFiles(L);const R=wbModel.rec;
+      return {err:wbModel.err,tris:R&&R.tris,parts:R&&R.parts.map(p=>[p.name,p.parent??-1]),palette:!!(wbModel.D&&wbModel.D.isPalette),
+        mode:workbench.mode,sec:studioState.sec}})()""")
+    if got['err'] or got['tris'] != 632: raise Exception(f'the turbine wasn’t read: {got}')
+    if got['parts'] != [['windturbine_tall', -1], ['windturbine_tall_fan', 0]]: raise Exception(f'its parts: {got["parts"]}')
+    if not got['palette']: raise Exception('its palette texture wasn’t found')
+    if got['mode'] != 'model' or got['sec'] != 'workbench': raise Exception(f'Model mode didn’t open: {got}')
+    if not until(pg, "walkView.ready&&walkView.id==='__modelpv'&&propModelState.meshes.get('scene/models/__model_pv.json')", 120):
+        raise Exception('the turntable never drew the model')
+    bake = pg.evaluate("ACTIONS.wbmBake();[wbModel.tex.width,wbModel.tex.height,wbModel.D.median,wbModel.D.isPalette]")
+    if bake[3] or abs(bake[2] - 32) > 3: raise Exception(f'Bake to 32 px/m: {bake}')
+    pg.evaluate("ACTIONS.wbmWrite()")
+    if not until(pg, "wbModel.written==='windturbine_tall'", 20): raise Exception('Write to game didn’t finish')
+    w = pg.evaluate("""(()=>{const M=sceneryCatalog().props.windturbine_tall,t=studioState.textDirty.get('art/scene/models/windturbine_tall.json');
+      const R=t&&JSON.parse(t.text);return {model:M.model,img:M.img,art:[...studioState.artDirty.keys()].sort(),v:R&&R.v,tex:R&&R.tex,tris:R&&R.tris}})()""")
+    want = {'model': 'scene/models/windturbine_tall.json', 'img': 'scene/props/windturbine_tall.png',
+            'art': ['art/scene/models/windturbine_tall.png', 'art/scene/props/windturbine_tall.png'], 'v': 2,
+            'tex': 'scene/models/windturbine_tall.png', 'tris': 632}
+    if w != want: raise Exception(f'written: {w}')
+    pg.evaluate("mapEditor.ped='windturbine_tall';openSection('props');0")
+    if not until(pg, "!!document.querySelector('[data-act=\"wbmOpenProp\"]')", 30): raise Exception('Props offers no Open in Model mode')
+    pg.evaluate("undo();undo();undo();0")
+    left = pg.evaluate("[!!sceneryCatalog().props.windturbine_tall,studioState.artDirty.size,studioState.textDirty.size]")
+    if left != [False, 0, 0]: raise Exception(f'three undos left {left} (the prop, pictures, text files)')
+    return f'the turbine: 632 triangles in 2 parts, a palette texture, baked to {bake[0]}×{bake[1]} px at {bake[2]} px/m, written (model, texture, picture, catalogue), offered in Props, undone'
+
+
 def run_shop(pg, base):
     """UI-5: a run town's shop opens with the day's wares (the hub has no shop since RL-5)"""
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();openShop(Object.keys(SHOPS)[0]);0")
@@ -1686,7 +1724,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera)]),
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
 

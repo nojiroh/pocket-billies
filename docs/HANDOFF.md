@@ -658,6 +658,42 @@ only** (pushback on the plan's "`uMist` 0": the grid reaches 24 m, 16 on phones,
   (same sums, noisier).
 - Next: AIR-4 (edges and shadowed haze). Tag `air-3-done` for the owner.
 
+### Studio track ST-7: Model mode import - 2026-10-27
+Branch `track/studio` (made by the owner from main today; the first commit adds it to BRANCHES.md). Draft PR #258.
+Plan approved in Plan Mode after a question round: Model mode on the Art workbench (Props opens a model there); models
+stored as files beside the art (`art/scene/models/<key>.json` + `.png`); palette-textured packs imported as they are
+and flagged, with "Bake to 32 px/m"; all of ST-7 in one session (the owner's pick over a 7a/7b split). Tag to suggest:
+`st-7-done` (the owner pushes tags). Details: docs/phases/studio-track.md, "ST-7"; docs/STUDIO.md, "Art workbench:
+Model mode".
+- What RP-3's tools/glb-to-recipe.py covered: a Python glTF reader (accessors, strides, node transforms, side files,
+  texture colours) feeding a lossy fit to recipe shapes, no mesh kept. Ported to JS and widened (sparse accessors,
+  strips and fans, mirrored nodes, vertex colours, Draco/meshopt refused); the test checks the JS reader against it
+  on the three KayKit models (validation/cc0-src).
+- Changed: logic model-gltf.js, model-obj.js, model-vox.js, model-mesh.js, model-bake.js (new, tested in
+  tools/test/model-import.test.mjs, 13 tests); mesh format v2 (own texture in the same 24-byte vertex, parts with
+  pivot, spin and joint, `extras.pb` for Blender); prop-models.js draws v2 with its own texture (the model program
+  only, unit 5, nearest texel, outside the instanced batches); studio/js/workbench-model.js (Model mode: drop or
+  open, size and turn, turntable in the game renderer, the baked picture, density/palette/triangle checks, Resample
+  and Bake to 32 px/m, parts' spins and joints, Write to game as undo steps, texture painting on the shared pixel
+  canvas with face outlines and click-to-find-the-texel); Props' 3D model panel opens a v2 model there; Props' .vox
+  import reads through model-vox.js (same layer); draft-record.js sends `art/scene/models/<key>.json` as text;
+  check-fast.py "The Studio's Model mode" step.
+- **Risky:** a v2 model is one draw a part outside the batches (no game data uses one yet); the local Save (start-
+  studio.py isn't in this repository) is untested for the model's JSON; it takes other text files, and the GitHub
+  route is covered by the draft test. Bake to 32 px/m picks a material by hue (wood, stone, metal, hay, leaves,
+  plain): a guess. glTF from Blockbench is guessed at 1/16 scale; OBJ axes follow Blender's export (an "Up is z"
+  choice covers others). The turntable is as small as the Props one (use its zoom).
+- Verified: lint, typecheck, format, check:modules, unit tests (all pass after main's merge; the 1,000-maps timing
+  test failed once under load and passes alone), the smoke check 6 of 6 (37 shaders build), check-fast's Studio
+  checks (Model mode ok; "world map look" and "Camera section" fail the same on main 2e74c89d), the full quick check
+  37 of 40 (Terraces' props in the air, RL-8's seam view, room light: failing on main per the last handoffs).
+  Headless Studio runs: the KayKit turbine imported, shown, baked, written, painted (a stroke and its undo), its texel
+  found, opened again from Props, undone; a .vox imported and written as a voxel prop. CI on the PR: lint was red on
+  main's island test (fixed by #253, merged in), smoke shows only main's Studio 404 PROBLEMs.
+- Phone check: not needed for the Studio (tablet and up); a v2 prop in a scene needs one once a model is placed.
+- Next: the owner tries Model mode with a model of their own (Blender's glTF export) and picks whether KayKit-style
+  bakes are wanted; then ST-8 (export: GLB/OBJ with pivots, spins and joints in `extras.pb`; voxel props to meshes).
+
 ### Terrain track TR-4: the look by height and steepness - 2026-10-26
 Branch `ccr-6e23f760-mdbx5x` (this cloud session's own; BRANCHES.md would call it `track/terrain`, which doesn't exist
 yet). Started from main da51c766. Tag to suggest: `tr-4-done` (the owner pushes tags). Details: docs/phases/terrain-track.md,
