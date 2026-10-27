@@ -1,0 +1,109 @@
+{
+ "about": "Region map track WM-7: the leaders' arenas (logic/arena-gen.js). A mini-boss's place gets a raised, fenced ring on its main road, near the end it leaves by (its way on: WM-3, east, north or south), themed by its leader's type; a gate across the ramp on that side (gone once the leader is beaten: `unless: beat:`); a line of route trainers before it. The boss's place gets a bigger ring at its middle, no gate. Every prop and ground is an existing one (scenery.json). r: the ring's half width (an octagon, metres), rise: its height over the road (metres), back: how far from the way on's exit along the road its middle stands (metres).",
+ "sizes": {
+  "leader": {"r":8,"rise":0.6,"back":28},
+  "boss": {"r":11,"rise":0.8}
+ },
+ "trainers": 3,
+ "themes": {
+  "Water": {
+   "name": "Tide deck",
+   "ground": "[",
+   "rim": "-",
+   "fence": "fence_rail",
+   "gate": "fence_gate",
+   "posts": "dock_post",
+   "dress": ["pearl_lamp","lily_flowers"]
+  },
+  "Grass": {
+   "name": "Hedge ring",
+   "ground": "l",
+   "rim": "K",
+   "fence": "hedge",
+   "gate": "fence_gate",
+   "posts": "waymarker_post",
+   "dress": ["sunflowers","bush_flower"]
+  },
+  "Ground": {
+   "name": "Dust ring",
+   "ground": "A",
+   "rim": "e",
+   "fence": "stone_wall",
+   "gate": "fence_gate",
+   "posts": "waymarker_post",
+   "dress": ["boulder","lantern"]
+  },
+  "Fire": {
+   "name": "Basalt ring",
+   "ground": "j",
+   "rim": "Z",
+   "fence": "stone_wall",
+   "gate": "fence_gate",
+   "posts": "lantern",
+   "dress": ["lava_rock","lantern"]
+  },
+  "Flying": {
+   "name": "Sky stage",
+   "ground": "V",
+   "rim": "T",
+   "fence": "fence_wood",
+   "gate": "fence_gate",
+   "posts": "flag_pole",
+   "dress": ["banner_pole","flag_pole"]
+  },
+  "Steel": {
+   "name": "Steel yard",
+   "ground": "i",
+   "rim": "a",
+   "fence": "fence_rail",
+   "gate": "bureau_barrier",
+   "posts": "bollard",
+   "dress": ["streetlamp","streetlamp_b"]
+  },
+  "Psychic": {
+   "name": "Spore ring",
+   "ground": "J",
+   "rim": "M",
+   "fence": "hedge",
+   "gate": "fence_gate",
+   "posts": "lantern",
+   "dress": ["mushroom_giant","crystal_purple"]
+  },
+  "Electric": {
+   "name": "Hex grid",
+   "ground": "*",
+   "rim": "i",
+   "fence": "fence_rail",
+   "gate": "bureau_barrier",
+   "posts": "solar_post_light",
+   "dress": ["solar_post_light","streetlamp_b"]
+  },
+  "Dragon": {
+   "name": "Crystal ring",
+   "ground": "X",
+   "rim": "-",
+   "fence": "stone_wall",
+   "gate": "fence_gate",
+   "posts": "lantern",
+   "dress": ["crystal_cluster","crystal"]
+  },
+  "bureau": {
+   "name": "Scrap ring",
+   "ground": "x",
+   "rim": "a",
+   "fence": "fence_rail",
+   "gate": "bureau_barrier",
+   "posts": "bollard",
+   "dress": ["tires","scrap"]
+  },
+  "plain": {
+   "name": "Stone ring",
+   "ground": "K",
+   "rim": "e",
+   "fence": "fence_wood",
+   "gate": "fence_gate",
+   "posts": "waymarker_post",
+   "dress": ["lantern","flag_pole"]
+  }
+ }
+}

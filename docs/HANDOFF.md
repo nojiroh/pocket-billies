@@ -2,6 +2,36 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-4a (in part) - a run's places on the world map at their grid cells; fog - 2026-10-27
+Branch `ccr-9477901d-w1h11w`, from `track/worldmap` (made this session from WM-2's head, 5a1326a7; main since merged
+in, PR #243). The owner first chose to wait for WM-3, then asked to start now: WM-4a is the part that doesn't need WM-3;
+WM-4b (exact seams, WM-3's sizes and L-masks, side areas' places from WM-3 if it gives them) follows once WM-3a is merged.
+The owner's answer: the whole region shows from the landing, unreached places fogged.
+- logic/run-map.js: `runSpot` reads the region grid: each place at its cells' middle, at the walk's scale
+  (`RUN_BOWL_GRID.metres` 1000 to a bowl radius, as world-bowl.js BOWL_METRES), the region's cells centred on the bowl
+  (WM-2: paths sit north of the landing's row). `runSpotCells` (side areas' places, which have no footprint, take free
+  2 x 1 cells from their obstacle's: north first, then east along the chain; worked out, never stored) and
+  `runSpotBoxes`. A run from before WM-2 (no `at`) keeps the rows-and-lanes spot (RUN_BOWL). Every caller unchanged.
+  WM-2's grids are 10-20 cells wide (0.64-1.28 km, 400 seeds), inside the bowl.
+- logic/run-bowl.js: each place's round of land covers its cells (`RUN_BOWL_LAND.cover`); `runBowlRelief`: on the grid
+  a kind's bump or dip reaches at most half a cell (`RUN_BOWL_LAND.relief` 0.032) and is as much lower (slopes as
+  steep): places 64-128 m apart made a summit lift the lake beside it (bowl-ground's and bowl-things' tests found it).
+  **For the owner to judge**: the run's world map is flatter (a summit about 30 m, not 105).
+- world-bowl.js: a run's road is painted from one place's exit to the other's (`worldBowlExitAt`, the maps' own
+  edgeExits), not pin to pin; `worldBowlRunFog`: every run place not walked and not where you stand under a veil with
+  its cells' dashed outline (`BOWL_RUN_FOG`), drawn under the pins.
+- **Until WM-3**: scenes are still 112 x 64 m in 128 x 64 m cells (8 m of ground each side) and a north link still
+  leaves by the east side in the walk, so its road on the map runs from the east edge to the next place's west edge.
+- Tests: run-map (the old bowl test kept for a run without footprints; new: places at their cells, centred, linked
+  ones touching; a side area's chain), run-bowl (`runBowlRelief`), bowl-ground's ridge and lake now against the land
+  round them.
+- Verified: lint, typecheck, format, check:modules; unit tests 1422 pass; check-fast's run pages 7 of 7 (the run's
+  world, the helper thread, waystations, Blake, the battle held, Play this seed, the bowl). Headless pictures of the run
+  fixture's map (the region in one piece, fogged outlines, short roads across the gaps). Smoke and the full quick check
+  not run. Python Playwright 1.63 again (the pin's 1.56 doesn't match the container's Chromium).
+- Next: WM-4b after WM-3a merges into `track/worldmap`: merge it here, check the seams meet exactly, the 1x1 and L
+  outlines (the L's `cut` cell left out of the fog), roads from exits on any side, the side areas; then the HANDOFF
+  and `wm-4-done`.
 ### Region map track WM-3a - shapes and sizes in the logic and mapgen (in part) - 2026-10-27
 Branch `claude/wm-3-shapes` (from WM-2's head). The owner's answers: routes 2 x 1 40%, 3 x 1 20%, 1 x 2 15%, L 20%,
 1 x 3 5%; events and stalls 1 x 1; landing, leaders, boss and towns 2 x 1; an L's missing cell reserved and walled;
@@ -172,6 +202,68 @@ took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan'
   equal to the page's, and reports where the boot's came from. `runWorld.how` says 'page at once' for that path.
 - Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
   smoke 6 of 6.
+### Region map track WM-7 - leader arenas - 2026-10-27
+Branch `claude/wm-7-leader-arenas` (from WM-1's HEAD; runs beside WM-2 on `claude/wm-2-region-grid`). Planned in Plan
+Mode; the owner's answers: the fight starts on stepping into the ring, the gate is themed by type, 3 trainers by
+sight, the boss's place a big ring of its leader's type (a scrap `bureau` theme kept for the Voltron).
+- **Claims corrected**: the leader stood 2.2 m in from the east exit (not on it) and fought only when tapped; mini-boss
+  places had no route trainers; there is no Voltron and no Bureau leader yet (the boss is a type leader's top Billie as
+  an Alpha; RL-14b on `track/bots`); battle stages are only ambience now (the 3D battle draws the walk scene round you,
+  so a battle in the ring has the ring as its backdrop); no camera API framed a spot.
+- New data section **game/data/arenas.json** (schema, `dataArenas` in data-checks.js, the Studio's Check): sizes (a
+  leader's ring r 8 m, rise 0.6 m, 28 m back from the east exit; the boss's r 11 m, rise 0.8 m), `trainers` 3, and a
+  theme per type (Water, Grass, Ground, Fire, Flying, Steel, Psychic, Electric, Dragon) plus `bureau` and `plain`:
+  ground, rim ground, fence, gate, posts, dressing, all existing props and grounds. **No water moat**: the Water theme
+  is a teak-deck ring with mooring posts (a moat needs bridges; not worth it this session).
+- New **game/js/logic/arena-gen.js** behind a new mapgen dial `arena` (kept only when given; no other scene moves),
+  three small hooks in mapgen.js (after the lots, after the layout, at the end):
+  - the ring: an octagon on the main road, the ground levelled, raised by the step raise with a flat apron and a ramp
+    down each road; it moves back along the road, 2-4 m to a side or off the scene's edge to stay clear of water;
+  - its fence (open where roads cross), posts at the corners, dressing by the gaps;
+  - **a leader's barrier**: one straight fence across the whole place just past the ring's east ramp, on the walk
+    grid's half-metre lines (a thin box can fall between cells' middles and leak), moved on past jetties and bridges,
+    open only where a road crosses it. A ring alone could be walked round, so the gate is in this line, not in the ring;
+  - `scene.arena` {mode, name, x, z, r, top, leader, from, gate, gates}; no spot left on the ring.
+- run-scenes.js: `runLeaderPicks` (runFoes reads it now; same order as before), `runArenaOf`, the `arena` dial on
+  miniboss and boss nodes, and `runSceneMake` lays the gate (`act: 'arenagate'`, `unless: beat:run_<i>_foe`; it opens
+  by itself on the win: the walk's nav grid already rebuilds when an `unless` prop changes). The run's world data, the
+  preview's and the sim's carry `arenas` (the sim's also `region`). **MAPGEN_VERSION 20.**
+- walk-control.js stands an arena's leader on `arena.leader`, facing the way in. The hint: "A leader waits in the arena
+  to the east. Win to open the gate."
+- route-trainers.js: a mini-boss's place gets 3 required trainers (own stream 'arena|trainers', no pair), stood by
+  `routeArenaLine` on the main road before the ring, 8 m apart, alternate sides 2.8 m off, their sight across it.
+- route-sight.js: stepping over a ring's fence line with its leader unbeaten: the camera's new **arena moment**
+  (camera-moments.js; Engine settings arenaOn, arenaZoom 1.2, arenaBlend 0.7) frames the ring 1.4 s, the leader says
+  "Welcome to the <arena>! Nobody goes east without beating me." (the boss: "This is the <arena>. Your run ends here,
+  one way or another."; **new player-facing lines, the owner's to change**), walks up, and their usual script and battle
+  run. It starts again only after you have stepped out of the ring. Tapping the leader still works.
+- Tests: new arena-gen.test.mjs (12 places: whole, 55-65% walkable, the ring level and walled, fenced, the gate shuts
+  the way on and opens it), check-data's planted arenas, run-world-real (a new WM-7 test; its frozen dials snapshot remade
+  on purpose: the arena dials added), route-trainer-spots (the line), camera-moments (the arena moment), rng's scene hash
+  and run-start's mapgenV (gen.v only). New check-fast step "A leader's arena: ..." (the fixture's first mini-boss: the
+  gate shut, the leader in the ring, set down inside it: the intro and the battle; won, the gate open).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1419 pass; slow tests all pass but
+  "the game's island is the generator's own output" (fails on main too); check-fast's run pages (the run's world, the
+  helper thread, shop, life, quest, battle held, Blake, the bowl, waystations, Play this seed, the arena) all pass (the
+  run's world failed once under two browsers' load and passed alone); smoke passes (244 s). A headless picture of the
+  fixture's mini-boss place shows the raised concrete ring (Steel yard), its rail fence and lamps, the leader inside.
+- **Merging with WM-2**: expect collisions in mapgen.js's MAPGEN_VERSION line (take one number past both), the
+  run-world-real, run-start and rng snapshots, and check-data-snapshot's file count (176 here). WM-2 was told (a message
+  to its session). The arena assumes a leader's place goes on east (P.ahead); if WM-2/WM-3 let a mini-boss place go on
+  north or south, pass `ahead` N/S and the barrier turns to that axis (arenaGenBarrier takes it), but the ring's spot
+  (`back` along road[0]) and the trainers' line (the west and east exits' paths) need a look.
+- Risky: the barrier crosses the whole place, so a side area's north exit east of the line opens only after the leader;
+  a ring on a place where the road hugs water can end up off the road by up to 4.5 m (still crossed by it); wadeable
+  shallows on the barrier's line hold a fence (it stands in them on purpose).
+- **From the WM-2 and WM-3 sessions (their messages, after this was built)**: WM-3 merges before WM-7 and takes
+  MAPGEN_VERSION 20, so WM-7 takes 21 and remakes its snapshots after merging it. Since WM-2 the leader comes before
+  its town. With WM-3 a place's way on may be north or south, `ahead` is the first forward exit's side, exit ids go by
+  side, and leaders' and the boss's places are 2x1 cells (128 x 64 m). To do at that merge: `routeArenaLine` looks for
+  the exits `west` and `east` (take the way-in exit and the `ahead` one instead); `arenaMainRoad` and the ring's spot
+  assume road[0] runs from the way in to the way on; the hint and the intro line say "east"; recheck
+  arena-gen.test.mjs, route-trainer-spots and run-world-real on the new shapes.
+- Next: the owner looks at a leader place on the phone (Settings → Engine → Camera has the arena dials) and tags
+  `wm-7-done`; after WM-3 merges, merge it in, take MAPGEN_VERSION 21 and do the follow-ups above.
 
 ### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
 Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The

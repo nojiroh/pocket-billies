@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:204",
     "game/js/art.js:206",
-    "game/js/logic/data-checks.js:1735"
+    "game/js/logic/data-checks.js:1762"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:204",
-    "game/js/logic/data-checks.js:1735"
+    "game/js/logic/data-checks.js:1762"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:399",
-    "game/js/logic/data-checks.js:1737"
+    "game/js/logic/data-checks.js:1764"
    ]
   },
   {

@@ -86,6 +86,8 @@ export interface GameData {
   fieldMoves?: { about?: string; moves: Record<DataId, FieldMove>; waterfall?: FieldClimb };
   /** RT-3: set pieces, prop groups placed as a unit on a laid-out place */
   setPieces?: SetPiecesData;
+  /** WM-7: the leaders' arenas */
+  arenas?: ArenasData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   /** RL-14: the runs' enemy factions and their bots */
@@ -2284,6 +2286,36 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's
+ * (logic/arena-gen.js) */
+export interface ArenasData {
+  about?: string;
+  sizes: { leader: ArenaSize; boss: ArenaSize };
+  /** how many route trainers stand on the road before a leader's ring (logic/route-trainers.js) */
+  trainers: number;
+  /** by the leader's type, and `bureau` and `plain` */
+  themes: Record<string, ArenaTheme>;
+}
+export interface ArenaSize {
+  /** half its width (an octagon), metres */
+  r: number;
+  /** its height over the road, metres */
+  rise: number;
+  /** a leader's ring: how far from the east exit along the main road its middle stands, metres */
+  back?: number;
+}
+export interface ArenaTheme {
+  name: string;
+  /** scenery.json terrains: the ring's ground and its outer metre's */
+  ground: string;
+  rim: string;
+  /** scenery.json props with a box: the fence round the rim and the gate across the east ramp */
+  fence: string;
+  gate: string;
+  /** scenery.json props: at its corners, and by its ramps outside the fence */
+  posts: string;
+  dress: string[];
 }
 /** RT-3: setPieces.json: small groups of existing props placed as a unit on a laid-out place's spots
  * (logic/mapgen.js mapgenStagePieces), in the piece's own metres (x across its front, z back from it) */

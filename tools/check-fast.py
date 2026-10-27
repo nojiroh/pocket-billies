@@ -423,6 +423,39 @@ def run_loop(pg, base):
 
 
 
+def run_arena(pg, base):
+    """WM-7: the run fixture's first mini-boss place has its leader's arena: walked there (runJump), its gate shut
+    (shown while the leader is unbeaten), the leader standing in the ring; set down inside the ring, the camera's
+    arena moment frames it, the leader's intro names it, the battle starts with no tap; won, the gate is gone"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    n = pg.evaluate("saveData.run.map.nodes.findIndex(x=>x.type==='miniboss')")
+    if n < 0: raise Exception('the fixture run has no mini-boss node')
+    if not pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({n}+1)"): raise Exception('couldn’t walk to the mini-boss’s place')
+    foe = pg.evaluate(f"runFoeId({n})")
+    if not until(pg, f"walkView.ready&&saveData.trip.node==={n}+1&&walkState().npcs.some(p=>p.id==='{foe}'&&p.arena)", 30):
+        raise Exception('the leader isn’t in the arena: ' + str(pg.evaluate("walkState().npcs.map(p=>[p.id,!!p.arena])")))
+    A = pg.evaluate(f"(sc=>sc.arena&&{{name:sc.arena.name,x:sc.arena.x,z:sc.arena.z,from:sc.arena.from,gates:sc.props.filter(p=>p.act==='arenagate').map(p=>propShown(p))}})(mapById(LOCATIONS[{n}+1].mapId))")
+    if not A or not A['gates'] or not all(A['gates']): raise Exception(f'the arena or its shut gate: {A}')
+    # set down inside the ring (again while the place's first frames put you at its way in)
+    put = f"(o=>{{if(routeSight.busy)return 1;const P=walkView.pl;P.x={A['from'][0]}+o[0];P.z={A['from'][1]}+o[1];P.route=null;P.goal=null;return 0}})(walkView.sc.baseOff||[0,0])"
+    if not until(pg, put + "||!!walkRenderer.arenaAt||talkBox.on", 30):
+        raise Exception('stepping into the ring started nothing: ' + str(pg.evaluate("(A=>JSON.stringify([routeSightOK(),A&&[A.id,A.x,A.z,A.r],[walkView.pl.x,walkView.pl.z],routeSight,uiState.modal&&uiState.modal.title,uiState.tab,saveData.run.at.phase,!!walkView.director]))(arenaHere())")))
+    if not until(pg, "talkBox.on&&!!talkBox.cur", 15): raise Exception('the leader said nothing')
+    said = pg.evaluate("talkBox.cur.text")
+    if A['name'] not in said: raise Exception(f'the intro: {said}')
+    for _ in range(12):
+        if pg.evaluate("!!activeBattle"): break
+        pg.evaluate("talkBox.cur&&talkBox.cur.done(),0")
+        until(pg, "!!activeBattle||(talkBox.on&&!!talkBox.cur)", 5)
+    if not until(pg, f"!!activeBattle&&activeBattle.T&&activeBattle.T.id==='{foe}'", 20): raise Exception('the leader’s battle didn’t start')
+    pg.evaluate("stopTimers();activeBattle.over='win';endBattle();0")
+    if not until(pg, f"!activeBattle&&!!saveData.flags['{foe}']", 30): raise Exception('the win wasn’t kept')
+    shut = pg.evaluate(f"mapById(LOCATIONS[{n}+1].mapId).props.filter(p=>p.act==='arenagate').some(p=>propShown(p))")
+    if shut: raise Exception('the gate is still shut after the win')
+    return f"{A['name']}: the gate shut ({len(A['gates'])} pieces), the leader in the ring, “{said[:60]}”, the battle, won: the gate open"
+
+
 def run_rival(pg, base):
     """RL-S2: the run fixture's map holds a rival node (Blake, on streams of his own); the run knows the lead he
     counters; his foe stands on that place (person chad, his team as big as rules.json run.rival says for a first
@@ -1667,6 +1700,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
+    ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),

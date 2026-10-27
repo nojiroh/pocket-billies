@@ -18,6 +18,8 @@ import { $ } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle, worldExtra } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { runMarkDraw } from './logic/run-marks.js';
+import { runSpotBoxes } from './logic/run-map.js';
+import { mapgenExitPoint } from './logic/mapgen.js';
 import {
   BOWL_GROUND_EXTENT,
   BOWL_ISLAND_BASE,
@@ -145,6 +147,7 @@ expose({
   BOWL_REGION_SHADE: [() => BOWL_REGION_SHADE],
   BOWL_RIVER_FIELD: [() => BOWL_RIVER_FIELD],
   BOWL_ROUTE_FIELD: [() => BOWL_ROUTE_FIELD],
+  BOWL_RUN_FOG: [() => BOWL_RUN_FOG],
   BOWL_SEA_FAR: [() => BOWL_SEA_FAR],
   BOWL_SHADOW_GLSL: [() => BOWL_SHADOW_GLSL],
   BOWL_SHADOW_SIZE: [() => BOWL_SHADOW_SIZE],
@@ -172,6 +175,7 @@ expose({
   worldBowlDot: [() => worldBowlDot, v => (worldBowlDot = v)],
   worldBowlDrawSky: [() => worldBowlDrawSky, v => (worldBowlDrawSky = v)],
   worldBowlDropGpu: [() => worldBowlDropGpu, v => (worldBowlDropGpu = v)],
+  worldBowlExitAt: [() => worldBowlExitAt, v => (worldBowlExitAt = v)],
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
@@ -213,6 +217,7 @@ expose({
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
   worldBowlRunColors: [() => worldBowlRunColors, v => (worldBowlRunColors = v)],
+  worldBowlRunFog: [() => worldBowlRunFog, v => (worldBowlRunFog = v)],
   worldBowlRunMark: [() => worldBowlRunMark, v => (worldBowlRunMark = v)],
   worldBowlRunPin: [() => worldBowlRunPin, v => (worldBowlRunPin = v)],
   worldBowlShadowUniforms: [() => worldBowlShadowUniforms, v => (worldBowlShadowUniforms = v)],
@@ -313,6 +318,9 @@ export const worldBowl = {
   mapSettings: null,
   /** where each pin is on screen, last drawn: { i, base, top, z } */
   marks: [],
+  /** WM-4: the run map the fog's footprints were worked out for, and them (logic/run-map.js runSpotBoxes) */
+  fogFor: null,
+  fogBoxes: null,
 };
 
 /* the Inner Sun (owner chose A, 2026-10-19): off the centre, the light slanted from where it hangs (logic/bowl.js
@@ -2042,17 +2050,40 @@ function worldBowlThingsDraw(W, VP, F, shadowPass) {
   gl.bindVertexArray(null);
 }
 /* paths along the roads, a few squares wide (the places' own maps lie over their ends) */
+/* WM-4: where a place's exit meets its map's edge on the bowl ({x, y}, bowl radii), from its walk map's own exit (its
+   side and t, mapgen.js mapgenExitPoint at the edge itself) turned the way the map lies; null without its map or exit */
+function worldBowlExitAt(i, id) {
+  const s = worldBowl.spots[i],
+    M = id && worldBowlMapOf(i),
+    e = M && (M.edgeExits || []).find(q => q.id === id);
+  if (!s || !e || !M.w || !M.h) return null;
+  const { north, east } = bowlCompass(s.x, s.y, s.up),
+    [mx, mz] = mapgenExitPoint(M.w, M.h, { ...e, in: 0 }),
+    u = (mx - M.w / 2) / BOWL_METRES,
+    v = (mz - M.h / 2) / BOWL_METRES;
+  return { x: s.x + u * east[0] + v * north[0], y: s.y + u * east[1] + v * north[1] };
+}
 function worldBowlRoadsInto(T) {
   const N = BOWL_INDEX,
     S = worldBowl.spots,
     path = T.K.layer.p ?? T.K.layer.u;
   if (path == null) return;
-  for (const [a, b] of ROADS) {
-    const A = S[a],
+  for (const [a, b, , J] of ROADS) {
+    let A = S[a],
       B = S[b];
     if (!A || !B || A.under || B.under || A.off || B.off) continue;
+    /* WM-4: a run's road runs from one place's exit to the other's: its maps (stamped over it) carry it on to their
+       middles, so the ground between them shows the road the walk takes, not a line between the pins */
+    if (J && LOCATIONS[a].runNode != null && LOCATIONS[b].runNode != null) {
+      const ea = worldBowlExitAt(a, J.a),
+        eb = worldBowlExitAt(b, J.b);
+      if (ea && eb) {
+        A = ea;
+        B = eb;
+      }
+    }
     const len = Math.hypot(B.x - A.x, B.y - A.y) * (N / 2),
-      steps = Math.ceil(len * 2);
+      steps = Math.max(1, Math.ceil(len * 2));
     for (let k = 0; k <= steps; k++) {
       const f = k / steps,
         cx = ((A.x + (B.x - A.x) * f + 1) / 2) * N,
@@ -3440,6 +3471,8 @@ function worldBowlOverlay(t) {
   c.setTransform(d, 0, 0, d, 0, 0);
   c.lineJoin = c.lineCap = 'round';
   const at = s => bowlCamProject(v, bowlToGpu(s.x, s.y, s.h + 0.003));
+  /* WM-4: the run's places you haven't reached under fog, each its footprint's outline */
+  worldBowlRunFog(c, v);
   /* HB-1: on the floating island the place's pin stands at its hub (the town) and you where you stand, on its own
      ground (its spot is the map's middle, on the bowl's coarse grid) */
   const FI = worldBowlFloatIsland(),
@@ -3558,6 +3591,55 @@ function worldBowlOverlay(t) {
       );
     }
   }
+}
+/* WM-4 (the owner: unreached places as fogged outlines, the whole region from the landing): each run place not yet
+   walked (not on run.path, not where you stand) under a veil, its cells' outline dashed, following the ground. Its
+   footprint is its cells on the region grid (logic/run-map.js runSpotBoxes); a run from before WM-2 has none */
+const BOWL_RUN_FOG = { fill: 'rgba(226,232,242,.5)', edge: 'rgba(255,255,255,.75)', steps: 6 };
+function worldBowlRunFog(c, v) {
+  const run = saveData.run,
+    map = run && run.map;
+  if (!map) return;
+  if (worldBowl.fogFor !== map) {
+    worldBowl.fogFor = map;
+    worldBowl.fogBoxes = runSpotBoxes(map);
+  }
+  const B = worldBowl.fogBoxes;
+  if (!B) return;
+  const n = BOWL_RUN_FOG.steps;
+  c.save();
+  c.setLineDash([5, 5]);
+  c.lineWidth = 1.5;
+  LOCATIONS.forEach((l, i) => {
+    const k = l.runNode,
+      b = k != null ? B[k] : null,
+      s = worldBowl.spots[i];
+    if (!b || !s || s.off || i === saveData.trip.node || run.path.includes(k)) return;
+    /* the box's edge, n points a side, at the ground's height */
+    const pts = [];
+    for (const [x0, y0, x1, y1] of [
+      [-1, -1, 1, -1],
+      [1, -1, 1, 1],
+      [1, 1, -1, 1],
+      [-1, 1, -1, -1],
+    ])
+      for (let j = 0; j < n; j++) {
+        const f = j / n,
+          x = s.x + ((x0 + (x1 - x0) * f) * b.w) / 2,
+          y = s.y + ((y0 + (y1 - y0) * f) * b.h) / 2,
+          q = bowlCamProject(v, bowlToGpu(x, y, bowlSurface(x, y) + 0.003));
+        if (!q) return;
+        pts.push(q);
+      }
+    c.beginPath();
+    pts.forEach((q, j) => (j ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y)));
+    c.closePath();
+    c.fillStyle = BOWL_RUN_FOG.fill;
+    c.fill();
+    c.strokeStyle = BOWL_RUN_FOG.edge;
+    c.stroke();
+  });
+  c.restore();
 }
 /* a line along the roads between places, following the ground */
 function worldBowlLine(c, nodes, col, w, dash, off) {

@@ -100,9 +100,16 @@ test('the kinds read: a ridge stands up, a lake dips', () => {
   const seen = { ridge: 0, lake: 0 };
   for (const W of RUNS)
     for (const l of W.locations.slice(1)) {
-      const h = bowlRelief(W.F, ...W.at(l));
-      if (l.t === 'ridge') (seen.ridge++, assert.ok(h > 0.04, `a ridge at ${h}`));
-      if (l.t === 'lake') (seen.lake++, assert.ok(h < 0, `a lake at ${h}`));
+      const h = bowlRelief(W.F, ...W.at(l)),
+        [x, y] = W.at(l),
+        /* WM-4: against the land round it (a run's places a cell apart: their bumps and dips are smaller than the
+           broad roll they stand on) */
+        round = [0, 1, 2, 3, 4, 5, 6, 7].map(k =>
+          bowlRelief(W.F, x + 0.08 * Math.cos((k * Math.PI) / 4), y + 0.08 * Math.sin((k * Math.PI) / 4))
+        ),
+        mean = round.reduce((a, b) => a + b, 0) / round.length;
+      if (l.t === 'ridge') (seen.ridge++, assert.ok(h > mean + 0.01, `a ridge at ${h}, the land round it ${mean}`));
+      if (l.t === 'lake') (seen.lake++, assert.ok(h < mean - 0.005, `a lake at ${h}, the land round it ${mean}`));
     }
   assert.ok(seen.ridge && seen.lake, 'the runs need a ridge and a lake');
 });

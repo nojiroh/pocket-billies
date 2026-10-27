@@ -47,6 +47,7 @@ import { runSideAdd, runSideLinked, runSideMain } from './run-side.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL: [() => RUN_BOWL],
+  RUN_BOWL_GRID: [() => RUN_BOWL_GRID],
   RUN_EXIT_T: [() => RUN_EXIT_T],
   RUN_GRID: [() => RUN_GRID],
   // @ts-expect-error -- replaced on purpose
@@ -100,6 +101,12 @@ expose({
   runShapeSize: [() => runShapeSize, v => (runShapeSize = v)],
   // @ts-expect-error -- replaced on purpose
   runSpot: [() => runSpot, v => (runSpot = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotAt: [() => runSpotAt, v => (runSpotAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotBoxes: [() => runSpotBoxes, v => (runSpotBoxes = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotCells: [() => runSpotCells, v => (runSpotCells = v)],
   runWeather: [() => runWeather],
   runWorldNode: [() => runWorldNode],
 });
@@ -735,9 +742,71 @@ export function runExits(map, i) {
  * north and south of it, lane 0 the southern. Every place's map faces the bowl's north (up 90), so a run's places read
  * west to east on the map as they are walked. RL-R2: a side area's places `side` lanes north of the line */
 export const RUN_BOWL = { x: 0.72, step: 0.18, lane: 0.1, bend: 0.06, side: 2 };
-/** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out from its row and lane, never stored
+/** WM-4: a run's places on the bowl at their region-grid cells (RUN_GRID), at the walk's own scale (`metres` to a
+ * bowl radius, as world-bowl.js BOWL_METRES), so their maps lie side by side as the walk joins them; the region's
+ * cells centred on the bowl. A side area's places (no footprint of their own) take free cells from their obstacle's:
+ * the first north of it, then each east of the one before (else north, else south), a step further north while those
+ * are taken */
+export const RUN_BOWL_GRID = { metres: 1000 };
+/** each node's footprint on the region grid ({ at, size } in cells), a side area's places' worked out as
+ * RUN_BOWL_GRID says; null when the map's main places have none (a run from before WM-2)
+ * @param {RunMap} map @returns {{ at: [number, number], size: [number, number] }[] | null} */
+export function runSpotCells(map) {
+  const nodes = map.nodes;
+  if (!nodes.length || nodes.some(n => runSideMain(n) && !(n.at && n.size))) return null;
+  /** @type {({ at: [number, number], size: [number, number] } | null)[]} */
+  const cells = nodes.map(n =>
+      n.at && n.size
+        ? { at: /** @type {[number, number]} */ ([...n.at]), size: /** @type {[number, number]} */ ([...n.size]) }
+        : null
+    ),
+    taken = (/** @type {{ at: number[], size: number[] }} */ f) => cells.some(c => c && runGridOverlap(c, f)),
+    S = map.side;
+  if (S) {
+    let prev = cells[S.from] || cells[0];
+    S.nodes.forEach((i, k) => {
+      if (cells[i] || !prev) return;
+      const p = prev,
+        size = /** @type {[number, number]} */ ([...RUN_GRID.place]),
+        north = (/** @type {number} */ d) => ({
+          at: /** @type {[number, number]} */ ([p.at[0], p.at[1] + p.size[1] + d]),
+          size,
+        }),
+        east = { at: /** @type {[number, number]} */ ([p.at[0] + p.size[0], p.at[1]]), size },
+        south = { at: /** @type {[number, number]} */ ([p.at[0], p.at[1] - size[1]]), size },
+        tries = k ? [east, north(0), south] : [north(0), east, south];
+      let f = tries.find(t => !taken(t));
+      for (let d = 1; !f && d < 64; d++) if (!taken(north(d))) f = north(d);
+      cells[i] = f || null;
+      prev = cells[i];
+    });
+  }
+  return cells.every(Boolean) ? /** @type {{ at: [number, number], size: [number, number] }[]} */ (cells) : null;
+}
+/** WM-4: a node's place on the bowl from the region grid: its middle and its size (bowl radii, x east, y north), the
+ * region's cells centred on the bowl; null for a map without footprints @param {RunMap} map
+ * @returns {{ x: number, y: number, w: number, h: number }[] | null} */
+export function runSpotBoxes(map) {
+  const cells = runSpotCells(map);
+  if (!cells) return null;
+  const c = RUN_GRID.cell / RUN_BOWL_GRID.metres,
+    x0 = Math.min(...cells.map(f => f.at[0])),
+    x1 = Math.max(...cells.map(f => f.at[0] + f.size[0])),
+    y0 = Math.min(...cells.map(f => f.at[1])),
+    y1 = Math.max(...cells.map(f => f.at[1] + f.size[1]));
+  return cells.map(f => ({
+    x: (f.at[0] + f.size[0] / 2 - (x0 + x1) / 2) * c,
+    y: (f.at[1] + f.size[1] / 2 - (y0 + y1) / 2) * c,
+    w: f.size[0] * c,
+    h: f.size[1] * c,
+  }));
+}
+/** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out, never stored: WM-4, from the region
+ * grid (runSpotBoxes); a run from before WM-2, from its row and lane (RUN_BOWL)
  * @param {RunMap} map @param {number} i @returns {{ a: number, r: number, up: number }} */
 export function runSpot(map, i) {
+  const B = runSpotBoxes(map);
+  if (B) return runSpotAt(B[i].x, B[i].y);
   const node = map.nodes[i],
     main = map.nodes.filter(runSideMain),
     rows = 1 + Math.max(...main.map(n => n.row)),
@@ -757,6 +826,10 @@ export function runSpot(map, i) {
     x = (node.row - (rows - 1) / 2) * step;
     y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + (node.lane - (width - 1) / 2) * RUN_BOWL.lane;
   }
+  return runSpotAt(x, y);
+}
+/** a spot on the bowl at x east and y north (bowl radii), facing the bowl's north @param {number} x @param {number} y */
+export function runSpotAt(x, y) {
   const a = (Math.atan2(y, x) * 180) / Math.PI;
   return { a: Math.round((a < 0 ? a + 360 : a) * 1e9) / 1e9, r: Math.hypot(x, y), up: 90 };
 }

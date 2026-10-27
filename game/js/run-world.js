@@ -17,6 +17,7 @@
 import { expose } from './test-globals.js';
 import { TEST_RUN, provide, toast } from './hooks.js';
 import {
+  ARENAS,
   EVENTS,
   LOCATIONS,
   LOCATION_BY_ID,
@@ -312,7 +313,7 @@ function runWorldPutRun(run, scenes, data) {
       rngFrom
     ),
     /* RL-12b: the route trainers who walk up on sight (logic/route-trainers.js); RT-2: on their places' spots */
-    route = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run });
+    route = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run, arenas: ARENAS });
   routeTrainersPlace(run, route, scenes, EVENTS.classes);
   /* RS-2: the run's resident in their town or towns (logic/run-quests.js residentPlan), once the boards and the route
      trainers are known */

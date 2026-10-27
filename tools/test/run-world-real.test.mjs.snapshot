@@ -171,6 +171,26 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lanes",
     "pieces": 2,
+    "arena": {
+      "mode": "leader",
+      "r": 8,
+      "rise": 0.6,
+      "back": 28,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ],
+      "on": [
+        1,
+        3
+      ]
+    },
     "kind": "route",
     "biome": "thicket",
     "w": 128,
@@ -500,6 +520,26 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "forest",
     "pieces": 2,
+    "arena": {
+      "mode": "leader",
+      "r": 8,
+      "rise": 0.6,
+      "back": 28,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ],
+      "on": [
+        1,
+        3
+      ]
+    },
     "kind": "route",
     "biome": "thicket",
     "w": 128,
@@ -670,6 +710,22 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lakeside",
     "pieces": 4,
+    "arena": {
+      "mode": "boss",
+      "r": 11,
+      "rise": 0.8,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ],
+      "on": []
+    },
     "kind": "route",
     "biome": "lake",
     "w": 128,

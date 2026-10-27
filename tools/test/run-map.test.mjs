@@ -29,6 +29,8 @@ import {
   runReveal,
   runShapeSize,
   runSpot,
+  runSpotBoxes,
+  runSpotCells,
   runWeather,
   runWorldNode,
 } from '../../game/js/logic/run-map.js';
@@ -256,10 +258,15 @@ test('exits: one link in the middle of a side, two 10 m and 54 m along its 64 m;
   assert.throws(() => runExits(tooMany, 0), /more than two/);
 });
 
-test('on the bowl (RL-8b, WM-1): rows from the west to the east across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
+/** a map as a run from before WM-2 has it: no footprints */
+const unGridded = map => {
+  for (const n of map.nodes) (delete n.at, delete n.size);
+  return map;
+};
+test('a run from before WM-2 on the bowl (RL-8b, WM-1): rows from the west to the east across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
   for (let rows = 6; rows <= 12; rows++)
     for (const s of seeds(60)) {
-      const map = runMapMake(s, NODE_TYPES, rulesFor(rows)),
+      const map = unGridded(runMapMake(s, NODE_TYPES, rulesFor(rows))),
         N = map.nodes,
         P = N.map((_, i) => xy(map, i));
       N.forEach((n, i) => {
@@ -301,6 +308,91 @@ test('on the bowl (RL-8b, WM-1): rows from the west to the east across the bowl,
         }
       });
     }
+});
+
+test("WM-4: on the bowl at the region grid: every place at its cells, to the walk's scale, the region centred, linked places touching", () => {
+  for (let rows = 6; rows <= 12; rows++)
+    for (const s of seeds(60)) {
+      const map = runMapMake(s, NODE_TYPES, rulesFor(rows)),
+        N = map.nodes,
+        B = runSpotBoxes(map),
+        P = N.map((_, i) => xy(map, i)),
+        eps = 1e-9;
+      assert.ok(B, `${s}: a gridded map has boxes`);
+      N.forEach((n, i) => {
+        const b = B[i];
+        assert.equal(runSpot(map, i).up, 90, "a run's maps face the bowl's north");
+        assert.ok(
+          Math.abs(P[i][0] - b.x) < 1e-6 && Math.abs(P[i][1] - b.y) < 1e-6,
+          `${s}: ${i}'s spot is its box's middle`
+        );
+        assert.ok(Math.abs(b.w - n.size[0] * 0.064) < eps && Math.abs(b.h - n.size[1] * 0.064) < eps, '64 m cells');
+        for (const [cx, cy] of [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ])
+          assert.ok(Math.hypot(b.x + (cx * b.w) / 2, b.y + (cy * b.h) / 2) < 0.8, `${s}: ${i} inside the bowl`);
+      });
+      /* the region's cells centred on the bowl */
+      const x0 = Math.min(...B.map(b => b.x - b.w / 2)),
+        x1 = Math.max(...B.map(b => b.x + b.w / 2)),
+        y0 = Math.min(...B.map(b => b.y - b.h / 2)),
+        y1 = Math.max(...B.map(b => b.y + b.h / 2));
+      assert.ok(Math.abs(x0 + x1) < 1e-6 && Math.abs(y0 + y1) < 1e-6, `${s}: the region centred`);
+      const landing = N.findIndex(n => n.row === 0),
+        boss = N.findIndex(n => n.type === 'boss');
+      assert.ok(B[landing].x < 0 && B[boss].x > 0, `${s}: the landing in the west, the boss in the east`);
+      /* no two places' boxes overlap; linked ones share an edge */
+      for (let i = 0; i < B.length; i++)
+        for (let j = i + 1; j < B.length; j++) {
+          const dx = Math.abs(B[i].x - B[j].x) - (B[i].w + B[j].w) / 2,
+            dy = Math.abs(B[i].y - B[j].y) - (B[i].h + B[j].h) / 2;
+          assert.ok(dx > -eps || dy > -eps, `${s}: ${i} and ${j} overlap`);
+        }
+      for (const [a, b] of links(map)) {
+        const dx = Math.abs(B[a].x - B[b].x) - (B[a].w + B[b].w) / 2,
+          dy = Math.abs(B[a].y - B[b].y) - (B[a].h + B[b].h) / 2;
+        assert.ok(
+          (Math.abs(dx) < eps && dy < -eps) || (Math.abs(dy) < eps && dx < -eps),
+          `${s}: ${a}->${b} touch along an edge`
+        );
+      }
+    }
+});
+
+test("WM-4: a side area's places on free cells from their obstacle's, a chain of touching footprints", () => {
+  const map = runMapMake('WM4SIDE', NODE_TYPES, rulesFor(9)),
+    from = map.nodes.findIndex(n => n.row === 3),
+    first = map.nodes.length;
+  for (let k = 0; k < 3; k++)
+    map.nodes.push({ type: 'route', row: 4, lane: 0, to: k < 2 ? [first + k + 1] : [], seen: 0, side: 1 });
+  map.side = {
+    kind: 'detour',
+    move: 'x',
+    name: 'x',
+    from,
+    to: map.nodes[from].to[0],
+    nodes: [first, first + 1, first + 2],
+  };
+  const C = runSpotCells(map);
+  assert.ok(C, 'cells for every place');
+  for (let i = 0; i < C.length; i++)
+    for (let j = i + 1; j < C.length; j++) assert.ok(!overlaps(C[i], C[j]), `${i} and ${j} overlap`);
+  const chain = [from, first, first + 1, first + 2];
+  for (let k = 1; k < chain.length; k++)
+    assert.ok(runGridSide(C[chain[k - 1]], C[chain[k]]), `${chain[k - 1]} and ${chain[k]} touch`);
+  assert.deepEqual(C[first].size, [2, 1]);
+  const north = { at: [C[from].at[0], C[from].at[1] + C[from].size[1]], size: [2, 1] };
+  if (!C.slice(0, first).some(c => overlaps(c, north)))
+    assert.deepEqual(C[first], north, 'the first north of its obstacle when free');
+  assert.equal(map.nodes[first].at, undefined, 'worked out, never stored');
+  /* a run from before WM-2: no cells, no boxes; its spots from rows and lanes */
+  unGridded(map);
+  assert.equal(runSpotCells(map), null);
+  assert.equal(runSpotBoxes(map), null);
+  assert.ok(runSpot(map, 0).r > 0.3, 'the landing near the rim, as before');
 });
 
 test("the world's numbering: Copperleaf first, map node i is world node i + 1", () => {
