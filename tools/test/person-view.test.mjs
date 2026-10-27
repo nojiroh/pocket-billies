@@ -1,7 +1,14 @@
 // Characters track CH-1: how a person is seen (game/js/logic/person-view.js)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { copiedAnchor, facingWord } from '../../game/js/logic/person-view.js';
+import {
+  WORD_HEADING,
+  copiedAnchor,
+  faceToward,
+  faceWay,
+  faceWord,
+  facingWord,
+} from '../../game/js/logic/person-view.js';
 
 /* the walk view's rule as it was written in walk-view.js directionOf before CH-1 */
 const oldDirectionOf = (mx, mz) =>
@@ -16,6 +23,35 @@ test('person view: facingWord is the walk view’s old rule, everywhere', () => 
   assert.equal(facingWord(1.11, 1), 'sideR');
   assert.equal(facingWord(-1.11, -1), 'side');
   assert.equal(facingWord(0, 0), 'down');
+});
+
+test('person view: faceToward gives the walk view’s word and keeps the heading', () => {
+  const o = {};
+  assert.equal(faceToward(o, 3, 0.5), 'sideR');
+  assert.deepEqual(o, { dir: 'sideR', head: Math.atan2(3, 0.5), headDir: 'sideR' });
+  for (let i = 0; i < 360; i++) {
+    const a = (i * Math.PI) / 180,
+      mx = Math.sin(a) * 2.5,
+      mz = Math.cos(a) * 2.5;
+    assert.equal(faceToward(o, mx, mz), oldDirectionOf(mx, mz), `${i} degrees`);
+    assert.ok(Math.abs(o.head - Math.atan2(mx, mz)) < 1e-12);
+  }
+  /* standing on the spot faces down, as directionOf(0, 0) does, with down's heading */
+  assert.equal(faceToward(o, 0, 0), 'down');
+  assert.equal(o.head, Math.PI);
+});
+
+test('person view: faceWay is a world word with its heading; faceWord a plain word with none', () => {
+  const o = {};
+  for (const w of ['up', 'sideR', 'down', 'side']) {
+    assert.equal(faceWay(o, w), w);
+    assert.deepEqual(o, { dir: w, head: WORD_HEADING[w], headDir: w });
+    /* a word's heading turns back into the word */
+    assert.equal(facingWord(Math.sin(o.head), Math.cos(o.head)), w);
+  }
+  faceToward(o, 1, 1);
+  assert.equal(faceWord(o, 'down'), 'down');
+  assert.deepEqual(o, { dir: 'down', head: null, headDir: null });
 });
 
 /* a person's walk frame as person-art.js personFrame tags it: 64 px wide, feet at (30, 112), 66.5 px a metre */

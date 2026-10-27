@@ -8,12 +8,12 @@
 import { expose } from '../test-globals.js';
 import { landing, landingFrame, openingFall, provide } from '../hooks.js';
 import { $, clamp } from '../util.js';
-import { copiedAnchor } from '../logic/person-view.js';
+import { copiedAnchor, faceToward } from '../logic/person-view.js';
 import { reducedMotion } from '../game-state.js';
 import { makeCanvas } from '../art.js';
 import { personBattlePose, personWalkFrames } from '../person-art.js';
 import { particleSprite } from '../battle-stage.js';
-import { directionOf, stopWalkView, walkData, walkView } from '../walk-view.js';
+import { stopWalkView, walkData, walkView } from '../walk-view.js';
 import { walkRenderer } from '../walk/walk-state.js';
 import { personItem } from '../walk/frame-items.js';
 import { talkBox, talkHide, talkLine } from '../talk.js';
@@ -134,7 +134,7 @@ export function cutsceneActor(id, who, at, dir, dark = false) {
 export function cutsceneWalk(id, to, ms) {
   const a = cutscene.actors[id];
   a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: cutsceneNow(), dur: ms };
-  a.dir = directionOf(to[0] - a.x, to[1] - a.z);
+  faceToward(a, to[0] - a.x, to[1] - a.z);
   return cutsceneWait(ms);
 }
 export function cutsceneAct(id, act, ms) {

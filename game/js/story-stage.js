@@ -20,6 +20,7 @@ import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { BANTER, LOCATIONS, PEOPLE, RELATIONS, RESIDENTS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
+import { faceWord } from './logic/person-view.js';
 import { relFavoursPay } from './logic/relations.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { conditionHolds, conditionTree, storyStateOf } from './logic/conditions.js';
@@ -316,9 +317,9 @@ const storyGameStage = {
     if (!storySceneOn() || !A) return;
     const toMe = storyScene.side > 0 ? 'side' : 'sideR';
     if (dir === 'me') {
-      A.dir = toMe;
-      if (cutscene.actors.me) cutscene.actors.me.dir = toMe === 'side' ? 'sideR' : 'side';
-    } else A.dir = dir;
+      faceWord(A, toMe);
+      if (cutscene.actors.me) faceWord(cutscene.actors.me, toMe === 'side' ? 'sideR' : 'side');
+    } else faceWord(A, dir);
   },
   fade: ([dir]) => {
     const f = $('#csFade');
