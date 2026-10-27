@@ -216,7 +216,7 @@ town node needs it.
   check) done 2026-10-27 on `ccr-3df446bb-9jvdvq`; LD-1 (the debug log's picture on export, picture facts baked at
   build time, canvases read back kept in memory) done 2026-10-27 on the same branch; LD-2 (shaders started together, read once, finished behind
   the loader) done 2026-10-27; LD-3 (the island in a worker, pictures per place, the bundle minified, the
-  precache) done 2026-10-27; LD-4 (the run's scenes in a worker from the pick) next, then LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
+  precache) done 2026-10-27; LD-4 (the run's places on a helper thread from the pick) done 2026-10-27; next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
   `ld-N-done`. Branch `track/load`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done

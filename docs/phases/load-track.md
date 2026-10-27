@@ -179,6 +179,16 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   before the train reaches the tear; the results posted back as transferable arrays where they are big.
   `runWorldPutRun` split into steps under the frame budget. The carriage screen stays up only until the landing is
   ready.
+  **Done 2026-10-27** on `ccr-3df446bb-9jvdvq`: game/js/run-worker.js (a module worker: reads data/gamedata.js,
+  loads run-worker-modules.js = game-data.js, the water generator, logic/run-scenes.js and logic/run-world-data.js;
+  makes the places with `runScenesSlices`, posts progress, then each place in its own message); `runWorldData` moved to
+  logic/run-world-data.js; run-world.js `runWorldAhead` / `runWorldAheadStart`, started by `runTakeOff` at the pick
+  and used by `runWorldMake` (a reload mid-run starts it there); the page makes the places as before when the thread
+  is off (a test run, the Studio's live edits, a failure, nothing in 20 s). The built site bundles the worker's
+  modules (vite.config.js). check-fast "The run's places from the helper thread" keeps them JSON-equal to the page's.
+  Headless take-off: the places were ready before the white-out (the places stage 9 ms, the swap 7 ms), so
+  `runWorldPutRun` needs no splitting. The longest stage of a take-off is now the world map's prewarm ("bowl", about
+  7 s in software): LD-5.
 - **LD-5 moving between places** (seams, rooms, battles, the Map tab). One frame budget shared by every job queue (the
   ground, models, people, solid props, buildings, uploads), so their sum stays under the 33 ms. Model meshes
   (voxelise, greedy mesh) in a worker, the buffers transferred. The next place's pictures, programs and meshes warmed

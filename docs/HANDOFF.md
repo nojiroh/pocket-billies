@@ -2,6 +2,26 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-4 - the run's places on a helper thread, from the pick - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- New game/js/run-worker.js and run-worker-modules.js (on no page; the build bundles the modules). The worker fetches
+  data/gamedata.js itself (no cost on the page), loads the logic and makes a run's places; the page gets progress and
+  then each place as a message of its own.
+- Moved: `runWorldData` to game/js/logic/run-world-data.js (a move commit; the imports regenerated).
+- run-world.js: `runWorldAhead` (the thread, its job, `off` with why), `runWorldAheadStart` (run.js `runTakeOff` calls
+  it right after the run is made, while the train leaves), `runWorldMake` takes the thread's places or makes them as
+  before. `runWorld.how` ('helper' or 'page'); the debug log's run state has `madeOn` and `helperOff`. Off in a test
+  run and once the Studio's edits are showing (boot.js `studioLive`), since the thread reads the site's data.
+- ui-lint leaves the two worker files out (on no page, nothing drawn).
+- New check: check-fast "The run's places from the helper thread: made there at boot, equal to the page's (LD-4)".
+- Measured headless: a reload mid-run made 12 places on the thread (wall 1.5 s with the page free); a take-off from the
+  hub had them ready before the white-out (places stage 9 ms, swap 7 ms).
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
+  `--only=world,helper,train,packing,blake,perks,encounters,quest` 11 of 11, SMOKE4.
+- Risky: a phone without module workers (Safari before 15) makes the places on the page as before; a Studio session
+  that changes run data without live edits showing (none known) would differ from the page.
+- Next: LD-5 (moving between places: the world map's prewarm in a worker first). Tag `ld-4-done` for the owner.
+
 ### Load track LD-3 - booting: the island off the main thread, pictures per place, a smaller bundle, the precache - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes.
 - boot.js: the loader's island is drawn by a worker on an OffscreenCanvas (`loaderIslandWorker`, the same drawing
