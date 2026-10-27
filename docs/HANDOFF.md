@@ -2,6 +2,63 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-6 (UI-6a written up, UI-6b) - Old layers gone: lint down, the blur budget, accessibility - 2026-10-26
+Branch `ccr-30c007a6-eol40p` (the owner's answer: work here, so it rides PR #230 with UI-8; `track/ui` doesn't exist).
+Main merged in first (#219, #224, #225, #226; HANDOFF and CHANGELOG entries placed on both sides kept once), then the
+branch's own new commits (another session's main merge, Bingebat's cry). Plan approved in Plan Mode with my
+recommendations: swaps that change nothing on screen only, blur frozen per screen at today's count, accessibility fixed
+now, main merged first.
+- **Found first: half of UI-6 was done.** UI-6a (2026-10-22, branch `ccr-1099b25a-7iznp7`, PR #112 and #113, merged)
+  deleted style, polish, screens, v05 and battle.css (screen rules to their files, legacy parts to a file each, the
+  rest to base.css and parts.css) and put the ui-lint ratchet in `npm run lint`, but left no HANDOFF entry, row or
+  ROADMAP note. Written up in ui-track.md ("UI-6a found"); this session is UI-6b. No other UI-6 work on any branch.
+- **Changed (one cause per commit):**
+  - Raw values equal to a token now read it, the same computed values with uiTheme.json's defaults: spacing 369
+    (4/8/12/16/24/32/48 px -> `--s1..s7`), radii 43 (12/16/22 px -> `--r-sm/md/lg`, 999px -> `--r-pill`), times 14
+    (140/240/420 ms -> `--m-fast/base/slow`). The Studio's Space and Motion dials now reach them.
+  - ui-lint: an `@font-face` block's family is its definition, not a raw font (8 in base.css; unit test).
+  - check-quick: smoke's phone flow fails above 3 blurred surfaces a screen, or above `BLUR_CEILING` (map 10, shop
+    5) for the two screens over it today.
+  - Tap targets to the game's 40 px: the Field Guide entry's arrows (28 px wide), Settings Help's sections (32 px),
+    the dressing room's toggles, the title's links; the settings switches keep their look and get the icons'
+    invisible 7 px margin. The tap step also opens a Guide entry, Settings Display and Help, and counts `<summary>`.
+  - Contrast: the Field Guide's tabs got the panel's surface behind them (they sat on the bare scene: 2.2:1 light,
+    1.4:1 dark); a chosen segment's background is the surface, not v05's white (dark mode: white on white, 1.03:1).
+  - The dressing room's custom colour picker has a name ("Any colour").
+  - tools/style-diff.py: the four sheet views had failed since UI-8 (they tapped a Billie card Walk no longer has);
+    both pages wait for the place's fade-in.
+  - Docs: ui-track.md (UI-6a and UI-6b rows and "found" notes, a proposed UI-9), ROADMAP (UI-6 and phase 06 done),
+    TESTING (the enforced lint, blur and tap steps), CHANGELOG.
+- **ui-lint (start -> end):** radius 146 -> 103, space 995 -> 626, times 269 -> 255, fonts 18 -> 10, CSS colours
+  669 -> 667; shadows 178, keyframes 77, !important 194, layers 60, blur rules 29, JS colours 591, innerHTML 55,
+  style= 41 unchanged. Not "near zero": what is left is mostly off the scale (spacing 6 px x146, 10 px x123, 3 px
+  x67...), and snapping it moves things 1-2 px: UI-9 with a phone check.
+- **Where the plan was wrong:** the row's "lint at or near zero" and "no visible change" can't both hold (above). The
+  Studio's contrast overlay misreads the kit's clipped pseudo-element fills (white on dark called 1.9:1), and a
+  pixel reading over glass and a moving scene is muddled too: findings were judged on pictures, and only the two
+  confirmed failures were fixed. The game's tap rule is 40 px, the Studio overlay's 44 px (see "Ask").
+- **Verified:** the fast tier at every commit (lint with the ratchet, typecheck, 1314 unit tests, modules, format,
+  data); smoke before every game commit (6 of 6; blur walk 3, map 10, team 2, guide 3, profile 2, shop 5, battle 3);
+  the blur check seen failing on a planted ceiling (map 9) and the tap step on the old CSS (dex 28x40, SUMMARY
+  310x32); style-diff after the swaps against the commit before them: 29 of 36 the same, the other 7 by timing only
+  (map's fade layer, the title's live class, the battle canvases' size), the same kinds an unchanged tree showed; the
+  UI gallery: the same 38 pictures differ from the committed baseline before and after this session's changes, with
+  the same shares (UI-8's bar and this container), so the baseline was not remade; pictures of the fixed tabs in light
+  and dark. Full quick check: 32 of 40. Known reds
+  (earlier entries): Terraces ( floats, HB-7), RL-8 (never landed), room light; Time and weather, Animals,
+  RT-4a and Sound effects pass alone (one browser). "Running" (the joystick, walked 2.23 m) fails the same way on
+  b7da6013, the commit before this session's changes: not this session's, for whoever owns walking.
+- **Risky:** the swaps tie hundreds of values to the Space and Motion dials: a dial moved in the Studio now moves them
+  too (as intended, but more than before). The settings switch's tap margin reaches 7 px past it. The chosen segment
+  in dark is a dark chip with its edge line, quieter than light's white chip.
+- **Ask me (owner):** 40 px (the game's 06-4 rule, the quick check) or 44 px (WCAG 2.5.5, the Studio overlay) for tap
+  targets; 44 would grow every `.pb.small`, segment and tab. And whether UI-9 (proposed in ui-track.md) is next.
+- **Phone check wanted:** the Field Guide's tabs and a dex entry's arrows, light and dark; Settings' Display switches
+  and Help sections; the dressing room's toggles.
+- **Tags to push (sessions can't):** `ui-6-done` and `phase-06-done` on this entry's commit.
+- **Next:** UI-9 (off-scale values snapped per screen, parts.css into the kit and deleted, its 48 !important), in a
+  new session, as the owner asked.
+
 ### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
 Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
 question round and a clickable mockup (docs/phases/ui-track.md, UI-8). Then the owner asked, mid-session: "merge all

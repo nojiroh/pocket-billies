@@ -117,7 +117,8 @@ town node needs it.
   shapes, done whole, not split) done 2026-10-21; UI-3 split by the owner: UI-3a (the Studio's UI section, core) done
   2026-10-21; UI-3b (its tools) and UI-4 (the run parts, beside it at the owner's word) done 2026-10-21; UI-5 (every screen
   onto the kit, one session at the owner's word, the bottom bar swapped) done 2026-10-22; UI-6a (old layers gone, the lint
-  ratchet) done 2026-10-22 (PR #112, written up 2026-10-26); UI-6b (lint down, blur budget, accessibility) next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
+  ratchet) done 2026-10-22 (PR #112, written up 2026-10-26); UI-6b (lint down, blur budget, accessibility) done 2026-10-26: UI-6 and phase 06 end
+  (tags `ui-6-done`, `phase-06-done`); UI-9 (off-scale values snapped, parts.css into the kit) proposed next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
   (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) done 2026-10-23. UI-8 (the bottom bar with the minimap, the owner's brief 2026-10-26) built 2026-10-26; the owner's phone check next.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
@@ -210,7 +211,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 03 | 03-fresh-base-and-scope-reset | done; no picture baseline yet | keep |
 | 04 | 04-modernize-codebase | done (04a-04e) | keep |
 | 05 | 05-internal-renaming | done | keep |
-| 06 | 06-ui-structure | mostly done (06-1..06-4); ui.js not split, old CSS layers not emptied | absorbed: UI-5 and UI-6 (docs/phases/ui-track.md); `phase-06-done` when UI-6 ends |
+| 06 | 06-ui-structure | done (06-1..06-4, then UI-5 and UI-6, 2026-10-26) | `phase-06-done` with `ui-6-done`; what is left (off-scale values, parts.css) is UI-9 |
 | 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
 | 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
 | 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone; every tree of the run biomes a model (batch 10) | parked: the other towns are legacy; run biomes reuse the done kits (left: the rooms' furniture, the barn, the mossy boulder, campfire, lookout tower, wind-sail flower) |

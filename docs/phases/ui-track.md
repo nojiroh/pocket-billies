@@ -121,6 +121,20 @@ screens, reduced motion; 98 rules) and parts.css (the old shared parts not on th
 two branches each under a ceiling can merge over it (it happened twice on 2026-10-22: lower the value or set the
 ceiling to main's count). The blur budget and the accessibility pass were not done.
 
+UI-6b found (read at 1bf2f45, 2026-10-26): 380 of the 995 raw spacing values, 43 radii and 14 times already equalled a
+token, so they became it with no change on screen (style-diff 29 of 36 the same, the other 7 differing only by timing:
+the map's fade layer, the title's live class, the battle canvases' size); the lint counted @font-face's family names
+as raw fonts (8). The style diff's four sheet views had failed since UI-8 (they tapped a Billie card the Walk screen
+no longer has) and it compared some screens before the place had faded in. Blur, measured by smoke's phone flow: walk
+3, map 10, team 2, guide 3, profile 2, shop 5, battle 3; on the 36 style-diff screens up to 14 (heal pick, bag 12): the
+count includes the screen under a sheet. The game's tap rule is 40 px (06-4, the quick check), the Studio's overlay 44
+px; small icons carry an invisible 7 px margin (menus.css), so most of the overlay's marks pass the game's rule. Its
+contrast overlay misreads the kit's clipped pseudo-element fills (white text on dark called 1.9:1); a pixel-based
+reading is closer but still muddled by glass over the moving scene and by entrances: findings were judged on pictures.
+Real ones fixed: the Guide's quiet tabs sat on the bare scene (v05's 7 % tint as the track: 2.2:1 light, 1.4:1 dark),
+and every active segment was v05's white under dark mode's light text (1.03:1). The kit's square-corner !important
+still has work: v05's !important corners moved to parts.css in UI-6a.
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 `--t-*` colours are the pre-roguelite game's (UI-5 swapped the bar itself).
@@ -198,7 +212,8 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 (done 2026-10-22) | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
 | UI-6a (done 2026-10-22, PR #112; written up 2026-10-26) | Old layers gone | style, polish, screens, v05 and battle.css deleted: screen rules to their screen files, legacy parts to a file each, the rest to base.css and parts.css; style-diff views for the legacy parts; the ui-lint ratchet in `npm run lint` | none | style-diff 37 of 37 the same; lint fails when a raw count rises |
-| UI-6b | Lint down, blur and accessibility | raw values that equal a token become the token (no change on screen); the blur budget enforced per screen; the accessibility pass (tap targets, contrast, focus, labels); then `phase-06-done` and `ui-6-done` | the accessibility fixes | ui-lint ceilings lowered; full quick check green apart from known reds |
+| UI-6b (done 2026-10-26) | Lint down, blur and accessibility | raw values that equal a token became the token (no change on screen); the blur budget enforced per screen; the accessibility pass (tap targets, contrast, names); then `phase-06-done` and `ui-6-done` | the Guide's tabs, five controls up to 40 px | ui-lint ceilings lowered; smoke and the tap-target step green, each seen failing on a planted fault |
+| UI-9 (proposed) | Off the scale, parts into the kit | the off-scale values (spacing 6/10/3/2/14 px..., radii 10/6/8 px...) snapped to the scale one screen per commit; parts.css's shared parts (.pb, .pbar, .seg, .sheet, .chip, .sec-h...) into the kit and parts.css deleted (Ask me before, as above), its 48 `!important` with it; the 40 vs 44 px tap rule decided | 1-2 px per screen | ui-lint near zero for space and radius; phone check by the owner |
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
 | UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
 | UI-7c (done 2026-10-23) | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
