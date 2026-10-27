@@ -1270,9 +1270,10 @@ html[data-contrast='high'] .px {
   border-radius: 10px !important;
   box-shadow: 0 3px 8px -4px rgba(46, 33, 64, 0.45) !important;
 }
+/* UI-9a: its one declaration was v05's width: 0 !important, and a keyframe ignores an !important declaration, so the
+   Billie sheet's stat bars (billie-sheet.css .ms-bar b) never grew in: emptied, so nothing changes */
 @keyframes v05Grow {
   from {
-    width: 0 !important;
   }
 }
 .seg {
