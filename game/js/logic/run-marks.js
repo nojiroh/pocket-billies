@@ -180,13 +180,17 @@ export function runMarkLook(type, state = 'seen') {
 /** UI-8c: a place's icon size on the map in CSS px (18 and 22 before; the owner's phone check may move them) */
 export const RUN_MARK_SIZES = { seen: 28, current: 34 };
 /** UI-8c: the icons' grid, how far the gold rim reaches past it (two art pixels), its colours (the set's golds), how
- * much a done place fades */
+ * much a done place fades, and the ground rings' colours */
 export const RUN_MARK_ART = {
   grid: 36,
   rim: 2,
   rimFill: [255, 224, 138],
   rimEdge: [176, 122, 30],
   dim: 0.62,
+  /* the bowl's ground rings in the same style (world-bowl.js): where you stand gold on a darker gold, the place picked
+     cream on the ink */
+  ringEdge: [138, 90, 18],
+  pick: [255, 248, 230],
 };
 /** UI-8c: a locked place's grey for one colour (light kept, a touch of blue) @param {number} r @param {number} g
  * @param {number} b @returns {[number, number, number]} */

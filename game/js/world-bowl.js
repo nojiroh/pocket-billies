@@ -181,6 +181,8 @@ expose({
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
+  worldBowlFlag: [() => worldBowlFlag, v => (worldBowlFlag = v)],
+  worldBowlFlagImage: [() => worldBowlFlagImage, v => (worldBowlFlagImage = v)],
   worldBowlFloatCam: [() => worldBowlFloatCam, v => (worldBowlFloatCam = v)],
   worldBowlFloatFrame: [() => worldBowlFloatFrame, v => (worldBowlFloatFrame = v)],
   worldBowlFloatGpu: [() => worldBowlFloatGpu, v => (worldBowlFloatGpu = v)],
@@ -216,6 +218,7 @@ expose({
   worldBowlReady: [() => worldBowlReady, v => (worldBowlReady = v)],
   worldBowlRender: [() => worldBowlRender, v => setWorldBowlRender(v)],
   worldBowlReset: [() => worldBowlReset, v => (worldBowlReset = v)],
+  worldBowlRing: [() => worldBowlRing, v => (worldBowlRing = v)],
   worldBowlRiversInto: [() => worldBowlRiversInto, v => (worldBowlRiversInto = v)],
   worldBowlRoadsInto: [() => worldBowlRoadsInto, v => (worldBowlRoadsInto = v)],
   worldBowlRunArt: [() => worldBowlRunArt, v => (worldBowlRunArt = v)],
@@ -3536,24 +3539,25 @@ function worldBowlOverlay(t) {
       locked = !rm && !canEnter(i),
       fresh = !rm && !saveData.visited[i] && !locked;
     const ring = here && floatMe && i === FI.i ? at(floatMe) : here ? base : null;
+    /* UI-8c: the ground rings as the icon set draws an edge: a dark rim of their own hue under the colour */
     if (ring) {
       const k = 1 + 0.15 * Math.sin(t / 300);
-      c.strokeStyle = 'rgba(255,226,122,.95)';
-      c.lineWidth = 2.5;
-      c.beginPath();
-      c.ellipse(ring.x, ring.y, 16 * k, 6 * k, 0, 0, 7);
-      c.stroke();
+      worldBowlRing(
+        c,
+        ring.x,
+        ring.y,
+        16 * k,
+        6 * k,
+        `rgb(${RUN_MARK_ART.rimFill})`,
+        `rgb(${RUN_MARK_ART.ringEdge})`,
+        2.5
+      );
     }
-    if (i === sel) {
-      c.strokeStyle = '#fff';
-      c.lineWidth = 2;
-      c.beginPath();
-      c.ellipse(base.x, base.y, 20, 7.5, 0, 0, 7);
-      c.stroke();
-    }
+    if (i === sel)
+      worldBowlRing(c, base.x, base.y, 20, 7.5, `rgb(${RUN_MARK_ART.pick})`, `rgb(${RUN_MARK_ART.ringEdge})`, 2);
     if (locked) worldBowlLock(c, top.x, top.y - 12);
     else if (fresh) worldBowlDot(c, top.x + 9, top.y - 6, 4, '#ff9ec4');
-    if (i === dest && !here) worldBowlDot(c, top.x, top.y - 12, 5, '#FFE27A');
+    if (i === dest && !here) worldBowlFlag(c, top.x, top.y - 12, !!rm);
     /* a run's '?' place keeps its name to itself */
     if ((!rm || rm.seen > 1) && (l.town || i === sel || here || close)) {
       const y = (s.under ? top.y + 10 : top.y - 12) + (locked ? -12 : 0);
@@ -3768,6 +3772,7 @@ function worldBowlRunPin(c, x, y, rm, picked) {
 const runPinArt = {
   px: /** @type {Record<string, Uint8ClampedArray | null>} */ ({}),
   pics: /** @type {Record<string, HTMLCanvasElement>} */ ({}),
+  flag: /** @type {HTMLImageElement | null} */ (null),
 };
 function worldBowlRunArt(name) {
   if (name in runPinArt.px) return runPinArt.px[name];
@@ -3800,6 +3805,39 @@ function worldBowlRunPic(look, state, d) {
   x.imageSmoothingEnabled = false;
   x.drawImage(small, 0, 0, D, D);
   return (runPinArt.pics[key] = big);
+}
+/* UI-8c: a ring on the ground (where you stand, the place picked): a dark rim under the colour, as the icons' edges */
+function worldBowlRing(c, x, y, rx, ry, col, rim, w) {
+  c.lineWidth = w + 2;
+  c.strokeStyle = rim;
+  c.beginPath();
+  c.ellipse(x, y, rx, ry, 0, 0, 7);
+  c.stroke();
+  c.lineWidth = w;
+  c.strokeStyle = col;
+  c.stroke();
+}
+/* UI-8c: where your trip ends: the icon set's flag (art/ui/flag.svg) at half its grid; on a run beside the place's
+   icon, in the hub above its pin; the old gold dot until it has loaded */
+function worldBowlFlag(c, x, y, run) {
+  const im = worldBowlFlagImage(),
+    s = 18,
+    fx = run ? x + 12 : x - s / 2 + 3,
+    fy = run ? y + 2 : y - s + 6;
+  if (!im.complete || !im.naturalWidth) return worldBowlDot(c, x, y, 5, '#FFE27A');
+  const d = worldMap.dpr || 1;
+  c.save();
+  c.imageSmoothingEnabled = false;
+  c.drawImage(im, Math.round(fx * d) / d, Math.round(fy * d) / d, s, s);
+  c.restore();
+}
+function worldBowlFlagImage() {
+  if (!runPinArt.flag) {
+    runPinArt.flag = new Image();
+    runPinArt.flag.onload = () => (worldBowl.dirty = true);
+    runPinArt.flag.src = uiIconURL('flag');
+  }
+  return runPinArt.flag;
 }
 /* a place's pin: a stalk standing on its spot and a round head, a house for a town; locked grey, here gold, picked
    white */
