@@ -402,6 +402,15 @@ async function tools(G, T, fail, stopped, step) {
       b = now();
     G.findRun('copperleaf');
     T.find = { buildMs: r1(b - a), entries: idx.length, queryMs: r1(now() - b) };
+    /* SA-4: Find finds every section by its name (and a joined row, Characters, by its own), and every section is in
+       a workspace (none left under More) */
+    const lost = G.SECTION_LIST.map(n => n.slice(0, 2))
+      .concat(G.NAV_JOINED.map(j => [j.keys[0], j.name]))
+      .filter(([k, n]) => !G.findRun(n).some(e => e.kind === 'section' && e.sec === k))
+      .map(([, n]) => n);
+    if (lost.length) throw new Error(`Find doesn't find the section${lost.length > 1 ? 's' : ''} ${lost.join(', ')}`);
+    const loose = G.SECTION_LIST.filter(n => G.workspaceOf(n[0]) === 'More').map(n => n[1]);
+    if (loose.length) throw new Error(`in no workspace (shown under More): ${loose.join(', ')}`);
   });
   await run('check', () => {
     const a = now(),

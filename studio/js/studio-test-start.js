@@ -13,6 +13,7 @@ import { frameScheduler } from '../../game/js/frame-scheduler.js';
 import { applyGroundTone, bigTilePaths, groundToneAt } from '../../game/js/walk-view.js';
 import { gpuState } from '../../game/js/engine/webgl.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { NAV_JOINED, workspaceOf } from '../../game/js/logic/studio-layout.js';
 import {
   HISTORY_STEPS,
   historyBytes,
@@ -74,6 +75,8 @@ function studioTestHandles() {
     studioProbe,
     SECTIONS,
     SECTION_LIST,
+    NAV_JOINED,
+    workspaceOf,
     PANE2_REFUSED,
     ACTIONS,
     HISTORY_STEPS,

@@ -10,6 +10,7 @@ import { artBrowserShow, artPictures, noteConnectionsField, provide, uiRulesShow
 import { $, $$ } from '../../game/js/util.js';
 import { CAMERA_FOLDERS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { NAV_JOINED, navJoined, workspaceOf } from '../../game/js/logic/studio-layout.js';
 import { UI_DIALS, uiDialList } from '../../game/js/logic/ui-dials.js';
 import { artFolderOf } from '../../game/js/logic/art-search.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
@@ -102,7 +103,8 @@ function findPageFields(sec, add) {
   }
   const div = document.createElement('div');
   div.innerHTML = html;
-  const nav = (SECTION_LIST.find(n => n[0] === sec) || [])[1] || sec,
+  const j = navJoined(sec),
+    nav = (j ? j.name + ' › ' : '') + ((SECTION_LIST.find(n => n[0] === sec) || [])[1] || sec),
     seen = new Set();
   div.querySelectorAll('[data-p]').forEach(el => {
     const p = el.dataset.p;
@@ -139,7 +141,17 @@ export function buildSearchIndex() {
           x: normalizeForFind(where + ' ' + extra),
         });
     };
-  SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => openSection(k), d));
+  /* SA-4: a section says the workspace it is in (and its joined row: Characters); a joined row is found by its name
+     too. sec is the section an entry opens (the Studio self-test checks every section is found) */
+  SECTION_LIST.forEach(([k, n, d]) => {
+    const j = navJoined(k);
+    add(n, workspaceOf(k) + (j ? ' › ' + j.name : ''), 'section', () => openSection(k), d);
+    E[E.length - 1].sec = k;
+  });
+  NAV_JOINED.forEach(j => {
+    add(j.name, workspaceOf(j.keys[0]), 'section', () => openSection(j.keys[0]), j.d);
+    E[E.length - 1].sec = j.keys[0];
+  });
   if (typeof ENGINE_SPEC !== 'undefined')
     ENGINE_SPEC.forEach(([g, t, F]) =>
       F.forEach(f => {
