@@ -13,7 +13,11 @@ expose({
   applyUiTheme: [() => applyUiTheme, v => (applyUiTheme = v)],
   fontsUrl: [() => fontsUrl],
   // @ts-expect-error -- replaced on purpose
+  setUiPalette: [() => setUiPalette, v => (setUiPalette = v)],
+  // @ts-expect-error -- replaced on purpose
   uiBlurCount: [() => uiBlurCount, v => (uiBlurCount = v)],
+  uiPalette: [() => uiPalette, v => setUiPalette(v)],
+  uiPaletteNow: [() => uiPaletteNow],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -23,8 +27,23 @@ const fontsUrl = () => {
   return new URL('../fonts/', link ? link.href : location.href).href;
 };
 
-/** @param {any} theme uiTheme.json (nothing: the sheet is taken away) @param {string} [preset] */
-export function applyUiTheme(theme, preset) {
+/** UI-12: the palette the player picked in Settings (a preset of uiTheme.json; '' the defaults) */
+let uiPalette = '';
+/** UI-12: Settings' Palette row (settings-screen.js applyPreferences): the sheet again, with the player's palette
+ * @param {string} [id] a preset id; nothing or an unknown one: the defaults */
+export function setUiPalette(id) {
+  const theme = /** @type {any} */ (globalThis).GAMEDATA?.uiTheme;
+  const next = id && theme && theme.presets && theme.presets[id] ? id : '';
+  if (next === uiPalette) return;
+  uiPalette = next;
+  applyUiTheme(theme);
+}
+/** the preset the sheet is written with when a caller names none: the player's palette (the Studio's draft and the
+ * fixtures keep it; the gallery names its own) */
+const uiPaletteNow = () => uiPalette;
+
+/** @param {any} theme uiTheme.json (nothing: the sheet is taken away) @param {string} [preset] (nothing: the player's palette) */
+export function applyUiTheme(theme, preset = uiPalette) {
   let el = document.getElementById('ui-theme');
   const css = theme ? uiThemeCss(theme, { preset, fonts: fontsUrl() }) : '';
   if (!css) {

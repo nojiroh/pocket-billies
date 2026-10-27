@@ -80,14 +80,11 @@ test("tokens.css holds the data's colour code, for a page without uiTheme.json",
 
 test('danger is the red family: a palette without one takes the side’s red shade, and is checked as it', () => {
   const t = structuredClone(THEME);
-  // today's defaults keep their own danger: nothing changes on screen
+  // UI-12: the defaults (Field Guide) leave danger to the colour code; a palette's own danger still wins
+  assert.equal(t.defaults.color.light.danger, undefined);
   assert.ok(
-    modeVars(t.defaults.color.light, t.defaults, 'light').includes(
-      `--c-danger: ${t.defaults.color.light.danger.toLowerCase()};`
-    )
+    modeVars({ ...t.defaults.color.light, danger: '#C8492F' }, t.defaults, 'light').includes('--c-danger: #c8492f;')
   );
-  delete t.defaults.color.light.danger;
-  delete t.defaults.color.dark.danger;
   const look = uiThemeLook(t);
   assert.ok(modeVars(look.color.light, look, 'light').includes('--c-danger: #bd2c42;'));
   assert.ok(modeVars(look.color.dark, look, 'dark').includes('--red: #ff8a9f;'));

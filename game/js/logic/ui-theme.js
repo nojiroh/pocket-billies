@@ -27,6 +27,7 @@ expose({
   UI_CONTRAST: [() => UI_CONTRAST],
   UI_DERIVED: [() => UI_DERIVED],
   UI_FONTS: [() => UI_FONTS],
+  UI_FROM_SIGNALS: [() => UI_FROM_SIGNALS],
   UI_ROLES: [() => UI_ROLES],
   UI_SCREENS: [() => UI_SCREENS],
   UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
@@ -64,6 +65,9 @@ expose({
   sharedVars: [() => sharedVars, v => (sharedVars = v)],
   // @ts-expect-error -- replaced on purpose
   solidOver: [() => solidOver, v => (solidOver = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiPalettes: [() => uiPalettes, v => (uiPalettes = v)],
+  uiPlayerLook: [() => uiPlayerLook],
   uiRatio: [() => uiRatio],
   // @ts-expect-error -- replaced on purpose
   uiSignalProblems: [() => uiSignalProblems, v => (uiSignalProblems = v)],
@@ -91,6 +95,8 @@ export const UI_ROLES = {
   hpOk: [],
   hpMid: [],
   hpLow: [],
+  mapGrass: [],
+  mapWater: [],
 };
 /** goldA -> --c-gold-a */
 export const roleVar = (/** @type {string} */ r) => '--c-' + r.replace(/[A-Z]/g, c => '-' + c.toLowerCase());
@@ -126,15 +132,33 @@ export function uiThemeLook(theme, preset) {
   const over = (preset && theme && theme.presets && theme.presets[preset]) || {};
   const look = mergeLook(base, over);
   delete look.name;
+  delete look.player;
   return look;
 }
 
-/** UI-11: a side's palette with what it leaves to the colour code filled in: danger is the red family's text shade
+/** what a palette may leave to the colour code, and the family each comes from (UI-11 danger; UI-12 the HP bars) */
+export const UI_FROM_SIGNALS = { danger: 'bad', hpOk: 'good', hpMid: 'caution', hpLow: 'bad' };
+/** UI-11: a side's palette with what it leaves to the colour code filled in from that side's text shades: danger and
+ * HP under a quarter are the red family, HP under half amber, healthy HP teal (UI-12)
  * @param {Record<string, string>} pal @param {any} look @param {'light' | 'dark' | string} side */
 export function paletteFor(pal, look, side) {
-  const bad = (((look && look.signals) || {})[side] || {}).bad;
-  return !pal.danger && bad ? { ...pal, danger: bad } : pal;
+  const sh = ((look && look.signals) || {})[side] || {};
+  let out = pal;
+  for (const [role, id] of Object.entries(UI_FROM_SIGNALS)) if (!pal[role] && sh[id]) out = { ...out, [role]: sh[id] };
+  return out;
 }
+/** UI-12: the palettes players pick in Settings: the defaults (id '') and each preset marked `player`, as [id, name]
+ * @param {any} theme uiTheme.json @returns {[string, string][]} */
+export function uiPalettes(theme) {
+  if (!theme || !theme.defaults) return [];
+  const out = /** @type {[string, string][]} */ ([['', theme.defaults.name || 'Default']]);
+  for (const [id, p] of Object.entries(theme.presets || {}))
+    if (p && /** @type {any} */ (p).player) out.push([id, /** @type {any} */ (p).name || id]);
+  return out;
+}
+/** UI-12: a look players can have: the defaults, or a preset marked `player` @param {any} theme @param {string} where */
+export const uiPlayerLook = (theme, where) =>
+  !where.startsWith('preset:') || !!((theme.presets || {})[where.slice(7)] || {}).player;
 /** one mode's declarations @param {Record<string, string>} pal @param {any} look @param {'light' | 'dark'} mode */
 export function modeVars(pal, look, mode) {
   pal = paletteFor(pal, look, mode);
@@ -233,6 +257,9 @@ export function sharedVars(look) {
     if (typeof mm[k] === 'boolean') out.push(`--minimap-${k}: ${mm[k] ? 1 : 0};`);
   // UI-11: the colour code's fills (each side's text shades: uiThemeCss)
   if (look.signals) out.push(...signalVars(look.signals).shared);
+  // UI-12: dark text on gold and on the colour code's fills, the same on both sides: the dark side's ground
+  const ink = ((look.color || {}).dark || {}).ground;
+  if (ink) out.push(`--c-ink: ${cssColour(ink.slice(0, 7))};`);
   return out;
 }
 
@@ -463,8 +490,9 @@ export function overrideCss(id, look, ov, block) {
 
 /* ---------- UI-3: contrast ----------
    Text and quiet text read at 4.5:1 on the ground and on a solid surface; danger and primary, used for marks and big
-   text, at 3:1 (WCAG AA). Checked in the defaults and every screen's override, both sides; a preset over the defaults
-   for text only (alpha05 is the look before UI-1, for comparing, and its green reads 2.5:1 on its ground).
+   text, at 3:1 (WCAG AA). Checked in the defaults, every palette players pick (a preset marked `player`, UI-12) and
+   every screen's override, both sides; any other preset for text only (alpha05 is the look before UI-1, for
+   comparing, and its green reads 2.5:1 on its ground).
    tools/check-data.mjs and the Studio's Check use the same list. */
 export const UI_CONTRAST = [
   ['text', 4.5],
@@ -506,7 +534,7 @@ export function uiThemeContrast(theme) {
       const pal = paletteFor((look.color || {})[side] || {}, look, side);
       for (const [fg, min] of UI_CONTRAST)
         for (const bg of ['ground', 'surface']) {
-          if (!pal[fg] || !pal[bg] || (where.startsWith('preset:') && /** @type {number} */ (min) < 4.5)) continue;
+          if (!pal[fg] || !pal[bg] || (!uiPlayerLook(theme, where) && /** @type {number} */ (min) < 4.5)) continue;
           const ratio = uiRatio(pal[fg], pal[bg]);
           if (ratio < /** @type {number} */ (min)) out.push({ where, side, fg, bg, ratio, min });
         }
@@ -517,9 +545,8 @@ export function uiThemeContrast(theme) {
 /* ---------- UI-11: the colour code's checks ----------
    The colour code (defaults.signals, logic/signals.js) is the same in every palette, so it is checked against each:
    every text shade on its side's surface (4.5:1) and ground (3:1), dark text (the dark side's ground) on every fill
-   (4.5:1), in the defaults and every screen's colours; a preset, as in uiThemeContrast, for the shades on its
-   surface only (alpha05, the look before UI-1, has a darker dark ground; UI-12 checks the players' palettes in
-   full); and within each screen's set (UI_SIGNAL_SETS, types.json's types with the battle and the pickups) every two
+   (4.5:1), in the defaults, the players' palettes (UI-12) and every screen's colours; any other preset, as in
+   uiThemeContrast, for the shades on its surface only (alpha05, the look before UI-1, has a darker dark ground); and within each screen's set (UI_SIGNAL_SETS, types.json's types with the battle and the pickups) every two
    fills apart (OKLab 5). A preset can't set its own. tools/check-data.mjs and the Studio's Check use the same list. */
 /** every problem: {where ('' the defaults, 'preset:<id>', 'screen:<id>'), rel (the dial's place in the look), msg}
  * @param {any} theme uiTheme.json @param {any[]} [types] types.json */
@@ -542,7 +569,7 @@ export function uiSignalProblems(theme, types = []) {
     looks.push([`screen:${id}`, screenLook(uiThemeLook(theme), ov)]);
   for (const [where, look] of looks) {
     const C = look.color || {},
-      preset = where.startsWith('preset:');
+      preset = !uiPlayerLook(theme, where);
     for (const side of /** @type {const} */ (['light', 'dark'])) {
       const pal = C[side] || {};
       for (const [id, hex] of Object.entries(sig[side] || {}))
@@ -633,6 +660,16 @@ export function uiThemeCss(theme, o = {}) {
       block(":root[data-theme='dark']", dark);
   // UI-3: each screen's own colours and shapes
   for (const [id, ov] of Object.entries(theme.overrides || {})) css += overrideCss(id, look, ov, block);
+  // UI-12: the phone asks for less see-through: the glass goes solid and stops blurring (after the palettes and as
+  // specific as their dark blocks, so it wins on either side)
+  css +=
+    `@media (prefers-reduced-transparency: reduce) {\n` +
+    block(
+      ":root:not([data-theme='light']),\n  :root[data-theme='light']",
+      ['--g-blur: none;', '--g-bg: var(--g-solid);'],
+      '  '
+    ) +
+    '}\n';
   // the voice font has one weight: never fake a bold (the CSS still asks for 600 and 700 in places)
   const ty = look.type || {};
   if (ty.voice && (UI_FONTS[/** @type {keyof typeof UI_FONTS} */ (ty.voice)] || []).length === 1)

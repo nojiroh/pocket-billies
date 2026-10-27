@@ -58,6 +58,59 @@ owner's standing instruction); the plan was written as a message and carried out
   `UI_GLYPHS`.
 - Tag to suggest: `ui-13-done` on this entry's commit.
 
+### UI track UI-12 - the palettes (Field Guide by default, the Settings Palette row) - 2026-10-27
+Branch `claude/ui-12-palettes` (the session's own), made from UI-11's `ccr-dab4e0cd-6re1eb` (PR #280, not merged), so
+its PR to main carries UI-11's commits until #280 merges. No Plan Mode (the owner's standing rule); the plan is in
+ui-track.md, "UI-12: the palettes". **Visible change: the whole UI's colours** (Field Guide replaces Copper Grove).
+- Changed:
+  - **uiTheme.json:** `defaults` are Field Guide (`name` "Field Guide"; every role of Part 2's table; `line` the text at
+    18% light, white at 14% dark); `danger`, `hpOk`, `hpMid`, `hpLow` left out. Presets `copper_grove` (Copper
+    Grove+) and `bureau_night` with `player: true`; `brass_plum` and `sunpunk_day` for the Studio; alpha05 and stepped
+    kept. Two new optional roles, `mapGrass` and `mapWater` (schema, types, Studio dials).
+  - **logic/ui-theme.js:** `paletteFor` fills danger and hpLow from the side's red shade, hpMid amber, hpOk teal
+    (`UI_FROM_SIGNALS`); `--c-ink` (the dark side's ground: dark text on gold and fills); `uiPalettes` (Settings'
+    list); a preset marked `player` is checked in full like the defaults (contrast and the colour code), the
+    Studio's presets as before; `prefers-reduced-transparency: reduce` makes the glass solid without blur.
+  - **Settings:** a Palette row at the top of the Display tab; `preferences.palette` (a preset id, '' the defaults);
+    `applyPreferences` calls theme-sheet.js `setUiPalette`; `applyUiTheme` without a preset keeps the player's
+    palette, so the Studio's live draft and fixtures don't reset it. The debug log's state: `palette` and `side`.
+  - **minimap.js:** the grass and water mix the palette's `mapGrass`/`mapWater` into the surface (primary and the HP
+    teal without them); the cache key includes the grass.
+  - **CSS:** every alpha 0.5 `rgba(46, 33, 64, a)` became a `--c-shadow` mix (36 lines; the plan said 32; four of
+    them are base.css's fallback `--line`, `--lo`, `--g-sh`, `--g-sh2`, the first, third and fourth replaced by the
+    theme anyway); `color: #2e2140` on gold became `--c-ink`;
+    `.pb.dark` is ink. XP: `--sig-growth-text` (base.css `.pbar.xpb`, pb-stat-bar) and `--sig-growth` on the
+    always-dark battle plate, whose HP bar now uses the colour code's fills. ui-lint's colour ceiling 650 -> 613.
+  - The gallery's look buttons: the five palettes. Tests: ui-theme (Field Guide, the fallbacks, the list, full checks
+    for player presets, reduced transparency), ui-signals and ui-dials updated (`uiDialShown`: a dial left to the
+    colour code shows and nudges what it resolves to).
+- Decided for the owner, to review:
+  - HP bars on light screens use the families' **light text shades** (Part 2: "the text shades are for words and bars
+    on light and dark screens"): HP under half is #9A5505, a brown-amber, on Team cards. The always-dark battle plate
+    uses the fills instead (#40D9C1, #FAAB3F, #EA5974). If the brown reads badly on the phone, set `hpMid` in the
+    defaults' light palette (one value).
+  - The Palette row went in the **Display** tab (the plan's word), while Theme stays in Accessibility.
+  - The minimap's grass and water per palette as two new colour roles; my picks: Field Guide #5E721F / #2F7F86
+    (dark #9DBB55 / #5FB4BC), Copper Grove+ today's primary and teal, Bureau Night #4E8A3E / its cyan, Brass & Plum
+    #5C8A3A / #3A7FA8, Sunpunk Day #4A9A3A / its blue. Not seen on screen yet.
+  - `--c-ink` is the dark side's ground on both sides (the colour code's "dark text").
+  - Reduced transparency follows the phone's setting only (no Settings switch); High contrast already does the same
+    and more.
+- Found (figures checked): the five palettes and the colour code pass every check in full: the shades' worst is
+  3.99:1 on Field Guide's light ground (good teal, min 3) and 4.5:1+ on every surface; dark text on fills 4.70:1 at
+  worst (Copper Grove+). The plan's Settings "Display tab" exists as the `graphics` key labelled Display.
+- Risky: every screen's colours change and nobody has looked at them: no browser run this session (the owner's rule).
+  Places still drawn in the old purple or in Copper Grove's green by literal colours will show up in the pictures.
+  The picture baselines (gallery, quick check) are now out of date on purpose.
+- Verified: `npm run lint` (ceilings lowered), typecheck, format:check, `npm test` (1579 pass), check:data (176 files
+  fine; the two bridge warnings are main's), check:modules.
+- Skipped until after UI-18 (the owner's rule), for the final checks session: the gallery and quick-check pictures
+  remade once for Field Guide; the smoke step that opens screens in each of the three player palettes (contrast, no
+  page errors), not written yet; check-fast and the Studio check (the colour dials, `mapGrass`/`mapWater`, the
+  empty danger and HP dials); the owner's phone check of the three palettes, light and dark, and the minimap.
+- Next: UI-13 (glyphs and types), started from this branch in a new session.
+- Tag to suggest: `ui-12-done` on this entry's commit.
+
 ### UI track UI-11 - the colour code as data (signals, --sig-* tokens, the checks, the Studio) - 2026-10-27
 Branch `ccr-dab4e0cd-6re1eb` (the session's own: a cloud session pushes only there), from main at 07c9b284, which
 already holds `track/ui`; its PR goes to main, as UI-10's did. No Plan Mode (the owner's standing instruction); the

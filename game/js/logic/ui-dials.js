@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { UI_SIGNALS } from './signals.js';
-import { uiThemeCss } from './ui-theme.js';
+import { paletteFor, uiThemeCss, uiThemeLook } from './ui-theme.js';
 /* eslint-disable no-func-assign */
 expose({
   UI_DIALS: [() => UI_DIALS],
@@ -28,6 +28,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   uiDialList: [() => uiDialList, v => (uiDialList = v)],
   uiDialReach: [() => uiDialReach],
+  // @ts-expect-error -- replaced on purpose
+  uiDialShown: [() => uiDialShown, v => (uiDialShown = v)],
   // @ts-expect-error -- replaced on purpose
   uiDialVars: [() => uiDialVars, v => (uiDialVars = v)],
   // @ts-expect-error -- replaced on purpose
@@ -80,13 +82,15 @@ export const UI_ROLE_LABELS = /** @type {[string, string, string][]} */ ([
   ['text', 'Text', ''],
   ['text2', 'Quiet text', 'Hints, captions, second lines.'],
   ['line', 'Lines', 'Rules and borders (can be see-through: #rrggbbaa).'],
-  ['primary', 'Primary', 'The green: success, primary marks.'],
+  ['primary', 'Primary', 'The palette’s own colour: success, primary marks.'],
   ['goldA', 'Gold, top', 'The main action’s gradient.'],
   ['goldB', 'Gold, bottom', 'The main action’s gradient, and gold marks.'],
-  ['danger', 'Danger', 'Errors, damage, the red.'],
-  ['hpOk', 'HP healthy', 'Teal, so primary, the Grass pill and HP stay apart.'],
-  ['hpMid', 'HP under half', ''],
-  ['hpLow', 'HP under a quarter', ''],
+  ['danger', 'Danger', 'Errors, damage, the red. Empty: the colour code’s red.'],
+  ['hpOk', 'HP healthy', 'Empty: the colour code’s teal, so primary, the Grass pill and HP stay apart.'],
+  ['hpMid', 'HP under half', 'Empty: the colour code’s amber.'],
+  ['hpLow', 'HP under a quarter', 'Empty: the colour code’s red.'],
+  ['mapGrass', 'Minimap grass', 'Mixed into the surface for the minimap’s grass. Empty: primary.'],
+  ['mapWater', 'Minimap water', 'Mixed into the surface for the minimap’s water. Empty: HP healthy.'],
 ]);
 /** the shape families: id, the Studio's name, and whether it is a long hexagon (cut at both ends, no corners to pick) */
 export const UI_FAMILY_LABELS = /** @type {[string, string, boolean][]} */ ([
@@ -436,12 +440,21 @@ export function uiDialVars(theme, rel) {
     entry = uiDialList().find(e => e.path === rel);
   let o = t.defaults;
   for (const k of keys.slice(0, -1)) o = o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {};
-  o[keys[keys.length - 1]] = uiNudge(uiGet(theme.defaults, rel), entry && entry.dial);
+  o[keys[keys.length - 1]] = uiNudge(uiDialShown(theme, rel), entry && entry.dial);
   const after = uiSheetVars(uiThemeCss(t)),
     names = new Set();
   for (const k of new Set([...Object.keys(before), ...Object.keys(after)]))
     if (before[k] !== after[k]) names.add(k.slice(k.indexOf('|') + 1));
   return [...names].sort();
+}
+/** UI-12: a dial's value as the look has it: its own, or for a colour role the palette leaves out (danger, the HP
+ * colours), what the colour code fills in @param {any} theme @param {string} rel */
+export function uiDialShown(theme, rel) {
+  const v = uiGet(theme.defaults, rel),
+    m = /^color\.(light|dark)\.(\w+)$/.exec(rel);
+  if (v !== undefined || !m) return v;
+  const look = uiThemeLook(theme);
+  return paletteFor((look.color || {})[m[1]] || {}, look, m[1])[m[2]];
 }
 /** dials that act through something other than a variable, and the variable whose parts they change: the voice
  * font's size is its @font-face's size-adjust, on every part in --font-voice */

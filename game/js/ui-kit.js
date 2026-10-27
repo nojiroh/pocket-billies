@@ -770,7 +770,7 @@ const PbStatBar = class extends LitElement {
       }
       :host([kind='xp']) {
         --bar-h: 6px;
-        --bar-c: #4f8fe0;
+        --bar-c: var(--sig-growth-text);
       }
       :host([kind='stat']) {
         --bar-c: linear-gradient(90deg, var(--gold-a), var(--gold-b));

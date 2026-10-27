@@ -118,7 +118,7 @@
   border-radius: var(--r-lg) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 16px 30px -12px rgba(46, 33, 64, 0.55) !important;
+    0 16px 30px -12px color-mix(in srgb, var(--c-shadow) 55%, transparent) !important;
 }
 .ms-tabs {
   display: flex;
@@ -126,8 +126,8 @@
   padding: var(--s1);
   margin: var(--s3) 0 var(--s3);
   border-radius: var(--r-md);
-  background: rgba(46, 33, 64, 0.07);
-  box-shadow: inset 0 1px 3px rgba(46, 33, 64, 0.12);
+  background: color-mix(in srgb, var(--c-shadow) 7%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--c-shadow) 12%, transparent);
 }
 .ms-tabs button {
   flex: 1;
@@ -144,7 +144,7 @@
 }
 .ms-tabs button[aria-selected='true'] {
   background: linear-gradient(var(--gold-a), var(--gold-b));
-  color: #2e2140;
+  color: var(--c-ink);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
     0 6px 12px -5px var(--gold-sh);
@@ -179,8 +179,8 @@
   display: block;
   height: 10px;
   border-radius: var(--r-xs);
-  background: rgba(46, 33, 64, 0.1);
-  box-shadow: inset 0 1px 2px rgba(46, 33, 64, 0.2);
+  background: color-mix(in srgb, var(--c-shadow) 10%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--c-shadow) 20%, transparent);
   overflow: hidden;
 }
 .ms-bar b {
@@ -201,7 +201,7 @@
   background: var(--g-bg2);
   border: 1px solid var(--g-bd);
   font-size: 14.5px;
-  box-shadow: 0 4px 10px -6px rgba(46, 33, 64, 0.4);
+  box-shadow: 0 4px 10px -6px color-mix(in srgb, var(--c-shadow) 40%, transparent);
 }
 .ms-met .uico {
   color: var(--t-walk);
@@ -225,7 +225,7 @@
   background: var(--g-bg2);
   border: 1px solid var(--g-bd);
   min-width: 84px;
-  box-shadow: 0 6px 14px -8px rgba(46, 33, 64, 0.45);
+  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--c-shadow) 45%, transparent);
 }
 .ms-evo.on {
   background: rgba(242, 184, 75, 0.25);

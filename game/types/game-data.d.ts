@@ -2291,7 +2291,9 @@ export type UiRole =
   | 'danger'
   | 'hpOk'
   | 'hpMid'
-  | 'hpLow';
+  | 'hpLow'
+  | 'mapGrass'
+  | 'mapWater';
 export interface UiSurfaceSide {
   glass?: number;
   highlight?: number;
@@ -2318,8 +2320,10 @@ export interface UiFamilyShape {
 }
 export type UiEase = [number, number, number, number];
 export interface UiLook {
-  /** a preset's name in the Studio */
+  /** a preset's name in the Studio; the defaults' and a player preset's in Settings' Palette row (UI-12) */
   name?: string;
+  /** UI-12: a preset players pick in Settings' Palette row */
+  player?: boolean;
   color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
   surface?: { blur?: number; saturate?: number; light?: UiSurfaceSide; dark?: UiSurfaceSide };
   /** the glass panels' box shadows per side (UI-3) */

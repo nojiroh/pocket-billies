@@ -44,6 +44,8 @@ import {
 } from './hooks.js';
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
+import { uiPalettes } from './logic/ui-theme.js';
+import { setUiPalette } from './theme-sheet.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
 import { onlinePlayOn } from './logic/online.js';
 import {
@@ -124,6 +126,8 @@ export function applyPreferences() {
   root.dataset.flash = p.flashes === 'off' ? 'off' : 'on';
   root.dataset.targets = p.bigTargets ? 'big' : 'normal';
   if (typeof i18nSet === 'function') i18nSet(p.lang || 'en');
+  /* UI-12: the palette (uiTheme.json: the defaults or a preset players pick) */
+  setUiPalette(p.palette || '');
 }
 function customizeTrainer() {
   openDressingRoom();
@@ -492,8 +496,17 @@ function settingsHTML() {
       ) +
       `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
-    const gp = p.aim === 'off' ? 'off' : p.aim === 'smooth' ? 'balanced' : 'best';
+    const gp = p.aim === 'off' ? 'off' : p.aim === 'smooth' ? 'balanced' : 'best',
+      pals = uiPalettes(gameData.uiTheme);
     body =
+      /* UI-12: the palettes players pick (uiTheme.json: the defaults and each preset marked player) */
+      (pals.length > 1
+        ? settingsRowHTML(
+            'Palette',
+            'The colours of menus and panels. What things mean keeps its colour in every palette.',
+            segmentedHTML('palette', pals.some(([id]) => id === p.palette) ? p.palette : '', pals)
+          )
+        : '') +
       `<div class="gfx-presets" role="radiogroup" aria-label="Graphics">${[
         ['balanced', 'Balanced', 'Everything on; softens a little when busy'],
         ['best', 'Beautiful', 'Everything at full detail'],
