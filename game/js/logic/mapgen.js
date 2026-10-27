@@ -35,6 +35,7 @@ expose({
   MAPGEN_BRIDGE_SQUARE: [() => MAPGEN_BRIDGE_SQUARE],
   MAPGEN_DEEP: [() => MAPGEN_DEEP],
   MAPGEN_DEFAULTS: [() => MAPGEN_DEFAULTS],
+  MAPGEN_EIGHT: [() => MAPGEN_EIGHT],
   MAPGEN_EXIT_IN: [() => MAPGEN_EXIT_IN],
   MAPGEN_FAMILY_SHARE: [() => MAPGEN_FAMILY_SHARE],
   MAPGEN_FEATURES: [() => MAPGEN_FEATURES],
@@ -52,6 +53,7 @@ expose({
   MAPGEN_MASSIF: [() => MAPGEN_MASSIF],
   MAPGEN_MOUNTAIN_DIALS: [() => MAPGEN_MOUNTAIN_DIALS],
   MAPGEN_MOUNTAIN_SMOOTH: [() => MAPGEN_MOUNTAIN_SMOOTH],
+  MAPGEN_MOUTH: [() => MAPGEN_MOUTH],
   MAPGEN_OPPOSITE: [() => MAPGEN_OPPOSITE],
   MAPGEN_OUTCROP: [() => MAPGEN_OUTCROP],
   MAPGEN_OUTWARD: [() => MAPGEN_OUTWARD],
@@ -165,6 +167,8 @@ expose({
   mapgenMountainLevel: [() => mapgenMountainLevel],
   // @ts-expect-error -- replaced on purpose
   mapgenMountains: [() => mapgenMountains, v => (mapgenMountains = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenMouths: [() => mapgenMouths, v => (mapgenMouths = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenNearJoined: [() => mapgenNearJoined, v => (mapgenNearJoined = v)],
   // @ts-expect-error -- replaced on purpose
@@ -313,7 +317,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 19; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1) */
+export const MAPGEN_VERSION = 22; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20, 21: kept for the region map track (WM-3, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`, RT-4b) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -4549,6 +4553,8 @@ export function mapgenBuild(P, ctx, aim) {
     /* RT-4: where wild Billies of each habitat wait (after the pieces, on what they leave) */
     const hab = mapgenHabitats(G, sc, walk);
     if (hab) sc.habitats = hab;
+    /* RT-4b: where Cut brambles could plug a pocket or a dead end (put up by the run, logic/route-finds.js) */
+    mapgenMouths(sc, ctx.scenery, walk, G);
   }
   waterGenClimbs(sc, ctx.scenery); /* WA-2b: which falls the Waterfall field move climbs (logic/water-gen.js) */
   waterGenReeds(G, sc); /* WA-5a: a reed or two in a marsh hides an item (logic/water-gen.js) */
@@ -4916,6 +4922,150 @@ export function mapgenHabitats(G, sc, R) {
     if (took.length) out[k] = took;
   }
   return Object.keys(out).length ? out : null;
+}
+
+/* ---------- RT-4b: the mouths Cut brambles can plug ---------- */
+/** a mouth's measures: brambles across a crossing at most `wide` metres, `step` apart, `from`-`to` metres back from
+ * the spot along the walk; what a plug shuts off at most `most` of the walked cells, and nothing within `keep`
+ * metres of an exit, the hub, another spot or a set piece */
+export const MAPGEN_MOUTH = { wide: 3.6, step: 0.8, from: 2.5, to: 14, most: 0.15, keep: 1.5 };
+/** the eight ways from a cell, for the plug's check (a diagonal squeeze counts as a way through) */
+export const MAPGEN_EIGHT = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1],
+];
+/**
+ * RT-4b: on a laid-out place, each pocket's and dead end's mouth: where brambles (bush_bramble, solid as the walk
+ * grid reads it) across the narrowest crossing of the walk to it, 2.5-14 m back, shut it off from the hub and shut
+ * off nothing that must stay open (an exit, the hub, another spot or its stand, a set piece; at most 15% of what is
+ * walked). The spot keeps them as `mouth` ([[x, z], ...]); the run puts them up in front of a find or the rarer one
+ * (logic/route-finds.js). No random draw: it moves nothing else. @param {any} sc @param {any} scenery
+ * @param {any} R the walk on the finished scene (mapgenReach with slope, props and pieces in)
+ */
+export function mapgenMouths(sc, scenery, R, G) {
+  const M = scenery && scenery.props && scenery.props.bush_bramble;
+  if (!M || !R || !R.dist || !sc.spots) return;
+  const { N, gw, gh, seen, dist, step } = R,
+    br = M.solid != null ? M.solid : 0.5,
+    cellOf = (x, z) => mapgenBetween(Math.floor(z * N), 0, gh - 1) * gw + mapgenBetween(Math.floor(x * N), 0, gw - 1),
+    xy = q => [((q % gw) + 0.5) / N, (Math.floor(q / gw) + 0.5) / N],
+    walked = seen.reduce((a, v) => a + v, 0),
+    exits = (sc.edgeExits || []).map(e => mapgenExitPoint(sc.w, sc.h, e)),
+    offRoad = (x, z) => {
+      if (!G) return true;
+      const q = mapgenCellAt(G, x, z);
+      return G.near[q] < 0 || G.dist[q] - G.roadPts[G.near[q]].r > 0.6;
+    };
+  for (const sp of sc.spots) {
+    if (sp.kind !== 'pocket' && sp.kind !== 'deadend') continue;
+    const s = cellOf(sp.x, sp.z);
+    if (!seen[s] || dist[s] < 0) continue;
+    /* the walk back from the spot toward the hub: each step to a neighbour one nearer */
+    const path = [s];
+    for (let q = s; dist[q] > 0 && path.length < (MAPGEN_MOUTH.to + 2) * N;) {
+      const i = q % gw,
+        j = Math.floor(q / gw);
+      let next = -1;
+      for (const [di, dj] of MAPGEN_FOUR) {
+        const ii = i + di,
+          jj = j + dj;
+        if (ii < 0 || jj < 0 || ii >= gw || jj >= gh) continue;
+        const r = jj * gw + ii;
+        if (seen[r] && dist[r] === dist[q] - 1) {
+          next = r;
+          break;
+        }
+      }
+      if (next < 0) break;
+      path.push(next);
+      q = next;
+    }
+    /* the crossings: the open width across the walk's heading at each cell, the narrowest first, the nearer on a tie */
+    const open = (x, z) => x >= 0 && z >= 0 && x < sc.w && z < sc.h && !!seen[cellOf(x, z)];
+    const tries = [];
+    for (let k = MAPGEN_MOUTH.from * N; k < path.length - 2 && k <= MAPGEN_MOUTH.to * N; k++) {
+      const [x, z] = xy(path[k]),
+        a = xy(path[k - 2]),
+        b = xy(path[k + 2]),
+        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1,
+        nx = -(b[1] - a[1]) / L,
+        nz = (b[0] - a[0]) / L;
+      let l = 0,
+        r = 0;
+      while (l < MAPGEN_MOUTH.wide && open(x + nx * (l + 0.25), z + nz * (l + 0.25))) l += 0.25;
+      while (r < MAPGEN_MOUTH.wide && open(x - nx * (r + 0.25), z - nz * (r + 0.25))) r += 0.25;
+      if (l + r + 0.5 > MAPGEN_MOUTH.wide) continue;
+      tries.push({ k, x, z, nx, nz, l, r });
+    }
+    tries.sort((a, b) => a.l + a.r - (b.l + b.r) || a.k - b.k);
+    for (const T of tries.slice(0, 4)) {
+      /* brambles across, from one side's last open cell to the other's, `step` apart, the ends included */
+      const W = T.l + T.r,
+        n = Math.max(1, Math.ceil(W / MAPGEN_MOUTH.step) + 1),
+        at = [];
+      for (let m = 0; m < n; m++) {
+        const u = n === 1 ? 0 : T.l - (W * m) / (n - 1);
+        at.push([mapgenRound2(T.x + T.nx * u), mapgenRound2(T.z + T.nz * u)]);
+      }
+      if (!at.every(([x, z]) => offRoad(x, z))) continue;
+      /* the cells they block, as the walk grid reads a solid prop (a disc of `solid`, a fifth of it nearer the back) */
+      const blk = new Uint8Array(gw * gh);
+      for (const [px, pz] of at) {
+        const cz = pz + br * 0.2;
+        for (let j = Math.max(0, Math.floor((cz - br) * N)); j < Math.min(gh, Math.ceil((cz + br) * N)); j++)
+          for (let i = Math.max(0, Math.floor((px - br) * N)); i < Math.min(gw, Math.ceil((px + br) * N)); i++)
+            if (Math.hypot((i + 0.5) / N - px, (j + 0.5) / N - cz) <= br) blk[j * gw + i] = 1;
+      }
+      if (blk[R.start] || blk[s]) continue;
+      /* the cells that can still walk to the spot with them up (eight ways, a diagonal squeeze counts): shut off when
+         the hub is not among them, and too much shut off past `most` of the walk */
+      const got = new Uint8Array(gw * gh),
+        cap = walked * MAPGEN_MOUTH.most,
+        Q = [s];
+      got[s] = 1;
+      let through = false;
+      for (let h = 0; h < Q.length && !through && Q.length <= cap; h++) {
+        const q = Q[h],
+          i = q % gw,
+          j = Math.floor(q / gw);
+        for (const [di, dj] of MAPGEN_EIGHT) {
+          const ii = i + di,
+            jj = j + dj;
+          if (ii < 0 || jj < 0 || ii >= gw || jj >= gh) continue;
+          const r = jj * gw + ii;
+          if (got[r] || !seen[r] || blk[r] || !step(r, q)) continue;
+          got[r] = 1;
+          Q.push(r);
+          if (r === R.start) through = true;
+        }
+      }
+      if (through || Q.length > cap) continue;
+      const kept = (x, z) => {
+        const K = MAPGEN_MOUTH.keep;
+        for (let dz = -K; dz <= K; dz += 0.5)
+          for (let dx = -K; dx <= K; dx += 0.5) {
+            const q = cellOf(x + dx, z + dz);
+            if (got[q]) return false;
+          }
+        return true;
+      };
+      const need = [
+        sc.hub,
+        ...exits,
+        ...sc.spots.filter(o => o !== sp).flatMap(o => [[o.x, o.z], ...(o.stand ? [o.stand] : [])]),
+        ...(sc.pieces || []).flatMap(o => [[o.x, o.z], ...(o.people || []).map(q => [q.x, q.z])]),
+      ];
+      if (!need.every(([x, z]) => kept(x, z))) continue;
+      sp.mouth = at;
+      break;
+    }
+  }
 }
 
 /* ---------- checking a scene: can you walk from the hub to every exit? ---------- */
