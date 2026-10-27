@@ -9,12 +9,12 @@ import './walk-renderer.mjs';
 
 const { POST_EFFECT_SHADERS, POST_MEDIUMP, gpuState, MEDIUMP_FROM, MEDIUMP_TO, mediumpFragment, mediumpMissing } =
   globalThis;
-const NAMES = ['bright', 'down', 'up'];
+const NAMES = ['bright', 'down', 'up', 'rays'];
 
 test('the post passes that opt in are the ones meant, and each carries its list', () => {
   assert.deepEqual(Object.keys(POST_MEDIUMP).sort(), [...NAMES].sort());
   for (const k of NAMES) assert.equal(POST_EFFECT_SHADERS[k].mp, POST_MEDIUMP[k], k);
-  for (const k of ['dof', 'dofnear', 'dofgrow', 'ao', 'vol', 'rays', 'grade'])
+  for (const k of ['dof', 'dofnear', 'dofgrow', 'ao', 'vol', 'grade'])
     assert.equal(POST_EFFECT_SHADERS[k].mp, undefined, k);
 });
 
@@ -36,6 +36,19 @@ test('on: mediump by default, every edit applied, the vertex shader as it was', 
     assert.ok(m.includes('in highp vec2 vUV;'), `${k}: the screen place stays highp`);
     assert.ok(vs.startsWith('#version 300 es\nprecision highp float;'), k);
   }
+});
+
+test('on: what must stay highp does (depth, the hash, the sun on screen)', () => {
+  // every uniform declared once, and none lost
+  const names = s =>
+    [...s.matchAll(/uniform\s+(?:highp\s+|mediump\s+)?\w+\s+([^;]+);/g)]
+      .flatMap(m => m[1].split(','))
+      .map(n => n.trim().replace(/\[.*\]$/, ''))
+      .sort();
+  const r = mediumpFragment(POST_EFFECT_SHADERS.rays[1], POST_MEDIUMP.rays);
+  assert.match(r, /highp float h\(highp vec2 p\)/);
+  assert.match(r, /uniform highp sampler2D uDep;/);
+  assert.deepEqual(names(r), names(POST_EFFECT_SHADERS.rays[1]));
 });
 
 test('a list that no longer matches leaves the shader as it was', () => {

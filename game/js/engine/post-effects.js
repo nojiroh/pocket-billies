@@ -288,6 +288,16 @@ const POST_MEDIUMP = {
     ],
     ['void main(){vec2 d=uPx*uR;', 'void main(){highp vec2 d=uPx*uR;'],
   ],
+  rays: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uSun;uniform float uLen,uVirt;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp sampler2D uDep;uniform highp vec2 uSun;uniform highp float uLen;uniform float uVirt;',
+    ],
+    ['float h(vec2 p){', 'highp float h(highp vec2 p){'],
+    ['vec3 src(vec2 q){', 'vec3 src(highp vec2 q){'],
+    ['void main(){vec2 dv=(uSun-vUV);', 'void main(){highp vec2 dv=(uSun-vUV);'],
+    ['vec2 q=vUV+dv*h(gl_FragCoord.xy);', 'highp vec2 q=vUV+dv*h(gl_FragCoord.xy);'],
+  ],
 };
 for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
 /* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
