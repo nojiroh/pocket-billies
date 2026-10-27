@@ -661,7 +661,7 @@ const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v)
 export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
-  ['parts', 'Part sizes', 'Part sizes, weight and Prime Billies'],
+  ['parts', 'Part rules', 'How big a part can turn out, its weight and Prime Billies'],
   ['genes', 'Genes', 'Splicing: Stability, traits, wild splices, the Gene Bank and a splice preview'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
   ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere), then their pivots and sockets'],

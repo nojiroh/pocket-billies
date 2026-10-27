@@ -290,10 +290,10 @@ export function runCheck() {
     const odds = Object.values(PR.sizes || {}).reduce((a, s) => a + (+s.odds || 0), 0),
       share = (PR.slots || []).reduce((a, k) => a + (+(PR.share || {})[k] || 0), 0);
     if (Math.abs(odds - 1) > 0.001)
-      warn(`Part sizes: the chances add up to ${Math.round(odds * 100)}%, not 100%.`, 'parts');
+      warn(`Part rules: the chances add up to ${Math.round(odds * 100)}%, not 100%.`, 'parts');
     if (Math.abs(share - 1) > 0.001)
-      warn(`Part sizes: the weight shares add up to ${Math.round(share * 100)}%, not 100%.`, 'parts');
-    if (!PR.sizes || !PR.sizes.M) warn('Part sizes: there is no normal size (M), so no Billie can be Prime.', 'parts');
+      warn(`Part rules: the weight shares add up to ${Math.round(share * 100)}%, not 100%.`, 'parts');
+    if (!PR.sizes || !PR.sizes.M) warn('Part rules: there is no normal size (M), so no Billie can be Prime.', 'parts');
     D.lines.forEach(L =>
       L.names.forEach((n, i) => {
         const meta = studioState.rigs[L.id + i] && studioState.rigs[L.id + i].front;

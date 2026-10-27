@@ -125,6 +125,7 @@ test('the sidebar rows: Looks and Wardrobe are one Characters row, unknown keys 
 });
 
 test('the labels say what they are (SA-4)', () => {
+  assert.equal(NAMES.parts, 'Part rules', 'T6.8: "Parts" says it holds the size rules');
   assert.equal(NAMES.relics, 'Perks');
   assert.equal(NAMES.people, 'Looks');
   assert.equal(NAMES.wardrobe, 'Wardrobe');
