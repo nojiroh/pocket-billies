@@ -283,3 +283,201 @@
     opacity: 0;
   }
 }
+
+/* UI-9a: the old shared parts' entrances and loops, from parts.css (v05, polish, style), names kept */
+@keyframes sheen {
+  0%,
+  62% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+@keyframes spr {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes stripes {
+  to {
+    background-position: 11.3px 0;
+  }
+}
+@keyframes drop {
+  from {
+    transform: translate(-50%, -26px) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes lowpulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes nwSheet {
+  0% {
+    transform: translateY(56px) scale(0.97);
+    opacity: 0.2;
+  }
+  62% {
+    transform: translateY(-4px) scale(1.004);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes nwDlg {
+  0% {
+    transform: translateY(14px) scale(0.94);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-2px) scale(1.012);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes nwFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes nwSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+@keyframes nwPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes nwSpark {
+  0% {
+    transform: scale(0) rotate(-90deg);
+  }
+  70% {
+    transform: scale(1.35) rotate(10deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes nwDash {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+@keyframes nwIdle {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-2px);
+  }
+  90% {
+    transform: translateY(0) scaleY(0.94);
+  }
+}
+@keyframes nwGlint {
+  0%,
+  82% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -60% 0;
+  }
+}
+@keyframes nwToast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -18px) scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-50%, 2px) scale(1.04);
+  }
+  100% {
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes nwFlip {
+  0% {
+    transform: scaleX(1);
+  }
+  35% {
+    transform: scaleX(0.1);
+  }
+  65% {
+    transform: scaleX(-1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+@keyframes pfGlint {
+  0%,
+  80% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+@keyframes wxRain {
+  to {
+    background-position: -30px 120px;
+  }
+}
+@keyframes wxSnow {
+  to {
+    background-position:
+      20px 460px,
+      -10px 290px;
+  }
+}
+@keyframes v05In {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+@keyframes v05InR {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+@keyframes v05InL {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+@keyframes v05Card {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+/* UI-9a: its one declaration was v05's width: 0 !important, and a keyframe ignores an !important declaration, so the
+   Billie sheet's stat bars (billie-sheet.css .ms-bar b) never grew in: emptied, so nothing changes */
+@keyframes v05Grow {
+}
