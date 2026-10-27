@@ -1,12 +1,25 @@
 {
  "about": "Pictures nothing in the game loads that stay on purpose (Studio art track SA-5). A path ending in / is a folder. The Art browser shows them as kept, and tools/art-unused.mjs doesn't count them as orphans.",
  "kept": [
-  { "p": "next/portraits/", "why": "the portrait kit (portraits.json), phase 07's 32-bit portraits" },
-  { "p": "next/palette.png", "why": "the palette, read by tools/build-palette.py and the Studio's palette tools" },
-  { "p": "next/palette-big.png", "why": "the palette at 24x, written by tools/build-palette.py for viewing" },
-  { "p": "next/placeholders/kappi.png", "why": "Kappi's drawing sheet (tools/paint-kappi.mjs); the game draws next/billionaires/kappi.png" },
-  { "p": "scene/build/detail-a04.png", "why": "an input of tools/build-airship.py, which writes the live sheet detail-a04b.png" },
-  { "p": "ui/loader-coins.png", "why": "the loading screen's coins, a viewable copy of what tools/build-loader-v47.py writes into css/loader.css" },
-  { "p": "ui/loader-runner.png", "why": "the loading screen's runner, a viewable copy of what tools/build-loader-v47.py writes into css/loader.css" }
+  {
+   "p": "next/portraits/",
+   "why": "the portrait kit (portraits.json), phase 07's 32-bit portraits"
+  },
+  {
+   "p": "next/palette.png",
+   "why": "the palette, read by tools/build-palette.py and the Studio's palette tools"
+  },
+  {
+   "p": "next/palette-big.png",
+   "why": "the palette at 24x, written by tools/build-palette.py for viewing"
+  },
+  {
+   "p": "next/placeholders/kappi.png",
+   "why": "Kappi's drawing sheet (tools/paint-kappi.mjs); the game draws next/billionaires/kappi.png"
+  },
+  {
+   "p": "scene/build/detail-a04.png",
+   "why": "an input of tools/build-airship.py, which writes the live sheet detail-a04b.png"
+  }
  ]
 }
