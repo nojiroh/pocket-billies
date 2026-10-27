@@ -23,7 +23,7 @@
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { glyphOf, sigVar } from './logic/signals.js';
-import { rarityTier } from './logic/marks.js';
+import { chipLook, rarityTier } from './logic/marks.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
 expose({
@@ -807,8 +807,9 @@ const PbPayout = class extends LitElement {
         font-size: 20px;
         font-variant-numeric: tabular-nums;
       }
+      /* UI-14b: a cost is the bad family's text shade (4.5:1 on surfaces, the colour code's check) */
       .v.neg {
-        color: color-mix(in srgb, var(--c-danger) 70%, var(--c-text)); /* danger alone reads 3.7:1 here */
+        color: var(--sig-bad-text);
       }
       .tot {
         display: flex;
@@ -817,8 +818,8 @@ const PbPayout = class extends LitElement {
         margin-top: var(--s3);
         padding: var(--s3) var(--s4);
         clip-path: var(--clip-action);
-        background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
-        color: var(--goldink, #3a2408);
+        background: var(--tot, linear-gradient(180deg, var(--gold-a), var(--gold-b)));
+        color: var(--c-ink);
       }
       .tot .lab {
         font-size: 19px;
@@ -922,7 +923,9 @@ const PbPayout = class extends LitElement {
     const rows = this.rows || [],
       n = Math.min(this._n, rows.length),
       t = this._t ?? this.total,
-      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research';
+      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research',
+      /* UI-14b: the total in its currency's family (Research sky, Moneys gold: logic/marks.js chipLook) */
+      tone = chipLook(this.kind).sig;
     return html`<ol aria-label="Payout" @click=${() => this.finish()}>
         ${rows.map((r, i) => {
           const v = Number(r.value) || 0;
@@ -932,7 +935,12 @@ const PbPayout = class extends LitElement {
           </li>`;
         })}
       </ol>
-      <div class="tot" role="status" aria-label=${`${this.totalLabel}: ${runNumber(this.total)}`}>
+      <div
+        class="tot"
+        style=${tone ? `--tot:var(${sigVar(tone)})` : nothing}
+        role="status"
+        aria-label=${`${this.totalLabel}: ${runNumber(this.total)}`}
+      >
         ${runIcon(k)}<span class="lab" aria-hidden="true">${this.totalLabel}</span
         ><span class="v" aria-hidden="true" @animationend=${e => e.target.classList.remove('bump')}
           >${runNumber(t)}</span

@@ -13,7 +13,9 @@ import { expose } from './test-globals.js';
 import { boardsFetch, boardsPayoutHTML, provide, renderOverlay } from './hooks.js';
 import { CURRENCIES, PERKS, QUESTS, RESIDENTS, RULES } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
+import { speciesOf } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
+import { rarityTier } from './logic/marks.js';
 import { payoutOf } from './logic/run-state.js';
 import { runItemPrice, runKept, runPayoutRows, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates } from './logic/effects.js';
@@ -24,6 +26,7 @@ import { trainName, trainOfRun } from './train-ride.js';
 import { runEndHome } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
+  payoutRarity: [() => payoutRarity],
   runPayoutDone: [() => runPayoutDone, v => (runPayoutDone = v)],
   runPayoutNow: [() => runPayoutNow, v => (runPayoutNow = v)],
   runPayoutOpen: [() => runPayoutOpen, v => ((runPayoutOpen = v), provide({ runPayoutOpen }))],
@@ -31,6 +34,11 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runPayoutOpen });
 /* to-module: end */
+/** UI-14b: a Billie card's species tier (starter shows as common; a bot has none) @param {any} m */
+const payoutRarity = m => {
+  const t = rarityTier((speciesOf(m) || {}).rar);
+  return t ? ` rarity="${t}"` : '';
+};
 /** what the run pays as it stands: the same sum runEnd pays */
 function runPayoutNow() {
   const s = saveData,
@@ -59,7 +67,7 @@ function runPayoutOpen() {
       : `<p class="note">Pick one Billie to bring its run home. One from Copperleaf keeps what it learned; one caught on the run comes home with you. Everyone else from Copperleaf comes back as they left.</p><div class="bx-grid">${saveData.team
           .map(
             m =>
-              `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
+              `<pb-pick-card data-u="${m.uid}"${payoutRarity(m)} heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
           )
           .join('')}</div>`;
   const M = {
