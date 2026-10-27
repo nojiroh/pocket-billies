@@ -62,6 +62,7 @@ const UG_W = 206,
 /** the grant kinds, and a new grant of each */
 const UNLOCK_GRANTS = {
   building: 'A building’s level',
+  resident: 'A resident’s service level',
   shop: 'An item in run shops',
   biome: 'A biome on run maps',
   research: 'Research',
@@ -75,6 +76,7 @@ function unlockGrantNew(/** @type {string} */ kind) {
     const b = Object.keys(D.buildings).find(k => D.buildings[k].levels > 1) || Object.keys(D.buildings)[0];
     return { building: b, level: 2 };
   }
+  if (kind === 'resident') return { resident: Object.keys(D.residents || {})[0] || '', level: 2 };
   if (kind === 'shop') return { shop: Object.keys(D.rules.run.shop.pick)[0] };
   if (kind === 'biome') return { biome: Object.keys(D.rules.run.map.biomes)[0] };
   return { [kind]: 10 };
@@ -144,13 +146,15 @@ function unlockGraphSvg(
           G = n.grant,
           gives = G.building
             ? `→ ${G.building} Lv ${G.level}`
-            : G.shop
-              ? `→ shop: ${G.shop}`
-              : G.biome
-                ? `→ biome: ${G.biome}`
-                : Object.entries(G)
-                    .map(([k, v]) => `+${v} ${k}`)
-                    .join(' '),
+            : G.resident
+              ? `→ ${G.resident} Lv ${G.level}`
+              : G.shop
+                ? `→ shop: ${G.shop}`
+                : G.biome
+                  ? `→ biome: ${G.biome}`
+                  : Object.entries(G)
+                      .map(([k, v]) => `+${v} ${k}`)
+                      .join(' '),
           cost =
             n.door === 'earned'
               ? (studioState.D.unlocks[n.id] || {}).when || ''
@@ -216,6 +220,14 @@ function unlockRowHTML(/** @type {string} */ id, /** @type {{ f: string, m: stri
             Object.entries(D.buildings).map(([k, b]) => [k, b.name || k])
           ),
           numberField('To level', `${gp}.level`, { min: 2, max: 20, step: 1 }),
+        ],
+        resident: () => [
+          selectField(
+            'Resident',
+            `${gp}.resident`,
+            Object.entries(D.residents || {}).map(([k, r]) => [k, /** @type {any} */ (r).name || k])
+          ),
+          numberField('To level', `${gp}.level`, { min: 2, max: 9, step: 1 }),
         ],
         shop: () => [
           selectField(

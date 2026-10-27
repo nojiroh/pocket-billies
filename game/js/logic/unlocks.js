@@ -5,7 +5,8 @@
    that building's currency, buildings.json; the Lab's rows are its board), or earned when a condition holds (`when`,
    checked in the hub after a run and on load). What is owned is saveData.meta.unlocks (id -> 1). A grant gives a
    building's level (saveData.meta.buildings, which tidy rebuilds from the owned rows so the two can't drift apart),
-   an item into run shops, a biome onto run maps, or a currency.
+   an item into run shops, a biome onto run maps, a currency, or (RS-4) a resident's service level (`{resident,
+   level}`: logic/residents.js resLevel reads the owned rows; sold only while that resident lives in Copperleaf).
    A run copies the shop and biome unlocks it starts with (run.unlocks), and its shops and map read that copy, so the
    same seed and the same copy always make the same run. A run saved before RL-11 has no copy: everything is open
    for it, as it was when it started. Earned rows are never granted on a run.
@@ -13,7 +14,7 @@
 /** @import { SaveData, Run } from '../../types/save-data' */
 /** @import { Unlock, HubBuilding } from '../../types/game-data' */
 /** @typedef {{ unlocks: Record<string, Unlock>, buildings: Record<string, HubBuilding> }} UnlockData */
-/** @typedef {'unknown' | 'owned' | 'earned' | 'soon' | 'requires' | 'run' | 'cost'} UnlockRefusal */
+/** @typedef {'unknown' | 'owned' | 'earned' | 'soon' | 'resident' | 'requires' | 'run' | 'cost'} UnlockRefusal */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
@@ -54,7 +55,7 @@ export const unlockCurrency = (R, D) => (R.at && D.buildings[R.at] ? D.buildings
 export const buildingLevel = (s, b) => Math.max(1, (s.meta && s.meta.buildings && s.meta.buildings[b]) || 1);
 
 /** null when the row can be bought now, else why not: unknown id, owned already, earned (not sold), its building is
- * coming later, a row it needs isn't owned, a run is on (unlocks are bought in the hub), or not enough of its currency
+ * coming later, (RS-4) the resident whose service it raises doesn't live in Copperleaf, a row it needs isn't owned, a run is on (unlocks are bought in the hub), or not enough of its currency
  * @param {SaveData} s @param {string} id @param {UnlockData} D @returns {UnlockRefusal | null} */
 export function unlockReady(s, id, D) {
   const R = D.unlocks[id];
@@ -62,6 +63,8 @@ export function unlockReady(s, id, D) {
   if (s.meta.unlocks[id]) return 'owned';
   if (R.when) return 'earned';
   if (!D.buildings[/** @type {string} */ (R.at)] || D.buildings[/** @type {string} */ (R.at)].soon) return 'soon';
+  const who = /** @type {any} */ (R.grant).resident;
+  if (who && !(s.meta.residents || {})[who]) return 'resident';
   if ((R.requires || []).some(r => !s.meta.unlocks[r])) return 'requires';
   if (s.run) return 'run';
   const c = unlockCurrency(R, D);

@@ -738,6 +738,9 @@ export interface Shop {
   stock?: { item?: DataId; coin?: DataId; price: number }[];
   /** 'wardrobe' for a clothes shop */
   kind?: string;
+  /** RS-4: a resident's hub shop: whose (residents.json), and the currency it takes (not Moneys) */
+  res?: DataId;
+  currency?: Exclude<CurrencyId, 'money'>;
   sells?: string[];
   thanks?: string[];
 }
@@ -2074,9 +2077,27 @@ export interface Resident {
   first?: true;
   /** where a run can meet them, and their weight among those left (0: not yet) */
   meet: { where: ('town' | 'event')[]; weight: number };
-  /** their service's levels: unlocks.json rows sold at their home (RS-4) */
+  /** their service's levels above 1: unlocks.json rows sold at their home, granting {resident, level} 2, 3, ... (RS-4) */
   levels: string[];
+  /** RS-4: what their service does at each level, Lv 1 first (it comes with moving in) */
+  service?: ResidentService[];
   about: string;
+}
+/** RS-4: one level of a resident's service (residents.json `service`) */
+export interface ResidentService {
+  about: string;
+  /** the one power level */
+  power?: true;
+  /** wares their hub shop sells from this level on, priced in their home's currency */
+  stock?: { item?: DataId; coin?: DataId; price: number }[];
+  /** rerolls of a run shop's stock a run */
+  reroll?: number;
+  /** a rumour at takeoff: a hidden node's type, or which place hides a side area */
+  rumour?: 'node' | 'side';
+  /** items into the bag at each takeoff */
+  items?: Record<DataId, number>;
+  /** effect rows on every run while they hold the level */
+  fx?: FxRow[];
 }
 /** events.json: a run's events, loot tables and trainer classes (roguelite track RL-12b; logic/encounters.js) */
 export interface EventsData {
@@ -2189,6 +2210,8 @@ export interface HubBuilding {
 /** unlocks.json: what an unlock gives (exactly one kind) */
 export type UnlockGrant =
   | { building: string; level: number }
+  /** RS-4: a resident's service level (2 and up; Lv 1 comes with moving in) */
+  | { resident: string; level: number }
   | { shop: string }
   | { biome: string }
   | { research: number }

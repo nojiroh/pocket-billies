@@ -48,7 +48,7 @@ import {
 } from './seamless-world.js';
 import { battle3dLayout } from './battle-3d.js';
 import { worldMapWanted } from './world-bowl.js';
-import { openShop } from './shop.js';
+import { openShop, residentShop } from './shop.js';
 import { runArriveSound, soundEffect } from './sound.js';
 import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
@@ -156,7 +156,8 @@ export function enterRoom(a, p) {
     id,
     kind: a,
     node: saveData.trip.node,
-    shop: a === 'shop' ? p.shop || here.shop || null : null,
+    /* RS-4: in Copperleaf, the resident who runs it (Mo's General store) */
+    shop: a === 'shop' ? p.shop || here.shop || residentShop(residentAt(p)) || null : null,
     p,
     /* RS-3: the resident who lives here (their room card) */
     res: residentAt(p),
@@ -659,7 +660,7 @@ export function walkPick(h) {
     }
     if (PB_DATA.opensRoom(a) && enterRoom(a, p)) return;
     if (a === 'shop') {
-      const id = p.shop || here.shop;
+      const id = p.shop || here.shop || residentShop(residentAt(p));
       if (id && SHOPS[id]) openShop(id);
       else toast(p.say || 'The shop is closed today.');
     } else if (a === 'clinic') clinicHeal(p.say);

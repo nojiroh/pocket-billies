@@ -29,8 +29,9 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELATIONS, RULES, wishTakeoff } from '../hooks.js';
+import { RELATIONS, RESIDENTS, RULES, UNLOCK_DATA, wishTakeoff } from '../hooks.js';
 import { relTakeoff } from './relations.js';
+import { resTakeoff } from './residents.js';
 import { copyOf, newRun, runBegin } from './run-state.js';
 import { runRegionMake } from './run-region.js';
 import { runSideForce } from './run-side.js';
@@ -146,6 +147,8 @@ export function runStartOn(s, plan, pick = {}) {
   }
   /* RL-S2: the hub folk's levels ride along (their run bonuses), and their gifts go into the bag (logic/relations.js) */
   if (RELATIONS) relTakeoff(s, RELATIONS);
+  /* RS-4: the residents' services ride along too (their levels, their gifts into the bag; logic/residents.js) */
+  if (RESIDENTS && UNLOCK_DATA) resTakeoff(s, RESIDENTS, UNLOCK_DATA.unlocks);
   /* HB-10d: a boon or curse from the square's fountain joins this run, an item from it goes into the bag */
   if (RULES && RULES.square && RULES.square.wish) wishTakeoff(s, RULES.square.wish);
   return run;

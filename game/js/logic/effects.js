@@ -20,15 +20,16 @@
    multiplied smallest first (the same product for any order), and the product stays within FX_LIMIT, so a run holding
    every Perk stays finite. With no rows every answer is the number it was given (a multiplier of exactly 1), so a
    battle or a run without Perks is the same as before them. Later sessions add rows from other places into the same
-   list (RL-11 building levels; RL-13: the run's Expedition and challenges, logic/modifiers.js).
+   list (RL-11 building levels; RL-13: the run's Expedition and challenges, logic/modifiers.js; RS-4: residents').
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
 /** @import { FxRow, Perk } from '../../types/game-data' */
 /** @typedef {FxRow & { src: string }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELATIONS, billyGeneFx, provide } from '../hooks.js';
+import { RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
 import { relFxRows } from './relations.js';
 import { modFxRows } from './modifiers.js';
+import { resFxRows } from './residents.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -100,6 +101,8 @@ export const fxOfRun = (run, perks) => {
         .../** @type {Fx[]} */ (modFxRows(run)),
         /* RL-S2: the hub folk's level bonuses (logic/relations.js) */
         .../** @type {Fx[]} */ (relFxRows(/** @type {any} */ (run), RELATIONS)),
+        /* RS-4: the residents' service levels it took off with (logic/residents.js) */
+        .../** @type {Fx[]} */ (resFxRows(/** @type {any} */ (run), RESIDENTS)),
       ]
     : [];
   return rows.length ? rows : null;

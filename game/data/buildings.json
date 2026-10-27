@@ -33,5 +33,23 @@
   "act": "workshop",
   "levels": 3,
   "about": "Bot parts fitted on your Billies as Augments, and upgraded, for Scrap. Each level fits more and upgrades further."
+ },
+ "shop": {
+  "name": "General store",
+  "currency": "research",
+  "levels": 1,
+  "about": "The store on the square. Mo Stockley runs it once he moves in: stock for Research, packed into a run."
+ },
+ "inn": {
+  "name": "Inn",
+  "currency": "research",
+  "levels": 1,
+  "about": "The inn by the square. Bertha Brew runs it once she moves in: rumours about the next run, and a snack for the road."
+ },
+ "library": {
+  "name": "Library",
+  "currency": "research",
+  "levels": 1,
+  "about": "The library. Dottie Filewell keeps it once she moves in: lore, files and a sharper eye for Research."
  }
 }
