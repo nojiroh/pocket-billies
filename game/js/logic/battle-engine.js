@@ -145,6 +145,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   bossAlpha: [() => bossAlpha, v => (bossAlpha = v)],
   // @ts-expect-error -- replaced on purpose
+  bossPhase: [() => bossPhase, v => (bossPhase = v)],
+  // @ts-expect-error -- replaced on purpose
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
   canUse: [() => canUse],
   // @ts-expect-error -- replaced on purpose
@@ -184,6 +186,8 @@ expose({
   liveActors: [() => liveActors],
   // @ts-expect-error -- replaced on purpose
   makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
+  // @ts-expect-error -- replaced on purpose
+  makeBossRobot: [() => makeBossRobot, v => (makeBossRobot = v)],
   // @ts-expect-error -- replaced on purpose
   movePower: [() => movePower, v => (movePower = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
@@ -964,15 +968,46 @@ export function checkFaints() {
 }
 /* how much a move is worth against one target, for the computer's choices */
 /* v34: an Alpha has two phases. Brought below half its HP it raises a shield (half damage for a couple of turns),
-   its eyes go red and it hits harder from then on (RULES.battle.alphaShield*) */
+   its eyes go red and it hits harder from then on (RULES.battle.alphaShield*). RL-14b: a boss with phases of its own
+   (m.boss.phases, bosses.json) fires each of them once, in order, as its HP falls to their `at`: a shield, stat
+   stages, a limb that tears loose and its line */
 export function alphaPhase(k) {
   const m = fighter(k);
-  if (!m || !m.boss || m.hp <= 0 || m.boss.ph2 || m.hp > maxHp(m) * (BATTLE_RULES.alphaPhaseAt ?? 0.5)) return;
+  if (!m || !m.boss || m.hp <= 0) return;
+  const P = m.boss.phases;
+  if (P) {
+    while ((m.boss.done || 0) < P.length && m.hp <= maxHp(m) * P[m.boss.done || 0].at)
+      bossPhase(k, P[(m.boss.done = (m.boss.done || 0) + 1) - 1]);
+    return;
+  }
+  if (m.boss.ph2 || m.hp > maxHp(m) * (BATTLE_RULES.alphaPhaseAt ?? 0.5)) return;
   m.boss.ph2 = true;
   const v = fieldState(k);
   v.shield = BATTLE_RULES.alphaShieldTurns ?? 2;
   battleSay(`${billyName(m)} is furious! A golden shield rises around it.`, { k: 'alphaPhase', si: k });
   applyStatStages(k, { lev: 1, lob: 1 });
+}
+/** RL-14b: one of a boss's phases (bosses.json): its line, its shield, its stages, then the limb that tears loose
+ * (broken outright: its move is gone and the stage drops it) @param {number} k
+ * @param {import('../../types/game-data').BossPhase} ph */
+export function bossPhase(k, ph) {
+  const m = fighter(k),
+    bots = (m.boss && m.boss.bots) || {},
+    slot = ph.breaks && limbKeys(m).includes(ph.breaks) && !partBroken(m, ph.breaks) ? ph.breaks : null,
+    part = ph.breaks ? bots[ph.breaks] || ROBOT_SLOT_NAMES[ph.breaks] : '';
+  if (ph.shield) fieldState(k).shield = ph.shield;
+  battleSay((ph.say || '{name} is furious!').replace(/\{name\}/g, billyName(m)).replace(/\{part\}/g, part), {
+    k: 'alphaPhase',
+    si: k,
+    shield: !!ph.shield,
+  });
+  if (ph.stages) applyStatStages(k, ph.stages);
+  if (slot) {
+    m.partDmg = m.partDmg || {};
+    m.partDmg[slot] = partMaxHp(m, slot);
+    refreshLastSnapshot();
+    battleSay('', { k: 'break', si: k, part: slot });
+  }
 }
 /* a rough damage figure for the AI (no rolls): how much of the target's HP a move would take */
 export function aiDamage(k, id, tk) {
@@ -1120,6 +1155,21 @@ export const joinNames = K => {
 export function makeAlpha(sp, lvl, o = {}) {
   const m = makeBilly(sp, lvl + (BATTLE_RULES.alphaLevels ?? 3), o);
   m.boss = { hp: BATTLE_RULES.alphaHp ?? 3, st: BATTLE_RULES.alphaStats ?? 1.3 };
+  m.hp = maxHp(m);
+  return m;
+}
+/** RL-14b: a boss that is a robot (bosses.json): its fighter built from new parts at lvl + its own levels, fought as
+ * an Alpha with its HP and stats multiplied, its phases and its bots' names; hpMult the Expedition's (as bossAlpha)
+ * @param {import('../../types/game-data').BossDef} def @param {number} lvl @param {number} [hpMult] */
+export function makeBossRobot(def, lvl, hpMult) {
+  const F = def.fighter,
+    m = makeRobot(F.gem, fitFromIds(F), Math.max(1, Math.min(100, lvl + (def.boss.levels || 0))), { nick: def.name });
+  m.boss = {
+    hp: def.boss.hp * (hpMult && hpMult > 0 ? hpMult : 1),
+    st: def.boss.st,
+    phases: JSON.parse(JSON.stringify(def.phases || [])),
+    bots: { ...(def.bots || {}) },
+  };
   m.hp = maxHp(m);
   return m;
 }

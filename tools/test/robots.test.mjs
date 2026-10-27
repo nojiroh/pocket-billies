@@ -319,3 +319,70 @@ test('RL-14: a wild bot (its sp names its build) fights alone as a robot by its 
   assert.ok(pay.prize > 0, 'a prize like a wild Billie’s');
   assert.ok(!fn('encountersHere')().some(x => x.id === 'wildbot'), 'gone from the place');
 });
+
+// RL-14b: the Voltron (bosses.json retrieval): a robot fought as an Alpha, its phases from the data
+const voltron = () => data.BOSSES.retrieval;
+
+test('RL-14b: makeBossRobot builds the Retrieval Unit from its boss parts, as an Alpha, never caught', () => {
+  startedSave('musk0', 30);
+  const V = voltron(),
+    m = fn('makeBossRobot')(V, 20),
+    plain = fn('makeRobot')(V.fighter.gem, fitOf(V.fighter), 20 + V.boss.levels);
+  assert.equal(m.kind, 'robot');
+  assert.equal(m.sp, 'bot:volt.intake.seizer.franker.conveyor');
+  assert.equal(m.lvl, 20 + V.boss.levels);
+  assert.equal(m.nick, 'The Retrieval Unit');
+  assert.equal(fn('maxHp')(m), Math.floor(fn('maxHp')(plain) * V.boss.hp));
+  assert.equal(m.hp, fn('maxHp')(m));
+  assert.equal(fn('makeBossRobot')(V, 20, 1.15).boss.hp, V.boss.hp * 1.15);
+  assert.equal(fn('makeBossRobot')(V, 99).lvl, 100, 'its level stops at 100');
+  fn('newBattle')('trainer', [m]);
+  assert.equal(fn('catchable')(hooks.activeBattle.sides[1].team[0]), false);
+});
+
+test('RL-14b: its phases fire once each, in order: a shield and stages at 60%, an arm-bot torn loose at 30%', () => {
+  startedSave('musk0', 30);
+  const m = fn('makeBossRobot')(voltron(), 20),
+    max = fn('maxHp')(m);
+  fn('newBattle')('trainer', [m]);
+  hooks.activeBattle.events = [];
+  m.hp = Math.floor(max * 0.7);
+  fn('alphaPhase')(1);
+  assert.equal(m.boss.done || 0, 0, 'nothing above 60%');
+  m.hp = Math.floor(max * 0.6);
+  fn('alphaPhase')(1);
+  fn('alphaPhase')(1);
+  assert.equal(m.boss.done, 1, 'the first phase fires once');
+  assert.equal(fn('fieldState')(1).shield, 2);
+  assert.ok(hooks.activeBattle.events.some(e => /The Retrieval Unit reroutes its power/.test(e.t)));
+  assert.equal(fn('partBroken')(m, 'armR'), false);
+  m.hp = Math.floor(max * 0.3);
+  fn('alphaPhase')(1);
+  assert.equal(m.boss.done, 2);
+  assert.ok(fn('partBroken')(m, 'armR'), 'the Franking Unit tears loose');
+  assert.ok(hooks.activeBattle.events.some(e => /The Franking Unit tears loose/.test(e.t)));
+  assert.ok(hooks.activeBattle.events.some(e => e.an && e.an.k === 'break' && e.an.part === 'armR'));
+  assert.equal(fn('moveUsable')(m, 'cindershot'), false, 'its move is gone with it');
+  assert.deepEqual(fn('actorSnapshot')(1).bot.brk, ['armR']);
+});
+
+test('RL-14b: a hit past both phases fires both in order; a Billie Alpha keeps the one 50% phase', () => {
+  startedSave('musk0', 30);
+  const m = fn('makeBossRobot')(voltron(), 20);
+  fn('newBattle')('trainer', [m]);
+  hooks.activeBattle.events = [];
+  m.hp = 1;
+  fn('alphaPhase')(1);
+  assert.equal(m.boss.done, 2);
+  const lines = hooks.activeBattle.events.filter(e => e.an && e.an.k === 'alphaPhase').map(e => e.t);
+  assert.equal(lines.length, 2);
+  assert.match(lines[0], /reroutes/);
+  assert.match(lines[1], /tears loose/);
+  const a = fn('makeAlpha')('musk0', 20);
+  assert.equal(a.boss.phases, undefined);
+  fn('newBattle')('trainer', [a]);
+  a.hp = Math.floor(fn('maxHp')(a) * 0.5);
+  fn('alphaPhase')(1);
+  assert.equal(a.boss.ph2, true);
+  assert.equal(fn('fieldState')(1).shield, RULES.battle.alphaShieldTurns ?? 2);
+});

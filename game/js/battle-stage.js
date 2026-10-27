@@ -2174,7 +2174,8 @@ export function battleStagePlay(an, ev) {
       battleStageFlash('#FFD860', 0.5, 420);
       battleStage.shk = 7;
       handheld(800, 1.2);
-      if (s) s.shield = 1;
+      /* RL-14b: a boss's phase without a shield (bosses.json) lights none */
+      if (s && an.shield !== false) s.shield = 1;
       ringFx(T, '#FFD860', 0.3, 2.2, 700);
       groundRing(an.si, '#FFD860', 2.6, 800);
       for (let i = 0; i < 24; i++)

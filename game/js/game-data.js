@@ -438,7 +438,7 @@ provide({ RELATIONS }); /* to-module */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}
 );
-/* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; logic/bosses.js) */
+/* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; battle-engine.js makeBossRobot) */
 export const BOSSES = /** @type {Record<string, import('../types/game-data').BossDef>} */ (
   (gameData.bosses && gameData.bosses.bosses) || {}
 );

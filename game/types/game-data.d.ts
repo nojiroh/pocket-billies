@@ -1994,7 +1994,7 @@ export interface BossPhase {
   breaks?: 'armL' | 'armR' | 'legs';
   say?: string;
 }
-/** RL-14b: bosses.json: a run boss that is a robot fought as an Alpha (logic/bosses.js) */
+/** RL-14b: bosses.json: a run boss that is a robot fought as an Alpha (battle-engine.js makeBossRobot) */
 export interface BossDef {
   name: string;
   expeditions: number[];

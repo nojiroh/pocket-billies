@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "bosses.schema.json",
- "title": "game/data/bosses.json: a run's bosses that are not a leader's Billie (roguelite track RL-14b; logic/bosses.js)",
+ "title": "game/data/bosses.json: a run's bosses that are not a leader's Billie (roguelite track RL-14b; battle-engine.js makeBossRobot)",
  "type": "object",
  "required": ["bosses"],
  "additionalProperties": false,

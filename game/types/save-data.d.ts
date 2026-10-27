@@ -502,7 +502,16 @@ export interface Billy {
   /** an Alpha you caught */
   alpha?: boolean;
   /** an Alpha in battle: its HP and stat multipliers (battle.js; not kept after the battle) */
-  boss?: { hp: number; st: number };
+  boss?: {
+    hp: number;
+    st: number;
+    /** v34: the one default phase has fired */
+    ph2?: boolean;
+    /** RL-14b: a boss's own phases (bosses.json), how many have fired, its bots' names by slot */
+    phases?: import('./game-data').BossPhase[];
+    done?: number;
+    bots?: Partial<Record<'torso' | 'armL' | 'armR' | 'legs', string>>;
+  };
   /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
   build?: Build;
   /** RL-10: a risky egg's surprise (logic/breeding.js): a quirk, or an abomination with its own name, one stat raised
