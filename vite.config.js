@@ -17,8 +17,11 @@ const MODULE_TAG = /<script type="module" src="([^"]+)"><\/script>\n?/g;
 // Phase 04c: a page's module scripts become one file, js/<page>-<hash>.js next to the page, in place of the first
 // tag. Each page is bundled on its own into a single file, so the modules run in the page's order (their imports only
 // point back); a shared chunk could run a Studio-and-game module before a game-only one that comes first on the page.
-// Not minified, so a stack trace in a debug log reads as the code; the source map is next to it. The classic scripts
+// LD-3 (the owner, 2026-10-27: minified, with its source map): only whitespace and comments go (PAGE_MINIFY), never a
+// name, so a stack trace in a debug log still names the functions and the workers made from functions' source text
+// (the ground painter's, the normal maps', the loader island's) still find them; the source map is next to it. The classic scripts
 // (version.js, debug-log.js, the art manifests, the data files) stay as they are; the module sources are left out of dist/.
+const PAGE_MINIFY = { compress: false, mangle: false, codegen: { removeWhitespace: true } };
 async function bundlePage(outDir, page) {
   const file = resolve(outDir, page);
   const html = readFileSync(file, 'utf8');
@@ -37,7 +40,10 @@ async function bundlePage(outDir, page) {
       modulePreload: false,
       copyPublicDir: false,
       // a lazy import() (the Studio self-test, studio-test-start.js) goes into the same file: one bundle per page
-      rollupOptions: { input: ENTRY, output: { format: 'es', codeSplitting: false } },
+      rollupOptions: {
+        input: ENTRY,
+        output: { format: 'es', codeSplitting: false, minify: PAGE_MINIFY, comments: false },
+      },
     },
     plugins: [
       {
