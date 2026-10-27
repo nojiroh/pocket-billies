@@ -656,6 +656,32 @@ HANDOFF entry under "Decided for the owner, to review"; the phone checks are lis
 the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
 main stay the owner's (the PR from `track/ui`).
 
+## UI-11: the colour code as data (the plan, 2026-10-27)
+Built on the session's own branch (a cloud session pushes only there), from main, which already holds `track/ui`;
+its PR goes to main, as UI-10's did (a PR into `track/ui` would carry main's 220 newer commits with it).
+- **Data:** `defaults.signals` in uiTheme.json, so the Studio's dials, ↺, Find and Connections work on it as on every
+  other group: `fill.<id>` (tags, chips, bars on dark glass, dark text on them) and `light.<id>` / `dark.<id>` (the
+  text shades). Ids: the eight families (good, bad, caution, value, special, growth, machine, bio), the three statuses
+  (brn, par, slp) and the four rarity tiers (common, uncommon, rare, mythical), with the hexes in the tables above.
+  Neutral is the palette's greys and the types stay in types.json (UI-13 retunes them), so neither is here.
+- **The same in every palette:** a preset or a screen's override can't set `signals` (the schema for overrides; the
+  check and the Studio's Save as preset for presets).
+- **Tokens:** `--sig-<id>` (the fill, both sides) and `--sig-<id>-text` (the side's shade), written by the theme sheet
+  and in tokens.css as the fallback for a page without the data. Nothing reads them yet: no visible change.
+- **Danger is the red family:** a palette that leaves `danger` out gets the red family's text shade for its side. The
+  defaults keep today's `danger` for now (no visible change); UI-12's palettes drop it.
+- **Checks** (logic/signals.js; check-data and the Studio's Check share them): each text shade reads at 4.5:1 on its
+  side's surface and 3:1 on its ground, in the defaults, every preset and every screen's colours; dark text (the dark
+  side's ground) on every fill at 4.5:1; within each screen's set the fills, the types included, at least OKLab 5
+  apart (the nearest today: amber and Electric, 5.5). The sets: battle (good, bad, caution, special, growth, the three
+  statuses, the types), pickups (the eight families and the types), map (the eight families), rarity (the four
+  tiers, on their own: common sits by Machine's gunmetal on purpose, and the pill names the tier).
+- **The Studio:** a "Colour code" group (the whole game only): a row each, the fill and both text shades, each shade
+  with its contrast badge; a colour-blind preview (none, protan, deutan, tritan; Machado 2009 at full strength) that
+  shows every screen's set as swatches and its nearest pair.
+- **Tests:** unit tests for the data, the sheet, the fallback, the checks (a planted clash fails); the Studio check's
+  `ui` step changes a fill and sees it in the preview, plants a clash for the Check, then undoes.
+
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
   39), and edits this file, ROADMAP, BRANCHES and HANDOFF; whichever of the two PRs merges second takes a small merge.
