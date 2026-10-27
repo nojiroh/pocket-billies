@@ -1541,7 +1541,7 @@
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:778",
+   "game/js/battle.js:792",
    "game/js/billie-sheet.js:118",
    "game/js/billie-sheet.js:170",
    "game/js/billie-sheet.js:179",
@@ -1575,13 +1575,13 @@
   "bolt": [
    "game/js/battle-stage.js:809",
    "game/js/battle-stage.js:2188",
-   "game/js/battle.js:515",
+   "game/js/battle.js:564",
    "game/js/boot.js:142",
    "game/js/run-loading.js:396",
    "game/js/ui-run-kit.js:76"
   ],
   "box": [
-   "game/js/battle.js:950",
+   "game/js/battle.js:964",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
@@ -1770,7 +1770,7 @@
    "game/js/unit-card.js:164"
   ],
   "leaf": [
-   "game/js/battle.js:310",
+   "game/js/battle.js:314",
    "game/js/boot.js:137",
    "game/js/field-moves.js:146",
    "game/js/logic/placeholder-art.js:270",
@@ -1786,6 +1786,7 @@
    "game/js/world-bowl.js:4075"
   ],
   "moon": [
+   "game/js/battle.js:530",
    "game/js/boot.js:167",
    "game/js/environment.js:658"
   ],
@@ -1810,8 +1811,8 @@
   "pick": [
    "game/js/augment-screen.js:202",
    "game/js/augment-screen.js:224",
-   "game/js/battle.js:714",
-   "game/js/battle.js:830",
+   "game/js/battle.js:728",
+   "game/js/battle.js:844",
    "game/js/gene-bank-screen.js:199",
    "game/js/gene-bank-screen.js:221",
    "game/js/logic/data-checks.js:797",
@@ -1864,7 +1865,7 @@
    "game/js/battle-stage.js:2354",
    "game/js/battle-stage.js:2377",
    "game/js/battle-stage.js:2476",
-   "game/js/battle.js:1133",
+   "game/js/battle.js:1147",
    "game/js/billie-sheet.js:82",
    "game/js/billie-sheet.js:156",
    "game/js/billie-sheet.js:213",
@@ -1894,7 +1895,7 @@
    "game/js/game-data.js:160"
   ],
   "tag": [
-   "game/js/battle.js:568",
+   "game/js/battle.js:582",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:205",
    "game/js/ui.js:206"
@@ -1904,8 +1905,7 @@
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
    "game/js/battle-stage.js:2175",
-   "game/js/battle.js:533",
-   "game/js/battle.js:1189",
+   "game/js/battle.js:1203",
    "game/js/cutscene/director.js:163",
    "game/js/engine/post-effects.js:478",
    "game/js/engine/post-effects.js:580",
