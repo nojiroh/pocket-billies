@@ -1,0 +1,40 @@
+{
+ "id": "carnegie",
+ "names": ["Philanthrobite"],
+ "types": [["Steel","Water"]],
+ "prof": [1.1,1.05,1.4,0.8,1.15,0.5],
+ "rar": "rare",
+ "wild": false,
+ "totals": [490],
+ "learn": [
+  [1,"handshake"],
+  [1,"markdown"],
+  [1,"interest"],
+  [8,"gripcrush"],
+  [14,"bulk"],
+  [20,"buyhold"],
+  [26,"libraryslam"],
+  [32,"headline"],
+  [38,"dynamic"],
+  [44,"exclusive"],
+  [50,"gentrify"]
+ ],
+ "cat": ["Shale Billie"],
+ "ht": [0.6],
+ "wt": [55],
+ "hab": ["Revived in Bureau labs; once, the floor of an iron sea"],
+ "diet": ["Pig iron and library fines"],
+ "bio": [
+  "A trilobite in riveted plate, dug out of a shale bed and brought back by a Bureau lab that has regretted it ever since. It builds a library in every town it crawls through, then bills the town for the bricks."
+ ],
+ "note": ["Gives it all away. Invoices the giving."],
+ "parody": "Andrew Carnegie",
+ "cry": [
+  {
+   "base": "machine",
+   "pitch": 40,
+   "length": 1.3,
+   "name": "placeholder: a rusty clank from the bottom of an old sea (Claude's draft)"
+  }
+ ]
+}

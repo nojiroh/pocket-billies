@@ -78,6 +78,7 @@ expose({
   MAPGEN_WATER: [() => MAPGEN_WATER],
   MAPGEN_WET: [() => MAPGEN_WET],
   MAPGEN_WILD_MARK: [() => MAPGEN_WILD_MARK],
+  mapgenAhead: [() => mapgenAhead],
   mapgenAlong: [() => mapgenAlong],
   mapgenBetween: [() => mapgenBetween],
   // @ts-expect-error -- replaced on purpose
@@ -292,6 +293,7 @@ expose({
   mapgenStreamLine: [() => mapgenStreamLine, v => (mapgenStreamLine = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTerraces: [() => mapgenTerraces, v => (mapgenTerraces = v)],
+  mapgenToward: [() => mapgenToward],
   // @ts-expect-error -- replaced on purpose
   mapgenTownFolk: [() => mapgenTownFolk, v => (mapgenTownFolk = v)],
   // @ts-expect-error -- replaced on purpose
@@ -311,7 +313,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 17; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a) */
+export const MAPGEN_VERSION = 19; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -487,6 +489,8 @@ export function mapgenParams(p) {
   /* the sides whose edge is pinned to height 0 (a run's: every scene meets any neighbour there), kept only when given */
   if (P.pin !== undefined)
     P.pin = typeof P.pin === 'string' ? [...new Set(P.pin.split(''))].filter(c => 'NSEW'.includes(c)).join('') : '';
+  /* WM-1: the side the way on leaves by (a run's: east), kept only when given; west when not */
+  if (P.ahead !== undefined) P.ahead = typeof P.ahead === 'string' && /^[NSEW]$/.test(P.ahead) ? P.ahead : 'W';
   R.exits = (R.exits || [])
     .filter(e => e && 'NSEW'.includes(e.side))
     .slice(0, 4)
@@ -683,7 +687,7 @@ export function mapgenNewWork(P, ctx) {
     /* TR-2c: the ledges' cells and their flights of stairs (mapgenLedges) */
     ledgeCells: 0,
     ledgeStairs: 0,
-    /* TR-2c: the tall grass patches (mapgenGrassPatches), [{ x, z, r, n: cells, across: on the way west }] */
+    /* TR-2c: the tall grass patches (mapgenGrassPatches), [{ x, z, r, n: cells, across: on the way on }] */
     grassPatches: /** @type {{ x: number, z: number, r: number, n: number, across: boolean }[]} */ ([]),
     /* TR-2b: marked spots (a trail's summit: { kind, x, z, y }) */
     spots: /** @type {{ kind: string, x: number, z: number, y: number }[]} */ ([]),
@@ -924,6 +928,11 @@ export function mapgenPairScene(A, idA, B, idB) {
 
 /* ---------- MG-2: the land meets the neighbour along a joined edge ---------- */
 /** the depth of point (x, z) from a side of the map, and how far along that side it is */
+/** WM-1: the side the way on leaves by (params.ahead; west when not given, as before runs went west to east)
+ * @param {any} P */
+export const mapgenAhead = P => P.ahead || 'W';
+/** WM-1: how far a point lies toward a side (larger is further) @param {string} side @param {number[]} p [x, z] */
+export const mapgenToward = (side, p) => (side === 'E' ? p[0] : side === 'W' ? -p[0] : side === 'N' ? p[1] : -p[1]);
 export const mapgenDepth = (G, side, x, z) => (side === 'S' ? z : side === 'N' ? G.h - z : side === 'W' ? x : G.w - x);
 export const mapgenAlong = (side, x, z) => (side === 'N' || side === 'S' ? x : z);
 /** a side's corner heights corrected toward each joined strip: corr[u] for every corner u along the side. Full
@@ -2535,7 +2544,7 @@ export function mapgenStageLand(G) {
 export const MAPGEN_GRASS_PATCH = [15, 70];
 /** tall grass in patches (Gen 3: a few patches a route, one across the path you take), in place of the old drifts
  * beside the road: 3-6 (by the nature.tall dial) ragged ovals of 15-70 m². The first lies across the road on the way
- * west (from the hub to the westmost exit, else the longest way out), the road under it too, so walking on means
+ * on (from the hub to the furthest exit on the `ahead` side, west when not given; else the longest way out), the road under it too, so walking on means
  * walking through it; the rest lie off the road, 2-14 m from it. None within 7 m of the hub or an exit, on water, a
  * bank, a bridge, a jetty or a mountain. Sets G.grassPatches: [{ x, z, r: the reach from its middle, n: cells, across }] */
 export function mapgenGrassPatches(G) {
@@ -2592,12 +2601,13 @@ export function mapgenGrassPatches(G) {
     }
     patches.push({ x: mapgenRound2(x), z: mapgenRound2(z), r: mapgenRound2(r * 1.05 + 0.75), n: cells.length, across });
   };
-  /* the first: across the road on the way west */
-  const ways = G.edgeExits.filter(e => e.path && e.path.length > 1);
-  const west = ways.filter(e => e.side === 'W'),
-    way = (west.length ? west : ways).reduce(
-      (m, e) =>
-        !m || (west.length ? e.path[e.path.length - 1][0] < m.path[m.path.length - 1][0] : e.len > m.len) ? e : m,
+  /* the first: across the road on the way on (WM-1: the `ahead` side's) */
+  const ways = G.edgeExits.filter(e => e.path && e.path.length > 1),
+    A = mapgenAhead(P),
+    end = (/** @type {any} */ e) => mapgenToward(A, e.path[e.path.length - 1]);
+  const on = ways.filter(e => e.side === A),
+    way = (on.length ? on : ways).reduce(
+      (m, e) => (!m || (on.length ? end(e) > end(m) : e.len > m.len) ? e : m),
       /** @type {any} */ (null)
     );
   if (way) {
@@ -3810,7 +3820,7 @@ export function mapgenForestFill(G, rnd) {
  * RT-1: the spots a laid-out route marks for what comes later (RT-2 trainers, RT-3 set pieces, RT-4 finds), found on
  * the finished scene from the walk (props and all): `pocket` (made on purpose: a field with a gap, a clearing with a
  * way in; kept when reached), `clearing` (open ground 3.5 m round, off the road), `deadend` (where a walk from the
- * hub ends: a local peak of its length, hemmed in), `pinch` (the way west at its narrowest: dir its heading in
+ * hub ends: a local peak of its length, hemmed in), `pinch` (the way on at its narrowest: dir its heading in
  * degrees, r half its width). { kind, x, z, y, r?, dir? }
  */
 export function mapgenLayoutSpots(sc, scenery, G) {
@@ -3896,10 +3906,12 @@ export function mapgenLayoutSpots(sc, scenery, G) {
     out.push({ kind: 'deadend', x: mapgenRound2(x), z: mapgenRound2(z), y: yOf(q, x, z) });
     nd++;
   }
-  /* pinches: along the way west (the westmost exit's walk from the hub), the open width across it, its narrowest */
-  const west = (sc.edgeExits || []).filter(e => e.side === 'W').sort((a, b) => a.t - b.t)[0] || (sc.edgeExits || [])[0];
-  if (west && west.path && west.path.length > 1) {
-    const pts = mapgenResample(west.path, 1),
+  /* pinches: along the way on (the `ahead` side's first exit's walk from the hub; WM-1), the open width across it,
+     its narrowest */
+  const A = mapgenAhead(G.P),
+    way = (sc.edgeExits || []).filter(e => e.side === A).sort((a, b) => a.t - b.t)[0] || (sc.edgeExits || [])[0];
+  if (way && way.path && way.path.length > 1) {
+    const pts = mapgenResample(way.path, 1),
       wid = [];
     const openAt = (x, z) => {
       if (x < 0 || z < 0 || x >= sc.w || z >= sc.h) return false;

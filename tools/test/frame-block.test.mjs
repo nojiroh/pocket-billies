@@ -36,6 +36,19 @@ function declared(glsl) {
   return out;
 }
 const lightUniforms = () => declared(OLD_LIGHT_UNIFORMS);
+// air track AIR-1: the haze's members, added after the old path left (packed from the light context, 0: today's haze)
+const AIR_MEMBERS = [
+  'uSkyTop',
+  'uSkyMid',
+  'uSkyLow',
+  'uHazeSky',
+  'uHazeTint',
+  'uHazeFall',
+  'uSkyGlow',
+  'uHazeY',
+  'uMistRay',
+  'uMistBox',
+];
 const mat = k => Array.from({ length: 16 }, (_, i) => k + i * 0.125);
 // a light context with every part filled, odd numbers so a wrong offset shows
 function fixture(o = {}) {
@@ -229,7 +242,9 @@ test('LIGHT_GLSL declares only the block, the shadow samplers and uFol', () => {
   assert.ok(LIGHT_GLSL.includes(FRAME_BLOCK_GLSL));
 });
 
-test('the block declares every light value the old path had (uSH as vec4 slots), and nothing else but padding', () => {
+// added to the block after C3 (in a padding slot, so its size and offsets stay): the shadow fixes' bits
+const NEW_MEMBERS = ['uShFix'];
+test('the block declares every light value the old path had (uSH as vec4 slots), and nothing else but padding and the new members', () => {
   const L = lightUniforms(),
     B = FRAME_BLOCK_LAYOUT.members;
   for (const [name, [type, len]] of Object.entries(L)) {
@@ -237,19 +252,28 @@ test('the block declares every light value the old path had (uSH as vec4 slots),
     assert.ok(B[name], name + ' missing from the block');
     assert.deepEqual([B[name][1], B[name][2]], name === 'uSH' ? ['vec4', 9] : [type, len], name);
   }
-  for (const name of Object.keys(B)) assert.ok(L[name] || /Pad/.test(name), name + ' is not a light uniform');
+  for (const name of Object.keys(B))
+    assert.ok(
+      L[name] || AIR_MEMBERS.includes(name) || NEW_MEMBERS.includes(name) || /Pad/.test(name),
+      name + ' is not a light uniform'
+    );
 });
 
-test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints at the end; 2208 bytes', () => {
+test('std140 offsets: matrices, arrays, vec3 + float pairs, the ints, then the haze, then the fog grid box; 2288 bytes', () => {
   const B = FRAME_BLOCK_LAYOUT.members,
     at = k => B[k][0];
-  assert.equal(FRAME_BLOCK_BYTES, 2208);
+  assert.equal(FRAME_BLOCK_BYTES, 2288);
+  assert.equal(at('uMistBox'), 2272);
   assert.deepEqual([at('uShadowM'), at('uShadowM2'), at('uLampM0'), at('uLampM1')], [0, 64, 128, 192]);
   assert.deepEqual([at('uLP'), at('uLC'), at('uAO'), at('uSH')], [256, 512, 768, 1792]);
   assert.deepEqual([at('uEye'), at('uTime'), at('uSunDir'), at('uFogStart')], [1936, 1948, 1952, 1964]);
   assert.deepEqual([at('uValley'), at('uMist'), at('uMistY'), at('uCloudSh')], [2112, 2120, 2124, 2128]);
   assert.deepEqual([at('uShadowTexel'), at('uShadowTexel2'), at('uRoomDim')], [2160, 2168, 2176]);
   assert.deepEqual([at('uNL'), at('uNLS'), at('uNAO')], [2192, 2196, 2200]);
+  assert.deepEqual(
+    [at('uSkyTop'), at('uHazeSky'), at('uSkyMid'), at('uSkyLow'), at('uSkyGlow'), at('uMistRay')],
+    [2208, 2220, 2224, 2240, 2256, 2264]
+  );
   // the rules on their own: a vec3 takes 16-byte alignment, a float may fill its fourth slot, arrays step by vec4
   const t = std140Layout('layout(std140) uniform T{float a;vec3 b;float c;vec2 d[2];int e;};').members;
   assert.deepEqual(
@@ -331,4 +355,79 @@ test('a program with the block: packed and sent once per light context, bound ag
   X.lampSh = [];
   setLightUniforms(B, X);
   assert.equal(calls('bufferSubData').length, 3);
+});
+
+test('packing: the haze (AIR-1): the sky colours and dials at their offsets; with none given, 0 and the haze colour', () => {
+  const X = fixture({
+    sky: [
+      [0.1, 0.2, 0.3],
+      [0.4, 0.5, 0.6],
+      [0.7, 0.8, 0.9],
+    ],
+    hazeSky: 1,
+    hazeTint: 0.5,
+    hazeFall: 0.06,
+  });
+  Object.assign(X, { skyGlow: 0.4, hazeY: 2.5, mistRay: 0.75 });
+  const get = packed(X),
+    F = v => Array.from(Float32Array.from(v));
+  assert.deepEqual(
+    [get('uSkyTop'), get('uSkyMid'), get('uSkyLow')],
+    [F([0.1, 0.2, 0.3]), F([0.4, 0.5, 0.6]), F([0.7, 0.8, 0.9])]
+  );
+  assert.deepEqual(
+    ['uHazeSky', 'uHazeTint', 'uHazeFall', 'uSkyGlow', 'uHazeY', 'uMistRay'].map(k => get(k)[0]),
+    F([1, 0.5, 0.06, 0.4, 2.5, 0.75])
+  );
+  const none = packed(fixture());
+  assert.deepEqual(
+    ['uHazeSky', 'uHazeTint', 'uHazeFall', 'uSkyGlow', 'uHazeY', 'uMistRay'].map(k => none(k)[0]),
+    [0, 0, 0, 0, 0, 0]
+  );
+  assert.deepEqual(none('uSkyLow'), F(fixture().fog));
+});
+
+test('packing: the fog grid box for the mist in fogit (AIR-3), zeros when the march is off', () => {
+  const F = v => Array.from(Float32Array.from(v));
+  assert.deepEqual(packed(fixture({ mistBox: [12.5, -3, 24, 1] }))('uMistBox'), F([12.5, -3, 24, 1]));
+  assert.deepEqual(packed(fixture())('uMistBox'), [0, 0, 0, 0]);
+});
+
+test('packing: a window light that knows its way out (lights.windowFacing) carries it as an angle past 10 in uLC.w', () => {
+  const fn = [0.6, -0.8],
+    X = fixture({
+      lights: [
+        { p: [1, 2, 3], r: 4, c: [1, 0.8, 0.5], front: true, fn },
+        { p: [0, 1, 0], r: 3, c: [1, 1, 1] },
+      ],
+    }),
+    buf = new ArrayBuffer(FRAME_BLOCK_BYTES),
+    f = new Float32Array(buf),
+    n = new Int32Array(buf);
+  packFrameBlock(X, f, n);
+  const w0 = f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + 3],
+    w1 = f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + 7];
+  assert.ok(Math.abs(Math.cos(w0 - 10) - fn[0]) < 1e-6 && Math.abs(Math.sin(w0 - 10) - fn[1]) < 1e-6);
+  assert.equal(w1, 1, 'any other light keeps 1');
+  assert.ok(f[FRAME_BLOCK_LAYOUT.members.uLP[0] / 4 + 3] < 0, 'a window light is still marked by a negative range');
+});
+
+test('packing: the shadow fixes as bits, and a lamp’s pool takes its lamp’s shadow map with Lamp shadows hold', () => {
+  const lamp = { p: [0, 3, 0], r: 6, c: [1, 1, 1], src: 'L1' },
+    pool = { p: [0, 0.35, 0], r: 4, c: [1, 1, 1], pool: 1, src: 'L1' },
+    other = { p: [5, 0.35, 5], r: 4, c: [1, 1, 1], pool: 1, src: 'L2' },
+    pack = shFix => {
+      const buf = new ArrayBuffer(FRAME_BLOCK_BYTES),
+        f = new Float32Array(buf),
+        n = new Int32Array(buf);
+      packFrameBlock(fixture({ lights: [lamp, pool, other], lampSh: [{ d: 'lamp0', vp: mat(3) }], shFix }), f, n);
+      return f;
+    },
+    w = (f, i) => f[FRAME_BLOCK_LAYOUT.members.uLC[0] / 4 + i * 4 + 3];
+  const on = pack(3),
+    off = pack(1);
+  assert.equal(on[FRAME_BLOCK_LAYOUT.members.uShFix[0] / 4], 3);
+  assert.equal(w(on, 1), -1, 'the pool uses lamp map 0');
+  assert.equal(w(on, 2), 1, 'a pool whose lamp has no map: plain');
+  assert.equal(w(off, 1), 1, 'without the fix the pool is plain, as before');
 });

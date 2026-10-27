@@ -18,6 +18,7 @@ expose({
   FRAME_OFFSETS: [() => FRAME_OFFSETS],
   STD140: [() => STD140],
   packFrameBlock: [() => packFrameBlock, v => (packFrameBlock = v)],
+  poolLampMap: [() => poolLampMap, v => (poolLampMap = v)],
   put: [() => put],
   std140Layout: [() => std140Layout, v => (std140Layout = v)],
 });
@@ -30,7 +31,9 @@ vec3 uEye;float uTime;vec3 uSunDir;float uFogStart;vec3 uSunCol;float uFogD;vec3
 vec3 uAmbBot;float uSHK;vec3 uFogCol;float uFogSun;vec3 uTint;float uTintAmt;vec3 uShTint;float uShStr;
 vec3 uShLift;float uShPx;vec4 uRoomB;vec4 uSeason;vec2 uValley;float uMist,uMistY;
 float uCloudSh,uCloudSpd,uCloudCov,uContact;float uShadowOn,uShadow2On,uShPen,uShPen2;
-vec2 uShadowTexel,uShadowTexel2;float uRoomDim,uShLite,uShSteps,uFramePad;int uNL,uNLS,uNAO,uFramePadI;
+vec2 uShadowTexel,uShadowTexel2;float uRoomDim,uShLite,uShSteps,uShFix;int uNL,uNLS,uNAO,uFramePadI;
+vec3 uSkyTop;float uHazeSky;vec3 uSkyMid;float uHazeTint;vec3 uSkyLow;float uHazeFall;float uSkyGlow,uHazeY,uMistRay,uFramePad2;
+vec4 uMistBox;
 };`;
 /* std140: a member's size and alignment in bytes; an array element and a matrix column take a whole vec4 */
 const STD140 = { float: [4, 4], int: [4, 4], vec2: [8, 8], vec3: [12, 16], vec4: [16, 16], mat4: [64, 16] };
@@ -96,7 +99,9 @@ export function packFrameBlock(X, f, n) {
     f[c] = l.c[0];
     f[c + 1] = l.c[1];
     f[c + 2] = l.c[2];
-    f[c + 3] = 1;
+    /* a window light that knows its way out (lights.windowFacing): that direction as an angle past 10; else 1 */
+    f[c + 3] =
+      l.front && l.fn ? 10 + Math.atan2(l.fn[1], l.fn[0]) : l.pool && X.shFix & 2 ? poolLampMap(L, l, LS.length) : 1;
   }
   n[FRAME_OFFSETS.uNL] = L.length;
   for (let i = 0; i < X.ao.length; i++) put(f, FRAME_OFFSETS.uAO + i * 4, X.ao[i], 4);
@@ -132,5 +137,27 @@ export function packFrameBlock(X, f, n) {
   f[FRAME_OFFSETS.uContact] = X.contact;
   f[FRAME_OFFSETS.uShPx] = X.shPx || 0;
   f[FRAME_OFFSETS.uShSteps] = X.shSteps ?? 2;
+  /* the shadow fixes as bits: 1 Steady shadow edges (the soft edge's blocker search), 2 Lamp shadows hold */
+  f[FRAME_OFFSETS.uShFix] = X.shFix || 0;
   if (X.shLift) put(f, FRAME_OFFSETS.uShLift, X.shLift, 3);
+  /* air track AIR-1: the haze's sky colours and dials (fogit; each 0 is today's haze) */
+  const sk = X.sky || [X.fog, X.fog, X.fog];
+  put(f, FRAME_OFFSETS.uSkyTop, sk[0], 3);
+  put(f, FRAME_OFFSETS.uSkyMid, sk[1], 3);
+  put(f, FRAME_OFFSETS.uSkyLow, sk[2], 3);
+  f[FRAME_OFFSETS.uHazeSky] = X.hazeSky || 0;
+  f[FRAME_OFFSETS.uHazeTint] = X.hazeTint || 0;
+  f[FRAME_OFFSETS.uHazeFall] = X.hazeFall || 0;
+  f[FRAME_OFFSETS.uSkyGlow] = X.skyGlow || 0;
+  f[FRAME_OFFSETS.uHazeY] = X.hazeY || 0;
+  f[FRAME_OFFSETS.uMistRay] = X.mistRay || 0;
+  /* AIR-3: where the lit march holds the low fog (the fog grid's middle x, z, its half size, 1 when on); fogit's mist
+     and valley mist fade out inside it so the fog isn't counted twice. All 0: the mist everywhere, as before */
+  put(f, FRAME_OFFSETS.uMistBox, X.mistBox || [0, 0, 0, 0], 4);
+}
+/* Lamp shadows hold: a lamp's pool of light uses the shadow map of its lamp when that lamp has one (-1 or -2 in uLC.w,
+   the map's index + 1, negated); else 1 */
+function poolLampMap(L, pool, nLS) {
+  for (let j = 0; j < nLS; j++) if (L[j].src != null && L[j].src === pool.src && !L[j].pool) return -(j + 1);
+  return 1;
 }

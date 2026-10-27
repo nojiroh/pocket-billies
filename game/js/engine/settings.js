@@ -18,6 +18,7 @@ expose({
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
   FRAME_SETTINGS: [() => FRAME_SETTINGS],
+  OFF_LOOK: [() => OFF_LOOK],
   PLAIN_LOOK: [() => PLAIN_LOOK],
   TOD_NAMES: [() => TOD_NAMES],
   beginFrameSettings: [() => beginFrameSettings, v => (beginFrameSettings = v)],
@@ -28,6 +29,7 @@ expose({
   engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
   frameSettingsState: [() => frameSettingsState],
   gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
+  graphicsOff: [() => graphicsOff, v => (graphicsOff = v)],
   lookDials: [() => lookDials, v => (lookDials = v)],
   lookStop: [() => lookStop],
   playerBlur: [() => playerBlur, v => (playerBlur = v)],
@@ -47,6 +49,7 @@ export const ENGINE_DEFAULTS = {
     focusEase: 0.35,
     blurFar: 1.5,
     blurNear: 0.9,
+    nearSpread: false,
     blur: 0.5,
     bokeh: 1,
     aberration: 0.5,
@@ -63,11 +66,17 @@ export const ENGINE_DEFAULTS = {
     bloom: 0.55,
     bloomThreshold: 0.9,
     bloomSize: 1,
+    /* the bloom as strong at every quality step (it added one copy per level, so the slower steps' fewer levels made it
+       fainter) and its threshold read after the exposure (changing the exposure moved what blooms); off: as before */
+    bloomEven: false,
     grade: 'film',
     gradeAmount: 0.6,
     tone: 'soft',
     ink: 0.35,
     outlines: 1,
+    /* the ink outlines and the screen's occlusion follow the camera: blurred things lose their outlines with the blur,
+       and the outlines fade out past where the camera looks (they faded from 25 m, about where you stand) */
+    inkFollow: false,
   },
   sun: {
     angle: 35,
@@ -86,6 +95,9 @@ export const ENGINE_DEFAULTS = {
     shaftLength: 0.85,
     glare: 0.6,
     shAmbient: 1,
+    /* the shafts, the glare and the god rays take the light's own colour (warm at golden hour, the moon's at night) and
+       its strength (dim under the moon); off: always the sun's colour at full strength, as before */
+    followLight: false,
   },
   shadows: {
     selfShade: 0.7,
@@ -102,12 +114,39 @@ export const ENGINE_DEFAULTS = {
     hue: 0.6,
     fit: true,
     groundAO: 1,
+    /* the screen's occlusion is measured so a plane gives none (open ground, seen at a slant, no longer reads as a
+       crease); off: as before */
+    aoPlane: false,
+    /* the ground's baked shade at the feet of things dims only its sky light (sunlit ground at a wall's foot stays
+       sunlit); off: it dimmed the ground's colour and its sunlight too */
+    groundAOSky: false,
     cascades: true,
     nearRadius: 13,
     lampShadows: 2,
+    /* the sun's shadow maps look straight down the light, so the texel snapping holds and shadow edges stand still as you
+       walk; off: their eye sits 2 m higher than the light's line, which made the snapping miss and the edges crawl */
+    steadyEdges: false,
+    /* lamp shadows hold: their depth bias grows with distance as a perspective map needs (shadows stayed on the feet only
+       close to the lamp), the pool a lamp lays under itself takes the lamp's shadow (it lit over it), and a lamp counts
+       as hanging high by its height above the ground, not above sea level */
+    lampFix: false,
     aoKind: 'horizon',
   },
-  lights: { brightness: 1, glow: 1, flicker: 0.5, windowsDay: 0.15, roomLight: true, windowLight: 1, pools: 1 },
+  lights: {
+    brightness: 1,
+    glow: 1,
+    flicker: 0.5,
+    windowsDay: 0.15,
+    roomLight: true,
+    windowLight: 1,
+    pools: 1,
+    /* lamps, windows and fires light the water and the falls near them at night, as they light the ground; off: water
+       took no lamp light */
+    onWater: false,
+    /* a house's window light falls out of its front whichever way the house faces (soft at the wall); off: it is cut
+       off on the far side of a line through it, the same for every house (lit wrong when the house is turned) */
+    windowFacing: false,
+  },
   air: {
     haze: null,
     hazeStart: 0.95,
@@ -121,8 +160,23 @@ export const ENGINE_DEFAULTS = {
     heat: 1,
     wetGround: 1,
     sunFog: 0.4,
+    /* air track AIR-1 (fogit): each 0 is the haze as it was */
+    hazeSky: 0,
+    hazeTint: 0,
+    hazeFalloff: 0,
+    mistRay: 0,
+    skyGlow: 0,
     godRays: 0.5,
     lightsInAir: 0.7,
+    /* air track AIR-3: the low fog lit in the air (the march reads the fog grid; 0: fogit's flat mist as before), and
+       how much lamps glow in it at night */
+    fogVolume: 1,
+    fogLamps: 1,
+    /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
+    cheapShafts: 0,
+    /* smart light shafts: the cheap shafts placed where shade lies behind them, looking into the light, apart and never
+       over you (logic/shaft-pick.js); off: one at about every other tree near you */
+    shaftPick: false,
   },
   world: {
     hugSlopes: true,
@@ -133,6 +187,19 @@ export const ENGINE_DEFAULTS = {
     reliefShade: 1,
     groundBumps: 1,
     groundShine: 1,
+    /* bricks, planks and roof tiles on the 3D buildings and the low-poly models catch the light from their own texels
+       (buildings.js bldBump); 0: flat walls and roofs, as before */
+    buildingBumps: 0,
+    /* terrain TR-4: a generated place's cliffs in its biome's own rock (biomes.json cliff: the wall atlas's material
+       and three strata colours), steep smooth land included; off: the scene's rock and the rock ground picture */
+    cliffFaces: false,
+    /* terrain TR-4: snow on level ground above the biome's snow line (biomes.json cliff.snowLine) */
+    snowLine: false,
+    /* terrain TR-4: scree at the foot of natural cliffs and a turf edge along grassy terrace tops, painted on the ground */
+    cliffEdges: false,
+    /* a 3D building's front picture takes the building material's shine and wrap (as its bumps are made with it), and its
+       bumps may face a little down; off: a hard-wired wrap of .6 and no bump below a quarter up */
+    frontMaterial: false,
     buildings3d: true,
     interiors: true,
     solidProps: true,
@@ -140,6 +207,9 @@ export const ENGINE_DEFAULTS = {
     voxelChunky: false,
     voxelLowPoly: true,
     solidTrees: true,
+    /* a solid tree's dark core (the crown's own picture in the middle) takes 30% less light, as its shader meant to (the
+       darkening was worked out and never used); off: lit like its clumps */
+    treeCoreShade: false,
     treeDetail: 20,
     treeCount: 40,
     mini3d: true,
@@ -270,8 +340,14 @@ export const ENGINE_DEFAULTS = {
        0: no limit) */
     minPropPx: 0,
     phonePropDistance: 0,
+    /* HB-10c: the most townsfolk drawn at once in a town (the hub and a run's towns), fewer on Balanced and once
+       frames come late (logic/square-day.js folkCap) */
+    townFolk: 10,
     sharpTex: true,
     edgeBleed: true,
+    /* pictures' bump maps get smaller sizes too, so a far prop's light doesn't flicker as it moves (its colour already
+       had them); off: one size */
+    normalMips: false,
     /* phase 20 C1: the same, as the code's fallbacks (walk scenes kept ready; the ground painted in a worker unless
        false) */
     keepScenes: 3,
@@ -279,6 +355,9 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 C5: lights picked with stable keys and fades (off: the nearest each frame, as before), and how many may
        be lit at once (the shaders hold 16) */
     stableLights: false,
+    /* on a graphics chip that can draw to half-float pictures but not to full-float ones (some phones), the scene and the
+       bloom keep their bright parts above white (HDR) as on the others; read when the 3D view starts */
+    hdrHalf: false,
     lights: 16,
     /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
     skyLast: false,
@@ -388,6 +467,12 @@ export const ENGINE_SPEC = [
       ],
       ['blurFar', 'Blur growth behind', 0.1, 3, 0.05],
       ['blurNear', 'Blur growth in front', 0.1, 3, 0.05],
+      [
+        'nearSpread',
+        'Spread blur in front',
+        'bool',
+        "A blurred thing in front of the focus softens over what is behind it, as through a real lens (on). Off: the blur stops at the thing's outline, a hard edge against the sharp ground. Two small extra passes.",
+      ],
       ['blur', 'Maximum blur', 0, 2.5, 0.05],
       ['bokeh', 'Round highlights', 0, 3, 0.05, 'How much bright spots bloom into discs when out of focus.'],
       ['aberration', 'Chromatic aberration', 0, 3, 0.05, 'Color fringes toward the corners.'],
@@ -420,9 +505,21 @@ export const ENGINE_SPEC = [
         0.05,
         'v47: black outlines in older pictures take a deep shade of the colour beside them, as the newer art draws them. 0: as painted.',
       ],
+      [
+        'inkFollow',
+        'Outlines follow the camera',
+        'bool',
+        'Ink outlines and contact shading melt away with the depth-of-field blur, and stay on you and what is near you at every zoom (on). Off: crisp outlines on blurred things, and fading from 25 m.',
+      ],
       ['bloom', 'Bloom', 0, 2, 0.02, 'Glow around bright lights.'],
       ['bloomThreshold', 'Bloom threshold', 0.5, 2, 0.02],
       ['bloomSize', 'Bloom size', 0.3, 2, 0.05],
+      [
+        'bloomEven',
+        'Even bloom',
+        'bool',
+        'The glow round bright things is as strong at every quality step, and its threshold follows the exposure (on). Off: as before.',
+      ],
       [
         'grade',
         'Colour grade',
@@ -502,6 +599,12 @@ export const ENGINE_SPEC = [
         'A soft halo and lens ghosts when the sun is in view and nothing blocks it.',
       ],
       ['shaftLength', 'Shaft length', 0.2, 1.5, 0.05],
+      [
+        'followLight',
+        'Rays follow the light',
+        'bool',
+        'Light shafts, glare and god rays take the colour of the light (warm at golden hour, the moon at night) and fade with it at night (on). Off: always the sun’s colour at full strength.',
+      ],
     ],
   ],
   [
@@ -567,6 +670,18 @@ export const ENGINE_SPEC = [
         'At night the nearest lamps get a shadow map of their own, so people and trees throw shadows away from them (v43).',
       ],
       [
+        'steadyEdges',
+        'Steady shadow edges',
+        'bool',
+        'The sun’s shadow maps look straight down the light, so shadow edges stand still while you walk, and wide soft edges don’t end in a lit band (on). Off: as before.',
+      ],
+      [
+        'lampFix',
+        'Lamp shadows hold',
+        'bool',
+        'Shadows from lamps stay on the feet of what casts them farther from the lamp, aren’t washed out by the lamp’s own pool of light, and work on high ground (on). Off: as before.',
+      ],
+      [
         'aoKind',
         'Ambient occlusion',
         'sel',
@@ -595,6 +710,18 @@ export const ENGINE_SPEC = [
         0.05,
         'Soft darkening on the ground round buildings, trees, rocks and the foot of walls, worked out once per scene.',
       ],
+      [
+        'groundAOSky',
+        'Feet shade on sky light only',
+        'bool',
+        'The shade at the feet of things dims only the light from the sky, so sunlit ground stays sunlit (on). Off: it also dims the ground’s colour and its sunlight.',
+      ],
+      [
+        'aoPlane',
+        'Occlusion follows the slope',
+        'bool',
+        'The screen’s occlusion darkens creases, not open ground seen at a slant (on). Off: as before.',
+      ],
     ],
   ],
   [
@@ -618,9 +745,21 @@ export const ENGINE_SPEC = [
         0.05,
         'After dark, street lamps lay a pool of light on the ground under them.',
       ],
+      [
+        'onWater',
+        'Lamp light on water',
+        'bool',
+        'Lamps, windows and fires near water light its surface and the falls at night, as they light the ground (on). Off: water takes no lamp light.',
+      ],
       ['glow', 'Glow size', 0, 3, 0.05],
       ['flicker', 'Flicker', 0, 1, 0.05],
       ['windowsDay', 'Window light in daytime', 0, 1, 0.01],
+      [
+        'windowFacing',
+        'Window light faces out',
+        'bool',
+        'The pool of light from a house’s windows falls out of its front whichever way the house is turned, fading softly at the wall (on). Off: the same cut-off line for every house.',
+      ],
       [
         'roomLight',
         'Light through room windows',
@@ -639,6 +778,46 @@ export const ENGINE_SPEC = [
       ['mist', 'Low mist', 0, 0.6, 0.01],
       ['sunFog', 'Sunlit haze', 0, 1.5, 0.05, 'The haze takes the sun’s colour where you look toward the sun (v43).'],
       [
+        'skyGlow',
+        'Sky glow',
+        0,
+        1.5,
+        0.05,
+        'A broad, soft brightening of the haze on the sun’s whole side; Sunlit haze is the tight glow round the sun (AIR-1).',
+      ],
+      [
+        'hazeSky',
+        'Haze follows the sky',
+        0,
+        1,
+        0.05,
+        'The haze takes the sky’s gradient where you look: the place’s own haze below the horizon, the sky’s colours above it (AIR-1).',
+      ],
+      [
+        'hazeTint',
+        'Haze colour fade',
+        0,
+        1,
+        0.05,
+        'Far things lose red a little faster than blue, as in real air (AIR-1).',
+      ],
+      [
+        'hazeFalloff',
+        'Haze thins with height',
+        0,
+        0.3,
+        0.01,
+        'The haze is thickest low down and thins above where you stand: hilltops and roofs stand clearer (AIR-1).',
+      ],
+      [
+        'mistRay',
+        'Mist across the view',
+        0,
+        1,
+        0.05,
+        'The low mist thickens along the whole view over low ground, not only where a thing stands in it (AIR-1).',
+      ],
+      [
         'godRays',
         'God rays',
         0,
@@ -647,6 +826,29 @@ export const ENGINE_SPEC = [
         'Sunlight in the air, shadowed by what stands in it: beams between trees and buildings (v43). A march through the air at half resolution.',
       ],
       ['lightsInAir', 'Lamps in the air', 0, 2, 0.05, 'A glow in the air round lamps and fires at night (v43).'],
+      [
+        'fogVolume',
+        'Fog in the air',
+        0,
+        2,
+        0.05,
+        'The low fog as a lit volume: banks in hollows, sun shafts and shade in it (AIR-3). 0: the flat mist as before.',
+      ],
+      ['fogLamps', 'Lamps in the fog', 0, 2, 0.05, 'How much lamps and fires glow in the low fog at night (AIR-3).'],
+      [
+        'cheapShafts',
+        'Cheap light shafts',
+        0,
+        1.5,
+        0.05,
+        'When God rays are off (or the automatic quality turns them off): a few soft beams of sunlight from the trees near you, strongest at dawn and golden hour. Cheap; 0 for none.',
+      ],
+      [
+        'shaftPick',
+        'Smart light shafts',
+        'bool',
+        'The cheap light shafts go where they show best: through gaps between crowns and past roofs, with shade behind them, looking into the light, a few apart and never over you, fading in and out (on). Off: one at about every other tree near you.',
+      ],
       ['mistHeight', 'Mist height (m)', 0, 2, 0.05],
       [
         'valleyMist',
@@ -713,10 +915,42 @@ export const ENGINE_SPEC = [
       ['groundBumps', 'Ground bumpiness', 0, 3, 0.05, 'Cobbles, rock and paths catch the light from their own pixels.'],
       ['groundShine', 'Ground shine', 0, 3, 0.05, 'How much smooth floors and plazas gleam in the sun.'],
       [
+        'buildingBumps',
+        'Building bumpiness',
+        0,
+        3,
+        0.05,
+        'Bricks, planks and roof tiles on buildings and low-poly models catch the light from their own pixels. 0: flat.',
+      ],
+      [
+        'frontMaterial',
+        'Fronts lit as their material',
+        'bool',
+        'A 3D building’s painted front takes the light as its material says (its shine, how far light wraps round), and ledges can face down into shade (on). Off: as before.',
+      ],
+      [
         'buildings3d',
         '3D buildings',
         'bool',
         'Houses and shops as models with real roofs, walls and see-through windows. Off: their pictures stand in.',
+      ],
+      [
+        'cliffFaces',
+        'Biome cliffs',
+        'bool',
+        "Cliffs and steep slopes in a run place take its biome's own rock (basalt, limestone, granite...) in coloured strata bands. Off: the same grey rock everywhere.",
+      ],
+      [
+        'snowLine',
+        'Snow line',
+        'bool',
+        "High ground in a run place is snowy above its biome's snow line (mountain biomes, the tallest peaks elsewhere). Off: snow only in winter.",
+      ],
+      [
+        'cliffEdges',
+        'Scree and turf edges',
+        'bool',
+        'Loose stones gather at the foot of natural cliffs and a darker turf edge lines grassy terrace tops. Off: a plain light lip and shadow.',
       ],
       [
         'hugSlopes',
@@ -735,6 +969,12 @@ export const ENGINE_SPEC = [
         'Solid trees',
         'bool',
         'Trees and bushes with round trunks and crowns of separate leaf clumps that sway on their own. Off: their layered pictures.',
+      ],
+      [
+        'treeCoreShade',
+        'Shaded tree cores',
+        'bool',
+        'The dark middle of a solid tree’s crown takes less light than its clumps, so the crown looks deep (on). Off: lit like the clumps.',
       ],
       ['treeDetail', 'Solid trees within (m)', 8, 40, 1, 'Farther trees are drawn as pictures.'],
       ['treeCount', 'Most solid trees at once', 5, 120, 1],
@@ -1235,6 +1475,14 @@ export const ENGINE_SPEC = [
         'On a phone, small props (flowers, tufts, pebbles, crates) fade out before this many metres; buildings, trees and anything big stay. 0: no limit.',
       ],
       [
+        'townFolk',
+        'Townsfolk at once',
+        0,
+        12,
+        1,
+        'The most townsfolk drawn at once in a town; on Balanced graphics 0.8 of it, once frames come late 0.6. The rest keep their day unseen.',
+      ],
+      [
         'battleLite',
         'Lighter battles',
         'bool',
@@ -1251,6 +1499,12 @@ export const ENGINE_SPEC = [
         'Keep still shadows',
         'bool',
         'Shadows of things that never move are drawn once and kept; only moving things are drawn each frame.',
+      ],
+      [
+        'hdrHalf',
+        'Half-float HDR',
+        'bool',
+        'On graphics chips that can only draw to half-float pictures (some phones), keep bright parts above white for bloom and lamps, as other chips do (on). Read when the 3D view starts. Off: such chips clip at white.',
       ],
       [
         'stableLights',
@@ -1301,6 +1555,12 @@ export const ENGINE_SPEC = [
         'Clean edges far off',
         'bool',
         'Far-off props keep their colour at the edges instead of a dark fringe.',
+      ],
+      [
+        'normalMips',
+        'Steady light on far props',
+        'bool',
+        'The bumps that catch the light on pictures get smaller sizes for far-off props, so their lighting doesn’t flicker as they move (on). Off: one size.',
       ],
     ],
   ],
@@ -1370,11 +1630,36 @@ export const PLAIN_LOOK = {
     heat: 0,
     wetGround: 0,
     sunFog: 0,
+    skyGlow: 0,
+    hazeSky: 0,
+    hazeTint: 0,
+    hazeFalloff: 0,
+    mistRay: 0,
     godRays: 0,
     lightsInAir: 0,
+    fogVolume: 0,
+    fogLamps: 0,
     hazeDistance: 900,
   },
 };
+/* the Graphics preset Off (Settings → Display): the plain look and also no shadows, grass, far things, water
+   reflections or lamp glow. It stands in for the player's dials (their expert dials wait untouched), and the walk view
+   leaves out the time of day, the weather and the blur while it is on */
+const OFF_LOOK = {
+  ...PLAIN_LOOK,
+  lens: { ...PLAIN_LOOK.lens, blurFar: 0, blurNear: 0, edgeBlur: 0, miniature: 0 },
+  sun: { ...PLAIN_LOOK.sun, shafts: 0, innerSun: 0 },
+  air: { ...PLAIN_LOOK.air, cheapShafts: 0 },
+  shadows: { strength: 0, selfShade: 0, contact: 0, ao: 0, groundAO: 0, lampShadows: 0 },
+  lights: { glow: 0, pools: 0, flicker: 0 },
+  grass: { density: 0 },
+  world: { farProps: 0, farHills: 0 },
+  water: { reflection: 0, caustics: 0, glints: 0, foam: 0 },
+};
+export function graphicsOff() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
+  return !!p && p.aim === 'off';
+}
 /* CAM-4b: camera looks (the Studio's Camera section): presets of camera dials only, each setting the same dials so one
    swaps cleanly for another. Their stops stay on the straight line the default stops lie on (14 degrees of tilt a
    unit of zoom, the distance times the zoom), so the pull and the cycle feel the same; they differ in the tilt, the
@@ -1505,11 +1790,13 @@ function gameDataDials() {
 export function playerBlur() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
     v = p ? p.blur : null;
+  if (graphicsOff()) return 0;
   return typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(1.5, v)) : 1;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
 function playerDials() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
+  if (graphicsOff()) return OFF_LOOK;
   return p && p.expert && p.eng ? p.eng : null;
 }
 /* phase 20 C1: while a walk frame draws, each dial is looked up once (beginFrameSettings, after the environment update)

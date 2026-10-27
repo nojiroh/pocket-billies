@@ -264,6 +264,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
         p: [cx + fn[0] * 0.5, it.y + 1.2, cz + fn[1] * 0.5],
         r: 2.4 + Math.min(1.6, n * 0.5),
         front: true,
+        /* Window light faces out (lights.windowFacing): the way out of the front, for the shader's soft cut at the wall */
+        fn: engineSetting('lights', 'windowFacing') ? fn : null,
         src: it.p,
         kind: LIGHT_KIND.window,
         c: [1.1, 0.8, 0.45].map(v => v * Math.min(2, 0.7 + n * 0.35) * wk * lb * (dark ? 1 : 0.6)),
@@ -402,6 +404,10 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     ambHor,
     noSunLobe: !!roomSH,
     haze: hz,
+    /* air track AIR-1: the sky the haze follows, the height its falloff starts from (where you stand), and the cave */
+    sky,
+    hazeY: standingHeightAt(P.x, P.z),
+    cave,
     fogStart: C.df * engineSetting('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
     /* HB-8: a director's frame may see further than the walk (BT.hazeK: the train ride's shots out over the sea) */
     fogD:

@@ -29,6 +29,7 @@ import {
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
 import { WADE_DEPTH } from '../logic/wading.js';
+import { artImg } from '../art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
 import {
   WALK_FRAME_M,
@@ -100,8 +101,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
   const prop = (p, far) => {
     const M = propWithVariant(p, C0.props[p.k]);
     if (!M || !propShown(p)) return;
-    const im = artImage(alternatePropImage(p, M, C0, sc));
-    if (!imageReady(im)) return;
+    const path = alternatePropImage(p, M, C0, sc),
+      im = artImage(path);
+    if (!imageReady(im)) {
+      /* LD-3: a picture its place's list didn't name (pictures load per place now) is asked for once */
+      if (!im && path) artImg(path);
+      return;
+    }
     const lk = far ? null : propLook(p, M, sc),
       /* phase 09 batch 1: a prop drawn at its own scale (ppm: pixels to the metre, 32 for the new style) */
       s = ((p.s || 1) / (M.ppm || PPU)) * (lk ? lk.size : 1) * (p.grow != null ? cropGrowth(p) : 1),
@@ -383,9 +389,11 @@ export function gatherFrameItems(st, C, PPU, C0) {
   });
   if (!st.battle)
     for (const f of walkView.folk) {
-      const fr = folkFrames(f.seed);
+      /* RS-3: a resident wears their own look (people/<id>.json) */
+      const who = f.who || 'folk:' + f.seed,
+        fr = f.who ? personWalkFrames(f.who) : folkFrames(f.seed);
       if (!fr) continue;
-      warmPerson('folk:' + f.seed);
+      warmPerson(who);
       const set = fr[f.dir] || fr.down;
       let fim =
         typeof pickWalkFrame === 'function'
@@ -396,7 +404,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
               : set[1 + (Math.floor(t / 150) % 2)]
             : set[0];
       /* v47: a wave hello */ if (f.waveT > 0 && typeof personBattlePose === 'function') {
-        const w = personBattlePose('folk:' + f.seed, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
+        const w = personBattlePose(who, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
         if (w) fim = w;
       }
       if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));

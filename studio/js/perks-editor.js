@@ -252,7 +252,8 @@ SECTIONS.relics = () => {
   if (!perkEd.sp || !D.lines.some((/** @type {any} */ l) => perkEd.sp.startsWith(l.id)))
     perkEd.sp = D.lines[0].id + '1';
   perkEd.also = perkEd.also.filter(id => L[id] && id !== k);
-  if (!perkEd.picks) perkEd.picks = Math.max(1, D.rules.run.map.minibosses || 1);
+  /* WM-2: a run's fewest mini-bosses (rules.json run.map.towns: a town after each) */
+  if (!perkEd.picks) perkEd.picks = Math.max(1, (D.rules.run.map.towns || [])[0] || 1);
   const p = `perks.${k}`;
   afterRender(perkFillSoon);
   return `<div class="split"><aside class="list-col">${head}<div class="llist">${list}</div></aside>

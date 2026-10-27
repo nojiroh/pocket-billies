@@ -27,6 +27,7 @@ import {
   platesTick,
   provide,
   reducedMotion,
+  ribbonColour,
   robotIdsFromSp,
   robotPartDef,
   saveData,
@@ -34,6 +35,19 @@ import {
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
+import {
+  RIBBON_CORE,
+  ribbonCells,
+  ribbonEdges,
+  ribbonTone,
+  smearCount,
+  smearGhosts,
+  smearHistory,
+  smearRecord,
+  smearRibbon,
+  smearStretch,
+  throwArcEase,
+} from './logic/smear.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
@@ -44,6 +58,7 @@ expose({
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
   AREAS: [() => AREAS],
   BATTLE_STAGE_ART: [() => BATTLE_STAGE_ART],
+  BAYER4: [() => BAYER4],
   CAMERA_KEYS: [() => CAMERA_KEYS],
   CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
@@ -70,7 +85,9 @@ expose({
   PYRAMID_SCALE: [() => PYRAMID_SCALE],
   PYRAMID_SIDE: [() => PYRAMID_SIDE],
   PYRAMID_YAW: [() => PYRAMID_YAW],
+  RIBBON_DITHER: [() => RIBBON_DITHER],
   SOFT_BLUR_PAD: [() => SOFT_BLUR_PAD],
+  SPIN_AXIS: [() => SPIN_AXIS],
   SPRITE_BLUR_SCALE: [() => SPRITE_BLUR_SCALE],
   STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
   STAGE_FRAME_WIDTH: [() => STAGE_FRAME_WIDTH],
@@ -84,6 +101,8 @@ expose({
   actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
+  battleRibbonCells: [() => battleRibbonCells, v => (battleRibbonCells = v)],
+  battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
@@ -108,6 +127,7 @@ expose({
   battleStageStop: [() => battleStageStop, v => ((battleStageStop = v), provide({ battleStageStop }))],
   battleStageTargets: [() => battleStageTargets, v => (battleStageTargets = v)],
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
+  battleStretch: [() => battleStretch, v => (battleStretch = v)],
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
@@ -126,6 +146,7 @@ expose({
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
   drawParticles: [() => drawParticles, v => (drawParticles = v)],
   drawPixelRing: [() => drawPixelRing, v => (drawPixelRing = v)],
+  drawRibbon2d: [() => drawRibbon2d, v => (drawRibbon2d = v)],
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
   dueEvents: [() => dueEvents],
@@ -140,6 +161,7 @@ expose({
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
   pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
+  ribbonDither: [() => ribbonDither, v => (ribbonDither = v)],
   rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
@@ -808,6 +830,60 @@ function spawnAmbientParticles(dt) {
     }
   }
 }
+/* VFX-1: how many afterimages a thrown pyramid leaves (none under Reduced motion, fewer as the quality drops) */
+export function battleSmearCount() {
+  return smearCount(!!reducedMotion, battleStage.q.lvl);
+}
+/* VFX-3: its stretch now (logic/smear.js smearStretch), or null: off where the afterimages are */
+export function battleStretch(C) {
+  return C && C.arc ? smearStretch(C.trail, battleStage.t, battleSmearCount() > 0, battleStage.V) : null;
+}
+/* VFX-2: how many places its ribbon runs along (none where the afterimages are off, fewer at level 2) */
+export function battleRibbonCells() {
+  return ribbonCells(!!reducedMotion, battleStage.q.lvl);
+}
+/* VFX-2: a thrown pyramid's ribbon on the 2D canvas, while its model can't be drawn: each span a flat four-sided
+   piece in its colour with the white core inside, eroded by a 4x4 dither pattern (one a colour and step, made once) */
+const RIBBON_DITHER = new Map(),
+  BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function ribbonDither(c, col, e) {
+  const key = col + e;
+  let P = RIBBON_DITHER.get(key);
+  if (!P) {
+    const cv = makeCanvas(4, 4),
+      x = cv.getContext('2d');
+    x.fillStyle = col;
+    for (let i = 0; i < 16; i++) if ((BAYER4[i] + 0.5) / 16 >= e) x.fillRect(i % 4, i >> 2, 1, 1);
+    RIBBON_DITHER.set(key, (P = c.createPattern(cv, 'repeat')));
+  }
+  return P;
+}
+function drawRibbon2d(c, R, E, col) {
+  const Q = E.map(e => [battleStageProject(...e[0]), battleStageProject(...e[1])]),
+    piece = (a, b, k) => {
+      const m = (p, q) => [(p.x + q.x) / 2, (p.y + q.y) / 2],
+        ma = m(a[0], a[1]),
+        mb = m(b[0], b[1]),
+        at = (M, p, s) => [Math.round(M[0] + (p.x - M[0]) * s), Math.round(M[1] + (p.y - M[1]) * s)];
+      c.beginPath();
+      c.moveTo(...at(ma, a[0], k));
+      c.lineTo(...at(ma, a[1], k));
+      c.lineTo(...at(mb, b[1], k));
+      c.lineTo(...at(mb, b[0], k));
+      c.closePath();
+      c.fill();
+    };
+  for (let i = 0; i + 1 < R.length; i++) {
+    const a = Q[i],
+      b = Q[i + 1],
+      e = Math.max(R[i].e, R[i + 1].e);
+    if (!a[0] || !a[1] || !b[0] || !b[1] || e >= 1) continue;
+    c.fillStyle = ribbonDither(c, col, e);
+    piece(a, b, 1);
+    c.fillStyle = ribbonDither(c, 'white', e);
+    piece(a, b, RIBBON_CORE);
+  }
+}
 /* adaptive quality: drop render detail if frames run long, restore when there's headroom */
 function adaptBattleStageQuality(work) {
   const Q = battleStage.q,
@@ -1335,8 +1411,47 @@ function battleStageDrawEffects(c, skip0) {
       /* the mail move's coin: the money icon (not a catch item) */
       const cc = C.kind === MONEY_ICON ? iconCanvas('coin', 3) : pyramidCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
+      /* VFX-2: its ribbon under everything (as walk/effects.js ribbonPass draws it) */
+      const RB = smearRibbon(C.trail, battleStage.t, battleRibbonCells(), battleStage.V, C.arc ? C : null),
+        rc = ribbonColour(C.kind);
+      if (RB.length > 1 && rc)
+        drawRibbon2d(
+          c,
+          RB,
+          ribbonEdges(RB, battleStage.V, C.rax),
+          `rgb(${ribbonTone(rc).map(v => Math.round(v * 255))})`
+        );
+      /* VFX-1: its afterimages, oldest first (under the newer ones), at whole pixels like the icon */
+      const G = smearGhosts(C.trail, battleStage.t, battleSmearCount(), battleStage.V);
+      for (let i = G.length - 1; i >= 0; i--) {
+        const g = G[i],
+          gq = battleStageProject(g.s.x, g.s.y, g.s.z);
+        if (!gq) continue;
+        c.save();
+        c.translate(Math.round(gq.x), Math.round(gq.y));
+        c.rotate(g.s.rot || 0);
+        c.globalAlpha = g.fade;
+        c.drawImage(cc, -8 * k, -8 * k, 16 * k, 16 * k);
+        c.globalAlpha = g.fade * Math.min(1, g.glow);
+        c.drawImage(whiteCopy(cc), -8 * k, -8 * k, 16 * k, 16 * k);
+        c.restore();
+      }
+      c.globalAlpha = 1;
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
+      /* VFX-3: on its fastest cells, drawn longer back along its drag (its front edge stays put) */
+      const S = battleStretch(C),
+        sq = S && battleStageProject(C.x + S.d[0], C.y + S.d[1], C.z + S.d[2]);
+      if (sq) {
+        const dx = sq.x - q.x,
+          dy = sq.y - q.y,
+          l = Math.hypot(dx, dy),
+          a = Math.atan2(dy, dx);
+        c.rotate(a);
+        c.translate(l / 2, 0);
+        c.scale(1 + l / (16 * k), 1);
+        c.rotate(-a);
+      }
       c.rotate(C.rot || 0);
       c.drawImage(cc, -8 * k, -8 * k, 16 * k, 16 * k);
       if (C.glow > 0) {
@@ -1487,7 +1602,8 @@ export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
 };
 /* RF-2: a pyramid (a catch item's id: its model or its icon) or the mail move's coin (MONEY_ICON) flies an arc. A
    pyramid tumbles about a tilted axis (C.ax, C.tum; faster with spin) while C.fly; battle-3d.js pyramidItem draws it */
-const MONEY_ICON = '$coin';
+const MONEY_ICON = '$coin',
+  SPIN_AXIS = [0.35, 0.3, 0.89];
 function pyramidArc(from, to, dur, kind, onLand, spin) {
   const C = {
     kind,
@@ -1500,20 +1616,31 @@ function pyramidArc(from, to, dur, kind, onLand, spin) {
     glow: 0,
     fly: true,
     tum: 0,
-    ax: spin ? [0.35, 0.3, 0.89] : [0.62, 0.45, 0.64],
+    ax: spin ? SPIN_AXIS : [0.62, 0.45, 0.64],
     tip: false,
+    /* VFX-1: its places on the smear grid, for the afterimages and (VFX-2) the ribbon (logic/smear.js); arc: still
+       on its arc (the ribbon reaches it), rax: a spin throw's tumble axis, which its ribbon twists about (C.ax changes
+       on the catch's hit, the ribbon's doesn't) */
+    trail: smearHistory(),
+    arc: true,
+    rax: spin ? SPIN_AXIS : null,
   };
   battleStage.coin = C;
   const t0 = battleStage.t;
   const step = () => {
-    const k = Math.min(1, (battleStage.t - t0) / dur);
-    C.x = from.x + (to.x - from.x) * k;
-    C.z = from.z + (to.z - from.z) * k;
-    C.y = from.y + (to.y - from.y) * k + Math.sin(k * Math.PI) * 1.6;
+    const k = Math.min(1, (battleStage.t - t0) / dur),
+      /* VFX-1: fast from the hand, a hang at the top, fast into the hit; the same path and time */
+      u = throwArcEase(k);
+    C.x = from.x + (to.x - from.x) * u;
+    C.z = from.z + (to.z - from.z) * u;
+    C.y = from.y + (to.y - from.y) * u + Math.sin(u * Math.PI) * 1.6;
     C.rot = k * Math.PI * (spin ? 6 : 3);
     C.tum = k * Math.PI * (spin ? 7 : 4);
+    /* VFX-3: k too, its pace there says whether the cell is stretched */
+    if (k < 1) smearRecord(C.trail, battleStage.t, { x: C.x, y: C.y, z: C.z, rot: C.rot, tum: C.tum, k });
     if (k < 1) scheduleAt(8, step);
     else {
+      C.arc = false;
       C.rot = 0;
       onLand && onLand(C);
     }

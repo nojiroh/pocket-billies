@@ -53,6 +53,7 @@
   "canopy": {"forest_canopy":1},
   "fences": {"fence_wood":3,"hedge":2,"stone_wall":1},
   "tall": {"tallgrass":4,"tallgrass_c":4,"tallgrass_b":3},
+  "cliff": {"mat":1,"strata":["#86807A","#7A746C","#958C80"],"band":1.2,"snowLine":15},
   "look": {"sky":["#8CC6E6","#BFE3EE","#F4E8C8"],"haze":"#EAD9C0","hazeD":34,"amb":"pollen","far":"hills","farH":8},
   "town": {
    "houses": {"house_red":3,"house_blue":2,"house_green":2,"house_cottage":3,"cottage_solar":2},
@@ -132,6 +133,7 @@
   "canopy": {"forest_canopy":1},
   "fences": {"hedge":2,"fence_wood":2},
   "tall": {"tallgrass":4,"tallgrass_b":4,"tallgrass_c":3},
+  "cliff": {"mat":9,"strata":["#6E7860","#646C58","#7A8068"],"band":1,"snowLine":15},
   "look": {"sky":["#7FB8D8","#B3D9E6","#E2E8C8"],"haze":"#C9D8B8","hazeD":28,"amb":"spore","rays":1,"far":"forest","farH":8},
   "town": {
    "houses": {"cottage_moss":4,"house_cottage":3,"house_green":2},
@@ -212,6 +214,7 @@
   "canopy": {"forest_canopy":1},
   "fences": {"fence_wood":2,"hedge":2},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":2},
+  "cliff": {"mat":1,"strata":["#7E8084","#74767C","#8A8A88"],"band":1.2,"snowLine":15},
   "look": {"sky":["#88C4E4","#BEE2EC","#F2EACB"],"haze":"#DCE6D0","hazeD":34,"amb":"pollen","rays":1,"far":"forest","farH":8},
   "town": {
    "houses": {"house_blue":3,"cottage_solar":3,"house_cottage":2,"townhouse_yellow":1},
@@ -272,6 +275,7 @@
   "rocks": {"stones_flat":4,"scree":4,"boulder_lichen":2,"rocks":2,"rocks_b":2,"rocks_c":1,"rocks_snow":1,"boulder":1},
   "fences": {"stone_wall":1},
   "tall": {"tallgrass_c":4,"tallgrass":3,"tallgrass_b":2},
+  "cliff": {"mat":2,"strata":["#CC9460","#B87C50","#D8A878"],"band":0.9},
   "look": {"sky":["#8CC2E2","#D6E6E4","#F6E2BE"],"haze":"#F0D9B2","hazeD":42,"amb":"sand","far":"canyon","farH":8},
   "town": {
    "houses": {"townhouse_red":3,"house_red":2,"cottage_solar":2},
@@ -329,6 +333,7 @@
   "rocks": {"lava_rock":4,"boulder_basalt":3,"basalt_columns":3,"rocks_basalt":2,"stones_flat":2,"scree":1,"boulder_lichen":1},
   "fences": {"stone_wall":1},
   "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
+  "cliff": {"mat":12,"strata":["#4C4C54","#423E44","#5A4E4A"],"band":1.4},
   "look": {
    "sky": ["#3A2230","#8A4A3A","#E6A060"],
    "haze": "#B07060",
@@ -398,6 +403,7 @@
   "canopy": {"forest_canopy_pine":1},
   "fences": {"stone_wall":2,"fence_wood":1},
   "tall": {"tallgrass":4},
+  "cliff": {"mat":13,"strata":["#C8C4B8","#B8B6AE","#D4D2CA"],"band":1.1,"snowLine":4},
   "look": {
    "sky": ["#8AB0D6","#C8DCEC","#EEF2F6"],
    "haze": "#DCE6EE",
@@ -453,6 +459,7 @@
   "rocks": {"stones_flat":4,"scree":4,"rocks":1,"boulder_lichen":1},
   "fences": {"fence_wood":1},
   "tall": {"tallgrass":4},
+  "cliff": {"mat":13,"strata":["#D2C8AE","#C4BAA0","#DCD4BE"],"band":1},
   "look": {
    "sky": ["#5E9EE0","#A6D2F2","#F2F0E0"],
    "haze": "#D6E8F2",
@@ -540,6 +547,7 @@
   "canopy": {"forest_canopy_pine":1},
   "fences": {"stone_wall":3,"fence_wood":1},
   "tall": {"tallgrass_b":4,"tallgrass":4,"tallgrass_c":3},
+  "cliff": {"mat":15,"strata":["#B4AEA8","#A69E98","#C0BAB2"],"band":1.6,"snowLine":11},
   "look": {"sky":["#7FBCE8","#BFE0F0","#EEF2EA"],"haze":"#DCE6EE","hazeD":48,"amb":"dust","wind":1.6,"far":"mountains","farH":9},
   "town": {
    "houses": {"house_large":2,"cottage_juniper":3,"cottage_moss":2},
@@ -610,6 +618,7 @@
   "canopy": {"forest_canopy_autumn":3,"forest_canopy":1},
   "fences": {"fence_wood":2,"hedge":2,"stone_wall":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":4,"tallgrass":2},
+  "cliff": {"mat":1,"strata":["#8A7E70","#7C7064","#968878"],"band":1.2,"snowLine":15},
   "look": {
    "sky": ["#8CB8E0","#D8D8D0","#F4DCC0"],
    "haze": "#E2D6C8",
@@ -678,6 +687,7 @@
   "rocks": {"rocks_b":4,"stones_flat":4,"rocks_mossy":3,"rocks_c":2,"rocks":2,"scree":1,"rocks_snow":1,"boulder_lichen":1},
   "fences": {"stone_wall":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":3},
+  "cliff": {"mat":2,"strata":["#C0704C","#D89A6C","#A85C40"],"band":0.7},
   "look": {
    "sky": ["#86BEE6","#D6DCD8","#F2D8B8"],
    "haze": "#E6D0B6",
@@ -756,6 +766,7 @@
   "canopy": {"forest_canopy":1},
   "fences": {"hedge":1},
   "tall": {"tallgrass_c":4,"tallgrass_b":3,"tallgrass":3},
+  "cliff": {"mat":9,"strata":["#5E7050","#56664A","#6A7A58"],"band":1},
   "look": {
    "sky": ["#7EB8D8","#C4E0D8","#E8EED4"],
    "haze": "#C6D8C8",
@@ -811,6 +822,7 @@
   "plants": {"mushroom_blue":3,"mushroom":3,"mushroom_brown":2},
   "rocks": {"boulder":3,"boulder_b":3,"rocks":3,"rocks_b":3,"rocks_c":2,"scree":2,"boulder_granite":1},
   "tall": {"mushroom_blue":3,"mushroom":2,"mushroom_brown":2},
+  "cliff": {"mat":14,"strata":["#5C5474","#524A68","#665E80"],"band":1.3},
   "look": {
    "sky": ["#221C36","#342C50","#54486E"],
    "haze": "#463E62",

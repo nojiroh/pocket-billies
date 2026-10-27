@@ -113,7 +113,12 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-6 | Natural fence | The bending post-and-rail fence | HB-4b | 1 |
 | HB-7 | Station and trains | The station, platform and sky rail models; one train per region theme; the station's sheet takes "Start a run" and the Crest upgrades; the airship scenery only | HB-4b | 1-2 |
 | HB-8 | Departure and return | Board, climb the rail, the portal opens, the train flies in, the carriage loading screen; the return out of the portal (win and loss) | HB-2, HB-7 | 1-2 |
-| HB-10 | The square alive (asked in WA-10) | The owner (2026-10-26): the town square smaller, "more alive with 3D props and a natural shape". WA-10 (water track) patched its size only: tools/patch-copperleaf-water.mjs --square paved it to about 8 m with an uneven rim, grass round it, the two streets carried in (the town zone stays locked). Left here: a natural outline from the generator (town.square: a noise or lobed rim instead of a circle), 3D props (benches, a fountain or the well as a model, market stalls, planters, lamps as models), the front plots brought in toward the smaller square. Found in WA-10: an unlocked rebuild of the town makes it again differently even with the same dials (19 plots of 22, three buildings lost, 114 of 155 height rows): the placing after HB-4b (HB-5, HB-7) is not reproducible from the dials, so a town rebuild needs that fixed first | HB-4b | 1-2 |
+| HB-10a | Square: shape and fountain (done 2026-10-26) | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
+| HB-10b | Square: edges and market (done 2026-10-26) | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
+| HB-10c | Square: people (done 2026-10-26) | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
+| HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
+| HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
+| HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera; the pinwheel street entries (moved from HB-10a) | HB-10a | 1-2 |
 | HB-9 | Look pass on the phone | Headless phone pictures each round, then the owner's play test and debug log | all | 1 |
 
 About 10-15 sessions. HB-1, HB-2 and HB-4a can run side by side; then HB-3 beside HB-4b; then HB-5, HB-6 and HB-7.
@@ -458,6 +463,140 @@ toasts and the lost run's scene); the words as proposed. Checked against the cod
   (validation/look-train-ride/).
 - Not done: the station's own door/boarding animation (you walk to the train and vanish); the train has no sound of
   its own (the take-off motif and a whoosh at the tear); a save swapped in mid-ride is not handled specially.
+
+### HB-10 The square alive
+Planned 2026-10-26 in Plan Mode with online research (session branch `ccr-144f3c08-vf09lo`). The owner's brief: the
+town square is empty and the layout dull; make the hub island feel more alive. WA-10 left a natural outline, 3D props
+and the front plots here (the old HB-10 row).
+
+**Verified facts** (main at b87b818d; check again each session)
+- The square's middle is the well plot (148.63, 59.36), paved to about 8 m by WA-10 (`patch-copperleaf-water.mjs
+  --square`); dials `town.square {r: 8, off: 6, front: 6}`. Within 18 m stand 8 props: the well, one lantern, a
+  signpost, a fruit tree, the giant swing tree, bracken, the Workshop, one cottage.
+- From the well: Workshop 16 m, lab 19, library 22, General store 27, inn 41, station 43, Juniper's home 54. No
+  building fronts the square.
+- People: Juniper only (at her cottage), `folk: 5` wandering; animals in `life`. No day schedules found.
+- Models in game/art/scene/next/models never placed on the hub: fountain, bench_wood, stall, market_cart,
+  market_hall, streetlamp(_b), notice_board, clock_tower, flag_pole, banner_bunting, planter_round, crate_goods, sack,
+  tent, campfire, bike_rack, bin (low-poly or picture not yet checked).
+- An unlocked town rebuild is not reproducible (WA-10): layout changes are hand patches with the town locked until
+  HB-10f.
+
+**Research** (what we take)
+- Whyte, *The Social Life of Small Urban Spaces*: sittable space, food, water, trees and "triangulation" (a
+  performer or feature that gets strangers talking). → the fountain, the busker, the stalls.
+- Gehl, the edge effect: people stop along edges and facades first; the middle fills last. → edges before middle;
+  the middle stays walkable for the orbit camera.
+- Sitte: irregular but rule-bound squares, streets entering at T-joins or as a pinwheel, bent lines, changing views.
+  → the lobed outline and pinwheel entries.
+- Hades (small hub changes after runs), Animal Crossing (the plaza upgraded at headcount milestones), Stardew
+  (festivals in the square), Lumiose (one landmark per plaza, its use changing). → reactions, festivals, growth by
+  residents.
+- Solarpunk squares: a market, a water feature, outdoor dining, seed exchange, tool library. → the market mood.
+
+**Decided** (the owner, 2026-10-26)
+- Mood: a busy solarpunk market. Bureau: hints only (a notice, a closed kiosk, a watcher).
+- The middle: a **fountain** (the well goes), lit from below at night, changing per chapter.
+- About **10 m with a lobed outline** (the owner, 2026-10-26: between WA-10's ~8 m and the generator's 12 m).
+- Layout in two steps: hand patches now (the square moves toward the buildings), then HB-10f's reproducible rebuild
+  brings the store, inn and library to front it.
+- A framed view from the square to the sky rail and the portal.
+- People: stop points and time of day (morning market, busy midday, quiet lantern evening), 6-10 at once, measured
+  and scaled by an Engine setting; your ranch Billies visit.
+- Growth: residents add stalls (RS-3/RS-4); the square reacts to runs (win banners, loss gossip, the fountain's
+  chapter changes); festivals by run count, real dates and milestones (all three).
+- Interactions: the fountain's coin toss as a **gamble**; a notice board (quests, daily seeds, ghost teams); a busker
+  who is an invited resident and plays your last run's region theme.
+- Night: lit windows, string lights, fireflies, the lit fountain.
+- Art: reuse the existing models, remade low-poly (32 px/m) only where they miss the airship style.
+- Sound: later, by the sound track; leave hooks (fountain, chatter, busker).
+- Order: look first (HB-10a, b), then people, then reactions, festivals, and the rebuild.
+
+**Ask me before** (recommendation first, in the session that needs it)
+- HB-10d: the coin gamble's cost, odds and effects (rec: a small stake, mostly small boons or a joke, a rare big win
+  or a small curse, once per return).
+- HB-10d: the fountain's look per chapter.
+- HB-10e: the festival calendar and names (player-facing words).
+
+**Risks**: phone cost of 6-10 people and the night lights (HB-10c measures); positions (hub, npcSpots, fixtures,
+checks, the fall's landing) when the square or buildings move; the locked town zone (hand patches only until
+HB-10f); one owner per file (`copperleaf.json` with the water track's patches).
+
+**Done in HB-10a** (2026-10-26, on `ccr-144f3c08-vf09lo` at the owner's word, the planning session's branch; merge
+into `track/hub`). The owner's answer: about 10 m. Checked against the code:
+- The generator's old 12 m square was paved and level out to 12 m (1683 of 1789 corner heights 1.14 m; the rest are
+  where streets slope in), so a rim inside 12 m changes ground letters only.
+- `tools/patch-copperleaf-square.mjs` (rerunnable): `--outline` paves to `squareRim(a)` (mean 10 m, a bulge toward the
+  portal's north-east, three soft lobes, 8.2-11.8 m), grass outside, streets carried to the rim; `--fountain` puts the
+  fountain where the well stood and the signpost 4.5 m out (it stood 2.2 m from the middle, against the basin).
+  WA-10's `patch-copperleaf-water.mjs --square` (8 m) is gone, so a rerun can't shrink it again.
+- `build-copperleaf.mjs` places the fountain and the signpost the same way (a rebuild keeps them); the world map draws
+  a fountain on the well plot (`BOWL_PLOT_PROPS`). The plot kind stays `well` (an internal name; a rename is its own
+  commit if wanted).
+- **Model fix**: the fountain's three waters and its lily pads sat just under their bowls' solid tops, so the fountain
+  looked dry; lifted (tools/build-props-batch6.py). Rebuilding batch 6 also rewrote `clock_tower` and
+  `test_props_marigold` (old drift between the script and later edits): not taken, left for whoever owns them.
+- The view: from the square's south-west edge the sky rail and the portal stand open to the north-east (no tall thing on
+  the line); HB-10b frames it with the edge props.
+- Tests: tools/test/hub-square.test.mjs (quick tier: the rim, paved to it, no plot on it, the fountain, the signpost
+  and the hub spot clear). Pictures: `python3 tools/island-shots.py OUT --only=town-square,town,square-portal,square-near`
+  (two new shots; fountain shots stand you 3 m east, not in the basin).
+- **Not done, moved to HB-10f**: the pinwheel street entries. The streets come in from the north-west, west and east
+  inside the locked town zone; turning them means re-routing streets, which is the reproducible rebuild's work.
+- The hub spot [151.63, 59.36] stays (1.25 m from the basin's edge): every hub position is unchanged.
+- **HB-10b started then**: its work so far is docs/plans/hb-10b-wip.patch (see HANDOFF's HB-10a entry for what's left).
+
+**Done in HB-10b** (2026-10-26, on `track/hub` after merging `ccr-144f3c08-vf09lo`; the WIP patch applied, then finished):
+- The edge layout: `tools/square-props.mjs` `SQUARE_EDGE`, 24 props by angle round the middle and an inset from the rim
+  (each marked `sq: 1`, laid again on a rerun): the market on the north rim (three stalls, a cart, crates, sacks, a
+  barrel), six planters at the street mouths, five streetlamps, two string lights, a solar canopy, three benches.
+  Nothing nearer the middle than 4.6 m (`WALK_R`); only planters in the portal view (`VIEW`). Laid by
+  `node tools/patch-copperleaf-square.mjs --edges` and by `build-copperleaf.mjs` (after the pasture, like the dressing).
+- `string_lights` (tools/build-props-square.py): a new low-poly model, two verdigris posts 6 m apart, a sagging wire of
+  nine bulbs, each a lamp glow (lit after dusk, `lampLit`). Its baked picture is scene/next/hub/string_lights.png.
+- The fountain at night (build-props-batch6.py): three glows round the basin (lit from below) and `fireflies`.
+- The `fireflies` effect (game/js/walk/effects.js): `{k:'fireflies', n, r}`, n small yellow-green glows drifting
+  within r metres, each blinking on its own beat, only after dusk (`lampLit`); reduced motion holds them still. The
+  Studio's prop editor lists it (PROP_EFFECT_KINDS).
+- Lit windows: already there; the 3D buildings' glass lights at night (prop-models.js glassLit), seen in the pictures.
+- Pictures by day and night: `python3 tools/island-shots.py OUT --hour=22 --only=town-square,town,square-portal,square-near`
+  (`--hour=H` is new: clear summer weather at that hour).
+- The hub's spot moved to [152.38, 60.86] (`squareHubSpot`, `--hub`): from HB-10a's spot a push up (the orbit camera
+  points it toward the island's middle) ran into the fountain, red in the quick check's Running step. HB-10a's "every
+  hub position is unchanged" no longer holds: the walking checks start from the new spot.
+- Left out: cafe_table and crates (voxel models, not the airship style; remakes later). The pasture test's rerun check
+  leaves out the `sq` props (laid after the pasture).
+
+**Done in HB-10c** (2026-10-26, on `track/hub`). The owner's answers: 6-10 is how many are drawn at once; the morning
+market every day; up to 2 ranch Billies by day; one cap for the hub and the run towns. Checked against the code first:
+- The phase file's "no day schedules found" was wrong: walk-view.js already gave each townsfolk a day (folkPhase: in,
+  out, work, noon, about, home; a home, a workplace and a hang-out each; an hour's offset; a night owl in six), and
+  folkAnchors already took benches, the fountain and npcSpots as hang-outs. HB-10c builds on it.
+- `game/js/logic/square-day.js` (Node-tested: tools/test/square-day.test.mjs): the square's stops from HB-10b's `sq`
+  props (behind and in front of the stalls and the cart, by the benches and under the canopy, under the lamps and
+  string lights, round the fountain at 2.6 m but not on the hub's side: where you arrive and the stick's run, HB-10b),
+  the slots of the day, who goes (a hash of the slot and the person: the same people each day) and to which stop,
+  `folkCap`, and the visits. Data: rules.json `square` {day, visit} (checked by dataSquareRules).
+- The day (rules.json square.day): market 7-11 (0.6 of the folk: the stalls kept and shopped at), midday 11.5-14
+  (0.8: fountain, benches, stalls), afternoon 14-17.5 (0.3), lantern evening 18-21.5 (0.3: lamps and benches).
+  Headless at the hub with 10 folk: 6 on the square at 8:00, 8 at 12:30, 4 at 15:00, 4 at 20:00, 1 night owl at 23:00.
+- Copperleaf's folk 10 (was 5): `patch-copperleaf-square.mjs --folk` (`SQUARE_FOLK`; build-copperleaf.mjs keeps it).
+- The Engine's `quality.townFolk` (its Quality dials, "Townsfolk at once", 0-12, default 10): the most drawn at once,
+  0.8 of it on Balanced, 0.6 once frames come late; the rest keep their day unseen. Run towns use it too:
+  rules.json `run.town.cap` and `runTownFolkCap` are gone (a slow phone draws up to 6 in a run town, was 3).
+- The ranch's Billies visit (rules.json square.visit; world-billies.js): in each 10-minute block from 8 to 18, 1-2 of
+  the pasture's Billies (never a trainee or the buddy) leave by the gate, walk the streets (about 115 m, 1 m/s) to a
+  bench or the fountain, stay 1-2.5 minutes and walk back; where each is comes from the clock alone. Away, they aren't
+  in the pasture; each one drawn takes one off the townsfolk drawn; a tap opens the ranch's sheet.
+- Fixed on the way (own commits): folk out about the streets (14:00-17:30) when a town loaded started indoors until
+  17:30; folk trimmed by the cap never came back when it rose again.
+- Frame cost (`python3 tools/island-perf.py --square [--low]`): with the low graphics 10 folk add about 39 draw calls
+  to about 878 (+4.5%) at midday; headless milliseconds are SwiftShader's (noise). At full graphics headless the game
+  stepped its quality down (frames of seconds), so the cap drew 0.6; the night lights cost more than the people (about
+  1035 draws at 21:00 against 878 at midday). The phone's debug log has the real frame times (scene: folk, folkAll,
+  onSquare, visitors).
+- Not done: people don't sit (no sitting pose; they stand by the benches); visitors walk through people and props on
+  their road only as findPath allows (no avoidance); sounds (chatter) left to the sound track.
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading

@@ -167,7 +167,7 @@ SECTIONS.wardrobe = () => {
   const rows = list
     .map(
       ([k, it]) =>
-        `<button class="lcard ${wardrobeEditor.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${escapeHtml(k)}"><span class="wd-th" data-th="${escapeHtml(k)}"></span><span class="lt"><b>${escapeHtml(it.name)}</b><small>${escapeHtml((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · ${formatThousands(it.price)} Moneys${it.shop && studioState.D.shops[it.shop] ? ' · ' + escapeHtml(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
+        `<button class="lcard ${wardrobeEditor.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${escapeHtml(k)}"><span class="wd-th" data-th="${escapeHtml(k)}"></span><span class="lt"><b>${escapeHtml(it.name)}</b><small>${escapeHtml((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · ${formatThousands(it.price)} Moneys${it.shop && (W.shops || {})[it.shop] ? ' · ' + escapeHtml(W.shops[it.shop].name) : ''}` : ''}</small></span></button>`
     )
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="wdNew">+ New item</button>
@@ -179,9 +179,8 @@ function wardrobeItemHTML(k) {
   const W = editedWardrobe(),
     it = W.items[k],
     p = `wardrobe.items.${k}`,
-    shops = Object.entries(studioState.D.shops || {})
-      .filter(([s, v]) => v.kind === 'wardrobe')
-      .map(([s, v]) => [s, v.name]);
+    /* SA-3: the boutiques are the wardrobe's own (wardrobe.json shops) */
+    shops = Object.entries(W.shops || {}).map(([s, v]) => [s, v.name]);
   const used = Object.entries(studioState.D.people || {})
     .filter(([x, P]) => P.look && P.look.wear && Object.values(P.look.wear).includes(k))
     .map(([x]) => x);

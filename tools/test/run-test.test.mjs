@@ -39,7 +39,7 @@ test('runTestOf: the seed as the debug menu cleans it, the short map, the Studio
   assert.equal(R.seed, 'abc_d-E0123456789012');
   assert.equal(R.short, true);
   assert.equal(R.draft, true);
-  assert.deepEqual(RUN_TEST_SHORT, { rows: 5, minibosses: 1 });
+  assert.deepEqual(RUN_TEST_SHORT, { rows: 6, minibosses: 1 });
 });
 
 test('runTestOf: unlocks none, all or a list; the party and the Perks; what the data lacks is named', () => {

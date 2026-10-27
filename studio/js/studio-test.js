@@ -28,7 +28,7 @@ const SETTLE_MS = 300,
   /* the live update and the Check run 500 ms after an edit; this waits for both */
   AFTER_EDIT_MS = 650;
 /* the section the second pane opens beside, and the one the leak check rests on: light, with no preview */
-const QUIET_SECTION = 'jobs';
+const QUIET_SECTION = 'types';
 
 const now = () => performance.now();
 const r1 = v => Math.round(v * 10) / 10;
@@ -78,6 +78,7 @@ export async function runStudioTest(G, opts = {}) {
     dirty: S.dirty,
     rigsDirty: S.rigsDirty,
     artDirty: new Map(S.artDirty),
+    textDirty: new Map(S.textDirty),
     sel: cloneSel(S.sel),
     sec: S.sec,
     sec2: S.sec2,
@@ -275,6 +276,7 @@ export async function runStudioTest(G, opts = {}) {
       S.dirty = keep.dirty;
       S.rigsDirty = keep.rigsDirty;
       S.artDirty = keep.artDirty;
+      S.textDirty = keep.textDirty;
       S.sel = keep.sel;
       if (G.ACTIONS.paneClose) G.ACTIONS.paneClose();
       G.openSection(keep.sec);
@@ -400,6 +402,15 @@ async function tools(G, T, fail, stopped, step) {
       b = now();
     G.findRun('copperleaf');
     T.find = { buildMs: r1(b - a), entries: idx.length, queryMs: r1(now() - b) };
+    /* SA-4: Find finds every section by its name (and a joined row, Characters, by its own), and every section is in
+       a workspace (none left under More) */
+    const lost = G.SECTION_LIST.map(n => n.slice(0, 2))
+      .concat(G.NAV_JOINED.map(j => [j.keys[0], j.name]))
+      .filter(([k, n]) => !G.findRun(n).some(e => e.kind === 'section' && e.sec === k))
+      .map(([, n]) => n);
+    if (lost.length) throw new Error(`Find doesn't find the section${lost.length > 1 ? 's' : ''} ${lost.join(', ')}`);
+    const loose = G.SECTION_LIST.filter(n => G.workspaceOf(n[0]) === 'More').map(n => n[1]);
+    if (loose.length) throw new Error(`in no workspace (shown under More): ${loose.join(', ')}`);
   });
   await run('check', () => {
     const a = now(),
@@ -455,6 +466,72 @@ async function tools(G, T, fail, stopped, step) {
         throw new Error(`water tools: seed ${seed} made no hand fall`);
     }
     T.water = { ms: r1(now() - a) };
+  });
+  /* Studio art track SA-1: the Art browser's reference index over every picture (made again, not the kept one), and a
+     search through them all */
+  await run('art browser', async () => {
+    await G.artCodeRefsLoad();
+    await G.legacyLoad();
+    G.artBrowser.ixKey = '';
+    const a = now(),
+      ix = G.artRefs(),
+      b = now();
+    if (!ix) throw new Error('art browser: no reference index');
+    const Q = G.artQueryParse('dir:scene unused'),
+      all = G.artPictures(),
+      hits = all.filter(p => G.artMatch(p, { state: G.artRefState(ix.get(p)) }, Q) === true);
+    if (!all.length || ix.size < all.length / 2)
+      throw new Error(`art browser: ${ix.size} of ${all.length} pictures have a reference`);
+    T.art = { files: all.length, named: ix.size, indexMs: r1(b - a), searchMs: r1(now() - b), unused: hits.length };
+  });
+  /* Studio art track SA-2a: the ground tile set's Lite tiles made from every kind's first 32 px tile (and how many are
+     the committed ones: the kinds made from their set), and the frame strips the Art browser plays */
+  await run('tile set', async () => {
+    const kinds = G.tileSetKinds(),
+      tone = { toneAt: G.groundToneAt, applyTone: G.applyGroundTone };
+    if (kinds.length < 70) throw new Error(`tile set: ${kinds.length} kinds`);
+    const pairs = kinds.map(K => {
+      const p = G.liteTilePlan(K.t, G.bigTilePaths(K.t.tile, (S.D.scenery || {}).tileSet))[0];
+      return { K, from: 'art/' + p.from, to: 'art/' + p.to };
+    });
+    const l0 = now();
+    await Promise.all(pairs.flatMap(q => [G.atlasGet(q.from), G.atlasGet(q.to)]));
+    const a = now();
+    let made = 0;
+    for (const q of pairs) {
+      const got = G.liteTile(G.pictureImage(G.loadedAtlas(q.from)), 0, G.liteToneK(q.K.t), tone);
+      if (G.liteDiff(got, G.pictureImage(G.loadedAtlas(q.to))) <= G.LITE_SAME) made++;
+    }
+    if (!made) throw new Error('tile set: no kind’s Lite tile is made from its set');
+    const strips = G.artPictures().filter(p => G.artStripOf(p)).length;
+    if (strips < 20) throw new Error(`tile set: ${strips} frame strips`);
+    T.tiles = { kinds: kinds.length, made, loadMs: r1(a - l0), liteMs: r1(now() - a), strips };
+  });
+  /* Studio art track SA-2b: every UI icon read as pixels and written back to the same text, and the icon atlas's
+     rectangles all on the sheet, none overlapping */
+  await run('icons', async () => {
+    const names = G.iconNames(),
+      l0 = now(),
+      texts = await Promise.all(names.map(n => G.textGet(`art/ui/${n}.svg`))),
+      a = now();
+    let same = 0;
+    for (const t of texts) {
+      const px = G.svgToPixels(t);
+      if (!px.error && G.pixelsToSvg(px.data, px.w, px.h) === t) same++;
+    }
+    if (names.length < 51 || same !== names.length)
+      throw new Error(`icons: ${same} of ${names.length} icons round-trip through their pixels`);
+    const man = G.manifestParse(await G.textGet('art/manifest.js')),
+      sheet = await G.atlasGet('art/icons/icons.png'),
+      probs = G.atlasProblems(man.icons, sheet.width, sheet.height);
+    if (probs.length)
+      throw new Error(`icons: the atlas has ${probs.length} problems (${probs[0].key} ${probs[0].msg})`);
+    T.icons = {
+      icons: names.length,
+      loadMs: r1(a - l0),
+      pixelsMs: r1(now() - a),
+      rects: Object.keys(man.icons).length,
+    };
   });
   await run('slice', () => {
     const img = testSheet(512, 512),
@@ -830,7 +907,7 @@ function showReport(G, r, changes, before) {
 <h3>Look here first</h3>${find}
 <h3>Since the last run</h3>${cmp}
 <h3>Sections (ms; frames p50 / p95; edit / undo)</h3><div class="st-scroll"><table class="tbl"><thead><tr><th>Section</th><th>Open</th><th>HTML</th><th>Page</th><th>After</th><th>Beside</th><th>Again</th><th>Frames</th><th>Draws</th><th>Elements</th><th>Links</th><th>Edit</th></tr></thead><tbody>${rows}</tbody></table></div>
-<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
+<h3>Tools, undo and loading</h3><table class="tbl"><tbody>${tool('Find', T.find)}${tool('Check', T.check)}${tool('Save (built)', T.save)}${tool('Propose (built)', T.propose)}${tool('Map generator', T.mapgen)}${tool('Water tools', T.water)}${tool('Art browser', T.art)}${tool('Tile set', T.tiles)}${tool('Icons', T.icons)}${tool('Sheet slicing', T.slice)}${tool('Pixel editor', T.pixel)}${tool('Skeleton builder', T.skeleton)}${tool('Undo', r.undo)}${tool('Loading', { dataMs: r.load.dataMs, readMs: r.load.readMs, assembleMs: r.load.assembleMs, firstDrawMs: r.load.firstDrawMs, resources: r.load.resources })}</tbody></table>
 ${r.errors.length ? `<h3>Errors</h3><ul>${r.errors.map(e => `<li><b>${esc(e.where)}</b> ${esc(e.msg)}</li>`).join('')}</ul>` : ''}
 </div><div class="dlg-btns"><button class="btn" data-st="copy">Copy</button><button class="btn" data-st="save">Download the report</button><button class="btn primary" data-st="close">Close</button></div></div></div>`;
   const json = JSON.stringify(r, null, 1);

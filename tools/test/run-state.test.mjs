@@ -75,7 +75,7 @@ test('run: starting one sets the hub aside and gives the run its own working fie
     'every item key, at 0 unless given'
   );
   assert.deepEqual(s.trip, { node: 0, plan: [] });
-  assert.deepEqual([s.wild, s.eggs, s.visited], [{}, [], { 0: 1 }]);
+  assert.deepEqual([s.wild, s.visited], [{}, { 0: 1 }]);
   assert.deepEqual([s.flags, s.seats], [before.flags, before.seats], 'story flags and badges carry over');
   assert.equal(validRun(run), true);
   assert.throws(() => runBegin(s, GIVE), /already/);

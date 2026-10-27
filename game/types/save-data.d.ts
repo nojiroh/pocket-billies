@@ -53,7 +53,6 @@ export interface SaveData {
   visited: Record<LocationNode, number>;
   /** the last encounter number */
   serial: number;
-  eggs: Egg[];
   /** Date.now() at the last save */
   savedAt: number;
   /** the trainer card: ID number, start date (0: unknown) and eggs hatched */
@@ -79,7 +78,7 @@ export interface SaveData {
   /** clothes owned and saved outfits (dressing-room.js) */
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
   /** roguelite track RL-3 (save format 4): what lasts between runs, the run in progress (null in the hub; while it is
-      on, team, se, items, pyramids, trip, wild, eggs, flags, seats and visited are the run's), the ranch */
+      on, team, se, items, pyramids, trip, wild, flags, seats and visited are the run's), the ranch */
   meta: Meta;
   run: Run | null;
   ranch: Ranch;
@@ -119,12 +118,15 @@ export interface Meta {
   history: HistoryEntry[];
   /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
   residents: Record<string, number>;
+  /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
+      (logic/daily.js) */
+  boards: { d: number; w: number };
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
     Billie standing, and whether it was the Bureau's */
 export interface RunLostTo {
-  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'rival' | 'trainer';
+  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'rival' | 'ghost' | 'trainer';
   id?: string;
   sp?: SpeciesId;
   bureau?: 1;
@@ -156,6 +158,22 @@ export interface HistoryEntry {
 }
 
 /** roguelite track RL-S2: what a run keeps of Blake (logic/rival.js) */
+/** ON-2: a daily ('d', its UTC day number) or weekly ('w', its week number) run (logic/daily.js) */
+export interface RunBoard {
+  k: 'd' | 'w';
+  n: number;
+}
+
+/** ON-2: a friend's ghost team in a run, as it was when the run took off (logic/run-record.js ghostPick) */
+export interface RunGhost {
+  /** the friend's uid and name (cleanName), and their party (online copies, logic/online-legal.js onlineCopy) */
+  u: string;
+  n: string;
+  party: Billy[];
+  /** whether it was beaten */
+  won?: 1;
+}
+
 export interface RunRival {
   /** the species you led the run with (his ace counters it) */
   lead: SpeciesId;
@@ -202,6 +220,10 @@ export interface RunNode {
   zone?: number;
   /** RL-R2: 1 on a side area's place (run.map.side) */
   side?: 1;
+  /** WM-2: its footprint on the region grid (logic/run-map.js RUN_GRID): its south-west cell (x east, y north) and its
+      size in cells; a main place's only (none on a side area's or a run's from before WM-2) */
+  at?: [number, number];
+  size?: [number, number];
 }
 
 /** roguelite track RL-R2: a run's side area (logic/run-side.js runSideAdd) */
@@ -264,7 +286,6 @@ export interface RunStart {
   pyramids: Record<DataId, number>;
   trip: Trip;
   wild: Record<string, WildStock>;
-  eggs: Egg[];
   flags: Record<string, number>;
   seats: string[];
   visited: Record<LocationNode, number>;
@@ -335,10 +356,16 @@ export interface Run {
   lostTo?: RunLostTo;
   /** RL-S1: the leaders (trainer ids) beaten this run */
   beat?: string[];
+  /** RO-3f: a mythical was met (battled or fled from) this run: no other stands in for a rarer one (logic/rules.js spawnMyth) */
+  myth?: 1;
   /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
   quests?: RunQuests;
   /** RS-1: the resident invited this run (residents.json); they move in when it ends, won or lost */
   invited?: string;
+  /** ON-2: a daily or weekly run (missing on any other) */
+  board?: RunBoard;
+  /** ON-2: a friend's ghost team waiting on the map's ghost node (missing when none) */
+  ghost?: RunGhost;
 }
 
 /** TW-3: a quest held on a run (logic/run-quests.js) */
@@ -500,6 +527,10 @@ export interface Billy {
   fit?: RobotFit;
   /** phase 17: damage each limb has taken; a limb at or past its HP is broken until healed */
   partDmg?: Partial<Record<'armL' | 'armR' | 'legs', number>>;
+  /** ON-1: its original trainer, stamped the first time it goes online (logic/online-legal.js onlineCopy) */
+  ot?: { u: string; n: string };
+  /** ON-4: when it was last traded, and from whom (a player's uid) */
+  traded?: { at: number; from: string };
 }
 
 /** phase 17: a robot part you own (in saveData.parts, or fitted to a robot) */
@@ -556,15 +587,4 @@ export interface Encounter {
   unstable?: { up: string; down: string; name: string };
   /** SP-5: an Escaped specimen's Augment, as a Billie's (Billy.aug) */
   aug?: Partial<Record<'front' | 'back', PartInstance>>;
-}
-
-/** an egg (game-state.js addEgg) */
-export interface Egg {
-  id: string;
-  /** its km, a key of gameData.eggs (a number: hatchEgg compares it with EGG_TIERS) */
-  tier: number;
-  /** steps toward hatching */
-  prog: number;
-  /** the incubator slot it is in, or null */
-  slot: number | null;
 }

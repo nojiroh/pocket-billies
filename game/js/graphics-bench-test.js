@@ -81,6 +81,11 @@ const GRAPHICS_TEST_HIDDEN = [
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
+  ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
+  /* smart light shafts (logic/shaft-pick.js): the cheap shafts placed by the picker; a look change, on its own */
+  ['air.shaftPick', 'Smart light shafts', { values: [false, true], alone: true }],
+  /* the blur in front spread over what is behind it (two small passes); a look change, on its own */
+  ['lens.nearSpread', 'Spread blur in front', { values: [false, true], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
 ];
@@ -95,7 +100,17 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'shadows',
     name: 'Shadow court',
     sun: { angle: 30, height: 30 },
-    dials: ['shadows.strength', 'quality.shadowMap', 'shadows.cascades', 'shadows.ao', 'shadows.contact'],
+    dials: [
+      'shadows.strength',
+      'quality.shadowMap',
+      'shadows.cascades',
+      'shadows.ao',
+      'shadows.contact',
+      /* the audit's fixes (2026-10-26), each a look change behind its own switch */
+      'shadows.steadyEdges',
+      'shadows.aoPlane',
+      'shadows.groundAOSky',
+    ],
   },
   { id: 'pond', name: 'Pond', dials: ['water.reflection', 'water.pixel', 'quality.spriteInstances'] },
   {
@@ -104,21 +119,49 @@ const GRAPHICS_TEST_STATIONS = [
     sun: { angle: -90, height: 18 },
     dials: ['air.godRays', 'quality.skyLast'],
   },
+  /* the same spot with the cheap shafts on: placed one at about every other tree, then by the picker */
+  {
+    id: 'shaftPick',
+    name: 'Sun gap, smart shafts',
+    spot: 'sun',
+    sun: { angle: -90, height: 18 },
+    fixed: { 'air.godRays': 0, 'air.cheapShafts': 0.6 },
+    dials: ['air.shaftPick'],
+  },
   {
     id: 'lamps',
     name: 'Lamp square',
     time: 22,
-    dials: ['color.bloom', 'lights.brightness', 'quality.stableLights', 'quality.lights'],
+    dials: [
+      'color.bloom',
+      'lights.brightness',
+      'quality.stableLights',
+      'quality.lights',
+      'lights.windowFacing',
+      'shadows.lampFix',
+      'lights.onWater',
+      'sun.followLight',
+      'color.bloomEven',
+    ],
   },
   {
     id: 'meadow',
     name: 'Meadow',
-    dials: ['grass.density', 'air.particles', 'air.mist'],
   },
   {
     id: 'depth',
     name: 'Depth corridor',
-    dials: ['lens.blur', 'world.farProps', 'quality.stableLights', 'quality.spriteInstances'],
+    dials: [
+      'lens.blur',
+      'lens.nearSpread',
+      'world.farProps',
+      'quality.stableLights',
+      'quality.spriteInstances',
+      'color.inkFollow',
+      'world.buildingBumps',
+      'world.frontMaterial',
+      'quality.normalMips',
+    ],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
   /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise); against the Meadow it shows
@@ -196,7 +239,7 @@ const graphicsTestWaterNote = set =>
 function graphicsTestPrefs(st, set) {
   const eng = { quality: { auto: false, resolution: 1 } };
   if (st.sun) eng.sun = Object.assign({}, st.sun);
-  for (const [gk, v] of Object.entries(set || {})) {
+  for (const [gk, v] of Object.entries({ ...(st.fixed || {}), ...(set || {}) })) {
     const [g, k] = gk.split('.');
     (eng[g] = eng[g] || {})[k] = v;
   }

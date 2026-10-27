@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · drafts (Studio plan Phase 1, T1.1) =================
    What you haven't proposed yet is kept in this browser (IndexedDB), 2 s after the last change and when the tab is
    hidden, so closing the tab, a crash or a phone killing the page loses nothing. Only what is pending is kept (the
-   data files that differ from the commit the Studio loaded, the skeletons if they changed, each unsaved picture),
+   data files that differ from the commit the Studio loaded, the skeletons if they changed, each unsaved picture and, SA-2b, text file),
    with that commit: opening the Studio again offers the changes back, and a restore reads everything at that commit
    again, so nothing main changed since is put back (Propose then says which files main changed too).
    The draft goes when a proposal took everything, or on Discard. It stays in this browser: it is never sent anywhere
@@ -25,7 +25,7 @@ import {
   toast,
   updateTopBar,
 } from './studio-app.js';
-import { markArt, spriteCacheClear } from './sprites.js';
+import { markArt, markText, spriteCacheClear } from './sprites.js';
 import { scheduleCheck } from './check.js';
 import { GITHUB_CONFIG, changedDataFiles, gameFilePath, githubFetch, githubMode, repoApiPath } from './github.js';
 /* eslint-disable no-func-assign */
@@ -111,6 +111,7 @@ async function draftCapture() {
     files,
     rigsText: S.rigsDirty && rigs !== draftState.baseRigs ? rigs : null,
     art,
+    texts: [...S.textDirty].map(([path, t]) => ({ path, text: t.text })),
   });
 }
 /* writes what is pending now (or removes the draft when nothing is); one write at a time */
@@ -125,7 +126,13 @@ function draftNow() {
         d = await draftCapture();
       if (draftEmpty(d)) await draftDelete();
       else await draftIdb('readwrite', s => s.put(d, d.key));
-      if (P) P('draft', { ms: performance.now() - a, files: Object.keys(d.files).length, art: d.art.length });
+      if (P)
+        P('draft', {
+          ms: performance.now() - a,
+          files: Object.keys(d.files).length,
+          art: d.art.length,
+          texts: d.texts.length,
+        });
     })
     .catch(e => draftOff('Unsent changes can’t be kept in this browser (' + e.message + ').'));
   return draftState.chain;
@@ -230,6 +237,7 @@ async function draftStart(d) {
         S.rigsDirty = true;
       }
       for (const [path, c] of art) markArt(path, c);
+      for (const t of d.texts) markText(t.path, t.text);
       S.undo = [];
       S.redo = [];
       S.last = snapshotParts();

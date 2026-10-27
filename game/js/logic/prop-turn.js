@@ -28,6 +28,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   pointInProp: [() => pointInProp, v => (pointInProp = v)],
   // @ts-expect-error -- replaced on purpose
+  propDoor: [() => propDoor, v => (propDoor = v)],
+  // @ts-expect-error -- replaced on purpose
   propTurn: [() => propTurn, v => (propTurn = v)],
   // @ts-expect-error -- replaced on purpose
   spanFit: [() => spanFit, v => (spanFit = v)],
@@ -56,6 +58,21 @@ export function turnedPoint(p, dx, dz) {
   const c = Math.cos(r),
     s = Math.sin(r);
   return [p.x + dx * c - dz * s, p.z + dx * s + dz * c];
+}
+
+/** a building's door (walk-view.js doorOf; RS-3 places residents by it in Node): where it is, the way out of it and the
+ * building's middle. A turned building turns about the middle of its front (buildings.js buildingRotation)
+ * @param {{ x: number, z: number, s?: number, f?: boolean | number, rot?: number }} p
+ * @param {{ door?: { x?: number } } | undefined} M the kind's catalogue row (scenery.json props) @param {number} ppu
+ * @returns {{ at: [number, number], out: [number, number], mid: [number, number] }} */
+export function propDoor(p, M, ppu) {
+  const s = p.s || 1,
+    f = p.f ? -1 : 1,
+    dx = (((M && M.door && M.door.x) || 0) / (ppu || 34)) * s * f,
+    r = ((p.rot || 0) * Math.PI) / 180,
+    c = Math.cos(r),
+    sn = Math.sin(r);
+  return { at: [p.x + dx * c, p.z + dx * sn], out: [sn, -c], mid: [+p.x, +p.z] };
 }
 
 /** a point of the place in the prop's own metres (the inverse of turnedPoint)

@@ -9,6 +9,61 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
+  and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
+  meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the
+  Trainer screen (Today, This week, each Expedition, Fastest; ranked by won, then places cleared, leaders beaten and
+  fewest days), and a daily's payout shows how your friends did. A friend's last run can wait on your run's map as
+  their ghost: their team, as it was, at the place's level. Friends only; blocked players never show.
+- **Cutscenes and run screens** (one session, the owner's brief, 2026-10-27):
+  - Going home after a run shows a "Heading home" screen in the train's carriage, with what the run came to, instead
+    of a plain white screen. A run's evolution waits until you're off the train.
+  - The loading screen before a run is a region card in the portal tunnel's dark colours: its zones, types, leaders,
+    regional dex, the weather ahead and tips that change.
+  - Skyline Station faces out to sea, toward the camera. It has a plain track instead of the climbing sky rail.
+  - The portal floats on its own out over the sea, with glowing layers and turning rings.
+  - The sky train rises on its engines, turns and shoots into the portal; coming home it flies across and sets down.
+  - New game's fall is a dive straight down onto the spot where the opening begins. Its last picture is held while
+    Copperleaf loads.
+  - The starter pick shows the three side by side, above a shorter card. No starter is mirrored.
+- **Loading** (load track LD-5, in part, from the same session):
+  - The world map's ground is worked out on a helper thread.
+  - The walking grid is built in about a third of the time.
+- **Kappi the Wise** replaces Hazel as Professor Chosen's assistant: a capybara (they/them) who does the real
+  research, calm and unhurried, with Billies asleep on their back and a hot yuzu bath in the lab. New lines in the
+  opening, the lab and the hub; their own talk-box portrait (it blinks and talks), a low soft voice, and a capybara
+  body in the lab and the opening. The gift, the favour and the Potion at level 2 are as Hazel's were.
+- **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
+  arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
+  one on the route props test map.
+- **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
+  blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
+  what is behind it instead of stopping at a hard outline against the sharp ground.
+- **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
+  braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
+  a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.
+- **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
+  no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
+  hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
+  dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
+- **Easier to read and tap** (UI-6): the Field Guide's tabs have a panel behind them, so Lore and Postcards read over
+  the world; in dark mode a chosen option (the Guide's tabs, segmented choices) is no longer white text on white; the
+  Field Guide's arrows, Settings Help's sections, the dressing room's toggles and the title's links are 40 px tap
+  targets, and the settings switches have the small icons' larger tap area.
+- **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
+  the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
+  landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a
+  glowing seed, a haystack, a rain barrel, a water pump, beehives, a tool shed, a vegetable bed, a small wind
+  turbine, a solar path light, a seed library, and a Bureau barrier and crate (plus a footbridge, not placed yet).
+  The ruins, farm pen, rest stop, woodcutter's clearing, fishing jetty and Bureau checkpoint use them, and two new
+  set pieces appear on routes: a wayside shrine and a solar garden. A run's places change (generator version 18).
+- **Smart light shafts and the HD-2D fixes** (all off until tested on the phone): cheap sunbeams placed where they
+  show best (through gaps between trees and past houses, with shade behind them, looking into the light, never over
+  you, fading in and out); and switches that fix what the audit found: rays that follow the light's colour and fade
+  under the moon, window light that falls out of a turned house's front, shadow edges that stand still, lamp shadows
+  that hold, shaded tree cores, occlusion that leaves open ground alone, lamp light on water, outlines that follow the
+  camera, even bloom, half-float HDR, steady light on far props, fronts lit as their material, and Building bumpiness
+  (bricks, planks and roof tiles catching the light). Engine > Air, Sun, Lights, Shadows, Colour, World and Quality.
 - **Sturdier after the graphics card is lost** (phase 20): when the browser takes the graphics card away and gives it
   back (a phone under memory pressure, a driver reset, the debug menu's "Lose the GPU context"), every part of the
   walk view, the world map and a battle is made again, with none of the hundreds of warnings and the unlit things of
@@ -45,6 +100,13 @@ kept aside in the browser).
   many may light the scene (1-16). Both are in the graphics test.
 - **One light block per frame** is now the only way the renderer sends the frame's light (the old switch and path are
   gone); it looks the same.
+- **Residents live in Copperleaf** (residents track RS-3): whoever you bring home now lives in town. Each has their
+  own look and walks Copperleaf with the townsfolk: out of their door in the morning, at work, on the square around
+  noon, about the streets in the afternoon and indoors at night. Dottie keeps the library, Mo the General store,
+  Bertha the inn, Gus the Workshop, Hayden helps at the ranch, Rosa works at Skyline Station, Seamus sews from a
+  cottage of his own and Dr. Helix keeps the Gene Bank. Tap one for a word: the first time it's about moving in, then
+  about your last run. Walk into their building and its card says who lives there, with a Talk button and their
+  upgrades (the first ones come next). The station's and the ranch's sheets name theirs too.
 - **Residents** (residents track RS-2): runs can now bring people home to Copperleaf. On your first run, **Dottie
   Filewell**, a clerk who walked out of the Bureau with a cardigan full of files, waits in the first row of towns with
   a gold "!": say yes and she moves to Copperleaf. After her, one person a run waits in one town with a **favour**
@@ -102,6 +164,10 @@ kept aside in the browser).
   they leave **salvage**: pick one of two of their parts (kept for the Workshop) or a stack of **Scrap** sent home.
   About a third of runs now have a **Scrapyard**: a place where every wild one is a bot, Reclamation Agents stand guard
   and scrap heaps line the way.
+- **Three new Billies (roster RO-3f, placeholder art)**: Pseudonymph, a faceless mythical Steel blob whose move Fork
+  takes the foe's types for 5 turns; it stands in for a route's rarer one in 2% of routes, at most once a run, and is
+  in no pool or regional dex. Pilotbat evolves into Bingebat at 18 (Flying, then Flying/Psychic), the cave bat, in
+  the cave, thicket and jungle.
 - **You stay visible behind things**: when a building, a tree or anything else stands between the camera and you,
   your outline shows through it in the colour of your top, the thing in front thins out in a soft circle round you,
   and tall things covering you fade a little (now smoothly, and the modelled buildings too). Out in the open nothing

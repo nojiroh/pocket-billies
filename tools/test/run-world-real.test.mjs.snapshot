@@ -19,12 +19,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.36,
       "exits": [
         {
-          "side": "W",
+          "side": "E",
           "t": 0.15625,
           "width": 2
         },
         {
-          "side": "W",
+          "side": "E",
           "t": 0.84375,
           "width": 2
         }
@@ -41,6 +41,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "h": 64,
     "seed": 477028837,
     "pin": "EW",
+    "ahead": "E",
     "edges": 0
   },
   {
@@ -62,12 +63,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.59,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
+          "side": "E",
           "t": 0.5,
           "width": 2
         }
@@ -82,6 +83,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "h": 64,
     "seed": 2108422820,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
@@ -103,12 +105,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.56,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
+          "side": "E",
           "t": 0.5,
           "width": 2
         }
@@ -123,6 +125,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "h": 64,
     "seed": 1923185927,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
@@ -140,9 +143,14 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.61
     },
     "road": {
-      "shape": "straight",
-      "wobble": 0.25,
+      "shape": "winding",
+      "wobble": 0.74,
       "exits": [
+        {
+          "side": "W",
+          "t": 0.15625,
+          "width": 2
+        },
         {
           "side": "E",
           "t": 0.15625,
@@ -150,7 +158,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         },
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.84375,
           "width": 2
         },
         {
@@ -160,20 +168,20 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         }
       ]
     },
-    "props": {
-      "clinic": 1,
-      "shop": 1
-    },
-    "kind": "town",
+    "props": {},
+    "layout": "lanes",
+    "pieces": 2,
+    "kind": "route",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 986359382,
     "pin": "EW",
+    "ahead": "E",
     "edges": 2
   },
   {
-    "feature": "glade",
+    "feature": "none",
     "land": {
       "cliffs": 0.19,
       "hills": 0.18,
@@ -188,34 +196,31 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     },
     "road": {
       "shape": "straight",
-      "wobble": 0.31,
+      "wobble": 0.25,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
-          "t": 0.15625,
-          "width": 2
-        },
-        {
-          "side": "W",
-          "t": 0.84375,
+          "side": "E",
+          "t": 0.5,
           "width": 2
         }
       ]
     },
-    "props": {},
-    "layout": "lanes",
-    "pieces": 4,
-    "kind": "route",
+    "props": {
+      "clinic": 1,
+      "shop": 1
+    },
+    "kind": "town",
     "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 1951062480,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
@@ -233,35 +238,32 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.57
     },
     "road": {
-      "shape": "winding",
-      "wobble": 0.4,
+      "shape": "straight",
+      "wobble": 0.25,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
-          "t": 0.15625,
-          "width": 2
-        },
-        {
-          "side": "W",
-          "t": 0.84375,
+          "side": "E",
+          "t": 0.5,
           "width": 2
         }
       ]
     },
-    "props": {},
-    "layout": "farmland",
-    "pieces": 4,
-    "kind": "route",
-    "biome": "thicket",
+    "props": {
+      "clinic": 1,
+      "shop": 1
+    },
+    "kind": "town",
+    "biome": "lake",
     "w": 112,
     "h": 64,
     "seed": 553354720,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
@@ -283,26 +285,32 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.73,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
-          "t": 0.5,
+          "side": "E",
+          "t": 0.15625,
+          "width": 2
+        },
+        {
+          "side": "E",
+          "t": 0.84375,
           "width": 2
         }
       ]
     },
     "props": {},
-    "layout": "lanes",
+    "layout": "forest",
     "pieces": 3,
     "kind": "route",
-    "biome": "ridge",
+    "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 1581277298,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
@@ -320,35 +328,35 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.57
     },
     "road": {
-      "shape": "straight",
-      "wobble": 0.25,
+      "shape": "winding",
+      "wobble": 0.54,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
+          "side": "E",
           "t": 0.5,
           "width": 2
         }
       ]
     },
-    "props": {
-      "clinic": 1,
-      "shop": 1
-    },
-    "kind": "town",
-    "biome": "thicket",
+    "props": {},
+    "layout": "lanes",
+    "pieces": 4,
+    "kind": "route",
+    "biome": "ridge",
     "w": 112,
     "h": 64,
     "seed": 63358577,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
-    "feature": "none",
+    "feature": "lookout",
     "land": {
       "cliffs": 0.47,
       "hills": 0.68,
@@ -362,14 +370,9 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.33
     },
     "road": {
-      "shape": "straight",
-      "wobble": 0.25,
+      "shape": "winding",
+      "wobble": 0.72,
       "exits": [
-        {
-          "side": "E",
-          "t": 0.15625,
-          "width": 2
-        },
         {
           "side": "W",
           "t": 0.5,
@@ -377,22 +380,22 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         },
         {
           "side": "E",
-          "t": 0.84375,
+          "t": 0.5,
           "width": 2
         }
       ]
     },
-    "props": {
-      "clinic": 1,
-      "shop": 1
-    },
-    "kind": "town",
-    "biome": "meadow",
+    "props": {},
+    "layout": "forest",
+    "pieces": 4,
+    "kind": "route",
+    "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 577964397,
     "pin": "EW",
-    "edges": 2
+    "ahead": "E",
+    "edges": 1
   },
   {
     "feature": "none",
@@ -413,18 +416,13 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.47,
       "exits": [
         {
-          "side": "E",
-          "t": 0.15625,
-          "width": 2
-        },
-        {
           "side": "W",
           "t": 0.15625,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.84375,
+          "t": 0.5,
           "width": 2
         },
         {
@@ -437,12 +435,14 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lanes",
     "pieces": 2,
+    "site": "scrapyard",
     "kind": "route",
-    "biome": "thicket",
+    "biome": "meadow",
     "w": 112,
     "h": 64,
     "seed": 553133995,
     "pin": "EW",
+    "ahead": "E",
     "edges": 2
   },
   {
@@ -464,13 +464,23 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.43,
       "exits": [
         {
+          "side": "W",
+          "t": 0.15625,
+          "width": 2
+        },
+        {
           "side": "E",
-          "t": 0.5,
+          "t": 0.15625,
           "width": 2
         },
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.84375,
+          "width": 2
+        },
+        {
+          "side": "E",
+          "t": 0.84375,
           "width": 2
         }
       ]
@@ -479,12 +489,13 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "layout": "forest",
     "pieces": 2,
     "kind": "route",
-    "biome": "meadow",
+    "biome": "thicket",
     "w": 112,
     "h": 64,
     "seed": 1584210054,
     "pin": "EW",
-    "edges": 1
+    "ahead": "E",
+    "edges": 2
   },
   {
     "feature": "none",
@@ -502,33 +513,35 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     },
     "road": {
       "shape": "straight",
-      "wobble": 0.68,
+      "wobble": 0.25,
       "exits": [
         {
-          "side": "E",
+          "side": "W",
           "t": 0.5,
           "width": 2
         },
         {
-          "side": "W",
+          "side": "E",
           "t": 0.5,
           "width": 2
         }
       ]
     },
     "props": {
-      "stall": 1
+      "clinic": 1,
+      "shop": 1
     },
-    "kind": "route",
+    "kind": "town",
     "biome": "meadow",
     "w": 112,
     "h": 64,
     "seed": 1020292343,
     "pin": "EW",
+    "ahead": "E",
     "edges": 1
   },
   {
-    "feature": "lookout",
+    "feature": "none",
     "land": {
       "cliffs": 0.39,
       "hills": 0.57,
@@ -542,31 +555,117 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.39
     },
     "road": {
-      "shape": "scurve",
-      "wobble": 0.74,
+      "shape": "straight",
+      "wobble": 0.25,
       "exits": [
         {
+          "side": "W",
+          "t": 0.5,
+          "width": 2
+        },
+        {
           "side": "E",
+          "t": 0.5,
+          "width": 2
+        }
+      ]
+    },
+    "props": {
+      "clinic": 1,
+      "shop": 1
+    },
+    "kind": "town",
+    "biome": "meadow",
+    "w": 112,
+    "h": 64,
+    "seed": 137567764,
+    "pin": "EW",
+    "ahead": "E",
+    "edges": 1
+  },
+  {
+    "feature": "bridge",
+    "land": {
+      "cliffs": 0.39,
+      "hills": 0.58,
+      "water": "pond",
+      "waterAmount": 0.45
+    },
+    "nature": {
+      "clearings": 0.24,
+      "growth": 0.99,
+      "tall": 0.53,
+      "trees": 0.38
+    },
+    "road": {
+      "shape": "straight",
+      "wobble": 0.34,
+      "exits": [
+        {
+          "side": "W",
           "t": 0.15625,
           "width": 2
         },
         {
           "side": "E",
+          "t": 0.5,
+          "width": 2
+        },
+        {
+          "side": "W",
           "t": 0.84375,
           "width": 2
         }
       ]
     },
     "props": {},
-    "layout": "farmland",
+    "layout": "ledges",
     "pieces": 4,
     "kind": "route",
     "biome": "meadow",
     "w": 112,
     "h": 64,
-    "seed": 137567764,
+    "seed": 274119125,
     "pin": "EW",
+    "ahead": "E",
     "edges": 2
+  },
+  {
+    "feature": "bridge",
+    "land": {
+      "cliffs": 0.29,
+      "hills": 0.24,
+      "water": "none",
+      "waterAmount": 0.48
+    },
+    "nature": {
+      "clearings": 0.27,
+      "growth": 0.68,
+      "tall": 0.56,
+      "trees": 0.4
+    },
+    "road": {
+      "shape": "scurve",
+      "wobble": 0.57,
+      "exits": [
+        {
+          "side": "W",
+          "t": 0.5,
+          "width": 2
+        }
+      ]
+    },
+    "props": {},
+    "layout": "lakeside",
+    "pieces": 4,
+    "kind": "route",
+    "biome": "lake",
+    "w": 112,
+    "h": 64,
+    "seed": 1019465122,
+    "pin": "EW",
+    "ahead": "E",
+    "edges": 1
   }
 ]
 `;

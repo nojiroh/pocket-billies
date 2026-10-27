@@ -10,8 +10,10 @@ import { sheetIslands } from '../../game/js/logic/sheet-slice.js';
 import { mapgenParams, mapgenScene } from '../../game/js/logic/mapgen.js';
 import { gpuCountBegin, gpuCountEnd } from '../../game/js/engine/gpu-counters.js';
 import { frameScheduler } from '../../game/js/frame-scheduler.js';
+import { applyGroundTone, bigTilePaths, groundToneAt } from '../../game/js/walk-view.js';
 import { gpuState } from '../../game/js/engine/webgl.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { NAV_JOINED, workspaceOf } from '../../game/js/logic/studio-layout.js';
 import {
   HISTORY_STEPS,
   historyBytes,
@@ -19,6 +21,11 @@ import {
   historyPartsBytes,
   historyPartsData,
 } from '../../game/js/logic/history.js';
+import { artMatch, artQueryParse } from '../../game/js/logic/art-search.js';
+import { artRefState } from '../../game/js/logic/art-refs.js';
+import { LITE_SAME, liteDiff, liteTile, liteTilePlan, liteToneK } from '../../game/js/logic/lite-tile.js';
+import { pixelsToSvg, svgToPixels } from '../../game/js/logic/svg-pixels.js';
+import { atlasProblems, manifestParse } from '../../game/js/logic/atlas-rects.js';
 import {
   ACTIONS,
   PANE2_REFUSED,
@@ -41,13 +48,18 @@ import {
   undo,
   updateTopBar,
 } from './studio-app.js';
-import { openPixelEditor } from './sprites.js';
+import { pictureImage } from './pixel-canvas.js';
+import { atlasGet, loadedAtlas, openPixelEditor, textGet } from './sprites.js';
 import { runCheck } from './check.js';
 import { openSkeleton } from './skeleton.js';
 import { sceneryCatalog } from './map-editor.js';
 import { buildSearchIndex, findRun } from './find.js';
 import { connectionsHTML } from './connections.js';
 import { githubMode } from './github.js';
+import { legacyLoad } from './legacy-view.js';
+import { artBrowser, artCodeRefsLoad, artPictures, artRefs, artStripOf } from './art-browser.js';
+import { tileSetKinds } from './tile-set.js';
+import { iconNames } from './icon-editor.js';
 import { musicPlay, musicPlaying, musicStop, musicStudio } from './music-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -63,6 +75,8 @@ function studioTestHandles() {
     studioProbe,
     SECTIONS,
     SECTION_LIST,
+    NAV_JOINED,
+    workspaceOf,
     PANE2_REFUSED,
     ACTIONS,
     HISTORY_STEPS,
@@ -103,6 +117,33 @@ function studioTestHandles() {
     musicStop,
     musicPlaying,
     musicStudio,
+    artBrowser,
+    artCodeRefsLoad,
+    tileSetKinds,
+    groundToneAt,
+    applyGroundTone,
+    liteTilePlan,
+    bigTilePaths,
+    atlasGet,
+    liteTile,
+    pictureImage,
+    loadedAtlas,
+    liteToneK,
+    liteDiff,
+    LITE_SAME,
+    artStripOf,
+    artRefs,
+    artPictures,
+    artQueryParse,
+    artMatch,
+    artRefState,
+    legacyLoad,
+    iconNames,
+    textGet,
+    svgToPixels,
+    pixelsToSvg,
+    manifestParse,
+    atlasProblems,
     githubOn: !!githubMode.on,
   };
 }

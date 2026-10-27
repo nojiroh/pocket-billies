@@ -1,0 +1,44 @@
+name: Trainer Editable Sprite Sheets
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'game/art/trainer/**'
+      - 'game/art/people/**'
+      - 'game/art/next/portraits/**'
+      - 'game/data/gamedata.js'
+      - 'tools/export-trainer-sprite-sheets.py'
+      - '.github/workflows/trainer-sprite-sheets.yml'
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pillow
+      - name: Export editable art
+        run: python tools/export-trainer-sprite-sheets.py --root . --out art-edit/trainer-sheets
+      - name: Verify exact pixel round trip
+        run: |
+          python tools/export-trainer-sprite-sheets.py --reimport art-edit/trainer-sheets --out art-edit/roundtrip
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageChops
+          import json
+          root=Path('art-edit/trainer-sheets')
+          m=json.loads((root/'manifest.json').read_text())
+          for name in m['source_files']:
+              a=Image.open(root/'originals'/name).convert('RGBA')
+              b=Image.open('art-edit/roundtrip'/name).convert('RGBA')
+              assert a.size==b.size and ImageChops.difference(a,b).getbbox() is None,name
+          print(f"Verified {len(m['source_files'])} original PNGs pixel-for-pixel.")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trainer-sprite-edit-pack
+          path: art-edit/trainer-sheets/
+          retention-days: 30

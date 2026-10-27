@@ -55,7 +55,7 @@ export const SCRIPT_COMMANDS = {
   walk: {
     args: ['who', '...'],
     about:
-      'walk someone: in a cutscene "walk Hazel door 1.5 [nowait]" (waits till they arrive unless nowait); in the walk scene "walk Blake beside me" (after camera run-up)',
+      'walk someone: in a cutscene "walk Kappi door 1.5 [nowait]" (waits till they arrive unless nowait); in the walk scene "walk Blake beside me" (after camera run-up)',
   },
   face: { args: ['who', 'dir'], about: 'turn someone (up, down, side, sideR, or toward someone)' },
   camera: {
@@ -71,16 +71,16 @@ export const SCRIPT_COMMANDS = {
   pick: {
     args: ['who'],
     about:
-      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, hazel, juniper, back_lost, leader, bureau, rival (RL-S2); nothing if none fits',
+      'say the story director’s line for who (banter.json, picked by the run history: RL-S1): chosen, kappi, juniper, back_lost, leader, bureau, rival (RL-S2); nothing if none fits',
   },
   /* RL-S2: the hub folk and you (logic/relations.js) */
   beans: { args: ['n'], about: 'give Beans, the gift currency, kept between runs (RL-S2): beans 1' },
   gift: {
     args: ['who'],
     about:
-      'give a hub person a gift (RL-S2, relations.json): a Bean, points with them; nothing when you have too few Beans or gave them one since the last run (gate it with "[if beans >= 1 and not gifted:hazel]")',
+      'give a hub person a gift (RL-S2, relations.json): a Bean, points with them; nothing when you have too few Beans or gave them one since the last run (gate it with "[if beans >= 1 and not gifted:kappi]")',
   },
-  rel: { args: ['who', 'n'], about: 'points with a hub person, as for a favour done (RL-S2): rel hazel 2' },
+  rel: { args: ['who', 'n'], about: 'points with a hub person, as for a favour done (RL-S2): rel kappi 2' },
   chapter: {
     args: ['n'],
     about: 'move the story on to chapter n (RL-S2; never back): an Expedition’s boss scene, "chapter 2"',
@@ -90,7 +90,7 @@ export const SCRIPT_COMMANDS = {
   actor: {
     args: ['who', 'at', 'spot', '...'],
     group: 'cutscene',
-    about: 'put someone in the scene: "actor Hazel at door down"; "actor you at street up silhouette" (a dark figure)',
+    about: 'put someone in the scene: "actor Kappi at door down"; "actor you at street up silhouette" (a dark figure)',
   },
   act: {
     args: ['who', 'pose', 's?'],
@@ -154,6 +154,15 @@ export const SCRIPT_COMMANDS = {
     group: 'event',
     checkpoint: true,
     about: 'you pick a Billie to give up; a Billie of the region’s dex takes its place, n levels up',
+  },
+  /* RO-3e: a fossil revived (the Dig Site): a Billie by species, not drawn from the region (named revive, not gift:
+     gift is RL-S2's, a gift to a hub person) */
+  revive: {
+    args: ['species', 'n?'],
+    group: 'event',
+    checkpoint: true,
+    about:
+      'a Billie of that species joins you at the place’s level plus n; with a full team you pick one to leave behind',
   },
   foe: {
     args: ['class', 'n?'],

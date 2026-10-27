@@ -9,7 +9,7 @@
 }
 .ws-top {
   display: flex;
-  gap: 12px;
+  gap: var(--s3);
   align-items: center;
 }
 .ws-big {
@@ -24,7 +24,7 @@
 .ws-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: var(--s1);
   margin-top: 6px;
 }
 .ws-stats span {
@@ -39,15 +39,15 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 .ws-slot {
   display: grid;
   grid-template-columns: 74px 1fr auto;
   grid-template-areas: 'k n c' 'k m c';
   align-items: center;
-  gap: 2px 8px;
-  padding: 8px 10px;
+  gap: 2px var(--s2);
+  padding: var(--s2) 10px;
   border: 0;
   border-radius: 10px;
   text-align: left;
@@ -81,7 +81,7 @@
   font-size: 12px;
 }
 .ws-up {
-  margin-left: 4px;
+  margin-left: var(--s1);
   color: var(--gold, #ffd86a);
 }
 .ws-brk {
@@ -101,8 +101,8 @@
 .ws-upg {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--s2);
+  padding: var(--s2) 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
 }
@@ -116,7 +116,7 @@
 .ws-ds {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--s1);
 }
 .ws-d {
   font-size: 11px;

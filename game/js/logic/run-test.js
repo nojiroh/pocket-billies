@@ -23,7 +23,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** the debug menu's short run (debug-menu.js runstart) */
-export const RUN_TEST_SHORT = { rows: 5, minibosses: 1 };
+export const RUN_TEST_SHORT = { rows: 6, minibosses: 1 };
 
 /**
  * a test run's address, or null (no ?debug, or no seed)

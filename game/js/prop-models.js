@@ -11,6 +11,7 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
+import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
@@ -39,7 +40,8 @@ import {
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
-import { windLeanAt } from './walk/prop-look.js';
+import { frameBudgetLeft } from './walk/quality-cull.js';
+import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
@@ -62,6 +64,7 @@ expose({
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
+  SMEAR_GLSL: [() => SMEAR_GLSL],
   SPIN_BY_GLSL: [() => SPIN_BY_GLSL],
   SPIN_GLSL: [() => SPIN_GLSL],
   SWAPPED_RECIPES: [() => SWAPPED_RECIPES],
@@ -73,16 +76,20 @@ expose({
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
   decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
+  drawLowPolyItems: [() => drawLowPolyItems, v => (drawLowPolyItems = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
   drawModelInstances: [() => drawModelInstances, v => (drawModelInstances = v)],
   drawModelPart: [() => drawModelPart, v => (drawModelPart = v)],
   drawModelShadowPart: [() => drawModelShadowPart, v => (drawModelShadowPart = v)],
+  drawPropModelMesh: [() => drawPropModelMesh, v => (drawPropModelMesh = v)],
   drawPropModelShadows: [
     () => drawPropModelShadows,
     v => ((drawPropModelShadows = v), provide({ drawPropModelShadows })),
   ],
   drawPropModelShadowsInstanced: [() => drawPropModelShadowsInstanced, v => (drawPropModelShadowsInstanced = v)],
   drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
+  drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
+  drawVoxItems: [() => drawVoxItems, v => (drawVoxItems = v)],
   flushPropModelMeshes: [
     () => flushPropModelMeshes,
     v => ((flushPropModelMeshes = v), provide({ flushPropModelMeshes })),
@@ -91,7 +98,6 @@ expose({
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
   layerProp: [() => layerProp, v => (layerProp = v)],
   leafCut: [() => leafCut, v => (leafCut = v)],
-  leafOutlineColour: [() => leafOutlineColour, v => (leafOutlineColour = v)],
   limbPoints: [() => limbPoints, v => (limbPoints = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
@@ -111,7 +117,11 @@ expose({
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
+  setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
+  setItemSpin: [() => setItemSpin, v => (setItemSpin = v)],
+  setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
   spinPartAngle: [() => spinPartAngle, v => (spinPartAngle = v)],
+  splitSmeared: [() => splitSmeared, v => (splitSmeared = v)],
   swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
@@ -819,6 +829,19 @@ function spinPartAngle(s, t) {
   const ph = t * s.rps * Math.PI * 2;
   return s.sw ? Math.sin(ph) * s.sw : ph;
 }
+/* a mesh's turning parts (the one-at-a-time path, VFX-3's stretched items): each turned by its own angle now */
+function drawSpinningParts(p, m) {
+  if (!m.spins || !m.spins.length) return;
+  const gl = gpuState.gl,
+    t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
+  for (const s of m.spins) {
+    gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], spinPartAngle(s, t));
+    gl.uniform3fv(p.U.uSpinC, s.c);
+    drawPropModelMesh(s);
+  }
+  gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
+  gl.uniform3f(p.U.uSpinC, 0, 0, 0);
+}
 function flushPropModelMeshes() {
   for (const k of [...propModelState.meshes.keys()]) invalidatePropModel(k, true);
   /* phase 20 R2: the instanced models' record buffer too (a restored context may hand back the same context object) */
@@ -1367,11 +1390,18 @@ function lowPolyOn(rec) {
     !(rec.layers || []).some(l => l.k === 'raw' && !l.hide)
   );
 }
+/* one mesh part drawn once (the one-at-a-time path) */
+function drawPropModelMesh(m) {
+  const gl = gpuState.gl;
+  gl.bindVertexArray(m.vao);
+  if (m.el) gl.drawElements(gl.TRIANGLES, m.n, m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
+  else gl.drawArrays(gl.TRIANGLES, 0, m.n);
+}
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
 const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
-uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}
-void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
+uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}${SMEAR_GLSL}
+void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=smearDrag(p,cr,sr,mPos);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
 /* a window's glass (vTex.z 2-32: window 1-31): by day the sky in it, more of it at a grazing look, and a glint of the
    sun; lit from its room when its bit of uWinOn is set, as strongly as uWinK says (1 after dark), a warm lamp, a cooler
@@ -1410,14 +1440,17 @@ export function propModelShaders() {
   if (!P.mdlI && PROP_MODEL_SHADERS.mdl) P.mdlI = lowPolyInstancedShaders();
   return P;
 }
-function drawLowPolyModels(C, X, L) {
+/* VFX-3: inst false for the stretched models (it.smear), drawn one at a time with the plain program, compiled on the
+   first stretch */
+function drawLowPolyModels(C, X, L, inst = true) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = gpuState.gl;
   ensurePrograms(propModelShaders());
+  if (!inst) ensurePrograms({ mdl: PROP_MODEL_SHADERS.mdl });
   const A = buildingArt(),
     det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
-  const p = useWalkProgram('mdlI', C, X);
+  const p = useWalkProgram(inst ? 'mdlI' : 'mdl', C, X);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -1427,16 +1460,61 @@ function drawLowPolyModels(C, X, L) {
   gl.uniform1i(p.U.uDet, 0);
   gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
-  drawModelInstances(p, 'mdl', L);
+  /* Building bumpiness: the models wear the buildings' sheet, and bump as the buildings do */
+  if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
+  if (!inst) drawLowPolyItems(p, L);
+  else {
+    /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
+    const [one, many] = splitSmeared(L);
+    if (many.length) drawModelInstances(p, 'mdl', many);
+    if (one.length) drawLowPolyModels(C, X, one, false);
+  }
+}
+/* [the stretched (it.smear), the rest] of a list of [item, mesh] */
+function splitSmeared(L) {
+  const one = [],
+    many = [];
+  for (const e of L) (e[0].smear ? one : many).push(e);
+  return [one, many];
+}
+/* the models one at a time: each item's own uniforms, then its mesh, its extra parts and its turning parts */
+function drawLowPolyItems(p, L) {
+  const gl = gpuState.gl;
+  for (const [it, m] of L) {
+    gl.uniform1f(p.U.uFade, it.fade ?? 1);
+    gl.uniform1f(p.U.uBaseY, it.y);
+    setItemSmear(p, it);
+    if (p.U.uCel) gl.uniform1f(p.U.uCel, it.vox && it.vox.cel != null ? it.vox.cel : 0.75);
+    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
+    setPropModelUniforms(p, it);
+    setItemSpin(p, it);
+    if (p.U.uWinK) {
+      const W = it.wins ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null;
+      gl.uniform1f(p.U.uWinK, W ? W.k : 0);
+      gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
+      gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
+    }
+    drawPropModelMesh(m);
+    for (const q of m.more || []) drawPropModelMesh(q);
+    drawSpinningParts(p, m);
+    propModelState.drawn++;
+    propModelState.lowPoly++;
+  }
+  gl.bindVertexArray(null);
 }
 /* alpha 0.4: a part that turns (a propeller): its own mesh, turned uSpin.w radians about the axis uSpin.xyz (a unit
    vector, up as y) through its pivot uSpinC (the model's metres, up as y) */
 const SPIN_GLSL = `vec3 voxSpin(vec3 d){float a=uSpin.w;if(a==0.)return d;vec3 k=uSpin.xyz;float c=cos(a),s=sin(a);return d*c+cross(k,d)*s+k*dot(k,d)*(1.-c);}`;
+/* VFX-3: a thrown pyramid's stretch on its fastest frames (logic/smear.js smearStretch, it.smear): a vertex on the
+   side facing away from the motion (from the spin's pivot, placed, scaled and turned as p is) is dragged back by up to
+   uSmear.xyz (the scene's metres), the more the further round it is, broken up by noise on its own model place m
+   (uSmear.w: the cell's seed); 0 for every other model. After voxSpin and the turn (cr, sr), before the base */
+const SMEAR_GLSL = `uniform vec4 uSmear;vec3 smearDrag(vec3 p,float cr,float sr,vec3 m){if(dot(uSmear.xyz,uSmear.xyz)<1e-8)return p;vec3 c=vec3(uSpinC.x*uFlip,uSpinC.y,uSpinC.z)*uS;vec3 r=p-vec3(c.x*cr-c.z*sr,c.y,c.x*sr+c.z*cr);float l=length(r);if(l<1e-4)return p;float f=clamp(dot(r/l,normalize(uSmear.xyz)),0.,1.),h=fract(sin(dot(m,vec3(12.9898,78.233,37.719))+uSmear.w*61.7)*43758.5453);return p+uSmear.xyz*f*(.7+.3*h);}`;
 const PROP_MODEL_SHADERS = {
   vox: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}
-void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
+precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}${SMEAR_GLSL}
+void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=smearDrag(p,cr,sr,qPos);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${LIGHT_GLSL}${ROCK_GLSL}
@@ -1514,14 +1592,15 @@ function tagPropModel(it) {
     if (propModelState.res) flushPropModelMeshes();
     propModelState.res = R;
   }
-  /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
+  /* a few new meshes a frame: the first always, the rest while the frame's one-off budget lasts (LD-5: it was 12 ms
+     of their own); the rest draw as their pictures a frame or two longer */
   if (rec && !propModelState.meshes.has(path)) {
     const fr = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
     if (propModelState.fr !== fr) {
       propModelState.fr = fr;
       propModelState.bt = 0;
     }
-    if (propModelState.bt > 12) return;
+    if (propModelState.bt > 0 && typeof frameBudgetLeft === 'function' && !frameBudgetLeft()) return;
     const t0 = performance.now();
     propModelGuard(() => propModelMesh(path, rec));
     propModelState.bt += performance.now() - t0;
@@ -1557,14 +1636,25 @@ function propModelImageItems(it, out) {
     turn: propTurn(it),
     bob: mooredBob(it),
   };
+  const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
-    if (!im0 || !(im0.naturalWidth || im0.width)) {
+    /* LD-1: a leaf clump's baked cut (tools/bake-pixel-facts.mjs), so its crown picture is never read (or even
+       loaded) in the page; the Studio painting the crown (_ver) or moving the clump (a key with no bake) cuts it here */
+    const baked = F && (L.clip || L.shade) && !(im0 && im0._ver) ? F.cuts[leafCutKey(L.img, L)] : null;
+    if (baked) {
+      const b = artImage(baked);
+      if (!b || !(b.naturalWidth || b.width)) {
+        artImg(baked);
+        continue;
+      }
+    }
+    if (!baked && (!im0 || !(im0.naturalWidth || im0.width))) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;
     }
-    const im = L.clip || L.shade ? leafCut(im0, L) : im0;
+    const im = baked ? artImage(baked) : L.clip || L.shade ? leafCut(im0, L) : im0;
     if (!im) continue;
     const d = decalPlace(it, L, m),
       s = d.s,
@@ -1611,25 +1701,6 @@ function propModelImageItems(it, out) {
    picture's darkest colour as an outline, as a drawn clump has. shade darkens the whole picture (the crown's core,
    behind the clumps). Cuts are kept per picture and made again when the picture changes (the Studio's _ver). */
 const LEAF_CUTS = new WeakMap();
-function leafOutlineColour(d) {
-  const n = new Map();
-  for (let i = 0; i < d.length; i += 4)
-    if (d[i + 3] > 127) {
-      const k = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
-      n.set(k, (n.get(k) || 0) + 1);
-    }
-  let best = 0,
-    bl = 1e9;
-  for (const [k, c] of n)
-    if (c > 15) {
-      const l = 0.299 * (k >> 16) + 0.587 * ((k >> 8) & 255) + 0.114 * (k & 255);
-      if (l < bl) {
-        bl = l;
-        best = k;
-      }
-    }
-  return [best >> 16, (best >> 8) & 255, best & 255];
-}
 function leafCut(im, L) {
   const ver = im._ver || 0;
   let C = LEAF_CUTS.get(im);
@@ -1637,7 +1708,7 @@ function leafCut(im, L) {
     const W = im.naturalWidth || im.width,
       H = im.naturalHeight || im.height,
       src = makeCanvas(W, H),
-      x = src.getContext('2d');
+      x = src.getContext('2d', { willReadFrequently: true });
     x.drawImage(im, 0, 0);
     const data = x.getImageData(0, 0, W, H).data;
     C = { ver, W, H, data, outline: leafOutlineColour(data), cuts: new Map() };
@@ -1646,77 +1717,13 @@ function leafCut(im, L) {
   const key = (L.clip || []).join(',') + '|' + (L.shade || 1);
   let out = C.cuts.get(key);
   if (out) return out;
-  const { W, H, data } = C,
-    sh = L.shade || 1;
-  if (!L.clip) {
-    out = makeCanvas(W, H);
-    const X = out.getContext('2d'),
-      o = X.createImageData(W, H);
-    for (let i = 0; i < data.length; i += 4) {
-      o.data[i] = data[i] * sh;
-      o.data[i + 1] = data[i + 1] * sh;
-      o.data[i + 2] = data[i + 2] * sh;
-      o.data[i + 3] = data[i + 3];
-    }
-    X.putImageData(o, 0, 0);
-  } else if (L.clip.length >= 4) {
-    /* phase 09 batch 10: a box [left, top, right, bottom] (picture pixels, right and bottom excluded), a pine's tier:
-       a wide, short band with its own drawn hem, so no outline is added; the layer stands on the box's bottom middle
-       as a circle's clump stands on its circle's */
-    const [x0, y0, x1, y1] = L.clip.map(Math.round),
-      w = Math.max(1, x1 - x0),
-      h = Math.max(1, y1 - y0);
-    out = makeCanvas(w, h);
-    const X = out.getContext('2d'),
-      o = X.createImageData(w, h);
-    for (let y = 0; y < h; y++)
-      for (let x = 0; x < w; x++) {
-        const px = x0 + x,
-          py = y0 + y;
-        if (px < 0 || py < 0 || px >= W || py >= H) continue;
-        const i = (py * W + px) * 4,
-          j = (y * w + x) * 4;
-        if (data[i + 3] <= 127) continue;
-        o.data[j] = data[i] * sh;
-        o.data[j + 1] = data[i + 1] * sh;
-        o.data[j + 2] = data[i + 2] * sh;
-        o.data[j + 3] = 255;
-      }
-    X.putImageData(o, 0, 0);
-  } else {
-    const [cx, cy, r] = L.clip,
-      R = Math.max(1, Math.ceil(r)),
-      S = 2 * R,
-      x0 = Math.round(cx) - R,
-      y0 = Math.round(cy) - R,
-      inC = (px, py) => (px + 0.5 - cx) ** 2 + (py + 0.5 - cy) ** 2 <= r * r,
-      op = (px, py) => px >= 0 && py >= 0 && px < W && py < H && data[(py * W + px) * 4 + 3] > 127;
-    out = makeCanvas(S, S);
-    const X = out.getContext('2d'),
-      o = X.createImageData(S, S);
-    for (let y = 0; y < S; y++)
-      for (let x = 0; x < S; x++) {
-        const px = x0 + x,
-          py = y0 + y;
-        if (!op(px, py) || !inC(px, py)) continue;
-        const i = (py * W + px) * 4,
-          j = (y * S + x) * 4,
-          rim =
-            py > cy - r * 0.25 &&
-            [
-              [1, 0],
-              [-1, 0],
-              [0, 1],
-              [0, -1],
-            ].some(([a, b]) => op(px + a, py + b) && !inC(px + a, py + b));
-        const c = rim ? C.outline : [data[i], data[i + 1], data[i + 2]];
-        o.data[j] = c[0] * sh;
-        o.data[j + 1] = c[1] * sh;
-        o.data[j + 2] = c[2] * sh;
-        o.data[j + 3] = 255;
-      }
-    X.putImageData(o, 0, 0);
-  }
+  /* LD-1: the cut's maths in logic/pixel-facts.js, shared with the bake (tools/bake-pixel-facts.mjs) */
+  const P = leafCutPixels(C.W, C.H, C.data, C.outline, L);
+  out = makeCanvas(P.w, P.h);
+  const X = out.getContext('2d'),
+    o = X.createImageData(P.w, P.h);
+  o.data.set(P.data);
+  X.putImageData(o, 0, 0);
   C.cuts.set(key, out);
   return out;
 }
@@ -1749,6 +1756,50 @@ function mooredBob(it) {
     Math.sin(t * 0.29 + ph) * 0.03 * (1 + w * 0.4),
   ];
 }
+/* RF-2: a whole model turned about any axis (a thrown pyramid tumbling, rocking on a base edge): it.spin {a: a unit
+   axis, up as y; an: radians; c: the pivot in the model's metres, up as y}; else not turned */
+function setItemSpin(p, it) {
+  const gl = gpuState.gl,
+    S = it.spin;
+  if (S) {
+    gl.uniform4f(p.U.uSpin, S.a[0], S.a[1], S.a[2], S.an);
+    gl.uniform3fv(p.U.uSpinC, S.c);
+  } else {
+    gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
+    gl.uniform3f(p.U.uSpinC, 0, 0, 0);
+  }
+}
+/* VFX-3: its stretch, it.smear {d: the drag in the scene's metres; seed: 0..1} (SMEAR_GLSL), else none */
+function setItemSmear(p, it) {
+  const S = it.smear;
+  if (p.U.uSmear) gpuState.gl.uniform4f(p.U.uSmear, S ? S.d[0] : 0, S ? S.d[1] : 0, S ? S.d[2] : 0, S ? S.seed : 0);
+}
+function setPropModelUniforms(p, it) {
+  const gl = gpuState.gl,
+    U = p.U,
+    s = (it.p.s || 1) * (it.lk ? it.lk.size : 1),
+    bo = mooredBob(it);
+  gl.uniform3f(U.uBase, it.x, it.y + (bo ? bo[0] : 0), it.z);
+  gl.uniform1f(U.uS, s);
+  gl.uniform1f(U.uRot, propTurn(it) + (bo ? bo[1] : 0)); /* phase 09 batch 9: and the placement's turn */
+  gl.uniform1f(U.uFlip, it.flip || 1);
+}
+/* the voxel props one at a time (L is [item, mesh]): each item's own uniforms, then its mesh and its turning parts */
+function drawVoxItems(p, L) {
+  const gl = gpuState.gl;
+  for (const [it, m] of L) {
+    gl.uniform3f(p.U.uBaseP, it.x, it.y, it.z);
+    gl.uniform1f(p.U.uFade, it.fade ?? 1);
+    gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
+    setItemSmear(p, it);
+    setPropModelUniforms(p, it);
+    gl.uniform1f(p.U.uQ, m.q || 1);
+    setItemSpin(p, it);
+    drawPropModelMesh(m);
+    drawSpinningParts(p, m);
+    propModelState.drawn++;
+  }
+}
 export function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   propModelState.lowPoly = 0;
@@ -1771,7 +1822,14 @@ export function drawPropModels(C, items, X, hits, labels, PPU) {
       gl.depthMask(true);
       gl.disable(gl.BLEND);
       gl.disable(gl.CULL_FACE);
-      drawModelInstances(p, 'vox', VL);
+      /* VFX-3: a stretched item has no place in the instance record: drawn one at a time, with the plain program
+         (compiled on the first stretch) */
+      const [one, many] = splitSmeared(VL);
+      if (many.length) drawModelInstances(p, 'vox', many);
+      if (one.length) {
+        ensurePrograms({ vox: PROP_MODEL_SHADERS.vox });
+        drawVoxItems(useWalkProgram('vox', C, X), one);
+      }
     }
     gl.bindVertexArray(null);
     if (hits) for (const [it] of VL) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
@@ -1965,7 +2023,7 @@ function drawPropModelShadowsInstanced(SH, items) {
     t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
   L.length = 0;
   for (const it of items) {
-    if (!it.vox) continue;
+    if (!it.vox || it.ghost) continue;
     const m = propModelMesh(it.voxPath, it.vox);
     if (m) L.push([it, m]);
   }
@@ -2022,20 +2080,23 @@ function drawModelShadowPart(q, A, I, buf, at, n) {
 }
 /* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
 function propModelArtPaths(sc, C) {
-  const L = [];
+  const L = [],
+    F = typeof gameData !== 'undefined' && gameData.pixelFacts,
+    /* LD-1: a leaf clump comes as its baked cut (propModelImageItems), not its crown */
+    art = l => (F && (l.clip || l.shade) && F.cuts[leafCutKey(l.img, l)]) || l.img;
   let any = false;
   for (const p of sc.props || (sc._lite && sc._lite.props) || []) {
     const M = C.props[p.k];
     if (!M || !M.model) continue;
     any = true;
     const rec = propModelState.recipes.get(M.model);
-    if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(art(l));
     /* phase 09 batch 1: a variant's own model and swapped pictures (the autumn oak's leaves) load with the place too */
     const V = p.v && M.variants ? M.variants[p.v - 1] : null;
     if (V && V.swap) for (const v of Object.values(V.swap)) if (/\.png$/i.test(v)) L.push(v);
     if (V && typeof V.model === 'string') {
       const r2 = propModelState.recipes.get(V.model);
-      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(art(l));
     }
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */

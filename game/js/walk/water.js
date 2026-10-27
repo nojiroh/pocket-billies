@@ -364,6 +364,8 @@ export function drawWater(C, X, rw, rh) {
     U = p.U,
     sc = walkView.sc,
     sky = skyColors(sc);
+  /* Lamp light on water (lights.onWater): the near lamps light the surface and the falls at night */
+  if (U.uLampW) gl.uniform1f(U.uLampW, engineSetting('lights', 'onWater') ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, walkRenderer.water && gpuState.fb.refl ? gpuState.fb.refl.c : gpuState.white);
   gl.uniform1i(U.uRefl, 0);
@@ -399,6 +401,7 @@ export function drawWater(C, X, rw, rh) {
   }
   if (walkRenderer.fallMesh) {
     const f = useWalkProgram('fall', C, X);
+    if (f.U.uLampW) gl.uniform1f(f.U.uLampW, engineSetting('lights', 'onWater') ? 1 : 0);
     gl.uniform3fv(f.U.uShallow, engineColor('water', 'shallow', '#4FA6C0'));
     setPixelWaterUniform(f.U);
     gl.disable(gl.CULL_FACE);

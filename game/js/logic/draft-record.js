@@ -7,17 +7,20 @@
      included when the list of files changed: a deleted entry is a file the index no longer lists);
    - rigsText: the skeletons' text, when they differ from what was loaded;
    - art: each unsaved picture as a Blob;
+   - texts (SA-2b): each unsaved text file (an SVG icon, art/manifest.js) as its text; a draft from before has none;
    - base: that commit, so a restore reads everything at it again (main may have moved on); login and time for the
      prompt. Never a token, and never sent anywhere.
    Logic only: no DOM, runs in Node (tools/test/draft-record.test.mjs). */
 /** @typedef {{ path: string, blob: any }} DraftArt */
-/** @typedef {{ v: number, key: string, base: string, login: string, time: number, files: Record<string, string>, rigsText: string | null, art: DraftArt[] }} Draft */
+/** @typedef {{ path: string, text: string }} DraftText */
+/** @typedef {{ v: number, key: string, base: string, login: string, time: number, files: Record<string, string>, rigsText: string | null, art: DraftArt[], texts: DraftText[] }} Draft */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   DRAFT_ART: [() => DRAFT_ART],
   DRAFT_FILE: [() => DRAFT_FILE],
+  DRAFT_TEXT: [() => DRAFT_TEXT],
   DRAFT_VERSION: [() => DRAFT_VERSION],
   draftEmpty: [() => draftEmpty],
   // @ts-expect-error -- replaced on purpose
@@ -35,8 +38,10 @@ export const DRAFT_VERSION = 1;
 /* a data file's path in game/data (index.json, uiTheme.json, maps/copperleaf.json) and an art path as Save takes it */
 export const DRAFT_FILE = /^[\w-]+(\/[\w-]+)?\.json$/;
 export const DRAFT_ART = /^art\/[\w\-./]+\.(png|webp)$/i;
+/* SA-2b: the text files the Studio saves: an SVG under art/ and the atlas rectangles' file */
+export const DRAFT_TEXT = /^art\/([\w\-./]+\.svg|manifest\.js)$/i;
 
-/** a draft from what is pending @param {Omit<Draft, 'v'>} d @returns {Draft} */
+/** a draft from what is pending @param {Omit<Draft, 'v' | 'texts'> & { texts?: DraftText[] }} d @returns {Draft} */
 export function draftRecord(d) {
   return {
     v: DRAFT_VERSION,
@@ -47,6 +52,7 @@ export function draftRecord(d) {
     files: { ...d.files },
     rigsText: d.rigsText,
     art: d.art.map(a => ({ path: a.path, blob: a.blob })),
+    texts: (d.texts || []).map(a => ({ path: a.path, text: a.text })),
   };
 }
 
@@ -63,11 +69,22 @@ export function draftParse(x) {
   if (!Array.isArray(x.art)) return null;
   for (const a of x.art)
     if (!a || typeof a.path !== 'string' || !DRAFT_ART.test(a.path) || a.path.includes('..') || !a.blob) return null;
+  if (x.texts !== undefined && !Array.isArray(x.texts)) return null;
+  for (const a of x.texts || [])
+    if (
+      !a ||
+      typeof a.path !== 'string' ||
+      !DRAFT_TEXT.test(a.path) ||
+      a.path.includes('..') ||
+      typeof a.text !== 'string'
+    )
+      return null;
   return draftRecord(x);
 }
 
 /** true when a draft holds nothing to restore @param {Draft} d */
-export const draftEmpty = d => !Object.keys(d.files).length && d.rigsText == null && !d.art.length;
+export const draftEmpty = d =>
+  !Object.keys(d.files).length && d.rigsText == null && !d.art.length && !(d.texts || []).length;
 
 /** what a draft holds, in words: "2 data files, the skeletons and 1 picture" @param {Draft} d */
 export function draftSummary(d) {
@@ -76,6 +93,8 @@ export function draftSummary(d) {
   if (n || 'index.json' in d.files) parts.push(n === 1 ? '1 data file' : `${n} data files`);
   if (d.rigsText != null) parts.push('the skeletons');
   if (d.art.length) parts.push(d.art.length === 1 ? '1 picture' : `${d.art.length} pictures`);
+  const t = (d.texts || []).length;
+  if (t) parts.push(t === 1 ? '1 text file' : `${t} text files`);
   return parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0] || 'nothing';
 }
 

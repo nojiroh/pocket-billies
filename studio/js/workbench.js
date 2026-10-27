@@ -1,7 +1,7 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · Art workbench (studio track ST-3: Sheet mode) =================
-   One workbench for art, in modes: Sheet (here), Part (workbench-part.js, ST-4), then Pixels and Model (ST-6 to
-   ST-8). Sheet mode cuts a sheet into parts: drop PNGs anywhere on the Studio (and an Aseprite JSON beside its PNG),
+   One workbench for art, in modes: Sheet (here) and Part (workbench-part.js, ST-4); SA-3: the never-enabled Pixels
+   and Model buttons are gone (pixels are painted from the Art browser, models in Props). Sheet mode cuts a sheet into parts: drop PNGs anywhere on the Studio (and an Aseprite JSON beside its PNG),
    pick how the parts are found (a phase 16 kit's rows, islands of art, a template grid, or Aseprite's frames and
    slices), snap art drawn big back to its pixels, name the parts from a template, match front and back, and write
    them to the game: the pictures to art/next/parts/<view>/<id>.png and the parts to partKits.json (one undo step for
@@ -422,15 +422,12 @@ SECTIONS.workbench = () => {
     modes = [
       ['sheet', 'Sheet', 'Cut sheets into parts'],
       ['part', 'Part', 'Pivots, sockets, turn limits, draw order, test fit, mirror, S and L'],
-      ['pixels', 'Pixels', 'Painting on the shared canvas (ST-6)'],
-      ['model', 'Model', '3D models in and out (ST-7, ST-8)'],
     ],
     on = workbench.mode;
   const head = `<div class="ed-head"><div><small class="mono">${on === 'part' && wbPart.src === 'species' ? 'art/next/rigs-next.js · art/next/billionaires' : on === 'part' && wbPart.src === 'robots' ? 'robots.json · art/robots' : 'partKits.json · art/next/parts'}</small><h2>Art workbench</h2><p class="sub">${on === 'part' ? (wbPart.src === 'species' ? 'A species’ parts on its sheet: pivots, boxes, draw order.' : 'A part’s joints: drag the pivot and sockets, test it on a body.') : 'Drop sheets anywhere on the Studio to cut them into parts.'}</p></div><div class="seg-row">${modes
-    .map(([k, l, t]) =>
-      k === 'sheet' || k === 'part'
-        ? `<button class="seg ${k === on ? 'on' : ''}" data-act="wbMode" data-m="${k}" title="${t}">${l}</button>`
-        : `<button class="seg" disabled title="${t}">${l}</button>`
+    .map(
+      ([k, l, t]) =>
+        `<button class="seg ${k === on ? 'on' : ''}" data-act="wbMode" data-m="${k}" title="${t}">${l}</button>`
     )
     .join('')}</div></div>`;
   if (on === 'part') return wbPartSection(head);

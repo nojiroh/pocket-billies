@@ -9,6 +9,8 @@
    - art: a patch of a picture, `{ art: path, before, after }`, each a box of pixels `{ x, y, width, height, data }`
      (or the whole picture when its size changed, `whole: true`; `made: true` when the picture is new, its `before`
      0 x 0: undoing it drops the picture). Art does not change `last`.
+   - a text file (SA-2b: an SVG icon, art/manifest.js), `{ art: path, text: { before, after } }` with empty patches:
+     `before` is null when the file is new (undoing it drops the file).
    - a group of art steps, one step of the undo (`group`: a kit's parts written at once; studio track ST-3), with the
      data it changed as a data step's parts (`snapshot`) when it changed data too.
    Undoing a data step puts its `before` texts into `last` and hands them back to put into the data; undoing art hands
@@ -19,7 +21,7 @@
 /** @typedef {Record<string, [string | null, string | null]>} PartsDiff */
 /** @typedef {Map<string, string>} Parts */
 /** @typedef {{ parts: PartsDiff }} DataStep */
-/** @typedef {{ art: string, before: Patch, after: Patch, whole?: boolean, made?: boolean, group?: ArtStep[], snapshot?: PartsDiff }} ArtStep */
+/** @typedef {{ art: string, before: Patch, after: Patch, whole?: boolean, made?: boolean, group?: ArtStep[], snapshot?: PartsDiff, text?: { before: string | null, after: string } }} ArtStep */
 /** @typedef {{ undo: (DataStep | ArtStep)[], redo: (DataStep | ArtStep)[], last: Parts | null, ver?: number }} History */
 /** @typedef {{ kind: 'data', put: Record<string, string | null> } | { kind: 'art', step: ArtStep, put: Patch, parts?: Record<string, string | null> }} Undone */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -54,6 +56,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   historyRedo: [() => historyRedo, v => (historyRedo = v)],
   historyTextBytes: [() => historyTextBytes],
+  // @ts-expect-error -- replaced on purpose
+  historyTextStep: [() => historyTextStep, v => (historyTextStep = v)],
   // @ts-expect-error -- replaced on purpose
   historyTrim: [() => historyTrim, v => (historyTrim = v)],
   // @ts-expect-error -- replaced on purpose
@@ -209,7 +213,9 @@ export const historyBytes = (
   if (kind === 'data') return data;
   const art = s.group
     ? s.group.reduce((n, g) => n + historyBytes(g, 'art'), 0)
-    : s.before.data.length + s.after.data.length;
+    : s.before.data.length +
+      s.after.data.length +
+      (s.text ? 2 * ((s.text.before || '').length + s.text.after.length) : 0);
   return art + data;
 };
 /** the bytes the parts hold, names and texts (`real` as historyTextBytes) */
@@ -219,6 +225,12 @@ export function historyPartsBytes(/** @type {Parts | null} */ parts, real = fals
   return n;
 }
 export const noPixels = () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint8ClampedArray(0) });
+/** SA-2b: a text file changed from `before` (null: new) to `after`: an art step holding the texts, or null when
+ * nothing changed @param {string} path @param {string | null} before @param {string} after @returns {ArtStep | null} */
+export function historyTextStep(path, before, after) {
+  if (!path || typeof after !== 'string' || before === after) return null;
+  return { art: path, before: noPixels(), after: noPixels(), text: { before, after } };
+}
 /** several picture steps as one (undone and redone together), with the data as it is now when they changed data too */
 export function historyArtGroup(
   /** @type {History} */ H,

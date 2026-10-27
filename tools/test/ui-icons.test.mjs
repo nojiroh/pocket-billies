@@ -1,29 +1,28 @@
-// The UI icons (game/art/ui/*.svg) are 36 x 36 fixed-colour pixel art drawn as grids in tools/build-ui-icons.py
-// (the "block and split" look); each SVG must be what its grid makes, and every icon the game names must exist.
-// Remake the files with `python3 tools/build-ui-icons.py`.
+// The UI icons (game/art/ui/*.svg) are 36 x 36 fixed-colour pixel art, the "block and split" look. Since SA-2b the
+// SVG files are the source (tools/build-ui-icons.py retired, decision 6): the Studio's icon editor paints them and
+// writes the same pixel format (game/js/logic/svg-pixels.js). Here: the set, its size and format, and every icon the
+// game names exists.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { ROOT, modules } from './setup-real.mjs';
 
-const ROOT = join(import.meta.dirname, '../..');
-const TOOL = join(ROOT, 'tools/build-ui-icons.py');
-const NAMES = [...readFileSync(TOOL, 'utf8').matchAll(/^ {4}'([a-z-]+)': \[$/gm)].map(m => m[1]);
+const UI = join(ROOT, 'game/art/ui');
+const NAMES = readdirSync(UI)
+  .filter(f => f.endsWith('.svg'))
+  .map(f => f.slice(0, -4));
 
-test('every icon file is what its grid in tools/build-ui-icons.py makes', () => {
+test('the 51 icons: names in the code’s style, each a 36 x 36 picture in the pixel format', () => {
+  /* a new icon (the Studio's New icon) raises this count on purpose */
   assert.equal(NAMES.length, 51);
-  const r = spawnSync('python3', [TOOL, '--check'], { encoding: 'utf8' });
-  assert.equal(r.status, 0, r.stdout + r.stderr);
-});
-
-test('every icon is a 36 x 36 picture and the tool draws every file in game/art/ui', () => {
-  const files = readdirSync(join(ROOT, 'game/art/ui'))
-    .filter(f => f.endsWith('.svg'))
-    .map(f => f.slice(0, -4));
-  assert.deepEqual(files.sort(), [...NAMES].sort());
-  for (const n of NAMES)
-    assert.match(readFileSync(join(ROOT, `game/art/ui/${n}.svg`), 'utf8'), /^<svg [^>]*viewBox="0 0 36 36"/, n);
+  for (const n of NAMES) {
+    assert.match(n, /^[a-z][a-z0-9-]*$/, n);
+    const text = readFileSync(join(UI, `${n}.svg`), 'utf8');
+    assert.match(text, /^<svg [^>]*viewBox="0 0 36 36"/, n);
+    const px = modules['svg-pixels'].svgToPixels(text);
+    assert.ok(!px.error, `${n}: ${px.error}`);
+  }
 });
 
 test('the icons the game names by key all exist', () => {

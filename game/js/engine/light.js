@@ -150,6 +150,15 @@ export function lightContext(o) {
     sh: shK > 0 ? skyHarmonics(sky, hor, gnd, o.sun, o.noSunLobe ? 0 : 1) : null,
     shK,
     fog: hz,
+    /* air track AIR-1 (fogit): the haze follows the sky's gradient (none indoors, less in a cave), fades red first,
+       thins with height and lies as mist along the view; and a broad glow on the sun's side. 0: today's haze */
+    sky: o.sky || null,
+    hazeSky: o.indoor ? 0 : (engineSetting('air', 'hazeSky') || 0) * (1 - (o.cave || 0)),
+    hazeTint: engineSetting('air', 'hazeTint') || 0,
+    hazeFall: o.indoor ? 0 : engineSetting('air', 'hazeFalloff') || 0,
+    hazeY: o.hazeY || 0,
+    mistRay: engineSetting('air', 'mistRay') || 0,
+    skyGlow: o.indoor ? 0 : engineSetting('air', 'skyGlow') || 0,
     fogStart: o.fogStart,
     fogD: o.fogD,
     tint: tint ? tint : [1, 1, 1],
@@ -171,6 +180,7 @@ export function lightContext(o) {
     shLift,
     shPx: engineSetting('shadows', 'pixel') ? (engineSetting('shadows', 'pixelSize') ?? 32) : 0,
     shSteps: engineSetting('shadows', 'pixelSteps') ?? 2,
+    shFix: (engineSetting('shadows', 'steadyEdges') ? 1 : 0) + (engineSetting('shadows', 'lampFix') ? 2 : 0),
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,
@@ -302,7 +312,10 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow', cy = 0
     cx += dx + f[0] * t;
     cz += dz + f[2] * t;
   }
-  const eye = [cx - tr[0] * dist, cy - tr[1] * dist + 2, cz - tr[2] * dist];
+  /* Steady shadow edges (shadows.steadyEdges): the eye on the light's own line through the centre, the line the snapping
+     above assumes; 2 m higher (as before) tilts the view a little off it and the snapped grid drifts as you walk */
+  const lift = engineSetting('shadows', 'steadyEdges') ? 0 : 2,
+    eye = [cx - tr[0] * dist, cy - tr[1] * dist + lift, cz - tr[2] * dist];
   const view = matrix4.look(eye, [cx, cy, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
     depth = 140,
     proj = matrix4.ortho(-radius, radius, -radius, radius, 1, depth),
