@@ -50,7 +50,8 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 |---|---|
 | `main` | The game. |
 | `legacy` | The old build (Net Worth v47.x / alpha 0.5), reference only (CLAUDE.md). Tag `legacy` on 0314a22. |
-| `sound` | Sound track. SND-6 (cries, UI sounds, jingles, the mix, the Studio's Sounds tab) is here, 13 commits, **not merged into main** and with no pull request. |
+| `sound` | Sound track Part 1 (SND-1..SND-6). Its tip (8f5d43eb, SND-6's docs) is in main (checked 2026-10-27), so nothing is left on it: delete it by hand when convenient. Part 2 works on `track/sound`. |
+| `ccr-1e8a9924-tt5x1q` | Sound track SND-7 (docs/phases/sound-track.md Part 2: the plan and research for layered music, gentle environment sounds and water; docs only, plus a private listening page), written here because `track/sound` didn't exist yet (2026-10-27). SND-8 on starts on `track/sound`, made by the owner from main (or this branch before its PR merges). Until its PR merges. |
 | `RL-10b` | RL-10b, Ranch B second half (PR #144, open). |
 | `ccr-9023a485-qr0fhf` | Project Story: Professor Chosen replaces Hazel (PR #142, open). |
 | `ccr-5f47d3ef-j66nm0` | Project Story: Kappi the Wise, a capybara, replaces Hazel (2026-10-26, no pull request yet). |
