@@ -84,7 +84,11 @@ test("the ghost's foe: the friend's name, their Billies as they were at the node
   assert.equal(G.reward, R.ghost.reward);
   assert.equal(G.blocks, false);
   assert.equal(G.team.length, 2);
-  assert.equal(G.team[1].lvl, Math.max(1, Math.round((G.team[0].lvl * 20) / 30)), 'in the same proportion as they were');
+  assert.equal(
+    G.team[1].lvl,
+    Math.max(1, Math.round((G.team[0].lvl * 20) / 30)),
+    'in the same proportion as they were'
+  );
   /* the trainer team the battle fields: their moves, nickname and look, at the node's level, full HP */
   const team = fn('trainerTeam')(G);
   assert.equal(team[0].sp, SP[0]);
