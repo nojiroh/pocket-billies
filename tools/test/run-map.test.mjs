@@ -28,6 +28,7 @@ import {
   runNodeSeed,
   runReveal,
   runShapeSize,
+  runSideLay,
   runSpot,
   runSpotBoxes,
   runSpotCells,
@@ -361,7 +362,7 @@ test("WM-4: on the bowl at the region grid: every place at its cells, to the wal
     }
 });
 
-test("WM-4: a side area's places on free cells from their obstacle's, a chain of touching footprints", () => {
+test("WM-4: a side area's places on free cells from their obstacle's (WM-4b: by its door), a chain of touching footprints", () => {
   const map = runMapMake('WM4SIDE', NODE_TYPES, rulesFor(9)),
     from = map.nodes.findIndex(n => n.row === 3),
     first = map.nodes.length;
@@ -383,9 +384,13 @@ test("WM-4: a side area's places on free cells from their obstacle's, a chain of
   for (let k = 1; k < chain.length; k++)
     assert.ok(runGridSide(C[chain[k - 1]], C[chain[k]]), `${chain[k - 1]} and ${chain[k]} touch`);
   assert.deepEqual(C[first].size, [2, 1]);
-  const north = { at: [C[from].at[0], C[from].at[1] + C[from].size[1]], size: [2, 1] };
-  if (!C.slice(0, first).some(c => overlaps(c, north)))
-    assert.deepEqual(C[first], north, 'the first north of its obstacle when free');
+  /* WM-4b: the first on free cells by its obstacle's north side (else its south), the door on the edge they share */
+  const lay = runSideLay(map),
+    F = { at: C[from].at, size: C[from].size };
+  assert.ok(['N', 'S'].includes(runGridSide(F, C[first])), 'the first by its obstacle, north or south');
+  assert.equal(runGridSide(F, C[first]), lay.door.side, 'by the side its door is on');
+  const u = (F.at[0] + lay.door.t * F.size[0]) * 64;
+  assert.ok(u >= C[first].at[0] * 64 + 12 && u <= (C[first].at[0] + 2) * 64 - 12, 'the door on the edge they share');
   assert.equal(map.nodes[first].at, undefined, 'worked out, never stored');
   /* a run from before WM-2: no cells, no boxes; its spots from rows and lanes */
   unGridded(map);

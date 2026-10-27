@@ -24,7 +24,16 @@ import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
-import { RUN_GRID, runExits, runGridExits, runNodeSeed, runSpot } from './run-map.js';
+import {
+  RUN_GRID,
+  runExits,
+  runGridExits,
+  runGridShared,
+  runGridSide,
+  runNodeSeed,
+  runSideLay,
+  runSpot,
+} from './run-map.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { arenaGenGates } from './arena-gen.js';
 import { wildPoolList } from './wild-pool.js';
@@ -124,34 +133,12 @@ export function runPlaceSize(map, i) {
   const size = !n.side && n.size ? n.size : RUN_GRID.place;
   return { w: size[0] * C, h: size[1] * C };
 }
-/** RL-R2: where the obstacle's place opens into its side area: WM-3, on a grid map, the whole metre of its north side
- * (else its south) furthest from its other exits there, RUN_GRID.edge from the ends and off an L's cut cell, when it
- * is RUN_GRID.gap from them (the north's best when neither side has room); the middle of the north side before
- * @param {RunMap} map @returns {{ side: 'N' | 'S', t: number }} */
+/** RL-R2: where the obstacle's place opens into its side area: WM-4b, on a grid map, on the edge it shares with the
+ * side area's first place (run-map.js runSideLay: north, else south, the spot furthest from its other exits there);
+ * the middle of the north side before @param {RunMap} map @returns {{ side: 'N' | 'S', t: number }} */
 export function runSideDoor(map) {
-  const S = /** @type {import('../../types/save-data').RunSide} */ (map.side),
-    f = map.nodes[S.from],
-    G = runOnGrid(map) ? runGridExits(map, S.from) : null;
-  if (!G || !f.at || !f.size) return { side: 'N', t: 0.5 };
-  const C = RUN_GRID.cell,
-    E = RUN_GRID.edge,
-    L = f.size[0] * C,
-    /** @type {{ side: 'N' | 'S', t: number, room: number }[]} */
-    best = [];
-  for (const side of /** @type {('N' | 'S')[]} */ (['N', 'S'])) {
-    const taken = G.filter(e => e.side === side).map(e => e.t * L),
-      cut = f.cut && f.cut[1] === (side === 'N' ? f.at[1] + f.size[1] - 1 : f.at[1]) ? (f.cut[0] - f.at[0]) * C : null;
-    let pick = { side, t: 0.5, room: -1 };
-    for (let u = E; u <= L - E; u++) {
-      if (cut !== null && u > cut - E && u < cut + C + E) continue;
-      const room = Math.min(1e9, ...taken.map(v => Math.abs(u - v))),
-        better = room > pick.room || (room === pick.room && Math.abs(u - L / 2) < Math.abs(pick.t * L - L / 2));
-      if (better) pick = { side, t: u / L, room };
-    }
-    best.push(pick);
-  }
-  const door = best.find(p => p.room >= RUN_GRID.gap) || best[0];
-  return { side: door.side, t: door.t };
+  const lay = runOnGrid(map) ? runSideLay(map) : null;
+  return lay ? lay.door : { side: 'N', t: 0.5 };
 }
 /** WM-3: give exits their ids as mapgen does (mapgenStageExits): the side's name, then 2, 3 ... for the later ones on
  * the same side, in the order the scene is made with them
@@ -174,20 +161,43 @@ export function runExitIds(exits) {
 export function runSceneExits(map, i) {
   const S = map.side;
   /* RL-R2: a side area's place: its first comes in from the obstacle's place (by the side facing its door), the
-     others by their west from the one before; each but the last goes on by its east to the next */
+     others from the one before; each but the last goes on to the next. WM-4b: on a grid map each link where the
+     places' cells meet (run-map.js runSideLay: the door's spot, else the middle of the edge they share); before, the
+     first by the middle of the side facing the door, the others west to east by their middles */
   if (S && map.nodes[i].side) {
     const k = S.nodes.indexOf(i),
-      next = S.nodes[k + 1];
-    return runExitIds([
-      k === 0
-        ? {
-            side: runSideDoor(map).side === 'N' ? /** @type {'S'} */ ('S') : /** @type {'N'} */ ('N'),
-            t: 0.5,
-            node: S.from,
-          }
-        : { side: /** @type {'W'} */ ('W'), t: 0.5, node: S.nodes[k - 1] },
-      ...(next === undefined ? [] : [{ side: /** @type {'E'} */ ('E'), t: 0.5, node: next }]),
-    ]);
+      next = S.nodes[k + 1],
+      lay = runOnGrid(map) ? runSideLay(map) : null,
+      door = runSideDoor(map),
+      C = RUN_GRID.cell;
+    /** where node i's place meets the side place k + d (d -1 the one before, 1 the next) or the obstacle's */
+    const link = (/** @type {number} */ d) => {
+      const node = d < 0 ? (k ? S.nodes[k - 1] : S.from) : /** @type {number} */ (next);
+      if (!lay) {
+        if (k === 0 && d < 0)
+          return { side: door.side === 'N' ? /** @type {'S'} */ ('S') : /** @type {'N'} */ ('N'), t: 0.5, node };
+        return { side: d < 0 ? /** @type {'W'} */ ('W') : /** @type {'E'} */ ('E'), t: 0.5, node };
+      }
+      const me = lay.cells[k],
+        F = map.nodes[S.from],
+        other =
+          k === 0 && d < 0
+            ? { at: /** @type {number[]} */ (F.at), size: /** @type {number[]} */ (F.size) }
+            : lay.cells[k + d],
+        side = /** @type {'E' | 'W' | 'N' | 'S'} */ (
+          runGridSide(me, other) || (k === 0 && d < 0 ? (door.side === 'N' ? 'S' : 'N') : d < 0 ? 'S' : 'N')
+        ),
+        ax = side === 'E' || side === 'W' ? 1 : 0,
+        len = me.size[ax] * C;
+      if (k === 0 && d < 0 && runGridSide(me, other)) {
+        /* the obstacle's door, measured from its place's west end */
+        const u = /** @type {number[]} */ (F.at)[0] * C + door.t * /** @type {number[]} */ (F.size)[0] * C;
+        return { side, t: (u - me.at[0] * C) / len, node };
+      }
+      const sh = runGridShared(me, other);
+      return { side, t: sh ? (((sh[0] + sh[1]) / 2 - me.at[ax]) * C) / len : 0.5, node };
+    };
+    return runExitIds([link(-1), ...(next === undefined ? [] : [link(1)])]);
   }
   const G = runOnGrid(map) ? runGridExits(map, i) : null;
   /** @type {{ side: 'E' | 'W' | 'N' | 'S', t: number, node: number }[]} */
