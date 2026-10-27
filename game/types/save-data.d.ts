@@ -121,6 +121,17 @@ export interface Meta {
   /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
       (logic/daily.js) */
   boards: { d: number; w: number };
+  /** ON-3: the Showcase (logic/showcase.js) */
+  show: MetaShow;
+}
+
+/** ON-3: the save's Showcase record: my entries (slot, stamp, week, theme and the Billie's uid, for its ribbon), the
+    votes I gave (`<entry>_<k>`), the last week whose ribbons were looked at, and the ribbons won (the Trainer card) */
+export interface MetaShow {
+  s: { i: number; k: number; w: number; th: string; b: string }[];
+  v: string[];
+  rw: number;
+  rib: { w: number; th: string; p: number; sp: string; nick: string }[];
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
@@ -531,6 +542,8 @@ export interface Billy {
   ot?: { u: string; n: string };
   /** ON-4: when it was last traded, and from whom (a player's uid) */
   traded?: { at: number; from: string };
+  /** ON-3: Showcase ribbons won (the week, its theme, the place from 0), cosmetic, never shown in battle */
+  ribbons?: { w: number; th: string; p: number }[];
 }
 
 /** phase 17: a robot part you own (in saveData.parts, or fitted to a robot) */

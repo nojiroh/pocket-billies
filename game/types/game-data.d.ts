@@ -67,6 +67,8 @@ export interface GameData {
   banter?: Record<DataId, BanterLine>;
   /** RL-S2: the hub folk and you (relations.json) */
   relations?: RelationsData;
+  /** ON-3: the Showcase's weekly themes and ribbons (game/data/showcase.json) */
+  showcase?: ShowcaseData;
   /** RL-12b: rewards.json */
   rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -2361,6 +2363,21 @@ export interface RivalRules {
 }
 
 /** RL-S2: relations.json: what a gift costs and gives, and each hub person's levels (logic/relations.js) */
+/** ON-3: showcase.json: the weekly themes (one a week from Monday 00:00 UTC, round again) and the ribbons the
+ * theme's top entries earn, first place first (logic/showcase.js) */
+export interface ShowcaseData {
+  about?: string;
+  ribbons: string[];
+  themes: ShowcaseTheme[];
+}
+export interface ShowcaseTheme {
+  id: string;
+  name: string;
+  d: string;
+  /** what a Billie needs to enter: an abomination or Unstable splice, Augments, a splice, a type (`type`), anything */
+  need: 'abom' | 'aug' | 'graft' | 'type' | 'any';
+  type?: string;
+}
 export interface RelationsData {
   gift: { cost: number; points: number; favour: number };
   people: Record<string, { levels: RelationLevel[]; favour?: RelationFavour }>;

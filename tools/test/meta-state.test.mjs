@@ -27,8 +27,19 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     history: [],
     residents: {},
     boards: { d: 0, w: 0 },
+    show: { s: [], v: [], rw: 0, rib: [] },
   });
   assert.equal(validMeta(m), true);
+  /* ON-3: the Showcase record */
+  const slot = { i: 0, k: 1700000000000, w: 2913, th: 'splice', b: 'b1' },
+    rib = { w: 2912, th: 'abom', p: 0, sp: 'bezos0', nick: 'Jeff' };
+  assert.equal(validMeta({ ...m, show: { s: [slot], v: ['ann_0_1'], rw: 2912, rib: [rib] } }), true);
+  assert.equal(validMeta({ ...m, show: { s: [slot, slot], v: [], rw: 0, rib: [] } }), false);
+  assert.equal(validMeta({ ...m, show: { s: [{ ...slot, i: 3 }], v: [], rw: 0, rib: [] } }), false);
+  assert.equal(validMeta({ ...m, show: { s: [], v: [], rw: 0, rib: [{ ...rib, p: 10 }] } }), false);
+  assert.equal(validMeta({ ...m, show: { s: [], v: [1], rw: 0, rib: [] } }), false);
+  assert.equal(metaFill({ ...m, show: 'junk' }).show.s.length, 0, 'a broken Showcase record goes alone');
+  assert.equal(metaFill({ ...m, runs: 4, show: 'junk' }).runs, 4);
   /* ON-2: the last daily and weekly taken off on */
   assert.equal(validMeta({ ...m, boards: { d: 20387, w: 2913 } }), true);
   assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);
