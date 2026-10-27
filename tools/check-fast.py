@@ -1399,6 +1399,16 @@ def screens(pg, base):
     # side of the minimap tile (Map), in the page's order
     tabs = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.dataset.t).join(',')")
     if tabs != 'team,guide,map,bag,lab': raise Exception(f'the bottom bar holds {tabs}')
+    # UI-8b: the map tile is wide and stands out of the bar's frame; every button a 40 px tap target; nothing overlaps
+    bar = pg.evaluate("""(()=>{const n=document.querySelector('#nav'),R=e=>{const q=e.getBoundingClientRect();return [q.left,q.top,q.right,q.bottom]},
+      sr=n.shadowRoot;return {tile:R(sr.querySelector('.map')),tabs:[...sr.querySelectorAll('.tab')].map(R),
+      frame:R(sr.querySelector('.side.l')).map((v,i)=>i===1?v-4:v)}})()""")   # the frame's top: the side's, less its 4 px
+    t, f = bar['tile'], bar['frame']
+    if not t[2] - t[0] > t[3] - t[1] + 20: raise Exception(f'the map tile is not wide: {t}')
+    if not f[1] - t[1] >= 40: raise Exception(f'the map tile stands {f[1] - t[1]:.0f} px out of the bar (40 or more)')
+    for q in bar['tabs']:
+        if q[2] - q[0] < 40 or q[3] - q[1] < 40: raise Exception(f'a bar button under 40 px: {q}')
+        if q[2] > t[0] and q[0] < t[2]: raise Exception(f'a bar button overlaps the tile: {q} and {t}')
     for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'), ('guide', '.dex,.ledger,.lrow'),
                     ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
