@@ -547,9 +547,15 @@ pb-nav-bar#nav[hidden] {
 :root {
   --nav-h: 96px;
 }
+/* UI-8b: the bar's height is pb-nav-bar's (the tile and 8 px, or the 128 px bar on a narrow phone; walking, the square
+   and 4 px, or the 76 px bar), worked out from the same --minimap-tile-* on the bar's width (the screen less 16 px, at
+   most 480 px), plus its 6 px off the bottom and a 26 px gap: 224 px standing and 148 px walking on a 390 px phone */
 :root:has(pb-nav-bar#nav:not([hidden])) {
-  --nav-h: 172px;
+  --nav-bar-w: min(100vw - 16px, 480px);
+  --nav-h: calc(
+    max(min(var(--minimap-tile-h), (var(--nav-bar-w) - 136px) * var(--minimap-tile-aspect)) + var(--s2), 128px) + 32px
+  );
 }
 :root:has(pb-nav-bar#nav[compact]:not([hidden])) {
-  --nav-h: 102px;
+  --nav-h: calc(max(min(var(--minimap-tile-compact), var(--nav-bar-w) - 208px) + 4px, 76px) + 32px);
 }
