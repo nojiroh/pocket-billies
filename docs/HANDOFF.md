@@ -2,6 +2,34 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Terrain track TR-4: the look by height and steepness - 2026-10-26
+Branch `ccr-6e23f760-mdbx5x` (this cloud session's own; BRANCHES.md would call it `track/terrain`, which doesn't exist
+yet). Started from main da51c766. Tag to suggest: `tr-4-done` (the owner pushes tags). Details: docs/phases/terrain-track.md,
+"TR-4 as built". The owner asked how to improve the terrain textures; the review found mountains showing the top-down
+rock ground tile on every steep slope (about 29 px/m, the same in every biome) and no snow by height.
+- Changed: the wall atlas `walls.png` 4 x 3 -> 4 x 4 (columnar basalt, limestone, crystal-veined rock, speckled granite;
+  the first three rows unchanged, checked by hash; `tools/build-walls.py --extend`); 16 wall materials in the shader,
+  `WALL_MATERIALS`/`WALL_COLORS` and the Studio's wall picker; a `cliff` block per biome in `biomes.json` (face, three
+  strata colours, band, snow line). **Three Engine > World switches, all off**: Biome cliffs (`cliffFaces`), Snow line
+  (`snowLine`), Scree and turf edges (`cliffEdges`). The debug menu toggles them for a session (beside "Lose the GPU
+  context"); a mountains run (Runs, "Mountains and ledges") shows them best.
+- **Risky:** strata colours and snow tones are judged only from headless low-graphics pictures (`tools/look-terrain.py`);
+  steepness from screen-space derivatives can flicker along triangle edges at a distance; the steep-land rock now
+  changes in three hard steps (it faded softly). A view across two places takes its base place's biome for the whole
+  view. Nothing changes with the switches off (unit test: no painted pixel differs; the smoke check's pictures pass).
+- Verified: lint, typecheck, format, check:modules, check:data, unit tests (1309 pass, `terrain-look.test.mjs` new),
+  the smoke check 6 of 6 (35 shaders build), headless pictures of the mountains fixture with each switch (biome, strata
+  on the walls, the snow line moving with the data, scree at a cliff foot); the scree pass's cost in Node is within
+  noise.
+- The full quick check (no local baseline, so no picture comparison): 31 of 40 the first time. Re-run side by side with
+  main da51c766: the same five fail on both (Terraces: Copperleaf's sky_portal in the air; RL-8 run from the mast, a
+  different stage each time; room light; Song fingerprints: cave mid/late not in the sound baseline; Running), so they
+  are not this branch's; route trainers, Granny Juniper and the weather/rooms step passed on the re-run (flaky in the
+  long run); the Debug menu step failed on a track code in my note, fixed.
+- Not done: a Graphics test station (its map has no cliffs).
+- Next: the owner on the phone: a mountains run, the three toggles in the debug menu, a debug log; then one commit per
+  switch to turn on what stays, and the colours tuned in `biomes.json`. After that TR-2c part 2 or TR-5.
+
 ### Online track ON-2 (= RL-15): run record, ghosts, daily and weekly runs, friends' boards - 2026-10-27
 Branch `track/online` (this session made it: `ccr-0b8e3c38-gt7t6a` with main 36bca3b4 merged in; its first push
 created it). Both halves in one session at the owner's word. Tag to suggest: `on-2-done`. Details:

@@ -554,3 +554,14 @@ art pipeline (phase 17 task 11).
   front, tilted 12 and 10 degrees: the owner asked for playful angles, so this one breaks the 45-degree rule.
   The far one is sand, not gold: the pale top half washed a gold one out to near white.
 - Weather icons are unchanged (offered, not picked).
+
+## Terrain TR-4 (2026-10-26): the biomes' cliff faces
+- `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept
+  pixel for pixel; the fourth row is new, drawn by `python3 tools/build-walls.py --extend` (from its own seed, so it
+  never touches the first three rows; `--force` still redraws everything): 12 columnar basalt (volcano), 13 limestone
+  (sea, tundra), 14 crystal-veined rock (cave), 15 speckled granite (ridge). Same rules as the other cells: 64 px = 2 m
+  (32 px/m), five grey levels, tiling, lit from the top left. Repaint them freely; `--extend` does nothing once the
+  file has four rows.
+- The game reads how many rows the atlas has from its height, so a scene with its own 4 x 3 `wallArt` still works.
+- Each biome's colours for its faces are data, not art: `biomes.json` `cliff.strata` (three colours, one per band,
+  `cliff.band` metres tall). They are used only with Engine > World > Biome cliffs on.

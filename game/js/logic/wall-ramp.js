@@ -45,6 +45,11 @@ export const WALL_CELL_NAMES = [
   'mossy rock',
   'concrete',
   'dark slate',
+  /* terrain TR-4: the biomes' cliff faces (the fourth row) */
+  'columnar basalt',
+  'limestone',
+  'crystal-veined rock',
+  'speckled granite',
 ];
 /* the building sheet's cells (detail-a04b.png); past the end reads as plaster */
 export const BUILD_CELL_NAMES = [

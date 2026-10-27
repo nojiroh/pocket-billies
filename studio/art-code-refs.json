@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:725"
+    "game/js/walk-view.js:726"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:726"
+    "game/js/walk-view.js:727"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:727"
+    "game/js/walk-view.js:728"
    ]
   },
   {
@@ -105,7 +105,7 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:493"
+    "game/js/walk-view.js:494"
    ]
   },
   {
@@ -151,47 +151,47 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2129",
-    "game/js/walk-view.js:749"
+    "game/js/walk-view.js:750"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:749"
+    "game/js/walk-view.js:750"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:724",
-    "game/js/walk/ground-draw.js:71"
+    "game/js/walk-view.js:725",
+    "game/js/walk/ground-draw.js:90"
    ]
   },
   {
    "p": "scene/far/*.png",
    "at": [
-    "game/js/walk-view.js:761"
+    "game/js/walk-view.js:762"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:509"
+    "game/js/walk-view.js:510"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:759",
+    "game/js/walk-view.js:760",
     "game/js/walk/frame-items.js:195"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:728",
+    "game/js/walk-view.js:729",
     "game/js/walk/effects.js:253"
    ]
   },
@@ -1754,7 +1754,7 @@
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
-   "game/js/logic/wall-ramp.js:53",
+   "game/js/logic/wall-ramp.js:58",
    "game/js/prop-models.js:207",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
@@ -1843,11 +1843,11 @@
    "game/js/walk-control.js:421",
    "game/js/walk-control.js:513",
    "game/js/walk-control.js:531",
-   "game/js/walk-view.js:321",
-   "game/js/walk-view.js:3437",
-   "game/js/walk-view.js:3626",
-   "game/js/walk-view.js:3737",
-   "game/js/walk-view.js:4056",
+   "game/js/walk-view.js:322",
+   "game/js/walk-view.js:3510",
+   "game/js/walk-view.js:3699",
+   "game/js/walk-view.js:3810",
+   "game/js/walk-view.js:4129",
    "game/js/walk/frame-items.js:310"
   ],
   "drop": [
@@ -1861,7 +1861,7 @@
    "game/js/battle-stage.js:800",
    "game/js/battle-stage.js:2030",
    "game/js/battle-stage.js:2093",
-   "game/js/walk-view.js:384",
+   "game/js/walk-view.js:385",
    "game/js/walk/effects.js:371"
   ],
   "floppy": [
@@ -1930,8 +1930,8 @@
    "game/js/minimap.js:81",
    "game/js/minimap.js:82",
    "game/js/self-test.js:3066",
-   "game/js/walk-view.js:384",
-   "game/js/walk-view.js:3911",
+   "game/js/walk-view.js:385",
+   "game/js/walk-view.js:3984",
    "game/js/walk/effects.js:517",
    "game/js/walk/effects.js:671",
    "game/js/walk/effects.js:779",
@@ -2032,7 +2032,7 @@
    "game/js/logic/cutscene-set.js:44",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
-   "game/js/walk-view.js:384",
+   "game/js/walk-view.js:385",
    "game/js/walk/effects.js:337",
    "game/js/walk/effects.js:341"
   ],
@@ -2076,8 +2076,8 @@
    "game/js/unit-card.js:177",
    "game/js/unit-card.js:204",
    "game/js/walk-control.js:305",
-   "game/js/walk-view.js:3437",
-   "game/js/walk-view.js:3626",
+   "game/js/walk-view.js:3510",
+   "game/js/walk-view.js:3699",
    "game/js/walk/prop-look.js:151",
    "game/js/workshop.js:102"
   ],

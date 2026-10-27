@@ -105,6 +105,18 @@
     "description": "scene look keys copied onto a generated scene (sky, haze, hazeD, amb, tint, wind, grassCol, rays, far, farH, flatFar)",
     "type": "object"
    },
+   "cliff": {
+    "description": "terrain TR-4, read when a scene of this biome is drawn (not copied onto the scene): the cliff faces' wall material (mat: a WALL_MATERIALS index, walk/heights.js), the strata bands' colours (strata: three, one picked per band) and their height in metres (band), and the snow line in metres above the run's base height (snowLine; none: no snow by height)",
+    "type": "object",
+    "required": ["mat", "strata", "band"],
+    "additionalProperties": false,
+    "properties": {
+     "mat": { "type": "integer", "minimum": 1, "maximum": 15 },
+     "strata": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" } },
+     "band": { "type": "number", "minimum": 0.25, "maximum": 4 },
+     "snowLine": { "type": "number", "minimum": 0, "maximum": 40 }
+    }
+   },
    "life": {
     "description": "animals: [{k, n}] (scenery.json life)",
     "type": "array",

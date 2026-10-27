@@ -2,14 +2,19 @@
 
     python3 tools/build-walls.py            # only writes the file if it isn't there yet (keeps your edits)
     python3 tools/build-walls.py --force    # redraws it
+    python3 tools/build-walls.py --extend   # terrain TR-4: adds the fourth row to a 4 x 3 file, the first three rows
+                                            # kept pixel for pixel (your edits stay)
 
-A 4 x 3 atlas of 64 px cells; one cell covers 2 m of wall, so a pixel is about 3 cm. Each cell tiles seamlessly.
+A 4 x 4 atlas of 64 px cells (4 x 3 before terrain TR-4); one cell covers 2 m of wall, so a pixel is about 3 cm. Each cell tiles seamlessly.
 Pixels are greyscale in five levels (0, 64, 128, 191, 255): the game colours each level through the same ramp as the
 props (dark shadow, shadow, base colour, light, highlight) in the wall's own colour, so one drawing serves every biome.
 Cells, left to right, top to bottom:
     0 rock (the scene's own default)   1 rock          2 layered sandstone   3 cave rock
     4 brick                            5 dressed stone 6 hedge               7 wooden boards
     8 stone steps (risers)             9 mossy rock   10 concrete           11 dark slate
+   12 columnar basalt                 13 limestone   14 crystal-veined rock 15 speckled granite
+The fourth row (TR-4) is the biomes' cliff faces (biomes.json `cliff.mat`); its cells come from their own seed, so
+drawing it never changes the first three rows.
 """
 import sys
 from pathlib import Path
@@ -208,6 +213,117 @@ def mossy(rng):
     return L
 
 
+def basalt(rng):
+    """TR-4: columnar basalt: upright columns 7-12 px wide (20-35 cm), lit down the left side, shaded down the right,
+    each broken by its own cross joints"""
+    yy, xx = np.mgrid[0:T, 0:T]
+    edges, x = [], 0
+    while x < T - 6:
+        edges.append(x)
+        x += int(rng.integers(7, 13))
+    sway = np.round((pnoise(rng, 4)[:, 0] - .5) * 3).astype(int)
+    L = np.full((T, T), 1, int)
+    xs = (xx - sway[yy]) % T
+    col = np.searchsorted(np.array(edges), xs, side='right') - 1
+    starts = np.array(edges)[col]
+    ends = np.array(edges[1:] + [T])[col]
+    tone = rng.random(len(edges))
+    L += (tone[col] > .55).astype(int)
+    L[xs == starts + 1] = 3
+    L[xs == ends - 1] = 0
+    L[xs == starts] = 0
+    off = rng.integers(0, T, len(edges))
+    step = rng.integers(14, 26, len(edges))
+    j = (yy + off[col]) % step[col]
+    L[(j == 0) & (xs > starts)] = 0
+    L[(j == 1) & (xs > starts + 1) & (xs < ends - 1)] = 3
+    nz = fbm(rng, ((8, .5), (16, .5)))
+    L[(nz > .76) & (L == 1)] = 2
+    return np.clip(L, 0, 4)
+
+
+def limestone(rng):
+    """TR-4: pale limestone or chalk: thick beds with thin partings, vertical joints offset per bed, a few pits"""
+    yy, xx = np.mgrid[0:T, 0:T].astype(float)
+    y = (yy + (pnoise(rng, 4) - .5) * 3) % T
+    beds = [0, 12, 21, 34, 41, 53, 64]
+    L = np.full((T, T), 3, int)
+    for k in range(len(beds) - 1):
+        m = (y >= beds[k]) & (y < beds[k + 1])
+        L[m & (y < beds[k] + 1)] = 4
+        L[m & (y >= beds[k + 1] - 1)] = 1
+        for j in range(2):
+            jx = int(rng.integers(0, T))
+            L[m & (np.abs(((xx - jx + T / 2) % T) - T / 2) < .5) & (y < beds[k + 1] - 1)] = 1
+    nz = fbm(rng)
+    L[(nz < .32) & (L == 3)] = 2
+    sp = rng.random((T, T))
+    L[(sp < .01) & (L >= 2)] = 1
+    return L
+
+
+def crystal_rock(rng):
+    """TR-4: dark cave rock split by bright crystal veins, with small facets where veins cross"""
+    L = rock(rng, 9, 1, 1.0)
+    d1, d2, ids = voronoi(rng, 6, .8)
+    vein = (d2 - d1) < 1.0
+    keep = np.isin(ids, rng.choice(6, 3, replace=False))
+    v = vein & keep
+    L[v] = 4
+    L[np.roll(v, 1, 0) & ~v] = 3
+    L[np.roll(v, -1, 1) & ~v & (L < 2)] = 0
+    sp = rng.random((T, T))
+    L[(sp < .006)] = 4
+    return L
+
+
+def granite(rng):
+    """TR-4: pale speckled granite in big rounded blocks"""
+    d1, d2, ids = voronoi(rng, 6, 1.1)
+    L = shade_blocks(ids, (d2 - d1) < 1.3, 3)
+    sp = rng.random((T, T))
+    L[(sp < .06) & (L == 3)] = 1
+    L[(sp > .975) & (L == 3)] = 4
+    L[(sp > .5) & (sp < .54) & (L == 3)] = 2
+    nz = fbm(rng)
+    L[(nz < .3) & (L == 3)] = 2
+    return L
+
+
+GREY = np.array([0, 64, 128, 191, 255])
+
+
+def row4():
+    rng = np.random.default_rng(2026)
+    return [basalt(rng), limestone(rng), crystal_rock(rng), granite(rng)]
+
+
+def save(img):
+    rgba = np.dstack([img, img, img, np.full_like(img, 255)])
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(rgba, 'RGBA').save(OUT, optimize=True)
+    print('wrote', OUT.relative_to(ROOT))
+
+
+def paste(img, i, c):
+    r, k = divmod(i, 4)
+    img[r * T:(r + 1) * T, k * T:(k + 1) * T] = GREY[np.clip(c, 0, 4)]
+
+
+def extend():
+    """keep the first three rows as they are on disk (painted edits included), draw the fourth"""
+    old = np.array(Image.open(OUT).convert('RGBA'))[:, :, 0]
+    if old.shape == (T * 4, T * 4):
+        print(OUT.relative_to(ROOT), 'already has four rows; --force redraws it')
+        return
+    assert old.shape == (T * 3, T * 4), old.shape
+    img = np.zeros((T * 4, T * 4), np.uint8)
+    img[:T * 3] = old
+    for i, c in enumerate(row4()):
+        paste(img, 12 + i, c)
+    save(img)
+
+
 def build():
     rng = np.random.default_rng(1808)
     cells = [
@@ -215,18 +331,16 @@ def build():
         brick(rng), brick(rng, 32, 16, 1), hedge(rng), boards(rng),
         risers(rng), mossy(rng), concrete(rng), slate(rng),
     ]
-    img = np.zeros((T * 3, T * 4), np.uint8)
-    for i, c in enumerate(cells):
-        r, k = divmod(i, 4)
-        img[r * T:(r + 1) * T, k * T:(k + 1) * T] = np.array([0, 64, 128, 191, 255])[np.clip(c, 0, 4)]
-    rgba = np.dstack([img, img, img, np.full_like(img, 255)])
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(rgba, 'RGBA').save(OUT, optimize=True)
-    print('wrote', OUT.relative_to(ROOT))
+    img = np.zeros((T * 4, T * 4), np.uint8)
+    for i, c in enumerate(cells + row4()):
+        paste(img, i, c)
+    save(img)
 
 
 if __name__ == '__main__':
     if '--force' in sys.argv or not OUT.exists():
         build()
+    elif '--extend' in sys.argv:
+        extend()
     else:
         print(OUT.relative_to(ROOT), 'is already there; --force redraws it')
