@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, renderOverlay, toast } from './hooks.js';
 import { FESTIVALS, ITEMS, PEOPLE, PYRAMIDS, RELATIONS, RULES, SPECIES } from './game-data.js';
 import { formatNumber } from './logic/rules.js';
-import { ranchNow } from './logic/ranch-clock.js';
+import { ranchFloor, ranchSkew } from './logic/ranch-clock.js';
 import { wishCan, wishSaid, wishToss } from './logic/fountain-wish.js';
 import { festBuy, festDate, festNext, festStock, festivalOn } from './logic/festival.js';
 import { storyHolds } from './logic/script.js';
@@ -34,6 +34,7 @@ expose({
   festivalForce: [() => festivalForce, v => setFestivalForce(v)],
   festivalMarketBuy: [() => festivalMarketBuy, v => (festivalMarketBuy = v)],
   festivalMarketOpen: [() => festivalMarketOpen, v => (festivalMarketOpen = v)],
+  festivalNow: [() => festivalNow, v => (festivalNow = v)],
   festivalToday: [() => festivalToday, v => ((festivalToday = v), provide({ festivalToday }))],
   fountainWishOpen: [() => fountainWishOpen, v => (fountainWishOpen = v)],
   fountainWishToss: [() => fountainWishToss, v => (fountainWishToss = v)],
@@ -178,6 +179,15 @@ export function setFestivalForce(v) {
 }
 let festCache = /** @type {{ s: any, key: string, on: any } | null} */ (null),
   festBusy = false;
+/** the time the festivals go by: the ranch clock's (logic/ranch-clock.js) read without moving its mark, so a look at
+ * the square changes no ranch timer: the phone's time less the measured skew, or the save's mark when the clock was
+ * turned back more than guardMs behind it @param {any} s @returns {number} */
+function festivalNow(s) {
+  const t = Date.now() - (Number.isFinite(ranchSkew) ? ranchSkew : 0),
+    R = RULES.ranch,
+    seen = Math.max((s.ranch && s.ranch.seen) || 0, ranchFloor || 0);
+  return R && t < seen - R.guardMs ? seen : t;
+}
 /** the festival on in Copperleaf now for a save (logic/festival.js festivalOn), or null: none on a run, none while a
  * milestone's own condition is being read (it can't wait on a festival). The date is the ranch clock's
  * (logic/ranch-clock.js: a clock turned back stands still at the save's mark) on the phone's calendar. Kept until the
@@ -189,7 +199,7 @@ export function festivalToday(s = saveData) {
     const F = FESTIVALS.festivals[festivalForce.id];
     return F ? { id: festivalForce.id, F, at: festivalForce.at ?? s.meta.runs ?? 0 } : null;
   }
-  const now = s.ranch && RULES.ranch ? ranchNow(s, Date.now(), RULES.ranch).now : Date.now(),
+  const now = festivalNow(s),
     D = festDate(now, new Date(now).getTimezoneOffset()),
     H = s.meta.history || [],
     key = `${D.day}|${s.meta.runs}|${s.meta.wins}|${H.length}|${(H[H.length - 1] || {}).seed || ''}|${s.meta.chapter}`;
@@ -295,7 +305,7 @@ function festivalBoardLines() {
     on = festivalToday();
   if (!s || !s.meta || !FESTIVALS) return [];
   const L = on ? [`<b>Today: ${escapeHtml(on.F.name)}!</b> ${escapeHtml(on.F.about)} The middle stall has wares.`] : [];
-  const now = s.ranch && RULES.ranch ? ranchNow(s, Date.now(), RULES.ranch).now : Date.now(),
+  const now = festivalNow(s),
     D = festDate(now, new Date(now).getTimezoneOffset());
   for (const n of festNext(FESTIVALS, s.meta, D).slice(0, 3))
     if (!on || n.id !== on.id)
