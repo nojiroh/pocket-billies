@@ -12,12 +12,14 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   UI_CVD: [() => UI_CVD],
+  UI_GLYPHS: [() => UI_GLYPHS],
   UI_SIGNALS: [() => UI_SIGNALS],
   UI_SIGNAL_IDS: [() => UI_SIGNAL_IDS],
   UI_SIGNAL_MIN: [() => UI_SIGNAL_MIN],
   UI_SIGNAL_SETS: [() => UI_SIGNAL_SETS],
   // @ts-expect-error -- replaced on purpose
   cvdHex: [() => cvdHex, v => (cvdHex = v)],
+  glyphOf: [() => glyphOf],
   // @ts-expect-error -- replaced on purpose
   linearHex: [() => linearHex, v => (linearHex = v)],
   // @ts-expect-error -- replaced on purpose
@@ -77,6 +79,46 @@ export const UI_SIGNAL_SETS = /** @type {Record<string, {name: string, ids: stri
   map: { name: 'Map', ids: ['good', 'bad', 'caution', 'value', 'special', 'growth', 'machine', 'bio'] },
   rarity: { name: 'Rarity', ids: ['common', 'uncommon', 'rare', 'mythical'] },
 });
+/** UI-13: the new marks' glyphs (art/ui/g-*.svg, one colour each, drawn in the Studio's icon editor) and the colour
+ * code id that tints them ('' for neutral: the text's colour). The page draws each as a mask of its SVG (art.js
+ * glyphHTML), so only its shape counts; object icons keep their fixed colours (the owner's answer 4). By group: the
+ * statuses; the short effects, Sandstorm with its own glyph (the bolt is the storm weather's alone, answer 7); the eight
+ * families; what kind of pickup a card is */
+export const UI_GLYPHS = /** @type {Record<string, Record<string, [string, string]>>} */ ({
+  status: { brn: ['g-burn', 'brn'], par: ['g-par', 'par'], slp: ['g-sleep', 'slp'] },
+  effect: {
+    protect: ['g-protect', 'good'],
+    shield: ['g-shield', 'good'],
+    confused: ['g-confused', 'special'],
+    soaked: ['g-soaked', 'growth'],
+    fork: ['g-fork', 'special'],
+    delayed: ['g-delay', 'caution'],
+    stones: ['g-stones', 'caution'],
+    sandstorm: ['g-sand', 'caution'],
+  },
+  family: {
+    good: ['g-good', 'good'],
+    bad: ['g-bad', 'bad'],
+    caution: ['g-caution', 'caution'],
+    value: ['g-value', 'value'],
+    special: ['g-special', 'special'],
+    growth: ['g-growth', 'growth'],
+    machine: ['g-machine', 'machine'],
+    bio: ['g-bio', 'bio'],
+  },
+  kind: {
+    perk: ['g-perk', 'special'],
+    held: ['g-held', 'good'],
+    item: ['g-item', ''],
+    candy: ['g-candy', 'growth'],
+    evo: ['g-evo', 'growth'],
+    tutor: ['g-tutor', 'growth'],
+    part: ['g-part', 'machine'],
+    scrap: ['g-part', 'machine'],
+  },
+});
+/** a mark's glyph: [the icon's name, its colour code id], or null @param {string} group @param {string} id */
+export const glyphOf = (group, id) => (UI_GLYPHS[group] && UI_GLYPHS[group][id]) || null;
 /** the checks' minimums: OKLab distance (x100) within a set; a text shade on its side's surface and ground; dark text
  * (the dark side's ground) on a fill; UI-13: a type's text on its colour, and how far (OKLab L, x100) a type with light
  * text may sit from the others' middle ("the types at one lightness"; Electric, with dark ink, is left out) */

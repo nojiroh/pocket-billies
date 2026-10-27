@@ -1191,6 +1191,16 @@ section > h2,
   flex: none;
   background: var(--ico) center/contain no-repeat;
 }
+/* UI-13: a mark's glyph (art/ui/g-*.svg, art.js glyphHTML): the SVG as a mask, filled with its colour code (--tone,
+   a --sig-* token) or the text's colour; -webkit-mask for Safari, and no filter here (it would run before the mask) */
+.ugl {
+  display: inline-block;
+  flex: none;
+  vertical-align: -2px;
+  background-color: var(--tone, currentColor);
+  -webkit-mask: var(--ico) center/contain no-repeat;
+  mask: var(--ico) center/contain no-repeat;
+}
 /* RF-1: a run's money: the coin icon beside the number (art.js moneyHTML) */
 .money {
   display: inline-flex;
