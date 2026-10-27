@@ -9,8 +9,8 @@ those sessions; until then, follow the rule next to them.
 
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
-| (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 20 s in a cloud container (TC-4 round 3, 23 Oct 2026, after RF-3 and RO-1 merged; 26 s in round 2, 72 s before) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s; 11-13 s + 2.5 s in a cloud container on 27 Oct 2026 | under 10 s | after every edit (the Claude Code hook runs it) |
+| (b) unit tests | `npm test` | about 104-148 s in a cloud container (1,569 tests, 27 Oct 2026; about 20 s on 23 Oct, TC-4 round 3) | under 30 s, not met | the edited area's files after every edit to logic or tests (the after-edit hook); the whole tier before Claude's reply ends when logic, data or tests changed (the Stop hook): "Claude Code in the cloud" below |
 | (b2) slow unit tests | `npm run test:slow` | about 58 s (50 tests: the scene sweeps that generate whole maps and islands, runs played with their scenes, the weather's every-roll sweep; `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
@@ -38,6 +38,46 @@ fewer drawn steps (more logic checked in Node, as TC-3 did) or a faster machine;
 The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
 `dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
 load the built game, build again while it runs, and bring the page back to the front: it loads the new build.
+
+## Claude Code in the cloud
+
+How a cloud session (claude.ai/code, the Claude app) gets ready and checks its work (Tooling, 2026-10-27).
+
+**The environment's setup script** (the owner pastes it once: the environment menu in a session's title bar, Edit
+cloud environment, Setup script; the result is cached about 7 days). The cloud image's Chromium only works with the
+Python Playwright of its own version, not the 1.56.0 tools/requirements-check.txt pins for CI:
+
+```bash
+#!/bin/bash
+# Python Playwright matching the cloud image's Chromium
+PW=$(node -p "require('$(npm root -g)/playwright/package.json').version" 2>/dev/null || echo 1.63.0)
+pip install -q --root-user-action=ignore "playwright==$PW" pillow numpy || true
+```
+
+**The hooks** (.claude/settings.json; a session reads them when it starts):
+- SessionStart, `tools/session-start.mjs` (cloud sessions only): `npm ci` when node_modules is missing or the
+  lockfile changed, `npm run data`, Python Playwright installed when the setup script didn't, and the starting state
+  of the files the unit tests guard. Claude sees one "Session setup: ..." line. About 1 s on a ready machine, 14 s
+  from a bare one.
+- PostToolUse, `tools/after-edit.mjs`: lint and the type check for game code, `check:data` for data,
+  `py_compile` for Python, and the unit test files for the edited area (`<name>.test.mjs`, `<name>-real.test.mjs`,
+  then the files using `modules['<name>']`, then `<name>-*`; at most 12, the slow tier left out). A check that runs
+  out of time is reported as not finished, never as failed.
+- Stop, `tools/before-stop.mjs`: `npm test` before a reply ends, when game/js/logic, game-data.js, game/data or
+  tools/test changed since the session started and since the last passing run; never while Claude waits on
+  background work. A failure sends Claude back to fix it once; if it still fails, the reply ends and the owner sees
+  the failure.
+
+**Looking at the game**: .mcp.json starts Microsoft's Playwright MCP server through `tools/mcp-playwright.mjs`, with
+the cloud image's Chromium, browser_check.py's flags and page set-up, and a 390x844 touch page. The look skill
+(.claude/skills/look) says how to serve the game, open a fixture and take screenshots. Frame rates and `mediump`
+precision still come from a real phone: software drawing can't show them.
+
+**Reading a debug log**: `python3 tools/read-debug-log.py <log.json>` prints a one-screen summary and saves the log's
+picture to validation/debug-log/ (the debug-log skill).
+
+**Skills and rules**: .claude/skills (start-session, handoff, look, debug-log) load when a session needs them or the
+owner types `/<name>`; .claude/rules load when Claude touches game/js, game/data or tools/*.py.
 
 ## Where a new test goes
 

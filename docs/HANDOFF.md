@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Tooling - Claude Code's cloud setup: hooks, Playwright MCP, debug log reader, skills - 2026-10-27
+Branch `ccr-d18fe41a-eh3yrz` (the session's own, from main at 07c9b284). Not a phase: the owner asked what to add to
+the Claude Code environment (research online), then approved the plan in Plan Mode. No game code, data or art changed;
+no tag. How it all works: docs/TESTING.md, "Claude Code in the cloud".
+- Changed:
+  - tools/after-edit.mjs (PostToolUse): the edited area's unit test files instead of the whole quick tier, which
+    takes 104-148 s now and was stopped at 50 s, so the hook said "npm test failed" with nothing failing. A check
+    that runs out of time is reported as not finished. Hook limit 180 s.
+  - tools/session-start.mjs (new, SessionStart, cloud only): npm ci when needed, npm run data, Python Playwright at
+    the cloud image's browser version, the unit tests' starting state.
+  - tools/before-stop.mjs (new, Stop): npm test before a reply ends when game/js/logic, game-data.js, game/data or
+    tools/test changed; a failure sends Claude back once, then the owner sees it.
+  - .mcp.json and tools/mcp-playwright.mjs (new): Microsoft's Playwright MCP server (0.0.83, through npx) on the cloud
+    image's Chromium with browser_check.py's flags and page set-up, a 390x844 touch page; settings.json pre-approves
+    it. tools/read-debug-log.py (new): a debug log in one screen, its picture saved.
+  - .claude/skills (start-session, handoff, look, debug-log) and .claude/rules (game-js, game-data, python-tools).
+  - CLAUDE.md: sessions read only their track's newest HANDOFF entries; gamedata.js is 0.84 MB, generated (was "~13
+    MB"). docs/TESTING.md: tiers (a) and (b), the new section with the environment's setup script. .gitignore:
+    validation/mcp/, validation/debug-log/.
+- Not done: plan item 7, the permission allow list. The session's auto mode refused to edit permissions in
+  .claude/settings.json (it counts as Claude changing its own permissions). For the owner to add, if wanted:
+  `"permissions": {"allow": ["Bash(npm run *)", "Bash(npm test *)", "Bash(npm ci *)", "Bash(node tools/*)",
+  "Bash(node --test *)", "Bash(python3 tools/*)", "Bash(python3 -m http.server *)", "mcp__playwright__*"]}`.
+- Found, not changed:
+  - **The ground painter's worker fails every paint.** game/js/ground-paint-worker.js `paintWorkerSource` (:114)
+    sends paintGroundSteps and its helpers to the worker as source text, but not `groundTileRole`, a function since
+    e89c8131 (2026-10-26, walk-view.js:1073). The smoke run's debug log: `graphics.groundPainter` failed 25 of 25,
+    "ReferenceError: groundTileRole is not defined". The ground still draws in the checks' pictures; phones lose the
+    worker. Likely a one-line fix (add it to the list), for a session that owns the ground.
+  - The quick unit tier is 1,569 tests and 104-148 s in a cloud container (about 20 s on 23 Oct, budget 30 s): for the
+    test cleanup track. route-trainer-spots.test.mjs (slow tier) alone took about 110 s.
+  - docs/BRANCHES.md says a cloud session can only push to the branch it started on. The current docs say the GitHub
+    proxy refuses branch deletions and tag pushes but "doesn't limit which branches a push can update", and a
+    session can start from an existing branch at claude.ai/code
+    (https://code.claude.com/docs/en/cloud-environments, "GitHub proxy"). Not tried here.
+  - characters-track.md says the container reaches GitHub for KayKit's packs: a release or archive download from a
+    repository not attached to the session now gets a 403 from the GitHub proxy (raw.githubusercontent.com works).
+- Risky: the Stop hook adds the tier's 2 minutes or so to the end of a reply that changed logic, data or tests. A
+  session reads the hooks and .mcp.json only when it starts, so this one checked them by feeding them the hook JSON
+  and through a scripted MCP client, not as Claude Code runs them.
+- Verified: lint (34 s), typecheck, `npm test` 1,569 pass (144 s), check:modules, format:check, check:data, build.
+  after-edit: a logic file 19 s (lint 11-13 s, types 2.5 s, 1 test file), the most used one 27 s (12 files, a note
+  for 14 more), a test file 1 s, a data file 3 s, a doc 0 s; a failing test exits 2 with its output; a 1 s limit
+  gives the "not finished" note; no test processes left. session-start: 14 s from no node_modules and no Python
+  Playwright, then 1 s; nothing outside the cloud. before-stop: no change 0.1 s; a failing test blocks, the retry
+  lets go without re-running, a passing change records the new state. MCP: ?fixture=title and ?fixture=town drawn,
+  inline screenshots, 0 console errors (the plugin directory's own Playwright MCP fails here: "Chromium
+  distribution 'chrome' is not found"). read-debug-log.py on smoke's log. Smoke 6 of 6 in 201 s (before these
+  changes; nothing in game/ changed).
+- For the owner: paste the setup script from docs/TESTING.md into the environment (once). After the merge, a new
+  session's first message should show "Session setup: ...", and `/look` should return a screenshot.
+- Next: whichever session owns the ground fixes the painter's worker; the test cleanup track takes the unit tier's time.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
