@@ -5,7 +5,7 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
 owner's picks: delete all seven orphan groups; delete the loader's PNG copies too; retire the far backdrops; leave
-`art/manifest.js`'s `battle` layout. 17 commits. Tag `sa-5-done` (made here, for the owner to push). **The track is done.**
+`art/manifest.js`'s `battle` layout. 19 commits. Tag `sa-5-done` (made here, for the owner to push). **The track is done.**
 - Changed:
   - **The report**: `artRefInputs` and `artReport` in `game/js/logic/art-refs.js` (unused, legacy, kept, missing), used
     by the Art browser and by `tools/art-unused.mjs` (`--check`, `--json`), so the Studio and the checks count alike.
@@ -40,7 +40,11 @@ owner's picks: delete all seven orphan groups; delete the loader's PNG copies to
   - `node tools/art-unused.mjs --check`: 3,730 pictures, 0 unused, 21 legacy, 16 kept, 0 missing.
   - `check-studio-github.py --only=sections,art_browser,scene_art,studio_test`: ok except scene_art's "the painter
     does not outline the 12 wall cells", which fails the same on main before SA-5 (checked on a worktree at a8c60bbc).
-  - The full quick check: running (result in the next commit).
+  - The full quick check (1,503 s, 40 steps): 36 passed. Mine: "no flag picture for marigold" (the check looked in
+    `scene/flags` only; fixed, the step passes). Not SA-5's, each run again on a worktree at main (a8c60bbc) with the
+    same result: Terraces' "props in the air: copperleaf: train_station"; the settings tabs in "Walking left and
+    right…"; RL-8's "crossed into … Route but its view never showed" (main fails it that way too; its runs vary by
+    seed: a second run here failed later instead, "the town's shop has no Perk"). Unused: 0 pictures.
 - For the owner on the phone:
   - Art → Art browser → Report: four lists, "Nothing uses it · 0".
   - `art/legacy/scene/flags/marigold.png`: waves, no Edit pixels.
