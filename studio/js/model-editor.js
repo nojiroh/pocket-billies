@@ -98,6 +98,8 @@ function modelEditorHTML(k) {
     }, 400);
     return `${head}<p class="help">Loading ${escapeHtml(String(M.model))}…</p>`;
   }
+  if (rec.kind === 'mesh' && rec.v === 2)
+    return `<h4>3D model</h4><p class="help">A mesh with its own texture, imported in the Art workbench's Model mode${rec.src ? ' from ' + escapeHtml(rec.src) : ''}: ${rec.tris || '?'} triangles. Its spins, joints and texture are edited there.</p><button class="btn sm" data-act="wbmOpenProp" data-k="${escapeHtml(k)}">Open in Model mode</button>`;
   if (rec.kind === 'mesh')
     return `<h4>3D model</h4><p class="help">A low-poly model painted with the buildings’ 32 px textures${rec.about ? ' (' + escapeHtml(rec.about) + ')' : ''}. A tool makes its shape, so it isn’t edited here; the turntable shows it as the game draws it.</p>`;
   if (typeof M.model === 'string') ownModelRecipe(M); /* edited in the catalogue entry from here on */

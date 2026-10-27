@@ -11,7 +11,7 @@
    the same parts. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { wbPart, wbPartSection } from '../../game/js/hooks.js';
+import { wbModelFiles, wbModelSection, wbPart, wbPartSection, wbmIsModelFile } from '../../game/js/hooks.js';
 import {
   asepriteBoxes,
   sheetArtBox,
@@ -422,15 +422,21 @@ SECTIONS.workbench = () => {
     modes = [
       ['sheet', 'Sheet', 'Cut sheets into parts'],
       ['part', 'Part', 'Pivots, sockets, turn limits, draw order, test fit, mirror, S and L'],
+      [
+        'model',
+        'Model',
+        'Import a 3D model (glTF, GLB, OBJ, VOX): checks, preview, parts, texture (workbench-model.js)',
+      ],
     ],
     on = workbench.mode;
-  const head = `<div class="ed-head"><div><small class="mono">${on === 'part' && wbPart.src === 'species' ? 'art/next/rigs-next.js · art/next/billionaires' : on === 'part' && wbPart.src === 'robots' ? 'robots.json · art/robots' : 'partKits.json · art/next/parts'}</small><h2>Art workbench</h2><p class="sub">${on === 'part' ? (wbPart.src === 'species' ? 'A species’ parts on its sheet: pivots, boxes, draw order.' : 'A part’s joints: drag the pivot and sockets, test it on a body.') : 'Drop sheets anywhere on the Studio to cut them into parts.'}</p></div><div class="seg-row">${modes
+  const head = `<div class="ed-head"><div><small class="mono">${on === 'model' ? 'art/scene/models · scenery.json props' : on === 'part' && wbPart.src === 'species' ? 'art/next/rigs-next.js · art/next/billionaires' : on === 'part' && wbPart.src === 'robots' ? 'robots.json · art/robots' : 'partKits.json · art/next/parts'}</small><h2>Art workbench</h2><p class="sub">${on === 'model' ? 'Drop a 3D model anywhere on the Studio (glTF, GLB, OBJ, VOX) to make it a prop.' : on === 'part' ? (wbPart.src === 'species' ? 'A species’ parts on its sheet: pivots, boxes, draw order.' : 'A part’s joints: drag the pivot and sockets, test it on a body.') : 'Drop sheets anywhere on the Studio to cut them into parts.'}</p></div><div class="seg-row">${modes
     .map(
       ([k, l, t]) =>
         `<button class="seg ${k === on ? 'on' : ''}" data-act="wbMode" data-m="${k}" title="${t}">${l}</button>`
     )
     .join('')}</div></div>`;
   if (on === 'part') return wbPartSection(head);
+  if (on === 'model') return wbModelSection(head);
   const sheets = workbench.sheets
     .map(
       (s, i) =>
@@ -839,7 +845,7 @@ function wbInput(ev) {
 }
 document.addEventListener('input', wbInput);
 document.addEventListener('change', wbInput);
-/* drop anywhere: sheets go to the workbench */
+/* drop anywhere: sheets go to the workbench (a 3D model to its Model mode) */
 const wbHasFiles = ev => ev.dataTransfer && [...(ev.dataTransfer.types || [])].includes('Files');
 document.addEventListener('dragover', ev => {
   if (!wbHasFiles(ev) || !studioState.D) return;
@@ -853,5 +859,9 @@ document.addEventListener('drop', ev => {
   document.body.classList.remove('wb-dropping');
   if (!wbHasFiles(ev) || !studioState.D) return;
   ev.preventDefault();
-  wbAddFiles(ev.dataTransfer.files).catch(e => toast('Could not open that: ' + e.message, 'err'));
+  /* studio track ST-7: a 3D model (and the files beside it) goes to Model mode */
+  const list = [...ev.dataTransfer.files];
+  if (list.some(f => wbmIsModelFile(f)))
+    wbModelFiles(list).catch(e => toast('Could not open that: ' + e.message, 'err'));
+  else wbAddFiles(list).catch(e => toast('Could not open that: ' + e.message, 'err'));
 });

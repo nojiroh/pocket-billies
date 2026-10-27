@@ -1021,7 +1021,7 @@ ACTIONS.wbpRobotReset = d => {
   render();
 };
 ACTIONS.wbMode = d => {
-  workbench.mode = d.m === 'part' ? 'part' : 'sheet';
+  workbench.mode = d.m === 'part' || d.m === 'model' ? d.m : 'sheet';
   render();
 };
 ACTIONS.wbpPick = d => {
