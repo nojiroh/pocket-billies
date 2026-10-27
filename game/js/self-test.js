@@ -142,6 +142,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { WALK_SHADERS } from './walk/walk-shaders.js';
 import { roomDimming } from './walk/lighting.js';
+import { fogGridReport } from './walk/fog-grid.js';
 import { BUILDING_SHADERS, buildingState } from './buildings.js';
 import { hasStructures, structureState } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
@@ -339,6 +340,8 @@ async function runFullTest(mode) {
       'Device',
       'Frame budget',
       'Rain and night',
+      /* air track AIR-4: the fog in the air */
+      'Fog in the air',
       /* phase 20 R1: the renderer's baseline tour */
       'Renderer baseline',
       'Battle on the 3D stage',
@@ -348,8 +351,8 @@ async function runFullTest(mode) {
     ];
   }
   const total = diag
-    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 150 + 6 + 8 + 1
-    : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40;
+    ? scenes.length * 4 + 1 + 1 + 6 + 6 + 10 + 6 + 150 + 6 + 8 + 1
+    : scenes.length * 4 + 1 + 5 + 8 + 6 + 5 + 8 + 8 + 6 + 6 + 10 + 8 + 8 + 1 + 40 + 6;
   let done = 0;
   const tick = s => {
     done += s;
@@ -743,6 +746,46 @@ async function runFullTest(mode) {
         },
         10
       );
+    /* air track AIR-4: fog weather at dawn in the open walk scene: the light-in-air march with the fog grid (on, or
+       why not), the frame rate, the post chain's graphics-chip time where there are timers, and no graphics error */
+    await phase(
+      'Fog in the air: dawn fog',
+      'dio',
+      async () => {
+        if (!(typeof walkRenderer !== 'undefined' && walkRenderer.on && walkView.ready))
+          return 'skipped: no 3D walk scene open';
+        if (walkView.sc && walkView.sc.indoor) return 'skipped: indoors (no fog there)';
+        const f0 = environment.force,
+          on0 = environment.on,
+          gl = typeof gpuState !== 'undefined' ? gpuState.gl : null;
+        try {
+          environment.on = true;
+          environment.force = { time: 6.6, weather: 'fog', season: 'autumn' };
+          await selfTestSleep(1000);
+          if (gl) gl.getError();
+          const fr = walkRenderer.frames,
+            T = diagnosticsTimersOn(),
+            t0 = debugLog.now();
+          await walkAbout(3);
+          const st = selfTestFrameStats(t0, debugLog.now(), 'dio'),
+            r = await diagnosticsTimersOff(T),
+            ge = gl ? gl.getError() : 0;
+          if (walkRenderer.frames === fr) throw new Error('the scene isn’t drawing in fog: no frames in 3 s');
+          if (ge) throw new Error(`a graphics error in fog (${ge})`);
+          const rep = typeof fogGridReport === 'function' ? fogGridReport() : null,
+            M = rep && rep.march,
+            post = r && r.gpu && r.gpu.post != null ? `, post ${r.gpu.post} ms on the graphics chip` : '';
+          return (
+            `march ${M ? (M.on ? `on, ${M.steps} steps` : `off (${M.why})`) : 'not reported'}` +
+            `${rep && rep.size ? `, grid ${rep.size.join(' x ')}` : ''}, ${st.fpsAvg} fps (${st.cpuMs} ms)${post}`
+          );
+        } finally {
+          environment.force = f0;
+          environment.on = on0;
+        }
+      },
+      6
+    );
     function stGeometry() {
       const sc = walkView.sc;
       if (!sc || (!sc.steps && !sc.bridges)) return;
