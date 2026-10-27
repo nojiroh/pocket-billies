@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · find =================
    alpha 0.4.1: one search box for the whole Studio (Ctrl+K, or the Find button). It knows every engine dial, every
    numbered setting on the Rules, Types and Items pages, every section, and the things you edit: Billies, moves,
-   items, pyramids, trainers, shops, people, places, props and (SA-1) art files (SA-3: no route stops). Pick a result and the Studio opens it, scrolls
+   items, pyramids, trainers, people, places, props and (SA-1) art files (SA-3: no route stops). Pick a result and the Studio opens it, scrolls
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -245,9 +245,6 @@ export function buildSearchIndex() {
       `${k} ${C.long || ''} ${C.about || ''}`
     )
   );
-  Object.entries(D.shops || {}).forEach(([k, S]) =>
-    add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => openSection('shops', { shop: k }), k)
-  );
   Object.keys(D.people || {}).forEach(k =>
     add(k, 'Look (People)', 'person', () => openSection('people', { person: k }))
   );
@@ -295,7 +292,6 @@ const FIND_KIND_LABELS = {
   move: 'Move',
   item: 'Item',
   trainer: 'Trainer',
-  shop: 'Shop',
   person: 'Look',
   scene: 'Place',
   prop: 'Prop',

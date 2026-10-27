@@ -2171,16 +2171,6 @@ def polish_steps(pg, errs):
     pg.evaluate("void undo()"); time.sleep(0.4)
     if v0 + ' Polish' not in listed: errs.append('F16: a move renamed in the second pane kept its old name in that pane\'s list')
     pg.evaluate("ACTIONS.paneClose()"); time.sleep(0.3)
-    # F20: the shop keeper's thank-you lines are the shop's, not a key of the data
-    got = pg.evaluate("""(async () => { const D = studioState.D, had = D.shops, keep = studioState.sel.shop;
-      D.shops = { tst: { name: 'Test shop', keeper: 'K', who: Object.keys(D.people)[0], thanks: ['Ta', 'Cheers'], stock: [] } };
-      studioState.sel.shop = 'tst'; openSection('shops'); await new Promise(r => setTimeout(r, 300));
-      const t = [...document.querySelectorAll('#main textarea[data-p]')].find(e => e.dataset.p.startsWith('@') && e.dataset.p.endsWith('.tst'));
-      const shown = t ? t.value : null;
-      if (t) { t.value = 'One\\nTwo'; t.dispatchEvent(new Event('input', { bubbles: true })); }
-      const r = { shown, thanks: D.shops.tst.thanks, top: 'tst' in D };
-      delete D.tst; D.shops = had; studioState.sel.shop = keep; commit(true); return r; })()""")
-    if got != {'shown': 'Ta\nCheers', 'thanks': ['One', 'Two'], 'top': False}: errs.append(f'F20: the shop thank-you field gave {got}')
     # F20: lore's lists of lines and a trainer's script read as text and write back the same
     got = pg.evaluate("""(() => { const L = readPath('@lines.lore.loading'), S = readPath('@script.trainer:crude'),
       a = JSON.stringify(studioState.D.lore.loading), b = JSON.stringify(studioState.D.trainers.crude.script);

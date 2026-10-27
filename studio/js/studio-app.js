@@ -667,7 +667,6 @@ export const SECTION_LIST = [
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
   ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
-  ['shops', 'Town shops', 'Legacy: keepers and what they sell (runs stock from the run rules)'],
   ['world', 'World & encounters', 'Who appears where (runs read the pools their biomes name); map: legacy'],
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
   ['hub', 'Hub island', 'The hub’s island: an orbit view, its ground, coast, zones and pivot, and the ground lock'],
@@ -705,9 +704,9 @@ const SECTION_GROUPS = [
   ['Sound', ['music']],
   /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
   ['Runs', ['runlab', 'relics', 'unlocks', 'economy']],
-  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); Studio plan T4.5: Town shops
-     edits shops.json, which is {} (run shops come from rules.json run.shop); SA-3: Jobs is gone (the game has no jobs) */
-  ['Legacy', ['legacy', 'shops']],
+  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); SA-3: Jobs and Town shops are
+     gone (the game has no jobs; run shops stock from rules.json run.shop, the boutiques' names are the wardrobe's) */
+  ['Legacy', ['legacy']],
 ];
 const foldedSectionGroups = (() => {
   try {

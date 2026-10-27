@@ -40,13 +40,11 @@ import {
   clone,
   colorField,
   dialog,
-  formatThousands,
   grid,
   itemOptions,
   moveOptions,
   numberField,
   openSection,
-  pathPrefix,
   peopleOptions,
   pyramidOptions,
   rangeField,
@@ -1097,10 +1095,8 @@ ACTIONS.itemNew = () => {
 };
 ACTIONS.itemDel = async d => {
   const D = studioState.D;
-  if (!(await ask(`Delete ${escapeHtml(D.items[d.k].n)}? It’s removed from shops and starting items.`, 'Delete')))
-    return;
+  if (!(await ask(`Delete ${escapeHtml(D.items[d.k].n)}? It’s removed from the starting items.`, 'Delete'))) return;
   delete D.items[d.k];
-  Object.values(D.shops || {}).forEach(s => (s.stock = s.stock.filter(w => w.item !== d.k)));
   delete D.rules.start.items[d.k];
   changed();
   render();
@@ -1119,181 +1115,6 @@ ACTIONS.itemImg = async d => {
 };
 ACTIONS.itemImgOff = d => {
   delete studioState.D.items[d.k].img;
-  changed();
-  render();
-};
-/* ================= SHOPS ================= */
-SECTIONS.shops = () => {
-  const D = studioState.D,
-    S = (D.shops = D.shops || {});
-  const ks = Object.keys(S);
-  if (!S[studioState.sel.shop]) studioState.sel.shop = ks[0];
-  const k = studioState.sel.shop,
-    sh = S[k];
-  const list = ks
-    .map(
-      x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickShop" data-id="${x}"><span class="lt"><b>${escapeHtml(S[x].name)}</b><small>${S[x].kind === 'wardrobe' ? 'Boutique · ' : ''}${escapeHtml(
-          D.locations
-            .filter(r => r.shop === x || r.boutique === x)
-            .map(r => r.name)
-            .join(', ') || 'Not placed on the route'
-        )}</small></span></button>`
-    )
-    .join('');
-  if (!sh)
-    return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div></aside><div class="ed-col"><p class="help">No shops yet. Legacy: shops.json is the old world’s town shops; a run’s towns stock from the run rules (rules.json run.shop, in the Run Lab).</p></div></div>`;
-  const wardrobe = sh.kind === 'wardrobe',
-    p = `shops.${k}`,
-    stock = (sh.stock || [])
-      .map((w, i) => {
-        const isC = !!w.coin,
-          key = w.coin || w.item,
-          base = isC ? (D.pyramids[key] || {}).price : (D.items[key] || {}).price;
-        return `<tr><td><select data-act-sel="stockKind" data-i="${i}">${[
-          ['item', 'Item'],
-          ['coin', 'Pyramid'],
-        ]
-          .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
-          .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? pyramidOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: ${base} Moneys` : ''}</small></td>
-  <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
-      })
-      .join('');
-  return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under Looks.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@thanks.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
- ${
-   wardrobe
-     ? card(
-         'Clothes and hair',
-         `<div class="wd-shoplist">${
-           Object.entries((D.wardrobe || {}).items || {})
-             .filter(([i, it]) => it.shop === k)
-             .map(
-               ([i, it]) =>
-                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · ${formatThousands(it.price || 0)} Moneys</button>`
-             )
-             .join('') || '<span class="help">Nothing yet.</span>'
-         }</div>`,
-         {
-           sub: 'A boutique sells wardrobe items: pick “Sold at” for an item under Wardrobe. Players try things on in the dressing room and buy what they wear.',
-         }
-       )
-     : card(
-         'Stock',
-         `<table class="tbl"><thead><tr><th>Kind</th><th>What</th><th>Price (Moneys)</th><th></th><th></th></tr></thead><tbody>${stock}</tbody></table><div class="seg-row"><button class="btn" data-act="stockAdd">Add to the shelves</button></div>`,
-         { sub: 'Leave the price empty to use the normal Shop price. Pyramids that need badges stay locked here too.' }
-       )
- }
- ${card(
-   'Where it is',
-   `<p class="help">Open on: ${escapeHtml(
-     D.locations
-       .filter(r => r.shop === k || r.boutique === k)
-       .map(r => r.name)
-       .join(', ') || 'nowhere yet'
-   )}. Choose a shop or boutique for a stop under World & encounters.</p>`
- )}</div></div>`;
-};
-/* thank-you lines are stored as an array; edit them as text (Studio plan F20: their own prefix, @thanks.; lore's
-   lists of lines have @lines.) */
-pathPrefix(
-  '@thanks.',
-  k => {
-    const s = studioState.D.shops[k];
-    return s && s.thanks ? s.thanks.join('\n') : '';
-  },
-  (k, v) => {
-    const s = studioState.D.shops[k];
-    const a = String(v || '')
-      .split('\n')
-      .map(x => x.trim())
-      .filter(Boolean);
-    if (a.length) s.thanks = a;
-    else delete s.thanks;
-  }
-);
-document.addEventListener('change', ev => {
-  const el = ev.target;
-  if (el.dataset.actSel === 'stockKind') {
-    const w = studioState.D.shops[studioState.sel.shop].stock[+el.dataset.i];
-    if (el.value === 'coin') {
-      delete w.item;
-      w.coin = Object.keys(studioState.D.pyramids)[0];
-    } else {
-      delete w.coin;
-      w.item = Object.keys(studioState.D.items)[0];
-    }
-    delete w.price;
-    changed();
-    render();
-  }
-});
-ACTIONS.pickShop = d => {
-  studioState.sel.shop = d.id;
-  render();
-};
-ACTIONS.stockAdd = () => {
-  studioState.D.shops[studioState.sel.shop].stock.push({ item: Object.keys(studioState.D.items)[0] });
-  changed();
-  render();
-};
-ACTIONS.stockDel = d => {
-  studioState.D.shops[studioState.sel.shop].stock.splice(+d.i, 1);
-  changed();
-  render();
-};
-ACTIONS.stockMove = d => {
-  const a = studioState.D.shops[studioState.sel.shop].stock,
-    i = +d.i,
-    j = i - 1;
-  if (j < 0) return;
-  [a[i], a[j]] = [a[j], a[i]];
-  changed();
-  render();
-};
-ACTIONS.boutiqueNew = () => {
-  const D = studioState.D,
-    k = uniqueKey('boutique', x => !!(D.shops || {})[x]);
-  D.shops = D.shops || {};
-  D.shops[k] = {
-    name: 'New Boutique',
-    keeper: 'Shopkeeper',
-    who: Object.keys(D.people)[0],
-    kind: 'wardrobe',
-    greeting: 'Try anything on!',
-  };
-  studioState.sel.shop = k;
-  changed();
-  render();
-};
-ACTIONS.shopNew = () => {
-  const D = studioState.D,
-    k = uniqueKey('shop', x => !!(D.shops || {})[x]);
-  D.shops = D.shops || {};
-  D.shops[k] = {
-    name: 'New Shop',
-    keeper: 'Shopkeeper',
-    who: Object.keys(D.people)[0],
-    greeting: 'Welcome in!',
-    stock: [{ item: Object.keys(D.items)[0] }],
-  };
-  studioState.sel.shop = k;
-  changed();
-  render();
-};
-ACTIONS.shopDel = async () => {
-  const D = studioState.D,
-    k = studioState.sel.shop;
-  if (!(await ask(`Delete ${escapeHtml(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete')))
-    return;
-  delete D.shops[k];
-  D.locations.forEach(r => {
-    if (r.shop === k) delete r.shop;
-    if (r.boutique === k) delete r.boutique;
-  });
-  studioState.sel.shop = null;
   changed();
   render();
 };
@@ -1339,9 +1160,6 @@ SECTIONS.people = () => {
     ...Object.values(D.trainers || {})
       .filter(T => T.who === k)
       .map(T => 'trainer ' + T.name),
-    ...Object.values(D.shops || {})
-      .filter(s => s.who === k)
-      .map(s => s.keeper),
   ];
   const list = ks
     .map(

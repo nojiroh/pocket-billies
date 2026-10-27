@@ -278,11 +278,6 @@ export function runCheck() {
       if (P.who && !people.has(P.who))
         warn(`${P.name || k} (Lore & story) has a look that isn’t in People.`, 'lore', { ltab: 'people' });
   }
-  for (const [k, s] of Object.entries(D.shops || {}))
-    (s.stock || []).forEach(w => {
-      if (w.item && !items[w.item]) warn(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
-      if (w.coin && !pyramids[w.coin]) warn(`${s.name} sells a pyramid that doesn’t exist.`, 'shops', { shop: k });
-    });
   const R = D.rules;
   R.start.starters.forEach(l => {
     if (!sp.has(l + '0')) warn(`Starter ${l} doesn’t exist.`, 'rules');
@@ -321,10 +316,6 @@ export function runCheck() {
   /* T1.3: the scene and road checks are logic/data-checks.js's, so check-data (CI) runs them too */
   for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])
     (f.lvl === 'error' ? err : warn)(f.msg, f.go, f.sel);
-  for (const [k, sh] of Object.entries(D.shops || {}))
-    (sh.sells || []).forEach(o => {
-      if (!(D.shops || {})[o]) warn(`${sh.name} sells the clothes of a shop that doesn’t exist (${o}).`, 'shops');
-    });
   if (!legacyIds && Object.keys(legacyRefs).length)
     warn(
       'The parked world (game/data/legacy) isn’t read yet, so Billies named like a legacy line are taken to be one. Open Legacy to read it.',
