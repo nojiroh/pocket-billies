@@ -94,6 +94,9 @@ export function linearToSrgb(v) {
  */
 export function modelAtlas(sizes) {
   const list = sizes.map((s, image) => (s ? { image, w: s[0], h: s[1] } : null)).filter(x => !!x);
+  /* one picture is the texture as it is (its coordinates stay) */
+  if (list.length === 1)
+    return { w: list[0].w, h: list[0].h, slots: [{ image: list[0].image, x: 0, y: 0, w: list[0].w, h: list[0].h }] };
   list.sort((a, b) => b.h - a.h || b.w - a.w);
   const area = list.reduce((s, q) => s + (q.w + 1) * (q.h + 1), 0),
     widest = list.reduce((s, q) => Math.max(s, q.w), 1);

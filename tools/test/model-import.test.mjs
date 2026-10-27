@@ -88,6 +88,7 @@ test('the turbine: its fan is a part of its own, hanging from the tower at its n
   near(B.rec.parts[1].pivot[1], (2.05 / 3) * 4.6, 0.01, 'the fan turns about its node origin');
   assert.equal(B.rec.tex, 'scene/models/turbine.png');
   assert.equal(B.rec.v, 2);
+  assert.deepEqual([B.atlas.w, B.atlas.h], [1024, 1024], 'one texture is kept as it is');
   const D = M.modelDensity(M.modelFaces(B.rec), B.atlas.w, B.atlas.h, readPng(join(CC0, 'spacebits_texture.png')));
   assert.ok(D.isPalette, 'KayKit colours a face with one swatch');
   assert.equal(D.fix, 1, 'no resample offered for a palette texture');
