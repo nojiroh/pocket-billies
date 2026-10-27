@@ -55,6 +55,7 @@ import {
   newBattle,
   sayBattleFx,
 } from './logic/battle-engine.js';
+import { bossStoryNext } from './logic/battle-rewards.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { storyAllows } from './logic/script.js';
@@ -224,6 +225,8 @@ function runEndHomeGo(won, keep, itemPrice, train, show) {
       : null,
     rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
     opened = saveData.meta.expedition,
+    /* RL-14b: a won run's scene: a bosses.json boss's first win (the Voltron: Chapter 1's end), read before it ends */
+    next = won ? bossStoryNext(saveData) : '',
     pay = runEnd(saveData, { won, keep }, rates, itemPrice),
     cover = show(pay);
   if (rec && typeof boardsPost === 'function') boardsPost(rec);
@@ -241,7 +244,7 @@ function runEndHomeGo(won, keep, itemPrice, train, show) {
     });
   else stand();
   /* RL-S1: the hub characters' lines for this return, and a lost run's scene (story-stage.js) */
-  storyHomeArrive(won);
+  storyHomeArrive(won, next);
   saveNow();
   closeModal();
   render();

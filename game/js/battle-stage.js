@@ -28,6 +28,7 @@ import {
   provide,
   reducedMotion,
   ribbonColour,
+  robotGemDef,
   robotIdsFromSp,
   robotPartDef,
   saveData,
@@ -53,7 +54,7 @@ import {
 } from './logic/smear.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
-import { ROBOT_PART_BONES } from './robot-art.js';
+import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigFrameKey, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -170,6 +171,7 @@ expose({
   ribbonDither: [() => ribbonDither, v => (ribbonDither = v)],
   rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
+  robotPartPicture: [() => robotPartPicture, v => (robotPartPicture = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
   setTrainerAction: [() => setTrainerAction, v => (setTrainerAction = v)],
@@ -1295,8 +1297,8 @@ function drawParticles(c, layer) {
     } else if (p.img) {
       /* RL-14: a picture (a bot's dropped part), turning as it falls */
       const kk = Math.max(0.5, Math.round(k * 2) / 4),
-        w = Math.round(p.img.naturalWidth * kk),
-        h = Math.round(p.img.naturalHeight * kk);
+        w = Math.round((p.img.naturalWidth || p.img.width) * kk),
+        h = Math.round((p.img.naturalHeight || p.img.height) * kk);
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
       c.rotate((p.rot || 0) + ((p.vr || 0) * Math.min(p.age, 700)) / 1000);
@@ -1666,6 +1668,19 @@ function pyramidArc(from, to, dur, kind, onLand, spin) {
   return C;
 }
 const PULL_BACK_CAMERA = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
+/** RL-14b: a robot part's picture: its own (art.img, loaded), or the placeholder robot-art.js draws from its shape
+ * and colour (a torso's with the gem's colour on its chest, or a slot's as given) */
+function robotPartPicture(P, slot, gemColor) {
+  const im = P.art && P.art.img ? artImg(P.art.img) : null;
+  if (im && im.complete && im.naturalWidth) return im;
+  if (P.art && P.art.img) return null;
+  const kind = slot === 'torso' || slot === 'legs' ? slot : P.slot;
+  return kind === 'torso'
+    ? robotTorsoCanvas(P, gemColor || P.art.color)
+    : kind === 'legs'
+      ? robotLegsCanvas(P)
+      : robotArmCanvas(P);
+}
 const throwOrigin = () => ({ x: battleStage.V.x - 0.9, y: battleStage.V.y - 0.6, z: battleStage.V.z + 0.6 });
 export function battleStagePlay(an, ev) {
   battleStageFlush();
@@ -1789,6 +1804,73 @@ export function battleStagePlay(an, ev) {
       camHome(520, 560);
       scheduleAt(950, () => battleStageFocus('wide'));
       return { dur: 900, hit: 0 };
+    }
+    /* RL-14b: a boss's join intro (bosses.json, battle-engine.js startTrainer): its four bots fly in from four sides,
+       lock together in a flash, and it stands at Alpha scale. Tapping on skips it (battleStageFlush) */
+    case 'join': {
+      const i = an.si,
+        s = battleStage.s[i];
+      syncSide(i);
+      Object.assign(s, { show: false, ox: 0, oy: 0, sc: 0, a: 1, white: 1, dark: 0, act: null });
+      const T = battleStage.tr[actorTeam(i)];
+      if (T.show) {
+        tween(T, 'x', 140, 320, 'in');
+        scheduleAt(330, () => {
+          T.show = false;
+        });
+      }
+      battleStageFocus('foe');
+      camAt(i, 0.3, 0.08, 0.012, 400);
+      const c = actorCenter(i),
+        ids = robotIdsFromSp(s.sp),
+        /* its glow (bosses.json), else the gem's colour */
+        G = ids && robotGemDef(ids.gem),
+        glow = an.glow || (G && G.color),
+        LOCK = 1300;
+      /* where each bot comes from: the leader from above, the arm-bots from the sides, the leg-bot from the front */
+      const FROM = { torso: [0, 2.4, -0.6], armL: [-2.8, 0.6, 0.2], armR: [2.8, 0.6, 0.2], legs: [0, -0.4, 2.2] };
+      if (ids && !reducedMotion)
+        Object.entries(FROM).forEach(([k, d], n) => {
+          const P = robotPartDef(ids[k]),
+            im = P && robotPartPicture(P, k, G && G.color);
+          if (!im) return;
+          const at = n * 140,
+            life = LOCK - at;
+          scheduleAt(at, () =>
+            addParticle({
+              img: im,
+              x: c.x + d[0],
+              y: c.y + d[1],
+              z: c.z + d[2],
+              vx: (-d[0] * 1000) / life,
+              vy: (-d[1] * 1000) / life,
+              vz: (-d[2] * 1000) / life,
+              life,
+              fade: false,
+              rot: 0,
+              vr: k === 'armL' ? 2 : k === 'armR' ? -2 : 0,
+              k: 2.4,
+            })
+          );
+          scheduleAt(at, () => groundRing(i, glow, 1.2 + n * 0.4, 500));
+        });
+      battleStage.shk = 3;
+      scheduleAt(LOCK, () => {
+        battleStageFlash(glow, 0.7, 520);
+        battleStage.shk = 10;
+        handheld(900, 1.4);
+        s.show = true;
+        tween(s, 'sc', 1, 340, 'back');
+        tween(s, 'white', 0, 420, 'lin', 120);
+        setActorAction(i, 'enter', 800);
+        ringFx(c, glow, 0.2, 2.6, 800);
+        groundRing(i, glow, 3.4, 900);
+        burst(c, 'Steel', 18, 2.8, 1.2);
+        if (typeof buzz === 'function') buzz([30, 60, 30, 60, 80]);
+      });
+      camHome(600, LOCK + 300);
+      scheduleAt(LOCK + 900, () => battleStageFocus('wide'));
+      return { dur: LOCK + 900, hit: 0 };
     }
     case 'recall': {
       const s = battleStage.s[an.si];
@@ -2187,7 +2269,8 @@ export function battleStagePlay(an, ev) {
       battleStageFlash('#FFD860', 0.5, 420);
       battleStage.shk = 7;
       handheld(800, 1.2);
-      if (s) s.shield = 1;
+      /* RL-14b: a boss's phase without a shield (bosses.json) lights none */
+      if (s && an.shield !== false) s.shield = 1;
       ringFx(T, '#FFD860', 0.3, 2.2, 700);
       groundRing(an.si, '#FFD860', 2.6, 800);
       for (let i = 0; i < 24; i++)
@@ -2240,8 +2323,9 @@ export function battleStagePlay(an, ev) {
         ids = S && robotIdsFromSp(S.sp),
         aug = S && !ids ? graftLookSplit(S.graft).aug : null,
         P = ids ? robotPartDef(ids[an.part]) : aug ? robotPartDef(aug[an.part === 'legs' ? 'back' : 'front']) : null,
-        im = P && P.art && P.art.img ? artImg(P.art.img) : null;
-      if (im && im.complete && im.naturalWidth && !reducedMotion) {
+        /* RL-14b: a part with no picture of its own (the Voltron's) drops its placeholder */
+        im = P ? robotPartPicture(P) : null;
+      if (im && !reducedMotion) {
         const side = an.part === 'armL' ? -1 : an.part === 'armR' ? 1 : random() < 0.5 ? -1 : 1;
         addParticle({
           img: im,

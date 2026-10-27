@@ -28,6 +28,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     residents: {},
     boards: { d: 0, w: 0 },
     show: { s: [], v: [], rw: 0, rib: [] },
+    bosses: {},
   });
   assert.equal(validMeta(m), true);
   /* ON-3: the Showcase record */
@@ -40,6 +41,12 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
   assert.equal(validMeta({ ...m, show: { s: [], v: [1], rw: 0, rib: [] } }), false);
   assert.equal(metaFill({ ...m, show: 'junk' }).show.s.length, 0, 'a broken Showcase record goes alone');
   assert.equal(metaFill({ ...m, runs: 4, show: 'junk' }).runs, 4);
+  /* RL-14b: the bosses.json bosses beaten, how many times */
+  assert.equal(validMeta({ ...m, bosses: { retrieval: 3 } }), true);
+  assert.equal(validMeta({ ...m, bosses: { retrieval: 1.5 } }), false);
+  /* a meta saved before RL-14b is filled out */
+  const { bosses, ...old } = m;
+  assert.deepEqual(metaFill(old).bosses, {});
   /* ON-2: the last daily and weekly taken off on */
   assert.equal(validMeta({ ...m, boards: { d: 20387, w: 2913 } }), true);
   assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);

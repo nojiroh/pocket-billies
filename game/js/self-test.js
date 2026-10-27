@@ -13,6 +13,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
+  BOSSES,
   EVENTS,
   FACTIONS,
   FIELD_MOVES,
@@ -90,7 +91,7 @@ import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
 import { routeRareSpots, routeTrainersPlace, runRouteTrainers } from './logic/route-trainers.js';
 import { routeFindsPlace } from './logic/route-finds.js';
-import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
+import { catchable, fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { questOffer, questTake } from './logic/run-quests.js';
 import { conditionHolds, storyStateOf } from './logic/conditions.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -1110,6 +1111,93 @@ async function runFullTest(mode) {
       await selfTestSleep(600);
       if (broke && !dropped && !reducedMotion) throw new Error('a part broke but nothing dropped off the stage');
       return `${B.name}, not catchable; ${broke ? `${broke} part(s) broke, ${dropped} dropped` : 'the hit landed on its torso'}; the turn in ${(turnMs / 1000).toFixed(1)} s`;
+    };
+    /* RL-14b: the Voltron (bosses.json retrieval) as a run's boss fights it: its join intro (its four bots fly in),
+       an Alpha robot, never caught; one hit past both its phases: a shield, then an arm-bot torn loose and dropped */
+    const voltronBattle = async () => {
+      uiState.bench = null;
+      uiState.tab = 'walk';
+      saveData.trip.node = back.node;
+      render();
+      await selfTestSleep(1200);
+      saveData.team.forEach(m => {
+        m.hp = maxHp(m);
+        m.status = null;
+      });
+      const V = BOSSES.retrieval,
+        id = 'selftest-voltron';
+      TRAINERS[id] = {
+        id,
+        name: V.name,
+        who: V.who,
+        team: [{ sp: 'robot', lvl: Math.min(95, fighterLead().lvl + 2), boss: 'retrieval' }],
+        alpha: true,
+        boss: 'retrieval',
+        reward: 0,
+        win: V.win || '',
+        lose: '',
+      };
+      let flew = 0,
+        dropped = 0,
+        turn = false;
+      /* part pictures on the stage: its bots flying in (the intro), then the torn-off arm falling (the turn) */
+      const watch = setInterval(() => {
+        const n = battleStage.parts.filter(p => p.img).length;
+        if (turn) dropped = Math.max(dropped, n);
+        else flew = Math.max(flew, n);
+      }, 50);
+      const g0 = selfTest.gen || 0;
+      const want = async (ph, ms) => {
+        const end = performance.now() + ms * (selfTest.slow || 1);
+        while (performance.now() < end) {
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMessage();
+          await selfTestSleep(120);
+        }
+        return false;
+      };
+      try {
+        startTrainer(id, { talked: true });
+        if (!activeBattle) throw new Error('the boss battle never started');
+        const joined = activeBattle.events.some(e => e.an && e.an.k === 'join');
+        /* let the intro play before tapping through it */
+        await selfTestSleep(1700);
+        if (!(await want(['choose'], 45000)))
+          throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+        const foe = fighter(1);
+        if (!foe || foe.kind !== 'robot' || !foe.boss || !foe.boss.phases) throw new Error('the boss is no boss robot');
+        if (!joined) throw new Error('no join intro');
+        if (!flew && !reducedMotion) throw new Error('its bots never flew in');
+        if (catchable(foe)) throw new Error('the boss can be caught');
+        /* just over 30%: the next hit passes both phases (a 60% shield, then the arm-bot tears loose) */
+        foe.hp = Math.floor(maxHp(foe) * 0.3) + 1;
+        turn = true;
+        /* a turn at a time (a move can miss) until a hit lands, at most four */
+        const hp0 = foe.hp;
+        for (let t = 0; t < 4 && foe.hp === hp0 && activeBattle && activeBattle.phase === 'choose'; t++) {
+          const m = fighter(activeBattle.cur),
+            mid = m.moves.find(k => MOVES[k] && MOVES[k].c !== 'X' && (MOVES[k].p || 0) > 0) || m.moves[0];
+          pickMove(mid);
+          if (activeBattle.phase === 'target') pickTarget(1);
+          if (!(await want(['choose', 'end', 'switch'], 60000)))
+            throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
+        }
+        const done = foe.boss.done || 0,
+          torn = partBroken(foe, 'armR');
+        stopTimers();
+        setActiveBattle(null);
+        battleStageStop();
+        render();
+        await selfTestSleep(600);
+        if (foe.hp > 0 && done < 2) throw new Error(`only ${done} of its phases fired at ${foe.hp} HP`);
+        if (foe.hp > 0 && !torn) throw new Error('its arm-bot never tore loose');
+        if (foe.hp > 0 && !dropped && !reducedMotion) throw new Error('the arm-bot tore loose but nothing dropped');
+        return `${V.name}: joined (${flew ? 'its bots flew in' : 'reduced motion'}), not catchable; ${foe.hp > 0 ? `${done} phases, the ${V.bots && V.bots.armR} torn loose` : 'fainted from the hit'}`;
+      } finally {
+        clearInterval(watch);
+        delete TRAINERS[id];
+      }
     };
     /* RL-5: the Road phase (v43, phase 08: out of Marigold Town over its edge and into Tallgrass Meadow on foot) went
        with those places to game/data/legacy: the hub has no road. RL-7: back on a run's road. A run is put on a copy
@@ -2165,6 +2253,11 @@ async function runFullTest(mode) {
             startTrainer(B.id, { talked: true });
             if (!activeBattle || activeBattle.fmt !== 'alpha') throw new Error('the boss isn’t an Alpha battle');
             if (!activeBattle.fx || !activeBattle.fx.length) throw new Error('the boss’s battle has no Perks');
+            /* RL-14b: on Expedition I the boss is the Voltron; its first win plays Chapter 1's end at home */
+            const volt = B.boss && BOSSES[B.boss],
+              firstWin = !!volt && !(saveData.meta.bosses || {})[B.boss] && (saveData.meta.chapter || 1) === 1;
+            if ((saveData.run.expedition || 1) === 1 && !(volt && fighter(1).kind === 'robot'))
+              throw new Error('Expedition I’s boss isn’t the Voltron');
             stopTimers();
             activeBattle.over = 'win';
             endBattle();
@@ -2185,7 +2278,10 @@ async function runFullTest(mode) {
             const H = saveData.meta.history[saveData.meta.history.length - 1];
             if (!H || H.end !== 'won' || H.seed !== 'SELFTESTRUN8') throw new Error('the won run isn’t in the history');
             if (!H.leaders.some(l => l.id === MB.from && l.beat)) throw new Error('the history lost the mini-boss win');
-            if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
+            if (!saveData.story.fresh || (saveData.story.pending || '') !== (firstWin ? volt.story : ''))
+              throw new Error(`home from a win: the story’s picks (waiting: ${saveData.story.pending || 'nothing'})`);
+            /* the Voltron's scene is the story phase's to play, not this one's */
+            delete saveData.story.pending;
             if (!saveData.meta.residents.dottie || H.res !== 'dottie')
               throw new Error('Dottie didn’t move in (or the history lost her)');
             /* RS-3: home again, Dottie walks Copperleaf as one of its townsfolk (her own look), from the library's
@@ -3019,6 +3115,9 @@ async function runFullTest(mode) {
     /* RL-14: the Bureau's bot in the grass: it can't be caught, its limbs break and drop off, it cries */
     if (typeof FACTIONS !== 'undefined' && FACTIONS.bureau)
       await phase('A wild bot: never caught, its parts break off', 'scene', () => botBattle(), 8, 150);
+    /* RL-14b: the Voltron: its join intro, its phases, an arm-bot torn loose */
+    if (typeof BOSSES !== 'undefined' && BOSSES.retrieval && !selfTest.stop)
+      await phase('The Voltron: its bots join, its phases fire', 'scene', () => voltronBattle(), 8, 150);
     /* v47: the opening's fall into the Hollow Earth (the bowl's own ground, past the Inner Sun), timed */
     if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(

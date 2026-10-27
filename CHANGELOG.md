@@ -14,6 +14,13 @@ kept aside in the browser).
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)
   win a Gold, Silver or Bronze ribbon, shown on the Billie and the Trainer card. Only the look goes online; nothing of
   value moves. Report or block from any entry; three reports hide one until the moderator looks.
+
+- **The Retrieval Unit, Expedition I's boss** (roguelite track RL-14, second half): at the end of an Expedition I
+  run the Bureau calls in its first big retrieval unit. Four bots (a filing-cabinet leader, two arm-bots and a
+  conveyor leg-bot) fly in and lock together into one giant robot, fought as an Alpha by your team. It fights in two
+  phases: below 60% it raises a shield and hits harder; below 30% its Franking Unit arm tears loose and it speeds up.
+  It can't be caught. The first win salvages one of its boss parts for your spares and brings Chapter 1 to its end
+  at home. From Expedition II on, the region's leaders stay the boss.
 - **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
   sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
   Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a

@@ -18,6 +18,7 @@ import { formSpeciesOf } from './logic/forms.js';
 expose({
   BANTER: [() => BANTER],
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
   CURRENCIES: [() => CURRENCIES],
@@ -441,6 +442,10 @@ export const SHOWCASE = /** @type {import('../types/game-data').ShowcaseData} */
 /* roguelite track RL-14: the runs' enemy factions and their bots (factions.json; logic/factions.js) */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}
+);
+/* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; battle-engine.js makeBossRobot) */
+export const BOSSES = /** @type {Record<string, import('../types/game-data').BossDef>} */ (
+  (gameData.bosses && gameData.bosses.bosses) || {}
 );
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);

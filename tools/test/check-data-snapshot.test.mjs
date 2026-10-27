@@ -264,6 +264,23 @@ test('check-data: planted factions (RL-14)', t => {
   );
 });
 
+test('check-data: planted bosses (RL-14b)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'bosses.json': B => {
+        const V = B.bosses.retrieval;
+        V.fighter.armL = 'conveyor';
+        V.fighter.gem = 'opal';
+        V.phases[1].at = 0.7;
+        V.phases[0].stages.luck = 1;
+        V.story = 'chapter9-end';
+        V.expeditions.push(12);
+        B.bosses.copy = JSON.parse(JSON.stringify(B.bosses.retrieval));
+      },
+    })
+  );
+});
+
 test('check-data: planted fossils (RO-3e)', t => {
   t.assert.snapshot(
     checkDataOn({

@@ -50,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBosses: [() => dataBosses, v => (dataBosses = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
   dataCameraStops: [() => dataCameraStops, v => (dataCameraStops = v)],
@@ -1194,6 +1196,45 @@ export function dataFactions(D, valid = () => true) {
     if (C.agents.bots[0] > C.agents.bots[1]) problem(`${k}.agents.bots: the fewest is more than the most`);
     if (C.scrapyard.trainers[0] > C.scrapyard.trainers[1])
       problem(`${k}.scrapyard.trainers: the fewest is more than the most`);
+  }
+  return out;
+}
+// RL-14b: bosses.json: the schema; its fighter is a gem and the right kind of part in each slot (robots.json); its
+// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's
+/** RL-14b: bosses.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBosses(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['bosses.json', what]),
+    B = D.bosses;
+  if (!B) return [['bosses.json', 'missing']];
+  if (!valid('bosses.schema.json', B, 'bosses.json')) return out;
+  const R = D.robots || { parts: {}, gems: {} },
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' },
+    scripts = (D.story && D.story.scripts) || {},
+    exps = ((D.modifiers && D.modifiers.expeditions) || []).length,
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    /** @type {Record<number, string>} */
+    taken = {};
+  for (const [k, X] of Object.entries(/** @type {Record<string, any>} */ (B.bosses))) {
+    const F = X.fighter;
+    if (!R.gems[F.gem]) problem(`${k}.fighter.gem: no gem "${F.gem}" (robots.json)`);
+    for (const [slot, kind] of Object.entries(fits)) {
+      const P = R.parts[F[slot]];
+      if (!P) problem(`${k}.fighter.${slot}: no part "${F[slot]}" (robots.json)`);
+      else if (P.slot !== kind) problem(`${k}.fighter.${slot}: "${F[slot]}" is a ${P.slot}, not a ${kind}`);
+    }
+    X.phases.forEach((/** @type {any} */ p, /** @type {number} */ i) => {
+      if (i && p.at >= X.phases[i - 1].at) problem(`${k}.phases[${i}].at: not below the phase before it`);
+      for (const s of Object.keys(p.stages || {}))
+        if (stats.size && !stats.has(s)) problem(`${k}.phases[${i}].stages: no stat "${s}" (stats.json)`);
+    });
+    if (X.story && !scripts[X.story]) problem(`${k}.story: no script "${X.story}" (story.json scripts)`);
+    for (const n of X.expeditions) {
+      if (exps && n > exps) problem(`${k}.expeditions: no Expedition ${n} (modifiers.json)`);
+      if (taken[n]) problem(`${k}.expeditions: Expedition ${n} is already ${taken[n]}'s`);
+      taken[n] = k;
+    }
   }
   return out;
 }

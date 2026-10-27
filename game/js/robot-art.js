@@ -72,7 +72,7 @@ const robotCanvas = (w, h) => {
   return [c, x];
 };
 /** the torso picture (with the gem on its chest) @returns {HTMLCanvasElement} */
-function robotTorsoCanvas(P, gemColor) {
+export function robotTorsoCanvas(P, gemColor) {
   const A = P.art,
     w = A.w || 28,
     h = A.h || 26,

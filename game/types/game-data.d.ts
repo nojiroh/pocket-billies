@@ -92,6 +92,8 @@ export interface GameData {
   modifiers?: ModifiersData;
   /** RL-14: the runs' enemy factions and their bots */
   factions?: { about?: string; factions: Record<DataId, Faction> };
+  /** RL-14b: a run's bosses that are not a leader's Billie (the Voltron) */
+  bosses?: { about?: string; bosses: Record<DataId, BossDef> };
   /** TW-3: a run's quests */
   quests?: QuestsData;
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
@@ -829,6 +831,8 @@ export interface TrainerEntry extends Trainer {
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
   hpMult?: number;
+  /** RL-14b: a bosses.json boss's id (the Voltron): the run's boss is that robot, not the team's Billie */
+  boss?: string;
   /** RT-2: a route pair's second trainer (logic/route-trainers.js runRouteTrainers): its class, look and name */
   mate?: { cls: DataId; who: DataId; name: string };
 }
@@ -1992,6 +1996,34 @@ export interface Faction {
   scrapyard: { trainers: [number, number]; classes: string[] };
   /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
   salvage: { parts: number; scrap: number; scrapPerBot: number };
+}
+/** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
+export interface BossPhase {
+  at: number;
+  shield?: number;
+  stages?: Record<string, number>;
+  breaks?: 'armL' | 'armR' | 'legs';
+  say?: string;
+}
+/** RL-14b: bosses.json: a run boss that is a robot fought as an Alpha (battle-engine.js makeBossRobot) */
+export interface BossDef {
+  name: string;
+  expeditions: number[];
+  who?: string;
+  fighter: { gem: string; torso: string; armL: string; armR: string; legs: string };
+  bots?: Partial<Record<'torso' | 'armL' | 'armR' | 'legs', string>>;
+  boss: { hp: number; st: number; levels: number };
+  phases: BossPhase[];
+  /** the battle's first line ({name}) */
+  call?: string;
+  join?: string;
+  /** the join intro's glow (else its gem's colour) */
+  glow?: string;
+  win?: string;
+  rewards?: { parts?: number };
+  story?: string;
+  /** its story script plays only while the story's chapter is this */
+  chapter?: number;
 }
 /** TW-3: quests.json: a run's quests (logic/run-quests.js) */
 export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';

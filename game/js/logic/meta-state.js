@@ -69,6 +69,7 @@ export function newMeta() {
     residents: {},
     boards: { d: 0, w: 0 },
     show: newShowMeta(),
+    bosses: {},
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
@@ -155,6 +156,8 @@ export function validMeta(o) {
     Object.keys(o.boards).every(k => k === 'd' || k === 'w') &&
     /* ON-3: the Showcase (logic/showcase.js) */
     validShowMeta(o.show) &&
+    /* RL-14b: the bosses.json bosses beaten, by id: how many times (logic/battle-rewards.js bossWin) */
+    recordOf(o.bosses, 32, v => wholeIn(v, 1, META_MAX)) &&
     Array.isArray(o.genes) &&
     o.genes.length <= META_GENES &&
     o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
