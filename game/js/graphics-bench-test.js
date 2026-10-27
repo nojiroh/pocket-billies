@@ -81,6 +81,8 @@ const GRAPHICS_TEST_HIDDEN = [
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
+  /* phase 20 D2: the bloom, rays and grade in mediump (the same look, meant to be cheaper on Android) */
+  ['quality.mediump', 'Medium precision', { values: [false, true], alone: true }],
   ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
   /* smart light shafts (logic/shaft-pick.js): the cheap shafts placed by the picker; a look change, on its own */
   ['air.shaftPick', 'Smart light shafts', { values: [false, true], alone: true }],

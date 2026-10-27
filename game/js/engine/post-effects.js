@@ -12,7 +12,7 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
+import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuFree, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -23,6 +23,7 @@ expose({
   drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
   drawPostRest: [() => drawPostRest, v => setDrawPostRest(v)],
+  postPrecisionFollow: [() => postPrecisionFollow, v => (postPrecisionFollow = v)],
   postTex: [() => postTex, v => (postTex = v)],
   postUse: [() => postUse, v => (postUse = v)],
   projectToScreenUv: [() => projectToScreenUv, v => (projectToScreenUv = v)],
@@ -326,6 +327,18 @@ const POST_MEDIUMP = {
   ],
 };
 for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
+/* Medium precision switched (the Studio, the graphics test): the passes with a list are made again in the new
+   precision (once, on the spot), and any of them still compiling in the background is dropped */
+function postPrecisionFollow() {
+  const mp = !!engineSetting('quality', 'mediump');
+  if (mp === gpuState.mp) return;
+  gpuState.mp = mp;
+  for (const k of Object.keys(POST_MEDIUMP)) {
+    if (gpuState.P[k]) gpuFree(gpuState.P[k].p);
+    delete gpuState.P[k];
+    if (gpuState.pend) gpuState.pend.delete(k);
+  }
+}
 /* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
 function postUse(name, F, w, h) {
   const gl = gpuState.gl,
@@ -344,6 +357,7 @@ function postTex(U, name, unit, t) {
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
+  postPrecisionFollow();
   ensurePrograms(POST_EFFECT_SHADERS);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);

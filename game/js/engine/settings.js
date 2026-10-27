@@ -358,8 +358,8 @@ export const ENGINE_DEFAULTS = {
     /* on a graphics chip that can draw to half-float pictures but not to full-float ones (some phones), the scene and the
        bloom keep their bright parts above white (HDR) as on the others; read when the 3D view starts */
     hdrHalf: false,
-    /* phase 20 D2: the post passes' colour maths in medium precision (engine/shader-precision.js); read when the 3D view
-       starts */
+    /* phase 20 D2: the post passes' colour maths in medium precision (engine/shader-precision.js); a change rebuilds
+       them (engine/post-effects.js postPrecisionFollow) */
     mediump: false,
     lights: 16,
     /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
@@ -1513,7 +1513,7 @@ export const ENGINE_SPEC = [
         'mediump',
         'Medium precision',
         'bool',
-        'The bloom, light rays and colour grade work their colours in medium precision, where phone graphics chips run about twice as fast (on; iPhones and iPads ignore it). Screen places, depth, time and noise stay in full precision. Read when the 3D view starts: reload after changing it. Off: everything in full precision, as before.',
+        'The bloom, light rays and colour grade work their colours in medium precision, where phone graphics chips run about twice as fast (on; iPhones and iPads ignore it). Screen places, depth, time and noise stay in full precision. The first frame after a change compiles them again (a short stall). Off: everything in full precision, as before.',
       ],
       [
         'stableLights',

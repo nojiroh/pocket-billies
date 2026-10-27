@@ -417,8 +417,8 @@ function startProgramCompile(def, name) {
 }
 /* LD-2: compile and link, no status read: reading one waits for the driver, so it is read once, after the link, and
    a shader's own log only when the link failed (finishProgramCompile) */
-/* phase 20 D2: a fragment shader with mediump edits (def.mp) is compiled in mediump while quality.mediump was on when
-   the 3D view started (gpuState.mp), unless plain */
+/* phase 20 D2: a fragment shader with mediump edits (def.mp) is compiled in mediump while Medium precision is on
+   (gpuState.mp), unless plain */
 function beginProgramCompile(def, name, plain) {
   const [vs, fs0] = def,
     mp = !plain && !!def.mp && !!gpuState.mp,
@@ -670,7 +670,8 @@ export function initWebgl(cv) {
       !!gl.getExtension('EXT_color_buffer_float') ||
       (!!(typeof engineSetting === 'function' && engineSetting('quality', 'hdrHalf')) &&
         !!gl.getExtension('EXT_color_buffer_half_float'));
-    /* phase 20 D2: Medium precision (quality.mediump), read here as the 3D view starts; the programs that refused it */
+    /* phase 20 D2: Medium precision (quality.mediump) as the 3D view starts (post-effects.js follows later changes); the
+       programs that refused it */
     gpuState.mp = !!(typeof engineSetting === 'function' && engineSetting('quality', 'mediump'));
     gpuState.mpBad = [];
     gpuState.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
