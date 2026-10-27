@@ -36,9 +36,13 @@ Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game c
   1475, `npm run check:data` (172 files fine; its one warning, test_props_island's bridge, is main's). The sampler
   opened headless at 390 x 844 in light and dark: no page or console errors, no sideways scroll; a battle turn
   played; every palette switched.
-- Next: the owner's answers to Part 2's 11 questions (the palette first), written into the plan; then #266 merges and
-  UI-11 (the colour code as data) starts on `track/ui`.
-- Tag to suggest (sessions can't push tags): `ui-10-done` once the answers are written.
+- The owner's answers (after the sampler; Part 2, "The owner's answers"): Field Guide by default, with Field Guide,
+  Copper Grove+ and Bureau Night in a Settings Palette row; Brass & Plum and Sunpunk Day as Studio presets; angled
+  status tags; the family table, tinted glyphs and one-lightness types; all four battle changes; the icon fixes; Full
+  motion by default with Calm added, no Follow the sky; rarity as the loot colour ladder on the card's edge, not metal
+  frames; the new UI sounds; the Colour shapes switch.
+- Next: #266 merges, then UI-11 (the colour code as data) on `track/ui`.
+- Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
 
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
