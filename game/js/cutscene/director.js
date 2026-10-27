@@ -163,7 +163,8 @@ function cutscenePersonItem(a, t, C0) {
     /* an arm held out the way they face: the throw's wind-up, held */
     const view = a.dir === 'up' ? 'back' : a.dir === 'down' ? 'front' : 'side';
     im = personBattlePose(a.who, view, 'throw', 0.35);
-    if (a.dir === 'sideR') im = cutsceneMirrored(im);
+    /* CH-1: a side view as drawn faces right (person-art.js personFrame; the walk frames mirror it for 'side') */
+    if (a.dir === 'side') im = cutsceneMirrored(im);
   } else im = (personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down)[0];
   return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});
 }
