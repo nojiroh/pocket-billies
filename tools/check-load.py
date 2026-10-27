@@ -7,7 +7,8 @@ lifts; each then sits still for a while. It reads the debug log's boot timeline 
 
     python3 tools/check-load.py                  # both boots, on dist/ (built first when missing)
     python3 tools/check-load.py --build          # run npm run build first
-    python3 tools/check-load.py --only=cold      # one boot: cold or run
+    python3 tools/check-load.py --only=cold      # one boot: cold, run or moves
+    python3 tools/check-load.py --only=moves     # LD-5: on the run fixture, a seam crossed, the Map tab, a battle
     python3 tools/check-load.py --site=game      # the source folder instead of the build (modules unbundled)
     python3 tools/check-load.py --sit=20         # seconds to sit after each boot (default 15)
     python3 tools/check-load.py --max-hitches=0  # fail when more frames than this were held once the loader was gone
@@ -23,7 +24,7 @@ from browser_check import LAUNCH, ROOT, log, new_page, serve, until  # noqa: E40
 
 ARGS = sys.argv[1:]
 arg = lambda k, d=None: next((a.split('=', 1)[1] for a in ARGS if a.startswith(f'--{k}=')), d)
-ONLY = arg('only', 'cold,run').split(',')
+ONLY = arg('only', 'cold,run,moves').split(',')
 SIT = float(arg('sit', 15))
 MAX = arg('max-hitches')
 SITE = ROOT / ('dist' if arg('site', 'dist') == 'dist' else arg('site'))
@@ -34,6 +35,36 @@ BOOTS = {
     'run': ('game/index.html?fixture=run',
             "typeof runLoad!=='undefined'&&runLoad.ready&&!document.getElementById('runload')&&!document.getElementById('loader')", 300),
 }
+BOOTS['moves'] = BOOTS['run']
+# LD-5: the moves, each with the held frames from its start until it has settled (the hitch list cleared first)
+
+
+def moves(pg):
+    """on the run fixture once it has loaded: a seam crossed into the next place, the Map tab opened and closed, a wild
+    battle started: each one's held frames over 33 ms (the hitch list's), longest first"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('check_fast', Path(__file__).with_name('check-fast.py'))
+    cf = importlib.util.module_from_spec(spec); spec.loader.exec_module(cf)
+    out = {}
+
+    def measure(name, act, settle):
+        pg.evaluate("debugLog.hitch.list.length=0;0")
+        act()
+        if not until(pg, settle, 240): log(f'{name}: did not settle in 240 s')
+        pg.wait_for_timeout(2000)
+        out[name] = pg.evaluate("debugLog.hitch.list.map(h=>[h.ms,h.why,h.screen])")
+
+    n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
+    measure('seam', lambda: cf.walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6),
+            f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'")
+    measure('map tab', lambda: pg.evaluate(cf.nav_tap('map')),
+            "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=10")
+    measure('back from the map', lambda: pg.evaluate(cf.nav_tap('map')), "walkView.ready&&walkRenderer.on")
+    measure('battle', lambda: pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);0"),
+            "!!activeBattle&&activeBattle.phase==='choose'")
+    return out
+
+
 REPORT = """(()=>({boot: debugLog.bootReport(), hitches: debugLog.hitchReport(),
   late: typeof gpuState!=='undefined'&&gpuState.pcl?{counts: gpuState.pcl, names: gpuState.pclNames}:null,
   load: debugLog.load, longTasks: {n: debugLog.long.n, maxMs: Math.round(debugLog.long.max)},
@@ -77,6 +108,14 @@ def main():
             if not until(pg, done, sec): bad.append(f'{name}: not ready in {sec} s'); ctx.close(); continue
             secs = time.time() - t
             pg.wait_for_timeout(SIT * 1000)
+            if name == 'moves':
+                M = moves(pg)
+                (OUT / 'moves.json').write_text(json.dumps(M, indent=1))
+                for k, L in M.items():
+                    L = sorted(L, key=lambda h: -h[0])
+                    print(f"   {k}: {len(L)} held frames" + ''.join(f"\n     {h[0]:>6} ms on the {h[2]}: {h[1][:110]}" for h in L[:5]), flush=True)
+                if errs: bad.append(f'{name}: page errors: {errs[:3]}')
+                ctx.close(); continue
             R = pg.evaluate(REPORT)
             (OUT / f'{name}.json').write_text(json.dumps(R, indent=1))
             n = show(name, R, secs)
