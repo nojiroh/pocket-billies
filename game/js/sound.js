@@ -21,6 +21,7 @@ import {
   AMBIENCE_BEDS,
   AMBIENCE_FIXED,
   ambienceBuckets,
+  ambienceCrackles,
   ambienceDrift,
   ambienceLiveStep,
   ambienceNearest,
@@ -61,6 +62,7 @@ expose({
   ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
   ambienceBirds: [() => ambienceBirds, v => (ambienceBirds = v)],
   ambienceDriftTick: [() => ambienceDriftTick, v => (ambienceDriftTick = v)],
+  ambienceEvents: [() => ambienceEvents, v => (ambienceEvents = v)],
   ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   ambiencePreviewTick: [() => ambiencePreviewTick, v => (ambiencePreviewTick = v)],
@@ -939,6 +941,17 @@ function initAmbience() {
       p.connect(bus);
     } else g.connect(bus);
     for (const L of B.layers) layer(L, tr, b);
+    /* SND-8a: a bed's events (ambienceEvents) play at a few places around it */
+    if (B.events === 'crackles') {
+      b.events = B.events;
+      b.ev = { next: 0 };
+      b.evOut = [-0.25, 0, 0.25].map(v => {
+        const q = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+        if (q.pan) q.pan.value = v;
+        q.connect(tr);
+        return q;
+      });
+    }
     b.osc = t => {
       const out = name === 'crickets' ? [...cricket(4300, 26, 0.9, tr, t), ...cricket(4650, 23, 0.7, tr, t)] : [];
       if (B.tone) {
@@ -970,6 +983,7 @@ function ambienceApply(T, pans, t) {
     b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
     if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
     if (b.st.live) ambienceDriftTick(b, t);
+    if (b.st.live && b.events) ambienceEvents(b, t);
   }
 }
 /* SND-8a: the Sound Test and tools/check-sound.py --loudness play world sounds here as the game would: a list of
@@ -993,6 +1007,31 @@ function ambienceBedStart(b, t) {
     b.srcs.push(s);
   }
   b.srcs.push(...b.osc(t));
+}
+/* SND-8a: a live bed's events due in the next 0.3 s: a fire's crackles (logic/ambience-sound.js) */
+function ambienceEvents(b, t) {
+  const c = soundEngine.ctx,
+    r = ambience.rng;
+  if (b.events === 'crackles')
+    for (const e of ambienceCrackles(b.ev, t, t + 0.3, r)) {
+      /* a few milliseconds of noise, band-passed at a random pitch, snapping in and dying away */
+      const s = c.createBufferSource(),
+        F = c.createBiquadFilter(),
+        g = c.createGain();
+      s.buffer = ambience.noise.pink;
+      F.type = 'bandpass';
+      F.frequency.value = e.f;
+      F.Q.value = e.q;
+      g.gain.setValueAtTime(0, e.t);
+      g.gain.linearRampToValueAtTime(e.gain, e.t + 0.001);
+      g.gain.setTargetAtTime(0, e.t + 0.001, e.d / 3);
+      s.connect(F);
+      F.connect(g);
+      g.connect(b.evOut[1 + Math.sign(e.pan)]);
+      s.start(e.t, r() * (s.buffer.duration - 0.5));
+      s.stop(e.t + 0.001 + e.d * 2.5);
+      s.onended = () => g.disconnect();
+    }
 }
 function ambienceBedStop(b, t) {
   for (const s of b.srcs)

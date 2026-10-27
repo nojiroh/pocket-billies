@@ -323,15 +323,25 @@ export const AMBIENCE_BEDS = {
       },
     ],
   },
+  /* a fire: a low roar, a faint hiss, and crackles at random (ambienceCrackles) */
   fire: {
     bus: 'world',
     trim: 1,
+    events: 'crackles',
     layers: [
       {
-        noise: 'pink',
+        noise: 'brown',
         gain: 1,
-        filters: [['bandpass', 3000, 1.6]],
+        filters: [['lowpass', 220]],
         drift: [{ on: 'gain', base: 1, depth: 0.35, min: 0.4, max: 1.6, tau: 0.35 }],
+      },
+      {
+        noise: 'pink',
+        gain: 0.06,
+        filters: [
+          ['highpass', 1200],
+          ['highshelf', 4000, 0.7, -8],
+        ],
       },
     ],
   },
