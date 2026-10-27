@@ -19,6 +19,7 @@ import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
   AMBIENCE_BEDS,
+  AMBIENCE_FIXED,
   ambienceBuckets,
   ambienceDrift,
   ambienceLiveStep,
@@ -1071,7 +1072,7 @@ function updateAmbience() {
       0.7
     );
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
-      T.sea = 0.35;
+      T.sea = AMBIENCE_FIXED.sea_coast.gain;
       pans.sea = 0;
       put('sea', nearestWaterSound(walkView.water, 8), 0.6);
     } else put('pond', nearestWaterSound(walkView.water, 6), 0.22);

@@ -268,19 +268,28 @@ export const AMBIENCE_BEDS = {
       },
     ],
   },
+  /* the sea: two layers that swell on their own, never in step */
   sea: {
     bus: 'world',
     trim: 1,
     layers: [
       {
         noise: 'brown',
-        rate: 0.7,
-        gain: 1,
+        gain: 0.8,
         filters: [
-          ['lowpass', 650],
-          ['highpass', 60],
+          ['lowpass', 500],
+          ['highpass', 50],
         ],
-        drift: [{ on: 'gain', base: 1, depth: 0.55, min: 4, max: 9, tau: 2.2 }],
+        drift: [{ on: 'gain', base: 0.8, depth: 0.55, min: 4, max: 9, tau: 2.2 }],
+      },
+      {
+        noise: 'pink',
+        gain: 0.4,
+        filters: [
+          ['lowpass', 900],
+          ['highpass', 150],
+        ],
+        drift: [{ on: 'gain', base: 0.4, depth: 0.6, min: 3, max: 8, tau: 1.8 }],
       },
     ],
   },
@@ -587,7 +596,8 @@ export const AMBIENCE_SOURCES = {
 };
 /** the beds set by the place, not by a distance (as updateAmbience and ambienceBeds set them at their fullest) */
 export const AMBIENCE_FIXED = {
-  sea_coast: { bed: 'sea', gain: 0.35 },
+  /* the sea anywhere in a sea scene: SND-8a lowered it (0.35 before) so the coast is heard near the water, not all over */
+  sea_coast: { bed: 'sea', gain: 0.2 },
   rain: { bed: 'rain', gain: 0.42 },
   wind: { bed: 'wind', gain: 0.4 },
   leaves: { bed: 'leaves', gain: 0.22 },
