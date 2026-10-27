@@ -7,7 +7,10 @@ import { test } from 'node:test';
 import { hashString, rngFrom } from '../../game/js/logic/rng.js';
 import { runSpot } from '../../game/js/logic/run-map.js';
 import {
+  runCutRect,
   runMapIdOf,
+  runOnGrid,
+  runPlaceSize,
   runPlaceId,
   runPlaceName,
   runSceneDials,
@@ -185,4 +188,75 @@ test("the run's world: Copperleaf first, a place per node, a seam road per link,
       ['road:run_4-run_5', 'seam', id(4), 'east', id(5), 'west2'],
     ]
   );
+});
+
+/* WM-3: the same map laid out on the region grid (64 m cells, x east, y north), each link's exit where it crosses:
+   the landing (0, 0) 2 x 1; 1 east of it (2, 0); 2 north of it (1, 1) 2 x 2; 3 (3, 1) north of 1 and east of 2;
+   4 (3, 2) east of 2; the boss (5, 1) 2 x 2 east of 3 and 4 */
+const GRID = {
+  nodes: [
+    { ...MAP.nodes[0], at: [0, 0], size: [2, 1], ways: [30, 100] },
+    { ...MAP.nodes[1], at: [2, 0], size: [2, 1], ways: [220] },
+    { ...MAP.nodes[2], at: [1, 1], size: [2, 2], ways: [90, 160] },
+    { ...MAP.nodes[3], at: [3, 1], size: [2, 1], ways: [100] },
+    { ...MAP.nodes[4], at: [3, 2], size: [2, 1], ways: [150] },
+    { ...MAP.nodes[5], at: [5, 1], size: [2, 2], ways: [] },
+  ],
+};
+
+test('WM-3: on the grid, a node’s exits are where its links cross its edges, with the generator’s ids', () => {
+  const exits = (/** @type {number} */ i) => runSceneExits(GRID, i).map(e => [e.side, e.t, e.id, e.node]);
+  assert.ok(runOnGrid(GRID) && !runOnGrid(MAP));
+  assert.deepEqual(exits(0), [
+    ['E', 30 / 64, 'east', 1],
+    ['N', 100 / 128, 'north', 2],
+  ]);
+  assert.deepEqual(exits(1), [
+    ['W', 30 / 64, 'west', 0],
+    ['N', 92 / 128, 'north', 3],
+  ]);
+  assert.deepEqual(exits(2), [
+    ['S', 36 / 128, 'south', 0],
+    ['E', 26 / 128, 'east', 3],
+    ['E', 96 / 128, 'east2', 4],
+  ]);
+  /* back first by lane (1 by its south, then 2 by its west), the way on between */
+  assert.deepEqual(exits(3), [
+    ['S', 28 / 128, 'south', 1],
+    ['E', 36 / 64, 'east', 5],
+    ['W', 26 / 64, 'west', 2],
+  ]);
+  assert.deepEqual(exits(5), [
+    ['W', 36 / 128, 'west', 3],
+    ['W', 86 / 128, 'west2', 4],
+  ]);
+  /* both ends of every link at one spot on the grid */
+  GRID.nodes.forEach((n, i) =>
+    n.to.forEach(j => {
+      const a = /** @type {any} */ (runSceneExitTo(GRID, i, j)),
+        b = /** @type {any} */ (runSceneExitTo(GRID, j, i)),
+        m = GRID.nodes[j],
+        along = (/** @type {any} */ p, /** @type {any} */ e) =>
+          e.side === 'N' || e.side === 'S' ? (p.at[0] + e.t * p.size[0]) * 64 : (p.at[1] + e.t * p.size[1]) * 64;
+      assert.equal(along(n, a), along(m, b), `${i}->${j}`);
+    })
+  );
+  assert.deepEqual(
+    [0, 2, 5].map(i => runPlaceSize(GRID, i)),
+    [
+      { w: 128, h: 64 },
+      { w: 128, h: 128 },
+      { w: 128, h: 128 },
+    ]
+  );
+  assert.deepEqual(runPlaceSize(MAP, 2), { w: 112, h: 64 }, 'a run from before WM-3: a route’s 112 x 64');
+  const P = runSceneParams({ seed: 'RL7SCENES', map: GRID }, 0, [], DATA);
+  assert.deepEqual([P.w, P.h, P.pin, P.ahead, P.cut], [128, 64, 'EWN', 'E', undefined]);
+  assert.deepEqual(P.road.exits, [
+    { side: 'E', t: 30 / 64, width: 2 },
+    { side: 'N', t: 100 / 128, width: 2 },
+  ]);
+  /* an L's cut corner in its place's metres */
+  assert.deepEqual(runCutRect(/** @type {any} */ ({ at: [1, 1], cut: [1, 2] })), [0, 64, 64, 128]);
+  assert.deepEqual(runCutRect(/** @type {any} */ ({ at: [1, 1], cut: [2, 1] })), [64, 0, 128, 64]);
 });

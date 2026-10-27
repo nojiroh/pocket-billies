@@ -1831,6 +1831,9 @@ export interface NodeType {
   /** WM-2: it counts as a route between towns (a route, the rival's, a mini-boss's, a scrapyard; not a waystation, a
       stall or the landing): the map puts one on every lane of the free row before each mini-boss */
   routeLike?: boolean;
+  /** WM-3: the footprints its place may take on the region grid, by weight: 'WxH' cells (wide x tall) or 'L' (two by
+      two, a corner walled off); left out: two by one (logic/run-map.js runShapeSize) */
+  shapes?: Record<string, number>;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */

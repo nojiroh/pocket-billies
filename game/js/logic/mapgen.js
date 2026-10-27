@@ -107,6 +107,7 @@ expose({
   mapgenEdgeStrip: [() => mapgenEdgeStrip, v => (mapgenEdgeStrip = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenEncodeBase64: [() => mapgenEncodeBase64, v => (mapgenEncodeBase64 = v)],
+  mapgenExitEnd: [() => mapgenExitEnd],
   // @ts-expect-error -- replaced on purpose
   mapgenExitOf: [() => mapgenExitOf, v => (mapgenExitOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -134,6 +135,7 @@ expose({
   mapgenGrowWild: [() => mapgenGrowWild, v => (mapgenGrowWild = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenHabitats: [() => mapgenHabitats, v => (mapgenHabitats = v)],
+  mapgenInCut: [() => mapgenInCut],
   mapgenInLot: [() => mapgenInLot],
   // @ts-expect-error -- replaced on purpose
   mapgenJetty: [() => mapgenJetty, v => (mapgenJetty = v)],
@@ -313,7 +315,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 19; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1) */
+export const MAPGEN_VERSION = 20; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -450,6 +452,9 @@ export function mapgenMergeDefaults(def, v) {
   }
   return v === undefined || v === null || (typeof def === 'number' && typeof v !== 'number') ? def : v;
 }
+/** how near an end of its side an exit may be, as a share of the side's length: 8%, or (WM-3) 12 m on a side longer
+ * than 150 m (a region grid place's exit stands 12 m from a corner at least) @param {number} L the side's metres */
+export const mapgenExitEnd = L => Math.min(0.08, 12 / L);
 /** the dials filled in from the defaults and kept in range (a copy; the given params are not changed) */
 export function mapgenParams(p) {
   const P = mapgenMergeDefaults(MAPGEN_DEFAULTS, p || {});
@@ -489,12 +494,31 @@ export function mapgenParams(p) {
   /* the sides whose edge is pinned to height 0 (a run's: every scene meets any neighbour there), kept only when given */
   if (P.pin !== undefined)
     P.pin = typeof P.pin === 'string' ? [...new Set(P.pin.split(''))].filter(c => 'NSEW'.includes(c)).join('') : '';
+  /* WM-3: an L's corner walled off ([x0, z0, x1, z1] metres inside the scene), kept only when given */
+  if (P.cut !== undefined) {
+    const c = Array.isArray(P.cut) && P.cut.length === 4 ? P.cut.map(Number) : null;
+    if (
+      c &&
+      c.every(Number.isFinite) &&
+      c[0] >= 0 &&
+      c[1] >= 0 &&
+      c[2] <= P.w &&
+      c[3] <= P.h &&
+      c[2] > c[0] &&
+      c[3] > c[1]
+    )
+      P.cut = c;
+    else delete P.cut;
+  }
   /* WM-1: the side the way on leaves by (a run's: east), kept only when given; west when not */
   if (P.ahead !== undefined) P.ahead = typeof P.ahead === 'string' && /^[NSEW]$/.test(P.ahead) ? P.ahead : 'W';
   R.exits = (R.exits || [])
     .filter(e => e && 'NSEW'.includes(e.side))
     .slice(0, 4)
-    .map(e => ({ side: e.side, t: mapgenBetween(+e.t || 0.5, 0.08, 0.92), width: mapgenBetween(+e.width || 2, 1, 6) }));
+    .map(e => {
+      const lo = mapgenExitEnd(e.side === 'N' || e.side === 'S' ? P.w : P.h);
+      return { side: e.side, t: mapgenBetween(+e.t || 0.5, lo, 1 - lo), width: mapgenBetween(+e.width || 2, 1, 6) };
+    });
   if (!R.exits.length) R.exits = [{ side: 'S', t: 0.5, width: 2 }];
   /* MG-2: the edges joined to a neighbour (mapgenEdgeStrip), copied (mapgenMergeDefaults keeps unknown keys by
      reference); each one's exit is the nearest on its side within 44 m, moved onto it, or a new one */
@@ -547,9 +571,12 @@ export function mapgenEdgeStrip(nb, exitId, size, t) {
     want = (t == null ? xn.e.t : t) * L;
   /* the offset of the new scene along the edge, a whole number of metres: its exit at an - o */
   let o = Math.round(an - want);
-  while (an - o > 0.92 * L && o < an) o++;
-  while (an - o < 0.08 * L && o > an - L) o--;
-  const at = mapgenRound2(an - o),
+  const end = mapgenExitEnd(L);
+  while (an - o > (1 - end) * L && o < an) o++;
+  while (an - o < end * L && o > an - L) o--;
+  /* WM-3: a whole metre when it is within 2 cm of one (the neighbour's exit is kept to 4 places of its side's t, a
+     centimetre off on a 192 m side) */
+  const at = Math.abs(an - o - Math.round(an - o)) < 0.02 ? Math.round(an - o) : mapgenRound2(an - o),
     lo = Math.max(0, -o, at - MAPGEN_BAND - 4),
     hi = Math.min(L, Lnb - o, at + MAPGEN_BAND + 4);
   if (hi <= lo) return null;
@@ -2610,8 +2637,11 @@ export function mapgenGrassPatches(G) {
       (m, e) => (!m || (on.length ? end(e) > end(m) : e.len > m.len) ? e : m),
       /** @type {any} */ (null)
     );
-  if (way) {
-    const pts = mapgenResample(way.path, 0.5),
+  /* WM-3: when the way on is too short for it (a north exit near the hub), across the next longest way */
+  for (const wy of way ? [way, ...ways.filter(e => e !== way).sort((m, n) => n.len - m.len)] : []) {
+    if (patches.length) break;
+    const way = wy,
+      pts = mapgenResample(way.path, 0.5),
       half = P.road.width / 2;
     for (let tries = 0; tries < 24; tries++) {
       const k = Math.floor(pts.length * rnd.range(0.3, 0.75)),
@@ -2635,8 +2665,8 @@ export function mapgenGrassPatches(G) {
       put(cells, c[0], c[1], true, Math.max(a, b));
       break;
     }
-    if (!patches.length) G.notes.push('no room for tall grass across the road');
   }
+  if (way && !patches.length) G.notes.push('no room for tall grass across the road');
   /* the rest: off the road, 2-14 m from it */
   for (let tries = 0; patches.length < want && tries < 80 * want; tries++) {
     const x = rnd.range(2, w - 2),
@@ -2827,6 +2857,9 @@ export const mapgenInLot = (G, x, z, m = 0) =>
 export function mapgenLotFree(G, x0, z0, x1, z1, hub = true) {
   const { w, h } = G;
   if (x0 < 1 || z0 < 1 || x1 > w - 1 || z1 > h - 1) return false;
+  /* WM-3: nothing on an L's cut corner */
+  const c = G.P.cut;
+  if (c && x0 < c[2] && x1 > c[0] && z0 < c[3] && z1 > c[1]) return false;
   for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
     for (let x = Math.floor(x0); x < Math.ceil(x1); x++) if (G.F[z * w + x] & (1 | 2 | 4 | 8 | 64 | 128)) return false;
   const cx = (x0 + x1) / 2,
@@ -2874,32 +2907,44 @@ export function mapgenStageLots(G) {
       bd = C.box[1],
       dx = ((C.door && C.door.x) || 0) / ppu;
     let done = /** @type {any} */ (null);
-    for (const s of cand) {
-      const R = M[s];
-      /* north of the road (it runs across), or beside it (it runs north), always facing the camera */
-      const spots = [];
-      for (const gap of [2.5, 3.5, 4.5]) for (const ox of [0, 2, -2, 4, -4]) spots.push([ox - dx, half + gap]);
-      for (const gap of [1.5, 2.5]) for (const sg of [1, -1]) spots.push([sg * (half + gap + bw / 2), -1]);
-      for (const [ox, oz] of spots) {
-        const z = Math.round((R[1] + oz) * 2) / 2,
-          x = mapgenRound2(R[0] + ox),
-          door = [x + dx, z],
-          step = [door[0], z - 0.55];
-        if (door[0] < 7 || door[0] > w - 7 || z > h - 10.4) continue;
-        /* the road it fronts: the nearest sample to the door step, close and south of it */
-        const q = mapgenCellAt(G, step[0], step[1]),
-          nk = G.near[q];
-        if (nk < 0) continue;
-        const p = G.roadPts[nk];
-        if (p.k !== 0 || step[1] < p.z - 1.5 || Math.hypot(step[0] - p.x, step[1] - p.z) > p.r + 5.5) continue;
-        if (!free(x - bw / 2 - 0.5, z - 1, x + bw / 2 + 0.5, z + bd + 0.5)) continue;
-        /* a spot for the mast's landing (airship.js flyLand: beside it, a step in front) */
-        if (act === 'fly' && !free(x + bw / 2 + 0.4, z - 1.4, x + bw / 2 + 1.4, z - 0.4)) continue;
-        done = { x, z, step, road: p, bw, bd };
-        break;
+    /* WM-3: the whole main road after the stretch near the hub (a road that bends north there leaves little room) */
+    const far = [];
+    for (let k = 0; k < M.length; k += 2) if (Math.abs(k - hk) > 60) far.push(k);
+    far.sort((a, b) => Math.abs(a - hk) - Math.abs(b - hk) || a - b);
+    /* WM-3: then, when nothing fits by the road (a short road round a corner), set further back with a longer path */
+    for (const wide of [false, true])
+      for (const s of done ? [] : cand.concat(far)) {
+        const R = M[s];
+        /* north of the road (it runs across), or beside it (it runs north), always facing the camera */
+        const spots = [];
+        if (!wide) {
+          for (const gap of [2.5, 3.5, 4.5]) for (const ox of [0, 2, -2, 4, -4]) spots.push([ox - dx, half + gap]);
+          for (const gap of [1.5, 2.5]) for (const sg of [1, -1]) spots.push([sg * (half + gap + bw / 2), -1]);
+        } else {
+          for (const gap of [6, 8, 10, 12]) for (const ox of [0, 4, -4, 8, -8]) spots.push([ox - dx, half + gap]);
+          for (const gap of [4, 6, 8]) for (const sg of [1, -1]) spots.push([sg * (half + gap + bw / 2), -1]);
+        }
+        for (const [ox, oz] of spots) {
+          const z = Math.round((R[1] + oz) * 2) / 2,
+            x = mapgenRound2(R[0] + ox),
+            door = [x + dx, z],
+            step = [door[0], z - 0.55];
+          if (door[0] < 7 || door[0] > w - 7 || z > h - 10.4) continue;
+          /* the road it fronts: the nearest sample to the door step, close and south of it */
+          const q = mapgenCellAt(G, step[0], step[1]),
+            nk = G.near[q];
+          if (nk < 0) continue;
+          const p = G.roadPts[nk];
+          if (p.k !== 0 || step[1] < p.z - 1.5 || Math.hypot(step[0] - p.x, step[1] - p.z) > p.r + (wide ? 14 : 5.5))
+            continue;
+          if (!free(x - bw / 2 - 0.5, z - 1, x + bw / 2 + 0.5, z + bd + 0.5)) continue;
+          /* a spot for the mast's landing (airship.js flyLand: beside it, a step in front) */
+          if (act === 'fly' && !free(x + bw / 2 + 0.4, z - 1.4, x + bw / 2 + 1.4, z - 0.4)) continue;
+          done = { x, z, step, road: p, bw, bd };
+          break;
+        }
+        if (done) break;
       }
-      if (done) break;
-    }
     if (!done) {
       G.notes.push(`no room for the ${dial === 'mast' ? "airship's mast" : dial} beside the road near the hub`);
       continue;
@@ -3343,8 +3388,8 @@ export const mapgenLaidOut = P => !!P.layout && P.layout !== 'none' && !!MAPGEN_
 
 /** the cells a layout may block: off the road and its verge (2.2 m from its edge; 7 m on its south, the camera's
  * side, where a forest would hide you), water, banks, bridges and jettys, tall grass (1 m round it), 9 m round the
- * hub, each exit's straight run-in, a joined edge's strip, the east and west 5 m (the seams), lots and kept spots,
- * and mountains */
+ * hub, each exit's straight run-in, a joined edge's strip, the east and west 5 m (the seams; WM-3: a pinned north or
+ * south side's too), lots and kept spots, and mountains */
 export function mapgenLayoutFree(G) {
   const { w, h } = G,
     free = new Uint8Array(w * h);
@@ -3355,6 +3400,8 @@ export function mapgenLayoutFree(G) {
       z = j + 0.5;
     if (G.F[q] & (1 | 2 | 4 | 8 | 32 | 64 | 128)) continue;
     if (x < 5 || x > w - 5) continue;
+    /* WM-3: a pinned north or south side is a seam too */
+    if ((z < 5 && (G.P.pin || '').includes('S')) || (z > h - 5 && (G.P.pin || '').includes('N'))) continue;
     const k = G.near[q];
     if (k >= 0) {
       const R = G.roadPts[k],
@@ -3458,12 +3505,24 @@ export function mapgenStageLayout(G, aim) {
   const free = mapgenLayoutFree(G),
     N = w * h,
     span = r => (Array.isArray(r) ? rnd.int(r[0], r[1]) : r || 0);
+  /* WM-3: an L's cut corner is a forest mass wherever it may be blocked (the road and its run-ins keep their way) and
+     takes nothing else; the budget and the walkable share are the rest of the place's */
+  const cut = new Uint8Array(N);
+  let cutN = 0;
+  if (P.cut)
+    for (let q = 0; q < N; q++)
+      if (mapgenInCut(P.cut, (q % w) + 0.5, Math.floor(q / w) + 0.5)) {
+        cut[q] = 1;
+        cutN++;
+        if (free[q]) G.Lm[q] = MAPGEN_LM.forest;
+        free[q] = 0;
+      }
   let water = 0;
-  for (let q = 0; q < N; q++) if (G.F[q] & 4 && !(G.F[q] & 8)) water++;
-  const budget = Math.max(0, Math.round(N * (1 - aim - MAPGEN_PLANT_SHARE) - water));
+  for (let q = 0; q < N; q++) if (G.F[q] & 4 && !(G.F[q] & 8) && !cut[q]) water++;
+  const budget = Math.max(0, Math.round((N - cutN) * (1 - aim - MAPGEN_PLANT_SHARE) - water));
   const blocked = () => {
     let n = 0;
-    for (let q = 0; q < N; q++) if (G.Lm[q] && G.Lm[q] !== MAPGEN_LM.keep) n++;
+    for (let q = 0; q < N; q++) if (G.Lm[q] && G.Lm[q] !== MAPGEN_LM.keep && !cut[q]) n++;
     return n;
   };
   const fences = B.fences || { fence_wood: 1 },
@@ -3577,7 +3636,7 @@ export function mapgenStageLayout(G, aim) {
   /* forest masses fill what is left: the free cells with the highest field, the field a few soft cores (along the
      road on the forest trail, else toward the back and the front edges) with noise */
   const left = budget - blocked();
-  if (left > 0) {
+  if (left > 0 || cutN) {
     const cores = [];
     if (plan.hug) {
       const Rp = G.road[0].pts;
@@ -4068,11 +4127,19 @@ export function mapgenLayoutSpots(sc, scenery, G) {
   return { spots: out, walk: R };
 }
 /** the share of a scene's half-metre cells you can walk to from the hub (R: from mapgenReach) */
-export function mapgenWalkShare(R) {
-  let n = 0;
-  for (let q = 0; q < R.seen.length; q++) if (R.seen[q]) n++;
-  return n / R.seen.length;
+export function mapgenWalkShare(R, cut) {
+  let n = 0,
+    all = 0;
+  for (let q = 0; q < R.seen.length; q++) {
+    /* WM-3: an L's cut corner is not part of the place */
+    if (cut && mapgenInCut(cut, ((q % R.gw) + 0.5) / R.N, (Math.floor(q / R.gw) + 0.5) / R.N)) continue;
+    all++;
+    if (R.seen[q]) n++;
+  }
+  return all ? n / all : 0;
 }
+/** WM-3: is the point (x, z) inside an L's cut corner ([x0, z0, x1, z1], the cut dial)? */
+export const mapgenInCut = (c, x, z) => x >= c[0] && x < c[2] && z >= c[1] && z < c[3];
 
 export function mapgenStagePlants(G) {
   const { P, B, w, h } = G,
@@ -4220,14 +4287,15 @@ export function mapgenStageFeature(G) {
   const { P, B } = G,
     rnd = G.rng('feature'),
     f = P.feature;
-  const spotBeside = (minD, maxD, tries = 80) => {
-    /* a spot this far from the road, away from the hub, the exits and water */
+  const spotBeside = (minD, maxD, tries = 80 * Math.max(1, Math.round((G.w * G.h) / 7168))) => {
+    /* a spot this far from the road, away from the hub, the exits and water (WM-3: and off an L's cut corner; more
+       tries on a bigger place) */
     for (let t = 0; t < tries; t++) {
       const x = rnd.range(8, G.w - 8),
         z = rnd.range(8, G.h - 8),
         q = mapgenCellAt(G, x, z),
         d = G.dist[q] - (G.near[q] >= 0 ? G.roadPts[G.near[q]].r : 0);
-      if (d < minD || d > maxD || G.F[q] & 4) continue;
+      if (d < minD || d > maxD || G.F[q] & 4 || (P.cut && mapgenInCut(P.cut, x, z))) continue;
       if (Math.hypot(x - G.hub[0], z - G.hub[1]) < 12 || G.exits.some(e => Math.hypot(x - e.pt[0], z - e.pt[1]) < 12))
         continue;
       return [x, z];
@@ -4545,7 +4613,7 @@ export function mapgenBuild(P, ctx, aim) {
     /* RT-3: set pieces on spare spots (they change what you can walk, so the share is measured after them) */
     const walk =
       P.pieces > 0 && ctx.setPieces ? mapgenStagePieces(G, sc, ctx.scenery, ctx.setPieces) || L.walk : L.walk;
-    sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(walk) * 1000) / 1000 };
+    sc.layout = { plan: P.layout, walk: Math.round(mapgenWalkShare(walk, P.cut) * 1000) / 1000 };
     /* RT-4: where wild Billies of each habitat wait (after the pieces, on what they leave) */
     const hab = mapgenHabitats(G, sc, walk);
     if (hab) sc.habitats = hab;

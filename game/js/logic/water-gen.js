@@ -917,14 +917,28 @@ export function waterGenRiver(G, rnd, width, want) {
     [plans[i], plans[k]] = [plans[k], plans[i]];
   }
   const minLen = (seam ? 0.4 : 0.6) * Math.min(w, h);
-  let best = /** @type {any} */ (null);
+  let best = /** @type {any} */ (null),
+    dry = /** @type {any} */ (null);
   const tried = [],
     cutting = [];
   for (const plan of plans.slice(0, WATERGEN_TRIES)) {
     const got = waterGenTry(G, R, plan, r);
     if (!got) continue;
     const river = waterGenShape(G, R, plan, got, width);
-    if (!river || !waterGenFits(G, river)) continue;
+    if (!river) continue;
+    if (!waterGenFits(G, river)) {
+      /* WM-3: the bridge feature wants the river across the road; one that fits but crosses nothing is kept in case
+         none does (a bent road, a dead end's short one: nothing drawn from R, so the rest go as they did) */
+      if (
+        G.P.feature === 'bridge' &&
+        waterGenFits(G, river, false) &&
+        river.len >= minLen &&
+        !waterGenCutsOff(G, river) &&
+        (!dry || river.len > dry.len)
+      )
+        dry = river;
+      continue;
+    }
     let ok = river;
     if (waterGenCutsOff(G, river)) {
       cutting.push(river);
@@ -941,6 +955,8 @@ export function waterGenRiver(G, rnd, width, want) {
      last resort even where it cuts ground off */
   const longest = L => L.reduce((a, b) => (!a || b.len > a.len ? b : a), /** @type {any} */ (null));
   if (!best && tried.length && (seam || longest(tried).len >= 12)) best = longest(tried);
+  /* WM-3: a bridge's river that crosses nothing, rather than the line across the map */
+  if (!best && dry) best = dry;
   if (!best && seam && cutting.length) {
     best = longest(cutting);
     G.notes.push("the neighbour's river cuts ground off from the road");
@@ -1123,8 +1139,9 @@ export function waterGenShorten(G, river, least) {
   return null;
 }
 /** does the river keep clear: the road only crossed (never run along for long), at most two crossings, one at least
- * for the bridge feature (waterGenCutsOff is the other test, apart: a neighbour's river may need to fail it) */
-export function waterGenFits(G, river) {
+ * for the bridge feature unless `cross` is false (waterGenCutsOff is the other test, apart: a neighbour's river may need
+ * to fail it) */
+export function waterGenFits(G, river, cross = true) {
   const { pts, wid } = river;
   let crossings = 0,
     run = 0;
@@ -1140,7 +1157,7 @@ export function waterGenFits(G, river) {
           if (mapgenSegCross(pts[i - 1], pts[i], Rd.pts[k2], Rd.pts[k2 + 1])) crossings++;
   }
   if (crossings > 2) return false;
-  if (G.P.feature === 'bridge' && !crossings) return false;
+  if (cross && G.P.feature === 'bridge' && !crossings) return false;
   return true;
 }
 /** would the river cut ground off from the road (25 cells or more that reach a road now and would not with it)? A

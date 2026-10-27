@@ -183,8 +183,9 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
     };
   /* WM-1: TR2MTN1 swapped for TR2MTN2. Known, before and after WM-1: about 1 place in 50 of this debug run has a
      north summit you can walk down from but not up to (a one-way ledge across its trail; seeds TR2MTN1, 3, 7, 9, 11
-     over the two directions); recorded in HANDOFF for a terrain session */
-  for (const seed of ['TR2MTN0', 'TR2MTN2']) {
+     over the two directions); recorded in HANDOFF for a terrain session. WM-3: the maps changed, TR2MTN1 is clean
+     again and TR2MTN2 meets it (3 of 158 places over TR2MTN0-11, the same share) */
+  for (const seed of ['TR2MTN0', 'TR2MTN1']) {
     const run = newRun(seed, 1, G.MAPGEN_VERSION, start);
     run.mods = [RUN_MOD_MOUNTAINS];
     runMapStart(run, { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R });

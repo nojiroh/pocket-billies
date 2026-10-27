@@ -11,7 +11,12 @@ import {
   runBack,
   runExits,
   runForecastFill,
+  runGridCut,
+  runGridExits,
+  runGridLinks,
+  runGridShared,
   runGridSide,
+  RUN_GRID,
   runLinkDir,
   runMapLength,
   runMapMake,
@@ -22,6 +27,7 @@ import {
   runNext,
   runNodeSeed,
   runReveal,
+  runShapeSize,
   runSpot,
   runWeather,
   runWorldNode,
@@ -568,4 +574,107 @@ test('WM-2: lane switches the grid can’t hold are dropped, nothing else change
     if (links(a).length === links(flat).length) dropped++;
   }
   assert.ok(dropped < 300, 'some maps keep their switches');
+});
+
+/* WM-3: the types with shapes, as nodeTypes.json gives them */
+const SHAPED = {
+  ...NODE_TYPES,
+  route: { ...NODE_TYPES.route, shapes: { '2x1': 8, '3x1': 4, '1x2': 3, L: 4, '1x3': 1 } },
+  event: { name: 'Waystation', engine: 'scene', weight: 2, shapes: { '1x1': 1 } },
+};
+
+test('WM-3: shapes by type: a footprint of its shape or a route’s, exits on the edges places share, spaced', () => {
+  assert.deepEqual(['2x1', '3x1', '1x2', '1x3', '1x1', 'L', 'x', ''].map(runShapeSize), [
+    [2, 1],
+    [3, 1],
+    [1, 2],
+    [1, 3],
+    [1, 1],
+    [2, 2],
+    [2, 1],
+    [2, 1],
+  ]);
+  /** @type {Record<string, number>} */
+  const got = {};
+  let cuts = 0,
+    exits = 0;
+  for (const s of seeds(300)) {
+    const map = runMapMake(s, SHAPED, MAP_RULES),
+      N = map.nodes;
+    N.forEach((n, i) => {
+      const key = `${n.type} ${n.size}`;
+      got[key] = (got[key] || 0) + 1;
+      if (!SHAPED[n.type].shapes) assert.deepEqual(n.size, RUN_GRID.place, `${s}: a ${n.type} is two by one`);
+      assert.equal(n.ways?.length, n.to.length, `${s}: an exit spot a link`);
+      // each link crosses an edge the two share, a whole metre, RUN_GRID.edge from its ends; both see it at one spot
+      n.to.forEach((j, k) => {
+        const sh = runGridShared(n, N[j]),
+          u = n.ways[k];
+        assert.ok(sh && Number.isInteger(u), `${s}: ${i}->${j}`);
+        assert.ok(u >= sh[0] * 64 + RUN_GRID.edge && u <= sh[1] * 64 - RUN_GRID.edge, `${s}: ${i}->${j} at ${u}`);
+        const a = runGridExits(map, i).find(e => e.node === j),
+          b = runGridExits(map, j).find(e => e.node === i),
+          at = (/** @type {any} */ m, /** @type {any} */ e) =>
+            e.side === 'N' || e.side === 'S'
+              ? m.at[0] * 64 + e.t * m.size[0] * 64
+              : m.at[1] * 64 + e.t * m.size[1] * 64;
+        assert.equal({ E: 'W', N: 'S', S: 'N' }[a.side], b.side, `${s}: ${i}->${j} faces`);
+        assert.ok(Math.abs(at(n, a) - u) < 1e-9 && Math.abs(at(N[j], b) - u) < 1e-9, `${s}: ${i}->${j} lines up`);
+      });
+      // the exits on a side 44 m apart, in the place's order (back first, ahead second)
+      const E = runGridExits(map, i);
+      assert.deepEqual(
+        E.map(e => e.node),
+        runGridLinks(N, i).map(e => e.node)
+      );
+      for (const side of 'NSEW') {
+        const len = (side === 'N' || side === 'S' ? n.size[0] : n.size[1]) * 64,
+          xs = E.filter(e => e.side === side)
+            .map(e => e.t * len)
+            .sort((a, b) => a - b);
+        for (let k = 1; k < xs.length; k++) assert.ok(xs[k] - xs[k - 1] >= 44, `${s}: ${i}'s ${side} side`);
+        exits += xs.length;
+      }
+      // an L: a corner of its two by two with no exit, its road in and out by diagonal cells
+      if (n.cut) {
+        cuts++;
+        assert.deepEqual(n.size, [2, 2]);
+        assert.ok([n.at[0], n.at[0] + 1].includes(n.cut[0]) && [n.at[1], n.at[1] + 1].includes(n.cut[1]));
+        assert.deepEqual(runGridCut(N, i), n.cut);
+        const cell = (/** @type {any} */ e) => {
+          const L = (e.side === 'N' || e.side === 'S' ? 2 : 2) * 64,
+            u = e.t * L;
+          return e.side === 'E' || e.side === 'W'
+            ? [e.side === 'E' ? n.at[0] + 1 : n.at[0], n.at[1] + Math.floor(u / 64)]
+            : [n.at[0] + Math.floor(u / 64), e.side === 'N' ? n.at[1] + 1 : n.at[1]];
+        };
+        for (const e of E) assert.notDeepEqual(cell(e), n.cut, `${s}: an exit in ${i}'s cut`);
+        const [a, b] = E.map(cell);
+        assert.ok(a[0] !== b[0] && a[1] !== b[1], `${s}: ${i}'s road bends`);
+      }
+    });
+    assert.ok(validRun(JSON.parse(JSON.stringify({ ...newRun(s, 1, 3, START), map }))), s);
+    assert.deepEqual(runMapMake(s, SHAPED, MAP_RULES), map, `${s}: the same seed lays out the same`);
+  }
+  for (const k of ['route 2,1', 'route 3,1', 'route 1,2', 'route 1,3', 'route 2,2', 'event 1,1'])
+    assert.ok(got[k] > 10, `${k}: ${got[k]}`);
+  assert.ok(cuts > 30, `${cuts} Ls`);
+  assert.ok(exits > 0);
+});
+
+test('WM-3: an L is cut only where its road bends; a square when its exits share a row or a column', () => {
+  const sq = (/** @type {number[]} */ at) => ({ type: 'route', row: 1, lane: 0, to: [], at, size: [2, 2] });
+  // in from the west by the south-west cell, out north by the north-east: the road turns through the south-east,
+  // the north-west is cut
+  const nodes = [
+    { type: 'landing', row: 0, lane: 0, to: [1], at: [-2, 0], size: [2, 1], ways: [40] },
+    { ...sq([0, 0]), to: [2], ways: [100] },
+    { type: 'route', row: 2, lane: 0, to: [], at: [1, 2], size: [2, 1], ways: [] },
+  ];
+  assert.deepEqual(runGridCut(/** @type {any} */ (nodes), 1), [0, 1]);
+  // out north by the north-west instead (the same column as nothing, the same row as nothing, but the west column):
+  // in by the south-west and out by the north-west share a column: no bend, no cut
+  nodes[1].ways = [30];
+  nodes[2].at = [-1, 2];
+  assert.equal(runGridCut(/** @type {any} */ (nodes), 1), null);
 });

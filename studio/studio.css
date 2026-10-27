@@ -5026,8 +5026,14 @@ body.wb-dropping::after {
   pointer-events: none;
 }
 .rl-map .rl-node.on circle,
-.rl-map .rl-node.on rect {
+.rl-map .rl-node.on rect,
+.rl-map .rl-node.on polygon {
   stroke-width: 7;
+}
+/* WM-3: where a place's ways on cross its edges */
+.rl-map .rl-exit {
+  fill: var(--line2);
+  pointer-events: none;
 }
 /* WM-2: the region grid's links that go north or south */
 .rl-map .rl-link-ns {

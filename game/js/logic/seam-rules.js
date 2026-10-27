@@ -30,13 +30,17 @@ expose({
   seamRulesSides: [() => seamRulesSides, v => (seamRulesSides = v)],
   // @ts-expect-error -- replaced on purpose
   seamRulesWalkable: [() => seamRulesWalkable, v => (seamRulesWalkable = v)],
+  seamSideMost: [() => seamSideMost],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
 export const SEAM_OPPOSITE = { E: 'W', W: 'E', N: 'S', S: 'N' };
-export const SEAM_SIDE_MOST = 2; /* exits on one side of a map, at most */
+export const SEAM_SIDE_MOST = 2; /* exits on a side of a map up to 64 m long, at most (WM-3: a longer side holds one more each 44 m) */
 export const SEAM_EXIT_GAP = 44; /* metres between two exits on one side, at least */
 
+/** WM-3: how many exits a side `len` metres long may hold: two up to 64 m, one more for each 44 m past it (three on
+ * a 128 m side, four on 192 m) @param {number} len */
+export const seamSideMost = len => SEAM_SIDE_MOST + Math.max(0, Math.floor((len - 64) / SEAM_EXIT_GAP));
 /** where along its side an exit is, in metres to the hundredth */
 export const seamRulesAlong = (sc, e) => Math.round(e.t * (e.side === 'N' || e.side === 'S' ? sc.w : sc.h) * 100) / 100;
 /** the point an exit stands on (as walk-view.js exitPoint works it out) */
@@ -143,7 +147,8 @@ export function seamRulesPlaces({ locations, maps, used }) {
   }
   return problems;
 }
-/** what is wrong with the exits on each side of one map (two at most, 44 m apart) */
+/** what is wrong with the exits on each side of one map (two at most on a side up to 64 m, more on a longer one:
+ * seamSideMost; 44 m apart) */
 export function seamRulesSides(sc) {
   const out = [],
     E = sc.edgeExits || [];
@@ -151,7 +156,8 @@ export function seamRulesSides(sc) {
     const xs = E.filter(e => e.side === side)
       .map(e => seamRulesAlong(sc, e))
       .sort((a, b) => a - b);
-    if (xs.length > SEAM_SIDE_MOST) out.push(`${xs.length} exits on its ${side} side (two at most)`);
+    const most = seamSideMost(side === 'N' || side === 'S' ? sc.w : sc.h);
+    if (xs.length > most) out.push(`${xs.length} exits on its ${side} side (${most} at most)`);
     for (let k = 1; k < xs.length; k++)
       if (xs[k] - xs[k - 1] < SEAM_EXIT_GAP)
         out.push(`two exits on its ${side} side ${(xs[k] - xs[k - 1]).toFixed(1)} m apart (44 m at least)`);
