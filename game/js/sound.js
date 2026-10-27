@@ -31,6 +31,7 @@ import {
   ambienceNoiseLoop,
   ambiencePreview,
   ambienceRandom,
+  ambienceStep,
 } from './logic/ambience-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
@@ -69,6 +70,7 @@ expose({
   ambienceDriftTick: [() => ambienceDriftTick, v => (ambienceDriftTick = v)],
   ambienceEvents: [() => ambienceEvents, v => (ambienceEvents = v)],
   ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
+  ambienceHit: [() => ambienceHit, v => (ambienceHit = v)],
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   ambiencePreviewTick: [() => ambiencePreviewTick, v => (ambiencePreviewTick = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
@@ -441,26 +443,23 @@ export function soundEffect(name, o = {}) {
       break;
     }
     case 'step': {
-      if (o.ter === 'n') {
-        synthNoise(F, { t, dur: 0.07, vol: 0.07, bp: 2600, q: 0.9 });
-        synthNoise(F, { t: t + 0.025, dur: 0.05, vol: 0.05, bp: 4200, q: 1.2 });
-        break;
+      /* SND-8a: each step a little different (its pitch and level), the feet a little left and right, the natural
+         grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep) */
+      soundEngine.foot = soundEngine.foot ? 0 : 1;
+      const S = ambienceStep(o.ter || 'g', ambience.rng || Math.random, soundEngine.foot);
+      let dest = F;
+      if (c.createStereoPanner) {
+        const p = c.createStereoPanner();
+        p.pan.value = S.pan;
+        p.connect(F);
+        dest = p;
+        setTimeout(() => {
+          try {
+            p.disconnect();
+          } catch (e) {}
+        }, 1000);
       }
-      if (o.ter === 'wet') {
-        synthNoise(F, { t, dur: 0.09, vol: 0.07, bp: 1500, q: 0.5 });
-        synthNoise(F, { t: t + 0.03, dur: 0.06, vol: 0.04, hp: 5000 });
-        break;
-      }
-      const k = o.ter || 'g',
-        soft = /[gGftn]/.test(k),
-        wood = k === 'b';
-      synthNoise(F, {
-        t,
-        dur: soft ? 0.05 : wood ? 0.06 : 0.035,
-        vol: soft ? 0.05 : wood ? 0.08 : 0.07,
-        bp: soft ? 900 : wood ? 520 : 2200,
-        q: soft ? 0.6 : wood ? 2.2 : 1.4,
-      });
+      for (const h of S.hits) ambienceHit(dest, t + h.at, h);
       break;
     }
     case 'throw':
@@ -1280,6 +1279,29 @@ function ambienceBirds(t, L, town, day, rain, thru) {
     if (Math.random() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
   }
   ambience.birdAt = end + ambienceBirdWait(r, town);
+}
+/* SND-8a: a short hit of the beds' noise (brown under a low-pass, else pink), falling away as synthNoise's does;
+   before the beds' noise exists, synthNoise itself */
+function ambienceHit(dest, t, h) {
+  if (!ambience.noise) {
+    synthNoise(dest, { t, dur: h.dur, vol: h.vol, lp: h.lp || 0, bp: h.bp || 0, hp: h.hp || 0, q: h.q || 1 });
+    return;
+  }
+  const c = soundEngine.ctx,
+    s = c.createBufferSource(),
+    F = c.createBiquadFilter(),
+    g = c.createGain();
+  s.buffer = h.lp ? ambience.noise.brown : ambience.noise.pink;
+  F.type = h.lp ? 'lowpass' : h.hp ? 'highpass' : 'bandpass';
+  F.frequency.value = h.lp || h.hp || h.bp;
+  F.Q.value = h.q || 1;
+  g.gain.setValueAtTime(h.vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + h.dur);
+  s.connect(F);
+  F.connect(g);
+  g.connect(dest);
+  s.start(t, (ambience.rng || Math.random)() * (s.buffer.duration - 0.5));
+  s.stop(t + h.dur + 0.02);
 }
 function ambienceOutput(pan, dry, lp = 0) {
   const c = soundEngine.ctx,
