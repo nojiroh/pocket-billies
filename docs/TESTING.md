@@ -454,6 +454,9 @@ same phase:
   makes which sound), `sound-levels.test.mjs` (the mix's trims, `bedDuck`), `music-studio.test.mjs` (placeholder base
   cries and Billie cries). `check-studio-github.py --only=music` plays a base cry and a button sound on the Sounds
   tab, changes the mix and undoes it, and changes a stage's own cry, hearing its base's notes and the low-HP version.
+  Since RL-R2 (594a094e) there is no deadline version: `musicParts` names none, "Run music" no longer looks for one,
+  and `sound.test.mjs` asserts there is none (the SND-5 lines above are history). The baseline holds 194 fingerprints
+  (checked in SND-7, 2026-10-27).
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
