@@ -5,8 +5,12 @@
    - The seed is typed, rolled (🎲) or read from a pasted debug log (its run's seed and the save's unlocks). Seeds are
      cleaned as the game's debug menu cleans them, so the same text makes the same run there.
    - Unlocks: none (a fresh save's), all, or the pasted log's. Only what opens biomes changes the map.
-   - "Short map" is the debug menu's (5 rows, 1 mini-boss).
-   - The map is SVG: rows from the landing (left) to the boss (right), lane 0 below; a node's fill is its biome's haze
+   - "Short map" is the debug menu's (6 rows, 1 mini-boss). WM-2: the Expedition picks the places a path (rules.json
+     run.map.path) for the map, the sweep and the logic panel; "Play this seed" plays Expedition I.
+   - The map is SVG. WM-2, the region grid (the default view): each place's footprint on its cells (64 m each, north
+     up, west on the left), its fill its biome's haze colour, its outline its type, a link across the edge two places
+     share (a north or south one marked); a side area's places, which have no footprint yet (WM-4), in a band above.
+     The steps view: rows from the landing (left) to the boss (right), lane 0 below; a node's fill is its biome's haze
      colour, its letter its type; a dashed ring is what the landing shows as '?', a faint one what it doesn't show.
    - Clicking a node shows its type, role, biome, links, the day the shortest walk reaches it, its seed
      and its forecast.
@@ -29,7 +33,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { runRegionData } from '../../game/js/logic/run-region.js';
-import { runBack, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/logic/run-map.js';
+import { RUN_GRID, runBack, runLinkDir, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/logic/run-map.js';
 import { runUnlocks } from '../../game/js/logic/unlocks.js';
 import { runStartPlan } from '../../game/js/logic/run-start.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -59,13 +63,16 @@ expose({
   RUN_LAB_ROLE: [() => RUN_LAB_ROLE],
   RUN_LAB_SHORT: [() => RUN_LAB_SHORT],
   RUN_LAB_TYPE_COLOUR: [() => RUN_LAB_TYPE_COLOUR],
+  RUN_LAB_WAY: [() => RUN_LAB_WAY],
   runLab: [() => runLab],
   runLabBiomeColour: [() => runLabBiomeColour],
   runLabCodeLines: [() => runLabCodeLines, v => (runLabCodeLines = v)],
   runLabFigures: [() => runLabFigures, v => (runLabFigures = v)],
+  runLabGridSvg: [() => runLabGridSvg, v => (runLabGridSvg = v)],
   runLabLogicFill: [() => runLabLogicFill, v => (runLabLogicFill = v)],
   runLabLogicHTML: [() => runLabLogicHTML, v => (runLabLogicHTML = v)],
   runLabLogicSoon: [() => runLabLogicSoon],
+  runLabMapSvg: [() => runLabMapSvg],
   runLabName: [() => runLabName],
   runLabNodeHTML: [() => runLabNodeHTML, v => (runLabNodeHTML = v)],
   runLabOutHTML: [() => runLabOutHTML, v => (runLabOutHTML = v)],
@@ -93,6 +100,10 @@ const runLab = {
   logNote: '',
   short: false,
   beside: false,
+  /** WM-2: the Expedition the map is made for (1-5), and the map's view: the region grid or the steps */
+  expedition: 1,
+  /** @type {'grid' | 'steps'} */
+  view: 'grid',
   pick: -1,
   redrawT: 0,
   /** the latest ask to the logic worker (an older answer is dropped) */
@@ -116,10 +127,10 @@ const RUN_LAB_PAYOUT = {
   scrapWin: 'Scrap for a win',
 };
 /** the debug menu's short run (debug-menu.js runstart) */
-const RUN_LAB_SHORT = { rows: 5, minibosses: 1 };
+const RUN_LAB_SHORT = { rows: 6, minibosses: 1 };
 const RUN_LAB_ROLE = {
   first: 'the landing',
-  rest: 'a rest stop (the row before a mini-boss)',
+  rest: 'a town (the row after a mini-boss: its reward)',
   guard: 'a mini-boss',
   last: 'the boss',
   '': 'a filler row (drawn by nodeTypes weight)',
@@ -156,6 +167,7 @@ function runLabPlan(D) {
     const plan = runStartPlan(runLab.seed, data, {
       unlocks: runLabUnlocks(D),
       map: runLab.short ? RUN_LAB_SHORT : undefined,
+      expedition: runLab.expedition,
     });
     return { plan, roles: runMapRows(plan.data.rules.map) };
   } catch (e) {
@@ -163,6 +175,8 @@ function runLabPlan(D) {
   }
 }
 
+/** WM-2: a link's way on the grid, in words */
+const RUN_LAB_WAY = { E: 'east', N: 'north', S: 'south', W: 'west' };
 /** a biome's colour on the map: its look's haze @param {any} D @param {string} b */
 const runLabBiomeColour = (D, b) => ((D.biomes[b] || {}).look || {}).haze || '#ccc';
 const RUN_LAB_TYPE_COLOUR = {
@@ -209,6 +223,71 @@ function runLabSvg(D, plan, pickable) {
     .join('');
   return `<svg class="rl-map" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="The run's map">${links}${dots}</svg>`;
 }
+
+/** WM-2: the map on the region grid as SVG: each main place's footprint on its cells (north up), a link across the
+ * edge two places share (north and south ones dashed), a side area's places in a band above, joined to the obstacle's
+ * place @param {any} D @param {any} plan @param {boolean} pickable */
+function runLabGridSvg(D, plan, pickable) {
+  const nodes = plan.map.nodes,
+    S = plan.map.side,
+    laid = nodes.filter((/** @type {any} */ n) => n.at && n.size);
+  if (!laid.length) return runLabSvg(D, plan, pickable);
+  const C = 26,
+    pad = 8,
+    x0 = Math.min(...laid.map((/** @type {any} */ n) => n.at[0])),
+    x1 = Math.max(...laid.map((/** @type {any} */ n) => n.at[0] + n.size[0])),
+    y1 = Math.max(...laid.map((/** @type {any} */ n) => n.at[1] + n.size[1])),
+    y0 = Math.min(...laid.map((/** @type {any} */ n) => n.at[1])),
+    side = S ? S.nodes.map((/** @type {number} */ i) => nodes[i]) : [],
+    top = side.length ? 2 * C : 0,
+    /** a place's box in the picture: its footprint's, or a side place's in the band above */
+    box = (/** @type {any} */ n) => {
+      if (n.at && n.size)
+        return {
+          x: pad + (n.at[0] - x0) * C,
+          y: top + pad + (y1 - n.at[1] - n.size[1]) * C,
+          w: n.size[0] * C,
+          h: n.size[1] * C,
+        };
+      const F = nodes[S.from],
+        k = S.nodes.indexOf(nodes.indexOf(n));
+      return { x: pad + (F.at[0] - x0 + 2 * k) * C, y: pad, w: 2 * C, h: C };
+    },
+    mid = (/** @type {any} */ n) => {
+      const b = box(n);
+      return [b.x + b.w / 2, b.y + b.h / 2];
+    },
+    w = 2 * pad + (x1 - x0) * C,
+    h = top + 2 * pad + (y1 - y0) * C;
+  const line = (/** @type {any} */ a, /** @type {any} */ b, cls = 'rl-link', dir = '') => {
+    const [ax, ay] = mid(a),
+      [bx, by] = mid(b);
+    return `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" class="${cls}${dir === 'N' || dir === 'S' ? ' rl-link-ns' : ''}"${dir ? ` data-dir="${dir}"` : ''}/>`;
+  };
+  const links =
+    nodes
+      .flatMap((/** @type {any} */ n, /** @type {number} */ i) =>
+        n.to.map((/** @type {number} */ j) => line(n, nodes[j], 'rl-link', runLinkDir(plan.map, i, j)))
+      )
+      .join('') +
+    (S
+      ? line(nodes[S.from], nodes[S.nodes[0]], 'rl-link rl-side-in') +
+        (S.to >= 0 ? line(nodes[S.nodes[S.nodes.length - 1]], nodes[S.to], 'rl-link rl-side-out') : '')
+      : '');
+  const cells = nodes
+    .map((/** @type {any} */ n, /** @type {number} */ i) => {
+      const T = D.nodeTypes[n.type] || {},
+        b = box(n),
+        letter = escapeHtml((T.name || n.type || '?').slice(0, 1).toUpperCase()),
+        ring = n.seen >= 2 ? '' : n.seen === 1 ? ' stroke-dasharray="3 3"' : ' stroke-opacity=".35"';
+      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"${n.side ? ' data-side="1"' : ` data-at="${n.at}"`}><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title><rect x="${b.x + 2}" y="${b.y + 2}" width="${b.w - 4}" height="${b.h - 4}" rx="4" fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="3"${ring}/><text x="${b.x + b.w / 2}" y="${b.y + b.h / 2 + 5}" text-anchor="middle">${letter}</text></g>`;
+    })
+    .join('');
+  return `<svg class="rl-map rl-grid" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="The run's map on the region grid (north up)">${links}${cells}</svg>`;
+}
+/** the map in the Lab's view @param {any} D @param {any} plan @param {boolean} pickable */
+const runLabMapSvg = (D, plan, pickable) =>
+  runLab.view === 'grid' ? runLabGridSvg(D, plan, pickable) : runLabSvg(D, plan, pickable);
 
 /** a map's figures in a line @param {any} D @param {any} plan */
 function runLabFigures(D, plan) {
@@ -273,7 +352,23 @@ function runLabNodeHTML(D, plan, roles, i) {
           ),
         ]
       : []),
-    row('Leads to', n.to.map(name).join(', ') || 'nothing (the end)'),
+    row(
+      'Leads to',
+      n.to
+        .map((/** @type {number} */ j) => {
+          const d = runLinkDir(map, i, j);
+          return name(j) + (d ? ` (${RUN_LAB_WAY[d] || d})` : '');
+        })
+        .join(', ') || 'nothing (the end)'
+    ),
+    ...(n.at && n.size
+      ? [
+          row(
+            'On the grid',
+            `cells ${n.at[0]}–${n.at[0] + n.size[0] - 1} east, ${n.at[1]}${n.size[1] > 1 ? `–${n.at[1] + n.size[1] - 1}` : ''} north of the landing’s; ${n.size[0]} × ${n.size[1]} cells (${n.size[0] * RUN_GRID.cell} × ${n.size[1] * RUN_GRID.cell} m)`
+          ),
+        ]
+      : []),
     row('Reached from', back.map(name).join(', ') || 'Copperleaf (the airship)'),
     row('Day', `day ${n.row + 1} on the shortest walk`),
     row('At the landing', shown),
@@ -369,7 +464,7 @@ function runLabSweepHTML(D, S) {
       `<button class="btn small" data-act="runLabOpenSeed" data-seed="${escapeHtml(seed)}">${l}</button>`,
     problems = S.problems.length
       ? `<ul class="rl-sweep-problems">${S.problems.map((/** @type {any} */ p) => `<li class="err" data-seed="${escapeHtml(p.seed)}">${escapeHtml(p.text)} (${p.count} of ${S.maps || 1000} maps) ${open(p.seed, `Open ${escapeHtml(p.seed)}`)}</li>`).join('')}</ul>`
-      : '<p class="ok rl-sweep-ok">No problems: every map reaches the boss, every place can be reached, each role row holds its type.</p>';
+      : '<p class="ok rl-sweep-ok">No problems: every map reaches the boss, every place can be reached, each role row holds its type, the grid holds every place with its links east, north or south, and every town has two routes before it.</p>';
   if (!S.maps) return `<h4>Over 1,000 seeds</h4>${problems}`;
   const types = Object.entries(S.types)
       .map(([k, v]) => `${escapeHtml((D.nodeTypes[k] || {}).name || k)} ${pct(/** @type {number} */ (v), all)}`)
@@ -382,9 +477,25 @@ function runLabSweepHTML(D, S) {
     R = S.ratio;
   return `<h4>Over ${S.maps.toLocaleString()} seeds</h4>${problems}<table class="tbl rl-sweep-figures">
 <tr><th>Places</th><td>${S.nodes.min}–${S.nodes.max}, ${S.nodes.avg.toFixed(1)} on average</td></tr>
+${S.path ? `<tr><th>Places a path</th><td data-path="${S.path.min}-${S.path.max}">${S.path.min}–${S.path.max}, ${S.path.avg.toFixed(1)} on average</td></tr>` : ''}
+${S.grid ? `<tr><th>On the grid</th><td>${S.grid.wide.min}–${S.grid.wide.max} cells west to east (${S.grid.wide.avg.toFixed(1)} on average), ${S.grid.high.min}–${S.grid.high.max} south to north</td></tr>` : ''}
+${
+  S.dirs
+    ? `<tr><th>Links</th><td data-dirs="${escapeHtml(JSON.stringify(S.dirs))}">${['E', 'N', 'S', 'W', '?']
+        .filter(d => S.dirs[d])
+        .map(
+          d =>
+            `${RUN_LAB_WAY[/** @type {'E'} */ (d)] || 'no footprint'} ${pct(
+              S.dirs[d],
+              Object.values(S.dirs).reduce((/** @type {number} */ a, /** @type {any} */ b) => a + b, 0)
+            )}`
+        )
+        .join(', ')}</td></tr>`
+    : ''
+}
 <tr><th>By type</th><td>${types}</td></tr>
 <tr><th>Towns on a walk</th><td>${S.townsPerPath.min}–${S.townsPerPath.max} (the walk with fewest: ${S.townsPerPath.avg.toFixed(1)} on average)</td></tr>
-<tr><th>Towns : routes</th><td data-ratio="${R.towns}:${R.routes}">${R.towns.toLocaleString()} : ${R.routes.toLocaleString()} made, against weights ${R.weights.town} : ${R.weights.route} (rest rows are always towns)</td></tr>
+<tr><th>Towns : routes</th><td data-ratio="${R.towns}:${R.routes}">${R.towns.toLocaleString()} : ${R.routes.toLocaleString()} made, against weights ${R.weights.town} : ${R.weights.route} (rest rows, after each mini-boss, are always towns)</td></tr>
 <tr><th>Biomes</th><td>${biomes}</td></tr>
 <tr><th>Seeds to look at</th><td>${S.outliers.map((/** @type {any} */ o) => open(o.seed, `${escapeHtml(o.seed)}: ${escapeHtml(o.why)}`)).join(' ')}</td></tr></table>`;
 }
@@ -396,7 +507,9 @@ function runLabSweepFill() {
     now = runLabPlan(D),
     k = ++runLab.sweepN;
   if (now.error || !now.plan) return;
-  const args = [D.nodeTypes, now.plan.data.rules.map, { n: 1000 }],
+  /* WM-2: the rules without the plan's own rows (the sweep draws each seed's for the Expedition), the short map's kept */
+  const { rows, minibosses, ...drawn } = now.plan.data.rules.map,
+    args = [D.nodeTypes, runLab.short ? now.plan.data.rules.map : drawn, { n: 1000, expedition: runLab.expedition }],
     key = JSON.stringify(args),
     show = (/** @type {any} */ S) => {
       for (const el of els) {
@@ -429,7 +542,11 @@ function runLabLogicFill() {
     t0 = performance.now(),
     seed = runLab.seed,
     pick = runLab.pick;
-  logicAsk('runPreview', seed, { unlocks: runLabUnlocks(D), map: runLab.short ? RUN_LAB_SHORT : undefined }).then(
+  logicAsk('runPreview', seed, {
+    unlocks: runLabUnlocks(D),
+    map: runLab.short ? RUN_LAB_SHORT : undefined,
+    expedition: runLab.expedition,
+  }).then(
     p => {
       if (k !== runLab.logicN) return;
       for (const el of els) {
@@ -458,8 +575,8 @@ function runLabOutHTML() {
       ? ''
       : base.error
         ? `<p class="err">The loaded data couldn’t make it: ${escapeHtml(base.error)}</p>`
-        : `<h4>As loaded${same ? ' (the same map)' : ''}</h4><div class="rl-scroll">${runLabSvg(studioState.loaded, base.plan, false)}</div><p class="help rl-figures-base">${runLabFigures(studioState.loaded, base.plan)}</p>`;
-  return `<h4>${runLab.beside ? 'With your changes' : 'The map'}</h4><div class="rl-scroll">${runLabSvg(D, now.plan, true)}</div><p class="help rl-figures">${runLabFigures(D, now.plan)}</p>${baseHTML}<div class="rl-legend">${Object.entries(
+        : `<h4>As loaded${same ? ' (the same map)' : ''}</h4><div class="rl-scroll">${runLabMapSvg(studioState.loaded, base.plan, false)}</div><p class="help rl-figures-base">${runLabFigures(studioState.loaded, base.plan)}</p>`;
+  return `<h4>${runLab.beside ? 'With your changes' : 'The map'}</h4><div class="rl-scroll">${runLabMapSvg(D, now.plan, true)}</div><p class="help rl-figures">${runLabFigures(D, now.plan)}</p>${baseHTML}<div class="rl-legend">${Object.entries(
     RUN_LAB_TYPE_COLOUR
   )
     .map(([k, c]) => `<span><i style="border-color:${c}"></i>${escapeHtml((D.nodeTypes[k] || {}).name || k)}</span>`)
@@ -487,12 +604,24 @@ function runLabRulesHTML() {
   return [
     `<p class="help">Each change redraws the map and the game’s logic beside it. These are rules.json <code>run</code> and nodeTypes.json, saved and proposed like any other field.</p>`,
     part('Map', [
-      n('Rows', 'map.rows', { min: 2, max: 30, step: 1 }),
-      n('Mini-bosses', 'map.minibosses', { min: 0, max: 10, step: 1 }),
+      ...(R.map.path || []).flatMap((/** @type {any} */ _, /** @type {number} */ k) => [
+        n(`Expedition ${['I', 'II', 'III', 'IV', 'V'][k] || k + 1}: fewest places a path`, `map.path.${k}.0`, {
+          min: 6,
+          max: 15,
+          step: 1,
+        }),
+        n(`Expedition ${['I', 'II', 'III', 'IV', 'V'][k] || k + 1}: most places a path`, `map.path.${k}.1`, {
+          min: 6,
+          max: 15,
+          step: 1,
+        }),
+      ]),
+      n('Fewest towns (each after a mini-boss)', 'map.towns.0', { min: 0, max: 4, step: 1 }),
+      n('Most towns', 'map.towns.1', { min: 0, max: 4, step: 1 }),
       n('Two lanes (chance a row)', 'map.wide', { min: 0, max: 1, step: 0.05 }),
       n('Cross-link (chance a row)', 'map.cross', { min: 0, max: 1, step: 0.05 }),
       selectField('The landing’s row', 'rules.run.map.first', types),
-      selectField('A rest row (before a mini-boss)', 'rules.run.map.rest', types),
+      selectField('A rest row (after a mini-boss)', 'rules.run.map.rest', types),
       selectField('A mini-boss row', 'rules.run.map.guard', types),
       selectField('The last row', 'rules.run.map.last', types),
     ]),
@@ -598,6 +727,8 @@ SECTIONS.runlab = () => {
 <label class="fld"><span>Seed</span><input id="rlSeed" data-rl="seed" value="${escapeHtml(runLab.seed)}" maxlength="20" spellcheck="false"></label>
 <button class="btn" data-act="runLabRoll" title="A new seed">🎲</button>
 <label class="fld"><span>Unlocks</span><select id="rlUnlocks" data-rl="unlocks">${opt('none', 'None (a fresh save)')}${opt('all', 'All')}${runLab.logUnlocks.length || runLab.unlocks === 'log' ? opt('log', `The debug log’s (${runLab.logUnlocks.length})`) : ''}</select></label>
+<label class="fld"><span>Expedition</span><select id="rlExpedition" data-rl="expedition">${['I', 'II', 'III', 'IV', 'V'].map((x, k) => `<option value="${k + 1}"${runLab.expedition === k + 1 ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
+<label class="fld"><span>View</span><select id="rlView" data-rl="view"><option value="grid"${runLab.view === 'grid' ? ' selected' : ''}>The region grid</option><option value="steps"${runLab.view === 'steps' ? ' selected' : ''}>Steps (rows)</option></select></label>
 <label class="chk"><input type="checkbox" id="rlShort" data-rl="short"${runLab.short ? ' checked' : ''}> Short map (the debug menu’s)</label>
 <label class="chk"><input type="checkbox" id="rlBeside" data-rl="beside"${runLab.beside ? ' checked' : ''}> Beside the loaded data</label>
 <button class="btn" data-act="runLabPaste">Paste a debug log…</button>
@@ -622,6 +753,8 @@ document.addEventListener('input', ev => {
       runLab.seed = v;
     } else if (k === 'unlocks') runLab.unlocks = /** @type {any} */ (el.value);
     else if (k === 'short') runLab.short = el.checked;
+    else if (k === 'expedition') runLab.expedition = Math.max(1, Math.min(5, +el.value || 1));
+    else if (k === 'view') runLab.view = el.value === 'steps' ? 'steps' : 'grid';
     else if (k === 'beside') runLab.beside = el.checked;
     runLab.pick = -1;
     runLabSoon();

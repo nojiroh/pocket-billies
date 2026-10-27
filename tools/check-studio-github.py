@@ -1243,6 +1243,15 @@ def run_lab_steps(pg, errs):
     while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
+    # WM-2: the region grid (the default view): a footprint for every main place, none overlapping, a link across a
+    # shared edge (north and south ones marked), none west
+    grid = pg.evaluate("""(()=>{const m=document.querySelector('#main .rl-map.rl-grid');if(!m)return null;
+      const g=[...m.querySelectorAll('.rl-node:not([data-side])')];
+      return {places:g.length,at:new Set(g.map(e=>e.dataset.at)).size,dirs:[...m.querySelectorAll('.rl-link[data-dir]')].map(l=>l.dataset.dir)}})()""")
+    if not grid: errs.append('run lab: the map is not drawn on the region grid by default')
+    elif grid['at'] != grid['places'] or not grid['dirs'] or any(d not in ('E', 'N', 'S') for d in grid['dirs']):
+        errs.append(f'run lab: the grid view drew {grid}')
+    pg.select_option('#rlView', 'steps')
     # T2.6: a debug log's run carries its own unlocks; an older log only the save's
     read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_wake_tea']}}})),
       runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_wake_tea']}}}))]""")
@@ -1289,9 +1298,10 @@ def run_lab_play_steps(pg, errs):
     pg.fill('#rlSeed', 'PLAYCHECK1')
     pg.select_option('#rlUnlocks', 'none')
     pg.check('#rlShort')
+    pg.select_option('#rlView', 'steps')
     t0 = time.time()
     rows = "(()=>{const m=document.querySelector('#main .rl-map');return m?new Set([...m.querySelectorAll('circle')].map(c=>c.getAttribute('cx'))).size:0})()"
-    while time.time() - t0 < 5 and pg.evaluate(rows) != 5: time.sleep(0.05)
+    while time.time() - t0 < 5 and pg.evaluate(rows) != 6: time.sleep(0.05)
     lab = pg.evaluate("[...document.querySelector('#main .rl-map').querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
     was = pg.evaluate('studioState.D.rules.run.healCost')
     pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '77')
@@ -1338,30 +1348,36 @@ def run_lab_rules_steps(pg, errs):
     rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node:not([data-side]) circle')].map(c=>c.getAttribute('cx'))).size})()")
     pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
     if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
-    was = pg.evaluate('studioState.D.rules.run.map.rows')
+    pg.select_option('#rlView', 'steps')
+    if pg.is_checked('#rlShort'): pg.uncheck('#rlShort')
+    pg.select_option('#rlExpedition', '1')
+    # WM-2: Expedition I's places a path, both ends typed 12 (a 12-place map)
+    was = pg.evaluate('studioState.D.rules.run.map.path[0].slice()')
     before = rows_drawn()
-    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', '7')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.1"]', '12')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.0"]', '12')
     t0 = time.time()
-    while time.time() - t0 < 5 and rows_drawn() == before: time.sleep(0.05)
+    while time.time() - t0 < 5 and rows_drawn() != 12: time.sleep(0.05)
     drawn = rows_drawn()
-    if drawn != 7: errs.append(f'rows 7 typed in the rules card: the map has {drawn} rows')
-    if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
+    if drawn != 12: errs.append(f'12 places a path typed in the rules card: the map has {drawn} rows (before: {before})')
+    if pg.evaluate('studioState.D.rules.run.map.path[0]') != [12, 12]: errs.append('the path fields did not write rules.run.map.path')
     name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
     pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     sent = pending()
     rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
     if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
-    elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
+    elif '[12,12]' not in rules_text.replace(' ', '').replace('\n', ''): errs.append('the proposed rules.json does not hold the path [12, 12]')
     if 'potion' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
-    # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
-    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
+    # a value the map can't lay out (more towns than 12 places hold): the game's own error beside the map
+    pg.fill('#main .rl-rules [data-p="rules.run.map.towns.0"]', '4')
     t0 = time.time()
     while time.time() - t0 < 5 and not pg.locator('#main .rl-error').count(): time.sleep(0.05)
-    if not pg.locator('#main .rl-error').count(): errs.append('6 mini-bosses on 7 rows drew a map, not the game’s error')
-    mb = pg.evaluate('studioState.loaded.rules.run.map.minibosses')
-    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
-    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
+    if not pg.locator('#main .rl-error').count(): errs.append('4 towns on 12 places drew a map, not the game’s error')
+    tw = pg.evaluate('studioState.loaded.rules.run.map.towns[0]')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.towns.0"]', str(tw))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.0"]', str(was[0]))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.1"]', str(was[1]))
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
     pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     left = pending()
@@ -1370,7 +1386,7 @@ def run_lab_rules_steps(pg, errs):
     while time.time() - t0 < 10 and pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].some(e=>!e.dataset.line)"): time.sleep(0.1)
     lines = pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].map(e=>e.textContent)")
     if not lines or any(l.endswith(':?') or ':' not in l for l in lines): errs.append(f'the rules in code did not all find their line: {lines}')
-    return f"the rules card: rows 7 redrawn, proposed in rules.json and nodeTypes.json, the game's error for 6 mini-bosses, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
+    return f"the rules card: 12 places a path redrawn, proposed in rules.json and nodeTypes.json, the game's error for 4 towns, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
 
 
 def run_lab_logic_steps(pg, errs, want):
@@ -1971,7 +1987,7 @@ def music_steps(pg, errs):
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
-out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.towns[0]).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
 out.running_shoes = modules['content-preview'].perkPreview(['running_shoes'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();
