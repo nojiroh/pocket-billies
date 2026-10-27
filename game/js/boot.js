@@ -42,7 +42,7 @@ import { ART_CACHE, EGG_ART, ICON_ATLAS, PYRAMID_ART, artBoot, artImg, uiIconURL
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
-import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
+import { mapArtPaths, mapById, walkView } from './walk-view.js';
 import { gpuState, pendingPrograms, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -205,18 +205,9 @@ function loadList() {
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) add(rigAtlas(sp, v), 1);
   }
-  try {
-    const D = walkData();
-    for (const id of Object.keys(D.scenes)) mapArtPaths(D.scenes[id]).forEach(p => add(p, 3));
-    for (const P of Object.values(D.sc.props)) {
-      add(P.img, 3);
-      if (P.blades) add(P.blades.img, 3);
-      for (const h of P.hands || []) add(h.img, 3);
-    }
-    for (const T of Object.values(D.sc.terrains)) add(T.tile, 3);
-  } catch (e) {
-    console.error(e);
-  }
+  /* LD-3 (the owner, 2026-10-27: pictures per place): no map's, prop's or ground's pictures here. A place's come with
+     it (walk-view.js prepareMap, the seams' next place, a run's landing) and the title town's in the first phase
+     (townPaths); this loaded every picture of all 43 maps, test maps too, before the title */
   try {
     personArtPaths().forEach(p => add(p, 0));
   } catch (e) {

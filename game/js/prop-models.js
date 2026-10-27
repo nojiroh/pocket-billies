@@ -2104,20 +2104,23 @@ function drawModelShadowPart(q, A, I, buf, at, n) {
 }
 /* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
 function propModelArtPaths(sc, C) {
-  const L = [];
+  const L = [],
+    F = typeof gameData !== 'undefined' && gameData.pixelFacts,
+    /* LD-1: a leaf clump comes as its baked cut (propModelImageItems), not its crown */
+    art = l => (F && (l.clip || l.shade) && F.cuts[leafCutKey(l.img, l)]) || l.img;
   let any = false;
   for (const p of sc.props || (sc._lite && sc._lite.props) || []) {
     const M = C.props[p.k];
     if (!M || !M.model) continue;
     any = true;
     const rec = propModelState.recipes.get(M.model);
-    if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(art(l));
     /* phase 09 batch 1: a variant's own model and swapped pictures (the autumn oak's leaves) load with the place too */
     const V = p.v && M.variants ? M.variants[p.v - 1] : null;
     if (V && V.swap) for (const v of Object.values(V.swap)) if (/\.png$/i.test(v)) L.push(v);
     if (V && typeof V.model === 'string') {
       const r2 = propModelState.recipes.get(V.model);
-      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(art(l));
     }
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */

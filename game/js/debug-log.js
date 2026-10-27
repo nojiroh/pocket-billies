@@ -637,6 +637,10 @@ try {
    than HITCH_MS (33 ms, the track's goal, plus 3 ms for the display's timing): measured by a requestAnimationFrame
    of its own, so it counts from before the game's modules run, on the loader, the title and in play alike */
 const HITCH_MS = 36;
+/* the browser keeps 250 file timings by default; a boot fetches more (bootReport's counts) */
+try {
+  performance.setResourceTimingBufferSize(3000);
+} catch (e) {}
 debugLog.boot = [['debug log', Math.round(performance.now())]];
 debugLog.stage = name => {
   if (debugLog.boot.length < 80) debugLog.boot.push([name, Math.round(performance.now())]);
