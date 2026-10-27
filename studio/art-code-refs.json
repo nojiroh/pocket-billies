@@ -66,7 +66,7 @@
    "p": "coins/pyramid_32.png",
    "at": [
     "game/js/cutscene/opening.js:152",
-    "game/js/cutscene/opening.js:425"
+    "game/js/cutscene/opening.js:429"
    ]
   },
   {

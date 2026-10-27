@@ -2524,15 +2524,26 @@ export function worldMapPrewarm(done, eager) {
 }
 /* the opening fall's frame (opening-fall.js): the floating island's middle, radius and height, and where you land
    (outside Professor Chosen's lab); null without the floating island */
-export function worldMapFallFrame() {
+/** the opening fall's frame: the floating island (its middle, radius and top) and where you land on it: `at` (a point
+ * of the island's map, cutscenes track B: the opening's own landing spot), else the lab; m, the bowl's units a metre
+ * there @param {number[]} [at] */
+export function worldMapFallFrame(at) {
   worldBowlSpots();
   const F = worldBowlFloatIsland();
   if (!F) return null;
   const M = gameData.maps[worldBowl.ground.islandMap],
     s = worldBowl.spots[F.i],
     lab = (M.props || []).find(p => p.k === 'lab'),
-    [x, y] = lab ? bowlMapPoint(s, M, lab.x, lab.z, BOWL_METRES) : F.c;
-  return { c: F.c, r: F.r, top: F.top, land: [x, y, Math.max(F.top, bowlSurface(x, y))] };
+    pt = at || (lab ? [lab.x, lab.z] : null),
+    [x, y] = pt ? bowlMapPoint(s, M, pt[0], pt[1], BOWL_METRES) : F.c,
+    [x1, y1] = pt ? bowlMapPoint(s, M, pt[0] + 1, pt[1], BOWL_METRES) : [x + F.r / 100, y];
+  return {
+    c: F.c,
+    r: F.r,
+    top: F.top,
+    land: [x, y, Math.max(F.top, bowlSurface(x, y))],
+    m: Math.hypot(x1 - x, y1 - y) || F.r / 100,
+  };
 }
 /* everything the map shows is in (for the opening fall, which films it) */
 export function worldMapReadyNow() {

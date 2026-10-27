@@ -14,6 +14,7 @@
   "blakeFrom": [158.65,88.66]
  },
  "shots": {
+  "drop": {"eye":[159.3,22,83.31],"tgt":[157.8,0,83.31],"fov":58,"w":6},
   "wake": {"eye":[158.12,0.4,83.37],"tgt":[152.4,3.9,85.71],"fov":58,"w":1.3},
   "door": {"eye":[158.12,0.62,83.37],"tgt":[155.35,1.25,79.66],"fov":52,"w":1.3},
   "hazelRuns": {"eye":[158.12,0.78,83.37],"tgt":[157.5,1.08,81.56],"fov":58,"w":1.3},
@@ -31,11 +32,13 @@
  },
  "script": [
   "music hazel",
-  "camera wake",
+  "camera drop",
   "effect landing at me",
   "fade in",
+  "wait 0.5",
+  "camera wake 1.6",
   "wait 1.4",
-  "caption 3.4 The Hollow Earth | {place}",
+  "caption 3.4 You landed in | {place}",
   "wait 0.3",
   "blink",
   "wait 0.42",
