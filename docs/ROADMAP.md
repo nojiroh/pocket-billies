@@ -71,7 +71,7 @@ town node needs it.
 - **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
   a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
   and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
-  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25; WA-2a (waterfalls drawn, the flow map) done 2026-10-25; WA-2b (waterfalls placed) done 2026-10-25; WA-5a (new kinds' play, weather on water, shallows for others) done 2026-10-25; WA-4 (the sea and the coast) done 2026-10-25; WA-7 (the world map's and battles' water) done 2026-10-26; WA-9 (the Studio's water tools: a river brush, a waterfall placer, the kind painter, kept in the dials) done 2026-10-26; WA-10 (Copperleaf's river, mouth and outflow: kinds by connectivity, estuaries, smooth river levels, the outflow and a smaller square patched) done 2026-10-26;
+  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25; WA-2a (waterfalls drawn, the flow map) done 2026-10-25; WA-2b (waterfalls placed) done 2026-10-25; WA-3a (rivers that run downhill) done 2026-10-25; WA-6a (wading) done 2026-10-25; WA-6b (Surf and the Waterfall climb) done 2026-10-25; WA-5a (new kinds' play, weather on water, shallows for others) done 2026-10-25; WA-4 (the sea and the coast) done 2026-10-25; WA-7 (the world map's and battles' water) done 2026-10-26; WA-5b (kinds as a texture, water life) done 2026-10-26; WA-9 (the Studio's water tools: a river brush, a waterfall placer, the kind painter, kept in the dials) done 2026-10-26; WA-10 (Copperleaf's river, mouth and outflow: kinds by connectivity, estuaries, smooth river levels, the outflow and a smaller square patched) done 2026-10-26; next WA-11 (the hub island's waterfall, the owner's pick 2026-10-27), then WA-8 alone;
   then three lanes at once (renderer, generation, play; rounds 1-4; a fourth, world map and battles, in round 3), WA-8
   alone last. Takes over TR-6's waterfalls, TR-10's water and "rivers downhill" from the terrain track. Tags
   `wa-N-done`. Branch `track/water`.
@@ -98,8 +98,9 @@ town node needs it.
   `ccr-65e11839-9p92dx`; RS-2 (meeting them in a run: Dottie free in the first town row, favours from quests.json, the
   Stranded Cart event, the payout's line, the Run Lab and sim) done 2026-10-26 on the same branch; RS-3 (living in
   Copperleaf: residents walk the town as townsfolk of their own from their building or cottage, their looks, lines in
-  banter.json with `lastres:`, the room card, the Studio's hub editor) done 2026-10-26 on the same branch; RS-4
-  (services and upgrades) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
+  banter.json with `lastres:`, the room card, the Studio's hub editor) done 2026-10-26 on the same branch; RS-4a
+  (services, part 1: the machinery, Mo's store and restock, Bertha's rumours and lunch, the room card, the sim's
+  `--residents`) done 2026-10-27 on `track/residents`; RS-4b (Dottie, Gus, the milestones) next. Tags `rs-N-done`. Branch `track/residents`.
 - **Region map track** (docs/phases/worldmap-track.md, the owner's brief and answers 2026-10-27): runs as a small
   Pokémon region. WM-1 (runs go west to east, reversing TR-2; the world map opens like the walk camera; done
   2026-10-27), WM-2 (a

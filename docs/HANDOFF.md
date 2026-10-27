@@ -34,6 +34,62 @@ on crits; the negative, then the positive.
   owner (the git proxy refuses tag pushes).
 - Next: VFX-5 (attack lunges) on `track/vfx`, in Plan Mode.
 
+### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
+Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
+approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's
+power level is Lv 2 (Research x1.1 at the payout), Gus's Lv 3 (Augments break half as often); RS-4 in two sessions.
+Tag to suggest: `rs-4a-done`. Details: docs/phases/residents-track.md, "Done in RS-4a". CHANGELOG line added. PR #259.
+- Where the plan and the code differed: `shops.json` is gone (SA-3); Moneys are run-only, so no hub upgrade can cost
+  them; the store, inn and library weren't buildings.json rows; the Workshop already sells 3 levels (SP-5), so a
+  resident's service is its own level, not the building's; Dr. Helix's home `gene_bank` doesn't match the building
+  `genebank` (RS-5); no `run.fx` exists (effects come from `fxOfRun`).
+- Changed (one cause per commit): buildings.json shop/inn/library; the unlock grant `{resident, level}`,
+  `resLevel`, the refusal `resident` and their checks; residents.json `service` (schema, type, checks) and Mo's and
+  Bertha's rows; `resTakeoff`/`resFxRows`/`run.res`; Mo's General store in Copperleaf (`residentShop`, shops paid in a
+  meta currency); Mo's restock (`runShopReroll`, `run.reshop`); Bertha's rumours (`resRumour`, `run.rumour`, the map
+  card); the room card; `resLevel` asks whether a resident lives there (the sim moved them in "after run 0"); the
+  sim's `--residents=all`; docs.
+- Risky or unfinished: every price is a guess. The sim sees no change in wins (1000 seeds, two setups; its bot drinks
+  only Potions and never restocks), so the two power levels' size is untested until played. Bertha's rumour may show a
+  place two rows on that the map would have shown anyway one arrival later. The Lab board now has General store, Inn
+  and Library sections (rows priced, bought only at the building). Gus's rows (RS-4b) will be `at: workshop` beside
+  SP-5's: the Workshop's own sheet lists every row there, so filter it then. Not played on a phone.
+- Verified: lint, typecheck, format, check:modules, check:data, build, `npm test` after each commit (1471 at the end);
+  `test:slow` 88/89 before the last main merge (the island test, red on main then, fixed by #253: island-gen passes
+  after the merge); smoke 6/6. Headless probes: Mo's store buys a Potion for 15 Research (Moneys untouched, his
+  portrait shown), the room card buys his Lv 2 and redraws, a run shop's restock changes its drawn wares once, the map
+  card names Bertha's rumoured place; no page errors. The full quick check: 35/40, the 5 failures main's own (Terraces'
+  props in the air, RL-8 "the town's shop has no Perk" (run alone on this branch and on main 29b0cdaf: the same
+  failure on both), RT-2's pair, Granny Juniper, room light). CI's fast check fails 4 steps main fails too, plus one
+  different flaky step per run (Behind things; the pasture).
+- Decisions I made (and why): Mo's wares go into the hub bag rather than straight into a run (the packed bag's cap of
+  5 keeps the power small); a rumour never shows the boss or a side place; a restock redraws only the `more` wares
+  (the always-stocked Pyramid and Potion stay), once a shop a day; the room card lists only the resident's own rows.
+- Questions waiting for the owner: the prices (Mo 15/8/30 and 40/32/60 Research, Lv 2 100, Lv 3 200; Bertha Lv 2 120,
+  Lv 3 150); whether Bertha's rumour should reach further (today 2+ rows on). Please tag `rs-4a-done`.
+- Next session starts with: RS-4b (Dottie, Gus, the headcount milestones, the in-game full test's step), in Plan
+  Mode, on `track/residents`.
+
+### Water track - the hub island's golden test: hand patches marked (islandGen.patched) - 2026-10-27
+Branch `track/water` (main merged in first, twice: a fast-forward, then 3 commits). The owner's pick ("Patched marker",
+asked when PR #253's `lint` job failed). Not a numbered session: the docs fix that found WA-6a and WA-6b done (the
+table had not been updated), WA-11 (the hub island's fall) scheduled before WA-8, and this test fix.
+- Found: `npm run test:slow`'s "the game's island is the generator's own output" (island-gen.test.mjs) has failed on
+  main since WA-10's `3332015` (the pond outflow patched by hand; bisected). The HB-10a to 10c square patches add to
+  it (tiles 98 cells, heights 644 corners, spots, streams, plots, landmarks). Main's own Check runs were cancelled, so
+  nobody saw it; WA-10 ran `npm test` (quick), not the slow set.
+- Changed: `islandGen.patched` (map.schema.json): a list of the hand patches run on the generator's output. With it,
+  the test still checks `w`, `h`, `steps`, `stepm`, `island`, `zones`, `grassPatches`, the bridges and the orbit, and
+  skips `tiles`, `heights`, `spots`, `streams`, `plots` and `landmarks`. Copperleaf's list: water --river, WA-10's old
+  water --square, square --outline, --fountain, --edges, --hub, --folk. `patch-copperleaf-water.mjs --river` adds
+  its own tag; a rebuild (build-island writes a fresh islandGen) clears the list.
+- For the hub track (its file, not edited here): `patch-copperleaf-square.mjs` could add its tag the same way
+  (`M.islandGen.patched = [...new Set([...(M.islandGen.patched || []), 'square --x'])]`); the list is already set, so
+  nothing breaks meanwhile. HB-10f's reproducible rebuild clears it.
+- Verified: lint, typecheck, `npm test`, `npm run test:slow` 89/89 (was 88/89), check:data, check:modules,
+  format:check, `check:smoke` 6/6 (Playwright 1.63.0).
+- Next: WA-11 (the hub island's fall), then WA-8 alone.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
@@ -1482,7 +1538,6 @@ paths generated and checked; the label "Art browser" (section key `art` unchange
   the index builds in 20 ms); smoke 6 of 6 (170 s); screenshots at 1920, 1024 and 390.
 - Next: SA-2 (the missing editors: tiles47 ground, robots, coins, SVG icons, the icon atlas, scene art), in a new
   session on `track/studio-art`, in Plan Mode.
-
 
 ### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
 Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
@@ -7933,7 +7988,6 @@ publish code, run-lab.js internals, the sim files and the workbench: this one ad
   `relics` and `unlocks`.
 - Tag: `sr-4-done`.
 
-
 ### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
 Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
 recommended option is taken for every decision and recorded in the plan doc's "Decisions".
@@ -8947,7 +9001,6 @@ moot (the generator lays the town out).
   doors east toward the farmhouse; the pasture zone is free. **IS-9**: 357 old props belonged to no building and
   were not brought over (the old meadow's flowers, trees, reeds); the island needs dressing.
 - Next: IS-8 (after RL-10), IS-9. Tag `is-5-done` is the owner's to push.
-
 
 ### Island track IS-7 - The world map's island - 2026-10-22
 Branch `claude/is-7-world-map-island`, from the wave-2 base `claude/new-session-3qlesh` (fcda361: main with IS-0 and
@@ -10335,7 +10388,6 @@ bipeds, the gear goes, the hand-drawn art is kept. The preview was shown before 
 - Next: the owner looks at the Billies on the phone (team, a battle, the grass, the Studio's Parts preview); then the
   bios without gear, and a decision on a taller box for finals.
 
-
 ### UI track UI-4 - Run parts - 2026-10-21
 Branch `claude/ui-4-run-parts`, from main 167cc96, beside UI-3b (owner's choice). Before it, by the owner's ask, the
 three open PRs were brought up to main and merged: #92 (the dialogue bubble: rewritten as a shape family in UI-3a's
@@ -10414,7 +10466,6 @@ Branch `props/flat-sizes` (owner's request in chat, no phase file). No tag.
   stand at size 1 in generated routes.
 - Next: Copperleaf's scaled plants to variants (one-off), the turn and lean of flowers (owner to decide), then the
   plants of the other biomes the same way once their kits are converted.
-
 
 ### Roguelite track RL-5 - Legacy parking and the world setter - 2026-10-21
 Branch `ccr-ad41ba43-cf2age`, from main 3479f01 (RL-4 merged). Plan approved at the start with the owner's answers:
