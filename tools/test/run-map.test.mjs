@@ -116,7 +116,7 @@ test('over many seeds and 5 to 12 rows: every path walks every row, two links at
       const map = runMapMake(s, NODE_TYPES, M),
         N = map.nodes;
       assert.equal(rowsOf(map), rows);
-      // numbered row by row, west to east
+      // numbered row by row, lane by lane
       N.forEach((n, i) => {
         if (i) assert.ok(n.row > N[i - 1].row || (n.row === N[i - 1].row && n.lane === N[i - 1].lane + 1));
         assert.ok(n.lane < widthOf(map, n.row));
@@ -200,7 +200,7 @@ test('exits: one link in the middle of a side, two 10 m and 54 m along its 64 m;
   assert.throws(() => runExits(tooMany, 0), /more than two/);
 });
 
-test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
+test('on the bowl (RL-8b, WM-1): rows from the west to the east across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
   for (let rows = 5; rows <= 12; rows++)
     for (const s of seeds(60)) {
       const map = runMapMake(s, NODE_TYPES, rulesFor(rows)),
@@ -210,9 +210,9 @@ test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes
         const { a, r, up } = runSpot(map, i);
         assert.ok(a >= 0 && a < 360 && r >= 0 && r < 0.8, `${a}, ${r}`);
         assert.equal(up, 90, "a run's maps face the bowl's north");
-        if (n.row === 0) assert.ok(P[i][0] > 0.3, `the landing is in the east (${P[i][0]})`);
-        if (n.row === rows - 1) assert.ok(P[i][0] < -0.3, `the boss is in the west (${P[i][0]})`);
-        for (const j of n.to) assert.ok(P[j][0] < P[i][0], `${i}->${j} goes west`);
+        if (n.row === 0) assert.ok(P[i][0] < -0.3, `the landing is in the west (${P[i][0]})`);
+        if (n.row === rows - 1) assert.ok(P[i][0] > 0.3, `the boss is in the east (${P[i][0]})`);
+        for (const j of n.to) assert.ok(P[j][0] > P[i][0], `${i}->${j} goes east`);
       });
       // pins at least 0.1 of the bowl's radius apart; a place's map (112 x 64 m, facing north) never over another's
       for (let i = 0; i < P.length; i++)
@@ -227,7 +227,7 @@ test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes
         }
       // a road turns within the hub's 30 degrees from its exits, a lane switch within 45
       for (const [a, b] of links(map)) {
-        const turn = bowlSeamTurn(P[a], P[b], 'west', 'east', 90),
+        const turn = bowlSeamTurn(P[a], P[b], 'east', 'west', 90),
           switching = N[a].lane !== N[b].lane && widthOf(map, N[a].row) === 2 && widthOf(map, N[b].row) === 2;
         assert.ok(turn <= (switching ? 45 : 30), `${s}, ${rows} rows: ${a}->${b} turns ${turn.toFixed(1)}`);
       }
