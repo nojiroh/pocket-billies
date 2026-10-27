@@ -256,7 +256,8 @@ function battle3dFrame() {
         actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + Tr.x * actorMetersPerPixel[i],
         actorPositions[i].z + (i === 0 ? 0.25 : 0.4)
       ),
-      mpp = trainerMetersPerPixel(i);
+      /* CH-3: a figure (figures.js) stands as tall as the trainer it stands in for */
+      mpp = f.figure && f.ppm ? (i === 0 ? 1.42 : 1.7) / 1.75 / f.ppm : trainerMetersPerPixel(i);
     items.push({
       k: 'rig',
       im: f,

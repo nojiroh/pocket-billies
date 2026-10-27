@@ -1,30 +1,36 @@
 'use strict';
 /* ================= THE FIGURE BAKER (characters track CH-2, the spike; Engine > People > Figures, off) =================
-   People as small 3D figures of jointed rigid parts (logic/figure-pose.js: the mannequin, its poses and its view),
-   drawn into pixel pictures that go down today's sprite path. A baked picture is a plain canvas tagged as a person's
+   People as small 3D figures of jointed rigid parts, drawn into pixel pictures that go down today's sprite path. A
+   figure is built in code (logic/figure-pose.js: the mannequin, its poses) or made from a rigged model by
+   tools/gltf-figure.mjs (CH-3: game/art/figures/*.json and their palette-snapped textures; each vertex on its
+   strongest joint, the model's clips sampled on the 12 fps clock). A baked picture is a plain canvas tagged as a person's
    (`ax`, `ay` the ground point, `ppm` its pixels a metre, `noNormal` the flat light people have), so the sprites,
    their shadows, AO, fog, the reflection, the outline round you and the person counters take it as they take a
    person-art.js frame, and nothing else in the renderer changes.
    - The baker draws in its own small WebGL2 context (the owner's pick: kept apart from the game's renderer state).
      Pass 1 draws the figure with its depth into a texture: each face in one of three toon bands from a top-left light,
-     the scene props' ramps; the depth goes in alpha. Pass 2, at the same pixels: the dark plum outline round it (each
+     the scene props' ramps (a code figure's from its palette, a model's from its texture); the depth goes in alpha. Pass 2, at the same pixels: the dark plum outline round it (each
      outside pixel next to the figure takes the outline of its colour, as tools/build-scene-props.py olc) and inside it
      where a part stands well in front of another. Then the pixels are copied to a 2D canvas, and the face is painted
      on it in whole pixels (eyes, mouth, blush: logic/figure-pose.js figureFaceMarks).
-   - Pictures are kept by figure, clip, frame, the view's steps, the density and the outline (figureKey), at most
+   - Two styles (Engine > People > Style): 'pixel', the pixel puppet (C) described here, and 'smooth', the plain 3D
+     figure (B): a soft light and no outline, baked at FIGURE_SMOOTH_PPM and left to the GPU's mipmaps.
+   - Pictures are kept by figure, clip, frame, the view's steps, the density, the outline and the style (figureKey), at most
      FIGURE_CACHE_MAX, and at most FIGURE_BAKES_A_FRAME are baked a frame: until a person's picture is ready they keep
      the last one they had (or today's picture, or nobody, on a test map).
    - A lost baker context bakes nothing until it is back, then rebuilds; the game's own lost context only drops the
      textures, and the canvases are uploaded again. figureBakerLose forces a loss for the checks.
-   The renderer never calls this with the switch off. */
+   The renderer never calls this with the switch off, and a model's file is only fetched when one is first wanted. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
 import {
   FIGURE_BANDS,
   FIGURE_LIGHT,
   OUTLINE_RGB,
   cardSize,
   clipFrameAt,
+  codeExtent,
   figureClipMatrix,
   figureFaceMarks,
   figureKey,
@@ -35,44 +41,67 @@ import {
   figureView,
   jointMatrices,
   mannequinFigure,
+  meshClipFrame,
+  meshClipMatrices,
 } from './logic/figure-pose.js';
-import { makeCanvas } from './art.js';
-import { seenYaw, walkView } from './walk-view.js';
+import { artImg, artURL, makeCanvas } from './art.js';
+import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_BAKES_A_FRAME: [() => FIGURE_BAKES_A_FRAME],
+  FIGURE_BATTLE_PPM: [() => FIGURE_BATTLE_PPM],
   FIGURE_CACHE: [() => FIGURE_CACHE],
   FIGURE_CACHE_MAX: [() => FIGURE_CACHE_MAX],
   FIGURE_DEFS: [() => FIGURE_DEFS],
+  FIGURE_FILES: [() => FIGURE_FILES],
   FIGURE_FS: [() => FIGURE_FS],
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
+  FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
+  FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
   bakeFigure: [() => bakeFigure, v => (bakeFigure = v)],
   figureBaker: [() => figureBaker],
   figureBakerLose: [() => figureBakerLose, v => (figureBakerLose = v)],
+  figureBattlePicture: [() => figureBattlePicture, v => ((figureBattlePicture = v), provide({ figureBattlePicture }))],
   figureBuild: [() => figureBuild, v => (figureBuild = v)],
+  figureBytes: [() => figureBytes, v => (figureBytes = v)],
   figureCacheClear: [() => figureCacheClear, v => (figureCacheClear = v)],
+  figureChoice: [() => figureChoice, v => (figureChoice = v)],
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
+  figureFolk: [() => figureFolk, v => ((figureFolk = v), provide({ figureFolk }))],
+  figureFromFile: [() => figureFromFile, v => (figureFromFile = v)],
   figureGait: [() => figureGait],
   figureGl: [() => figureGl, v => (figureGl = v)],
   figureLast: [() => figureLast],
+  figureLoad: [() => figureLoad, v => (figureLoad = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
   figurePicture: [() => figurePicture, v => (figurePicture = v)],
   figureReport: [() => figureReport, v => (figureReport = v)],
+  figureRes: [() => figureRes, v => (figureRes = v)],
+  figureStyle: [() => figureStyle, v => (figureStyle = v)],
   figureTarget: [() => figureTarget, v => (figureTarget = v)],
   figureTilt: [() => figureTilt, v => (figureTilt = v)],
-  figuresOn: [() => figuresOn, v => (figuresOn = v)],
+  figuresOn: [() => figuresOn, v => ((figuresOn = v), provide({ figuresOn }))],
 });
 /* eslint-enable no-func-assign */
+provide({ figureBattlePicture, figureFolk, figuresOn });
 /* to-module: end */
 const FIGURE_CACHE_MAX = 600,
-  FIGURE_BAKES_A_FRAME = 4;
-/** the baker: its canvas and context, programs, buffers and counts (debug log: people.figures) */
+  FIGURE_BAKES_A_FRAME = 4,
+  /** the plain 3D figure (B, the style "smooth") is baked this fine and left to the GPU's mipmaps to smooth */
+  FIGURE_SMOOTH_PPM = 128,
+  /** figures in battle: twice the world's grid (the old style guide's "32 px/m in the world, 64 in battle") */
+  FIGURE_BATTLE_PPM = 64;
+/** the figures made from models (tools/gltf-figure.mjs; their CC0 sources in validation/cc0-src/LICENSES.md), each
+ * a JSON file and its texture */
+const FIGURE_FILES = { rogue: 'figures/rogue.json' };
+const FIGURE_TEXTURES = { rogue: 'figures/rogue.png' };
+/** the baker: its canvas and context, programs, each figure's buffers and texture, and counts (debug log: people) */
 const figureBaker = {
   cv: null,
   gl: null,
@@ -81,13 +110,12 @@ const figureBaker = {
   failed: '',
   P: null,
   O: null,
-  vao: null,
   oVao: null,
   fb: null,
   tex: null,
   depth: null,
   size: [0, 0],
-  mesh: null,
+  res: new Map(),
   bakes: 0,
   ms: 0,
   losses: 0,
@@ -97,26 +125,111 @@ const figureBaker = {
 const FIGURE_CACHE = new Map();
 /** each person's last picture (a runtime record or a test map's lineup entry; nothing is written on them) */
 const figureLast = new WeakMap();
-/** the figures by name */
+/** the figures by name: a code figure at once; a model's once its file is in (null while it loads, false if it can't) */
 const FIGURE_DEFS = {};
 
 /** whether people are drawn as figures (Engine > People > Figures) */
 export function figuresOn() {
   return typeof engineSetting === 'function' && !!engineSetting('people', 'figures');
 }
+/** the figure you (and townsfolk drawn as figures) are (Engine > People > Figure) */
+export function figureChoice() {
+  const v = typeof engineSetting === 'function' ? engineSetting('people', 'figure') : null;
+  return v === 'mannequin' || v in FIGURE_FILES ? v : 'rogue';
+}
+/** how figures are drawn (Engine > People > Style): 'pixel' (the pixel puppet, C) or 'smooth' (the plain 3D figure, B) */
+export function figureStyle() {
+  return typeof engineSetting === 'function' && engineSetting('people', 'style') === 'smooth' ? 'smooth' : 'pixel';
+}
+/** whether townsfolk are drawn as figures too (Engine > People > Townsfolk as figures) */
+export function figureFolk() {
+  return typeof engineSetting === 'function' && !!engineSetting('people', 'folk');
+}
+/** a figure by name: null while its file loads, false if there is none */
 function figureDef(name) {
-  if (name !== 'mannequin') return null;
-  return FIGURE_DEFS[name] || (FIGURE_DEFS[name] = mannequinFigure());
+  if (name in FIGURE_DEFS) return FIGURE_DEFS[name];
+  if (name === 'mannequin') {
+    const F = mannequinFigure();
+    return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: codeExtent(F.height) });
+  }
+  if (!(name in FIGURE_FILES)) return (FIGURE_DEFS[name] = false);
+  FIGURE_DEFS[name] = null;
+  figureLoad(name);
+  return null;
+}
+/** a figure's file, fetched once (inline in a single-file build: a data: link, decoded here) */
+function figureLoad(name) {
+  const path = FIGURE_FILES[name],
+    url = typeof artURL === 'function' ? artURL(path) : 'art/' + path,
+    done = j => {
+      try {
+        FIGURE_DEFS[name] = j ? figureFromFile(name, j) : false;
+      } catch (e) {
+        FIGURE_DEFS[name] = false;
+        if (typeof debugLog !== 'undefined') debugLog.add('figures', name + ': ' + ((e && e.message) || e));
+      }
+      if (!FIGURE_DEFS[name] && typeof debugLog !== 'undefined') debugLog.add('figures', name + ': not loaded');
+    };
+  if (url.startsWith('data:')) {
+    const c = url.indexOf(','),
+      body = url.slice(c + 1);
+    try {
+      done(
+        JSON.parse(
+          /;base64/.test(url.slice(5, c)) ? new TextDecoder().decode(figureBytes(body)) : decodeURIComponent(body)
+        )
+      );
+    } catch (e) {
+      done(null);
+    }
+    return;
+  }
+  fetch(url)
+    .then(r => (r.ok ? r.json() : null))
+    .then(done, () => done(null));
+}
+/** base64 to bytes */
+function figureBytes(b64) {
+  const s = atob(b64),
+    u = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+  return u;
+}
+/** a figure from its file (tools/gltf-figure.mjs, format 1): its mesh, joints, clips, extent and texture */
+function figureFromFile(name, j) {
+  if (j.format !== 1) throw new Error('figure format ' + j.format);
+  const clips = {};
+  for (const [k, c] of Object.entries(j.clips || {}))
+    clips[k] = { ...c, mats: new Float32Array(figureBytes(c.matrices).buffer) };
+  return {
+    kind: 'mesh',
+    name,
+    height: j.height,
+    joints: j.joints,
+    ext: j.extent,
+    data: new Float32Array(figureBytes(j.vertices).buffer),
+    index: new Uint16Array(figureBytes(j.indices).buffer),
+    clips,
+    tex: typeof artImg === 'function' ? artImg(FIGURE_TEXTURES[name] || j.texture) : null,
+  };
 }
 
 const FIGURE_VS = `#version 300 es
-in vec3 aP;in vec3 aN;in float aJ;in float aC;uniform mat4 uJ[24];uniform mat4 uM;uniform mat3 uR;out vec3 vN;flat out int vC;
-void main(){mat4 J=uJ[int(aJ)];vN=uR*(mat3(J)*aN);vC=int(aC);gl_Position=uM*(J*vec4(aP,1.));}`;
+in vec3 aP;in vec3 aN;in float aJ;in float aC;in vec2 aUV;uniform mat4 uJ[32];uniform mat4 uM;uniform mat3 uR;
+out vec3 vN;out vec2 vUV;flat out int vC;
+void main(){mat4 J=uJ[int(aJ)];vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;gl_Position=uM*(J*vec4(aP,1.));}`;
+/* a code figure's colours come from its palette (its ramps); a model's from its texture, ramped here as the props'
+   ramp does it (logic/figure-pose.js figureRamp: the shadow darker and lavender, the light warmer). Smooth (the plain
+   3D figure): a soft light, no bands */
 const FIGURE_FS = `#version 300 es
-precision highp float;in vec3 vN;flat in int vC;uniform vec3 uPal[48];uniform vec3 uL;uniform vec2 uB;out vec4 o;
-void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.x?2:(d>uB.y?1:0);
+precision highp float;in vec3 vN;in vec2 vUV;flat in int vC;uniform vec3 uPal[48];uniform vec3 uL;uniform vec2 uB;
+uniform float uTexOn,uSmooth;uniform sampler2D uTx;out vec4 o;
+void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.x?2:(d>uB.y?1:0);vec3 base,sh,li;
+ if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);}
+ else{sh=uPal[vC*3];base=uPal[vC*3+1];li=uPal[vC*3+2];}
+ vec3 c=uSmooth>.5?base*clamp(.62+.5*d,.35,1.12):(b==2?li:(b==1?base:sh));
 /* the depth, nearer larger, in alpha: 0 is no figure */
-o=vec4(uPal[vC*3+b]/255.,mix(1.,.08,gl_FragCoord.z));}`;
+o=vec4(c/255.,mix(1.,.08,gl_FragCoord.z));}`;
 const FIGURE_OUT_VS = `#version 300 es
 in vec2 aQ;void main(){gl_Position=vec4(aQ*2.-1.,0.,1.);}`;
 const FIGURE_OUT_FS = `#version 300 es
@@ -201,29 +314,13 @@ function figureGl() {
     }
   return gl;
 }
-/** the programs, the mesh, the screen quad and the pass-1 target, on a new or restored context */
+/** the programs, the screen quad and the pass-1 target, on a new or restored context (each figure's own buffers and
+ * texture are made again the next time it is baked) */
 function figureBuild(gl) {
   const B = figureBaker;
   B.P = figureCompile(gl, FIGURE_VS, FIGURE_FS);
   B.O = figureCompile(gl, FIGURE_OUT_VS, FIGURE_OUT_FS);
-  const M = figureMesh(figureDef('mannequin'));
-  B.mesh = M;
-  B.vao = gl.createVertexArray();
-  gl.bindVertexArray(B.vao);
-  const vb = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
-  gl.bufferData(gl.ARRAY_BUFFER, M.data, gl.STATIC_DRAW);
-  for (const [k, n, off] of [
-    ['aP', 3, 0],
-    ['aN', 3, 3],
-    ['aJ', 1, 6],
-    ['aC', 1, 7],
-  ]) {
-    const a = B.P.a(k);
-    if (a < 0) continue;
-    gl.enableVertexAttribArray(a);
-    gl.vertexAttribPointer(a, n, gl.FLOAT, false, 32, off * 4);
-  }
+  B.res = new Map();
   B.oVao = gl.createVertexArray();
   gl.bindVertexArray(B.oVao);
   const qb = gl.createBuffer();
@@ -233,8 +330,66 @@ function figureBuild(gl) {
   gl.enableVertexAttribArray(qa);
   gl.vertexAttribPointer(qa, 2, gl.FLOAT, false, 8, 0);
   gl.bindVertexArray(null);
+  B.fb = null;
   B.size = [0, 0];
   figureTarget(gl, B.cv.width, B.cv.height);
+}
+/** a figure's buffers (and a model's texture) in the baker's context; null while a model's texture loads */
+function figureRes(gl, Fig) {
+  const B = figureBaker;
+  let R = B.res.get(Fig.name);
+  if (R) return R;
+  if (Fig.kind === 'mesh' && !(Fig.tex && Fig.tex.complete && Fig.tex.naturalWidth > 0)) return null;
+  const code = Fig.kind === 'code',
+    M = code ? figureMesh(Fig.F) : null,
+    vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const vb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, code ? M.data : Fig.data, gl.STATIC_DRAW);
+  /* a code figure: x y z, the normal, its joint, its colour (8 numbers); a model: x y z, the normal, its joint, u v (9) */
+  const L = code
+      ? [
+          ['aP', 3, 0],
+          ['aN', 3, 3],
+          ['aJ', 1, 6],
+          ['aC', 1, 7],
+        ]
+      : [
+          ['aP', 3, 0],
+          ['aN', 3, 3],
+          ['aJ', 1, 6],
+          ['aUV', 2, 7],
+        ],
+    stride = code ? 32 : 36;
+  for (const k of ['aP', 'aN', 'aJ', 'aC', 'aUV']) {
+    const a = B.P.a(k);
+    if (a < 0) continue;
+    const l = L.find(x => x[0] === k);
+    if (l) {
+      gl.enableVertexAttribArray(a);
+      gl.vertexAttribPointer(a, l[1], gl.FLOAT, false, stride, l[2] * 4);
+    } else gl.disableVertexAttribArray(a);
+  }
+  let count = code ? M.count : Fig.index.length,
+    tex = null;
+  if (!code) {
+    const ib = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, Fig.index, gl.STATIC_DRAW);
+    tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, Fig.tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  gl.bindVertexArray(null);
+  R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null };
+  B.res.set(Fig.name, R);
+  return R;
 }
 /** pass 1's colour (alpha the depth) and depth, as big as the baker's canvas */
 function figureTarget(gl, w, h) {
@@ -260,7 +415,7 @@ function figureTarget(gl, w, h) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   B.size = [w, h];
 }
-/** a figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
+/** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
 function figurePalette(F, colours) {
   const out = new Float32Array(48 * 3);
   colours.forEach((k, i) => {
@@ -271,22 +426,27 @@ function figurePalette(F, colours) {
   return out;
 }
 /**
- * one picture of a figure: its pose at a clip's frame, seen in view V at `ppm` pixels a metre. A canvas tagged as a
- * person's picture, or null if the baker can't draw now.
+ * one picture of a figure: its pose at a clip's frame, seen in view V at `ppm` pixels a metre, in a style ('pixel':
+ * toon bands and the outline as `outline` says; 'smooth': the plain 3D figure, a soft light and no outline). A canvas
+ * tagged as a person's picture, or null if the baker can't draw it now.
  */
-function bakeFigure(F, clip, frame, V, ppm, outline) {
+function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   const gl = figureGl();
   if (!gl) return null;
+  const R = figureRes(gl, Fig);
+  if (!R) return null;
   const B = figureBaker,
     t0 = performance.now(),
-    S = cardSize(ppm, V.tilt, F.height);
+    smooth = style === 'smooth',
+    S = cardSize(ppm, V.tilt, Fig.ext);
   if (S.w > B.cv.width || S.h > B.cv.height) {
     B.cv.width = Math.max(B.cv.width, S.w);
     B.cv.height = Math.max(B.cv.height, S.h);
   }
   figureTarget(gl, B.cv.width, B.cv.height);
-  const pose = figurePose(F, clip, frame),
-    J = jointMatrices(F, pose, ppm),
+  const code = Fig.kind === 'code',
+    pose = code ? figurePose(Fig.F, clip, frame) : null,
+    J = code ? jointMatrices(Fig.F, pose, ppm) : meshClipMatrices(Fig.clips[clip], frame, Fig.joints.length, ppm),
     c = Math.cos(V.rel),
     s = Math.sin(V.rel);
   /* pass 1: the figure with its depth */
@@ -306,11 +466,17 @@ function bakeFigure(F, clip, frame, V, ppm, outline) {
   gl.uniformMatrix4fv(U.uM, false, figureClipMatrix(V.rel, V.tilt, ppm, S));
   /* the figure's turn in the camera's frame, for the normals (logic/figure-pose.js cardPoint) */
   gl.uniformMatrix3fv(U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
-  gl.uniform3fv(U.uPal, figurePalette(F, B.mesh.colours));
+  if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours));
   gl.uniform3fv(U.uL, FIGURE_LIGHT);
   gl.uniform2f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base);
-  gl.bindVertexArray(B.vao);
-  gl.drawArrays(gl.TRIANGLES, 0, B.mesh.count);
+  gl.uniform1f(U.uTexOn, code ? 0 : 1);
+  gl.uniform1f(U.uSmooth, smooth ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, R.tex);
+  gl.uniform1i(U.uTx, 1);
+  gl.bindVertexArray(R.vao);
+  if (R.indexed) gl.drawElements(gl.TRIANGLES, R.count, gl.UNSIGNED_SHORT, 0);
+  else gl.drawArrays(gl.TRIANGLES, 0, R.count);
   /* pass 2: the outline, to the canvas */
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, S.w, S.h);
@@ -320,7 +486,7 @@ function bakeFigure(F, clip, frame, V, ppm, outline) {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, B.tex);
   gl.uniform1i(B.O.U.uT, 0);
-  gl.uniform1f(B.O.U.uOut, outline ? 1 : 0);
+  gl.uniform1f(B.O.U.uOut, outline && !smooth ? 1 : 0);
   gl.uniform3f(B.O.U.uOL, OUTLINE_RGB[0] / 255, OUTLINE_RGB[1] / 255, OUTLINE_RGB[2] / 255);
   gl.uniform2i(B.O.U.uS, S.w, S.h);
   gl.bindVertexArray(B.oVao);
@@ -331,16 +497,18 @@ function bakeFigure(F, clip, frame, V, ppm, outline) {
     x = out.getContext('2d');
   x.imageSmoothingEnabled = false;
   x.drawImage(B.cv, 0, B.cv.height - S.h, S.w, S.h, 0, 0, S.w, S.h);
-  /* the face, painted in whole pixels where the head faces the camera (logic/figure-pose.js figureFaceMarks) */
-  for (const m of figureFaceMarks(F, J, pose, V, ppm, S)) {
-    x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
-    x.fillRect(m.x, m.y, m.w, m.h);
-  }
+  /* a code figure's face, painted in whole pixels where its head faces the camera (logic/figure-pose.js
+     figureFaceMarks); a model's face is in its texture */
+  if (code)
+    for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S)) {
+      x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
+      x.fillRect(m.x, m.y, m.w, m.h);
+    }
   out.ax = S.ax;
   out.ay = S.ay;
   out.ppm = ppm;
   out.noNormal = true;
-  out.figure = F.name;
+  out.figure = Fig.name;
   B.bakes++;
   B.ms += performance.now() - t0;
   return out;
@@ -349,35 +517,40 @@ function bakeFigure(F, clip, frame, V, ppm, outline) {
  * the picture of a person drawn as a figure this frame, or their last one while it isn't baked yet (null when there
  * is none). `rec` is what the last picture is kept against (a runtime record or a lineup entry, never written to);
  * `heading` the way they face in the world (logic/person-view.js personHeading), `yaw` the camera's turn (seenYaw),
- * `tilt` the camera's tilt.
+ * `tilt` the camera's tilt, `style` 'pixel' or 'smooth' (the plain 3D figure, baked at FIGURE_SMOOTH_PPM); a pixel
+ * figure at `ppmAt` pixels a metre if given (a battle's), else at the dial's.
  */
-function figurePicture(rec, name, clip, frame, heading, yaw, tilt) {
-  const F = figureDef(name);
-  if (!F) return null;
-  const e = k => engineSetting('people', k),
-    ppm = Math.max(16, Math.min(64, Math.round(e('density') || 32))),
-    steps = e('yawSteps') >= 12 ? 16 : 8,
-    outline = e('outline') !== false,
-    V = figureView(heading, yaw, tilt, steps),
-    key = figureKey(F.name, clip, frame, V, steps, ppm, outline);
-  let im = FIGURE_CACHE.get(key);
-  if (im) {
-    /* kept the longest by the last use */
-    FIGURE_CACHE.delete(key);
-    FIGURE_CACHE.set(key, im);
-  } else {
-    const B = figureBaker,
-      fr = typeof gpuState !== 'undefined' ? gpuState.fr || 0 : 0;
-    if (B.frame !== fr) {
-      B.frame = fr;
-      B.frameBakes = 0;
-    }
-    if (B.frameBakes < FIGURE_BAKES_A_FRAME) {
-      B.frameBakes++;
-      im = bakeFigure(F, clip, frame, V, ppm, outline);
-      if (im) {
-        FIGURE_CACHE.set(key, im);
-        while (FIGURE_CACHE.size > FIGURE_CACHE_MAX) FIGURE_CACHE.delete(FIGURE_CACHE.keys().next().value);
+function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixel', ppmAt = 0) {
+  const Fig = figureDef(name);
+  let im = null;
+  if (Fig) {
+    const e = k => engineSetting('people', k),
+      smooth = style === 'smooth',
+      ppm = smooth ? FIGURE_SMOOTH_PPM : ppmAt || Math.max(16, Math.min(64, Math.round(e('density') || 32))),
+      ys = e('yawSteps') || 16,
+      steps = ys >= 32 ? 32 : ys >= 16 ? 16 : 8,
+      outline = !smooth && e('outline') !== false,
+      V = figureView(heading, yaw, tilt, steps),
+      key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, smooth ? 'smooth' : 'pixel');
+    im = FIGURE_CACHE.get(key) || null;
+    if (im) {
+      /* kept the longest by the last use */
+      FIGURE_CACHE.delete(key);
+      FIGURE_CACHE.set(key, im);
+    } else {
+      const B = figureBaker,
+        fr = typeof gpuState !== 'undefined' ? gpuState.fr || 0 : 0;
+      if (B.frame !== fr) {
+        B.frame = fr;
+        B.frameBakes = 0;
+      }
+      if (B.frameBakes < FIGURE_BAKES_A_FRAME) {
+        B.frameBakes++;
+        im = bakeFigure(Fig, clip, frame, V, ppm, outline, smooth ? 'smooth' : 'pixel');
+        if (im) {
+          FIGURE_CACHE.set(key, im);
+          while (FIGURE_CACHE.size > FIGURE_CACHE_MAX) FIGURE_CACHE.delete(FIGURE_CACHE.keys().next().value);
+        }
       }
     }
   }
@@ -392,17 +565,51 @@ function figureTilt() {
   return C && C.sp != null ? Math.atan2(C.sp, C.cp) : (26 * Math.PI) / 180;
 }
 /**
- * a person drawn as figure `name` this frame: idle, or walking by the distance walked (`gait`, metres) as it was at
- * the last tick, turned to `heading` in the world (logic/person-view.js personHeading), seen from this frame's camera.
- * `rec` keeps their last picture and their gait at the last tick (nothing is written on it). Null until a first
- * picture is baked.
+ * a person drawn as figure `name` this frame, doing `act`: 'idle', 'walk' or 'run' (by the distance walked, `gait`
+ * metres, as it was at the last tick), or another of the figure's clips ('cheer', 'throw', 'sit': a code figure has
+ * only idle and walk); turned to `heading` in the world (logic/person-view.js personHeading), seen from this frame's
+ * camera, in `style`. `rec` keeps their last picture and their gait at the last tick (nothing is written on it). Null
+ * until a first picture is baked (or while a model's file loads).
  */
-export function figurePersonPicture(rec, name, t, walking, gait, heading) {
-  const clip = walking ? 'walk' : 'idle',
-    tick = figureTick(t);
+export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'pixel') {
+  const Fig = figureDef(name);
+  if (!Fig) return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
+  const tick = figureTick(t);
   let g = figureGait.get(rec);
   if (!g || g.tick !== tick) figureGait.set(rec, (g = { tick, gait }));
-  return figurePicture(rec, name, clip, clipFrameAt(clip, t, g.gait), heading, seenYaw(), figureTilt());
+  let clip = act,
+    frame;
+  if (Fig.kind === 'code') {
+    clip = act === 'walk' || act === 'run' ? 'walk' : 'idle';
+    frame = clipFrameAt(clip, t, g.gait);
+  } else {
+    if (!Fig.clips[clip]) clip = act === 'run' && Fig.clips.walk ? 'walk' : 'idle';
+    if (!Fig.clips[clip]) clip = Object.keys(Fig.clips)[0];
+    const speed = clip === 'run' ? WALK_SPEED * RUN_FACTOR : WALK_SPEED;
+    frame = meshClipFrame(Fig.clips[clip], t, g.gait, speed);
+  }
+  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style);
+}
+/**
+ * a battle's trainer drawn as your figure (battle-stage.js trainerBattleFrame): you from behind (i 0) or the rival
+ * facing you (i 1), at FIGURE_BATTLE_PPM, square to the battle's level camera; an act of the figure's own (the throw:
+ * by how far through it the battle is, `progress` 0..1), else its idle by the clock. `rec` keeps their last picture.
+ */
+function figureBattlePicture(rec, i, t, act, progress) {
+  const name = figureChoice(),
+    Fig = figureDef(name);
+  if (!Fig) return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
+  const C = Fig.kind === 'mesh' ? Fig.clips : null;
+  let clip = 'idle',
+    frame;
+  if (act && C && C[act]) {
+    clip = act;
+    frame = Math.max(0, Math.min(C[act].frames - 1, Math.floor((progress || 0) * C[act].frames)));
+  } else {
+    if (C && !C.idle) clip = Object.keys(C)[0];
+    frame = C ? meshClipFrame(C[clip], t, 0, 0) : clipFrameAt('idle', t);
+  }
+  return figurePicture(rec, name, clip, frame, i === 0 ? 0 : Math.PI, 0, 0, figureStyle(), FIGURE_BATTLE_PPM);
 }
 /** the baker's numbers for the debug log's people section (numbers only) */
 export function figureReport() {
@@ -415,6 +622,7 @@ export function figureReport() {
     lost: B.lost,
     losses: B.losses,
     failed: B.failed || null,
+    figures: Object.keys(FIGURE_DEFS).filter(k => FIGURE_DEFS[k]).length,
   };
 }
 /** the checks: lose the baker's context on purpose, back after `ms` (WEBGL_lose_context); false if it can't */

@@ -34,6 +34,7 @@ import { WADE_DEPTH } from '../logic/wading.js';
 import { artImg } from '../art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
 import {
+  RUN_FACTOR,
   WALK_FRAME_M,
   WALK_SPEED,
   artImage,
@@ -68,7 +69,7 @@ import {
   stillPropState,
   windLeanAt,
 } from './prop-look.js';
-import { figurePersonPicture, figuresOn } from '../figures.js';
+import { figureChoice, figureFolk, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
 /* eslint-disable no-func-assign */
 expose({
   SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
@@ -415,6 +416,20 @@ export function gatherFrameItems(st, C, PPU, C0) {
         const w = personBattlePose(who, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
         if (w) fim = w;
       }
+      /* CH-3: townsfolk as figures too (Engine > People > Townsfolk as figures): yours, strolling by the clock, cheering
+         for the wave hello */
+      if (figuresOn() && figureFolk()) {
+        const g = figurePersonPicture(
+          f,
+          figureChoice(),
+          t,
+          f.waveT > 0 ? 'cheer' : f.walk ? 'walk' : 'idle',
+          (figureTick(t) / FIGURE_FPS) * 1.4,
+          personHeading(f, seenYaw()),
+          figureStyle()
+        );
+        if (g) fim = g;
+      }
       if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));
     }
   /* characters track CH-1: a test map's lineup (tools/build-test-scenes.py test_people, tools/look-people.py): people
@@ -423,16 +438,26 @@ export function gatherFrameItems(st, C, PPU, C0) {
      seen from the camera; `walk` walks them on the spot */
   if (!st.battle && sc.test && Array.isArray(sc.lineup))
     sc.lineup.forEach((/** @type {any} */ L, /** @type {number} */ i) => {
-      /* CH-2: a figure (`figure`, the figure baker's mannequin: figures.js), only with Engine > People > Figures on;
-         walking on the spot at your walking pace */
+      /* CH-2, CH-3: a figure (`figure`: figures.js), only with Engine > People > Figures on: idle, doing an `act`,
+         or walking (running) on the spot at your pace, in its `style` (the plain 3D figure: smooth) */
       if (L && typeof L.figure === 'string') {
         if (!figuresOn()) return;
         const head =
             L.face != null
               ? Math.PI / 2 - (L.face * Math.PI) / 180
               : personHeading({ dir: L.dir || 'down' }, seenYaw()),
-          im = figurePersonPicture(L, L.figure, t, !!L.walk, (figureTick(t) / FIGURE_FPS) * WALK_SPEED, head);
+          act = L.walk ? (L.run ? 'run' : 'walk') : L.act || 'idle',
+          pace = (figureTick(t) / FIGURE_FPS) * WALK_SPEED * (L.run ? RUN_FACTOR : 1),
+          im = figurePersonPicture(L, L.figure, t, act, pace, head, L.style === 'smooth' ? 'smooth' : 'pixel');
         if (im) out.push(personItem('line', im, L.x, L.z, C0, { line: i }));
+        return;
+      }
+      /* CH-3: a Billie (`billie`, a species) to stand the figures beside, also only with the figures on */
+      if (L && typeof L.billie === 'string') {
+        if (!figuresOn()) return;
+        const it =
+          typeof worldBillyItem === 'function' ? worldBillyItem('line', L.billie, 'front', null, t, i, L.x, L.z) : null;
+        if (it) out.push(it);
         return;
       }
       const fr = L && typeof L.who === 'string' ? personWalkFrames(L.who) : null;
@@ -471,10 +496,20 @@ export function gatherFrameItems(st, C, PPU, C0) {
   if (st.who !== null && typeof personWalkFrames === 'function') {
     const fr = personWalkFrames(st.who),
       set = fr[seenWord(P, seenYaw())] || fr.down;
-    /* CH-2: with Engine > People > Figures on you are the figure baker's mannequin (figures.js), today's picture until
-       yours is baked */
+    /* CH-2, CH-3: with Engine > People > Figures on you are a figure (figures.js: Engine > People > Your figure, in its
+       style), today's picture until yours is baked; seated on a mount */
     const figHead = personHeading(P, seenYaw()),
-      fig = figuresOn() ? figurePersonPicture(P, 'mannequin', t, !!(P.walk || P.hop), P.gait || 0, figHead) : null;
+      fig = figuresOn()
+        ? figurePersonPicture(
+            P,
+            figureChoice(),
+            t,
+            P.walk || P.hop ? (P.running ? 'run' : 'walk') : 'idle',
+            P.gait || 0,
+            figHead,
+            figureStyle()
+          )
+        : null;
     const me = personItem(
       'me',
       fig ||
@@ -498,7 +533,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     if (mt) {
       out.push(mt.it);
       me.y += mt.lift;
-      me.im = (fig && figurePersonPicture(P, 'mannequin', t, false, 0, figHead)) || set[0];
+      me.im = (fig && figurePersonPicture(P, figureChoice(), t, 'sit', 0, figHead, figureStyle())) || set[0];
       me.z -= 0.02;
     }
     out.push(me);

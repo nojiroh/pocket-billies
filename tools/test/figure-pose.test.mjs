@@ -7,6 +7,7 @@ import {
   WALK_CYCLE_M,
   cardPoint,
   cardSize,
+  codeExtent,
   clipFrameAt,
   figureClipMatrix,
   figureFaceMarks,
@@ -18,6 +19,8 @@ import {
   figureView,
   jointMatrices,
   mannequinFigure,
+  meshClipFrame,
+  meshClipMatrices,
   outlineOf,
   restPose,
   toonBand,
@@ -326,6 +329,51 @@ test('figure pose: the clock: the idle on twos, the walk by the distance walked'
   assert.equal(figureTick(tick * 3 + 1), 3);
   assert.equal(
     figureKey('mannequin', 'walk', 3, { k: 5, tiltStep: 13 }, 16, 32, true),
-    'mannequin|walk|3|5/16|13|32|1'
+    'mannequin|walk|3|5/16|13|32|1|pixel'
   );
+  assert.equal(
+    figureKey('rogue', 'idle', 0, { k: 0, tiltStep: 13 }, 8, 128, false, 'smooth'),
+    'rogue|idle|0|0/8|13|128|0|smooth'
+  );
+});
+
+test('figure pose: a card as big as a figure reaches: a code figure’s as before, a model’s from its extent', () => {
+  const t = (26 * Math.PI) / 180;
+  assert.deepEqual(cardSize(32, t), cardSize(32, t, codeExtent(1.75)));
+  const S = cardSize(32, t, { r: 0.9, depth: 0.9, top: 1.83, bottom: -0.1 });
+  assert.equal(S.w, Math.ceil(0.9 * 32) * 2 + 4);
+  assert.equal(S.ay, Math.ceil((1.83 + 0.9 * Math.tan(t)) * 32) + 2);
+  assert.equal(S.h - S.ay - 2, Math.ceil((0.9 * Math.tan(t) + 0.1) * 32));
+});
+
+test('figure pose: a model’s clip: a walk by the distance at its own cadence, an idle on twos, an act on ones', () => {
+  const tick = 1000 / 12,
+    walk = { fps: 12, frames: 12, cycleM: 0.6, lift: [], mats: new Float32Array(0) },
+    idle = { fps: 6, frames: 6, lift: [], mats: new Float32Array(0) },
+    act = { fps: 12, frames: 20, lift: [], mats: new Float32Array(0) };
+  /* at 3.4 m/s a 12-frame cycle at 12 fps takes 1 s: 3.4 m, longer than its 0.6 m stride, so 3.4 m a cycle */
+  assert.equal(meshClipFrame(walk, 0, 0, 3.4), 0);
+  assert.equal(meshClipFrame(walk, 0, 3.4 / 12, 3.4), 1);
+  assert.equal(meshClipFrame(walk, 0, 3.4 * 1.5, 3.4), 6);
+  /* slow enough, its own stride */
+  assert.equal(meshClipFrame(walk, 0, 0.3, 0.1), 6);
+  assert.equal(meshClipFrame(idle, tick * 1.9, 0, 3.4), 0);
+  assert.equal(meshClipFrame(idle, tick * 2, 0, 3.4), 1);
+  assert.equal(meshClipFrame(idle, tick * 12, 0, 3.4), 0, 'wraps after 6 poses');
+  assert.equal(meshClipFrame(act, tick * 3, 0, 3.4), 3);
+});
+
+test('figure pose: a model’s clip matrices: 3 x 4 to 4 x 4, the hips’ lift snapped to whole texels', () => {
+  const mats = new Float32Array(2 * 2 * 12);
+  for (let f = 0; f < 2; f++)
+    for (let j = 0; j < 2; j++) mats.set([1, 0, 0, 0, 1, 0, 0, 0, 1, j, f * 0.5 + 0.013, 0], (f * 2 + j) * 12);
+  const c = { fps: 12, frames: 2, lift: [0.013, 0.513], mats },
+    M = meshClipMatrices(c, 1, 2, 32);
+  assert.equal(M.length, 32);
+  assert.deepEqual([...M.subarray(0, 12)], [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]);
+  assert.equal(M[15], 1);
+  assert.equal(M[16 + 12], 1, 'the second joint’s own move');
+  /* lift 0.513 m is 16.4 texels: snapped to 16, so every joint is 0.013 m lower */
+  assert.ok(Math.abs(M[13] - (0.5 + 0.013 + 16 / 32 - 0.513)) < 1e-6, `${M[13]}`);
+  assert.deepEqual(meshClipMatrices(c, 3, 2, 32), M, 'the frames wrap');
 });

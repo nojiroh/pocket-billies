@@ -39,6 +39,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   clipFrameAt: [() => clipFrameAt, v => (clipFrameAt = v)],
   // @ts-expect-error -- replaced on purpose
+  codeExtent: [() => codeExtent, v => (codeExtent = v)],
+  // @ts-expect-error -- replaced on purpose
   figureClipMatrix: [() => figureClipMatrix, v => (figureClipMatrix = v)],
   // @ts-expect-error -- replaced on purpose
   figureDark: [() => figureDark, v => (figureDark = v)],
@@ -72,6 +74,10 @@ expose({
   mannequinFigure: [() => mannequinFigure, v => (mannequinFigure = v)],
   // @ts-expect-error -- replaced on purpose
   mat4Mul: [() => mat4Mul, v => (mat4Mul = v)],
+  // @ts-expect-error -- replaced on purpose
+  meshClipFrame: [() => meshClipFrame, v => (meshClipFrame = v)],
+  // @ts-expect-error -- replaced on purpose
+  meshClipMatrices: [() => meshClipMatrices, v => (meshClipMatrices = v)],
   // @ts-expect-error -- replaced on purpose
   outlineOf: [() => outlineOf, v => (outlineOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -774,18 +780,29 @@ export function cardPoint(p, rel, tilt) {
     z = -p[0] * s + p[2] * c;
   return { u: x, v: p[1] + z * Math.tan(tilt), depth: z * Math.cos(tilt) - p[1] * Math.sin(tilt) };
 }
+/** @typedef {{ r: number, depth: number, top: number, bottom: number }} FigureExtent the room every pose of a figure
+ * takes, metres: its reach round its upright axis (r), how far it reaches toward or away from the camera (depth: what
+ * the tilt lifts or drops on the card), its top and its bottom */
+/**
+ * the room a code figure of this height takes: wide enough for a swinging limb seen side-on (0.62 m), 0.4 m deep
+ * @param {number} height @returns {FigureExtent}
+ */
+export function codeExtent(height = 1.75) {
+  return { r: 0.62, depth: 0.4, top: height + 0.06, bottom: -0.06 };
+}
 /**
  * the bake's picture for a view: its size in pixels and its anchor (the ground point under the figure), with a margin
- * of 2 pixels for the outline. Wide enough for a swinging limb seen side-on, tall enough for the head lifted by the
- * tilt and for the feet nearer the camera dropped below the ground point.
- * @param {number} ppm @param {number} tilt @param {number} [height]
+ * of 2 pixels for the outline: as wide as the figure's reach, tall enough for its top lifted by the tilt and for its
+ * feet nearer the camera dropped below the ground point
+ * @param {number} ppm @param {number} tilt @param {number | FigureExtent} [ext] an extent, or a code figure's height
  * @returns {{ w: number, h: number, ax: number, ay: number }}
  */
-export function cardSize(ppm, tilt, height = 1.75) {
-  const tn = Math.tan(tilt),
-    half = Math.ceil(0.62 * ppm),
-    top = Math.ceil((height + 0.06 + 0.4 * tn) * ppm),
-    bottom = Math.ceil(0.4 * tn * ppm + 0.06 * ppm);
+export function cardSize(ppm, tilt, ext = 1.75) {
+  const E = typeof ext === 'number' ? codeExtent(ext) : ext,
+    tn = Math.tan(tilt),
+    half = Math.ceil(E.r * ppm),
+    top = Math.ceil((E.top + E.depth * tn) * ppm),
+    bottom = Math.ceil((E.depth * tn - E.bottom) * ppm);
   return { w: half * 2 + 4, h: top + bottom + 4, ax: half + 2, ay: top + 2 };
 }
 /**
@@ -844,10 +861,48 @@ export function figureTick(t) {
   return Math.floor(t / (1000 / FIGURE_FPS));
 }
 /**
- * the key a baked picture is kept by: the figure, clip and frame, the view's steps, the density and the outline
+ * the key a baked picture is kept by: the figure, clip and frame, the view's steps, the density, the outline and the
+ * style (pixel, or smooth: the plain 3D figure)
  * @param {string} name @param {string} clip @param {number} frame @param {{ k: number, tiltStep: number }} V
- * @param {number} steps @param {number} ppm @param {boolean} outline
+ * @param {number} steps @param {number} ppm @param {boolean} outline @param {string} [style]
  */
-export function figureKey(name, clip, frame, V, steps, ppm, outline) {
-  return `${name}|${clip}|${frame}|${V.k}/${steps}|${V.tiltStep}|${ppm}|${outline ? 1 : 0}`;
+export function figureKey(name, clip, frame, V, steps, ppm, outline, style = 'pixel') {
+  return `${name}|${clip}|${frame}|${V.k}/${steps}|${V.tiltStep}|${ppm}|${outline ? 1 : 0}|${style}`;
+}
+
+/* ---------- figures made from a model (tools/gltf-figure.mjs) ---------- */
+/** @typedef {{ fps: number, frames: number, lift: number[], cycleM?: number, mats: Float32Array }} MeshClip a clip
+ * of a figure made from a model: for each frame and joint a 3 x 4 matrix (12 numbers, column by column) from where a
+ * vertex is modelled to where the clip has it, and the hips' height over their rest */
+/**
+ * a mesh clip's frame at time `t` (ms) and distance walked `gait` (m), on the 12 fps clock. A walk or a run (a clip
+ * with a stride) goes by the distance: a cycle is its own stride or what it covers at `speed` (m/s) at its own
+ * cadence, the longer (a short stride at the game's speed would race through its frames; its feet slide instead).
+ * Anything else goes by time, each frame held 12 / fps ticks (a clip at 6 fps is "on twos").
+ * @param {MeshClip} c @param {number} t @param {number} gait @param {number} speed @returns {number}
+ */
+export function meshClipFrame(c, t, gait, speed) {
+  const n = Math.max(1, c.frames);
+  if (c.cycleM) {
+    const cycle = Math.max(c.cycleM, (speed * n) / c.fps);
+    return ((Math.floor((gait / cycle) * n) % n) + n) % n;
+  }
+  const hold = Math.max(1, Math.round(FIGURE_FPS / (c.fps || FIGURE_FPS)));
+  return ((Math.floor(figureTick(t) / hold) % n) + n) % n;
+}
+/**
+ * a mesh clip's joint matrices at a frame (16 numbers each, as jointMatrices gives a code figure's), the whole figure
+ * moved so the hips' lift is snapped to whole texels (1 / ppm)
+ * @param {MeshClip} c @param {number} frame @param {number} joints @param {number} ppm @returns {Float32Array}
+ */
+export function meshClipMatrices(c, frame, joints, ppm) {
+  const f = ((Math.floor(frame) % c.frames) + c.frames) % c.frames,
+    lift = c.lift[f] || 0,
+    dy = ppm > 0 ? Math.round(lift * ppm) / ppm - lift : 0,
+    out = new Float32Array(joints * 16);
+  for (let j = 0; j < joints; j++) {
+    const m = c.mats.subarray((f * joints + j) * 12, (f * joints + j) * 12 + 12);
+    out.set([m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, m[9], m[10] + dy, m[11], 1], j * 16);
+  }
+  return out;
 }

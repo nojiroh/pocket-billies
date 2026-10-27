@@ -1,6 +1,8 @@
 // Characters track CH-2: the figure baker (game/js/figures.js) against a stand-in WebGL2 context: what one bake sends,
 // the pictures it keeps, how many it bakes a frame, and a lost context (the baker's own) and its return. No graphics.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import './walk-renderer.mjs';
 
@@ -96,7 +98,7 @@ function fakeDocument(opts = {}) {
 function freshBaker(opts) {
   const D = fakeDocument(opts),
     B = G.figureBaker;
-  Object.assign(B, { cv: null, gl: null, ready: false, lost: 0, failed: '', fb: null, size: [0, 0] });
+  Object.assign(B, { cv: null, gl: null, ready: false, lost: 0, failed: '', fb: null, size: [0, 0], res: new Map() });
   Object.assign(B, { bakes: 0, ms: 0, losses: 0, frame: -1, frameBakes: 0 });
   G.figureCacheClear();
   G.document.createElement = D.createElement;
@@ -243,5 +245,82 @@ test('figures: at most 600 pictures kept, the longest unused going first', () =>
     assert.equal(G.figurePicture({}, 'mannequin', 'idle', 0, Math.PI, 0, TILT), first, 'still kept');
   } finally {
     G.document.createElement = was;
+  }
+});
+
+test('figures: a figure made from a model (the stand-in): its triangles by index, its texture, a joint each', () => {
+  const was2 = G.artImg;
+  try {
+    const D = freshBaker(),
+      file = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/art/figures/rogue.json'), 'utf8'));
+    G.artImg = () => ({ complete: true, naturalWidth: 128, naturalHeight: 128 });
+    const Fig = G.figureFromFile('rogue', file);
+    assert.equal(Fig.kind, 'mesh');
+    assert.equal(Fig.data.length, file.counts.vertices * 9);
+    assert.equal(Fig.index.length, file.counts.triangles * 3);
+    assert.equal(Fig.clips.walk.mats.length, file.clips.walk.frames * file.joints.length * 12);
+    G.FIGURE_DEFS.rogue = Fig;
+    const im = G.figurePersonPicture({}, 'rogue', 0, 'idle', 0, Math.PI);
+    assert.ok(im && im.ppm === 32, 'a person’s picture at 32 px a metre');
+    const S = G.cardSize(32, 13 * G.TILT_STEP, file.extent);
+    assert.deepEqual([im.width, im.height], [S.w, S.h], 'as big as its extent');
+    const calls = D.made.gl.calls;
+    assert.deepEqual(
+      calls.filter(c => c[0] === 'drawElements').map(c => c.slice(1)),
+      [['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0]]
+    );
+    assert.equal(calls.find(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ')[3].length, file.joints.length * 16);
+    assert.equal(calls.find(c => c[0] === 'uniform1f' && c[1] === 'uTexOn')[2], 1, 'coloured by its texture');
+    assert.ok(
+      calls.some(c => c[0] === 'texImage2D'),
+      'its texture in the baker'
+    );
+    assert.equal(im.x.fills.length, 0, 'its face is in its texture');
+    /* the plain 3D figure: smooth, no outline, at 128 px a metre */
+    G.gpuState.fr++;
+    const B = G.figurePersonPicture({}, 'rogue', 0, 'idle', 0, Math.PI, 'smooth');
+    assert.equal(B.ppm, 128);
+    const outs = calls.filter(c => c[0] === 'uniform1f' && c[1] === 'uOut');
+    assert.equal(outs[outs.length - 1][2], 0, 'no outline');
+    const sm = calls.filter(c => c[0] === 'uniform1f' && c[1] === 'uSmooth');
+    assert.equal(sm[sm.length - 1][2], 1);
+    /* an act it has, and one it hasn't: the idle */
+    G.gpuState.fr++;
+    assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'cheer', 0, Math.PI));
+    assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'dance', 0, Math.PI));
+    /* in battle: at 64 px a metre, square to the level camera, the throw by how far through it the battle is */
+    G.gpuState.fr++;
+    const T = {},
+      bp = G.figureBattlePicture(T, 0, 0, 'throw', 0.5);
+    assert.ok(bp && bp.ppm === 64 && bp.figure === 'rogue');
+    const S0 = G.cardSize(64, 0, file.extent);
+    assert.deepEqual([bp.width, bp.height], [S0.w, S0.h], 'no tilt: the card as tall as the figure');
+    const J = calls.filter(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ').pop()[3],
+      want = G.meshClipMatrices(Fig.clips.throw, Math.floor(0.5 * Fig.clips.throw.frames), file.joints.length, 64);
+    assert.ok(
+      J.every((v, k) => Math.abs(v - want[k]) < 1e-5),
+      'the throw half way through'
+    );
+    G.gpuState.fr++;
+    assert.ok(G.figureBattlePicture({}, 1, 0, null, 0), 'the rival, idle');
+  } finally {
+    G.document.createElement = was;
+    G.artImg = was2;
+    delete G.FIGURE_DEFS.rogue;
+  }
+});
+
+test('figures: a model’s file is fetched once, and none is drawn until it is in', () => {
+  try {
+    freshBaker();
+    delete G.FIGURE_DEFS.rogue;
+    assert.equal(G.figurePersonPicture({}, 'rogue', 0, 'idle', 0, Math.PI), null, 'loading');
+    assert.equal(G.FIGURE_DEFS.rogue, null);
+    assert.equal(G.figurePersonPicture({}, 'nobody', 0, 'idle', 0, Math.PI), null);
+    assert.equal(G.FIGURE_DEFS.nobody, false);
+  } finally {
+    G.document.createElement = was;
+    delete G.FIGURE_DEFS.rogue;
+    delete G.FIGURE_DEFS.nobody;
   }
 });
