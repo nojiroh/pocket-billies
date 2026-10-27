@@ -49,6 +49,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   routeWaySpot: [() => routeWaySpot, v => (routeWaySpot = v)],
   // @ts-expect-error -- replaced on purpose
+  routeWet: [() => routeWet, v => (routeWet = v)],
+  // @ts-expect-error -- replaced on purpose
   runRouteTrainers: [() => runRouteTrainers, v => (runRouteTrainers = v)],
   // @ts-expect-error -- replaced on purpose
   scrapyardAgents: [() => scrapyardAgents, v => (scrapyardAgents = v)],
@@ -275,13 +277,23 @@ export function routeTrainersPlace(run, trainers, scenes, classes) {
       if (T.mate) {
         const fx = look[0] - at[0],
           fz = look[1] - at[1],
-          l = Math.hypot(fx, fz) || 1;
-        T.route.mate = [r2(at[0] - (fz / l) * 1.2), r2(at[1] + (fx / l) * 1.2)];
+          l = Math.hypot(fx, fz) || 1,
+          side = (/** @type {number} */ s) =>
+            /** @type {[number, number]} */ ([r2(at[0] - (fz / l) * 1.2 * s), r2(at[1] + (fx / l) * 1.2 * s)]),
+          /** @type {[number, number]} */
+          behind = [r2(at[0] - (fx / l) * 1.2), r2(at[1] - (fz / l) * 1.2)];
+        /* never in water (a bridge's spot is on the bank by its stream): the other side, then a step behind */
+        T.route.mate = [side(1), side(-1), behind].find(q => !routeWet(sc, q)) || side(1);
       }
     }
   }
 }
 
+/** whether a point (a scene's own metres) stands on a water tile (MAPGEN_WET) @param {any} sc @param {number[]} p
+ * @returns {boolean} */
+export function routeWet(sc, p) {
+  return MAPGEN_WET.includes(((sc.tiles || [])[sc.h - 1 - Math.floor(p[1])] || '')[Math.floor(p[0])] || '');
+}
 /** RT-4: the spot kinds a route's rarer one waits in, the hardest to reach first */
 export const ROUTE_RARE_SPOTS = ['pocket', 'deadend', 'clearing'];
 /**

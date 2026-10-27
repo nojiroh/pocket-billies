@@ -234,8 +234,12 @@ test("WM-7: a mini-boss's place has a leader's ring of its leader's type, gated 
     if (node.type !== 'miniboss' && node.type !== 'boss') return assert.equal(sc.arena, undefined, where);
     rings++;
     const foe = foes[modules['run-loop'].runFoeId(i)],
-      T = data.TRAINERS[foe.from];
-    assert.equal(foe.from, picks[i], `${where}: the leader its place was themed for`);
+      /* RL-14b: a bosses.json boss (the Voltron) fights at the boss's place on its Expeditions; the leader is still
+         drawn, and the place keeps that leader's theme */
+      T = data.TRAINERS[foe.boss ? picks[i] : foe.from];
+    if (foe.boss) assert.equal(node.type, 'boss', `${where}: a bosses.json boss only at the boss's place`);
+    else assert.equal(foe.from, picks[i], `${where}: the leader its place was themed for`);
+    assert.ok(T, `${where}: the leader ${picks[i]}`);
     assert.equal(sc.arena.name, GAME_DATA.arenas.themes[T.type].name, `${where}: ${T.type}`);
     const gates = sc.props.filter((/** @type {any} */ p) => p.act === 'arenagate');
     if (node.type === 'boss') return assert.equal(gates.length, 0, `${where}: no gate`);
