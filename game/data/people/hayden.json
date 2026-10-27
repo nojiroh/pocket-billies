@@ -1,0 +1,28 @@
+{
+ "look": {
+  "name": "Hayden Bales",
+  "body": {"height":1.04,"body":1,"chest":0.3,"hips":1,"shoulders":1.04},
+  "skin": "#E2A982",
+  "hair": "#C8A050",
+  "eyes": "#4A6A3A",
+  "wear": {
+   "hair": "hair_long",
+   "eyes": "eyes_sleepy",
+   "brows": "brows_soft",
+   "mouth": "mouth_smile",
+   "facial": "facial_freckles",
+   "top": "longsleeve",
+   "bottom": "jeans",
+   "shoes": "boots",
+   "hat": "hat_cowboy",
+   "neck": "scarf"
+  },
+  "colors": {
+   "longsleeve": ["#B8423A"],
+   "jeans": ["#3E5A8A"],
+   "boots": ["#6A4A32","#3A2614"],
+   "hat_cowboy": ["#B89060","#5A3A20"],
+   "scarf": ["#E9B83C","#B8423A"]
+  }
+ }
+}

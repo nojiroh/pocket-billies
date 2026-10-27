@@ -87,7 +87,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   islandZoneShape: [() => islandZoneShape, v => (islandZoneShape = v)],
   // @ts-expect-error -- replaced on purpose
-  skyRailHeight: [() => skyRailHeight, v => (skyRailHeight = v)],
+  stationLandmarks: [() => stationLandmarks, v => (stationLandmarks = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -118,32 +118,45 @@ export const ISLAND_GEN_BUILT = ['town', 'barn', 'pasture'];
 /** HB-4a: the town's other buildings (town.extra): plot sizes [width, width, depth, depth] */
 /** HB-4b: the station's plot (w across its front, d deep), metres */
 export const STATION_PLOT = [14, 8];
-/** hub placing: the station stands side-on, its front a quarter turn clockwise from facing out (radians), so the rail
-    out of its right-hand end (HB-7's art) runs straight out to sea */
-export const STATION_TURN = -Math.PI / 2;
-/** hub placing: HB-7's sky rail (tools/build-station-trains.py), chained from the station's right-hand end: `from`, the
-    rail's start from the station plot's middle in metres [toward its right-hand end, behind it] (train_station stands
-    in the middle of its plot, 6.6 m deep, its rail 6.1 m behind its front and its right-hand end 6.3 m out); `piece`
-    metres a piece, one piece per look of sky_rail; then sky_portal, its launch lip `lip` and its tear `tear` [metres
-    along, height] past the start */
+/** cutscenes track A: the station faces out (its front, the platform side, to the sea), where the hub's orbit camera
+    stands looking in at it, so you see it from the front; its track runs along behind it (radians, from facing out) */
+export const STATION_TURN = 0;
+/** cutscenes track A: the track (tools/build-station-trains.py), from the station's right-hand end: `from`, the track's
+    start from the station plot's middle in metres [toward its right-hand end, behind it] (train_station stands in the
+    middle of its plot, 6.6 m deep, its track 6.1 m behind its front and its right-hand end 6.3 m out); `piece` metres a
+    piece, one piece per look of sky_rail (the last, `end`, has the buffer stop), all of it `height` over the station's
+    ground; `back` how far the track runs back past the start (the station's own, to its left-hand end); then
+    sky_portal, floating on its own: `tear` [metres along from the start, metres out in front of the track, its middle's
+    height over the station's ground] */
 export const SKY_RAIL = {
   from: [6.3, 2.8],
   piece: 12,
-  looks: ['', 'bend', 'rise', 'rise_high', 'crest'],
-  lip: 64.6,
-  tear: [68, 17.05],
+  looks: ['end'],
+  back: 12.6,
+  height: 0.13,
+  tear: [-2, 30, 20],
 };
-/** hub placing: the sky rail's middle (its tube's axis) over the station's ground s metres along from its start, as
-    build-station-trains.py draws its pieces: flat 0.13 m, easing into a climb of 5 m a piece, easing out at 15.13 m */
-export function skyRailHeight(s) {
-  const i = Math.max(0, Math.floor(s / SKY_RAIL.piece)),
-    t = Math.min(1, Math.max(0, s / SKY_RAIL.piece - i));
-  if (i === 0) return 0.13;
-  if (i === 1) return 0.13 + 2.5 * t * t;
-  if (i === 2) return 2.63 + 5 * t;
-  if (i === 3) return 7.63 + 5 * t;
-  if (i === 4) return 12.63 + 2.5 * (2 * t - t * t);
-  return 15.13;
+/** cutscenes track A: the station's landmarks from its plot (x, z its middle, a its front's angle in radians, y its
+    level): `rail`, the track every 2 m from its left-hand end to the buffer stop [x, z, height], and `portal`, the
+    portal's middle [x, z, height]
+    @param {{ x: number, z: number, a: number, y: number }} L @returns {{ rail: number[][], portal: number[] }} */
+export function stationLandmarks(L) {
+  const fx = Math.cos(L.a),
+    fz = Math.sin(L.a),
+    /* u metres toward the right-hand end from the plot's middle, w metres behind it */
+    at = (/** @type {number} */ u, /** @type {number} */ w, /** @type {number} */ h) => [
+      mapgenRound2(L.x - fz * u - fx * w),
+      mapgenRound2(L.z + fx * u - fz * w),
+      mapgenRound2(L.y + h),
+    ],
+    end = SKY_RAIL.piece * SKY_RAIL.looks.length,
+    ss = [];
+  for (let u = -SKY_RAIL.back; u < end; u += 2) ss.push(u);
+  ss.push(end);
+  return {
+    rail: ss.map(u => at(SKY_RAIL.from[0] + u, SKY_RAIL.from[1], SKY_RAIL.height)),
+    portal: at(SKY_RAIL.from[0] + SKY_RAIL.tear[0], SKY_RAIL.from[1] - SKY_RAIL.tear[1], SKY_RAIL.tear[2]),
+  };
 }
 export const ISLAND_TOWN_EXTRA = {
   inn: [10, 12, 8, 9],
@@ -2147,24 +2160,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
       st = [stationSite.x, stationSite.z];
     if (!st) notes.push('no headland for the station');
     else {
-      /* hub placing: the rail as HB-7's pieces lay it (SKY_RAIL): from the station's right-hand end straight out (the
-         way it faces turned back a quarter, out to sea), every 2 m to the portal's launch lip, its height over the
-         station's ground; the portal is its tear */
-      const L = plots[plots.length - 1],
-        y0 = L.y,
-        fx = Math.cos(L.a),
-        fz = Math.sin(L.a),
-        along = (u, h) => [
-          mapgenRound2(L.x - fz * u - fx * SKY_RAIL.from[1]),
-          mapgenRound2(L.z + fx * u - fz * SKY_RAIL.from[1]),
-          mapgenRound2(y0 + h),
-        ],
-        ss = [...Array(Math.floor(SKY_RAIL.lip / 2) + 1).keys()].map(k => k * 2);
-      if (ss[ss.length - 1] < SKY_RAIL.lip) ss.push(SKY_RAIL.lip);
-      landmarks = {
-        rail: ss.map(u => along(SKY_RAIL.from[0] + u, skyRailHeight(u))),
-        portal: along(SKY_RAIL.from[0] + SKY_RAIL.tear[0], SKY_RAIL.tear[1]),
-      };
+      /* cutscenes track A: the track behind the station, out of its right-hand end, and the portal out in front */
+      landmarks = stationLandmarks(plots[plots.length - 1]);
     }
     /* the lighthouse: the cove's arm further from the station (or the one asked for), as far out as fits */
     if (D.cove.on) {

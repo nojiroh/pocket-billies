@@ -13,11 +13,16 @@
    The carriage goes in the screen's `view` slot (runLoadView) at a take-off. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RULES } from './game-data.js';
+import { pillColor } from './hooks.js';
+import { RULES, TRAINERS, gameData } from './game-data.js';
 import { runLoadNew, runLoadPart, runLoadShare, runLoadSummary, runLoadTick } from './logic/run-load.js';
+import { runCardOut } from './logic/run-card.js';
+import { runIconURL } from './ui-run-kit.js';
 import { reducedMotion, saveData, uiState } from './game-state.js';
 import { artLoad } from './art.js';
+import { RIG_CANVAS_SIZE } from './skeleton-rig.js';
 import { mapArtPaths, mapById, prepareMap, walkData, walkView } from './walk-view.js';
+import { WEATHER_NAMES } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { loadPropModelRecipe } from './prop-models.js';
 import { seamlessHubMap } from './seamless-world.js';
@@ -28,10 +33,18 @@ import { trainName } from './train-ride.js';
 import { trainCarriage } from './train-carriage.js';
 /* eslint-disable no-func-assign */
 expose({
+  LOAD_WEATHER_ICONS: [() => LOAD_WEATHER_ICONS],
   RUN_LOAD_PLACES: [() => RUN_LOAD_PLACES],
   RUN_LOAD_STAGES: [() => RUN_LOAD_STAGES],
+  cardEl: [() => cardEl, v => (cardEl = v)],
+  cardList: [() => cardList, v => (cardList = v)],
+  cardOf: [() => cardOf, v => (cardOf = v)],
+  cardRow: [() => cardRow, v => (cardRow = v)],
+  cardSpan: [() => cardSpan, v => (cardSpan = v)],
+  runHomeScreen: [() => runHomeScreen, v => (runHomeScreen = v)],
   runLoad: [() => runLoad],
   runLoadBegin: [() => runLoadBegin, v => (runLoadBegin = v)],
+  runLoadCard: [() => runLoadCard, v => (runLoadCard = v)],
   runLoadEnd: [() => runLoadEnd, v => (runLoadEnd = v)],
   runLoadHide: [() => runLoadHide, v => (runLoadHide = v)],
   runLoadLanding: [() => runLoadLanding, v => (runLoadLanding = v)],
@@ -90,6 +103,7 @@ export function runLoadBegin(why, node, train = '') {
       if (mine()) runLoadPart(L, id, f, performance.now());
     };
   Object.assign(runLoad, { on: true, ready: false, L, node: -1, train, part, more: {} });
+  if (typeof debugLog !== 'undefined') debugLog.stage('run loading: ' + why);
   if (node >= 0) runLoadLanding(node);
   runLoad.timer = setInterval(() => runLoadStep(gen), 100);
 }
@@ -216,6 +230,7 @@ function runLoadEnd(how) {
   const L = runLoad.L;
   if (L && how !== 'gone' && typeof debugLog !== 'undefined')
     debugLog.add('load', `run ${runLoadSummary(L, { ...runLoad.more, shown: runLoad.el ? 1 : 0 })}`);
+  if (how !== 'gone' && typeof debugLog !== 'undefined') debugLog.stage('run loaded: ' + how);
   Object.assign(runLoad, { on: false, ready: true });
   runLoadHide();
 }
@@ -236,12 +251,210 @@ export function runLoadShow() {
         : 'Landing';
   el.heading = (run && run.region && run.region.name) || 'The wild lands';
   el.tip = tips[0] || '';
+  /* cutscenes track C: the tips turn over, the screen in the tunnel's dark, the region's card under its name */
+  el.tips = tips;
+  el.night = true;
   el.value = runLoadShare(runLoad.L);
   el.stages = runLoad.L.stages.map(s => ({ id: s.id, label: s.label, state: s.f >= 1 ? 'ready' : 'waiting' }));
+  const card = runLoadCard(run);
+  if (card) el.appendChild(card);
   document.body.appendChild(el);
   runLoad.el = el;
   /* HB-8: a take-off's screen is the train's carriage, the portal's tunnel past its windows */
   if (runLoad.train && typeof trainCarriage === 'function') runLoadView(trainCarriage(runLoad.train, !!reducedMotion));
+}
+
+/** a card's part: a tag with its class and text @param {string} tag @param {string} [cls] @param {string} [text]
+ * @returns {HTMLElement} */
+function cardEl(tag, cls = '', text = '') {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+}
+/** a labelled row of the card @param {string} label @param {Node[]} parts */
+function cardRow(label, parts) {
+  const r = cardEl('div', 'lc-row');
+  r.append(cardEl('small', '', label), ...parts);
+  return r;
+}
+/** parts side by side, wrapping @param {Node[]} parts */
+function cardSpan(parts) {
+  const sp = cardEl('span');
+  sp.append(...parts);
+  return sp;
+}
+/** a list of the card @param {string} cls @param {Node[]} items */
+function cardList(cls, items) {
+  const o = cardEl('ol', cls);
+  for (const it of items) {
+    const li = cardEl('li');
+    li.append(it);
+    o.append(li);
+  }
+  return o;
+}
+/** the card itself, its rows coming in one after another (--i) @param {Node[]} rows */
+function cardOf(rows) {
+  const box = cardEl('div', 'load-card');
+  box.setAttribute('slot', 'card');
+  rows.forEach((r, i) => {
+    const w = cardEl('div', 'lc-in');
+    w.style.setProperty('--i', String(i));
+    w.append(r);
+    box.append(w);
+  });
+  return box;
+}
+
+/** cutscenes track C: the region's card (logic/run-card.js runCardOut) in the screen's `card` slot, its rows coming in
+ * one after another: the zones in order (each its biome's sky), the types it favours, the leaders, the regional dex
+ * (a few of its species as silhouettes), the weather ahead; null for a run with no region @param {any} run */
+function runLoadCard(run) {
+  const F = runCardOut(run, {
+    themes: gameData.regions && gameData.regions.themes,
+    biomes: gameData.biomes,
+    trainers: TRAINERS,
+  });
+  if (!F) return null;
+  const s = (/** @type {number} */ n, /** @type {string} */ w) => `${n} ${w}${n === 1 ? '' : 's'}`,
+    rows = [
+      cardEl(
+        'p',
+        'lc-about',
+        `${F.theme} · Expedition ${F.expedition} · ${s(F.places, 'place')} · ${s(F.towns, 'town')} · ${s(F.guards, 'guard')}`
+      ),
+    ];
+  const zones = cardEl('ol', 'lc-zones');
+  zones.setAttribute('aria-label', 'Zones');
+  for (const z of F.zones) {
+    const li = cardEl('li', '', z.name);
+    if (z.sky[0]) li.style.setProperty('--a', z.sky[0]);
+    if (z.sky[2] || z.sky[1]) li.style.setProperty('--b', z.sky[2] || z.sky[1]);
+    zones.append(li);
+  }
+  rows.push(zones);
+  if (F.types.length)
+    rows.push(
+      cardRow('Types', [
+        cardSpan(
+          F.types.map(t => {
+            const pill = /** @type {any} */ (cardEl('pb-pill', '', t === 'None' ? 'Normal' : t));
+            pill.type = t;
+            pill.tone = pillColor(t);
+            return pill;
+          })
+        ),
+      ])
+    );
+  if (F.leaders.length)
+    rows.push(
+      cardRow('Leaders', [
+        cardList(
+          'lc-leaders',
+          F.leaders.map(L => cardEl('span', L.boss ? 'boss' : '', L.name))
+        ),
+      ])
+    );
+  const dex = cardEl('span', 'lc-dex');
+  for (const sp of F.sample) {
+    const c = /** @type {HTMLCanvasElement} */ (cardEl('canvas', 'rig sil'));
+    c.width = RIG_CANVAS_SIZE.w * 2;
+    c.height = RIG_CANVAS_SIZE.h * 2;
+    c.dataset.sp = sp;
+    c.dataset.v = 'front';
+    c.dataset.still = '1';
+    c.setAttribute('aria-hidden', 'true');
+    dex.append(c);
+  }
+  dex.append(cardEl('b', '', `${F.dex} Billies`));
+  rows.push(cardRow('Dex', [dex]));
+  if (F.weather.length)
+    rows.push(
+      cardRow('Weather', [
+        cardList(
+          'lc-wx',
+          F.weather.map(w => {
+            const sp = cardEl('span'),
+              ic = cardEl('i', 'ic');
+            ic.style.setProperty('--ico', `url('${runIconURL(LOAD_WEATHER_ICONS[w] || 'cloud')}')`);
+            ic.setAttribute('aria-hidden', 'true');
+            sp.append(ic, (WEATHER_NAMES && WEATHER_NAMES[w]) || w);
+            return sp;
+          })
+        ),
+      ])
+    );
+  if (F.side) rows.push(cardEl('p', 'lc-about', `Rumour has it: ${F.side}`));
+  return cardOf(rows);
+}
+/** the weather's icons (ui-run-kit.js's own set) */
+const LOAD_WEATHER_ICONS = {
+  clear: 'sun',
+  cloudy: 'cloud',
+  rain: 'rain',
+  storm: 'bolt',
+  fog: 'fog',
+  snow: 'snow',
+  ash: 'ash',
+};
+
+/** cutscenes track C: the way home's screen, up at once when "Ride home" is pressed (in place of HB-8's plain white
+ * veil): the carriage, "Heading home", what the run came to (logic/run-card.js runCardHome), while the hub's world goes
+ * back in behind it; the ride home lifts it (train-ride.js trainRideHome's cover) @param {string} train
+ * @param {ReturnType<typeof import('./logic/run-card.js').runCardHome>} F @returns {HTMLElement} */
+export function runHomeScreen(train, F) {
+  const el = /** @type {any} */ (document.createElement('pb-loading')),
+    tips = typeof loreLoadingLines === 'function' ? loreLoadingLines() : [];
+  el.id = 'runhome';
+  el.night = true;
+  el.sub = `Heading home · ${trainName(train)}`;
+  el.heading = 'Copperleaf Town';
+  el.tips = tips;
+  el.tip = tips[0] || '';
+  el.value = 0;
+  el.stages = [];
+  const rows = [
+    cardEl(
+      'p',
+      'lc-about',
+      `${F.won ? 'Run won' : 'Run over'}${F.name ? ` in ${F.name}` : ''} · day ${F.days} · ${F.cleared} place${F.cleared === 1 ? '' : 's'} cleared`
+    ),
+  ];
+  const pay = /** @type {[number, string][]} */ ([
+    [F.research, 'Research'],
+    [F.crests, 'Crests'],
+    [F.scrap, 'Scrap'],
+  ]).filter(p => p[0] > 0);
+  if (pay.length)
+    rows.push(
+      cardList(
+        'lc-pay',
+        pay.map(([n, w]) => {
+          const sp = cardEl('span');
+          sp.append(cardEl('b', '', `+${n}`), ` ${w}`);
+          return sp;
+        })
+      )
+    );
+  if (F.kept.length) rows.push(cardRow('Coming home', [cardEl('span', '', F.kept.join(', '))]));
+  const card = cardOf(rows);
+  el.appendChild(card);
+  if (typeof trainCarriage === 'function') {
+    const v = trainCarriage(train, !!reducedMotion);
+    v.setAttribute('slot', 'view');
+    el.appendChild(v);
+  }
+  document.body.appendChild(el);
+  /* the bar creeps on while the hub comes back (the ride lifts the screen when it can film) */
+  const t0 = performance.now(),
+    tick = () => {
+      if (!el.isConnected) return;
+      el.value = 1 - Math.exp(-(performance.now() - t0) / 2500);
+      setTimeout(tick, 120);
+    };
+  tick();
+  return el;
 }
 
 /** the screen's picture (HB-8: the carriage), in its `view` slot; null takes it out @param {Element | null} node */

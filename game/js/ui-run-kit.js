@@ -12,7 +12,8 @@
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
-     <pb-nav-bar set="run|hub" value="map" badges="perks:2">   the bottom bar (pb-change)
+     <pb-nav-bar set="run|hub" value="map" badges="perks:2" compact>   the bottom bar (pb-change); UI-8: the minimap
+                                                       tile in the middle (slot "map"), compact while walking
      <pb-loading heading="..." sub="..." tip="..." value="0.4" stages='[{"id":"map","label":"...","state":"ready"}]'>
                                                        HB-2: the run's loading screen; slot "view" for its picture
    The motions here repeat css/motion.css's reward motions (m-slam, m-flip), as a component's styles can't see the
@@ -34,6 +35,7 @@ expose({
   RUN_CURRENCY_ICONS: [() => RUN_CURRENCY_ICONS],
   RUN_NAV_SETS: [() => RUN_NAV_SETS],
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
+  navStep: [() => navStep],
   runIcon: [() => runIcon],
   runIconURL: [() => runIconURL],
   runKitBase: [() => runKitBase],
@@ -42,14 +44,16 @@ expose({
   runMsVar: [() => runMsVar],
   runNumber: [() => runNumber],
   runSvg: [() => runSvg],
+  unsafeCSS: [() => unsafeCSS],
 });
 /* to-module: end */
 /* Lit's html, css, LitElement and nothing, and reduced(), come from js/ui-kit.js (one name each on the page) */
 const runSvg = /** @type {any} */ (self).PB_LIT.svg;
+const unsafeCSS = /** @type {any} */ (self).PB_LIT.unsafeCSS;
 
 /* a UI icon (game/art/ui/<key>.svg), fixed-colour pixel art shown as an image, found as art.js finds it (the bundled
    build inlines them in NW_ART; a page outside game/ sets NW_ARTDIR) */
-const runIconURL = (/** @type {string} */ k) => {
+export const runIconURL = (/** @type {string} */ k) => {
   const w = /** @type {any} */ (self);
   return (w.NW_ART && w.NW_ART[`ui/${k}.svg`]) || new URL(`${w.NW_ARTDIR || 'art/'}ui/${k}.svg`, document.baseURI).href;
 };
@@ -83,17 +87,19 @@ const RUN_CURRENCY_ICONS = {
   beans: 'bean',
   dna: 'dna',
 };
-/* the bottom bar's two sets (owner's decision: one bar whose tabs change) */
+/* the bottom bar's two sets (owner's decision: one bar whose tabs change); Map is the minimap tile (UI-8) */
 const RUN_NAV_SETS = {
   run: [
     { id: 'map', label: 'Map', icon: 'map' },
     { id: 'team', label: 'Team', icon: 'team' },
+    { id: 'guide', label: 'Guide', icon: 'ledger' },
     { id: 'bag', label: 'Bag', icon: 'bag' },
     { id: 'perks', label: 'Perks', icon: 'relic' },
   ],
   hub: [
     { id: 'map', label: 'Map', icon: 'map' },
     { id: 'team', label: 'Team', icon: 'team' },
+    { id: 'guide', label: 'Guide', icon: 'ledger' },
     { id: 'bag', label: 'Bag', icon: 'bag' },
     { id: 'lab', label: 'Lab', icon: 'spark' },
   ],
@@ -860,87 +866,168 @@ const PbPayout = class extends LitElement {
   }
 };
 
-/* ---------- the bottom bar: one bar whose tabs change (run: Map, Team, Bag, Relics; hub: Map, Team, Bag, Lab) ---------- */
+/* ---------- the bottom bar: the minimap in the middle, two buttons on each side (UI-8) ---------- */
+/* The set's first tab (Map) is the minimap tile, raised out of the bar; the rest go two to a side, under each other.
+   The tile's picture is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map
+   icon. `compact` (while walking) shrinks the bar: a small tile, icon-only buttons side by side. The outline is the
+   tab family's, stepped up round the tile with 45° shoulders: --rise is the step, --tw half the tower's width. */
+const navStep = (/** @type {number} */ i) => {
+  /* the outline inset by i px (0: the outer line; 1: the edge line's inside); 45° corners move by i·tan(22.5°) */
+  const k = i * 0.4142,
+    c = 'var(--cut-md)',
+    R = 'var(--rise)',
+    T = 'var(--tw)';
+  return [
+    `${i}px calc(${R} + ${c} + ${k}px)`,
+    `calc(${c} + ${k}px) calc(${R} + ${i}px)`,
+    `calc(50% - ${T} - ${R} + ${k}px) calc(${R} + ${i}px)`,
+    `calc(50% - ${T} + ${k}px) ${i}px`,
+    `calc(50% + ${T} - ${k}px) ${i}px`,
+    `calc(50% + ${T} + ${R} - ${k}px) calc(${R} + ${i}px)`,
+    `calc(100% - ${c} - ${k}px) calc(${R} + ${i}px)`,
+    `calc(100% - ${i}px) calc(${R} + ${c} + ${k}px)`,
+    `calc(100% - ${i}px) calc(100% - ${i}px)`,
+    `${i}px calc(100% - ${i}px)`,
+  ].join(', ');
+};
 const PbNavBar = class extends LitElement {
-  static properties = { set: { reflect: true }, value: { reflect: true }, badges: {}, hide: {} };
+  static properties = {
+    set: { reflect: true },
+    value: { reflect: true },
+    badges: {},
+    hide: {},
+    compact: { type: Boolean, reflect: true },
+  };
   static styles = [
     runKitBase,
     css`
       :host {
+        --rise: 20px;
+        --bar-h: 120px;
+        --tile-w: 120px;
+        --tile-h: 128px;
+        --tw: calc(var(--tile-w) / 2 + var(--s2));
         display: block;
         position: relative;
         isolation: isolate;
       }
+      :host([compact]) {
+        --rise: 10px;
+        --bar-h: 60px;
+        --tile-w: 72px;
+        --tile-h: 66px;
+      }
       nav {
         position: relative;
-        display: flex;
-        gap: 2px;
-        padding: var(--s1) var(--s2) calc(var(--s1) + env(safe-area-inset-bottom, 0px));
+        container-type: inline-size;
+        height: calc(var(--rise) + var(--bar-h) + env(safe-area-inset-bottom, 0px));
+        transition: height var(--m-base) var(--ease-out);
       }
-      nav::before {
-        content: '';
+      .glass,
+      .edge {
         position: absolute;
         inset: 0;
         z-index: var(--z-below);
-        clip-path: var(--clip-tab);
+        pointer-events: none;
+      }
+      .glass {
+        clip-path: polygon(${unsafeCSS(navStep(0))});
         background: color-mix(in srgb, var(--c-surface) calc(var(--glass, 0.7) * 100%), transparent);
         -webkit-backdrop-filter: blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5));
         backdrop-filter: blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5));
       }
-      nav::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: var(--z-below);
-        clip-path: var(--edge-tab);
+      .edge {
+        clip-path: polygon(evenodd, ${unsafeCSS(navStep(0))}, ${unsafeCSS(navStep(1))});
         background: var(--edge);
-        pointer-events: none;
+      }
+      .side {
+        --apart: var(--s7);
+        position: absolute;
+        top: calc(var(--rise) + var(--s1));
+        width: calc((100% - var(--tile-w) - var(--apart)) / 2);
+        display: flex;
+        flex-direction: column;
+        gap: var(--s1);
+      }
+      .side.l {
+        left: var(--s2);
+      }
+      .side.r {
+        right: var(--s2);
+      }
+      :host([compact]) .side {
+        flex-direction: row;
+      }
+      :host([compact]) .side.r {
+        justify-content: flex-end;
       }
       button {
         position: relative;
         isolation: isolate;
-        display: grid;
-        justify-items: center;
-        align-content: center;
-        gap: 2px;
-        flex: 1 1 0;
-        min-width: 0;
-        min-height: 52px;
-        padding: var(--s1) var(--s1);
         border: 0;
         background: none;
+        cursor: pointer;
         color: var(--text2);
         font: 15px/1 var(--font-voice);
-        cursor: pointer;
       }
-      button .ic {
-        width: 22px;
-        height: 22px;
+      .tab {
+        display: flex;
+        align-items: center;
+        gap: var(--s2);
+        min-width: 0;
+        min-height: 52px;
+        padding: 0 var(--s2);
       }
-      button span {
-        max-width: 100%;
+      .tab .ic {
+        width: 24px;
+        height: 24px;
+      }
+      .tab span {
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      button::before {
-        content: none; /* only the current tab has the gold bar (so nothing reads it behind the others) */
+      /* a narrow bar (a 320 px phone): a smaller tile, the sides closer, the labels kept */
+      @container (max-width: 320px) {
+        :host(:not([compact])) nav > * {
+          --tile-w: 96px;
+          --tile-h: 116px;
+          --tw: calc(var(--tile-w) / 2 + var(--s2));
+          --apart: var(--s6);
+        }
+        :host(:not([compact])) .tab {
+          gap: var(--s1);
+          padding: 0 var(--s1);
+        }
+      }
+      :host([compact]) .tab {
+        justify-content: center;
+        width: 46px;
+        min-height: 46px;
+        padding: 0;
+      }
+      :host([compact]) .tab span {
+        display: none;
+      }
+      .tab::before {
+        content: none; /* only the current tab has the gold bar */
         position: absolute;
         inset: 3px 4px;
         z-index: var(--z-below);
         transform: skewX(calc(var(--slant) * -1));
         background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
       }
-      button[aria-current='page'] {
+      .tab[aria-current='page'] {
         color: var(--goldink, #3a2408);
       }
-      button[aria-current='page']::before {
+      .tab[aria-current='page']::before {
         content: '';
       }
       .badge {
         position: absolute;
         top: 2px;
-        left: calc(50% + 8px);
+        left: 22px;
         display: grid;
         place-items: center;
         min-width: 20px;
@@ -951,10 +1038,89 @@ const PbNavBar = class extends LitElement {
         color: var(--c-surface);
         font-size: 12px;
       }
+      :host([compact]) .badge {
+        left: auto;
+        right: 0;
+        top: 0;
+      }
+      /* the minimap tile: the card family's outline (four small cuts), its edge gold and a gold notch when open */
+      .map {
+        position: absolute;
+        top: var(--s1);
+        left: calc(50% - var(--tile-w) / 2);
+        width: var(--tile-w);
+        height: var(--tile-h);
+        padding: 0;
+        transition:
+          width var(--m-base) var(--ease-out),
+          height var(--m-base) var(--ease-out),
+          left var(--m-base) var(--ease-out),
+          top var(--m-base) var(--ease-out);
+      }
+      :host([compact]) .map {
+        top: 2px;
+      }
+      .map .face {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        clip-path: var(--clip-card);
+        background: color-mix(in srgb, var(--c-primary) 30%, var(--c-surface));
+      }
+      .map .face ::slotted(*) {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .map .face .ic {
+        width: 32px;
+        height: 32px;
+      }
+      .map .edge {
+        z-index: 1;
+        clip-path: var(--edge-card);
+      }
+      .map[aria-current='page'] .edge {
+        background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+      }
+      .map .notch {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        z-index: 2;
+        width: 6px;
+        height: min(40%, 32px);
+        transform: translateY(-50%);
+        background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+        clip-path: polygon(0 0, 100% 3px, 100% calc(100% - 3px), 0 100%);
+        display: none;
+      }
+      .map[aria-current='page'] .notch {
+        display: block;
+      }
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
       button:focus-visible {
         outline: none;
         text-decoration: underline 2px;
         text-underline-offset: 3px;
+      }
+      .map:focus-visible .edge {
+        background: var(--text);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        nav,
+        .map {
+          transition: none;
+        }
       }
     `,
   ];
@@ -964,6 +1130,7 @@ const PbNavBar = class extends LitElement {
     this.value = 'map';
     this.badges = '';
     this.hide = '';
+    this.compact = false;
   }
   /* UI-5: hide lists tabs to leave out (ids, comma-separated): a set's tab whose screen isn't built yet */
   get tabs() {
@@ -983,23 +1150,46 @@ const PbNavBar = class extends LitElement {
     this.dispatchEvent(new CustomEvent('pb-change', { detail: { value: id }, bubbles: true, composed: true }));
   }
   render() {
-    const b = this.badgeOf;
+    const b = this.badgeOf,
+      say = (/** @type {string} */ s) => (typeof i18nText === 'function' ? i18nText(s) : s),
+      all = this.tabs,
+      map = all.find(t => t.id === 'map'),
+      rest = all.filter(t => t !== map),
+      half = Math.ceil(rest.length / 2);
+    const tab = t =>
+      html`<button
+        class="tab"
+        part="tab"
+        data-t=${t.id}
+        aria-label=${say(t.label)}
+        aria-current=${t.id === this.value ? 'page' : nothing}
+        @click=${() => this.pick(t.id)}
+      >
+        ${runIcon(t.icon)}<span aria-hidden="true">${say(t.label)}</span>${
+          b[t.id] > 0
+            ? html`<b class="badge" aria-label=${`${b[t.id]} new`}>${b[t.id] > 9 ? '9+' : b[t.id]}</b>`
+            : nothing
+        }
+      </button>`;
     return html`<nav aria-label=${this.set === 'run' ? 'Run' : 'Hub'}>
-      ${this.tabs.map(
-        t =>
-          html`<button
-            part="tab"
-            data-t=${t.id}
-            aria-current=${t.id === this.value ? 'page' : nothing}
-            @click=${() => this.pick(t.id)}
+      <i class="glass" aria-hidden="true"></i><i class="edge" aria-hidden="true"></i>
+      <div class="side l">${rest.slice(0, half).map(tab)}</div>
+      ${
+        map
+          ? html`<button
+            class="map"
+            part="map"
+            data-t="map"
+            aria-current=${this.value === 'map' ? 'page' : nothing}
+            @click=${() => this.pick('map')}
           >
-            ${runIcon(t.icon)}<span>${typeof i18nText === 'function' ? i18nText(t.label) : t.label}</span>${
-              b[t.id] > 0
-                ? html`<b class="badge" aria-label=${`${b[t.id]} new`}>${b[t.id] > 9 ? '9+' : b[t.id]}</b>`
-                : nothing
-            }
+            <span class="face"><slot name="map">${runIcon(map.icon)}</slot></span>
+            <i class="edge" aria-hidden="true"></i><i class="notch" aria-hidden="true"></i>
+            <span class="sr">${say(map.label)}</span>
           </button>`
-      )}
+          : nothing
+      }
+      <div class="side r">${rest.slice(half).map(tab)}</div>
     </nav>`;
   }
 };
@@ -1007,15 +1197,21 @@ const PbNavBar = class extends LitElement {
 /* ---------- HB-2: the run's loading screen ---------- */
 /* The whole screen while a run's world comes in: the region's name, a tip, the bar and the stages (waiting, working,
    ready, late). The picture is a slot (`view`): empty, the theme's own backdrop; HB-8 puts the carriage there. With
-   `contained` it fills its box instead of the screen (the UI gallery). */
+   `contained` it fills its box instead of the screen (the UI gallery). Cutscenes track (part C): `tips` turn over every
+   few seconds (one at a time, faded), a second slot (`card`) holds the region's card under the name, the stages fold
+   into one line (the one under way, how many are ready, a diamond each), and `night` gives it the portal tunnel's dark
+   colours (the carriage's screens), so it never reads as an empty page. */
 const PbLoading = class extends LitElement {
   static properties = {
     heading: {},
     sub: {},
     tip: {},
+    tips: { type: Array },
     value: { type: Number },
     stages: { type: Array },
     contained: { type: Boolean, reflect: true },
+    night: { type: Boolean, reflect: true },
+    _tipAt: { state: true },
   };
   static styles = [
     runKitBase,
@@ -1034,6 +1230,16 @@ const PbLoading = class extends LitElement {
         inset: auto;
         z-index: auto;
         min-height: 420px;
+      }
+      :host([night]) {
+        --g-solid: var(--night-bg);
+        --text: var(--night-text);
+        --text2: var(--night-text2);
+        color-scheme: dark;
+      }
+      /* the picture (the carriage) above the text, not under it */
+      :host([night]) .view {
+        bottom: 52%;
       }
       .view {
         position: absolute;
@@ -1067,20 +1273,28 @@ const PbLoading = class extends LitElement {
         font: 15px / var(--lh-prose) var(--font-prose);
         color: var(--text2);
       }
+      .now {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--s2);
+        font-size: 15px;
+        color: var(--text2);
+      }
+      .now b {
+        font-weight: 600;
+        color: var(--text);
+      }
       ol {
-        margin: var(--s1) 0 0;
+        margin: 0;
         padding: 0;
         list-style: none;
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--s1) var(--s3);
-        font-size: 15px;
+        display: inline-flex;
+        gap: var(--s1);
       }
       li {
         display: inline-flex;
         align-items: center;
-        gap: var(--s1);
-        color: var(--text2);
       }
       li::before {
         content: '';
@@ -1091,9 +1305,24 @@ const PbLoading = class extends LitElement {
       }
       li[data-s='working']::before {
         background: var(--gold-b);
+        animation: pb-load-pulse 0.9s ease-in-out infinite alternate;
       }
-      li[data-s='ready'] {
-        color: var(--text);
+      @keyframes pb-load-pulse {
+        to {
+          opacity: 0.35;
+        }
+      }
+      .tip {
+        min-height: 3.2em;
+      }
+      .tip.turn {
+        animation: m-fade var(--m-slow) var(--ease-out, ease-out);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        li[data-s='working']::before,
+        .tip.turn {
+          animation: none;
+        }
       }
       li[data-s='ready']::before {
         background: var(--c-primary);
@@ -1112,22 +1341,55 @@ const PbLoading = class extends LitElement {
     /** @type {{ id: string, label: string, state?: string }[]} */
     this.stages = [];
     this.contained = false;
+    this.night = false;
+    /** @type {string[]} */
+    this.tips = [];
+    this._tipAt = 0;
+    /** @type {any} */
+    this._turn = 0;
+  }
+  connectedCallback() {
+    super.connectedCallback();
+    /* a tip a few seconds, while there is more than one */
+    this._turn = setInterval(() => {
+      if (this.tips.length > 1) this._tipAt = (this._tipAt + 1) % this.tips.length;
+    }, 4200);
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    clearInterval(this._turn);
+  }
+  /** @param {Map<string, unknown>} changed */
+  updated(changed) {
+    /* a new tip fades in */
+    const el = changed.has('_tipAt') && changed.get('_tipAt') !== undefined && this.renderRoot.querySelector('.tip');
+    if (!el) return;
+    el.classList.remove('turn');
+    void (/** @type {HTMLElement} */ (el).offsetWidth);
+    el.classList.add('turn');
   }
   render() {
-    const p = Math.round(Math.max(0, Math.min(1, this.value || 0)) * 100);
+    const p = Math.round(Math.max(0, Math.min(1, this.value || 0)) * 100),
+      tip = this.tips.length ? this.tips[this._tipAt % this.tips.length] : this.tip,
+      ready = this.stages.filter(s => s.state === 'ready').length,
+      now = this.stages.find(s => s.state === 'working') || this.stages.find(s => s.state !== 'ready');
     return html`<div class="view" part="view"><slot name="view"></slot></div>
       <div class="box" role="status" aria-live="polite" aria-label=${`${this.heading || 'Loading'}, ${p}%`}>
         ${this.sub ? html`<small>${this.sub}</small>` : nothing}
         ${this.heading ? html`<h2>${this.heading}</h2>` : nothing}
+        <slot name="card"></slot>
         <pb-stat-bar kind="stat" .value=${p} .max=${100} label="Loading"></pb-stat-bar>
         ${
           this.stages.length
-            ? html`<ol>
-              ${this.stages.map(s => html`<li data-s=${s.state || 'waiting'}>${s.label}</li>`)}
-            </ol>`
+            ? html`<div class="now">
+              <ol>
+                ${this.stages.map(s => html`<li data-s=${s.state || 'waiting'} aria-label=${s.label}></li>`)}
+              </ol>
+              <span><b>${now ? now.label : 'Ready'}</b> · ${ready} of ${this.stages.length}</span>
+            </div>`
             : nothing
         }
-        ${this.tip ? html`<p class="tip">${this.tip}</p>` : nothing}
+        ${tip ? html`<p class="tip">${tip}</p>` : nothing}
       </div>`;
   }
 };

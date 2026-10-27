@@ -174,7 +174,8 @@ test('a program that fails to compile leaves nothing behind', () =>
   withGL(gl => {
     assert.throws(() => G.compileProgram(['void main(){}', 'void main(){}'], 't'), /t: bad/);
     assert.equal(G.gpuRes.n.programs, 0);
-    assert.equal(gl.deleted.length, 1, 'the one shader made');
+    /* LD-2: both shaders are compiled before anything is read, so a failure deletes both and the program */
+    assert.equal(gl.deleted.length, 3, 'both shaders and the program');
   }, linking(false)));
 
 test('a background compile of a program made meanwhile is deleted when it finishes (pollPendingPrograms)', () =>

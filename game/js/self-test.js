@@ -46,6 +46,7 @@ import { bankLevel, bankPrice, bankSlots } from './logic/gene-bank.js';
 import { geneEventSlots } from './logic/gene-events.js';
 import { isRobot, robotRules } from './logic/fighters.js';
 import {
+  addBilly,
   billyName,
   canEnter,
   encounterStock,
@@ -64,6 +65,7 @@ import {
   plural,
   spawn,
   spliceWords,
+  teamSize,
 } from './logic/rules.js';
 import { rivalSize } from './logic/rival.js';
 import { relFavoursPay, relGift } from './logic/relations.js';
@@ -80,6 +82,7 @@ import { runArrive, runNext, runWorldNode } from './logic/run-map.js';
 import { MAPGEN_HUB_BUILDINGS } from './logic/mapgen.js';
 import { wildHabitat } from './logic/wild-pool.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
 import { wishCan } from './logic/fountain-wish.js';
 import { fxOfBillie } from './logic/effects.js';
@@ -121,6 +124,7 @@ import {
   actionSpot,
   climbEnds,
   findPath,
+  hubResidentWalkers,
   mapBridges,
   mapById,
   mapHub,
@@ -154,20 +158,21 @@ import { openShop } from './shop.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { runWorld, runWorldData, runWorldSync } from './run-world.js';
+import { runWorld, runWorldSync } from './run-world.js';
 import { trainRide, trainRideSkip } from './train-ride.js';
 import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
-import { encounterOpen } from './encounter-screen.js';
+import { encPlaying, encounterOpen } from './encounter-screen.js';
 import { questData, questMarked, residentTalk } from './quest-board.js';
 import { fountainWishOpen } from './town-square.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { augmentsDo, augmentsOpen } from './augment-screen.js';
 import { labBuy, labMilestones, renderLabBoard } from './lab-board.js';
-import { storyPickTree } from './story-stage.js';
+import { residentHomeTalk } from './story.js';
+import { storyPickTree, storyRun } from './story-stage.js';
 import { closeModal, modal, renderOverlay, toast } from './overlay.js';
 import { renderWorldMapTab } from './map-tab.js';
 import { clinicHeal } from './walk-tab.js';
@@ -1088,7 +1093,7 @@ async function runFullTest(mode) {
             for (let i = 0; i < 150 && !(walkView.ready && walkView.id === landing); i++) await selfTestSleep(100);
             if (walkView.id !== landing) throw new Error(`the run's landing isn't shown (still ${walkView.id})`);
             measureFromHere();
-            /* the way to the exit ahead (west) and on past where a run's crossing counts (rules.json run.seamIn) */
+            /* the way to the exit ahead (east) and on past where a run's crossing counts (rules.json run.seamIn) */
             const to = runWorldNode(runNext(s.run.map, 0)[0]),
               e = (walkState().exits || []).find(x => x.to === to);
             if (!e) throw new Error(`no exit from the landing to ${LOCATIONS[to].name}`);
@@ -1100,7 +1105,7 @@ async function runFullTest(mode) {
               R = findPath(walkView.pl.x, walkView.pl.z, pt[0] + side[0] * past, pt[1] + side[1] * past, {
                 max: 1e6,
               });
-            if (!R) throw new Error('no path out of the landing to its west exit');
+            if (!R) throw new Error('no path out of the landing to its east exit');
             let crossed = false;
             for (let k = 1; k < R.length && !crossed; k++) {
               const [ax, az] = R[k - 1],
@@ -1269,11 +1274,11 @@ async function runFullTest(mode) {
       );
     /* RL-S2: Blake and the hub folk, on a copy of the save: a run at Expedition II knows the lead he counters, each of
        his places has his foe (person chad, never blocking), his team one Billie bigger by meetings as rules.json
-       run.rival says, his ace of a type that beats the lead's; a Bean for Hazel raises her level and the story reads it
-       (rel:hazel); the run takes off with the levels' bonuses. Then the save as it was */
+       run.rival says, his ace of a type that beats the lead's; a Bean for Kappi raises their level and the story reads it
+       (rel:kappi); the run takes off with the levels' bonuses. Then the save as it was */
     if (typeof rivalSize === 'function' && typeof relGift === 'function' && !selfTest.stop)
       await phase(
-        'Blake in a run, and a Bean for Hazel',
+        'Blake in a run, and a Bean for Kappi',
         'dio',
         async () => {
           const was = saveData,
@@ -1293,15 +1298,15 @@ async function runFullTest(mode) {
             }
             if (!plan) throw new Error('no seed of 20 met Blake twice at Expedition II');
             s.meta.beans = 1;
-            if (!relGift(s.meta, 'hazel', RELATIONS)) throw new Error('the Bean for Hazel wasn’t given');
+            if (!relGift(s.meta, 'kappi', RELATIONS)) throw new Error('the Bean for Kappi wasn’t given');
             const holds = (/** @type {string} */ c) => conditionHolds(c, storyStateOf(s));
-            if (!holds('rel:hazel >= 1 and gifted:hazel and beans = 0'))
+            if (!holds('rel:kappi >= 1 and gifted:kappi and beans = 0'))
               throw new Error('the story doesn’t read the gift: ' + JSON.stringify(storyStateOf(s).rel));
             runStartOn(s, plan);
             const run = s.run,
               lead = SPECIES[run.rival.lead];
             if (!lead || run.rival.lead !== s.team[0].sp) throw new Error(`the lead: ${run.rival.lead}`);
-            if (!run.rel || run.rel.hazel !== 1)
+            if (!run.rel || run.rel.kappi !== 1)
               throw new Error(`the levels it took off with: ${JSON.stringify(run.rel)}`);
             const blakes = Object.values(
               runFoes(run, { leaders: Object.values(TRAINERS).filter(T => T.miniboss), rules: RULES.run })
@@ -1317,10 +1322,10 @@ async function runFullTest(mode) {
               if (!ace.types.some(t => typeEffectiveness(t, lead.types) > 1))
                 throw new Error(`his ace ${ace.name} doesn't beat ${lead.name}`);
             });
-            /* RL-S2 part B: Hazel's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
+            /* RL-S2 part B: Kappi's favour, asked, paid on the way home from a run that reached row 7; Chapter 1's end
                moves the story to chapter 2 */
             const story = s.story || (s.story = {});
-            (story.quests || (story.quests = {})).fav_hazel = 'asked';
+            (story.quests || (story.quests = {})).fav_kappi = 'asked';
             s.meta.history.push({
               seed: 'SELFTESTFAV',
               theme: '',
@@ -1336,8 +1341,8 @@ async function runFullTest(mode) {
               rival: null,
             });
             const paid = relFavoursPay(s, c => conditionHolds(c, storyStateOf(s)), RELATIONS);
-            if (paid.length !== 1 || paid[0].who !== 'hazel' || story.quests.fav_hazel !== 'done')
-              throw new Error(`Hazel's favour: ${JSON.stringify(paid)}`);
+            if (paid.length !== 1 || paid[0].who !== 'kappi' || story.quests.fav_kappi !== 'done')
+              throw new Error(`Kappi's favour: ${JSON.stringify(paid)}`);
             const end = STORY_DATA.scripts && STORY_DATA.scripts['chapter1-end'];
             if (!end) throw new Error('no story.json scripts.chapter1-end');
             await runScript(
@@ -1346,7 +1351,7 @@ async function runFullTest(mode) {
               { save: s, id: 'story:chapter1-end' }
             );
             if (s.meta.chapter !== 2) throw new Error(`chapter1-end left the chapter at ${s.meta.chapter}`);
-            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Hazel level 1, her favour +${paid[0].points}; chapter 2`;
+            return `Blake twice against ${lead.name}: ${blakes.map(F => F.team.map(e => SPECIES[e.sp].name).join('+')).join(', then ')}; Kappi level 1, their favour +${paid[0].points}; chapter 2`;
           } finally {
             setSaveData(was);
             render();
@@ -1356,7 +1361,7 @@ async function runFullTest(mode) {
         60
       );
     /* RL-12b: a run's waystation and stall, on a copy of the save: the first seed (SELFTESTWAY0, 1, ...) whose map has
-       both; at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
+       both (WM-2: at Expedition V, as a shorter path's free rows hold no stall); at the waystation its stand (act 'event') opens the event the place holds, at the stall its stall opens
        the place's shop with the day's wares; both hold rules.json run.wild.waystation wild Billies. Then the save as
        it was */
     if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
@@ -1389,7 +1394,11 @@ async function runFullTest(mode) {
             let plan = null,
               seed = '';
             for (let k = 0; k < 60 && !plan; k++) {
-              const p = runStartPlan(`SELFTESTWAY${k}`, { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }),
+              const p = runStartPlan(
+                  `SELFTESTWAY${k}`,
+                  { ...data, unlockData: UNLOCK_DATA },
+                  { unlocks: [], expedition: 5 }
+                ),
                 types = p.map.nodes.filter(n => !n.side).map(n => n.type);
               if (types.includes('event') && types.includes('stall')) [plan, seed] = [p, `SELFTESTWAY${k}`];
             }
@@ -1439,6 +1448,89 @@ async function runFullTest(mode) {
         },
         8,
         180
+      );
+    /* RO-3e: the Dig Site, on a copy of the save on a run (seed SELFTESTDIG): reviving the trilobite adds Philanthrobite
+       to a party with room; with a full party the rail snake takes the place of the one you leave behind. Then the save
+       as it was */
+    if (typeof runWorldSync === 'function' && typeof encounterOpen === 'function' && !selfTest.stop)
+      await phase(
+        "The Dig Site's fossils",
+        'dio',
+        async () => {
+          const was = saveData,
+            s = JSON.parse(JSON.stringify(saveData)),
+            data = runWorldData(),
+            /* tap the event sheet's button whose words start with one of these; false when none shows */
+            tap = async (/** @type {string[]} */ ...words) => {
+              for (let i = 0; i < 80; i++) {
+                const b = [...document.querySelectorAll('#ov .event-sheet button')].find(x =>
+                  words.some(w => (x.textContent || '').trim().startsWith(w))
+                );
+                if (b) {
+                  /** @type {HTMLButtonElement} */ (b).click();
+                  return true;
+                }
+                await selfTestSleep(100);
+              }
+              return false;
+            },
+            /* tap Go on, then Keep walking, until the sheet closes */
+            finish = async () => {
+              for (let i = 0; i < 20 && document.querySelector('#ov .event-sheet'); i++)
+                if (!(await tap('Go on', 'Keep walking'))) break;
+              for (let i = 0; i < 50 && encPlaying; i++) await selfTestSleep(100);
+            },
+            out = [];
+          try {
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.tab = 'walk';
+            if (s.run) runRestore(s);
+            runStartOn(s, runStartPlan('SELFTESTDIG', { ...data, unlockData: UNLOCK_DATA }, { unlocks: [] }));
+            runArrive(s, 0, data);
+            s.visited[s.trip.node] = 1;
+            s.team = s.team.slice(0, 1);
+            setSaveData(s);
+            render();
+            encounterOpen(null, 'dig_site');
+            if (!(await tap('Revive the trilobite'))) throw new Error('the Dig Site never offered the trilobite');
+            await finish();
+            const got = saveData.team.find(m => m.sp === 'carnegie0');
+            if (!got) throw new Error('no Philanthrobite joined a party with room');
+            out.push(`${billyName(got)} Lv ${got.lvl} joined`);
+            while (saveData.team.length < teamSize() - 1) addBilly(makeBilly('knight0', 5, { wild: true }));
+            /* the one left behind: the only one of its kind, so its button is the one tapped */
+            addBilly(makeBilly('cuban0', 5, { wild: true }));
+            const last = saveData.team[saveData.team.length - 1];
+            encounterOpen(null, 'dig_site');
+            if (!(await tap('Revive the rail snake'))) throw new Error('the Dig Site never offered the rail snake');
+            /* the revive's line first (Go on), then who stays behind */
+            let asked = false;
+            for (let i = 0; i < 5 && !asked; i++) {
+              const has = (/** @type {string} */ w) =>
+                [...document.querySelectorAll('#ov .event-sheet button')].some(x =>
+                  (x.textContent || '').trim().startsWith(w)
+                );
+              for (let k = 0; k < 50 && !has(billyName(last)) && !has('Go on'); k++) await selfTestSleep(100);
+              if (has(billyName(last))) asked = await tap(billyName(last));
+              else await tap('Go on');
+            }
+            if (!asked) throw new Error('a full party wasn’t asked who stays behind');
+            await finish();
+            if (saveData.team.includes(last)) throw new Error(`${billyName(last)} was left behind but is still here`);
+            if (saveData.team.length !== teamSize() || !saveData.team.some(m => m.sp === 'vanderbilt0'))
+              throw new Error('the rail snake didn’t take the place in a full party');
+            out.push(`full party: Vanderbolt in, ${billyName(last)} left behind`);
+            return out.join('; ');
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            setSaveData(was);
+            render();
+          }
+        },
+        8,
+        120
       );
     /* RT-2: a run route's trainers, on a copy of the save: the first seed (SELFTESTRT0, 1, ...) whose map has a route
        with a pair; on its place every trainer stands on its spot (a pair's second beside it), facing the way it
@@ -1736,7 +1828,7 @@ async function runFullTest(mode) {
         180
       );
     /* RL-8: a run from the station to the payout, on a copy of the save (nothing is written while the test runs): a
-       short run (5 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
+       short run (6 rows) taken off from Copperleaf (RL-9b: one Billie from home, the hub's team left as it was), the
        sky train to the landing (HB-8: its ride skipped), a wild battle there, "Go there" to the town (a paid heal; RL-12: its shop's
        Perk bought), the mini-boss (beaten: a Perk picked), to the boss (an Alpha, its battle carrying the
        Perks) and its payout, then home: Copperleaf without the run. Then the save as it was */
@@ -1774,7 +1866,7 @@ async function runFullTest(mode) {
             setSaveData(s);
             render();
             const hubTeam = saveData.team.map(m => m.uid).join();
-            runTakeOff('SELFTESTRUN8', { rows: 5, minibosses: 1 });
+            runTakeOff('SELFTESTRUN8', { rows: 6, minibosses: 1 });
             /* HB-8: the sky train's ride (skipped), then the run's world made over several frames behind the carriage's
                loading screen */
             if (!saveData.run || !(await wait(() => trainRide.on || runLoad.on, 30000)))
@@ -1800,13 +1892,13 @@ async function runFullTest(mode) {
             /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
             if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
               throw new Error('the landing’s loading screen never lifted');
-            /* RL-R1: the run's region: the short map's 5 rows in its zones, each place its zone's biome (RL-R2: a
+            /* RL-R1: the run's region: the short map’s 6 rows in its zones, each place its zone's biome (RL-R2: a
                side area's its field move's), its name on the Map tab */
             const G = saveData.run.region,
               side = saveData.run.map.side,
               sideBiome = side && FIELD_MOVES[side.move] ? FIELD_MOVES[side.move].biome : '';
-            if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 5)
-              throw new Error(`the run's region doesn't fit its 5 rows: ${JSON.stringify(G && G.zones)}`);
+            if (!G || G.zones.reduce((n, z) => n + z.rows, 0) !== 6)
+              throw new Error(`the run's region doesn’t fit its 6 rows: ${JSON.stringify(G && G.zones)}`);
             const off = saveData.run.map.nodes.find(
               n => !G.zones[n.zone] || (n.side ? sideBiome : G.zones[n.zone].biome) !== n.biome
             );
@@ -1952,7 +2044,44 @@ async function runFullTest(mode) {
             if (!saveData.story.fresh || saveData.story.pending) throw new Error('home from a win: the story’s picks');
             if (!saveData.meta.residents.dottie || H.res !== 'dottie')
               throw new Error('Dottie didn’t move in (or the history lost her)');
-            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in; home with ${saveData.meta.research} Research; in the history`;
+            /* RS-3: home again, Dottie walks Copperleaf as one of its townsfolk (her own look), from the library's
+               door; talking to her (her line tapped through), her first word is her moving-in line, said once */
+            if (
+              !(await wait(
+                () =>
+                  walkView.ready &&
+                  (walkView.folkAll || []).some(f => f.res === 'dottie' && f.who === 'dottie') &&
+                  hubResidentWalkers(walkView.sc).some(w => w.id === 'dottie' && w.prop.k === 'library'),
+                20000
+              ))
+            )
+              throw new Error('Dottie isn’t walking Copperleaf from the library');
+            /* a story line waits for open windows (the way home's) to close */
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            let homeTalk = false;
+            residentHomeTalk({ res: 'dottie' }).then(() => (homeTalk = true));
+            if (
+              !(await wait(() => {
+                if (talkBox.cur) talkBox.cur.tap();
+                return homeTalk;
+              }, 15000))
+            )
+              throw new Error(
+                'talking to Dottie at home never ended DBG ' +
+                  JSON.stringify([
+                    talkBox.on,
+                    !!talkBox.cur,
+                    storyRun.on,
+                    storyRun.id,
+                    typeof cutscene !== 'undefined' && cutscene.on,
+                    !!uiState.modal,
+                  ])
+              );
+            if (!saveData.story.once || !saveData.story.once['banter:dottie_moved'])
+              throw new Error('Dottie’s first word at home isn’t her moving-in line');
+            return `${G.name} (${G.zones.map(z => z.biome).join(', ')}): ${made[0]} scenes made in ${made[1]} ms; landed ${flew} ms after the train; a battle, a heal for ${plural(cost, 'Money')}, a Perk bought and one picked after the mini-boss, the boss; Dottie invited and moved in, walking Copperleaf, her moving-in line said; home with ${saveData.meta.research} Research; in the history`;
           } finally {
             if (activeBattle) {
               stopTimers();

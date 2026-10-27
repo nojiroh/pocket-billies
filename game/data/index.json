@@ -35,16 +35,14 @@
   "quests",
   "residents",
   "pools",
-  "eggs",
   "pyramids",
   "items",
-  "jobs",
   "people",
-  "shops",
   "trainers",
   "rules",
   "battleStages",
   "scenery",
+  "pixelFacts",
   "maps",
   "roads",
   "engine",
@@ -78,7 +76,12 @@
     "arnault",
     "huang",
     "ortega",
-    "bloomberg"
+    "bloomberg",
+    "knight",
+    "carnegie",
+    "vanderbilt",
+    "satoshi",
+    "hastings"
    ]
   },
   "people": {
@@ -89,7 +92,7 @@
     "crude",
     "markdown",
     "chosen",
-    "hazel",
+    "kappi",
     "clerk",
     "miner",
     "chef",
@@ -117,7 +120,15 @@
     "cass",
     "vinylla",
     "juniper",
-    "nacre"
+    "nacre",
+    "dottie",
+    "mo",
+    "bertha",
+    "gus",
+    "hayden",
+    "rosa",
+    "seamus",
+    "helix"
    ]
   },
   "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
@@ -164,7 +175,8 @@
     "int_inn",
     "int_library",
     "int_workshop",
-    "int_gene_bank"
+    "int_gene_bank",
+    "test_props_routes"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}

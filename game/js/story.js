@@ -14,6 +14,7 @@ import {
   selfTest,
   showPendingWindows,
   storyFreshTake,
+  storyPickId,
   storyPickPlay,
   storyRun,
   storyWorldOK,
@@ -26,7 +27,7 @@ import { startTrainer, startWild } from './logic/battle-engine.js';
 import { setStoryFlag } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
-import { baseMapId, walkView } from './walk-view.js';
+import { baseMapId, turnToPlayer, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { music } from './sound.js';
@@ -40,6 +41,7 @@ expose({
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
   personTalk: [() => personTalk, v => (personTalk = v)],
+  residentHomeTalk: [() => residentHomeTalk, v => ((residentHomeTalk = v), provide({ residentHomeTalk }))],
   storyAfterRival: [() => storyAfterRival, v => ((storyAfterRival = v), provide({ storyAfterRival }))],
   storyAfterWin: [() => storyAfterWin, v => ((storyAfterWin = v), provide({ storyAfterWin }))],
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
@@ -51,7 +53,7 @@ expose({
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags, storyGiftOffer });
+provide({ openingDone, residentHomeTalk, storyAfterRival, storyAfterWin, storyFlags, storyGiftOffer });
 /* to-module: end */
 function storyFlags() {
   return saveData.story || (saveData.story = {});
@@ -220,6 +222,24 @@ export async function personTalk(P) {
     );
 }
 
+/* RS-3: a resident of Copperleaf (one of its townsfolk, walk-view.js hubResidentWalkers) stops and says the line the
+   story director picks for them (banter.json, their id as `who`; every resident has one that always holds) */
+export async function residentHomeTalk(f) {
+  if (talkBox.on || storyRun.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  f.wait = 99;
+  f.route = null;
+  f.walk = 0;
+  /* from their room card (Talk) there is nobody to turn: only the line */
+  if (f.x != null) turnToPlayer(f);
+  if (f.x != null && typeof walkRenderer !== 'undefined') {
+    walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
+    walkRenderer.talkAt = { x: f.x, z: f.z, t: walkView.t };
+  }
+  const k = storyPickId(f.res, null);
+  if (!k || !(await playStoryScript('banter:' + k))) await talk([[f.res, 'Hello again.']]);
+  f.wait = 2;
+}
+
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
 /* this device has seen Blake's first battle through once: next time it can be skipped */
@@ -264,7 +284,7 @@ export function storyRivalBattle(o = {}) {
   };
   setTimeout(poll, 150);
 }
-/* win or lose: Blake has his say and goes off to train, Hazel heals your team and points you down the road (story.json
+/* win or lose: Blake has his say and goes off to train, the Chosen heals your team and points you down the road (story.json
    scripts.blake-first-battle, which reads rival0) */
 async function storyAfterRival(o) {
   setStoryFlag('rival0', o === 'win' ? 'win' : o === 'lose' ? 'lose' : 'skip');

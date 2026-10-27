@@ -1,7 +1,8 @@
 // RL-R1/RL-R2: each place of a run is its zone's biome, except a side area's, which are its field move's (Cut's
 // thicket, Surf's lake, Rock Smash's cave: fieldMoves.json `biome`, roguelite track RL-R2a/RL-R2b) in the zone of
 // their row. The in-game full test's run phase checks the same rule (self-test.js "A run: the train"); it once asked
-// every place for its zone's biome and failed on any run with a side area, as on its own seed SELFTESTRUN8.
+// every place for its zone's biome and failed on any run with a side area, as on its own seed SELFTESTRUN8 (before
+// WM-2's 6-row short map).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
@@ -20,23 +21,24 @@ const RAW = readGameData(),
     fieldMoves: MOVES,
   },
   /* the debug menu's short map (self-test.js runTakeOff) and the full one */
-  SHORT = { rows: 5, minibosses: 1 },
+  SHORT = { rows: 6, minibosses: 1 },
   SEEDS = Array.from({ length: 150 }, (_, k) => `Z${k.toString(36).toUpperCase()}BIOME`);
 
 /** the biome a run's place should be: its side area's move's, else its zone's */
 const want = (plan, n) => (n.side ? MOVES[plan.map.side.move].biome : plan.region.zones[n.zone].biome);
 
-test("the self-test's seed: a Cut detour on row 4 is thicket in a meadow zone", () => {
+test("the self-test's seed: a Cut detour on row 5, thicket; only side places may be off their zone", () => {
+  /* WM-2: the short map is 6 rows and its detour stands in a thicket zone, so no place is off its zone on this seed
+     any more; every place of the next test's seeds still holds the rule */
   const plan = runStartPlan('SELFTESTRUN8', DATA, { map: SHORT }),
     S = plan.map.side,
     off = plan.map.nodes.filter(n => plan.region.zones[n.zone].biome !== n.biome);
   assert.equal(S.move, 'cut');
-  assert.ok(off.length > 0, 'a side place off its zone, as the old rule saw');
-  for (const n of off) {
-    assert.equal(n.side, 1, 'only side places are off their zone');
-    assert.equal(n.row, 3);
-    assert.equal(n.biome, 'thicket');
+  for (const i of S.nodes) {
+    assert.equal(plan.map.nodes[i].row, 4);
+    assert.equal(plan.map.nodes[i].biome, 'thicket');
   }
+  for (const n of off) assert.equal(n.side, 1, 'only side places are off their zone');
 });
 
 test("every place is its zone's biome, a side area's its move's: short and full maps, many seeds", () => {

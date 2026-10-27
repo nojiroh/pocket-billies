@@ -69,7 +69,10 @@ test("a run's region: its map follows the zones over the open biomes, real speci
         G.dex.every(sp => SPECIES.has(sp)),
         `${seed}: real species`
       );
-      assert.equal(G.leaders.length, GAME_DATA.rules.run.map.minibosses + 1, seed);
+      /* RO-3f: a mythical is in no regional dex */
+      const myth = GAME_DATA.lines.filter(L => L.rar === 'mythical').map(L => L.id + '0');
+      assert.ok(myth.length && !G.dex.some(sp => myth.includes(sp)), `${seed}: no mythical`);
+      assert.equal(G.leaders.length, plan.data.rules.map.minibosses + 1, seed);
       // each theme leans to 4 types with a leader each: all three leaders are of its types
       for (const id of G.leaders) assert.ok(T.types[LEADER_TYPE[id]] > 0, `${seed}: ${id} for ${G.theme}`);
     }
@@ -91,13 +94,13 @@ test("the run keeps its region, the save loads, and the debug menu's short map f
   assert.equal(validRun({ ...run, region: { ...run.region, extra: 1 } }), false, 'a region with a key too many');
   const { region, ...before } = run;
   assert.ok(region && validRun(before), 'a run from before regions still loads');
-  const short = runStartPlan('RLR1REAL', DATA, { unlocks: [], map: { rows: 5, minibosses: 1 } });
+  const short = runStartPlan('RLR1REAL', DATA, { unlocks: [], map: { rows: 6, minibosses: 1 } });
   assert.deepEqual(
     short.region.zones.map(z => z.rows),
-    [3, 2]
+    [2, 2, 2]
   );
   assert.equal(short.region.leaders.length, 2);
-  assert.equal(1 + Math.max(...short.map.nodes.map(n => n.row)), 5);
+  assert.equal(1 + Math.max(...short.map.nodes.map(n => n.row)), 6);
   // without its region data a start makes no region (the tests' own tables, and a run from before)
   assert.equal(runStartPlan('RLR1REAL', { ...DATA, region: undefined }, { unlocks: [] }).region, null);
 });

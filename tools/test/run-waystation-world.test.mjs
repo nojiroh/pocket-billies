@@ -36,7 +36,7 @@ function seedsWithBoth(n) {
   const out = [];
   for (let k = 0; out.length < n && k < 200; k++) {
     const seed = `WAY${k}`,
-      plan = runStartPlan(seed, DATA, {}),
+      plan = runStartPlan(seed, DATA, { expedition: 5 }),
       types = new Set(plan.map.nodes.filter((/** @type {any} */ x) => !x.side).map((/** @type {any} */ x) => x.type));
     if (types.has('event') && types.has('stall')) out.push({ seed, plan });
   }

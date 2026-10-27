@@ -30,7 +30,8 @@ test(':host becomes a selector for the host; inner parts are not the host', () =
 
 test('the overlays: tap targets, colours read from CSS, contrast through layers, glass depth', async () => {
   const L = await import('../../game/js/logic/ui-inspect.js');
-  assert.equal(L.uiTapTooSmall({ width: 44, height: 44 }), false);
+  assert.equal(L.uiTapTooSmall({ width: 40, height: 40 }), false);
+  assert.equal(L.uiTapTooSmall({ width: 39, height: 44 }), true);
   assert.equal(L.uiTapTooSmall({ width: 120, height: 30 }), true);
   assert.equal(L.uiTapTooSmall({ width: 0, height: 0 }), false);
   assert.deepEqual(L.parseCssColour('rgba(255, 0, 16, 0.5)'), { hex: '#ff0010', a: 0.5 });

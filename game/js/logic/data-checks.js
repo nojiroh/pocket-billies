@@ -19,7 +19,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
-import { runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
+import { runGridOverlap, runLinkDir, runMapLength, runMapMake, runMapRows, runMapRowsFit } from './run-map.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
@@ -31,6 +31,7 @@ import {
 import { fxRowOf } from './run-enc.js';
 import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
+import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
@@ -405,9 +406,10 @@ export function dataSquareRules(D) {
   }
   return out;
 }
-// RL-6: how a run's node map is laid out (logic/run-map.js): 5 to 12 rows, mini-bosses that fit (each on a row of
-// its own, a town's row before it, after the landing's row and before the boss's), the four types it names in
-// nodeTypes.json, chances from 0 to 1, biomes that exist with something to pick
+// RL-6: how a run's node map is laid out (logic/run-map.js): WM-2: its places a path by Expedition (whole ranges
+// from 6 to 15), towns (a whole range) that fit every length (each mini-bosses' town after it, a free row before
+// each mini-boss and before the boss), the four types it names in nodeTypes.json, chances from 0 to 1, biomes that
+// exist with something to pick
 /** RL-6: rules.json run.map @param {any} D @returns {DataProblem[]} */
 export function dataRunMapRules(D) {
   /** @type {DataProblem[]} */
@@ -415,17 +417,27 @@ export function dataRunMapRules(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const M = D.rules && D.rules.run && D.rules.run.map,
-      KEYS = ['rows', 'minibosses', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'];
+      KEYS = ['path', 'towns', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'],
+      whole = (/** @type {any} */ r, /** @type {number} */ lo, /** @type {number} */ hi) =>
+        Array.isArray(r) && r.length === 2 && r.every(v => Number.isInteger(v) && v >= lo && v <= hi) && r[0] <= r[1];
     if (!M || typeof M !== 'object') problem('rules.json', 'run.map missing');
     else {
       for (const k of Object.keys(M)) if (!KEYS.includes(k)) problem('rules.json', `run.map.${k}: no such rule`);
-      if (!Number.isInteger(M.rows) || M.rows < 5 || M.rows > 12)
-        problem('rules.json', 'run.map.rows is not a whole number from 5 to 12');
-      else if (!Number.isInteger(M.minibosses) || M.minibosses < 0 || !runMapRowsFit(M))
-        problem(
-          'rules.json',
-          `run.map: ${M.rows} rows can't hold ${M.minibosses} mini-bosses (each on a row of its own with a town's row before it)`
-        );
+      const towns = whole(M.towns, 0, 4);
+      if (!towns) problem('rules.json', 'run.map.towns is not [fewest, most] whole numbers from 0 to 4');
+      if (!Array.isArray(M.path) || !M.path.length || !M.path.every((/** @type {any} */ r) => whole(r, 6, 15)))
+        problem('rules.json', 'run.map.path is not a list of [fewest, most] places from 6 to 15, an Expedition each');
+      else if (towns)
+        M.path.forEach((/** @type {number[]} */ [lo, hi], /** @type {number} */ k) => {
+          for (let rows = lo; rows <= hi; rows++) {
+            const L = runMapLength('', { ...M, rows }, k + 1);
+            if (!runMapRowsFit({ ...M, ...L }) || L.minibosses > M.towns[1])
+              problem(
+                'rules.json',
+                `run.map: ${rows} places (Expedition ${k + 1}) can't hold ${M.towns[0]} towns (each after its mini-boss, a place before each mini-boss and the boss)`
+              );
+          }
+        });
       for (const k of ['first', 'rest', 'guard', 'last'])
         if (!(D.nodeTypes || {})[M[k]]) problem('rules.json', `run.map.${k}: no node type "${M[k]}" (nodeTypes.json)`);
       for (const k of ['wide', 'cross'])
@@ -466,6 +478,8 @@ export const RUN_RULE_KEYS = Object.freeze([
   'side',
   'beans',
   'rival',
+  'ghost',
+  'boards',
   'trainers',
   'rewards',
   'town',
@@ -594,9 +608,27 @@ export function dataRunScene(D) {
     if (
       W &&
       W.rare !== undefined &&
-      !(W.rare && typeof W.rare === 'object' && whole(W.rare.up, 0, 20) && Object.keys(W.rare).length === 1)
+      !(
+        W.rare &&
+        typeof W.rare === 'object' &&
+        whole(W.rare.up, 0, 20) &&
+        Object.keys(W.rare).every(k => k === 'up' || k === 'myth')
+      )
     )
-      problem('rules.json', 'run.wild.rare is not { up } (whole levels, 0-20)');
+      problem('rules.json', 'run.wild.rare is not { up, myth? } (whole levels, 0-20)');
+    /* RO-3f: the mythical that now and then stands in for the rarer one: a chance and real one-stage mythicals */
+    const MY = W && W.rare && W.rare.myth;
+    if (MY !== undefined) {
+      const lines = Object.fromEntries((D.lines || []).map((/** @type {any} */ l) => [l.id, l]));
+      if (!MY || typeof MY.chance !== 'number' || !(MY.chance >= 0 && MY.chance <= 1) || !Array.isArray(MY.list))
+        problem('rules.json', 'run.wild.rare.myth is not { chance (0-1), list }');
+      else
+        for (const sp of MY.list) {
+          const L = typeof sp === 'string' && lines[sp.replace(/\d+$/, '')];
+          if (!L || L.rar !== 'mythical' || sp !== L.id + '0')
+            problem('rules.json', `run.wild.rare.myth: ${sp} is not a mythical line's species (<line>0)`);
+        }
+    }
     /* RT-4: the habitats (logic/mapgen.js mapgenHabitats makes their points), each a list of types, no type twice */
     const H = W && W.habitats;
     if (H !== undefined) {
@@ -739,7 +771,7 @@ export function dataRunLoop(D) {
         problem('rules.json', 'run.rival.on: the node types he can stand in for (a list)');
       else
         for (const t of RV.on)
-          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival'].includes(t))
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival', 'ghost'].includes(t))
             problem('rules.json', `run.rival.on: "${t}" is not a filler node type (nodeTypes.json)`);
       if (
         !Array.isArray(RV.bands) ||
@@ -752,6 +784,49 @@ export function dataRunLoop(D) {
         problem('rules.json', 'run.rival: size (1-6), max (size-6) and grow (1-20) are whole numbers');
       if (!whole(RV.up, -20, 50) || !whole(RV.reward, 0, 1e6))
         problem('rules.json', 'run.rival: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
+    }
+    /* ON-2: a friend's ghost team (logic/run-map.js runMapGhost) and the daily and weekly runs (logic/daily.js) */
+    const GH = R.ghost;
+    if (!rec(GH)) problem('rules.json', 'run.ghost missing');
+    else {
+      only(GH, ['on', 'spare', 'band', 'up', 'reward', 'who'], 'run.ghost');
+      if (GH.spare !== undefined && (!D.nodeTypes || !D.nodeTypes[GH.spare]))
+        problem('rules.json', `run.ghost.spare: "${GH.spare}" is not a node type (nodeTypes.json)`);
+      if (!Array.isArray(GH.on) || !GH.on.length)
+        problem('rules.json', 'run.ghost.on: the node types it can stand in for');
+      else
+        for (const t of GH.on)
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival', 'ghost'].includes(t))
+            problem('rules.json', `run.ghost.on: "${t}" is not a filler node type (nodeTypes.json)`);
+      const b = GH.band;
+      if (!Array.isArray(b) || b.length !== 2 || !(b[0] >= 0 && b[1] > b[0] && b[1] <= 1))
+        problem('rules.json', 'run.ghost.band: [from, to) shares of the rows, 0-1');
+      if (!whole(GH.up, -20, 50) || !whole(GH.reward, 0, 1e6))
+        problem('rules.json', 'run.ghost: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
+      const folk = Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {});
+      if (typeof GH.who !== 'string' || (folk.length && !folk.includes(GH.who)))
+        problem('rules.json', `run.ghost.who: "${GH.who}" is not a person (people/)`);
+      if (!D.nodeTypes || !D.nodeTypes.ghost) problem('nodeTypes.json', 'the ghost node type is missing (ON-2)');
+    }
+    const BD = R.boards,
+      chal = (/** @type {any} */ v) =>
+        Array.isArray(v) && v.every(c => typeof c === 'string' && (!D.modifiers || D.modifiers.challenges[c]));
+    if (!rec(BD) || !rec(BD.daily) || !rec(BD.weekly)) problem('rules.json', 'run.boards: daily and weekly are needed');
+    else {
+      only(BD, ['daily', 'weekly'], 'run.boards');
+      only(BD.daily, ['expedition', 'challenges'], 'run.boards.daily');
+      only(BD.weekly, ['expedition', 'challenges', 'picks'], 'run.boards.weekly');
+      const W = BD.weekly,
+        pair = (/** @type {any} */ v, /** @type {number} */ lo, /** @type {number} */ hi) =>
+          Array.isArray(v) && v.length === 2 && whole(v[0], lo, hi) && whole(v[1], v[0], hi);
+      if (!whole(BD.daily.expedition, 1, 9) || !chal(BD.daily.challenges) || BD.daily.challenges.includes('mono'))
+        problem('rules.json', 'run.boards.daily: an Expedition (1-9) and challenges (modifiers.json, not mono)');
+      if (!pair(W.expedition, 1, 9) || !chal(W.challenges) || W.challenges.includes('mono'))
+        problem(
+          'rules.json',
+          'run.boards.weekly: an Expedition [lo, hi] (1-9) and challenges (modifiers.json, not mono)'
+        );
+      if (!pair(W.picks, 0, 8)) problem('rules.json', 'run.boards.weekly.picks: [lo, hi] challenges, 0-8');
     }
     /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
     const TR = R.trainers,
@@ -989,22 +1064,24 @@ export function dataRegions(D, valid = () => true) {
             seen.add(text);
             problem('regions.json', `${text} (${what}, Expedition ${expedition}, seed ${seed})`);
           },
+          /* WM-2: the run's places a path and mini-bosses, as runStartPlan draws them; the zones fit them */
+          L = runMapLength(seed, M, expedition),
           G = runRegionMake(seed, data, {
             open: /** @type {string[]} */ (open),
             expedition,
-            guards: M.minibosses || 0,
+            guards: L.minibosses,
+            rows: L.rows,
           });
         if (!G) {
           note(`no theme can roll with only ${/** @type {string[]} */ (open).join(', ')} open`);
           continue;
         }
         const rows = G.zones.reduce((n, z) => n + z.rows, 0);
-        if (!runMapRowsFit({ ...M, rows }))
-          note(`${rows} rows (${G.zones.length} zones) can't hold ${M.minibosses} mini-bosses`);
+        if (rows !== L.rows) note(`${G.zones.length} zones hold ${rows} rows, not the path's ${L.rows}`);
         if (G.dex.some(sp => !species.has(sp))) note(`the dex names a species no line makes`);
         if (G.dex.length > R.dex[1] || (G.dex.length < R.dex[0] && roster >= R.dex[0]))
           note(`a dex of ${G.dex.length} species, not ${R.dex[0]}-${R.dex[1]}`);
-        if (G.leaders.length !== (M.minibosses || 0) + 1) note('a leader short for its mini-bosses and boss');
+        if (G.leaders.length !== L.minibosses + 1) note('a leader short for its mini-bosses and boss');
       }
   return out;
 }
@@ -1239,12 +1316,15 @@ export function dataResidents(D, valid = () => true) {
   const hub = ((D.maps || {}).copperleaf || {}).props || [],
     B = D.buildings || {},
     U = D.unlocks || {},
+    people = D.people || {},
     firsts = Object.keys(R).filter(k => R[k].first);
   if (firsts.length > 1) problem(`more than one first resident: ${firsts.join(', ')}`);
   for (const [k, r] of Object.entries(R)) {
     const at = /** @type {any} */ (r).home;
     if (at !== 'house' && !B[at] && !hub.some((/** @type {any} */ p) => p.k === at))
       problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
+    /* RS-3: their look is a person of the same id (people/<id>.json), in a run town and in Copperleaf */
+    if (!people[k]) problem(`${k}: no look (people/${k}.json)`);
     for (const u of /** @type {any} */ (r).levels)
       if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
       else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
@@ -1269,6 +1349,10 @@ export function dataEvents(D, valid = () => true) {
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
     statuses = new Set((D.statuses || []).map((/** @type {any} */ t) => t.id)),
     biomes = new Set(Object.keys(D.biomes || {})),
+    /* RO-3e: the species a revive may name (every stage of every line) */
+    species = new Set(
+      (D.lines || []).flatMap((/** @type {any} */ L) => (L.names || []).map((/** @type {any} */ _, st) => L.id + st))
+    ),
     people = new Set(
       Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {})
     ),
@@ -1323,6 +1407,11 @@ export function dataEvents(D, valid = () => true) {
       case 'wild':
       case 'recall':
         if (a != null && !(Number.isInteger(num(a)) && Math.abs(num(a)) <= 20))
+          problem(`${at}: levels up of -20 to 20`);
+        return;
+      case 'revive':
+        if (!species.has(a)) problem(`${at}: no species "${a}" (lines/)`);
+        if (b != null && !(Number.isInteger(num(b)) && Math.abs(num(b)) <= 20))
           problem(`${at}: levels up of -20 to 20`);
         return;
       case 'level':
@@ -1515,11 +1604,21 @@ export function dataBanter(D, valid = () => true) {
         problem(`${k}: a square line is one line of 70 letters or fewer with no speaker`);
     }
   /* RL-S2 part B: Blake and the thank-yous, once they have lines, always have one to say */
-  for (const who of ['rival', 'thanks_chosen', 'thanks_hazel', 'thanks_juniper']) {
+  for (const who of ['rival', 'thanks_chosen', 'thanks_kappi', 'thanks_juniper']) {
     const mine = Object.values(B).filter((/** @type {any} */ b) => b.who === who);
     if (mine.length && !mine.some((/** @type {any} */ b) => !b.when && !b.once))
       problem(`no ${who} line without a when that is said more than once: ${who} could have nothing to say`);
   }
+  /* RS-3: a line is for a listed speaker or a resident (residents.json), and every resident has one that always holds */
+  const R = D.residents || {};
+  for (const [k, b] of Object.entries(B)) {
+    const who = /** @type {any} */ (b).who;
+    if (!BANTER_WHO.includes(who) && !R[who])
+      problem(`${k}.who: "${who}" is no speaker and no resident (residents.json)`);
+  }
+  for (const id of Object.keys(R))
+    if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
+      problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
   return out;
 }
 
@@ -2061,8 +2160,7 @@ export function dataSceneFindings(D, roadOf) {
       );
   locations.forEach((r, i) => {
     if (r.mapId && !SCN[r.mapId])
-      at('error', 'locations.json')(`${r.name} uses a walk scene that doesn’t exist.`, 'world', {
-        wtab: 'route',
+      at('error', 'locations.json')(`${r.name} uses a walk scene that doesn’t exist.`, 'hub', {
         stop: i,
       });
   });
@@ -2222,15 +2320,14 @@ export function dataRoadFindings(D, roadOf) {
     if (r.kind === 'seam' && (!r.exitA || !r.exitB) && locations[r.a] && locations[r.b])
       err(
         `The road between ${locations[r.a].name} and ${locations[r.b].name} doesn’t say which exit it leaves by at ${!r.exitA ? locations[r.a].name : locations[r.b].name}.`,
-        'world',
-        { wtab: 'route', stop: !r.exitA ? r.a : r.b }
+        'hub',
+        { stop: !r.exitA ? r.a : r.b }
       );
   });
   const LK = (D.roads || []).map(l => roadOf(D, l));
   LK.forEach((l, k) => {
-    if (!locations[l.a] || !locations[l.b])
-      err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
-    else if (l.a === l.b) err(`${locations[l.a].name} has a road to itself.`, 'world', { wtab: 'route', stop: l.a });
+    if (!locations[l.a] || !locations[l.b]) err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'hub');
+    else if (l.a === l.b) err(`${locations[l.a].name} has a road to itself.`, 'hub', { stop: l.a });
   });
   if (LK.length) {
     const seen = new Set([0]),
@@ -2246,7 +2343,7 @@ export function dataRoadFindings(D, roadOf) {
       });
     }
     locations.forEach((r, i) => {
-      if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'world', { wtab: 'route', stop: i });
+      if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'hub', { stop: i });
     });
   }
   return out;
@@ -2260,12 +2357,16 @@ export const RUN_MAP_ROLE_NAMES = { first: 'landing', rest: 'rest', guard: 'mini
 
 /** what is wrong with one run map (run-map.js runMapMake's), as sentences: a place the landing can't reach, a place
  * that leads nowhere or skips a row, a role row without the type the game looks for; RL-12b: with the node types, two
- * places that sell things one after the other
- * @param {any} map @param {any} M rules.json run.map @param {Record<string, any>} [nodeTypes] @returns {string[]} */
-export function runMapProblems(map, M, nodeTypes) {
+ * places that sell things one after the other. WM-2: footprints that overlap, a link between places that don't share
+ * an edge or that goes west, the landing's links not one north and one east, a path with fewer than two route-like
+ * places (nodeTypes.json routeLike) before a town, more or fewer places a path or towns on a walk than the rules allow.
+ * Rules without rows (rules.json's own) are read for the map's rows
+ * @param {any} map @param {any} rules rules.json run.map @param {Record<string, any>} [nodeTypes] @returns {string[]} */
+export function runMapProblems(map, rules, nodeTypes) {
   const out = [],
     nodes = map.nodes,
     last = Math.max(...nodes.map((/** @type {any} */ n) => n.row)),
+    M = rules.rows ? rules : { ...rules, ...runMapLength('', { ...rules, rows: last + 1 }) },
     roles = runMapRows(M),
     seen = new Set([0]),
     todo = [0];
@@ -2295,6 +2396,47 @@ export function runMapProblems(map, M, nodeTypes) {
           : `a ${RUN_MAP_ROLE_NAMES[role]} row (row ${n.row + 1}) is a ${n.type}, not a ${want === 'town' ? 'town' : want}`
       );
   });
+  /* WM-2: the grid */
+  if (nodes.every((/** @type {any} */ n) => n.at && n.size)) {
+    nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
+      for (let j = 0; j < i; j++) if (runGridOverlap(n, nodes[j])) out.push(`places ${j} and ${i} overlap on the grid`);
+      for (const j of n.to) {
+        const d = nodes[j] ? runLinkDir(map, i, j) : '';
+        if (!d) out.push(`place ${i} leads to place ${j}, which doesn’t share an edge with it`);
+        else if (d === 'W') out.push(`place ${i} leads west to place ${j}`);
+      }
+    });
+    const exits = nodes[0].to.map((/** @type {number} */ j) => runLinkDir(map, 0, j)).sort();
+    if (exits.join() !== 'E,N')
+      out.push(`the landing’s ways on go ${exits.join(' and ') || 'nowhere'}, not north and east`);
+  } else out.push('a place has no footprint on the grid');
+  /* WM-2: two route-like places at least before each town, from the landing or the town before it, on every path */
+  if (nodeTypes) {
+    const town = (/** @type {any} */ n) => n.type === M.rest,
+      road = (/** @type {any} */ n) => !!(nodeTypes[n.type] && nodeTypes[n.type].routeLike),
+      after = nodes.map(() => Infinity);
+    after[0] = 0;
+    nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
+      if (i === 0) return;
+      const before = Math.min(
+        ...nodes.flatMap((/** @type {any} */ p, /** @type {number} */ k) => (p.to.includes(i) ? [after[k]] : []))
+      );
+      if (town(n) && before < 2)
+        out.push(`a path reaches the town at place ${i} after fewer than 2 routes (${before})`);
+      after[i] = town(n) ? 0 : before + (road(n) ? 1 : 0);
+    });
+  }
+  /* WM-2: the places a path and the towns on a walk the rules allow */
+  if (Array.isArray(rules.path) && rules.path.length && !rules.rows) {
+    const lo = Math.min(...rules.path.map((/** @type {number[]} */ r) => r[0])),
+      hi = Math.max(...rules.path.map((/** @type {number[]} */ r) => r[1]));
+    if (last + 1 < lo || last + 1 > hi) out.push(`${last + 1} places a path, not ${lo} to ${hi}`);
+  }
+  if (Array.isArray(rules.towns) && !rules.minibosses) {
+    const [a, b] = runMapTownsPerPath(map);
+    if (a < rules.towns[0] || b > rules.towns[1])
+      out.push(`towns on a walk: ${a === b ? a : `${a} to ${b}`}, not ${rules.towns[0]} to ${rules.towns[1]}`);
+  }
   return [...new Set(out)];
 }
 
@@ -2319,11 +2461,13 @@ export function runMapTownsPerPath(map) {
 /**
  * a sweep of n seeds (`${prefix}${k}`): the problems (each with how many maps have it and a seed that shows it), and
  * the figures a designer weighs: places per map, places by type, towns on a walk, biomes, the towns made against the
- * routes (rest rows are always towns, so the ratio isn't the weights'), and outlying seeds to open
- * @param {Record<string, any>} nodeTypes @param {any} M rules.json run.map (its biomes as the run's unlocks leave them)
- * @param {{ n?: number, prefix?: string }} [o]
+ * routes (rest rows are always towns, so the ratio isn't the weights'), and outlying seeds to open. WM-2: places a
+ * path (rules without rows draw them for `expedition`, as a run does), the grid's width and height in cells, the
+ * links by the way they go, and the fewest route-like places before a town on any path
+ * @param {Record<string, any>} nodeTypes @param {any} rules rules.json run.map (its biomes as the run's unlocks leave them)
+ * @param {{ n?: number, prefix?: string, expedition?: number }} [o]
  */
-export function runMapSweep(nodeTypes, M, o = {}) {
+export function runMapSweep(nodeTypes, rules, o = {}) {
   const n = o.n || 1000,
     prefix = o.prefix || 'SWEEP',
     /** @type {Map<string, { text: string, seed: string, count: number }>} */
@@ -2332,7 +2476,11 @@ export function runMapSweep(nodeTypes, M, o = {}) {
     /** @type {Record<string, number>} */ biomes = {},
     sizes = [],
     towns = [],
-    /** @type {{ seed: string, why: string }[]} */ outliers = [];
+    /** @type {{ seed: string, why: string }[]} */ outliers = [],
+    /** @type {number[][]} */ paths = [],
+    /** @type {number[][]} */ wide = [],
+    /** @type {number[][]} */ high = [],
+    /** @type {Record<string, number>} */ dirs = {};
   let maps = 0,
     lo = Infinity,
     hi = -Infinity;
@@ -2342,7 +2490,8 @@ export function runMapSweep(nodeTypes, M, o = {}) {
     else problems.set(text, { text, seed, count: 1 });
   };
   for (let k = 0; k < n; k++) {
-    const seed = prefix + k;
+    const seed = prefix + k,
+      M = rules.rows ? rules : { ...rules, ...runMapLength(seed, rules, o.expedition || 1) };
     let map;
     try {
       map = runMapMake(seed, nodeTypes, M);
@@ -2351,8 +2500,22 @@ export function runMapSweep(nodeTypes, M, o = {}) {
       continue;
     }
     maps++;
-    for (const p of runMapProblems(map, M, nodeTypes)) note(p, seed);
+    for (const p of runMapProblems(map, rules, nodeTypes)) note(p, seed);
     sizes.push([map.nodes.length, seed]);
+    paths.push([M.rows, /** @type {any} */ (seed)]);
+    const N = map.nodes.filter((/** @type {any} */ x) => x.at && x.size);
+    if (N.length) {
+      const xs = N.flatMap((/** @type {any} */ x) => [x.at[0], x.at[0] + x.size[0]]),
+        ys = N.flatMap((/** @type {any} */ x) => [x.at[1], x.at[1] + x.size[1]]);
+      wide.push([Math.max(...xs) - Math.min(...xs), /** @type {any} */ (seed)]);
+      high.push([Math.max(...ys) - Math.min(...ys), /** @type {any} */ (seed)]);
+    }
+    map.nodes.forEach((/** @type {any} */ x, /** @type {number} */ i) =>
+      x.to.forEach((/** @type {number} */ j) => {
+        const d = runLinkDir(map, i, j) || '?';
+        dirs[d] = (dirs[d] || 0) + 1;
+      })
+    );
     for (const x of map.nodes) {
       types[x.type] = (types[x.type] || 0) + 1;
       biomes[x.biome] = (biomes[x.biome] || 0) + 1;
@@ -2393,6 +2556,9 @@ export function runMapSweep(nodeTypes, M, o = {}) {
     types,
     biomes,
     townsPerPath: { min: maps ? lo : 0, max: maps ? hi : 0, avg: tp.avg },
+    path: stat(paths),
+    grid: { wide: stat(wide), high: stat(high) },
+    dirs,
     ratio: {
       towns: types.town || 0,
       routes: types.route || 0,

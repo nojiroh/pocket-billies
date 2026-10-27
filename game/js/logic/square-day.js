@@ -187,12 +187,12 @@ export function squareStopFor(stops, slot, rank) {
 }
 
 /** how many townsfolk are drawn at once: `most` (the Engine's quality.townFolk), fewer once the game has stepped its
- * quality down (q 2 or more: frames came late, 0.6 of it) or on the Balanced graphics (aim smooth, 0.8 of it); the
+ * quality down (q 2 or more: frames came late, 0.6 of it) or on the Balanced or Off graphics (aim smooth or off, 0.8 of it); the
  * rest keep their day unseen
  * @param {number} most @param {number} q @param {string} [aim] @returns {number} */
 export function folkCap(most, q, aim) {
   most = Math.max(0, Math.round(most));
-  return q >= 2 ? Math.round(most * 0.6) : aim === 'smooth' ? Math.round(most * 0.8) : most;
+  return q >= 2 ? Math.round(most * 0.6) : aim === 'smooth' || aim === 'off' ? Math.round(most * 0.8) : most;
 }
 
 /** the visits in one block of `V.every` seconds (block b: the seconds from b * every): 1 to V.most of the Billies

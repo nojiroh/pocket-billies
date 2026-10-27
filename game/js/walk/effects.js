@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
+  buildingItems,
   buildingState,
   chimneySmoke,
   clueDraw,
@@ -17,6 +18,7 @@ import {
 } from '../hooks.js';
 import { clamp } from '../util.js';
 import { placedTurn } from '../logic/prop-turn.js';
+import { crownGaps, pickShafts } from '../logic/shaft-pick.js';
 import { hexToRgb } from '../art.js';
 import { EFFECT_FRAMES, artImage, walkData, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
@@ -42,7 +44,11 @@ import { lampLit } from './lighting.js';
 import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
 /* eslint-disable no-func-assign */
 expose({
+  RIBBON_FLOATS: [() => RIBBON_FLOATS],
+  RIBBON_SHADERS: [() => RIBBON_SHADERS],
+  SHAFT_FADE_S: [() => SHAFT_FADE_S],
   SHAFT_MAX: [() => SHAFT_MAX],
+  SHAFT_PICK_MS: [() => SHAFT_PICK_MS],
   SHAFT_RANGE: [() => SHAFT_RANGE],
   WEATHER_FLOATS: [() => WEATHER_FLOATS],
   WEATHER_FX_SHADERS: [() => WEATHER_FX_SHADERS],
@@ -50,7 +56,11 @@ expose({
   drawDivers: [() => drawDivers, v => (drawDivers = v)],
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
+  ribbonPass: [() => ribbonPass, v => (ribbonPass = v)],
   shaftList: [() => shaftList],
+  shaftStrength: [() => shaftStrength, v => (shaftStrength = v)],
+  smartLightShafts: [() => smartLightShafts, v => (smartLightShafts = v)],
+  smartShafts: [() => smartShafts],
   volumeAirOn: [() => volumeAirOn, v => (volumeAirOn = v)],
   weatherBatch: [() => weatherBatch],
 });
@@ -74,6 +84,66 @@ precision highp float;in vec2 vUV;in vec3 vW;in vec4 vCol;out vec4 o;uniform sam
 void main(){vec4 c=texture(uTex,vUV)*vCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);o=c;}`,
   ],
 };
+/* VFX-2: a thrown pyramid's motion lines (battle-3d.js battle3dFrame's ribbon): one strip, flat and unlit, hard
+   edged, a white core along its middle and its own colour outside; eroded by a 4x4 Bayer dither on the screen's
+   pixels (never a soft fade). Per vertex: its place, which side (-1, 1) and its erosion (0 whole .. 1 gone) */
+export const RIBBON_SHADERS = {
+  ribbon: [
+    `#version 300 es
+precision highp float;layout(location=0) in vec3 aP;layout(location=1) in vec2 aA;uniform mat4 uVP;out vec3 vW;out vec2 vA;
+void main(){vW=aP;vA=aA;gl_Position=uVP*vec4(aP,1.);}`,
+    `#version 300 es
+precision highp float;in vec3 vW;in vec2 vA;out vec4 o;uniform vec3 uCol;uniform float uCore;${LIGHT_GLSL}
+float rbBayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
+void main(){if(rbBayer(gl_FragCoord.xy)<vA.y)discard;o=vec4(fogit(abs(vA.x)<uCore?vec3(1.):uCol,vW),1.);}`,
+  ],
+};
+const RIBBON_FLOATS = 5;
+/* R: { v: [x, y, z, side, erosion, ...] two vertices a point, head first; col: [r, g, b] 0..1; core: the white
+   share }. Drawn after the effects, before the post pass; leaves the fx program's quad bound as it found it */
+export function ribbonPass(C, R, X) {
+  const n = R && R.v ? R.v.length / RIBBON_FLOATS : 0;
+  if (n < 4) return;
+  const gl = gpuState.gl;
+  ensurePrograms(RIBBON_SHADERS);
+  const p = useWalkProgram('ribbon', C, X);
+  if (!p.rb) {
+    /* made with the program, so a new context (initWebgl empties gpuState.P) makes them again */
+    const vao = gpuVao('instances'),
+      buf = gpuBuffer('instances');
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, RIBBON_FLOATS * 4, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, RIBBON_FLOATS * 4, 12);
+    gl.bindVertexArray(null);
+    p.rb = { vao, buf, d: new Float32Array(RIBBON_FLOATS * 64) };
+  }
+  if (p.rb.d.length < R.v.length) p.rb.d = new Float32Array(R.v.length * 2);
+  const d = p.rb.d;
+  for (let i = 0; i < R.v.length; i += RIBBON_FLOATS) {
+    d[i] = R.v[i];
+    d[i + 1] = R.v[i + 1] + worldCurveDrop(R.v[i], R.v[i + 2]);
+    d[i + 2] = R.v[i + 2];
+    d[i + 3] = R.v[i + 3];
+    d[i + 4] = R.v[i + 4];
+  }
+  gl.uniform3fv(p.U.uCol, R.col);
+  gl.uniform1f(p.U.uCore, R.core);
+  gl.disable(gl.CULL_FACE);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.bindBuffer(gl.ARRAY_BUFFER, p.rb.buf);
+  gl.bufferData(gl.ARRAY_BUFFER, d.subarray(0, R.v.length), gl.DYNAMIC_DRAW);
+  gpuSized(p.rb.buf, R.v.length * 4);
+  gl.bindVertexArray(p.rb.vao);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+  gl.bindVertexArray(null);
+  gl.enable(gl.BLEND);
+  bindQuad();
+}
 const WEATHER_FLOATS = 16;
 const weatherBatch = {
   n: 0,
@@ -756,7 +826,9 @@ export function effectsPass(C, items, X, dark, t, dt) {
   /* phase 20 R2 (D7): cheap light shafts while the light in the air (the vol pass) is off */
   const sk = engineSetting('air', 'cheapShafts') || 0;
   if (sk > 0.01 && !sc.indoor && !volumeAirOn(X)) {
-    const S = lightShafts(items, C, walkRenderer.sun, sk);
+    const smart = !!engineSetting('air', 'shaftPick'),
+      S = smart ? smartLightShafts(items, C, walkRenderer.sun, sk, dt) : lightShafts(items, C, walkRenderer.sun, sk);
+    if (smart) gl.uniform1f(U.uGlow, 2);
     for (const h of S) {
       gl.uniform3fv(U.uRight, h.right);
       gl.uniform3fv(U.uUp, h.up);
@@ -769,7 +841,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
       gl.uniform3fv(U.uRight, R);
       gl.uniform3fv(U.uUp, Up);
     }
-  }
+    if (smart) gl.uniform1f(U.uGlow, 1);
+  } else smartShafts.fade.clear();
   gl.uniform1f(U.uGlow, 0);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -882,16 +955,22 @@ function volumeAirOn(X) {
 const SHAFT_MAX = 6,
   SHAFT_RANGE = 26;
 const shaftList = [];
+/* how strong the shafts are now: strongest with the sun low (dawn, golden hour), fading as it climbs, at night, in
+   grey weather and in rain */
+function shaftStrength(sun, k) {
+  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
+    e = sun.dir[1];
+  return (
+    k *
+    clamp((e - 0.03) / 0.12, 0, 1) *
+    (1 - clamp((e - 0.4) / 0.35, 0, 1)) *
+    (E ? (1 - E.night) * (1 - E.grey * 0.85) * (1 - Math.min(1, E.rain)) : 1)
+  );
+}
 function lightShafts(items, C, sun, k) {
   shaftList.length = 0;
   if (!sun || !C.eye) return shaftList;
-  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
-    e = sun.dir[1],
-    tk =
-      k *
-      clamp((e - 0.03) / 0.12, 0, 1) *
-      (1 - clamp((e - 0.4) / 0.35, 0, 1)) *
-      (E ? (1 - E.night) * (1 - E.grey * 0.85) * (1 - Math.min(1, E.rain)) : 1);
+  const tk = shaftStrength(sun, k);
   if (tk < 0.01) return shaftList;
   const P = walkRenderer.bt ? { x: walkRenderer.bt.center[0], z: walkRenderer.bt.center[1] } : walkView.pl,
     byTree = new Map(),
@@ -957,4 +1036,143 @@ function lightShafts(items, C, sun, k) {
     });
   }
   return shaftList;
+}
+/* smart light shafts (Engine > Air "Smart light shafts"): the same beams, placed by logic/shaft-pick.js where they show
+   best (shade behind them, looking into the light, apart, never over you) from the crowns near you, the gaps between
+   them, the sides of the roofs and the place's own list. Picked again every 0.4 s; a picked beam fades in over about
+   1.2 s and a dropped one fades out, so none pops. Fewer on a struggling device (the quality step), and together they
+   may cover at most a quarter of the screen: an additive quad costs its pixels */
+const SHAFT_PICK_MS = 400,
+  SHAFT_FADE_S = 1.2;
+const smartShafts = { t: -1e9, fade: new Map(), list: [] };
+function smartLightShafts(items, C, sun, k, dt) {
+  const L = smartShafts.list,
+    F = smartShafts.fade;
+  L.length = 0;
+  if (!sun || !C.eye || !C.vp) return L;
+  const tk = shaftStrength(sun, k),
+    now = performance.now();
+  if (tk < 0.01) {
+    F.clear();
+    return L;
+  }
+  if (now - smartShafts.t > SHAFT_PICK_MS) {
+    smartShafts.t = now;
+    const P = walkRenderer.bt ? { x: walkRenderer.bt.center[0], z: walkRenderer.bt.center[1] } : walkView.pl,
+      qe = walkRenderer.qe || 0,
+      max = qe >= 3 ? 3 : qe >= 1 ? 5 : 8,
+      byTree = new Map(),
+      cands = [],
+      blockers = [];
+    /* buildings: the old 3D ones and the low-poly models with windows (a house, the lab), 3.5 m wide or more */
+    const houses = typeof buildingItems === 'function' ? buildingItems(items).slice() : [],
+      houseOf = new Set(houses.map(it => it.p));
+    for (const it of items)
+      if (it.vox && it.wins && it.vis !== false && it.w * it.mpp >= 3.5 && !houseOf.has(it.p)) {
+        houses.push(it);
+        houseOf.add(it.p);
+      }
+    /* a tree's crown: the highest and widest of its leaf pictures (not a building's vines or flower boxes) */
+    for (const it of items) {
+      if (!it.voxImg || !it.layer || it.vis === false || houseOf.has(it.p)) continue;
+      const top = it.y + it.h * it.mpp,
+        r = (it.w * it.mpp) / 2,
+        c = byTree.get(it.p);
+      if (c) {
+        c.top = Math.max(c.top, top);
+        c.r = Math.max(c.r, r);
+      } else if (Math.hypot(it.x - P.x, it.z - P.z) <= SHAFT_RANGE + 4)
+        byTree.set(it.p, { key: `t:${Math.round(it.x * 10)},${Math.round(it.z * 10)}`, x: it.x, z: it.z, top, r });
+    }
+    const crowns = [...byTree.values()].filter(c => c.r >= 0.7);
+    for (const c of crowns) {
+      blockers.push({ x: c.x, z: c.z, y: c.top - c.r, r: c.r });
+      cands.push({ key: c.key, x: c.x, z: c.z, top: c.top, w: Math.min(2.4, Math.max(0.8, c.r * 0.9)), kind: 'crown' });
+    }
+    for (const g of crownGaps(crowns)) cands.push(g);
+    /* a building: light grazing past its two sides square to the sun, from its roof's height (its picture's size) */
+    const sl = Math.hypot(sun.dir[0], sun.dir[2]) || 1,
+      px = -sun.dir[2] / sl,
+      pz = sun.dir[0] / sl;
+    for (const it of houses) {
+      const hw = (it.w * it.mpp) / 2,
+        top = it.y + it.h * it.mpp * 0.8;
+      if (Math.hypot(it.x - P.x, it.z - P.z) > SHAFT_RANGE + 6) continue;
+      blockers.push({ x: it.x, z: it.z, y: it.y + it.h * it.mpp * 0.4, r: hw });
+      for (const sd of [-1, 1])
+        cands.push({
+          key: `b:${Math.round(it.x * 10)},${Math.round(it.z * 10)},${sd}`,
+          x: it.x + px * (hw + 0.6) * sd,
+          z: it.z + pz * (hw + 0.6) * sd,
+          top,
+          w: 1.6,
+          kind: 'roof',
+        });
+    }
+    for (const f of walkView.sc.shafts || [])
+      cands.push({
+        key: `l:${f[0]},${f[1]}`,
+        x: f[0],
+        z: f[1],
+        top: standingHeightAt(f[0], f[1]) + (f[2] || 6),
+        w: f[3] || 1.2,
+        kind: 'list',
+      });
+    const keep = new Set();
+    for (const [key, f] of F) if (f.on) keep.add(key);
+    const picks = pickShafts(cands, {
+      eye: C.eye,
+      vp: C.vp,
+      sun: sun.dir,
+      player: walkView.pl ? [walkView.pl.x, standingHeightAt(walkView.pl.x, walkView.pl.z), walkView.pl.z] : null,
+      focus: [P.x, 0, P.z],
+      ground: standingHeightAt,
+      blockers,
+      keep,
+      max,
+      range: SHAFT_RANGE,
+    });
+    for (const f of F.values()) f.on = false;
+    for (const q of picks) {
+      const f = F.get(q.key);
+      if (f) Object.assign(f, { q, on: true });
+      else F.set(q.key, { q, on: true, a: 0 });
+    }
+  }
+  const t = sun.travel,
+    up = [-t[0], -t[1], -t[2]];
+  for (const [key, f] of F) {
+    f.a = clamp(f.a + (f.on ? dt : -dt) / SHAFT_FADE_S, 0, 1);
+    if (!f.on && f.a <= 0) {
+      F.delete(key);
+      continue;
+    }
+    const q = f.q,
+      g = standingHeightAt(q.x, q.z),
+      len = Math.min(14, q.top / Math.max(0.25, up[1])),
+      cx = q.x + t[0] * len * 0.5,
+      cy = g + q.top + t[1] * len * 0.5,
+      cz = q.z + t[2] * len * 0.5,
+      tx = C.eye[0] - cx,
+      ty = C.eye[1] - cy,
+      tz = C.eye[2] - cz,
+      de = Math.hypot(tx, ty, tz);
+    let rx = up[1] * tz - up[2] * ty,
+      ry = up[2] * tx - up[0] * tz,
+      rz = up[0] * ty - up[1] * tx;
+    const rl = Math.hypot(rx, ry, rz);
+    if (rl < 1e-4) continue;
+    const a = tk * 0.55 * f.a * clamp((de - 3) / 5, 0, 1) * Math.min(1, 0.55 + q.score * 0.6);
+    if (a < 0.005) continue;
+    L.push({
+      p: [cx, cy, cz],
+      right: [rx / rl, ry / rl, rz / rl],
+      up,
+      w: q.w,
+      len,
+      col: sun.col,
+      a,
+    });
+  }
+  return L;
 }

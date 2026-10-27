@@ -35,6 +35,7 @@ import {
   worldMapPrewarm,
 } from './hooks.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
+import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
 import { gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import {
@@ -69,6 +70,7 @@ import {
   endFrameSettings,
   engineContext,
   engineSetting,
+  graphicsOff,
   playerBlur,
 } from './engine/settings.js';
 import {
@@ -105,7 +107,15 @@ import {
   swapMapCache,
   updateNearRing,
 } from './walk/map-cache.js';
-import { adaptQuality, coverItems, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
+import {
+  adaptQuality,
+  coverItems,
+  cullItems,
+  easedMood,
+  frameBudgetRemaining,
+  heatHaze,
+  heatSources,
+} from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
@@ -116,7 +126,8 @@ import { mapSun, walkLightContext } from './walk/lighting.js';
 import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
-import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
+import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
+import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -130,6 +141,7 @@ expose({
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
+  litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
@@ -308,8 +320,10 @@ export function ensureWalkGl(cv) {
     return false;
   }
   try {
-    ensurePrograms(WALK_SHADERS);
-    ensurePrograms(POST_EFFECT_SHADERS);
+    /* LD-2: every program starts compiling first (the driver may work on them side by side), then the ones the first
+       frame needs are finished; the rest finish in the background (pollPendingPrograms) */
+    precompilePrograms(WALK_SHADERS);
+    precompilePrograms(POST_EFFECT_SHADERS);
     for (const d of [
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
@@ -320,6 +334,8 @@ export function ensureWalkGl(cv) {
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
       /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
       engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
+      RIBBON_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
          batches" is on */
       engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
@@ -331,6 +347,8 @@ export function ensureWalkGl(cv) {
         precompilePrograms(
           d
         ); /* alpha 0.4: the low-poly props' too (they were built on first use, in the first place with props) */
+    ensurePrograms(WALK_SHADERS);
+    ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
     gpuState.fail = 1;
@@ -483,10 +501,13 @@ function drawWalkFrame(ts, dtm) {
   engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
+  /* LD-5: the one-off work's budget starts here (walk/quality-cull.js frameBudgetLeft) */
+  walkRenderer.budT = performance.now();
   runNormalMapJobs(walkView.warm ? 40 : 3);
-  pollPendingPrograms(1);
+  /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
+  pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
   groundOcclusionWork();
-  groundPrepWork(walkRenderer.bt ? 0 : PREP_BUDGET_MS);
+  groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
@@ -517,7 +538,8 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  engineContext.env = !sc.plain && typeof environment !== 'undefined' && (environment.on || !!environment.force);
+  engineContext.env =
+    !sc.plain && !graphicsOff() && typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
   else if (typeof environment !== 'undefined') environment.look = null; /* no time-of-day look left over */
   const gq = beginGpuTimer();
@@ -589,9 +611,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
-    updateNearRing(sc.groundOf || sc, fx, fz, PREP_BUDGET_MS);
+    updateNearRing(sc.groundOf || sc, fx, fz, Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   }
-  walkRenderer.budT = performance.now();
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
   gpuPass('other');
   let items = gatherFrameItems(st, C, PPU, C0);
@@ -615,7 +636,21 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     walkRenderer.lastShadow = shadow;
   }
   gpuPass('other');
+  /* AIR-2: the fog grid round you (walk/fog-grid.js), kept up before the light so this frame's march and mist agree.
+     AIR-3: when the light-in-air march reads it, fogit's low mist steps aside inside the grid (X.mistBox) */
+  fogGridFrame(sc, P, BT, PHONE);
+  const FGS = fogGridState(),
+    fogK = engineSetting('air', 'fogVolume') ?? 1,
+    fogOn = fogMarchOn({ grid: !!FGS, battle: !!BT, qe: QE, k: fogK }) && !(walkRenderer.dbg || {}).noPost,
+    fogBox = fogOn ? fogGridBox(FGS.G) : null,
+    fogSteps = FOG_MARCH_STEPS[PHONE ? 'phone' : 'full'];
+  fogMarchNote(
+    fogOn,
+    fogOn ? 'on' : BT ? 'battle' : !FGS ? 'no grid' : QE >= 3 ? 'quality' : fogK <= 0.01 ? 'dial' : 'no post',
+    fogOn ? fogSteps : 0
+  );
   const X = walkLightContext(C, sun, dark, items, shadow, BT);
+  if (fogBox) X.mistBox = [fogBox.cx, fogBox.cz, fogBox.r, 1];
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
@@ -682,8 +717,15 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
+  /* AIR-2: the fog grid's blocks from the debug menu */
+  if (D.fogGrid) {
+    gpuPass('other');
+    drawFogGridBlocks(C);
+  }
   gpuPass('effects');
   effectsPass(C, items, X, dark, t, dt);
+  /* VFX-2: a thrown pyramid's motion lines (battle-3d.js) */
+  if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
@@ -735,8 +777,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
       /* CAM-4b: times the zoom stops' blur at the zoom (walk/camera.js), not in battles */
       blur:
-        (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) *
-        playerBlur(),
+        (BT
+          ? BT.blur
+          : sc.plain || graphicsOff()
+            ? 0
+            : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) * playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
@@ -750,12 +795,16 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       heat: heatHaze(sc),
       heatS: heatSources(C),
       mood: easedMood(sc),
-      sun: sc.indoor ? null : sunScreenPosition(C, sun.dir, 300),
+      sun: sc.indoor ? null : litSunScreenPosition(C, sun),
+      sunCol: engineSetting('sun', 'followLight') ? sun.col : null,
       X,
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
       airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
+      fog: fogOn
+        ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
+        : null,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {
@@ -766,6 +815,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     tilt,
     blur: LF ? Math.round(LF.scale * 100) / 100 : 0,
     slider: playerBlur(),
+    spread: !!(LF && LF.nearSpread) /* lens.nearSpread: the blur in front spread over what is behind it */,
   };
   gpuPass('other');
   /* labels and markers stay sharp on the layer above */
@@ -834,4 +884,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;
   }
   if (typeof frameCount === 'function' && walkView.opt.meter) frameCount(work);
+}
+/* the sun's place on screen for the shafts and the glare; with Rays follow the light (sun.followLight) its strength
+   fades with the night, so the moon gives no full-strength warm glare */
+function litSunScreenPosition(C, sun) {
+  const sp = sunScreenPosition(C, sun.dir, 300);
+  if (!sp || !engineSetting('sun', 'followLight') || !engineContext.env) return sp;
+  sp[2] *= 1 - 0.85 * (environment.night || 0);
+  return sp;
 }

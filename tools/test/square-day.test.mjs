@@ -114,6 +114,7 @@ test('a goer’s stop: the slot’s kinds in turn; at the market the stalls are 
 test('the townsfolk drawn at once: the setting, 0.8 of it on Balanced, 0.6 once the frames come late', () => {
   assert.equal(folkCap(10, 0, 'sharp'), 10);
   assert.equal(folkCap(10, 1, 'smooth'), 8);
+  assert.equal(folkCap(10, 0, 'off'), 8); /* Off keeps Balanced's count */
   assert.equal(folkCap(10, 2, 'sharp'), 6);
   assert.equal(folkCap(0, 0), 0);
 });

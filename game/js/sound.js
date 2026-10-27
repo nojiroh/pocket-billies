@@ -385,18 +385,25 @@ export function soundEffect(name, o = {}) {
       uiSound('select');
       break;
     case 'blip': {
+      if (o.who === 'kappi') {
+        /* Kappi, a capybara: a low, soft, falling note with a small click in front, like a capybara's purr and click */
+        synthNoise(F, { t, dur: 0.012, vol: 0.03, bp: 3200, q: 1.4 });
+        synthVoice(F, {
+          type: 'triangle',
+          freq: midiToFrequency(53 + [0, 2, 3][Math.floor(Math.random() * 3)]),
+          t: t + 0.008,
+          dur: 0.05,
+          vol: 0.07,
+          r: 0.03,
+          slide: 0.88,
+          cut: 1400,
+        });
+        break;
+      }
       let h = 0;
       for (const ch of String(o.who || '')) h = (h * 31 + ch.charCodeAt(0)) % 997;
       const base =
-        o.who === 'chosen'
-          ? 64
-          : o.who === 'hazel'
-            ? 72
-            : o.who === 'me'
-              ? 67
-              : /^folk/.test(o.who || '')
-                ? 62 + (h % 10)
-                : 60 + (h % 14);
+        o.who === 'chosen' ? 64 : o.who === 'me' ? 67 : /^folk/.test(o.who || '') ? 62 + (h % 10) : 60 + (h % 14);
       synthVoice(F, {
         type: 'p25',
         freq: midiToFrequency(base + [0, 2, 4, 7][Math.floor(Math.random() * 4)]),

@@ -4,7 +4,7 @@
   "priority": 1,
   "script": [
    "Chosen: Rescued you again. Don’t thank me. Actually, do. #l:0caf",
-   "Hazel: Same spot over the dock. To the metre. #l:11db"
+   "Kappi: Same spot over the dock. To the metre. #l:11db"
   ]
  },
  "lost_reflexes": {
@@ -12,7 +12,7 @@
   "priority": 1,
   "script": [
    "Chosen: Yanked you out just in time. Professor reflexes. #l:bd0a",
-   "Hazel: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
+   "Kappi: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
   ]
  },
  "lost_charge": {
@@ -21,7 +21,7 @@
   "priority": 3,
   "script": [
    "Chosen: At this point I should charge for rescues. #l:fefa",
-   "Hazel: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
+   "Kappi: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
   ]
  },
  "lost_stamp": {
@@ -31,7 +31,7 @@
   "once": true,
   "script": [
    "Chosen: You lost to a clerk and I still saved you. Generous of me. #l:ba8e",
-   "Hazel: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
+   "Kappi: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
   ]
  },
  "lost_postcard": {
@@ -40,11 +40,11 @@
   "priority": 6,
   "script": [
    "Chosen: Blake sent a postcard. It just says “Ha.” #l:3c86",
-   "Hazel: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
+   "Kappi: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
   ]
  },
  "ch1_drop": {
-  "who": "hazel",
+  "who": "kappi",
   "when": "history:runs >= 1",
   "priority": 10,
   "once": true,
@@ -60,8 +60,8 @@
   "script": ["Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. #l:8d8e","set ch1_blake"]
  },
  "ch1_beans": {
-  "who": "hazel",
-  "when": "ch1_blake and (beans >= 1 or rel:chosen or rel:hazel or rel:juniper)",
+  "who": "kappi",
+  "when": "ch1_blake and (beans >= 1 or rel:chosen or rel:kappi or rel:juniper)",
   "priority": 10,
   "once": true,
   "must": true,
@@ -71,7 +71,7 @@
   ]
  },
  "ch1_number": {
-  "who": "hazel",
+  "who": "kappi",
   "when": "ch1_beans and (history:bureau >= 1 or history:runs >= 3)",
   "priority": 10,
   "once": true,
@@ -84,7 +84,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["Something big walked across Hazel’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
+  "script": ["Something big walked across Kappi’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
  },
  "fav_chosen_ask": {
   "who": "chosen",
@@ -102,17 +102,17 @@
   "must": true,
   "script": ["They remembered me? Brand awareness. Have two points of my respect. #l:5363"]
  },
- "fav_hazel_ask": {
-  "who": "hazel",
-  "when": "ch1_drop and quest:fav_hazel = none",
+ "fav_kappi_ask": {
+  "who": "kappi",
+  "when": "ch1_drop and quest:fav_kappi = none",
   "priority": 7,
   "once": true,
   "must": true,
-  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_hazel asked"]
+  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_kappi asked"]
  },
- "fav_hazel_thanks": {
-  "who": "hazel",
-  "when": "quest:fav_hazel = done",
+ "fav_kappi_thanks": {
+  "who": "kappi",
+  "when": "quest:fav_kappi = done",
   "priority": 8,
   "once": true,
   "must": true,
@@ -179,40 +179,40 @@
   "priority": 6,
   "script": ["[angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. #l:0564"]
  },
- "hazel_rounder": {
-  "who": "hazel",
+ "kappi_rounder": {
+  "who": "kappi",
   "when": "last:lost",
   "priority": 4,
-  "script": ["You came back through the same hole. I measured it. It’s getting rounder. #l:5be0"]
+  "script": ["You came back through the same hole. I measured it from the bath. It’s getting rounder. #l:5be0"]
  },
- "hazel_tidy": {
-  "who": "hazel",
+ "kappi_tidy": {
+  "who": "kappi",
   "when": "history:losses >= 2",
   "priority": 6,
   "once": true,
   "script": ["Every time you lose out there, you land in the same spot. Things don’t fall that tidily. #l:2b31"]
  },
- "hazel_won": {
-  "who": "hazel",
+ "kappi_won": {
+  "who": "kappi",
   "when": "last:won",
   "priority": 4,
   "script": ["You won and came home by train. Good. The other way home makes my instruments hum. #l:df6c"]
  },
- "hazel_file": {
-  "who": "hazel",
+ "kappi_file": {
+  "who": "kappi",
   "when": "lastby:bureau",
   "priority": 7,
   "once": true,
   "script": ["The clerk who beat you. Did they mention a file? A number? ...No reason. #l:41c7"]
  },
- "hazel_perks": {
-  "who": "hazel",
+ "kappi_perks": {
+  "who": "kappi",
   "when": "last:perks >= 4",
   "priority": 3,
   "script": ["That many Perks in one run. You sound like someone I work with. Not a compliment. #l:1d8e"]
  },
- "hazel_scrapbook": {
-  "who": "hazel",
+ "kappi_scrapbook": {
+  "who": "kappi",
   "when": "history:runs >= 5",
   "priority": 5,
   "once": true,
@@ -312,10 +312,10 @@
   "when": "rel:chosen >= 5",
   "priority": 6,
   "once": true,
-  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Hazel I said that. She knows. #l:608e"]
+  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Kappi I said that. They know. #l:608e"]
  },
- "thanks_hazel": {
-  "who": "thanks_hazel",
+ "thanks_kappi": {
+  "who": "thanks_kappi",
   "priority": 1,
   "script": [
    "cycle",
@@ -323,37 +323,39 @@
    "  - Another one. They’re warm. Why are they warm? #l:f5c6"
   ]
  },
- "thanks_hazel_1": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 1",
+ "thanks_kappi_1": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 1",
   "priority": 2,
   "once": true,
   "script": ["Oh. Thank you. People don’t usually give me things. They give me forms. #l:5db1"]
  },
- "thanks_hazel_2": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 2",
+ "thanks_kappi_2": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 2",
   "priority": 3,
   "once": true,
   "script": ["Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. #l:355b"]
  },
- "thanks_hazel_3": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 3",
+ "thanks_kappi_3": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 3",
   "priority": 4,
   "once": true,
   "script": ["I’m adding you to my notes. Under “reliable.” It’s a short section. #l:79b4"]
  },
- "thanks_hazel_4": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 4",
+ "thanks_kappi_4": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 4",
   "priority": 5,
   "once": true,
-  "script": ["My spare lab coat. It has pockets for evidence. Please don’t put snacks in them. #l:fbdf"]
+  "script": [
+   "My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence. Not snacks. #l:fbdf"
+  ]
  },
- "thanks_hazel_5": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 5",
+ "thanks_kappi_5": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 5",
   "priority": 6,
   "once": true,
   "script": ["My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. #l:9a5c"]
@@ -486,5 +488,227 @@
   "when": "history:streak >= 3",
   "priority": 6,
   "script": ["Another win? We’ll run out of bunting. #l:6cd6"]
+ },
+ "dottie_shelves": {
+  "who": "dottie",
+  "priority": 1,
+  "script": ["Every book here is shelved by the colour of its spine. The Bureau would hate it. That’s the point. #l:593f"]
+ },
+ "dottie_moved": {
+  "who": "dottie",
+  "when": "lastres:dottie",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["I’ve unpacked my cardigan and three hundred files. The library is open, if you count me as open. #l:a8d0"]
+ },
+ "dottie_won": {
+  "who": "dottie",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["[happy] A win! I’ll file it under “Wins”. It’s a thin folder. Let’s fatten it. #l:0318"]
+ },
+ "dottie_lost": {
+  "who": "dottie",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Lost? I’ll file that under “Lessons”. It’s my thickest folder. I love it. #l:5d9a"]
+ },
+ "dottie_form": {
+  "who": "dottie",
+  "when": "history:bureau >= 1",
+  "priority": 5,
+  "cooldown": 3,
+  "script": ["The Bureau beat you? They keep a form for that. I used to stamp it. Sorry. #l:9708"]
+ },
+ "mo_shelves": {
+  "who": "mo",
+  "priority": 1,
+  "script": ["The shelves are empty, but they’re very good shelves. Top quality nothing. #l:e205"]
+ },
+ "mo_moved": {
+  "who": "mo",
+  "when": "lastres:mo",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["[happy] Mo Stockley, open for business! Business hasn’t arrived yet. I’ll wait by the door. #l:6726"]
+ },
+ "mo_won": {
+  "who": "mo",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["You won? Then you can afford something. Once I have something. #l:1e91"]
+ },
+ "mo_lost": {
+  "who": "mo",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Lost everything out there? Same thing happened to my stock. We’re practically twins. #l:8516"]
+ },
+ "mo_bread": {
+  "who": "mo",
+  "when": "resident:bertha",
+  "priority": 3,
+  "cooldown": 4,
+  "script": ["Bertha keeps sending people here for bread. I don’t sell bread. I barely sell shelves. #l:bba1"]
+ },
+ "bertha_rumour": {"who":"bertha","priority":1,"script":["Heard a rumour you were about. Turns out it’s true. Pull up a chair. #l:d9c7"]},
+ "bertha_moved": {
+  "who": "bertha",
+  "when": "lastres:bertha",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["The inn’s got a roof, a kettle and me. Two of the three are very loud. #l:f8dd"]
+ },
+ "bertha_won": {
+  "who": "bertha",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["[happy] A win! By supper the whole island will know. By breakfast it’ll be two bosses. #l:91da"]
+ },
+ "bertha_lost": {
+  "who": "bertha",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Rough trip? Sit down. I’ll tell everyone you won. Nobody checks. #l:2188"]
+ },
+ "bertha_gossip": {
+  "who": "bertha",
+  "when": "residents >= 3",
+  "priority": 3,
+  "cooldown": 4,
+  "script": ["Copperleaf’s filling up. More neighbours, more gossip. This is my golden age. #l:d688"]
+ },
+ "gus_rattle": {"who":"gus","priority":1,"script":["If it rattles, I can fix it. If it doesn’t rattle, I can fix that too. #l:ecb0"]},
+ "gus_moved": {
+  "who": "gus",
+  "when": "lastres:gus",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["Nice Workshop. Somebody left the tools in alphabetical order. I’ll sort that out. #l:e751"]
+ },
+ "gus_won": {
+  "who": "gus",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["You won? Bring back any scrap? Bots, bits, bolts. I’m not fussy. #l:312b"]
+ },
+ "gus_lost": {
+  "who": "gus",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Came back in pieces, eh? Happens to the best machines. Rest up. #l:e9fb"]
+ },
+ "gus_bolt": {
+  "who": "gus",
+  "when": "lastby:boss",
+  "priority": 5,
+  "script": ["The big one got you? Everything’s got a loose bolt. You just have to find it. #l:38a1"]
+ },
+ "hayden_hello": {"who":"hayden","priority":1,"script":["The Billies say hello. Well, one of them did. The rest were eating. #l:7340"]},
+ "hayden_moved": {
+  "who": "hayden",
+  "when": "lastres:hayden",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["I’ve met every Billie in the pasture. Two of them have already filed complaints. #l:46bf"]
+ },
+ "hayden_won": {
+  "who": "hayden",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["[happy] The Billies heard you won. They did a little dance. It looked like falling over. #l:4ece"]
+ },
+ "hayden_lost": {
+  "who": "hayden",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Lost out there? The Billies don’t mind. They lose to the fence every day. #l:0903"]
+ },
+ "hayden_count": {
+  "who": "hayden",
+  "when": "history:runs >= 5",
+  "priority": 3,
+  "once": true,
+  "script": ["Five trips out. The pasture’s keeping count. Mostly by chewing the scoreboard. #l:d4cb"]
+ },
+ "rosa_twice": {
+  "who": "rosa",
+  "priority": 1,
+  "script": ["I’ve mapped Copperleaf twice. It moved a little the second time. Islands do that. #l:95e0"]
+ },
+ "rosa_moved": {
+  "who": "rosa",
+  "when": "lastres:rosa",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["Skyline Station has the best view of places that don’t exist yet. I’ll draw them before they do. #l:ef4a"]
+ },
+ "rosa_won": {
+  "who": "rosa",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["You won? Then the map you took is finished. I’ll frame it and start another. #l:70f1"]
+ },
+ "rosa_lost": {
+  "who": "rosa",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Lost? Not on my maps, you weren’t. You were exploring very quickly backwards. #l:e65f"]
+ },
+ "rosa_early": {
+  "who": "rosa",
+  "when": "last:lost and last:row <= 3",
+  "priority": 5,
+  "script": ["Down that close to the start? The first rows are the hardest to draw. Try again. #l:904d"]
+ },
+ "seamus_still": {"who":"seamus","priority":1,"script":["Hold still. Thirty-two by... no, don’t breathe. Thank you. #l:7074"]},
+ "seamus_moved": {
+  "who": "seamus",
+  "when": "lastres:seamus",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["A cottage with good light. Perfect for sewing, terrible for napping. I’ll manage. #l:5d62"]
+ },
+ "seamus_won": {"who":"seamus","when":"last:won","priority":4,"script":["A win suits you. The jacket doesn’t. We’ll talk. #l:4bde"]},
+ "seamus_lost": {
+  "who": "seamus",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["Torn sleeve, mud on the knees. Leave it with me. Leave the Billie hair too. I collect it. #l:7a57"]
+ },
+ "seamus_suit": {
+  "who": "seamus",
+  "when": "resident:hayden",
+  "priority": 3,
+  "cooldown": 4,
+  "script": ["Hayden came in smelling of hay and wanting a suit. I said yes. I regret nothing. #l:5472"]
+ },
+ "helix_menu": {"who":"helix","priority":1,"script":["Genes are a menu. Most people order the same thing. Not me. #l:9b7b"]},
+ "helix_moved": {
+  "who": "helix",
+  "when": "lastres:helix",
+  "priority": 9,
+  "must": true,
+  "once": true,
+  "script": ["The Gene Bank is lovely. The vault hums. I hum back. We get along. #l:e417"]
+ },
+ "helix_won": {
+  "who": "helix",
+  "when": "last:won",
+  "priority": 4,
+  "script": ["You won! I’d love a sample of whatever made that happen. Kidding. Mostly. #l:9199"]
+ },
+ "helix_lost": {
+  "who": "helix",
+  "when": "last:lost",
+  "priority": 4,
+  "script": ["A loss is just data with feelings. Rest, then bring me more data. #l:e850"]
  }
 }

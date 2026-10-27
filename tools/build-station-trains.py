@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Hub track HB-7: Skyline Station, the sky rail, the sky portal and the five sky trains, in the low-poly 32 px/m style
-(phase 09, the airship's palette). Runs (Expeditions) start from the station; HB-8 flies a train up the rail and through
-the portal. The station stands in Copperleaf (tools/build-copperleaf.mjs); everything here is finished all round for the
+(phase 09, the airship's palette). Runs (Expeditions) start from the station; HB-8 flies a train off the track and
+through the portal (cutscenes track A: it rises on its engines and shoots in). The station stands in Copperleaf (tools/build-copperleaf.mjs); everything here is finished all round for the
 hub's orbit camera.
 
   train_station   Skyline Station: a stone platform under a verdigris canopy on iron columns, the departures board, the
-                  name boards, a ticket kiosk, a clock, benches, lamps; the trains' track bed behind it (+y), its rail
-                  running out of the station's right end (+x)
-  sky_rail        the rail on its pylons, 12 m a piece along x, chained end to end on one heading: flat (0.45 m up, out of
-                  the station), then its looks bend (easing into the climb), rise, rise high and crest (easing out flat,
-                  15.5 m up); a model can't stand above the ground, so each piece carries its pylon down to it
-  sky_portal      the tear in the sky at the rail's top: the rail stops at a launch lip, the tear hangs in the air beyond
-                  it (always turned to the eye), chrome stabilisers float round it and a brass hoop turns round it (its
-                  gold look a swap)
+                  name boards, a ticket kiosk, a clock, benches, lamps; the trains' track behind it (+y): a ballast bed,
+                  sleepers and two rails, running out of the station's right end (+x)
+  sky_rail        cutscenes track A: the track out of the station's right end, 12 m a piece along x on a stone
+                  causeway (it runs out over the beach); its look `end` has the buffer stop
+  sky_portal      the portal, floating on its own in the sky out to sea (cutscenes track A): glowing layers stacked
+                  front to back (a bright rim, a streaming swirl, the deep core, a soft halo round it all), chrome,
+                  brass and violet rings turning at their own speeds between them, crystal shards drifting round; it
+                  faces its -y (the station); its gold look a swap
   train_<theme>   one per region theme (regions.json themes; a run's region is RL-R1's): the Lakeland Clipper, the
-                  Greenbelt Sunrunner, the Wildwood Zephyr, the Highland Arrow, the Harvest Comet. Each rides the rail
-                  on hover skids either side of it, facing +x, pushed by rocket engines at its tail, and bobs a little
+                  Greenbelt Sunrunner, the Wildwood Zephyr, the Highland Arrow, the Harvest Comet. Each rides the track
+                  on hover skids over its rails, facing +x, lifted by rocket engines at its tail, and bobs a little
 
 Lettering (the station's boards, the trains' names) is a fixed decal, never mirrored (HB-1, logic/prop-turn.js
 decalPlace); every model here keeps its size, turn and lean (no wobble), so a decal stays where it was drawn.
@@ -151,71 +151,58 @@ def livery(s, name, ink, shade):
     return save_decal(a, name)
 
 
-def tear(name, cols):
-    """the portal: a tear in the sky, 5 m wide and 9.4 m tall (160 x 300 px), a lens with ragged edges that flicker
-    out into sparks; inside, bands of colour streaming toward a bright seam down its middle"""
-    w, h = 160, 300
-    a = np.zeros((h, w, 4), np.uint8)
-    rng = np.random.default_rng(len(name))
-    yy, xx = np.mgrid[0:h, 0:w]
-    v = (yy - (h - 1) / 2) / ((h - 1) / 2)  # -1 top to 1 bottom
-    half = (w * 0.3) * (1 - np.abs(v) ** 1.8) ** 1.3 * (1 + 0.05 * np.sin(v * 9.0))  # a slit, widest a little above the middle
-    rag = np.repeat(rng.normal(0, 1, (h // 4 + 1, 1)), 4, 0)[:h] * 3  # ragged edges, steps of 4 px
-    rag2 = np.repeat(rng.normal(0, 1, (h // 4 + 1, 1)), 4, 0)[:h] * 3
-    bend = 10 * np.sin(v * 2.4)  # the tear leans and bends a little
-    u = xx - (w - 1) / 2 - bend
-    left, right = -(half + rag), half + rag2
-    inside = (u > left) & (u < right)
-    k = np.zeros((h, w))
-    span = np.maximum(right - left, 1)
-    d = 1 - np.abs((u - (left + right) / 2) / (span / 2))  # 0 at the edge, 1 on the seam
-    band = ((d * 3.0 + v * 2.2) % 1.0) > 0.6
-    k = np.clip(d * (len(cols) - 1) + band * 0.8, 0, len(cols) - 1).astype(int)
-    pal = np.array([rgb(c) for c in cols])
-    a[..., :3] = pal[k]
-    a[..., 3] = np.where(inside, 255, 0)
-    edge = inside & (d < 0.08)
-    a[edge, :3] = pal[-2]
-    for _ in range(70):  # sparks off the edges
-        y = int(rng.integers(8, h - 8))
-        side = rng.choice([-1, 1])
-        x = int((w - 1) / 2 + bend[y, 0] + side * (half[y, 0] + 3 + rng.integers(0, 14)))
-        if 0 <= x < w - 1:
-            a[y:y + 2, x:x + 2] = (*pal[-1], 255)
+def portal_disc(name, cols, kind, m):
+    """one of the portal's glowing layers, m metres across (32 px a metre), in its colours (darkest first): 'core' the
+    deep middle, spiral arms streaming in to a bright eye, specks of light; 'swirl' a ring of streaks with gaps (the core
+    shows through behind it); 'rim' the bright edge, ragged, sparks flying off it; 'halo' a soft dithered glow round it
+    all. Pixel art: every pixel is either drawn or not"""
+    n = int(round(m * PPM)) // 2 * 2
+    a = np.zeros((n, n, 4), np.uint8)
+    rng = np.random.default_rng(sum(map(ord, name)))
+    yy, xx = np.mgrid[0:n, 0:n]
+    c = (n - 1) / 2
+    dx, dy = (xx - c) / c, (yy - c) / c
+    r = np.hypot(dx, dy)
+    th = np.arctan2(dy, dx)
+    pal = np.array([rgb(q) for q in cols])
+    top = len(cols) - 1
+    dith = ((xx + yy) % 2 == 0) | ((xx // 2 + yy // 2) % 2 == 0)  # a 3-in-4 dither
+    if kind == 'core':
+        arm = (np.sin(3 * th + 10 * r) + 1) / 2
+        k = np.clip((1 - r) * top * 0.75 + arm * 1.4, 0, top).astype(int)
+        inside = r < 1 - 0.04 * np.sin(th * 7)
+        a[..., :3] = pal[k]
+        a[..., 3] = np.where(inside, 255, 0)
+        eye = r < 0.12
+        a[eye, :3] = pal[top]
+        for _ in range(60):  # specks
+            t, q = rng.uniform(0, 2 * np.pi), rng.uniform(0.15, 0.9)
+            x, y = int(c + np.cos(t) * q * c), int(c + np.sin(t) * q * c)
+            a[y:y + 2, x:x + 2] = (*pal[top], 255)
+    elif kind == 'swirl':
+        band = ((th / np.pi * 4 + r * 5) % 1.0) < 0.45
+        ring = (r > 0.55) & (r < 1 - 0.05 * np.sin(th * 5 + 1))
+        k = np.clip((r - 0.55) / 0.45 * top, 1, top - 1).astype(int)
+        a[..., :3] = pal[k]
+        a[..., 3] = np.where(ring & band, 255, 0)
+    elif kind == 'rim':
+        rag = 0.03 * np.sin(th * 13) + 0.02 * np.sin(th * 29 + 2)
+        ring = (r > 0.86 + rag) & (r < 0.97 + rag)
+        k = np.where(r > 0.92 + rag, top, top - 1)
+        a[..., :3] = pal[k]
+        a[..., 3] = np.where(ring, 255, 0)
+        for _ in range(90):  # sparks off the edge
+            t, q = rng.uniform(0, 2 * np.pi), rng.uniform(0.98, 1.0)
+            x, y = int(c + np.cos(t) * q * c), int(c + np.sin(t) * q * c)
+            if 0 <= x < n - 1 and 0 <= y < n - 1: a[y:y + 2, x:x + 2] = (*pal[top], 255)
+    else:  # halo: thinning out from the middle, dithered
+        keep = (r < 1) & (rng.random((n, n)) < np.clip(1 - r, 0, 1) ** 2.2 * 0.6) & dith
+        a[..., :3] = pal[np.clip((1 - r) * (top - 1) + 1, 0, top).astype(int)]
+        a[..., 3] = np.where(keep, 255, 0)
     return save_decal(a, name)
 
 
 # ================================================================ Skyline Station
-def lattice(L, x, y, h, foot=0.9, top=0.35, col=STEEL, name='pylon', step=3.0, base=0.0):
-    """a lattice pylon: four legs leaning in from a concrete footing at base (under the ground: SINK), braced in X every
-    few metres, a cap on top at h"""
-    L.append(box(x, y, base, foot * 2 + 0.6, foot * 2 + 0.6, 0.4, CONCRETE, 'stone', name + ' footing'))
-    at = lambda z, sx, sy: (x + sx * (foot + (top - foot) * (z - base) / (h - base)),
-                            y + sy * (foot + (top - foot) * (z - base) / (h - base)), z)
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            L.append(limb(at(base + 0.3, sx, sy), at(h, sx, sy), 0.08, 0.06, col, 'metal', name + ' leg', 5))
-    n = max(1, int(round((h - base - 0.3) / step)))
-    for i in range(n):
-        z0, z1 = base + 0.3 + (h - base - 0.3) * i / n, base + 0.3 + (h - base - 0.3) * (i + 1) / n
-        for (ax, ay), (bx, by) in (((-1, -1), (1, -1)), ((1, -1), (1, 1)), ((1, 1), (-1, 1)), ((-1, 1), (-1, -1))):
-            L.append(limb(at(z0, ax, ay), at(z1, bx, by), 0.035, 0.035, STEEL_D, 'metal', name + ' brace', 4))
-            L.append(limb(at(z0, bx, by), at(z1, ax, ay), 0.035, 0.035, STEEL_D, 'metal', name + ' brace', 4))
-    L.append(box(x, y, h, top * 2 + 0.5, top * 2 + 0.5, 0.25, STEEL_D, 'metal', name + ' cap'))
-
-
-def beam(L, pts, name='rail'):
-    """the rail: a steel tube 0.64 m thick (its top 0.32 m over the points), the guide rail on top, brass collars"""
-    L.append({'k': 'limb', 'pts': [[r2(x), r2(y), r2(z), 0.32] for x, y, z in pts], 'sides': 8, 'col': STEEL, 'tex': 'metal', 'name': name})
-    L.append({'k': 'limb', 'pts': [[r2(x), r2(y), r2(z + 0.34), 0.06] for x, y, z in pts], 'sides': 6, 'col': A['brass'], 'tex': 'metal',
-              'name': name + ' guide'})
-    for (x0, y0, z0), (x1, y1, z1) in zip(pts, pts[1:]):
-        mx, my, mz = (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2
-        d = math.hypot(x1 - x0, z1 - z0) or 1
-        ux, uz = (x1 - x0) / d * 0.07, (z1 - z0) / d * 0.07
-        L.append(limb((mx - ux, my, mz - uz), (mx + ux, my, mz + uz), 0.36, 0.36, A['copper'], 'metal', name + ' collar', 8))
-
-
 def lamp(L, x, y, z, name='lamp'):
     """a lamp hung from the canopy: a rod, a copper hood, the lit glass"""
     L += [limb((x, y, z + 0.9), (x, y, z + 0.45), 0.02, 0.02, A['iron'], 'metal', name + ' rod', 4),
@@ -306,97 +293,91 @@ def station():
     bench(L, -5.0, y0 + 1.2, -1)
     for x in (-5.0, 0.0, 5.0):
         lamp(L, x, y0 + pd - 0.5 if x else y0 + 0.6, rz - 1.05)
-    # the track bed behind, the rail on it (its right end meets sky_rail's flat piece), a buffer at its left end
-    L.append(box(0, yb, 0, 12.6, 2.9, 0.12, '#8A8494', 'rock', 'track bed'))
-    beam(L, [(-6.3, yb, 0.13), (-2.1, yb, 0.13), (2.1, yb, 0.13), (6.3, yb, 0.13)])
-    L += [box(-6.0, yb, 0, 0.6, 1.2, 0.9, STEEL_D, 'metal', 'buffer'),
-          box(-5.68, yb, 0.45, 0.06, 1.0, 0.35, '#D6403C', 'plain', 'buffer plate')]
+    # the track bed behind, the track on it (its right end meets sky_rail), a buffer stop at its left end
+    L.append(box(0, yb, 0, 12.6, 2.9, 0.12, BALLAST, 'rock', 'track bed'))
+    track(L, -6.3, 6.3, yb)
+    buffer_stop(L, -6.0, yb, -1)
     return rec(L, 0.7)
 
 
-# ================================================================ the sky rail
+# ================================================================ the track
 RAIL_LEN = 12.0
-Z_FLAT = 0.13  # the rail's middle out of the station (its top 0.45 m up)
-CLIMB = 5.0  # what a straight piece climbs in its 12 m
-# how far the rail's piers and pylons reach under their base: the hub's rail stands level with its station (a
-# placement's y) out over the sea, about a metre lower, so its feet still go into the water (under the ground on land)
+Z_FLAT = 0.13  # cutscenes track A: the track's height over the ground (the trains' rail line, logic/train-path.js)
+BALLAST, SLEEPER = '#8A8494', '#5A4A3E'
+RAIL_GAUGE = 0.72  # each rail out from the middle: right under a train's hover skids
+# how far the causeway reaches under its base: the track stands level with its station (a placement's y) out over the
+# beach and the shallows, so its feet still go into the ground there
 SINK = 2.5
 
 
-def rail_piece(z0, z1, shape):
-    """a 12 m piece of rail along x (-6 to 6), its middle from z0 to z1: 'flat', 'ease in' (flat to the climb), 'line',
-    'ease out' (the climb to flat); its pylon at its right end (a low pier when it is near the ground)"""
-    pts = []
-    for i in range(9):
-        t = i / 8
-        k = {'flat': 0, 'ease in': t * t, 'line': t, 'ease out': 2 * t - t * t}[shape]
-        pts.append((-RAIL_LEN / 2 + RAIL_LEN * t, 0, z0 + (z1 - z0) * k))
-    L = []
-    beam(L, pts)
-    h = z1 - 0.69  # the cap and the saddle under the rail's bottom
-    if h < 1.5:
-        L += [box(RAIL_LEN / 2 - 0.6, 0, -SINK, 1.1, 1.4, max(0.2, h) + SINK, CONCRETE, 'stone', 'pier'),
-              box(RAIL_LEN / 2 - 0.6, 0, max(0.2, h), 1.3, 1.6, 0.12, STEEL_D, 'metal', 'pier cap')]
-    else:
-        lattice(L, RAIL_LEN / 2 - 0.6, 0, h, base=-SINK)
-        L.append(box(RAIL_LEN / 2 - 0.6, 0, h + 0.25, 0.9, 1.0, 0.12, A['brass'], 'metal', 'saddle'))
-    if shape != 'flat' and z1 - z0 > 4:  # a mid pylon under the long climbs
-        zm = pts[4][2] - 0.57
-        lattice(L, 0, 0, zm, foot=0.75, top=0.3, base=-SINK)
+def track(L, x0, x1, y, z=0.12):
+    """a plain track along x from x0 to x1 at y: sleepers every 0.65 m, two steel rails on them"""
+    n = max(1, int((x1 - x0) / 0.65))
+    for i in range(n + 1):
+        L.append(box(r2(x0 + 0.15 + (x1 - x0 - 0.3) * i / n), y, z, 0.24, 2.1, 0.1, SLEEPER, 'wood', 'sleeper'))
+    for sy in (-1, 1):
+        L.append(limb((x0, y + sy * RAIL_GAUGE, z + 0.16), (x1, y + sy * RAIL_GAUGE, z + 0.16), 0.06, 0.06, STEEL, 'metal', 'rail', 4))
+
+
+def buffer_stop(L, x, y, side):
+    """the buffer stop at a track's end (side -1 its left end, 1 its right): a steel frame, a red plate toward the track"""
+    L += [box(x, y, 0, 0.6, 1.9, 0.9, STEEL_D, 'metal', 'buffer'),
+          box(x - side * 0.32, y, 0.45, 0.06, 1.6, 0.35, RED, 'plain', 'buffer plate')]
+    for sy in (-1, 1):
+        L.append(sphere(x - side * 0.4, y + sy * 0.55, 0.45, 0.12, STEEL, 'metal', 'buffer pad', 8, 4) | {'h': 0.24})
+
+
+def rail_piece(end=False):
+    """a 12 m piece of track along x (-6 to 6) on a stone causeway (its feet SINK m down, under the beach), a buffer
+    stop at its right end when it is the last"""
+    L = [box(0, 0, -SINK, RAIL_LEN, 3.3, SINK, STONE, 'stone', 'causeway'),
+         box(0, 0, 0, RAIL_LEN, 2.9, 0.12, BALLAST, 'rock', 'track bed')]
+    track(L, -RAIL_LEN / 2, RAIL_LEN / 2, 0)
+    if end: buffer_stop(L, RAIL_LEN / 2 - 0.4, 0, 1)
     return rec(L, 0.7)
 
 
-Z_TOP = Z_FLAT + CLIMB / 2 + CLIMB * 2 + CLIMB / 2  # the crest: ease in (half a climb), two straight, ease out (half)
-RAIL_LOOKS = [  # (look, label, z0, z1, shape)
-    ('', 'Sky rail (flat)', Z_FLAT, Z_FLAT, 'flat'),
-    ('bend', 'Sky rail (bend)', Z_FLAT, Z_FLAT + CLIMB / 2, 'ease in'),
-    ('rise', 'Sky rail (rise)', Z_FLAT + CLIMB / 2, Z_FLAT + CLIMB * 1.5, 'line'),
-    ('rise_high', 'Sky rail (rise high)', Z_FLAT + CLIMB * 1.5, Z_FLAT + CLIMB * 2.5, 'line'),
-    ('crest', 'Sky rail (crest)', Z_FLAT + CLIMB * 2.5, Z_TOP, 'ease out'),
-]
+RAIL_LOOKS = [('', 'Track'), ('end', 'Track (buffer stop)')]
 
 
 # ================================================================ the sky portal
-def emitter(L, x, y, z, ty, tz, spin_rps):
-    """a floating stabiliser, Googie style: a chrome ball with its nose aimed at (ty, tz) in its own x plane, red fins
-    out behind it, a brass ring round it turning like a planet's"""
-    d = math.hypot(ty - y, tz - z) or 1
-    ny, nz = (ty - y) / d, (tz - z) / d  # toward the target
-    L.append(sphere(x, y, z - 0.55, 0.55, CHROME, 'metal', 'emitter', 14, 7) | {'h': 1.1})
-    L.append(limb((x, y, z), (x, y + ny * 1.2, z + nz * 1.2), 0.3, 0.06, CHROME, 'metal', 'emitter nose', 10))
-    L.append(sphere(x, y + ny * 1.25, z + nz * 1.25 - 0.12, 0.12, '#FFFCEC', 'plain', 'emitter tip', 8, 4) | {'h': 0.24})
-    for f in (-1, 1):  # three fins out behind it: either side (across x) and one in its plane
-        L.append(plank((x, y - ny * 0.3, z - nz * 0.3), (x + f * 0.8, y - ny * 1.0, z - nz * 1.0), 0.05, RED, 'emitter fin'))
-    L.append(plank((x, y - ny * 0.3, z - nz * 0.3), (x, y - ny * 1.0 - nz * 0.7, z - nz * 1.0 + ny * 0.7), 0.05, RED, 'emitter fin'))
-    ring = {'axis': 'z', 'x': r2(x), 'y': r2(y), 'z': r2(z), 'rps': spin_rps}
-    n = 10
-    P = lambda t: (x + 0.95 * math.cos(t), y + 0.95 * math.sin(t), z + 0.25 * math.sin(t))
+PORTAL_ZC = 6.5  # the portal's middle over its base point (its placement's y floats it: logic/island-gen.js)
+PORTAL_LAYERS = [('rim', 8.4, -0.6), ('swirl', 7.6, 0.0), ('core', 6.4, 0.8)]  # front to back: across, its y
+
+
+def ring(L, rad, y, zc, t, col, rps, name, n=20, studs=0):
+    """a ring round the portal's middle in its own plane (x and up), y deep, turning at rps (0: still; a model needs a
+    still part, so one ring stands still); studs lamps on it"""
+    sp = {'spin': {'axis': 'y', 'x': 0, 'y': r2(y), 'z': r2(zc), 'rps': rps}} if rps else {}
+    P = lambda a: (rad * math.cos(a), y, zc + rad * math.sin(a))
     for i in range(n):
-        L.append(limb(P(2 * math.pi * i / n), P(2 * math.pi * (i + 1) / n), 0.04, 0.04, A['brass'], 'metal', 'emitter ring', 5)
-                 | {'spin': dict(ring)})
+        L.append(limb(P(2 * math.pi * i / n), P(2 * math.pi * (i + 1) / n), t, t, col, 'metal', name, 6) | dict(sp))
+    for i in range(studs):
+        x, yy, z = P(2 * math.pi * (i + 0.5) / studs)
+        L.append(sphere(x, yy, z - t * 1.6, t * 1.6, '#FFE6A0', 'plain', name + ' lamp', 8, 4) | {'h': r2(t * 3.2), **sp})
 
 
-def sky_portal(tear_pic):
-    """the tear in the sky at the rail's top. The rail climbs in from -x and stops at a launch lip on its last pylon
-    (x -1.4); 3.4 m beyond it the tear hangs in the air (x 2), its middle a train's height over the rail, always turned
-    to the eye (a picture, not a plane). Three chrome stabilisers float round it, aimed at it, and a brass hoop turns
-    round its waist with lamps on it: a gateway in the sky as the old pulp covers drew one"""
+def sky_portal(pics):
+    """the portal on its own in the sky: its glowing layers (pics: rim, swirl, core, halo) stacked front to back facing
+    -y, so they shift against each other as the camera moves (depth), the halo round them always turned to the eye;
+    three rings turning at their own speeds between the layers; crystal shards drifting round the outside"""
     L = []
-    xt, zt = 2.0, Z_TOP + 0.32 + 1.6  # the tear's middle
-    beam(L, [(-8.0, 0, Z_TOP), (-5.0, 0, Z_TOP), (-2.0, 0, Z_TOP)])
-    lattice(L, -4.0, 0, Z_TOP - 0.57, base=-SINK)
-    L += [box(-1.7, 0, Z_TOP - 0.45, 0.6, 1.4, 0.95, STEEL_D, 'metal', 'launch lip'),
-          box(-1.42, 0, Z_TOP + 0.1, 0.06, 1.2, 0.3, '#E8C040', 'plain', 'lip stripe')]
-    for sy in (-1, 1):  # the lip's beacons
-        L.append(sphere(-1.7, sy * 0.6, Z_TOP + 0.5, 0.12, '#FF6A4A', 'plain', 'beacon', 8, 4) | {'h': 0.24})
-    L.append(img(tear_pic, xt, 0, r2(zt - 4.7), glow=1, recv=0, sway=0, name='portal'))
-    for i, (y, z) in enumerate(((0.0, zt + 6.2), (-4.2, zt - 3.4), (4.2, zt - 3.4))):
-        emitter(L, xt, y, z, 0.0, zt, 0.25 if i % 2 else -0.25)
-    hoop = {'axis': 'z', 'x': xt, 'y': 0, 'z': r2(zt), 'rps': 0.08}
-    P = lambda t: (xt + 3.4 * math.cos(t), 3.4 * math.sin(t), zt + 0.4 * math.sin(t * 2))
-    n = 16
-    for i in range(n):
-        L.append(limb(P(2 * math.pi * i / n), P(2 * math.pi * (i + 1) / n), 0.07, 0.07, A['brass'], 'metal', 'hoop', 5) | {'spin': dict(hoop)})
+    zc = PORTAL_ZC
+    for (kind, m, y), pic in zip(PORTAL_LAYERS, pics):
+        L.append(img(pic, 0, y, r2(zc - m / 2), face='fixed', yaw=0, glow=1, recv=0, sway=0, name='portal ' + kind))
+    L.append(img(pics[3], 0, 1.4, r2(zc - 6.5), glow=0.7, recv=0, sway=0, name='portal halo'))
+    ring(L, 4.55, -1.0, zc, 0.13, CHROME, 0, 'portal ring', studs=8)
+    ring(L, 3.95, -0.25, zc, 0.09, A['brass'], -0.16, 'portal ring brass')
+    ring(L, 3.4, 0.45, zc, 0.07, '#7A5AE8', 0.24, 'portal ring violet')
+    ring(L, 5.0, -1.3, zc, 0.05, '#BFEFFF', 0.07, 'portal ring outer')
+    rng = np.random.default_rng(7)
+    drift = {'axis': 'y', 'x': 0, 'y': 0, 'z': zc, 'rps': 0.03}
+    for i in range(9):  # the shards: long thin crystals pointing out from the middle
+        a = 2 * math.pi * i / 9 + rng.uniform(-0.2, 0.2)
+        rr, y = rng.uniform(5.4, 6.2), rng.uniform(-1.2, 1.2)
+        p0 = (rr * math.cos(a), y, zc + rr * math.sin(a))
+        p1 = ((rr + 0.9) * math.cos(a), y, zc + (rr + 0.9) * math.sin(a))
+        L.append(limb(p0, p1, 0.16, 0.02, '#BFEFFF' if i % 2 else '#C8B4FF', 'plain', 'portal shard', 4) | {'spin': dict(drift)})
     return rec(L, 0.65)
 
 
@@ -696,7 +677,7 @@ CARRIAGES = {
     'train_harvest': {'wall': A['copper'], 'trim': A['cream'], 'seat': '#6A3A20', 'dark': '#9A5A34'},
 }
 CARRIAGE_BAGS = ['#8A5A34', '#3A4E7A', '#A04A3A', '#5E7C4E', '#6A4A70']
-TUNNEL = ['#1A1240', '#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF']  # the tear's colours, darkest first
+TUNNEL = ['#1A1240', '#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF']  # the portal's colours, darkest first
 
 
 def train_variants(key, name):
@@ -711,21 +692,22 @@ def add_props(C):
                                       vary=FIXED, about='Skyline Station (HB-7): the platform where runs start, its trains '
                                       'behind it (+y) on the rail, which runs out of its right end into sky_rail. Its act '
                                       '(station) comes from the map')
-    flat = RAIL_LOOKS[0]
-    C['sky_rail'] = ISL.new_prop('sky_rail', flat[1], rail_piece(*flat[2:]), shadow=0.6, tags=('hub', 'station'), solid=0.7,
-                                 vary=FIXED, variants=[ISL.model_variant(f'sky_rail_{k}', label, rail_piece(z0, z1, sh), {'form': k})
-                                                       for k, label, z0, z1, sh in RAIL_LOOKS[1:]],
-                                 about='The sky rail (HB-7): 12 m pieces along x, chained end to end on one heading: flat, '
-                                 'bend, rise, rise high, crest (the top, 15.5 m up), then sky_portal')
-    blue = tear('sky_portal_tear', ['#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF'])
-    gold = tear('sky_portal_tear_gold', ['#6A3A1A', '#C8702E', '#F4B44A', '#FFE08A', '#FFFCEC'])
-    C['sky_portal'] = ISL.new_prop('sky_portal', 'Sky portal', sky_portal(blue), shadow=1.2, tags=('hub', 'station'), solid=1.2,
-                                   vary=FIXED, glow={'c': '#7FD8FF', 'r': 6, 'y': r2(Z_TOP + 2), 'day': 0.5},
-                                   variants=[{'swap': {blue: gold}, 'glow': {'c': '#FFC94A', 'r': 6, 'y': r2(Z_TOP + 2), 'day': 0.5},
+    C['sky_rail'] = ISL.new_prop('sky_rail', RAIL_LOOKS[0][1], rail_piece(), shadow=0.6, tags=('hub', 'station'), solid=0.7,
+                                 vary=FIXED, variants=[ISL.model_variant('sky_rail_end', RAIL_LOOKS[1][1], rail_piece(True), {'form': 'end'})],
+                                 about='The track out of the station (cutscenes track A): 12 m pieces along x on a stone '
+                                 'causeway, chained from the station\'s right-hand end; the last one (look end) has the buffer stop')
+    blue_c, gold_c = ['#120C30', '#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF'], ['#3A1A0A', '#6A3A1A', '#C8702E', '#F4B44A', '#FFE08A', '#FFFCEC']
+    kinds = [k for k, *_ in PORTAL_LAYERS] + ['halo']
+    sizes = [m for _k, m, _y in PORTAL_LAYERS] + [13.0]
+    blue = [portal_disc(f'sky_portal_{k}', blue_c, k, m) for k, m in zip(kinds, sizes)]
+    gold = [portal_disc(f'sky_portal_{k}_gold', gold_c, k, m) for k, m in zip(kinds, sizes)]
+    C['sky_portal'] = ISL.new_prop('sky_portal', 'Sky portal', sky_portal(blue), shadow=0, tags=('hub', 'station'),
+                                   vary=FIXED, glow={'c': '#8FD8FF', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6},
+                                   variants=[{'swap': dict(zip(blue, gold)), 'glow': {'c': '#FFC94A', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6},
                                               'name': 'Sky portal (gold)'}], tunnel=TUNNEL,
-                                   about='The tear in the sky at the sky rail\'s top (HB-7): the rail climbs into it from -x and '
-                                   'stops at a launch lip; HB-8 flies the train off it into the tear. Its gold look for the way '
-                                   'home after a win')
+                                   about='The portal (cutscenes track A): floating on its own in the sky out to sea, its '
+                                   'glowing layers stacked for depth and its rings turning; it faces its -y. The sky train rises '
+                                   'off the track on its engines and shoots into it. Its gold look for the way home after a win')
     for key, name, fn in TRAINS:
         r = fn()
         B1.shift_y(r['layers'], TRAIN_HALF)
@@ -738,8 +720,8 @@ def add_props(C):
 
 # ================================================================ the showcase map
 def showcase():
-    """test_station_trains: the station on the grass with the rail climbing east out over the sea to the portal; the
-    other four trains in a row before it on flat pieces of rail"""
+    """test_station_trains: the station on the grass, its track running east out of its right end onto the beach, the
+    portal floating out over the sea; the other four trains in a row before it on pieces of track"""
     W, H = 100, 46
     sea = 58
 
@@ -756,9 +738,8 @@ def showcase():
     sx, sz = 14, 16  # the station's base point (the steps' front)
     rz = sz + 0.9 + 3.6 + 1.6  # the rail's middle (station(): y0 + pd + 1.6)
     add('train_station', sx, sz, act='station', label='Skyline Station')
-    for i, (look, *_r) in enumerate(RAIL_LOOKS):
-        add('sky_rail', sx + 6.3 + RAIL_LEN / 2 + RAIL_LEN * i, rz, **({'v': i} if i else {}))
-    add('sky_portal', sx + 6.3 + RAIL_LEN * (len(RAIL_LOOKS) + 0.5), rz)
+    add('sky_rail', sx + 6.3 + RAIL_LEN / 2, rz, v=1)
+    add('sky_portal', 62, 22, y=14, rot=-90)
     add('train_greenbelt', sx - 0.5, rz - TRAIN_HALF, label='Greenbelt Sunrunner')
     for i, (key, name, _) in enumerate(t for t in TRAINS if t[0] != 'train_greenbelt'):
         x = 8 + i * 14
@@ -786,7 +767,7 @@ def main():
     add_props(D['scenery']['props'])
     D['maps']['test_station_trains'] = showcase()
     gamedata.save(D)
-    print('station and trains built: train_station, sky_rail (5 looks), sky_portal, ' + ', '.join(k for k, *_ in TRAINS))
+    print('station and trains built: train_station, sky_rail (2 looks), sky_portal, ' + ', '.join(k for k, *_ in TRAINS))
 
 
 if __name__ == '__main__':

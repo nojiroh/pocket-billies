@@ -22,6 +22,7 @@ expose({
 /* phase 06-4: the pill's colour is the type's, deepened just enough for its label to read at 4.5:1 (logic/colors.js) */
 const PILL_COLORS = {};
 const pillColor = t => (PILL_COLORS[t] = PILL_COLORS[t] || readableBg(TYPE_COLORS[t][0], TYPE_COLORS[t][1]));
+provide({ pillColor }); /* to-module */
 export const typeBadgeHTML = t =>
   `<span class="chip" style="--tc:${pillColor(t)};--tf:${TYPE_COLORS[t][1]}">${typeGlyphHTML(t)}${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
