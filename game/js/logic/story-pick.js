@@ -29,7 +29,7 @@ expose({
 /** who a line can be for (banter.schema.json's list); the first three are the hub characters picked on the way home */
 export const BANTER_WHO = [
     'chosen',
-    'hazel',
+    'kappi',
     'juniper',
     'back_lost',
     'leader',
@@ -37,10 +37,10 @@ export const BANTER_WHO = [
     'rival',
     /* RL-S2 part B: a hub person's thank-you for a gift (story.js storyGiftOffer) */
     'thanks_chosen',
-    'thanks_hazel',
+    'thanks_kappi',
     'thanks_juniper',
   ],
-  BANTER_HUB = ['chosen', 'hazel', 'juniper'];
+  BANTER_HUB = ['chosen', 'kappi', 'juniper'];
 
 /** whose line it is when it names nobody: a hub person's own lines and their thank-yous are theirs, the others name
  * their speakers @param {string} who @returns {string | null} */

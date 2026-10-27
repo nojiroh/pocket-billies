@@ -462,7 +462,7 @@
   left: 50%;
   bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
   width: min(440px, calc(100% - 2 * var(--gutter)));
-  padding: var(--s5) var(--pad-panel) var(--pad-panel);
+  padding: var(--s3) var(--pad-panel) var(--s3);
   border: 1px solid var(--g-bd);
   border-radius: var(--r-lg);
   background: var(--g-bg);
@@ -519,7 +519,7 @@
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin: var(--s3) 0 0;
+  margin: var(--s2) 0 0;
 }
 .pk-dots i {
   width: 6px;
@@ -533,16 +533,22 @@
   background: var(--text);
 }
 .pk-blurb {
-  margin: var(--s4) 0 0;
+  /* cutscenes track B: two lines at most, so the starter stands clear above the card */
+  display: -webkit-box;
+  margin: var(--s2) 0 0;
+  overflow: hidden;
   font: 500 var(--fs-body) / var(--lh-prose) var(--font-prose);
   color: var(--text2);
   text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .pk-match {
   display: grid;
-  gap: var(--s2);
-  margin-top: var(--s4);
-  padding: var(--s3) var(--s4);
+  gap: var(--s1);
+  margin-top: var(--s2);
+  padding: var(--s2) var(--s3);
   border-radius: var(--r-md);
   background: var(--g-bg2);
 }
@@ -567,7 +573,7 @@
 }
 .cs-pick .pk-go,
 .cs-pick .pk-acts {
-  margin-top: var(--s5);
+  margin-top: var(--s3);
 }
 .cs-pick .pk-go,
 .cs-pick .pk-acts .pb {

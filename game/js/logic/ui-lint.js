@@ -278,8 +278,8 @@ export const uiLintReads = (/** @type {string} */ f) =>
   !/\/vendor\//.test(f) &&
   !f.endsWith('/hooks.js') &&
   !f.endsWith('logic/ui-lint.js') &&
-  /* LD-4: the run's helper thread is on no page and draws nothing */
-  !/\/run-worker(-modules)?\.js$/.test(f);
+  /* LD-4: the run's helper thread is on no page and draws nothing; LD-5: nor the world map's (bowl-worker.js) */
+  !/\/(run|bowl)-worker(-modules)?\.js$/.test(f);
 
 /** every file the lint reads, by following the pages: read(path) gives a file's text (fetch or fs) */
 export async function uiLintCrawl(/** @type {(path: string) => Promise<string>} */ read) {

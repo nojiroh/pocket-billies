@@ -76,7 +76,10 @@ test('relic preview: a product past FX_LIMIT is named with the product used', ()
 test('leader run values: runFoes on each mini-boss row and the boss row, for every mini-boss leader', () => {
   const V = P.leaderRunValues(),
     leaders = Object.values(TRAINERS).filter(T => T.miniboss),
-    rows = modules['run-map'].runMapRows(RULES.run.map);
+    M = RULES.run.map,
+    /* WM-2: the longest run's rows: 12 places, 3 mini-bosses */
+    rows = modules['run-map'].runMapRows({ ...M, ...modules['run-map'].runMapLength('', { ...M, rows: 12 }) });
+  assert.equal(rows.filter(r => r === 'guard').length, 3);
   assert.deepEqual(Object.keys(V).sort(), leaders.map(T => T.id).sort());
   const one = V[leaders[0].id];
   assert.deepEqual(

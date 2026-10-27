@@ -167,7 +167,12 @@ export function validRun(o) {
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
         (node.biome !== undefined && !id(node.biome)) ||
         (node.zone !== undefined && !wholeIn(node.zone, 0, 7)) ||
-        (node.side !== undefined && node.side !== 1)
+        (node.side !== undefined && node.side !== 1) ||
+        /* WM-2: its footprint on the region grid: a cell and a size, whole cells */
+        (node.at !== undefined &&
+          !(list(node.at, 2) && node.at.length === 2 && node.at.every(v => wholeIn(v, -64, 64)))) ||
+        (node.size !== undefined &&
+          !(list(node.size, 2) && node.size.length === 2 && node.size.every(v => wholeIn(v, 1, 8))))
       )
         return false;
     /* RL-R2: its side area (run-side.js): a kind, a move, a name, the obstacle's place on the main path, the way out

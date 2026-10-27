@@ -27,7 +27,7 @@ import {
 } from './effects.js';
 import { stageFactor } from './battle-engine.js';
 import { makeBilly, stat, wildPrize } from './rules.js';
-import { runMapRows } from './run-map.js';
+import { runMapLength, runMapRows } from './run-map.js';
 import { runFoes } from './run-loop.js';
 
 /**
@@ -97,11 +97,14 @@ export function perkPreview(ids, sample) {
 
 /**
  * What a run makes of each mini-boss leader on each mini-boss row and on the boss's row (runFoes on a map of that one
- * place): the reward and the team at the run's levels. By leader id; `ids` narrows it.
+ * place): the reward and the team at the run's levels. By leader id; `ids` narrows it. WM-2: on the longest run the
+ * rules make (the last Expedition's most places a path)
  * @param {string[]} [ids]
  */
 export function leaderRunValues(ids) {
-  const rows = runMapRows(RULES.run.map),
+  const M = RULES.run.map,
+    most = Math.max(...(M.path || [[M.rows]]).map((/** @type {number[]} */ r) => r[r.length - 1])),
+    rows = runMapRows({ ...M, ...runMapLength('', { ...M, rows: most }) }),
     places = rows
       .map((role, row) => ({ role, row }))
       .filter(r => r.role === 'guard' || r.role === 'last')

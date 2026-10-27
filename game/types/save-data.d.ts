@@ -201,6 +201,10 @@ export interface RunNode {
   zone?: number;
   /** RL-R2: 1 on a side area's place (run.map.side) */
   side?: 1;
+  /** WM-2: its footprint on the region grid (logic/run-map.js RUN_GRID): its south-west cell (x east, y north) and its
+      size in cells; a main place's only (none on a side area's or a run's from before WM-2) */
+  at?: [number, number];
+  size?: [number, number];
 }
 
 /** roguelite track RL-R2: a run's side area (logic/run-side.js runSideAdd) */

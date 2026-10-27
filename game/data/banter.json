@@ -4,7 +4,7 @@
   "priority": 1,
   "script": [
    "Chosen: Rescued you again. Don’t thank me. Actually, do. #l:0caf",
-   "Hazel: Same spot over the dock. To the metre. #l:11db"
+   "Kappi: Same spot over the dock. To the metre. #l:11db"
   ]
  },
  "lost_reflexes": {
@@ -12,7 +12,7 @@
   "priority": 1,
   "script": [
    "Chosen: Yanked you out just in time. Professor reflexes. #l:bd0a",
-   "Hazel: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
+   "Kappi: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
   ]
  },
  "lost_charge": {
@@ -21,7 +21,7 @@
   "priority": 3,
   "script": [
    "Chosen: At this point I should charge for rescues. #l:fefa",
-   "Hazel: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
+   "Kappi: Something out there keeps sending you back. Folded. Like a returned parcel. #l:af04"
   ]
  },
  "lost_stamp": {
@@ -31,7 +31,7 @@
   "once": true,
   "script": [
    "Chosen: You lost to a clerk and I still saved you. Generous of me. #l:ba8e",
-   "Hazel: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
+   "Kappi: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
   ]
  },
  "lost_postcard": {
@@ -40,11 +40,11 @@
   "priority": 6,
   "script": [
    "Chosen: Blake sent a postcard. It just says “Ha.” #l:3c86",
-   "Hazel: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
+   "Kappi: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
   ]
  },
  "ch1_drop": {
-  "who": "hazel",
+  "who": "kappi",
   "when": "history:runs >= 1",
   "priority": 10,
   "once": true,
@@ -60,8 +60,8 @@
   "script": ["Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. #l:8d8e","set ch1_blake"]
  },
  "ch1_beans": {
-  "who": "hazel",
-  "when": "ch1_blake and (beans >= 1 or rel:chosen or rel:hazel or rel:juniper)",
+  "who": "kappi",
+  "when": "ch1_blake and (beans >= 1 or rel:chosen or rel:kappi or rel:juniper)",
   "priority": 10,
   "once": true,
   "must": true,
@@ -71,7 +71,7 @@
   ]
  },
  "ch1_number": {
-  "who": "hazel",
+  "who": "kappi",
   "when": "ch1_beans and (history:bureau >= 1 or history:runs >= 3)",
   "priority": 10,
   "once": true,
@@ -84,7 +84,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["Something big walked across Hazel’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
+  "script": ["Something big walked across Kappi’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
  },
  "fav_chosen_ask": {
   "who": "chosen",
@@ -102,17 +102,17 @@
   "must": true,
   "script": ["They remembered me? Brand awareness. Have two points of my respect. #l:5363"]
  },
- "fav_hazel_ask": {
-  "who": "hazel",
-  "when": "ch1_drop and quest:fav_hazel = none",
+ "fav_kappi_ask": {
+  "who": "kappi",
+  "when": "ch1_drop and quest:fav_kappi = none",
   "priority": 7,
   "once": true,
   "must": true,
-  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_hazel asked"]
+  "script": ["Go far next time. Row six or past it. I need readings from where they park things. #l:ed42","quest fav_kappi asked"]
  },
- "fav_hazel_thanks": {
-  "who": "hazel",
-  "when": "quest:fav_hazel = done",
+ "fav_kappi_thanks": {
+  "who": "kappi",
+  "when": "quest:fav_kappi = done",
   "priority": 8,
   "once": true,
   "must": true,
@@ -179,40 +179,40 @@
   "priority": 6,
   "script": ["[angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. #l:0564"]
  },
- "hazel_rounder": {
-  "who": "hazel",
+ "kappi_rounder": {
+  "who": "kappi",
   "when": "last:lost",
   "priority": 4,
-  "script": ["You came back through the same hole. I measured it. It’s getting rounder. #l:5be0"]
+  "script": ["You came back through the same hole. I measured it from the bath. It’s getting rounder. #l:5be0"]
  },
- "hazel_tidy": {
-  "who": "hazel",
+ "kappi_tidy": {
+  "who": "kappi",
   "when": "history:losses >= 2",
   "priority": 6,
   "once": true,
   "script": ["Every time you lose out there, you land in the same spot. Things don’t fall that tidily. #l:2b31"]
  },
- "hazel_won": {
-  "who": "hazel",
+ "kappi_won": {
+  "who": "kappi",
   "when": "last:won",
   "priority": 4,
   "script": ["You won and came home by train. Good. The other way home makes my instruments hum. #l:df6c"]
  },
- "hazel_file": {
-  "who": "hazel",
+ "kappi_file": {
+  "who": "kappi",
   "when": "lastby:bureau",
   "priority": 7,
   "once": true,
   "script": ["The clerk who beat you. Did they mention a file? A number? ...No reason. #l:41c7"]
  },
- "hazel_perks": {
-  "who": "hazel",
+ "kappi_perks": {
+  "who": "kappi",
   "when": "last:perks >= 4",
   "priority": 3,
   "script": ["That many Perks in one run. You sound like someone I work with. Not a compliment. #l:1d8e"]
  },
- "hazel_scrapbook": {
-  "who": "hazel",
+ "kappi_scrapbook": {
+  "who": "kappi",
   "when": "history:runs >= 5",
   "priority": 5,
   "once": true,
@@ -312,10 +312,10 @@
   "when": "rel:chosen >= 5",
   "priority": 6,
   "once": true,
-  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Hazel I said that. She knows. #l:608e"]
+  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Kappi I said that. They know. #l:608e"]
  },
- "thanks_hazel": {
-  "who": "thanks_hazel",
+ "thanks_kappi": {
+  "who": "thanks_kappi",
   "priority": 1,
   "script": [
    "cycle",
@@ -323,37 +323,39 @@
    "  - Another one. They’re warm. Why are they warm? #l:f5c6"
   ]
  },
- "thanks_hazel_1": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 1",
+ "thanks_kappi_1": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 1",
   "priority": 2,
   "once": true,
   "script": ["Oh. Thank you. People don’t usually give me things. They give me forms. #l:5db1"]
  },
- "thanks_hazel_2": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 2",
+ "thanks_kappi_2": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 2",
   "priority": 3,
   "once": true,
   "script": ["Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. #l:355b"]
  },
- "thanks_hazel_3": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 3",
+ "thanks_kappi_3": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 3",
   "priority": 4,
   "once": true,
   "script": ["I’m adding you to my notes. Under “reliable.” It’s a short section. #l:79b4"]
  },
- "thanks_hazel_4": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 4",
+ "thanks_kappi_4": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 4",
   "priority": 5,
   "once": true,
-  "script": ["My spare lab coat. It has pockets for evidence. Please don’t put snacks in them. #l:fbdf"]
+  "script": [
+   "My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence. Not snacks. #l:fbdf"
+  ]
  },
- "thanks_hazel_5": {
-  "who": "thanks_hazel",
-  "when": "rel:hazel >= 5",
+ "thanks_kappi_5": {
+  "who": "thanks_kappi",
+  "when": "rel:kappi >= 5",
   "priority": 6,
   "once": true,
   "script": ["My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. #l:9a5c"]

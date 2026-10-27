@@ -5029,8 +5029,13 @@ body.wb-dropping::after {
   fill: #222;
   pointer-events: none;
 }
-.rl-map .rl-node.on circle {
+.rl-map .rl-node.on circle,
+.rl-map .rl-node.on rect {
   stroke-width: 7;
+}
+/* WM-2: the region grid's links that go north or south */
+.rl-map .rl-link-ns {
+  stroke-dasharray: 2 3;
 }
 .rl-legend {
   display: flex;

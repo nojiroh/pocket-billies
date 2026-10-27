@@ -90,13 +90,19 @@ export function runWorldSync() {
         data = runWorldData(),
         scenes = runScenesMake(run, data);
       runWorldPutRun(run, scenes, data);
-      Object.assign(runWorld, { seed: want, scenes: scenes.length, ms: Math.round(performance.now() - t0), wall: 0 });
+      Object.assign(runWorld, {
+        seed: want,
+        scenes: scenes.length,
+        ms: Math.round(performance.now() - t0),
+        wall: 0,
+        how: 'page at once',
+      });
     } catch (e) {
       runWorldFailed(e);
     }
   else {
     worldHubBack();
-    Object.assign(runWorld, { seed: '', scenes: 0, ms: 0, wall: 0 });
+    Object.assign(runWorld, { seed: '', scenes: 0, ms: 0, wall: 0, how: '' });
   }
   runWorldLetGo();
   return true;

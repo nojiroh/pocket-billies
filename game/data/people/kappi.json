@@ -9,7 +9,7 @@
  "glasses": 1,
  "coat": 1,
  "look": {
-  "name": "Hazel",
+  "name": "Kappi",
   "body": {"chest":0.45,"hips":1.06,"height":1.03,"body":1.04,"head":1.02},
   "skin": "#E2A982",
   "hair": "#B9BFC4",
@@ -27,5 +27,6 @@
    "neck": "nametag"
   },
   "colors": {"sweater":["#3F8A63"],"trousers":["#4A5260"],"oxfords":["#5A3A24"]}
- }
+ },
+ "creature": {"rig":"kappi","ht":0.8}
 }

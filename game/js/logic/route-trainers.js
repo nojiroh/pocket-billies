@@ -202,7 +202,7 @@ export function routeTrainerTally(trainers) {
  * `route.at`, `route.look` (a point 2 m the way it faces), `route.spot` (the spot's kind) and, for a pair,
  * `route.mate` (where the second stands, 1.2 m to the side). Required ones take ROUTE_SPOTS.road, optional ones
  * ROUTE_SPOTS.aside, the kinds their class likes first, drawn from the node's 'route|spots' stream, each spot 6 m
- * from the ones taken; when a place runs out of one, the other; with no spot left, a point 3 m off the way west.
+ * from the ones taken; when a place runs out of one, the other; with no spot left, a point 3 m off the way ahead.
  * Changes the entries in place.
  * @param {Run} run @param {Record<string, any>} trainers runRouteTrainers' @param {any[]} scenes the run's, by node
  * @param {EventsData['classes']} classes
@@ -307,14 +307,14 @@ export function routeRareSpots(run, trainers, scenes) {
 export const routeUnderCanopy = (q, p) =>
   Math.hypot(q.x - p.x, q.z - p.z) < 4.5 || (q.z < p.z && p.z - q.z < 7 && Math.abs(q.x - p.x) < 3);
 
-/** a place with no spot left: on the way west (its west exit's road, else the first) at (k + 1) / (n + 1) of it, 3 m
+/** a place with no spot left: on the way ahead (its east exit's road, else the first; WM-1: runs go west to east) at (k + 1) / (n + 1) of it, 3 m
  * to one side for even k and the other for odd ones, facing it @param {any} sc @param {number} k @param {number} n
  * @returns {{ at: [number, number], road: [number, number] } | null} */
 export function routeWaySpot(sc, k, n) {
   const E = sc.edgeExits || [],
-    west = E.filter(e => e.side === 'W' && e.path && e.path.length > 1)[0] || E.find(e => e.path && e.path.length > 1);
-  if (!west) return null;
-  const P = west.path,
+    ahead = E.filter(e => e.side === 'E' && e.path && e.path.length > 1)[0] || E.find(e => e.path && e.path.length > 1);
+  if (!ahead) return null;
+  const P = ahead.path,
     seg = [];
   let L = 0;
   for (let j = 1; j < P.length; j++) {

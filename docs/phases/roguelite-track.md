@@ -258,7 +258,11 @@ east rim and the boss near the west (RUN_BOWL x 0.72, step 0.18, lane 0.1, bend 
 the bowl's north (a spot's `up` 90), on land of its own made from the seed (logic/run-bowl.js); Copperleaf is off a
 run's map. MAPGEN_VERSION 5 (merged after RL-8 took 4) leaves a run saved going north. The free sides of a run scene
 are now north (the back, behind what the camera looks at) and south (toward the camera); the lines below that say
-N to S describe the layout before this change.
+N to S describe the layout before this change. **Changed in WM-1 (2026-10-27, the owner: "runs go from west to
+east"; docs/phases/worldmap-track.md):** entered by the west side and left ahead by the east (`west`/`west2` back,
+`east`/`east2` ahead), the landing near the bowl's west rim and the boss near the east, mapgen's `ahead` dial `E`
+(the tall grass across the way on, the pinches along it), MAPGEN_VERSION 19; the world map opens looking north like
+the walk camera.
 
 ### Findings A: battle, state, randomness, saves (verified)
 

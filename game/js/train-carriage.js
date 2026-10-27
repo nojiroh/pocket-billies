@@ -29,9 +29,10 @@ const hash = (/** @type {number} */ i) => {
 export function trainCarriage(key, still) {
   const cv = document.createElement('canvas'),
     vw = Math.max(1, window.innerWidth || 390),
-    vh = Math.max(1, window.innerHeight || 640),
+    /* the top half of the screen (pb-loading night: its text below) */
+    vh = Math.max(1, (window.innerHeight || 640) * 0.48),
     w = 144,
-    h = Math.max(80, Math.min(260, Math.round((w * vh) / vw)));
+    h = Math.max(64, Math.min(200, Math.round((w * vh) / vw)));
   cv.width = w;
   cv.height = h;
   const box = document.createElement('div');

@@ -120,8 +120,8 @@
  "run": {
   "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winCrests":1,"scrapNode":2,"scrapWin":10,"beansWin":1},
   "map": {
-   "rows": 9,
-   "minibosses": 2,
+   "path": [[9,10],[9,11],[10,11],[10,12],[11,12]],
+   "towns": [2,3],
    "first": "landing",
    "rest": "town",
    "guard": "miniboss",

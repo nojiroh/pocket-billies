@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { SKY_RAIL, islandAngleDiff, skyRailHeight } from '../../game/js/logic/island-gen.js';
+import { SKY_RAIL, islandAngleDiff } from '../../game/js/logic/island-gen.js';
 
 const D = readGameData(),
   C = D.scenery.props,
@@ -72,7 +72,7 @@ test('hub placing: the new buildings on their plots, their doors open their room
   assert.equal(M.props.find(q => q.k === 'train_station').act, 'station');
 });
 
-test("hub placing: Skyline Station's sky rail chained from its right-hand end, level with it, along landmarks.rail", () => {
+test('cutscenes track A: Skyline Station faces out, its track chained from its right-hand end, level with it, the portal floating out in front', () => {
   const st = M.props.find(q => q.k === 'train_station'),
     L = M.plots.find(q => q.k === 'station'),
     pieces = M.props.filter(q => q.k === 'sky_rail'),
@@ -83,24 +83,30 @@ test("hub placing: Skyline Station's sky rail chained from its right-hand end, l
       (q.x - st.x) * Math.cos(r) + (q.z - st.z) * Math.sin(r),
       -(q.x - st.x) * Math.sin(r) + (q.z - st.z) * Math.cos(r),
     ];
+  /* its front toward the orbit camera, which looks in from out at sea */
+  const [cx, cz] = M.cam.orbit.c,
+    front = [Math.sin(r), -Math.cos(r)],
+    outward = [st.x - cx, st.z - cz];
+  assert.ok(front[0] * outward[0] + front[1] * outward[1] > 0.8 * Math.hypot(...outward), 'it faces out');
   assert.equal(pieces.length, SKY_RAIL.looks.length);
   const back = C.train_station.box[1] / 2 + SKY_RAIL.from[1];
-  [...pieces, portal].forEach((q, i) => {
+  pieces.forEach((q, i) => {
     const [u, v] = own(q);
-    assert.ok(Math.abs(u - SKY_RAIL.from[0] - SKY_RAIL.piece * (i + 0.5)) < 0.02, `${q.k} ${i} at ${u} along`);
-    assert.ok(Math.abs(v - back) < 0.02, `${q.k} ${i} ${v} m back`);
-    assert.equal(q.y, L.y, `${q.k} ${i} level with the station`);
+    assert.ok(Math.abs(u - SKY_RAIL.from[0] - SKY_RAIL.piece * (i + 0.5)) < 0.02, `piece ${i} at ${u} along`);
+    assert.ok(Math.abs(v - back) < 0.02, `piece ${i} ${v} m back`);
+    assert.equal(q.y, L.y, `piece ${i} level with the station`);
     assert.equal(q.rot || 0, st.rot || 0);
-    if (q.k === 'sky_rail') {
-      const look = SKY_RAIL.looks[i],
-        V = look ? C.sky_rail.variants[q.v - 1] : null;
-      assert.equal(V ? V.form : '', look, `piece ${i}'s look`);
-    }
+    const look = SKY_RAIL.looks[i],
+      V = look ? C.sky_rail.variants[q.v - 1] : null;
+    assert.equal(V ? V.form : '', look, `piece ${i}'s look`);
   });
-  /* the data (HB-8 flies the train along it) runs down the drawn rail's middle */
+  const [pu, pv] = own(portal);
+  assert.ok(Math.abs(pu - SKY_RAIL.from[0] - SKY_RAIL.tear[0]) < 0.02 && Math.abs(pv - back + SKY_RAIL.tear[1]) < 0.02);
+  assert.ok(portal.y > L.y + 10, 'floating');
+  /* the data (the ride flies the train from it) runs down the drawn track's middle */
   for (const [x, z, y] of M.landmarks.rail) {
-    const [u, v] = own({ x, z });
-    assert.ok(Math.abs(v - back) < 0.05, `the rail data ${v} m back`);
-    assert.ok(Math.abs(y - L.y - skyRailHeight(u - SKY_RAIL.from[0])) < 0.05, `the rail data at ${u}: ${y}`);
+    const [, v] = own({ x, z });
+    assert.ok(Math.abs(v - back) < 0.05, `the track data ${v} m back`);
+    assert.ok(Math.abs(y - L.y - SKY_RAIL.height) < 0.05, `the track data at ${y}`);
   }
 });

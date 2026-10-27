@@ -26,7 +26,7 @@ const UNLOCK_DATA = { unlocks: GAME_DATA.unlocks, buildings: GAME_DATA.buildings
   CASES = {
     none: { unlocks: [] },
     all: { unlocks: Object.keys(GAME_DATA.unlocks) },
-    short: { unlocks: [], map: { rows: 5, minibosses: 1 } },
+    short: { unlocks: [], map: { rows: 6, minibosses: 1 } },
   };
 
 /** a save at the mast: one starter, the unlocks bought */
@@ -100,8 +100,8 @@ test('a run starts with run.start (copies), on its seed, expedition and generato
 
 test('a plan touches nothing: the data stays as it was, the same seed plans the same run, a save it goes on is its own', () => {
   const before = JSON.stringify(DATA),
-    a = runStartPlan('PURE', DATA, { unlocks: ['biome_ridge'], map: { rows: 5, minibosses: 1 }, mods: ['m'] }),
-    b = runStartPlan('PURE', DATA, { unlocks: ['biome_ridge'], map: { rows: 5, minibosses: 1 }, mods: ['m'] });
+    a = runStartPlan('PURE', DATA, { unlocks: ['biome_ridge'], map: { rows: 6, minibosses: 1 }, mods: ['m'] }),
+    b = runStartPlan('PURE', DATA, { unlocks: ['biome_ridge'], map: { rows: 6, minibosses: 1 }, mods: ['m'] });
   assert.equal(JSON.stringify(DATA), before);
   assert.deepEqual(a, b);
   assert.equal(a.map.nodes.length >= 5, true);
