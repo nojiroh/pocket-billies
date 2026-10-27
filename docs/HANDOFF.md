@@ -51,6 +51,62 @@ owner's picks: delete all seven orphan groups; delete the loader's PNG copies to
   - A run and the hub: the loading screen, eggs at the ranch, flags and postcards (Copperleaf's) look as before.
 - Next: the track is done. Hot reload and shared asset collections (the track's Pushing back) wait for the owner.
 
+### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
+Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
+approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's
+power level is Lv 2 (Research x1.1 at the payout), Gus's Lv 3 (Augments break half as often); RS-4 in two sessions.
+Tag to suggest: `rs-4a-done`. Details: docs/phases/residents-track.md, "Done in RS-4a". CHANGELOG line added. PR #259.
+- Where the plan and the code differed: `shops.json` is gone (SA-3); Moneys are run-only, so no hub upgrade can cost
+  them; the store, inn and library weren't buildings.json rows; the Workshop already sells 3 levels (SP-5), so a
+  resident's service is its own level, not the building's; Dr. Helix's home `gene_bank` doesn't match the building
+  `genebank` (RS-5); no `run.fx` exists (effects come from `fxOfRun`).
+- Changed (one cause per commit): buildings.json shop/inn/library; the unlock grant `{resident, level}`,
+  `resLevel`, the refusal `resident` and their checks; residents.json `service` (schema, type, checks) and Mo's and
+  Bertha's rows; `resTakeoff`/`resFxRows`/`run.res`; Mo's General store in Copperleaf (`residentShop`, shops paid in a
+  meta currency); Mo's restock (`runShopReroll`, `run.reshop`); Bertha's rumours (`resRumour`, `run.rumour`, the map
+  card); the room card; `resLevel` asks whether a resident lives there (the sim moved them in "after run 0"); the
+  sim's `--residents=all`; docs.
+- Risky or unfinished: every price is a guess. The sim sees no change in wins (1000 seeds, two setups; its bot drinks
+  only Potions and never restocks), so the two power levels' size is untested until played. Bertha's rumour may show a
+  place two rows on that the map would have shown anyway one arrival later. The Lab board now has General store, Inn
+  and Library sections (rows priced, bought only at the building). Gus's rows (RS-4b) will be `at: workshop` beside
+  SP-5's: the Workshop's own sheet lists every row there, so filter it then. Not played on a phone.
+- Verified: lint, typecheck, format, check:modules, check:data, build, `npm test` after each commit (1471 at the end);
+  `test:slow` 88/89 before the last main merge (the island test, red on main then, fixed by #253: island-gen passes
+  after the merge); smoke 6/6. Headless probes: Mo's store buys a Potion for 15 Research (Moneys untouched, his
+  portrait shown), the room card buys his Lv 2 and redraws, a run shop's restock changes its drawn wares once, the map
+  card names Bertha's rumoured place; no page errors. The full quick check: 35/40, the 5 failures main's own (Terraces'
+  props in the air, RL-8 "the town's shop has no Perk" (run alone on this branch and on main 29b0cdaf: the same
+  failure on both), RT-2's pair, Granny Juniper, room light). CI's fast check fails 4 steps main fails too, plus one
+  different flaky step per run (Behind things; the pasture).
+- Decisions I made (and why): Mo's wares go into the hub bag rather than straight into a run (the packed bag's cap of
+  5 keeps the power small); a rumour never shows the boss or a side place; a restock redraws only the `more` wares
+  (the always-stocked Pyramid and Potion stay), once a shop a day; the room card lists only the resident's own rows.
+- Questions waiting for the owner: the prices (Mo 15/8/30 and 40/32/60 Research, Lv 2 100, Lv 3 200; Bertha Lv 2 120,
+  Lv 3 150); whether Bertha's rumour should reach further (today 2+ rows on). Please tag `rs-4a-done`.
+- Next session starts with: RS-4b (Dottie, Gus, the headcount milestones, the in-game full test's step), in Plan
+  Mode, on `track/residents`.
+
+### Water track - the hub island's golden test: hand patches marked (islandGen.patched) - 2026-10-27
+Branch `track/water` (main merged in first, twice: a fast-forward, then 3 commits). The owner's pick ("Patched marker",
+asked when PR #253's `lint` job failed). Not a numbered session: the docs fix that found WA-6a and WA-6b done (the
+table had not been updated), WA-11 (the hub island's fall) scheduled before WA-8, and this test fix.
+- Found: `npm run test:slow`'s "the game's island is the generator's own output" (island-gen.test.mjs) has failed on
+  main since WA-10's `3332015` (the pond outflow patched by hand; bisected). The HB-10a to 10c square patches add to
+  it (tiles 98 cells, heights 644 corners, spots, streams, plots, landmarks). Main's own Check runs were cancelled, so
+  nobody saw it; WA-10 ran `npm test` (quick), not the slow set.
+- Changed: `islandGen.patched` (map.schema.json): a list of the hand patches run on the generator's output. With it,
+  the test still checks `w`, `h`, `steps`, `stepm`, `island`, `zones`, `grassPatches`, the bridges and the orbit, and
+  skips `tiles`, `heights`, `spots`, `streams`, `plots` and `landmarks`. Copperleaf's list: water --river, WA-10's old
+  water --square, square --outline, --fountain, --edges, --hub, --folk. `patch-copperleaf-water.mjs --river` adds
+  its own tag; a rebuild (build-island writes a fresh islandGen) clears the list.
+- For the hub track (its file, not edited here): `patch-copperleaf-square.mjs` could add its tag the same way
+  (`M.islandGen.patched = [...new Set([...(M.islandGen.patched || []), 'square --x'])]`); the list is already set, so
+  nothing breaks meanwhile. HB-10f's reproducible rebuild clears it.
+- Verified: lint, typecheck, `npm test`, `npm run test:slow` 89/89 (was 88/89), check:data, check:modules,
+  format:check, `check:smoke` 6/6 (Playwright 1.63.0).
+- Next: WA-11 (the hub island's fall), then WA-8 alone.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
@@ -1006,7 +1062,10 @@ the hit; the send-out and the mail coin stretch at both ends); the 2D fallback's
   catch's foe sometimes reads white in the noon sun's glare, in frames before the stretch too (not this change).
 - Verified: lint, typecheck, format, check:modules, unit tests 1329 pass; headless films (landscape catch and
   send-out, phone portrait, voxel path, batching on, the 2D fallback): the wedge shows on the fast cells only, no
-  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Tag `vfx-3-done` for the owner (the git proxy
+  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Full quick check: 35 of 40, none in battles:
+  terraces `sky_portal`, room light and "Running" as in VFX-2; RL-8's run (this time a crossing into Lakeside Town
+  whose view never showed: the slow headless machine); new, RT-4a "the rarer wild Billie isn't in its pocket" (route
+  generation, untouched here; likely from the main merge, not checked on main). Tag `vfx-3-done` for the owner (the git proxy
   refuses tag pushes).
 - Next: VFX-4 (the impact frame) on `track/vfx`, in Plan Mode.
 

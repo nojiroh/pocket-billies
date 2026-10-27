@@ -13,7 +13,7 @@ import { formatNumber } from './logic/rules.js';
 import { META_CURRENCIES } from './logic/meta-state.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { incomeBank } from './logic/ranch-income.js';
-import { residentsHere } from './logic/residents.js';
+import { resLevel, residentsHere } from './logic/residents.js';
 import { buildingLevel, unlockAuto, unlockBuy, unlockCurrency, unlockReady, unlockRows } from './logic/unlocks.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -72,6 +72,7 @@ const LAB_WHY = {
   owned: 'Owned',
   earned: 'Earned by a milestone',
   soon: 'Coming later',
+  resident: 'Waits for its resident to move in',
   requires: 'Needs another unlock first',
   run: 'Bought between runs',
   cost: 'Not enough',
@@ -83,6 +84,9 @@ const LAB_WHERE = {
   ranch: 'at the ranch',
   genebank: 'at the Gene Bank',
   workshop: 'at the Workshop',
+  shop: 'at the General store',
+  inn: 'at the inn',
+  library: 'at the library',
 };
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {
@@ -128,14 +132,21 @@ function residentNoteHTML(ids, verb = 'lives here') {
 function residentsAt(b) {
   return residentsHere(saveData).filter(id => RESIDENTS[id] && RESIDENTS[id].home === b);
 }
-/** RS-3: a resident's room card: who they are, Talk, and the upgrades sold at their home (unlocks.json rows `at` it,
- * RS-4 adds them); with none yet, that they come soon @param {string} id */
+/** RS-3: a resident's room card: who they are, Talk, and their upgrades. RS-4: what their service does at the level
+ * they're at (Lv 1 comes with moving in), and the rows that raise it (unlocks.json `{resident, level}`, bought here;
+ * the purchase draws the card again); with no service yet, that it comes soon @param {string} id */
 export function residentCardHTML(id) {
   const r = RESIDENTS[id];
   if (!r) return '';
-  const all = unlockRows(saveData, UNLOCK_DATA).filter(x => x.R.at === r.home),
-    first = r.name.split(' ')[0];
-  return `${residentNoteHTML([id])}${all.length ? buildingRowsHTML(r.home, 'room') : `<p class="note">${escapeHtml(first)}’s first upgrades come soon.</p>`}`;
+  const first = r.name.split(' ')[0],
+    sv = r.service || [];
+  if (!sv.length)
+    return `${residentNoteHTML([id])}<p class="note">${escapeHtml(first)}’s first upgrades come soon.</p>`;
+  const lv = resLevel(saveData, id, UNLOCK_DATA.unlocks),
+    now = sv.slice(0, lv),
+    rows = unlockRows(saveData, UNLOCK_DATA).filter(x => x.R.grant && x.R.grant.resident === id && !x.owned),
+    does = `<p class="note"><b>${escapeHtml(first)}’s service · Lv ${lv} of ${sv.length}</b>${now.some(L => L.stock) ? ' · Tap the counter to shop.' : ''}</p><ul class="note">${now.map(L => `<li>${escapeHtml(L.about)}</li>`).join('')}</ul>`;
+  return `${residentNoteHTML([id])}${does}${rows.length ? `<div class="lab-list">${rows.map(x => labRowHTML(x, 'room')).join('')}</div>` : ''}`;
 }
 /** a hub building's label with its level ("Ranch · Lv 2"): a building of buildings.json with levels, in Copperleaf
  * (not in a room, not on a run) @param {string} label @param {string} act */

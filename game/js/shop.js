@@ -6,9 +6,10 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, perkDropOpen, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
-import { ITEMS, PERKS, PYRAMIDS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
+import { CURRENCIES, ITEMS, PERKS, PYRAMIDS, RESIDENTS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
-import { runShopOpen } from './logic/run-loop.js';
+import { resStock } from './logic/residents.js';
+import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -21,12 +22,17 @@ import { itemIcon } from './battle.js';
 expose({
   SHOP_THANKS: [() => SHOP_THANKS],
   openShop: [() => openShop, v => setOpenShop(v)],
+  residentShop: [() => residentShop, v => (residentShop = v)],
   shopBuy: [() => shopBuy, v => (shopBuy = v)],
+  shopCostHTML: [() => shopCostHTML, v => (shopCostHTML = v)],
   shopHTML: [() => shopHTML, v => (shopHTML = v)],
   shopPerk: [() => shopPerk, v => (shopPerk = v)],
   shopPerkBuy: [() => shopPerkBuy, v => (shopPerkBuy = v)],
   shopPerkHTML: [() => shopPerkHTML, v => (shopPerkHTML = v)],
+  shopPurse: [() => shopPurse],
   shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
+  shopReroll: [() => shopReroll, v => (shopReroll = v)],
+  shopRerollHTML: [() => shopRerollHTML, v => (shopRerollHTML = v)],
   wareInfo: [() => wareInfo],
   warePrice: [() => warePrice],
 });
@@ -63,6 +69,33 @@ const wareInfo = w => {
     ? { kind: 'item', key: w.item, n: I.n, d: I.d, base: I.price, need: 0, have: saveData.items[w.item] || 0 }
     : null;
 };
+/** RS-4: what a shop is paid in: a resident's hub shop takes its home's currency (saveData.meta), the rest Moneys */
+const shopPurse = sh => (sh.currency ? saveData.meta[sh.currency] || 0 : saveData.se);
+/** a price in the shop's currency, for its buttons */
+function shopCostHTML(sh, n) {
+  if (!sh.currency) return moneyHTML(n);
+  const C = CURRENCIES[sh.currency] || { name: sh.currency, one: sh.currency, icon: 'coin' };
+  return `<span class="money" role="img" aria-label="${formatNumber(n)} ${escapeHtml(n === 1 ? C.one : C.name)}">${uiIconHTML(C.icon, 14)}<span aria-hidden="true">${formatNumber(n)}</span></span>`;
+}
+/** RS-4: a resident's hub shop (Mo's General store): their wares at their level (logic/residents.js resStock), in
+ * their home's currency; registered in SHOPS as res_<id> when their building is entered. Null when they sell
+ * nothing, or on a run @param {string | null} id */
+export function residentShop(id) {
+  const r = id && RESIDENTS[id];
+  if (!r || saveData.run || !(r.service || []).some(L => L.stock)) return null;
+  const B = UNLOCK_DATA.buildings[r.home],
+    key = 'res_' + id;
+  SHOPS[key] = {
+    name: (B && B.name) || r.role,
+    keeper: r.name,
+    who: id,
+    greeting: `Welcome in! Everything’s priced in ${(CURRENCIES[(B && B.currency) || 'research'] || { name: 'Research' }).name}.`,
+    stock: resStock(saveData, id, RESIDENTS, UNLOCK_DATA.unlocks),
+    res: id,
+    currency: (B && B.currency) || 'research',
+  };
+  return key;
+}
 /** a ware's price: its own or its base; in a run shop, with the Perks' price rows (RL-12, logic/effects.js) */
 const warePrice = (sh, w, it) => {
   const p = w.price ?? it.base;
@@ -85,6 +118,28 @@ function shopPerkHTML(id, sh) {
     can = saveData.se >= L.price;
   return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
+/** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
+function shopRerollHTML(id, sh) {
+  const run = saveData.run;
+  if (sh.runNode == null || !run) return '';
+  const left = runRerollsLeft(run, RESIDENTS);
+  if (!left && !runShopRerolled(run, sh.runNode, run.clock)) return '';
+  return runShopRerolled(run, sh.runNode, run.clock)
+    ? '<p class="note">Fresh stock, on Mo’s word.</p>'
+    : `<p class="note"><button class="pb small" data-a="shopreroll" data-s="${id}">Fresh stock, on Mo’s word (${left} left this run)</button></p>`;
+}
+function shopReroll(id) {
+  const sh = SHOPS[id],
+    run = saveData.run;
+  if (!sh || !run || sh.runNode == null) return;
+  if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS)) return;
+  sh.stock = runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
+  uiState.shopQty = {};
+  uiState.shopLine = 'The shopkeeper ducks into the back and comes out with other boxes.';
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `shop restocked: ${sh.runNode}:${run.clock}`);
+  saveNow();
+  shopRefresh();
+}
 function shopHTML(id) {
   const sh = SHOPS[id],
     q = uiState.shopQty || (uiState.shopQty = {}),
@@ -98,18 +153,19 @@ function shopHTML(id) {
         price = warePrice(sh, w, it),
         locked = it.need && seats < it.need,
         cost = price * n,
-        deal = price < it.base;
+        /* RS-4: a price in another currency is no deal on the Moneys one */
+        deal = !sh.currency && price < it.base;
       return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
       : `<span class="qty"><button class="qb k-btn" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIconHTML('minus', 10)}</button><b class="tnum">${n}</b><button class="qb k-btn" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIconHTML('plus', 10)}</button></span>
-  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>${moneyHTML(cost)}</button>`
+  <button class="pb small ${shopPurse(sh) >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${shopPurse(sh) >= cost ? '' : 'disabled'}>${shopCostHTML(sh, cost)}</button>`
   }</span></div>`;
     })
     .join('');
   return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${escapeHtml(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
- <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Moneys</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
+ <div class="shop-bal">${sh.currency ? `<span>${uiIconHTML((CURRENCIES[sh.currency] || { icon: 'coin' }).icon, 14)} ${escapeHtml((CURRENCIES[sh.currency] || { name: sh.currency }).name)}</span><b class="tnum">${formatNumber(shopPurse(sh))}</b>` : `<span>${uiIconHTML('coin', 14)} Moneys</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b>`}</div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(PYRAMIDS)
    .map(
      k =>
@@ -117,7 +173,7 @@ function shopHTML(id) {
    )
    .join(
      ''
-   )}</div><div class="wares2">${shopPerkHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
+   )}</div><div class="wares2">${shopRerollHTML(id, sh)}${shopPerkHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
 export function openShop(id) {
   const sh = SHOPS[id];
@@ -134,6 +190,8 @@ export function openShop(id) {
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
     perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks);
   }
+  /* RS-4: a resident's shop sells what their level has now */
+  if (sh.res && !saveData.run) sh.stock = resStock(saveData, sh.res, RESIDENTS, UNLOCK_DATA.unlocks);
   uiState.shopLine = null;
   uiState.shopQty = {};
   const m = {
@@ -162,11 +220,16 @@ function shopBuy(id, k) {
     price = warePrice(sh, w, it),
     cost = price * n;
   if (it.need && saveData.seats.length < it.need) return;
-  if (saveData.se < cost) {
-    toast('Not enough Moneys. Win a few battles first.');
+  if (shopPurse(sh) < cost) {
+    toast(
+      sh.currency
+        ? `Not enough ${(CURRENCIES[sh.currency] || { name: sh.currency }).name}.`
+        : 'Not enough Moneys. Win a few battles first.'
+    );
     return;
   }
-  saveData.se -= cost;
+  if (sh.currency) saveData.meta[sh.currency] -= cost;
+  else saveData.se -= cost;
   if (typeof soundEffect === 'function') soundEffect('buy');
   if (kind === 'coin') saveData.pyramids[key] = (saveData.pyramids[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
@@ -219,5 +282,6 @@ document.addEventListener('click', ev => {
     q[d.k] = clamp((q[d.k] || 1) + +d.d, 1, 99);
     shopRefresh();
   } else if (d.a === 'shopbuy') shopBuy(d.s, d.k);
+  else if (d.a === 'shopreroll') shopReroll(d.s);
   else if (d.a === 'shoprelic') shopPerkBuy(d.s);
 });
