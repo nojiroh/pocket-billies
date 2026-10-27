@@ -2,6 +2,38 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-4 - The impact frame - 2026-10-27
+Branch `track/vfx` (main merged in first, clean; VFX-3's last commit had gone to main with PR #252 during the plan, so
+no PR was due). Plan approved in Plan Mode with its recommendations as the answers: the catch's hit, the mail move's
+coin and crits (not the send-out's landing, not super-effective hits); ink and white, the crit's warm yellow as paper
+on crits; the negative, then the positive.
+- logic/smear.js: `impactFrame` (two cells on the 24 fps grid, one at quality 2, none at 3 or under Reduced motion; a
+  crit keeps its speed lines at quality 3, as before), `impactAt` (mode 1 the negative, 2 the positive, 3 a crit's speed
+  lines alone for 260 ms, stepped), `impactLength`. Tests in tools/test/smear.test.mjs.
+- battle-stage.js `impactFx` / `battleImpact` (`battleStage.impact`): started on the catch's hit, the mail coin's hit
+  (`hitFx` takes it) and crits. Real time (`performance.now`), so it plays through the hit-stop (which freezes the
+  battle's clock). The white / warm CSS flashes and the chromatic flash wait for it (`afterImpact`, setTimeout); the 2D
+  effects canvas stays clear while the two-tone shows. Nothing is made longer.
+- The look, in the grade pass (engine/post-effects.js, no new pass): `uImp` / `uImpL`; ink and paper split hard at
+  luma 0.42 of the graded picture, radial wedges from the edges in toward the hit (thicker outside, a fifth missing),
+  whole pixels; the lines take the other tone. battle-3d.js puts the hit point in `BT.impact`, walk-view-gl.js
+  `impactOnScreen` projects it.
+- The crit's speed lines (the 2D `speedLines` particle and its `p.lines` draw) are gone from the 2D canvas; the same
+  shader draws them after the frame, white, moving out.
+- Found: there is no battle picture without GL (`battleStageDraw` draws nothing then), so the "2D fallback" of
+  VFX-1..3 is the flat pyramid icon over a GL battle; the post pass covers it, so no 2D impact frame was built. With
+  the debug "no post" switch there is no impact frame and no crit speed lines.
+- Risky, check on the phone: the strength of a full-screen negative (one per hit, off under Reduced motion); the 0.42
+  split (a dark night stage may come out nearly all ink); the lines' thickness at full resolution (filmed at a third).
+- Verified: lint, typecheck, format, check:modules, unit tests 1464 pass; headless films with the cells held (landscape
+  and phone portrait; a crit's two cells and speed lines, a catch's two cells; no page errors). Smoke check: 6 of 6
+  in 234 s. Full quick check: 35 of 40, none in battles: terraces (props in the air, `train_station` this time), RL-8's
+  shop Perk and room light as before; RT-2's walking pair and Granny Juniper's line failed in the full run but both
+  pass alone, on this branch and on main (a slow, loaded machine). Python Playwright 1.56 was missing in the container:
+  installed from tools/requirements-check.txt and pointed at the pre-installed Chromium. Tag `vfx-4-done` for the
+  owner (the git proxy refuses tag pushes).
+- Next: VFX-5 (attack lunges) on `track/vfx`, in Plan Mode.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
