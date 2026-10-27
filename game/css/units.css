@@ -641,16 +641,16 @@
   font: 500 var(--fs-caption) / 1.2 var(--font-prose);
   color: var(--text2);
 }
+/* UI-14b: Broken is the bad family, Damaged caution: the fills with dark text, as the colour code's tags */
 .u-brk {
   padding: 1px var(--s2);
   border-radius: var(--r-pill);
   font: 700 var(--fs-caption) / 1.4 var(--font-voice);
-  color: #fff;
-  background: var(--red);
+  color: var(--c-ink);
+  background: var(--sig-bad);
 }
 .u-brk.dmg {
-  color: var(--goldink, #3a2408);
-  background: var(--gold-b);
+  background: var(--sig-caution);
 }
 .u-carry {
   display: grid;

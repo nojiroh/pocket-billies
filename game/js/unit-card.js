@@ -203,7 +203,7 @@ function unitBuildHTML(u, slots) {
     })
     .join('')}</ul>
   ${unitBalanceHTML(L)}
-  <p class="u-prime ${L.prime ? 'yes' : ''}">${L.prime ? `<span class="u-tag prime">Prime</span> Every part at its own normal size: a little stronger at everything.` : `Not Prime: ${L.off === 1 ? '1 part' : `${L.off} parts`} off normal size. Bigger parts hit harder but slow it down.`}</p></div>`;
+  <p class="u-prime ${L.prime ? 'yes' : ''}">${L.prime ? `${unitPrimeHTML()} Every part at its own normal size: a little stronger at everything.` : `Not Prime: ${L.off === 1 ? '1 part' : `${L.off} parts`} off normal size. Bigger parts hit harder but slow it down.`}</p></div>`;
 }
 
 /* ---------- robots (phase 17 merged, 06-3): the same build view, in slots ---------- */
@@ -227,7 +227,9 @@ function unitBotSlotsHTML(m) {
         mv = k === 'torso' ? null : MOVES[P.move],
         brk = k !== 'torso' && k !== 'gem' && partBroken(m, k),
         dmg = !brk && k !== 'torso' && k !== 'gem' && ((m.partDmg && m.partDmg[k]) || 0) > 0;
-      return `<li><span class="u-slot-n">${BOT_SLOT_TITLES[k]}</span><span class="u-part"><b>${escapeHtml(P.name)}</b><span class="u-part-m">${typeBadgeHTML(P.type)}${mv ? `<span>${escapeHtml(mv.n)}</span>` : ''}${brk ? '<span class="u-brk">Broken</span>' : dmg ? '<span class="u-brk dmg">Damaged</span>' : ''}</span></span></li>`;
+      /* UI-14b: a part's tier (an arm's or legs' as an Augment; a boss's own part has none) colours its name and puts
+         its pill by the type; Broken is the bad family, Damaged caution */
+      return `<li${rarityRowAttr(P.rar)}><span class="u-slot-n">${BOT_SLOT_TITLES[k]}</span><span class="u-part"><b class="rar-name">${escapeHtml(P.name)}</b><span class="u-part-m">${typeBadgeHTML(P.type)}${rarityPillHTML(P.rar)}${mv ? `<span>${escapeHtml(mv.n)}</span>` : ''}${brk ? '<span class="u-brk">Broken</span>' : dmg ? '<span class="u-brk dmg">Damaged</span>' : ''}</span></span></li>`;
     })
     .join('')}</ul>`;
 }
