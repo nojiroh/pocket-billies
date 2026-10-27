@@ -1232,7 +1232,11 @@ function turnBar() {
     const m = fighter(k),
       mine = ACTOR_SIDE[k] === 0,
       n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    return `<span class="tb ${mine ? 'me' : 'foe'}${fighter(k).boss ? ' alpha' : ''}" title="${escapeHtml(billyName(m))}">${escapeHtml(billyName(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
+    return `<span class="tb ${mine ? 'me' : 'foe'}${fighter(k).boss ? ' alpha' : ''}" title="${escapeHtml(billyName(m))}">${escapeHtml(
+      billyName(m)
+        .replace(/^The\s+/, '')
+        .split(' ')[0]
+    )}${n > 1 ? ' ×' + n : ''}</span>`;
   }).join('<i>›</i>');
   if (e.innerHTML !== html) e.innerHTML = '<b>Order</b>' + html;
 }
