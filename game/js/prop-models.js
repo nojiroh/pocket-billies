@@ -40,6 +40,7 @@ import {
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
@@ -1587,14 +1588,15 @@ function tagPropModel(it) {
     if (propModelState.res) flushPropModelMeshes();
     propModelState.res = R;
   }
-  /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
+  /* a few new meshes a frame: the first always, the rest while the frame's one-off budget lasts (LD-5: it was 12 ms
+     of their own); the rest draw as their pictures a frame or two longer */
   if (rec && !propModelState.meshes.has(path)) {
     const fr = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
     if (propModelState.fr !== fr) {
       propModelState.fr = fr;
       propModelState.bt = 0;
     }
-    if (propModelState.bt > 12) return;
+    if (propModelState.bt > 0 && typeof frameBudgetLeft === 'function' && !frameBudgetLeft()) return;
     const t0 = performance.now();
     propModelGuard(() => propModelMesh(path, rec));
     propModelState.bt += performance.now() - t0;

@@ -107,7 +107,15 @@ import {
   swapMapCache,
   updateNearRing,
 } from './walk/map-cache.js';
-import { adaptQuality, coverItems, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
+import {
+  adaptQuality,
+  coverItems,
+  cullItems,
+  easedMood,
+  frameBudgetRemaining,
+  heatHaze,
+  heatSources,
+} from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
@@ -493,11 +501,13 @@ function drawWalkFrame(ts, dtm) {
   engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
+  /* LD-5: the one-off work's budget starts here (walk/quality-cull.js frameBudgetLeft) */
+  walkRenderer.budT = performance.now();
   runNormalMapJobs(walkView.warm ? 40 : 3);
   /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
   pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
   groundOcclusionWork();
-  groundPrepWork(walkRenderer.bt ? 0 : PREP_BUDGET_MS);
+  groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
@@ -601,9 +611,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
-    updateNearRing(sc.groundOf || sc, fx, fz, PREP_BUDGET_MS);
+    updateNearRing(sc.groundOf || sc, fx, fz, Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   }
-  walkRenderer.budT = performance.now();
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
   gpuPass('other');
   let items = gatherFrameItems(st, C, PPU, C0);

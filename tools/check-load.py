@@ -35,7 +35,7 @@ BOOTS = {
     'run': ('game/index.html?fixture=run',
             "typeof runLoad!=='undefined'&&runLoad.ready&&!document.getElementById('runload')&&!document.getElementById('loader')", 300),
 }
-BOOTS['moves'] = BOOTS['run']
+BOOTS['moves'] = (BOOTS['run'][0], BOOTS['run'][1] + "&&!(gpuState.pend&&gpuState.pend.size)", BOOTS['run'][2])
 # LD-5: the moves, each with the held frames from its start until it has settled (the hitch list cleared first)
 
 

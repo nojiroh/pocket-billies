@@ -36,6 +36,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms } from './walk/prop-look.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -364,7 +365,11 @@ function buildingBudgetLeft() {
     buildingState.t0 = performance.now();
     buildingState.n = 0;
   }
-  return buildingState.n === 0 || performance.now() - buildingState.t0 < 5;
+  /* LD-5: past the first, while the frame's one-off budget lasts (walk/quality-cull.js), not 5 ms of their own */
+  return (
+    buildingState.n === 0 ||
+    (typeof frameBudgetLeft === 'function' ? frameBudgetLeft() : performance.now() - buildingState.t0 < 5)
+  );
 }
 function buildingMesh(it) {
   const p = it.p,
