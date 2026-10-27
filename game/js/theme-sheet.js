@@ -14,6 +14,8 @@ expose({
   fontsUrl: [() => fontsUrl],
   // @ts-expect-error -- replaced on purpose
   uiBlurCount: [() => uiBlurCount, v => (uiBlurCount = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiElementCount: [() => uiElementCount, v => (uiElementCount = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -50,6 +52,37 @@ function uiBlurCount() {
     const r = el.getBoundingClientRect();
     if (r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && r.bottom > 0 && r.top < innerHeight) n++;
   }
+  return n;
+}
+
+/** UI-15: how many pieces a screen shows: visible elements that draw words of their own or are an icon or picture (the
+ * scene's canvases not counted), shadow trees included. Opacity is not read (a tile half way through rising in still
+ * counts); what fades away also turns visibility: hidden. The smoke run logs it per screen, so clutter can only go down
+ * (check-quick.py ELEMENT_CEILING) */
+function uiElementCount() {
+  let n = 0;
+  const icon = /** @param {Element} el */ el =>
+    el.tagName === 'IMG' || el.tagName === 'svg' || (el.classList && el.classList.contains('uico'));
+  const own = /** @param {Element} el */ el => {
+    for (const c of el.childNodes) if (c.nodeType === 3 && /\S/.test(c.nodeValue || '')) return true;
+    return false;
+  };
+  const shown = /** @param {Element} el */ el => {
+    const r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth))
+      return false;
+    const E = /** @type {any} */ (el);
+    if (typeof E.checkVisibility === 'function') return E.checkVisibility({ visibilityProperty: true });
+    return getComputedStyle(el).visibility !== 'hidden';
+  };
+  const walk = /** @param {Element | ShadowRoot} root */ root => {
+    for (const el of root.querySelectorAll('*')) {
+      if (el.shadowRoot) walk(el.shadowRoot);
+      if (el.closest('svg') && el.tagName !== 'svg') continue;
+      if ((icon(el) || own(el)) && shown(el)) n++;
+    }
+  };
+  walk(document.body);
   return n;
 }
 
