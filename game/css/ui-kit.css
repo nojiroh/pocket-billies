@@ -481,3 +481,7 @@ hr.pb-rule::after {
 .rar-name {
   color: var(--rar-t, inherit);
 }
+/* UI-14b: a list row's stat tags sit after its text; its pill at the row's end */
+.bag-t pb-tag {
+  margin-left: var(--s1);
+}
