@@ -2,6 +2,37 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-4a (in part) - a run's places on the world map at their grid cells; fog - 2026-10-27
+Branch `ccr-9477901d-w1h11w`, from `track/worldmap` (made this session from WM-2's head, 5a1326a7; main since merged
+in, PR #243). The owner first chose to wait for WM-3, then asked to start now: WM-4a is the part that doesn't need WM-3;
+WM-4b (exact seams, WM-3's sizes and L-masks, side areas' places from WM-3 if it gives them) follows once WM-3a is merged.
+The owner's answer: the whole region shows from the landing, unreached places fogged.
+- logic/run-map.js: `runSpot` reads the region grid: each place at its cells' middle, at the walk's scale
+  (`RUN_BOWL_GRID.metres` 1000 to a bowl radius, as world-bowl.js BOWL_METRES), the region's cells centred on the bowl
+  (WM-2: paths sit north of the landing's row). `runSpotCells` (side areas' places, which have no footprint, take free
+  2 x 1 cells from their obstacle's: north first, then east along the chain; worked out, never stored) and
+  `runSpotBoxes`. A run from before WM-2 (no `at`) keeps the rows-and-lanes spot (RUN_BOWL). Every caller unchanged.
+  WM-2's grids are 10-20 cells wide (0.64-1.28 km, 400 seeds), inside the bowl.
+- logic/run-bowl.js: each place's round of land covers its cells (`RUN_BOWL_LAND.cover`); `runBowlRelief`: on the grid
+  a kind's bump or dip reaches at most half a cell (`RUN_BOWL_LAND.relief` 0.032) and is as much lower (slopes as
+  steep): places 64-128 m apart made a summit lift the lake beside it (bowl-ground's and bowl-things' tests found it).
+  **For the owner to judge**: the run's world map is flatter (a summit about 30 m, not 105).
+- world-bowl.js: a run's road is painted from one place's exit to the other's (`worldBowlExitAt`, the maps' own
+  edgeExits), not pin to pin; `worldBowlRunFog`: every run place not walked and not where you stand under a veil with
+  its cells' dashed outline (`BOWL_RUN_FOG`), drawn under the pins.
+- **Until WM-3**: scenes are still 112 x 64 m in 128 x 64 m cells (8 m of ground each side) and a north link still
+  leaves by the east side in the walk, so its road on the map runs from the east edge to the next place's west edge.
+- Tests: run-map (the old bowl test kept for a run without footprints; new: places at their cells, centred, linked
+  ones touching; a side area's chain), run-bowl (`runBowlRelief`), bowl-ground's ridge and lake now against the land
+  round them.
+- Verified: lint, typecheck, format, check:modules; unit tests 1422 pass; check-fast's run pages 7 of 7 (the run's
+  world, the helper thread, waystations, Blake, the battle held, Play this seed, the bowl). Headless pictures of the run
+  fixture's map (the region in one piece, fogged outlines, short roads across the gaps). Smoke and the full quick check
+  not run. Python Playwright 1.63 again (the pin's 1.56 doesn't match the container's Chromium).
+- Next: WM-4b after WM-3a merges into `track/worldmap`: merge it here, check the seams meet exactly, the 1x1 and L
+  outlines (the L's `cut` cell left out of the fog), roads from exits on any side, the side areas; then the HANDOFF
+  and `wm-4-done`.
+
 ### Region map track WM-2 - the region grid (logic only) - 2026-10-27
 Branch `claude/wm-2-region-grid` (from WM-1's branch). The owner's answers: places a path by Expedition (I 9-10, II
 9-11, III 10-11, IV 10-12, V 11-12), a free place before the boss, so 2 towns at 9-11 places and 3 at 12; no filler
