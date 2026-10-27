@@ -20,12 +20,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "E",
-          "t": 0.15625,
+          "t": 0.34375,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.84375,
+          "side": "N",
+          "t": 0.609375,
           "width": 2
         }
       ]
@@ -37,10 +37,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 3,
     "kind": "route",
     "biome": "thicket",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 477028837,
-    "pin": "EW",
+    "pin": "EWN",
     "ahead": "E",
     "edges": 0
   },
@@ -64,12 +64,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.34375,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.5,
+          "side": "N",
+          "t": 0.796875,
           "width": 2
         }
       ]
@@ -79,11 +79,11 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 3,
     "kind": "route",
     "biome": "ridge",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 2108422820,
-    "pin": "EW",
-    "ahead": "E",
+    "pin": "EWN",
+    "ahead": "N",
     "edges": 1
   },
   {
@@ -105,13 +105,13 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.56,
       "exits": [
         {
-          "side": "W",
-          "t": 0.5,
+          "side": "S",
+          "t": 0.109375,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.3046875,
           "width": 2
         }
       ]
@@ -121,10 +121,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 2,
     "kind": "route",
     "biome": "autumn",
-    "w": 112,
-    "h": 64,
+    "w": 128,
+    "h": 128,
     "seed": 1923185927,
-    "pin": "EW",
+    "pin": "EWS",
     "ahead": "E",
     "edges": 1
   },
@@ -147,23 +147,23 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.74,
       "exits": [
         {
-          "side": "W",
-          "t": 0.15625,
+          "side": "S",
+          "t": 0.296875,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.15625,
+          "t": 0.578125,
           "width": 2
         },
         {
           "side": "W",
-          "t": 0.84375,
+          "t": 0.609375,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.84375,
+          "side": "N",
+          "t": 0.4296875,
           "width": 2
         }
       ]
@@ -171,12 +171,32 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lanes",
     "pieces": 2,
+    "arena": {
+      "mode": "leader",
+      "r": 8,
+      "rise": 0.6,
+      "back": 28,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ],
+      "on": [
+        1,
+        3
+      ]
+    },
     "kind": "route",
     "biome": "thicket",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 986359382,
-    "pin": "EW",
+    "pin": "EWSN",
     "ahead": "E",
     "edges": 2
   },
@@ -195,17 +215,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.52
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.578125,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.25,
           "width": 2
         }
       ]
@@ -216,7 +236,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     },
     "kind": "town",
     "biome": "thicket",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 1951062480,
     "pin": "EW",
@@ -238,17 +258,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.57
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
-          "side": "W",
-          "t": 0.5,
+          "side": "S",
+          "t": 0.4296875,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.8125,
           "width": 2
         }
       ]
@@ -259,10 +279,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     },
     "kind": "town",
     "biome": "lake",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 553354720,
-    "pin": "EW",
+    "pin": "EWS",
     "ahead": "E",
     "edges": 1
   },
@@ -286,17 +306,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.625,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.15625,
+          "t": 0.171875,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.84375,
+          "side": "N",
+          "t": 0.1953125,
           "width": 2
         }
       ]
@@ -306,11 +326,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 3,
     "kind": "route",
     "biome": "thicket",
-    "w": 112,
-    "h": 64,
+    "w": 128,
+    "h": 128,
     "seed": 1581277298,
-    "pin": "EW",
+    "pin": "EWN",
     "ahead": "E",
+    "cut": [
+      64,
+      64,
+      128,
+      128
+    ],
     "edges": 1
   },
   {
@@ -333,12 +359,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.8125,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.34375,
           "width": 2
         }
       ]
@@ -348,7 +374,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 4,
     "kind": "route",
     "biome": "ridge",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 63358577,
     "pin": "EW",
@@ -375,12 +401,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.171875,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.5,
+          "side": "N",
+          "t": 0.71875,
           "width": 2
         }
       ]
@@ -390,11 +416,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 4,
     "kind": "route",
     "biome": "thicket",
-    "w": 112,
-    "h": 64,
+    "w": 128,
+    "h": 128,
     "seed": 577964397,
-    "pin": "EW",
-    "ahead": "E",
+    "pin": "EWN",
+    "ahead": "N",
+    "cut": [
+      0,
+      64,
+      64,
+      128
+    ],
     "edges": 1
   },
   {
@@ -416,18 +448,18 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.47,
       "exits": [
         {
-          "side": "W",
-          "t": 0.15625,
+          "side": "S",
+          "t": 0.1953125,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.5625,
           "width": 2
         },
         {
           "side": "W",
-          "t": 0.84375,
+          "t": 0.34375,
           "width": 2
         }
       ]
@@ -438,10 +470,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "site": "scrapyard",
     "kind": "route",
     "biome": "meadow",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 553133995,
-    "pin": "EW",
+    "pin": "EWS",
     "ahead": "E",
     "edges": 2
   },
@@ -464,23 +496,23 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.43,
       "exits": [
         {
-          "side": "W",
-          "t": 0.15625,
+          "side": "S",
+          "t": 0.71875,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.15625,
+          "t": 0.265625,
           "width": 2
         },
         {
           "side": "W",
-          "t": 0.84375,
+          "t": 0.5625,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.84375,
+          "side": "N",
+          "t": 0.421875,
           "width": 2
         }
       ]
@@ -488,12 +520,32 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "forest",
     "pieces": 2,
+    "arena": {
+      "mode": "leader",
+      "r": 8,
+      "rise": 0.6,
+      "back": 28,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ],
+      "on": [
+        1,
+        3
+      ]
+    },
     "kind": "route",
     "biome": "thicket",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 1584210054,
-    "pin": "EW",
+    "pin": "EWSN",
     "ahead": "E",
     "edges": 2
   },
@@ -512,17 +564,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.42
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.265625,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.5,
+          "side": "N",
+          "t": 0.6796875,
           "width": 2
         }
       ]
@@ -533,11 +585,11 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     },
     "kind": "town",
     "biome": "meadow",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 1020292343,
-    "pin": "EW",
-    "ahead": "E",
+    "pin": "EWN",
+    "ahead": "N",
     "edges": 1
   },
   {
@@ -555,17 +607,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.39
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
-          "side": "W",
-          "t": 0.5,
+          "side": "S",
+          "t": 0.421875,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.59375,
           "width": 2
         }
       ]
@@ -576,10 +628,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     },
     "kind": "town",
     "biome": "meadow",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 137567764,
-    "pin": "EW",
+    "pin": "EWS",
     "ahead": "E",
     "edges": 1
   },
@@ -602,18 +654,18 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.34,
       "exits": [
         {
-          "side": "W",
-          "t": 0.15625,
+          "side": "S",
+          "t": 0.6796875,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.5,
+          "t": 0.640625,
           "width": 2
         },
         {
           "side": "W",
-          "t": 0.84375,
+          "t": 0.59375,
           "width": 2
         }
       ]
@@ -623,10 +675,10 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "pieces": 4,
     "kind": "route",
     "biome": "meadow",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 274119125,
-    "pin": "EW",
+    "pin": "EWS",
     "ahead": "E",
     "edges": 2
   },
@@ -650,7 +702,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.5,
+          "t": 0.640625,
           "width": 2
         }
       ]
@@ -658,9 +710,25 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lakeside",
     "pieces": 4,
+    "arena": {
+      "mode": "boss",
+      "r": 11,
+      "rise": 0.8,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ],
+      "on": []
+    },
     "kind": "route",
     "biome": "lake",
-    "w": 112,
+    "w": 128,
     "h": 64,
     "seed": 1019465122,
     "pin": "EW",

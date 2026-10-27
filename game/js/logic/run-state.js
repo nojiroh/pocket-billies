@@ -174,7 +174,12 @@ export function validRun(o) {
         (node.at !== undefined &&
           !(list(node.at, 2) && node.at.length === 2 && node.at.every(v => wholeIn(v, -64, 64)))) ||
         (node.size !== undefined &&
-          !(list(node.size, 2) && node.size.length === 2 && node.size.every(v => wholeIn(v, 1, 8))))
+          !(list(node.size, 2) && node.size.length === 2 && node.size.every(v => wholeIn(v, 1, 8)))) ||
+        /* WM-3: an L's walled-off cell, and where each link crosses its edge (whole metres on the grid) */
+        (node.cut !== undefined &&
+          !(list(node.cut, 2) && node.cut.length === 2 && node.cut.every(v => wholeIn(v, -64, 64)))) ||
+        (node.ways !== undefined &&
+          !(list(node.ways, 8) && node.ways.length === node.to.length && node.ways.every(v => wholeIn(v, -8192, 8192))))
       )
         return false;
     /* RL-R2: its side area (run-side.js): a kind, a move, a name, the obstacle's place on the main path, the way out

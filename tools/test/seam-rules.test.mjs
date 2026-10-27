@@ -127,7 +127,7 @@ test('each planted fault gives its words', () => {
       [
         ['maps/a.json', 'exit east2 is used by no link'],
         ['maps/a.json', 'exit east3 is used by no link'],
-        ['maps/a.json', '3 exits on its E side (two at most)'],
+        ['maps/a.json', '3 exits on its E side (2 at most)'],
         ['maps/a.json', 'two exits on its E side 12.0 m apart (44 m at least)'],
         ['maps/a.json', 'two exits on its E side 12.0 m apart (44 m at least)'],
       ],
@@ -156,4 +156,19 @@ test('the pair and side rules on their own', () => {
   assert.deepEqual(R.seamRulesSides(maps.a), []);
   assert.equal(R.seamRulesAlong(maps.a, maps.a.edgeExits[0]), 15);
   assert.deepEqual(R.seamRulesExitPoint(maps.a, maps.a.edgeExits[0]), [38.9, 15]);
+});
+
+test('WM-3: a longer side holds more exits, still 44 m apart', () => {
+  assert.deepEqual([30, 64, 107, 108, 128, 192].map(R.seamSideMost), [2, 2, 2, 3, 3, 4]);
+  const side = (/** @type {number} */ len, /** @type {number[]} */ at) => ({
+    w: len,
+    h: 64,
+    edgeExits: at.map((u, k) => ({ id: `north${k ? k + 1 : ''}`, side: 'N', t: u / len, width: 2 })),
+  });
+  assert.deepEqual(R.seamRulesSides(side(128, [12, 64, 116])), []);
+  assert.deepEqual(R.seamRulesSides(side(192, [12, 60, 110, 180])), []);
+  assert.deepEqual(R.seamRulesSides(side(128, [12, 56, 100, 116])), [
+    '4 exits on its N side (3 at most)',
+    'two exits on its N side 16.0 m apart (44 m at least)',
+  ]);
 });

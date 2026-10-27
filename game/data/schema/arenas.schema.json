@@ -1,0 +1,133 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "arenas.schema.json",
+ "title": "game/data/arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's (region map track WM-7; logic/arena-gen.js)",
+ "type": "object",
+ "required": [
+  "sizes",
+  "trainers",
+  "themes"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "sizes": {
+   "type": "object",
+   "required": [
+    "leader",
+    "boss"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "leader": {
+     "$ref": "#/$defs/size"
+    },
+    "boss": {
+     "$ref": "#/$defs/size"
+    }
+   }
+  },
+  "trainers": {
+   "description": "how many route trainers stand on the road before a leader's ring",
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 6
+  },
+  "themes": {
+   "description": "by the leader's type (types.json), and `bureau` and `plain` (a leader of no theme)",
+   "type": "object",
+   "required": [
+    "plain"
+   ],
+   "propertyNames": {
+    "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "name",
+     "ground",
+     "rim",
+     "fence",
+     "gate",
+     "posts",
+     "dress"
+    ],
+    "properties": {
+     "name": {
+      "description": "what it is called (the Studio, the debug log)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+     },
+     "ground": {
+      "description": "the ring's ground (scenery.json terrains)",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1
+     },
+     "rim": {
+      "description": "the ground of its outer metre",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1
+     },
+     "fence": {
+      "description": "the fence round its rim: a scenery.json prop with a box",
+      "type": "string"
+     },
+     "gate": {
+      "description": "what shuts its east ramp until the leader is beaten: a scenery.json prop with a box",
+      "type": "string"
+     },
+     "posts": {
+      "description": "what stands at its corners: a scenery.json prop",
+      "type": "string"
+     },
+     "dress": {
+      "description": "what stands by its ramps, outside the fence: scenery.json props",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  }
+ },
+ "$defs": {
+  "size": {
+   "type": "object",
+   "required": [
+    "r",
+    "rise"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "r": {
+     "description": "half its width (an octagon), metres",
+     "type": "number",
+     "minimum": 4,
+     "maximum": 14
+    },
+    "rise": {
+     "description": "its height over the road, metres (more than a step, 0.34 m: you come up by the ramps)",
+     "type": "number",
+     "minimum": 0.4,
+     "maximum": 1.2
+    },
+    "back": {
+     "description": "a leader's ring: how far from the east exit along the main road its middle stands, metres",
+     "type": "number",
+     "minimum": 16,
+     "maximum": 60
+    }
+   }
+  }
+ }
+}
