@@ -1,8 +1,9 @@
 # Pocket Billies: Gotta tax 'em all! — 0.1.0 alpha
 
-A classic RPG inside the Hollow Earth, where the Billies are the wildlife. You walk the seamless maps yourself with a
-joystick (push it past its rim to run), step into rooms that are bigger on the inside, battle, make friends, and edit
-everything in **Pocket Billies Studio**.
+A roguelite inside the Hollow Earth with a Pokémon-style world, where the Billies are the wildlife. From the hub,
+Copperleaf Town, each run crosses a small region made from a seed. You walk the seamless maps yourself with a joystick
+(push it past its rim to run), step into rooms that are bigger on the inside, battle, make friends, and edit everything
+in **Pocket Billies Studio**.
 
 0.1.0 alpha is a fresh base: numbering starts over here and old saves don't carry over. What changes from release to
 release is in [CHANGELOG.md](CHANGELOG.md); where the game is going is in [docs/VISION.md](docs/VISION.md). The earlier
@@ -19,19 +20,20 @@ with a Google account keeps it online.
 
 ## Sending a debug log
 
-If something looks wrong or runs slowly, open **Settings** (the gear) and use:
+If something looks wrong or runs slowly, open **Settings** (the gear) → **Help** → **Report a problem**:
 - **Run the full test**: several minutes on a phone (every place and room, then battles, the map and the opening, then
   a stress test). A table marks each part OK or Problem. Your save isn't changed.
-- **Run the diagnostics test**: about two minutes, for when the game runs slowly. It ends with **Save the report**, a
-  short `pocket-billies-diagnostics-….json` to send.
-- **Run the graphics test**: about ten minutes, on a place built for it. It steps every graphics setting through a few
-  values and shows what each one costs on your device, costliest first. **Save the report** gives a short
-  `pocket-billies-graphics-….json` to send. Your settings and save aren't changed (docs/graphics-bench.md).
 - **Export debug log**: one `.json` file with frame rates per screen and scene, slow frames, errors, loading times,
   your device and graphics chip, and a small picture of the scene. It contains no save data, no names and no positions
   (only which places opened and when).
 
-The full test, the graphics test and the log export are also in the debug menu (add `?debug` to the address).
+The **debug menu** (its button there, Ctrl+Shift+D, or `?debug` in the address) has both of those, and:
+- **Diagnostics test**: about two minutes, for when the game runs slowly. It ends with **Save the report**, a short
+  `pocket-billies-diagnostics-….json` to send.
+- **Graphics cost test**: about 11 to 12 minutes, on a place built for it. It steps every graphics setting through a
+  few values and shows what each one costs on your device, costliest first. **Save the report** gives a short
+  `pocket-billies-graphics-….json` to send. Your settings and save aren't changed (docs/graphics-bench.md).
+- **Graphics test**: every shader, each engine dial on its own and each preset, checking that frames keep coming.
 
 ## Run it from the source
 
@@ -79,23 +81,27 @@ Before you push:
 npm run lint            # ESLint: undefined names (a module name used without an import), a name defined twice, likely bugs;
                         # then tools/check-names.mjs: the names follow docs/NAMING.md
                         # then tools/ui-lint.mjs --check and tools/unused-css.mjs --check (no CSS rule nothing uses)
+                        # then tools/art-code-refs.mjs --check (the art paths the code names, for the Studio's Art browser)
 npm run check:modules   # the modules' generated parts are up to date and the load order holds (npm run modules fixes them)
 npm run format          # Prettier (npm run format:check only checks)
 npm run check:data      # the game data: files, schemas, what refers to what (a second)
 npm run typecheck       # TypeScript on the files that start with // @ts-check, against game/types, then game/js/logic/
                         # again with no DOM lib (tsconfig.logic.json), a second
 npm test                # the unit tests (tools/test/), in plain Node with no browser: the logic on a small data set of
-                        # their own and on the game's data, the world-map graph, the expressions in dialogue (a second);
-                        # npm run check:logic is the same
-npm run check:smoke     # the quick check's smoke set, about two and a half minutes
+                        # their own and on the game's data, the world-map graph, the expressions in dialogue (about
+                        # 20 s); npm run check:logic is the same; npm run test:slow the slow ones (about a minute)
+npm run check:smoke     # the quick check's smoke set, about three minutes
+npm run check:fast      # what must never break, every page booted once (about 11 minutes; CI runs it on every push)
 ```
 
 The quick check drives the game in headless Chromium. It needs Python 3 and
 `pip install -r tools/requirements-check.txt && python3 -m playwright install chromium`. `npm run check:quick` is
-the full check (about 35 minutes); results and pictures go to `validation/quick/`. Both run one step of the game's own
+the full check (about 21 minutes); results and pictures go to `validation/quick/`. Both run one step of the game's own
 full test; `python3 tools/check-quick.py --selftest` runs it whole, with the diagnostics test (about 25 minutes).
-GitHub runs lint, the type check, the unit tests, the format check, the data check, the build, smoke and the Firestore
-rules tests on every push and pull request, and the full check and the whole in-game test nightly.
+GitHub runs lint, the type check, the unit tests (quick and slow), the module, format and data checks, the build, the
+fast check and the Firestore rules tests on every push and pull request (plus the Studio checks on pull requests that
+touch studio/ or game/js/logic/), and the full check and the whole in-game test nightly. The tiers and their times are
+in [docs/TESTING.md](docs/TESTING.md).
 
 Conventions: one rename per commit and never mixed with a behaviour change; reformatting only in separate no-op
 commits (listed in `.git-blame-ignore-revs`); names follow [docs/NAMING.md](docs/NAMING.md). The plan of work is in
@@ -117,9 +123,9 @@ stands.
     `battle-engine.js` the battle rules; they reach the page only through `hooks.js`); `battle.js` the battle screen and HUD; `seamless-world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
     `walk-view-gl.js` draws it (the canvas, mounting a place and the frame; each part of the drawing is a file in
     `walk/`: heights, shaders, ground mesh and textures, the map cache, grass, sky, rooms, water, prop looks, the
-    frame's items, sprites, camera, lighting, shadows, fountains and weather, effects, input); `engine/` the 3D engine (settings, WebGL setup, light, post effects); `battle-3d.js`,
-    `world-map-gl.js` battles and the world map on the engine; `buildings.js`, `structures.js`, `solid-props.js`, `prop-models.js`
-    3D buildings and props; `debug-log.js` the debug log; `self-test.js` the full test; `graphics-bench-test.js` the graphics test; `debug-menu.js` the debug menu;
+    frame's items, sprites, camera, lighting, shadows, fountains and weather, effects, input); `engine/` the 3D engine (settings, WebGL setup, light, post effects); `battle-3d.js`
+    battles on the engine; `world-bowl.js` (with `logic/bowl*.js`) the world map; `buildings.js`, `structures.js`, `solid-props.js`, `prop-models.js`
+    3D buildings and props; `debug-log.js` the debug log; `self-test.js` the full test; `graphics-test.js` the graphics test and `graphics-bench-test.js` the graphics cost test; `debug-menu.js` the debug menu;
     generated by `tools/to-module.mjs`: `hooks.js` (names from later modules), `debug-log-names.js` (what the debug log
     reads); `test-globals.js` puts the modules' names on `window` for the checks.
 - `studio/`: Pocket Billies Studio. It imports the game's renderer modules from `../game/js/`.
