@@ -281,9 +281,10 @@
 }
 .fs-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--s2);
+  height: 40px;
 }
 .fs-side,
 .fs-mid {
@@ -292,31 +293,41 @@
 }
 .fs-chip {
   display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.fs-face {
+  display: inline-flex;
   align-items: center;
   gap: var(--s1);
   height: 24px;
   min-width: 30px;
   padding: 0 var(--s2);
-  border: 0;
   font: 400 13px/1 var(--font-voice);
   color: var(--bt-ink);
   background: var(--bt-glass);
   clip-path: var(--clip-chip);
-  pointer-events: auto;
-  cursor: pointer;
 }
 .fs-chip.warn b {
   color: var(--gold-a);
 }
-.fs-chip.bad {
+.fs-chip.bad .fs-face {
   background:
     linear-gradient(var(--red), var(--red)) bottom / 100% 2px no-repeat,
     var(--bt-glass);
 }
 .fs-tip {
+  position: relative;
   width: fit-content;
   max-width: min(360px, 100%);
-  margin: var(--s1) auto 0;
+  margin: calc(-1 * var(--s3)) auto 0;
   padding: var(--s1) var(--s3);
   font: 600 13px/1.35 var(--font-voice);
   color: var(--bt-ink);

@@ -543,7 +543,8 @@ const FIELD_WEATHER_ICONS = {
    is on screen: the strip waits for the event, then reads the field when the turn is over) */
 const fieldUi = { stones: [false, false], mk: null };
 function fieldChipHTML(icon, words, turns, cls) {
-  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}">${uiIconHTML(icon, 14)}${turns ? `<b class="tnum">${turns}</b>` : ''}</button>`;
+  /* a 40 px button (the tap rule) around a 24 px chip */
+  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${uiIconHTML(icon, 14)}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
 }
 function fieldStripUpdate(mk) {
   const el = $('#fsRow');
