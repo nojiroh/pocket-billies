@@ -196,6 +196,18 @@
    ]
   },
   {
+   "p": "scene/models/*.png",
+   "at": [
+    "game/js/logic/model-mesh.js:306"
+   ]
+  },
+  {
+   "p": "scene/models/<key>.png",
+   "at": [
+    "game/js/logic/model-mesh.js:6"
+   ]
+  },
+  {
    "p": "ui/*.svg",
    "at": [
     "game/js/art.js:172",
