@@ -4,9 +4,10 @@
    What a run's node map (logic/run-map.js) becomes when you stand in it: a walkable scene per node, made by the map
    generator (logic/mapgen.js) from the run's seed, and the world tables the game reads (game-data.js worldSetGraph):
    Copperleaf first (world node 0), then a place per map node (world node i + 1), joined by seam roads.
-   - A node's scene is a 112 × 64 route (MAPGEN_SIZES.route). Its exits are runExits' (the owner: runs go east to
-     west): west to the nodes it leads to, east to the ones that lead to it, at t 0.5, or 0.15625 and 0.84375 (10 m and 54 m along). The main road
-     runs from its first east exit to its first west exit; the second ones branch off it.
+   - A node's scene is its footprint's size on the region grid (WM-3: runPlaceSize, 64 m a cell; a side area's 128 x
+     64; a run's from before WM-3 112 x 64, MAPGEN_SIZES.route). Its exits are runSceneExits': where its links cross
+     its edges (run-map.js runGridExits: east, north or south ahead, west, north or south back), the first back and
+     the first ahead joined by the main road, the others branching off it; an L's cut corner walled off (`cut`).
    - A node's scene is made from every parent's edge (mapgenEdgeStrip into params.edges, map generator MG-2), so the
      two meet with no gap and a straight walk across. The map numbers nodes row by row, so every parent comes before
      its children: making the scenes in order makes each one after the ones it needs.
@@ -23,8 +24,8 @@ import { expose } from '../test-globals.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
-import { runExits, runNodeSeed, runSpot } from './run-map.js';
-import { MAPGEN_LAYOUTS, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
+import { RUN_GRID, runExits, runGridExits, runNodeSeed, runSpot } from './run-map.js';
+import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { wildPoolList } from './wild-pool.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -39,15 +40,22 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runAlongBack: [() => runAlongBack, v => (runAlongBack = v)],
   // @ts-expect-error -- replaced on purpose
+  runCutRect: [() => runCutRect, v => (runCutRect = v)],
+  // @ts-expect-error -- replaced on purpose
+  runExitIds: [() => runExitIds, v => (runExitIds = v)],
+  // @ts-expect-error -- replaced on purpose
   runFieldProps: [() => runFieldProps, v => (runFieldProps = v)],
   // @ts-expect-error -- replaced on purpose
   runLayoutOf: [() => runLayoutOf, v => (runLayoutOf = v)],
   runMapIdOf: [() => runMapIdOf],
+  runOnGrid: [() => runOnGrid],
   // @ts-expect-error -- replaced on purpose
   runPiecesOf: [() => runPiecesOf, v => (runPiecesOf = v)],
   runPlaceId: [() => runPlaceId],
   // @ts-expect-error -- replaced on purpose
   runPlaceName: [() => runPlaceName, v => (runPlaceName = v)],
+  // @ts-expect-error -- replaced on purpose
+  runPlaceSize: [() => runPlaceSize, v => (runPlaceSize = v)],
   // @ts-expect-error -- replaced on purpose
   runSceneDials: [() => runSceneDials, v => (runSceneDials = v)],
   runSceneExitTo: [() => runSceneExitTo],
@@ -62,6 +70,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runScenesSlices: [() => runScenesSlices, v => (runScenesSlices = v)],
   runShopId: [() => runShopId],
+  // @ts-expect-error -- replaced on purpose
+  runSideDoor: [() => runSideDoor, v => (runSideDoor = v)],
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
@@ -95,35 +105,96 @@ export const runShopId = i => `run_${i}_shop`;
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
 /** the side names mapgen gives a scene's exits, the first and then the second on a side (mapgenStageExits) */
 export const RUN_SIDE_ID = { E: ['east', 'east2'], W: ['west', 'west2'] };
-/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first west
- * (back), the first east (ahead; the main road between them), then the second west and the second east (WM-1: runs
- * go west to east)
+/** WM-3: is the map laid out on the region grid with its exits (`ways`, runGridWays)? A run's from before WM-3 isn't:
+ * its places are 112 x 64 with exits east and west (runExits) @param {RunMap} map */
+export const runOnGrid = map => map.nodes.some(n => !n.side && !!n.ways);
+/** WM-3: node i's place in metres: its footprint's (RUN_GRID.cell a cell), a side area's place a route's
+ * (RUN_GRID.place), MAPGEN_SIZES.route's on a run from before WM-3 @param {RunMap} map @param {number} i
+ * @returns {{ w: number, h: number }} */
+export function runPlaceSize(map, i) {
+  const n = map.nodes[i],
+    C = RUN_GRID.cell;
+  if (!runOnGrid(map)) return { w: MAPGEN_SIZES.route.w, h: MAPGEN_SIZES.route.h };
+  const size = !n.side && n.size ? n.size : RUN_GRID.place;
+  return { w: size[0] * C, h: size[1] * C };
+}
+/** RL-R2: where the obstacle's place opens into its side area: WM-3, on a grid map, the whole metre of its north side
+ * (else its south) furthest from its other exits there, RUN_GRID.edge from the ends and off an L's cut cell, when it
+ * is RUN_GRID.gap from them (the north's best when neither side has room); the middle of the north side before
+ * @param {RunMap} map @returns {{ side: 'N' | 'S', t: number }} */
+export function runSideDoor(map) {
+  const S = /** @type {import('../../types/save-data').RunSide} */ (map.side),
+    f = map.nodes[S.from],
+    G = runOnGrid(map) ? runGridExits(map, S.from) : null;
+  if (!G || !f.at || !f.size) return { side: 'N', t: 0.5 };
+  const C = RUN_GRID.cell,
+    E = RUN_GRID.edge,
+    L = f.size[0] * C,
+    /** @type {{ side: 'N' | 'S', t: number, room: number }[]} */
+    best = [];
+  for (const side of /** @type {('N' | 'S')[]} */ (['N', 'S'])) {
+    const taken = G.filter(e => e.side === side).map(e => e.t * L),
+      cut = f.cut && f.cut[1] === (side === 'N' ? f.at[1] + f.size[1] - 1 : f.at[1]) ? (f.cut[0] - f.at[0]) * C : null;
+    let pick = { side, t: 0.5, room: -1 };
+    for (let u = E; u <= L - E; u++) {
+      if (cut !== null && u > cut - E && u < cut + C + E) continue;
+      const room = Math.min(1e9, ...taken.map(v => Math.abs(u - v))),
+        better = room > pick.room || (room === pick.room && Math.abs(u - L / 2) < Math.abs(pick.t * L - L / 2));
+      if (better) pick = { side, t: u / L, room };
+    }
+    best.push(pick);
+  }
+  const door = best.find(p => p.room >= RUN_GRID.gap) || best[0];
+  return { side: door.side, t: door.t };
+}
+/** WM-3: give exits their ids as mapgen does (mapgenStageExits): the side's name, then 2, 3 ... for the later ones on
+ * the same side, in the order the scene is made with them
+ * @param {{ side: 'E' | 'W' | 'N' | 'S', t: number, node: number }[]} exits */
+export function runExitIds(exits) {
+  /** @type {Record<string, number>} */
+  const used = {};
+  return exits.map(e => {
+    used[e.side] = (used[e.side] || 0) + 1;
+    return { ...e, id: MAPGEN_SIDE_NAME[e.side] + (used[e.side] > 1 ? used[e.side] : '') };
+  });
+}
+/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first back,
+ * the first ahead (the main road between them), then the other back and ahead ones. WM-3: on the region grid each on
+ * the side its link crosses, where it crosses it (runGridExits); on a run from before, back by the west and ahead by
+ * the east at RUN_EXIT_T (WM-1: runs go west to east)
  * @param {RunMap} map @param {number} i
  * @returns {{ side: 'E' | 'W' | 'N' | 'S', t: number, id: string, node: number }[]} node: the neighbour the exit leads
- * to. RL-R2: a side area's places and the obstacle's north exit (run-side.js) */
+ * to. RL-R2: a side area's places and the obstacle's door into it (run-side.js, runSideDoor) */
 export function runSceneExits(map, i) {
   const S = map.side;
-  /* RL-R2: a side area's place: its first comes in by its south side from the obstacle's place (whose north exit it
-     is), the others by their west from the one before; each but the last goes on by its east to the next */
+  /* RL-R2: a side area's place: its first comes in from the obstacle's place (by the side facing its door), the
+     others by their west from the one before; each but the last goes on by its east to the next */
   if (S && map.nodes[i].side) {
     const k = S.nodes.indexOf(i),
       next = S.nodes[k + 1];
-    return [
+    return runExitIds([
       k === 0
-        ? { side: /** @type {'S'} */ ('S'), t: 0.5, id: 'south', node: S.from }
-        : { side: /** @type {'W'} */ ('W'), t: 0.5, id: 'west', node: S.nodes[k - 1] },
-      ...(next === undefined ? [] : [{ side: /** @type {'E'} */ ('E'), t: 0.5, id: 'east', node: next }]),
-    ];
+        ? {
+            side: runSideDoor(map).side === 'N' ? /** @type {'S'} */ ('S') : /** @type {'N'} */ ('N'),
+            t: 0.5,
+            node: S.from,
+          }
+        : { side: /** @type {'W'} */ ('W'), t: 0.5, node: S.nodes[k - 1] },
+      ...(next === undefined ? [] : [{ side: /** @type {'E'} */ ('E'), t: 0.5, node: next }]),
+    ]);
   }
-  const ex = runExits(map, i),
-    W = ex.back.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.from })),
-    E = ex.ahead.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.to }));
-  const out = /** @type {{ side: 'E' | 'W' | 'N' | 'S', t: number, id: string, node: number }[]} */ (
-    [W[0], E[0], W[1], E[1]].filter(e => !!e)
-  );
-  /* RL-R2: the obstacle's place: a north exit (a branch off the main road) into the side area */
-  if (S && S.from === i) out.push({ side: 'N', t: 0.5, id: 'north', node: S.nodes[0] });
-  return out;
+  const G = runOnGrid(map) ? runGridExits(map, i) : null;
+  /** @type {{ side: 'E' | 'W' | 'N' | 'S', t: number, node: number }[]} */
+  let out;
+  if (G) out = G.map(e => ({ side: e.side, t: e.t, node: e.node }));
+  else {
+    const ex = runExits(map, i),
+      W = ex.back.map(e => ({ side: /** @type {'W'} */ ('W'), t: e.t, node: e.from })),
+      E = ex.ahead.map(e => ({ side: /** @type {'E'} */ ('E'), t: e.t, node: e.to }));
+    out = [W[0], E[0], W[1], E[1]].filter(e => !!e);
+  }
+  if (S && S.from === i) out.push({ ...runSideDoor(map), node: S.nodes[0] });
+  return runExitIds(out);
 }
 /** the exit of node i that leads to node j, or null @param {RunMap} map @param {number} i @param {number} j */
 export const runSceneExitTo = (map, i, j) => runSceneExits(map, i).find(e => e.node === j) || null;
@@ -150,7 +221,7 @@ export function runSceneDials(rule, g) {
 export function runSceneParams(run, i, scenes, data) {
   const map = /** @type {RunMap} */ (run.map),
     node = map.nodes[i],
-    size = MAPGEN_SIZES.route,
+    size = runPlaceSize(map, i),
     nodeSeed = runNodeSeed(run.seed, i),
     exits = runSceneExits(map, i),
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials')),
@@ -196,10 +267,13 @@ export function runSceneParams(run, i, scenes, data) {
     h: size.h,
     seed: hashString(nodeSeed + '|scene') % 2147483647,
     /* its east and west edges at height 0, so it meets any neighbour with no step (two neighbours' strips overlap on
-       a 64 m edge, where one scene can't follow both) */
-    pin: 'EW',
-    /* WM-1: the way on leaves by the east (the tall grass across it, the pinches along it) */
-    ahead: 'E',
+       a 64 m edge, where one scene can't follow both); WM-3: and every other side an exit crosses */
+    pin: globalThis.PINEW ? 'EW' : [...new Set('EW' + exits.map(e => e.side).join(''))].join(''),
+    /* WM-1: the way on leaves by the east (the tall grass across it, the pinches along it); WM-3: by the side of its
+       first exit ahead (north or south on the grid), east when it has none */
+    ahead: (exits.find(e => node.to.includes(e.node)) || { side: 'E' }).side,
+    /* WM-3: an L's cut corner, walled off (metres: x, z of its south-west corner, then its north-east) */
+    ...(node.cut && node.at && runOnGrid(map) ? { cut: runCutRect(node) } : {}),
     road: {
       ...(dials.road || {}),
       /* TW-1: a town's through road runs straight, so its street and square have room beside it */
@@ -210,6 +284,14 @@ export function runSceneParams(run, i, scenes, data) {
     ...(node.type === 'town' ? { feature: 'none' } : {}),
     edges,
   };
+}
+/** WM-3: an L's cut cell as a rectangle in its place's metres: [x0, z0, x1, z1] (x east, z north)
+ * @param {import('../../types/save-data').RunNode} node @returns {[number, number, number, number]} */
+export function runCutRect(node) {
+  const C = RUN_GRID.cell,
+    [cx, cy] = /** @type {number[]} */ (node.cut),
+    [ax, ay] = /** @type {number[]} */ (node.at);
+  return [(cx - ax) * C, (cy - ay) * C, (cx - ax + 1) * C, (cy - ay + 1) * C];
 }
 /** RT-1: the debug menu's run mod that gives every laid-out place one plan: the mod is this and the plan's id */
 export const RUN_LAYOUT_MOD = 'dbg_layout_';
@@ -269,7 +351,7 @@ export const RUN_FIELD_PROPS = /** @type {Record<string, { obstacle: string, out
   boulder: { obstacle: 'boulder_granite', out: 'mine_entrance' },
   shore: { obstacle: 'rowboat', out: 'fishing_boat' },
 });
-/** RL-R2: how far in from the north exit the obstacle stands (metres along the exit's road; past the walk's seamIn) */
+/** RL-R2: how far in from its door (the north exit; WM-3: or the south) the obstacle stands (metres along the exit's road; past the walk's seamIn) */
 export const RUN_FIELD_IN = 8;
 /** RL-R2: put the side area's props on a made scene: the obstacle on the obstacle's place (act 'field', gone once
  * open: `unless`), the way out on the side's last place (act 'fieldout'); a ridden area's places are ridden
@@ -280,7 +362,8 @@ export function runFieldProps(map, i, scene, data) {
   if (!S || !M) return;
   const P = RUN_FIELD_PROPS[M.obstacle] || RUN_FIELD_PROPS.thorns;
   if (i === S.from) {
-    const e = (scene.edgeExits || []).find((/** @type {any} */ x) => x.id === 'north');
+    const door = runSceneExitTo(map, i, S.nodes[0]),
+      e = door && (scene.edgeExits || []).find((/** @type {any} */ x) => x.id === door.id);
     if (!e) return;
     const at = runAlongBack(e.path, RUN_FIELD_IN);
     scene.props.push({

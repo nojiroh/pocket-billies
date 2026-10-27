@@ -2,7 +2,7 @@
 // of a run's map made by the generator from the run's seed, each joined to its parents, and the world tables with
 // Copperleaf first. What must hold for every seed: each road's two exits exist with the ids the tables name, face
 // each other and line up (check-data's seam rules), the two scenes meet with no height gap or step and a straight
-// walk across (mapgenSeamAgreement), every scene can be walked from its hub to everywhere, the generator has no note;
+// walk across (mapgenSeamAgreement) and lie where the region grid has them (WM-3), every scene can be walked from its hub to everywhere, the generator has no note;
 // the same seed makes the same scenes; the run's world goes in and the hub's comes back exactly.
 //   node --test --test-update-snapshots tools/test/run-world-real.test.mjs   remakes the frozen dials (say why in the
 //   commit: a change to how a node's dials are drawn changes every run's scenes)
@@ -14,8 +14,8 @@ import { data, fn, GAME_DATA, hooks, modules, startedSave } from './setup-real.m
 const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
 const { seamRulesLinks } = modules['seam-rules'];
-const { MAPGEN_VERSION, mapgenSeamAgreement, mapgenUnreachable } = modules.mapgen;
-const { runSceneExits, runSceneMake, runSceneParams, runScenesMake, runScenesSlices, runWorldTables } =
+const { MAPGEN_VERSION, mapgenExitOf, mapgenJoinOffset, mapgenSeamAgreement, mapgenUnreachable } = modules.mapgen;
+const { runSceneExitTo, runSceneExits, runSceneMake, runSceneParams, runScenesMake, runScenesSlices, runWorldTables } =
   modules['run-scenes'];
 
 const START = {
@@ -48,9 +48,9 @@ function runOf(/** @type {string} */ seed) {
   runMapStart(run, MAP_DATA);
   return run;
 }
-/* WM-2: RL7WORLD3's map changed and a place's neighbour's river ends at their seam (mapgen notes about 1 run place
-   in 25 so, before WM-2 as after: a mapgen session's to fix); RL7WORLD6 stands in for it */
-const SEEDS = ['RL7WORLD0', 'RL7WORLD1', 'RL7WORLD2', 'RL7WORLD6', 'RL7WORLD4', 'RL7WORLD5'];
+/* WM-3: RL7WORLD3 is back (WM-2 had moved to RL7WORLD6 for a river note); since WM-3 a run place gets a river note
+   about 1 in 120 (a bridge's river that no road lets cross: 1 in 25 before), RL7WORLD6 among them */
+const SEEDS = ['RL7WORLD0', 'RL7WORLD1', 'RL7WORLD2', 'RL7WORLD3', 'RL7WORLD4', 'RL7WORLD5'];
 
 test("every run's scenes join: exits where the roads say, no gap, a straight walk across, all ground reachable", () => {
   const scenery = GAME_DATA.scenery;
@@ -102,6 +102,22 @@ test("every run's scenes join: exits where the roads say, no gap, a straight wal
       assert.deepEqual([a.dhNear, a.dhBand, a.raiseExit, a.walk], [0, 0, 0, null], `${seed} ${L.id}`);
       roads++;
     }
+    /* WM-3: the walk lays each place where the region grid has it: two linked places' offset is their cells' */
+    map.nodes.forEach((n, i) =>
+      n.to.forEach(j => {
+        const A = made[i],
+          B = made[j],
+          m = map.nodes[j],
+          a = /** @type {any} */ (runSceneExitTo(map, i, j)),
+          b = /** @type {any} */ (runSceneExitTo(map, j, i)),
+          off = mapgenJoinOffset(A, mapgenExitOf(A, a.id), B, mapgenExitOf(B, b.id)).map(v => v + 0);
+        assert.deepEqual(
+          off,
+          [(m.at[0] - n.at[0]) * 64, (m.at[1] - n.at[1]) * 64],
+          `${seed} ${i}->${j}: laid where the grid has it`
+        );
+      })
+    );
   }
   assert.ok(scenes > 60 && roads > 60, `${scenes} scenes, ${roads} roads`);
 });

@@ -33,7 +33,15 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { runRegionData } from '../../game/js/logic/run-region.js';
-import { RUN_GRID, runBack, runLinkDir, runMapRows, runNodeSeed, runWorldNode } from '../../game/js/logic/run-map.js';
+import {
+  RUN_GRID,
+  runBack,
+  runGridExits,
+  runLinkDir,
+  runMapRows,
+  runNodeSeed,
+  runWorldNode,
+} from '../../game/js/logic/run-map.js';
 import { runUnlocks } from '../../game/js/logic/unlocks.js';
 import { runStartPlan } from '../../game/js/logic/run-start.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -274,16 +282,75 @@ function runLabGridSvg(D, plan, pickable) {
       ? line(nodes[S.from], nodes[S.nodes[0]], 'rl-link rl-side-in') +
         (S.to >= 0 ? line(nodes[S.nodes[S.nodes.length - 1]], nodes[S.to], 'rl-link rl-side-out') : '')
       : '');
+  /* WM-3: an L's outline (two by two): its box's corners clockwise from the top left, the cut one turned into a notch
+     to the middle */
+  const outline = (/** @type {any} */ n, /** @type {any} */ b) => {
+    const [x, y, X1, Y1] = [b.x + 2, b.y + 2, b.x + b.w - 2, b.y + b.h - 2],
+      [cx, cy] = [b.x + b.w / 2, b.y + b.h / 2],
+      west = n.cut[0] === n.at[0],
+      north = n.cut[1] !== n.at[1],
+      k = north ? (west ? 0 : 1) : west ? 3 : 2,
+      notch = [
+        [
+          [x, cy],
+          [cx, cy],
+          [cx, y],
+        ],
+        [
+          [cx, y],
+          [cx, cy],
+          [X1, cy],
+        ],
+        [
+          [X1, cy],
+          [cx, cy],
+          [cx, Y1],
+        ],
+        [
+          [cx, Y1],
+          [cx, cy],
+          [x, cy],
+        ],
+      ][k];
+    return [
+      [x, y],
+      [X1, y],
+      [X1, Y1],
+      [x, Y1],
+    ]
+      .flatMap((p, j) => (j === k ? notch : [p]))
+      .map(p => p.join(','))
+      .join(' ');
+  };
+  /* WM-3: where each place's exits cross its edges (runGridExits) */
+  const exitDots = nodes
+    .flatMap((/** @type {any} */ n, /** @type {number} */ i) => {
+      const E = n.at && n.size ? runGridExits(plan.map, i) : null;
+      if (!E) return [];
+      const b = box(n);
+      return E.filter(e => e.ahead).map(e => {
+        const [ex, ey] =
+          e.side === 'E'
+            ? [b.x + b.w, b.y + b.h * (1 - e.t)]
+            : e.side === 'W'
+              ? [b.x, b.y + b.h * (1 - e.t)]
+              : e.side === 'N'
+                ? [b.x + b.w * e.t, b.y]
+                : [b.x + b.w * e.t, b.y + b.h];
+        return `<circle class="rl-exit" cx="${ex}" cy="${ey}" r="3"/>`;
+      });
+    })
+    .join('');
   const cells = nodes
     .map((/** @type {any} */ n, /** @type {number} */ i) => {
       const T = D.nodeTypes[n.type] || {},
         b = box(n),
         letter = escapeHtml((T.name || n.type || '?').slice(0, 1).toUpperCase()),
         ring = n.seen >= 2 ? '' : n.seen === 1 ? ' stroke-dasharray="3 3"' : ' stroke-opacity=".35"';
-      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"${n.side ? ' data-side="1"' : ` data-at="${n.at}"`}><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title><rect x="${b.x + 2}" y="${b.y + 2}" width="${b.w - 4}" height="${b.h - 4}" rx="4" fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="3"${ring}/><text x="${b.x + b.w / 2}" y="${b.y + b.h / 2 + 5}" text-anchor="middle">${letter}</text></g>`;
+      return `<g class="rl-node${pickable && runLab.pick === i ? ' on' : ''}"${pickable ? ` data-act="runLabPick" data-i="${i}"` : ''} data-type="${escapeHtml(n.type)}" data-biome="${escapeHtml(n.biome || '')}"${n.side ? ' data-side="1"' : ` data-at="${n.at}"`}><title>${i}: ${escapeHtml(T.name || n.type)}, ${escapeHtml((D.biomes[n.biome] || {}).name || n.biome || '')}</title>${n.cut ? `<polygon points="${outline(n, b)}"` : `<rect x="${b.x + 2}" y="${b.y + 2}" width="${b.w - 4}" height="${b.h - 4}" rx="4"`} fill="${runLabBiomeColour(D, n.biome)}" stroke="${RUN_LAB_TYPE_COLOUR[n.type] || '#333'}" stroke-width="3"${ring}/><text x="${b.x + b.w / 2}" y="${b.y + b.h / 2 + 5}" text-anchor="middle">${letter}</text></g>`;
     })
     .join('');
-  return `<svg class="rl-map rl-grid" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="The run's map on the region grid (north up)">${links}${cells}</svg>`;
+  return `<svg class="rl-map rl-grid" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="The run's map on the region grid (north up)">${links}${cells}${exitDots}</svg>`;
 }
 /** the map in the Lab's view @param {any} D @param {any} plan @param {boolean} pickable */
 const runLabMapSvg = (D, plan, pickable) =>
@@ -365,8 +432,22 @@ function runLabNodeHTML(D, plan, roles, i) {
       ? [
           row(
             'On the grid',
-            `cells ${n.at[0]}–${n.at[0] + n.size[0] - 1} east, ${n.at[1]}${n.size[1] > 1 ? `–${n.at[1] + n.size[1] - 1}` : ''} north of the landing’s; ${n.size[0]} × ${n.size[1]} cells (${n.size[0] * RUN_GRID.cell} × ${n.size[1] * RUN_GRID.cell} m)`
+            `cells ${n.at[0]}–${n.at[0] + n.size[0] - 1} east, ${n.at[1]}${n.size[1] > 1 ? `–${n.at[1] + n.size[1] - 1}` : ''} north of the landing’s; ${n.size[0]} × ${n.size[1]} cells (${n.size[0] * RUN_GRID.cell} × ${n.size[1] * RUN_GRID.cell} m)${n.cut ? `, an L: cell ${n.cut[0]}, ${n.cut[1]} walled off` : ''}`
           ),
+          /* WM-3: where its exits are (metres along their side from its south or west end) */
+          ...(runGridExits(map, i)
+            ? [
+                row(
+                  'Exits',
+                  /** @type {any[]} */ (runGridExits(map, i))
+                    .map(
+                      e =>
+                        `${RUN_LAB_WAY[/** @type {'E'} */ (e.side)]} ${Math.round(e.t * (e.side === 'N' || e.side === 'S' ? n.size[0] : n.size[1]) * RUN_GRID.cell)} m to ${name(e.node)}`
+                    )
+                    .join(', ')
+                ),
+              ]
+            : []),
         ]
       : []),
     row('Reached from', back.map(name).join(', ') || 'Copperleaf (the airship)'),
