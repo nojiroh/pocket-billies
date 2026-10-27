@@ -127,10 +127,12 @@ def run_world(pg, base):
 
 
 def run_helper(pg, base):
-    """LD-4: the run fixture's places were made on the run's helper thread (run-worker.js) as the page booted, and the
-    thread makes the very places the page's own code makes from the run (the same JSON, place by place)"""
+    """LD-4: the run's helper thread (run-worker.js) is on and makes the very places the page's own code makes from the
+    run (the same JSON, place by place)"""
+    # where the boot made them depends on when the fixture's save came in (a save swapped in is made at once,
+    # runWorldSync); the thread must not be off, and its places must equal the page's
     how, off = pg.evaluate("[runWorld.how, runWorldAhead.off]")
-    if how != 'helper': raise Exception(f"the run's places were made on the {how or '?'}, not the helper thread ({off or 'not off'})")
+    if off: raise Exception(f"the run's helper thread is off: {off}")
     R = pg.evaluate("""async () => {
       const run = saveData.run, here = runScenesMake(run, runWorldData()),
         w = new Worker('js/run-worker.js', { type: 'module' }), got = [];
@@ -145,7 +147,7 @@ def run_helper(pg, base):
     }""")
     if R['end'] != 'done': raise Exception(f"the helper thread didn't finish: {R['end']} {R['error']}")
     if R['got'] != R['n'] or R['bad'] >= 0: raise Exception(f"the helper thread's places differ from the page's (place {R['bad']} of {R['n']}, {R['got']} came)")
-    return f"{R['n']} places from the helper thread, each equal to the page's"
+    return f"{R['n']} places from the helper thread, each equal to the page's (the boot's made: {how or '?'})"
 
 
 def bowl_map(pg, base):
@@ -1658,7 +1660,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('The train ride: up on its engines into the portal, the white veil, the carriage, the ride home gold and battered (HB-8, cutscenes A)', train_ride)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
-             ("The run's places from the helper thread: made there at boot, equal to the page's (LD-4)", run_helper),
+             ("The run's places from the helper thread: equal to the page's (LD-4)", run_helper),
              ("A run town's shop opens (UI-5)", run_shop),
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
