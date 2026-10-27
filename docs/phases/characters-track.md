@@ -58,12 +58,15 @@ The old style guide already had the rule: "32 px/m in the world, 64 in battle" (
 6. **Facing bugs:** facing comes from world-space movement and ignores the camera's turn (the orbit camera, turned
    rooms, the ±35° turn); `leaveRoom` sets `P.dir` to `'right'`/`'left'`, which don't exist, so the player faces down
    (walk-control.js:306); the director's dark and mirrored copies lose `ax`/`ay`/`ppm` (director.js:172-199), so
-   they fall back to anchor (16, 40) and 42 px/m.
+   they fall back to anchor (16, 40) and 42 px/m. All fixed in CH-1 (people are seen from the camera's turn; a plain
+   word such as a map's `down` or a cutscene's `face X down` stays a screen word).
 7. **Cost:** every frame is its own canvas texture (no atlas), so people never batch; each sprite costs up to 6
    draws (main, two sun shadow maps, two lamp shadows, reflection); the person cache holds up to 2,000 pictures
    (about 40 MB) on phones. Copperleaf drew 1,770 calls a frame against the 400 budget (20-renderer-batching.md:91).
-8. **Tools:** tools/export-trainer-sprite-sheets.py (the owner's, 2026-10-24) still reads `game/data/gamedata.js`,
-   which is gone, and `game/art/people/`, deleted in SA-5; docs/EDIT-TRAINER-SPRITES.md is stale.
+8. **Tools:** tools/export-trainer-sprite-sheets.py (the owner's, 2026-10-24) read `game/data/gamedata.js`, which
+   isn't gone but built by `npm run data` and gitignored, so its CI workflow never found it and failed all 30 runs
+   (CH-0 had the cause wrong); deleting `game/art/people/` in SA-5 broke nothing. Retired in CH-1 at the owner's word,
+   with its workflow and docs/EDIT-TRAINER-SPRITES.md.
 9. **Battle:** the player's trainer is the back view at 1.42 m, the rival the front view at 1.7 m (battle-stage.js
    1234-1245); 2 breathing frames, the throw in 7 steps, cheer and react in 4 frames at 90 ms.
 10. **Engine facts for C:** no skinning anywhere; `renderTarget` exists (webgl.js:1274, LINEAR by default);
@@ -188,10 +191,14 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
 
 ## Sessions
 - **CH-0** the plan (this file), ROADMAP, BRANCHES, HANDOFF. Docs only. Done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`.
-- **CH-1 The bench and the fixes:** a `test_people` map (tools/build-test-scenes.py); `tools/look-people.py` for
-  headless pictures and draw counts; debug-log counters for people; facing relative to the camera's turn (`C.yaw` in
-  `directionOf`) and a continuous heading per person; the room-exit facing and the cutscene copies fixed; the
-  sprite-sheet exporter mended (it reads wardrobe.json) or retired, at the owner's word.
+- **CH-1 The bench and the fixes.** Done 2026-10-27 on `track/characters` (HANDOFF has the numbers):
+  - the `test_people` map (tools/build-test-scenes.py `t_people`) with a draw-only `lineup`, a new key for test maps;
+  - `tools/look-people.py` for headless pictures and draw counts at every zoom stop, by day and night, turned;
+  - debug-log counters for people (`people`, `ppl`, a `person` draw tag);
+  - facing relative to the camera's turn, and a heading per person (game/js/logic/person-view.js; `personHeading`
+    is what CH-2's figures turn to);
+  - the room-exit facing, the cutscene copies and the reach's mirror fixed;
+  - the sprite-sheet exporter retired, at the owner's word.
 - **CH-2 Spike 1: the figure baker** (a switch `people.figures`, off): a WebGL renderer for jointed rigid parts (one
   joint per vertex); an oblique projection onto the upright card, snapped to the texel grid, yaw in steps; poses on
   the 12 fps clock; toon bands from the props' top-left light; the plum outline and sel-out drawn in the low-res
@@ -244,7 +251,7 @@ Tags `ch-N-done` (the owner pushes them).
    built in code; which CC0 clip packs.
 8. The player's design (the neon outsider) and the Bureau's look.
 9. Hand touch-ups on baked sheets for named people.
-10. The sprite-sheet exporter: mend or retire.
+10. The sprite-sheet exporter: mend or retire. **Answered 2026-10-27: retired** (CH-1).
 
 ## Key files
 - Today's people: game/js/person-art.js, game/js/walk/frame-items.js (`personItem`, the player, folk, map people),
@@ -255,8 +262,10 @@ Tags `ch-N-done` (the owner pushes them).
   game/js/engine/webgl.js (`renderTarget`, `imageTexture`), game/js/walk/draw-common.js,
   game/js/walk/walk-shaders.js, game/js/engine/sprite-instances.js, game/js/walk/shadows.js,
   game/js/engine/gpu-counters.js, game/js/self-test.js (the Diagnostics groups).
+- The bench (CH-1): game/js/logic/person-view.js (facing, headings, which pictures are people's),
+  game/data/maps/test_people.json (its `lineup`), tools/look-people.py, walk-view-gl.js `peopleReport`.
 - New: game/js/figures.js (in both index.html files; `npm run modules`), tools/gltf-figure.mjs,
-  tools/look-people.py, game/data/figures.json.
+  game/data/figures.json.
 
 ## Verification
 - Every session: lint, typecheck and unit tests; smoke before each game commit; check:fast in CI; the full quick

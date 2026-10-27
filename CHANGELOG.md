@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
+  the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
+  and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you
+  face out of the door, not the camera. In the opening, Chosen runs out of the lab toward you face first, and Kappi
+  turns to you once you're up.
+- **People in the debug log** (characters track CH-1): how many people are drawn, how many draw calls they cost and
+  how much graphics memory their pictures take, in each exported log.
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

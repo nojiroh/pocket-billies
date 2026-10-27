@@ -246,9 +246,11 @@ town node needs it.
   Normal zoom (blurred), so higher resolution would not help in the world; the recommendation is "3D-driven pixel
   puppets" (jointed low-poly figures rendered into pixel sprites at 32 px/m in the world, 64 in battle), proven first
   by a spike beside today's people on the owner's phone, with a classic 2D redraw as the fallback. CH-0 (the plan, with
-  research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
-  and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
-  `track/characters` (the owner makes it).
+  research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; CH-1 (the bench: the test_people map, tools/look-people.py,
+  people in the debug log; people seen from the camera's turn, the room-exit facing and the cutscene copies fixed;
+  the sprite-sheet exporter retired) done 2026-10-27; next the spike CH-2 (the figure baker) and CH-3, then the
+  owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch `track/characters` (made
+  2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
