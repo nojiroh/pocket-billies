@@ -23,6 +23,7 @@
 import {
   EVENTS,
   FIELD_MOVES,
+  ARENAS,
   SET_PIECES,
   POOLS,
   NODE_TYPES,
@@ -65,6 +66,8 @@ const runPreviewData = () => ({
   fieldMoves: FIELD_MOVES,
   /* RT-3: and the set pieces, so a preview's places are the game's */
   setPieces: SET_PIECES,
+  /* WM-7: and the leaders' arenas */
+  arenas: ARENAS,
 });
 
 /**
@@ -133,7 +136,12 @@ export function runPreview(seed, o = {}) {
  * towns, and the waystations whose event would be theirs (encounters.js eventAt with them to meet, none played yet)
  * @param {Run} run */
 function runPreviewResidents(run) {
-  const trainers = runRouteTrainers(run, { classes: EVENTS.classes, species: SPECIES, rules: RULES.run }),
+  const trainers = runRouteTrainers(run, {
+      classes: EVENTS.classes,
+      species: SPECIES,
+      rules: RULES.run,
+      arenas: ARENAS,
+    }),
     at = /** @type {Record<number, number>} */ ({});
   for (const T of Object.values(trainers)) at[T.runNode] = (at[T.runNode] || 0) + 1;
   const nodes = /** @type {RunMap} */ (run.map).nodes,

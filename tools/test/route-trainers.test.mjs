@@ -208,3 +208,47 @@ test('RL-14: a scrapyard has its faction’s agents by the road, each with its b
   }
   assert.ok(yards > 0, 'some seed has a scrapyard');
 });
+
+test('WM-3: a place with no spot left stands its trainers on the way on’s road, north or south too', () => {
+  const road = (/** @type {number[][]} */ path, /** @type {string} */ side, /** @type {number} */ t) => ({
+      side,
+      t,
+      path,
+    }),
+    sc = (/** @type {string | undefined} */ ahead) => ({
+      gen: ahead ? { params: { ahead } } : undefined,
+      edgeExits: [
+        road(
+          [
+            [4, 32],
+            [64, 32],
+          ],
+          'W',
+          0.5
+        ),
+        road(
+          [
+            [64, 60],
+            [64, 32],
+          ],
+          'N',
+          0.5
+        ),
+        road(
+          [
+            [124, 32],
+            [64, 32],
+          ],
+          'E',
+          0.5
+        ),
+      ],
+    }),
+    /* the spot's road point lies on the exit's path: x 64 for the north road, z 32 for the east one */
+    north = RT.routeWaySpot(sc('N'), 0, 1),
+    east = RT.routeWaySpot(sc(undefined), 0, 1);
+  assert.ok(north && north.road[0] === 64 && north.road[1] > 32, `north: ${JSON.stringify(north)}`);
+  assert.ok(east && east.road[1] === 32 && east.road[0] > 64, `east: ${JSON.stringify(east)}`);
+  /* 3 m off the road, to one side */
+  assert.equal(Math.round(Math.hypot(north.at[0] - north.road[0], north.at[1] - north.road[1])), 3);
+});

@@ -59,9 +59,22 @@ export const RUN_RULES_IN_CODE = [
   {
     what: 'The region grid',
     value:
-      'cells 64 m; every place 2 × 1 cells (until WM-3); the main path within 3 cells north and south of the landing',
+      'cells 64 m; a place its type’s shape (nodeTypes.json shapes), else 2 × 1 cells; the main path within 3 cells north and south of the landing; an exit 12 m from a corner, 44 m from another',
     file: 'game/js/logic/run-map.js',
-    code: 'export const RUN_GRID = { cell: 64, place: [2, 1], half: 3, tries: 4000 };',
+    code: 'export const RUN_GRID = { cell: 64, place: [2, 1], half: 3, tries: 6000, edge: 12, gap: 44 };',
+  },
+  {
+    what: 'A town’s ways',
+    value: 'a town and the place after it lean east (eight times), so its through road runs straight',
+    file: 'game/js/logic/run-map.js',
+    code: "(d === 'E' && townish(i) ? 8 : 1))) +",
+  },
+  {
+    what: 'An L-bend',
+    value:
+      'a 2 × 2 place whose road comes in and goes out by diagonal cells; the other corner, 32 m from the road, walled off; else square',
+    file: 'game/js/logic/run-map.js',
+    code: 'most = 32;',
   },
   {
     what: 'Which way a link goes on the grid',
@@ -70,7 +83,7 @@ export const RUN_RULES_IN_CODE = [
     code: 'W = { E: 2, N: 1, S: 1 };',
   },
   {
-    what: 'Where links meet a scene’s side',
+    what: 'Where links meet a scene’s side (a run from before WM-3)',
     value: 'one link: the middle; two: 10 m and 54 m along a 64 m edge',
     file: 'game/js/logic/run-map.js',
     code: 'export const RUN_EXIT_T = [',

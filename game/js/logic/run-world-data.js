@@ -6,7 +6,7 @@
    Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { FIELD_MOVES, NODE_TYPES, POOLS, RULES, SET_PIECES, TRAINERS, gameData } from '../game-data.js';
+import { ARENAS, FIELD_MOVES, NODE_TYPES, POOLS, RULES, SET_PIECES, TRAINERS, gameData } from '../game-data.js';
 import { runRegionData } from './run-region.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -30,5 +30,7 @@ export function runWorldData() {
     fieldMoves: FIELD_MOVES,
     /* RT-3: the set pieces a laid-out place is dressed with (logic/mapgen.js mapgenStagePieces) */
     setPieces: SET_PIECES,
+    /* WM-7: the leaders' arenas (logic/arena-gen.js) */
+    arenas: ARENAS,
   };
 }

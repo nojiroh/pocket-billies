@@ -5,7 +5,7 @@
    (data/gamedata.js, the one the page loaded: the browser has it), then the logic (run-worker-modules.js).
    Messages: page -> worker { kind: 'make', id, run, version }; worker -> page { kind: 'step', id, made, of } as the
    places are made, then one { kind: 'scene', id, i, n, scene } per place (each one is copied to the page in a task of
-   its own) and { kind: 'done', id, n, ms }, or
+   its own) and { kind: 'done', id, n, ms, places } (WM-3b: each place's node, type, size, shape and ms), or
    { kind: 'failed', id, error }. Nothing here reads or sends a save: it gets the run (its seed and map) and nothing
    else. The page makes the places itself where this can't run (run-world.js runWorldMake). */
 let runWorkerMods = null;
@@ -23,14 +23,15 @@ self.onmessage = async ev => {
     globalThis.PB_VERSION = d.version;
     const m = await (runWorkerMods || (runWorkerMods = runWorkerLoad())),
       t0 = performance.now(),
-      it = m.runScenesSlices(d.run, m.runWorldData());
+      places = [],
+      it = m.runScenesSlices(d.run, m.runWorldData(), places);
     let r = it.next();
     for (; !r.done; r = it.next()) self.postMessage({ kind: 'step', id: d.id, made: r.value[0], of: r.value[1] });
     const scenes = r.value,
       ms = Math.round(performance.now() - t0);
     for (let i = 0; i < scenes.length; i++)
       self.postMessage({ kind: 'scene', id: d.id, i, n: scenes.length, scene: scenes[i] });
-    self.postMessage({ kind: 'done', id: d.id, n: scenes.length, ms });
+    self.postMessage({ kind: 'done', id: d.id, n: scenes.length, ms, places });
   } catch (e) {
     self.postMessage({ kind: 'failed', id: d.id, error: String((e && e.message) || e) });
   }

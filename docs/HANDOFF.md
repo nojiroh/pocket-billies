@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-0 - the plan, with research - 2026-10-27
+Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
+Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
+last commit.
+- Changed:
+  - **docs/phases/characters-track.md** (new): the brief; the numbers; what the game has; the research with links;
+    the directions (A: classic 2D redrawn, B: 3D figurines, C: 3D-driven pixel puppets, recommended); C's risks; the
+    art direction; the animation set; sessions CH-0..CH-14 with a two-session spike (CH-2, CH-3) before the owner's
+    pick; Ask me before; key files; verification.
+  - ROADMAP (the track under "Tracks alongside"), BRANCHES (this branch).
+- The arithmetic (a 390×844 CSS phone, DPR 3, portrait; engine.json and Copperleaf's `cam {pitch 34, h 9, fov 1}`):
+  - Scene buffer: R = min(DPR, 1.75) × `quality.resolution` 1.5 = 2.625, cut by the 1.6 MP cap to 2.205, so
+    860×1861 (0.73 of the device grid), stretched to the screen with `image-rendering: auto` (walk-view-gl.js:513-524).
+  - Camera at Normal: tilt 34 − 8 = 26°; height 9 × 2.1 = 18.9 m; distance 18.9 / sin 26° = 43.1 m; width at the
+    aim max(11, 15 × 390/844) / 0.68 = 16.18 m (camera.js:269-306).
+  - 390 / 16.18 = 24.1 CSS px a metre; a 1.75 m upright person × cos 26° (0.899) = 37.9 CSS px, 39.3 with the
+    perspective (the feet nearer than the aim) = 118 device px = 86.5 buffer px.
+  - Today's art is 116.4 px tall (66.5 px/m): 86.5 / 116.4 = 0.74 buffer px per art px (0.80 across). The ground (32
+    px/m) is 1.66, props (34 px/m) 1.56. At 32 px/m a person is 56 px tall: 86.5 / 56 = 1.55.
+  - Close (0.55): 77 CSS px, 169 buffer px: 1.45 today, 3.0 at 32 px/m. Far (1.7): 20.5 CSS px, 45 buffer px: 0.39
+    today, 0.8 at 32 px/m.
+  - Battle: the player's trainer (1.42 m at 2.85 m, focal 170 stage px, about 1.74 CSS px per stage px) is about 147
+    CSS px = 442 device px: 3.8 device px per art px today; about 4.9 at 64 px/m.
+- Found, not changed (for CH-1):
+  - `leaveRoom` sets `P.dir` to `'right'`/`'left'` (walk-control.js:306): not frame keys, so the player faces down
+    after leaving a room.
+  - Facing ignores the camera's yaw: `directionOf` (walk-view.js:3508) works in world space, and frame-items.js
+    picks the view from it, so the orbit camera and turned rooms can show the wrong side.
+  - The director's dark and mirrored copies lose `ax`/`ay`/`ppm` (director.js:172-199), falling back to anchor
+    (16, 40) and 42 px/m.
+  - tools/export-trainer-sprite-sheets.py reads `game/data/gamedata.js` (gone) and `game/art/people/` (deleted in
+    SA-5), so its workflow will fail; docs/EDIT-TRAINER-SPRITES.md is stale.
+  - Stale leftovers: `ppm || 42` (person-art.js:790) and the "~20 KB" frame comment (person-art.js:370; a frame is
+    about 55 KB now).
+- Claims checked: ART-NOTES' 116 px figures, 3.4 heads and 66.5 px/m are right. The HD-2D audit's "people at 42"
+  is only that fallback.
+- The Studio's rule "spinning and jointed parts; no skinning" (studio-track.md, 2026-10-19) shapes C: figures are
+  rigid jointed parts.
+- Risky: nothing ships. The recommendation rests on CH-3's pictures and the owner's phone; the track file says when
+  A is the better choice.
+- Verified: each figure above traced to its code line by read-only searches; the research links opened or returned
+  by search; `git diff` reviewed. No game checks apply to a docs-only change.
+- Next: the owner makes `track/characters` (from main, or from this branch before its PR merges). CH-1 (the bench and
+  the facing fixes) starts there. Answer "Ask me before" 10 (mend or retire the sprite-sheet exporter) before CH-1.
+
 ### UI track UI-10 - Part 2 planned: Living Semigloss (research, the colour code, palettes, a sampler) - 2026-10-27
 Branch `ccr-03a15a70-nd3yqu` (the session's own; `track/ui` holds UI-9b, PR #266). Main merged first (a fast-forward).
 Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game changed. Details: docs/phases/ui-track.md,
@@ -684,6 +729,238 @@ table had not been updated), WA-11 (the hub island's fall) scheduled before WA-8
   format:check, `check:smoke` 6/6 (Playwright 1.63.0).
 - Next: WA-11 (the hub island's fall), then WA-8 alone.
 
+### Region map track WM-3b - route layouts and trainers on any side, per-place times; WM-3 done - 2026-10-27
+Branch `claude/wm-3b-any-side` (from `track/worldmap` 7cd31f76, track/worldmap merged in again at the end), PR into
+`track/worldmap`. Planned in Plan Mode; the owner's answer: reword the town plot test now (WM-5 rewrites towns).
+- **Claims checked**: mapgen was already side-agnostic for the way on (`mapgenAhead`, the tall grass across it, the
+  pinches, the RT-1 layout plans and seams read `ahead` and `pin`); over 25 seeds 227 route places go on east, 66 north,
+  41 south, and every one has tall grass across its way on. **"The trainer facing a wall" was a bush**: all 6 of 561
+  trainers (25 seeds; 3 on places going north) looked into a hawthorn, bramble or berry bush that a set piece or the
+  plants put about 1 m in front of their spot after the spot was found.
+- route-trainers.js `routeWaySpot` (a place with no spot left; 0 of 561 trainers used it) takes the first exit on the
+  scene's `ahead` side, not the east one.
+- mapgen.js `mapgenSpotsFaceOpen` (after the set pieces, on the finished walk): a spot whose face finds no walkable
+  ground 1 m ahead (`MAPGEN_FACE_OPEN`) turns to the nearest open way, 15 degrees at a time, at most 90. Wall-facing
+  trainers 6 -> 0 of 561; route-trainer-spots' "faces a wall" is back to none. **MAPGEN_VERSION 23** (22 kept for
+  RT-4b: whichever merges second keeps the higher number and its note).
+- **Per-place times in the debug log**: `runScenesSlices`/`runScenesMake` fill an optional list, one
+  `[node, type, w, h, 'L' or '', ms]` a place (`RunPlaceTime`, Date.now in the logic); the helper thread sends it with
+  `done`, the page's slices and runWorldSync keep their own; `runWorld.places`, the log's `state.run.places`, and the
+  slowest place in the "a run's world in" line. Node types, sizes and ms only: no names, nothing of the save.
+- mapgen-town: track/worldmap's own fix for the plot (8c99940e: the road a few metres north of the plot at its own x)
+  kept at the merge, the same idea as this session's. **Found behind it** (failing on track/worldmap too, hidden by
+  the plot): TW1F node 4, a town whose way on leaves north, has 2 houses (the road takes the houses' side); the test
+  lets a town leaving north have 2 (3 otherwise). WM-5's to make better.
+- **Arenas, found re-running WM-7's checks** (both on track/worldmap too): check-fast's arena step failed: the run
+  fixture's first leader place (RL7FIXTURE node 3, way in and way on both on the south edge) had no spot on one
+  terrace, so the ring took the first spot that fits, where no barrier fits: no gate. arena-gen.js now takes a spot
+  its barrier fits before that fallback: leader places gated over 150 seeds 300 of 300 (296 before). And 3 leader
+  places in 300 (the ring about 13 m from a way in from the south) had no road before the ring for the trainers'
+  line, so their 3 required trainers got no spot: they now take ordinary route spots (route-trainers.js).
+- Tests: route-trainers (the fallback on a north road), route-trainer-spots (walls none; new: places going north or
+  south have tall grass across the way on, the plan's share, trainers reachable), run-world-real's HB-2 test (each
+  place timed: those six fields only), check-fast's Play this seed (the exported log's `run.places`). Remade on
+  purpose: rng's scene hash and run-start's snapshot (gen.v / mapgenV only).
+- **Found, not fixed**: a few laid-out places miss the 55-65% walkable band by more than 5 points, at the same rate
+  whichever way they go on (4 of 73 north/south, 7 of 157 east over 25 seeds; ledge drops and lanes most, lowest
+  32%); the new test holds the share at 15%. route-trainer-spots' RT-2 data carries no `arenas`, so its sweep has no
+  rings (the WM-7 test there does).
+- Verified: lint, typecheck, format, check:modules, check:data; unit tests quick tier 1477 pass; slow tier all but "the
+  game's island is the generator's own output" (fails on main too); check-fast's run pages 7 of 7 (the run's world,
+  the helper thread, waystations, the battle held, the arena, Blake, Play this seed with `run.places`: TESTSEED's
+  slowest place 128 x 64, 1341 ms headless); smoke passes (149 s); the full quick check 37 of 40 (1146 s). Its 3
+  problems fail the same on track/worldmap without this session's commits: Copperleaf's train_station "in the air",
+  "the town's shop has no Perk" (RL-8's mast run), and "Walking left and right" (room light here, the settings tabs
+  on the base run: it fails at a different point each time). Python Playwright 1.63 (the pin's 1.56 doesn't match
+  the container's Chromium).
+- **For the owner**: the leader's intro (route-sight.js, WM-7's new line) still says "Nobody goes east without beating
+  me" on places whose way on is north or south (the fixture's first leader goes on south); the hint was reworded in
+  d9e17e94, the intro not. A player-facing line, so left for you to word.
+- Next: WM-4b (merge this in; places' exits on any side are as before), WM-5 (town streets; the house floor above),
+  the owner looks at the debug log's `run.places` on the phone (the measurement WM-3's risk asked for).
+### Region map track WM-7 after WM-3 - the arena on any side - 2026-10-27
+No entry was written for these three commits (d9e17e94, 07c27a09, 5ebdcfb6, on `ccr-9477901d-w1h11w`, merged into
+`track/worldmap` with PR #248); written in WM-3b.
+- run.js and arenas.json's notes: the leader's hint says "the way on", not east.
+- arena-gen.js: the arena dial gets the exits that lead on (`on`, from run-scenes.js). The barrier is a straight line
+  or an L round a corner that keeps every way in on the ring's side and every way on past it, 6 m clear of every exit;
+  the ring stands where such a barrier fits, with room for its trainers, its roads crossing its rim square and on one
+  terrace where it can. Gate runs overlap the fence; fence pieces never stretched past 1.25 nor left a centimetre
+  apart. Over 300 leader places 296 were gated (35 of 80 at the merge before it). run-world-real's frozen dials
+  snapshot remade (the arena dial).
+- route-trainers.js `routeArenaLine`: the line before the ring from the way in (the scene's first exit) to the way on
+  (its second), on any side, out of water, at least 6 m apart (`ROUTE_ARENA_MIN`, 5 m from the way in on a short road).
+- Re-run in WM-3b on the new shapes (MAPGEN_VERSION 23): arena-gen, route-trainer-spots and run-world-real all pass
+  (21 tests). Over 150 seeds (WM3BARENA0-149): 300 leader places (237 going on east, 57 south, 6 north), all gated
+  after WM-3b's fix (296 before); 891 trainers in lines (189 on places going north or south), the other 9 on ordinary
+  spots (3 places with no room for a line, above).
+
+### Region map track WM-4b - the seamless region on the world map: side areas on the grid, L outlines - 2026-10-27
+Branch `claude/wm-4b-seamless-region` (from `track/worldmap` at 7cd31f76, WM-3a in; `track/worldmap` merged in again
+before the PR), beside WM-3b in another session. Planned in Plan Mode, the owner's go the same day.
+- **Claims corrected**: roads from exits on any side already worked since WM-3a (runWorldTables builds every road from
+  runSceneExits' side and t; worldBowlExitAt reads them by id), and the "until WM-3" east-to-west workaround was never
+  code (WM-3a's sizes and exits ended it): nothing to remove. The flat world map: no run biome uses the 105 m summit
+  (a hub kind); on a run only ridge (50 m, now about 20) and lake (-22 m, now about -12) have relief, the rest 8 m
+  (now about 4).
+- **Found and fixed**: a side area's places were not on the region grid. The walk laid them by their exits (the first
+  at the door, the rest east along a line), over main places in 2 of 3 runs with a side area (200 of 300 forced); the
+  world map put them elsewhere (230 of 300). run-map.js **runSideLay** lays them on free 2 x 1 cells, the first by its
+  obstacle's north side (else south) with the door on the edge they share (the spot furthest from that side's other
+  exits, as before), each next east, else north, else south of the one before; runSpotCells, run-scenes.js
+  runSideDoor and the side places' exits (where their cells meet, any side) all read it, so the walk and the world map
+  agree. run-side.js prefers an obstacle with free cells by its north or south side. Left: about 1.5% of side areas
+  (an alternate path's obstacle is fixed, or a chain is boxed in) still have a place on cells apart from the one before:
+  the walk joins it by its exits, the world map by a short road.
+- An L's outline: runSpotBoxes gives its cut corner, **runSpotOutline** its six corners; the fog leaves the cut cell out
+  (BOWL_RUN_FOG.steps is now points a cell's side).
+- Tests: new run-bowl-seams.test.mjs (quick tier, the game's data, 300 runs: no two places overlap; every link's exits
+  face each other and meet at one point with each place on its cells, each place fills its cells; the door is the
+  layout's; at most 3% of side areas laid apart; the outline of a box and of each L); run-map's side-area test on the
+  new rule. Side areas' scenes change (their exits); no snapshot held them.
+- Pictures (headless, Chromium): the run fixture's region in one piece, its side area flush south of its town, the 1 x 1
+  event and the 1 x 2 route; a seed with Ls (WMLSEED25) with the cut cells clear of fog; the flatter map **for the
+  owner to judge**: WMRIDGE14's ridge now vs the hub's relief (the old one bends the ridge places over a hump about
+  50 m high; up to 86 m difference on the land round them).
+- Verified: lint, typecheck, format, check:modules, the data build; unit tests: quick tier 1478 pass (the 1,000-maps
+  sweep missed its 1 s once with check-fast running beside it, passes alone); slow tier all but two that fail the same
+  on `track/worldmap` (the island's own output, known; **mapgen-town's "every run town has a street..." on TW1F node 4:
+  2 houses**, WM-3b's file). check-fast: every check but three, each failing the same on `track/worldmap`: **the leader's
+  arena (WM-7) on the fixture's first mini-boss: its barrier has no gate (`gates: []`)**, and the Studio's world map look
+  and Camera section (the billionaires' portraits aren't in git, 404 in this container). Smoke passes (6 of 6). The full
+  quick check: 35 of 40 on the first run; RT-2's pair and Granny Juniper passed when run again; the three left fail the
+  same on `track/worldmap` (Copperleaf's train station in the air, RL-8's town shop with no Perk, room light at night).
+  Python Playwright 1.63 again; `npm ci` and `npm run data` first in a fresh container.
+- Risky: side areas' places move (their exits change), so any saved run with a side area resumes with the new layout
+  (remade from the seed); arena/route code that assumed side places go west to east by t 0.5 now gets any side.
+- Next: the owner looks at the pictures and decides on the relief; then WM-5 (town streets) or WM-6.
+
+### Region map track WM-5a - town streets in mapgen, at three sizes (WM-5 in part) - 2026-10-27
+Branch `claude/wm-5-town-streets` (from `track/worldmap` at ff8e2fbb; PR into it). Planned in Plan Mode; the owner's
+answers are in worldmap-track.md ("WM-5's answers"): services grow with size (a village adds a market stall, a town
+the stall and a second quest giver), the stall sells 2 held items a day, sizes by order and Expedition, streets south
+of a through road that runs high, every house facing the camera, at most 10 townsfolk, the size in the place's name.
+WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until WM-5b gives them sizes.
+- **Corrected facts**: towns were 2 x 1 only for want of `shapes`; the grid's 2 x 1 fallback would shrink the last
+  town in about 40% of rows holding two towns (an in-memory sweep; strict sizes had no failures); the Expedition doesn't
+  reach the grid; a ghost replacing a town keeps its footprint; water-gen kept rivers out of a fixed box round a town;
+  nothing kept a tall-grass patch at a town's edge; RT-4b already uses MAPGEN_VERSION 22 on `track/routes`.
+- logic/mapgen.js (MAPGEN_VERSION 24; 22 RT-4b's, 23 left for WM-3b):
+  - `mapgenTownPlan`, a new stage after the exits (towns only): the main junction where the through road runs across
+    near the hub, the square at it (front on the road, 16 x 8 m to 24 x 10 m), the clinic and the shop either side of
+    the main street, rows of side streets off it at T-junctions (a bend now and then, dead ends; in a 3 x 2 town a
+    second north street they meet, so blocks), a south street with rows of its own when the road runs through the upper
+    half of a place two cells tall, and rows off the through road where it runs north or south. Streets grow as long as
+    the houses still wanted need (the through road takes about a third of them, by the square). `mapgenAddStreets` makes
+    them roads after the exits' branches (distance field, paved in the town's square ground, heights from the parent).
+  - `mapgenStageTown` rebuilt on the plan (the square, services, board and giver spots, a town's second giver spot on
+    the west side, the stall by the road beside the square or else on its front; houses on the north side of every
+    east-west street, streets in turn; plots south of the road or a street). The scene carries `town` (size, houses,
+    streets, stall, givers, square) for the checks.
+  - Sizes `MAPGEN_TOWN_SIZES` (hamlet 2 cells 3-5 houses, village 4 cells 6-10, town 6 cells 10-16) by the place's cells,
+    and a `town` dial (houses, stall, givers; kept only when given) for WM-5b to pass rules.json's.
+  - Road shape `dogleg` (straight stretches, square turns, kept inside `mapgenTownBand` where a town fits; a jog 4 m on
+    from an exit outside it); run-scenes.js RUN_TOWN_ROAD uses it.
+  - Tall grass keeps off the town's planned ground; townsfolk at most 10; water-gen.js's river box sized by the town.
+- Studio: the Generate card's sizes are Hamlet 128 x 64, Village 128 x 128, Town 192 x 128 (were the unused 80 x 60 and
+  128 x 96).
+- Tests: mapgen-town.test.mjs rewritten by size (8 tests: the run towns as before with the size's houses; 72 fixed-size
+  towns, exits east, north or south at either cell; south growth; the same seed; the dial). Snapshots remade on purpose:
+  rng's scene hash (a route: only gen.v), run-start (mapgenV), run-world-real's frozen dials (the town road's shape).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1476 pass; slow tier 99 of 99;
+  check-fast's run pages 11 of 11 (the town's life, quest and shop, the helper thread's places equal to the page's, the
+  leader's arena); smoke 6 of 6 (156 s). Headless pictures from the Studio's Generate card at each size (the preview
+  and top-down plans).
+- **Not mine, found failing on the track's head too**:
+  - Ported, so they pass here (each does nothing once the track has it): main's island test fix (PR #253, 62bc12f8:
+    the hand patches marked in `islandGen.patched`; the slow tier's "the game's island is the generator's own
+    output") and WM-3b's pick for a leader's ring (PR #263, aebaa60e: check-fast's "A leader's arena", where the
+    fixture's mini-boss place had no gate, `gates: []`).
+  - Still failing: check-fast's "The Studio's world map look" and "The Studio's Camera section" (404s for
+    `game/art/billionaires/*0.png`, legacy art SA-5 deleted; main's own fast check fails both the same way, no fix
+    yet), and the Studio check's `--only=generate` (a fixed 0.8 s wait races the draft under software drawing: 2 of 3
+    runs fail on the track's head; with a longer wait it passes here).
+  - CI's smoke on a slow runner (every step 1.5-2 times slower) once also failed "Behind things" (Copperleaf) and "A
+    run's world" (the walk from the landing into a route); both passed on the same commit in the other run and here.
+- Measured in Node: over 205 run towns the square fits in all but 1 (20 before: the dogleg); generator notes the same
+  (2); a run town about 30 ms as before. Fixed sizes: hamlet about 55 ms, village 60-70, town 80-100 (max about 230),
+  so a run gains roughly 0.1-0.3 s with its sizes in WM-5b (a phone about 3-5 times that, on LD-4's helper thread).
+- Risky: frame times in a 3 x 2 town on the phone (up to 16 houses and 10 folk); a ghost on a village or town row gets a
+  big laid-out place; merge conflicts with WM-3b and RT-4b in mapgen.js (the version line, mapgenSceneLife's neighbour
+  `mapgenExtraLife`, mapgenGrassPatches).
+- Next: WM-5b (rules.json `run.map.townSizes` and `run.town.sizes`, the grid's strict town sizes with a step-down,
+  names, the stall's shop and held items, the second giver, check-fast's village stall step and the folk range, the
+  sim, the full quick check, pictures in a run), then `wm-5-done`.
+
+### Region map track WM-4a (in part) - a run's places on the world map at their grid cells; fog - 2026-10-27
+Branch `ccr-9477901d-w1h11w`, from `track/worldmap` (made this session from WM-2's head, 5a1326a7; main since merged
+in, PR #243). The owner first chose to wait for WM-3, then asked to start now: WM-4a is the part that doesn't need WM-3;
+WM-4b (exact seams, WM-3's sizes and L-masks, side areas' places from WM-3 if it gives them) follows once WM-3a is merged.
+The owner's answer: the whole region shows from the landing, unreached places fogged.
+- logic/run-map.js: `runSpot` reads the region grid: each place at its cells' middle, at the walk's scale
+  (`RUN_BOWL_GRID.metres` 1000 to a bowl radius, as world-bowl.js BOWL_METRES), the region's cells centred on the bowl
+  (WM-2: paths sit north of the landing's row). `runSpotCells` (side areas' places, which have no footprint, take free
+  2 x 1 cells from their obstacle's: north first, then east along the chain; worked out, never stored) and
+  `runSpotBoxes`. A run from before WM-2 (no `at`) keeps the rows-and-lanes spot (RUN_BOWL). Every caller unchanged.
+  WM-2's grids are 10-20 cells wide (0.64-1.28 km, 400 seeds), inside the bowl.
+- logic/run-bowl.js: each place's round of land covers its cells (`RUN_BOWL_LAND.cover`); `runBowlRelief`: on the grid
+  a kind's bump or dip reaches at most half a cell (`RUN_BOWL_LAND.relief` 0.032) and is as much lower (slopes as
+  steep): places 64-128 m apart made a summit lift the lake beside it (bowl-ground's and bowl-things' tests found it).
+  **For the owner to judge**: the run's world map is flatter (a summit about 30 m, not 105).
+- world-bowl.js: a run's road is painted from one place's exit to the other's (`worldBowlExitAt`, the maps' own
+  edgeExits), not pin to pin; `worldBowlRunFog`: every run place not walked and not where you stand under a veil with
+  its cells' dashed outline (`BOWL_RUN_FOG`), drawn under the pins.
+- **Until WM-3**: scenes are still 112 x 64 m in 128 x 64 m cells (8 m of ground each side) and a north link still
+  leaves by the east side in the walk, so its road on the map runs from the east edge to the next place's west edge.
+- Tests: run-map (the old bowl test kept for a run without footprints; new: places at their cells, centred, linked
+  ones touching; a side area's chain), run-bowl (`runBowlRelief`), bowl-ground's ridge and lake now against the land
+  round them.
+- Verified: lint, typecheck, format, check:modules; unit tests 1422 pass; check-fast's run pages 7 of 7 (the run's
+  world, the helper thread, waystations, Blake, the battle held, Play this seed, the bowl). Headless pictures of the run
+  fixture's map (the region in one piece, fogged outlines, short roads across the gaps). Smoke and the full quick check
+  not run. Python Playwright 1.63 again (the pin's 1.56 doesn't match the container's Chromium).
+- Next: WM-4b after WM-3a merges into `track/worldmap`: merge it here, check the seams meet exactly, the 1x1 and L
+  outlines (the L's `cut` cell left out of the fog), roads from exits on any side, the side areas; then the HANDOFF
+  and `wm-4-done`.
+### Region map track WM-3a - shapes and sizes in the logic and mapgen (in part) - 2026-10-27
+Branch `claude/wm-3-shapes` (from WM-2's head). The owner's answers: routes 2 x 1 40%, 3 x 1 20%, 1 x 2 15%, L 20%,
+1 x 3 5%; events and stalls 1 x 1; landing, leaders, boss and towns 2 x 1; an L's missing cell reserved and walled;
+exits drawn along the shared edge; the bowl left to WM-4; WM-3 merges before WM-7; per-place times in the debug log
+(WM-3b); two sessions.
+- run-map.js: nodeTypes.json `shapes` (runShapeSize), drawn on 'map|size|row|lane', tried at every spot before 2 x 1;
+  `ways` beside `to` (runGridWays: a whole metre on the shared cells, 12 m from their ends, 44 m from other exits; a
+  bend's way out from the far half of its edge, a town's way in to suit its turn); an L's `cut` (runGridCut) only where
+  the road comes in and leaves by diagonal cells (about a third of the 2 x 2 draws; the rest stay square); runGridExits;
+  towns and the place after them lean east (x8). No two shops is settled before the grid. validRun checks cut and ways.
+- run-scenes.js: places at their footprint's size (runPlaceSize; a side area's 128 x 64; a run from before WM-3 keeps
+  112 x 64 and east/west exits), exits where links cross (ids by side: east, east2, north, ...), pin on every linked
+  side, `ahead` the first way on's side, `cut` (runCutRect); the side door (runSideDoor) on a free spot of the
+  obstacle's north side, else its south.
+- mapgen.js (MAPGEN_VERSION 20): the `cut` dial (a forest mass on the corner, nothing built there, the walkable share
+  measured without it); a pinned north/south side is a seam for the layout; exits may sit 12 m from a corner on a side
+  over 150 m (mapgenExitEnd), the edge strip's spot snapped to a whole metre; tall grass across the next longest way
+  when the way on is short; a lot further back when none fits by the road; the lookout off the cut, more tries on big
+  places. water-gen.js: **fixed** the river note's main cause: a bridge's river that no road lets cross falls back to a
+  river with no bridge instead of the line across the map. Notes on run places: 7 in about 830 (0.8%) vs 13 in 411
+  (3.2%) before. seam-rules.js: seamSideMost (2 up to 64 m, one more each 44 m).
+- Studio Run Lab: L outlines, the ways on as dots, the place's exits listed.
+- Tests: mapgen-shapes.test.mjs (slow tier: the L, north strips, a north/south seam at the grid's offset), run-map
+  (shapes, ways, cuts), run-scenes (a grid map's exits), run-world-real (the walk lays every link at the grid's offset;
+  RL7WORLD3 back), seam-rules; snapshots remade on purpose (run-map, run-start, run-world-real); rng's scene hash (the
+  same scene but gen.v, checked against WM-2's tree); mapgen-mountains TR2MTN2 -> TR2MTN1 (the known one-way ledge, the
+  same 2%); run-map-checks' planted west place given a size.
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests: quick tier all pass; slow tier all
+  but two: "the game's island is the generator's own output" (fails on main too) and **mapgen-town's "a vegetable plot
+  south of the road" on TW1E node 10** (the plot is there but the test wants it 8 m south of the square, which a road
+  bending from the south doesn't give; open). The 1,000-maps sweep takes about 580 ms alone (410 before) and missed its
+  1 s once under the full parallel run. **Not run**: check-fast, smoke, the Studio's GitHub check (the owner asked for
+  the PR first).
+- Measured in Node: 128 x 64 places mean about 210 ms, 192 x 64 about 440, 128 x 128 about 510, an L about 530 (max
+  about 2 s on a retry); 64 x 64 about 30.
+- Risky: places are bigger (more walking, more generation time); WM-7's arenas must follow `ahead` north or south.
+- Next: WM-3b (route layouts and trainers on any side, the trainer facing a wall, per-place times in the debug log, the
+  town plot test, check-fast, smoke, the full quick check), then tag `wm-3-done`.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
@@ -1209,6 +1486,68 @@ took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan'
   equal to the page's, and reports where the boot's came from. `runWorld.how` says 'page at once' for that path.
 - Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
   smoke 6 of 6.
+### Region map track WM-7 - leader arenas - 2026-10-27
+Branch `claude/wm-7-leader-arenas` (from WM-1's HEAD; runs beside WM-2 on `claude/wm-2-region-grid`). Planned in Plan
+Mode; the owner's answers: the fight starts on stepping into the ring, the gate is themed by type, 3 trainers by
+sight, the boss's place a big ring of its leader's type (a scrap `bureau` theme kept for the Voltron).
+- **Claims corrected**: the leader stood 2.2 m in from the east exit (not on it) and fought only when tapped; mini-boss
+  places had no route trainers; there is no Voltron and no Bureau leader yet (the boss is a type leader's top Billie as
+  an Alpha; RL-14b on `track/bots`); battle stages are only ambience now (the 3D battle draws the walk scene round you,
+  so a battle in the ring has the ring as its backdrop); no camera API framed a spot.
+- New data section **game/data/arenas.json** (schema, `dataArenas` in data-checks.js, the Studio's Check): sizes (a
+  leader's ring r 8 m, rise 0.6 m, 28 m back from the east exit; the boss's r 11 m, rise 0.8 m), `trainers` 3, and a
+  theme per type (Water, Grass, Ground, Fire, Flying, Steel, Psychic, Electric, Dragon) plus `bureau` and `plain`:
+  ground, rim ground, fence, gate, posts, dressing, all existing props and grounds. **No water moat**: the Water theme
+  is a teak-deck ring with mooring posts (a moat needs bridges; not worth it this session).
+- New **game/js/logic/arena-gen.js** behind a new mapgen dial `arena` (kept only when given; no other scene moves),
+  three small hooks in mapgen.js (after the lots, after the layout, at the end):
+  - the ring: an octagon on the main road, the ground levelled, raised by the step raise with a flat apron and a ramp
+    down each road; it moves back along the road, 2-4 m to a side or off the scene's edge to stay clear of water;
+  - its fence (open where roads cross), posts at the corners, dressing by the gaps;
+  - **a leader's barrier**: one straight fence across the whole place just past the ring's east ramp, on the walk
+    grid's half-metre lines (a thin box can fall between cells' middles and leak), moved on past jetties and bridges,
+    open only where a road crosses it. A ring alone could be walked round, so the gate is in this line, not in the ring;
+  - `scene.arena` {mode, name, x, z, r, top, leader, from, gate, gates}; no spot left on the ring.
+- run-scenes.js: `runLeaderPicks` (runFoes reads it now; same order as before), `runArenaOf`, the `arena` dial on
+  miniboss and boss nodes, and `runSceneMake` lays the gate (`act: 'arenagate'`, `unless: beat:run_<i>_foe`; it opens
+  by itself on the win: the walk's nav grid already rebuilds when an `unless` prop changes). The run's world data, the
+  preview's and the sim's carry `arenas` (the sim's also `region`). **MAPGEN_VERSION 20.**
+- walk-control.js stands an arena's leader on `arena.leader`, facing the way in. The hint: "A leader waits in the arena
+  to the east. Win to open the gate."
+- route-trainers.js: a mini-boss's place gets 3 required trainers (own stream 'arena|trainers', no pair), stood by
+  `routeArenaLine` on the main road before the ring, 8 m apart, alternate sides 2.8 m off, their sight across it.
+- route-sight.js: stepping over a ring's fence line with its leader unbeaten: the camera's new **arena moment**
+  (camera-moments.js; Engine settings arenaOn, arenaZoom 1.2, arenaBlend 0.7) frames the ring 1.4 s, the leader says
+  "Welcome to the <arena>! Nobody goes east without beating me." (the boss: "This is the <arena>. Your run ends here,
+  one way or another."; **new player-facing lines, the owner's to change**), walks up, and their usual script and battle
+  run. It starts again only after you have stepped out of the ring. Tapping the leader still works.
+- Tests: new arena-gen.test.mjs (12 places: whole, 55-65% walkable, the ring level and walled, fenced, the gate shuts
+  the way on and opens it), check-data's planted arenas, run-world-real (a new WM-7 test; its frozen dials snapshot remade
+  on purpose: the arena dials added), route-trainer-spots (the line), camera-moments (the arena moment), rng's scene hash
+  and run-start's mapgenV (gen.v only). New check-fast step "A leader's arena: ..." (the fixture's first mini-boss: the
+  gate shut, the leader in the ring, set down inside it: the intro and the battle; won, the gate open).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1419 pass; slow tests all pass but
+  "the game's island is the generator's own output" (fails on main too); check-fast's run pages (the run's world, the
+  helper thread, shop, life, quest, battle held, Blake, the bowl, waystations, Play this seed, the arena) all pass (the
+  run's world failed once under two browsers' load and passed alone); smoke passes (244 s). A headless picture of the
+  fixture's mini-boss place shows the raised concrete ring (Steel yard), its rail fence and lamps, the leader inside.
+- **Merging with WM-2**: expect collisions in mapgen.js's MAPGEN_VERSION line (take one number past both), the
+  run-world-real, run-start and rng snapshots, and check-data-snapshot's file count (176 here). WM-2 was told (a message
+  to its session). The arena assumes a leader's place goes on east (P.ahead); if WM-2/WM-3 let a mini-boss place go on
+  north or south, pass `ahead` N/S and the barrier turns to that axis (arenaGenBarrier takes it), but the ring's spot
+  (`back` along road[0]) and the trainers' line (the west and east exits' paths) need a look.
+- Risky: the barrier crosses the whole place, so a side area's north exit east of the line opens only after the leader;
+  a ring on a place where the road hugs water can end up off the road by up to 4.5 m (still crossed by it); wadeable
+  shallows on the barrier's line hold a fence (it stands in them on purpose).
+- **From the WM-2 and WM-3 sessions (their messages, after this was built)**: WM-3 merges before WM-7 and takes
+  MAPGEN_VERSION 20, so WM-7 takes 21 and remakes its snapshots after merging it. Since WM-2 the leader comes before
+  its town. With WM-3 a place's way on may be north or south, `ahead` is the first forward exit's side, exit ids go by
+  side, and leaders' and the boss's places are 2x1 cells (128 x 64 m). To do at that merge: `routeArenaLine` looks for
+  the exits `west` and `east` (take the way-in exit and the `ahead` one instead); `arenaMainRoad` and the ring's spot
+  assume road[0] runs from the way in to the way on; the hint and the intro line say "east"; recheck
+  arena-gen.test.mjs, route-trainer-spots and run-world-real on the new shapes.
+- Next: the owner looks at a leader place on the phone (Settings → Engine → Camera has the arena dials) and tags
+  `wm-7-done`; after WM-3 merges, merge it in, take MAPGEN_VERSION 21 and do the follow-ups above.
 
 ### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
 Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
