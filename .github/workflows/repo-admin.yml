@@ -1,15 +1,19 @@
 # Repository housekeeping that cloud sessions can't do through git: their git proxy only lets them push to their own
 # branch, so pushing a tag or deleting a branch gets HTTP 403. A session (or you) runs this by hand instead:
 # Actions -> Repo admin -> Run workflow, or the GitHub tools' "run workflow". Running it needs write access to the repo.
+# Start one run at a time: GitHub keeps one waiting run in the repo-admin group and cancels any older waiting one, so
+# put several tags or branches in one run instead of starting several runs.
 # - create-tag: lightweight tags. `tag` is one name (on `commit`, default main) or several `name=commit` pairs (spaces,
 #   commas or new lines between them). Only `legacy` and `<something>-done` names; a tag that already exists is never
-#   moved. A tag made here doesn't start other workflows (GitHub's rule for its own token), so for a phase-* tag this
-#   workflow starts the Check workflow on the tag itself, the run a pushed phase tag starts.
-# - delete-branches: deletes the listed branches (spaces, commas or new lines between names). Never main, legacy, the
-#   default branch, an archive/* branch, or a branch that an open pull request uses as its head or its base (deleting a
-#   base closes the pull request). A track/* branch (a long plan's branch, docs/BRANCHES.md) is kept too, unless
-#   allow_merged_tracks is on and every commit of the branch is in the default branch (a finished plan, tagged
-#   `<plan>-done` first). Each deleted branch's last commit goes in the run summary.
+#   moved. A tag made here doesn't start other workflows (GitHub's rule for its own token), so for a phase-* tag on the
+#   tip of main this workflow starts the Check workflow on the tag itself, the run a pushed phase tag starts. A phase-*
+#   tag on an older commit starts nothing: its picture baseline would replace today's.
+# - delete-branches: deletes the listed branches (spaces, commas or new lines between names; plain names only: letters,
+#   digits and . _ / -). Never main, legacy, the default branch, an archive/* branch, or a branch that an open pull
+#   request uses as its head or its base (deleting a base closes the pull request). A track/* branch (a long plan's
+#   branch, docs/BRANCHES.md) is kept too, unless allow_merged_tracks is on, the plan's `<plan>-done` tag exists
+#   (track/towns needs towns-done) and every commit of the branch is in the default branch. Each deleted branch's last
+#   commit goes in the run summary.
 # - restore-branch: brings deleted branches back. `branches` holds `name=commit` pairs (the commits from a delete run's
 #   summary or docs/BRANCHES.md); an existing branch is never moved.
 # dry_run (on by default) only reports what would happen.
@@ -35,7 +39,7 @@ on:
         type: string
         default: ''
       allow_merged_tracks:
-        description: 'delete-branches: also delete track/* branches whose commits are all in main'
+        description: 'delete-branches: also delete track/* branches whose <plan>-done tag exists and whose commits are all in main'
         type: boolean
         default: false
       dry_run:
@@ -65,11 +69,16 @@ jobs:
       BRANCHES: ${{ inputs.branches }}
       ALLOW_TRACKS: ${{ inputs.allow_merged_tracks }}
       DRY_RUN: ${{ inputs.dry_run }}
+      # A name goes into an API path as it is, so ? # % and the like could point the call at another branch than the
+      # one the checks looked at: only letters, digits and . _ / - pass, and no "..".
+      PLAIN_NAME: '^[A-Za-z0-9_][A-Za-z0-9._/-]*$'
     steps:
       - name: Create tags
         if: inputs.action == 'create-tag'
         run: |
           set -euo pipefail
+          default=$(gh api "repos/$REPO" -q .default_branch)
+          tip=$(gh api "repos/$REPO/commits/$default" -q .sha)
           read -r -a items <<< "$(echo "$TAG" | tr ',\n' '  ')"
           if [ "${#items[@]}" -eq 0 ]; then
             echo "::error::No tag name given"
@@ -88,6 +97,9 @@ jobs:
             if ! [[ "$name" =~ ^(legacy|[a-z0-9]+(-[a-z0-9]+)*-done)$ ]]; then
               result="not allowed: only legacy or <something>-done (lowercase, digits, dashes)"
               failed=1
+            elif ! [[ "$target" =~ $PLAIN_NAME ]] || [[ "$target" == *..* ]]; then
+              result="not a commit id or branch name: $target"
+              failed=1
             elif gh api "repos/$REPO/git/ref/tags/$name" > /dev/null 2>&1; then
               result="exists: tags are never moved here"
               failed=1
@@ -97,11 +109,22 @@ jobs:
               failed=1
             elif [ "$DRY_RUN" = "true" ]; then
               result="would make ($(gh api "repos/$REPO/commits/$sha" -q '.commit.message | split("\n")[0]' || true))"
+              if [[ "$name" == phase-* ]] && [ "$sha" = "$tip" ]; then
+                result="$result; would start the Check workflow on it (the picture baseline)"
+              elif [[ "$name" == phase-* ]]; then
+                result="$result; would not start the Check workflow (not the tip of $default)"
+              fi
             elif gh api "repos/$REPO/git/refs" -f "ref=refs/tags/$name" -f "sha=$sha" > /dev/null; then
               result="made"
-              if [[ "$name" == phase-* ]]; then
-                gh workflow run check.yml --repo "$REPO" --ref "$name" -f baseline=true
-                result="made; started the Check workflow on it (the picture baseline, as a pushed phase tag does)"
+              if [[ "$name" == phase-* ]] && [ "$sha" != "$tip" ]; then
+                result="made; Check not started: not the tip of $default (its picture baseline would replace today's)"
+              elif [[ "$name" == phase-* ]]; then
+                if gh workflow run check.yml --repo "$REPO" --ref "$name" -f baseline=true; then
+                  result="made; started the Check workflow on it (the picture baseline, as a pushed phase tag does)"
+                else
+                  result="made; starting the Check workflow FAILED (start it by hand: Actions -> Check, on this tag)"
+                  failed=1
+                fi
               fi
             else
               result="FAILED"
@@ -132,7 +155,10 @@ jobs:
           for b in "${names[@]}"; do
             result=""
             sha=""
-            if [ "$b" = "main" ] || [ "$b" = "legacy" ] || [ "$b" = "$default" ] || [[ "$b" == archive/* ]]; then
+            if ! [[ "$b" =~ $PLAIN_NAME ]] || [[ "$b" == *..* ]] || [[ "$b" == */ ]]; then
+              result="kept: not a plain branch name (letters, digits and . _ / - only)"
+              failed=1
+            elif [ "$b" = "main" ] || [ "$b" = "legacy" ] || [ "$b" = "$default" ] || [[ "$b" == archive/* ]]; then
               result="kept: protected name"
             elif grep -qxF -- "$b" <<< "$used"; then
               result="kept: an open pull request uses it"
@@ -141,6 +167,8 @@ jobs:
               result="not found"
             elif [[ "$b" == track/* ]] && [ "$ALLOW_TRACKS" != "true" ]; then
               result="kept: track/* (allow_merged_tracks is off)"
+            elif [[ "$b" == track/* ]] && ! gh api "repos/$REPO/git/ref/tags/${b#track/}-done" > /dev/null 2>&1; then
+              result="kept: track/* without its ${b#track/}-done tag (tag the finished plan first)"
             elif [[ "$b" == track/* ]] && [ "$(gh api "repos/$REPO/compare/$default...$sha" -q .ahead_by)" != "0" ]; then
               result="kept: track/* with commits that are not in $default"
             elif [ "$DRY_RUN" = "true" ]; then
@@ -176,6 +204,9 @@ jobs:
             sha=""
             if [[ "$item" != *=* ]] || [ -z "$name" ] || ! [[ "$target" =~ ^[0-9a-f]{7,40}$ ]]; then
               result="not a name=commit pair"
+              failed=1
+            elif ! [[ "$name" =~ $PLAIN_NAME ]] || [[ "$name" == *..* ]] || [[ "$name" == */ ]]; then
+              result="not a plain branch name (letters, digits and . _ / - only)"
               failed=1
             elif gh api "repos/$REPO/git/ref/heads/$name" > /dev/null 2>&1; then
               result="exists: branches are never moved here"
