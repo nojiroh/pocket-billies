@@ -2,6 +2,42 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-1 - battle flashes follow the Flashes and Reduced motion settings - 2026-10-27
+Branch `ccr-86dc9cb1-odx2za` (the plan's branch; `track/style` doesn't exist yet), at the owner's word ("Continue"
+after the plan; SY-0's PR #279). Main merged in first (no change: still 07c9b284). Tag `sy-1-done` (for the owner to
+push; the git proxy refuses tags).
+- Changed:
+  - **game/js/logic/smear.js:** `flashFor(col, a, reduced, flashesOff)` (with `flashLuma`, `FLASH_SOFT_MAX` 0.15,
+    `FLASH_DARK` 0.25): no flash under Reduced motion; with Flashes off a bright flash is held to 15%, and a dark one
+    (the faint's #5A1030) stays as it is. `impactFrame` takes `noFlash`: with Flashes off the two-tone cells go, and a
+    crit keeps its speed lines.
+  - **game/js/battle-stage.js:** `flashesOff()` reads `saveData.preferences.flashes` (as `buzz` reads haptics);
+    `battleStageFlash` (all 12 calls, unchanged) goes through `flashFor`; the chromatic flash is off with Flashes off;
+    `impactFx` passes `flashesOff()` to `impactFrame`.
+  - **tools/test/flashes.test.mjs** (new, 5 tests); studio/art-code-refs.json regenerated (moved line numbers); the
+    smear module's expose list (`npm run modules`).
+  - The track file and ROADMAP mark SY-1 done.
+- Different from the plan: a bright flash keeps its colour (held to 15%) instead of turning to the palette's surface.
+  This is simpler and reads the same at 15%.
+- Not changed: storm lightning (environment.js 419-425) and the evolution and hatch CSS already follow both
+  settings. The opening's `cutscene.flashes` are small point lights where a pyramid lands (director.js 271-275), not
+  full-screen flashes.
+- Verified: lint, type check, modules, format, `npm test` (1,574 pass), `npm run check:smoke` (6 of 6). `npm run
+  check:quick`: 35 of 41. The 6 problems aren't this change's:
+  - RL-8 "the town's shop has no Perk", RT-2 "the pair talked but no battle started", "Granny Juniper didn't say
+    anything" and "Walking left and right ... room light" are known in this file.
+  - "Battle music ... the drums never came in on a throw" passed when re-run alone (the 8 s fallback on a busy
+    machine).
+  - "Terraces ... props in the air: copperleaf: train_station@167.3,100.8" fails the same way on main (checked in a
+    main worktree): the hub's station prop floats. For the hub track.
+- Browser checks here: Python Playwright 1.56 expects Chromium build 1194, but the container has 1243 in
+  /opt/pw-browsers. A scratch folder with build-1194 names linked to 1243 (PLAYWRIGHT_BROWSERS_PATH) works.
+- CI on PR #279: smoke is red on main's own failures (the Studio's world map look and Camera section), commented on the
+  PR.
+- Risky: low. Only what the settings change; with both settings at their defaults every flash is as before.
+- Next: SY-2 (numbers you feel), started automatically in its own session on `track/style` (the owner, 2026-10-27:
+  "automatically start the next steps in their own Sessions. Their plans are automatically approved").
+
 ### Style track SY-0 - the plan, with research - 2026-10-27
 Branch `ccr-86dc9cb1-odx2za`, made from main at 07c9b284 (`track/style` doesn't exist yet). Written at the owner's word
 ("Make this a plan for the game") after two research answers in chat. Docs only: no game code, data or art changed.
