@@ -56,7 +56,7 @@ export function fountainWishOpen(p) {
     return;
   }
   const can = wishCan(s.meta, R),
-    price = `<pb-coin kind="${R.cost.cur}" value="${R.cost.n}" label="Scrap"></pb-coin>`;
+    price = `<pb-chip kind="${R.cost.cur}" value="${R.cost.n}" label="Scrap"></pb-chip>`;
   if (can === 'done') {
     toast('You’ve tossed your coin. The fountain wants a new story first: come back after your next run.');
     return;
@@ -239,7 +239,7 @@ function festMarketHTML() {
     .map(({ i, ware, left }) => {
       const W = festWare(ware),
         can = left > 0 && have >= ware.price;
-      return `<div class="ware2 k-card${left ? '' : ' locked'}"><span class="w-ic">${W.icon}</span><span class="w-t"><b>${escapeHtml(W.name)}</b><small>${escapeHtml(W.d)}</small><small class="note">${left ? `${left} left this time` : 'Sold out'}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="festbuy" data-i="${i}" ${can ? '' : 'disabled'}><pb-coin kind="${cur}" value="${ware.price}" label="Scrap"></pb-coin></button></span></div>`;
+      return `<div class="ware2 k-card${left ? '' : ' locked'}"><span class="w-ic">${W.icon}</span><span class="w-t"><b>${escapeHtml(W.name)}</b><small>${escapeHtml(W.d)}</small><small class="note">${left ? `${left} left this time` : 'Sold out'}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="festbuy" data-i="${i}" ${can ? '' : 'disabled'}><pb-chip kind="${cur}" value="${ware.price}" label="Scrap"></pb-chip></button></span></div>`;
     })
     .join('');
   return `<p>${escapeHtml(on.F.about)}</p><p class="note">Into your bag for the next run. You have ${formatNumber(have)} Scrap.</p><div class="wares2">${rows}</div>`;
