@@ -15,7 +15,9 @@ const LVL = 30;
 
 /** every build the data allows: [gem, torso, armL, armR, legs] */
 export function allBuilds() {
-  const of = slot => Object.keys(ROBOTS.parts).filter(id => ROBOTS.parts[id].slot === slot);
+  /* RL-14b: a boss's parts (rar 'boss', the Voltron's) are not a player's build */
+  const of = slot =>
+    Object.keys(ROBOTS.parts).filter(id => ROBOTS.parts[id].slot === slot && ROBOTS.parts[id].rar !== 'boss');
   const out = [];
   for (const gem of Object.keys(ROBOTS.gems))
     for (const torso of of('torso'))

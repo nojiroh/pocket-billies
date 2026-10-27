@@ -424,6 +424,11 @@ debugLog.glInfo = () => {
     o.webglFailed = !!(typeof GAME.gpuState !== 'undefined' && GAME.gpuState.fail);
     o.contextLost = !!(typeof GAME.gpuState !== 'undefined' && GAME.gpuState.lost);
     o.frames = GAME.walkRenderer.frames;
+    /* phase 20 D2: Medium precision as the 3D view started, and any program the driver refused it for */
+    if (typeof GAME.gpuState !== 'undefined')
+      o.mediump = GAME.gpuState.mp
+        ? 'on' + (GAME.gpuState.mpBad.length ? ', refused: ' + GAME.gpuState.mpBad.join(' ') : '')
+        : 'off';
   }
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
@@ -544,6 +549,14 @@ debugLog.state = () => {
               ((GAME.saveData.wild || {})[((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).id] || {}).list || []
             ).map((/** @type {any} */ q) => `${q.sp}:${q.lvl}:${q.rare ? 'rare' : q.hab || 'grass'}`),
             rareAt: ((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).rareAt || null,
+            /* RT-4b: this place's finds (reward card ids, taken marked) and its Cut bramble row (cut marked) */
+            finds: ((placeMap && placeMap.props) || [])
+              .filter((/** @type {any} */ p) => p.find)
+              .map((/** @type {any} */ p) => `${p.card}${GAME.saveData.flags[p.find] ? ':taken' : ''}`),
+            cut: (() => {
+              const p = ((placeMap && placeMap.props) || []).find((/** @type {any} */ q) => q.cut);
+              return p ? `${p.cut}${GAME.saveData.flags[p.cut] ? ':cut' : ''}` : null;
+            })(),
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

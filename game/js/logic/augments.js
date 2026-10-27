@@ -198,14 +198,14 @@ export const augKey = a =>
 /** a Billie's (or a snapshot's) Augments' code, '' for none @param {any} m */
 export const augOf = m => (m && typeof m === 'object' && m.aug ? augKey(m.aug) : '');
 /** the robot parts an Escaped specimen of this species could wear (a slot that fits, a part of its kind), as
- * [slot, part id] pairs in slot and robots.json order @param {GeneData} D @param {string} sp
- * @returns {[string, string][]} */
+ * [slot, part id] pairs in slot and robots.json order; RL-14b: never a boss's part (rar 'boss', the Voltron's)
+ * @param {GeneData} D @param {string} sp @returns {[string, string][]} */
 export function augChoices(D, sp) {
   /** @type {[string, string][]} */
-  const out = [];
+  const out = [],
+    parts = (D.robots && D.robots.parts) || {};
   for (const slot of AUG_SLOTS)
-    for (const id of Object.keys((D.robots && D.robots.parts) || {}))
-      if (augFits(D, sp, slot, id)) out.push([slot, id]);
+    for (const id of Object.keys(parts)) if (parts[id].rar !== 'boss' && augFits(D, sp, slot, id)) out.push([slot, id]);
   return out;
 }
 

@@ -203,6 +203,41 @@ normal payout, open to anyone; the ghost on its own node, one per run, paying as
 - Studio: a moderation view (reports, hide an entry). Hiding needs a moderator: the owner's uid in the rules.
 - **Ask me before:** the first themes; whether ribbons show in battle.
 
+**Facts corrected at ON-3's start** (2026-10-27, main at a8c60bbc): the Firebase SDK the game loads (compat 10.12.5,
+account.js) has no `count()` aggregation, and a count can't sort a list anyway: each entry keeps its own vote count.
+Sorting a week by votes (`w == N`, order by `v`) needs a composite index created in the Firebase console: one sort key
+`wv` (week * 1,000,000 + votes) does it with a single-field range. The Studio signs in with GitHub only (no Firebase
+account), so it can't read reports. The look draws from data as planned: `rigCanvasHTML(sp, size, {build, coat,
+graft})`, the graft code (`graftLook`) carrying the Augments too.
+
+**Done in ON-3** (2026-10-27, on `track/online`, main a8c60bbc merged in first). The owner's answers: three themes to
+start (Best abomination, Most Bureau, Best splice); ribbons on the Billie sheet and the Trainer card, never in battle;
+moderation in the game's Debug menu; the theme's top 3 win a ribbon.
+- `game/js/logic/showcase.js`: `showEntry` (a Billie's look and names only: species, coat, sizes, splice, Augments as
+  part ids, the abomination mark, level, nickname, OT name, trainer name; after `legalBilly` on its online copy),
+  `showValid` (what is read back: only looks the game can draw, clean names), `showTheme` / `showThemeFits`,
+  `showWinners` (the week's theme by votes, then the earlier entry; never hidden, never without a vote), `showAward`
+  (once a week, to the Billie still in its slot), `showHidden` (the moderator's `hid`, or 3 reports past `ok`).
+- `game/data/showcase.json` (+ schema, `dataShowcase`): the themes (one a week from Monday 00:00 UTC, round again;
+  `need` abom / aug / graft / type / any) and the ribbons' names (their count is how many win).
+- The save: `meta.show` `{s: my slots {i, k, w, th, b}, v: my votes, rw: the last week looked at, rib: ribbons won}`
+  and `Billy.ribbons` `[{w, th, p}]`, checked by `validMeta` / `billiesOk` (in meta-state.js, so the Studio has them).
+  No SAVE_VERSION change. `onlineCopy` doesn't carry ribbons (ON-4 decides whether a traded Billie keeps them).
+- Rules: `showcase/<uid>_<slot>` (slots 0-2; the owner creates and deletes, never edits; listed by anyone signed in, 20
+  at a time); `votes/<entry>_<k>_<uid>` (once, with the entry's `v` and `wv` ± 1 in the same batch, only in the
+  entry's week, not on your own or a hidden entry); reports on `show_<entry>_<k>` also raise the entry's `r`; the
+  moderator sets `ok` and `hid`. 7 emulator tests (`firebase/test/showcase.test.mjs`, one with entries the game makes).
+- The page (`game/js/showcase.js`): the Billie sheet's "Share to the Showcase" (needs Online play; a full set
+  replaces one of the three); the Trainer screen's Showcase: This week (the theme by votes), Last week (with its
+  ribbons), New, Friends, Yours; Vote / Voted, Take down, and "…" (report with ON-1's reasons, or block). Everyone's
+  tabs need Online play; Friends and Yours don't. Pages of 20 kept 10 minutes; "Show more" reads the next 20. The
+  ribbons won on the Billie sheet and the Trainer screen. Debug > Moderation: reports past what was cleared (Clear,
+  Hide entry), the hidden entries (Show again).
+- Tests: `tools/test/showcase.test.mjs` (every species shares and reads back), meta-state; the quick check's Safety
+  step covers every Showcase tab, the entry sheet, the share sheet, Moderation and the ribbons.
+- Changed from the plan above: one vote count per entry instead of `count()`; "Top this week" and "Theme" are one tab
+  (one theme a week); moderation in the game's Debug menu, not the Studio.
+
 ### ON-4 Friend trades: Billies, eggs, parts (2 sessions)
 - Flow (Pokémon's trade screen): open a trade with a friend, each puts in up to 3 things, a summary both see, both
   confirm, then "Trade!". `offers/{a}_{b}_{t}`: each side writes only its own `give` and `ok`; any change to a `give`

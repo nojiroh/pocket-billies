@@ -264,7 +264,7 @@ export function friendShownName(u, name, or = 'Friend') {
   return friends.hidden[u] ? 'Trainer' : name || or;
 }
 /* ON-1: block a player: they leave my friends, their requests go, and the rules refuse their new ones */
-async function blockPlayer(u, name) {
+export async function blockPlayer(u, name) {
   if (!u || u === friends.uid) return;
   friends.blocked = blockListClean([...friends.blocked, u]);
   friends.blockNames = Object.assign({}, friends.blockNames, { [u]: cleanName(name || '', 40) || 'Trainer' });

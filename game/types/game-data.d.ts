@@ -67,6 +67,8 @@ export interface GameData {
   banter?: Record<DataId, BanterLine>;
   /** RL-S2: the hub folk and you (relations.json) */
   relations?: RelationsData;
+  /** ON-3: the Showcase's weekly themes and ribbons (game/data/showcase.json) */
+  showcase?: ShowcaseData;
   /** RL-12b: rewards.json */
   rewards?: Record<DataId, RewardRow>;
   /** roguelite track RL-11: the four currencies (game/data/currencies.json) */
@@ -90,6 +92,8 @@ export interface GameData {
   modifiers?: ModifiersData;
   /** RL-14: the runs' enemy factions and their bots */
   factions?: { about?: string; factions: Record<DataId, Faction> };
+  /** RL-14b: a run's bosses that are not a leader's Billie (the Voltron) */
+  bosses?: { about?: string; bosses: Record<DataId, BossDef> };
   /** TW-3: a run's quests */
   quests?: QuestsData;
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
@@ -827,6 +831,8 @@ export interface TrainerEntry extends Trainer {
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
   hpMult?: number;
+  /** RL-14b: a bosses.json boss's id (the Voltron): the run's boss is that robot, not the team's Billie */
+  boss?: string;
   /** RT-2: a route pair's second trainer (logic/route-trainers.js runRouteTrainers): its class, look and name */
   mate?: { cls: DataId; who: DataId; name: string };
 }
@@ -1025,6 +1031,10 @@ export interface Rules {
       /** RO-3f: myth: the chance a run route's rarer one is a mythical instead (at most one a run), and which */
       rare?: { up: number; myth?: { chance: number; list: DataId[] } };
     };
+    /** RT-4b: a run route's finds (logic/route-finds.js): `perRoute` [fewest, most] a place on its free dead ends and
+        pockets, `rare` the share drawn from `rareCards` (rewards.json cards; the rest a small item or candy card by
+        weight), `brambles` the most Cut bramble rows a place */
+    finds?: { perRoute: [number, number]; rare: number; rareCards: DataId[]; brambles: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
@@ -1987,6 +1997,34 @@ export interface Faction {
   /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
   salvage: { parts: number; scrap: number; scrapPerBot: number };
 }
+/** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
+export interface BossPhase {
+  at: number;
+  shield?: number;
+  stages?: Record<string, number>;
+  breaks?: 'armL' | 'armR' | 'legs';
+  say?: string;
+}
+/** RL-14b: bosses.json: a run boss that is a robot fought as an Alpha (battle-engine.js makeBossRobot) */
+export interface BossDef {
+  name: string;
+  expeditions: number[];
+  who?: string;
+  fighter: { gem: string; torso: string; armL: string; armR: string; legs: string };
+  bots?: Partial<Record<'torso' | 'armL' | 'armR' | 'legs', string>>;
+  boss: { hp: number; st: number; levels: number };
+  phases: BossPhase[];
+  /** the battle's first line ({name}) */
+  call?: string;
+  join?: string;
+  /** the join intro's glow (else its gem's colour) */
+  glow?: string;
+  win?: string;
+  rewards?: { parts?: number };
+  story?: string;
+  /** its story script plays only while the story's chapter is this */
+  chapter?: number;
+}
 /** TW-3: quests.json: a run's quests (logic/run-quests.js) */
 export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';
 export interface QuestKindRule {
@@ -2297,6 +2335,8 @@ export interface SetPiece {
   plans?: Record<string, number>;
   props: SetPieceProp[];
   people?: SetPiecePerson[];
+  /** RT-4b: animals living in it, kept to an area in its own metres [x0, z0, x1, z1] */
+  life?: { k: string; n: number; area: [number, number, number, number] }[];
 }
 export interface SetPieceProp {
   /** a scenery.json prop */
@@ -2384,6 +2424,21 @@ export interface RivalRules {
 }
 
 /** RL-S2: relations.json: what a gift costs and gives, and each hub person's levels (logic/relations.js) */
+/** ON-3: showcase.json: the weekly themes (one a week from Monday 00:00 UTC, round again) and the ribbons the
+ * theme's top entries earn, first place first (logic/showcase.js) */
+export interface ShowcaseData {
+  about?: string;
+  ribbons: string[];
+  themes: ShowcaseTheme[];
+}
+export interface ShowcaseTheme {
+  id: string;
+  name: string;
+  d: string;
+  /** what a Billie needs to enter: an abomination or Unstable splice, Augments, a splice, a type (`type`), anything */
+  need: 'abom' | 'aug' | 'graft' | 'type' | 'any';
+  type?: string;
+}
 export interface RelationsData {
   gift: { cost: number; points: number; favour: number };
   people: Record<string, { levels: RelationLevel[]; favour?: RelationFavour }>;

@@ -7,6 +7,9 @@
    "on": ["clearing","roadside"],
    "r": 4.5,
    "biomes": {"meadow":3,"thicket":3,"autumn":3,"lake":2,"ridge":2,"tundra":2,"jungle":2,"default":1},
+   "life": [
+    {"k":"cat","n":1,"area":[-2.4,0.4,2.4,3.4]}
+   ],
    "props": [
     {"k":"campfire","x":0,"z":1.6},
     {"k":"log","x":-1.9,"z":1.2,"rot":70},
@@ -23,6 +26,10 @@
    "r": 6,
    "biomes": {"meadow":3,"autumn":2,"lake":1,"default":0},
    "plans": {"farmland":2},
+   "life": [
+    {"k":"sheep","n":2,"area":[-1.8,1.5,2,4.8]},
+    {"k":"chicken","n":2,"area":[-1.8,1.5,2,4.8]}
+   ],
    "props": [
     {"k":"fence_gate","x":-1.1,"z":1},
     {"k":"fence_wood","x":1.1,"z":1},

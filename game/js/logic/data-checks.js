@@ -50,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBosses: [() => dataBosses, v => (dataBosses = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
   // @ts-expect-error -- replaced on purpose
   dataCameraStops: [() => dataCameraStops, v => (dataCameraStops = v)],
@@ -107,6 +109,8 @@ expose({
   dataSceneFindings: [() => dataSceneFindings, v => (dataSceneFindings = v)],
   // @ts-expect-error -- replaced on purpose
   dataSetPieces: [() => dataSetPieces, v => (dataSetPieces = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataShowcase: [() => dataShowcase, v => (dataShowcase = v)],
   // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
@@ -399,6 +403,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'scene',
   'layouts',
   'wild',
+  'finds',
   'seamIn',
   'load',
   'start',
@@ -581,6 +586,36 @@ export function dataRunScene(D) {
               had.add(t);
             }
         }
+    }
+    /* RT-4b: a route's finds (logic/route-finds.js): how many a place, the rare share, the rare cards (rewards.json
+       cards), how many bramble rows a place */
+    const FD = R.finds;
+    if (FD !== undefined) {
+      const cards = D.rewards || {};
+      if (
+        !FD ||
+        typeof FD !== 'object' ||
+        !Array.isArray(FD.perRoute) ||
+        FD.perRoute.length !== 2 ||
+        !whole(FD.perRoute[0], 0, 6) ||
+        !whole(FD.perRoute[1], FD.perRoute[0], 6) ||
+        typeof FD.rare !== 'number' ||
+        !(FD.rare >= 0 && FD.rare <= 1) ||
+        !Array.isArray(FD.rareCards) ||
+        !whole(FD.brambles, 0, 3)
+      )
+        problem(
+          'rules.json',
+          'run.finds is not { perRoute [fewest, most] (0-6), rare (0-1), rareCards (rewards.json ids), brambles (0-3) }'
+        );
+      else {
+        for (const k of Object.keys(FD))
+          if (!['perRoute', 'rare', 'rareCards', 'brambles'].includes(k))
+            problem('rules.json', `run.finds.${k}: no such rule`);
+        for (const k of FD.rareCards)
+          if (Object.keys(cards).length && !cards[k])
+            problem('rules.json', `run.finds.rareCards: no card "${k}" (rewards.json)`);
+      }
     }
     if (!whole(R.seamIn, 1, 30)) problem('rules.json', 'run.seamIn is not a whole number of metres from 1 to 30');
     /* HB-2: the loading screen's cap (logic/run-load.js), 1-120 s */
@@ -1164,6 +1199,45 @@ export function dataFactions(D, valid = () => true) {
   }
   return out;
 }
+// RL-14b: bosses.json: the schema; its fighter is a gem and the right kind of part in each slot (robots.json); its
+// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's
+/** RL-14b: bosses.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBosses(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['bosses.json', what]),
+    B = D.bosses;
+  if (!B) return [['bosses.json', 'missing']];
+  if (!valid('bosses.schema.json', B, 'bosses.json')) return out;
+  const R = D.robots || { parts: {}, gems: {} },
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' },
+    scripts = (D.story && D.story.scripts) || {},
+    exps = ((D.modifiers && D.modifiers.expeditions) || []).length,
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    /** @type {Record<number, string>} */
+    taken = {};
+  for (const [k, X] of Object.entries(/** @type {Record<string, any>} */ (B.bosses))) {
+    const F = X.fighter;
+    if (!R.gems[F.gem]) problem(`${k}.fighter.gem: no gem "${F.gem}" (robots.json)`);
+    for (const [slot, kind] of Object.entries(fits)) {
+      const P = R.parts[F[slot]];
+      if (!P) problem(`${k}.fighter.${slot}: no part "${F[slot]}" (robots.json)`);
+      else if (P.slot !== kind) problem(`${k}.fighter.${slot}: "${F[slot]}" is a ${P.slot}, not a ${kind}`);
+    }
+    X.phases.forEach((/** @type {any} */ p, /** @type {number} */ i) => {
+      if (i && p.at >= X.phases[i - 1].at) problem(`${k}.phases[${i}].at: not below the phase before it`);
+      for (const s of Object.keys(p.stages || {}))
+        if (stats.size && !stats.has(s)) problem(`${k}.phases[${i}].stages: no stat "${s}" (stats.json)`);
+    });
+    if (X.story && !scripts[X.story]) problem(`${k}.story: no script "${X.story}" (story.json scripts)`);
+    for (const n of X.expeditions) {
+      if (exps && n > exps) problem(`${k}.expeditions: no Expedition ${n} (modifiers.json)`);
+      if (taken[n]) problem(`${k}.expeditions: Expedition ${n} is already ${taken[n]}'s`);
+      taken[n] = k;
+    }
+  }
+  return out;
+}
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
 // regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down
 /** RL-13: modifiers.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
@@ -1542,6 +1616,27 @@ export function dataRelations(D, valid = () => true) {
         if (!(D.pyramids || {})[i]) problem(`${at}.pyramids: no catch item "${i}" (pyramids.json)`);
       if (L.wardrobe && !wardrobe[L.wardrobe]) problem(`${at}.wardrobe: no piece "${L.wardrobe}" (wardrobe.json)`);
     });
+  }
+  return out;
+}
+
+/** ON-3: showcase.json: the schema, theme ids once each, a type theme's type @param {any} D @param {DataValid} [valid]
+ * @returns {DataProblem[]} */
+export function dataShowcase(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['showcase.json', what]),
+    S = D.showcase;
+  if (!S) return [['showcase.json', 'missing']];
+  if (!valid('showcase.schema.json', S, 'showcase.json')) return out;
+  const seen = new Set(),
+    types = new Set((Array.isArray(D.types) ? D.types : []).map((/** @type {any} */ t) => t.id));
+  for (const T of S.themes) {
+    if (seen.has(T.id)) problem(`themes: "${T.id}" twice`);
+    seen.add(T.id);
+    if (T.need === 'type' && !types.has(T.type)) problem(`themes.${T.id}.type: no type "${T.type}" (types.json)`);
+    if (T.need !== 'type' && T.type !== undefined)
+      problem(`themes.${T.id}.type: only a theme of need "type" names one`);
   }
   return out;
 }

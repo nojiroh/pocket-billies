@@ -15,7 +15,7 @@
      type:Water >= 2       Billies of a type in the team (RL-12b)        money >= 200     Moneys on hand (RL-12b)
      team >= 2             Billies in the team (RL-12b)
      badge:Water           a badge of that type is won (RL-12b: meta.badges, or a leader's seat)
-     opened:cut            a run's field move obstacle is open (RL-R2)
+     opened:cut            a run's field move obstacle is open (RL-R2); opened:cut.3.1 a route's bramble row (RT-4b)
      last:lost, last:row <= 3      the last run (RL-S1: logic/run-history.js LAST_FACTS)
      lastby:boss, lastby:bureau    what ended the last run: its kind, a leader's or class's id, a Billie, the Bureau
      history:losses >= 2   over the runs kept (HISTORY_FACTS)   rematch >= 1   runs this foe ended (a leader's lines)
@@ -53,6 +53,8 @@ expose({
   editDistance: [() => editDistance, v => (editDistance = v)],
   // @ts-expect-error -- replaced on purpose
   lastTeamOf: [() => lastTeamOf, v => (lastTeamOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  openedOf: [() => openedOf, v => (openedOf = v)],
   // @ts-expect-error -- replaced on purpose
   parseCondition: [() => parseCondition, v => (parseCondition = v)],
   parsed: [() => parsed],
@@ -103,7 +105,11 @@ export const CONDITION_KINDS = {
   money: { id: false, count: true, about: 'Moneys on hand: money >= 200' },
   team: { id: false, count: true, about: 'Billies in your team: team >= 2' },
   badge: { id: true, count: false, about: 'a badge of that type is won: badge:Water' },
-  opened: { id: true, count: false, about: 'a run’s field move obstacle is open (RL-R2): opened:cut' },
+  opened: {
+    id: true,
+    count: false,
+    about: 'a run’s field move obstacle is open (RL-R2): opened:cut; a route’s bramble row cut (RT-4b): opened:cut.3.1',
+  },
   dna: { id: false, count: true, about: 'DNA on hand (SP-6): dna >= 10' },
   genes: { id: false, count: true, about: 'Genes in the Gene Bank’s library (SP-6): genes >= 1' },
   spliced: { id: false, count: true, about: 'spliced Billies in your team (SP-6): spliced >= 1' },
@@ -449,6 +455,17 @@ export function conditionHolds(c, S) {
   return CONDITION_KINDS[c.kind] && CONDITION_KINDS[c.kind].count ? v > 0 : !!v;
 }
 
+/** what is open this run: the side area's move once its obstacle is (RL-R2), and each route bramble row cut and find
+ * taken (RT-4b: the run's flags cut.<node>.<spot> and find.<node>.<k>) @param {any} save
+ * @returns {Record<string, number>} */
+export function openedOf(save) {
+  /** @type {Record<string, number>} */
+  const o = {},
+    S = save.run && save.run.map && save.run.map.side;
+  if (S && S.open) o[S.move] = 1;
+  if (save.run) for (const k of Object.keys(save.flags || {})) if (/^(cut|find)\./.test(k) && save.flags[k]) o[k] = 1;
+  return o;
+}
 /** the story state a save gives, for conditionHolds: the save's own objects where they fit (so a script's changes to
  * story flags, items and pyramids show at once), counts and lookups made fresh. RL-12b: `typesOf` gives a team
  * Billie's types (else its own `types`), `badgeTypes` a seat's, a leader's or a badge's type (meta.badges may hold
@@ -495,8 +512,8 @@ export function storyStateOf(save, o = {}) {
     team: (save.team || []).length,
     badgeTypes: badgeTypesOf(save, o.badgeTypes || {}),
     /* RL-R2: the run's side area's move, once its obstacle is open (logic/run-side.js) */
-    opened:
-      save.run && save.run.map && save.run.map.side && save.run.map.side.open ? { [save.run.map.side.move]: 1 } : {},
+    /* RT-4b: and a route's Cut bramble rows cut this run (the run's flags cut.<node>.<spot>: logic/route-finds.js) */
+    opened: openedOf(save),
     /* SP-6: DNA, the Gene library and the team's splices (a Billie with a graft) */
     dna: meta.dna || 0,
     genes: (meta.genes || []).length,

@@ -78,15 +78,11 @@ const GRAPHICS_TEST_HIDDEN = [
      the scene (8 is the phone limit stage D6 may take) */
   ['quality.stableLights', 'Steady lamps', { values: [false, true], alone: true }],
   ['quality.lights', 'Lamps lit at once', { values: [8, 16], alone: true }],
-  /* phase 20 R2: the models drawn one draw per mesh; the same look, so left out of "everything lowest / highest" */
-  ['quality.modelInstances', 'Models in batches', { values: [false, true], alone: true }],
   /* phase 20 R2 (pixels): each on its own, out of "everything lowest / highest" (Phone pixel budget is not here: the
      test pins resolution 1, under the phone's budget either way; the diagnostics' Renderer baseline measures it) */
   ['quality.skyLast', 'Sky last', { values: [false, true], alone: true }],
-  ['quality.solidFirst', 'Solid things first', { values: [false, true], alone: true }],
-  ['quality.invalidate', 'Drop spent pictures', { values: [false, true], alone: true }],
-  ['quality.phoneLamps', 'Phone lamps', { values: [false, true], alone: true }],
-  ['quality.rainBatch', 'Rain in one go', { values: [false, true], alone: true }],
+  /* phase 20 D2: the bloom, rays and grade in mediump (the same look, meant to be cheaper on Android) */
+  ['quality.mediump', 'Medium precision', { values: [false, true], alone: true }],
   ['air.cheapShafts', 'Cheap light shafts', { values: [0, 0.6], alone: true }],
   /* smart light shafts (logic/shaft-pick.js): the cheap shafts placed by the picker; a look change, on its own */
   ['air.shaftPick', 'Smart light shafts', { values: [false, true], alone: true }],
@@ -94,18 +90,13 @@ const GRAPHICS_TEST_HIDDEN = [
   ['lens.nearSpread', 'Spread blur in front', { values: [false, true], alone: true }],
   /* phase 20 E7-E10: the standing pictures (and the reflection's) drawn one draw per run of one picture; the same look */
   ['quality.spriteInstances', 'Pictures in batches', { values: [false, true], alone: true }],
-  /* phase 20 R3 (shadows): the shadow maps' pictures and models in batches (the same look); models in the far shadow
-     cache and the far shadows held still (a look change past 13 m), each on its own */
-  ['quality.shadowInstances', 'Shadows in batches', { values: [false, true], alone: true }],
-  ['quality.modelShadowCache', 'Models in the shadow cache', { values: [false, true], alone: true }],
-  ['quality.farShadowsStill', 'Far shadows hold still', { values: [false, true], alone: true }],
 ];
 /* the stations, in the order the test walks them; their spots are the map's `bench` ([x, z, camera turn, zoom]) */
 const GRAPHICS_TEST_STATIONS = [
   {
     id: 'control',
     name: 'Control pad',
-    dials: ['quality.resolution', 'lens.vignette', 'lens.grain', 'quality.invalidate'],
+    dials: ['quality.resolution', 'lens.vignette', 'lens.grain', 'quality.mediump'],
   },
   {
     id: 'shadows',
@@ -117,7 +108,6 @@ const GRAPHICS_TEST_STATIONS = [
       'shadows.cascades',
       'shadows.ao',
       'shadows.contact',
-      'quality.shadowInstances',
       /* the audit's fixes (2026-10-26), each a look change behind its own switch */
       'shadows.steadyEdges',
       'shadows.aoPlane',
@@ -129,17 +119,7 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'sun',
     name: 'Sun gap',
     sun: { angle: -90, height: 18 },
-    dials: ['air.godRays', 'quality.solidFirst', 'quality.skyLast'],
-  },
-  /* phase 20 R2 (D7): the Sun gap with God rays off, where the cheap shafts stand in (a station may borrow another's
-     spot, and fix values of its own under every step) */
-  {
-    id: 'shafts',
-    name: 'Sun gap, no god rays',
-    spot: 'sun',
-    sun: { angle: -90, height: 18 },
-    fixed: { 'air.godRays': 0 },
-    dials: ['air.cheapShafts'],
+    dials: ['air.godRays', 'quality.skyLast', 'quality.mediump'],
   },
   /* the same spot with the cheap shafts on: placed one at about every other tree, then by the picker */
   {
@@ -159,10 +139,6 @@ const GRAPHICS_TEST_STATIONS = [
       'lights.brightness',
       'quality.stableLights',
       'quality.lights',
-      'quality.modelInstances',
-      'quality.phoneLamps',
-      'quality.invalidate',
-      'quality.shadowInstances',
       'lights.windowFacing',
       'shadows.lampFix',
       'lights.onWater',
@@ -173,7 +149,6 @@ const GRAPHICS_TEST_STATIONS = [
   {
     id: 'meadow',
     name: 'Meadow',
-    dials: ['grass.density', 'air.particles', 'air.mist', 'quality.farShadowsStill', 'world.treeCoreShade'],
   },
   {
     id: 'depth',
@@ -183,11 +158,7 @@ const GRAPHICS_TEST_STATIONS = [
       'lens.nearSpread',
       'world.farProps',
       'quality.stableLights',
-      'quality.modelInstances',
       'quality.spriteInstances',
-      'quality.shadowInstances',
-      'quality.modelShadowCache',
-      'quality.farShadowsStill',
       'color.inkFollow',
       'world.buildingBumps',
       'world.frontMaterial',
@@ -195,8 +166,9 @@ const GRAPHICS_TEST_STATIONS = [
     ],
   },
   { id: 'sky', name: 'Open sky', dials: ['sun.clouds', 'sun.cloudShadows', 'quality.skyLast'] },
-  /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise) */
-  { id: 'rain', name: 'Meadow in the rain', spot: 'meadow', weather: 'rain', dials: ['quality.rainBatch'] },
+  /* phase 20 R2: the meadow in the rain (a station may name its weather; clear otherwise); against the Meadow it shows
+     what the rain costs */
+  { id: 'rain', name: 'Meadow in the rain', spot: 'meadow', weather: 'rain', dials: [] },
   { id: 'everything', name: 'Everything', all: true },
 ];
 const GRAPHICS_TEST_MAP = 'test_graphics';

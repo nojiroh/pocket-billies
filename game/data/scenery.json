@@ -4581,6 +4581,19 @@
    ],
    "vary": {"size":0}
   },
+  "find_pyramid": {
+   "name": "Find (a pyramid on the ground)",
+   "img": "coins/pyramid_16.png",
+   "ox": -8,
+   "oy": -16,
+   "shadow": 0.22,
+   "sway": 0,
+   "flat": 0,
+   "tags": [],
+   "group": "find_pyramid",
+   "solid": 0,
+   "ppm": 32
+  },
   "pebbles": {
    "name": "Pebbles",
    "img": "scene/props/pebbles.png",

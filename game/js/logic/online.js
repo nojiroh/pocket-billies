@@ -67,7 +67,7 @@ export function blockListClean(v) {
 export const onlinePlayOn = prefs => !!(prefs && prefs.online === true);
 
 /** a report target's id: what kind of thing and whose, as one Firestore id ('user_<uid>')
- * @param {'user'} kind @param {string} id */
+ * @param {'user' | 'show'} kind @param {string} id */
 export const reportTarget = (kind, id) => kind + '_' + id;
 
 /** whether a target is hidden for everyone: reported by ONLINE_HIDE_AT accounts more than the moderator cleared

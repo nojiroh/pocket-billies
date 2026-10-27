@@ -98,6 +98,7 @@ test("Studio plan T3.3: a run town's wares through the run's own unlocks (runSho
   assert.deepEqual(L.runShopOpen(run, 3, 2, R.shop, UD), L.runShopStock(run, 3, 2, R.shop), 'no copy: all open');
 });
 
+/* RL-14b: with no bosses.json boss (as on Expedition II and up), a leader is the boss */
 test("the run's foes: a leader on every mini-boss node and the boss's, none twice, at their row's levels", () => {
   assert.equal(LEADERS.length, 8);
   for (let k = 0; k < 200; k++) {
@@ -105,12 +106,12 @@ test("the run's foes: a leader on every mini-boss node and the boss's, none twic
       /* RL-S2: Blake's foes are rival.test.mjs's */
       leadersOf = (/** @type {any} */ o) =>
         Object.fromEntries(Object.entries(o).filter(([, F]) => F.runFoe !== 'rival')),
-      foes = leadersOf(L.runFoes(run, { leaders: LEADERS, rules: R })),
+      foes = leadersOf(L.runFoes(run, { leaders: LEADERS, rules: R, bosses: {} })),
       want = run.map.nodes.flatMap((n, i) => (n.type === 'miniboss' || n.type === 'boss' ? [i] : []));
     assert.deepEqual(Object.keys(foes).sort(), want.map(L.runFoeId).sort());
     assert.equal(new Set(Object.values(foes).map(F => F.from)).size, want.length, 'no leader twice in a run');
     assert.deepEqual(
-      leadersOf(L.runFoes(run, { leaders: LEADERS.slice().reverse(), rules: R })),
+      leadersOf(L.runFoes(run, { leaders: LEADERS.slice().reverse(), rules: R, bosses: {} })),
       foes,
       'the same foes again'
     );
@@ -279,6 +280,49 @@ test("on a run new ids come from the run's counter, so a run made again gives th
   assert.deepEqual([fn('newUid')(), fn('newUid')(), fn('makeBilly')('musk0', 5).uid], ['r3-0', 'r3-1', 'r3-2']);
   assert.equal(s.run.uidN, 3);
   s.run = null;
+});
+
+test("RL-14b: on Expedition I the boss is the Retrieval Unit at the leader's level; the other foes stay; II has a leader", () => {
+  const V = data.BOSSES.retrieval;
+  assert.deepEqual(L.runBossFor(data.BOSSES, 1), ['retrieval', V]);
+  assert.equal(L.runBossFor(data.BOSSES, 2), null);
+  for (let k = 0; k < 40; k++) {
+    const run = runOf(`VOLT${k}`),
+      lead = L.runFoes(run, { leaders: LEADERS, rules: R, bosses: {} }),
+      foes = L.runFoes(run, { leaders: LEADERS, rules: R });
+    for (const [id, F] of Object.entries(foes)) {
+      if (F.runFoe !== 'boss') {
+        assert.deepEqual(F, lead[id], 'a mini-boss or Blake as before');
+        continue;
+      }
+      assert.equal(F.boss, 'retrieval');
+      assert.equal(F.name, V.name);
+      assert.equal(F.alpha, true);
+      assert.equal(F.from, 'retrieval');
+      assert.equal(F.type, undefined, 'no badge: it is not a leader');
+      assert.deepEqual(F.script, [`battle ${F.id}`]);
+      assert.deepEqual(F.team, [{ sp: 'robot', lvl: lead[id].team[0].lvl, boss: 'retrieval' }]);
+    }
+    run.expedition = 2;
+    for (const F of Object.values(L.runFoes(run, { leaders: LEADERS, rules: R }))) assert.equal(F.boss, undefined);
+  }
+});
+
+test("RL-14b: the run boss battle builds the Retrieval Unit as an Alpha robot, the Expedition's HP on it", () => {
+  startedSave('musk0', 30);
+  const run = runOf('VOLTB'),
+    F = Object.values(L.runFoes(run, { leaders: LEADERS, rules: R })).find(f => f.runFoe === 'boss');
+  data.TRAINERS[F.id] = { ...F, hpMult: 1.15 };
+  try {
+    fn('startTrainer')(F.id, { talked: true });
+    const m = fn('fighter')(1);
+    assert.equal(m.kind, 'robot');
+    assert.equal(m.lvl, Math.min(100, F.team[0].lvl + data.BOSSES.retrieval.boss.levels));
+    assert.equal(m.boss.hp, data.BOSSES.retrieval.boss.hp * 1.15);
+    assert.equal(m.boss.phases.length, 2);
+  } finally {
+    delete data.TRAINERS[F.id];
+  }
 });
 
 test("RL-13: a higher Expedition's foes: wild Billies and leaders its levels up, the boss's HP times its row", () => {

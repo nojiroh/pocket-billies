@@ -143,16 +143,10 @@ const LIGHT_PICK = lightPicker(),
   BATTLE_LIGHT_PICK = lightPicker();
 let lightFrustum = null;
 const lightInView = l => inFrustum(lightFrustum, l.p[0], l.p[1] + worldCurveDrop(l.p[0], l.p[2]), l.p[2], l.r);
-/* phase 20 R2 (D6): a phone (Android, iPhone; as the automatic quality has it) with quality.phoneLamps lights at most 8 */
+/* phase 20 R2 (D6): a phone (Android, iPhone; as the automatic quality has it) lights at most 8 */
 const PHONE_LAMPS = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent) ? 8 : 16;
 function pickLights(L, C, P, BT) {
-  const max = Math.max(
-    1,
-    Math.min(
-      engineSetting('quality', 'phoneLamps') ? PHONE_LAMPS : 16,
-      Math.round(engineSetting('quality', 'lights') ?? 16)
-    )
-  );
+  const max = Math.max(1, Math.min(PHONE_LAMPS, Math.round(engineSetting('quality', 'lights') ?? 16)));
   if (!engineSetting('quality', 'stableLights')) return pickPointLights(L, P.x, P.z, max);
   const cull = !!C.vp && (engineSetting('quality', 'cull') ?? true);
   if (cull) lightFrustum = computeFrustum(C.vp);

@@ -35,7 +35,7 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-S1 | Story director (done 2026-10-25, branch `track/story`) | `meta.history`, `banter.json` (was `lines.json`), the hub's line pick, the return-from-a-loss scene | RL-12b | 1-2 | yes |
 | RL-S2 | Rival and relationships (done 2026-10-26, branch `track/story`: part A the systems, part B the owner's answers, Chapter 1's beats, the favours and every line) | Blake as a rival node countering your lead, `meta.rel` with gifts of Beans, the `rel:` and `chapter` conditions; Chapter 1's beats and the favours are part B | RL-S1 | 1-2 | yes |
 | RL-13 | Expeditions, challenges, starter points (done 2026-10-24, branch `track/expeditions`) | `modifiers.json` Expeditions I-V, four challenges, starter points at the mast, leaders of their own type, the sim tuned to its first wins | RL-R2 | 1-2 | yes |
-| RL-14 | The organization's bots, salvage, the Voltron (RL-14a done 2026-10-26 on `ccr-15fdd30c-5nfh0d`: `factions.json`, wild bots, the Bureau's agents with bots, salvage, the scrapyard, bots' cries, limbs dropping off; RL-14b the Voltron next, on `track/bots`) | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
+| RL-14 | The organization's bots, salvage, the Voltron (RL-14a done 2026-10-26 on `ccr-15fdd30c-5nfh0d`: `factions.json`, wild bots, the Bureau's agents with bots, salvage, the scrapyard, bots' cries, limbs dropping off; RL-14b done 2026-10-27 on `track/bots`: `bosses.json`, the Retrieval Unit as Expedition I's boss, its phases from data, the join intro, its part and Chapter 1's end on the first win) | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | done |
 | RL-15 | Online (now ON-2 of the online track, docs/phases/online-track.md; **done** 2026-10-27 on `track/online`) | the run record, friend ghosts, daily seeds, friends' boards, rules and emulator tests | RL-14, ON-1 | 2 | done |
 | RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |
 | RO-2.. | Roster: new lines (**done** 2026-10-24, branch `track/roster`: RO-2a Hughes, Kamprad, Cuban, Altman; RO-2b Yiming, Woods, Arnault; RO-2c Huang, five regional forms and a balance pass, 40 species) | from 24 to 40 species through the Studio's kit bake; plan in roguelite-track.md (RO-2.. plan) | RO-1 | 3 | done |
@@ -50,7 +50,7 @@ town node needs it.
 
 ## Tracks alongside
 - **Online track** (docs/phases/online-track.md, the owner's brief and answers 2026-10-26; ON-1 done 2026-10-26 on
-  `ccr-0b8e3c38-gt7t6a`; ON-2 done 2026-10-27 on `track/online`): ON-1 base (one legality
+  `ccr-0b8e3c38-gt7t6a`; ON-2 and ON-3 done 2026-10-27 on `track/online`): ON-1 base (one legality
   check, Online play switch, block and report, the friend re-add fix), ON-2 run record, ghosts, dailies and friends'
   boards (= RL-15), ON-3 the Showcase (share a Billie's look, votes, weekly themes, ribbons), ON-4 friend trades
   (Billies, eggs, parts; trade evolutions), ON-5 GTS and Surprise Trade on trust, ON-6 live friend battles (lockstep,
@@ -60,7 +60,7 @@ town node needs it.
 - **Routes track** (docs/phases/routes-track.md, the owner's brief 2026-10-24): run routes planned like a Pokémon
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs; done 2026-10-25), RT-3 (set pieces for a lived-in feel; done 2026-10-25), RT-4a (more wild Billies, habitats, a rarer one in a
-  hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals). Tags `rt-N-done`, `rt-4a-done`.
+  hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals; done 2026-10-27). Tags `rt-N-done`, `rt-4a-done`, `rt-4b-done`.
   Branch `track/routes`.
 - **Route props track** (docs/phases/route-props-track.md, the owner's brief 2026-10-26): more 3D props for the
   routes: RP-1 (the set pieces' last pictures as models, 20 new route props, the pieces use them, a wayside shrine
@@ -165,7 +165,8 @@ town node needs it.
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the
   stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
   VFX-0 (the plan, with research) and VFX-1 built 2026-10-26 on `ccr-a98cc267-eqso1d` at the owner's word; VFX-2
-  (the ribbon) and VFX-3 (the stretched pyramid) built 2026-10-26 on `track/vfx`; VFX-4 next. Tags `vfx-N-done`. Branch `track/vfx`.
+  (the ribbon) and VFX-3 (the stretched pyramid) built 2026-10-26 on `track/vfx`; VFX-4 (the impact frame) built
+  2026-10-27; VFX-5 next. Tags `vfx-N-done`. Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
@@ -225,7 +226,8 @@ town node needs it.
   haze. AIR-1 haze (the colour follows the sky, RGB fade, height falloff), AIR-2 a fog density grid round the player
   (a small 3D texture, coarser on phones), AIR-3 the light-in-air march lights the fog (sun, shadows, lamps), AIR-4
   depth-aware edges and shadowed haze. AIR-0 (the plan and research) done 2026-10-26 on `ccr-c0505a05-bzef90`; AIR-1
-  and AIR-2 done 2026-10-26, AIR-3 (the lit march) done 2026-10-27, waiting on the phone's frame times. Tags
+  and AIR-2 done 2026-10-26, AIR-3 (the lit march) done 2026-10-27, AIR-4 (edges by depth, blue noise, shade in the
+  haze) done 2026-10-27: the track is complete, waiting on the phone's frame times. Tags
   `air-N-done`. Branch `track/air`.
 - **Load track** (docs/phases/load-track.md, the owner's brief and answers 2026-10-26/27): no frame over 33 ms once
   the title shows, loading screens included. LD-0 (the plan with research, the hitch list, the boot timeline, the load
@@ -271,7 +273,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
 | 18 | 18-friend-trading-and-battles | not started | absorbed: the online track (docs/phases/online-track.md, 2026-10-26): ON-4 friend trades, ON-6 live friend battles |
 | 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
-| 20 | 20-renderer-batching (branch `track/renderer`) | A, B, C1-C4 done (C3 off by default); restructured 2026-10-26 into lanes and rounds; round 1 (light, measure, context) started | active: rounds R1-R4 in the phase file |
+| 20 | 20-renderer-batching (branch `track/renderer`) | A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
 
 ## If the scope is too big

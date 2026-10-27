@@ -95,9 +95,10 @@ export const RUN_RULES_IN_CODE = [
   },
   {
     what: 'How the foes fight',
-    value: 'a mini-boss: a double battle that blocks the way on; the boss: its leader’s top Billie alone, as an Alpha',
+    value:
+      'a mini-boss: a double battle that blocks the way on; the boss: its leader’s top Billie alone, as an Alpha, or on an Expedition with a bosses.json boss (Expedition I: the Retrieval Unit) that robot',
     file: 'game/js/logic/run-loop.js',
-    code: "boss = node.type === 'boss';",
+    code: "boss = node.type === 'boss',",
   },
   {
     what: 'Which leaders a run meets',

@@ -168,7 +168,11 @@ test('the shaders: the march reads the grid on its own gate; fogit steps aside i
   assert.deepEqual(FOG_EDGE, [0.7, 0.95]);
   assert.match(gl, /float m=uMist\*mo\*/, 'the low mist steps aside');
   assert.match(gl, /float v=mo\*uValley\.y\*/, 'the valley mist too');
-  assert.match(post, /if \(sh \|\| FG\)/, 'the march runs for the fog alone (no shadow map, shafts at 0)');
+  assert.match(
+    post,
+    /if \(sh \|\| FG \|\| hs > 0\.01\)/,
+    'the march runs for the fog alone (no shadow map, shafts at 0)'
+  );
   assert.match(walk, /if \(fogBox\) X\.mistBox =/, 'the mist steps aside only when the march reads the grid');
   assert.match(walk, /fog: fogOn\n/, 'and the march gets the grid only then');
 });

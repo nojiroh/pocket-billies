@@ -32,6 +32,7 @@
   "setPieces",
   "modifiers",
   "factions",
+  "bosses",
   "quests",
   "residents",
   "pools",
@@ -54,6 +55,7 @@
   "story",
   "banter",
   "relations",
+  "showcase",
   "cutscenes"
  ],
  "split": {

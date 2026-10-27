@@ -21,13 +21,27 @@ expose({
   META_GENES: [() => META_GENES],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
+  SHOW_NAME_MOST: [() => SHOW_NAME_MOST],
+  SHOW_NICK_MOST: [() => SHOW_NICK_MOST],
+  SHOW_PAGE: [() => SHOW_PAGE],
+  SHOW_RIBBONS_MOST: [() => SHOW_RIBBONS_MOST],
+  SHOW_RIB_MOST: [() => SHOW_RIB_MOST],
+  SHOW_SLOTS: [() => SHOW_SLOTS],
+  SHOW_VOTES_MOST: [() => SHOW_VOTES_MOST],
+  SHOW_WEEK_KEY: [() => SHOW_WEEK_KEY],
   // @ts-expect-error -- replaced on purpose
   metaFill: [() => metaFill, v => (metaFill = v)],
   // @ts-expect-error -- replaced on purpose
   newMeta: [() => newMeta, v => (newMeta = v)],
+  newShowMeta: [() => newShowMeta],
+  plainRecord: [() => plainRecord],
   recordOf: [() => recordOf],
+  ribbonOk: [() => ribbonOk],
+  ribbonsShapeOk: [() => ribbonsShapeOk],
   // @ts-expect-error -- replaced on purpose
   validMeta: [() => validMeta, v => (validMeta = v)],
+  // @ts-expect-error -- replaced on purpose
+  validShowMeta: [() => validShowMeta, v => (validShowMeta = v)],
   wholeIn: [() => wholeIn],
 });
 /* eslint-enable no-func-assign */
@@ -54,6 +68,8 @@ export function newMeta() {
     history: [],
     residents: {},
     boards: { d: 0, w: 0 },
+    show: newShowMeta(),
+    bosses: {},
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
@@ -74,6 +90,52 @@ export const recordOf = (v, most, ok) =>
   Object.keys(v).length <= most &&
   Object.keys(v).every(k => /^[a-z0-9_:]{1,64}$/.test(k)) &&
   Object.values(v).every(ok);
+/* ON-3: the Showcase's numbers (logic/showcase.js) and the save's own parts of it: they live here, with the save's
+   other checks, so every page that loads the save's checks has them (the Studio loads no Showcase) */
+export const SHOW_SLOTS = 3,
+  /** a page of entries (the rules refuse a bigger one) */
+  SHOW_PAGE = 20,
+  SHOW_WEEK_KEY = 1e6,
+  /** ribbons a Billie keeps, the Trainer card's list, the votes a save remembers */
+  SHOW_RIBBONS_MOST = 20,
+  SHOW_RIB_MOST = 50,
+  SHOW_VOTES_MOST = 200,
+  SHOW_NICK_MOST = 16,
+  SHOW_NAME_MOST = 40;
+/** a plain record (not an array, no __proto__ key) @param {unknown} v */
+export const plainRecord = v => !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
+/** a ribbon as a Billie keeps it: the week, its theme, the place from 0 @param {any} r */
+export const ribbonOk = r =>
+  plainRecord(r) && wholeIn(r.w, 0, 1e7) && wholeIn(r.p, 0, 9) && typeof r.th === 'string' && r.th.length <= 32;
+/** the save's Showcase record as a new player starts it: my entries' slots, the votes I gave, the last week whose
+ * ribbons were looked at, the ribbons won @returns {import('../../types/save-data').MetaShow} */
+export const newShowMeta = () => ({ s: [], v: [], rw: 0, rib: [] });
+/** whether a meta.show record is well formed @param {any} o */
+export function validShowMeta(o) {
+  if (!plainRecord(o) || Object.keys(o).some(k => !['s', 'v', 'rw', 'rib'].includes(k))) return false;
+  if (!Array.isArray(o.s) || o.s.length > SHOW_SLOTS) return false;
+  const slots = new Set();
+  for (const x of o.s) {
+    if (!plainRecord(x) || !wholeIn(x.i, 0, SHOW_SLOTS - 1) || slots.has(x.i)) return false;
+    if (!wholeIn(x.k, 0, 1e15) || !wholeIn(x.w, 0, 1e7) || typeof x.b !== 'string' || x.b.length > 64) return false;
+    if (typeof x.th !== 'string' || x.th.length > 32) return false;
+    slots.add(x.i);
+  }
+  if (!Array.isArray(o.v) || o.v.length > SHOW_VOTES_MOST) return false;
+  if (o.v.some((/** @type {unknown} */ k) => typeof k !== 'string' || k.length > 200)) return false;
+  if (!wholeIn(o.rw, 0, 1e7) || !Array.isArray(o.rib) || o.rib.length > SHOW_RIB_MOST) return false;
+  return o.rib.every(
+    (/** @type {any} */ r) =>
+      ribbonOk(r) &&
+      typeof r.sp === 'string' &&
+      r.sp.length <= 32 &&
+      typeof r.nick === 'string' &&
+      r.nick.length <= SHOW_NICK_MOST
+  );
+}
+/** a Billie's ribbons as a save holds them (saves.js billiesOk): none, or up to SHOW_RIBBONS_MOST @param {unknown} v */
+export const ribbonsShapeOk = v =>
+  v == null || (Array.isArray(v) && v.length <= SHOW_RIBBONS_MOST && v.every(ribbonOk));
 /** the load check for saveData.meta: strict, like validSave (a broken or tampered save is refused) */
 /** @param {any} o @returns {boolean} */
 export function validMeta(o) {
@@ -92,6 +154,10 @@ export function validMeta(o) {
     /* ON-2: the last daily and weekly taken off on (logic/daily.js) */
     recordOf(o.boards, 2, v => wholeIn(v, 0, 1e7)) &&
     Object.keys(o.boards).every(k => k === 'd' || k === 'w') &&
+    /* ON-3: the Showcase (logic/showcase.js) */
+    validShowMeta(o.show) &&
+    /* RL-14b: the bosses.json bosses beaten, by id: how many times (logic/battle-rewards.js bossWin) */
+    recordOf(o.bosses, 32, v => wholeIn(v, 1, META_MAX)) &&
     Array.isArray(o.genes) &&
     o.genes.length <= META_GENES &&
     o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
@@ -106,5 +172,7 @@ export function metaFill(o) {
   const filled = Object.assign(newMeta(), o && typeof o === 'object' && !Array.isArray(o) ? o : {});
   /* RL-S1: a broken history is dropped on its own, not the whole meta with it */
   if (!validHistory(filled.history)) filled.history = [];
+  /* ON-3: a broken Showcase record is dropped on its own too */
+  if (!validShowMeta(filled.show)) filled.show = newShowMeta();
   return validMeta(filled) ? filled : newMeta();
 }

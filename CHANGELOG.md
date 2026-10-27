@@ -9,6 +9,18 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
+  vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
+  and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)
+  win a Gold, Silver or Bronze ribbon, shown on the Billie and the Trainer card. Only the look goes online; nothing of
+  value moves. Report or block from any entry; three reports hide one until the moderator looks.
+
+- **The Retrieval Unit, Expedition I's boss** (roguelite track RL-14, second half): at the end of an Expedition I
+  run the Bureau calls in its first big retrieval unit. Four bots (a filing-cabinet leader, two arm-bots and a
+  conveyor leg-bot) fly in and lock together into one giant robot, fought as an Alpha by your team. It fights in two
+  phases: below 60% it raises a shield and hits harder; below 30% its Franking Unit arm tears loose and it speeds up.
+  It can't be caught. The first win salvages one of its boss parts for your spares and brings Chapter 1 to its end
+  at home. From Expedition II on, the region's leaders stay the boss.
 - **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
   sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
   Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a
@@ -69,6 +81,11 @@ kept aside in the browser).
   that hold, shaded tree cores, occlusion that leaves open ground alone, lamp light on water, outlines that follow the
   camera, even bloom, half-float HDR, steady light on far props, fronts lit as their material, and Building bumpiness
   (bricks, planks and roof tiles catching the light). Engine > Air, Sun, Lights, Shadows, Colour, World and Quality.
+- **Medium precision** (phase 20, a test switch, off for now): Studio > Engine > Quality "Medium precision" works the
+  bloom, the light rays and the final colour grade in medium precision, which Android phones' graphics chips run
+  faster (iPhones and iPads ignore it). Screen places, depth, time and noise stay in full precision. Meant to look the
+  same; the graphics test compares it on and off. A chip that refuses it gets the full-precision version, and the
+  debug log says so.
 - **Sturdier after the graphics card is lost** (phase 20): when the browser takes the graphics card away and gives it
   back (a phone under memory pressure, a driver reset, the debug menu's "Lose the GPU context"), every part of the
   walk view, the world map and a battle is made again, with none of the hundreds of warnings and the unlit things of
@@ -76,24 +93,20 @@ kept aside in the browser).
   (at most 1.5 s later; Studio > Engine > Quality "Warm up before showing", on), so the first draws' hitch happens out
   of sight. The debug log says how much of the graphics card's memory each kind of thing takes (pictures, render
   targets, ground, the near ring, meshes, instances) and names any shader compiled after a place had settled.
-- **Battles: rigs reused** (phase 20, a test switch, off for now; Studio > Engine > Quality "Reuse battle rigs"): each
-  Billie's picture in a battle is drawn and sent to the graphics card again only when its pose, face or tint changes
-  (about 6 times a second) instead of on every frame. Same picture. The diagnostics test now counts a battle's whole
+- **Battles: rigs reused** (phase 20): each Billie's picture in a battle is drawn and sent to the graphics card again
+  only when its pose, face or tint changes (about 6 times a second) instead of on every frame. Same picture; on the
+  Android phone a battle's processor time fell from 18.5 to 13.4 ms a frame. The diagnostics test now counts a battle's whole
   frame in its CPU time (it counted only the battle's own part, about 1 ms) and reports what the rigs cost.
-- **Lighter shadows** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Shadows in batches"
-  draws the shadows of grass, bushes, leaves, people and models in batches, one draw for all the copies of a picture
-  or a model (in a jungle route the shadows from about 360 draws a frame to about 120, and to about 75 with the next two), with the same look. "Models
-  in the shadow cache" keeps the far shadows of trees and other standing models from frame to frame (boats, the
-  airship, windmill sails and propellers are drawn each frame, so their far shadows move again). "Far shadows hold
-  still" stops the shadows of grass and leaves swaying past the sharp shadows round you (about 13 m) and keeps them
-  from frame to frame. They are in the graphics test.
-- **Lighter drawing for phones** (phase 20, test switches, all off for now; Studio > Engine > Quality): "Sky last"
-  draws the sky only where it shows, "Solid things first" lets the graphics card skip leaves hidden behind trunks and
-  walls, "Drop spent pictures" saves memory traffic between the effects, "Rain in one go" draws rain, snow and ash in
-  one go (bad weather cost about 150-230 extra draws a frame), "Phone pixel budget" (phones draw at most 1.2 million
-  pixels, starting a step lower) and "Phone lamps" (8 lamps lit at once on phones, 4 of them glowing in the air).
-  Studio > Engine > Air "Cheap light shafts" adds a few soft sunbeams from the trees when God rays are off. They are
-  in the graphics test, with two new stations (the Sun gap without god rays, the meadow in the rain).
+- **Lighter shadows** (phase 20): the shadows of grass, bushes, leaves, people and models are drawn in batches, one
+  draw for all the copies of a picture or a model, with the same look; the far shadows of trees and other standing
+  models are kept from frame to frame (boats, the airship, windmill sails and propellers are drawn each frame, so
+  their far shadows move again); past the sharp shadows round you (about 13 m) the shadows of grass and leaves hold
+  still and are kept too. In a jungle route the shadows went from about 360 draws a frame to about 75.
+- **Lighter drawing for phones** (phase 20): rain, snow and ash are drawn in one go (bad weather cost about 150-230
+  extra draws a frame), and a phone lights at most 8 lamps at once, 4 of them glowing in the air. Two test switches
+  stay off for now (Studio > Engine > Quality): "Sky last" draws the sky only where it shows, and "Phone pixel budget"
+  (phones draw at most 1.2 million pixels, starting a step lower); the diagnostics test measures both. The graphics
+  test has a new station, the meadow in the rain.
 - **Pictures in batches** (phase 20, a test switch, off for now): Studio > Engine > Quality "Pictures in batches"
   draws the trees, leaf clumps, people and other standing pictures (and their reflections) in batches, one draw for
   all the copies of a picture next to each other (Copperleaf's pictures from about 700 draws a frame to about 140),
@@ -101,9 +114,8 @@ kept aside in the browser).
 - **Reflections show the seasons**: trees and leaves in the water now turn with autumn and carry snow as the trees
   themselves do, crowns shade themselves in the water too, and a reflection no longer borrows the shading of the last
   picture drawn the frame before.
-- **Models in batches** (phase 20, a test switch, off for now): Studio > Engine > Quality "Models in batches" draws
-  every tree, house or lamp post of one kind in one go instead of one at a time (about 130 fewer draws a frame in
-  Copperleaf), with the same look. It is in the graphics test.
+- **Models in batches** (phase 20): every tree, house or lamp post of one kind is drawn in one go instead of one at a
+  time (about 130 fewer draws a frame in Copperleaf), with the same look.
 - **Steadier lamps at night** (phase 20, a test switch, off for now): Studio > Engine > Quality "Steady lamps" keeps
   the lamps, windows and fires that light the scene from popping and flickering as you walk (each fades in and out,
   a lit one stays lit until another is clearly nearer, lamp shadows stop swapping), and "Lamps lit at once" sets how

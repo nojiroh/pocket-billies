@@ -341,6 +341,8 @@ export function fogGridReport() {
     fillMaxMs: r(S.fillMax),
     fills,
     march: { ...fogGrid.march },
+    /* AIR-4: the last frame's light in the air: blurred and upscaled by depth (edges), and the haze shade dial in use */
+    air: typeof gpuState !== 'undefined' && gpuState.air ? { ...gpuState.air } : null,
   };
 }
 /* ---------- the debug view: the cells as see-through blocks (debug menu only) ---------- */

@@ -1,0 +1,88 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "bosses.schema.json",
+ "title": "game/data/bosses.json: a run's bosses that are not a leader's Billie (roguelite track RL-14b; battle-engine.js makeBossRobot)",
+ "type": "object",
+ "required": ["bosses"],
+ "additionalProperties": false,
+ "properties": {
+  "about": {"type": "string"},
+  "bosses": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["name", "expeditions", "fighter", "boss", "phases"],
+    "properties": {
+     "name": {"type": "string", "minLength": 1},
+     "expeditions": {"description": "the Expeditions (from 1) whose run boss it is", "type": "array", "items": {"type": "integer", "minimum": 1}, "uniqueItems": true},
+     "who": {"description": "the portrait on its win sheet and the battle's trainer (a people id); none: no one", "type": "string"},
+     "fighter": {
+      "description": "a robot: a gem and a robots.json part in each slot",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gem", "torso", "armL", "armR", "legs"],
+      "properties": {
+       "gem": {"type": "string"},
+       "torso": {"type": "string"},
+       "armL": {"type": "string"},
+       "armR": {"type": "string"},
+       "legs": {"type": "string"}
+      }
+     },
+     "bots": {
+      "description": "the name of the bot each slot is (the join intro, a limb that tears loose)",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "torso": {"type": "string"},
+       "armL": {"type": "string"},
+       "armR": {"type": "string"},
+       "legs": {"type": "string"}
+      }
+     },
+     "boss": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hp", "st", "levels"],
+      "properties": {
+       "hp": {"description": "its HP times this", "type": "number", "exclusiveMinimum": 0},
+       "st": {"description": "its other stats times this", "type": "number", "exclusiveMinimum": 0},
+       "levels": {"description": "levels over the boss row's", "type": "integer", "minimum": 0, "maximum": 20}
+      }
+     },
+     "phases": {
+      "description": "each fires once, when its HP falls to `at` of the most (highest first)",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": ["at"],
+       "properties": {
+        "at": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+        "shield": {"description": "turns of half damage", "type": "integer", "minimum": 0, "maximum": 9},
+        "stages": {"description": "stat stages it gains, by stat id", "type": "object", "additionalProperties": {"type": "integer", "minimum": -6, "maximum": 6}},
+        "breaks": {"description": "a limb that tears loose", "enum": ["armL", "armR", "legs"]},
+        "say": {"description": "its line ({name}; {part}: the torn limb's bot)", "type": "string"}
+       }
+      }
+     },
+     "call": {"description": "the battle's first line ({name})", "type": "string"},
+     "join": {"description": "the join intro's line ({name})", "type": "string"},
+     "glow": {"description": "the join intro's glow (else its gem's colour)", "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+     "win": {"description": "the win sheet's line", "type": "string"},
+     "rewards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "parts": {"description": "its first win: this many of its boss parts into your parts", "type": "integer", "minimum": 0, "maximum": 4}
+      }
+     },
+     "story": {"description": "its first win: a story.json script played at home", "type": "string"},
+     "chapter": {"description": "the story script plays only while the story's chapter is this", "type": "integer", "minimum": 1, "maximum": 9}
+    }
+   }
+  }
+ }
+}

@@ -12,6 +12,11 @@ rules_version = '2';
 //                           (reports/<target>/by/<uid>: { reason, t }), and up to which count the moderator cleared
 //   ghosts/<uid>            ON-2: { name, last, day, week, x, fast }: the last run (a friend's ghost) and the board
 //                           entries, read by the owner's friends
+//   showcase/<uid>_<slot>   ON-3: one shared Billie's look (slot 0-2, so at most 3 a player): { u, name, sp, coat,
+//                           build, graft, aug, abom, lvl, nick, ot, th, w, k, v, wv, r, ok, hid }, listed by anyone
+//                           signed in, 20 at a time
+//   votes/<entry>_<k>_<uid> ON-3: one account's vote on one entry ({ e, k, by, t }); the entry's v goes up by one in
+//                           the same batch, and down by one when the vote is taken back
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -98,7 +103,8 @@ service cloud.firestore {
       }
       allow get: if signedIn();
       allow list: if moderator();
-      allow create: if signedIn() && target.matches('^user_[A-Za-z0-9]{1,128}$') && target != 'user_' + me()
+      allow create: if signedIn() && target.matches('^(user_[A-Za-z0-9]{1,128}|show_[A-Za-z0-9]{1,128}_[0-2]_[0-9]{1,16})$')
+        && !target.matches('^(user|show)_' + me() + '(_.*)?$')
         && request.resource.data.keys().hasOnly(['n', 'ok'])
         && request.resource.data.n == 1 && request.resource.data.ok == 0 && firstReport();
       allow update: if signedIn() && (
@@ -160,6 +166,74 @@ service cloud.firestore {
         && (!('x' in d) || (d.x is map && d.x.keys().hasOnly(['1', '2', '3', '4', '5', '6', '7', '8', '9'])
           && bestOk(d.x, '1') && bestOk(d.x, '2') && bestOk(d.x, '3') && bestOk(d.x, '4') && bestOk(d.x, '5')
           && bestOk(d.x, '6') && bestOk(d.x, '7') && bestOk(d.x, '8') && bestOk(d.x, '9')));
+    }
+
+    // ON-3: the Showcase (js/showcase.js, js/logic/showcase.js). An entry is a Billie's look only (nothing of value
+    // moves): its owner makes it (one of three slots) and deletes it, never edits it. Anyone signed in lists entries,
+    // 20 at a time. Votes: votes/<entry>_<k>_<voter> is made once (k: the entry's own stamp, so a replaced entry starts
+    // again) in one batch with the entry's v + 1 (and wv, the week's sort key, for an entry in the week's theme), each
+    // checking the other, as reports do; never on your own entry, only in the entry's own week. Taking a vote back is
+    // the same batch with - 1. A report on an entry also raises its r (the game hides an entry 3 reports past ok); the
+    // moderator raises ok or sets hid. Spark has no server: one person with several accounts can vote several times.
+    match /showcase/{id} {
+      function voteAt(e) {
+        return /databases/$(database)/documents/votes/$(id + '_' + string(e.k) + '_' + me());
+      }
+      function reportAt(e) {
+        return /databases/$(database)/documents/reports/$('show_' + id + '_' + string(e.k))/by/$(me());
+      }
+      function step(o, n, k) {
+        return n.v == o.v + k && n.v >= 0 && n.wv == o.wv + (o.wv > 0 ? k : 0);
+      }
+      allow get: if signedIn();
+      allow list: if signedIn() && request.query.limit <= 20;
+      allow delete: if signedIn() && resource.data.u == me();
+      allow create: if signedIn() && id in [me() + '_0', me() + '_1', me() + '_2']
+        && validShow(request.resource.data) && request.resource.data.u == me()
+        && request.resource.data.v == 0 && request.resource.data.r == 0 && request.resource.data.ok == 0
+        && !('hid' in request.resource.data)
+        && request.resource.data.w == thisWeek()
+        && request.resource.data.wv == (request.resource.data.th == '' ? 0 : request.resource.data.w * 1000000);
+      allow update: if signedIn() && (
+        (resource.data.u != me() && resource.data.w == thisWeek() && !resource.data.get('hid', false)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['v', 'wv'])
+          && ((step(resource.data, request.resource.data, 1)
+              && !exists(voteAt(resource.data)) && existsAfter(voteAt(resource.data)))
+            || (step(resource.data, request.resource.data, -1)
+              && exists(voteAt(resource.data)) && !existsAfter(voteAt(resource.data)))))
+        || (resource.data.u != me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['r'])
+          && request.resource.data.r == resource.data.r + 1
+          && !exists(reportAt(resource.data)) && existsAfter(reportAt(resource.data)))
+        || (moderator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ok', 'hid'])
+          && request.resource.data.ok is int && request.resource.data.ok >= resource.data.ok
+          && request.resource.data.ok <= request.resource.data.r
+          && request.resource.data.get('hid', false) is bool));
+    }
+    function validShow(d) {
+      return d.keys().hasOnly(['u', 'name', 'sp', 'coat', 'build', 'graft', 'aug', 'abom', 'lvl', 'nick', 'ot', 'th',
+          'w', 'k', 'v', 'wv', 'r', 'ok'])
+        && shortText(d.name, 40) && shortText(d.sp, 32) && shortText(d.nick, 16) && shortText(d.ot, 40)
+        && shortText(d.th, 32)
+        && (!('coat' in d) || shortText(d.coat, 32))
+        && (!('build' in d) || (d.build is map && d.build.size() <= 8))
+        && (!('graft' in d) || (d.graft is map && d.graft.size() <= 8))
+        && (!('aug' in d) || (d.aug is map && d.aug.size() <= 2))
+        && d.abom is bool
+        && d.lvl is int && d.lvl >= 1 && d.lvl <= 100
+        && d.k is int && d.k > 0 && d.w is int && d.v is int && d.wv is int && d.r is int && d.ok is int;
+    }
+    match /votes/{id} {
+      function entry(v) { return /databases/$(database)/documents/showcase/$(v.e); }
+      allow get: if signedIn() && (resource == null || resource.data.by == me());
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['e', 'k', 'by', 't'])
+        && request.resource.data.by == me() && request.resource.data.e is string
+        && request.resource.data.k is int && request.resource.data.t is number
+        && id == request.resource.data.e + '_' + string(request.resource.data.k) + '_' + me()
+        && get(entry(request.resource.data)).data.k == request.resource.data.k
+        && getAfter(entry(request.resource.data)).data.v == get(entry(request.resource.data)).data.v + 1;
+      allow delete: if signedIn() && resource.data.by == me()
+        && (!exists(entry(resource.data)) || get(entry(resource.data)).data.k != resource.data.k
+          || getAfter(entry(resource.data)).data.v == get(entry(resource.data)).data.v - 1);
     }
 
     function validRequest(d) {

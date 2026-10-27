@@ -138,6 +138,20 @@ weekly's entry to the server's day or week (or the one before) and never let it 
 posting a bad attempt (by going offline and clearing the browser before the next start). The record keeps the seed,
 challenges, unlocks and path, so a server could replay the map side if Blaze ever comes; battle choices are not kept.
 
+### ON-3 for the owner to do (2026-10-27)
+Publish the rules again (they add `showcase/<uid>_<slot>`, `votes/...` and reports on an entry). The moderator line
+from ON-1 matters now: hiding an entry and Debug > Moderation work only for the uid pasted into `moderator()`. Until the
+rules are published, sharing says "The Showcase isn't open yet" and the Showcase stays empty; everything else works as
+before.
+
+What ON-3 leaves open (accepted: everything in the Showcase is cosmetic): an entry is written by its owner's game, so a
+modified game can share a look the rules can't see into (the game reads back only looks it can draw: species, coat,
+sizes, splice and Augments it has, clean names; anything else is dropped unseen); one person with several accounts
+can vote several times (each account once per entry); ribbons are given by the winner's own game from the week's
+counts, so a modified game can give itself one. Reports hide an entry after 3 different accounts (as ON-1's names),
+so 3 accounts of one person can hide an entry until the moderator shows it again. Votes, entries and reports are
+counted with `getAfter`/`existsAfter` in one batch (no `count()`: the compat SDK the game loads has none).
+
 ### Superseded 2026-10-26: the online track on Spark
 The owner chose to stay on the free Spark plan (docs/phases/online-track.md), so the table above (`trades`,
 `inventory` written by a Cloud Function) won't be built. Instead every write comes from a player's own game and the
