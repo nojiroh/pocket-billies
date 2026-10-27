@@ -672,7 +672,7 @@ export const SECTION_LIST = [
   ['jobs', 'Jobs', 'Legacy: what working Billies earn (the game has no jobs)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
-  ['art', 'Art files', 'Browse and replace any image'],
+  ['art', 'Art browser', 'Every picture in the game: search, see what uses it, paint, replace'],
   ['music', 'Music & sound', 'Play and edit the songs, where each one plays, and the jingles'],
   ['check', 'Check', 'Problems, the game data as a file, and the Studio test'],
   ['legacy', 'Legacy world', 'The places parked outside the hub, read-only: copy a map into the game'],

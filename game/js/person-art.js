@@ -1044,7 +1044,10 @@ function creaturePortrait(cv, Cr, expr, t) {
 function portraitURL(who, expr) {
   const L = lookOf(who);
   return cachedPersonArt('porurl|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
+    /* LD-1: a canvas kept in memory (willReadFrequently: drawPortrait's getContext gets the same), so its PNG is
+       made without first reading it back from the graphics chip */
     const c = makeCanvas(1, 1);
+    c.getContext('2d', { willReadFrequently: true });
     drawPortrait(c, L, expr, 0);
     return c.toDataURL();
   });

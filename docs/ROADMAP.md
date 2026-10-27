@@ -36,10 +36,10 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | RL-S2 | Rival and relationships (done 2026-10-26, branch `track/story`: part A the systems, part B the owner's answers, Chapter 1's beats, the favours and every line) | Blake as a rival node countering your lead, `meta.rel` with gifts of Beans, the `rel:` and `chapter` conditions; Chapter 1's beats and the favours are part B | RL-S1 | 1-2 | yes |
 | RL-13 | Expeditions, challenges, starter points (done 2026-10-24, branch `track/expeditions`) | `modifiers.json` Expeditions I-V, four challenges, starter points at the mast, leaders of their own type, the sim tuned to its first wins | RL-R2 | 1-2 | yes |
 | RL-14 | The organization's bots, salvage, the Voltron (RL-14a done 2026-10-26 on `ccr-15fdd30c-5nfh0d`: `factions.json`, wild bots, the Bureau's agents with bots, salvage, the scrapyard, bots' cries, limbs dropping off; RL-14b the Voltron next, on `track/bots`) | `factions.json`, `bosses.json`, data-driven `alphaPhase`, the bots as the organization's army | RL-13, RL-S1 | 2 | yes |
-| RL-15 | Online | the run record, friend ghosts, daily seeds, rules and emulator tests | RL-14 | 2 | yes |
+| RL-15 | Online (now ON-2 of the online track, docs/phases/online-track.md) | the run record, friend ghosts, daily seeds, friends' boards, rules and emulator tests | RL-14, ON-1 | 2 | yes |
 | RL-16 | Content packs and Studio editors | pack merge and checks, editors for the new sections | RL-11 | 1-2 | yes |
 | RO-2.. | Roster: new lines (**done** 2026-10-24, branch `track/roster`: RO-2a Hughes, Kamprad, Cuban, Altman; RO-2b Yiming, Woods, Arnault; RO-2c Huang, five regional forms and a balance pass, 40 species) | from 24 to 40 species through the Studio's kit bake; plan in roguelite-track.md (RO-2.. plan) | RO-1 | 3 | done |
-| RO-3.. | Roster: every body plan (branch `track/roster`; RO-3a body plans and the placeholder pipeline done 2026-10-26; RO-3b every Billie on its plan as a placeholder done 2026-10-26) | every plan in the roster, placeholder art with drawing sheets, splicing by slot, about 58 species; plan in roguelite-track.md (RO-3.. plan) | RO-2.. | 7 | yes |
+| RO-3.. | Roster: every body plan (branch `track/roster`; RO-3a body plans and the placeholder pipeline done 2026-10-26; RO-3b every Billie on its plan as a placeholder done 2026-10-26; RO-3e the Knight frog and the fossil pair done 2026-10-26; RO-3f Pseudonymph and the Pilotbat line done 2026-10-26) | every plan in the roster, placeholder art with drawing sheets, splicing by slot, about 58 species; plan in roguelite-track.md (RO-3.. plan) | RO-2.. | 7 | yes |
 | RL-E | Endless mode | after online | RL-15 | 1 | yes |
 
 **Restructured 2026-10-23** (roguelite-track.md section 9, the owner's answers): after RL-12a the order is the
@@ -49,11 +49,25 @@ before the owner has played the first cut on the phone.** MG-3 (towns from the g
 town node needs it.
 
 ## Tracks alongside
+- **Online track** (docs/phases/online-track.md, the owner's brief and answers 2026-10-26; ON-1 done 2026-10-26 on
+  `ccr-0b8e3c38-gt7t6a`): ON-1 base (one legality
+  check, Online play switch, block and report, the friend re-add fix), ON-2 run record, ghosts, dailies and friends'
+  boards (= RL-15), ON-3 the Showcase (share a Billie's look, votes, weekly themes, ribbons), ON-4 friend trades
+  (Billies, eggs, parts; trade evolutions), ON-5 GTS and Surprise Trade on trust, ON-6 live friend battles (lockstep,
+  level 50), ON-7 random casual matches. Firebase stays on Spark (no server code): what that leaves open is in the
+  track file and SECURITY.md. About 10-13 sessions. ON-4 and ON-5 wait for the Billie format (splicing, augments,
+  RO-3). Tags `on-N-done`. Branch `track/online`.
 - **Routes track** (docs/phases/routes-track.md, the owner's brief 2026-10-24): run routes planned like a Pokémon
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs; done 2026-10-25), RT-3 (set pieces for a lived-in feel; done 2026-10-25), RT-4a (more wild Billies, habitats, a rarer one in a
   hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals). Tags `rt-N-done`, `rt-4a-done`.
   Branch `track/routes`.
+- **Route props track** (docs/phases/route-props-track.md, the owner's brief 2026-10-26): more 3D props for the
+  routes: RP-1 (the set pieces' last pictures as models, 20 new route props, the pieces use them, a wayside shrine
+  and a solar garden; done 2026-10-26), RP-2 (bridges, jetties, rails and arches in the props' style, a hump on wood
+  bridges; done 2026-10-26), RP-3 (a CC0 glTF-to-recipe converter, tools/glb-to-recipe.py, tried on the turbine, the
+  footbridge and the ruined arch from KayKit's CC0 packs, side by side with RP-1's on test_props_routes for the
+  owner's pick; done 2026-10-26). Tags `rp-1-done`, `rp-2-done`, `rp-3-done`. Branch `track/route-props`.
 - **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
   a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
   and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
@@ -82,7 +96,10 @@ town node needs it.
   level each, the rest options. RS-0 (the plan, with research) and RS-1 (residents.json with 8 residents, the save's
   `meta.residents` and `run.invited`, logic/residents.js, `resident:`/`residents` conditions) done 2026-10-26 on
   `ccr-65e11839-9p92dx`; RS-2 (meeting them in a run: Dottie free in the first town row, favours from quests.json, the
-  Stranded Cart event, the payout's line, the Run Lab and sim) done 2026-10-26 on the same branch; RS-3 (living in Copperleaf) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
+  Stranded Cart event, the payout's line, the Run Lab and sim) done 2026-10-26 on the same branch; RS-3 (living in
+  Copperleaf: residents walk the town as townsfolk of their own from their building or cottage, their looks, lines in
+  banter.json with `lastres:`, the room card, the Studio's hub editor) done 2026-10-26 on the same branch; RS-4
+  (services and upgrades) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals)
@@ -95,6 +112,13 @@ town node needs it.
   Beans. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`. Branch `track/reflavour`.
   RF-1 (the words players see), RF-2 (pyramids: names, icons, the 3D throw, its sounds) and RF-3 (type passives) done
   2026-10-23. RF-4 (internal renames, SAVE_VERSION 5) and RF-5 (the new tone in text) done 2026-10-23; RF-6 (the game's name) next.
+- **Studio art track** (docs/phases/studio-art-track.md, the owner's brief 2026-10-26): every piece of art viewable
+  and editable in the Studio, with online research, and what no longer fits the Vision taken out. SA-1 (an Art
+  browser over the whole art tree: search, Used by, Edit pixels, Open in its editor; done 2026-10-26), SA-2a (the
+  ground tile set with its Lite tiles, robots, pyramids, frame strips; the terrain builder retired; done 2026-10-26),
+  SA-2b next (SVG icons and their builder retired, the icon atlas, far backdrops, flags, walls and rooms), SA-3 (clean-up in the Studio and the game: Jobs,
+  Town shops, dead Rules fields, the walk eggs), SA-4 (navigation as workspaces), SA-5 (unused art). Planned
+  2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
@@ -105,7 +129,7 @@ town node needs it.
   2026-10-21; UI-3b (its tools) and UI-4 (the run parts, beside it at the owner's word) done 2026-10-21; UI-5 (every screen
   onto the kit, one session at the owner's word, the bottom bar swapped) done 2026-10-22; UI-6 (old layers gone)
   next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
-  (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) done 2026-10-23.
+  (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) done 2026-10-23. UI-8 (the bottom bar with the minimap, the owner's brief 2026-10-26) built 2026-10-26; the owner's phone check next.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
@@ -124,6 +148,11 @@ town node needs it.
   deadline version, the map song's forecast) done 2026-10-22; SND-6 (a cry per Billie from eight kinds with a low-HP
   cry, four UI sounds, jingles for the run's beats, the mix as data; every new sound a placeholder) done 2026-10-23.
   The track's planned sessions are done; what's next is the owner's listening pass.
+- **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
+  art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the
+  stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
+  VFX-0 (the plan, with research) and VFX-1 built 2026-10-26 on `ccr-a98cc267-eqso1d` at the owner's word; VFX-2
+  (the ribbon) and VFX-3 (the stretched pyramid) built 2026-10-26 on `track/vfx`; VFX-4 next. Tags `vfx-N-done`. Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
@@ -162,8 +191,12 @@ town node needs it.
   plots, the store's, inn's, library's, Workshop's and Gene Bank's doors open their rooms. HB-8 (departure and return:
   the run's sky train glides into Skyline Station, climbs the sky rail into the tear, a white-out into the carriage's
   loading screen while the run's places are made; home out of the tear, gold after a win, battered after a loss; no
-  airship flight for runs) done 2026-10-26 on `art/hub-departure`, waiting on the owner's phone test. HB-9 next. Tags
-  `hb-N-done`. Branch `track/hub`.
+  airship flight for runs) done 2026-10-26 on `art/hub-departure`, waiting on the owner's phone test. HB-9 next. HB-10
+  (the square alive: a lobed 10 m market square round a fountain, edges, people by time of day, reactions,
+  festivals, then a reproducible town rebuild) planned 2026-10-26 as HB-10a-f; HB-10a (the 10 m lobed square, the fountain) done 2026-10-26 on
+  `ccr-144f3c08-vf09lo`; HB-10b (the edges and market, string lights, fireflies, the lit fountain) done 2026-10-26 on
+  `track/hub`; HB-10c (the square's people by time of day, 6-10 drawn by the Engine's townFolk, ranch Billies
+  visiting) done 2026-10-26 on `track/hub`; HB-10d next. Tags `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
@@ -175,6 +208,19 @@ town node needs it.
   done 2026-10-22. IS-8 (the barn's fenced pasture, the ranch's Billies wandering in it) done 2026-10-22. IS-9 (dressing,
   the forest, gulls and crabs, the phone pass) done 2026-10-22 headless, waiting on the owner's phone test; then the
   ground is locked. Tags `is-N-done`.
+- **Air track** (docs/phases/air-track.md, the owner's brief and answers 2026-10-26): volumetric low fog and better
+  haze. AIR-1 haze (the colour follows the sky, RGB fade, height falloff), AIR-2 a fog density grid round the player
+  (a small 3D texture, coarser on phones), AIR-3 the light-in-air march lights the fog (sun, shadows, lamps), AIR-4
+  depth-aware edges and shadowed haze. AIR-0 (the plan and research) done 2026-10-26 on `ccr-c0505a05-bzef90`. Tags
+  `air-N-done`. Branch `track/air`.
+- **Load track** (docs/phases/load-track.md, the owner's brief and answers 2026-10-26/27): no frame over 33 ms once
+  the title shows, loading screens included. LD-0 (the plan with research, the hitch list, the boot timeline, the load
+  check) done 2026-10-27 on `ccr-3df446bb-9jvdvq`; LD-1 (the debug log's picture on export, picture facts baked at
+  build time, canvases read back kept in memory) done 2026-10-27 on the same branch; LD-2 (shaders started together, read once, finished behind
+  the loader) done 2026-10-27; LD-3 (the island in a worker, pictures per place, the bundle minified, the
+  precache) done 2026-10-27; LD-4 (the run's places on a helper thread from the pick) done 2026-10-27; LD-5 in part (one frame budget, the
+  moves measured) done 2026-10-27, its other items wait on the owner's phone log; next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
+  `ld-N-done`. Branch `track/load`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
@@ -209,7 +255,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 15 | archive/15-game-design-and-story | archived; the design half is the roguelite track; the story half is Project Story S4 | superseded |
 | 16 | 16-billies-monster-system | prep and prototype part 1 (parts, 7 lines, Studio Parts) | absorbed: breeding and abominations in RL-10; the rest parked |
 | 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
-| 18 | 18-friend-trading-and-battles | not started | absorbed: RL-15 (ghosts, daily seeds); trading out of scope |
+| 18 | 18-friend-trading-and-battles | not started | absorbed: the online track (docs/phases/online-track.md, 2026-10-26): ON-4 friend trades, ON-6 live friend battles |
 | 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
 | 20 | 20-renderer-batching (branch `track/renderer`) | A, B, C1-C4 done (C3 off by default); restructured 2026-10-26 into lanes and rounds; round 1 (light, measure, context) started | active: rounds R1-R4 in the phase file |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |

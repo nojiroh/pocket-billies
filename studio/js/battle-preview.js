@@ -172,7 +172,7 @@ SECTIONS.preview = () => {
     arr
       .map(([k, n]) => `<option value="${escapeHtml(k)}" ${k === v ? 'selected' : ''}>${escapeHtml(n)}</option>`)
       .join('');
-  return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced under Art files appears here after you save.</p></div></div>
+  return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced in the Art browser appears here after you save.</p></div></div>
  <div class="bp-wrap"><div class="bp-stage" id="battle" data-layout="landscape"><div class="bstage" id="stage"><div class="cam" id="camWorld"><canvas id="cvWorld"></canvas></div><div class="cam" id="camFg"><canvas id="cvFg"></canvas></div><div class="bloom" id="bloom"></div><div class="vign"></div><div class="flash" id="flash"></div><div class="pops" id="pops"></div></div><div class="bp-loading" id="bpLoad">Loading the stage…</div></div>
  <aside class="bp-ctl">
   ${card(
@@ -337,7 +337,7 @@ function playBattlePreviewMove(si) {
   const D = studioState.D,
     M = D.moves[battlePreview.move],
     fx = M.fx || {},
-    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe,
+    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes,
     an = { k: 'move', si, mid: battlePreview.move };
   if (fx.protect) an.protect = true;
   else if (!onFoe) an.self = true;

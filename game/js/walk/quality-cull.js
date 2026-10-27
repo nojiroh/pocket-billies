@@ -16,6 +16,7 @@ import { worldCurveDrop } from './draw-common.js';
 /* eslint-disable no-func-assign */
 expose({
   COVER_FADES: [() => COVER_FADES],
+  FRAME_WORK_MS: [() => FRAME_WORK_MS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   NEUTRAL_MOOD: [() => NEUTRAL_MOOD],
   adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
@@ -25,6 +26,7 @@ expose({
   cullItems: [() => cullItems, v => (cullItems = v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
+  frameBudgetRemaining: [() => frameBudgetRemaining, v => (frameBudgetRemaining = v)],
   heatHaze: [() => heatHaze, v => (heatHaze = v)],
   heatSources: [() => heatSources, v => (heatSources = v)],
   inFrustum: [() => inFrustum, v => (inFrustum = v)],
@@ -150,9 +152,16 @@ export function coverItems(items, C, dt) {
     }
 }
 /* v32: a per-frame time budget for one-off work (solid bodies, outlines of buildings): past it, things stay pictures
-   for a frame or two instead of freezing the scene while they are worked out */
+   for a frame or two instead of freezing the scene while they are worked out. LD-5: one budget for all of it, from the
+   frame's start (walk-view-gl.js): the ground's preparing, the near ring, solid props, model meshes and buildings,
+   FRAME_WORK_MS between them (they added up to about 35 ms); each still makes its first of a frame */
+const FRAME_WORK_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 8 : 10;
 export function frameBudgetLeft() {
-  return performance.now() - (walkRenderer.budT || 0) < (walkRenderer.budMs ?? 7);
+  return frameBudgetRemaining() > 0;
+}
+/** LD-5: the frame's one-off work budget left, ms */
+export function frameBudgetRemaining() {
+  return (walkRenderer.budMs ?? FRAME_WORK_MS) - (performance.now() - (walkRenderer.budT || 0));
 }
 /* v32: how much heat shimmer: over lava always, over desert sand and canyons in the heat of the day */
 /* v47: a mood per place (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon...):

@@ -147,9 +147,18 @@ export function shadowPass(items0, sun, C) {
 const LAMP_SHADOWED = [];
 /* the n lamps of L that throw shadows (hanging high, not a window's light, within 22 m of (x, z)), nearest first */
 function pickShadowLamps(L, x, z, n) {
-  const dist = l => Math.hypot(l.p[0] - x, l.p[2] - z) - (LAMP_SHADOWED.includes(l) ? LIGHT_HOLD_M : 0),
+  /* Lamp shadows hold (shadows.lampFix): high above the ground where it stands (above sea level before), never a pool */
+  const fix = !!engineSetting('shadows', 'lampFix'),
+    dist = l => Math.hypot(l.p[0] - x, l.p[2] - z) - (LAMP_SHADOWED.includes(l) ? LIGHT_HOLD_M : 0),
     cand = n
-      ? L.filter(l => !l.front && l.p[1] > 1.6 && l.r >= 3 && Math.hypot(l.p[0] - x, l.p[2] - z) < 22)
+      ? L.filter(
+          l =>
+            !l.front &&
+            !(fix && l.pool) &&
+            (fix ? l.p[1] - standingHeightAt(l.p[0], l.p[2]) : l.p[1]) > 1.6 &&
+            l.r >= 3 &&
+            Math.hypot(l.p[0] - x, l.p[2] - z) < 22
+        )
           .sort((a, b) => dist(a) - dist(b))
           .slice(0, n)
       : [];

@@ -2,6 +2,1105 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
+pictures into solids in a busy frame.
+- walk/quality-cull.js: `FRAME_WORK_MS` (8 ms phones, 10 elsewhere) and `frameBudgetRemaining`; walk-view-gl.js stamps
+  `walkRenderer.budT` at the frame's start (it was after the near ring); `groundPrepWork` and `updateNearRing` get at most
+  what is left (still at most 4 ms); prop-models.js meshes and buildings.js `buildingBudgetLeft` use the shared budget
+  past their first of a frame.
+- tools/check-load.py `--only=moves`: a seam, the Map tab, back, a battle on the run fixture, each with its held frames
+  (it waits for the boot's last shaders first).
+- Measured headless: no shader in any move; the held frames left are GPU-side (main thread idle) and the Map tab's first
+  draw. Candidates for after the phone's hitch list are in the plan (the walk grid, the world map's prewarm, meshes in
+  a worker, uploads).
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
+  `--only=town,room,world,island,behind,battle,tall,pasture,screens` 17 of 17, smoke 6 of 6 (152 s).
+- Next: **the owner's phone** (LD-6): Export debug log after a cold start, after a run's take-off and after walking
+  over a seam; the log's `boot` and `hitches` say what is left. Tag `ld-5-done` for the owner once the candidates are
+  decided.
+
+### Load track LD-4 - the run's places on a helper thread, from the pick - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- New game/js/run-worker.js and run-worker-modules.js (on no page; the build bundles the modules). The worker fetches
+  data/gamedata.js itself (no cost on the page), loads the logic and makes a run's places; the page gets progress and
+  then each place as a message of its own.
+- Moved: `runWorldData` to game/js/logic/run-world-data.js (a move commit; the imports regenerated).
+- run-world.js: `runWorldAhead` (the thread, its job, `off` with why), `runWorldAheadStart` (run.js `runTakeOff` calls
+  it right after the run is made, while the train leaves), `runWorldMake` takes the thread's places or makes them as
+  before. `runWorld.how` ('helper' or 'page'); the debug log's run state has `madeOn` and `helperOff`. Off in a test
+  run and once the Studio's edits are showing (boot.js `studioLive`), since the thread reads the site's data.
+- ui-lint leaves the two worker files out (on no page, nothing drawn).
+- New check: check-fast "The run's places from the helper thread: made there at boot, equal to the page's (LD-4)".
+- Measured headless: a reload mid-run made 12 places on the thread (wall 1.5 s with the page free); a take-off from the
+  hub had them ready before the white-out (places stage 9 ms, swap 7 ms).
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
+  `--only=world,helper,train,packing,blake,perks,encounters,quest` 11 of 11, smoke 6 of 6 (160 s).
+- Risky: a phone without module workers (Safari before 15) makes the places on the page as before; a Studio session
+  that changes run data without live edits showing (none known) would differ from the page.
+- Next: LD-5 (moving between places: the world map's prewarm in a worker first). Tag `ld-4-done` for the owner.
+
+### Load track LD-3 - booting: the island off the main thread, pictures per place, a smaller bundle, the precache - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- boot.js: the loader's island is drawn by a worker on an OffscreenCanvas (`loaderIslandWorker`, the same drawing
+  functions as source text, progress posted by `loaderIslandProgress`); the page draws it where that isn't possible.
+  **Claim corrected**: after the first second the loader shows the WebGL title town, not the island, so the loader
+  can't be kept moving by CSS; only by cutting main-thread stalls.
+- boot.js `loadList`: no map, prop or ground pictures (they come with their place); walk/frame-items.js asks once for a
+  prop picture nobody loaded; prop-models.js `propModelArtPaths` names baked leaf cuts.
+- vite.config.js: page bundles minified without renaming (`PAGE_MINIFY`), 2.64 MB (3.57), gzip 862 KB (1086).
+  **For future workers**: never turn on mangle or compress: the ground painter's, normal maps' and island's workers
+  are built from `Function.toString` and call functions by name.
+- game/sw.js: `PRECACHE` (the build's bundle, written by `stampBuild`) fetched on install; hashed bundles cache-first,
+  other builds' bundles dropped on activate.
+- debug-log.js: 3000 file timings kept.
+- Not done, with reasons in the plan: test code behind `import()`, `JSON.parse` for gamedata.js, stylesheets after the
+  title, Firebase later; `createImageBitmap` and an upload queue moved to LD-5.
+- Measured headless: the boot's pictures 889 files, done at 2.1 s; both load-check boots run on the minified bundle
+  with no page errors; the service worker served the bundle from its cache on a reload.
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, the whole fast check (every check passed) and smoke 6 of 6 (155 s).
+- Risky: a place's first visit fetches its pictures behind its fade (before, they were all in at boot; the service
+  worker's art cache keeps them after); a prop picture outside its place's list pops in a frame late.
+- Next: LD-4 (the run's places in a worker from the pick). Tag `ld-3-done` for the owner.
+
+### Load track LD-2 - shaders: started together, read once, finished behind the loader - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- engine/webgl.js: `compileProgram` compiles both shaders and links before reading anything (`beginProgramCompile`),
+  then `finishProgramCompile` (the link status once; the shaders' logs only when the link failed). A failed program
+  now deletes both shaders and the program (tools/test/gpu-registry.test.mjs says so). `pollPendingPrograms(max,
+  budget)`: with a budget, as many as fit; `pendingPrograms()`.
+- walk-view-gl.js: `ensureWalkGl` starts every list (walk, post and the rest) before finishing the walk and post
+  programs; the frame finishes background programs 12 ms a frame while the boot's loader (`ld-on`) or a run's loading
+  screen (`#runload`) is up, one a frame otherwise.
+- boot.js `programsWarmup`: after `walkViewWarmup`, for new players too, waits (at most 8 s) until no program is left
+  compiling; debug log "N of M shaders ready in T ms", stage "shaders ready".
+- Measured headless: a new player's 26 programs ready in 2.4 s behind the loader; held frames after the loader 3
+  (13 at LD-0), none a shader. In software a run's reload hits the 8 s cap (programs take seconds there).
+- Tried and dropped: a warm-up draw per program; the driver refuses a draw without the program's inputs.
+- Found: with every shader done, software drawing still holds a frame for 2-5 s every few seconds on the title with an
+  idle main thread (the GPU side of periodic redraws). Only the phone's hitch list can size it.
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast `--only=boots,world,room,battle,debug`
+  10 of 10 and smoke 6 of 6 (192 s), both on a tree that also had LD-3's loader island worker.
+- Risky: a slow phone waits up to 8 s more behind the loader when its shaders are slow (it shows "Setting the scene").
+- Next: LD-3. Tag `ld-2-done` for the owner.
+
+### Load track LD-1 - the quick wins: no timed picture, pixel facts baked, canvases in memory - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq` (the owner's word: continue without input). No look changes.
+- The debug log's picture is taken only when the log is exported (debug-log.js: the 60 s timer gone).
+- New game/js/logic/pixel-facts.js (the leaf cut, outline colour and lightness maths, moved from prop-models.js and
+  walk/sprites.js; on both pages and in the Studio's logic worker), tools/bake-pixel-facts.mjs (`npm run bake:pixels`,
+  `--check`), game/data/pixelFacts.json (a new data section, in index.json after scenery) and
+  game/art/scene/next/cuts/ (260 PNGs, 456 KB). The game draws a clump from its baked cut and never loads or reads its
+  crown for it; the moss and clover lightness come from the file. The Studio's painted pictures (`_ver`) and moved
+  clumps (a key with no bake) still cut in the page.
+- **For artists and the Studio**: after painting a crown, moving a clump or painting moss or clover, run
+  `npm run bake:pixels`; tools/test/pixel-facts-real.test.mjs (npm test, CI) fails until then. The Studio's
+  "Propose changes" doesn't bake: a PR from it that touches those pictures needs the bake added.
+- `willReadFrequently` on the canvases that lacked it (both fallbacks, `coatAtlas`, the portrait canvas before its
+  `toDataURL`).
+- Verified: lint, typecheck, format, check:modules, check:data (175 files; the data check's snapshot remade for the
+  count), unit tests 1371 pass; in a headless page all 260 baked cuts equal the page's own (no channel off by more than
+  1); the load check: a new player's boot 17 held frames (28 at LD-0), 7 after the loader; "reading the picture back",
+  "drawing items" and "warming up a scene" gone; what's left is "finishing a shader" (LD-2).
+- Risky: 456 KB more art on the site (fetched per tree kind as it's drawn, as before for the crowns); a crown painted
+  without a re-bake shows the old clumps in the game until baked (the test catches it).
+- Next: LD-2 (shaders). Tag `ld-1-done` for the owner.
+
+### Load track LD-0 - the plan, the hitch list, the boot timeline, the load check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq` (`track/load` doesn't exist yet: the owner makes it from this branch or main). The
+owner's brief: loading without hitches, especially at the start, with online research. Planned, the owner's answers
+taken (docs/phases/load-track.md: a 33 ms goal on every screen once the title shows, loading screens included;
+debug-log pictures on export; test code loaded on use and a minified bundle; picture facts baked at build time;
+pictures per place; the run made in a worker from the pick), then LD-0 built.
+- **Claim corrected**: CLAUDE.md's "gamedata.js is a ~13 MB file, ~8 MB of it scenes" is out of date: 0.79 MB now;
+  the maps' ground and props are in data/maps/<id>.json (Copperleaf's 703 KB). CLAUDE.md is the owner's to change.
+  Also run-world.js's "about 30 ms" a scene: 18-600 ms in Node.
+- New: `debugLog.stage(name)` and the boot timeline (`debugLog.boot`, times since the page was asked for); the hitch
+  list (`debugLog.hitch`: every frame held over 36 ms, from a requestAnimationFrame of the log's own that starts
+  before the modules, with its blame, screen, scene and the last stage); Chrome's long animation frames
+  (`debugLog.loaf`: the scripts that held a frame, matched to the hitches). The export has `boot` (stages, page
+  timings, files by kind with counts, KB and cache hits: no addresses) and `hitches`. GAME has `titleScreen` now.
+- Changed: `debugLog.hook()` runs before the loader instead of after it (boot.js), so the loader's stalls are named
+  (opening a scene, compiling shaders...) instead of "outside the marked steps".
+- New tool: tools/check-load.py, on the built site (dist/, built when missing): a new player's boot and a run's
+  reload, phone-sized, the game's own graphics; prints the timeline and the longest held frames; reports in
+  validation/load/ (gitignored). A note, not a gate (LD-6).
+- Measured (software drawing; ranks causes, not phone times): a new player, title out of the loader at about 6 s,
+  28 held frames, 13 after the loader went: finishing a shader 8.1 s, finishing a shader plus reading the picture back
+  (the debug log's timed picture) 4.9 s, warming up a scene 3.6 s. A run's reload: 39 held frames; drawing items
+  (`leafCut`) plus the picture 7.4 s, finishing shaders 3-6.6 s a frame; the run's loading hit its 20 s cap. CPU
+  profile of a boot: `screenSnapshot` 5.2 s, `finishProgramCompile` 5.2 s, `pictureLightness` 4.6 s; on a run
+  `leafCut` 5.7 s and `portraitURL` 2.2 s.
+- Verified: lint, typecheck, format, check:modules, check:data, unit tests 1366 pass; the load check runs both boots
+  with no page errors; check-fast `--only=debug,boots` 3 of 3 (the exported log holds no names); smoke 6 of 6 (159 s).
+- In this container: the checks' Python Playwright (1.56) runs against the preinstalled Chromium through
+  `PLAYWRIGHT_BROWSERS_PATH` pointing at a folder of links named for revision 1194 (nothing installed in the repo).
+- Risky: the hitch list's own requestAnimationFrame runs on every page with the debug log (a few comparisons a
+  frame); a 30 Hz display (iOS Low Power Mode) gives 33.3 ms frames, under the 36 ms line, so it isn't flooded.
+- Next: the owner's phone baseline (Export debug log after a cold start and after a run's start: `boot` and
+  `hitches`), then LD-1 and LD-2 on `track/load`. Tag `ld-0-done` for the owner.
+
+### Air track AIR-2 - the fog grid: a density grid round the player as an R8 3D texture, unread - 2026-10-26
+Branch `track/air` (main merged in first: a conflict in AIR-1's Frame block, main's `uShFix` in the pad slot AIR-1
+kept and both test blocks: resolved side by side, 2272 bytes; AIR-1's work merged before each push). Plan Mode,
+approved. Nothing reads the grid yet (AIR-3), so the game's look doesn't change.
+- New game/js/logic/fog-grid.js (the density as plain numbers, type-checked, in the logic worker's list) and
+  game/js/walk/fog-grid.js (the texture, the uploads, the debug view), both on the game's and the Studio's pages.
+  The split is mine: the plan named walk/fog-grid.js only; the logic folder is what keeps the maths testable.
+- The density: each column's fog top is the mean ground on a ring about 6 m round it (8 samples), plus a layer of
+  0.5-2 m (thicker in fog weather), lifted to the water level plus Mist height near water, plus a valley's mist below
+  its level (`walkRenderer.valley` x the Valley mist dial), times a value noise (5 m, drifting with the wind, faster in
+  storms). The amount: the scene's mist (scaled by the Low mist dial, as lighting.js does) + 0.85 x `environment.fog`.
+  So a hollow fills to its rim, a hilltop's top lies below its ground (clear), none indoors (`sc.indoor` or `sc.room`).
+- **Claim corrected**: the dawn mist isn't a separate input. environment.js folds it into `environment.fog` (the
+  larger of the weather's fog and the morning mist), so the grid reads it once from there.
+- The grid: 48 x 12 x 48 cells of 1 m, 32 x 8 x 32 on phones (`PHONE`, the user agent, as walk-view-gl.js). A ring in x
+  and z: world cell (ix, iy, iz) is texel (ix mod nx, iy - oy, iz mod nz). **For AIR-3**: sample at
+  `(x/(nx*cell), (y/cell - oy)/ny, z/(nz*cell))` with repeat in x and z, clamp in y (the texture's wrap modes are set
+  so). The grid is in flat world positions (no `worldCurveDrop`). `fogGrid` holds `tex`, `G` (nx, ny, nz, cell, ox, oy,
+  oz).
+- The grid's floor follows the ground under you (4 cells below, 3 on phones). When it is 2 cells off, every row is
+  refilled at once. The columns' heights are kept, and the ring's samples share heights by cell (a third of the
+  reads). Uploads:
+  - a step across a cell refills and uploads one slab (texSubImage3D, `UNPACK_ALIGNMENT` 1, then back to 4);
+  - when the weather, mist, valley or water moves by more than 0.02, every row is refilled over a few frames (12 rows a
+    frame);
+  - otherwise one row every 4 frames, so the noise drifts without a seam.
+- Not built indoors (the texture is freed), not updated in battles. The hook is one call after the water in
+  `drawWalkFrameInner` (walk-view-gl.js), in the GPU counters' `other` pass.
+- Debug: the debug menu (Tests and performance) has "Show the fog grid": the cells over 24/255 as see-through blocks,
+  not saved. The debug log's report has `fogGrid`: the size, the heights read, the builds, refills, slabs and rows,
+  the uploads, KB, ms per upload (the CPU's side of the call) and the fill times.
+- Measured headless (software drawing, this container's CPU), Copperleaf (fixture town):
+  - the first build: 48-cell grid 11.6 ms, 32-cell grid 4.7 ms (31 and 11 ms before the shared heights);
+  - a slab: under 1 ms; an upload: 0.005-0.15 ms on average, at most 0.4;
+  - a weather refill: about 1-2 ms a frame for 8 frames on the 48-cell grid.
+  The phone's own numbers are needed: Export debug log after walking in fog.
+- Tests: tools/test/fog-grid.test.mjs: a hollow fills, a hilltop stays clear (even in fog weather), none indoors (even
+  with fog, mist, water and a valley), fog weather, water and a valley thicken it, the sizes, a step refills one slab
+  and reads one strip of heights, and the rolled grid equals one built there.
+- Verified: lint, typecheck, format, check:modules, unit tests 1320 pass. In a browser (fixture town, desktop and an
+  Android user agent): the grid builds, a step uploads one slab, fog weather refills it, a room frees it, the blocks
+  draw, no page errors. The smoke check passed 6 of 6, and its pictures were compared with a smoke run of AIR-1's tip
+  (before AIR-2): the walk, team, guide, shop, profile, mast and run sheet match (under 1.5). phone-map and
+  phone-opening-pick differ by when the picture was taken (the postcard still open; the starter card not yet up), not
+  by the scene: a second run of AIR-1's tip against its first differs as much (opening-pick 77.7, battle 18.6). The exported phone debug log has `fogGrid`.
+- Risky: the build happens in the frame that opens a place (about 5 ms on a phone grid here); the floor's refill on
+  stairs and hills (density only, about 2 ms); the weather refill adds about 1-2 ms a frame for a few frames. 27 KB of
+  texture (8 KB on phones). The Studio's walk views build it too (round `walkView.pl`).
+- Next: AIR-3 (the lit march reads the grid). Tag `air-2-done` for the owner.
+
+### Air track AIR-1 - haze: follows the sky, RGB fade, height falloff, ray mist, sky glow - 2026-10-26
+Branch `track/air` (main merged in first; a HANDOFF conflict with the Studio art plan: both kept). Plan Mode, approved.
+The owner's answer to the plan's AIR-1 question: **keep a place's own `haze`, shaped by the sky**.
+- Changed: `fogit` (engine/webgl.js) reads new Frame block values (engine/frame-block.js, after the ints, 2272 bytes):
+  the sky's three colours, `uHazeSky` (the place's haze below the horizon, leaning to the sky's gradient above it:
+  `uFogCol + skyGrad(view) - uSkyLow`), `uHazeTint` (red lost a little faster, blue slower), `uHazeFall` (height
+  falloff from where you stand, Quilez's exact integral along the ray: `airAvg`, capped at 3), `uMistRay` (the low
+  mist from the same integral along the view, mixed with the point mist) and `uSkyGlow` (a broad lobe on the sun's
+  side; `sunFog` stays the tight lobe). One GLSL `skyGrad` (`SKY_GLSL`) is used by the sky shader and `fogit`.
+- New `air` settings with Studio/expert dials after Sunlit haze, all **0 by default = today's look**: `hazeSky`,
+  `hazeTint`, `hazeFalloff`, `mistRay`, `skyGlow`; zeroed in PLAIN_LOOK. None indoors (`hazeSky`, `hazeFalloff`,
+  `skyGlow`); `hazeSky` scaled down in caves. Every lit shader, battles included, gets it through LIGHT_GLSL.
+- Tests: tools/test/haze-twin.mjs is the JS twin (in tools/test, not game/js: the tests require every game/js file to
+  be loaded by the pages); haze.test.mjs checks every dial at 0 gives the old `fogit` (1e-12), the integral against a
+  numerical sum, the fade order, the sky colour, the ray mist, the glow, and that the sky shader and `fogit` read the
+  one `skyGrad`. frame-block.test.mjs: the new members, offsets and packing.
+- Claims corrected: `sunFog` defaults to 0.4 (0.6 is only light.js's fallback). Pushback confirmed by the screenshots:
+  the walk camera looks down, so nearly everything is below the horizon, where the sky is flat at its low colour;
+  "follows the sky" shows on tall things, low tilts and director frames, not on the ground at your feet. In
+  Copperleaf (short view distances) the proposed look is subtle; it should show more on runs' longer views.
+- Screenshots (Copperleaf, fixture town, software drawing): dawn, noon, dusk, fog and a low tilt, before / after at
+  the defaults / after with the proposed look `{hazeSky: 1, hazeFalloff: 0.06, hazeTint: 0.5, mistRay: 0.6,
+  skyGlow: 0.5}` (set as expert dials). Before and after at the defaults differ only by a sub-pixel camera shift and
+  moving characters (no tone change). Not committed (the contact sheet went to the owner in the session).
+- Verified: lint, typecheck, format, check:modules, unit tests 1294 pass; the smoke check (check-quick --smoke): 6 of 6 passed in 189 s (the in-game
+  test's shader step: 35 shaders, 14 with the Frame block, all compiled).
+- Risky: every lit shader's `fogit` changed (identity at 0 is proved in the twin, not on GPUs: check on the phone);
+  a few more ALU ops per pixel (two `exp`s, `skyGrad`, one `pow`) on every lit surface, even at 0: watch the phone's
+  frame times in the debug log. Rooms, caves, the bowl (its own shaders, untouched) and the train ride (`BT.hazeK`
+  still scales `fogD`) were not looked at with the dials up.
+- Asks: whether the proposed values become the defaults (engine.json `air`; that moves the quick-check baseline).
+- Next: AIR-2 (fog grid) runs in its own session on this branch (started 2026-10-26); AIR-3 needs both. Tag
+  `air-1-done` for the owner.
+
+### Route props track RP-3 - the CC0 converter test - 2026-10-26
+Branch `track/route-props` (made by the owner from `ccr-5d98165a-i1ustq`; main merged in first, a merge commit).
+Plan approved in Plan Mode: KayKit's CC0 models from GitHub (no upload needed), the tall turbine, RP-1's and RP-2's
+tags made again.
+- What differed from the docs: github.com's pages and API answer 403 here, but `git clone` and
+  raw.githubusercontent.com work. Kenney's GitHub starter kits are MIT, not CC0, and have no turbine, bridge or arch.
+  KayKit's own repositories are CC0 (each pack's LICENSE.txt) and had all three: Space Base Bits `windturbine_tall`,
+  Halloween Bits `arch`, Medieval Hexagon `building_bridge_A`. They are .gltf with .bin and a palette texture, not GLB.
+  The tags `rp-1-done` and `rp-2-done` were gone; RP-3 made them again (e7954859, b9cb51f9), but the git proxy refuses
+  tag pushes from this session, so they and `rp-3-done` are local only: **please add the three tags on GitHub**.
+- Changed: tools/glb-to-recipe.py (new; reads glTF/GLB, colours from the texture snapped to the props' palette,
+  each piece fitted with the closest box, cyl, cone, dome, sphere or limb, else voxel boxes, else cut in two; cut at
+  the ground; `--selftest`, `--preview`); tools/build-props-routes.py (`CC0_PALETTE`, the `CONVERTED` table, a
+  "converter" row on test_props_routes); validation/cc0-src/ (the 3 models, their textures, LICENSES.md); new props
+  wind_turbine_small_cc0, arch_ruin_cc0, footbridge_wood_cc0 with baked pictures (test map only).
+- Measured (RP-1 recipe -> converted, triangles as the game builds them; one draw each either way): turbine 216 ->
+  1052, arch 572 -> 1196, footbridge 428 -> 796. The rerun of build-props-routes.py rewrites RP-1's files unchanged.
+- How they look (headless pictures of the row; the owner picks): the turbine is close to its source (blades as
+  limbs, the shroud ring as boxes; KayKit's sci-fi turbine, one blade tip lost its gold); the arch is a whole arch
+  in stepped stone blocks, not a ruin; the footbridge is wrong (the hex tile's stone bridge cut at the ground is a
+  low stone lump on stubby piers), so RP-1's stays. Set pieces still use RP-1's recipes for all three.
+- Verified: lint, type-check, check-data (161 files), check:modules, unit tests 1304 pass (after the merge and after
+  the props), the converter's self-test, headless pictures of the row (no page errors), the smoke check 6 of 6 (298 s; its unused-art note, detail-a04.png and airship_mast,
+  predates this). The full quick check was not run.
+- Local set-up: the checks pin Python Playwright 1.56 (chromium 1194); this container has chromium 1243, so this
+  session ran Python Playwright 1.63 (matching the container's Node Playwright), not committed.
+- Risky: the converted models are 2-2.5x RP-1's triangles; the converter's fits depend on per-model settings
+  (`tol`, `vox`, `use`, `ground`) found by eye; KayKit's art style (sci-fi turbine, intact graveyard arch) is not ours.
+- Phone check wanted: `test_props_routes`, the last props row ("converter": each RP-1 prop, then its conversion);
+  export the debug log.
+- Next: the owner's pick per prop ("Ask me before" 4 in the plan file), or the other "Ask me before" items.
+
+### Camera track, CAM-3 follow-up - Spread blur in front - 2026-10-26
+Branch `ccr-831c6196-cnlx4w` (a one-session fix; BRANCHES.md would name it `fix/blur-spill`, but a session pushes only
+to its own branch). The owner asked why the blur on 3D props looks weird ("like the blur stops at its edges"); plan
+approved: the fix behind a switch, off until the phone check.
+- **Found (measured, not guessed):** not the ink outlines (my first answer; turning ink and AO off changed nothing).
+  On the Workshop's roof in front of the focus the blur pass's probes found the roof, but its gather counted no roof
+  sample, so the spill alpha was 0 on the cobbles beside it and the full-size composite cut sharp at the depth edge. A
+  front sample reached only as far as its own blur, and an outline is a thing's least blurred part (0.12 at the roof's
+  edge, 0.33 in its middle, with tilt 0.7).
+- **Changed:** `lens.nearSpread` (Studio Engine > Lens "Spread blur in front", default **off**): two small passes
+  (`dofnear` per 16 x 16 tile, `dofgrow` 1-4 tiles) and the `dof` shader's spread path (engine/post-effects.js; the
+  details in camera-track.md under CAM-3). Off is the old shader path. `walkRenderer.lensInfo.spread` and the debug
+  log's `lens.spread`; the graphics test measures it on its own (Depth corridor); tools/look-blur.py `--only=10`.
+- **Risky:** the cost on a phone (two passes on a 1/256-size target; the blur's gather now runs wherever a blurred
+  thing in front is within reach); the look of the per-pixel noise in the spill (static, at half size) and how strong
+  the spill reads at the default blur (subtle) against Strong (clear). Battles get it too when on.
+- **Verified:** the spill measured on the roof: about 0.45 at its outline fading to 0 over about 12 half-size pixels,
+  both sides of the chimney even (a first try doubled the cover and left a ghost band; fixed). lint, typecheck,
+  format:check, check:modules, unit tests 1314 pass, smoke (no problems), the fast check 37 of 37. Here the checks ran
+  with Python playwright 1.63 (the container's browser build), not the pinned 1.56.
+- **Next:** turn it on in the Studio on the phone (Copperleaf, the Workshop near the bottom of the screen, Blur
+  Strong) and send a debug log with the graphics test's Depth corridor; if it looks right and costs little, make it
+  the default in engine.json.
+### Online track ON-1: the base (legality, block, report, Online play) - 2026-10-26
+Branch `ccr-0b8e3c38-gt7t6a` (`track/online` doesn't exist; the owner: build here). Tag to suggest: `on-1-done`.
+Details: docs/phases/online-track.md, "Done in ON-1". The owner's answers: hide after 3 reports, a placeholder
+moderator uid, Online play off by default.
+- Changed: `logic/online-legal.js` (onlineCopy, legalBilly/Egg/Part, legalMoves), `logic/online.js` (friendListFrom:
+  the friend re-add bug fixed; blocks, reports, onlinePlayOn), `Billy.ot` / `Billy.traded` (billiesOk checks shapes),
+  firestore.rules `blocks/<uid>` and `reports/<target>` (+ `/by/<uid>`), friends.js sheets (Remove / Block / Report,
+  Decline / Block / Report, the Blocked list, reported names as "Trainer"), Settings > Save "Online play" (signed in
+  only), Debug > Save shows your account id, the quick check's Safety step covers the sheets.
+- **For the owner**: paste your uid over `PASTE-YOUR-UID-HERE` in firestore.rules, then publish the rules
+  (SECURITY.md "ON-1 for the owner to do"). Until published, Block shows the "updated database rules" message and
+  Report says "You reported them already." (the rules' refusal, read as a repeat).
+- **Risky**: legalBilly is as strict as the game's own Billie paths I found (level-up, tutors, quirk eggs, splices,
+  Augments, abominations); a path I missed would make a fair Billie fail (it says why: a reason word). Nothing calls
+  it yet (ON-3 is the first). Blocking and reporting were only tried against the emulator's rules and with fake
+  friend data in the page; never with two real accounts.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build, `npm test` 1320 pass, the rules emulator
+  tests 19 pass (5 new), smoke 6 of 6, headless pictures of the friends panel and the three sheets. Full quick check:
+  35 of 40 ok; the 5 problems (Terraces' sky_portal, RL-8's shop Perk, room light, Running's distances, two cave songs
+  missing from the sound baseline) fail the same on main da51c766, run here in a worktree. Python Playwright 1.63.0
+  (the pinned 1.56 wants a browser this container lacks).
+- Next: the owner publishes the rules and tries Block and Report between two accounts; then ON-2 (= RL-15) on
+  `track/online` (made from this branch).
+
+### Online track ON-0 planned: leaderboards, Showcase, trading, live battles - 2026-10-26
+Branch `ccr-0b8e3c38-gt7t6a` (a planning session; the owner: expand the friend system with trading, real-time
+battles, global trading, leaderboards for runs and shared Billies with votes, with online research). Docs only, no
+code. Tag to suggest: `on-0-done` (the owner pushes tags).
+- docs/phases/online-track.md: the owner's answers, the verified facts, the research (Pokémon SV, HOME, GO, Showdown,
+  Slay the Spire, PokeRogue, Mario Maker, Firebase), what the rules can do without a server, sessions ON-1..ON-7.
+- The owner's answers: stay on Spark (no Cloud Functions); boards first; trade ranch Billies, eggs and robot parts;
+  global trading on trust; friends-only leaderboards; names as typed; level 50 PvP with splices allowed; a few trade
+  evolutions with a solo route. No ranked ladder on Spark (my call, written in the track: it can't be verified).
+- VISION's Online line, ROADMAP (RL-15 is ON-2, phase 18 absorbed, the track listed), SECURITY (the phase 18 table
+  superseded, what stays open), BRANCHES (`track/online`).
+- Found: the battle field is uneven (`SIDE_ACTORS` three slots for side 0, two for side 1): ON-6 checks a fair mirror
+  match first. The friend re-add bug is still open (ON-1).
+- **Risky**: the friend-trade swap without a server relies on `getAfter`/`existsAfter` across two players' batches:
+  ON-4 proves it on the emulator before any screen is built. Spark's 50k reads a day for GTS and Showcase browsing.
+- Next: the owner makes `track/online` from main; ON-1 there (it can start before RL-14b; ON-2 replaces RL-15).
+### Route props track RP-2 - bridges, jetties, rails and arches in the props' style - 2026-10-26
+Branch `ccr-5d98165a-i1ustq` (as RP-1). The owner asked after RP-1 ("make it so bridges and similar things are in the
+current style") and chose: restyle in structures.js; bridges and jetties, rails, arches and tunnels (not escalators);
+a gentle hump on wood bridges; the ruins' cool grey stone. RP-3 (the converter) still waits for CC0 files.
+- What differed: the structures already shared the props' texture sheet and the buildings' shader; only their shapes
+  (half-metre deck slabs, posts without caps, smooth parapets) and colours differed. The walk height already follows
+  the drawn deck (walk-view.js `BRIDGE_ARCH`), so the hump is one number (wood 0.12 -> 0.35).
+- Changed: game/js/structures.js (the props' palette in STRUCTURE_MATERIALS; planks with gaps, edge beams, capped
+  posts and newels, braced trestles; a rope rail dipping between hangers; stone paving, a two-course staggered parapet
+  in three tones with coping and moss, a voussoir ring and the vault's underside; jetty mooring posts; wood, iron and
+  stone rails; arch piers in courses, voussoirs, keystone and coping; helpers `beam` and `cap`); walk-view.js
+  BRIDGE_ARCH; `test_props_routes` gained a structures row (stone and brick arches, three rails, props beside them).
+- Measured (headless, main -> RP-2): triangles of the structures a scene: Copperleaf 1040 -> 2296, test_bridges
+  1646 -> 3818, test_stairs 1130 -> 1904, test_hilltown 800 -> 1416; draws the same (one mesh, the same parts).
+- Verified: lint, type-check, prettier, check-data, check:modules, unit tests 1284 pass; pictures of test_bridges
+  (wood, stone, rope, low on the wood deck), the structures row and Copperleaf's jetty. Full quick check: 34 of 40.
+  Five failures are main's (the first four as listed before; run on main 2026-10-26 for the jingles): Terraces
+  (`sky_portal` in the air), RL-8 (the town's shop has no Perk), room light, song fingerprints (cave mid/late), Sound
+  effects and jingles (the payout jingles, fails on main b87b818d too). The sixth, Animals (a rabbit didn't bolt),
+  passed alone on this branch and on main: a timing flake under the full run's load.
+- Pictures change on purpose: remake the picture baseline (Actions -> Check -> Run workflow -> "Make the picture
+  baseline").
+- Risky: the hump changes the deck height you walk on over every wood bridge (Copperleaf's two, generated stream
+  crossings): up to 0.35 m in the middle of a 6 m bridge; trainers standing at a bridge's end are off the deck.
+  Stone arches and parapets read dark on their shaded sides, as the ruin props do.
+- Phone check wanted: Copperleaf's bridges and jetty, `test_bridges`, `test_props_routes` (the last row); walk over
+  a wood bridge; export the debug log.
+- Next: RP-3 once CC0 files are uploaded (`validation/cc0-src/`), or the "Ask me before" items in
+  docs/phases/route-props-track.md.
+
+### Route props track RP-1 - more 3D props for the routes - 2026-10-26
+Branch `ccr-5d98165a-i1ustq` (the session's own: `track/route-props` didn't exist; the owner makes it from this
+branch, docs/BRANCHES.md). Plan in docs/phases/route-props-track.md, approved in Plan Mode with the owner's answers.
+- What differed from the plan: 6 set-piece props were still pictures, not 16 (the rest were models or batch 1's
+  colour swaps; `fence` is a battle prop). No route stream crossing lacks a bridge, so the footbridge is in the
+  catalogue and the showcase only. The CC0 pack sites (kenney.nl, opengameart.org, quaternius.com, itch.io) are
+  unreachable from the container, so the converter test (RP-2) needs the files uploaded.
+- Changed: tools/build-props-routes.py (rerunnable) swaps in firewood, firewood_b, scrap, statue, tires and tollbooth
+  as models and adds 20 props with baked pictures (scene/next/routes); setPieces.json uses them (ruins round an arch,
+  a stile in the farm pen, a solar path light and a seed library at the rest stop, a tool shed, a landing stage at
+  the fishing jetty, a Bureau barrier and crate) and adds `wayside_shrine` and `solar_garden`. MAPGEN_VERSION 18.
+- Measured on 66 generated routes (2-4 pieces asked each, the same seeds): pieces placed 188 -> 193, the fishing
+  jetty 4 -> 4 (its landing stage first cut it to 1: the rowboat moved to the other side, r 5 -> 5.5), props a
+  route 802.7 -> 804.1, model parts a route 5815 -> 5932 (+2%). Draws at a piece, headless, phone size (each piece
+  alone on a test map, neighbours partly in view, so +-7): most the same; Bureau checkpoint 22 -> 31, farm pen
+  48 -> 54; the new pieces 39 (solar garden) and 53 (wayside shrine), as the old ones. Not quite "the same draws":
+  the Bureau's two new models cost the most.
+- Snapshots remade on purpose: check-data's (161 data files), rng's scene hash (only gen.v), run-start's (mapgenV 18).
+- Verified: lint, type-check, check-data, unit tests (1284 pass), headless pictures of every new prop on
+  `test_props_routes` (no page errors) and the baked pictures, the smoke check (6 of 6; its unused-art note,
+  detail-a04.png and airship_mast, predates this). The full quick check was not run.
+- Risky: the turbine's blades stand still; the statue's face reads oddly from the side; a set piece's props may
+  overlap each other (mapgen doesn't check a piece against itself, as before).
+- Phone check wanted: `test_props_routes`, and a meadow or lake run for the solar garden, the fishing jetty and the
+  rest stop at dusk (the solar light, the shrine's seed and the seed library glow); export the debug log.
+- Next: the bridges, rails and arches in the props' style (the owner asked 2026-10-26), then RP-2 (the converter)
+  once CC0 files are uploaded.
+### Air track AIR-0 - the plan: volumetric low fog and better haze - 2026-10-26
+Branch `ccr-c0505a05-bzef90` (`track/air` doesn't exist yet: the owner makes it, and AIR-1 on starts there). Plan Mode;
+the owner asked whether the low fog could be volumetric with simple voxels, then for the same research on haze, then
+answered: soft volumetric (no visible cubes), its own track, all four parts in scope, phones on with a coarser grid.
+- New docs/phases/air-track.md: the verified facts (`fogit` in engine/webgl.js is a colour fade per surface; the v43
+  light-in-air march in engine/post-effects.js already samples the shadow maps and lamps but never paints fog; the
+  haze is one colour, the sky a three-colour gradient), the research with sources, sessions AIR-1..AIR-4, the asks.
+- ROADMAP (Tracks alongside) and BRANCHES rows.
+- No code changed, so no checks were run. Risky: nothing yet; AIR-1 moves every lit shader's colour (`fogit`).
+- Found on the way: the auto-quality ladder drops the light-in-air march at step 3, so a phone under load loses it;
+  the plan keeps `fogit` as the fallback.
+- Next: the owner makes `track/air`; AIR-1 (haze) and AIR-2 (fog grid) can run at the same time. Tag `air-0-done`
+  for the owner.
+### Graphics preset Off - 2026-10-26
+Branch `ccr-5d6955bf-muk1fs`. Asked: "Add a Graphics option that turns everything off". Not a phase; plan and a
+question round first (name Off, full sharpness, time of day and weather off too, Expert dials ignored while on).
+- **Changed:** Settings → Display gets a third card, Off (`preferences.aim = 'off'`; saves.js keeps it).
+  engine/settings.js: `OFF_LOOK` (PLAIN_LOOK plus no shadows, AO, grass, far props/hills, water reflections, lamp
+  glow) answers in place of the player's dials while `graphicsOff()`; `playerBlur()` is 0. walk-view-gl.js leaves out
+  the environment (time of day, weather, season) and the scene blur while Off. Map clouds on Auto → off; run towns
+  draw Balanced's folk count. The preset grid is three columns.
+- **Risky:** Off only zeroes dials; the post pass still runs (it also does tone mapping and the ink outlines, so the
+  `noPost` blit would change the art), so the saving on a phone is whatever the zeroed dials buy. Untested on a phone.
+  No grass blades also means tall grass reads only from the ground texture.
+- **Verified:** lint, typecheck, unit tests (1314 pass; new cases for map clouds and folk cap), check:modules, the
+  smoke check (6/6). Headless: Copperleaf on Beautiful vs Off (engine dials read 0, env off, no page errors) and the
+  cards at 420 px; tapping Beautiful then Off sets `aim` sharp then off. Full quick check not run (not a phase).
+- **Next:** try Off on the phone; if it isn't fast enough, a lighter post pass (tone map and ink only) is the step.
+### VFX track VFX-3 - The stretched pyramid - 2026-10-26
+Branch `track/vfx` (main merged in first; HANDOFF conflicted, both sides kept). Plan approved in Plan Mode; the
+owner's answers: the 2 m rule near the camera stays (a catch's release is within it, so a catch stretches only before
+the hit; the send-out and the mail coin stretch at both ends); the 2D fallback's icon stretches too.
+- logic/smear.js: `throwArcPace` (the ease's slope) and `smearStretch`: on a cell whose kept place has a pace of 1.3x
+  the mean or more (`STRETCH_PACE`: one or two cells at each end of a 380-480 ms throw), the drag toward the place one
+  cell ago, x0.6 (`STRETCH_K`), at most 0.8 m (`STRETCH_MAX`), and a seed a cell; held for the cell, none once landed,
+  near the camera, under Reduced motion or at quality 3 (the afterimages' gate). Kept places now carry the arc's `k`.
+  Tests in tools/test/smear.test.mjs.
+- prop-models.js `SMEAR_GLSL`/`smearDrag` in both one-at-a-time vertex shaders (low-poly `mdl` and voxel `vox`):
+  from the spin's pivot, a vertex facing away from the motion is pushed back by the drag x clamp(dot) x noise
+  (0.7..1, hashed from its model place and the seed); `setItemSmear` sets `uSmear` for every item (0 unless
+  `it.smear`). "Models in batches" (on by default) has no room for it in the instance record, so a stretched item
+  leaves the batch (`splitSmeared`) and is drawn one at a time. Shadows stay unstretched.
+- battle-stage.js `battleStretch(C)`, used by battle-3d.js (the main pyramid only, not its copies; the drag turned
+  into the walk scene's metres) and the 2D icon (scaled along the projected drag, its front edge kept).
+- Checked: the plan said "the voxel shader"; the pyramid is low-poly by default (`world.voxelLowPoly`), voxel when that
+  is off; both were filmed.
+- Risky, check on the phone: the look (an arrow-like wedge for a cell or two; 0.6/0.8 m are first guesses for VFX-6's
+  dials). At a send-out's release the pyramid is at the top edge, partly under the top bar. In headless films a
+  catch's foe sometimes reads white in the noon sun's glare, in frames before the stretch too (not this change).
+- Verified: lint, typecheck, format, check:modules, unit tests 1329 pass; headless films (landscape catch and
+  send-out, phone portrait, voxel path, batching on, the 2D fallback): the wedge shows on the fast cells only, no
+  errors. Smoke check (check-quick --smoke): 6 of 6 passed in 214 s. Tag `vfx-3-done` for the owner (the git proxy
+  refuses tag pushes).
+- Next: VFX-4 (the impact frame) on `track/vfx`, in Plan Mode.
+
+### VFX track VFX-2 - The motion-line ribbon - 2026-10-26
+Branch `track/vfx` (main merged in first; HANDOFF and BRANCHES conflicted, both sides kept). Plan approved in Plan
+Mode; the owner's answers: the 2D fallback draws it too; the catch, the send-out and the mail coin all leave it;
+six places long (about 250 ms).
+- logic/smear.js: `smearRibbon` (a Catmull-Rom curve through the last kept places, up to where the pyramid is now
+  while it flies; tapered to nothing at the tail; erosion in quarter steps, the tail frayed to 0.75 in flight, then one
+  more step a 24 fps cell once it stops, gone in four cells, about 167 ms), `ribbonEdges` (faces the camera; a spin
+  throw turns it about its tumble axis by a third of the tumble), `ribbonCells` (6, 4 at quality level 2, none under
+  Reduced motion or at level 3), `ribbonTone` (the colour's value x1.35). A history now keeps `SMEAR_KEEP` (6)
+  places; the afterimages read the first ones as before. Tests in tools/test/smear.test.mjs.
+- walk/effects.js `RIBBON_SHADERS`/`ribbonPass`: one triangle strip, unlit, no blending, a 4x4 Bayer dither on the
+  screen's pixels for the erosion, a white core in the middle 40%, fogged; precompiled with the walk programs.
+  walk-view-gl.js calls it after the effects pass when the battle's frame has a ribbon; battle-3d.js builds it while
+  the pyramid's model is drawn (`ribbonVertices`; `ribbonColour`: the recipe's first layer colour, the mail coin the
+  gold pyramid's). battle-stage.js: `C.arc` (on its arc: the ribbon reaches it), `C.rax` (a spin throw's axis, kept
+  when the catch's hit changes `C.ax`), `battleRibbonCells`, and the 2D fallback's `drawRibbon2d` (4x4 dither
+  patterns, a colour and step each, made once).
+- Changed after a headless film: the half width 0.24 m (0.13 m read as a thin line next to the 0.54 m pyramid), the
+  twist a third of the tumble (the whole of it turned the strip nearly twice along its length: mostly edge-on).
+- Found on the way: the UI lint's raw-colour ceiling counts hex in game JS, so the ribbon has no hex of its own (the
+  coin takes the gold pyramid's recipe colour; the 2D core is `'white'`). A pyramid whose recipe hasn't loaded yet
+  draws no ribbon for that moment. In a slow headless browser the battle's adaptive quality reaches level 3 and the
+  smears switch off (the gate working); the films lock quality at 0.
+- Risky, check on the phone: the look (width, the core's share, the twist) and the cost (one strip, a few dozen
+  vertices). At the check's third resolution the white core is about a pixel and barely shows; at full resolution it
+  reads. The ribbon starts only once the pyramid is 2 m from the camera (the first ~130 ms of a catch), as the copies.
+- Verified: lint, typecheck, format, check:modules, unit tests 1316 pass; headless films (landscape, phone portrait,
+  spin and plain catches, the 2D fallback): the strip trails the pyramid, frays at its tail and erodes out in four
+  steps after the hit. Smoke check (check-quick --smoke): 6 of 6 passed in 170 s. Full quick check: 35 of 40, none in
+  battles: the four known main failures (terraces `sky_portal`, RL-8's shop Perk, room light, song fingerprints' cave
+  mid/late) and "Running" (the gait grew too little on a walk; run alone it fails the same way on main 715cf860, the
+  measures vary run to run: a slow headless machine, not this session's). Tag `vfx-2-done` for the owner (the git proxy refuses tag pushes).
+- Next: VFX-3 (the stretched pyramid) on `track/vfx`, in Plan Mode.
+
+### VFX track VFX-0 and VFX-1 - The plan (smears, with research), the eased throw and its afterimages - 2026-10-26
+Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't exist yet; later sessions start on
+`track/vfx`, made from this branch). Plan approved in Plan Mode; the owner's answers in docs/phases/vfx-track.md.
+- VFX-0: docs/phases/vfx-track.md (the brief, the research and its sources, how smears fit the art, sessions VFX-1..6),
+  ROADMAP and BRANCHES.
+- VFX-1: game/js/logic/smear.js (`throwArcEase`, `smearHistory`/`smearRecord`/`smearGhosts`, `smearCount`) and
+  tools/test/smear.test.mjs. battle-stage.js `pyramidArc` eases its progress (1.45x the mean speed at both ends, 0.55x
+  at the top, the same path and duration) and records `C.trail` on a 24 fps grid; battle-3d.js draws up to three
+  copies of the pyramid model at its older places (the models' Bayer-dithered fade 0.6/0.4/0.25, brighter through
+  the low-poly shader's look: value x1.45..1.95), `it.ghost` skips their shadows (prop-models.js, both paths). The 2D
+  fallback icon draws them too. None under Reduced motion or at battle quality 3, two at level 2, none within 2 m of
+  the camera (a throw leaves the lens: the first copies filled the screen). The send-out and the mail move's coin use
+  the same arc, so they ease and leave copies too.
+- Found on the way: the pyramid is a low-poly model (its recipe has `cel`), so a voxel prop's `glow` doesn't brighten
+  it; the copies are brightened through `it.lk` instead (walk/prop-look.js's look). The trailing copies mostly show the
+  pyramid's shaded faces, so they read darker than the plan's "own colours, brighter"; the white core comes with
+  VFX-2's ribbon. The logic worker's module list (studio/js/logic-worker-modules.js) needs every new logic module.
+- Risky, check on the phone: the throw's feel (the hang at the top); in a landscape window the arc's top leaves the
+  frame (as before), and now spends longer there; in a phone's portrait view it stays in frame.
+- Verified: lint, typecheck, format, check:modules, unit tests 1291 pass; a headless film of a slowed throw (landscape
+  and phone): the copies trail the pyramid and run out after the hit. Smoke check (check-quick --smoke): 6 of 6
+  passed in 195 s. Tags `vfx-0-done` (e437c6f4) and `vfx-1-done` for the owner: the session's git proxy
+  refuses tag pushes.
+- Next: VFX-2 (the motion-line ribbon with the white core) on `track/vfx`.
+
+### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
+Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
+question round and a clickable mockup (docs/phases/ui-track.md, UI-8). Then the owner asked, mid-session: "merge all
+currently open PRs and anything sessions that are done haven't pushed yet".
+- **UI-8 changed:** `<pb-nav-bar>` puts Map as a raised minimap tile in the middle and the other tabs two to a side
+  (Team, Guide | Bag, Perks or Lab; the Guide joins both sets); js/minimap.js draws the ground, roofs, facility icons,
+  unbeaten trainers, wild Billies and you, north up, about 5 times a second; the bar goes compact after 2.5 s of
+  walking; `--nav-h` moves what sat at 96 px above the old bar; uiTheme.json gains a `minimap` group (the Studio's
+  Minimap dials). Tests: the fast check's bar step expects `team,guide,map,bag,lab` and opens the Guide; the
+  gallery's run-hud pictures remade on purpose.
+- **UI-8 risky:** the frame cost on a phone (a 2D canvas at 5 Hz, the ground painted once per view; software
+  drawing here says nothing about it); the compact timing; what else sat over the old bar's spot that `--nav-h` missed
+  (looked at: the town and a run, light and dark, standing and walking). Check on the phone.
+- **Merge batch 3:** merged on GitHub: #223 (the Studio art plan) into main, #222 (RO-3e) into track/roster. Merged
+  here (one PR into main): track/hub (HB-10a and HB-10b, holds `ccr-144f3c08`), `ccr-5d98165a` (route props RP-1),
+  `claude/ro-3b-placeholder-billies` (its HANDOFF note), `art/editable-trainer-sprite-sheets` (adds a CI workflow),
+  track/story (RL-S2 part B's HANDOFF), track/renderer (#219), `ccr-65e11839` (RS-3), track/roster with RO-3e,
+  RO-3f (#221, which conflicts with #222 on track/roster), and `ccr-6f3a4696` (#224).
+- **How the overlaps were settled (check in play):** RS-3 on top of main's RS-2 resolution: banter's `who` takes
+  RL-S2's names and a resident's id; the payout keeps main's Beans chip; a story line's owner is `banterOwner`'s or a
+  resident's. The rosters (RO-3d in main, RO-3e, RO-3f): every list keeps all three; the placeholder rigs rebaked; the
+  cry baseline keeps both sides'. **RO-3e's event command `gift species` is now `revive`**: main's RL-S2 already has
+  `gift who` in the one script table. Snapshots remade on purpose: battle-golden and run-start (the merged roster
+  changes the fixed-seed battles), check-data (the file count). scenery.json keeps HB-10b's string lights and RP-1's
+  route props.
+- **Left out:** `claude/sp-2-rules` and `claude/sp-3-wild-splices` (earlier copies of SP-2 and SP-3: main has them
+  through `sp-5-augments`, merge batch 1; merging them would undo that resolution); `ccr-a073cfde` (the same plan as
+  #223); the old 1000+-commit branches (archive and pre-fresh-base). Unpushed work in other sessions' containers can't
+  be reached from here.
+- **Verified:** lint, typecheck, format:check, check:modules, check:data, bake:placeholders --check, unit tests 1314 pass; `test:slow` 89 of 90 (the WA-10
+  island test, red on main, left at the owner's word). The fast check (check-fast.py, 2 browsers): 35 of 37; the two
+  reds ("A battle plays to the end" stuck at choose, "Every screen opens with its parts" missing the inbox) pass when
+  run again, alone and paired (battle and screens side by side, twice), and every merge commit passes the screens
+  check alone: flaky under load here, not a code change. The battle check's time is noisy on this machine (main 50-80 s,
+  UI-8 alone 47-49 s, the merged head 63-75 s).
+- **Next:** the owner's phone check of the bar; close #221 by hand (its commits reach main with this PR, not its base);
+  the one-session branches merged here can go (BRANCHES.md), the `track/*` ones stay.
+
+### Roster track RO-3e - The Knight frog and the fossil pair (dex 47-50) - 2026-10-26
+Branch `claude/ro-3e-knight-fossils` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d (#217,
+41-46) and RO-3f (51-53) ran beside it. Plan approved in Plan Mode. The owner's answers: a 2-stage frog plus two single
+fossils; the fossils come from an event, **the Dig Site** (pick one of the two); types Water > Water/Flying (frog),
+Steel/Water (Carnegie), Fire/Ground (Vanderbilt); names Swooshpole > Victoad, Philanthrobite, Vanderbolt; the frog
+common at level 18 with 265/470, the fossils rare at about 490. Tag `ro-3e-done` for the owner (local only: the proxy
+refuses tag pushes).
+- Where the brief and the code differed (checked): the 9 types also lack Ghost, Ice, Dark, Normal and Fairy; no event
+  could give a chosen Billie (`give` gives items, `wild` and `recall` draw from the region), and no reward card gives
+  one; events **can** be held to biomes (`biomes`, unused until now); every line could land in a regional dex (so
+  `recall` could have handed out a fossil); the wild-pools test asked every line to be in some pool; Leader Rocco's team
+  and the 2 km egg named the legacy id `carnegie0` (a stand-in until now), Leader Alta's `knight1`; the moves Just Do
+  It, Library Slam and Full Steam already carried `sig` knight, carnegie and vanderbilt (Full Steam is Electric).
+- Changed:
+  - **Lines** `lines/knight.json`, `carnegie.json`, `vanderbilt.json` (learnsets of existing moves with each line's
+    signature; cries, bios and notes are drafts), `index.json` lines, roster rows 47-50.
+  - **Placeholders** (bodyPlans.json forms, `npm run bake:placeholders`): the frog on the hopper (ears dropped, eye
+    bumps, an orange tick; Swooshpole a long tail at scale 0.9, Victoad a headband, winged feet, stronger thighs at
+    1.3); Philanthrobite on the crab (back plates, a white beard, small claws and short eye stalks, 1.2); Vanderbolt on
+    the serpent (top hat and brim, a sideburn, a cow-catcher, a funnel, two wheels, 1.3). The legacy vanderbolt.json
+    layout left the sheets folder.
+  - **Never met wild**: line schema `wild: false` (the two fossils). `runRegionData` leaves such a line out of every
+    region (dex, side areas, sim, preview), so `recall` can't give one and it takes no dex room; check-data: such a line
+    is in no pool and no egg (the 2 km egg's `carnegie0` is gone).
+  - **The Dig Site** (events.json `dig_site`, weight 1, ridge, canyon, badlands and cave, once a run): revive the
+    trilobite, the rail snake, or neither. New event command **`gift species [up]`** (script-parse, data-checks,
+    encounter-screen.js, docs/SCRIPTS.md): the species joins you at the place's level plus up; a full party picks one
+    (not from home, as `recall`) to stay behind, or leaves the gift.
+  - **Pools**: Swooshpole in the lake (26), sea (24) and jungle (20).
+  - Tests: wild-pools (every line met wild is in a pool and no other; every `wild: false` line is gifted by an event);
+    check-data planted fossils (new snapshot case); pixel-density 55 placeholder rows; graft-placeholder runs over the
+    new forms (it found Swooshpole at 0.83 too small for a bird's or octopus's back legs: 0.9 fits); the in-game test's
+    new phase **The Dig Site's fossils** (a party with room, then a full one).
+- Remade on purpose: the check-data snapshot (153 -> 156 files, the planted case), run-start (the regional dex draws
+  one more line), battle-golden's double (Leader Rocco's `carnegie0` is the real Philanthrobite now, not a stand-in),
+  the sound baseline (the 8 new cries with their low variants, and the cave biome's run songs `mid` and `late`, which
+  were missing from the baseline on track/roster too).
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; unit tests (1080 pass); the
+  graft sweep over all 55 forms; `bake:placeholders` clean; all four drawn by the game's renderer (rigParts,
+  rigFrame, drawRig on the game page) in idle, walk, attack and hurt, front and back, beside Pupfin: all stand on the
+  ground and move; the smoke subset (`npm run check:smoke`: 6 of 6, Start-Game on a phone, the debug log 103 KB with no
+  names); the in-game test's waystation phase and the new Dig Site phase run alone headless (`selfTest.only`), both
+  pass. Not the full quick check: its picture baseline waits for the roster sessions on main (as RO-3b).
+- Risky / open:
+  - **Merges with RO-3d and RO-3f**: rebuild rigs-next.js and the sheets (`npm run bake:placeholders`), the check-data
+    and run-start snapshots, battle-golden if a team changes, the sound baseline; merge roster rows, index lines,
+    bodyPlans forms, pools and pixel-density's count (51 + 6 + 4 + RO-3f's) by hand.
+  - **The picture baseline** (quick check) is not remade here: it needs remaking once the roster sessions are on main.
+  - A fossil only appears on a run that reaches a rocky biome's waystation and draws the Dig Site (weight 1 of about
+    20): rare by design, not measured with the run sim yet. Fossils at about 490 from the place's level are strong early;
+    RO-3g's balance pass may tune them.
+  - A mono-type challenge doesn't check a gifted Billie's type (the same as `recall`).
+  - Leader Rocco (Ground) fields Philanthrobite (Steel/Water): the legacy id's choice, not retuned.
+  - Swooshpole's lace tail sits behind its torso from the front (the hopper's tail spot); a drawing can fix it.
+  - Not tried on a phone. Looks judged on a contact sheet drawn by the game's renderer in this container.
+- Next: RO-3d and RO-3f merge into track/roster (then merge it in here, rebuild and remake as above), RO-3g last.
+### Roster track RO-3f - Pseudonymph (the mythical copycat) and the Pilotbat line (the cave bat) - 2026-10-26
+Branch `claude/ro-3f-satoshi-hastings` (from `track/roster` at 92ca0db1; pull request into `track/roster`). RO-3d
+(#217) and RO-3e ran beside it; neither had landed on track/roster when this was pushed. Plan approved in Plan Mode.
+The owner's answers: **Pseudonymph** (not Nakamorph), Steel alone, mythical, one stage; its mechanic is **Fork**
+(takes the foe's types); it is met as **a route's rarer one, 2% a route, any biome, once a run, at the rarer one's
+usual level**; **Pilotbat → Bingebat**, Flying → Flying/Psychic, common, evolves at 18, in cave, thicket and jungle.
+Tag `ro-3f-done` for the owner (local only: the proxy refuses tag pushes).
+- Where the brief and the code differed (checked): Hastings already had its signature move (`autoplay`, Psychic, 80)
+  and the game already had a `mythical` rarity (560 total, 0.03 catch, 5 starter points, "Does not evolve."); pools
+  have no time of day, so "night-leaning" means dark and misty biomes; the event script's `wild N` can't name a
+  species; a route's rarer one is the lowest weight of its pool, so a mythical in a pool would be almost every
+  route's rarer one; the blob's face is on its one shared bone, so faceless is an added mask, not a dropped face; the
+  legacy Bingebat sheet was still at `billionaires/bingebat.png`, the name the placeholder bakes to. The regional
+  dex draws from every line, so a mythical could have taken a dex slot: it is left out (below).
+- Changed:
+  - **Lines**: `lines/satoshi.json` (Pseudonymph: prof all 1, a move of each of the 9 types, Fork at 1) and
+    `lines/hastings.json` (Pilotbat, Bingebat: Lullaby, Bewilder, Sap Drain, Autoplay at 18, Mind Wipe, Premonition);
+    index.json lines; roster.json rows 51-53 (kind `mythical` for Pseudonymph). No kit `parts` (optional; no kit
+    art). Bios, notes and cries are Claude's drafts.
+  - **Fork** (moves.json `fork`, Steel status, never misses, sig `satoshi`): `fx.copyTypes` in battle-engine.js
+    useMove sets the user's type override (`ov`, as Soak does on the target) to the target's types for
+    `rules.json battle.forkTurns` (5) turns, marked `ovBy: 'fork'` so it wears off with its own line; fails ("But it
+    failed.") when the target has no type to take or the user already has those types; aiScore 20, or 0 when it
+    would fail. Soak on a forked Billie wins (Water, its own line). The copied types are everything `actorTypes`
+    feeds: the same-type bonus, weaknesses and the **type passives** (a Fork into Grass regrows). battle.js and the
+    Studio's battle preview pick its target in doubles; the Studio's move editor and battle rules have its fields.
+  - **The mythical roll**: `rules.json run.wild.rare.myth {chance: 0.02, list: ["satoshi0"]}`; rules.js `spawnMyth`
+    is asked by `spawnRare` for a run route's rarer one, on its own stream (`rngFn(node seed, 'myth')`), so every
+    other draw is unchanged; none while a mythical waits in any place's list; `dropEncounter` (battled or fled
+    from) sets `run.myth = 1` (validated in run-state.js, typed in save-data.d.ts) and none comes after. It skips the
+    regional dex on purpose. check-data checks the rule (a 0-1 chance, mythical lines' `<line>0`), with a planted
+    fault in the check-data snapshot.
+  - **No mythical in a regional dex**: run-region.js runRegionData leaves mythical lines out of the lines a region's
+    (and a side area's) dex draws from.
+  - **Placeholders** (bodyPlans.json forms, `npm run bake:placeholders`): Pseudonymph on the blob (scale 1.1, steel
+    grey, a gold tuft, a light `mask` over where its eyes are drawn); Pilotbat (0.83) and Bingebat (1.3) on the
+    flyer (ears and a fang added; Bingebat red with dark wings x1.3, tail x1.2 and a `screen` on its chest, hidden from
+    behind). The legacy Bingebat's sheet, layout and rig (`hastings0`) moved into `billionaires/hand`
+    (rigs-hand.json) first, as RO-2 did with the legacy lines.
+  - **Pools**: `hastings0` in cave 30, thicket 12, jungle 6. Pseudonymph in none.
+- Remade on purpose: the check-data snapshot (155 files, the planted myth fault); the run-start snapshot (the
+  regional dex draws from the line list, which grew; one commit's message blamed the pools, the next one corrects
+  it); the sound baseline (the 3 cries and low-HP cries, and `cave mid`/`cave late`, which were already missing from
+  the baseline on track/roster: check-sound said so on the untouched branch); pixel-density counts bodyPlans.json's
+  forms instead of a hard-coded 51 (one number fewer for the parallel sessions to fight over); wild-pools expects
+  every mythical outside every pool and in `run.wild.rare.myth`.
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; unit tests quick (1083 pass)
+  and slow (87 pass); new tests: battle-fork.test.mjs (4), run-world-real's mythical roll (chance 0 and 1, the level,
+  the rest of the stock unchanged, met, one waiting), run-region-real's no mythical in a dex on every seed;
+  graft-placeholder's real-forms sweep now takes Pseudonymph and Pilotbat as the blob and flyer donors (head refused
+  to and from the blob); `bake:placeholders --check` and `bake:kits --check` clean; every stage drawn by the game's
+  renderer (rigParts, rigFrame, drawRig on the game page) front and back, idle, attack, hurt and faint, on a contact
+  sheet (the faint frame leaves the box like every Billie's does). Smoke (`npm run check:smoke`): 6 steps, 6 passed (241 s; Start-Game on a phone with a battle, the actions sheet, the in-game full test's step: nothing saved).  Not the full quick check: its picture baseline waits for the roster on main (RO-3b).
+- Risky / open:
+  - Fork copies the type passives too (Kindling, Regrowth, Bedrock...). The owner may want types only.
+  - A 2% chance per route is about 1 run in 10; nothing in the run sim or preview counts it yet. To test on the phone,
+    set `run.wild.rare.myth.chance` to 1 in rules.json (or the Studio's rules once a field exists; there is none yet).
+  - Pseudonymph's catch rate is the mythical 0.03, so a run that meets it will often lose it.
+  - Satoshi's placeholder head/body is the blob's shared bone: never grafted, as RO-3c designed.
+  - Python Playwright 1.56 wants Chromium 1194 and this container has 1243: the browser checks ran through a
+    scratchpad folder that maps one onto the other (PLAYWRIGHT_BROWSERS_PATH), not on CI's browser.
+  - Looks judged on a contact sheet in this container, not on a phone.
+- Next: RO-3d and RO-3e merge (rebuild rigs-next.js, the sheets, the snapshots and the sound baseline after each;
+  merge forms, rows, lines and pools by hand); RO-3g last; the picture baseline once the roster reaches main.
+
+### Roguelite track RL-S2 (part B) - Chapter 1's beats, the favours, every line - 2026-10-26
+Branch `track/story` (main had nothing new: no merge; PR #210). Plan approved in Plan Mode; the four asks answered in
+the session (2026-10-26): **A** Blake as built (the lead you take off with, 1/2/2/2/2 meetings, 2 Billies +1 per 2
+meetings at most 6, **losing to him ends the run**); **B** level 1 a line, 2 as built, 3 a second bonus (Chosen +5% XP,
+Hazel a Hi-Potion at takeoff, Juniper +10% catch), 4 a wardrobe piece (`glasses_sun`, `labcoat`, `hat_bucket`), 5 a
+once-only line; **C** Beans as built plus 1 for Blake's first defeat in a run; **D** every drafted line approved as
+written. Tag `rl-s2-done` is the owner's.
+- Where part A's notes were wrong (checked in the code):
+  - **Blake's lose line never shows on a run**: battle.js shows `T.lose` only off a run. A `back_lost` pair
+    (`lastby:rival`) now carries his last word.
+  - **A chapter is not "one an Expedition"** and no boss scene moves it: only `chapter n` (at most 9). Wording fixed in
+    SCRIPTS, conditions.js and save-data.d.ts.
+  - **Part A's "six beats" were never written down**; proposed again and approved.
+  - The "always a plain line" banter rule covered only leaders and agents; Blake and the thank-yous joined it.
+- Found while building (each its own commit):
+  - **An `xp` effect row on a run did nothing**: `heldXp` read only the held item's rows. It now reads the run's too
+    (no Perk had an xp row, so nothing else changes; golden record unchanged).
+  - **A `must` fresh line not talked to was lost for good**: its `once` is marked at the pick on the way home, its
+    script (a beat's flag, a favour's quest) runs only when said, and the next return picked over it. It now waits
+    for the next talk.
+  - Blake's line at a second meeting in a run needed this run's meetings: the condition `rival`.
+- Changed:
+  - **Favours as data**: relations.json `people.<who>.favour {quest, check, points?}`, story.json quests `fav_<who>`
+    (`asked`, `done`), `relFavoursPay` (relations.js) on the way home before the lines are picked (`storyHomeArrive`:
+    quest done, points, wardrobe, a toast). Chosen: a leader beaten; Hazel: row six; Juniper: a Grass Billie home (the
+    new condition `lastteam:`, the last run's team by type, line or species). Asks and thanks are once + must banter.
+  - **Thank-yous**: banter who `thanks_<who>`; after a gift story.js plays `pick thanks_<who>` (the level just reached
+    first) and the talk ends there; the old toast when no line fits. Level lines 1-5 for each.
+  - **Blake**: five lines before his battle (`pick rival` is on), his win line, the `back_lost` pair; the Bean.
+  - **Chapter 1**: five once + must beats on Hazel and Chosen chained by flags `ch1_drop`, `ch1_blake`, `ch1_beans`,
+    `ch1_number`, `ch1_signal`; story.json `scripts.chapter1-end` (Hazel, Chosen, `chapter 2`). **Nothing calls it
+    yet**: RL-14's Voltron win sets `saveData.story.pending = 'chapter1-end'` after `storyHomeArrive` (which clears
+    `pending` on a won run).
+  - relations.json levels 3 and 4 as B says. Story checks: a favour's quest and stages, its check, `lastteam:` ids.
+  - Docs: SCRIPTS, NAMING, roguelite-track 9.4 "RL-S2 as built, part B", ROADMAP (RL-S2 done), BRANCHES, CHANGELOG.
+- Verified:
+  - lint, typecheck, check:modules, format:check, check:data after each commit; `npm test` 1077/1077; `test:slow` 86/86.
+  - **check-fast's RL-S2 page** (`--only=Blake`) passes: Blake says his first line and his battle starts, beaten: a
+    meeting, a win, his Bean, a reward pick; a Bean for Chosen: level 1 and his level-1 thank-you as the talk, no
+    second offer; home with Hazel's favour asked from a row-7 run: quest done, +2 points, her thanks next.
+  - **In-game test phase** alone: "Blake twice against Marsox ...; Hazel level 1, her favour +2; chapter 2".
+  - **Full check-fast: 23/33** with the slow tests running beside it. Run again alone, all pass but **"A room opens
+    and draws (the lab)"** and the ranch checks' **"not in the ranch"** (Breeding, Income), which **fail the same way
+    on part A's commit 7caf8d2d** run here (entering a room in this container); not this session's.
+  - **Full quick check: 32/40.** Known: song fingerprints (cave mid/late), RL-8 "Take off", the Actions sheet,
+    Terraces sky_portal, room light. RT-2, Battle music and Sound effects failed in the full run and **pass alone**.
+- Risky / open:
+  - **Not tried on the phone.** Read the lines in play; the beats come one a return, so Chapter 1 takes at least six
+    returns (five beats need Blake met, a Bean, a Bureau loss or 3 runs, a boss reached or a win).
+  - A favour reached by points (not a gift) speaks its level line only at the next gift.
+  - The thank-you replaces the talk: that return's fresh line waits for the next talk.
+  - Room entering fails in this container on both commits: worth a look on main before trusting it.
+- Next: RL-14 (bots, salvage, the Voltron) calls `chapter1-end`; then RL-15.
+
+### Residents track RS-3 - living in Copperleaf: residents walk the town, their looks, lines and room cards - 2026-10-26
+Branch `ccr-65e11839-9p92dx` (`track/residents` still doesn't exist; pushed there, named in BRANCHES). Plan Mode, plan
+approved. Owner's answers: wardrobe looks; residents near their house or walking round town (not standing still); merge
+main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS-3". CHANGELOG line added.
+- Where the plan and the code differed: no door acts needed switching (HB-5 already opens every resident's room), so
+  `copperleaf.json` is untouched; banter's `who` was a closed list; nothing read the history's `res`; Copperleaf's
+  townsfolk already keep a day (walk-view.js `initFolk`), so residents join it instead of standing at a spot.
+- Changed (one cause per commit): main (HB-8) merged in (conflicts in run-payout.js, self-test.js, HANDOFF kept both
+  sides); `propDoor` (doorOf's maths, pure, no-op); `residentHomes` (logic/residents.js); people/<id>.json looks for the
+  eight, worn in run towns too, check-data asks for one; residents walking as townsfolk of their own
+  (`hubResidentWalkers`, `talkFolk` -> story.js `residentHomeTalk`); the condition `lastres:<id>`; 39 lines in
+  banter.json with a resident's id as `who` (schema, check-data); the room card (walk-tab.js) and the station's and
+  ranch's sheets; the Studio's hub editor (Map marks, a Residents preview); the in-game full test's home step; docs.
+  The check-data snapshot was remade on purpose twice (161 files; planted residents and lines).
+- Risky or unfinished: the lines are Claude's drafts. Residents have no portraits (the talk box shows an empty face)
+  until RS-5. No upgrades yet (the card says they come soon; RS-4), and Seamus's home is `house`, which no row uses:
+  RS-4 decides where his are sold. Phone fps not measured: software drawing runs under 1 fps here, the same with 0 and
+  8 residents; the hub goes from 6 people to 14 at most. `track/story` (RL-S2 part B) also edits banter.json, its
+  schema, story-pick.js and run-history.js: small hand-resolved conflicts when both merge. Not played on a phone.
+- Verified (what ran, what passed): lint, typecheck, check:modules, check:data, `npm test` after each commit (1079 at
+  the end); check-data-text; `npm run test:slow` 87/87; smoke 6/6. Headless probes: all eight walking Copperleaf at
+  noon in their looks, Dottie's moving-in line under her name, the library's card naming her, the Studio's preview (8
+  walk, off back to 5) and Map marks, no page errors. The in-game test's run step alone: passed ("Dottie invited and
+  moved in, walking Copperleaf, her moving-in line said"). The full quick check twice: the first 34/40 (RT-2 "the pair
+  talked but no battle started" and, on the same page right after, "Granny Juniper didn't say anything"; both pass
+  alone, after RL-8, and in the second run), the second 36/40 with only the 4 known failures. main bc106c4's own full
+  run: 36/40, the same 4. RL-8 fails at a different point each run on main too ("the town's shop has no Perk", "the
+  landing's loading screen never lifted", "crossed into Lakeside Town but its view..."), so its known failure changed
+  wording with HB-8, not with RS-3. No validation/quick-baseline in this container, so no pictures compared: if you
+  keep one, remake it on purpose (people walk the hub now).
+- Decisions I made (and why): a building resident sleeps and works at their own door (the folk day gives everyone a
+  home and a work spot); the room card keeps "Go outside" as its main button (TW-0) with Talk beside it; a resident's
+  line waits for open windows like any story line; Dr. Helix has lines though nobody can meet her yet (the check asks
+  every resident for one).
+- Questions waiting for the owner: the drafted lines (banter.json `*_moved`, `*_won`, ... and RS-2's); the looks (a
+  phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
+  tag `rs-3-done`.
+- Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+### Studio art track SA-2a - the missing editors, part 1 - 2026-10-26
+Branch `track/studio-art` (main merged first, a merge commit: only HANDOFF conflicted, both top entries kept). Plan
+approved in Plan Mode. The owner's picks (all Claude's recommendations): the Studio makes the Lite tiles from tiles47;
+the SVG icons become the source and their builder retires (SA-2b); the other builders stay and the Studio warns; SA-2
+split into SA-2a and SA-2b. Recorded as decisions 5-8 in docs/phases/studio-art-track.md. Tag `sa-2a-done` for the
+owner.
+- Changed:
+  - **Ground tile set** (`studio/js/tile-set.js`, new). It takes the Art browser section's place while open
+    (`artBrowser.tiles`) and is opened from the `next/tiles47` folder, a tile's "Open in Ground tile set", or Walk
+    scenes' tile painter ("Paint the 32 px set").
+    - A kind's twelve tiles with their roles; the pixel canvas repeating round the tile.
+    - An 8 × 6 m tiled preview laid by the game's own pick, with soft patches and a path, redrawn each stroke.
+    - The Lite tile at 1x and 4x, and a note when two tiles of a kind are the same.
+  - `walk-view.js`: the ground's role pick became `groundTileRole` (+ `GROUND_DETAIL_TILES`), the same pick, in its
+    own commit (no change in what is drawn: smoke's Ground and phone steps pass).
+  - **Lite tiles** (`game/js/logic/lite-tile.js`, new): the builder's `small()` ported, with walk-view's own tone sums
+    passed in. A stroke on tiles 1-6 of a made kind rewrites its Lite tile in the same undo step (pixel-canvas
+    `companions`). "Make the Lite tiles from this set" does it for a hand-drawn kind (one step).
+  - **tools/build-terrain-v47.py deleted** (decision 1); `tools/art-source/terrain-v47/README.md` keeps its rules.
+    Comments and docs that named it are updated (walk-view, build-interiors, ART-NOTES, roguelite-track,
+    03-audit-notes).
+  - **Frame strips**:
+    - `game/js/logic/frame-strips.js` (new): effects from `EFFECT_FRAMES`, animals and cars from `scenery.life`.
+    - `studio/js/strip-player.js` (new): Play/Pause, Step, speed, scale; in the browser's picture panel and beside
+      the painter, live as you paint.
+  - **The builder warning**: `ART_BUILDERS`/`artMadeBy` in art-search.js, shown in the picture panel and the
+    painter.
+  - **Robots**: Edit pixels and Upload… on every part's and gem's picture.
+    - A missing picture is named `robots/<part>[_back|_head|_head_back].png` or `robots/gem_<gem>.png` and filled
+      in, one undo step.
+    - The builds draw unsaved pictures: the editor puts them in the game's picture cache before drawing.
+    - The Art browser's "Open in Robots" now opens a gem too.
+  - **Pyramids**: Items & pyramids shows each pyramid's 16 and 32 px icons with Edit pixels.
+  - **The Art browser's painter as a service**: `artPaint(path, { label, fn })`, Done reads "Done, back to …".
+    `artPicSrc` gives an `<img>` the unsaved picture.
+  - **Checks**:
+    - `check-studio-github.py` steps `tile_set`, `strips`, `robot_art` (robot pictures, and a pyramid painted and
+      back).
+    - The self-test's "Tile set" row.
+    - `studio-shots.py` views `tiles`, `strips`, `robots`, `pyramids`.
+  - STUDIO.md: Frame strips; Ground tile set; Robot pictures and pyramids; the Art browser's builder warning.
+- Where the plan was wrong:
+  - The builder also wrote the 16 px Lite tiles, but only for the 40 kinds it added. The 38 older kinds' Lite tiles
+    are v46 tiles drawn by hand: they already differ from full mode (up to 174 of 255 in a channel). So the Studio
+    tells the two apart by pixels and never overwrites a hand-drawn one unasked.
+  - Frame strips have no layout file beside them (fx.json misses 4 effects and isn't read).
+  - Pyramids, walls, building detail and rooms, flags, effects and life are all drawn by Python builders (the plan
+    named only the terrain one).
+- Not as planned:
+  - Robot pictures are painted in the Art browser's painter with a way back, not inline in the Robots page. One
+    mechanism for robots and pyramids, and the builds still show the edit.
+  - Making a new ground kind is not in the Studio (noted in STUDIO.md and the README).
+- Risky:
+  - The robot editor tags an unsaved canvas with `complete`/`naturalWidth` so robot-art.js's `artReady` takes it.
+    That is Studio-only and needs no game change, but it is a trick: if robot-art changes how it checks a picture,
+    the builds stop showing edits (the robot_art step would catch it).
+  - The ground pick moved into a function in the renderer's hot loop: the same sums, one call per metre.
+  - The Studio is still wider than a 390 px phone in every section (not new).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data.
+  - Unit tests 1331 pass. New: lite-tile, frame-strips, artMadeBy. The 40 made kinds' 240 Lite tiles come out within
+    1 of the committed ones.
+  - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,studio_test` and `--only=tiles`:
+    all ok. The self-test makes 78 kinds' Lite tiles in about 0.3 s and finds 28 strips.
+  - Smoke 6 of 6 (299 s), the Ground step included.
+  - Screenshots at 1920, 1024 and 390.
+- For the owner on the phone:
+  - Art browser → next/tiles47 → Open as a ground tile set. Paint a tile of a made kind (e.g. Granite flags) and
+    watch the preview and the Lite tile, then try a grass kind (hand-drawn Lite).
+  - A robot picture's Edit pixels and Upload….
+  - A pyramid's Edit pixels and "Done, back to Items & pyramids".
+  - An animal or effect playing in the Art browser.
+- Next: SA-2b (the text-file save, SVG icons and build-ui-icons.py retired, the icon atlas's rectangles, far
+  backdrops, flags, walls and rooms), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-1 - the Art browser - 2026-10-26
+Branch `track/studio-art` (main merged first: already up to date). Plan approved in Plan Mode. The owner's picks (all
+Claude's recommendations): sizes from each PNG's header; split SA-1 if it ran long (it didn't); the code's art
+paths generated and checked; the label "Art browser" (section key `art` unchanged). Tag `sa-1-done` for the owner.
+- Changed:
+  - `studio/js/art-browser.js` (new) replaces Art files (`ART_GROUPS` and its actions removed from
+    world-rules-art.js, with the dead "Rebuild sundown.webp" card: `art/background/` is gone).
+  - The browser: folders and breadcrumbs from the file list; thumbnails on a checkerboard, nearest-neighbour, with a
+    size slider; search chips; a picture panel (size, KB, frames, colours and off-palette pixels, Used by); Edit
+    pixels on any PNG (the shared pixel canvas, one undo step a stroke); Replace; Download; Open in its editor.
+  - `game/js/logic/art-search.js`: the tokens `dir:`, `w:`, `h:`, `unused`, `legacy`, the chips, the folder view and
+    `pngSize`.
+  - `game/js/logic/art-refs.js`: the reference index (data texts, the legacy data, rigs, model recipes, code patterns,
+    legacy-only names).
+  - `tools/art-code-refs.mjs` writes `studio/art-code-refs.json` (30 code patterns, 238 recipe references) and checks
+    it with `--check`, now part of `npm run lint`.
+  - github.js's file list carries each file's `sha`.
+  - find.js: Ctrl K finds art files.
+  - Help texts say "Art browser".
+  - The self-test has an "Art browser" row. `check-studio-github.py` has a new step `art_browser`.
+    `studio-shots.py` has a view `art`.
+  - STUDIO.md has an "Art browser" section.
+- Where the plan was wrong:
+  - The browser lists 3,596 pictures (the plan said about 3,850, which counted JSON and JS files).
+  - The 7 folders with no tab hold 3,500 of them (the plan said about 3,700).
+- What the index finds on today's data:
+  - 72 `scene/props` renders unused, matching the plan's 71 `_vN` + clinic_pearl + flag_pole.
+  - Also unused: `people/` (18), `battle/cloud_3-5`, `ui/loader-*.png`, 5 `battle/props`, the palette PNGs (read by a
+    tool, so expected) and `next/billionaires/hand/concept` (24).
+  - 15 postcards are legacy (all but copperleaf), and 6 of 7 flags.
+  - `hand/*.png` counts as used because the archive's own `rigs-hand.json` names it.
+- Risky:
+  - The index reads the code as patterns, so "unused" is a hint: SA-5 must grep before deleting.
+  - A `*` matches one name, so a path the code builds with a slash in a variable is missed.
+  - The w:/h: sizes use Range requests to the site; a host that ignores Range sends the whole file, which is slower
+    but still right.
+  - The Studio is wider than a 390 px screen in every section (not new, not this session's).
+  - The smoke check's own "Unused" step (validation/quick/unused.txt) counts differently from the browser; SA-5 should
+    pick one source.
+- Verified: lint, typecheck, format, check:modules, check:data; unit tests 1301 pass (17 new);
+  `check-studio-github.py --only=sections,art_browser` and `--only=studio_test` (the art section opens in about 60 ms,
+  the index builds in 20 ms); smoke 6 of 6 (170 s); screenshots at 1920, 1024 and 390.
+- Next: SA-2 (the missing editors: tiles47 ground, robots, coins, SVG icons, the icon atlas, scene art), in a new
+  session on `track/studio-art`, in Plan Mode.
+
+
+### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
+Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
+`art/hd2d-fixes`). Started from main b87b818d (phase 20 R2-R3 merged). The owner asked for an audit of the HD-2D
+effects already in the game (three code reviews and a headless on/off run of 14 effects in Copperleaf), then a fix plan
+and smart, cheap god rays. **Every look change is behind its own switch, off by default** (phase 20's rule), so nothing
+changes until the owner turns them on after a phone check.
+- What the audit measured (headless, Copperleaf, 640x480, the share of pixels each effect changes): vignette 51%, bloom
+  26%, ink 26%, outlines 20%, lamps at night 20%, shafts 13%, AO 12%, ground bumps 6%, contact shadows 6%, DOF blur 5%,
+  lamp shadows 4%, ground AO 4%; **god rays 0: engine.json sets `air.godRays` 0 and `air.cheapShafts` defaults to 0, so
+  the game has no light shafts at all today**.
+- Smart light shafts (`air.shaftPick`, Engine > Air, off): `logic/shaft-pick.js` (pure, `tools/test/shaft-pick.test.mjs`)
+  picks the cheap shafts every 0.4 s from tree crowns, the gaps between them, the two sides of houses (old 3D buildings
+  and low-poly models with windows) and a place's `shafts` list; scored by shade behind the beam's foot (crowns and
+  houses as circles seen toward the sun), forward scattering (looking into the light), distance from you (the walk
+  camera stands 36-58 m back; the range counts from you), never over you; at most 3/5/8 by quality step and a quarter of
+  the screen together; a showing shaft holds unless another scores 1.3x; fades in and out over 1.2 s. Drawn as a soft
+  streaked beam (the fx program's uGlow 2). Needs `air.cheapShafts` > 0 and god rays off (as D7). Graphics test: "Sun
+  gap, smart shafts".
+- The fixes, each with its switch (all off): Rays follow the light (`sun.followLight`: the walk view never passed the
+  light's colour, and the moon kept a full-strength warm glare); Window light faces out (`lights.windowFacing`: window
+  pools were cut on a fixed +z line, wrong for every turned house; the facing rides in uLC.w); Steady shadow edges
+  (`shadows.steadyEdges`: the sun maps' eye sat 2 m off the light's line, so the texel snapping drifted, test in
+  tall-ground-draw.test.mjs; and the soft edge's blocker search now reaches its filter); Lamp shadows hold
+  (`shadows.lampFix`: distance-scaled bias for the perspective lamp maps, a lamp's pool takes its lamp's map, lamps
+  high by height above the ground); Shaded tree cores (`world.treeCoreShade`: the 30% darkening solid-props.js worked
+  out and never used); Occlusion follows the slope (`shadows.aoPlane`: both ways along a line in a harmonic mean, so a
+  plane gives none); Feet shade on sky light only (`shadows.groundAOSky`); Lamp light on water (`lights.onWater`);
+  Outlines follow the camera (`color.inkFollow`: ink melts with the blur and fades past the focus, it faded from 25 m:
+  half strength on you at zoom 1); Even bloom (`color.bloomEven`); Half-float HDR (`quality.hdrHalf`, read at start);
+  Steady light on far props (`quality.normalMips`); Fronts lit as their material (`world.frontMaterial`); Building
+  bumpiness (`world.buildingBumps`, 0..3, 0 = off: bricks, planks and roof tiles from the sheet's own texels, on the
+  old 3D buildings and the low-poly models; the hub's houses are models now).
+- Fixed without a switch (artefacts, no look intended): the near ring's bump lookup stays inside its 16 m square (seams);
+  the no-worker fallback bleeds picture edges too (`bleedEdges`, shared with the helper thread).
+- The light block: its float padding slot is now `uShFix` (the shadow fix bits); the size and offsets are unchanged
+  (frame-block.test.mjs knows the new member).
+- **Risky**: the AO slope fix went through two wrong tries (a one-pixel slope was all depth steps at 40 m; a plain mean
+  misreads planes) before the harmonic mean; headless it is within noise at zoom 1, brighter close up. Building bumps at
+  the usual zoom read the sheet's half size (a texel is half a screen pixel there), so they are subtle; 1.5 shows on
+  roofs and planks. Lamp shadows hold and Lamp light on water showed no change in Copperleaf at night (no case near the
+  player); they compile and run.
+- **Found, not changed (the owner's call)**: the screen AO fades out by 36 m, nearer than you stand at zoom 1 (reaching
+  further darkened every grass blade's foot); props without `ppm` are at 34 px/m (scenery.json `ppu`), people at 42 and
+  66.5, Billies on a 68 grid: an art rebake to reach 32; the sprite bump's +0.18 upward tilt may be meant.
+- Verified: lint, typecheck, format, check:modules, unit tests 1297 pass, the smoke check 6 of 6, `check-fast --only=town` 4 of
+  5 ("A run town's shop opens (UI-5): no shop with wares" fails on main 0ba64f10 too, not this branch's), every switch on at once in Copperleaf and a
+  forest trail (no errors, every lit program builds with the light block), and headless on/off pictures for each
+  switch. Not judged headless (phase 20's rule): how any of it looks or costs on the phone.
+- Next: the owner on the Android phone and the iPad: Graphics test (Sun gap smart shafts; Shadow court, Lamp square,
+  Meadow and Depth corridor now hold the new switches) and a debug log; then one commit per switch to turn on what
+  stays. After that: cavity darkening from the same sheet, short self-shadows on the ground.
+### Hub track HB-10c: the square's people - 2026-10-26
+Branch `track/hub` (started while HB-10b was being finished; edits began at the owner's word, HB-10b merged in when it
+landed). Plan approved in Plan Mode with four answers: 6-10 drawn at once, the morning market daily, up to 2 ranch
+Billies by day, one cap for the hub and the run towns. Tag to suggest: `hb-10c-done` (the owner pushes tags).
+Details: docs/phases/hub-track.md, "Done in HB-10c".
+- Changed: `game/js/logic/square-day.js` (stops by HB-10b's edge props, the day's slots, who goes, `folkCap`, the
+  visits) and rules.json `square` {day, visit} (dataSquareRules). The townsfolk keep the square's day on top of their
+  own (walk-view.js): a market 7-11, a busy midday, a quiet afternoon, a lantern evening; none on the fountain's hub side
+  (HB-10b's run line). Copperleaf's folk 10 (`patch-copperleaf-square.mjs --folk`). New Engine dial
+  `quality.townFolk` (10; 0.8 on Balanced, 0.6 when slow) for the hub AND run towns: rules.json `run.town.cap` and
+  `runTownFolkCap` removed. The ranch's Billies visit by day (world-billies.js: 1-2 per 10 minutes, by the pasture's
+  gate along the streets to a bench or the fountain and back, by the clock). The debug log's scene: folkAll,
+  onSquare, visitors (counts). `tools/island-perf.py --square`.
+- Fixed (own commits): folk out about the streets at load (14:00-17:30) started indoors till 17:30; folk trimmed by
+  the cap never came back when it rose.
+- Risky / check on the phone: a run town on a slow phone now draws up to 6 folk (was 3); the frame times with 10
+  folk and the night lights (headless numbers are SwiftShader's: low graphics +39 draws on ~878 at midday; at full
+  graphics headless the game stepped down to the 0.6 cap; the night lights cost more than the people). A visitor
+  walks about 2 minutes each way and is gone from the pasture meanwhile. Nobody sits (no sitting pose).
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1304 of 1304 (new
+  square-day.test.mjs, data-checks), smoke all ok, headless probes (folk on the square by hour; a visit there, staying,
+  home), pictures at 8:00, 12:30 and 20:00 (town-square, square-near). Full quick check: 6 PROBLEMs:
+  - also red on main (HB-10b's entry): Terraces sky_portal, RL-8 shop Perk, room light, song fingerprints;
+  - "Sound effects and jingles" (payout): passed alone;
+  - "Actions sheet: a run's sheet has no day chip": failed twice beside other steps (boots 52-81 s; its wait is 5 s),
+    passed alone twice on this head and once on HB-10b's head: load, not this phase's code as far as these show.
+- Next: HB-10d (started in its own session, Plan Mode, waiting on this entry).
+
+### Hub track HB-10b: the square's edges, market and night look - 2026-10-26
+Branch `track/hub` (merged `ccr-144f3c08-vf09lo` with a merge commit, then docs/plans/hb-10b-wip.patch applied and
+finished; the patch file is gone). Plan approved in Plan Mode. Tag to suggest: `hb-10b-done` (the owner pushes tags).
+Details: docs/phases/hub-track.md, "Done in HB-10b".
+- Changed: 24 props round Copperleaf's square (`SQUARE_EDGE` in tools/square-props.mjs, laid by
+  `patch-copperleaf-square.mjs --edges` and by build-copperleaf.mjs): the market on the north rim, planters at the
+  street mouths, five streetlamps, two string lights, a solar canopy, three benches. New model `string_lights`
+  (tools/build-props-square.py, its bulbs lamp glows). The fountain lit from below at night and fireflies round it
+  (build-props-batch6.py). New prop effect `fireflies` (walk/effects.js; listed in the Studio's prop editor).
+  tools/island-shots.py `--hour=H` for night pictures. Lit windows needed nothing (the 3D buildings' glass already
+  lights at night: seen in the pictures).
+- Risky: batch 6's drift in clock_tower.json and test_props_marigold.json reverted again (each batch 6 run brings it
+  back until its owner settles it). The pasture test's rerun check now leaves out `sq` props, as it leaves out the
+  dressing. Phone cost not measured yet (HB-10c measures): at night the square adds about 9 x 2 string bulbs, 5 lamps,
+  3 fountain glows and 7 fireflies to the glow list. In the `square-portal` picture (a free camera 1.7 m up) the
+  south-west string light hangs in front of the lens; the walk camera sits higher.
+- **The hub's spot moved** (the owner chose it over fixing only the test): the quick check's "Running" step was red
+  since HB-10a. At the hub the orbit camera points the stick's up toward the island's middle (north-west), which
+  from HB-10a's spot (1.25 m from the basin) ran into the fountain after about 2 m; the player slid round it and the
+  gait counted more than the metres moved (green before the HB-10a merge, 09de1e25, and on main). The spot is now
+  [152.38, 60.86] (`squareHubSpot`, 1.7 m from the old one): the fountain 2.7 m ahead to the left, the run line clear
+  on paving. `patch-copperleaf-square.mjs --hub` and build-copperleaf.mjs set it and move the walking checks' starts
+  with it; hub-square.test.mjs keeps the line clear. Only the hub and the checks' `from` changed in copperleaf.json.
+  **Check on the phone**: Start-Game and coming home land you there.
+- Verified: lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings, the same before),
+  build, `npm test` 1291 of 1291, tools/test/hub-square.test.mjs, smoke 6 of 6 (Python Playwright 1.63.0), headless
+  pictures by day (13:00) and night (22:00). Full quick check: 40 steps, 34 passed, 6 PROBLEMs:
+  - also red on main (b87b818d), not this track's: Terraces "props in the air: sky_portal" (the portal floats by
+    design, HB-7: the step needs it on its list), RL-8 "the town's shop has no Perk", "room light" (Walking left and
+    right), Song fingerprints (cave mid and late not in the baseline);
+  - "Run map music hears the forecast": passed alone on track/hub and on main (load);
+  - "Running": red, HB-10a's (above); green after the hub's spot moved (rerun with In-game full test, Terraces,
+    Walking left and right, RL-8, Animals: only the three main has too stayed red), smoke 6 of 6 again.
+  The HB-10a run's rabbit and payout jingle PROBLEMs passed here and on main.
+- Next: HB-10c (started in its own session; it should pull the new hub spot).
+
+### Hub track HB-10a: the square's shape and fountain (and HB-10b started) - 2026-10-26
+Branch `ccr-144f3c08-vf09lo` (the planning session's; the owner: "make it 10m and start"). Merge into `track/hub`.
+Tag to suggest: `hb-10a-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10a".
+- Changed: Copperleaf's square paved to a lobed rim about 10 m out (mean 10, 8.2-11.8, bulging north-east toward the
+  sky rail and the portal) by `tools/patch-copperleaf-square.mjs --outline`; the fountain in place of the well and the
+  signpost 4.5 m out (`--fountain`; build-copperleaf.mjs does the same on a rebuild; the world map draws a fountain on
+  the well plot). WA-10's `patch-copperleaf-water.mjs --square` removed (it would shrink the square back to 8 m).
+  `squareRim` lives in tools/square-props.mjs. The fountain model's waters and lily pads were hidden under its solid
+  bowl tops (it looked dry): lifted (build-props-batch6.py). island-shots.py: `square-portal`, `square-near`.
+- Risky: the plot kind stays `well` (internal). Rebuilding batch 6 rewrites `clock_tower.json` and
+  `test_props_marigold.json` (old drift between the script and later edits): reverted here, so the next batch 6 run
+  must revert them again or their owner settles it. The pinwheel street entries moved to HB-10f.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build, `npm test` 1288 pass (one after-edit hook
+  run reported a failure that two reruns didn't show), smoke 6 of 6 (Python Playwright 1.63.0; the pinned 1.56 wants a
+  browser this container lacks), tools/test/hub-square.test.mjs, headless pictures before and after. The full quick
+  check was still running at the session's end: 13 of 37 steps ok, 2 PROBLEMs that look unrelated, not yet checked on
+  main: "Terraces ... props in the air: copperleaf: sky_portal" (the portal floats by design, HB-7) and "RL-8 ... the
+  town's shop has no Perk (RL-12)". **Next session: run the quick check again and run both steps on main.**
+- **HB-10b started, not committed**: docs/plans/hb-10b-wip.patch (`git apply` it; it applies on 7c41fad6). It holds
+  the edge layout (tools/square-props.mjs `SQUARE_EDGE`: three stalls, a cart, crates, sacks, six planters at the
+  street mouths, five streetlamps, a solar canopy, three benches, two string lights; nothing nearer the middle than
+  4.6 m, only planters in the portal view, a reach test that nothing is shut in), `--edges` on the patch tool, the
+  call in build-copperleaf.mjs, tools/build-props-square.py (the new `string_lights` model, its bulbs lamp glows), the
+  fountain's night fx in build-props-batch6.py (three glows round the basin, `fireflies`), and the edge tests. Not
+  yet done: the `fireflies` effect in game/js/walk/effects.js (and the Studio's PROP_EFFECT_KINDS), running
+  build-props-square.py, batch 6 (revert the drift above) and `--edges`, the pictures by day and night, and checking
+  that the 3D buildings' windows already light at night (they should: prop-models.js glassLit). A dry run of the
+  layout passed every test. cafe_table and crates are voxel models (not the airship style): left out, remakes later.
+- Next: HB-10b on `track/hub` (or this branch at the owner's word) from the patch above.
+
+### Hub track HB-10 planned: the square alive - 2026-10-26
+Branch `ccr-144f3c08-vf09lo` (a planning session; the owner: "make a plan to make the hub island feel more alive",
+with online research and questions). Docs only, no code.
+- docs/phases/hub-track.md: HB-10 split into HB-10a-f with the verified facts, the research, the owner's answers
+  and the Ask me befores; ROADMAP's hub line.
+- Found: the square holds 8 props within 18 m and no building fronts it (store 27 m, inn 41 m); 17 town furniture
+  models exist unused on the hub.
+- The square's size: the owner settled on about 10 m (between WA-10's ~8 m and the generator's 12 m).
+- Next: HB-10a on `track/hub` (shape and fountain).
+### Phase 20 R3, lane context (H1-H3, H5: the resource registry, freeing, memory by kind, warm-up) - 2026-10-26
+Branch `track/renderer` (one of three R3 lanes: shadows, context, battle). Plan approved ("Continue") with my
+recommendations: each owner drops its own handles on a restore and makes them again lazily (no stored rebuild per
+object, which would have kept every mesh's and texture's data twice); the warm-up is on by default behind its own
+switch (it doesn't change the look); the other lanes may create through the registry.
+- Where the phase file, R1's notes and the code differed (checked):
+  - Nothing needs deleting after a loss: the old handles died with the context (a delete on them does nothing). The
+    real gaps were caches fooled by the restored context being the same object, and objects dropped without delete.
+  - Already fine after a restore: the sprite instance buffer (keyed on `gpuState.quad`, new with each context), the
+    rain batch's arrays (kept on the program; `gpuState.P` is emptied), the models' record buffer (flushed).
+  - Not fine, found here: the cloth grid (`gpuState.gridGL === gl`) kept its dead buffer after a restore.
+  - No program was ever replaced within a context, but a background compile whose program had been made on the spot
+    meanwhile was dropped undeleted, a failed compile left its shaders and program, and no shader was ever deleted.
+  - The walk set (WALK_SHADERS, POST_EFFECT_SHADERS) compiles in one blocking go in `ensureWalkGl`; the debug log
+    already blames compiles ("compiling shaders", "finishing a shader"), and your Copperleaf hitches were blamed on
+    the ground setup, not compiles: H5 doesn't touch the ground setup.
+  - The precompile list (walk-view-gl.js `ensureWalkGl`, not webgl.js) already had every new instanced and batched
+    program, the shadows lane's two included.
+- Changed (one kind per commit; files of other lanes: create and delete lines only):
+  - The known bugs: engine/light.js `frameBlockLost()` and walk/sprites.js `hideQueriesLost()`, run on every restore.
+  - The registry (engine/webgl.js, "resources"): `gpuBuffer/gpuTexture/gpuVao/gpuFramebuffer/gpuMake(type, kind,
+    bytes)`, `gpuSized`, `gpuFree` (a handle of an older context is only forgotten; one made outside it is deleted by
+    its type), `gpuRetire` (freed two frame ticks later), `gpuOnRestore(name, fn)`, `gpuMemory()`. Entries sit in a
+    WeakMap and never keep an object alive; one collected without `gpuFree` counts as "dropped" (a leak's sign).
+    `gpuState.gen` goes up with every context and restore; caches compare it. The frame scheduler's tick calls
+    `gpuFrame()`: retired objects freed, and a context that died before its lost event is marked lost at once.
+  - Moved onto it: the engine's own objects (quad, stand-ins, samplers, pictures, canvases, normal maps, render
+    targets, meshes, GPU timers); programs and shaders (shaders deleted once linked; duplicates and failures
+    deleted); buffers and vertex arrays in prop-models.js (both halves: I moved the shadow maps' record buffer's
+    create line, `MODEL_SHADOW_INSTANCES`), model-instances.js, sprite-instances.js, buildings.js, structures.js,
+    solid-props.js, walk/effects.js (rain), walk/grass-build.js, engine/light.js, walk/sprites.js (queries); the
+    ground (ground-textures.js, map-cache.js, ground-mesh.js, water-data.js: kinds ground and ring); the world map
+    (world-bowl.js). Left on purpose: self-test.js's probes (they delete their own).
+  - Restore: the walk view's drop (`walkViewGpuLost`) and the world map's (`worldBowlDropGpu`) registered with
+    `gpuOnRestore`; the registry runs every drop first, then the walk view and the map are handed back.
+  - H3, debug log: `gpuMemory` in the report (MB, objects and dropped objects by kind, the picture cap's own count,
+    pictures trimmed, contexts made, `lateCompiles`: the names behind `pcl`), `gmb` (total MB) in every sample.
+  - H5: `quality.warmUp` ("Warm up before showing", on): a place fades in once two frames have drawn behind its fade
+    (at most 1.5 s), `mountWalkView`'s promise waits for it; a restore fades out and back in the same way.
+  - Debug menu: the diagnostics test's note says 4-5 min on a phone (the R1 measure lane's note for this lane).
+- Verified: lint, typecheck, `npm test` (1132), check:modules after every commit; the smoke check on every commit
+  touching game/ (run from a worktree of the commit). New tests: tools/test/gpu-registry.test.mjs (counts, sizes,
+  free, retire, generations, the early loss, owners' drops, render targets, meshes, programs). One headless crash check
+  at low graphics (scratch script, no pictures compared), the town fixture: two forced losses, the world map with a
+  loss, back to walk, a wild battle with a loss: every one restored and faded back in, **0 console warnings and 0 page
+  errors after each loss** (R1's run had hundreds of "used but unbound" and getQueryParameter warnings), 0 objects
+  dropped without being freed, `pcl` 0. Memory there (low graphics, 800 x 500): Copperleaf about 9 MB targets, 66 MB
+  ground, 27 MB near ring, 15 MB pictures, 4 MB meshes; the world map adds about 20 MB pictures and 20 MB targets.
+- Risky:
+  - Shaders are now detached and deleted once their program links. It is the standard practice and passed the
+    in-game shader test headless, but an old driver that misbehaves would show as a shader error in the log.
+  - The warm-up holds a place's fade-in for up to 1.5 s on a device that draws slower than two frames in that time;
+    turn "Warm up before showing" off if opening a place feels slower.
+  - For the shadows lane: `shadowInstanceState.bad === gl` and `modelShadowState.bad === gl` (walk/shadows.js,
+    prop-models.js) still compare the context, so a failure before a restore stays after it; compare `gpuState.gen`.
+  - H2's `gpuRetire` is in place but no site needed it: WebGL keeps a deleted object alive until the commands using
+    it are done, and no replacement found here was read after its old one was freed.
+- To test on your phone (debug menu → "Lose the GPU context", wait 2 s, each one; send the debug log after):
+  - Copperleaf by day: the town comes back whole and lit (buildings, trees, ground, water, shadows, lamps), fading
+    back in; tap the button twice in a row, a few seconds apart.
+  - Copperleaf at night (lamps and windows lit after the loss), and in the rain.
+  - The world map (Map tab), then back to the walk view.
+  - A battle at its move menu, and again with "Reuse battle rigs" on.
+  - A run place (jungle) and a run town, with "Shadows in batches" and "Models in batches" on.
+  - The Studio with `?glLose=12`: the battle preview with a walk scene open before 12 s pass.
+  - In each debug log: `gpuMemory` (what each kind holds; `dropped` should stay 0), `lateCompiles` empty after a tour
+    of the town, a route and a room (`pcl` 0), and whether opening a place feels slower with the warm-up.
+- Next: round 4 (D2 `mediump`, old paths deleted after your verdicts, the `phase-20-done` tag).
+### Studio art track - the plan (SA) - 2026-10-26
+Branch `ccr-a073cfde-ab64xh` (the track branch `track/studio-art` didn't exist; this session pushes only here).
+Planning only; no code changed. The owner's brief: all art viewable and editable in the Studio, online research on a
+more intuitive Studio, and what no longer fits the Vision taken out.
+- Changed: docs/phases/studio-art-track.md (findings, research with sources, five sessions SA-1..SA-5, the owner's
+  decisions); ROADMAP's tracks list; BRANCHES' `track/studio-art` row.
+- Risky or unfinished: nothing built. The orphan lists in the plan come from greps of game/js and studio/js; SA-5
+  checks them again before deleting.
+- Verified: the main claims by grep and ls (Art files' four empty tabs and missing folders; tiles47 read only by
+  walk-view.js and built by tools/build-terrain-v47.py; `addEgg`/`hatchEgg` with no caller; `starterEgg`,
+  `dropTiers`, `restCost`, `endText` unread; portraits and art/people read by nothing; the Workbench's disabled modes).
+- Decisions (the owner, every recommendation): tiles47 PNGs are the source and the builder retires; orphans deleted,
+  legacy art parked; the clean-up reaches the game (Jobs, Town shops, walk eggs); `track/studio-art`, SA-1 first.
+- Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
+  is on it).
+- Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
+
 ### Side session - Kappi the Wise, a capybara, replaces Hazel - 2026-10-26
 Branch `ccr-5f47d3ef-j66nm0`, from main b87b818d (no pull request yet). Plan approved in Plan Mode. The owner's answers:
 the exact swap (Hazel's role, gift, favour and Potion bonus); name tag "Kappi", "the Wise" in lore and their
@@ -185,11 +1284,18 @@ Tag `ro-3b-done` for the owner.
   write, library swap, repack's refusal and density still run on a kit Billie, plus a kept recipe shown as kept and a
   placeholder refused by Repack. The check-data snapshot, the UI gallery (no Billie in it), the run-start and sound
   baselines did not change.
-- Verified: lint, typecheck, check:modules, format, check:data; unit tests (1071 pass); `bake:kits --check` and
-  `bake:placeholders --check` clean; all 51 drawn by the game's renderer (idle, walk, attack, back) on a contact sheet;
-  tools/look-grafts.py (team, details, walk, a battle with two grafted Billies: drawn plain, no bakes, no errors);
-  smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the debug log: 112 KB, no
-  names); the Studio check up to density with the kit steps on the served kit Billie (IN PROGRESS: the rest).
+- Verified (after the RO-3c merge): lint, typecheck, check:modules, format:check, check:data; unit tests (1079
+  pass) and the slow kit graft sweep; `bake:kits --check` and `bake:placeholders --check` clean; all 51 drawn by the
+  game's renderer (idle, walk, attack, back) on a contact sheet; on a phone-sized page every species in the grass, in
+  a battle (yours from behind, the foe in front) and in its Guide entry, no page errors; tools/look-grafts.py: RO-3c's
+  grafts on real placeholders (Marsox with the otter's arms, Versewift with the muskox's legs) in a battle, 2 bakes,
+  38 ms median, none failed; smoke (Start-Game on a phone, five screens, a battle, the in-game full test's step, the
+  debug log: no names); CI on #218 green (smoke's tall-ground step flaked once, as on #215, passed alone here and on
+  its re-run). The Studio check: every step through the kit ones passes; the later ones fail with the same 10
+  problems on track/roster without RO-3b (8 404s, two run-lab ones). The full quick check: 6 problems; 4 also fail on
+  track/roster (sky_portal floating, RL-8, room light, two cave songs not in the sound baseline); the rest vary from
+  run to run (autumn drawing, the Actions sheet's day chip, the lost payout's jingle just past its 90 s wait): the
+  payout timed alone takes the same on both (3 s, then 29-35 s on a second loss).
 - Risky / open:
   - **The picture baseline is not remade yet.** check.yml keeps one baseline per version (release
     `baseline-0.1.0-alpha`) for every branch; remade from this branch before it reaches main, main's quick check
@@ -588,18 +1694,6 @@ only if the phone still says the rigs matter.
   `uploadMs` x redraws exceeds ~3 ms a frame, or `ownRigReuse` shows a clearly higher fps than `own`; otherwise close
   G and, after your verdict, turn `rigReuse` on by default.
 - Next: the round 3 phone run covering every lane's switches.
-
-### Phase 20 R3, lane context (H1-H3, H5) - in progress, 2026-10-26: the resource registry's API, for the other lanes
-The full entry replaces this one at the end of the lane. Pushed now so the shadows and battle lanes can make their GPU
-objects through it (engine/webgl.js, "resources"):
-- `gpuBuffer(kind, bytes)`, `gpuTexture(kind, bytes)`, `gpuVao(kind)`, `gpuFramebuffer(kind)`, `gpuMake(type, kind,
-  bytes)` for the rest (renderbuffer, sampler, query, program); kinds: programs, pictures, targets, ground, ring,
-  meshes, instances, canvases, other. `gpuSized(h, bytes)` after a bufferData or texImage at a new size.
-- `gpuFree(h)` instead of `gl.deleteX(h)` (null-safe; a handle of an older context is only forgotten).
-  `gpuRetire(h)` frees it two frame ticks later (a replaced object the frames in flight may still read).
-- A cache checks `x.gen !== gpuState.gen` (with or instead of `x.gl !== gl`): a restored context is the same object.
-- `gpuOnRestore(name, fn)`: fn drops what that owner holds on a restore (it is made again on next use).
-- I moved the create line of the shadow maps' model record buffer (prop-models.js, `MODEL_SHADOW_INSTANCES`) onto it.
 
 ### Phase 20 R2, lane pixels (stage 6 without D2) - 2026-10-26
 Branch `track/renderer` (one of three R2 lanes: models, sprites, pixels). Plan approved in Plan Mode; the owner's

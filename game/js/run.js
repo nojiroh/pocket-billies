@@ -36,6 +36,7 @@ import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import {
@@ -57,7 +58,7 @@ import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { JINGLES, jingle } from './sound.js';
 import { standByMast } from './airship.js';
-import { runWorld, runWorldData, runWorldMake, runWorldSync } from './run-world.js';
+import { runWorld, runWorldAheadStart, runWorldMake, runWorldSync } from './run-world.js';
 import { trainOfRun, trainRideDepart, trainRideHome, trainVeil } from './train-ride.js';
 import { runLoadBegin, runLoadLanding, runLoadPlaces, runLoadShow } from './run-loading.js';
 /* eslint-disable no-func-assign */
@@ -498,6 +499,8 @@ export function runTakeOff(seed, map, mods, pick, expedition) {
     for (const uid of P.home) ranchStop(s, uid, ranchNow(s, Date.now(), RULES.ranch).now, RULES.ranch, toast);
   healAll();
   runStartOn(s, plan, { home: P.home, pack: P.pack });
+  /* LD-4: the places start on the helper thread now, while the train leaves the station */
+  runWorldAheadStart(s.run);
   uiState.learnQ = [];
   runCatch.m = null;
   if (uiState.modal && uiState.modal.cls === 'fly-sheet run-start') closeModal();

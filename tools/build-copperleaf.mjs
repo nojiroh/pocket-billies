@@ -22,6 +22,7 @@ import { SKY_RAIL } from '../game/js/logic/island-gen.js';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
+import { moveHub, squareEdgeProps, squareHubSpot } from './square-props.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
 const D = readGameData(),
@@ -207,6 +208,11 @@ function place(B, L) {
   if (B.k === 'well') q.z = r2(L.z);
   if (Math.abs(rot) > 0.05) q.rot = rot;
   else delete q.rot;
+  /* HB-10a: the fountain in the middle of the square, where the old town's well stood (round: no turn) */
+  if (B.k === 'well') {
+    q.k = 'fountain';
+    delete q.rot;
+  }
   if (bx && (bx[0] * s > L.w + 0.01 || bx[1] * s > L.d + 0.01))
     throw new Error(`${B.k} (${bx[0] * s} x ${bx[1] * s} m) doesn't fit its ${L.k} plot (${L.w} x ${L.d} m)`);
   return q;
@@ -311,7 +317,8 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
     dx = well.x - lab.x,
     dz = well.z - lab.z,
     l = Math.hypot(dx, dz) || 1;
-  props.push({ ...S, x: r2(well.x + (dx / l) * 4.5), z: r2(well.z + (dz / l) * 4.5 + 2.5) });
+  /* HB-10a: 4.5 m out, clear of the fountain's basin (tools/patch-copperleaf-square.mjs puts it there too) */
+  props.push({ ...S, x: r2(well.x + (dx / l) * 4.5), z: r2(well.z + (dz / l) * 4.5) });
 }
 /* a few of the old town's trees on open ground in the town, away from its plots and streets */
 {
@@ -578,6 +585,8 @@ Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npc
 const fenced = pastureProps(sc, D.scenery);
 sc.props = fenced.props;
 pastureGround(sc, fenced.gap);
+/* HB-10b: the market, lamps, planters and benches round the square's rim (tools/square-props.mjs) */
+sc.props = squareEdgeProps(sc);
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
    where a building now stands (the barn's zone's middle) ends at its door instead */
@@ -592,6 +601,8 @@ sc.checks = (G.checks || []).map(c => {
     what: c.what.replace(/(\(\d+ of \d+\))?$/, "'s door $1").replace(/ +$/, ''),
   };
 });
+/* HB-10b: the hub's spot clear of the fountain (tools/square-props.mjs), the checks starting from it with it */
+moveHub(sc, squareHubSpot(sc));
 /* IS-9: the dressing, last (tools/island-dress.mjs): the forest and its floor, the shore, the mountain, the heath and
    meadows; never the pasture or the barn's zone (IS-8's), the town, its plots, streets or doors. --no-dress leaves it
    off. Its dials are the input file's `dress` (trees: the share of the forest's trees kept, 0-1; each tree is 4-5 draw

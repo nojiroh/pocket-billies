@@ -48,6 +48,7 @@
   "shockTurns": 5,
   "spinType": "Water",
   "spinTurns": 3,
+  "forkTurns": 5,
   "mailTurns": 2,
   "holdCap": 320,
   "shockName": "Sandstorm",
@@ -171,7 +172,10 @@
    "route": 10,
    "routeMin": 4,
    "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
-   "rare": {"up":2}
+   "rare": {
+    "up": 2,
+    "myth": {"chance":0.02,"list":["satoshi0"]}
+   }
   },
   "seamIn": 6,
   "load": {"capMs":20000},
@@ -192,7 +196,6 @@
   },
   "pack": [5],
   "town": {
-   "cap": {"busy":3,"balanced":5,"best":6},
    "locals": [1,2],
    "names": [
     "Old Tam",
@@ -292,5 +295,14 @@
    "abomDown": 0.75
   },
   "income": {"rate":[1,2,3],"capHours":24}
+ },
+ "square": {
+  "day": [
+   {"k":"market","from":7,"to":11,"share":0.6,"stops":["keep","shop"]},
+   {"k":"midday","from":11.5,"to":14,"share":0.8,"stops":["fountain","sit","shop"]},
+   {"k":"afternoon","from":14,"to":17.5,"share":0.3,"stops":["sit","fountain"]},
+   {"k":"evening","from":18,"to":21.5,"share":0.3,"stops":["lamp","sit"]}
+  ],
+  "visit": {"most":2,"from":8,"to":18,"every":600,"walk":1,"stay":[60,150],"stops":["fountain","sit"]}
  }
 }

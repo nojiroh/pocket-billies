@@ -147,7 +147,7 @@ export function saveFill(o) {
     o.preferences || {}
   ));
   if (![30, 60, 90, 120].includes(+p.fps)) p.fps = 60;
-  if (p.aim !== 'smooth') p.aim = 'sharp';
+  if (p.aim !== 'smooth' && p.aim !== 'off') p.aim = 'sharp';
   p.effects = 'full';
   p.fps = +p.fps;
   if (!Array.isArray(s.eggs)) s.eggs = [];
@@ -431,6 +431,22 @@ export function billiesOk(list) {
     if (typeof u !== 'object' || Array.isArray(u)) return false;
     if ([u.up, u.down, u.name].some(v => typeof v !== 'string' || v.length > 24)) return false;
   }
+  /* ON-1: its original trainer (uid and name) and, once traded, when and from whom */
+  const ref = (v, a, b) => v == null || (typeof v === 'object' && !Array.isArray(v) && a(v) && b(v));
+  for (const m of list)
+    if (
+      !ref(
+        m.ot,
+        o => typeof o.u === 'string' && o.u.length <= 128,
+        o => typeof o.n === 'string' && o.n.length <= 40
+      ) ||
+      !ref(
+        m.traded,
+        o => num(o.at, 0, 1e13),
+        o => typeof o.from === 'string' && o.from.length <= 128
+      )
+    )
+      return false;
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {
     const u = m.mut;

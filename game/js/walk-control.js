@@ -9,6 +9,7 @@ import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, traine
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
@@ -24,6 +25,7 @@ import {
   mapById,
   mapHub,
   openingHoursKind,
+  residentAt,
   startClimb,
   stopWalkView,
   walkData,
@@ -52,7 +54,6 @@ import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift, stationMenu } from './airship.js';
-import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
@@ -156,6 +157,8 @@ export function enterRoom(a, p) {
     node: saveData.trip.node,
     shop: a === 'shop' ? p.shop || here.shop || null : null,
     p,
+    /* RS-3: the resident who lives here (their room card) */
+    res: residentAt(p),
     name: p.label || (a === 'shop' && SHOPS[p.shop || here.shop] ? SHOPS[p.shop || here.shop].name : null),
     back: (() => {
       const o = (walkView.sc && walkView.sc.baseOff) || [0, 0];

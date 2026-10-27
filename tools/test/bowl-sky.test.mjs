@@ -79,4 +79,5 @@ test('the setting: your choice, else from the graphics preset', () => {
   assert.equal(bowlCloudLevel('high', 'smooth'), 'high');
   assert.equal(bowlCloudLevel('auto', 'sharp'), 'high');
   assert.equal(bowlCloudLevel(undefined, 'smooth'), 'low');
+  assert.equal(bowlCloudLevel('auto', 'off'), 'off'); /* the Graphics preset Off: no map clouds on Auto */
 });

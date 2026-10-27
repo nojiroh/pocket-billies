@@ -46,6 +46,14 @@
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   /* --spring is v05's cubic-bezier(0.3, 1.6, 0.5, 1) */
   --stagger: 35ms;
+  /* UI-8: the minimap (uiTheme.json minimap): metres across, ms of walking before the bar goes compact and standing
+     before it comes back, which marks show (1 shown, 0 hidden) */
+  --minimap-span: 44;
+  --minimap-compact-after: 2500;
+  --minimap-full-after: 700;
+  --minimap-facilities: 1;
+  --minimap-trainers: 1;
+  --minimap-billies: 1;
 
   /* messages */
   --toast-time: 2500ms;

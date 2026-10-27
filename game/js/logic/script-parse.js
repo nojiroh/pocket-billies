@@ -155,6 +155,15 @@ export const SCRIPT_COMMANDS = {
     checkpoint: true,
     about: 'you pick a Billie to give up; a Billie of the region’s dex takes its place, n levels up',
   },
+  /* RO-3e: a fossil revived (the Dig Site): a Billie by species, not drawn from the region (named revive, not gift:
+     gift is RL-S2's, a gift to a hub person) */
+  revive: {
+    args: ['species', 'n?'],
+    group: 'event',
+    checkpoint: true,
+    about:
+      'a Billie of that species joins you at the place’s level plus n; with a full team you pick one to leave behind',
+  },
   foe: {
     args: ['class', 'n?'],
     group: 'event',

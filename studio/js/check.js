@@ -52,6 +52,7 @@ import {
   dataSceneFindings,
   dataSetPieces,
   dataSpeciesKind,
+  dataSquareRules,
   dataUnlocks,
 } from '../../game/js/logic/data-checks.js';
 import {
@@ -412,6 +413,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['battle rules', dataBattleRules],
   ['run payout', dataRunPayout],
   ['ranch', dataRanchRules],
+  ['square', dataSquareRules],
   ['run map', dataRunMapRules],
   ['run clock', dataRunClock],
   ['run scene', dataRunScene],

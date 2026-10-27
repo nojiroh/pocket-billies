@@ -61,6 +61,7 @@ import {
   dataRunPayout,
   dataRunScene,
   dataSceneFindings,
+  dataSquareRules,
   dataSpeciesKind,
   dataUiTheme,
   dataUnderscoreKeys,
@@ -228,6 +229,15 @@ const speciesKind = dataSpeciesKind(D.lines || [], legacyLines),
   known = sp => !!speciesKind(sp);
 for (const [k, P] of Object.entries(pools))
   for (const [sp] of P.list || []) if (!known(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
+// RO-3e: a line never met wild (the fossils) is in no biome pool and hatches from no egg: an event gives it
+const notWild = new Set((D.lines || []).filter(L => L.wild === false).map(L => L.id)),
+  lineOfSp = sp => (D.lines || []).find(L => notWild.has(L.id) && lineSpeciesIds(L).includes(sp));
+for (const [k, P] of Object.entries(pools))
+  for (const [sp] of P.list || [])
+    if (lineOfSp(sp)) problem('pools.json', `${k} has ${sp}, of a line never met wild (wild: false)`);
+for (const [k, E] of Object.entries(D.eggs || {}))
+  for (const [sp] of E.list || [])
+    if (lineOfSp(sp)) problem('eggs.json', `${k} hatches ${sp}, of a line never met wild (wild: false)`);
 route.forEach((r, i) => {
   if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
@@ -297,6 +307,7 @@ for (const family of [
   dataBattleRules,
   dataRunPayout,
   dataRanchRules,
+  dataSquareRules,
   dataRunMapRules,
   dataRunClock,
   dataRunScene,

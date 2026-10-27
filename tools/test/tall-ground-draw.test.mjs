@@ -220,3 +220,34 @@ test("the near shadow map is centred at the player's height: a point there lands
   assert.ok(at(high, 40, 15, 30) < 0.01, 'with it, in the middle');
   assert.equal(high.cy, 15);
 });
+
+test('Steady shadow edges: as the centre moves, a still point keeps its place inside its shadow-map texel', () => {
+  setup(camera());
+  gpuState.fb = {};
+  const sun = { travel: [0.45, -0.7, 0.55], dir: [-0.45, 0.7, -0.55] },
+    res = 1024,
+    /* where the point (12.3, 0.4, 7.9) falls inside its texel, across and up the map (0-1 each) */
+    frac = SH => {
+      const m = SH.vp,
+        X = m[0] * 12.3 + m[4] * 0.4 + m[8] * 7.9 + m[12],
+        Y = m[1] * 12.3 + m[5] * 0.4 + m[9] * 7.9 + m[13],
+        f = v => ((((v * 0.5 + 0.5) * res) % 1) + 1) % 1;
+      return [f(X), f(Y)];
+    },
+    drift = () => {
+      const p = [0, 0.37, 1.1, 2.9, 4.45].map(d =>
+        frac(G.beginSunShadow(10 + d, 5 + d * 0.6, 13, sun, res, 'shadowN'))
+      );
+      return Math.max(...p.map(q => Math.hypot(q[0] - p[0][0], q[1] - p[0][1])));
+    },
+    D = G.ENGINE_DEFAULTS.shadows,
+    was = D.steadyEdges;
+  try {
+    D.steadyEdges = true;
+    assert.ok(drift() < 0.02, `steady: drift ${drift()}`);
+    D.steadyEdges = false;
+    assert.ok(drift() > 0.05, `as before, the point crawls across its texel: drift ${drift()}`);
+  } finally {
+    D.steadyEdges = was;
+  }
+});

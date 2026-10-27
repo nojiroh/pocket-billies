@@ -6,13 +6,12 @@ import { poolRunTag, runValuesFill, standInMark, worldMapLookTab } from '../../g
 import { $ } from '../../game/js/util.js';
 import { WILD_TYPE_BOOSTS } from '../../game/js/logic/weather.js';
 import { bowlLandmarkPick, bowlPropClass } from '../../game/js/logic/bowl-things.js';
-import { artURL, makeCanvas } from '../../game/js/art.js';
+import { artURL } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
   afterRender,
-  api,
   ask,
   card,
   changed,
@@ -35,12 +34,11 @@ import {
   uniqueKey,
 } from './studio-app.js';
 import { conditionField } from './story-editor.js';
-import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, spritePreviewHTML } from './sprites.js';
+import { mountPreviews, spritePreviewHTML } from './sprites.js';
 import { RARITY_LABELS } from './data-editors.js';
 /* eslint-disable no-func-assign */
 expose({
   AMBIENT_PARTICLES: [() => AMBIENT_PARTICLES],
-  ART_GROUPS: [() => ART_GROUPS],
   BOWL_SVG: [() => BOWL_SVG],
   FISHING_WATERS: [() => FISHING_WATERS],
   LOCATION_KINDS: [() => LOCATION_KINDS],
@@ -652,7 +650,7 @@ function worldEggs() {
           }),
           numberField('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
         ) + weightTable(`eggs.${k}`, E),
-        { sub: 'Egg art is art/eggs/egg_' + k + '.png (Art files).' }
+        { sub: 'Egg art is art/eggs/egg_' + k + '.png (Art browser).' }
       )
     )
     .join('');
@@ -937,7 +935,8 @@ SECTIONS.rules = () => {
        numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),
        selectField('Soak turns the target into', `${bt}.spinType`, typeOptions()),
-       numberField('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 })
+       numberField('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 }),
+       numberField('Fork turns (copied types)', `${bt}.forkTurns`, { min: 1, max: 10, step: 1 })
      ) +
      '<h4>Alphas and team battles</h4>' +
      grid(
@@ -1031,75 +1030,3 @@ document.addEventListener('change', ev => {
   commit(true);
   if (k === 'starter') render();
 });
-/* ================= ART FILES ================= */
-const ART_GROUPS = [
-  ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],
-  ['battle', 'Battle backdrops', 'Ground, far land, walls, props, clouds, foregrounds'],
-  ['background', 'Menus and title', 'Title picture, sky, clouds, islands'],
-  ['pyramids', 'Pyramids', 'The catch items’ icons (folder pyramids until RF-4)'],
-  ['eggs', 'Eggs', ''],
-  ['icons', 'Icon atlas', 'All item and effect icons on one sheet'],
-  ['map', 'World map', 'The inside of the sphere (equirectangular)'],
-  ['items', 'Custom item icons', ''],
-  ['ui', 'Interface icons', '12×12 masks'],
-  ['app', 'App icon', ''],
-];
-SECTIONS.art = () => {
-  const g = studioState.sel.agroup || 'battle',
-    files = studioState.files.filter(f => f.path.split('/')[1] === g);
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Art files</h2><button class="btn" data-act="artRefresh">Refresh list</button></div><div class="seg-row tabs">${ART_GROUPS.map(([k, n]) => `<button class="seg ${k === g ? 'on' : ''}" data-act="agroup" data-g="${k}">${n}</button>`).join('')}</div>
- ${card(
-   ART_GROUPS.find(x => x[0] === g)[1],
-   `<div class="files">${
-     files
-       .map(f => {
-         const dirty = studioState.artDirty.has(f.path);
-         return `<figure class="file"><div class="fthumb"><img src="../game/${f.path}?v=${f.mtime}${dirty ? '&d' : ''}" alt="" loading="lazy" class="pix"></div><figcaption><b title="${escapeHtml(f.path)}">${escapeHtml(f.path.split('/').slice(2).join('/'))}</b><small>${(f.size / 1024).toFixed(1)} KB${dirty ? ' · edited' : ''}</small></figcaption>
-  <div class="seg-row"><a class="btn sm" href="../game/${f.path}" download>Download</a>${f.path.endsWith('.svg') ? '' : `<button class="btn sm" data-act="artReplace" data-p="${f.path}">Replace…</button>`}</div></figure>`;
-       })
-       .join('') || '<p class="help">No files here yet.</p>'
-   }</div>`,
-   { sub: (ART_GROUPS.find(x => x[0] === g) || [])[2] || '' }
- )}
- ${g === 'background' ? card('Title picture for the web', `<p class="help">The game shows <code>background/sundown.webp</code>, a lighter copy of <code>sundown.png</code>. After replacing sundown.png, rebuild the web copy here.</p><button class="btn primary" data-act="rebuildWebp">Rebuild sundown.webp</button>`) : ''}</div>`;
-};
-ACTIONS.agroup = d => {
-  studioState.sel.agroup = d.g;
-  render();
-};
-ACTIONS.artRefresh = async () => {
-  studioState.files = await api('files?dir=');
-  render();
-};
-ACTIONS.artReplace = async d => {
-  const f = await pickFile('image/png,image/webp');
-  if (!f) return;
-  const c = await fileToCanvas(f);
-  let old = null;
-  try {
-    old = await loadImage('../game/' + d.p + '?v=' + Date.now());
-  } catch (e) {}
-  if (
-    old &&
-    (old.naturalWidth !== c.width || old.naturalHeight !== c.height) &&
-    !(await ask(
-      `The new image is ${c.width}×${c.height}; the old one is ${old.naturalWidth}×${old.naturalHeight}. Some art (atlases, textures) must keep its size. Replace anyway?`,
-      'Replace'
-    ))
-  )
-    return;
-  markArt(d.p, c);
-  toast('Replaced in the Studio. Save to game to write it.');
-  render();
-};
-ACTIONS.rebuildWebp = async () => {
-  const im = await loadImage('../game/art/background/sundown.png?v=' + Date.now());
-  const w = 1280,
-    h = Math.round((im.naturalHeight * w) / im.naturalWidth),
-    c = makeCanvas(w, h),
-    x = c.getContext('2d');
-  x.imageSmoothingQuality = 'high';
-  x.drawImage(im, 0, 0, w, h);
-  markArt('art/background/sundown.webp', c);
-  toast('Web copy rebuilt. Save to game to write it.');
-};

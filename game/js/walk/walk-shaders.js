@@ -4,7 +4,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
-import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL } from '../engine/webgl.js';
+import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL, SKY_GLSL } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_GLSL: [() => FALL_GLSL],
@@ -69,14 +69,17 @@ vec2 fallNear(vec3 p){vec2 r=vec2(0.);for(int i=0;i<4;i++){if(i>=uFallN)break;ve
 `;
 /* v46: the near ring lookup, shared by the ground and the grass (their uniforms: uRingC, uRingBox, uCanvas) */
 const RING_AT_GLSL = `float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
- ruv=(s*16.+(cc-ch*16.))/64.;vec2 e=min(cc-uRingBox.xy,uRingBox.zw-cc);return clamp(min(e.x,e.y)/3.,0.,1.);}`;
+ ruv=(s*16.+(cc-ch*16.))/64.;vec2 e=min(cc-uRingBox.xy,uRingBox.zw-cc);return clamp(min(e.x,e.y)/3.,0.,1.);}
+/* the ground's bump ring is filtered smoothly: its lookup stays half a texel (at the level the filter reads) inside its own
+   16 m square, so the filter never mixes in the next slot, an unrelated square (seams along every square's edge) */
+vec2 ringIn(vec2 u,vec2 dx,vec2 dy,float sz){vec2 s=floor(u*4.)/4.;float h=.5*max(1.,max(length(dx),length(dy))*sz)/sz;return clamp(u,s+h,s+.25-h);}`;
 export const WALK_SHADERS = {
   ground: [
     `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;uniform vec3 uOrg;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
 void main(){vec3 p=aPos+uOrg;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform vec3 uWGlow;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef;uniform vec3 uWallCol[12];uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uSea;uniform vec4 uRoom;uniform vec4 uRoomT;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uGAOSky;uniform float uWet,uRainK,uCausW;uniform vec3 uWGlow;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;uniform vec4 uHole;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}${FALL_GLSL}${TIDE_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
 ${RING_AT_GLSL}
@@ -115,7 +118,7 @@ void main(){/* phase 08b: a room drawn over the place: the place's ground leaves
  /* v31: in a room, past the front edge: the floor boards' cut edge, then the dark under the floor */
  if(uRoom.w>.5&&vW.z<-.001){float d=uRoomY-vW.y;vec3 sec=d<.07?vec3(.42,.3,.2)*(d<.015?1.25:1.):d<.13?vec3(.16,.12,.1):mix(vec3(.1,.08,.09),vec3(.02,.02,.03),smoothstep(.13,1.4,d));o=vec4(fogit(sec,vW),0.);return;}
  vec2 g=vec2((vW.x-uGRect.x)*uGRect.z,(uGRect.y-vW.z)*uGRect.w);vec3 a;float spec=0.;float st=1.-n.y,c=smoothstep(.28,.5,st);
- if(g.x>0.&&g.y>0.&&g.x<1.&&g.y<1.){a=texture(uGround,g).rgb;if(rw>0.)a=mix(a,textureGrad(uRing,ruv,rdx,rdy).rgb,rw);/* v24: snow reads white, not grey */{float lm=dot(a,vec3(.3,.59,.11));a*=1.+.3*smoothstep(.74,.9,lm)*clamp(1.-abs(a.r-a.b)*4.,0.,1.);}vec4 gm=texture(uGNrm,g);if(rw>0.)gm=mix(gm,textureGrad(uRingN,ruv,rdx,rdy),rw);n=normalize(n+vec3(gm.r*2.-1.,0.,gm.g*2.-1.)*uGStr*(1.-c));spec=gm.a;
+ if(g.x>0.&&g.y>0.&&g.x<1.&&g.y<1.){a=texture(uGround,g).rgb;if(rw>0.)a=mix(a,textureGrad(uRing,ruv,rdx,rdy).rgb,rw);/* v24: snow reads white, not grey */{float lm=dot(a,vec3(.3,.59,.11));a*=1.+.3*smoothstep(.74,.9,lm)*clamp(1.-abs(a.r-a.b)*4.,0.,1.);}vec4 gm=texture(uGNrm,g);if(rw>0.)gm=mix(gm,textureGrad(uRingN,ringIn(ruv,rdx,rdy,float(textureSize(uRingN,0).x)),rdx,rdy),rw);n=normalize(n+vec3(gm.r*2.-1.,0.,gm.g*2.-1.)*uGStr*(1.-c));spec=gm.a;
   /* v31: the shore: water tile art becomes a sandy-muddy bed, and a wet rim darkens the bank along the curved edge */
   if(uRoom.w>.5){vec2 rl=roomOwn(vW.xz);float dw=min(min(rl.x-uRoom.x,uRoom.y-rl.x),uRoom.z-rl.y);a*=mix(.7,1.,smoothstep(0.,.75,dw));}
   if(uShoreR.z>.5){vec2 su=(pwSnap(vW.xz)+.5/pwRes())*uShoreR.xy;if(su.x>0.&&su.y>0.&&su.x<1.&&su.y<1.){vec4 s4=texture(uShore,su);float sf=s4.r,sft=tideSF(s4);
@@ -141,7 +144,8 @@ if(c>0.){vec3 cx=texture(uCliff,vec2(vW.z,-vW.y)*.9).rgb,cz=texture(uCliff,vec2(
   float rim=smoothstep(.15,.4,pud)*(1.-smoothstep(.45,.75,pud));a=mix(a,mix(a*.3,uSkyW*1.3+.04,fr*.85)+rr*.3,smoothstep(.35,.7,pud)*.9);a*=1.-rim*.35;n=normalize(mix(n,vec3(0.,1.,0.),pud));spec=max(spec,pud*1.6);}
  /* water track WA-2a: the ground round a waterfall's foot is wet from its spray, and lit by its white water */
  vec2 fn=uFallN>0?fallNear(vW):vec2(0.);float fw=pwQ(fn.x,3.,pwCell(vW.xz));if(fw>0.){a*=1.-.3*fw;spec=max(spec,fw*.6);}
- vec3 lit=shade(a*mix(1.,gao,.35),n,vW,sh,mix(1.,ao,.7)*gao,vec4(spec*uGShine*.9,24.,0.,0.),0.);
+ /* Feet shade on sky light only (uGAOSky): the baked shade dims the sky's light alone, not the colour or the sun */
+ vec3 ab=a*mix(1.,gao,.35*(1.-uGAOSky));float aoc=mix(1.,ao,.7);vec3 lit=shade(ab,n,vW,sh,aoc*mix(gao,1.,uGAOSky),vec4(spec*uGShine*.9,24.,0.,0.),0.);if(uGAOSky>.5)lit-=ab*ambient(n,aoc,min(sh,aoc))*(1.-gao);
  if(fn.y>0.){vec2 q=pwSnap(vW.xz);float t=pwStep(uTime*.001),k=sin(q.x*5.1+t*1.6+sin(q.y*3.7-t)*1.4)+sin(q.x*3.3-t*1.1+q.y*4.2);
   lit+=vec3(.82,.9,1.)*pwQ(fn.y*(.4+.6*pow(clamp(1.-abs(k)*.5,0.,1.),3.)),3.,pwCell(vW.xz))*(.035+.25*(1.-uAmbK));}
  /* v47: alpha 0 marks the ground for the post pass: no ink outlines on it */o=vec4(fogit(lit,vW),0.);}`,
@@ -207,12 +211,12 @@ precision highp float;in vec2 vH;uniform vec4 uHole;out vec4 o;void main(){if(vH
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vP;void main(){vP=aC*2.-1.;gl_Position=vec4(vP,1.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform float uWallOn;uniform vec4 uEnv;uniform vec3 uMoon;
+precision highp float;in vec2 vP;out vec4 o;uniform mat4 uIVP;uniform vec3 uSky0,uSky1,uSky2,uSunCol,uSunDir;uniform float uIndoor,uTime,uSunPulse,uClouds,uCloudSpd;uniform sampler2D uWorld;uniform float uWallOn;uniform vec4 uEnv;uniform vec3 uMoon;${SKY_GLSL}
 float hsh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hsh(i),hsh(i+vec2(1,0)),f.x),mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x),f.y);}
 float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*vn(p);p*=2.03;a*=.5;}return s;}
 void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b.xyz/b.w-a.xyz/a.w);float e=d.y;
- vec3 c=e<.18?mix(uSky2,uSky1,smoothstep(-.05,.18,e)):mix(uSky1,uSky0,smoothstep(.18,.75,e));
+ vec3 c=skyGrad(uSky0,uSky1,uSky2,e);
  if(uIndoor<.5){vec2 q=d.xz/max(.12,d.y+.25);float cl=smoothstep(1.-uClouds*.5,1.3-uClouds*.5,fbm(q*.9+vec2(uTime,uTime*.5)*.000012*uCloudSpd)+.25);
   /* v26: clouds take the light of the hour: grey in bad weather, dark at night */
   vec3 cc=mix(vec3(1.,.99,.96),mix(uSky1,uSky0,.3)*1.25+.06,clamp(uEnv.z*.7+uEnv.x*.85,0.,1.));c=mix(c,cc,cl*.8*smoothstep(-.02,.2,e));
@@ -247,7 +251,7 @@ void main(){vec3 p=aPos;
   p.y+=(.5+.5*sin(length(r)*.55+uTide.w*1.3))*.2*uTide.y*smoothstep(.45,.9,aDK.x)*(1.-smoothstep(4.,14.,ou));}
  p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
+precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform float uLampW;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
 /* water track WA-5b: the kinds' looks in a small texture (walk/water.js kindTexture: a column a kind, a row a group), no cap on the kinds */
 uniform highp sampler2D uKinds;float gEst=0.;
 /* water track WA-10: in an estuary (the flow map's alpha) the river's look (the stream's column) is mixed into the body's; what a kind does (row 4) stays the body's */
@@ -379,6 +383,8 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
  float a=mix(clamp(ka.x/max(uClar,.05),0.,1.),.94,smoothstep(0.,.8,depC));a=mix(a,max(a,.8),reef);a=mix(a,.97,kb.y*.6);a=max(a,clamp(foam,0.,1.)*.9);a=mix(a,min(a,.42),flo);
  /* IS-3: the sea past the scene's edge has no land under it beyond the 8 m border: there it is opaque */
  {vec2 sz=1./max(uShoreR.xy,vec2(1e-4));float ou=max(max(-vW.x,vW.x-sz.x),max(-vW.z,vW.z-sz.y));a=mix(a,1.,smoothstep(3.,7.,ou));}
+ /* Lamp light on water (uLampW): the near lamps light the surface as they light the ground */
+ if(uLampW>0.)c+=c*points(vW,vec3(0.,1.,0.))*uLampW;
  o=vec4(fogit(c,vW),a);}`,
   ],
   fall: [
@@ -386,7 +392,7 @@ void main(){if(rockHides(vW))discard;if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y
 precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;layout(location=3) in vec2 aBig;uniform mat4 uVP;out vec3 vW;out vec2 vT;out vec2 vB;${COMMON_GLSL}
 out float vH;void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vT=vec2(aFl.y,aShore*aFl.x);vH=aFl.x;vB=aBig;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec2 vT;in float vH;in vec2 vB;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
+precision highp float;in vec3 vW;in vec2 vT;in float vH;in vec2 vB;out vec4 o;uniform float uLampW;uniform vec3 uShallow;${LIGHT_GLSL}${ROCK_GLSL}${PIXEL_WATER_GLSL}
 void main(){if(rockHides(vW))discard;
  float pr=pwRes(),pix=uPixW.x,t=pwStep(uTime*.001),sh=shadowAt(vW,.002);vec3 Lt=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;
  if(pix<.5){/* pixel water off: the sheet of before */float x=vT.x*7.,y=vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
@@ -401,7 +407,7 @@ void main(){if(rockHides(vW))discard;
  float q=pwQ(v,4.,fc);vec3 c=q<.2?uShallow*.9:q<.5?mix(uShallow,vec3(.9,.96,1.),.38):q<.8?mix(uShallow,vec3(.93,.97,1.),.7):vec3(.95,.98,1.);
  float e=min(ax,wM-ax)*pr,rag=step(e,1.+2.*step(.55,lnoise(vec2(y*2.-t*2.,fc.x*.3))));
  /* falling water stays bright in the cliff's shade (it catches the sky), and a little of its own at night */
- Lt=ambient(vec3(0,0,-1),1.,sh)*1.3+uSunCol*(.3+.4*sh);Lt=mix(Lt,vec3(dot(Lt,vec3(.3,.59,.11))),.6);c+=c*.08*(1.-uAmbK);o=vec4(fogit(c*Lt,vW),mix(.9+q*.08,.62,rag*(1.-ft)));}`,
+ Lt=ambient(vec3(0,0,-1),1.,sh)*1.3+uSunCol*(.3+.4*sh);if(uLampW>0.)Lt+=points(vW,vec3(0,0,-1))*uLampW;Lt=mix(Lt,vec3(dot(Lt,vec3(.3,.59,.11))),.6);c+=c*.08*(1.-uAmbK);o=vec4(fogit(c*Lt,vW),mix(.9+q*.08,.62,rag*(1.-ft)));}`,
   ],
   /* 0.1.0 alpha: the grass in the 32 px a metre pixel style, coloured by the ground it grows from. A blade is a quad
      on the pixel grid (vP: its pixels across and up); the fragment shader draws it in whole pixels: a staircase that
@@ -467,8 +473,19 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;c.rgb=lookOn(c.rgb,floor(
 precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uP,uRight,uUp;uniform vec2 uS;uniform vec4 uUV;out vec2 vUV;out vec3 vW;
 void main(){vec2 c=aC-.5;vec3 p=uP+uRight*c.x*uS.x+uUp*(-c.y)*uS.y;vW=p;vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec4 uCol;uniform float uGlow,uLitFx;${LIGHT_GLSL}
-void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uGround;uniform vec4 uCol,uGRect,uGTint;uniform vec2 uS;uniform float uGlow,uLitFx;${LIGHT_GLSL}
+/* 0.1.0 alpha: a flat grass prop (moss, clover) on grass takes the grass's colour, as the blades do: the ground picture
+   round its middle (uGTint.xy, five taps), its own pixels' lightness over the picture's mean (uGTint.w) keeping its tones, a tenth lighter (as the blades' tips are) so it still reads, lit as the blades and the ground are */
+vec3 groundTap(vec2 w){return textureLod(uGround,vec2((w.x-uGRect.x)*uGRect.z,(uGRect.y-w.y)*uGRect.w),0.).rgb;}
+vec3 groundTone(vec2 w){return (groundTap(w)+groundTap(w+vec2(.25,0.))+groundTap(w-vec2(.25,0.))+groundTap(w+vec2(0.,.25))+groundTap(w-vec2(0.,.25)))*.2;}
+void main(){vec4 c;if(uGlow>1.5){/* a smart light shaft (walk/effects.js): soft across, faded in at its top and out over its lower half (no hard
+  line where it meets the ground or a trunk), a few faint streaks four pixels wide that drift slowly */
+  float x=abs(vUV.x*2.-1.),y=vUV.y,a=(1.-x*x)*(1.-x*x)*smoothstep(0.,.18,y)*(1.-smoothstep(.35,1.,y));
+  float cl=floor(vUV.x*uS.x*8.),ph=uTime*.00035+fract(sin(cl*12.9898)*43758.5)*6.,f0=floor(ph);
+  float h0=fract(sin((cl+f0*7.31)*91.7)*437.58),h1=fract(sin((cl+(f0+1.)*7.31)*91.7)*437.58);
+  a*=.55+.6*mix(h0,h1,smoothstep(0.,1.,fract(ph)));c=vec4(uCol.rgb*a*uCol.a,1.);}else if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;
+ if(uGTint.z>.5){float sh=shadowAt(vW,.002),ao=contactAO(vW),occ=min(sh,ao);c.rgb=seasonalF(groundTone(uGTint.xy)*dot(c.rgb,vec3(.299,.587,.114))/max(uGTint.w,.02)*1.1,vW,vec2(.75,1.))*
+  (ambient(vec3(0,1,0),ao,occ)+uSunCol*max(uSunDir.y,0.)*occ+points(vW,vec3(0,1,0)));}else if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
   ],
 };
 provide({ WALK_SHADERS }); /* to-module */

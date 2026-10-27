@@ -516,8 +516,9 @@ export function coatAtlas(img, path, sp, view, coat) {
   const key = path + '#' + coat,
     had = COAT_ATLASES.get(key);
   if (had && had.src === img) return had.c;
+  /* LD-1: a canvas kept in memory (willReadFrequently), so reading it back doesn't stall on the graphics chip */
   const c = makeCanvas(img.width, img.height),
-    x = c.getContext('2d');
+    x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(img, 0, 0);
   const im = x.getImageData(0, 0, c.width, c.height),
     pal = typeof window !== 'undefined' ? window.NW_PALETTE : null;

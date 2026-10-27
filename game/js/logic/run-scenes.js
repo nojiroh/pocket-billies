@@ -20,7 +20,6 @@
 /** @import { Biome, LocationData, NodeType, Pool, RoadLink, RunSceneRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
@@ -66,8 +65,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
-  runTownFolkCap: [() => runTownFolkCap, v => ((runTownFolkCap = v), provide({ runTownFolkCap }))],
-  // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
@@ -79,7 +76,6 @@ expose({
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runTownFolkCap });
 /* to-module: end */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
@@ -354,14 +350,6 @@ export function runSceneMake(run, i, scenes, data) {
   }
   return { scene, notes };
 }
-/** TW-2: how many of a run town's folk are drawn (rules.json run.town.cap): `busy` once the game has stepped its
- * quality down (walkRenderer.q 2 or more: frames came late), else by the Graphics preset (preferences.aim: smooth is
- * Balanced, sharp is Beautiful) @param {import('../../types/game-data').RunTownRules} T @param {number} q
- * @param {string} [aim] @returns {number} */
-export function runTownFolkCap(T, q, aim) {
-  if (q >= 2) return T.cap.busy;
-  return aim === 'smooth' ? T.cap.balanced : T.cap.best;
-}
 /** TW-2: a run town's own life, from its node's stream ('town|life'): its region's chat lines after its biome's
  * (rules.json run.town.chat by the region's theme), and its named locals (scene.people), run.town.locals of them on
  * the town's local spots (mapgen.js: the square's first, then a house's gate drawn), each with a seeded look (a
@@ -417,8 +405,8 @@ export function runTownQuest(run, i, scene, data) {
 }
 /** RS-2: a run's resident standing in a town (scene.people id 'resident', `resident: <id>`: quest-board.js offers
  * their favour or their invite), on the first of the town's local spots nobody stands on (mapgen.js: the square's
- * first, then the houses' gates), else beside the square's. Their look is their own (seeded by their id), the same in
- * every run @param {any} scene @param {string} id @param {string} name */
+ * first, then the houses' gates), else beside the square's. Their look is their own (RS-3: people/<id>.json), the same
+ * in every run @param {any} scene @param {string} id @param {string} name */
 export function runTownResident(scene, id, name) {
   if (!scene) return;
   const people = scene.people || [],
@@ -428,8 +416,10 @@ export function runTownResident(scene, id, name) {
     ),
     at = free || (spots[0] ? { x: spots[0].x + 1.2, z: spots[0].z } : null);
   if (!at) return;
-  const who = 'folk:' + rngFrom('resident|' + id, 'look').int(1000, 99999);
-  scene.people = people.concat([{ id: 'resident', who, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id }]);
+  /* RS-3: their look is the person of their id (people/<id>.json, the data check asks for one) */
+  scene.people = people.concat([
+    { id: 'resident', who: id, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id },
+  ]);
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
  * @param {RunWorldData} data @returns {any[]} */

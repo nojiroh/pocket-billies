@@ -29,6 +29,7 @@ const FAMILIES = [
   'dataBattleRules',
   'dataRunPayout',
   'dataRanchRules',
+  'dataSquareRules',
   'dataRunMapRules',
   'dataRunClock',
   'dataRunScene',
@@ -68,6 +69,12 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D = copy();
   D.rules.ranch.breed.odds.safe = 0.9;
   found('dataRanchRules', D, 'adding up to 1');
+  D = copy();
+  D.rules.square.day[1].from = 9;
+  found('dataSquareRules', D, 'after the slot before');
+  D = copy();
+  D.rules.square.visit.stops = ['bench'];
+  found('dataSquareRules', D, 'kinds of stop');
   D = copy();
   D.rules.run.map.first = 'nosuch';
   found('dataRunMapRules', D, 'no node type "nosuch"');

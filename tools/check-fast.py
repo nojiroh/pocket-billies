@@ -126,6 +126,28 @@ def run_world(pg, base):
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
+def run_helper(pg, base):
+    """LD-4: the run fixture's places were made on the run's helper thread (run-worker.js) as the page booted, and the
+    thread makes the very places the page's own code makes from the run (the same JSON, place by place)"""
+    how, off = pg.evaluate("[runWorld.how, runWorldAhead.off]")
+    if how != 'helper': raise Exception(f"the run's places were made on the {how or '?'}, not the helper thread ({off or 'not off'})")
+    R = pg.evaluate("""async () => {
+      const run = saveData.run, here = runScenesMake(run, runWorldData()),
+        w = new Worker('js/run-worker.js', { type: 'module' }), got = [];
+      const end = await new Promise(ok => {
+        w.onmessage = e => { const m = e.data; if (m.kind === 'scene') got[m.i] = m.scene; else if (m.kind !== 'step') ok(m); };
+        w.onerror = e => ok({ kind: 'error', error: String(e.message) });
+        w.postMessage({ kind: 'make', id: 1, run, version: PB_VERSION });
+      });
+      w.terminate();
+      const bad = here.findIndex((s, i) => JSON.stringify(s) !== JSON.stringify(got[i]));
+      return { end: end.kind, error: end.error || '', n: here.length, got: got.length, bad };
+    }""")
+    if R['end'] != 'done': raise Exception(f"the helper thread didn't finish: {R['end']} {R['error']}")
+    if R['got'] != R['n'] or R['bad'] >= 0: raise Exception(f"the helper thread's places differ from the page's (place {R['bad']} of {R['n']}, {R['got']} came)")
+    return f"{R['n']} places from the helper thread, each equal to the page's"
+
+
 def bowl_map(pg, base):
     """phase 10: the Map tab opens as the bowl (world-bowl.js) and keeps drawing; a tap on a place's pin opens its card,
     and Home brings the camera back over you. Small page, graphics off, no pictures: on a device, the debug menu's
@@ -1230,7 +1252,7 @@ def run_town_life(pg, base):
     want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
     if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
     if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
-    cap = pg.evaluate("runTownFolkCap(RULES.run.town,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
+    cap = pg.evaluate("folkCap(engineSetting('quality','townFolk')??10,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
     if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
     pg.evaluate("walkView.folkAll.forEach(f=>{f.x0=f.x;f.z0=f.z});0")
     if not until(pg, "walkView.folkAll.some(f=>Math.hypot(f.x-f.x0,f.z-f.z0)>1)", 90): raise Exception('nobody walked in 90 s')
@@ -1319,10 +1341,11 @@ def screens(pg, base):
             raise Exception(f'{what}: not there ({cond}); on screen: ' + pg.evaluate("[uiState.tab,uiState.modal&&(uiState.modal.cls||uiState.modal.title),document.querySelector('#ov').className+' '+(document.querySelector('#ov .sheet')||{}).className].join(' / ')"))
         seen.append(what)
     screen = lambda t, part: f"!!document.querySelector('.screen.s-{t}')&&!!document.querySelector('.screen.s-{t} :is({part})')"
-    # UI-5: the bar holds Map, Team and Bag, and RL-11's Lab (the hub's set)
+    # UI-5: the bar holds Map, Team and Bag, and RL-11's Lab (the hub's set); UI-8: and the Guide, two buttons on each
+    # side of the minimap tile (Map), in the page's order
     tabs = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.dataset.t).join(',')")
-    if tabs != 'map,team,bag,lab': raise Exception(f'the bottom bar holds {tabs}')
-    for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'),
+    if tabs != 'team,guide,map,bag,lab': raise Exception(f'the bottom bar holds {tabs}')
+    for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'), ('guide', '.dex,.ledger,.lrow'),
                     ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
         need(t, screen(t, part))
@@ -1634,6 +1657,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('The train ride: the departure to the white veil, the carriage, the ride home gold and battered (HB-8)', train_ride)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
+             ("The run's places from the helper thread: made there at boot, equal to the page's (LD-4)", run_helper),
              ("A run town's shop opens (UI-5)", run_shop),
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),

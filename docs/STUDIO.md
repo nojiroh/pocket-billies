@@ -580,6 +580,108 @@ only after a click). It stops by itself when the section is off screen.
   with Show me, one note on how many Billies use the cry their id makes, and notes listing the hooks, jingles, base
   cries and Billie cries still named "placeholder".
 
+## Art browser (Studio art track SA-1)
+
+The **Art browser** (section `art`, group Game) shows every picture under `game/art`: PNG, WebP, JPEG and SVG, about
+3,600 files. It replaced the old Art files tabs, four of which named folders that no longer existed.
+
+- **Folders** come from the file list (the repository's tree), never from a list in the code. A new folder shows up
+  by itself. The breadcrumbs above the grid go back up.
+- **Thumbnails** are drawn pixel for pixel on a checkerboard. The **Size** slider (32 to 256 px) is remembered in this
+  browser. Each tile shows the picture's size once it is known, "edited" for an unsaved change, and "legacy" for art
+  only the parked world uses. An unused picture has a grey name.
+- **Search** with words and tokens. The tokens show as chips under the box; ✕ takes one off.
+  - Words must all be in the path, upper or lower case alike.
+  - `dir:scene/props` keeps a folder; `dir:props` keeps any folder with that name.
+  - `w:32`, `w:>32`, `w:<=64`, `w:16-64` filter by width; `h:` the same by height. The sizes come from each PNG's
+    header (a 33-byte read) and are kept in this browser by the file's contents hash.
+  - `unused` keeps pictures nothing names; `legacy` keeps pictures only the legacy world names.
+  - With a search, the current folder and everything under it are searched.
+  - The parser is `game/js/logic/art-search.js`, unit-tested in `tools/test/art-search.test.mjs`.
+- **The picture panel** shows the path, the size in pixels and KB, frames or pieces (from a `.json` layout beside the
+  picture), the colour count and how many pixels are off the game palette. Its **Used by** list is built from:
+  - every text in the game data (and the parked legacy data) that is the picture's path;
+  - a Billie's sheet from its rig;
+  - the model recipes in `game/art`;
+  - the art paths the game's code names. `tools/art-code-refs.mjs` reads them into `studio/art-code-refs.json`.
+    `npm run lint` fails when that file is out of date: run `node tools/art-code-refs.mjs` after code that names art
+    changes.
+
+  The index is `game/js/logic/art-refs.js`, unit-tested in `tools/test/art-refs.test.mjs`. The code builds many paths
+  from names, so it is read as patterns (`scene/flags/*.png`). A pattern whose name is only a legacy place's counts as
+  legacy. So **unused means "no reference found", not proof**: SA-5's report checks each file again with grep before
+  anything is deleted.
+- **Actions:**
+  - **Edit pixels** opens any PNG on the shared pixel canvas. Its tools, keys, symmetry and palette lock are the same
+    as everywhere else. Each stroke is one step of the Studio's undo; Done goes back to the grid.
+  - **Replace…** takes a PNG or WebP and warns when the size differs. SVG icons get their own editor in SA-2b.
+  - **Download** saves the picture, with your unsaved edit if there is one.
+  - **Open in …** goes to the editor for what uses the picture: Billies, Props, Walk scenes, Wardrobe, Robots or the
+    Art workbench.
+- **Ctrl+K** finds art files by name or path, ranked after the thing a picture belongs to. Picking one opens the
+  browser in its folder with the picture picked.
+- Checks: `check-studio-github.py --only=art_browser`, the Studio self-test's "Art browser" row (the index over every
+  picture and a search through them all), `studio-shots.py --views art`.
+- **Drawn by a builder.** A picture a Python builder in `tools/` draws says so in red, in the picture panel and in
+  the painter: running that builder again can draw over edits made here. The list is `ART_BUILDERS` in
+  `game/js/logic/art-search.js`: effects and animals (build-fx-v47.py, build-life-v47.py), pyramids
+  (build-pyramids.py), walls, buildings' detail and rooms (build-walls.py, build-buildings.py, build-props-a04.py),
+  flags (build-flags.py) and the UI icons (build-ui-icons.py, until SA-2b). The owner's choice (2026-10-26): the
+  builders stay and the Studio warns.
+- **Another editor's Edit pixels** (Robots, Items & pyramids) opens this painter too; its button then reads "Done,
+  back to …" and goes back there.
+
+## Frame strips (Studio art track SA-2a)
+
+A picture the game animates as a row of frames plays in the Art browser's picture panel, and beside the pixel canvas
+while you paint it, so a stroke shows on the next frame. Play or Pause, Step › (one frame), the speed (1-30 frames a
+second, 8 at first, kept in this browser) and the scale (2x, 4x, 8x).
+
+- Which pictures are strips, and their frames, come from where the game reads them (`game/js/logic/frame-strips.js`):
+  the walk effects (`scene/fx`) from `EFFECT_FRAMES` in walk-view.js, the animals and cars (`scene/life`) from the
+  data's `scenery.life` (with the animal's name and where it lives). No picture has its own layout file; fx.json
+  misses four effects and the game doesn't read it.
+- The game times each strip in its own code (a bird's wings by its flight, a car by its speed), so the player's speed
+  is for looking, not the game's.
+- Checks: `tools/test/frame-strips.test.mjs` (every strip fits its picture), `check-studio-github.py --only=strips`,
+  `studio-shots.py --views strips`.
+
+## Ground tile set (Studio art track SA-2a)
+
+The full-mode ground is `art/next/tiles47`: twelve 32 px tiles for each kind in the catalogue. **These PNGs are the
+source**: tools/build-terrain-v47.py retired (decision 1). Its rules are in `tools/art-source/terrain-v47/README.md`.
+
+- **Open it** from the Art browser (the `next/tiles47` folder → **Open as a ground tile set**, or **Open in Ground
+  tile set** on one of its tiles) or from Walk scenes' tile painter (**Paint the 32 px set**; Back goes back there).
+- **The kind** is picked from the list. Its twelve tiles show with their roles, as the game places them
+  (walk-view.js `groundTileRole`): 1, 7 and 8 plain; 2-6 and 10 detail; 9 damp; 11 and 12 worn.
+- **The pixel canvas** paints the picked tile, repeated round itself so the seams show; clicks wrap.
+- **The tiled preview** beside it is 8 × 6 m of the kind, each metre's tile picked as the game picks it, with the soft
+  patches of light and shade laid over it and a path across (each can be switched off). The tile you paint is
+  outlined. It is drawn again on every stroke.
+- **The Lite tiles** (`art/scene/tiles`: Lite mode and Walk scenes' thumbnails) are made from tiles 1-6
+  (`game/js/logic/lite-tile.js`: the soft patches baked in, then halved, as the builder did). For the 40 kinds made
+  that way, a stroke on tiles 1-6 makes the tile's Lite tile again, in the same undo step; the panel shows it at 1x and
+  4x. The 38 older kinds' Lite tiles were drawn by hand at 16 px, apart from the set: painting here leaves them alone
+  until **Make the Lite tiles from this set** (one undo step).
+- **A note** shows when two of a kind's twelve tiles are the same: the quick check's Ground step wants twelve
+  different tiles.
+- Not here yet: a new ground kind (its catalogue entry and files are made by hand, see the README).
+- Checks: `tools/test/lite-tile.test.mjs` (the 40 made kinds come out as committed), `check-studio-github.py
+  --only=tile_set`, the self-test's "Tile set" row, `studio-shots.py --views tiles`.
+
+## Robot pictures and pyramids (Studio art track SA-2a)
+
+- **Robots → Picture**: every picture of a part (front, back, and a torso's head front and back) and a gem's picture
+  has **Edit pixels** (the Art browser's painter; Done goes back to Robots) and **Upload…** (a PNG; a different size
+  asks first). A picture the part hasn't got is saved as `robots/<part>.png` (`_back`, `_head`, `_head_back`; a gem's
+  `robots/gem_<gem>.png`) and its field filled in, one undo step. The builds on the page ("Try a build", the list)
+  draw unsaved pictures as the game will.
+- **Items & pyramids → Pyramids**: each pyramid's two icons (`coins/<id>_16.png` and `_32.png`, each drawn at its own
+  size, never scaled) at their size and larger, with **Edit pixels** on each (Done comes back). Its 3D model
+  (`coins/<id>.json`) is not edited here. tools/build-pyramids.py drew them all.
+- Checks: `check-studio-github.py --only=robot_art`, `studio-shots.py --views robots,pyramids`.
+
 ## Sections
 
 | Section | What you can do |
@@ -610,9 +712,9 @@ only after a click). It stops by itself when the section is off screen.
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
-| **Art files** | Browse, download and replace any image. |
+| **Art browser** | Studio art track SA-1: every picture under `game/art` (see "Art browser" above): folders, search with tokens, what uses each picture, Edit pixels, Replace, Download, Open in its editor. |
 | **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
-| **Find and Connections** | Ctrl+K finds any setting or thing and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
+| **Find and Connections** | Ctrl+K finds any setting or thing (and, SA-1, any art file) and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
 ## Saving in local mode
 

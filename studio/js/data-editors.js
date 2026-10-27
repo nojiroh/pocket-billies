@@ -5,6 +5,8 @@ import { expose } from '../../game/js/test-globals.js';
 import {
   BODY_TEMPLATES,
   PLAN_INFO,
+  artPaint,
+  artPicSrc,
   loadWardrobe,
   makeBlankBody,
   musicCryCardHTML,
@@ -98,6 +100,7 @@ expose({
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
   poolPercent: [() => poolPercent],
+  pyramidArtHTML: [() => pyramidArtHTML, v => (pyramidArtHTML = v)],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
   selectedLineIndex: [() => selectedLineIndex],
@@ -829,7 +832,7 @@ SECTIONS.moves = () => {
     { none: 'Fixed power', opt: 1 }
   )}
   ${checkboxField('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${checkboxField('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${checkboxField('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
-  ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${escapeHtml(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
+  ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${escapeHtml(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}${checkboxField('Fork: takes the target’s types for a few turns', `${p}.fx.copyTypes`, { num: 1 })}
   ${checkboxField('Robots: aims at a part the attacker picks', `${p}.fx.aim`, { num: 1, help: 'Phase 17. On a robot the player (or the computer) picks the arm or legs to hit.' })}${numberField('Robots: part damage ×', `${p}.fx.breaker`, { opt: 1, min: 0.5, max: 4, step: 0.25, help: 'A robot part it hits loses this many times the usual damage.' })}${numberField('Robots: repairs its parts', `${p}.fx.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fixes this share of each of its own parts’ HP (1 = all).' })}
   ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.stones`, { num: 1 })}${checkboxField(`Starts a sandstorm (${escapeHtml(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${escapeHtml(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
@@ -1081,11 +1084,22 @@ SECTIONS.items = () => {
   const pyramids = Object.entries(D.pyramids)
     .map(([k, C]) => {
       const p = `pyramids.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="${escapeHtml(artPicSrc(`coins/${k}_32.png`))}" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${pyramidArtHTML(k)}${grid(textField('Name', `${p}.n`), numberField('Catch multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always catches.' }), numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', pyramids, { sub: 'Pyramid icons are art/coins/<id>_16.png and _32.png (tools/build-pyramids.py). Replace them under Art files.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Items & pyramids</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Pyramids', pyramids, { sub: 'Each pyramid has two icons, art/coins/<id>_16.png and _32.png, each drawn at its own size (never scaled), and a 3D model (art/coins/<id>.json, thrown in battle), which is not edited here. tools/build-pyramids.py drew them all: running it again draws over edits made here.' })}</div>`;
 };
+/* SA-2a: a pyramid's two icons at their own size and larger, each with Edit pixels (Done comes back here) */
+function pyramidArtHTML(k) {
+  return `<div class="seg-row pyr-art">${[16, 32]
+    .map(n => {
+      const rel = `coins/${k}_${n}.png`,
+        src = escapeHtml(artPicSrc(rel));
+      return `<figure class="pyr-fig"><span class="seg-row"><img class="pix" src="${src}" width="${n}" height="${n}" alt=""><img class="pix" src="${src}" width="${n * (n === 16 ? 4 : 2)}" height="${n * (n === 16 ? 4 : 2)}" alt=""></span><figcaption>${n} px <button class="btn sm" data-act="pyrPaint" data-p="art/${escapeHtml(rel)}">Edit pixels</button></figcaption></figure>`;
+    })
+    .join('')}</div>`;
+}
+ACTIONS.pyrPaint = d => artPaint(d.p, { label: 'Items & pyramids', fn: () => openSection('items') });
 ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);

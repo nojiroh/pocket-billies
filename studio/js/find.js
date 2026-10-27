@@ -2,15 +2,16 @@
 /* ================= POCKET BILLIES STUDIO · find =================
    alpha 0.4.1: one search box for the whole Studio (Ctrl+K, or the Find button). It knows every engine dial, every
    numbered setting on the Rules, Types, Items and Jobs pages, every section, and the things you edit: Billies, moves,
-   items, pyramids, trainers, shops, people, places, route stops and props. Pick a result and the Studio opens it, scrolls
+   items, pyramids, trainers, shops, people, places, route stops, props and (SA-1) art files. Pick a result and the Studio opens it, scrolls
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { noteConnectionsField, provide, uiRulesShow } from '../../game/js/hooks.js';
+import { artBrowserShow, artPictures, noteConnectionsField, provide, uiRulesShow } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { CAMERA_FOLDERS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { UI_DIALS, uiDialList } from '../../game/js/logic/ui-dials.js';
+import { artFolderOf } from '../../game/js/logic/art-search.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
 import { engineEditor, refreshEngineSettings } from './engine-editor.js';
 import { UI_VIEWS, findUi, uiEditor } from './ui-editor.js';
@@ -280,6 +281,11 @@ export function buildSearchIndex() {
       k
     )
   );
+  /* SA-1: every picture in the art folder, opened in the Art browser */
+  if (typeof artPictures === 'function')
+    artPictures().forEach(p =>
+      add(p.split('/').pop(), 'Art · ' + (artFolderOf(p) || 'art'), 'art', () => artBrowserShow(p), p)
+    );
   return E;
 }
 /* rebuilt when the data changed: a new undo state (`last`), or a step, undo or redo (the history's counter) */
@@ -307,6 +313,7 @@ const FIND_KIND_LABELS = {
   unlock: 'Unlock',
   building: 'Building',
   currency: 'Currency',
+  art: 'Art',
 };
 export function findRun(q) {
   const n = normalizeForFind(q).trim(),
@@ -329,6 +336,8 @@ export function findRun(q) {
     if (!ok) continue;
     if (e.t === n) s += 10;
     if (e.kind === 'setting' || e.kind === 'section') s += 0.5;
+    /* SA-1: a picture's file name comes after the thing it is a picture of */
+    if (e.kind === 'art') s -= 0.5;
     out.push([s, e]);
   }
   return out

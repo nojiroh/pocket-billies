@@ -33,7 +33,7 @@ every tier ran. 285 tests passed before RL-1 (290 after). PR #78 left `check:mod
 the smoke check's one red step was older than #78 (the world map's `mthing` shader, aCol on location 7, from phase
 10; fixed). `CLAUDE.md:30` had already been corrected in RL-0. The "16 version-stamped tools" are **not** dead weight:
 `build-scene-props.py` execs the five `scene_props_v*.py`, `build-props-a04.py` imports `build-buildings-v46.py`,
-`build-terrain-v47.py` is the ground generator the game's painter mirrors, and 03-audit-notes lists most of the rest
+`build-terrain-v47.py` was the ground generator the game's painter mirrors (retired in SA-2a), and 03-audit-notes lists most of the rest
 as live generators; only a few are one-off migrations (owner's decision pending, HANDOFF RL-1). Direct `Math.random`
 calls: 172, not 177.
 
@@ -1114,8 +1114,15 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
     2026-10-26 (HANDOFF): Threadling → Zaracoon → Ortegamoth (Grass → Grass/Steel → Grass/Flying, 7/10) and Tickerbud →
     Bloomburst → Terminalia (Grass → Grass → Grass/Psychic, 14/30), both common, dex 41-46, placeholders only.
   - **RO-3e** the Knight frog (hopper) and the fossil pair: Carnegie trilobite (crab), Vanderbilt rail snake
-    (serpent).
-  - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer).
+    (serpent). Done 2026-10-26 (HANDOFF): Swooshpole > Victoad (common, Water > Water/Flying, level 18), the fossils
+    as two rare singles (Philanthrobite Steel/Water, Vanderbolt Fire/Ground, totals 490), `wild: false` lines given
+    only by the Dig Site event's new `revive` command (`gift` on its branch, renamed in the merge: RL-S2 has a `gift`) (pick one of the two).
+  - **RO-3f** Satoshi (blob, the mythical copycat) and the Hastings cave bat (flyer). Done 2026-10-26 (HANDOFF): the
+    owner's picks: **Pseudonymph** (dex 51, Steel, mythical, one stage; **Fork**, a new move: takes the foe's types
+    for 5 turns; met only as a route's rarer one, 2% of routes, once a run, at the rarer one's level; in no pool and
+    no regional dex) and **Pilotbat → Bingebat** (52-53, common, Flying → Flying/Psychic at 18, Autoplay; cave 30,
+    thicket 12, jungle 6). Two new rules: `battle.forkTurns` with the move's `fx.copyTypes`, and
+    `run.wild.rare.myth`.
   - **RO-3g** legendaries Mansa Musa (quad) and Rockefeller (biped), the Eevee-style line, pools and a balance pass.
     **The owner (2026-10-26): the Swift line is the Eevee-style line** (in place of the draft "Pivotlet"): Swiftlet
     the base, branching into one era form per type (Erastar already "changes colour each era"); which eras, their

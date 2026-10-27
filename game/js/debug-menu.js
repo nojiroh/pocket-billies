@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  account,
   augmentsLevelled,
   augmentsOpen,
   closeModal,
@@ -91,6 +92,7 @@ import { applyPreferences, exportSave, settingsReset } from './settings-screen.j
 import { battleStage, battleStageResize } from './battle-stage.js';
 import { mapById, walkTo, walkView } from './walk-view.js';
 import { forceContextLoss, gpuState } from './engine/webgl.js';
+import { walkRenderer } from './walk/walk-state.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
@@ -197,9 +199,9 @@ function debugHTML() {
     node = saveData.trip.node,
     p = saveData.preferences || {},
     inTest = !!(uiState.bench && uiState.bench.test);
-  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (2 min) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
+  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (4-5 min on a phone) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
-  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}</div>
+  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}${debugButtonHTML('foggrid', walkRenderer.dbg && walkRenderer.dbg.fogGrid ? 'Hide the fog grid' : 'Show the fog grid')}</div>
   ${
     DATA_WARN.length
       ? `<p class="note">Game data warnings (${DATA_WARN.length}):</p><ul class="dbg-warn">${DATA_WARN.slice(0, 30)
@@ -280,7 +282,12 @@ function debugHTML() {
     ''
   )}${debugButtonHTML('script', 'Play it')}</div><p class="note">The conversations written in the new script format. They play as written, flags and all; hold the dialogue box to skip. Walking and camera lines do nothing yet.</p>`;
   const ranch = `<div class="dbg-row">${debugButtonHTML('ranchhour', 'Age the ranch by an hour')}${debugButtonHTML('eggsready', 'Eggs ready now')}</div>`;
-  const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>`;
+  const saveRow = `<div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div>${
+    /* ON-1: the moderator's uid goes into firebase/firestore.rules (moderator()); shown here, never sent */
+    typeof account !== 'undefined' && account.user
+      ? `<p class="note">Your account id (for the moderator line in firestore.rules): <b>${escapeHtml(account.user.uid)}</b></p>`
+      : ''
+  }`;
   return `<div class="dbg">
  <input id="dbgFind" type="search" placeholder="Find a button" aria-label="Find a button" autocomplete="off" value="${escapeHtml(uiState.dbgFind || '')}">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo. Gold buttons give you things; red ones erase something or start a battle.</p>
@@ -423,6 +430,12 @@ function debugAction(x) {
         if (!battleStage.on && !worldMap.on) frameTask('meter', () => frameCount(0));
         debugFps();
       }
+      return refreshDebugMenu();
+    case 'foggrid':
+      /* air track AIR-2: the fog grid's cells as see-through blocks in the walk view (not saved) */
+      walkRenderer.dbg = Object.assign({}, walkRenderer.dbg, {
+        fogGrid: !(walkRenderer.dbg && walkRenderer.dbg.fogGrid),
+      });
       return refreshDebugMenu();
     case 'q0':
       battleStage.lockQ = true;
