@@ -173,7 +173,9 @@ town node needs it.
   instruments and reverb), water (SND-10, taking WA-8's water sounds if the owner agrees), stems and ensembles in a
   Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
   weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone
-  pass (SND-15). Branch `track/sound` (the owner makes it from main).
+  pass (SND-15); SND-17 (the jingles with the new instruments, stingers on the beat) right after SND-11, added at the
+  owner's question. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
+  plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the
   stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
