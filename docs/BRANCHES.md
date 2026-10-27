@@ -106,6 +106,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `tools/rl-1-renames` | RL-1 tools follow-up: version-stamped tools renamed, legacy generators moved to tools/legacy/. Not merged; far behind main. |
 | `design/expedition-punk-prototype` | Standalone UI prototype ("Hollow Signal" shell), PR #76 closed unmerged. Not wired into the game. |
 | `ccr-03a15a70-nd3yqu` | UI track UI-10 (docs only): Part 2 of docs/phases/ui-track.md, Living Semigloss (the owner's brief 2026-10-27; research, the colour code, palettes, sessions UI-11..UI-18) and a palette sampler artifact, written here at the owner's word (a cloud session pushes only to its own branch). Later UI sessions work on `track/ui`. To main by pull request. |
+| `claude/ui-8c-map-markers` | UI track UI-8c (the run map's icons: the place markers as 36 px pixel badges, the map's buttons as 44 px chips, the names in Jersey 15), made from the UI-10 planning branch (main plus the UI-8c plan, PR #275) to run beside UI-8b at the owner's word; a draft PR into `track/ui`, as WM-4b, WM-5 and WM-7 took PRs into `track/worldmap`. Until its PR merges. |
 
 ## Archive (unmerged work from before the roguelite pivot, kept but parked)
 
