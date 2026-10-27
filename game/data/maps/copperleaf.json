@@ -693,7 +693,16 @@
    "wild": {"n":6},
    "level": 1.2,
    "seeds": {}
-  }
+  },
+  "patched": [
+   "water --river",
+   "water --square (WA-10; now square --outline)",
+   "square --outline",
+   "square --fountain",
+   "square --edges",
+   "square --hub",
+   "square --folk"
+  ]
  },
  "hub": [152.38,60.86],
  "exits": [],
