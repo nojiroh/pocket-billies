@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/tools/after-edit.mjs\"",
-            "timeout": 60
+            "timeout": 180
           }
         ]
       }
