@@ -48,6 +48,7 @@ import '../../game/js/logic/encounters.js';
 import '../../game/js/logic/factions.js';
 import '../../game/js/logic/festival.js';
 import '../../game/js/logic/fighters.js';
+import '../../game/js/logic/figure-pose.js';
 import '../../game/js/logic/float-island.js';
 import '../../game/js/logic/fog-grid.js';
 import '../../game/js/logic/forms.js';

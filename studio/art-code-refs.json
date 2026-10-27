@@ -1586,6 +1586,7 @@
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
    "game/js/logic/cutscene-set.js:142",
+   "game/js/logic/figure-pose.js:164",
    "game/js/logic/rules.js:936",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:220",
@@ -1710,6 +1711,10 @@
    "game/js/logic/perks.js:112",
    "game/js/logic/ui-dials.js:134",
    "game/js/map-tab.js:127"
+  ],
+  "eye": [
+   "game/js/logic/figure-pose.js:175",
+   "game/js/logic/figure-pose.js:260"
   ],
   "flame": [
    "game/js/battle-stage.js:809",
