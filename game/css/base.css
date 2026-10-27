@@ -521,7 +521,6 @@ body.on-scene #dioui {
    ===================================================================== */
 /* ---------- tokens ---------- */
 :root {
-  --r-s: 6px;
   --focus: #8a5a0c; /* focus ring, ≥3:1 on light panels */
   --dither: rgba(53, 68, 85, 0.055); /* faint pixel texture on cards */
   --sheen: rgba(255, 255, 255, 0.55);
