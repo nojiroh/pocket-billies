@@ -146,7 +146,8 @@ town node needs it.
   Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
   run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
   `ccr-03a15a70-nd3yqu`, answered (Field Guide by default, three palettes in Settings; rarity as frame and pill); UI-8b (the wide
-  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) first, then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
+  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) first, UI-8c (the run map's icons in the icon set's pixel style)
+  next, then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
   the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
