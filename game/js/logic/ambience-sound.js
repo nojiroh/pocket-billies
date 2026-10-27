@@ -316,6 +316,7 @@ export const AMBIENCE_BEDS = {
       },
     ],
   },
+  /* rain: a soft wash (pink, high-passed, the highs shelved down) over a low rumble, the wash drifting a little */
   rain: {
     bus: 'world',
     trim: 1,
@@ -324,10 +325,13 @@ export const AMBIENCE_BEDS = {
         noise: 'pink',
         gain: 1,
         filters: [
-          ['highpass', 1700],
-          ['lowpass', 7500],
+          ['highpass', 350],
+          ['lowpass', 4500, 0.5],
+          ['highshelf', 3000, 0.7, -6],
         ],
+        drift: [{ on: 'gain', base: 1, depth: 0.12, min: 2, max: 6, tau: 1.5 }],
       },
+      { noise: 'brown', gain: 0.55, filters: [['lowpass', 700]] },
     ],
   },
   wind: {
