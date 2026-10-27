@@ -359,6 +359,10 @@
      "say": ["Jackpot! A Bean bobs up from the bottom. Into your pocket it goes."]
     }
    ]
+  },
+  "busk": {
+   "near": 5,
+   "songs": {"lakeland":"trench","greenbelt":"meadow","wildwood":"spore","highland":"crystal","harvest":"spire"}
   }
  }
 }

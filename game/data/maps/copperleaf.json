@@ -1382,6 +1382,7 @@
   {"k":"bench_wood","x":144.22,"z":52.31,"rot":148,"sq":1},
   {"k":"bench_wood","x":141.42,"z":57.83,"rot":102,"sq":1},
   {"k":"notice_board","x":149.51,"z":50.97,"rot":-174,"act":"hubnotice","label":"Notice board","sq":1},
+  {"k":"busker_case","x":152.3,"z":54.31,"rot":-144,"sq":1},
   {"k":"pennant_line","x":160.81,"z":60.64,"rot":-84,"when":"last:won","sq":1},
   {"k":"pennant_line","x":146.67,"z":70.47,"rot":10,"when":"last:won","sq":1},
   {"k":"flag_pole","x":152.28,"z":69.4,"rot":-20,"when":"last:won","sq":1},

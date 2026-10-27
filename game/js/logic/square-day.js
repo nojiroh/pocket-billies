@@ -6,7 +6,8 @@
    Billies who walk over from the pasture by day to visit (rules.json square.visit).
    Stops: points by the square's furniture, the props HB-10b laid round its rim (marked `sq`), each with the point it
    faces: behind a stall (keep) and in front of it (shop), by a bench or under the canopy (sit), under a lamp or the
-   string lights (lamp), round the fountain's basin (fountain). The edges fill first (Gehl): every stop but the
+   string lights (lamp), round the fountain's basin (fountain), HB-10d: by the busker's open case (busk, the busker's
+   own: no slot sends folk there). The edges fill first (Gehl): every stop but the
    fountain's stands near the rim, so the middle stays walkable.
    Who goes: in each slot of the day a share of the town's folk, picked by a hash of the slot and the person (the same
    people every day), each with a rank that picks a stop by the slot's kinds in turn.
@@ -28,6 +29,10 @@ expose({
   SQUARE_STANDS: [() => SQUARE_STANDS],
   // @ts-expect-error -- replaced on purpose
   folkCap: [() => folkCap, v => (folkCap = v)],
+  // @ts-expect-error -- replaced on purpose
+  squareBuskSong: [() => squareBuskSong, v => (squareBuskSong = v)],
+  // @ts-expect-error -- replaced on purpose
+  squareBusker: [() => squareBusker, v => (squareBusker = v)],
   // @ts-expect-error -- replaced on purpose
   squareGoers: [() => squareGoers, v => (squareGoers = v)],
   // @ts-expect-error -- replaced on purpose
@@ -61,6 +66,8 @@ export const SQUARE_STANDS = Object.freeze({
   solar_canopy: [['sit', -0.3]],
   streetlamp: [['lamp', -0.7]],
   string_lights: [['lamp', -0.5]],
+  /* HB-10d: the busker's slot, by the open case: no slot of the day sends anyone there (a `busk` stop is the busker's) */
+  busker_case: [['busk', -0.7]],
 });
 /** the stops round the fountain: how far from its middle (its basin is 1.75 m round) and how many; none within
  * SQUARE_HUB_OPEN degrees of the hub's side (where you arrive, and the stick's run from there: HB-10b) */
@@ -128,6 +135,25 @@ export function squareStops(props, hub) {
     });
   }
   return out;
+}
+
+/** HB-10d: who plays at the busker's slot: the first resident who busks (residents.json `busk`, the residents track
+ * adds one) and lives in Copperleaf (meta.residents), or null: the case lies open and empty
+ * @param {{ residents?: Record<string, number> } | null | undefined} meta
+ * @param {Record<string, { busk?: boolean }> | null | undefined} residents residents.json @returns {string | null} */
+export function squareBusker(meta, residents) {
+  const here = (meta && meta.residents) || {};
+  for (const [id, R] of Object.entries(residents || {})) if (R && R.busk && here[id]) return id;
+  return null;
+}
+
+/** HB-10d: what the busker plays: your last run's region theme as a song (rules.json square.busk.songs, theme ->
+ * music.json song), or null before a run or for a theme with none
+ * @param {{ theme?: string }[] | null | undefined} history meta.history @param {Record<string, string>} songs
+ * @returns {string | null} */
+export function squareBuskSong(history, songs) {
+  const e = history && history.length ? history[history.length - 1] : null;
+  return (e && e.theme && songs[e.theme]) || null;
 }
 
 /** the slot of the square's day at hour h (0-24, wraps), or null between slots

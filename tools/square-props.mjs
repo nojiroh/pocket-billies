@@ -107,6 +107,9 @@ export const SQUARE_EDGE = [
   /* HB-10d: the town's notice board on the south rim, between the canopy and a lamp (the one gap clear of every edge
      prop and stop off the streets' mouths): the town's news, your favours, the fountain (game/js/town-square.js) */
   ['notice_board', -84, 0.9, 'in', { act: 'hubnotice', label: 'Notice board' }],
+  /* HB-10d: the busker's slot (logic/square-day.js `busk`), an open case 3.5 m in from the south-east rim, clear of
+     the stops and of the stick's run from the hub */
+  ['busker_case', -54, 3.5, 'in'],
   /* HB-10d: the win bunting, up only after a won run (`when`: logic/run-history.js historyFacts), on grass just
      outside the rim: pennant lines across the east street's mouth and behind the market, the town's flag on two poles
      either side of the market; each 1.8 m or more from every edge prop and stop (logic/square-day.js) */

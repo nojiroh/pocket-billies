@@ -305,7 +305,8 @@ export function dataSquareRules(D) {
     problem('square missing');
     return out;
   }
-  for (const k of Object.keys(S)) if (!['day', 'visit', 'wish'].includes(k)) problem(`square.${k}: no such rule`);
+  for (const k of Object.keys(S))
+    if (!['day', 'visit', 'wish', 'busk'].includes(k)) problem(`square.${k}: no such rule`);
   const day = S.day;
   if (!Array.isArray(day) || !day.length) problem('square.day: a list of slots');
   else
@@ -335,6 +336,22 @@ export function dataSquareRules(D) {
     if (!Array.isArray(T) || T.length !== 2 || !(T[0] >= 5 && T[1] >= T[0] && T[1] <= 3600))
       problem('square.visit.stay: [fewest, most] seconds, 5-3,600');
     if (!kinds(V.stops)) problem(`square.visit.stops: kinds of stop (${KINDS.join(', ')}), each once`);
+  }
+  /* HB-10d: the busker's slot: how near you hear the busker, and the song for each region theme (regions.json themes,
+     music.json songs) */
+  const K = S.busk,
+    themes = Object.keys((D.regions && D.regions.themes) || {}),
+    songs = (D.music && D.music.songs) || {};
+  if (!K || typeof K !== 'object' || Array.isArray(K)) problem('square.busk missing');
+  else {
+    for (const k of Object.keys(K)) if (!['near', 'songs'].includes(k)) problem(`square.busk.${k}: no such rule`);
+    if (!(typeof K.near === 'number' && K.near >= 2 && K.near <= 30)) problem('square.busk.near: 2-30 m');
+    if (!K.songs || typeof K.songs !== 'object') problem('square.busk.songs: theme -> song');
+    else
+      for (const [t, g] of Object.entries(K.songs)) {
+        if (!themes.includes(t)) problem(`square.busk.songs.${t}: no region theme ${t} (regions.json themes)`);
+        if (typeof g !== 'string' || !songs[g]) problem(`square.busk.songs.${t}: no song "${g}" (music.json songs)`);
+      }
   }
   /* HB-10d: the fountain's coin (logic/fountain-wish.js): a cost in a kept currency, outcomes by weight, each a line or
      more to show and what it does (a boon or curse for the next run's first places, an item in the bag, a payout) */
