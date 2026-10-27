@@ -15,10 +15,13 @@ const lead = () => hooks.saveData.team[0];
 beforeEach(() => reseed());
 
 test('robots.json: every part fits a slot, and the prototype family has 3 torsos, 6 arms, 3 legs and 3 gems', () => {
-  const by = k => Object.values(ROBOTS.parts).filter(p => p.slot === k).length;
+  const by = (k, boss = false) =>
+    Object.values(ROBOTS.parts).filter(p => p.slot === k && (p.rar === 'boss') === boss).length;
   assert.equal(by('torso'), 3);
   assert.equal(by('arm'), 6);
   assert.equal(by('legs'), 3);
+  /* RL-14b: the Voltron's four boss parts: a leader torso, two arm-bots, a leg-bot */
+  assert.deepEqual([by('torso', true), by('arm', true), by('legs', true)], [1, 2, 1]);
   assert.equal(Object.keys(ROBOTS.gems).length, 3);
   for (const [id, p] of Object.entries(ROBOTS.parts)) if (p.slot !== 'torso') assert.ok(MOVES[p.move], `${id} move`);
 });
