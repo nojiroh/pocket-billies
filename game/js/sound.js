@@ -447,11 +447,13 @@ export function soundEffect(name, o = {}) {
          grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep) */
       soundEngine.foot = soundEngine.foot ? 0 : 1;
       const S = ambienceStep(o.ter || 'g', ambience.rng || Math.random, soundEngine.foot);
-      let dest = F;
+      /* SND-8a (the owner's pick, recommended): steps are the world's, on the World slider, not Sound effects */
+      const W = ambience.bus || F;
+      let dest = W;
       if (c.createStereoPanner) {
         const p = c.createStereoPanner();
         p.pan.value = S.pan;
-        p.connect(F);
+        p.connect(W);
         dest = p;
         setTimeout(() => {
           try {
