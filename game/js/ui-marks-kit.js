@@ -499,7 +499,7 @@ export const fxTagsHTML = fx =>
 /** a small label chip in a kind's family (a node type, a currency, a family by name): its icon or glyph, the
  * family's tint, the label @param {string} kind @param {string} label
  * @param {{ family?: string, icon?: string, value?: number }} [o] */
-const kindChipHTML = (kind, label, o = {}) =>
+export const kindChipHTML = (kind, label, o = {}) =>
   `<pb-chip small kind="${markAttr(kind)}" label="${markAttr(label)}"${o.family ? ` family="${markAttr(o.family)}"` : ''}${
     o.icon ? ` icon="${markAttr(o.icon)}"` : ''
   }${o.value != null ? ` value="${Number(o.value) || 0}"` : ''}></pb-chip>`;

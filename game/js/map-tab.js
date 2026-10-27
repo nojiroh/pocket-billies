@@ -5,8 +5,9 @@
 import { expose } from './test-globals.js';
 import { nodeActions, provide, render, tripButtons, tripDest, tripStatus } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, POOLS, RESIDENTS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
+import { LOCATIONS, NODE_TYPES, POOLS, RESIDENTS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
+import { kindChipHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -124,7 +125,10 @@ function worldMapCardHTML() {
     const to = worldBowlRunMark(e.to);
     return to && to.seen < 2 ? 'somewhere further on' : LOCATIONS[e.to].name;
   });
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div>${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
+  /* UI-14b: a run place's kind as its chip: UI-8c's place icon in its family's tint (logic/marks.js chipLook) */
+  const kindChip =
+    rm && NODE_TYPES[rm.type] ? kindChipHTML(rm.type, NODE_TYPES[rm.type].name || locationSubtitle(n)) : '';
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2>${kindChip || `<span class="sub">${escapeHtml(locationSubtitle(n))}</span>`}</div>${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
 }
 function paintWorldMapCard() {
   const c = $('#mapcard');

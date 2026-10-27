@@ -14,10 +14,12 @@ import {
   runMarkClip,
   runMarkDraw,
   runMarkGrey,
+  RUN_MARK_FAMILIES,
   runMarkLook,
   runMarkPixels,
   runMarkPoints,
 } from '../../game/js/logic/run-marks.js';
+import { MARK_CHIP_FAMILIES } from '../../game/js/logic/marks.js';
 
 /** twice the signed area (shoelace); positive is clockwise with y down */
 const area2 = pts =>
@@ -70,6 +72,12 @@ test('states: hidden shows "?" whatever the type, current glows gold, visited an
   assert.equal(hidden.glyph, '?');
   assert.equal(runMarkLook('town').tone, 'primary');
   assert.equal(runMarkLook('boss').tone, 'danger');
+  /* UI-14b: the family table: towns good, bosses bad, shops value, events and "?" special, scrapyards machine */
+  assert.equal(runMarkLook('town').family, 'good');
+  assert.equal(runMarkLook('boss', 'hidden').family, 'special');
+  assert.equal(runMarkLook('town', 'locked').family, '');
+  for (const k of Object.keys(RUN_MARK_FAMILIES))
+    if (MARK_CHIP_FAMILIES[k]) assert.equal(runMarkLook(k).family, MARK_CHIP_FAMILIES[k][0], `${k}: the chip's family`);
   const cur = runMarkLook('route', 'current');
   assert.equal(cur.tone, 'gold');
   assert.ok(cur.glow && !cur.faded);

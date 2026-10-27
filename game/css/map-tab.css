@@ -326,9 +326,10 @@ body.map-gl #dioui {
   background: #f2c14e;
   color: #3a2408;
 }
+/* UI-14b: towns are the good family's teal everywhere (they were blue here, green on the run map) */
 .mpl-row.town .mp-i {
-  background: #5da9e9;
-  color: #fff;
+  background: var(--sig-good);
+  color: var(--c-ink);
 }
 .mpl-n {
   font-weight: 600;

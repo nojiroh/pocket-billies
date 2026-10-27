@@ -16,6 +16,7 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_MARK_ART: [() => RUN_MARK_ART],
+  RUN_MARK_FAMILIES: [() => RUN_MARK_FAMILIES],
   RUN_MARK_SHAPES: [() => RUN_MARK_SHAPES],
   RUN_MARK_SIZES: [() => RUN_MARK_SIZES],
   RUN_MARK_STATES: [() => RUN_MARK_STATES],
@@ -156,6 +157,22 @@ export const RUN_MARK_TONES = {
   unknown: 'muted',
 };
 
+/** UI-14b: each type's colour family (ui-track.md Part 2, the family table; the same as its chip's, logic/marks.js
+ * chipLook): towns good, bosses and the rival bad, shops value, events and "?" special, scrapyards machine; the
+ * landing and roads neutral (''). UI-8c's icons are painted in these families; the place card's chip and the list
+ * use them on the page */
+export const RUN_MARK_FAMILIES = /** @type {Record<string, string>} */ ({
+  landing: '',
+  route: '',
+  town: 'good',
+  miniboss: 'bad',
+  boss: 'bad',
+  event: 'special',
+  shop: 'value',
+  rival: 'bad',
+  scrapyard: 'machine',
+  unknown: 'special',
+});
 /** a type's outline ('unknown' for a type it doesn't know) @param {string} type */
 export function runMarkShape(type) {
   return /** @type {any} */ (RUN_MARK_SHAPES)[type] || RUN_MARK_SHAPES.unknown;
@@ -169,6 +186,8 @@ export function runMarkLook(type, state = 'seen') {
     points: runMarkShape(shown),
     tone: state === 'locked' ? 'muted' : state === 'current' ? 'gold' : /** @type {any} */ (RUN_MARK_TONES)[shown],
     glow: state === 'current',
+    /* UI-14b: its colour family (none while locked) */
+    family: state === 'locked' ? '' : RUN_MARK_FAMILIES[shown] || '',
     faded: state === 'visited' || state === 'locked',
     glyph: state === 'hidden' ? '?' : state === 'locked' ? 'lock' : state === 'visited' ? 'check' : '',
     /* UI-8c: the pixel icon (art/ui), the corner badge drawn over it, and its size on the map in CSS px */
