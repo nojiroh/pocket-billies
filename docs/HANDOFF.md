@@ -28,7 +28,7 @@ pictures per place; the run made in a worker from the pick), then LD-0 built.
   profile of a boot: `screenSnapshot` 5.2 s, `finishProgramCompile` 5.2 s, `pictureLightness` 4.6 s; on a run
   `leafCut` 5.7 s and `portraitURL` 2.2 s.
 - Verified: lint, typecheck, format, check:modules, check:data, unit tests 1366 pass; the load check runs both boots
-  with no page errors; the fast check (debug log, boot) and smoke: running at commit time, see the next commit.
+  with no page errors; check-fast `--only=debug,boots` 3 of 3 (the exported log holds no names); smoke 6 of 6 (159 s).
 - In this container: the checks' Python Playwright (1.56) runs against the preinstalled Chromium through
   `PLAYWRIGHT_BROWSERS_PATH` pointing at a folder of links named for revision 1194 (nothing installed in the repo).
 - Risky: the hitch list's own requestAnimationFrame runs on every page with the debug log (a few comparisons a
