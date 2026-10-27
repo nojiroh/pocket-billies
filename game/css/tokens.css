@@ -51,6 +51,10 @@
   /* UI-8: the minimap (uiTheme.json minimap): metres across, ms of walking before the bar goes compact and standing
      before it comes back, which marks show (1 shown, 0 hidden) */
   --minimap-span: 44;
+  /* UI-8b: the tile standing (wide, out of the bar's frame) and walking (a square), in px */
+  --minimap-tile-w: 232px;
+  --minimap-tile-h: 184px;
+  --minimap-tile-compact: 112px;
   --minimap-compact-after: 2500;
   --minimap-full-after: 700;
   --minimap-facilities: 1;

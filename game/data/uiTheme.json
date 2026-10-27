@@ -89,7 +89,17 @@
   "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},
   "type": {"voice":"Jersey 15","prose":"Oxanium","voiceScale":1.18,"scale":1,"lineHeight":1.5},
   "motion": {"fast":140,"base":240,"slow":420,"stagger":35,"easeOut":[0.2,0.8,0.2,1],"easeIn":[0.4,0,1,1],"spring":[0.3,1.6,0.5,1]},
-  "minimap": {"span":44,"compactAfter":2500,"fullAfter":700,"facilities":true,"trainers":true,"billies":true}
+  "minimap": {
+   "span": 44,
+   "tileW": 232,
+   "tileH": 184,
+   "tileCompact": 112,
+   "compactAfter": 2500,
+   "fullAfter": 700,
+   "facilities": true,
+   "trainers": true,
+   "billies": true
+  }
  },
  "presets": {
   "alpha05": {

@@ -184,7 +184,10 @@
    "additionalProperties": false,
    "description": "UI-8: the bottom bar's minimap (js/minimap.js): how much it shows, when the bar goes compact, its marks",
    "properties": {
-    "span": {"type": "number", "minimum": 16, "maximum": 160, "description": "--minimap-span, metres across the tile"},
+    "span": {"type": "number", "minimum": 16, "maximum": 160, "description": "--minimap-span, metres across the tile's shorter side (top to bottom while standing)"},
+    "tileW": {"type": "number", "minimum": 120, "maximum": 320, "description": "UI-8b: --minimap-tile-w, the standing tile's width in px (narrow phones shrink it, keeping its shape)"},
+    "tileH": {"type": "number", "minimum": 96, "maximum": 260, "description": "UI-8b: --minimap-tile-h, the standing tile's height in px; it stands out of the bar's frame by about this less the bar"},
+    "tileCompact": {"type": "number", "minimum": 64, "maximum": 160, "description": "UI-8b: --minimap-tile-compact, the walking tile's side in px (a square)"},
     "compactAfter": {"type": "number", "minimum": 0, "maximum": 10000, "description": "--minimap-compact-after, ms of walking before the bar goes compact"},
     "fullAfter": {"type": "number", "minimum": 0, "maximum": 5000, "description": "--minimap-full-after, ms standing before it comes back"},
     "facilities": {"type": "boolean", "description": "--minimap-facilities: an icon on each facility"},
