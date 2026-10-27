@@ -20,6 +20,17 @@ SND-6: a species' cry also renders its low-HP version ('<id>@low', when sound.js
 render into ui.json (when sound.js has uiSound), and a jingle renders at its own tempo and wave as the game plays it
 (sound.js jinglePlay, music.json jingles' bpm and wave); on code without them, as before.
 
+SND-8a: --loudness adds a loudness report after the comparison (it never changes the exit status; its ceilings only
+warn until SND-15). On a page of its own, in stereo at default sliders, it renders every song's day version and the
+world sounds (tools/sound-loudness.mjs, put in the page, measures each, BS.1770 K-weighted): each bed alone at a distance, birds, steps
+on a lawn, and three made-up scenes (Copperleaf's square, a route in the rain, a meadow at night), as the Sound Test
+plays them (sound.js ambiencePreviewTick). Beds are reported with the beds' duck under a four-voice song (music.json
+mix bedsUnderSong) and in LU under the route song; on code without ambiencePreviewTick (before SND-8a) the beds'
+gains are set as updateAmbience would set them.
+
+    python3 tools/check-sound.py --loudness               # the comparison, then the report
+    python3 tools/check-sound.py --loudness --only=route  # the report for those songs (and every world sound)
+
 A window may differ by 1% (or 0.0001) before it counts as changed. The baseline is committed: SND-4 and SND-5 write it
 again on purpose, like the picture baseline."""
 import json, sys, time
@@ -103,6 +114,124 @@ RENDER = r"""async ({jobs, rate, win}) => {
 }"""
 
 
+# SND-8a: the loudness report. Each job renders 12 s (a song: its 8 bars) in stereo on its own offline context through
+# the game's code, then tools/sound-loudness.mjs measures it in the page (only the numbers come back)
+LOUD = r"""async ({jobs, rate}) => {
+  const soundLoudness = window.__soundLoudness;
+  const real = Math.random, AC = window.AudioContext, E = soundEngine, wait = window.setTimeout;
+  /* what updateAmbience set on code before SND-8a: [range m, gain] by source, else a fixed gain */
+  const OLD = { stream: [10, 0.5], falls: [14, 0.7], sea: [8, 0.6], pond: [6, 0.22], lava: [10, 0.5], fountain: [9, 0.45], fire: [7, 0.35] },
+    FIXED = { sea_coast: ['sea', 0.35], rain: ['rain', 0.42], wind: ['wind', 0.4], leaves: ['leaves', 0.22], crickets: ['crickets', 0.11], town: ['town', 0.13], cave: ['cave', 0.3], room: ['room', 0.16] };
+  const out = [];
+  for (const job of jobs) {
+    let seed = 0x5eed;
+    Math.random = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    let len = 12, steps = 0, spb = 0;
+    if (job.song) {
+      const D = trackerCompose(trackerRecipe(SONGS, job.song, MUSIC.run));
+      steps = D.steps; spb = 60 / D.bpm / 4; len = 0.08 + steps * spb + 1.5;
+    }
+    const oc = new OfflineAudioContext(2, Math.ceil(len * rate), rate);
+    let now = 0;
+    Object.defineProperty(oc, 'currentTime', { get: () => now, configurable: true });
+    Object.defineProperty(oc, 'state', { get: () => 'running', configurable: true });
+    if (E.timer) clearInterval(E.timer);
+    Object.assign(E, { ctx: null, waves: {}, song: null, want: null, timer: null, voices: [], jingle: 0, L: { drums: 1, pad: 0 } });
+    const prefs = saveData.preferences, amb = Object.assign({}, ambience);
+    saveData.preferences = {};
+    window.AudioContext = function () { return oc; };
+    window.setTimeout = () => 0;   /* the one-shots' disconnects would cut a render short */
+    try {
+      if (!initSound()) throw new Error('initSound failed on the offline context');
+      if (job.song) {
+        music(job.song);
+        now = 0.08 + (steps - 0.5) * spb - 0.14;
+        E.tracker.tick();
+      } else {
+        Object.assign(ambience, { bus: null, amb: null, lpA: null, lpW: null, beds: {}, flash: 0, arrive: -9, id: null, lastCall: 0, ev: {} });
+        if (!initAmbience()) throw new Error('initAmbience failed on the offline context');
+        ambience.arrive = -9; applyAmbienceVolume();
+        const beds = job.beds.filter(([k]) => k !== 'birds' && k !== 'steps');
+        if (typeof ambiencePreviewTick === 'function')
+          for (now = 0; now < len; now += 0.2) ambiencePreviewTick(job.beds, now);
+        else {
+          for (const [k, d] of beds) {
+            const [bed, v] = OLD[k] ? [k, d < OLD[k][0] ? Math.pow(1 - d / OLD[k][0], 1.6) * OLD[k][1] : 0] : FIXED[k];
+            const b = ambience.beds[bed];
+            if (b) b.g.gain.value = Math.max(b.g.gain.value, v);
+          }
+          if (job.beds.some(([k]) => k === 'birds'))
+            for (now = 0; now < len; now += 0.2) if (Math.random() < 0.06) playBirdCall(now, ['lark', 'lark', 'song'][Math.floor(Math.random() * 3)]);
+        }
+        if (job.beds.some(([k]) => k === 'steps'))
+          for (now = 0.5; now < len; now += 0.35) soundEffect('step', { ter: 'g' });
+      }
+    } finally {
+      if (E.timer) clearInterval(E.timer);
+      Object.assign(E, { ctx: null, song: null, want: null, timer: null, voices: [], jingle: 0 });
+      window.AudioContext = AC; Math.random = real; window.setTimeout = wait;
+      saveData.preferences = prefs;
+    }
+    delete oc.currentTime; delete oc.state;
+    const buf = await oc.startRendering();
+    Object.assign(ambience, amb);
+    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.song ? 0.5 : 1);
+    out.push(Object.fromEntries(Object.entries(L).map(([k, v]) => [k, typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 100) / 100 : v])));
+  }
+  return out;
+}"""
+
+# the world sounds the report renders: each bed alone (water at 3 m, a fire at 2 m), and three made-up scenes
+LOUD_BEDS = [('rain', [['rain', 0]]), ('wind (storm)', [['wind', 0]]), ('leaves (woods)', [['leaves', 0]]),
+             ('crickets', [['crickets', 0]]), ('town murmur', [['town', 0]]), ('cave', [['cave', 0]]), ('room', [['room', 0]]),
+             ('stream 3 m', [['stream', 3]]), ('falls 3 m', [['falls', 3]]), ('fountain 3 m', [['fountain', 3]]),
+             ('pond 3 m', [['pond', 3]]), ('lava 3 m', [['lava', 3]]), ('fire 2 m', [['fire', 2]]), ('sea, the coast', [['sea_coast', 0]]),
+             ('sea 3 m', [['sea_coast', 0], ['sea', 3]]), ('birds', [['birds', 0]]), ('steps (lawn)', [['steps', 0]])]
+LOUD_SCENES = [('Copperleaf square', [['sea_coast', 0], ['fountain', 3], ['town', 0], ['birds', 0]]),
+               ('a route in rain', [['rain', 0], ['leaves', 0]]), ('a meadow at night', [['crickets', 0], ['leaves', 0]])]
+CEILING_BED, CEILING_EVENT = -12, -8   # LU under the route song (design rule 7: beds at least 12 under, events 8)
+
+
+def loudness(b, base, only=None):
+    """the loudness report's lines (every song's day version, the world sounds), and its warnings"""
+    ctx = b.new_context(viewport={'width': 390, 'height': 844})
+    ctx.add_init_script(TEST_GLOBALS); ctx.add_init_script(NO_ACCOUNTS)
+    pg = ctx.new_page(); errs = []
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    try:
+        pg.goto(base + '/index.html')
+        if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'&&typeof initAmbience==='function'", 120):
+            raise Exception('the game page never loaded its sound code')
+        src = (ROOT / 'tools' / 'sound-loudness.mjs').read_text().replace('export function', 'function')
+        pg.evaluate('(() => {' + src + '\nwindow.__soundLoudness = soundLoudness;})()')
+        songs = [s for s in pg.evaluate("Object.keys(SONGS)") if not only or s in only or s == 'route']
+        duck = pg.evaluate("Math.round(20*Math.log10(bedDuck(MUSIC.mix,true))*100)/100")
+        jobs = [{'song': s} for s in songs] + [{'beds': B} for _, B in LOUD_BEDS + LOUD_SCENES]
+        res = []
+        for i in range(0, len(jobs), 6):
+            res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
+        if errs: raise Exception('page errors: ' + ' | '.join(errs[:3]))
+    finally:
+        ctx.close()
+    S = dict(zip(songs, res[:len(songs)]))
+    ref = S['route']['lufs']
+    lines = [f'loudness at default sliders, stereo, K-weighted (LUFS; LU against the route song, {ref:.1f} LUFS; beds {duck:+.1f} dB under a song)',
+             '  songs (day):']
+    lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS' for s, L in sorted(S.items(), key=lambda x: -x[1]['lufs'])]
+    warn = []
+    for title, rows in (('world sounds', LOUD_BEDS), ('scenes', LOUD_SCENES)):
+        lines.append(f'  {title}:')
+        for (name, B), L in zip(rows, res[len(songs) + (0 if title == 'world sounds' else len(LOUD_BEDS)):]):
+            lu, mx = L['lufs'] + duck - ref, L['short'] + duck - ref
+            event = name in ('birds', 'steps (lawn)')
+            lines.append(f'    {name:20} {lu:+6.1f} LU   max 3 s {mx:+6.1f}   phone band {L["phone"] + duck:6.1f} dB   2-6 kHz {L["share"] * 100:4.0f} %   peak {L["peak"] + duck:6.1f}')
+            if L.get('nan'): warn.append(f'{name}: NaN in the render')
+            if title == 'world sounds' and (mx if event else lu) > (CEILING_EVENT if event else CEILING_BED):
+                warn.append(f'{name}: {(mx if event else lu):+.1f} LU, over the ceiling of {CEILING_EVENT if event else CEILING_BED} LU')
+    return lines, warn
+
+
 def render_all(pg, only=None):
     """{file name: {part: [rms, ...]}} for every song (day and night), jingle, cry (and its low-HP version) and UI sound"""
     N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)),"
@@ -173,13 +302,18 @@ def main():
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch()
+        report = None
         try:
             bad, line = run(b, base, '--baseline' in args, only)
+            if '--loudness' in args: report = loudness(b, base, only)
         finally:
             b.close()
     srv.shutdown()
     print(line)
     for x in bad[:40]: print('  CHANGED', x)
+    if '--loudness' in args:
+        print('\n'.join(report[0]))
+        for w in report[1]: print('  WARN', w)
     sys.exit(1 if bad else 0)
 
 
