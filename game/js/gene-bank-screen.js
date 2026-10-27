@@ -188,7 +188,7 @@ export function geneBankOpen() {
   const M = {
     title: `The Gene Bank · Lv ${level}`,
     cls: 'ranch-sheet gene-sheet',
-    html: `<p class="ranch-head"><pb-coin kind="dna" value="${s.meta.dna}" label="DNA"></pb-coin> <span class="note">Stability limit ${bankRow(D, level).limit} · splices ${bankSlots(
+    html: `<p class="ranch-head"><pb-chip kind="dna" value="${s.meta.dna}" label="DNA"></pb-chip> <span class="note">Stability limit ${bankRow(D, level).limit} · splices ${bankSlots(
       D,
       level
     )
