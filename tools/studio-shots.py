@@ -25,6 +25,9 @@ VIEWS = {
     'moves': ('moves', '', '.split'),
     'world': ('world', '', '.ed-col'),
     'rules': ('rules', '', '.ed-col'),
+    # SA-4: the Characters row's two sections, with the Looks | Wardrobe switch on top
+    'looks': ('people', '', '.nav-switch'),
+    'wardrobe': ('wardrobe', '', '.nav-switch'),
     'preview': ('preview', '', '#cvWorld'),
     'skeleton': ('billionaires', "void openSkeleton(studioState.D.lines[0].id + '0', 'front')", '.pxed.skel'),
     'pixels': ('billionaires', "void openPixelEditor(studioState.D.lines[0].id + '0', 'front')", '#pxCv'),

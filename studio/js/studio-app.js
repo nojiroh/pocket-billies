@@ -21,7 +21,7 @@ import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { STUDIO_WORKSPACES, navRows } from '../../game/js/logic/studio-layout.js';
+import { navJoined, navRows } from '../../game/js/logic/studio-layout.js';
 import {
   HISTORY_ORDER,
   historyBytes,
@@ -70,6 +70,9 @@ expose({
   grid: [() => grid],
   helpHTML: [() => helpHTML],
   itemOptions: [() => itemOptions],
+  joinedLast: [() => joinedLast],
+  joinedSwitch: [() => joinedSwitch, v => (joinedSwitch = v)],
+  joinedTarget: [() => joinedTarget, v => (joinedTarget = v)],
   keepAside: [() => keepAside, v => (keepAside = v)],
   keepPutBack: [() => keepPutBack, v => (keepPutBack = v)],
   keptElements: [() => keptElements],
@@ -699,13 +702,30 @@ const foldedSectionGroups = (() => {
     return {};
   }
 })();
+/* SA-4: the section of a joined row last opened on the left, by row name */
+const joinedLast = {};
+function joinedTarget(keys) {
+  const j = navJoined(keys[0]),
+    last = j && joinedLast[j.name];
+  return last && keys.includes(last) ? last : keys[0];
+}
+/* SA-4: the switch at the top of a joined row's section (Looks | Wardrobe), in the pane it is drawn in */
+function joinedSwitch(sec, pane2) {
+  const j = navJoined(sec);
+  if (!j) return '';
+  if (!pane2) joinedLast[j.name] = sec;
+  const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n[1]]));
+  return `<div class="seg-row nav-switch" role="group" aria-label="${escapeHtml(j.name)}"><b>${escapeHtml(j.name)}</b>${j.keys
+    .filter(k => N[k])
+    .map(
+      k =>
+        `<button class="seg sm ${k === sec ? 'on' : ''}" data-act="navSwitch" data-s="${k}" ${pane2 ? 'data-pane="2"' : ''} aria-pressed="${k === sec}">${escapeHtml(N[k])}</button>`
+    )
+    .join('')}</div>`;
+}
 export function renderSide() {
   const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n])),
-    G = navRows(
-      SECTION_LIST.map(n => n[0]),
-      STUDIO_WORKSPACES,
-      []
-    );
+    G = navRows(SECTION_LIST.map(n => n[0]));
   $('#side').innerHTML =
     G.map(([t, R]) => {
       const has = R.some(r => r.keys.includes(studioState.sec)),
@@ -713,10 +733,16 @@ export function renderSide() {
       return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${escapeHtml(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${escapeHtml(t)}</button>${
         shut
           ? ''
-          : R.map(({ key: k }) => {
-              const [, n, d] = N[k],
-                why = besideRefusal(k);
-              return `<div class="nav-row"><button class="nav ${studioState.sec === k ? 'on' : studioState.sec2 === k ? 'on2' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(n)} beside this section"`}>⇥</button></div>`;
+          : R.map(r => {
+              /* SA-4: a joined row (Characters) opens the one of its sections last open, and beside it the other */
+              const k = joinedTarget(r.keys),
+                here = r.keys.includes(studioState.sec),
+                k2 = here ? r.keys.find(x => x !== studioState.sec) || k : k,
+                j = r.name ? navJoined(k) : null,
+                n = j ? j.name : N[k][1],
+                d = j ? j.d : N[k][2],
+                why = besideRefusal(k2);
+              return `<div class="nav-row"><button class="nav ${here ? 'on' : r.keys.includes(studioState.sec2) ? 'on2' : ''}" data-act="go" data-s="${here ? studioState.sec : k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${escapeHtml(n)}</b>${here ? `<small>${escapeHtml(d)}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k2}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(j ? N[k2][1] : n)} beside this section"`}>⇥</button></div>`;
             }).join('')
       }</div>`;
     }).join('') +
@@ -746,6 +772,12 @@ export function openSection(s, sel) {
 }
 export const SECTIONS = {};
 export const ACTIONS = {};
+/* SA-4: the switch at the top of a joined row's section; in the second pane it changes that pane */
+ACTIONS.navSwitch = d => {
+  if (d.pane === '2') {
+    if (d.s !== studioState.sec2 && ACTIONS.openBeside) ACTIONS.openBeside(d);
+  } else if (d.s !== studioState.sec) openSection(d.s);
+};
 ACTIONS.navFold = d => {
   foldedSectionGroups[d.g] = !foldedSectionGroups[d.g];
   try {
@@ -809,7 +841,7 @@ export function renderPane(m, sec) {
     const html = S();
     const t1 = P ? performance.now() : 0;
     keepAside(m);
-    m.innerHTML = html;
+    m.innerHTML = joinedSwitch(sec, m.id === 'main2') + html;
     keepPutBack(m);
     const t2 = P ? performance.now() : 0;
     studioState.after.forEach(f => f());

@@ -148,7 +148,13 @@ export const STUDIO_WORKSPACES = [
   ['Legacy', ['legacy']],
 ];
 /* sections that share one row in the sidebar, under the row's own name; each of them shows a switch to the others */
-export const NAV_JOINED = [{ name: 'Characters', keys: ['people', 'wardrobe'] }];
+export const NAV_JOINED = [
+  {
+    name: 'Characters',
+    d: 'Trainers’ and shopkeepers’ looks, and the wardrobe they are made from: body, hair, faces, clothes',
+    keys: ['people', 'wardrobe'],
+  },
+];
 
 /** the joined row a section belongs to, or null */
 export function navJoined(key) {
@@ -160,7 +166,7 @@ export function navJoined(key) {
  * sections no workspace lists under More, workspaces with no known section left out.
  * @param {string[]} keys the sections there are, in SECTION_LIST's order
  * @param {[string, string[]][]} [workspaces]
- * @param {{ name: string, keys: string[] }[]} [joined]
+ * @param {{ name: string, d?: string, keys: string[] }[]} [joined]
  * @returns {[string, { key: string, keys: string[], name: string | null }[]][]}
  */
 export function navRows(keys, workspaces = STUDIO_WORKSPACES, joined = NAV_JOINED) {
