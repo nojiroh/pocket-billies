@@ -656,6 +656,13 @@ HANDOFF entry under "Decided for the owner, to review"; the phone checks are lis
 the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
 main stay the owner's (the PR from `track/ui`).
 
+The owner, 2026-10-27, after UI-11: "Automatically start the next session after done, skip the checks until after
+all ui is done." So each step, when its HANDOFF entry is pushed, starts the next step itself in a new session (from
+its own branch, since main may not hold it yet), with these same rules. Until UI-18 is done the browser checks
+(check-fast, check-quick, the Studio check, the gallery, the picture baselines) and the phone checks are skipped;
+the seconds-long ones (lint, typecheck, unit tests, check:data, check:modules) still run, as the edit hook runs them
+anyway. After UI-18, one session runs every skipped check and fixes what they find.
+
 ## UI-11: the colour code as data (the plan, 2026-10-27)
 Built on the session's own branch (a cloud session pushes only there), from main, which already holds `track/ui`;
 its PR goes to main, as UI-10's did (a PR into `track/ui` would carry main's 220 newer commits with it).

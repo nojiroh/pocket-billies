@@ -40,6 +40,8 @@ plan is in ui-track.md, "UI-11: the colour code as data". No visible change.
   Camera section", and the Studio check's `ui_tools` step (a UI rule warning it wants as an error): all three fail the
   same way on main without this change (missing game/art/billionaires art, a tilt readout).
 - Next: UI-12 (the palettes): Field Guide as the defaults without its own `danger`, the Settings Palette row.
+- The owner, after this entry: "Automatically start the next session after done, skip the checks until after all ui
+  is done." Written in ui-track.md (after "How the sessions run"). UI-12 was started from this branch in a new session.
 - Tag to suggest: `ui-11-done` on this entry's commit.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
