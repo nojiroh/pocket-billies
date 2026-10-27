@@ -141,3 +141,32 @@ test('set pieces: a piece that fits nowhere leaves the scene as it was', () => {
     assert.deepEqual(a.spots, b.spots);
   }
 });
+
+test('RT-4b: a piece’s animals live in its area turned as it lies; farmland has crows; MAPGEN_LIFE_EXTRA at most', () => {
+  let pens = 0,
+    crows = 0;
+  for (const { P, sc } of scenes) {
+    const extra = (sc.life || []).filter((/** @type {any} */ l) => l.extra),
+      where = `${P.biome}/${P.layout} ${P.seed}`;
+    assert.ok(
+      extra.reduce((/** @type {number} */ a, /** @type {any} */ l) => a + l.n, 0) <= G.MAPGEN_LIFE_EXTRA,
+      `${where}: too many animals added`
+    );
+    if (P.layout === 'farmland' && extra.some((/** @type {any} */ l) => l.k === 'crow' && !l.area)) crows++;
+    for (const L of sc.pieces || []) {
+      const S = D.pieces[L.id];
+      for (const l of S.life || []) {
+        const got = extra.find((/** @type {any} */ e) => e.k === l.k && e.area);
+        if (!got) continue;
+        const flip = L.f ? -1 : 1,
+          [cx, cz] = turnedPoint(L, ((l.area[0] + l.area[2]) / 2) * flip, (l.area[1] + l.area[3]) / 2),
+          [a0, b0, a1, b1] = got.area;
+        assert.ok(cx >= a0 - 0.01 && cx <= a1 + 0.01 && cz >= b0 - 0.01 && cz <= b1 + 0.01, `${where} ${L.id}`);
+        assert.ok(Math.hypot(cx - L.x, cz - L.z) <= S.r, `${where} ${L.id}: its animals' area off the piece`);
+        if (L.id === 'farm_pen') pens++;
+      }
+    }
+  }
+  assert.ok(crows >= 1, 'a farmland place has its crows');
+  console.log(`RT-4b: ${pens} farm pen animal areas, ${crows} farmland places with crows`);
+});

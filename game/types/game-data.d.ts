@@ -2278,6 +2278,8 @@ export interface SetPiece {
   plans?: Record<string, number>;
   props: SetPieceProp[];
   people?: SetPiecePerson[];
+  /** RT-4b: animals living in it, kept to an area in its own metres [x0, z0, x1, z1] */
+  life?: { k: string; n: number; area: [number, number, number, number] }[];
 }
 export interface SetPieceProp {
   /** a scenery.json prop */

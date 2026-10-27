@@ -49,6 +49,7 @@ expose({
   MAPGEN_LAYOUTS: [() => MAPGEN_LAYOUTS],
   MAPGEN_LAYOUT_DIALS: [() => MAPGEN_LAYOUT_DIALS],
   MAPGEN_LEDGE_PIECE: [() => MAPGEN_LEDGE_PIECE],
+  MAPGEN_LIFE_EXTRA: [() => MAPGEN_LIFE_EXTRA],
   MAPGEN_LM: [() => MAPGEN_LM],
   MAPGEN_MASSIF: [() => MAPGEN_MASSIF],
   MAPGEN_MOUNTAIN_DIALS: [() => MAPGEN_MOUNTAIN_DIALS],
@@ -113,6 +114,8 @@ expose({
   mapgenExitOf: [() => mapgenExitOf, v => (mapgenExitOf = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenExitPoint: [() => mapgenExitPoint, v => (mapgenExitPoint = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenExtraLife: [() => mapgenExtraLife, v => (mapgenExtraLife = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenFbm: [() => mapgenFbm, v => (mapgenFbm = v)],
   // @ts-expect-error -- replaced on purpose
@@ -317,7 +320,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 22; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20, 21: kept for the region map track (WM-3, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`, RT-4b) */
+export const MAPGEN_VERSION = 22; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20, 21: kept for the region map track (WM-3, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -3307,6 +3310,45 @@ export function mapgenSceneLife(G) {
   }
   return wild.concat(own);
 }
+/** RT-4b: the most animals a laid-out place's plan and set pieces add to its biome's */
+export const MAPGEN_LIFE_EXTRA = 8;
+/** RT-4b: the animals a laid-out place's plan (MAPGEN_LAYOUTS life: crows on farmland) and its set pieces (setPieces.json
+ * life, kept to the piece's area turned as the piece lies) add to sc.life, marked `extra` (ambient-life.js draws fewer
+ * of them on lower graphics), MAPGEN_LIFE_EXTRA at most. No random draw. @param {any} sc @param {any} P the dials
+ * @param {any} D setPieces.json */
+export function mapgenExtraLife(sc, P, D) {
+  const add = [],
+    L = MAPGEN_LAYOUTS[P.layout];
+  for (const l of (L && L.life) || []) add.push({ k: l.k, n: l.n, extra: 1 });
+  for (const piece of sc.pieces || []) {
+    const S = D && D.pieces && D.pieces[piece.id],
+      flip = piece.f ? -1 : 1;
+    for (const l of (S && S.life) || []) {
+      const [a0, b0, a1, b1] = l.area,
+        pts = [
+          [a0, b0],
+          [a1, b0],
+          [a0, b1],
+          [a1, b1],
+        ].map(([x, z]) => turnedPoint(piece, x * flip, z)),
+        xs = pts.map(p => p[0]),
+        zs = pts.map(p => p[1]);
+      add.push({
+        k: l.k,
+        n: l.n,
+        area: [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)].map(mapgenRound2),
+        extra: 1,
+      });
+    }
+  }
+  let left = MAPGEN_LIFE_EXTRA;
+  for (const l of add) {
+    const n = Math.min(l.n, left);
+    if (n <= 0) break;
+    (sc.life ||= []).push({ ...l, n });
+    left -= n;
+  }
+}
 /* ---------- 6. plants: groves and an edge belt of trees, shrubs, rocks, tall grass, then the wild growth ---------- */
 /* ---------- RT-1: route layouts (the routes track) ---------- */
 /** the plans a run route is laid out by (the layout dial; 'none' leaves the open field). Each says what it builds
@@ -3316,7 +3358,15 @@ export function mapgenSceneLife(G) {
 export const MAPGEN_LAYOUTS = {
   none: { name: 'None (open field)' },
   forest: { name: 'Forest trail', hug: 1, outcrops: [0, 1], clearings: [1, 2] },
-  farmland: { name: 'Farmland', fields: [2, 4], hedgerows: [1, 2], outcrops: [0, 0], clearings: [0, 1] },
+  farmland: {
+    name: 'Farmland',
+    fields: [2, 4],
+    hedgerows: [1, 2],
+    outcrops: [0, 0],
+    clearings: [0, 1],
+    /* RT-4b: crows over the fields */
+    life: [{ k: 'crow', n: 3 }],
+  },
   lakeside: { name: 'Lakeside', dials: { water: 'pond', waterAmount: 0.85 }, outcrops: [0, 1], clearings: [1, 1] },
   ledges: { name: 'Ledge drop', dials: { terraces: 0.6, ledges: 1 }, outcrops: [2, 3], clearings: [0, 1] },
   lanes: { name: 'Two lanes', lane: 1, hedgerows: [0, 1], outcrops: [0, 1], clearings: [0, 1] },
@@ -4555,6 +4605,8 @@ export function mapgenBuild(P, ctx, aim) {
     if (hab) sc.habitats = hab;
     /* RT-4b: where Cut brambles could plug a pocket or a dead end (put up by the run, logic/route-finds.js) */
     mapgenMouths(sc, ctx.scenery, walk, G);
+    /* RT-4b: animals by the plan and the set pieces (sheep and chickens in the farm pen, a cat at the campsite) */
+    mapgenExtraLife(sc, P, ctx.setPieces);
   }
   waterGenClimbs(sc, ctx.scenery); /* WA-2b: which falls the Waterfall field move climbs (logic/water-gen.js) */
   waterGenReeds(G, sc); /* WA-5a: a reed or two in a marsh hides an item (logic/water-gen.js) */
