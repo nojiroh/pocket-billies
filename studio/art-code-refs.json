@@ -1757,7 +1757,8 @@
    "game/js/walk/rooms.js:299"
   ],
   "globe": [
-   "game/js/boot.js:139"
+   "game/js/boot.js:139",
+   "game/js/world-bowl.js:4163"
   ],
   "heart": [
    "game/js/bag.js:26",
@@ -1783,7 +1784,7 @@
    "game/js/walk/effects.js:672",
    "game/js/walk/effects.js:780",
    "game/js/walk/fountains-weather.js:517",
-   "game/js/world-bowl.js:4193"
+   "game/js/world-bowl.js:4202"
   ],
   "moon": [
    "game/js/boot.js:167",
@@ -1831,6 +1832,7 @@
    "game/js/battle-stage.js:2152",
    "game/js/billie-sheet.js:194",
    "game/js/boot.js:156",
+   "game/js/map-tab.js:52",
    "game/js/shop.js:162"
   ],
   "pow": [

@@ -4155,13 +4155,22 @@ function worldMapChrome() {
   if (ctl && !ctl.querySelector('[data-a=mlist]'))
     ctl.insertAdjacentHTML(
       'beforeend',
-      `<button class="mbtn" data-a="mlist" aria-label="Places" title="Places">${uiIconHTML('list', 16)}</button>`
+      `<button class="mbtn k-btn" data-a="mlist" aria-label="Places" title="Places">${uiIconHTML('list', 24)}</button>`
     );
   if (worldMap.gl && !box.querySelector('.mapbowl')) {
     box.insertAdjacentHTML(
       'beforeend',
-      `<div class="mapview mapbowl glass" role="group" aria-label="Look around"><button class="mbtn sm" data-k="left" aria-label="Turn left" title="Turn left">⟲</button><button class="mbtn sm" data-k="all" aria-label="See the whole bowl" title="The whole bowl">◎</button><button class="mbtn sm" data-k="right" aria-label="Turn right" title="Turn right">⟳</button></div>`
+      `<div class="mapview mapbowl" role="group" aria-label="Look around"><button class="mbtn k-btn" data-k="left" aria-label="Turn left" title="Turn left">${uiIconHTML('back', 24)}</button><button class="mbtn k-btn" data-k="all" aria-label="See the whole bowl" title="The whole bowl">${uiIconHTML('globe', 24)}</button><button class="mbtn k-btn" data-k="right" aria-label="Turn right" title="Turn right"><span class="flip">${uiIconHTML('back', 24)}</span></button></div>`
     );
+    /* UI-8c: the look-around group rides just above the place card, however tall the card is */
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => {
+        const card = box.querySelector('#mapcard');
+        box.style.setProperty('--mapcard-h', `${card ? Math.round(card.getBoundingClientRect().height) : 0}px`);
+      });
+      const card = box.querySelector('#mapcard');
+      if (card) ro.observe(card);
+    }
     box.querySelector('.mapbowl').addEventListener('click', e => {
       const b = e.target.closest('button');
       if (!b || !worldBowl.on) return;
