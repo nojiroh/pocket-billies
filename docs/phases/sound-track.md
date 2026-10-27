@@ -687,23 +687,43 @@ Water and nature, synthesized:
 | SND-9 | Bake and reverb | `logic/sound-bake.js` (pure DSP, Node-tested), the tracker's bank and `sampleVoice`, the reverb bus, one proof instrument in the Sound Test, bake time and memory in the debug log, a brightness fingerprint (a tool commit first) | SND-8b | none (brightness added) |
 | SND-10 | Water | `soundscape.json` and emitters, a recipe per water kind, the placed falls by height, rain on water, wading, Surf, fishing and water life; takes WA-8's water sounds if the owner agrees | SND-9 (WA-11 for the hub's fall) | none |
 | SND-11 | Stems and ensembles | the tick's patterns factored into pure functions; stems; `instruments` and `ensembles` in music.json; `gb` reserved for today's code; GB Sounds; the first ensembles; the Studio's Instruments tab and its mix on the game's chain | SND-9 | none: the new `gb` must equal the old by day and night |
+| SND-17 | Jingles and stingers | the 12 jingles given the new instruments (a DS fanfare for victory, a glockenspiel and harp run for a level-up, strings swelling into an evolution...), stingers on the song's beat and in its key, GB Sounds keeping today's 8-bit ones; added at the owner's question (2026-10-27) | SND-11 | the 12 jingles |
 | SND-13 | Layers in play | the walking beat, weather and night, building intensity, street musicians (simulated until the busker resident, RS-5) | SND-11 | the layers' renders |
 | SND-12 | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves | SND-11 | the songs rewritten |
 | SND-14 | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
 | SND-15 | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
 | SND-16 (optional) | Effects pass | battle hits, throws and catches with body and space; sounds for things that have none (the airship's engine, the sky train and its rail, the world map, steam vents, wells) | SND-9 | the effects |
 
-SND-13 may come before SND-12 (layers work on the first ensembles; arrangements are long and go in batches), and the
-world (SND-10, SND-14) and music (SND-11..SND-13) lanes can swap at the owner's word. Each is 1-2 sessions, about 11-14
-in all. Engine pieces land with their first audible use, so no session builds what nobody can hear yet. Every audible
-change is the owner's call by ear (Claude can't listen): each session ends with a listening list for the Sound Test on
-the phone. A session that changes fingerprints writes the baseline again in its own commit (the full check fails
-until then), once a render of each commit against the one before it, in a worktree, lists exactly the planned changes.
+SND-17 needs only SND-11's instruments, so the jingles come early. SND-13 may come before SND-12 (layers work on the
+first ensembles; arrangements are long and go in batches), and the world (SND-10, SND-14) and music (SND-11..SND-13)
+lanes can swap at the owner's word. Each is 1-2 sessions, about 12-15 in all. Engine pieces land with their first
+audible use, so no session builds what nobody can hear yet. Every audible change is the owner's call by ear (Claude
+can't listen): each session ends with a listening list for the Sound Test on the phone. A session that changes
+fingerprints writes the baseline again in its own commit (the full check fails until then), once a render of each
+commit against the one before it, in a worktree, lists exactly the planned changes.
 
 **Names** (from the code review, 2026-10-27): "parts" already means a song's versions (`musicParts`, trackerRecipe's
 `@` parts, check-sound's `parts`), so an instrument line's bus is a **stem**; new names take prefixes that clash with
 nothing (`musicStem*`, `musicLayer*`, `soundBake*`: "layer" appears ~90 times in the render code and "bake" is the art
 bakes' word).
+
+## How the sessions run (the owner, 2026-10-27)
+The owner, after SND-7: "Continue with next steps in this plan automatically in new sessions. Automatically approve
+plans." So, as the UI track's Part 2 does:
+- The planning session (SND-7's, `session_019UpAFxCHyLNWb1TCD6L3vh`) starts each step in a new cloud session on
+  `track/sound` when the step before has pushed its HANDOFF entry. Order: SND-8a, SND-8b, SND-9, SND-10, SND-11,
+  SND-17, SND-13, SND-12, SND-14, SND-15. SND-16 (optional) waits for the owner's word.
+- A step reads CLAUDE.md, ROADMAP, VISION, the top of HANDOFF and this file's Part 2; checks that it is on
+  `track/sound` and merges main into it first; writes its plan into its HANDOFF entry and goes on without waiting for
+  approval. Where it meets an open choice or an "Ask me before" item it takes the recommended option and lists it in
+  its HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for.
+- It commits one cause per commit, runs the checks this file names, pushes to `track/sound`, keeps one draft PR from
+  `track/sound` to main up to date, and notes its tag (`snd-N-done`) for the owner to push.
+- When it is done it tells the planning session with `send_message`; an hourly check in the planning session covers a
+  missed message. A step that can't finish (a check it can't make pass, Start-Game, phone mode, the Studio or the
+  in-game full test broken) stops the chain, says why in its HANDOFF entry and its message, and the planning session
+  asks the owner.
+- Merges to main stay the owner's.
 
 ## The listening page (SND-7)
 A private artifact for the owner's phone (nothing committed): https://claude.ai/artifact/GuTVE9L1WfjFWVc4NPe9oh.
@@ -824,7 +844,32 @@ Phone: the bake's time, no hitch in the Load track's hitch list, the proof instr
 - **Busker**: HB-10d swaps the whole song within 5 m with no hysteresis (sound.js `buskerSongNear`); SND-13 replaces
   that with a stem by distance, simulated until RS-5's busker exists.
 
+## SND-17: jingles and stingers (draft; the owner asked whether the jingles improve too, 2026-10-27)
+Today the 12 jingles (music.json `jingles`: victory, levelup, evolve, caught, hatch, motif, relic, reveal, day,
+run_won, run_lost, payout_coin) play their notes on one chip lead with a triangle an octave down (`T.jingle`,
+tracker.js:667) and duck the song to 0.15. SND-8b moves their echo off the music bus and SND-15 tunes the duck; this
+session gives them the new instruments.
+1. A jingle may name an `ensemble` and add lines: `harmony` (chords under the tune), `bass` and `perc` (hits by step),
+   as note lists like a hook's; the schema in both places and `musicFindings`; `gb` stays today's code.
+2. Placeholder arrangements, named as placeholders the owner edits: victory a DS fanfare (the chip lead over brass,
+   strings and a timpani roll); levelup a glockenspiel and harp run; evolve a string swell and a harp glissando into
+   the reveal; caught a pizzicato and snare-roll fanfare; hatch a music box and celesta; motif the title's first bar
+   on chip, harp and strings; relic a sly woodwind run up over pizzicato; reveal two bell notes over a harp; day the
+   clock's tock on a woodblock and a soft bell; run_won the victory fanfare into the motif, full; run_lost the victory
+   tune backwards in minor on soft strings; payout_coin a chip and glockenspiel coin, a tone higher each row.
+3. Stingers: over a song, the short ones (relic, reveal, day, payout_coin) start on the song's next beat and in its key
+   where they can, and drop the song's busy stems instead of ducking all of it; the battle fanfares keep the duck.
+4. GB Sounds plays today's 8-bit jingles. Cries and UI sounds stay as they are (the chip identity) unless the owner
+   asks.
+5. The Studio's Jingles card picks the ensemble and edits the new lines; the Sound Test plays every jingle both ways.
+6. The 12 jingles' fingerprints written again on purpose, in their own commit (no other fingerprint changes).
+Verified by: check-sound (only the jingles change), the full check's "Sound effects and jingles" step, the Studio
+check (`--only=music`), the owner's phone.
+
 ## Ask me before (Part 2; the first four before SND-8a)
+Since the owner's standing instruction (2026-10-27, "How the sessions run"), each session takes the recommended
+option below and lists it in its HANDOFF entry under "Decided for the owner, to review"; the owner can change any of
+them later.
 - WA-8's water sounds move here as SND-10 (recommended), or stay in the water track.
 - The music's rain low-pass (2.2 kHz today): soften it to about 4 kHz in SND-8b (recommended; SND-13's rain layer
   then replaces it), keep it, or drop it.
