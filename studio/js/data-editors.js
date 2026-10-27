@@ -1432,58 +1432,6 @@ ACTIONS.wdGo = d => {
   wardrobeEditor.sel = d.k;
   openSection('wardrobe');
 };
-/* ================= JOBS ================= */
-SECTIONS.jobs = () => {
-  const D = studioState.D;
-  const rows = Object.entries(D.jobs)
-    .map(([k, J]) => {
-      const p = `jobs.${k}`,
-        kind = J.out[0];
-      return `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(
-        textField('Job title', `${p}.n`),
-        textField('Where', `${p}.where`),
-        `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
-          ['item', 'Items'],
-          ['coin', 'Pyramids'],
-          ['se', 'Moneys'],
-        ]
-          .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
-          .join('')}</select></label>`,
-        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : pyramidOptions()),
-        numberField('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
-        textField('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
-      )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
-    })
-    .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: 'Legacy: kept for the ranch (phase 12). The game has no jobs, so nothing here is used.' })}</div>`;
-};
-document.addEventListener('change', ev => {
-  const el = ev.target;
-  if (el.dataset.actSel === 'jobKind') {
-    const J = studioState.D.jobs[el.dataset.k];
-    const v = el.value;
-    J.out = [
-      v,
-      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.pyramids)[0],
-      J.out[2] || 1,
-    ];
-    changed();
-    render();
-  }
-});
-ACTIONS.jobNew = () => {
-  const D = studioState.D,
-    k = uniqueKey('job', x => !!D.jobs[x]);
-  D.jobs[k] = { n: 'New job', where: 'Somewhere', out: ['se', 'se', 100], pay: '$100', quip: 'worked a full shift.' };
-  changed();
-  render();
-};
-ACTIONS.jobDel = async d => {
-  if (!(await ask('Delete this job? Anyone working it keeps working until the shift ends.', 'Delete'))) return;
-  delete studioState.D.jobs[d.k];
-  changed();
-  render();
-};
 /* ================= TRAINERS ================= */
 SECTIONS.trainers = () => {
   const D = studioState.D,

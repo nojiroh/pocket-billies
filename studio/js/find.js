@@ -1,7 +1,7 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · find =================
    alpha 0.4.1: one search box for the whole Studio (Ctrl+K, or the Find button). It knows every engine dial, every
-   numbered setting on the Rules, Types, Items and Jobs pages, every section, and the things you edit: Billies, moves,
+   numbered setting on the Rules, Types and Items pages, every section, and the things you edit: Billies, moves,
    items, pyramids, trainers, shops, people, places, route stops, props and (SA-1) art files. Pick a result and the Studio opens it, scrolls
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -178,7 +178,7 @@ export function buildSearchIndex() {
       openSection('ui');
     });
   }
-  ['rules', 'types', 'items', 'jobs'].forEach(s => findPageFields(s, add));
+  ['rules', 'types', 'items'].forEach(s => findPageFields(s, add));
   (D.lines || []).forEach(L =>
     L.names.forEach((n, st) =>
       add(

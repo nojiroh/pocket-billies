@@ -290,11 +290,6 @@ export function runCheck() {
       if (w.item && !items[w.item]) warn(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
       if (w.coin && !pyramids[w.coin]) warn(`${s.name} sells a pyramid that doesn’t exist.`, 'shops', { shop: k });
     });
-  for (const [k, J] of Object.entries(D.jobs)) {
-    const [kind, key] = J.out;
-    if (kind === 'item' && !items[key]) warn(`Job ${J.n} pays an unknown item.`, 'jobs');
-    if (kind === 'coin' && !pyramids[key]) warn(`Job ${J.n} pays an unknown pyramid.`, 'jobs');
-  }
   const R = D.rules;
   R.start.starters.forEach(l => {
     if (!sp.has(l + '0')) warn(`Starter ${l} doesn’t exist.`, 'rules');

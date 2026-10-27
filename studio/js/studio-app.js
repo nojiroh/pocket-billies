@@ -687,7 +687,6 @@ export const SECTION_LIST = [
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],
   ['people', 'Looks', 'Looks for trainers and shopkeepers'],
-  ['jobs', 'Jobs', 'Legacy: what working Billies earn (the game has no jobs)'],
   ['rules', 'Rules', 'Every number that tunes the game'],
   ['ui', 'UI look', 'The menus’ look: colours, glass, shapes, space, type and motion, for the game or one screen'],
   ['art', 'Art browser', 'Every picture in the game: search, see what uses it, paint, replace'],
@@ -714,9 +713,9 @@ const SECTION_GROUPS = [
   ['Sound', ['music']],
   /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
   ['Runs', ['runlab', 'relics', 'unlocks', 'economy']],
-  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); Studio plan T4.5: Town shops and
-     Jobs edit shops.json and jobs.json, both {} (run shops come from rules.json run.shop; the game has no jobs) */
-  ['Legacy', ['legacy', 'shops', 'jobs']],
+  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); Studio plan T4.5: Town shops
+     edits shops.json, which is {} (run shops come from rules.json run.shop); SA-3: Jobs is gone (the game has no jobs) */
+  ['Legacy', ['legacy', 'shops']],
 ];
 const foldedSectionGroups = (() => {
   try {

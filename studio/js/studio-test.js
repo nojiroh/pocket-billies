@@ -28,7 +28,7 @@ const SETTLE_MS = 300,
   /* the live update and the Check run 500 ms after an edit; this waits for both */
   AFTER_EDIT_MS = 650;
 /* the section the second pane opens beside, and the one the leak check rests on: light, with no preview */
-const QUIET_SECTION = 'jobs';
+const QUIET_SECTION = 'types';
 
 const now = () => performance.now();
 const r1 = v => Math.round(v * 10) / 10;

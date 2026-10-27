@@ -2266,7 +2266,7 @@ def polish_steps(pg, errs):
     if made or any('not drawn' in x for x in shown): errs.append(f'3D view: across {shown}, {made} new WebGL contexts')
     if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects across the 3D sections: {GL_WARN[w0:w0 + 2]}')
     print(f'polish: {", ".join(shown)} on one canvas, {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings', flush=True)
-    pg.evaluate("void openSection('jobs')")  # a section with no 3D view, so its frames don't slow the steps after
+    pg.evaluate("void openSection('types')")  # a section with no 3D view, so its frames don't slow the steps after
 
 
 def art_browser_steps(pg, errs):
