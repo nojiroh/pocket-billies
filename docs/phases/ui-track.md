@@ -586,7 +586,8 @@ What the code does today:
   UI-4's ten outlines, `RUN_MARK_TONES`), 18 px and 22 px where you stand, on a 3 px stalk 22 px tall
   (world-bowl.js `worldBowlRunPin`, `BOWL_PIN`). A place not yet seen prints "?" in the phone's font (700 10px
   system-ui); the names are canvas text in system-ui at 11 and 12 px. The kit's `<pb-node>` (ui-run-kit.js) draws the
-  same outlines as SVG in the place card.
+  same outlines as SVG; no game screen uses it, only the Studio's UI gallery (UI-8c: the place card's corner shows
+  `locationSubtitle`'s text, not a marker).
 - The map's buttons are the old look: 34 px squares in `rgba(20,14,30,.78)` with a near-black ring (map-tab.css
   `.mbtn`), zoom as typed "+" and "−" (map-tab.js), and the look-around group (world-bowl.js) as typed ⟲ ◎ ⟳ at 28 px,
   under the 40 px tap rule.
@@ -627,13 +628,33 @@ WM-7 ran beside their track's sessions.
 - Not taken: Pins (one outline for every place, so places differ only by colour and the small glyph; the cream faces
   brighten a busy map).
 
+Built (UI-8c, 2026-10-27, on `claude/ui-8c-map-markers`):
+- The art: twelve 36 px SVGs in art/ui in the pixel format (svg-pixels.js), so the Studio's icon editor opens them:
+  `node-landing`, `node-route`, `node-town`, `node-miniboss`, `node-boss`, `node-event`, `node-shop`, `node-rival`,
+  `node-scrapyard`, `node-unknown`, and the badges `node-check` and `node-lock` (in the grid's bottom-right corner).
+  Painted once from the examples' painter on `RUN_MARK_SHAPES`; the SVGs are the source now, for the owner to repaint.
+- run-marks.js: `runMarkLook` gives `icon`, `badge` and `size` (`RUN_MARK_SIZES` 28 and 34); `runMarkPixels` makes a
+  state's picture from an icon's pixels (the rim, faded, grey, the badge), `RUN_MARK_ART` its numbers and colours.
+- The bowl (world-bowl.js): the run pin draws that picture, made once per icon, state and size at the canvas's own
+  pixels, a gold glow where you stand, the flat shape until the icon loads; the head stands 4 px higher. The ground
+  rings (where you stand, picked) take a dark rim under their colour; the trip's end is the set's flag. The names are
+  in the theme's voice font (`--font-voice`, Jersey 15 in Field Guide) at 13 and 14 px.
+- `<pb-node>` paints the same picture (the gallery shows every type and state).
+- The seven buttons: `.mbtn.k-btn` at 44 px (the kit's button outline and edge line, the card's panel colour, no
+  blur), with plus, minus, walk, list, back, back mirrored and globe; the look-around group is three chips of their own
+  riding just above the place card (`--mapcard-h`, written by a ResizeObserver).
+- The minimap's marks (trainers, wild Billies, you) stay as they are: at 5 to 8 px a plate with a rim and a glyph
+  doesn't read; their shapes already carry the meaning (a diamond for danger, a round dot for wild, a chevron for you).
+- Found: the run map never gives a place the `locked` state (world-bowl.js `worldBowlRunMark`: current, hidden,
+  visited or seen), so the padlock shows only in the gallery for now.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
 | UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
 | UI-8b | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
-| UI-8c | The run map's icons | the ten place icons drawn as 36 px SVGs in the Studio's icon editor (Badges: UI-4's outlines as pixel plates, a glyph each, the icon set's palette by family); the bowl's pin painter (28 px, 34 px where you stand; the gold rim, the check, the padlock, the pixel "?"); `<pb-node>` the same; the names in Jersey 15; the map's seven buttons as 44 px chips with the set's icons | the run's map | run-marks and ui-icons tests; the gallery's pb-node pictures and the fast check's map step remade on purpose; tap targets; the owner's phone check (sizes, sharpness at 28 px, the art) |
+| UI-8c (built 2026-10-27, `claude/ui-8c-map-markers`) | The run map's icons | the ten place icons drawn as 36 px SVGs in the Studio's icon editor (Badges: UI-4's outlines as pixel plates, a glyph each, the icon set's palette by family); the bowl's pin painter (28 px, 34 px where you stand; the gold rim, the check, the padlock, the pixel "?"); `<pb-node>` the same; the names in Jersey 15; the map's seven buttons as 44 px chips with the set's icons | the run's map | run-marks and ui-icons tests; the gallery's pb-node pictures and the fast check's map step remade on purpose; tap targets; the owner's phone check (sizes, sharpness at 28 px, the art) |
 | UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
 | UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
 | UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
