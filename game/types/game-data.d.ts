@@ -793,8 +793,6 @@ export interface Trainer {
   blocks?: boolean;
   team: TrainerBilly[];
   reward: number;
-  /** an egg tier they hand out */
-  egg?: number;
   market?: { k: string; n: number } | null;
   marketText?: string;
   win: string;
