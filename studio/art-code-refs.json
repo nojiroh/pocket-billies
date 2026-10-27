@@ -1834,8 +1834,8 @@
    "game/js/shop.js:162"
   ],
   "pow": [
-   "game/js/game-data.js:157",
-   "game/js/game-data.js:160"
+   "game/js/game-data.js:162",
+   "game/js/game-data.js:165"
   ],
   "ring": [
    "game/js/engine/webgl.js:784",
@@ -1890,8 +1890,8 @@
    "game/js/battle-stage.js:2222",
    "game/js/battle-stage.js:2491",
    "game/js/cutscene/opening.js:344",
-   "game/js/game-data.js:157",
-   "game/js/game-data.js:160"
+   "game/js/game-data.js:162",
+   "game/js/game-data.js:165"
   ],
   "tag": [
    "game/js/battle.js:568",

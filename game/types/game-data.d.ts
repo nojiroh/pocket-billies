@@ -196,6 +196,8 @@ export interface Meta {
 export interface BillyType {
   id: TypeId;
   color: Color;
+  /** UI-13: its colour in battle's 3D effects (rings, beams; default `color`) */
+  glow?: Color;
   /** the text colour on it (default '#fff') */
   text?: Color;
   /** the types it hits for double damage */
@@ -214,6 +216,8 @@ export interface BillyType {
 /** untyped.json: the colours and hit effects of 'None' */
 export interface Untyped {
   color: Color;
+  /** UI-13: its colour in battle's 3D effects (default `color`) */
+  glow?: Color;
   text?: Color;
   fx?: string[];
 }
