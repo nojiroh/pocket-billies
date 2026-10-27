@@ -6,9 +6,11 @@
 import { expose } from './test-globals.js';
 import {
   JINGLES,
+  WEATHER_BATTLE_NOTES,
   battleSoundEffect,
   battleTipHide,
   battleTutor,
+  battleWeather,
   battleWeatherMultiplier,
   closeModal,
   fieldBadgeLine,
@@ -97,13 +99,13 @@ import {
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
+import { WEATHER_NAMES } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
-  TICKER_LAST: [() => TICKER_LAST],
+  FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
@@ -123,6 +125,10 @@ expose({
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
+  fieldChipHTML: [() => fieldChipHTML, v => (fieldChipHTML = v)],
+  fieldStripUpdate: [() => fieldStripUpdate, v => (fieldStripUpdate = v)],
+  fieldTip: [() => fieldTip, v => (fieldTip = v)],
+  fieldUi: [() => fieldUi],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
   floatPos: [() => floatPos],
   floatTick: [() => floatTick, v => (floatTick = v)],
@@ -161,7 +167,6 @@ expose({
   stopTimers: [() => stopTimers, v => ((stopTimers = v), provide({ stopTimers }))],
   tapMessage: [() => tapMessage, v => (tapMessage = v)],
   teamPick: [() => teamPick, v => (teamPick = v)],
-  tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
   turnBar: [() => turnBar, v => (turnBar = v)],
   typeText: [() => typeText, v => (typeText = v)],
 });
@@ -186,8 +191,7 @@ export function battleShell() {
   <div class="pops" id="pops" aria-hidden="true"></div>
   <div class="bplates" id="plates"></div>
  </div>
- <div class="ticker" aria-hidden="true"><div class="tk-in" id="tk"></div></div>
- <div class="mk glassy" id="mk"></div>
+ <div class="fstrip" id="fstrip" role="group" aria-label="The field"><div class="fs-row" id="fsRow"></div><p class="fs-tip" id="fsTip" role="status" hidden></p></div>
  <div class="dock glassy" id="dock">
   <button class="bmsg" id="msg" data-a="adv" aria-live="polite"><span id="msgT"></span><i class="more"></i></button>
   <div class="cmd" id="acts"></div>
@@ -203,7 +207,7 @@ function battleFreeArea(vw, vh, lay) {
     },
     dock = r('#dock'),
     foe = r('#hb1'),
-    tk = r('.ticker');
+    tk = r('#fstrip');
   /* phase 06-3: with the cards floating in the scene the dock has no fixed place, so the action is framed in a fixed
      share of the screen (above the cards in portrait, left of them in landscape) */
   const floating = $('#battle').classList.contains('ui3d');
@@ -503,64 +507,74 @@ export function tapMessage() {
 function boxAnims(ev) {
   const an = ev.an;
   if (!an) return;
+  /* UI-15: stones that hurt someone are on the field (the strip shows them from here, not a turn early) */
+  if (an.fx === 'stones' && an.si != null) fieldUi.stones[ACTOR_SIDE[an.si]] = true;
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
 }
 const statShortName = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
 export function paintBoxes(s, mk, anim) {
   paintPlates(s, anim);
-  tickerUpdate(s, mk);
-  const m = $('#mk');
-  if (m) {
-    m.innerHTML = mk ? `${uiIconHTML('bolt', 14)} ${escapeHtml(shockName())} · ${plural(mk.n, 'turn')}` : '';
-    m.classList.toggle('on', !!mk);
-  }
+  fieldStripUpdate(mk);
 }
-const TICKER_LAST = {};
-function tickerUpdate(s, mk) {
-  const el = $('#tk');
+/* UI-15: the field strip (in the ticker's place, at the top): the weather and the field's hazards as glyphs, with the
+   turns left where they run out; your side's hazards on the left, the foe's on the right. A chip's words show under the
+   strip when it is tapped. The icon set's icons for now (UI-13 draws the strip's own glyphs) */
+const FIELD_WEATHER_ICONS = {
+  rain: 'rain',
+  storm: 'rain',
+  snow: 'snow',
+  fog: 'fog',
+  ash: 'ash',
+  sunny: 'sun',
+  night: 'moon',
+  cloudy: 'cloud',
+};
+/* the sharp stones each side has, as the turn's playback has shown them so far (the battle runs a turn ahead of what
+   is on screen: the strip waits for the event, then reads the field when the turn is over) */
+const fieldUi = { stones: [false, false], mk: null };
+function fieldChipHTML(icon, words, turns, cls) {
+  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}">${uiIconHTML(icon, 14)}${turns ? `<b class="tnum">${turns}</b>` : ''}</button>`;
+}
+function fieldStripUpdate(mk) {
+  const el = $('#fsRow');
   if (!el) return;
-  const items = [];
-  [1, 3, 0, 2, 4].forEach(i => {
-    const x = s[i];
-    if (!x) return;
-    const p = Math.round((Math.max(0, x.hp) / x.max) * 100),
-      k = x.uid,
-      prev = TICKER_LAST[k],
-      d = prev == null ? 0 : p - prev;
-    TICKER_LAST[k] = p;
-    items.push(
-      `<span class="tki"><b>${escapeHtml(x.name.toUpperCase())}</b> Lv ${x.lvl} <em class="${d < 0 ? 'dn' : d > 0 ? 'up' : ''}">HP ${p}%</em></span>`
-    );
-  });
-  if (mk)
-    items.push(
-      `<span class="tki warn"><b>${escapeHtml(shockName().toUpperCase())}</b> ${plural(mk.n, 'turn')} left</span>`
-    );
-  const sunTxt = (() => {
-    if (typeof environmentState !== 'function' || !environment.on) return 'noon, steady';
-    const st = environmentState(currentLocationMap());
-    return (
-      (st.night > 0.5
-        ? 'night, dim'
-        : st.dusk > 0.35
-          ? 'dusk, glowing'
-          : st.dawn > 0.35
-            ? 'dawn, rising'
-            : st.h < 11
-              ? 'morning, climbing'
-              : st.h < 15
-                ? 'noon, steady'
-                : 'afternoon, mellow') +
-      (st.wx !== 'clear' ? ` · <b>WEATHER</b> ${(WEATHER_NAMES[st.wx] || st.wx).toLowerCase()}` : '')
-    );
-  })();
-  items.push(
-    `<span class="tki"><b>INNER SUN</b> ${sunTxt}</span>`,
-    `<span class="tki"><b>MONEYS</b> ${moneyHTML(saveData.se, 12)}</span>`
-  );
-  const h = items.join('<i>•</i>');
-  el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
+  if (mk !== undefined) fieldUi.mk = mk;
+  if (activeBattle && activeBattle.phase !== 'playing')
+    fieldUi.stones = [0, 1].map(i => !!(activeBattle.sides[i] && activeBattle.sides[i].stones));
+  const w = typeof battleWeather === 'function' ? battleWeather() : null,
+    side = i =>
+      fieldUi.stones[i]
+        ? fieldChipHTML(
+            'scrap',
+            `Sharp stones on ${i ? 'their' : 'your'} side: they hurt each Billie that comes in`,
+            0,
+            'bad'
+          )
+        : '',
+    m = fieldUi.mk,
+    mid =
+      (w
+        ? fieldChipHTML(
+            FIELD_WEATHER_ICONS[w.k] || 'cloud',
+            WEATHER_BATTLE_NOTES[w.k] || WEATHER_NAMES[w.k] || w.k,
+            0,
+            'wx'
+          )
+        : '') + (m ? fieldChipHTML('bolt', `${shockName()}: ${plural(m.n, 'turn')} left`, m.n, 'warn') : '');
+  const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
+  if (el.innerHTML !== h) el.innerHTML = h;
+  $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
+}
+/* a chip's words under the strip for a few seconds (rule 3: never colour alone; the word on tap) */
+function fieldTip(ev) {
+  const b = ev.target && ev.target.closest && ev.target.closest('.fs-chip'),
+    t = $('#fsTip');
+  if (!b || !t) return;
+  t.textContent = b.dataset.tip;
+  t.hidden = false;
+  clearTimeout(fieldUi.tipT);
+  fieldUi.tipT = setTimeout(() => (t.hidden = true), 3500);
 }
 /* floating numbers and tags over the billionaires */
 function hudPop(si, text, kind) {
@@ -1269,7 +1283,7 @@ function floatTick() {
     vh = L.vh,
     pad = 16,
     land = L.lay === 'landscape',
-    tk = $('.ticker'),
+    tk = $('#fstrip'),
     top0 = (tk ? tk.getBoundingClientRect().bottom - B.getBoundingClientRect().top : 24) + 8,
     who = activeBattle.cur != null && battleStage.s[activeBattle.cur] ? activeBattle.cur : 0,
     w0 = actorWorldPoint(who),
@@ -1313,7 +1327,7 @@ function platesTick() {
   if (!L || !activeBattle || !battleStage.L || !L.firstChild) return;
   const tgt = activeBattle.phase === 'target',
     placed = [],
-    tk = $('.ticker'),
+    tk = $('#fstrip'),
     top0 = (tk ? tk.getBoundingClientRect().bottom - $('#battle').getBoundingClientRect().top : 24) + 4;
   const list = [...L.children]
     .map(e => ({ e, k: +e.dataset.k }))
@@ -1369,6 +1383,9 @@ function stageTap(ev) {
   }
   if (best != null && bd < 160) pickTarget(best);
 }
+document.addEventListener('click', e => {
+  if (e.target && e.target.closest && e.target.closest('#fstrip')) fieldTip(e);
+});
 document.addEventListener('pointerup', e => {
   if (
     activeBattle &&

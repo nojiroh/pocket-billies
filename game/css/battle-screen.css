@@ -66,14 +66,6 @@
     transform: translate(calc(-50% + var(--dx)), -240%) scale(0.94);
   }
 }
-@keyframes tick {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
 /* HP cards */
 @keyframes cardhit {
   20% {
@@ -262,52 +254,77 @@
     inset 0 0 0 1px var(--g-line),
     0 18px 40px -18px rgba(0, 0, 0, 0.65);
 }
-.battle .ticker {
+/* UI-15: every floating battle part sits in dark glass, in both themes (the owner's answer 6): the night tokens until
+   UI-12 gives each palette its own dark side */
+.battle {
+  --bt-glass: color-mix(in srgb, var(--night-ink) 86%, transparent);
+  --bt-ink: var(--night-text);
+  --bt-ink2: var(--night-text2);
+}
+/* UI-15: the field strip (battle.js fieldStripUpdate), where the ticker was: the weather and the hazards as glyph chips
+   in dark glass, your side's on the left, the foe's on the right; empty, it keeps its place (the stage frames the
+   action under it) but shows nothing */
+.battle .fstrip {
   position: absolute;
-  z-index: 4;
+  z-index: 7;
   top: var(--st);
   left: 0;
   right: 0;
-  height: 24px;
+  height: 28px;
+  padding: var(--s1) var(--s2) 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.battle .fstrip.on {
+  visibility: visible;
+}
+.fs-row {
   display: flex;
   align-items: center;
-  overflow: hidden;
-  background: rgba(6, 4, 14, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  justify-content: space-between;
+  gap: var(--s2);
 }
-.tk-in {
+.fs-side,
+.fs-mid {
   display: flex;
-  gap: var(--s3);
-  white-space: nowrap;
-  font: 400 12px/1 var(--font-voice);
-  color: #c8c0e0;
-  animation: tick 26s linear infinite;
-  padding-left: var(--s3);
+  gap: var(--s1);
 }
-.tk-in i {
-  font-style: normal;
-  color: #5a5080;
+.fs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  height: 24px;
+  min-width: 30px;
+  padding: 0 var(--s2);
+  border: 0;
+  font: 400 13px/1 var(--font-voice);
+  color: var(--bt-ink);
+  background: var(--bt-glass);
+  clip-path: var(--clip-chip);
+  pointer-events: auto;
+  cursor: pointer;
 }
-.tki b {
-  color: #f3eef8;
-  font-weight: 400;
+.fs-chip.warn b {
+  color: var(--gold-a);
 }
-.tki em {
-  font-style: normal;
-  color: #c8c0e0;
+.fs-chip.bad {
+  background:
+    linear-gradient(var(--red), var(--red)) bottom / 100% 2px no-repeat,
+    var(--bt-glass);
 }
-.tki em.up {
-  color: #5dff8a;
+.fs-tip {
+  width: fit-content;
+  max-width: min(360px, 100%);
+  margin: var(--s1) auto 0;
+  padding: var(--s1) var(--s3);
+  font: 600 13px/1.35 var(--font-voice);
+  color: var(--bt-ink);
+  background: var(--bt-glass);
+  clip-path: var(--clip-chip);
+  visibility: visible;
 }
-.tki em.dn {
-  color: #ff6a6a;
-}
-.tki.warn b {
-  color: #f2c14e;
+.fs-tip[hidden] {
+  display: none;
 }
 .pip {
   width: 8px;
@@ -321,22 +338,6 @@
 }
 .pip.st {
   background: radial-gradient(circle at 35% 35%, #ffd0a0, #e06a3a);
-}
-.battle .mk {
-  position: absolute;
-  z-index: 5;
-  top: calc(var(--st) + 32px);
-  right: 12px;
-  padding: var(--s2) var(--s3);
-  font: 400 12.5px/1 var(--font-voice);
-  color: #ffd86a;
-  display: none;
-  align-items: center;
-  gap: var(--s2);
-}
-.battle .mk.on {
-  display: flex;
-  animation: pop 0.4s cubic-bezier(0.3, 1.7, 0.5, 1);
 }
 /* dock: your card, the message, the commands */
 .dock {
@@ -789,9 +790,6 @@
   border-radius: var(--r-sm);
   max-height: calc(100% - 48px - var(--st) - var(--sb));
 }
-.battle[data-layout='landscape'] .mk {
-  right: calc(clamp(300px, 31vw, 420px) + 24px);
-}
 .battle[data-layout='landscape'] .cmd {
   height: auto;
   min-height: 180px;
@@ -803,9 +801,6 @@
     gap: var(--s2);
     padding: var(--s2) var(--s3);
     width: clamp(290px, 40vw, 380px);
-  }
-  .battle[data-layout='landscape'] .mk {
-    right: calc(clamp(290px, 40vw, 380px) + 24px);
   }
   .battle[data-layout='landscape'] .cmd {
     min-height: 0;
@@ -855,14 +850,12 @@
   }
 }
 @media (min-height: 820px) and (min-width: 1100px) {
-  .battle[data-layout='landscape'] .dock,
-  .battle[data-layout='landscape'] .mk {
+  .battle[data-layout='landscape'] .dock {
     zoom: 1.18;
   }
 }
 @media (min-height: 1000px) and (min-width: 1500px) {
-  .battle[data-layout='landscape'] .dock,
-  .battle[data-layout='landscape'] .mk {
+  .battle[data-layout='landscape'] .dock {
     zoom: 1.35;
   }
 }
@@ -1109,9 +1102,6 @@ body.battle-3d #camFg {
 .bplate.hit {
   animation: cardhit 0.38s;
 }
-.battle.hud-scene .ticker {
-  opacity: 0.85;
-}
 .pick em.alpha {
   color: #ff7a9a;
   font-style: normal;
@@ -1268,13 +1258,13 @@ html[data-flash='off'] .hatch.flash {
 #battle.bt-rise :is(#dock, .cmd, .bmsg) {
   animation: btRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-#battle.bt-rise :is(#hb0, #hb1, .ticker) {
+#battle.bt-rise :is(#hb0, #hb1, .fstrip) {
   animation: btRiseTop 0.55s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 #battle.bt-leave :is(#dock, .cmd, .bmsg) {
   animation: btLeave 0.34s ease-in both;
 }
-#battle.bt-leave :is(#hb0, #hb1, .ticker) {
+#battle.bt-leave :is(#hb0, #hb1, .fstrip) {
   animation: btLeaveTop 0.34s ease-in both;
 }
 @media (prefers-reduced-motion: reduce) {
