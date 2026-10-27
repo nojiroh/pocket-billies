@@ -130,7 +130,7 @@ town node needs it.
   Town shops, Route stops, dead Rules and Trainers fields, the walk eggs and eggs.json; done 2026-10-27), SA-4
   (navigation as workspaces, Characters, Part rules; done 2026-10-27), SA-5 next (unused art). Planned
   2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
-- **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
+- **Studio track** (docs/phases/studio-track.md): ST-0..ST-7 done (ST-7, Model mode import, 2026-10-27 on `track/studio`); ST-8 (Model mode export) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
 - **UI track** (docs/phases/ui-track.md, planned 2026-10-21): Semigloss Angular, the Studio's UI section and phase

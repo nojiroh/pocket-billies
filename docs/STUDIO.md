@@ -266,6 +266,46 @@ today's sheets 122 of 129 would get smaller; nothing is repacked until someone p
 The skeleton builder zooms by whole steps (+, −, 0 to fit, 1 to 6 for 1x to 32x, as on the pixel canvas; O for the
 onion), fits its window when opened, and **Paint pixels** opens the sheet with the part picked in focus.
 
+## Art workbench: Model mode (studio track ST-7)
+
+A 3D model from Blender, Blockbench, MagicaVoxel or an AI generator made into a prop (studio/js/workbench-model.js;
+the logic in game/js/logic/model-gltf.js, model-obj.js, model-vox.js, model-mesh.js, model-bake.js).
+
+- **In**: drop a **.glb**, a **.gltf** with its .bin and pictures, an **.obj** with its .mtl and pictures, or a
+  MagicaVoxel **.vox** anywhere on the Studio (all the files together), or **Open a model…**. Only files beside the
+  model are read (no paths out of its folder). Draco or meshopt compression is refused: export again without it.
+  Skins and animations are left out (models have spinning and jointed parts, no skinning).
+- **Size and turn**: height in metres (or a scale from the file's units: Blockbench's 1/16 and a voxel's 1/32 are
+  guessed), a quarter turn, which way is up, standing on the ground, centred on the base point. Any change builds it
+  again from the file.
+- **The turntable** is the game's renderer, as the Props section's; under it, the picture the game shows with 3D
+  props off and far away, baked from the model as the props' pictures are (front and a little above, three tones,
+  ink outline).
+- **Checks**: triangles (a warning over 2,000), the texture's size, and **texel density**: pixels to the metre on
+  every face, the area-weighted median, how much of the surface is more than a quarter off 32 px/m and a histogram
+  (green is 24-36). **Resample to 32 px/m** scales the texture by nearest pixel. A **palette texture** (KayKit,
+  Kenney: most faces take one colour) isn't measured; **Bake to 32 px/m** gives it a texture of its own: its faces
+  laid flat in charts at 32 px/m, each in its colour snapped to the game palette and drawn with the building sheet's
+  texture for its material (planks, stone, metal seams, moss) through the buildings' five-tone ramp.
+- **Parts**: each node of the file is a part turning about its pivot (the node's origin). **Spins** turns a part all
+  the time (an axis, turns a second), as the airship's propellers do; a **Joint** (an axis and limits in degrees) is
+  kept for posing and drawn at rest. A Blender custom property `pb` on the node (`{"spin": {"axis": [0, 0, 1],
+  "rps": 1}}`, `{"joint": {"axis": [1, 0, 0], "min": -30, "max": 45}}`) fills them in; ST-8's export writes it.
+- **Write to game**: `art/scene/models/<key>.json` (the model, a text file), `<key>.png` beside it (its texture), its
+  picture in `art/scene/props/<key>.png` and the prop in the scenery catalogue: three undo steps, sent by Save or
+  Propose changes. A .vox becomes a voxel prop as the Props section's import makes it (a raw layer), with its picture.
+- **Texture**: once written, the texture is painted on the shared pixel canvas (every stroke shows on the model and
+  is an undo step), the faces' outlines over it; click the model's picture beside it to mark the texel under the
+  pointer (⟲ ⟳ turn it).
+- **Props**: a model imported here shows **Open in Model mode** in the prop's 3D model panel (its spins, joints and
+  texture are edited here; size and turn come from the file).
+
+The format (mesh v2): `{ kind: 'mesh', v: 2, ppm: 32, name, about, src, tex, wrap, box, tris, parts: [{ name, n, ni,
+data, parent, pivot, spin, joint }] }`, a vertex 24 bytes as v1's (position 1/256 m, normal, texture coordinates on
+its own texture in 1/4096, byte 16 = 255, byte 18 = 1 for a face with no texture, colour), triangles uint16 (a part
+over 65,535 vertices is cut in pieces). The game draws it with its own texture (nearest texel), outside the instanced
+batches, one draw a part.
+
 ## Placeholder Billies and their drawing sheets (roster track RO-3a)
 
 A placeholder Billie (game/data/bodyPlans.json `forms`) is built on one of the 14 body plans the game animates
