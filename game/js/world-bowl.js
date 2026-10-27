@@ -2598,7 +2598,7 @@ export function worldMapMount() {
   const me = worldBowl.spots[saveData.trip.node] || { x: 0, y: 0, h: 0 },
     FI = worldBowlFloatCam(),
     yaw = worldBowl.cam ? worldBowl.cam.yaw : Math.hypot(me.x, me.y) > 0.05 ? Math.atan2(me.x, me.y) : 0,
-    home = FI ? worldBowlFloatHome(FI, yaw) : bowlCamHome(me.x, me.y, yaw);
+    home = FI ? worldBowlFloatHome(FI, yaw) : bowlCamHome(me.x, me.y, yaw, me.up);
   if (worldBowl.cam) worldBowl.cam = bowlCamClamp(worldBowl.cam);
   worldBowl.idle = 0;
   if (FI && !(typeof airshipFlight !== 'undefined' && airshipFlight.on)) {
@@ -2615,7 +2615,7 @@ export function worldMapMount() {
   } else if (typeof airshipFlight !== 'undefined' && airshipFlight.on) {
     /* the flight: from above where it takes off, far enough out to see the way */
     const A = worldBowl.spots[airshipFlight.a] || me;
-    worldBowl.cam = bowlCamClamp({ ...bowlCamHome(A.x, A.y, yaw), dist: Math.max(1, airshipFlight.span || 1) });
+    worldBowl.cam = bowlCamClamp({ ...bowlCamHome(A.x, A.y, yaw, A.up), dist: Math.max(1, airshipFlight.span || 1) });
     worldBowl.goal = null;
     worldBowl.tween = null;
   } else if (uiState.mglFrom === 'walk' && !reducedMotion) {
@@ -2626,6 +2626,11 @@ export function worldMapMount() {
   } else if (!worldBowl.cam) {
     worldBowl.cam = reducedMotion ? home : bowlCamOverview(home.yaw);
     worldBowl.goal = reducedMotion ? null : home;
+  } else if (typeof me.up === 'number') {
+    /* WM-1: a run's place opens over you the way the walk camera looks, whatever the camera did last time */
+    worldBowl.cam = home;
+    worldBowl.goal = null;
+    worldBowl.tween = null;
   }
   uiState.mglFrom = null;
   worldBowl.sel = uiState.mapSel;
@@ -2671,7 +2676,7 @@ export function worldMapReset() {
   const me = worldBowlSpots()[saveData.trip.node],
     FI = worldBowlFloatCam();
   worldBowl.tween = null;
-  worldBowl.goal = FI ? worldBowlFloatHome(FI, worldBowl.cam.yaw) : bowlCamHome(me.x, me.y, worldBowl.cam.yaw);
+  worldBowl.goal = FI ? worldBowlFloatHome(FI, worldBowl.cam.yaw) : bowlCamHome(me.x, me.y, worldBowl.cam.yaw, me.up);
   worldBowl.dirty = true;
 }
 /* pick a place: its card, and the camera comes over it */
