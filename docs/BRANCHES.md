@@ -31,11 +31,12 @@ they say nothing about the work, so plan work never stays on one. Names are inte
 4. **Milestones go to main by pull request** from `track/<plan>`, merged with a merge commit (not squash, so the next
    merge has no conflicts). After the merge **the branch stays**: don't press "Delete branch", and keep GitHub's
    "Automatically delete head branches" off, since it would delete the branch on every merge. The Repo admin workflow
-   never deletes `track/*`.
+   keeps `track/*` unless asked (rule 6).
 5. **Each session's HANDOFF entry** names the branch and the session's part of the plan (e.g. `SND-6`). The tag
    `<id>-done` marks where each part ended.
 6. **When the plan is done** (its file and ROADMAP say so, the last PR is merged): tag `<plan>-done`, then delete the
-   branch by hand on GitHub's Branches page. Unfinished work that is being parked goes to `archive/<plan>` instead.
+   branch: Repo admin's delete-branches with allow_merged_tracks (it checks the tag and that every commit is in main),
+   or by hand on GitHub's Branches page. Unfinished work that is being parked goes to `archive/<plan>` instead.
 
 The branches made before this rule (`sound`, `RL-10b`, `terrain-generation`, `CAM*`, `claude/sr-*`, ...) keep their
 names until their plans end: renaming a branch breaks the sessions working on it. A plan that starts after
