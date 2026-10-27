@@ -253,7 +253,10 @@ export function arenaGenGround(G) {
       arenaBarrierCorners(G, { x: at[0], z: at[1], past }, 1, true).length > 0;
   let spot = /** @type {{ at: number[], dir: number[] } | null} */ (null),
     first = /** @type {{ at: number[], dir: number[] } | null} */ (null),
-    walled = /** @type {{ at: number[], dir: number[] } | null} */ (null);
+    walled = /** @type {{ at: number[], dir: number[] } | null} */ (null),
+    /* WM-3b: one where the barrier fits though its roads don't cross it square or it spans two terraces: a gate
+       before a ring on one terrace (the run fixture's first leader place had none on one terrace) */
+    gated = /** @type {{ at: number[], dir: number[] } | null} */ (null);
   /* a leader's: room on the road before it for its line of trainers (ARENA_LINE_ROOM) first */
   const room = A.mode === 'leader' ? ARENA_LINE_ROOM + r + ARENA_APRON : 0;
   for (const d of tries) {
@@ -266,6 +269,7 @@ export function arenaGenGround(G) {
       if (Math.hypot(at[0] - s.at[0], at[1] - s.at[1]) > r - 3.5) continue;
       if (arenaGenFits(G, at[0], at[1], r)) {
         first ||= { at, dir: s.dir };
+        if (!gated && walls(at)) gated = { at, dir: s.dir };
         if (!arenaCrossesSquare(G, at[0], at[1], r) || !arenaOnOneTerrace(G, at[0], at[1], foot)) continue;
         if (!walls(at)) continue;
         walled ||= { at, dir: s.dir };
@@ -276,7 +280,7 @@ export function arenaGenGround(G) {
     }
     if (spot) break;
   }
-  spot ||= walled || first;
+  spot ||= walled || gated || first;
   if (!spot) {
     G.notes.push('no room for the arena on the main road');
     return;
