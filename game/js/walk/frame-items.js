@@ -28,12 +28,14 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
-import { seenFacing, seenToward, seenWord } from '../logic/person-view.js';
+import { personHeading, seenFacing, seenToward, seenWord } from '../logic/person-view.js';
+import { FIGURE_FPS, figureTick } from '../logic/figure-pose.js';
 import { WADE_DEPTH } from '../logic/wading.js';
 import { artImg } from '../art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
 import {
   WALK_FRAME_M,
+  WALK_SPEED,
   artImage,
   cropGrowth,
   encounterSpot,
@@ -66,6 +68,7 @@ import {
   stillPropState,
   windLeanAt,
 } from './prop-look.js';
+import { figurePersonPicture, figuresOn } from '../figures.js';
 /* eslint-disable no-func-assign */
 expose({
   SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
@@ -420,6 +423,18 @@ export function gatherFrameItems(st, C, PPU, C0) {
      seen from the camera; `walk` walks them on the spot */
   if (!st.battle && sc.test && Array.isArray(sc.lineup))
     sc.lineup.forEach((/** @type {any} */ L, /** @type {number} */ i) => {
+      /* CH-2: a figure (`figure`, the figure baker's mannequin: figures.js), only with Engine > People > Figures on;
+         walking on the spot at your walking pace */
+      if (L && typeof L.figure === 'string') {
+        if (!figuresOn()) return;
+        const head =
+            L.face != null
+              ? Math.PI / 2 - (L.face * Math.PI) / 180
+              : personHeading({ dir: L.dir || 'down' }, seenYaw()),
+          im = figurePersonPicture(L, L.figure, t, !!L.walk, (figureTick(t) / FIGURE_FPS) * WALK_SPEED, head);
+        if (im) out.push(personItem('line', im, L.x, L.z, C0, { line: i }));
+        return;
+      }
       const fr = L && typeof L.who === 'string' ? personWalkFrames(L.who) : null;
       if (!fr) return;
       warmPerson(L.who);
@@ -456,17 +471,22 @@ export function gatherFrameItems(st, C, PPU, C0) {
   if (st.who !== null && typeof personWalkFrames === 'function') {
     const fr = personWalkFrames(st.who),
       set = fr[seenWord(P, seenYaw())] || fr.down;
+    /* CH-2: with Engine > People > Figures on you are the figure baker's mannequin (figures.js), today's picture until
+       yours is baked */
+    const figHead = personHeading(P, seenYaw()),
+      fig = figuresOn() ? figurePersonPicture(P, 'mannequin', t, !!(P.walk || P.hop), P.gait || 0, figHead) : null;
     const me = personItem(
       'me',
-      P.hop
-        ? set.cyc
-          ? set.cyc[2]
-          : set[1]
-        : P.walk
+      fig ||
+        (P.hop
           ? set.cyc
-            ? set.cyc[Math.floor((P.gait || 0) / WALK_FRAME_M) % 6]
-            : set[1 + (Math.floor((P.gait || 0) / (WALK_FRAME_M * 1.36)) % 2)]
-          : set[0],
+            ? set.cyc[2]
+            : set[1]
+          : P.walk
+            ? set.cyc
+              ? set.cyc[Math.floor((P.gait || 0) / WALK_FRAME_M) % 6]
+              : set[1 + (Math.floor((P.gait || 0) / (WALK_FRAME_M * 1.36)) % 2)]
+            : set[0]),
       P.x,
       P.z,
       C0,
@@ -478,7 +498,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     if (mt) {
       out.push(mt.it);
       me.y += mt.lift;
-      me.im = set[0];
+      me.im = (fig && figurePersonPicture(P, 'mannequin', t, false, 0, figHead)) || set[0];
       me.z -= 0.02;
     }
     out.push(me);

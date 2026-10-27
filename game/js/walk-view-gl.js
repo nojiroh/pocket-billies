@@ -122,6 +122,7 @@ import {
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
+import { figureReport, figuresOn } from './figures.js';
 import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites, hideQueriesLost } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
@@ -327,6 +328,8 @@ export function peopleReport() {
     byPass,
     textures: T.n,
     mb: Math.round((T.bytes / 1048576) * 10) / 10,
+    /* CH-2: the figure baker's numbers, once it has baked (figures.js figureReport) */
+    ...(typeof figureReport === 'function' && (figuresOn() || figureReport().bakes) ? { figures: figureReport() } : {}),
   };
 }
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the

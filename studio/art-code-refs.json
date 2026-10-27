@@ -179,7 +179,7 @@
    "at": [
     "game/js/postcards.js:49",
     "game/js/walk-view.js:775",
-    "game/js/walk/frame-items.js:196"
+    "game/js/walk/frame-items.js:199"
    ]
   },
   {
@@ -1594,7 +1594,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:931",
    "game/js/ui-run-kit.js:1377",
-   "game/js/walk-view-gl.js:713"
+   "game/js/walk-view-gl.js:716"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1620,8 +1620,8 @@
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
-   "game/js/walk/frame-items.js:167",
-   "game/js/walk/frame-items.js:265",
+   "game/js/walk/frame-items.js:170",
+   "game/js/walk/frame-items.js:268",
    "game/js/walk/prop-look.js:55",
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
@@ -1702,8 +1702,9 @@
    "game/js/walk-view.js:3740",
    "game/js/walk-view.js:3851",
    "game/js/walk-view.js:4172",
-   "game/js/walk/frame-items.js:315",
-   "game/js/walk/frame-items.js:426"
+   "game/js/walk/frame-items.js:318",
+   "game/js/walk/frame-items.js:433",
+   "game/js/walk/frame-items.js:441"
   ],
   "drop": [
    "game/js/boot.js:162",
@@ -1713,6 +1714,7 @@
    "game/js/map-tab.js:127"
   ],
   "eye": [
+   "game/js/figures.js:266",
    "game/js/logic/figure-pose.js:175",
    "game/js/logic/figure-pose.js:260"
   ],
@@ -1815,7 +1817,7 @@
    "game/js/battle-stage.js:2112"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:675",
+   "game/js/walk-view-gl.js:678",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
