@@ -1206,7 +1206,9 @@ setInterval(() => {
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
 function ambienceBeds(sc, E, T, pans, t) {
   const st = E || (typeof environmentState === 'function' ? environmentState(sc) : { night: 0, dusk: 0 }),
-    night = st.night || 0,
+    /* SND-8a: a room reads the place's own night (environment.raw), not the room's light (0 indoors): no daytime birds
+       through the walls at night, and the crickets outside instead */
+    night = (E && E.raw ? E.raw.night : st.night) || 0,
     day = 1 - night,
     rain = E ? E.rain : 0,
     dt = 0.2,
