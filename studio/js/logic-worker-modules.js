@@ -139,6 +139,7 @@ import '../../game/js/logic/seam-rules.js';
 import '../../game/js/logic/shaft-pick.js';
 import '../../game/js/logic/sheet-slice.js';
 import '../../game/js/logic/showcase.js';
+import '../../game/js/logic/signals.js';
 import '../../game/js/logic/sim-compare.js';
 import '../../game/js/logic/smear.js';
 import '../../game/js/logic/square-day.js';

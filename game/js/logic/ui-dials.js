@@ -4,10 +4,12 @@
    The Studio's UI section edits game/data/uiTheme.json through these dials, the way the Engine section edits
    engine.json through ENGINE_SPEC: a table of groups, each a list of dials (a key, a label, a kind and its range).
    A group's dials are either shared by light and dark (`dials`) or set per side (`sideDials`, shown side by side).
-   Only the colour and shape groups can be set for one screen (uiTheme.json overrides). The ranges are the schema's
-   (tools/test/ui-dials.test.mjs keeps them equal). Logic only: no DOM, runs in Node. */
+   Only the colour and shape groups can be set for one screen (uiTheme.json overrides); UI-11's colour code only for the
+   whole game. The ranges are the schema's (tools/test/ui-dials.test.mjs keeps them equal). Logic only: no DOM, runs
+   in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { UI_SIGNALS } from './signals.js';
 import { uiThemeCss } from './ui-theme.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -107,6 +109,13 @@ export const UI_DIALS = [
     screen: true,
     help: 'Light and dark side by side. A text colour shows how well it reads on the ground and on a surface.',
     sideDials: UI_ROLE_LABELS.map(([k, label, help]) => ({ k, label, kind: 'color', alpha: k === 'line', help })),
+  },
+  {
+    id: 'signals',
+    title: 'Colour code',
+    help: 'What colours mean, the same in every palette: a fill for tags, chips and bars on dark glass (dark text on it), and a text shade for light and for dark screens. Each screen’s colours must stay apart; the colour-blind preview shows them as people with each kind see them.',
+    dials: UI_SIGNALS.map(([id, label, , help]) => ({ k: `fill.${id}`, label, kind: 'color', help })),
+    sideDials: UI_SIGNALS.map(([id, label]) => ({ k: id, label, kind: 'color' })),
   },
   {
     id: 'surface',

@@ -14,7 +14,7 @@ import { expose } from '../test-globals.js';
 import { ZOOM_STOPS, stopsProblems } from '../hooks.js';
 import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
-import { uiThemeContrast } from './ui-theme.js';
+import { uiSignalProblems, uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
@@ -981,18 +981,24 @@ export function dataRobots(D, valid = () => true) {
 }
 // UI-1: the UI's look: the schema, then the colours read on the ground and on a solid surface (UI-3: text and quiet
 // text at 4.5:1, danger and primary at 3:1) in the defaults, every preset and every screen's override, both sides
-// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too)
+// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too); UI-11: the colour code (uiSignalProblems)
 /** UI-1: uiTheme.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataUiTheme(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
-  if (D.uiTheme && valid('uiTheme.schema.json', D.uiTheme, 'uiTheme.json'))
+  if (D.uiTheme && valid('uiTheme.schema.json', D.uiTheme, 'uiTheme.json')) {
     for (const f of uiThemeContrast(D.uiTheme))
       problem(
         'uiTheme.json',
         `${f.where || 'defaults'} ${f.side}: ${f.fg} on ${f.bg} reads at ${f.ratio.toFixed(2)}:1, under ${f.min}`
       );
+    // UI-11: the colour code: its shades on every palette, dark text on its fills, and each screen's set apart
+    for (const f of uiSignalProblems(D.uiTheme, Array.isArray(D.types) ? D.types : [])) {
+      const where = f.where ? ' (' + f.where + ')' : '';
+      problem(f.where === 'types' ? 'types.json' : 'uiTheme.json', 'colour code' + where + ': ' + f.msg);
+    }
+  }
   return out;
 }
 // camera track CAM-4b: the zoom stops are the whole game's (engine.json defaults.camera.stops): 3-5 in zoom order,

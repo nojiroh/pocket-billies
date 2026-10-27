@@ -12,6 +12,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { contrastRatio, hexRgb } from './colors.js';
+import { UI_SIGNALS, UI_SIGNAL_MIN, UI_SIGNAL_SETS, oklabDistance, signalSetColours, signalVars } from './signals.js';
 /* eslint-disable no-func-assign */
 expose({
   RING: [() => RING],
@@ -35,6 +36,8 @@ expose({
   modeVars: [() => modeVars, v => (modeVars = v)],
   // @ts-expect-error -- replaced on purpose
   overrideCss: [() => overrideCss, v => (overrideCss = v)],
+  // @ts-expect-error -- replaced on purpose
+  paletteFor: [() => paletteFor, v => (paletteFor = v)],
   plain: [() => plain],
   ptsText: [() => ptsText],
   roleVar: [() => roleVar],
@@ -54,6 +57,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   solidOver: [() => solidOver, v => (solidOver = v)],
   uiRatio: [() => uiRatio],
+  // @ts-expect-error -- replaced on purpose
+  uiSignalProblems: [() => uiSignalProblems, v => (uiSignalProblems = v)],
   // @ts-expect-error -- replaced on purpose
   uiThemeContrast: [() => uiThemeContrast, v => (uiThemeContrast = v)],
   // @ts-expect-error -- replaced on purpose
@@ -116,8 +121,15 @@ export function uiThemeLook(theme, preset) {
   return look;
 }
 
+/** UI-11: a side's palette with what it leaves to the colour code filled in: danger is the red family's text shade
+ * @param {Record<string, string>} pal @param {any} look @param {'light' | 'dark' | string} side */
+export function paletteFor(pal, look, side) {
+  const bad = (((look && look.signals) || {})[side] || {}).bad;
+  return !pal.danger && bad ? { ...pal, danger: bad } : pal;
+}
 /** one mode's declarations @param {Record<string, string>} pal @param {any} look @param {'light' | 'dark'} mode */
 export function modeVars(pal, look, mode) {
+  pal = paletteFor(pal, look, mode);
   const out = [];
   for (const [role, olds] of Object.entries(UI_ROLES)) {
     if (!pal[role]) continue;
@@ -211,6 +223,8 @@ export function sharedVars(look) {
   if (typeof mm.fullAfter === 'number') out.push(`--minimap-full-after: ${mm.fullAfter};`);
   for (const k of /** @type {const} */ (['facilities', 'trainers', 'billies']))
     if (typeof mm[k] === 'boolean') out.push(`--minimap-${k}: ${mm[k] ? 1 : 0};`);
+  // UI-11: the colour code's fills (each side's text shades: uiThemeCss)
+  if (look.signals) out.push(...signalVars(look.signals).shared);
   return out;
 }
 
@@ -481,7 +495,7 @@ export function uiThemeContrast(theme) {
     looks.push([`screen:${id}`, screenLook(uiThemeLook(theme), ov)]);
   for (const [where, look] of looks)
     for (const side of ['light', 'dark']) {
-      const pal = (look.color || {})[side] || {};
+      const pal = paletteFor((look.color || {})[side] || {}, look, side);
       for (const [fg, min] of UI_CONTRAST)
         for (const bg of ['ground', 'surface']) {
           if (!pal[fg] || !pal[bg] || (where.startsWith('preset:') && /** @type {number} */ (min) < 4.5)) continue;
@@ -489,6 +503,82 @@ export function uiThemeContrast(theme) {
           if (ratio < /** @type {number} */ (min)) out.push({ where, side, fg, bg, ratio, min });
         }
     }
+  return out;
+}
+
+/* ---------- UI-11: the colour code's checks ----------
+   The colour code (defaults.signals, logic/signals.js) is the same in every palette, so it is checked against each:
+   every text shade on its side's surface (4.5:1) and ground (3:1), dark text (the dark side's ground) on every fill
+   (4.5:1), in the defaults and every screen's colours; a preset, as in uiThemeContrast, for the shades on its
+   surface only (alpha05, the look before UI-1, has a darker dark ground; UI-12 checks the players' palettes in
+   full); and within each screen's set (UI_SIGNAL_SETS, types.json's types with the battle and the pickups) every two
+   fills apart (OKLab 5). A preset can't set its own. tools/check-data.mjs and the Studio's Check use the same list. */
+/** every problem: {where ('' the defaults, 'preset:<id>', 'screen:<id>'), rel (the dial's place in the look), msg}
+ * @param {any} theme uiTheme.json @param {any[]} [types] types.json */
+export function uiSignalProblems(theme, types = []) {
+  const sig = theme && theme.defaults && theme.defaults.signals;
+  if (!sig) return [];
+  const out = /** @type {{where: string, rel: string, msg: string}[]} */ ([]),
+    M = UI_SIGNAL_MIN,
+    name = (/** @type {string} */ id) => (UI_SIGNALS.find(s => s[0] === id) || [])[1] || id;
+  for (const id of Object.keys(theme.presets || {}))
+    if ((theme.presets[id] || {}).signals)
+      out.push({
+        where: `preset:${id}`,
+        rel: 'signals',
+        msg: 'sets its own colour code; the colour code is the same in every palette',
+      });
+  const looks = /** @type {[string, any][]} */ ([['', uiThemeLook(theme)]]);
+  for (const id of Object.keys(theme.presets || {})) looks.push([`preset:${id}`, uiThemeLook(theme, id)]);
+  for (const [id, ov] of Object.entries(theme.overrides || {}))
+    looks.push([`screen:${id}`, screenLook(uiThemeLook(theme), ov)]);
+  for (const [where, look] of looks) {
+    const C = look.color || {},
+      preset = where.startsWith('preset:');
+    for (const side of /** @type {const} */ (['light', 'dark'])) {
+      const pal = C[side] || {};
+      for (const [id, hex] of Object.entries(sig[side] || {}))
+        for (const [bg, min] of /** @type {const} */ ([
+          ['surface', M.surface],
+          ['ground', M.ground],
+        ])) {
+          if (!pal[bg] || (preset && bg !== 'surface')) continue;
+          const r = uiRatio(/** @type {string} */ (hex), pal[bg]);
+          if (r < min)
+            out.push({
+              where,
+              rel: `signals.${side}.${id}`,
+              msg: `${name(id)} (${side}) reads at ${r.toFixed(2)}:1 on the ${bg}, under ${min}:1`,
+            });
+        }
+    }
+    const ink = !preset && (C.dark || {}).ground;
+    if (ink)
+      for (const [id, hex] of Object.entries(sig.fill || {})) {
+        const r = uiRatio(ink, /** @type {string} */ (hex).slice(0, 7));
+        if (r < M.ink)
+          out.push({
+            where,
+            rel: `signals.fill.${id}`,
+            msg: `dark text (the dark ground) on ${name(id)}'s fill reads at ${r.toFixed(2)}:1, under ${M.ink}:1`,
+          });
+      }
+  }
+  for (const [set, S] of Object.entries(UI_SIGNAL_SETS)) {
+    const list = signalSetColours(sig, set, types);
+    for (let i = 0; i < list.length; i++)
+      for (let j = i + 1; j < list.length; j++) {
+        const d = oklabDistance(list[i][1], list[j][1]);
+        if (d >= M.distance) continue;
+        // the dial to open: the first of the two that is the colour code's (two types: types.json's own)
+        const own = [list[i][0], list[j][0]].find(k => !k.startsWith('type '));
+        out.push({
+          where: own ? '' : 'types',
+          rel: own ? `signals.fill.${own}` : '',
+          msg: `${S.name}: ${name(list[i][0])} and ${name(list[j][0])} are ${d.toFixed(1)} apart, under ${M.distance} (OKLab)`,
+        });
+      }
+  }
   return out;
 }
 
@@ -500,8 +590,9 @@ export function uiThemeCss(theme, o = {}) {
   const pal = look.color || {};
   const block = (/** @type {string} */ sel, /** @type {string[]} */ lines, ind = '') =>
     lines.length ? `${ind}${sel} {\n${lines.map(l => `${ind}  ${l}`).join('\n')}\n${ind}}\n` : '';
-  const light = [...sharedVars(look), ...modeVars(pal.light || {}, look, 'light')];
-  const dark = modeVars(pal.dark || {}, look, 'dark');
+  const sig = signalVars(look.signals);
+  const light = [...sharedVars(look), ...modeVars(pal.light || {}, look, 'light'), ...sig.light];
+  const dark = [...modeVars(pal.dark || {}, look, 'dark'), ...sig.dark];
   let css = block(':root', light);
   if (dark.length)
     css +=

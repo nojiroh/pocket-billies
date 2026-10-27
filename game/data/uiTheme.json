@@ -89,7 +89,60 @@
   "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},
   "type": {"voice":"Jersey 15","prose":"Oxanium","voiceScale":1.18,"scale":1,"lineHeight":1.5},
   "motion": {"fast":140,"base":240,"slow":420,"stagger":35,"easeOut":[0.2,0.8,0.2,1],"easeIn":[0.4,0,1,1],"spring":[0.3,1.6,0.5,1]},
-  "minimap": {"span":44,"compactAfter":2500,"fullAfter":700,"facilities":true,"trainers":true,"billies":true}
+  "minimap": {"span":44,"compactAfter":2500,"fullAfter":700,"facilities":true,"trainers":true,"billies":true},
+  "signals": {
+   "fill": {
+    "good": "#40D9C1",
+    "bad": "#EA5974",
+    "caution": "#FAAB3F",
+    "value": "#FACA59",
+    "special": "#AE7EE2",
+    "growth": "#82D7FF",
+    "machine": "#99AEBB",
+    "bio": "#DA5AB6",
+    "brn": "#FF8F49",
+    "par": "#ECE95C",
+    "slp": "#B3B3DD",
+    "common": "#A5ACB2",
+    "uncommon": "#4AB962",
+    "rare": "#629BFF",
+    "mythical": "#F77036"
+   },
+   "light": {
+    "good": "#007E6E",
+    "bad": "#BD2C42",
+    "caution": "#9A5505",
+    "value": "#855E11",
+    "special": "#7847A6",
+    "growth": "#1774A4",
+    "machine": "#546673",
+    "bio": "#A73189",
+    "brn": "#AF4803",
+    "par": "#756700",
+    "slp": "#656390",
+    "common": "#5F6469",
+    "uncommon": "#02782E",
+    "rare": "#2F5EB9",
+    "mythical": "#AA3700"
+   },
+   "dark": {
+    "good": "#57D6C0",
+    "bad": "#FF8A9F",
+    "caution": "#F5AD53",
+    "value": "#F6CB69",
+    "special": "#CFA3FF",
+    "growth": "#8BD6FA",
+    "machine": "#ABBECA",
+    "bio": "#FF8BDD",
+    "brn": "#FF9D61",
+    "par": "#EBE86F",
+    "slp": "#B6B6DD",
+    "common": "#B9BEC4",
+    "uncommon": "#7CD68B",
+    "rare": "#8ABDFF",
+    "mythical": "#FF9A6B"
+   }
+  }
  },
  "presets": {
   "alpha05": {

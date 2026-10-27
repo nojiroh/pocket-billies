@@ -2348,6 +2348,31 @@ export interface UiLook {
     easeIn?: UiEase;
     spring?: UiEase;
   };
+  /** UI-11: the colour code; only the defaults set it */
+  signals?: UiSignals;
+}
+/** UI-11: the colour code's ids (logic/signals.js UI_SIGNALS): the eight families, the three statuses, the rarity tiers */
+export type UiSignalId =
+  | 'good'
+  | 'bad'
+  | 'caution'
+  | 'value'
+  | 'special'
+  | 'growth'
+  | 'machine'
+  | 'bio'
+  | 'brn'
+  | 'par'
+  | 'slp'
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'mythical';
+/** UI-11: the colour code, the same in every palette: a fill (--sig-<id>) and a text shade per side (--sig-<id>-text) */
+export interface UiSignals {
+  fill?: Partial<Record<UiSignalId, string>>;
+  light?: Partial<Record<UiSignalId, string>>;
+  dark?: Partial<Record<UiSignalId, string>>;
 }
 export interface UiTheme {
   version: 2;
