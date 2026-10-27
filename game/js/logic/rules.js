@@ -43,8 +43,6 @@ import {
 import { random } from '../util.js';
 import {
   COATS,
-  EGGS,
-  EGG_TIERS,
   FACTIONS,
   FIELD_MOVES,
   GENES,
@@ -104,14 +102,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   addBilly: [() => addBilly, v => (addBilly = v)],
   // @ts-expect-error -- replaced on purpose
-  addEgg: [() => addEgg, v => (addEgg = v)],
-  // @ts-expect-error -- replaced on purpose
   addPart: [() => addPart, v => (addPart = v)],
   // @ts-expect-error -- replaced on purpose
   addWalked: [() => addWalked, v => ((addWalked = v), provide({ addWalked }))],
   allBillies: [() => allBillies],
-  // @ts-expect-error -- replaced on purpose
-  autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyAug: [() => billyAug],
   billyBuild: [() => billyBuild],
   // @ts-expect-error -- replaced on purpose
@@ -150,8 +144,6 @@ expose({
   distanceText: [() => distanceText],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
-  eggKm: [() => eggKm],
-  eggSlotCount: [() => eggSlotCount],
   // @ts-expect-error -- replaced on purpose
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
@@ -183,9 +175,6 @@ expose({
   geneData: [() => geneData],
   // @ts-expect-error -- replaced on purpose
   geneLimit: [() => geneLimit, v => ((geneLimit = v), provide({ geneLimit }))],
-  // @ts-expect-error -- replaced on purpose
-  hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
-  hatchable: [() => hatchable],
   // @ts-expect-error -- replaced on purpose
   healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
@@ -243,6 +232,8 @@ expose({
   spawn: [() => spawn, v => (spawn = v)],
   // @ts-expect-error -- replaced on purpose
   spawnBot: [() => spawnBot, v => (spawnBot = v)],
+  // @ts-expect-error -- replaced on purpose
+  spawnMyth: [() => spawnMyth, v => (spawnMyth = v)],
   // @ts-expect-error -- replaced on purpose
   spawnRare: [() => spawnRare, v => (spawnRare = v)],
   speciesStep: [() => speciesStep],
@@ -1154,6 +1145,11 @@ export function encountersHere(node = saveData.trip.node) {
 export const wildPrize = lvl => Math.max(0, Math.round(lvl * (RULES.encounters.prizePerLevel || 0)));
 /* a battled (or fled-from) encounter leaves the map it was on; a map that was full starts its minute from now */
 export function dropEncounter(id) {
+  /* RO-3f: a mythical battled or fled from is met: it does not come back this run */
+  const M = RULES.run && RULES.run.wild.rare && RULES.run.wild.rare.myth;
+  if (M && saveData.run)
+    for (const w of Object.values(saveData.wild || {}))
+      if (w.list.some(q => q.id === id && M.list.includes(q.sp))) saveData.run.myth = 1;
   for (const [k, w] of Object.entries(saveData.wild || {})) {
     const L = LOCATION_BY_ID[k],
       full = !!L && w.list.length >= encounterStock(L.node);
@@ -1166,7 +1162,7 @@ export function dropEncounter(id) {
  * @param {number} node @param {() => number} rnd */
 export function spawnRare(node, rnd) {
   const P = encounterPoolHere(node),
-    q = spawn(false, pickWeighted(wildRareList(P.list), rnd), node, rnd);
+    q = spawn(false, spawnMyth(node) || pickWeighted(wildRareList(P.list), rnd), node, rnd);
   q.lvl = Math.min(100, q.lvl + (RULES.run.wild.rare ? RULES.run.wild.rare.up : 0));
   q.rare = 1;
   return q;
@@ -1198,6 +1194,19 @@ export function spawnBot(where, rnd) {
     return q;
   }
   return null;
+}
+/** RO-3f: now and then a mythical (rules.json run.wild.rare.myth: its chance and list) stands in for a run route's
+ * rarer one, in any biome and past the regional dex; never while one is waiting in a run place, nor once one was met
+ * (run.myth). Its roll has a stream of its own (the node's 'myth'), so every other draw stays as it was
+ * @param {number} node @returns {string | null} the species, or none */
+export function spawnMyth(node) {
+  const M = RULES.run.wild.rare && RULES.run.wild.rare.myth,
+    run = saveData.run,
+    L = LOCATIONS[node];
+  if (!M || !M.list.length || !run || run.myth || !L || L.runNode == null) return null;
+  if (Object.values(saveData.wild || {}).some(w => w.list.some(q => M.list.includes(q.sp)))) return null;
+  const rnd = rngFn(runNodeSeed(run.seed, L.runNode), 'myth');
+  return rnd() < M.chance ? M.list[Math.floor(rnd() * M.list.length)] : null;
 }
 /* RL-2: every outcome draw (species, level, sizes, coat, Alpha) comes from rnd; a run passes its own stream */
 export function spawn(gentle, force, node = saveData.trip.node, rnd = random) {
@@ -1266,40 +1275,3 @@ export function addWalked(m) {
 export const metresToKm = m => (m / 1000).toFixed(1);
 /* a walking distance for people: "80 m", "850 m", "1.2 km" */
 export const distanceText = m => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${metresToKm(m)} km`);
-/* an egg's name comes from the distance it needs ("2 km egg"); its tier id is only a key */
-export const eggKm = tier => Math.round((EGGS[tier] ? EGGS[tier].need : 0) / 100) / 10;
-/* ---------- Seed Rounds ---------- */
-export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
-export function autoSlot() {
-  for (let sl = 0; sl < eggSlotCount(); sl++) {
-    if (saveData.eggs.some(e => e.slot === sl)) continue;
-    const e = saveData.eggs.find(e => e.slot == null);
-    if (e) e.slot = sl;
-  }
-}
-export function addEgg(tier) {
-  if (!EGGS[tier]) return false;
-  if (saveData.eggs.length >= RULES.eggs.capacity) {
-    toast('You’re carrying too many eggs. Hatch a few first.');
-    return false;
-  }
-  saveData.eggs.push({ id: newUid(), tier, prog: 0, slot: null });
-  autoSlot();
-  return true;
-}
-export const hatchable = () => saveData.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
-export function hatchEgg(e) {
-  if (typeof jingle === 'function') jingle(JINGLES.hatch);
-  const T = EGGS[e.tier],
-    R = RULES.eggs,
-    top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
-  let sp = pickWeighted(T.list);
-  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) sp = R.mythSpecies;
-  const m = makeBilly(sp, T.lv, { wild: true, coat: coatRoll(COATS, 'egg', random) });
-  saveData.eggs = saveData.eggs.filter(x => x !== e);
-  saveData.hatched = (saveData.hatched || 0) + 1;
-  autoSlot();
-  const where = addBilly(m);
-  save();
-  return { m, where };
-}

@@ -1,11 +1,12 @@
 {
  "landing": {"name":"Landing","engine":"scene","layout":true},
- "route": {"name":"Route","engine":"scene","weight":4,"layout":true},
- "town": {"name":"Town","engine":"scene","weight":1,"shop":true},
+ "route": {"name":"Route","engine":"scene","weight":4,"layout":true,"routeLike":true},
+ "town": {"name":"Town","engine":"scene","shop":true},
  "event": {"name":"Waystation","engine":"scene","weight":2,"mark":"event"},
  "stall": {"name":"Stall","engine":"scene","weight":1,"mark":"shop","shop":true},
- "miniboss": {"name":"Mini-boss","engine":"scene","layout":true},
+ "miniboss": {"name":"Mini-boss","engine":"scene","layout":true,"routeLike":true},
  "boss": {"name":"Boss","engine":"scene","layout":true},
- "rival": {"name":"Rival","place":"Route","engine":"scene","layout":true},
- "scrapyard": {"name":"Scrapyard","engine":"scene","layout":true,"chance":0.12,"fromRow":3}
+ "rival": {"name":"Rival","place":"Route","engine":"scene","layout":true,"routeLike":true},
+ "ghost": {"name":"Friend's ghost","place":"Route","engine":"scene","layout":true,"mark":"rival","routeLike":true},
+ "scrapyard": {"name":"Scrapyard","engine":"scene","layout":true,"chance":0.12,"fromRow":3,"routeLike":true}
 }

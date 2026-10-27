@@ -8,7 +8,7 @@
      (rngFrom(its node's seed, 'shop|' + day)), so a reload or another device sees the same stock;
    - the run's foes: a mini-boss on each mini-boss node and the boss, each a leader (the trainers with miniboss: true)
      drawn from the node's stream, never one twice in a run, its team's levels set over its row's top wild level
-     (run.foes); a copy with its own id, blocking the way north (mini-bosses), with nothing of the hub's (no hub
+     (run.foes); a copy with its own id, blocking the way east (mini-bosses), with nothing of the hub's (no hub
      script, badge, egg or story conditions; RL-S1: its script is a word picked by the run history, then the battle);
    - a battle's seed (its node's seed and its number in the run), the payout screen's rows, what may be kept.
    Numbers come in as arguments; logic only: no DOM, no Date, no Math.random (tools/test/run-loop.test.mjs). */
@@ -20,7 +20,7 @@ import { BANTER, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-dat
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural, speciesStep } from './rules.js';
-import { RIVAL_TRAINER, rivalTeam } from './rival.js';
+import { RIVAL_TRAINER, ghostTeam, rivalTeam } from './rival.js';
 import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
@@ -206,13 +206,14 @@ export const runFoeId = i => `run_${i}_foe`;
  * The run's foes, by id: on each mini-boss node and the boss's, a copy of a leader drawn from the node's stream
  * ('foe'), no leader twice in a run (nodes in order); RL-R1: a run with a region has its leaders (run.region.leaders,
  * picked by its types), in node order, while there are any; RL-R2: a side area's mini-boss or boss its own leader. Its levels: its row's top wild level + run.foes[type].up for its
- * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way north and fights a
+ * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way east and fights a
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
  * RL-S2: on each rival node, Blake (trainers/blake.json's name and words) with his team for that meeting
  * (logic/rival.js rivalTeam: against run.rival.lead, one meeting more than the last), at its row's top wild level +
  * run.rival.up; a reward pick after it (battle-rewards.js), never blocking.
  * @param {Run} run
  * @param {{ leaders: any[], rival?: import('../../types/game-data').RivalRules, rules: { foes: Record<'miniboss' | 'boss', { up: number, reward: number }>, rival?: import('../../types/game-data').RivalRules,
+ *   ghost?: import('../../types/game-data').GhostRules,
  *   wild: { lv: [number, number], perRow: number } } }} data leaders: the trainer entries with miniboss: true
  * @returns {Record<string, any>}
  */
@@ -228,6 +229,7 @@ export function runFoes(run, data) {
   /* RL-S2: Blake on each rival node (logic/rival.js), his team growing meeting by meeting */
   const B = TRAINERS[RIVAL_TRAINER],
     RV = data.rules.rival,
+    GH = data.rules.ghost,
     lead = run.rival && SPECIES[run.rival.lead] ? SPECIES[run.rival.lead].types || [] : [];
   let met = run.rival ? run.rival.past : 0;
   map.nodes.forEach((node, i) => {
@@ -262,6 +264,28 @@ export function runFoes(run, data) {
           ...(Object.values(BANTER).some(L => L.who === 'rival') ? ['pick rival'] : []),
           `battle ${runFoeId(i)}`,
         ],
+      };
+      return;
+    }
+    /* ON-2: a friend's ghost team (run.ghost, logic/run-record.js): their last run's party, its strongest at the
+       row's top wild level + run.ghost.up, the others as far below as they were */
+    if (node.type === 'ghost' && run.ghost && GH) {
+      const G = run.ghost;
+      out[runFoeId(i)] = {
+        id: runFoeId(i),
+        name: G.n,
+        who: GH.who,
+        battleStage: 'grass',
+        win: `“GG! My ghost will be back stronger.”`,
+        lose: `“Not bad for a ghost, right?”`,
+        reward: GH.reward,
+        team: ghostTeam(G.party, runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + GH.up),
+        node: runWorldNode(i),
+        blocks: false,
+        runFoe: 'ghost',
+        runNode: i,
+        from: 'ghost',
+        script: [`battle ${runFoeId(i)}`],
       };
       return;
     }

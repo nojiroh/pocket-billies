@@ -646,7 +646,7 @@ export function planBack() {
 function needsTarget(mid) {
   const M = MOVES[mid],
     fx = M.fx || {};
-  const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe;
+  const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes;
   return onFoe && !fx.spread && liveActors(1).length > 1;
 }
 export function pickMove(mid) {

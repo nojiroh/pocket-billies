@@ -111,6 +111,39 @@ diff has no view of them: the opening cutscene, the postcard pop-up, the airship
 photo mode, the workshop and fishing; and the old shared pieces (.pb, .pbar, .px, .glass, .sec-h, .seg, .tpanel,
 .fchip, .note) stay in the old layers for UI-6 to fold into the kit.
 
+UI-6a found (written up from its commits in UI-6b; the session left no HANDOFF entry or row): of the old layers' rules, 125
+went to the top of their screen files and 51 stayed, each one a rule a move would have put on the other side of a rule it
+fights (a cascade check over every pair whose order changed); the parts the roguelite barely shows got a file each
+(airship, postcard, controls, fishing, photo-mode, workshop, opening-old, evolution, full-test) and style-diff four views
+for them (37 in all); what was left became base.css (the page: fonts, old variables, reset, the world behind the
+screens, reduced motion; 98 rules) and parts.css (the old shared parts not on the kit: .px, .pb, .chip, .pbar, .seg,
+.sec-h, .sheet, .pickrow...; 225 rules). The ratchet (`UI_LINT_CEILING` in logic/ui-lint.js) counts the whole game, so
+two branches each under a ceiling can merge over it (it happened twice on 2026-10-22: lower the value or set the
+ceiling to main's count). The blur budget and the accessibility pass were not done.
+
+UI-6b found (read at 1bf2f45, 2026-10-26): 380 of the 995 raw spacing values, 43 radii and 14 times already equalled a
+token, so they became it with no change on screen (style-diff 29 of 36 the same, the other 7 differing only by timing:
+the map's fade layer, the title's live class, the battle canvases' size); the lint counted @font-face's family names
+as raw fonts (8). The style diff's four sheet views had failed since UI-8 (they tapped a Billie card the Walk screen
+no longer has) and it compared some screens before the place had faded in. Blur, measured by smoke's phone flow: walk
+3, map 10, team 2, guide 3, profile 2, shop 5, battle 3; on the 36 style-diff screens up to 14 (heal pick, bag 12): the
+count includes the screen under a sheet. The game's tap rule is 40 px (06-4, the quick check), the Studio's overlay 44
+px; small icons carry an invisible 7 px margin (menus.css), so most of the overlay's marks pass the game's rule. Its
+contrast overlay misreads the kit's clipped pseudo-element fills (white text on dark called 1.9:1); a pixel-based
+reading is closer but still muddled by glass over the moving scene and by entrances: findings were judged on pictures.
+Real ones fixed: the Guide's quiet tabs sat on the bare scene (v05's 7 % tint as the track: 2.2:1 light, 1.4:1 dark),
+and every active segment was v05's white under dark mode's light text (1.03:1). The kit's square-corner !important
+still has work: v05's !important corners moved to parts.css in UI-6a.
+
+UI-9a found (read at 066f970e, 2026-10-27): parts.css loads before all 27 screen files and the kit after them, so a move
+into the kit hands every fight a screen rule won back to the part: tools/css-order.mjs (new) counted 619 for the whole
+file, and nearly every one of its 48 !important beat a real screen rule. A tenth of its declarations were dead (beaten
+by a later one on the same selector). The `.badge` rules never reached anything: the game's only `.badge` is in
+`<pb-nav-bar>`'s shadow tree, and the unused-CSS check counts words in JS, so it can't see that. An !important in a
+keyframe is ignored, so v05Grow (the Billie sheet's stat bars) never ran. The owner's answers: UI-9 split (UI-9a
+shrinks parts.css in place, UI-9b the rest and the snapping); tap targets stay 40 px (the Studio overlay now marks
+under 40, `--tap` stays 44 px as the size real controls use).
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 `--t-*` colours are the pre-roguelite game's (UI-5 swapped the bar itself).
@@ -187,10 +220,14 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-3b (done 2026-10-21) | Studio UI section, tools | real screens from fixtures beside the gallery (Team, Bag, a battle, the dialogue box; payout and run chip once they exist); inspect (tap a part: its component and tokens) and Ctrl+L the reverse; overlays (tap targets under 44 px, contrast failures, glass layers); before/after shots; the rule check (ui-lint as a browser-safe module with lines) in the Studio's Check with Show me | Studio only | its check steps pass |
 | UI-4 (done 2026-10-21) | Run parts | day and deadline chip, forecast icon row, node markers, the four currency chips, the relic and keep-one card, payout rows with their motion, the hub/run bottom bar | gallery only | RL-7 and RL-8 can use them with no CSS of their own |
 | UI-5 (done 2026-10-22) | Every screen onto the kit | after the RL-8 play test: every screen, including ones the roguelite replaces, moves out of ui.js and the old CSS, one screen per commit, moves only (absorbs 06-5) | every remaining screen | each moved screen passes its UI test; the unused-CSS list shrinks |
-| UI-6 | Old layers gone | style, polish, screens and v05 emptied and deleted; lint and the blur budget enforced (fail when raw values rise); accessibility pass; then `phase-06-done` and `ui-6-done` | none intended | ui-lint at or near zero; full quick check green apart from known reds |
+| UI-6a (done 2026-10-22, PR #112; written up 2026-10-26) | Old layers gone | style, polish, screens, v05 and battle.css deleted: screen rules to their screen files, legacy parts to a file each, the rest to base.css and parts.css; style-diff views for the legacy parts; the ui-lint ratchet in `npm run lint` | none | style-diff 37 of 37 the same; lint fails when a raw count rises |
+| UI-6b (done 2026-10-26) | Lint down, blur and accessibility | raw values that equal a token became the token (no change on screen); the blur budget enforced per screen; the accessibility pass (tap targets, contrast, names); then `phase-06-done` and `ui-6-done` | the Guide's tabs, five controls up to 40 px | ui-lint ceilings lowered; smoke and the tap-target step green, each seen failing on a planted fault |
+| UI-9a (done 2026-10-27) | parts.css shrunk in place | split from UI-9 by the owner: tools/css-order.mjs; parts.css's dead rules, 41 of its 48 `!important` (each fight checked), the type pill into ui-kit.css, its keyframes into motion.css; the tap rule decided: 40 px, the Studio overlay too | none | css-order and style-diff the same at every CSS commit; ui-lint !important 194 -> 153 |
+| UI-9b (proposed) | Off the scale, the rest of parts.css | parts.css's remaining families (.px, .pb, .sheet, .pbar, .seg, .sec-h, .note, .mon/.row) into the kit as UI-9a did (remove what is always beaten, then move) and parts.css deleted; the off-scale values (spacing 6/10/3/14 px..., radii 10/6/8 px...) snapped one screen per commit: nearest step, ties up (6->8, 10->12, 14->16, 3->4), 1-2 px kept as hairlines (the lint stops counting them) | 1-2 px per screen | ui-lint near zero for space and radius; phone check by the owner |
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
 | UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
 | UI-7c (done 2026-10-23) | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |
+| UI-8 (built 2026-10-26, phone check next) | Bottom bar with the minimap | Map becomes the minimap tile in the middle of the bar, two buttons on each side (Team, Guide; Bag, Perks or Lab); the bar compact while walking; what sits above the bar on `--nav-h`; the minimap's dials in the Studio | the new bar | fast check's bar step (team,guide,map,bag,lab); gallery run-hud remade; phone check by the owner |
 
 UI-2 is the biggest; if it runs long, split it: shapes, edge line, wipes and battle cards first, then icons, glyphs,
 portraits and the bot plate. About 6-8 sessions of Claude's working time, plus the owner's phone checks after UI-2,
@@ -240,6 +277,32 @@ starts a battle (Battle it now, As an Alpha, trainers, Clear encounters, Lose th
 says so. Phase and track codes went from labels and notes; test scene names lose a bracketed phase note in the menu
 only (the map data keeps it for the Studio). The quick check's new Debug menu step checks it.
 Found while reading, not changed: the trainer list still offers the legacy leaders (Rocco and the rest).
+
+## UI-8: the bottom bar with the minimap (owner's brief and answers, 2026-10-26)
+The owner asked for a new bottom bar: a big, roughly square map in the middle that is also a minimap, two buttons on
+each side, under each other, in the current look. Online research (thumb reach: Hoober's field study; Roblox's
+mobile UI guide: the bottom corners belong to movement; minimap rotation and shape surveys) and a clickable mockup (a
+private Design canvas the owner holds, "Bottom bar + minimap mockup") came first. The owner's answers: the Guide is the
+fourth button (both sets), north up, trainers and wild Billies shown, facilities in the hub and towns as one small icon
+on the roof (no labels, never on plain houses), no doors, exits or next-node arrow, and the bar compact while walking.
+
+As built (branch `ccr-30c007a6-eol40p`; `track/ui` didn't exist):
+- `<pb-nav-bar>` (ui-run-kit.js): the set's Map tab is a raised tile (card family: four cuts, the edge line, gold
+  edge and notch when open) holding slot "map"; the rest go two to a side. The outline is the tab family's stepped up
+  round the tile with 45° shoulders (`navStep`, clip-path polygons on `--rise` and `--tw`). `compact`: a 72 px tile,
+  icon-only buttons side by side. A container query keeps the labels on a 320 px phone.
+- js/minimap.js: a canvas in that slot, drawn about five times a second on frame-scheduler.js: the ground by kind
+  painted once per view at a pixel a metre (tiles' row 0 is north) and scaled up unsmoothed, the roofs, facility
+  icons by the door's act (`p.act || M.act`), trainers not beaten (`walkView.npcAt`, TRAINERS, flags), the wild ones
+  placed (`walkRenderer.encPos`) and you (a chevron by `pl.dir`). Indoors the room's floor alone. Colours are the
+  theme's roles mixed (no colours of its own: the lint's ceilings hold). Skips a frame a battle or a cutscene borrows.
+- `--nav-h` (shell.css): the dialogue box, the hint and Actions, sticky rows, the map's controls, the d-pad and the
+  debug button clear the bar: 172 px with it, 102 px compact, the old 96 px with no bar.
+- uiTheme.json `minimap` (schema, defaults, the Studio's Minimap group): metres across (44), compact after 2.5 s of
+  walking, full 0.7 s after stopping, and which marks show; written as `--minimap-*`, read where the canvas sits.
+
+Left for later: the full quick check's pictures (the bar changed on purpose); a minimap step in the fast check beyond
+the bar's tabs; the owner's phone check (the compact timing, the icon size, the frame cost on a phone).
 
 ## Risks
 - Clip-path shapes plus blur on many surfaces can cost frames on phones: measure with the Graphics bench after UI-2.

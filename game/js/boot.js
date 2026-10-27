@@ -42,8 +42,8 @@ import { ART_CACHE, EGG_ART, ICON_ATLAS, PYRAMID_ART, artBoot, artImg, uiIconURL
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
-import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
-import { gpuState, webgl2Supported } from './engine/webgl.js';
+import { mapArtPaths, mapById, walkView } from './walk-view.js';
+import { gpuState, pendingPrograms, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { startTownRise } from './walk/sprites.js';
@@ -52,7 +52,7 @@ import { worldBowlReset } from './world-bowl.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
-import { runWorld, runWorldMake } from './run-world.js';
+import { runWorld, runWorldAhead, runWorldMake } from './run-world.js';
 import { runLoadBegin, runLoadShow } from './run-loading.js';
 import { runResume, runTakeOff } from './run.js';
 import { labMilestones } from './lab-board.js';
@@ -68,6 +68,7 @@ import { updateCheckStart } from './update-check.js';
 expose({
   ART_VERSION_KEY: [() => ART_VERSION_KEY],
   LOADER_ISLAND_COLORS: [() => LOADER_ISLAND_COLORS],
+  LOADER_ISLAND_WORKER_MAIN: [() => LOADER_ISLAND_WORKER_MAIN],
   LOAD_PHASES: [() => LOAD_PHASES],
   LOAD_TIPS: [() => LOAD_TIPS],
   TEST_RUN: [() => TEST_RUN],
@@ -84,8 +85,10 @@ expose({
   loaderIslandDraw: [() => loaderIslandDraw, v => (loaderIslandDraw = v)],
   loaderIslandInit: [() => loaderIslandInit, v => (loaderIslandInit = v)],
   loaderIslandLoop: [() => loaderIslandLoop, v => (loaderIslandLoop = v)],
+  loaderIslandProgress: [() => loaderIslandProgress, v => (loaderIslandProgress = v)],
   loaderIslandRandom: [() => loaderIslandRandom, v => (loaderIslandRandom = v)],
   loaderIslandThing: [() => loaderIslandThing, v => (loaderIslandThing = v)],
+  loaderIslandWorker: [() => loaderIslandWorker, v => (loaderIslandWorker = v)],
   loaderLines: [() => loaderLines, v => (loaderLines = v)],
   loaderSet: [() => loaderSet, v => (loaderSet = v)],
   loaderTip: [() => loaderTip, v => (loaderTip = v)],
@@ -93,6 +96,7 @@ expose({
   mountLoaderTown: [() => mountLoaderTown, v => (mountLoaderTown = v)],
   noWebGL: [() => noWebGL, v => ((noWebGL = v), provide({ noWebGL }))],
   preloadAll: [() => preloadAll, v => (preloadAll = v)],
+  programsWarmup: [() => programsWarmup, v => (programsWarmup = v)],
   runTestStart: [() => runTestStart, v => (runTestStart = v)],
   studioChannel: [() => studioChannel, v => (studioChannel = v)],
   studioDraftReady: [() => studioDraftReady, v => (studioDraftReady = v)],
@@ -201,18 +205,9 @@ function loadList() {
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) add(rigAtlas(sp, v), 1);
   }
-  try {
-    const D = walkData();
-    for (const id of Object.keys(D.scenes)) mapArtPaths(D.scenes[id]).forEach(p => add(p, 3));
-    for (const P of Object.values(D.sc.props)) {
-      add(P.img, 3);
-      if (P.blades) add(P.blades.img, 3);
-      for (const h of P.hands || []) add(h.img, 3);
-    }
-    for (const T of Object.values(D.sc.terrains)) add(T.tile, 3);
-  } catch (e) {
-    console.error(e);
-  }
+  /* LD-3 (the owner, 2026-10-27: pictures per place): no map's, prop's or ground's pictures here. A place's come with
+     it (walk-view.js prepareMap, the seams' next place, a run's landing) and the title town's in the first phase
+     (townPaths); this loaded every picture of all 43 maps, test maps too, before the title */
   try {
     personArtPaths().forEach(p => add(p, 0));
   } catch (e) {
@@ -228,6 +223,7 @@ function loaderSet(done, total, phase) {
   const f = total ? done / total : 0,
     pct = Math.round(f * 100);
   loadingScreen.f = Math.max(loadingScreen.f, f);
+  loaderIslandProgress();
   const bar = el.querySelector('.ld-bar i');
   if (bar) bar.style.width = pct + '%';
   if (loadingScreen.town) {
@@ -242,7 +238,7 @@ function loaderSet(done, total, phase) {
    Drawn by hand on a 256 x 168 canvas (no art is loaded yet): isometric ground tiles drop in from the middle outward
    as the files come in, then trees, little houses, lamps and an airship station whose ship bobs at its mast. Each
    thing waits for its share of the loading; when the load is done the whole island is there. */
-const loaderIsland = { cv: null, x: null, tiles: [], things: [], raf: 0, last: 0 };
+const loaderIsland = { cv: null, x: null, tiles: [], things: [], raf: 0, last: 0, w: null };
 function loaderIslandRandom(i, k) {
   const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
   return v - Math.floor(v);
@@ -251,7 +247,6 @@ function loaderIslandInit() {
   const cv = loadingScreen.el && loadingScreen.el.querySelector('.ld-world');
   if (!cv || !cv.getContext) return;
   loaderIsland.cv = cv;
-  loaderIsland.x = cv.getContext('2d');
   const T = [];
   for (let i = -6; i <= 6; i++)
     for (let j = -6; j <= 6; j++) {
@@ -295,7 +290,54 @@ function loaderIslandInit() {
   TH.forEach(o => (o.at = 0));
   loaderIsland.things = TH;
   loaderIsland.t0 = performance.now();
+  loaderIsland.w = loaderIslandWorker(cv);
+  if (loaderIsland.w) return;
+  loaderIsland.x = cv.getContext('2d');
   loaderIslandLoop();
+}
+/* LD-3: the island is drawn on a helper thread where the browser allows it (OffscreenCanvas): the very same drawing
+   code, sent as its source text, keeps moving while the page is busy loading (a stall here froze it). Elsewhere, or
+   when that fails before the canvas is handed over, it is drawn here as before. The loading's progress is posted */
+function loaderIslandWorker(cv) {
+  if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined' || !cv.transferControlToOffscreen)
+    return null;
+  let W = null;
+  try {
+    const src = [
+      'const loadingScreen = { f: 0 };',
+      'const loaderIsland = { x: null, tiles: [], things: [], t0: 0, last: 0, stop: 0 };',
+      'const LOADER_ISLAND_COLORS = ' + JSON.stringify(LOADER_ISLAND_COLORS) + ';',
+      loaderIslandRandom.toString(),
+      loaderIslandDraw.toString(),
+      loaderIslandThing.toString(),
+      LOADER_ISLAND_WORKER_MAIN,
+    ].join('\n');
+    W = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    const off = cv.transferControlToOffscreen();
+    W.postMessage({ cv: off, tiles: loaderIsland.tiles, things: loaderIsland.things, f: loadingScreen.f }, [off]);
+    return W;
+  } catch (e) {
+    if (W) W.terminate();
+    return null;
+  }
+}
+/* the helper thread's own loop: a frame every 32 ms as here (requestAnimationFrame where a worker has it) */
+const LOADER_ISLAND_WORKER_MAIN = `const raf = self.requestAnimationFrame ? f => self.requestAnimationFrame(f) : f => setTimeout(() => f(performance.now()), 16);
+const loop = () => {
+  if (loaderIsland.stop) return;
+  raf(loop);
+  const now = performance.now();
+  if (now - loaderIsland.last < 32) return;
+  loaderIsland.last = now;
+  try { loaderIslandDraw(now); } catch (e) { loaderIsland.stop = 1; }
+};
+onmessage = e => {
+  const m = e.data;
+  if (m.f != null) loadingScreen.f = m.f;
+  if (m.cv) { loaderIsland.x = m.cv.getContext('2d'); loaderIsland.tiles = m.tiles; loaderIsland.things = m.things; loaderIsland.t0 = performance.now(); loop(); }
+};`;
+function loaderIslandProgress() {
+  if (loaderIsland.w) loaderIsland.w.postMessage({ f: loadingScreen.f });
 }
 const LOADER_ISLAND_COLORS = {
   grass: ['#7cc35a', '#5a9a47', '#467a3a'],
@@ -594,6 +636,7 @@ async function preloadAll(onTown) {
       files: byPh[ph].length,
       ms: Math.round(performance.now() - pt),
     });
+    if (typeof debugLog !== 'undefined') debugLog.stage('pictures: ' + phT[phT.length - 1].phase);
     if (ph === 0 && onTown && TP.size)
       try {
         onTown();
@@ -662,6 +705,7 @@ async function bootLoad() {
   }
   clearInterval(loadingScreen.tipT);
   loadingScreen.f = 1;
+  loaderIslandProgress();
   loaderIsland.doneAt = performance.now();
   loadingScreen.el.classList.add('ready');
   loadingScreen.el.querySelector('.ld-phase').textContent = 'Ready';
@@ -684,7 +728,26 @@ async function walkViewWarmup() {
     if (ok || !document.getElementById('dio')) break;
     await new Promise(r => setTimeout(r, 60));
   }
-  if (typeof debugLog !== 'undefined') debugLog.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
+  if (typeof debugLog !== 'undefined') {
+    debugLog.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
+    debugLog.stage('scene ready');
+  }
+}
+/* LD-2: wait (at most 8 s) until every program started in the background has compiled, so none finishes in play: the
+   walk view finishes them 12 ms a frame while the loader is up */
+async function programsWarmup() {
+  if (typeof pendingPrograms !== 'function' || !pendingPrograms()) return;
+  const t0 = performance.now(),
+    n0 = pendingPrograms();
+  if (loadingScreen.el) loadingScreen.el.querySelector('.ld-phase').textContent = 'Setting the scene';
+  while (pendingPrograms() && performance.now() - t0 < 8000) await new Promise(r => setTimeout(r, 60));
+  if (typeof debugLog !== 'undefined') {
+    debugLog.add(
+      'load',
+      `${n0 - pendingPrograms()} of ${n0} shaders ready in ${Math.round(performance.now() - t0)} ms`
+    );
+    debugLog.stage('shaders ready');
+  }
 }
 /* the town behind the loader: the title starts, its town is put up and grows in as the loading goes on */
 function mountLoaderTown() {
@@ -702,9 +765,15 @@ function loaderHide() {
     return;
   }
   loadingScreen.f = 1;
+  loaderIslandProgress();
   const end = () => {
     cancelAnimationFrame(loaderIsland.raf);
+    if (loaderIsland.w) {
+      loaderIsland.w.terminate();
+      loaderIsland.w = null;
+    }
     el.remove();
+    if (typeof debugLog !== 'undefined') debugLog.stage('loader gone');
     loadingScreen.el = null;
     document.body.classList.remove('ld-on', 'ttl-reveal');
   };
@@ -934,6 +1003,8 @@ function studioLive(D) {
     }
   }
   if (typeof environment !== 'undefined') environment.id = null;
+  /* LD-4: the run's helper thread reads the site's data, not these edits */
+  if (typeof runWorldAhead !== 'undefined' && !runWorldAhead.off) runWorldAhead.off = 'the Studio’s edits are showing';
   if (!studioLive.told) {
     studioLive.told = 1;
     toast('Showing your Studio edits as you make them.');
@@ -973,6 +1044,7 @@ function noWebGL(why) {
 /* RL-7: the world the save needs goes in before anything reads where you stand (a run's, made from its seed; the
    hub's is in already); from here a swapped save brings its own (game-state.js setSaveData). HB-2: a run's scenes are
    made over several frames behind the loader (run-world.js runWorldMake), which says how far it is */
+if (typeof debugLog !== 'undefined') debugLog.stage('modules ran');
 const bootWorldIn = runWorldMake((made, of) => {
   const ph = document.querySelector('#loader .ld-phase');
   if (ph) ph.textContent = `Making the run’s places ${made}/${of}`;
@@ -981,10 +1053,29 @@ runWorld.live = true;
 if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
-  Promise.all([artCacheCheck(), bootWorldIn.then(() => loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE))])
-    .then(() => bootLoad())
+  Promise.all([
+    artCacheCheck(),
+    bootWorldIn.then(() => {
+      if (typeof debugLog !== 'undefined') debugLog.stage('world in');
+      return loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE);
+    }),
+  ])
+    .then(() => {
+      /* LD-0: the log's marks from here, so the loader's stalls have names too */
+      if (typeof debugLog !== 'undefined') {
+        debugLog.stage('maps ahead');
+        /* only once debug-log-names.js (the page's last module) has handed the names over: unbundled, each module is a
+           task of its own and this can come first; module scripts all run before DOMContentLoaded */
+        if ('render' in GAME) debugLog.hook();
+        else addEventListener('DOMContentLoaded', () => debugLog.hook(), { once: true });
+      }
+      return bootLoad();
+    })
     .then(async () => {
-      if (typeof debugLog !== 'undefined') debugLog.hook();
+      if (typeof debugLog !== 'undefined') {
+        debugLog.stage('loader ready');
+        debugLog.hook();
+      }
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on the professor's scene (below), or,
@@ -1004,6 +1095,7 @@ else
       const resume = saveData.started && saveData.run && saveData.run.map && runWorld.seed && !TEST_RUN;
       if (resume) runLoadBegin('resume', saveData.trip.node);
       await walkViewWarmup();
+      await programsWarmup();
       if (resume) runLoadShow();
       loaderHide();
       if (quickOpening && uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted())

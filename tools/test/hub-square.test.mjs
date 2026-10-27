@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { SQUARE_EDGE, SQUARE_R, VIEW, WALK_R, squareRim } from '../square-props.mjs';
+import { SQUARE_EDGE, SQUARE_R, VIEW, WALK_R, squareHubSpot, squareRim } from '../square-props.mjs';
 import { mapgenReach } from '../../game/js/logic/mapgen.js';
 
 const D = readGameData(),
@@ -87,4 +87,25 @@ test('round the edge shuts nothing in: every cell walkable from the hub without 
   let lost = 0;
   for (let q = 0; q < a.dist.length; q++) if (a.dist[q] >= 0 && b.dist[q] < 0 && !b.blk[q]) lost++;
   assert.equal(lost, 0, `${lost} half-metre cells shut in`);
+});
+
+test("the hub's spot: a push up runs past the fountain on paving, with nothing in the way (the quick check's Running)", () => {
+  assert.deepEqual(M.hub, squareHubSpot(M));
+  assert.ok(
+    !M.checks.some(c => c.from && Math.hypot(c.from[0] - 151.63, c.from[1] - 59.36) < 0.01),
+    'a check left at the old spot'
+  );
+  /* the orbit camera points up toward cam.orbit.c; a run there and back is about 3.5 m each way */
+  const O = M.cam.orbit.c,
+    L = Math.hypot(O[0] - M.hub[0], O[1] - M.hub[1]),
+    u = [(O[0] - M.hub[0]) / L, (O[1] - M.hub[1]) / L],
+    at = s => [M.hub[0] + s * u[0], M.hub[1] + s * u[1]];
+  for (let s = -4; s <= 4; s += 0.25) {
+    const [x, z] = at(s);
+    assert.equal(tile(Math.floor(x), Math.floor(z)), 'c', `off the paving ${s} m along`);
+    assert.ok(Math.hypot(x - well.x, z - well.z) >= C.fountain.solid + 1, `by the fountain ${s} m along`);
+    for (const p of M.props)
+      if (p.k !== 'fountain') assert.ok(Math.hypot(x - p.x, z - p.z) >= 1.5, `${p.k} in the way ${s} m along`);
+  }
+  assert.ok((well.x - M.hub[0]) * u[0] + (well.z - M.hub[1]) * u[1] > 1.5, 'the fountain ahead');
 });

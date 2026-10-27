@@ -11,7 +11,6 @@
   {"sp":"ford1","lvl":15}
  ],
  "reward": 1200,
- "egg": 10,
  "market": {"k":"sand","n":5},
  "marketText": "The arena is caught in a sandstorm. Ground moves hit 1.5× harder, and everyone else takes a little damage each turn.",
  "win": "“Well fought. The Ground Badge is yours.”",

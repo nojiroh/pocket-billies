@@ -341,7 +341,7 @@ ones are kept in `retired/map-mini-v46/`). The tools below only write what's mis
 the metre for props and 32 px to the metre for the ground.
 
 ### Part 1: the ground
-- **Ground** (`tools/build-terrain-v47.py`): 78 kinds (the 38 from before, 22 new and part 4's 18 room floors), each
+- **Ground** (`tools/build-terrain-v47.py`, retired in SA-2a: the tiles are painted in the Studio, tools/art-source/terrain-v47): 78 kinds (the 38 from before, 22 new and part 4's 18 room floors), each
   with twelve 32 px tiles in `art/next/tiles47/<name>_1..12.png`
   (the v46 set in `art/next/tiles/` is untouched). `_1`, `_7`, `_8` plain; `_2`–`_6` and `_10` details; `_9` the damp
   patch in the kind's own colours; `_11`, `_12` worn (fewer details: the painter lays the trodden track itself). The
@@ -525,20 +525,24 @@ art pipeline (phase 17 task 11).
 - All 49 interface icons in `game/art/ui/*.svg` are redrawn as 36×36 pixel art in fixed colours (they were 12×12
   one-colour masks tinted by the text colour). The owner picked the look from samples: "P5", a mix of an extruded
   block and a diagonal split.
-- `tools/build-ui-icons.py` holds each icon as a 34×34 grid of colour letters (its `PALETTE`: the light theme's
-  colours from `uiTheme.json` plus blue, ice, paper, cream, stone, steel, slate, wood, violet and cloud). The tool
-  adds the same treatment to every icon: a 2 px block side to the lower right in a darker shade of each colour, the
-  front split on the 45° line through its middle (paler above), a lit top/left edge and a darker seam where two
-  colours meet. Edit a grid and run the tool; `--check` (run by `tools/test/ui-icons.test.mjs`) fails if a file
-  differs.
+- Each icon was drawn as a 34×34 grid of colour letters (the `PALETTE`: the light theme's colours from
+  `uiTheme.json` plus blue, ice, paper, cream, stone, steel, slate, wood, violet and cloud), and the same treatment
+  is added to every icon: a 2 px block side to the lower right in a darker shade of each colour, the front split on
+  the 45° line through its middle (paler above), a lit top/left edge and a darker seam where two colours meet.
+- Since SA-2b (Studio art track, decision 6) **the SVG files are the source**: `tools/build-ui-icons.py` retired.
+  The Studio's icon editor paints an icon's pixels (or edits its text) and writes the same SVG format
+  (`game/js/logic/svg-pixels.js`); **Shade as a block** adds the treatment above to a front painted flat
+  (`game/js/logic/icon-block.js`, the builder's rules and colours, `ICON_PALETTE` and `ICON_RAMPS`). The builder's
+  grids are kept as a test fixture (`tools/test/fixtures/ui-icon-grids.json`).
 - Icons are objects: the same colours on both themes; shadows are always dark (never the theme's text colour,
   which is light on the dark theme). The darkest colour is slate `#4A5544`, so nothing vanishes on dark panels.
 - Shapes keep the UI track's 45° rule: straight lines and 45° steps, octagons for circles. Strokes are 3 px or
   more so the icons hold up at the 14–22 px the game mostly draws them.
 
 ## UI icons in one colour: the bottom bar, controls and stats (2026-10-26)
-- An icon in `MONO` (tools/build-ui-icons.py) names one colour from `RAMP` (gold, red, green, steel, blue, teal,
-  violet) and draws with the digits 1-4: that colour's light, mid, dark and ink shades. Letters in its grid are
+- A one-colour icon (the builder's `MONO`; the icon editor's "One colour") names one colour from `RAMP` (gold, red,
+  green, steel, blue, teal, violet; `ICON_RAMPS` in icon-block.js) and draws with that colour's light, mid, dark
+  and ink shades (the builder's digits 1-4). Letters in its grid are
   accents (map's cream pin hole, sound-off's red cross). Shades of one colour get no seam between them, so the
   tones read as one block; the block side, the lit edge and the pale top half are the same as every other icon.
   Ink is for details inside a shape only (the bag's clasp): it is too dark to read on the dark theme's panels.

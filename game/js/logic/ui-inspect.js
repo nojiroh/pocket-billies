@@ -86,8 +86,9 @@ export function hostSelector(sel) {
 /* ---- the overlays (UI-3b): tap targets, contrast, glass ---- */
 /** three channels from a function of the channel's index @param {(i: number) => number} f */
 export const rgb3 = f => /** @type {[number, number, number]} */ ([f(0), f(1), f(2)]);
-/** a tap target's smallest side (WCAG 2.5.5, Apple and Material's 44 px) */
-export const UI_TAP_MIN = 44;
+/** a tap target's smallest side: the game's rule, 40 px (06-4, the quick check's tap step; UI-9a, the owner's answer:
+ * not WCAG 2.5.5's 44, which would grow every small button, segment and tab) */
+export const UI_TAP_MIN = 40;
 /** glass layers on top of each other that are still fine (ui-track.md: more than two is an overlay) */
 export const UI_GLASS_STACK = 2;
 /** blurred surfaces a screen may have (ui-track.md, the blur budget) */

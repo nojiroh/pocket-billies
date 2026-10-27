@@ -1,6 +1,6 @@
 'use strict';
 /* ================= TOWN SHOPS =================
-   Shops live in data (GAMEDATA.shops) and are attached to route stops (route[].shop).
+   Shops are a run's (logic/run-scenes.js puts them in SHOPS with its world) and are attached to its places (.shop).
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';

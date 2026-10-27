@@ -36,7 +36,8 @@ written) and check what MG-2 to MG-5 have already changed in mapgen.js. Report w
   mesh (`fall`). TR-10 and TR-6 reuse them: marsh = swamp, lava and ice exist, waterfalls use `fall`. New kinds (hot
   spring with steam, oasis, rapids) mean growing the shader's kind arrays past 9.
 - (TR-2 session: runs now go east to west, entered by the east edge and left by the west, so the free sides are north,
-  the back, and south, toward the camera; both run edges are pinned to height 0. The rest of this point is as written.)
+  the back, and south, toward the camera; both run edges are pinned to height 0. WM-1, 2026-10-27: west to east now,
+  entered by the west edge; the free sides and the pins are the same. The rest of this point is as written.)
   Run scenes are fixed at 112×64 with forward links N→S at t 0.25/0.5/0.75 (roguelite-track 2e), and MG-2 copies the
   parent's edge strip into the child. So big relief belongs on the free E/W sides (the massif mask), and N/S edges must
   match their neighbours. Climbing toward the boss comes from that continuity: each scene ends a little higher than it

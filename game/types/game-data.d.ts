@@ -95,17 +95,16 @@ export interface GameData {
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
   residents?: Record<DataId, Resident>;
   pools: Record<DataId, Pool>;
-  /** the egg tiers, keyed by the distance in km that hatches them ('2', '5', '10') */
-  eggs: Record<string, EggTier>;
   pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
-  jobs: Record<DataId, Job>;
   people: Record<DataId, Person>;
-  shops?: Record<DataId, Shop>;
   trainers?: Record<DataId, Trainer>;
   rules: Rules;
   battleStages: Record<DataId, BattleStage>;
   scenery: Scenery;
+  /** LD-1: what tools/bake-pixel-facts.mjs read out of pictures' pixels: the flat grass props' lightness by picture,
+      and the leaf clumps' baked cuts (logic/pixel-facts.js leafCutKey -> an art path) */
+  pixelFacts?: { lightness: Record<string, number>; cuts: Record<string, string> };
   /** every walkable map: towns, routes, rooms (int_*) and test maps (test_*) */
   maps: Record<DataId, MapData>;
   /** the walking network between the locations; a world without roads has none (RL-5: no chain made up) */
@@ -182,7 +181,6 @@ export interface Meta {
   version: number;
   dataVersion: number;
   notes: string;
-  endText: string;
   worldV24?: number;
 }
 
@@ -251,6 +249,8 @@ export interface MoveEffect {
   delay?: number;
   crit?: number;
   spin?: number;
+  /** RO-3f: Fork: the user takes the target's types for battle.forkTurns turns */
+  copyTypes?: number;
   hold?: number;
   missCost?: number;
   stones?: number;
@@ -415,7 +415,7 @@ export interface LocationData {
   bowl: BowlSpot;
   region?: string;
   music?: string;
-  /** a key of gameData.shops */
+  /** a key of SHOPS */
   shop?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
@@ -492,7 +492,6 @@ export interface RoadEnds {
 
 /** TW-2: rules.json run.town */
 export interface RunTownRules {
-  cap: { busy: number; balanced: number; best: number };
   locals: [number, number];
   names: string[];
   chat: Record<DataId, string[]>;
@@ -687,19 +686,11 @@ export interface MapProp {
   [key: string]: any;
 }
 
-/* ---------- encounters, eggs, money, items, jobs ---------- */
+/* ---------- encounters, money, items ---------- */
 
 /** pools.json (and fishing.json): a level range and weighted species */
 export interface Pool {
   lv: [min: number, max: number];
-  list: WeightedSpecies[];
-}
-
-/** eggs.json: an egg tier */
-export interface EggTier {
-  /** steps to hatch */
-  need: number;
-  lv: number;
   list: WeightedSpecies[];
 }
 
@@ -735,17 +726,7 @@ export interface Item {
   hold?: FxRow[];
 }
 
-/** jobs.json: a day job a boxed Billie can take */
-export interface Job {
-  n: string;
-  where: string;
-  /** what a shift pays: ['item', item id, n], ['coin', coin id, n] or ['se', 'se', dollars] */
-  out: [kind: 'item' | 'coin' | 'se', key: string, amount: number];
-  pay: string;
-  quip: string;
-}
-
-/** shops.json */
+/** a shop: a run town's or stall's (logic/run-scenes.js), in SHOPS while the run's world is in */
 export interface Shop {
   name: string;
   keeper: string;
@@ -764,6 +745,8 @@ export interface Shop {
 /** people/<id>.json (person.schema.json): how a person looks (the old colour keys beside it are ignored) */
 export interface Person {
   look: PersonLook;
+  /** a creature person (Kappi): drawn from this rig instead of the look, ht metres tall */
+  creature?: { rig: string; ht?: number };
   style?: string;
   hair?: Color;
   hat?: Color;
@@ -801,8 +784,6 @@ export interface Trainer {
   blocks?: boolean;
   team: TrainerBilly[];
   reward: number;
-  /** an egg tier they hand out */
-  egg?: number;
   market?: { k: string; n: number } | null;
   marketText?: string;
   win: string;
@@ -880,7 +861,6 @@ export interface Rules {
     /** the starters' line ids */
     starters: DataId[];
     starterLevel: number;
-    starterEgg: number;
     starterEncounters: number;
     /** your starter's line -> the rival's species */
     rival: Record<DataId, SpeciesId>;
@@ -910,14 +890,6 @@ export interface Rules {
     trainerXpMult: number;
     teamXpShare: number;
   };
-  eggs: {
-    capacity: number;
-    slots: number;
-    mythOdds: number;
-    mythSpecies: SpeciesId;
-    dropChance: number;
-    dropTiers: Record<string, number>;
-  };
   battle: {
     stab: number;
     critChances: number[];
@@ -943,8 +915,6 @@ export interface Rules {
     stageMax: number;
     aiSmart: number;
     loseFee: number;
-    /** what a rest stop costs (it heals the team) */
-    restCost: number;
     /** roguelite track RL-4: a battle still going after this many turns ends as a draw ('draw': a wild battle as if
      * you walked away, a trainer's or a ghost's as a loss) */
     turnCap: number;
@@ -953,6 +923,8 @@ export interface Rules {
     shockName: string;
     spinType: TypeId;
     spinTurns: number;
+    /** RO-3f: how long Fork's copied types last */
+    forkTurns: number;
     mailTurns: number;
     holdCap: number;
     alphaHp: number;
@@ -1047,7 +1019,8 @@ export interface Rules {
       routeMin: number;
       habitats?: Record<string, string[]>;
       /** RT-4: a run route's rarer one, `up` levels above the rest (rules.js spawnRare) */
-      rare?: { up: number };
+      /** RO-3f: myth: the chance a run route's rarer one is a mythical instead (at most one a run), and which */
+      rare?: { up: number; myth?: { chance: number; list: DataId[] } };
     };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
@@ -1072,6 +1045,10 @@ export interface Rules {
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
     /** RL-S2: Blake, the rival (logic/run-map.js runMapRival, logic/rival.js; placeholders) */
     rival: RivalRules;
+    /** ON-2: a friend's ghost team (logic/run-map.js runMapGhost, logic/run-record.js ghostTeam) */
+    ghost: GhostRules;
+    /** ON-2: the daily and weekly runs (logic/daily.js boardPlan) */
+    boards: BoardRules;
     /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
      * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
      * a double, levels over the place's top wild level, what each pays, how far they see (m) */
@@ -1102,6 +1079,26 @@ export interface Rules {
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
+  /** hub track HB-10c: the town square's day (logic/square-day.js) */
+  square: SquareRules;
+}
+
+/** rules.json square: when the square's folk stop where, and the ranch's Billies' visits (logic/square-day.js) */
+export interface SquareRules {
+  /** the slots of the day (hours 0-24, in order, none overlapping): a share of the town's folk go to stops of these
+   * kinds (keep, shop, sit, lamp, fountain), taken in turn */
+  day: { k: string; from: number; to: number; share: number; stops: string[] }[];
+  /** the ranch's Billies walking over from the pasture: at most `most` in a block of `every` seconds, leaving between
+   * the hours from and to, walking `walk` m/s, staying `stay` seconds (fewest, most) at stops of these kinds */
+  visit: {
+    most: number;
+    from: number;
+    to: number;
+    every: number;
+    walk: number;
+    stay: [number, number];
+    stops: string[];
+  };
 }
 
 /** RL-13: rules.json run.points: a Billie's cost in starter points and the budget a run has (logic/starter-points.js) */
@@ -1180,10 +1177,16 @@ export type RunSceneRules = {
 
 /** rules.json run.map: how a run's node map is laid out (logic/run-map.js runMapMake; placeholders, 8.18) */
 export interface RunMapRules {
-  /** rows from the landing (0) to the boss (the last): the nodes on every path */
+  /** rows (steps) from the landing (0) to the boss (the last): the places on every path. WM-2: the run's own, drawn
+      from `path` (logic/run-map.js runMapLength) unless given (the debug menu's short map) */
   rows: number;
-  /** mini-bosses on rows round(k * rows / (minibosses + 1)), each with a town's row before it */
+  /** mini-bosses, each on a row of its own with its town right after it (WM-2), the free rows shared out between
+      them: the run's own, as many as fit `rows` within `towns`, unless given */
   minibosses: number;
+  /** WM-2: the places a path by Expedition (index 0 = Expedition I; past the end, the last): [fewest, most] */
+  path?: [number, number][];
+  /** WM-2: the fewest and most towns (each after a mini-boss) a run */
+  towns?: [number, number];
   /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
   first: DataId;
   rest: DataId;
@@ -1534,6 +1537,8 @@ export interface Engine {
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */
 export interface Wardrobe {
   version: number;
+  /** studio art track SA-3: the boutiques an item's `shop` names (moved here from the old Town shops) */
+  shops?: Record<DataId, { name: string }>;
   [key: string]: any;
 }
 
@@ -1795,6 +1800,9 @@ export interface NodeType {
   /** RL-14: instead of a weight, the chance a free node becomes it (on its own stream), from map row fromRow on */
   chance?: number;
   fromRow?: number;
+  /** WM-2: it counts as a route between towns (a route, the rival's, a mini-boss's, a scrapyard; not a waystation, a
+      stall or the landing): the map puts one on every lane of the free row before each mini-boss */
+  routeLike?: boolean;
 }
 
 /** music.json: a song's recipe, composed into notes by the tracker (game/js/audio/tracker.js; sound track SND-2) */
@@ -2042,7 +2050,7 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
+  who: 'chosen' | 'kappi' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
   when?: string;
   priority: number;
   once?: boolean;
@@ -2314,6 +2322,28 @@ export interface RunSideRules {
   lean: number;
 }
 /** RL-S2: rules.json run.rival: Blake's meetings in a run and his team (placeholders until the owner answers) */
+/** ON-2: where a friend's ghost team waits (rules.json run.ghost) */
+export interface GhostRules {
+  /** the node types it can stand in for, in order: the first the band has */
+  on: string[];
+  /** with none of those: a type it takes only on a row that keeps another of it ('town') */
+  spare?: string;
+  /** its rows: [from, to) as a share of the map's rows */
+  band: [number, number];
+  /** its ace's levels over the row's top wild level, what beating it pays (Moneys), the trainer look it wears */
+  up: number;
+  reward: number;
+  who: string;
+}
+
+/** ON-2: the daily and weekly runs (rules.json run.boards; logic/daily.js) */
+export interface BoardRules {
+  /** the daily: its Expedition and challenges (modifiers.json ids) */
+  daily: { expedition: number; challenges: string[] };
+  /** the weekly: its Expedition drawn from [lo, hi], and [lo, hi] picks of `challenges` */
+  weekly: { expedition: [number, number]; challenges: string[]; picks: [number, number] };
+}
+
 export interface RivalRules {
   /** meetings a run by Expedition (index 0 = Expedition I; past the end, the last) */
   meet: number[];

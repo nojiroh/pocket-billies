@@ -17,12 +17,13 @@
 import { expose } from '../../game/js/test-globals.js';
 import { previewViewport } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { residentHomes } from '../../game/js/logic/residents.js';
 import { ISLAND_ZONE_KINDS, islandGroundHash, islandPointIn, islandProblems } from '../../game/js/logic/island.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { artImage, mapHub, setWalkData, walkData, walkView, walkablePointNear } from '../../game/js/walk-view.js';
 import { groundHeightAt, rawHeightAt } from '../../game/js/walk/heights.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
-import { escapeHtml } from './game-stand-ins.js';
+import { escapeHtml, saveData } from './game-stand-ins.js';
 import { FREE_CAM, freeCamCopy, freeCamGlide, freeCamLook, freeCamZoom } from '../../game/js/logic/free-camera.js';
 import {
   ISLAND_GEN_BUILT,
@@ -65,9 +66,12 @@ import {
   card,
   changed,
   commit,
+  grid,
   openSection,
   render,
+  selectField,
   studioState,
+  textField,
   toast,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
@@ -115,6 +119,7 @@ expose({
   hubMap: [() => hubMap],
   hubMapId: [() => hubMapId],
   hubPivotMove: [() => hubPivotMove, v => (hubPivotMove = v)],
+  hubPlaceHTML: [() => hubPlaceHTML, v => (hubPlaceHTML = v)],
   hubPointer: [() => hubPointer, v => (hubPointer = v)],
   hubPointsDown: [() => hubPointsDown, v => (hubPointsDown = v)],
   hubPolyOf: [() => hubPolyOf],
@@ -138,6 +143,8 @@ expose({
 /* to-module: end */
 const hubEd = {
   tool: 'paint',
+  /* RS-3: the residents' preview in the orbit view */
+  res: false,
   ter: 'g',
   brush: 2,
   hmode: 'raise',
@@ -237,13 +244,59 @@ ${card(
   `<div class="sc-bar"><span class="px-tools">${tools}</span><span class="px-tools"><button class="seg" data-act="hubZoom" data-z="-1" aria-label="Smaller">−</button><span id="hubZ">${hubZoom(sc)} px/m</span><button class="seg" data-act="hubZoom" data-z="1" aria-label="Bigger">+</button></span></div>
 ${why ? '' : hubToolBarHTML(sc)}
 <div class="hub-stage"><div class="hub-map-in"><canvas id="hubMap"></canvas><canvas id="hubMapCam" aria-hidden="true"></canvas></div></div>
-<div class="hub-legend">${ISLAND_ZONE_KINDS.map(k => `<span><i style="background:${ZONE_COLOURS[k]}"></i>${k}</span>`).join('')}<span><i class="hub-hatch"></i>locked zone</span><span><i class="hub-pivot"></i>pivot and dead zone</span></div>`
+<div class="hub-legend">${ISLAND_ZONE_KINDS.map(k => `<span><i style="background:${ZONE_COLOURS[k]}"></i>${k}</span>`).join('')}<span><i class="hub-hatch"></i>locked zone</span><span><i class="hub-pivot"></i>pivot and dead zone</span><span><i class="hub-res"></i>where each resident lives (residents.json)</span></div>`
 )}
 </div>
 ${card('Dials', `<div id="hubGen">${hubGenHTML(sc)}</div>`)}
 ${card('Ground lock', `<div id="hubLock">${hubLockHTML(sc)}</div>`)}
+${hubPlaceHTML(id)}
 </div>`;
 };
+/* SA-3: the hub's own place in locations.json (its name, wild Billies, backdrop, mood and music), edited here now that
+   World & encounters has no route stops */
+function hubPlaceHTML(id) {
+  const D = studioState.D,
+    L = D.locations || [],
+    i = Math.max(
+      0,
+      L.findIndex(r => r.mapId === id)
+    ),
+    r = L[i];
+  if (!r) return '';
+  studioState.sel.stop = i;
+  const p = `locations.${i}`;
+  return card(
+    `${escapeHtml(r.name)} (the hub’s place)`,
+    grid(
+      textField('Name', `${p}.name`),
+      textField('Route label', `${p}.route`, { help: 'Shown above the name, like “Town”.' }),
+      selectField(
+        'Wild encounters',
+        `${p}.pool`,
+        Object.keys(D.pools).map(k => [k, k]),
+        { help: 'Edit the pool under World & encounters → Wild encounters.' }
+      ),
+      selectField(
+        'Battle backdrop',
+        `${p}.battleStage`,
+        Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k])
+      ),
+      selectField(
+        'Mood',
+        `${p}.mood`,
+        Object.entries(D.moods || {}).map(([k, v]) => [k, v.name || k]),
+        { none: 'None (the plain look)', opt: 1, help: 'The colour mood: saturation, contrast, warmth and tints.' }
+      ),
+      selectField(
+        'Music',
+        `${p}.music`,
+        Object.keys((D.music && D.music.songs) || {}).map(k => [k, k]),
+        { none: 'By the rules (Music & sound)', opt: 1 }
+      )
+    ) + textField('Description', `${p}.blurb`, { area: 1, rows: 2 }),
+    { sub: `<code>locations.json</code>, place ${escapeHtml(r.id)}. The hub has no roads: a run starts from the mast.` }
+  );
+}
 
 function hubViewBarHTML() {
   const side = hubEd.goal ? hubSideOf(hubEd.goal.yaw) : 'S';
@@ -256,7 +309,7 @@ function hubViewBarHTML() {
     )
     .join(
       ''
-    )}<button class="btn sm" data-act="hubFrame" ${hubEd.walk ? 'disabled' : ''}>Whole island</button><button class="seg ${hubEd.walk ? 'on' : ''}" data-act="hubWalk" aria-pressed="${hubEd.walk}" title="The walker goes round the coast under the game's own walk camera">Walk the coast</button>`;
+    )}<button class="btn sm" data-act="hubFrame" ${hubEd.walk ? 'disabled' : ''}>Whole island</button><button class="seg ${hubEd.walk ? 'on' : ''}" data-act="hubWalk" aria-pressed="${hubEd.walk}" title="The walker goes round the coast under the game's own walk camera">Walk the coast</button><button class="seg ${hubEd.res ? 'on' : ''}" data-act="hubRes" aria-pressed="${!!hubEd.res}" title="Everyone in residents.json moved in: they walk the town as they would in the game (a preview, never saved)">Residents</button>`;
 }
 
 function hubToolBarHTML(sc) {
@@ -345,6 +398,13 @@ function mountHubView() {
     onPick: () => {},
     cap: () => (studioState.sec === 'hub' ? 30 : 0),
     look: hubLook,
+    /* RS-3: the residents' preview walks the shown map with the Studio's own tables (walk-view.js hubResidentWalkers) */
+    residents: () => ({
+      hub: walkView.id,
+      map: hubShown(),
+      R: studioState.D.residents || {},
+      B: studioState.D.buildings || {},
+    }),
   }).then(() => {
     const l = $('#hubPvLoad');
     if (l) l.hidden = true;
@@ -617,6 +677,29 @@ function drawHubMap() {
     x.strokeStyle = '#1E1A34';
     x.lineWidth = 1;
     x.stroke();
+  }
+  /* RS-3: where each resident would live (logic/residents.js residentHomes): their door's spot and their name */
+  const D = studioState.D,
+    ids = Object.keys(D.residents || {}),
+    homes = residentHomes(sc, ids, D.residents || {}, D.buildings || {}, walkData().sc);
+  x.font = '600 11px system-ui, sans-serif';
+  x.textAlign = 'center';
+  for (const id of ids) {
+    const h = homes[id];
+    if (!h) continue;
+    const px = h.at[0] * Z,
+      py = (H - h.at[1]) * Z;
+    x.beginPath();
+    x.arc(px, py, 4, 0, Math.PI * 2);
+    x.fillStyle = '#9B6BFF';
+    x.fill();
+    x.strokeStyle = '#1E1A34';
+    x.lineWidth = 1.5;
+    x.stroke();
+    x.lineWidth = 3;
+    x.strokeText(D.residents[id].name, px, py - 7);
+    x.fillStyle = '#FFFFFF';
+    x.fillText(D.residents[id].name, px, py - 7);
   }
   const zEl = $('#hubZ');
   if (zEl) zEl.textContent = Z + ' px/m';
@@ -920,6 +1003,17 @@ ACTIONS.hubZoneDel = async () => {
   render();
 };
 ACTIONS.hubProps = () => openSection('scenes', { scene: hubMapId() });
+/* RS-3: the residents' preview: everyone in residents.json living in Copperleaf, walking it as in the game (walk-view.js
+   hubResidentWalkers reads the save's meta.residents: the Studio's stand-in save, never written anywhere) */
+ACTIONS.hubRes = () => {
+  hubEd.res = !hubEd.res;
+  const ids = Object.keys(studioState.D.residents || {});
+  saveData.meta = {
+    ...(saveData.meta || {}),
+    residents: hubEd.res ? Object.fromEntries(ids.map((id, i) => [id, i + 1])) : {},
+  };
+  hubViewBar();
+};
 ACTIONS.hubSpin = () => {
   hubEd.spin = !hubEd.spin;
   hubViewBar();

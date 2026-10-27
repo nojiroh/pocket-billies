@@ -47,7 +47,7 @@ test('each planted fault is found', () => {
     [
       'a favour whose quest story.json lacks (RL-S2)',
       G =>
-        (G.relations = { gift: {}, people: { hazel: { levels: [], favour: { quest: 'nope', check: 'last:won' } } } }),
+        (G.relations = { gift: {}, people: { kappi: { levels: [], favour: { quest: 'nope', check: 'last:won' } } } }),
       'problems',
       'quest nope, no such quest',
     ],
@@ -55,7 +55,7 @@ test('each planted fault is found', () => {
       'a favour whose quest has no stage done, and a check that names no fact (RL-S2)',
       G => (
         (G.story.quests.q = { stages: ['asked'] }),
-        (G.relations = { gift: {}, people: { hazel: { levels: [], favour: { quest: 'q', check: 'last:wins' } } } })
+        (G.relations = { gift: {}, people: { kappi: { levels: [], favour: { quest: 'q', check: 'last:wins' } } } })
       ),
       'problems',
       'quest q has no stage done',
@@ -64,7 +64,7 @@ test('each planted fault is found', () => {
       'a favour check that names no fact (RL-S2)',
       G => (
         (G.story.quests.q = { stages: ['asked', 'done'] }),
-        (G.relations = { gift: {}, people: { hazel: { levels: [], favour: { quest: 'q', check: 'last:wins' } } } })
+        (G.relations = { gift: {}, people: { kappi: { levels: [], favour: { quest: 'q', check: 'last:wins' } } } })
       ),
       'problems',
       'last:wins, no such fact',

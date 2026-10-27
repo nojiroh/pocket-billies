@@ -41,10 +41,10 @@ VIEWS = [
     ('map', 'town', "uiState.tab='map';render()", "!!document.querySelector('.screen.s-map')"),
     ('map-card', 'town', "uiState.tab='map';render();setTimeout(()=>{worldMapSelect(0)},800)", "!!document.querySelector('.screen.s-map .mapcard')"),
     ('team', 'team', "uiState.tab='team';render()", "!!document.querySelector('.screen.s-team')"),
-    ('sheet', 'team', "document.querySelector('[data-a=mon]').click()", "!!document.querySelector('#ov .mon-sheet')"),
-    ('sheet-build', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=build]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=build][aria-selected=true]')"),
-    ('sheet-moves', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=moves]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=moves][aria-selected=true]')"),
-    ('sheet-evo', 'team', "document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=evo]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=evo][aria-selected=true]')"),
+    ('sheet', 'team', "uiState.tab='team';render();document.querySelector('[data-a=mon]').click()", "!!document.querySelector('#ov .mon-sheet')"),
+    ('sheet-build', 'team', "uiState.tab='team';render();document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=build]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=build][aria-selected=true]')"),
+    ('sheet-moves', 'team', "uiState.tab='team';render();document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=moves]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=moves][aria-selected=true]')"),
+    ('sheet-evo', 'team', "uiState.tab='team';render();document.querySelector('[data-a=mon]').click();setTimeout(()=>document.querySelector('#ov [data-a=ms-tab][data-k=evo]').click(),300)", "!!document.querySelector('#ov [data-a=ms-tab][data-k=evo][aria-selected=true]')"),
     ('storage', 'team', "saveData.box=saveData.team.map((m,i)=>Object.assign({},m,{uid:m.uid+'b'+i}));uiState.tab='team';render()", "!!document.querySelector('.screen.s-team .bx')"),
     ('heal-pick', 'bag', OPEN + "saveData.team[0].hp=1;healPick(saveData.team[0])", "!!document.querySelector('#ov .pickrow')"),
     ('guide', 'town', "uiState.tab='guide';render()", "!!document.querySelector('.screen.s-guide')"),
@@ -184,6 +184,8 @@ def show(pg, view, first):
     if not first: pg.evaluate(f'()=>{{{BATTLE_RESET if fixture == "battle" else RESET}}}')
     if setup: pg.evaluate(f'()=>{{{setup}}}')
     if not cf.until(pg, cond, 60): raise Exception(f'{name}: the screen never showed ({cond})')
+    # the place fades in once its first frames are drawn (phase 20's warm-up): both pages wait for it, or 15 s
+    cf.until(pg, "!document.querySelector('canvas#dio:not(.in)')||!!activeBattle", 15)
     pg.evaluate('document.fonts.ready')
     pg.wait_for_timeout(1500)  # let entrances end
 

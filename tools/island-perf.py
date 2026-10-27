@@ -6,6 +6,8 @@
     python3 tools/island-perf.py --out=FILE.json # also write the numbers to a file
     python3 tools/island-perf.py --scene=test_island
     python3 tools/island-perf.py --frames=10     # fewer frames a place (default 30; full graphics headless is slow)
+    python3 tools/island-perf.py --square        # HB-10c: at the hub on the square instead, by hour and townsfolk
+    python3 tools/island-perf.py --square --folk=0,6,10 --hours=12.5,21   # (default folk 0,6,8,10; hours 12.5,21)
 
 At each place (the same spots as tools/island-shots.py: by the coast road N, NE ... NW of the middle) it lets the
 camera settle, then for 30 frames (--frames) counts every graphics call (engine/gpu-counters.js, as the debug log does) and times
@@ -26,6 +28,10 @@ OUT = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), None)
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'copperleaf')
 FRAMES = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--frames=')), 30))
 
+SQUARE = '--square' in ARGS
+FOLK = [int(v) for v in next((a.split('=', 1)[1] for a in ARGS if a.startswith('--folk=')), '0,6,8,10').split(',')]
+HOURS = [float(v) for v in next((a.split('=', 1)[1] for a in ARGS if a.startswith('--hours=')), '12.5,21').split(',')]
+
 MEASURE = """(async (n)=>{
  const R=walkRenderer, f0=R.frames, t0=performance.now();
  gpuCountBegin();
@@ -36,6 +42,24 @@ MEASURE = """(async (n)=>{
  return {ms:Math.round((performance.now()-t0)/(R.frames-f0)*10)/10, p90:Math.round(times[Math.floor(times.length*.9)]*10)/10,
   draws:g&&g.dc[0], inst:g&&g.dc[1], programs:g&&g.dc[2], passes:g&&g.dcp,
   cull:[R.culled||0,R.cullOf||0], groundTris:R.mesh?Math.round(R.mesh.n/3):null, yaw:R.orbit?Math.round(R.orbit.yaw*180/Math.PI):null}})"""
+
+
+def square(pg, rows, t0):
+    """HB-10c: at the hub, the square in view, at each hour (clear summer weather) with the Engine's quality.townFolk
+    at each count: the townsfolk drawn, the lights lit and what it costs"""
+    hub = pg.evaluate('mapHub(walkView.sc)')
+    fast.stand(pg, hub[0], hub[1], frames=8)
+    for h in HOURS:
+        pg.evaluate(f"environment.force={{time:{h},weather:'clear',season:'summer'}};walkView.folkId='';0")
+        for n in FOLK:
+            pg.evaluate(f'ENGINE_DEFAULTS.quality.townFolk={n};0')
+            shots.settle(pg, 12)
+            r = pg.evaluate(f'{MEASURE}({FRAMES})')
+            r.update(at=f'{h:g}h folk {n}', hour=h, townFolk=n, folk=pg.evaluate('walkView.folk.length'))
+            rows.append(r)
+            print(f"[{time.time() - t0:5.0f}s] {r['at']:>14}: {r['ms']:6.1f} ms/frame (p90 {r['p90']}), {r['draws']} draws, "
+                  f"{r['inst']} instances, {r['folk']} folk drawn", flush=True)
+    pg.evaluate('ENGINE_DEFAULTS.quality.townFolk=10;environment.force=null;0')
 
 
 def main():
@@ -56,7 +80,9 @@ def main():
             raise Exception('the island never opened')
         boot = round(time.time() - t0, 1)
         shots.settle(pg, 10)
-        for k, nm in enumerate(shots.COMPASS):
+        if SQUARE:
+            square(pg, rows, t0)
+        for k, nm in enumerate([] if SQUARE else shots.COMPASS):
             x, z = pg.evaluate(f'{shots.COAST_SPOT}({k * 45})')
             fast.stand(pg, x, z, frames=12)
             r = pg.evaluate(f'{MEASURE}({FRAMES})')

@@ -108,7 +108,7 @@ Guides and forum posts, not design papers: read as examples, not facts.
 | RS-0 | The plan (done 2026-10-26) | this file, ROADMAP, BRANCHES, HANDOFF | none | in the planning session |
 | RS-1 | Data and save (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | `residents.json` + schema, type, `check-data.mjs` rule (home and level rows exist); `meta.residents` and `run.invited` in the validators; `logic/residents.js` (pure: the run's candidate from its seed, invite, settle at the run's end); the `resident:` condition kind; Node tests | none | 1 |
 | RS-2 | Meeting in a run (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | the favour from a run town's named local and one event; quest payout = invite; the payout screen's line; candidates in the Run Lab and the sim; an in-game test step | RS-1 | 1 |
-| RS-3 | Living in Copperleaf | residents as people at their buildings or cottages, door acts switched, the room card's upgrades, banter lines; the Studio's hub editor shows them | RS-1 | 1-2 |
+| RS-3 | Living in Copperleaf (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | residents as people at their buildings or cottages, door acts switched, the room card's upgrades, banter lines; the Studio's hub editor shows them | RS-1 | 1-2 |
 | RS-4 | Services and upgrades | the first four residents' unlock rows and effects (`run.fx`, shops.json stock), the headcount milestones; balance by the run sim | RS-2, RS-3 | 1-2 |
 | RS-5 | The rest of the roster | the other residents, request gates, the look pass on the phone | RS-4 | 1 |
 
@@ -192,10 +192,52 @@ Dottie in every town of the first all-town row):
 - **For RS-3**: the resident's look is a seeded townsfolk one (`folk:<n>` from their id) until the owner picks looks.
   A failed mini-boss favour (Gus) is dropped like any quest; walking back to their town offers it again.
 
+**Done in RS-3** (2026-10-26, on `ccr-65e11839-9p92dx` from RS-2's c4d564e with main 2314da8..bc106c4, HB-8, merged
+in first; the owner's answers: wardrobe looks; residents near their house or walking round town; no cottage cap):
+- **Where the plan and the code differed:** the doors needed no new acts. HB-5 already opens every resident's room
+  (`shop`, `enter`, `house`, `ranch`; the station's sheet), so `copperleaf.json` is untouched and the change is what
+  a room's card says and what tapping a resident does. Banter's `who` was a closed list (schema and `BANTER_WHO`), and
+  nothing read the history's `res` yet. Copperleaf is a `town`, so its townsfolk already keep a day (walk-view.js
+  `initFolk`: out, work, the square at noon, the streets, home, indoors at night): residents join it.
+- `logic/prop-turn.js propDoor` (walk-view.js `doorOf`'s maths, pure); `logic/residents.js residentHomes(map, ids, R,
+  buildings, catalogue)`: each resident's building (the prop whose `k` is their home, else the one whose act is their
+  buildings.json row's: the barn, Skyline Station) or, for a `house` resident, a cottage of their own (nearest the
+  town's middle first, in the order they moved in, so nobody's changes; Juniper's never), and the spot by its door.
+- **Looks**: `people/<id>.json` for all eight (wardrobe parts that fit the role, like Juniper's); a run town's resident
+  wears it too (`runTownResident`); check-data asks every resident for one.
+- **Walking**: walk-view.js `hubResidentWalkers` (only in Copperleaf's own view; the game's tables, or a preview's
+  `opt.residents`): residents come after the townsfolk in `initFolk` with their look, name, and their door as home and
+  work (never out all night); the drawing uses their look (`f.who`); tapped, `talkFolk` hands them to story.js
+  `residentHomeTalk`, which plays the story director's line for them.
+- **Lines**: banter.json lines with a resident's id as `who` (Claude's drafts, for the owner: one that always holds,
+  one on moving in (`must`, `once`), a win's, a loss's, and one more each but Dr. Helix's); the schema takes a
+  resident's id and check-data refuses anyone else and asks each resident for a line that always holds; the new
+  condition `lastres:<id>` (the last run brought them; run-history.js facts `lastres`, docs/SCRIPTS.md); story-stage.js
+  `storyOwner` makes a resident's line theirs.
+- **Room card** (walk-tab.js `roomHero`): in a resident's building or cottage (`uiState.inside.res`, walk-view.js
+  `residentAt`) the card says "<name>, the <role>, lives here.", Talk, and their upgrades (`buildingRowsHTML` of their
+  home; none until RS-4: "<name>'s first upgrades come soon"). The station's sheet says Rosa works there, the ranch's
+  that Hayden helps there. Juniper, her cottage and the five townsfolk are as they were; a building with nobody too.
+- **Studio** (hub editor): the Map marks where each resident in residents.json would live, with their names; the
+  orbit view's "Residents" button previews everyone moved in, walking the town (the Studio's stand-in save, never
+  written).
+- **In-game full test** ("A run: the train, nodes, payout"): home after the run, Dottie walks Copperleaf from the
+  library in her own look and her first word there is her moving-in line.
+- Tests: new hub-residents.test.mjs (the real map: everyone's building, the barn and the station by act, cottages kept
+  as more move in, unknown ones left out; their lines in order); conditions (`lastres:`), run-history (facts),
+  check-data's planted residents (no look) and story director lines (a line for nobody, a resident with no line that
+  always holds).
+- **For RS-4**: a resident's upgrades are rows `at` their home; a `house` resident's (Seamus's) home is `house`, which
+  no building or row uses yet: decide where his are sold. The store, inn and library still need buildings.json rows
+  before rows can be sold there (unchanged from RS-1). Residents have no portraits yet (the talk box shows an empty
+  face): RS-5's look pass.
+
 ## Ask me before (recommendation first)
-1. The roster's looks and lines (names approved in RS-1).
+1. The roster's looks and lines (names approved in RS-1). **Looks answered in RS-3: wardrobe looks
+   (people/<id>.json); portraits wait for RS-5. Lines: Claude's drafts in banter.json and quests.json, waiting for the
+   owner.**
 2. Pace: one invite per run (rec) / two; residents capped by the 10 cottages (rec: no cap, the building residents
-   don't need one). **Answered in RS-2: one invite per run.** (The cottage cap is still open.)
+   don't need one). **Answered in RS-2: one invite per run.** **Answered in RS-3: no cottage cap.**
 3. The player-facing word: **answered in RS-1: "residents"**.
 4. The power level's size per resident (RS-4 proposes numbers from the sim).
 

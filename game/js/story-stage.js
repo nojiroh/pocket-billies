@@ -2,7 +2,7 @@
 /* ================= STORY STAGE (Project Story S1) =================
    Plays a story script (logic/script.js) in the game: the lines in the dialogue box (talk.js), choices as buttons over
    it, battles, healing. Scripts live in the data: a person's `script` (a map's people), a trainer's `script`; ids are
-   person:<id> and trainer:<id>. A name before a line is a speaker from story.json (Hazel, Blake ...) or a person id.
+   person:<id> and trainer:<id>. A name before a line is a speaker from story.json (Kappi, Blake ...) or a person id.
    - Safe runs: while a script plays, a save writes the state from before it (or from its last checkpoint, a battle)
      and where to carry on (logic/script.js saveDuringRun); Continue plays it again from there (storyResumeCheck).
    - Hold the dialogue box (0.6 s) to skip: the rest runs at once and still makes every change; a battle stops it.
@@ -18,7 +18,7 @@
 import { expose } from './test-globals.js';
 import { provide, render, selfTest, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { BANTER, LOCATIONS, PEOPLE, RELATIONS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
+import { BANTER, LOCATIONS, PEOPLE, RELATIONS, RESIDENTS, STORY_DATA, TRAINERS, gameData } from './game-data.js';
 import { healAll } from './logic/rules.js';
 import { relFavoursPay } from './logic/relations.js';
 import { startTrainer } from './logic/battle-engine.js';
@@ -57,7 +57,7 @@ expose({
   storyHomeArrive: [() => storyHomeArrive, v => ((storyHomeArrive = v), provide({ storyHomeArrive }))],
   storyOwner: [() => storyOwner, v => (storyOwner = v)],
   storyPendingCheck: [() => storyPendingCheck, v => ((storyPendingCheck = v), provide({ storyPendingCheck }))],
-  storyPickId: [() => storyPickId, v => (storyPickId = v)],
+  storyPickId: [() => storyPickId, v => ((storyPickId = v), provide({ storyPickId }))],
   storyPickPlay: [() => storyPickPlay, v => ((storyPickPlay = v), provide({ storyPickPlay }))],
   storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
@@ -82,6 +82,7 @@ provide({
   storyFreshTake,
   storyHomeArrive,
   storyPendingCheck,
+  storyPickId,
   storyPickPlay,
   storyScriptIds,
   storyWorldOK,
@@ -118,7 +119,9 @@ function storyOwner(id) {
   if (id.startsWith('trainer:')) return (TRAINERS[key] && TRAINERS[key].who) || null;
   if (id.startsWith('story:')) return ((STORY_DATA.scripts || {})[key] || {}).who || null;
   /* a hub character's line is theirs (their person id is their `who`); the others name their speakers */
-  if (id.startsWith('banter:')) return (BANTER[key] && banterOwner(BANTER[key].who)) || null;
+  /* RS-3: a resident's line is theirs too (their id is their `who` and their person's) */
+  if (id.startsWith('banter:'))
+    return (BANTER[key] && (banterOwner(BANTER[key].who) || (RESIDENTS[BANTER[key].who] && BANTER[key].who))) || null;
   for (const sc of Object.values(gameData.maps)) {
     const P = (sc.people || []).find(p => p.id === key);
     if (P) return P.who || P.id;
@@ -330,7 +333,7 @@ const storyGameStage = {
   },
 };
 /* line: the id of the line on screen (tools/story-ids.mjs), for the debug log */
-const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
+export const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };
 provide({ storyRun }); /* to-module */
 const storySlots = { name: () => lookOf('me').name || 'Trainer' };
 /* RL-S1: the script command `pick <who>`: the story director's line (logic/story-pick.js) on the game's save, marked

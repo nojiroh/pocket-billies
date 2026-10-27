@@ -1,12 +1,12 @@
 'use strict';
 /* ================= CONVERSATIONS =================
-   One dialogue box for everyone who talks: Professor Chosen and Hazel, your rival Blake, townsfolk, trainers and the opening cutscene.
+   One dialogue box for everyone who talks: Professor Chosen and Kappi, your rival Blake, townsfolk, trainers and the opening cutscene.
    A portrait that blinks and moves its mouth while the line types out, the speaker's name, a voice blip per few
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapChatLines, playStoryScript, provide, storyFreshTake, storyGiftOffer } from './hooks.js';
+import { mapChatLines, playStoryScript, provide, residentHomeTalk, storyFreshTake, storyGiftOffer } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { reducedMotion } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -296,6 +296,11 @@ const FOLK_TALK = [
 ];
 async function talkFolk(f) {
   if (talkBox.on) return;
+  /* RS-3: a resident of Copperleaf says their own line (story.js residentHomeTalk) */
+  if (f.res && typeof residentHomeTalk === 'function') {
+    await residentHomeTalk(f);
+    return;
+  }
   const sc = walkView.sc,
     L = typeof mapChatLines === 'function' ? mapChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
     who = 'folk:' + f.seed,

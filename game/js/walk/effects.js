@@ -44,6 +44,8 @@ import { lampLit } from './lighting.js';
 import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
 /* eslint-disable no-func-assign */
 expose({
+  RIBBON_FLOATS: [() => RIBBON_FLOATS],
+  RIBBON_SHADERS: [() => RIBBON_SHADERS],
   SHAFT_FADE_S: [() => SHAFT_FADE_S],
   SHAFT_MAX: [() => SHAFT_MAX],
   SHAFT_PICK_MS: [() => SHAFT_PICK_MS],
@@ -54,6 +56,7 @@ expose({
   drawDivers: [() => drawDivers, v => (drawDivers = v)],
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
+  ribbonPass: [() => ribbonPass, v => (ribbonPass = v)],
   shaftList: [() => shaftList],
   shaftStrength: [() => shaftStrength, v => (shaftStrength = v)],
   smartLightShafts: [() => smartLightShafts, v => (smartLightShafts = v)],
@@ -81,6 +84,66 @@ precision highp float;in vec2 vUV;in vec3 vW;in vec4 vCol;out vec4 o;uniform sam
 void main(){vec4 c=texture(uTex,vUV)*vCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);o=c;}`,
   ],
 };
+/* VFX-2: a thrown pyramid's motion lines (battle-3d.js battle3dFrame's ribbon): one strip, flat and unlit, hard
+   edged, a white core along its middle and its own colour outside; eroded by a 4x4 Bayer dither on the screen's
+   pixels (never a soft fade). Per vertex: its place, which side (-1, 1) and its erosion (0 whole .. 1 gone) */
+export const RIBBON_SHADERS = {
+  ribbon: [
+    `#version 300 es
+precision highp float;layout(location=0) in vec3 aP;layout(location=1) in vec2 aA;uniform mat4 uVP;out vec3 vW;out vec2 vA;
+void main(){vW=aP;vA=aA;gl_Position=uVP*vec4(aP,1.);}`,
+    `#version 300 es
+precision highp float;in vec3 vW;in vec2 vA;out vec4 o;uniform vec3 uCol;uniform float uCore;${LIGHT_GLSL}
+float rbBayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
+void main(){if(rbBayer(gl_FragCoord.xy)<vA.y)discard;o=vec4(fogit(abs(vA.x)<uCore?vec3(1.):uCol,vW),1.);}`,
+  ],
+};
+const RIBBON_FLOATS = 5;
+/* R: { v: [x, y, z, side, erosion, ...] two vertices a point, head first; col: [r, g, b] 0..1; core: the white
+   share }. Drawn after the effects, before the post pass; leaves the fx program's quad bound as it found it */
+export function ribbonPass(C, R, X) {
+  const n = R && R.v ? R.v.length / RIBBON_FLOATS : 0;
+  if (n < 4) return;
+  const gl = gpuState.gl;
+  ensurePrograms(RIBBON_SHADERS);
+  const p = useWalkProgram('ribbon', C, X);
+  if (!p.rb) {
+    /* made with the program, so a new context (initWebgl empties gpuState.P) makes them again */
+    const vao = gpuVao('instances'),
+      buf = gpuBuffer('instances');
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, RIBBON_FLOATS * 4, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, RIBBON_FLOATS * 4, 12);
+    gl.bindVertexArray(null);
+    p.rb = { vao, buf, d: new Float32Array(RIBBON_FLOATS * 64) };
+  }
+  if (p.rb.d.length < R.v.length) p.rb.d = new Float32Array(R.v.length * 2);
+  const d = p.rb.d;
+  for (let i = 0; i < R.v.length; i += RIBBON_FLOATS) {
+    d[i] = R.v[i];
+    d[i + 1] = R.v[i + 1] + worldCurveDrop(R.v[i], R.v[i + 2]);
+    d[i + 2] = R.v[i + 2];
+    d[i + 3] = R.v[i + 3];
+    d[i + 4] = R.v[i + 4];
+  }
+  gl.uniform3fv(p.U.uCol, R.col);
+  gl.uniform1f(p.U.uCore, R.core);
+  gl.disable(gl.CULL_FACE);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.bindBuffer(gl.ARRAY_BUFFER, p.rb.buf);
+  gl.bufferData(gl.ARRAY_BUFFER, d.subarray(0, R.v.length), gl.DYNAMIC_DRAW);
+  gpuSized(p.rb.buf, R.v.length * 4);
+  gl.bindVertexArray(p.rb.vao);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+  gl.bindVertexArray(null);
+  gl.enable(gl.BLEND);
+  bindQuad();
+}
 const WEATHER_FLOATS = 16;
 const weatherBatch = {
   n: 0,

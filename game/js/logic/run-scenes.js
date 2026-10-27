@@ -20,7 +20,6 @@
 /** @import { Biome, LocationData, NodeType, Pool, RoadLink, RunSceneRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
@@ -66,8 +65,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
-  runTownFolkCap: [() => runTownFolkCap, v => ((runTownFolkCap = v), provide({ runTownFolkCap }))],
-  // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
@@ -79,7 +76,6 @@ expose({
   runWorldTables: [() => runWorldTables, v => (runWorldTables = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ runTownFolkCap });
 /* to-module: end */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
@@ -99,30 +95,31 @@ export const runShopId = i => `run_${i}_shop`;
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
 /** the side names mapgen gives a scene's exits, the first and then the second on a side (mapgenStageExits) */
 export const RUN_SIDE_ID = { E: ['east', 'east2'], W: ['west', 'west2'] };
-/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first east
- * (back), the first west (ahead; the main road between them), then the second east and the second west
+/** a node's exits in the order its scene is made with them, with the ids the generator gives them: the first west
+ * (back), the first east (ahead; the main road between them), then the second west and the second east (WM-1: runs
+ * go west to east)
  * @param {RunMap} map @param {number} i
  * @returns {{ side: 'E' | 'W' | 'N' | 'S', t: number, id: string, node: number }[]} node: the neighbour the exit leads
  * to. RL-R2: a side area's places and the obstacle's north exit (run-side.js) */
 export function runSceneExits(map, i) {
   const S = map.side;
   /* RL-R2: a side area's place: its first comes in by its south side from the obstacle's place (whose north exit it
-     is), the others by their east from the one before; each but the last goes on by its west to the next */
+     is), the others by their west from the one before; each but the last goes on by its east to the next */
   if (S && map.nodes[i].side) {
     const k = S.nodes.indexOf(i),
       next = S.nodes[k + 1];
     return [
       k === 0
         ? { side: /** @type {'S'} */ ('S'), t: 0.5, id: 'south', node: S.from }
-        : { side: /** @type {'E'} */ ('E'), t: 0.5, id: 'east', node: S.nodes[k - 1] },
-      ...(next === undefined ? [] : [{ side: /** @type {'W'} */ ('W'), t: 0.5, id: 'west', node: next }]),
+        : { side: /** @type {'W'} */ ('W'), t: 0.5, id: 'west', node: S.nodes[k - 1] },
+      ...(next === undefined ? [] : [{ side: /** @type {'E'} */ ('E'), t: 0.5, id: 'east', node: next }]),
     ];
   }
   const ex = runExits(map, i),
-    E = ex.back.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.from })),
-    W = ex.ahead.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.to }));
+    W = ex.back.map((e, k) => ({ side: /** @type {'W'} */ ('W'), t: e.t, id: RUN_SIDE_ID.W[k], node: e.from })),
+    E = ex.ahead.map((e, k) => ({ side: /** @type {'E'} */ ('E'), t: e.t, id: RUN_SIDE_ID.E[k], node: e.to }));
   const out = /** @type {{ side: 'E' | 'W' | 'N' | 'S', t: number, id: string, node: number }[]} */ (
-    [E[0], W[0], E[1], W[1]].filter(e => !!e)
+    [W[0], E[0], W[1], E[1]].filter(e => !!e)
   );
   /* RL-R2: the obstacle's place: a north exit (a branch off the main road) into the side area */
   if (S && S.from === i) out.push({ side: 'N', t: 0.5, id: 'north', node: S.nodes[0] });
@@ -159,7 +156,7 @@ export function runSceneParams(run, i, scenes, data) {
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials')),
     layout = runLayoutOf(run, i, data),
     pieces = layout ? runPiecesOf(run, i, data) : 0;
-  /* its parents: the neighbours made before it (a main place's east ones; RL-R2: a side place's south or east one) */
+  /* its parents: the neighbours made before it (a main place's west ones; RL-R2: a side place's south or west one) */
   const edges = exits
     .filter(e => e.node < i)
     .map(e => {
@@ -173,7 +170,7 @@ export function runSceneParams(run, i, scenes, data) {
   return {
     ...dials,
     /* TR-2: the debug menu's mountains run (a mod on the run, so a reload makes the same scenes): every place gets
-       the tallest mountains on its north and south sides (the back and the camera's side: a run goes east to west;
+       the tallest mountains on its north and south sides (the back and the camera's side: a run goes west to east;
        south since TR-3's camera), with trails, and terraces whose fronts are ledges (TR-2c), for measuring them on a
        phone and playing the route's shape */
     ...((run.mods || []).includes(RUN_MOD_MOUNTAINS)
@@ -201,6 +198,8 @@ export function runSceneParams(run, i, scenes, data) {
     /* its east and west edges at height 0, so it meets any neighbour with no step (two neighbours' strips overlap on
        a 64 m edge, where one scene can't follow both) */
     pin: 'EW',
+    /* WM-1: the way on leaves by the east (the tall grass across it, the pinches along it) */
+    ahead: 'E',
     road: {
       ...(dials.road || {}),
       /* TW-1: a town's through road runs straight, so its street and square have room beside it */
@@ -354,14 +353,6 @@ export function runSceneMake(run, i, scenes, data) {
   }
   return { scene, notes };
 }
-/** TW-2: how many of a run town's folk are drawn (rules.json run.town.cap): `busy` once the game has stepped its
- * quality down (walkRenderer.q 2 or more: frames came late), else by the Graphics preset (preferences.aim: smooth is
- * Balanced, sharp is Beautiful) @param {import('../../types/game-data').RunTownRules} T @param {number} q
- * @param {string} [aim] @returns {number} */
-export function runTownFolkCap(T, q, aim) {
-  if (q >= 2) return T.cap.busy;
-  return aim === 'smooth' ? T.cap.balanced : T.cap.best;
-}
 /** TW-2: a run town's own life, from its node's stream ('town|life'): its region's chat lines after its biome's
  * (rules.json run.town.chat by the region's theme), and its named locals (scene.people), run.town.locals of them on
  * the town's local spots (mapgen.js: the square's first, then a house's gate drawn), each with a seeded look (a
@@ -417,8 +408,8 @@ export function runTownQuest(run, i, scene, data) {
 }
 /** RS-2: a run's resident standing in a town (scene.people id 'resident', `resident: <id>`: quest-board.js offers
  * their favour or their invite), on the first of the town's local spots nobody stands on (mapgen.js: the square's
- * first, then the houses' gates), else beside the square's. Their look is their own (seeded by their id), the same in
- * every run @param {any} scene @param {string} id @param {string} name */
+ * first, then the houses' gates), else beside the square's. Their look is their own (RS-3: people/<id>.json), the same
+ * in every run @param {any} scene @param {string} id @param {string} name */
 export function runTownResident(scene, id, name) {
   if (!scene) return;
   const people = scene.people || [],
@@ -428,8 +419,10 @@ export function runTownResident(scene, id, name) {
     ),
     at = free || (spots[0] ? { x: spots[0].x + 1.2, z: spots[0].z } : null);
   if (!at) return;
-  const who = 'folk:' + rngFrom('resident|' + id, 'look').int(1000, 99999);
-  scene.people = people.concat([{ id: 'resident', who, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id }]);
+  /* RS-3: their look is the person of their id (people/<id>.json, the data check asks for one) */
+  scene.people = people.concat([
+    { id: 'resident', who: id, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id },
+  ]);
 }
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
  * @param {RunWorldData} data @returns {any[]} */
@@ -461,7 +454,7 @@ export function runWildLevels(map, i, data, more = 0) {
   return lv;
 }
 /** the run's world: Copperleaf (`hub`, world node 0) and a place per map node, the seam roads between them (each
- * node's north exits to its children's south ones) and each node's pool (its biome's species at its row's levels).
+ * node's east exits to its children's west ones) and each node's pool (its biome's species at its row's levels).
  * A place is an ordinary row (game-data.js worldSetGraph) plus runNode, its map node
  * @param {Run} run @param {LocationData} hub @param {RunWorldData} data
  * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, shops: Record<string, any> }} */

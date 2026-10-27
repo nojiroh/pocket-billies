@@ -5,21 +5,12 @@
   "items": {"potion":2},
   "starters": ["musk","bezos","gates"],
   "starterLevel": 5,
-  "starterEgg": 2,
   "starterEncounters": 3,
   "rival": {"hood":"scoop0","gush":"hood0","scoop":"gush0","musk":"bezos0","bezos":"gates0","gates":"musk0"},
   "locationId": "copperleaf"
  },
  "encounters": {"route":4,"townGrass":2,"refillMs":60000,"prizePerLevel":20,"alphaOdds":45},
  "progression": {"xpFactor":0.8,"maxLevel":100,"teamSize":6,"moveSlots":4,"xpYield":[55,120,190],"trainerXpMult":1.5,"teamXpShare":0.5},
- "eggs": {
-  "capacity": 8,
-  "slots": 2,
-  "mythOdds": 1000,
-  "mythSpecies": "mansa0",
-  "dropChance": 0.12,
-  "dropTiers": {"2":0.6,"5":0.3,"10":0.1}
- },
  "battle": {
   "stab": 1.5,
   "critChances": [0.0625,0.125,0.25,0.5],
@@ -48,6 +39,7 @@
   "shockTurns": 5,
   "spinType": "Water",
   "spinTurns": 3,
+  "forkTurns": 5,
   "mailTurns": 2,
   "holdCap": 320,
   "shockName": "Sandstorm",
@@ -60,7 +52,6 @@
   "alphaKeep": 1.08,
   "alphaSleepResist": 0.5,
   "spreadMult": 0.75,
-  "restCost": 100,
   "turnCap": 40
  },
  "catching": {
@@ -129,8 +120,8 @@
  "run": {
   "payout": {"money":0.1,"itemShare":0.5,"released":15,"node":10,"win":100,"winCrests":1,"scrapNode":2,"scrapWin":10,"beansWin":1},
   "map": {
-   "rows": 9,
-   "minibosses": 2,
+   "path": [[9,10],[9,11],[10,11],[10,12],[11,12]],
+   "towns": [2,3],
    "first": "landing",
    "rest": "town",
    "guard": "miniboss",
@@ -171,7 +162,10 @@
    "route": 10,
    "routeMin": 4,
    "habitats": {"water":["Water"],"woods":["Grass","Psychic","Dragon"]},
-   "rare": {"up":2}
+   "rare": {
+    "up": 2,
+    "myth": {"chance":0.02,"list":["satoshi0"]}
+   }
   },
   "seamIn": 6,
   "load": {"capMs":20000},
@@ -192,7 +186,6 @@
   },
   "pack": [5],
   "town": {
-   "cap": {"busy":3,"balanced":5,"best":6},
    "locals": [1,2],
    "names": [
     "Old Tam",
@@ -247,6 +240,11 @@
    "up": 1,
    "reward": 200
   },
+  "ghost": {"on":["route","event"],"spare":"town","band":[0.1,0.95],"up":1,"reward":200,"who":"hiker"},
+  "boards": {
+   "daily": {"expedition":1,"challenges":[]},
+   "weekly": {"expedition":[2,3],"challenges":["noheal","noperks","fragile"],"picks":[1,2]}
+  },
   "trainers": {
    "perRoute": [[4,4],[4,5],[5,6]],
    "required": 0.5,
@@ -292,5 +290,14 @@
    "abomDown": 0.75
   },
   "income": {"rate":[1,2,3],"capHours":24}
+ },
+ "square": {
+  "day": [
+   {"k":"market","from":7,"to":11,"share":0.6,"stops":["keep","shop"]},
+   {"k":"midday","from":11.5,"to":14,"share":0.8,"stops":["fountain","sit","shop"]},
+   {"k":"afternoon","from":14,"to":17.5,"share":0.3,"stops":["sit","fountain"]},
+   {"k":"evening","from":18,"to":21.5,"share":0.3,"stops":["lamp","sit"]}
+  ],
+  "visit": {"most":2,"from":8,"to":18,"every":600,"walk":1,"stay":[60,150],"stops":["fountain","sit"]}
  }
 }

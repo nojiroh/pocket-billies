@@ -40,8 +40,8 @@ expose({
 export const HISTORY_MAX = 20,
   HISTORY_ENDS = ['won', 'lost', 'quit'],
   /** what can end a run: a wild Billie, a route trainer, an event's foe, a mini-boss, the boss, the rival (RL-S2),
-   * another trainer */
-  LOST_TO_KINDS = ['wild', 'route', 'event', 'miniboss', 'boss', 'rival', 'trainer'],
+   * a friend's ghost (ON-2), another trainer */
+  LOST_TO_KINDS = ['wild', 'route', 'event', 'miniboss', 'boss', 'rival', 'ghost', 'trainer'],
   /** `last:<fact>`: the last run's numbers (0 with no run yet) */
   LAST_FACTS = ['won', 'lost', 'quit', 'row', 'days', 'perks', 'team', 'leaders', 'expedition', 'rival', 'rivalwon'],
   /** `history:<fact>`: over every run kept */
@@ -193,9 +193,10 @@ export function validHistory(v) {
 }
 
 /** the facts the story's conditions read (conditions.js storyStateOf): `last` (LAST_FACTS of the newest entry),
- * `lastby` (what ended it: its kind, its trainer or class id, the Billie, `bureau`) and `history` (HISTORY_FACTS)
- * @param {HistoryEntry[] | undefined} list
- * @returns {{ last: Record<string, number>, lastby: Record<string, number>, history: Record<string, number> }} */
+ * `lastby` (what ended it: its kind, its trainer or class id, the Billie, `bureau`), `lastres` (RS-3: who it brought
+ * to Copperleaf) and `history` (HISTORY_FACTS) @param {HistoryEntry[] | undefined} list
+ * @returns {{ last: Record<string, number>, lastby: Record<string, number>, lastres: Record<string, number>,
+ *   history: Record<string, number> }} */
 export function historyFacts(list) {
   const H = Array.isArray(list) ? list : [],
     e = H[H.length - 1],
@@ -233,6 +234,8 @@ export function historyFacts(list) {
   return {
     last,
     lastby,
+    /* RS-3: who the last run brought to Copperleaf (its `res`): `lastres:<id>` */
+    lastres: e && e.res ? { [e.res]: 1 } : {},
     history: {
       runs: H.length,
       wins: count(e => e.end === 'won'),
