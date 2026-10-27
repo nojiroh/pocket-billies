@@ -8,6 +8,7 @@
 import { expose } from '../test-globals.js';
 import { landing, landingFrame, openingFall, provide } from '../hooks.js';
 import { $, clamp } from '../util.js';
+import { copiedAnchor } from '../logic/person-view.js';
 import { reducedMotion } from '../game-state.js';
 import { makeCanvas } from '../art.js';
 import { personBattlePose, personWalkFrames } from '../person-art.js';
@@ -166,7 +167,8 @@ function cutscenePersonItem(a, t, C0) {
   } else im = (personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down)[0];
   return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});
 }
-/* a picture of a person, flat dark (a silhouette) or mirrored, made once per picture */
+/* a picture of a person, flat dark (a silhouette) or mirrored, made once per picture; CH-1: the copy keeps the
+   original's anchor and size (logic/person-view.js copiedAnchor), so it stands where the person stands */
 const DARK_ART = new WeakMap(),
   MIRROR_ART = new WeakMap();
 function cutsceneDark(im) {
@@ -180,6 +182,7 @@ function cutsceneDark(im) {
     x.fillStyle = '#0D0A16';
     x.fillRect(0, 0, d.width, d.height);
     if (im.__mat) d.__mat = im.__mat;
+    Object.assign(d, copiedAnchor(im));
     DARK_ART.set(im, d);
   }
   return d;
@@ -193,6 +196,7 @@ function cutsceneMirrored(im) {
     x.imageSmoothingEnabled = false;
     x.setTransform(-1, 0, 0, 1, d.width, 0);
     x.drawImage(im, 0, 0);
+    Object.assign(d, copiedAnchor(im, true));
     MIRROR_ART.set(im, d);
   }
   return d;
