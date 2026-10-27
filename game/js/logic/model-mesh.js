@@ -33,6 +33,7 @@ expose({
   MODEL_DENSITY_OFF: [() => MODEL_DENSITY_OFF],
   MODEL_FLAT_RANGE: [() => MODEL_FLAT_RANGE],
   MODEL_OWN_CELL: [() => MODEL_OWN_CELL],
+  MODEL_PALETTE_SHARE: [() => MODEL_PALETTE_SHARE],
   MODEL_PPM: [() => MODEL_PPM],
   MODEL_TRI_WARN: [() => MODEL_TRI_WARN],
   MODEL_UV_Q: [() => MODEL_UV_Q],
@@ -74,6 +75,9 @@ export const MODEL_DENSITY_OFF = 0.25;
 export const MODEL_UV_Q = 4096;
 /** byte 16 of a vertex: the model's own texture */
 export const MODEL_OWN_CELL = 255;
+/** a model is a palette model when faces of one colour make more than this share of its textured surface (a model
+    baked to 32 px/m has plain faces too: about half of the turbine's) */
+export const MODEL_PALETTE_SHARE = 0.75;
 /** the density histogram's bins, in px/m (the last is open) */
 export const MODEL_DENSITY_BINS = [0, 4, 8, 16, 24, 28, 36, 48, 64, 128];
 
@@ -147,7 +151,7 @@ export function modelBuild(src, imageSizes, o = {}) {
     sy = Math.sin(yaw),
     turn = (/** @type {number[]} */ p) => [p[0] * cy + p[2] * sy, p[1], -p[0] * sy + p[2] * cy],
     dir = (/** @type {number[]} */ p) => turn(map(p)),
-    linear = src.format !== 'obj';
+    linear = src.format === 'gltf' || src.format === 'glb';
   /* the textures in use, packed into one */
   const used = imageSizes.map(() => false);
   for (const n of src.nodes)
@@ -468,12 +472,12 @@ export function modelDensity(faces, texW, texH, pixels = null) {
     off: modelRound3(off),
     hist: hist.map(modelRound3),
     palette: modelRound3(paletteShare),
-    isPalette: paletteShare > 0.5,
+    isPalette: paletteShare > MODEL_PALETTE_SHARE,
     textured: modelRound3(textured),
     plain: modelRound3(plain),
     /** the texture's scale that brings the median to MODEL_PPM (1: nothing to do) */
     fix:
-      median > 0 && paletteShare <= 0.5 && Math.abs(median / MODEL_PPM - 1) > MODEL_DENSITY_OFF
+      median > 0 && paletteShare <= MODEL_PALETTE_SHARE && Math.abs(median / MODEL_PPM - 1) > MODEL_DENSITY_OFF
         ? modelResampleFactor(median)
         : 1,
   };

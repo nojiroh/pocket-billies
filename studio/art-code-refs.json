@@ -198,7 +198,7 @@
   {
    "p": "scene/models/*.png",
    "at": [
-    "game/js/logic/model-mesh.js:306"
+    "game/js/logic/model-mesh.js:310"
    ]
   },
   {

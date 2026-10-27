@@ -16,7 +16,8 @@ const G = modules['model-gltf'],
     return s && [s.w, s.h];
   },
   O = modules['model-obj'],
-  M = modules['model-mesh'];
+  M = modules['model-mesh'],
+  K = modules['model-bake'];
 const CC0 = join(ROOT, 'validation/cc0-src');
 const kayFiles = () => Object.fromEntries(readdirSync(CC0).map(f => [f, new Uint8Array(readFileSync(join(CC0, f)))]));
 const RP3 = JSON.parse(readFileSync(join(ROOT, 'tools/test/model-import-rp3.json'), 'utf8'));
@@ -503,4 +504,110 @@ test('the triangle warning and a part cut at 65,535 vertices', () => {
     n * n * 2
   );
   assert.equal(R.rec.tex, undefined, 'no texture: colours only');
+});
+
+/* ---------------------------------------------------------------- the bakes */
+const PALETTE = Object.values(
+  JSON.parse(
+    readFileSync(join(ROOT, 'game/art/next/palette.js'), 'utf8')
+      .replace(/^[\s\S]*?window\.NW_PALETTE=/, '')
+      .replace(/;\s*$/, '')
+  ).ramps
+).flat();
+
+test('the prop picture: 32 px to the metre, base point at the bottom middle, an ink outline', () => {
+  const S = G.readGltf(kayFiles(), 'arch.gltf'),
+    tex = readPng(join(CC0, 'halloweenbits_texture.png')),
+    B = M.modelBuild(S, [[tex.width, tex.height]], { height: 4, key: 'arch' }),
+    P = K.modelBakePicture(B.rec, tex);
+  const wide = B.rec.box[3] - B.rec.box[0];
+  near(P.pixels.width, Math.ceil(wide * 32) + 4, 1, 'width');
+  near(-P.ox, P.pixels.width / 2, 2, 'base point across');
+  /* the ground is near the bottom (the depth adds half its size above it) */
+  assert.ok(-P.oy > P.pixels.height - 4 - ((B.rec.box[5] - B.rec.box[2]) * 32) / 2 - 2);
+  const ink = [...P.pixels.data].filter((v, i) => i % 4 === 0 && v === K.MODEL_INK[0]).length;
+  assert.ok(ink > 100, 'outlined');
+});
+
+test('Bake to 32 px/m: a palette model gets a texture of its own at 32 px/m, in our palette', () => {
+  const S = G.readGltf(kayFiles(), 'arch.gltf'),
+    tex = readPng(join(CC0, 'halloweenbits_texture.png')),
+    B = M.modelBuild(S, [[tex.width, tex.height]], { height: 4, key: 'arch' }),
+    sheet = readPng(join(ROOT, 'game/art/scene/build/detail-a04b.png')),
+    R = K.modelBakeTexture(B.rec, tex, { palette: PALETTE, sheet, cols: 8, cell: 64 });
+  assert.equal(R.rec.tris, B.rec.tris);
+  assert.equal(M.modelFaces(R.rec).length, B.rec.tris, 'every face kept');
+  const D = M.modelDensity(M.modelFaces(R.rec), R.pixels.width, R.pixels.height, R.pixels);
+  near(D.median, 32, 2, 'the art density');
+  assert.ok(D.off < 0.05, `${D.off} off`);
+  assert.equal(D.isPalette, false);
+  /* the colours at shade level 2 are the palette's own */
+  const base = K.modelSnapColour([120, 124, 130], PALETTE);
+  assert.ok(PALETTE.includes('#' + base.map(v => v.toString(16).padStart(2, '0')).join('')));
+  assert.deepEqual(K.modelRamp([100, 150, 200], 2), [100, 150, 200]);
+  assert.equal(K.modelBakeMaterial([128, 128, 132]), 'stone');
+  assert.equal(K.modelBakeMaterial([139, 90, 43]), 'wood');
+  assert.equal(K.modelBakeMaterial([60, 160, 60]), 'leaves');
+  /* the vertex colours are white: the texture carries the colour */
+  const raw = Buffer.from(R.rec.parts[0].data, 'base64');
+  assert.deepEqual([raw[16], raw[18], raw[20], raw[21], raw[22]], [255, 0, 255, 255, 255]);
+});
+
+/* ---------------------------------------------------------------- .vox */
+/** a .vox: SIZE, XYZI and RGBA chunks inside MAIN */
+function voxFile(size, voxels, rgba) {
+  const chunk = (tag, body) => {
+    const h = Buffer.alloc(12);
+    h.write(tag, 0, 'latin1');
+    h.writeInt32LE(body.length, 4);
+    return Buffer.concat([h, body]);
+  };
+  const S = Buffer.alloc(12);
+  size.forEach((v, i) => S.writeInt32LE(v, i * 4));
+  const X = Buffer.alloc(4 + voxels.length * 4);
+  X.writeInt32LE(voxels.length, 0);
+  voxels.forEach((v, i) => X.set(v, 4 + i * 4));
+  const parts = [chunk('SIZE', S), chunk('XYZI', X)];
+  if (rgba) parts.push(chunk('RGBA', Buffer.from(rgba)));
+  const kids = Buffer.concat(parts),
+    main = Buffer.alloc(12);
+  main.write('MAIN', 0, 'latin1');
+  main.writeInt32LE(0, 4);
+  main.writeInt32LE(kids.length, 8);
+  const head = Buffer.alloc(8);
+  head.write('VOX ', 0, 'latin1');
+  head.writeInt32LE(150, 4);
+  return new Uint8Array(Buffer.concat([head, main, kids]));
+}
+
+test('a .vox: read as the Props import read it, its raw layer, and its outer faces as a model', () => {
+  const V = modules['model-vox'],
+    pal = new Uint8Array(1024);
+  pal.set([10, 20, 30, 255], 0);
+  const f = voxFile(
+      [4, 2, 3],
+      [
+        [0, 0, 0, 1],
+        [1, 0, 0, 1],
+      ],
+      pal
+    ),
+    P = V.voxParse(f);
+  assert.deepEqual(P.size, [4, 2, 3]);
+  assert.equal(P.voxels.length, 2);
+  assert.deepEqual(P.palette[0], [10, 20, 30]);
+  /* the raw layer as model-editor.js always wrote it: btoa of x, y, z, r, g, b characters */
+  const L = V.voxRawLayer(P, 'two.vox');
+  assert.equal(L.data, Buffer.from([0, 0, 0, 10, 20, 30, 1, 0, 0, 10, 20, 30]).toString('base64'));
+  assert.deepEqual([L.name, L.n, L.ox, L.oy, L.vpm], ['two', 2, -2, -1, 32]);
+  /* two voxels side by side: 10 faces show, 20 triangles; a voxel is 1/32 m */
+  const S = V.voxSource(P, 'two'),
+    B = M.modelBuild(S, [], { scale: 1 / 32 });
+  assert.equal(B.rec.tris, 20);
+  near(B.rec.box[3] - B.rec.box[0], 2 / 32, 1e-3, 'two voxels wide');
+  near(B.rec.box[4], 1 / 32, 1e-3, 'one tall');
+  /* sRGB colours as they are */
+  const raw = Buffer.from(B.rec.parts[0].data, 'base64');
+  assert.deepEqual([raw[18], raw[20], raw[21], raw[22]], [1, 10, 20, 30]);
+  assert.throws(() => V.voxParse(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])), /not a \.vox/);
 });
