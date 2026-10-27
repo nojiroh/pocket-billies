@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-5 - unused art - 2026-10-27
+Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
+owner's picks: delete all seven orphan groups; delete the loader's PNG copies too; retire the far backdrops; leave
+`art/manifest.js`'s `battle` layout. 17 commits. Tag `sa-5-done` (made here, for the owner to push). **The track is done.**
+- Changed:
+  - **The report**: `artRefInputs` and `artReport` in `game/js/logic/art-refs.js` (unused, legacy, kept, missing), used
+    by the Art browser and by `tools/art-unused.mjs` (`--check`, `--json`), so the Studio and the checks count alike.
+    check-quick.py's Unused step counts pictures with it (closes SA-1's "the smoke step counts differently").
+  - **The keep list** `studio/art-keep.json` (16 pictures nothing loads that stay, each with a reason: the portrait
+    kit, the palette PNGs, Kappi's drawing sheet, `detail-a04.png`); a `kept` search token and state.
+  - **The Art browser**: a Report button (Nothing uses it, Missing, Legacy, Kept on purpose); legacy art read-only
+    (no Edit pixels or Replace, also from other editors' Edit pixels).
+  - **Moved** to `art/legacy/`: 15 postcards, 6 flags (decision 2). build-flags.py writes the legacy towns' flags there.
+  - **Deleted** (grep by full path first; git history and the `legacy` tag keep them): `people/` (15), 71 `scene/props`
+    renders, `battle/cloud_3-5`, 5 battle props, the hand rig archive (`next/billionaires/hand`: 27 sheets, 24
+    concepts, 29 JSON), `props/layers/tree_giant_swing.png`, `egg_5` and its cracked one (`EGG_ART` is 2 and 10 now),
+    the loader's PNGs (build-loader-v47.py writes loader.css only), the far backdrops and `far.json` (walk-view.js no
+    longer preloads them; the Studio's far preview is gone; build-scene-props.py writes none; Walk scenes labels the
+    `far` picker "Surroundings (picks the sound, water and walls)").
+  - Checks: unit tests for the keep list, the legacy folder, the inputs, the report, and the game at 0 orphans, 0
+    missing, legacy art only in `art/legacy`; `kept` in art-search's tests; check-studio-github's art_browser step
+    compares the unused search and the Report with the tool and tries to paint a legacy flag.
+  - Docs: STUDIO.md (Report, keep list, read-only legacy, far retired), the track's "Found in SA-5", ROADMAP.
+- Where the plan was wrong: `people/` was 15, not 18; `flag_pole.png` is used (legacy maps place it); the hand archive
+  was bigger than listed (20 sheets counted as used through `rigs-hand.json`, which nothing reads, so they showed only
+  once it was gone; deleted with the rest of the archive you approved); `egg_5` read as used through a pattern.
+- Risky:
+  - The A5 commit (the hand archive's first part) left `studio/art-code-refs.json` stale; the regenerated file is in
+    the next commit (the egg preload). Lint fails on that one commit only.
+  - Deleting art the code builds a name for: each was grepped by full path, and the index reads code as patterns; a
+    path assembled in a way neither sees would now 404. The full quick check is the guard (below).
+  - `scenery.flags` still lists the six legacy towns: a live scene with one of those ids would look in `scene/flags`.
+    None has one today.
+- Verified:
+  - lint, typecheck, format, check:modules after each change; unit tests 1466 pass.
+  - `node tools/art-unused.mjs --check`: 3,730 pictures, 0 unused, 21 legacy, 16 kept, 0 missing.
+  - `check-studio-github.py --only=sections,art_browser,scene_art,studio_test`: ok except scene_art's "the painter
+    does not outline the 12 wall cells", which fails the same on main before SA-5 (checked on a worktree at a8c60bbc).
+  - The full quick check: running (result in the next commit).
+- For the owner on the phone:
+  - Art → Art browser → Report: four lists, "Nothing uses it · 0".
+  - `art/legacy/scene/flags/marigold.png`: waves, no Edit pixels.
+  - A run and the hub: the loading screen, eggs at the ranch, flags and postcards (Copperleaf's) look as before.
+- Next: the track is done. Hot reload and shared asset collections (the track's Pushing back) wait for the owner.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**

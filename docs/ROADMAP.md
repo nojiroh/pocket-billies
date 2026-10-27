@@ -127,7 +127,8 @@ town node needs it.
   SA-2b (a text-file save, the UI icon editor with the icons' builder retired, the icon atlas's rectangles, previews
   of walls, building cells, rooms, flags and far backdrops; done 2026-10-27), SA-3 (clean-up in the Studio and the game: Jobs,
   Town shops, Route stops, dead Rules and Trainers fields, the walk eggs and eggs.json; done 2026-10-27), SA-4
-  (navigation as workspaces, Characters, Part rules; done 2026-10-27), SA-5 next (unused art). Planned
+  (navigation as workspaces, Characters, Part rules; done 2026-10-27), SA-5 (the unused-art report, 0 orphans, legacy
+  art in art/legacy read-only, the far backdrops retired; done 2026-10-27): **the track is done**. Planned
   2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
