@@ -160,7 +160,7 @@ export function ambienceDrift(D, r) {
 /** @type {Record<string, AmbienceBed>} */
 export const AMBIENCE_BEDS = {
   /* crickets: chirps in groups with pauses (ambienceCrickets), two of them at different places, lower than before */
-  crickets: { bus: 'amb', trim: 1, layers: [], events: 'crickets' },
+  crickets: { bus: 'amb', trim: 0.74, layers: [], events: 'crickets' },
   /* leaves: a soft rustle that comes and goes in gusts */
   leaves: {
     bus: 'amb',
@@ -181,7 +181,7 @@ export const AMBIENCE_BEDS = {
   /* the town: a low hum of people, two layers that move on their own */
   town: {
     bus: 'amb',
-    trim: 1,
+    trim: 1.2,
     layers: [
       {
         noise: 'pink',
@@ -208,7 +208,7 @@ export const AMBIENCE_BEDS = {
   },
   cave: {
     bus: 'amb',
-    trim: 1,
+    trim: 0.54,
     tone: 49,
     layers: [
       {
@@ -222,7 +222,7 @@ export const AMBIENCE_BEDS = {
   },
   room: {
     bus: 'amb',
-    trim: 1,
+    trim: 0.59,
     layers: [
       {
         noise: 'brown',
@@ -255,7 +255,7 @@ export const AMBIENCE_BEDS = {
   },
   falls: {
     bus: 'world',
-    trim: 1,
+    trim: 0.37,
     layers: [
       {
         noise: 'brown',
@@ -271,7 +271,7 @@ export const AMBIENCE_BEDS = {
   /* the sea: two layers that swell on their own, never in step */
   sea: {
     bus: 'world',
-    trim: 1,
+    trim: 0.56,
     layers: [
       {
         noise: 'brown',
@@ -295,7 +295,7 @@ export const AMBIENCE_BEDS = {
   },
   pond: {
     bus: 'world',
-    trim: 1,
+    trim: 1.6,
     layers: [
       {
         noise: 'pink',
@@ -347,7 +347,7 @@ export const AMBIENCE_BEDS = {
   },
   lava: {
     bus: 'world',
-    trim: 1,
+    trim: 0.51,
     layers: [
       {
         noise: 'brown',
@@ -361,7 +361,7 @@ export const AMBIENCE_BEDS = {
   /* rain: a soft wash (pink, high-passed, the highs shelved down) over a low rumble, the wash drifting a little */
   rain: {
     bus: 'world',
-    trim: 1,
+    trim: 0.38,
     layers: [
       {
         noise: 'pink',
