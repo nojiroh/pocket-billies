@@ -939,7 +939,7 @@ const PbNavBar = class extends LitElement {
         background: var(--edge);
       }
       .side {
-        --apart: var(--s4);
+        --apart: var(--s2); /* its margin and the gap to the tile: 60 px columns at the narrowest */
         position: absolute;
         top: calc(var(--rise) + var(--s1));
         width: calc((100% - var(--tile-w)) / 2 - var(--apart));
