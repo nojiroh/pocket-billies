@@ -4,10 +4,21 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { gameData, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { placedTurn, pointInProp, turnedBounds } from '../logic/prop-turn.js';
-import { bridgeAt, navGrid, setNavGrid, stepRaiseAt, terrainAt, walkData, walkView } from '../walk-view.js';
+import {
+  bridgeAt,
+  mapBridges,
+  mapById,
+  navGrid,
+  setNavGrid,
+  stepRaiseAt,
+  terrainAt,
+  walkData,
+  walkView,
+} from '../walk-view.js';
+import { engineSetting } from '../engine/settings.js';
 import { smooth01 } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -15,12 +26,17 @@ expose({
   WALL_COLORS: [() => WALL_COLORS],
   WALL_MATERIALS: [() => WALL_MATERIALS],
   baseNavGrid: [() => baseNavGrid],
+  biomeCliff: [() => biomeCliff, v => (biomeCliff = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
+  heightCorner: [() => heightCorner, v => (heightCorner = v)],
+  heightCurve: [() => heightCurve, v => (heightCurve = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
+  navGridSteep: [() => navGridSteep, v => (navGridSteep = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
+  wallAtlasRows: [() => wallAtlasRows, v => (wallAtlasRows = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ defaultWallMaterial, groundHeightAt, rawHeightAt, standingHeightAt });
@@ -80,8 +96,13 @@ function heightGrid(sc) {
       return (sc._hg = { H, sig: 'room', t: performance.now(), G, W, Hh: sc.h, base: B.G });
     }
   }
+  const c0 = sc._hg;
+  /* LD-5 (cutscenes session): while the walking grid is built (navGrid, one go: nothing can change meanwhile) the grid
+     made at its start is the one; asked hundreds of thousands of times, the clock and the props' signature cost more
+     than the grid's own sums */
+  if (walkView.navBuilding && c0 && c0.H === H) return c0;
   const now = performance.now(),
-    c = sc._hg;
+    c = c0;
   if (c && now - c.t < 120 && c.H === H) return c;
   const CP = walkData().sc.props;
   let sig = (sc._hv || 0) + '|' + (sc.props ? sc.props.length : 0);
@@ -149,6 +170,16 @@ function heightGrid(sc) {
   }
   return (sc._hg = { H, sig, t: now, G, W, Hh });
 }
+/** the height grid's corner (a, b), held at its edges @param {Float32Array} G @param {number} W @param {number} Hh
+ * @param {number} a @param {number} b */
+function heightCorner(G, W, Hh, a, b) {
+  return G[clamp(b, 0, Hh) * (W + 1) + clamp(a, 0, W)];
+}
+/** a Catmull-Rom curve through four heights, t of the way from p1 to p2 @param {number} p0 @param {number} p1
+ * @param {number} p2 @param {number} p3 @param {number} t */
+function heightCurve(p0, p1, p2, p3, t) {
+  return p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
+}
 export function rawHeightAt(sc, x, z) {
   const Q = heightGrid(sc);
   if (!Q) return 0;
@@ -161,18 +192,41 @@ export function rawHeightAt(sc, x, z) {
     j = Math.min(Hh - 1, Math.floor(fz)),
     u = fx - i,
     v = fz - j;
-  const g = (a, b) => G[clamp(b, 0, Hh) * (W + 1) + clamp(a, 0, W)],
-    cr = (p0, p1, p2, p3, t) =>
-      p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
-  const r0 = cr(g(i - 1, j - 1), g(i, j - 1), g(i + 1, j - 1), g(i + 2, j - 1), u),
-    r1 = cr(g(i - 1, j), g(i, j), g(i + 1, j), g(i + 2, j), u),
-    r2 = cr(g(i - 1, j + 1), g(i, j + 1), g(i + 1, j + 1), g(i + 2, j + 1), u),
-    r3 = cr(g(i - 1, j + 2), g(i, j + 2), g(i + 1, j + 2), g(i + 2, j + 2), u);
-  const a = g(i, j),
-    b = g(i + 1, j),
-    c = g(i, j + 1),
-    d = g(i + 1, j + 1);
-  return clamp(cr(r0, r1, r2, r3, v), Math.min(a, b, c, d), Math.max(a, b, c, d));
+  /* LD-5 (cutscenes session): the corner reads and the curve are plain functions (heightCorner, heightCurve), not
+     closures made on every call: the walking grid asks this hundreds of thousands of times */
+  const r0 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j - 1),
+      heightCorner(G, W, Hh, i, j - 1),
+      heightCorner(G, W, Hh, i + 1, j - 1),
+      heightCorner(G, W, Hh, i + 2, j - 1),
+      u
+    ),
+    r1 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j),
+      heightCorner(G, W, Hh, i, j),
+      heightCorner(G, W, Hh, i + 1, j),
+      heightCorner(G, W, Hh, i + 2, j),
+      u
+    ),
+    r2 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j + 1),
+      heightCorner(G, W, Hh, i, j + 1),
+      heightCorner(G, W, Hh, i + 1, j + 1),
+      heightCorner(G, W, Hh, i + 2, j + 1),
+      u
+    ),
+    r3 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j + 2),
+      heightCorner(G, W, Hh, i, j + 2),
+      heightCorner(G, W, Hh, i + 1, j + 2),
+      heightCorner(G, W, Hh, i + 2, j + 2),
+      u
+    );
+  const a = heightCorner(G, W, Hh, i, j),
+    b = heightCorner(G, W, Hh, i + 1, j),
+    c = heightCorner(G, W, Hh, i, j + 1),
+    d = heightCorner(G, W, Hh, i + 1, j + 1);
+  return clamp(heightCurve(r0, r1, r2, r3, v), Math.min(a, b, c, d), Math.max(a, b, c, d));
 }
 /* the visible ground (smooth land plus the terrace, cliff or stair raise of its half-metre cell) and the height you
    stand at (a bridge deck where there is one; a little lower in water) */
@@ -207,6 +261,11 @@ export const WALL_MATERIALS = [
   'Mossy rock',
   'Concrete',
   'Dark slate',
+  /* terrain TR-4: the biomes' cliff faces (walls.png's fourth row) */
+  'Columnar basalt',
+  'Limestone',
+  'Crystal-veined rock',
+  'Speckled granite',
 ];
 export const WALL_COLORS = [
   [0.47, 0.45, 0.42],
@@ -221,9 +280,30 @@ export const WALL_COLORS = [
   [0.42, 0.47, 0.36],
   [0.62, 0.62, 0.6],
   [0.32, 0.33, 0.38],
+  [0.3, 0.3, 0.33],
+  [0.8, 0.77, 0.68],
+  [0.36, 0.33, 0.46],
+  [0.7, 0.68, 0.66],
 ];
+/* terrain TR-4: how many rows of 64 px cells the wall atlas has (3 before TR-4, 4 after; 3 until the picture is in) */
+export function wallAtlasRows(im) {
+  const w = (im && (im.naturalWidth || im.width)) || 0,
+    h = (im && (im.naturalHeight || im.height)) || 0;
+  return w > 0 && h > 0 ? clamp(Math.round(h / (w / 4)), 3, 4) : 3;
+}
+/* terrain TR-4: a generated place's biome's cliff block (biomes.json cliff: mat, strata, band, snowLine), read when it is
+   drawn (mapgen doesn't copy it, so a scene's hash is unchanged); null for a hand-made map, which has no biome */
+export function biomeCliff(sc) {
+  if (!sc) return null;
+  /* a seamless view carries no biome: its base place (the map you stand in) has it */
+  const base = sc.biome || !sc.baseId ? null : mapById(sc.baseId),
+    B = ((gameData && gameData.biomes) || {})[sc.biome || (base && base.biome) || ''];
+  return (B && B.cliff) || null;
+}
 export function defaultWallMaterial(sc) {
   if (sc.cliffMat) return sc.cliffMat;
+  const K = engineSetting('world', 'cliffFaces') ? biomeCliff(sc) : null;
+  if (K) return K.mat;
   if (sc.far === 'canyon') return 2;
   if (sc.indoor && sc.far === 'cave') return 3;
   if (sc.indoor) return 10;
@@ -239,8 +319,20 @@ setNavGrid(function () {
       walkView.navSc === sc &&
       walkView.navG === walkView.gkey &&
       walkView.navP === (sc.props || []).length
-    ),
-    n = baseNavGrid();
+    );
+  if (!fresh || walkView.navBuilding) return navGridSteep(sc, fresh, baseNavGrid());
+  /* LD-5: the heights and bridges looked at once, then held for the build (heightGrid, mapBridges) */
+  heightGrid(sc);
+  mapBridges(sc);
+  walkView.navBuilding = true;
+  try {
+    return navGridSteep(sc, fresh, baseNavGrid());
+  } finally {
+    walkView.navBuilding = false;
+  }
+});
+/** the steep ground shut on a fresh walking grid (once per scene) @param {any} sc @param {boolean} fresh @param {any} n */
+function navGridSteep(sc, fresh, n) {
   if (!fresh || !sc.heights || !sc.heights.length || n._hk) return n;
   const { N, gw, gh, blk } = n;
   for (let j = 0; j < gh; j++)
@@ -257,4 +349,4 @@ setNavGrid(function () {
     }
   n._hk = 1;
   return n;
-});
+}

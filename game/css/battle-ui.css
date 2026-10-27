@@ -173,11 +173,11 @@
 }
 .bplate .pl-sg .stg {
   font-size: 10px;
-  padding: 0 4px;
+  padding: 0 var(--s1);
 }
 .bplate .pl-parts {
   display: flex;
-  gap: 4px;
+  gap: var(--s1);
   margin-top: 3px;
 }
 .bplate .pl-parts[hidden],

@@ -19,6 +19,7 @@ those sessions; until then, follow the rule next to them.
 | (c) smoke | `npm run check:smoke` | about 3 min (188 s on 23 Oct 2026, a 4-core cloud container: the phone flow, the actions sheet, one in-game test step) | 1-2 min, not met | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 21 min (1282 s on 23 Oct 2026, all 37 steps passed, 13 pages, 2 browsers, about 500 s of the pages' time boots; 1217-1338 s over four runs; 41 min the same day before TC-4 round 3) | about 10 min, not met (see below) | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
+| load (LD-0) | `python3 tools/check-load.py` (`--only=cold` or `run`, `--max-hitches=N`) | about 1.5 min (92 s on 27 Oct 2026 in a cloud container, the build included) | none; a note until LD-6 makes it a gate | after a change to booting, loading or what a place builds; at the end of every load-track session |
 | rules | `cd firebase && npm test` | about 1 min | none | when firestore.rules or what the game writes changes |
 
 The quick check needs Python Playwright matching the installed Chromium (tools/requirements-check.txt). A phase that
@@ -217,7 +218,7 @@ same phase:
 - The Road phase was removed in RL-5 (the hub has no road); RL-7 brought it back as "A run's road" (a run put on a
   copy of the save, its world made, the landing's north seam walked a step at a time, the next place on day 2, the
   save and the hub's world put back). RL-8 added "A run: airship, nodes, payout" (a short run taken off from the mast
-  on a copy of the save, the flight, a battle, a paid heal, the Alpha boss, the payout, home). The Room phase walks into Hazel's lab; the night, Billies-in-the-world and
+  on a copy of the save, the flight, a battle, a paid heal, the Alpha boss, the payout, home). The Room phase walks into Kappi's lab; the night, Billies-in-the-world and
   Stress phases run on the hub's map. The scenes of a run's world are not in the "Walk:" list.
 - The test never writes the save: it pauses saving (`pauseSaving`/`resumeSaving`, game-state.js) and puts the save
   back. Don't call `writeStoredSave` or the account directly from a step.
@@ -335,8 +336,11 @@ same phase:
   (`--quick` for a sample; `robot-sim.test.mjs` checks it runs). Its bounds are still to be agreed with the owner.
 - **UI track** (docs/phases/ui-track.md): `npm run lint:ui` (tools/ui-lint.mjs, UI-1) counts raw values per UI rule
   and file next to the token uses (corners, space, shadows, keyframes, times, fonts, colours, `!important`, layers,
-  blur rules; colours, `innerHTML` and `style="` in game JS). A report until UI-6 makes it fail when a count rises.
-  Smoke's phone step ends with the blurred surfaces on each screen it visits (`uiBlurCount()`, budget 3). The look
+  blur rules; colours, `innerHTML` and `style="` in game JS). Since UI-6a `npm run lint` fails when a count rises
+  above its ceiling (`UI_LINT_CEILING`; `--save` lowers them). Smoke's phone step counts the blurred surfaces on each
+  screen it visits (`uiBlurCount()`) and, since UI-6b, fails above 3, or above `BLUR_CEILING` (tools/check-quick.py:
+  map 10, shop 5) for a screen that was over it. The tap-target step (40 px, or an icon with its invisible 7 px
+  margin) also opens a Field Guide entry and Settings' Display and Help tabs since UI-6b. The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
   UI-2: `npm run check:ui` (tools/check-ui-gallery.py) takes a picture of every `[data-shot]` section of
@@ -346,8 +350,8 @@ same phase:
   change to a cut is caught). A new kit part or state goes into the gallery as a section with `data-shot`; a look
   change on purpose is `python3 tools/check-ui-gallery.py --update`, said in the commit. Not in CI: the baseline is
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
-  copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
-  tools/build-ui-icons.py.
+  copy equals the generator's) and `tools/test/ui-icons.test.mjs` checks game/art/ui/*.svg (51 icons, 36×36, the
+  pixel format the Studio's icon editor writes, every icon the code names; the SVGs are the source since SA-2b).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
@@ -370,7 +374,7 @@ same phase:
   and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
   in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
-  (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Hazel's lab, `battle` = Leader Rocco); the
+  (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Kappi's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town
   were retired with their places (each change is marked RL-5 in tools/check-quick.py). RL-7 brought a run's world
   back into the checks: the `run` fixture (the fixture's team on a run with the seed RL7FIXTURE, landed on day 1; its

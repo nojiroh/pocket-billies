@@ -14,6 +14,7 @@ import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from
 import { eggHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { walkView } from './walk-view.js';
+import { trainRide } from './train-ride.js';
 import { encounterResume } from './encounter-screen.js';
 import { typeBadgeHTML } from './ui-bits.js';
 import { closeModal, modal, toast } from './overlay.js';
@@ -51,6 +52,9 @@ export function whenWorldShows(fn, settle = 1200) {
 }
 export function showPendingWindows() {
   if (activeBattle || uiState.modal || !saveData.started || uiState.title) return;
+  /* cutscenes track C: never over the sky train's ride (the way home brings a run's evolutions): its end opens them
+     (train-ride.js trainRideEnd), before a waiting story scene */
+  if (typeof trainRide !== 'undefined' && (trainRide.on || trainRide.cover)) return;
   const lq = uiState.learnQ.shift();
   if (lq) {
     const m = findBilly(lq.uid);

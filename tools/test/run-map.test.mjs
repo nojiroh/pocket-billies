@@ -1,6 +1,6 @@
 // RL-6: the run's node map and its clock (game/js/logic/run-map.js), on the tests' own small tables: rows from the
-// landing to the boss, mini-boss rows with a town before each, one or two lanes, links only to the next row, where it
-// all sits on the bowl; the days, what the map shows and the forecast. run-map-real.test.mjs runs it on the game's data.
+// landing to the boss, mini-boss rows with a town after each (WM-2), one or two lanes, links only to the next row, the
+// region grid's footprints (WM-2), where it all sits on the bowl; the days, what the map shows and the forecast. run-map-real.test.mjs runs it on the game's data.
 //   node --test --test-update-snapshots tools/test/run-map.test.mjs   remakes the frozen map (say why in the commit)
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -11,6 +11,9 @@ import {
   runBack,
   runExits,
   runForecastFill,
+  runGridSide,
+  runLinkDir,
+  runMapLength,
   runMapMake,
   runMapNode,
   runMapRows,
@@ -28,9 +31,9 @@ import { CLIMATE_WEATHER_ODDS } from '../../game/js/logic/weather.js';
 
 const NODE_TYPES = {
   landing: { name: 'Landing', engine: 'scene' },
-  route: { name: 'Route', engine: 'scene', weight: 4 },
+  route: { name: 'Route', engine: 'scene', weight: 4, routeLike: true },
   town: { name: 'Town', engine: 'scene', weight: 1 },
-  miniboss: { name: 'Mini-boss', engine: 'scene' },
+  miniboss: { name: 'Mini-boss', engine: 'scene', routeLike: true },
   boss: { name: 'Boss', engine: 'scene' },
 };
 const MAP_RULES = {
@@ -51,7 +54,6 @@ const START = {
   pyramids: {},
   trip: { node: 0, plan: [] },
   wild: {},
-  eggs: [],
   flags: {},
   seats: [],
   visited: {},
@@ -69,20 +71,50 @@ const xy = (map, i) => {
   return bowlXY(s.a, s.r);
 };
 const links = map => map.nodes.flatMap((n, a) => n.to.map(b => [a, b]));
+const overlaps = (a, b) =>
+  a.at[0] < b.at[0] + b.size[0] &&
+  b.at[0] < a.at[0] + a.size[0] &&
+  a.at[1] < b.at[1] + b.size[1] &&
+  b.at[1] < a.at[1] + a.size[1];
 
-test("the rows: the landing first, the boss last, the mini-bosses on rows of their own with a town's row before", () => {
-  assert.deepEqual(runMapRows(MAP_RULES), ['first', '', 'rest', 'guard', '', 'rest', 'guard', '', 'last']);
-  assert.deepEqual(runMapRows({ ...MAP_RULES, rows: 5, minibosses: 1 }), ['first', '', 'rest', 'guard', 'last']);
+test("the rows (WM-2): the landing first, the boss last, each mini-boss on a row of its own with its town's row after, a free row before each mini-boss and the boss", () => {
+  assert.deepEqual(runMapRows(MAP_RULES), ['first', '', 'guard', 'rest', '', 'guard', 'rest', '', 'last']);
+  assert.deepEqual(runMapRows({ ...MAP_RULES, rows: 10 }), [
+    'first',
+    '',
+    'guard',
+    'rest',
+    '',
+    '',
+    'guard',
+    'rest',
+    '',
+    'last',
+  ]);
+  assert.deepEqual(runMapRows({ ...MAP_RULES, rows: 12, minibosses: 3 }), [
+    'first',
+    '',
+    'guard',
+    'rest',
+    '',
+    'guard',
+    'rest',
+    '',
+    'guard',
+    'rest',
+    '',
+    'last',
+  ]);
+  assert.deepEqual(runMapRows({ ...MAP_RULES, rows: 6, minibosses: 1 }), ['first', '', 'guard', 'rest', '', 'last']);
   assert.deepEqual(runMapRows({ ...MAP_RULES, rows: 6, minibosses: 0 }), ['first', '', '', '', '', 'last']);
-  // what can't be laid out: two mini-bosses side by side, one on the boss's row, one next to the landing
-  assert.equal(runMapRowsFit({ ...MAP_RULES, rows: 5 }), false);
-  assert.equal(runMapRowsFit({ ...MAP_RULES, rows: 3, minibosses: 1 }), false);
-  assert.equal(runMapRowsFit({ ...MAP_RULES, rows: 7, minibosses: 3 }), false);
-  // the fewest: the landing, a town, the mini-boss, the boss
-  assert.deepEqual(runMapRows({ ...MAP_RULES, rows: 4, minibosses: 1 }), ['first', 'rest', 'guard', 'last']);
-  assert.ok(runMapRowsFit({ ...MAP_RULES, rows: 4, minibosses: 1 }));
-  for (let rows = 6; rows <= 12; rows++) assert.ok(runMapRowsFit({ ...MAP_RULES, rows }), `${rows} rows`);
-  assert.throws(() => runMapMake('X', NODE_TYPES, { ...MAP_RULES, rows: 5 }), /can't hold/);
+  // what can't be laid out: a mini-boss with no free row before it or its town right before the boss
+  assert.equal(runMapRowsFit({ ...MAP_RULES, rows: 8 }), false);
+  assert.equal(runMapRowsFit({ ...MAP_RULES, rows: 5, minibosses: 1 }), false);
+  assert.equal(runMapRowsFit({ ...MAP_RULES, rows: 11, minibosses: 3 }), false);
+  // the fewest with a mini-boss: the landing, a route, the mini-boss, its town, a route, the boss
+  assert.ok(runMapRowsFit({ ...MAP_RULES, rows: 6, minibosses: 1 }));
+  for (let rows = 9; rows <= 12; rows++) assert.ok(runMapRowsFit({ ...MAP_RULES, rows }), `${rows} rows`);
+  assert.throws(() => runMapMake('X', NODE_TYPES, { ...MAP_RULES, rows: 8 }), /can't hold/);
   const noFill = Object.fromEntries(Object.entries(NODE_TYPES).map(([k, t]) => [k, { ...t, weight: 0 }]));
   assert.throws(() => runMapMake('X', noFill, MAP_RULES), /no node type/);
 });
@@ -109,14 +141,14 @@ test("a rule moves only what it rules: a lane switch's odds don't change the typ
 test('over many seeds and 5 to 12 rows: every path walks every row, two links at most each way, nothing crosses', () => {
   let count = 0,
     maps = 0;
-  for (let rows = 5; rows <= 12; rows++) {
+  for (let rows = 6; rows <= 12; rows++) {
     const M = rulesFor(rows),
       roles = runMapRows(M);
     for (const s of seeds(rows === 9 ? 500 : 100)) {
       const map = runMapMake(s, NODE_TYPES, M),
         N = map.nodes;
       assert.equal(rowsOf(map), rows);
-      // numbered row by row, west to east
+      // numbered row by row, lane by lane
       N.forEach((n, i) => {
         if (i) assert.ok(n.row > N[i - 1].row || (n.row === N[i - 1].row && n.lane === N[i - 1].lane + 1));
         assert.ok(n.lane < widthOf(map, n.row));
@@ -147,6 +179,22 @@ test('over many seeds and 5 to 12 rows: every path walks every row, two links at
         for (const [c, d] of L)
           if (N[a].row === N[c].row && N[a].lane < N[c].lane)
             assert.ok(N[b].lane <= N[d].lane, `${s}: ${a}->${b} crosses ${c}->${d}`);
+      // WM-2: the grid: footprints that never overlap, every link across a shared edge east, north or south, the
+      // landing's two east (lane 0) and north (lane 1), every lane of the free row before a mini-boss route-like
+      N.forEach((n, i) => {
+        assert.deepEqual(n.size, [2, 1]);
+        for (let j = 0; j < i; j++) assert.ok(!overlaps(n, N[j]), `${s}: ${j} and ${i} overlap`);
+        for (const j of n.to) assert.ok(['E', 'N', 'S'].includes(runLinkDir(map, i, j)), `${s}: ${i}->${j}`);
+        if (roles[n.row + 1] === 'guard') assert.ok(NODE_TYPES[n.type].routeLike, `${s}: ${n.type} before a mini-boss`);
+      });
+      assert.deepEqual(N[0].at, [0, 0]);
+      assert.deepEqual(
+        N[0].to.map(j => [N[j].lane, runLinkDir(map, 0, j)]),
+        [
+          [0, 'E'],
+          [1, 'N'],
+        ]
+      );
       // the save's check takes it
       assert.ok(validRun(JSON.parse(JSON.stringify({ ...newRun(s, 1, 3, START), map }))), s);
       count += N.length;
@@ -157,13 +205,14 @@ test('over many seeds and 5 to 12 rows: every path walks every row, two links at
 });
 
 test('the 9-row map: 9 on every path, two lanes on a free or town row as often as `wide` says, some lane switches', () => {
-  // five rows may have two lanes (rows 1, 2, 4, 5, 7): 9 + 5 x 0.7 = 12.5 nodes on average, 9 to 14
+  // five rows may have two lanes (rows 1, 3, 4, 6, 7), row 1 always (WM-2: the landing's two ways on): 9 + 1 + 4 x 0.7
+  // = 12.8 nodes on average, 10 to 14
   const sizes = seeds(500).map(s => runMapMake(s, NODE_TYPES, MAP_RULES).nodes.length),
     mean = sizes.reduce((a, b) => a + b, 0) / sizes.length,
-    want = 9 + runMapRows(MAP_RULES).filter(r => r === '' || r === 'rest').length * MAP_RULES.wide;
-  assert.equal(want, 12.5);
+    want = 10 + (runMapRows(MAP_RULES).filter(r => r === '' || r === 'rest').length - 1) * MAP_RULES.wide;
+  assert.ok(Math.abs(want - 12.8) < 1e-9);
   assert.ok(Math.abs(mean - want) < 0.3, `mean ${mean}`);
-  assert.ok(Math.min(...sizes) >= 9 && Math.max(...sizes) <= 14);
+  assert.ok(Math.min(...sizes) >= 10 && Math.max(...sizes) <= 14);
   const switches = seeds(500).filter(s => {
     const map = runMapMake(s, NODE_TYPES, MAP_RULES);
     return links(map).some(
@@ -200,8 +249,8 @@ test('exits: one link in the middle of a side, two 10 m and 54 m along its 64 m;
   assert.throws(() => runExits(tooMany, 0), /more than two/);
 });
 
-test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
-  for (let rows = 5; rows <= 12; rows++)
+test('on the bowl (RL-8b, WM-1): rows from the west to the east across the bowl, lanes apart, maps facing north, roads leave and arrive the way their exits face', () => {
+  for (let rows = 6; rows <= 12; rows++)
     for (const s of seeds(60)) {
       const map = runMapMake(s, NODE_TYPES, rulesFor(rows)),
         N = map.nodes,
@@ -210,9 +259,9 @@ test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes
         const { a, r, up } = runSpot(map, i);
         assert.ok(a >= 0 && a < 360 && r >= 0 && r < 0.8, `${a}, ${r}`);
         assert.equal(up, 90, "a run's maps face the bowl's north");
-        if (n.row === 0) assert.ok(P[i][0] > 0.3, `the landing is in the east (${P[i][0]})`);
-        if (n.row === rows - 1) assert.ok(P[i][0] < -0.3, `the boss is in the west (${P[i][0]})`);
-        for (const j of n.to) assert.ok(P[j][0] < P[i][0], `${i}->${j} goes west`);
+        if (n.row === 0) assert.ok(P[i][0] < -0.3, `the landing is in the west (${P[i][0]})`);
+        if (n.row === rows - 1) assert.ok(P[i][0] > 0.3, `the boss is in the east (${P[i][0]})`);
+        for (const j of n.to) assert.ok(P[j][0] > P[i][0], `${i}->${j} goes east`);
       });
       // pins at least 0.1 of the bowl's radius apart; a place's map (112 x 64 m, facing north) never over another's
       for (let i = 0; i < P.length; i++)
@@ -227,7 +276,7 @@ test('on the bowl (RL-8b): rows from the east to the west across the bowl, lanes
         }
       // a road turns within the hub's 30 degrees from its exits, a lane switch within 45
       for (const [a, b] of links(map)) {
-        const turn = bowlSeamTurn(P[a], P[b], 'west', 'east', 90),
+        const turn = bowlSeamTurn(P[a], P[b], 'east', 'west', 90),
           switching = N[a].lane !== N[b].lane && widthOf(map, N[a].row) === 2 && widthOf(map, N[b].row) === 2;
         assert.ok(turn <= (switching ? 45 : 30), `${s}, ${rows} rows: ${a}->${b} turns ${turn.toFixed(1)}`);
       }
@@ -398,13 +447,13 @@ test("RL-R1: a region's zones give the rows their biomes, each node its zone, an
   const zones = [
       { biome: 'lake', rows: 3 },
       { biome: 'meadow', rows: 2 },
-      { biome: 'thicket', rows: 3 },
+      { biome: 'thicket', rows: 4 },
     ],
-    M = { ...MAP_RULES, rows: 8, zones };
+    M = { ...MAP_RULES, rows: 9, zones };
   for (const s of seeds(200)) {
     const map = runMapMake(s, NODE_TYPES, M),
-      plain = runMapMake(s, NODE_TYPES, { ...MAP_RULES, rows: 8 });
-    assert.equal(rowsOf(map), 8, s);
+      plain = runMapMake(s, NODE_TYPES, { ...MAP_RULES, rows: 9 });
+    assert.equal(rowsOf(map), 9, s);
     // the zones change only the biomes: the shape and the types are the map without them
     assert.deepEqual(
       map.nodes.map(n => [n.type, n.row, n.lane, n.to]),
@@ -425,7 +474,7 @@ test("RL-R1: a region's zones give the rows their biomes, each node its zone, an
       );
     }
   }
-  assert.throws(() => runMapMake('X', NODE_TYPES, { ...M, rows: 9 }), /don't add up/);
+  assert.throws(() => runMapMake('X', NODE_TYPES, { ...M, rows: 10 }), /don't add up/);
   // a run's state keeps the zones
   const run = newRun('ZONED', 1, 1, START);
   runMapStart(run, {
@@ -437,4 +486,85 @@ test("RL-R1: a region's zones give the rows their biomes, each node its zone, an
   assert.equal(run.map.nodes.at(-1).zone, 2);
   run.map.nodes[0].zone = 9;
   assert.equal(validRun(run), false, 'a zone past 7');
+  run.map.nodes[0].zone = 0;
+  assert.ok(validRun(run));
+  // WM-2: a footprint is whole cells: a cell within 64 of the landing's, a size of 1 to 8
+  for (const [k, v] of [
+    ['at', [0.5, 0]],
+    ['at', [0]],
+    ['at', [99, 0]],
+    ['size', [0, 1]],
+    ['size', [2, 1, 1]],
+    ['size', 'big'],
+  ]) {
+    const was = run.map.nodes[1][k];
+    run.map.nodes[1][k] = v;
+    assert.equal(validRun(run), false, `${k} ${JSON.stringify(v)}`);
+    run.map.nodes[1][k] = was;
+  }
+  delete run.map.nodes[1].at;
+  assert.ok(validRun(run), 'a run from before WM-2 has none');
+});
+
+test('WM-2: a run’s places a path by Expedition and its mini-bosses as fit; given rows and mini-bosses stand', () => {
+  const R = {
+    ...MAP_RULES,
+    rows: undefined,
+    minibosses: undefined,
+    path: [
+      [9, 10],
+      [11, 12],
+    ],
+    towns: [2, 3],
+  };
+  const got = seeds(200).map(s => runMapLength(s, R, 1));
+  assert.deepEqual(
+    [...new Set(got.map(g => g.rows))].sort((a, b) => a - b),
+    [9, 10]
+  );
+  assert.ok(got.every(g => g.minibosses === 2));
+  const late = seeds(200).map(s => runMapLength(s, R, 9));
+  assert.deepEqual(
+    [...new Set(late.map(g => g.rows))].sort((a, b) => a - b),
+    [11, 12],
+    'past the last Expedition, the last'
+  );
+  assert.ok(late.every(g => g.minibosses === (g.rows === 12 ? 3 : 2)));
+  assert.deepEqual(runMapLength('X', { ...R, rows: 6, minibosses: 1 }, 5), { rows: 6, minibosses: 1 });
+  assert.deepEqual(runMapLength('X', { ...R, rows: 6 }, 5), { rows: 6, minibosses: 2 }, 'within towns');
+  assert.deepEqual(runMapLength('SAME', R, 1), runMapLength('SAME', R, 1));
+  // rules without rows draw Expedition I's
+  const map = runMapMake('NOROWS', NODE_TYPES, R);
+  assert.equal(rowsOf(map), runMapLength('NOROWS', R, 1).rows);
+});
+
+test('WM-2: the grid’s sides; a link’s way; none for a place with no footprint', () => {
+  const f = (x, y, w = 2, h = 1) => ({ at: [x, y], size: [w, h] });
+  assert.equal(runGridSide(f(0, 0), f(2, 0)), 'E');
+  assert.equal(runGridSide(f(0, 0), f(-2, 0)), 'W');
+  assert.equal(runGridSide(f(0, 0), f(1, 1)), 'N');
+  assert.equal(runGridSide(f(0, 0), f(-1, -1)), 'S');
+  assert.equal(runGridSide(f(0, 0), f(2, 1)), '', 'corners only');
+  assert.equal(runGridSide(f(0, 0), f(-2, 1)), '', 'corners only');
+  assert.equal(runGridSide(f(0, 0, 3, 2), f(3, 1)), 'E');
+  const map = runMapMake('DIRS', NODE_TYPES, MAP_RULES);
+  assert.ok(['E', 'N'].includes(runLinkDir(map, 0, map.nodes[0].to[0])));
+  delete map.nodes[0].at;
+  assert.equal(runLinkDir(map, 0, map.nodes[0].to[0]), '');
+});
+
+test('WM-2: lane switches the grid can’t hold are dropped, nothing else changes; the same seed lays out the same', () => {
+  let dropped = 0;
+  for (const s of seeds(300)) {
+    const a = runMapMake(s, NODE_TYPES, { ...MAP_RULES, cross: 1 }),
+      b = runMapMake(s, NODE_TYPES, { ...MAP_RULES, cross: 1 });
+    assert.deepEqual(a, b);
+    const flat = runMapMake(s, NODE_TYPES, { ...MAP_RULES, cross: 0 });
+    assert.deepEqual(
+      a.nodes.map(n => [n.type, n.row, n.lane, n.biome]),
+      flat.nodes.map(n => [n.type, n.row, n.lane, n.biome])
+    );
+    if (links(a).length === links(flat).length) dropped++;
+  }
+  assert.ok(dropped < 300, 'some maps keep their switches');
 });

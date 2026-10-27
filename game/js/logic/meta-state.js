@@ -53,6 +53,7 @@ export function newMeta() {
     badges: {},
     history: [],
     residents: {},
+    boards: { d: 0, w: 0 },
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
@@ -88,6 +89,9 @@ export function validMeta(o) {
     recordOf(o.rel, 32, v => wholeIn(v, 0, 9999)) &&
     recordOf(o.gifted, 32, v => wholeIn(v, 0, META_MAX)) &&
     recordOf(o.residents, 64, v => wholeIn(v, 1, META_MAX)) &&
+    /* ON-2: the last daily and weekly taken off on (logic/daily.js) */
+    recordOf(o.boards, 2, v => wholeIn(v, 0, 1e7)) &&
+    Object.keys(o.boards).every(k => k === 'd' || k === 'w') &&
     Array.isArray(o.genes) &&
     o.genes.length <= META_GENES &&
     o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&

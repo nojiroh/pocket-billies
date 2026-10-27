@@ -277,8 +277,10 @@ export function standByMast(b) {
     s = m.s || 1,
     f = m.f ? -1 : 1,
     bx = M.box ? M.box[0] * s : 1.2;
-  /* IS-5: beside it as it is turned (the island's mast faces its street); the walk puts you on open ground near it */
-  const [x, z] = turnedPoint(m, (bx / 2 + 0.9) * f, -0.9);
+  /* IS-5: beside it as it is turned (the island's mast faces its street); the walk puts you on open ground near it.
+     Cutscenes track A: at the station, before the middle of its front, at the foot of its steps (the ride home walks
+     you down them) */
+  const [x, z] = m.act === 'station' ? turnedPoint(m, 0, -1.4) : turnedPoint(m, (bx / 2 + 0.9) * f, -0.9);
   uiState.roam = { id: sid, node: b, x, z };
   return true;
 }

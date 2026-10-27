@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readGameData, ROOT } from '../data-files.mjs';
-import { SKY_RAIL, islandAngleDiff, islandGenerate, skyRailHeight } from '../../game/js/logic/island-gen.js';
+import { SKY_RAIL, islandAngleDiff, islandGenerate } from '../../game/js/logic/island-gen.js';
 import { islandPointIn } from '../../game/js/logic/island.js';
 import { mapgenReach, mapgenReached } from '../../game/js/logic/mapgen.js';
 
@@ -170,28 +170,28 @@ test('town.extra: the inn, the Workshop, the Gene Bank and the library each get 
   for (const k of ['inn', 'workshop', 'genebank', 'library']) only(scene, k);
 });
 
-test('landmarks: the station with its rail out to sea and up to the portal, the lighthouse on the cove, the windmill by the farm', () => {
+test('landmarks: the station facing out with its track behind it and the portal out in front, the lighthouse on the cove, the windmill by the farm', () => {
   const res = sketchA({ landmarks: { on: 1 } }),
     sc = res.scene,
     coast = sc.island.coast,
     st = only(sc, 'station'),
     { rail, portal } = res.landmarks;
-  /* hub placing: side-on, the rail out of its right-hand end (HB-7's pieces, SKY_RAIL) straight out to sea */
+  /* cutscenes track A: its front out (the orbit camera looks in at it), the track behind it out of its right-hand end */
   const a = (st.a * Math.PI) / 180,
     right = [-Math.sin(a), Math.cos(a)],
     [cx, cz] = sc.cam.orbit.c,
     out = Math.atan2(st.z - cz, st.x - cx);
-  assert.ok(Math.abs(islandAngleDiff(st.a + 90, (out * 180) / Math.PI)) <= 45, 'its right-hand end faces out');
-  const [fx, fz] = [rail[0][0] - st.x, rail[0][1] - st.z];
-  assert.ok(Math.abs(fx * right[0] + fz * right[1] - SKY_RAIL.from[0]) < 0.02, 'the rail starts at its right-hand end');
+  assert.ok(Math.abs(islandAngleDiff(st.a, (out * 180) / Math.PI)) <= 45, 'its front faces out');
+  const end = rail[rail.length - 1],
+    [fx, fz] = [end[0] - st.x, end[1] - st.z];
+  assert.ok(
+    Math.abs(fx * right[0] + fz * right[1] - SKY_RAIL.from[0] - SKY_RAIL.piece * SKY_RAIL.looks.length) < 0.02,
+    'the track ends past its right-hand end'
+  );
   assert.ok(Math.abs(fx * Math.cos(a) + fz * Math.sin(a) + SKY_RAIL.from[1]) < 0.02, 'behind its middle');
-  for (const [x, z, y] of rail) {
-    const u = (x - st.x) * right[0] + (z - st.z) * right[1] - SKY_RAIL.from[0];
-    assert.ok(Math.abs(y - st.y - skyRailHeight(u)) < 0.02, `the rail ${u} m along at ${y}`);
-  }
+  for (const [, , y] of rail) assert.ok(Math.abs(y - st.y - SKY_RAIL.height) < 0.02, `the track level, at ${y}`);
   assert.ok(!islandPointIn(coast, portal[0], portal[1]), 'the portal is out over the sea');
-  for (let i = 1; i < rail.length; i++) assert.ok(rail[i][2] >= rail[i - 1][2], 'the rail climbs all the way');
-  assert.ok(Math.abs(portal[2] - st.y - SKY_RAIL.tear[1]) < 0.02, `the tear ${portal[2] - st.y} m up`);
+  assert.ok(Math.abs(portal[2] - st.y - SKY_RAIL.tear[2]) < 0.02, `the portal ${portal[2] - st.y} m up`);
   const lh = only(sc, 'lighthouse'),
     cove = hub.dials.cove,
     [ix, iz] = sc.island.c,
@@ -311,7 +311,7 @@ test('town.square front: buildings round the square, by its rim, one facing into
     return Math.cos(a) * (W.x - L.x) + Math.sin(a) * (W.z - L.z) > 0.7 * Math.hypot(W.x - L.x, W.z - L.z);
   });
   assert.ok(facing.length >= 1, 'one of them faces into the square');
-  /* the station has no door: it stands side-on, its right-hand end out (hub placing, STATION_TURN) */
+  /* the station has no door: it faces out, its track behind it (cutscenes track A, STATION_TURN) */
   for (const o of offOut(sc)) {
     assert.equal(((o.L.a % 90) + 90) % 90, 0, `${o.L.k} at ${o.L.a}`);
     if (o.L.k === 'station') continue;

@@ -22,6 +22,7 @@ import {
   TONE_NONE,
   applyGroundTone,
   bigTilesOn,
+  cliffEdgeLook,
   clipSegmentToRect,
   groundKey,
   groundTileFolder,
@@ -262,6 +263,8 @@ function sendPaintWorkerView(id, sc) {
       exits: sc.exits || [],
       worn: sc.worn || null,
       stable: S,
+      /* terrain TR-4: scree and turf edges (null: off) */
+      ce: cliffEdgeLook(sc),
     },
     E: E ? { s: 'w', m0: 'w', w: E.w, h: E.h, H: E.H, M: E.M } : null,
     t47: worldPatchTilesOn(),

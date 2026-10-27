@@ -108,7 +108,7 @@ export async function artPixels(path) {
   return (ART_CACHE.pix[path] = new Uint32Array(d.buffer.slice(0)));
 }
 /* ---- small color helpers shared by the renderers ---- */
-const ICON_CACHE = {};
+export const ICON_CACHE = {};
 export function makeCanvas(w, h) {
   const c = document.createElement('canvas');
   c.width = w;

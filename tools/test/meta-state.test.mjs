@@ -26,8 +26,13 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     badges: {},
     history: [],
     residents: {},
+    boards: { d: 0, w: 0 },
   });
   assert.equal(validMeta(m), true);
+  /* ON-2: the last daily and weekly taken off on */
+  assert.equal(validMeta({ ...m, boards: { d: 20387, w: 2913 } }), true);
+  assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);
+  assert.equal(validMeta({ ...m, boards: { d: 0, w: 0, x: 1 } }), false);
   assert.notEqual(newMeta(), m, 'a fresh object each time');
 });
 
@@ -43,8 +48,8 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, crests: '3' },
     { ...ok, beans: -1 },
     { ...ok, chapter: 0 },
-    { ...ok, rel: { hazel: -1 } },
-    { ...ok, gifted: { hazel: 1.5 } },
+    { ...ok, rel: { kappi: -1 } },
+    { ...ok, gifted: { kappi: 1.5 } },
     { ...ok, research: 1e13 },
     { ...ok, wins: 4 }, // more wins than runs
     { ...ok, expedition: 0 },

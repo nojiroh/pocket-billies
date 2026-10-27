@@ -24,13 +24,14 @@ import {
   pastureWander,
   pastureZone,
 } from './logic/pasture.js';
+import { squareStops, squareVisitAt, squareVisits } from './logic/square-day.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { densityWorldMpp } from './logic/pixel-density.js';
 import { reducedMotion, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
-import { walkData, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
+import { findPath, folkHour, mapHub, walkData, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
 import { addRipple } from './walk/water.js';
@@ -47,6 +48,10 @@ expose({
   pastureRounds: [() => pastureRounds, v => (pastureRounds = v)],
   pastureTap: [() => pastureTap, v => ((pastureTap = v), provide({ pastureTap }))],
   shiftWorldBillies: [() => shiftWorldBillies, v => (shiftWorldBillies = v)],
+  squareRoadAt: [() => squareRoadAt, v => (squareRoadAt = v)],
+  squareVisitRoads: [() => squareVisitRoads, v => (squareVisitRoads = v)],
+  squareVisitorItems: [() => squareVisitorItems, v => (squareVisitorItems = v)],
+  squareVisitorsOut: [() => squareVisitorsOut, v => ((squareVisitorsOut = v), provide({ squareVisitorsOut }))],
   warmWorldBillies: [() => warmWorldBillies, v => ((warmWorldBillies = v), provide({ warmWorldBillies }))],
   wildBillyItem: [() => wildBillyItem, v => ((wildBillyItem = v), provide({ wildBillyItem }))],
   worldBillies: [() => worldBillies],
@@ -64,6 +69,7 @@ provide({
   companionItems,
   pastureItems,
   pastureTap,
+  squareVisitorsOut,
   warmWorldBillies,
   wildBillyItem,
   worldBillyGlows,
@@ -446,10 +452,16 @@ function pastureItems(out, t, dt) {
     const keep = new Set(F.list.map(m => m.uid));
     for (const u of Object.keys(F.mons)) if (!keep.has(u)) delete F.mons[u];
   }
+  /* HB-10c: who of them is out visiting the square, drawn where they are on the way or there */
+  const away = squareVisitorItems(F, sc, out, t, dt);
   /* nothing drawn from far off (their frames are made when first seen) */
   const P = walkView.pl;
   if (!P || Math.hypot(P.x - F.mid[0], P.z - F.mid[1]) > 75) return;
   for (const m of F.list) {
+    if (away.has(m.uid)) {
+      delete F.mons[m.uid];
+      continue;
+    }
     let b = F.mons[m.uid];
     if (!b) {
       const at = pastureSpot(F.line, F.rounds, Math.random);
@@ -510,10 +522,128 @@ function pastureItems(out, t, dt) {
     if (it) out.push(it);
   }
 }
-/* tapping a Billie in the pasture: it hops and cries, then the ranch's sheet opens */
+/* ---------- HB-10c: the ranch's Billies visit the square ---------- */
+/* By day (rules.json square.visit), in each block of `every` real seconds, 1-2 of the pasture's Billies (never a
+   trainee, never your buddy: logic/square-day.js squareVisits) leave by the pasture's gate, walk the streets to a stop
+   by the fountain or a bench, stay a while and walk back; while away they aren't in the pasture. Where each is comes
+   from the clock alone (squareVisitAt), so a visit carries on the same however the map was walked. The roads (the
+   gate to each stop, findPath) are found once a scene. */
+function squareVisitRoads(F, sc, V) {
+  if (F.roads && F.roads.id === walkView.id) return F.roads;
+  const gate = (sc.props || []).find(p => p.act === 'pasture'),
+    stops = gate ? squareStops(sc.props || [], mapHub(sc)).filter(s => V.stops.includes(s.k)) : [],
+    roads = [];
+  for (const s of stops) {
+    const at = walkablePointNear(s.x, s.z),
+      R = findPath(gate.x, gate.z, at[0], at[1], { noHop: true });
+    if (!R || R.length < 2) continue;
+    let len = 0;
+    for (let i = 1; i < R.length; i++) len += Math.hypot(R[i][0] - R[i - 1][0], R[i][1] - R[i - 1][1]);
+    roads.push({ R, len, s });
+  }
+  F.roads = { id: walkView.id, roads, len: Math.max(0, ...roads.map(r => r.len)) };
+  return F.roads;
+}
+/* the point s metres along a road, and the way it runs there */
+function squareRoadAt(R, s) {
+  for (let i = 1; i < R.length; i++) {
+    const dx = R[i][0] - R[i - 1][0],
+      dz = R[i][1] - R[i - 1][1],
+      l = Math.hypot(dx, dz);
+    if (s <= l || i === R.length - 1) {
+      const f = l ? Math.min(1, s / l) : 1;
+      return { x: R[i - 1][0] + dx * f, z: R[i - 1][1] + dz * f, dx, dz };
+    }
+    s -= l;
+  }
+  return { x: R[0][0], z: R[0][1], dx: 0, dz: 0 };
+}
+/* draws the visitors (within 60 m of you) and returns the uids away from the pasture now */
+function squareVisitorItems(F, sc, out, t, dt) {
+  const V = RULES.square && RULES.square.visit,
+    away = new Set();
+  worldBillies.visitors = 0;
+  if (!V || !V.most || !F.list.length) return away;
+  const W = squareVisitRoads(F, sc, V);
+  if (!W.roads.length) return away;
+  const trainees = new Set(((saveData.ranch && saveData.ranch.trainees) || []).map(q => q.uid)),
+    home = F.list.filter(m => !trainees.has(m.uid)),
+    walk = W.len / V.walk,
+    now = Date.now() / 1000,
+    b = Math.floor(now / V.every),
+    P = walkView.pl,
+    /* the hour the block began at: a visit that started by day walks home after V.to */
+    h0 = folkHour() - (now - b * V.every) / 3600,
+    key = `${b}|${h0 >= V.from && h0 < V.to}|${home.map(m => m.uid).join()}|${Math.round(walk)}`;
+  if (F.visitKey !== key) {
+    F.visitKey = key;
+    F.visits = squareVisits(
+      b,
+      home.map(m => m.uid),
+      V,
+      h0,
+      walk
+    );
+  }
+  const visits = F.visits;
+  F.away = F.away || {};
+  for (const v of visits) {
+    const road = W.roads[(b + v.stop * 2) % W.roads.length],
+      /* each walks its own road at the pace that takes the longest road `walk` seconds */
+      at = squareVisitAt(v, now - b * V.every, walk, road.len),
+      m = home.find(q => q.uid === v.uid);
+    if (!at || !m) continue;
+    away.add(v.uid);
+    const p = squareRoadAt(road.R, at.s);
+    if (P && Math.hypot(P.x - p.x, P.z - p.z) > 60) continue;
+    worldBillies.visitors++;
+    let a = F.away[v.uid];
+    if (!a)
+      a = F.away[v.uid] = {
+        react: null,
+        flip: 1,
+        seed: Math.abs(v.uid.split('').reduce((h, c) => h * 31 + c.charCodeAt(0), 11)) % 997,
+      };
+    const walking = at.leg !== 'stay',
+      dx = at.leg === 'back' ? -p.dx : p.dx,
+      dz = at.leg === 'back' ? -p.dz : p.dz;
+    a.x = p.x;
+    a.z = p.z;
+    if (walking && Math.abs(dx) > 0.02) a.flip = dx > 0 ? -1 : 1;
+    if (!walking && !a.react && Math.random() < dt * 0.04) a.react = { pose: 'cheer', t0: t };
+    if (a.react && t - a.react.t0 > 900) a.react = null;
+    const pose = a.react ? a.react.pose : null,
+      back = walking && dz > 0.12 && Math.abs(dz) > Math.abs(dx),
+      it = worldBillyItem(
+        'ranchBilly',
+        m.sp,
+        back && !pose ? 'back' : 'front',
+        pose || (walking ? 'walk' : null),
+        pose ? t - a.react.t0 : t + a.seed * 37,
+        a.seed,
+        a.x,
+        a.z,
+        {
+          flip: a.flip,
+          big: m.alpha ? 1.12 : 1,
+          build: m.build,
+          coat: m.coat,
+          graft: graftLook(m),
+          extra: { mon: m, uid: m.uid },
+        }
+      );
+    if (it) out.push(it);
+  }
+  return away;
+}
+/* how many of the ranch's Billies are drawn visiting now (they count toward the townsfolk drawn at once) */
+function squareVisitorsOut() {
+  return worldBillies.visitors || 0;
+}
+/* tapping a Billie in the pasture (or visiting the square): it hops and cries, then the ranch's sheet opens */
 function pastureTap(uid) {
   const F = worldBillies.pasture,
-    b = F && F.mons[uid],
+    b = F && (F.mons[uid] || (F.away && F.away[uid])),
     m = F && F.list.find(q => q.uid === uid);
   if (b) {
     b.react = { pose: 'cheer', t0: walkView.t };

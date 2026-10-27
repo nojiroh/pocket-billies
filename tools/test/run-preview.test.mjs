@@ -19,7 +19,7 @@ const SEEDS = ['LAB1', 'TESTSEED', 'Q7', 'ZZTOP99', 'PREVIEW-3'],
   CASES = {
     none: { unlocks: [] },
     all: { unlocks: Object.keys(GAME_DATA.unlocks) },
-    short: { unlocks: [], map: { rows: 5, minibosses: 1 } },
+    short: { unlocks: [], map: { rows: 6, minibosses: 1 } },
   };
 
 /** run-world.js runWorldData, which the page's runTakeOff and runWorldSync use */
@@ -113,10 +113,11 @@ test('the preview gives a stall a shop and a waystation its event, as the game d
   const { eventAt } = modules.encounters;
   let stalls = 0,
     stands = 0;
-  /* 24 seeds: RL-14's scrapyards take some free nodes, stalls among them */
+  /* 24 seeds: RL-14's scrapyards take some free nodes, stalls among them; WM-2: at Expedition V (11-12 places), as a
+     shorter path's free rows are all before a mini-boss or after a town */
   for (let k = 0; k < 24; k++) {
     const seed = `PREVWAY${k}`,
-      P = runPreview(seed, {});
+      P = runPreview(seed, { expedition: 5 });
     P.map.nodes.forEach((/** @type {any} */ n, /** @type {number} */ i) => {
       const N = P.nodes[i];
       if (n.type === 'stall') stalls++;

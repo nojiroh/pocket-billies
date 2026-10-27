@@ -123,6 +123,8 @@ export function battleSettle(b, s) {
       if (run.rival.won === 1) runBeans(s, (RULES.run.beans || {}).rival, run);
     }
   }
+  /* ON-2: a friend's ghost beaten (the run's record says so) */
+  if (run && run.ghost && o === 'win' && b.T && b.T.runFoe === 'ghost') run.ghost.won = 1;
   /* v36: the Hype counter */
   if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;
   if (b.kind === 'wild') dropEncounter(b.qid);
@@ -176,8 +178,9 @@ export function battleSettleWin(b, s, pay, run) {
     if (run && b.T && run.map && run.map.side && b.T.from && b.T.from === run.map.side.leader)
       runBeans(s, (RULES.run.beans || {}).side, run);
     if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
-    /* RL-12b: a route trainer (or the rival) leaves a reward pick (logic/rewards.js), saved with the battle's end */
-    if (!salvage && run && b.T && (b.T.runFoe === 'route' || b.T.runFoe === 'rival'))
+    /* RL-12b: a route trainer (or the rival, or ON-2's ghost) leaves a reward pick (logic/rewards.js), saved with the
+       battle's end */
+    if (!salvage && run && b.T && ['route', 'rival', 'ghost'].includes(b.T.runFoe))
       rewardOfferMake(run, b.tid, rewardDataGame(s.team));
     s.flags[b.tid] = 1;
   }

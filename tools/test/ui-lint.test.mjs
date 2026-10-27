@@ -12,6 +12,7 @@ const CSS = `
 .d { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-family: 'Chakra Petch', sans-serif; }
 .e { backdrop-filter: none; font-family: var(--font-voice); }
 @keyframes spin { to { transform: rotate(1turn); } }
+@font-face { font-family: 'Tiny5'; src: url(x.woff2); }
 `;
 
 test('raw values and token uses are counted per rule', () => {
@@ -27,7 +28,7 @@ test('raw values and token uses are counted per rule', () => {
   assert.equal(r.important.raw, 1);
   assert.equal(r.zindex.raw, 1);
   assert.equal(r.blur.raw, 1); // prefixed and plain on one rule are one surface; none is none
-  assert.equal(r.font.raw, 1);
+  assert.equal(r.font.raw, 1); // an @font-face's family is its definition, not a use
   assert.equal(r.font.token, 1);
   assert.equal(r.keyframes.raw, 1);
   assert.equal(lintCss(CSS, 'game/css/motion.css').keyframes.token, 1);

@@ -1,8 +1,8 @@
 'use strict';
-/* ================= ROSTER BOARD (v35) =================
-   The 117 billionaires of the big art update as cards: name, line, stage, parody target, types, the design line, and
-   four checkboxes for how far its art is (silhouette approved, piece sheet drawn, rigged, portrait). Lives in
-   gamedata.roster; the game ignores it until v38 when the new species replace the old ones.
+/* ================= ROSTER BOARD =================
+   The roster (roster.json) as cards: name, line, stage, parody target, types, the design line, and four checkboxes
+   for how far its art is (silhouette approved, piece sheet drawn, rigged, portrait). SA-3: no count or version in
+   its words, so they can't go stale.
    The board also opens the silhouette check: the new piece sheet (art/next/billionaires/<id>.png), else the current
    rig, drawn black at 24 px beside its neighbours. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -81,7 +81,7 @@ function rosterCardHTML(e, i) {
 SECTIONS.roster = () => {
   const L = studioState.D.roster || [];
   if (!L.length)
-    return `<div class="ed-col solo"><h2>Roster board</h2><p class="help">No roster in this game data. Version 35 adds it (117 Billies for the big art update).</p></div>`;
+    return `<div class="ed-col solo"><h2>Roster board</h2><p class="help">No roster in this game data: roster.json is empty.</p></div>`;
   const all = L.length,
     done = L.filter(e => Object.values(e.state || {}).every(Boolean)).length,
     sil = L.filter(e => e.state && e.state.silhouette).length,

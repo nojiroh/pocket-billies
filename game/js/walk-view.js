@@ -28,6 +28,7 @@ import {
   cachedBuildingSignature,
   currentLocationMap,
   defaultWallMaterial,
+  engineSetting,
   environment,
   environmentSeason,
   environmentState,
@@ -51,7 +52,6 @@ import {
   rawHeightAt,
   reducedMotion,
   riderName,
-  runTownFolkCap,
   saveData,
   saveNow,
   seamlessMapById,
@@ -59,6 +59,7 @@ import {
   soundEffect,
   soundEffectAt,
   speciesOf,
+  squareVisitorsOut,
   standingHeightAt,
   storyAllows,
   talkFolk,
@@ -73,6 +74,7 @@ import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
+import { folkCap, squareGoers, squareSlot, squareStopFor, squareStops } from './logic/square-day.js';
 import { residentHomes, residentsHere } from './logic/residents.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
@@ -97,6 +99,7 @@ expose({
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
   GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
+  GROUND_DETAIL_TILES: [() => GROUND_DETAIL_TILES],
   LABEL_GOLD: [() => LABEL_GOLD],
   MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
   MAX_STEP_RISE: [() => MAX_STEP_RISE],
@@ -139,6 +142,7 @@ expose({
   canStepTo: [() => canStepTo, v => (canStepTo = v)],
   canvasPixels: [() => canvasPixels],
   canvasPoint: [() => canvasPoint, v => (canvasPoint = v)],
+  cliffEdgeLook: [() => cliffEdgeLook, v => (cliffEdgeLook = v)],
   climbEnds: [() => climbEnds, v => (climbEnds = v)],
   climbStartEnd: [() => climbStartEnd, v => (climbStartEnd = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
@@ -169,14 +173,18 @@ expose({
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
   folkAnchors: [() => folkAnchors, v => (folkAnchors = v)],
   folkCount: [() => folkCount, v => (folkCount = v)],
+  folkFace: [() => folkFace, v => (folkFace = v)],
   folkHello: [() => folkHello, v => (folkHello = v)],
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkSay: [() => folkSay, v => (folkSay = v)],
+  folkSquare: [() => folkSquare, v => (folkSquare = v)],
+  folkSquareStop: [() => folkSquareStop, v => (folkSquareStop = v)],
   folkStreetSpot: [() => folkStreetSpot, v => (folkStreetSpot = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
   groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
+  groundTileRole: [() => groundTileRole, v => (groundTileRole = v)],
   groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
   handleWalkClick: [() => handleWalkClick, v => (handleWalkClick = v)],
   hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
@@ -340,6 +348,8 @@ export const walkView = {
   ready: false,
   nav: null,
   navKey: '',
+  /** LD-5: true while the walking grid is built (walk/heights.js): the heights and bridges looked at once, held */
+  navBuilding: false,
   folk: [],
   folkId: '',
   parts: [],
@@ -483,7 +493,7 @@ export function bigTilePaths(path, set) {
     f = set || groundTileFolder();
   return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => `next/${f}/${b}_${i}.png`);
 } /* v46: twelve per kind (tools/build-terrain.py) */
-/* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
+/* v47: which set of twelve: the catalogue's tileSet ('tiles47', painted in the Studio's ground tile set; tools/art-source/terrain-v47), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
 export function groundTileFolder() {
   const C = typeof walkData === 'function' && walkData();
@@ -795,10 +805,21 @@ function tilePixels(path) {
   x.drawImage(im, 0, 0);
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
+/* terrain TR-4 (world.cliffEdges): what the ground painter needs for scree and turf edges, or null when off (and in
+   rooms): whether the scene's own rock (wall material 0) is natural rock, and the scree's ground kind (the biome's
+   ground.rock, else rock). Sent to the helper thread with the scene, and part of the ground's key */
+export function cliffEdgeLook(sc) {
+  if (!engineSetting('world', 'cliffEdges') || sc.indoor) return null;
+  const base = sc.biome || !sc.baseId ? sc : mapById(sc.baseId),
+    B = base && base.biome ? ((gameData && gameData.biomes) || {})[base.biome] : null,
+    m = defaultWallMaterial(sc);
+  return { nat0: m < 4 || m === 9 || m > 10, rock: (B && B.ground && B.ground.rock) || 'r' };
+}
 export function groundKey(sc) {
   if (sc.groundOf) return groundKey(sc.groundOf); /* phase 08b: a room shows its place's ground */
   const C = walkData().sc;
   return JSON.stringify([
+    cliffEdgeLook(sc),
     sc.w,
     sc.h,
     sc.edge,
@@ -982,7 +1003,7 @@ export function pathWearFn(sc, wx0, wy0) {
 /* v47: the soft patches of light and shade, laid across the whole ground in world metres (in the v46 tiles they were
    cut at every tile's edge and repeated with the tile): a quarter of natural ground half a step darker and a touch
    richer, a fifth lighter and a touch paler, a checker where they meet. A kind's `tone` scales them (paved: none).
-   The same sums as tools/build-terrain-v47.py (tone_at, tone_px), so its sheets show what the game lays */
+   The retired tools/build-terrain-v47.py had the same sums; logic/lite-tile.js bakes them into the Lite tiles */
 export const TONE_DIRECTIONS = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
   TONE_DARK = [0.895, 0.905, 0.935],
   TONE_LIGHT = [1.05, 1.05, 1.04],
@@ -1031,6 +1052,17 @@ export function scaleColor(c, k) {
     (Math.min(255, ((c >> 8) & 255) * k) << 8) |
     Math.min(255, (c & 255) * k)
   );
+}
+/* v46: which of a kind's twelve tiles a metre of ground shows (0-11), at its spot (sx, sz) with the scene's salt sa:
+   the worn ones (10, 11) where people walk, the touched ones (1-5, 8, 9) gathered in slow patches of detail, the plain
+   ones (0, 6, 7) over the rest (v47: picked evenly, plainTileIndex). The ground painter and the Studio's tile set
+   preview (studio/js/tile-set.js, SA-2a) both pick with it */
+const GROUND_DETAIL_TILES = [1, 2, 3, 4, 5, 8, 9];
+export function groundTileRole(sx, sz, sa, worn, t47) {
+  const r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
+  if (worn) return r < 0.5 ? 10 : 11;
+  if (valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31) > 0.63) return GROUND_DETAIL_TILES[Math.floor(r * 7)];
+  return t47 ? plainTileIndex(sx, sz, sa) : r < 0.5 ? 0 : r < 0.75 ? 6 : 7;
 }
 export function plainTileIndex(sx, sz, sa) {
   const h = (x, z) => Math.floor(hash2d(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
@@ -1154,6 +1186,11 @@ export function* paintGroundSteps(sc, o) {
     brkOn = brk.some((b, i) => b && used[i]),
     soilK = brkOn ? idx.u : null;
   if (soilK != null) used[soilK] = 1;
+  /* terrain TR-4 (world.cliffEdges): scree at natural cliff feet in the biome's rock ground, turf edges on grassy tops.
+    The helper thread gets the look with the scene (sc.ce); here it is worked out from the settings */
+  const CE = 'ce' in sc ? sc.ce : typeof cliffEdgeLook === 'function' ? cliffEdgeLook(sc) : null,
+    screeK = CE ? (idx[CE.rock] ?? idx.r ?? null) : null;
+  if (screeK != null) used[screeK] = 1;
   const pix = T.map((t, i) => (used[i] ? tileSetPixels(t, TP) : [])),
     pav = T.map((t, i) => (t.paved != null ? !!t.paved : 'mbaqhe'.includes(chars[i]))),
     t47 = worldPatchTilesOn(),
@@ -1187,8 +1224,7 @@ export function* paintGroundSteps(sc, o) {
     ST = stableCells(sc, wx0, wy0, CW, CH);
   /* v46: with twelve tiles a kind, each has a role: plain ones (0, 6, 7) over most of the ground, the touched ones
     (1-5, 8, 9) gathered in slow patches of detail, the worn ones (10, 11) along the lines people walk */
-  const DET = [1, 2, 3, 4, 5, 8, 9],
-    wornAt = pathWearFn(sc, wx0, wy0);
+  const wornAt = pathWearFn(sc, wx0, wy0);
   /* alpha 0.4: the cells on such an edge, one bit per neighbour across it (left, right, up, down, then the corners):
     breaking paving with natural ground beside it, or natural ground beside breaking paving */
   const ND = [
@@ -1214,23 +1250,9 @@ export function* paintGroundSteps(sc, o) {
         sa = ST.salt[q],
         r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
       cellK[q] = k;
-      if (n >= 12) {
-        const det = valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31),
-          wr = !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz);
-        pick[q] = wr
-          ? r < 0.5
-            ? 10
-            : 11
-          : det > 0.63
-            ? DET[Math.floor(r * 7)]
-            : t47
-              ? plainTileIndex(sx, sz, sa)
-              : r < 0.5
-                ? 0
-                : r < 0.75
-                  ? 6
-                  : 7;
-      } else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
+      if (n >= 12)
+        pick[q] = groundTileRole(sx, sz, sa, !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz), t47);
+      else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
       fl[q] = flip[k] ? Math.floor(hash2d(sx + 71 + sa * 104729, sz + 13) * 4) : 0;
     }
   if (brkOn) {
@@ -1944,32 +1966,88 @@ export function* paintGroundSteps(sc, o) {
         out[i] = (c & 0xff000000) | ((((c >> 16) & 255) * k) << 16) | ((((c >> 8) & 255) * k) << 8) | ((c & 255) * k);
       };
     const hAt = (i, j) => E.H[clamp(j, 0, E.h - 1) * E.w + clamp(i, 0, E.w - 1)];
-    /* only the half-metre cells under this rectangle (and one round it) */
-    const i0 = Math.max(0, Math.floor(X0 / half) - P * 2 - 2),
-      i1 = Math.min(E.w, Math.ceil((X0 + TW) / half) - P * 2 + 2),
+    /* only the half-metre cells under this rectangle (and one round it; three with scree, which reaches 1.5 m) */
+    const R4 = CE ? 3 : 0,
+      i0 = Math.max(0, Math.floor(X0 / half) - P * 2 - 2 - R4),
+      i1 = Math.min(E.w, Math.ceil((X0 + TW) / half) - P * 2 + 2 + R4),
       jA = (THf - Y0 - TH) / half - P * 2 - 1,
-      j0 = Math.max(0, Math.floor(jA) - 2),
-      j1 = Math.min(E.h, Math.ceil(jA + TH / half) + 3);
+      j0 = Math.max(0, Math.floor(jA) - 2 - R4),
+      j1 = Math.min(E.h, Math.ceil(jA + TH / half) + 3 + R4);
+    const SIDES = [
+      [0, -1, 's'],
+      [0, 1, 'n'],
+      [-1, 0, 'w'],
+      [1, 0, 'e'],
+    ];
+    /* terrain TR-4: scree first (the foot's shadow then falls on it): below a natural rock face (wall material rock,
+      sandstone, cave rock, mossy rock, slate or a biome face; 0 is the scene's own, CE.nat0) 0.7 m or taller, a ragged
+      band 0.5-1.5 m deep (deeper under taller faces), thinning out away from the foot, of the scree kind's own pixels;
+      never on paving or water */
+    const SK = screeK != null ? pix[screeK].filter(Boolean) : [];
+    if (CE && SK.length) {
+      const natM = m => (m === 0 ? CE.nat0 : m < 4 || m === 9 || m > 10),
+        noScree = T.map((t, k) => pav[k] || chars[k] === 'w' || chars[k] === 'd');
+      for (let j = j0; j < j1; j++) {
+        for (let i = i0; i < i1; i++) {
+          const h = hAt(i, j),
+            x0 = (i + P * 2) * half,
+            y0 = THf - (j + 1 + P * 2) * half;
+          for (const [di, dj, side] of SIDES) {
+            const ni = i + di,
+              nj = j + dj;
+            if (ni < 0 || nj < 0 || ni >= E.w || nj >= E.h) continue;
+            const d = hAt(ni, nj) - h;
+            if (d < 0.7 || !natM(E.M[nj * E.w + ni] & 15)) continue;
+            if (E.sl && stepCellsJoined(E, i, j, di, dj)) continue;
+            const deep = Math.min(1.5, 0.5 + (d - 0.7) * 0.4) * TP;
+            for (let t = 0; t < half; t++)
+              for (let k = 0; k < deep; k++) {
+                /* (px, py): t along the foot, k out from it into this (lower) side */
+                const px = side === 's' || side === 'n' ? x0 + t : side === 'w' ? x0 + k : x0 + half - 1 - k,
+                  py = side === 's' ? y0 + half - 1 - k : side === 'n' ? y0 + k : y0 + t,
+                  x = px - X0,
+                  y = py - Y0;
+                if (x < 0 || y < 0 || x >= TW || y >= TH) continue;
+                const oi = y * TW + x;
+                if (noScree[map[oi]]) continue;
+                const r = hash2d(px * 1.7 + 3, py * 2.3 + 11),
+                  edge = deep * (0.6 + 0.4 * hash2d(Math.floor(px / 3) + 7, Math.floor(py / 3) + 5));
+                if (k > edge || r > 1 - (k / edge) * 0.75) continue;
+                const tl = SK[Math.floor(hash2d(Math.floor(px / TP), Math.floor(py / TP) + 17) * SK.length)];
+                out[oi] = tl.d[(((py % tl.h) + tl.h) % tl.h) * tl.w + (((px % tl.w) + tl.w) % tl.w)];
+              }
+          }
+        }
+        if (j % 32 === 31) yield;
+      }
+    }
+    /* terrain TR-4: a turf edge on grassy tops (CE): the edge pixel dark under the overhanging turf, the next one a
+      little dark, with tufts breaking the line, instead of the plain light lip */
+    const grassy = CE ? T.map(t => /grass|meadow|clover|lawn|moss/.test(String(t.tile || ''))) : null;
     for (let j = j0; j < j1; j++) {
       for (let i = i0; i < i1; i++) {
         const h = hAt(i, j),
           x0 = (i + P * 2) * half,
           y0 = THf - (j + 1 + P * 2) * half;
         /* neighbours: toward the camera (j-1), away (j+1), left, right; a higher cell gets a lip, a lower one a shadow at the foot */
-        for (const [di, dj, side] of [
-          [0, -1, 's'],
-          [0, 1, 'n'],
-          [-1, 0, 'w'],
-          [1, 0, 'e'],
-        ]) {
+        for (const [di, dj, side] of SIDES) {
           const d = h - hAt(i + di, j + dj);
           if (Math.abs(d) < 0.12) continue;
           if (E.sl && stepCellsJoined(E, i, j, di, dj)) continue;
           for (let t = 0; t < half; t++) {
             const px = side === 's' || side === 'n' ? x0 + t : side === 'w' ? x0 : x0 + half - 1,
               py = side === 's' ? y0 + half - 1 : side === 'n' ? y0 : y0 + t;
-            if (d > 0) sh(px, py, 1.22);
-            else {
+            if (d > 0) {
+              const gx = px - X0,
+                gy = py - Y0;
+              if (grassy && gx >= 0 && gy >= 0 && gx < TW && gy < TH && grassy[map[gy * TW + gx]]) {
+                const ox = side === 'w' ? 1 : side === 'e' ? -1 : 0,
+                  oy = side === 's' ? -1 : side === 'n' ? 1 : 0,
+                  tuft = hash2d(px * 3.1 + 1, py * 1.3 + 9);
+                sh(px, py, tuft < 0.3 ? 0.86 : 0.7);
+                sh(px + ox, py + oy, tuft > 0.8 ? 1.12 : 0.88);
+              } else sh(px, py, 1.22);
+            } else {
               const depth = Math.min(4, 1 + Math.round((-d * 2 * TP) / 32)),
                 dpx = Math.max(1, Math.round(TP / 32));
               for (let k = 0; k < depth; k++) {
@@ -2656,12 +2734,14 @@ export function stepWallAt(x, z, sc = walkView.sc) {
   return E ? E.M[stepCellAt(x, z, E)] : 0;
 }
 /* bridges: a deck from end a to end b, w wide; its height runs from the ground at one end to the other, with a hump
-   (stone), a slight crown (wood) or a sag (rope) */
-const BRIDGE_ARCH = { stone: 0.5, wood: 0.12, rope: -0.32 };
+   (stone), a gentle hump (wood; RP-2, the owner 2026-10-26: 0.12 -> 0.35, like the footbridge prop) or a sag (rope) */
+const BRIDGE_ARCH = { stone: 0.5, wood: 0.35, rope: -0.32 };
 export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = STEP_GRID_CACHE.get(L);
+  /* LD-5 (cutscenes session): held while the walking grid is built (walk/heights.js), which looked at them first */
+  if (E && walkView.navBuilding) return E.list;
   /* IS-5: asked once a vertex while a ground is built (the island's: hundreds of thousands); the bridges' words are
      compared again only after a quarter of a second (the Studio edits them in place) */
   const now = performance.now();
@@ -3940,7 +4020,7 @@ function movePlayer(st, dt) {
 const FOLK_WORK =
   /shop|clinic|lab\b|lab_|bakery|inn\b|inn_|bank|library|school|station|market|stall|cafe|mart|boutique|barn|greenhouse|windmill|office|city_hall|kiosk|ski_lodge/;
 const FOLK_HOME = /house|cottage|townhouse|apartment|cave_house|chalet|villa|cabin|hut/;
-function folkHour() {
+export function folkHour() {
   if (typeof environmentState !== 'function') return 13;
   try {
     const st = environmentState(typeof currentLocationMap === 'function' ? currentLocationMap() : null);
@@ -3994,6 +4074,32 @@ function folkAnchors(sc) {
   if (!A.work.length) A.work = A.hang.slice();
   if (!A.home.length) A.home = A.hang.slice();
   return A;
+}
+/* HB-10c: the square's day (logic/square-day.js, rules.json square): its stops in this scene, each on the walkable
+   point nearest (at), and per slot of the day who of the n folk go (index -> rank); null when the scene has no square */
+function folkSquare(sc, n) {
+  let S = walkView.square;
+  if (!S || S.id !== walkView.id || S.n !== n) {
+    const stops = folkTown(sc) && RULES.square ? squareStops(sc.props || [], mapHub(sc)) : [];
+    S = walkView.square = {
+      id: walkView.id,
+      n,
+      stops: stops.map(s => ({ ...s, at: walkablePointNear(s.x, s.z) })),
+      goers: {},
+    };
+  }
+  return S.stops.length ? S : null;
+}
+/* the stop a person stands at on the square at hour h (their own hours: h + their offset), or null */
+function folkSquareStop(S, f, h) {
+  const T = squareSlot(RULES.square.day, h + (f.off || 0));
+  if (!T) return null;
+  const G = S.goers[T.k] || (S.goers[T.k] = squareGoers(S.n, T, walkView.id)),
+    r = G.get(f.line);
+  return r == null ? null : squareStopFor(S.stops, T, r);
+}
+function folkFace(f, s) {
+  if (Math.hypot(s.fx - f.x, s.fz - f.z) > 0.05) f.dir = directionOf(s.fx - f.x, s.fz - f.z);
 }
 function initFolk(n) {
   const sc = walkView.sc,
@@ -4057,7 +4163,8 @@ function initFolk(n) {
                 : f.ph === 'owl'
                   ? [hub[0], hub[1]]
                   : null;
-      if (!at) f.in = true;
+      /* HB-10c: out about the streets (placed below) is out, not indoors */
+      if (!at) f.in = f.ph !== 'about';
       else {
         const q = walkablePointNear(at[0] + (((i * 0.37) % 1) - 0.5) * 2.4, at[1] + (((i * 0.61) % 1) - 0.5) * 1.8);
         f.x = q[0];
@@ -4067,6 +4174,14 @@ function initFolk(n) {
         const q = folkStreetSpot(f);
         f.x = q[0];
         f.z = q[1];
+      }
+      const S = folkSquare(sc, n),
+        s = S && folkSquareStop(S, f, h);
+      if (s) {
+        f.sq = s;
+        f.in = false;
+        [f.x, f.z] = s.at;
+        folkFace(f, s);
       }
     }
     walkView.folkAll.push(f);
@@ -4146,14 +4261,35 @@ function folkHello() {
 function stepFolk(dt) {
   const P = walkView.pl,
     h = folkHour(),
-    all = walkView.folkAll || walkView.folk;
+    all = walkView.folkAll || walkView.folk,
+    S = folkSquare(walkView.sc, all.length);
   let vis = false;
   for (const f of all) {
     f.sayT = Math.max(0, f.sayT - dt);
     f.waveT = Math.max(0, f.waveT - dt);
     f.walk = 0;
+    /* HB-10c: the square's day: a slot that takes them sends them to their stop (out of their door first); when it
+       ends, their own day takes them on */
+    if (S && f.A) {
+      const s = folkSquareStop(S, f, h);
+      if (s !== (f.sq || null)) {
+        const was = f.sq;
+        f.sq = s;
+        f.route = null;
+        if (s) {
+          if (f.in) {
+            f.in = false;
+            vis = true;
+            [f.x, f.z] = f.A.home;
+            if (typeof soundEffectAt === 'function') soundEffectAt('door', f.x, f.z);
+          }
+          f.wait = Math.random() * 3;
+          f.then = null;
+        } else if (was) f.ph = null;
+      }
+    }
     /* the day moves on: somewhere else to be */
-    if (f.A) {
+    if (f.A && !f.sq) {
       const ph = folkPhase(h + f.off, f.owl);
       if (ph !== f.ph) {
         f.ph = ph;
@@ -4196,6 +4332,7 @@ function stepFolk(dt) {
           if (f.ri >= f.route.length) {
             f.route = null;
             f.wait = 2 + Math.random() * 5;
+            if (f.sq) folkFace(f, f.sq);
             if (f.then === 'inside') {
               f.then = null;
               f.in = true;
@@ -4211,7 +4348,18 @@ function stepFolk(dt) {
       }
       f.walk = f.in ? 0 : 1;
     } else if ((f.wait -= dt) <= 0) {
-      if (f.A && (f.ph === 'home' || f.ph === 'in')) {
+      if (f.sq) {
+        const s = f.sq,
+          away = Math.hypot(f.x - s.at[0], f.z - s.at[1]);
+        f.wait = 5 + Math.random() * 9;
+        if (away > 1.2) {
+          if (!sendFolk(f, s.at)) f.wait = 2;
+        } else if (Math.random() < 0.35) {
+          const a = Math.random() * 6.283,
+            t = walkablePointNear(s.at[0] + Math.cos(a) * 0.5, s.at[1] + Math.sin(a) * 0.4);
+          if (!sendFolk(f, t)) folkFace(f, s);
+        } else folkFace(f, s);
+      } else if (f.A && (f.ph === 'home' || f.ph === 'in')) {
         if (!sendFolk(f, f.A.home, 'inside')) {
           f.in = true;
           vis = true;
@@ -4273,11 +4421,19 @@ export function updateFolk(n, dt) {
   const all = n + hubResidentWalkers(walkView.sc).length;
   if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== all) initFolk(n);
   stepFolk(dt);
-  /* TW-2: a run town draws only its first few folk, by the graphics (rules.json run.town.cap); the rest keep their day */
-  const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;
-  if (b && b.gen && b.kind === 'town' && RULES.run.town) {
-    const cap = runTownFolkCap(RULES.run.town, walkRenderer.q, saveData.preferences && saveData.preferences.aim);
-    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+  /* TW-2, HB-10c: a town (the hub, a run's) draws only its first few folk, by the Engine's quality.townFolk and the
+     graphics; the rest keep their day */
+  if (folkTown(walkView.sc)) {
+    /* HB-10c: the ranch's Billies visiting count toward it */
+    const cap =
+      folkCap(
+        engineSetting('quality', 'townFolk') ?? 10,
+        walkRenderer.q,
+        saveData.preferences && saveData.preferences.aim
+      ) - (typeof squareVisitorsOut === 'function' ? squareVisitorsOut() : 0);
+    /* from everyone each frame, so a cap raised again (or frames back on time) brings them back; RS-3's residents
+       (after the townsfolk) are always drawn */
+    walkView.folk = walkView.folkAll.filter((f, i) => !f.in && (f.res || i < cap));
   }
 }
 export function tallGrassProps(C0) {

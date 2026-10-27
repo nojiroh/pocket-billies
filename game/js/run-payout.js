@@ -10,7 +10,7 @@
    Built from the run parts (js/ui-run-kit.js: pb-payout, pb-coin, pb-pick-card) in a sheet. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, renderOverlay } from './hooks.js';
+import { boardsFetch, boardsPayoutHTML, provide, renderOverlay } from './hooks.js';
 import { CURRENCIES, PERKS, QUESTS, RESIDENTS, RULES } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { billyName } from './logic/rules.js';
@@ -66,7 +66,7 @@ function runPayoutOpen() {
     title: won ? 'You beat the run' : 'The run is over',
     cls: 'run-payout',
     lock: true,
-    html: `<p>${won ? `The boss is down. The ${escapeHtml(trainName(trainOfRun(run)))} takes everyone home, with all they learned, and your bag goes into Copperleaf’s.` : 'A train comes for you through the portal. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${moving}${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.crests ? `<pb-coin kind="crests" value="${pay.crests}" label="Crest"></pb-coin> ` : ''}${beans ? `<pb-coin kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-coin>` : ''}</p>` : ''}${cards}`,
+    html: `<p>${won ? `The boss is down. The ${escapeHtml(trainName(trainOfRun(run)))} takes everyone home, with all they learned, and your bag goes into Copperleaf’s.` : 'A train comes for you through the portal. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${moving}${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.crests ? `<pb-coin kind="crests" value="${pay.crests}" label="Crest"></pb-coin> ` : ''}${beans ? `<pb-coin kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-coin>` : ''}</p>` : ''}${typeof boardsPayoutHTML === 'function' ? boardsPayoutHTML(run.board) : ''}${cards}`,
     btns: [{ l: 'Ride home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));
@@ -94,6 +94,13 @@ function runPayoutOpen() {
         });
     },
   };
+  /* ON-2: a daily's or weekly's friends, read fresh once (boards.js), then the sheet again in place */
+  if (run.board && typeof boardsFetch === 'function' && !uiState.runPayoutBoards) {
+    uiState.runPayoutBoards = true;
+    boardsFetch(true).then(() => {
+      if (saveData.run === run && uiState.modal && uiState.modal.cls === 'run-payout') runPayoutOpen();
+    });
+  }
   /* it comes first: opened again (a card picked) in place; any other sheet waits behind it */
   if (uiState.modal && uiState.modal.cls !== 'run-payout') uiState.mq.unshift(uiState.modal);
   uiState.mq = uiState.mq.filter(q => q.cls !== 'run-payout');
@@ -110,5 +117,6 @@ function runPayoutDone() {
   uiState.runKeep = null;
   uiState.runPayoutPlayed = false;
   uiState.runPayoutSung = false;
+  uiState.runPayoutBoards = false;
   runEndHome(won, keep, runItemPrice);
 }

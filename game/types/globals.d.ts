@@ -43,11 +43,13 @@ interface DebugLog {
   time(section: string, ms: number): void;
   /** the frame scheduler's report of a task it ran */
   task(name: string, work: number, ts: number): void;
+  /** LD-0: a step of the boot (or a run's loading) on the timeline, timed since the page was asked for */
+  stage(name: string): void;
   /** the loading screen's timings (boot.js) */
   load: { ms: number; files: number; failed: unknown[]; phases: unknown } | null;
   /** the full test's progress and result (self-test.js) */
   bench: { step: string | null; result: unknown } | null;
-  /** the scene's picture every few seconds */
+  /** the scene's picture, taken when the log is exported (LD-1) */
   shot: { t: number; what?: string; jpeg?: string; error?: string } | null;
   /** the rest: the event lists, the samples, summaries, hooks */
   [key: string]: any;
@@ -58,8 +60,7 @@ declare var ARTMAN: Record<string, any>;
 declare var RIGS: Record<string, any>;
 declare var RIGS_NEXT: Record<string, any>;
 
-/** the Studio's page (its inline script): the deploy's key, and where the game's art is from the Studio */
-declare var STUDIO_KEY: string;
+/** the Studio's page (its inline script): where the game's art is from the Studio */
 declare var NW_ARTDIR: string;
 
 /** the checks set it before the page loads: put the modules' names on window (js/test-globals.js) */
