@@ -54,6 +54,8 @@ expose({
   RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
   base64Bytes: [() => base64Bytes],
   // @ts-expect-error -- replaced on purpose
+  dataArenas: [() => dataArenas, v => (dataArenas = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBanter: [() => dataBanter, v => (dataBanter = v)],
   // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
@@ -1093,6 +1095,31 @@ export function dataSetPieces(D, valid = () => true) {
     });
   }
   if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
+  return out;
+}
+// WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds
+// scenery.json terrains; its fence and gate props with a box (logic/arena-gen.js lays them along the rim), its posts and
+// dressing props
+/** WM-7: arenas.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataArenas(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    F = 'arenas.json',
+    problem = (/** @type {string} */ what) => out.push([F, what]),
+    A = D.arenas;
+  if (!A || !valid('arenas.schema.json', A, F)) return out;
+  const props = (D.scenery && D.scenery.props) || {},
+    terr = (D.scenery && D.scenery.terrains) || {},
+    types = new Set((Array.isArray(D.types) ? D.types : []).map((/** @type {any} */ t) => (t && t.id) || t));
+  for (const [k, T] of Object.entries(/** @type {Record<string, any>} */ (A.themes))) {
+    if (k !== 'bureau' && k !== 'plain' && types.size && !types.has(k))
+      problem(`themes.${k}: no type "${k}" (types.json), and not bureau or plain`);
+    for (const g of ['ground', 'rim']) if (!terr[T[g]]) problem(`themes.${k}.${g}: no ground "${T[g]}" (scenery.json)`);
+    for (const b of ['fence', 'gate'])
+      if (!props[T[b]] || !props[T[b]].box) problem(`themes.${k}.${b}: "${T[b]}" is no scenery.json prop with a box`);
+    for (const q of [T.posts, ...T.dress]) if (!props[q]) problem(`themes.${k}: no prop "${q}" (scenery.json)`);
+  }
+  if (!A.sizes.leader.back) problem("sizes.leader.back: a leader's ring needs its place along the road");
   return out;
 }
 // RL-14: factions.json: the schema; each bot is a gem and the right kind of part in each slot (robots.json); its

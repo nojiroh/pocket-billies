@@ -18,6 +18,10 @@
 import { expose } from '../test-globals.js';
 import {
   WATERGEN_SHALLOW_PROP,
+  arenaGenGround,
+  arenaGenParams,
+  arenaGenProps,
+  arenaGenPublish,
   waterGenCarve,
   waterGenClimbs,
   waterGenFalls,
@@ -315,7 +319,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 20; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3) */
+export const MAPGEN_VERSION = 21; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -482,6 +486,9 @@ export function mapgenParams(p) {
     P.layout = MAPGEN_LAYOUT_DIALS.layout;
   /* RT-3: how many set pieces, kept only when given (whole, 0-6) */
   if (P.pieces !== undefined) P.pieces = mapgenBetween(Math.round(+P.pieces || 0), 0, MAPGEN_PIECES_MOST);
+  /* WM-7: a leader's arena (logic/arena-gen.js), kept only when given */
+  if (P.arena !== undefined) P.arena = arenaGenParams(P.arena);
+  if (P.arena === undefined) delete P.arena;
   /* RL-14: the kind of place (a run's scrapyard) set pieces may favour, kept only when given */
   if (P.site !== undefined && (typeof P.site !== 'string' || !/^[a-z][a-z0-9_]{0,23}$/.test(P.site))) delete P.site;
   if (mapgenLaidOut(P)) {
@@ -4544,10 +4551,12 @@ export function mapgenBuild(P, ctx, aim) {
   mapgenStageEdgeGround(G);
   mapgenStageTown(G);
   mapgenStageLots(G);
+  arenaGenGround(G); /* WM-7: a leader's arena: the ring raised on the road (logic/arena-gen.js) */
   /* RT-3: a laid-out place with a pond gets a jetty when a set piece wants one (the fishing jetty) */
   if (mapgenLaidOut(P) && P.pieces > 0 && G.pond && !G.jetty && mapgenPiecesWant(P, ctx.setPieces, 'jetty'))
     mapgenJetty(G, true);
   if (mapgenLaidOut(P)) mapgenStageLayout(G, aim);
+  arenaGenProps(G); /* WM-7: its fence, posts and dressing (logic/arena-gen.js) */
   mapgenStagePlants(G);
   mapgenStageProps(G);
   mapgenPinSides(G, 6);
@@ -4618,6 +4627,7 @@ export function mapgenBuild(P, ctx, aim) {
     const hab = mapgenHabitats(G, sc, walk);
     if (hab) sc.habitats = hab;
   }
+  arenaGenPublish(G, sc); /* WM-7: scene.arena, and no spot left on it (logic/arena-gen.js) */
   waterGenClimbs(sc, ctx.scenery); /* WA-2b: which falls the Waterfall field move climbs (logic/water-gen.js) */
   waterGenReeds(G, sc); /* WA-5a: a reed or two in a marsh hides an item (logic/water-gen.js) */
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };

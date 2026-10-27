@@ -136,3 +136,48 @@ test('RT-4: a route’s rarer one waits on a free pocket, dead end or clearing, 
     `mostly pockets and dead ends: ${JSON.stringify(kinds)}`
   );
 });
+
+test("WM-7: a mini-boss's place has a line of trainers on the road before its leader's ring, each seeing the road", () => {
+  const C = GAME_DATA.scenery,
+    D = { ...DATA, arenas: GAME_DATA.arenas },
+    TA = { ...TD, arenas: GAME_DATA.arenas },
+    A = modules['arena-gen'];
+  let lines = 0;
+  for (let k = 0; k < 3; k++) {
+    const seed = 'WM7LINE' + k,
+      a = run(seed),
+      scenes = runScenesMake(a, D),
+      T = RT.runRouteTrainers(a, TA);
+    RT.routeTrainersPlace(a, T, scenes, TA.classes);
+    a.map.nodes.forEach((/** @type {any} */ node, /** @type {number} */ i) => {
+      if (node.type !== 'miniboss') return;
+      const sc = scenes[i],
+        R = sc.arena,
+        mine = Object.values(T).filter((/** @type {any} */ t) => t.runNode === i),
+        where = `${seed} node ${i}`,
+        west = M.mapgenExitPoint(
+          sc.w,
+          sc.h,
+          sc.edgeExits.find((/** @type {any} */ e) => e.id === 'west')
+        ),
+        /* the leader not yet beaten: its gate shut */
+        reach = M.mapgenReach(sc, C, west, { slope: true }),
+        road = (sc.edgeExits || []).flatMap((/** @type {any} */ e) => (e.path ? M.mapgenResample(e.path, 0.5) : []));
+      lines++;
+      assert.equal(mine.length, GAME_DATA.arenas.trainers, `${where}: the line`);
+      for (const t of mine) {
+        const at = t.route.at;
+        assert.ok(!t.route.opt && t.route.spot === 'arena', `${where} ${t.id}`);
+        assert.ok(M.mapgenReached(reach, ...at), `${where} ${t.id}: at ${at} reached with the gate shut`);
+        assert.ok(A.arenaOct(at[0] - R.x, at[1] - R.z) > R.r + 1.5, `${where} ${t.id}: off the ring`);
+        assert.ok(
+          road.some((/** @type {[number, number]} */ p) => RT.routeInSight(at, t.route.look, p, RUN.trainers.sight)),
+          `${where} ${t.id}: sees the road`
+        );
+        for (const u of mine)
+          if (u !== t) assert.ok(Math.hypot(u.route.at[0] - at[0], u.route.at[1] - at[1]) >= 6, `${where}: apart`);
+      }
+    });
+  }
+  assert.ok(lines >= 3, `${lines} lines`);
+});

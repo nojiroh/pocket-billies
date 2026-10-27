@@ -26,6 +26,7 @@ import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
 import { RUN_GRID, runExits, runGridExits, runNodeSeed, runSpot } from './run-map.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
+import { arenaGenGates } from './arena-gen.js';
 import { wildPoolList } from './wild-pool.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -40,6 +41,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runAlongBack: [() => runAlongBack, v => (runAlongBack = v)],
   // @ts-expect-error -- replaced on purpose
+  runArenaOf: [() => runArenaOf, v => (runArenaOf = v)],
+  // @ts-expect-error -- replaced on purpose
   runCutRect: [() => runCutRect, v => (runCutRect = v)],
   // @ts-expect-error -- replaced on purpose
   runExitIds: [() => runExitIds, v => (runExitIds = v)],
@@ -47,6 +50,8 @@ expose({
   runFieldProps: [() => runFieldProps, v => (runFieldProps = v)],
   // @ts-expect-error -- replaced on purpose
   runLayoutOf: [() => runLayoutOf, v => (runLayoutOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  runLeaderPicks: [() => runLeaderPicks, v => (runLeaderPicks = v)],
   runMapIdOf: [() => runMapIdOf],
   runOnGrid: [() => runOnGrid],
   // @ts-expect-error -- replaced on purpose
@@ -92,7 +97,8 @@ expose({
  *   scenery: any, rules: { scene: RunSceneRules, layouts?: Record<string, Record<string, number>>,
  *   wild: { lv: [number, number], perRow: number, back: number }, town?: import('../../types/game-data').RunTownRules },
  *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove>,
- *   setPieces?: import('../../types/game-data').SetPiecesData | null }} RunWorldData
+ *   setPieces?: import('../../types/game-data').SetPiecesData | null,
+ *   arenas?: import('../../types/game-data').ArenasData | null, region?: { leaders: { id: string, type: string }[] } }} RunWorldData
  * RO-1: dex, a region's species, cuts each place's biome pool to them (logic/wild-pool.js); RL-R1: without it, the
  * run's region's (run.region.dex, its other varieties swapped to the region's)
  */
@@ -226,7 +232,8 @@ export function runSceneParams(run, i, scenes, data) {
     exits = runSceneExits(map, i),
     dials = runSceneDials(data.rules.scene, rngFrom(nodeSeed, 'scene|dials')),
     layout = runLayoutOf(run, i, data),
-    pieces = layout ? runPiecesOf(run, i, data) : 0;
+    pieces = layout ? runPiecesOf(run, i, data) : 0,
+    arena = runArenaOf(run, i, data);
   /* its parents: the neighbours made before it (a main place's west ones; RL-R2: a side place's south or west one) */
   const edges = exits
     .filter(e => e.node < i)
@@ -258,6 +265,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(layout ? { layout } : {}),
     /* RT-3: and its set pieces (setPieces.json perPlace) */
     ...(pieces ? { pieces } : {}),
+    /* WM-7: a mini-boss's ring on the road and the boss's arena (logic/arena-gen.js) */
+    ...(arena ? { arena } : {}),
     /* RL-14: a scrapyard's set pieces lean to its own (setPieces.json sites) */
     ...(node.type === 'scrapyard' ? { site: 'scrapyard' } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
@@ -292,6 +301,35 @@ export function runCutRect(node) {
     [cx, cy] = /** @type {number[]} */ (node.cut),
     [ax, ay] = /** @type {number[]} */ (node.at);
   return [(cx - ax) * C, (cy - ay) * C, (cx - ax + 1) * C, (cy - ay + 1) * C];
+}
+/** the leader each mini-boss's and the boss's node asks for, by node (logic/run-loop.js runFoes fields it): RL-R1: the
+ * region's leaders (run.region.leaders, the mini-bosses in order then the boss) while there are any; RL-R2: a side
+ * area's own (run.map.side.leader; its places come after the main path's). Undefined where the run has none to ask for
+ * (runFoes then draws one) @param {Run} run @returns {Record<number, string | undefined>} */
+export function runLeaderPicks(run) {
+  const map = /** @type {RunMap} */ (run.map),
+    picks = (run.region && run.region.leaders) || [],
+    /** @type {Record<number, string | undefined>} */
+    out = {};
+  let k = 0;
+  map.nodes.forEach((node, i) => {
+    if (node.type !== 'miniboss' && node.type !== 'boss') return;
+    out[i] = node.side && map.side ? map.side.leader : picks[k++];
+  });
+  return out;
+}
+/** WM-7: node i's arena dial (logic/arena-gen.js), or null: a mini-boss's place gets a leader's ring and the boss's its
+ * own, sized by arenas.json sizes and themed by its leader's type (the region's leaders' types; arenas.json themes,
+ * `plain` for a type with none or a leader the run doesn't name). None without arenas.json
+ * @param {Run} run @param {number} i @param {RunWorldData} data @returns {any} */
+export function runArenaOf(run, i, data) {
+  const A = data.arenas,
+    node = /** @type {RunMap} */ (run.map).nodes[i];
+  if (!A || (node.type !== 'miniboss' && node.type !== 'boss')) return null;
+  const id = runLeaderPicks(run)[i],
+    L = ((data.region && data.region.leaders) || []).find(x => x.id === id),
+    mode = node.type === 'boss' ? 'boss' : 'leader';
+  return { mode, ...A.sizes[mode], ...((L && A.themes[L.type]) || A.themes.plain) };
 }
 /** RT-1: the debug menu's run mod that gives every laid-out place one plan: the mod is this and the plan's id */
 export const RUN_LAYOUT_MOD = 'dbg_layout_';
@@ -430,6 +468,8 @@ export function runSceneMake(run, i, scenes, data) {
     climate: B.climate,
   });
   runFieldProps(map, i, scene, data);
+  /* WM-7: a leader's gate, shut until it is beaten (its foe's id: run-loop.js runFoeId) */
+  arenaGenGates(scene, data.scenery, `beat:${runPlaceId(i)}_foe`);
   if (scene.kind === 'town') {
     runTownLife(run, i, scene, data);
     runTownQuest(run, i, scene, data);
