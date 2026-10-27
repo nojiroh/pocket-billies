@@ -407,13 +407,7 @@ SECTIONS.rules = () => {
      ),
      numberField('Moneys', `${s}.se`, { min: 0, step: 50 }),
      numberField('Starter’s level', `${s}.starterLevel`, { min: 1, max: 100, step: 1 }),
-     numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 }),
-     selectField(
-       'Free egg',
-       `${s}.starterEgg`,
-       Object.keys(D.eggs).map(k => [k, D.eggs[k].need / 1000 + ' km']),
-       { num: 1, none: 'None', opt: 1 }
-     )
+     numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 })
    ) +
      '<h4>Pyramids and items</h4>' +
      coinsStart +
@@ -485,12 +479,8 @@ SECTIONS.rules = () => {
      numberField('Eggs carried', `${eg}.capacity`, { min: 1, max: 30, step: 1 }),
      numberField('Incubators', `${eg}.slots`, { min: 1, max: 6, step: 1 }),
      numberField('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
-     selectField('The mythical', `${eg}.mythSpecies`, speciesOptions()),
-     numberField('Wild drop chance', `${eg}.dropChance`, { min: 0, max: 1, step: 0.01 })
-   ) +
-     `<div class="grid">${Object.keys(D.eggs)
-       .map(k => numberField(`Drop weight · ${k} km`, `${eg}.dropTiers.${k}`, { opt: 1, min: 0, max: 1, step: 0.05 }))
-       .join('')}</div>`
+     selectField('The mythical', `${eg}.mythSpecies`, speciesOptions())
+   )
  )}
  ${card(
    'Time and weather',
