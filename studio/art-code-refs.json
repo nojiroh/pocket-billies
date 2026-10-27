@@ -1605,7 +1605,7 @@
    "game/js/structures.js:626"
   ],
   "bubble": [
-   "game/js/logic/ui-dials.js:99"
+   "game/js/logic/ui-dials.js:103"
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
@@ -1701,7 +1701,7 @@
    "game/js/boot.js:162",
    "game/js/logic/perks.js:104",
    "game/js/logic/perks.js:112",
-   "game/js/logic/ui-dials.js:143",
+   "game/js/logic/ui-dials.js:147",
    "game/js/map-tab.js:127"
   ],
   "flame": [
@@ -1749,7 +1749,7 @@
    "game/js/workshop.js:206"
   ],
   "glass": [
-   "game/js/logic/ui-dials.js:129",
+   "game/js/logic/ui-dials.js:133",
    "game/js/structures.js:724",
    "game/js/ui-run-kit.js:1175",
    "game/js/walk/rooms.js:273",
@@ -1847,7 +1847,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
-   "game/js/logic/ui-dials.js:215"
+   "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
    "game/js/ui-kit.js:515"

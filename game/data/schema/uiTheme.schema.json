@@ -20,10 +20,12 @@
     "primary": {"$ref": "#/$defs/hex", "description": "the green: success, primary marks (--ok)"},
     "goldA": {"$ref": "#/$defs/hex", "description": "the main action's gradient, top"},
     "goldB": {"$ref": "#/$defs/hex", "description": "the main action's gradient, bottom (--gold-b, --gold)"},
-    "danger": {"$ref": "#/$defs/hex", "description": "(--red)"},
-    "hpOk": {"$ref": "#/$defs/hex", "description": "healthy HP: teal, so primary, the Grass pill and HP stay apart"},
-    "hpMid": {"$ref": "#/$defs/hex", "description": "HP under half"},
-    "hpLow": {"$ref": "#/$defs/hex", "description": "HP under a quarter"}
+    "danger": {"$ref": "#/$defs/hex", "description": "(--red); left out: the colour code's red (signals, the side's bad shade)"},
+    "hpOk": {"$ref": "#/$defs/hex", "description": "healthy HP; left out (UI-12): the colour code's teal (good)"},
+    "hpMid": {"$ref": "#/$defs/hex", "description": "HP under half; left out (UI-12): the colour code's amber (caution)"},
+    "hpLow": {"$ref": "#/$defs/hex", "description": "HP under a quarter; left out (UI-12): the colour code's red (bad)"},
+    "mapGrass": {"$ref": "#/$defs/hex", "description": "UI-12: the minimap's grass, mixed into the surface (left out: primary)"},
+    "mapWater": {"$ref": "#/$defs/hex", "description": "UI-12: the minimap's water, mixed into the surface (left out: healthy HP)"}
    }
   },
   "color": {
@@ -99,7 +101,8 @@
    "type": "object",
    "additionalProperties": false,
    "properties": {
-    "name": {"type": "string", "maxLength": 40, "description": "a preset's name in the Studio"},
+    "name": {"type": "string", "maxLength": 40, "description": "a preset's name in the Studio; the defaults' and a player preset's in Settings' Palette row"},
+    "player": {"type": "boolean", "description": "UI-12: a preset players pick in Settings' Palette row (checked in full, like the defaults)"},
     "color": {"$ref": "#/$defs/color"},
     "surface": {"$ref": "#/$defs/surface"},
     "depth": {"$ref": "#/$defs/depth"},

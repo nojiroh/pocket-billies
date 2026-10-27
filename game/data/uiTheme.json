@@ -1,34 +1,31 @@
 {
  "version": 2,
  "defaults": {
+  "name": "Field Guide",
   "color": {
    "light": {
-    "ground": "#F4EFE0",
-    "surface": "#FFFBF0",
-    "text": "#22301F",
-    "text2": "#55634F",
-    "line": "#22301F2E",
-    "primary": "#3B8446",
-    "goldA": "#F6D06C",
-    "goldB": "#D99E33",
-    "danger": "#C8492F",
-    "hpOk": "#2A9D8F",
-    "hpMid": "#D99E33",
-    "hpLow": "#C8492F"
+    "ground": "#F0E5CF",
+    "surface": "#FAF3E3",
+    "text": "#2E1F14",
+    "text2": "#625240",
+    "line": "#2E1F142E",
+    "primary": "#5E721F",
+    "goldA": "#F2C36A",
+    "goldB": "#D18E35",
+    "mapGrass": "#5E721F",
+    "mapWater": "#2F7F86"
    },
    "dark": {
-    "ground": "#17261E",
-    "surface": "#1D2E25",
-    "text": "#EEF2E2",
-    "text2": "#AEB9A4",
+    "ground": "#1A1611",
+    "surface": "#25211A",
+    "text": "#F1E7D2",
+    "text2": "#BCAF99",
     "line": "#FFFFFF24",
-    "primary": "#7DCB7B",
-    "goldA": "#F3CF6E",
-    "goldB": "#DDA640",
-    "danger": "#FF8466",
-    "hpOk": "#4FD1C0",
-    "hpMid": "#F3CF6E",
-    "hpLow": "#FF8466"
+    "primary": "#B0CB67",
+    "goldA": "#EEC469",
+    "goldB": "#DB9D40",
+    "mapGrass": "#9DBB55",
+    "mapWater": "#5FB4BC"
    }
   },
   "surface": {
@@ -145,6 +142,124 @@
   }
  },
  "presets": {
+  "copper_grove": {
+   "name": "Copper Grove+",
+   "player": true,
+   "color": {
+    "light": {
+     "ground": "#F4EFE0",
+     "surface": "#FFFBF1",
+     "text": "#203020",
+     "text2": "#51604D",
+     "line": "#2030202E",
+     "primary": "#3A6B3D",
+     "goldA": "#F6CF6D",
+     "goldB": "#DB9E38",
+     "mapGrass": "#3A6B3D",
+     "mapWater": "#2A9D8F"
+    },
+    "dark": {
+     "ground": "#15241D",
+     "surface": "#1D2F26",
+     "text": "#EEF2E2",
+     "text2": "#B1BCA7",
+     "line": "#FFFFFF24",
+     "primary": "#85CD75",
+     "goldA": "#F3CF6E",
+     "goldB": "#DEA640",
+     "mapGrass": "#85CD75",
+     "mapWater": "#4FD1C0"
+    }
+   }
+  },
+  "bureau_night": {
+   "name": "Bureau Night",
+   "player": true,
+   "color": {
+    "light": {
+     "ground": "#E6EAEF",
+     "surface": "#F8FAFD",
+     "text": "#151E2F",
+     "text2": "#4A5669",
+     "line": "#151E2F2E",
+     "primary": "#0078A2",
+     "goldA": "#F9C555",
+     "goldB": "#E1961B",
+     "mapGrass": "#4E8A3E",
+     "mapWater": "#0078A2"
+    },
+    "dark": {
+     "ground": "#0B111F",
+     "surface": "#141B2C",
+     "text": "#E9EFF6",
+     "text2": "#A5B2C4",
+     "line": "#FFFFFF24",
+     "primary": "#31CFEE",
+     "goldA": "#F9C555",
+     "goldB": "#E9A128",
+     "mapGrass": "#7FBF6A",
+     "mapWater": "#31CFEE"
+    }
+   }
+  },
+  "brass_plum": {
+   "name": "Brass & Plum",
+   "color": {
+    "light": {
+     "ground": "#F5EAE5",
+     "surface": "#FEF9F4",
+     "text": "#361B34",
+     "text2": "#684E65",
+     "line": "#361B342E",
+     "primary": "#763671",
+     "goldA": "#F7CB65",
+     "goldB": "#DB992E",
+     "mapGrass": "#5C8A3A",
+     "mapWater": "#3A7FA8"
+    },
+    "dark": {
+     "ground": "#1F1120",
+     "surface": "#2B1B2C",
+     "text": "#F7EAF5",
+     "text2": "#C4ABC1",
+     "line": "#FFFFFF24",
+     "primary": "#DC95D5",
+     "goldA": "#F4CC6A",
+     "goldB": "#DEA13C",
+     "mapGrass": "#9CC873",
+     "mapWater": "#7CC0E0"
+    }
+   }
+  },
+  "sunpunk_day": {
+   "name": "Sunpunk Day",
+   "color": {
+    "light": {
+     "ground": "#E2F5F4",
+     "surface": "#F9FFFF",
+     "text": "#0C263A",
+     "text2": "#415C6F",
+     "line": "#0C263A2E",
+     "primary": "#1777B8",
+     "goldA": "#FBD452",
+     "goldB": "#EBA503",
+     "mapGrass": "#4A9A3A",
+     "mapWater": "#1777B8"
+    },
+    "dark": {
+     "ground": "#071B2B",
+     "surface": "#0F2638",
+     "text": "#E6F3F7",
+     "text2": "#A1BCCA",
+     "line": "#FFFFFF24",
+     "primary": "#61C3F9",
+     "goldA": "#FACF4E",
+     "goldB": "#EDA922",
+     "mapGrass": "#8FD47A",
+     "mapWater": "#61C3F9"
+    }
+   }
+  },
   "alpha05": {
    "name": "Alpha 0.5",
    "color": {
