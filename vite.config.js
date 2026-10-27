@@ -2,7 +2,16 @@
 // The build copies the deployable folders into dist/ (game/, studio/ and the root redirect page; not tools/, docs/,
 // firebase/ or validation/), then (phase 04c) bundles each page's module scripts into one file.
 import { createHash } from 'node:crypto';
-import { cpSync, createReadStream, existsSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  createReadStream,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { build } from 'vite';
 import { buildData } from './tools/build-data.mjs';
@@ -121,6 +130,15 @@ function stampBuild(outDir) {
   if (!src.includes("self.PB_BUILD = '';")) throw new Error('game/version.js: no PB_BUILD line to stamp');
   writeFileSync(file, src.replace("self.PB_BUILD = '';", `self.PB_BUILD = ${JSON.stringify(id)};`));
   writeFileSync(resolve(outDir, 'game/build.json'), JSON.stringify({ build: id }) + '\n');
+  // LD-3: the service worker fetches this build's page bundle when it installs (sw.js PRECACHE)
+  const sw = resolve(outDir, 'game/sw.js'),
+    swSrc = readFileSync(sw, 'utf8'),
+    bundles = readdirSync(resolve(outDir, 'game/js')).filter(f => /^game-[0-9a-f]{10}\.js$/.test(f));
+  if (!swSrc.includes('const PRECACHE = [];')) throw new Error('game/sw.js: no PRECACHE line to fill');
+  writeFileSync(
+    sw,
+    swSrc.replace('const PRECACHE = [];', `const PRECACHE = ${JSON.stringify(bundles.map(f => 'js/' + f))};`)
+  );
 }
 
 function copySite() {
