@@ -69,6 +69,7 @@ import '../../game/js/logic/kit-pixels.js';
 import '../../game/js/logic/lens-focus.js';
 import '../../game/js/logic/lite-tile.js';
 import '../../game/js/logic/mapgen.js';
+import '../../game/js/logic/marks.js';
 import '../../game/js/logic/messages.js';
 import '../../game/js/logic/meta-state.js';
 import '../../game/js/logic/model-bake.js';

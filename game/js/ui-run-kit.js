@@ -8,7 +8,8 @@
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
      <pb-coin kind="money|research|scrap|crests|beans|dna" value="340" label="Moneys">   a currency chip that counts to a new value
-     <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
+     <pb-pick-card heading="..." facedown selected rarity="rare">   the relic pick and keep-one card; turning it face up
+                                                       flips it; UI-14a: rarity shows as a frame, pill and name colour
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
@@ -21,6 +22,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
+import { rarityTier } from './logic/marks.js';
 import { runMarkLook } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
 expose({
@@ -66,7 +68,7 @@ const runMsVar = (/** @type {Element} */ el, /** @type {string} */ name, dflt) =
   return Number.isFinite(n) ? (v.endsWith('ms') ? n : v.endsWith('s') ? n * 1000 : n) : dflt;
 };
 /** numbers as the game writes them: 12,400 */
-const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
+export const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
 
 /* the weather's icons and names (environment.js WEATHER_NAMES gives the game's; these are the fallbacks) */
 const RUN_WEATHER_ICONS = {
@@ -144,7 +146,7 @@ const runKitBase = css`
   }
 `;
 /* the reward motions (css/motion.css m-slam, m-flip), repeated for the shadow styles */
-const runKitMotion = css`
+export const runKitMotion = css`
   @keyframes m-slam {
     from {
       opacity: 0;
@@ -402,7 +404,7 @@ const PbNode = class extends LitElement {
 };
 
 /* ---------- a currency chip ---------- */
-const PbCoin = class extends LitElement {
+export const PbCoin = class extends LitElement {
   static properties = { kind: { reflect: true }, value: { type: Number }, label: {}, _shown: { state: true } };
   static styles = [
     runKitBase,
@@ -507,6 +509,7 @@ const PbPickCard = class extends LitElement {
     facedown: { type: Boolean, reflect: true },
     selected: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
+    rarity: { reflect: true },
   };
   static styles = [
     runKitBase,
@@ -516,6 +519,46 @@ const PbPickCard = class extends LitElement {
         display: block;
         min-width: 0;
         --w: 100%;
+      }
+      /* UI-14a: rarity (the owner's answer 9, the loot ladder as frame and pill): a 3 px frame in the tier's fill along
+         the card's cut outline, the tier's pill at the top right, the name in the tier's text shade. The selected card
+         keeps its gold edge line over the frame */
+      .rar {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: var(--rar);
+        clip-path: polygon(
+          evenodd,
+          0 8px,
+          8px 0,
+          calc(100% - 8px) 0,
+          100% 8px,
+          100% calc(100% - 8px),
+          calc(100% - 8px) 100%,
+          8px 100%,
+          0 calc(100% - 8px),
+          0 8px,
+          3px 12.24px,
+          12.24px 3px,
+          calc(100% - 12.24px) 3px,
+          calc(100% - 3px) 12.24px,
+          calc(100% - 3px) calc(100% - 12.24px),
+          calc(100% - 12.24px) calc(100% - 3px),
+          12.24px calc(100% - 3px),
+          3px calc(100% - 12.24px),
+          3px 12.24px
+        );
+      }
+      .tier {
+        position: absolute;
+        top: var(--s2);
+        right: var(--s3);
+        z-index: 2;
+      }
+      :host([rarity]) h3 {
+        color: var(--rar-t, inherit);
       }
       button {
         position: relative;
@@ -640,6 +683,7 @@ const PbPickCard = class extends LitElement {
     this.facedown = false;
     this.selected = false;
     this.disabled = false;
+    this.rarity = '';
   }
   /** turns it face up (the flip); with reduced motion it fades instead */
   reveal() {
@@ -655,6 +699,8 @@ const PbPickCard = class extends LitElement {
     this.dispatchEvent(new CustomEvent('pb-pick', { bubbles: true, composed: true }));
   }
   render() {
+    const t = rarityTier(this.rarity),
+      rar = t ? `--rar:var(--sig-${t});--rar-t:var(--sig-${t}-text)` : '';
     return html`<button
       part="button"
       ?disabled=${this.disabled}
@@ -663,7 +709,12 @@ const PbPickCard = class extends LitElement {
       @click=${this._pick}
     >
       <span class="card">
-        <span class="face" aria-hidden=${this.facedown ? 'true' : nothing}>
+        <span class="face" style=${rar || nothing} aria-hidden=${this.facedown ? 'true' : nothing}>
+          ${
+            t
+              ? html`<span class="rar" aria-hidden="true"></span><pb-rarity class="tier" tier=${t}></pb-rarity>`
+              : nothing
+          }
           <span class="art"><slot name="art"></slot></span>
           <span>
             <h3>${this.heading}</h3>
