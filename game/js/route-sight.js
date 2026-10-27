@@ -18,7 +18,7 @@ import { activeBattle, reducedMotion, saveData, uiState } from './game-state.js'
 import { mapById, walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { jinglePlay } from './sound.js';
-import { talkBox, talkLine } from './talk.js';
+import { talkBox, talkHide, talkLine } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { trainerTalk } from './story.js';
 /* eslint-disable no-func-assign */
@@ -112,6 +112,7 @@ async function arenaEntered(A) {
       null,
       { name: T.name }
     );
+    talkHide();
     walkRenderer.arenaAt = null;
     /* the leader walks up to stand two steps from you */
     const pos = walkView.npcAt[A.id];
