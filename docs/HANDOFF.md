@@ -2,6 +2,85 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-14b - the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, pb-chip, Colour shapes) - 2026-10-27
+Branch `claude/ui-14b-marks-screens`, made from UI-14a's `claude/ui-14a-marks-kit` (main plus UI-11, UI-12, UI-13 and
+UI-14a; draft PR #286); main merged in first (nothing new), then UI-8c's `claude/ui-8c-map-markers` (#281: only docs,
+an import line, the icon count and ui-lint's ceiling conflicted; both HANDOFF entries kept; art-code-refs.json
+remade with its tool; hooks.js unchanged). Its PR goes to main and shows UI-8c's, UI-11's, UI-12's, UI-13's and
+UI-14a's commits until #281, #280, #282, #284 and #286 merge. No Plan Mode (the owner's standing instruction); the
+plan was written as a message and carried out, one screen per commit. **Visible change: the marks on the screens
+below; the battle plates are unchanged.**
+- Changed:
+  - **Data:** items.json `rarity` on the eight held items; robots.json `rar` made real (the four tiers or `boss`);
+    genes.json `rarity` on every trait (a Gene shows its trait's). Schemas (robots, genes), types (`RarityTier`),
+    check:data (a held item names a tier, nothing else in items.json has one: data-checks.js `RARITY_TIERS` from
+    the colour code's rarity ids), the Studio's Genes editor (a Rarity select per trait).
+  - **logic/marks.js:** node chips show UI-8c's `node-*` place icons (a stall and a ghost have none and keep the
+    family glyph); `rarityHighest`; `fxTags` (an effect's stat rows as boost and drop tags: Atk, Def, SpA, SpD, Spe).
+    **run-marks.js** `RUN_MARK_FAMILIES` and `runMarkLook().family` (the family table; a test holds them equal to
+    the chips').
+  - **ui-marks-kit.js:** markup helpers for the screens (`statusTagHTML`, `statTagHTML`, `fxTagsHTML`,
+    `kindChipHTML`, `rarityPillHTML`, `rarityRowAttr`); pb-rarity's tier name through `i18nText`.
+    **ui-run-kit.js:** `pb-pick-card kind="..."` (perk, held, item, candy, evo, tutor, part, scrap): the sub line as
+    a ribbon in the kind's family with its glyph; pb-payout's total in its currency's family (Research sky), a cost
+    in the bad family's text shade.
+  - **Settings, Accessibility:** a Colour shapes switch under High contrast (`preferences.shapes`, `:root[data-shapes]`,
+    off by default); the debug log's preferences state names it (never save data). i18n rows for the row and the
+    four tiers.
+  - **The screens** (one commit each): Team (status tags beside the types; Prime the teal ★ tag; a Coat a prism;
+    Lead neutral; the held item's glyph teal and its name in its tier's colour; each Billie's species tier as a row
+    frame and name colour, the pill on the lead's card; storage cards too); the Billie sheet (the status as a big
+    tag; the plate's Lead neutral and Prime teal ★; the species' pill; the held item's tier, stat tags and pill); the
+    build tab (Prime teal ★; a bot's parts by tier; Broken red, Damaged amber, which was gold); the Workshop and the
+    Gene Bank (each Augment's and Gene's tier, worn, listed and previewed); the shop (the Perk's and held items'
+    tiers and stat tags, the Perk glyph); the reward pick (every card's kind ribbon, held items' and parts' tiers);
+    Perks (rarity as frame, pill and name colour instead of a grey caption; the Perk ribbon; stat tags); the Bag
+    (held items' tiers and stat tags; the status tag in Use on); map nodes (the place card names a run place's kind
+    with its chip; the places list's town dot teal, it was blue); the payout (the total's family, the keep-one cards'
+    tiers).
+  - **pb-coin -> pb-chip** on its nine screens, one commit each (the payout, the Ranch, an event's DNA cost, the
+    Workshop, the splice sheet after a battle, the Map, the Gene Bank, the square, the Lab). pb-coin itself and its
+    API are unchanged (ON-3 uses it).
+  - ui-lint ceilings lowered: CSS colours 613 -> 607, game-js colours 635 -> 634.
+- Decided for the owner, to review:
+  - **The tiers** (Ask me before; by price and effect size): held items: Snack Pack, Lucky Coin, Study Notes common;
+    Quick Laces, Iron Vest uncommon; Leftover Sandwich, Brass Knuckles, Smart Specs rare. Augments (every arm has 50
+    stat points and every legs 70-80, so effect decides): Piston, Cinder, Tesla common; Clamp uncommon (tears parts
+    off); Auger and Hydrant rare (their field moves open side paths); Treads common; Striders and Hover uncommon;
+    torsos and gems common; the boss's own parts stay `boss` (no tier shown). Gene traits: Grip, Barbed, Lure,
+    Swimmer common; Counterweight, Stride, Showy, Keen, Gore, Armored uncommon; Airborne rare. Nothing is mythical.
+  - **The battle plates went to UI-16b:** UI-15 had no commits on `claude/ui-15-less-clutter` when this session got
+    there (checked twice), so its tag row wasn't there to move onto `markRow`. UI-16b's row in ui-track.md now
+    starts with them: the plates' tag row on `markRow`/`pb-tag`, Atk..Spe on the stage chips (battle.js
+    `statShortName` still prints "SP." twice), statuses as tags on the plates, and **Alpha one colour** (the bad
+    family; battle-screen.css has the plate crimson and the turn bar gold).
+  - A Coat's "prism foil" is a static four-hue gradient for now (UI-17 makes it shimmer); Prime's ★ is the text star.
+  - A Billie row's rarity frame is its edge line and a 4 px bar inside its fill (`.u-row` uses both pseudo-elements,
+    so `.rar-row` can't be used there).
+  - Pyramids on the reward pick take the neutral item ribbon; the payout's total keeps gold for Moneys (value).
+  - The place card shows the node chip only for run places; the hub's places keep their grey subtitle.
+- Found (figures checked): pb-coin was in 9 game files (10 tags; town-square has two), not 10 files. Towns: teal on the
+  run map (UI-8c's badge), blue in the places list (map-tab.css), orange `#ffb46b` on the hub map (world-bowl.js 3537
+  and 3871, WM-6's file: not changed here, for WM-6 or UI-18). The bowl's flat fallback shape (before an icon
+  loads) still uses `RUN_MARK_TONES` roles via world-bowl.js's colours: also left. Lead was already neutral on the
+  Team card (`.u-tag.lead`); only the sheet's ribbon was gold. None of these screens has a UI unit test (the tests
+  are DOM-free), so the logic tests cover the marks' data.
+- Risky: every screen named above changes look and nobody has looked at them (no browser run, the owner's rule).
+  pb-tag inside `<small>` text lines and pills in column layouts are new to those screens: expect spacing nits.
+  pb-chip is wider than pb-coin (the fill bar), on the Map's header and the Lab board especially. data-shapes now
+  always has a value (off).
+- Verified: lint (ceilings lowered), typecheck, format:check, `npm test` 1596 of 1596, check:data (a planted bad
+  `rar` fails), check:modules.
+- Skipped until after UI-18 (the owner's rule), needed later: the gallery check and its pictures (`marks-*` and `picks`:
+  pb-pick-card's kind ribbon isn't in the gallery yet, add a row then; the payout's total colour); the fast check
+  and the quick check (Team, the sheet and build tab, the Workshop, the Gene Bank, the shop, the reward and Perk
+  picks, the Perks tab, the Bag, the Map's place card and list, the payout, Settings' Accessibility tab with the new
+  row, and every pb-chip screen); the Studio check (the Genes editor's Rarity select); the smoke step; the owner's
+  phone check (status tags at 16 and 22 px, rarity frames on rows, the prism Coat, Prime's teal, the kind ribbons,
+  Colour shapes on and off).
+- Next: UI-16a and UI-16b (the planning session starts them; UI-16b takes the battle plates' marks above), then UI-17.
+- Tag to suggest: `ui-14b-done` on this entry's commit.
+
 ### UI track UI-14a - the marks kit (pb-tag, pb-chip, pb-proc, pb-info, rarity, Colour shapes patterns) - 2026-10-27
 Branch `claude/ui-14a-marks-kit`, made from UI-13's `claude/ui-13-glyphs-types` (main plus UI-11 and UI-13, draft PR
 #284); main merged in first (nothing new), then UI-12's `claude/ui-12-palettes` (#282; only docs conflicted, both sides
