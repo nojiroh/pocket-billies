@@ -5,8 +5,9 @@
 // Read from the game's code and styles (game/js, game/css, game/index.html, game/sw.js and the art folder's own
 // scripts); the generated hooks.js and debug-log-names.js are left out, and so are the Art browser's own logic files
 // (their comments show patterns as examples). Also the art folder's own JSON files (the model recipes in
-// scene/next/models and scene/vox, a sheet's layout): the art paths they name, as `recipes`. Writes
-// studio/art-code-refs.json.
+// scene/next/models and scene/vox, a sheet's layout): the art paths they name, as `recipes`. SA-2b: the icon atlas's
+// keys (art/manifest.js) the game's scripts name as a quoted word, as `atlas` (a short key like 'up' can be another
+// word: a hint for the Studio's atlas editor, not proof). Writes studio/art-code-refs.json.
 //   node tools/art-code-refs.mjs          # write it
 //   node tools/art-code-refs.mjs --check  # fail when it is out of date (npm run lint)
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -104,12 +105,33 @@ export function artRecipeRefs() {
   return [...by].sort((a, b) => a[0].localeCompare(b[0])).map(([p, at]) => ({ p, at }));
 }
 
+/** the icon atlas's keys the game's scripts name as a quoted word: { key: ['file:line', ...] }, keys sorted */
+export function artAtlasRefs() {
+  const t = readFileSync(join(ROOT, 'game/art/manifest.js'), 'utf8'),
+    keys = Object.keys(JSON.parse(t.slice(t.indexOf('=') + 1).replace(/;\s*$/, '')).icons),
+    /** @type {Record<string, string[]>} */ out = {};
+  const files = sources().filter(f => f.startsWith('game/js/') && f !== 'game/js/logic/atlas-rects.js');
+  for (const f of files) {
+    const lines = readFileSync(join(ROOT, f), 'utf8').split('\n');
+    lines.forEach((L, i) => {
+      for (const m of L.matchAll(/'([A-Za-z][\w]*)'|"([A-Za-z][\w]*)"/g)) {
+        const k = m[1] ?? m[2];
+        if (!keys.includes(k)) continue;
+        const at = `${f}:${i + 1}`;
+        if (!(out[k] || []).includes(at)) (out[k] = out[k] || []).push(at);
+      }
+    });
+  }
+  return Object.fromEntries(Object.entries(out).sort((a, b) => a[0].localeCompare(b[0])));
+}
+
 export const artCodeRefsText = () =>
   JSON.stringify(
     {
       about: 'The art paths the game code names (made by tools/art-code-refs.mjs; * is a name the code fills in)',
       refs: artCodeRefs(),
       recipes: artRecipeRefs(),
+      atlas: artAtlasRefs(),
     },
     null,
     1

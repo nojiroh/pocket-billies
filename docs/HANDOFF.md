@@ -2,6 +2,191 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-4 - navigation - 2026-10-27
+Branch `track/studio-art`. The container's HEAD was detached at origin's tip and the local branch was 195 commits behind
+with 6 stale SA-1 commits (their work is on origin under other hashes): the branch was checked out again from origin.
+Main had nothing new, so there was nothing to merge. Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): workspaces as the sidebar's folding groups; Characters as one row with a Looks | Wardrobe switch;
+a "Game" workspace on top for Rules and Check; Items & pyramids in Runs. Labels only: no section key, data key or
+player-facing word changed. 7 commits. Tag `sa-4-done` (made here, for the owner to push).
+- Changed:
+  - **Workspaces**: Game (Rules, Check), Art (Art browser, Art workbench), Creatures (Billies, Roster board, Part
+    rules, Genes, Coats, Moves, Types, Battle preview), World (Walk scenes, Hub island, Props, World & encounters,
+    Engine, Camera), People & story (Trainers, Characters, Lore & story, Story scripts), Runs (Run Lab, Perks, Unlocks
+    & hub, Economy, Robots, Items & pyramids), Sound & UI (Music & sound, UI look), Legacy. The Moneys group is gone.
+    The table is `STUDIO_WORKSPACES` in `game/js/logic/studio-layout.js` (was `SECTION_GROUPS` in studio-app.js), with
+    `navRows`, `navJoined`, `workspaceOf`.
+  - **Characters**: one sidebar row for Looks (`people`) and Wardrobe (`wardrobe`); it opens the one last opened, its
+    ⇥ opens the other beside. A switch on top of both sections (`.nav-switch`) changes the section in the pane it is
+    in. `#people` and `#wardrobe` links, Find and the checks work as before.
+  - **Part rules**: the label of Part sizes (nav, heading, the Check's three messages).
+  - **Rules** says what it holds: What's new and the game-wide numbers; a run's own are in Runs.
+  - **Find** shows each section's workspace (Looks and Wardrobe settings say "Characters › …") and finds Characters.
+  - Checks: `studio-layout.test.mjs` +3 tests (every SECTION_LIST section in exactly one workspace, the rows, the
+    labels); the Studio self-test's Find step fails if Find misses a section or a section is in no workspace;
+    `studio-shots.py` views `looks` and `wardrobe`.
+  - Docs: STUDIO.md (a Workspaces note under Layout; Perks, `perks.json`, `run.perks` for Loopholes and relics; the
+    workspace paths; Characters); the improvement plan's T4.5 and T6.8 marked done here; the plan's "Found in SA-4".
+- Where the plan was wrong: T4.5 was mostly done already (Runs existed, Jobs and Town shops removed in SA-3);
+  STUDIO.md named `relics.json` and `run.relics` (the data is `perks.json`, `run.perks`); nothing tested the nav before.
+- Decisions I made:
+  - Rules and Check: not in the plan's list; a Game workspace (the owner's pick), put first.
+  - Robots sit in Runs after the run pages, Items & pyramids last.
+  - The folds are stored by workspace name, so a fold saved under an old group name is forgotten once (harmless).
+  - Left as they are: the battle-golden test's name "holding Loopholes" (a test name; its snapshot key would change),
+    the run URL's `relics=` and the section key `relics` (internal).
+- Risky:
+  - The switch is put above the section's own HTML in `renderPane`; a section that one day reads its pane's first
+    child would see the switch. None does today (grepped).
+  - Shift-clicking the Characters row while one of the two is open on the left says "Already open on the left"; its
+    ⇥ button opens the other one beside.
+- Verified:
+  - lint (with art-code-refs), typecheck, format, check:modules after each commit; unit tests 1431 pass.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections opened, the self-test with the new Find
+    check: 21 edits undone, proposal made). `--only=polish,checks`: ok (the second pane by a Shift-click on a nav row).
+  - Smoke: 6 of 6 (286 s), run alone.
+  - In a browser (scratch script): the row, the ⇥ button and the switch in both panes; Find for every section's name
+    and for Characters, Part rules and "shopkeeper"; no page errors. Screenshots at 1024 and 1920 (looks, wardrobe).
+  - Not run: the full quick check, the publish checks (they time out here).
+  - Noticed, not SA-4's: the polish step's line still says "shop thank-you lines" (Town shops went in SA-3).
+- For the owner on the phone:
+  - The section list: the eight workspaces; fold one and reopen the Studio.
+  - People & story → Characters: Looks and Wardrobe with the switch on top; Shift-click or ⇥ to put one beside.
+  - Ctrl K: "characters", "part rules", "perks": each result says its workspace.
+- Next: SA-5 (unused art), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-3 - the clean-up - 2026-10-27
+Branch `track/studio-art` (main merged first, a merge commit: HANDOFF and art-code-refs.json conflicted; SA-2b kept on
+top, main's entries below, SA-2a and SA-1 once; the container's local branch was 165 commits stale, so the merge's
+first parent is main and its second the track branch: no history rewritten). Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): Copperleaf's place as a card in Hub island; What's new at the top of Rules; the save's empty `eggs`
+list removed; the boutiques' names only into the wardrobe. One cause per commit (33), each removal grepped before and
+checked after (lint, typecheck, check:modules, check:data, unit tests). Tag `sa-3-done` for the owner.
+- Changed (Studio):
+  - **Jobs** gone, with its Find entries and checks. The self-test's and check-studio-github.py's quiet section is
+    Types now.
+  - **World & encounters** opens on Wild encounters; **Route stops** and **Eggs** are gone. Copperleaf's own place
+    (name, route label, wild encounters, backdrop, mood, music, description) is a card in **Hub island**; Check,
+    Connections, Story scripts and data-checks' findings open Hub island for a place. Find lists no route stops.
+  - **What's new** is the first card of Rules; the dead End of the road (`meta.endText`) is gone, from meta.json too.
+  - **Rules**: the Free egg, the wild drop chance and weights, the Eggs card, the rest stop price gone.
+  - **Trainers**: the km First-win egg (and the 8 mini-bosses' `egg`), the Stands at picker gone; the badge id's help
+    says the save and the profile keep it (not route gates).
+  - **Art workbench**: the always-disabled Pixels and Model buttons gone. **Roster board**: no count or version in
+    its words.
+  - **Local mode**: `window.STUDIO_KEY`, github.js's key check, the `X-Studio-Key` header, its global type and
+    STUDIO.md's "Saving in local mode" gone.
+  - **Town shops** gone, with its Find entries, Connections' shop kind, its checks, the Looks list's keepers, Walk
+    scenes' Which shop picker (a door opens its place's shop) and check-studio-github.py's shop thank-you step.
+- Changed (game):
+  - **The walk eggs**: `addEgg`, `hatchEgg`, `hatchable`, `autoSlot`, `eggSlotCount`, `eggKm` (logic/rules.js);
+    `saveData.eggs` (a new save has none, an old one's is dropped; no SAVE_VERSION change); the run's working field;
+    `rules.eggs`; `EGGS`/`EGG_TIERS`; **eggs.json**. Ranch eggs (breeding.js), `saveData.hatched` and the egg
+    pictures stay.
+  - **jobs.json** and **shops.json** gone. `SHOPS` starts empty; a run's world fills it as before. The boutiques'
+    names are in `wardrobe.json shops`: the dressing room names them, the Wardrobe's Sold at lists them.
+  - Types, the test fixture, check-data's snapshot (file count 175 to 172; the planted egg line gone) and
+    art-code-refs.json follow.
+- Where the plan was wrong: see the plan's "Found in SA-3" (the shops were the legacy world's; the badge and `node`
+  are live; Route stops was Copperleaf's only editor; the save held the walk eggs; the roster has 53).
+- Decisions I made:
+  - The quiet section of the two Studio checks is Types (no 3D view); Types now skips the second-pane step.
+  - The path-prefix test's floor is 2 claims (lore's, the story editor's): the shop's `@thanks.` went with its section.
+  - The landmark picker went with Route stops; `landmark` is still read and checked.
+  - A regional form's preview in the Studio uses its base stage's rig in the form's coat (sprites.js), as the game
+    does: Wild encounters, now the first tab, drew four forms (Trump, Zuckerberg, Swift, Kardashian) that asked for
+    missing pictures about 100 times each. Not saved into rigs.js.
+- Risky:
+  - The hub card edits `locations.json` from a 3D section; a field change redraws the section.
+  - The dressing room's inside-a-boutique mode can't be reached any more (no shop has `kind: 'wardrobe'`): left.
+  - `egg_5.png` is only preloaded now (SA-5).
+- Verified:
+  - lint, typecheck, format, check:modules, check:data after every commit; unit tests 1428 pass.
+  - Smoke: 5 of 6 in the full run (208 s). The Actions sheet step failed there with "debug log: no function render
+    to wrap" (the debug log's hook ran before the page's functions, with two browsers busy); alone it passed (57 s).
+    One re-run, as the rules allow; noted in case it comes back.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections, 21 edits undone, no problems). Its first
+    run found my Wardrobe bug (it read `D.shops`, gone with shops.json) and the forms' 404s: both fixed, then ok.
+  - `--only=wardrobe,workbench,leaders,checks,story,polish`: ok except `story: the reference didn't put heal in the
+    script`, which fails the same way on the merge commit before SA-3 (main's or SA-2b's; not looked into).
+  - Not run: the publish checks (they time out here, as in SA-2b) and the full quick check.
+  - In this container Python Playwright must be 1.63.0 to match the installed Chromium (tools/requirements-check.txt
+    pins 1.56.0, which can't find its browser; smoke then skips the browser steps and still says exit 0).
+- For the owner on the phone:
+  - Studio → Hub island: the Copperleaf card at the bottom; change the music or mood and play.
+  - Rules → What's new at the top; the title shows it.
+  - Wardrobe → an item sold at a boutique: Sold at lists the four; in the game's dressing room an item you don't own
+    says "sold at Second Chance Threads" (was "a boutique").
+  - An old save loads (its walk eggs dropped); a run starts and ends.
+- Next: SA-4 (navigation as workspaces), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-2b - the missing editors, part 2 - 2026-10-27
+Branch `track/studio-art` (SA-2a pulled first, then main merged: a merge commit, only HANDOFF conflicted, both top
+entries kept; art-code-refs.json made again for main's moved lines). Plan approved in Plan Mode. The owner's picks
+(Claude's recommendations): icons get text **and** Edit pixels; the builder's block shading ported as a button. Not
+the recommendation: **no split** (all of SA-2b in one session, done so). Tag `sa-2-done` for the owner.
+- Changed:
+  - **A text-file save.** An SVG under `art/` and `art/manifest.js` are kept unsaved (`studioState.textDirty`), sent by
+    Propose as text (github.js `file` takes them; anything else is still refused), kept in drafts (draft-record.js
+    `texts`, a draft without them still reads), one undo step each (history.js text steps, also grouped with a data
+    change). They raise `meta.artVersion` like pictures (the game's art cache holds them too).
+  - **UI icons** (`studio/js/icon-editor.js`): pixels on the shared canvas, written back as the icons' own SVG format
+    (`logic/svg-pixels.js`); **Shade as a block** (`logic/icon-block.js`, the builder's rules); the text checked as
+    typed (`svgProblem` + the browser's parse); New icon; previews at 14-108 px on light and dark panels and beside the
+    others; unsaved icons in the Studio's own menu previews (`window.NW_ART`). Edit icon and Replace… (SVG) in the Art
+    browser.
+  - **tools/build-ui-icons.py deleted** (decision 6). `ui-icons.test.mjs` keeps the names, the count (51), the size and
+    format, and the code's uses; its grids kept as `tools/test/fixtures/ui-icon-grids.json` for the shading test.
+  - **Icon atlas** (`studio/js/atlas-editor.js`, `logic/atlas-rects.js`): the sheet with every rectangle; pick, drag,
+    resize, arrow keys, numbers; Add (a free place), Rename (items' icons and types' particles follow, one undo step),
+    Delete (refused while the data uses it); problems listed; the rectangles over the sheet in the painter; the Studio's
+    icons follow at once. `art-code-refs.json` gains `atlas`: keys the code names as words (a hint).
+  - **Scene art previews** (`studio/js/scene-art-preview.js`, `logic/wall-ramp.js`): walls and the building sheet
+    coloured as the shaders do (6 × 4 m of a cell, a colour to pick, off-level pixels counted, the cells outlined in the
+    painter), rooms behind a window by day and at night, a flag waving by the game's ripple with its postcard stamp, a
+    far backdrop over a sky wrapped at its seam.
+  - `ART_BUILDERS`: the icons' builder out; the far backdrops (build-scene-props.py) and `detail-a04b.png`
+    (build-airship.py and build-props-batch1.py) in.
+  - Walk scenes' far list has sea and volcano (two places use sea and showed None).
+  - Fixed on the way: the pixel canvas's side panel closed one element too many without the onion skin (the tile set's
+    help sat outside its column); the publish check waited for every picture's load event (over 30 s here).
+  - Checks: `check-studio-github.py` steps `icons`, `atlas`, `scene_art` and an SVG in the publish checks; the self-test's
+    "Icons" row; `studio-shots.py` views `icons`, `atlas`, `walls`, `flags`; unit tests svg-pixels, icon-block,
+    atlas-rects, wall-ramp (+ publish-plan, draft-record, history, art-search cases).
+  - STUDIO.md: UI icons; Icon atlas; Scene art previews; Propose and drafts carry text files.
+- Where the plan was wrong:
+  - **Far backdrops aren't drawn by the game** (only preloaded; `farH` does nothing). The Studio shows and paints them
+    with that note; bringing them back or retiring them is yours to decide (SA-5's report?).
+  - Only `detail-a04b.png` is the live building sheet; `detail.png` and `detail-a04.png` are builder inputs. Nothing in
+    the game reads `manifest.js`'s `battle` layout. Both noted for SA-5.
+  - The icon sheet is 254 × 48 (not 256 wide), 119 rectangles.
+- Decisions I made:
+  - The UI lint's raw-colour ceiling rose by exactly 47 (the icon palette moved from Python into
+    `logic/icon-block.js`): art colours, not UI styling; the reason is in the ceiling's comment.
+  - A new icon keeps the unit test's count at 51 on purpose: the owner raises it with the new icon.
+  - Renaming an atlas key changes the data, not the code; the code's uses are listed as a hint.
+- Risky:
+  - The atlas's "the code names it" list matches words (`up`, `box`): it can show false uses.
+  - The wall preview is flat light: the shaders' sun, bumps and the room skirting aren't drawn.
+  - Text steps reuse the picture steps' shape (empty patches + texts); a later change to history.js's art steps
+    should keep `text` steps working (history.test.mjs covers it).
+  - The Studio is still wider than a 390 px phone in every section (not new).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data.
+  - Unit tests: 1358 pass.
+  - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,icons,atlas,scene_art,studio_test`:
+    every step ok; the self-test round-trips 51 icons in about 11 ms and finds the atlas's 119 rectangles fine.
+    The publish checks (`--only=publish`) still time out at their first click in this container, with or without this
+    session's changes (the page stops painting frames); the SVG case is written but couldn't be seen through here.
+  - Smoke 6 of 6 (237 s). The Studio needs `npm run data` first in a fresh container (gamedata.js is generated).
+  - Screenshots at 1920, 1024 and 390 (views icons, atlas, walls, flags): fine at 1920 and 1024; wider than 390 px, like every section.
+- For the owner on the phone:
+  - Art browser → ui → an icon → Edit icon: paint a pixel, watch the previews; clear it, paint a flat shape, Shade as a
+    block (try One colour).
+  - icons → icons.png → Edit the rectangles: drag one, Shift + an arrow, Rename an item icon and see the item.
+  - scene/build/walls.png → pick a cell and a colour; Edit pixels and paint: the preview follows. A flag waving.
+- Next: SA-3 (clean-up in the Studio and the game), in a new session on `track/studio-art`, in Plan Mode.
+
 ### Region map track WM-2 - the region grid (logic only) - 2026-10-27
 Branch `claude/wm-2-region-grid` (from WM-1's branch). The owner's answers: places a path by Expedition (I 9-10, II
 9-11, III 10-11, IV 10-12, V 11-12), a free place before the boss, so 2 towns at 9-11 places and 3 at 12; no filler

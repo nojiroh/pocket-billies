@@ -2,7 +2,7 @@
 'use strict';
 /* ================= RUN STATE (roguelite track RL-3) =================
    The run in progress, kept in the save as saveData.run (null in the hub; roguelite-track.md 2a). While a run is
-   on, the save's working fields (team, se, items, pyramids, trip, wild, eggs, flags, seats, visited, buddy) are the
+   on, the save's working fields (team, se, items, pyramids, trip, wild, flags, seats, visited, buddy) are the
    run's: every engine and screen reads them as before. runBegin copies the hub's into run.start and gives the run its
    own: the Billies from home (RL-9b: picked at the mast, from the team or storage) and the bag packed from the hub's;
    runEnd pays out, puts the hub's back and keeps the Billies the player chose. Only the seed is stored for what can
@@ -63,7 +63,6 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'pyramids',
   'trip',
   'wild',
-  'eggs',
   'flags',
   'seats',
   'visited',
@@ -287,7 +286,6 @@ export function validRun(o) {
     list(st.trip.plan, 500) &&
     st.trip.plan.every(Number.isInteger) &&
     plain(st.wild) &&
-    list(st.eggs, 500) &&
     plain(st.flags) &&
     list(st.seats, 64) &&
     st.seats.every(v => typeof v === 'string') &&
@@ -461,7 +459,6 @@ export function runBegin(s, give) {
   s.pyramids = add(Object.assign(zero(start.pyramids), give.pyramids || {}), pack.pyramids);
   s.trip = { node: 0, plan: [] };
   s.wild = {};
-  s.eggs = [];
   s.flags = copyOf(start.flags || {});
   s.seats = copyOf(start.seats || []);
   s.visited = { 0: 1 };

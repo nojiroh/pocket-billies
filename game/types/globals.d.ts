@@ -60,8 +60,7 @@ declare var ARTMAN: Record<string, any>;
 declare var RIGS: Record<string, any>;
 declare var RIGS_NEXT: Record<string, any>;
 
-/** the Studio's page (its inline script): the deploy's key, and where the game's art is from the Studio */
-declare var STUDIO_KEY: string;
+/** the Studio's page (its inline script): where the game's art is from the Studio */
 declare var NW_ARTDIR: string;
 
 /** the checks set it before the page loads: put the modules' names on window (js/test-globals.js) */

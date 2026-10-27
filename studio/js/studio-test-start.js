@@ -13,6 +13,7 @@ import { frameScheduler } from '../../game/js/frame-scheduler.js';
 import { applyGroundTone, bigTilePaths, groundToneAt } from '../../game/js/walk-view.js';
 import { gpuState } from '../../game/js/engine/webgl.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { NAV_JOINED, workspaceOf } from '../../game/js/logic/studio-layout.js';
 import {
   HISTORY_STEPS,
   historyBytes,
@@ -23,6 +24,8 @@ import {
 import { artMatch, artQueryParse } from '../../game/js/logic/art-search.js';
 import { artRefState } from '../../game/js/logic/art-refs.js';
 import { LITE_SAME, liteDiff, liteTile, liteTilePlan, liteToneK } from '../../game/js/logic/lite-tile.js';
+import { pixelsToSvg, svgToPixels } from '../../game/js/logic/svg-pixels.js';
+import { atlasProblems, manifestParse } from '../../game/js/logic/atlas-rects.js';
 import {
   ACTIONS,
   PANE2_REFUSED,
@@ -46,7 +49,7 @@ import {
   updateTopBar,
 } from './studio-app.js';
 import { pictureImage } from './pixel-canvas.js';
-import { atlasGet, loadedAtlas, openPixelEditor } from './sprites.js';
+import { atlasGet, loadedAtlas, openPixelEditor, textGet } from './sprites.js';
 import { runCheck } from './check.js';
 import { openSkeleton } from './skeleton.js';
 import { sceneryCatalog } from './map-editor.js';
@@ -56,6 +59,7 @@ import { githubMode } from './github.js';
 import { legacyLoad } from './legacy-view.js';
 import { artBrowser, artCodeRefsLoad, artPictures, artRefs, artStripOf } from './art-browser.js';
 import { tileSetKinds } from './tile-set.js';
+import { iconNames } from './icon-editor.js';
 import { musicPlay, musicPlaying, musicStop, musicStudio } from './music-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -71,6 +75,8 @@ function studioTestHandles() {
     studioProbe,
     SECTIONS,
     SECTION_LIST,
+    NAV_JOINED,
+    workspaceOf,
     PANE2_REFUSED,
     ACTIONS,
     HISTORY_STEPS,
@@ -132,6 +138,12 @@ function studioTestHandles() {
     artMatch,
     artRefState,
     legacyLoad,
+    iconNames,
+    textGet,
+    svgToPixels,
+    pixelsToSvg,
+    manifestParse,
+    atlasProblems,
     githubOn: !!githubMode.on,
   };
 }
