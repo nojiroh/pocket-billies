@@ -60,7 +60,7 @@ town node needs it.
 - **Routes track** (docs/phases/routes-track.md, the owner's brief 2026-10-24): run routes planned like a Pokémon
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs; done 2026-10-25), RT-3 (set pieces for a lived-in feel; done 2026-10-25), RT-4a (more wild Billies, habitats, a rarer one in a
-  hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals). Tags `rt-N-done`, `rt-4a-done`.
+  hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals; done 2026-10-27). Tags `rt-N-done`, `rt-4a-done`, `rt-4b-done`.
   Branch `track/routes`.
 - **Route props track** (docs/phases/route-props-track.md, the owner's brief 2026-10-26): more 3D props for the
   routes: RP-1 (the set pieces' last pictures as models, 20 new route props, the pieces use them, a wayside shrine
