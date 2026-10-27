@@ -405,6 +405,11 @@ test("the game's island is the generator's own output for its stored dials and s
   if (sc.islandGen.lock || sc.islandGen.v !== ISLAND_GEN_VERSION) return;
   /* as the tool makes it again: its own locked zones kept */
   const { scene, landmarks } = islandGenerate(sc.islandGen.dials, sc.islandGen.seed, ctx, sc);
+  /* hand patches (islandGen.patched: tools/patch-copperleaf-water.mjs, tools/patch-copperleaf-square.mjs) change the
+     ground, its spots, streams, plots and landmarks by hand; the rest must still be the generator's own. A rebuild
+     (build-island) writes a fresh islandGen, which clears the list. */
+  const patched = Array.isArray(sc.islandGen.patched) && sc.islandGen.patched.length > 0,
+    HAND = ['tiles', 'heights', 'spots', 'streams', 'plots'];
   for (const k of [
     'w',
     'h',
@@ -419,7 +424,8 @@ test("the game's island is the generator's own output for its stored dials and s
     'plots',
     'grassPatches',
   ])
-    assert.deepEqual(sc[k], scene[k], `${k} (run node tools/build-island.mjs to remake it)`);
+    if (!(patched && HAND.includes(k)))
+      assert.deepEqual(sc[k], scene[k], `${k} (run node tools/build-island.mjs to remake it)`);
   assert.deepEqual(
     sc.bridges.filter(b => !b.pier),
     scene.bridges.filter(b => !b.pier),
@@ -427,5 +433,5 @@ test("the game's island is the generator's own output for its stored dials and s
   );
   assert.deepEqual(sc.cam.orbit, scene.cam.orbit);
   /* HB-4b: the station's sky rail and portal, kept by build-island */
-  assert.deepEqual(sc.landmarks, landmarks, 'landmarks (run node tools/build-island.mjs to remake it)');
+  if (!patched) assert.deepEqual(sc.landmarks, landmarks, 'landmarks (run node tools/build-island.mjs to remake it)');
 });
