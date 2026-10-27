@@ -30,14 +30,6 @@
       color-mix(in srgb, var(--c2, #8bbdd2) 42%, var(--panel-s)) 64% 100%
     );
 }
-.badge.bud {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  margin-left: var(--s1);
-  background: var(--rose);
-  color: #fff;
-}
 /* ---------- Team: party cards ---------- */
 .tm-spr {
   position: relative;
