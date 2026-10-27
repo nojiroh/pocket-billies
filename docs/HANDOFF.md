@@ -20,7 +20,7 @@ Branch `ccr-3df446bb-9jvdvq`. No look changes.
   title, Firebase later; `createImageBitmap` and an upload queue moved to LD-5.
 - Measured headless: the boot's pictures 889 files, done at 2.1 s; both load-check boots run on the minified bundle
   with no page errors; the service worker served the bundle from its cache on a reload.
-- Verified: lint, typecheck, format, check:modules, CHECKS3.
+- Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, the whole fast check (every check passed) and smoke 6 of 6 (155 s).
 - Risky: a place's first visit fetches its pictures behind its fade (before, they were all in at boot; the service
   worker's art cache keeps them after); a prop picture outside its place's list pops in a frame late.
 - Next: LD-4 (the run's places in a worker from the pick). Tag `ld-3-done` for the owner.
