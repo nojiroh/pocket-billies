@@ -25,7 +25,7 @@ import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { resRerolls } from './residents.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
-import { runWildLevels } from './run-scenes.js';
+import { runLeaderPicks, runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -246,10 +246,9 @@ export function runFoes(run, data) {
     pool = data.leaders.filter(T => T && T.team && T.team.length).sort((a, b) => (a.id < b.id ? -1 : 1)),
     used = new Set(),
     /* RL-R1: the region's leaders, the mini-bosses in order then the boss (logic/run-region.js) */
-    picks = (run.region && run.region.leaders) || [],
+    picks = runLeaderPicks(run),
     /** @type {Record<string, any>} */
     out = {};
-  let k = 0;
   /* RL-S2: Blake on each rival node (logic/rival.js), his team growing meeting by meeting */
   const B = TRAINERS[RIVAL_TRAINER],
     RV = data.rules.rival,
@@ -316,8 +315,7 @@ export function runFoes(run, data) {
     if (node.type !== 'miniboss' && node.type !== 'boss') return;
     const left = pool.filter(T => !used.has(T.id)),
       from = left.length ? left : pool,
-      /* RL-R2: a side area's leader is its own (run.map.side.leader); its places come after the main path's */
-      pick = node.side && map.side ? map.side.leader : picks[k++],
+      pick = picks[i],
       want = pool.find(T => T.id === pick);
     if (!from.length) return;
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];

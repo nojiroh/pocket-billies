@@ -106,7 +106,7 @@ town node needs it.
   2026-10-27), WM-2 (a
   region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town, 9-12
   places a path by Expedition, 2-3 towns; done 2026-10-27 on `claude/wm-2-region-grid`), WM-3
-  (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines),
+  (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines; side areas on the grid; done 2026-10-27),
   WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
@@ -146,7 +146,8 @@ town node needs it.
   Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
   run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
   `ccr-03a15a70-nd3yqu`, answered (Field Guide by default, three palettes in Settings; rarity as frame and pill); UI-8b (the wide
-  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) done 2026-10-27 on `track/ui`, the owner's phone check next; then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
+  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) done 2026-10-27 on `track/ui`, the owner's phone check next; UI-8c (the run map's icons in the icon set's pixel style, the markers first)
+  beside it on `claude/ui-8c-map-markers`, then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
   the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
@@ -246,6 +247,14 @@ town node needs it.
   precache) done 2026-10-27; LD-4 (the run's places on a helper thread from the pick) done 2026-10-27; LD-5 in part (one frame budget, the
   moves measured) done 2026-10-27, its other items wait on the owner's phone log; next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
   `ld-N-done`. Branch `track/load`.
+- **Characters track** (docs/phases/characters-track.md, the owner's brief 2026-10-27): people that look like they
+  belong and move like they're alive. People are 66.5 px/m and drawn at 0.74 of a screen pixel per art pixel at the
+  Normal zoom (blurred), so higher resolution would not help in the world; the recommendation is "3D-driven pixel
+  puppets" (jointed low-poly figures rendered into pixel sprites at 32 px/m in the world, 64 in battle), proven first
+  by a spike beside today's people on the owner's phone, with a classic 2D redraw as the fallback. CH-0 (the plan, with
+  research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
+  and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
+  `track/characters` (the owner makes it).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.

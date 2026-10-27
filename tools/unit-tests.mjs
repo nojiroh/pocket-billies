@@ -23,6 +23,7 @@ export const SLOW_TESTS = [
   'mapgen-pieces.test.mjs',
   'mapgen-roads.test.mjs',
   'mapgen-seams.test.mjs',
+  'mapgen-shapes.test.mjs',
   'mapgen-town.test.mjs',
   'route-finds-real.test.mjs',
   'route-trainer-spots.test.mjs',
