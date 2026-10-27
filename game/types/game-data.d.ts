@@ -1045,6 +1045,10 @@ export interface Rules {
     foes: { miniboss: { up: number; reward: number }; boss: { up: number; reward: number } };
     /** RL-S2: Blake, the rival (logic/run-map.js runMapRival, logic/rival.js; placeholders) */
     rival: RivalRules;
+    /** ON-2: a friend's ghost team (logic/run-map.js runMapGhost, logic/run-record.js ghostTeam) */
+    ghost: GhostRules;
+    /** ON-2: the daily and weekly runs (logic/daily.js boardPlan) */
+    boards: BoardRules;
     /** RL-12b: route trainers: how many a route place by row ([fewest, most] from the first route row, the last for
      * every row after; RT-2), the share that stands by the road (`required`), the chance a place has a pair fought as
      * a double, levels over the place's top wild level, what each pays, how far they see (m) */
@@ -2318,6 +2322,28 @@ export interface RunSideRules {
   lean: number;
 }
 /** RL-S2: rules.json run.rival: Blake's meetings in a run and his team (placeholders until the owner answers) */
+/** ON-2: where a friend's ghost team waits (rules.json run.ghost) */
+export interface GhostRules {
+  /** the node types it can stand in for, in order: the first the band has */
+  on: string[];
+  /** with none of those: a type it takes only on a row that keeps another of it ('town') */
+  spare?: string;
+  /** its rows: [from, to) as a share of the map's rows */
+  band: [number, number];
+  /** its ace's levels over the row's top wild level, what beating it pays (Moneys), the trainer look it wears */
+  up: number;
+  reward: number;
+  who: string;
+}
+
+/** ON-2: the daily and weekly runs (rules.json run.boards; logic/daily.js) */
+export interface BoardRules {
+  /** the daily: its Expedition and challenges (modifiers.json ids) */
+  daily: { expedition: number; challenges: string[] };
+  /** the weekly: its Expedition drawn from [lo, hi], and [lo, hi] picks of `challenges` */
+  weekly: { expedition: [number, number]; challenges: string[]; picks: [number, number] };
+}
+
 export interface RivalRules {
   /** meetings a run by Expedition (index 0 = Expedition I; past the end, the last) */
   meet: number[];

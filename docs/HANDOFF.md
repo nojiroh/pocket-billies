@@ -2,6 +2,40 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Online track ON-2 (= RL-15): run record, ghosts, daily and weekly runs, friends' boards - 2026-10-27
+Branch `track/online` (this session made it: `ccr-0b8e3c38-gt7t6a` with main 36bca3b4 merged in; its first push
+created it). Both halves in one session at the owner's word. Tag to suggest: `on-2-done`. Details:
+docs/phases/online-track.md, "Facts corrected at ON-2's start" and "Done in ON-2".
+- The owner's answers: one `ghosts/<uid>` document per player (not `boards/{board}/entries`); no score (won, places
+  cleared, leaders beaten, fewest days); dailies and weeklies with every unlock open, Blake reset, no hub bonus,
+  normal payout, open to anyone; the ghost on its own node, one per run, paying as Blake does.
+- Changed: `logic/run-record.js`, `logic/daily.js`, `game/js/boards.js` (new); the `ghost` node type, rules.json
+  `run.ghost` and `run.boards`, `run-map.js runMapGhost`, `rival.js ghostTeam`, `trainerTeam`'s `whole` entries,
+  `run-start.js` (board runs, the ghost kept in `run.ghost`), `run-loop.js runFoes` (the ghost's foe),
+  `battle-rewards.js` (a ghost win: a reward pick), `run.board` / `run.ghost` / `meta.boards` (validRun, validMeta;
+  no SAVE_VERSION change: metaFill fills it), the start sheet's Your own / Daily / Weekly (after a first run), the
+  record posted at Ride home, the Trainer screen's "Friends' boards", a daily's friends on its payout screen;
+  firestore.rules `ghosts/<uid>`; the quick check's Safety step covers the boards.
+- **For the owner**: publish the rules again (SECURITY.md "ON-2 for the owner to do"; the moderator uid from ON-1 is
+  still to paste). Until then records wait in the browser and the boards stay empty.
+- **Risky**: never tried with two real accounts (the boards and a ghost were tried with stand-in friends in the page,
+  the rules on the emulator). A ghost takes a town when no route or waystation fits, on a row that keeps another
+  town, so the road through the ghost skips that town (about half of today's maps have no free route or waystation).
+  A friend's Billie scaled down keeps its species (a final form at a low level). Board runs open every shop and biome
+  unlock, so a new player's daily can be harder than their own runs. Records wait in localStorage per account (at
+  most 5); a browser cleared before the next start loses them.
+- Found: `node --test` runs the emulator test files at once against one project, so each file's clearFirestore can
+  wipe the other's data mid-test (ON-1's "friends on a player's own list" test failed that way once):
+  `ghosts.test.mjs` uses its own project id.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build, `npm test` 1348 pass (daily 5,
+  run-record 10, ghost-run 3 new), the rules emulator tests 26 pass (7 new; three runs in a row), headless pictures of
+  the start sheet, the boards and a take-off with a stand-in ghost to its battle (their nickname and moves, no page
+  errors). Full quick check: 32 of 40 ok. Known on main: Terraces' sky_portal, RL-8's shop Perk, room light, Running
+  (the two cave songs pass now). RT-2's pair, Granny Juniper, the lab's drawing and the Actions sheet's day chip
+  failed in the full run but pass alone, both on this branch and on main 36bca3b4: load, not ON-2.
+- Next: the owner publishes the rules and plays a daily with a friend on two accounts; then ON-3 (the Showcase) on
+  `track/online`.
+
 ### UI track UI-9a - parts.css shrunk in place: dead rules, most of its !important, the pill and keyframes out - 2026-10-27
 Branch `ccr-30c007a6-eol40p` (the owner's answer: stay here; UI-6b on it isn't in main yet, PR #230 merged; `track/ui`
 doesn't exist). Main merged in first (CHANGELOG and HANDOFF keep both sides, settings.css's Graphics presets take
@@ -743,6 +777,7 @@ code. Tag to suggest: `on-0-done` (the owner pushes tags).
 - **Risky**: the friend-trade swap without a server relies on `getAfter`/`existsAfter` across two players' batches:
   ON-4 proves it on the emulator before any screen is built. Spark's 50k reads a day for GTS and Showcase browsing.
 - Next: the owner makes `track/online` from main; ON-1 there (it can start before RL-14b; ON-2 replaces RL-15).
+
 ### Route props track RP-2 - bridges, jetties, rails and arches in the props' style - 2026-10-26
 Branch `ccr-5d98165a-i1ustq` (as RP-1). The owner asked after RP-1 ("make it so bridges and similar things are in the
 current style") and chose: restyle in structures.js; bridges and jetties, rails, arches and tunnels (not escalators);
@@ -1221,6 +1256,7 @@ main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS
   phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
   tag `rs-3-done`.
 - Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+
 ### Studio art track SA-2a - the missing editors, part 1 - 2026-10-26
 Branch `track/studio-art` (main merged first, a merge commit: only HANDOFF conflicted, both top entries kept). Plan
 approved in Plan Mode. The owner's picks (all Claude's recommendations): the Studio makes the Lite tiles from tiles47;

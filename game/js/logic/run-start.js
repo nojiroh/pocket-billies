@@ -10,7 +10,7 @@
    (run-map.js runMapStart: what the landing shows, the forecast).
    runStartOn puts a plan on a save (run-state.js runBegin). What the page does around it (heal, the ranch, the world,
    the flight) stays in run.js. Logic only: no DOM, no Date, no Math.random (tools/test/run-start.test.mjs). */
-/** @import { Run, RunMap, RunRegion, SaveData } from '../../types/save-data' */
+/** @import { Run, RunBoard, RunGhost, RunMap, RunRegion, SaveData } from '../../types/save-data' */
 /** @import { NodeType, RunMapRules, Unlock, HubBuilding } from '../../types/game-data' */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
@@ -22,7 +22,10 @@
  * fieldMoves (fieldMoves.json moves) with rules.side make the run's side area (run-side.js; without them, none)
  * @typedef {{ give: ReturnType<typeof runGive>, unlocks: string[], mods: string[],
  *   data: { nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>, rules: any },
- *   map: RunMap, forecast: string[][], region: RunRegion | null }} RunStartPlan
+ *   map: RunMap, forecast: string[][], region: RunRegion | null, board: RunBoard | null,
+ *   ghost: RunGhost | null }} RunStartPlan
+ * ON-2: board, a daily's or weekly's day or week (logic/daily.js); ghost, the friend's ghost team on the map's ghost
+ * node (logic/run-record.js ghostPick; null when none, or no place fits it)
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -59,9 +62,11 @@ export const runGive = (seed, expedition, mapgenV, start) => ({
 /**
  * a run's start from its seed, before anything touches a save. `unlocks` is what the run carries (unlocks.js
  * runUnlocks of the save; [] a fresh save's), `map` overrides rules.json run.map (the debug menu's short map), `mods`
- * the run's mods (they don't change the map)
+ * the run's mods (they don't change the map); ON-2: `board` a daily's or weekly's (the caller gives its seed,
+ * Expedition, challenges and every unlock: logic/daily.js boardPlan), `ghost` a friend's ghost team (its node on the map)
  * @param {string} seed @param {RunStartData} data
- * @param {{ unlocks?: string[], map?: Partial<RunMapRules>, mods?: string[], expedition?: number }} [o]
+ * @param {{ unlocks?: string[], map?: Partial<RunMapRules>, mods?: string[], expedition?: number,
+ *   board?: RunBoard | null, ghost?: RunGhost | null }} [o]
  * @returns {RunStartPlan}
  */
 export function runStartPlan(seed, data, o = {}) {
@@ -102,6 +107,7 @@ export function runStartPlan(seed, data, o = {}) {
       biomes: data.biomes,
       rules: { ...data.rules, map: { ...rules, biomes, ...zoned } },
       side,
+      ghost: !!o.ghost,
     },
     scratch = newRun(seed, expedition, MAPGEN_VERSION, /** @type {any} */ ({}));
   runMapStart(scratch, mapData);
@@ -113,6 +119,8 @@ export function runStartPlan(seed, data, o = {}) {
     map: /** @type {RunMap} */ (scratch.map),
     forecast: scratch.forecast,
     region,
+    board: o.board ? { k: o.board.k, n: o.board.n } : null,
+    ghost: o.ghost && scratch.map && scratch.map.nodes.some(nd => nd.type === 'ghost') ? copyOf(o.ghost) : null,
   };
 }
 
@@ -128,6 +136,14 @@ export function runStartOn(s, plan, pick = {}) {
   run.map = copyOf(plan.map);
   run.forecast = copyOf(plan.forecast);
   if (plan.region) run.region = copyOf(plan.region);
+  if (plan.ghost) run.ghost = copyOf(plan.ghost);
+  /* ON-2: a daily or weekly is the same for everyone: Blake meets you for the first time, and no hub person's
+     bonus or gift rides along */
+  if (plan.board) {
+    run.board = { ...plan.board };
+    if (run.rival) run.rival.past = 0;
+    return run;
+  }
   /* RL-S2: the hub folk's levels ride along (their run bonuses), and their gifts go into the bag (logic/relations.js) */
   if (RELATIONS) relTakeoff(s, RELATIONS);
   return run;

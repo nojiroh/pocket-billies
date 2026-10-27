@@ -12,7 +12,7 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { makeBilly, makeRobot, provide, saveData, storyAllows } from './hooks.js';
+import { makeBilly, makeRobot, maxHp, provide, saveData, storyAllows } from './hooks.js';
 import { formSpeciesOf } from './logic/forms.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -29,6 +29,7 @@ expose({
   FACTIONS: [() => FACTIONS],
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
+  GHOST_KEEPS: [() => GHOST_KEEPS],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
@@ -629,6 +630,8 @@ export function rivalSpecies(code) {
     id = base.replace(/\d+$/, '') + st;
   return SPECIES[id] ? id : base;
 }
+/** ON-2: what a ghost's Billie keeps of the friend's (the rest is made at the node's level) */
+export const GHOST_KEEPS = ['moves', 'coat', 'nick', 'build', 'mut', 'graft', 'unstable', 'aug', 'evoNo', 'ot'];
 /* a team entry may name its moves (v47: Blake's first billionaire only knows Tackle) */
 export function trainerTeam(T) {
   return T.team.map(e => {
@@ -644,6 +647,13 @@ export function trainerTeam(T) {
     const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSpecies(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];
     if (mv.length) m.moves = mv;
+    /* ON-2: a friend's ghost: their Billie as it was (logic/rival.js ghostTeam), at this level, with its own moves */
+    if (e.whole) {
+      for (const k of GHOST_KEEPS) if (e.whole[k] != null) m[k] = JSON.parse(JSON.stringify(e.whole[k]));
+      m.moves = (m.moves || []).filter(k => MOVES[k]);
+      if (!m.moves.length) m.moves = makeBilly(m.sp, e.lvl).moves;
+      m.hp = maxHp(m);
+    }
     return m;
   });
 }

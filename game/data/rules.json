@@ -240,6 +240,11 @@
    "up": 1,
    "reward": 200
   },
+  "ghost": {"on":["route","event"],"spare":"town","band":[0.1,0.95],"up":1,"reward":200,"who":"hiker"},
+  "boards": {
+   "daily": {"expedition":1,"challenges":[]},
+   "weekly": {"expedition":[2,3],"challenges":["noheal","noperks","fragile"],"picks":[1,2]}
+  },
   "trainers": {
    "perRoute": [[4,4],[4,5],[5,6]],
    "required": 0.5,

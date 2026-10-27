@@ -32,7 +32,7 @@
    Logic only: no DOM, runs in Node (tools/test/run-map.test.mjs). It reads no game data: every table comes in as an
    argument, so the data check can use it too. */
 /** @import { Run, RunMap, RunNode, SaveData } from '../../types/save-data' */
-/** @import { NodeType, RivalRules, RunMapRules } from '../../types/game-data' */
+/** @import { GhostRules, NodeType, RivalRules, RunMapRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
@@ -58,6 +58,8 @@ expose({
   runGridSide: [() => runGridSide, v => (runGridSide = v)],
   // @ts-expect-error -- replaced on purpose
   runLinkDir: [() => runLinkDir, v => (runLinkDir = v)],
+  // @ts-expect-error -- replaced on purpose
+  runMapGhost: [() => runMapGhost, v => (runMapGhost = v)],
   // @ts-expect-error -- replaced on purpose
   runMapGrid: [() => runMapGrid, v => (runMapGrid = v)],
   // @ts-expect-error -- replaced on purpose
@@ -392,6 +394,31 @@ export function runMapRival(seed, map, R, expedition) {
   }
   return out;
 }
+/** ON-2: where a friend's ghost waits (rules.json run.ghost): one main-path place of the first type in `on` the band
+ * has (the band a share of the map's rows, [from, to)), else one of the `spare` type on a row that keeps another
+ * (a town beside a town: the road through the ghost skips that town), drawn on its own stream 'map|ghost'. Blake keeps his places;
+ * the ghost may stand beside him on a row (the road picks one). Turns the node's type to 'ghost' and returns its
+ * index (-1: no place fits)
+ * @param {string} seed @param {RunMap} map @param {GhostRules} R @returns {number} */
+export function runMapGhost(seed, map, R) {
+  const nodes = map.nodes,
+    rows = nodes.filter(nd => !nd.side).reduce((m, nd) => Math.max(m, nd.row), 0) + 1,
+    at = (/** @type {string} */ type) =>
+      nodes.flatMap((nd, i) =>
+        !nd.side && nd.type === type && nd.row / rows >= R.band[0] && nd.row / rows < R.band[1] ? [i] : []
+      ),
+    /* none: a place of the `spare` type on a row that keeps another of it (a town beside a town) */
+    spare = R.spare
+      ? at(R.spare).filter(i =>
+          nodes.some((nd, j) => j !== i && !nd.side && nd.row === nodes[i].row && nd.type === R.spare)
+        )
+      : [],
+    can = R.on.map(at).find(c => c.length) || spare;
+  if (!can.length) return -1;
+  const i = can[rngFrom(seed, 'map|ghost').int(0, can.length - 1)];
+  nodes[i].type = 'ghost';
+  return i;
+}
 /** the nodes a node leads to (forward, by its east side) @param {RunMap} map @param {number} i @returns {number[]} */
 export const runNext = (map, i) => map.nodes[i].to.slice();
 /** the nodes that lead to a node (back, by its west side) @param {RunMap} map @param {number} i @returns {number[]} */
@@ -490,9 +517,11 @@ export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])
 provide({ runWeather }); /* to-module */
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>,
- *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number }, rival?: RivalRules },
- *   side?: import('./run-side.js').RunSideData | null }} RunMapData
- * RL-R2: side, what the run's side area is made from (run-start.js; none: no side area)
+ *   rules: { map: RunMapRules, clock: { ahead: number }, reveal: { icons: number, unknown: number }, rival?: RivalRules,
+ *     ghost?: GhostRules },
+ *   side?: import('./run-side.js').RunSideData | null, ghost?: boolean }} RunMapData
+ * RL-R2: side, what the run's side area is made from (run-start.js; none: no side area); ON-2: ghost, whether a
+ * friend's ghost waits on the map (run-start.js; then rules.ghost places it)
  */
 /** give a new run its map (at the mast, before the flight): the map from the seed, the landing's view and the
  * forecast a week ahead @param {Run} run @param {RunMapData} data @returns {RunMap} */
@@ -502,6 +531,8 @@ export function runMapStart(run, data) {
   if (data.side) runSideAdd(run.seed, run.map, data.side);
   /* RL-S2: Blake, on streams of his own after the side area, so neither moves */
   if (data.rules.rival) runMapRival(run.seed, run.map, data.rules.rival, run.expedition);
+  /* ON-2: a friend's ghost, after Blake, on a stream of its own: a run without one has the same map */
+  if (data.ghost && data.rules.ghost) runMapGhost(run.seed, run.map, data.rules.ghost);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
   runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);

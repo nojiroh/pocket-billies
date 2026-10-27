@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
+  and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
+  meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the
+  Trainer screen (Today, This week, each Expedition, Fastest; ranked by won, then places cleared, leaders beaten and
+  fewest days), and a daily's payout shows how your friends did. A friend's last run can wait on your run's map as
+  their ghost: their team, as it was, at the place's level. Friends only; blocked players never show.
 - **Cutscenes and run screens** (one session, the owner's brief, 2026-10-27):
   - Going home after a run shows a "Heading home" screen in the train's carriage, with what the run came to, instead
     of a plain white screen. A run's evolution waits until you're off the train.

@@ -40,8 +40,8 @@ expose({
 export const HISTORY_MAX = 20,
   HISTORY_ENDS = ['won', 'lost', 'quit'],
   /** what can end a run: a wild Billie, a route trainer, an event's foe, a mini-boss, the boss, the rival (RL-S2),
-   * another trainer */
-  LOST_TO_KINDS = ['wild', 'route', 'event', 'miniboss', 'boss', 'rival', 'trainer'],
+   * a friend's ghost (ON-2), another trainer */
+  LOST_TO_KINDS = ['wild', 'route', 'event', 'miniboss', 'boss', 'rival', 'ghost', 'trainer'],
   /** `last:<fact>`: the last run's numbers (0 with no run yet) */
   LAST_FACTS = ['won', 'lost', 'quit', 'row', 'days', 'perks', 'team', 'leaders', 'expedition', 'rival', 'rivalwon'],
   /** `history:<fact>`: over every run kept */

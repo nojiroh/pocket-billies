@@ -118,12 +118,15 @@ export interface Meta {
   history: HistoryEntry[];
   /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
   residents: Record<string, number>;
+  /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
+      (logic/daily.js) */
+  boards: { d: number; w: number };
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
     Billie standing, and whether it was the Bureau's */
 export interface RunLostTo {
-  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'rival' | 'trainer';
+  kind: 'wild' | 'route' | 'event' | 'miniboss' | 'boss' | 'rival' | 'ghost' | 'trainer';
   id?: string;
   sp?: SpeciesId;
   bureau?: 1;
@@ -155,6 +158,22 @@ export interface HistoryEntry {
 }
 
 /** roguelite track RL-S2: what a run keeps of Blake (logic/rival.js) */
+/** ON-2: a daily ('d', its UTC day number) or weekly ('w', its week number) run (logic/daily.js) */
+export interface RunBoard {
+  k: 'd' | 'w';
+  n: number;
+}
+
+/** ON-2: a friend's ghost team in a run, as it was when the run took off (logic/run-record.js ghostPick) */
+export interface RunGhost {
+  /** the friend's uid and name (cleanName), and their party (online copies, logic/online-legal.js onlineCopy) */
+  u: string;
+  n: string;
+  party: Billy[];
+  /** whether it was beaten */
+  won?: 1;
+}
+
 export interface RunRival {
   /** the species you led the run with (his ace counters it) */
   lead: SpeciesId;
@@ -343,6 +362,10 @@ export interface Run {
   quests?: RunQuests;
   /** RS-1: the resident invited this run (residents.json); they move in when it ends, won or lost */
   invited?: string;
+  /** ON-2: a daily or weekly run (missing on any other) */
+  board?: RunBoard;
+  /** ON-2: a friend's ghost team waiting on the map's ghost node (missing when none) */
+  ghost?: RunGhost;
 }
 
 /** TW-3: a quest held on a run (logic/run-quests.js) */
