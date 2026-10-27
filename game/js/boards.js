@@ -12,7 +12,7 @@
      among my friends'. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { account, provide, render } from './hooks.js';
+import { account, provide, render, selfTest } from './hooks.js';
 import { SPECIES } from './game-data.js';
 import { plural } from './logic/rules.js';
 import { expeditionNumeral } from './logic/modifiers.js';
@@ -30,8 +30,10 @@ expose({
   boardTabName: [() => boardTabName],
   boards: [() => boards],
   boardsFetch: [() => boardsFetch, v => ((boardsFetch = v), provide({ boardsFetch }))],
+  boardsGet: [() => boardsGet, v => (boardsGet = v)],
   boardsGhost: [() => boardsGhost, v => ((boardsGhost = v), provide({ boardsGhost }))],
   boardsHTML: [() => boardsHTML, v => (boardsHTML = v)],
+  boardsLive: [() => boardsLive],
   boardsPayoutHTML: [() => boardsPayoutHTML, v => ((boardsPayoutHTML = v), provide({ boardsPayoutHTML }))],
   boardsPost: [() => boardsPost, v => ((boardsPost = v), provide({ boardsPost }))],
   boardsRowsHTML: [() => boardsRowsHTML, v => (boardsRowsHTML = v)],
@@ -71,24 +73,36 @@ function boardsWaitSet(uid, list) {
   } catch (e) {}
 }
 
+/** whether boards may reach the database now: signed in with friends started, and never during the self-test (it
+ * must send nothing: CLAUDE.md) */
+const boardsLive = () =>
+  typeof friendsOn === 'function' &&
+  friendsOn() &&
+  friends.on &&
+  !!friends.uid &&
+  !(typeof selfTest !== 'undefined' && selfTest.on);
+/** one ghosts/<uid> read: [uid, the document read through ghostDocRead], or null (none, refused, offline)
+ * @param {string} u */
+function boardsGet(u) {
+  try {
+    return friendsDb()
+      .collection('ghosts')
+      .doc(u)
+      .get()
+      .then(s => (s.exists ? [u, ghostDocRead(s.data())] : null))
+      .catch(() => null);
+  } catch (e) {
+    return Promise.resolve(null);
+  }
+}
 /** read my document and my friends' (not the blocked), at most every BOARDS_KEEP_MS unless `force`; a friend whose
  * document isn't open to me yet (they haven't added me back) is left out. Resolves when done, never throws */
 function boardsFetch(force) {
-  if (typeof friendsOn !== 'function' || !friendsOn() || !friends.on || !friends.uid) return Promise.resolve();
+  if (!boardsLive()) return Promise.resolve();
   if (boards.busy) return boards.busy;
   if (!force && Date.now() - boards.at < BOARDS_KEEP_MS) return Promise.resolve();
-  const db = friendsDb(),
-    who = [friends.uid, ...friends.list.filter(u => !friends.blocked.includes(u))];
-  boards.busy = Promise.all(
-    who.map(u =>
-      db
-        .collection('ghosts')
-        .doc(u)
-        .get()
-        .then(s => (s.exists ? [u, ghostDocRead(s.data())] : null))
-        .catch(() => null)
-    )
-  ).then(got => {
+  const who = [friends.uid, ...friends.list.filter(u => !friends.blocked.includes(u))];
+  boards.busy = Promise.all(who.map(boardsGet)).then(got => {
     boards.docs = Object.fromEntries(got.filter(x => !!x));
     boards.at = Date.now();
     boards.busy = null;
@@ -102,15 +116,15 @@ function boardsFetch(force) {
 /** post a finished run's record (logic/run-record.js runRecord) to my ghosts/<uid>, after any still waiting; what
  * can't go now waits in this browser. Signed out: nothing is kept (there is no account to post it to) */
 async function boardsPost(rec) {
-  if (typeof friendsOn !== 'function' || !friendsOn() || !friends.uid) return;
+  if (!boardsLive()) return;
   const uid = friends.uid,
     list = [...boardsWaiting(uid), ...(rec && validRunRecord(rec) ? [rec] : [])];
   if (!list.length) return;
   boardsWaitSet(uid, list);
-  const ref = friendsDb().collection('ghosts').doc(uid),
-    name = (saveData.avatar && saveData.avatar.name) || (account.user && account.user.name) || 'Trainer';
+  const name = (saveData.avatar && saveData.avatar.name) || (account.user && account.user.name) || 'Trainer';
   try {
-    const s = await ref.get();
+    const ref = friendsDb().collection('ghosts').doc(uid),
+      s = await ref.get();
     let doc = s.exists ? s.data() : null;
     for (const r of list) doc = ghostDocNext(doc, r, name, Date.now());
     await ref.set(doc);

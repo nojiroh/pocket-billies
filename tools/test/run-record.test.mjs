@@ -190,7 +190,7 @@ test('a ghost: picked from the seed among friends with a party, never a blocked 
   const team = modules.rival.ghostTeam(G.party, 30),
     high = Math.max(...G.party.map(m => m.lvl));
   assert.equal(Math.max(...team.map(e => e.lvl)), 30);
-  team.forEach((e, k) => assert.equal(e.lvl, Math.max(1, 30 - (high - G.party[k].lvl))));
+  team.forEach((e, k) => assert.equal(e.lvl, Math.max(1, Math.round((30 * G.party[k].lvl) / high))));
   assert.equal(team[0].whole, G.party[0]);
 });
 

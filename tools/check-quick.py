@@ -509,6 +509,17 @@ def safety_step(P):
     for name, js in [('friend sheet', "document.querySelector('[data-a=fr-rm]')?.click()"), ('request sheet', "document.querySelector('[data-a=fr-no]')?.click()"), ('report sheet', "reportSheet('u1',friends.data.u1.name)")]:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';render();{js};0"); ui(pg); check(name)
     shown.append('friend sheets')
+    # ON-2: friends' boards (every tab) and a daily's board on its payout screen, a friend's and my name as stored
+    pg.evaluate("""(()=>{const X=window.__X,now=Date.now(),e={won:1,cleared:5,leaders:1,days:4,exp:1,lead:saveData.team[0].sp,t:1};
+      friends.on=true;friends.uid='me';boards.at=now;
+      boards.docs={u1:{name:'Ghost'+X,last:null,day:{n:boardDay(now),e},week:{n:boardWeek(now),e},x:{1:e},fast:e},
+        me:{name:'Me'+X,last:null,day:{n:boardDay(now),e:{...e,won:0}},week:null,x:{1:e},fast:null}};0})()""")
+    for b in ['day', 'week', 'x1', 'fast']:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';render();document.querySelector('[data-a=bd-tab][data-b={b}]')?.click();0"); ui(pg); check('boards ' + b)
+    if not pg.evaluate("document.querySelectorAll('.bd-row').length"): raise Exception('the boards showed no rows')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();modal({title:'Payout',html:boardsPayoutHTML({k:'d',n:boardDay(Date.now())})});0"); ui(pg); check('payout board')
+    pg.evaluate("friends.on=false;friends.uid=null;boards.docs={};boards.at=0;uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    shown.append('boards')
     for k in ['sum', 'build', 'moves', 'evo']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); ui(pg); check('details ' + k)
     shown.append('details')
@@ -523,7 +534,7 @@ def safety_step(P):
     if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
     ui(pg); check('battle'); shown.append('battle')
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-    return f'a payload in the trainer, nicknames, a friend, a request and the friend code stayed text on {len(shown)} screens: ' + ', '.join(shown)
+    return f'a payload in the trainer, nicknames, a friend, a request, the friend code and friends\' boards stayed text on {len(shown)} screens: ' + ', '.join(shown)
 
 
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)

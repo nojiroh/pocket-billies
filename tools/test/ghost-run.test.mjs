@@ -25,7 +25,7 @@ const RAW = readGameData(),
   SEEDS = Array.from({ length: 60 }, (_, k) => `G${k.toString(36).toUpperCase()}HOST`),
   SP = Object.keys(data.SPECIES);
 
-/** a friend's ghost: two of their Billies, ten levels apart, one with its own coat-free moves */
+/** a friend's ghost: two of their Billies, at Lv 30 and 20 */
 function ghost() {
   reseed(3);
   const a = onlineCopy(fn('makeBilly')(SP[0], 30), { u: 'fr1', n: 'Robin' }),
@@ -84,7 +84,7 @@ test("the ghost's foe: the friend's name, their Billies as they were at the node
   assert.equal(G.reward, R.ghost.reward);
   assert.equal(G.blocks, false);
   assert.equal(G.team.length, 2);
-  assert.equal(G.team[0].lvl - G.team[1].lvl, 10, 'as far apart as they were');
+  assert.equal(G.team[1].lvl, Math.max(1, Math.round((G.team[0].lvl * 20) / 30)), 'in the same proportion as they were');
   /* the trainer team the battle fields: their moves, nickname and look, at the node's level, full HP */
   const team = fn('trainerTeam')(G);
   assert.equal(team[0].sp, SP[0]);
