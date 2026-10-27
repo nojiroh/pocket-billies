@@ -203,3 +203,16 @@ test('on the game: the code’s patterns and the data name most of the art; know
   const used = paths.filter(p => state(p) !== 'unused').length;
   assert.ok(used > paths.length / 2, `${used} of ${paths.length} named`);
 });
+
+test('SA-5: the unused-art report on the game: no orphan, nothing missing (tools/art-unused.mjs)', async () => {
+  const { artUnusedReport } = await import('../art-unused.mjs');
+  const r = artUnusedReport();
+  assert.deepEqual(r.unused, [], 'a picture nothing names: delete it, or put it on studio/art-keep.json with a reason');
+  assert.deepEqual(r.missing, [], 'a picture named that is not there');
+  assert.deepEqual(
+    r.legacy.filter(p => !p.startsWith('art/legacy/')),
+    [],
+    'legacy-only art lives in art/legacy'
+  );
+  assert.ok(r.kept.length > 0);
+});
