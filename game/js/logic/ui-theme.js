@@ -11,7 +11,7 @@
    DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { contrastRatio, hexRgb, rgbHex } from './colors.js';
+import { contrastRatio, hexRgb, luminance, rgbHex } from './colors.js';
 import {
   UI_SIGNALS,
   UI_SIGNAL_MIN,
@@ -573,9 +573,10 @@ export function uiSignalProblems(theme, types = []) {
       }
   }
   /* UI-13: every type's text reads on its colour, and the types with light text sit at one lightness */
-  const typeInk = (/** @type {any} */ t) => rgbHex(hexRgb(t.text || '#fff')),
+  // a type's text colour, white when it names none (as game-data.js reads it)
+  const typeInk = (/** @type {any} */ t) => rgbHex(t.text ? hexRgb(t.text) : [255, 255, 255]),
     typed = (types || []).filter(t => t && t.id && t.color),
-    light = typed.filter(t => uiRatio(typeInk(t), '#000000') > uiRatio(typeInk(t), '#ffffff')),
+    light = typed.filter(t => luminance(hexRgb(typeInk(t))) > 0.5),
     Ls = light.map(t => oklab(t.color)[0]).sort((a, b) => a - b),
     mid = Ls.length ? (Ls[0] + Ls[Ls.length - 1]) / 2 : 0;
   for (const t of typed) {
