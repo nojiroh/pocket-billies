@@ -20,6 +20,7 @@ import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
   AMBIENCE_BEDS,
   AMBIENCE_FIXED,
+  ambienceBirdWait,
   ambienceBuckets,
   ambienceChirp,
   ambienceCrackles,
@@ -52,6 +53,8 @@ import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
+  BIRD_LEVEL: [() => BIRD_LEVEL],
+  BIRD_PITCH: [() => BIRD_PITCH],
   CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
@@ -1263,13 +1266,20 @@ function ambienceBeds(sc, E, T, pans, t) {
 }
 /* birds of the list L now and then (by day, fewer in the rain and in towns) */
 function ambienceBirds(t, L, town, day, rain, thru) {
-  const dt = 0.2;
-  if (L.length && day > 0.3 && Math.random() < dt * (town ? 0.12 : 0.3) * day * (1 - Math.min(1, rain) * 0.8) * thru) {
+  /* SND-8a: one at a time: the next call waits for the last to end, then a gap of about 10 s outside towns (rarer in
+     one: logic/ambience-sound.js ambienceBirdWait); fewer by dusk, in the rain and through a wall */
+  if (!L.length || day <= 0.3 || thru <= 0) return;
+  const r = ambience.rng || Math.random;
+  if (ambience.birdAt == null || ambience.birdAt > t + 60) ambience.birdAt = t + ambienceBirdWait(r, town) * r();
+  if (t < ambience.birdAt) return;
+  let end = t;
+  if (r() < day * (1 - Math.min(1, rain) * 0.8) * thru) {
     const k = L[Math.floor(Math.random() * L.length)];
-    if (Math.random() < (RARE_BIRDS[k] || 1)) playBirdCall(t, k);
+    if (Math.random() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
   }
+  ambience.birdAt = end + ambienceBirdWait(r, town);
 }
-function ambienceOutput(pan, dry) {
+function ambienceOutput(pan, dry, lp = 0) {
   const c = soundEngine.ctx,
     g = c.createGain();
   let out = g;
@@ -1278,6 +1288,15 @@ function ambienceOutput(pan, dry) {
     p.pan.value = pan;
     g.connect(p);
     out = p;
+  }
+  /* SND-8a: the birds come through a gentle low-pass, so no call is shrill */
+  if (lp) {
+    const F = c.createBiquadFilter();
+    F.type = 'lowpass';
+    F.frequency.value = lp;
+    F.Q.value = 0.5;
+    out.connect(F);
+    out = F;
   }
   out.connect(dry ? ambience.amb : ambience.lpA || ambience.amb);
   setTimeout(() => {
@@ -1335,11 +1354,14 @@ const BIRD_CALLS = {
   sun: [],
 };
 const RARE_BIRDS = { hawk: 0.3, woodpecker: 0.45, rooster: 1 };
+/* SND-8a: a little lower and quieter than before, and it says when its call ends (so the next bird waits) */
+const BIRD_PITCH = 0.88,
+  BIRD_LEVEL = 0.6;
 function playBirdCall(t, kind) {
-  const g = ambienceOutput((Math.random() - 0.5) * 1.4),
+  const g = ambienceOutput((Math.random() - 0.5) * 1.4, false, 6000),
     r = Math.random,
-    V = o => synthVoice(g, o);
-  g.gain.value = 0.5 + r() * 0.5;
+    V = o => synthVoice(g, { ...o, freq: o.freq * BIRD_PITCH });
+  g.gain.value = (0.5 + r() * 0.5) * BIRD_LEVEL;
   if (kind === 'sparrow') {
     const n = 3 + Math.floor(r() * 5),
       f = 3600 + r() * 700;
@@ -1357,7 +1379,7 @@ function playBirdCall(t, kind) {
       });
       s += 0.07 + r() * 0.09;
     }
-    return;
+    return s;
   }
   if (kind === 'lark') {
     const n = 12 + Math.floor(r() * 12);
@@ -1375,7 +1397,7 @@ function playBirdCall(t, kind) {
       });
       s += 0.045 + r() * 0.03;
     }
-    return;
+    return s;
   }
   if (kind === 'thrush') {
     const m = [1700 + r() * 500, 2300 + r() * 500, 1900 + r() * 400],
@@ -1386,7 +1408,7 @@ function playBirdCall(t, kind) {
         V({ type: 'sine', freq: f, t: s, dur: 0.11, vol: 0.035, a: 0.01, r: 0.04, slide: r() < 0.5 ? 1.2 : 0.85 });
         s += 0.15;
       }
-    return;
+    return s;
   }
   if (kind === 'reed') {
     const n = 8 + Math.floor(r() * 8);
@@ -1395,7 +1417,7 @@ function playBirdCall(t, kind) {
       V({ type: 'triangle', freq: i % 2 ? 2400 : 1900, t: s, dur: 0.04, vol: 0.022, a: 0.004, r: 0.02, cut: 5000 });
       s += 0.07;
     }
-    return;
+    return s;
   }
   if (kind === 'gull') {
     const n = 2 + Math.floor(r() * 3);
@@ -1414,7 +1436,7 @@ function playBirdCall(t, kind) {
       });
       s += 0.32 + r() * 0.1;
     }
-    return;
+    return s;
   }
   if (kind === 'crow') {
     const n = 2 + Math.floor(r() * 2);
@@ -1434,7 +1456,7 @@ function playBirdCall(t, kind) {
       synthNoise(g, { t: s, dur: 0.18, vol: 0.02, bp: 900, q: 1.2 });
       s += 0.34 + r() * 0.12;
     }
-    return;
+    return s;
   }
   if (kind === 'pigeon') {
     [
@@ -1444,7 +1466,7 @@ function playBirdCall(t, kind) {
     ].forEach(([f, d], i) =>
       V({ type: 'sine', freq: f, t: t + i * 0.3, dur: d, vol: 0.035, a: 0.04, r: 0.08, slide: 0.92, vib: 2 })
     );
-    return;
+    return t + 0.95;
   }
   if (kind === 'chough') {
     for (let i = 0; i < 2; i++)
@@ -1458,17 +1480,17 @@ function playBirdCall(t, kind) {
         r: 0.04,
         slide: 0.65,
       });
-    return;
+    return t + 0.5;
   }
   if (kind === 'hawk') {
     V({ type: 'sine', freq: 3000, t, dur: 0.75, vol: 0.026, a: 0.03, r: 0.15, slide: 0.7, vib: 1.5 });
-    return;
+    return t + 0.9;
   }
   if (kind === 'woodpecker') {
     const n = 12 + Math.floor(r() * 6);
     for (let i = 0; i < n; i++)
       synthNoise(g, { t: t + i * 0.055, dur: 0.03, vol: 0.07 * (1 - (i / n) * 0.5), bp: 1100, q: 3 });
-    return;
+    return t + n * 0.055;
   }
   if (kind === 'rooster') {
     let s = t;
@@ -1491,7 +1513,7 @@ function playBirdCall(t, kind) {
       });
       s += d + 0.03;
     });
-    return;
+    return s;
   }
   const base = 2200 + r() * 1800,
     n = 2 + Math.floor(r() * 4),
@@ -1509,6 +1531,7 @@ function playBirdCall(t, kind) {
       slide: kd < 0.5 ? 1.25 : 0.8,
     });
   }
+  return t + n * 0.15 + 0.11;
 }
 /* v47: the scrap yard: a sheet of metal shifting, or a slow creak of cable */
 function playScrapClank(t) {
