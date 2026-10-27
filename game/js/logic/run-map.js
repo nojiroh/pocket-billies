@@ -102,6 +102,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runShapeSize: [() => runShapeSize, v => (runShapeSize = v)],
   // @ts-expect-error -- replaced on purpose
+  runTownSize: [() => runTownSize, v => (runTownSize = v)],
+  // @ts-expect-error -- replaced on purpose
   runSideLay: [() => runSideLay, v => (runSideLay = v)],
   // @ts-expect-error -- replaced on purpose
   runSpot: [() => runSpot, v => (runSpot = v)],
@@ -150,15 +152,31 @@ export function runMapRowsFit(M) {
 }
 /** WM-2: a run's places a path and its mini-bosses: the rows drawn from run.map.path's range for the Expedition
  * (index 0 = Expedition I; past the end, the last) on the stream 'map|path', unless the rules give them (the debug
- * menu's short map); as many mini-bosses (each with its town) as fit them, within run.map.towns, unless given
- * @param {string} seed @param {RunMapRules} M @param {number} [expedition] @returns {{ rows: number, minibosses: number }} */
+ * menu's short map); as many mini-bosses (each with its town) as fit them, within run.map.towns, unless given; WM-5:
+ * and their towns' sizes in order (run.map.townSizes by Expedition and town count; none without the table)
+ * @param {string} seed @param {RunMapRules} M @param {number} [expedition]
+ * @returns {{ rows: number, minibosses: number, sizes?: string[] }} */
 export function runMapLength(seed, M, expedition) {
   const P = M.path || [],
     span = P[Math.min(Math.max(1, expedition || 1), P.length) - 1],
     rows = M.rows || (span ? rngFrom(seed, 'map|path').int(span[0], span[1]) : 0),
     [lo, hi] = M.towns || [0, 0],
     minibosses = M.minibosses !== undefined ? M.minibosses : Math.max(lo, Math.min(hi, Math.floor((rows - 3) / 3)));
-  return { rows, minibosses };
+  /* WM-5: the towns' sizes in order (run.map.townSizes by Expedition and how many towns), unless given */
+  const O = M.townSizes && M.townSizes.order,
+    by = O && O.length ? O[Math.min(Math.max(1, expedition || 1), O.length) - 1] : null,
+    sizes = M.sizes || (by && by[String(minibosses)]);
+  return sizes ? { rows, minibosses, sizes: sizes.slice() } : { rows, minibosses };
+}
+/** WM-5: a town node's size (a name of run.map.townSizes.cells, smallest first): the one whose cells its footprint
+ * has, else the smallest (a side area's town, which has no footprint, or a run's from before WM-5b: 2 x 1); '' without
+ * the table @param {RunNode} node @param {RunMapRules['townSizes']} [T] */
+export function runTownSize(node, T) {
+  const C = T && T.cells;
+  if (!C) return '';
+  const names = Object.keys(C),
+    s = node.size;
+  return (s && names.find(k => C[k][0] === s[0] && C[k][1] === s[1])) || names[0] || '';
 }
 /** WM-2: the region grid: cells `cell` metres square (x east, y north), the main path within `half` cells north and
  * south of the landing's row; `tries`, how many footprints the layout search may try before it gives up on a map's
@@ -217,21 +235,27 @@ export function runLinkDir(map, i, j) {
  * 'map|grid|row|lane|spot' (east twice as likely as north or south, half as likely again away from the landing's row)
  * and steps back when the next can't be placed. WM-3: each node's footprint is its type's shape (nodeTypes.json
  * `shapes`, drawn on 'map|size|row|lane'), tried at every spot before RUN_GRID.place is; then every link's exit
- * along the edge it crosses (runGridWays) and an L's cut corner (runGridCut).
+ * along the edge it crosses (runGridWays) and an L's cut corner (runGridCut). WM-5: `want`, the cells a node must
+ * take (a town's size), with no shape drawn and no fallback.
  * Sets `at`, `size`, `ways` (and an L's `cut`) on the nodes and returns true, or false (nothing set) when the search
  * gives up
- * @param {string} seed @param {RunNode[]} nodes @param {Record<string, NodeType>} [nodeTypes] @returns {boolean} */
-export function runMapGrid(seed, nodes, nodeTypes = {}) {
+ * @param {string} seed @param {RunNode[]} nodes @param {Record<string, NodeType>} [nodeTypes]
+ * @param {(number[] | null)[]} [want] @returns {boolean} */
+export function runMapGrid(seed, nodes, nodeTypes = {}, want = []) {
   const H = RUN_GRID.half,
     from = nodes.map((_, i) => nodes.flatMap((p, k) => (p.to.includes(i) ? [k] : []))),
     /** @type {({ at: number[], size: number[] } | null)[]} */
     put = nodes.map(() => null),
     /* each node's shape, and the sizes it tries in turn */
-    shape = nodes.map(n => {
+    shape = nodes.map((n, i) => {
       const S = (nodeTypes[n.type] || {}).shapes;
+      if (want[i]) return '';
       return S && Object.values(S).some(w => w > 0) ? rngFrom(seed, `map|size|${n.row}|${n.lane}`).pick(S) : '';
     }),
-    sizes = shape.map(s => {
+    /* WM-5: a node given its cells (a town's size) takes them or nothing (no 2 x 1 to fall back on) */
+    sizes = shape.map((s, i) => {
+      const f = want[i];
+      if (f) return [/** @type {[number, number]} */ ([f[0], f[1]])];
       const a = runShapeSize(s),
         b = RUN_GRID.place;
       return a[0] === b[0] && a[1] === b[1] ? [a] : [a, /** @type {[number, number]} */ (b.slice())];
@@ -632,28 +656,48 @@ export function runMapMake(seed, nodeTypes, rules) {
   /* the links, then their layout on the grid (WM-2); when the grid can't hold the map's lane switches, the map is
      linked again without them (nothing else changes). WM-3: no two shops in a row is settled before the grid, as a
      place's type gives its shape (each try starts from the types drawn) */
-  const drawn = nodes.map(n => n.type);
-  for (const switches of [true, false]) {
-    nodes.forEach((n, i) => {
-      n.to = [];
-      n.type = drawn[i];
-    });
-    for (let row = 0; row + 1 < at.length; row++) {
-      const here = at[row],
-        next = at[row + 1],
-        link = (/** @type {number} */ a, /** @type {number} */ b) => nodes[here[a]].to.push(next[b]);
-      if (here.length === 1) next.forEach((_, b) => link(0, b));
-      else if (next.length === 1) here.forEach((_, a) => link(a, 0));
-      else {
-        link(0, 0);
-        link(1, 1);
-        if (switches && shape[row].cross) shape[row].west ? link(1, 0) : link(0, 1);
+  const drawn = nodes.map(n => n.type),
+    /* WM-5: each town's size (M.sizes, in order of the town rows: two towns on a row share one), its cells from
+       M.townSizes.cells; stepped down a size at a time (every town at once, the smallest kept) when the grid can't
+       hold the map even without its lane switches */
+    C = M.townSizes && M.townSizes.cells,
+    names = C ? Object.keys(C) : [],
+    townRows = roles.flatMap((r, row) => (r === 'rest' ? [row] : [])),
+    sizeAt = (/** @type {number} */ row) => {
+      const S = /** @type {string[]} */ (M.sizes),
+        k = names.indexOf(S[Math.min(townRows.indexOf(row), S.length - 1)]);
+      return k < 0 ? 0 : k;
+    },
+    sized = !!(C && M.sizes && M.sizes.length && townRows.length),
+    most = sized ? Math.max(0, ...townRows.map(sizeAt)) : 0;
+  grid: for (let down = 0; down <= most; down++) {
+    const want = nodes.map(n =>
+      sized && roles[n.row] === 'rest'
+        ? /** @type {[number, number]} */ (C[names[Math.max(0, sizeAt(n.row) - down)]])
+        : null
+    );
+    for (const switches of [true, false]) {
+      nodes.forEach((n, i) => {
+        n.to = [];
+        n.type = drawn[i];
+      });
+      for (let row = 0; row + 1 < at.length; row++) {
+        const here = at[row],
+          next = at[row + 1],
+          link = (/** @type {number} */ a, /** @type {number} */ b) => nodes[here[a]].to.push(next[b]);
+        if (here.length === 1) next.forEach((_, b) => link(0, b));
+        else if (next.length === 1) here.forEach((_, a) => link(a, 0));
+        else {
+          link(0, 0);
+          link(1, 1);
+          if (switches && shape[row].cross) shape[row].west ? link(1, 0) : link(0, 1);
+        }
       }
+      for (const n of nodes) n.to.sort((a, b) => a - b);
+      runMapNoTwoShops(seed, nodeTypes, roles, nodes);
+      if (runMapGrid(seed, nodes, nodeTypes, want)) break grid;
     }
-    for (const n of nodes) n.to.sort((a, b) => a - b);
-    runMapNoTwoShops(seed, nodeTypes, roles, nodes);
-    if (runMapGrid(seed, nodes, nodeTypes)) break;
-    if (!switches) throw new Error(`runMapMake: seed ${seed}'s map doesn't fit the grid`);
+    if (down === most) throw new Error(`runMapMake: seed ${seed}'s map doesn't fit the grid`);
   }
   return { nodes };
 }

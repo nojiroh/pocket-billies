@@ -79,6 +79,22 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D.rules.run.map.first = 'nosuch';
   found('dataRunMapRules', D, 'no node type "nosuch"');
   assert.deepEqual(C.dataRunMapRules(D)[0][0], 'rules.json');
+  // WM-5: the town sizes, their services and the market stall's wares
+  D = copy();
+  D.rules.run.map.townSizes.order[1]['3'] = ['hamlet', 'town'];
+  found('dataRunMapRules', D, 'order[1]["3"]: 3 sizes');
+  D = copy();
+  D.rules.run.map.townSizes.cells.mega = [4, 4];
+  found('dataRunMapRules', D, 'cells.mega: not in run.town.sizes');
+  D = copy();
+  D.rules.run.map.townSizes.cells = { town: [3, 2], hamlet: [2, 1] };
+  found('dataRunMapRules', D, 'smaller than the size before');
+  D = copy();
+  D.rules.run.town.sizes.town.givers = 3;
+  found('dataRunLoop', D, 'run.town.sizes.town: word');
+  D = copy();
+  D.rules.run.town.stall.pick.potion = 1;
+  found('dataRunLoop', D, 'stall.pick.potion: not a held item');
   D = copy();
   D.rules.run.typo = 1;
   found('dataRunClock', D, 'run.typo: no such rule');
