@@ -454,6 +454,8 @@ debugLog.state = () => {
           ? 'dark'
           : 'light',
       motion: p.motion || 'system',
+      /* UI-14b: the Colour shapes switch (patterns on the marks and bars) */
+      shapes: p.shapes === 'on' ? 'on' : 'off',
       fps: p.fps || 60,
       effects: p.effects || 'full',
       tilt: p.tilt !== false,

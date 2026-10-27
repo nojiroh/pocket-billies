@@ -123,6 +123,9 @@ export function applyPreferences() {
   /* v30: accessibility: text size, high contrast, no flashing, bigger buttons */ root.dataset.text =
     p.textSize || 'normal';
   root.dataset.contrast = p.contrast === 'high' ? 'high' : 'normal';
+  /* UI-14b: the Colour shapes switch (the owner's answer 11): patterns over the coloured marks and bars (tokens.css
+     --pat-ink, ui-kit.js patternVars), off by default */
+  root.dataset.shapes = p.shapes === 'on' ? 'on' : 'off';
   root.dataset.flash = p.flashes === 'off' ? 'off' : 'on';
   root.dataset.targets = p.bigTargets ? 'big' : 'normal';
   if (typeof i18nSet === 'function') i18nSet(p.lang || 'en');
@@ -448,6 +451,11 @@ function settingsHTML() {
         'High contrast',
         'Stronger outlines and plainer backgrounds behind text.',
         switchHTML('contrast', p.contrast === 'high', 'high', 'normal')
+      ) +
+      settingsRowHTML(
+        'Colour shapes',
+        'Stripes, dots and hatching on coloured tags and bars, so they differ without their colour.',
+        switchHTML('shapes', p.shapes === 'on', 'on', 'off')
       ) +
       settingsRowHTML(
         'Flashes',

@@ -493,6 +493,8 @@ export interface Preferences {
   bigTargets?: boolean;
   textSize?: string;
   contrast?: string;
+  /** UI-14b: the Colour shapes switch: 'on' draws patterns over the coloured marks and bars */
+  shapes?: 'on' | 'off';
   flashes?: string;
   lang?: string;
   expert?: boolean;
