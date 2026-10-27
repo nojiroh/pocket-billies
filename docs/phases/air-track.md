@@ -93,7 +93,7 @@ changes and renames never share a commit. New settings default to today's look u
 | AIR-0 | Plan (done 2026-10-26) | this file, the research, the ROADMAP and BRANCHES rows | the owner approves |
 | AIR-1 | Haze (done 2026-10-26: new dials at 0 keep today's look; HANDOFF has the proposed values) | `fogit`: the haze colour follows the sky gradient in the view direction (one shared GLSL sky function for the sky shader and `fogit`, so they can't drift apart); RGB extinction (`air.hazeTint`, red lost a little faster); height falloff with the analytic integral (`air.hazeFalloff`), also used for the low mist; separate dials for the broad sky glow and the sun glow (the `toSun` lobe softened) | unit tests for the shared JS twin of the haze maths; screenshots at dawn, noon, dusk and in fog weather before and after; the baseline changes only where intended |
 | AIR-2 | Fog grid (done 2026-10-26: unread until AIR-3; the density in logic/fog-grid.js, the texture in walk/fog-grid.js) | new `walk/fog-grid.js`: a density grid round the player, 48x12x48 cells of about 1 m (32x8x32 on phones), from `groundHeightAt`, the water level, the weather's fog, the dawn mist, valley mist and a drifting noise; low ground and water fill first. An R8 3D texture, updated with `texSubImage3D` only when the player crosses a cell or the weather moves (a rolling origin, so a step uploads one slab); not built indoors. A debug view of the grid as blocks (debug menu only) | unit tests on the density (a hollow fills, a hilltop stays clear, no fog indoors); upload time in the debug log |
-| AIR-3 | Lit march | the march reads the grid: fog density x sun visibility (shadow maps) x phase + sky ambient + lamps; outputs the fog's colour and how much it hides (premultiplied), composited in the grade pass. The march starts nearer the camera inside the grid's box (not only the last 14 m). Phones: 10 steps. When the march runs, `fogit`'s low mist is off (`uMist` 0, one flag), so fog isn't counted twice; when it drops (quality step 3, lit rooms), `fogit` takes over | fog banks, sun shafts in fog and lamp glow at night in a fixture; the owner's phone frame times from the debug log within budget |
+| AIR-3 | Lit march (done 2026-10-27: its own gate, `fogVolume`/`fogLamps` at 1; fogit's mist steps aside inside the grid; phone times from the owner's log still to come) | the march reads the grid: fog density x sun visibility (shadow maps) x phase + sky ambient + lamps; outputs the fog's colour and how much it hides (premultiplied), composited in the grade pass. The march starts nearer the camera inside the grid's box (not only the last 14 m). Phones: 10 steps. When the march runs, `fogit`'s low mist is off (`uMist` 0, one flag), so fog isn't counted twice; when it drops (quality step 3, lit rooms), `fogit` takes over | fog banks, sun shafts in fog and lamp glow at night in a fixture; the owner's phone frame times from the debug log within budget |
 | AIR-4 | Edges and shadowed haze | a depth-aware blur and upscale replace `down` (nearest depth when shrinking); blue-noise jitter; the near haze (14-40 m) dims in shade from the march; Studio dials for every new `air` setting; a fog step in the in-game full test; the clean prop turntable zeroes the new settings; the baseline regenerated | the full quick check passes; no fog bleeding round the player, trees or roofs in screenshots |
 
 About 4 sessions after AIR-0. AIR-1 and AIR-2 don't touch the same files and can run at the same time; AIR-3 needs
@@ -104,9 +104,13 @@ both; AIR-4 needs AIR-3.
   Answered: keep it, shaped by the sky.
 - After AIR-1: whether the proposed haze values (HANDOFF, AIR-1) become the game's defaults (engine.json `air`); that
   moves the quick-check baseline.
-- AIR-3: battles. They use the same march (`noVol` only at quality step 3); fog in battles is in scope only if the
-  owner says so.
-- AIR-3: if the phone frame times go over budget, which goes first: fewer steps, a smaller grid, or no lamps in fog.
+- ~~AIR-3: battles. They use the same march (`noVol` only at quality step 3); fog in battles is in scope only if the
+  owner says so.~~ Answered (2026-10-26): not in AIR-3; battles keep fogit's mist. A grid round the battle stage is a
+  later item.
+- ~~AIR-3: if the phone frame times go over budget, which goes first: fewer steps, a smaller grid, or no lamps in fog.~~
+  Answered: fewer steps (10 to 8) first, then no lamps in fog (`fogLamps` 0), then a smaller grid.
+- AIR-3 (answered): fogit's mist steps aside only inside the grid, fading back in at its edge (`uMistBox`), not
+  `uMist` 0 everywhere (the grid reaches 24 m, 16 on phones; the camera sees about 36).
 - Later (not planned): Hillaire's sky and aerial-perspective lookup textures to replace the hand-tuned sky.
 
 ## Risks
