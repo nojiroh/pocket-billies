@@ -1810,8 +1810,8 @@
    "game/js/walk/fog-grid.js:247"
   ],
   "pick": [
-   "game/js/augment-screen.js:202",
-   "game/js/augment-screen.js:224",
+   "game/js/augment-screen.js:208",
+   "game/js/augment-screen.js:230",
    "game/js/battle.js:716",
    "game/js/battle.js:832",
    "game/js/gene-bank-screen.js:199",
@@ -1904,8 +1904,8 @@
   ],
   "up": [
    "game/js/audio/tracker.js:577",
-   "game/js/augment-screen.js:142",
-   "game/js/augment-screen.js:253",
+   "game/js/augment-screen.js:148",
+   "game/js/augment-screen.js:259",
    "game/js/battle-stage.js:2175",
    "game/js/battle.js:535",
    "game/js/battle.js:1191",
