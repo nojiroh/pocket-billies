@@ -1,4 +1,4 @@
-/* UI-6: the old shared parts not yet on the kit: .px panels, .glass, .pb buttons, .chip, .pbar, .seg, .sec-h, .note, .row, .spr sprites, .mon rows, .sheet, .pickrow and the rest, with the entrances they share. Gathered from the old layers (style, polish, screens, v05) in the order the page loaded them; a rule that fights another at equal specificity is still in its old order, so the cascade is as it was (tools/style-diff.py). They go as each part moves onto the kit. */
+/* UI-6: the old shared parts not yet on the kit: .px panels, .glass, .pb buttons, .pbar, .seg, .sec-h, .note, .row, .spr sprites, .mon rows, .sheet, .pickrow and the rest, with the entrances they share. Gathered from the old layers (style, polish, screens, v05) in the order the page loaded them; a rule that fights another at equal specificity is still in its old order, so the cascade is as it was (tools/style-diff.py). They go as each part moves onto the kit. */
 .tnum {
   font-variant-numeric: tabular-nums;
 }
@@ -284,12 +284,6 @@ section > h2,
   font: 400 19px/1 var(--font-voice);
 }
 /* chips */
-.chip {
-  display: inline-block;
-  font: 400 12px/1 var(--font-voice);
-  background: var(--tc);
-  color: var(--tf);
-}
 .stb {
   display: inline-block;
   font: 400 12px/1 var(--font-voice);
@@ -1182,16 +1176,6 @@ html[data-contrast='high'] .px {
   border-radius: var(--r3);
 }
 /* ---------- small things ---------- */
-.chip {
-  border-radius: 8px;
-  font-family: var(--font-voice);
-  font-weight: 600;
-  font-size: 12.5px;
-  padding: 3px var(--s2) var(--s1);
-  box-shadow:
-    inset 0 -2px 0 rgba(0, 0, 0, 0.16),
-    0 2px 4px -1px rgba(46, 33, 64, 0.3);
-}
 @keyframes v05In {
   from {
     opacity: 0;
