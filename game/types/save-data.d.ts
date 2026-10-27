@@ -121,6 +121,9 @@ export interface Meta {
   /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
       (logic/daily.js) */
   boards: { d: number; w: number };
+  /** RL-14b: the bosses.json bosses beaten (the Voltron), by id: how many times; the first win gives its parts and
+      plays its story script (logic/battle-rewards.js bossWin) */
+  bosses: Record<string, number>;
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the

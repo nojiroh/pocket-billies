@@ -386,3 +386,39 @@ test('RL-14b: a hit past both phases fires both in order; a Billie Alpha keeps t
   assert.equal(a.boss.ph2, true);
   assert.equal(fn('fieldState')(1).shield, RULES.battle.alphaShieldTurns ?? 2);
 });
+
+test('RL-14b: beating the Retrieval Unit: counted for good; the first win gives one boss part, later wins none', () => {
+  const s = startedSave('musk0', 30),
+    run = { seed: 'VOLTWIN' },
+    before = (s.parts || []).length;
+  assert.deepEqual(s.meta.bosses, {});
+  const first = fn('bossWin')(s, run, 'retrieval');
+  assert.equal(s.meta.bosses.retrieval, 1);
+  assert.equal(s.parts.length, before + 1);
+  const got = s.parts[s.parts.length - 1];
+  assert.ok(Object.values(voltron().fighter).includes(got.id), got.id);
+  assert.deepEqual(first.bossParts, [ROBOTS.parts[got.id].name]);
+  assert.deepEqual(fn('bossWin')(s, { seed: 'VOLTWIN' }, 'retrieval'), {});
+  assert.equal(s.meta.bosses.retrieval, 2);
+  assert.equal(s.parts.length, before + 1);
+  assert.deepEqual(fn('bossWin')(s, run, 'nobody'), {});
+  assert.equal(fn('validMeta')(s.meta), true);
+  assert.equal(fn('validMeta')({ ...s.meta, bosses: { retrieval: 0 } }), false);
+  assert.equal(fn('validMeta')({ ...s.meta, bosses: [] }), false);
+});
+
+test("RL-14b: its first win plays Chapter 1's end at home, only while the chapter is 1", () => {
+  const s = startedSave('musk0', 30);
+  s.run = { beat: ['retrieval'] };
+  s.meta.bosses = { retrieval: 1 };
+  assert.equal(fn('bossStoryNext')(s), 'chapter1-end');
+  s.meta.chapter = 2;
+  assert.equal(fn('bossStoryNext')(s), '', 'not past chapter 1');
+  s.meta.chapter = 1;
+  s.meta.bosses.retrieval = 2;
+  assert.equal(fn('bossStoryNext')(s), '', 'not on a later win');
+  s.meta.bosses.retrieval = 1;
+  s.run.beat = ['alta'];
+  assert.equal(fn('bossStoryNext')(s), '', 'not without it beaten on this run');
+  s.run = null;
+});

@@ -27,8 +27,15 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     history: [],
     residents: {},
     boards: { d: 0, w: 0 },
+    bosses: {},
   });
   assert.equal(validMeta(m), true);
+  /* RL-14b: the bosses.json bosses beaten, how many times */
+  assert.equal(validMeta({ ...m, bosses: { retrieval: 3 } }), true);
+  assert.equal(validMeta({ ...m, bosses: { retrieval: 1.5 } }), false);
+  /* a meta saved before RL-14b is filled out */
+  const { bosses, ...old } = m;
+  assert.deepEqual(metaFill(old).bosses, {});
   /* ON-2: the last daily and weekly taken off on */
   assert.equal(validMeta({ ...m, boards: { d: 20387, w: 2913 } }), true);
   assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);

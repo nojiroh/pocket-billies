@@ -2009,6 +2009,8 @@ export interface BossDef {
   win?: string;
   rewards?: { parts?: number };
   story?: string;
+  /** its story script plays only while the story's chapter is this */
+  chapter?: number;
 }
 /** TW-3: quests.json: a run's quests (logic/run-quests.js) */
 export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';

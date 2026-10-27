@@ -1,5 +1,5 @@
 {
- "about": "Roguelite track RL-14b: a run's bosses that are not a leader's Billie (battle-engine.js makeBossRobot, logic/run-loop.js runFoes). The Retrieval Unit is the Bureau's first big retrieval unit, the Voltron: four bots (a leader torso, two arm-bots, a leg-bot: boss parts in robots.json) that lock together into one robot fought as an Alpha. It is the boss of the Expeditions it names (leaders stay the boss elsewhere). Its level is the boss row's level + boss.levels; boss.hp and boss.st multiply its HP and other stats; each phase fires once when its HP falls to `at` of the most: a shield for `shield` turns, stat stages, a limb that tears loose (`breaks`), and its line ({name}, {part}). Its first win gives one of its parts (`rewards.parts`) and plays the story script `story`. Numbers are placeholders for the sim.",
+ "about": "Roguelite track RL-14b: a run's bosses that are not a leader's Billie (battle-engine.js makeBossRobot, logic/run-loop.js runFoes). The Retrieval Unit is the Bureau's first big retrieval unit, the Voltron: four bots (a leader torso, two arm-bots, a leg-bot: boss parts in robots.json) that lock together into one robot fought as an Alpha. It is the boss of the Expeditions it names (leaders stay the boss elsewhere). Its level is the boss row's level + boss.levels; boss.hp and boss.st multiply its HP and other stats; each phase fires once when its HP falls to `at` of the most: a shield for `shield` turns, stat stages, a limb that tears loose (`breaks`), and its line ({name}, {part}). Its first win gives one of its parts (`rewards.parts`) and plays the story script `story` at home (only while the story's chapter is `chapter`). Numbers are placeholders for the sim.",
  "bosses": {
   "retrieval": {
    "name": "The Retrieval Unit",
@@ -25,7 +25,8 @@
    "join": "Four Bureau bots roll in... and lock together into {name}!",
    "win": "Retrieval suspended. Claim filed as pending.",
    "rewards": {"parts":1},
-   "story": "chapter1-end"
+   "story": "chapter1-end",
+   "chapter": 1
   }
  }
 }
