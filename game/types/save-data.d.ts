@@ -348,8 +348,8 @@ export interface Run {
   rel?: Record<string, number>;
   /** RS-4: each resident's service level as the run took off (logic/residents.js resTakeoff) */
   res?: Record<string, number>;
-  /** RS-4: run shop rerolls used (Mo's service) */
-  rerolled?: number;
+  /** RS-4: the run shops asked for a fresh stock, as 'node:day' (Mo's service; logic/run-loop.js runShopReroll) */
+  reshop?: string[];
   /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */
   rival?: RunRival;
   /** RL-9b: what was packed from Copperleaf's bag at the mast */

@@ -24,6 +24,7 @@ expose({
   resHeld: [() => resHeld],
   // @ts-expect-error -- replaced on purpose
   resLevel: [() => resLevel, v => (resLevel = v)],
+  resRerolls: [() => resRerolls],
   resStock: [() => resStock],
   // @ts-expect-error -- replaced on purpose
   resTakeoff: [() => resTakeoff, v => (resTakeoff = v)],
@@ -85,6 +86,10 @@ export const resFxRows = (run, R) =>
  * @param {Record<string, { grant: any }>} U unlocks.json @returns {{ item?: string, coin?: string, price: number }[]} */
 export const resStock = (s, id, R, U) =>
   resHeld({ [id]: resLevel(s, id, U) }, R).flatMap(([, L]) => (L.stock || []).map(w => ({ ...w })));
+/** RS-4: how many times a run may ask a run shop for a fresh stock (Mo's service: `reroll` on the levels it took off
+ * with) @param {{ res?: Record<string, number> } | null | undefined} run @param {ResidentsTable} R */
+export const resRerolls = (run, R) =>
+  run && run.res && R ? resHeld(run.res, R).reduce((n, [, L]) => n + (L.reroll || 0), 0) : 0;
 /** RS-4: a run takes off: run.res is each resident's service level now (those with a service), and their levels'
  * items go into the bag. Returns what was given @param {SaveData} s @param {ResidentsTable} R
  * @param {Record<string, { grant: any }>} U unlocks.json */

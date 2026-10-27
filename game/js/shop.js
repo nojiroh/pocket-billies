@@ -9,7 +9,7 @@ import { clamp, random } from './util.js';
 import { CURRENCIES, ITEMS, PERKS, PYRAMIDS, RESIDENTS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { resStock } from './logic/residents.js';
-import { runShopOpen } from './logic/run-loop.js';
+import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -31,6 +31,8 @@ expose({
   shopPerkHTML: [() => shopPerkHTML, v => (shopPerkHTML = v)],
   shopPurse: [() => shopPurse],
   shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
+  shopReroll: [() => shopReroll, v => (shopReroll = v)],
+  shopRerollHTML: [() => shopRerollHTML, v => (shopRerollHTML = v)],
   wareInfo: [() => wareInfo],
   warePrice: [() => warePrice],
 });
@@ -116,6 +118,28 @@ function shopPerkHTML(id, sh) {
     can = saveData.se >= L.price;
   return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
+/** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
+function shopRerollHTML(id, sh) {
+  const run = saveData.run;
+  if (sh.runNode == null || !run) return '';
+  const left = runRerollsLeft(run, RESIDENTS);
+  if (!left && !runShopRerolled(run, sh.runNode, run.clock)) return '';
+  return runShopRerolled(run, sh.runNode, run.clock)
+    ? '<p class="note">Fresh stock, on Mo’s word.</p>'
+    : `<p class="note"><button class="pb small" data-a="shopreroll" data-s="${id}">Fresh stock, on Mo’s word (${left} left this run)</button></p>`;
+}
+function shopReroll(id) {
+  const sh = SHOPS[id],
+    run = saveData.run;
+  if (!sh || !run || sh.runNode == null) return;
+  if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS)) return;
+  sh.stock = runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
+  uiState.shopQty = {};
+  uiState.shopLine = 'The shopkeeper ducks into the back and comes out with other boxes.';
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `shop restocked: ${sh.runNode}:${run.clock}`);
+  saveNow();
+  shopRefresh();
+}
 function shopHTML(id) {
   const sh = SHOPS[id],
     q = uiState.shopQty || (uiState.shopQty = {}),
@@ -149,7 +173,7 @@ function shopHTML(id) {
    )
    .join(
      ''
-   )}</div><div class="wares2">${shopPerkHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
+   )}</div><div class="wares2">${shopRerollHTML(id, sh)}${shopPerkHTML(id, sh)}${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
 export function openShop(id) {
   const sh = SHOPS[id];
@@ -258,5 +282,6 @@ document.addEventListener('click', ev => {
     q[d.k] = clamp((q[d.k] || 1) + +d.d, 1, 99);
     shopRefresh();
   } else if (d.a === 'shopbuy') shopBuy(d.s, d.k);
+  else if (d.a === 'shopreroll') shopReroll(d.s);
   else if (d.a === 'shoprelic') shopPerkBuy(d.s);
 });

@@ -37,7 +37,8 @@ test('residents: RS-4: a run takes off with each service level; Bertha’s packe
   assert.equal(s.items.potion, 2, 'the run’s start untouched');
   assert.equal(validRun(s.run), true, 'a reload keeps the levels');
   assert.equal(validRun({ ...s.run, res: { bertha: 0 } }), false);
-  assert.equal(validRun({ ...s.run, rerolled: -1 }), false);
+  assert.equal(validRun({ ...s.run, reshop: ['3:1'] }), true);
+  assert.equal(validRun({ ...s.run, reshop: ['shop'] }), false);
 });
 
 test('residents: RS-4: a service level’s effect rows join the run’s, tagged res:<id>', () => {
@@ -102,4 +103,33 @@ test('residents: RS-4: Mo’s store sells his Lv 1 stock once he moves in, and m
   one[0].price = 1;
   assert.equal(RS.resStock(s, 'mo', RES, U)[0].price, RES.mo.service[0].stock[0].price, 'a copy, never the table');
   assert.deepEqual(RS.resStock(s, 'bertha', RES, U), [], 'Bertha sells nothing');
+});
+
+test('residents: RS-4: Mo’s Lv 3 asks a run shop for a fresh stock, once a run; the same seed, the same restock', () => {
+  const L = modules['run-loop'],
+    rule = GAME_DATA.rules.run.shop,
+    names = st => st.map(w => w.item || 'coin:' + w.coin).join(),
+    run = { seed: 'RESHOP', res: { mo: 2 }, unlocks: [] };
+  assert.equal(L.runRerollsLeft(run, RES), 0, 'Lv 2: none');
+  assert.equal(L.runShopReroll(run, 3, 1, RES), false);
+  run.res.mo = 3;
+  assert.equal(L.runRerollsLeft(run, RES), 1);
+  /* a node and day whose fresh stock differs from the first (the draws are seeded: look for one) */
+  let i = 1;
+  while (names(L.runShopStock(run, i, 1, rule)) === names(L.runShopStock({ ...run, reshop: [i + ':1'] }, i, 1, rule)))
+    i++;
+  const first = names(L.runShopStock(run, i, 1, rule));
+  assert.equal(L.runShopReroll(run, i, 1, RES), true);
+  const fresh = names(L.runShopStock(run, i, 1, rule));
+  assert.notEqual(fresh, first);
+  assert.ok(fresh.startsWith(rule.always.map(w => w).join()), 'the always-stocked wares stay');
+  assert.equal(names(L.runShopStock({ ...run }, i, 1, rule)), fresh, 'a reload keeps it');
+  assert.equal(L.runShopReroll(run, i, 1, RES), false, 'once a shop a day');
+  assert.equal(L.runShopReroll(run, i + 1, 1, RES), false, 'once a run');
+  assert.equal(L.runRerollsLeft(run, RES), 0);
+  assert.equal(
+    names(L.runShopStock(run, i, 2, rule)),
+    names(L.runShopStock({ seed: 'RESHOP' }, i, 2, rule)),
+    'the next day as before'
+  );
 });
