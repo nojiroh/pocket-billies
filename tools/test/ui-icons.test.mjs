@@ -37,3 +37,11 @@ test('the icons the game names by key all exist', () => {
   assert.ok(used.size > 20, `only ${used.size} icons found`);
   for (const k of used) assert.ok(NAMES.includes(k), `no icon "${k}"`);
 });
+
+test('UI-13: HP’s heart is teal, like its bar (the icon set’s teal and its shades, no red left)', () => {
+  const px = modules['svg-pixels'].svgToPixels(readFileSync(join(UI, 'heart.svg'), 'utf8'));
+  const seen = new Set();
+  for (let i = 0; i < px.data.length; i += 4)
+    if (px.data[i + 3] >= 128) seen.add([0, 1, 2].map(k => px.data[i + k].toString(16).padStart(2, '0')).join(''));
+  assert.deepEqual([...seen].sort(), ['1f5e4f', '216b5c', '2a9d8f', '94cec7', 'cae6e3']);
+});
