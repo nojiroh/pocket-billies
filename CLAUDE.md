@@ -21,12 +21,12 @@ The game vision is in docs/VISION.md. Read it before any design or art work.
 - The quick check (tools/check-quick.py) drives a headless browser (Python + Playwright, tools/requirements-check.txt); verify the command on first use. Its pictures are compared with the picture baseline as notes, never failures.
 - Test speed: the edit hook runs lint, type-check and unit tests for what you edit; run `npm run check:smoke` before a commit that touches game/; run the full quick check at the end of a phase. Tiers and budgets are in docs/TESTING.md.
 - Branches follow docs/BRANCHES.md. A plan that takes several sessions lives on one `track/<plan>` branch, named in its plan file's `Branch:` line; every session of it starts on that branch, checks it before any edit and pushes only there. The branch stays after its PRs merge.
-- Commit often. When a track or phase plan is finished, its branch gets a `<plan>-done` tag and is deleted (docs/BRANCHES.md); sessions don't ask for per-session tags. Start from the plan's branch with main merged in.
+- Commit often. When a track or phase plan is finished, its branch gets a `<plan>-done` tag and is deleted (docs/BRANCHES.md); sessions don't ask for per-session tags (older lines in ROADMAP.md and BRANCHES.md that ask for them are out of date). Start from the plan's branch with main merged in.
 - Anything marked "Ask me before" in a phase file is a decision I want to make myself. Offer options and a recommendation, then wait.
 - End each phase by updating docs/HANDOFF.md: what changed, what is risky, what was verified, what is next.
 
 ## Treat figures as claims
-Numbers and file names in the numbered phase briefs (docs/phases/NN-*, docs/archive/) come from an outside review of the alpha 0.4.1 build (README, file layout, partial code reads), not a full read of the code; track plans quote the code at a dated commit. The current legacy build is alpha 0.5 with a new UI look. Verify each claim against the real code, tell me where it is wrong, and push back on any idea you think is bad.
+Numbers and file names in the numbered phase briefs (docs/phases/, docs/archive/) come from an outside review of the alpha 0.4.1 build (README, file layout, partial code reads), not a full read of the code; the -plan files, track plans and results that sessions added quote the code at a dated commit. The current legacy build is alpha 0.5 with a new UI look. Verify each claim against the real code, tell me where it is wrong, and push back on any idea you think is bad.
 
 ## Known gotchas (verify)
 - The page's modules share names through the generated game/js/hooks.js (tools/to-module.mjs): a new module-level value needs a `setX` setter that calls `provide`, then `npm run modules`; check:modules also checks the load order. Check for name clashes before and after any move.
