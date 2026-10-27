@@ -2,6 +2,45 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-4b - the seamless region on the world map: side areas on the grid, L outlines - 2026-10-27
+Branch `claude/wm-4b-seamless-region` (from `track/worldmap` at 7cd31f76, WM-3a in; `track/worldmap` merged in again
+before the PR), beside WM-3b in another session. Planned in Plan Mode, the owner's go the same day.
+- **Claims corrected**: roads from exits on any side already worked since WM-3a (runWorldTables builds every road from
+  runSceneExits' side and t; worldBowlExitAt reads them by id), and the "until WM-3" east-to-west workaround was never
+  code (WM-3a's sizes and exits ended it): nothing to remove. The flat world map: no run biome uses the 105 m summit
+  (a hub kind); on a run only ridge (50 m, now about 20) and lake (-22 m, now about -12) have relief, the rest 8 m
+  (now about 4).
+- **Found and fixed**: a side area's places were not on the region grid. The walk laid them by their exits (the first
+  at the door, the rest east along a line), over main places in 2 of 3 runs with a side area (200 of 300 forced); the
+  world map put them elsewhere (230 of 300). run-map.js **runSideLay** lays them on free 2 x 1 cells, the first by its
+  obstacle's north side (else south) with the door on the edge they share (the spot furthest from that side's other
+  exits, as before), each next east, else north, else south of the one before; runSpotCells, run-scenes.js
+  runSideDoor and the side places' exits (where their cells meet, any side) all read it, so the walk and the world map
+  agree. run-side.js prefers an obstacle with free cells by its north or south side. Left: about 1.5% of side areas
+  (an alternate path's obstacle is fixed, or a chain is boxed in) still have a place on cells apart from the one before:
+  the walk joins it by its exits, the world map by a short road.
+- An L's outline: runSpotBoxes gives its cut corner, **runSpotOutline** its six corners; the fog leaves the cut cell out
+  (BOWL_RUN_FOG.steps is now points a cell's side).
+- Tests: new run-bowl-seams.test.mjs (quick tier, the game's data, 300 runs: no two places overlap; every link's exits
+  face each other and meet at one point with each place on its cells, each place fills its cells; the door is the
+  layout's; at most 3% of side areas laid apart; the outline of a box and of each L); run-map's side-area test on the
+  new rule. Side areas' scenes change (their exits); no snapshot held them.
+- Pictures (headless, Chromium): the run fixture's region in one piece, its side area flush south of its town, the 1 x 1
+  event and the 1 x 2 route; a seed with Ls (WMLSEED25) with the cut cells clear of fog; the flatter map **for the
+  owner to judge**: WMRIDGE14's ridge now vs the hub's relief (the old one bends the ridge places over a hump about
+  50 m high; up to 86 m difference on the land round them).
+- Verified: lint, typecheck, format, check:modules, the data build; unit tests: quick tier 1478 pass (the 1,000-maps
+  sweep missed its 1 s once with check-fast running beside it, passes alone); slow tier all but two that fail the same
+  on `track/worldmap` (the island's own output, known; **mapgen-town's "every run town has a street..." on TW1F node 4:
+  2 houses**, WM-3b's file). check-fast: every check but three, each failing the same on `track/worldmap`: **the leader's
+  arena (WM-7) on the fixture's first mini-boss: its barrier has no gate (`gates: []`)**, and the Studio's world map look
+  and Camera section (the billionaires' portraits aren't in git, 404 in this container). Smoke passes (6 of 6). The full
+  quick check: 35 of 40 on the first run; RT-2's pair and Granny Juniper passed when run again; the three left fail the
+  same on `track/worldmap` (Copperleaf's train station in the air, RL-8's town shop with no Perk, room light at night).
+  Python Playwright 1.63 again; `npm ci` and `npm run data` first in a fresh container.
+- Risky: side areas' places move (their exits change), so any saved run with a side area resumes with the new layout
+  (remade from the seed); arena/route code that assumed side places go west to east by t 0.5 now gets any side.
+- Next: the owner looks at the pictures and decides on the relief; then WM-5 (town streets) or WM-6.
 ### Region map track WM-4a (in part) - a run's places on the world map at their grid cells; fog - 2026-10-27
 Branch `ccr-9477901d-w1h11w`, from `track/worldmap` (made this session from WM-2's head, 5a1326a7; main since merged
 in, PR #243). The owner first chose to wait for WM-3, then asked to start now: WM-4a is the part that doesn't need WM-3;
