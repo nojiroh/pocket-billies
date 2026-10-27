@@ -70,18 +70,36 @@ const walk = dir =>
     return statSync(p).isDirectory() ? (f === 'vendor' ? [] : walk(p)) : /\.(js|html)$/.test(f) ? [p] : [];
   });
 const together = new Map();
+/* and the tags each class is written on ('*' where the code sets it with no tag in sight: className, classList) */
+const tagsOf = new Map();
+const onTag = (c, tag) => (tagsOf.get(c) || tagsOf.set(c, new Set()).get(c)).add(tag);
 for (const f of [...walk(join(ROOT, 'game/js')), join(ROOT, 'game/index.html')]) {
-  for (const m of readFileSync(f, 'utf8').matchAll(/class(?:Name)?\s*=\s*\\?["'`]([^"'`]+)/g)) {
-    const names = m[1].split(/\s+/).filter(c => /^[a-zA-Z][\w-]*$/.test(c));
-    for (const a of names)
+  const src = readFileSync(f, 'utf8');
+  for (const m of src.matchAll(/class(Name)?\s*=\s*\\?["'`]([^"'`]+)/g)) {
+    const names = m[2].split(/\s+/).filter(c => /^[a-zA-Z][\w-]*$/.test(c));
+    const open = src.lastIndexOf('<', m.index);
+    const tag =
+      !m[1] && open >= 0 && !src.slice(open, m.index).includes('>')
+        ? (src.slice(open + 1).match(/^[a-zA-Z][\w-]*/) || ['*'])[0]
+        : '*';
+    for (const a of names) {
+      onTag(a, tag.toLowerCase());
       for (const b of names) if (a !== b) (together.get(a) || together.set(a, new Set()).get(a)).add(b);
+    }
   }
+  for (const m of src.matchAll(/classList\.(?:add|toggle)\(\s*['"`]([\w-]+)/g)) onTag(m[1], '*');
 }
+/* a class can sit on this tag: written on it, or set where the tag can't be seen, or never seen at all */
+const canTag = (c, tag) => !tagsOf.has(c) || tagsOf.get(c).has('*') || tagsOf.get(c).has(tag);
 
 function meet(a, b) {
   if (a.pe !== b.pe) return false;
-  if (!a.keys.length || !b.keys.length) return !a.tag || !b.tag || a.tag === b.tag;
   if (a.tag && b.tag && a.tag !== b.tag) return false;
+  if (!a.keys.length && !b.keys.length) return true;
+  if (!a.keys.length || !b.keys.length) {
+    const [k, bare] = a.keys.length ? [a, b] : [b, a];
+    return !bare.tag || k.keys.every(x => x[0] !== '.' || canTag(x.slice(1), bare.tag));
+  }
   for (const k of a.keys) if (b.keys.includes(k)) return true;
   for (const k of a.keys)
     if (k[0] === '.')
@@ -100,8 +118,26 @@ const SPECIAL = {
     'border-bottom-right-radius',
   ],
 };
+/* longhands that share a shorthand's name but aren't set by it */
+const APART = new Set([
+  'transform-origin',
+  'transform-style',
+  'transform-box',
+  'outline-offset',
+  'overflow-wrap',
+  'flex-direction',
+  'flex-wrap',
+  'flex-flow',
+  'border-collapse',
+  'border-spacing',
+  'font-feature-settings',
+  'font-display',
+  'text-decoration-skip-ink',
+  'background-blend-mode',
+]);
 const under = (s, l) =>
-  (SPECIAL[s] || []).includes(l) || (l.startsWith(s + '-') && !(s === 'border' && /radius$/.test(l)));
+  !APART.has(l) &&
+  ((SPECIAL[s] || []).includes(l) || (l.startsWith(s + '-') && !(s === 'border' && /radius$/.test(l))));
 const covers = (s, l) => s === l || under(s, l);
 const overlap = (p, q) => covers(p, q) || covers(q, p);
 
