@@ -10,7 +10,7 @@
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, soundEffectAt } from './hooks.js';
+import { provide, saveData, soundEffectAt } from './hooks.js';
 import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import {
@@ -130,10 +130,13 @@ function lifeInit() {
   ambientLife.list = [];
   let n = 0;
   const water = swimWater();
+  /* RT-4b: the animals a route's plan and set pieces add (`extra`): none on Off graphics, half on Balanced */
+  const aim = typeof saveData !== 'undefined' && saveData && saveData.preferences ? saveData.preferences.aim : '';
   for (const L of sc.life || []) {
     const K = LIFE_KIND[L.k];
-    if (!K) continue;
-    for (let i = 0; i < (L.n || 1); i++) {
+    if (!K || (L.extra && aim === 'off')) continue;
+    const count = L.extra && aim === 'smooth' ? Math.ceil((L.n || 1) / 2) : L.n || 1;
+    for (let i = 0; i < count; i++) {
       n++;
       const r = a => lifeRandom(n, a);
       let x, z;

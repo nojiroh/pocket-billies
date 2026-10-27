@@ -8,7 +8,7 @@ game flow shows became a low-poly model (phase 09 batches 10-11), the game flow 
 water track and the five times of day landed. This section is the plan now; the stage texts further down stay as the
 detailed task list (task ids A1...I3) and their "what the renderer does today" notes are history: verify every claim.
 
-### Status (checked in the code, 2026-10-26, at 2314da8)
+### Status (checked in the code, 2026-10-26, at 2314da8; R4 defaults lane the same day; D2 2026-10-27)
 | Task | Status |
 |---|---|
 | A1-A7 | Done (gpu-counters.js, gpuPass marks, `dc` `dcp` `up` `lit` `pcl` `alloc`, the A6 timer fix). |
@@ -17,12 +17,12 @@ detailed task list (task ids A1...I3) and their "what the renderer does today" n
 | C1, C2 | Done; C2's item pool, `matrix4` and basin key left on purpose (HANDOFF C-1). |
 | C3 | Done (R1 light lane, 2026-10-26): the owner's verdict "same look, not slower"; the Frame block is the only path, `quality.frameBlock` deleted. |
 | C4 | Done. |
-| C5 | Ported (R1 light lane, 2026-10-26) behind `quality.stableLights` (off) and `quality.lights` (16); waiting on the owner's phone verdict. |
-| D1, D3-D7 | Built (R2 pixels lane, 2026-10-26), each behind its own switch, off: `quality.skyLast` (D1), `quality.invalidate` (D3, the table under D3), `quality.phonePixels` (D4: 1.2 MP and a 0.9 start on phones, the owner's numbers), `quality.solidFirst` (D5 option (a); (b) and (c) wait for the phone's numbers), `quality.phoneLamps` (D6: 8 lamps, 4 in the air on phones, the owner's numbers), `air.cheapShafts` (D7), and rain's cost: `quality.rainBatch`. Waiting on the owner's phone run. |
-| D2 | Not done (round 4, alone): every shader is still `highp`. |
-| E1-E8, E10 | Done (R2 sprites lane, 2026-10-26) behind `quality.spriteInstances` (off); E3 fixed (the owner's choice), the reflection grouped by picture. E12 left out by the counters. E13 waits on the owner's phone verdict. E9 done (R3 shadows lane) behind `quality.shadowInstances`; E11 done as the owner's option (a), the far map at rest, behind `quality.farShadowsStill` (no sway in the shaders). |
-| F1-F9 | F1, F2, F4, F5 done (R2 models lane); the shadow maps' models instanced (R3, `voxSI`, behind `quality.shadowInstances`); F8 done as models in the far cache with a caster signature in the key (`quality.modelShadowCache`). F6-F7 (merged casters) left until the counts ask (the owner, R3): after instancing the models are one draw per mesh part. Earlier: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
-| G | R3 battle lane (2026-10-26): the battle's CPU measure fixed (it timed `scene` only; the 3D frame is `dio`), the rigs' cost in the baseline, and G-lite built: `quality.rigReuse` (off) redraws and uploads a rig only when its pose, face or tint changes. Full G (instanced part quads) not built: headless the rigs are ~1 ms of a 12-22 ms frame; it waits on the owner's phone numbers. |
+| C5 | Ported (R1 light lane, 2026-10-26) behind `quality.stableLights` (off) and `quality.lights` (16). R4: no speed effect on the phone; stays off until the owner's night walk decides (a look call). |
+| D1, D3-D7 | Built (R2 pixels lane). R4, after the owner's phone run: D6 (phone lamps) and rain's batch are the only paths (switches gone); D3 (`quality.invalidate`, no gain), D5 (a) (`quality.solidFirst`, +4.3 ms) and D7 (`air.cheapShafts`, "barely showed") deleted; D5 (b) and (c) dropped with it. D1 `quality.skyLast` (24→26 fps at one station) stays off until the owner has looked at the water with it on (the "water barely visible" report); D4 `quality.phonePixels` stays off until the baseline's `ownPhonePixels` is measured on the phone. |
+| D2 | Built (R4, 2026-10-27; the approved plan's recommendation: the post passes first) behind `quality.mediump` (off): bright, down, up, rays and grade in `mediump`; the table below says what keeps `highp`. dof, dofnear, ao and vol stay `highp` (depth or world-space maths nearly throughout), dofgrow too (integers). The lit programs (ground, sprites, models, buildings) not touched: a later step if the phone shows a gain. Waiting on the owner's phone run. |
+| E1-E8, E10 | Done (R2 sprites lane, 2026-10-26) behind `quality.spriteInstances` (off); E3 fixed (the owner's choice), the reflection grouped by picture. E12 left out by the counters. E13: held off in R4 until the owner has looked at the water with it on (it draws the reflection's pictures). E9 (R3) and E11 option (a) (R3, the owner's yes) are the only paths since R4 (`quality.shadowInstances`, `quality.farShadowsStill` gone). |
+| F1-F9 | F1, F2, F4, F5 done (R2 models lane); the shadow maps' models instanced (R3, `voxSI`, behind `quality.shadowInstances`); F8 done as models in the far cache with a caster signature in the key. R4: models instanced, shadows' models instanced and F8 are the only paths (`quality.modelInstances`, `quality.modelShadowCache` gone; the old loops kept in tools/test/ as references). F6-F7 (merged casters) left until the counts ask (the owner, R3): after instancing the models are one draw per mesh part. Earlier: the models (`vox`, `mdl`, `voxS` in prop-models.js) are now the solid geometry; `tagSolidProp` skips every model, so F3 (solid props instanced) is dropped unless R1's numbers show a real `solid` pass. |
+| G | R3 battle lane (2026-10-26): the battle's CPU measure fixed (it timed `scene` only; the 3D frame is `dio`), the rigs' cost in the baseline, and G-lite built: a rig redrawn and uploaded only when its pose, face or tint changes; the only path since R4 (Android battle CPU 18.5→13.4 ms, `quality.rigReuse` gone). Full G (instanced part quads): not worth building (the owner, R4). |
 | H | Done (R1 context lane: H4, listeners once, the world map on restore; R3 context lane, 2026-10-26: H1 the registry in engine/webgl.js, every create in the game moved onto it (not the in-game tests' own probes, which delete theirs), restores dropped through `gpuOnRestore`; H2 shaders deleted once linked, duplicate and failed programs deleted, `gpuRetire`; H3 `gpuMemory` in the debug log; H5 the warm-up behind the fade, `quality.warmUp` on). Waiting on the owner's phone run after "Lose the GPU context" on every screen. |
 | I1 | Done another way: five looks, logic/time-of-day.js. |
 | I2 | Partly done: model window glass glows by its own lamp (HANDOFF 2026-10-25). Left: lantern glass flicker with its lamp, unlit glass dimmed, a night fill for characters. Moved to a later look task (it changes the look). |
@@ -63,7 +63,8 @@ phone run (graphics test, diagnostics, debug log) covering every lane's switches
 | R3 | shadows | Stage 5 | walk/shadows.js, the shadow half of prop-models.js |
 | R3 | context | H1-H3, H5 | engine/webgl.js's resources |
 | R3 | battle | Stage 8, if wanted | battle-stage.js, battle-3d.js |
-| R4 | - | D2 alone; old paths deleted after the owner's verdicts (one commit each); tag `phase-20-done` | every shader |
+| R4 | defaults | The owner's verdicts on the round 3 run: switches on and their old paths deleted, the losers deleted, one commit each; the water report; the baseline's `ownPhonePixels` and `ownAllOn` (done 2026-10-26, HANDOFF) | the switches' files |
+| R4 | - | D2 alone (after the defaults lane; built 2026-10-27, HANDOFF); tag `phase-20-done` once Medium precision, Sky last, Pictures in batches, Steady lamps and the phone pixel budget are decided | every shader |
 
 ## Goal
 Keep the custom WebGL 2 renderer and its look, and make it fast and sturdy on phones:
@@ -333,6 +334,24 @@ D2. **`mediump` where it is safe.** Colour, fog, grade, bloom and look maths in 
     comparisons, world-space noise and time stay `highp`. Per shader, a list of which variables keep `highp`. The owner
     compares the look on the phone (banding in the sky and fog, noise patterns, shadow acne). **Ask me before:** which
     shaders.
+    **Built (R4, 2026-10-27)** behind `quality.mediump` (off; the first frame after a change rebuilds the five passes).
+    engine/shader-precision.js turns a fragment shader's default to `mediump` and applies its list of edits
+    (engine/post-effects.js `POST_MEDIUMP`), each putting `highp` back on one thing; a list that stops matching its
+    shader fails tools/test/shader-precision.test.mjs. A program the driver refuses in `mediump` is made in `highp`
+    (the debug log's `graphics.mediump` names it), and the in-game full test's Shaders step builds every `mediump`
+    version. An operation runs at the highest precision of its operands, so marking a value `highp` keeps every sum
+    it is part of `highp`. Colour samplers are `mediump` (16-bit floats hold the HDR range), depth samplers `highp`.
+
+    | Pass | Size | Keeps `highp` |
+    |---|---|---|
+    | bright | 1/2 | vUV, uPx (the 3 x 3 taps' places) |
+    | down | 1/2 ... 1/32 | vUV, uPx |
+    | up | 1/2 ... 1/32 | vUV, uPx, uR and the offset d |
+    | rays | 1/4 | vUV, the depth sampler, uSun, uLen, the hash h, src's place q, the march's step dv and place q |
+    | grade | full | vUV and uv (the shimmer's), uPx, uHeatS and the shimmer's hs, the depth sampler, linz and its z, the blur's plane (uDofPl, uDofB) and dz, the outlines' d0, z0, zs and offset q, uInkF, uTime, uNear, uFar, uSunP, the grain's hashes (gh, gv, its f and q), the dither's q |
+    | dof, dofnear, ao | - | all: their maths is depth (lin, the plane, the horizon walk) almost throughout |
+    | vol | - | all: world-space positions, the shadow maps, the fog grid |
+    | dofgrow | - | all: integers and one read per tap, nothing to gain |
 D3. **`invalidateFramebuffer`** after each pass whose depth (or colour) is not read again: the scene depth after the
     post passes that read it, each bloom level after use, the shadow maps' unused parts. A table of every render target,
     who reads it and when it can be dropped.

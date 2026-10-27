@@ -12,7 +12,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: var(--s4);
   padding: 20px var(--s1);
   text-align: center;
 }
@@ -105,7 +105,7 @@
   background: linear-gradient(180deg, #7ea4c3, #99aec6 22%, #909f9c 42%, #889a76 52%, #869b55 75%, #6f7b4a);
   border: 3px solid var(--line);
   box-shadow: 0 8px 0 var(--lo);
-  border-radius: 7px;
+  border-radius: var(--r-xs);
 }
 .title .title-coin {
   position: absolute;
@@ -144,7 +144,7 @@ body.in-title #app {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: max(28px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+  padding: max(28px, env(safe-area-inset-top)) var(--s4) max(var(--s5), env(safe-area-inset-bottom));
   text-align: center;
   color: #fff7e6;
   background: linear-gradient(
@@ -201,7 +201,7 @@ body.ttl-live .ttl-bg {
   animation-delay: -1.6s;
 }
 .ttl-tag {
-  margin: 14px 0 0;
+  margin: var(--s4) 0 0;
   font: 600 13px/1 var(--font-voice);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -344,7 +344,7 @@ body.ttl-auto .ttl-ring circle {
   align-items: center;
   gap: var(--s2);
   min-height: 36px;
-  padding: 3px var(--s3) 3px 3px;
+  padding: var(--s1) var(--s3) var(--s1) var(--s1);
   border: 1px solid var(--g-bd);
   border-radius: var(--r-pill);
   cursor: pointer;
@@ -398,7 +398,7 @@ body.ttl-auto .ttl-ring circle {
 }
 .acc-pick-card {
   display: grid;
-  gap: 3px;
+  gap: var(--s1);
   padding: var(--s3);
   border-radius: var(--r-md);
   background: var(--g-bg2);
@@ -413,7 +413,7 @@ body.ttl-auto .ttl-ring circle {
 }
 .ttl-btns {
   display: flex;
-  gap: 10px;
+  gap: var(--s3);
   justify-content: center;
 }
 .ttl-hint {
@@ -472,7 +472,7 @@ body.ld-on #app {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  padding: 6px var(--s3) 6px 6px;
+  padding: var(--s2) var(--s3) var(--s2) var(--s2);
   border: 0;
   border-radius: var(--r-pill);
   background: rgba(20, 14, 40, 0.55);
@@ -484,12 +484,12 @@ body.ld-on #app {
 .acc-chip.google {
   background: #fff;
   color: #2a2238;
-  padding: 7px 14px 7px 10px;
+  padding: var(--s2) var(--s4) var(--s2) var(--s3);
   box-shadow: 0 2px 0 rgba(20, 14, 40, 0.35);
 }
 .acc-chip.quiet {
   opacity: 0.75;
-  padding: 6px var(--s3);
+  padding: var(--s2) var(--s3);
   cursor: default;
 }
 .acc-g {
@@ -515,7 +515,7 @@ body.ld-on #app {
   gap: var(--s3);
   padding: var(--s3);
   margin: 0 0 var(--s3);
-  border-radius: 14px;
+  border-radius: var(--r-md);
   background: var(--panel2, rgba(0, 0, 0, 0.04));
   flex-wrap: wrap;
 }

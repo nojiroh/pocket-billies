@@ -1,0 +1,14 @@
+{
+ "about": "ON-3, the Showcase (docs/phases/online-track.md; logic/showcase.js): the weekly themes, one a week from Monday 00:00 UTC in this order and round again, and the ribbons the theme's top entries earn (cosmetic: shown on the Billie and the Trainer card, never in battle). The owner's first three, 2026-10-27.",
+ "ribbons": ["Gold","Silver","Bronze"],
+ "themes": [
+  {
+   "id": "abom",
+   "name": "Best abomination",
+   "d": "A Billie from a risky egg gone wrong, or one spliced past its Stability.",
+   "need": "abom"
+  },
+  {"id":"bureau","name":"Most Bureau","d":"A Billie wearing the Bureau's hardware: one with Augments.","need":"aug"},
+  {"id":"splice","name":"Best splice","d":"A Billie with another line's parts grafted on.","need":"graft"}
+ ]
+}

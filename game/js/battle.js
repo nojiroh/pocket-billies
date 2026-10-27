@@ -1047,7 +1047,7 @@ export function endBattle() {
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
         /* RL-R2: a run leader's first win of its type keeps that badge for good (logic/battle-rewards.js) */
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}${pay.bossParts ? `<p class="note"><b>Salvaged:</b> ${escapeHtml(pay.bossParts.join(', '))}. It goes home with you, whatever happens.</p>` : ''}`,
         btns: [
           {
             c: 'dark',
@@ -1232,7 +1232,11 @@ function turnBar() {
     const m = fighter(k),
       mine = ACTOR_SIDE[k] === 0,
       n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
-    return `<span class="tb ${mine ? 'me' : 'foe'}${fighter(k).boss ? ' alpha' : ''}" title="${escapeHtml(billyName(m))}">${escapeHtml(billyName(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
+    return `<span class="tb ${mine ? 'me' : 'foe'}${fighter(k).boss ? ' alpha' : ''}" title="${escapeHtml(billyName(m))}">${escapeHtml(
+      billyName(m)
+        .replace(/^The\s+/, '')
+        .split(' ')[0]
+    )}${n > 1 ? ' ×' + n : ''}</span>`;
   }).join('<i>›</i>');
   if (e.innerHTML !== html) e.innerHTML = '<b>Order</b>' + html;
 }

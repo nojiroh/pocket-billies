@@ -172,6 +172,8 @@ export const ENGINE_DEFAULTS = {
        how much lamps glow in it at night */
     fogVolume: 1,
     fogLamps: 1,
+    /* air track AIR-4: the near haze (its first 26 m) darker where it lies in the sun's shadow, from the light-in-air march */
+    hazeShade: 0.5,
     /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
     cheapShafts: 0,
     /* smart light shafts: the cheap shafts placed where shade lies behind them, looking into the light, apart and never
@@ -358,34 +360,16 @@ export const ENGINE_DEFAULTS = {
     /* on a graphics chip that can draw to half-float pictures but not to full-float ones (some phones), the scene and the
        bloom keep their bright parts above white (HDR) as on the others; read when the 3D view starts */
     hdrHalf: false,
+    /* phase 20 D2: the post passes' colour maths in medium precision (engine/shader-precision.js); a change rebuilds
+       them (engine/post-effects.js postPrecisionFollow) */
+    mediump: false,
     lights: 16,
-    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1); models, buildings and structures before the
-       sprites (D5) */
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
     skyLast: false,
-    solidFirst: false,
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
-    /* a phone's lamps: at most 8 lit at once, 4 of them in the air (D6) */
-    phoneLamps: true,
-    /* render targets' old content dropped before a pass that draws over all of it, the reflection's depth after it
-       (D3) */
-    invalidate: false,
-    /* rain, snow, ash and their splashes in one draw */
-    rainBatch: true,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
     spriteInstances: false,
-    /* phase 20 R2: the solid models (voxel props, low-poly models) drawn one draw per mesh for every item with it */
-    modelInstances: true,
-    /* phase 20 R3 (shadows): the shadow maps' pictures one draw per picture, their models one draw per mesh */
-    shadowInstances: true,
-    /* phase 20 R3 (F8): models whose mesh holds still (trees whose leaves sway too) in the far shadow map's cache, the
-       ones that bob or turn out of it */
-    modelShadowCache: true,
-    /* phase 20 R3 (E11, the owner's option a): the far shadow map draws what only the wind sways at rest and keeps it
-       in its cache; within the near map (13 m) shadows sway as before */
-    farShadowsStill: true,
-    /* phase 20 R3 (battle): a battle rig's canvas drawn and uploaded again only when its pose, face or tint changes */
-    rigReuse: true,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -856,6 +840,14 @@ export const ENGINE_SPEC = [
         'The low fog as a lit volume: banks in hollows, sun shafts and shade in it (AIR-3). 0: the flat mist as before.',
       ],
       ['fogLamps', 'Lamps in the fog', 0, 2, 0.05, 'How much lamps and fires glow in the low fog at night (AIR-3).'],
+      [
+        'hazeShade',
+        'Shade in the haze',
+        0,
+        2,
+        0.05,
+        'The near haze darker where it lies in the shadow of trees and houses (AIR-4). Needs shadows; 0: the haze as before.',
+      ],
       [
         'cheapShafts',
         'Cheap light shafts',
@@ -1528,6 +1520,12 @@ export const ENGINE_SPEC = [
         'On graphics chips that can only draw to half-float pictures (some phones), keep bright parts above white for bloom and lamps, as other chips do (on). Read when the 3D view starts. Off: such chips clip at white.',
       ],
       [
+        'mediump',
+        'Medium precision',
+        'bool',
+        'The bloom, light rays and colour grade work their colours in medium precision, where phone graphics chips run about twice as fast (on; iPhones and iPads ignore it). Screen places, depth, time and noise stay in full precision. The first frame after a change compiles them again (a short stall). Off: everything in full precision, as before.',
+      ],
+      [
         'stableLights',
         'Steady lamps',
         'bool',
@@ -1539,7 +1537,7 @@ export const ENGINE_SPEC = [
         1,
         16,
         1,
-        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground.',
+        'How many lamps, windows and fires near you light the scene at once (the nearest ones). Fewer is faster on phones; farther lamps still glow but no longer light the ground. A phone (Android, iPhone) lights at most 8, and 4 of them glow in the air.',
       ],
       [
         'skyLast',
@@ -1554,64 +1552,10 @@ export const ENGINE_SPEC = [
         'On a phone (Android, iPhone) the scene is drawn at most 1.2 million pixels instead of 1.6, and the automatic quality starts one step lower. Softer, faster; tablets and computers are unchanged.',
       ],
       [
-        'phoneLamps',
-        'Phone lamps',
-        'bool',
-        'On a phone (Android, iPhone) at most 8 lamps, windows and fires light the scene at once (fewer if Lamps lit at once says so), and 4 of them glow in the air. Tablets and computers are unchanged.',
-      ],
-      [
-        'invalidate',
-        'Drop spent pictures',
-        'bool',
-        'Tells the graphics card which in-between pictures (blur, glow, shading, the reflection’s depth) need not be kept or read back. Same picture; it saves memory traffic on phones.',
-      ],
-      [
-        'rainBatch',
-        'Rain in one go',
-        'bool',
-        'Rain, snow and ash (and the splashes) are drawn in one go instead of one drop at a time: the same drops, far less work for the processor in bad weather.',
-      ],
-      [
-        'solidFirst',
-        'Solid things first',
-        'bool',
-        'Models, buildings and structures are drawn before the leaf and prop pictures, so leaves hidden behind a trunk or a wall are skipped by the graphics card. Faster in groves; a picture lying flat on a model may show differently.',
-      ],
-      [
         'spriteInstances',
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
-      ],
-      [
-        'modelInstances',
-        'Models in batches',
-        'bool',
-        'Every tree, house or lamp post of one kind is drawn in one go instead of one at a time: fewer draws, the same look. The shadows still draw them one at a time.',
-      ],
-      [
-        'shadowInstances',
-        'Shadows in batches',
-        'bool',
-        'The shadows of grass, bushes, leaves, people and models are drawn in batches, one draw for all the copies of a picture or a model, instead of one draw each. The same shadows; fewer calls to the graphics card.',
-      ],
-      [
-        'modelShadowCache',
-        'Models in the shadow cache',
-        'bool',
-        'The far shadows of trees and other models that stand still are kept from frame to frame instead of drawn again each frame (a tree whose leaves sway still counts: its trunk doesn’t move). Boats, the airship, windmill sails and propellers are drawn each frame, so their far shadows move again.',
-      ],
-      [
-        'farShadowsStill',
-        'Far shadows hold still',
-        'bool',
-        'Past the sharp shadows round you (about 13 m) the shadows of grass, bushes and leaves stop swaying in the wind and are kept from frame to frame instead of drawn again each frame. Close by they sway as before.',
-      ],
-      [
-        'rigReuse',
-        'Reuse battle rigs',
-        'bool',
-        'In a battle each Billie’s picture is drawn and sent to the graphics card again only when its pose, face or tint changes (about 6 times a second), not on every frame. Same picture, less work.',
       ],
       [
         'warmUp',
@@ -1714,6 +1658,7 @@ export const PLAIN_LOOK = {
     lightsInAir: 0,
     fogVolume: 0,
     fogLamps: 0,
+    hazeShade: 0,
     hazeDistance: 900,
   },
 };

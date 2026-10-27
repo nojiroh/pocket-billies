@@ -369,7 +369,8 @@ function storyPickId(who, id) {
 /* RL-S1: home from a run (run.js runEndHome, after the run has ended): each hub character's first line is picked
    now (story.fresh, said at the first talk after: storyFreshTake), and a lost run's scene waits to play
    (story.pending, storyPendingCheck) */
-function storyHomeArrive(won) {
+/* RL-14b: next, a won run's scene (a bosses.json boss's first win: battle-rewards.js bossStoryNext) */
+function storyHomeArrive(won, next = '') {
   const story = saveData.story || (saveData.story = {}),
     fresh = {};
   /* RL-S2 part B: the favours the run just ended did are paid first (logic/relations.js), so a thank-you can be
@@ -394,7 +395,8 @@ function storyHomeArrive(won) {
     if (k) fresh[who] = k;
   }
   story.fresh = fresh;
-  if (won) delete story.pending;
+  if (won && next) story.pending = next;
+  else if (won) delete story.pending;
   else story.pending = 'back-lost';
 }
 /* the line picked for who on the way home, taken (a talk plays it once in place of their own script), or null */

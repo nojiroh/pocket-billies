@@ -38,7 +38,7 @@ polish tasks. Each session is tagged `st-N-done`.
 | ST-4 | Part mode: front and back side by side, pivot crosshair (drag, arrow-key nudge), labelled sockets, turn limits, draw order per view, socket rules, test fit onto a body, mirror to the other side, S/L override painting. | unit tests |
 | ST-5 | Robots on the workbench: stored sockets, falling back to today's computed ones. | robot build test, battle preview |
 | ST-6 | Species sheets in Part mode (rig rects, pivots, z). Skeleton builder and wardrobe painting move onto the shared canvas. | skeleton tests, full Studio check |
-| ST-7 | Model mode import: hand-written GLB/glTF reader, OBJ, the existing .vox path; mesh format v2 (own texture, 0-1 UVs, joints, spins); texel density check (area-weighted px/m per face) with a resample fix; triangle warning; texture painting; preview in the game renderer. | unit tests on sample files |
+| ST-7 | (**done** 2026-10-27) Model mode import: hand-written GLB/glTF reader, OBJ, the existing .vox path; mesh format v2 (own texture, 0-1 UVs, joints, spins); texel density check (area-weighted px/m per face) with a resample fix; triangle warning; texture painting; preview in the game renderer. | unit tests on sample files |
 | ST-8 | Model mode export: GLB/OBJ with pivots, spins and joints kept in node data (extras) for a Blender round trip; voxel props to meshes. | export -> import round trip test |
 | ST-9 | Polish: art in the global undo everywhere, one unsaved marker per section, Check warnings next to their fields, hover help, STUDIO.md, tests. | full quick check |
 
@@ -53,6 +53,40 @@ polish tasks. Each session is tagged `st-N-done`.
   view), robots (separate PNGs, sockets computed in robot-art.js `robotRig`, none stored).
 - Pixel editing: three editors (sprites.js, wardrobe.js, skeleton painting), each with its own undo, art outside the
   global undo, no vertical flip, no symmetry.
+
+## ST-7: Model mode import (2026-10-27, branch `track/studio`)
+- Owner's picks: Model mode on the Art workbench (Props opens a model there); a model is stored as files beside the
+  art (`art/scene/models/<key>.json` and `<key>.png`), so Propose changes sends that JSON as text; palette-textured
+  packs import as they are, flagged, with "Bake to 32 px/m"; ST-7 whole in one session (no 7a/7b split).
+- game/js/logic/model-gltf.js `readGltf` (RP-3's Python reader, tools/glb-to-recipe.py, ported and widened),
+  model-obj.js `readObj`/`readMtl`, model-vox.js `voxParse`/`voxRawLayer`/`voxSource` (Props' .vox import uses them
+  now, same layer), model-mesh.js (`modelBuild`, the format, `modelFaces`, `modelDensity`, `modelResample`,
+  `modelAtlas`, `modelCheckLines`), model-bake.js (`modelBakePicture`, `modelBakeTexture`, `modelVertices`).
+  Tests: tools/test/model-import.test.mjs (the three KayKit models against RP-3's reader through
+  model-import-rp3.json; a .glb, .gltf, .obj/.mtl and .vox made in the test). studio/js/workbench-model.js: the mode.
+  prop-models.js: v2 drawn with its own texture (the model program only; unit 5; outside the instanced batches).
+  tools/check-fast.py `studio_model`. docs/STUDIO.md "Art workbench: Model mode".
+- Mesh v2 keeps v1's 24-byte vertex, so the vertex layout and the shadow and depth passes stay: byte 16 = 255 marks
+  the model's own texture, texture coordinates in 1/4096 (0-1, up to 8 for a repeating texture), byte 18 = 1 a face
+  with no texture. Parts carry parent, pivot (the node's origin), `spin` `{ a, rps }` (drawn as v1's spins) and
+  `joint` `{ a, min, max }` (kept, drawn at rest); a Blender custom property `pb` on a node fills them in.
+- Axes: glTF is y up with its front at +z; the game's meshes have their front at -z (the airship's triangles wind
+  clockwise against their normals, measured), so z is flipped and the winding kept. Blender's OBJ export has its
+  front at -z: turned half round. MagicaVoxel: z up, front -y.
+- **Corrections:** RP-3's converter keeps no mesh (it fits recipe shapes to the triangles) and reads no vertex
+  colours, sparse accessors, strips or fans, nor turns a mirrored node's triangles round; only its reader logic was
+  reusable. "The existing .vox path" was the Props model editor's import only (a raw voxel layer), not a mesh path.
+  SA-3 had taken the workbench's disabled Pixels and Model buttons out; Model mode is back as a real mode. The Studio
+  could save pictures and two kinds of text file (SVG, art/manifest.js), not models (draft-record.js `DRAFT_TEXT`
+  now takes `art/scene/models/<key>.json`). KayKit's textures are palettes at 1024 px whose swatches are a few
+  texels a face, not single texels: the palette check samples the texels under each face (one colour = a swatch)
+  and needs 75% of the surface so (a baked model has plain faces too). A single texture is kept as it is (packing
+  one picture into a power-of-two atlas moved its coordinates).
+- Found, not fixed: the Studio checks "The Studio's world map look" and "The Studio's Camera section" fail on main
+  2e74c89d too (missing legacy Billie pictures, the landmark field), not this branch's.
+- For ST-8: export reads `modelVertices` (positions, normals, texture coordinates, colours per part) and writes
+  each part as a node with its pivot as the node's origin and `extras.pb` (spin, joint), so `readGltf` brings them
+  back; voxel props to meshes can start from `voxSource` and `modelBuild` (a voxel is 1/32 m).
 
 ## ST-6: species sheets in Part mode, the skeleton builder and the wardrobe (2026-10-20)
 - Owner's picks: the skeleton builder keeps its posed stage (whole-step zoom fitted to it, the pixel canvas's view

@@ -1,0 +1,66 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "festivals.schema.json",
+ "title": "game/data/festivals.json: Copperleaf's festivals and market days (hub track HB-10e; logic/festival.js)",
+ "type": "object",
+ "required": ["cur", "festivals"],
+ "additionalProperties": false,
+ "properties": {
+  "about": {"type": "string"},
+  "cur": {"description": "what the festival market is paid in: a currency kept between runs (currencies.json, kept: meta)", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+  "festivals": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+   "minProperties": 1,
+   "maxProperties": 64,
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "kind", "about", "day", "stock"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"description": "what the player reads", "type": "string", "minLength": 1, "maxLength": 32},
+     "kind": {"description": "milestone: while `when` holds (a story condition, read on the run history); date: from `from` (MM-DD, the phone's calendar by the ranch clock) for `days`; market: every `every` returns (meta.runs). A milestone goes before a date, a date before a market day", "enum": ["milestone", "date", "market"]},
+     "when": {"description": "milestone: the condition that holds while it is on (no festival: in it)", "type": "string", "minLength": 1},
+     "from": {"description": "date: its first day, MM-DD", "type": "string", "pattern": "^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"},
+     "days": {"description": "date: how many days it lasts", "type": "integer", "minimum": 1, "maximum": 14},
+     "every": {"description": "market: on every this-many-th return (meta.runs a multiple of it)", "type": "integer", "minimum": 2, "maximum": 10},
+     "about": {"description": "the notice board's line while it is on, and the toast when you come home to it", "type": "string", "minLength": 1, "maxLength": 140},
+     "day": {
+      "description": "the square's day while it is on, in place of rules.json square.day (logic/square-day.js); its slot keys are its own (the goers are kept per key)",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "object",
+       "required": ["k", "from", "to", "share", "stops"],
+       "additionalProperties": false,
+       "properties": {
+        "k": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "from": {"type": "number", "minimum": 0, "maximum": 24},
+        "to": {"type": "number", "minimum": 0, "maximum": 24},
+        "share": {"type": "number", "minimum": 0, "maximum": 1},
+        "stops": {"type": "array", "minItems": 1, "items": {"enum": ["keep", "shop", "sit", "lamp", "fountain"]}}
+       }
+      }
+     },
+     "stock": {
+      "description": "the festival market's wares: an item (items.json) or a coin (pyramids.json), how many it has each time the festival is on, the price in `cur`",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+       "type": "object",
+       "required": ["n", "price"],
+       "additionalProperties": false,
+       "properties": {
+        "item": {"type": "string"},
+        "coin": {"type": "string"},
+        "n": {"type": "integer", "minimum": 1, "maximum": 9},
+        "price": {"type": "integer", "minimum": 1, "maximum": 99}
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

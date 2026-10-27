@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-real.mjs';
+import { provide } from '../../game/js/hooks.js';
 
 const { conditionHolds, conditionProblem, conditionNames, conditionTree, storyStateOf } = modules.conditions;
 
@@ -169,6 +170,30 @@ test('RS-1: resident: and residents read who lives in Copperleaf (saveData.meta)
   assert.equal(conditionHolds('residents', storyStateOf({ meta: {} })), false, 'a meta from before: nobody');
   assert.equal(conditionProblem('resident:dottie and residents >= 3'), null);
   assert.deepEqual([...conditionNames(conditionTree('resident:a or resident:b')).resident], ['a', 'b']);
+});
+
+test('HB-10e: festival: reads the festival on in Copperleaf for the save read (town-square.js festivalToday)', () => {
+  const seen = [];
+  provide({
+    festivalToday: save => {
+      seen.push(save);
+      return save.run ? null : { id: 'sprout_fair', F: {}, at: 2026 };
+    },
+  });
+  try {
+    const home = { meta: { runs: 1 } },
+      S = storyStateOf(home);
+    assert.equal(seen[0], home, 'asked for the save being read');
+    assert.equal(conditionHolds('festival:sprout_fair', S), true);
+    assert.equal(conditionHolds('festival:lantern_walk or !festival:sprout_fair', S), false);
+    assert.equal(conditionHolds('festival:sprout_fair', storyStateOf({ meta: {}, run: { seed: 'x' } })), false);
+  } finally {
+    provide({ festivalToday: undefined });
+  }
+  /* in Node, with nothing to ask: none on */
+  assert.equal(conditionHolds('festival:sprout_fair', storyStateOf({ meta: {} })), false);
+  assert.equal(conditionProblem('festival:sprout_fair and last:won'), null);
+  assert.deepEqual([...conditionNames(conditionTree('festival:a or festival:b')).festival], ['a', 'b']);
 });
 
 test('RL-12b: type:, money and badge: read the team, the Moneys on hand and the badges won', () => {

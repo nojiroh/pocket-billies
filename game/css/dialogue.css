@@ -87,7 +87,7 @@
 .talk-who {
   display: inline-block;
   margin: 0 0 var(--s2);
-  padding: 3px var(--s3);
+  padding: var(--s1) var(--s3);
   clip-path: var(--clip-chip);
   font: 700 var(--fs-caption) / 1.2 var(--font-voice);
   letter-spacing: 0.02em;

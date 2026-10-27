@@ -50,6 +50,8 @@ test('a stored draft with anything off is refused whole', () => {
     { ...d, texts: [{ path: 'art/ui/bag.png', text: '' }] },
     { ...d, texts: [{ path: 'art/rigs.js', text: '' }] },
     { ...d, texts: [{ path: 'art/../x.svg', text: '' }] },
+    { ...d, texts: [{ path: 'art/scene/models/sub/x.json', text: '' }] },
+    { ...d, texts: [{ path: 'art/scene/x.json', text: '' }] },
   ])
     assert.equal(R.draftParse(bad), null, JSON.stringify(bad));
 });
@@ -69,6 +71,9 @@ test('SA-2b: text files ride in a draft, and a draft kept before them still read
   assert.deepEqual(R.draftParse(structuredClone({ ...d, art: [] })).texts, d.texts);
   assert.equal(R.draftSummary(d), '2 data files, the skeletons, 1 picture and 2 text files');
   assert.equal(R.draftSummary(draft({ files: {}, rigsText: null, art: [], texts: [svg] })), '1 text file');
+  /* ST-7: a model Model mode writes */
+  const mdl = { path: 'art/scene/models/turbine.json', text: '{"kind":"mesh","v":2}' };
+  assert.deepEqual(R.draftParse(structuredClone(draft({ art: [], texts: [mdl] }))).texts, [mdl]);
   assert.equal(R.draftEmpty(draft({ files: {}, rigsText: null, art: [], texts: [svg] })), false);
   const old = structuredClone({ ...draft(), art: [] });
   delete old.texts;

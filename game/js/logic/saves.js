@@ -36,7 +36,7 @@ import {
   teamSize,
   unstableTidy,
 } from './rules.js';
-import { metaFill, newMeta, validMeta } from './meta-state.js';
+import { metaFill, newMeta, ribbonsShapeOk, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
 import { ranchTidy } from './ranch.js';
 import { runNodeCount, runRestore, validRun } from './run-state.js';
@@ -444,6 +444,8 @@ export function billiesOk(list) {
       )
     )
       return false;
+  /* ON-3: Showcase ribbons */
+  for (const m of list) if (!ribbonsShapeOk(m.ribbons)) return false;
   /* RL-10: a bred Billie's mark: a quirk, or an abomination with a short name and two different stats */
   for (const m of list) {
     const u = m.mut;

@@ -7,7 +7,7 @@
 }
 .tcard {
   position: relative;
-  margin: var(--s4) 3px 0;
+  margin: var(--s4) var(--s1) 0;
   overflow: hidden;
   background:
     radial-gradient(var(--dither, rgba(0, 0, 0, 0.05)) 1px, transparent 1.2px) 0 0/4px 4px,
@@ -27,8 +27,8 @@
   justify-content: space-between;
   align-items: center;
   gap: var(--s2);
-  margin: 3px 3px 0;
-  padding: 9px 13px 10px;
+  margin: var(--s1) var(--s1) 0;
+  padding: var(--s2) var(--s3) var(--s3);
   background: repeating-linear-gradient(90deg, #275c60 0 6px, #2b6468 6px 12px);
   color: #fffbee;
   font: 400 14px/1 var(--font-voice);
@@ -44,8 +44,8 @@
 .tc-body {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
-  padding: 14px 15px var(--s1);
+  gap: var(--s4);
+  padding: var(--s4) var(--s4) var(--s1);
 }
 .tc-photo {
   display: flex;
@@ -66,9 +66,9 @@
     inset 0 0 0 2px rgba(255, 255, 255, 0.45);
 }
 .tc-photo .pb {
-  margin: 3px 0;
+  margin: var(--s1) 0;
   min-height: 38px;
-  padding: 6px var(--s2);
+  padding: var(--s2) var(--s2);
 }
 .tc-name {
   font-size: 27px;
@@ -77,15 +77,15 @@
 }
 .tc-dl {
   display: grid;
-  gap: 7px;
-  margin: 10px 0 0;
+  gap: var(--s2);
+  margin: var(--s3) 0 0;
 }
 .tc-dl > div {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--s2);
-  padding-bottom: 6px;
+  padding-bottom: var(--s2);
   border-bottom: 2px dotted color-mix(in srgb, var(--line) 25%, transparent);
 }
 .tc-dl dt {
@@ -99,7 +99,7 @@
 .tc-dl dd {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--s1);
   min-width: 0;
   margin: 0;
   font: 400 15px/1.1 var(--font-voice);
@@ -107,8 +107,8 @@
   overflow-wrap: anywhere;
 }
 .tc-badges {
-  margin: 10px 5px 5px;
-  padding: 10px var(--s3) 14px;
+  margin: var(--s3) var(--s1) var(--s1);
+  padding: var(--s3) var(--s3) var(--s4);
   background: color-mix(in srgb, var(--panel2) 80%, transparent);
   border-top: 2px dashed color-mix(in srgb, var(--line) 25%, transparent);
 }
@@ -131,13 +131,13 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--s3) 6px;
+  gap: var(--s3) var(--s2);
 }
 .bdg {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: var(--s1);
   min-width: 0;
   text-align: center;
 }
@@ -194,16 +194,16 @@
 .pf-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--s3);
   margin-top: var(--s3);
 }
 .pf-tile {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--s1);
   min-width: 0;
-  padding: 10px var(--s3);
-  border-radius: 10px;
+  padding: var(--s3) var(--s3);
+  border-radius: var(--r-sm);
   background: var(--panel-s);
   box-shadow:
     0 0 0 2px var(--line),
@@ -213,7 +213,7 @@
 .pf-k {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--s2);
   font-size: 12px;
   font-weight: 600;
   color: var(--text2);
@@ -230,7 +230,7 @@
 }
 .pf-tile .pbar {
   height: 8px;
-  margin: 5px 2px 1px;
+  margin: var(--s1) 2px 1px;
 }
 .pf-row {
   display: grid;
@@ -238,12 +238,12 @@
 .pf-bud {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--s4);
   width: calc(100% - 4px);
   margin: var(--s3) 2px 2px;
   padding: var(--s2);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--panel-s);
   color: var(--text);
   text-align: left;
@@ -261,7 +261,7 @@
 .pf-bt {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--s1);
   min-width: 0;
 }
 .pf-bt b {
@@ -286,9 +286,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: var(--s1);
   padding: var(--s2) var(--s1);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--panel-s);
   box-shadow:
     0 0 0 2px var(--line),
@@ -307,19 +307,19 @@
 }
 .pf-items {
   list-style: none;
-  margin: 10px 0 0;
+  margin: var(--s3) 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--s2);
 }
 .pf-items li {
   display: flex;
   align-items: center;
   gap: var(--s2);
   min-width: 0;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-xs);
   background: var(--panel2);
   font-size: 13px;
   font-weight: 600;
@@ -335,14 +335,14 @@
   font: 400 14px/1 var(--font-voice);
 }
 .pf-bag > .note:last-child {
-  margin-top: 10px;
+  margin-top: var(--s3);
 }
 @media (max-width: 370px) {
   .tc-photo {
     width: 96px;
   }
   .tc-body {
-    gap: 10px;
+    gap: var(--s3);
     padding: var(--s3) var(--s3) var(--s1);
   }
   .tc-name {
@@ -357,7 +357,7 @@
     align-items: start;
   }
   .s-profile .tcard {
-    margin-top: 18px;
+    margin-top: var(--s4);
   }
   .s-profile .bdgs {
     grid-template-columns: repeat(4, minmax(0, 1fr));

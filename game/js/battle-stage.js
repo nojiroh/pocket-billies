@@ -20,7 +20,6 @@ import {
   battle3dStop,
   battleFreeArea,
   battleLayoutChanged,
-  engineSetting,
   fighter,
   hudHit,
   hudPop,
@@ -29,6 +28,7 @@ import {
   provide,
   reducedMotion,
   ribbonColour,
+  robotGemDef,
   robotIdsFromSp,
   robotPartDef,
   saveData,
@@ -38,6 +38,9 @@ import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
 import {
   RIBBON_CORE,
+  impactAt,
+  impactFrame,
+  impactLength,
   ribbonCells,
   ribbonEdges,
   ribbonTone,
@@ -51,7 +54,7 @@ import {
 } from './logic/smear.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
-import { ROBOT_PART_BONES } from './robot-art.js';
+import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigFrameKey, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -102,6 +105,8 @@ expose({
   actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
+  afterImpact: [() => afterImpact, v => (afterImpact = v)],
+  battleImpact: [() => battleImpact, v => (battleImpact = v)],
   battleRibbonCells: [() => battleRibbonCells, v => (battleRibbonCells = v)],
   battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
@@ -158,6 +163,7 @@ expose({
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
+  impactFx: [() => impactFx, v => (impactFx = v)],
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
@@ -165,13 +171,13 @@ expose({
   ribbonDither: [() => ribbonDither, v => (ribbonDither = v)],
   rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
+  robotPartPicture: [() => robotPartPicture, v => (robotPartPicture = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
   setTrainerAction: [() => setTrainerAction, v => (setTrainerAction = v)],
   shrinkForSoftBlur: [() => shrinkForSoftBlur, v => (shrinkForSoftBlur = v)],
   softDraw: [() => softDraw, v => (softDraw = v)],
   spawnAmbientParticles: [() => spawnAmbientParticles, v => (spawnAmbientParticles = v)],
-  speedLines: [() => speedLines, v => (speedLines = v)],
   throwOrigin: [() => throwOrigin],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
@@ -339,6 +345,8 @@ export const battleStage = {
   F: null,
   floorKey: '',
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
+  /* VFX-4: the impact frame playing (impactFx), or null */
+  impact: /** @type {any} */ (null),
   stT: 0,
   speed: 1,
   /* phase 06-3: the camera holds still while the player chooses (battle.js floatTick) */
@@ -457,6 +465,7 @@ export function battleStageStart(area) {
   battleStage.oil = false;
   battleStage.ring = null;
   battleStage.coin = null;
+  battleStage.impact = null;
   battleStage.shk = 0;
   battleStage.hold = 0;
   battleStage.focusK = null;
@@ -1195,17 +1204,14 @@ export function actorBuffer(i) {
     tau = a ? battleStage.t - a.t0 : 0,
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
     t16 = Math.floor(battleStage.t / 16) * 16;
-  /* phase 20 R3 (quality.rigReuse): the same rig, pose, face, build, faint parts and tints as the last frame drawn here
-     is the same picture: the canvas stays, its counter too, so nothing is uploaded again */
-  let key = null;
-  if (engineSetting('quality', 'rigReuse')) {
-    key =
-      rigFrameKey(R, ak, tau, t16, s.seed) +
-      `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
-    if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
-      rigStats.ms += performance.now() - t0;
-      return { s, k, R, P: buf.__P, ak, buf };
-    }
+  /* phase 20 R3: the same rig, pose, face, build, faint parts and tints as the last frame drawn here is the same
+     picture: the canvas stays, its counter too, so nothing is uploaded again */
+  const key =
+    rigFrameKey(R, ak, tau, t16, s.seed) +
+    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
+  if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
+    rigStats.ms += performance.now() - t0;
+    return { s, k, R, P: buf.__P, ak, buf };
   }
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
@@ -1222,7 +1228,7 @@ export function actorBuffer(i) {
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
-  buf.__R = key ? R : null;
+  buf.__R = R;
   buf.__key = key;
   buf.__P = P;
   rigStats.redraws++;
@@ -1291,8 +1297,8 @@ function drawParticles(c, layer) {
     } else if (p.img) {
       /* RL-14: a picture (a bot's dropped part), turning as it falls */
       const kk = Math.max(0.5, Math.round(k * 2) / 4),
-        w = Math.round(p.img.naturalWidth * kk),
-        h = Math.round(p.img.naturalHeight * kk);
+        w = Math.round((p.img.naturalWidth || p.img.width) * kk),
+        h = Math.round((p.img.naturalHeight || p.img.height) * kk);
       c.save();
       c.translate(Math.round(q.x), Math.round(q.y));
       c.rotate((p.rot || 0) + ((p.vr || 0) * Math.min(p.age, 700)) / 1000);
@@ -1320,20 +1326,6 @@ function drawParticles(c, layer) {
         c.stroke();
         c.strokeStyle = '#FFFFFF';
         c.lineWidth = Math.max(1, p.w * k * 0.35);
-        c.stroke();
-      }
-    } else if (p.lines) {
-      const n = p.n || 18,
-        a0 = p.age / p.life;
-      c.strokeStyle = p.col;
-      c.lineWidth = 1;
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2 + p.seed,
-          r0 = (14 + a0 * 26) * k,
-          r1 = r0 + (22 + ((i * 37) % 17)) * k;
-        c.beginPath();
-        c.moveTo(q.x + Math.cos(a) * r0, q.y + Math.sin(a) * r0 * 0.8);
-        c.lineTo(q.x + Math.cos(a) * r1, q.y + Math.sin(a) * r1 * 0.8);
         c.stroke();
       }
     } else {
@@ -1366,6 +1358,9 @@ function battleStageDraw() {
   if (!battleStage.gl) return;
   c.setTransform(R, 0, 0, R, 0, 0);
   c.imageSmoothingEnabled = false;
+  /* VFX-4: while the impact frame's two-tone shows, this canvas (above the toned picture) stays clear */
+  const I = battleStage.impact;
+  if (I && performance.now() - I.t0 < impactLength(I)) return;
   battleStageDrawEffects(c);
 }
 /* v33: the fighter choosing stands in a gold ring; while aiming, the foes you can pick pulse */
@@ -1528,9 +1523,26 @@ function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
   const w = actorWorldPoint(i);
   addParticle({ x: w.x, y: 0.02, z: w.z, ring: 1, ground: 1, r0: 6, r1: r1 * 30, col, life, layer: 2 });
 }
-function speedLines(P, col = 'rgba(255,255,255,.85)') {
-  if (reducedMotion) return;
-  addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: random() * 6 });
+/* VFX-4: the impact frame (logic/smear.js impactFrame; drawn by the grade pass, engine/post-effects.js): a cell or two
+   of two-tone with radial lines from P, on a catch's pyramid, the mail move's coin and a crit (whose speed lines,
+   2D-canvas lines before VFX-4, follow it). Timed on real time, so it plays through the hit-stop. Returns the frame */
+function impactFx(P, kind) {
+  const F = impactFrame(kind, !!reducedMotion, battleStage.q.lvl);
+  battleStage.impact = F ? { ...F, P: { x: P.x, y: P.y, z: P.z }, t0: performance.now(), seed: random() } : null;
+  return F;
+}
+/* what it shows now (battle-3d.js passes it to the post pass), or null once over */
+export function battleImpact() {
+  const I = battleStage.impact,
+    s = I && impactAt(I, performance.now() - I.t0);
+  if (!s) battleStage.impact = null;
+  return s ? { ...s, I } : null;
+}
+/* a flash (or the chromatic flash) that would wash the two-tone out waits until it is over */
+function afterImpact(F, fn) {
+  const ms = impactLength(F);
+  if (ms > 0) setTimeout(fn, ms);
+  else fn();
 }
 function blinkActor(i, ms = 380) {
   battleStage.s[i].blinkUntil = battleStage.t + ms;
@@ -1546,7 +1558,8 @@ function hitWeight(ti, an) {
     return 0.3;
   }
 }
-function hitFx(ti, an) {
+/* imp: an impact frame already started for this hit (the mail move's coin); a crit starts its own */
+function hitFx(ti, an, imp0 = null) {
   const T = actorCenter(ti),
     s = battleStage.s[ti],
     ts = actorTeam(ti),
@@ -1560,10 +1573,13 @@ function hitFx(ti, an) {
     hitStop(20 + w * 70);
     if (w > 0.45) punch(0.03 + w * 0.04, 240, ts === 1 ? 0.008 : -0.008);
   }
+  const imp = imp0 || (an.crit ? impactFx(T, 'crit') : null);
   if (an.te > 1) {
     battleStage.shk = 8;
-    battleStageFlash('#FFFFFF', 0.55, 260);
-    battleStageChromaticFlash(180);
+    afterImpact(imp, () => {
+      battleStageFlash('#FFFFFF', 0.55, 260);
+      battleStageChromaticFlash(180);
+    });
     hitStop(80);
     ringFx(T, '#FFFFFF', 0.2, 1.6);
     groundRing(ti, '#FFFFFF', 2.2);
@@ -1574,9 +1590,8 @@ function hitFx(ti, an) {
     if (ts === 0) buzz(w > 0.45 ? [14, 20, 14] : 10);
   }
   if (an.crit) {
-    battleStageFlash('#FFF2A8', 0.6, 300);
+    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300));
     hitStop(90);
-    speedLines(T);
     punch(an.te > 1 ? 0.12 : 0.09, 320, ts === 1 ? 0.014 : -0.014);
   }
   if (an.crit || an.te > 1) handheld(520, an.crit && an.te > 1 ? 1.3 : 1);
@@ -1653,6 +1668,19 @@ function pyramidArc(from, to, dur, kind, onLand, spin) {
   return C;
 }
 const PULL_BACK_CAMERA = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
+/** RL-14b: a robot part's picture: its own (art.img, loaded), or the placeholder robot-art.js draws from its shape
+ * and colour (a torso's with the gem's colour on its chest, or a slot's as given) */
+function robotPartPicture(P, slot, gemColor) {
+  const im = P.art && P.art.img ? artImg(P.art.img) : null;
+  if (im && im.complete && im.naturalWidth) return im;
+  if (P.art && P.art.img) return null;
+  const kind = slot === 'torso' || slot === 'legs' ? slot : P.slot;
+  return kind === 'torso'
+    ? robotTorsoCanvas(P, gemColor || P.art.color)
+    : kind === 'legs'
+      ? robotLegsCanvas(P)
+      : robotArmCanvas(P);
+}
 const throwOrigin = () => ({ x: battleStage.V.x - 0.9, y: battleStage.V.y - 0.6, z: battleStage.V.z + 0.6 });
 export function battleStagePlay(an, ev) {
   battleStageFlush();
@@ -1776,6 +1804,73 @@ export function battleStagePlay(an, ev) {
       camHome(520, 560);
       scheduleAt(950, () => battleStageFocus('wide'));
       return { dur: 900, hit: 0 };
+    }
+    /* RL-14b: a boss's join intro (bosses.json, battle-engine.js startTrainer): its four bots fly in from four sides,
+       lock together in a flash, and it stands at Alpha scale. Tapping on skips it (battleStageFlush) */
+    case 'join': {
+      const i = an.si,
+        s = battleStage.s[i];
+      syncSide(i);
+      Object.assign(s, { show: false, ox: 0, oy: 0, sc: 0, a: 1, white: 1, dark: 0, act: null });
+      const T = battleStage.tr[actorTeam(i)];
+      if (T.show) {
+        tween(T, 'x', 140, 320, 'in');
+        scheduleAt(330, () => {
+          T.show = false;
+        });
+      }
+      battleStageFocus('foe');
+      camAt(i, 0.3, 0.08, 0.012, 400);
+      const c = actorCenter(i),
+        ids = robotIdsFromSp(s.sp),
+        /* its glow (bosses.json), else the gem's colour */
+        G = ids && robotGemDef(ids.gem),
+        glow = an.glow || (G && G.color),
+        LOCK = 1300;
+      /* where each bot comes from: the leader from above, the arm-bots from the sides, the leg-bot from the front */
+      const FROM = { torso: [0, 2.4, -0.6], armL: [-2.8, 0.6, 0.2], armR: [2.8, 0.6, 0.2], legs: [0, -0.4, 2.2] };
+      if (ids && !reducedMotion)
+        Object.entries(FROM).forEach(([k, d], n) => {
+          const P = robotPartDef(ids[k]),
+            im = P && robotPartPicture(P, k, G && G.color);
+          if (!im) return;
+          const at = n * 140,
+            life = LOCK - at;
+          scheduleAt(at, () =>
+            addParticle({
+              img: im,
+              x: c.x + d[0],
+              y: c.y + d[1],
+              z: c.z + d[2],
+              vx: (-d[0] * 1000) / life,
+              vy: (-d[1] * 1000) / life,
+              vz: (-d[2] * 1000) / life,
+              life,
+              fade: false,
+              rot: 0,
+              vr: k === 'armL' ? 2 : k === 'armR' ? -2 : 0,
+              k: 2.4,
+            })
+          );
+          scheduleAt(at, () => groundRing(i, glow, 1.2 + n * 0.4, 500));
+        });
+      battleStage.shk = 3;
+      scheduleAt(LOCK, () => {
+        battleStageFlash(glow, 0.7, 520);
+        battleStage.shk = 10;
+        handheld(900, 1.4);
+        s.show = true;
+        tween(s, 'sc', 1, 340, 'back');
+        tween(s, 'white', 0, 420, 'lin', 120);
+        setActorAction(i, 'enter', 800);
+        ringFx(c, glow, 0.2, 2.6, 800);
+        groundRing(i, glow, 3.4, 900);
+        burst(c, 'Steel', 18, 2.8, 1.2);
+        if (typeof buzz === 'function') buzz([30, 60, 30, 60, 80]);
+      });
+      camHome(600, LOCK + 300);
+      scheduleAt(LOCK + 900, () => battleStageFocus('wide'));
+      return { dur: LOCK + 900, hit: 0 };
     }
     case 'recall': {
       const s = battleStage.s[an.si];
@@ -2035,7 +2130,7 @@ export function battleStagePlay(an, ev) {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
         pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
-          hitFx(an.si, { te: an.te, t: 'Retail' });
+          hitFx(an.si, { te: an.te, t: 'Retail' }, impactFx(T, 'coin'));
         });
         scheduleAt(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };
@@ -2174,7 +2269,8 @@ export function battleStagePlay(an, ev) {
       battleStageFlash('#FFD860', 0.5, 420);
       battleStage.shk = 7;
       handheld(800, 1.2);
-      if (s) s.shield = 1;
+      /* RL-14b: a boss's phase without a shield (bosses.json) lights none */
+      if (s && an.shield !== false) s.shield = 1;
       ringFx(T, '#FFD860', 0.3, 2.2, 700);
       groundRing(an.si, '#FFD860', 2.6, 800);
       for (let i = 0; i < 24; i++)
@@ -2227,8 +2323,9 @@ export function battleStagePlay(an, ev) {
         ids = S && robotIdsFromSp(S.sp),
         aug = S && !ids ? graftLookSplit(S.graft).aug : null,
         P = ids ? robotPartDef(ids[an.part]) : aug ? robotPartDef(aug[an.part === 'legs' ? 'back' : 'front']) : null,
-        im = P && P.art && P.art.img ? artImg(P.art.img) : null;
-      if (im && im.complete && im.naturalWidth && !reducedMotion) {
+        /* RL-14b: a part with no picture of its own (the Voltron's) drops its placeholder */
+        im = P ? robotPartPicture(P) : null;
+      if (im && !reducedMotion) {
         const side = an.part === 'armL' ? -1 : an.part === 'armR' ? 1 : random() < 0.5 ? -1 : 1;
         addParticle({
           img: im,
@@ -2326,7 +2423,7 @@ export function battleStageCatch(kind, res, spin, done) {
     480,
     kind,
     C => {
-      battleStageFlash('#FFFFFF', 0.55, 280);
+      afterImpact(impactFx(C, 'catch'), () => battleStageFlash('#FFFFFF', 0.55, 280));
       ringFx(C, '#FFFFFF', 0.1, 1);
       tween(s1, 'white', 1, 120, 'lin');
       tween(s1, 'sc', 0, 220, 'in', 120);

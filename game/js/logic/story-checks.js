@@ -232,6 +232,11 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     for (const t of N.lastteam || [])
       if (!typeIds.has(t.toLowerCase()) && !lines.has(t) && !species.has(t))
         problems.push(at, `lastteam:${t}, not a type, a line nor a Billie`);
+    /* HB-10e: a festival in festivals.json */
+    const fests = (G.festivals || {}).festivals || {};
+    for (const f of N.festival || [])
+      if (!fests[f])
+        problems.push(at, `festival:${f}, no such festival (festivals.json: ${Object.keys(fests).join(', ')})`);
     /* RL-S2: the hub folk (relations.json people) */
     const folk = (G.relations || {}).people || {};
     for (const k of ['rel', 'gifted'])

@@ -156,7 +156,7 @@ export function pictureRight(it, cameraRight) {
 
 /**
  * where a model's picture layer stands (a decal: a sign's lettering, a window's view, washing on a line; HB-1): on its
- * model as the model shaders draw it (prop-models.js setPropModelUniforms), so with the model's size and its look's
+ * model as the model shaders draw it (prop-models.js propModelInstanceValues), so with the model's size and its look's
  * random wobble, its turn, its mirror and its bob. A layer's x is across the model, y back from its front, z up (its
  * metres before the size). A mirrored model's fixed layer moves to the mirrored spot and faces the mirrored way, but
  * its picture is never mirrored, so lettering reads right (the owner, 2026-10-25); a camera-facing layer mirrors with

@@ -15,10 +15,12 @@
   --gutter: 16px;
   --pad-panel: var(--s5);
 
-  /* corners: nothing else (06-plan "Shape and depth") */
-  --r-sm: 12px; /* chips, inputs, small buttons (= v05 --r1) */
-  --r-md: 16px; /* cards, buttons (= v05 --r2) */
-  --r-lg: 22px; /* sheets, panels (= v05 --r3) */
+  /* corners: nothing else (06-plan "Shape and depth"; the two small ones the owner's, UI-9b) */
+  --r-xxs: 4px; /* bars' fills, dots, tiny tags */
+  --r-xs: 8px; /* small inner parts: inputs in a row, tiles, chips inside a card */
+  --r-sm: 12px; /* chips, inputs, small buttons */
+  --r-md: 16px; /* cards, buttons */
+  --r-lg: 22px; /* sheets, panels */
   --r-pill: 999px;
 
   /* depth: flat (inside a panel), raised (cards, buttons), floating (sheets, toasts, the bottom bar) */

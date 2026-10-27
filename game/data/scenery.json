@@ -4581,6 +4581,19 @@
    ],
    "vary": {"size":0}
   },
+  "find_pyramid": {
+   "name": "Find (a pyramid on the ground)",
+   "img": "coins/pyramid_16.png",
+   "ox": -8,
+   "oy": -16,
+   "shadow": 0.22,
+   "sway": 0,
+   "flat": 0,
+   "tags": [],
+   "group": "find_pyramid",
+   "solid": 0,
+   "ppm": 32
+  },
   "pebbles": {
    "name": "Pebbles",
    "img": "scene/props/pebbles.png",
@@ -12143,6 +12156,61 @@
     {"x":-96,"r":0.1},
     {"x":96,"r":0.1}
    ]
+  },
+  "pennant_line": {
+   "name": "Pennant line",
+   "img": "scene/next/hub/pennant_line.png",
+   "ox": -89,
+   "oy": -113,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "pennant_line",
+   "model": "scene/next/models/pennant_line.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "posts": [
+    {"x":-83,"r":0.1},
+    {"x":83,"r":0.1}
+   ]
+  },
+  "fountain_ch2": {
+   "name": "Fountain (Chapter 2)",
+   "img": "scene/next/hub/fountain_ch2.png",
+   "ox": -58,
+   "oy": -82,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "fountain_ch2",
+   "model": "scene/next/models/fountain_ch2.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 1.6,
+   "fx": [
+    {"k":"spray","x":0,"y":-80},
+    {"k":"glow","x":-32,"y":-19,"z":-0.5},
+    {"k":"glow","x":32,"y":-19,"z":-0.5},
+    {"k":"glow","x":0,"y":-19,"z":0.9},
+    {"k":"fireflies","x":0,"y":0,"n":7,"r":3.2}
+   ],
+   "glowCol": "#B494FF"
+  },
+  "busker_case": {
+   "name": "Busker's case",
+   "img": "scene/next/hub/busker_case.png",
+   "ox": -17,
+   "oy": -19,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "busker_case",
+   "model": "scene/next/models/busker_case.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   },
   "footbridge_wood": {
    "name": "Footbridge",

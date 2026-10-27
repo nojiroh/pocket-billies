@@ -99,6 +99,7 @@ import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { titleScreen } from './title.js';
 import { runWorld, runWorldAhead } from './run-world.js';
+import { festivalForce, festivalToday } from './town-square.js';
 import { account } from './account.js';
 import { routeSight } from './route-sight.js';
 import { renderOverlay, setRenderOverlay, toast } from './overlay.js';
@@ -141,6 +142,8 @@ Object.defineProperties(GAME, {
   endBattle: { get: () => endBattle, set: setEndBattle },
   ensurePrograms: { get: () => ensurePrograms, set: setEnsurePrograms },
   environment: { get: () => environment },
+  festivalForce: { get: () => festivalForce },
+  festivalToday: { get: () => festivalToday },
   finishProgramCompile: { get: () => finishProgramCompile, set: setFinishProgramCompile },
   fogGridReport: { get: () => fogGridReport },
   frameScheduler: { get: () => frameScheduler },

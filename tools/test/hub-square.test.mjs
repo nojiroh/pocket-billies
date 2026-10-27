@@ -1,11 +1,24 @@
 // Hub track HB-10a: Copperleaf's town square as tools/patch-copperleaf-square.mjs leaves it: paved to its lobed rim
 // (about 10 m out), the fountain in the middle where the well stood, the signpost and the hub's spot clear of its basin,
-// no plot on the paving. HB-10b: what stands round its edge (tools/square-props.mjs). Reads the built map.
+// no plot on the paving. HB-10b: what stands round its edge (tools/square-props.mjs). HB-10d: the win bunting just
+// outside the rim. HB-10e: the festivals' decorations there too, and the middle stall's festival market. Reads the built
+// map.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readGameData } from '../data-files.mjs';
-import { SQUARE_EDGE, SQUARE_R, VIEW, WALK_R, squareHubSpot, squareRim } from '../square-props.mjs';
+import {
+  FESTIVAL_DRESS,
+  FOUNTAIN_LOOKS,
+  SQUARE_EDGE,
+  SQUARE_R,
+  VIEW,
+  WALK_R,
+  squareHubSpot,
+  squareRim,
+} from '../square-props.mjs';
 import { mapgenReach } from '../../game/js/logic/mapgen.js';
+import { turnedPoint } from '../../game/js/logic/prop-turn.js';
+import { squareStops } from '../../game/js/logic/square-day.js';
 
 const D = readGameData(),
   C = D.scenery.props,
@@ -68,7 +81,8 @@ test('round the edge: every prop of the layout on the paving, none in the walk r
   assert.equal(E.length, SQUARE_EDGE.length);
   for (const p of E) {
     const r = Math.hypot(p.x - well.x, p.z - well.z);
-    assert.equal(tile(Math.floor(p.x), Math.floor(p.z)), 'c', `${p.k} at ${p.x}, ${p.z} off the paving`);
+    /* HB-10d: the win bunting stands on the grass just outside the rim (its own test below) */
+    if (!p.when) assert.equal(tile(Math.floor(p.x), Math.floor(p.z)), 'c', `${p.k} at ${p.x}, ${p.z} off the paving`);
     assert.ok(r >= WALK_R, `${p.k} at ${p.x}, ${p.z}: ${r.toFixed(1)} m from the middle`);
     assert.ok(Math.hypot(p.x - M.hub[0], p.z - M.hub[1]) >= 1.5, `${p.k} on the hub spot`);
   }
@@ -79,6 +93,84 @@ test('the view toward the sky rail and the portal stays low: only planters in it
     const deg = (Math.atan2(p.z - well.z, p.x - well.x) * 180) / Math.PI;
     if (deg >= VIEW[0] && deg <= VIEW[1]) assert.equal(p.k, 'planter_round', `${p.k} at ${Math.round(deg)} degrees`);
   }
+});
+
+test('the win bunting (HB-10d): only after a won run, its posts on grass, 1.8 m or more from every edge prop and stop', () => {
+  const W = M.props.filter(p => p.sq && p.when === 'last:won');
+  assert.deepEqual(W.map(p => p.k).sort(), ['flag_pole', 'flag_pole', 'pennant_line', 'pennant_line']);
+  const others = [...M.props.filter(p => p.sq && !p.when), ...squareStops(M.props, M.hub)];
+  for (const p of W) {
+    assert.equal(p.when, 'last:won');
+    /* where it stands on the ground: a pole's foot, a pennant line's two posts (scenery posts, in pixels along x) */
+    const feet = (C[p.k].posts || [{ x: 0 }]).map(q => turnedPoint(p, q.x / C[p.k].ppm, 0));
+    for (const [x, z] of feet) {
+      const g = tile(Math.floor(x), Math.floor(z));
+      assert.ok(g === 'G' || g === 'g', `${p.k} foot at ${x.toFixed(1)}, ${z.toFixed(1)} on ${g}, not grass`);
+      const near = Math.min(...others.map(o => Math.hypot(o.x - x, o.z - z)));
+      assert.ok(near >= 1.8, `${p.k} foot at ${x.toFixed(1)}, ${z.toFixed(1)}: ${near.toFixed(2)} m from the nearest`);
+    }
+  }
+});
+
+/* where a prop stands on the ground: a pole's foot, a line's posts (scenery posts, in pixels along x) */
+const feetOf = p => (C[p.k].posts || [{ x: 0 }]).map(q => turnedPoint(p, q.x / C[p.k].ppm, 0));
+const festIds = p => (p.when || '').match(/festival:([a-z_]+)/g)?.map(t => t.slice(9)) || [];
+
+test('the festivals (HB-10e): each decoration a model on grass, clear of the edge, the stops and whatever shows with it', () => {
+  const F = M.props.filter(p => p.sq && festIds(p).length),
+    ids = Object.keys(D.festivals.festivals);
+  assert.equal(F.length, FESTIVAL_DRESS.length);
+  const others = [...M.props.filter(p => p.sq && !p.when), ...squareStops(M.props, M.hub)];
+  for (const p of F) {
+    assert.ok(C[p.k] && C[p.k].model && C[p.k].ppm === 32, `${p.k}: a low-poly model (32 px/m)`);
+    for (const id of festIds(p)) assert.ok(ids.includes(id), `${p.k}: no festival ${id}`);
+    for (const [x, z] of feetOf(p)) {
+      const g = tile(Math.floor(x), Math.floor(z));
+      assert.ok(g === 'G' || g === 'g', `${p.k} foot at ${x.toFixed(1)}, ${z.toFixed(1)} on ${g}, not grass`);
+      const near = Math.min(...others.map(o => Math.hypot(o.x - x, o.z - z)));
+      assert.ok(near >= 1.8, `${p.k} foot at ${x.toFixed(1)}, ${z.toFixed(1)}: ${near.toFixed(2)} m from the nearest`);
+    }
+  }
+  /* what shows at once (one festival, the win bunting with it) stands 1.2 m apart or more */
+  const bunting = M.props.filter(p => p.sq && p.when === 'last:won');
+  for (const id of ids) {
+    const up = [...F.filter(p => festIds(p).includes(id)), ...bunting];
+    assert.ok(up.length >= (id === 'market_day' ? 3 : 4), `${id}: ${up.length} things up`);
+    for (let a = 0; a < up.length; a++)
+      for (let b = a + 1; b < up.length; b++)
+        for (const [x, z] of feetOf(up[a]))
+          for (const [u, v] of feetOf(up[b]))
+            assert.ok(
+              Math.hypot(x - u, z - v) >= 1.2,
+              `${id}: ${up[a].k} and ${up[b].k} ${Math.hypot(x - u, z - v).toFixed(2)} m apart`
+            );
+  }
+  /* the middle stall keeps the festival market */
+  assert.equal(
+    M.props
+      .filter(p => p.sq && p.act === 'fest')
+      .map(p => p.k)
+      .join(),
+    'stall'
+  );
+});
+
+test("the fountain's looks (HB-10d): one per chapter on the same spot, exactly one shown at any chapter", () => {
+  const F = M.props.filter(p => FOUNTAIN_LOOKS.some(([k]) => k === p.k));
+  assert.deepEqual(
+    F.map(p => p.k),
+    FOUNTAIN_LOOKS.map(([k]) => k)
+  );
+  for (const p of F) {
+    assert.ok(C[p.k] && C[p.k].model, `${p.k} has a model`);
+    assert.deepEqual([p.x, p.z], [F[0].x, F[0].z]);
+  }
+  /* the conditions here are all "chapter >= n": read them by hand */
+  const shown = (p, ch) => {
+    const ge = c => ch >= +c.match(/chapter >= (\d)/)[1];
+    return (!p.when || ge(p.when)) && (!p.unless || !ge(p.unless));
+  };
+  for (let ch = 1; ch <= 9; ch++) assert.equal(F.filter(p => shown(p, ch)).length, 1, `chapter ${ch}`);
 });
 
 test('round the edge shuts nothing in: every cell walkable from the hub without it still is', () => {

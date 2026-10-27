@@ -8,10 +8,11 @@
    endBattle as it was (tools/test/battle-rewards.test.mjs). Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { FACTIONS, GENES, ITEMS, PERKS, RULES } from '../game-data.js';
+import { BOSSES, FACTIONS, GENES, ITEMS, PERKS, RULES } from '../game-data.js';
+import { rngFrom } from './rng.js';
 import { augWords } from './augments.js';
 import { geneWords } from './genes.js';
-import { isRobot, newPart, speciesOf } from './fighters.js';
+import { ROBOT_SLOTS, isRobot, newPart, robotPartDef, speciesOf } from './fighters.js';
 import { billyAug, billyGraft, dropEncounter, findBilly, geneData, newUid, wildPrize } from './rules.js';
 import { runLostTo } from './run-history.js';
 import { runBeans } from './relations.js';
@@ -37,6 +38,10 @@ expose({
   battleSettle: [() => battleSettle, v => (battleSettle = v)],
   // @ts-expect-error -- replaced on purpose
   battleSettleWin: [() => battleSettleWin, v => (battleSettleWin = v)],
+  // @ts-expect-error -- replaced on purpose
+  bossStoryNext: [() => bossStoryNext, v => (bossStoryNext = v)],
+  // @ts-expect-error -- replaced on purpose
+  bossWin: [() => bossWin, v => (bossWin = v)],
   // @ts-expect-error -- replaced on purpose
   spliceSample: [() => spliceSample, v => (spliceSample = v)],
 });
@@ -174,6 +179,8 @@ export function battleSettleWin(b, s, pay, run) {
         runBeans(s, (RULES.run.beans || {}).badge, run);
       }
     }
+    /* RL-14b: a bosses.json boss beaten on a run (the Voltron): counted for good; its first win gives its parts */
+    if (run && b.T && b.T.boss && s.meta) Object.assign(pay, bossWin(s, run, b.T.boss));
     /* RL-S2: a side area's leader beaten finds Beans */
     if (run && b.T && run.map && run.map.side && b.T.from && b.T.from === run.map.side.leader)
       runBeans(s, (RULES.run.beans || {}).side, run);
@@ -186,6 +193,40 @@ export function battleSettleWin(b, s, pay, run) {
   }
 }
 
+/** RL-14b: a bosses.json boss beaten on a run: meta.bosses counts it; the first win puts `rewards.parts` of its
+ * boss parts (none twice, drawn from the run's seed) into your parts, kept whatever the run's end. Returns the parts'
+ * names for the win sheet @param {any} s @param {any} run @param {string} id
+ * @returns {{ bossParts?: string[] }} */
+export function bossWin(s, run, id) {
+  const D = BOSSES[id];
+  if (!D) return {};
+  const B = s.meta.bosses || (s.meta.bosses = {}),
+    n = (B[id] = Math.min(META_MAX, (B[id] || 0) + 1)),
+    want = (D.rewards && D.rewards.parts) || 0;
+  if (n !== 1 || want <= 0) return {};
+  const g = rngFrom(run.seed, 'boss|' + id),
+    left = [...new Set(ROBOT_SLOTS.map(k => D.fighter[k]))].filter(p => robotPartDef(p)),
+    /** @type {string[]} */
+    got = [];
+  while (got.length < want && left.length) {
+    const p = left.splice(g.int(0, left.length - 1), 1)[0];
+    (s.parts || (s.parts = [])).push(newPart(p, newUid()));
+    got.push((robotPartDef(p) || { name: p }).name);
+  }
+  return got.length ? { bossParts: got } : {};
+}
+/** RL-14b: the story script a won run plays at home: a bosses.json boss beaten on it (run.beat) for the first time
+ * (meta.bosses 1), while the story's chapter is its `chapter` (when it names one: its script moves it on); else ''
+ * @param {any} s */
+export function bossStoryNext(s) {
+  const run = s.run,
+    B = (s.meta && s.meta.bosses) || {};
+  for (const id of (run && run.beat) || []) {
+    const D = BOSSES[id];
+    if (D && D.story && B[id] === 1 && (D.chapter == null || (s.meta.chapter || 1) === D.chapter)) return D.story;
+  }
+  return '';
+}
 /** SP-3: the beaten wild Billies' splices sampled: each spliced one banks DNA at once (genes.json wild.dna, a Graft's
  * or a Chimera's: meta, kept even if the run is lost), and each of its Genes not in s.meta.genes yet joins it (the
  * library SP-4's Gene Bank opens; a Gene is its id, "shark_tailfin@zuck2"). Returns the DNA and the new Genes in words

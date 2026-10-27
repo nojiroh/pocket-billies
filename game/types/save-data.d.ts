@@ -118,9 +118,30 @@ export interface Meta {
   history: HistoryEntry[];
   /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
   residents: Record<string, number>;
+  /** HB-10d: the last coin tossed into the square's fountain (logic/fountain-wish.js): meta.runs then, the outcome's
+      id (rules.json square.wish), and `used` once its boon joined a run; null before the first */
+  wish: { at: number; out: string; used?: 1 } | null;
   /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
       (logic/daily.js) */
   boards: { d: number; w: number };
+  /** HB-10e: the festival market's sales on the latest occasion (logic/festival.js): the festival's id, its occasion
+      (the year a date festival began, or meta.runs) and how many of each ware (by its place in the stock) were
+      bought; null before the first */
+  fest: { id: string; at: number; got: Record<string, number> } | null;
+  /** RL-14b: the bosses.json bosses beaten (the Voltron), by id: how many times; the first win gives its parts and
+      plays its story script (logic/battle-rewards.js bossWin) */
+  bosses: Record<string, number>;
+  /** ON-3: the Showcase (logic/showcase.js) */
+  show: MetaShow;
+}
+
+/** ON-3: the save's Showcase record: my entries (slot, stamp, week, theme and the Billie's uid, for its ribbon), the
+    votes I gave (`<entry>_<k>`), the last week whose ribbons were looked at, and the ribbons won (the Trainer card) */
+export interface MetaShow {
+  s: { i: number; k: number; w: number; th: string; b: string }[];
+  v: string[];
+  rw: number;
+  rib: { w: number; th: string; p: number; sp: string; nick: string }[];
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the
@@ -508,7 +529,16 @@ export interface Billy {
   /** an Alpha you caught */
   alpha?: boolean;
   /** an Alpha in battle: its HP and stat multipliers (battle.js; not kept after the battle) */
-  boss?: { hp: number; st: number };
+  boss?: {
+    hp: number;
+    st: number;
+    /** v34: the one default phase has fired */
+    ph2?: boolean;
+    /** RL-14b: a boss's own phases (bosses.json), how many have fired, its bots' names by slot */
+    phases?: import('./game-data').BossPhase[];
+    done?: number;
+    bots?: Partial<Record<'torso' | 'armL' | 'armR' | 'legs', string>>;
+  };
   /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
   build?: Build;
   /** RL-10: a risky egg's surprise (logic/breeding.js): a quirk, or an abomination with its own name, one stat raised
@@ -537,6 +567,8 @@ export interface Billy {
   ot?: { u: string; n: string };
   /** ON-4: when it was last traded, and from whom (a player's uid) */
   traded?: { at: number; from: string };
+  /** ON-3: Showcase ribbons won (the week, its theme, the place from 0), cosmetic, never shown in battle */
+  ribbons?: { w: number; th: string; p: number }[];
 }
 
 /** phase 17: a robot part you own (in saveData.parts, or fitted to a robot) */

@@ -21,7 +21,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--panel2);
 }
 .fly-row .pr-t {
@@ -48,8 +48,8 @@
   left: 50%;
   top: calc(14px + env(safe-area-inset-top));
   transform: translateX(-50%);
-  padding: 10px var(--s4);
-  border-radius: 14px;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
   text-align: center;
   z-index: 5;
   pointer-events: none;
@@ -104,8 +104,8 @@ body.flying #nav {
   pointer-events: auto;
 }
 .lift-cap {
-  padding: 14px 18px;
-  border-radius: 14px;
+  padding: var(--s4) var(--s4);
+  border-radius: var(--r-md);
   text-align: center;
   color: #fff6dc;
   background: rgba(10, 30, 50, 0.45);

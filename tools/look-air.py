@@ -10,6 +10,8 @@ Fog in the air dial (fogVolume; 0 is the flat mist as before). The march's state
     python3 tools/look-air.py --scene=test_water     # another place
     python3 tools/look-air.py --phone                # an Android user agent (the phone's grid and steps)
     python3 tools/look-air.py --out=DIR              # somewhere else
+    python3 tools/look-air.py --air=hazeShade:0      # other air dials for every look (AIR-4), names get the dials
+    python3 tools/look-air.py --frames=16            # frames drawn before each picture (40; software drawing in fog is slow)
 
 Run `npm run data` first. Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the
 test globals). Nothing is sent anywhere."""
@@ -25,12 +27,15 @@ ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only
 OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), ROOT / 'validation' / 'look-air'))
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'copperleaf')
 PHONE = '--phone' in ARGS
+FRAMES = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--frames=')), 40))
+AIR = dict((k, float(v)) for k, v in (p.split(':') for a in ARGS if a.startswith('--air=') for p in a.split('=', 1)[1].split(',')))
 W, H = 390, 760
 UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36'
 
 # (name, hour, weather, fogVolume)
 LOOKS = [
     ('noon-clear', 12.5, 'clear', 1), ('noon-clear-off', 12.5, 'clear', 0),
+    ('low-sun-am', 7.6, 'clear', 1), ('low-sun-pm', 17.4, 'clear', 1),
     ('dawn-fog', 6.6, 'fog', 1), ('dawn-fog-off', 6.6, 'fog', 0),
     ('morning-fog', 8.5, 'fog', 1), ('morning-fog-off', 8.5, 'fog', 0),
     ('dusk-fog', 18.6, 'fog', 1),
@@ -44,7 +49,7 @@ HIDE_HUD = """(()=>{const cv=walkView.cv;for(const el of document.body.querySele
 
 def frames(pg, n=10):
     f0 = pg.evaluate('walkRenderer.frames')
-    if not CF.until(pg, f'walkRenderer.frames>={f0 + n}', 300): raise Exception(f'{SCENE} isn’t drawing')
+    if not CF.until(pg, f'walkRenderer.frames>={f0 + n}', 900): raise Exception(f'{SCENE} isn’t drawing')
 
 
 def main():
@@ -67,14 +72,14 @@ def main():
         pg.evaluate(HIDE_HUD)
         for name, hour, weather, fv in LOOKS:
             if ONLY and not any(w in name for w in ONLY): continue
-            pg.evaluate(f"""(()=>{{const D=gameData.engine.defaults;D.air=Object.assign({{}},D.air||{{}},{{fogVolume:{fv}}});
+            pg.evaluate(f"""(()=>{{const D=gameData.engine.defaults;D.air=Object.assign({{}},D.air||{{}},{json.dumps({**AIR, 'fogVolume': fv})});
              environment.force=Object.assign({{}},environment.force||{{}},{{time:{hour},weather:'{weather}'}});walkRenderer.adaptT=0;walkRenderer.q=0;walkView.R=1;return 0}})()""")
-            frames(pg, 40)
-            shot = f'{SCENE}-{name}' + ('-phone' if PHONE else '')
+            frames(pg, FRAMES)
+            shot = f'{SCENE}-{name}' + ''.join(f'-{k}{v:g}' for k, v in AIR.items()) + ('-phone' if PHONE else '')
             pg.screenshot(path=str(OUT / f'{shot}.png'))
             rep = pg.evaluate("GAME.fogGridReport?GAME.fogGridReport():null")
             notes['shots'].append({'name': shot, 'fogVolume': pg.evaluate("engineSetting('air','fogVolume')"),
-                                   'march': rep and rep.get('march'), 'grid': rep and rep.get('size')})
+                                   'march': rep and rep.get('march'), 'air': rep and rep.get('air'), 'grid': rep and rep.get('size')})
             print(f'[{time.time() - t0:5.0f}s] {shot} {rep and rep.get("march")}', flush=True)
         notes['fogGrid'] = pg.evaluate("GAME.fogGridReport?GAME.fogGridReport():null")
         ctx.close(); b.close()
