@@ -61,6 +61,7 @@ import {
   drawPixelCanvas,
   pictureImage,
   pixelCanvas,
+  pixelCanvasFit,
   pixelCanvasPanel,
   pixelCanvasPanelHTML,
   pixelCanvasToolsHTML,
@@ -464,7 +465,7 @@ function wbmHistHTML(D) {
 }
 function wbmTextureHTML() {
   const live = !!wbmTexPath();
-  return `<div class="wbm-tex"><div class="wbm-paint"><div class="seg-row wb-tools">${live ? pixelCanvasToolsHTML() : ''}<span class="help">${live ? 'Paint the texture: every stroke shows on the model and is a step of the undo.' : 'Write the model to the game first: then its texture is a picture of the game, painted with the undo and saved with it.'}${wbModel.hl ? ` Texel ${wbModel.hl[0]}, ${wbModel.hl[1]} marked.` : ''}</span></div><div class="wb-stage" id="wbmTexStage"></div></div><div class="wbm-pickcol"><p class="help">Click the model to find its texel.</p><canvas id="wbmPick"></canvas><div class="seg-row"><button class="seg sm" data-act="wbmPickTurn" data-d="-1">⟲</button><button class="seg sm" data-act="wbmPickTurn" data-d="1">⟳</button></div>${live ? `<div id="wbmPanel">${pixelCanvasPanelHTML()}</div>` : ''}</div></div>`;
+  return `<div class="wbm-tex"><div class="wbm-paint"><div class="seg-row wb-tools">${live ? pixelCanvasToolsHTML() : ''}<span class="help">${live ? 'Paint the texture: every stroke shows on the model and is a step of the undo.' : 'Write the model to the game first: then its texture is a picture of the game, painted with the undo and saved with it.'}${wbModel.hl ? ` Texel ${wbModel.hl[0]}, ${wbModel.hl[1]} marked.` : ''}</span></div><div class="wb-stage" id="wbmTexStage"></div></div><div class="wbm-pickcol"><div><p class="help">Click the model to find its texel.</p><canvas id="wbmPick"></canvas><div class="seg-row"><button class="seg sm" data-act="wbmPickTurn" data-d="-1" title="Turn the model">⟲</button><button class="seg sm" data-act="wbmPickTurn" data-d="1" title="Turn the model">⟳</button></div></div>${live ? `<div id="wbmPanel">${pixelCanvasPanelHTML()}</div>` : ''}</div></div>`;
 }
 /* ---------- after drawing ---------- */
 function wbmMount() {
@@ -508,10 +509,10 @@ function wbmMountTexture(root) {
       wbmPickDraw(root);
     },
   });
-  if (path) {
-    const panel = root.querySelector('#wbmPanel');
-    if (panel) pixelCanvasPanel(P, panel);
-  }
+  /* the tool bar and the symmetry and palette panel both talk to the canvas */
+  if (path) pixelCanvasPanel(P, root.querySelector('.wbm-tex'));
+  P.zoom = pixelCanvasFit(P);
+  drawPixelCanvas(P);
   wbModel.pc = P;
   wbmPickDraw(root);
 }
@@ -667,7 +668,10 @@ async function wbmWrite() {
       if (cur !== wbModel.tex) await art(texPath, wbModel.tex);
     } else delete rec.tex;
     const text = JSON.stringify(rec) + '\n';
-    const before = textAsLoaded('art/' + path) ?? (await textGet('art/' + path).catch(() => null));
+    /* the file as the game has it: only a prop that already names it has one (a new key's file isn't fetched) */
+    const before =
+      textAsLoaded('art/' + path) ??
+      (old && old.model === path ? await textGet('art/' + path).catch(() => null) : null);
     if (before !== text) textStep('art/' + path, before, text);
     propModelState.recipes.set(path, rec);
     invalidatePropModel(path, true);
