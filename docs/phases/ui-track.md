@@ -579,12 +579,61 @@ each with the minimap captured at its own size), and the owner picked **Wide**.
   (29% of the screen); of the first four layouts, the Pocket screen (a third of the screen), the corner map (away from
   the thumb, a busier top) and the pull-up map (one more gesture).
 
+## The run map's icons (UI-8c; the owner's note 2026-10-27)
+The owner, after the bar: "I also want you to give the world map icons on the run more the style of all the others."
+What the code does today:
+- The run's places on the bowl are flat polygons in the theme's roles with a 1 px edge (run-marks.js `runMarkDraw`:
+  UI-4's ten outlines, `RUN_MARK_TONES`), 18 px and 22 px where you stand, on a 3 px stalk 22 px tall
+  (world-bowl.js `worldBowlRunPin`, `BOWL_PIN`). A place not yet seen prints "?" in the phone's font (700 10px
+  system-ui); the names are canvas text in system-ui at 11 and 12 px. The kit's `<pb-node>` (ui-run-kit.js) draws the
+  same outlines as SVG in the place card.
+- The map's buttons are the old look: 34 px squares in `rgba(20,14,30,.78)` with a near-black ring (map-tab.css
+  `.mbtn`), zoom as typed "+" and "−" (map-tab.js), and the look-around group (world-bowl.js) as typed ⟲ ◎ ⟳ at 28 px,
+  under the 40 px tap rule.
+- Every other icon is a 36 px pixel-art SVG in game/art/ui (51 of them: a rim in a darker tone of the same hue, a light
+  top-left edge, a shaded bottom-right, a shared muted palette). The map's canvas is drawn at most twice the screen's
+  pixels (world-bowl.js `worldMapSize`).
+
+Examples: a private artifact the owner holds, "Run Map Icons" (https://claude.ai/artifact/KjBa67X4gcVLGynRjj79dL): the
+run's map captured in the real game in Field Guide, light and dark, today and with a scratch painter put in through the
+test hooks (`window.runMarkDraw`), plus a key of every place in every state. Two takes: Badges and Pins (every place a
+map pin like art/ui/map.svg, coloured by family, the glyph on a cream face).
+
+The owner's pick: **Badges**, with the buttons and the names, built right after UI-8b. Then the owner: "I meant
+especially the map markers", and asked for UI-8c to start at once, beside UI-8b: the place markers come first; the
+other marks the run's map draws (the gold ring where you stand, the picked place's ring, the destination dot) follow
+them; whether the minimap's marks (trainers, wild Billies, you) follow too is asked in UI-8c's plan; the buttons and the
+names come last. UI-8c runs on `claude/ui-8c-map-markers` (from this branch, a PR into `track/ui`), as WM-4b, WM-5 and
+WM-7 ran beside their track's sessions.
+- Each place keeps UI-4's outline as a bevelled pixel plate on the 36 grid, like the coin, clock and mint icons, in the
+  icon set's own palette, one hue per colour family, with a glyph lit from the top left: the landing a blue octagon
+  (an airship), a road a plain cream chevron (no glyph, so the special places stand out), a town a teal hexagon (a
+  house), a shop a gold card (an awning), an event a violet card (a sparkle), a mini-boss a red notched diamond (a horned
+  skull), the boss a red diamond (a skull), the rival a red shield (crossed swords), a scrapyard a grey cog (a nut), a
+  place not yet seen a slate diamond with a pixel "?".
+- States: seen; where you stand a gold rim two art pixels wide with a soft glow; done dimmed with a small green check;
+  locked grey with a small padlock.
+- Sizes: 28 px a place and 34 px where you stand (18 and 22 today). On the map's canvas (at most twice the screen's
+  pixels) the 36 px art is sharpest at 18, 36 or 54 px; the phone check decides.
+- The names in Jersey 15, the game's own font, instead of system-ui.
+- The map's seven buttons as the kit's chips at 44 px with the set's icons: plus and minus to zoom, the footprints
+  (walk) back to you, the list for places, back and back mirrored to turn, the globe for the whole bowl.
+- Build: the ten place icons drawn as 36 px SVGs in the Studio's icon editor (art/ui, beside the others), so the owner
+  can repaint them; `runMarkLook` names each place's icon; the pin painter in world-bowl.js draws the icon (rasterized
+  once per size) in place of the flat shape, with the rim, the check and the padlock; run-marks.js stays logic only
+  (its unit test); `<pb-node>` shows the same SVG; the label font and the look-around buttons in world-bowl.js; the
+  buttons' markup in map-tab.js and their style in map-tab.css (the look-around group clears the place card, which it
+  overlaps today).
+- Not taken: Pins (one outline for every place, so places differ only by colour and the small glyph; the cream faces
+  brighten a busy map).
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
 | UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
 | UI-8b | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
+| UI-8c | The run map's icons | the ten place icons drawn as 36 px SVGs in the Studio's icon editor (Badges: UI-4's outlines as pixel plates, a glyph each, the icon set's palette by family); the bowl's pin painter (28 px, 34 px where you stand; the gold rim, the check, the padlock, the pixel "?"); `<pb-node>` the same; the names in Jersey 15; the map's seven buttons as 44 px chips with the set's icons | the run's map | run-marks and ui-icons tests; the gallery's pb-node pictures and the fast check's map step remade on purpose; tap targets; the owner's phone check (sizes, sharpness at 28 px, the art) |
 | UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
 | UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
 | UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
@@ -596,12 +645,22 @@ each with the minimap captured at its own size), and the owner picked **Wide**.
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
 | UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 
-About 12 sessions in all, plus the owner's phone checks after UI-8b, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
+About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
 and on.
+
+How the sessions run (the owner, 2026-10-27: "Start each next step of the ui plan in a new session and automatically
+approve the plans. The choices are made and I want it done."): the planning session starts each step in a new session
+on `track/ui` when the one before has pushed its HANDOFF entry. A step writes its plan and goes on without waiting for
+approval; where it meets an open choice or an "Ask me before" item it takes the recommended option and lists it in its
+HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for. Each step tells
+the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
+main stay the owner's (the PR from `track/ui`).
 
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
   39), and edits this file, ROADMAP, BRANCHES and HANDOFF; whichever of the two PRs merges second takes a small merge.
+- UI-8c touches world-bowl.js lightly (the run pin's painter, the label font, the look-around buttons), which the
+  world map track also edits (WM-4b, #267, on `track/worldmap`; WM-6): keep those edits small and merge main first.
 - VFX-4 (#257, #268) owns crits' impact frame; VFX-5 and VFX-6 work in battle-stage.js and need a rule for Calm.
 - RL-14b (#264) adds boss shield phases and a stage intro: the boss banner and the shield pip are shared with it.
 - ON-3 (#255) builds the Showcase on the kit: `pb-coin`'s API stays as it is.
@@ -641,12 +700,18 @@ and on.
     112 px square walking.
 13. **The map's area:** 44 m from top to bottom, drawn bigger (about 55 m across while standing).
 14. **Walking:** the bar shrinks a little (labels off, the tile at 112 px).
+15. **The run map's places (after the map examples):** Badges: UI-4's outlines as pixel plates with a glyph each, in
+    the icon set's palette by colour family.
+16. **The map's buttons and names:** both: the kit's 44 px chips with the set's icons, and the names in the game's font.
+17. **When:** UI-8c, started at once beside UI-8b at the owner's word (its own branch, a PR into `track/ui`); the map
+    markers first ("I meant especially the map markers").
 
 ## Ask me before
 - Any change to the answers above (palettes, statuses, families, types, battle layout, rarity, motion defaults).
 - The exact hexes of the retuned types and the rarity ladder if the phone shows them differently from the sampler.
 - A fourth player palette, or dropping one of the three.
 - The tier of each held item, Augment and Gene (proposed by price and effect size).
+- The final art of the ten place icons (the examples' glyphs are a first pass, for the owner to repaint in the Studio).
 
 ## Research (UI-10; sources)
 - Status colours: Pokémon Showdown's battle CSS (BRN #EE5533, PSN #A4009A, PAR #9AA400, SLP #AA77AA, FRZ #009AA4;
