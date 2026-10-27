@@ -12,7 +12,7 @@
    wait on; the debug log gets one 'scene' line a ride (the train's key and the ms, never a name). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapIdAt } from './hooks.js';
+import { mapIdAt, showPendingWindows } from './hooks.js';
 import { clamp } from './util.js';
 import { gameData } from './game-data.js';
 import { TRAIN_RIDE, trainGlide, trainPathAt, trainPlace, trainRoute, trainRouteBack } from './logic/train-path.js';
@@ -35,6 +35,7 @@ expose({
   placeTrain: [() => placeTrain, v => (placeTrain = v)],
   portalBack: [() => portalBack, v => (portalBack = v)],
   portalLook: [() => portalLook, v => (portalLook = v)],
+  trainCoverOff: [() => trainCoverOff, v => (trainCoverOff = v)],
   trainName: [() => trainName, v => (trainName = v)],
   trainOfRun: [() => trainOfRun, v => (trainOfRun = v)],
   trainParkHome: [() => trainParkHome, v => (trainParkHome = v)],
@@ -77,6 +78,8 @@ export const trainRide = {
   /** @type {any[]} */
   lights: [],
   hide: new Set(),
+  /** @type {HTMLElement | null} the way home's loading screen while the ride waits for the hub (trainRideHome) */
+  cover: null,
 };
 
 /** the beats (ms): the departure and the way home */
@@ -133,6 +136,8 @@ export function trainVeil(on, ms = VEIL_MS) {
   if (!on) {
     if (!el) return;
     const v = el;
+    /* a veil just asked for (its fade-in waiting on a frame) is not to come back on over the fade-out */
+    cancelAnimationFrame(/** @type {any} */ (v)._raf || 0);
     v.style.transition = `opacity ${ms}ms ease-out`;
     v.style.opacity = '0';
     setTimeout(() => v.remove(), ms + 50);
@@ -147,7 +152,20 @@ export function trainVeil(on, ms = VEIL_MS) {
   }
   const v = el;
   v.style.transition = `opacity ${ms}ms ease-in`;
-  requestAnimationFrame(() => (v.style.opacity = '1'));
+  /** @type {any} */ (v)._raf = requestAnimationFrame(() => (v.style.opacity = '1'));
+}
+
+/** cutscenes track C: the way home's loading screen (run-loading.js runHomeScreen) fades off when the ride home can
+ * start (or gives up); also when the ride stops before @param {number} ms */
+function trainCoverOff(ms) {
+  const el = trainRide.cover;
+  trainRide.cover = null;
+  trainVeil(false, Math.min(ms, 200));
+  if (!el) return;
+  if (!ms || reducedMotion) return void el.remove();
+  el.style.transition = `opacity ${ms}ms ease-out`;
+  el.style.opacity = '0';
+  setTimeout(() => el.remove(), ms + 50);
 }
 
 /** the train's placement in the scene (one per ride, put in the walk view's props), moved each frame */
@@ -323,7 +341,7 @@ function trainRideStart(kind, key, o, done) {
       setTimeout(() => trainRideEnd(false), 420);
     } else {
       trainParkHome(key, o.won ? 1 : 2, performance.now());
-      trainVeil(false, 400);
+      trainCoverOff(400);
       setTimeout(() => trainRideEnd(false), 420);
     }
     return;
@@ -333,7 +351,7 @@ function trainRideStart(kind, key, o, done) {
   walkView.director = { frame: trainRideFrame };
   trainRideGuard();
   trainRideCaption(true);
-  if (kind === 'home') trainVeil(false, 600);
+  if (kind === 'home') trainCoverOff(600);
 }
 
 /** the train home standing at the platform in its look (v), once the hub's walk view is up to put it in (it can come
@@ -389,6 +407,7 @@ function trainRideEnd(skip) {
       delete W.train.moving;
       if (skip) trainVeil(false, 200);
     }
+    if (R.kind === 'home') trainCoverOff(0);
     if (typeof walkRenderer !== 'undefined') walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   }
   R.W = null;
@@ -397,6 +416,9 @@ function trainRideEnd(skip) {
       'scene',
       `train ride ${R.kind === 'depart' ? 'departure' : 'home'} ${R.key} ${ms} ms${skip ? ' (skipped)' : ''}`
     );
+  /* cutscenes track C: what waited for the ride home (an evolution: pending-windows.js) opens now, before the story's
+     scene of the way home (story-stage.js storyPendingCheck waits for it) */
+  if (R.kind === 'home' && typeof showPendingWindows === 'function') showPendingWindows();
   const f = R.done;
   R.done = null;
   /* the departure's next step once the veil is white */
@@ -420,15 +442,18 @@ function trainRideCaption(on) {
 export function trainRideDepart(key, done) {
   trainRideStart('depart', key, {}, done);
 }
-/** come home from a run: out of the tear and down the rail to the station (gold after a win, battered after a loss),
+/** come home from a run: out of the tear and down to the station (gold after a win, battered after a loss),
  * you step off where the walk stands you (uiState.roam: standByMast); done() once you stand there. It waits (behind
- * the white veil, `on` already) for the hub's walk view to be up, 30 s at most (a slow phone) @param {string} key
- * @param {boolean} won @param {() => void} done */
-export function trainRideHome(key, won, done) {
+ * `cover`, the way home's loading screen, `on` already) for the hub's walk view to be up, 30 s at most (a slow
+ * phone); the cover lifts as the ride starts, and whenever it stops @param {string} key @param {boolean} won
+ * @param {() => void} done @param {HTMLElement | null} [cover] */
+export function trainRideHome(key, won, done, cover = null) {
   const t0 = performance.now();
-  Object.assign(trainRide, { on: true, kind: 'home', key, W: null, done: null });
+  if (trainRide.cover && trainRide.cover !== cover) trainRide.cover.remove();
+  Object.assign(trainRide, { on: true, kind: 'home', key, W: null, done: null, cover });
   const go = () => {
-    if (!trainRide.on || trainRide.W) return;
+    if (trainRide.W) return;
+    if (!trainRide.on) return void trainCoverOff(0);
     if (!reducedMotion && !trainRideWorld() && performance.now() - t0 < 30000) return void setTimeout(go, 150);
     trainRideStart('home', key, { won }, done);
   };
