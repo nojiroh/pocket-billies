@@ -116,7 +116,7 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-10a | Square: shape and fountain (done 2026-10-26) | The lobed ~10 m outline as a rerunnable patch (town locked), the fountain in place of the well, the streets entering in a pinwheel, a framed view of the sky rail and the portal; headless pictures | HB-4b | 1 |
 | HB-10b | Square: edges and market (done 2026-10-26) | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
 | HB-10c | Square: people (done 2026-10-26) | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
-| HB-10d | Square: reactions and things to do | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
+| HB-10d | Square: reactions and things to do (done 2026-10-27) | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
 | HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
 | HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera; the pinwheel street entries (moved from HB-10a) | HB-10a | 1-2 |
 | HB-9 | Look pass on the phone | Headless phone pictures each round, then the owner's play test and debug log | all | 1 |
@@ -597,6 +597,49 @@ market every day; up to 2 ranch Billies by day; one cap for the hub and the run 
   onSquare, visitors).
 - Not done: people don't sit (no sitting pose; they stand by the benches); visitors walk through people and props on
   their road only as findPath allows (no avoidance); sounds (chatter) left to the sound track.
+
+**Done in HB-10d** (2026-10-26/27, on `track/hub`). The owner's answers: the coin costs 3 Scrap, once per return, 55% a
+small boon for the next run's first 3 places, 30% a joke, 10% a small curse for 2 places, 5% a big win (1 Bean or 30
+Research); the fountain's look: colour and one piece (Chapter 2: the portal tear's violet, a crack, a Bureau plaque);
+the busker: the slot and its hook only, the resident from the residents track. Checked against the code first:
+- Chapters have no names; `meta.chapter` is 1-9 and only `chapter n` moves it (Chapter 2 after the Voltron, RL-14,
+  not built). History entries have no date. No busker resident exists, and RS-3/RS-4 (residents in Copperleaf) are not
+  built. Music is one song at a time; region themes had no songs. Run quests are run-only (the hub's favours are the
+  only hub quests); daily seeds and ghost teams are RL-15 (not built). Props already took `when`/`unless`.
+- **Win bunting**: `pennant_line` (a new low-poly model, tools/build-props-square.py) across the east street's mouth
+  and behind the market, the town's flag on two `flag_pole`s either side of the market, all `when: "last:won"` in
+  `SQUARE_EDGE` (just outside the rim on grass, 1.8 m or more from every edge prop and stop: hub-square.test.mjs). Shown
+  from the moment you come home (props re-check their conditions every 0.2 s); down after the next run unless it won.
+- **Loss gossip and win cheers**: banter.json `square_lost` (11) and `square_won` (6), one line each, by the run
+  history (`lastby:bureau`, `lastby:rival`, `lastby:boss`, `lastby:wild`, `last:row <= 2`, `last:quit`,
+  `history:lstreak >= 3`, `history:wins <= 1`, `last:rivalwon`, `history:streak >= 3`); `logic/square-talk.js` keeps
+  every line that holds. Folk at the square's stops say one every other line until the next run. The data check
+  holds them to one line of 70 letters, no speaker. The debug log's scene: `squareMood`.
+- **The fountain per chapter**: `fountain_ch2` (batch 6's recipe recoloured, a glowing crack up the top bowl, a brass
+  plaque; built in build-props-square.py so batch 6 needn't run again) on the fountain's spot, `when: chapter >= 2`, the
+  fountain `unless` it (`FOUNTAIN_LOOKS`; a later chapter adds a row). Not rules.json as planned: the condition does it
+  with no code and changes the moment the story moves on. New scenery key `glowCol`: a prop's glows and their light
+  in its own colour (walk/effects.js, walk/lighting.js).
+- **The notice board** (`notice_board` on the south rim, -84 degrees, `act: hubnotice`; town-square.js
+  `townBoardOpen`): Town news (the last 3 runs in plain words), Favours (the hub folk's asked favours, their checks
+  worded by the board: relations.json has no ask text), Fountain (the coin's line), and "Daily seeds and friends'
+  teams: coming soon" (RL-15). A run town's board (`notice`) is unchanged.
+- **The coin gamble**: tap the fountain (`act: wish`). `logic/fountain-wish.js` (Node-tested): rules.json
+  `square.wish` {cost, outcomes}; `meta.wish {at, out, used}` (meta-state.js validWish; no migration); the roll from
+  meta.runs and the last run's seed (a reload tosses the same coin); a boon or curse joins the next run at take-off as
+  an event boon (`run.enc.boons`, src `fountain`), the Hi-Potion goes into the bag, a big win pays at once. The coin
+  sound and a plop at the fountain (the sound track can replace them). Debug log: `hub fountain coin: <id>`.
+- **The busker's slot**: `busker_case` (a low-poly open case) 3.5 m in from the south-east rim, a `busk` stop no slot
+  of the day sends folk to; `squareBusker(meta, residents)` (the first resident with `busk: true` living in town:
+  none yet) and `squareBuskSong` (rules.json `square.busk.songs`: lakeland trench, greenbelt meadow, wildwood spore,
+  highland crystal, harvest spire). Within `square.busk.near` (5 m, not 8: the hub spot is 6.6 m from the case and
+  should keep the town's song) the last run's theme plays in place of Copperleaf's song (sound.js musicState's
+  placeMusic). **For RS-5**: give a resident `busk: true` (residents.json and its schema) and stand them at the `busk`
+  stop (RS-3's people); the music follows by itself.
+- Tests: square-talk, fountain-wish (new), square-day (the busk stop, the hooks), hub-square (bunting, the looks),
+  meta-state; the in-game full test's "The square: bunting, gossip, the fountain's coin, the notice board".
+  Pictures: `python3 tools/island-shots.py OUT --last=won|lost --chapter=N --only=town-square,square-near`.
+- Not done: the busker themselves (RS-5); the board's daily seeds and ghosts (RL-15); the coin's own sound (sound track).
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading

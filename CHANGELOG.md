@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Copperleaf's square reacts to your runs** (hub track HB-10d): after a won run bunting and the town's flags go up
+  round the square and its folk cheer; after a lost one they gossip about it (who beat you, how far you got). From
+  Chapter 2 the fountain changes: violet water and light, a crack up its top bowl, a Bureau plaque. Tap the fountain to
+  toss a coin for 3 Scrap, once each time you come home: mostly a small boon for your next run's first places, now and
+  then a joke or a small curse, rarely a jackpot. A notice board on the square shows the town's news of your last
+  runs, the favours you've been asked and the fountain's last coin. An open instrument case waits for a busker.
+
 - **Sturdier after the graphics card is lost** (phase 20): when the browser takes the graphics card away and gives it
   back (a phone under memory pressure, a driver reset, the debug menu's "Lose the GPU context"), every part of the
   walk view, the world map and a battle is made again, with none of the hundreds of warnings and the unlit things of
