@@ -894,6 +894,11 @@ function bindMoveInfo(el) {
     );
   });
 }
+/* UI-15: the command row is quiet chrome, an icon over a word, so the moves are the loud choice; what the small line
+   under each word said (pyramids left, items, who can fight, why one is off) is the button's title and spoken name */
+function cmdButtonHTML(cls, act, icon, word, note, key, on) {
+  return `<button class="bt ${cls}" data-a="${act}" ${on ? '' : 'disabled'} title="${escapeHtml(note)}" aria-label="${escapeHtml(`${word}: ${note}`)}">${uiIconHTML(icon, 18)}<b>${word}</b><kbd>${key}</kbd></button>`;
+}
 export function paintActions() {
   const el = $('#acts');
   if (!el || !activeBattle) return;
@@ -913,10 +918,7 @@ export function paintActions() {
     /* RL-14: a bot is never caught */
     const bot = wild && !catchable(fighter(1));
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first && !bot ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${bot ? 'Not a Billie' : wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
-  <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
-  <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
-  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  <div class="bt-row">${cmdButtonHTML('coin', 'bcoins', 'pyramid', 'Catch it', bot ? 'Not a Billie' : wild ? (first ? plural(pyramids, 'pyramid') + ' left' : 'First pick only') : 'Wild only', 'X', wild && first && !bot)}${cmdButtonHTML('items', 'bitems', 'bag', 'Bag', plural(items, 'item'), 'I', true)}${cmdButtonHTML('team', 'bteam', 'team', 'Team', `${alive} of ${crew.length} can fight`, 'T', true)}${cmdButtonHTML('run', 'brun', 'run', 'Run', wild ? 'Walk away' : 'No way out of a trainer battle', 'R', wild)}</div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'part') {
     const t = fighter(activeBattle.tk);
     /* SP-5: a Billie's Augments are its limbs */

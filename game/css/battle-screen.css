@@ -502,15 +502,20 @@
   min-height: 70px;
   font-size: 15px;
 }
+/* UI-15: the command row is quiet chrome (an icon over a word, the glass's own ink), so the moves are the loud
+   choice; Catch it, Bag, Team and Run look alike (they borrowed gold and the types' green and blue before) */
+.battle .bt-row .bt {
+  min-height: 52px;
+  font-size: 14px;
+  color: var(--bt-ink);
+  background: color-mix(in srgb, var(--bt-ink) 10%, transparent);
+}
+.battle .bt-row .bt .uico {
+  opacity: 0.9;
+}
 .bt.coin {
   background: linear-gradient(180deg, #ffe27a, #f2b43c 60%, #d18e1e);
   color: #3a2408;
-}
-.bt.items {
-  background: linear-gradient(180deg, #5adb9c, #2e9c66);
-}
-.bt.team {
-  background: linear-gradient(180deg, #7aa8ff, #3f6bd6);
 }
 .bt.end {
   background: linear-gradient(180deg, #5a4a8a, #30264f);

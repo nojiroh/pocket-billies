@@ -162,13 +162,6 @@
 .battle.ui3d #acts .bt:focus-visible::after {
   background: var(--focus, var(--gold-b));
 }
-.battle.ui3d #acts .bt.run {
-  color: #fff;
-  background: #3a2c55;
-}
-.battle.ui3d #acts .bt.run small {
-  color: rgba(255, 255, 255, 0.75);
-}
 @media (prefers-reduced-motion: reduce) {
   .battle.ui3d .dock > #msg,
   .battle.ui3d .dock > #acts {
