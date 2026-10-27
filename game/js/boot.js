@@ -43,7 +43,7 @@ import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
-import { gpuState, webgl2Supported } from './engine/webgl.js';
+import { gpuState, pendingPrograms, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { startTownRise } from './walk/sprites.js';
@@ -93,6 +93,7 @@ expose({
   mountLoaderTown: [() => mountLoaderTown, v => (mountLoaderTown = v)],
   noWebGL: [() => noWebGL, v => ((noWebGL = v), provide({ noWebGL }))],
   preloadAll: [() => preloadAll, v => (preloadAll = v)],
+  programsWarmup: [() => programsWarmup, v => (programsWarmup = v)],
   runTestStart: [() => runTestStart, v => (runTestStart = v)],
   studioChannel: [() => studioChannel, v => (studioChannel = v)],
   studioDraftReady: [() => studioDraftReady, v => (studioDraftReady = v)],
@@ -690,6 +691,22 @@ async function walkViewWarmup() {
     debugLog.stage('scene ready');
   }
 }
+/* LD-2: wait (at most 8 s) until every program started in the background has compiled, so none finishes in play: the
+   walk view finishes them 12 ms a frame while the loader is up */
+async function programsWarmup() {
+  if (typeof pendingPrograms !== 'function' || !pendingPrograms()) return;
+  const t0 = performance.now(),
+    n0 = pendingPrograms();
+  if (loadingScreen.el) loadingScreen.el.querySelector('.ld-phase').textContent = 'Setting the scene';
+  while (pendingPrograms() && performance.now() - t0 < 8000) await new Promise(r => setTimeout(r, 60));
+  if (typeof debugLog !== 'undefined') {
+    debugLog.add(
+      'load',
+      `${n0 - pendingPrograms()} of ${n0} shaders ready in ${Math.round(performance.now() - t0)} ms`
+    );
+    debugLog.stage('shaders ready');
+  }
+}
 /* the town behind the loader: the title starts, its town is put up and grows in as the loading goes on */
 function mountLoaderTown() {
   if (loadingScreen.town) return;
@@ -1023,6 +1040,7 @@ else
       const resume = saveData.started && saveData.run && saveData.run.map && runWorld.seed && !TEST_RUN;
       if (resume) runLoadBegin('resume', saveData.trip.node);
       await walkViewWarmup();
+      await programsWarmup();
       if (resume) runLoadShow();
       loaderHide();
       if (quickOpening && uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted())

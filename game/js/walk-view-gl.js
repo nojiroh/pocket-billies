@@ -312,8 +312,10 @@ export function ensureWalkGl(cv) {
     return false;
   }
   try {
-    ensurePrograms(WALK_SHADERS);
-    ensurePrograms(POST_EFFECT_SHADERS);
+    /* LD-2: every program starts compiling first (the driver may work on them side by side), then the ones the first
+       frame needs are finished; the rest finish in the background (pollPendingPrograms) */
+    precompilePrograms(WALK_SHADERS);
+    precompilePrograms(POST_EFFECT_SHADERS);
     for (const d of [
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
@@ -337,6 +339,8 @@ export function ensureWalkGl(cv) {
         precompilePrograms(
           d
         ); /* alpha 0.4: the low-poly props' too (they were built on first use, in the first place with props) */
+    ensurePrograms(WALK_SHADERS);
+    ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
     gpuState.fail = 1;
@@ -490,7 +494,8 @@ function drawWalkFrame(ts, dtm) {
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
   runNormalMapJobs(walkView.warm ? 40 : 3);
-  pollPendingPrograms(1);
+  /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
+  pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
   groundOcclusionWork();
   groundPrepWork(walkRenderer.bt ? 0 : PREP_BUDGET_MS);
   const cssW = cv.clientWidth,
