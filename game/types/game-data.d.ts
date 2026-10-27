@@ -98,6 +98,8 @@ export interface GameData {
   quests?: QuestsData;
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
   residents?: Record<DataId, Resident>;
+  /** HB-10e: Copperleaf's festivals and market days (game/data/festivals.json; logic/festival.js) */
+  festivals?: FestivalsData;
   pools: Record<DataId, Pool>;
   pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
@@ -1112,6 +1114,22 @@ export interface SquareRules {
     stay: [number, number];
     stops: string[];
   };
+  /** HB-10d: the busker's slot: within `near` metres of a busker you hear your last run's theme (region theme -> song) */
+  busk: { near: number; songs: Record<string, string> };
+  /** HB-10d: the fountain's coin (logic/fountain-wish.js): what a toss costs, and its outcomes by weight, each lines
+   * to show and what it does (effect rows for the next run's first `places`, items into the bag, a payout at once) */
+  wish: {
+    cost: { cur: string; n: number };
+    outcomes: {
+      id: string;
+      w: number;
+      say: string[];
+      fx?: FxRow[];
+      places?: number;
+      give?: Record<string, number>;
+      pay?: Record<string, number>;
+    }[];
+  };
 }
 
 /** RL-13: rules.json run.points: a Billie's cost in starter points and the budget a run has (logic/starter-points.js) */
@@ -2061,6 +2079,32 @@ export interface QuestFavour {
   /** their offer ({type}, {n}) */
   ask: string;
 }
+/** festivals.json (hub track HB-10e): Copperleaf's festivals and market days, and what their market is paid in */
+export interface FestivalsData {
+  about?: string;
+  /** a currency kept between runs (currencies.json) */
+  cur: DataId;
+  festivals: Record<DataId, Festival>;
+}
+/** a festival or market day: on by a condition (milestone), the calendar (date) or the returns (market) */
+export interface Festival {
+  name: string;
+  kind: 'milestone' | 'date' | 'market';
+  /** milestone: while this holds */
+  when?: string;
+  /** date: its first day, MM-DD, and how many days */
+  from?: string;
+  days?: number;
+  /** market: every this-many-th return */
+  every?: number;
+  /** the notice board's line while it is on */
+  about: string;
+  /** the square's day while it is on (rules.json square.day's rows) */
+  day: { k: string; from: number; to: number; share: number; stops: string[] }[];
+  /** the festival market: an item or a coin, how many each occasion, the price */
+  stock: { item?: DataId; coin?: DataId; n: number; price: number }[];
+}
+
 /** residents.json: someone a run can invite to Copperleaf (residents track RS-1) */
 export interface Resident {
   name: string;
@@ -2109,7 +2153,20 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'kappi' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
+  who:
+    | 'chosen'
+    | 'kappi'
+    | 'juniper'
+    | 'back_lost'
+    | 'leader'
+    | 'bureau'
+    | 'rival'
+    | 'thanks_chosen'
+    | 'thanks_kappi'
+    | 'thanks_juniper'
+    | 'square_won'
+    | 'square_lost'
+    | 'square_fest';
   when?: string;
   priority: number;
   once?: boolean;

@@ -20,6 +20,7 @@ import {
   drawPropModels,
   drawSolidProps,
   drawStructures,
+  festivalArrive,
   lifeStep,
   noWebGL,
   propModelShaders,
@@ -250,6 +251,8 @@ export function mountWalkView(cv, id, opt = {}) {
     .then(() => {
       if (walkView.id !== id) return;
       walkView.ready = true;
+      /* HB-10e: coming home to a festival or market day says so (town-square.js) */
+      if (typeof festivalArrive === 'function') festivalArrive(walkView.sc);
       frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       /* the hub: the world map's slow parts done ahead, so it opens whole (world-bowl.js worldMapPrewarm) */
       if (typeof worldMapPrewarm === 'function' && !worldExtra.look) setTimeout(worldMapPrewarm, 1500);

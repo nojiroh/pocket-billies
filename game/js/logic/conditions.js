@@ -21,11 +21,12 @@
      history:losses >= 2   over the runs kept (HISTORY_FACTS)   rematch >= 1   runs this foe ended (a leader's lines)
      resident:dottie       someone lives in Copperleaf  residents >= 3   how many do (RS-1: meta.residents)
      lastres:dottie        the last run brought them to Copperleaf (RS-3: its history entry's res)
+     festival:sprout_fair  a festival is on in Copperleaf now (HB-10e: festivals.json, town-square.js festivalToday)
    combined with `and`, `or`, `not` / `!` and parentheses (`and` binds tighter than `or`). A bare count term
    (`item:honey`, `visits:juniper`, `badges`) means more than 0. Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELATIONS } from '../hooks.js';
+import { RELATIONS, festivalToday } from '../hooks.js';
 import { historyFacts, historyRematch } from './run-history.js';
 import { relLevels } from './relations.js';
 /* eslint-disable no-func-assign */
@@ -51,6 +52,8 @@ expose({
   didYouMean: [() => didYouMean, v => (didYouMean = v)],
   // @ts-expect-error -- replaced on purpose
   editDistance: [() => editDistance, v => (editDistance = v)],
+  // @ts-expect-error -- replaced on purpose
+  festivalNowOf: [() => festivalNowOf, v => (festivalNowOf = v)],
   // @ts-expect-error -- replaced on purpose
   lastTeamOf: [() => lastTeamOf, v => (lastTeamOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -82,7 +85,7 @@ expose({
  *   history?: Record<string, number>, rematch?: number, rel?: Record<string, number>, beans?: number,
  *   gifted?: Record<string, number>, chapter?: number, lastteam?: Record<string, number>, rival?: number,
  *   residents?: Record<string, number>,
- *   lastres?: Record<string, number> }} StoryState */
+ *   lastres?: Record<string, number>, festival?: Record<string, number> }} StoryState */
 
 /** each term kind: whether it takes an id after the colon, whether it is a count (compared as a number), and what it
  * reads, for the Studio's reference (Project Story S3) */
@@ -153,6 +156,11 @@ export const CONDITION_KINDS = {
   resident: { id: true, count: false, about: 'someone lives in Copperleaf (residents.json, RS-1): resident:dottie' },
   residents: { id: false, count: true, about: 'how many live in Copperleaf (RS-1): residents >= 3' },
   lastres: { id: true, count: false, about: 'the last run brought them to Copperleaf (RS-3): lastres:dottie' },
+  festival: {
+    id: true,
+    count: false,
+    about: 'a festival or market day is on in Copperleaf now (HB-10e, festivals.json): festival:sprout_fair',
+  },
 };
 export const OPS = ['>=', '<=', '!=', '==', '=', '>', '<'];
 export const WORDS = new Set(['and', 'or', 'not']);
@@ -405,6 +413,8 @@ export function termValue(c, S) {
       return Object.keys(S.residents || {}).length;
     case 'lastres':
       return !!(S.lastres || {})[c.id];
+    case 'festival':
+      return !!(S.festival || {})[c.id];
     case 'opened':
       return !!(S.opened || {})[c.id];
     case 'dna':
@@ -537,9 +547,18 @@ export function storyStateOf(save, o = {}) {
     residents: meta.residents || {},
     /* RS-3: who the last run brought */
     lastres: facts.lastres,
+    /* HB-10e: the festival on in Copperleaf now (none on a run; town-square.js festivalToday, through the hooks: none
+       in Node) */
+    festival: festivalNowOf(save),
   };
 }
 
+/** HB-10e: the festival on now for this save as a record ({ sprout_fair: 1 }), or none @param {any} save
+ * @returns {Record<string, number>} */
+export function festivalNowOf(save) {
+  const on = typeof festivalToday === 'function' ? festivalToday(save) : null;
+  return on ? { [on.id]: 1 } : {};
+}
 /** RL-12b: how many Billies of each type (lower case) the team holds, fainted ones too
  * @param {any[]} team @param {(m: any) => string[]} [typesOf] */
 export function teamTypes(team, typesOf) {

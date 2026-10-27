@@ -3,11 +3,11 @@
 /* ---------- UI-5: from style.css, as it was ---------- */
 /* map */
 .mapcard {
-  padding: 10px var(--s3) var(--s2);
+  padding: var(--s3) var(--s3) var(--s2);
   position: sticky;
   bottom: calc(var(--nav-h) - 6px + env(safe-area-inset-bottom, 0px));
   z-index: 3;
-  margin-top: 14px;
+  margin-top: var(--s4);
   animation: up 0.3s ease-out;
 }
 .mapcard .mc-top {
@@ -39,7 +39,7 @@
   bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--s2);
   z-index: 2;
 }
 .mbtn {
@@ -66,7 +66,7 @@
 }
 /* map */
 .mapcard {
-  border-radius: 10px;
+  border-radius: var(--r-sm);
 }
 @media (min-width: 960px) {
   .s-map {
@@ -133,8 +133,8 @@ body.on-map #bgfx {
   left: 12px;
   top: calc(70px + env(safe-area-inset-top, 0px));
   max-width: min(360px, calc(100% - 90px));
-  padding: var(--s2) 14px 10px;
-  border-radius: 14px;
+  padding: var(--s2) var(--s4) var(--s3);
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--panel-s) 84%, transparent);
   box-shadow:
     0 0 0 2px var(--line),
@@ -184,7 +184,7 @@ body.on-map #bgfx {
   top: calc(70px + env(safe-area-inset-top, 0px));
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--s2);
 }
 .map-full .mapcard {
   position: absolute;
@@ -195,7 +195,7 @@ body.on-map #bgfx {
   max-height: 34vh;
   overflow: auto;
   margin: 0;
-  padding: var(--s3) 14px;
+  padding: var(--s3) var(--s4);
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--panel-s) 92%, transparent);
 }
@@ -203,7 +203,7 @@ body.on-map #bgfx {
   margin-top: var(--s2);
 }
 .mc-nb {
-  margin-top: 6px;
+  margin-top: var(--s2);
   font-size: 12.5px;
 }
 @media (min-width: 850px) {
@@ -278,7 +278,7 @@ body.map-gl #dioui {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px var(--s3) 6px;
+  padding: var(--s3) var(--s3) var(--s2);
   font: 400 18px var(--font-voice);
 }
 .mbtn.sm {
@@ -288,10 +288,10 @@ body.map-gl #dioui {
 }
 .mpl-body {
   overflow: auto;
-  padding: 0 var(--s2) 10px;
+  padding: 0 var(--s2) var(--s3);
 }
 .mpl-g {
-  margin: 10px 6px var(--s1);
+  margin: var(--s3) var(--s2) var(--s1);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -300,14 +300,14 @@ body.map-gl #dioui {
 .mpl-row {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: var(--s3);
   align-items: center;
   width: 100%;
   text-align: left;
   border: 0;
   background: none;
-  padding: var(--s2) 6px;
-  border-radius: 10px;
+  padding: var(--s2) var(--s2);
+  border-radius: var(--r-sm);
   color: var(--text);
   cursor: pointer;
 }

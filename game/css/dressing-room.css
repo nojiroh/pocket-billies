@@ -59,9 +59,9 @@ body.dressing #nav {
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
+  gap: var(--s2);
   align-items: center;
-  padding: 6px;
+  padding: var(--s2);
   border-radius: var(--r-pill);
 }
 .dr-tog {
@@ -73,7 +73,7 @@ body.dressing #nav {
   color: inherit;
   font: 600 13px var(--font-voice);
   display: inline-flex;
-  gap: 5px;
+  gap: var(--s1);
   align-items: center;
   cursor: pointer;
 }
@@ -88,7 +88,7 @@ body.dressing #nav {
   right: 12px;
   max-width: 420px;
   display: flex;
-  gap: 10px;
+  gap: var(--s3);
   align-items: center;
   padding: var(--s2) var(--s3);
   border-radius: var(--r-md);
@@ -101,14 +101,14 @@ body.dressing #nav {
   display: flex;
   gap: var(--s2);
   align-items: end;
-  padding: var(--s3) 14px var(--s2);
+  padding: var(--s3) var(--s4) var(--s2);
 }
 .dr-name {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--s1);
   font-size: 12px;
   font-weight: 600;
   color: var(--text2);
@@ -118,8 +118,8 @@ body.dressing #nav {
   min-width: 0;
   min-height: 38px;
   border: 2px solid color-mix(in srgb, var(--line) 55%, var(--panel-s));
-  border-radius: var(--r-s, 6px);
-  padding: 0 10px;
+  border-radius: var(--r-xs);
+  padding: 0 var(--s3);
   font: 600 15px var(--font-voice);
   background: var(--hi);
   color: var(--text);
@@ -128,7 +128,7 @@ body.dressing #nav {
   display: flex;
   gap: 2px;
   overflow-x: auto;
-  padding: 0 10px;
+  padding: 0 var(--s3);
   border-bottom: 2px solid color-mix(in srgb, var(--line) 25%, transparent);
   scrollbar-width: none;
 }
@@ -136,7 +136,7 @@ body.dressing #nav {
   flex: none;
   border: 0;
   background: none;
-  padding: 10px 10px 9px;
+  padding: var(--s3) var(--s3) var(--s2);
   font: 600 13.5px var(--font-voice);
   color: var(--text2);
   border-bottom: 3px solid transparent;
@@ -149,12 +149,12 @@ body.dressing #nav {
 .dr-body {
   flex: 1;
   overflow: auto;
-  padding: var(--s1) 14px var(--s4);
+  padding: var(--s1) var(--s4) var(--s4);
   overscroll-behavior: contain;
 }
 .dr-sec h3 {
   font: 400 15px var(--font-voice);
-  margin: 14px 0 var(--s2);
+  margin: var(--s4) 0 var(--s2);
 }
 .dr-grid {
   display: grid;
@@ -166,10 +166,10 @@ body.dressing #nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px var(--s1) 7px;
+  gap: var(--s1);
+  padding: var(--s2) var(--s1) var(--s2);
   border: 2px solid color-mix(in srgb, var(--line) 30%, transparent);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--hi);
   color: var(--text);
   cursor: pointer;
@@ -194,7 +194,7 @@ body.dressing #nav {
   font-size: 10.5px;
   color: var(--text2);
   display: flex;
-  gap: 3px;
+  gap: var(--s1);
   align-items: center;
   text-align: center;
 }
@@ -217,8 +217,8 @@ body.dressing #nav {
 .dr-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--s2);
+  margin-top: var(--s3);
 }
 .dr-l {
   font-size: 12px;
@@ -238,7 +238,7 @@ body.dressing #nav {
   align-items: center;
   font-size: 13px;
   font-weight: 600;
-  margin: 6px 0;
+  margin: var(--s2) 0;
 }
 .dr-sl input {
   width: 100%;
@@ -260,9 +260,9 @@ body.dressing #nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 6px;
-  border-radius: 10px;
+  gap: var(--s2);
+  padding: var(--s3) var(--s2);
+  border-radius: var(--r-sm);
   text-align: center;
 }
 .dr-out img {
@@ -278,14 +278,14 @@ body.dressing #nav {
 }
 .dr-out .racts {
   flex-direction: column;
-  gap: 5px;
+  gap: var(--s1);
   width: 100%;
 }
 .dr-foot {
   display: flex;
   gap: var(--s2);
   align-items: center;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom, 0px));
   border-top: 2px solid color-mix(in srgb, var(--line) 25%, transparent);
 }
 .dr-msg {
@@ -300,13 +300,13 @@ body.dressing #nav {
     max-width: calc(100% - 20px);
   }
   .dr-tog {
-    padding: 0 9px;
+    padding: 0 var(--s2);
   }
   .dr-viewbar {
     bottom: 22px;
   }
   .dr-keeper {
-    padding: 6px 10px;
+    padding: var(--s2) var(--s3);
   }
   .dr-keeper p {
     font-size: 12.5px;
@@ -315,14 +315,14 @@ body.dressing #nav {
 .dr-presets {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: var(--s2);
 }
 .dr-pre {
   display: grid;
   place-items: end center;
   height: 84px;
   padding: var(--s1);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   border: 2px solid transparent;
   background: var(--panel2);
@@ -350,7 +350,7 @@ body.dressing #nav {
 .dr-builds {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--s2);
 }
 .dr-more {
   border-top: 1px dashed rgba(0, 0, 0, 0.12);
@@ -374,7 +374,7 @@ body.dressing #nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px var(--s1) 2px;
+  padding: var(--s2) var(--s1) 2px;
 }
 .dr-outfit[aria-pressed='true'] {
   outline: 2px solid var(--gold, #d9a441);
@@ -384,5 +384,5 @@ body.dressing #nav {
   display: flex;
   justify-content: center;
   gap: var(--s1);
-  padding: 2px 0 6px;
+  padding: 2px 0 var(--s2);
 }

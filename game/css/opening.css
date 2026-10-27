@@ -27,7 +27,7 @@ body.cs-fighting .cs-skip {
 }
 .csf-plate {
   display: grid;
-  gap: 6px;
+  gap: var(--s2);
   padding: var(--s3) var(--s4);
   border: 1px solid var(--g-bd);
   border-radius: var(--r-md);
@@ -148,7 +148,7 @@ body.cs-fighting .cs-skip {
   bottom: -7px;
   width: 14px;
   height: 14px;
-  margin-left: -7px;
+  margin-left: calc(var(--s2) * -1);
   background: inherit;
   transform: rotate(45deg);
   border-radius: 2px;

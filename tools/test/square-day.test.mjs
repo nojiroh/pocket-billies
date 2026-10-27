@@ -12,6 +12,8 @@ import {
   squareMiddle,
   squareSlot,
   squareStopFor,
+  squareBuskSong,
+  squareBusker,
   squareStops,
   squareVisitAt,
   squareVisits,
@@ -34,10 +36,10 @@ test('the middle is the fountain; a map without a square has no stops', () => {
   assert.deepEqual(squareStops(M.props.filter(p => !p.sq)), []);
 });
 
-test('the stops: behind and in front of each stall and the cart, by the benches, under the lamps, round the fountain', () => {
+test('the stops: behind and in front of each stall and the cart, by the benches, under the lamps, round the fountain, the busker’s', () => {
   assert.deepEqual(
-    ['keep', 'shop', 'sit', 'lamp', 'fountain'].map(count),
-    [4, 4, 4, 7, 3],
+    ['keep', 'shop', 'sit', 'lamp', 'fountain', 'busk'].map(count),
+    [4, 4, 4, 7, 3, 1],
     JSON.stringify(stops.map(s => s.k))
   );
 });
@@ -142,4 +144,29 @@ test('where a visit is: there, at the square, back, then home', () => {
   assert.deepEqual(squareVisitAt(v, 220, 100, 120), { leg: 'stay', s: 120 });
   assert.deepEqual(squareVisitAt(v, 310, 100, 120), { leg: 'back', s: 60 });
   assert.equal(squareVisitAt(v, 360, 100, 120), null);
+});
+
+test('the busker’s slot (HB-10d): no slot of the day sends townsfolk there', () => {
+  for (const T of S.day) {
+    assert.ok(!T.stops.includes('busk'), T.k);
+    for (let rank = 0; rank < 40; rank++) {
+      const at = squareStopFor(stops, T, rank);
+      assert.ok(!at || at.k !== 'busk', `${T.k} rank ${rank}`);
+    }
+  }
+});
+
+test('the busker: a resident who busks and lives in town; they play your last run’s theme', () => {
+  const RES = { dottie: { name: 'Dottie' }, lark: { name: 'Lark', busk: true } };
+  assert.equal(squareBusker({ residents: {} }, RES), null, 'nobody yet: the case lies empty');
+  assert.equal(squareBusker({ residents: { dottie: 1 } }, RES), null);
+  assert.equal(squareBusker({ residents: { dottie: 1, lark: 3 } }, RES), 'lark');
+  assert.equal(squareBusker({ residents: { dottie: 1 } }, D.residents), null, 'none of the game’s residents busks yet');
+  assert.equal(squareBuskSong([], S.busk.songs), null);
+  assert.equal(squareBuskSong([{ theme: 'lakeland' }, { theme: 'harvest' }], S.busk.songs), 'spire');
+  assert.equal(squareBuskSong([{ theme: 'nowhere' }], S.busk.songs), null);
+  for (const t of Object.keys(D.regions.themes)) assert.ok(D.music.songs[S.busk.songs[t]], `a song for ${t}`);
+  /* where you arrive home the town's own song plays: the hub is out of the busker's earshot */
+  const c = M.props.find(p => p.k === 'busker_case');
+  assert.ok(Math.hypot(c.x - M.hub[0], c.z - M.hub[1]) > S.busk.near + 1);
 });

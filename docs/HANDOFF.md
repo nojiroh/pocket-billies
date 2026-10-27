@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
+Branch `track/ui` (the owner made it from main after UI-9a merged, PR #247; it replaces `ccr-30c007a6-eol40p` for UI
+work, BRANCHES.md updated; the track file now has `Branch: track/ui`). Main merged in once (AIR-3, VFX-3: no CSS).
+Plan approved in Plan Mode with the owner's answers: parts.css into the kit behind `@layer`, small corner tokens (4
+and 8 px), finish every file this session, switch v05Grow on. A second question after the layer was measured (below).
+- **Found: the layer can't keep the screens.** In a cascade layer a rule loses to every unlayered one, even the fights
+  it wins today by specificity: css-order (taught to read `@layer`) counted 3,827 changed fights; 130 parts
+  declarations both win and lose, so no split between a layer and unlayered rules fixes it. Unlayered at ui-kit.css's
+  top, 29 of 36 style-diff views differed (fights screens win today by order). base.css loaded just before parts.css,
+  so appending it there changes nothing: the owner's answer. The parts still move onto the kit screen by screen.
+- **Found: the corner scale stopped at 12 px.** Snapping 3-8 px corners to it would have changed shapes, not 1-2 px;
+  hence `--r-xxs`/`--r-xs`. base.css still had v05's `--r-s/m/l` (6/10/16) and `--r1/2/3` (= sm/md/lg).
+- **Changed (one cause per commit):**
+  - `tools/css-order.mjs` reads cascade layers (normal: unlayered over layered, later layer over earlier; !important
+    the other way), a layer not part of a declaration's identity.
+  - ui-lint: 0 and 1-2 px are hairlines, not off the space or radius scale (a unit test); ceilings saved.
+  - parts.css appended whole to base.css's end and deleted; index.html and the Studio's gallery stop loading it.
+  - v05Grow's keyframe is `from { width: 0 }`: the Billie sheet's stat bars grow in over 0.6 s; reduced motion stops it.
+  - `--r1/2/3` renamed to `--r-sm/md/lg` (a rename commit); unused `--r-m/--r-l` removed.
+  - `--r-xxs` 4 px and `--r-xs` 8 px in tokens.css and the gallery's token row.
+  - Every CSS file snapped, one commit each, worst first (30 files, 504 declarations): nearest step, ties up, but
+    only where the value moves 1-2 px, as the plan promised (6->8, 10->12, 14->16, 3/5->4, 7/9->8, 18->16, 22->24;
+    corners 3/5->4, 6/7/9->8, 10->12, 14->16, 18->16, 24->22). Each commit names what it replaced and what it left.
+    Then the dressing room's `var(--r-s, 6px)` (a fallback the script skipped) and the old `--r-s` itself.
+  - The UI gallery baseline remade on purpose; studio/art-code-refs.json remade by its tool.
+- **Left raw (39 spacing values):** moves of more than 2 px (20 px x12, 28 px x6, 40 px x5, 36 px x2) and values
+  above 48 px (the joystick's -56/-84 px, 50/52 px list indents, 104/120/1120 px), plus one 1.2em. They read as
+  layout sizes; a later session can name them (`--nav-h`-like) or the owner can say "snap them anyway".
+- **ui-lint (start -> end):** radius 99 -> 0 (token uses 87 -> 198), space 616 -> 39 (73 of the drop are the hairline
+  rule, the rest the snap; token uses 633 -> 1,137); everything else unchanged.
+- **Verified:** css-order at every CSS commit: 0 fights change winner (values only). style-diff over the base.css
+  move: 27 of 36 the same, battle, guide, title, heal-pick and dressing differ by timing as on the clean tree (UI-9a),
+  settings, settings-sound, debug and sheet-evo (a focus ring) the same when run again alone. The stat bars' grow-in
+  seen in Chromium on a bare page with motion.css (0 -> 112 of 112 px in 0.8 s); in the headless game page the
+  animation waits for a frame the software WebGL rarely gives, so it was checked apart. The gallery's 93 pictures
+  side by side with this session's start (2e74c89d): nothing overlaps or is cut; the Team rows' empty-spot card wraps
+  once more at 320 px. Real screens side by side with the start: Team, the Billie sheet, Guide, Settings, Profile, the
+  shop and walking: slightly roomier, nothing broken. The fast tier (lint with the ratchet, typecheck, 1,463 unit
+  tests, modules, format); smoke 6 of 6. Full quick check: 35 of 40; RT-2's pair and Granny Juniper pass alone (as in
+  ON-2); Terraces (a prop in the air, now the train station), RL-8's run view and room light are the known reds, none
+  touched by CSS.
+- **Where the plan was wrong:** "into the kit" can't be done by moving files while screens sit between the two in the
+  load order, with or without a layer; "ties up" for 20 px or 40 px would move 4-8 px, more than the 1-2 px promised.
+- **Risky:** spacing changed on every screen by 1-2 px; tight rows on small phones (320 px) may wrap a word earlier.
+  Screens not opened by the checks: the opening, photo mode, fishing, the workshop, friends.
+- **Phone check wanted:** Team and the Billie sheet (the bars grow in), Settings, the Guide, a shop, a battle's move
+  tiles, the run map, light and dark; any line that now wraps or a button that grew too tall.
+- **Tags to push (sessions can't):** `ui-9b-done` on this entry's commit.
+- **Next:** the owner's phone check; then the old parts (now base.css's end) onto the kit screen by screen, and the
+  39 layout values named, as later UI sessions.
+
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
 owner's picks: delete all seven orphan groups; delete the loader's PNG copies too; retire the far backdrops; leave
@@ -307,6 +358,66 @@ win only, while the chapter is 1**; **the join intro on the battle stage**. Tag 
   - The boss parts have placeholder art only; `robots.json` art pictures would replace them.
 - Next: tag `rl-14b-done` (the owner's); RL-16 (content packs) is the roguelite track's next session; the Studio has
   no editor for `bosses.json` yet (RL-16's generic editors).
+
+### Hub track HB-10e: festivals - 2026-10-27
+Branch `track/hub` (main merged in twice: before HB-10d's entry, 69ac03a3, and after this session's work, f1e2c629).
+Plan given in Plan Mode; the owner answered the four questions (all the recommendations): four seasonal festivals and
+two milestones, a market day every 3rd return, the market in Scrap, looks, lines and stock only, HB-10d finished
+first. Tag to suggest: `hb-10e-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10e".
+- Changed: game/data/festivals.json (+ schema, types, `dataFestivals` in check-data and the Studio's Check);
+  `logic/festival.js` (Node-tested); `meta.fest` (validFest, no migration); the `festival:<id>` condition through a new
+  hooks seam `festivalToday` (town-square.js, by the ranch clock on the phone's calendar; tools/test/logic.test.mjs
+  lists the seam); the square's day per festival (`squareDayNow`, walk-view.js); banter.json `square_fest` (16 lines);
+  30 decorations (`FESTIVAL_DRESS`, tools/square-props.mjs, laid by `patch-copperleaf-square.mjs --edges`); the middle
+  stall `act: fest` (the festival market sheet); the notice board's Festivals section; a toast coming home to one;
+  the debug log's scene `festival`; island-shots.py `--festival=<id>`; the in-game full test's festival step.
+- Fixed on the way (own commit): tools/check-data-text.py treats a prop's `unless` as a condition like `when`:
+  HB-10d's fountain `unless: chapter >= 2` turned the PR's smoke job red.
+- Risky / check on the phone: the decorations stand on grass just outside the rim, and from the hub's camera only a
+  few show (pictures: `python3 tools/island-shots.py OUT --festival=lantern_walk --hour=21`); HB-9's look pass or
+  HB-10f's rebuild may want them nearer. The date: offline, a phone set ahead brings a festival early (the clock's
+  mark then holds it there); its market sells once per occasion either way. Northern seasons only. A festival's day
+  sends up to 0.9 of the folk out (the Engine's townFolk cap still holds). No Studio editor for festivals.json yet
+  (RL-16). How to see one now: the test globals' `festivalForce = {id: 'market_day'}`.
+- Verified (merged head f1e2c629): lint, typecheck, check:modules, format:check, check:data, check-data-text, build,
+  `npm test` 1497 of 1497, `npm run test:slow` 89 of 89 (main's island fix came in with the merge). Before the second
+  merge: smoke (check-quick --smoke) no problems; in-game full test whole: the new festival step passed; its failures
+  were the rooms' black screen and the grid after a room, as on main (HB-10d's entry). check-fast's "Behind things"
+  (red once on the PR's CI, "hidden where the player starts") passed alone twice here.
+- Next: HB-10f (the reproducible town rebuild, the store, inn and library fronting the square, the pinwheel entries),
+  then HB-9. PR #260 (track/hub to main) carries HB-10d and HB-10e.
+
+### Hub track HB-10d: the square's reactions and things to do - 2026-10-27
+Branch `track/hub`. Plan approved in Plan Mode with the owner's answers (the coin: 3 Scrap, once per return, 55% a
+small boon for the next run's first 3 places, 30% a joke, 10% a small curse for 2 places, 5% a big win; the fountain's
+look: colour and one piece; the busker: the slot and its hook only). The building session ended before this entry;
+it was written by the next session (HB-10e's) after merging main in (69ac03a3) and running the checks on the merged
+head. Tag to suggest: `hb-10d-done` on this entry's commit (the owner pushes tags). Details: docs/phases/hub-track.md,
+"Done in HB-10d".
+- Changed: win bunting (`pennant_line`, a new low-poly model, and two `flag_pole`s, `when: last:won`); the square's
+  folk cheer a win and gossip about a loss (banter.json `square_won` 6 and `square_lost` 11, `logic/square-talk.js`);
+  the fountain's Chapter 2 look (`fountain_ch2`, `when: chapter >= 2`; new scenery key `glowCol`); Copperleaf's
+  notice board (`act: hubnotice`, town-square.js); the fountain's coin (`act: wish`, `logic/fountain-wish.js`,
+  rules.json `square.wish`, `meta.wish`); the busker's slot (`busker_case`, the `busk` stop, `squareBusker`,
+  rules.json `square.busk`: the last run's region theme within 5 m once a resident with `busk: true` lives in town).
+  Tools: island-shots.py `--last=won|lost`, `--chapter=N`.
+- The merge with main: main renamed Hazel to Kappi; HB-10d's banter schema and game-data.d.ts said `hazel` and now
+  say `kappi`. `meta.wish` sits beside main's ON-2 `meta.boards`. The banter schema now lets a resident's id be a
+  `who` (RS-3); `square_won`/`square_lost` stay in its enum.
+- Risky / check on the phone: the bunting goes up the moment you come home from a win (props re-check every 0.2 s);
+  the coin's boon or curse joins the next run as an event boon (`run.enc.boons`, src `fountain`); a daily or weekly
+  (ON-2) returns before it in run-start.js, so the boon waits for your next ordinary run (checked on the merge). No busker
+  yet (RS-5). The coin uses the coin sound and a plop until the sound track replaces them.
+- Verified (merged head 69ac03a3): lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings),
+  build, `npm test` 1478 of 1478. Full quick check (Python Playwright 1.63.0): 40 steps, 35 passed, 5 PROBLEMs:
+  - also red on main (rerun alone on main 2e74c89d's tree): Terraces "props in the air: train_station" (main moved
+    the station to face the sea); RL-8 "the town's shop has no Perk" and "room light" (red on main since HB-10b's entry);
+  - RT-2 "the pair talked but no battle started" and "Granny Juniper didn't say anything": passed alone on this head
+    and on main (load; Running and Actions sheet were over their boot budgets in the same run).
+  In-game full test whole (`--selftest`): the square's step passed; 2 failures, the same two on main's tree: a room
+  "isn't drawing (black screen): no frames in 3 s" (the barn here, a house on main) and "A room that opens in place:
+  the town's walking grid changed after the room" (236 cells here, 77 on main).
+- Next: the PR of `track/hub` (HB-10d) to main, then HB-10e (festivals; the owner's answers in hub-track.md).
 ### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
 Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
 approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's
@@ -546,6 +657,42 @@ only** (pushback on the plan's "`uMist` 0": the grid reaches 24 m, 16 on phones,
   the look is heavy at dawn: the dial `fogVolume` tunes it. The shafts outdoors now step with the fog's spacing
   (same sums, noisier).
 - Next: AIR-4 (edges and shadowed haze). Tag `air-3-done` for the owner.
+
+### Studio track ST-7: Model mode import - 2026-10-27
+Branch `track/studio` (made by the owner from main today; the first commit adds it to BRANCHES.md). Draft PR #258.
+Plan approved in Plan Mode after a question round: Model mode on the Art workbench (Props opens a model there); models
+stored as files beside the art (`art/scene/models/<key>.json` + `.png`); palette-textured packs imported as they are
+and flagged, with "Bake to 32 px/m"; all of ST-7 in one session (the owner's pick over a 7a/7b split). Tag to suggest:
+`st-7-done` (the owner pushes tags). Details: docs/phases/studio-track.md, "ST-7"; docs/STUDIO.md, "Art workbench:
+Model mode".
+- What RP-3's tools/glb-to-recipe.py covered: a Python glTF reader (accessors, strides, node transforms, side files,
+  texture colours) feeding a lossy fit to recipe shapes, no mesh kept. Ported to JS and widened (sparse accessors,
+  strips and fans, mirrored nodes, vertex colours, Draco/meshopt refused); the test checks the JS reader against it
+  on the three KayKit models (validation/cc0-src).
+- Changed: logic model-gltf.js, model-obj.js, model-vox.js, model-mesh.js, model-bake.js (new, tested in
+  tools/test/model-import.test.mjs, 13 tests); mesh format v2 (own texture in the same 24-byte vertex, parts with
+  pivot, spin and joint, `extras.pb` for Blender); prop-models.js draws v2 with its own texture (the model program
+  only, unit 5, nearest texel, outside the instanced batches); studio/js/workbench-model.js (Model mode: drop or
+  open, size and turn, turntable in the game renderer, the baked picture, density/palette/triangle checks, Resample
+  and Bake to 32 px/m, parts' spins and joints, Write to game as undo steps, texture painting on the shared pixel
+  canvas with face outlines and click-to-find-the-texel); Props' 3D model panel opens a v2 model there; Props' .vox
+  import reads through model-vox.js (same layer); draft-record.js sends `art/scene/models/<key>.json` as text;
+  check-fast.py "The Studio's Model mode" step.
+- **Risky:** a v2 model is one draw a part outside the batches (no game data uses one yet); the local Save (start-
+  studio.py isn't in this repository) is untested for the model's JSON; it takes other text files, and the GitHub
+  route is covered by the draft test. Bake to 32 px/m picks a material by hue (wood, stone, metal, hay, leaves,
+  plain): a guess. glTF from Blockbench is guessed at 1/16 scale; OBJ axes follow Blender's export (an "Up is z"
+  choice covers others). The turntable is as small as the Props one (use its zoom).
+- Verified: lint, typecheck, format, check:modules, unit tests (all pass after main's merge; the 1,000-maps timing
+  test failed once under load and passes alone), the smoke check 6 of 6 (37 shaders build), check-fast's Studio
+  checks (Model mode ok; "world map look" and "Camera section" fail the same on main 2e74c89d), the full quick check
+  37 of 40 (Terraces' props in the air, RL-8's seam view, room light: failing on main per the last handoffs).
+  Headless Studio runs: the KayKit turbine imported, shown, baked, written, painted (a stroke and its undo), its texel
+  found, opened again from Props, undone; a .vox imported and written as a voxel prop. CI on the PR: lint was red on
+  main's island test (fixed by #253, merged in), smoke shows only main's Studio 404 PROBLEMs.
+- Phone check: not needed for the Studio (tablet and up); a v2 prop in a scene needs one once a model is placed.
+- Next: the owner tries Model mode with a model of their own (Blender's glTF export) and picks whether KayKit-style
+  bakes are wanted; then ST-8 (export: GLB/OBJ with pivots, spins and joints in `extras.pb`; voxel props to meshes).
 
 ### Terrain track TR-4: the look by height and steepness - 2026-10-26
 Branch `ccr-6e23f760-mdbx5x` (this cloud session's own; BRANCHES.md would call it `track/terrain`, which doesn't exist

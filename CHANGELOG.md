@@ -21,11 +21,34 @@ kept aside in the browser).
   phases: below 60% it raises a shield and hits harder; below 30% its Franking Unit arm tears loose and it speeds up.
   It can't be caught. The first win salvages one of its boss parts for your spares and brings Chapter 1 to its end
   at home. From Expedition II on, the region's leaders stay the boss.
+
+- **Festivals in Copperleaf** (hub track HB-10e): four a year, a week each: the Sprout Fair (late March), Longest
+  Light (late June), the Spire Supper (late September) and the Lantern Walk (late December), by your phone's calendar,
+  online or off. Your first win brings a Homecoming Parade, your tenth run the Tenth Departure, and every third time
+  you come home is a market day. Each puts up its own decorations round the square, brings more folk out for longer
+  and gives them something to say, and the middle stall sells a few festival wares for Scrap (they go in your bag for
+  the next run). The notice board shows what's on and what's coming.
+- **Copperleaf's square reacts to your runs** (hub track HB-10d): after a won run bunting and the town's flags go up
+  round the square and its folk cheer; after a lost one they gossip about it (who beat you, how far you got). From
+  Chapter 2 the fountain changes: violet water and light, a crack up its top bowl, a Bureau plaque. Tap the fountain to
+  toss a coin for 3 Scrap, once each time you come home: mostly a small boon for your next run's first places, now and
+  then a joke or a small curse, rarely a jackpot. A notice board on the square shows the town's news of your last
+  runs, the favours you've been asked and the fountain's last coin. An open instrument case waits for a busker.
+
+
+- **Tidier spacing and corners** (UI track UI-9b): the gaps and corners across the menus are on one scale now, most of
+  them moved by a pixel or two, so screens line up more evenly. The Billie sheet's stat bars grow in when it opens, as
+  they were always meant to.
 - **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
   sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
   Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a
   hidden place on the next run's map (Lv 1) and later the place that hides a side path (Lv 3); at Lv 2 she packs a
   Pretzel for every run. Prices are first guesses.
+- **Studio: Model mode** (studio track ST-7): the Art workbench imports 3D models from Blender, Blockbench,
+  MagicaVoxel or an AI generator (.glb, .gltf, .obj, .vox) as props: checked against the art's 32 pixels to the
+  metre and 2,000 triangles, shown on a turntable as the game draws them, with spinning and jointed parts, a texture
+  painted in the Studio, and "Bake to 32 px/m" to give a palette-coloured pack model the game's own look. The game
+  draws these models with their own texture.
 - **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
   and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
   meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the

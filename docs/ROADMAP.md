@@ -131,7 +131,7 @@ town node needs it.
   (navigation as workspaces, Characters, Part rules; done 2026-10-27), SA-5 (the unused-art report, 0 orphans, legacy
   art in art/legacy read-only, the far backdrops retired; done 2026-10-27): **the track is done**. Planned
   2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
-- **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
+- **Studio track** (docs/phases/studio-track.md): ST-0..ST-7 done (ST-7, Model mode import, 2026-10-27 on `track/studio`); ST-8 (Model mode export) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
   Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
 - **UI track** (docs/phases/ui-track.md, planned 2026-10-21): Semigloss Angular, the Studio's UI section and phase
@@ -141,7 +141,7 @@ town node needs it.
   2026-10-21; UI-3b (its tools) and UI-4 (the run parts, beside it at the owner's word) done 2026-10-21; UI-5 (every screen
   onto the kit, one session at the owner's word, the bottom bar swapped) done 2026-10-22; UI-6a (old layers gone, the lint
   ratchet) done 2026-10-22 (PR #112, written up 2026-10-26); UI-6b (lint down, blur budget, accessibility) done 2026-10-26: UI-6 and phase 06 end
-  (tags `ui-6-done`, `phase-06-done`); UI-9a (parts.css shrunk in place: dead rules, 41 of its 48 !important, the type pill and keyframes out; tap targets stay 40 px) done 2026-10-27; UI-9b (the rest of parts.css, off-scale values snapped) proposed next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
+  (tags `ui-6-done`, `phase-06-done`); UI-9a (parts.css shrunk in place: dead rules, 41 of its 48 !important, the type pill and keyframes out; tap targets stay 40 px) done 2026-10-27; UI-9b (parts.css appended to base.css and deleted at the owner's word, every corner and all but 39 spacing values on the scale, two small corner tokens, the stat bars' grow-in) done 2026-10-27 on `track/ui`; the owner's phone check next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
   (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) done 2026-10-23. UI-8 (the bottom bar with the minimap, the owner's brief 2026-10-26) built 2026-10-26; the owner's phone check next.
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
@@ -210,7 +210,11 @@ town node needs it.
   festivals, then a reproducible town rebuild) planned 2026-10-26 as HB-10a-f; HB-10a (the 10 m lobed square, the fountain) done 2026-10-26 on
   `ccr-144f3c08-vf09lo`; HB-10b (the edges and market, string lights, fireflies, the lit fountain) done 2026-10-26 on
   `track/hub`; HB-10c (the square's people by time of day, 6-10 drawn by the Engine's townFolk, ranch Billies
-  visiting) done 2026-10-26 on `track/hub`; HB-10d next. Tags `hb-N-done`. Branch `track/hub`.
+  visiting) done 2026-10-26 on `track/hub`; HB-10d (win bunting, loss gossip, the fountain's Chapter 2 look, the
+  notice board, the fountain's coin gamble, the busker's slot) done 2026-10-27 on `track/hub`; HB-10e (festivals: four
+  seasonal weeks by the ranch clock, two milestones, a market day every 3rd return, the festival market in Scrap) done
+  2026-10-27 on `track/hub`; HB-10f next. Tags
+  `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all
@@ -259,7 +263,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 03 | 03-fresh-base-and-scope-reset | done; no picture baseline yet | keep |
 | 04 | 04-modernize-codebase | done (04a-04e) | keep |
 | 05 | 05-internal-renaming | done | keep |
-| 06 | 06-ui-structure | done (06-1..06-4, then UI-5 and UI-6, 2026-10-26) | `phase-06-done` with `ui-6-done`; what is left (off-scale values, the rest of parts.css) is UI-9b |
+| 06 | 06-ui-structure | done (06-1..06-4, then UI-5 and UI-6, 2026-10-26) | `phase-06-done` with `ui-6-done`; UI-9b (2026-10-27) took the off-scale values and parts.css; the old parts still move onto the kit screen by screen |
 | 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
 | 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
 | 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone; every tree of the run biomes a model (batch 10) | parked: the other towns are legacy; run biomes reuse the done kits (left: the rooms' furniture, the barn, the mossy boulder, campfire, lookout tower, wind-sail flower) |

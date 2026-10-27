@@ -13,9 +13,11 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import {
+  BANTER,
   BOSSES,
   EVENTS,
   FACTIONS,
+  FESTIVALS,
   FIELD_MOVES,
   GENES,
   ITEMS,
@@ -86,6 +88,7 @@ import { wildHabitat } from './logic/wild-pool.js';
 import { runScenesMake, runWorldTables } from './logic/run-scenes.js';
 import { runWorldData } from './logic/run-world-data.js';
 import { runClinic, runFoes, runHealCost, runShopOpen, runWareHeals } from './logic/run-loop.js';
+import { wishCan } from './logic/fountain-wish.js';
 import { fxOfBillie } from './logic/effects.js';
 import { perkOfferMake } from './logic/perks.js';
 import { eventAt } from './logic/encounters.js';
@@ -97,7 +100,8 @@ import { conditionHolds, storyStateOf } from './logic/conditions.js';
 import { runUnlocks } from './logic/unlocks.js';
 import { runStartOn, runStartPlan } from './logic/run-start.js';
 import { parseScript } from './logic/script-parse.js';
-import { runScript } from './logic/script.js';
+import { squareMood, squareTalk } from './logic/square-talk.js';
+import { runScript, storyAllows } from './logic/script.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -169,6 +173,14 @@ import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encPlaying, encounterOpen } from './encounter-screen.js';
 import { questData, questMarked, residentTalk } from './quest-board.js';
+import {
+  festivalForce,
+  festivalMarketOpen,
+  festivalToday,
+  fountainWishOpen,
+  setFestivalForce,
+  squareDayNow,
+} from './town-square.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { augmentsDo, augmentsOpen } from './augment-screen.js';
@@ -2503,6 +2515,179 @@ async function runFullTest(mode) {
             if (s.ranch.income.lastAt !== s.ranch.seen) throw new Error('the income’s time moved back');
             return `three hours showed and paid ${want} Scrap (${rate} an hour); a clock two hours behind paid nothing and said so`;
           } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* HB-10d: the square reacts to your runs and gives you things to do, on a copy of the save (nothing is written
+       while the test runs): after a won run the bunting is up, after a lost one it is down and the square gossips; the
+       fountain takes a coin once per return; the notice board shows the run. Then the save as it was */
+    if (
+      typeof fountainWishOpen === 'function' &&
+      !saveData.run &&
+      !selfTest.stop &&
+      walkView.sc &&
+      (walkView.sc.baseId || walkView.id) === 'copperleaf'
+    )
+      await phase(
+        'The square: bunting, gossip, the fountain’s coin, the notice board',
+        'dio',
+        async () => {
+          const was = saveData;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData)),
+              run = (/** @type {string} */ end, /** @type {any} */ by) => ({
+                seed: 'selftest' + s.meta.history.length,
+                theme: 'lakeland',
+                region: 'Selftest Shore',
+                exp: 1,
+                end,
+                by,
+                row: 4,
+                days: 5,
+                team: [],
+                perks: [],
+                leaders: [],
+                rival: null,
+              }),
+              bunting = () => walkView.sc.props.filter((/** @type {any} */ p) => p.when === 'last:won'),
+              talk = () =>
+                squareTalk(BANTER, squareMood(s.meta.history), (/** @type {string} */ c) => storyAllows({ when: c }));
+            s.meta.history = [...s.meta.history.slice(-18), run('won', null)];
+            s.meta.runs += 1;
+            s.meta.wins += 1;
+            setSaveData(s);
+            if (bunting().length !== 4 || !bunting().every(propShown))
+              throw new Error(
+                `after a win ${bunting().filter(propShown).length} of ${bunting().length} bunting props up`
+              );
+            if (!talk().some(l => /gold/.test(l))) throw new Error('nobody on the square cheers a win');
+            s.meta.history.push(run('lost', { kind: 'trainer', bureau: 1 }));
+            s.meta.runs += 1;
+            if (bunting().some(propShown)) throw new Error('the bunting stays up after a loss');
+            const gossip = talk();
+            if (!/clerk|stamp/.test(gossip[0] || ''))
+              throw new Error(`a loss to the Bureau: the square says “${gossip[0]}”`);
+            /* the fountain: 3 Scrap, once per return */
+            const F = walkView.sc.props.find((/** @type {any} */ p) => p.act === 'wish' && propShown(p)),
+              R = RULES.square.wish;
+            if (!F) throw new Error('no fountain to toss a coin into');
+            s.meta.scrap = 5;
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({ k: 'act', act: 'wish', p: F });
+            const toss = /** @type {HTMLButtonElement | null} */ (
+              [...document.querySelectorAll('#ov .sheet button')].find(b => /Toss/.test(b.textContent || ''))
+            );
+            if (!toss) throw new Error('the fountain’s sheet has no Toss button');
+            toss.click();
+            const W = s.meta.wish,
+              out = W && R.outcomes.find((/** @type {any} */ o) => o.id === W.out);
+            if (!W || W.at !== s.meta.runs || !out) throw new Error(`the toss wasn’t kept: ${JSON.stringify(W)}`);
+            if (s.meta.scrap !== 2 + ((out.pay && out.pay.scrap) || 0))
+              throw new Error(`the toss cost ${5 - s.meta.scrap} Scrap, not ${R.cost.n}`);
+            if (wishCan(s.meta, R) !== 'done') throw new Error('a second coin could be tossed on the same return');
+            /* the notice board */
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({
+              k: 'act',
+              act: 'hubnotice',
+              p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'hubnotice'),
+            });
+            const board = (document.querySelector('#ov .sheet') || { textContent: '' }).textContent || '';
+            if (!/Town news/.test(board) || !/Selftest Shore: lost to the Bureau/.test(board))
+              throw new Error('the notice board doesn’t show the last run');
+            return `a win put up ${bunting().length} bunting props and cheers, a loss to the Bureau took them down and started the gossip (${gossip.length} lines); the coin: ${W.out}, once; the board shows the run`;
+          } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* HB-10e: the festivals, on a copy of the save (nothing is written while the test runs): each festival forced on
+       shows its own decorations and no other's, gives the square its own day and lines; on a market day the middle
+       stall sells a ware for Scrap into the bag, counted on the occasion, and the notice board names it; with none
+       forced, what today and the runs give. Then the save and the festival as they were */
+    if (
+      typeof festivalMarketOpen === 'function' &&
+      !saveData.run &&
+      !selfTest.stop &&
+      walkView.sc &&
+      (walkView.sc.baseId || walkView.id) === 'copperleaf'
+    )
+      await phase(
+        'The square: festivals, their decorations, lines and market',
+        'dio',
+        async () => {
+          const was = saveData,
+            F0 = festivalForce;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData));
+            s.meta.scrap = 20;
+            s.meta.fest = null;
+            setSaveData(s);
+            const FS = /** @type {any} */ (FESTIVALS).festivals,
+              dress = () => walkView.sc.props.filter((/** @type {any} */ p) => p.sq && /festival:/.test(p.when || '')),
+              its = (/** @type {string} */ id) =>
+                dress().filter((/** @type {any} */ p) => new RegExp(`festival:${id}\\b`).test(p.when));
+            if (!dress().length) throw new Error('no festival decorations round the square');
+            for (const id of Object.keys(FS)) {
+              setFestivalForce({ id, at: 1 });
+              const up = dress().filter(propShown);
+              if (up.length !== its(id).length || !its(id).every(propShown))
+                throw new Error(`${id}: ${up.length} decorations up, ${its(id).length} of them its own`);
+              if (squareDayNow() !== FS[id].day) throw new Error(`${id}: the square keeps its usual day`);
+              if (!squareTalk(BANTER, 'fest', (/** @type {string} */ c) => storyAllows({ when: c })).length)
+                throw new Error(`${id}: the square has nothing to say`);
+            }
+            /* the market at the middle stall */
+            setFestivalForce({ id: 'market_day', at: s.meta.runs });
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({ k: 'act', act: 'fest', p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'fest') });
+            const buy = /** @type {HTMLElement | null} */ (
+              document.querySelector('#ov .sheet [data-a="festbuy"]:not([disabled])')
+            );
+            if (!buy) throw new Error('the festival market has nothing to buy');
+            const i = +(buy.dataset.i || 0),
+              w = FS.market_day.stock[i],
+              had = w.item ? s.items[w.item] || 0 : s.pyramids[w.coin] || 0;
+            buy.click();
+            const got = w.item ? s.items[w.item] || 0 : s.pyramids[w.coin] || 0;
+            if (s.meta.scrap !== 20 - w.price || got !== had + 1)
+              throw new Error(`the ware cost ${20 - s.meta.scrap} Scrap (not ${w.price}) and gave ${got - had}`);
+            if (!s.meta.fest || s.meta.fest.id !== 'market_day' || s.meta.fest.got[i] !== 1)
+              throw new Error(`the sale wasn’t counted: ${JSON.stringify(s.meta.fest)}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({
+              k: 'act',
+              act: 'hubnotice',
+              p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'hubnotice'),
+            });
+            const board = (document.querySelector('#ov .sheet') || { textContent: '' }).textContent || '';
+            if (!/Today: Market day/.test(board)) throw new Error('the notice board doesn’t name the market day');
+            /* none forced: what today and the runs give, and only its decorations */
+            setFestivalForce(null);
+            const today = festivalToday(),
+              up = dress().filter(propShown).length;
+            if (up !== (today ? its(today.id).length : 0))
+              throw new Error(`today (${today ? today.id : 'no festival'}): ${up} decorations up`);
+            return `${Object.keys(FS).length} festivals, each with only its own decorations, day and lines; the market day sold a ${w.item || w.coin} for ${w.price} Scrap; today: ${today ? today.id + '@' + today.at : 'none'}`;
+          } finally {
+            setFestivalForce(F0);
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();
