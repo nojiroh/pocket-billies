@@ -78,14 +78,14 @@
   {
    "p": "eggs/egg_*_cracked.png",
    "at": [
-    "game/js/art.js:214"
+    "game/js/art.js:215"
    ]
   },
   {
    "p": "eggs/egg_*.png",
    "at": [
-    "game/js/art.js:214",
-    "game/js/art.js:216"
+    "game/js/art.js:215",
+    "game/js/art.js:217"
    ]
   },
   {
@@ -206,168 +206,6 @@
   }
  ],
  "recipes": [
-  {
-   "p": "next/billionaires/bingebat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/cublet.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/gigajenzard.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/altmowl.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/aviatorgoose.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/billgoat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/boostox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/cartotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/emberox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/everyotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/flatpackrat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/gosling.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/harvestgoat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/kamprat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/kidling.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/marsox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/memeox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/orbitotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/primotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/pupfin.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/sharktank.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/sprucegoose.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/windowgoat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/jenzard.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/siliclet.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/tigerwoods.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/tiktokferret.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
   {
    "p": "scene/build/detail.png",
    "at": [
