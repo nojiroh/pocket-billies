@@ -100,9 +100,8 @@ export function storyFindingPlace(f, D = studioState.D) {
     return ['scenes', { scene: kind === 'person' ? mapOf(k) : mapOf(''), ...at }];
   if (kind === 'place')
     return [
-      'world',
+      'hub',
       {
-        wtab: 'route',
         stop: Math.max(
           0,
           D.locations.findIndex(l => l.id === k)

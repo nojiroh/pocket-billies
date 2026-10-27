@@ -70,6 +70,320 @@ exits drawn along the shared edge; the bowl left to WM-4; WM-3 merges before WM-
 - Risky: places are bigger (more walking, more generation time); WM-7's arenas must follow `ahead` north or south.
 - Next: WM-3b (route layouts and trainers on any side, the trainer facing a wall, per-place times in the debug log, the
   town plot test, check-fast, smoke, the full quick check), then tag `wm-3-done`.
+### Terrain track TR-4: the look by height and steepness - 2026-10-26
+Branch `ccr-6e23f760-mdbx5x` (this cloud session's own; BRANCHES.md would call it `track/terrain`, which doesn't exist
+yet). Started from main da51c766. Tag to suggest: `tr-4-done` (the owner pushes tags). Details: docs/phases/terrain-track.md,
+"TR-4 as built". The owner asked how to improve the terrain textures; the review found mountains showing the top-down
+rock ground tile on every steep slope (about 29 px/m, the same in every biome) and no snow by height.
+- Changed: the wall atlas `walls.png` 4 x 3 -> 4 x 4 (columnar basalt, limestone, crystal-veined rock, speckled granite;
+  the first three rows unchanged, checked by hash; `tools/build-walls.py --extend`); 16 wall materials in the shader,
+  `WALL_MATERIALS`/`WALL_COLORS` and the Studio's wall picker; a `cliff` block per biome in `biomes.json` (face, three
+  strata colours, band, snow line). **Three Engine > World switches, all off**: Biome cliffs (`cliffFaces`), Snow line
+  (`snowLine`), Scree and turf edges (`cliffEdges`). The debug menu toggles them for a session (beside "Lose the GPU
+  context"); a mountains run (Runs, "Mountains and ledges") shows them best.
+- **Risky:** strata colours and snow tones are judged only from headless low-graphics pictures (`tools/look-terrain.py`);
+  steepness from screen-space derivatives can flicker along triangle edges at a distance; the steep-land rock now
+  changes in three hard steps (it faded softly). A view across two places takes its base place's biome for the whole
+  view. Nothing changes with the switches off (unit test: no painted pixel differs; the smoke check's pictures pass).
+- Verified: lint, typecheck, format, check:modules, check:data, unit tests (1309 pass, `terrain-look.test.mjs` new),
+  the smoke check 6 of 6 (35 shaders build), headless pictures of the mountains fixture with each switch (biome, strata
+  on the walls, the snow line moving with the data, scree at a cliff foot); the scree pass's cost in Node is within
+  noise.
+- The full quick check (no local baseline, so no picture comparison): 31 of 40 the first time. Re-run side by side with
+  main da51c766: the same five fail on both (Terraces: Copperleaf's sky_portal in the air; RL-8 run from the mast, a
+  different stage each time; room light; Song fingerprints: cave mid/late not in the sound baseline; Running), so they
+  are not this branch's; route trainers, Granny Juniper and the weather/rooms step passed on the re-run (flaky in the
+  long run); the Debug menu step failed on a track code in my note, fixed.
+- Not done: a Graphics test station (its map has no cliffs).
+- Next: the owner on the phone: a mountains run, the three toggles in the debug menu, a debug log; then one commit per
+  switch to turn on what stays, and the colours tuned in `biomes.json`. After that TR-2c part 2 or TR-5.
+
+### Online track ON-2 (= RL-15): run record, ghosts, daily and weekly runs, friends' boards - 2026-10-27
+Branch `track/online` (this session made it: `ccr-0b8e3c38-gt7t6a` with main 36bca3b4 merged in; its first push
+created it). Both halves in one session at the owner's word. Tag to suggest: `on-2-done`. Details:
+docs/phases/online-track.md, "Facts corrected at ON-2's start" and "Done in ON-2".
+- The owner's answers: one `ghosts/<uid>` document per player (not `boards/{board}/entries`); no score (won, places
+  cleared, leaders beaten, fewest days); dailies and weeklies with every unlock open, Blake reset, no hub bonus,
+  normal payout, open to anyone; the ghost on its own node, one per run, paying as Blake does.
+- Changed: `logic/run-record.js`, `logic/daily.js`, `game/js/boards.js` (new); the `ghost` node type, rules.json
+  `run.ghost` and `run.boards`, `run-map.js runMapGhost`, `rival.js ghostTeam`, `trainerTeam`'s `whole` entries,
+  `run-start.js` (board runs, the ghost kept in `run.ghost`), `run-loop.js runFoes` (the ghost's foe),
+  `battle-rewards.js` (a ghost win: a reward pick), `run.board` / `run.ghost` / `meta.boards` (validRun, validMeta;
+  no SAVE_VERSION change: metaFill fills it), the start sheet's Your own / Daily / Weekly (after a first run), the
+  record posted at Ride home, the Trainer screen's "Friends' boards", a daily's friends on its payout screen;
+  firestore.rules `ghosts/<uid>`; the quick check's Safety step covers the boards.
+- **For the owner**: publish the rules again (SECURITY.md "ON-2 for the owner to do"; the moderator uid from ON-1 is
+  still to paste). Until then records wait in the browser and the boards stay empty.
+- **Risky**: never tried with two real accounts (the boards and a ghost were tried with stand-in friends in the page,
+  the rules on the emulator). A ghost takes a town when no route or waystation fits, on a row that keeps another
+  town, so the road through the ghost skips that town (about half of today's maps have no free route or waystation).
+  A friend's Billie scaled down keeps its species (a final form at a low level). Board runs open every shop and biome
+  unlock, so a new player's daily can be harder than their own runs. Records wait in localStorage per account (at
+  most 5); a browser cleared before the next start loses them.
+- Found: `node --test` runs the emulator test files at once against one project, so each file's clearFirestore can
+  wipe the other's data mid-test (ON-1's "friends on a player's own list" test failed that way once):
+  `ghosts.test.mjs` uses its own project id.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build, `npm test` 1348 pass (daily 5,
+  run-record 10, ghost-run 3 new), the rules emulator tests 26 pass (7 new; three runs in a row), headless pictures of
+  the start sheet, the boards and a take-off with a stand-in ghost to its battle (their nickname and moves, no page
+  errors). Full quick check: 32 of 40 ok. Known on main: Terraces' sky_portal, RL-8's shop Perk, room light, Running
+  (the two cave songs pass now). RT-2's pair, Granny Juniper, the lab's drawing and the Actions sheet's day chip
+  failed in the full run but pass alone, both on this branch and on main 36bca3b4: load, not ON-2.
+- Next: the owner publishes the rules and plays a daily with a friend on two accounts; then ON-3 (the Showcase) on
+  `track/online`.
+
+### UI track UI-9a - parts.css shrunk in place: dead rules, most of its !important, the pill and keyframes out - 2026-10-27
+Branch `ccr-30c007a6-eol40p` (the owner's answer: stay here; UI-6b on it isn't in main yet, PR #230 merged; `track/ui`
+doesn't exist). Main merged in first (CHANGELOG and HANDOFF keep both sides, settings.css's Graphics presets take
+main's three columns with the branch's `var(--s2)`, art-code-refs remade). Plan approved in Plan Mode after a question
+round: UI-9 split (UI-9a parts.css now, UI-9b the snapping), snap rule nearest step with ties up and 1-2 px as
+hairlines, tap targets stay 40 px.
+- **Found first: the move as planned can't keep the screens the same.** parts.css loads 3rd, before all 27 screen
+  files; the kit loads after them. A new tool, `tools/css-order.mjs` (below), counted the fights a move would hand to
+  the other side: all of parts.css at the top of ui-kit.css, 619; per family .px 56, .pb 48, .pbar 73, .seg 44,
+  .mon/.row 63, .chip 0. And nearly every one of the 48 !important really beat a screen rule. The owner chose (second
+  question round): shrink it in place, move what moves cleanly, leave the rest for UI-9b.
+- **Changed (one cause per commit, no change on screen):**
+  - `tools/css-order.mjs`: the page's stylesheets in index.html order at a revision and now; lists each pair of
+    declarations that can meet on one element and set the same property whose winner changed (!important,
+    specificity, order), and each removed declaration nothing still beats (one on its own selector, or an !important
+    on classes alone naming every class of its last compound). Matches declarations by a per-file alignment, then
+    across files. Wary on purpose: a class meets a bare tag only where the code writes it on that tag or sets it
+    unseen. Seen working on planted faults (.pb moved: 16 fights; a live .sec-h declaration removed: flagged; a dead
+    .px one: passes).
+  - parts.css: 70 declarations a later one on the same selector always beat; 14 (in parts, shell, walk-tab,
+    battle-screen) that an !important on `.pb`, `.px`, `.chip` always beat; the `.badge` rules (and team.css's
+    `.badge.bud`): the game's only `.badge` is inside `<pb-nav-bar>`'s shadow tree, so no page CSS reaches it (the
+    unused-CSS tool counts the word in JS and never listed them); guide.css's `.lore-tabs button` font-size (the Lore
+    tabs are always `seg lore-tabs`).
+  - !important dropped where every fight css-order lists can't happen (each checked against the markup, listed in
+    its commit): `.pbar`, `.seg`, `.seg button.on` (11), `.chip`, `.pbar i`, `.sec-h .count` (8), `.pb` and its
+    colours and `.pb.big` (19), `.seg button` (2). parts.css 48 -> 7; the game 194 -> 153.
+  - `v05Grow`'s keyframe emptied: its one declaration was `!important`, which a keyframe ignores, so the Billie
+    sheet's stat bars never grew in (see Ask).
+  - The type pill's `.chip` rules into ui-kit.css beside its glyph (0 fights); parts.css's 24 `@keyframes` into
+    motion.css (no name is defined twice), and three nothing names (nwIdle, nwGlint, v05Card) removed.
+  - The Studio's tap overlay marks under 40 px, the game's rule (the owner's answer); `--tap` (44 px, real controls'
+    size) unchanged.
+- **Left in parts.css for UI-9b (measured on the final tree):** 1,049 lines, 165 rules. 7 !important: `.px` 5 (219
+  fights; `px` is also set from code where the tag isn't seen, and many are real: `.sheet`, `.mapcard`, `.ledger`,
+  `.pickrow.px`... lose their own background and corners to it today), `.pb:active` 1 (real: it beats the pixel
+  button's hover and press transforms) and `.spr img`'s reduced-motion `animation: none` 1 (real: it stops
+  `.spr.slow/.fast img`; it should stay). Moving the rest now: .px 25 fights, .pb 47, .sheet/.pickrow 21, .pbar 70,
+  .seg 28, .sec-h 9, .note 19, .mon/.spr/.row 41. The way through is the one used here, per family: remove what an
+  !important or a later rule always beats, then move. UI-9b's per-screen commits touch those screen rules anyway.
+- **ui-lint (start -> end):** !important 194 -> 153, keyframes outside motion.css 77 -> 53, radius 103 -> 99,
+  space 626 -> 616, shadows 178 -> 161, times 255 -> 249, CSS colours 667 -> 650; the rest unchanged.
+- **Verified:** the fast tier at every commit (lint with the ratchet, typecheck, unit tests, modules, format). css-order
+  at every CSS commit (its findings judged in each message). style-diff `--workers=1` over every CSS commit, in four
+  runs against the commit before each batch: the views the full runs called different (guide, settings-graphics,
+  -save, -help, sheet-build, heal-pick, bag) matched when run again alone; map (the fade layer), title (the live
+  class), the battle views and dressing (the canvases' aspect-ratio) differ by timing, as on the clean tree at the
+  start (28 of 36 the same there). Smoke 6 of 6 after the first removal. The UI gallery at the end against a run on
+  066f970e (this session's start): all 132 pictures pixel-identical (both differ from the committed baseline in the
+  same 38, UI-8's bar and this container, so the baseline was not remade). check-studio-github `--only=ui_tools`: the
+  overlay steps pass with the 40 px note; its one problem (a rule over its ceiling shows as a warning in the Check, the
+  step wants an error) is the same on 066f970e, not this session's. The unused-CSS list stays empty.
+  Full quick check: 37 of 40; the 3 reds are the known ones (Terraces' `sky_portal`, RL-8's shop with no Perk, room
+  light); "Running" passed this time.
+- **Where the plan was wrong:** "move into the kit and delete parts.css" assumed a move is cheap; it isn't while the
+  screen files sit between the two (above). The unused-CSS list was already empty, so the Ask-me-before on deleting a
+  file didn't apply (parts.css isn't deleted anyway).
+- **Risky:** the !important drops rest on markup readings (which classes sit together, which containers hold what);
+  a screen built later that puts a `.pb` in a `.seg`, or a type pill in `.ws-stats`, would now be styled by the
+  screen's rule. style-diff covers 36 views, not the opening, the joystick or photo mode (none of them use the parts
+  touched here).
+- **Ask me (owner):** the Billie sheet's stat bars were meant to grow in (v05Grow) and never did: switch it on?
+- **Phone check wanted:** nothing should look different: Team and the Billie sheet, a shop, Settings, a battle, the
+  Field Guide's tabs, the title, in light and dark.
+- **Tags to push (sessions can't):** `ui-9a-done` on this entry's commit.
+- **Next:** UI-9b: the families above out of parts.css the same way, and the off-scale values snapped one screen per
+  commit (nearest step, ties up, 1-2 px kept as hairlines), with a phone check.
+
+### Studio art track SA-4 - navigation - 2026-10-27
+Branch `track/studio-art`. The container's HEAD was detached at origin's tip and the local branch was 195 commits behind
+with 6 stale SA-1 commits (their work is on origin under other hashes): the branch was checked out again from origin.
+Main had nothing new, so there was nothing to merge. Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): workspaces as the sidebar's folding groups; Characters as one row with a Looks | Wardrobe switch;
+a "Game" workspace on top for Rules and Check; Items & pyramids in Runs. Labels only: no section key, data key or
+player-facing word changed. 7 commits. Tag `sa-4-done` (made here, for the owner to push).
+- Changed:
+  - **Workspaces**: Game (Rules, Check), Art (Art browser, Art workbench), Creatures (Billies, Roster board, Part
+    rules, Genes, Coats, Moves, Types, Battle preview), World (Walk scenes, Hub island, Props, World & encounters,
+    Engine, Camera), People & story (Trainers, Characters, Lore & story, Story scripts), Runs (Run Lab, Perks, Unlocks
+    & hub, Economy, Robots, Items & pyramids), Sound & UI (Music & sound, UI look), Legacy. The Moneys group is gone.
+    The table is `STUDIO_WORKSPACES` in `game/js/logic/studio-layout.js` (was `SECTION_GROUPS` in studio-app.js), with
+    `navRows`, `navJoined`, `workspaceOf`.
+  - **Characters**: one sidebar row for Looks (`people`) and Wardrobe (`wardrobe`); it opens the one last opened, its
+    ⇥ opens the other beside. A switch on top of both sections (`.nav-switch`) changes the section in the pane it is
+    in. `#people` and `#wardrobe` links, Find and the checks work as before.
+  - **Part rules**: the label of Part sizes (nav, heading, the Check's three messages).
+  - **Rules** says what it holds: What's new and the game-wide numbers; a run's own are in Runs.
+  - **Find** shows each section's workspace (Looks and Wardrobe settings say "Characters › …") and finds Characters.
+  - Checks: `studio-layout.test.mjs` +3 tests (every SECTION_LIST section in exactly one workspace, the rows, the
+    labels); the Studio self-test's Find step fails if Find misses a section or a section is in no workspace;
+    `studio-shots.py` views `looks` and `wardrobe`.
+  - Docs: STUDIO.md (a Workspaces note under Layout; Perks, `perks.json`, `run.perks` for Loopholes and relics; the
+    workspace paths; Characters); the improvement plan's T4.5 and T6.8 marked done here; the plan's "Found in SA-4".
+- Where the plan was wrong: T4.5 was mostly done already (Runs existed, Jobs and Town shops removed in SA-3);
+  STUDIO.md named `relics.json` and `run.relics` (the data is `perks.json`, `run.perks`); nothing tested the nav before.
+- Decisions I made:
+  - Rules and Check: not in the plan's list; a Game workspace (the owner's pick), put first.
+  - Robots sit in Runs after the run pages, Items & pyramids last.
+  - The folds are stored by workspace name, so a fold saved under an old group name is forgotten once (harmless).
+  - Left as they are: the battle-golden test's name "holding Loopholes" (a test name; its snapshot key would change),
+    the run URL's `relics=` and the section key `relics` (internal).
+- Risky:
+  - The switch is put above the section's own HTML in `renderPane`; a section that one day reads its pane's first
+    child would see the switch. None does today (grepped).
+  - Shift-clicking the Characters row while one of the two is open on the left says "Already open on the left"; its
+    ⇥ button opens the other one beside.
+- Verified:
+  - lint (with art-code-refs), typecheck, format, check:modules after each commit; unit tests 1431 pass.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections opened, the self-test with the new Find
+    check: 21 edits undone, proposal made). `--only=polish,checks`: ok (the second pane by a Shift-click on a nav row).
+  - Smoke: 6 of 6 (286 s), run alone.
+  - In a browser (scratch script): the row, the ⇥ button and the switch in both panes; Find for every section's name
+    and for Characters, Part rules and "shopkeeper"; no page errors. Screenshots at 1024 and 1920 (looks, wardrobe).
+  - Not run: the full quick check, the publish checks (they time out here).
+  - Noticed, not SA-4's: the polish step's line still says "shop thank-you lines" (Town shops went in SA-3).
+- For the owner on the phone:
+  - The section list: the eight workspaces; fold one and reopen the Studio.
+  - People & story → Characters: Looks and Wardrobe with the switch on top; Shift-click or ⇥ to put one beside.
+  - Ctrl K: "characters", "part rules", "perks": each result says its workspace.
+- Next: SA-5 (unused art), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-3 - the clean-up - 2026-10-27
+Branch `track/studio-art` (main merged first, a merge commit: HANDOFF and art-code-refs.json conflicted; SA-2b kept on
+top, main's entries below, SA-2a and SA-1 once; the container's local branch was 165 commits stale, so the merge's
+first parent is main and its second the track branch: no history rewritten). Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): Copperleaf's place as a card in Hub island; What's new at the top of Rules; the save's empty `eggs`
+list removed; the boutiques' names only into the wardrobe. One cause per commit (33), each removal grepped before and
+checked after (lint, typecheck, check:modules, check:data, unit tests). Tag `sa-3-done` for the owner.
+- Changed (Studio):
+  - **Jobs** gone, with its Find entries and checks. The self-test's and check-studio-github.py's quiet section is
+    Types now.
+  - **World & encounters** opens on Wild encounters; **Route stops** and **Eggs** are gone. Copperleaf's own place
+    (name, route label, wild encounters, backdrop, mood, music, description) is a card in **Hub island**; Check,
+    Connections, Story scripts and data-checks' findings open Hub island for a place. Find lists no route stops.
+  - **What's new** is the first card of Rules; the dead End of the road (`meta.endText`) is gone, from meta.json too.
+  - **Rules**: the Free egg, the wild drop chance and weights, the Eggs card, the rest stop price gone.
+  - **Trainers**: the km First-win egg (and the 8 mini-bosses' `egg`), the Stands at picker gone; the badge id's help
+    says the save and the profile keep it (not route gates).
+  - **Art workbench**: the always-disabled Pixels and Model buttons gone. **Roster board**: no count or version in
+    its words.
+  - **Local mode**: `window.STUDIO_KEY`, github.js's key check, the `X-Studio-Key` header, its global type and
+    STUDIO.md's "Saving in local mode" gone.
+  - **Town shops** gone, with its Find entries, Connections' shop kind, its checks, the Looks list's keepers, Walk
+    scenes' Which shop picker (a door opens its place's shop) and check-studio-github.py's shop thank-you step.
+- Changed (game):
+  - **The walk eggs**: `addEgg`, `hatchEgg`, `hatchable`, `autoSlot`, `eggSlotCount`, `eggKm` (logic/rules.js);
+    `saveData.eggs` (a new save has none, an old one's is dropped; no SAVE_VERSION change); the run's working field;
+    `rules.eggs`; `EGGS`/`EGG_TIERS`; **eggs.json**. Ranch eggs (breeding.js), `saveData.hatched` and the egg
+    pictures stay.
+  - **jobs.json** and **shops.json** gone. `SHOPS` starts empty; a run's world fills it as before. The boutiques'
+    names are in `wardrobe.json shops`: the dressing room names them, the Wardrobe's Sold at lists them.
+  - Types, the test fixture, check-data's snapshot (file count 175 to 172; the planted egg line gone) and
+    art-code-refs.json follow.
+- Where the plan was wrong: see the plan's "Found in SA-3" (the shops were the legacy world's; the badge and `node`
+  are live; Route stops was Copperleaf's only editor; the save held the walk eggs; the roster has 53).
+- Decisions I made:
+  - The quiet section of the two Studio checks is Types (no 3D view); Types now skips the second-pane step.
+  - The path-prefix test's floor is 2 claims (lore's, the story editor's): the shop's `@thanks.` went with its section.
+  - The landmark picker went with Route stops; `landmark` is still read and checked.
+  - A regional form's preview in the Studio uses its base stage's rig in the form's coat (sprites.js), as the game
+    does: Wild encounters, now the first tab, drew four forms (Trump, Zuckerberg, Swift, Kardashian) that asked for
+    missing pictures about 100 times each. Not saved into rigs.js.
+- Risky:
+  - The hub card edits `locations.json` from a 3D section; a field change redraws the section.
+  - The dressing room's inside-a-boutique mode can't be reached any more (no shop has `kind: 'wardrobe'`): left.
+  - `egg_5.png` is only preloaded now (SA-5).
+- Verified:
+  - lint, typecheck, format, check:modules, check:data after every commit; unit tests 1428 pass.
+  - Smoke: 5 of 6 in the full run (208 s). The Actions sheet step failed there with "debug log: no function render
+    to wrap" (the debug log's hook ran before the page's functions, with two browsers busy); alone it passed (57 s).
+    One re-run, as the rules allow; noted in case it comes back.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections, 21 edits undone, no problems). Its first
+    run found my Wardrobe bug (it read `D.shops`, gone with shops.json) and the forms' 404s: both fixed, then ok.
+  - `--only=wardrobe,workbench,leaders,checks,story,polish`: ok except `story: the reference didn't put heal in the
+    script`, which fails the same way on the merge commit before SA-3 (main's or SA-2b's; not looked into).
+  - Not run: the publish checks (they time out here, as in SA-2b) and the full quick check.
+  - In this container Python Playwright must be 1.63.0 to match the installed Chromium (tools/requirements-check.txt
+    pins 1.56.0, which can't find its browser; smoke then skips the browser steps and still says exit 0).
+- For the owner on the phone:
+  - Studio → Hub island: the Copperleaf card at the bottom; change the music or mood and play.
+  - Rules → What's new at the top; the title shows it.
+  - Wardrobe → an item sold at a boutique: Sold at lists the four; in the game's dressing room an item you don't own
+    says "sold at Second Chance Threads" (was "a boutique").
+  - An old save loads (its walk eggs dropped); a run starts and ends.
+- Next: SA-4 (navigation as workspaces), in a new session on `track/studio-art`, in Plan Mode.
+
+### Studio art track SA-2b - the missing editors, part 2 - 2026-10-27
+Branch `track/studio-art` (SA-2a pulled first, then main merged: a merge commit, only HANDOFF conflicted, both top
+entries kept; art-code-refs.json made again for main's moved lines). Plan approved in Plan Mode. The owner's picks
+(Claude's recommendations): icons get text **and** Edit pixels; the builder's block shading ported as a button. Not
+the recommendation: **no split** (all of SA-2b in one session, done so). Tag `sa-2-done` for the owner.
+- Changed:
+  - **A text-file save.** An SVG under `art/` and `art/manifest.js` are kept unsaved (`studioState.textDirty`), sent by
+    Propose as text (github.js `file` takes them; anything else is still refused), kept in drafts (draft-record.js
+    `texts`, a draft without them still reads), one undo step each (history.js text steps, also grouped with a data
+    change). They raise `meta.artVersion` like pictures (the game's art cache holds them too).
+  - **UI icons** (`studio/js/icon-editor.js`): pixels on the shared canvas, written back as the icons' own SVG format
+    (`logic/svg-pixels.js`); **Shade as a block** (`logic/icon-block.js`, the builder's rules); the text checked as
+    typed (`svgProblem` + the browser's parse); New icon; previews at 14-108 px on light and dark panels and beside the
+    others; unsaved icons in the Studio's own menu previews (`window.NW_ART`). Edit icon and Replace… (SVG) in the Art
+    browser.
+  - **tools/build-ui-icons.py deleted** (decision 6). `ui-icons.test.mjs` keeps the names, the count (51), the size and
+    format, and the code's uses; its grids kept as `tools/test/fixtures/ui-icon-grids.json` for the shading test.
+  - **Icon atlas** (`studio/js/atlas-editor.js`, `logic/atlas-rects.js`): the sheet with every rectangle; pick, drag,
+    resize, arrow keys, numbers; Add (a free place), Rename (items' icons and types' particles follow, one undo step),
+    Delete (refused while the data uses it); problems listed; the rectangles over the sheet in the painter; the Studio's
+    icons follow at once. `art-code-refs.json` gains `atlas`: keys the code names as words (a hint).
+  - **Scene art previews** (`studio/js/scene-art-preview.js`, `logic/wall-ramp.js`): walls and the building sheet
+    coloured as the shaders do (6 × 4 m of a cell, a colour to pick, off-level pixels counted, the cells outlined in the
+    painter), rooms behind a window by day and at night, a flag waving by the game's ripple with its postcard stamp, a
+    far backdrop over a sky wrapped at its seam.
+  - `ART_BUILDERS`: the icons' builder out; the far backdrops (build-scene-props.py) and `detail-a04b.png`
+    (build-airship.py and build-props-batch1.py) in.
+  - Walk scenes' far list has sea and volcano (two places use sea and showed None).
+  - Fixed on the way: the pixel canvas's side panel closed one element too many without the onion skin (the tile set's
+    help sat outside its column); the publish check waited for every picture's load event (over 30 s here).
+  - Checks: `check-studio-github.py` steps `icons`, `atlas`, `scene_art` and an SVG in the publish checks; the self-test's
+    "Icons" row; `studio-shots.py` views `icons`, `atlas`, `walls`, `flags`; unit tests svg-pixels, icon-block,
+    atlas-rects, wall-ramp (+ publish-plan, draft-record, history, art-search cases).
+  - STUDIO.md: UI icons; Icon atlas; Scene art previews; Propose and drafts carry text files.
+- Where the plan was wrong:
+  - **Far backdrops aren't drawn by the game** (only preloaded; `farH` does nothing). The Studio shows and paints them
+    with that note; bringing them back or retiring them is yours to decide (SA-5's report?).
+  - Only `detail-a04b.png` is the live building sheet; `detail.png` and `detail-a04.png` are builder inputs. Nothing in
+    the game reads `manifest.js`'s `battle` layout. Both noted for SA-5.
+  - The icon sheet is 254 × 48 (not 256 wide), 119 rectangles.
+- Decisions I made:
+  - The UI lint's raw-colour ceiling rose by exactly 47 (the icon palette moved from Python into
+    `logic/icon-block.js`): art colours, not UI styling; the reason is in the ceiling's comment.
+  - A new icon keeps the unit test's count at 51 on purpose: the owner raises it with the new icon.
+  - Renaming an atlas key changes the data, not the code; the code's uses are listed as a hint.
+- Risky:
+  - The atlas's "the code names it" list matches words (`up`, `box`): it can show false uses.
+  - The wall preview is flat light: the shaders' sun, bumps and the room skirting aren't drawn.
+  - Text steps reuse the picture steps' shape (empty patches + texts); a later change to history.js's art steps
+    should keep `text` steps working (history.test.mjs covers it).
+  - The Studio is still wider than a 390 px phone in every section (not new).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data.
+  - Unit tests: 1358 pass.
+  - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,icons,atlas,scene_art,studio_test`:
+    every step ok; the self-test round-trips 51 icons in about 11 ms and finds the atlas's 119 rectangles fine.
+    The publish checks (`--only=publish`) still time out at their first click in this container, with or without this
+    session's changes (the page stops painting frames); the SVG case is written but couldn't be seen through here.
+  - Smoke 6 of 6 (237 s). The Studio needs `npm run data` first in a fresh container (gamedata.js is generated).
+  - Screenshots at 1920, 1024 and 390 (views icons, atlas, walls, flags): fine at 1920 and 1024; wider than 390 px, like every section.
+- For the owner on the phone:
+  - Art browser → ui → an icon → Edit icon: paint a pixel, watch the previews; clear it, paint a flat shape, Shade as a
+    block (try One colour).
+  - icons → icons.png → Edit the rectangles: drag one, Shift + an arrow, Rename an item icon and see the item.
+  - scene/build/walls.png → pick a cell and a colour; Edit pixels and paint: the preview follows. A flag waving.
+- Next: SA-3 (clean-up in the Studio and the game), in a new session on `track/studio-art`, in Plan Mode.
 
 ### Region map track WM-2 - the region grid (logic only) - 2026-10-27
 Branch `claude/wm-2-region-grid` (from WM-1's branch). The owner's answers: places a path by Expedition (I 9-10, II
@@ -621,6 +935,7 @@ code. Tag to suggest: `on-0-done` (the owner pushes tags).
 - **Risky**: the friend-trade swap without a server relies on `getAfter`/`existsAfter` across two players' batches:
   ON-4 proves it on the emulator before any screen is built. Spark's 50k reads a day for GTS and Showcase browsing.
 - Next: the owner makes `track/online` from main; ON-1 there (it can start before RL-14b; ON-2 replaces RL-15).
+
 ### Route props track RP-2 - bridges, jetties, rails and arches in the props' style - 2026-10-26
 Branch `ccr-5d98165a-i1ustq` (as RP-1). The owner asked after RP-1 ("make it so bridges and similar things are in the
 current style") and chose: restyle in structures.js; bridges and jetties, rails, arches and tunnels (not escalators);
@@ -791,6 +1106,62 @@ Branch `ccr-a98cc267-eqso1d`, built here at the owner's word (`track/vfx` didn't
   passed in 195 s. Tags `vfx-0-done` (e437c6f4) and `vfx-1-done` for the owner: the session's git proxy
   refuses tag pushes.
 - Next: VFX-2 (the motion-line ribbon with the white core) on `track/vfx`.
+### UI track UI-6 (UI-6a written up, UI-6b) - Old layers gone: lint down, the blur budget, accessibility - 2026-10-26
+Branch `ccr-30c007a6-eol40p` (the owner's answer: work here, so it rides PR #230 with UI-8; `track/ui` doesn't exist).
+Main merged in first (#219, #224, #225, #226; HANDOFF and CHANGELOG entries placed on both sides kept once), then the
+branch's own new commits (another session's main merge, Bingebat's cry). Plan approved in Plan Mode with my
+recommendations: swaps that change nothing on screen only, blur frozen per screen at today's count, accessibility fixed
+now, main merged first.
+- **Found first: half of UI-6 was done.** UI-6a (2026-10-22, branch `ccr-1099b25a-7iznp7`, PR #112 and #113, merged)
+  deleted style, polish, screens, v05 and battle.css (screen rules to their files, legacy parts to a file each, the
+  rest to base.css and parts.css) and put the ui-lint ratchet in `npm run lint`, but left no HANDOFF entry, row or
+  ROADMAP note. Written up in ui-track.md ("UI-6a found"); this session is UI-6b. No other UI-6 work on any branch.
+- **Changed (one cause per commit):**
+  - Raw values equal to a token now read it, the same computed values with uiTheme.json's defaults: spacing 369
+    (4/8/12/16/24/32/48 px -> `--s1..s7`), radii 43 (12/16/22 px -> `--r-sm/md/lg`, 999px -> `--r-pill`), times 14
+    (140/240/420 ms -> `--m-fast/base/slow`). The Studio's Space and Motion dials now reach them.
+  - ui-lint: an `@font-face` block's family is its definition, not a raw font (8 in base.css; unit test).
+  - check-quick: smoke's phone flow fails above 3 blurred surfaces a screen, or above `BLUR_CEILING` (map 10, shop
+    5) for the two screens over it today.
+  - Tap targets to the game's 40 px: the Field Guide entry's arrows (28 px wide), Settings Help's sections (32 px),
+    the dressing room's toggles, the title's links; the settings switches keep their look and get the icons'
+    invisible 7 px margin. The tap step also opens a Guide entry, Settings Display and Help, and counts `<summary>`.
+  - Contrast: the Field Guide's tabs got the panel's surface behind them (they sat on the bare scene: 2.2:1 light,
+    1.4:1 dark); a chosen segment's background is the surface, not v05's white (dark mode: white on white, 1.03:1).
+  - The dressing room's custom colour picker has a name ("Any colour").
+  - tools/style-diff.py: the four sheet views had failed since UI-8 (they tapped a Billie card Walk no longer has);
+    both pages wait for the place's fade-in.
+  - Docs: ui-track.md (UI-6a and UI-6b rows and "found" notes, a proposed UI-9), ROADMAP (UI-6 and phase 06 done),
+    TESTING (the enforced lint, blur and tap steps), CHANGELOG.
+- **ui-lint (start -> end):** radius 146 -> 103, space 995 -> 626, times 269 -> 255, fonts 18 -> 10, CSS colours
+  669 -> 667; shadows 178, keyframes 77, !important 194, layers 60, blur rules 29, JS colours 591, innerHTML 55,
+  style= 41 unchanged. Not "near zero": what is left is mostly off the scale (spacing 6 px x146, 10 px x123, 3 px
+  x67...), and snapping it moves things 1-2 px: UI-9 with a phone check.
+- **Where the plan was wrong:** the row's "lint at or near zero" and "no visible change" can't both hold (above). The
+  Studio's contrast overlay misreads the kit's clipped pseudo-element fills (white on dark called 1.9:1), and a
+  pixel reading over glass and a moving scene is muddled too: findings were judged on pictures, and only the two
+  confirmed failures were fixed. The game's tap rule is 40 px, the Studio overlay's 44 px (see "Ask").
+- **Verified:** the fast tier at every commit (lint with the ratchet, typecheck, 1314 unit tests, modules, format,
+  data); smoke before every game commit (6 of 6; blur walk 3, map 10, team 2, guide 3, profile 2, shop 5, battle 3);
+  the blur check seen failing on a planted ceiling (map 9) and the tap step on the old CSS (dex 28x40, SUMMARY
+  310x32); style-diff after the swaps against the commit before them: 29 of 36 the same, the other 7 by timing only
+  (map's fade layer, the title's live class, the battle canvases' size), the same kinds an unchanged tree showed; the
+  UI gallery: the same 38 pictures differ from the committed baseline before and after this session's changes, with
+  the same shares (UI-8's bar and this container), so the baseline was not remade; pictures of the fixed tabs in light
+  and dark. Full quick check: 32 of 40. Known reds
+  (earlier entries): Terraces (`sky_portal` floats, HB-7), RL-8 (never landed), room light; Time and weather, Animals,
+  RT-4a and Sound effects pass alone (one browser). "Running" (the joystick, walked 2.23 m) fails the same way on
+  b7da6013, the commit before this session's changes: not this session's, for whoever owns walking.
+- **Risky:** the swaps tie hundreds of values to the Space and Motion dials: a dial moved in the Studio now moves them
+  too (as intended, but more than before). The settings switch's tap margin reaches 7 px past it. The chosen segment
+  in dark is a dark chip with its edge line, quieter than light's white chip.
+- **Ask me (owner):** 40 px (the game's 06-4 rule, the quick check) or 44 px (WCAG 2.5.5, the Studio overlay) for tap
+  targets; 44 would grow every `.pb.small`, segment and tab. And whether UI-9 (proposed in ui-track.md) is next.
+- **Phone check wanted:** the Field Guide's tabs and a dex entry's arrows, light and dark; Settings' Display switches
+  and Help sections; the dressing room's toggles.
+- **Tags to push (sessions can't):** `ui-6-done` and `phase-06-done` on this entry's commit.
+- **Next:** UI-9 (off-scale values snapped per screen, parts.css into the kit and deleted, its 48 !important), in a
+  new session, as the owner asked.
 
 ### UI track UI-8 - The bottom bar with the minimap; merge batch 3 - 2026-10-26
 Branch `ccr-30c007a6-eol40p` (`track/ui` didn't exist; a session pushes only to its own branch). Plan approved after a
@@ -1043,6 +1414,7 @@ main first; no cottage cap. Details: docs/phases/residents-track.md, "Done in RS
   phone look); where Seamus's upgrades are sold (RS-4). Please make `track/residents` from main, merge this branch in,
   tag `rs-3-done`.
 - Next session starts with: RS-4 (services and upgrades), in Plan Mode.
+
 ### Studio art track SA-2a - the missing editors, part 1 - 2026-10-26
 Branch `track/studio-art` (main merged first, a merge commit: only HANDOFF conflicted, both top entries kept). Plan
 approved in Plan Mode. The owner's picks (all Claude's recommendations): the Studio makes the Lite tiles from tiles47;

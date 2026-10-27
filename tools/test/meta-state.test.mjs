@@ -26,8 +26,13 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     badges: {},
     history: [],
     residents: {},
+    boards: { d: 0, w: 0 },
   });
   assert.equal(validMeta(m), true);
+  /* ON-2: the last daily and weekly taken off on */
+  assert.equal(validMeta({ ...m, boards: { d: 20387, w: 2913 } }), true);
+  assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);
+  assert.equal(validMeta({ ...m, boards: { d: 0, w: 0, x: 1 } }), false);
   assert.notEqual(newMeta(), m, 'a fresh object each time');
 });
 

@@ -176,7 +176,6 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
       pyramids: {},
       trip: { node: 0, plan: [] },
       wild: {},
-      eggs: [],
       flags: {},
       seats: [],
       visited: {},

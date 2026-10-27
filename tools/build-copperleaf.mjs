@@ -153,7 +153,7 @@ const pairs = [
   [oldBuildings.find(B => B.act === 'fly'), plotOf('mast')],
   [oldBuildings.find(B => B.act === 'home'), plotOf('home')],
   [oldBuildings.find(B => B.k === 'well'), well],
-  /* hub placing: the General store opens (its room, int_shop; its counter is closed until shops.json has a stock) */
+  /* hub placing: the General store opens (its room, int_shop; its counter is closed: the hub has no shop in SHOPS) */
   [{ k: 'shop', x: 0, z: 0, act: 'shop', label: 'General store' }, plotOf('shop')],
   /* HB-4b: the inn and the library (the archive) on their plots; hub placing: HB-5's Workshop and Gene Bank on theirs,
      the lighthouse on the cove, the windmill by the farm. The inn's, the library's, the Workshop's and the Gene Bank's

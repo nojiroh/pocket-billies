@@ -42,6 +42,10 @@ OUT = ROOT / 'validation' / 'quick'
 # RL-5: the shops were parked with their towns (game/data/legacy): the checks open a shop of their own to see the shop
 # screen (the stock Marigold's General Store had)
 CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'potion',price:150},{item:'burn_salve',price:200},{item:'nerve_tonic',price:200},{item:'wake_tea',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
+# UI-6b: blurred surfaces a screen may have (ui-track.md: at most 3; logic/ui-inspect.js UI_BLUR_BUDGET); the screens
+# over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
+BLUR_BUDGET = 3
+BLUR_CEILING = {'map': 10, 'shop': 5}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -509,6 +513,17 @@ def safety_step(P):
     for name, js in [('friend sheet', "document.querySelector('[data-a=fr-rm]')?.click()"), ('request sheet', "document.querySelector('[data-a=fr-no]')?.click()"), ('report sheet', "reportSheet('u1',friends.data.u1.name)")]:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';render();{js};0"); ui(pg); check(name)
     shown.append('friend sheets')
+    # ON-2: friends' boards (every tab) and a daily's board on its payout screen, a friend's and my name as stored
+    pg.evaluate("""(()=>{const X=window.__X,now=Date.now(),e={won:1,cleared:5,leaders:1,days:4,exp:1,lead:saveData.team[0].sp,t:1};
+      friends.on=true;friends.uid='me';boards.at=now;
+      boards.docs={u1:{name:'Ghost'+X,last:null,day:{n:boardDay(now),e},week:{n:boardWeek(now),e},x:{1:e},fast:e},
+        me:{name:'Me'+X,last:null,day:{n:boardDay(now),e:{...e,won:0}},week:null,x:{1:e},fast:null}};0})()""")
+    for b in ['day', 'week', 'x1', 'fast']:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';render();document.querySelector('[data-a=bd-tab][data-b={b}]')?.click();0"); ui(pg); check('boards ' + b)
+    if not pg.evaluate("document.querySelectorAll('.bd-row').length"): raise Exception('the boards showed no rows')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();modal({title:'Payout',html:boardsPayoutHTML({k:'d',n:boardDay(Date.now())})});0"); ui(pg); check('payout board')
+    pg.evaluate("friends.on=false;friends.uid=null;boards.docs={};boards.at=0;uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    shown.append('boards')
     for k in ['sum', 'build', 'moves', 'evo']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); ui(pg); check('details ' + k)
     shown.append('details')
@@ -523,16 +538,17 @@ def safety_step(P):
     if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
     ui(pg); check('battle'); shown.append('battle')
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-    return f'a payload in the trainer, nicknames, a friend, a request and the friend code stayed text on {len(shown)} screens: ' + ', '.join(shown)
+    return f'a payload in the trainer, nicknames, a friend, a request, the friend code and friends\' boards stayed text on {len(shown)} screens: ' + ', '.join(shown)
 
 
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
 def targets_step(P):
     """phase 06-4 accessibility: on a 390 px phone every visible control is at least 40 px each way, or one of the small
-    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round)"""
+    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round). 40 px is the game's rule; the
+    Studio's overlay marks under 40 px too (UI-9a, the owner's answer)"""
     pg = P.pg
-    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb')?14:0;
-      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,[data-a]')){
+    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb,.sw')?14:0;
+      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,summary,[data-a]')){
         if(e.closest('[hidden],.dbg'))continue;const r=e.getBoundingClientRect();if(!r.width||!r.height||r.bottom<0||r.top>innerHeight)continue;
         const cs=getComputedStyle(e);if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity===0)continue;
         const m=Math.min(r.width,r.height)+pad(e);if(m<39.5)out.push(where+': '+(e.dataset.a||e.className||e.tagName)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
@@ -544,11 +560,15 @@ def targets_step(P):
     for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); ui(pg)
         bad += pg.evaluate(small, tab)
-    for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
+    # UI-6b: a Field Guide entry (its arrows), Settings' Display (switches) and Help (sections) tabs too
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='guide';uiState.dex=saveData.team[0].sp;render();scrollTo(0,0);0"); ui(pg)
+    bad += pg.evaluate(small, 'guide entry')
+    pg.evaluate("uiState.dex=null;0")
+    for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('settings display', "openSettings('graphics')"), ('settings help', "openSettings('help')"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();{js};0"); ui(pg)
         bad += pg.evaluate(small, name)
     if bad: raise Exception(f'{len(bad)} controls too small to tap: ' + '; '.join(bad[:8]))
-    return 'every control on 9 screens is 40 px or more, or an icon with its 7 px tap margin'
+    return 'every control on 12 screens is 40 px or more, or an icon with its 7 px tap margin'
 
 
 @step('Sound settings: each slider sets its bus and sounds on it when let go, each row mutes its bus, the header mute keeps the levels (SND-1, UI-7a)', 120)
@@ -940,7 +960,8 @@ def phone_flow(P):
     # TC-4: the screens as the opening left them (play() gave the team, money and encounters the old step counter
     # brought; nothing below needs them): only the messages and toasts are cleared, as play() did
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
-    # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
+    # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
+    # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
     blur = {}
     for tab in ['walk', 'map', 'team', 'guide', 'profile']:
         pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0")
@@ -955,6 +976,8 @@ def phone_flow(P):
     shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount()')
     R['blurPerScreen'] = blur
+    over = [f'{k} {v} (at most {max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))})' for k, v in blur.items() if v > max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))]
+    if over: raise Exception('more surfaces blur what is behind them than allowed (ui-track.md, the blur budget): ' + ', '.join(over))
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
     # phase 13: the debug log never holds names: the trainer is called Checker, and the buddy gets a nickname it
     # then says out loud (debug_picture_privacy); neither may be in the exported log

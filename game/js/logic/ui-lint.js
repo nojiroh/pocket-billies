@@ -73,20 +73,22 @@ export const UI_LINT_RULES = [
 
 /* UI-6: the ratchet. The most raw values each rule may have in the whole game (game CSS and JS, as lintGame counts
    them). A rise fails `npm run lint` and the Studio's Check; a fall is kept by `node tools/ui-lint.mjs --save`, which
-   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here. */
+   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here.
+   jsColour rose by 47 in SA-2b, on purpose: the UI icons' palette (logic/icon-block.js), art colours that moved in
+   from tools/build-ui-icons.py when the SVG files became the source. */
 // ceiling: start
 export const UI_LINT_CEILING = {
-  radius: 146,
-  space: 995,
-  shadow: 178,
-  keyframes: 77,
-  duration: 269,
-  font: 18,
-  colour: 669,
-  important: 194,
+  radius: 99,
+  space: 616,
+  shadow: 161,
+  keyframes: 53,
+  duration: 249,
+  font: 10,
+  colour: 650,
+  important: 153,
   zindex: 60,
-  blur: 29,
-  jsColour: 591,
+  blur: 27,
+  jsColour: 638,
   innerHtml: 55,
   styleAttr: 41,
 };
@@ -151,7 +153,8 @@ export function lintCssAll(text, file = '') {
   /** @type {[string, number][]} */
   const raw = [];
   const add = (rule, at) => raw.push([rule, at]);
-  for (const { prop, value, at } of declarations(css)) {
+  // UI-6b: an @font-face block names the family it defines, so its font-family is not a raw font
+  for (const { prop, value, at } of declarations(css.replace(/@font-face\s*\{[^{}]*\}/g, blank))) {
     // what's left once vars are taken out (each var as spaces, so places hold)
     const v = value.replace(/var\([^()]*(?:\([^()]*\)[^()]*)*\)/g, blank);
     const lengths = () => [...v.matchAll(LENGTH)].filter(m => parseFloat(m[0]) !== 0).map(m => at + m.index);

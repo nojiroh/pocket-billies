@@ -1091,6 +1091,10 @@ Otherwise the field goes into an existing generic card.
   - No other section moves (no cosmetic churn).
 - **Effort:** S.
 - **Acceptance:** `SECTION_GROUPS` updated, Find still finds everything, `studio-layout` tests pass.
+- **Done in the Studio art track SA-4 (2026-10-27, docs/phases/studio-art-track.md):** the Runs workspace (Run Lab,
+  Perks, Unlocks & hub, Economy, with Robots and Items & pyramids); Rules says it holds the game-wide numbers; Town
+  shops and Jobs were removed in SA-3, not moved; World & encounters already said what runs read. `SECTION_GROUPS` is
+  `STUDIO_WORKSPACES` in logic/studio-layout.js, unit-tested; the Studio self-test checks Find finds every section.
 
 ### Phase 5 - Billie and robot parts
 
@@ -1273,6 +1277,9 @@ with the self-test's comparison to the last run, which the self-test already pro
     not change. Labels are Studio UI, not game text.
   - Update STUDIO.md's stale entries, such as "Map art".
 - **Effort:** S.
+- **Done in the Studio art track SA-4 (2026-10-27):** Looks and Wardrobe are one "Characters" row; "Part sizes" is
+  labelled "Part rules"; STUDIO.md says Perks (not Loopholes, perks.json not relics.json) and the workspaces' names.
+  "Map art" was already gone.
 
 #### T6.5 Docs
 - **Priority:** P3.

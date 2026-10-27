@@ -21,7 +21,7 @@ import { engineColor, engineContext, engineSetting } from '../engine/settings.js
 import { gpuState, imageTexture } from '../engine/webgl.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
-import { WALL_COLORS, defaultWallMaterial, standingHeightAt } from './heights.js';
+import { WALL_COLORS, biomeCliff, defaultWallMaterial, standingHeightAt, wallAtlasRows } from './heights.js';
 import { useWalkProgram, worldCurveDrop } from './draw-common.js';
 import { setShoreUniforms } from './water-data.js';
 import { buildGroundMeshSteps } from './ground-mesh.js';
@@ -50,6 +50,7 @@ expose({
   roomFloorOf: [() => roomFloorOf, v => ((roomFloorOf = v), provide({ roomFloorOf }))],
   roomFloorReady: [() => roomFloorReady, v => (roomFloorReady = v)],
   roomHole: [() => roomHole, v => ((roomHole = v), provide({ roomHole }))],
+  setTerrainLookUniforms: [() => setTerrainLookUniforms, v => (setTerrainLookUniforms = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ drawGroundDepth, roomFloorOf, roomHole });
@@ -62,26 +63,48 @@ export function setDrawGround(v) {
   provide({ drawGround });
 }
 /* to-module: end */
+/* terrain TR-4: the biome's cliff faces and strata (world.cliffFaces: uFaceB = band, strata on, steep land as rock face,
+   its material; uStrata the three colours) and its snow line (world.snowLine: uSnowL = line, ragged depth, on), from
+   the biome's cliff block K (biomes.json; null for a hand-made map) */
+function setTerrainLookUniforms(gl, U, sc, K) {
+  const faces = !!K && !!engineSetting('world', 'cliffFaces'),
+    snow = !!K && K.snowLine != null && !!engineSetting('world', 'snowLine');
+  gl.uniform4f(U.uFaceB, K ? K.band : 1, faces ? 1 : 0, faces ? 1 : 0, faces ? K.mat : 1);
+  if (faces) {
+    if (!walkRenderer.strataF) walkRenderer.strataF = new Float32Array(9);
+    for (let i = 0; i < 3; i++)
+      walkRenderer.strataF.set(
+        hexToRgb(K.strata[i]).map(v => v / 255),
+        i * 3
+      );
+    gl.uniform3fv(U.uStrata, walkRenderer.strataF);
+  }
+  gl.uniform4f(U.uSnowL, snow ? K.snowLine : 0, 1.5, snow ? 1 : 0, 0);
+}
 export function drawGround(C, X) {
   const gl = gpuState.gl,
     sc = walkView.sc,
     p = useWalkProgram('ground', C, X),
     U = p.U,
     P = GROUND_BORDER_M;
-  const wa = imageTexture(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
+  const wim = artImage(walkData().sc.wallArt || 'scene/build/walls.png'),
+    wa = imageTexture(wim, { noNormal: true });
+  /* terrain TR-4: the atlas has 3 rows of cells (12 materials) or 4 (16): read from the picture's shape */
+  gl.uniform1f(U.uWallRows, wallAtlasRows(wim));
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : gpuState.white);
   gl.uniform1i(U.uWallA, 4);
   if (!walkRenderer.wallColF) {
-    walkRenderer.wallColF = new Float32Array(36);
+    walkRenderer.wallColF = new Float32Array(48);
   }
   const WC = sc.wallCol || [];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 16; i++) {
     const c = WC[i] ? hexToRgb(WC[i]).map(v => v / 255) : WALL_COLORS[i];
     walkRenderer.wallColF.set(c, i * 3);
   }
   gl.uniform3fv(U.uWallCol, walkRenderer.wallColF);
   gl.uniform1f(U.uWallDef, defaultWallMaterial(sc));
+  setTerrainLookUniforms(gl, U, sc, biomeCliff(sc));
   /* your spot on screen (uPlC: walls and, since terrain TR-3, rock between the camera and you thin out round it)
     is set with the program (draw-common.js setRockUniforms) */
   if (U.uFol) gl.uniform2f(U.uFol, 0.6, sc.indoor ? 0 : 1);

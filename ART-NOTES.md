@@ -525,20 +525,24 @@ art pipeline (phase 17 task 11).
 - All 49 interface icons in `game/art/ui/*.svg` are redrawn as 36×36 pixel art in fixed colours (they were 12×12
   one-colour masks tinted by the text colour). The owner picked the look from samples: "P5", a mix of an extruded
   block and a diagonal split.
-- `tools/build-ui-icons.py` holds each icon as a 34×34 grid of colour letters (its `PALETTE`: the light theme's
-  colours from `uiTheme.json` plus blue, ice, paper, cream, stone, steel, slate, wood, violet and cloud). The tool
-  adds the same treatment to every icon: a 2 px block side to the lower right in a darker shade of each colour, the
-  front split on the 45° line through its middle (paler above), a lit top/left edge and a darker seam where two
-  colours meet. Edit a grid and run the tool; `--check` (run by `tools/test/ui-icons.test.mjs`) fails if a file
-  differs.
+- Each icon was drawn as a 34×34 grid of colour letters (the `PALETTE`: the light theme's colours from
+  `uiTheme.json` plus blue, ice, paper, cream, stone, steel, slate, wood, violet and cloud), and the same treatment
+  is added to every icon: a 2 px block side to the lower right in a darker shade of each colour, the front split on
+  the 45° line through its middle (paler above), a lit top/left edge and a darker seam where two colours meet.
+- Since SA-2b (Studio art track, decision 6) **the SVG files are the source**: `tools/build-ui-icons.py` retired.
+  The Studio's icon editor paints an icon's pixels (or edits its text) and writes the same SVG format
+  (`game/js/logic/svg-pixels.js`); **Shade as a block** adds the treatment above to a front painted flat
+  (`game/js/logic/icon-block.js`, the builder's rules and colours, `ICON_PALETTE` and `ICON_RAMPS`). The builder's
+  grids are kept as a test fixture (`tools/test/fixtures/ui-icon-grids.json`).
 - Icons are objects: the same colours on both themes; shadows are always dark (never the theme's text colour,
   which is light on the dark theme). The darkest colour is slate `#4A5544`, so nothing vanishes on dark panels.
 - Shapes keep the UI track's 45° rule: straight lines and 45° steps, octagons for circles. Strokes are 3 px or
   more so the icons hold up at the 14–22 px the game mostly draws them.
 
 ## UI icons in one colour: the bottom bar, controls and stats (2026-10-26)
-- An icon in `MONO` (tools/build-ui-icons.py) names one colour from `RAMP` (gold, red, green, steel, blue, teal,
-  violet) and draws with the digits 1-4: that colour's light, mid, dark and ink shades. Letters in its grid are
+- A one-colour icon (the builder's `MONO`; the icon editor's "One colour") names one colour from `RAMP` (gold, red,
+  green, steel, blue, teal, violet; `ICON_RAMPS` in icon-block.js) and draws with that colour's light, mid, dark
+  and ink shades (the builder's digits 1-4). Letters in its grid are
   accents (map's cream pin hole, sound-off's red cross). Shades of one colour get no seam between them, so the
   tones read as one block; the block side, the lit edge and the pale top half are the same as every other icon.
   Ink is for details inside a shape only (the bag's clasp): it is too dark to read on the dark theme's panels.
@@ -550,3 +554,14 @@ art pipeline (phase 17 task 11).
   front, tilted 12 and 10 degrees: the owner asked for playful angles, so this one breaks the 45-degree rule.
   The far one is sand, not gold: the pale top half washed a gold one out to near white.
 - Weather icons are unchanged (offered, not picked).
+
+## Terrain TR-4 (2026-10-26): the biomes' cliff faces
+- `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept
+  pixel for pixel; the fourth row is new, drawn by `python3 tools/build-walls.py --extend` (from its own seed, so it
+  never touches the first three rows; `--force` still redraws everything): 12 columnar basalt (volcano), 13 limestone
+  (sea, tundra), 14 crystal-veined rock (cave), 15 speckled granite (ridge). Same rules as the other cells: 64 px = 2 m
+  (32 px/m), five grey levels, tiling, lit from the top left. Repaint them freely; `--extend` does nothing once the
+  file has four rows.
+- The game reads how many rows the atlas has from its height, so a scene with its own 4 x 3 `wallArt` still works.
+- Each biome's colours for its faces are data, not art: `biomes.json` `cliff.strata` (three colours, one per band,
+  `cliff.band` metres tall). They are used only with Engine > World > Biome cliffs on.

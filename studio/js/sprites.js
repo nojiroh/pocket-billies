@@ -7,6 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { openShortcutSheet, openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { formSpeciesId } from '../../game/js/logic/forms.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { coatAtlas, drawRig, rigFrame, rigFromMeta, setCoatRigData } from '../../game/js/skeleton-rig.js';
@@ -35,6 +36,8 @@ expose({
   FACE_FRAMES: [() => FACE_FRAMES],
   RIG_CACHE: [() => RIG_CACHE],
   SPRITE_PREVIEWS: [() => SPRITE_PREVIEWS],
+  TEXT_LOADED: [() => TEXT_LOADED],
+  TEXT_LOADS: [() => TEXT_LOADS],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
   atlasPath: [() => atlasPath],
   atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
@@ -50,11 +53,15 @@ expose({
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
   forgetArt: [() => forgetArt, v => ((forgetArt = v), provide({ forgetArt }))],
+  forgetText: [() => forgetText, v => ((forgetText = v), provide({ forgetText }))],
+  formPreviewBase: [() => formPreviewBase, v => (formPreviewBase = v)],
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
   loadedAtlas: [() => loadedAtlas],
+  loadedText: [() => loadedText],
   markArt: [() => markArt, v => ((markArt = v), provide({ markArt }))],
+  markText: [() => markText, v => ((markText = v), provide({ markText }))],
   mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
@@ -79,10 +86,14 @@ expose({
   spritePreviewHTML: [() => spritePreviewHTML, v => (spritePreviewHTML = v)],
   spritePreviewLoop: [() => spritePreviewLoop, v => (spritePreviewLoop = v)],
   spritePreviewsRunning: [() => spritePreviewsRunning, v => (spritePreviewsRunning = v)],
+  svgDataUrl: [() => svgDataUrl, v => (svgDataUrl = v)],
+  textAsLoaded: [() => textAsLoaded],
+  textGet: [() => textGet, v => (textGet = v)],
+  textSaved: [() => textSaved, v => ((textSaved = v), provide({ textSaved }))],
   undoPixels: [() => undoPixels, v => (undoPixels = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ forgetArt, markArt, mountPreviews, spriteCacheClear });
+provide({ forgetArt, forgetText, markArt, markText, mountPreviews, spriteCacheClear, textSaved });
 /* to-module: end */
 export const ATLAS_CACHE = new Map(); /* path -> canvas */
 const ATLAS_LOADS = new Map();
@@ -175,11 +186,21 @@ let spritePreviewsRunning = false;
 export function spritePreviewHTML(o) {
   return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${escapeHtml(JSON.stringify(o))}' width="10" height="10"></canvas>`;
 }
+/* a regional form with no rig of its own is drawn with its base stage's rig in the form's coat, as the game does
+   (skeleton-rig.js, RO-1); without this its preview asked for a picture that doesn't exist */
+function formPreviewBase(o) {
+  if (!o.sp || (studioState.rigs && studioState.rigs[o.sp])) return {};
+  for (const L of studioState.D.lines || [])
+    for (const F of L.forms || [])
+      for (let i = 0; i < (L.names || []).length; i++)
+        if (o.sp === formSpeciesId(L.id, F.id, i)) return { sp: L.id + i, coat: o.coat || F.coat };
+  return {};
+}
 export function mountPreviews(root = document) {
   $$('canvas[data-prev]', root).forEach(c => {
     if (c._p) return;
     const o = JSON.parse(c.dataset.prev);
-    c._p = { ...o, seed: Math.random() * 6, t0: performance.now(), act: o.act || null };
+    c._p = { ...o, ...formPreviewBase(o), seed: Math.random() * 6, t0: performance.now(), act: o.act || null };
     SPRITE_PREVIEWS.add(c);
     drawSpritePreview(c, performance.now());
   });
@@ -322,6 +343,62 @@ function forgetArt(path) {
   atlasVersion++;
   updateTopBar();
   previewsDirty();
+}
+/* ---------- SA-2b: text files (an SVG icon, art/manifest.js) ----------
+   The text as the game has it (TEXT_LOADED, read once), and an unsaved one in studioState.textDirty
+   ({ text, _ver }), sent by Save as pictures are. A text put back to what was loaded is saved again: nothing to send */
+const TEXT_LOADED = new Map(),
+  TEXT_LOADS = new Map();
+export function textGet(path) {
+  if (studioState.textDirty.has(path)) return Promise.resolve(studioState.textDirty.get(path).text);
+  if (TEXT_LOADED.has(path)) return Promise.resolve(TEXT_LOADED.get(path));
+  if (TEXT_LOADS.has(path)) return TEXT_LOADS.get(path);
+  const p = fetch('../game/' + path + '?v=' + Date.now())
+    .then(r => {
+      if (!r.ok) throw new Error('Could not load ' + path);
+      return r.text();
+    })
+    .then(t => {
+      TEXT_LOADED.set(path, t);
+      TEXT_LOADS.delete(path);
+      return t;
+    })
+    .catch(e => {
+      TEXT_LOADS.delete(path);
+      throw e;
+    });
+  TEXT_LOADS.set(path, p);
+  return p;
+}
+/** the text now (unsaved, else as loaded), or null when it hasn't been read and isn't new */
+export const loadedText = path =>
+  studioState.textDirty.has(path)
+    ? studioState.textDirty.get(path).text
+    : TEXT_LOADED.has(path)
+      ? TEXT_LOADED.get(path)
+      : null;
+/** the text as the game has it ('' for a file the Studio made), or null when not read yet */
+export const textAsLoaded = path => (TEXT_LOADED.has(path) ? TEXT_LOADED.get(path) : null);
+export function markText(path, text) {
+  const was = studioState.textDirty.get(path);
+  if (TEXT_LOADED.get(path) === text) studioState.textDirty.delete(path);
+  else studioState.textDirty.set(path, { text, _ver: ((was && was._ver) || 0) + 1 });
+  updateTopBar();
+  document.dispatchEvent(new CustomEvent('studio-text', { detail: { path } }));
+}
+/** an SVG's text as a URL an <img> or a CSS url() takes */
+export function svgDataUrl(text) {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text);
+}
+/* a text file saved: what the game has now */
+function textSaved(path, text) {
+  TEXT_LOADED.set(path, text);
+}
+/* a text file made in this session and not saved, taken back (an undo of a new icon) */
+function forgetText(path) {
+  studioState.textDirty.delete(path);
+  updateTopBar();
+  document.dispatchEvent(new CustomEvent('studio-text', { detail: { path } }));
 }
 export function downloadCanvas(c, name) {
   c.toBlob(b => {

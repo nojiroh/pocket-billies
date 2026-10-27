@@ -14,6 +14,7 @@ import { cleanTrainer, personHTML } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { friendsHTML } from './friends.js';
+import { boardsHTML } from './boards.js';
 import { progressBarHTML } from './ui-bits.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -90,5 +91,5 @@ export function renderProfile() {
     )
     .join('')}</div>
   ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${escapeHtml(ITEMS[k].n)}</span><b class="tnum">×${formatNumber(saveData.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}
-  <p class="note">Buy pyramids and items at a town shop.</p></section></div>${typeof friendsHTML === 'function' ? friendsHTML() : ''}`;
+  <p class="note">Buy pyramids and items at a town shop.</p></section></div>${typeof friendsHTML === 'function' ? friendsHTML() : ''}${typeof boardsHTML === 'function' ? boardsHTML() : ''}`;
 }

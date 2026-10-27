@@ -14,6 +14,7 @@ import { draftOffer, draftStart } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { publishBranchName, publishEmpty, publishOverlap } from '../../game/js/logic/publish-plan.js';
+import { DRAFT_ART, DRAFT_TEXT } from '../../game/js/logic/draft-record.js';
 import {
   ACTIONS,
   ask,
@@ -24,7 +25,7 @@ import {
   setApi,
   setSaveAll,
   stageChanges,
-  studioState,
+  studioPending,
   toast,
   writeStaged,
 } from './studio-app.js';
@@ -58,7 +59,7 @@ export const GITHUB_CONFIG = Object.assign(
   window.PB_STUDIO_GITHUB || {}
 );
 export const githubMode = {
-  on: window.STUDIO_KEY === '__STUDIO_KEY__' || !window.STUDIO_KEY,
+  on: true, // SA-3: always (local mode and its key are gone)
   token: '',
   login: '',
   batch: null,
@@ -229,7 +230,7 @@ async function startGithubMode() {
   }
 }
 ACTIONS.ghOut = async () => {
-  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
+  if (studioPending()) {
     if (!(await ask('You have changes you haven’t proposed yet. Sign out anyway? They will be lost.', 'Sign out')))
       return;
   }
@@ -356,7 +357,13 @@ async function studioApiViaGithub(path, opt = {}) {
   }
   if (p === 'file') {
     const rel = q.get('path') || '';
-    if (!/^art\/[\w\-./]+\.(png|webp)$/i.test(rel) || rel.includes('..')) throw new Error('Bad art path.');
+    if (rel.includes('..')) throw new Error('Bad art path.');
+    /* SA-2b: an SVG icon or art/manifest.js goes as text (draft-record.js DRAFT_TEXT) */
+    if (DRAFT_TEXT.test(rel) && typeof opt.body === 'string') {
+      githubMode.batch.push({ path: gameFilePath(rel), text: opt.body });
+      return { ok: true };
+    }
+    if (!DRAFT_ART.test(rel)) throw new Error('Bad art path.');
     githubMode.batch.push({ path: gameFilePath(rel), blob: await opt.body.arrayBuffer() });
     return { ok: true };
   }

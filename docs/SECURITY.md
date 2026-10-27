@@ -126,6 +126,18 @@ own rules.
    shows "Friends need the updated database rules" and reporting says "You reported them already." (both are the
    rules' refusal); everything else works as before.
 
+### ON-2 for the owner to do (2026-10-27)
+Publish the rules again (they add `ghosts/<uid>`). Until then a finished run's record waits in the browser (it is
+posted the next time friends start after the rules are in), the boards stay empty and no ghost waits on a run's map;
+everything else works as before.
+
+What ON-2 leaves open (accepted, friends only): `ghosts/<uid>` is written by its owner's game, so a friend could post
+a faked entry within the caps (won, up to 40 places, 16 leaders, at least 1 day), or a faked last run (each Billie in
+it must pass `legalBilly` when a friend's game reads it, or the ghost isn't used). The rules hold a daily's and
+weekly's entry to the server's day or week (or the one before) and never let it change, but a player can still skip
+posting a bad attempt (by going offline and clearing the browser before the next start). The record keeps the seed,
+challenges, unlocks and path, so a server could replay the map side if Blaze ever comes; battle choices are not kept.
+
 ### Superseded 2026-10-26: the online track on Spark
 The owner chose to stay on the free Spark plan (docs/phases/online-track.md), so the table above (`trades`,
 `inventory` written by a Cloud Function) won't be built. Instead every write comes from a player's own game and the
