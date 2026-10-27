@@ -5,12 +5,16 @@
 // background work. A failure exits with 2 and the failing tests on stderr, so Claude goes on to fix them. When the
 // tests still fail on the stop after that (stop_hook_active), it lets Claude stop and shows you the failure instead,
 // so it never loops; a state that already failed isn't run again until a file changes.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, guardedHash, readState, writeState } from './session-start.mjs';
 
 const TEST_SECONDS = 280;
+/* GNU timeout (Linux, the cloud) also stops the test processes npm test started; without it (macOS), only the time
+   limit of execFileSync below */
+const limited = (sec, cmd, args) =>
+  spawnSync('timeout', ['--version']).status === 0 ? ['timeout', ['-k', '5', String(sec), cmd, ...args]] : [cmd, args];
 
 let input = {};
 try {
@@ -53,7 +57,7 @@ if (now === state.failed) {
 let out = '';
 let failed = false;
 try {
-  execFileSync('timeout', ['-k', '5', String(TEST_SECONDS), 'npm', 'test', '-s'], {
+  execFileSync(...limited(TEST_SECONDS, 'npm', ['test', '-s']), {
     cwd: ROOT,
     stdio: 'pipe',
     encoding: 'utf8',

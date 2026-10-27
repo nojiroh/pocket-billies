@@ -11,7 +11,7 @@
 // Tooling 2026-10-27: the whole quick tier (npm test) takes about 104 s now, more than a hook can wait after every
 // edit, so it runs once before Claude finishes a reply instead (tools/before-stop.mjs). A check that runs out of time
 // is reported as not finished, never as failed.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { SLOW_TESTS } from './unit-tests.mjs';
@@ -20,6 +20,10 @@ const ROOT = join(import.meta.dirname, '..');
 // at most this many test files after one edit (single files take 0.3-3 s); the rest wait for tools/before-stop.mjs
 const MAX_TEST_FILES = 12;
 const TEST_SECONDS = 60;
+/* GNU timeout (Linux, the cloud) also stops the test processes node --test started; without it (macOS), only the
+   time limit of execFileSync below */
+const limited = (sec, cmd, args) =>
+  spawnSync('timeout', ['--version']).status === 0 ? ['timeout', ['-k', '5', String(sec), cmd, ...args]] : [cmd, args];
 
 let file = '';
 try {
@@ -60,9 +64,8 @@ const runs = [];
 if (/^(game\/js|studio)\/.*\.js$/.test(rel) || /^[^/]+\.js$/.test(rel)) runs.push(['npm', ['run', '-s', 'lint']]);
 if (/^game\/js\/.*\.js$/.test(rel)) runs.push(['npm', ['run', '-s', 'typecheck']]);
 const tests = testsFor(rel);
-/* GNU timeout stops node --test with the test processes it started */
 if (tests.files.length)
-  runs.push(['timeout', ['-k', '5', String(TEST_SECONDS), process.execPath, '--test', ...tests.files], 'unit tests']);
+  runs.push([...limited(TEST_SECONDS, process.execPath, ['--test', ...tests.files]), 'unit tests']);
 if (/^game\/data\/.*\.json$/.test(rel)) runs.push(['npm', ['run', '-s', 'check:data']]);
 if (/^tools\/.*\.py$/.test(rel)) runs.push(['python3', ['-m', 'py_compile', rel]]);
 
