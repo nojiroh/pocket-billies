@@ -9,6 +9,7 @@ import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, traine
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { startWild } from './logic/battle-engine.js';
 import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
@@ -53,7 +54,6 @@ import { talkChosen } from './talk.js';
 import { cutscene } from './cutscene/director.js';
 import { loreBook } from './lore.js';
 import { flyMenu, rideGlassLift, stationMenu } from './airship.js';
-import { runWorldData } from './run-world.js';
 import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
@@ -411,7 +411,7 @@ export function roomState() {
     enc: [],
     npcs: [
       ...(sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : []),
-      /* people who only talk in the room's own data (Hazel in the lab): they stand on the room's next npcSpots */
+      /* people who only talk in the room's own data (Kappi in the lab): they stand on the room's next npcSpots */
       ...roomPeople(sc).map(P => ({
         who: P.who,
         id: '_talk:' + P.id,

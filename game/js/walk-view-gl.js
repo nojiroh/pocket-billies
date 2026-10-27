@@ -70,6 +70,7 @@ import {
   endFrameSettings,
   engineContext,
   engineSetting,
+  graphicsOff,
   playerBlur,
 } from './engine/settings.js';
 import {
@@ -106,7 +107,15 @@ import {
   swapMapCache,
   updateNearRing,
 } from './walk/map-cache.js';
-import { adaptQuality, coverItems, cullItems, easedMood, heatHaze, heatSources } from './walk/quality-cull.js';
+import {
+  adaptQuality,
+  coverItems,
+  cullItems,
+  easedMood,
+  frameBudgetRemaining,
+  heatHaze,
+  heatSources,
+} from './walk/quality-cull.js';
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
@@ -117,7 +126,7 @@ import { mapSun, walkLightContext } from './walk/lighting.js';
 import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
-import { WEATHER_FX_SHADERS, effectsPass } from './walk/effects.js';
+import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
@@ -311,8 +320,10 @@ export function ensureWalkGl(cv) {
     return false;
   }
   try {
-    ensurePrograms(WALK_SHADERS);
-    ensurePrograms(POST_EFFECT_SHADERS);
+    /* LD-2: every program starts compiling first (the driver may work on them side by side), then the ones the first
+       frame needs are finished; the rest finish in the background (pollPendingPrograms) */
+    precompilePrograms(WALK_SHADERS);
+    precompilePrograms(POST_EFFECT_SHADERS);
     for (const d of [
       typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
@@ -323,6 +334,8 @@ export function ensureWalkGl(cv) {
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
       /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
       engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
+      RIBBON_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
          batches" is on */
       engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
@@ -334,6 +347,8 @@ export function ensureWalkGl(cv) {
         precompilePrograms(
           d
         ); /* alpha 0.4: the low-poly props' too (they were built on first use, in the first place with props) */
+    ensurePrograms(WALK_SHADERS);
+    ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
     gpuState.fail = 1;
@@ -486,10 +501,13 @@ function drawWalkFrame(ts, dtm) {
   engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
+  /* LD-5: the one-off work's budget starts here (walk/quality-cull.js frameBudgetLeft) */
+  walkRenderer.budT = performance.now();
   runNormalMapJobs(walkView.warm ? 40 : 3);
-  pollPendingPrograms(1);
+  /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
+  pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
   groundOcclusionWork();
-  groundPrepWork(walkRenderer.bt ? 0 : PREP_BUDGET_MS);
+  groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
@@ -520,7 +538,8 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  engineContext.env = !sc.plain && typeof environment !== 'undefined' && (environment.on || !!environment.force);
+  engineContext.env =
+    !sc.plain && !graphicsOff() && typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
   else if (typeof environment !== 'undefined') environment.look = null; /* no time-of-day look left over */
   const gq = beginGpuTimer();
@@ -592,9 +611,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
-    updateNearRing(sc.groundOf || sc, fx, fz, PREP_BUDGET_MS);
+    updateNearRing(sc.groundOf || sc, fx, fz, Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   }
-  walkRenderer.budT = performance.now();
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
   gpuPass('other');
   let items = gatherFrameItems(st, C, PPU, C0);
@@ -706,6 +724,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   }
   gpuPass('effects');
   effectsPass(C, items, X, dark, t, dt);
+  /* VFX-2: a thrown pyramid's motion lines (battle-3d.js) */
+  if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
@@ -757,8 +777,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       /* CAM-3: times the player's blur slider (Settings → Graphics → Blur), in battles too */
       /* CAM-4b: times the zoom stops' blur at the zoom (walk/camera.js), not in battles */
       blur:
-        (BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) *
-        playerBlur(),
+        (BT
+          ? BT.blur
+          : sc.plain || graphicsOff()
+            ? 0
+            : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (walkRenderer.zoomBlur ?? 1)) * playerBlur(),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
@@ -792,6 +815,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     tilt,
     blur: LF ? Math.round(LF.scale * 100) / 100 : 0,
     slider: playerBlur(),
+    spread: !!(LF && LF.nearSpread) /* lens.nearSpread: the blur in front spread over what is behind it */,
   };
   gpuPass('other');
   /* labels and markers stay sharp on the layer above */

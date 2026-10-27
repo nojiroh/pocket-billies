@@ -50,12 +50,12 @@ export const CHOSEN = {
     bezos: [
       'It’ll deliver your groceries in two days. Destiny takes longer.',
       'Cute. Don’t sign anything it hands you.',
-      'That box has more storage than my lab. Hazel says that’s not hard.',
+      'That box has more storage than my lab. Kappi says that’s not hard.',
     ],
     gates: [
       'Very sensible. It’ll ask you to restart it twice a day.',
       'It jumped over a chair once. You’ll hear about it. I jumped two.',
-      'It ate Hazel’s thesis. Twice. I told her it was the Billie. It was the Billie.',
+      'It ate Kappi’s thesis. Twice. I told them it was the Billie. It was the Billie.',
     ],
   }),
   annoyed: [
@@ -73,8 +73,8 @@ export const CHOSEN = {
     'Type advantage is a myth. Real heroes win by believing harder.',
   ],
   tooFastPicks: [
-    'Instant picks. Reckless. I respect it. Hazel doesn’t.',
-    'Did you even read the moves? Hazel wrote those. I approved them.',
+    'Instant picks. Reckless. I respect it. Kappi doesn’t.',
+    'Did you even read the moves? Kappi wrote those. I approved them.',
   ],
   tooFastSkips: [
     'You skipped that. I could tell. Chosen ones can always tell.',

@@ -6,8 +6,8 @@ JSON array of lines in the data, next to the thing that owns it:
 - a person in a map's `people` list: `script` (id `person:<id>`),
 - a trainer, `game/data/trainers/<id>.json`: `script` (id `trainer:<id>`).
 - the story itself, `game/data/story.json` `scripts`: `{ "who": <who talks>, "script": [...] }` (id `story:<id>`):
-  Professor Chosen in the lab (`story:chosen`), after Blake's first battle, the ending. Hazel's own lab talk is a
-  person in the lab room's map (`person:hazel_lab`, maps/int_lab.json): a room may hold talking people besides its keeper.
+  Professor Chosen in the lab (`story:chosen`), after Blake's first battle, the ending. Kappi's own lab talk is a
+  person in the lab room's map (`person:kappi_lab`, maps/int_lab.json): a room may hold talking people besides its keeper.
 - a cutscene, `game/data/cutscenes/<id>.json` `script` (id `cutscene:<id>`): the opening. A cutscene has commands of
   its own (people, named shots and spots, captions): docs/CUTSCENES.md.
 - RL-S1: a line of the story director's, `game/data/banter.json` `script` (id `banter:<id>`): below, "The story
@@ -17,7 +17,7 @@ A line or a choice waits until the windows on screen (a battle's result) are clo
 trainer counts one visit (`visits:<id>`).
 
 Since S2 every conversation is a script: people, trainers (what they say before a battle; the battle ends the
-script), the ones who run up to you (`"runsUp": true` on the trainer: Blake, Cass, Vinylla), Professor Chosen and Hazel in the lab, what
+script), the ones who run up to you (`"runsUp": true` on the trainer: Blake, Cass, Vinylla), Professor Chosen and Kappi in the lab, what
 comes after Blake's first battle and the ending. Townsfolk chatter and favours stay as they are (made up from lists).
 The debug menu's "Story scripts" row plays any of them.
 
@@ -34,7 +34,7 @@ One string per line. Indentation is two spaces per level, inside the string.
 |---|---|
 | `There you are, dear.` | a line said by the one the script belongs to |
 | `[happy] There you are, dear.` | with an expression (happy, surprised, sad, angry, blink, talk) |
-| `Hazel: Another one!` / `[happy] Hazel: ...` | said by someone else: a speaker from story.json `speakers` (Chosen, Hazel, Blake, Juniper, Nacre, Cass, You) or a person id (`chosen: ...`) |
+| `Kappi: Another one!` / `[happy] Kappi: ...` | said by someone else: a speaker from story.json `speakers` (Chosen, Kappi, Blake, Juniper, Nacre, Cass, You) or a person id (`chosen: ...`) |
 | `set met_juniper` | a command (below) |
 
 A line (or a command) may hold slots, filled in as it is said: `{name}` (your name; Trainer before you have one),
@@ -107,9 +107,9 @@ An entry of `cycle` or `seq` starts after `- `; its other lines go under it, two
 | `lastby:bureau`, `lastby:boss`, `lastby:marina` | what ended the last run: its kind (`wild`, `route`, `event`, `miniboss`, `boss`, `rival`, `trainer`), a leader's or class's id (Blake's is `blake`), the Billie standing, or `bureau` (a Bureau agent) |
 | `history:losses >= 2` | over the runs kept (the last 20): `runs`, `wins`, `losses`, `quits`, `streak` (wins in a row, newest back), `lstreak` (losses in a row), `bureau` (runs a Bureau agent ended), RL-S2 `rivalmet`, `rivalwon` (meetings with Blake, and wins), `rivallost` (runs he ended) |
 | `rematch >= 1` | in a leader's or agent's line: how many runs kept that foe ended |
-| `rel:hazel >= 2` | your level with a hub person (RL-S2, relations.json: the levels their points reach) |
+| `rel:kappi >= 2` | your level with a hub person (RL-S2, relations.json: the levels their points reach) |
 | `beans >= 1` | Beans on hand, the gift currency (RL-S2) |
-| `gifted:hazel` | you gave them a gift since the last run (RL-S2) |
+| `gifted:kappi` | you gave them a gift since the last run (RL-S2) |
 | `lastteam:Grass`, `lastteam:musk >= 2` | the team the last run ended with (RL-S2, `meta.history`'s newest entry): Billies of a type, a line or a species; `type:` reads the team you have now |
 | `rival >= 1` | on a run, the meetings with Blake so far (RL-S2; before his battle, `rival >= 1` means a second meeting); 0 off a run |
 | `chapter >= 2` | the story's chapter (RL-S2: `meta.chapter`, 1 at the start, moved on only by the command `chapter n`, at most 9) |
@@ -130,9 +130,9 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `wait s` | waits, in seconds |
 | `music piece` | plays a piece of music (`rival`, `title`, ...: sound.js) |
 | `call script` | plays another script, then goes on |
-| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `hazel`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`, RL-S2 `thanks_chosen`, `thanks_hazel`, `thanks_juniper`; nothing if no line fits |
+| `pick who` | says the story director's line for who (RL-S1, below): `chosen`, `kappi`, `juniper`, `back_lost`, `leader`, `bureau`, `rival`, RL-S2 `thanks_chosen`, `thanks_kappi`, `thanks_juniper`; nothing if no line fits |
 | `beans n` | Beans found (RL-S2): into `meta.beans` at once, counted on the run for its payout screen |
-| `gift who` | a gift for a hub person (RL-S2): a Bean, `gift.points` with them; nothing with too few Beans or one given since the last run (gate it: `> [if beans >= 1 and not gifted:hazel] ...`) |
+| `gift who` | a gift for a hub person (RL-S2): a Bean, `gift.points` with them; nothing with too few Beans or one given since the last run (gate it: `> [if beans >= 1 and not gifted:kappi] ...`) |
 | `rel who n` | points with a hub person, as for a favour done (RL-S2) |
 | `chapter n` | moves the story on to chapter n (RL-S2), never back |
 | `end` | stops the script |
@@ -189,7 +189,7 @@ and a `script` (most often one line). `logic/story-pick.js storyPick` takes the 
 is drawn from the runs ended and who, so the same save picks the same line. What was said is in story `said` and
 `once`.
 
-- **Home from a run** (run.js `runEndHome` → story-stage.js `storyHomeArrive`): Chosen, Hazel and Juniper each get a
+- **Home from a run** (run.js `runEndHome` → story-stage.js `storyHomeArrive`): Chosen, Kappi and Juniper each get a
   line for this return (story `fresh`); the first talk after it plays that line once instead of their own script.
 - **A lost run** leaves story `pending` = `back-lost`: story.json `scripts.back-lost` plays by the mast once nothing
   else is open (the first time in full, flag `firstLoss`; later `pick back_lost`).
@@ -222,7 +222,7 @@ meeting ever, a plain line, after you beat him, after he ended a run, a second m
 `rival`), his win line in trainers/blake.json, and a `back_lost` pair with `lastby:rival`. `run.rival` counts the meetings and
 wins; the history keeps them as `rival: {met, won}` (null when you never met him).
 
-**The hub folk.** game/data/relations.json: `gift` (`cost` in Beans, `points`, `favour`) and `people` (Chosen, Hazel,
+**The hub folk.** game/data/relations.json: `gift` (`cost` in Beans, `points`, `favour`) and `people` (Chosen, Kappi,
 Juniper), each with `levels` (`at` points). While you hold a level its `fx` rows join every run's effects (as a
 Perk's, tagged `rel:<who>`), its `items` and `pyramids` go into the bag at each takeoff, and its `wardrobe` piece is
 given once when reached. Points are `meta.rel`; one gift a person each time home (`meta.gifted`). In the hub, with a
@@ -237,14 +237,14 @@ bonus each, 4 a wardrobe piece, 5 a once-only line.
 condition) and `points` (else `gift.favour`). Their ask is a `once` + `must` banter line whose script ends `quest
 <id> asked`; on the way home (story-stage.js `storyHomeArrive` → relations.js `relFavoursPay`, before the lines are
 picked) a favour at `asked` whose `check` holds is paid: the quest `done`, the points, a toast, and their thanks
-(`when: quest:<id> = done`, once, must) is their next line. Chosen: a leader beaten (`last:leaders >= 1`); Hazel: row
+(`when: quest:<id> = done`, once, must) is their next line. Chosen: a leader beaten (`last:leaders >= 1`); Kappi: row
 six (`last:row >= 6`); Juniper: a Grass Billie home (`lastteam:Grass`). The story checks: the quest exists with both
 stages, the check reads.
 
 **Chapters.** `meta.chapter` (1 at the start); `chapter n` moves it on; `chapter >= n` reads it. It is not story.json's
 `chapters` (map variants), which can read it in their own conditions. **Chapter 1's beats** are five `once` + `must`
-banter lines on Hazel and Chosen (`ch1_drop`, `ch1_blake`, `ch1_beans`, `ch1_number`, `ch1_signal`), each setting its
-flag, each needing the one before; its end is story.json `scripts.chapter1-end` (Hazel and Chosen, then `chapter 2`).
+banter lines on Kappi and Chosen (`ch1_drop`, `ch1_blake`, `ch1_beans`, `ch1_number`, `ch1_signal`), each setting its
+flag, each needing the one before; its end is story.json `scripts.chapter1-end` (Kappi and Chosen, then `chapter 2`).
 Nothing plays it yet: RL-14's Voltron win sets story `pending = 'chapter1-end'` after `storyHomeArrive` (which clears it on a won run), as a lost run sets `back-lost`;
 until then the debug menu's Story scripts row plays it.
 

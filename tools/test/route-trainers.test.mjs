@@ -128,10 +128,10 @@ test('route trainers: on the spots, the liked kinds first, by the road if requir
       ],
       edgeExits: [
         {
-          side: 'W',
+          side: 'E',
           path: [
             [56, 32],
-            [0, 32],
+            [112, 32],
           ],
         },
       ],
@@ -161,12 +161,12 @@ test('route trainers: on the spots, the liked kinds first, by the road if requir
   for (const t of Object.values(U)) for (const k of ['at', 'look', 'spot', 'mate']) delete t.route[k];
   RT.routeTrainersPlace(R, U, [null, sc], classes);
   assert.deepEqual(U, T);
-  /* a place with no spots: on the way west, 3 m to one side, facing it */
+  /* a place with no spots: on the way ahead (east, WM-1), 3 m to one side, facing it */
   const V = { v: { cls: 'c', runNode: 1, route: { k: 0, n: 1, opt: false } } };
   RT.routeTrainersPlace(R, V, [null, { edgeExits: sc.edgeExits }], classes);
   assert.equal(V.v.route.spot, 'way');
-  assert.deepEqual(V.v.route.at, [28, 35]);
-  assert.deepEqual(V.v.route.look, [28, 32]);
+  assert.deepEqual(V.v.route.at, [84, 29]);
+  assert.deepEqual(V.v.route.look, [84, 32]);
 });
 
 test('route trainers: they see a straight line ahead, sight metres long and a little wide', () => {

@@ -1,7 +1,7 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · overlays (UI track, UI-3b) =================
    Three switches on the UI look section's preview mark what breaks the UI rules on what it shows, as boxes drawn over
-   the frame (never in the way of a tap): tap targets under 44 px, text under its contrast on what is behind it (4.5:1,
+   the frame (never in the way of a tap): tap targets under 40 px (the game's rule), text under its contrast on what is behind it (4.5:1,
    3:1 for large text; worked out through the see-through layers down to the first solid one, a gradient by its worst
    stop; an image behind can't be told), and glass (each blurred surface, red when more than two stack, with the count
    on screen against the budget of 3). The rules are logic/ui-inspect.js's; a line under the preview counts them. */

@@ -36,7 +36,7 @@ test('an ask for runPreview answers what a direct call returns', () => {
   const m = { runPreview: modules['run-preview'].runPreview };
   for (const [seed, o] of [
     ['LAB1', { unlocks: [] }],
-    ['TESTSEED', { unlocks: [], map: { rows: 5, minibosses: 1 } }],
+    ['TESTSEED', { unlocks: [], map: { rows: 6, minibosses: 1 } }],
   ]) {
     const a = worker.logicWorkerAnswer({ id: 7, fn: 'runPreview', args: [seed, o] }, m);
     assert.equal(a.kind, 'answer');

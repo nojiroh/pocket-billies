@@ -119,9 +119,36 @@ This needs: the tradeable things to move out of the save into `inventory/` (phas
 Functions, and App Check at the same time. Nothing in today's rules has to change for it: new collections get their
 own rules.
 
+### ON-1 for the owner to do (2026-10-26)
+1. Sign in, open Debug > Save, copy "Your account id", and put it in place of `PASTE-YOUR-UID-HERE` in
+   `firebase/firestore.rules` (`moderator()`); the rules tests read whatever stands there.
+2. Publish the rules (Firebase console > Firestore Database > Rules > paste the file > Publish). Until then blocking
+   shows "Friends need the updated database rules" and reporting says "You reported them already." (both are the
+   rules' refusal); everything else works as before.
+
+### ON-2 for the owner to do (2026-10-27)
+Publish the rules again (they add `ghosts/<uid>`). Until then a finished run's record waits in the browser (it is
+posted the next time friends start after the rules are in), the boards stay empty and no ghost waits on a run's map;
+everything else works as before.
+
+What ON-2 leaves open (accepted, friends only): `ghosts/<uid>` is written by its owner's game, so a friend could post
+a faked entry within the caps (won, up to 40 places, 16 leaders, at least 1 day), or a faked last run (each Billie in
+it must pass `legalBilly` when a friend's game reads it, or the ghost isn't used). The rules hold a daily's and
+weekly's entry to the server's day or week (or the one before) and never let it change, but a player can still skip
+posting a bad attempt (by going offline and clearing the browser before the next start). The record keeps the seed,
+challenges, unlocks and path, so a server could replay the map side if Blaze ever comes; battle choices are not kept.
+
+### Superseded 2026-10-26: the online track on Spark
+The owner chose to stay on the free Spark plan (docs/phases/online-track.md), so the table above (`trades`,
+`inventory` written by a Cloud Function) won't be built. Instead every write comes from a player's own game and the
+rules guard shape, size, single claims (create-only documents) and linked writes (`getAfter`/`existsAfter`). What
+stays open, accepted by the owner: a cheater can keep a Billie, egg or part they traded away by restoring their save
+(friend trades, GTS, Surprise Trade); hacked-but-legal Billies pass `legalBilly`; a friend can post a faked score
+(boards are friends only for that reason); there is no ranked ladder. Names show as typed in global views (only
+`cleanName`); the block list and reports are the answer. App Check is still not worth it (it proves the page, not
+the player). If Blaze ever comes, the table above is the plan for trades, boards and ranked matches.
+
 ## Found, not fixed (not security)
 
-- Making friends again the other way round fails: if A once sent B a request that was later removed, and B then sends
-  A a new one that A accepts, both games drop each other again (syncFriends applies "removed" from the old request after
-  "accepted" from the new one). Asking again from the same side works. Fix by taking each pair's newest request (`t`).
-  Small; best done with the rest of the friends work (phase 06 or 18).
+- (Fixed in ON-1, 2026-10-26: each pair's newest request decides, logic/online.js `friendListFrom`.) Making friends
+  again the other way round used to drop both sides.

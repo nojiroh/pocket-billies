@@ -43,8 +43,6 @@ import {
 import { random } from '../util.js';
 import {
   COATS,
-  EGGS,
-  EGG_TIERS,
   FACTIONS,
   FIELD_MOVES,
   GENES,
@@ -104,14 +102,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   addBilly: [() => addBilly, v => (addBilly = v)],
   // @ts-expect-error -- replaced on purpose
-  addEgg: [() => addEgg, v => (addEgg = v)],
-  // @ts-expect-error -- replaced on purpose
   addPart: [() => addPart, v => (addPart = v)],
   // @ts-expect-error -- replaced on purpose
   addWalked: [() => addWalked, v => ((addWalked = v), provide({ addWalked }))],
   allBillies: [() => allBillies],
-  // @ts-expect-error -- replaced on purpose
-  autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyAug: [() => billyAug],
   billyBuild: [() => billyBuild],
   // @ts-expect-error -- replaced on purpose
@@ -150,8 +144,6 @@ expose({
   distanceText: [() => distanceText],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
-  eggKm: [() => eggKm],
-  eggSlotCount: [() => eggSlotCount],
   // @ts-expect-error -- replaced on purpose
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
@@ -183,9 +175,6 @@ expose({
   geneData: [() => geneData],
   // @ts-expect-error -- replaced on purpose
   geneLimit: [() => geneLimit, v => ((geneLimit = v), provide({ geneLimit }))],
-  // @ts-expect-error -- replaced on purpose
-  hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
-  hatchable: [() => hatchable],
   // @ts-expect-error -- replaced on purpose
   healAll: [() => healAll, v => ((healAll = v), provide({ healAll }))],
   hereLocation: [() => hereLocation],
@@ -1286,40 +1275,3 @@ export function addWalked(m) {
 export const metresToKm = m => (m / 1000).toFixed(1);
 /* a walking distance for people: "80 m", "850 m", "1.2 km" */
 export const distanceText = m => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${metresToKm(m)} km`);
-/* an egg's name comes from the distance it needs ("2 km egg"); its tier id is only a key */
-export const eggKm = tier => Math.round((EGGS[tier] ? EGGS[tier].need : 0) / 100) / 10;
-/* ---------- Seed Rounds ---------- */
-export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
-export function autoSlot() {
-  for (let sl = 0; sl < eggSlotCount(); sl++) {
-    if (saveData.eggs.some(e => e.slot === sl)) continue;
-    const e = saveData.eggs.find(e => e.slot == null);
-    if (e) e.slot = sl;
-  }
-}
-export function addEgg(tier) {
-  if (!EGGS[tier]) return false;
-  if (saveData.eggs.length >= RULES.eggs.capacity) {
-    toast('You’re carrying too many eggs. Hatch a few first.');
-    return false;
-  }
-  saveData.eggs.push({ id: newUid(), tier, prog: 0, slot: null });
-  autoSlot();
-  return true;
-}
-export const hatchable = () => saveData.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
-export function hatchEgg(e) {
-  if (typeof jingle === 'function') jingle(JINGLES.hatch);
-  const T = EGGS[e.tier],
-    R = RULES.eggs,
-    top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
-  let sp = pickWeighted(T.list);
-  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) sp = R.mythSpecies;
-  const m = makeBilly(sp, T.lv, { wild: true, coat: coatRoll(COATS, 'egg', random) });
-  saveData.eggs = saveData.eggs.filter(x => x !== e);
-  saveData.hatched = (saveData.hatched || 0) + 1;
-  autoSlot();
-  const where = addBilly(m);
-  save();
-  return { m, where };
-}

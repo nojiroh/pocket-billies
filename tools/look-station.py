@@ -31,9 +31,9 @@ VIEWS = [
     ('wildwood', [29, 5, -9], [22, 1.8, 6], 60),
     ('highland', [43, 5, -9], [36, 1.8, 6], 60),
     ('harvest', [57, 5, -9], [50, 1.8, 6], 60),
-    ('climb', [44, 12, -14], [52, 7, 22], 64),
-    ('portal', [72, 18, 6], [91, 16, 22], 60),
-    ('portal-end', [76, 17, 22], [92, 17, 22], 60),
+    ('track', [30, 5, 10], [22, 1.5, 22], 64),
+    ('portal', [44, 18, 22], [62, 20.5, 22], 60),
+    ('portal-side', [50, 19, 6], [62, 20.5, 22], 60),
 ]
 HIDE_HUD = """(()=>{const cv=walkView.cv;for(const el of document.body.querySelectorAll('*'))
  if(el!==cv&&!el.contains(cv))el.style.setProperty('visibility','hidden','important');

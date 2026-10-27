@@ -18,8 +18,8 @@
   left: 50%;
   top: max(14vh, 90px);
   transform: translateX(-50%);
-  padding: 8px 14px;
-  border-radius: 12px;
+  padding: var(--s2) 14px;
+  border-radius: var(--r-sm);
   font-size: 15px;
   max-width: min(92vw, 460px);
   text-align: center;
@@ -38,7 +38,7 @@
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
   align-items: stretch;
   height: min(46vh, 300px);
 }

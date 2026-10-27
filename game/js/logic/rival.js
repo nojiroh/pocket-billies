@@ -15,6 +15,8 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   RIVAL_TRAINER: [() => RIVAL_TRAINER],
+  // @ts-expect-error -- replaced on purpose
+  ghostTeam: [() => ghostTeam, v => (ghostTeam = v)],
   rivalPast: [() => rivalPast],
   rivalRunStart: [() => rivalRunStart],
   rivalSize: [() => rivalSize],
@@ -82,4 +84,15 @@ export function rivalTeam(g, leadTypes, met, top, R, species, dex, beats, step) 
     taken.push(sp);
     return { sp, lvl };
   });
+}
+
+/** ON-2: a friend's ghost team for its node (logic/run-record.js ghostPick, run-loop.js runFoes): its strongest at
+ * `top`, the others in the same proportion below it as they were (a Lv 22 beside a Lv 30 at a Lv 12 place: Lv 9; 1 at
+ * least), each the friend's Billie as it was (moves, coat, splice, Augments), as trainer team entries
+ * (game-data.js trainerTeam: `whole`)
+ * @template {{ sp: string, lvl: number }} B @param {B[]} party @param {number} top
+ * @returns {{ sp: string, lvl: number, whole: B }[]} */
+export function ghostTeam(party, top) {
+  const high = Math.max(...party.map(m => m.lvl));
+  return party.map(m => ({ sp: m.sp, lvl: Math.max(1, Math.min(100, Math.round((top * m.lvl) / high))), whole: m }));
 }
