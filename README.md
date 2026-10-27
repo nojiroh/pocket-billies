@@ -28,8 +28,8 @@ If something looks wrong or runs slowly, open **Settings** (the gear) → **Help
   (only which places opened and when).
 
 The **debug menu** (its button there, Ctrl+Shift+D, or `?debug` in the address) has both of those, and:
-- **Diagnostics test**: about two minutes, for when the game runs slowly. It ends with **Save the report**, a short
-  `pocket-billies-diagnostics-….json` to send.
+- **Diagnostics test**: about 6 to 8 minutes on a phone, for when the game runs slowly. It ends with
+  **Save the report**, a short `pocket-billies-diagnostics-….json` to send.
 - **Graphics cost test**: about 11 to 12 minutes, on a place built for it. It steps every graphics setting through a
   few values and shows what each one costs on your device, costliest first. **Save the report** gives a short
   `pocket-billies-graphics-….json` to send. Your settings and save aren't changed (docs/graphics-bench.md).
