@@ -1002,6 +1002,8 @@ def lab(pg, base):
     rows, want = pg.evaluate("[document.querySelectorAll('.s-lab .lab-row').length,Object.keys(UNLOCK_DATA.unlocks).length]")
     if rows != want: raise Exception(f'the board shows {rows} rows of {want}')
     cost = pg.evaluate("UNLOCK_DATA.unlocks.shop_revive.cost")
+    # UI-8b: the taps on a phone-sized page: on this page's 300 px the wide map tile's bar (198 px) covers every row
+    pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.3)
     pg.click(".s-lab [data-a=lab-buy][data-k=shop_revive]")
     st = pg.evaluate("[saveData.meta.research,!!saveData.meta.unlocks.shop_revive]")
     if st != [500 - cost, True]: raise Exception(f'buying Revives: Research and owned {st}')
@@ -1012,6 +1014,7 @@ def lab(pg, base):
     pg.evaluate("uiState.modal=null;uiState.mq=[];stationMenu(walkView.sc.props.find(q=>q.act==='station'));0")
     pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=station_2]")
     if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Station Lv 2 didn’t open the ridge lands on the station’s sheet')
+    pg.set_viewport_size({'width': 400, 'height': 300})
     if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_revive': raise Exception('a run wouldn’t carry the shop unlock')
     keep = pg.evaluate("JSON.stringify(saveData.meta)")
     pg.goto(base + '/index.html?fixture=stored')
