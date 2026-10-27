@@ -160,6 +160,7 @@ expose({
   BOWL_WALL_W: [() => BOWL_WALL_W],
   WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
+  bowlFont: [() => bowlFont],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   bowlWorker: [() => bowlWorker],
   runPinArt: [() => runPinArt],
@@ -191,6 +192,7 @@ expose({
   worldBowlFloatLook: [() => worldBowlFloatLook, v => (worldBowlFloatLook = v)],
   worldBowlFloats: [() => worldBowlFloats, v => (worldBowlFloats = v)],
   worldBowlFlying: [() => worldBowlFlying],
+  worldBowlFont: [() => worldBowlFont, v => (worldBowlFont = v)],
   worldBowlGpu: [() => worldBowlGpu, v => (worldBowlGpu = v)],
   worldBowlHex: [() => worldBowlHex],
   worldBowlInst: [() => worldBowlInst, v => (worldBowlInst = v)],
@@ -3561,7 +3563,7 @@ function worldBowlOverlay(t) {
     /* a run's '?' place keeps its name to itself */
     if ((!rm || rm.seen > 1) && (l.town || i === sel || here || close)) {
       const y = (s.under ? top.y + 10 : top.y - 12) + (locked ? -12 : 0);
-      c.font = `${l.town ? '700 ' : ''}${l.town ? 12 : 11}px system-ui, sans-serif`;
+      c.font = worldBowlFont(l.town ? 14 : 13);
       c.textAlign = 'center';
       c.textBaseline = 'bottom';
       c.lineWidth = 3.5;
@@ -3838,6 +3840,27 @@ function worldBowlFlagImage() {
     runPinArt.flag.src = uiIconURL('flag');
   }
   return runPinArt.flag;
+}
+/* UI-8c: the places' names in the game's voice font (uiTheme.json's, Jersey 15 by default) instead of the phone's;
+   until it has loaded the canvas draws them in its fallback, then the map draws again */
+const bowlFont = { key: '', fam: '', at: -1e9 };
+function worldBowlFont(px) {
+  /* the family read again at most once a second (a theme change), not for every name */
+  const now = performance.now();
+  if (now - bowlFont.at > 1000) {
+    bowlFont.at = now;
+    bowlFont.fam = getComputedStyle(document.documentElement).getPropertyValue('--font-voice').trim() || 'sans-serif';
+  }
+  const font = `${px}px ${bowlFont.fam}`;
+  if (bowlFont.key !== font) {
+    bowlFont.key = font;
+    if (document.fonts && document.fonts.load)
+      document.fonts.load(font).then(
+        () => (worldBowl.dirty = true),
+        () => 0
+      );
+  }
+  return font;
 }
 /* a place's pin: a stalk standing on its spot and a round head, a house for a town; locked grey, here gold, picked
    white */
