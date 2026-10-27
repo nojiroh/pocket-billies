@@ -9,7 +9,15 @@
    Studio's undo), Replace, Download and Open in its editor. Ctrl K finds art files (find.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide, tileSetOpen } from '../../game/js/hooks.js';
+import {
+  atlasOverlay,
+  iconReplace,
+  mountScenePreviews,
+  provide,
+  scenePreviewHTML,
+  scenePreviewOverlay,
+  tileSetOpen,
+} from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { artURL } from '../../game/js/art.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
@@ -60,6 +68,7 @@ import {
   loadedAtlas,
   markArt,
   pickFile,
+  svgDataUrl,
 } from './sprites.js';
 import { gameFilePath, githubMode } from './github.js';
 import { legacyLoad, legacyView } from './legacy-view.js';
@@ -114,6 +123,10 @@ export const artBrowser = {
   edit: '',
   /* SA-2a: the ground tile set (tile-set.js) shows in this section's place */
   tiles: false,
+  /* SA-2b: the icon being edited (icon-editor.js), shown in this section's place; '' none */
+  icon: '',
+  /* SA-2b: the icon atlas's rectangles (atlas-editor.js) in this section's place */
+  atlas: false,
   /* SA-2a: where Done goes back to when another editor opened the painter: { label, fn } */
   from: null,
   more: 0,
@@ -362,6 +375,9 @@ function artEditorsFor(path) {
 
 /* ---------- the section ---------- */
 const thumbSrc = path => {
+  /* SA-2b: an unsaved SVG shows as its text */
+  const t = studioState.textDirty.get(path);
+  if (t) return svgDataUrl(t.text);
   const c = studioState.artDirty.get(path);
   if (!c) return `../game/${path}`;
   if (c._abUrl && c._abVer === c._ver) return c._abUrl;
@@ -373,7 +389,7 @@ function thumbHTML(path, ix) {
   const name = path.split('/').pop(),
     s = artSize(path),
     st = ix ? artRefState(ix.get(path)) : '',
-    dirty = studioState.artDirty.has(path);
+    dirty = studioState.artDirty.has(path) || studioState.textDirty.has(path);
   return `<button class="ab-tile${path === artBrowser.sel ? ' on' : ''}${st === 'unused' ? ' ab-unused' : ''}" data-act="abPick" data-p="${escapeHtml(path)}" title="${escapeHtml(path)}"><span class="ab-thumb"><img src="${escapeHtml(thumbSrc(path))}" alt="" loading="lazy"></span><span class="ab-name">${escapeHtml(name)}</span><small>${s ? s.w + '×' + s.h : ''}${dirty ? ' · edited' : ''}${st === 'legacy' ? ' · legacy' : ''}</small></button>`;
 }
 function detailHTML(path, ix) {
@@ -382,6 +398,7 @@ function detailHTML(path, ix) {
     s = artSize(path),
     refs = ix ? ix.get(path) || [] : null,
     png = /\.png$/i.test(path),
+    icon = /^art\/ui\/([\w-]+)\.svg$/.exec(path),
     eds = ix ? artEditorsFor(path) : [];
   const used =
     refs == null
@@ -403,11 +420,11 @@ function detailHTML(path, ix) {
         : '';
   const pal = artBrowser.pal && artBrowser.pal.path === path ? artBrowser.pal.text : '';
   return `<div class="ab-big"><img src="${escapeHtml(thumbSrc(path))}" alt=""></div>
-  ${strip ? stripPlayerHTML(path, strip) : ''}
+  ${strip ? stripPlayerHTML(path, strip) : ''}${scenePreviewHTML(path)}
   <p class="mono ab-path">${escapeHtml(path)}</p>
-  <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
+  <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
   ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}
-  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
+  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
 function gridHTML(ix) {
@@ -501,6 +518,7 @@ function mountArtBrowser() {
   if (artBrowser.edit) mountArtPixels();
   else artDetailNotes(artBrowser.sel);
   mountStripPlayers();
+  mountScenePreviews();
 }
 /* a file of game/ is in the repository's tree (the file list keeps pictures only; the tree has every file) */
 let treeFiles = null;
@@ -546,6 +564,7 @@ async function artDetailNotes(path) {
     if (side) {
       side.innerHTML = detailHTML(path, artBrowser.ix);
       mountStripPlayers(side);
+      mountScenePreviews(side);
     }
   }
 }
@@ -553,6 +572,8 @@ async function artDetailNotes(path) {
 /* ---------- actions ---------- */
 ACTIONS.abGo = d => {
   artBrowser.tiles = false;
+  artBrowser.icon = '';
+  artBrowser.atlas = false;
   artBrowser.from = null;
   artBrowser.at = d.at || '';
   artBrowser.more = 0;
@@ -580,6 +601,12 @@ ACTIONS.abOpen = d => {
   if (E) E[1]();
 };
 ACTIONS.abDownload = async d => {
+  if (studioState.textDirty.has(d.p)) {
+    const a = document.createElement('a');
+    a.href = svgDataUrl(studioState.textDirty.get(d.p).text);
+    a.download = d.p.split('/').pop();
+    return a.click();
+  }
   if (/\.png$/i.test(d.p) || studioState.artDirty.has(d.p))
     return downloadCanvas(await atlasGet(d.p), d.p.split('/').pop());
   const a = document.createElement('a');
@@ -588,10 +615,7 @@ ACTIONS.abDownload = async d => {
   a.click();
 };
 ACTIONS.abReplace = async d => {
-  if (/\.svg$/i.test(d.p)) {
-    toast('SVG icons are edited as text in SA-2; replace the file in the repository for now.');
-    return;
-  }
+  if (/\.svg$/i.test(d.p)) return iconReplace(d.p);
   const f = await pickFile('image/png,image/webp');
   if (!f) return;
   const c = await fileToCanvas(f);
@@ -620,6 +644,8 @@ function artBrowserShow(path) {
   artBrowser.sel = path;
   artBrowser.edit = '';
   artBrowser.tiles = false;
+  artBrowser.icon = '';
+  artBrowser.atlas = false;
   artBrowser.from = null;
   openSection('art');
 }
@@ -631,7 +657,7 @@ function editCardHTML() {
   return card(
     `Edit pixels: ${escapeHtml(p.split('/').pop())}`,
     `<div class="sc-pe" id="abPe"><div class="sc-pe-bar">${pixelCanvasToolsHTML()}<span class="colw"><input type="color" id="abPeColor" value="${artBrowser.color}"></span><span class="grow"></span><button class="btn sm primary" data-act="abEditDone">${artBrowser.from ? 'Done, back to ' + escapeHtml(artBrowser.from.label) : 'Done'}</button></div>
-  <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${strip ? stripPlayerHTML(p, strip) : ''}${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p>${artMadeByHTML(p)}<p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
+  <div class="sc-pe-body"><div class="sc-pe-stage" id="abPeStage"></div><div class="sc-pe-side">${strip ? stripPlayerHTML(p, strip) : ''}${scenePreviewHTML(p)}${pixelCanvasPanelHTML()}<p class="help mono">${escapeHtml(p)}</p>${artMadeByHTML(p)}<p class="help">Each stroke is a step of the Studio’s undo (Ctrl Z). Save to game writes the picture.</p></div></div></div>`
   );
 }
 ACTIONS.abEdit = async d => {
@@ -657,20 +683,29 @@ ACTIONS.abEditDone = () => {
 };
 /** SA-2a: another editor's Edit pixels: the painter on a picture (art/...), and Done goes back with `back`
  * ({ label, fn }) */
-async function artPaint(path, back = null) {
+export async function artPaint(path, back = null) {
   try {
     await atlasGet(path);
   } catch (e) {
     toast('Could not load ' + path, 'err');
     return;
   }
-  Object.assign(artBrowser, { tiles: false, edit: path, sel: path, at: artFolderOf(path), q: '', from: back });
+  Object.assign(artBrowser, {
+    tiles: false,
+    icon: '',
+    atlas: false,
+    edit: path,
+    sel: path,
+    at: artFolderOf(path),
+    q: '',
+    from: back,
+  });
   if (studioState.sec !== 'art') openSection('art');
   else render();
 }
 /** SA-2a: a picture's src for an <img>: the unsaved canvas when it has been edited, else the game's file
  * @param {string} rel a path under game/art (robots/vane.png) */
-const artPicSrc = rel => (studioState.artDirty.has('art/' + rel) ? thumbSrc('art/' + rel) : artURL(rel));
+export const artPicSrc = rel => (studioState.artDirty.has('art/' + rel) ? thumbSrc('art/' + rel) : artURL(rel));
 provide({ artPicSrc }); /* to-module */
 function mountArtPixels() {
   const st = $('#abPeStage');
@@ -679,6 +714,8 @@ function mountArtPixels() {
   const P = pixelCanvas(st, {
     get: () => loadedAtlas(path),
     path: () => path,
+    /* SA-2b: the icon atlas's rectangles over its sheet; a cell sheet's cells (scene-art-preview.js) */
+    overlay: () => (path === 'art/icons/icons.png' ? atlasOverlay() : scenePreviewOverlay(path)),
     tool: artBrowser.tool,
     color: artBrowser.color,
     changed: () => markArt(path, loadedAtlas(path)),

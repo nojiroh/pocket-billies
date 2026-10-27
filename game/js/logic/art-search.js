@@ -217,7 +217,7 @@ export function pngSize(b) {
 }
 
 /* SA-2a: art a Python builder in tools/ draws, so running it again can draw over a Studio edit (the owner,
-   2026-10-26: the builders stay and the Studio says so; tiles47's builder retired). [path pattern, builder] */
+   2026-10-26: the builders stay and the Studio says so; tiles47's and, SA-2b, the UI icons' builders retired). [path pattern, builder] */
 export const ART_BUILDERS = [
   [/^scene\/fx\/(bee|fish|moth)\.png$/, 'tools/build-fx-v47.py'],
   [/^scene\/life\/crow\.png$/, 'tools/build-fx-v47.py'],
@@ -226,8 +226,10 @@ export const ART_BUILDERS = [
   [/^scene\/build\/walls\.png$/, 'tools/build-walls.py'],
   [/^scene\/build\/(detail|rooms)\.png$/, 'tools/build-buildings.py'],
   [/^scene\/build\/detail-a04\.png$/, 'tools/build-props-a04.py'],
+  /* SA-2b: the live building sheet: the airship's textures, then bark and rock, written into it */
+  [/^scene\/build\/detail-a04b\.png$/, 'tools/build-airship.py and tools/build-props-batch1.py'],
+  [/^scene\/far\/[\w-]+\.png$/, 'tools/build-scene-props.py'],
   [/^scene\/flags\/[\w-]+\.png$/, 'tools/build-flags.py'],
-  [/^ui\/[\w-]+\.svg$/, 'tools/build-ui-icons.py'],
 ];
 /** the builder that draws a picture, or '' (a path under art/, with or without art/ in front)
  * @param {string} path */

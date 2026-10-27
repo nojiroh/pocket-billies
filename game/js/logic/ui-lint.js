@@ -73,7 +73,9 @@ export const UI_LINT_RULES = [
 
 /* UI-6: the ratchet. The most raw values each rule may have in the whole game (game CSS and JS, as lintGame counts
    them). A rise fails `npm run lint` and the Studio's Check; a fall is kept by `node tools/ui-lint.mjs --save`, which
-   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here. */
+   rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here.
+   jsColour rose by 47 in SA-2b, on purpose: the UI icons' palette (logic/icon-block.js), art colours that moved in
+   from tools/build-ui-icons.py when the SVG files became the source. */
 // ceiling: start
 export const UI_LINT_CEILING = {
   radius: 146,
@@ -86,7 +88,7 @@ export const UI_LINT_CEILING = {
   important: 194,
   zindex: 60,
   blur: 29,
-  jsColour: 591,
+  jsColour: 638,
   innerHtml: 55,
   styleAttr: 41,
 };

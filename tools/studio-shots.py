@@ -33,6 +33,10 @@ VIEWS = {
     'art': ('art', "artBrowserShow('art/scene/props/house.png')", '#abGrid .ab-tile'),
     'tiles': ('art', "void tileSetOpen('granite', 2)", '#tsStage .pc-art'),
     'strips': ('art', "artBrowserShow('art/scene/life/duck.png')", '.ab-side canvas.sp-cv'),
+    'icons': ('art', "void iconEditOpen('bag')", '#icStage .pc-art'),
+    'atlas': ('art', "void atlasOpen('coin')", '#atCv'),
+    'walls': ('art', "artBrowserShow('art/scene/build/walls.png')", '.ab-side canvas.sp-wall'),
+    'flags': ('art', "artBrowserShow('art/scene/flags/marigold.png')", '.ab-side canvas.sp-flag'),
     'robots': ('robots', "studioState.sel.rbKind = 'torso'; studioState.sel.rbId = 'bulwark'; render(); setTimeout(() => document.querySelector('.rb-fig').scrollIntoView(), 50)", '.rb-fig'),
     'pyramids': ('items', "setTimeout(() => document.querySelector('.pyr-art').scrollIntoView(), 50)", '.pyr-art'),
     'workbench': ('workbench', """(async () => { const fs = []; for (const n of ['beasts-front.png', 'beasts-back.png']) {

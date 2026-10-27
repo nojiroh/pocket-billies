@@ -347,8 +347,8 @@ same phase:
   change to a cut is caught). A new kit part or state goes into the gallery as a section with `data-shot`; a look
   change on purpose is `python3 tools/check-ui-gallery.py --update`, said in the commit. Not in CI: the baseline is
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
-  copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
-  tools/build-ui-icons.py.
+  copy equals the generator's) and `tools/test/ui-icons.test.mjs` checks game/art/ui/*.svg (51 icons, 36×36, the
+  pixel format the Studio's icon editor writes, every icon the code names; the SVGs are the source since SA-2b).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
