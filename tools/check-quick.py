@@ -1442,7 +1442,8 @@ def views_flags_wind_light(P):
     # one, else the coin ring
     fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,path:flagPicturePath(gameData.maps.copperleaf)})"))
     for t in fl['towns'] + ['default']:
-        if not (ROOT / 'game' / 'art' / 'scene' / 'flags' / (t + '.png')).exists(): raise Exception(f'no flag picture for {t}')
+        # SA-5: the legacy towns' flags live in art/legacy/scene/flags (read-only in the Studio)
+        if not any((ROOT / 'game' / 'art' / d / 'flags' / (t + '.png')).exists() for d in ('scene', 'legacy/scene')): raise Exception(f'no flag picture for {t}')
     own = 'copperleaf' in fl['towns']
     if fl['pole']['sway'] or not fl['pole'].get('flag') or fl['path'] != f'scene/flags/{"copperleaf" if own else "default"}.png': raise Exception(f'flags: {fl}')
     out.append(f'{len(fl["towns"])} town flags, poles rigid with a waving cloth, Copperleaf flies {"its own" if own else "the coin ring"}')
