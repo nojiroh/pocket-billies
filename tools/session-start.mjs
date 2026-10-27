@@ -126,7 +126,10 @@ function main() {
       writeState({ start: now, green: now });
       return 'unit tests run before a reply ends once logic, data or tests change';
     }
-    return state.green === now ? 'unit tests up to date' : 'logic, data or tests changed since the last unit test run';
+    /* the same test as tools/before-stop.mjs: back at the start, or where the tests last passed */
+    return now === state.start || now === state.green
+      ? 'unit tests up to date'
+      : 'logic, data or tests changed since the last unit test run';
   }, 'recording the unit tests start');
 
   process.stdout.write(`Session setup (tools/session-start.mjs): ${said.join('; ')}.\n`);
