@@ -7,6 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { openShortcutSheet, openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
+import { formSpeciesId } from '../../game/js/logic/forms.js';
 import { coatArt } from '../../game/js/logic/coats.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { coatAtlas, drawRig, rigFrame, rigFromMeta, setCoatRigData } from '../../game/js/skeleton-rig.js';
@@ -53,6 +54,7 @@ expose({
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
   forgetArt: [() => forgetArt, v => ((forgetArt = v), provide({ forgetArt }))],
   forgetText: [() => forgetText, v => ((forgetText = v), provide({ forgetText }))],
+  formPreviewBase: [() => formPreviewBase, v => (formPreviewBase = v)],
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
@@ -184,11 +186,21 @@ let spritePreviewsRunning = false;
 export function spritePreviewHTML(o) {
   return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${escapeHtml(JSON.stringify(o))}' width="10" height="10"></canvas>`;
 }
+/* a regional form with no rig of its own is drawn with its base stage's rig in the form's coat, as the game does
+   (skeleton-rig.js, RO-1); without this its preview asked for a picture that doesn't exist */
+function formPreviewBase(o) {
+  if (!o.sp || (studioState.rigs && studioState.rigs[o.sp])) return {};
+  for (const L of studioState.D.lines || [])
+    for (const F of L.forms || [])
+      for (let i = 0; i < (L.names || []).length; i++)
+        if (o.sp === formSpeciesId(L.id, F.id, i)) return { sp: L.id + i, coat: o.coat || F.coat };
+  return {};
+}
 export function mountPreviews(root = document) {
   $$('canvas[data-prev]', root).forEach(c => {
     if (c._p) return;
     const o = JSON.parse(c.dataset.prev);
-    c._p = { ...o, seed: Math.random() * 6, t0: performance.now(), act: o.act || null };
+    c._p = { ...o, ...formPreviewBase(o), seed: Math.random() * 6, t0: performance.now(), act: o.act || null };
     SPRITE_PREVIEWS.add(c);
     drawSpritePreview(c, performance.now());
   });
