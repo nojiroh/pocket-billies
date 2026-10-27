@@ -33,6 +33,7 @@ import {
   runNodeSeed,
   runSideLay,
   runSpot,
+  runTownSize,
 } from './run-map.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { arenaGenGates } from './arena-gen.js';
@@ -88,8 +89,13 @@ expose({
   runSideDoor: [() => runSideDoor, v => (runSideDoor = v)],
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
+  runStallId: [() => runStallId],
+  // @ts-expect-error -- replaced on purpose
+  runTownDial: [() => runTownDial, v => (runTownDial = v)],
   // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
+  // @ts-expect-error -- replaced on purpose
+  runTownOf: [() => runTownOf, v => (runTownOf = v)],
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
   // @ts-expect-error -- replaced on purpose
@@ -104,7 +110,8 @@ expose({
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
  *   scenery: any, rules: { scene: RunSceneRules, layouts?: Record<string, Record<string, number>>,
- *   wild: { lv: [number, number], perRow: number, back: number }, town?: import('../../types/game-data').RunTownRules },
+ *   wild: { lv: [number, number], perRow: number, back: number }, town?: import('../../types/game-data').RunTownRules,
+ *   map?: import('../../types/game-data').RunMapRules },
  *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove>,
  *   setPieces?: import('../../types/game-data').SetPiecesData | null,
  *   arenas?: import('../../types/game-data').ArenasData | null, region?: { leaders: { id: string, type: string }[] } }} RunWorldData
@@ -115,6 +122,8 @@ expose({
 export const runPlaceId = i => `run_${i}`;
 /** RL-8: a run town's shop id @param {number} i */
 export const runShopId = i => `run_${i}_shop`;
+/** WM-5: a village's or a town's market stall's shop id @param {number} i */
+export const runStallId = i => `run_${i}_stall`;
 /** a run node's map id: its place id and a tag of the run's seed, so no cache keyed by map id mixes two runs
  * @param {string} seed @param {number} i */
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
@@ -282,6 +291,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(node.type === 'scrapyard' ? { site: 'scrapyard' } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
+    /* WM-5: and its size's houses, market stall and quest givers (rules.json run.town.sizes) */
+    ...(node.type === 'town' ? runTownDial(map, i, data) : {}),
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
     h: size.h,
@@ -449,15 +460,31 @@ export function runAlongBack(path, d) {
   }
   return path[0].slice();
 }
+/** WM-5: town node i's size (logic/run-map.js runTownSize: by its footprint, rules.json run.map.townSizes) and what it
+ * has (run.town.sizes), or null without the tables @param {RunMap} map @param {number} i @param {RunWorldData} data */
+export function runTownOf(map, i, data) {
+  const node = map.nodes[i],
+    size = node && node.type === 'town' ? runTownSize(node, data.rules.map && data.rules.map.townSizes) : '',
+    Z = size && data.rules.town && data.rules.town.sizes ? data.rules.town.sizes[size] : null;
+  return Z ? { size, ...Z } : null;
+}
+/** WM-5: town node i's `town` dial for mapgen (mapgen.js mapgenTownDial: its size, houses, market stall and quest
+ * givers), none without the tables @param {RunMap} map @param {number} i @param {RunWorldData} data */
+export function runTownDial(map, i, data) {
+  const Z = runTownOf(map, i, data);
+  return Z ? { town: { size: Z.size, houses: Z.houses.slice(), stall: Z.stall, givers: Z.givers } } : {};
+}
 /** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route"; RL-S2: the type's
- * `place` word when it has one)
+ * `place` word when it has one; WM-5: a town's size, "Meadow Hamlet", "Meadow Village", "Meadow Town"). The one place
+ * a run place's name is made: the world map, signposts and shops read it
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
   const node = map.nodes[i],
     B = data.biomes[node.biome || ''],
-    T = data.nodeTypes[node.type];
-  /* RL-S2: a type's own word for its place, when it has one (a rival's place is a Route) */
-  const word = T ? T.place || T.name : 'Route';
+    T = data.nodeTypes[node.type],
+    Z = runTownOf(map, i, data);
+  /* RL-S2: a type's own word for its place, when it has one (a rival's place is a Route); WM-5: a town's, its size's */
+  const word = Z ? Z.word : T ? T.place || T.name : 'Route';
   /* RL-R2: a side area's places carry its name ("Bramble Grove Town") */
   if (node.side && map.side) return `${map.side.name} ${word}`;
   return `${B ? B.name : 'Wild'} ${word}`;
@@ -485,6 +512,8 @@ export function runSceneMake(run, i, scenes, data) {
   if (scene.kind === 'town') {
     runTownLife(run, i, scene, data);
     runTownQuest(run, i, scene, data);
+    /* WM-5: its market stall opens the stall's own shop (walk-control.js: a prop's `shop` first) */
+    for (const p of scene.props || []) if (p.act === 'stall') p.shop = runStallId(i);
   }
   return { scene, notes };
 }
@@ -660,6 +689,20 @@ export function runWorldTables(run, hub, data) {
         greeting: town ? 'New stock every morning. Have a look.' : 'Fresh off the cart this morning. Have a look.',
         stock: [],
         runNode: i,
+      };
+    }
+    /* WM-5: a village's and a town's market stall, a shop of its own (held items: run-loop.js runStallStock) */
+    const Z = town ? runTownOf(map, i, data) : null;
+    if (Z && Z.stall) {
+      row.stall = runStallId(i);
+      shops[row.stall] = {
+        name: `${row.name} Market Stall`,
+        keeper: 'The stallholder',
+        who: 'clerk',
+        greeting: 'Something for your Billies to hold? Two new pieces every morning.',
+        stock: [],
+        runNode: i,
+        stall: 1,
       };
     }
     return row;

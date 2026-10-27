@@ -425,6 +425,8 @@ export interface LocationData {
   music?: string;
   /** a key of SHOPS */
   shop?: DataId;
+  /** WM-5: a village's or a town's market stall's shop (logic/run-scenes.js runStallId) */
+  stall?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
   gate?: string;

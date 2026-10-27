@@ -102,8 +102,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runShapeSize: [() => runShapeSize, v => (runShapeSize = v)],
   // @ts-expect-error -- replaced on purpose
-  runTownSize: [() => runTownSize, v => (runTownSize = v)],
-  // @ts-expect-error -- replaced on purpose
   runSideLay: [() => runSideLay, v => (runSideLay = v)],
   // @ts-expect-error -- replaced on purpose
   runSpot: [() => runSpot, v => (runSpot = v)],
@@ -115,6 +113,8 @@ expose({
   runSpotCells: [() => runSpotCells, v => (runSpotCells = v)],
   // @ts-expect-error -- replaced on purpose
   runSpotOutline: [() => runSpotOutline, v => (runSpotOutline = v)],
+  // @ts-expect-error -- replaced on purpose
+  runTownSize: [() => runTownSize, v => (runTownSize = v)],
   runWeather: [() => runWeather],
   runWorldNode: [() => runWorldNode],
 });
