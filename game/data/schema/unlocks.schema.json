@@ -87,7 +87,7 @@
     }
    },
    "grant": {
-    "description": "what it gives: a building's level, an item into run shops, a biome onto run maps, or a currency",
+    "description": "what it gives: a building's level, a resident's service level, an item into run shops, a biome onto run maps, or a currency",
     "oneOf": [
      {
       "type": "object",
@@ -105,6 +105,26 @@
         "type": "integer",
         "minimum": 2,
         "maximum": 99
+       }
+      }
+     },
+     {
+      "type": "object",
+      "required": [
+       "resident",
+       "level"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "resident": {
+        "description": "RS-4: a resident (residents.json) whose service this raises; sold at their home while they live in Copperleaf (their Lv 1 comes with moving in)",
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+       },
+       "level": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 9
        }
       }
      },
@@ -148,7 +168,8 @@
          "building",
          "level",
          "shop",
-         "biome"
+         "biome",
+         "resident"
         ]
        }
       },

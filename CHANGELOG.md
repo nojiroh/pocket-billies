@@ -12,6 +12,11 @@ kept aside in the browser).
 - **Tidier spacing and corners** (UI track UI-9b): the gaps and corners across the menus are on one scale now, most of
   them moved by a pixel or two, so screens line up more evenly. The Billie sheet's stat bars grow in when it opens, as
   they were always meant to.
+- **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
+  sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
+  Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a
+  hidden place on the next run's map (Lv 1) and later the place that hides a side path (Lv 3); at Lv 2 she packs a
+  Pretzel for every run. Prices are first guesses.
 - **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
   and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
   meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the

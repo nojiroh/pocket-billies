@@ -13,7 +13,26 @@
   "role": "Shopkeeper",
   "home": "shop",
   "meet": {"where":["town"],"weight":2},
-  "levels": [],
+  "levels": ["mo_2","mo_3"],
+  "service": [
+   {
+    "about": "The General store opens: Potions, Pretzels and Pyramids for Research, into your bag to pack.",
+    "stock": [
+     {"item":"potion","price":15},
+     {"item":"pretzel","price":8},
+     {"coin":"pyramid","price":30}
+    ]
+   },
+   {
+    "about": "Fuller shelves: Hi-Potions, Full Remedies and Revives too.",
+    "stock": [
+     {"item":"hi_potion","price":40},
+     {"item":"full_remedy","price":32},
+     {"item":"revive","price":60}
+    ]
+   },
+   {"about":"Mo knows the trade: once a run, ask a run shop to fetch a fresh stock.","power":true,"reroll":1}
+  ],
   "about": "Has sold everything to everyone at least twice. Opens the General store."
  },
  "bertha": {
@@ -21,7 +40,16 @@
   "role": "Innkeeper",
   "home": "inn",
   "meet": {"where":["town","event"],"weight":2},
-  "levels": [],
+  "levels": ["bertha_2","bertha_3"],
+  "service": [
+   {"about":"Rumours: as a run takes off, one hidden place further on is shown on the map.","rumour":"node"},
+   {
+    "about": "A packed lunch: a Pretzel in the bag at every takeoff.",
+    "power": true,
+    "items": {"pretzel":1}
+   },
+   {"about":"Better rumours: the map names a place that hides a side path.","rumour":"side"}
+  ],
   "about": "Hears every rumour first and repeats it louder. Runs the inn."
  },
  "gus": {

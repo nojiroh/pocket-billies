@@ -88,6 +88,36 @@
   "requires": ["workshop_2"],
   "grant": {"building":"workshop","level":3}
  },
+ "mo_2": {
+  "name": "Mo's fuller shelves",
+  "about": "The General store stocks Hi-Potions, Full Remedies and Revives too.",
+  "at": "shop",
+  "cost": 100,
+  "grant": {"resident":"mo","level":2}
+ },
+ "mo_3": {
+  "name": "Mo's fresh stock",
+  "about": "Once a run, a run shop fetches a fresh stock (Mo's word carries).",
+  "at": "shop",
+  "cost": 200,
+  "requires": ["mo_2"],
+  "grant": {"resident":"mo","level":3}
+ },
+ "bertha_2": {
+  "name": "Bertha's packed lunch",
+  "about": "A Pretzel in the bag at every takeoff.",
+  "at": "inn",
+  "cost": 120,
+  "grant": {"resident":"bertha","level":2}
+ },
+ "bertha_3": {
+  "name": "Bertha's side-path rumours",
+  "about": "As a run takes off, the map names a place that hides a side path.",
+  "at": "inn",
+  "cost": 150,
+  "requires": ["bertha_2"],
+  "grant": {"resident":"bertha","level":3}
+ },
  "first_run": {
   "name": "First flight",
   "about": "End your first run.",
