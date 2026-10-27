@@ -60,6 +60,7 @@ expose({
   MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
   MODEL_VALUES: [() => MODEL_VALUES],
   NEUTRAL_MODEL_LOOK: [() => NEUTRAL_MODEL_LOOK],
+  OWN_UNIT: [() => OWN_UNIT],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
@@ -74,6 +75,7 @@ expose({
   VOX_FLAT: [() => VOX_FLAT],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
+  bindOwnTexture: [() => bindOwnTexture, v => (bindOwnTexture = v)],
   decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
   drawLowPolyItems: [() => drawLowPolyItems, v => (drawLowPolyItems = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
@@ -890,7 +892,15 @@ function uploadPrebuiltModel(rec) {
     if (!P.n || b.length < P.n * 24 + P.ni * 2) return null;
     return uploadLowPolyMesh(b.subarray(0, P.n * 24), new Uint16Array(b.buffer, P.n * 24, P.ni));
   };
-  const parts = (rec.parts || []).map(mk).filter(Boolean);
+  /* studio track ST-7: a v2 part that spins (logic/model-mesh.js) is drawn as v1's spins are, about its pivot */
+  const v2 = rec.v === 2,
+    still = v2 ? (rec.parts || []).filter(P => !(P.spin && P.spin.rps)) : rec.parts || [],
+    turning = v2
+      ? (rec.parts || [])
+          .filter(P => P.spin && P.spin.rps)
+          .map(P => ({ ...P, c: P.pivot, a: P.spin.a, rps: P.spin.rps }))
+      : [];
+  const parts = still.map(mk).filter(Boolean);
   if (!parts.length) return null;
   const ax = a => {
     const l = Math.hypot(a[0], a[1], a[2]) || 1;
@@ -902,7 +912,10 @@ function uploadPrebuiltModel(rec) {
     model: 1,
     q: 1 / 256,
     box: rec.box || [-1, 0, -1, 1, 2, 1],
-    spins: (rec.spins || [])
+    /* ST-7: the model's own texture (art path; null: the building sheet only) and whether it repeats */
+    own: v2 && rec.tex ? rec.tex : null,
+    wrap: !!rec.wrap,
+    spins: [...(rec.spins || []), ...turning]
       .map(s => {
         const m = mk(s);
         return m && { ...m, c: s.c || [0, 0, 0], a: ax(s.a || [1, 0, 0]), rps: s.rps ?? 1.5 };
@@ -1422,9 +1435,18 @@ function lowPolyFragmentShader() {
   if (!f.includes(a)) return f;
   /* terrain TR-3: a model between the camera and you (a tree's trunk on a mountain's shelf) thins out like the rock
      (the buildings' shader has ROCK_GLSL since player visibility) */
+  /* studio track ST-7: a v2 model's vertex marks its own texture (vTex.x 255; logic/model-mesh.js): the picture's
+     colour times the vertex colour in place of a building-sheet cell, cut out where it is clear, no sheet bumps */
+  const ownC = 'vec3 c=vTex.z>.5?vCol:rampC(vCol,floor(lv+.5));',
+    bump = 'n=bldBump(n,g);';
   return f
     .replace(a, 'glassLit(shade(c,n,vW,sh,ao,vec4(.06,20.,0.,.22),uCel),n,v,sh)')
-    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;' + GLASS_GLSL);
+    .replace(
+      ownC,
+      ownC + 'bool own=vTex.x>254.5;if(own&&vTex.z<.5){vec4 tx=texture(uOwn,vUV/64.);if(tx.a<.5)discard;c=tx.rgb*vCol;}'
+    )
+    .replace(bump, 'if(!own)' + bump)
+    .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;uniform sampler2D uOwn;' + GLASS_GLSL);
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js ensureWalkGl) */
@@ -1461,7 +1483,10 @@ function drawLowPolyModels(C, X, L, inst) {
   if (!inst) drawLowPolyItems(p, L);
   else {
     /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
-    const [one, many] = splitSmeared(L);
+    /* ST-7: a model with its own texture is drawn on its own (the batches share the building sheet) */
+    const own = L.filter(e => e[1].own),
+      [one, many] = splitSmeared(own.length ? L.filter(e => !e[1].own) : L);
+    if (own.length) one.push(...own);
     if (many.length) drawModelInstances(p, 'mdl', many);
     if (one.length) drawLowPolyModels(C, X, one, false);
   }
@@ -1490,6 +1515,7 @@ function drawLowPolyItems(p, L) {
       gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
       gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
     }
+    if (m.own && !bindOwnTexture(p, m)) continue;
     drawPropModelMesh(m);
     for (const q of m.more || []) drawPropModelMesh(q);
     drawSpinningParts(p, m);
@@ -1497,6 +1523,22 @@ function drawLowPolyItems(p, L) {
     propModelState.lowPoly++;
   }
   gl.bindVertexArray(null);
+}
+/* studio track ST-7: a v2 model's own texture on unit 5 (uOwn): its picture as the game loads it (the Studio's: the
+   canvas being painted). False while it loads: the model waits a frame, its picture stands in */
+const OWN_UNIT = 5;
+function bindOwnTexture(p, m) {
+  if (!p.U.uOwn) return false;
+  const im =
+      (typeof artImage === 'function' && artImage(m.own)) || (typeof artImg === 'function' ? artImg(m.own) : null),
+    t = im && imageTexture(im, { noNormal: true, repeat: m.wrap });
+  if (!t) return false;
+  const gl = gpuState.gl;
+  gl.activeTexture(gl.TEXTURE0 + OWN_UNIT);
+  gl.bindTexture(gl.TEXTURE_2D, t.t);
+  gl.uniform1i(p.U.uOwn, OWN_UNIT);
+  gl.activeTexture(gl.TEXTURE0);
+  return true;
 }
 /* alpha 0.4: a part that turns (a propeller): its own mesh, turned uSpin.w radians about the axis uSpin.xyz (a unit
    vector, up as y) through its pivot uSpinC (the model's metres, up as y) */
