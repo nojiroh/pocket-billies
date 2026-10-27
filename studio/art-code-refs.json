@@ -149,15 +149,15 @@
   {
    "p": "scene/build/detail.png",
    "at": [
-    "game/js/buildings.js:170",
-    "game/js/prop-models.js:2196",
+    "game/js/buildings.js:171",
+    "game/js/prop-models.js:2129",
     "game/js/walk-view.js:747"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
-    "game/js/buildings.js:170",
+    "game/js/buildings.js:171",
     "game/js/walk-view.js:747"
    ]
   },
@@ -185,7 +185,7 @@
    "at": [
     "game/js/postcards.js:49",
     "game/js/walk-view.js:757",
-    "game/js/walk/frame-items.js:189"
+    "game/js/walk/frame-items.js:195"
    ]
   },
   {
@@ -200,7 +200,7 @@
    "at": [
     "game/js/art.js:172",
     "game/js/art.js:173",
-    "game/js/boot.js:585",
+    "game/js/boot.js:627",
     "game/js/ui-run-kit.js:58"
    ]
   }
