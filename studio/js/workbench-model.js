@@ -134,11 +134,15 @@ const wbModel = {
   pick: null,
   hl: null /* the texel found by clicking the model */,
   written: '' /* the key once written */,
+  pending: false /* changed since it was written */,
   spin: true,
   err: '',
 };
 const wbmShown = () => workbench.mode === 'model' && studioState.sec === 'workbench';
-const wbmTexPath = () => (wbModel.written && wbModel.rec && wbModel.rec.tex ? 'art/' + wbModel.rec.tex : '');
+/* the written texture, painted in place; not while the model has changes not written yet (a bake, a rebuild, a part's
+   spin: the texture or its faces differ from the written ones) */
+const wbmTexPath = () =>
+  wbModel.written && !wbModel.pending && wbModel.rec && wbModel.rec.tex ? 'art/' + wbModel.rec.tex : '';
 const wbmPixels = c => {
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height);
   return { width: c.width, height: c.height, data: d.data };
@@ -202,6 +206,7 @@ async function wbModelFiles(list) {
     view: 'model',
     hl: null,
     written: '',
+    pending: false,
     err: '',
   });
   try {
@@ -238,6 +243,7 @@ function wbmBuild() {
     });
   wbModel.rec = B.rec;
   wbModel.warnings = B.warnings;
+  wbModel.pending = !!wbModel.written;
   wbModel.locked = '';
   wbModel.tex = null;
   if (B.atlas) {
@@ -438,10 +444,13 @@ function wbmSideHTML() {
     size = `${(B[3] - B[0]).toFixed(2)} × ${(B[4] - B[1]).toFixed(2)} × ${(B[5] - B[2]).toFixed(2)} m`;
   const num = (k, label, step, help) =>
     `<label class="fld"><span>${label}</span><input type="number" step="${step}" value="${+wbModel.o[k] || 0}" data-wbm="${k}" ${imported ? '' : 'disabled'}>${help ? `<small class="help">${help}</small>` : ''}</label>`;
-  const settings = imported
-    ? `<div class="px-sec"><h4>Size and turn</h4><div class="grid">${num('height', 'Height (m)', 0.1, '0: as the file is, times the scale')}${num('scale', 'Scale (file units to m)', 0.01, wbModel.kind === 'vox' ? '1/32: a voxel a texel' : '')}<label class="fld"><span>Turn (°)</span><select data-wbm="yaw">${[0, 90, 180, 270].map(a => `<option value="${a}" ${+wbModel.o.yaw === a ? 'selected' : ''}>${a}°</option>`).join('')}</select></label><label class="fld"><span>Up is</span><select data-wbm="upZ"><option value="" ${wbModel.o.upZ ? '' : 'selected'}>y (glTF, Blender export)</option><option value="1" ${wbModel.o.upZ ? 'selected' : ''}>z (some OBJ exports)</option></select></label></div>
+  const settings =
+    wbModel.kind === 'vox'
+      ? `<div class="px-sec"><h4>Size</h4><p class="help">A voxel prop is 32 voxels to the metre (a voxel a texel), standing on its base point: ${size}.</p></div>`
+      : imported
+        ? `<div class="px-sec"><h4>Size and turn</h4><div class="grid">${num('height', 'Height (m)', 0.1, '0: as the file is, times the scale')}${num('scale', 'Scale (file units to m)', 0.01, wbModel.kind === 'vox' ? '1/32: a voxel a texel' : '')}<label class="fld"><span>Turn (°)</span><select data-wbm="yaw">${[0, 90, 180, 270].map(a => `<option value="${a}" ${+wbModel.o.yaw === a ? 'selected' : ''}>${a}°</option>`).join('')}</select></label><label class="fld"><span>Up is</span><select data-wbm="upZ"><option value="" ${wbModel.o.upZ ? '' : 'selected'}>y (glTF, Blender export)</option><option value="1" ${wbModel.o.upZ ? 'selected' : ''}>z (some OBJ exports)</option></select></label></div>
   <label class="chk"><input type="checkbox" data-wbm="ground" ${wbModel.o.ground ? 'checked' : ''}> Stands on the ground (its lowest point at 0)</label><label class="chk"><input type="checkbox" data-wbm="centre" ${wbModel.o.centre ? 'checked' : ''}> Centred on its base point</label>${wbModel.locked ? `<p class="help">The texture was ${wbModel.locked}: changing these builds the model again from the file and drops that. <button class="btn sm subtle" data-act="wbmRebuild">Start again from the file</button></p>` : ''}</div>`
-    : `<div class="px-sec"><h4>Written model</h4><p class="help">Size and turn come from the file it was imported from; import that again to change them. Spins, joints and the texture are edited here.</p></div>`;
+        : `<div class="px-sec"><h4>Written model</h4><p class="help">Size and turn come from the file it was imported from; import that again to change them. Spins, joints and the texture are edited here.</p></div>`;
   const checks = `<div class="px-sec"><h4>Checks</h4><p class="help">${R.tris} triangles · ${R.parts.length} part${R.parts.length === 1 ? '' : 's'} · ${size}${wbModel.tex ? ` · texture ${wbModel.tex.width} × ${wbModel.tex.height} px` : ' · colours only'}</p>${lines.map(l => `<p class="wbm-check ${l.level}">${escapeHtml(l.text)}</p>`).join('')}${D && !D.isPalette && D.median ? wbmHistHTML(D) : ''}<div class="seg-row">${D && D.fix !== 1 ? `<button class="btn sm" data-act="wbmResample">Resample to 32 px/m (×${D.fix.toFixed(2)})</button>` : ''}${D && D.isPalette ? `<button class="btn sm" data-act="wbmBake">Bake to 32 px/m</button>` : ''}</div></div>`;
   const write = `<div class="px-sec"><h4>Write to game</h4><div class="grid"><label class="fld"><span>Prop key</span><input type="text" value="${escapeHtml(wbModel.key)}" data-wbm="key" ${wbModel.written ? 'disabled' : ''}></label><label class="fld"><span>Name</span><input type="text" value="${escapeHtml(wbModel.name)}" data-wbm="name"></label></div><button class="btn primary" data-act="wbmWrite">${wbModel.written ? 'Write again' : 'Write to game'}</button><p class="help">${
     wbModel.kind === 'vox'
@@ -465,7 +474,7 @@ function wbmHistHTML(D) {
 }
 function wbmTextureHTML() {
   const live = !!wbmTexPath();
-  return `<div class="wbm-tex"><div class="wbm-paint"><div class="seg-row wb-tools">${live ? pixelCanvasToolsHTML() : ''}<span class="help">${live ? 'Paint the texture: every stroke shows on the model and is a step of the undo.' : 'Write the model to the game first: then its texture is a picture of the game, painted with the undo and saved with it.'}${wbModel.hl ? ` Texel ${wbModel.hl[0]}, ${wbModel.hl[1]} marked.` : ''}</span></div><div class="wb-stage" id="wbmTexStage"></div></div><div class="wbm-pickcol"><div><p class="help">Click the model to find its texel.</p><canvas id="wbmPick"></canvas><div class="seg-row"><button class="seg sm" data-act="wbmPickTurn" data-d="-1" title="Turn the model">⟲</button><button class="seg sm" data-act="wbmPickTurn" data-d="1" title="Turn the model">⟳</button></div></div>${live ? `<div id="wbmPanel">${pixelCanvasPanelHTML()}</div>` : ''}</div></div>`;
+  return `<div class="wbm-tex"><div class="wbm-paint"><div class="seg-row wb-tools">${live ? pixelCanvasToolsHTML() : ''}<span class="help">${live ? 'Paint the texture: every stroke shows on the model and is a step of the undo.' : wbModel.pending ? 'Write the model again first: the texture or its faces changed since it was written.' : 'Write the model to the game first: then its texture is a picture of the game, painted with the undo and saved with it.'}${wbModel.hl ? ` Texel ${wbModel.hl[0]}, ${wbModel.hl[1]} marked.` : ''}</span></div><div class="wb-stage" id="wbmTexStage"></div></div><div class="wbm-pickcol"><div><p class="help">Click the model to find its texel.</p><canvas id="wbmPick"></canvas><div class="seg-row"><button class="seg sm" data-act="wbmPickTurn" data-d="-1" title="Turn the model">⟲</button><button class="seg sm" data-act="wbmPickTurn" data-d="1" title="Turn the model">⟳</button></div></div>${live ? `<div id="wbmPanel">${pixelCanvasPanelHTML()}</div>` : ''}</div></div>`;
 }
 /* ---------- after drawing ---------- */
 function wbmMount() {
@@ -610,6 +619,7 @@ ACTIONS.wbmBake = () => {
   if (wbModel.written && !B.rec.tex) B.rec.tex = `scene/models/${wbModel.key}.png`;
   wbModel.tex = wbPixelsCanvas(B.pixels);
   wbModel.locked = 'baked';
+  wbModel.pending = !!wbModel.written;
   wbModel.hl = null;
   wbmChecked();
   render();
@@ -688,6 +698,7 @@ async function wbmWrite() {
   changed();
   commit(true);
   wbModel.written = key;
+  wbModel.pending = false;
   wbmChecked();
   render();
   toast(`${key} written: the prop is in the catalogue (Props), its files wait for Save or Propose changes.`, 'ok');
@@ -718,6 +729,7 @@ async function wbModelOpenProp(k) {
     view: 'model',
     hl: null,
     written: k,
+    pending: false,
     err: '',
   });
   wbmChecked();
@@ -758,6 +770,7 @@ function wbmInput(ev) {
     else if (k === 'min' || k === 'max')
       e.joint = { ...(p.joint || { a: [1, 0, 0], min: -30, max: 30 }), [k]: Number(el.value) || 0 };
     wbmApplyEdits();
+    wbModel.pending = !!wbModel.written;
     wbmRegister();
     render();
   }
