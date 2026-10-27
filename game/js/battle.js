@@ -52,6 +52,7 @@ import {
   plural,
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
+import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -106,6 +107,7 @@ import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
   FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
+  MOVE_HOLD_MS: [() => MOVE_HOLD_MS],
   PLATE_TAGS: [() => PLATE_TAGS],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
@@ -121,6 +123,7 @@ expose({
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
+  bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
@@ -138,7 +141,11 @@ expose({
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   logLine: [() => logLine, v => (logLine = v)],
+  moveInfoHide: [() => moveInfoHide, v => (moveInfoHide = v)],
+  moveInfoNodes: [() => moveInfoNodes, v => (moveInfoNodes = v)],
+  moveInfoShow: [() => moveInfoShow, v => (moveInfoShow = v)],
   moveTilesHTML: [() => moveTilesHTML, v => (moveTilesHTML = v)],
+  moveWeatherMark: [() => moveWeatherMark],
   needsPart: [() => needsPart, v => (needsPart = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   nextEvent: [() => nextEvent, v => (nextEvent = v)],
@@ -753,7 +760,17 @@ export const itemIcon = (k, size = 30) => {
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
     : `<img class="pxi" src="${iconURL('i_' + (I.icon || k))}" width="${size}" height="${size}" alt="">`;
 };
-/* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming */
+/* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming. UI-15: a
+   tile shows the type's glyph, the name, the power and the effectiveness; the rest (type, accuracy, same-type bonus,
+   weather, the move's text) on a long press, or on hover and keyboard focus (moveInfoShow) */
+const moveWeatherMark = M =>
+  M.p && typeof battleWeatherMultiplier === 'function'
+    ? battleWeatherMultiplier(M.t) > 1
+      ? ' ▲'
+      : battleWeatherMultiplier(M.t) < 1
+        ? ' ▼'
+        : ''
+    : '';
 function moveTilesHTML(m) {
   /* SP-5: and the moves its Augments bring */
   return `<div class="moves">${movesOf(m)
@@ -761,14 +778,121 @@ function moveTilesHTML(m) {
       const M = MOVES[id],
         c = TYPE_COLORS[M.t],
         P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
-        stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t),
         /* phase 17: a robot can't use the move of a broken part */
-        off = !moveUsable(m, id);
+        off = !moveUsable(m, id),
+        top = `<span class="mv-top">${typeGlyphHTML(M.t)}<b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span>`;
       if (off)
-        return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>`;
-      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
+        return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-m="${id}">${top}<span class="mv-meta"><span>Part broken</span></span></button>`;
+      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}">${top}<span class="mv-meta"><span class="tnum">${P}${M.p ? ' pow' : ''}${moveWeatherMark(M)}</span></span>${effectivenessLabel(id)}</button>`;
     })
     .join('')}</div>`;
+}
+/** UI-15: a move's details: its type (and the same-type bonus), power, accuracy, what the weather does to it, its text
+ * (built as nodes: the words are the data's, never markup) */
+function moveInfoNodes(id) {
+  const M = MOVES[id],
+    stab = M.t !== 'None' && activeBattle && actorTypes(activeBattle.cur).includes(M.t),
+    wx = moveWeatherMark(M).trim(),
+    acc = M.c === 'X' && !(M.a < 100) ? '' : `${M.a || 100}% accuracy`,
+    pow = M.p ? `${M.p} power` : M.fx && M.fx.vary ? 'power varies' : 'no damage',
+    part = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      e.textContent = text;
+      return e;
+    },
+    ty = part(
+      'span',
+      'mi-ty',
+      `${M.t === 'None' ? 'Normal' : M.t}${stab ? ` · ★ same type, ×${BATTLE_RULES.stab}` : ''}`
+    ),
+    g = document.createElement('i');
+  g.className = 'ty-g';
+  g.setAttribute('aria-hidden', 'true');
+  g.style.setProperty('--glyph', `url('${typeGlyphURL(M.t)}')`);
+  ty.prepend(g);
+  return [
+    part('b', '', M.n),
+    ty,
+    part(
+      'span',
+      'mi-n tnum',
+      [pow, acc, wx && `${wx === '▲' ? 'stronger' : 'weaker'} in this weather`].filter(Boolean).join(' · ')
+    ),
+    part('span', 'mi-d', M.d || ''),
+  ];
+}
+function moveInfoShow(b) {
+  const B = $('#battle'),
+    id = b && b.dataset.m;
+  if (!B || !id || !MOVES[id]) return;
+  let e = $('#mvInfo');
+  if (!e) {
+    e = document.createElement('div');
+    e.id = 'mvInfo';
+    e.className = 'mv-info';
+    e.setAttribute('role', 'tooltip');
+    B.appendChild(e);
+  }
+  e.replaceChildren(...moveInfoNodes(id));
+  e.hidden = false;
+  /* over the whole grid of tiles (it covers the message line, not the other moves); under it when there's no room */
+  const r = (b.closest('.moves') || b).getBoundingClientRect(),
+    t = b.getBoundingClientRect(),
+    o = B.getBoundingClientRect(),
+    w = e.offsetWidth,
+    h = e.offsetHeight;
+  let y = r.top - o.top - h - 8;
+  if (y < 8) y = r.bottom - o.top + 8;
+  e.style.left = clamp(t.left - o.left + t.width / 2 - w / 2, 8, o.width - w - 8) + 'px';
+  e.style.top = y + 'px';
+  b.setAttribute('aria-describedby', 'mvInfo');
+}
+function moveInfoHide() {
+  const e = $('#mvInfo');
+  if (e) e.hidden = true;
+}
+/* a press held this long on a tile shows its details instead of picking it */
+const MOVE_HOLD_MS = 420;
+function bindMoveInfo(el) {
+  $$('.mv', el).forEach(b => {
+    let t = 0;
+    const end = () => {
+      clearTimeout(t);
+      if (b.dataset.held) moveInfoHide();
+    };
+    b.addEventListener('pointerdown', ev => {
+      delete b.dataset.held;
+      if (ev.pointerType === 'mouse') return;
+      t = setTimeout(() => {
+        b.dataset.held = '1';
+        moveInfoShow(b);
+      }, MOVE_HOLD_MS);
+    });
+    b.addEventListener('pointerup', end);
+    b.addEventListener('pointercancel', end);
+    b.addEventListener('pointerleave', ev => {
+      end();
+      if (ev.pointerType === 'mouse') moveInfoHide();
+    });
+    b.addEventListener('pointerenter', ev => {
+      if (ev.pointerType === 'mouse') moveInfoShow(b);
+    });
+    b.addEventListener('focus', () => b.matches(':focus-visible') && moveInfoShow(b));
+    b.addEventListener('blur', moveInfoHide);
+    b.addEventListener('contextmenu', ev => ev.preventDefault());
+    /* the press that showed the details doesn't also pick the move */
+    b.addEventListener(
+      'click',
+      ev => {
+        if (!b.dataset.held) return;
+        delete b.dataset.held;
+        ev.stopPropagation();
+        ev.preventDefault();
+      },
+      true
+    );
+  });
 }
 export function paintActions() {
   const el = $('#acts');
@@ -870,14 +994,8 @@ export function paintActions() {
   void el.offsetWidth;
   el.classList.add('swap');
   if (ph === 'aim') bindAim();
-  if (ph === 'fight')
-    $$('.mv', el).forEach(b => {
-      const tip = () => {
-        if (activeBattle && activeBattle.phase === 'fight') $('#msgT').textContent = b.dataset.tip;
-      };
-      b.addEventListener('pointerenter', tip);
-      b.addEventListener('focus', tip);
-    });
+  moveInfoHide();
+  bindMoveInfo(el);
 }
 function bindAim() {
   const c = $('#aimCoin');
