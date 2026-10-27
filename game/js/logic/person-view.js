@@ -9,6 +9,11 @@
      about the up axis, 0 along +z, π/2 along +x (Math.atan2(x, z)), set with faceToward or faceWay. A plain word (a
      map's 'down', a cutscene's `face Chosen down`) has none: faceWord. People are only ever turned on runtime records
      (the player, a townsperson, a cutscene actor, a frame's record of a map person), never on a scene's own data.
+     What is drawn is seen from the camera: a heading less the camera's turn (seenFacing, seenWord), so walking away
+     from the orbit camera on the hub island shows your back whichever way it looks; a plain word is drawn as it is.
+     The walk camera's turn leaves out the phone's tilt (walk/camera.js `turn`), so the tilt's sway never turns
+     anyone, and with the camera unturned every picture is the one it was before CH-1. personHeading is the heading
+     the characters track's figures (CH-2 on) turn to.
    - A copy of a person's picture (the cutscene director's flat dark silhouette, or its mirrored reach) keeps the
      original's anchor and size: copiedAnchor.
    Logic only: no DOM, runs in Node (tools/test/person-view.test.mjs). */
@@ -27,6 +32,18 @@ expose({
   faceWord: [() => faceWord, v => (faceWord = v)],
   // @ts-expect-error -- replaced on purpose
   facingWord: [() => facingWord, v => (facingWord = v)],
+  // @ts-expect-error -- replaced on purpose
+  ownHeading: [() => ownHeading, v => (ownHeading = v)],
+  // @ts-expect-error -- replaced on purpose
+  personHeading: [() => personHeading, v => (personHeading = v)],
+  // @ts-expect-error -- replaced on purpose
+  seenFacing: [() => seenFacing, v => (seenFacing = v)],
+  // @ts-expect-error -- replaced on purpose
+  seenToward: [() => seenToward, v => (seenToward = v)],
+  // @ts-expect-error -- replaced on purpose
+  seenWord: [() => seenWord, v => (seenWord = v)],
+  // @ts-expect-error -- replaced on purpose
+  wordHeading: [() => wordHeading, v => (wordHeading = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -66,9 +83,14 @@ export function faceToward(o, mx, mz) {
  */
 export function faceWay(o, word) {
   o.dir = word;
-  o.head = WORD_HEADING[/** @type {keyof typeof WORD_HEADING} */ (word)] ?? Math.PI;
+  o.head = wordHeading(word);
   o.headDir = word;
   return word;
+}
+
+/** a word's heading (WORD_HEADING), down's for anything else @param {string | undefined} word @returns {number} */
+export function wordHeading(word) {
+  return WORD_HEADING[/** @type {keyof typeof WORD_HEADING} */ (word)] ?? Math.PI;
 }
 
 /**
@@ -81,6 +103,53 @@ export function faceWord(o, word) {
   o.head = null;
   o.headDir = null;
   return word;
+}
+
+/**
+ * the word a camera turned `yaw` (radians: walk/camera.js, 0 looks along +z and its right is +x) sees of someone
+ * facing `head` in the world: the heading less the camera's turn, put to the walk view's rule. At yaw 0 it is the
+ * word the heading was made from.
+ * @param {number} head @param {number} yaw @returns {'up' | 'down' | 'side' | 'sideR'}
+ */
+export function seenFacing(head, yaw) {
+  const r = head - yaw;
+  return facingWord(Math.sin(r), Math.cos(r));
+}
+
+/**
+ * the word a camera turned `yaw` sees of someone facing along (mx, mz) in the world (a person turning to you, worked
+ * out each frame); standing on the spot faces down
+ * @param {number} mx @param {number} mz @param {number} yaw
+ */
+export function seenToward(mx, mz, yaw) {
+  return seenFacing(Math.abs(mx) > 1e-9 || Math.abs(mz) > 1e-9 ? Math.atan2(mx, mz) : Math.PI, yaw);
+}
+
+/** a person's own heading while it still goes with their word (faceToward, faceWay), else null: a plain word
+ * @param {Facing} o @returns {number | null} */
+export function ownHeading(o) {
+  return o.head != null && o.headDir === o.dir ? o.head : null;
+}
+
+/**
+ * the word to draw a person by (their walk frames' key), seen from a camera turned `yaw`: their heading as the camera
+ * sees it, or a plain word as it is (an unknown word too: the frames fall back to 'down')
+ * @param {Facing} o @param {number} yaw @returns {string | undefined}
+ */
+export function seenWord(o, yaw) {
+  const h = ownHeading(o);
+  return h == null ? o.dir : seenFacing(h, yaw);
+}
+
+/**
+ * the heading in the world a person faces this frame, seen from a camera turned `yaw`: their own, or for a plain word
+ * the heading that shows that word from this camera (so 'down' faces the camera wherever it looks). The characters
+ * track's figures (CH-2 on) turn to it.
+ * @param {Facing} o @param {number} yaw @returns {number}
+ */
+export function personHeading(o, yaw) {
+  const h = ownHeading(o);
+  return h != null ? h : yaw + wordHeading(o.dir);
 }
 
 /**

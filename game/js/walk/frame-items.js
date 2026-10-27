@@ -28,6 +28,7 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
+import { seenToward, seenWord } from '../logic/person-view.js';
 import { WADE_DEPTH } from '../logic/wading.js';
 import { artImg } from '../art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
@@ -35,7 +36,6 @@ import {
   WALK_FRAME_M,
   artImage,
   cropGrowth,
-  directionOf,
   encounterSpot,
   flagPicturePath,
   imageReady,
@@ -44,6 +44,7 @@ import {
   pointAlongMapPath,
   propShown,
   propWithVariant,
+  seenYaw,
   stepLevelAt,
   tallGrassProps,
   wadeDepthHere,
@@ -306,8 +307,12 @@ export function gatherFrameItems(st, C, PPU, C0) {
     const fr = typeof personWalkFrames === 'function' ? personWalkFrames(n.who) : null;
     if (!fr) return;
     warmPerson(n.who);
-    const dir =
-      Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5 ? directionOf(P.x - pos[0], P.z - pos[1]) : n.dir || 'down';
+    /* CH-1: the side the camera sees (logic/person-view.js): turned to you within 4.5 m, else their own way */
+    const yaw = seenYaw(),
+      dir =
+        Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5
+          ? seenToward(P.x - pos[0], P.z - pos[1], yaw)
+          : seenWord(n, yaw) || 'down';
     const nset = fr[dir] || fr.down,
       nim = typeof pickWalkFrame === 'function' ? pickWalkFrame(nset, false, 0) : nset[0];
     if (nim) out.push(personItem('npc', nim, pos[0], pos[1], C0, { n }));
@@ -394,7 +399,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
         fr = f.who ? personWalkFrames(f.who) : folkFrames(f.seed);
       if (!fr) continue;
       warmPerson(who);
-      const set = fr[f.dir] || fr.down;
+      const set = fr[seenWord(f, seenYaw())] || fr.down;
       let fim =
         typeof pickWalkFrame === 'function'
           ? pickWalkFrame(set, f.walk, Math.floor(t / 110) % 6)
@@ -436,7 +441,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
   }
   if (st.who !== null && typeof personWalkFrames === 'function') {
     const fr = personWalkFrames(st.who),
-      set = fr[P.dir] || fr.down;
+      set = fr[seenWord(P, seenYaw())] || fr.down;
     const me = personItem(
       'me',
       P.hop

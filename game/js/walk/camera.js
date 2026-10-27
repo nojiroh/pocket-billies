@@ -512,6 +512,9 @@ export function walkCamera(rw, rh, st, dt) {
     sp: Math.sin(pitch),
     cp: Math.cos(pitch),
     yaw,
+    /* CH-1: the turn people are seen from (logic/person-view.js seenFacing): the yaw without the phone's tilt, which
+       only sways the view a few degrees and must not turn anyone */
+    turn,
     occ,
     rockK: walkRenderer.rockK,
   };

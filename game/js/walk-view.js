@@ -247,6 +247,7 @@ expose({
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   screenToGround: [() => screenToGround, v => setScreenToGround(v)],
+  seenYaw: [() => seenYaw, v => (seenYaw = v)],
   sendFolk: [() => sendFolk, v => (sendFolk = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setNavGrid: [() => setNavGrid, v => (setNavGrid = v)],
@@ -3540,6 +3541,12 @@ export function walkTo(pt, cb) {
 /* the word for a way along the ground as a camera at yaw 0 sees it (logic/person-view.js facingWord) */
 export function directionOf(mx, mz) {
   return facingWord(mx, mz);
+}
+/* CH-1: the camera's turn this frame's people are seen from (walk/camera.js `turn`: its base yaw and your own turn,
+   without the phone's tilt; a look's or a battle's camera, its yaw), radians */
+export function seenYaw() {
+  const C = walkView.C;
+  return C ? (C.turn ?? C.yaw ?? 0) : 0;
 }
 export function turnToPlayer(f) {
   const P = walkView.pl;
