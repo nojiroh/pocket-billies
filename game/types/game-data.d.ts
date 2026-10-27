@@ -1422,7 +1422,8 @@ export interface RobotPart {
   /** which slot it fits: an arm fits either side */
   slot: 'torso' | 'arm' | 'legs';
   type: TypeId;
-  rar?: string;
+  /** UI-14b: its tier on the loot ladder (an arm or legs as an Augment), or boss (a boss's own part, never offered) */
+  rar?: RarityTier | 'boss';
   /** kg */
   wt: number;
   /** its own HP x this (default 1) */
@@ -1470,7 +1471,7 @@ export interface RobotGem {
   name: string;
   short?: string;
   type: TypeId;
-  rar?: string;
+  rar?: RarityTier;
   /** its signature move */
   move: MoveId;
   stats: Partial<Record<StatId, number>>;
