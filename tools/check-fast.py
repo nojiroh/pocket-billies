@@ -100,7 +100,7 @@ def walk_over(pg, n1, past, sec=60):
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
     per node, the landing's view drawing; HB-2: its loading screen lifts and logs a resume line (no seed); the Map tab opens as the bowl with every place on it; a walk over the
-    landing's west seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
+    landing's east seam (the way ahead; rules.json run.seamIn metres in) arrives at the next node on day 2 and opens its view"""
     drawing(pg)
     seed, scenes, ms, places, want, node, day, view = pg.evaluate("[runWorld.seed, runWorld.scenes, runWorld.ms, LOCATIONS.length, 1 + saveData.run.map.nodes.length, saveData.trip.node, saveData.run.clock, walkView.id]")
     if seed != 'RL7FIXTURE' or places != want: raise Exception(f"the run's world isn't in: {places} places for {want}, made from {seed!r}")

@@ -2,6 +2,45 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
+Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
+owner's brief: a better world map, routes and towns for runs, with online research and many questions; planned and
+answered in docs/phases/worldmap-track.md (WM-1..WM-8), then WM-1 built in the same session.
+- **Reverses TR-2**: logic/run-scenes.js `runSceneExits` gives `west`/`west2` back and `east`/`east2` ahead (a side
+  area's places too); run-map.js `runSpot` puts the landing near the bowl's west rim and the boss near the east (a
+  detour's places east of their obstacle); route-trainers.js `routeWaySpot` stands a spare trainer on the way east.
+- mapgen.js: a new dial `ahead` (the side the way on leaves by; west when not given, so the Studio's and every other
+  map are unchanged); a run's scenes give `E`. The first tall-grass patch lies across the way on and the pinches run
+  along it (`mapgenAhead`, `mapgenToward`). MAPGEN_VERSION 19.
+- logic/bowl-camera.js `bowlCamHome(x, y, yaw, up)`: with a place's `up` it looks the way the place's map north faces
+  (a run place: north), so the run reads west to east, left to right; world-bowl.js passes the spot's `up` on opening,
+  in the flight and on Home, and a run's map now opens over you that way whatever the camera did last (from the walk
+  it still pulls back from above you). Places with no `up` look outward as before.
+- Words: the landing's hint "Walk east into the next place", the mini-boss's "blocks the way east"; comments that said
+  north/south or east to west.
+- Tests: run-map, run-scenes, route-trainers and bowl-camera (a new one: a run place's opening view looks north, west
+  on the left, north up); snapshots remade on purpose (run-world-real's frozen dials: the sides and `ahead`;
+  run-start's mapgenV; rng's scene hash, the same scene but for gen.v).
+- **Found, not fixed** (before and after WM-1): about 1 place in 50 of the debug menu's mountains run has a north
+  summit you can walk down from but not up to (a one-way ledge across its trail). mapgen-mountains.test.mjs's second
+  seed moved from TR2MTN1 to TR2MTN2, with a comment; a terrain session's to fix.
+- **Watch**: route places with a spot for their rarer Billie went from 0.95 to 0.90 over 90 seeds (the same spots a
+  place on average); route-trainer-spots.test.mjs now samples 15 seeds with a 0.75 floor (5 seeds swung 0.67-0.78).
+  WM-3 reworks how routes are made; look again there. mapgen-town.test.mjs's pinned-edge check allows a river bank's
+  corner a cell on (1 cm off at TW1D's west edge).
+- Also: studio/art-code-refs.json regenerated in its own commit (its line numbers were out of date on main since LD-5,
+  so `npm run lint` failed before this session).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1412 pass; slow tests all pass but
+  "the game's island is the generator's own output", which fails on main too; check-fast's run pages (the run's world,
+  the helper thread, the town's shop, life and quest, the battle held, Blake, the bowl, Play this seed, waystations)
+  10 of 10; smoke 6 of 6 (159 s). A headless picture of the run fixture: the landing's "Thicket Route →" sign points
+  right in the walk, and the world map opens over the landing looking north with the road going right to the next pin.
+- The container's Python Playwright 1.56 (tools/requirements-check.txt) doesn't match its Chromium (build 1243); the
+  checks ran with Playwright 1.63 installed in the container only. The pin may need moving.
+- Risky: a run saved mid-way before WM-1 is remade from its seed going the new way (its places' exits flip, you stand
+  where you were); old saves don't matter (CLAUDE.md).
+- Next: WM-2 (the region grid, logic only). Tag `wm-1-done` for the owner.
+
 ### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
 pictures into solids in a busy frame.

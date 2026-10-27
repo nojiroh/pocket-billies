@@ -1,7 +1,7 @@
 // RL-7: a run's scenes and world tables (game/js/logic/run-scenes.js) on small tables of its own: each node's exits
 // in the order its scene is made with them and the ids the generator gives them, the dials drawn from rules.json
-// run.scene, the wild levels by row, and the world: Copperleaf first, a place per node, a seam road per link from a
-// west exit to an east one. Making the scenes on the game's data is run-world-real.test.mjs.
+// run.scene, the wild levels by row, and the world: Copperleaf first, a place per node, a seam road per link from
+// an east exit to a west one. Making the scenes on the game's data is run-world-real.test.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { hashString, rngFrom } from '../../game/js/logic/rng.js';
@@ -64,28 +64,28 @@ const DATA = {
 const RUN = { seed: 'RL7SCENES', map: MAP };
 const HUB = { id: 'copperleaf', name: 'Copperleaf Town', mapId: 'copperleaf', kind: 'town', pool: 'hedgerow' };
 
-test("a node's exits: the first east, the first west (the main road), then the second of each, with the generator's ids", () => {
+test("a node's exits: the first west, the first east (the main road; WM-1: runs go west to east), then the second of each, with the generator's ids", () => {
   const exits = (/** @type {number} */ i) => runSceneExits(MAP, i).map(e => [e.side, e.t, e.id, e.node]);
   assert.deepEqual(exits(0), [
-    ['W', 0.15625, 'west', 1],
-    ['W', 0.84375, 'west2', 2],
-  ]);
-  assert.deepEqual(exits(2), [
-    ['E', 0.5, 'east', 0],
-    ['W', 0.15625, 'west', 3],
-    ['W', 0.84375, 'west2', 4],
-  ]);
-  assert.deepEqual(exits(3), [
     ['E', 0.15625, 'east', 1],
-    ['W', 0.5, 'west', 5],
     ['E', 0.84375, 'east2', 2],
   ]);
-  assert.deepEqual(exits(5), [
+  assert.deepEqual(exits(2), [
+    ['W', 0.5, 'west', 0],
     ['E', 0.15625, 'east', 3],
     ['E', 0.84375, 'east2', 4],
   ]);
-  assert.equal(runSceneExitTo(MAP, 2, 4)?.id, 'west2');
-  assert.equal(runSceneExitTo(MAP, 4, 2)?.id, 'east');
+  assert.deepEqual(exits(3), [
+    ['W', 0.15625, 'west', 1],
+    ['E', 0.5, 'east', 5],
+    ['W', 0.84375, 'west2', 2],
+  ]);
+  assert.deepEqual(exits(5), [
+    ['W', 0.15625, 'west', 3],
+    ['W', 0.84375, 'west2', 4],
+  ]);
+  assert.equal(runSceneExitTo(MAP, 2, 4)?.id, 'east2');
+  assert.equal(runSceneExitTo(MAP, 4, 2)?.id, 'west');
   assert.equal(runSceneExitTo(MAP, 1, 4), null, 'no link, no exit');
 });
 
@@ -121,8 +121,8 @@ test("a node's generator dials: the run's seed, biome, size and exits; it can't 
   const P = runSceneParams(RUN, 0, [], DATA);
   assert.deepEqual([P.kind, P.biome, P.w, P.h, P.edges.length], ['route', 'meadow', 112, 64, 0]);
   assert.deepEqual(P.road.exits, [
-    { side: 'W', t: 0.15625, width: 2 },
-    { side: 'W', t: 0.84375, width: 2 },
+    { side: 'E', t: 0.15625, width: 2 },
+    { side: 'E', t: 0.84375, width: 2 },
   ]);
   assert.equal(P.road.wobble, runSceneDials(DATA.rules.scene, rngFrom('RL7SCENES|n0', 'scene|dials')).road.wobble);
   assert.equal(P.seed, hashString('RL7SCENES|n0|scene') % 2147483647, "the node's own seed");
@@ -171,18 +171,18 @@ test("the run's world: Copperleaf first, a place per node, a seam road per link,
   assert.deepEqual(W.pools.run_0, { lv: [3, 5], list: DATA.pools.grass.list });
   assert.deepEqual(W.pools.run_3, { lv: [5, 7], list: DATA.pools.pond.list });
   assert.notEqual(W.pools.run_0.list, DATA.pools.grass.list, 'a copy');
-  /* a road per link, from the parent's west exit to the child's east one */
+  /* a road per link, from the parent's east exit to the child's west one */
   const id = (/** @type {number} */ i) => runMapIdOf('RL7SCENES', i);
   assert.deepEqual(
     W.roads.map(r => [r.id, r.kind, r.a.map, r.a.exit, r.b.map, r.b.exit]),
     [
-      ['road:run_0-run_1', 'seam', id(0), 'west', id(1), 'east'],
-      ['road:run_0-run_2', 'seam', id(0), 'west2', id(2), 'east'],
-      ['road:run_1-run_3', 'seam', id(1), 'west', id(3), 'east'],
-      ['road:run_2-run_3', 'seam', id(2), 'west', id(3), 'east2'],
-      ['road:run_2-run_4', 'seam', id(2), 'west2', id(4), 'east'],
-      ['road:run_3-run_5', 'seam', id(3), 'west', id(5), 'east'],
-      ['road:run_4-run_5', 'seam', id(4), 'west', id(5), 'east2'],
+      ['road:run_0-run_1', 'seam', id(0), 'east', id(1), 'west'],
+      ['road:run_0-run_2', 'seam', id(0), 'east2', id(2), 'west'],
+      ['road:run_1-run_3', 'seam', id(1), 'east', id(3), 'west'],
+      ['road:run_2-run_3', 'seam', id(2), 'east', id(3), 'west2'],
+      ['road:run_2-run_4', 'seam', id(2), 'east2', id(4), 'west'],
+      ['road:run_3-run_5', 'seam', id(3), 'east', id(5), 'west'],
+      ['road:run_4-run_5', 'seam', id(4), 'east', id(5), 'west2'],
     ]
   );
 });

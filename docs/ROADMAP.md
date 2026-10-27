@@ -100,6 +100,13 @@ town node needs it.
   Copperleaf: residents walk the town as townsfolk of their own from their building or cottage, their looks, lines in
   banter.json with `lastres:`, the room card, the Studio's hub editor) done 2026-10-26 on the same branch; RS-4
   (services and upgrades) next. Tags `rs-N-done`. Branch `track/residents` (the owner makes it from main).
+- **Region map track** (docs/phases/worldmap-track.md, the owner's brief and answers 2026-10-27): runs as a small
+  Pokémon region. WM-1 (runs go west to east, reversing TR-2; the world map opens like the walk camera; done
+  2026-10-27), WM-2 (a
+  region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town), WM-3
+  (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines),
+  WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names), WM-7 (leader arenas, the
+  final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals)
@@ -135,8 +142,8 @@ town node needs it.
   after RL-8.
 - **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
   gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2a (mountains as the border) and
-  TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs now go east to west (the
-  owner, TR-2 session). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4..TR-7 alongside RL-9..RL-11
+  TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs went east to west (the
+  owner, TR-2 session; west to east since WM-1). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4..TR-7 alongside RL-9..RL-11
   after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
 - **Sound track** (docs/phases/sound-track.md, planned 2026-10-21): settings fixes, the tracker as data, a Studio
   section for music and cries, then a Pokémon-style rework (four voices, written hooks, battle intros, a cry per

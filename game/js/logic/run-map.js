@@ -6,13 +6,14 @@
    as the map has rows. Mini-boss rows and the boss row hold one node, so every path meets them, and the row before
    each mini-boss is a town (rules.json run.map). The other rows take a filler type by weight (nodeTypes.json); RL-14:
    a type with a chance instead (a scrapyard) takes a free node by it, from its fromRow on.
-   A link leaves its node by the west side and arrives by the next node's east (the owner: runs go east to west): one
+   A link leaves its node by the east side and arrives by the next node's west (the owner, WM-1: runs go west to east,
+   reversing TR-2's east to west): one
    link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
-   east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way west,
-   `back` the way east. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
-   On the bowl every map's north faces the centre (logic/bowl.js), so west is clockwise round it: a run's rows go
-   clockwise along an arc on the bowl's south side, lane 0 outermost (a map's south), and each node's exits run south
-   to north in the order of its neighbours.
+   east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way east,
+   `back` the way west. Two lanes run straight, split, merge, or switch once (one diagonal, never two, so links never cross).
+   On the bowl (RUN_BOWL) the rows run straight across from the landing near the west rim to the boss near the east,
+   every place's map facing the bowl's north (up 90), lane 0 the southern, and each node's exits run south to north
+   in the order of its neighbours.
    The clock (owner, 8.10): a day per arrival, backtracking included; the landing is day 1 (RL-R2: the owner dropped
    the deadline; the day still drives the forecast and the shops' stock). The map shows the
    next row from where you stand, the row after as '?', and the boss always (run.reveal). Each node has a forecast by
@@ -221,9 +222,9 @@ export function runMapRival(seed, map, R, expedition) {
   }
   return out;
 }
-/** the nodes a node leads to (forward, by its north side) @param {RunMap} map @param {number} i @returns {number[]} */
+/** the nodes a node leads to (forward, by its east side) @param {RunMap} map @param {number} i @returns {number[]} */
 export const runNext = (map, i) => map.nodes[i].to.slice();
-/** the nodes that lead to a node (back, by its south side) @param {RunMap} map @param {number} i @returns {number[]} */
+/** the nodes that lead to a node (back, by its west side) @param {RunMap} map @param {number} i @returns {number[]} */
 export const runBack = (map, i) => map.nodes.flatMap((n, j) => (n.to.includes(i) ? [j] : []));
 /** where links meet a side of a scene: one in the middle, two at a quarter and three quarters (56 m apart on a 112 m
  * run scene; the seam rules want 44 m) */
@@ -232,7 +233,7 @@ export const RUN_EXIT_T = [
   [0.5],
   [0.15625, 0.84375],
 ]; /* 10 m and 54 m along a 64 m edge: whole metres, 44 m apart */
-/** a node's exits, west to east: north to the nodes it leads to, south to the ones that lead to it
+/** a node's exits, by lane (south first): ahead to the nodes it leads to, back to the ones that lead to it
  * @param {RunMap} map @param {number} i
  * @returns {{ ahead: { to: number, t: number }[], back: { from: number, t: number }[] }} */
 export function runExits(map, i) {
@@ -246,10 +247,11 @@ export function runExits(map, i) {
   };
 }
 /** where a run's map sits on the bowl (RL-8b, the owner: the run across the whole bowl, on land of its own; Copperleaf
- * isn't on it): its rows from the landing at x east of the centre to the boss at -x west of it, `step` apart at most
+ * isn't on it): its rows from the landing at -x west of the centre to the boss at x east of it (WM-1: runs go west to
+ * east), `step` apart at most
  * (bowl radii; a 9-row map spans the whole width), the line bowed `bend` north in the middle; two lanes `lane` apart
  * north and south of it, lane 0 the southern. Every place's map faces the bowl's north (up 90), so a run's places read
- * east to west on the map as they are walked. RL-R2: a side area's places `side` lanes north of the line */
+ * west to east on the map as they are walked. RL-R2: a side area's places `side` lanes north of the line */
 export const RUN_BOWL = { x: 0.72, step: 0.18, lane: 0.1, bend: 0.06, side: 2 };
 /** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out from its row and lane, never stored
  * @param {RunMap} map @param {number} i @returns {{ a: number, r: number, up: number }} */
@@ -265,12 +267,12 @@ export function runSpot(map, i) {
   if (node.side && S) {
     const k = S.nodes.indexOf(i),
       from = map.nodes[S.from],
-      x0 = ((rows - 1) / 2 - from.row) * step;
-    x = S.kind === 'detour' ? x0 - ((k + 1) * step) / (S.nodes.length + 1) : ((rows - 1) / 2 - node.row) * step;
+      x0 = (from.row - (rows - 1) / 2) * step;
+    x = S.kind === 'detour' ? x0 + ((k + 1) * step) / (S.nodes.length + 1) : (node.row - (rows - 1) / 2) * step;
     y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + RUN_BOWL.side * RUN_BOWL.lane;
   } else {
     const width = main.filter(n => n.row === node.row).length;
-    x = ((rows - 1) / 2 - node.row) * step;
+    x = (node.row - (rows - 1) / 2) * step;
     y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + (node.lane - (width - 1) / 2) * RUN_BOWL.lane;
   }
   const a = (Math.atan2(y, x) * 180) / Math.PI;
