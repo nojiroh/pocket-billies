@@ -18,15 +18,11 @@ import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
 import {
   EVENTS,
-  FIELD_MOVES,
   LOCATIONS,
   LOCATION_BY_ID,
-  NODE_TYPES,
-  POOLS,
   QUESTS,
   RESIDENTS,
   RULES,
-  SET_PIECES,
   SPECIES,
   START_NODE,
   TRAINERS,
@@ -38,10 +34,10 @@ import {
 import { rngFrom } from './logic/rng.js';
 import { waterMarshOf } from './logic/water-play.js';
 import { runRestore } from './logic/run-state.js';
-import { runRegionData } from './logic/run-region.js';
 import { runSpot, runWeather } from './logic/run-map.js';
 import { waterWeatherApply } from './logic/water-weather.js';
 import { runScenesMake, runScenesSlices, runTownResident, runWorldTables } from './logic/run-scenes.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { runBowlLook } from './logic/run-bowl.js';
 import { runFoes } from './logic/run-loop.js';
 import { encEventFoe } from './logic/encounters.js';
@@ -62,7 +58,6 @@ expose({
   runWaterWeatherSync: [() => runWaterWeatherSync, v => ((runWaterWeatherSync = v), provide({ runWaterWeatherSync }))],
   runWaterWx: [() => runWaterWx],
   runWorld: [() => runWorld],
-  runWorldData: [() => runWorldData, v => (runWorldData = v)],
   runWorldFailed: [() => runWorldFailed, v => (runWorldFailed = v)],
   runWorldLetGo: [() => runWorldLetGo, v => (runWorldLetGo = v)],
   runWorldMake: [() => runWorldMake, v => (runWorldMake = v)],
@@ -78,22 +73,6 @@ provide({ runPlaceWeather, runWaterWeatherSync, runWorldSync });
  * to make (HB-2: ms the work, wall from start to swap when made over frames); live once boot has put the first world in (before that a swapped save waits for boot) */
 export const runWorld = { seed: '', scenes: 0, ms: 0, wall: 0, live: false };
 provide({ runWorld }); /* to-module */
-/** what the run's scenes and tables are made from: the game data as the page holds it (POOLS with stand-ins); RL-R1:
- * and its region (logic/run-region.js: regions.json, the lines, the leaders) */
-export function runWorldData() {
-  return {
-    nodeTypes: NODE_TYPES,
-    biomes: gameData.biomes,
-    pools: POOLS,
-    scenery: gameData.scenery,
-    rules: RULES.run,
-    region: runRegionData(gameData, TRAINERS),
-    /* RL-R2: the field moves that open a run's side area (logic/run-side.js) */
-    fieldMoves: FIELD_MOVES,
-    /* RT-3: the set pieces a laid-out place is dressed with (logic/mapgen.js mapgenStagePieces) */
-    setPieces: SET_PIECES,
-  };
-}
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.
  * Returns whether the world changed */
 export function runWorldSync() {
