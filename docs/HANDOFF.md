@@ -2,6 +2,75 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Roguelite track RL-14b - The Voltron: the Retrieval Unit, Expedition I's boss - 2026-10-27
+Branch `track/bots` (made by the owner from main today; main merged in at the start). Plan approved in Plan Mode;
+the owner's answers: **two phases** (60%: a shield for 2 turns, +1 both attacks; 30%: an arm-bot tears loose, +1
+Speed); the name **The Retrieval Unit**; **payout + one boss part on the first win**; **Chapter 1's end on the first
+win only, while the chapter is 1**; **the join intro on the battle stage**. Tag `rl-14b-done` for the owner.
+- Where the plan was wrong (checked in the code):
+  - "One engine change" was more: `alphaPhase` had one 50% rule and a `ph2` flag; data phases need a list fired once
+    each and a limb break (`bossPhase`).
+  - `startTrainer` builds a run boss through `bossAlpha`/`makeAlpha`, a Billie only, so the Voltron has its own path
+    (`makeBossRobot`, picked by the run foe's `boss` id).
+  - Boss HP needed no change (`stat()` multiplies by `m.boss` for robots too); the stage already drew a boss at 1.6.
+  - SP-5's Augments are on main, so boss parts had to be kept off Escaped specimens (`augChoices`).
+- Changed (one cause per commit):
+  - **robots.json**: four boss-rarity parts (`rar: 'boss'`): Intake Frame (torso), Seizure Arm, Franking Cannon,
+    Conveyor Treads; no pictures (robot-art.js placeholders). The robot sim and the family count leave them out.
+  - **bosses.json** (schema, types, `BOSSES`, check-data and the Studio's Check `dataBosses`): `retrieval` with its
+    `fighter` (Volt gem), its bots' names, `boss {hp 2, st 1.1, levels 3}`, two `phases`, `call`, `join`, `glow`,
+    `win`, `rewards.parts 1`, `story chapter1-end`, `chapter 1`, `expeditions [1]`.
+  - **battle-engine.js**: `makeBossRobot`; `alphaPhase` fires `m.boss.phases` in order (`bossPhase`: shield, stages,
+    the limb broken outright, its line); with no phases the old rule (every Billie Alpha unchanged).
+  - **run-loop.js**: `runBossFor`; `runFoes` makes the boss node's foe the Voltron on Expedition I (`boss`, team
+    `[{sp: 'robot', lvl, boss}]`, at the leader's level, the Expedition's HP, no badge, no leader banter). The leader
+    is still drawn, so mini-bosses and Blake are as before. `startTrainer` builds it. Expedition II and up: leaders.
+  - **battle-rewards.js**: `bossWin` (`meta.bosses[id]` counts wins; the first puts one of its parts into
+    `saveData.parts`, from the run's seed, named on the win sheet) and `bossStoryNext` (`run.beat` + first win +
+    chapter) -> `storyHomeArrive(won, next)` leaves `pending = 'chapter1-end'`. `meta.bosses` is in `newMeta`,
+    `validMeta`; `metaFill` fills old saves (no SAVE_VERSION bump).
+  - **battle-stage.js**: the `join` event: its four parts fly in from four sides, a flash of its `glow`, the robot at
+    Alpha scale (a tap skips it, `battleStageFlush`). A part with no picture of its own drops its placeholder when it
+    breaks. A phase without a shield lights none.
+  - **battle.js**: the turn-order chip skips a leading "The" ("Retrieval ×2", not "The ×2").
+  - Docs: roguelite-track 9.4 "RL-14b as built", ROADMAP (RL-14 done), BRANCHES (`track/bots`), NAMING, SCRIPTS,
+    CHANGELOG.
+- **The run sim** (200 seeds, balance mode, 6 at the ranch, 4 fights, 5 Potions; paired against main, Expedition I):
+
+  | numbers | level 20 wins | level 15 wins |
+  |---|---|---|
+  | main (a leader's Billie Alpha) | 62 | 18 |
+  | first try: HP x3, stats x1.3 | 4 | 0 |
+  | one 50% phase instead of two (a test, not kept) | 124 | 32 |
+  | **as built: HP x2, stats x1.1, +3 levels** | **75** | **9** |
+
+  The second phase's +1 Speed is most of its strength. It is easier than the leader at level 20 and harder at level
+  15; no setting matched both (a weak party struggles against it more than against a leader). No bound asserted.
+- Verified: lint, typecheck, check:modules, format:check, check:data after each change; `npm test` 1470/1470 (1462
+  before: +8 tests: the boss build, phases once and in order, both at once and the Billie default, the win's part,
+  Chapter 1's end, the run's boss on I and II, the boss battle's build; the meta; a planted bosses check-data case).
+  - check-fast `--only=Voltron` (new: the in-game phase "The Voltron: its bots join, its phases fire"): passes, "The
+    Retrieval Unit: joined (its bots flew in), not catchable; 2 phases, the Franking Unit torn loose". The in-game
+    phase "A run: the train, nodes, payout" passes alone (Expedition I's boss is the Voltron, Chapter 1's end waits).
+  - Headless pictures at 390x760 (not committed): the parts flying in, the giant robot standing, "Retrieval ×2".
+  - **Full quick check: 35 of 40** (1459 s). Failing on main too: terraces (the station "in the air"), room light,
+    and RL-8 ("the town's shop has no Perk" alone, on this branch and on main 3c8ef84c alike; in the full run it
+    stopped earlier at a seam's view). RT-2 and Granny Juniper failed in the full run and **pass alone** here and on
+    main (load timing).
+  - Python Playwright 1.56 needed its headless shell under the name `chromium_headless_shell-1194`: a symlink to the
+    installed 1243 build in this container (nothing in the repo).
+- Risky / open:
+  - **Not tried on the phone.** The intro's timing (1.3 s to lock, 2.2 s in all) and the parts' size are guesses.
+  - **Chapter 1's end does not wait for the five beats**: a player who beats the Voltron on an early run hears the
+    end (and moves to chapter 2) before the beats. Say if it should wait for `ch1_signal`.
+  - The Voltron gives **no badge** (a leader boss gave its type's badge on a first win): one fewer badge source on
+    Expedition I.
+  - A run in progress when this lands gets the Voltron at its boss node (its foes are made again from the seed).
+  - Its stand-in on the map is the Reclamation Agent's look (`who: miner`); the four bots are drawn as parts flying
+    in, not four walking rigs.
+  - The boss parts have placeholder art only; `robots.json` art pictures would replace them.
+- Next: tag `rl-14b-done` (the owner's); RL-16 (content packs) is the roguelite track's next session; the Studio has
+  no editor for `bosses.json` yet (RL-16's generic editors).
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
