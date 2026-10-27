@@ -1586,7 +1586,6 @@
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
    "game/js/logic/cutscene-set.js:142",
-   "game/js/logic/figure-pose.js:164",
    "game/js/logic/rules.js:936",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:220",
@@ -1714,9 +1713,13 @@
    "game/js/map-tab.js:127"
   ],
   "eye": [
-   "game/js/figures.js:266",
-   "game/js/logic/figure-pose.js:175",
-   "game/js/logic/figure-pose.js:260"
+   "game/js/figures.js:268",
+   "game/js/logic/figure-pose.js:125",
+   "game/js/logic/figure-pose.js:309",
+   "game/js/logic/figure-pose.js:310",
+   "game/js/logic/figure-pose.js:730",
+   "game/js/logic/figure-pose.js:733",
+   "game/js/logic/figure-pose.js:741"
   ],
   "flame": [
    "game/js/battle-stage.js:809",

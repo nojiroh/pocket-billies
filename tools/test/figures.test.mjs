@@ -75,7 +75,14 @@ function fakeDocument(opts = {}) {
         if (type === 'webgl2') return opts.noGl ? null : (made.gl ||= Object.assign(fakeGl(cv), { cv }));
         if (type === '2d') {
           made.pictures.push(cv);
-          return (cv.x ||= { draws: [], drawImage: (...a) => cv.x.draws.push(a), imageSmoothingEnabled: true });
+          return (cv.x ||= {
+            draws: [],
+            fills: [],
+            fillStyle: '',
+            drawImage: (...a) => cv.x.draws.push(a),
+            fillRect: (...a) => cv.x.fills.push([cv.x.fillStyle, ...a]),
+            imageSmoothingEnabled: true,
+          });
         }
         return null;
       },
@@ -113,7 +120,7 @@ test('figures: one bake draws the mannequin and its outline, and gives a personâ
     assert.deepEqual(
       draws.map(c => c.slice(1)),
       [
-        ['TRIANGLES', 0, G.mannequinFigure().parts.length * 36],
+        ['TRIANGLES', 0, G.figureMesh(G.mannequinFigure()).count],
         ['TRIANGLES', 0, 6],
       ],
       'the figure, then the outline pass'
@@ -127,6 +134,11 @@ test('figures: one bake draws the mannequin and its outline, and gives a personâ
     assert.deepEqual(d.slice(1), [0, D.made.gl.cv.height - S.h, S.w, S.h, 0, 0, S.w, S.h]);
     assert.equal(G.figureReport().bakes, 1);
     assert.equal(G.figureReport().pictures, 1);
+    /* facing the camera: its face painted on, in whole pixels; from behind none */
+    assert.equal(im.x.fills.length, 7, 'two eyes, two glints, a mouth, two blushes');
+    assert.ok(im.x.fills.every(f => /^rgb\(\d+,\d+,\d+\)$/.test(f[0]) && f.slice(1).every(Number.isInteger)));
+    G.gpuState.fr++;
+    assert.equal(G.figurePicture({}, 'mannequin', 'idle', 0, 0, 0, TILT).x.fills.length, 0);
   } finally {
     G.document.createElement = was;
   }

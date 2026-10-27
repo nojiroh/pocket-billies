@@ -9,6 +9,7 @@ import {
   cardSize,
   clipFrameAt,
   figureClipMatrix,
+  figureFaceMarks,
   figureKey,
   figureMesh,
   figurePose,
@@ -93,47 +94,76 @@ test('figure pose: the light is from the top left: tops and left sides lit, righ
   assert.equal(toonBand([0, -1, 0]), 0);
 });
 
-test('figure pose: the mannequin is 1.75 m at about 2.75 heads, a parent before each child', () => {
+/** every vertex of a figure in its pose, in the figure's space, with its part */
+function posedVertices(F, J) {
+  const { data, count } = figureMesh(F),
+    out = [];
+  for (let v = 0; v < count; v++) {
+    const j = data[v * 8 + 6];
+    out.push({ p: apply(J.subarray(j * 16, j * 16 + 16), [data[v * 8], data[v * 8 + 1], data[v * 8 + 2]]), j });
+  }
+  return out;
+}
+
+test('figure pose: the mannequin is 1.75 m to its cowlick at about 2.75 heads, a parent before each child', () => {
   const F = mannequinFigure(),
-    M = jointMatrices(F, restPose(F), 0);
-  let top = -1,
-    bottom = 9;
+    V = posedVertices(F, jointMatrices(F, restPose(F), 0)),
+    ys = V.map(v => v.p[1]),
+    of = id => V.filter(v => F.parts[v.j].id === id).map(v => v.p[1]);
   F.parts.forEach((p, i) => {
     assert.ok(p.parent < i, `${p.id} comes after its parent`);
     assert.ok(p.col in F.colours, `${p.id}'s colour`);
-    for (const x of [0, 3])
-      for (const y of [1, 4])
-        for (const z of [2, 5]) {
-          const q = apply(M.subarray(i * 16, i * 16 + 16), [p.box[x], p.box[y], p.box[z]]);
-          top = Math.max(top, q[1]);
-          bottom = Math.min(bottom, q[1]);
-        }
   });
-  assert.ok(Math.abs(bottom) < 1e-6, `the soles on the ground (${bottom})`);
-  assert.ok(Math.abs(top - 1.74) < 0.02, `the hair's top at about 1.75 m (${top})`);
-  const head = F.parts.find(p => p.id === 'head');
-  assert.ok(Math.abs(1.75 / (head.box[4] - head.box[1]) - 2.75) < 0.1, 'about 2.75 heads');
+  assert.ok(Math.abs(Math.min(...ys)) < 0.005, `the soles on the ground (${Math.min(...ys)})`);
+  assert.ok(Math.abs(Math.max(...ys) - 1.75) < 0.02, `the cowlick's tip at about 1.75 m (${Math.max(...ys)})`);
+  const head = Math.max(...of('hair')) - Math.min(...of('head'));
+  assert.ok(Math.abs(1.75 / head - 2.75) < 0.2, `about 2.75 heads (${(1.75 / head).toFixed(2)})`);
+  /* the head sits on the body: no gap at the neck */
+  assert.ok(Math.min(...of('head')) <= Math.max(...of('torso')) + 0.005, 'no neck showing');
 });
 
-test('figure pose: the mesh is 36 vertices a box, each on one joint, the normals outward', () => {
+test('figure pose: the mesh: rounded shapes, each vertex on one joint, wound outward, smooth normals', () => {
   const F = mannequinFigure(),
     { data, count, colours } = figureMesh(F);
-  assert.equal(count, F.parts.length * 36);
+  assert.equal(count % 3, 0);
+  assert.ok(count > 2000 && count < 20000, `${count} vertices`);
   assert.deepEqual(colours, Object.keys(F.colours));
+  const seen = new Set();
   for (let v = 0; v < count; v++) {
     const j = data[v * 8 + 6];
     assert.ok(Number.isInteger(j) && j >= 0 && j < F.parts.length);
+    seen.add(j);
+    const n = Math.hypot(data[v * 8 + 3], data[v * 8 + 4], data[v * 8 + 5]);
+    assert.ok(Math.abs(n - 1) < 1e-5, `vertex ${v}'s normal is a unit`);
   }
-  /* each triangle winds counter-clockwise seen along its normal */
+  assert.equal(seen.size, F.parts.length, 'every part has triangles');
+  /* each triangle winds counter-clockwise seen from outside: its own normal goes with its vertices' */
   for (let t = 0; t < count; t += 3) {
     const p = k => [0, 1, 2].map(i => data[(t + k) * 8 + i]),
       [a, b, c] = [p(0), p(1), p(2)],
       e1 = b.map((x, i) => x - a[i]),
       e2 = c.map((x, i) => x - a[i]),
       n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]],
-      d = n[0] * data[t * 8 + 3] + n[1] * data[t * 8 + 4] + n[2] * data[t * 8 + 5];
+      vn = [3, 4, 5].map(i => data[t * 8 + i] + data[(t + 1) * 8 + i] + data[(t + 2) * 8 + i]),
+      d = n[0] * vn[0] + n[1] * vn[1] + n[2] * vn[2];
     assert.ok(d > 0, `triangle ${t / 3}`);
   }
+  /* smooth: the same point has one normal in every triangle round it */
+  const at = new Map();
+  for (let v = 0; v < count; v++) {
+    const k = [0, 1, 2, 6].map(i => data[v * 8 + i].toFixed(5)).join(','),
+      n = [3, 4, 5].map(i => data[v * 8 + i]);
+    if (!at.has(k)) at.set(k, n);
+    else
+      assert.ok(
+        at.get(k).every((x, i) => Math.abs(x - n[i]) < 1e-5),
+        `one normal at ${k}`
+      );
+  }
+  /* the hair is a cap: none of it below the back of the neck */
+  const hair = F.parts.findIndex(q => q.id === 'hair');
+  for (let v = 0; v < count; v++)
+    if (data[v * 8 + 6] === hair) assert.ok(data[v * 8 + 1] > 0.305 - 0.302 * 0.75, 'the hair stops above the nape');
 });
 
 test('figure pose: the walk swings the legs against each other and the arms against the legs', () => {
@@ -145,7 +175,7 @@ test('figure pose: the walk swings the legs against each other and the arms agai
   assert.ok(P2.rot[at('thighA')][0] < -0.5 && P2.rot[at('thighB')][0] > 0.5, 'frame 2: A forward, B back');
   assert.ok(P2.rot[at('armA')][0] > 0.4, 'the arm on the side of the forward leg swings back');
   assert.deepEqual(P6.rot[at('thighA')], P2.rot[at('thighB')]);
-  assert.ok(P2.rootY < 0 && Math.abs(figurePose(F, 'walk', 0).rootY) < 1e-9, 'it drops as the legs part');
+  assert.ok(P2.rootY < 0 && figurePose(F, 'walk', 0).rootY > 0, 'it drops as the legs part and bounces as they pass');
   for (let f = 0; f < 8; f++) {
     const P = figurePose(F, 'walk', f);
     for (const k of ['A', 'B']) {
@@ -157,16 +187,56 @@ test('figure pose: the walk swings the legs against each other and the arms agai
   assert.deepEqual(figurePose(F, 'walk', 9), figurePose(F, 'walk', 1));
 });
 
-test('figure pose: the idle breathes and blinks once', () => {
+test('figure pose: the idle breathes, nods and blinks once', () => {
   const F = mannequinFigure(),
     at = id => F.parts.findIndex(p => p.id === id),
     blinks = [];
-  for (let f = 0; f < CLIP_FRAMES.idle; f++) {
-    const P = figurePose(F, 'idle', f);
-    if (P.scale[at('eyeA')][1] < 1) blinks.push(f);
-  }
+  for (let f = 0; f < CLIP_FRAMES.idle; f++) if (figurePose(F, 'idle', f).blink) blinks.push(f);
   assert.deepEqual(blinks, [14]);
   assert.ok(figurePose(F, 'idle', 6).lift[at('torso')][1] > figurePose(F, 'idle', 0).lift[at('torso')][1]);
+  assert.notDeepEqual(figurePose(F, 'idle', 6).rot[at('head')], figurePose(F, 'idle', 0).rot[at('head')], 'a nod');
+});
+
+test('figure pose: the face: two eyes with glints, a mouth and blush seen from the front, none from behind', () => {
+  const F = mannequinFigure(),
+    t = (26 * Math.PI) / 180,
+    S = cardSize(32, t),
+    marks = (rel, clip = 'idle', f = 0) => {
+      const P = figurePose(F, clip, f);
+      return figureFaceMarks(F, jointMatrices(F, P, 32), P, { rel, tilt: t }, 32, S);
+    },
+    kinds = M =>
+      M.map(m => m.kind)
+        .sort()
+        .join(' ');
+  /* facing the camera (rel π): everything, the eyes 3 x 4 pixels with a glint at their top left */
+  const front = marks(Math.PI);
+  assert.equal(kinds(front), 'blush blush eye eye glint glint mouth');
+  const eyes = front.filter(m => m.kind === 'eye');
+  for (const e of eyes) assert.deepEqual([e.w, e.h], [3, 4]);
+  for (const g of front.filter(m => m.kind === 'glint'))
+    assert.ok(
+      eyes.some(e => e.x === g.x && e.y === g.y),
+      'a glint at the top left of an eye'
+    );
+  /* the two eyes level, apart, inside the picture, the mouth under them and between them */
+  assert.equal(eyes[0].y, eyes[1].y);
+  assert.ok(Math.abs(eyes[0].x - eyes[1].x) >= 5);
+  const mouth = front.find(m => m.kind === 'mouth');
+  assert.ok(
+    mouth.y > eyes[0].y + 3 && mouth.x > Math.min(eyes[0].x, eyes[1].x) && mouth.x < Math.max(eyes[0].x, eyes[1].x)
+  );
+  for (const m of front) assert.ok(m.x >= 0 && m.y >= 0 && m.x + m.w <= S.w && m.y + m.h <= S.h);
+  /* from behind: no face; side on: one narrow eye and no mouth */
+  assert.equal(marks(0).length, 0);
+  const side = marks(Math.PI / 2);
+  assert.equal(side.filter(m => m.kind === 'eye').length, 1);
+  assert.equal(side.find(m => m.kind === 'eye').w, 1);
+  assert.equal(side.filter(m => m.kind === 'mouth').length, 0);
+  /* a blink: the eyes a line, no glints */
+  const shut = marks(Math.PI, 'idle', 14);
+  for (const e of shut.filter(m => m.kind === 'eye')) assert.equal(e.h, 1);
+  assert.equal(shut.filter(m => m.kind === 'glint').length, 0);
 });
 
 test('figure pose: the lift is snapped to whole texels', () => {
@@ -226,30 +296,22 @@ test('figure pose: the clip matrix puts the card on the bake’s pixels', () => 
     assert.ok(Math.abs(c[2] - q.depth / 2.5) < 1e-6, 'depth');
     assert.equal(c[3], 1);
   }
-  /* the whole figure fits, in every pose and view */
+  /* the whole figure fits, in every pose and view, at the Normal and the Far tilts, 2 px kept free for the outline */
   const F = mannequinFigure();
-  for (const clip of ['idle', 'walk'])
-    for (let f = 0; f < CLIP_FRAMES[clip]; f++) {
-      const J = jointMatrices(F, figurePose(F, clip, f), 32);
-      for (let k = 0; k < 16; k++)
-        F.parts.forEach((p, i) => {
-          for (const x of [0, 3])
-            for (const y of [1, 4])
-              for (const z of [2, 5]) {
-                const w = apply(J.subarray(i * 16, i * 16 + 16), [p.box[x], p.box[y], p.box[z]]),
-                  c = apply(
-                    figureClipMatrix((k * Math.PI) / 8, (40 * Math.PI) / 180, 32, cardSize(32, (40 * Math.PI) / 180)),
-                    w
-                  ),
-                  sz = cardSize(32, (40 * Math.PI) / 180);
-                /* 2 px kept free for the outline */
-                assert.ok(
-                  Math.abs(c[0]) <= 1 - 4 / sz.w && Math.abs(c[1]) <= 1 - 4 / sz.h,
-                  `${clip} ${f} ${k} ${p.id}`
-                );
-              }
-        });
-    }
+  for (const deg of [26, 40])
+    for (const clip of ['idle', 'walk'])
+      for (let f = 0; f < CLIP_FRAMES[clip]; f++) {
+        const tl = (deg * Math.PI) / 180,
+          sz = cardSize(32, tl),
+          V = posedVertices(F, jointMatrices(F, figurePose(F, clip, f), 32));
+        for (let k = 0; k < 16; k++) {
+          const M = figureClipMatrix((k * Math.PI) / 8, tl, 32, sz);
+          for (const v of V) {
+            const c = apply(M, v.p);
+            assert.ok(Math.abs(c[0]) <= 1 - 4 / sz.w && Math.abs(c[1]) <= 1 - 4 / sz.h, `${deg} ${clip} ${f} ${k}`);
+          }
+        }
+      }
 });
 
 test('figure pose: the clock: the idle on twos, the walk by the distance walked', () => {

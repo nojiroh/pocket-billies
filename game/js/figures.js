@@ -9,7 +9,8 @@
      Pass 1 draws the figure with its depth into a texture: each face in one of three toon bands from a top-left light,
      the scene props' ramps; the depth goes in alpha. Pass 2, at the same pixels: the dark plum outline round it (each
      outside pixel next to the figure takes the outline of its colour, as tools/build-scene-props.py olc) and inside it
-     where a part stands well in front of another. Then the pixels are copied to a 2D canvas.
+     where a part stands well in front of another. Then the pixels are copied to a 2D canvas, and the face is painted
+     on it in whole pixels (eyes, mouth, blush: logic/figure-pose.js figureFaceMarks).
    - Pictures are kept by figure, clip, frame, the view's steps, the density and the outline (figureKey), at most
      FIGURE_CACHE_MAX, and at most FIGURE_BAKES_A_FRAME are baked a frame: until a person's picture is ready they keep
      the last one they had (or today's picture, or nobody, on a test map).
@@ -25,6 +26,7 @@ import {
   cardSize,
   clipFrameAt,
   figureClipMatrix,
+  figureFaceMarks,
   figureKey,
   figureMesh,
   figurePose,
@@ -283,7 +285,8 @@ function bakeFigure(F, clip, frame, V, ppm, outline) {
     B.cv.height = Math.max(B.cv.height, S.h);
   }
   figureTarget(gl, B.cv.width, B.cv.height);
-  const J = jointMatrices(F, figurePose(F, clip, frame), ppm),
+  const pose = figurePose(F, clip, frame),
+    J = jointMatrices(F, pose, ppm),
     c = Math.cos(V.rel),
     s = Math.sin(V.rel);
   /* pass 1: the figure with its depth */
@@ -328,6 +331,11 @@ function bakeFigure(F, clip, frame, V, ppm, outline) {
     x = out.getContext('2d');
   x.imageSmoothingEnabled = false;
   x.drawImage(B.cv, 0, B.cv.height - S.h, S.w, S.h, 0, 0, S.w, S.h);
+  /* the face, painted in whole pixels where the head faces the camera (logic/figure-pose.js figureFaceMarks) */
+  for (const m of figureFaceMarks(F, J, pose, V, ppm, S)) {
+    x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
+    x.fillRect(m.x, m.y, m.w, m.h);
+  }
   out.ax = S.ax;
   out.ay = S.ay;
   out.ppm = ppm;

@@ -3,9 +3,13 @@
 /* ================= A FIGURE'S PARTS, POSES AND VIEW (characters track CH-2, the spike) =================
    The maths of the figure baker (game/js/figures.js draws with it): a figure is jointed rigid parts (the Studio's rule:
    "spinning and jointed parts; no skinning"), each vertex on one joint.
-   - The mannequin: a person built in code from boxes, 1.75 m tall at about 2.75 heads (the track's proportions), with
-     big hands and shoes and two eyes. Its own axes: y up, facing +z (a heading of 0, logic/person-view.js), x across.
-   - Poses: an idle (breathing, a blink) and an 8-frame walk, each frame a rotation (and a small lift) per part. A pose
+   - The mannequin: a person built in code, 1.75 m tall at about 2.75 heads (the track's proportions), from rounded
+     low-poly shapes (the owner, 2026-10-27: "less boxy, more charming"): an egg of a head under a hair cap with a
+     fringe and a cowlick, a bean of a body with a scarf, capsule limbs, mitten hands and bean shoes, every shape
+     smooth-shaded so the toon bands follow its curve. Its face is marks painted on the picture in whole pixels (big
+     eyes with a glint, a small mouth, blush) where its head faces the camera, not geometry, so a face 18 pixels wide
+     stays crisp. Its own axes: y up, facing +z (a heading of 0, logic/person-view.js), x across.
+   - Poses: an idle (breathing, a nod, a blink) and an 8-frame walk, each frame a rotation (and a small lift) per part. A pose
      is sampled on the 12 fps clock (skeleton-rig.js rigFrame's grid): the idle holds each pose two ticks, the walk is
      keyed to the distance walked (WALK_CYCLE_M a cycle) and read once a tick.
    - The view: an oblique projection onto the upright card the sprite path stands in the world. The card is upright and
@@ -34,11 +38,12 @@ expose({
   cardSize: [() => cardSize, v => (cardSize = v)],
   // @ts-expect-error -- replaced on purpose
   clipFrameAt: [() => clipFrameAt, v => (clipFrameAt = v)],
-  figureBox: [() => figureBox],
   // @ts-expect-error -- replaced on purpose
   figureClipMatrix: [() => figureClipMatrix, v => (figureClipMatrix = v)],
   // @ts-expect-error -- replaced on purpose
   figureDark: [() => figureDark, v => (figureDark = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureFaceMarks: [() => figureFaceMarks, v => (figureFaceMarks = v)],
   // @ts-expect-error -- replaced on purpose
   figureKey: [() => figureKey, v => (figureKey = v)],
   // @ts-expect-error -- replaced on purpose
@@ -58,6 +63,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureView: [() => figureView, v => (figureView = v)],
   // @ts-expect-error -- replaced on purpose
+  frontOf: [() => frontOf, v => (frontOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  hairCutAt: [() => hairCutAt, v => (hairCutAt = v)],
+  // @ts-expect-error -- replaced on purpose
   jointMatrices: [() => jointMatrices, v => (jointMatrices = v)],
   // @ts-expect-error -- replaced on purpose
   mannequinFigure: [() => mannequinFigure, v => (mannequinFigure = v)],
@@ -70,7 +79,16 @@ expose({
   // @ts-expect-error -- replaced on purpose
   restPose: [() => restPose, v => (restPose = v)],
   // @ts-expect-error -- replaced on purpose
+  ringSurface: [() => ringSurface, v => (ringSurface = v)],
+  // @ts-expect-error -- replaced on purpose
+  shapeSurface: [() => shapeSurface, v => (shapeSurface = v)],
+  // @ts-expect-error -- replaced on purpose
+  shapeTriangles: [() => shapeTriangles, v => (shapeTriangles = v)],
+  // @ts-expect-error -- replaced on purpose
   toonBand: [() => toonBand, v => (toonBand = v)],
+  vCross: [() => vCross],
+  vDot: [() => vDot],
+  vSub: [() => vSub],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -91,10 +109,24 @@ export const FIGURE_LIGHT = Object.freeze(figureUnit([-0.55, 0.7, -0.45]));
 export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1 });
 
 /** @typedef {[number, number, number]} Vec3 */
-/** @typedef {{ id: string, parent: number, at: Vec3, box: [number, number, number, number, number, number], col: string }} FigurePart
- * a part: its joint at `at` from its parent's joint (rest pose, metres), its box from its own joint, its colour */
-/** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3> }} Figure */
-/** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number }} FigurePose per part (in parts order) */
+/** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number }} HairCut where a hair cap
+ * ends, as a height on its own sphere (-1 the bottom, 1 the top) at the front, the sides and the back, its fringe in
+ * `bangs` points `depth` deep */
+/** @typedef {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg?: number, rings?: number, cut?: HairCut }
+ *   | { kind: 'lathe', c: Vec3, y: number[], rx: number[], rz: number[], seg?: number }
+ *   | { kind: 'capsule', a: Vec3, b: Vec3, r0: number, r1: number, seg?: number }
+ *   | { kind: 'cone', a: Vec3, b: Vec3, r: number, seg?: number }
+ *   | { kind: 'torus', c: Vec3, R: [number, number], r: number, seg?: number, rings?: number }} FigureShape
+ * a part's shape, in its joint's space: an ellipsoid (centre, radii; a hair cap is one with a cut), a lathe (rings
+ * round an upright axis through c at heights y, radii rx across and rz front to back; a radius of 0 closes it), a
+ * capsule from a to b (radii r0 and r1), a cone from its base a to its tip b, or a torus round an upright axis */
+/** @typedef {{ id: string, parent: number, at: Vec3, shape: FigureShape, col: string }} FigurePart
+ * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour */
+/** @typedef {{ part: string, kind: 'eye' | 'mouth' | 'blush', at: Vec3, n: Vec3, w: number, h: number }} FaceMark
+ * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres */
+/** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[] }} Figure */
+/** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
+ * parts order); `blink` closes the eyes */
 
 /** @param {number[]} v @returns {Vec3} */
 export function figureUnit(v) {
@@ -145,54 +177,153 @@ export function toonBand(n) {
 }
 
 /* ---------- the mannequin ---------- */
-/** a box from its sides: x from -w to w, y from y0 to y1, z from z0 to z1 @returns {[number, number, number, number, number, number]} */
-export const figureBox = (
-  /** @type {number} */ w,
-  /** @type {number} */ y0,
-  /** @type {number} */ y1,
-  /** @type {number} */ z0,
-  /** @type {number} */ z1
-) => [-w, y0, z0, w, y1, z1];
 /**
- * the spike's mannequin: 1.75 m, the head 0.64 m (2.75 heads), legs 0.5 m, big hands and shoes. Parts in order, a
- * parent before its children; the eyes and the hair sit on the head's joint.
+ * a point on the front of an ellipsoid at (x, y), and its outward normal: where a face mark sits
+ * @param {{ c: Vec3, r: Vec3 }} E @param {number} x @param {number} y @returns {{ at: Vec3, n: Vec3 }}
+ */
+export function frontOf(E, x, y) {
+  const { c, r } = E,
+    u = (x - c[0]) / r[0],
+    v = (y - c[1]) / r[1],
+    w = Math.sqrt(Math.max(0, 1 - u * u - v * v)),
+    z = c[2] + r[2] * w;
+  return { at: [x, y, z], n: figureUnit([u / r[0], v / r[1], w / r[2]]) };
+}
+/**
+ * the spike's mannequin, 1.75 m to the tip of its cowlick: the head and hair 0.6 m (about 2.9 heads), legs 0.5 m,
+ * big mitten hands and bean shoes, a scarf. Parts in order, a parent before its children; the hair, the cowlick and
+ * the face sit on the head's joint, the scarf on the body's.
  * @returns {Figure}
  */
 export function mannequinFigure() {
   /** @type {FigurePart[]} */
   const parts = [];
-  /** @param {string} id @param {string | null} parent @param {Vec3} at @param {FigurePart['box']} box @param {string} col */
-  const add = (id, parent, at, box, col) => {
-    parts.push({ id, parent: parent == null ? -1 : parts.findIndex(p => p.id === parent), at, box, col });
+  /** @param {string} id @param {string | null} parent @param {Vec3} at @param {FigureShape} shape @param {string} col */
+  const add = (id, parent, at, shape, col) => {
+    parts.push({ id, parent: parent == null ? -1 : parts.findIndex(p => p.id === parent), at, shape, col });
   };
-  add('hips', null, [0, 0.5, 0], figureBox(0.15, -0.06, 0.1, -0.1, 0.1), 'pants');
-  add('torso', 'hips', [0, 0.1, 0], figureBox(0.16, 0, 0.42, -0.1, 0.11), 'shirt');
-  add('head', 'torso', [0, 0.44, 0], [-0.29, 0, -0.26, 0.29, 0.62, 0.27], 'skin');
-  add('hair', 'head', [0, 0, 0], [-0.31, 0.4, -0.29, 0.31, 0.7, 0.2], 'hair');
-  add('fringe', 'head', [0, 0, 0], [-0.31, 0.5, 0.2, 0.31, 0.7, 0.3], 'hair');
+  /** @type {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg: number, rings: number }} */
+  const head = { kind: 'ellipsoid', c: [0, 0.29, 0.01], r: [0.3, 0.285, 0.275], seg: 16, rings: 12 };
+  add(
+    'hips',
+    null,
+    [0, 0.5, 0],
+    { kind: 'ellipsoid', c: [0, 0.03, 0], r: [0.15, 0.09, 0.105], seg: 12, rings: 6 },
+    'pants'
+  );
+  add(
+    'torso',
+    'hips',
+    [0, 0.1, 0],
+    {
+      kind: 'lathe',
+      c: [0, 0, 0],
+      y: [-0.08, -0.05, 0.04, 0.17, 0.29, 0.37, 0.41],
+      rx: [0, 0.1, 0.165, 0.172, 0.15, 0.1, 0],
+      rz: [0, 0.08, 0.12, 0.125, 0.108, 0.075, 0],
+      seg: 12,
+    },
+    'shirt'
+  );
+  add(
+    'scarf',
+    'torso',
+    [0, 0.36, 0],
+    { kind: 'torus', c: [0, 0, 0.005], R: [0.105, 0.085], r: 0.04, seg: 12, rings: 6 },
+    'scarf'
+  );
+  add('head', 'torso', [0, 0.4, 0], head, 'skin');
+  add(
+    'hair',
+    'head',
+    [0, 0, 0],
+    {
+      kind: 'ellipsoid',
+      c: [0, 0.305, 0.0],
+      r: [0.318, 0.302, 0.294],
+      seg: 16,
+      rings: 12,
+      cut: { front: 0.36, side: -0.05, back: -0.5, bangs: 3, depth: 0.16 },
+    },
+    'hair'
+  );
+  add(
+    'cowlick',
+    'head',
+    [0, 0, 0],
+    { kind: 'cone', a: [0.02, 0.56, -0.02], b: [0.09, 0.75, -0.1], r: 0.05, seg: 7 },
+    'hair'
+  );
   for (const s of [1, -1]) {
     const k = s > 0 ? 'A' : 'B';
-    add('eye' + k, 'head', [s * 0.12, 0.22, 0.27], figureBox(0.04, 0, 0.13, 0, 0.012), 'eye');
-    add('glint' + k, 'head', [s * 0.12 - 0.02, 0.29, 0.282], figureBox(0.016, 0, 0.032, 0, 0.004), 'glint');
-    add('thigh' + k, 'hips', [s * 0.085, 0, 0], figureBox(0.07, -0.25, 0, -0.07, 0.07), 'pants');
-    add('shin' + k, 'thigh' + k, [0, -0.25, 0], figureBox(0.065, -0.2, 0, -0.065, 0.065), 'pants');
-    add('foot' + k, 'shin' + k, [0, -0.2, 0], figureBox(0.08, -0.05, 0.02, -0.07, 0.15), 'shoe');
-    add('arm' + k, 'torso', [s * 0.215, 0.38, 0], figureBox(0.055, -0.21, 0.02, -0.055, 0.055), 'shirt');
-    add('forearm' + k, 'arm' + k, [0, -0.21, 0], figureBox(0.05, -0.17, 0, -0.05, 0.05), 'skin');
-    add('hand' + k, 'forearm' + k, [0, -0.17, 0], figureBox(0.07, -0.12, 0, -0.06, 0.07), 'skin');
+    add(
+      'thigh' + k,
+      'hips',
+      [s * 0.08, 0, 0],
+      { kind: 'capsule', a: [0, 0, 0], b: [0, -0.24, 0], r0: 0.07, r1: 0.062, seg: 9 },
+      'pants'
+    );
+    add(
+      'shin' + k,
+      'thigh' + k,
+      [0, -0.24, 0],
+      { kind: 'capsule', a: [0, 0, 0], b: [0, -0.19, 0], r0: 0.06, r1: 0.055, seg: 9 },
+      'pants'
+    );
+    add(
+      'foot' + k,
+      'shin' + k,
+      [0, -0.19, 0],
+      { kind: 'ellipsoid', c: [0, -0.03, 0.04], r: [0.075, 0.04, 0.108], seg: 10, rings: 6 },
+      'shoe'
+    );
+    add(
+      'arm' + k,
+      'torso',
+      [s * 0.2, 0.33, 0],
+      { kind: 'capsule', a: [0, 0, 0], b: [0, -0.19, 0], r0: 0.058, r1: 0.052, seg: 9 },
+      'shirt'
+    );
+    add(
+      'forearm' + k,
+      'arm' + k,
+      [0, -0.19, 0],
+      { kind: 'capsule', a: [0, 0, 0], b: [0, -0.14, 0], r0: 0.047, r1: 0.044, seg: 8 },
+      'skin'
+    );
+    add(
+      'hand' + k,
+      'forearm' + k,
+      [0, -0.15, 0],
+      { kind: 'ellipsoid', c: [0, -0.045, 0.008], r: [0.064, 0.068, 0.062], seg: 9, rings: 6 },
+      'skin'
+    );
   }
+  /** @type {FaceMark[]} blush first, so the eyes and mouth go over it */
+  const face = [];
+  /** @param {FaceMark['kind']} kind @param {number} x @param {number} y @param {number} w @param {number} h */
+  const mark = (kind, x, y, w, h) => face.push({ part: 'head', kind, ...frontOf(head, x, y), w, h });
+  mark('blush', 0.18, 0.18, 0.07, 0.03);
+  mark('blush', -0.18, 0.18, 0.07, 0.03);
+  mark('mouth', 0, 0.135, 0.06, 0.03);
+  mark('eye', 0.11, 0.255, 0.09, 0.125);
+  mark('eye', -0.11, 0.255, 0.09, 0.125);
   return {
     name: 'mannequin',
     height: 1.75,
     parts,
+    face,
     colours: {
       skin: [248, 214, 178],
-      hair: [132, 84, 60],
+      hair: [164, 98, 58],
       shirt: [46, 164, 160],
+      scarf: [232, 98, 86],
       pants: [70, 84, 112],
-      shoe: [178, 118, 72],
+      shoe: [132, 84, 60],
       eye: [36, 25, 54],
-      glint: [234, 238, 236],
+      glint: [250, 250, 245],
+      mouth: [150, 70, 74],
+      blush: [238, 146, 140],
     },
   };
 }
@@ -209,10 +340,11 @@ export function restPose(F) {
 }
 /**
  * a clip's pose at one of its frames. A swing forward is toward the figure's +z.
- * - idle (16 frames, two ticks each: 2.7 s): the chest and head rise a little for half the breath, the arms ease out;
- *   a blink on frame 14.
+ * - idle (16 frames, two ticks each: 2.7 s): the chest and head rise a little for half the breath, the arms ease out,
+ *   the head nods and leans; a blink on frame 14.
  * - walk (8 frames): the legs swing 0.55 rad, the knee of the leg coming forward bends, the feet stay level, the arms
- *   swing against the legs with the elbows a little bent, the body twists and drops as the legs part.
+ *   swing against the legs with the elbows a little bent, the body twists and drops as the legs part and bounces as
+ *   they pass, the head rocks.
  * @param {Figure} F @param {string} clip @param {number} frame @returns {FigurePose}
  */
 export function figurePose(F, clip, frame) {
@@ -245,10 +377,15 @@ export function figurePose(F, clip, frame) {
     P.rot[at('torso')][1] = 0.12 * s;
     P.rot[at('head')][1] = -0.08 * s;
     P.rot[at('torso')][0] = -0.06;
-    P.rootY = -0.5 * (1 - Math.cos(swing * s));
+    /* the body drops as the legs part and bounces up as they pass (a spring in the step) */
+    P.rootY = -0.5 * (1 - Math.cos(swing * s)) + 0.02 * (1 - Math.abs(s));
+    P.rot[at('head')][2] = 0.03 * s;
   } else {
     const up = f >= 4 && f < 12 ? 1 : 0;
     P.lift[at('torso')][1] = up * 0.02;
+    /* a slow nod and a lean of the head with the breath */
+    P.rot[at('head')][0] = up ? -0.05 : 0.02;
+    P.rot[at('head')][2] = f >= 8 ? 0.05 : -0.03;
     for (const [k, sg] of /** @type {[string, number][]} */ ([
       ['A', 1],
       ['B', -1],
@@ -256,8 +393,7 @@ export function figurePose(F, clip, frame) {
       P.rot[at('arm' + k)][2] = sg * (0.06 + up * 0.03);
       rx('forearm' + k, -0.12);
     }
-    if (f === 14)
-      for (const k of ['eyeA', 'eyeB', 'glintA', 'glintB']) P.scale[at(k)][1] = k.startsWith('eye') ? 0.25 : 0;
+    if (f === 14) P.blink = true;
   }
   return P;
 }
@@ -335,81 +471,277 @@ export function jointMatrices(F, P, ppm) {
 }
 
 /* ---------- the mesh ---------- */
+/** @param {number[]} a @param {number[]} b @returns {Vec3} */
+export const vSub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+/** @param {number[]} a @param {number[]} b @returns {Vec3} */
+export const vCross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+/** @param {number[]} a @param {number[]} b */
+export const vDot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
 /**
- * the figure's boxes as triangles, each vertex with its part (one joint) and colour: 8 numbers a vertex (x, y, z, the
- * face's normal, the part, the colour's place in `colours`)
+ * a surface from rings of points (a ring of one point is a pole), each point with a way out of the shape: triangles
+ * between each ring and the next (and the last and the first, `closed`)
+ * @param {Vec3[][]} rings @param {Vec3[][]} out @param {boolean} [closed]
+ * @returns {{ pts: Vec3[], out: Vec3[], tris: number[][] }}
+ */
+export function ringSurface(rings, out, closed = false) {
+  /** @type {Vec3[]} */ const pts = [],
+    /** @type {Vec3[]} */ hint = [],
+    /** @type {number[][]} */ tris = [],
+    /** @type {number[]} */ at = [];
+  rings.forEach((R, i) => {
+    at.push(pts.length);
+    R.forEach((p, j) => {
+      pts.push(p);
+      hint.push(out[i][j]);
+    });
+  });
+  const n = rings.length;
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const A = rings[i],
+      B = rings[(i + 1) % n],
+      a = at[i],
+      b = at[(i + 1) % n];
+    if (A.length === 1 && B.length === 1) continue;
+    if (A.length === 1) for (let j = 0; j < B.length; j++) tris.push([a, b + j, b + ((j + 1) % B.length)]);
+    else if (B.length === 1) for (let j = 0; j < A.length; j++) tris.push([a + j, b, a + ((j + 1) % A.length)]);
+    else
+      for (let j = 0; j < A.length; j++) {
+        const j1 = (j + 1) % A.length;
+        tris.push([a + j, b + j, b + j1], [a + j, b + j1, a + j1]);
+      }
+  }
+  return { pts, out: hint, tris };
+}
+/**
+ * the hair cap's edge: the height on its sphere (-1..1) below which an ellipsoid is cut away, at a point (u across, w
+ * front to back) of its sphere; the fringe comes down in points at the front
+ * @param {HairCut} C @param {number} u @param {number} w
+ */
+export function hairCutAt(C, u, w) {
+  let v = w >= 0 ? C.side + (C.front - C.side) * w : C.side + (C.back - C.side) * -w;
+  if (C.bangs && w > 0.3)
+    v -= (C.depth || 0) * (0.5 + 0.5 * Math.cos(u * C.bangs * Math.PI)) * Math.min(1, (w - 0.3) / 0.4);
+  return v;
+}
+/**
+ * a shape's surface: points, a way out of the shape at each, and triangles
+ * @param {FigureShape} sh @returns {{ pts: Vec3[], out: Vec3[], tris: number[][] }}
+ */
+export function shapeSurface(sh) {
+  /** @type {Vec3[][]} */ const R = [],
+    /** @type {Vec3[][]} */ O = [];
+  const ring = (/** @type {number} */ n, /** @type {(t: number) => [Vec3, Vec3]} */ f) => {
+    const r = [],
+      o = [];
+    for (let j = 0; j < n; j++) {
+      const [p, q] = f((2 * Math.PI * j) / n);
+      r.push(p);
+      o.push(q);
+    }
+    R.push(r);
+    O.push(o);
+  };
+  if (sh.kind === 'ellipsoid') {
+    const { c, r } = sh,
+      seg = sh.seg || 12,
+      rings = sh.rings || 8;
+    for (let i = 0; i <= rings; i++) {
+      const ph = (Math.PI * i) / rings,
+        sp = Math.sin(ph),
+        cp = Math.cos(ph);
+      if (i === 0 || i === rings) {
+        const p = /** @type {Vec3} */ ([c[0], c[1] + r[1] * cp, c[2]]);
+        R.push([p]);
+        O.push([[0, cp, 0]]);
+      } else
+        ring(seg, t => {
+          const d = /** @type {Vec3} */ ([sp * Math.sin(t), cp, sp * Math.cos(t)]);
+          return [[c[0] + r[0] * d[0], c[1] + r[1] * d[1], c[2] + r[2] * d[2]], d];
+        });
+    }
+    const S = ringSurface(R, O);
+    if (sh.cut) {
+      const C = sh.cut;
+      S.tris = S.tris.filter(tr => {
+        const m = [0, 1, 2].map(k => (S.pts[tr[0]][k] + S.pts[tr[1]][k] + S.pts[tr[2]][k]) / 3);
+        const u = (m[0] - c[0]) / r[0],
+          v = (m[1] - c[1]) / r[1],
+          w = (m[2] - c[2]) / r[2];
+        return v > hairCutAt(C, u, w);
+      });
+    }
+    return S;
+  }
+  if (sh.kind === 'lathe') {
+    const seg = sh.seg || 12,
+      c = sh.c,
+      mid = sh.y.reduce((a, b) => a + b, 0) / sh.y.length;
+    sh.y.forEach((y, i) => {
+      if (!(sh.rx[i] > 0)) {
+        R.push([[c[0], y, c[2]]]);
+        O.push([[0, y - mid, 0]]);
+      } else
+        ring(seg, t => {
+          const p = /** @type {Vec3} */ ([c[0] + sh.rx[i] * Math.sin(t), y, c[2] + sh.rz[i] * Math.cos(t)]);
+          return [p, vSub(p, [c[0], mid, c[2]])];
+        });
+    });
+    return ringSurface(R, O);
+  }
+  if (sh.kind === 'capsule' || sh.kind === 'cone') {
+    const a = sh.a,
+      b = sh.b,
+      d = vSub(b, a),
+      L = Math.hypot(d[0], d[1], d[2]) || 1e-6,
+      e = /** @type {Vec3} */ ([d[0] / L, d[1] / L, d[2] / L]),
+      /* two ways across the axis */
+      p0 = figureUnit(Math.abs(e[1]) < 0.9 ? vCross(e, [0, 1, 0]) : vCross(e, [1, 0, 0])),
+      q0 = vCross(e, p0),
+      seg = sh.seg || 8,
+      /** @param {number} along @param {number} rad @param {Vec3} axisAt */
+      circle = (along, rad, axisAt) =>
+        ring(seg, t => {
+          const dir = /** @type {Vec3} */ ([
+            p0[0] * Math.cos(t) + q0[0] * Math.sin(t),
+            p0[1] * Math.cos(t) + q0[1] * Math.sin(t),
+            p0[2] * Math.cos(t) + q0[2] * Math.sin(t),
+          ]);
+          const centre = [a[0] + e[0] * along, a[1] + e[1] * along, a[2] + e[2] * along],
+            p = /** @type {Vec3} */ ([centre[0] + dir[0] * rad, centre[1] + dir[1] * rad, centre[2] + dir[2] * rad]);
+          return [p, vSub(p, axisAt)];
+        }),
+      pole = (/** @type {number} */ along, /** @type {Vec3} */ way) => {
+        R.push([[a[0] + e[0] * along, a[1] + e[1] * along, a[2] + e[2] * along]]);
+        O.push([way]);
+      };
+    if (sh.kind === 'cone') {
+      const mid = /** @type {Vec3} */ ([a[0] + d[0] / 3, a[1] + d[1] / 3, a[2] + d[2] / 3]);
+      pole(0, [-e[0], -e[1], -e[2]]);
+      circle(0, sh.r, mid);
+      circle(L * 0.5, sh.r * 0.5, mid);
+      pole(L, e);
+      return ringSurface(R, O);
+    }
+    /* a half sphere at each end, the side between them */
+    const steps = 3;
+    pole(-sh.r0, [-e[0], -e[1], -e[2]]);
+    for (let k = steps - 1; k >= 0; k--) {
+      const al = (Math.PI / 2) * (k / steps);
+      circle(-sh.r0 * Math.sin(al), sh.r0 * Math.cos(al), a);
+    }
+    for (let k = 0; k < steps; k++) {
+      const al = (Math.PI / 2) * (k / steps);
+      circle(L + sh.r1 * Math.sin(al), sh.r1 * Math.cos(al), b);
+    }
+    pole(L + sh.r1, e);
+    return ringSurface(R, O);
+  }
+  /* a torus round an upright axis through c: a ring of the tube's circles */
+  const { c, r } = sh,
+    seg = sh.seg || 12,
+    rings = sh.rings || 6;
+  for (let i = 0; i < seg; i++) {
+    const t = (2 * Math.PI * i) / seg,
+      cx = c[0] + sh.R[0] * Math.sin(t),
+      cz = c[2] + sh.R[1] * Math.cos(t),
+      rad = /** @type {Vec3} */ ([Math.sin(t), 0, Math.cos(t)]),
+      tube = /** @type {Vec3} */ ([cx, c[1], cz]);
+    const ringPts = [],
+      ringOut = [];
+    for (let j = 0; j < rings; j++) {
+      const a = (2 * Math.PI * j) / rings,
+        dir = /** @type {Vec3} */ ([rad[0] * Math.cos(a), Math.sin(a), rad[2] * Math.cos(a)]);
+      ringPts.push(/** @type {Vec3} */ ([cx + dir[0] * r, c[1] + dir[1] * r, cz + dir[2] * r]));
+      ringOut.push(vSub(ringPts[j], tube));
+    }
+    R.push(ringPts);
+    O.push(ringOut);
+  }
+  return ringSurface(R, O, true);
+}
+/**
+ * a shape's triangles, each wound counter-clockwise seen from outside, with smooth normals (each point's the sum of
+ * the faces round it, so the toon bands follow the curve): 6 numbers a vertex (x, y, z, the normal)
+ * @param {FigureShape} sh @returns {number[][][]} three vertices a triangle
+ */
+export function shapeTriangles(sh) {
+  const S = shapeSurface(sh),
+    /** @type {Vec3[]} */ nrm = S.pts.map(() => [0, 0, 0]);
+  const tris = S.tris.map(tr => {
+    let [i, j, k] = tr;
+    let g = vCross(vSub(S.pts[j], S.pts[i]), vSub(S.pts[k], S.pts[i]));
+    const o = [0, 1, 2].map(m => S.out[i][m] + S.out[j][m] + S.out[k][m]);
+    if (vDot(g, o) < 0) {
+      [j, k] = [k, j];
+      g = [-g[0], -g[1], -g[2]];
+    }
+    for (const v of [i, j, k]) for (let m = 0; m < 3; m++) nrm[v][m] += g[m];
+    return [i, j, k];
+  });
+  const N = nrm.map(n => figureUnit(n));
+  return tris.map(tr => tr.map(v => [...S.pts[v], ...N[v]]));
+}
+/**
+ * the figure's shapes as triangles, each vertex with its part (one joint) and colour: 8 numbers a vertex (x, y, z, the
+ * smooth normal, the part, the colour's place in `colours`)
  * @param {Figure} F @returns {{ data: Float32Array, count: number, colours: string[] }}
  */
 export function figureMesh(F) {
   const colours = Object.keys(F.colours),
     /** @type {number[]} */ v = [];
-  /* each face: its normal and its four corners as (x, y, z) picks from the box's low (0) and high (1) sides, wound
-     counter-clockwise seen from outside */
-  const FACES = /** @type {[Vec3, number[][]][]} */ ([
-    [
-      [1, 0, 0],
-      [
-        [1, 0, 1],
-        [1, 0, 0],
-        [1, 1, 0],
-        [1, 1, 1],
-      ],
-    ],
-    [
-      [-1, 0, 0],
-      [
-        [0, 0, 0],
-        [0, 0, 1],
-        [0, 1, 1],
-        [0, 1, 0],
-      ],
-    ],
-    [
-      [0, 1, 0],
-      [
-        [0, 1, 1],
-        [1, 1, 1],
-        [1, 1, 0],
-        [0, 1, 0],
-      ],
-    ],
-    [
-      [0, -1, 0],
-      [
-        [0, 0, 0],
-        [1, 0, 0],
-        [1, 0, 1],
-        [0, 0, 1],
-      ],
-    ],
-    [
-      [0, 0, 1],
-      [
-        [0, 0, 1],
-        [1, 0, 1],
-        [1, 1, 1],
-        [0, 1, 1],
-      ],
-    ],
-    [
-      [0, 0, -1],
-      [
-        [1, 0, 0],
-        [0, 0, 0],
-        [0, 1, 0],
-        [1, 1, 0],
-      ],
-    ],
-  ]);
   F.parts.forEach((p, j) => {
-    const b = p.box,
-      ci = Math.max(0, colours.indexOf(p.col));
-    for (const [n, q] of FACES) {
-      const pt = (/** @type {number[]} */ c) => [c[0] ? b[3] : b[0], c[1] ? b[4] : b[1], c[2] ? b[5] : b[2]];
-      for (const k of [0, 1, 2, 0, 2, 3]) v.push(...pt(q[k]), ...n, j, ci);
-    }
+    const ci = Math.max(0, colours.indexOf(p.col));
+    for (const tri of shapeTriangles(p.shape)) for (const q of tri) v.push(...q, j, ci);
   });
   return { data: new Float32Array(v), count: v.length / 8, colours };
+}
+
+/* ---------- the face ---------- */
+/**
+ * the face marks to paint on a baked picture, in its pixels (x, y from the top left, w by h): each mark where its part
+ * holds it this pose, seen in view V, if it faces the camera enough (eyes most, the mouth least); an eye seen from the
+ * side is a pixel wide; a closed eye (`blink`) a line; an open eye 2 pixels or wider and 3 or taller gets a glint at
+ * its top left, toward the light
+ * @param {Figure} F @param {Float32Array} J the pose's joint matrices (jointMatrices) @param {FigurePose} P
+ * @param {{ rel: number, tilt: number }} V @param {number} ppm @param {{ ax: number, ay: number }} S
+ * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string }[]}
+ */
+export function figureFaceMarks(F, J, P, V, ppm, S) {
+  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string }[]} */
+  const out = [];
+  const c = Math.cos(V.rel),
+    s = Math.sin(V.rel),
+    ct = Math.cos(V.tilt),
+    st = Math.sin(V.tilt);
+  for (const m of F.face || []) {
+    const i = F.parts.findIndex(p => p.id === m.part);
+    if (i < 0) continue;
+    const M = J.subarray(i * 16, i * 16 + 16),
+      at = /** @type {Vec3} */ (
+        [0, 1, 2].map(r => M[r] * m.at[0] + M[4 + r] * m.at[1] + M[8 + r] * m.at[2] + M[12 + r])
+      ),
+      n = [0, 1, 2].map(r => M[r] * m.n[0] + M[4 + r] * m.n[1] + M[8 + r] * m.n[2]),
+      /* the normal in the camera's frame, and how much it faces the camera (which looks along (0, -sin, cos)) */
+      nx = n[0] * c + n[2] * s,
+      nz = -n[0] * s + n[2] * c,
+      facing = -(n[1] * -st + nz * ct) / (Math.hypot(nx, n[1], nz) || 1);
+    /* the camera looks down, so a face's lower half faces it less: the eyes show the longest, the mouth the least */
+    if (facing < (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2)) continue;
+    let w = Math.max(1, Math.round(m.w * ppm)),
+      h = Math.max(1, Math.round(m.h * ppm));
+    if (m.kind === 'eye') {
+      if (facing < 0.6) w = 1;
+      if (P.blink) h = 1;
+    }
+    const q = cardPoint(at, V.rel, V.tilt),
+      x = Math.round(S.ax + q.u * ppm - w / 2),
+      y = Math.round(S.ay - q.v * ppm - h / 2);
+    out.push({ x, y, w, h, rgb: F.colours[m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]], kind: m.kind });
+    if (m.kind === 'eye' && !P.blink && w >= 2 && h >= 3)
+      out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint' });
+  }
+  return out;
 }
 
 /* ---------- the view ---------- */
