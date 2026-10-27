@@ -45,7 +45,6 @@ expose({
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
   worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
-  worldEggs: [() => worldEggs, v => (worldEggs = v)],
   worldFishing: [() => worldFishing, v => (worldFishing = v)],
   worldMapHTML: [() => worldMapHTML, v => (worldMapHTML = v)],
   worldPools: [() => worldPools, v => (worldPools = v)],
@@ -159,11 +158,10 @@ function bindWorldMap() {
   });
 }
 /* Studio plan T4.5: what a run reads (a run place's wild Billies come from the pool its biome names, biomes.json pool)
-   and what is legacy (the old world's eggs, regions and world map) */
+   and what is legacy (the old world's regions and world map) */
 const WORLD_TABS = [
   ['pools', 'Wild encounters'],
   ['fishing', 'Fishing'],
-  ['eggs', 'Eggs (legacy)'],
   ['regions', 'Map and notes (legacy)'],
   ['backdrops', 'Battle backdrops'],
   ['look', 'World map look (legacy)'],
@@ -175,12 +173,11 @@ SECTIONS.world = () => {
   const body = {
     pools: worldPools,
     fishing: worldFishing,
-    eggs: worldEggs,
     regions: worldRegions,
     backdrops: worldBackdrops,
     look: worldMapLookTab,
   }[tab]();
-  return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><p class="help world-run-note">A run reads the wild encounters of the pools its biomes name (<code>biomes.json pool</code>), at the run’s own levels, and the battle backdrops. The eggs, regions and world map are the old world’s (legacy); the hub’s own place is under Hub island.</p><div class="seg-row tabs">${WORLD_TABS.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><p class="help world-run-note">A run reads the wild encounters of the pools its biomes name (<code>biomes.json pool</code>), at the run’s own levels, and the battle backdrops. The regions and world map are the old world’s (legacy); the hub’s own place is under Hub island.</p><div class="seg-row tabs">${WORLD_TABS.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
 ACTIONS.wtab = d => {
   studioState.sel.wtab = d.t;
@@ -296,26 +293,6 @@ ACTIONS.poolDel = async d => {
   changed();
   render();
 };
-function worldEggs() {
-  const D = studioState.D;
-  afterRender(() => mountPreviews(paneRoot()));
-  return Object.entries(D.eggs)
-    .map(([k, E]) =>
-      card(
-        `${E.need / 1000} km egg`,
-        grid(
-          numberField('Metres to hatch', `eggs.${k}.need`, {
-            min: 100,
-            step: 100,
-            help: `${(E.need / 1000).toFixed(1)} km walked outdoors with it in an incubator.`,
-          }),
-          numberField('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
-        ) + weightTable(`eggs.${k}`, E),
-        { sub: 'Egg art is art/eggs/egg_' + k + '.png (Art browser).' }
-      )
-    )
-    .join('');
-}
 /* RL-R1: the old regions beyond the route are in game/data/legacy/regions.json (the Inner Sun); regions.json is the
    run's region themes now */
 function worldRegions() {
