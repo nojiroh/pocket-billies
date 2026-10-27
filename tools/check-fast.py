@@ -126,6 +126,28 @@ def run_world(pg, base):
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
+def run_helper(pg, base):
+    """LD-4: the run fixture's places were made on the run's helper thread (run-worker.js) as the page booted, and the
+    thread makes the very places the page's own code makes from the run (the same JSON, place by place)"""
+    how, off = pg.evaluate("[runWorld.how, runWorldAhead.off]")
+    if how != 'helper': raise Exception(f"the run's places were made on the {how or '?'}, not the helper thread ({off or 'not off'})")
+    R = pg.evaluate("""async () => {
+      const run = saveData.run, here = runScenesMake(run, runWorldData()),
+        w = new Worker('js/run-worker.js', { type: 'module' }), got = [];
+      const end = await new Promise(ok => {
+        w.onmessage = e => { const m = e.data; if (m.kind === 'scene') got[m.i] = m.scene; else if (m.kind !== 'step') ok(m); };
+        w.onerror = e => ok({ kind: 'error', error: String(e.message) });
+        w.postMessage({ kind: 'make', id: 1, run, version: PB_VERSION });
+      });
+      w.terminate();
+      const bad = here.findIndex((s, i) => JSON.stringify(s) !== JSON.stringify(got[i]));
+      return { end: end.kind, error: end.error || '', n: here.length, got: got.length, bad };
+    }""")
+    if R['end'] != 'done': raise Exception(f"the helper thread didn't finish: {R['end']} {R['error']}")
+    if R['got'] != R['n'] or R['bad'] >= 0: raise Exception(f"the helper thread's places differ from the page's (place {R['bad']} of {R['n']}, {R['got']} came)")
+    return f"{R['n']} places from the helper thread, each equal to the page's"
+
+
 def bowl_map(pg, base):
     """phase 10: the Map tab opens as the bowl (world-bowl.js) and keeps drawing; a tap on a place's pin opens its card,
     and Home brings the camera back over you. Small page, graphics off, no pictures: on a device, the debug menu's
@@ -1635,6 +1657,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('town', [('The train ride: the departure to the white veil, the carriage, the ride home gold and battered (HB-8)', train_ride)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
+             ("The run's places from the helper thread: made there at boot, equal to the page's (LD-4)", run_helper),
              ("A run town's shop opens (UI-5)", run_shop),
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),

@@ -474,6 +474,9 @@ debugLog.state = () => {
             nodes: run.map.nodes.length,
             scenes: GAME.runWorld.scenes,
             makeMs: GAME.runWorld.ms,
+            /* LD-4: where they were made: 'helper' (the run's helper thread) or 'page', and if the thread is off, why */
+            madeOn: GAME.runWorld.how || null,
+            helperOff: (GAME.runWorldAhead && GAME.runWorldAhead.off) || null,
             /* RL-8: its phase (fly, walk, battle, payout), the battles fought, whether saving is held for a battle, the
                party's size and the run's money (numbers only) */
             phase: run.at.phase,

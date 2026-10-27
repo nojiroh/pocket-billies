@@ -52,7 +52,7 @@ import { worldBowlReset } from './world-bowl.js';
 import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
-import { runWorld, runWorldMake } from './run-world.js';
+import { runWorld, runWorldAhead, runWorldMake } from './run-world.js';
 import { runLoadBegin, runLoadShow } from './run-loading.js';
 import { runResume, runTakeOff } from './run.js';
 import { labMilestones } from './lab-board.js';
@@ -1003,6 +1003,8 @@ function studioLive(D) {
     }
   }
   if (typeof environment !== 'undefined') environment.id = null;
+  /* LD-4: the run's helper thread reads the site's data, not these edits */
+  if (typeof runWorldAhead !== 'undefined' && !runWorldAhead.off) runWorldAhead.off = 'the Studio’s edits are showing';
   if (!studioLive.told) {
     studioLive.told = 1;
     toast('Showing your Studio edits as you make them.');
