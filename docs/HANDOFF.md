@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-8c - the run map's icons: pixel badges, 44 px chips, the voice font - 2026-10-27
+Branch `claude/ui-8c-map-markers`, made from the UI-10 planning branch (main plus the UI-8c plan, PR #275); main merged
+first (already up to date). Run beside UI-8b at the owner's word, a draft PR into `track/ui` (as WM-4b, WM-5 and WM-7
+took PRs into `track/worldmap`). The plan was approved in advance (the owner's standing word for the UI plan). One
+cause per commit. Details: docs/phases/ui-track.md, "The run map's icons", "Built".
+- Changed:
+  - **The art** (art/ui, 51 -> 63 icons): `node-landing`, `node-route`, `node-town`, `node-miniboss`, `node-boss`,
+    `node-event`, `node-shop`, `node-rival`, `node-scrapyard`, `node-unknown` (Badges: UI-4's outlines as bevelled
+    plates, a glyph each, the icon set's palette by family), and the badges `node-check` and `node-lock`. 36 px SVGs in
+    the pixel format, so the Studio's icon editor opens them as pixels. Painted once by a scratch port of the examples'
+    painter ("Run Map Icons") on the repo's own `RUN_MARK_SHAPES`; nothing generates them now.
+  - **run-marks.js**: `runMarkLook` names `icon`, `badge` and `size` (`RUN_MARK_SIZES`: 28, 34 where you stand);
+    `runMarkPixels` makes a state's picture (a gold rim two art pixels wide along the outline where you stand, done
+    faded 0.62 under a check, locked grey under a padlock); `RUN_MARK_ART` its numbers and colours.
+  - **The bowl** (world-bowl.js, small edits): the run pin draws that picture (made once per icon, state and size at
+    the canvas's own pixels, put on whole pixels; a gold glow where you stand); the flat shape until an icon loads;
+    the head 4 px higher on its stalk. The rings where you stand and the picked place take a dark rim under their
+    colour; the trip's end is the set's flag. The names are in the theme's voice font (`--font-voice`, Jersey 15 in
+    Field Guide) at 13 and 14 px instead of system-ui at 11 and 12.
+  - **`<pb-node>`** paints the same picture on a canvas (`--size` is the 36 grid, 36 px by default).
+  - **The map's seven buttons**: 44 px `.mbtn.k-btn` chips (the kit's button outline and edge line, the card's panel
+    colour, no blur) with plus, minus, walk, list, back, back mirrored and globe. The look-around group is three
+    chips riding just above the place card (`--mapcard-h`, from a ResizeObserver), so it no longer covers the card's
+    last line.
+  - Checks: run-marks tests (the look, the picture per state, every SVG inside its outline), ui-icons counts 63; the
+    gallery's run-nodes row gains rival and scrapyard and waits for the markers to paint; the fast check's map steps
+    check the 44 px chips with icons, the group clear of the card, the run's places drawn as icons and the names in
+    the voice font. UI lint ceilings lowered: raw colours in game js 638 -> 636, shadows 161 -> 160.
+- Decided for the owner, to review:
+  - **The minimap's marks stay as they are** (trainers a red diamond, wild Billies a teal dot, you a gold chevron): at
+    5-8 px a plate with a rim and a glyph turns to mush, the shapes already carry the meaning (a diamond is danger, as
+    the boss; round is wild; the chevron points the way you face), and UI-8b is reworking minimap.js's scale right now.
+    Revisit after UI-8b's phone check if they read small on the wide tile.
+  - The corner badges are two more SVGs (`node-check`, `node-lock`), so they can be repainted too, rather than code.
+  - The chips use the kit's button outline (`.k-btn`, 4 px cuts) and the place card's panel colour; no new chip
+    class, so UI-14a's `pb-chip` isn't pre-empted (the planning session's note). The chips lost their blur (7 fewer
+    blurred surfaces on the Map).
+  - The glyphs are the examples' first pass, unchanged ("Ask me before": the final art is the owner's to repaint).
+  - The picked ring is cream on a darker gold rim (it was plain white); the trip's end is the flag icon (a gold dot).
+- Found:
+  - The run map never gives a place the `locked` state (`worldBowlRunMark`: current, hidden, visited, seen), so the
+    padlock shows only in the gallery for now.
+  - `<pb-node>` is on no game screen (ui-track.md said the place card; corrected).
+  - The doc's claims checked: the 18/22 px sizes, `BOWL_PIN` 22, the 3 px stalk, system-ui names at 11/12 and the
+    "?" at 10, the 34 px and 28 px buttons, `worldMapSize`'s 2x cap and the 51 icons were all right.
+- Risky:
+  - 28 px from a 36 grid is 1.56 device pixels per art pixel on a 2x phone: nearest-neighbour scaling makes some art
+    pixels a device pixel wider than others. 36 (or 18/54) would be exact; the phone check decides.
+  - UI-8b changes `--nav-h`; `.mapview` now sits on `--nav-h` plus the card's height, so it should follow, but the
+    merge of this PR and UI-8b will meet in map-tab.css and maybe ui-lint.js's ceilings.
+  - world-bowl.js is shared with the world map track (WM-6): the edits are the run pin, the rings, the flag, the
+    label font and worldMapChrome's buttons.
+- Verified: `npm run lint`, `npm run typecheck`, `npm test` (1572 of 1572 before the buttons), the gallery check
+  (run-nodes remade on purpose; the rest unchanged), the fast check, smoke and the full quick check (results below).
+  The run's map captured headless at 390 x 844, 2x, light and dark, before and after the buttons: no page errors.
+- For the owner's phone: the markers' sizes (28 and 34) and sharpness, the glyphs (repaint in the Studio: Art ->
+  UI icons -> node-*), the gold rim and glow where you stand, the names in Jersey 15 at 13-14 px, the chips' tap feel
+  and the look-around group above the card, the done check on a visited place.
+- Next: UI-8b's and this PR's merge into `track/ui`; then UI-11 (the colour code as data).
+- Tag to suggest (sessions can't push tags): `ui-8c-done` on this entry's last commit.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
