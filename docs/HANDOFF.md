@@ -2,6 +2,34 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-10e: festivals - 2026-10-27
+Branch `track/hub` (main merged in twice: before HB-10d's entry, 69ac03a3, and after this session's work, f1e2c629).
+Plan given in Plan Mode; the owner answered the four questions (all the recommendations): four seasonal festivals and
+two milestones, a market day every 3rd return, the market in Scrap, looks, lines and stock only, HB-10d finished
+first. Tag to suggest: `hb-10e-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10e".
+- Changed: game/data/festivals.json (+ schema, types, `dataFestivals` in check-data and the Studio's Check);
+  `logic/festival.js` (Node-tested); `meta.fest` (validFest, no migration); the `festival:<id>` condition through a new
+  hooks seam `festivalToday` (town-square.js, by the ranch clock on the phone's calendar; tools/test/logic.test.mjs
+  lists the seam); the square's day per festival (`squareDayNow`, walk-view.js); banter.json `square_fest` (16 lines);
+  30 decorations (`FESTIVAL_DRESS`, tools/square-props.mjs, laid by `patch-copperleaf-square.mjs --edges`); the middle
+  stall `act: fest` (the festival market sheet); the notice board's Festivals section; a toast coming home to one;
+  the debug log's scene `festival`; island-shots.py `--festival=<id>`; the in-game full test's festival step.
+- Fixed on the way (own commit): tools/check-data-text.py treats a prop's `unless` as a condition like `when`:
+  HB-10d's fountain `unless: chapter >= 2` turned the PR's smoke job red.
+- Risky / check on the phone: the decorations stand on grass just outside the rim, and from the hub's camera only a
+  few show (pictures: `python3 tools/island-shots.py OUT --festival=lantern_walk --hour=21`); HB-9's look pass or
+  HB-10f's rebuild may want them nearer. The date: offline, a phone set ahead brings a festival early (the clock's
+  mark then holds it there); its market sells once per occasion either way. Northern seasons only. A festival's day
+  sends up to 0.9 of the folk out (the Engine's townFolk cap still holds). No Studio editor for festivals.json yet
+  (RL-16). How to see one now: the test globals' `festivalForce = {id: 'market_day'}`.
+- Verified (merged head f1e2c629): lint, typecheck, check:modules, format:check, check:data, check-data-text, build,
+  `npm test` 1497 of 1497, `npm run test:slow` 89 of 89 (main's island fix came in with the merge). Before the second
+  merge: smoke (check-quick --smoke) no problems; in-game full test whole: the new festival step passed; its failures
+  were the rooms' black screen and the grid after a room, as on main (HB-10d's entry). check-fast's "Behind things"
+  (red once on the PR's CI, "hidden where the player starts") passed alone twice here.
+- Next: HB-10f (the reproducible town rebuild, the store, inn and library fronting the square, the pinwheel entries),
+  then HB-9. PR #260 (track/hub to main) carries HB-10d and HB-10e.
+
 ### Hub track HB-10d: the square's reactions and things to do - 2026-10-27
 Branch `track/hub`. Plan approved in Plan Mode with the owner's answers (the coin: 3 Scrap, once per return, 55% a
 small boon for the next run's first 3 places, 30% a joke, 10% a small curse for 2 places, 5% a big win; the fountain's
