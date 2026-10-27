@@ -81,7 +81,7 @@ below against main and report what differs.
 | WM-4 | The seamless region on the world map | places stamped at their grid positions, region filler between, the run's real roads, fogged outlines for unreached places; ends the crowding | WM-3 | 1-2 |
 | WM-5 | Town streets | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 1-2 |
 | WM-6 | A region's look | districts (square, homes, park or pond, farm edge), a landmark per town from existing props, route numbers and town names on signposts at seams and on the world map | WM-4, WM-5 | 1 |
-| WM-7 | Leader arenas | a raised, fenced ring by the leader's type on the road, a gate or Bureau barrier opening after the win, a line of trainers before it, the camera framing it; the final boss's own arena place | WM-2 | 1 |
+| WM-7 | Leader arenas (done 2026-10-27, `claude/wm-7-leader-arenas`) | a raised, fenced ring by the leader's type on the road, a gate or Bureau barrier opening after the win, a line of trainers before it, the camera framing it; the final boss's own arena place | WM-2 | 1 |
 | WM-8 | Ledges and loops | one-way ledges and shortcuts that loop between routes | WM-3 | 1 |
 
 About 9-11 sessions. Most change test snapshots (run-map, run-scenes, run-world-real, run-bowl, bowl-camera,

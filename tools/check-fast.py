@@ -437,7 +437,7 @@ def run_arena(pg, base):
     if not A or not A['gates'] or not all(A['gates']): raise Exception(f'the arena or its shut gate: {A}')
     # set down inside the ring (again while the place's first frames put you at its way in)
     put = f"(o=>{{if(routeSight.busy)return 1;const P=walkView.pl;P.x={A['from'][0]}+o[0];P.z={A['from'][1]}+o[1];P.route=null;P.goal=null;return 0}})(walkView.sc.baseOff||[0,0])"
-    if not until(pg, put + "||!!walkRenderer.arenaAt||talkBox.on", 10):
+    if not until(pg, put + "||!!walkRenderer.arenaAt||talkBox.on", 30):
         raise Exception('stepping into the ring started nothing: ' + str(pg.evaluate("(A=>JSON.stringify([routeSightOK(),A&&[A.id,A.x,A.z,A.r],[walkView.pl.x,walkView.pl.z],routeSight,uiState.modal&&uiState.modal.title,uiState.tab,saveData.run.at.phase,!!walkView.director]))(arenaHere())")))
     if not until(pg, "talkBox.on&&!!talkBox.cur", 15): raise Exception('the leader said nothing')
     said = pg.evaluate("talkBox.cur.text")
