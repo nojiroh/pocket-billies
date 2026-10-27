@@ -179,9 +179,8 @@ function wardrobeItemHTML(k) {
   const W = editedWardrobe(),
     it = W.items[k],
     p = `wardrobe.items.${k}`,
-    shops = Object.entries(studioState.D.shops || {})
-      .filter(([s, v]) => v.kind === 'wardrobe')
-      .map(([s, v]) => [s, v.name]);
+    /* SA-3: the boutiques are the wardrobe's own (wardrobe.json shops) */
+    shops = Object.entries(W.shops || {}).map(([s, v]) => [s, v.name]);
   const used = Object.entries(studioState.D.people || {})
     .filter(([x, P]) => P.look && P.look.wear && Object.values(P.look.wear).includes(k))
     .map(([x]) => x);
