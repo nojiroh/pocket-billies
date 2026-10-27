@@ -1526,6 +1526,8 @@ export interface Engine {
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */
 export interface Wardrobe {
   version: number;
+  /** studio art track SA-3: the boutiques an item's `shop` names (moved here from the old Town shops) */
+  shops?: Record<DataId, { name: string }>;
   [key: string]: any;
 }
 
