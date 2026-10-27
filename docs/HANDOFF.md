@@ -2,6 +2,51 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-7 - Part 2 planned: battle effects (research, the owner's answers) - 2026-10-27
+Branch `ccr-7526d712-gliikp` (the session's own, made from main at 07c9b284; main had not moved). Plan Mode, plan
+approved. Docs only, one cause per commit; nothing in the game changed. Tag `vfx-7-done` (for the owner to push) on
+this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle effects".
+- The owner's brief: "Make a plan to improve the art and effects of attacks and other things in battle. Do research
+  online. Make suggestions for additions."
+- The owner's answers (asked this session): Part 2 of the VFX track, VFX-6 folded in; Claude draws the effect art and
+  the owner repaints any in the Studio; all four additions (signature scenes, leader/rival/boss VS intros, battle
+  scars, move sounds); signature scenes and power 100+ moves may run up to 0.5 s longer.
+- Changed: vfx-track.md (a pointer to Part 2 in the title and header; VFX-5's lean and afterimages built as helpers the
+  runner reuses; VFX-6 folded into VFX-8 and VFX-12; Part 1's "anything longer" item answered; Part 2: what a battle
+  shows today with refs, the research, ten art rules, the build, 16 families for all 122 moves, type kits, hit tiers,
+  statuses, the stage, the flow, signature scenes, move sounds, the effect art, budgets, sessions VFX-8..VFX-20, the
+  bugs found, fits with other tracks, risks, not taken, ideas for later, Ask me before, sources); ROADMAP's VFX entry;
+  BRANCHES (this branch; Part 2 on `track/vfx`).
+- Found: the 122 moves share three choreographies picked by category (H, S, X), recoloured by type; icon particles
+  are 30 px/m beside your Billie's ~65 (twice its pixel size), fade smoothly, take a draw and a texture bind each, and
+  never lit anything (only particles with a hex `col` make light); rings, dust and beams are on the 2D canvas over
+  the GL; a rig's hit flash redraws and uploads its canvas every frame; the chromatic flash is a CSS filter over the
+  whole canvas; Flashes doesn't reach the battle; a tap only finishes the text and can't skip an animation.
+- Bugs found (none fixed here; each has its session in the track file): Flashes ignored in battle; the selection and
+  target rings divide by `R.k2`, which no rig has, so they never draw; a stat drop plays the rising sound (sound.js
+  643 vs the engine's `up: false`); level-up plays on slot 0 (the engine sends `uid`); every status but par and slp
+  shows flames; the XP bar moves a line late (an engine change, golden record remade alone); the reduced-motion tag
+  check misses 'tag crit'; "Dynasty" and "Retail" aren't types; the Studio's particle picker misses 7 types' sprites;
+  `an.t = M.t` writes into the engine's event.
+- Where the review against the code corrected the draft: the stage clock already multiplies by speed (timelines stay
+  in stage ms); KO can't be read from `ev.s` (`refreshLastSnapshot` refreshes only the last event): a look-ahead
+  instead; the pool needs one atlas (`kitPack`, `gpuTexture`, the warm-up) and cutout drawing in GL; the rigs' `uHit`
+  keeps the plain sprite program (the instanced one has no slot); battle lights need fixed keys for Steady lamps;
+  snapping positions buys nothing (the camera moves smoothly), so time is stepped instead; drawn words can't be
+  translated.
+- Pushback, left to the owner (Ask me before): the UI plan says hit-stop only on crits, KOs and super-effective hits;
+  Sakurai's research favours a small stop on every hit, and today's (20-90 ms) costs under 0.1 s. Recommended: keep it.
+- Risky: nothing ships. The numbers (tiers, budgets, ramps) are placeholders; the art will be placeholder art until
+  the owner's repaint; the 56 scenes need storyboards first; the tap that skips (VFX-8) changes the quick check's
+  battle timing (it plays battles at 4x).
+- Verified: every file:line the track file cites printed at this branch's head; the family table checked by script
+  against moves.json (16 families, 122 moves, each once); `npm run lint` (eslint, names, ui-lint at its ceilings,
+  unused CSS, art-code-refs), `npm test` 1569 of 1569, `npm run check:data` (176 files fine; its two warnings,
+  Copperleaf's bridge 3 and test_props_island's bridge 1, are main's). `git diff` shows docs only; no game checks
+  apply to a docs-only change.
+- Questions waiting for the owner: hit-stop on normal hits (before VFX-13); turning the selection rings on (VFX-8).
+- Next: VFX-5 (attack lunges) on `track/vfx` (fetch it first), in Plan Mode; then VFX-8 (anims as data).
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
