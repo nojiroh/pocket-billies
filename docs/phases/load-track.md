@@ -122,6 +122,15 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   picture's outline colour and the leaf cuts' boxes into the data, so `pictureLightness` and `leafCut` read numbers
   (the Studio, editing pictures, keeps the old way for an edited picture). `willReadFrequently` on every canvas that
   is read back. Portraits drawn as `toBlob` object URLs (or the canvas itself), not PNG text.
+  **Done 2026-10-27** on `ccr-3df446bb-9jvdvq`: the timed picture gone (exportDebugLog takes one); the maths moved to
+  game/js/logic/pixel-facts.js; `npm run bake:pixels` (tools/bake-pixel-facts.mjs) writes the 260 leaf cuts to
+  game/art/scene/next/cuts/ (456 KB: RGBA, larger than the 194 KB of crowns they come from, which the game no longer
+  loads for them) and game/data/pixelFacts.json; prop-models.js `propModelImageItems` uses a baked cut before it
+  needs the crown, walk/sprites.js `pictureLightness` the baked number; the Studio's painted (`_ver`) pictures and
+  moved clumps still cut in the page. tools/test/pixel-facts-real.test.mjs fails on a stale bake. Claim corrected:
+  most read-back canvases already had `willReadFrequently`; the four that didn't (both fallbacks, `coatAtlas`, the
+  portrait's) have it. Headless after LD-1: a new player's boot 17 held frames (28 before), 7 after the loader;
+  every long one is "finishing a shader".
 - **LD-2 shaders.** Every program the game flow can need starts compiling at boot (one list, engine/webgl.js), status
   read only after the link and only if it failed; finished one a frame behind the loader; the opening fall's and the
   world map's programs join the list. Each finished program drawn once off screen. Goal: `pcl` stays 0 on a tour of

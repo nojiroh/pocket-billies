@@ -2,6 +2,28 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-1 - the quick wins: no timed picture, pixel facts baked, canvases in memory - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq` (the owner's word: continue without input). No look changes.
+- The debug log's picture is taken only when the log is exported (debug-log.js: the 60 s timer gone).
+- New game/js/logic/pixel-facts.js (the leaf cut, outline colour and lightness maths, moved from prop-models.js and
+  walk/sprites.js; on both pages and in the Studio's logic worker), tools/bake-pixel-facts.mjs (`npm run bake:pixels`,
+  `--check`), game/data/pixelFacts.json (a new data section, in index.json after scenery) and
+  game/art/scene/next/cuts/ (260 PNGs, 456 KB). The game draws a clump from its baked cut and never loads or reads its
+  crown for it; the moss and clover lightness come from the file. The Studio's painted pictures (`_ver`) and moved
+  clumps (a key with no bake) still cut in the page.
+- **For artists and the Studio**: after painting a crown, moving a clump or painting moss or clover, run
+  `npm run bake:pixels`; tools/test/pixel-facts-real.test.mjs (npm test, CI) fails until then. The Studio's
+  "Propose changes" doesn't bake: a PR from it that touches those pictures needs the bake added.
+- `willReadFrequently` on the canvases that lacked it (both fallbacks, `coatAtlas`, the portrait canvas before its
+  `toDataURL`).
+- Verified: lint, typecheck, format, check:modules, check:data (175 files; the data check's snapshot remade for the
+  count), unit tests 1371 pass; in a headless page all 260 baked cuts equal the page's own (no channel off by more than
+  1); the load check: a new player's boot 17 held frames (28 at LD-0), 7 after the loader; "reading the picture back",
+  "drawing items" and "warming up a scene" gone; what's left is "finishing a shader" (LD-2).
+- Risky: 456 KB more art on the site (fetched per tree kind as it's drawn, as before for the crowns); a crown painted
+  without a re-bake shows the old clumps in the game until baked (the test catches it).
+- Next: LD-2 (shaders). Tag `ld-1-done` for the owner.
+
 ### Load track LD-0 - the plan, the hitch list, the boot timeline, the load check - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq` (`track/load` doesn't exist yet: the owner makes it from this branch or main). The
 owner's brief: loading without hitches, especially at the start, with online research. Planned, the owner's answers
