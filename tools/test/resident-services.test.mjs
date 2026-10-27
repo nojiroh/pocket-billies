@@ -80,3 +80,26 @@ test('residents: RS-4: the game’s takeoff (runStartOn) brings the services; a 
     }
   }
 });
+
+test('residents: RS-4: Mo’s store sells his Lv 1 stock once he moves in, and more at Lv 2', () => {
+  const s = { meta: { ...newMeta(), residents: {}, unlocks: {} } };
+  assert.deepEqual(RS.resStock(s, 'mo', RES, U), [], 'not living there: an empty store');
+  s.meta.residents.mo = 1;
+  const one = RS.resStock(s, 'mo', RES, U);
+  assert.deepEqual(
+    one.map(w => w.item || 'coin:' + w.coin),
+    ['potion', 'pretzel', 'coin:pyramid']
+  );
+  assert.ok(
+    one.every(w => w.price > 0 && w.price < GAME_DATA.items.potion.price),
+    'priced in Research, not Moneys'
+  );
+  s.meta.unlocks.mo_2 = 1;
+  assert.deepEqual(
+    RS.resStock(s, 'mo', RES, U).map(w => w.item || 'coin:' + w.coin),
+    ['potion', 'pretzel', 'coin:pyramid', 'hi_potion', 'full_remedy', 'revive']
+  );
+  one[0].price = 1;
+  assert.equal(RS.resStock(s, 'mo', RES, U)[0].price, RES.mo.service[0].stock[0].price, 'a copy, never the table');
+  assert.deepEqual(RS.resStock(s, 'bertha', RES, U), [], 'Bertha sells nothing');
+});

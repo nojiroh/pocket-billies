@@ -736,6 +736,9 @@ export interface Shop {
   stock?: { item?: DataId; coin?: DataId; price: number }[];
   /** 'wardrobe' for a clothes shop */
   kind?: string;
+  /** RS-4: a resident's hub shop: whose (residents.json), and the currency it takes (not Moneys) */
+  res?: DataId;
+  currency?: Exclude<CurrencyId, 'money'>;
   sells?: string[];
   thanks?: string[];
 }

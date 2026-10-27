@@ -24,6 +24,7 @@ expose({
   resHeld: [() => resHeld],
   // @ts-expect-error -- replaced on purpose
   resLevel: [() => resLevel, v => (resLevel = v)],
+  resStock: [() => resStock],
   // @ts-expect-error -- replaced on purpose
   resTakeoff: [() => resTakeoff, v => (resTakeoff = v)],
   // @ts-expect-error -- replaced on purpose
@@ -79,6 +80,11 @@ export const resFxRows = (run, R) =>
   run && run.res && R
     ? resHeld(run.res, R).flatMap(([id, L]) => (L.fx || []).map(f => ({ ...f, src: 'res:' + id })))
     : [];
+/** RS-4: what a resident's hub shop sells now: the wares of every level they hold, Lv 1 first ([] while they don't
+ * live in Copperleaf) @param {SaveData} s @param {string} id @param {ResidentsTable} R
+ * @param {Record<string, { grant: any }>} U unlocks.json @returns {{ item?: string, coin?: string, price: number }[]} */
+export const resStock = (s, id, R, U) =>
+  resHeld({ [id]: resLevel(s, id, U) }, R).flatMap(([, L]) => (L.stock || []).map(w => ({ ...w })));
 /** RS-4: a run takes off: run.res is each resident's service level now (those with a service), and their levels'
  * items go into the bag. Returns what was given @param {SaveData} s @param {ResidentsTable} R
  * @param {Record<string, { grant: any }>} U unlocks.json */
