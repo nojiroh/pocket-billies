@@ -1828,9 +1828,9 @@
    "game/js/fishing.js:168",
    "game/js/friends.js:629",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/run-scenes.js:509",
-   "game/js/logic/run-scenes.js:530",
-   "game/js/logic/run-scenes.js:548",
+   "game/js/logic/run-scenes.js:519",
+   "game/js/logic/run-scenes.js:540",
+   "game/js/logic/run-scenes.js:558",
    "game/js/logic/train-path.js:193",
    "game/js/person-art.js:801",
    "game/js/person-art.js:881",
@@ -1936,7 +1936,7 @@
    "game/js/walk/effects.js:671",
    "game/js/walk/effects.js:779",
    "game/js/walk/fountains-weather.js:523",
-   "game/js/world-bowl.js:4074"
+   "game/js/world-bowl.js:4075"
   ],
   "moon": [
    "game/js/boot.js:167",

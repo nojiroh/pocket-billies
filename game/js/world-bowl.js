@@ -18,7 +18,7 @@ import { $ } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle, worldExtra } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { runMarkDraw } from './logic/run-marks.js';
-import { runSpotBoxes } from './logic/run-map.js';
+import { RUN_GRID, runSpotBoxes, runSpotOutline } from './logic/run-map.js';
 import { mapgenExitPoint } from './logic/mapgen.js';
 import {
   BOWL_GROUND_EXTENT,
@@ -3595,7 +3595,7 @@ function worldBowlOverlay(t) {
 /* WM-4 (the owner: unreached places as fogged outlines, the whole region from the landing): each run place not yet
    walked (not on run.path, not where you stand) under a veil, its cells' outline dashed, following the ground. Its
    footprint is its cells on the region grid (logic/run-map.js runSpotBoxes); a run from before WM-2 has none */
-const BOWL_RUN_FOG = { fill: 'rgba(226,232,242,.5)', edge: 'rgba(255,255,255,.75)', steps: 6 };
+const BOWL_RUN_FOG = { fill: 'rgba(226,232,242,.5)', edge: 'rgba(255,255,255,.75)', steps: 3 };
 function worldBowlRunFog(c, v) {
   const run = saveData.run,
     map = run && run.map;
@@ -3615,22 +3615,23 @@ function worldBowlRunFog(c, v) {
       b = k != null ? B[k] : null,
       s = worldBowl.spots[i];
     if (!b || !s || s.off || i === saveData.trip.node || run.path.includes(k)) return;
-    /* the box's edge, n points a side, at the ground's height */
-    const pts = [];
-    for (const [x0, y0, x1, y1] of [
-      [-1, -1, 1, -1],
-      [1, -1, 1, 1],
-      [1, 1, -1, 1],
-      [-1, 1, -1, -1],
-    ])
-      for (let j = 0; j < n; j++) {
-        const f = j / n,
-          x = s.x + ((x0 + (x1 - x0) * f) * b.w) / 2,
-          y = s.y + ((y0 + (y1 - y0) * f) * b.h) / 2,
+    /* its outline (WM-4b: an L's six corners, its cut cell left out), about n points a cell's side, at the
+       ground's height; around its spot (the map's middle, as the stamp lies) */
+    const O = runSpotOutline({ ...b, x: s.x, y: s.y }),
+      cell = RUN_GRID.cell / BOWL_METRES,
+      pts = [];
+    for (let k = 0; k < O.length; k++) {
+      const [x0, y0] = O[k],
+        [x1, y1] = O[(k + 1) % O.length],
+        m = Math.max(1, Math.round((n * Math.hypot(x1 - x0, y1 - y0)) / cell));
+      for (let j = 0; j < m; j++) {
+        const x = x0 + ((x1 - x0) * j) / m,
+          y = y0 + ((y1 - y0) * j) / m,
           q = bowlCamProject(v, bowlToGpu(x, y, bowlSurface(x, y) + 0.003));
         if (!q) return;
         pts.push(q);
       }
+    }
     c.beginPath();
     pts.forEach((q, j) => (j ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y)));
     c.closePath();
