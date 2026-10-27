@@ -227,8 +227,9 @@ export function routeTrainersPlace(run, trainers, scenes, classes) {
     const i = +ni,
       sc = scenes[i];
     if (!sc) continue;
-    /* WM-7: before a leader's ring they stand in a line on the road (routeArenaLine) */
-    if (sc.arena && sc.arena.mode === 'leader') {
+    /* WM-7: before a leader's ring they stand in a line on the road (routeArenaLine); WM-3b: on the generator's spots
+       as on any route when the ring is too near the way in for a line (3 leader places in 300) */
+    if (sc.arena && sc.arena.mode === 'leader' && list.every((_, k) => routeArenaLine(sc, k, list.length))) {
       list.sort((a, b) => a.route.k - b.route.k);
       list.forEach((T, k) => {
         const S = routeArenaLine(sc, k, list.length);
