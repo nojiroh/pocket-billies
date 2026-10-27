@@ -50,7 +50,13 @@ towns; the scrapyard counts as a route; side areas flipped too; the grid in the 
   can centre the region on the bowl.
 - Snapshots remade on purpose: run-map, run-start, run-world-real (the maps changed), check-data's planted rules (the
   planted `rows` became a bad `path`).
-- Verified so far: lint, typecheck, format, check:modules, check:data, build; unit tests 1416 pass; slow tests pass but "the game's island is the generator's own output" (fails on main too). Browser checks: in progress at this commit (see the next entry update).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1416 pass; slow tests all pass but
+  "the game's island is the generator's own output" (fails on main too); check-fast's run pages 15 of 16 (the world
+  map's bowl check failed once under load with "debug log: no function render to wrap" and passed alone); smoke 6 of
+  6 on the third run (the first two each failed one step with the same debug-log message; the old tree passed twice:
+  a race between boot.js's `debugLog.hook()` at 'maps ahead' and debug-log-names.js, the page's last module, worth a
+  look); check-studio-github `--only=run_lab` passes (it found the Run Lab sweep keeping the plan's zones, fixed). The
+  full quick check was not run this session.
 - Next: WM-3 (mapgen takes a footprint; north and south seams; then the scenes read `runLinkDir`). Tag `wm-2-done`
   for the owner.
 

@@ -507,8 +507,9 @@ function runLabSweepFill() {
     now = runLabPlan(D),
     k = ++runLab.sweepN;
   if (now.error || !now.plan) return;
-  /* WM-2: the rules without the plan's own rows (the sweep draws each seed's for the Expedition), the short map's kept */
-  const { rows, minibosses, ...drawn } = now.plan.data.rules.map,
+  /* WM-2: the rules without the plan's own rows and the zones fitted to them (the sweep draws each seed's length for
+     the Expedition), the short map's kept */
+  const { rows, minibosses, zones, ...drawn } = now.plan.data.rules.map,
     args = [D.nodeTypes, runLab.short ? now.plan.data.rules.map : drawn, { n: 1000, expedition: runLab.expedition }],
     key = JSON.stringify(args),
     show = (/** @type {any} */ S) => {
