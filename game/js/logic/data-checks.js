@@ -108,6 +108,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSetPieces: [() => dataSetPieces, v => (dataSetPieces = v)],
   // @ts-expect-error -- replaced on purpose
+  dataShowcase: [() => dataShowcase, v => (dataShowcase = v)],
+  // @ts-expect-error -- replaced on purpose
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
@@ -1573,6 +1575,27 @@ export function dataRelations(D, valid = () => true) {
         if (!(D.pyramids || {})[i]) problem(`${at}.pyramids: no catch item "${i}" (pyramids.json)`);
       if (L.wardrobe && !wardrobe[L.wardrobe]) problem(`${at}.wardrobe: no piece "${L.wardrobe}" (wardrobe.json)`);
     });
+  }
+  return out;
+}
+
+/** ON-3: showcase.json: the schema, theme ids once each, a type theme's type @param {any} D @param {DataValid} [valid]
+ * @returns {DataProblem[]} */
+export function dataShowcase(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['showcase.json', what]),
+    S = D.showcase;
+  if (!S) return [['showcase.json', 'missing']];
+  if (!valid('showcase.schema.json', S, 'showcase.json')) return out;
+  const seen = new Set(),
+    types = new Set((Array.isArray(D.types) ? D.types : []).map((/** @type {any} */ t) => t.id));
+  for (const T of S.themes) {
+    if (seen.has(T.id)) problem(`themes: "${T.id}" twice`);
+    seen.add(T.id);
+    if (T.need === 'type' && !types.has(T.type)) problem(`themes.${T.id}.type: no type "${T.type}" (types.json)`);
+    if (T.need !== 'type' && T.type !== undefined)
+      problem(`themes.${T.id}.type: only a theme of need "type" names one`);
   }
   return out;
 }

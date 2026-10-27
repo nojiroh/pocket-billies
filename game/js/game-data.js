@@ -59,6 +59,7 @@ expose({
   SEATS: [() => SEATS],
   SET_PIECES: [() => SET_PIECES],
   SHOPS: [() => SHOPS],
+  SHOWCASE: [() => SHOWCASE],
   SPECIES: [() => SPECIES],
   SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
@@ -433,6 +434,10 @@ export const RELATIONS = /** @type {import('../types/game-data').RelationsData} 
   gameData.relations || { gift: { cost: 1, points: 1, favour: 0 }, people: {} }
 );
 provide({ RELATIONS }); /* to-module */
+/* the online track ON-3: the Showcase's weekly themes and ribbons (showcase.json; logic/showcase.js) */
+export const SHOWCASE = /** @type {import('../types/game-data').ShowcaseData} */ (
+  gameData.showcase || { ribbons: ['Gold'], themes: [{ id: 'any', name: 'Best Billie', d: '', need: 'any' }] }
+);
 /* roguelite track RL-14: the runs' enemy factions and their bots (factions.json; logic/factions.js) */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}

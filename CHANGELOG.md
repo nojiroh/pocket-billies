@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
+  vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
+  and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)
+  win a Gold, Silver or Bronze ribbon, shown on the Billie and the Trainer card. Only the look goes online; nothing of
+  value moves. Report or block from any entry; three reports hide one until the moderator looks.
 - **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
   sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
   Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a
