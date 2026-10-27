@@ -23,7 +23,7 @@
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { rarityTier } from './logic/marks.js';
-import { runMarkLook } from './logic/run-marks.js';
+import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
 expose({
   PbCoin: [() => PbCoin],
@@ -39,6 +39,8 @@ expose({
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
   navStep: [() => navStep],
   runIcon: [() => runIcon],
+  runIconPixels: [() => runIconPixels],
+  runIconPx: [() => runIconPx],
   runIconURL: [() => runIconURL],
   runKitBase: [() => runKitBase],
   runKitMotion: [() => runKitMotion],
@@ -284,72 +286,48 @@ const PbForecast = class extends LitElement {
 };
 
 /* ---------- a run map marker ---------- */
+/** UI-8c: a UI icon's pixels (36 x 36 RGBA), loaded once each */
+const runIconPx = /** @type {Record<string, Promise<Uint8ClampedArray>>} */ ({});
+const runIconPixels = (/** @type {string} */ k) =>
+  runIconPx[k] ||
+  (runIconPx[k] = new Promise((ok, no) => {
+    const im = new Image(),
+      N = RUN_MARK_ART.grid;
+    im.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = N;
+      const x = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+      x.drawImage(im, 0, 0, N, N);
+      ok(x.getImageData(0, 0, N, N).data);
+    };
+    im.onerror = no;
+    im.src = runIconURL(k);
+  }));
+/* UI-8c: the place's pixel icon (art/ui/node-<shape>.svg, Badges) for its state, painted as the bowl paints it
+   (logic/run-marks.js runMarkPixels: the gold rim where you stand, done faded with a check, locked grey with a
+   padlock); --size is the icon's 36 grid, the rim reaches two art pixels past it */
 const PbNode = class extends LitElement {
   static properties = { type: { reflect: true }, state: { reflect: true }, weather: {}, label: {} };
   static styles = [
     runKitBase,
     css`
       :host {
-        --size: 44px;
+        --size: 36px;
         display: inline-grid;
         position: relative;
         width: var(--size);
         height: var(--size);
-        --fill: var(--c-surface);
-        --line: var(--c-text);
-        --ink: var(--c-text);
       }
-      :host([data-tone='primary']) {
-        --fill: var(--c-primary);
-        --line: color-mix(in srgb, var(--c-primary) 55%, black);
-        --ink: var(--c-surface);
-      }
-      :host([data-tone='danger']) {
-        --fill: var(--c-danger);
-        --line: color-mix(in srgb, var(--c-danger) 55%, black);
-        --ink: var(--c-surface);
-      }
-      :host([data-tone='gold']) {
-        --fill: var(--gold-b);
-        --line: color-mix(in srgb, var(--gold-b) 50%, black);
-        --ink: var(--goldink, #3a2408);
-      }
-      :host([data-tone='muted']) {
-        --fill: color-mix(in srgb, var(--c-text) 22%, var(--c-surface));
-        --line: color-mix(in srgb, var(--c-text) 45%, transparent);
-        --ink: var(--c-text2);
-      }
-      svg {
+      canvas {
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
+        left: calc(var(--size) / -18);
+        top: calc(var(--size) / -18);
+        width: calc(var(--size) * 40 / 36);
+        height: calc(var(--size) * 40 / 36);
+        image-rendering: pixelated;
       }
-      polygon {
-        fill: var(--fill);
-        stroke: var(--line);
-        stroke-width: 1.5px;
-        stroke-linejoin: miter;
-        vector-effect: non-scaling-stroke;
-      }
-      :host([state='current']) svg {
-        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold-a) 80%, transparent));
-      }
-      :host([state='visited']) svg,
-      :host([state='locked']) svg {
-        opacity: 0.6;
-      }
-      .g {
-        place-self: center;
-        position: relative;
-        color: var(--ink);
-        font-size: calc(var(--size) * 0.45);
-        line-height: 1;
-      }
-      .g.ic {
-        width: calc(var(--size) * 0.4);
-        height: calc(var(--size) * 0.4);
+      :host([state='current']) canvas {
+        filter: drop-shadow(0 0 calc(var(--size) / 8) color-mix(in srgb, var(--gold-a) 80%, transparent));
       }
       .wx {
         position: absolute;
@@ -375,30 +353,41 @@ const PbNode = class extends LitElement {
     this.state = 'seen';
     this.weather = '';
     this.label = '';
+    /** the picture drawn once its icons have loaded (a promise, for the gallery's pictures) */
+    this.painted = Promise.resolve();
   }
   get look() {
     return runMarkLook(this.type, this.state);
   }
   updated() {
-    this.dataset.tone = this.look.tone;
+    const L = this.look,
+      state = this.state,
+      cv = /** @type {HTMLCanvasElement | null} */ (this.renderRoot.querySelector('canvas'));
+    if (!cv) return;
+    this.painted = Promise.all([runIconPixels(L.icon), L.badge ? runIconPixels(L.badge) : null])
+      .then(([icon, badge]) => {
+        if (this.look.icon !== L.icon || this.state !== state) return;
+        const p = runMarkPixels(icon, badge, state);
+        cv.width = p.w;
+        cv.height = p.h;
+        /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).putImageData(
+          new ImageData(p.data, p.w, p.h),
+          0,
+          0
+        );
+      })
+      .catch(() => {});
   }
   render() {
-    const L = this.look,
-      pts = L.points.map(([x, y]) => `${x},${y}`).join(' '),
-      wx = this.weather && this.state !== 'hidden' && /** @type {any} */ (RUN_WEATHER_ICONS)[this.weather],
+    const wx = this.weather && this.state !== 'hidden' && /** @type {any} */ (RUN_WEATHER_ICONS)[this.weather],
       said =
         this.state === 'hidden'
           ? 'Not yet seen'
           : [this.label || this.type, this.state !== 'seen' ? this.state : '', this.weather].filter(Boolean).join(', ');
     return html`<span role="img" aria-label=${said} style="display:contents"
-      ><svg viewBox="0 0 100 100" aria-hidden="true">${runSvg`<polygon points=${pts}></polygon>`}</svg
-      >${
-        L.glyph === '?'
-          ? html`<span class="g" aria-hidden="true">?</span>`
-          : L.glyph
-            ? runIcon(L.glyph, 'g ic')
-            : nothing
-      }${wx ? html`<span class="wx" aria-hidden="true">${runIcon(wx)}</span>` : nothing}</span
+      ><canvas width="40" height="40" aria-hidden="true"></canvas>${
+        wx ? html`<span class="wx" aria-hidden="true">${runIcon(wx)}</span>` : nothing
+      }</span
     >`;
   }
 };

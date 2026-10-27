@@ -67,6 +67,8 @@ def main():
                 if look:
                     page.click(f'[data-g="look"][data-v="{look}"]')
                 page.evaluate('document.fonts.ready')
+                # UI-8c: the run map's markers paint their pixel icons once those have loaded
+                page.evaluate("Promise.all([...document.querySelectorAll('pb-node')].map(n => n.updateComplete.then(() => n.painted)))")
                 page.wait_for_timeout(400)
                 names = page.eval_on_selector_all('[data-shot]', 'els => els.map(e => e.dataset.shot)')
                 for name in names:

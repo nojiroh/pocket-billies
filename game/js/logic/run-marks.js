@@ -5,12 +5,19 @@
    diamond boss, hexagon town, chevron route, slanted event; RL-14 a cog for a scrapyard), the colour role each type and state takes, and a canvas
    painter for the bowl, which draws its pins on a 2D canvas (world-bowl.js worldBowlPin), not in the page. The kit's
    <pb-node> (js/ui-run-kit.js) draws the same outlines as SVG, so a marker reads the same on the bowl and in a list.
-   Logic only: no DOM, runs in Node (tools/test/run-marks.test.mjs). Nothing calls the painter yet (RL-7 does). */
+   UI-8c (Badges, the owner's pick): each place is also a 36 px pixel icon in art/ui (node-<shape>.svg, painted in the
+   Studio's icon editor on these outlines), with node-check and node-lock for done and locked places. runMarkLook names
+   the icon, its badge and its size; runMarkPixels turns the icon's pixels into the state's picture (the gold rim where
+   you stand, done dimmed, locked grey), which the bowl draws (world-bowl.js worldBowlRunPin). runMarkDraw stays as the
+   flat shape the bowl draws until an icon has loaded.
+   Logic only: no DOM, runs in Node (tools/test/run-marks.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  RUN_MARK_ART: [() => RUN_MARK_ART],
   RUN_MARK_SHAPES: [() => RUN_MARK_SHAPES],
+  RUN_MARK_SIZES: [() => RUN_MARK_SIZES],
   RUN_MARK_STATES: [() => RUN_MARK_STATES],
   RUN_MARK_TONES: [() => RUN_MARK_TONES],
   RUN_MARK_TYPES: [() => RUN_MARK_TYPES],
@@ -19,7 +26,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runMarkDraw: [() => runMarkDraw, v => (runMarkDraw = v)],
   // @ts-expect-error -- replaced on purpose
+  runMarkGrey: [() => runMarkGrey, v => (runMarkGrey = v)],
+  // @ts-expect-error -- replaced on purpose
   runMarkLook: [() => runMarkLook, v => (runMarkLook = v)],
+  // @ts-expect-error -- replaced on purpose
+  runMarkPixels: [() => runMarkPixels, v => (runMarkPixels = v)],
   // @ts-expect-error -- replaced on purpose
   runMarkPoints: [() => runMarkPoints, v => (runMarkPoints = v)],
   // @ts-expect-error -- replaced on purpose
@@ -160,7 +171,90 @@ export function runMarkLook(type, state = 'seen') {
     glow: state === 'current',
     faded: state === 'visited' || state === 'locked',
     glyph: state === 'hidden' ? '?' : state === 'locked' ? 'lock' : state === 'visited' ? 'check' : '',
+    /* UI-8c: the pixel icon (art/ui), the corner badge drawn over it, and its size on the map in CSS px */
+    icon: `node-${shown}`,
+    badge: state === 'visited' ? 'node-check' : state === 'locked' ? 'node-lock' : '',
+    size: state === 'current' ? RUN_MARK_SIZES.current : RUN_MARK_SIZES.seen,
   };
+}
+/** UI-8c: a place's icon size on the map in CSS px (18 and 22 before; the owner's phone check may move them) */
+export const RUN_MARK_SIZES = { seen: 28, current: 34 };
+/** UI-8c: the icons' grid, how far the gold rim reaches past it (two art pixels), its colours (the set's golds), how
+ * much a done place fades, and the ground rings' colours */
+export const RUN_MARK_ART = {
+  grid: 36,
+  rim: 2,
+  rimFill: [255, 224, 138],
+  rimEdge: [176, 122, 30],
+  dim: 0.62,
+  /* the bowl's ground rings in the same style (world-bowl.js): where you stand gold on a darker gold, the place picked
+     cream on the ink */
+  ringEdge: [138, 90, 18],
+  pick: [255, 248, 230],
+};
+/** UI-8c: a locked place's grey for one colour (light kept, a touch of blue) @param {number} r @param {number} g
+ * @param {number} b @returns {[number, number, number]} */
+export function runMarkGrey(r, g, b) {
+  const k = Math.round((0.3 * r + 0.59 * g + 0.11 * b) * 0.82 + 30);
+  return [k, k, Math.min(255, k + 6)];
+}
+/** UI-8c: a place's picture for its state, from its icon's pixels (RGBA, grid x grid) and its badge's (or null). The
+ * picture is (grid + 2 rim) square so the rim fits round it: where you stand a gold rim two art pixels wide follows the
+ * icon's outline (its own edge darker); done places fade; locked ones turn grey; the badge goes on top unfaded.
+ * @param {ArrayLike<number>} icon @param {ArrayLike<number> | null} badge @param {string} state
+ * @returns {{ w: number, h: number, data: Uint8ClampedArray }} */
+export function runMarkPixels(icon, badge, state) {
+  const N = RUN_MARK_ART.grid,
+    R = RUN_MARK_ART.rim,
+    W = N + 2 * R,
+    out = new Uint8ClampedArray(W * W * 4),
+    solid = (/** @type {number} */ x, /** @type {number} */ y) =>
+      x >= 0 && y >= 0 && x < N && y < N && icon[(y * N + x) * 4 + 3] >= 128,
+    put = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number[]} */ c, a = 255) => {
+      const i = (y * W + x) * 4;
+      out[i] = c[0];
+      out[i + 1] = c[1];
+      out[i + 2] = c[2];
+      out[i + 3] = a;
+    };
+  if (state === 'current') {
+    /* the rim: every picture pixel within two art pixels of the icon (corners rounded off), its outer edge darker */
+    const ring = new Uint8Array(W * W),
+      on = (/** @type {number} */ x, /** @type {number} */ y) => x >= 0 && y >= 0 && x < W && y < W && ring[y * W + x];
+    for (let y = 0; y < W; y++)
+      for (let x = 0; x < W; x++)
+        for (let dy = -R; dy <= R && !ring[y * W + x]; dy++)
+          for (let dx = -R; dx <= R; dx++)
+            if (Math.abs(dx) + Math.abs(dy) <= R + 1 && solid(x - R + dx, y - R + dy)) {
+              ring[y * W + x] = 1;
+              break;
+            }
+    for (let y = 0; y < W; y++)
+      for (let x = 0; x < W; x++)
+        if (ring[y * W + x])
+          put(
+            x,
+            y,
+            !on(x + 1, y) || !on(x - 1, y) || !on(x, y + 1) || !on(x, y - 1)
+              ? RUN_MARK_ART.rimEdge
+              : RUN_MARK_ART.rimFill
+          );
+  }
+  const fade = state === 'visited' ? RUN_MARK_ART.dim : 1,
+    grey = state === 'locked';
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const i = (y * N + x) * 4;
+      if (badge && badge[i + 3] >= 128) {
+        put(x + R, y + R, [badge[i], badge[i + 1], badge[i + 2]]);
+        continue;
+      }
+      if (icon[i + 3] < 128) continue;
+      const c = grey ? runMarkGrey(icon[i], icon[i + 1], icon[i + 2]) : [icon[i], icon[i + 1], icon[i + 2]];
+      /* faded over whatever is under it (the rim never is: a done place isn't where you stand) */
+      put(x + R, y + R, c, Math.round(255 * fade));
+    }
+  return { w: W, h: W, data: out };
 }
 /** the outline as an SVG points list @param {string} type */
 export function runMarkPoints(type) {

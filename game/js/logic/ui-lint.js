@@ -86,7 +86,7 @@ export const UI_LINT_RULES = [
 export const UI_LINT_CEILING = {
   radius: 0,
   space: 39,
-  shadow: 161,
+  shadow: 160,
   keyframes: 53,
   duration: 249,
   font: 10,
@@ -94,7 +94,7 @@ export const UI_LINT_CEILING = {
   important: 153,
   zindex: 60,
   blur: 27,
-  jsColour: 637,
+  jsColour: 635,
   innerHtml: 55,
   styleAttr: 41,
 };

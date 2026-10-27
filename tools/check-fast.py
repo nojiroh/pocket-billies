@@ -117,6 +117,11 @@ def run_world(pg, base):
     if not pg.evaluate(nav_tap('map')): raise Exception('no Map tab on the bottom bar')
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3&&!!worldBowl.spots&&worldBowl.spots.length===LOCATIONS.length", 30):
         raise Exception('the map didn’t open as the bowl with the run’s places')
+    # UI-8c: the run's places are drawn as their pixel icons (art/ui/node-*.svg), the names in the voice font
+    if not until(pg, "Object.keys(runPinArt.pics).length>0&&Object.keys(runPinArt.pics).every(k=>k.startsWith('node-'))", 15):
+        raise Exception(f"the run's places aren't drawn as their icons (loaded: {pg.evaluate('Object.keys(runPinArt.px)')})")
+    font = pg.evaluate("[bowlFont.fam,getComputedStyle(document.documentElement).getPropertyValue('--font-voice').trim()]")
+    if not font[0] or font[0] != font[1]: raise Exception(f"the bowl's names are in {font[0]!r}, not the voice font {font[1]!r}")
     pg.evaluate(nav_tap('map'))   # the open tab again: back to the world
     drawing(pg)
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
@@ -172,6 +177,14 @@ def bowl_map(pg, base):
     if not until(pg, "!document.querySelector('.pcard-wrap')", 15): raise Exception('a postcard never closed')
     hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2),p=e&&e.parentElement;return e?e.tagName+'#'+e.id+'.'+e.className+(e.src?' src '+String(e.src).split('/').pop().slice(0,40):'')+' in '+(p?p.tagName+'#'+p.id+'.'+p.className:'?'):'nothing'})()")
     if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
+    # UI-8c: the map's seven buttons are the kit's 44 px chips with the icon set's pictures (no typed symbols), and
+    # the look-around group stands clear of the place card
+    chips = pg.evaluate("""(()=>{const out=[],bs=[...document.querySelectorAll('.map-full .mapctl .mbtn,.map-full .mapview .mbtn')];
+      for(const b of bs){const r=b.getBoundingClientRect();if(Math.round(r.width)<44||Math.round(r.height)<44||!b.querySelector('.uico')||b.textContent.trim())out.push((b.dataset.a||b.dataset.k)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
+      const v=document.querySelector('.map-full .mapview'),c=document.querySelector('#mapcard');let over='';
+      if(v&&c){const a=v.getBoundingClientRect(),k=c.getBoundingClientRect();if(a.bottom>k.top+.5&&a.top<k.bottom&&a.right>k.left&&a.left<k.right)over='the look-around group overlaps the card by '+Math.round(a.bottom-k.top)+' px'}
+      return [bs.length,out,over]})()""")
+    if chips[0] != 7 or chips[1] or chips[2]: raise Exception(f'the map’s buttons: {chips[0]} of 7; not 44 px chips with an icon: {chips[1]}; {chips[2]}')
     pg.set_viewport_size({'width': 400, 'height': 300})
     # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
     if not until(pg, "!!(worldBowl.ground&&worldBowl.ground.terrain&&worldBowl.ground.terrain.ready&&worldBowl.ground.ok)", 60): raise Exception('the terrain never got ready')
