@@ -32,7 +32,8 @@ export function squareMood(history) {
 
 /** the lines the square's folk say in this mood: every `square_<mood>` line whose `when` holds, highest priority
  * first (then by id), its line id and any speaker taken off (a bubble shows the words alone)
- * @param {Record<string, BanterLine>} banter banter.json @param {'won' | 'lost' | null} mood
+ * @param {Record<string, BanterLine>} banter banter.json @param {'won' | 'lost' | 'fest' | null} mood ('fest': HB-10e,
+ * a festival's or market day's lines, square_fest, each `when` naming its festival)
  * @param {(cond: string) => boolean} holds whether a condition holds @returns {string[]} */
 export function squareTalk(banter, mood, holds) {
   if (!mood) return [];

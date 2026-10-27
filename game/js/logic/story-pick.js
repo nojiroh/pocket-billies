@@ -42,6 +42,8 @@ export const BANTER_WHO = [
     /* HB-10d: what the town square's folk say after a won or a lost run (logic/square-talk.js: every line that holds) */
     'square_won',
     'square_lost',
+    /* HB-10e: what they say on a festival or market day (each line's `when` names its festival) */
+    'square_fest',
   ],
   BANTER_HUB = ['chosen', 'kappi', 'juniper'];
 

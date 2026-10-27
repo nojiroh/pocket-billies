@@ -124,6 +124,10 @@ export interface Meta {
   /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
       (logic/daily.js) */
   boards: { d: number; w: number };
+  /** HB-10e: the festival market's sales on the latest occasion (logic/festival.js): the festival's id, its occasion
+      (the year a date festival began, or meta.runs) and how many of each ware (by its place in the stock) were
+      bought; null before the first */
+  fest: { id: string; at: number; got: Record<string, number> } | null;
 }
 
 /** RL-S1: what ended a lost run (logic/run-history.js runLostTo): the battle's kind, its leader's or class's id, the

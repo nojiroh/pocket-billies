@@ -58,7 +58,7 @@ import { runArrivedFx, runArrivedHint } from './run.js';
 import { fieldMoveOpen, fieldWayOut } from './field-moves.js';
 import { encounterOpen } from './encounter-screen.js';
 import { questBoardOpen } from './quest-board.js';
-import { fountainWishOpen, townBoardOpen } from './town-square.js';
+import { festivalMarketOpen, fountainWishOpen, townBoardOpen } from './town-square.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankOpen } from './gene-bank-screen.js';
 import { augmentsOpen } from './augment-screen.js';
@@ -679,6 +679,11 @@ export function walkPick(h) {
       typeof fountainWishOpen === 'function'
     )
       fountainWishOpen(p);
+    /* HB-10e: the square's middle stall: the festival market on a festival or market day (town-square.js) */ else if (
+      a === 'fest' &&
+      typeof festivalMarketOpen === 'function'
+    )
+      festivalMarketOpen();
     /* HB-10d: Copperleaf's notice board (town-square.js; a run town's is `notice`) */ else if (
       a === 'hubnotice' &&
       typeof townBoardOpen === 'function'

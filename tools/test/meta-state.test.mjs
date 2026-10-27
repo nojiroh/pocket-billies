@@ -28,6 +28,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     residents: {},
     wish: null,
     boards: { d: 0, w: 0 },
+    fest: null,
   });
   assert.equal(validMeta(m), true);
   /* ON-2: the last daily and weekly taken off on */
@@ -35,6 +36,24 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
   assert.equal(validMeta({ ...m, boards: { d: -1, w: 0 } }), false);
   assert.equal(validMeta({ ...m, boards: { d: 0, w: 0, x: 1 } }), false);
   assert.notEqual(newMeta(), m, 'a fresh object each time');
+});
+
+test("meta.fest (HB-10e): null, or a festival market's sales on one occasion", () => {
+  const m = newMeta();
+  assert.equal(validMeta({ ...m, fest: { id: 'sprout_fair', at: 2026, got: { 0: 2, 3: 1 } } }), true);
+  assert.equal(validMeta({ ...m, fest: { id: 'market_day', at: 6, got: {} } }), true);
+  for (const fest of [
+    { id: 'Sprout', at: 2026, got: {} },
+    { id: 'sprout_fair', at: -1, got: {} },
+    { id: 'sprout_fair', at: 2026, got: { 8: 1 } },
+    { id: 'sprout_fair', at: 2026, got: { 0: 100 } },
+    { id: 'sprout_fair', at: 2026, got: {}, x: 1 },
+    [],
+  ])
+    assert.equal(validMeta({ ...m, fest }), false, JSON.stringify(fest));
+  /* a save from before HB-10e has none: filled in */
+  const { fest: _, ...old } = m;
+  assert.equal(metaFill(old).fest, null);
 });
 
 test('meta: broken or tampered shapes are refused', () => {

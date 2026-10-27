@@ -813,6 +813,11 @@ debugLog.more = () => {
           e = H[H.length - 1];
         return !e ? null : e.end === 'won' ? 'won' : 'lost';
       })(),
+      /* HB-10e: the festival on in Copperleaf (its id and occasion; forced: by the debug menu or a test) */
+      festival: (() => {
+        const on = typeof GAME.festivalToday === 'function' ? GAME.festivalToday() : null;
+        return on ? `${on.id}@${on.at}${GAME.festivalForce ? ' (forced)' : ''}` : null;
+      })(),
       visitors: typeof GAME.worldBillies !== 'undefined' ? GAME.worldBillies.visitors || 0 : 0,
       water: (GAME.walkView.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,

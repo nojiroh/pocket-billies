@@ -32,6 +32,7 @@ import {
   environment,
   environmentSeason,
   environmentState,
+  festivalToday,
   fieldClimb,
   gameData,
   groundHeightAt,
@@ -59,6 +60,7 @@ import {
   soundEffect,
   soundEffectAt,
   speciesOf,
+  squareDayNow,
   squareMood,
   squareTalk,
   squareVisitorsOut,
@@ -4095,7 +4097,8 @@ function folkSquare(sc, n) {
 }
 /* the stop a person stands at on the square at hour h (their own hours: h + their offset), or null */
 function folkSquareStop(S, f, h) {
-  const T = squareSlot(RULES.square.day, h + (f.off || 0));
+  /* HB-10e: a festival's or market day's own day (town-square.js squareDayNow) */
+  const T = squareSlot(typeof squareDayNow === 'function' ? squareDayNow() : RULES.square.day, h + (f.off || 0));
   if (!T) return null;
   const G = S.goers[T.k] || (S.goers[T.k] = squareGoers(S.n, T, walkView.id)),
     r = G.get(f.line);
@@ -4248,10 +4251,14 @@ function folkSay(f, force) {
   f.say = T.length && n % 2 === 0 ? T[(n >> 1) % T.length] : L[n % L.length];
   f.sayT = force ? 4.2 : 3.2;
 }
-/** HB-10d: what the square says about your last run: every square_won / square_lost line that holds now */
+/** HB-10d: what the square says about your last run: every square_won / square_lost line that holds now; HB-10e: on
+ * a festival or market day, its own lines (square_fest) first */
 function squareChat() {
-  const H = saveData && saveData.meta && saveData.meta.history;
-  return squareTalk(gameData.banter || {}, squareMood(H), c => storyAllows({ when: c }));
+  const H = saveData && saveData.meta && saveData.meta.history,
+    holds = (/** @type {string} */ c) => storyAllows({ when: c }),
+    fest =
+      typeof festivalToday === 'function' && festivalToday() ? squareTalk(gameData.banter || {}, 'fest', holds) : [];
+  return [...fest, ...squareTalk(gameData.banter || {}, squareMood(H), holds)];
 }
 function sendFolk(f, to, then) {
   const rt = findPath(f.x, f.z, to[0], to[1], { noHop: true });

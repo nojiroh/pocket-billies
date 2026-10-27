@@ -74,12 +74,69 @@ export const VIEW = [15, 45]; /* degrees round the square kept low toward the po
 /** HB-10c: Copperleaf's folk (the map's `folk`): 10, the most drawn at once (the Engine's quality.townFolk) */
 export const SQUARE_FOLK = 10;
 
+/* HB-10e: the festivals' decorations (festivals.json), on grass just outside the rim like the win bunting, each shown
+   while one of its festivals is on (`when: festival:<id> or ...`). Only one festival is on at a time, so they share
+   spots: FESTIVAL_SPOTS, [degrees, metres in from the rim], each clear of the edge props, the stops, the bunting and
+   the streets' mouths (hub-square.test.mjs); a pennant line across the south rim for every festival but a market day */
+export const FESTIVAL_SPOTS = {
+  a: [-56, -1.5],
+  b: [-32, -2.5],
+  c: [52, -1.5],
+  d: [-112, -1.5],
+  e: [124, -1.5],
+  f: [-140, -1.5],
+};
+const FESTIVALS_ALL = ['homecoming', 'tenth_departure', 'sprout_fair', 'longest_light', 'spire_supper', 'lantern_walk'];
+/* [kind, spot (a key of FESTIVAL_SPOTS, or [degrees, inset]), the festivals it is up for] */
+export const FESTIVAL_DRESS = [
+  ['pennant_line', [-88, -1.5], FESTIVALS_ALL],
+  /* the Sprout Fair: the seed swap */
+  ['seed_library_box', 'a', ['sprout_fair']],
+  ['veg_patch_frame', 'b', ['sprout_fair']],
+  ['beehive', 'c', ['sprout_fair']],
+  ['flowerpot', 'd', ['sprout_fair']],
+  ['veg_patch_frame', 'e', ['sprout_fair']],
+  /* Longest Light: solar lights and a turbine */
+  ['solar_post_light', 'a', ['longest_light']],
+  ['wind_turbine_small', 'b', ['longest_light']],
+  ['solar_post_light', 'c', ['longest_light']],
+  ['flag_pole', 'd', ['longest_light']],
+  ['solar_post_light', 'e', ['longest_light']],
+  ['flag_pole', 'f', ['longest_light']],
+  /* the Spire Supper: the harvest */
+  ['haystack', 'a', ['spire_supper']],
+  ['hay_round', 'b', ['spire_supper']],
+  ['crate_goods', 'c', ['spire_supper']],
+  ['barrel_wood', 'd', ['spire_supper']],
+  ['haybale_stack', 'e', ['spire_supper']],
+  ['firewood', 'f', ['spire_supper']],
+  /* the Lantern Walk: lanterns all round */
+  ...['a', 'b', 'c', 'd', 'e', 'f'].map(k => ['lantern', k, ['lantern_walk']]),
+  /* the milestones: flags */
+  ['flag_pole', 'a', ['homecoming', 'tenth_departure']],
+  ['flag_pole', 'd', ['homecoming', 'tenth_departure']],
+  ['flag_pole', 'f', ['homecoming', 'tenth_departure']],
+  ['flag_pole', 'c', ['tenth_departure']],
+  /* a market day: more goods out */
+  ['crate_goods', 'a', ['market_day']],
+  ['sack', 'd', ['market_day']],
+  ['barrel_wood', 'e', ['market_day']],
+];
+/** FESTIVAL_DRESS as SQUARE_EDGE rows: [kind, degrees, inset, 'in', { when }] */
+export function festivalDress() {
+  return FESTIVAL_DRESS.map(([k, at, ids]) => {
+    const [deg, inset] = typeof at === 'string' ? FESTIVAL_SPOTS[at] : at;
+    return [k, deg, inset, 'in', { when: ids.map(id => 'festival:' + id).join(' or ') }];
+  });
+}
+
 export const SQUARE_EDGE = [
   /* the market on the north rim */
   ['market_cart', 58, 1.3, 'in'],
   ['stall', 80, 1.6, 'in'],
   ['crate_goods', 92, 0.9, 'in'],
-  ['stall', 104, 1.6, 'in'],
+  /* HB-10e: the middle stall keeps the festival market (game/js/town-square.js festivalMarketOpen) */
+  ['stall', 104, 1.6, 'in', { act: 'fest', label: 'Middle stall' }],
   ['sack', 116, 0.9, 'in'],
   ['stall', 128, 1.6, 'in'],
   ['barrel_wood', 139, 0.9, 'in'],
@@ -117,6 +174,8 @@ export const SQUARE_EDGE = [
   ['pennant_line', 100, -0.6, 'in', { when: 'last:won' }],
   ['flag_pole', 70, -0.6, 'in', { when: 'last:won' }],
   ['flag_pole', 160, -0.6, 'in', { when: 'last:won' }],
+  /* HB-10e: the festivals' decorations (FESTIVAL_DRESS, below) */
+  ...festivalDress(),
 ];
 
 /** the edge props for a map whose square's middle is the well plot: the map's props without the old ones, then the
@@ -129,7 +188,14 @@ export function squareEdgeProps(M) {
       r = squareRim(a) - inset,
       /* rot 0 faces south; facing the middle (degrees deg + 180) is rot deg + 270 (logic/prop-turn.js) */
       rot = face === 'in' ? ((((deg + 270) % 360) + 540) % 360) - 180 : face;
-    out.push({ k, x: r2(well.x + Math.cos(a) * r), z: r2(well.z + Math.sin(a) * r), ...(rot ? { rot } : {}), ...more, sq: 1 });
+    out.push({
+      k,
+      x: r2(well.x + Math.cos(a) * r),
+      z: r2(well.z + Math.sin(a) * r),
+      ...(rot ? { rot } : {}),
+      ...more,
+      sq: 1,
+    });
   }
   return [...M.props.filter(p => !p.sq), ...out];
 }

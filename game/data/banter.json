@@ -710,5 +710,101 @@
   "when": "last:lost",
   "priority": 4,
   "script": ["A loss is just data with feelings. Rest, then bring me more data. #l:e850"]
+ },
+ "sq_fest_home1": {
+  "who": "square_fest",
+  "when": "festival:homecoming",
+  "priority": 3,
+  "script": ["First win! The whole town’s out. Even the cat. #l:8981"]
+ },
+ "sq_fest_home2": {
+  "who": "square_fest",
+  "when": "festival:homecoming",
+  "priority": 3,
+  "script": ["Homecoming Parade! Mind the bunting, it’s load-bearing. #l:d3c5"]
+ },
+ "sq_fest_home3": {
+  "who": "square_fest",
+  "when": "festival:homecoming",
+  "priority": 3,
+  "script": ["Beat a whole region, they say. Not bad for a stranger. #l:75cf"]
+ },
+ "sq_fest_tenth1": {
+  "who": "square_fest",
+  "when": "festival:tenth_departure",
+  "priority": 3,
+  "script": ["Ten runs! The station master is crying into the cake. #l:8df4"]
+ },
+ "sq_fest_tenth2": {
+  "who": "square_fest",
+  "when": "festival:tenth_departure",
+  "priority": 3,
+  "script": ["Ten trains out, ten home. Mostly in one piece. #l:2642"]
+ },
+ "sq_fest_sprout1": {
+  "who": "square_fest",
+  "when": "festival:sprout_fair",
+  "priority": 3,
+  "script": ["Swapped my turnip seeds for a mystery packet. Wish me luck. #l:970a"]
+ },
+ "sq_fest_sprout2": {
+  "who": "square_fest",
+  "when": "festival:sprout_fair",
+  "priority": 3,
+  "script": ["Sprout Fair! Take a seedling, leave a seedling. #l:e772"]
+ },
+ "sq_fest_sprout3": {
+  "who": "square_fest",
+  "when": "festival:sprout_fair",
+  "priority": 3,
+  "script": ["Too much elderflower cordial? There’s such a thing. Ask me how. #l:fcf6"]
+ },
+ "sq_fest_light1": {
+  "who": "square_fest",
+  "when": "festival:longest_light",
+  "priority": 3,
+  "script": ["Longest Light! The roofs are drinking sun like it’s free. #l:9f96"]
+ },
+ "sq_fest_light2": {
+  "who": "square_fest",
+  "when": "festival:longest_light",
+  "priority": 3,
+  "script": ["Nobody sleeps tonight. The sun won’t let us. #l:4eff"]
+ },
+ "sq_fest_supper1": {
+  "who": "square_fest",
+  "when": "festival:spire_supper",
+  "priority": 3,
+  "script": ["Spire Supper tonight. Somebody always brings soup. #l:1dae"]
+ },
+ "sq_fest_supper2": {
+  "who": "square_fest",
+  "when": "festival:spire_supper",
+  "priority": 3,
+  "script": ["Hay bales for chairs again. My trousers will never recover. #l:53cd"]
+ },
+ "sq_fest_lantern1": {
+  "who": "square_fest",
+  "when": "festival:lantern_walk",
+  "priority": 3,
+  "script": ["Lantern Walk tonight. We light the trains home. #l:7409"]
+ },
+ "sq_fest_lantern2": {
+  "who": "square_fest",
+  "when": "festival:lantern_walk",
+  "priority": 3,
+  "script": ["Cold hands, warm lanterns. Best week of the year. #l:a8fc"]
+ },
+ "sq_fest_market1": {
+  "who": "square_fest",
+  "when": "festival:market_day",
+  "priority": 3,
+  "script": ["Market day! The middle stall’s got something under the counter. #l:5d18"]
+ },
+ "sq_fest_market2": {
+  "who": "square_fest",
+  "when": "festival:market_day",
+  "priority": 3,
+  "script": ["Fresh pretzels, lukewarm gossip. Market day. #l:26dd"]
  }
 }

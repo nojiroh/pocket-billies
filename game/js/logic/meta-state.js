@@ -27,6 +27,8 @@ expose({
   newMeta: [() => newMeta, v => (newMeta = v)],
   recordOf: [() => recordOf],
   // @ts-expect-error -- replaced on purpose
+  validFest: [() => validFest, v => (validFest = v)],
+  // @ts-expect-error -- replaced on purpose
   validMeta: [() => validMeta, v => (validMeta = v)],
   // @ts-expect-error -- replaced on purpose
   validWish: [() => validWish, v => (validWish = v)],
@@ -57,6 +59,7 @@ export function newMeta() {
     residents: {},
     wish: null,
     boards: { d: 0, w: 0 },
+    fest: null,
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
@@ -100,7 +103,23 @@ export function validMeta(o) {
     o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
     new Set(o.genes).size === o.genes.length &&
     validHistory(o.history) &&
-    validWish(o.wish)
+    validWish(o.wish) &&
+    validFest(o.fest)
+  );
+}
+/** HB-10e: meta.fest as stored (logic/festival.js): null, or the festival market's sales on the latest occasion (the
+ * festival's id, the occasion, how many of each ware by its place) @param {any} f @returns {boolean} */
+export function validFest(f) {
+  if (f == null) return true;
+  return (
+    typeof f === 'object' &&
+    !Array.isArray(f) &&
+    Object.keys(f).every(k => ['id', 'at', 'got'].includes(k)) &&
+    typeof f.id === 'string' &&
+    /^[a-z0-9_]{1,32}$/.test(f.id) &&
+    wholeIn(f.at, 0, META_MAX) &&
+    recordOf(f.got, 8, v => wholeIn(v, 0, 99)) &&
+    Object.keys(f.got).every(k => /^[0-7]$/.test(k))
   );
 }
 /** HB-10d: meta.wish as stored (logic/fountain-wish.js): null, or the last coin tossed into the square's fountain

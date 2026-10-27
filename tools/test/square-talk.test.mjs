@@ -60,3 +60,18 @@ test('every line a bubble: no line id, no speaker', () => {
   for (const H of [[run('won')], [run('lost')], [run('quit')]])
     for (const l of talk(H)) assert.ok(!/#l:|^[A-Z]\w*:\s/.test(l), l);
 });
+
+test('HB-10e: on a festival the square says its own lines (square_fest), each naming its festival, none on another', () => {
+  const fest = id => {
+    const S = { ...storyStateOf({ meta: { runs: 3, history: [] }, story: {} }), festival: { [id]: 1 } };
+    return squareTalk(GAME_DATA.banter, 'fest', c => conditionHolds(c, S));
+  };
+  const ids = Object.keys(GAME_DATA.festivals.festivals),
+    said = ids.map(fest);
+  for (const [i, L] of said.entries()) {
+    assert.ok(L.length >= 2, `${ids[i]}: ${L.length} lines`);
+    for (const l of L) assert.ok(l.length <= 70 && !/#l:/.test(l), l);
+  }
+  /* no line is shared between two festivals */
+  assert.equal(new Set(said.flat()).size, said.flat().length);
+});

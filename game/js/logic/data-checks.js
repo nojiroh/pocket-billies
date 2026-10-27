@@ -62,6 +62,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataFactions: [() => dataFactions, v => (dataFactions = v)],
   // @ts-expect-error -- replaced on purpose
+  dataFestivals: [() => dataFestivals, v => (dataFestivals = v)],
+  // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
   // @ts-expect-error -- replaced on purpose
   dataGenes: [() => dataGenes, v => (dataGenes = v)],
@@ -125,6 +127,8 @@ expose({
   runMapSweep: [() => runMapSweep, v => (runMapSweep = v)],
   // @ts-expect-error -- replaced on purpose
   runMapTownsPerPath: [() => runMapTownsPerPath, v => (runMapTownsPerPath = v)],
+  // @ts-expect-error -- replaced on purpose
+  squareDayProblems: [() => squareDayProblems, v => (squareDayProblems = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -292,6 +296,32 @@ export function dataRanchRules(D) {
 // HB-10c: the town square's day (logic/square-day.js): slots in order and apart within 0-24 hours, each a name of its
 // own, a share 0-1 and stops of the kinds the square has; the visits: 0-4 Billies a block of 1-60 minutes, leaving
 // between two hours, walking 0.3-3 m/s, staying [fewest, most] seconds, at stops of those kinds; nothing else
+/** the square's day (rules.json square.day; HB-10e: a festival's `day`): slots in order within 0-24 hours, each with a
+ * name of its own, a share of the folk and the kinds of stop it sends them to
+ * @param {any} day @param {string} at where it is @param {(what: string) => void} problem */
+export function squareDayProblems(day, at, problem) {
+  const KINDS = ['keep', 'shop', 'sit', 'lamp', 'fountain'],
+    hour = (/** @type {any} */ v) => typeof v === 'number' && v >= 0 && v <= 24;
+  if (!Array.isArray(day) || !day.length) return problem(`${at}: a list of slots`);
+  day.forEach((/** @type {any} */ T, /** @type {number} */ i) => {
+    const w = `${at}[${i}]`;
+    if (!T || typeof T !== 'object') return problem(`${w}: not a slot`);
+    for (const k of Object.keys(T))
+      if (!['k', 'from', 'to', 'share', 'stops'].includes(k)) problem(`${w}.${k}: no such rule`);
+    if (typeof T.k !== 'string' || !T.k || day.findIndex((/** @type {any} */ o) => o && o.k === T.k) !== i)
+      problem(`${w}.k: a name of its own`);
+    if (!hour(T.from) || !hour(T.to) || T.from >= T.to || (i && day[i - 1] && T.from < day[i - 1].to))
+      problem(`${w}: from before to, within 0-24 hours, after the slot before`);
+    if (!(typeof T.share === 'number' && T.share >= 0 && T.share <= 1)) problem(`${w}.share: 0-1`);
+    if (!(
+      Array.isArray(T.stops) &&
+      T.stops.length > 0 &&
+      T.stops.every((/** @type {any} */ k) => KINDS.includes(k)) &&
+      new Set(T.stops).size === T.stops.length
+    ))
+      problem(`${w}.stops: kinds of stop (${KINDS.join(', ')}), each once`);
+  });
+}
 /** HB-10c: rules.json square @param {any} D @returns {DataProblem[]} */
 export function dataSquareRules(D) {
   /** @type {DataProblem[]} */
@@ -308,21 +338,7 @@ export function dataSquareRules(D) {
   }
   for (const k of Object.keys(S))
     if (!['day', 'visit', 'wish', 'busk'].includes(k)) problem(`square.${k}: no such rule`);
-  const day = S.day;
-  if (!Array.isArray(day) || !day.length) problem('square.day: a list of slots');
-  else
-    day.forEach((/** @type {any} */ T, /** @type {number} */ i) => {
-      const at = `square.day[${i}]`;
-      if (!T || typeof T !== 'object') return problem(`${at}: not a slot`);
-      for (const k of Object.keys(T))
-        if (!['k', 'from', 'to', 'share', 'stops'].includes(k)) problem(`${at}.${k}: no such rule`);
-      if (typeof T.k !== 'string' || !T.k || day.findIndex((/** @type {any} */ o) => o && o.k === T.k) !== i)
-        problem(`${at}.k: a name of its own`);
-      if (!hour(T.from) || !hour(T.to) || T.from >= T.to || (i && day[i - 1] && T.from < day[i - 1].to))
-        problem(`${at}: from before to, within 0-24 hours, after the slot before`);
-      if (!(typeof T.share === 'number' && T.share >= 0 && T.share <= 1)) problem(`${at}.share: 0-1`);
-      if (!kinds(T.stops)) problem(`${at}.stops: kinds of stop (${KINDS.join(', ')}), each once`);
-    });
+  squareDayProblems(S.day, 'square.day', problem);
   const V = S.visit;
   if (!V || typeof V !== 'object' || Array.isArray(V)) problem('square.visit missing');
   else {
@@ -1329,6 +1345,78 @@ export function dataResidents(D, valid = () => true) {
       if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
       else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
   }
+  return out;
+}
+// HB-10e: festivals.json: the schema; paid in a currency kept between runs; a milestone has a condition (no
+// festival: in it: a festival can't wait on another), a date its first day and days, a market day its `every`, and
+// nothing of another kind's; no two date festivals' weeks overlap; the square's day as rules.json's, with keys of its
+// own; the market's wares are an item or a coin that exists, each once; the square's folk have a line for each
+/** HB-10e: festivals.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFestivals(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['festivals.json', what]),
+    FS = D.festivals;
+  if (!FS) return [['festivals.json', 'missing']];
+  if (!valid('festivals.schema.json', FS, 'festivals.json')) return out;
+  const C = (D.currencies || {})[FS.cur];
+  if (!C || C.kept !== 'meta')
+    problem(`cur: "${FS.cur}" is no currency kept between runs (currencies.json kept: meta)`);
+  const base = new Set(((D.rules && D.rules.square && D.rules.square.day) || []).map((/** @type {any} */ T) => T.k)),
+    items = D.items || {},
+    coins = D.pyramids || {},
+    /** @type {[string, number, number][]} */
+    weeks = [],
+    OWN = /** @type {Record<string, string[]>} */ ({ milestone: ['when'], date: ['from', 'days'], market: ['every'] });
+  for (const [id, F] of Object.entries(/** @type {Record<string, any>} */ (FS.festivals))) {
+    for (const [kind, keys] of Object.entries(OWN))
+      for (const k of keys)
+        if (kind === F.kind && F[k] == null) problem(`${id}: a ${kind} needs ${k}`);
+        else if (kind !== F.kind && F[k] != null) problem(`${id}.${k}: only a ${kind} has one`);
+    if (F.kind === 'milestone' && F.when) {
+      const p = conditionProblem(F.when);
+      if (p) problem(`${id}.when: ${p.message}`);
+      else if (conditionNames(conditionTree(F.when)).festival) problem(`${id}.when: a festival can't wait on another`);
+    }
+    if (F.kind === 'date' && F.from) {
+      const [m, d] = F.from.split('-').map(Number),
+        t = Date.UTC(2025, m - 1, d);
+      if (new Date(t).getUTCDate() !== d) problem(`${id}.from: no such day (${F.from})`);
+      else weeks.push([id, Math.round((t - Date.UTC(2025, 0, 1)) / 864e5), F.days || 1]);
+    }
+    squareDayProblems(F.day, `${id}.day`, problem);
+    for (const T of F.day || [])
+      if (T && base.has(T.k))
+        problem(`${id}.day: "${T.k}" is rules.json square.day's: a festival's slots have keys of their own`);
+    const seen = new Set();
+    (F.stock || []).forEach((/** @type {any} */ w, /** @type {number} */ i) => {
+      const at = `${id}.stock[${i}]`;
+      if (!!w.item === !!w.coin) return problem(`${at}: an item or a coin`);
+      if (w.item && !items[w.item]) problem(`${at}: no item "${w.item}" (items.json)`);
+      if (w.coin && !coins[w.coin]) problem(`${at}: no coin "${w.coin}" (pyramids.json)`);
+      const key = w.item ? 'item:' + w.item : 'coin:' + w.coin;
+      if (seen.has(key)) problem(`${at}: ${key} twice`);
+      seen.add(key);
+    });
+  }
+  /* the square's folk have something to say on each (banter.json square_fest), and a square_fest line names one */
+  const lines = Object.entries(/** @type {Record<string, any>} */ (D.banter || {})).filter(
+    ([, b]) => b.who === 'square_fest'
+  );
+  for (const [k, b] of lines)
+    if (!b.when || conditionProblem(b.when) || !conditionNames(conditionTree(b.when)).festival)
+      problem(`banter.json ${k}: a square_fest line's when names its festival (festival:<id>)`);
+  for (const id of Object.keys(FS.festivals))
+    if (!lines.some(([, b]) => b.when && new RegExp(`\\bfestival:${id}\\b`).test(b.when)))
+      problem(`${id}: no square_fest line in banter.json (the square would have nothing to say)`);
+  /* weeks on a 365-day circle (a week that runs into January wraps round) */
+  for (let a = 0; a < weeks.length; a++)
+    for (let b = a + 1; b < weeks.length; b++) {
+      const [x, s1, n1] = weeks[a],
+        [y, s2, n2] = weeks[b],
+        gap = (((s2 - s1) % 365) + 365) % 365;
+      if (gap < n1 || 365 - gap < n2) problem(`${x} and ${y}: their weeks overlap`);
+    }
   return out;
 }
 // RL-12b: events.json: the schema; every intro reads as lines only, every option's need as a condition and its `then`
