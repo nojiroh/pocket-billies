@@ -512,6 +512,22 @@ export function walkState() {
         };
         return [me, mate];
       }
+      /* WM-7: a run's leader stands in its place's arena (logic/arena-gen.js), facing the way you come in by */
+      const A = (T.runFoe === 'miniboss' || T.runFoe === 'boss') && (mapById(sc.baseId || v.id) || {}).arena;
+      if (A) {
+        const o = sc.baseOff || [0, 0],
+          at = /** @type {[number, number]} */ ([A.leader[0] + o[0], A.leader[1] + o[1]]);
+        return {
+          who: T.who,
+          id: T.id,
+          done: !!saveData.flags[T.id],
+          exit: null,
+          dir: directionOf(A.from[0] - A.leader[0], A.from[1] - A.leader[1]),
+          boss: T.runFoe === 'boss',
+          at,
+          arena: true,
+        };
+      }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     })
     .flat();

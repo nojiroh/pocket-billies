@@ -20,6 +20,7 @@ import { escapeHtml } from './game-stand-ins.js';
 import { UI_ROLE_LABELS } from '../../game/js/logic/ui-dials.js';
 import { RIG_NEUTRAL_POSE, rigGeo } from '../../game/js/logic/rig-joints.js';
 import {
+  dataArenas,
   dataBanter,
   dataBattleRules,
   dataBiomes,
@@ -404,6 +405,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['region', dataRegions],
   ['field move', dataFieldMoves],
   ['set piece', dataSetPieces],
+  ['arena', dataArenas],
   ['modifier', dataModifiers],
   ['faction', dataFactions],
   ['boss', dataBosses],
