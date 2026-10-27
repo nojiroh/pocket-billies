@@ -6,7 +6,7 @@
      colour (logic/wall-ramp.js); a cell repeats over a patch of wall in the colour you pick, the cells outlined on
      the painter, with a note of pixels between the five levels;
    - rooms (rooms.png): each room as the little box seen through a window, by day and lit at night;
-   - flags (scene/flags): waving on a mast by the game's ripple, the postcard stamp, and who flies it;
+   - flags (scene/flags, and the legacy towns' in legacy/scene/flags): waving on a mast by the game's ripple, the postcard stamp, and who flies it;
    - far backdrops (scene/far): over a sky, wrapped so the seam shows. The game loads these but doesn't draw them
      (walk-view.js only preloads scene/far/<far>.png; `far` still picks the sound, water and default walls).
    Lighting is flat: the shaders' sun, shadows and bumps are left out. */
@@ -60,7 +60,7 @@ function scenePreviewKind(path) {
   if (p === (S.wallArt || 'scene/build/walls.png')) return 'walls';
   if (/^scene\/build\/detail[\w-]*\.png$/.test(p)) return 'build';
   if (p === B.rooms) return 'rooms';
-  if (/^scene\/flags\/[\w-]+\.png$/.test(p)) return 'flag';
+  if (/^(legacy\/)?scene\/flags\/[\w-]+\.png$/.test(p)) return 'flag'; /* SA-5: legacy towns' flags in art/legacy */
   if (/^scene\/far\/[\w-]+\.png$/.test(p)) return 'far';
   return '';
 }

@@ -2550,7 +2550,7 @@ def scene_art_steps(pg, errs):
     the picture panel; a stroke on walls.png in the painter redraws its preview (then undone)."""
     E = pg.evaluate
     for p, sel in [('art/scene/build/walls.png', 'canvas.sp-wall'), ('art/scene/build/detail-a04b.png', 'canvas.sp-wall'),
-                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/scene/flags/marigold.png', 'canvas.sp-flag'),
+                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/legacy/scene/flags/marigold.png', 'canvas.sp-flag'),
                    ('art/scene/far/hills.png', 'canvas.sp-far')]:
         E(f"artBrowserShow({json.dumps(p)})")
         try: pg.wait_for_selector('.ab-side ' + sel, timeout=15000)

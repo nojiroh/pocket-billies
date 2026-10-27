@@ -194,7 +194,8 @@ test('on the game: the code’s patterns and the data name most of the art; know
   const prop = Object.values(GAME_DATA.scenery.props).find(p => p.img).img;
   assert.equal(state('art/' + prop), 'used', prop);
   assert.equal(state('art/postcards/copperleaf.webp'), 'used');
-  assert.equal(state('art/postcards/marigold.webp'), 'legacy');
+  assert.equal(state('art/legacy/postcards/marigold.webp'), 'legacy', 'SA-5: the legacy folder');
+  assert.equal(state('art/scene/flags/default.png'), 'used');
   assert.equal(state('art/app/icon-512.png'), 'used', 'the web manifest names it');
   assert.equal(state('art/scene/next/decals/bakery_word.png'), 'used', 'the bakery recipe names it');
   assert.equal(state('art/ui/bag.svg') === 'unused', !paths.includes('art/ui/bag.svg'));
