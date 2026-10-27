@@ -172,7 +172,7 @@ export const ENGINE_DEFAULTS = {
        how much lamps glow in it at night */
     fogVolume: 1,
     fogLamps: 1,
-    /* air track AIR-4: the near haze (to 40 m) darker where it lies in the sun's shadow, from the light-in-air march */
+    /* air track AIR-4: the near haze (its first 26 m) darker where it lies in the sun's shadow, from the light-in-air march */
     hazeShade: 0.5,
     /* phase 20 R2 (D7): cheap light shafts (one quad each) while the light in the air is off; 0: none */
     cheapShafts: 0,

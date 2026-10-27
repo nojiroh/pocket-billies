@@ -229,9 +229,10 @@ void main(){float zq=volZ(uZ,ivec2(gl_FragCoord.xy),uF),d0=zq>=uF*.9995?1.:((uF+
     and runs to the surface or out of the box, in uSteps steps; the shafts still count only their last 14 m. Without
     it, the old 14 steps over the last 14 m */
  /* AIR-4: shade in the haze (uHS, the Shade in the haze dial): fogit's haze builds up past its start as
-    1-exp(-k(t-start)); the march sums the part of that built in the sun's shadow, out to 40 m (the near haze) */
+    1-exp(-k(t-start)); the march sums the part of that built in the sun's shadow over the haze's first 26 m
+    (the near haze: it starts about at the camera's distance, so a fixed 14-40 m would miss it) */
  bool sh=uK>0.||uLK>0.;float s0=max(0.,L-14.),t0=s0,t1=L,N=14.,fa=0.,fb=-1.;
- float hk=1.6/max(uFogD,.001),h0=uFogStart,h1=min(L,40.),hsh=0.;bool hz=uHS>0.&&uShadowOn>.5&&d0<=.9999&&h0<h1;
+ float hk=1.6/max(uFogD,.001),h0=uFogStart,h1=min(L,h0+26.),hsh=0.;bool hz=uHS>0.&&uShadowOn>.5&&d0<=.9999&&h0<h1;
  if(uFogK>0.){vec3 iv=mix(vec3(-1.),vec3(1.),step(0.,dir))/max(abs(dir),vec3(1e-6)),ta=(uFogLo-uEye)*iv,tb=(uFogHi-uEye)*iv,mn=min(ta,tb),mx=max(ta,tb);
   fa=max(0.,max(max(mn.x,mn.y),mn.z));fb=min(L0,min(min(mx.x,mx.y),mx.z));
   if(fa<fb){t0=sh?min(s0,fa):fa;t1=sh?max(L,fb):fb;N=uSteps;}else if(!sh&&!hz){o=vec4(0.);return;}}
@@ -244,7 +245,7 @@ void main(){float zq=volZ(uZ,ivec2(gl_FragCoord.xy),uF),d0=zq>=uF*.9995?1.:((uF+
   float w=sh&&t>=s0&&t<=L?1.:0.,fd=t>=fa&&t<=fb?fogAt(p)*uFogK:0.,wh=hz&&t>=h0&&t<=h1?1.:0.;if(w+fd+wh<=0.)continue;
   float v=vis(p);vec3 lp=(w>0.&&uLK>0.)||(fd>0.&&uFogLK>0.)?lampAt(p):vec3(0.);
   if(w>0.){float dens=exp(-max(0.,p.y-P.y)*.32)*.85+exp(-max(0.,p.y-uMistY)*.1)*.15;float dd=dens*dt*.045;sun+=vec3(v*dd,dd,0.);lamps+=lp*dt;}
-  if(wh>0.)hsh+=(1.-v)*hk*exp(-hk*(t-h0))*dt*(1.-smoothstep(30.,40.,t));
+  if(wh>0.)hsh+=(1.-v)*hk*exp(-hk*(t-h0))*dt*(1.-smoothstep(h0+18.,h0+26.,t));
   if(fd>0.){float a=1.-exp(-fd*.22*dt);fc+=T*a*(uFogCol*(.45+.55*sl*(.4+.6*v))+uSunCol*v*ph*.18+lp*uFogLK*.5);T*=1.-a;}}
  /* lit air brightens a little; air in the shadow of a canopy or a roof darkens what is behind it (alpha), so the beams
     show as light and dark columns, on any graphics chip (no negative light needed) */
