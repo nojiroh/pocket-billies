@@ -119,6 +119,147 @@ Tag to suggest: `rs-4a-done`. Details: docs/phases/residents-track.md, "Done in 
 - Next session starts with: RS-4b (Dottie, Gus, the headcount milestones, the in-game full test's step), in Plan
   Mode, on `track/residents`.
 
+### Phase 20 R4, D2 alone: Medium precision (`mediump` in the post passes), and main merged in - 2026-10-27
+Branch `track/renderer`. The plan was approved in Plan Mode with my recommendations: the post passes first, Smart light
+shafts kept (off), and stretched models drawn one at a time. PR #256 (draft) takes R4 and the merge to main.
+- **Main merged in** (c9e78567): 21 conflict spots in 7 files.
+  - Kept: AIR-3's fog dials and lamp fog, VFX-2's ribbon (precompiled), the audit's dials, Spread blur in front
+    (without D3's deleted argument), RF-2 spin and the ghost skip.
+  - Smart light shafts (`air.shaftPick`) are back with the cheap shafts they need. Both stay off. Judge them at
+    "Sun gap, smart shafts"; the stations' `fixed` values came back for that station.
+  - VFX-3's stretched models (`it.smear`) have no slot in the instance record. They are drawn one at a time with the
+    plain `vox` / `mdl` programs, which compile on the first stretch. Everything else stays instanced.
+- **D2 built**, behind Studio > Engine > Quality "Medium precision" (`quality.mediump`, off). Four commits: the
+  mechanism with bloom, then rays, then grade, then a live switch.
+  - The passes in `mediump`: bloom (bright, down, up), light rays and the colour grade.
+  - Each pass carries a list of edits that put `highp` back on screen places, depth, time, the sun's place and every
+    hash. The phase file has the per-pass table.
+  - Left `highp`: dof, dofnear and ao (depth maths), vol (world space) and dofgrow (integers).
+  - Not touched: the lit programs (ground, pictures, models, buildings).
+  - It takes effect on the next frame after a change (those five passes are recompiled once, a short stall), so the
+    graphics test steps it at the Control pad and the Sun gap.
+  - A program the driver refuses in `mediump` is made in `highp`, and the debug log's `graphics.mediump` names it.
+  - The in-game full test's Shaders step now builds every `mediump` version, whether or not the switch is on.
+- **Where the claims were off:** in GLSL ES 3.00 a fragment `sampler2D` is `lowp` by default, so today's depth reads
+  were formally `lowp`; drivers give full precision anyway. With the switch on, colour samplers are `mediump` and
+  depth samplers `highp`, stated in the shader.
+- **Tests:** tools/test/shader-precision.test.mjs is new. It checks that every edit is found exactly once, that off
+  leaves the texts as they were, and that what must stay `highp` does.
+- **Verified**
+  - Fast checks: lint, typecheck, format and check:modules are clean; `npm test` 1,468 pass.
+  - The smoke check: no problems. The Shaders step builds all 5 medium versions headless.
+  - Crash check, headless, low settings, counts only: Copperleaf with Medium precision, bloom and rays on, switched
+    off and on live, night, then a forced context loss. 0 GL errors, 0 refusals, 0 page errors.
+  - The full quick check (on the merge): 37 of 40 pass. On their own, the 3 problems fail the same way on main's tip
+    a8c60bbc, so none is this lane's. **For main's owners:**
+    - "Terraces": the train_station floats.
+    - "Walking left and right": the settings tabs.
+    - RL-8: the town's shop has no Perk.
+  - In the full run (two workers), RL-8 and the room light stopped earlier. Run alone, they match main.
+- **CI on PR #256:** "export" (Trainer Editable Sprite Sheets) is red on main and every track too. The workflow
+  never builds the gitignored game/data/gamedata.js. The proposed patch is in a comment on the PR.
+- **Risky:**
+  - The look in `mediump` is judged only on your phone. Watch for banding in sky and fog gradients, the grain or the
+    dither turning into patterns, heat shimmer, and outline or blur edges.
+  - The live switch recompiles five programs on the spot once.
+- **Your phone run** (Android first; the iPad ignores `mediump`):
+  1. The graphics test's "Medium precision" steps at the Control pad and the Sun gap: fps on and off.
+  2. Walk Copperleaf at dusk and at night with it on. Is any sky, fog or bloom banding new?
+  3. Then the debug log: `graphics.mediump` should read "on" with nothing refused.
+  4. Still open from R4: the water check (Pictures in batches, Sky last), Steady lamps, the phone pixel budget, and
+     now Smart light shafts.
+- **Ask me before:** Medium precision on (and its old path deleted); the lit programs in `mediump` as a next step.
+- Next: your verdicts on the five switches, then tag `phase-20-done`.
+
+### Phase 20 R4, lane defaults (the owner's verdicts: switches on, old paths and losers deleted) - 2026-10-26
+Branch `track/renderer` (the only lane this round; D2 `mediump` follows alone). Plan approved in Plan Mode. The owner's
+answers this session: where the water looked weird: "not sure"; Steady lamps stays off for now; the phone pixel
+budget measured first; old paths deleted fully, as C3 was (no fallback to one draw per item).
+- **The water ("looked weird, barely visible")**, checked first:
+  - No R1-R3 switch touches how see-through the water is or its colour. Its opacity comes from the kind's clarity,
+    `water.clarity` (0.2 in engine.json), depth, reef and foam. The reflection only adds the mirrored pictures. Sky
+    last keeps the water after the sky. Drop spent pictures dropped only the reflection's depth. Rain draws after the
+    water. The registry moved the shore and flow textures over one to one.
+  - The graphics test itself makes the pond look flat and see-through on purpose: the Pond station steps Water
+    reflections to 0 and Pixel water off, and "Everything lowest" does the same. Those steps now say so on screen.
+  - **Found and fixed (not a switch):** main's WA-5b (merged into this branch today) keeps the water's kinds in a
+    texture checked with `kindTex.gl === gl`. A restored context is the same object, so after any context loss (a
+    phone back from the background, memory pressure) the water bound a dead texture. Its kinds then read as zero
+    (black, see-through), and every frame logged INVALID_OPERATION (headless: from the first loss on, also on the
+    upstream tip before my merge). Now it compares `gpuState.gen` and goes through the registry. If your phone had
+    lost its context, this is the likeliest cause.
+  - Pictures in batches (it draws the reflection's pictures) and Sky last are held back, still off with their old
+    paths, until you've looked at the water with each on.
+- **On, with the old path and the switch deleted** (each its own commit, settings/Studio/graphics test with it):
+  - Models in batches: the plain `vox` and `mdl` programs are no longer compiled.
+  - Shadows in batches: the pictures and the models; `voxS` is no longer compiled.
+  - Models in the shadow cache: the cache key always carries the casters' signature.
+  - Far shadows hold still.
+  - Rain in one go: its program is always precompiled.
+  - Phone lamps: 8 lamps lit on a phone, 4 of them glowing in the air. The Studio's "Lamps lit at once" says so.
+  - Reuse battle rigs: the baseline's `ownRigReuse` went with it.
+  - First a commit of each set the default on, green on its own.
+- **Deleted:**
+  - Solid things first (+4.3 ms on the phone): the draw order is the old default's.
+  - Drop spent pictures (no gain; a driver risk).
+  - Cheap light shafts: "barely showed" at their intended 0.6, with the sun at 18°, so it wasn't a mis-setting. The
+    "Sun gap, no god rays" station and stations' `fixed` values went with it.
+  - The rain station stays, with no dials: next to the Meadow it shows what rain costs.
+- **Still switches, off:**
+  - Sky last and Pictures in batches (the water check).
+  - Steady lamps (your night walk).
+  - Phone pixel budget (to be measured).
+  - Lamps lit at once (16) stays a dial.
+- **Tests:** the old one-at-a-time loops are kept as references in tools/test/model-loops-ref.mjs and
+  shadow-loops-ref.mjs. `withOldShadowSprites` in the shadow fixture swaps the old loop in, so the old == new tests
+  still prove the packing.
+  - shadow-passes.test.mjs still freezes the old picture loop's calls. Its snapshot was remade once (the shadow-cache
+    commit): the fixture's model with no mesh yet moves from the cached list to the drawn-each-frame list.
+  - New: water-kinds-restore.test.mjs. It fails on the old code.
+- **Diagnostics:** the renderer baseline measures each stop four times: `r1`, `own`, `ownPhonePixels` (the game's own
+  resolution with the 1.2 MP budget; only Android and iPhone change) and `ownAllOn` (every switch still off by default
+  turned on). The step's limit is now 20 min, and the debug menu says 6-8 min on a phone.
+  - Auto quality off resets `walkView.R` to 1 every frame, so the budget's 0.9 start can't skew the measures.
+- Merged origin/track/renderer (main had been merged into it) once. The one conflict was walk/effects.js: WA-5b's
+  diving birds kept, the deleted shafts left out.
+- **Headless** (390 x 760, low graphics, counts only, never looks or speed):
+  - The baseline tour ran through with 20 of 20 measures and 0 page errors. Draws own → ownAllOn:
+    - Copperleaf by day 853 → 274, by night 847 → 275.
+    - Jungle 243 → 133.
+    - Run town 225 → 147.
+    - Battle 425 → 280.
+  - The crash check, every switch on: Copperleaf, a forced context loss, night and rain, test_water, test_island,
+    and back home. 0 page errors; gl.getError 0 at every step after the fix (1282 from the loss on before it).
+- **Verified** after every commit: lint, typecheck, `npm test` (1,132 → 1,284 with main's tests), check:modules and
+  format. The smoke check passed ("no problems") on every commit touching game/, run from a worktree of each commit.
+  check:data after the shafts removal.
+- **The full quick check** at ab4f884b: 6 problems. Every one also fails on the upstream tip I merged (dfd24555, main
+  merged in), or passed when re-run on this branch, so none is this lane's. **For main's owners:**
+  - The same on both: "Terraces": props in the air, copperleaf sky_portal at 231.2, 103.6.
+  - The same on both: "room light" day/night values.
+  - The same on both: RT-4a, the rarer wild Billie not in its pocket.
+  - The same on both: song fingerprints, "cave mid" and "cave late" not in validation/sound-baseline.
+  - RL-8, "the town's shop has no Perk": fails on both.
+  - The battle music's drums: passed when re-run (timing under load).
+- **Risky:**
+  - There is no fallback now. A device whose driver rejects `voxI`, `mdlI`, `voxSI`, `shadowI` or `fxW` draws no
+    models, no model or picture shadows, or no rain. The debug log names it ("model shadows off", "picture shadows
+    off").
+  - Far shadows hold still: past about 13 m, grass and leaf shadows no longer sway, and a line where swaying shadows
+    meet still ones could show.
+  - The diagnostics test is about 2-3 min longer.
+- **Your phone run** (Android, then the iPad; full charge):
+  1. **Water**, outside the graphics test: look at the hub pond, then a run's river or sea, with Studio > Engine >
+     Quality "Pictures in batches" on alone, then "Sky last" on alone, then both off. Does any of them look weird or
+     barely visible? Then the debug menu's "Lose the GPU context" at the pond: the water should come back the same.
+  2. **Steady lamps**: walk Copperleaf at night with it on. Do lamps still pop, does anything flicker, do lamp shadows
+     swap? Say on or off.
+  3. **Diagnostics test**, then save the report and export the debug log. The baseline lines `ownPhonePixels` and
+     `ownAllOn` give the pixel budget's and everything-on fps. Also walk Copperleaf with "Phone pixel budget" on: is
+     it too soft?
+- **Ask me before:** Sky last and Pictures in batches on (after the water check), Steady lamps, the phone pixel budget.
+- Next: D2 `mediump`, alone; then the switches above; tag `phase-20-done` once they are decided.
+
 ### Water track - the hub island's golden test: hand patches marked (islandGen.patched) - 2026-10-27
 Branch `track/water` (main merged in first, twice: a fast-forward, then 3 commits). The owner's pick ("Patched marker",
 asked when PR #253's `lint` job failed). Not a numbered session: the docs fix that found WA-6a and WA-6b done (the

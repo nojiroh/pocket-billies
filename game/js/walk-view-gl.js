@@ -333,16 +333,13 @@ export function ensureWalkGl(cv) {
       typeof WORLD_BOWL_SHADERS !== 'undefined' && WORLD_BOWL_SHADERS,
       /* phase 20 E6: the instanced pictures' program, while Engine > Quality "Pictures in batches" is on */
       engineSetting('quality', 'spriteInstances') && SPRITE_INSTANCE_SHADERS,
-      /* phase 20 R2: the weather in one draw, while Engine > Quality "Rain in one go" is on */
-      engineSetting('quality', 'rainBatch') && WEATHER_FX_SHADERS,
+      /* phase 20 R2: the weather in one draw */
+      WEATHER_FX_SHADERS,
       /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
       RIBBON_SHADERS,
-      /* phase 20 R3: the instanced shadow pictures' and shadow models' programs, while Engine > Quality "Shadows in
-         batches" is on */
-      engineSetting('quality', 'shadowInstances') && SHADOW_INSTANCE_SHADERS,
-      engineSetting('quality', 'shadowInstances') &&
-        typeof MODEL_SHADOW_SHADERS !== 'undefined' &&
-        MODEL_SHADOW_SHADERS,
+      /* phase 20 R3: the instanced shadow pictures' and shadow models' programs */
+      SHADOW_INSTANCE_SHADERS,
+      typeof MODEL_SHADOW_SHADERS !== 'undefined' && MODEL_SHADOW_SHADERS,
     ])
       if (d)
         precompilePrograms(
@@ -655,14 +652,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl)) {
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
     reflectionPass(items, C, rw, rh, X);
-    /* phase 20 R2 (D3): only the reflection's colour is read (by the water), so its depth needn't be kept */
-    if (engineSetting('quality', 'invalidate') && gpuState.fb.refl) {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, gpuState.fb.refl.f);
-      gl.invalidateFramebuffer(gl.FRAMEBUFFER, [gl.DEPTH_ATTACHMENT]);
-    }
-  }
   gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -672,39 +663,28 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const D = walkRenderer.dbg || {};
   /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
      drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
-     the ground, so a frame that shows one keeps the sky first. D5: with quality.solidFirst the models, buildings and
-     structures go before the sprites, so leaves behind a trunk or a wall fail the depth test */
+     the ground, so a frame that shows one keeps the sky first */
   const skyLast =
       !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
-    solidFirst = !!engineSetting('quality', 'solidFirst'),
-    bpart = skyLast || solidFirst ? 'solid' : undefined;
-  const drawSolids = () => {
-    gpuPass('models');
-    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
-    if (!solidFirst) {
-      gpuPass('box');
-      drawBoxFaces(C, items, X);
-    }
-    gpuPass('buildings');
-    if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
-    gpuPass('structures');
-    if (typeof drawStructures === 'function') drawStructures(C, X);
-  };
+    bpart = skyLast ? 'solid' : undefined;
   if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
   drawGround(C, X);
   drawRoomFront(C, X);
   gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
-  if (solidFirst) drawSolids();
   gpuPass('sprites');
   drawSprites(C, items, X, hits, labels, PPU);
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
-  if (solidFirst) {
-    gpuPass('box');
-    drawBoxFaces(C, items, X);
-  } else drawSolids();
+  gpuPass('models');
+  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+  gpuPass('box');
+  drawBoxFaces(C, items, X);
+  gpuPass('buildings');
+  if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade, bpart);
+  gpuPass('structures');
+  if (typeof drawStructures === 'function') drawStructures(C, X);
   if (skyLast) {
     gpuPass('sky');
     drawSky(C, sun, true);
@@ -802,7 +782,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
       volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
-      airLamps: PHONE && engineSetting('quality', 'phoneLamps') ? 4 : 6,
+      airLamps: PHONE ? 4 : 6,
       fog: fogOn
         ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
         : null,

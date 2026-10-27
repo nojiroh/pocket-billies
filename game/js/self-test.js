@@ -135,7 +135,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { attributeClashes, frameBlockCheck, gpuState } from './engine/webgl.js';
+import { attributeClashes, frameBlockCheck, gpuState, mediumpCheck } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -176,8 +176,8 @@ import { leaveRoom, mapIdAt, walkCross, walkPick, walkState } from './walk-contr
 import { render } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
+  BASELINE_LABELS: [() => BASELINE_LABELS],
   BASELINE_RESOLUTIONS: [() => BASELINE_RESOLUTIONS],
-  BASELINE_RIG_REUSE: [() => BASELINE_RIG_REUSE],
   BASELINE_STOPS: [() => BASELINE_STOPS],
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
   baselineBattle: [() => baselineBattle, v => (baselineBattle = v)],
@@ -590,6 +590,10 @@ async function runFullTest(mode) {
           );
           if (r.bad.length) throw new Error('Frame block: ' + r.bad.slice(0, 4).join('; '));
           fb = `; ${r.n} with the Frame block`;
+          /* phase 20 D2: the medium-precision versions build too, whether or not the switch is on */
+          const m = mediumpCheck(all);
+          if (m.bad.length) throw new Error('Medium precision: ' + m.bad.slice(0, 4).join('; '));
+          fb += `; ${m.n} in medium precision`;
         }
         if (typeof buildingState !== 'undefined' && buildingState.fail)
           throw new Error('3D buildings are off on this device: ' + String(buildingState.fail).slice(0, 90));
@@ -2566,8 +2570,9 @@ async function runFullTest(mode) {
             throw new Error(`measured ${B.length} of ${BASELINE_STOPS.length * BASELINE_RESOLUTIONS.length}`);
           return baselineNote(B);
         },
-        150,
-        600
+        /* phase 20 R4: four measures a stop (was two) */
+        300,
+        1200
       );
     await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
@@ -3326,13 +3331,22 @@ const BASELINE_STOPS = [
   { id: 'town', name: 'A run town', time: 12.5, run: { seed: 'BASELINE2', type: 'town', biome: 'meadow' } },
   { id: 'battle', name: 'A battle', time: 12.5, battle: true },
 ];
-/* the two resolutions: [name, the engine's quality group for it] */
+/* the measures at each stop: [name, the engine's quality group for it]. The two resolutions; then (phase 20 R4) the
+   game's own resolution with the phone pixel budget on (1.2 MP on Android and iPhone; the graphics test pins
+   resolution 1, so only this measures it; other devices draw as 'own'), and with every renderer switch still off by
+   default on: the baseline sets the player's dials aside, so it never saw them */
 const BASELINE_RESOLUTIONS = [
   ['r1', { auto: false, resolution: 1 }],
   ['own', { auto: false }],
+  ['ownPhonePixels', { auto: false, phonePixels: true }],
+  ['ownAllOn', { auto: false, phonePixels: true, spriteInstances: true, skyLast: true, stableLights: true }],
 ];
-/* phase 20 R3: the battle measured a third time, at the game's own resolution with its rigs reused (quality.rigReuse) */
-const BASELINE_RIG_REUSE = ['ownRigReuse', { auto: false, rigReuse: true }];
+const BASELINE_LABELS = {
+  r1: 'resolution 1',
+  own: 'the game’s own resolution',
+  ownPhonePixels: 'the game’s own resolution, phone pixel budget',
+  ownAllOn: 'the game’s own resolution, every switch on',
+};
 /* the player on the place's arrival spot, the camera straight and at its own zoom */
 function baselineStand() {
   const sc = walkView.sc;
@@ -3526,11 +3540,9 @@ async function rendererBaseline(o) {
         environment.force = { time: st.time, weather: 'clear', season: 'summer' };
         baselineStand();
         if (st.battle) await baselineBattle(o.foeSp);
-        for (const [res, quality] of st.battle ? [...BASELINE_RESOLUTIONS, BASELINE_RIG_REUSE] : BASELINE_RESOLUTIONS) {
+        for (const [res, quality] of BASELINE_RESOLUTIONS) {
           if (selfTest.stop) break;
-          o.show(
-            `${st.name}, resolution ${res === 'r1' ? '1' : 'the game’s own'}${quality.rigReuse ? ', rigs reused' : ''}`
-          );
+          o.show(`${st.name}, ${BASELINE_LABELS[res]}`);
           saveData.preferences.expert = true;
           saveData.preferences.eng = { quality: { ...quality } };
           if (!st.battle) baselineStand();

@@ -424,6 +424,11 @@ debugLog.glInfo = () => {
     o.webglFailed = !!(typeof GAME.gpuState !== 'undefined' && GAME.gpuState.fail);
     o.contextLost = !!(typeof GAME.gpuState !== 'undefined' && GAME.gpuState.lost);
     o.frames = GAME.walkRenderer.frames;
+    /* phase 20 D2: Medium precision as the 3D view started, and any program the driver refused it for */
+    if (typeof GAME.gpuState !== 'undefined')
+      o.mediump = GAME.gpuState.mp
+        ? 'on' + (GAME.gpuState.mpBad.length ? ', refused: ' + GAME.gpuState.mpBad.join(' ') : '')
+        : 'off';
   }
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {

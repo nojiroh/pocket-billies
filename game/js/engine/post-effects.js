@@ -12,18 +12,18 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
+import { COMMON_GLSL, LIGHT_GLSL, bindQuad, ensurePrograms, gpuFree, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
   COLOR_GRADES: [() => COLOR_GRADES],
-  DROP_COLOR: [() => DROP_COLOR],
-  DROP_SCREEN: [() => DROP_SCREEN],
   POST_EFFECT_SHADERS: [() => POST_EFFECT_SHADERS],
+  POST_MEDIUMP: [() => POST_MEDIUMP],
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
   drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
   drawPostRest: [() => drawPostRest, v => setDrawPostRest(v)],
+  postPrecisionFollow: [() => postPrecisionFollow, v => (postPrecisionFollow = v)],
   postTex: [() => postTex, v => (postTex = v)],
   postUse: [() => postUse, v => (postUse = v)],
   projectToScreenUv: [() => projectToScreenUv, v => (projectToScreenUv = v)],
@@ -276,18 +276,87 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
-/* phase 20 R2 (D3): what a pass that draws over all of its target may drop first, so a tiled graphics chip (the
-   phones') doesn't load the old picture: a target's colour, or the screen's colour, depth and stencil */
-const DROP_COLOR = [0x8ce0 /* COLOR_ATTACHMENT0 */],
-  DROP_SCREEN = [0x1800, 0x1801, 0x1802 /* COLOR, DEPTH, STENCIL */];
-/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms. fresh: the pass draws every
-   pixel of F with no blending, so with quality.invalidate its old content is dropped */
-function postUse(name, F, w, h, fresh) {
+/* phase 20 D2 (Engine > Quality "Medium precision", quality.mediump; engine/shader-precision.js): the post passes
+   whose maths is mostly colour, with highp kept on the screen places (vUV, uPx, offsets and taps), depth and its
+   linear distance (the blur's plane, the outlines), time, the sun's place on screen and every hash (grain, dither,
+   the rays' jitter). The colour samplers are mediump (16-bit floats hold the HDR range), depth highp. Left highp: dof,
+   dofnear and ao (depth maths nearly throughout), vol (world-space positions, the shadow maps and the fog grid),
+   dofgrow (integers and one read) */
+const POST_MEDIUMP = {
+  bright: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;',
+    ],
+  ],
+  down: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;',
+    ],
+  ],
+  up: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;uniform float uR;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;uniform highp float uR;',
+    ],
+    ['void main(){vec2 d=uPx*uR;', 'void main(){highp vec2 d=uPx*uR;'],
+  ],
+  rays: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDep;uniform vec2 uSun;uniform float uLen,uVirt;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp sampler2D uDep;uniform highp vec2 uSun;uniform highp float uLen;uniform float uVirt;',
+    ],
+    ['float h(vec2 p){', 'highp float h(highp vec2 p){'],
+    ['vec3 src(vec2 q){', 'vec3 src(highp vec2 q){'],
+    ['void main(){vec2 dv=(uSun-vUV);', 'void main(){highp vec2 dv=(uSun-vUV);'],
+    ['vec2 q=vUV+dv*h(gl_FragCoord.xy);', 'highp vec2 q=vUV+dv*h(gl_FragCoord.xy);'],
+  ],
+  grade: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol,uDof,uBloom,uAO,uRays,uVol;uniform highp sampler2D uDep;uniform highp vec2 uPx;uniform highp vec4 uHeatS[6];uniform float uHeatN;uniform highp vec4 uDofPl,uDofB;',
+    ],
+    ['uniform vec3 uInkF;', 'uniform highp vec3 uInkF;'],
+    ['uSharp,uBloomK,uTime,uDofOn,', 'uSharp,uBloomK,uDofOn,'],
+    ['uInk,uNear,uFar,uGlare;', 'uInk,uGlare;uniform highp float uTime,uNear,uFar;'],
+    ['uHiT,uRayC,uSunP;', 'uHiT,uRayC;uniform highp vec3 uSunP;'],
+    ['float linz(float d){float z=d*2.-1.;', 'highp float linz(highp float d){highp float z=d*2.-1.;'],
+    ['float gh(vec3 p){', 'highp float gh(highp vec3 p){'],
+    [
+      'float gv(vec2 q,float f){vec2 i=floor(q),u=fract(q);',
+      'highp float gv(highp vec2 q,highp float f){highp vec2 i=floor(q),u=fract(q);',
+    ],
+    ['vec3 grain(vec3 c){float f=', 'vec3 grain(vec3 c){highp float f='],
+    ['vec2 q=gl_FragCoord.xy/1.5;', 'highp vec2 q=gl_FragCoord.xy/1.5;'],
+    ['void main(){vec2 uv=vUV;', 'void main(){highp vec2 uv=vUV;'],
+    ['vec4 hs=uHeatS[i];', 'highp vec4 hs=uHeatS[i];'],
+    ['if(uDofOn>.5){float dz=linz(', 'if(uDofOn>.5){highp float dz=linz('],
+    [
+      'if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];',
+      'if(uInk>0.){highp float d0=texture(uDep,vUV).r;if(d0<.9999){highp float z0=linz(d0),e=0.;highp vec2 q=uPx*1.;highp float zs[4];',
+    ],
+    ['{vec2 q=floor(gl_FragCoord.xy);', '{highp vec2 q=floor(gl_FragCoord.xy);'],
+  ],
+};
+for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
+/* Medium precision switched (the Studio, the graphics test): the passes with a list are made again in the new
+   precision (once, on the spot), and any of them still compiling in the background is dropped */
+function postPrecisionFollow() {
+  const mp = !!engineSetting('quality', 'mediump');
+  if (mp === gpuState.mp) return;
+  gpuState.mp = mp;
+  for (const k of Object.keys(POST_MEDIUMP)) {
+    if (gpuState.P[k]) gpuFree(gpuState.P[k].p);
+    delete gpuState.P[k];
+    if (gpuState.pend) gpuState.pend.delete(k);
+  }
+}
+/* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
+function postUse(name, F, w, h) {
   const gl = gpuState.gl,
     p = gpuState.P[name];
   gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
-  if (fresh && engineSetting('quality', 'invalidate'))
-    gl.invalidateFramebuffer(gl.FRAMEBUFFER, F ? DROP_COLOR : DROP_SCREEN);
   gl.viewport(0, 0, w, h);
   gl.useProgram(p.p);
   return p.U;
@@ -301,6 +370,7 @@ function postTex(U, name, unit, t) {
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
+  postPrecisionFollow();
   ensurePrograms(POST_EFFECT_SHADERS);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
@@ -338,15 +408,15 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
       qh = Math.max(8, hh >> 1),
       K0 = renderTarget('dofk0', hw, hh, { hdr: true }),
       K1 = renderTarget('dofk1', qw, qh, { hdr: true });
-    let U = use('down', K0, hw, hh, true);
+    let U = use('down', K0, hw, hh);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    U = use('down', K1, qw, qh, true);
+    U = use('down', K1, qw, qh);
     tex(U, 'uCol', 0, K0.c);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    U = use('up', D, hw, hh, true);
+    U = use('up', D, hw, hh);
     tex(U, 'uCol', 0, K1.c);
     gl.uniform2f(U.uPx, 1 / qw, 1 / qh);
     gl.uniform1f(U.uR, Math.min(3, 0.5 + blur));
@@ -361,7 +431,7 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
         th = Math.ceil(rh / 16),
         T0 = renderTarget('dofnear0', tw, th),
         T1 = renderTarget('dofnear1', tw, th);
-      let V = use('dofnear', T0, tw, th, true);
+      let V = use('dofnear', T0, tw, th);
       tex(V, 'uDep', 0, S.d);
       gl.uniform1f(V.uN, C.near);
       gl.uniform1f(V.uF, C.far);
@@ -369,14 +439,14 @@ export function drawDepthOfField(S, C, focusDist, rw, rh, o = {}) {
       gl.uniform1f(V.uBand, band[0]);
       gl.uniform1f(V.uRampN, band[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      V = use('dofgrow', T1, tw, th, true);
+      V = use('dofgrow', T1, tw, th);
       tex(V, 'uT', 0, T0.c);
       /* (maxR is in half-size pixels, a tile is 8 of them) */
       gl.uniform1i(V.uGrow, Math.min(4, Math.max(1, Math.ceil(maxR / 8))));
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       N = T1;
     }
-    const U = use('dof', D, hw, hh, true);
+    const U = use('dof', D, hw, hh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
@@ -421,7 +491,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     w = hw,
     h = hh;
   if (bk > 0.01) {
-    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h, true);
+    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     /* Even bloom (color.bloomEven): the threshold as it reads after the exposure */
@@ -438,7 +508,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
       w = Math.max(4, w >> 1);
       h = Math.max(4, h >> 1);
       const F = renderTarget('b' + i, w, h, { hdr: true });
-      U = use('down', F, w, h, true);
+      U = use('down', F, w, h);
       tex(U, 'uCol', 0, chain[i - 1].c);
       gl.uniform2f(U.uPx, 1 / pw, 1 / ph);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -461,7 +531,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   let AO = null;
   if (aoK > 0.01) {
     AO = renderTarget('ao', hw, hh);
-    const U = use('ao', AO, hw, hh, true);
+    const U = use('ao', AO, hw, hh);
     tex(U, 'uDep', 0, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.uniform1f(U.uN, C.near);
@@ -483,7 +553,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1);
     RY = renderTarget('rays', qw, qh, { hdr: true });
-    const U = use('rays', RY, qw, qh, true);
+    const U = use('rays', RY, qw, qh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uSun, o.sun[0], o.sun[1]);
@@ -505,7 +575,7 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1),
       V0 = renderTarget('vol0', qw, qh, { hdr: true });
-    const U = use('vol', V0, qw, qh, true);
+    const U = use('vol', V0, qw, qh);
     const p = gpuState.P.vol;
     setLightUniforms(p, X);
     tex(U, 'uDep', 0, S.d);
@@ -533,20 +603,19 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     }
     gl.uniform1f(U.uDens, o.volDens ?? 1);
     gl.uniform1f(U.uMaxD, o.volMax || 48);
-    /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone with
-       quality.phoneLamps) */
+    /* phase 20 R2 (D6): how many of the lit lamps glow in the air (6, the most the march checks; 4 on a phone) */
     gl.uniform1f(U.uAirN, o.airLamps ?? 6);
     /* Rays follow the light (sun.followLight): the shade in the air is as deep as the light is bright (shallow under the moon) */
     gl.uniform1f(U.uFollow, engineSetting('sun', 'followLight') ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     VO = renderTarget('vol1', qw, qh, { hdr: true });
-    const U2 = use('down', VO, qw, qh, true);
+    const U2 = use('down', VO, qw, qh);
     tex(U2, 'uCol', 0, V0.c);
     gl.uniform2f(U2.uPx, 1 / qw, 1 / qh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* grade to the screen */
-  const U = use('grade', null, rw, rh, true);
+  const U = use('grade', null, rw, rh);
   tex(U, 'uCol', 0, S.c);
   tex(U, 'uDof', 1, D.c);
   tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : gpuState.white);

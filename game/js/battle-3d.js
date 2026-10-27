@@ -481,7 +481,7 @@ function smearLook(glow) {
   return L;
 }
 /* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
-   included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU
+   included), spin its turn (it.spin, as prop-models.js propModelInstanceValues reads it); null while it can't be drawn (3D props off, the GPU
    lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
 export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
   if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind])

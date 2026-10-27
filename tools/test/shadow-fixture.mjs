@@ -1,6 +1,7 @@
 // Phase 20 R3 (shadows lane): the shadow maps' test fixture (shadow-passes and shadow-instances tests): items that take
 // every branch of the shadow pictures, and a stand-in context with the passes' helpers as stand-ins that note their turn.
 import { recordingGL } from './walk-renderer.mjs';
+import * as REF from './shadow-loops-ref.mjs';
 
 const G = globalThis;
 const { gpuState, walkView, walkRenderer, engineContext, WALK_SHADERS } = G;
@@ -92,14 +93,7 @@ export function shadowSetup() {
   walkRenderer.itemGen = 1;
   engineContext.look = {
     shadows: { cascades: true, nearRadius: 13, buildings: true, fit: false, lampShadows: 2 },
-    /* the frozen calls are the old paths' (phase 20 R4: the R3 switches on by default; each test turns its own on) */
-    quality: {
-      shadowMap: 2048,
-      shadowCache: true,
-      shadowInstances: false,
-      modelShadowCache: false,
-      farShadowsStill: false,
-    },
+    quality: { shadowMap: 2048, shadowCache: true },
     world: { curve: 0.002 },
   };
   G.imageTexture = im => (im && im.T) || null;
@@ -124,6 +118,17 @@ export function shadowSetup() {
     drawPropModelShadows: (SH, L) => note('models', SH.vp[0], L.filter(it => it.vox).length),
   });
   return gl;
+}
+/* phase 20 R4: f run with the shadow pictures drawn one at a time by the old loop (shadow-loops-ref.mjs), the
+   reference the instanced pictures are compared against */
+export function withOldShadowSprites(f) {
+  const keep = G.drawShadowSprites;
+  G.drawShadowSprites = REF.drawShadowSprites;
+  try {
+    return f();
+  } finally {
+    G.drawShadowSprites = keep;
+  }
 }
 const round = v => (typeof v === 'number' ? +v.toFixed(6) : Array.isArray(v) ? v.map(round) : v);
 export const record = gl => gl.calls.map(c => c.map(round).join(' '));

@@ -272,15 +272,12 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     n = nR + nS + nA,
     wind = (walkView.sc.wind || 1) * (0.35 + E.storm * 0.9),
     sp = rm ? 1 : 0.2;
-  /* phase 20 R2 (pixels): with quality.rainBatch every quad below goes into one draw (walk/effects.js), each with the
-     up axis it would have set */
-  const B = engineSetting('quality', 'rainBatch') && quad.batch ? quad.batch('spray') : null;
+  /* phase 20 R2 (pixels): every quad below goes into one draw (walk/effects.js), each with its own up axis; nothing is
+     drawn until the picture is loaded */
+  const B = quad.batch('spray');
   let up = Up;
-  const setUp = v => {
-      if (B) up = v;
-      else gl.uniform3f(U.uUp, v[0], v[1], v[2]);
-    },
-    put = B ? (k, fr, x, y, z, sw, sh, a, col) => B.put(fr, x, y, z, sw, sh, a, col, up) : quad;
+  const setUp = v => (up = v),
+    put = B ? (k, fr, x, y, z, sw, sh, a, col) => B.put(fr, x, y, z, sw, sh, a, col, up) : () => {};
   const home = q => {
     for (let t = 0; t < 6; t++) {
       q.x = P.x + (Math.random() - 0.5) * 22;
@@ -343,10 +340,7 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     const f = s.a / 0.28;
     put('spray', 2, s.x, s.y + 0.04 + f * 0.06, s.z, 0.1 + f * 0.14, 0.05 + f * 0.05, (1 - f) * 0.45, [0.85, 0.9, 1]);
   }
-  if (B) {
-    B.flush();
-    gl.uniform3f(U.uUp, Up[0], Up[1], Up[2]);
-  }
+  if (B) B.flush();
   if (rain > 0 && walkRenderer.wgrid && !reducedMotion && Math.random() < dt * rain * 18) {
     const x = P.x + (Math.random() - 0.5) * 16,
       z = P.z - 3 + Math.random() * 12,
