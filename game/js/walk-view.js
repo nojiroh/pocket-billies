@@ -14,7 +14,9 @@ import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
   ITEMS,
+  PYRAMIDS,
   RESIDENTS,
+  REWARDS,
   RULES,
   TERRAIN_MATERIALS,
   UNLOCK_DATA,
@@ -52,6 +54,8 @@ import {
   rawHeightAt,
   reducedMotion,
   riderName,
+  routeFindAt,
+  routeFindGive,
   saveData,
   saveNow,
   seamlessMapById,
@@ -234,6 +238,7 @@ expose({
   propShown: [() => propShown, v => (propShown = v)],
   propWithVariant: [() => propWithVariant, v => (propWithVariant = v)],
   residentAt: [() => residentAt, v => (residentAt = v)],
+  routeFindStep: [() => routeFindStep, v => (routeFindStep = v)],
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   screenToGround: [() => screenToGround, v => setScreenToGround(v)],
@@ -610,6 +615,9 @@ export function cropGrowth(p) {
 }
 export function propShown(p) {
   if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry && !p.when && !p.unless)) return true;
+  /* RT-4b: a route's bramble row or find goes once its run flag is set: what its `unless` (opened:<flag>) says, read
+     without making the story state (asked for every prop, every frame) */
+  if (p.rt4b) return !(typeof saveData !== 'undefined' && saveData && (saveData.flags || {})[p.cut || p.find]);
   /* Project Story S2: "when" / "unless": only while the story allows (logic/script.js storyAllows) */
   if ((p.when || p.unless) && !storyAllows(p)) return false;
   if (p.grow != null && !cropGrowth(p)) return false;
@@ -3132,6 +3140,24 @@ function waterPlayStep(P, wd) {
   if (typeof toast === 'function') toast(`You found a ${ITEMS[R.k].n} in the reeds!`);
   if (typeof saveNow === 'function') saveNow();
 }
+/** RT-4b: a route's find (logic/route-finds.js): walking onto the pyramid on the ground gives its card, once a run (its
+ * flag in the run's flags); the pyramid goes once its flag is set (its `unless: opened:find.<node>.<k>`) */
+function routeFindStep(P) {
+  const sc = walkView.sc;
+  if (!sc || !saveData || !saveData.run || !(sc.props || []).some(p => p.find)) return;
+  const F = saveData.flags || (saveData.flags = {}),
+    R = routeFindAt(sc, P.x, P.z, F);
+  if (!R) return;
+  const got = routeFindGive(saveData, REWARDS[R.card]);
+  F[R.flag] = 1;
+  if (!got) return;
+  const T = got.pyramid ? PYRAMIDS[got.id] : ITEMS[got.id],
+    name = (T && T.n) || got.id;
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `find: ${R.card}`);
+  if (typeof soundEffect === 'function') soundEffect('coin');
+  if (typeof toast === 'function') toast(got.n > 1 ? `You found ${got.n} ${name}s!` : `You found a ${name}!`);
+  if (typeof saveNow === 'function') saveNow();
+}
 /** WA-6b: the team's Billies still standing, as fieldMoveState reads them (their names and types) */
 function surfTeam() {
   return (saveData.team || [])
@@ -3953,6 +3979,7 @@ function movePlayer(st, dt) {
   if (afloat !== !!P.surf || P.surfId !== walkView.id) surfMount(P, afloat, P.surfId !== walkView.id);
   const wd = wadeDepthHere(P.x, P.z);
   if (P.walk) waterPlayStep(P, wd);
+  if (P.walk) routeFindStep(P);
   if (wd > 0.05 && typeof addRipple === 'function') {
     P.wakeT = (P.wakeT || 0) - dt;
     if (P.wakeT <= 0) {
