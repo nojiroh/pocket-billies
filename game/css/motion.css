@@ -284,7 +284,7 @@
   }
 }
 
-/* UI-9a: the old shared parts' entrances and loops, from parts.css (v05, polish, style), names kept */
+/* UI-9a: the old shared parts' entrances and loops, from parts.css (v05, polish, style; the rest of it is base.css's end since UI-9b), names kept */
 @keyframes sheen {
   0%,
   62% {
