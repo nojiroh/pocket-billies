@@ -17,7 +17,7 @@ Branch `ccr-3df446bb-9jvdvq`. No look changes.
 - Measured headless: a reload mid-run made 12 places on the thread (wall 1.5 s with the page free); a take-off from the
   hub had them ready before the white-out (places stage 9 ms, swap 7 ms).
 - Verified: lint, typecheck, format, check:modules, unit tests 1371 pass, check-fast
-  `--only=world,helper,train,packing,blake,perks,encounters,quest` 11 of 11, SMOKE4.
+  `--only=world,helper,train,packing,blake,perks,encounters,quest` 11 of 11, smoke 6 of 6 (160 s).
 - Risky: a phone without module workers (Safari before 15) makes the places on the page as before; a Studio session
   that changes run data without live edits showing (none known) would differ from the page.
 - Next: LD-5 (moving between places: the world map's prewarm in a worker first). Tag `ld-4-done` for the owner.
