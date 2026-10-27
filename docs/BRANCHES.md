@@ -109,6 +109,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `ccr-dab4e0cd-6re1eb` | UI track UI-11: the colour code as data (uiTheme.json `defaults.signals`, `--sig-*` tokens, the checks, the Studio's Colour code group), built here since a cloud session pushes only to its own branch. To main by pull request. |
 | `claude/ui-12-palettes` | UI track UI-12: the palettes (Field Guide as the defaults, Copper Grove+ and Bureau Night in a Settings Palette row, Brass & Plum and Sunpunk Day for the Studio), made from UI-11's branch; to main by pull request, carrying UI-11's commits until #280 merges. |
 | `claude/ui-13-glyphs-types` | UI track UI-13: glyphs and types (the marks' glyphs as masks of one-colour SVGs, the nine types at one lightness, HP's heart teal, Sandstorm and paralysis off the bolt), made from UI-11's `ccr-dab4e0cd-6re1eb`. To main by pull request (it carries UI-11's commits until #280 merges). |
+| `claude/ui-14a-marks-kit` | UI track UI-14a: the marks kit (`pb-tag`, `pb-chip` on pb-coin's API, `pb-proc`, `pb-info`, `pb-rarity` and rarity on `pb-pick-card` and list rows, the Colour shapes patterns; the gallery only), made from UI-13's branch with main and UI-12's `claude/ui-12-palettes` merged in. To main by pull request (it carries UI-11's, UI-12's and UI-13's commits until #280, #282 and #284 merge). |
 
 ## Archive (unmerged work from before the roguelite pivot, kept but parked)
 

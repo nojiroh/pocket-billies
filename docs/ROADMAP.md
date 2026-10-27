@@ -151,8 +151,9 @@ town node needs it.
   the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266). UI-11 (the colour code as data) done
   2026-10-27 on `ccr-dab4e0cd-6re1eb` (#280); UI-12 (the palettes: Field Guide by default, a Settings Palette row)
   done 2026-10-27 on `claude/ui-12-palettes`; UI-13 (the marks' glyphs, the types at one lightness, the teal heart,
-  the bolt for storms only) done 2026-10-27 on `claude/ui-13-glyphs-types`; the browser and phone checks wait until
-  UI-18 (the owner's word).
+  the bolt for storms only) done 2026-10-27 on `claude/ui-13-glyphs-types`; UI-14a (the marks kit: `pb-tag`,
+  `pb-chip`, `pb-proc`, `pb-info`, rarity, the Colour shapes patterns; gallery only) done 2026-10-27 on
+  `claude/ui-14a-marks-kit`; the browser and phone checks wait until UI-18 (the owner's word).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.

@@ -2,6 +2,78 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-14a - the marks kit (pb-tag, pb-chip, pb-proc, pb-info, rarity, Colour shapes patterns) - 2026-10-27
+Branch `claude/ui-14a-marks-kit`, made from UI-13's `claude/ui-13-glyphs-types` (main plus UI-11 and UI-13, draft PR
+#284); main merged in first (nothing new), then UI-12's `claude/ui-12-palettes` (#282; only docs conflicted, both sides
+kept; hooks.js unchanged; check:data passes with UI-12's player presets against UI-13's type colours), then UI-13's
+branch again before the PR (nothing new). Its PR goes to main and shows UI-11's, UI-12's and UI-13's commits until
+#280, #282 and #284 merge. No Plan Mode (the owner's standing instruction); the plan was written as a message and
+carried out. **Visible change: none in the game** (the kit and the gallery only; UI-14b puts the marks on screens).
+- Changed:
+  - **game/js/logic/marks.js** (new, logic, in the Studio's logic worker): what each mark shows, so the parts and
+    UI-14b's screens agree. `tagLook` (status: glyph, BRN/PAR/SLP, its own colour; stat: ▲ teal or ▼ red first, the
+    short name from stats.json's ids `lev law lob pr hus` = Atk Def SpA SpD Spe, pips up to stageMax 6; effect: its
+    glyph and turns left; more: "+N"), each with its spoken word ("Speed up 2 stages", "Protect, 1 turn left");
+    `markRow` (status first, then boosts and drops, then effects; past 3 the last spot is "+N", so a row is never
+    wider than 3 tags); `rarityTier` and `MARK_RARITY`; `chipLook` and `MARK_CHIP_FAMILIES` (the six currencies with
+    currencies.json's icons, every nodeTypes.json id, the eight families and `info` for messages); `MARK_PATTERNS`.
+  - **game/js/ui-marks-kit.js** (new, after ui-run-kit.js): `<pb-tag>` (16 px tall, 11 px text, for the plate's row;
+    `big` 22 px for explainers and sheets), `<pb-chip>` (a subclass of `PbCoin`: kind, value and label and the same
+    count; the face tinted by family with a fill bar on the slanted edge; a currency's own icon, else its family's
+    glyph in the text shade; no value = a label chip for nodes and messages; `family`, `icon`, `small`), `<pb-proc>`
+    (glyph in its family's fill, a short line and an optional coloured ▲Spe, on dark glass; the look only),
+    `<pb-info>` (the mark as a big pb-tag or the `mark` slot, its word, one line; a tap or Escape closes it and sends
+    `pb-close`), `<pb-rarity>` (the tier's pill). Glyphs are UI-13's `g-*` SVGs as masks; colours UI-11's `--sig-*`;
+    fills always carry `--c-ink` text. Every mark has `role="img"` and its word.
+  - **Rarity:** `pb-pick-card rarity="..."`: a 3 px frame in the tier's fill along the card's cut outline (a ring
+    polygon, under the selected card's gold edge line), the pill at the top right, the name in the tier's text shade;
+    face down shows no tier. List rows: `.rar-row` with `data-rarity` (a 4 px bar and a thin inside frame; outline and
+    `::before`, since `.bag-row`'s borders are `!important`), `.rar-name`, and `<pb-rarity>` (ui-kit.css).
+  - **Colour shapes patterns** (the owner's answer 11): tokens.css `--pat-ink` is transparent until
+    `:root[data-shapes='on']`; ui-kit.js `patternVars` (stripe, cross, bars, dots, rise) on each part's host, so they
+    reach shadow roots without `:host-context`. Tags: burn and caution striped, paralysis barred, sleep and special
+    dotted, bad (drops) cross-hatched, growth lined; `pb-stat-bar` HP striped under half, cross-hatched under a quarter.
+  - ui-run-kit.js exports `PbCoin`, `runKitMotion` and `runNumber` (to-module's export; no change in behaviour).
+  - **The gallery:** six sections (`marks-tags`, `marks-chips`, `marks-procs`, `marks-info`, `marks-rarity`,
+    `marks-shapes`: every status, stat at ±1..6 and 0, every effect, "+N", the plate's dark glass, the six currencies,
+    node and message chips, small chips, blips, explainers, tiers on cards and rows, patterns always on) and a Colour
+    shapes button in the bar.
+  - tools/test/ui-marks.test.mjs (9 tests): every status, stat, effect, currency, node type and rarity tier in the data
+    has a mark, glyph or icon that exists and a word; the row's "+N"; the patterns' ids; the kit has no
+    `:host-context`, keyframes, loops, its own counting or hex colours.
+- Decided for the owner, to review:
+  - rarities.json's **`starter` shows as common** (grey, "Common" on the pill): the ladder keeps four colours, and a
+    starter isn't rarer than a common to the player. A fifth colour is one line in marks.js `rarityTier` if wanted.
+  - **pb-chip is a pb-coin** (a subclass), and pb-coin itself is unchanged: its tones (Research and DNA in the
+    palette's primary) differ from the families (sky and magenta). UI-14b should switch those screens to `pb-chip` (or
+    turn `pb-coin` into it), one screen per commit; ON-3 can build on either.
+  - Chip families where Part 2 names none: landing and route neutral, rival bad (a fight, as bosses), Beans neutral
+    (answer 3), messages by family name plus `info` neutral.
+  - Node and message chips use the family's glyph (`g-*`) until UI-8c's place icons merge; `icon="..."` takes them.
+  - The patterns per colour (above) and their ink (black at 30%), my picks; the switch's Settings row is UI-14b's,
+    which puts the marks on screens (Accessibility; `preferences` and the debug log's state as Part 2 says).
+  - Fills always take dark text, on light screens too (Part 2 says "on dark glass"; on a light card the fill still
+    reads 4.5:1 or more with ink, and a tag looks the same everywhere: rule 2).
+  - pb-info is a `role="note"` with `aria-live="polite"` (read when it opens), not a modal dialog.
+- Found (figures checked): the brief's "about ten screens use pb-coin": 10 game files (plus the gallery). stats.json's
+  stat ids are `lev law lob pr hus`, not atk..spe; rules.json `battle.stageMax` is 6; `.bag-row` sets its borders and
+  background with `!important` (units.css), so a row frame can't be a border. pb-pick-card already had a
+  `:host-context` rule (UI-16a's to remove); nothing new adds one.
+- Risky: little in the game (nothing uses the parts yet; pb-pick-card without `rarity` and pb-stat-bar with the switch
+  off draw as before). `--pat-*` lists in a `background` shorthand are new to the page. pb-info listens for Escape on
+  the document while connected.
+- Verified: lint (ui-lint at its ceilings), typecheck, format:check, `npm test` (1591 pass after the logic-worker
+  list was fixed), check:data, check:modules. One headless load of the gallery for page errors (none) and a look at
+  the six sections, light and dark; not the gallery check or its pictures.
+- Skipped until after UI-18 (the owner's rule), needed later: the gallery check and its pictures (`check:ui`, the six
+  new `marks-*` shots and the changed `picks` section's neighbours; the whole gallery's baselines are remade once
+  then); the Studio check (its UI section shows the gallery); check-fast and check-quick (nothing in the game changed,
+  but the pages load two new modules); the smoke step; the owner's phone check (the tags at 16 px on a plate, the
+  patterns, the rarity frames).
+- Next: UI-14b (the marks on every screen, one screen per commit; the Colour shapes row in Accessibility; pb-coin's
+  screens to pb-chip; UI-15's tag row takes `markRow` and pb-tag).
+- Tag to suggest: `ui-14a-done` on this entry's commit.
+
 ### UI track UI-13 - glyphs and types (the marks' glyphs, the types at one lightness, the teal heart, the bolt for storms) - 2026-10-27
 Branch `claude/ui-13-glyphs-types`, made from UI-11's `ccr-dab4e0cd-6re1eb` (main plus UI-11, draft PR #280); main
 merged in first (nothing new). Its PR goes to main and shows UI-11's commits until #280 merges. No Plan Mode (the
