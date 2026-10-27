@@ -657,16 +657,16 @@ def sound_step(P):
         except Exception: pass
 
 
-@step('Debug menu: nine sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
+@step('Debug menu: ten sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
 def debug_menu_step(P):
-    """UI-7c: the debug menu on a 390 px phone: the nine sections in their order, no phase or track code in what it
+    """UI-7c: the debug menu on a 390 px phone: the ten sections in their order (ON-3 added Moderation), no phase or track code in what it
     says, one copy of each test, the search box narrowing the buttons and putting the sections back, the open sections
     kept across closing and opening, and a button saying what it changed (not "Done.")"""
     pg = P.pg
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
     pg.evaluate("localStorage.removeItem('pb-debug-open');uiState.modal=null;uiState.mq=[];renderOverlay();openDebug();0"); until(pg, "!!document.querySelector('.dbg details[data-k]')", 10); ui(pg)
     keys = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].map(d=>d.dataset.k)")
-    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save']
+    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save', 'mod']
     if keys != want: raise Exception(f'sections {keys}, wanted {want}')
     text = pg.evaluate("document.querySelector('.dbg').textContent")
     codes = sorted(set(re.findall(r'\b(?:[Pp]hase \d+|(?:RL|UI|TR|ST|MG|IS|SND|CAM)-\d+|v\d{2}\b|S\d\b)', text)))
@@ -689,7 +689,7 @@ def debug_menu_step(P):
     said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
     if 'Moneys.' not in said or 'Done.' in said: raise Exception(f'+1,000 Moneys said {said[:160]}')
     if pg.evaluate("saveData.se") != se + 1000: raise Exception('+1,000 Moneys didn’t add 1,000')
-    return 'nine sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
+    return 'ten sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
 
 
 @step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
