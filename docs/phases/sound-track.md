@@ -38,7 +38,8 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
   songs (innersun, meadow, hills, spore, crystal, trench, spire) are legacy-only and unreachable.
 - **Jingles** (`JINGLES`: victory, levelup, evolve, caught, hatch) play on the effects bus and duck the song to
   0.15 for their length. **Cries** hash the species name into one of four waves and a pitch (`sound.js:1053`).
-  **Footsteps** by terrain every 0.33 m on a 50 ms poller. **One tick** on every button.
+  **Footsteps** by terrain every 1.12 m of gait (`FOOTSTEP_M`, `WALK_SPEED * 0.33`: about 0.35 s apart walking;
+  this line said 0.33 m until SND-7) on a 50 ms poller. **One tick** on every button.
 - **Settings → Sound** (`settings-screen.js:425`): a mute switch, five sliders with a Test button each.
 - **The Studio** loads no sound code. `sound.js` imports walk-view, environment, battle-stage and game-state, so it
   cannot be loaded there as it is. The Studio edits data sections listed in `game/data/index.json` with schemas
@@ -76,7 +77,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | SND-2 (done 2026-10-22) | The tracker as data | `game/js/audio/tracker.js` with no game imports; `music.json` + schema (songs, jingles, cries, where); biome music in a run; timers that stop when idle; a song fingerprint baseline | SND-1 | 1-2 | fingerprints unchanged; check-data; modules check; the run fixture plays a biome song |
 | SND-3 (done 2026-10-22) | The Studio's Music & sound section | play and loop any song, the recipe's dials, a piano roll for the hook, the where table, a cry card on Billies, check warnings | SND-2 | 1-2 | Studio self-test; quick check; the owner plays it |
 | SND-4 (done 2026-10-22) | The Pokémon rework: themes | four voices, written hooks and countermelodies, the title motif as a leitmotif, Copperleaf as two voices, night variants | SND-3, RL-8 played | 1-2 | fingerprints updated on purpose; the owner listens on the phone |
-| SND-5 (done 2026-10-22) | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant, the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
+| SND-5 (done 2026-10-22) | Battle and run music | intros timed to the throw, wild/trainer/leader/boss/rival/ghost, biome × row variants, the deadline variant (gone with the deadline in RL-R2), the red zone | SND-4, RL-8 | 1-2 | battle fixture; run fixture; phone |
 | SND-6 (done 2026-10-23) | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
 
 Budget: SND-1 to SND-3 are three to five sessions before the play test; SND-4 to SND-6 three to five after. Tiers
@@ -409,6 +410,15 @@ Corrections to this section's plan, found in SND-6:
   in the mix, where the Studio sets it.
 - Jingle ids must be lowercase (the schema's id pattern): `run_won`, `run_lost`, `payout_coin`.
 - SND-2's note that the cries' shape was "still code, for SND-6": it is data now.
+
+### Corrections found in SND-7 (2026-10-27, checked in the code at main 07c9b284)
+- The deadline version (SND-5 item 9) went with the run's deadline in RL-R2 (commit 594a094e, 2026-10-23): no
+  `trackerDeadline`, no `run.deadlineDays`, no Studio card, no baseline renders. `tools/test/sound.test.mjs` asserts
+  there is none.
+- The fingerprint baseline holds **194** fingerprints in 26 files (72 song versions, 106 cries with their low-HP
+  versions, 12 jingles, 4 UI sounds), not SND-6's 143: the roster's later species and the cave biome's arc bands
+  came after.
+- Footsteps come every 1.12 m of gait (`FOOTSTEP_M = WALK_SPEED * 0.33`), not every 0.33 m (fixed above).
 
 ## Ask me before (collected)
 - SND-1 (answered 2026-10-22): jingles stay on Sound effects; volumes stay in the save; the mute beside the sheet's title.
