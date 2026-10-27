@@ -96,7 +96,7 @@ const GRAPHICS_TEST_STATIONS = [
   {
     id: 'control',
     name: 'Control pad',
-    dials: ['quality.resolution', 'lens.vignette', 'lens.grain'],
+    dials: ['quality.resolution', 'lens.vignette', 'lens.grain', 'quality.mediump'],
   },
   {
     id: 'shadows',
@@ -119,7 +119,7 @@ const GRAPHICS_TEST_STATIONS = [
     id: 'sun',
     name: 'Sun gap',
     sun: { angle: -90, height: 18 },
-    dials: ['air.godRays', 'quality.skyLast'],
+    dials: ['air.godRays', 'quality.skyLast', 'quality.mediump'],
   },
   /* the same spot with the cheap shafts on: placed one at about every other tree, then by the picker */
   {
