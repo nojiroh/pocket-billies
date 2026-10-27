@@ -30,6 +30,8 @@ const C = GAME_DATA.scenery,
     visited: {},
   };
 const HOUSE = /house|cottage/,
+  /* the road's tiles, whichever surface (mapgen.js MAPGEN_SURFACES) */
+  ROAD_TILES = Object.values(G.MAPGEN_SURFACES),
   /* half the deepest square's depth (MAPGEN_TOWN.squares) */
   SQUARE_HALF_DEPTH = 4;
 
@@ -129,9 +131,14 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, p.x + dx, p.z - 0.55), `${where}: ${p.k}'s door step can't be walked to`);
       }
       assert.ok(sc.tiles.join('').includes(B.ground.tall), `${where}: tall grass`);
-      /* south of the road (the camera's side): a fenced vegetable plot in farm soil */
+      /* south of the road (the camera's side): a fenced vegetable plot in farm soil, the road a few metres north of it
+         at its own x (WM-3: a road may bend, so not by the square's z) */
+      const roadNorth = (/** @type {any} */ p) => {
+        for (let dz = 1; dz <= 12; dz++) if (ROAD_TILES.includes(tile(p.x, p.z + dz))) return true;
+        return false;
+      };
       assert.ok(
-        sc.props.some(p => p.k === 'planter_box' && p.z < sq.z - 8 && tile(p.x, p.z) === 'o'),
+        sc.props.some(p => p.k === 'planter_box' && tile(p.x, p.z) === 'o' && roadNorth(p)),
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
