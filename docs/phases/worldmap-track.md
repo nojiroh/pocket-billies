@@ -75,7 +75,7 @@ below against main and report what differs.
 
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
-| WM-1 | Direction and map facing | runs go west to east (exits, the bowl line, wording); the world map opens centred on you looking north like the walk camera, and Home resets to it | none | 1 |
+| WM-1 | Direction and map facing (done 2026-10-27) | runs go west to east (exits, the bowl line, wording); the world map opens centred on you looking north like the walk camera, and Home resets to it | none | 1 |
 | WM-2 | The region grid (logic) | a coarse grid (about 64 m cells) replaces the rows: nodes get footprints, links go east, north or south; the landing's exits north and east; at least 2 routes between towns; leader then town; 2-3 towns; 8-12 places a path; the data checks, sim and the Run Lab's 2D preview | WM-1 | 1-2 |
 | WM-3 | Shapes and sizes | mapgen takes a footprint: any width and height, L-masks walled by mountain or forest, exits on any edge (more than 2 on long edges), roads that bend to a north exit; seam rules for north/south joins; a phone-time measurement | WM-2 | 1-2 |
 | WM-4 | The seamless region on the world map | places stamped at their grid positions, region filler between, the run's real roads, fogged outlines for unreached places; ends the crowding | WM-3 | 1-2 |
