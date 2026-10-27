@@ -143,6 +143,10 @@ town node needs it.
   ratchet) done 2026-10-22 (PR #112, written up 2026-10-26); UI-6b (lint down, blur budget, accessibility) done 2026-10-26: UI-6 and phase 06 end
   (tags `ui-6-done`, `phase-06-done`); UI-9a (parts.css shrunk in place: dead rules, 41 of its 48 !important, the type pill and keyframes out; tap targets stay 40 px) done 2026-10-27; UI-9b (the rest of parts.css, off-scale values snapped) proposed next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
   (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) done 2026-10-23. UI-8 (the bottom bar with the minimap, the owner's brief 2026-10-26) built 2026-10-26; the owner's phone check next.
+  Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
+  run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
+  `ccr-03a15a70-nd3yqu`, the owner's answers next; UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
+  the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
