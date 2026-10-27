@@ -2,6 +2,29 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-3 - booting: the island off the main thread, pictures per place, a smaller bundle, the precache - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. No look changes.
+- boot.js: the loader's island is drawn by a worker on an OffscreenCanvas (`loaderIslandWorker`, the same drawing
+  functions as source text, progress posted by `loaderIslandProgress`); the page draws it where that isn't possible.
+  **Claim corrected**: after the first second the loader shows the WebGL title town, not the island, so the loader
+  can't be kept moving by CSS; only by cutting main-thread stalls.
+- boot.js `loadList`: no map, prop or ground pictures (they come with their place); walk/frame-items.js asks once for a
+  prop picture nobody loaded; prop-models.js `propModelArtPaths` names baked leaf cuts.
+- vite.config.js: page bundles minified without renaming (`PAGE_MINIFY`), 2.64 MB (3.57), gzip 862 KB (1086).
+  **For future workers**: never turn on mangle or compress: the ground painter's, normal maps' and island's workers
+  are built from `Function.toString` and call functions by name.
+- game/sw.js: `PRECACHE` (the build's bundle, written by `stampBuild`) fetched on install; hashed bundles cache-first,
+  other builds' bundles dropped on activate.
+- debug-log.js: 3000 file timings kept.
+- Not done, with reasons in the plan: test code behind `import()`, `JSON.parse` for gamedata.js, stylesheets after the
+  title, Firebase later; `createImageBitmap` and an upload queue moved to LD-5.
+- Measured headless: the boot's pictures 889 files, done at 2.1 s; both load-check boots run on the minified bundle
+  with no page errors; the service worker served the bundle from its cache on a reload.
+- Verified: lint, typecheck, format, check:modules, CHECKS3.
+- Risky: a place's first visit fetches its pictures behind its fade (before, they were all in at boot; the service
+  worker's art cache keeps them after); a prop picture outside its place's list pops in a frame late.
+- Next: LD-4 (the run's places in a worker from the pick). Tag `ld-3-done` for the owner.
+
 ### Load track LD-2 - shaders: started together, read once, finished behind the loader - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes.
 - engine/webgl.js: `compileProgram` compiles both shaders and links before reading anything (`beginProgramCompile`),

@@ -154,6 +154,26 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   heavy parts behind a dynamic `import()` (vite.config.js's one-bundle rule kept for the rest). Firebase after the
   world shows. The service worker precaches the versioned app files and serves them cache-first (the cache named by
   the version, as now). Stylesheets: those the title doesn't need load after it.
+  **Done 2026-10-27** on `ccr-3df446bb-9jvdvq`, changed from the plan where the code said otherwise:
+  - **Claim corrected**: the loader's island shows only for the first second; once the title town's pictures are in
+    (`loader.town`), the WebGL town behind the loader is what moves, drawn on the main thread. So no CSS can keep
+    the loading screen moving: only fewer main-thread stalls can. The island itself is drawn in a worker on an
+    OffscreenCanvas (`loaderIslandWorker`: the same functions sent as source text), with the page's drawing as the
+    fallback; same look (headless pictures side by side).
+  - Pictures per place: `loadList` no longer takes every map's, prop's and ground's pictures (889 files at boot, done
+    at 2.1 s headless); `gatherFrameItems` asks once for a prop picture its place's list didn't name;
+    `propModelArtPaths` names the baked leaf cuts. Copperleaf A/B: the same props.
+  - The bundle: whitespace and comments only (oxc, compress and mangle off: the three workers made from
+    `Function.toString` and the debug log's stack traces need the names), 3.57 MB -> 2.64 MB, gzip 1086 -> 862 KB.
+  - The service worker precaches the build's bundle (sw.js PRECACHE, filled by vite.config.js `stampBuild`) and
+    serves hashed bundles cache-first; the rest stays network-first (Studio edits and deploys as before).
+  - The debug log keeps 3000 file timings (the browser's 250 were full, so LD-0's counts were short).
+  - Not done, on purpose: test code behind `import()` (about 6% of the bundle, and code that never runs costs only a
+    pre-parse; moving the modules breaks the page order hooks.js relies on); `JSON.parse` for gamedata.js (0.8 MB now,
+    a few ms, and the old Python art tools read it as a literal); stylesheets after the title (they hold only the
+    loader's first paint); Firebase later (the checks never sign in, so it can't be measured here, and a late start
+    makes a different account's reload come after the title: measure on the phone first). `createImageBitmap` and
+    the upload queue move to LD-5 (one frame budget).
 - **LD-4 the run's start.** The run's scenes made in a worker (logic/ is plain code; the Studio already has a logic
   worker, studio/js/logic-worker-modules.js), starting when the run is picked at the mast, so they are often ready
   before the train reaches the tear; the results posted back as transferable arrays where they are big.
