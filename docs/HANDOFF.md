@@ -2,6 +2,38 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track HB-10d: the square's reactions and things to do - 2026-10-27
+Branch `track/hub`. Plan approved in Plan Mode with the owner's answers (the coin: 3 Scrap, once per return, 55% a
+small boon for the next run's first 3 places, 30% a joke, 10% a small curse for 2 places, 5% a big win; the fountain's
+look: colour and one piece; the busker: the slot and its hook only). The building session ended before this entry;
+it was written by the next session (HB-10e's) after merging main in (69ac03a3) and running the checks on the merged
+head. Tag to suggest: `hb-10d-done` on this entry's commit (the owner pushes tags). Details: docs/phases/hub-track.md,
+"Done in HB-10d".
+- Changed: win bunting (`pennant_line`, a new low-poly model, and two `flag_pole`s, `when: last:won`); the square's
+  folk cheer a win and gossip about a loss (banter.json `square_won` 6 and `square_lost` 11, `logic/square-talk.js`);
+  the fountain's Chapter 2 look (`fountain_ch2`, `when: chapter >= 2`; new scenery key `glowCol`); Copperleaf's
+  notice board (`act: hubnotice`, town-square.js); the fountain's coin (`act: wish`, `logic/fountain-wish.js`,
+  rules.json `square.wish`, `meta.wish`); the busker's slot (`busker_case`, the `busk` stop, `squareBusker`,
+  rules.json `square.busk`: the last run's region theme within 5 m once a resident with `busk: true` lives in town).
+  Tools: island-shots.py `--last=won|lost`, `--chapter=N`.
+- The merge with main: main renamed Hazel to Kappi; HB-10d's banter schema and game-data.d.ts said `hazel` and now
+  say `kappi`. `meta.wish` sits beside main's ON-2 `meta.boards`. The banter schema now lets a resident's id be a
+  `who` (RS-3); `square_won`/`square_lost` stay in its enum.
+- Risky / check on the phone: the bunting goes up the moment you come home from a win (props re-check every 0.2 s);
+  the coin's boon or curse joins the next run as an event boon (`run.enc.boons`, src `fountain`): not yet checked
+  against ON-2's daily and weekly runs (a fixed start for everyone: a daily may carry your fountain boon). No busker
+  yet (RS-5). The coin uses the coin sound and a plop until the sound track replaces them.
+- Verified (merged head 69ac03a3): lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings),
+  build, `npm test` 1478 of 1478. Full quick check (Python Playwright 1.63.0): 40 steps, 35 passed, 5 PROBLEMs:
+  - also red on main (rerun alone on main 2e74c89d's tree): Terraces "props in the air: train_station" (main moved
+    the station to face the sea); RL-8 "the town's shop has no Perk" and "room light" (red on main since HB-10b's entry);
+  - RT-2 "the pair talked but no battle started" and "Granny Juniper didn't say anything": passed alone on this head
+    and on main (load; Running and Actions sheet were over their boot budgets in the same run).
+  In-game full test whole (`--selftest`): the square's step passed; 2 failures, the same two on main's tree: a room
+  "isn't drawing (black screen): no frames in 3 s" (the barn here, a house on main) and "A room that opens in place:
+  the town's walking grid changed after the room" (236 cells here, 77 on main).
+- Next: the PR of `track/hub` (HB-10d) to main, then HB-10e (festivals; the owner's answers in hub-track.md).
+
 ### Terrain track TR-4: the look by height and steepness - 2026-10-26
 Branch `ccr-6e23f760-mdbx5x` (this cloud session's own; BRANCHES.md would call it `track/terrain`, which doesn't exist
 yet). Started from main da51c766. Tag to suggest: `tr-4-done` (the owner pushes tags). Details: docs/phases/terrain-track.md,
