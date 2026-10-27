@@ -2028,8 +2028,7 @@ export function dataSceneFindings(D, roadOf) {
       );
   locations.forEach((r, i) => {
     if (r.mapId && !SCN[r.mapId])
-      at('error', 'locations.json')(`${r.name} uses a walk scene that doesn’t exist.`, 'world', {
-        wtab: 'route',
+      at('error', 'locations.json')(`${r.name} uses a walk scene that doesn’t exist.`, 'hub', {
         stop: i,
       });
   });
@@ -2189,15 +2188,14 @@ export function dataRoadFindings(D, roadOf) {
     if (r.kind === 'seam' && (!r.exitA || !r.exitB) && locations[r.a] && locations[r.b])
       err(
         `The road between ${locations[r.a].name} and ${locations[r.b].name} doesn’t say which exit it leaves by at ${!r.exitA ? locations[r.a].name : locations[r.b].name}.`,
-        'world',
-        { wtab: 'route', stop: !r.exitA ? r.a : r.b }
+        'hub',
+        { stop: !r.exitA ? r.a : r.b }
       );
   });
   const LK = (D.roads || []).map(l => roadOf(D, l));
   LK.forEach((l, k) => {
-    if (!locations[l.a] || !locations[l.b])
-      err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
-    else if (l.a === l.b) err(`${locations[l.a].name} has a road to itself.`, 'world', { wtab: 'route', stop: l.a });
+    if (!locations[l.a] || !locations[l.b]) err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'hub');
+    else if (l.a === l.b) err(`${locations[l.a].name} has a road to itself.`, 'hub', { stop: l.a });
   });
   if (LK.length) {
     const seen = new Set([0]),
@@ -2213,7 +2211,7 @@ export function dataRoadFindings(D, roadOf) {
       });
     }
     locations.forEach((r, i) => {
-      if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'world', { wtab: 'route', stop: i });
+      if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'hub', { stop: i });
     });
   }
   return out;
