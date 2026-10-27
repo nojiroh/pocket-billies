@@ -140,6 +140,7 @@ expose({
   dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
+  impactOnScreen: [() => impactOnScreen, v => (impactOnScreen = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
@@ -805,6 +806,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       fog: fogOn
         ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
         : null,
+      impact: BT && BT.impact ? impactOnScreen(C, BT.impact) : null,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {
@@ -887,6 +889,18 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
 }
 /* the sun's place on screen for the shafts and the glare; with Rays follow the light (sun.followLight) its strength
    fades with the night, so the moon gives no full-strength warm glare */
+/* VFX-4: the battle's impact frame for the grade pass: [u, v, mode, age] and [lines, seed, warm]; the hit point on
+   screen (off screen, the lines still come from where it would be) */
+function impactOnScreen(C, I) {
+  const p = I.p,
+    m = C.vp,
+    y = p[1] + worldCurveDrop(p[0], p[2]),
+    x = m[0] * p[0] + m[4] * y + m[8] * p[2] + m[12],
+    yy = m[1] * p[0] + m[5] * y + m[9] * p[2] + m[13],
+    w = m[3] * p[0] + m[7] * y + m[11] * p[2] + m[15];
+  const uv = w > 0.01 ? [(x / w) * 0.5 + 0.5, (yy / w) * 0.5 + 0.5] : [0.5, 0.5];
+  return { a: [uv[0], uv[1], I.mode, I.age], b: [I.n, I.seed, I.warm ? 1 : 0, 0] };
+}
 function litSunScreenPosition(C, sun) {
   const sp = sunScreenPosition(C, sun.dir, 300);
   if (!sp || !engineSetting('sun', 'followLight') || !engineContext.env) return sp;

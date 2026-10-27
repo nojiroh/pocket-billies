@@ -1,7 +1,9 @@
-// VFX track VFX-1..VFX-3: the throw's pace, its afterimages, its ribbon and its stretch (game/js/logic/smear.js)
+// VFX track VFX-1..VFX-4: the throw's pace, its afterimages, its ribbon, its stretch and the impact frame (game/js/logic/smear.js)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  IMPACT_LINES,
+  IMPACT_SPEED_LIFE,
   RIBBON_CELLS,
   RIBBON_HALF,
   RIBBON_STEPS,
@@ -12,6 +14,9 @@ import {
   STRETCH_K,
   STRETCH_MAX,
   STRETCH_PACE,
+  impactAt,
+  impactFrame,
+  impactLength,
   ribbonCells,
   ribbonEdges,
   ribbonTone,
@@ -246,4 +251,41 @@ test('the stretch holds for its cell, and none once stopped, when off, or near t
   smearRecord(old, 0, { x: 0, y: 0, z: 0 });
   smearRecord(old, 50, { x: 1, y: 0, z: 0 });
   assert.equal(smearStretch(old, 50, true), null, 'places without a pace (not a thrown arc)');
+});
+
+test('the impact frame: catch, coin and crit; fewer cells as the quality drops; none under Reduced motion', () => {
+  for (const k of ['catch', 'coin', 'crit']) {
+    assert.equal(impactFrame(k, false, 0).cells, 2);
+    assert.equal(impactFrame(k, false, 0).lines, IMPACT_LINES);
+    assert.equal(impactFrame(k, false, 2).cells, 1);
+    assert.equal(impactFrame(k, true, 0), null, 'Reduced motion');
+  }
+  assert.equal(impactFrame('catch', false, 3), null, 'quality 3: no frame');
+  assert.deepEqual(
+    impactFrame('crit', false, 3),
+    { kind: 'crit', cells: 0, lines: 16, warm: true, speed: true },
+    'quality 3: a crit keeps its speed lines (as before)'
+  );
+  assert.equal(impactFrame('catch', false, 0).warm, false);
+  assert.equal(impactFrame('coin', false, 0).speed, false);
+  assert.equal(impactFrame('sendout', false, 0), null, 'other kinds have none');
+});
+
+test('the impact frame shows the negative, then the positive, then (a crit) the speed lines, on the grid', () => {
+  const F = impactFrame('crit', false, 0);
+  assert.deepEqual(impactAt(F, 0), { mode: 1, age: 0 });
+  assert.deepEqual(impactAt(F, SMEAR_STEP - 1), { mode: 1, age: 0 });
+  assert.deepEqual(impactAt(F, SMEAR_STEP), { mode: 2, age: 0 });
+  assert.deepEqual(impactAt(F, SMEAR_STEP * 2), { mode: 3, age: 0 });
+  assert.deepEqual(impactAt(F, SMEAR_STEP * 2 + 5), { mode: 3, age: 0 }, 'held for its cell');
+  assert.ok(Math.abs(impactAt(F, SMEAR_STEP * 3).age - SMEAR_STEP / IMPACT_SPEED_LIFE) < 1e-9);
+  assert.equal(impactAt(F, SMEAR_STEP * 2 + IMPACT_SPEED_LIFE + SMEAR_STEP), null, 'over');
+  const C = impactFrame('catch', false, 0);
+  assert.equal(impactAt(C, SMEAR_STEP * 2), null, 'no speed lines after a catch');
+  assert.deepEqual(impactAt(impactFrame('catch', false, 2), 0), { mode: 2, age: 0 }, 'one cell: the positive');
+  assert.deepEqual(impactAt(impactFrame('crit', false, 3), 0), { mode: 3, age: 0 }, 'quality 3: lines alone');
+  assert.equal(impactAt(null, 0), null);
+  assert.equal(impactAt(F, -1), null);
+  assert.equal(impactLength(F), SMEAR_STEP * 2);
+  assert.equal(impactLength(null), 0);
 });

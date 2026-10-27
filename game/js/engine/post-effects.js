@@ -221,6 +221,7 @@ precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec
     `#version 300 es
 precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
+uniform vec4 uImp,uImpL;
 /* film grain (2026-10): a hash without sine (Dave Hoskins), steady on phone graphics chips where the sine one makes
    patterns; soft grains about 1.5 pixels across, a new field 24 times a second, mostly brightness with a little colour,
    strongest in the midtones and faint in deep shade and bright highlights, as on film */
@@ -229,6 +230,13 @@ float gv(vec2 q,float f){vec2 i=floor(q),u=fract(q);u=u*u*(3.-2.*u);return mix(m
 vec3 grain(vec3 c){float f=mod(floor(uTime*.024),997.),l=clamp(dot(c,vec3(.3,.59,.11)),0.,1.);vec2 q=gl_FragCoord.xy/1.5;
  float m=gv(q,f)-.5;vec3 k=vec3(gh(vec3(q,f+1.)),gh(vec3(q,f+2.)),gh(vec3(q,f+3.)))-.5;
  return c+(m*1.6*.85+k*.15)*uGrain*mix(1.,4.*l*(1.-l),.8);}
+/* VFX-4: the impact frame's radial lines (uImpL.x of them, turned by the seed uImpL.y), r in screen heights from the
+   hit point, th its angle: 1 on a line. The frame's lines are wedges from the edges in toward the hit, thicker outside,
+   some missing; a crit's speed lines after it (mode 3) are short and thin, moving out with age. Whole pixels */
+float impLine(float r,float th,float age){float n=uImpL.x,f=(th/6.2831853+uImpL.y)*n,i=floor(f),h=gh(vec3(i,uImpL.y*97.,7.)),h2=gh(vec3(i,uImpL.y*97.,11.)),
+ dp=abs(fract(f)-.5)/n*6.2831853*r/uPx.y;
+ if(uImp.z>2.5){float r0=.07+age*.2+h*.05,r1=r0+.06+h2*.06;return step(r0,r)*step(r,r1)*step(dp,.75);}
+ float r0=.13+h*.2;return h2<.2?0.:step(r0,r)*step(dp,.6+(r-r0)*.02/uPx.y);}
 vec3 roll(vec3 c){float t=uShoulder;vec3 x=max(c-t,0.);return min(c,vec3(t))+(1.-t)*(1.-exp(-x/(1.-t)));}
 /* v32: a film curve (ACES, fitted): deeper darks, a long soft shoulder, colours that hold in bright light */
 vec3 film(vec3 c){c*=.82;return clamp((c*(2.51*c+.03))/(c*(2.43*c+.59)+.14),0.,1.);}
@@ -257,6 +265,11 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  c=uTone>.5?mix(roll(c*uExp),film(c*uExp*1.25),uTone>1.5?1.:.85):roll(c*uExp);if(uTone>1.5)c=(c-.5)*1.08+.5;c.r*=1.+uWarm*.08;c.b*=1.-uWarm*.1;float l=dot(c,vec3(.3,.59,.11));c=mix(vec3(l),c,uSat);c=(c-.5)*uCon+.5;
  c=pow(max(c*uGain+uLift*(1.-c),0.),1./uGam);float lg=clamp(dot(c,vec3(.3,.59,.11)),0.,1.);c+=uShT*(1.-lg)*(1.-lg)+uHiT*lg*lg;
  c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);if(uGrain>0.)c=grain(c);/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}
+ /* VFX-4: the impact frame (mode uImp.z): 1 the negative and 2 the positive two-tone, ink and paper split hard on the
+    graded brightness, the lines in the other tone; 3 a crit's speed lines alone over the picture */
+ if(uImp.z>0.){vec2 dv=(floor(gl_FragCoord.xy)+.5)*uPx-uImp.xy;dv.x*=uPx.y/uPx.x;float ln=impLine(length(dv),atan(dv.y,dv.x)+3.1415927,uImp.w);
+  if(uImp.z>2.5)c=mix(c,vec3(1.),ln*.85);
+  else{float t=step(.42,dot(c,vec3(.3,.59,.11)));if(uImp.z<1.5)t=1.-t;t=abs(t-ln);c=mix(vec3(.06,.05,.09),uImpL.z>.5?vec3(1.,.95,.66):vec3(1.),t);}}
  /* CAM-3: the Studio's blur heatmap (Engine > Blur heatmap): sharp green, then yellow, then red at full blur */
  if(uDofView>.5){vec3 hm=kb<.02?vec3(.1,.85,.3):kb<.5?mix(vec3(.95,.9,.15),vec3(1.,.55,.1),kb*2.):mix(vec3(1.,.55,.1),vec3(.9,.1,.1),kb*2.-1.);c=mix(c,hm,.55);}
  o=vec4(c,1.);}`,
@@ -542,6 +555,12 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   gl.uniform4f(U.uDofPl, F.pl[0], F.pl[1], F.pl[2], F.pl[3]);
   gl.uniform4f(U.uDofB, F.band[0], F.band[1], F.band[2], F.band[3]);
   gl.uniform1f(U.uDofView, o.dofView ? 1 : 0);
+  /* VFX-4: the battle's impact frame (walk-view-gl.js impactOnScreen), off when none */
+  const IM = o.impact;
+  if (U.uImp) {
+    gl.uniform4fv(U.uImp, IM ? IM.a : [0, 0, 0, 0]);
+    if (IM) gl.uniform4fv(U.uImpL, IM.b);
+  }
   /* Even bloom: each level the chain adds is one more copy, so fewer levels (the slower quality steps) scale up to five's */
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 * (engineSetting('color', 'bloomEven') ? 5 / (o.bloomN || 5) : 1) : 0);
   gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));

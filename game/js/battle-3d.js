@@ -26,6 +26,7 @@ import {
   actorMetersPerPixel,
   actorPositions,
   actorWorldPoint,
+  battleImpact,
   battleRibbonCells,
   battleSmearCount,
   battleStage,
@@ -364,6 +365,15 @@ function battle3dFrame() {
       items.push(it);
     }
   }
+  /* VFX-4: the impact frame now (battle-stage.js impactFx), its hit point in the walk scene (walk-view-gl.js projects
+     it for the grade pass) */
+  const IS = battleImpact();
+  let impact = null;
+  if (IS) {
+    const I = IS.I,
+      [ix, iz] = T(I.P.x, I.P.z);
+    impact = { p: [ix, battle3d.gy + I.P.y, iz], mode: IS.mode, age: IS.age, n: I.lines, seed: I.seed, warm: I.warm };
+  }
   const d = battleStage.dof;
   return {
     parts,
@@ -374,6 +384,7 @@ function battle3dFrame() {
     gy: battle3d.gy,
     items,
     ribbon,
+    impact,
     hide: battle3d.hide,
     lights,
     focus: d.zf,

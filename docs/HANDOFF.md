@@ -51,6 +51,38 @@ owner's picks: delete all seven orphan groups; delete the loader's PNG copies to
   - A run and the hub: the loading screen, eggs at the ranch, flags and postcards (Copperleaf's) look as before.
 - Next: the track is done. Hot reload and shared asset collections (the track's Pushing back) wait for the owner.
 
+### VFX track VFX-4 - The impact frame - 2026-10-27
+Branch `track/vfx` (main merged in first, clean; VFX-3's last commit had gone to main with PR #252 during the plan, so
+no PR was due). Plan approved in Plan Mode with its recommendations as the answers: the catch's hit, the mail move's
+coin and crits (not the send-out's landing, not super-effective hits); ink and white, the crit's warm yellow as paper
+on crits; the negative, then the positive.
+- logic/smear.js: `impactFrame` (two cells on the 24 fps grid, one at quality 2, none at 3 or under Reduced motion; a
+  crit keeps its speed lines at quality 3, as before), `impactAt` (mode 1 the negative, 2 the positive, 3 a crit's speed
+  lines alone for 260 ms, stepped), `impactLength`. Tests in tools/test/smear.test.mjs.
+- battle-stage.js `impactFx` / `battleImpact` (`battleStage.impact`): started on the catch's hit, the mail coin's hit
+  (`hitFx` takes it) and crits. Real time (`performance.now`), so it plays through the hit-stop (which freezes the
+  battle's clock). The white / warm CSS flashes and the chromatic flash wait for it (`afterImpact`, setTimeout); the 2D
+  effects canvas stays clear while the two-tone shows. Nothing is made longer.
+- The look, in the grade pass (engine/post-effects.js, no new pass): `uImp` / `uImpL`; ink and paper split hard at
+  luma 0.42 of the graded picture, radial wedges from the edges in toward the hit (thicker outside, a fifth missing),
+  whole pixels; the lines take the other tone. battle-3d.js puts the hit point in `BT.impact`, walk-view-gl.js
+  `impactOnScreen` projects it.
+- The crit's speed lines (the 2D `speedLines` particle and its `p.lines` draw) are gone from the 2D canvas; the same
+  shader draws them after the frame, white, moving out.
+- Found: there is no battle picture without GL (`battleStageDraw` draws nothing then), so the "2D fallback" of
+  VFX-1..3 is the flat pyramid icon over a GL battle; the post pass covers it, so no 2D impact frame was built. With
+  the debug "no post" switch there is no impact frame and no crit speed lines.
+- Risky, check on the phone: the strength of a full-screen negative (one per hit, off under Reduced motion); the 0.42
+  split (a dark night stage may come out nearly all ink); the lines' thickness at full resolution (filmed at a third).
+- Verified: lint, typecheck, format, check:modules, unit tests 1464 pass; headless films with the cells held (landscape
+  and phone portrait; a crit's two cells and speed lines, a catch's two cells; no page errors). Smoke check: 6 of 6
+  in 234 s. Full quick check: 35 of 40, none in battles: terraces (props in the air, `train_station` this time), RL-8's
+  shop Perk and room light as before; RT-2's walking pair and Granny Juniper's line failed in the full run but both
+  pass alone, on this branch and on main (a slow, loaded machine). Python Playwright 1.56 was missing in the container:
+  installed from tools/requirements-check.txt and pointed at the pre-installed Chromium. Tag `vfx-4-done` for the
+  owner (the git proxy refuses tag pushes).
+- Next: VFX-5 (attack lunges) on `track/vfx`, in Plan Mode.
+
 ### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
 Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
 approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's
@@ -1555,7 +1587,6 @@ paths generated and checked; the label "Art browser" (section key `art` unchange
   the index builds in 20 ms); smoke 6 of 6 (170 s); screenshots at 1920, 1024 and 390.
 - Next: SA-2 (the missing editors: tiles47 ground, robots, coins, SVG icons, the icon atlas, scene art), in a new
   session on `track/studio-art`, in Plan Mode.
-
 
 ### HD-2D audit fixes and smart light shafts (one session, not a phase) - 2026-10-26
 Branch `ccr-6f3a4696-vl6nkg` (this session's own: a cloud session pushes only there; BRANCHES.md would call it
@@ -8006,7 +8037,6 @@ publish code, run-lab.js internals, the sim files and the workbench: this one ad
   `relics` and `unlocks`.
 - Tag: `sr-4-done`.
 
-
 ### Studio plan Phase 2 (second session) - Logic worker, run rules card, Play this seed - 2026-10-22
 Branch `claude/sr-2-run-lab` (PR #135, against `ccr-81011a25-lf3exv`). Plans are pre-approved in these sessions: the
 recommended option is taken for every decision and recorded in the plan doc's "Decisions".
@@ -9020,7 +9050,6 @@ moot (the generator lays the town out).
   doors east toward the farmhouse; the pasture zone is free. **IS-9**: 357 old props belonged to no building and
   were not brought over (the old meadow's flowers, trees, reeds); the island needs dressing.
 - Next: IS-8 (after RL-10), IS-9. Tag `is-5-done` is the owner's to push.
-
 
 ### Island track IS-7 - The world map's island - 2026-10-22
 Branch `claude/is-7-world-map-island`, from the wave-2 base `claude/new-session-3qlesh` (fcda361: main with IS-0 and
@@ -10408,7 +10437,6 @@ bipeds, the gear goes, the hand-drawn art is kept. The preview was shown before 
 - Next: the owner looks at the Billies on the phone (team, a battle, the grass, the Studio's Parts preview); then the
   bios without gear, and a decision on a taller box for finals.
 
-
 ### UI track UI-4 - Run parts - 2026-10-21
 Branch `claude/ui-4-run-parts`, from main 167cc96, beside UI-3b (owner's choice). Before it, by the owner's ask, the
 three open PRs were brought up to main and merged: #92 (the dialogue bubble: rewritten as a shape family in UI-3a's
@@ -10487,7 +10515,6 @@ Branch `props/flat-sizes` (owner's request in chat, no phase file). No tag.
   stand at size 1 in generated routes.
 - Next: Copperleaf's scaled plants to variants (one-off), the turn and lean of flowers (owner to decide), then the
   plants of the other biomes the same way once their kits are converted.
-
 
 ### Roguelite track RL-5 - Legacy parking and the world setter - 2026-10-21
 Branch `ccr-ad41ba43-cf2age`, from main 3479f01 (RL-4 merged). Plan approved at the start with the owner's answers:

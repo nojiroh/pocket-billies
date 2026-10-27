@@ -38,6 +38,9 @@ import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
 import {
   RIBBON_CORE,
+  impactAt,
+  impactFrame,
+  impactLength,
   ribbonCells,
   ribbonEdges,
   ribbonTone,
@@ -102,6 +105,8 @@ expose({
   actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
+  afterImpact: [() => afterImpact, v => (afterImpact = v)],
+  battleImpact: [() => battleImpact, v => (battleImpact = v)],
   battleRibbonCells: [() => battleRibbonCells, v => (battleRibbonCells = v)],
   battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
@@ -158,6 +163,7 @@ expose({
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
+  impactFx: [() => impactFx, v => (impactFx = v)],
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
@@ -171,7 +177,6 @@ expose({
   shrinkForSoftBlur: [() => shrinkForSoftBlur, v => (shrinkForSoftBlur = v)],
   softDraw: [() => softDraw, v => (softDraw = v)],
   spawnAmbientParticles: [() => spawnAmbientParticles, v => (spawnAmbientParticles = v)],
-  speedLines: [() => speedLines, v => (speedLines = v)],
   throwOrigin: [() => throwOrigin],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
@@ -339,6 +344,8 @@ export const battleStage = {
   F: null,
   floorKey: '',
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
+  /* VFX-4: the impact frame playing (impactFx), or null */
+  impact: /** @type {any} */ (null),
   stT: 0,
   speed: 1,
   /* phase 06-3: the camera holds still while the player chooses (battle.js floatTick) */
@@ -457,6 +464,7 @@ export function battleStageStart(area) {
   battleStage.oil = false;
   battleStage.ring = null;
   battleStage.coin = null;
+  battleStage.impact = null;
   battleStage.shk = 0;
   battleStage.hold = 0;
   battleStage.focusK = null;
@@ -1322,20 +1330,6 @@ function drawParticles(c, layer) {
         c.lineWidth = Math.max(1, p.w * k * 0.35);
         c.stroke();
       }
-    } else if (p.lines) {
-      const n = p.n || 18,
-        a0 = p.age / p.life;
-      c.strokeStyle = p.col;
-      c.lineWidth = 1;
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2 + p.seed,
-          r0 = (14 + a0 * 26) * k,
-          r1 = r0 + (22 + ((i * 37) % 17)) * k;
-        c.beginPath();
-        c.moveTo(q.x + Math.cos(a) * r0, q.y + Math.sin(a) * r0 * 0.8);
-        c.lineTo(q.x + Math.cos(a) * r1, q.y + Math.sin(a) * r1 * 0.8);
-        c.stroke();
-      }
     } else {
       c.fillStyle = p.col;
       const sz = Math.max(1, Math.round((p.size || 2) * k * 0.6));
@@ -1366,6 +1360,9 @@ function battleStageDraw() {
   if (!battleStage.gl) return;
   c.setTransform(R, 0, 0, R, 0, 0);
   c.imageSmoothingEnabled = false;
+  /* VFX-4: while the impact frame's two-tone shows, this canvas (above the toned picture) stays clear */
+  const I = battleStage.impact;
+  if (I && performance.now() - I.t0 < impactLength(I)) return;
   battleStageDrawEffects(c);
 }
 /* v33: the fighter choosing stands in a gold ring; while aiming, the foes you can pick pulse */
@@ -1528,9 +1525,26 @@ function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
   const w = actorWorldPoint(i);
   addParticle({ x: w.x, y: 0.02, z: w.z, ring: 1, ground: 1, r0: 6, r1: r1 * 30, col, life, layer: 2 });
 }
-function speedLines(P, col = 'rgba(255,255,255,.85)') {
-  if (reducedMotion) return;
-  addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: random() * 6 });
+/* VFX-4: the impact frame (logic/smear.js impactFrame; drawn by the grade pass, engine/post-effects.js): a cell or two
+   of two-tone with radial lines from P, on a catch's pyramid, the mail move's coin and a crit (whose speed lines,
+   2D-canvas lines before VFX-4, follow it). Timed on real time, so it plays through the hit-stop. Returns the frame */
+function impactFx(P, kind) {
+  const F = impactFrame(kind, !!reducedMotion, battleStage.q.lvl);
+  battleStage.impact = F ? { ...F, P: { x: P.x, y: P.y, z: P.z }, t0: performance.now(), seed: random() } : null;
+  return F;
+}
+/* what it shows now (battle-3d.js passes it to the post pass), or null once over */
+export function battleImpact() {
+  const I = battleStage.impact,
+    s = I && impactAt(I, performance.now() - I.t0);
+  if (!s) battleStage.impact = null;
+  return s ? { ...s, I } : null;
+}
+/* a flash (or the chromatic flash) that would wash the two-tone out waits until it is over */
+function afterImpact(F, fn) {
+  const ms = impactLength(F);
+  if (ms > 0) setTimeout(fn, ms);
+  else fn();
 }
 function blinkActor(i, ms = 380) {
   battleStage.s[i].blinkUntil = battleStage.t + ms;
@@ -1546,7 +1560,8 @@ function hitWeight(ti, an) {
     return 0.3;
   }
 }
-function hitFx(ti, an) {
+/* imp: an impact frame already started for this hit (the mail move's coin); a crit starts its own */
+function hitFx(ti, an, imp0 = null) {
   const T = actorCenter(ti),
     s = battleStage.s[ti],
     ts = actorTeam(ti),
@@ -1560,10 +1575,13 @@ function hitFx(ti, an) {
     hitStop(20 + w * 70);
     if (w > 0.45) punch(0.03 + w * 0.04, 240, ts === 1 ? 0.008 : -0.008);
   }
+  const imp = imp0 || (an.crit ? impactFx(T, 'crit') : null);
   if (an.te > 1) {
     battleStage.shk = 8;
-    battleStageFlash('#FFFFFF', 0.55, 260);
-    battleStageChromaticFlash(180);
+    afterImpact(imp, () => {
+      battleStageFlash('#FFFFFF', 0.55, 260);
+      battleStageChromaticFlash(180);
+    });
     hitStop(80);
     ringFx(T, '#FFFFFF', 0.2, 1.6);
     groundRing(ti, '#FFFFFF', 2.2);
@@ -1574,9 +1592,8 @@ function hitFx(ti, an) {
     if (ts === 0) buzz(w > 0.45 ? [14, 20, 14] : 10);
   }
   if (an.crit) {
-    battleStageFlash('#FFF2A8', 0.6, 300);
+    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300));
     hitStop(90);
-    speedLines(T);
     punch(an.te > 1 ? 0.12 : 0.09, 320, ts === 1 ? 0.014 : -0.014);
   }
   if (an.crit || an.te > 1) handheld(520, an.crit && an.te > 1 ? 1.3 : 1);
@@ -2035,7 +2052,7 @@ export function battleStagePlay(an, ev) {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
         pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
-          hitFx(an.si, { te: an.te, t: 'Retail' });
+          hitFx(an.si, { te: an.te, t: 'Retail' }, impactFx(T, 'coin'));
         });
         scheduleAt(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };
@@ -2326,7 +2343,7 @@ export function battleStageCatch(kind, res, spin, done) {
     480,
     kind,
     C => {
-      battleStageFlash('#FFFFFF', 0.55, 280);
+      afterImpact(impactFx(C, 'catch'), () => battleStageFlash('#FFFFFF', 0.55, 280));
       ringFx(C, '#FFFFFF', 0.1, 1);
       tween(s1, 'white', 1, 120, 'lin');
       tween(s1, 'sc', 0, 220, 'in', 120);
