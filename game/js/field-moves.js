@@ -36,6 +36,7 @@ expose({
   FIELD_TRAVEL_MS: [() => FIELD_TRAVEL_MS],
   fieldBackToast: [() => fieldBackToast],
   fieldBadgeLine: [() => fieldBadgeLine, v => ((fieldBadgeLine = v), provide({ fieldBadgeLine }))],
+  fieldBrambleOpen: [() => fieldBrambleOpen, v => (fieldBrambleOpen = v)],
   fieldClimb: [() => fieldClimb, v => ((fieldClimb = v), provide({ fieldClimb }))],
   fieldMoveBurst: [() => fieldMoveBurst, v => (fieldMoveBurst = v)],
   fieldMoveOpen: [() => fieldMoveOpen, v => (fieldMoveOpen = v)],
@@ -63,6 +64,7 @@ const fieldTeam = () =>
  * (not a sheet): what it says, then a yes or no when the move can be used. `p` is the prop tapped (where the effect
  * plays) */
 export async function fieldMoveOpen(p) {
+  if (p && p.cut) return fieldBrambleOpen(p);
   const F = fieldSideHere();
   if (!F || F.S.open || talkBox.on) return;
   const team = fieldTeam(),
@@ -98,6 +100,37 @@ async function fieldMoveUse(m, p) {
   await said;
   talkHide();
   toast(`The way north is open: ${F.S.name}.`);
+}
+/** RT-4b: a route's bramble row (logic/route-finds.js) tapped: the same lines and question as the side area's
+ * obstacle; a yes cuts the whole row for the run (its flag, cut.<node>.<spot>: each bramble's `unless`) */
+async function fieldBrambleOpen(p) {
+  const M = FIELD_MOVES[p.move],
+    F = saveData.flags || (saveData.flags = {});
+  if (!M || F[p.cut] || talkBox.on) return;
+  const team = fieldTeam(),
+    st = fieldMoveState(M, (saveData.meta || {}).badges, team);
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `bramble ${p.cut}: ${st.state}`);
+  if (st.state !== 'ask') {
+    const line = fieldMoveText(M, st.state);
+    await talkLine('me', line, null);
+    talkHide();
+    return;
+  }
+  const ask = fieldMoveText(M, 'ask');
+  await talkLine('me', ask, null);
+  if ((await talkChoose([{ text: 'Yes' }, { text: 'No' }])) !== 0) return talkHide();
+  const B = team.find(t => t.types.includes(M.type)),
+    used = fieldMoveText(M, 'used', B ? billyName(B.m) : ''),
+    said = talkLine('me', used, null),
+    row = ((walkView.sc && walkView.sc.props) || []).filter((/** @type {any} */ q) => q.cut === p.cut);
+  for (const q of row.length ? row : [p]) fieldMoveBurst(M.obstacle, q);
+  if (typeof soundEffect === 'function') soundEffect('whoosh');
+  await new Promise(res => setTimeout(res, reducedMotion ? 0 : 380));
+  F[p.cut] = 1;
+  saveNow();
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `bramble ${p.cut} cut`);
+  await said;
+  talkHide();
 }
 /** the little animation on the map where the obstacle stands (walk/effects.js draws the bits): leaves for Cut, dust
  * for Rock Smash, rings on the water for Surf @param {string} kind the obstacle @param {any} p the prop */

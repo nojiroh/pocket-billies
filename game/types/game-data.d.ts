@@ -1025,6 +1025,10 @@ export interface Rules {
       /** RO-3f: myth: the chance a run route's rarer one is a mythical instead (at most one a run), and which */
       rare?: { up: number; myth?: { chance: number; list: DataId[] } };
     };
+    /** RT-4b: a run route's finds (logic/route-finds.js): `perRoute` [fewest, most] a place on its free dead ends and
+        pockets, `rare` the share drawn from `rareCards` (rewards.json cards; the rest a small item or candy card by
+        weight), `brambles` the most Cut bramble rows a place */
+    finds?: { perRoute: [number, number]; rare: number; rareCards: DataId[]; brambles: number };
     /** RL-7: metres past a seam before a crossing counts in a run (the hub's is 1), so a step over and back costs
         no day */
     seamIn: number;
@@ -2297,6 +2301,8 @@ export interface SetPiece {
   plans?: Record<string, number>;
   props: SetPieceProp[];
   people?: SetPiecePerson[];
+  /** RT-4b: animals living in it, kept to an area in its own metres [x0, z0, x1, z1] */
+  life?: { k: string; n: number; area: [number, number, number, number] }[];
 }
 export interface SetPieceProp {
   /** a scenery.json prop */

@@ -41,6 +41,12 @@ Measured on 5 seeds (20 route places) with the game's own data, `runSceneMake` a
   RL-R2a) but only at a side area's entrance.
 - **Phone cost:** towns ran at 27-28 fps on the owner's phone (phase 09). Routes already carry ~600 props.
 
+**RT-4b corrections (2026-10-27, HANDOFF):** MAPGEN_VERSION 14 was long taken by then; RT-4b is 22 (the region map
+track has 20 and 21). Finds reuse the reeds' way (WA-5a): run flags, no `run.found`; gold_pyramid is a pyramid and the
+Shining Stone item `bell`, so finds draw reward cards (rules.json `run.finds`). Most free dead ends lie under canopy,
+so a find falls back to a free clearing. `opened:` reads the run's `cut.` and `find.` flags. The owner's answers: 1-2
+finds a place, at most 1 bramble row guarding the rarer one or a find, picked up by walking onto it, version 22.
+
 **RT-4 corrections (2026-10-25, HANDOFF):** today's stock already met "6-8 counting trainers" (8 less them, 2 at
 least) but held fewer wild Billies than before RT-2; the owner chose 10 less them, 4 at least. A place's pool is only
 4-6 species after the dex cut, so a habitat is a species' types (rules.json `run.wild.habitats`), not a share of the
@@ -87,7 +93,7 @@ them, `routeMin` 2, the owner's answer); pairs about one route place in three (t
 | RT-2 | Battle spots and trainers (**done** 2026-10-25) | trainers stand on RT-1's spots (a clearing, a bridge, a fence gap, a ledge top, a jetty) facing the path along the real road; 4-6 a route place by row, about half optional; trainer pairs as doubles; a class likes some spots; run sim for length and difficulty | RT-1 | 1 |
 | RT-3 | Set pieces (**done** 2026-10-25) | `setPieces.json` + schema: small hand-designed prop groups (campsite, farm pen and scarecrow, rest stop, woodcutter's clearing, fishing jetty, ruins, a Bureau checkpoint) placed as a unit, 2-4 a route by biome; a signpost with the route's name at each entrance; existing props only; shared with TW-1 | RT-1 | 1 |
 | RT-4a | Wild Billies (**done** 2026-10-25) | the wild stock 10 less a place's trainers, 4 at least (the owner); habitats (water edge, woods, grass) each meet their part of the place's pool; a rarer one in a hard pocket | RT-1, RT-2 | 1 |
-| RT-4b | Finds, Cut, animals | items at dead ends and pockets (the reward pick's small items, a rare find about 1 in 12: max_revive, gold_pyramid, the shining stone; the owner), shown as the pyramid's icon, once a run; Cut brambles plugging a pocket's or dead end's mouth (Grass Billie and badge), guarding the rarer one or a find; ambient animals by layout and set piece (shared with TW-2) | RT-4a | 1 |
+| RT-4b | Finds, Cut, animals (**done** 2026-10-27) | items at dead ends and pockets (the reward pick's small items, a rare find about 1 in 12: max_revive, gold_pyramid, the shining stone; the owner), shown as the pyramid's icon, once a run; Cut brambles plugging a pocket's or dead end's mouth (Grass Billie and badge), guarding the rarer one or a find; ambient animals by layout and set piece (shared with TW-2) | RT-4a | 1 |
 
 **Each session's shape**, for its own Plan Mode:
 - **RT-1.** Files: `logic/mapgen.js` (the `layout` stage between `road` and `plants`, its own stream; plants keep off

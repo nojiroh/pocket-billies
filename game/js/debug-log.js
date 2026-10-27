@@ -549,6 +549,14 @@ debugLog.state = () => {
               ((GAME.saveData.wild || {})[((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).id] || {}).list || []
             ).map((/** @type {any} */ q) => `${q.sp}:${q.lvl}:${q.rare ? 'rare' : q.hab || 'grass'}`),
             rareAt: ((GAME.LOCATIONS || [])[GAME.saveData.trip.node] || {}).rareAt || null,
+            /* RT-4b: this place's finds (reward card ids, taken marked) and its Cut bramble row (cut marked) */
+            finds: ((placeMap && placeMap.props) || [])
+              .filter((/** @type {any} */ p) => p.find)
+              .map((/** @type {any} */ p) => `${p.card}${GAME.saveData.flags[p.find] ? ':taken' : ''}`),
+            cut: (() => {
+              const p = ((placeMap && placeMap.props) || []).find((/** @type {any} */ q) => q.cut);
+              return p ? `${p.cut}${GAME.saveData.flags[p.cut] ? ':cut' : ''}` : null;
+            })(),
           }
         : null;
     /* RL-8: what the runs brought home (numbers only) */

@@ -127,6 +127,84 @@ the plan's recommendation taken: **Shade in the haze on by default** (`hazeShade
 - Next: the owner's phone log (AIR-3 and AIR-4 frame times) and the baseline; later (not planned) Hillaire's sky LUTs.
   Tags `air-3-done`, `air-4-done` for the owner.
 
+### Routes track RT-4b - Finds, Cut brambles, animals - 2026-10-27
+Branch `track/routes` (it was 3782 commits behind main and had none of its own: main merged in as a fast-forward
+first). Plan approved in Plan Mode with the owner's answers: **1-2 finds a route place** on free dead ends and pockets,
+first visit only; **at most 1 bramble row a place, only guarding the rarer one or a find**; **picked up by walking onto
+it**, like the reeds; **MAPGEN_VERSION 22**, after the region map track's 20 (WM-3) and 21 (WM-7). Tag `rt-4b-done`
+for the owner to push.
+- Where the plan file and notes were wrong (checked in the code):
+  - MAPGEN_VERSION 14 "kept for RT-4b" is long gone: main is at 19 and `track/worldmap` uses 20 and 21. RT-4b takes 22.
+  - A find system already existed: the water track's reeds (WA-5a) hide an item (`hide`), found once a run by walking
+    past, marked in the run's flags (copied from the hub at the run's start and dropped with it). So no `run.found`
+    and no `validRun` change: finds and bramble rows are run flags too (`find.<node>.<k>`, `cut.<node>.<spot>`).
+  - "gold_pyramid" and "the shining stone" are reward cards, not items: `gold_pyramid` is a pyramid (pyramids.json),
+    the Shining Stone is item `bell`. Finds draw the reward pick's cards (rewards.json) and give items or pyramids.
+  - The pyramid's art existed (`art/coins/pyramid_16.png`); no new art.
+  - `opened:` read only the side area; there was no flag condition. `opened:` now also reads the run's cut and find
+    flags (conditions.js `openedOf`).
+  - There are 10 set pieces now, not 7.
+  - Most free dead ends lie under a forest's canopy (43 of 53 over 6 seeds), where RT-4a's rule keeps the rarer one
+    out because the camera can't see it. A pyramid there would be invisible too, so a find falls back to a free
+    clearing when no dead end or pocket is left.
+- Changed (one cause per commit):
+  - **mapgen** (MAPGEN_VERSION 22): `mapgenMouths` after the habitats: for each pocket and dead end, the narrowest
+    crossing of the walk to it 2.5-14 m back (3.6 m wide at most) gets a row of bramble spots 0.8 m apart, kept only
+    when, with them solid, the spot can't be walked to (eight ways, so no diagonal squeeze), and the hub, the exits,
+    every other spot and its stand and every set piece and its people stay open, with at most 15% of the walk shut
+    off. The spot keeps it as `mouth`. A backwards flood from the spot, stopped early: about 12 ms a place. No random
+    draw, so nothing else moves. Golden (laidOut), run-start and rng's pinned hash remade on purpose.
+  - **scenery** `find_pyramid`: the pyramid's own 16 px picture, half a metre, not solid.
+  - **logic/route-finds.js** (new) `routeFindsPlace`, called by run-world.js after `routeRareSpots`: rules.json
+    `run.finds` (perRoute [1, 2], rare 0.083, rareCards max_revive, gold_pyramid, shining_stone, brambles 1; checked
+    by check-data, typed). Finds lie on free dead ends and pockets (RT-4a's rule: 6 m from trainers, 4 m from pieces,
+    not under canopy, not the rarer one's), else free clearings, 6 m apart; a card by weight from the item and candy
+    cards, a rare one about 1 in 12. One bramble row a place where the rarer one's spot or a find's has a mouth:
+    `bush_bramble`, act `field`, move `cut`, one `Cut` label in the middle. Placing again gives one set (props marked
+    `rt4b`).
+  - **The walk**: walking within 0.8 m of a find gives its card, toasts "You found a ...!" and saves
+    (walk-view.js `routeFindStep`). `propShown` reads an rt4b prop's flag directly (`storyAllows` makes the whole
+    story state each call; this runs per prop per frame). A bramble tapped asks for Cut as the side area's obstacle
+    does (field-moves.js `fieldBrambleOpen`: needBadge, needType, then the question); a yes bursts leaves over the
+    whole row and sets its flag.
+  - **Animals**: setPieces.json `life` (schema, type): the farm pen 2 sheep and 2 chickens in its pen, the campsite
+    a cat; farmland's plan 3 crows (`MAPGEN_LAYOUTS.farmland.life`). `mapgenExtraLife` adds them to `sc.life` marked
+    `extra`, an area turned as its piece lies, 8 at most a place. ambient-life.js draws none of them on Off graphics
+    and half on Balanced.
+  - **Debug log**: `run.finds` (card ids, `:taken`), `run.cut` (the row's flag, `:cut`). Ids only.
+  - **Checks**: quick test route-finds (the card draw and rare share, the pick-up, the give, `opened:`); slow tests
+    route-finds-real (same run same set; finds on free spots; a row shuts its spot and keeps every exit, the hub,
+    the trainers and the other finds open, no new traps; cut, the spot is reached) and mapgen-pieces' animals (areas
+    follow their pieces, farmland's crows, the cap); in-game step "A route's finds and Cut brambles: picked up once,
+    the row refused without the badge, then cut"; check-quick step RT-4b runs it.
+- Measured:
+  - Mouths (30 mapgen places, 5 plans, 8 biomes): 22 places with one at least, 40 of 131 pockets and dead ends, rows of
+    2-5 brambles.
+  - Real runs (6 seeds): 19 route places, **20 finds** (9 dead ends, 2 pockets, 9 clearings; 0 rare in that sample,
+    0.083 over 6000 draws), **11 bramble rows**.
+  - The run sim is unchanged: finds and rows are optional and it doesn't walk to them.
+  - Frame cost not measured: up to 2 find sprites, 5 brambles and 8 animals more a route place (no new models).
+- Verified: lint, typecheck, check:modules, check:data, format:check; unit tests 1466 quick and 91 of 92
+  slow (the island test "the game's island is the generator's own output" failed on main too, then main fixed it in
+  #253, merged in here: 92 of 92 after); check-quick
+  RT-4a and RT-4b alone (SELFTESTFB1: Thicket Route, a Shining Stone find, a row of 5 brambles). **Full quick check** (1470 s):
+  36 of 41, RT-4b passed in it. Of the 5: Terraces (Copperleaf's train_station in the air) and "Walking left and
+  right" fail on main too (run there this session); RL-8's "the town's shop has no Perk" is main's (earlier entries);
+  RT-2's pair ("talked but no battle started") and Granny Juniper ("didn't say anything") failed under the paired
+  load and pass alone here and on main. Not seen on a phone.
+- Risky / open:
+  - **Not seen on a phone**: the pyramid's size on the ground (half a metre), a 5-bramble row, a pen's sheep.
+  - About 1 find a place, under the 1.5 the rules aim for: trainers and the canopy take most hard spots. Allowing
+    finds under canopy, or a find standing a few metres out of the canopy toward the mouth, would raise it.
+  - **The region map track** (WM-3) changes every place's size and exits; pockets, dead ends and mouths move with it.
+    Expect route-finds-real's counts and the golden snapshots to change in the merge; remake the snapshots, never
+    hand-merge them. RT-4b kept out of route-trainers.js and run-scenes.js; it adds to mapgen.js (two functions, two
+    calls after the habitats), run-world.js (one call) and walk-view.js.
+  - `mapgenWalkGrid` counts a bramble solid whatever its `unless`: fine for mapgen and the tests, which make scenes
+    without them, but a test walking a run-world scene sees the row up.
+  - Wild Billies in tall grass or a habitat behind a row wait there until it is cut (optional, by design).
+- Next: the routes track is done (RT-1..RT-4b). A phone pass on a run route; WM-3's merge into the routes' work.
+
 ### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
 Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
 approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's

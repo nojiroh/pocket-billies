@@ -448,6 +448,7 @@ provide({ RESIDENTS }); /* to-module */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
+provide({ REWARDS }); /* to-module */
 /** RL-12b: a run's events, loot tables and trainer classes */
 export const EVENTS = /** @type {import('../types/game-data').EventsData} */ (
   gameData.events || { loot: {}, classes: {}, events: {} }
