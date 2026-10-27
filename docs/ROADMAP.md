@@ -117,8 +117,9 @@ town node needs it.
   browser over the whole art tree: search, Used by, Edit pixels, Open in its editor; done 2026-10-26), SA-2a (the
   ground tile set with its Lite tiles, robots, pyramids, frame strips; the terrain builder retired; done 2026-10-26),
   SA-2b (a text-file save, the UI icon editor with the icons' builder retired, the icon atlas's rectangles, previews
-  of walls, building cells, rooms, flags and far backdrops; done 2026-10-27), SA-3 next (clean-up in the Studio and the game: Jobs,
-  Town shops, dead Rules fields, the walk eggs), SA-4 (navigation as workspaces), SA-5 (unused art). Planned
+  of walls, building cells, rooms, flags and far backdrops; done 2026-10-27), SA-3 (clean-up in the Studio and the game: Jobs,
+  Town shops, Route stops, dead Rules and Trainers fields, the walk eggs and eggs.json; done 2026-10-27), SA-4 next
+  (navigation as workspaces), SA-5 (unused art). Planned
   2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-6 done; ST-7 (Model mode import) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
