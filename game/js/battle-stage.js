@@ -1836,7 +1836,7 @@ export function battleStagePlay(an, ev) {
               fade: false,
               rot: 0,
               vr: k === 'armL' ? 2 : k === 'armR' ? -2 : 0,
-              k: 1.4,
+              k: 2.4,
             })
           );
           scheduleAt(at, () => groundRing(i, glow, 1.2 + n * 0.4, 500));
