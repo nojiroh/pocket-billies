@@ -84,8 +84,8 @@ export const UI_LINT_RULES = [
    from tools/build-ui-icons.py when the SVG files became the source. */
 // ceiling: start
 export const UI_LINT_CEILING = {
-  radius: 90,
-  space: 543,
+  radius: 0,
+  space: 39,
   shadow: 161,
   keyframes: 53,
   duration: 249,
