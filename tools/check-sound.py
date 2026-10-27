@@ -149,7 +149,7 @@ LOUD = r"""async ({jobs, rate}) => {
         now = 0.08 + (steps - 0.5) * spb - 0.14;
         E.tracker.tick();
       } else {
-        Object.assign(ambience, { bus: null, amb: null, lpA: null, lpW: null, beds: {}, flash: 0, arrive: -9, id: null, lastCall: 0, ev: {} });
+        Object.assign(ambience, { bus: null, amb: null, lpA: null, lpW: null, beds: {}, flash: 0, arrive: -9, id: null, lastCall: 0, ev: {}, birdAt: null });
         if (!initAmbience()) throw new Error('initAmbience failed on the offline context');
         ambience.arrive = -9; applyAmbienceVolume();
         const beds = job.beds.filter(([k]) => k !== 'birds' && k !== 'steps');
