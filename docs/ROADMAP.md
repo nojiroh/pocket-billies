@@ -255,6 +255,15 @@ town node needs it.
   research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
   and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
   `track/characters` (the owner makes it).
+- **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
+  relics) with lots of variety, each with its own picture in the UI icon set's 36 px block-and-split look, drawn as
+  flat 34x34 grids and shaded by the game's own `icon-block.js`. 66 new Perks in four waves (battle kit; types, team
+  and weather; catching, cash and maps; rules, growth and adventure) plus 12 **Fine Print** trade-off Perks offered at
+  leader wins, 7 Perk sets, 16 new held items, every Bag item and held item redrawn, 20 named boons and curses (the
+  Bureau's Red Tape), the Field Guide's Perks tab; the effects gain triggers, conditions, counters and growth. PK-0
+  (the plan, research and 8 sample icons) done 2026-10-27 on `ccr-24be55e6-2bmqci`; PK-1 (the effects core) next.
+  The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
+  sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
