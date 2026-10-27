@@ -17,6 +17,7 @@ import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
+import { AMBIENCE_BEDS, ambienceNoiseLoop } from './logic/ambience-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -837,38 +838,51 @@ function initAmbience() {
   ambience.lpA = lp(ambience.amb);
   ambience.lpW = lp(ambience.bus);
   applyAmbienceVolume();
-  const loop =
-    (filters, lfo, rate = 1) =>
-    dest => {
-      const s = c.createBufferSource();
-      s.buffer = soundEngine.noise;
-      s.loop = true;
-      s.playbackRate.value = rate;
-      let n = s;
-      for (const [type, f, q] of filters) {
-        const F = c.createBiquadFilter();
-        F.type = type;
-        F.frequency.value = f;
-        F.Q.value = q || 0.7;
-        n.connect(F);
-        n = F;
-      }
-      if (lfo) {
-        const m = c.createGain();
-        m.gain.value = 1 - lfo[1];
-        const o = c.createOscillator();
-        o.frequency.value = lfo[0];
-        const og = c.createGain();
-        og.gain.value = lfo[1];
-        o.connect(og);
-        og.connect(m.gain);
-        o.start();
-        n.connect(m);
-        n = m;
-      }
-      n.connect(dest);
-      s.start(0, Math.random() * 0.9);
-    };
+  const buffer = data => {
+    const b = c.createBuffer(1, data.length, c.sampleRate);
+    b.getChannelData(0).set(data);
+    return b;
+  };
+  /* SND-8a: the beds' own noise, long seamless loops of pink and brown made once from a seed (logic/ambience-sound.js),
+     at the context's own rate; the music's one second of white noise is no longer looped under them */
+  const t0 = performance.now();
+  ambience.noise = {
+    pink: buffer(ambienceNoiseLoop('pink', c.sampleRate, 6, 0x50d1)),
+    brown: buffer(ambienceNoiseLoop('brown', c.sampleRate, 8, 0x50d2)),
+  };
+  ambience.noiseMs = Math.round(performance.now() - t0);
+  /* a layer of a bed (AMBIENCE_BEDS): its noise from a random point, through its filters, at its gain */
+  const layer = (L, dest) => {
+    const s = c.createBufferSource();
+    s.buffer = ambience.noise[L.noise];
+    s.loop = true;
+    s.playbackRate.value = L.rate || 1;
+    let n = s;
+    for (const [type, f, q, gain] of L.filters) {
+      const F = c.createBiquadFilter();
+      F.type = type;
+      F.frequency.value = f;
+      F.Q.value = q || 0.7;
+      if (gain) F.gain.value = gain;
+      n.connect(F);
+      n = F;
+    }
+    const m = c.createGain();
+    m.gain.value = L.gain;
+    if (L.lfo) {
+      m.gain.value = L.gain * (1 - L.lfo[1]);
+      const o = c.createOscillator();
+      o.frequency.value = L.lfo[0];
+      const og = c.createGain();
+      og.gain.value = L.gain * L.lfo[1];
+      o.connect(og);
+      og.connect(m.gain);
+      o.start();
+    }
+    n.connect(m);
+    m.connect(dest);
+    s.start(0, Math.random() * s.buffer.duration);
+  };
   const bed = (name, make, bus = ambience.lpW) => {
     const g = c.createGain();
     g.gain.value = 0;
@@ -909,110 +923,31 @@ function initAmbience() {
     l1.start();
     l2.start();
   };
-  bed(
-    'crickets',
-    d => {
-      cricket(4300, 26, 0.9)(d);
-      cricket(4650, 23, 0.7)(d);
-    },
-    ambience.lpA
-  );
-  bed(
-    'leaves',
-    loop(
-      [
-        ['bandpass', 3200, 0.5],
-        ['highpass', 1200],
-      ],
-      [0.13, 0.8]
-    ),
-    ambience.lpA
-  );
-  bed(
-    'town',
-    loop(
-      [
-        ['bandpass', 420, 0.7],
-        ['lowpass', 900],
-      ],
-      [0.21, 0.5],
-      0.9
-    ),
-    ambience.lpA
-  );
-  bed(
-    'cave',
-    d => {
-      loop([['lowpass', 140]], [0.05, 0.4], 0.5)(d);
-      const o = c.createOscillator();
-      o.frequency.value = 49;
-      const g = c.createGain();
-      g.gain.value = 0.18;
-      o.connect(g);
-      g.connect(d);
-      o.start();
-    },
-    ambience.amb
-  );
-  bed(
-    'room',
-    loop(
-      [
-        ['lowpass', 260],
-        ['highpass', 40],
-      ],
-      null,
-      0.6
-    ),
-    ambience.amb
-  );
-  bed(
-    'stream',
-    loop(
-      [
-        ['bandpass', 1500, 0.9],
-        ['highpass', 500],
-      ],
-      [2.7, 0.4]
-    )
-  );
-  bed(
-    'falls',
-    loop(
-      [
-        ['lowpass', 1000],
-        ['highpass', 90],
-      ],
-      null,
-      0.8
-    )
-  );
-  bed(
-    'sea',
-    loop(
-      [
-        ['lowpass', 650],
-        ['highpass', 60],
-      ],
-      [0.09, 0.8],
-      0.7
-    )
-  );
-  bed('pond', loop([['bandpass', 520, 1.4]], [0.35, 0.6]));
-  bed('fountain', loop([['bandpass', 2400, 0.8]], [5.5, 0.3]));
-  bed('fire', loop([['bandpass', 3000, 1.6]], [11, 0.9]));
-  bed('lava', loop([['lowpass', 260]], [0.6, 0.7], 0.6));
-  bed(
-    'rain',
-    loop(
-      [
-        ['highpass', 1700],
-        ['lowpass', 7500],
-      ],
-      null
-    )
-  );
-  bed('wind', loop([['bandpass', 360, 0.6]], [0.06, 0.85]));
+  for (const [name, B] of Object.entries(AMBIENCE_BEDS))
+    bed(
+      name,
+      d => {
+        /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
+        const tr = c.createGain();
+        tr.gain.value = B.trim;
+        tr.connect(d);
+        if (name === 'crickets') {
+          cricket(4300, 26, 0.9)(tr);
+          cricket(4650, 23, 0.7)(tr);
+        }
+        for (const L of B.layers) layer(L, tr);
+        if (B.tone) {
+          const o = c.createOscillator();
+          o.frequency.value = B.tone;
+          const g = c.createGain();
+          g.gain.value = 0.18;
+          o.connect(g);
+          g.connect(tr);
+          o.start();
+        }
+      },
+      B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW
+    );
   return true;
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
