@@ -102,6 +102,7 @@ import { worldMap } from './world-bowl.js';
 expose({
   DEBUG_LOOK: [() => DEBUG_LOOK],
   DEBUG_OPEN_KEY: [() => DEBUG_OPEN_KEY],
+  FIGURE_SWITCHES: [() => FIGURE_SWITCHES],
   TERRAIN_LOOK_SWITCHES: [() => TERRAIN_LOOK_SWITCHES],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
@@ -119,6 +120,7 @@ expose({
   debugSelectHTML: [() => debugSelectHTML],
   debugSideOptions: [() => debugSideOptions],
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
+  figureSwitchLabel: [() => figureSwitchLabel, v => (figureSwitchLabel = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
   refreshDebugMenu: [() => refreshDebugMenu, v => (refreshDebugMenu = v)],
 });
@@ -204,6 +206,85 @@ const TERRAIN_LOOK_SWITCHES = [
   ['tr4snow', 'snowLine', 'Snow line'],
   ['tr4edges', 'cliffEdges', 'Scree and turf edges'],
 ];
+/* characters track CH-3: the figure spike's dials (Engine > People), stepped through for this session (the game
+   data's engine defaults, as the Studio's engine editor sets them), to try on the phone: [action, dial, label,
+   [value, its name]...] */
+const FIGURE_SWITCHES = [
+  [
+    'figon',
+    'figures',
+    'Figures',
+    [
+      [false, 'off'],
+      [true, 'on'],
+    ],
+  ],
+  [
+    'figwho',
+    'figure',
+    'Figure',
+    [
+      ['rogue', 'stand-in'],
+      ['mannequin', 'mannequin'],
+    ],
+  ],
+  [
+    'figstyle',
+    'style',
+    'Style',
+    [
+      ['pixel', 'pixel puppet'],
+      ['smooth', 'plain 3D'],
+    ],
+  ],
+  [
+    'figfolk',
+    'folk',
+    'Townsfolk',
+    [
+      [false, 'as they are'],
+      [true, 'figures'],
+    ],
+  ],
+  [
+    'figppm',
+    'density',
+    'Pixels a metre',
+    [
+      [32, '32'],
+      [40, '40'],
+      [48, '48'],
+      [64, '64'],
+      [24, '24'],
+      [16, '16'],
+    ],
+  ],
+  [
+    'figturns',
+    'yawSteps',
+    'Turns',
+    [
+      [16, '16'],
+      [32, '32'],
+      [8, '8'],
+    ],
+  ],
+  [
+    'figline',
+    'outline',
+    'Outline',
+    [
+      [true, 'on'],
+      [false, 'off'],
+    ],
+  ],
+];
+/** a figure switch's label: its dial's value now */
+function figureSwitchLabel([, k, l, vals]) {
+  const v = engineSetting('people', k),
+    hit = vals.find(o => o[0] === v);
+  return `${l}: ${hit ? hit[1] : String(v)}`;
+}
 function debugHTML() {
   const inB = !!activeBattle,
     node = saveData.trip.node,
@@ -212,7 +293,8 @@ function debugHTML() {
   const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (6-8 min on a phone) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
   <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}${debugButtonHTML('foggrid', walkRenderer.dbg && walkRenderer.dbg.fogGrid ? 'Hide the fog grid' : 'Show the fog grid')}</div>
-  <div class="dbg-row">${TERRAIN_LOOK_SWITCHES.map(([a, k, l]) => debugButtonHTML(a, (engineSetting('world', k) ? 'On: ' : 'Off: ') + l)).join('')}</div><p class="note">Terrain look, off in the game: a run place's cliffs in its biome's rock and strata, snow above its snow line, scree and turf edges. For this session only; a mountains run (Runs above) shows them best.</p>
+  <div class="dbg-row">${TERRAIN_LOOK_SWITCHES.map(([a, k, l]) => debugButtonHTML(a, (engineSetting('world', k) ? 'On: ' : 'Off: ') + l)).join('')}</div>
+  <div class="dbg-row">${FIGURE_SWITCHES.map(f => debugButtonHTML(f[0], figureSwitchLabel(f))).join('')}</div><p class="note">Figures (the characters track's spike), for this session only: you as a small 3D figure baked into pixel art; with Townsfolk on, the townsfolk and your rival in battle too. Style plain 3D is the same figure without the pixel pass. Tap a button to step its value.</p><p class="note">Terrain look, off in the game: a run place's cliffs in its biome's rock and strata, snow above its snow line, scree and turf edges. For this session only; a mountains run (Runs above) shows them best.</p>
   ${
     DATA_WARN.length
       ? `<p class="note">Game data warnings (${DATA_WARN.length}):</p><ul class="dbg-warn">${DATA_WARN.slice(0, 30)
@@ -570,6 +652,23 @@ function debugAction(x) {
       );
     /* terrain TR-4: its three World switches on and off for this session (the game data's engine defaults, as the
        Studio's engine editor sets them), the ground rebuilt as a changed dial does */
+    /* characters track CH-3: a figure dial stepped to its next value for this session (Engine > People) */
+    case 'figon':
+    case 'figwho':
+    case 'figstyle':
+    case 'figfolk':
+    case 'figppm':
+    case 'figturns':
+    case 'figline': {
+      const f = FIGURE_SWITCHES.find(t => t[0] === x),
+        [, k, , vals] = f,
+        E = (gameData.engine = gameData.engine || {}),
+        D = (E.defaults = E.defaults || {}),
+        i = vals.findIndex(o => o[0] === engineSetting('people', k)),
+        next = vals[(i + 1) % vals.length];
+      D.people = { ...(D.people || {}), [k]: next[0] };
+      return refreshDebugMenu(`${figureSwitchLabel(f)}.`);
+    }
     case 'tr4faces':
     case 'tr4snow':
     case 'tr4edges': {

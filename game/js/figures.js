@@ -614,8 +614,14 @@ function figureBattlePicture(rec, i, t, act, progress) {
 /** the baker's numbers for the debug log's people section (numbers only) */
 export function figureReport() {
   const B = figureBaker;
+  const e = k => (typeof engineSetting === 'function' ? engineSetting('people', k) : null);
   return {
     on: figuresOn(),
+    figure: figureChoice(),
+    style: figureStyle(),
+    density: e('density'),
+    turns: e('yawSteps'),
+    folk: figureFolk(),
     pictures: FIGURE_CACHE.size,
     bakes: B.bakes,
     ms: Math.round(B.ms * 10) / 10,
