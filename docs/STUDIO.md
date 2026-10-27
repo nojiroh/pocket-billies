@@ -780,16 +780,7 @@ beside the painter (drawn again after each stroke). Lighting is flat: the sun, s
 | **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
 | **Find and Connections** | Ctrl+K finds any setting or thing (and, SA-1, any art file) and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 
-## Saving in local mode
-
-**Save to game** (Ctrl+S) writes the game data, `game/art/rigs.js` and the
-changed images. Undo/redo cover every
-edit in the session. **Play test** opens the game with the debug menu at
-`localhost:8001`, which keeps a separate save from your normal game. Reload the game tab
-to see saved changes.
-
-The Studio only listens on your own computer, only writes inside `game/data` and
-`game/art`, and only accepts requests carrying the key it puts into its own page.
+## The game data files
 
 The game data is JSON files in `game/data/` (a file per map, line, trainer and person, one per
 other section; `index.json` lists them). On GitHub, **Propose changes** sends only the files

@@ -59,7 +59,7 @@ export const GITHUB_CONFIG = Object.assign(
   window.PB_STUDIO_GITHUB || {}
 );
 export const githubMode = {
-  on: window.STUDIO_KEY === '__STUDIO_KEY__' || !window.STUDIO_KEY,
+  on: true, // SA-3: always (local mode and its key are gone)
   token: '',
   login: '',
   batch: null,

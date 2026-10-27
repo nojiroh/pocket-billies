@@ -42,7 +42,6 @@ expose({
   SECTIONS: [() => SECTIONS],
   SECTION_GROUPS: [() => SECTION_GROUPS],
   SECTION_LIST: [() => SECTION_LIST],
-  STUDIO_SERVER_KEY: [() => STUDIO_SERVER_KEY],
   TEXT_ONLY_DATA: [() => TEXT_ONLY_DATA],
   afterRender: [() => afterRender],
   api: [() => api, v => setApi(v)],
@@ -151,12 +150,9 @@ provide({ studioState }); /* to-module */
 /* studio track ST-T: the Studio self-test's timings of the Studio's own work (studio/js/studio-test.js). `on` is the
    test's recorder while it runs and null otherwise, so a normal session pays one check per draw or edit */
 export const studioProbe = { on: null };
-const STUDIO_SERVER_KEY = window.STUDIO_KEY;
+/* a stand-in until github.js sets the GitHub route (SA-3: local mode's server and its X-Studio-Key are gone) */
 export async function api(path, opt = {}) {
-  const r = await fetch('/api/' + path, {
-    ...opt,
-    headers: { 'X-Studio-Key': STUDIO_SERVER_KEY, ...(opt.headers || {}) },
-  });
+  const r = await fetch('/api/' + path, opt);
   let j = null;
   try {
     j = await r.json();
