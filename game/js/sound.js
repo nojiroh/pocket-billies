@@ -909,7 +909,7 @@ function initAmbience() {
       p = c.createStereoPanner ? c.createStereoPanner() : null,
       tr = c.createGain(),
       bus = B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW,
-      b = { g, p, tr, drifts: [], parts: [], srcs: [], st: {} };
+      b = { g, p, tr, drifts: [], parts: [], srcs: [], st: {}, eventGain: B.eventGain || 1 };
     g.gain.value = 0;
     /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
     tr.gain.value = B.trim;
@@ -1016,7 +1016,7 @@ function ambienceEvents(b, t) {
       const s = c.createBufferSource(),
         g = c.createGain();
       s.buffer = b.chirps[e.who];
-      g.gain.value = e.gain * b.chirpGain[e.who];
+      g.gain.value = e.gain * b.chirpGain[e.who] * b.eventGain;
       s.connect(g);
       g.connect(b.evOut[e.who]);
       s.start(e.t);
@@ -1033,7 +1033,7 @@ function ambienceEvents(b, t) {
       F.frequency.value = e.f;
       F.Q.value = e.q;
       g.gain.setValueAtTime(0, e.t);
-      g.gain.linearRampToValueAtTime(e.gain, e.t + 0.001);
+      g.gain.linearRampToValueAtTime(e.gain * b.eventGain, e.t + 0.001);
       g.gain.setTargetAtTime(0, e.t + 0.001, e.d / 3);
       s.connect(F);
       F.connect(g);

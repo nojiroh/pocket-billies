@@ -153,9 +153,9 @@ export function ambienceDrift(D, r) {
 /**
  * @typedef {{noise: 'pink' | 'brown', rate?: number, gain: number, filters: Array<['lowpass' | 'highpass' | 'bandpass' | 'highshelf', number, number?, number?]>, drift?: AmbienceDriftSpec[]}} AmbienceLayer
  *   a layer: a noise loop (at a playback rate), through filters [type, frequency, Q, gain dB], at a gain
- * @typedef {{bus: 'world' | 'amb', trim: number, layers: AmbienceLayer[], tone?: number, events?: 'crickets' | 'crackles'}} AmbienceBed
+ * @typedef {{bus: 'world' | 'amb', trim: number, layers: AmbienceLayer[], tone?: number, events?: 'crickets' | 'crackles', eventGain?: number}} AmbienceBed
  *   a bed: where it plays (the World or Ambience slider), its trim (from tools/check-sound.py --loudness), its layers,
- *   a low tone (Hz) under it, its events
+ *   a low tone (Hz) under it, its events and their level (eventGain, 1 unless given)
  */
 /** @type {Record<string, AmbienceBed>} */
 export const AMBIENCE_BEDS = {
@@ -323,21 +323,23 @@ export const AMBIENCE_BEDS = {
       },
     ],
   },
-  /* a fire: a low roar, a faint hiss, and crackles at random (ambienceCrackles) */
+  /* a fire: a low roar, a faint hiss, and crackles at random (ambienceCrackles), the crackles over the roar: a phone's
+     speaker hears mids, not a roar under 220 Hz */
   fire: {
     bus: 'world',
     trim: 1,
     events: 'crackles',
+    eventGain: 12,
     layers: [
       {
         noise: 'brown',
-        gain: 1,
+        gain: 0.35,
         filters: [['lowpass', 220]],
-        drift: [{ on: 'gain', base: 1, depth: 0.35, min: 0.4, max: 1.6, tau: 0.35 }],
+        drift: [{ on: 'gain', base: 0.35, depth: 0.35, min: 0.4, max: 1.6, tau: 0.35 }],
       },
       {
         noise: 'pink',
-        gain: 0.06,
+        gain: 0.12,
         filters: [
           ['highpass', 1200],
           ['highshelf', 4000, 0.7, -8],
