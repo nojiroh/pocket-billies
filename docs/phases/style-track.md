@@ -110,7 +110,9 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
   flash at 15% and drops white to the palette's surface; Reduced shows no flash. The same rule for the impact frame's
   check (VFX-4) and the coat foil (SY-6). A unit test per setting. Small and on its own, so first: it is an
   accessibility fix.
-- **SY-2** numbers you feel, the battle part the UI track doesn't own:
+- **SY-2** numbers you feel, the battle part the UI track doesn't own. Done 2026-10-27 on `track/style` (built as
+  below in today's `hudPop` and plates, since UI-16a/b aren't built; logic/hit-numbers.js `popSize`, `rollValue`; the
+  status-damage pop is sized too; the KO's "short beat" adds no time: the faint already waits for its own event).
   - **Your HP rolls.** Your plate's `hp/max` counts down over the fill's .38 s instead of jumping (display only: the
     battle engine and its golden record don't change). A foe's boss % rolls the same way.
   - **Sized by the hit.** The pop's size comes from `hitWeight`: 24 px at a scratch to 40 px at a one-shot, then the
