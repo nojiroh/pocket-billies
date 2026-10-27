@@ -21,6 +21,7 @@ import { WATER_KINDS, waterKindHeals, waterKindShut, waterKindWalkOn } from './w
 import {
   MAPGEN_INWARD,
   MAPGEN_STRAIGHT_IN,
+  MAPGEN_TOWN,
   mapgenAlong,
   mapgenCellAt,
   mapgenDepth,
@@ -36,6 +37,7 @@ import {
   mapgenSegCross,
   mapgenSimplify,
   mapgenStreamLine,
+  mapgenTownSize,
 } from './mapgen.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -394,8 +396,14 @@ export function waterGenBlockedBase(G, r, seam) {
     B = new Uint8Array(W * (h + 1)),
     M = G.road[0] && G.road[0].pts,
     mid = M ? M[Math.floor(M.length / 2)] : null,
-    /* a town's street, square, clinic, shop and houses: north of the main road round its middle (mapgenStageTown) */
-    town = G.P.kind === 'town' ? mid : null;
+    /* a town's square, streets and houses: north of the main road round its middle (mapgenTownPlan,
+       mapgenStageTown); WM-5: as far as its size's (MAPGEN_TOWN_SIZES river: across, north), and south too when the
+       road runs through the upper half of a place two cells tall */
+    town = G.P.kind === 'town' ? mid : null,
+    TZ = town ? mapgenTownSize(G.P) : null,
+    tx = TZ ? TZ.river[0] : 0,
+    tn = TZ ? TZ.river[1] : 0,
+    ts = town && h >= 100 && town[1] > h * 0.55 ? MAPGEN_TOWN.river.high : MAPGEN_TOWN.river.south;
   const runs = G.exits.map(e => {
     const n = MAPGEN_INWARD[e.side];
     return {
@@ -410,7 +418,7 @@ export function waterGenBlockedBase(G, r, seam) {
       let b =
         runs.some(R => waterGenSegDist(i, j, R.a, R.b) < R.r) ||
         (mid && !seam && Math.hypot(i - mid[0], j - mid[1]) < 6 + r) ||
-        (town && Math.abs(i - town[0]) < 24 + r && j > town[1] - 8 - r && j < town[1] + 32 + r);
+        (town && Math.abs(i - town[0]) < tx + r && j > town[1] - ts - r && j < town[1] + tn + r);
       if (!b)
         for (const [ci, cj] of [
           [i, j],

@@ -362,8 +362,9 @@ export function runPiecesOf(run, i, data) {
   if (!S || !S.perPlace) return 0;
   return rngFrom(runNodeSeed(run.seed, i), 'scene|pieces').int(S.perPlace[0], S.perPlace[1]);
 }
-/** TW-1: a town's through road (mapgen's road dials): straight, a little wobble */
-export const RUN_TOWN_ROAD = { shape: 'straight', wobble: 0.25 };
+/** TW-1: a town's through road (mapgen's road dials): a little wobble; WM-5: square turns between straight stretches
+ * (mapgen.js 'dogleg'), so its streets and square have room beside it whatever heights its exits are at */
+export const RUN_TOWN_ROAD = { shape: 'dogleg', wobble: 0.25 };
 /** RL-R2b: a side place's land dials: the move's `land` over the run's, and a town's `townLand` over both (Surf's
  * islet) @param {any} M the field move @param {RunMap['nodes'][number]} node @param {any} dials */
 export function runSideLand(M, node, dials) {
