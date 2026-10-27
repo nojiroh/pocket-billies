@@ -48,7 +48,7 @@
   left: 50%;
   top: calc(14px + env(safe-area-inset-top));
   transform: translateX(-50%);
-  padding: 10px 16px;
+  padding: 10px var(--s4);
   border-radius: 14px;
   text-align: center;
   z-index: 5;
@@ -119,7 +119,7 @@ body.flying #nav {
   display: block;
   font-family: var(--font-voice);
   font-size: 26px;
-  margin: 4px 0;
+  margin: var(--s1) 0;
 }
 .lift-cap .note {
   color: #cfe6ee;
@@ -170,5 +170,101 @@ body.train-ride :is(.walk-hero, #walkSheet, #nav, .topbar, .joy) {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(transparent 42%, var(--g-solid) 68%);
+  background: linear-gradient(transparent 72%, var(--g-solid));
+}
+/* cutscenes track C: the region's card on a run's loading screens (run-loading.js runLoadCard, runHomeScreen), its
+   rows coming in one after another over the tunnel's dark */
+.load-card {
+  display: grid;
+  gap: var(--s2);
+  margin: var(--s1) 0;
+  font-size: 14px;
+  color: var(--text2);
+}
+.load-card .lc-in {
+  animation: m-fade var(--m-slow) var(--ease-out, ease-out) both;
+  animation-delay: calc(var(--i) * var(--m-base) + var(--m-fast));
+}
+.load-card p {
+  margin: 0;
+}
+.load-card ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+.load-card .lc-row {
+  display: grid;
+  grid-template-columns: 5.6em 1fr;
+  align-items: center;
+  gap: var(--s2);
+}
+.load-card .lc-row > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+.load-card .lc-row > small {
+  min-width: 5.2em;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.load-card .lc-zones li {
+  padding: var(--s1) var(--s3) var(--s1) var(--s2);
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--a, var(--sky-a)), var(--b, var(--sky-b)));
+  color: var(--night-ink);
+  font-weight: 600;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%);
+}
+.load-card .lc-leaders li + li::before {
+  content: '·';
+  margin-right: var(--s1);
+}
+.load-card .lc-leaders .boss {
+  color: var(--gold-b);
+  font-weight: 700;
+}
+.load-card .lc-dex {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+}
+.load-card .lc-dex canvas.rig {
+  width: var(--s6);
+  height: var(--s6);
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.55;
+}
+.load-card .lc-dex b {
+  margin-left: var(--s2);
+  color: var(--text);
+}
+.load-card .lc-wx span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+}
+.load-card .ic {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background: var(--ico) center / contain no-repeat;
+}
+.load-card .lc-pay li {
+  padding: var(--s1) var(--s3);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gold-b) 22%, transparent);
+  color: var(--text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .load-card .lc-in {
+    animation: none;
+  }
 }

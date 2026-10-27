@@ -8,7 +8,7 @@
      (rngFrom(its node's seed, 'shop|' + day)), so a reload or another device sees the same stock;
    - the run's foes: a mini-boss on each mini-boss node and the boss, each a leader (the trainers with miniboss: true)
      drawn from the node's stream, never one twice in a run, its team's levels set over its row's top wild level
-     (run.foes); a copy with its own id, blocking the way north (mini-bosses), with nothing of the hub's (no hub
+     (run.foes); a copy with its own id, blocking the way east (mini-bosses), with nothing of the hub's (no hub
      script, badge, egg or story conditions; RL-S1: its script is a word picked by the run history, then the battle);
    - a battle's seed (its node's seed and its number in the run), the payout screen's rows, what may be kept.
    Numbers come in as arguments; logic only: no DOM, no Date, no Math.random (tools/test/run-loop.test.mjs). */
@@ -206,7 +206,7 @@ export const runFoeId = i => `run_${i}_foe`;
  * The run's foes, by id: on each mini-boss node and the boss's, a copy of a leader drawn from the node's stream
  * ('foe'), no leader twice in a run (nodes in order); RL-R1: a run with a region has its leaders (run.region.leaders,
  * picked by its types), in node order, while there are any; RL-R2: a side area's mini-boss or boss its own leader. Its levels: its row's top wild level + run.foes[type].up for its
- * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way north and fights a
+ * top Billie, the others as far below as in the leader's team (1-100). A mini-boss blocks the way east and fights a
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
  * RL-S2: on each rival node, Blake (trainers/blake.json's name and words) with his team for that meeting
  * (logic/rival.js rivalTeam: against run.rival.lead, one meeting more than the last), at its row's top wild level +

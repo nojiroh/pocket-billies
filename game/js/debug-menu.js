@@ -92,6 +92,7 @@ import { applyPreferences, exportSave, settingsReset } from './settings-screen.j
 import { battleStage, battleStageResize } from './battle-stage.js';
 import { mapById, walkTo, walkView } from './walk-view.js';
 import { forceContextLoss, gpuState } from './engine/webgl.js';
+import { walkRenderer } from './walk/walk-state.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
@@ -200,7 +201,7 @@ function debugHTML() {
     inTest = !!(uiState.bench && uiState.bench.test);
   const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (4-5 min on a phone) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
-  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}</div>
+  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}${debugButtonHTML('foggrid', walkRenderer.dbg && walkRenderer.dbg.fogGrid ? 'Hide the fog grid' : 'Show the fog grid')}</div>
   ${
     DATA_WARN.length
       ? `<p class="note">Game data warnings (${DATA_WARN.length}):</p><ul class="dbg-warn">${DATA_WARN.slice(0, 30)
@@ -227,7 +228,7 @@ function debugHTML() {
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
       )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('routetrainer', 'Walk into a route trainer’s sight')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (5 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
         uiState.dbgRunSide || ''
@@ -429,6 +430,12 @@ function debugAction(x) {
         if (!battleStage.on && !worldMap.on) frameTask('meter', () => frameCount(0));
         debugFps();
       }
+      return refreshDebugMenu();
+    case 'foggrid':
+      /* air track AIR-2: the fog grid's cells as see-through blocks in the walk view (not saved) */
+      walkRenderer.dbg = Object.assign({}, walkRenderer.dbg, {
+        fogGrid: !(walkRenderer.dbg && walkRenderer.dbg.fogGrid),
+      });
       return refreshDebugMenu();
     case 'q0':
       battleStage.lockQ = true;
@@ -668,7 +675,7 @@ function debugAction(x) {
       uiState.dbgChal = chal;
       runTakeOff(
         sd || undefined,
-        short ? { rows: 5, minibosses: 1 } : undefined,
+        short ? { rows: 6, minibosses: 1 } : undefined,
         [
           ...modsMake(chal, monoType),
           ...(mountains ? [RUN_MOD_MOUNTAINS] : []),

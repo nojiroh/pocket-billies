@@ -42,6 +42,10 @@ OUT = ROOT / 'validation' / 'quick'
 # RL-5: the shops were parked with their towns (game/data/legacy): the checks open a shop of their own to see the shop
 # screen (the stock Marigold's General Store had)
 CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'potion',price:150},{item:'burn_salve',price:200},{item:'nerve_tonic',price:200},{item:'wake_tea',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
+# UI-6b: blurred surfaces a screen may have (ui-track.md: at most 3; logic/ui-inspect.js UI_BLUR_BUDGET); the screens
+# over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
+BLUR_BUDGET = 3
+BLUR_CEILING = {'map': 10, 'shop': 5}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -540,10 +544,11 @@ def safety_step(P):
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
 def targets_step(P):
     """phase 06-4 accessibility: on a 390 px phone every visible control is at least 40 px each way, or one of the small
-    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round)"""
+    icon controls that carry an invisible margin (game/css/menus.css: 7 px all round). 40 px is the game's rule; the
+    Studio's overlay marks under 40 px too (UI-9a, the owner's answer)"""
     pg = P.pg
-    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb')?14:0;
-      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,[data-a]')){
+    small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb,.sw')?14:0;
+      for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,summary,[data-a]')){
         if(e.closest('[hidden],.dbg'))continue;const r=e.getBoundingClientRect();if(!r.width||!r.height||r.bottom<0||r.top>innerHeight)continue;
         const cs=getComputedStyle(e);if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity===0)continue;
         const m=Math.min(r.width,r.height)+pad(e);if(m<39.5)out.push(where+': '+(e.dataset.a||e.className||e.tagName)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
@@ -555,11 +560,15 @@ def targets_step(P):
     for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='{tab}';render();scrollTo(0,0);0"); ui(pg)
         bad += pg.evaluate(small, tab)
-    for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
+    # UI-6b: a Field Guide entry (its arrows), Settings' Display (switches) and Help (sections) tabs too
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='guide';uiState.dex=saveData.team[0].sp;render();scrollTo(0,0);0"); ui(pg)
+    bad += pg.evaluate(small, 'guide entry')
+    pg.evaluate("uiState.dex=null;0")
+    for name, js in [('details', "billySheet(saveData.team[0])"), ('settings', "openSettings()"), ('settings display', "openSettings('graphics')"), ('settings help', "openSettings('help')"), ('shop', CHECK_SHOP + "openShop('check_shop')"), ('dressing room', "openDressingRoom({})")]:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();{js};0"); ui(pg)
         bad += pg.evaluate(small, name)
     if bad: raise Exception(f'{len(bad)} controls too small to tap: ' + '; '.join(bad[:8]))
-    return 'every control on 9 screens is 40 px or more, or an icon with its 7 px tap margin'
+    return 'every control on 12 screens is 40 px or more, or an icon with its 7 px tap margin'
 
 
 @step('Sound settings: each slider sets its bus and sounds on it when let go, each row mutes its bus, the header mute keeps the levels (SND-1, UI-7a)', 120)
@@ -931,9 +940,9 @@ def phone_flow(P):
     if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
     R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
     if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
-    # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Hazel's, no battle of his; the welcome
+    # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Kappi's, no battle of his; the welcome
     # sheet comes straight after the pick
-    if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Hazel’s fight or his battle)')
+    if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Kappi’s fight or his battle)')
     if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
     R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
     pg.evaluate("closeModal();0")
@@ -951,7 +960,8 @@ def phone_flow(P):
     # TC-4: the screens as the opening left them (play() gave the team, money and encounters the old step counter
     # brought; nothing below needs them): only the messages and toasts are cleared, as play() did
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
-    # UI-1: how many surfaces blur what's behind them on each screen (the plan's budget is 3); a report, not a failure
+    # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
+    # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
     blur = {}
     for tab in ['walk', 'map', 'team', 'guide', 'profile']:
         pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0")
@@ -966,6 +976,8 @@ def phone_flow(P):
     shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount()')
     R['blurPerScreen'] = blur
+    over = [f'{k} {v} (at most {max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))})' for k, v in blur.items() if v > max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))]
+    if over: raise Exception('more surfaces blur what is behind them than allowed (ui-track.md, the blur budget): ' + ', '.join(over))
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
     # phase 13: the debug log never holds names: the trainer is called Checker, and the buddy gets a nickname it
     # then says out loud (debug_picture_privacy); neither may be in the exported log
@@ -981,7 +993,7 @@ def phone_flow(P):
     if names: raise Exception(f'the exported debug log holds a name: {names}')
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
-    return f'the fall, Hazel, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
 
 
 def all_maps(pg, sec=180):
@@ -1065,7 +1077,7 @@ def walking(P):
     pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();0")
     return f'walked to {roam}'
 
-@step('Time, weather and rooms: night, a storm, snow, autumn, walking into the lab', 240)   # RL-5: the dark cave (Fizzwell) is parked; the room is Hazel's lab (the hub has no shop)
+@step('Time, weather and rooms: night, a storm, snow, autumn, walking into the lab', 240)   # RL-5: the dark cave (Fizzwell) is parked; the room is Kappi's lab (the hub has no shop)
 def atmosphere(P):
     pg = P.pg
     if not pg.evaluate("typeof environment!=='undefined'"): return 'no time and weather in this build'
@@ -1090,7 +1102,7 @@ def atmosphere(P):
     odds =pg.evaluate("(()=>{const ps=Object.keys(SPECIES).find(k=>SPECIES[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
     out.append(f"night {seen['night']['night']:.2f} (day {seen['day']['night']:.2f}), storm {seen['storm']['storm']:.2f} with rain {seen['storm']['rain']:.2f}, snow {seen['snow']['snow']:.2f} lying {seen['snow']['sk'][3]:.2f}, autumn colour {seen['autumn']['sk'][0]:.2f}")
     # RL-5: the dark cave (Fizzwell, 'env-dark-cave') is retired with its place: no cave in the hub (a run's caves come with RL-7)
-    # walk into the lab and out again (RL-5: was the shop, parked with its town; the hub's public building is Hazel's lab)
+    # walk into the lab and out again (RL-5: was the shop, parked with its town; the hub's public building is Kappi's lab)
     pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0)
     p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
     pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'lab'})})();0")   # v46: as a tap does: at the door first
@@ -1396,7 +1408,7 @@ def nature_growth_exits(P):
     # RL-5: the join table (every road's ends name an exit of their place) is retired: ROADS is empty and the hub has no
     # exit; a run's roads bring it back (RL-7). The exits left are the rooms' doorways
     out.append(f'{n_ex} edge-relative exits')
-    # a resize keeps exits on their edge: grow a copy of Hazel's lab (RL-5: a room, the only scenes with an exit now;
+    # a resize keeps exits on their edge: grow a copy of Kappi's lab (RL-5: a room, the only scenes with an exit now;
     # Tallgrass Meadow is parked) by 6 m each way, then shrink it back
     r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=JSON.parse(JSON.stringify(mapById('int_lab')));delete sc._exk;const before=sc.exits.map(p=>p.slice());sc.w+=6;sc.h+=6;syncExits(sc);const after=sc.exits;
      const ok=sc.edgeExits.every((e,k)=>{const p=after[k],q=before[k],n=e.in==null?1.1:e.in;return e.side==='N'?Math.abs(p[1]-(sc.h-n))<.02:e.side==='S'?Math.abs(p[1]-n)<.02:e.side==='E'?Math.abs(p[0]-(sc.w-n))<.02:Math.abs(p[0]-n)<.02});return {ok,before,after,E:sc.edgeExits}})())"""))
@@ -1454,7 +1466,7 @@ def views_flags_wind_light(P):
 @step('Ground tiles, building plans and colours, rooms laid in at their doors', 300)
 def buildings_and_rooms(P):
     """every ground kind has its 12 tiles; the new buildings have a 3D plan or a low-poly model and every colour variant
-    loads; each kind of building has a room (in the game or parked); walking into Hazel's lab lays the room into Copperleaf where the lab stands (its doorway
+    loads; each kind of building has a room (in the game or parked); walking into Kappi's lab lays the room into Copperleaf where the lab stands (its doorway
     exactly at the lab's door, the hamlet dimmed around it, nowhere to walk but the floor) and walking out leaves you
     at the door with the lab back. RL-5: the hub's doors and its lab (the shop was Marigold Town's, parked)"""
     pg = P.pg
@@ -1489,7 +1501,7 @@ def buildings_and_rooms(P):
         nd += d['n']; bad += [place + ' ' + b for b in d['bad']]
     if bad: raise Exception(f'{len(bad)} of {nd} doors: the room’s doorway isn’t at the door, or the room leaves the view: {bad[:4]}')
     out.append(f'{nd} doors in Copperleaf: each room’s doorway within 0.1 m of its door')   # RL-5: the hub's doors alone
-    # walk into Hazel's lab: the room opens in place (RL-5: was Marigold Town's shop, parked with its town)
+    # walk into Kappi's lab: the room opens in place (RL-5: was Marigold Town's shop, parked with its town)
     pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0)
     pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);window.__lab=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'lab'})})();0")   # a couple of steps from the door (walking is slow here)
     # this machine draws a frame a second: let the room be prepared in big slices (the poke)

@@ -10,7 +10,6 @@ import { expose } from '../test-globals.js';
 import { saveData, unlockTidy } from '../hooks.js';
 import { random } from '../util.js';
 import {
-  EGGS,
   HUB_LOCATIONS,
   ITEMS,
   LINES,
@@ -104,7 +103,6 @@ export function newSave() {
     seats: [],
     visited: { [START_NODE]: 1 },
     serial: 300,
-    eggs: [],
     savedAt: 0,
     /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
     tid: 10000 + Math.floor(random() * 90000),
@@ -147,10 +145,11 @@ export function saveFill(o) {
     o.preferences || {}
   ));
   if (![30, 60, 90, 120].includes(+p.fps)) p.fps = 60;
-  if (p.aim !== 'smooth') p.aim = 'sharp';
+  if (p.aim !== 'smooth' && p.aim !== 'off') p.aim = 'sharp';
   p.effects = 'full';
   p.fps = +p.fps;
-  if (!Array.isArray(s.eggs)) s.eggs = [];
+  /* SA-3: the walk eggs are gone (eggs are the ranch's nursery) */
+  delete (/** @type {any} */ (s).eggs);
   if (!SPECIES[s.starter + '0'] && s.started)
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
   s.team = (s.team || []).filter(m => speciesOf(m));
@@ -209,7 +208,6 @@ export function saveFill(o) {
       graftTidy(q);
     });
   }
-  s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   /* RL-9: a trainee whose Billie isn't in storage any more stops training */
   ranchTidy(s);
   /* RL-11: owned unlocks the table no longer has are forgotten; the buildings' levels follow the owned ones */
@@ -281,7 +279,6 @@ export function validSave(o) {
     return false;
   if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, nodes - 1) || !num(o.se, 0, 1e12)) return false;
   if (o.run && !num(o.run.start.trip.node, 0, HUB_LOCATIONS.length - 1)) return false;
-  if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
   for (const k of ['pyramids', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
   /* phase 17: robot parts you own (missing in a save from before robots) and robots' damaged parts */

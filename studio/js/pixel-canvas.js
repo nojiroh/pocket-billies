@@ -24,10 +24,18 @@
      drawn(P)     the canvas was drawn (zoom and grid may have changed) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { forgetArt, loadedAtlas, markArt, openShortcutSheet, provide } from '../../game/js/hooks.js';
+import {
+  forgetArt,
+  forgetText,
+  loadedAtlas,
+  markArt,
+  markText,
+  openShortcutSheet,
+  provide,
+} from '../../game/js/hooks.js';
 import { clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { historyArt, historyArtGroup } from '../../game/js/logic/history.js';
+import { historyArt, historyArtGroup, historyTextStep } from '../../game/js/logic/history.js';
 import {
   PIXEL_GRID_FROM,
   offPalette,
@@ -92,6 +100,7 @@ expose({
   strokeStart: [() => strokeStart, v => (strokeStart = v)],
   symmetryAt: [() => symmetryAt, v => (symmetryAt = v)],
   symmetryLines: [() => symmetryLines],
+  textStep: [() => textStep, v => (textStep = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ artStepPut });
@@ -169,7 +178,7 @@ export function pixelCanvasPanelHTML(opts = {}) {
   ).join(
     ''
   )}</div><p class="help">Mirrors about the middle of the selection, else of the part under the pointer.</p><div class="pc-shift"><label>Move the axis ↔ <input type="number" step="1" data-pc="shift" data-i="0" value="0" title="In half pixels"></label><label>↕ <input type="number" step="1" data-pc="shift" data-i="1" value="0" title="In half pixels"></label></div></div>
-  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label></div>${opts.onion ? '<div class="px-sec pc-panel"><h4>Onion skin</h4><label class="chk"><input type="checkbox" data-pc="onion"> The other view faint underneath (O)</label><p class="help">The same part from the back (or front), centred under the part you point at.</p>' : ''}<div class="pc-ramps" hidden>${Object.entries(
+  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label></div>${opts.onion ? '<div class="px-sec pc-panel"><h4>Onion skin</h4><label class="chk"><input type="checkbox" data-pc="onion"> The other view faint underneath (O)</label><p class="help">The same part from the back (or front), centred under the part you point at.</p></div>' : ''}<div class="pc-ramps" hidden>${Object.entries(
     (window.NW_PALETTE && window.NW_PALETTE.ramps) || {}
   )
     .filter(([, v]) => Array.isArray(v))
@@ -177,7 +186,7 @@ export function pixelCanvasPanelHTML(opts = {}) {
       ([k, v]) =>
         `<div class="pc-ramp" title="${k}">${v.map(h => `<button class="sw" style="background:${h}" data-pc="sw" data-c="${h}" title="${k} ${h}"></button>`).join('')}</div>`
     )
-    .join('')}</div></div>`;
+    .join('')}</div>`;
 }
 export function pixelCanvasPanel(P, root) {
   P.panel = root;
@@ -264,6 +273,23 @@ export function artSteps(list, parts) {
   historyArtGroup(studioState, steps, parts);
   updateTopBar();
 }
+/* SA-2b: a text file changed (from `before`, null when new, to `after`): marked unsaved and a step of the undo.
+   `parts`: the data as it is now (snapshotParts), when the change changed data too (an atlas key renamed where the
+   data names it); the data's change since the last step is then undone with it */
+export function textStep(path, before, after, parts) {
+  const step = historyTextStep(path, before, after);
+  if (!step) return;
+  markText(path, after);
+  if (parts) {
+    clearTimeout(studioState.snapT);
+    studioState.snapT = null;
+    historyArtGroup(studioState, [step], parts);
+  } else {
+    commit(true);
+    historyArt(studioState, step);
+  }
+  updateTopBar();
+}
 function artStepOf(path, before, after) {
   if (!path || !after) return null;
   if (!before)
@@ -291,6 +317,12 @@ function artStepPut(step, put) {
   if (step.group) {
     const back = put === step.before;
     for (const s of back ? [...step.group].reverse() : step.group) artStepPut(s, back ? s.before : s.after);
+    return;
+  }
+  if (step.text) {
+    const t = put === step.before ? step.text.before : step.text.after;
+    if (t == null) forgetText(step.art);
+    else markText(step.art, t);
     return;
   }
   if (!put.width) {

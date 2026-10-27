@@ -5,12 +5,13 @@
    Smash, Cut: fieldMoves.json). Its obstacle stands at the north exit of a place on the main path (a shore, a cracked
    boulder, a thorny tree); it opens for a Billie of the move's type once that type's badge is kept (meta.badges), and
    then you walk through, by a seam, into the area's first place. rules.json run.side decides, from the run's seed:
-   - a detour (most runs): 2-4 places (routes, a town, then a leader of its own) all at the next row's level; the
+   - a detour (most runs): 2-4 places (routes, a leader of its own, then a town: WM-2) all at the next row's level; the
      last place's way out (a one-way link: a current, a tunnel, a trail) sets you down on a place of the next row
      of the main path, the one the obstacle's place leads to;
-   - or an alternate path (a few runs): 2-3 places alongside the main path's rows, ending at its own mini-boss (a
-     town before it) and coming back by its way out to the main path's next row; or, now and then, ending at a boss
-     of its own (the run is won there, as at the main boss).
+   - or an alternate path (a few runs): 2-3 places alongside the main path's rows, ending at its own mini-boss and
+     the town after it (WM-2: the leader first, as on the main path) and coming back by its way out to the main
+     path's next row; or, now and then, ending at a boss of its own, a town before it (the run is won there, as at
+     the main boss).
    Never both on one run. A side area's places come after the main path's in run.map.nodes, marked `side: 1`, linked
    one to the next (`to`) in a chain, and run.map.side says the rest: its kind, move, name, the place with the
    obstacle (`from`), where the way out goes (`to`, -1 for an alternate path's own boss), its places in order, its
@@ -83,12 +84,14 @@ export const runSideMain = node => !node.side;
  * and the region's dex (the side's species are lines it left out); leaders: every mini-boss leader and its type;
  * used: the leaders the region already picked
  */
-/** the node types of a side area's places, in order: a detour's `n` places, an alternate path's `n`, or one ending
- * at a boss of its own @param {string} kind @param {number} n @param {boolean} boss @returns {string[]} */
+/** the node types of a side area's places, in order: a detour's `n` places, an alternate path's `n` (WM-2: its
+ * leader, then the town as on the main path; a detour of 2 has no town), or one ending at a boss of its own (a town
+ * before it) @param {string} kind @param {number} n @param {boolean} boss @returns {string[]} */
 export function runSideTypes(kind, n, boss) {
-  const end = kind === 'alt' && boss ? 'boss' : 'miniboss';
-  if (n <= 2) return n === 1 ? [end] : [kind === 'alt' ? 'town' : 'route', end];
-  return [...Array(n - 2).fill('route'), 'town', end];
+  if (kind === 'alt' && boss)
+    return n <= 2 ? (n === 1 ? ['boss'] : ['town', 'boss']) : [...Array(n - 2).fill('route'), 'town', 'boss'];
+  if (n <= 2) return n === 1 ? ['miniboss'] : kind === 'alt' ? ['miniboss', 'town'] : ['route', 'miniboss'];
+  return [...Array(n - 2).fill('route'), 'miniboss', 'town'];
 }
 /** the side's species: up to two whole lines the region's dex left out, drawn leaning to the move's type, each in
  * its base variety (null when the dex holds every line: the side then shares the region's)
@@ -251,7 +254,8 @@ provide({ fieldMoveText }); /* to-module */
 /** what is wrong with a map's side area, as sentences (none for a map without one): its places come after the main
  * path's, are marked and chained, its obstacle stands on the main path below its first place's row, its way out
  * goes to a main place of the row it comes back to (a detour's: the row after its obstacle's; an alternate path's:
- * the row after its last; none past its own boss) @param {RunMap} map @returns {string[]} */
+ * the row after its last; none past its own boss), its leader last or right before its town at the end
+ * @param {RunMap} map @returns {string[]} */
 export function runSideProblems(map) {
   const S = map.side,
     out = /** @type {string[]} */ ([]);
@@ -284,6 +288,9 @@ export function runSideProblems(map) {
     else if (F && T.row !== (S.kind === 'detour' ? F.row + 1 : end ? end.row + 1 : -1))
       out.push("the side's way out doesn't go back to the main path's next row");
   }
-  if (end && !['miniboss', 'boss'].includes(end.type)) out.push("the side's last place is not a leader's");
+  /* WM-2: its leader last, or right before its town at the end */
+  const lead = N[S.nodes[S.nodes.length - (end && end.type === 'town' ? 2 : 1)]];
+  if (!lead || !['miniboss', 'boss'].includes(lead.type))
+    out.push("the side's leader is not its last place or right before its town at the end");
   return out;
 }

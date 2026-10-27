@@ -10,6 +10,7 @@ import { expose } from './test-globals.js';
 import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
+import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
@@ -25,7 +26,10 @@ import {
   actorMetersPerPixel,
   actorPositions,
   actorWorldPoint,
+  battleRibbonCells,
+  battleSmearCount,
   battleStage,
+  battleStretch,
   particleSprite,
   trainerBattleFrame,
   trainerMetersPerPixel,
@@ -37,6 +41,7 @@ import { standingHeightAt } from './walk/heights.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
+  SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
@@ -48,9 +53,12 @@ expose({
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
+  ribbonColour: [() => ribbonColour, v => ((ribbonColour = v), provide({ ribbonColour }))],
+  ribbonVertices: [() => ribbonVertices, v => (ribbonVertices = v)],
+  smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dStart, battle3dStop });
+provide({ battle3dLayout, battle3dStart, battle3dStop, ribbonColour });
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -329,9 +337,32 @@ function battle3dFrame() {
   }
   /* RF-2: the thrown pyramid, a lit 3D model; battle-stage.js draws its flat icon instead while it can't be */
   const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, T) : null;
+  let ribbon = null;
   if (py) {
+    /* VFX-2: its motion lines along the last of its arc (walk/effects.js ribbonPass) */
+    ribbon = ribbonVertices(battleStage.coin, T);
+    /* VFX-3: on its fastest cells its trailing side is dragged back (prop-models.js SMEAR_GLSL); the copies aren't */
+    const C = battleStage.coin,
+      S = battleStretch(C);
+    if (S) {
+      const [x0, z0] = T(C.x, C.z),
+        [x1, z1] = T(C.x + S.d[0], C.z + S.d[2]);
+      py.smear = { d: [x1 - x0, S.d[1], z1 - z0], seed: S.seed };
+    }
     items.push(py);
     if (py.light) lights.push(py.light);
+    /* VFX-1: its afterimages, the same model at its older places, dithered and brighter in its own colours (the
+       low-poly shader's look, walk/prop-look.js; a voxel recipe's emission), casting no shadow */
+    for (const g of smearGhosts(battleStage.coin.trail, battleStage.t, battleSmearCount(), battleStage.V)) {
+      const it = pyramidItem({ ...battleStage.coin, ...g.s, glow: 0 }, T);
+      if (!it) continue;
+      it.fade = g.fade;
+      it.glow = g.glow;
+      it.lk = smearLook(g.glow);
+      it.light = null;
+      it.ghost = true;
+      items.push(it);
+    }
   }
   const d = battleStage.dof;
   return {
@@ -342,6 +373,7 @@ function battle3dFrame() {
     off: O,
     gy: battle3d.gy,
     items,
+    ribbon,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
@@ -391,6 +423,51 @@ function pyramidItem(C, T) {
   if (C.kind === 'capstone' || glow > 0.05)
     it.light = { p: [x, y + 0.4, z - 0.3], r: 1.6 + glow * 1.6, c: [0.5 + glow, 0.55 + glow, 0.75 + glow * 0.6] };
   return it;
+}
+/* VFX-2: a thrown pyramid's ribbon as the ribbon pass takes it (two vertices a point: the walk scene's place, the
+   side, the erosion), or null when there is none (Reduced motion, the lowest quality, landed and eroded away) */
+function ribbonVertices(C, T) {
+  const V = battleStage.V,
+    R = smearRibbon(C.trail, battleStage.t, battleRibbonCells(), V, C.arc ? C : null);
+  const col = ribbonColour(C.kind);
+  if (R.length < 2 || !col) return null;
+  const E = ribbonEdges(R, V, C.rax),
+    v = [];
+  for (let i = 0; i < E.length; i++)
+    for (let s = 0; s < 2; s++) {
+      const [x, z] = T(E[i][s][0], E[i][s][2]);
+      v.push(x, battle3d.gy + E[i][s][1], z, s ? 1 : -1, R[i].e);
+    }
+  return { v, col: ribbonTone(col), core: RIBBON_CORE };
+}
+/* VFX-2: a pyramid's own colour for its ribbon (its recipe's first layer); the mail move's coin takes the gold
+   pyramid's. null while the recipe isn't loaded (no ribbon for that moment) */
+function ribbonColour(kind) {
+  const k = PYRAMIDS && PYRAMIDS[kind] ? kind : 'gold_pyramid',
+    rec = PYRAMIDS && PYRAMIDS[k] ? loadPropModelRecipe(pyramidModelPath(k)) : null,
+    col = rec && rec.layers && rec.layers[0] && rec.layers[0].col;
+  return typeof col === 'string' && col[0] === '#' ? col : null;
+}
+/* VFX-1: an afterimage's look (walk/prop-look.js's shape): its colours' value times 1 + glow, a little more
+   saturated, nothing else changed; one per glow, made once */
+const SMEAR_LOOKS = new Map();
+function smearLook(glow) {
+  let L = SMEAR_LOOKS.get(glow);
+  if (!L)
+    SMEAR_LOOKS.set(
+      glow,
+      (L = {
+        key: 'smear' + glow,
+        hsv: [0, glow * 0.25, glow, 1],
+        wear: [0, 0, 0, 0],
+        tint: [1, 1, 1, 0],
+        mask: [0, 0],
+        size: 1,
+        rot: 0,
+        lean: 0,
+      })
+    );
+  return L;
 }
 /* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
    included), spin its turn (setItemSpin in prop-models.js); null while it can't be drawn (3D props off, the GPU

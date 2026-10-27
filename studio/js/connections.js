@@ -3,7 +3,7 @@
    alpha 0.4.1: a drawer (the Connections button, or Ctrl+L) that shows how the thing you are editing hangs together
    with the rest of the game, as a small map: what it uses on the left, what uses it on the right. Click any box to
    go there.
-   - a Billy, move, item, trainer, shop, place, route stop or prop: found by looking through all the game data for
+   - a Billy, move, item, trainer, place, route stop or prop: found by looking through all the game data for
      its id, both ways
    - an engine dial: where its value comes from (built in, the whole game, a scene's own look, presets), which dials
      it needs to do anything, which dials only matter when it is on, and when the game's automatic quality turns it off */
@@ -137,7 +137,6 @@ function connectionsTarget() {
   }
   if (s === 'moves' && studioState.sel.move) return { kind: 'move', id: studioState.sel.move };
   if (s === 'trainers' && studioState.sel.trainer) return { kind: 'trainer', id: studioState.sel.trainer };
-  if (s === 'shops' && studioState.sel.shop) return { kind: 'shop', id: studioState.sel.shop };
   if (s === 'people' && studioState.sel.person) return { kind: 'person', id: studioState.sel.person };
   if (s === 'scenes') {
     if (typeof mapEditor !== 'undefined' && mapEditor.sel != null) {
@@ -147,7 +146,7 @@ function connectionsTarget() {
     }
     return { kind: 'scene', id: currentMapId() };
   }
-  if (s === 'world' && studioState.sel.stop != null && D.locations[studioState.sel.stop])
+  if (s === 'hub' && studioState.sel.stop != null && D.locations[studioState.sel.stop])
     return { kind: 'stop', id: studioState.sel.stop };
   const m = f.match(/^(items|pyramids)\.([^.]+)\./);
   if (s === 'items' && m) return { kind: m[1] === 'items' ? 'item' : 'coin', id: m[2] };
@@ -206,14 +205,6 @@ function connectionNode(kind, id) {
         sub: 'Trainer',
         go: () => openSection('trainers', { trainer: id }),
       };
-    case 'shop':
-      return {
-        kind,
-        id,
-        label: (D.shops[id] || {}).name || id,
-        sub: 'Shop',
-        go: () => openSection('shops', { shop: id }),
-      };
     case 'person':
       return { kind, id, label: id, sub: 'Look', go: () => openSection('people', { person: id }) };
     case 'scene':
@@ -229,8 +220,8 @@ function connectionNode(kind, id) {
         kind,
         id,
         label: (D.locations[id] || {}).name || 'Stop ' + (+id + 1),
-        sub: 'Route stop ' + (+id + 1),
-        go: () => openSection('world', { wtab: 'route', stop: +id }),
+        sub: 'Place (Hub island)',
+        go: () => openSection('hub', { stop: +id }),
       };
     case 'pool':
       return { kind, id, label: id, sub: 'Wild encounters', go: () => openSection('world', { wtab: 'pools' }) };
@@ -276,7 +267,6 @@ function allDataIds() {
   Object.keys(D.items || {}).forEach(k => put(k, 'item'));
   Object.keys(D.pyramids || {}).forEach(k => put(k, 'coin'));
   Object.keys(D.trainers || {}).forEach(k => put(k, 'trainer'));
-  Object.keys(D.shops || {}).forEach(k => put(k, 'shop'));
   Object.keys(D.maps || {}).forEach(k => put(k, 'scene'));
   Object.keys(D.pools || {}).forEach(k => put(k, 'pool'));
   Object.keys((D.scenery || {}).props || {}).forEach(k => put(k, 'prop'));
@@ -299,8 +289,6 @@ function recordOwningPath(path) {
       return ['coin', p[1]];
     case 'trainers':
       return ['trainer', p[1]];
-    case 'shops':
-      return ['shop', p[1]];
     case 'people':
       return ['person', p[1]];
     case 'maps':
@@ -346,8 +334,6 @@ function recordPath(kind, id) {
       return ['pyramids.' + id, D.pyramids[id]];
     case 'trainer':
       return ['trainers.' + id, D.trainers[id]];
-    case 'shop':
-      return ['shops.' + id, D.shops[id]];
     case 'person':
       return ['people.' + id, D.people[id]];
     case 'scene':
@@ -387,18 +373,7 @@ function connectionGraph(cur) {
     });
   }
   const self = R ? R[0] : '';
-  for (const root of [
-    'lines',
-    'moves',
-    'items',
-    'pyramids',
-    'trainers',
-    'shops',
-    'maps',
-    'locations',
-    'pools',
-    'rules',
-  ]) {
+  for (const root of ['lines', 'moves', 'items', 'pyramids', 'trainers', 'maps', 'locations', 'pools', 'rules']) {
     walkDataStrings(D[root], root, (v, path) => {
       if (!ownIds.has(v) || (self && (path === self || path.startsWith(self + '.')))) return;
       const o = recordOwningPath(path);
@@ -428,7 +403,6 @@ function connectionGraph(cur) {
     if (r) {
       if (r.mapId) uses.set('scene:' + r.mapId, ['scene', r.mapId]);
       if (r.pool) uses.set('pool:' + r.pool, ['pool', r.pool]);
-      if (r.shop) uses.set('shop:' + r.shop, ['shop', r.shop]);
     }
     (D.roads || []).forEach(L => {
       const l = PB_DATA.road(D, L),

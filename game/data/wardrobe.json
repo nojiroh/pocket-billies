@@ -185,6 +185,12 @@
    "#E0703A"
   ]
  },
+ "shops": {
+  "thrift": {"name":"Second Chance Threads"},
+  "sports": {"name":"Personal Best Sports"},
+  "designer": {"name":"Maison Margin"},
+  "outlet": {"name":"Capital Outlet"}
+ },
  "items": {
   "tee": {
    "name": "T-shirt",

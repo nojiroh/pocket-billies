@@ -7,7 +7,7 @@
    Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/test/logic.test.mjs) a test puts
    its own small data there before it imports this module. */
 /**
- * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode, RoadLink } from '../types/game-data'
+ * @import { Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode, RoadLink } from '../types/game-data'
  * @import { CutsceneData, Perk, Seat, Species, TrainerEntry } from '../types/game-data'
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -25,8 +25,6 @@ expose({
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
   DEX_ORDER: [() => DEX_ORDER],
-  EGGS: [() => EGGS],
-  EGG_TIERS: [() => EGG_TIERS],
   EVENTS: [() => EVENTS],
   FACTIONS: [() => FACTIONS],
   FIELD_MOVES: [() => FIELD_MOVES],
@@ -309,7 +307,6 @@ export function standInSpecies(id) {
 }
 export const standInList = list => list.map(([id, w]) => [standInSpecies(id), w]);
 if (RULES.legends) for (const L of RULES.legends) L.sp = standInSpecies(L.sp);
-if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecies(RULES.eggs.mythSpecies);
 /* ---------- world ---------- */
 /* RL-5: the places and the roads between them, as the rest of the game reads them. worldSetGraph (below the trainers)
    fills these tables in place, so every module that imports them sees the new rows: here once from the game data,
@@ -383,19 +380,6 @@ export const roadCost = (a, b) => {
   const e = (ROADS_BY_NODE[a] || []).find(e => e.to === b);
   return e ? e.cost : null;
 };
-export const EGGS = /** @type {Record<string, EggTier>} */ ({});
-for (const k in gameData.eggs) {
-  const E = gameData.eggs[k];
-  EGGS[k] = {
-    need: E.need,
-    lv: E.lv,
-    list: standInList(E.list).filter(([id]) => SPECIES[id] || warnData(`Egg ${k} km lists unknown Billie ${id}.`)),
-  };
-  if (!EGGS[k].list.length) EGGS[k].list = [[DEX_ORDER[0], 1]];
-}
-export const EGG_TIERS = Object.keys(EGGS)
-  .map(Number)
-  .sort((a, b) => a - b);
 export const PYRAMIDS = gameData.pyramids;
 provide({ PYRAMIDS }); /* to-module */
 /* studio track ST-0: coats, a recolour of a Billie's art (game/js/logic/coats.js) */
@@ -405,7 +389,8 @@ export const ITEMS = gameData.items;
 provide({ ITEMS }); /* to-module */
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
-export const SHOPS = gameData.shops || {};
+/* SA-3: no shops.json: a run's towns and stalls put their shops in (worldPut) */
+export const SHOPS = /** @type {Record<string, import('../types/game-data').Shop>} */ ({});
 /* roguelite track RL-6: the kinds of node on a run's map (logic/run-map.js takes them as an argument) */
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */

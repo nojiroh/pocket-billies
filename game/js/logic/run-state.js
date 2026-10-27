@@ -2,7 +2,7 @@
 'use strict';
 /* ================= RUN STATE (roguelite track RL-3) =================
    The run in progress, kept in the save as saveData.run (null in the hub; roguelite-track.md 2a). While a run is
-   on, the save's working fields (team, se, items, pyramids, trip, wild, eggs, flags, seats, visited, buddy) are the
+   on, the save's working fields (team, se, items, pyramids, trip, wild, flags, seats, visited, buddy) are the
    run's: every engine and screen reads them as before. runBegin copies the hub's into run.start and gives the run its
    own: the Billies from home (RL-9b: picked at the mast, from the team or storage) and the bag packed from the hub's;
    runEnd pays out, puts the hub's back and keeps the Billies the player chose. Only the seed is stored for what can
@@ -65,7 +65,6 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'pyramids',
   'trip',
   'wild',
-  'eggs',
   'flags',
   'seats',
   'visited',
@@ -170,7 +169,12 @@ export function validRun(o) {
         (node.seen !== undefined && !wholeIn(node.seen, 0, 2)) ||
         (node.biome !== undefined && !id(node.biome)) ||
         (node.zone !== undefined && !wholeIn(node.zone, 0, 7)) ||
-        (node.side !== undefined && node.side !== 1)
+        (node.side !== undefined && node.side !== 1) ||
+        /* WM-2: its footprint on the region grid: a cell and a size, whole cells */
+        (node.at !== undefined &&
+          !(list(node.at, 2) && node.at.length === 2 && node.at.every(v => wholeIn(v, -64, 64)))) ||
+        (node.size !== undefined &&
+          !(list(node.size, 2) && node.size.length === 2 && node.size.every(v => wholeIn(v, 1, 8))))
       )
         return false;
     /* RL-R2: its side area (run-side.js): a kind, a move, a name, the obstacle's place on the main path, the way out
@@ -296,7 +300,6 @@ export function validRun(o) {
     list(st.trip.plan, 500) &&
     st.trip.plan.every(Number.isInteger) &&
     plain(st.wild) &&
-    list(st.eggs, 500) &&
     plain(st.flags) &&
     list(st.seats, 64) &&
     st.seats.every(v => typeof v === 'string') &&
@@ -490,7 +493,6 @@ export function runBegin(s, give) {
   s.pyramids = add(Object.assign(zero(start.pyramids), give.pyramids || {}), pack.pyramids);
   s.trip = { node: 0, plan: [] };
   s.wild = {};
-  s.eggs = [];
   s.flags = copyOf(start.flags || {});
   s.seats = copyOf(start.seats || []);
   s.visited = { 0: 1 };

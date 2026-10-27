@@ -5,7 +5,8 @@
    runTakeOff), the run fixtures (fixture.js), the self-test, the run simulation (tools/test/sim/run-sim.mjs) and the
    Studio's Run Lab. runStartPlan decides it without a save: what the run is given (rules.json run.start), the unlocks
    it carries, its map rules with only the biomes those unlocks open (unlocks.js unlockOpen; the debug menu's short map
-   overrides rows), the region (RL-R1, run-region.js: its zones give the map its rows and biomes), and the map they make
+   overrides rows), its places a path and mini-bosses (WM-2, run-map.js runMapLength: drawn by Expedition), the region
+   (RL-R1, run-region.js: its zones fitted to those rows give the map its biomes), and the map they make
    (run-map.js runMapStart: what the landing shows, the forecast).
    runStartOn puts a plan on a save (run-state.js runBegin). What the page does around it (heal, the ranch, the world,
    the flight) stays in run.js. Logic only: no DOM, no Date, no Math.random (tools/test/run-start.test.mjs). */
@@ -33,7 +34,7 @@ import { relTakeoff } from './relations.js';
 import { copyOf, newRun, runBegin } from './run-state.js';
 import { runRegionMake } from './run-region.js';
 import { runSideForce } from './run-side.js';
-import { runMapStart } from './run-map.js';
+import { runMapLength, runMapStart } from './run-map.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { unlockOpen } from './unlocks.js';
 /* eslint-disable no-func-assign */
@@ -71,15 +72,17 @@ export const runGive = (seed, expedition, mapgenV, start) => ({
 export function runStartPlan(seed, data, o = {}) {
   const expedition = o.expedition || 1,
     unlocks = (o.unlocks || []).slice(),
-    rules = { ...data.rules.map, ...(o.map || {}) },
+    given = { ...data.rules.map, ...(o.map || {}) },
+    /* WM-2: the run's places a path and its mini-bosses (run.map.path and towns, unless given) */
+    rules = { ...given, ...runMapLength(seed, given, expedition) },
     biomes = unlockOpen(rules.biomes, 'biome', unlocks, data.unlockData),
-    /* RL-R1: the region, from the biomes open to the run; its zones decide the map's rows unless they are given */
+    /* RL-R1: the region, from the biomes open to the run; its zones fit the map's rows (WM-2: the path's) */
     region = data.region
       ? runRegionMake(seed, data.region, {
           open: Object.keys(biomes).filter(b => biomes[b] > 0),
           expedition,
           guards: rules.minibosses,
-          rows: o.map && o.map.rows,
+          rows: rules.rows,
         })
       : null,
     zoned = region ? { rows: region.zones.reduce((n, z) => n + z.rows, 0), zones: region.zones } : {},

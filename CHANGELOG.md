@@ -15,6 +15,41 @@ kept aside in the browser).
   Trainer screen (Today, This week, each Expedition, Fastest; ranked by won, then places cleared, leaders beaten and
   fewest days), and a daily's payout shows how your friends did. A friend's last run can wait on your run's map as
   their ghost: their team, as it was, at the place's level. Friends only; blocked players never show.
+- **Cutscenes and run screens** (one session, the owner's brief, 2026-10-27):
+  - Going home after a run shows a "Heading home" screen in the train's carriage, with what the run came to, instead
+    of a plain white screen. A run's evolution waits until you're off the train.
+  - The loading screen before a run is a region card in the portal tunnel's dark colours: its zones, types, leaders,
+    regional dex, the weather ahead and tips that change.
+  - Skyline Station faces out to sea, toward the camera. It has a plain track instead of the climbing sky rail.
+  - The portal floats on its own out over the sea, with glowing layers and turning rings.
+  - The sky train rises on its engines, turns and shoots into the portal; coming home it flies across and sets down.
+  - New game's fall is a dive straight down onto the spot where the opening begins. Its last picture is held while
+    Copperleaf loads.
+  - The starter pick shows the three side by side, above a shorter card. No starter is mirrored.
+- **Loading** (load track LD-5, in part, from the same session):
+  - The world map's ground is worked out on a helper thread.
+  - The walking grid is built in about a third of the time.
+- **Kappi the Wise** replaces Hazel as Professor Chosen's assistant: a capybara (they/them) who does the real
+  research, calm and unhurried, with Billies asleep on their back and a hot yuzu bath in the lab. New lines in the
+  opening, the lab and the hub; their own talk-box portrait (it blinks and talks), a low soft voice, and a capybara
+  body in the lab and the opening. The gift, the favour and the Potion at level 2 are as Hazel's were.
+- **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
+  arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
+  one on the route props test map.
+- **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
+  blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
+  what is behind it instead of stopping at a hard outline against the sharp ground.
+- **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
+  braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
+  a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.
+- **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
+  no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
+  hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
+  dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
+- **Easier to read and tap** (UI-6): the Field Guide's tabs have a panel behind them, so Lore and Postcards read over
+  the world; in dark mode a chosen option (the Guide's tabs, segmented choices) is no longer white text on white; the
+  Field Guide's arrows, Settings Help's sections, the dressing room's toggles and the title's links are 40 px tap
+  targets, and the settings switches have the small icons' larger tap area.
 - **More props on the routes** (route props track RP-1): the last drawn props in the routes' set pieces (firewood,
   the scrap heap, the creature statue, tyres, the tollbooth) are 3D models, and 20 new 3D props: a stile, a
   landing stage, broken columns, a ruined arch and wall corner, a milestone, a trail post, a wayside shrine with a

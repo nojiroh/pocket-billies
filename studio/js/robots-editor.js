@@ -6,6 +6,7 @@
    worked out by the game's own arithmetic (game/js/logic/robot-math.js). Trainers' robots are picked in Trainers. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
+import { artPaint, artPicSrc } from '../../game/js/hooks.js';
 import {
   robotMathAttack,
   robotMathBase,
@@ -15,7 +16,7 @@ import {
   robotMathWeight,
 } from '../../game/js/logic/robot-math.js';
 import { robotHeadId } from '../../game/js/logic/robot-joints.js';
-import { artURL } from '../../game/js/art.js';
+import { ART_CACHE } from '../../game/js/art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, robotRigParts, setRobotRigData } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -33,23 +34,29 @@ import {
   render,
   sectionShown,
   selectField,
+  snapshotParts,
   studioState,
   textField,
+  toast,
   typeChipHTML,
   typeOptions,
   uniqueKey,
 } from './studio-app.js';
+import { artSteps, pictureImage } from './pixel-canvas.js';
+import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
 import { workbench } from './workbench.js';
 import { wbPart } from './workbench-part.js';
 /* eslint-disable no-func-assign */
 expose({
   RB_KINDS: [() => RB_KINDS],
+  RB_PIC_NAME: [() => RB_PIC_NAME],
   RB_SHAPES: [() => RB_SHAPES],
   RB_SLOT_NAMES: [() => RB_SLOT_NAMES],
   RB_SLOT_OF: [() => RB_SLOT_OF],
   rbAnim: [() => rbAnim],
   rbAnimStart: [() => rbAnimStart, v => (rbAnimStart = v)],
   rbAnimate: [() => rbAnimate, v => (rbAnimate = v)],
+  rbArtShown: [() => rbArtShown, v => (rbArtShown = v)],
   rbBuild: [() => rbBuild, v => (rbBuild = v)],
   rbCanvasHTML: [() => rbCanvasHTML],
   rbData: [() => rbData],
@@ -60,6 +67,8 @@ expose({
   rbListHTML: [() => rbListHTML, v => (rbListHTML = v)],
   rbPartEditorHTML: [() => rbPartEditorHTML, v => (rbPartEditorHTML = v)],
   rbPct: [() => rbPct],
+  rbPicAt: [() => rbPicAt, v => (rbPicAt = v)],
+  rbPicHTML: [() => rbPicHTML, v => (rbPicHTML = v)],
   rbReadoutHTML: [() => rbReadoutHTML, v => (rbReadoutHTML = v)],
   rbRulesHTML: [() => rbRulesHTML, v => (rbRulesHTML = v)],
   rbSel: [() => rbSel],
@@ -173,7 +182,7 @@ function rbThumbHTML(P, gem) {
   const path = gem ? P.img : P.art && P.art.img,
     col = gem ? P.color : P.art && P.art.color;
   return path
-    ? `<img class="rb-th" src="${escapeHtml(artURL(path))}" alt="">`
+    ? `<img class="rb-th" src="${escapeHtml(artPicSrc(path))}" alt="">`
     : `<span class="rb-th" style="background:${escapeHtml(col || '#888')}"></span>`;
 }
 function rbListHTML(kind) {
@@ -248,14 +257,8 @@ function rbPartEditorHTML(id) {
   ${card('Stats', rbStatsHTML(p), { sub: 'Added to every robot stat floor (Rules). Upgrades add a share of these.' })}
   ${card(
     'Picture',
-    `${grid(...pics.map(([k, l]) => textField(l, `${p}.art.${k}`, { opt: 1, help: k === 'img' ? 'A path in game/art, like robots/vane.png. Upload pictures under Art files.' : '' })))}
-    <div class="rb-pics">${pics
-      .map(([k, l]) =>
-        P.art[k]
-          ? `<figure><img class="rb-pic" src="${escapeHtml(artURL(P.art[k]))}" alt=""><figcaption>${escapeHtml(l)}</figcaption></figure>`
-          : ''
-      )
-      .join('')}</div>
+    `${grid(...pics.map(([k, l]) => textField(l, `${p}.art.${k}`, { opt: 1, help: k === 'img' ? 'A path in game/art, like robots/vane.png. Paint it with Edit pixels below, or Upload… a PNG: a picture this part hasn’t got is saved as robots/' + id + RB_PIC_NAME[k] + '.png.' : '' })))}
+    <div class="rb-pics">${pics.map(([k, l]) => rbPicHTML(id, k, l, P.art[k], false)).join('')}</div>
     ${rbJointsHTML(id, P)}
     <p class="help">Without a picture the game draws a stand-in from these:</p>${grid(
       colorField('Colour', `${p}.art.color`),
@@ -267,6 +270,69 @@ function rbPartEditorHTML(id) {
   ${users.length ? `<p class="help">Used by ${users.map(T => escapeHtml(T.name)).join(', ')}.</p>` : ''}`;
 }
 /* studio track ST-5: where the part's pictures join (stored or worked out), and the way to the workbench */
+/* SA-2a: a picture with Edit pixels and Upload…, or Upload… alone for a picture the part hasn't got */
+function rbPicHTML(id, k, label, path, gem) {
+  const at = `data-id="${escapeHtml(id)}" data-k="${k}"${gem ? ' data-gem="1"' : ''}`;
+  return `<figure class="rb-fig">${path ? `<img class="rb-pic" src="${escapeHtml(artPicSrc(path))}" alt="">` : '<span class="rb-pic rb-none">none</span>'}<figcaption>${escapeHtml(label)}</figcaption><span class="seg-row">${path && /\.png$/i.test(path) ? `<button class="btn sm" data-act="rbPaint" ${at}>Edit pixels</button>` : ''}<button class="btn sm" data-act="rbUpload" ${at}>Upload…</button></span></figure>`;
+}
+/* a part's or gem's picture field and where a new one is saved: robots/<id>.png, _back, _head, _head_back; a gem's
+   robots/gem_<id>.png (the names the pictures have) */
+const RB_PIC_NAME = { img: '', imgB: '_back', head: '_head', headB: '_head_back' };
+function rbPicAt(d) {
+  const R = rbData(),
+    gem = !!d.gem,
+    o = gem ? R.gems[d.id] : R.parts[d.id] && R.parts[d.id].art;
+  if (!o) return null;
+  return {
+    o,
+    k: d.k,
+    path: o[d.k] || (gem ? `robots/gem_${d.id}.png` : `robots/${d.id}${RB_PIC_NAME[d.k] || ''}.png`),
+  };
+}
+/* the game's robot drawing (robot-art.js) reads the game's picture cache: the unsaved pictures go there, so the
+   builds on this page show them as you paint */
+function rbArtShown() {
+  for (const [path, c] of studioState.artDirty)
+    if (path.startsWith('art/robots/') && ART_CACHE.img[path.slice(4)] !== c)
+      ART_CACHE.img[path.slice(4)] = Object.assign(c, {
+        complete: true,
+        naturalWidth: c.width,
+        naturalHeight: c.height,
+      });
+}
+ACTIONS.rbPaint = d => {
+  const A = rbPicAt(d);
+  if (!A) return;
+  const sel = { rbKind: d.gem ? 'gem' : rbData().parts[d.id].slot, rbId: d.id };
+  artPaint('art/' + A.path, { label: 'Robots', fn: () => openSection('robots', sel) });
+};
+ACTIONS.rbUpload = async d => {
+  const A = rbPicAt(d);
+  if (!A) return;
+  const f = await pickFile('image/png');
+  if (!f) return;
+  const c = await fileToCanvas(f),
+    path = 'art/' + A.path,
+    old = await atlasGet(path).catch(() => null);
+  if (
+    old &&
+    (old.width !== c.width || old.height !== c.height) &&
+    !(await ask(
+      `The new picture is ${c.width}×${c.height}; the old one is ${old.width}×${old.height}. Replace it?`,
+      'Replace'
+    ))
+  )
+    return;
+  const named = !A.o[A.k];
+  if (named) {
+    A.o[A.k] = A.path;
+    changed();
+  }
+  markArt(path, c);
+  artSteps([[path, old && pictureImage(old), pictureImage(c)]], named ? snapshotParts() : undefined);
+  toast(`${A.path}: uploaded. Save to game to write it.`);
+  render();
+};
 function rbJointsHTML(id, P) {
   const said = J => {
     const v = ['front', 'back'].filter(k => J?.[k]);
@@ -305,7 +371,7 @@ function rbGemEditorHTML(id) {
       textField('Picture', `${p}.img`, { opt: 1, help: 'Drawn in the torso’s chest socket. A path in game/art.' })
     ) + textField('Description', `${p}.d`, { area: 1, rows: 2 })
   )}
-  ${G.img ? `<div class="rb-pics"><figure><img class="rb-pic" src="${escapeHtml(artURL(G.img))}" alt=""><figcaption>Picture</figcaption></figure></div>` : ''}
+  <div class="rb-pics">${rbPicHTML(id, 'img', 'Picture', G.img, true)}</div>
   ${card('Stats', rbStatsHTML(p), { sub: 'Added to the robot’s stats. The gem is the robot: its level and XP stay with it.' })}`;
 }
 function rbRulesHTML() {
@@ -436,6 +502,7 @@ function rbAnimate(ts) {
     rbAnim.on = false;
     return;
   }
+  rbArtShown();
   for (const c of cvs) {
     const view = c.dataset.v,
       R = robotRigParts(c.dataset.bot, view === 'back' ? RIG_BACK_VIEW : 1),

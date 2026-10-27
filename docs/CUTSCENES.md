@@ -20,7 +20,7 @@ session 2, not built yet (docs/HANDOFF.md).
   "shots": { "trio": { "eye": [53.85, 1.9, 42.75], "tgt": [53.85, 1.0, 47.95], "fov": 40, "w": 5.9 } },
   "lanes": { "high": [[-20, 40, 50], [32, 44, 60]] },
   "clear": { "areas": [[50.8, 44.6, 55.8, 48.9]], "paths": [["blakeFrom", "blake"]], "eyes": [[55.5, 41.2]] },
-  "script": ["actor Hazel at door down", "camera trio 1.1", "[happy] Hazel: Hello! #l:2c0a"]
+  "script": ["actor Kappi at door down", "camera trio 1.1", "[happy] Kappi: Hello! #l:2c0a"]
 }
 ```
 
@@ -39,35 +39,43 @@ Schema: `game/data/schema/cutscene.schema.json`. Types: `CutsceneData` in `game/
 
 ## The commands
 
-People are named as the script names them: `you`, or a speaker from story.json (`Chosen`, `Hazel`, `Blake`, ...). A place may be
+People are named as the script names them: `you`, or a speaker from story.json (`Chosen`, `Kappi`, `Blake`, ...). A place may be
 a spot, someone in the scene (where they stand now), or a place the cutscene names itself (the opening's `starter`).
 
 | Command | Does | Waits? |
 |---|---|---|
-| `actor Hazel at door down` | puts someone in the scene at a spot, facing up, down, side or sideR | no |
+| `actor Kappi at door down` | puts someone in the scene at a spot, facing up, down, side or sideR | no |
 | `actor you at walkFrom up silhouette` | the same, drawn as a dark figure (who it is stays hidden) | no |
 | `camera trio 1.1` | glides to a shot in that many seconds (0 or none: a cut) | no: the camera moves on while the next step starts |
 | `camera picked 0.9 on starter you` | the same, aimed at a place, or between two | no |
 | `walk Blake blake 1.5` | walks someone to a place; no time given: 1.6 m a second | yes, till they arrive |
 | `walk Blake blake 1.5 nowait` | the same, while the script goes on | no |
-| `face Hazel sideR` / `face Hazel Blake` | turns someone, or towards someone or a spot | no |
-| `act Hazel throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face) | no |
+| `face Kappi sideR` / `face Kappi Blake` | turns someone, or towards someone or a spot | no |
+| `act Kappi throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face) | no |
 | `wait 1.5` / `wait Blake` | pauses for seconds, or till Blake stops walking | yes |
 | `caption 3.4 The Hollow Earth \| {place}` | a caption for seconds: the small line, then the big one | no |
 | `blink` | the letterbox closes and opens like eyelids | yes |
 | `screen dazed` / `waking` / `clear` | the look of the whole picture, coming round after the fall | no |
-| `effect landing at me` / `effect sparkle at Hazel` | a little effect at a place | no |
+| `effect landing at me` / `effect sparkle at Kappi` | a little effect at a place | no |
 | `hide box` / `hide Blake` | the dialogue box goes away / someone leaves the scene | no |
 | `hide prop rift` / `show prop rift` | the prop standing nearest a spot (within 3 m) out of the scene, and back; `show Blake` too | no |
 | `traffic high city_flying_car 9 3` | that many of a prop along one of the cutscene's lanes, end to end in that many seconds, again and again, floating at the lane's height | no |
 | `fade out #0B0912` / `fade in` | the screen fades out (to a colour) or back in | no |
 | `music rival` / `sound throw` | music, a sound effect | no |
-| `Hazel: text`, `[happy] Hazel: text` | a line in the dialogue box | yes, till the tap |
+| `Kappi: text`, `[happy] Kappi: text` | a line in the dialogue box | yes, till the tap |
 
 The rule in one line: **lines and walks wait; camera moves, poses and captions run on.** Put a `wait` where the picture
 should hold.
 
 Slots work in commands too (`{place}`, `{name}`, `{starter}` ...: docs/SCRIPTS.md).
+
+### How New game begins (cutscenes track B)
+
+The fall ends in a dive straight down onto Copperleaf's island, onto the opening's own landing spot (`me`): the
+world map films it (opening-fall.js `fallFloatCamera`), clouds and streaks of air over it. Its last picture is held
+(dazed) behind the impact's flash while Copperleaf's walk view is made, and the opening's first shot, `drop`, looks
+down on the same spot before `wake` brings the camera down to the ground. `tools/look-opening.py` takes pictures of
+it and of the starter pick, which looks across the three starters from the side the coins came from.
 
 ### The opening's own
 

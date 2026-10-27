@@ -5,12 +5,30 @@
    build is a new worker: it imports version.js, which names the build (PB_BUILD, update-check.js). */
 importScripts('version.js');
 const CACHE_PREFIX = 'pocketbillies-' + PB_VERSION_ID;
-self.addEventListener('install', () => self.skipWaiting());
+/* LD-3: a page bundle (js/<page>-<hash>.js, vite.config.js) never changes under its name, so it comes from the cache at
+   once; the build lists its own here (vite.config.js stampBuild), fetched when the worker installs, so the next visit
+   reads it from the cache (and the browser keeps its compiled code). Bundles of other builds are dropped */
+const PRECACHE = [];
+const HASHED = /\/js\/(game|studio)-[0-9a-f]{10}\.js$/;
+self.addEventListener('install', e =>
+  e.waitUntil(
+    caches
+      .open(CACHE_PREFIX + '-app')
+      .then(c => c.addAll(PRECACHE.map(p => new Request(p, { cache: 'reload' }))))
+      .catch(() => {})
+      .then(() => self.skipWaiting())
+  )
+);
 self.addEventListener('activate', e =>
   e.waitUntil(
     (async () => {
       const keys = await caches.keys();
       await Promise.all(keys.filter(k => !k.startsWith(CACHE_PREFIX)).map(k => caches.delete(k)));
+      if (PRECACHE.length) {
+        const c = await caches.open(CACHE_PREFIX + '-app'),
+          keep = new Set(PRECACHE.map(p => new URL(p, location.href).href));
+        for (const r of await c.keys()) if (HASHED.test(new URL(r.url).pathname) && !keep.has(r.url)) await c.delete(r);
+      }
       await self.clients.claim();
     })()
   )
@@ -31,6 +49,18 @@ self.addEventListener('fetch', e => {
           })
           .catch(() => hit);
         return hit || net;
+      })
+    );
+    return;
+  }
+  if (HASHED.test(u.pathname)) {
+    e.respondWith(
+      caches.open(CACHE_PREFIX + '-app').then(async c => {
+        const hit = await c.match(r);
+        if (hit) return hit;
+        const res = await fetch(r);
+        if (res.ok) c.put(r, res.clone());
+        return res;
       })
     );
     return;

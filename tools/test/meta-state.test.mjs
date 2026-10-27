@@ -48,8 +48,8 @@ test('meta: broken or tampered shapes are refused', () => {
     { ...ok, crests: '3' },
     { ...ok, beans: -1 },
     { ...ok, chapter: 0 },
-    { ...ok, rel: { hazel: -1 } },
-    { ...ok, gifted: { hazel: 1.5 } },
+    { ...ok, rel: { kappi: -1 } },
+    { ...ok, gifted: { kappi: 1.5 } },
     { ...ok, research: 1e13 },
     { ...ok, wins: 4 }, // more wins than runs
     { ...ok, expedition: 0 },
