@@ -78,14 +78,14 @@
   {
    "p": "eggs/egg_*_cracked.png",
    "at": [
-    "game/js/art.js:214"
+    "game/js/art.js:215"
    ]
   },
   {
    "p": "eggs/egg_*.png",
    "at": [
-    "game/js/art.js:214",
-    "game/js/art.js:216"
+    "game/js/art.js:215",
+    "game/js/art.js:217"
    ]
   },
   {
@@ -169,12 +169,6 @@
    ]
   },
   {
-   "p": "scene/far/*.png",
-   "at": [
-    "game/js/walk-view.js:762"
-   ]
-  },
-  {
    "p": "scene/flags/*.png",
    "at": [
     "game/js/walk-view.js:510"
@@ -206,168 +200,6 @@
   }
  ],
  "recipes": [
-  {
-   "p": "next/billionaires/bingebat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/cublet.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/gigajenzard.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/altmowl.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/aviatorgoose.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/billgoat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/boostox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/cartotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/emberox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/everyotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/flatpackrat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/gosling.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/harvestgoat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/kamprat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/kidling.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/marsox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/memeox.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/orbitotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/primotter.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/pupfin.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/sharktank.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/sprucegoose.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/hand/windowgoat.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/jenzard.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/siliclet.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/tigerwoods.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
-  {
-   "p": "next/billionaires/tiktokferret.png",
-   "at": [
-    "game/art/next/billionaires/hand/rigs-hand.json"
-   ]
-  },
   {
    "p": "scene/build/detail.png",
    "at": [
@@ -1845,10 +1677,10 @@
    "game/js/walk-control.js:514",
    "game/js/walk-control.js:532",
    "game/js/walk-view.js:322",
-   "game/js/walk-view.js:3510",
-   "game/js/walk-view.js:3699",
-   "game/js/walk-view.js:3810",
-   "game/js/walk-view.js:4129",
+   "game/js/walk-view.js:3509",
+   "game/js/walk-view.js:3698",
+   "game/js/walk-view.js:3809",
+   "game/js/walk-view.js:4128",
    "game/js/walk/frame-items.js:310"
   ],
   "drop": [
@@ -1932,7 +1764,7 @@
    "game/js/minimap.js:82",
    "game/js/self-test.js:3066",
    "game/js/walk-view.js:385",
-   "game/js/walk-view.js:3984",
+   "game/js/walk-view.js:3983",
    "game/js/walk/effects.js:517",
    "game/js/walk/effects.js:671",
    "game/js/walk/effects.js:779",
@@ -2078,8 +1910,8 @@
    "game/js/unit-card.js:177",
    "game/js/unit-card.js:204",
    "game/js/walk-control.js:306",
-   "game/js/walk-view.js:3510",
-   "game/js/walk-view.js:3699",
+   "game/js/walk-view.js:3509",
+   "game/js/walk-view.js:3698",
    "game/js/walk/prop-look.js:151",
    "game/js/workshop.js:102"
   ],

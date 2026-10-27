@@ -211,7 +211,8 @@ export function pyramidURL(kind, size = 16) {
 export function pyramidHTML(kind, css = 32, size = 16) {
   return `<img class="pxi" src="${pyramidURL(kind, size)}" width="${css}" height="${css}" alt="">`;
 }
-export const EGG_ART = [2, 5, 10].flatMap(t => [`eggs/egg_${t}.png`, `eggs/egg_${t}_cracked.png`]);
+/* the ranch draws egg 2 (safe breeding) and egg 10 (risky); SA-5: egg 5 went with the walk eggs */
+export const EGG_ART = [2, 10].flatMap(t => [`eggs/egg_${t}.png`, `eggs/egg_${t}_cracked.png`]);
 function eggCanvas(tier, crack) {
   return ART_CACHE.img[`eggs/egg_${tier}${crack ? '_cracked' : ''}.png`];
 }

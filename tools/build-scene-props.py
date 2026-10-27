@@ -5,7 +5,7 @@ Usage:  python3 tools/build-scene-props.py [--all] [--sheet out.png] [--far-shee
 Needs only Pillow. Every prop is drawn pixel by pixel from code (seeded, so the
 output is reproducible) and written to game/art/scene/props/<key>.png, plus
 game/art/scene/props.json with anchors and placement hints. Horizon strips go to
-game/art/scene/far/ (+ far.json) and small animated sprites to game/art/scene/fx/ (+ fx.json).
+game/art/scene/far/ (+ far.json; retired in SA-5, written no more) and small animated sprites to game/art/scene/fx/ (+ fx.json).
 
 Existing PNGs are never overwritten (they may have been touched up by hand): a run
 only writes files that are missing, but always refreshes the json metadata for every
@@ -3996,6 +3996,7 @@ FW, FH = 640, 120
 FAR = {}
 FAR_DIR = os.path.join(GAME, 'art', 'scene', 'far')
 FAR_META = os.path.join(GAME, 'art', 'scene', 'far.json')
+RETIRED_FAR = True  # SA-5: the far strips are retired (never drawn by the game); this builder writes none
 
 
 def far(key, name):
@@ -4879,9 +4880,9 @@ def build(keys=None, overwrite=False):
         except ValueError:
             pass
     write_json(META, meta)
-    # far layers
+    # far layers: retired in SA-5 (the owner's pick: the game never drew them); the drawing code stays for reference
     fmeta = {}
-    for key, F in FAR.items():
+    for key, F in ({} if RETIRED_FAR else FAR).items():
         cv = F['fn'](random.Random(zlib.crc32(('far_' + key).encode())))
         img = Image.new('RGBA', (FW, FH), (0, 0, 0, 0))
         for i, c in enumerate(cv.a):
@@ -4889,7 +4890,7 @@ def build(keys=None, overwrite=False):
         if (not keys or key in keys) and save_png(img, os.path.join(FAR_DIR, key + '.png'), overwrite):
             written.append('far/' + key)
         fmeta[key] = dict(name=F['name'], w=FW, h=FH)
-    write_json(FAR_META, fmeta)
+    if not RETIRED_FAR: write_json(FAR_META, fmeta)
     # fx sprites
     xmeta = {}
     for key, fn in FX.items():
@@ -4931,7 +4932,7 @@ def sheet(imgs, path, scale=2, maxw=1800):
 def far_sheet(path, scale=2, extra=160):
     """each strip over a sky gradient, with `extra` px of wrap so the seam is visible; fx sprites below"""
     pad = 8
-    keys = list(FAR)
+    keys = [] if RETIRED_FAR else list(FAR)
     W = (FW + extra) * scale + pad * 2
     H = len(keys) * (FH * scale + pad) + pad + 140
     out = Image.new('RGBA', (W, H), (40, 40, 52, 255))

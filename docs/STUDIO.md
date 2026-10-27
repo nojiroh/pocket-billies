@@ -609,7 +609,8 @@ The **Art browser** (section `art`, workspace Art) shows every picture under `ga
   - `dir:scene/props` keeps a folder; `dir:props` keeps any folder with that name.
   - `w:32`, `w:>32`, `w:<=64`, `w:16-64` filter by width; `h:` the same by height. The sizes come from each PNG's
     header (a 33-byte read) and are kept in this browser by the file's contents hash.
-  - `unused` keeps pictures nothing names; `legacy` keeps pictures only the legacy world names.
+  - `unused` keeps pictures nothing names; `legacy` keeps pictures only the legacy world names (or in `art/legacy`);
+    `kept` keeps pictures nothing loads that the keep list holds on purpose (below).
   - With a search, the current folder and everything under it are searched.
   - The parser is `game/js/logic/art-search.js`, unit-tested in `tools/test/art-search.test.mjs`.
 - **The picture panel** shows the path, the size in pixels and KB, frames or pieces (from a `.json` layout beside the
@@ -623,8 +624,7 @@ The **Art browser** (section `art`, workspace Art) shows every picture under `ga
 
   The index is `game/js/logic/art-refs.js`, unit-tested in `tools/test/art-refs.test.mjs`. The code builds many paths
   from names, so it is read as patterns (`scene/flags/*.png`). A pattern whose name is only a legacy place's counts as
-  legacy. So **unused means "no reference found", not proof**: SA-5's report checks each file again with grep before
-  anything is deleted.
+  legacy. So **unused means "no reference found", not proof**: grep a file by its full path before deleting it.
 - **Actions:**
   - **Edit pixels** opens any PNG on the shared pixel canvas. Its tools, keys, symmetry and palette lock are the same
     as everywhere else. Each stroke is one step of the Studio's undo; Done goes back to the grid.
@@ -634,6 +634,18 @@ The **Art browser** (section `art`, workspace Art) shows every picture under `ga
   - **Download** saves the picture, with your unsaved edit if there is one.
   - **Open in …** goes to the editor for what uses the picture: Billies, Props, Walk scenes, Wardrobe, Robots or the
     Art workbench.
+- **Report** (SA-5), the button by Refresh list: the unused-art report in the grid's place.
+  - **Nothing uses it**: the orphans (0 after SA-5).
+  - **Missing**: a data text or a keep entry that names a picture that isn't there.
+  - **Legacy**: what only the legacy world names, and everything in `art/legacy/`.
+  - **Kept on purpose**: pictures nothing loads that `studio/art-keep.json` keeps (a tool's input, the portrait kit),
+    each with its reason under Used by. Add an entry (`p`: a path inside `art/`, a folder ending in `/`; `why`) for a
+    picture that must stay.
+  - The same count runs outside the Studio: `node tools/art-unused.mjs` (`--check` fails on an orphan or a missing
+    picture; a unit test runs it), and tools/check-quick.py's Unused step uses it for pictures. Both build the index
+    with `artRefInputs` in `game/js/logic/art-refs.js`, so they agree with the browser.
+- **Legacy art** (`art/legacy/`: the legacy towns' postcards and flags, SA-5) is read-only: no Edit pixels or
+  Replace, only Download.
 - **Ctrl+K** finds art files by name or path, ranked after the thing a picture belongs to. Picking one opens the
   browser in its folder with the picture picked.
 - Checks: `check-studio-github.py --only=art_browser`, the Studio self-test's "Art browser" row (the index over every
@@ -752,10 +764,10 @@ beside the painter (drawn again after each stroke). Lighting is flat: the sun, s
   ceiling), by day and lit at night.
 - **Flags** (`scene/flags`): waving on the mast by the game's own ripple (a Wind slider), the postcard stamp, and who
   flies it.
-- **Far backdrops** (`scene/far`): over a sky, one and a half times across so the seam shows. **The game loads these but
-  doesn't draw them** (walk-view.js only preloads `scene/far/<far>.png`; a place's `far` still picks its sound, water
-  and default walls, and `farH` does nothing). Walk scenes' far list now has sea and volcano.
-- Builders: the far backdrops are drawn by tools/build-scene-props.py, `detail-a04b.png` by tools/build-airship.py and
+- **Flags** of legacy towns are in `art/legacy/scene/flags` (SA-5): previewed the same, read-only.
+- **Far backdrops** were retired in SA-5 (the owner's pick): the game never drew them. A place's `far` still picks its
+  sound, water and default walls (Walk scenes: "Surroundings"); `farH` does nothing.
+- Builders: `detail-a04b.png` is drawn by tools/build-airship.py and
   tools/build-props-batch1.py (now in `ART_BUILDERS`, so the warning shows).
 - Checks: `tools/test/wall-ramp.test.mjs`, `check-studio-github.py --only=scene_art`, `studio-shots.py --views
   walls,flags`.

@@ -759,7 +759,6 @@ export function mapArtPaths(sc) {
     L.add(flagPicturePath(sc));
     L.add('scene/flags/default.png');
   }
-  if (sc.far) L.add(`scene/far/${sc.far}.png`);
   if (typeof lifePaths === 'function') for (const q of lifePaths(sc)) L.add(q);
   if (typeof propModelArtPaths === 'function') for (const q of propModelArtPaths(sc, C)) L.add(q);
   return [...L];

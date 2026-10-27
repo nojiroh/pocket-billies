@@ -35,7 +35,7 @@ import {
   isArtPicture,
   pngSize,
 } from '../../game/js/logic/art-search.js';
-import { artRefIndex, artRefState } from '../../game/js/logic/art-refs.js';
+import { LEGACY_DIR, artRefIndex, artRefInputs, artRefState, artReport } from '../../game/js/logic/art-refs.js';
 import { stripOf } from '../../game/js/logic/frame-strips.js';
 import {
   ACTIONS,
@@ -87,6 +87,7 @@ expose({
   artPaint: [() => artPaint, v => ((artPaint = v), provide({ artPaint }))],
   artPicSrc: [() => artPicSrc],
   artPictures: [() => artPictures],
+  artReadOnly: [() => artReadOnly],
   artRefs: [() => artRefs, v => (artRefs = v)],
   artSize: [() => artSize, v => (artSize = v)],
   artSizeRead: [() => artSizeRead, v => (artSizeRead = v)],
@@ -101,7 +102,7 @@ expose({
   metaOf: [() => metaOf],
   mountArtBrowser: [() => mountArtBrowser, v => (mountArtBrowser = v)],
   mountArtPixels: [() => mountArtPixels, v => (mountArtPixels = v)],
-  rigRefs: [() => rigRefs, v => (rigRefs = v)],
+  reportHTML: [() => reportHTML, v => (reportHTML = v)],
   sizeKey: [() => sizeKey],
   sizeStore: [() => sizeStore, v => (sizeStore = v)],
   sizesRun: [() => sizesRun, v => (sizesRun = v)],
@@ -139,6 +140,11 @@ export const artBrowser = {
   /** @type {Map<string, any[]> | null} */
   ix: null,
   ixKey: '',
+  /** SA-5: the keep list (studio/art-keep.json) @type {{ p: string, why: string }[]} */
+  kept: [],
+  /** SA-5: the unused-art report (logic/art-refs.js artReport), made with the index; shown in place of the grid */
+  report: null,
+  reportOn: false,
   pc: null,
   keep: {},
   tool: 'pen',
@@ -255,23 +261,22 @@ function artSizesRead(paths) {
 /* ---------- what uses each picture (logic/art-refs.js) ---------- */
 export async function artCodeRefsLoad() {
   if (artBrowser.code) return artBrowser.code;
-  try {
-    const r = await fetch('art-code-refs.json', { cache: 'no-cache' });
-    artBrowser.code = r.ok ? await r.json() : { refs: [], recipes: [] };
-  } catch (e) {
-    artBrowser.code = { refs: [], recipes: [] };
-  }
+  const get = async (name, empty) => {
+    try {
+      const r = await fetch(name, { cache: 'no-cache' });
+      return r.ok ? await r.json() : empty;
+    } catch (e) {
+      return empty;
+    }
+  };
+  /* SA-5: the keep list (pictures nothing loads that stay on purpose) comes with the code's references */
+  const [code, keep] = await Promise.all([
+    get('art-code-refs.json', { refs: [], recipes: [] }),
+    get('art-keep.json', { kept: [] }),
+  ]);
+  artBrowser.kept = keep.kept || [];
+  artBrowser.code = code;
   return artBrowser.code;
-}
-/* a Billie's sheet: its rig's (sprites.js atlasPath), named by no data text */
-function rigRefs() {
-  const out = [];
-  for (const L of studioState.D.lines || [])
-    L.names.forEach((n, i) => {
-      for (const v of ['front', 'back'])
-        out.push({ path: atlasPath(L.id + i, v), ref: { kind: 'rig', from: 'lines', at: L.id + i, legacy: false } });
-    });
-  return out;
 }
 /* the index, made again when the data, the file list or the legacy data changed; null while its parts load */
 export function artRefs() {
@@ -286,26 +291,55 @@ export function artRefs() {
   }
   const key = [studioState.ver, studioState.files.length, studioState.artDirty.size, !!legacyView.data].join('|');
   if (artBrowser.ix && artBrowser.ixKey === key && artBrowser.ixLast === studioState.last) return artBrowser.ix;
-  const D = studioState.D,
-    L = legacyView.data || {};
-  const data = Object.entries(D).map(([from, value]) => ({ from, value }));
-  for (const [k, v] of Object.entries(L))
-    if (k !== 'mapIds' && k !== 'lines') data.push({ from: 'legacy ' + k, value: v, legacy: true });
   const paths = [...new Set([...artPictures(), ...studioState.artDirty.keys()])];
-  artBrowser.ix = artRefIndex(paths, {
-    data,
-    code: artBrowser.code.refs || [],
-    recipes: artBrowser.code.recipes || [],
-    extra: rigRefs(),
-    ids: {
-      live: [...Object.keys(D.maps || {}), ...(D.locations || []).map(r => r.id).filter(Boolean)],
-      legacy: [...(L.mapIds || []), ...(L.locations || []).map(r => r.id).filter(Boolean)],
-    },
+  /* the same inputs as tools/art-unused.mjs (logic/art-refs.js artRefInputs), so both count alike */
+  const o = artRefInputs({
+    D: studioState.D,
+    legacy: legacyView.data || {},
+    code: artBrowser.code,
+    kept: artBrowser.kept || [],
+    sheet: atlasPath,
   });
+  artBrowser.ix = artRefIndex(paths, o);
+  artBrowser.report = artReport(paths, artBrowser.ix, o);
   artBrowser.ixKey = key;
   artBrowser.ixLast = studioState.last;
   return artBrowser.ix;
 }
+/* SA-5: the legacy world's art (art/legacy/) is shown, never edited */
+const artReadOnly = path => String(path || '').startsWith(LEGACY_DIR);
+
+/* SA-5: the unused-art report, in the grid's place: orphans, missing pictures, legacy and kept (the same counts as
+   tools/art-unused.mjs) */
+function reportHTML(ix) {
+  const R = artBrowser.report;
+  if (!ix || !R) return { head: 'Finding what uses each picture…', body: '' };
+  const n = artPictures().length;
+  const group = (title, help, list) =>
+    `<h4>${escapeHtml(title)} · ${list.length}</h4><p class="help">${help}</p>${list.length ? `<div class="ab-grid">${listHTML(list, ix)}</div>` : ''}`;
+  const missing = R.missing.length
+    ? `<ul class="ab-refs">${R.missing
+        .slice(0, 100)
+        .map(
+          m =>
+            `<li><span class="mono">${escapeHtml(m.path)}</span> named by <b>${escapeHtml(m.from)}</b> ${escapeHtml(m.at)}</li>`
+        )
+        .join('')}</ul>`
+    : '';
+  return {
+    head: `<b>Unused-art report</b> · ${n} pictures`,
+    body: `${group('Nothing uses it', 'No data, code, rig or model recipe names these. A hint, not proof: grep before deleting one.', R.unused)}
+    <h4>Missing · ${R.missing.length}</h4><p class="help">Data or the keep list name these pictures, and there is no such file.</p>${missing}
+    ${group('Legacy', 'Only the legacy world names these, or they sit in art/legacy/ (read-only).', R.legacy)}
+    ${group('Kept on purpose', 'Nothing loads these; studio/art-keep.json keeps them (a tool’s input, the portrait kit). Each one’s reason is under Used by.', R.kept)}`,
+  };
+}
+ACTIONS.abReport = () => {
+  artBrowser.reportOn = !artBrowser.reportOn;
+  artBrowser.more = 0;
+  render();
+};
+
 const metaOf = (path, ix) => ({ ...(artSize(path) || {}), state: ix ? artRefState(ix.get(path)) : undefined });
 /* SA-2a: a picture's frames, when the game animates it (logic/frame-strips.js), and the builder that draws it */
 export const artStripOf = path =>
@@ -390,15 +424,16 @@ function thumbHTML(path, ix) {
     s = artSize(path),
     st = ix ? artRefState(ix.get(path)) : '',
     dirty = studioState.artDirty.has(path) || studioState.textDirty.has(path);
-  return `<button class="ab-tile${path === artBrowser.sel ? ' on' : ''}${st === 'unused' ? ' ab-unused' : ''}" data-act="abPick" data-p="${escapeHtml(path)}" title="${escapeHtml(path)}"><span class="ab-thumb"><img src="${escapeHtml(thumbSrc(path))}" alt="" loading="lazy"></span><span class="ab-name">${escapeHtml(name)}</span><small>${s ? s.w + '×' + s.h : ''}${dirty ? ' · edited' : ''}${st === 'legacy' ? ' · legacy' : ''}</small></button>`;
+  return `<button class="ab-tile${path === artBrowser.sel ? ' on' : ''}${st === 'unused' ? ' ab-unused' : ''}" data-act="abPick" data-p="${escapeHtml(path)}" title="${escapeHtml(path)}"><span class="ab-thumb"><img src="${escapeHtml(thumbSrc(path))}" alt="" loading="lazy"></span><span class="ab-name">${escapeHtml(name)}</span><small>${s ? s.w + '×' + s.h : ''}${dirty ? ' · edited' : ''}${st === 'legacy' ? ' · legacy' : st === 'kept' ? ' · kept' : ''}</small></button>`;
 }
 function detailHTML(path, ix) {
   if (!path) return '<p class="help">Pick a picture to see what uses it.</p>';
   const f = fileOf(path),
     s = artSize(path),
     refs = ix ? ix.get(path) || [] : null,
-    png = /\.png$/i.test(path),
-    icon = /^art\/ui\/([\w-]+)\.svg$/.exec(path),
+    ro = artReadOnly(path),
+    png = /\.png$/i.test(path) && !ro,
+    icon = !ro && /^art\/ui\/([\w-]+)\.svg$/.exec(path),
     eds = ix ? artEditorsFor(path) : [];
   const used =
     refs == null
@@ -408,7 +443,7 @@ function detailHTML(path, ix) {
             .slice(0, 40)
             .map(
               r =>
-                `<li><b>${escapeHtml(r.kind === 'code' ? 'code' : r.kind === 'recipe' ? 'model recipe' : r.kind === 'rig' ? 'Billie sheet' : r.from)}</b> ${escapeHtml(r.kind === 'code' ? r.from + ' (' + r.at + ')' : r.kind === 'recipe' ? r.from.replace(/^game\/art\//, '') : r.at)}${r.legacy ? ' <span class="chip">legacy</span>' : ''}</li>`
+                `<li><b>${escapeHtml(r.kind === 'code' ? 'code' : r.kind === 'recipe' ? 'model recipe' : r.kind === 'rig' ? 'Billie sheet' : r.kind === 'kept' ? 'kept on purpose' : r.kind === 'folder' ? 'the legacy folder' : r.from)}</b> ${escapeHtml(r.kind === 'code' ? r.from + ' (' + r.at + ')' : r.kind === 'recipe' ? r.from.replace(/^game\/art\//, '') : r.at)}${r.legacy ? ' <span class="chip">legacy</span>' : ''}</li>`
             )
             .join('')}${refs.length > 40 ? `<li class="help">and ${refs.length - 40} more</li>` : ''}</ul>`
         : '<p class="help">Nothing in the data or the code names it. That is a hint, not proof: the code builds some paths in ways the index can’t read.</p>';
@@ -423,8 +458,8 @@ function detailHTML(path, ix) {
   ${strip ? stripPlayerHTML(path, strip) : ''}${scenePreviewHTML(path)}
   <p class="mono ab-path">${escapeHtml(path)}</p>
   <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
-  ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}
-  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
+  ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}${ro ? '<p class="help">Legacy art (art/legacy): kept for reference, read-only here. Download it to look at it closer.</p>' : ''}
+  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}${ro ? '' : `<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button>`}<button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
 function gridHTML(ix) {
@@ -451,7 +486,7 @@ function gridHTML(ix) {
     };
   }
   const inside = artBrowser.at ? all.filter(p => (artFolderOf(p) + '/').startsWith(artBrowser.at + '/')) : all;
-  if ((Q.unused || Q.legacy) && !ix) return { head: 'Finding what uses each picture…', body: '', count: 0 };
+  if ((Q.unused || Q.legacy || Q.kept) && !ix) return { head: 'Finding what uses each picture…', body: '', count: 0 };
   const hit = [],
     need = [];
   for (const p of inside) {
@@ -481,18 +516,18 @@ function listHTML(paths, ix) {
 SECTIONS.art = () => {
   const Q = artQueryParse(artBrowser.q),
     ix = artRefs(),
-    G = gridHTML(ix),
+    G = artBrowser.reportOn ? reportHTML(ix) : gridHTML(ix),
     sz = thumbSize();
   if (artBrowser.sel && !artSize(artBrowser.sel))
     artSizeRead(artBrowser.sel).then(() => studioState.sec === 'art' && render());
   afterRender(mountArtBrowser);
   if (artBrowser.edit) return `<div class="ed-col solo">${editCardHTML()}</div>`;
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Art browser</h2><button class="btn" data-act="artRefresh">Refresh list</button></div>
-  <div class="ab-bar"><input type="search" id="abQ" class="ab-q" placeholder="Search: names, dir:scene/props, w:>32, h:16-64, unused, legacy" value="${escapeHtml(artBrowser.q)}" autocomplete="off" spellcheck="false">
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Art browser</h2><button class="btn${artBrowser.reportOn ? ' primary' : ''}" data-act="abReport" title="What nothing uses, what is missing, legacy and kept">Report</button><button class="btn" data-act="artRefresh">Refresh list</button></div>
+  <div class="ab-bar"><input type="search" id="abQ" class="ab-q" placeholder="Search: names, dir:scene/props, w:>32, h:16-64, unused, legacy, kept" value="${escapeHtml(artBrowser.q)}" autocomplete="off" spellcheck="false">
   <label class="ab-size">Size <input type="range" id="abSize" min="32" max="256" step="8" value="${sz}"></label></div>
   ${Q.chips.length ? `<div class="seg-row ab-chips">${Q.chips.map((c, i) => `<button class="chip ab-chip" data-act="abChip" data-i="${i}" title="Take it off">${escapeHtml(c.text)} ✕</button>`).join('')}</div>` : ''}
   ${/^next\/tiles\d*$/.test(artBrowser.at) && artQueryEmpty(Q) ? '<div class="seg-row ab-note"><span class="help">The full-mode ground: twelve 32 px tiles a kind.</span><button class="btn sm primary" data-act="tsOpen">Open as a ground tile set</button></div>' : ''}
-  <div class="ab-wrap"><div class="ab-main"><div class="ab-crumbs">${G.head}</div><div class="ab-grid" id="abGrid" style="--ab-size:${sz}px">${G.body || '<p class="help">Nothing here.</p>'}</div></div>
+  <div class="ab-wrap"><div class="ab-main"><div class="ab-crumbs">${G.head}</div>${artBrowser.reportOn ? `<div id="abGrid" class="ab-report" style="--ab-size:${sz}px">${G.body}</div>` : `<div class="ab-grid" id="abGrid" style="--ab-size:${sz}px">${G.body || '<p class="help">Nothing here.</p>'}</div>`}</div>
   <aside class="ab-side">${card('Picture', detailHTML(artBrowser.sel, ix))}</aside></div></div>`;
 };
 function mountArtBrowser() {
@@ -615,6 +650,7 @@ ACTIONS.abDownload = async d => {
   a.click();
 };
 ACTIONS.abReplace = async d => {
+  if (artReadOnly(d.p)) return toast('Legacy art is read-only.', 'err');
   if (/\.svg$/i.test(d.p)) return iconReplace(d.p);
   const f = await pickFile('image/png,image/webp');
   if (!f) return;
@@ -661,6 +697,7 @@ function editCardHTML() {
   );
 }
 ACTIONS.abEdit = async d => {
+  if (artReadOnly(d.p)) return toast('Legacy art is read-only.', 'err');
   try {
     await atlasGet(d.p);
   } catch (e) {
@@ -684,6 +721,7 @@ ACTIONS.abEditDone = () => {
 /** SA-2a: another editor's Edit pixels: the painter on a picture (art/...), and Done goes back with `back`
  * ({ label, fn }) */
 export async function artPaint(path, back = null) {
+  if (artReadOnly(path)) return toast('Legacy art is read-only.', 'err');
   try {
     await atlasGet(path);
   } catch (e) {

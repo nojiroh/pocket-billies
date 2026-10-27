@@ -83,6 +83,18 @@ test('unused and legacy read the reference state', () => {
   assert.equal(S.artMatch('art/a.png', { state: 'unused' }, L), false);
 });
 
+test('kept reads the reference state, and is a chip', () => {
+  const K = S.artQueryParse('kept dir:next');
+  assert.equal(K.kept, true);
+  assert.deepEqual(
+    K.chips.map(c => c.text),
+    ['Kept on purpose', 'In next']
+  );
+  assert.equal(S.artMatch('art/next/a.png', { state: 'kept' }, K), true);
+  assert.equal(S.artMatch('art/next/a.png', { state: 'unused' }, K), false);
+  assert.equal(S.artQueryEmpty(S.artQueryParse('kept')), false);
+});
+
 test('a chip comes off the text it was made from; an empty query keeps the folder view', () => {
   const q = 'house dir:scene w:>8 unused',
     Q = S.artQueryParse(q);
@@ -149,7 +161,7 @@ test('SA-2a: the builder that draws a picture, for the Studio`s warning', () => 
   assert.equal(S.artMadeBy('art/next/tiles47/grass_1.png'), '');
   assert.equal(S.artMadeBy('art/robots/vane.png'), '');
   assert.equal(S.artMadeBy('art/ui/bag.svg'), ''); // SA-2b: the SVG files are the source
-  assert.equal(S.artMadeBy('art/scene/far/hills.png'), 'tools/build-scene-props.py');
+  assert.equal(S.artMadeBy('art/scene/far/hills.png'), '', 'SA-5: the far strips are retired');
   assert.equal(S.artMadeBy('scene/build/detail-a04b.png'), 'tools/build-airship.py and tools/build-props-batch1.py');
   for (const [, tools] of S.ART_BUILDERS)
     for (const tool of tools.split(' and ')) assert.ok(existsSync(join(ROOT, tool)), tool);
