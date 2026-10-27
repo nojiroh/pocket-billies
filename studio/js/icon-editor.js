@@ -79,7 +79,7 @@ const iconEd = {
 const ICON_BOX = 36;
 const iconPath = name => `art/ui/${name}.svg`;
 /* the icons in the file list, and any made here and not saved */
-function iconNames() {
+export function iconNames() {
   const out = new Set();
   for (const p of artPictures()) {
     const m = /^art\/ui\/([\w-]+)\.svg$/.exec(p);
