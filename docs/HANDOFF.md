@@ -20,8 +20,8 @@ head. Tag to suggest: `hb-10d-done` on this entry's commit (the owner pushes tag
   say `kappi`. `meta.wish` sits beside main's ON-2 `meta.boards`. The banter schema now lets a resident's id be a
   `who` (RS-3); `square_won`/`square_lost` stay in its enum.
 - Risky / check on the phone: the bunting goes up the moment you come home from a win (props re-check every 0.2 s);
-  the coin's boon or curse joins the next run as an event boon (`run.enc.boons`, src `fountain`): not yet checked
-  against ON-2's daily and weekly runs (a fixed start for everyone: a daily may carry your fountain boon). No busker
+  the coin's boon or curse joins the next run as an event boon (`run.enc.boons`, src `fountain`); a daily or weekly
+  (ON-2) returns before it in run-start.js, so the boon waits for your next ordinary run (checked on the merge). No busker
   yet (RS-5). The coin uses the coin sound and a plop until the sound track replaces them.
 - Verified (merged head 69ac03a3): lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings),
   build, `npm test` 1478 of 1478. Full quick check (Python Playwright 1.63.0): 40 steps, 35 passed, 5 PROBLEMs:
