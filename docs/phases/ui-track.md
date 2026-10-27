@@ -669,6 +669,14 @@ Built (UI-8c, 2026-10-27, on `claude/ui-8c-map-markers`):
 About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
 and on.
 
+How the sessions run (the owner, 2026-10-27: "Start each next step of the ui plan in a new session and automatically
+approve the plans. The choices are made and I want it done."): the planning session starts each step in a new session
+on `track/ui` when the one before has pushed its HANDOFF entry. A step writes its plan and goes on without waiting for
+approval; where it meets an open choice or an "Ask me before" item it takes the recommended option and lists it in its
+HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for. Each step tells
+the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
+main stay the owner's (the PR from `track/ui`).
+
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
   39), and edits this file, ROADMAP, BRANCHES and HANDOFF; whichever of the two PRs merges second takes a small merge.
