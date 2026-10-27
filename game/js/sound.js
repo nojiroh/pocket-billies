@@ -17,7 +17,13 @@ import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
-import { AMBIENCE_BEDS, ambienceDrift, ambienceNoiseLoop, ambienceRandom } from './logic/ambience-sound.js';
+import {
+  AMBIENCE_BEDS,
+  ambienceDrift,
+  ambienceLiveStep,
+  ambienceNoiseLoop,
+  ambienceRandom,
+} from './logic/ambience-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -45,6 +51,8 @@ expose({
   RARE_BIRDS: [() => RARE_BIRDS],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
+  ambienceBedStart: [() => ambienceBedStart, v => (ambienceBedStart = v)],
+  ambienceBedStop: [() => ambienceBedStop, v => (ambienceBedStop = v)],
   ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
   ambienceDriftTick: [() => ambienceDriftTick, v => (ambienceDriftTick = v)],
   ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
@@ -853,46 +861,32 @@ function initAmbience() {
   };
   ambience.noiseMs = Math.round(performance.now() - t0);
   ambience.rng = ambienceRandom(0x50d3);
-  /* a layer of a bed (AMBIENCE_BEDS): its noise from a random point, through its filters, at its gain */
-  const layer = (L, dest, drifts) => {
-    const s = c.createBufferSource(),
-      F = [];
-    s.buffer = ambience.noise[L.noise];
-    s.loop = true;
-    s.playbackRate.value = L.rate || 1;
-    let n = s;
+  /* a layer of a bed (AMBIENCE_BEDS): its filters and its gain, waiting for its noise (ambienceBedStart) */
+  const layer = (L, dest, b) => {
+    const F = [];
+    let n = null,
+      head = null;
     for (const [type, f, q, gain] of L.filters) {
       const bq = c.createBiquadFilter();
       bq.type = type;
       bq.frequency.value = f;
       bq.Q.value = q || 0.7;
       if (gain) bq.gain.value = gain;
-      n.connect(bq);
+      if (n) n.connect(bq);
+      else head = bq;
       n = bq;
       F.push(bq);
     }
     const m = c.createGain();
     m.gain.value = L.gain;
     /* SND-8a: what wanders (its gain, or a filter's frequency), moved by ambienceDriftTick */
-    for (const D of L.drift || []) drifts.push({ D, param: D.on === 'gain' ? m.gain : F[D.on].frequency, next: 0 });
-    n.connect(m);
+    for (const D of L.drift || []) b.drifts.push({ D, param: D.on === 'gain' ? m.gain : F[D.on].frequency, next: 0 });
+    if (n) n.connect(m);
     m.connect(dest);
-    s.start(0, Math.random() * s.buffer.duration);
-  };
-  const bed = (name, make, bus = ambience.lpW) => {
-    const g = c.createGain();
-    g.gain.value = 0;
-    const p = c.createStereoPanner ? c.createStereoPanner() : null,
-      drifts = [];
-    make(g, drifts);
-    if (p) {
-      g.connect(p);
-      p.connect(bus);
-    } else g.connect(bus);
-    ambience.beds[name] = { g, p, drifts };
+    b.parts.push({ buffer: ambience.noise[L.noise], rate: L.rate || 1, head: head || m });
   };
   /* crickets: a high tone chopped fast, then gated in slow pulses; two of them, slightly apart */
-  const cricket = (f, r1, r2) => dest => {
+  const cricket = (f, r1, r2, dest, t) => {
     const o = c.createOscillator();
     o.frequency.value = f;
     const a = c.createGain(),
@@ -916,40 +910,69 @@ function initAmbience() {
     o.connect(a);
     a.connect(b);
     b.connect(dest);
-    o.start();
-    l1.start();
-    l2.start();
+    for (const x of [o, l1, l2]) x.start(t);
+    return [o, l1, l2];
   };
-  for (const [name, B] of Object.entries(AMBIENCE_BEDS))
-    bed(
-      name,
-      (d, drifts) => {
-        /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
-        const tr = c.createGain();
-        tr.gain.value = B.trim;
-        tr.connect(d);
-        if (name === 'crickets') {
-          cricket(4300, 26, 0.9)(tr);
-          cricket(4650, 23, 0.7)(tr);
-        }
-        for (const L of B.layers) layer(L, tr, drifts);
-        if (B.tone) {
-          const o = c.createOscillator();
-          o.frequency.value = B.tone;
-          const g = c.createGain();
-          g.gain.value = 0.18;
-          o.connect(g);
-          g.connect(tr);
-          o.start();
-        }
-      },
-      B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW
-    );
+  /* SND-8a: each bed is a level (g), a pan and its trim, its layers' filters and the drifts; its sources are made
+     when it starts and stopped when it stops (ambienceLiveStep), so a silent bed costs nothing */
+  for (const [name, B] of Object.entries(AMBIENCE_BEDS)) {
+    const g = c.createGain(),
+      p = c.createStereoPanner ? c.createStereoPanner() : null,
+      tr = c.createGain(),
+      bus = B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW,
+      b = { g, p, tr, drifts: [], parts: [], srcs: [], st: {} };
+    g.gain.value = 0;
+    /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
+    tr.gain.value = B.trim;
+    tr.connect(g);
+    if (p) {
+      g.connect(p);
+      p.connect(bus);
+    } else g.connect(bus);
+    for (const L of B.layers) layer(L, tr, b);
+    b.osc = t => {
+      const out = name === 'crickets' ? [...cricket(4300, 26, 0.9, tr, t), ...cricket(4650, 23, 0.7, tr, t)] : [];
+      if (B.tone) {
+        const o = c.createOscillator();
+        o.frequency.value = B.tone;
+        const og = c.createGain();
+        og.gain.value = 0.18;
+        o.connect(og);
+        og.connect(tr);
+        o.start(t);
+        out.push(o);
+      }
+      return out;
+    };
+    ambience.beds[name] = b;
+  }
   return true;
 }
 /* SND-8a: random drift instead of the regular wobbles (logic/ambience-sound.js ambienceDrift): each wandering level or
    filter of a bed gets a new random value every few seconds, scheduled a little ahead; no oscillator, and a level
    never swings below 0 */
+/* SND-8a: a bed's sources start (each layer's noise from a random point of its loop) and stop */
+function ambienceBedStart(b, t) {
+  const c = soundEngine.ctx;
+  for (const P of b.parts) {
+    const s = c.createBufferSource();
+    s.buffer = P.buffer;
+    s.loop = true;
+    s.playbackRate.value = P.rate;
+    s.connect(P.head);
+    s.start(t, ambience.rng() * P.buffer.duration);
+    b.srcs.push(s);
+  }
+  b.srcs.push(...b.osc(t));
+}
+function ambienceBedStop(b, t) {
+  for (const s of b.srcs)
+    try {
+      s.stop(t);
+    } catch (e) {}
+  b.srcs = [];
+  for (const w of b.drifts) w.next = 0;
+}
 function ambienceDriftTick(b, t) {
   for (const w of b.drifts) {
     if (w.next < t) w.next = t;
@@ -1086,9 +1109,13 @@ function updateAmbience() {
   }
   if (sc) ambienceBeds(sc, E, T, pans, t);
   for (const [k, b] of Object.entries(ambience.beds)) {
+    /* SND-8a: a bed starts when wanted, and stops once it has faded to nothing */
+    const step = ambienceLiveStep(b.st, T[k] || 0, t);
+    if (step === 'start') ambienceBedStart(b, t);
+    else if (step === 'stop') ambienceBedStop(b, t);
     b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
     if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
-    if (T[k] > 0) ambienceDriftTick(b, t);
+    if (b.st.live) ambienceDriftTick(b, t);
   }
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
   const night = E ? (E.raw || E).night : 0,
