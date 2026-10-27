@@ -45,6 +45,7 @@ expose({
   RUN_LAYOUT_MOD: [() => RUN_LAYOUT_MOD],
   RUN_MOD_MOUNTAINS: [() => RUN_MOD_MOUNTAINS],
   RUN_SIDE_ID: [() => RUN_SIDE_ID],
+  RUN_SIGN_SIDES: [() => RUN_SIGN_SIDES],
   RUN_TOWN_ROAD: [() => RUN_TOWN_ROAD],
   fieldMoveOf: [() => fieldMoveOf],
   // @ts-expect-error -- replaced on purpose
@@ -69,7 +70,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runPlaceName: [() => runPlaceName, v => (runPlaceName = v)],
   // @ts-expect-error -- replaced on purpose
+  runPlaceSign: [() => runPlaceSign, v => (runPlaceSign = v)],
+  // @ts-expect-error -- replaced on purpose
   runPlaceSize: [() => runPlaceSize, v => (runPlaceSize = v)],
+  // @ts-expect-error -- replaced on purpose
+  runRouteNumbers: [() => runRouteNumbers, v => (runRouteNumbers = v)],
   // @ts-expect-error -- replaced on purpose
   runSceneDials: [() => runSceneDials, v => (runSceneDials = v)],
   runSceneExitTo: [() => runSceneExitTo],
@@ -88,6 +93,8 @@ expose({
   runSideDoor: [() => runSideDoor, v => (runSideDoor = v)],
   // @ts-expect-error -- replaced on purpose
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSignposts: [() => runSignposts, v => (runSignposts = v)],
   // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
   // @ts-expect-error -- replaced on purpose
@@ -462,6 +469,59 @@ export function runPlaceName(map, i, data) {
   if (node.side && map.side) return `${map.side.name} ${word}`;
   return `${B ? B.name : 'Wild'} ${word}`;
 }
+/** WM-6: a run's route numbers, by node (0 where none): its route-like places (nodeTypes.json routeLike: a route, the
+ * rival's, a friend's ghost, a scrapyard, a leader's) on the main path, from the landing out (by step, then west to
+ * east, then south to north), from Route 1; a side area's places keep their own name
+ * @param {RunMap} map @param {RunWorldData} data @returns {number[]} */
+export function runRouteNumbers(map, data) {
+  const at = (/** @type {number} */ i) => map.nodes[i].at || [0, 0],
+    list = map.nodes
+      .map((_, i) => i)
+      .filter(i => {
+        const n = map.nodes[i],
+          T = data.nodeTypes[n.type];
+        return !!(T && T.routeLike) && !n.side;
+      })
+      .sort(
+        (a, b) =>
+          (map.nodes[a].row || 0) - (map.nodes[b].row || 0) || at(a)[0] - at(b)[0] || at(a)[1] - at(b)[1] || a - b
+      ),
+    out = map.nodes.map(() => 0);
+  list.forEach((i, k) => (out[i] = k + 1));
+  return out;
+}
+/** WM-6: what a place's signs and its world map label read: "Route 3" for a numbered place, else its name (through
+ * runPlaceName, the one name function) @param {RunMap} map @param {number} i @param {RunWorldData} data
+ * @param {number[]} [nos] runRouteNumbers' list, when already made */
+export function runPlaceSign(map, i, data, nos = runRouteNumbers(map, data)) {
+  return nos[i] ? `Route ${nos[i]}` : runPlaceName(map, i, data);
+}
+/** WM-6: the compass word for an exit's side */
+export const RUN_SIGN_SIDES = /** @type {Record<string, string>} */ ({
+  N: 'North',
+  E: 'East',
+  S: 'South',
+  W: 'West',
+});
+/** WM-6: a run place's signposts at its exits (mapgen.js puts one by each, `exit` its id): each shows this place's
+ * route number or name over it (`label`) and, tapped, says it with its name and where its way goes ("Route 3,
+ * Meadow Route. East: Meadow Hamlet."); a sign by the door into a side area, or out of one, names only this place
+ * @param {RunMap} map @param {number} i @param {any} scene @param {RunWorldData} data */
+export function runSignposts(map, i, scene, data) {
+  const nos = runRouteNumbers(map, data),
+    here = runPlaceSign(map, i, data, nos),
+    /* a numbered place's sign says its name too, as the place card shows it */
+    title = nos[i] ? `${here}, ${runPlaceName(map, i, data)}` : here,
+    exits = runSceneExits(map, i);
+  for (const p of scene.props || []) {
+    if (p.act !== 'sign' || p.say || !p.exit) continue;
+    const e = exits.find(x => x.id === p.exit),
+      j = e ? e.node : -1,
+      to = j >= 0 && map.nodes[j] && !map.nodes[j].side === !map.nodes[i].side ? runPlaceSign(map, j, data, nos) : '';
+    p.label = here;
+    p.say = `${title}.${to && e ? ` ${RUN_SIGN_SIDES[e.side]}: ${to}.` : ''}`;
+  }
+}
 /** node i's scene, made from its parents' (see runSceneParams), with what the game reads off a place's scene: its
  * place, name, colour grade (mood) and climate (its biome's: environment.js reads a scene's climate first)
  * @param {Run} run @param {number} i @param {any[]} scenes @param {RunWorldData} data */
@@ -480,6 +540,7 @@ export function runSceneMake(run, i, scenes, data) {
     climate: B.climate,
   });
   runFieldProps(map, i, scene, data);
+  runSignposts(map, i, scene, data);
   /* WM-7: a leader's gate, shut until it is beaten (its foe's id: run-loop.js runFoeId) */
   arenaGenGates(scene, data.scenery, `beat:${runPlaceId(i)}_foe`);
   if (scene.kind === 'town') {
@@ -611,7 +672,8 @@ export function runWorldTables(run, hub, data) {
     /** @type {RoadLink[]} */
     roads = [],
     /** @type {Record<string, any>} */
-    shops = {};
+    shops = {},
+    nos = runRouteNumbers(map, data);
   const places = map.nodes.map((node, i) => {
     const B = data.biomes[node.biome || ''] || /** @type {Biome} */ ({}),
       T = data.nodeTypes[node.type],
@@ -650,6 +712,8 @@ export function runWorldTables(run, hub, data) {
     /* RL-12b: a waystation (an event's or a stall's place) has fewer wild Billies (rules.js encounterStock) */
     if (node.type === 'event' || node.type === 'stall') row.waystation = 1;
     if (town) row.town = 1;
+    /* WM-6: its route number (its signs and the world map read it) */
+    if (nos[i]) row.routeNo = nos[i];
     if (sells) {
       /* RL-8: its shop (stocked by the day when it opens: logic/run-loop.js runShopStock); RL-12b: a stall's too */
       row.shop = runShopId(i);

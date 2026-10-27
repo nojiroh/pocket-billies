@@ -446,6 +446,8 @@ export interface LocationData {
   side?: 1;
   /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
   waystation?: 1;
+  /** WM-6: a run's route-like place's route number (logic/run-scenes.js runRouteNumbers), on its signs and the map */
+  routeNo?: number;
   /** WA-5a: a run's place with marsh or bog water: its wild Billies weighted toward the marsh's (logic/water-play.js) */
   marsh?: string;
   v47region?: number;

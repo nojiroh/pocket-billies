@@ -348,7 +348,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 25; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5); 25: a town's districts, a park with its landmark and a farm edge (WM-6) */
+export const MAPGEN_VERSION = 25; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5); 25: a town's districts, a park with its landmark and a farm edge, and an exit's signpost names its exit (`exit`, WM-6) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -5477,7 +5477,10 @@ export function mapgenStageProps(G) {
   if (D.signs > 0)
     G.exits.forEach((e, x) => {
       const pts = x === 0 ? R : x === 1 ? R.slice().reverse() : G.road[x - 1].pts;
-      const r = (x < 2 ? P.road.width : G.road[x - 1].width) / 2 + 1;
+      const r = (x < 2 ? P.road.width : G.road[x - 1].width) / 2 + 1,
+        /* WM-6: it names its exit (`exit`, the edge exit's id), so a run's sign can say where that way goes
+           (run-scenes.js runSignposts) */
+        sign = G.edgeExits[x] ? { act: 'sign', exit: G.edgeExits[x].id } : { act: 'sign' };
       for (let k = Math.min(pts.length - 2, 12); k < Math.min(pts.length - 1, 60); k += 2) {
         const a = pts[k - 1],
           b = pts[k + 1],
@@ -5488,8 +5491,7 @@ export function mapgenStageProps(G) {
           const x = pts[k][0] + nx * r * sg,
             z = pts[k][1] + nz * r * sg;
           /* RT-3: tapped, it reads the place's name (walk-control.js: a sign with no words of its own) */
-          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true, extra: { act: 'sign' } }))
-            return;
+          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true, extra: sign })) return;
         }
       }
     });
