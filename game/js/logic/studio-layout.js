@@ -135,6 +135,7 @@ export function layoutSizes(lay, sec) {
 /* Studio art track SA-4: the sidebar's workspaces (Blender's idea: a workspace per kind of work), as section keys in
    the order they show. studio/js/studio-app.js's SECTION_LIST names the sections; a section in no workspace shows
    under More, which the Studio self-test reports */
+/** @type {[string, string[]][]} */
 export const STUDIO_WORKSPACES = [
   ['Game', ['rules', 'check']],
   ['Art', ['art', 'workbench']],
@@ -158,9 +159,11 @@ export function navJoined(key) {
  * The sidebar's rows: each workspace with its rows, a joined pair as one row (at its first section's place), the
  * sections no workspace lists under More, workspaces with no known section left out.
  * @param {string[]} keys the sections there are, in SECTION_LIST's order
+ * @param {[string, string[]][]} [workspaces]
+ * @param {{ name: string, keys: string[] }[]} [joined]
  * @returns {[string, { key: string, keys: string[], name: string | null }[]][]}
  */
-export function navRows(keys, workspaces = STUDIO_WORKSPACES) {
+export function navRows(keys, workspaces = STUDIO_WORKSPACES, joined = NAV_JOINED) {
   const known = new Set(keys),
     listed = new Set(workspaces.flatMap(w => w[1])),
     all = workspaces.concat([['More', keys.filter(k => !listed.has(k))]]);
@@ -170,7 +173,7 @@ export function navRows(keys, workspaces = STUDIO_WORKSPACES) {
       const rows = [];
       for (const k of L) {
         if (!known.has(k)) continue;
-        const j = navJoined(k);
+        const j = joined.find(x => x.keys.includes(k));
         if (!j) rows.push({ key: k, keys: [k], name: null });
         else if (!rows.some(r => r.keys.includes(k)))
           rows.push({ key: k, keys: j.keys.filter(x => known.has(x)), name: j.name });

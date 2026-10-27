@@ -21,6 +21,7 @@ import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { STUDIO_WORKSPACES, navRows } from '../../game/js/logic/studio-layout.js';
 import {
   HISTORY_ORDER,
   historyBytes,
@@ -40,7 +41,6 @@ expose({
   RANGE_FORMATS: [() => RANGE_FORMATS],
   SAVE_REPLACER: [() => SAVE_REPLACER],
   SECTIONS: [() => SECTIONS],
-  SECTION_GROUPS: [() => SECTION_GROUPS],
   SECTION_LIST: [() => SECTION_LIST],
   TEXT_ONLY_DATA: [() => TEXT_ONLY_DATA],
   afterRender: [() => afterRender],
@@ -689,25 +689,9 @@ export const SECTION_LIST = [
   ['unlocks', 'Unlocks & hub', 'The unlock graph, the hub’s buildings and currencies, and what a new save has'],
   ['relics', 'Perks', 'A run’s Perks: effects by kind, the code’s limits, a sample build, the offer order for a seed'],
 ];
-/* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
-   a tooltip and under the section you're in, so the list is short enough to see at once */
-const SECTION_GROUPS = [
-  [
-    'Billies & battles',
-    ['billionaires', 'parts', 'genes', 'workbench', 'coats', 'robots', 'roster', 'moves', 'preview', 'types'],
-  ],
-  ['World & places', ['scenes', 'hub', 'props', 'engine', 'camera', 'world']],
-  ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
-  ['Moneys', ['items']],
-  ['Game', ['rules', 'ui', 'art', 'check']],
-  /* SND-3: the songs, the where table and the jingles (music-editor.js); the cries are on the Billies page */
-  ['Sound', ['music']],
-  /* Studio plan Phase 2: runs (T2.2's Run Lab; the run rules editor and Phase 4's roguelite editors join it) */
-  ['Runs', ['runlab', 'relics', 'unlocks', 'economy']],
-  /* RL-5: the old world outside the hub, parked in game/data/legacy (legacy-view.js); SA-3: Jobs and Town shops are
-     gone (the game has no jobs; run shops stock from rules.json run.shop, the boutiques' names are the wardrobe's) */
-  ['Legacy', ['legacy']],
-];
+/* SA-4: the sections in workspaces that fold away (logic/studio-layout.js STUDIO_WORKSPACES); the one you're in
+   always shows. The descriptions show as a tooltip and under the section you're in, so the list is short enough to see
+   at once. The folds are kept by workspace name */
 const foldedSectionGroups = (() => {
   try {
     return JSON.parse(localStorage.getItem('studio-fold') || '{}');
@@ -717,24 +701,23 @@ const foldedSectionGroups = (() => {
 })();
 export function renderSide() {
   const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n])),
-    used = new Set(SECTION_GROUPS.flatMap(g => g[1])),
-    G = SECTION_GROUPS.concat([['More', SECTION_LIST.map(n => n[0]).filter(k => !used.has(k))]]).filter(g =>
-      g[1].some(k => N[k])
+    G = navRows(
+      SECTION_LIST.map(n => n[0]),
+      STUDIO_WORKSPACES,
+      []
     );
   $('#side').innerHTML =
-    G.map(([t, L]) => {
-      const has = L.includes(studioState.sec),
+    G.map(([t, R]) => {
+      const has = R.some(r => r.keys.includes(studioState.sec)),
         shut = foldedSectionGroups[t] && !has;
       return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${escapeHtml(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${escapeHtml(t)}</button>${
         shut
           ? ''
-          : L.filter(k => N[k])
-              .map(k => {
-                const [, n, d] = N[k],
-                  why = besideRefusal(k);
-                return `<div class="nav-row"><button class="nav ${studioState.sec === k ? 'on' : studioState.sec2 === k ? 'on2' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(n)} beside this section"`}>⇥</button></div>`;
-              })
-              .join('')
+          : R.map(({ key: k }) => {
+              const [, n, d] = N[k],
+                why = besideRefusal(k);
+              return `<div class="nav-row"><button class="nav ${studioState.sec === k ? 'on' : studioState.sec2 === k ? 'on2' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)} (Shift-click: open beside)"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button><button class="nav-beside" data-act="openBeside" data-s="${k}" ${why ? `disabled title="${escapeHtml(why)}"` : `title="Open ${escapeHtml(n)} beside this section"`}>⇥</button></div>`;
+            }).join('')
       }</div>`;
     }).join('') +
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves · <kbd>?</kbd> lists the keys.</small></div>`;
