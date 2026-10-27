@@ -826,6 +826,8 @@ export interface TrainerEntry extends Trainer {
   alpha?: boolean;
   /** RL-13: a run boss's HP times this (the Expedition's, logic/run-loop.js runFoes) */
   hpMult?: number;
+  /** RL-14b: a bosses.json boss's id (the Voltron): the run's boss is that robot, not the team's Billie */
+  boss?: string;
   /** RT-2: a route pair's second trainer (logic/route-trainers.js runRouteTrainers): its class, look and name */
   mate?: { cls: DataId; who: DataId; name: string };
 }

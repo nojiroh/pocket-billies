@@ -26,6 +26,7 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
+  BOSSES,
   FACTIONS,
   ITEMS,
   MOVES,
@@ -1276,7 +1277,13 @@ export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
   /* RL-8: a run's boss is its leader's top Billie alone, as an Alpha (logic/run-loop.js runFoes) */
-  const team = T.alpha ? T.team.slice(0, 1).map(e => bossAlpha(e, T.hpMult)) : trainerTeam(T);
+  /* RL-14b: a bosses.json boss (the Voltron) is a robot built as an Alpha (makeBossRobot) */
+  const BD = T.boss ? BOSSES[T.boss] : null,
+    team = BD
+      ? T.team.slice(0, 1).map(e => makeBossRobot(BD, e.lvl, T.hpMult))
+      : T.alpha
+        ? T.team.slice(0, 1).map(e => bossAlpha(e, T.hpMult))
+        : trainerTeam(T);
   if (!team.length) {
     battleHost(o).toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;

@@ -16,7 +16,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
-import { BANTER, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
+import { BANTER, BOSSES, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural, speciesStep } from './rules.js';
@@ -36,6 +36,8 @@ expose({
   runBattleSeed: [() => runBattleSeed],
   // @ts-expect-error -- replaced on purpose
   runBattleWeather: [() => runBattleWeather, v => (runBattleWeather = v)],
+  // @ts-expect-error -- replaced on purpose
+  runBossFor: [() => runBossFor, v => (runBossFor = v)],
   // @ts-expect-error -- replaced on purpose
   runClinic: [() => runClinic, v => (runClinic = v)],
   runFoeId: [() => runFoeId],
@@ -210,11 +212,14 @@ export const runFoeId = i => `run_${i}_foe`;
  * double battle; the boss is its leader's top Billie alone, fought as an Alpha (which adds the Alpha's own levels).
  * RL-S2: on each rival node, Blake (trainers/blake.json's name and words) with his team for that meeting
  * (logic/rival.js rivalTeam: against run.rival.lead, one meeting more than the last), at its row's top wild level +
- * run.rival.up; a reward pick after it (battle-rewards.js), never blocking.
+ * run.rival.up; a reward pick after it (battle-rewards.js), never blocking. RL-14b: on an Expedition with a
+ * bosses.json boss (the Voltron), the boss node's foe is that boss at the same level instead of the leader's Billie
+ * (`boss`: its id; battle-engine.js startTrainer builds it); data.bosses defaults to the game's.
  * @param {Run} run
  * @param {{ leaders: any[], rival?: import('../../types/game-data').RivalRules, rules: { foes: Record<'miniboss' | 'boss', { up: number, reward: number }>, rival?: import('../../types/game-data').RivalRules,
  *   ghost?: import('../../types/game-data').GhostRules,
- *   wild: { lv: [number, number], perRow: number } } }} data leaders: the trainer entries with miniboss: true
+ *   wild: { lv: [number, number], perRow: number } }, bosses?: Record<string, import('../../types/game-data').BossDef> }} data
+ *   leaders: the trainer entries with miniboss: true
  * @returns {Record<string, any>}
  */
 export function runFoes(run, data) {
@@ -311,7 +316,34 @@ export function runFoes(run, data) {
         SPECIES,
         (run.region && run.region.dex) || null
       ),
-      boss = node.type === 'boss';
+      boss = node.type === 'boss',
+      /* RL-14b: a bosses.json boss (the Voltron) is the run's boss on its Expeditions; the leader is still drawn, so
+         every other foe stays as it was */
+      BB = boss ? runBossFor(data.bosses || BOSSES, run.expedition || 1) : null;
+    if (BB) {
+      const [bid, D] = BB;
+      out[runFoeId(i)] = {
+        id: runFoeId(i),
+        name: D.name,
+        who: D.who || T.who,
+        battleStage: T.battleStage,
+        win: D.win || '',
+        lose: '',
+        reward: F.reward,
+        team: [{ sp: 'robot', lvl: top, boss: bid }],
+        node: runWorldNode(i),
+        blocks: false,
+        double: false,
+        alpha: true,
+        ...(modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
+        boss: bid,
+        runFoe: node.type,
+        runNode: i,
+        from: bid,
+        script: [`battle ${runFoeId(i)}`],
+      };
+      return;
+    }
     out[runFoeId(i)] = {
       id: runFoeId(i),
       name: T.name,
@@ -338,6 +370,15 @@ export function runFoes(run, data) {
     };
   });
   return out;
+}
+
+/** RL-14b: the bosses.json boss of an Expedition, as [id, its entry], or null (a leader is the boss)
+ * @param {Record<string, import('../../types/game-data').BossDef>} bosses @param {number} expedition
+ * @returns {[string, import('../../types/game-data').BossDef] | null} */
+export function runBossFor(bosses, expedition) {
+  for (const id of Object.keys(bosses || {}).sort())
+    if ((bosses[id].expeditions || []).includes(expedition)) return [id, bosses[id]];
+  return null;
 }
 
 /** a run battle's seed: its node's seed and its number in the run (run.battleN when it began), the stream the
