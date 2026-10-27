@@ -9,6 +9,9 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Tidier spacing and corners** (UI track UI-9b): the gaps and corners across the menus are on one scale now, most of
+  them moved by a pixel or two, so screens line up more evenly. The Billie sheet's stat bars grow in when it opens, as
+  they were always meant to.
 - **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
   and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
   meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the
