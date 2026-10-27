@@ -14,8 +14,9 @@ import { data, fn, GAME_DATA, hooks, modules, startedSave } from './setup-real.m
 const { runArrive, runMapStart, runNext } = modules['run-map'];
 const { newRun } = modules['run-state'];
 const { seamRulesLinks } = modules['seam-rules'];
+const { runRegionData } = modules['run-region'];
 const { MAPGEN_VERSION, mapgenSeamAgreement, mapgenUnreachable } = modules.mapgen;
-const { runSceneExits, runSceneMake, runSceneParams, runScenesMake, runScenesSlices, runWorldTables } =
+const { runLeaderPicks, runSceneExits, runSceneMake, runSceneParams, runScenesMake, runScenesSlices, runWorldTables } =
   modules['run-scenes'];
 
 const START = {
@@ -40,6 +41,9 @@ const R = GAME_DATA.rules.run,
     rules: R,
     /* RT-3: laid-out places get their set pieces, as the game's do */
     setPieces: GAME_DATA.setPieces,
+    /* WM-7: a mini-boss's and the boss's places get their arenas, themed by the region's leaders' types */
+    arenas: GAME_DATA.arenas,
+    region: runRegionData(GAME_DATA, data.TRAINERS),
   },
   HUB = GAME_DATA.locations[0];
 /** a run with its map, as the mast gives it (RL-8) */
@@ -72,7 +76,9 @@ test("every run's scenes join: exits where the roads say, no gap, a straight wal
         runSceneExits(map, i).map(e => [e.id, e.side, +e.t.toFixed(4)]) /* the generator keeps t to 4 places */,
         `${where}: the exits the roads name`
       );
-      assert.deepEqual(mapgenUnreachable(sc, scenery), [], where);
+      /* WM-7: with a leader's gate open (once it is beaten) */
+      const open = { ...sc, props: sc.props.filter((/** @type {any} */ p) => p.act !== 'arenagate') };
+      assert.deepEqual(mapgenUnreachable(open, scenery), [], where);
       assert.equal(sc.locationId, W.locations[i + 1].id, where);
       assert.equal(sc.climate, GAME_DATA.biomes[map.nodes[i].biome].climate, where);
       /* RL-8: the landing has the airship's mast (where the flight lands you), a town its clinic and shop */
@@ -170,6 +176,42 @@ test('HB-2: the scenes made one a step are the scenes made at once, each step co
     Array.from({ length: n - 1 }, (_, i) => [i + 1, n])
   );
   assert.deepEqual(r.value, runScenesMake(runOf('HB2SLICES'), WORLD_DATA));
+});
+
+test("WM-7: a mini-boss's place has a leader's ring of its leader's type, gated until it is beaten; the boss's its own", () => {
+  const scenery = GAME_DATA.scenery,
+    run = runOf('WM7ARENA'),
+    map = run.map,
+    leaders = ['marina', 'poppy', 'vault', 'carat'];
+  /* the region's leaders, the mini-bosses in order then the boss (logic/run-region.js) */
+  run.region = { leaders };
+  const made = runScenesMake(run, WORLD_DATA),
+    foes = modules['run-loop'].runFoes(run, {
+      leaders: Object.values(data.TRAINERS).filter(T => T.miniboss),
+      rules: R,
+    }),
+    picks = runLeaderPicks(run);
+  let rings = 0;
+  map.nodes.forEach((/** @type {any} */ node, /** @type {number} */ i) => {
+    const sc = made[i],
+      where = `node ${i} (${node.type})`;
+    if (node.type !== 'miniboss' && node.type !== 'boss') return assert.equal(sc.arena, undefined, where);
+    rings++;
+    const foe = foes[modules['run-loop'].runFoeId(i)],
+      T = data.TRAINERS[foe.from];
+    assert.equal(foe.from, picks[i], `${where}: the leader its place was themed for`);
+    assert.equal(sc.arena.name, GAME_DATA.arenas.themes[T.type].name, `${where}: ${T.type}`);
+    const gates = sc.props.filter((/** @type {any} */ p) => p.act === 'arenagate');
+    if (node.type === 'boss') return assert.equal(gates.length, 0, `${where}: no gate`);
+    assert.ok(gates.length >= 1, `${where}: a gate`);
+    for (const p of gates) assert.equal(p.unless, `beat:${foe.id}`, where);
+    /* shut, the way on is not reached from the hub; open (beaten), it is */
+    assert.ok(mapgenUnreachable(sc, scenery).includes('east'), `${where}: shut`);
+    const open = { ...sc, props: sc.props.filter((/** @type {any} */ p) => p.act !== 'arenagate') };
+    assert.deepEqual(mapgenUnreachable(open, scenery), [], `${where}: open`);
+  });
+  assert.equal(rings, map.nodes.filter((/** @type {any} */ n) => n.type === 'miniboss' || n.type === 'boss').length);
+  assert.ok(rings >= 3);
 });
 
 test("a node's dials are frozen: a change to how they are drawn changes every run's scenes", t => {

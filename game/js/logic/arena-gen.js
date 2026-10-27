@@ -186,16 +186,29 @@ export function arenaGenGround(G) {
     const d = Math.hypot(road[k][0] - G.hub[0], road[k][1] - G.hub[1]);
     if (d < best) [best, hubAt] = [d, s];
   }
-  const tries = A.mode === 'boss' ? [0, -4, 4, -8, 8, -12, 12] : [0, 4, 8, 12, 16, 20];
+  /* where along the road: a leader's from `back` on toward the start, 3 m at a time, to the road's middle; the boss's
+     either way from the hub's point, 3 m at a time, 24 m at most; at each, on the road or moved off it to a side (2 or
+     4 m) or away from the scene's side, the road still crossing the ring */
+  /** @type {number[]} */
+  const tries = [];
+  if (A.mode === 'boss') for (let t = 0; t <= 24; t += 3) tries.push(hubAt + t, ...(t ? [hubAt - t] : []));
+  else for (let d = len - A.back; d >= len * 0.45; d -= 3) tries.push(d);
+  const edge = r + ARENA_APRON + 2;
   let spot = /** @type {{ at: number[], dir: number[] } | null} */ (null);
-  for (const t of tries) {
-    const d = A.mode === 'boss' ? hubAt + t : len - A.back - t;
+  for (const d of tries) {
     if (d < r + 6 || d > len - r - 6) continue;
     const s = arenaAlong(road, d);
-    if (arenaGenFits(G, s.at[0], s.at[1], r)) {
-      spot = s;
-      break;
+    for (const off of [0, 2, -2, 4, -4]) {
+      const x = s.at[0] - s.dir[1] * off,
+        z = s.at[1] + s.dir[0] * off,
+        at = [Math.min(G.w - edge, Math.max(edge, x)), Math.min(G.h - edge, Math.max(edge, z))];
+      if (Math.hypot(at[0] - s.at[0], at[1] - s.at[1]) > r - 3.5) continue;
+      if (arenaGenFits(G, at[0], at[1], r)) {
+        spot = { at, dir: s.dir };
+        break;
+      }
     }
+    if (spot) break;
   }
   if (!spot) {
     G.notes.push('no room for the arena on the main road');

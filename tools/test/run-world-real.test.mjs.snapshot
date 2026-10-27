@@ -214,6 +214,22 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lanes",
     "pieces": 4,
+    "arena": {
+      "mode": "leader",
+      "r": 8,
+      "rise": 0.6,
+      "back": 28,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ]
+    },
     "kind": "route",
     "biome": "thicket",
     "w": 112,
@@ -446,6 +462,22 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "lanes",
     "pieces": 2,
+    "arena": {
+      "mode": "leader",
+      "r": 8,
+      "rise": 0.6,
+      "back": 28,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ]
+    },
     "kind": "route",
     "biome": "thicket",
     "w": 112,
@@ -572,6 +604,21 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "props": {},
     "layout": "farmland",
     "pieces": 4,
+    "arena": {
+      "mode": "boss",
+      "r": 11,
+      "rise": 0.8,
+      "name": "Stone ring",
+      "ground": "K",
+      "rim": "e",
+      "fence": "fence_wood",
+      "gate": "fence_gate",
+      "posts": "waymarker_post",
+      "dress": [
+        "lantern",
+        "flag_pole"
+      ]
+    },
     "kind": "route",
     "biome": "meadow",
     "w": 112,

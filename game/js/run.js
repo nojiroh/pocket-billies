@@ -663,7 +663,7 @@ const RUN_HINTS = {
     `A town: its clinic heals for ${plural(runClinicEach(), 'Money')} a Billie, and its shop has new stock every day.`,
   event: () => 'A waystation: someone at the stand wants a word. Tap it to see what they offer.',
   stall: () => 'A stall: a shop with new stock every day, but no clinic.',
-  miniboss: () => 'A mini-boss blocks the way east. Beat them to go on.',
+  miniboss: () => 'A leader waits in the arena to the east. Win to open the gate.',
   scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
   rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',

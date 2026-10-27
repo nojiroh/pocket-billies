@@ -172,6 +172,9 @@ export function runSimOn(env) {
     fieldMoves: MOVES,
     /* RT-3: the set pieces, so a run's places are the game's */
     setPieces: GAME_DATA.setPieces || null,
+    /* WM-7: the leaders' arenas, themed by the region's leaders' types */
+    arenas: GAME_DATA.arenas || null,
+    region: runRegionData(GAME_DATA, TRAINERS),
   });
   /** RS-2: the run's resident and their towns (run-quests.js residentPlan), or null
    * @param {any} s the save on its run @param {any[] | null} scenes @param {Record<string, any>} route */

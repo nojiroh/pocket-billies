@@ -23,6 +23,7 @@
 import {
   EVENTS,
   FIELD_MOVES,
+  ARENAS,
   SET_PIECES,
   POOLS,
   NODE_TYPES,
@@ -65,6 +66,8 @@ const runPreviewData = () => ({
   fieldMoves: FIELD_MOVES,
   /* RT-3: and the set pieces, so a preview's places are the game's */
   setPieces: SET_PIECES,
+  /* WM-7: and the leaders' arenas */
+  arenas: ARENAS,
 });
 
 /**
