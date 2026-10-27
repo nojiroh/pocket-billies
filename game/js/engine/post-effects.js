@@ -298,6 +298,32 @@ const POST_MEDIUMP = {
     ['void main(){vec2 dv=(uSun-vUV);', 'void main(){highp vec2 dv=(uSun-vUV);'],
     ['vec2 q=vUV+dv*h(gl_FragCoord.xy);', 'highp vec2 q=vUV+dv*h(gl_FragCoord.xy);'],
   ],
+  grade: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol,uDof,uBloom,uAO,uRays,uVol;uniform highp sampler2D uDep;uniform highp vec2 uPx;uniform highp vec4 uHeatS[6];uniform float uHeatN;uniform highp vec4 uDofPl,uDofB;',
+    ],
+    ['uniform vec3 uInkF;', 'uniform highp vec3 uInkF;'],
+    ['uSharp,uBloomK,uTime,uDofOn,', 'uSharp,uBloomK,uDofOn,'],
+    ['uInk,uNear,uFar,uGlare;', 'uInk,uGlare;uniform highp float uTime,uNear,uFar;'],
+    ['uHiT,uRayC,uSunP;', 'uHiT,uRayC;uniform highp vec3 uSunP;'],
+    ['float linz(float d){float z=d*2.-1.;', 'highp float linz(highp float d){highp float z=d*2.-1.;'],
+    ['float gh(vec3 p){', 'highp float gh(highp vec3 p){'],
+    [
+      'float gv(vec2 q,float f){vec2 i=floor(q),u=fract(q);',
+      'highp float gv(highp vec2 q,highp float f){highp vec2 i=floor(q),u=fract(q);',
+    ],
+    ['vec3 grain(vec3 c){float f=', 'vec3 grain(vec3 c){highp float f='],
+    ['vec2 q=gl_FragCoord.xy/1.5;', 'highp vec2 q=gl_FragCoord.xy/1.5;'],
+    ['void main(){vec2 uv=vUV;', 'void main(){highp vec2 uv=vUV;'],
+    ['vec4 hs=uHeatS[i];', 'highp vec4 hs=uHeatS[i];'],
+    ['if(uDofOn>.5){float dz=linz(', 'if(uDofOn>.5){highp float dz=linz('],
+    [
+      'if(uInk>0.){float d0=texture(uDep,vUV).r;if(d0<.9999){float z0=linz(d0),e=0.;vec2 q=uPx*1.;float zs[4];',
+      'if(uInk>0.){highp float d0=texture(uDep,vUV).r;if(d0<.9999){highp float z0=linz(d0),e=0.;highp vec2 q=uPx*1.;highp float zs[4];',
+    ],
+    ['{vec2 q=floor(gl_FragCoord.xy);', '{highp vec2 q=floor(gl_FragCoord.xy);'],
+  ],
 };
 for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
 /* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */

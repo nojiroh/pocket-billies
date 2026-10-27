@@ -9,13 +9,12 @@ import './walk-renderer.mjs';
 
 const { POST_EFFECT_SHADERS, POST_MEDIUMP, gpuState, MEDIUMP_FROM, MEDIUMP_TO, mediumpFragment, mediumpMissing } =
   globalThis;
-const NAMES = ['bright', 'down', 'up', 'rays'];
+const NAMES = ['bright', 'down', 'up', 'rays', 'grade'];
 
 test('the post passes that opt in are the ones meant, and each carries its list', () => {
   assert.deepEqual(Object.keys(POST_MEDIUMP).sort(), [...NAMES].sort());
   for (const k of NAMES) assert.equal(POST_EFFECT_SHADERS[k].mp, POST_MEDIUMP[k], k);
-  for (const k of ['dof', 'dofnear', 'dofgrow', 'ao', 'vol', 'grade'])
-    assert.equal(POST_EFFECT_SHADERS[k].mp, undefined, k);
+  for (const k of ['dof', 'dofnear', 'dofgrow', 'ao', 'vol']) assert.equal(POST_EFFECT_SHADERS[k].mp, undefined, k);
 });
 
 test('every edit is found exactly once in its shader', () => {
@@ -38,13 +37,22 @@ test('on: mediump by default, every edit applied, the vertex shader as it was', 
   }
 });
 
-test('on: what must stay highp does (depth, the hash, the sun on screen)', () => {
+test('on: what must stay highp does (time, depth, the hashes, the sun on screen)', () => {
+  const g = mediumpFragment(POST_EFFECT_SHADERS.grade[1], POST_MEDIUMP.grade);
+  assert.match(g, /uniform highp float uTime,uNear,uFar;/);
+  assert.match(g, /uniform highp sampler2D uDep;/);
+  assert.match(g, /uniform mediump sampler2D uCol,uDof,uBloom,uAO,uRays,uVol;/);
+  assert.match(g, /highp float linz\(highp float d\)\{highp float z=/);
+  assert.match(g, /highp float gh\(highp vec3 p\)/);
+  assert.match(g, /\{highp vec2 q=floor\(gl_FragCoord\.xy\);/);
+  assert.match(g, /uniform highp vec3 uSunP;/);
   // every uniform declared once, and none lost
   const names = s =>
     [...s.matchAll(/uniform\s+(?:highp\s+|mediump\s+)?\w+\s+([^;]+);/g)]
       .flatMap(m => m[1].split(','))
       .map(n => n.trim().replace(/\[.*\]$/, ''))
       .sort();
+  assert.deepEqual(names(g), names(POST_EFFECT_SHADERS.grade[1]));
   const r = mediumpFragment(POST_EFFECT_SHADERS.rays[1], POST_MEDIUMP.rays);
   assert.match(r, /highp float h\(highp vec2 p\)/);
   assert.match(r, /uniform highp sampler2D uDep;/);
