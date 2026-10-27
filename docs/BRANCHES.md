@@ -106,6 +106,8 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | `tools/rl-1-renames` | RL-1 tools follow-up: version-stamped tools renamed, legacy generators moved to tools/legacy/. Not merged; far behind main. |
 | `design/expedition-punk-prototype` | Standalone UI prototype ("Hollow Signal" shell), PR #76 closed unmerged. Not wired into the game. |
 | `ccr-03a15a70-nd3yqu` | UI track UI-10 (docs only): Part 2 of docs/phases/ui-track.md, Living Semigloss (the owner's brief 2026-10-27; research, the colour code, palettes, sessions UI-11..UI-18) and a palette sampler artifact, written here at the owner's word (a cloud session pushes only to its own branch). Later UI sessions work on `track/ui`. To main by pull request. |
+| `ccr-24be55e6-2bmqci` | Perks track PK-0 (docs and samples only): docs/phases/perks-track.md (the owner's brief 2026-10-27; research, the catalog, the art pipeline, sessions PK-1..PK-12) and docs/samples/perk-icons.png, written here at the owner's word. Until its PR merges. |
+| `track/perks` | Perks track (docs/phases/perks-track.md): PK-1..PK-12 work here, one session at a time, each started by PK-0's session at the owner's standing instruction (2026-10-27). Made by PK-1's session from `ccr-24be55e6-2bmqci` (the owner's instruction stands in for "the owner makes the branch"). |
 
 ## Archive (unmerged work from before the roguelite pivot, kept but parked)
 
