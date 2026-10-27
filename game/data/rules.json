@@ -11,7 +11,6 @@
  },
  "encounters": {"route":4,"townGrass":2,"refillMs":60000,"prizePerLevel":20,"alphaOdds":45},
  "progression": {"xpFactor":0.8,"maxLevel":100,"teamSize":6,"moveSlots":4,"xpYield":[55,120,190],"trainerXpMult":1.5,"teamXpShare":0.5},
- "eggs": {"capacity":8,"slots":2,"mythOdds":1000,"mythSpecies":"mansa0"},
  "battle": {
   "stab": 1.5,
   "critChances": [0.0625,0.125,0.25,0.5],

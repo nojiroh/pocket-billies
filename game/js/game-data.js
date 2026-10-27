@@ -308,7 +308,6 @@ export function standInSpecies(id) {
 }
 export const standInList = list => list.map(([id, w]) => [standInSpecies(id), w]);
 if (RULES.legends) for (const L of RULES.legends) L.sp = standInSpecies(L.sp);
-if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecies(RULES.eggs.mythSpecies);
 /* ---------- world ---------- */
 /* RL-5: the places and the roads between them, as the rest of the game reads them. worldSetGraph (below the trainers)
    fills these tables in place, so every module that imports them sees the new rows: here once from the game data,

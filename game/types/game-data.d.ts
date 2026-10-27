@@ -899,12 +899,6 @@ export interface Rules {
     trainerXpMult: number;
     teamXpShare: number;
   };
-  eggs: {
-    capacity: number;
-    slots: number;
-    mythOdds: number;
-    mythSpecies: SpeciesId;
-  };
   battle: {
     stab: number;
     critChances: number[];

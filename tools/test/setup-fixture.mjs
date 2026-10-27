@@ -37,7 +37,6 @@ export const FIXTURE = {
       trainerXpMult: 1.5,
       teamXpShare: 0.5,
     },
-    eggs: { capacity: 8, slots: 2, mythOdds: 1000, mythSpecies: 'sparky0' },
     battle: {
       stab: 1.5,
       critChances: [0.0625, 0.125, 0.25, 0.5],
