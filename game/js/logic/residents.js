@@ -20,8 +20,12 @@ import { rngFrom } from './rng.js';
 import { propDoor } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
+  resFxRows: [() => resFxRows],
+  resHeld: [() => resHeld],
   // @ts-expect-error -- replaced on purpose
   resLevel: [() => resLevel, v => (resLevel = v)],
+  // @ts-expect-error -- replaced on purpose
+  resTakeoff: [() => resTakeoff, v => (resTakeoff = v)],
   // @ts-expect-error -- replaced on purpose
   residentCandidate: [() => residentCandidate, v => (residentCandidate = v)],
   // @ts-expect-error -- replaced on purpose
@@ -56,6 +60,45 @@ export function resLevel(s, id, U) {
     if (G && G.resident === id && G.level > lv) lv = G.level;
   }
   return lv;
+}
+/** RS-4: the service levels a run holds (run.res: id -> level as it took off), each as [id, its service entry],
+ * Lv 1 first @param {Record<string, number> | undefined} res @param {ResidentsTable} R
+ * @returns {[string, import('../../types/game-data').ResidentService][]} */
+export const resHeld = (res, R) =>
+  Object.entries(res || {}).flatMap(([id, n]) =>
+    R[id] && R[id].service
+      ? /** @type {any[]} */ (R[id].service)
+          .slice(0, n)
+          .map(L => /** @type {[string, import('../../types/game-data').ResidentService]} */ ([id, L]))
+      : []
+  );
+/** RS-4: the effect rows a run gets from the services it took off with, each tagged `res:<id>`
+ * @param {{ res?: Record<string, number> } | null | undefined} run @param {ResidentsTable} R
+ * @returns {(import('../../types/game-data').FxRow & { src: string })[]} */
+export const resFxRows = (run, R) =>
+  run && run.res && R
+    ? resHeld(run.res, R).flatMap(([id, L]) => (L.fx || []).map(f => ({ ...f, src: 'res:' + id })))
+    : [];
+/** RS-4: a run takes off: run.res is each resident's service level now (those with a service), and their levels'
+ * items go into the bag. Returns what was given @param {SaveData} s @param {ResidentsTable} R
+ * @param {Record<string, { grant: any }>} U unlocks.json */
+export function resTakeoff(s, R, U) {
+  /** @type {{ items: Record<string, number> }} */
+  const got = { items: {} };
+  if (!s.run || !s.meta) return got;
+  /** @type {Record<string, number>} */
+  const res = {};
+  for (const id of residentsHere(s)) {
+    const lv = R[id] && R[id].service ? Math.min(resLevel(s, id, U), R[id].service.length) : 0;
+    if (lv) res[id] = lv;
+  }
+  if (Object.keys(res).length) s.run.res = res;
+  for (const [, L] of resHeld(res, R))
+    for (const [k, n] of Object.entries(L.items || {})) {
+      s.items[k] = (s.items[k] || 0) + n;
+      got.items[k] = (got.items[k] || 0) + n;
+    }
+  return got;
 }
 /** RS-2: this run's one resident to meet, whatever has happened on it (invited or not): the free first one while
  * nobody lives in Copperleaf, else one drawn from the run's own stream ('resident') among those left with a weight.

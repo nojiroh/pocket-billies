@@ -244,6 +244,9 @@ export function validRun(o) {
   if (o.beans !== undefined && !wholeIn(o.beans, 0, 99)) return false;
   /* RL-S2: the hub folk's levels as it took off (missing on a run from before) */
   if (o.rel !== undefined && !recordOf(o.rel, 32, v => wholeIn(v, 0, 10))) return false;
+  /* RS-4: the residents' service levels as it took off, and the shop rerolls used (missing on a run from before) */
+  if (o.res !== undefined && !recordOf(o.res, 64, v => wholeIn(v, 1, 10))) return false;
+  if (o.rerolled !== undefined && !wholeIn(o.rerolled, 0, 9)) return false;
   /* RL-S2: Blake in the run (missing on a run from before) */
   const RV = o.rival;
   if (

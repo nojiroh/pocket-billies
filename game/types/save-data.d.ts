@@ -346,6 +346,10 @@ export interface Run {
   beans?: number;
   /** RL-S2: each hub person's level as the run took off (logic/relations.js: their run bonuses) */
   rel?: Record<string, number>;
+  /** RS-4: each resident's service level as the run took off (logic/residents.js resTakeoff) */
+  res?: Record<string, number>;
+  /** RS-4: run shop rerolls used (Mo's service) */
+  rerolled?: number;
   /** RL-S2: Blake in this run (logic/rival.js); missing on a run from before */
   rival?: RunRival;
   /** RL-9b: what was packed from Copperleaf's bag at the mast */
