@@ -348,6 +348,8 @@ export const RUN_RULE_KEYS = Object.freeze([
   'side',
   'beans',
   'rival',
+  'ghost',
+  'boards',
   'trainers',
   'rewards',
   'town',
@@ -639,7 +641,7 @@ export function dataRunLoop(D) {
         problem('rules.json', 'run.rival.on: the node types he can stand in for (a list)');
       else
         for (const t of RV.on)
-          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival'].includes(t))
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival', 'ghost'].includes(t))
             problem('rules.json', `run.rival.on: "${t}" is not a filler node type (nodeTypes.json)`);
       if (
         !Array.isArray(RV.bands) ||
@@ -652,6 +654,49 @@ export function dataRunLoop(D) {
         problem('rules.json', 'run.rival: size (1-6), max (size-6) and grow (1-20) are whole numbers');
       if (!whole(RV.up, -20, 50) || !whole(RV.reward, 0, 1e6))
         problem('rules.json', 'run.rival: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
+    }
+    /* ON-2: a friend's ghost team (logic/run-map.js runMapGhost) and the daily and weekly runs (logic/daily.js) */
+    const GH = R.ghost;
+    if (!rec(GH)) problem('rules.json', 'run.ghost missing');
+    else {
+      only(GH, ['on', 'spare', 'band', 'up', 'reward', 'who'], 'run.ghost');
+      if (GH.spare !== undefined && (!D.nodeTypes || !D.nodeTypes[GH.spare]))
+        problem('rules.json', `run.ghost.spare: "${GH.spare}" is not a node type (nodeTypes.json)`);
+      if (!Array.isArray(GH.on) || !GH.on.length)
+        problem('rules.json', 'run.ghost.on: the node types it can stand in for');
+      else
+        for (const t of GH.on)
+          if (!D.nodeTypes || !D.nodeTypes[t] || ['landing', 'boss', 'miniboss', 'rival', 'ghost'].includes(t))
+            problem('rules.json', `run.ghost.on: "${t}" is not a filler node type (nodeTypes.json)`);
+      const b = GH.band;
+      if (!Array.isArray(b) || b.length !== 2 || !(b[0] >= 0 && b[1] > b[0] && b[1] <= 1))
+        problem('rules.json', 'run.ghost.band: [from, to) shares of the rows, 0-1');
+      if (!whole(GH.up, -20, 50) || !whole(GH.reward, 0, 1e6))
+        problem('rules.json', 'run.ghost: up (whole, -20-50) and reward (whole Moneys, 0-1,000,000) are needed');
+      const folk = Array.isArray(D.people) ? D.people.map((/** @type {any} */ x) => x.id) : Object.keys(D.people || {});
+      if (typeof GH.who !== 'string' || (folk.length && !folk.includes(GH.who)))
+        problem('rules.json', `run.ghost.who: "${GH.who}" is not a person (people/)`);
+      if (!D.nodeTypes || !D.nodeTypes.ghost) problem('nodeTypes.json', 'the ghost node type is missing (ON-2)');
+    }
+    const BD = R.boards,
+      chal = (/** @type {any} */ v) =>
+        Array.isArray(v) && v.every(c => typeof c === 'string' && (!D.modifiers || D.modifiers.challenges[c]));
+    if (!rec(BD) || !rec(BD.daily) || !rec(BD.weekly)) problem('rules.json', 'run.boards: daily and weekly are needed');
+    else {
+      only(BD, ['daily', 'weekly'], 'run.boards');
+      only(BD.daily, ['expedition', 'challenges'], 'run.boards.daily');
+      only(BD.weekly, ['expedition', 'challenges', 'picks'], 'run.boards.weekly');
+      const W = BD.weekly,
+        pair = (/** @type {any} */ v, /** @type {number} */ lo, /** @type {number} */ hi) =>
+          Array.isArray(v) && v.length === 2 && whole(v[0], lo, hi) && whole(v[1], v[0], hi);
+      if (!whole(BD.daily.expedition, 1, 9) || !chal(BD.daily.challenges) || BD.daily.challenges.includes('mono'))
+        problem('rules.json', 'run.boards.daily: an Expedition (1-9) and challenges (modifiers.json, not mono)');
+      if (!pair(W.expedition, 1, 9) || !chal(W.challenges) || W.challenges.includes('mono'))
+        problem(
+          'rules.json',
+          'run.boards.weekly: an Expedition [lo, hi] (1-9) and challenges (modifiers.json, not mono)'
+        );
+      if (!pair(W.picks, 0, 8)) problem('rules.json', 'run.boards.weekly.picks: [lo, hi] challenges, 0-8');
     }
     /* RL-12b: route trainers (how many a route, levels up, what they pay, how far they see) and the reward pick */
     const TR = R.trainers,

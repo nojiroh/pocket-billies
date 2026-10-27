@@ -20,7 +20,7 @@ import { BANTER, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-dat
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural, speciesStep } from './rules.js';
-import { RIVAL_TRAINER, rivalTeam } from './rival.js';
+import { RIVAL_TRAINER, ghostTeam, rivalTeam } from './rival.js';
 import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
@@ -213,6 +213,7 @@ export const runFoeId = i => `run_${i}_foe`;
  * run.rival.up; a reward pick after it (battle-rewards.js), never blocking.
  * @param {Run} run
  * @param {{ leaders: any[], rival?: import('../../types/game-data').RivalRules, rules: { foes: Record<'miniboss' | 'boss', { up: number, reward: number }>, rival?: import('../../types/game-data').RivalRules,
+ *   ghost?: import('../../types/game-data').GhostRules,
  *   wild: { lv: [number, number], perRow: number } } }} data leaders: the trainer entries with miniboss: true
  * @returns {Record<string, any>}
  */
@@ -228,6 +229,7 @@ export function runFoes(run, data) {
   /* RL-S2: Blake on each rival node (logic/rival.js), his team growing meeting by meeting */
   const B = TRAINERS[RIVAL_TRAINER],
     RV = data.rules.rival,
+    GH = data.rules.ghost,
     lead = run.rival && SPECIES[run.rival.lead] ? SPECIES[run.rival.lead].types || [] : [];
   let met = run.rival ? run.rival.past : 0;
   map.nodes.forEach((node, i) => {
@@ -262,6 +264,28 @@ export function runFoes(run, data) {
           ...(Object.values(BANTER).some(L => L.who === 'rival') ? ['pick rival'] : []),
           `battle ${runFoeId(i)}`,
         ],
+      };
+      return;
+    }
+    /* ON-2: a friend's ghost team (run.ghost, logic/run-record.js): their last run's party, its strongest at the
+       row's top wild level + run.ghost.up, the others as far below as they were */
+    if (node.type === 'ghost' && run.ghost && GH) {
+      const G = run.ghost;
+      out[runFoeId(i)] = {
+        id: runFoeId(i),
+        name: G.n,
+        who: GH.who,
+        battleStage: 'grass',
+        win: `“GG! My ghost will be back stronger.”`,
+        lose: `“Not bad for a ghost, right?”`,
+        reward: GH.reward,
+        team: ghostTeam(G.party, runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + GH.up),
+        node: runWorldNode(i),
+        blocks: false,
+        runFoe: 'ghost',
+        runNode: i,
+        from: 'ghost',
+        script: [`battle ${runFoeId(i)}`],
       };
       return;
     }
