@@ -47,8 +47,18 @@ WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until 
     `game/art/billionaires/*0.png`, legacy art SA-5 deleted; main's own fast check fails both the same way, no fix
     yet), and the Studio check's `--only=generate` (a fixed 0.8 s wait races the draft under software drawing: 2 of 3
     runs fail on the track's head; with a longer wait it passes here).
-  - CI's smoke on a slow runner (every step 1.5-2 times slower) once also failed "Behind things" (Copperleaf) and "A
-    run's world" (the walk from the landing into a route); both passed on the same commit in the other run and here.
+  - check-fast's "A run's world" (`crossed but the view is still w:run_0_7i5p*`) fails in 3 of 4 CI runs here and in 3
+    of 4 on WM-3b's and WM-4b's PRs (#263, #267: the same base without WM-5). Reproduced locally pinned to 2 cores
+    (it passes on 4): after the crossing, seamless-world.js `seamlessGate` keeps the old view until the next one
+    (Thicket Route, 176 x 120 since WM-3a) is built on the card, and that build runs a few ms a frame
+    (`groundPrepWork`); with software drawing and two browsers on 2 cores the page draws about 2 frames a second, so
+    it isn't done in the step's 60 s. The hold has no time limit (a view's first build has 30 s); a 20 s limit passed 1
+    of 2 such runs, so it isn't the whole fix. Copperleaf's "Behind things" and orbit steps failed once each under load.
+  - Found while tracing it: the ground painter's helper thread fails every job (`ReferenceError: groundTileRole is not
+    defined`). e89c8131 moved the tile pick into `groundTileRole` (walk-view.js) without adding it and
+    `GROUND_DETAIL_TILES` to the helper's source (ground-paint-worker.js `paintWorkerSource`), so every square of ground
+    is painted on the page, on the phone too (main has it as well). Adding the two fixes it (38 jobs, 0 failures) but
+    alone doesn't fix the step above. Not fixed here: neither is WM-5's code.
 - Measured in Node: over 205 run towns the square fits in all but 1 (20 before: the dogleg); generator notes the same
   (2); a run town about 30 ms as before. Fixed sizes: hamlet about 55 ms, village 60-70, town 80-100 (max about 230),
   so a run gains roughly 0.1-0.3 s with its sizes in WM-5b (a phone about 3-5 times that, on LD-4's helper thread).
