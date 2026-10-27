@@ -68,6 +68,7 @@ import { updateCheckStart } from './update-check.js';
 expose({
   ART_VERSION_KEY: [() => ART_VERSION_KEY],
   LOADER_ISLAND_COLORS: [() => LOADER_ISLAND_COLORS],
+  LOADER_ISLAND_WORKER_MAIN: [() => LOADER_ISLAND_WORKER_MAIN],
   LOAD_PHASES: [() => LOAD_PHASES],
   LOAD_TIPS: [() => LOAD_TIPS],
   TEST_RUN: [() => TEST_RUN],
@@ -84,8 +85,10 @@ expose({
   loaderIslandDraw: [() => loaderIslandDraw, v => (loaderIslandDraw = v)],
   loaderIslandInit: [() => loaderIslandInit, v => (loaderIslandInit = v)],
   loaderIslandLoop: [() => loaderIslandLoop, v => (loaderIslandLoop = v)],
+  loaderIslandProgress: [() => loaderIslandProgress, v => (loaderIslandProgress = v)],
   loaderIslandRandom: [() => loaderIslandRandom, v => (loaderIslandRandom = v)],
   loaderIslandThing: [() => loaderIslandThing, v => (loaderIslandThing = v)],
+  loaderIslandWorker: [() => loaderIslandWorker, v => (loaderIslandWorker = v)],
   loaderLines: [() => loaderLines, v => (loaderLines = v)],
   loaderSet: [() => loaderSet, v => (loaderSet = v)],
   loaderTip: [() => loaderTip, v => (loaderTip = v)],
@@ -229,6 +232,7 @@ function loaderSet(done, total, phase) {
   const f = total ? done / total : 0,
     pct = Math.round(f * 100);
   loadingScreen.f = Math.max(loadingScreen.f, f);
+  loaderIslandProgress();
   const bar = el.querySelector('.ld-bar i');
   if (bar) bar.style.width = pct + '%';
   if (loadingScreen.town) {
@@ -243,7 +247,7 @@ function loaderSet(done, total, phase) {
    Drawn by hand on a 256 x 168 canvas (no art is loaded yet): isometric ground tiles drop in from the middle outward
    as the files come in, then trees, little houses, lamps and an airship station whose ship bobs at its mast. Each
    thing waits for its share of the loading; when the load is done the whole island is there. */
-const loaderIsland = { cv: null, x: null, tiles: [], things: [], raf: 0, last: 0 };
+const loaderIsland = { cv: null, x: null, tiles: [], things: [], raf: 0, last: 0, w: null };
 function loaderIslandRandom(i, k) {
   const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
   return v - Math.floor(v);
@@ -252,7 +256,6 @@ function loaderIslandInit() {
   const cv = loadingScreen.el && loadingScreen.el.querySelector('.ld-world');
   if (!cv || !cv.getContext) return;
   loaderIsland.cv = cv;
-  loaderIsland.x = cv.getContext('2d');
   const T = [];
   for (let i = -6; i <= 6; i++)
     for (let j = -6; j <= 6; j++) {
@@ -296,7 +299,54 @@ function loaderIslandInit() {
   TH.forEach(o => (o.at = 0));
   loaderIsland.things = TH;
   loaderIsland.t0 = performance.now();
+  loaderIsland.w = loaderIslandWorker(cv);
+  if (loaderIsland.w) return;
+  loaderIsland.x = cv.getContext('2d');
   loaderIslandLoop();
+}
+/* LD-3: the island is drawn on a helper thread where the browser allows it (OffscreenCanvas): the very same drawing
+   code, sent as its source text, keeps moving while the page is busy loading (a stall here froze it). Elsewhere, or
+   when that fails before the canvas is handed over, it is drawn here as before. The loading's progress is posted */
+function loaderIslandWorker(cv) {
+  if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined' || !cv.transferControlToOffscreen)
+    return null;
+  let W = null;
+  try {
+    const src = [
+      'const loadingScreen = { f: 0 };',
+      'const loaderIsland = { x: null, tiles: [], things: [], t0: 0, last: 0, stop: 0 };',
+      'const LOADER_ISLAND_COLORS = ' + JSON.stringify(LOADER_ISLAND_COLORS) + ';',
+      loaderIslandRandom.toString(),
+      loaderIslandDraw.toString(),
+      loaderIslandThing.toString(),
+      LOADER_ISLAND_WORKER_MAIN,
+    ].join('\n');
+    W = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    const off = cv.transferControlToOffscreen();
+    W.postMessage({ cv: off, tiles: loaderIsland.tiles, things: loaderIsland.things, f: loadingScreen.f }, [off]);
+    return W;
+  } catch (e) {
+    if (W) W.terminate();
+    return null;
+  }
+}
+/* the helper thread's own loop: a frame every 32 ms as here (requestAnimationFrame where a worker has it) */
+const LOADER_ISLAND_WORKER_MAIN = `const raf = self.requestAnimationFrame ? f => self.requestAnimationFrame(f) : f => setTimeout(() => f(performance.now()), 16);
+const loop = () => {
+  if (loaderIsland.stop) return;
+  raf(loop);
+  const now = performance.now();
+  if (now - loaderIsland.last < 32) return;
+  loaderIsland.last = now;
+  try { loaderIslandDraw(now); } catch (e) { loaderIsland.stop = 1; }
+};
+onmessage = e => {
+  const m = e.data;
+  if (m.f != null) loadingScreen.f = m.f;
+  if (m.cv) { loaderIsland.x = m.cv.getContext('2d'); loaderIsland.tiles = m.tiles; loaderIsland.things = m.things; loaderIsland.t0 = performance.now(); loop(); }
+};`;
+function loaderIslandProgress() {
+  if (loaderIsland.w) loaderIsland.w.postMessage({ f: loadingScreen.f });
 }
 const LOADER_ISLAND_COLORS = {
   grass: ['#7cc35a', '#5a9a47', '#467a3a'],
@@ -664,6 +714,7 @@ async function bootLoad() {
   }
   clearInterval(loadingScreen.tipT);
   loadingScreen.f = 1;
+  loaderIslandProgress();
   loaderIsland.doneAt = performance.now();
   loadingScreen.el.classList.add('ready');
   loadingScreen.el.querySelector('.ld-phase').textContent = 'Ready';
@@ -723,8 +774,13 @@ function loaderHide() {
     return;
   }
   loadingScreen.f = 1;
+  loaderIslandProgress();
   const end = () => {
     cancelAnimationFrame(loaderIsland.raf);
+    if (loaderIsland.w) {
+      loaderIsland.w.terminate();
+      loaderIsland.w = null;
+    }
     el.remove();
     if (typeof debugLog !== 'undefined') debugLog.stage('loader gone');
     loadingScreen.el = null;
