@@ -444,3 +444,40 @@ hr.pb-rule::after {
   background: var(--edge);
   pointer-events: none;
 }
+
+/* UI-14a: rarity on a list row (the owner's answer 9: frame, pill and name in the tier's colour; UI-14b puts it on the
+   Bag's, the shop's and the Perks' rows). The row takes data-rarity (rarities.json's starter shows as common, as
+   logic/marks.js rarityTier says) and .rar-row: a 4 px bar of the tier's fill on its leading edge and a thin frame in
+   it (both inside the row, so a cut row's clip-path keeps them, and clear of the rows' own !important borders; the
+   row is positioned, as every .k-* part is); its name takes .rar-name; the pill is <pb-rarity tier="..."> */
+:is([data-rarity='common'], [data-rarity='starter']) {
+  --rar: var(--sig-common);
+  --rar-t: var(--sig-common-text);
+}
+[data-rarity='uncommon'] {
+  --rar: var(--sig-uncommon);
+  --rar-t: var(--sig-uncommon-text);
+}
+[data-rarity='rare'] {
+  --rar: var(--sig-rare);
+  --rar-t: var(--sig-rare-text);
+}
+[data-rarity='mythical'] {
+  --rar: var(--sig-mythical);
+  --rar-t: var(--sig-mythical-text);
+}
+.rar-row {
+  outline: 1px solid color-mix(in srgb, var(--rar, transparent) 60%, transparent);
+  outline-offset: -1px;
+}
+.rar-row::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--rar, transparent);
+  pointer-events: none;
+}
+.rar-name {
+  color: var(--rar-t, inherit);
+}
