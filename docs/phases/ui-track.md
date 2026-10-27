@@ -599,7 +599,12 @@ run's map captured in the real game in Field Guide, light and dark, today and wi
 test hooks (`window.runMarkDraw`), plus a key of every place in every state. Two takes: Badges and Pins (every place a
 map pin like art/ui/map.svg, coloured by family, the glyph on a cream face).
 
-The owner's pick: **Badges**, with the buttons and the names, built right after UI-8b.
+The owner's pick: **Badges**, with the buttons and the names, built right after UI-8b. Then the owner: "I meant
+especially the map markers", and asked for UI-8c to start at once, beside UI-8b: the place markers come first; the
+other marks the run's map draws (the gold ring where you stand, the picked place's ring, the destination dot) follow
+them; whether the minimap's marks (trainers, wild Billies, you) follow too is asked in UI-8c's plan; the buttons and the
+names come last. UI-8c runs on `claude/ui-8c-map-markers` (from this branch, a PR into `track/ui`), as WM-4b, WM-5 and
+WM-7 ran beside their track's sessions.
 - Each place keeps UI-4's outline as a bevelled pixel plate on the 36 grid, like the coin, clock and mint icons, in the
   icon set's own palette, one hue per colour family, with a glyph lit from the top left: the landing a blue octagon
   (an airship), a road a plain cream chevron (no glyph, so the special places stand out), a town a teal hexagon (a
@@ -690,7 +695,8 @@ and on.
 15. **The run map's places (after the map examples):** Badges: UI-4's outlines as pixel plates with a glyph each, in
     the icon set's palette by colour family.
 16. **The map's buttons and names:** both: the kit's 44 px chips with the set's icons, and the names in the game's font.
-17. **When:** UI-8c, right after UI-8b.
+17. **When:** UI-8c, started at once beside UI-8b at the owner's word (its own branch, a PR into `track/ui`); the map
+    markers first ("I meant especially the map markers").
 
 ## Ask me before
 - Any change to the answers above (palettes, statuses, families, types, battle layout, rarity, motion defaults).
