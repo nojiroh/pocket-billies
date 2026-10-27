@@ -72,6 +72,7 @@ const LAB_WHY = {
   owned: 'Owned',
   earned: 'Earned by a milestone',
   soon: 'Coming later',
+  resident: 'Waits for its resident to move in',
   requires: 'Needs another unlock first',
   run: 'Bought between runs',
   cost: 'Not enough',
@@ -83,6 +84,9 @@ const LAB_WHERE = {
   ranch: 'at the ranch',
   genebank: 'at the Gene Bank',
   workshop: 'at the Workshop',
+  shop: 'at the General store',
+  inn: 'at the inn',
+  library: 'at the library',
 };
 /** a price: "60 Research", "1 Crest" @param {number} n @param {string | null} c */
 function labPrice(n, c) {

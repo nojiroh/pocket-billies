@@ -21,6 +21,8 @@ import { propDoor } from './prop-turn.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  resLevel: [() => resLevel, v => (resLevel = v)],
+  // @ts-expect-error -- replaced on purpose
   residentCandidate: [() => residentCandidate, v => (residentCandidate = v)],
   // @ts-expect-error -- replaced on purpose
   residentDrawn: [() => residentDrawn, v => (residentDrawn = v)],
@@ -41,6 +43,19 @@ expose({
 export function residentsHere(s) {
   const here = (s.meta && s.meta.residents) || {};
   return Object.keys(here).sort((a, b) => here[a] - here[b] || (a < b ? -1 : 1));
+}
+/** RS-4: a resident's service level: 0 while they don't live in Copperleaf, else the highest level an owned
+ * unlocks.json row grants them (`{resident, level}`), 1 when none does (their Lv 1 comes free with moving in)
+ * @param {SaveData} s @param {string} id @param {Record<string, { grant: any }>} U unlocks.json */
+export function resLevel(s, id, U) {
+  const M = s.meta;
+  if (!M || !(M.residents || {})[id]) return 0;
+  let lv = 1;
+  for (const u of Object.keys(M.unlocks || {})) {
+    const G = U[u] && U[u].grant;
+    if (G && G.resident === id && G.level > lv) lv = G.level;
+  }
+  return lv;
 }
 /** RS-2: this run's one resident to meet, whatever has happened on it (invited or not): the free first one while
  * nobody lives in Copperleaf, else one drawn from the run's own stream ('resident') among those left with a weight.

@@ -2132,6 +2132,8 @@ export interface HubBuilding {
 /** unlocks.json: what an unlock gives (exactly one kind) */
 export type UnlockGrant =
   | { building: string; level: number }
+  /** RS-4: a resident's service level (2 and up; Lv 1 comes with moving in) */
+  | { resident: string; level: number }
   | { shop: string }
   | { biome: string }
   | { research: number }

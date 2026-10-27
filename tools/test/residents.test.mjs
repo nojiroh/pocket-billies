@@ -4,8 +4,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { modules } from './setup-fixture.mjs';
 
-const { residentCandidate, residentDrawn, residentFirstTowns, residentInvite, residentSettle, residentsHere } =
-  modules.residents;
+const {
+  residentCandidate,
+  residentDrawn,
+  residentFirstTowns,
+  residentInvite,
+  residentSettle,
+  residentsHere,
+  resLevel,
+} = modules.residents;
 const { newMeta } = modules['meta-state'];
 const R = {
   ada: {
@@ -95,4 +102,22 @@ test('residents: RS-2: the runâ€™s one stays drawn once invited; the first oneâ€
   };
   assert.deepEqual(residentFirstTowns(map), [3, 4], 'row 1 has a route, so row 2');
   assert.deepEqual(residentFirstTowns({ nodes: [node('landing', 0), node('boss', 1)] }), []);
+});
+
+test('residents: RS-4: a service level is 0 until they move in, 1 then, and the highest owned row after', () => {
+  const U = {
+    bo_2: { grant: { resident: 'bo', level: 2 } },
+    bo_3: { grant: { resident: 'bo', level: 3 } },
+    cy_2: { grant: { resident: 'cy', level: 2 } },
+    lab: { grant: { research: 5 } },
+  };
+  const s = { meta: { ...newMeta(), residents: {}, unlocks: { bo_2: 1, cy_2: 1, lab: 1, gone: 1 } } };
+  assert.equal(resLevel(s, 'bo', U), 0, 'not living there: nothing, whatever is owned');
+  s.meta.residents.bo = 1;
+  assert.equal(resLevel(s, 'bo', U), 2);
+  s.meta.unlocks.bo_3 = 1;
+  assert.equal(resLevel(s, 'bo', U), 3);
+  s.meta.residents.ada = 2;
+  assert.equal(resLevel(s, 'ada', U), 1, 'Lv 1 comes with moving in');
+  assert.equal(resLevel({}, 'bo', U), 0);
 });
