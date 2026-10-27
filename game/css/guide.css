@@ -603,7 +603,6 @@
   --seg-bg: color-mix(in srgb, var(--panel-s) 84%, transparent);
 }
 .lore-tabs button {
-  font-size: 12.5px;
   padding: 6px var(--s2);
 }
 .lore {
