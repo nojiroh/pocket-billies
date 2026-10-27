@@ -7,7 +7,7 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 
 ## Propose changes: what it does, and what happens when it fails (Studio plan Phase 0)
 
-- **What is sent.** Every picture, the rigs and the data you changed, as one commit on a new branch
+- **What is sent.** Every picture, text file (an SVG icon, `art/manifest.js`: SA-2b), the rigs and the data you changed, as one commit on a new branch
   (`studio/<you>-<date>-<time>-<4 letters>`) and a pull request against main. Nothing is marked saved until GitHub
   has opened the pull request; then only what is still as it was sent is. A picture you paint, or a field you change,
   while it is sending stays unsaved for the next proposal.
@@ -30,7 +30,7 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 
 - **What is kept.** Two seconds after your last change, and whenever the tab is hidden, the Studio keeps what you
   haven't proposed yet in this browser (IndexedDB): the data files that differ from the commit it opened on, the
-  skeletons if they changed, each unsaved picture, and that commit. Not the whole game, and never your token.
+  skeletons if they changed, each unsaved picture and text file, and that commit. Not the whole game, and never your token.
 - **Opening the Studio again** with kept changes asks first: **Restore** puts them back as unsaved (undo starts
   empty), **Later** opens without them and keeps them for next time (nothing new is kept until then: the top bar says
   "Not kept if the tab closes"), **Discard** deletes them after a second question.
@@ -614,7 +614,9 @@ The **Art browser** (section `art`, group Game) shows every picture under `game/
 - **Actions:**
   - **Edit pixels** opens any PNG on the shared pixel canvas. Its tools, keys, symmetry and palette lock are the same
     as everywhere else. Each stroke is one step of the Studio's undo; Done goes back to the grid.
-  - **Replace…** takes a PNG or WebP and warns when the size differs. SVG icons get their own editor in SA-2b.
+  - **Replace…** takes a PNG or WebP and warns when the size differs; on an SVG icon it takes an SVG (checked as the
+    icon editor checks text).
+  - **Edit icon** on a UI icon, **Edit the rectangles** on `icons/icons.png` (below).
   - **Download** saves the picture, with your unsaved edit if there is one.
   - **Open in …** goes to the editor for what uses the picture: Billies, Props, Walk scenes, Wardrobe, Robots or the
     Art workbench.
@@ -682,6 +684,68 @@ source**: tools/build-terrain-v47.py retired (decision 1). Its rules are in `too
   (`coins/<id>.json`) is not edited here. tools/build-pyramids.py drew them all.
 - Checks: `check-studio-github.py --only=robot_art`, `studio-shots.py --views robots,pyramids`.
 
+## UI icons (Studio art track SA-2b)
+
+The interface icons are `art/ui/<name>.svg`: 36 × 36 pixel art in fixed colours, the "block and split" look. **The SVG
+files are the source** (decision 6): tools/build-ui-icons.py retired. Open one with **Edit icon** in the Art browser.
+
+- **Pixels**: the shared pixel canvas on the icon's picture. Each stroke writes the SVG's text in the format every icon
+  has (one path of one-pixel runs per colour, `game/js/logic/svg-pixels.js`), one step of the undo. An SVG drawn any
+  other way is edited as text only, and the editor says so.
+- **Shade as a block**: paint the front flat in the top left 34 × 34 pixels, then shade it as every icon is: a 2 px block
+  side to the lower right, paler above the 45° split, a lit top and left edge, a seam where two colours meet
+  (`game/js/logic/icon-block.js`, the builder's rules and colours, checked against all 51 icons). **One colour** picks a
+  ramp whose four shades are one block (no seams between them). The swatches are the set's colours.
+- **Text**: the SVG's text, used 0.4 s after you stop typing if it reads as SVG, has the 36 × 36 box and holds nothing
+  that runs or loads (scripts, styles, links, outside pictures).
+- **Preview**: at 14, 22, 36 and 108 px on a light and a dark panel, and beside the other icons (click one to open it).
+  An unsaved icon also shows in the Studio's own previews of the menus.
+- **New icon**: a name (lower case, digits and -), blank or a copy. `tools/test/ui-icons.test.mjs` counts the set (51):
+  raise the count when a new icon goes in.
+- Checks: `tools/test/svg-pixels.test.mjs`, `icon-block.test.mjs`, `ui-icons.test.mjs`, `check-studio-github.py
+  --only=icons`, the self-test's "Icons" row, `studio-shots.py --views icons`.
+
+## Icon atlas (Studio art track SA-2b)
+
+The small icons (items, battle particles, map marks) are cut from one sheet, `art/icons/icons.png`, by the rectangles in
+`art/manifest.js` (`window.ARTMAN`). **Edit the rectangles** on the sheet in the Art browser opens them.
+
+- The sheet with every rectangle outlined (the picked one orange, a bad one red), at 2-6×. Click to pick; drag to move;
+  drag the lower right corner to resize; the arrow keys move the picked one a pixel (Shift: resize). Or type x, y, w, h.
+- **Used by**: the data that names a key (an item's icon is `i_` + its `icon`; a type's battle particles, `fx`) and, as a
+  hint, where the game's code names the same word (`studio/art-code-refs.json` `atlas`; a short key like `up` can be
+  another word).
+- **Rename…** takes the data's uses along in the same undo step (an item icon's key stays `i_…`); **Delete** is
+  refused while the data uses a key; **Add a rectangle…** puts one in the first free place a pixel from the others.
+- Problems (off the sheet, no size, overlapping) are listed under the sheet (`game/js/logic/atlas-rects.js`).
+- **Edit pixels** paints the sheet in the Art browser's painter, the rectangles drawn over it; Done comes back.
+- The Studio's own item and particle icons follow at once. `manifest.js`'s `battle` layout is kept as it is (no game
+  code reads it; for SA-5).
+- Checks: `tools/test/atlas-rects.test.mjs`, `check-studio-github.py --only=atlas`, the self-test's "Icons" row,
+  `studio-shots.py --views atlas`.
+
+## Scene art previews (Studio art track SA-2b)
+
+Pictures the game doesn't show as they are get a preview of how it uses them, in the Art browser's picture panel and
+beside the painter (drawn again after each stroke). Lighting is flat: the sun, shadows and bumps are left out.
+
+- **Walls** (`scene/build/walls.png`, 12 cells) and **the building sheet** (`scenery.buildArt.detail`, today
+  `detail-a04b.png`, 24 cells): greyscale cells the shaders colour by five levels of the red channel
+  (`game/js/logic/wall-ramp.js`, the shaders' own ramp). Pick a cell and a colour; 6 × 4 m of it repeats (a cell is 2 m,
+  32 px a metre). Pixels between the five levels are counted (the game rounds them). The painter outlines the cells,
+  the previewed one in orange. `detail.png` and `detail-a04.png` say the game doesn't read them (builder inputs).
+- **Rooms** (`rooms.png`): each of the 8 rooms as the little box seen through a window (back wall, side walls, floor,
+  ceiling), by day and lit at night.
+- **Flags** (`scene/flags`): waving on the mast by the game's own ripple (a Wind slider), the postcard stamp, and who
+  flies it.
+- **Far backdrops** (`scene/far`): over a sky, one and a half times across so the seam shows. **The game loads these but
+  doesn't draw them** (walk-view.js only preloads `scene/far/<far>.png`; a place's `far` still picks its sound, water
+  and default walls, and `farH` does nothing). Walk scenes' far list now has sea and volcano.
+- Builders: the far backdrops are drawn by tools/build-scene-props.py, `detail-a04b.png` by tools/build-airship.py and
+  tools/build-props-batch1.py (now in `ART_BUILDERS`, so the warning shows).
+- Checks: `tools/test/wall-ramp.test.mjs`, `check-studio-github.py --only=scene_art`, `studio-shots.py --views
+  walls,flags`.
+
 ## Sections
 
 | Section | What you can do |
@@ -712,7 +776,7 @@ source**: tools/build-terrain-v47.py retired (decision 1). Its rules are in `too
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
 | **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | Every number that tunes the game: starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, eggs, damage, critical hits, type abilities, taxing, bargains. |
-| **Art browser** | Studio art track SA-1: every picture under `game/art` (see "Art browser" above): folders, search with tokens, what uses each picture, Edit pixels, Replace, Download, Open in its editor. |
+| **Art browser** | Studio art track SA-1: every picture under `game/art` (see "Art browser" above): folders, search with tokens, what uses each picture, Edit pixels, Replace, Download, Open in its editor. SA-2a/2b: the ground tile set, frame strips, the UI icon editor, the icon atlas and the scene art previews (above). |
 | **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
 | **Find and Connections** | Ctrl+K finds any setting or thing (and, SA-1, any art file) and takes you to it; Ctrl+L shows what the thing you're editing uses and what uses it, or, for an engine dial, where its value comes from and what it depends on. |
 

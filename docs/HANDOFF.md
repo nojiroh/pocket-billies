@@ -2,6 +2,72 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-2b - the missing editors, part 2 - 2026-10-27
+Branch `track/studio-art` (SA-2a pulled first, then main merged: a merge commit, only HANDOFF conflicted, both top
+entries kept; art-code-refs.json made again for main's moved lines). Plan approved in Plan Mode. The owner's picks
+(Claude's recommendations): icons get text **and** Edit pixels; the builder's block shading ported as a button. Not
+the recommendation: **no split** (all of SA-2b in one session, done so). Tag `sa-2-done` for the owner.
+- Changed:
+  - **A text-file save.** An SVG under `art/` and `art/manifest.js` are kept unsaved (`studioState.textDirty`), sent by
+    Propose as text (github.js `file` takes them; anything else is still refused), kept in drafts (draft-record.js
+    `texts`, a draft without them still reads), one undo step each (history.js text steps, also grouped with a data
+    change). They raise `meta.artVersion` like pictures (the game's art cache holds them too).
+  - **UI icons** (`studio/js/icon-editor.js`): pixels on the shared canvas, written back as the icons' own SVG format
+    (`logic/svg-pixels.js`); **Shade as a block** (`logic/icon-block.js`, the builder's rules); the text checked as
+    typed (`svgProblem` + the browser's parse); New icon; previews at 14-108 px on light and dark panels and beside the
+    others; unsaved icons in the Studio's own menu previews (`window.NW_ART`). Edit icon and Replace… (SVG) in the Art
+    browser.
+  - **tools/build-ui-icons.py deleted** (decision 6). `ui-icons.test.mjs` keeps the names, the count (51), the size and
+    format, and the code's uses; its grids kept as `tools/test/fixtures/ui-icon-grids.json` for the shading test.
+  - **Icon atlas** (`studio/js/atlas-editor.js`, `logic/atlas-rects.js`): the sheet with every rectangle; pick, drag,
+    resize, arrow keys, numbers; Add (a free place), Rename (items' icons and types' particles follow, one undo step),
+    Delete (refused while the data uses it); problems listed; the rectangles over the sheet in the painter; the Studio's
+    icons follow at once. `art-code-refs.json` gains `atlas`: keys the code names as words (a hint).
+  - **Scene art previews** (`studio/js/scene-art-preview.js`, `logic/wall-ramp.js`): walls and the building sheet
+    coloured as the shaders do (6 × 4 m of a cell, a colour to pick, off-level pixels counted, the cells outlined in the
+    painter), rooms behind a window by day and at night, a flag waving by the game's ripple with its postcard stamp, a
+    far backdrop over a sky wrapped at its seam.
+  - `ART_BUILDERS`: the icons' builder out; the far backdrops (build-scene-props.py) and `detail-a04b.png`
+    (build-airship.py and build-props-batch1.py) in.
+  - Walk scenes' far list has sea and volcano (two places use sea and showed None).
+  - Fixed on the way: the pixel canvas's side panel closed one element too many without the onion skin (the tile set's
+    help sat outside its column); the publish check waited for every picture's load event (over 30 s here).
+  - Checks: `check-studio-github.py` steps `icons`, `atlas`, `scene_art` and an SVG in the publish checks; the self-test's
+    "Icons" row; `studio-shots.py` views `icons`, `atlas`, `walls`, `flags`; unit tests svg-pixels, icon-block,
+    atlas-rects, wall-ramp (+ publish-plan, draft-record, history, art-search cases).
+  - STUDIO.md: UI icons; Icon atlas; Scene art previews; Propose and drafts carry text files.
+- Where the plan was wrong:
+  - **Far backdrops aren't drawn by the game** (only preloaded; `farH` does nothing). The Studio shows and paints them
+    with that note; bringing them back or retiring them is yours to decide (SA-5's report?).
+  - Only `detail-a04b.png` is the live building sheet; `detail.png` and `detail-a04.png` are builder inputs. Nothing in
+    the game reads `manifest.js`'s `battle` layout. Both noted for SA-5.
+  - The icon sheet is 254 × 48 (not 256 wide), 119 rectangles.
+- Decisions I made:
+  - The UI lint's raw-colour ceiling rose by exactly 47 (the icon palette moved from Python into
+    `logic/icon-block.js`): art colours, not UI styling; the reason is in the ceiling's comment.
+  - A new icon keeps the unit test's count at 51 on purpose: the owner raises it with the new icon.
+  - Renaming an atlas key changes the data, not the code; the code's uses are listed as a hint.
+- Risky:
+  - The atlas's "the code names it" list matches words (`up`, `box`): it can show false uses.
+  - The wall preview is flat light: the shaders' sun, bumps and the room skirting aren't drawn.
+  - Text steps reuse the picture steps' shape (empty patches + texts); a later change to history.js's art steps
+    should keep `text` steps working (history.test.mjs covers it).
+  - The Studio is still wider than a 390 px phone in every section (not new).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data.
+  - Unit tests: 1358 pass.
+  - `check-studio-github.py --only=sections,art_browser,tile_set,strips,robot_art,icons,atlas,scene_art,studio_test`:
+    every step ok; the self-test round-trips 51 icons in about 11 ms and finds the atlas's 119 rectangles fine.
+    CHECKS_NOTE
+  - SMOKE_NOTE
+  - SHOTS_NOTE
+- For the owner on the phone:
+  - Art browser → ui → an icon → Edit icon: paint a pixel, watch the previews; clear it, paint a flat shape, Shade as a
+    block (try One colour).
+  - icons → icons.png → Edit the rectangles: drag one, Shift + an arrow, Rename an item icon and see the item.
+  - scene/build/walls.png → pick a cell and a colour; Edit pixels and paint: the preview follows. A flag waving.
+- Next: SA-3 (clean-up in the Studio and the game), in a new session on `track/studio-art`, in Plan Mode.
+
 ### Studio art track SA-2a - the missing editors, part 1 - 2026-10-26
 Branch `track/studio-art` (main merged first, a merge commit: only HANDOFF conflicted, both top entries kept). Plan
 approved in Plan Mode. The owner's picks (all Claude's recommendations): the Studio makes the Lite tiles from tiles47;
