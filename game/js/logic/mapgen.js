@@ -75,6 +75,7 @@ expose({
   MAPGEN_SURFACES: [() => MAPGEN_SURFACES],
   MAPGEN_TOWN: [() => MAPGEN_TOWN],
   MAPGEN_TOWN_SET: [() => MAPGEN_TOWN_SET],
+  MAPGEN_TOWN_SIZES: [() => MAPGEN_TOWN_SIZES],
   MAPGEN_TRAIL_GRADE: [() => MAPGEN_TRAIL_GRADE],
   MAPGEN_TRAIL_WIDTH: [() => MAPGEN_TRAIL_WIDTH],
   MAPGEN_VERSION: [() => MAPGEN_VERSION],
@@ -83,6 +84,8 @@ expose({
   MAPGEN_WATER: [() => MAPGEN_WATER],
   MAPGEN_WET: [() => MAPGEN_WET],
   MAPGEN_WILD_MARK: [() => MAPGEN_WILD_MARK],
+  // @ts-expect-error -- replaced on purpose
+  mapgenAddStreets: [() => mapgenAddStreets, v => (mapgenAddStreets = v)],
   mapgenAhead: [() => mapgenAhead],
   mapgenAlong: [() => mapgenAlong],
   mapgenBetween: [() => mapgenBetween],
@@ -103,6 +106,8 @@ expose({
   mapgenCopyable: [() => mapgenCopyable, v => (mapgenCopyable = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenCornerHeight: [() => mapgenCornerHeight, v => (mapgenCornerHeight = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenCornerSpread: [() => mapgenCornerSpread, v => (mapgenCornerSpread = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenDecodeBase64: [() => mapgenDecodeBase64, v => (mapgenDecodeBase64 = v)],
   mapgenDepth: [() => mapgenDepth],
@@ -260,6 +265,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenSegCross: [() => mapgenSegCross, v => (mapgenSegCross = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenSegDist: [() => mapgenSegDist, v => (mapgenSegDist = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenShareMask: [() => mapgenShareMask, v => (mapgenShareMask = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenSimplify: [() => mapgenSimplify, v => (mapgenSimplify = v)],
@@ -304,7 +311,17 @@ expose({
   mapgenTerraces: [() => mapgenTerraces, v => (mapgenTerraces = v)],
   mapgenToward: [() => mapgenToward],
   // @ts-expect-error -- replaced on purpose
+  mapgenTownBand: [() => mapgenTownBand, v => (mapgenTownBand = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTownDial: [() => mapgenTownDial, v => (mapgenTownDial = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenTownFolk: [() => mapgenTownFolk, v => (mapgenTownFolk = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTownFree: [() => mapgenTownFree, v => (mapgenTownFree = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTownPlan: [() => mapgenTownPlan, v => (mapgenTownPlan = v)],
+  // @ts-expect-error -- replaced on purpose
+  mapgenTownSize: [() => mapgenTownSize, v => (mapgenTownSize = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTrailSearch: [() => mapgenTrailSearch, v => (mapgenTrailSearch = v)],
   // @ts-expect-error -- replaced on purpose
@@ -322,7 +339,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 23; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: kept for RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b) */
+export const MAPGEN_VERSION = 24; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: kept for RT-4b (the routes track); 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -341,6 +358,8 @@ export const MAPGEN_SHAPES = {
   winding: 'Gentle winding',
   scurve: 'S-curve',
   switchback: 'Switchback',
+  /* WM-5: a town's through road, square turns between straight stretches (mapgenRoadCurve) */
+  dogleg: 'Town dogleg',
 };
 export const MAPGEN_SURFACES = { dirt: 'p', gravel: 'v', cobbles: 'K', pavers: 'q' };
 export const MAPGEN_WATER = { none: 'None', stream: 'Stream', pond: 'Pond', coast: 'Coast', islet: 'Islet' };
@@ -372,8 +391,10 @@ export const MAPGEN_PEAK = 20;
 export const MAPGEN_MOUNTAIN_SMOOTH = 0.25;
 export const MAPGEN_SIZES = {
   route: { name: 'Route', w: 112, h: 64 },
-  small_town: { name: 'Small town', w: 80, h: 60 },
-  big_town: { name: 'Big town', w: 128, h: 96 },
+  /* WM-5: a run's three town sizes (MAPGEN_TOWN_SIZES), for the Studio's Generate card */
+  hamlet: { name: 'Hamlet', w: 128, h: 64 },
+  village: { name: 'Village', w: 128, h: 128 },
+  town: { name: 'Town', w: 192, h: 128 },
 };
 /* grow-wild.py's share of each plant family */
 export const MAPGEN_FAMILY_SHARE = {
@@ -492,6 +513,9 @@ export function mapgenParams(p) {
   /* WM-7: a leader's arena (logic/arena-gen.js), kept only when given */
   if (P.arena !== undefined) P.arena = arenaGenParams(P.arena);
   if (P.arena === undefined) delete P.arena;
+  /* WM-5: a town's size and what it asks for (mapgenTownSize), kept only when given */
+  if (P.town !== undefined) P.town = mapgenTownDial(P.town);
+  if (P.town === undefined) delete P.town;
   /* RL-14: the kind of place (a run's scrapyard) set pieces may favour, kept only when given */
   if (P.site !== undefined && (typeof P.site !== 'string' || !/^[a-z][a-z0-9_]{0,23}$/.test(P.site))) delete P.site;
   if (mapgenLaidOut(P)) {
@@ -1086,6 +1110,61 @@ export function mapgenRoadCurve(G, A, B, shape, rnd, ns) {
     b0 = B.pt,
     b1 = nB ? [b0[0] + nB[0] * MAPGEN_STRAIGHT_IN, b0[1] + nB[1] * MAPGEN_STRAIGHT_IN] : b0;
   const L = Math.hypot(b1[0] - a1[0], b1[1] - a1[1]) || 1;
+  /* WM-5: a town's dogleg: straight in from each exit, square turns between (a jog 30-70% of the way where opposite
+     exits are at different heights, an L where their sides are at right angles), its stretches across inside the band
+     where a town has room (mapgenTownBand: an exit outside it jogs into it 4 m on from its straight run), the turns
+     rounded */
+  if (shape === 'dogleg' && nB) {
+    const out = [a0, a1],
+      hA = nA[0] !== 0,
+      hB = nB[0] !== 0,
+      at = rnd.range(0.3, 0.7),
+      [lo, hi] = P.kind === 'town' ? mapgenTownBand(P) : [-Infinity, Infinity],
+      band = (/** @type {number} */ z) => mapgenBetween(z, lo, hi),
+      /** a jog from height z0 to z1 four metres on from end e's straight run (n its way in) */
+      jog = (
+        /** @type {number[]} */ e,
+        /** @type {number[]} */ n,
+        /** @type {number} */ z0,
+        /** @type {number} */ z1
+      ) => [
+        [e[0] + n[0] * 4, z0],
+        [e[0] + n[0] * 4, z1],
+      ];
+    if (hA && hB) {
+      const za = band(a1[1]),
+        zb = band(b1[1]),
+        x = a1[0] + (b1[0] - a1[0]) * at;
+      if (za !== a1[1]) out.push(...jog(a1, nA, a1[1], za));
+      if (za !== zb) out.push([x, za], [x, zb]);
+      if (zb !== b1[1]) out.push(...jog(b1, nB, zb, b1[1]));
+    } else if (!hA && !hB) {
+      const zm = band(a1[1] + (b1[1] - a1[1]) * at);
+      out.push([a1[0], zm], [b1[0], zm]);
+    } else if (hA) {
+      const za = band(a1[1]);
+      if (za !== a1[1]) out.push(...jog(a1, nA, a1[1], za));
+      out.push([b1[0], za]);
+    } else {
+      const zb = band(b1[1]);
+      out.push([a1[0], zb]);
+      if (zb !== b1[1]) out.push(...jog(b1, nB, zb, b1[1]));
+    }
+    out.push(b1, b0);
+    let pts = mapgenResample(out, 0.5);
+    for (let pass = 0; pass < 6; pass++) {
+      const nx = pts.map(p => p.slice());
+      for (let i = 2; i < pts.length - 2; i++) {
+        if (i * 0.5 < MAPGEN_STRAIGHT_IN - 0.5 || (pts.length - 1 - i) * 0.5 < MAPGEN_STRAIGHT_IN - 0.5) continue;
+        nx[i] = [
+          (pts[i - 2][0] + pts[i - 1][0] * 2 + pts[i][0] * 2 + pts[i + 1][0] * 2 + pts[i + 2][0]) / 8,
+          (pts[i - 2][1] + pts[i - 1][1] * 2 + pts[i][1] * 2 + pts[i + 1][1] * 2 + pts[i + 2][1]) / 8,
+        ];
+      }
+      pts = nx;
+    }
+    return mapgenResample(pts, 0.5);
+  }
   const c1 = [a1[0] + nA[0] * L * 0.35, a1[1] + nA[1] * L * 0.35],
     c2 = nB ? [b1[0] + nB[0] * L * 0.35, b1[1] + nB[1] * L * 0.35] : [(a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2];
   const n = Math.max(24, Math.ceil(L / 0.5));
@@ -1097,7 +1176,8 @@ export function mapgenRoadCurve(G, A, B, shape, rnd, ns) {
     ph = rnd.range(0, Math.PI * 2),
     ph2 = rnd.range(0, Math.PI * 2),
     legs = mapgenBetween(Math.round(L / 28), 3, 5);
-  const amp = { straight: 0, winding: 0.16, scurve: 0.26, switchback: 0.28 }[shape] * across * (0.6 + 0.8 * wob);
+  const amp =
+    { straight: 0, winding: 0.16, scurve: 0.26, switchback: 0.28, dogleg: 0 }[shape] * across * (0.6 + 0.8 * wob);
   const out = [a0];
   for (let i = 0; i <= n; i++) {
     const t = i / n,
@@ -2590,7 +2670,8 @@ export function mapgenGrassPatches(G) {
     s = G.salt('ground', 'grass'),
     E = G.mtnE,
     want = 3 + Math.min(3, Math.floor(P.nature.tall * 4)),
-    [AMIN, AMAX] = MAPGEN_GRASS_PATCH;
+    [AMIN, AMAX] = MAPGEN_GRASS_PATCH,
+    town = G.townPlan ? /** @type {Uint8Array} */ (G.townPlan.ground) : null;
   /** can cell q take tall grass (road: a road or verge cell may) */
   const free = (q, road) => {
     if (G.F[q] & (4 | 8 | 32 | 64 | 128)) return false;
@@ -2601,6 +2682,8 @@ export function mapgenGrassPatches(G) {
       z = j + 0.5;
     if (Math.hypot(x - G.hub[0], z - G.hub[1]) < 7) return false;
     for (const e of G.exits) if (Math.hypot(x - e.pt[0], z - e.pt[1]) < 7) return false;
+    /* WM-5: none on a town's streets and the lots by them (mapgenTownPlan) */
+    if (town && town[q]) return false;
     if (E)
       for (const c of [j * (w + 1) + i, j * (w + 1) + i + 1, (j + 1) * (w + 1) + i, (j + 1) * (w + 1) + i + 1])
         if (E[c] > 0) return false;
@@ -2653,8 +2736,24 @@ export function mapgenGrassPatches(G) {
     const way = wy,
       pts = mapgenResample(way.path, 0.5),
       half = P.road.width / 2;
+    /* WM-5: in a town, only where the way leaves the town's ground behind */
+    const end0 = way.path[way.path.length - 1],
+      outside = town
+        ? pts.flatMap((p, i) =>
+            i > 0 &&
+            i < pts.length - 1 &&
+            !town[mapgenCellAt(G, p[0], p[1])] &&
+            Math.hypot(p[0] - end0[0], p[1] - end0[1]) >= 12.5 &&
+            Math.hypot(p[0] - G.hub[0], p[1] - G.hub[1]) >= 12.5
+              ? [i]
+              : []
+          )
+        : null;
+    if (outside && !outside.length) continue;
     for (let tries = 0; tries < 24; tries++) {
-      const k = Math.floor(pts.length * rnd.range(0.3, 0.75)),
+      const k = outside
+          ? outside[Math.floor(outside.length * rnd.next())]
+          : Math.floor(pts.length * rnd.range(0.3, 0.75)),
         c = pts[Math.min(pts.length - 2, Math.max(1, k))],
         n = pts[Math.min(pts.length - 1, Math.max(2, k + 1))],
         len = Math.hypot(n[0] - c[0], n[1] - c[1]) || 1,
@@ -3025,7 +3124,7 @@ export function mapgenLevelLot(G, L) {
   if (raise) G.stepsUsed = true;
 }
 
-/* ---------- TW-1: a run town (kind 'town'): a street, a square, houses ---------- */
+/* ---------- TW-1, WM-5: a run town (kind 'town'): streets grown from the through road, a square, houses ---------- */
 /** a town's set when its biome has none (biomes.json town) */
 export const MAPGEN_TOWN_SET = {
   houses: { house_cottage: 1 },
@@ -3036,288 +3135,981 @@ export const MAPGEN_TOWN_SET = {
   bench: 'bench_wood',
   /* TW-3: the notice board on the square's east side (act 'notice': the run's quests are handed in there) */
   board: 'notice_board',
+  /* WM-5: a village's and a town's market stall beside the square (act 'stall': its own shop, run-scenes.js) */
+  stall: 'stall',
 };
-/** a town's sizes (metres): the main street's length and width, the square's width and depth, how many houses, the
- * garden beside a house, how far a house's fence stands in front of it */
+/** a town's measures (metres): its streets' widths (the main street and a second one, a side street), the paved
+ * apron between the through road and the square, the gap between two rows of side streets (a row of lots between
+ * them, drawn in this range), how far a side street's bend jogs, how far streets keep from the way on's exits (room
+ * for the tall grass across it) and from the others, the garden beside a house, how far a house's fence stands in
+ * front of it, its townsfolk (TW-2: `base`, one more for every `houses` houses, at most `most`: the owner, TW-2 and
+ * WM-5), how far south of the through road's middle rivers keep (water-gen.js; `high`: when the road runs through the
+ * upper half of a place two cells tall), and the band by the south edge kept for gardens, plots and tall grass */
 export const MAPGEN_TOWN = {
-  street: [3, 5.5],
   streetW: 2.4,
-  /* the square's width and depth: the first that fits */
-  squares: [
-    [16, 8],
-    [14, 7],
-    [12, 6],
-  ],
-  houses: [4, 7],
+  laneW: 2,
+  apron: 1.5,
+  row: [12, 16],
+  jog: [3.5, 6],
+  ahead: 24,
+  exit: 12,
   garden: 2.6,
   fence: 1.1,
-  /* TW-2: its townsfolk: `base`, one more for every `houses` houses, at most `most` (the owner, TW-2) */
-  folk: { base: 2, houses: 2, most: 6 },
+  folk: { base: 2, houses: 2, most: 10 },
+  river: { south: 8, high: 40 },
+  band: 14,
 };
-/** a town (kind 'town'), laid before the hub's buildings (mapgenStageLots, which then only adds what the town did
- * not place): a short main street north off the main road near the hub, to a small level square (the biome's well
- * or fountain in its middle, lamps at its front corners, benches on its west side, a spot kept on its east side for
- * a notice board: G.spots kind 'board', TW-3: the board on it and its quest giver's spot, kind 'giver'), the clinic and the shop on its north side facing the camera (the props dials
- * clinic and shop), then 4-7 houses north of the main road on both sides of the street, each facing the camera (the
- * owner, TW-1) with a garden beside it, a fence along its front with a gap at its path and a lamp at every other
- * one. The houses are shut (no act: only the clinic and the shop have rooms). South of the road: 1-2 fenced
- * vegetable plots, the rest open land and tall grass (the owner, TW-1). Nothing goes on tall grass, so the patches stay whole. Its own random stream ('lots', '|town').
- * Sets G.town, or leaves it null when no spot fits (the lot stage then places the buildings as on a route). */
-export function mapgenStageTown(G) {
-  const { P, B, w, h } = G;
-  G.town = null;
-  G.townBuilt = [];
-  if (P.kind !== 'town') return;
-  const S = { ...MAPGEN_TOWN_SET, ...(B.town || {}) },
-    Z = MAPGEN_TOWN,
-    rnd = G.rng('lots', '|town'),
+/** WM-5: a town's three sizes (the owner): a hamlet on 2 cells of the region grid (2 x 1), a village on 4 (2 x 2), a
+ * town on 6 (3 x 2): its houses, the squares it tries (width, depth: the first that fits), the most rows of side
+ * streets, how long a side street grows, how far rivers keep from its road (across, north: water-gen.js), and what it
+ * adds: a market stall, a second quest giver, a second north street off the through road (side streets meet it)
+ * @type {Record<string, { cells: number, houses: [number, number], squares: [number, number][], rows: number,
+ *   long: number, river: [number, number], stall: number, givers: number, second: number }>} */
+export const MAPGEN_TOWN_SIZES = {
+  hamlet: {
+    cells: 2,
+    houses: [3, 5],
+    squares: [
+      [16, 8],
+      [14, 7],
+      [12, 6],
+    ],
+    rows: 1,
+    long: 28,
+    river: [24, 32],
+    stall: 0,
+    givers: 1,
+    second: 0,
+  },
+  village: {
+    cells: 4,
+    houses: [6, 10],
+    squares: [
+      [20, 9],
+      [18, 8],
+      [16, 8],
+      [14, 7],
+    ],
+    rows: 3,
+    long: 40,
+    river: [36, 56],
+    stall: 1,
+    givers: 1,
+    second: 0,
+  },
+  town: {
+    cells: 6,
+    houses: [10, 16],
+    squares: [
+      [24, 10],
+      [20, 9],
+      [18, 8],
+      [16, 8],
+    ],
+    rows: 4,
+    long: 52,
+    river: [52, 56],
+    stall: 1,
+    givers: 2,
+    second: 1,
+  },
+};
+/** WM-5: the town dial, kept only when given: its size by name (MAPGEN_TOWN_SIZES) and the houses, market stall and
+ * quest givers asked for over the size's (a run's from rules.json run.town.sizes, run-scenes.js) @param {any} v */
+export function mapgenTownDial(v) {
+  if (!v || typeof v !== 'object') return undefined;
+  /** @type {{ size?: string, houses?: [number, number], stall?: number, givers?: number }} */
+  const out = {};
+  if (typeof v.size === 'string' && Object.hasOwn(MAPGEN_TOWN_SIZES, v.size)) out.size = v.size;
+  const H = v.houses;
+  if (Array.isArray(H) && H.length === 2 && H.every(n => Number.isInteger(n) && n >= 1 && n <= 24) && H[0] <= H[1])
+    out.houses = [H[0], H[1]];
+  if (v.stall === 0 || v.stall === 1) out.stall = v.stall;
+  if (v.givers === 1 || v.givers === 2) out.givers = v.givers;
+  return out;
+}
+/** WM-5: the town a place makes: its size by the town dial, else by its cells (64 m square: under 3 a hamlet, under 5
+ * a village, else a town), with the dial's houses, stall and givers over the size's @param {any} P the dials */
+export function mapgenTownSize(P) {
+  const D = P.town || {},
+    cells = (P.w * P.h) / 4096,
+    size = D.size || (cells < 3 ? 'hamlet' : cells < 5 ? 'village' : 'town'),
+    Z = MAPGEN_TOWN_SIZES[size];
+  return {
+    ...Z,
+    size,
+    houses: /** @type {[number, number]} */ (D.houses || Z.houses),
+    stall: D.stall ?? Z.stall,
+    givers: D.givers ?? Z.givers,
+  };
+}
+/** WM-5: the heights a town's through road may run across at (its dogleg's band): high enough above the south edge
+ * for its plots and grass, low enough below the north edge for its square, the clinic's and the shop's rooms and a
+ * row of side streets (a place two cells tall: room for the square and its rooms) @param {any} P the dials
+ * @returns {[number, number]} */
+export function mapgenTownBand(P) {
+  const Z = mapgenTownSize(P),
+    T = MAPGEN_TOWN,
+    sd = Z.squares[0][1],
+    rooms = P.h - 10.4 - sd - T.apron - P.road.width / 2 - 0.5;
+  return [12, Math.max(12, P.h >= 100 ? rooms : Math.min(rooms, P.h - 27))];
+}
+/** WM-5: is the rectangle free for a town's square at the plan (mapgenTownPlan): inside the scene by a metre, off an
+ * L's cut corner, on no road, water, bridge, bank or jetty (the main road's verge may be paved over), clear of the
+ * exits and the joined edges by MAPGEN_TOWN.exit */
+export function mapgenTownFree(G, x0, z0, x1, z1) {
+  const { w, h } = G;
+  if (x0 < 1 || z0 < 1 || x1 > w - 1 || z1 > h - 1) return false;
+  const c = G.P.cut;
+  if (c && x0 < c[2] && x1 > c[0] && z0 < c[3] && z1 > c[1]) return false;
+  for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+    for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
+      const q = z * w + x,
+        f = G.F[q];
+      if (f & (1 | 4 | 8 | 64 | 128)) return false;
+      if (f & 2 && !(G.near[q] >= 0 && G.roadPts[G.near[q]].k === 0)) return false;
+    }
+  const cx = (x0 + x1) / 2,
+    cz = (z0 + z1) / 2,
+    r = Math.hypot(x1 - x0, z1 - z0) / 2,
+    E = MAPGEN_TOWN.exit;
+  return !G.exits.some(e => Math.hypot(cx - e.pt[0], cz - e.pt[1]) < r + E) && !mapgenNearJoined(G, cx, cz, r + E);
+}
+/** how far the corner heights in a rectangle spread: its highest less its lowest */
+export function mapgenCornerSpread(G, x0, z0, x1, z1) {
+  let lo = Infinity,
+    hi = -Infinity;
+  for (let z = Math.ceil(z0); z <= Math.floor(z1); z++)
+    for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) {
+      const v = mapgenCornerHeight(G, x, z);
+      lo = Math.min(lo, v);
+      hi = Math.max(hi, v);
+    }
+  return hi - lo;
+}
+/** the distance from (x, z) to the segment a-b */
+export function mapgenSegDist(x, z, a, b) {
+  const vx = b[0] - a[0],
+    vz = b[1] - a[1],
+    l2 = vx * vx + vz * vz || 1e-9,
+    t = mapgenBetween(((x - a[0]) * vx + (z - a[1]) * vz) / l2, 0, 1);
+  return Math.hypot(a[0] + vx * t - x, a[1] + vz * t - z);
+}
+/**
+ * WM-5: a town's streets (kind 'town'), laid after the exits and before the land's tall grass, plants and props (so
+ * they treat the streets as roads) and the town's buildings (mapgenStageTown builds on them). The main junction is
+ * the through road's sample nearest the hub where it runs across with room north of it for the square (16 x 8 m in a
+ * hamlet to 24 x 10 m in a town), the square's front on the road; the clinic and the shop stand on its north side
+ * either side of the main street, which runs north from it to the rows of side streets: each row a lot's depth and a
+ * back strip from the one before (MAPGEN_TOWN.row), its side streets leaving the main street east or west (or both)
+ * at T-junctions, as long as the houses still wanted need (12 m to the size's `long`), bending once now and then (a
+ * jog north or south) and ending in a dead end, or in a town at the second north street, which leaves the through
+ * road 30-50 m from the square (a block between them; side streets go on out from it too). When the road runs through
+ * the upper half of a place two cells tall, a south street leaves it past the square's side with rows of its own going
+ * south (north and south rows by turns), a band by the south edge kept for gardens, plots and tall grass
+ * (MAPGEN_TOWN.band); then rows off the through road itself where it runs north or south. Rows grow until the side
+ * streets could hold half as many houses again as the town wants of them (the through road takes about a third, by
+ * the square); the main, second and south streets end at their last row. Every street keeps off water, banks,
+ * bridges, jetties, an L's cut corner, 6 m of the edges, MAPGEN_TOWN.exit of the exits (MAPGEN_TOWN.ahead of the way
+ * on's), 3 m of the other roads and 4 m of every other street but where it joins. The streets become roads
+ * (mapgenAddStreets). Sets G.townPlan ({ size, target: the houses wanted, roadShare: of them by the through road, sq,
+ * services, backD, rows, streets, main, second, south: their indices, high, ground: the cells the streets and their
+ * lots take, kept free of tall grass }), or leaves it null when no square fits (the clinic and the shop then stand by
+ * the road as on a route: mapgenStageLots). Its own random stream ('lots', '|streets').
+ */
+export function mapgenTownPlan(G) {
+  const { P, w, h } = G;
+  G.townPlan = null;
+  if (P.kind !== 'town' || !G.road.length) return;
+  const Z = mapgenTownSize(P),
+    T = MAPGEN_TOWN,
+    rnd = G.rng('lots', '|streets'),
     M = G.road[0].pts,
     hk = G.hubK,
     ppu = 34,
     half = P.road.width / 2,
-    want = MAPGEN_HUB_BUILDINGS.filter(b => (b[0] === 'clinic' || b[0] === 'shop') && P.props[b[0]] > 0),
-    blds = want.map(b => ({ dial: b[0], k: b[1], act: b[2], C: G.cat[b[1]] })).filter(b => b.C && b.C.box),
-    backD = Math.max(0, ...blds.map(b => b.C.box[1])),
-    streetLen = mapgenRound2(rnd.range(Z.street[0], Z.street[1])),
-    nHouses = rnd.int(Z.houses[0], Z.houses[1]);
-  let SW = 0,
-    SD = 0;
-  /* is cell q clear for the town: no water, bridge, stream, jetty or tall grass; a road only the main road */
-  const clear = (x0, z0, x1, z1) => {
-    for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
-      for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
-        if (x < 0 || z < 0 || x >= w || z >= h) return false;
-        const q = z * w + x;
-        if (G.F[q] & (4 | 8 | 32 | 64 | 128)) return false;
-        if (G.F[q] & 1 && (G.near[q] < 0 || G.roadPts[G.near[q]].k !== 0)) return false;
-      }
-    return true;
-  };
-  const corners = (x0, z0, x1, z1) => {
-    let lo = Infinity,
-      hi = -Infinity;
-    for (let z = Math.ceil(z0); z <= Math.floor(z1); z++)
-      for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) {
-        const v = mapgenCornerHeight(G, x, z);
-        lo = Math.min(lo, v);
-        hi = Math.max(hi, v);
-      }
-    return hi - lo;
-  };
-  /* ---- the square: the main road's samples nearest the hub first, where the road runs across ---- */
+    blds = MAPGEN_HUB_BUILDINGS.filter(b => (b[0] === 'clinic' || b[0] === 'shop') && P.props[b[0]] > 0)
+      .map(b => ({ dial: b[0], k: b[1], act: b[2], C: G.cat[b[1]] }))
+      .filter(b => b.C && b.C.box),
+    backD = Math.max(0, ...blds.map(b => b.C.box[1]));
+  /* ---- the main junction and its square: the through road's samples nearest the hub first, where it runs across ---- */
   const cand = [];
   for (let k = 8; k <= M.length - 9; k += 2) cand.push(k);
   cand.sort((a, b) => Math.abs(a - hk) - Math.abs(b - hk) || a - b);
+  /** the through road runs across at sample k (over `n` samples each way) */
+  const across = (/** @type {number} */ k, n = 6) => {
+    const a = M[Math.max(0, k - n)],
+      b = M[Math.min(M.length - 1, k + n)],
+      L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return Math.abs(b[1] - a[1]) / L <= 0.5;
+  };
   let sq = /** @type {any} */ (null);
-  for (const [sw, sd] of Z.squares) {
-    SW = sw;
-    SD = sd;
+  for (const [SW, SD] of Z.squares) {
     for (const k of cand) {
-      const a = M[k - 6],
-        b = M[k + 6],
-        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-      if (Math.abs(b[1] - a[1]) / L > 0.5) continue;
+      if (!across(k)) continue;
       const jx = mapgenRound2(M[k][0]),
         edge = M[k][1] + half,
-        z0 = Math.round((edge + streetLen) * 2) / 2,
+        z0 = Math.round((edge + T.apron) * 2) / 2,
         z1 = z0 + SD,
         x0 = jx - SW / 2,
         x1 = jx + SW / 2;
       if (x0 < 7 || x1 > w - 7 || z1 > h - 10.4 || z1 + backD + 1.5 > h - 1) continue;
-      if (!mapgenLotFree(G, x0 - 0.5, z0 - 0.5, x1 + 0.5, z1 + backD + 0.5, false)) continue;
-      if (!clear(x0 - 1, z0 - 1, x1 + 1, z1 + backD + 1) || !clear(jx - 2, edge, jx + 2, z0)) continue;
-      if (corners(x0, edge, x1, z1 + backD) > 3.5) continue;
-      sq = { k, jx, edge, z0, z1, x0, x1 };
+      if (!mapgenTownFree(G, x0 - 0.5, edge + 0.5, x1 + 0.5, z1 + backD + 0.5)) continue;
+      if (mapgenCornerSpread(G, x0, edge, x1, z1 + backD) > 3.5) continue;
+      sq = { k, jx, edge, z0, z1, x0, x1, SW, SD, mz: (z0 + z1) / 2 };
       break;
     }
     if (sq) break;
   }
   if (!sq) return;
-  /* the road sample the street meets (main road samples come first in G.roadPts) */
-  const p = G.roadPts[sq.k];
-  /* level the square, the buildings behind it and the street at the road's height there; the street is the lot's
-     path from its front to the road */
-  mapgenLevelLot(G, {
-    x: sq.jx,
-    z: sq.z0,
-    bw: SW,
-    bd: SD + backD + 0.5,
-    step: [sq.jx, sq.z0 - 0.25],
-    road: p,
+  const target = rnd.int(Z.houses[0], Z.houses[1]);
+  /* the clinic and the shop on its north side, either side of the main street (a metre clear of it), in a random order */
+  if (blds.length === 2 && rnd.chance(0.5)) blds.reverse();
+  const services = blds.map((b, i) => {
+    const [bw, bd] = b.C.box,
+      dx = ((b.C.door && b.C.door.x) || 0) / ppu,
+      sg = blds.length === 1 || !i ? -1 : 1,
+      x0 = mapgenRound2(sq.jx + sg * sq.SW * 0.27 - dx),
+      clear = T.streetW / 2 + 0.8 + bw / 2,
+      x = sg < 0 ? Math.min(x0, mapgenRound2(sq.jx - clear)) : Math.max(x0, mapgenRound2(sq.jx + clear));
+    return { dial: b.dial, k: b.k, act: b.act, x, z: sq.z1, bw, bd, dx };
   });
+  /* the square and the strip behind it: no street but the main one crosses them */
+  const held = [sq.x0 - 1, sq.edge, sq.x1 + 1, sq.z1 + backD + 1];
+  /* ---- the streets: each { pts (half a metre apart, from where it leaves its parent), w, ns (it runs north or
+     south), par (the street it leaves; -1: the through road, at its sample pk), kind } ---- */
+  /** @type {{ pts: number[][], w: number, ns: boolean, par: number, pk: number, kind: string }[]} */
+  const streets = [],
+    /* the cells within 4 m of a street (its index): no other street comes closer but where it joins */
+    taken = new Int16Array(w * h).fill(-1),
+    ahead = mapgenAhead(P);
+  const mark = (/** @type {number[][]} */ pts, /** @type {number} */ id) => {
+    for (const [x, z] of pts)
+      for (let j = Math.max(0, Math.floor(z - 4)); j <= Math.min(h - 1, Math.floor(z + 4)); j++)
+        for (let i = Math.max(0, Math.floor(x - 4)); i <= Math.min(w - 1, Math.floor(x + 4)); i++)
+          if (taken[j * w + i] < 0 && Math.hypot(i + 0.5 - x, j + 0.5 - z) <= 4) taken[j * w + i] = id;
+  };
+  /** why a street (id, leaving street par) can't pass (x, z): '' when it can, the index of the street it meets */
+  const why = (
+    /** @type {number} */ x,
+    /** @type {number} */ z,
+    /** @type {number} */ id,
+    /** @type {number} */ par,
+    /** @type {boolean} */ start,
+    /** @type {boolean} */ main
+  ) => {
+    if (x < 6 || x > w - 6 || z < 6 || z > h - 6) return 'edge';
+    const c = P.cut;
+    if (c && x > c[0] - 2 && x < c[2] + 2 && z > c[1] - 2 && z < c[3] + 2) return 'cut';
+    const q = Math.floor(z) * w + Math.floor(x),
+      f = G.F[q];
+    if (f & (4 | 8 | 64 | 128)) return 'water';
+    if (!start && !main) {
+      if (f & (1 | 2)) return 'road';
+      if (G.near[q] >= 0 && G.dist[q] - G.roadPts[G.near[q]].r < 3) return 'road';
+    }
+    for (const e of G.exits) {
+      const n = MAPGEN_INWARD[e.side],
+        run = [e.pt[0] + n[0] * MAPGEN_STRAIGHT_IN, e.pt[1] + n[1] * MAPGEN_STRAIGHT_IN];
+      if (Math.hypot(x - e.pt[0], z - e.pt[1]) < (e.side === ahead ? T.ahead : T.exit)) return 'exit';
+      if (mapgenSegDist(x, z, e.pt, run) < 8) return 'exit';
+    }
+    if (mapgenNearJoined(G, x, z, 8)) return 'edge';
+    if (!main && x > held[0] && x < held[2] && z > held[1] && z < held[3]) return 'square';
+    const o = taken[q];
+    if (o >= 0 && o !== id && !(start && o === par)) return o;
+    return '';
+  };
+  /** lay a street through the corner points `pts`, `wd` wide, leaving street `par` (-1: the through road at its
+   * sample pk): its samples up to the first that can't be (less 2 m, a dead end), or on to the centre line of the
+   * north-south street it meets (a join); its index, or -1 when under `min` metres are left. The first `skip` metres
+   * may come near its parent and the road */
+  const lay = (
+    /** @type {number[][]} */ pts,
+    /** @type {number} */ wd,
+    /** @type {number} */ par,
+    /** @type {number} */ pk,
+    /** @type {string} */ kind,
+    min = 8,
+    skip = 3
+  ) => {
+    const S = mapgenResample(pts, 0.5),
+      id = streets.length,
+      main = kind === 'main';
+    let n = 0,
+      join = -1;
+    for (let i = 0; i < S.length; i++) {
+      const y = why(S[i][0], S[i][1], id, par, i * 0.5 < skip, main);
+      if (y === '') {
+        n = i + 1;
+        continue;
+      }
+      if (typeof y === 'number' && streets[y].ns && !main) join = y;
+      break;
+    }
+    let keep = S.slice(0, join >= 0 || n === S.length ? n : Math.max(0, n - 4));
+    if (join >= 0 && keep.length) {
+      /* on to the street it meets, square to it: an east-west street runs on to its x */
+      const J = streets[join],
+        last = keep[keep.length - 1],
+        x = J.pts[0][0];
+      keep = keep.concat(mapgenResample([last, [x, last[1]]], 0.5).slice(1));
+    }
+    if (keep.length < 2 || (keep.length - 1) * 0.5 < min) return -1;
+    const ns = Math.abs(keep[keep.length - 1][1] - keep[0][1]) > Math.abs(keep[keep.length - 1][0] - keep[0][0]);
+    streets.push({ pts: keep, w: wd, ns, par, pk, kind });
+    mark(keep, id);
+    return id;
+  };
+  /* the rows of side streets north of the square: the first behind the clinic and the shop */
+  const rows = /** @type {number[]} */ ([]);
+  let zr = Math.round((sq.z1 + backD + 3 + T.laneW / 2) * 2) / 2;
+  while (rows.length < Z.rows && zr <= h - 9) {
+    rows.push(zr);
+    zr = Math.round((zr + rnd.range(T.row[0], T.row[1])) * 2) / 2;
+  }
+  /* the main street, north from the square to its last row */
+  let main = -1;
+  if (rows.length) {
+    main = lay(
+      [
+        [sq.jx, sq.z1],
+        [sq.jx, rows[rows.length - 1]],
+      ],
+      T.streetW,
+      -1,
+      sq.k,
+      'main',
+      2
+    );
+    const top = main >= 0 ? streets[main].pts[streets[main].pts.length - 1][1] : -1;
+    while (rows.length && rows[rows.length - 1] > top + 0.01) rows.pop();
+  }
+  /* which way there is more room from x (east 1, west -1), and the drawn side when about even */
+  const room = (/** @type {number} */ x) => {
+    const e = w - 6 - x,
+      wst = x - 6;
+    return Math.abs(e - wst) > 8 ? (e > wst ? 1 : -1) : rnd.chance(0.5) ? 1 : -1;
+  };
+  /* a town's second north street, 30-50 m from the square on the roomier side */
+  let second = -1;
+  if (Z.second && rows.length >= 2) {
+    const sg = room(sq.jx);
+    for (const d of [rnd.int(60, 100), 80, 60, 100]) {
+      const k = sq.k + sg * d;
+      if (k < 8 || k > M.length - 9 || !across(k, 4)) continue;
+      const x = mapgenRound2(M[k][0]),
+        z = M[k][1] + half;
+      second = lay(
+        [
+          [x, z],
+          [x, rows[rows.length - 1]],
+        ],
+        T.streetW,
+        -1,
+        k,
+        'second',
+        12,
+        4
+      );
+      if (second >= 0) break;
+    }
+  }
+  /* how many houses the side streets should hold: the through road takes about a third of them, by the square; a lot
+     takes about LOT metres of street with its garden */
+  const roadShare = mapgenBetween(Math.round(target * 0.35), 1, 6),
+    need = target - roadShare,
+    LOT = 8.5;
+  let cap = 0;
+  const enough = () => cap >= need * 1.5;
+  /** a side street from (x, z) on street par, sg east (1) or west (-1): as long as the houses still wanted need (12 m
+   * to the size's long), bending now and then (a jog north, or south when `south` lets it, `space` the most it may
+   * jog); its index or -1 */
+  const side = (
+    /** @type {number} */ x,
+    /** @type {number} */ z,
+    /** @type {number} */ sg,
+    /** @type {number} */ par,
+    /** @type {number} */ space,
+    /** @type {boolean} */ south,
+    pk = -1
+  ) => {
+    const L = mapgenBetween(Math.min(rnd.range(16, Z.long), (need - cap) * LOT + 6), 12, Z.long),
+      jog = Math.min(T.jog[1], space - 9),
+      bend = jog >= T.jog[0] && L >= 20 && rnd.chance(0.35),
+      at = rnd.range(0.35, 0.65) * L,
+      dz = (south && rnd.chance(0.5) ? -1 : 1) * rnd.range(T.jog[0], Math.max(T.jog[0], jog));
+    const xs = x + sg * (par >= 0 ? streets[par].w / 2 : half),
+      pts = bend
+        ? [
+            [xs, z],
+            [xs + sg * at, z],
+            [xs + sg * at, z + dz],
+            [xs + sg * L, z + dz],
+          ]
+        : [
+            [xs, z],
+            [xs + sg * L, z],
+          ];
+    const id = lay(pts, T.laneW, par, pk, 'side', 8, par >= 0 ? 3 : 4);
+    if (id >= 0) {
+      const P0 = streets[id].pts,
+        span = Math.abs(P0[P0.length - 1][0] - P0[0][0]);
+      cap += Math.max(0, Math.floor((span - 2) / LOT));
+    }
+    return id;
+  };
+  /* the south side, when the road runs through the upper half of a place two cells tall: a south street past the
+     square's side and rows of its own going south, the band by the south edge kept */
+  const high = h >= 100 && M[sq.k][1] > h * 0.55;
+  let south = -1;
+  const rowsS = /** @type {number[]} */ ([]);
+  if (high) {
+    const sg0 = room(sq.jx),
+      off = Math.ceil((sq.SW / 2 + 6) * 2),
+      tries = /** @type {[number, number][]} */ ([]);
+    for (const sg of [sg0, -sg0]) for (const d of [off + rnd.int(0, 20), off, off + 20]) tries.push([sg, d]);
+    for (const [sg, d] of tries) {
+      const k = sq.k + sg * d;
+      if (k < 8 || k > M.length - 9 || !across(k, 4)) continue;
+      const x = mapgenRound2(M[k][0]),
+        z = M[k][1] - half;
+      south = lay(
+        [
+          [x, z],
+          [x, T.band + 6],
+        ],
+        T.streetW,
+        -1,
+        k,
+        'south',
+        12,
+        4
+      );
+      if (south >= 0) break;
+    }
+    if (south >= 0) {
+      const S3 = streets[south],
+        bottom = S3.pts[S3.pts.length - 1][1];
+      let z = Math.round((S3.pts[0][1] - 3 - 3.6 - 4 - T.laneW / 2) * 2) / 2;
+      while (rowsS.length < Z.rows && z >= bottom - 0.01 && z >= T.band + 6) {
+        rowsS.push(z);
+        z = Math.round((z - rnd.range(T.row[0], T.row[1])) * 2) / 2;
+      }
+    }
+  }
+  /* the rows in turn (north and south by turns when the road runs high) until the side streets hold enough: each
+     row's side streets off its street, on one side or (a village's and a town's, now and then) both, toward the
+     second street first and on out from it; the first row always gets one */
+  /** @type {[string, number][]} */
+  const slots = [];
+  for (let i = 0; i < Math.max(rows.length, rowsS.length); i++) {
+    if (i < rows.length) slots.push(['N', i]);
+    if (i < rowsS.length) slots.push(['S', i]);
+  }
+  /* then rows off the through road where it runs north or south (a dogleg's turn, a way on north or south): a row
+     every row's gap along each such stretch, 8 m in from its ends, the nearest the square first */
+  const upright = (/** @type {number} */ k) => {
+      const a = M[Math.max(0, k - 6)],
+        b = M[Math.min(M.length - 1, k + 6)],
+        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return Math.abs(b[0] - a[0]) / L <= 0.35;
+    },
+    rowsV = /** @type {number[]} */ ([]);
+  for (let k = 8; k < M.length - 8;) {
+    if (!upright(k)) {
+      k++;
+      continue;
+    }
+    let e = k;
+    while (e + 1 < M.length - 8 && upright(e + 1)) e++;
+    for (let at = k + 16; at <= e - 16; at += Math.round(rnd.range(T.row[0], T.row[1]) * 2)) rowsV.push(at);
+    k = e + 1;
+  }
+  rowsV.sort((a, b) => Math.abs(a - sq.k) - Math.abs(b - sq.k) || a - b);
+  rowsV.forEach((_, i) => slots.push(['V', i]));
+  let topN = -1,
+    lowS = -1;
+  for (const [d, r] of slots) {
+    if (enough() && !(d === 'N' && r === 0)) continue;
+    if (d === 'V') {
+      const k = rowsV[r],
+        sides = rnd.chance(0.5) ? [1, -1] : [rnd.chance(0.5) ? 1 : -1];
+      for (const sg of sides) if (!enough()) side(M[k][0], M[k][1], sg, -1, 16, true, k);
+      continue;
+    }
+    const zs = d === 'N' ? rows : rowsS,
+      z = zs[r],
+      next = r + 1 < zs.length ? Math.abs(zs[r + 1] - z) : 16,
+      prev = r ? Math.abs(z - zs[r - 1]) : next,
+      space = Math.min(next, prev),
+      x0 = d === 'N' ? sq.jx : streets[south].pts[0][0],
+      par = d === 'N' ? main : south,
+      first = d === 'N' && second >= 0 ? Math.sign(streets[second].pts[0][0] - sq.jx) : room(x0),
+      sides = Z.size !== 'hamlet' && rnd.chance(0.55) ? [first, -first] : [first];
+    let any = false;
+    for (const sg of sides)
+      if (!enough() || sg === first) any = side(x0, z, sg, par, space, d === 'N' && r > 0) >= 0 || any;
+    if (d === 'N' && second >= 0 && !enough() && rnd.chance(0.6)) {
+      const S2 = streets[second],
+        x2 = S2.pts[0][0];
+      if (z <= S2.pts[S2.pts.length - 1][1] + 0.01)
+        any = side(x2, z, Math.sign(x2 - sq.jx), second, space, r > 0) >= 0 || any;
+    }
+    if (any && d === 'N') topN = Math.max(topN, r);
+    if (any && d === 'S') lowS = Math.max(lowS, r);
+  }
+  /* the main, second and south streets end at the last row that grew (a short dead end when none did) */
+  const trim = (/** @type {number} */ id, /** @type {number} */ zEnd, /** @type {number} */ dir) => {
+    if (id < 0) return;
+    const S = streets[id],
+      keep = S.pts.filter(p => (p[1] - zEnd) * dir <= 0.01);
+    if (keep.length >= 2) S.pts = keep;
+  };
+  if (main >= 0) trim(main, topN >= 0 ? rows[topN] : Math.min(rows[0], sq.z1 + backD + 2), 1);
+  if (second >= 0 && topN >= 0) trim(second, rows[topN], 1);
+  if (south >= 0) trim(south, lowS >= 0 ? rowsS[lowS] : streets[south].pts[0][1] - 6, -1);
+  /* the ground the town takes, kept free of tall grass: the square and the strip behind it, its streets and a row of
+     lots north of each east-west one (mapgenGrassPatches) */
+  const ground = new Uint8Array(w * h),
+    put = (/** @type {number} */ x0, /** @type {number} */ z0, /** @type {number} */ x1, /** @type {number} */ z1) => {
+      for (let j = Math.max(0, Math.floor(z0)); j < Math.min(h, Math.ceil(z1)); j++)
+        for (let i = Math.max(0, Math.floor(x0)); i < Math.min(w, Math.ceil(x1)); i++) ground[j * w + i] = 1;
+    };
+  put(held[0], held[1], held[2], held[3]);
+  for (const S of streets)
+    for (const [x, z] of S.pts) {
+      put(x - 4, z - 3, x + 4, z + 3);
+      if (!S.ns) put(x - 1, z, x + 1, z + 10);
+    }
+  G.townPlan = {
+    size: Z,
+    target,
+    roadShare,
+    sq,
+    services,
+    backD,
+    rows,
+    streets,
+    main,
+    second,
+    south,
+    high,
+    ground,
+  };
+  mapgenAddStreets(G, streets, sq);
+}
+/**
+ * WM-5: a town's streets as roads (mapgenTownPlan), after the road stage made the rest: each a road after the exits'
+ * branches (so every exit keeps its own and the main road's samples stay first), its samples in the distance field,
+ * paved in the town's square ground and walked like a road, its height smoothed along it from where it leaves its
+ * parent (the main street from the square's level, and level beside the clinic and the shop) and its slope kept to
+ * the roads' 18%, the land blended to it as to a road. Sets each street's `road` (its index in G.road)
+ */
+export function mapgenAddStreets(G, streets, sq) {
+  const { w, h } = G,
+    n0 = G.roadPts.length,
+    S = { ...MAPGEN_TOWN_SET, ...(G.B.town || {}) },
+    lim = 0.09,
+    reach = 14;
+  if (!streets.length) return;
+  let s = n0 ? G.roadPts[n0 - 1].s : 0;
+  /** a road's height where it passes nearest (x, z) (its profile) */
+  const heightOn = (/** @type {any} */ R, /** @type {number} */ x, /** @type {number} */ z) => {
+    let bi = 0,
+      bd = 1e9;
+    R.pts.forEach((/** @type {number[]} */ p, /** @type {number} */ i) => {
+      const d = Math.hypot(p[0] - x, p[1] - z);
+      if (d < bd) {
+        bd = d;
+        bi = i;
+      }
+    });
+    return R.prof ? R.prof[bi] : mapgenCornerHeight(G, R.pts[bi][0], R.pts[bi][1]);
+  };
+  const level = mapgenCornerHeight(G, G.roadPts[sq.k].x, G.roadPts[sq.k].z);
+  for (const st of streets) {
+    const pts = st.pts,
+      n = pts.length,
+      parent = st.par >= 0 ? G.road[streets[st.par].road] : G.road[0],
+      h0 = st.kind === 'main' ? level : st.par >= 0 ? heightOn(parent, pts[0][0], pts[0][1]) : parent.prof[st.pk],
+      /* the main street stays at the square's level beside the clinic and the shop */
+      pin = st.kind === 'main' ? 9 : 1;
+    G.road.push({ pts, width: st.w, main: false, street: true, first: G.roadPts.length });
+    st.road = G.road.length - 1;
+    const raw = pts.map(p => mapgenCornerHeight(G, p[0], p[1])),
+      sm = raw.map((_, i) => {
+        let a = 0,
+          c = 0;
+        for (let k = Math.max(0, i - 14); k <= Math.min(n - 1, i + 14); k++) {
+          a += raw[k];
+          c++;
+        }
+        return a / c;
+      });
+    for (let i = 0; i < Math.min(n, pin); i++) sm[i] = h0;
+    for (let i = n - 2; i >= pin; i--) sm[i] = mapgenBetween(sm[i], sm[i + 1] - lim, sm[i + 1] + lim);
+    for (let i = pin; i < n; i++) sm[i] = mapgenBetween(sm[i], sm[i - 1] - lim, sm[i - 1] + lim);
+    G.road[st.road].prof = sm;
+    for (let i = 0; i < n; i++) {
+      if (i) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      G.roadPts.push({ x: pts[i][0], z: pts[i][1], r: st.w / 2, s, k: st.road });
+    }
+  }
+  /* the distance field: the new samples stamp the cells round them (as mapgenStageRoad) */
+  for (let n = n0; n < G.roadPts.length; n++) {
+    const p = G.roadPts[n];
+    for (let j = Math.max(0, Math.floor(p.z - reach)); j < Math.min(h, Math.ceil(p.z + reach)); j++)
+      for (let i = Math.max(0, Math.floor(p.x - reach)); i < Math.min(w, Math.ceil(p.x + reach)); i++) {
+        const d = Math.hypot(i + 0.5 - p.x, j + 0.5 - p.z),
+          q = j * w + i;
+        if (d - p.r < G.dist[q] - (G.near[q] >= 0 ? G.roadPts[G.near[q]].r : 0)) {
+          G.dist[q] = d;
+          G.near[q] = n;
+        }
+      }
+  }
+  /* paved in the town's ground, walked like a road, no plants */
+  for (let q = 0; q < w * h; q++) {
+    if (G.near[q] < n0 || G.F[q] & (4 | 8 | 128)) continue;
+    if (G.dist[q] - G.roadPts[G.near[q]].r <= 0) {
+      G.T[q] = S.square;
+      G.F[q] = (G.F[q] & ~(2 | 32 | 64)) | 1 | 16;
+    }
+  }
+  /* the land blended to them (corners nearest a new sample), as mapgenFlattenRoads does for the roads */
+  for (let j = 0; j <= h; j++)
+    for (let i = 0; i <= w; i++) {
+      const q = mapgenBetween(j, 0, h - 1) * w + mapgenBetween(i, 0, w - 1),
+        k = G.near[q];
+      if (k < n0) continue;
+      const p = G.roadPts[k],
+        d = Math.hypot(i - p.x, j - p.z) - p.r,
+        inner = 1.2,
+        blend = 5;
+      if (d > inner + blend) continue;
+      const R = G.road[p.k],
+        t = d <= inner ? 1 : 1 - mapgenSmooth((d - inner) / blend),
+        c = j * (w + 1) + i;
+      G.H[c] = G.H[c] * (1 - t) + R.prof[k - R.first] * t;
+    }
+}
+/**
+ * a town (kind 'town'), built on its streets (WM-5: mapgenTownPlan) before the hub's buildings (mapgenStageLots,
+ * which then only adds what the town did not place): the square at the main junction, level and paved, an apron
+ * across its front onto the through road (the biome's well or fountain in its middle, lamps at its front corners,
+ * benches on its west side, a spot kept on its east side for a notice board: G.spots kind 'board', TW-3: the board on
+ * it and its quest giver's spot, kind 'giver'; WM-5: a town's second giver on the west side), the clinic and the shop
+ * on its north side facing the camera either side of the main street (the props dials clinic and shop), a village's
+ * and a town's market stall by the road beside the square (else on its front; act 'stall'), then the houses: lots
+ * along every east-west
+ * stretch of a street and of the through road, on its north side, each house facing the camera (the owner, TW-1 and
+ * WM-5) with a garden beside it, a fence along its front with a gap at its path and a lamp at every other one, the
+ * streets taken in turn so that each gets some (the size's houses, MAPGEN_TOWN_SIZES). The houses are shut (no act:
+ * only the clinic and the shop have rooms). South of the through road: 1-2 fenced vegetable plots (else south of a
+ * side street), the rest open land and tall grass (the owner, TW-1). Nothing goes on tall grass, so the patches stay
+ * whole. Its own random stream ('lots', '|town'). Sets G.town, or leaves it null when the plan found no square (the
+ * lot stage then places the buildings as on a route).
+ */
+export function mapgenStageTown(G) {
+  const { P, B, w, h } = G,
+    Pl = G.townPlan;
+  G.town = null;
+  G.townBuilt = [];
+  if (P.kind !== 'town' || !Pl) return;
+  const S = { ...MAPGEN_TOWN_SET, ...(B.town || {}) },
+    T = MAPGEN_TOWN,
+    rnd = G.rng('lots', '|town'),
+    M = G.road[0].pts,
+    ppu = 34,
+    half = P.road.width / 2,
+    sq = Pl.sq,
+    backD = Pl.backD;
+  /* is the rectangle clear for the town: no water, bridge, stream, jetty or tall grass; a road only road k's */
+  const clear = (
+    /** @type {number} */ x0,
+    /** @type {number} */ z0,
+    /** @type {number} */ x1,
+    /** @type {number} */ z1,
+    k = 0
+  ) => {
+    for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+      for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
+        if (x < 0 || z < 0 || x >= w || z >= h) return false;
+        const q = z * w + x;
+        if (G.F[q] & (4 | 8 | 32 | 64 | 128)) return false;
+        if (G.F[q] & 1 && (G.near[q] < 0 || G.roadPts[G.near[q]].k !== k)) return false;
+      }
+    return true;
+  };
+  const corners = (
+    /** @type {number} */ x0,
+    /** @type {number} */ z0,
+    /** @type {number} */ x1,
+    /** @type {number} */ z1
+  ) => mapgenCornerSpread(G, x0, z0, x1, z1);
+  /* ---- the square: level at the road's height where it meets it, with the strip behind it (the clinic and the
+     shop); paved in the square's ground, walked like a road, the apron across its front ---- */
+  const p = G.roadPts[sq.k];
+  mapgenLevelLot(G, { x: sq.jx, z: sq.z0, bw: sq.SW, bd: sq.SD + backD + 0.5, step: [sq.jx, sq.z0 - 0.25], road: p });
   G.lots.push([sq.x0, sq.z0 - 0.1, sq.x1, sq.z1 + backD + 0.5]);
-  /* paint: the square and the street in the square's ground, walked like a road, no plants */
-  const paint = q => {
+  const paint = (/** @type {number} */ q) => {
     G.T[q] = S.square;
     G.F[q] = (G.F[q] & ~(32 | 64)) | 1 | 16;
   };
   for (let z = Math.floor(sq.z0); z < Math.ceil(sq.z1); z++)
     for (let x = Math.floor(sq.x0); x < Math.ceil(sq.x1); x++) paint(z * w + x);
-  for (let z = sq.edge - 0.5; z <= sq.z0; z += 0.5)
-    mapgenPaintDisc(G, sq.jx, z, Z.streetW / 2, q => {
+  for (let z = Math.floor(sq.edge - 0.5); z < Math.ceil(sq.z0); z++)
+    for (let x = Math.floor(sq.x0); x < Math.ceil(sq.x1); x++) {
+      const q = z * w + x;
       if (!(G.F[q] & 4) && !(G.F[q] & 1 && G.T[q] !== S.square)) paint(q);
-    });
-  /* the clinic and the shop on its north side, their doors on its edge, in a random order */
-  if (blds.length === 2 && rnd.chance(0.5)) blds.reverse();
-  blds.forEach((b, i) => {
-    const [bw, bd] = b.C.box,
-      dx = ((b.C.door && b.C.door.x) || 0) / ppu,
-      doorX = sq.jx + (blds.length === 1 ? 0 : (i ? 1 : -1) * SW * 0.27),
-      x = mapgenRound2(doorX - dx),
-      z = sq.z1;
-    mapgenPutProp(G, b.k, x, z, { force: true, extra: { act: b.act } });
-    G.lots.push([x - bw / 2, z - 0.1, x + bw / 2, z + bd]);
-    mapgenOccAdd(G, x, z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
-    G.keep.push([doorX, z - 0.8, 0.9]);
+    }
+  /* the clinic and the shop on its north side, their doors on its edge */
+  for (const b of Pl.services) {
+    mapgenPutProp(G, b.k, b.x, b.z, { force: true, extra: { act: b.act } });
+    G.lots.push([b.x - b.bw / 2, b.z - 0.1, b.x + b.bw / 2, b.z + b.bd]);
+    mapgenOccAdd(G, b.x, b.z + b.bd / 2, Math.hypot(b.bw, b.bd) / 2 + 0.4);
+    G.keep.push([b.x + b.dx, b.z - 0.8, 0.9]);
     G.townBuilt.push(b.dial);
-  });
-  /* its middle: the well or the fountain; the notice board's spot on its east side; benches on its west side;
-     lamps at its front corners and at the street's mouth */
+  }
+  /* its middle: the well or the fountain; the notice board's spot on its east side and its quest giver in front of
+     it, to its west (a town's second giver on the west side); benches on its west side; lamps at its front corners */
   const mx = sq.jx,
-    mz = (sq.z0 + sq.z1) / 2,
+    mz = sq.mz,
     y = mapgenCornerHeight(G, mx, mz);
   mapgenPutProp(G, S.centre, mx, mz, { force: true });
   const board = [mapgenRound2(sq.x1 - 1.4), mapgenRound2(mz)];
   G.spots.push({ kind: 'square', x: mapgenRound2(mx), z: mapgenRound2(mz), y: mapgenRound2(y) });
   G.spots.push({ kind: 'board', x: board[0], z: board[1], y: mapgenRound2(y) });
   G.keep.push([board[0], board[1], 1.2]);
-  /* TW-3: the notice board on its spot, and where the town's quest giver stands: in front of it, to its west */
   if (G.cat[S.board])
     mapgenPutProp(G, S.board, board[0], board[1], { force: true, extra: { act: 'notice', label: 'Notice board' } });
-  const giver = [mapgenRound2(board[0] - 1.6), mapgenRound2(mz - 1)];
-  G.spots.push({ kind: 'giver', x: giver[0], z: giver[1], y: mapgenRound2(mapgenCornerHeight(G, giver[0], giver[1])) });
-  G.keep.push([giver[0], giver[1], 0.6]);
+  const givers = [[mapgenRound2(board[0] - 1.6), mapgenRound2(mz - 1)]];
+  if (Pl.size.givers > 1) givers.push([mapgenRound2(sq.x0 + 3), mapgenRound2(mz - 1)]);
+  for (const [gx, gz] of givers) {
+    G.spots.push({ kind: 'giver', x: gx, z: gz, y: mapgenRound2(mapgenCornerHeight(G, gx, gz)) });
+    G.keep.push([gx, gz, 0.6]);
+  }
   for (const dz of [-1.3, 1.3]) mapgenPutProp(G, S.bench, sq.x0 + 1.4, mz + dz, { force: true });
   for (const x of [sq.x0 + 0.5, sq.x1 - 0.5]) mapgenPutProp(G, S.lamp, x, sq.z0 + 0.5, { force: true });
-  for (const sg of [-1, 1]) {
-    const x = sq.jx + sg * (Z.streetW / 2 + 0.6),
-      z = sq.edge + 1;
-    if (clear(x - 0.3, z - 0.3, x + 0.3, z + 0.3) && !(G.F[mapgenCellAt(G, x, z)] & 1))
-      mapgenPutProp(G, S.lamp, x, z, { force: true });
-  }
-  /* ---- the houses: north of the main road, out from the street on both sides by turns ---- */
-  const kinds = Object.keys(S.houses).filter(k => G.cat[k] && G.cat[k].box);
-  const smallest = kinds.reduce((m, k) => (!m || G.cat[k].box[0] < G.cat[m].box[0] ? k : m), '');
-  let built = 0,
-    lamp = 0,
-    tx0 = sq.x0,
-    tx1 = sq.x1;
-  const tried = new Set(),
-    /* TW-2: where a named local may stand: on the square (first), then by a house's gate */
-    locals = [[sq.x0 + 3.4, sq.z0 + 1.4]];
-  for (let d = 8; d < M.length && built < nHouses && kinds.length; d += 2)
-    for (const k of [sq.k - d, sq.k + d]) {
-      if (built >= nHouses || k < 6 || k > M.length - 7 || tried.has(k)) continue;
-      tried.add(k);
-      const a = M[k - 4],
-        b = M[k + 4],
-        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-      if (Math.abs(b[1] - a[1]) / L > 0.6) continue;
-      const pick = rnd.pick(Object.fromEntries(kinds.map(q => [q, S.houses[q]]))),
-        gs = rnd.chance(0.5) ? 1 : -1,
-        gap0 = +rnd.pick({ 3: 2, 4: 2, 5.5: 1 }),
-        R = M[k];
-      /* the house drawn at the gap drawn, else at the other gaps, else the smallest house */
-      const tries = [];
-      for (const kk of [pick, smallest]) for (const gap of [gap0, 3, 4, 5.5]) tries.push([kk, gap]);
-      let lot = /** @type {any} */ (null);
-      for (const [kk, gap] of tries) {
-        const C = G.cat[kk],
-          [bw, bd] = C.box,
-          dx = ((C.door && C.door.x) || 0) / ppu,
-          x = mapgenRound2(R[0] - dx),
-          z = Math.round((R[1] + half + gap) * 2) / 2,
-          door = [x + dx, z],
-          step = [door[0], z - 0.55],
-          gx0 = gs > 0 ? x + bw / 2 + 0.3 : x - bw / 2 - 0.3 - Z.garden,
-          gx1 = gx0 + Z.garden,
-          px0 = Math.min(x - bw / 2, gx0),
-          px1 = Math.max(x + bw / 2, gx1),
-          fz = z - Z.fence;
-        if (door[0] < 4 || door[0] > w - 4 || z + bd > h - 1.5) continue;
-        if (!mapgenLotFree(G, px0 - 0.4, z - 0.6, px1 + 0.4, z + bd + 0.4)) continue;
-        if (!clear(px0 - 0.4, fz - 0.4, px1 + 0.4, z + bd + 0.4)) continue;
+  /* ---- WM-5: a village's and a town's market stall, by the road beside the square, facing it ---- */
+  let stall = 0;
+  const SC = G.cat[S.stall];
+  if (Pl.size.stall && SC && SC.box) {
+    const [bw, bd] = SC.box;
+    for (const sg of rnd.chance(0.5) ? [-1, 1] : [1, -1]) {
+      for (const g of [1.6, 2.6, 3.8, 5.2, 7]) {
+        const x = mapgenRound2(sg < 0 ? sq.x0 - g - bw / 2 : sq.x1 + g + bw / 2);
+        /* the road where it passes nearest, by the square's front */
+        let kk = sq.k,
+          best = 1e9;
+        for (let k = 0; k < M.length; k++) {
+          const d = Math.hypot(M[k][0] - x, M[k][1] - M[sq.k][1]);
+          if (d < best) {
+            best = d;
+            kk = k;
+          }
+        }
+        const z = Math.round((M[kk][1] + half + 2.5) * 2) / 2,
+          step = [x, z - 0.55];
+        if (x - bw / 2 < 4 || x + bw / 2 > w - 4 || z + bd > h - 1.5) continue;
+        if (!mapgenLotFree(G, x - bw / 2 - 0.4, z - 0.6, x + bw / 2 + 0.4, z + bd + 0.4)) continue;
+        if (!clear(x - bw / 2 - 0.4, z - 0.6, x + bw / 2 + 0.4, z + bd + 0.4)) continue;
         const nk = G.near[mapgenCellAt(G, step[0], step[1])];
         if (nk < 0) continue;
         const rp = G.roadPts[nk];
-        if (rp.k !== 0 || step[1] < rp.z || Math.hypot(step[0] - rp.x, step[1] - rp.z) > rp.r + 6) continue;
-        if (corners(px0, fz, px1, z + bd) > 2.4) continue;
-        lot = { kk, bw, bd, x, z, door, step, gx0, gx1, px0, px1, fz, rp };
+        if (rp.k !== 0 || step[1] < rp.z || Math.hypot(step[0] - rp.x, step[1] - rp.z) > rp.r + 4) continue;
+        if (corners(x - bw / 2, z, x + bw / 2, z + bd) > 2) continue;
+        mapgenLevelLot(G, { x, z, bw, bd, step, road: rp });
+        mapgenPutProp(G, S.stall, x, z, { force: true, extra: { act: 'stall', label: 'Market stall' } });
+        G.lots.push([x - bw / 2, z - 0.1, x + bw / 2, z + bd]);
+        mapgenOccAdd(G, x, z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
+        G.keep.push([x, z - 0.8, 0.9]);
+        G.townBuilt.push('stall');
+        stall = 1;
         break;
       }
-      if (!lot) continue;
-      const { kk, bw, bd, x, z, door, step, gx0, gx1, px0, px1, fz, rp } = lot;
-      mapgenLevelLot(G, { x: (px0 + px1) / 2, z, bw: px1 - px0, bd, step, road: rp });
-      mapgenPutProp(G, kk, x, z, { force: true });
-      G.lots.push([px0, z - 0.1, px1, z + bd]);
-      mapgenOccAdd(G, x, z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
-      /* the garden: lawn, a planter at its front, a shrub at its back, now and then a gnome */
-      for (let j = Math.floor(z); j < Math.ceil(z + bd); j++)
-        for (let i = Math.floor(gx0); i < Math.ceil(gx1); i++)
-          if (!(G.F[j * w + i] & (1 | 2 | 4))) {
-            G.T[j * w + i] = 'l';
-            G.F[j * w + i] |= 16;
-          }
-      const gx = (gx0 + gx1) / 2;
-      mapgenPutProp(G, 'planter_box', gx, z + 0.4, { force: true });
-      const shrubs = B.shrubs && Object.keys(B.shrubs).filter(s => G.cat[s]);
-      if (shrubs && shrubs.length)
-        mapgenPutProp(G, rnd.pick(Object.fromEntries(shrubs.map(s => [s, B.shrubs[s]]))), gx, z + bd - 0.5, {
-          force: true,
-        });
-      if (rnd.chance(0.2)) mapgenPutProp(G, 'garden_gnome', gx + 0.7, z + bd / 2, { force: true });
-      /* the fence along the front, in 2.2 m lengths, with a gap at the path */
-      const F = G.cat[S.fence],
-        fw = (F && F.box && F.box[0]) || 2.2;
-      for (let fx = px0 + fw / 2; fx <= px1 - fw / 2 + 0.01; fx += fw) {
-        if (Math.abs(fx - door[0]) < fw / 2 + 0.7) continue;
-        if (!clear(fx - fw / 2, fz - 0.2, fx + fw / 2, fz + 0.2)) continue;
-        let onRoad = false;
-        for (let s = -fw / 2; s <= fw / 2; s += 0.5) if (G.F[mapgenCellAt(G, fx + s, fz)] & 1) onRoad = true;
-        if (!onRoad) mapgenPutProp(G, S.fence, fx, fz, { force: true });
-      }
-      if (lamp++ % 2 === 0) {
-        const lx = gs > 0 ? px0 - 0.5 : px1 + 0.5;
-        if (!(G.F[mapgenCellAt(G, lx, fz)] & (1 | 4))) mapgenPutProp(G, S.lamp, lx, fz, { force: true });
-      }
-      locals.push([door[0] - gs * 0.9, fz - 0.6]);
-      tx0 = Math.min(tx0, px0);
-      tx1 = Math.max(tx1, px1);
-      built++;
+      if (stall) break;
     }
+    /* else on the square's front, east of its middle, where nothing stands */
+    if (!stall && sq.SW >= 14) {
+      const x = mapgenRound2(mx + Math.min(4.6, sq.SW / 2 - bw / 2 - 2.2)),
+        z = mapgenRound2(sq.z0 + 0.4);
+      mapgenPutProp(G, S.stall, x, z, { force: true, extra: { act: 'stall', label: 'Market stall' } });
+      mapgenOccAdd(G, x, z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
+      G.keep.push([x, z - 0.8, 0.9]);
+      G.townBuilt.push('stall');
+      stall = 1;
+    }
+    if (!stall) G.notes.push('no room for the market stall beside the square');
+  }
+  /* ---- the houses: north of every east-west stretch of street and of the through road, the streets in turn ---- */
+  const kinds = Object.keys(S.houses).filter(k => G.cat[k] && G.cat[k].box);
+  const smallest = kinds.reduce((m, k) => (!m || G.cat[k].box[0] < G.cat[m].box[0] ? k : m), '');
+  /** each street's frontage: its road, its samples out from where it leaves its parent, its half width, how far on */
+  const fronts = /** @type {{ k: number, pts: number[][], half: number, i: number }[]} */ ([]);
+  const west = [],
+    east = [];
+  for (let k = sq.k - 8; k >= 6; k--) west.push(M[k]);
+  for (let k = sq.k + 8; k <= M.length - 7; k++) east.push(M[k]);
+  fronts.push({ k: 0, pts: west, half, i: 0 }, { k: 0, pts: east, half, i: 0 });
+  for (const st of Pl.streets) if (!st.ns) fronts.push({ k: st.road, pts: st.pts, half: st.w / 2, i: 4 });
+  let built = 0,
+    lamp = 0,
+    tx0 = sq.x0,
+    tx1 = sq.x1,
+    tz0 = sq.edge,
+    tz1 = sq.z1 + backD;
+  /* TW-2: where a named local may stand: on the square (first), then by a house's gate */
+  const locals = [[sq.x0 + 3.4, sq.z0 + 1.4]];
+  /** a house on frontage f at its sample i, or false when none fits there */
+  const house = (/** @type {{ k: number, pts: number[][], half: number }} */ f, /** @type {number} */ i) => {
+    const R = f.pts[i],
+      a = f.pts[Math.max(0, i - 4)],
+      b = f.pts[Math.min(f.pts.length - 1, i + 4)],
+      L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    if (Math.abs(b[1] - a[1]) / L > 0.6) return false;
+    const pick = rnd.pick(Object.fromEntries(kinds.map(q => [q, S.houses[q]]))),
+      gs = rnd.chance(0.5) ? 1 : -1,
+      gap0 = +rnd.pick({ 3: 2, 4: 2, 5.5: 1 });
+    /* the house drawn at the gap drawn, else at the other gaps, else the smallest house */
+    const tries = [];
+    for (const kk of [pick, smallest]) for (const gap of [gap0, 3, 4, 5.5]) tries.push([kk, gap]);
+    let lot = /** @type {any} */ (null);
+    for (const [kk, gap] of tries) {
+      const C = G.cat[kk],
+        [bw, bd] = C.box,
+        dx = ((C.door && C.door.x) || 0) / ppu,
+        x = mapgenRound2(R[0] - dx),
+        z = Math.round((R[1] + f.half + gap) * 2) / 2,
+        door = [x + dx, z],
+        step = [door[0], z - 0.55],
+        gx0 = gs > 0 ? x + bw / 2 + 0.3 : x - bw / 2 - 0.3 - T.garden,
+        gx1 = gx0 + T.garden,
+        px0 = Math.min(x - bw / 2, gx0),
+        px1 = Math.max(x + bw / 2, gx1),
+        fz = z - T.fence;
+      if (door[0] < 4 || door[0] > w - 4 || z + bd > h - 1.5) continue;
+      if (!mapgenLotFree(G, px0 - 0.4, z - 0.6, px1 + 0.4, z + bd + 0.4)) continue;
+      if (!clear(px0 - 0.4, fz - 0.4, px1 + 0.4, z + bd + 0.4, f.k)) continue;
+      const nk = G.near[mapgenCellAt(G, step[0], step[1])];
+      if (nk < 0) continue;
+      const rp = G.roadPts[nk];
+      if (rp.k !== f.k || step[1] < rp.z || Math.hypot(step[0] - rp.x, step[1] - rp.z) > rp.r + 6) continue;
+      if (corners(px0, fz, px1, z + bd) > 2.4) continue;
+      lot = { kk, bw, bd, x, z, door, step, gx0, gx1, px0, px1, fz, rp };
+      break;
+    }
+    if (!lot) return false;
+    const { kk, bw, bd, x, z, door, step, gx0, gx1, px0, px1, fz, rp } = lot;
+    mapgenLevelLot(G, { x: (px0 + px1) / 2, z, bw: px1 - px0, bd, step, road: rp });
+    mapgenPutProp(G, kk, x, z, { force: true });
+    G.lots.push([px0, z - 0.1, px1, z + bd]);
+    mapgenOccAdd(G, x, z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
+    /* the garden: lawn, a planter at its front, a shrub at its back, now and then a gnome */
+    for (let j = Math.floor(z); j < Math.ceil(z + bd); j++)
+      for (let i2 = Math.floor(gx0); i2 < Math.ceil(gx1); i2++)
+        if (!(G.F[j * w + i2] & (1 | 2 | 4))) {
+          G.T[j * w + i2] = 'l';
+          G.F[j * w + i2] |= 16;
+        }
+    const gx = (gx0 + gx1) / 2;
+    mapgenPutProp(G, 'planter_box', gx, z + 0.4, { force: true });
+    const shrubs = B.shrubs && Object.keys(B.shrubs).filter(s => G.cat[s]);
+    if (shrubs && shrubs.length)
+      mapgenPutProp(G, rnd.pick(Object.fromEntries(shrubs.map(s => [s, B.shrubs[s]]))), gx, z + bd - 0.5, {
+        force: true,
+      });
+    if (rnd.chance(0.2)) mapgenPutProp(G, 'garden_gnome', gx + 0.7, z + bd / 2, { force: true });
+    /* the fence along the front, in 2.2 m lengths, with a gap at the path */
+    const F = G.cat[S.fence],
+      fw = (F && F.box && F.box[0]) || 2.2;
+    for (let fx = px0 + fw / 2; fx <= px1 - fw / 2 + 0.01; fx += fw) {
+      if (Math.abs(fx - door[0]) < fw / 2 + 0.7) continue;
+      if (!clear(fx - fw / 2, fz - 0.2, fx + fw / 2, fz + 0.2, f.k)) continue;
+      let onRoad = false;
+      for (let s = -fw / 2; s <= fw / 2; s += 0.5) if (G.F[mapgenCellAt(G, fx + s, fz)] & 1) onRoad = true;
+      if (!onRoad) mapgenPutProp(G, S.fence, fx, fz, { force: true });
+    }
+    if (lamp++ % 2 === 0) {
+      const lx = gs > 0 ? px0 - 0.5 : px1 + 0.5;
+      if (!(G.F[mapgenCellAt(G, lx, fz)] & (1 | 4))) mapgenPutProp(G, S.lamp, lx, fz, { force: true });
+    }
+    locals.push([door[0] - gs * 0.9, fz - 0.6]);
+    tx0 = Math.min(tx0, px0);
+    tx1 = Math.max(tx1, px1);
+    tz0 = Math.min(tz0, fz);
+    tz1 = Math.max(tz1, z + bd);
+    return true;
+  };
+  /** houses on the frontages in turn (each its next lot out from where it starts) until `upto` are built */
+  const fill = (/** @type {typeof fronts} */ list, /** @type {number} */ upto) => {
+    while (kinds.length && built < upto) {
+      let any = false;
+      for (const f of list) {
+        if (built >= upto) break;
+        while (f.i < f.pts.length) {
+          const i = f.i;
+          f.i += 2;
+          if (house(f, i)) {
+            built++;
+            any = true;
+            break;
+          }
+        }
+      }
+      if (!any) break;
+    }
+  };
+  /* the through road's share by the square, then the side streets in turn, then the road again if they ran out */
+  fill(fronts.slice(0, 2), Math.min(Pl.target, Pl.roadShare));
+  fill(fronts.slice(2), Pl.target);
+  fill(fronts.slice(0, 2), Pl.target);
+  /* a lamp at each side street's far end, on its north side, where one fits */
+  for (const st of Pl.streets) {
+    const e = st.pts[st.pts.length - 1];
+    if (st.ns) mapgenPutProp(G, S.lamp, e[0] + st.w / 2 + 0.8, e[1], { road: 0.3 });
+    else mapgenPutProp(G, S.lamp, e[0], e[1] + st.w / 2 + 0.8, { road: 0.3 });
+  }
   /* ---- south of the road (the camera's side): 1-2 vegetable plots in farm soil, planters in two rows, a fence along
-     their front; the rest stays open land and tall grass ---- */
+     their front; the rest stays open land and tall grass. Else south of a side street ---- */
   const nPlots = rnd.int(1, 2);
   let plots = 0;
+  const plot = (/** @type {number} */ cx, /** @type {number} */ top, /** @type {number} */ k) => {
+    const pw = 5,
+      pd = 3,
+      z1 = Math.round(top * 2) / 2,
+      z0 = z1 - pd,
+      x0 = cx - pw / 2,
+      x1 = cx + pw / 2;
+    if (!mapgenLotFree(G, x0 - 0.5, z0 - 1.5, x1 + 0.5, z1 + 0.3) || !clear(x0 - 0.5, z0 - 1.5, x1 + 0.5, z1 + 0.3, k))
+      return false;
+    if (corners(x0, z0 - 1, x1, z1) > 1.2) return false;
+    for (let j = Math.floor(z0); j < Math.ceil(z1); j++)
+      for (let i = Math.floor(x0); i < Math.ceil(x1); i++) {
+        G.T[j * w + i] = 'o';
+        G.F[j * w + i] |= 16;
+      }
+    for (const dz of [0.8, 2.1])
+      for (const dx of [-1.5, 0, 1.5]) mapgenPutProp(G, 'planter_box', cx + dx, z0 + dz, { force: true });
+    const F = G.cat[S.fence],
+      fw = (F && F.box && F.box[0]) || 2.2;
+    for (let fx = x0 + fw / 2; fx <= x1 - fw / 2 + 0.01; fx += fw)
+      mapgenPutProp(G, S.fence, fx, z0 - 0.6, { force: true });
+    G.lots.push([x0, z0 - 0.8, x1, z1]);
+    tz0 = Math.min(tz0, z0 - 1);
+    return true;
+  };
   for (let d = 10; d < M.length && plots < nPlots; d += 6)
     for (const k of [sq.k + d, sq.k - d]) {
       if (plots >= nPlots || k < 6 || k > M.length - 7) continue;
-      const pw = 5,
-        pd = 3,
-        cx = M[k][0],
-        z1 = Math.round((M[k][1] - half - 2.5) * 2) / 2,
-        z0 = z1 - pd,
-        x0 = cx - pw / 2,
-        x1 = cx + pw / 2;
-      if (!mapgenLotFree(G, x0 - 0.5, z0 - 1.5, x1 + 0.5, z1 + 0.3) || !clear(x0 - 0.5, z0 - 1.5, x1 + 0.5, z1 + 0.3))
-        continue;
-      if (corners(x0, z0 - 1, x1, z1) > 1.2) continue;
-      for (let j = Math.floor(z0); j < Math.ceil(z1); j++)
-        for (let i = Math.floor(x0); i < Math.ceil(x1); i++) {
-          G.T[j * w + i] = 'o';
-          G.F[j * w + i] |= 16;
-        }
-      for (const dz of [0.8, 2.1])
-        for (const dx of [-1.5, 0, 1.5]) mapgenPutProp(G, 'planter_box', cx + dx, z0 + dz, { force: true });
-      const F = G.cat[S.fence],
-        fw = (F && F.box && F.box[0]) || 2.2;
-      for (let fx = x0 + fw / 2; fx <= x1 - fw / 2 + 0.01; fx += fw)
-        mapgenPutProp(G, S.fence, fx, z0 - 0.6, { force: true });
-      G.lots.push([x0, z0 - 0.8, x1, z1]);
-      plots++;
+      if (plot(M[k][0], M[k][1] - half - 2.5, 0)) plots++;
     }
-  /* TW-2: the named locals' places, and the town's ground (its animals keep to it): the houses' and the square's
-     width, from the vegetable plots south of the road to the square's back */
+  for (const st of Pl.streets)
+    for (let i = 8; !plots && !st.ns && i < st.pts.length; i += 6)
+      if (plot(st.pts[i][0], st.pts[i][1] - st.w / 2 - 2.5, st.road)) plots++;
+  /* TW-2: the named locals' places, and the town's ground (its animals keep to it): from the plots south of the road
+     to the houses' backs, as wide as the houses and the square */
   for (const [x, z] of locals) {
     G.spots.push({
       kind: 'local',
@@ -3329,12 +4121,21 @@ export function mapgenStageTown(G) {
   }
   let rz = Infinity;
   for (const R of M) if (R[0] >= tx0 && R[0] <= tx1) rz = Math.min(rz, R[1]);
-  const area = [tx0 - 1, (isFinite(rz) ? rz : sq.edge) - half - 7, tx1 + 1, sq.z1].map(mapgenRound2);
+  const area = [
+    tx0 - 1,
+    Math.min(isFinite(rz) ? rz - half - 7 : sq.edge - 7, tz0 - 1),
+    tx1 + 1,
+    Math.max(sq.z1, tz1),
+  ].map(mapgenRound2);
   G.town = {
+    size: Pl.size.size,
     square: [sq.x0, sq.z0, sq.x1, sq.z1],
     street: [sq.jx, sq.edge, sq.z0],
+    streets: Pl.streets.length,
     houses: built,
     plots,
+    stall,
+    givers: givers.length,
     area: [Math.max(1, area[0]), Math.max(1, area[1]), Math.min(w - 1, area[2]), Math.min(h - 1, area[3])],
   };
 }
@@ -4547,6 +5348,7 @@ export function mapgenBuild(P, ctx, aim) {
   mapgenStageWater(G);
   mapgenChooseHub(G);
   mapgenStageExits(G);
+  mapgenTownPlan(G); /* WM-5: a town's streets, before the tall grass and the plants */
   mapgenStageLand(G);
   waterGenFalls(G); /* WA-2b: the river steps with the land, its waterfalls and a set piece (logic/water-gen.js) */
   waterGenKinds(G); /* WA-5a: rapids, a hot spring, the bog, an oasis, cave water (logic/water-gen.js) */
@@ -4600,6 +5402,11 @@ export function mapgenBuild(P, ctx, aim) {
   if (G.waterKind) sc.waterKind = G.waterKind;
   if (G.spots.length) sc.spots = G.spots;
   if (G.grassPatches.length) sc.grassPatches = G.grassPatches;
+  /* WM-5: what a town made (its size, houses, streets, market stall and quest givers, its square), for the checks */
+  if (G.town) {
+    const { size, houses, streets, stall, givers, square } = G.town;
+    sc.town = { size, houses, streets, stall, givers, square };
+  }
   /* TW-2: what a town's folk say (run-scenes.js adds the region's) */
   if (P.kind === 'town' && B.town && B.town.chat) sc.chat = B.town.chat.slice();
   if (G.stepsUsed) {

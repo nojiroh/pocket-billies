@@ -215,7 +215,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.52
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
@@ -258,7 +258,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.57
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
@@ -564,7 +564,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.42
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {
@@ -607,7 +607,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "trees": 0.39
     },
     "road": {
-      "shape": "straight",
+      "shape": "dogleg",
       "wobble": 0.25,
       "exits": [
         {

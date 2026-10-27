@@ -107,6 +107,56 @@ before the PR), beside WM-3b in another session. Planned in Plan Mode, the owner
 - Risky: side areas' places move (their exits change), so any saved run with a side area resumes with the new layout
   (remade from the seed); arena/route code that assumed side places go west to east by t 0.5 now gets any side.
 - Next: the owner looks at the pictures and decides on the relief; then WM-5 (town streets) or WM-6.
+
+### Region map track WM-5a - town streets in mapgen, at three sizes (WM-5 in part) - 2026-10-27
+Branch `claude/wm-5-town-streets` (from `track/worldmap` at ff8e2fbb; PR into it). Planned in Plan Mode; the owner's
+answers are in worldmap-track.md ("WM-5's answers"): services grow with size (a village adds a market stall, a town
+the stall and a second quest giver), the stall sells 2 held items a day, sizes by order and Expedition, streets south
+of a through road that runs high, every house facing the camera, at most 10 townsfolk, the size in the place's name.
+WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until WM-5b gives them sizes.
+- **Corrected facts**: towns were 2 x 1 only for want of `shapes`; the grid's 2 x 1 fallback would shrink the last
+  town in about 40% of rows holding two towns (an in-memory sweep; strict sizes had no failures); the Expedition doesn't
+  reach the grid; a ghost replacing a town keeps its footprint; water-gen kept rivers out of a fixed box round a town;
+  nothing kept a tall-grass patch at a town's edge; RT-4b already uses MAPGEN_VERSION 22 on `track/routes`.
+- logic/mapgen.js (MAPGEN_VERSION 24; 22 RT-4b's, 23 left for WM-3b):
+  - `mapgenTownPlan`, a new stage after the exits (towns only): the main junction where the through road runs across
+    near the hub, the square at it (front on the road, 16 x 8 m to 24 x 10 m), the clinic and the shop either side of
+    the main street, rows of side streets off it at T-junctions (a bend now and then, dead ends; in a 3 x 2 town a
+    second north street they meet, so blocks), a south street with rows of its own when the road runs through the upper
+    half of a place two cells tall, and rows off the through road where it runs north or south. Streets grow as long as
+    the houses still wanted need (the through road takes about a third of them, by the square). `mapgenAddStreets` makes
+    them roads after the exits' branches (distance field, paved in the town's square ground, heights from the parent).
+  - `mapgenStageTown` rebuilt on the plan (the square, services, board and giver spots, a town's second giver spot on
+    the west side, the stall by the road beside the square or else on its front; houses on the north side of every
+    east-west street, streets in turn; plots south of the road or a street). The scene carries `town` (size, houses,
+    streets, stall, givers, square) for the checks.
+  - Sizes `MAPGEN_TOWN_SIZES` (hamlet 2 cells 3-5 houses, village 4 cells 6-10, town 6 cells 10-16) by the place's cells,
+    and a `town` dial (houses, stall, givers; kept only when given) for WM-5b to pass rules.json's.
+  - Road shape `dogleg` (straight stretches, square turns, kept inside `mapgenTownBand` where a town fits; a jog 4 m on
+    from an exit outside it); run-scenes.js RUN_TOWN_ROAD uses it.
+  - Tall grass keeps off the town's planned ground; townsfolk at most 10; water-gen.js's river box sized by the town.
+- Studio: the Generate card's sizes are Hamlet 128 x 64, Village 128 x 128, Town 192 x 128 (were the unused 80 x 60 and
+  128 x 96).
+- Tests: mapgen-town.test.mjs rewritten by size (8 tests: the run towns as before with the size's houses; 72 fixed-size
+  towns, exits east, north or south at either cell; south growth; the same seed; the dial). Snapshots remade on purpose:
+  rng's scene hash (a route: only gen.v), run-start (mapgenV), run-world-real's frozen dials (the town road's shape).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1476 pass; slow tier all pass but
+  "the game's island is the generator's own output" (fails on the track's head too); check-fast's run pages 10 of 11
+  (the town's life, quest and shop, the helper thread's places equal to the page's); smoke 6 of 6 (156 s). Headless
+  pictures from the Studio's Generate card at each size (the preview and top-down plans).
+- **Not mine, found failing on the track's head too**: check-fast "A leader's arena" (the fixture's mini-boss place has
+  no gates: `gates: []`; WM-7 after WM-3) and the Studio check's `--only=generate` (a fixed 0.8 s wait races the
+  draft under software drawing: 2 of 3 runs fail on the track's head; with a longer wait it passes here).
+- Measured in Node: over 205 run towns the square fits in all but 1 (20 before: the dogleg); generator notes the same
+  (2); a run town about 30 ms as before. Fixed sizes: hamlet about 55 ms, village 60-70, town 80-100 (max about 230),
+  so a run gains roughly 0.1-0.3 s with its sizes in WM-5b (a phone about 3-5 times that, on LD-4's helper thread).
+- Risky: frame times in a 3 x 2 town on the phone (up to 16 houses and 10 folk); a ghost on a village or town row gets a
+  big laid-out place; merge conflicts with WM-3b and RT-4b in mapgen.js (the version line, mapgenSceneLife's neighbour
+  `mapgenExtraLife`, mapgenGrassPatches).
+- Next: WM-5b (rules.json `run.map.townSizes` and `run.town.sizes`, the grid's strict town sizes with a step-down,
+  names, the stall's shop and held items, the second giver, check-fast's village stall step and the folk range, the
+  sim, the full quick check, pictures in a run), then `wm-5-done`.
+
 ### Region map track WM-4a (in part) - a run's places on the world map at their grid cells; fog - 2026-10-27
 Branch `ccr-9477901d-w1h11w`, from `track/worldmap` (made this session from WM-2's head, 5a1326a7; main since merged
 in, PR #243). The owner first chose to wait for WM-3, then asked to start now: WM-4a is the part that doesn't need WM-3;

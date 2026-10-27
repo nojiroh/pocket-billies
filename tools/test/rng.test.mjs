@@ -60,7 +60,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // route with none of the new dials, is the same but for gen.v)
   // (and 1790661336 until MAPGEN_VERSION 21, WM-7: a leader's arena, the `arena` dial; not given here, so only gen.v)
   // (and 3200697165 until MAPGEN_VERSION 23, WM-3b: route spots turn from a bush; no layout here, so only gen.v)
-  assert.equal(hashString(JSON.stringify(sc)), 2625649843);
+  // (and 2625649843 until MAPGEN_VERSION 24, WM-5: a town's streets and sizes; this scene, a route, the same but gen.v)
+  assert.equal(hashString(JSON.stringify(sc)), 3715434692);
 });
 
 test('rng: the helpers stay in their ranges', () => {
