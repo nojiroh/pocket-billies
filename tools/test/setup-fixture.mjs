@@ -165,7 +165,6 @@ export const FIXTURE = {
   eggs: { 2: { need: 100, lv: 5, list: [['sprout0', 1]] } },
   pyramids: { pyramid: { n: 'Copper Coin', m: 1 }, capstone: { n: 'Platinum Coin', m: 0 } },
   items: { potion: { n: 'Potion', hp: 20 }, revive: { n: 'Revive', revive: 0.5 } },
-  jobs: { barista: { n: 'Barista', out: ['item', 'potion', 1], quip: 'made forty lattes.' } },
   people: { chosen: {} },
   shops: {},
   trainers: { ray: { name: 'Rival Ray', who: 'chosen', node: 1, blocks: true, team: [{ sp: '@rival', lvl: 5 }] } },

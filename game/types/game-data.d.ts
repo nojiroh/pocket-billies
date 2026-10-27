@@ -99,7 +99,6 @@ export interface GameData {
   eggs: Record<string, EggTier>;
   pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
-  jobs: Record<DataId, Job>;
   people: Record<DataId, Person>;
   shops?: Record<DataId, Shop>;
   trainers?: Record<DataId, Trainer>;
@@ -691,7 +690,7 @@ export interface MapProp {
   [key: string]: any;
 }
 
-/* ---------- encounters, eggs, money, items, jobs ---------- */
+/* ---------- encounters, eggs, money, items ---------- */
 
 /** pools.json (and fishing.json): a level range and weighted species */
 export interface Pool {
@@ -737,16 +736,6 @@ export interface Item {
   /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
       never used up, never used in battle */
   hold?: FxRow[];
-}
-
-/** jobs.json: a day job a boxed Billie can take */
-export interface Job {
-  n: string;
-  where: string;
-  /** what a shift pays: ['item', item id, n], ['coin', coin id, n] or ['se', 'se', dollars] */
-  out: [kind: 'item' | 'coin' | 'se', key: string, amount: number];
-  pay: string;
-  quip: string;
 }
 
 /** shops.json */
