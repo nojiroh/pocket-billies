@@ -17,23 +17,23 @@
   display: flex;
   gap: var(--s3);
   align-items: flex-end;
-  margin: var(--s1) 0 10px;
+  margin: var(--s1) 0 var(--s3);
 }
 .shop-keeper {
   flex: none;
-  padding: var(--s2) 6px 0;
-  border-radius: 10px;
+  padding: var(--s2) var(--s2) 0;
+  border-radius: var(--r-sm);
   background: linear-gradient(180deg, #d7eae8, #e9f1e0 70%, #c0d7af 70%, #d8e3bd);
   box-shadow: 0 0 0 2px var(--line);
 }
 .shop-say {
   position: relative;
   flex: 1;
-  padding: 10px var(--s3);
+  padding: var(--s3) var(--s3);
   border-radius: var(--r-sm);
   background: var(--panel2);
   box-shadow: 0 0 0 2px var(--line);
-  margin-bottom: 10px;
+  margin-bottom: var(--s3);
 }
 .shop-say::before {
   content: '';
@@ -58,7 +58,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--s2) var(--s3);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--panel2);
   font-weight: 600;
   font-size: 13px;
@@ -66,7 +66,7 @@
 }
 .shop-bal span {
   display: flex;
-  gap: 6px;
+  gap: var(--s2);
   align-items: center;
 }
 .shop-bal b {
@@ -77,15 +77,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--s2);
-  margin-top: 10px;
+  margin-top: var(--s3);
 }
 .ware2 {
   display: grid;
   grid-template-columns: 40px 1fr;
-  gap: var(--s1) 10px;
+  gap: var(--s1) var(--s3);
   align-items: center;
-  padding: 10px;
-  border-radius: 10px;
+  padding: var(--s3);
+  border-radius: var(--r-sm);
   background: var(--panel-s);
   box-shadow:
     0 0 0 2px var(--line),
@@ -214,7 +214,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px var(--s3);
+  gap: var(--s2) var(--s3);
   margin-top: var(--s2);
   padding: 2px var(--s1);
   font-size: 12.5px;

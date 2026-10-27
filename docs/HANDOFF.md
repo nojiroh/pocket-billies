@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
+Branch `track/ui` (the owner made it from main after UI-9a merged, PR #247; it replaces `ccr-30c007a6-eol40p` for UI
+work, BRANCHES.md updated; the track file now has `Branch: track/ui`). Main merged in once (AIR-3, VFX-3: no CSS).
+Plan approved in Plan Mode with the owner's answers: parts.css into the kit behind `@layer`, small corner tokens (4
+and 8 px), finish every file this session, switch v05Grow on. A second question after the layer was measured (below).
+- **Found: the layer can't keep the screens.** In a cascade layer a rule loses to every unlayered one, even the fights
+  it wins today by specificity: css-order (taught to read `@layer`) counted 3,827 changed fights; 130 parts
+  declarations both win and lose, so no split between a layer and unlayered rules fixes it. Unlayered at ui-kit.css's
+  top, 29 of 36 style-diff views differed (fights screens win today by order). base.css loaded just before parts.css,
+  so appending it there changes nothing: the owner's answer. The parts still move onto the kit screen by screen.
+- **Found: the corner scale stopped at 12 px.** Snapping 3-8 px corners to it would have changed shapes, not 1-2 px;
+  hence `--r-xxs`/`--r-xs`. base.css still had v05's `--r-s/m/l` (6/10/16) and `--r1/2/3` (= sm/md/lg).
+- **Changed (one cause per commit):**
+  - `tools/css-order.mjs` reads cascade layers (normal: unlayered over layered, later layer over earlier; !important
+    the other way), a layer not part of a declaration's identity.
+  - ui-lint: 0 and 1-2 px are hairlines, not off the space or radius scale (a unit test); ceilings saved.
+  - parts.css appended whole to base.css's end and deleted; index.html and the Studio's gallery stop loading it.
+  - v05Grow's keyframe is `from { width: 0 }`: the Billie sheet's stat bars grow in over 0.6 s; reduced motion stops it.
+  - `--r1/2/3` renamed to `--r-sm/md/lg` (a rename commit); unused `--r-m/--r-l` removed.
+  - `--r-xxs` 4 px and `--r-xs` 8 px in tokens.css and the gallery's token row.
+  - Every CSS file snapped, one commit each, worst first (30 files, 504 declarations): nearest step, ties up, but
+    only where the value moves 1-2 px, as the plan promised (6->8, 10->12, 14->16, 3/5->4, 7/9->8, 18->16, 22->24;
+    corners 3/5->4, 6/7/9->8, 10->12, 14->16, 18->16, 24->22). Each commit names what it replaced and what it left.
+    Then the dressing room's `var(--r-s, 6px)` (a fallback the script skipped) and the old `--r-s` itself.
+  - The UI gallery baseline remade on purpose; studio/art-code-refs.json remade by its tool.
+- **Left raw (39 spacing values):** moves of more than 2 px (20 px x12, 28 px x6, 40 px x5, 36 px x2) and values
+  above 48 px (the joystick's -56/-84 px, 50/52 px list indents, 104/120/1120 px), plus one 1.2em. They read as
+  layout sizes; a later session can name them (`--nav-h`-like) or the owner can say "snap them anyway".
+- **ui-lint (start -> end):** radius 99 -> 0 (token uses 87 -> 198), space 616 -> 39 (73 of the drop are the hairline
+  rule, the rest the snap; token uses 633 -> 1,137); everything else unchanged.
+- **Verified:** css-order at every CSS commit: 0 fights change winner (values only). style-diff over the base.css
+  move: 27 of 36 the same, battle, guide, title, heal-pick and dressing differ by timing as on the clean tree (UI-9a),
+  settings, settings-sound, debug and sheet-evo (a focus ring) the same when run again alone. The stat bars' grow-in
+  seen in Chromium on a bare page with motion.css (0 -> 112 of 112 px in 0.8 s); in the headless game page the
+  animation waits for a frame the software WebGL rarely gives, so it was checked apart. The gallery's 93 pictures
+  side by side with this session's start (2e74c89d): nothing overlaps or is cut; the Team rows' empty-spot card wraps
+  once more at 320 px. Real screens side by side with the start: Team, the Billie sheet, Guide, Settings, Profile, the
+  shop and walking: slightly roomier, nothing broken. The fast tier (lint with the ratchet, typecheck, 1,463 unit
+  tests, modules, format); smoke 6 of 6. Full quick check: 35 of 40; RT-2's pair and Granny Juniper pass alone (as in
+  ON-2); Terraces (a prop in the air, now the train station), RL-8's run view and room light are the known reds, none
+  touched by CSS.
+- **Where the plan was wrong:** "into the kit" can't be done by moving files while screens sit between the two in the
+  load order, with or without a layer; "ties up" for 20 px or 40 px would move 4-8 px, more than the 1-2 px promised.
+- **Risky:** spacing changed on every screen by 1-2 px; tight rows on small phones (320 px) may wrap a word earlier.
+  Screens not opened by the checks: the opening, photo mode, fishing, the workshop, friends.
+- **Phone check wanted:** Team and the Billie sheet (the bars grow in), Settings, the Guide, a shop, a battle's move
+  tiles, the run map, light and dark; any line that now wraps or a button that grew too tall.
+- **Tags to push (sessions can't):** `ui-9b-done` on this entry's commit.
+- **Next:** the owner's phone check; then the old parts (now base.css's end) onto the kit screen by screen, and the
+  39 layout values named, as later UI sessions.
+
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
 owner's picks: delete all seven orphan groups; delete the loader's PNG copies too; retire the far backdrops; leave

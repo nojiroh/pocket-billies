@@ -35,6 +35,10 @@ kept aside in the browser).
   then a joke or a small curse, rarely a jackpot. A notice board on the square shows the town's news of your last
   runs, the favours you've been asked and the fountain's last coin. An open instrument case waits for a busker.
 
+
+- **Tidier spacing and corners** (UI track UI-9b): the gaps and corners across the menus are on one scale now, most of
+  them moved by a pixel or two, so screens line up more evenly. The Billie sheet's stat bars grow in when it opens, as
+  they were always meant to.
 - **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
   sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
   Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a

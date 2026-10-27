@@ -13,7 +13,7 @@
   justify-content: space-between;
   align-items: center;
   overflow: hidden;
-  padding: max(28px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+  padding: max(28px, env(safe-area-inset-top)) var(--s4) max(var(--s5), env(safe-area-inset-bottom));
   text-align: center;
   background: radial-gradient(120% 80% at 50% 110%, #f6c56a 0%, #e8875c 22%, #7b4f8f 52%, #28264f 82%, #1a1838 100%);
   color: #fff7e6;
@@ -118,7 +118,7 @@
   }
 }
 #loader .ld-sub {
-  margin: 14px 0 0;
+  margin: var(--s4) 0 0;
   font:
     600 13px/1 'Chakra Petch',
     system-ui,
@@ -137,7 +137,7 @@
 }
 #loader .ld-bar {
   height: 10px;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   background: rgba(20, 10, 40, 0.45);
   box-shadow:
     inset 0 2px 0 rgba(0, 0, 0, 0.25),
@@ -218,7 +218,7 @@
 }
 #loader .ld-tip {
   min-height: 3em;
-  margin: 22px var(--s2) 0;
+  margin: var(--s5) var(--s2) 0;
   font-size: 14px;
   line-height: 1.45;
   color: #ffe9d6;
@@ -229,9 +229,9 @@
   opacity: 0;
 }
 #loader .ld-fail {
-  margin-top: 18px;
-  padding: 14px;
-  border-radius: 14px;
+  margin-top: var(--s4);
+  padding: var(--s4);
+  border-radius: var(--r-md);
   background: rgba(20, 14, 40, 0.6);
   border: 2px solid rgba(255, 190, 150, 0.5);
   text-align: left;
@@ -239,7 +239,7 @@
 }
 #loader .ld-fail ul {
   margin: var(--s2) 0 var(--s3);
-  padding-left: 18px;
+  padding-left: var(--s4);
   max-height: 7.5em;
   overflow: auto;
   font-family: ui-monospace, monospace;
@@ -248,7 +248,7 @@
 }
 #loader .ld-fail .ld-btns {
   display: flex;
-  gap: 10px;
+  gap: var(--s3);
 }
 #loader .ld-fail button {
   flex: 1;
@@ -256,7 +256,7 @@
     600 15px 'Chakra Petch',
     system-ui,
     sans-serif;
-  padding: 10px;
+  padding: var(--s3);
   border-radius: var(--r-sm);
   border: 2px solid #2b1d33;
   background: #ffd36b;
@@ -335,14 +335,14 @@ body.ld-on #dio {
   border: 2px solid rgba(255, 190, 150, 0.5);
 }
 #nogl h1 {
-  margin: 0 0 10px;
+  margin: 0 0 var(--s3);
   font-size: 20px;
   line-height: 1.2;
   color: #ffd36b;
 }
 #nogl .nogl-btns {
   display: flex;
-  gap: 10px;
+  gap: var(--s3);
   margin-top: var(--s4);
 }
 #nogl button {
@@ -351,7 +351,7 @@ body.ld-on #dio {
     600 15px 'Chakra Petch',
     system-ui,
     sans-serif;
-  padding: 10px;
+  padding: var(--s3);
   border-radius: var(--r-sm);
   border: 2px solid #2b1d33;
   background: #ffd36b;
