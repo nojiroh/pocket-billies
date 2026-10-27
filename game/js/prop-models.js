@@ -1702,7 +1702,7 @@ function leafCut(im, L) {
     const W = im.naturalWidth || im.width,
       H = im.naturalHeight || im.height,
       src = makeCanvas(W, H),
-      x = src.getContext('2d');
+      x = src.getContext('2d', { willReadFrequently: true });
     x.drawImage(im, 0, 0);
     const data = x.getImageData(0, 0, W, H).data;
     C = { ver, W, H, data, outline: leafOutlineColour(data), cuts: new Map() };

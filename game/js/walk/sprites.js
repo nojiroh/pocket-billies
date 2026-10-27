@@ -1079,7 +1079,7 @@ function pictureLightness(im) {
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       cv = makeCanvas(w, h),
-      cx = cv.getContext('2d');
+      cx = cv.getContext('2d', { willReadFrequently: true });
     cx.drawImage(im, 0, 0);
     l = pixelLightness(cx.getImageData(0, 0, w, h).data);
   } catch {
