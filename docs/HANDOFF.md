@@ -2,6 +2,56 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-7 - Part 2 planned: layered music, gentle world sounds, water (research, a listening page) - 2026-10-27
+Branch `ccr-1e8a9924-tt5x1q`, at main 07c9b284 (`track/sound` doesn't exist yet). Plan Mode, plan approved after four
+questions. Docs only: no game code, data or art changed; plus a private listening page (nothing committed). Tag
+`snd-7-done` (for the owner to push) on this session's last commit. PR #285 (draft).
+- The owner's brief: expand the sound system with more layers and complexity; music with more style and layers, not
+  fully 8-bit; environment sounds never too loud or obnoxious; better water "and stuff"; research online, suggest.
+  Answers: music **a mix of Chip+ and DS-era Pokémon**; **synth only**; **all four** environment groups bother them
+  (water; rain and wind; birds and crickets; steps, fire, the town's murmur); **all four** layer ideas (a walking beat,
+  street musicians, weather and night, building intensity).
+- Changed (one cause per commit):
+  - docs/phases/sound-track.md: Part 1's corrections (the deadline version gone since RL-R2; 194 fingerprints, not
+    143; footsteps every 1.12 m of gait, not 0.33 m); **Part 2** (a `Branch: track/sound` line; the answers; what the
+    code does today; the research with links; the design; sessions SND-8a, 8b, 9-16; draft steps for 8a, 8b and 9;
+    SND-11's seams; Ask me before; risks; key files; verification); then refined by a code review (SND-8 split so
+    8a changes no fingerprint; "stems", since `musicParts` already means versions; `logic/sound-bake.js`; the
+    reverb's post-fader sends; SND-13 may run before SND-12); then the page's measurements and link.
+  - TESTING (the deadline version gone, 194 fingerprints), water-track (WA-8's water sounds point at SND-10), ROADMAP
+    (Part 2), BRANCHES (this branch; `sound`'s tip 8f5d43eb is in main, so nothing is left on it).
+- **The listening page** (private, the owner's): https://claude.ai/artifact/GuTVE9L1WfjFWVc4NPe9oh. Today vs Calm for
+  nine world sounds (sound.js ported line for line), eleven new water sounds with a distance slider, and Copperleaf
+  and Route (the game's tracker.js copied in unchanged) as GB, GB level-matched, Chip+ and Chip+ DS, with the four
+  layer ideas as switches. Levels shown in LU against the route song.
+- Found, measured on the page's ports (K-weighted, the game's default mix, beds 3 dB under a song):
+  - Rain is **7.8 LU louder than the route song** (while the music is low-passed to 2.2 kHz); crickets −4.1 LU; a
+    fountain at 3 m −5.1; a stream at 3 m −6.8. The hub song is **15 LU under the route song** (19 dB by RMS), so in
+    Copperleaf the sea sits 5.1 LU and a fountain 9.9 LU over it.
+  - Every bed is one 1-second white-noise loop with a sine tremolo (depths over 0.5 swing the gain negative); the 14
+    beds keep ~120 nodes running even silent; `updateAmbience` scans 14,010 water cells in Copperleaf every 200 ms.
+  - Placed waterfalls (`sc.falls`) are silent; every still water kind plays one 520 Hz "pond"; a sea scene plays the
+    sea for rivers too; fishing's cast and bite play a grass footstep; about 5 thunderclaps in 6 are silent, and none
+    plays with reduced motion or flashes off; rooms read night as 0 (daytime birds at night, no rain on the roof).
+  - Echo: jingles and the heal and seal effects echo on the music bus; echo tails skip crossfades and ducks;
+    `echo: 0` would play as 0.15 (no song writes 0).
+- Risky or unfinished:
+  - Nothing in the game changed. The page's calm and new sounds are sketches for listening, not SND-8a's final code;
+    its bands are its own code, not the SND-9/11 engine.
+  - Levels were measured offline in Chromium at 48 kHz, not on a phone; a phone speaker drops most of the lows, so
+    the sea, the tall fall and the bass read lighter there.
+  - The page uses one ConvolverNode per room it plays; its cost on the owner's phone is unmeasured.
+- Verified: `git diff` reviewed; research links opened or returned by search; the page's sounds rendered offline in
+  headless Chromium (no NaN, peaks −14 dBFS or lower), then clicked through at 390 px in light and dark with no console
+  errors and no sideways scroll. No game check applies to a docs-only change.
+- Decisions (from the code review, written into Part 2): SND-8a first (beds, the loudness report, the debug log's
+  audio lines, a Sound Test v1; no fingerprint changes), SND-8b after (the mix fixes, the baseline written again);
+  new names `musicStem*`, `musicLayer*`, `soundBake*`; the bake module in `logic/`.
+- Questions waiting for the owner (Ask me before, the first four before SND-8a): WA-8's water sounds to SND-10; the
+  music's rain low-pass (soften to ~4 kHz); levels by internal trims, keeping your sliders; footsteps on the World bus.
+- Next session starts with: the owner listens to the page on the phone (silent switch off) and answers those four;
+  makes `track/sound` from main (or this branch before PR #285 merges); SND-8a starts there.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
