@@ -8,6 +8,7 @@ import { loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
+import { pixelLightness } from '../logic/pixel-facts.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
@@ -1073,15 +1074,7 @@ function pictureLightness(im) {
       cv = makeCanvas(w, h),
       cx = cv.getContext('2d');
     cx.drawImage(im, 0, 0);
-    const d = cx.getImageData(0, 0, w, h).data;
-    let s = 0,
-      n = 0;
-    for (let i = 0; i < d.length; i += 4) {
-      if (d[i + 3] < 128) continue;
-      s += (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
-      n++;
-    }
-    if (n) l = s / n;
+    l = pixelLightness(cx.getImageData(0, 0, w, h).data);
   } catch {
     /* a picture that can't be read keeps the middle value */
   }

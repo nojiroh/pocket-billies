@@ -70,6 +70,7 @@ import '../../game/js/logic/parts.js';
 import '../../game/js/logic/pasture.js';
 import '../../game/js/logic/perks.js';
 import '../../game/js/logic/pixel-density.js';
+import '../../game/js/logic/pixel-facts.js';
 import '../../game/js/logic/pixel-ops.js';
 import '../../game/js/logic/pixel-snap.js';
 import '../../game/js/logic/placeholder-art.js';
