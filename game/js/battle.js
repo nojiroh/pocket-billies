@@ -1020,7 +1020,7 @@ export function endBattle() {
   if ((spliced.sampled && spliced.sampled.length) || (spliced.parts && spliced.parts.length))
     after.push({
       title: spliced.sampled && spliced.sampled.length ? 'Gene Sample' : 'Salvaged Augment',
-      html: `${spliced.sampled && spliced.sampled.length ? `<p>You took a sample from what it wore: ${escapeHtml(spliced.sampled.map(x => x.words).join(', '))}.</p>` : ''}${spliced.parts && spliced.parts.length ? `<p>You pried off ${escapeHtml(spliced.parts.map(x => x.words).join(' and '))}: it’s in your spare parts.</p>` : ''}<p><pb-coin kind="dna" value="${saveData.meta.dna}" label="DNA"></pb-coin> +${formatNumber(spliced.dna || 0)} DNA</p><p class="note">${spliced.parts && spliced.parts.length ? 'Copperleaf’s Workshop fits bot parts on your own Billies.' : 'Copperleaf’s Gene Bank splices Genes into your own Billies.'}</p>`,
+      html: `${spliced.sampled && spliced.sampled.length ? `<p>You took a sample from what it wore: ${escapeHtml(spliced.sampled.map(x => x.words).join(', '))}.</p>` : ''}${spliced.parts && spliced.parts.length ? `<p>You pried off ${escapeHtml(spliced.parts.map(x => x.words).join(' and '))}: it’s in your spare parts.</p>` : ''}<p><pb-chip kind="dna" value="${saveData.meta.dna}" label="DNA"></pb-chip> +${formatNumber(spliced.dna || 0)} DNA</p><p class="note">${spliced.parts && spliced.parts.length ? 'Copperleaf’s Workshop fits bot parts on your own Billies.' : 'Copperleaf’s Gene Bank splices Genes into your own Billies.'}</p>`,
       btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
     });
   else if (spliced.dna)
