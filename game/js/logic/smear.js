@@ -17,6 +17,9 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  IMPACT_KINDS: [() => IMPACT_KINDS],
+  IMPACT_LINES: [() => IMPACT_LINES],
+  IMPACT_SPEED_LIFE: [() => IMPACT_SPEED_LIFE],
   RIBBON_BRIGHT: [() => RIBBON_BRIGHT],
   RIBBON_CELLS: [() => RIBBON_CELLS],
   RIBBON_CORE: [() => RIBBON_CORE],
@@ -34,6 +37,12 @@ expose({
   STRETCH_MAX: [() => STRETCH_MAX],
   STRETCH_PACE: [() => STRETCH_PACE],
   THROW_EASE: [() => THROW_EASE],
+  // @ts-expect-error -- replaced on purpose
+  impactAt: [() => impactAt, v => (impactAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  impactFrame: [() => impactFrame, v => (impactFrame = v)],
+  // @ts-expect-error -- replaced on purpose
+  impactLength: [() => impactLength, v => (impactLength = v)],
   // @ts-expect-error -- replaced on purpose
   ribbonCells: [() => ribbonCells, v => (ribbonCells = v)],
   // @ts-expect-error -- replaced on purpose
@@ -290,4 +299,46 @@ export function smearStretch(H, t, on, eye = null) {
   if (l < 1e-6) return null;
   const f = Math.min(1, STRETCH_MAX / l);
   return { d: d.map(v => v * f), seed: (((H.cell * 0.618034) % 1) + 1) % 1 };
+}
+
+/* VFX-4: the impact frame. For a cell or two on the same 24 fps grid the whole picture turns two-tone (ink and paper,
+   hard edged, no gradient) with radial lines from the hit point: the negative first, then the positive (one cell at
+   quality level 2: the positive only). On a crit the speed lines then stay over the normal picture for a short while,
+   moving outward (they were 2D-canvas lines before VFX-4; engine/post-effects.js draws both). Real time, not the
+   battle's clock: it plays through the hit-stop, which freezes that clock. */
+/** the radial lines a frame (16 at quality level 2) */
+export const IMPACT_LINES = 24;
+/** how long a crit's speed lines stay after the frame (ms) */
+export const IMPACT_SPEED_LIFE = 260;
+/** the frame's kinds: a catch's pyramid, the mail move's coin and a crit */
+export const IMPACT_KINDS = ['catch', 'coin', 'crit'];
+
+/** @typedef {{ kind: string, cells: number, lines: number, warm: boolean, speed: boolean }} ImpactFrame */
+
+/** the impact frame for a hit of this kind, or null: none under Reduced motion; two cells, one at quality level 2,
+ * none at level 3 (a crit still has its speed lines there, as before VFX-4); paper warm on a crit
+ * @param {string} kind @param {boolean} reduced @param {number} lvl @returns {ImpactFrame | null} */
+export function impactFrame(kind, reduced, lvl) {
+  if (reduced || !IMPACT_KINDS.includes(kind)) return null;
+  const cells = lvl >= 3 ? 0 : lvl >= 2 ? 1 : 2,
+    speed = kind === 'crit';
+  if (!cells && !speed) return null;
+  return { kind, cells, lines: lvl >= 2 ? 16 : IMPACT_LINES, warm: kind === 'crit', speed };
+}
+
+/** what the frame shows ms after the hit, or null once it is over: mode 1 the negative, 2 the positive, 3 the speed
+ * lines alone (age 0..1, stepped on the grid) @param {ImpactFrame | null | undefined} F @param {number} ms
+ * @returns {{ mode: number, age: number } | null} */
+export function impactAt(F, ms) {
+  if (!F || !(ms >= 0)) return null;
+  const cell = Math.floor(ms / SMEAR_STEP);
+  if (cell < F.cells) return { mode: F.cells - cell >= 2 ? 1 : 2, age: 0 };
+  if (!F.speed) return null;
+  const s = (cell - F.cells) * SMEAR_STEP;
+  return s < IMPACT_SPEED_LIFE ? { mode: 3, age: s / IMPACT_SPEED_LIFE } : null;
+}
+
+/** how long the two-tone part lasts (ms): what a flash that would wash it out waits @param {ImpactFrame | null} F */
+export function impactLength(F) {
+  return F ? F.cells * SMEAR_STEP : 0;
 }
