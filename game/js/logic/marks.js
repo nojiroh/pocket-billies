@@ -24,7 +24,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   chipLook: [() => chipLook, v => (chipLook = v)],
   // @ts-expect-error -- replaced on purpose
+  fxTags: [() => fxTags, v => (fxTags = v)],
+  // @ts-expect-error -- replaced on purpose
   markRow: [() => markRow, v => (markRow = v)],
+  // @ts-expect-error -- replaced on purpose
+  rarityHighest: [() => rarityHighest, v => (rarityHighest = v)],
   // @ts-expect-error -- replaced on purpose
   rarityTier: [() => rarityTier, v => (rarityTier = v)],
   // @ts-expect-error -- replaced on purpose
@@ -150,9 +154,27 @@ export function rarityTier(id) {
   if (r === 'starter') return 'common';
   return MARK_RARITY[r] ? r : '';
 }
+/** UI-14b: the highest tier of several (a Gene with two traits shows the rarer); '' when none has one
+ * @param {(string | undefined)[]} ids */
+export function rarityHighest(ids) {
+  const order = Object.keys(MARK_RARITY);
+  let best = -1;
+  for (const id of ids || []) best = Math.max(best, order.indexOf(rarityTier(id)));
+  return best < 0 ? '' : order[best];
+}
 
-/** pb-chip's families: the currencies (currencies.json ids and their icons), the map's nodes (nodeTypes.json ids) and
- * messages (the eight families by name). [colour code id ('' neutral), icon ('' the family's glyph)] */
+/** UI-14b: what an effect's rows show as tags beside its text: each stat row (a Perk's, held item's or trait's "Speed
+ * up a stage") as a boost or drop tag with Atk..Spe; the other kinds are numbers the text already says
+ * @param {{ kind: string, stat?: string, stages?: number }[] | undefined} fx @returns {TagSpec[]} */
+export function fxTags(fx) {
+  return (fx || [])
+    .filter(f => f && f.kind === 'stat' && f.stat && Number(f.stages))
+    .map(f => ({ kind: 'stat', stat: String(f.stat), stages: Number(f.stages) }));
+}
+
+/** pb-chip's families: the currencies (currencies.json ids and their icons), the map's nodes (nodeTypes.json ids, with
+ * UI-8c's place icons) and messages (the eight families by name). [colour code id ('' neutral), icon ('' the family's
+ * glyph)] */
 export const MARK_CHIP_FAMILIES = /** @type {Record<string, [string, string]>} */ ({
   money: ['value', 'coin'],
   research: ['growth', 'research'],
@@ -160,17 +182,19 @@ export const MARK_CHIP_FAMILIES = /** @type {Record<string, [string, string]>} *
   dna: ['bio', 'dna'],
   crests: ['bad', 'crest'],
   beans: ['', 'bean'],
-  landing: ['', ''],
-  route: ['', ''],
-  town: ['good', ''],
-  event: ['special', ''],
+  /* UI-14b: a map node's chip shows its place icon (UI-8c's art/ui/node-*.svg, the bowl's badges); a stall and a
+     friend's ghost have none, so they keep their family's glyph */
+  landing: ['', 'node-landing'],
+  route: ['', 'node-route'],
+  town: ['good', 'node-town'],
+  event: ['special', 'node-event'],
   stall: ['value', ''],
-  shop: ['value', ''],
-  miniboss: ['bad', ''],
-  boss: ['bad', ''],
-  rival: ['bad', ''],
+  shop: ['value', 'node-shop'],
+  miniboss: ['bad', 'node-miniboss'],
+  boss: ['bad', 'node-boss'],
+  rival: ['bad', 'node-rival'],
   ghost: ['special', ''],
-  scrapyard: ['machine', ''],
+  scrapyard: ['machine', 'node-scrapyard'],
   good: ['good', ''],
   bad: ['bad', ''],
   caution: ['caution', ''],

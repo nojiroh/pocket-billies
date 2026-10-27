@@ -15,10 +15,13 @@ import {
   MARK_STAT_SHORT,
   MARK_STATUS_CODES,
   chipLook,
+  fxTags,
   markRow,
+  rarityHighest,
   rarityTier,
   tagLook,
 } from '../../game/js/logic/marks.js';
+import { RUN_MARK_TYPES, runMarkLook } from '../../game/js/logic/run-marks.js';
 import { UI_GLYPHS, UI_SIGNAL_IDS } from '../../game/js/logic/signals.js';
 
 const ROOT = join(import.meta.dirname, '../..');
@@ -123,6 +126,40 @@ test('rarity: the four tiers of the ladder; starter shows as common', () => {
     for (const k of ['fill', 'light', 'dark']) assert.ok(sig[k][r], `${r}: a ${k} in the colour code`);
 });
 
+test('UI-14b: held items, Augments and Genes each name a tier; the rarer of two shows', () => {
+  const tiers = Object.keys(MARK_RARITY);
+  for (const [k, I] of Object.entries(json('game/data/items.json')))
+    if (I.hold) assert.ok(tiers.includes(I.rarity), `items.json ${k}: ${I.rarity}`);
+    else assert.equal(I.rarity, undefined, `items.json ${k}: only held items have a tier`);
+  for (const [k, P] of Object.entries(json('game/data/robots.json').parts))
+    assert.ok(P.rar === 'boss' || tiers.includes(P.rar), `robots.json ${k}: ${P.rar}`);
+  for (const [k, T] of Object.entries(json('game/data/genes.json').traits))
+    assert.ok(tiers.includes(T.rarity), `genes.json ${k}: ${T.rarity}`);
+  assert.equal(rarityHighest(['common', 'rare', 'uncommon']), 'rare');
+  assert.equal(rarityHighest(['starter']), 'common');
+  assert.equal(rarityHighest(['boss', undefined]), '');
+  assert.equal(rarityHighest([]), '');
+});
+
+test('UI-14b: effect rows as tags: stat rows become boosts and drops with Atk..Spe, the rest none', () => {
+  assert.deepEqual(
+    fxTags([
+      { kind: 'stat', stat: 'hus', stages: 1 },
+      { kind: 'xp', mult: 1.5 },
+    ]),
+    [{ kind: 'stat', stat: 'hus', stages: 1 }]
+  );
+  assert.deepEqual(fxTags(undefined), []);
+  assert.equal(tagLook(fxTags([{ kind: 'stat', stat: 'lob', stages: -2 }])[0]).code, 'SpA');
+  /* every stat row in the game's data names a stat with a short name */
+  const rows = [
+    ...Object.values(json('game/data/items.json')).flatMap(I => I.hold || []),
+    ...Object.values(json('game/data/genes.json').traits).flatMap(T => T.fx),
+    ...Object.values(json('game/data/perks.json')).flatMap(P => P.fx || []),
+  ];
+  for (const t of fxTags(rows)) assert.ok(MARK_STAT_SHORT[t.stat], `${t.stat} has a short name`);
+});
+
 test('chips: every currency, node type and family has its family and an icon that exists', () => {
   const kinds = [
     ...Object.keys(json('game/data/currencies.json')),
@@ -138,7 +175,11 @@ test('chips: every currency, node type and family has its family and an icon tha
   }
   for (const [k, c] of Object.entries(json('game/data/currencies.json')))
     assert.equal(chipLook(k).icon, c.icon, `${k}: currencies.json's icon`);
-  assert.deepEqual(chipLook('town'), { sig: 'good', icon: 'g-good', glyph: true });
+  /* UI-14b: a node's chip shows UI-8c's place icon, the bowl's; a stall and a ghost keep their family's glyph */
+  for (const k of RUN_MARK_TYPES)
+    if (MARK_CHIP_FAMILIES[k]) assert.equal(chipLook(k).icon, runMarkLook(k).icon, `${k}: the bowl's icon`);
+  assert.deepEqual(chipLook('town'), { sig: 'good', icon: 'node-town', glyph: false });
+  assert.deepEqual(chipLook('stall'), { sig: 'value', icon: 'g-value', glyph: true });
   assert.deepEqual(chipLook('town', { icon: 'house' }), { sig: 'good', icon: 'house', glyph: false });
   assert.deepEqual(chipLook('info', { family: 'special' }), { sig: 'special', icon: 'g-special', glyph: true });
 });

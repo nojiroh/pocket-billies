@@ -1567,7 +1567,7 @@
    "game/js/robot-art.js:81"
   ],
   "bean": [
-   "game/js/logic/marks.js:162",
+   "game/js/logic/marks.js:184",
    "game/js/ui-run-kit.js:91"
   ],
   "bit": [
@@ -1634,7 +1634,7 @@
    "game/js/battle-stage.js:2133",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
-   "game/js/logic/marks.js:157",
+   "game/js/logic/marks.js:179",
    "game/js/logic/smear.js:315",
    "game/js/logic/story-checks.js:348",
    "game/js/lore.js:209",
@@ -1656,7 +1656,7 @@
    "game/js/person-art.js:264"
   ],
   "crest": [
-   "game/js/logic/marks.js:161",
+   "game/js/logic/marks.js:183",
    "game/js/ui-run-kit.js:90"
   ],
   "crown": [
@@ -1677,7 +1677,7 @@
    "game/js/fishing.js:168",
    "game/js/friends.js:629",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/marks.js:105",
+   "game/js/logic/marks.js:109",
    "game/js/logic/run-scenes.js:520",
    "game/js/logic/run-scenes.js:541",
    "game/js/logic/run-scenes.js:559",
@@ -1922,7 +1922,7 @@
    "game/js/logic/data-checks.js:832",
    "game/js/logic/data-checks.js:857",
    "game/js/logic/data-checks.js:901",
-   "game/js/logic/marks.js:105",
+   "game/js/logic/marks.js:109",
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:242",
    "game/js/person-art.js:802",
