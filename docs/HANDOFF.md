@@ -83,6 +83,50 @@ on crits; the negative, then the positive.
   owner (the git proxy refuses tag pushes).
 - Next: VFX-5 (attack lunges) on `track/vfx`, in Plan Mode.
 
+### Air track AIR-4 - edges and shadowed haze: the light in the air by depth, blue noise, Shade in the haze - 2026-10-27
+Branch `track/air` (AIR-3 merged to main as PR #251 just before; main fast-forwarded in, pushed). Plan Mode, approved;
+the plan's recommendation taken: **Shade in the haze on by default** (`hazeShade` 0.5). The track is complete.
+- Claims checked: the march read the full-size depth with **one nearest tap** per quarter pixel (one of 16 pixels), then
+  the plain `down` blur and a bilinear stretch in grade: the cause of the fog's light halo round roofs and the player.
+  **`godRays` is 0 in engine.json**, so the shafts' shade (`sa`) is off in the game: the haze shade needed its own term.
+  The haze starts at about the camera distance (`fogStart = df*0.97`, ~35 m in Copperleaf) and the march stops at 48 m
+  (`volMax`): the plan's "14-40 m" window caught almost nothing, so the shade covers **the haze's first 26 m** instead.
+  The picture baseline is not in the repo (CI's release `baseline-0.1.0-alpha`).
+- Changed (engine/post-effects.js): `vdep`, a quarter-size target with the nearest of each pixel's four corner depths,
+  in metres over the far plane in two 8-bit steps (same in half-float and 8-bit targets; `VOLZ_GLSL` reads it back);
+  the march reads it (back to a depth value, so the old sums hold) and starts its steps at a **64 x 64 blue-noise
+  tile** (new logic/blue-noise.js, void-and-cluster, baked by tools/make-blue-noise.mjs; an R8 texture in webgl.js)
+  instead of the hash; `vblur` replaces `down` for the air (the same five taps weighted by depth); grade's `volUp`
+  brings it back by **nearest-depth upsampling** (bilinear where the four depths agree with the pixel's, else the
+  nearest texel). Cost: one tiny pass, 5 depth reads in the blur, 4 depth + 1 air read per screen pixel in grade.
+- **Shade in the haze** (`air.hazeShade` 0.5, dial "Shade in the haze" after Lamps in the fog, 0..2; 0 in PLAIN_LOOK;
+  0 in battles and rooms): the march sums how much of fogit's haze (`1-exp(-1.6(t-start)/fogD)`) builds up in the
+  sun's shadow over its first 26 m and darkens what is behind by 3x that x the dial, at most .35, through the existing
+  alpha (no negative light: phones without float targets). No extra shadow taps; the march segment widens to the haze
+  when the dial is on. The pass now also runs for the haze shade alone (shadow map needed).
+- In-game full test: a new step "Fog in the air: dawn fog" (both modes; also in the diagnostics list): fog weather at
+  6.6 h in the open walk scene, 3 s walking: the march (on/why), the grid, fps, the post pass's GPU ms where there
+  are timers; fails on no frames or a GL error. Debug log: `fogGrid.air` {edges, hazeShade}.
+- tools/look-air.py: `--air=k:v,...` (dials for every look), `--frames=N`, low-sun looks (7.6 h, 17.4 h clear).
+- Tests: blue-noise.test.mjs (baked = maker, every value 16 times, almost no low frequencies, neighbours differ);
+  air-edges.test.mjs (JS twins of the depth packing in 8-bit and half-float, the blur weight, the upscale's pick; the
+  shader sources; the dial, default, plain look and battles); fog-grid.test.mjs's gate line updated.
+- Pictures (software drawing, Copperleaf, scratchpad, sent to the owner in the session, not committed): before/after
+  in dawn, morning and night fog with close-ups: **the light halo round the house roof and walls is gone**, the
+  silhouette is crisp. Haze shade: at noon nearly nothing (short shadows); at low sun the haze darkens in the trees'
+  and houses' shadow wedges (subtle at 0.5, ~1-3/255 on average, more in the wedges).
+- Verified: lint, typecheck, format, check:modules, unit tests 1471 pass; smoke 6 of 6 in 203 s (39 shaders, 16 with
+  the Frame block); the full quick check: 35 of 40 in 1799 s; the 5 steps that failed were re-run on main
+  (6a482152) and on this branch: the same 3 fail on both (a train-station prop in the air, the settings tabs, the run
+  seam's view; also red in main's CI), the postcards and the lab's room passed on both (load timing in the full run); no page errors in the look-air runs; vdep/vblur/vol/grade compiled, no GL error.
+- Risky: **phone frame times unmeasured** (AIR-3's too): the owner's debug log after the new full-test step decides;
+  over budget, AIR-3's cut order, then the upscale's depth taps. The depth compare thresholds (5% + 10 cm) are tuned on
+  software drawing only. Haze shade is subtle in Copperleaf's short views; the dial tunes it. The look changes
+  everywhere the march runs (sharper edges, finer grain), so **CI's picture baseline is stale**: Actions > Check >
+  "Make the picture baseline" after the merge.
+- Next: the owner's phone log (AIR-3 and AIR-4 frame times) and the baseline; later (not planned) Hillaire's sky LUTs.
+  Tags `air-3-done`, `air-4-done` for the owner.
+
 ### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
 Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
 approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's

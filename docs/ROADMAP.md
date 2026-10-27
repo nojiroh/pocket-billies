@@ -226,7 +226,8 @@ town node needs it.
   haze. AIR-1 haze (the colour follows the sky, RGB fade, height falloff), AIR-2 a fog density grid round the player
   (a small 3D texture, coarser on phones), AIR-3 the light-in-air march lights the fog (sun, shadows, lamps), AIR-4
   depth-aware edges and shadowed haze. AIR-0 (the plan and research) done 2026-10-26 on `ccr-c0505a05-bzef90`; AIR-1
-  and AIR-2 done 2026-10-26, AIR-3 (the lit march) done 2026-10-27, waiting on the phone's frame times. Tags
+  and AIR-2 done 2026-10-26, AIR-3 (the lit march) done 2026-10-27, AIR-4 (edges by depth, blue noise, shade in the
+  haze) done 2026-10-27: the track is complete, waiting on the phone's frame times. Tags
   `air-N-done`. Branch `track/air`.
 - **Load track** (docs/phases/load-track.md, the owner's brief and answers 2026-10-26/27): no frame over 33 ms once
   the title shows, loading screens included. LD-0 (the plan with research, the hitch list, the boot timeline, the load

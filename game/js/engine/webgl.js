@@ -7,6 +7,7 @@
 import { expose } from '../test-globals.js';
 import { artCacheVersion, onGlContextRestored, provide, walkRenderer, worldBowlContextRestored } from '../hooks.js';
 import { clamp } from '../util.js';
+import { blueNoiseTable } from '../logic/blue-noise.js';
 import { mediumpFragment } from './shader-precision.js';
 import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
@@ -683,6 +684,14 @@ export function initWebgl(cv) {
     gpuState.quad = q;
     gpuState.white = textureFromData(1, 1, new Uint8Array([255, 255, 255, 255]));
     gpuState.flatN = textureFromData(1, 1, new Uint8Array([128, 128, 255, 255]));
+    /* air track AIR-4: the light-in-air march's 64 x 64 blue-noise tile (logic/blue-noise.js), one channel, read with
+       texelFetch */
+    gpuState.blueNoise = gpuTexture('other', 64 * 64);
+    gl.bindTexture(gl.TEXTURE_2D, gpuState.blueNoise);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 64, 64, 0, gl.RED, gl.UNSIGNED_BYTE, blueNoiseTable());
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    setTextureParams({});
     /* one depth texture read two ways: compared (soft shadow taps) and raw (blocker search) */
     /* a 1x1 "lit everywhere" depth map stands in on every shadow unit while no real map exists (shadows off, the first
      frames): a shadow sampler must always see a depth texture, or the whole draw is refused (v44) */
