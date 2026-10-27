@@ -867,23 +867,20 @@ const PbPayout = class extends LitElement {
 };
 
 /* ---------- the bottom bar: the minimap in the middle, two buttons on each side (UI-8) ---------- */
-/* The set's first tab (Map) is the minimap tile, raised out of the bar; the rest go two to a side, under each other.
-   The tile's picture is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map
-   icon. `compact` (while walking) shrinks the bar: a small tile, icon-only buttons side by side. The outline is the
-   tab family's, stepped up round the tile with 45° shoulders: --rise is the step, --tw half the tower's width. */
+/* The set's first tab (Map) is the minimap tile; the rest go two to a side, the icon over the word. The tile's picture
+   is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map icon. UI-8b: the tile
+   is wide (uiTheme.json minimap tileW x tileH, 232 x 184) and stands out of the bar's frame by --rise; the bar is a
+   plain cut outline from --rise down, so the world shows on both sides of the tile's top. A narrow bar shrinks the
+   whole tile, keeping its shape, so each side keeps 60 px. `compact` (while walking): a square tile (tileCompact),
+   icon-only buttons side by side. */
 const navStep = (/** @type {number} */ i) => {
   /* the outline inset by i px (0: the outer line; 1: the edge line's inside); 45° corners move by i·tan(22.5°) */
   const k = i * 0.4142,
     c = 'var(--cut-md)',
-    R = 'var(--rise)',
-    T = 'var(--tw)';
+    R = 'var(--rise)';
   return [
     `${i}px calc(${R} + ${c} + ${k}px)`,
     `calc(${c} + ${k}px) calc(${R} + ${i}px)`,
-    `calc(50% - ${T} - ${R} + ${k}px) calc(${R} + ${i}px)`,
-    `calc(50% - ${T} + ${k}px) ${i}px`,
-    `calc(50% + ${T} - ${k}px) ${i}px`,
-    `calc(50% + ${T} + ${R} - ${k}px) calc(${R} + ${i}px)`,
     `calc(100% - ${c} - ${k}px) calc(${R} + ${i}px)`,
     `calc(100% - ${i}px) calc(${R} + ${c} + ${k}px)`,
     `calc(100% - ${i}px) calc(100% - ${i}px)`,
@@ -901,25 +898,26 @@ const PbNavBar = class extends LitElement {
   static styles = [
     runKitBase,
     css`
+      /* the host is the container: its width (cqw) sizes the tile; a side keeps 60 px plus 8 px of margins */
       :host {
-        --rise: 20px;
-        --bar-h: 120px;
-        --tile-w: 120px;
-        --tile-h: 128px;
-        --tw: calc(var(--tile-w) / 2 + var(--s2));
+        --tile-w: min(var(--minimap-tile-w, 232px), 100cqw - 136px);
+        --tile-h: min(var(--minimap-tile-h, 184px), (100cqw - 136px) * var(--minimap-tile-aspect, 0.7931));
+        --bar-h: 128px;
+        --rise: max(0px, var(--tile-h) + var(--s2) - var(--bar-h));
         display: block;
         position: relative;
         isolation: isolate;
+        container-type: inline-size;
       }
+      /* walking: a square; a side keeps two 46 px buttons */
       :host([compact]) {
-        --rise: 10px;
-        --bar-h: 60px;
-        --tile-w: 72px;
-        --tile-h: 66px;
+        --tile-w: min(var(--minimap-tile-compact, 112px), 100cqw - 208px);
+        --tile-h: var(--tile-w);
+        --bar-h: 76px;
+        --rise: max(0px, var(--tile-h) + 4px - var(--bar-h));
       }
       nav {
         position: relative;
-        container-type: inline-size;
         height: calc(var(--rise) + var(--bar-h) + env(safe-area-inset-bottom, 0px));
         transition: height var(--m-base) var(--ease-out);
       }
@@ -941,19 +939,19 @@ const PbNavBar = class extends LitElement {
         background: var(--edge);
       }
       .side {
-        --apart: var(--s7);
+        --apart: var(--s4);
         position: absolute;
         top: calc(var(--rise) + var(--s1));
-        width: calc((100% - var(--tile-w) - var(--apart)) / 2);
+        width: calc((100% - var(--tile-w)) / 2 - var(--apart));
         display: flex;
         flex-direction: column;
         gap: var(--s1);
       }
       .side.l {
-        left: var(--s2);
+        left: var(--s1);
       }
       .side.r {
-        right: var(--s2);
+        right: var(--s1);
       }
       :host([compact]) .side {
         flex-direction: row;
@@ -970,36 +968,27 @@ const PbNavBar = class extends LitElement {
         color: var(--text2);
         font: 15px/1 var(--font-voice);
       }
+      /* standing: the icon over the word */
       .tab {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: var(--s2);
+        justify-content: center;
+        gap: 2px;
         min-width: 0;
         min-height: 52px;
-        padding: 0 var(--s2);
+        padding: 0 var(--s1);
       }
       .tab .ic {
         width: 24px;
         height: 24px;
       }
       .tab span {
+        max-width: 100%;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-      }
-      /* a narrow bar (a 320 px phone): a smaller tile, the sides closer, the labels kept */
-      @container (max-width: 320px) {
-        :host(:not([compact])) nav > * {
-          --tile-w: 96px;
-          --tile-h: 116px;
-          --tw: calc(var(--tile-w) / 2 + var(--s2));
-          --apart: var(--s6);
-        }
-        :host(:not([compact])) .tab {
-          gap: var(--s1);
-          padding: 0 var(--s1);
-        }
       }
       :host([compact]) .tab {
         justify-content: center;
@@ -1027,7 +1016,7 @@ const PbNavBar = class extends LitElement {
       .badge {
         position: absolute;
         top: 2px;
-        left: 22px;
+        left: calc(50% + 4px);
         display: grid;
         place-items: center;
         min-width: 20px;

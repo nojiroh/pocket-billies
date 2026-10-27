@@ -1592,7 +1592,7 @@
    "game/js/prop-models.js:349",
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:931",
-   "game/js/ui-run-kit.js:1377",
+   "game/js/ui-run-kit.js:1366",
    "game/js/walk-view-gl.js:685"
   ],
   "brick": [
@@ -1751,7 +1751,7 @@
   "glass": [
    "game/js/logic/ui-dials.js:120",
    "game/js/structures.js:724",
-   "game/js/ui-run-kit.js:1175",
+   "game/js/ui-run-kit.js:1164",
    "game/js/walk/rooms.js:273",
    "game/js/walk/rooms.js:286",
    "game/js/walk/rooms.js:299"
