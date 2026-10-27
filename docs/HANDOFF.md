@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-4 - navigation - 2026-10-27
+Branch `track/studio-art`. The container's HEAD was detached at origin's tip and the local branch was 195 commits behind
+with 6 stale SA-1 commits (their work is on origin under other hashes): the branch was checked out again from origin.
+Main had nothing new, so there was nothing to merge. Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): workspaces as the sidebar's folding groups; Characters as one row with a Looks | Wardrobe switch;
+a "Game" workspace on top for Rules and Check; Items & pyramids in Runs. Labels only: no section key, data key or
+player-facing word changed. 7 commits. Tag `sa-4-done` (made here, for the owner to push).
+- Changed:
+  - **Workspaces**: Game (Rules, Check), Art (Art browser, Art workbench), Creatures (Billies, Roster board, Part
+    rules, Genes, Coats, Moves, Types, Battle preview), World (Walk scenes, Hub island, Props, World & encounters,
+    Engine, Camera), People & story (Trainers, Characters, Lore & story, Story scripts), Runs (Run Lab, Perks, Unlocks
+    & hub, Economy, Robots, Items & pyramids), Sound & UI (Music & sound, UI look), Legacy. The Moneys group is gone.
+    The table is `STUDIO_WORKSPACES` in `game/js/logic/studio-layout.js` (was `SECTION_GROUPS` in studio-app.js), with
+    `navRows`, `navJoined`, `workspaceOf`.
+  - **Characters**: one sidebar row for Looks (`people`) and Wardrobe (`wardrobe`); it opens the one last opened, its
+    ⇥ opens the other beside. A switch on top of both sections (`.nav-switch`) changes the section in the pane it is
+    in. `#people` and `#wardrobe` links, Find and the checks work as before.
+  - **Part rules**: the label of Part sizes (nav, heading, the Check's three messages).
+  - **Rules** says what it holds: What's new and the game-wide numbers; a run's own are in Runs.
+  - **Find** shows each section's workspace (Looks and Wardrobe settings say "Characters › …") and finds Characters.
+  - Checks: `studio-layout.test.mjs` +3 tests (every SECTION_LIST section in exactly one workspace, the rows, the
+    labels); the Studio self-test's Find step fails if Find misses a section or a section is in no workspace;
+    `studio-shots.py` views `looks` and `wardrobe`.
+  - Docs: STUDIO.md (a Workspaces note under Layout; Perks, `perks.json`, `run.perks` for Loopholes and relics; the
+    workspace paths; Characters); the improvement plan's T4.5 and T6.8 marked done here; the plan's "Found in SA-4".
+- Where the plan was wrong: T4.5 was mostly done already (Runs existed, Jobs and Town shops removed in SA-3);
+  STUDIO.md named `relics.json` and `run.relics` (the data is `perks.json`, `run.perks`); nothing tested the nav before.
+- Decisions I made:
+  - Rules and Check: not in the plan's list; a Game workspace (the owner's pick), put first.
+  - Robots sit in Runs after the run pages, Items & pyramids last.
+  - The folds are stored by workspace name, so a fold saved under an old group name is forgotten once (harmless).
+  - Left as they are: the battle-golden test's name "holding Loopholes" (a test name; its snapshot key would change),
+    the run URL's `relics=` and the section key `relics` (internal).
+- Risky:
+  - The switch is put above the section's own HTML in `renderPane`; a section that one day reads its pane's first
+    child would see the switch. None does today (grepped).
+  - Shift-clicking the Characters row while one of the two is open on the left says "Already open on the left"; its
+    ⇥ button opens the other one beside.
+- Verified:
+  - lint (with art-code-refs), typecheck, format, check:modules after each commit; unit tests 1431 pass.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections opened, the self-test with the new Find
+    check: 21 edits undone, proposal made). `--only=polish,checks`: ok (the second pane by a Shift-click on a nav row).
+  - Smoke: 6 of 6 (286 s), run alone.
+  - In a browser (scratch script): the row, the ⇥ button and the switch in both panes; Find for every section's name
+    and for Characters, Part rules and "shopkeeper"; no page errors. Screenshots at 1024 and 1920 (looks, wardrobe).
+  - Not run: the full quick check, the publish checks (they time out here).
+  - Noticed, not SA-4's: the polish step's line still says "shop thank-you lines" (Town shops went in SA-3).
+- For the owner on the phone:
+  - The section list: the eight workspaces; fold one and reopen the Studio.
+  - People & story → Characters: Looks and Wardrobe with the switch on top; Shift-click or ⇥ to put one beside.
+  - Ctrl K: "characters", "part rules", "perks": each result says its workspace.
+- Next: SA-5 (unused art), in a new session on `track/studio-art`, in Plan Mode.
+
 ### Studio art track SA-3 - the clean-up - 2026-10-27
 Branch `track/studio-art` (main merged first, a merge commit: HANDOFF and art-code-refs.json conflicted; SA-2b kept on
 top, main's entries below, SA-2a and SA-1 once; the container's local branch was 165 commits stale, so the merge's
