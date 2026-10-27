@@ -49,7 +49,7 @@ interface DebugLog {
   load: { ms: number; files: number; failed: unknown[]; phases: unknown } | null;
   /** the full test's progress and result (self-test.js) */
   bench: { step: string | null; result: unknown } | null;
-  /** the scene's picture every few seconds */
+  /** the scene's picture, taken when the log is exported (LD-1) */
   shot: { t: number; what?: string; jpeg?: string; error?: string } | null;
   /** the rest: the event lists, the samples, summaries, hooks */
   [key: string]: any;

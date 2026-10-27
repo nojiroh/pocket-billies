@@ -1,8 +1,8 @@
 'use strict';
 /* ================= DEBUG LOG =================
    Quietly records what helps fix problems on a particular device: frame rates per screen and scene, slow frames,
-   errors, the loading screen's timings, the device and graphics chip, and a small picture of the scene every few
-   seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
+   errors, the loading screen's timings, the device and graphics chip, and a small picture of the scene when the log is
+   exported (LD-1: never on a timer). Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
    test (self-test.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data or names are included, and no positions: only which places opened and when. */
 const BUILD_VERSION = PB_VERSION;
@@ -280,12 +280,8 @@ debugLog.flush = ts => {
   debugLog.samples.push(s);
   if (debugLog.samples.length > debugLog.max.samples)
     debugLog.samples.splice(0, debugLog.samples.length - debugLog.max.samples);
-  /* a fresh picture of the scene now and then (reading the picture back stalls the GPU for a frame, so not often) */
-  if (!debugLog.shotT) debugLog.shotT = ts - 45000;
-  if (ts - debugLog.shotT > 60000) {
-    debugLog.shotT = ts;
-    debugLog.snap();
-  }
+  /* LD-1 (the owner, 2026-10-27): no timed picture. Reading the picture back stalls the GPU and the JPEG is made on
+     the main thread, a held frame every minute; exportDebugLog takes one picture when the log is saved */
 };
 /* the WebGL scene can only be read inside the frame that drew it, so it is captured there (walk-view-gl.js) */
 debugLog.snap = () => {
