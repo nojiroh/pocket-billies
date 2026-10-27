@@ -35,6 +35,7 @@ UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like G
 # (name, hour, weather, fogVolume)
 LOOKS = [
     ('noon-clear', 12.5, 'clear', 1), ('noon-clear-off', 12.5, 'clear', 0),
+    ('low-sun-am', 7.6, 'clear', 1), ('low-sun-pm', 17.4, 'clear', 1),
     ('dawn-fog', 6.6, 'fog', 1), ('dawn-fog-off', 6.6, 'fog', 0),
     ('morning-fog', 8.5, 'fog', 1), ('morning-fog-off', 8.5, 'fog', 0),
     ('dusk-fog', 18.6, 'fog', 1),
