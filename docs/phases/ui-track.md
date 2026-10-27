@@ -579,12 +579,34 @@ each with the minimap captured at its own size), and the owner picked **Wide**.
   (29% of the screen); of the first four layouts, the Pocket screen (a third of the screen), the corner map (away from
   the thumb, a busier top) and the pull-up map (one more gesture).
 
+UI-8b as built (2026-10-27, `track/ui`). The owner's answers at the start: the tile's edge turns gold only while the
+Map is open (today's rule, not the examples' gold); narrow phones shrink the whole tile, keeping its shape.
+- Dials: uiTheme.json `minimap` gains `tileW` 232, `tileH` 184 and `tileCompact` 112 (schema, the Studio's Minimap
+  group, tokens.css), written as `--minimap-tile-w/-h/-compact` and `--minimap-tile-aspect` (h / w, for the shrink).
+  The span dial is now "Metres shown", across the tile's shorter side.
+- pb-nav-bar: the host is the container (`container-type` moved from `nav`), so the tile sizes from `100cqw`: standing
+  `min(tileW, 100cqw - 136px)` wide and as tall as its shape allows, so a side keeps 60 px (4 px margin, 4 px gap);
+  the bar 128 px, `--rise` the tile's height plus 8 px less the bar (60 px on a 390 px phone, never under 0). Walking:
+  `min(tileCompact, 100cqw - 208px)` square in a 76 px bar. `navStep` keeps its name but lost the tower (6 points, not
+  10). The 320 px container query went: the cqw rule covers it. Buttons stand icon over word, 63 x 52 px at 390.
+- minimap.js: `S = min(W, H)`; `s = S / span`; the marks' `unit` and the facility icon's size from `S` too, so marks
+  keep their size in metres (1.53x on screen standing; walking up to 1.56x, the unit floor of 1 holding at 1x).
+- shell.css `--nav-h` worked out from the same tokens on the bar's width (`min(100vw - 16px, 480px)`): 224 px standing
+  and 148 px walking on a 390 px phone (172 and 102 before).
+- Measured in the game (fixture run, 390 x 844): the bar 374 x 192, the tile 232 x 184 at 4 px from the top of the bar
+  box, 60 px over the frame; walking 112 x 112 in 116. At 360 px: 208 x 165 (rise 41); at 320 px: 168 x 133 (rise 13),
+  walking 96 x 96. Side buttons 60-63 x 52 px at every width; no page errors.
+- Corrections to the plan's numbers: today's compact tile is 72 x 66, not a 72 px square; the bar is 128 px, not about
+  124, so the tile keeps a 4 px gap below as before; walking is a true 112 px square (rise 40), not 112 x 108.
+- Left for the owner's phone check: the size, the compact timing, the marks at 232 px, the minimap's frame cost (its
+  canvas is 2.8 times today's pixels standing), and whether 13 px of rise on a 320 px phone is enough.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
 | UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
-| UI-8b | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
+| UI-8b (done 2026-10-27, `track/ui`) | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
 | UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
 | UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
 | UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
