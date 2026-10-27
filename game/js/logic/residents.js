@@ -58,7 +58,7 @@ export function residentsHere(s) {
  * @param {SaveData} s @param {string} id @param {Record<string, { grant: any }>} U unlocks.json */
 export function resLevel(s, id, U) {
   const M = s.meta;
-  if (!M || !(M.residents || {})[id]) return 0;
+  if (!M || !M.residents || !Object.hasOwn(M.residents, id)) return 0;
   let lv = 1;
   for (const u of Object.keys(M.unlocks || {})) {
     const G = U[u] && U[u].grant;

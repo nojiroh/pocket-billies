@@ -120,4 +120,6 @@ test('residents: RS-4: a service level is 0 until they move in, 1 then, and the 
   s.meta.residents.ada = 2;
   assert.equal(resLevel(s, 'ada', U), 1, 'Lv 1 comes with moving in');
   assert.equal(resLevel({}, 'bo', U), 0);
+  s.meta.residents.cy = 0;
+  assert.equal(resLevel(s, 'cy', U), 2, 'living there, whatever run they came after');
 });
