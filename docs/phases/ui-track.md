@@ -662,8 +662,8 @@ it (as WM-4b, WM-5 and WM-7 did on their track).
 
 | Wave | Steps | Starts when |
 | --- | --- | --- |
-| 1 | UI-11 (`track/ui`), UI-8c and UI-15 (side branches) | now (UI-8b done) |
-| 2 | UI-12 and UI-13 | UI-11 is done |
+| 1 | UI-11 (the owner's own session, on `ccr-dab4e0cd-6re1eb` from main), UI-8c and UI-15 (side branches) | now (UI-8b done) |
+| 2 | UI-12 (`track/ui`, merging UI-11's branch and the finished side branches) and UI-13 | UI-11 is done |
 | 3 | UI-14a; UI-16a | UI-13 is done; UI-12 and UI-15 are done |
 | 4 | UI-14b; UI-17 | UI-14a is done; UI-14a, UI-16a and UI-8c are done |
 | 5 | UI-16b | UI-14b, UI-15 and UI-16a are done |
