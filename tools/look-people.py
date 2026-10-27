@@ -12,6 +12,9 @@
                                                     # baked figures); with --density=N (16-64), --steps=8|16, --outline=0
     python3 tools/look-people.py --figures --lose   # then a forced loss of the game's context and of the figure baker's,
                                                     # a shot after each (the figures must come back)
+    python3 tools/look-people.py --sheet[=mannequin] # a figure's every turn and frame baked as the game bakes them, on
+                                                    # one sheet at 4 screen pixels a pixel (figure-sheet-*.png), no shots;
+                                                    # with --density, --steps, --outline and --tilt=DEGREES (26: Normal)
 
 The page is a 390 x 844 phone at 3 device pixels to the CSS pixel (the one the characters track's numbers are worked
 out for: the scene drawn into the same 860 x 1861 buffer as on the phone), with the game's own graphics, but auto
@@ -44,6 +47,8 @@ CROWD = int(arg('crowd', 0))
 ONLY = set(arg('only', '').split(',')) - {''}
 FIGURES = '--figures' in ARGS
 LOSE = '--lose' in ARGS
+SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
+TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline'))) if v is not None}
 TIMES = [('day', 12.5), ('night', 22.0)]
 YAWS = [0, 35, 90]
@@ -82,6 +87,38 @@ def wanted(*names):
     """a shot is taken unless --only names something of its kind and not this one"""
     kinds = [{'close', 'normal', 'far'}, {'day', 'night'}, {f'yaw{y}' for y in YAWS}]
     return all(not (ONLY & k) or n in ONLY for n, k in zip(names, kinds))
+
+
+# CH-2: one figure's pictures as the baker makes them (figures.js bakeFigure): every turn of the dial's steps (rows),
+# the idle's first pose and its blink, then the walk's 8 frames (columns); each as a PNG
+SHEET_JS = """((name, tilt, dials) => {const F=figureDef(name); if(!F) return null;
+ const ppm=dials.density||32, steps=dials.yawSteps||16, outline=dials.outline!==false, rows=[];
+ for (let k=0;k<steps;k++){const V=figureView((k*2*Math.PI)/steps,0,tilt*Math.PI/180,steps), row=[];
+  for (const [clip,f] of [['idle',0],['idle',14],...[0,1,2,3,4,5,6,7].map(i=>['walk',i])]){
+   const im=bakeFigure(F,clip,f,V,ppm,outline); row.push(im?im.toDataURL('image/png'):null)}
+  rows.push(row)}
+ return {rows, ppm, steps, report: figureReport()}})"""
+
+
+def sheet(pg, t0):
+    """the --sheet contact sheet: the figure's views baked in the page, laid out and enlarged here"""
+    import base64, io
+    from PIL import Image
+    dials = {k: (v != '0' if k == 'outline' else int(v)) for k, v in FIG_DIALS.items()}
+    r = pg.evaluate(f'{SHEET_JS}({json.dumps(SHEET)},{TILT},{json.dumps(dials)})')
+    if not r: raise Exception(f'no figure {SHEET}')
+    ims = [[Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1]))) if u else None for u in row] for row in r['rows']]
+    cw = max(i.width for row in ims for i in row if i) + 2
+    ch = max(i.height for row in ims for i in row if i) + 2
+    S = 4
+    out = Image.new('RGBA', (cw * len(ims[0]) * S, ch * len(ims) * S), (196, 214, 170, 255))
+    for y, row in enumerate(ims):
+        for x, i in enumerate(row):
+            if i: out.alpha_composite(i.resize((i.width * S, i.height * S), Image.NEAREST), (x * cw * S, y * ch * S))
+    name = f"figure-sheet-{SHEET}-{r['ppm']}ppm-{r['steps']}turns-{int(TILT)}deg{'' if dials.get('outline', True) else '-nooutline'}.png"
+    out.save(OUT / name)
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(ims)} turns by {len(ims[0])} poses, the baker {r['report']}", flush=True)
+    return {'shot': name, 'figures': r['report']}
 
 
 def lose(pg, t0):
@@ -133,6 +170,12 @@ def main():
         shots.settle(pg, 4)
         # you face the camera (a plain word: logic/person-view.js faceWord), as a fresh view stands you
         pg.evaluate("(()=>{const P=walkView.pl;if(typeof faceWord==='function')faceWord(P,'down');else P.dir='down';return 0})()")
+        if SHEET:
+            rows.append(sheet(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'sheet': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
         print(f'[{time.time() - t0:5.0f}s] {SCENE} open; drawing everyone\'s walk frames', flush=True)
         for _ in range(60):
             if pg.evaluate(WARM): break
