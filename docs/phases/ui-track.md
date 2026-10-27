@@ -538,28 +538,42 @@ They were a bigger tile (today's layout, larger), a Pocket screen (a full-width 
 a corner map (158 px at the top right, a slim bar of five buttons) and a pull-up map (a 150 px tile that opens a
 half-screen 72 m map).
 
-The owner's pick: **the bigger tile.**
-- The tile: 176 px standing (120 today, +47%), 112 px walking (72 today, +56%); still the raised tile with the cuts and
-  the gold edge in the middle, two buttons a side (Team, Guide; Bag, Perks or Lab).
-- The same area, 44 m across, drawn larger (`minimap.span` stays 44).
-- Walking: as today, the buttons drop their labels and sit side by side; the tile shrinks to 112 px.
-- Room on screen (390 x 844, the home-bar strip counted): about 24% standing (20% today), 16% walking (11% today).
-- Build: pb-nav-bar's sizes in ui-run-kit.js (`--tile-w` 120 to 176, `--tile-h` 128 to about 172, `--bar-h` 120 to
-  about 150, `--rise` 20 to about 26; compact `--tile-w` 72 to 112, `--tile-h` 66 to about 106, `--bar-h` 60 to about
-  76, `--rise` 10 to about 36), best as dials beside uiTheme.json's `minimap` group so the Studio can tune them; the
-  320 px container query's tile (96 px today) checked against the side buttons; shell.css `--nav-h` (172 to about 208
-  standing, 102 to about 144 compact) so the dialogue box, the hint, Actions, sticky rows, the map's controls, the
-  d-pad and the debug button clear it. minimap.js draws at its canvas size, so only the chevron's and the icons'
-  sizes at 176 px need a look.
-- Not taken: the Pocket screen (a third of the screen), the corner map (away from the thumb, a busier top), the pull-up
-  map (one more gesture).
+The owner's pick: **the bigger tile**; then, after a look at it: "The map should be bigger than the frame when it's big
+and wider." Three takes on the standing tile followed on the same page (Wide 232 x 184, Wider 264 x 184, Big 240 x 220,
+each with the minimap captured at its own size), and the owner picked **Wide**.
+- Standing: the tile is 232 x 184 px (120 x 128 today), wider than tall, and stands about 60 px out of the bar's frame:
+  the bar's outline loses its raised tower and runs straight under the tile, so the world shows on both sides of the
+  tile's top. The cuts and the edge stay (the examples drew the edge gold; today it turns gold while the Map is open).
+  Two buttons a side (Team, Guide; Bag, Perks or Lab), the icon over the word, in columns about 60 px wide.
+- Walking: the tile shrinks to a 112 px square (72 today) in a 76 px bar; the buttons drop their words and sit side by
+  side, as today.
+- The map keeps 44 m from top to bottom and shows about 55 m across while standing (`minimap.span` stays 44, measured
+  on the tile's shorter side).
+- Room on screen (390 x 844, the home-bar strip counted): about 25% standing (20% today), 16% walking (11% today).
+- Build:
+  - pb-nav-bar's sizes in ui-run-kit.js: `--tile-w` 120 to 232 and `--tile-h` 128 to 184, `--bar-h` 120 to about 124,
+    `--rise` (now the tile's overhang plus its 4 px top gap) 20 to about 64; compact `--tile-w` 72 to 112, `--tile-h`
+    66 to about 108, `--bar-h` 60 to about 76, `--rise` 10 to about 36. Best as dials beside uiTheme.json's `minimap`
+    group, so the Studio can tune them.
+  - The outline (`navStep`) without the tower: a plain cut bar from `--rise` down, the tile over its top edge.
+  - The side buttons stacked icon over word while standing; `--apart` (48 px) narrowed so each side keeps about 60 px;
+    the tile's width capped on narrow phones (about 200 px on a 360 px phone); the 320 px container query (a 96 px
+    tile today) rechecked.
+  - minimap.js: the scale from the tile's shorter side (`s = min(W, H) / span`; today `W / span`), so 44 m stays top
+    to bottom; the marks' size (`unit`, from the width today) checked at 232 px. It draws 5 times a second at its
+    canvas size, about 2.8 times today's pixels.
+  - shell.css `--nav-h` (172 to about 220 standing, 102 to about 144 compact), so the dialogue box, the hint, Actions,
+    sticky rows, the map's controls, the d-pad and the debug button clear the tile.
+- Not taken: the 176 px square (the first pick, before the owner's note), Wider (44 px buttons with small words), Big
+  (29% of the screen); of the first four layouts, the Pocket screen (a third of the screen), the corner map (away from
+  the thumb, a busier top) and the pull-up map (one more gesture).
 
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
 | UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
-| UI-8b | The bigger map tile | the bar's sizes as dials (176 px tile, 112 px walking), `--nav-h`, the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, frame cost) |
+| UI-8b | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
 | UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
 | UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
 | UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
@@ -611,8 +625,10 @@ and on.
    cards.
 10. **New UI sounds:** yes (a sheet opening, a card flip, a count-up's end, a toast).
 11. **Colour shapes switch:** yes, in Accessibility.
-12. **The bottom bar (after the bar examples):** the bigger tile, 176 px standing and 112 px walking.
-13. **The map's area:** the same 44 m, drawn bigger.
+12. **The bottom bar (after the bar examples):** the bigger tile; then, after the owner's note ("The map should be
+    bigger than the frame when it's big and wider"), **Wide**: 232 x 184 px standing, out of the bar's frame, and the
+    112 px square walking.
+13. **The map's area:** 44 m from top to bottom, drawn bigger (about 55 m across while standing).
 14. **Walking:** the bar shrinks a little (labels off, the tile at 112 px).
 
 ## Ask me before
