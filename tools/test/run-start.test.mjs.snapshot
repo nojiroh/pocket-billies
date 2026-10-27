@@ -45,48 +45,80 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "row": 0,
             "lane": 0,
             "to": [
-              1
+              1,
+              2
             ],
             "seen": 2,
             "biome": "meadow",
-            "zone": 0
+            "zone": 0,
+            "at": [
+              0,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "rival",
+            "type": "route",
             "row": 1,
             "lane": 0,
             "to": [
-              2,
               3
             ],
             "seen": 2,
             "biome": "meadow",
-            "zone": 0
+            "zone": 0,
+            "at": [
+              2,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
+            "type": "route",
+            "row": 1,
+            "lane": 1,
+            "to": [
+              3
+            ],
+            "seen": 2,
+            "biome": "meadow",
+            "zone": 0,
+            "at": [
+              0,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "miniboss",
             "row": 2,
             "lane": 0,
             "to": [
               4
             ],
             "seen": 1,
-            "biome": "thicket",
-            "zone": 1
+            "biome": "meadow",
+            "zone": 0,
+            "at": [
+              2,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "town",
-            "row": 2,
-            "lane": 1,
-            "to": [
-              4
-            ],
-            "seen": 1,
-            "biome": "thicket",
-            "zone": 1
-          },
-          {
-            "type": "miniboss",
             "row": 3,
             "lane": 0,
             "to": [
@@ -94,73 +126,206 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               6
             ],
             "seen": 0,
-            "biome": "thicket",
-            "zone": 1
+            "biome": "meadow",
+            "zone": 0,
+            "at": [
+              4,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
+            "type": "route",
             "row": 4,
             "lane": 0,
             "to": [
-              7
+              7,
+              8
             ],
             "seen": 0,
             "biome": "thicket",
-            "zone": 1
+            "zone": 1,
+            "at": [
+              5,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
+            "type": "rival",
             "row": 4,
             "lane": 1,
             "to": [
-              7
+              8
             ],
             "seen": 0,
             "biome": "thicket",
-            "zone": 1
+            "zone": 1,
+            "at": [
+              6,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "miniboss",
+            "type": "route",
             "row": 5,
             "lane": 0,
             "to": [
-              8,
               9
             ],
             "seen": 0,
-            "biome": "meadow",
-            "zone": 2
+            "biome": "thicket",
+            "zone": 1,
+            "at": [
+              5,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "scrapyard",
+            "type": "route",
+            "row": 5,
+            "lane": 1,
+            "to": [
+              9
+            ],
+            "seen": 0,
+            "biome": "thicket",
+            "zone": 1,
+            "at": [
+              7,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "miniboss",
             "row": 6,
             "lane": 0,
             "to": [
-              10
+              10,
+              11
+            ],
+            "seen": 0,
+            "biome": "thicket",
+            "zone": 1,
+            "at": [
+              7,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "town",
+            "row": 7,
+            "lane": 0,
+            "to": [
+              12
             ],
             "seen": 0,
             "biome": "meadow",
-            "zone": 2
+            "zone": 2,
+            "at": [
+              8,
+              -2
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "town",
+            "row": 7,
+            "lane": 1,
+            "to": [
+              13
+            ],
+            "seen": 0,
+            "biome": "meadow",
+            "zone": 2,
+            "at": [
+              9,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "route",
+            "row": 8,
+            "lane": 0,
+            "to": [
+              14
+            ],
+            "seen": 0,
+            "biome": "meadow",
+            "zone": 2,
+            "at": [
+              10,
+              -2
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "event",
-            "row": 6,
+            "row": 8,
             "lane": 1,
             "to": [
-              10
+              14
             ],
             "seen": 0,
             "biome": "meadow",
-            "zone": 2
+            "zone": 2,
+            "at": [
+              11,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "boss",
-            "row": 7,
+            "row": 9,
             "lane": 0,
             "to": [],
             "seen": 2,
             "biome": "meadow",
-            "zone": 2
+            "zone": 2,
+            "at": [
+              12,
+              -2
+            ],
+            "size": [
+              2,
+              1
+            ]
           }
         ]
       },
@@ -275,6 +440,46 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "clear",
           "cloudy",
           "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "fog",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "clear",
+          "fog"
+        ],
+        [
+          "clear",
+          "rain",
+          "clear",
+          "cloudy",
+          "clear",
+          "rain",
+          "clear",
+          "rain"
+        ],
+        [
+          "clear",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "clear",
+          "clear",
+          "rain",
+          "cloudy"
+        ],
+        [
+          "clear",
+          "cloudy",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain",
+          "storm",
+          "clear"
         ]
       ],
       "region": {
@@ -283,7 +488,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "zones": [
           {
             "biome": "meadow",
-            "rows": 2
+            "rows": 4
           },
           {
             "biome": "thicket",
@@ -382,48 +587,80 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "row": 0,
             "lane": 0,
             "to": [
-              1
+              1,
+              2
             ],
             "seen": 2,
             "biome": "thicket",
-            "zone": 0
+            "zone": 0,
+            "at": [
+              0,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "rival",
+            "type": "route",
             "row": 1,
             "lane": 0,
             "to": [
-              2,
               3
             ],
             "seen": 2,
             "biome": "thicket",
-            "zone": 0
+            "zone": 0,
+            "at": [
+              2,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
+            "type": "route",
+            "row": 1,
+            "lane": 1,
+            "to": [
+              3
+            ],
+            "seen": 2,
+            "biome": "thicket",
+            "zone": 0,
+            "at": [
+              0,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "miniboss",
             "row": 2,
             "lane": 0,
             "to": [
               4
             ],
             "seen": 1,
-            "biome": "autumn",
-            "zone": 1
+            "biome": "thicket",
+            "zone": 0,
+            "at": [
+              2,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "town",
-            "row": 2,
-            "lane": 1,
-            "to": [
-              4
-            ],
-            "seen": 1,
-            "biome": "autumn",
-            "zone": 1
-          },
-          {
-            "type": "miniboss",
             "row": 3,
             "lane": 0,
             "to": [
@@ -431,73 +668,206 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
               6
             ],
             "seen": 0,
-            "biome": "autumn",
-            "zone": 1
+            "biome": "thicket",
+            "zone": 0,
+            "at": [
+              4,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
+            "type": "route",
             "row": 4,
             "lane": 0,
             "to": [
-              7
+              7,
+              8
             ],
             "seen": 0,
             "biome": "autumn",
-            "zone": 1
+            "zone": 1,
+            "at": [
+              5,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
+            "type": "rival",
             "row": 4,
             "lane": 1,
             "to": [
-              7
+              8
             ],
             "seen": 0,
             "biome": "autumn",
-            "zone": 1
+            "zone": 1,
+            "at": [
+              6,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "miniboss",
+            "type": "route",
             "row": 5,
             "lane": 0,
             "to": [
-              8,
               9
             ],
             "seen": 0,
-            "biome": "thicket",
-            "zone": 2
+            "biome": "autumn",
+            "zone": 1,
+            "at": [
+              5,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "scrapyard",
+            "type": "route",
+            "row": 5,
+            "lane": 1,
+            "to": [
+              9
+            ],
+            "seen": 0,
+            "biome": "autumn",
+            "zone": 1,
+            "at": [
+              7,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "miniboss",
             "row": 6,
             "lane": 0,
             "to": [
-              10
+              10,
+              11
+            ],
+            "seen": 0,
+            "biome": "autumn",
+            "zone": 1,
+            "at": [
+              7,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "town",
+            "row": 7,
+            "lane": 0,
+            "to": [
+              12
             ],
             "seen": 0,
             "biome": "thicket",
-            "zone": 2
+            "zone": 2,
+            "at": [
+              8,
+              -2
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "town",
+            "row": 7,
+            "lane": 1,
+            "to": [
+              13
+            ],
+            "seen": 0,
+            "biome": "thicket",
+            "zone": 2,
+            "at": [
+              9,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "route",
+            "row": 8,
+            "lane": 0,
+            "to": [
+              14
+            ],
+            "seen": 0,
+            "biome": "thicket",
+            "zone": 2,
+            "at": [
+              10,
+              -2
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "event",
-            "row": 6,
+            "row": 8,
             "lane": 1,
             "to": [
-              10
+              14
             ],
             "seen": 0,
             "biome": "thicket",
-            "zone": 2
+            "zone": 2,
+            "at": [
+              11,
+              -1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "boss",
-            "row": 7,
+            "row": 9,
             "lane": 0,
             "to": [],
             "seen": 2,
             "biome": "thicket",
-            "zone": 2
+            "zone": 2,
+            "at": [
+              12,
+              -2
+            ],
+            "size": [
+              2,
+              1
+            ]
           }
         ]
       },
@@ -612,6 +982,46 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "clear",
           "cloudy",
           "clear"
+        ],
+        [
+          "clear",
+          "clear",
+          "fog",
+          "cloudy",
+          "rain",
+          "cloudy",
+          "clear",
+          "fog"
+        ],
+        [
+          "clear",
+          "rain",
+          "clear",
+          "cloudy",
+          "clear",
+          "rain",
+          "clear",
+          "rain"
+        ],
+        [
+          "clear",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "clear",
+          "clear",
+          "rain",
+          "cloudy"
+        ],
+        [
+          "clear",
+          "cloudy",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain",
+          "storm",
+          "clear"
         ]
       ],
       "region": {
@@ -620,7 +1030,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "zones": [
           {
             "biome": "thicket",
-            "rows": 2
+            "rows": 4
           },
           {
             "biome": "autumn",
@@ -711,65 +1121,152 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "row": 0,
             "lane": 0,
             "to": [
-              1
+              1,
+              2
             ],
             "seen": 2,
             "biome": "meadow",
-            "zone": 0
+            "zone": 0,
+            "at": [
+              0,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "rival",
+            "type": "route",
             "row": 1,
             "lane": 0,
             "to": [
-              2,
               3
             ],
             "seen": 2,
             "biome": "meadow",
-            "zone": 0
-          },
-          {
-            "type": "town",
-            "row": 2,
-            "lane": 0,
-            "to": [
-              4
+            "zone": 0,
+            "at": [
+              2,
+              0
             ],
-            "seen": 1,
-            "biome": "meadow",
-            "zone": 0
+            "size": [
+              2,
+              1
+            ]
           },
           {
-            "type": "town",
-            "row": 2,
+            "type": "rival",
+            "row": 1,
             "lane": 1,
             "to": [
-              4
+              3
             ],
-            "seen": 1,
+            "seen": 2,
             "biome": "meadow",
-            "zone": 0
+            "zone": 0,
+            "at": [
+              0,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "miniboss",
+            "row": 2,
+            "lane": 0,
+            "to": [
+              4
+            ],
+            "seen": 1,
+            "biome": "thicket",
+            "zone": 1,
+            "at": [
+              2,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "town",
             "row": 3,
             "lane": 0,
             "to": [
-              5
+              5,
+              6
             ],
             "seen": 0,
             "biome": "thicket",
-            "zone": 1
+            "zone": 1,
+            "at": [
+              4,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "route",
+            "row": 4,
+            "lane": 0,
+            "to": [
+              7
+            ],
+            "seen": 0,
+            "biome": "meadow",
+            "zone": 2,
+            "at": [
+              5,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "route",
+            "row": 4,
+            "lane": 1,
+            "to": [
+              7
+            ],
+            "seen": 0,
+            "biome": "meadow",
+            "zone": 2,
+            "at": [
+              6,
+              1
+            ],
+            "size": [
+              2,
+              1
+            ]
           },
           {
             "type": "boss",
-            "row": 4,
+            "row": 5,
             "lane": 0,
             "to": [],
             "seen": 2,
-            "biome": "thicket",
-            "zone": 1
+            "biome": "meadow",
+            "zone": 2,
+            "at": [
+              7,
+              0
+            ],
+            "size": [
+              2,
+              1
+            ]
           }
         ]
       },
@@ -834,6 +1331,26 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
           "clear",
           "rain",
           "cloudy"
+        ],
+        [
+          "cloudy",
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "clear",
+          "fog",
+          "clear"
+        ],
+        [
+          "clear",
+          "rain",
+          "storm",
+          "rain",
+          "cloudy",
+          "clear",
+          "cloudy",
+          "rain"
         ]
       ],
       "region": {
@@ -842,10 +1359,14 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "zones": [
           {
             "biome": "meadow",
-            "rows": 3
+            "rows": 2
           },
           {
             "biome": "thicket",
+            "rows": 2
+          },
+          {
+            "biome": "meadow",
             "rows": 2
           }
         ],
@@ -887,6 +1408,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "099ac2345f44e674082d86fec9ba111151a21afa7a91661acad0a8a6a4c3d2ba"
+  "all": "1511ffc4e116ef0fc0782e3862391ee11d1fcc6fdf1207cf1f0b7b271a419997"
 }
 `;

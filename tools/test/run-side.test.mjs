@@ -102,7 +102,9 @@ test('an alternate path still reaches a boss: by its way out to the main path, o
       continue;
     }
     back++;
-    assert.equal(end.type, 'miniboss', seed);
+    /* WM-2: its leader, then its town */
+    assert.equal(end.type, 'town', seed);
+    assert.equal(map.nodes[side.nodes[side.nodes.length - 2]].type, 'miniboss', seed);
     // from the way out, the main path goes on to the boss
     let at = side.to;
     while (runNext(map, at).length) at = runNext(map, at)[0];

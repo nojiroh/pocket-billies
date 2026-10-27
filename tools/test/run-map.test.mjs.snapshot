@@ -6,101 +6,219 @@ exports[`the same seed makes the same map; other seeds make others 1`] = `
       "row": 0,
       "lane": 0,
       "to": [
-        1
+        1,
+        2
       ],
       "seen": 0,
-      "biome": "autumn"
+      "biome": "autumn",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
       "type": "route",
       "row": 1,
       "lane": 0,
       "to": [
-        2
+        3
       ],
       "seen": 0,
-      "biome": "thicket"
+      "biome": "thicket",
+      "at": [
+        2,
+        0
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
-      "type": "town",
-      "row": 2,
-      "lane": 0,
+      "type": "route",
+      "row": 1,
+      "lane": 1,
       "to": [
         3
       ],
       "seen": 0,
-      "biome": "lake"
+      "biome": "meadow",
+      "at": [
+        0,
+        1
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
       "type": "miniboss",
-      "row": 3,
+      "row": 2,
       "lane": 0,
       "to": [
         4,
         5
       ],
       "seen": 0,
-      "biome": "thicket"
+      "biome": "lake",
+      "at": [
+        2,
+        1
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
-      "type": "route",
-      "row": 4,
+      "type": "town",
+      "row": 3,
       "lane": 0,
       "to": [
         6
       ],
       "seen": 0,
-      "biome": "lake"
+      "biome": "thicket",
+      "at": [
+        4,
+        1
+      ],
+      "size": [
+        2,
+        1
+      ]
+    },
+    {
+      "type": "town",
+      "row": 3,
+      "lane": 1,
+      "to": [
+        7
+      ],
+      "seen": 0,
+      "biome": "ridge",
+      "at": [
+        2,
+        2
+      ],
+      "size": [
+        2,
+        1
+      ]
+    },
+    {
+      "type": "route",
+      "row": 4,
+      "lane": 0,
+      "to": [
+        8
+      ],
+      "seen": 0,
+      "biome": "lake",
+      "at": [
+        6,
+        1
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
       "type": "route",
       "row": 4,
       "lane": 1,
       "to": [
-        7
-      ],
-      "seen": 0,
-      "biome": "meadow"
-    },
-    {
-      "type": "town",
-      "row": 5,
-      "lane": 0,
-      "to": [
         8
       ],
       "seen": 0,
-      "biome": "meadow"
-    },
-    {
-      "type": "town",
-      "row": 5,
-      "lane": 1,
-      "to": [
-        8
+      "biome": "meadow",
+      "at": [
+        4,
+        2
       ],
-      "seen": 0,
-      "biome": "thicket"
+      "size": [
+        2,
+        1
+      ]
     },
     {
       "type": "miniboss",
+      "row": 5,
+      "lane": 0,
+      "to": [
+        9,
+        10
+      ],
+      "seen": 0,
+      "biome": "meadow",
+      "at": [
+        6,
+        2
+      ],
+      "size": [
+        2,
+        1
+      ]
+    },
+    {
+      "type": "town",
       "row": 6,
       "lane": 0,
       "to": [
-        9
+        11
       ],
       "seen": 0,
-      "biome": "meadow"
+      "biome": "meadow",
+      "at": [
+        8,
+        2
+      ],
+      "size": [
+        2,
+        1
+      ]
+    },
+    {
+      "type": "town",
+      "row": 6,
+      "lane": 1,
+      "to": [
+        11
+      ],
+      "seen": 0,
+      "biome": "meadow",
+      "at": [
+        7,
+        3
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
       "type": "town",
       "row": 7,
       "lane": 0,
       "to": [
-        10
+        12
       ],
       "seen": 0,
-      "biome": "lake"
+      "biome": "lake",
+      "at": [
+        9,
+        3
+      ],
+      "size": [
+        2,
+        1
+      ]
     },
     {
       "type": "boss",
@@ -108,7 +226,15 @@ exports[`the same seed makes the same map; other seeds make others 1`] = `
       "lane": 0,
       "to": [],
       "seen": 0,
-      "biome": "meadow"
+      "biome": "meadow",
+      "at": [
+        10,
+        2
+      ],
+      "size": [
+        2,
+        1
+      ]
     }
   ]
 }

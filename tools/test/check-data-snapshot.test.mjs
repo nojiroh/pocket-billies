@@ -50,7 +50,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         Object.assign(R.ranch, { slots: [3, 2], bogus: 1, levelsPerHour: 0 });
         Object.assign(R.ranch.breed, { riskyCost: 50, extra: 1 });
         R.ranch.breed.odds.safe = 0.9;
-        Object.assign(run.map, { rows: 4, first: 'nosuch', wide: 2, extra: 1 });
+        Object.assign(run.map, { path: [[4, 4]], first: 'nosuch', wide: 2, extra: 1 });
         run.map.biomes.nosuchbiome = 1;
         run.clock.slack = 3; /* RL-R2: the deadline's slack is gone */
         run.reveal.extra = 1;
