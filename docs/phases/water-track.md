@@ -156,7 +156,7 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 4 | WA-9 | G | (**done** 2026-10-26, notes below) **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
 | 4 | WA-10 | R | (**done** 2026-10-26, notes below) **Copperleaf's river, mouth and outflow** (the owner played it: weird river, weird mouth, weird fall). Kinds by connectivity (a pond behind a coast is a pond), a river runs only in its channel with an estuary blend into the sea, a river's surface at a never-rising level along its line, automatic sheets only down the flow with merged lips; Copperleaf's outflow and town square patched in the data (the owner's yes). | Copperleaf pictures, look-water numbers (test_water, test_island), unit tests, smoke |
 | 4 | WA-11 | G | **The hub island's waterfall** (the owner, 2026-10-27: its own session before WA-8). A `falls` entry on Copperleaf's island from the WA-9 falls placer, on the river WA-10 settled; pictures for the owner's yes (the island is locked once right). | Copperleaf pictures, look-water numbers, data check (the fall's lip and pool on its river), smoke |
-| 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
+| 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix (the sound track's Part 2 proposes its SND-10 takes them, 2026-10-27: see the Ask line below); the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
 ## Ask me before
 - The hub island's waterfall (WA-2b): the island is locked once right. (Answered in WA-2b: after HB-4b rebuilds the
@@ -168,7 +168,10 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
   standing; the 1.5 m rule dropped; no encounters while surfing for now.)
 - The Waterfall climb's badge (WA-6b). (Answered in WA-6b: the Water Badge and the Steel Badge, and a Water Billie.)
 - The new kinds list before WA-5a (the six above are a proposal). (Answered in WA-5a: all six, in that order.)
-- Water sounds after SND-6 merges (WA-8). SND-6 is done (2026-10-23): ask at WA-8's start.
+- Water sounds after SND-6 merges (WA-8). SND-6 is done (2026-10-23): ask at WA-8's start. The sound track's Part 2
+  (docs/phases/sound-track.md, SND-7, 2026-10-27) proposes that its SND-10 takes the water sounds (a recipe per kind,
+  falls by height, wading, Surf, fishing, rain on water), WA-8 keeping the phone pass and the baseline; the owner
+  decides at SND-8's start.
 
 ## WA-0 notes (2026-10-25)
 - test_water (58 x 28 m, was 40 x 28): the old west half unchanged; east of x 42 a 6 m cliff (rock) with a 1.6 m
