@@ -157,6 +157,7 @@ expose({
   WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
+  bowlWorker: [() => bowlWorker],
   runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
   worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
@@ -225,8 +226,12 @@ expose({
   worldBowlStampMap: [() => worldBowlStampMap, v => (worldBowlStampMap = v)],
   worldBowlStampMaps: [() => worldBowlStampMaps, v => (worldBowlStampMaps = v)],
   worldBowlSunNow: [() => worldBowlSunNow, v => (worldBowlSunNow = v)],
+  worldBowlTerrainAhead: [() => worldBowlTerrainAhead, v => (worldBowlTerrainAhead = v)],
+  worldBowlTerrainBack: [() => worldBowlTerrainBack, v => (worldBowlTerrainBack = v)],
+  worldBowlTerrainDone: [() => worldBowlTerrainDone, v => (worldBowlTerrainDone = v)],
   worldBowlTerrainGpu: [() => worldBowlTerrainGpu, v => (worldBowlTerrainGpu = v)],
   worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
+  worldBowlTerrainOff: [() => worldBowlTerrainOff, v => (worldBowlTerrainOff = v)],
   worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
   worldBowlTerrainStart: [() => worldBowlTerrainStart, v => (worldBowlTerrainStart = v)],
   worldBowlThingScale: [() => worldBowlThingScale, v => (worldBowlThingScale = v)],
@@ -1163,13 +1168,75 @@ function worldBowlTerrainStart() {
     bowlTerrainRows(T.P, T.row, end, T.idx);
     T.row = end;
     T.dirty = true;
-    if (T.row >= last) {
-      worldBowlRiversInto(T);
-      worldBowlRoadsInto(T);
-      T.ready = true;
-    }
+    if (T.row >= last) worldBowlTerrainDone(T);
   };
   return g.terrain;
+}
+/** the ground's squares all worked out: its rivers and roads over them, and it is ready @param {any} T */
+function worldBowlTerrainDone(T) {
+  worldBowlRiversInto(T);
+  worldBowlRoadsInto(T);
+  T.ready = true;
+  T.dirty = true;
+  worldBowl.dirty = true;
+}
+/** LD-5 (cutscenes session): the world map's helper thread (bowl-worker.js): the ground's squares worked out there,
+ * so the page keeps drawing (the take-off's loading, the opening's fall and the Map tab worked them out in slices a
+ * frame); off, with why, where it can't run or once it has failed (the page works them out then, as before) */
+const bowlWorker = { w: /** @type {Worker | null} */ (null), off: '', id: 0 };
+/** the ground's squares asked of the helper thread (once a ground); true while they are on their way @param {any} T */
+function worldBowlTerrainAhead(T) {
+  if (T.ready) return false;
+  if (T.job) return true;
+  const B = bowlWorker;
+  if (B.off) return false;
+  if (!B.w)
+    try {
+      const w = new Worker(new URL('js/bowl-worker.js', document.baseURI), { type: 'module' });
+      w.onmessage = ev => worldBowlTerrainBack(ev.data);
+      w.onerror = () => worldBowlTerrainOff('the helper thread failed to load');
+      B.w = w;
+    } catch (e) {
+      B.off = 'no helper thread here';
+      return false;
+    }
+  const N = BOWL_INDEX,
+    j0 = T.row,
+    j1 = Math.min(N, T.rowEnd ?? N);
+  T.job = { id: ++B.id, j0, j1, t0: performance.now() };
+  try {
+    /** @type {Worker} */ (B.w).postMessage({ kind: 'rows', id: T.job.id, P: T.P, j0, j1 });
+  } catch (e) {
+    worldBowlTerrainOff(String((e && e.message) || e));
+    return false;
+  }
+  return true;
+}
+/** the helper thread's rows back: put in, the ground finished on the page @param {any} m */
+function worldBowlTerrainBack(m) {
+  const T = worldBowl.ground && worldBowl.ground.terrain;
+  /* a ground made again meanwhile (another world) asks again */
+  if (!m || !T || !T.job || m.id !== T.job.id) return;
+  if (m.kind === 'failed') return worldBowlTerrainOff(m.error);
+  if (m.kind !== 'rows' || T.ready) return;
+  T.idx.set(new Uint8Array(m.band), m.j0 * BOWL_INDEX);
+  T.row = m.j1;
+  const wall = Math.round(performance.now() - T.job.t0);
+  T.job = null;
+  T.worker = m.ms;
+  worldBowlTerrainDone(T);
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('load', `world map ground on the helper thread: ${m.ms} ms there, ${wall} ms to the page`);
+}
+/** the helper thread off for good: the page works the squares out from here @param {string} why */
+function worldBowlTerrainOff(why) {
+  const B = bowlWorker,
+    T = worldBowl.ground && worldBowl.ground.terrain;
+  if (B.w) B.w.terminate();
+  B.w = null;
+  B.off = why || 'failed';
+  if (T) T.job = null;
+  if (typeof debugLog !== 'undefined') debugLog.add('load', 'the world map helper thread is off: ' + B.off);
 }
 /* the rivers: water a few squares wide (wider and deeper as rivers join), muddy or sandy banks; the roads go over them
    afterwards, as fords and bridges */
@@ -2297,7 +2364,8 @@ function worldBowlGpu() {
   }
   const T = worldBowlTerrainStart();
   if (!T.ready) {
-    T.fill(96);
+    /* LD-5: on the helper thread, the map's colours meanwhile; else a slice a frame */
+    if (!worldBowlTerrainAhead(T)) T.fill(96);
     worldBowl.dirty = true;
   } else worldBowlStampMaps(T);
   if (!T.pix && !T.pixLoading) {
@@ -2428,6 +2496,8 @@ export function worldMapPrewarm(done, eager) {
       /* the island's heights first: when they come the ground is worked out again */
       if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
       const T = worldBowlTerrainStart();
+      /* LD-5: the squares on the helper thread; the prewarm waits for them */
+      if (!T.ready && worldBowlTerrainAhead(T)) return later(step);
       if (!T.ready) {
         const t0 = performance.now();
         if (!worldMapWarm.eager) T.fill(48);

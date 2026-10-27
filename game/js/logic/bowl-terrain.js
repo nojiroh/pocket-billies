@@ -41,8 +41,9 @@ export const BOWL_BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 /** LD-5 (cutscenes session): the world map's ground squares of rows j0 to j1 (world-bowl.js worldBowlTerrainStart's
  * fill, the same sums), each a ground kind's layer into idx (N x N). P holds what they read as plain numbers and
  * arrays, so a helper thread (bowl-worker.js) works them out as the page does
- * @param {any} P @param {number} j0 @param {number} j1 @param {Uint8Array} idx */
-export function bowlTerrainRows(P, j0, j1, idx) {
+ * @param {any} P @param {number} j0 @param {number} j1 @param {Uint8Array} idx @param {number} [base] the row idx
+ * starts at (the helper thread's band of rows; 0: the whole map) */
+export function bowlTerrainRows(P, j0, j1, idx, base = 0) {
   const { N, C, near, lists, S, G, slopeG, L, ox, oy, metres } = P;
   for (let j = j0; j < j1; j++)
     for (let i = P.i0; i < P.i1; i++) {
@@ -99,6 +100,6 @@ export function bowlTerrainRows(P, j0, j1, idx) {
         else t = (bowlNoise(m * 0.2, n * 0.2) > 0.55 ? L.r : L.P) ?? t;
       }
       if (r > 0.985 && cv <= 0) t = L.r ?? t;
-      idx[j * N + i] = t;
+      idx[(j - base) * N + i] = t;
     }
 }
