@@ -665,7 +665,7 @@ export const SECTION_LIST = [
   ['parts', 'Part sizes', 'Part sizes, weight and Prime Billies'],
   ['genes', 'Genes', 'Splicing: Stability, traits, wild splices, the Gene Bank and a splice preview'],
   ['coats', 'Coats', 'Recolours of a Billie’s art, and how often each turns up'],
-  ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere); parts, pixels and models next'],
+  ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere), then their pivots and sockets'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
