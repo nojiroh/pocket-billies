@@ -236,7 +236,9 @@ test("the side's leader is its mini-boss or boss foe; the main path's foes are t
     const p = plan(seed),
       run = { seed, map: p.map, region: p.region },
       /* RL-S2: Blake's foes aside */
-      foes = Object.values(runFoes(run, { leaders, rules: GAME_DATA.rules.run })).filter(F => F.runFoe !== 'rival'),
+      foes = Object.values(runFoes(run, { leaders, rules: GAME_DATA.rules.run, bosses: {} })).filter(
+        F => F.runFoe !== 'rival'
+      ),
       side = p.map.side;
     const main = foes.filter(F => !p.map.nodes[F.runNode].side).map(F => F.from);
     assert.deepEqual(main, p.region.leaders, seed);

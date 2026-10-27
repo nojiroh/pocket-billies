@@ -1,4 +1,4 @@
-// Phase 20 R3 (the battle lane): skeleton-rig.js rigFrameKey, the key battle-stage.js (quality.rigReuse) keeps a rig's
+// Phase 20 R3 (the battle lane): skeleton-rig.js rigFrameKey, the key battle-stage.js keeps a rig's
 // canvas by. Two battle frames with the same key must get the same pose from rigFrame (a reused canvas never shows a
 // stale pose), and an idle rig at 60 frames a second must change key far less often than every frame (or there is
 // nothing to reuse). Numbers only: rigFrame's pose objects, no drawing.

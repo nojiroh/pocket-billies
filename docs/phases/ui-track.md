@@ -1,4 +1,5 @@
 # UI track (UI) - Semigloss Angular
+Branch: track/ui
 
 A track of its own, like the Studio and Map generator tracks (owner's brief and answers, 2026-10-21; planned in a
 chat session, not yet started in the repo). It reworks the UI's shapes and palette, keeps the alpha 0.5 semigloss,
@@ -144,6 +145,16 @@ keyframe is ignored, so v05Grow (the Billie sheet's stat bars) never ran. The ow
 shrinks parts.css in place, UI-9b the rest and the snapping); tap targets stay 40 px (the Studio overlay now marks
 under 40, `--tap` stays 44 px as the size real controls use).
 
+UI-9b found (read at 2e74c89d, 2026-10-27): the radius scale had nothing under 12 px, and base.css still defined v05's
+`--r-s/m/l` (6/10/16 px) and `--r1/2/3`; "nearest step" would have turned every 3-8 px corner into 12 px. The owner
+added `--r-xxs` 4 px and `--r-xs` 8 px (named so beside base.css's old `--r-s`). The owner's first pick for parts.css,
+a cascade layer, can't keep the screens: in a layer a rule loses even the fights it wins today by specificity
+(css-order, which now reads layers: 3,827 changed; 130 declarations both win and lose, so no split between a layer
+and unlayered works), and unlayered at ui-kit.css's top it wins fights screens win today by order (29 of 36 views
+differ). base.css loaded just before parts.css, so appending it there changes nothing: the owner's second answer.
+"Ties up" was kept only where a value moves 1-2 px, as the plan promised; 20, 28, 36 and 40 px (moves of 4-8 px) and
+values above 48 px are layout sizes and stay (39 in all, named in each file's commit).
+
 No rule yet but needed: a layer scale (24 distinct z-index values, -1 to 2147483000) and cut-corner tokens. The Studio
 is outside the 06 rules (studio.css: 108 raw radii, 372 raw spacing values, its own teal palette). The bottom bar's
 `--t-*` colours are the pre-roguelite game's (UI-5 swapped the bar itself).
@@ -223,7 +234,7 @@ Works like the Engine section (dials in groups, ↺ per dial, presets, Hold to c
 | UI-6a (done 2026-10-22, PR #112; written up 2026-10-26) | Old layers gone | style, polish, screens, v05 and battle.css deleted: screen rules to their screen files, legacy parts to a file each, the rest to base.css and parts.css; style-diff views for the legacy parts; the ui-lint ratchet in `npm run lint` | none | style-diff 37 of 37 the same; lint fails when a raw count rises |
 | UI-6b (done 2026-10-26) | Lint down, blur and accessibility | raw values that equal a token became the token (no change on screen); the blur budget enforced per screen; the accessibility pass (tap targets, contrast, names); then `phase-06-done` and `ui-6-done` | the Guide's tabs, five controls up to 40 px | ui-lint ceilings lowered; smoke and the tap-target step green, each seen failing on a planted fault |
 | UI-9a (done 2026-10-27) | parts.css shrunk in place | split from UI-9 by the owner: tools/css-order.mjs; parts.css's dead rules, 41 of its 48 `!important` (each fight checked), the type pill into ui-kit.css, its keyframes into motion.css; the tap rule decided: 40 px, the Studio overlay too | none | css-order and style-diff the same at every CSS commit; ui-lint !important 194 -> 153 |
-| UI-9b (proposed) | Off the scale, the rest of parts.css | parts.css's remaining families (.px, .pb, .sheet, .pbar, .seg, .sec-h, .note, .mon/.row) into the kit as UI-9a did (remove what is always beaten, then move) and parts.css deleted; the off-scale values (spacing 6/10/3/14 px..., radii 10/6/8 px...) snapped one screen per commit: nearest step, ties up (6->8, 10->12, 14->16, 3->4), 1-2 px kept as hairlines (the lint stops counting them) | 1-2 px per screen | ui-lint near zero for space and radius; phone check by the owner |
+| UI-9b (done 2026-10-27, branch `track/ui`) | Off the scale, the rest of parts.css | parts.css appended whole to base.css (0 fights change) and deleted, the owner's answer after the layer was measured; css-order reads `@layer`; `--r-xxs`/`--r-xs` added, `--r1/2/3` renamed to `--r-sm/md/lg`, v05's `--r-s/m/l` gone; 1-2 px are hairlines in ui-lint; every CSS file snapped, one per commit (nearest step, ties up, no value moved more than 2 px); v05Grow switched on | spacing and corners 1-2 px on most screens; the stat bars grow in | ui-lint radius 99 -> 0, space 616 -> 39; css-order 0 changed fights at every commit; gallery baseline remade on purpose; phone check by the owner |
 | UI-7a (done 2026-10-23) | Settings: Sound | the Test buttons go; a slider plays its sound once when let go (the music slider not over a song); each row has its own mute (the Volume row's is the master mute); dragging a muted slider unmutes it; the duplicate on/off switch goes | a mute icon on each sound row, no Test buttons | quick check's Sound settings step passes; phone check by the owner |
 | UI-7b (done 2026-10-23) | Settings: layout | seven tabs (Sound, Display, Controls, Accessibility, Game, Save, Help), opening on the last one used; time, weather and season to the debug menu; Start over into the Save tab's red section, one shared reset that stops a battle; Save card: runs won and taxed; Customize trainer to the trainer card; Help: a Report a problem box (Full test, Export debug log) | the new tabs | quick check green, settings screenshots remade on purpose |
 | UI-7c (done 2026-10-23) | Debug menu | grouped by task (tests, give me, Billies, battle, run, places, story, ranch and time, save); one copy of each test; no phase codes in labels; a search box; open sections remembered; a message saying what changed; the four old buttons gone once checked unused | the new menu | quick check green |

@@ -105,6 +105,7 @@ export const robotPartDef = id => ROBOTS.parts[id];
 provide({ robotPartDef }); /* to-module */
 /** @param {string} id @returns {RobotGem | undefined} */
 export const robotGemDef = id => ROBOTS.gems[id];
+provide({ robotGemDef }); /* to-module */
 /** does part id fit this slot? @param {string} id @param {RobotSlot} slot */
 export const partFits = (id, slot) => !!ROBOTS.parts[id] && ROBOTS.parts[id].slot === SLOT_FITS[slot];
 /** a robot's sp, from its gem and parts @param {string} gem @param {RobotFit} fit */

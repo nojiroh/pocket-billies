@@ -15,6 +15,12 @@ const CSS = `
 @font-face { font-family: 'Tiny5'; src: url(x.woff2); }
 `;
 
+test('UI-9b: 1-2 px are hairlines, not off the space or radius scale', () => {
+  const r = lintCss('.h { border-radius: 2px; padding: 1px 2px -2px 3px; margin: 0.5em 2.5px; gap: 1px; }', 'h.css');
+  assert.equal(r.radius.raw, 0);
+  assert.equal(r.space.raw, 3); // 3px, 0.5em (not px) and 2.5px count; 1px, 2px and -2px don't
+});
+
 test('raw values and token uses are counted per rule', () => {
   const r = lintCss(CSS, 'x.css');
   assert.deepEqual(r.radius, { raw: 1, token: 1 }); // --r-sm's definition is neither raw nor a use

@@ -5,7 +5,7 @@
 import { expose } from './test-globals.js';
 import { billyUnit, render, unitBotBuildHTML, unitBuildHTML } from './hooks.js';
 import { $ } from './util.js';
-import { ITEMS, LINE_BY_ID, LOCATIONS, MOVES, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
+import { ITEMS, LINE_BY_ID, LOCATIONS, MOVES, SHOWCASE, SPECIES, STAT_IDS, STAT_NAMES } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { isRobot, speciesOf } from './logic/fighters.js';
 import {
@@ -25,11 +25,13 @@ import {
   toTeam,
 } from './logic/rules.js';
 import { heldGive, heldIds, heldTake } from './logic/held.js';
+import { ribbonName } from './logic/showcase.js';
 import { applyItem, canUse } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
+import { showcaseAct } from './showcase.js';
 import { hpBar, progressBarHTML, typeBadgeHTML } from './ui-bits.js';
 import { closeModal, modal, nextModal, toast } from './overlay.js';
 import { runEvolution } from './pending-windows.js';
@@ -256,6 +258,9 @@ function billySheet(m) {
       },
     });
   }
+  /* ON-3: share its look to the Showcase (signed in; the sheet asks for Online play) */
+  const shareAct = typeof showcaseAct === 'function' ? showcaseAct(m) : null;
+  if (shareAct) acts.push(shareAct);
   /* alpha 0.5: the details open on a summary (meters, a stat chart, where it joined you, what it's like), with tabs
     for the exact stats, the moves and how it evolves */
   const base = s.base || [],
@@ -274,6 +279,11 @@ function billySheet(m) {
   const HI = m.held ? ITEMS[m.held] : null,
     heldR = HI
       ? `<div class="ms-met">${itemIcon(m.held || '', 14)}<span>Holding <b>${escapeHtml(HI.n)}</b> · ${escapeHtml(HI.d.replace(/^Held: /, ''))}</span></div>`
+      : '';
+  /* ON-3: the Showcase ribbons it won (cosmetic; never shown in battle) */
+  const ribR =
+    Array.isArray(m.ribbons) && m.ribbons.length
+      ? `<div class="ms-met">${uiIconHTML('spark', 14)}<span>${m.ribbons.map(r => `<b>${escapeHtml(ribbonName(r, SHOWCASE))}</b>`).join(' · ')} ${m.ribbons.length > 1 ? 'ribbons' : 'ribbon'} from the Showcase</span></div>`
       : '';
   const line = LINE_BY_ID[s.line],
     evo = line
@@ -300,7 +310,7 @@ function billySheet(m) {
     html: `<p class="row ms-chips">${billyTypes(m).map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
-   <div class="ms-chart">${st}</div>${metR}${heldR}
+   <div class="ms-chart">${st}</div>${metR}${heldR}${ribR}
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>

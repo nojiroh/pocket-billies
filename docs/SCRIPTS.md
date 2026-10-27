@@ -245,8 +245,10 @@ stages, the check reads.
 `chapters` (map variants), which can read it in their own conditions. **Chapter 1's beats** are five `once` + `must`
 banter lines on Kappi and Chosen (`ch1_drop`, `ch1_blake`, `ch1_beans`, `ch1_number`, `ch1_signal`), each setting its
 flag, each needing the one before; its end is story.json `scripts.chapter1-end` (Kappi and Chosen, then `chapter 2`).
-Nothing plays it yet: RL-14's Voltron win sets story `pending = 'chapter1-end'` after `storyHomeArrive` (which clears it on a won run), as a lost run sets `back-lost`;
-until then the debug menu's Story scripts row plays it.
+RL-14b plays it: the first win over the Retrieval Unit (Expedition I's boss, bosses.json `story`, while `meta.chapter`
+is its `chapter` 1) leaves story `pending = 'chapter1-end'` at home (`storyHomeArrive(won, next)`, next from
+battle-rewards.js `bossStoryNext`), as a lost run leaves `back-lost`. It does not wait for the five beats; the debug
+menu's Story scripts row still plays it.
 
 ## Flags
 

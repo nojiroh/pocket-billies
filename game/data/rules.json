@@ -154,6 +154,7 @@
    "ridge": {"ledges":3,"forest":2,"lanes":1},
    "autumn": {"forest":3,"farmland":2,"lanes":2,"lakeside":1}
   },
+  "finds": {"perRoute":[1,2],"rare":0.083,"rareCards":["max_revive","gold_pyramid","shining_stone"],"brambles":1},
   "wild": {
    "lv": [3,5],
    "perRow": 1,
@@ -298,6 +299,70 @@
    {"k":"afternoon","from":14,"to":17.5,"share":0.3,"stops":["sit","fountain"]},
    {"k":"evening","from":18,"to":21.5,"share":0.3,"stops":["lamp","sit"]}
   ],
-  "visit": {"most":2,"from":8,"to":18,"every":600,"walk":1,"stay":[60,150],"stops":["fountain","sit"]}
+  "visit": {"most":2,"from":8,"to":18,"every":600,"walk":1,"stay":[60,150],"stops":["fountain","sit"]},
+  "wish": {
+   "cost": {"cur":"scrap","n":3},
+   "outcomes": [
+    {
+     "id": "boon_money",
+     "w": 19,
+     "fx": [
+      {"kind":"money","mult":1.1}
+     ],
+     "places": 3,
+     "say": ["Plink! The water glitters. Your next run’s first places pay a little more."]
+    },
+    {
+     "id": "boon_heal",
+     "w": 18,
+     "give": {"hi_potion":1},
+     "say": ["The fountain coughs up a Hi-Potion. It’s in your bag for the next run."]
+    },
+    {
+     "id": "boon_catch",
+     "w": 18,
+     "fx": [
+      {"kind":"catch","mult":1.05}
+     ],
+     "places": 3,
+     "say": ["Lucky ripples. Pyramids fly a little truer in your next run’s first places."]
+    },
+    {
+     "id": "joke",
+     "w": 30,
+     "say": [
+      "The coin lands on a lily pad and stays there. The frog looks smug.",
+      "Plink. Nothing happens. Very convincingly.",
+      "A voice from the drain: “Wish received. Please allow six to eight weeks.”",
+      "The coin sinks. A fish nods at you, as if to say: bold."
+     ]
+    },
+    {
+     "id": "curse",
+     "w": 10,
+     "fx": [
+      {"kind":"price","what":"shop","mult":1.1}
+     ],
+     "places": 2,
+     "say": ["The coin bobs back up, stamped “Insufficient”. Shops charge a little more in your next run’s first two places."]
+    },
+    {
+     "id": "big_research",
+     "w": 3,
+     "pay": {"research":30},
+     "say": ["Jackpot! A soggy notebook full of findings floats up: 30 Research."]
+    },
+    {
+     "id": "big_bean",
+     "w": 2,
+     "pay": {"beans":1},
+     "say": ["Jackpot! A Bean bobs up from the bottom. Into your pocket it goes."]
+    }
+   ]
+  },
+  "busk": {
+   "near": 5,
+   "songs": {"lakeland":"trench","greenbelt":"meadow","wildwood":"spore","highland":"crystal","harvest":"spire"}
+  }
  }
 }

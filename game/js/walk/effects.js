@@ -71,7 +71,7 @@ export function setEffectsPass(v) {
 }
 /* to-module: end */
 /* phase 20 R2 (pixels): the weather's quads (rain, snow, ash and their splashes, one picture) in one draw
-   (quality.rainBatch): the fx program's maths, with each quad's place, size, frame, colour and up axis per instance,
+   (phase 20 R4: the only path): the fx program's maths, with each quad's place, size, frame, colour and up axis per instance,
    drawn in the same order */
 export const WEATHER_FX_SHADERS = {
   fxW: [
@@ -409,7 +409,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
             y,
             z - 0.06,
             (nG > 2 ? 0.26 : 0.34) * gk,
-            [1, 0.9, 0.62],
+            /* HB-10d: a prop's own glow colour (scenery glowCol: the chapter 2 fountain's violet) */
+            it.M.glowCol ? hexToRgb(it.M.glowCol).map(v => v / 255) : [1, 0.9, 0.62],
             (0.5 + 0.8 * on) * share * k * fl * lb * (it.M.glowK ?? 1),
           ]);
       } else if (e.k === 'fireflies') {

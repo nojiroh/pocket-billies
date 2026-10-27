@@ -141,9 +141,11 @@ const under = (s, l) =>
 const covers = (s, l) => s === l || under(s, l);
 const overlap = (p, q) => covers(p, q) || covers(q, p);
 
+/* UI-9b: cascade layers in the order the page first names them; a declaration outside every layer is '' */
 function decls(read) {
   const out = [];
   const seen = new Map();
+  const layers = [];
   let order = 0;
   for (const file of sheetsOf(read)) {
     const css = read(file);
@@ -152,12 +154,16 @@ function decls(read) {
       const rule = d.parent;
       if (rule.type !== 'rule') return;
       let ctx = '';
+      let layer = '';
       for (let p = rule.parent; p && p.type !== 'root'; p = p.parent) {
         if (p.type === 'atrule') {
           if (/keyframes$/.test(p.name)) return;
-          ctx = `@${p.name} ${p.params};${ctx}`;
+          // a layer is not part of a declaration's identity: a rule moved into one is the same rule, ranked apart
+          if (p.name === 'layer') layer = p.params.trim() + (layer && '.' + layer);
+          else ctx = `@${p.name} ${p.params};${ctx}`;
         }
       }
+      if (layer && !layers.includes(layer)) layers.push(layer);
       const prop = d.prop.toLowerCase();
       if (prop.startsWith('--')) return;
       for (const sel of rule.selectors) {
@@ -176,6 +182,8 @@ function decls(read) {
           prop,
           value: d.value.trim(),
           imp: !!d.important,
+          layer,
+          rank: layer ? layers.indexOf(layer) : Infinity,
           order: order++,
           spec: specificity(s),
           t: target(s),
@@ -241,8 +249,18 @@ for (const d of before) {
     d.prop.split('-')[0];
   (byProp.get(root) || byProp.set(root, []).get(root)).push(d);
 }
-/* the cascade: !important first, then specificity, then the later one */
-const beats = (a, b) => (a.imp !== b.imp ? a.imp : a.spec !== b.spec ? a.spec > b.spec : a.order > b.order);
+/* the cascade: !important first, then the layer (normal: unlayered over layered, the later layer over the earlier;
+   !important the other way round), then specificity, then the later one */
+const beats = (a, b) =>
+  a.imp !== b.imp
+    ? a.imp
+    : a.rank !== b.rank
+      ? a.imp
+        ? a.rank < b.rank
+        : a.rank > b.rank
+      : a.spec !== b.spec
+        ? a.spec > b.spec
+        : a.order > b.order;
 const flips = [];
 for (const list of byProp.values()) {
   for (let i = 0; i < list.length; i++) {

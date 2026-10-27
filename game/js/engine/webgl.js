@@ -7,6 +7,8 @@
 import { expose } from '../test-globals.js';
 import { artCacheVersion, onGlContextRestored, provide, walkRenderer, worldBowlContextRestored } from '../hooks.js';
 import { clamp } from '../util.js';
+import { blueNoiseTable } from '../logic/blue-noise.js';
+import { mediumpFragment } from './shader-precision.js';
 import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
 import { imageReady } from '../walk-view.js';
@@ -69,6 +71,7 @@ expose({
   lossWatched: [() => lossWatched],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
+  mediumpCheck: [() => mediumpCheck, v => (mediumpCheck = v)],
   normalMapWorkerState: [() => normalMapWorkerState],
   normalize3: [() => normalize3],
   pendingPrograms: [() => pendingPrograms, v => (pendingPrograms = v)],
@@ -113,6 +116,9 @@ export const gpuState = {
   gl: null,
   cv: null,
   P: {},
+  /* phase 20 D2: Medium precision as the 3D view started, and the programs that refused it */
+  mp: false,
+  mpBad: [],
   tex: new WeakMap(),
   white: null,
   flatN: null,
@@ -412,7 +418,12 @@ function startProgramCompile(def, name) {
 }
 /* LD-2: compile and link, no status read: reading one waits for the driver, so it is read once, after the link, and
    a shader's own log only when the link failed (finishProgramCompile) */
-function beginProgramCompile([vs, fs], name) {
+/* phase 20 D2: a fragment shader with mediump edits (def.mp) is compiled in mediump while Medium precision is on
+   (gpuState.mp), unless plain */
+function beginProgramCompile(def, name, plain) {
+  const [vs, fs0] = def,
+    mp = !plain && !!def.mp && !!gpuState.mp,
+    fs = mp ? mediumpFragment(fs0, def.mp) : fs0;
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gpuShader(t);
@@ -441,7 +452,7 @@ function beginProgramCompile([vs, fs], name) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  return { p, a, b, name, gl, gen: gpuState.gen };
+  return { p, a, b, name, gl, gen: gpuState.gen, def, mp };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
@@ -451,6 +462,11 @@ export function finishProgramCompile(j) {
       (gl.getShaderParameter(j.a, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.a)) +
         (gl.getShaderParameter(j.b, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.b)) || gl.getProgramInfoLog(p);
     dropProgramCompile(j, true);
+    /* phase 20 D2: a mediump version the driver refuses is made again as it was (the debug log names it) */
+    if (j.mp) {
+      if (!gpuState.mpBad.includes(j.name)) gpuState.mpBad.push(j.name);
+      return finishProgramCompile(beginProgramCompile(j.def, j.name, true));
+    }
     throw new Error(j.name + ': ' + e);
   }
   dropProgramCompile(j, false);
@@ -559,6 +575,27 @@ export function frameBlockCheck(defs) {
   }
   return { n, bad };
 }
+/* phase 20 D2, for the in-game test: every mediump version (def.mp) builds on this device, whether or not Medium
+   precision is on; built straight (no fallback, not counted as a compile in play) and deleted again */
+export function mediumpCheck(defs) {
+  const bad = [];
+  let n = 0;
+  for (const [k, v] of Object.entries(defs)) {
+    if (!Array.isArray(v) || !v.mp) continue;
+    const fs = mediumpFragment(v[1], v.mp);
+    if (fs === v[1]) {
+      bad.push(k + ': its mediump edits no longer match the shader');
+      continue;
+    }
+    try {
+      gpuFree(finishProgramCompile(beginProgramCompile([v[0], fs], k, true)).p);
+      n++;
+    } catch (e) {
+      bad.push(String(e.message || e).slice(0, 160));
+    }
+  }
+  return { n, bad };
+}
 /* the input locations a vertex shader ends up with (its own layout(location=…), else the engine's standard one);
    two inputs on one location is a link error on some GPUs (Adreno) that others forgive, so the full test checks it */
 const ATTRIBUTE_LOCATIONS = { aPos: 0, aC: 0, aNrm: 1, aShore: 1, aI: 1, aCol: 2, aUV: 2 };
@@ -634,6 +671,10 @@ export function initWebgl(cv) {
       !!gl.getExtension('EXT_color_buffer_float') ||
       (!!(typeof engineSetting === 'function' && engineSetting('quality', 'hdrHalf')) &&
         !!gl.getExtension('EXT_color_buffer_half_float'));
+    /* phase 20 D2: Medium precision (quality.mediump) as the 3D view starts (post-effects.js follows later changes); the
+       programs that refused it */
+    gpuState.mp = !!(typeof engineSetting === 'function' && engineSetting('quality', 'mediump'));
+    gpuState.mpBad = [];
     gpuState.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     gpuState.anisoMax = gpuState.aniso ? gl.getParameter(gpuState.aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1;
     gl.getExtension('OES_texture_float_linear');
@@ -643,6 +684,14 @@ export function initWebgl(cv) {
     gpuState.quad = q;
     gpuState.white = textureFromData(1, 1, new Uint8Array([255, 255, 255, 255]));
     gpuState.flatN = textureFromData(1, 1, new Uint8Array([128, 128, 255, 255]));
+    /* air track AIR-4: the light-in-air march's 64 x 64 blue-noise tile (logic/blue-noise.js), one channel, read with
+       texelFetch */
+    gpuState.blueNoise = gpuTexture('other', 64 * 64);
+    gl.bindTexture(gl.TEXTURE_2D, gpuState.blueNoise);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 64, 64, 0, gl.RED, gl.UNSIGNED_BYTE, blueNoiseTable());
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    setTextureParams({});
     /* one depth texture read two ways: compared (soft shadow taps) and raw (blocker search) */
     /* a 1x1 "lit everywhere" depth map stands in on every shadow unit while no real map exists (shadows off, the first
      frames): a shadow sampler must always see a depth texture, or the whole draw is refused (v44) */

@@ -9,9 +9,10 @@
 import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MUSIC, ROBOTS, SPECIES } from './game-data.js';
+import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SPECIES } from './game-data.js';
 import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
+import { squareBuskSong, squareBusker } from './logic/square-day.js';
 import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
@@ -52,6 +53,7 @@ expose({
   battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
   battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
+  buskerSongNear: [() => buskerSongNear, v => (buskerSongNear = v)],
   cryPlay: [() => cryPlay, v => (cryPlay = v)],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
@@ -264,12 +266,22 @@ function musicState() {
     indoor: !!(sc && sc.indoor),
     map: id,
     placeKind: r && r.t === 'city' ? 'city' : r && r.town ? 'town' : null,
-    placeMusic: (r && r.music) || null,
+    placeMusic: buskerSongNear(run, sc) || (r && r.music) || null,
     /* a run's place: its node's type, biome and row (logic/run-map.js) */
     nodeType: node ? node.type : null,
     biome: node ? node.biome || null : null,
     row: node ? node.row : null,
   };
+}
+/* HB-10d: near the square's busker (a resident who busks, logic/square-day.js squareBusker) your last run's region
+   theme plays in place of the town's own song, within rules.json square.busk.near metres of the busker's case */
+function buskerSongNear(run, sc) {
+  const K = RULES.square && RULES.square.busk;
+  if (!K || run || !sc || sc.indoor || typeof walkView === 'undefined' || !walkView.pl) return null;
+  if (!squareBusker(saveData.meta, /** @type {any} */ (RESIDENTS))) return null;
+  const c = (sc.props || []).find(p => p.k === 'busker_case');
+  if (!c || Math.hypot(c.x - walkView.pl.x, c.z - walkView.pl.z) > K.near) return null;
+  return squareBuskSong(saveData.meta.history, K.songs);
 }
 function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
@@ -1556,7 +1568,7 @@ function testVolume(k) {
   }, 60);
 }
 /* a one-off sound somewhere in the scene: animals calling, scurrying off, a frog's plop */
-function soundEffectAt(name, x, z, o = {}) {
+export function soundEffectAt(name, x, z, o = {}) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running' || typeof walkView === 'undefined' || !walkView.ready)
     return;
   const w = soundPlacement(x, z, 14);

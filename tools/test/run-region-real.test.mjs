@@ -134,7 +134,9 @@ test("a region run's places meet only its dex, in its varieties; its mini-bosses
       );
       assert.equal(new Set(P.list.map(e => e[0])).size, P.list.length, `${seed}: ${id} lists a species once`);
     }
-    const foes = Object.values(runFoes(run, { leaders: TRAINERS.filter(T => T.miniboss), rules: GAME_DATA.rules.run }))
+    const foes = Object.values(
+      runFoes(run, { leaders: TRAINERS.filter(T => T.miniboss), rules: GAME_DATA.rules.run, bosses: {} })
+    )
       .filter(F => F.runFoe !== 'rival')
       .sort((a, b) => a.runNode - b.runNode)
       .map(F => F.from);

@@ -21,7 +21,7 @@ import { pictureRight } from '../logic/prop-turn.js';
 import { gpuTag } from '../engine/gpu-counters.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
-import { bindQuad, gpuState, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
+import { bindQuad, gpuState, gpuTexture, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
 import { WATER_KIND_LOOKS, setFlowUniforms, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
@@ -190,12 +190,14 @@ export function reflectionPass(items, C, rw, rh, X) {
 /* water track WA-5b: the kinds' looks in a small texture instead of fixed uniform arrays (they stopped at nine): a
    column a kind (its index in WATER_KIND_LOOKS), a row a group: 0 deep and scum, 1 shallow, 2 clarity caustics foam ripples,
    3 glow murk weed mode, 4 the sea's family (swell, surf, tide), white water, coral, bubbles, 5 the glow's colour.
-   Made once per context (unit 15, read with texelFetch) */
+   Made once per context (unit 15, read with texelFetch). Phase 20 R4: a restored context is the same object, so the
+   context's generation (gpuState.gen) tells it apart, not gl (after a loss it bound a dead texture: the water's kinds
+   read as black and see-through, and every frame logged INVALID_OPERATION) */
 const KIND_ROWS = 6;
 let kindTex = null;
 function kindTexture() {
   const gl = gpuState.gl;
-  if (kindTex && kindTex.gl === gl) return kindTex.t;
+  if (kindTex && kindTex.gen === gpuState.gen) return kindTex.t;
   const N = WATER_KIND_LOOKS.length,
     d = new Float32Array(N * KIND_ROWS * 4);
   WATER_KIND_LOOKS.forEach((k, i) => {
@@ -207,14 +209,14 @@ function kindTexture() {
     row(4, [k.sea || 0, k.white || 0, k.coral || 0, k.bub || 0]);
     row(5, [...(k.glowC || [0, 0, 0]), 0]);
   });
-  const t = gl.createTexture();
+  const t = gpuTexture('ground', N * KIND_ROWS * 8);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, N, KIND_ROWS, 0, gl.RGBA, gl.FLOAT, d);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  kindTex = { gl, t };
+  kindTex = { gen: gpuState.gen, t };
   return t;
 }
 export function waterAt(x, z) {

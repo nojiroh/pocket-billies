@@ -1235,8 +1235,8 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   after a gift, conditions `lastteam:` and `rival`, Chapter 1's five beats and `scripts.chapter1-end` (for RL-14).
 
 - **The bots sessions (RL-14a, RL-14b)** were meant for a branch of their own (`track/bots`); RL-14a was built on its
-  session's branch, `ccr-15fdd30c-5nfh0d`, at the owner's word (2026-10-26). RL-14b starts on `track/bots` once the
-  owner makes it from main.
+  session's branch, `ccr-15fdd30c-5nfh0d`, at the owner's word (2026-10-26). RL-14b was built on `track/bots`, made
+  by the owner from main (2026-10-27).
   Branch: track/bots
 - **RL-14 split (the owner, 2026-10-26).** RL-14a: the Bureau's bots, salvage, the scrapyard; RL-14b: the Voltron
   (`bosses.json`, `alphaPhase` from data, the join intro, the story scene last, beside RL-S2). The owner's answers: the
@@ -1256,6 +1256,21 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   `archive/phase-17-robots`), robots have no head slot, `trainerTeam` already took robot entries, the Bureau's agents
   already existed (`bureau_clerk`, RL-S1), so "Collectors" are Bureau agents; wild bots are full builds, not
   `'bot:<torso>'`.
+- **RL-14b as built (2026-10-27, on `track/bots`; HANDOFF has the detail).** The owner's answers: two phases (60%: a
+  shield for 2 turns, +1 both attacks; 30%: an arm-bot tears loose, +1 Speed); the name **the Retrieval Unit**; the
+  payout plus one of its boss parts on the first win only; Chapter 1's end on the first win only, while the chapter
+  is 1; the join intro on the battle stage. Built: `bosses.json` (`fighter`, `bots`, `boss {hp, st, levels}`,
+  `phases`, `call`, `join`, `glow`, `win`, `rewards.parts`, `story`, `chapter`; one boss an Expedition), four
+  boss-rarity parts in `robots.json` (Intake Frame, Seizure Arm, Franking Cannon, Conveyor Treads; placeholders drawn
+  by robot-art.js; never on an Escaped specimen, not in the robot sim's builds), `battle-engine.js makeBossRobot` and
+  `bossPhase` (`alphaPhase` fires a boss's own phases once each, in order; without phases the old 50% rule, so every
+  Billie Alpha is unchanged), `run-loop.js runBossFor` (runFoes: the boss node's foe on Expedition I, the leader still
+  drawn so every other foe stays), `battle-rewards.js bossWin` (`meta.bosses`, the part) and `bossStoryNext`
+  (`storyHomeArrive`'s `next`), the stage's `join` event. Where the plan was wrong: `alphaPhase` needed more than "one
+  engine change" (a list of thresholds and a limb break), `startTrainer` builds the boss through `bossAlpha` (a
+  Billie only), so the Voltron has its own path; the stage already drew a boss at 1.6. The first numbers (HP x3,
+  stats x1.3) took Expedition I's wins from 62 to 4 of 200 in the sim; tuned to HP x2, stats x1.1 (62 -> 75 at level
+  20, 18 -> 9 at level 15). Its four bots joining are drawn as its four parts flying in, not four walking rigs.
 
 ### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
 
