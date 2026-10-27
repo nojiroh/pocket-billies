@@ -60,7 +60,8 @@ for the owner to push.
   - The run sim is unchanged: finds and rows are optional and it doesn't walk to them.
   - Frame cost not measured: up to 2 find sprites, 5 brambles and 8 animals more a route place (no new models).
 - Verified: lint, typecheck, check:modules, check:data, format:check; unit tests 1466 quick and 91 of 92
-  slow (the island test "the game's island is the generator's own output" fails on main too, checked); check-quick
+  slow (the island test "the game's island is the generator's own output" failed on main too, then main fixed it in
+  #253, merged in here: 92 of 92 after); check-quick
   RT-4a and RT-4b alone (SELFTESTFB1: Thicket Route, a Shining Stone find, a row of 5 brambles). **Full quick check** (1470 s):
   36 of 41, RT-4b passed in it. Of the 5: Terraces (Copperleaf's train_station in the air) and "Walking left and
   right" fail on main too (run there this session); RL-8's "the town's shop has no Perk" is main's (earlier entries);
