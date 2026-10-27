@@ -53,7 +53,6 @@
   "alphaKeep": 1.08,
   "alphaSleepResist": 0.5,
   "spreadMult": 0.75,
-  "restCost": 100,
   "turnCap": 40
  },
  "catching": {

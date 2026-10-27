@@ -530,7 +530,6 @@ SECTIONS.rules = () => {
        step: 0.05,
        help: 'Chance a trainer picks its best move.',
      }),
-     numberField('Rest stop price (Moneys)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Losing fee', `${bt}.loseFee`, {
        min: 0,
        max: 1,
