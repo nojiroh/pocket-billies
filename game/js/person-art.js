@@ -17,6 +17,8 @@ import {
   friends,
   gameData,
   provide,
+  rigParts,
+  rigPose,
   saveData,
   studioState,
   uiState,
@@ -26,6 +28,7 @@ import { frameStop, frameTask } from './frame-scheduler.js';
 import { ART_CACHE, artImg, hexToRgb, makeCanvas } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  CREATURE_ACTS: [() => CREATURE_ACTS],
   DEFAULT_WEAR: [() => DEFAULT_WEAR],
   HEX_COLOR: [() => HEX_COLOR],
   LOOK_PRESETS: [() => LOOK_PRESETS],
@@ -37,6 +40,8 @@ expose({
   cachedPersonArt: [() => cachedPersonArt, v => (cachedPersonArt = v)],
   cleanLook: [() => cleanLook, v => (cleanLook = v)],
   cleanTrainer: [() => cleanTrainer, v => (cleanTrainer = v)],
+  creatureFrame: [() => creatureFrame, v => (creatureFrame = v)],
+  creaturePortrait: [() => creaturePortrait, v => (creaturePortrait = v)],
   drawPortrait: [() => drawPortrait, v => (drawPortrait = v)],
   folkFrames: [() => folkFrames],
   folkLook: [() => folkLook, v => (folkLook = v)],
@@ -51,6 +56,7 @@ expose({
   opaqueBox: [() => opaqueBox, v => (opaqueBox = v)],
   personAnimation: [() => personAnimation, v => (personAnimation = v)],
   personArtImage: [() => personArtImage, v => (personArtImage = v)],
+  personArtMissing: [() => personArtMissing, v => (personArtMissing = v)],
   personArtPaths: [() => personArtPaths, v => (personArtPaths = v)],
   personArtPixels: [() => personArtPixels, v => (personArtPixels = v)],
   personArtVersion: [() => personArtVersion],
@@ -297,6 +303,9 @@ export function lookOf(who) {
     return cleanLook(uiState.trainerDraft || saveData.avatar, LOOK_PRESETS[0]);
   if (typeof who === 'string' && who.startsWith('folk:')) return folkLook(+who.slice(5));
   const p = (typeof PEOPLE !== 'undefined' && (PEOPLE[who] || PEOPLE.chosen)) || {};
+  /* a creature person (Kappi, a capybara): drawn from a Billie-style rig (people/<id>.json creature), not dressed */
+  if (p.creature && p.creature.rig)
+    return { name: (p.look && p.look.name) || who, creature: { rig: p.creature.rig, ht: p.creature.ht || 0.8 } };
   return p.look ? cleanLook(p.look) : lookFromOld(p);
 }
 function folkLook(seed) {
@@ -359,6 +368,8 @@ export const PERSON_ART_CACHE = new Map();
 const PERSON_ART_CACHE_MAX = /Android|iPhone|iPad/.test(navigator.userAgent)
   ? 2000
   : 6000; /* v41: a people picture is ~20 KB; phones keep 2000 (~40 MB) */
+/* a creature person's rig sheet still loading: what was drawn without it is shown but not kept (it is drawn again) */
+let personArtMissing = false;
 function cachedPersonArt(key, build) {
   if (PERSON_ART_CACHE.has(key)) {
     const v = PERSON_ART_CACHE.get(key);
@@ -366,7 +377,12 @@ function cachedPersonArt(key, build) {
     PERSON_ART_CACHE.set(key, v);
     return v;
   }
-  const v = build();
+  const was = personArtMissing;
+  personArtMissing = false;
+  const v = build(),
+    missing = personArtMissing;
+  personArtMissing = was || missing;
+  if (missing) return v;
   PERSON_ART_CACHE.set(key, v);
   if (PERSON_ART_CACHE.size > PERSON_ART_CACHE_MAX) {
     const it = PERSON_ART_CACHE.keys();
@@ -711,7 +727,46 @@ function personAnimation(P, view) {
   return A;
 }
 /* ---------- drawing ---------- */
+/* a creature person's frame: its rig (skeleton-rig.js, as a Billie's) in the person's act, canvas tagged as
+   personFrame's. The rig's front view faces left (a 3/4 side): walking down or left shows it, walking right shows it
+   mirrored, walking up shows the back view. The face holds still unless asked (a blink baked into a walk frame would
+   stay); 'blink' and 'talk' are the head's own frames (bodyPlans.json talk) */
+const CREATURE_ACTS = { walk: 'walk', throw: 'attack', cheer: 'cheer', react: 'hurt' };
+function creatureFrame(Cr, view, act, ph, t, mirror, expr) {
+  const back = view === 'back',
+    R = rigParts(Cr.rig, back ? 2 : 1),
+    flip = view === 'side' && !mirror;
+  if (!R) {
+    personArtMissing = true;
+    const c = makeCanvas(1, 1);
+    Object.assign(c, { ax: 0, ay: 1, ppm: 42, noNormal: true });
+    return c;
+  }
+  const a = CREATURE_ACTS[act] || 'idle',
+    P = rigPose(a, a === 'walk' ? (ph || 0) * 560 : a === 'idle' ? 0 : 120 + (ph || 0) * 400, t || 0, 0);
+  P.face = expr === 'blink' || expr === 'talk' ? expr : expr === 'happy' ? 'happy' : 'idle';
+  const c = makeCanvas(R.BW, R.BH),
+    x = c.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  if (flip) {
+    const tmp = makeCanvas(R.BW, R.BH),
+      tx = tmp.getContext('2d');
+    tx.imageSmoothingEnabled = false;
+    drawRig(tx, R, P, 'front');
+    x.translate(R.BW, 0);
+    x.scale(-1, 1);
+    x.drawImage(tmp, 0, 0);
+    x.setTransform(1, 0, 0, 1, 0, 0);
+  } else drawRig(x, R, P, back ? 'back' : 'front');
+  c.ax = flip ? R.BW - R.geo.cx : R.geo.cx;
+  c.ay = R.geo.base;
+  /* pixels per metre: its standing height (geo, at rest) is the person's height in metres */
+  c.ppm = Math.max(1, R.geo.base - R.geo.top) / Cr.ht;
+  c.noNormal = true;
+  return c;
+}
 export function personFrame(L, view, act, ph, t, mirror, expr) {
+  if (L.creature) return creatureFrame(L.creature, view, act, ph, t, mirror, expr);
   const R = personRig(L, view, expr),
     c = makeCanvas(R.BW, R.BH),
     x = c.getContext('2d');
@@ -756,7 +811,13 @@ export function personWalkFrames(who) {
           enumerable: true,
           get() {
             if (!f) {
-              f = make();
+              const was = personArtMissing;
+              personArtMissing = false;
+              const made = make(),
+                missing = personArtMissing;
+              personArtMissing = was || missing;
+              if (missing) return made;
+              f = made;
               (arr._b || (arr._b = {}))[i] = 1;
             }
             return f;
@@ -935,8 +996,12 @@ function portraitRect() {
 export function drawPortrait(cv, who, expr, t) {
   const W = wardrobeData();
   if (!W || !cv) return;
-  const L = typeof who === 'object' ? cleanLook(who) : lookOf(who),
-    R = personRig(L, 'front', expr),
+  const L = typeof who === 'object' ? (who.creature ? who : cleanLook(who)) : lookOf(who);
+  if (L.creature) {
+    creaturePortrait(cv, L.creature, expr, t);
+    return;
+  }
+  const R = personRig(L, 'front', expr),
     f = personFrame(L, 'front', 'idle', 0, t || 0, 0, expr),
     [hx, hy] = headCenter(R.bones),
     [rx, ry, w, h] = portraitRect();
@@ -948,6 +1013,33 @@ export function drawPortrait(cv, who, expr, t) {
   x.imageSmoothingEnabled = false;
   x.clearRect(0, 0, w, h);
   x.drawImage(f, Math.round(R.cx + hx + rx), Math.round(R.base + hy + ry), w, h, 0, 0, w, h);
+}
+/* a creature person's talking head: its rig's head at twice its size, in the people's portrait box (so the talk box
+   and every portrait slot fit it as they fit a person); blink and talk are its head's frames */
+function creaturePortrait(cv, Cr, expr, t) {
+  const [, , w, h] = portraitRect();
+  if (cv.width !== w || cv.height !== h) {
+    cv.width = w;
+    cv.height = h;
+  }
+  const x = cv.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  x.clearRect(0, 0, w, h);
+  const R = rigParts(Cr.rig, 1);
+  if (!R) {
+    personArtMissing = true;
+    return;
+  }
+  const f = creatureFrame(Cr, 'front', 'idle', 0, t || 0, 0, expr),
+    hb = R.bones.find(b => b.n === 'head'),
+    [hx, hy] = headCenter(R.bones),
+    im = hb && hb.img,
+    pic = im && (im.c || (im.v && im.v.idle));
+  /* the head picture's middle, from its joint */
+  const cx = R.cx + hx + (im ? im.ox + pic.width / 2 : 0),
+    cy = R.base + hy + (im ? im.oy + pic.height / 2 : 0),
+    k = 2;
+  x.drawImage(f, Math.round(cx - w / (2 * k)), Math.round(cy - (h * 0.5) / k), w / k, h / k, 0, 0, w, h);
 }
 function portraitURL(who, expr) {
   const L = lookOf(who);

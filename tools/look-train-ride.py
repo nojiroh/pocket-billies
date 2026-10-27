@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pictures of the sky train's ride (HB-8), for picture notes (nothing is judged here): the departure from Skyline
-Station (it glides in, you board, it climbs the sky rail, the tear opens, it flies in), the carriage's loading screen,
+Station (it glides in, you board, it rises on its engines, turns to the portal and shoots in), the carriage's loading screen,
 and the ride home after a win (gold) and after a loss (battered). Copperleaf with the game's own graphics, phone sized;
 each frame is a fixed moment of the ride (train-ride.js trainRide.hold), so the pictures don't depend on the machine's
 speed.
@@ -22,9 +22,9 @@ OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), RO
 TRAIN = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--train=')), 'train_greenbelt')
 PARTS = [a for a in ARGS if not a.startswith('--')] or ['depart', 'carriage', 'won', 'lost']
 # the moments (ms into the ride, train-ride.js DEPART and HOME) and what each shows
-DEPART = [(400, 'glide'), (1800, 'glide-low'), (3200, 'board'), (5800, 'climb'), (7600, 'climb-high'), (8300, 'portal'),
-          (8800, 'into-the-tear')]
-HOME = [(500, 'tear-opens'), (1300, 'out-of-the-tear'), (3200, 'down-the-rail'), (5200, 'down-low'), (6200, 'step-off')]
+DEPART = [(400, 'glide'), (1800, 'glide-low'), (3200, 'board'), (4800, 'lift'), (5900, 'lift-high'), (6700, 'turn'),
+          (7700, 'dash'), (8300, 'into-the-portal')]
+HOME = [(500, 'portal-opens'), (1300, 'out-of-the-portal'), (2300, 'across'), (3100, 'turn'), (4000, 'down'), (5600, 'step-off')]
 
 
 def settle(pg, frames=6):

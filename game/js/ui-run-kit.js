@@ -1197,15 +1197,21 @@ const PbNavBar = class extends LitElement {
 /* ---------- HB-2: the run's loading screen ---------- */
 /* The whole screen while a run's world comes in: the region's name, a tip, the bar and the stages (waiting, working,
    ready, late). The picture is a slot (`view`): empty, the theme's own backdrop; HB-8 puts the carriage there. With
-   `contained` it fills its box instead of the screen (the UI gallery). */
+   `contained` it fills its box instead of the screen (the UI gallery). Cutscenes track (part C): `tips` turn over every
+   few seconds (one at a time, faded), a second slot (`card`) holds the region's card under the name, the stages fold
+   into one line (the one under way, how many are ready, a diamond each), and `night` gives it the portal tunnel's dark
+   colours (the carriage's screens), so it never reads as an empty page. */
 const PbLoading = class extends LitElement {
   static properties = {
     heading: {},
     sub: {},
     tip: {},
+    tips: { type: Array },
     value: { type: Number },
     stages: { type: Array },
     contained: { type: Boolean, reflect: true },
+    night: { type: Boolean, reflect: true },
+    _tipAt: { state: true },
   };
   static styles = [
     runKitBase,
@@ -1224,6 +1230,16 @@ const PbLoading = class extends LitElement {
         inset: auto;
         z-index: auto;
         min-height: 420px;
+      }
+      :host([night]) {
+        --g-solid: var(--night-bg);
+        --text: var(--night-text);
+        --text2: var(--night-text2);
+        color-scheme: dark;
+      }
+      /* the picture (the carriage) above the text, not under it */
+      :host([night]) .view {
+        bottom: 52%;
       }
       .view {
         position: absolute;
@@ -1257,20 +1273,28 @@ const PbLoading = class extends LitElement {
         font: 15px / var(--lh-prose) var(--font-prose);
         color: var(--text2);
       }
+      .now {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--s2);
+        font-size: 15px;
+        color: var(--text2);
+      }
+      .now b {
+        font-weight: 600;
+        color: var(--text);
+      }
       ol {
-        margin: var(--s1) 0 0;
+        margin: 0;
         padding: 0;
         list-style: none;
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--s1) var(--s3);
-        font-size: 15px;
+        display: inline-flex;
+        gap: var(--s1);
       }
       li {
         display: inline-flex;
         align-items: center;
-        gap: var(--s1);
-        color: var(--text2);
       }
       li::before {
         content: '';
@@ -1281,9 +1305,24 @@ const PbLoading = class extends LitElement {
       }
       li[data-s='working']::before {
         background: var(--gold-b);
+        animation: pb-load-pulse 0.9s ease-in-out infinite alternate;
       }
-      li[data-s='ready'] {
-        color: var(--text);
+      @keyframes pb-load-pulse {
+        to {
+          opacity: 0.35;
+        }
+      }
+      .tip {
+        min-height: 3.2em;
+      }
+      .tip.turn {
+        animation: m-fade var(--m-slow) var(--ease-out, ease-out);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        li[data-s='working']::before,
+        .tip.turn {
+          animation: none;
+        }
       }
       li[data-s='ready']::before {
         background: var(--c-primary);
@@ -1302,22 +1341,55 @@ const PbLoading = class extends LitElement {
     /** @type {{ id: string, label: string, state?: string }[]} */
     this.stages = [];
     this.contained = false;
+    this.night = false;
+    /** @type {string[]} */
+    this.tips = [];
+    this._tipAt = 0;
+    /** @type {any} */
+    this._turn = 0;
+  }
+  connectedCallback() {
+    super.connectedCallback();
+    /* a tip a few seconds, while there is more than one */
+    this._turn = setInterval(() => {
+      if (this.tips.length > 1) this._tipAt = (this._tipAt + 1) % this.tips.length;
+    }, 4200);
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    clearInterval(this._turn);
+  }
+  /** @param {Map<string, unknown>} changed */
+  updated(changed) {
+    /* a new tip fades in */
+    const el = changed.has('_tipAt') && changed.get('_tipAt') !== undefined && this.renderRoot.querySelector('.tip');
+    if (!el) return;
+    el.classList.remove('turn');
+    void (/** @type {HTMLElement} */ (el).offsetWidth);
+    el.classList.add('turn');
   }
   render() {
-    const p = Math.round(Math.max(0, Math.min(1, this.value || 0)) * 100);
+    const p = Math.round(Math.max(0, Math.min(1, this.value || 0)) * 100),
+      tip = this.tips.length ? this.tips[this._tipAt % this.tips.length] : this.tip,
+      ready = this.stages.filter(s => s.state === 'ready').length,
+      now = this.stages.find(s => s.state === 'working') || this.stages.find(s => s.state !== 'ready');
     return html`<div class="view" part="view"><slot name="view"></slot></div>
       <div class="box" role="status" aria-live="polite" aria-label=${`${this.heading || 'Loading'}, ${p}%`}>
         ${this.sub ? html`<small>${this.sub}</small>` : nothing}
         ${this.heading ? html`<h2>${this.heading}</h2>` : nothing}
+        <slot name="card"></slot>
         <pb-stat-bar kind="stat" .value=${p} .max=${100} label="Loading"></pb-stat-bar>
         ${
           this.stages.length
-            ? html`<ol>
-              ${this.stages.map(s => html`<li data-s=${s.state || 'waiting'}>${s.label}</li>`)}
-            </ol>`
+            ? html`<div class="now">
+              <ol>
+                ${this.stages.map(s => html`<li data-s=${s.state || 'waiting'} aria-label=${s.label}></li>`)}
+              </ol>
+              <span><b>${now ? now.label : 'Ready'}</b> · ${ready} of ${this.stages.length}</span>
+            </div>`
             : nothing
         }
-        ${this.tip ? html`<p class="tip">${this.tip}</p>` : nothing}
+        ${tip ? html`<p class="tip">${tip}</p>` : nothing}
       </div>`;
   }
 };

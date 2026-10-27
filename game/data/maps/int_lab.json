@@ -31,18 +31,20 @@
  "npcSpots": [[4.5,6.52],[8.4,5.1]],
  "people": [
   {
-   "id": "hazel_lab",
-   "who": "hazel",
-   "name": "Hazel",
+   "id": "kappi_lab",
+   "who": "kappi",
+   "name": "Kappi",
    "dir": "down",
    "script": [
     "cycle",
-    "  - [happy] Oh, you’re back. In one piece, too. That never stops being surprising. #l:7640",
-    "  - People don’t fall through the crust and live. You did, and you can still talk. I’m writing a paper about it. #l:0b50",
+    "  - [happy] Oh, you’re back. In one piece. I’d get up, but there’s a Billie asleep on me. #l:7640",
+    "  - People don’t fall through the crust and live. You did. I’m writing a paper about it. Slowly. Good papers are slow. #l:0b50",
     "  - He isn’t a professor. He isn’t technically anything. But the Billies like him, so here we are. #l:7268",
     "  - If he gives you a type tip, do the opposite. It works more often than you’d think. #l:0e95",
     "  - The katana has been at the cleaners for two years. Don’t ask. #l:08e3",
-    "  - Granny Juniper sends honey. I hide it from him. You didn’t see that. #l:b689"
+    "  - Granny Juniper sends yuzu for my bath. He thinks it’s fruit for him. You didn’t see that. #l:b689",
+    "  - Sorry. I was chewing. Ask again; I’ll have an answer by the time I swallow. #l:ba82",
+    "  - I think best in the bath. Warm water, one yuzu, no forms. #l:ba1a"
    ]
   }
  ],
@@ -75,6 +77,7 @@
   {"k":"chair_wood","x":9.51,"z":4.81,"f":1},
   {"k":"rug_long","x":6,"z":3.44},
   {"k":"crate_goods","x":10.43,"z":3.1},
+  {"k":"yuzu_bath","x":8.75,"z":3.35},
   {"k":"plant_tall","x":1.4,"z":1.8}
  ],
  "edgeExits": [

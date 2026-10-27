@@ -42,7 +42,18 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 | His lines | Approved as drafted (2026-10-23): the opening, hot takes, tips, the lab, after Blake's battle, his line in the ending, signs and lore. The katana is "at the cleaners" until its art exists |
 | His look | Existing wardrobe pieces for now (spiky hair, sunglasses, open lab coat over a purple tee, khaki cargo shorts, black high-tops, a bone-white chain); the wolf-print tee and a katana on his back come in a later session |
 
-Read "Hazel" below as "the professor" where it means the one who runs the lab and the opening; S4's "Hazel's past"
+## Owner decisions (2026-10-26): Kappi the Wise replaces Hazel
+| Topic | Decision |
+|---|---|
+| Who | **Kappi the Wise**, a capybara, **they/them**; person `kappi` (was `hazel`). Name tag "Kappi"; "the Wise" in lore and their introduction |
+| Role | The exact swap: the Chosen's assistant who does the real research; Hazel's gift, favour and Potion bonus kept |
+| Voice | Calm, unhurried, dry and kind. Billies nap on them, they think best in a hot bath with a yuzu in it, they are always chewing something. Nothing from Kapibara-san (its look or its motto) |
+| Story | Kappi inherits **S4** (a former Bureau researcher: why they read form numbers at a glance) and **S6** (Kappi vs Blake in the battle engine) |
+| Look | A creature person: a Billie-style quad rig (bodyPlans.json form `kappi`, painted by tools/paint-kappi.mjs), a 32-bit pixel portrait that blinks and talks |
+| Voice blip | A low soft click |
+| Lab | A yuzu bath tub beside Kappi, later |
+
+Read "Hazel" below as "Kappi" where it means the assistant (2026-10-26), and as "the professor" where it means the one who runs the lab and the opening; S4's "Hazel's past"
 is open again (the organization link was dropped). Note: the Chosen is Smosh's character; fine for a private build,
 but his name and costume are what to change before any public release.
 

@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:723"
+    "game/js/walk-view.js:725"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:724"
+    "game/js/walk-view.js:726"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:725"
+    "game/js/walk-view.js:727"
    ]
   },
   {
@@ -66,7 +66,7 @@
    "p": "coins/pyramid_32.png",
    "at": [
     "game/js/cutscene/opening.js:152",
-    "game/js/cutscene/opening.js:425"
+    "game/js/cutscene/opening.js:429"
    ]
   },
   {
@@ -105,14 +105,14 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:491"
+    "game/js/walk-view.js:493"
    ]
   },
   {
    "p": "next/billionaires/*.png",
    "at": [
     "game/js/logic/kit-assemble.js:445",
-    "game/js/logic/placeholder-art.js:517"
+    "game/js/logic/placeholder-art.js:521"
    ]
   },
   {
@@ -151,47 +151,47 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2129",
-    "game/js/walk-view.js:747"
+    "game/js/walk-view.js:749"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:747"
+    "game/js/walk-view.js:749"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:722",
+    "game/js/walk-view.js:724",
     "game/js/walk/ground-draw.js:71"
    ]
   },
   {
    "p": "scene/far/*.png",
    "at": [
-    "game/js/walk-view.js:759"
+    "game/js/walk-view.js:761"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:507"
+    "game/js/walk-view.js:509"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:757",
+    "game/js/walk-view.js:759",
     "game/js/walk/frame-items.js:195"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:726",
+    "game/js/walk-view.js:728",
     "game/js/walk/effects.js:253"
    ]
   },
@@ -947,7 +947,25 @@
    ]
   },
   {
-   "p": "scene/next/decals/sky_portal_tear.png",
+   "p": "scene/next/decals/sky_portal_core.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_halo.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_rim.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_swirl.png",
    "at": [
     "game/art/scene/next/models/sky_portal.json"
    ]

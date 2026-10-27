@@ -1485,7 +1485,7 @@ export function dataBanter(D, valid = () => true) {
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === who && !b.when))
       problem(`no ${who} line without a when: a ${who} could have nothing to say`);
   /* RL-S2 part B: Blake and the thank-yous, once they have lines, always have one to say */
-  for (const who of ['rival', 'thanks_chosen', 'thanks_hazel', 'thanks_juniper']) {
+  for (const who of ['rival', 'thanks_chosen', 'thanks_kappi', 'thanks_juniper']) {
     const mine = Object.values(B).filter((/** @type {any} */ b) => b.who === who);
     if (mine.length && !mine.some((/** @type {any} */ b) => !b.when && !b.once))
       problem(`no ${who} line without a when that is said more than once: ${who} could have nothing to say`);

@@ -768,6 +768,8 @@ export interface Shop {
 /** people/<id>.json (person.schema.json): how a person looks (the old colour keys beside it are ignored) */
 export interface Person {
   look: PersonLook;
+  /** a creature person (Kappi): drawn from this rig instead of the look, ht metres tall */
+  creature?: { rig: string; ht?: number };
   style?: string;
   hair?: Color;
   hat?: Color;
@@ -2078,7 +2080,7 @@ export interface RewardRow {
 }
 /** RL-S1: banter.json: one of the story director's lines (logic/story-pick.js) */
 export interface BanterLine {
-  who: 'chosen' | 'hazel' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
+  who: 'chosen' | 'kappi' | 'juniper' | 'back_lost' | 'leader' | 'bureau' | 'rival';
   when?: string;
   priority: number;
   once?: boolean;

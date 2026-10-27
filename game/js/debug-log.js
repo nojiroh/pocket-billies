@@ -1054,6 +1054,9 @@ async function exportDebugLog() {
 /* hooks into the game, installed once everything has loaded */
 debugLog.hook = () => {
   if (debugLog.hooked) return;
+  /* LD-0 calls this before the loader (boot.js), which on a quick boot can come before debug-log-names.js, the page's
+     last module, has handed the names over: it waits for them */
+  if (!('render' in GAME)) return void setTimeout(debugLog.hook, 30);
   debugLog.hooked = true;
   /* phase 05: a function the log should wrap or time that is gone (renamed, say) is said, not skipped in silence */
   const missing = name => {

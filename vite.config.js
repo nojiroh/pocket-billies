@@ -170,6 +170,8 @@ function copySite() {
       for (const f of await bundleModule(outDir, 'studio/js/logic-worker-modules.js')) sources.add(f);
       // LD-4: the run's helper thread's modules (game/js/run-worker.js loads them) as one file too
       for (const f of await bundleModule(outDir, 'game/js/run-worker-modules.js')) sources.add(f);
+      // LD-5 (cutscenes session): the world map's helper thread's modules (game/js/bowl-worker.js loads them) too
+      for (const f of await bundleModule(outDir, 'game/js/bowl-worker-modules.js')) sources.add(f);
       for (const f of sources) rmSync(resolve(outDir, f), { force: true });
       // the folder the engine's modules came from, now empty (phase 04e: and the logic's, once it has modules)
       rmdirSync(resolve(outDir, 'game/js/engine'));

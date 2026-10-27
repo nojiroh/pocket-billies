@@ -60,6 +60,80 @@ towns; the scrapyard counts as a route; side areas flipped too; the grid in the 
 - Next: WM-3 (mapgen takes a footprint; north and south seams; then the scenes read `runLinkDir`). Tag `wm-2-done`
   for the owner.
 
+### Cutscenes and run screens (C, A, B), then loading (LD-5 in part) - 2026-10-27
+Branch `ccr-517fcc1e-p1asai` (one session at the owner's word; the plan was C, then A, then B, then loading). It merges
+the load track's `ccr-3df446bb-9jvdvq` (LD-0 to LD-5 in part). The only conflict was `run.js`'s generated imports.
+The load session was told.
+
+**What changed**
+- **C, the run's screens:**
+  - Ride home no longer turns the screen instantly white for up to 30 s. It shows `runHomeScreen` instead: the
+    carriage, "Heading home", and the run summary from `logic/run-card.js` `runCardHome`.
+  - `trainRideHome`'s `cover` lifts when the ride can film, on any stop, and after an error.
+  - `trainVeil` no longer flashes back on.
+  - A run's evolution waits while `trainRide.on` or `trainRide.cover` is set, and opens at the ride's end, before the
+    way home's story scene. It used to land on top of that scene and hold the save.
+  - The take-off's `pb-loading` has a dark `night` look, `tips` that turn over, a `card` slot with the region card
+    (`runCardOut`), and the stages folded into one line.
+  - `tools/look-run-screens.py` takes pictures of both screens.
+- **A, the station, track and portal:**
+  - Skyline Station faces out to sea, where the orbit camera looks in at it (`STATION_TURN` 0). It sits on the
+    headland's length, with its ground levelled (`tools/patch-station.mjs`, then a `build-copperleaf` rerun, which
+    re-rolled 18 dressing props).
+  - The track is a plain one: sleepers and two rails under the skids. One causeway piece (look `end`) has the buffer.
+  - `sky_portal` floats out at sea (prop `y`), with glowing layers stacked for depth and rings turning at their own
+    speeds. One ring must stay still: a model whose solid parts all spin draws as its flat picture. It has a gold look.
+  - `logic/train-path.js` was rewritten in the station's frame (glide, board, lift, turn, dash; home: open, out, turn,
+    down, off).
+  - `tools/station-place.mjs` is shared by the builder and the patch.
+  - `clear-windows --fix` was run after the rebuild.
+- **B, the opening:**
+  - The floating-island fall is now a dive onto `opening.json`'s `me`, with clouds and streaks drawn over it.
+  - The last picture is held, dazed (`#csHold`), while Copperleaf mounts. Its new first shot, `drop`, is on the same
+    spot. `copperleaf-town.json` holds that shot.
+  - The pick camera looks across the starters from the coins' side, aimed so the starter stands above the card.
+    Starters are no longer flipped, and the card is shorter.
+  - `tools/look-opening.py` takes pictures of the opening.
+- **Loading:**
+  - `bowl-worker.js` works out the world map's ground squares (`logic/bowl-terrain.js` `bowlTerrainRows`, moved out of
+    `world-bowl.js`). The ground's hash is unchanged.
+  - Headless take-off: the bowl stage went from 7.5 s to 6.3 s; Copperleaf's squares take 77 ms on the thread.
+  - The walking grid went from about 250 ms to 80 ms. The heights and bridges are held while it is built
+    (`walkView.navBuilding`), and `rawHeightAt` no longer makes closures. The grid's hash is unchanged.
+  - `debugLog.hook` now waits for `debug-log-names.js`. LD-0's early call sometimes logged "no function render to
+    wrap", which failed checks.
+
+**Risky**
+- The dive and its held frame were only seen headless. On a phone the hold should be short; the swap from the world
+  map's picture to the walk view is covered by the flash and the blur.
+- The portal's halo is dithered. Seen from the side it looks grainy.
+- Copperleaf was rebuilt: the dressing re-rolled (beach grass, one birch by the track's cutting).
+- The square's view of the old sky rail (HB-10a) now shows the portal instead.
+
+**Verified**
+- After each change: lint, typecheck, `check:modules`, `check:data`, `npm test` (1401 at the end).
+- `check-fast` steps: the train ride, packing, the lost run's scene, the world map, rooms, seams, tall ground.
+- `check:smoke` (before the loading work): 5 of 6. The sixth (Windows) was fixed and then passed run alone.
+- Pictures (not committed): the ride, the screens, the opening, the station from the walk.
+- `check-fast` "The run's places from the helper thread" fails on the load branch alone too ("made on the ?").
+  Reported to the load session.
+
+**Next**
+- The owner's phone test: a take-off, both ways home, New game's fall and the starter pick.
+- The load track's own LD-5 items: model meshes, uploads, and the next place's warm-up.
+### Load track fixes - the early debug-log hook, the helper-thread check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. Both found by the cutscenes session (ccr-517fcc1e-p1asai), which merged this branch and
+took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan's LD-5 say how).
+- boot.js: LD-0's early `debugLog.hook()` could run before debug-log-names.js had filled GAME (unbundled, each module
+  script is a task of its own), logging "no function render to wrap" and failing check-fast steps under two
+  browsers. It now hooks only once `render` is in GAME, else at DOMContentLoaded (after every module script), and again
+  (a no-op when done) when the loader is ready.
+- check-fast "The run's places from the helper thread": the boot's places may be made at once (`runWorldSync`, when the
+  fixture's save is swapped in) rather than on the thread, so the step now asks that the thread is on and makes places
+  equal to the page's, and reports where the boot's came from. `runWorld.how` says 'page at once' for that path.
+- Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
+  smoke 6 of 6.
+
 ### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
 Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
 owner's brief: a better world map, routes and towns for runs, with online research and many questions; planned and
@@ -1197,6 +1271,60 @@ more intuitive Studio, and what no longer fits the Vision taken out.
 - Questions waiting for the owner: make `track/studio-art` from main (after this branch's PR merges, so the plan file
   is on it).
 - Next session starts with: SA-1 (the Art browser) on `track/studio-art`, in Plan Mode.
+
+### Side session - Kappi the Wise, a capybara, replaces Hazel - 2026-10-26
+Branch `ccr-5f47d3ef-j66nm0`, from main b87b818d (no pull request yet). Plan approved in Plan Mode. The owner's answers:
+the exact swap (Hazel's role, gift, favour and Potion bonus); name tag "Kappi", "the Wise" in lore and their
+introduction; they/them; a quad rig and a pixel portrait that blinks and talks; Kappi inherits S4 (a former Bureau
+researcher) and S6 (Kappi vs Blake); lines lean on Billies napping on them, the yuzu bath, unhurried calm and grazing;
+a low soft click for a voice; Hazel's unused sprites deleted; the drafted lines approved as written; the lab tab says
+"Chosen's lab"; a yuzu bath tub in the lab. Research online: no "Kappi" capybara exists; the nearest is Bandai's
+Kapibara-san (onsen, "at your own pace"), so nothing of its look or motto is used. project-story.md has the decisions.
+- Changed (one cause per commit):
+  - Renames: person `hazel` -> `kappi` (with `thanks_hazel` -> `thanks_kappi`: banterOwner reads the person from
+    `thanks_<id>`), `hazel_lab` -> `kappi_lab`, quest `fav_hazel` -> `fav_kappi`, banter ids `hazel_*`/`fav_hazel_*` ->
+    `kappi_*`/`fav_kappi_*`. Kept: the song `hazel`, the opening's spot `hazel` and shot `hazelRuns`, the hazel tree,
+    the history in HANDOFF, CHANGELOG's old lines, meta.json's release notes.
+  - Deleted game/art/people/hazel_*.png (nothing loaded them; the unused-art report missed them because the song and
+    the tree are also named hazel).
+  - Names (speaker, name tags, lore, Field Guide, the lab's text and tab, others' mentions in they/them), then Kappi's
+    lines (the approved drafts; two new lab lines, ids ba82 and ba1a).
+  - Voice: sound.js blip, a soft click then a low falling filtered note.
+  - Body: bodyPlans.json form `kappi` (quad, a stub tail) with a new `talk` flag (a mouth-open face frame; no Billie
+    has it, so their bakes are unchanged); tools/paint-kappi.mjs paints its drawing sheet (placeholders/kappi.png) and
+    bakes it (billionaires/kappi.png, rigs-next.js `kappi`); `--preview=dir` writes both views and the faces.
+  - Creature people: people/<id>.json `creature: {rig, ht}` (person.schema.json, game-data.d.ts). person-art.js lookOf
+    gives a creature look; personFrame draws the rig (walk cycle, front/back, mirrored right, acts mapped to rig poses,
+    ppm from ht), so the walk world, rooms, cutscenes and battle poses use it unchanged; drawPortrait shows its head
+    at twice its size in the people's portrait box. Frames drawn before the rig's sheet loads are not cached
+    (`personArtMissing`). npm run modules routed rigParts and rigPose through hooks.js.
+  - The yuzu bath: tools/build-props-kappi.py (scenery `yuzu_bath`, a low-poly tub with water, yuzu, a step and a
+    wisp of steam), placed in int_lab beside Kappi.
+  - Docs: VISION, ROADMAP, project-story.md (owner decisions 2026-10-26), SCRIPTS, CUTSCENES, STUDIO, TESTING, BRANCHES,
+    CHANGELOG.
+- Risky or unfinished:
+  - Kappi's art is a first pass painted by a script; edit tools/paint-kappi.mjs (or export/import the sheet with
+    tools/bake-placeholders.mjs) to redraw it.
+  - A creature person in a battle (personBattleFrames/Pose: throw, cheer, react) is untried: nobody fights as Kappi
+    until S6, which needs a creature trainer's battle art anyway.
+  - The rig's sheet loads on first use: Kappi may be missing for a moment the very first time; watch for a blank.
+  - The Studio's People editor still edits kappi.json's `look` (kept, unused while `creature` is set).
+  - The tub's picture went into scene/next/island/ (build-props-island.py's bake folder).
+  - tools/check-quick.py --smoke printed "no problems" when Chromium could not start (its browser steps never ran):
+    not fixed here. Locally the pinned Playwright (1.56) wants Chromium 1194; ran through a scratch
+    PLAYWRIGHT_BROWSERS_PATH with links to /opt/pw-browsers' 1243 (chrome-linux -> chrome-linux64, headless_shell).
+- Verified:
+  - Every commit: lint, typecheck, check:modules, format:check, check:data, the data text check, unit tests (1284),
+    smoke 6 of 6 (code and data commits).
+  - In the game, headless: the lab with Kappi beside the tub, Kappi's talk box (portrait, name), the walk frames in
+    every direction next to the Chosen's (68.8 against 66.5 px/m).
+  - Full quick check on adb3df82: 2065 s, 45 steps, 37 passed. Problems: "Time, weather and rooms" (autumn stopped
+    drawing) passes alone here and on the base; "room light" fails the same on the base b87b818d. Of the other six, on the base: sky_portal floating, the payout
+    jingles and the two cave song fingerprints fail the same; the run from the mast fails there too (never landed);
+    "Run map music" and "Actions sheet" (a run's day chip) pass alone on this branch. None is this branch's.
+- Next: the owner's phone test (a new game: Kappi in the opening; the lab: tap Kappi, the voice, the tub's steam; a
+  lost run's return; a Bean for Kappi) and a debug log; a pull request into main when the owner says; then S4
+  (Kappi's past) and S6 (Kappi vs Blake).
 
 ### Merge batch 2: PRs #219 (renderer) and #217 (roster RO-3a..RO-3d) into main - 2026-10-26
 Branch `ccr-ed7f65cb-dk7xqw` (the owner: "look at the open PRs and merge them to main"). Both conflicted with main, so

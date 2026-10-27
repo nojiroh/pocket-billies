@@ -347,6 +347,8 @@ export const walkView = {
   ready: false,
   nav: null,
   navKey: '',
+  /** LD-5: true while the walking grid is built (walk/heights.js): the heights and bridges looked at once, held */
+  navBuilding: false,
   folk: [],
   folkId: '',
   parts: [],
@@ -2665,6 +2667,8 @@ export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = STEP_GRID_CACHE.get(L);
+  /* LD-5 (cutscenes session): held while the walking grid is built (walk/heights.js), which looked at them first */
+  if (E && walkView.navBuilding) return E.list;
   /* IS-5: asked once a vertex while a ground is built (the island's: hundreds of thousands); the bridges' words are
      compared again only after a quarter of a second (the Studio edits them in place) */
   const now = performance.now();

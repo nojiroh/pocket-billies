@@ -205,6 +205,25 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   ms of plain JavaScript where a place opens; on a seam it is prepared ahead), the world map's prewarm in a worker (the
   longest stage of a take-off, about 7 s in software, sliced 12 ms a frame), model meshes in a worker (a first mesh of
   a frame 20-70 ms in software), `createImageBitmap` and an upload queue, the next place's warm-up.
+  **LD-5, two of its items, done 2026-10-27** in the cutscenes session (`ccr-517fcc1e-p1asai`, which merges this
+  track's branch; split agreed with the load session):
+  - **The world map's ground squares on a helper thread.** `game/js/bowl-worker.js` and `bowl-worker-modules.js`
+    (bundled by vite.config.js) run `logic/bowl-terrain.js` `bowlTerrainRows`, moved out of world-bowl.js, on the
+    plain numbers in `T.P`. The band of rows comes back as one transferred buffer; the page adds the rivers and roads.
+    `worldMapPrewarm` and the map's draw wait for it instead of slicing. `bowlWorker.off` holds why it is off, and the
+    page fills as before.
+    - The same ground: the terrain's hash is unchanged, and `tools/test/bowl-terrain.test.mjs` checks the band.
+    - Headless take-off: the bowl stage went from 7.5 s to 6.3 s; Copperleaf's squares take 77 ms on the thread.
+  - **The walking grid in about a third of the time** (Copperleaf headless: about 250 ms to 80 ms warm, 145 ms cold).
+    - While it is built, `walkView.navBuilding` holds the height grid and the bridges looked at at its start. Before,
+      every height read checked the clock, rebuilt the props' signature every 120 ms and stringified the bridges every
+      250 ms.
+    - `rawHeightAt`'s corner read and curve are plain functions (`heightCorner`, `heightCurve`), not closures made
+      per call.
+    - The same grid: its arrays' hash is unchanged.
+  - Also fixed: `debugLog.hook` waits for `debug-log-names.js`. LD-0's early call could come first on a quick boot and
+    log "no function render to wrap", which failed check-fast steps under two browsers.
+  - Still left: model meshes in a worker, `createImageBitmap` and the upload queue, the next place's warm-up.
 - **LD-6 the phone check.** The owner's phone runs (cold start, a run's start, a walk across seams, a battle, the Map
   tab); the hitch list empty or explained; the settings on by default; the load check a gate in CI; the quick check's
   baseline updated; HANDOFF; tag `load-done`.

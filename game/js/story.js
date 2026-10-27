@@ -284,7 +284,7 @@ export function storyRivalBattle(o = {}) {
   };
   setTimeout(poll, 150);
 }
-/* win or lose: Blake has his say and goes off to train, Hazel heals your team and points you down the road (story.json
+/* win or lose: Blake has his say and goes off to train, the Chosen heals your team and points you down the road (story.json
    scripts.blake-first-battle, which reads rival0) */
 async function storyAfterRival(o) {
   setStoryFlag('rival0', o === 'win' ? 'win' : o === 'lose' ? 'lose' : 'skip');

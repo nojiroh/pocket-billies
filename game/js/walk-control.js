@@ -411,7 +411,7 @@ export function roomState() {
     enc: [],
     npcs: [
       ...(sc.keeper ? [{ who: sc.keeper, id: '_keeper:' + I.id, done: true, exit: null, dir: 'down' }] : []),
-      /* people who only talk in the room's own data (Hazel in the lab): they stand on the room's next npcSpots */
+      /* people who only talk in the room's own data (Kappi in the lab): they stand on the room's next npcSpots */
       ...roomPeople(sc).map(P => ({
         who: P.who,
         id: '_talk:' + P.id,
