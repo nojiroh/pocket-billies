@@ -388,7 +388,8 @@ export const ITEMS = gameData.items;
 provide({ ITEMS }); /* to-module */
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
-export const SHOPS = gameData.shops || {};
+/* SA-3: no shops.json: a run's towns and stalls put their shops in (worldPut) */
+export const SHOPS = /** @type {Record<string, import('../types/game-data').Shop>} */ ({});
 /* roguelite track RL-6: the kinds of node on a run's map (logic/run-map.js takes them as an argument) */
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */

@@ -385,16 +385,6 @@ SECTIONS.scenes = () => {
             { opt: 1 }
           ),
         ]
-      : []),
-    ...(sel.act === 'shop'
-      ? [
-          selectField(
-            'Which shop',
-            `${p}.props.${mapEditor.sel}.shop`,
-            Object.entries(studioState.D.shops || {}).map(([k, v]) => [k, v.name]),
-            { none: 'The stop’s shop', opt: 1 }
-          ),
-        ]
       : [])
   )}
   <details class="sc-look"><summary>Look: tint, wear and variety</summary>${grid(colorField('Tint', `${p}.props.${mapEditor.sel}.tint`, { help: 'Black for none. Tints the painted parts only (not outlines, windows or lights).' }), rangeField('Tint strength', `${p}.props.${mapEditor.sel}.tintAmt`, { min: 0, max: 1, step: 0.05, def: 0.6 }), rangeField('Wear and tear (× usual)', `${p}.props.${mapEditor.sel}.wear`, { min: 0, max: 3, step: 0.05, def: 1, help: 'Dirt, moss, faded paint and cracks. The kinds and amounts are set per prop in the prop editor.' }), checkboxField('Exactly as drawn (no size, colour or turn variety)', `${p}.props.${mapEditor.sel}.plain`, { num: 1 }))}</details>

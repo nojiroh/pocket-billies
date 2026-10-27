@@ -98,7 +98,6 @@ export interface GameData {
   pyramids: Record<DataId, Coin>;
   items: Record<DataId, Item>;
   people: Record<DataId, Person>;
-  shops?: Record<DataId, Shop>;
   trainers?: Record<DataId, Trainer>;
   rules: Rules;
   battleStages: Record<DataId, BattleStage>;
@@ -416,7 +415,7 @@ export interface LocationData {
   bowl: BowlSpot;
   region?: string;
   music?: string;
-  /** a key of gameData.shops */
+  /** a key of SHOPS */
   shop?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
@@ -727,7 +726,7 @@ export interface Item {
   hold?: FxRow[];
 }
 
-/** shops.json */
+/** a shop: a run town's or stall's (logic/run-scenes.js), in SHOPS while the run's world is in */
 export interface Shop {
   name: string;
   keeper: string;

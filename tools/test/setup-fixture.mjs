@@ -164,7 +164,6 @@ export const FIXTURE = {
   pyramids: { pyramid: { n: 'Copper Coin', m: 1 }, capstone: { n: 'Platinum Coin', m: 0 } },
   items: { potion: { n: 'Potion', hp: 20 }, revive: { n: 'Revive', revive: 0.5 } },
   people: { chosen: {} },
-  shops: {},
   trainers: { ray: { name: 'Rival Ray', who: 'chosen', node: 1, blocks: true, team: [{ sp: '@rival', lvl: 5 }] } },
 };
 
