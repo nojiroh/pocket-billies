@@ -1781,8 +1781,9 @@ async function runFullTest(mode) {
             if (!(await wait(() => walkView.ready && walkView.id === id, 60000)))
               throw new Error(`the route isn't shown (still ${walkView.id})`);
             const sc = walkView.sc,
-              finds = (sc.props || []).filter(p => p.find),
-              row = (sc.props || []).filter(p => p.cut);
+              /* this place's own (a joined view shows its neighbours' too) */
+              finds = (sc.props || []).filter(p => p.find && p.find.startsWith(`find.${node}.`)),
+              row = (sc.props || []).filter(p => p.cut && p.cut.startsWith(`cut.${node}.`));
             if (!finds.length || !row.length) throw new Error(`${finds.length} finds, ${row.length} brambles here`);
             if (!finds.every(p => propShown(p))) throw new Error('a find isn’t shown');
             if (!row.every(p => propShown(p))) throw new Error('a bramble isn’t shown');
