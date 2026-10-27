@@ -2,6 +2,47 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-0 - the plan, research and art samples - 2026-10-27
+Branch `ccr-24be55e6-2bmqci` (the session's own), made from main at 07c9b284; `track/perks` doesn't exist yet (PK-1's
+session makes it). Plan Mode, plan approved. Docs and samples only: no game code, data or art changed. Details:
+docs/phases/perks-track.md.
+- The owner's brief: "Make a plan for additions for the relics and such. There should be a lot of variety. Also make
+  it so they have their own art in a style that fits. Do research online." Answers: all four extras (held items, Bag
+  item icons, boons and curses, Perk sets), about 60 new Perks, Fine Print trade-off Perks offered at leader wins.
+- Changed: docs/phases/perks-track.md (the code today with file refs, research with sources, design rules, the
+  catalog: 66 new Perks in four waves plus Fine Print, 7 sets, 16 held items, 20 boons and curses, the Bag items; the
+  art pipeline; the effects core; sessions PK-1..PK-12; how the sessions run; Ask me before); docs/samples/
+  perk-icons.png and perk-icon-samples.json (8 sample icons); a ROADMAP line; two BRANCHES rows.
+- The samples: Lucky Charm, Rubber Stamp, Click Pen, Warranty Card, Bellows, Mic Drop, Umbrella, Glass Trophy, each a
+  flat 34x34 grid shaded by `iconBlockKeyed` and written by `pixelsToSvg` (the UI icons' own look), shown on mock
+  pick cards at 72 px and in rows at 36 and 18 px, light and dark. Drawn with a scratch painter (not committed;
+  PK-2's `tools/build-icons.mjs` takes the grids); the sheet rendered with the container's Playwright
+  (`NODE_PATH=$(npm root -g)`). Lucky Charm became a horseshoe: the clover read as a gem at 36 px. A cream sparkle
+  on the background vanished on the light panel (the track file's art rules now say so).
+- Found in the code (the plan's section 2): a Perk's stat rows skip Billies that switch in (`doSwitch` applies held
+  stages only), so Running Shoes helps the lead alone; run rows of turnHeal, pinchHeal, turnHurt, level and bossHp do
+  nothing; `sayBattleFx` prints a boon's raw source ("event:ring_light"); the Perks schema allows no art field; held
+  items borrow finance-era atlas sprites; no rarity colours exist in code yet (UI-14). Two drafts were wrong and fixed
+  before writing: a run's day moves with every arrival, so "each new day" Perks were "each place" (Time Card and
+  Subscription Box changed), and Perks are found on a run, so Boarding Pass pays when taken, not at a run's start.
+  Names checked against the data: Shredder (a bot), Filing Cabinet (the Retrieval Unit's leader), Hard Hat (a
+  wardrobe piece) and Recall Notice (an event) are taken; Hype Mic became Mic Drop (Hyped is the confusion state).
+- Risky: every number and name is a draft; the catalog's mechanisms were checked against the code's hook points but
+  not built; about 140 pictures to draw; the leader pick turning Fine Print changes `self-test.js:2215-2267`'s step.
+- Verified: `npm run lint` (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), `npm run
+  format:check`, `npm run check:data` (176 files fine; its two bridge warnings, copperleaf and test_props_island, are
+  main's). The saved grids shade back to the sample SVGs byte for byte (a scratch check). No code changed, so `npm
+  test` and the browser checks were not run.
+- The owner's standing instruction: "Automatically approve plans for next steps and start them in new sessions until
+  this plan is finished." This session starts each step (perks-track.md section 10): PK-1 from this branch with
+  outcome branch `track/perks`, the later steps from `track/perks`; each reports done with a one-shot scheduled task
+  here, and an hourly check covers a missed one.
+- Decided for the owner, to review: perks-track.md section 11 (Fine Print in the ladder's top orange with a red stamp,
+  weights 6/3/1 kept, the reward-pick Perk card at weight 2, held items' tiers, rerolls unchanged, a 50 Moneys appeal,
+  the horseshoe, existing numbers kept, the cap 6).
+- Next: PK-1 (the effects core) in a new session on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-0-done` on this entry's last commit.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
