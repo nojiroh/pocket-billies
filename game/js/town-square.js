@@ -169,10 +169,10 @@ function fountainWishToss(p) {
 }
 
 /* ---------- HB-10e: festivals ---------- */
-/** a festival forced on (the debug menu, the in-game test, island-shots.py --festival): { id, at } or null */
+/** a festival forced on (the in-game test, island-shots.py --festival; the test globals festivalForce): { id, at } or null */
 export let festivalForce = /** @type {{ id: string, at?: number } | null} */ (null);
 /** @param {{ id: string, at?: number } | null} v */
-function setFestivalForce(v) {
+export function setFestivalForce(v) {
   festivalForce = v && typeof v.id === 'string' ? v : null;
   festCache = null;
 }
@@ -206,7 +206,7 @@ export function festivalToday(s = saveData) {
 }
 provide({ festivalToday });
 /** the square's day now: the festival's own (more folk, out longer) or rules.json square.day */
-function squareDayNow() {
+export function squareDayNow() {
   const on = festivalToday();
   return on && on.F.day ? on.F.day : RULES.square.day;
 }

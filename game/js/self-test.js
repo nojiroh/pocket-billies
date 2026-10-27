@@ -16,6 +16,7 @@ import {
   BANTER,
   EVENTS,
   FACTIONS,
+  FESTIVALS,
   FIELD_MOVES,
   GENES,
   ITEMS,
@@ -166,7 +167,14 @@ import { fieldWayOutGo } from './field-moves.js';
 import { perkPickOpen } from './perk-screen.js';
 import { encPlaying, encounterOpen } from './encounter-screen.js';
 import { questData, questMarked, residentTalk } from './quest-board.js';
-import { fountainWishOpen } from './town-square.js';
+import {
+  festivalForce,
+  festivalMarketOpen,
+  festivalToday,
+  fountainWishOpen,
+  setFestivalForce,
+  squareDayNow,
+} from './town-square.js';
 import { ranchOpen } from './ranch-screen.js';
 import { geneBankDo, geneBankOpen } from './gene-bank-screen.js';
 import { augmentsDo, augmentsOpen } from './augment-screen.js';
@@ -2354,6 +2362,88 @@ async function runFullTest(mode) {
               throw new Error('the notice board doesn’t show the last run');
             return `a win put up ${bunting().length} bunting props and cheers, a loss to the Bureau took them down and started the gossip (${gossip.length} lines); the coin: ${W.out}, once; the board shows the run`;
           } finally {
+            uiState.modal = null;
+            uiState.mq = [];
+            renderOverlay();
+            setSaveData(was);
+            render();
+          }
+        },
+        3,
+        60
+      );
+    /* HB-10e: the festivals, on a copy of the save (nothing is written while the test runs): each festival forced on
+       shows its own decorations and no other's, gives the square its own day and lines; on a market day the middle
+       stall sells a ware for Scrap into the bag, counted on the occasion, and the notice board names it; with none
+       forced, what today and the runs give. Then the save and the festival as they were */
+    if (
+      typeof festivalMarketOpen === 'function' &&
+      !saveData.run &&
+      !selfTest.stop &&
+      walkView.sc &&
+      (walkView.sc.baseId || walkView.id) === 'copperleaf'
+    )
+      await phase(
+        'The square: festivals, their decorations, lines and market',
+        'dio',
+        async () => {
+          const was = saveData,
+            F0 = festivalForce;
+          try {
+            const s = JSON.parse(JSON.stringify(saveData));
+            s.meta.scrap = 20;
+            s.meta.fest = null;
+            setSaveData(s);
+            const FS = /** @type {any} */ (FESTIVALS).festivals,
+              dress = () => walkView.sc.props.filter((/** @type {any} */ p) => p.sq && /festival:/.test(p.when || '')),
+              its = (/** @type {string} */ id) =>
+                dress().filter((/** @type {any} */ p) => new RegExp(`festival:${id}\\b`).test(p.when));
+            if (!dress().length) throw new Error('no festival decorations round the square');
+            for (const id of Object.keys(FS)) {
+              setFestivalForce({ id, at: 1 });
+              const up = dress().filter(propShown);
+              if (up.length !== its(id).length || !its(id).every(propShown))
+                throw new Error(`${id}: ${up.length} decorations up, ${its(id).length} of them its own`);
+              if (squareDayNow() !== FS[id].day) throw new Error(`${id}: the square keeps its usual day`);
+              if (!squareTalk(BANTER, 'fest', (/** @type {string} */ c) => storyAllows({ when: c })).length)
+                throw new Error(`${id}: the square has nothing to say`);
+            }
+            /* the market at the middle stall */
+            setFestivalForce({ id: 'market_day', at: s.meta.runs });
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({ k: 'act', act: 'fest', p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'fest') });
+            const buy = /** @type {HTMLElement | null} */ (
+              document.querySelector('#ov .sheet [data-a="festbuy"]:not([disabled])')
+            );
+            if (!buy) throw new Error('the festival market has nothing to buy');
+            const i = +(buy.dataset.i || 0),
+              w = FS.market_day.stock[i],
+              had = w.item ? s.items[w.item] || 0 : s.pyramids[w.coin] || 0;
+            buy.click();
+            const got = w.item ? s.items[w.item] || 0 : s.pyramids[w.coin] || 0;
+            if (s.meta.scrap !== 20 - w.price || got !== had + 1)
+              throw new Error(`the ware cost ${20 - s.meta.scrap} Scrap (not ${w.price}) and gave ${got - had}`);
+            if (!s.meta.fest || s.meta.fest.id !== 'market_day' || s.meta.fest.got[i] !== 1)
+              throw new Error(`the sale wasn’t counted: ${JSON.stringify(s.meta.fest)}`);
+            uiState.modal = null;
+            uiState.mq = [];
+            walkPick({
+              k: 'act',
+              act: 'hubnotice',
+              p: walkView.sc.props.find((/** @type {any} */ p) => p.act === 'hubnotice'),
+            });
+            const board = (document.querySelector('#ov .sheet') || { textContent: '' }).textContent || '';
+            if (!/Today: Market day/.test(board)) throw new Error('the notice board doesn’t name the market day');
+            /* none forced: what today and the runs give, and only its decorations */
+            setFestivalForce(null);
+            const today = festivalToday(),
+              up = dress().filter(propShown).length;
+            if (up !== (today ? its(today.id).length : 0))
+              throw new Error(`today (${today ? today.id : 'no festival'}): ${up} decorations up`);
+            return `${Object.keys(FS).length} festivals, each with only its own decorations, day and lines; the market day sold a ${w.item || w.coin} for ${w.price} Scrap; today: ${today ? today.id + '@' + today.at : 'none'}`;
+          } finally {
+            setFestivalForce(F0);
             uiState.modal = null;
             uiState.mq = [];
             renderOverlay();

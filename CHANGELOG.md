@@ -9,6 +9,12 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Festivals in Copperleaf** (hub track HB-10e): four a year, a week each: the Sprout Fair (late March), Longest
+  Light (late June), the Spire Supper (late September) and the Lantern Walk (late December), by your phone's calendar,
+  online or off. Your first win brings a Homecoming Parade, your tenth run the Tenth Departure, and every third time
+  you come home is a market day. Each puts up its own decorations round the square, brings more folk out for longer
+  and gives them something to say, and the middle stall sells a few festival wares for Scrap (they go in your bag for
+  the next run). The notice board shows what's on and what's coming.
 - **Copperleaf's square reacts to your runs** (hub track HB-10d): after a won run bunting and the town's flags go up
   round the square and its folk cheer; after a lost one they gossip about it (who beat you, how far you got). From
   Chapter 2 the fountain changes: violet water and light, a crack up its top bowl, a Bureau plaque. Tap the fountain to

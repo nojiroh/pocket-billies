@@ -12,6 +12,7 @@ lighthouse, the windmill and the town from a free camera, and a flat ground map 
     python3 tools/island-shots.py OUT_DIR --hour=22      # at this hour, clear summer weather (HB-10b: the square by night)
     python3 tools/island-shots.py OUT_DIR --last=won     # as after a won (or lost) run: the square's reactions (HB-10d)
     python3 tools/island-shots.py OUT_DIR --chapter=2    # the story at this chapter: the fountain's look (HB-10d)
+    python3 tools/island-shots.py OUT_DIR --festival=lantern_walk  # a festival on (festivals.json): its decorations (HB-10e)
 
 Run `npm run data` first (the page reads game/data/gamedata.js). Writes OUT_DIR/<name>.png and OUT_DIR/shots.json
 (the names, where you stood, the frame count). Nothing is sent anywhere."""
@@ -32,6 +33,7 @@ HOUR = next((float(a.split('=', 1)[1]) for a in ARGS if a.startswith('--hour='))
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'copperleaf')
 LAST = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--last=')), None)
 CHAPTER = next((int(a.split('=', 1)[1]) for a in ARGS if a.startswith('--chapter=')), None)
+FESTIVAL = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--festival=')), None)
 # HB-10d: a made-up last run in the save's history (logic/run-history.js historyEntry's fields), so the square reacts
 FAKE_RUN = ("(end=>{{const M=saveData.meta;M.history=[...(M.history||[]),{{seed:'shots',theme:'greenbelt',region:'Shot Vale',"
             "exp:1,end,by:end==='won'?null:{{kind:'boss'}},row:6,days:9,team:[],perks:[],leaders:[],rival:null}}];"
@@ -113,6 +115,8 @@ def main():
         if HOUR is not None: pg.evaluate(f"environment.force={{time:{HOUR},weather:'clear',season:'summer'}};0")
         if LAST: pg.evaluate(FAKE_RUN.format(LAST))
         if CHAPTER: pg.evaluate(f'saveData.meta.chapter={CHAPTER};0')
+        # HB-10e: the festival forced on (town-square.js setFestivalForce): its props show within 0.2 s
+        if FESTIVAL: pg.evaluate(f"festivalForce={{id:{json.dumps(FESTIVAL)}}};0")
         settle(pg, 10)
 
         def shot(name, label, where=None):

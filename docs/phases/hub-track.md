@@ -117,7 +117,7 @@ Every figure is a claim from a read of the code: check it again at the start of 
 | HB-10b | Square: edges and market (done 2026-10-26) | Benches, planters, streetlamps, stalls, awnings, crates round the edge (existing models, remade where weak); lit windows, string lights, fireflies, the lit fountain | HB-10a | 1-2 |
 | HB-10c | Square: people (done 2026-10-26) | Stop points and time-of-day schedules for the townsfolk, 6-10 at once (an Engine setting), your ranch Billies visiting; phone frame times | HB-10b | 1 |
 | HB-10d | Square: reactions and things to do (done 2026-10-27) | Win banners, loss gossip, the fountain's chapter changes, the notice board, the fountain's coin gamble, the busker's slot (a resident: RS-3/RS-4) | HB-10c | 1-2 |
-| HB-10e | Square: festivals | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
+| HB-10e | Square: festivals (done 2026-10-27) | Market days and festivals by run count, real dates (clock-safe, offline) and milestones, with a festival market | HB-10d | 1 |
 | HB-10f | Town rebuild reproducible | An unlocked town rebuild that makes the same town from its dials; then the store, inn and library brought to front the square, doors still to the camera; the pinwheel street entries (moved from HB-10a) | HB-10a | 1-2 |
 | HB-9 | Look pass on the phone | Headless phone pictures each round, then the owner's play test and debug log | all | 1 |
 
@@ -516,7 +516,8 @@ and the front plots here (the old HB-10 row).
 - HB-10d: the coin gamble's cost, odds and effects (rec: a small stake, mostly small boons or a joke, a rare big win
   or a small curse, once per return).
 - HB-10d: the fountain's look per chapter.
-- HB-10e: the festival calendar and names (player-facing words).
+- HB-10e: the festival calendar and names (player-facing words). **Answered 2026-10-27**: four seasonal festivals and
+  two milestones as recommended, the market in Scrap, looks, lines and stock only (no run boon).
 
 **Risks**: phone cost of 6-10 people and the night lights (HB-10c measures); positions (hub, npcSpots, fixtures,
 checks, the fall's landing) when the square or buildings move; the locked town zone (hand patches only until
@@ -640,6 +641,46 @@ the busker: the slot and its hook only, the resident from the residents track. C
   meta-state; the in-game full test's "The square: bunting, gossip, the fountain's coin, the notice board".
   Pictures: `python3 tools/island-shots.py OUT --last=won|lost --chapter=N --only=town-square,square-near`.
 - Not done: the busker themselves (RS-5); the board's daily seeds and ghosts (RL-15); the coin's own sound (sound track).
+
+**Done in HB-10e** (2026-10-27, on `track/hub` after merging main). The owner's answers: Sprout Fair (about 20 March),
+Longest Light (about 21 June), Spire Supper (about 22 September), Lantern Walk (about 21 December), a week each;
+Homecoming Parade (your first win) and Tenth Departure (your tenth run); a market day every 3rd return; the festival
+market paid in Scrap; festivals give looks, lines and their market's stock, no run boon. Checked against the code first:
+- There was no calendar anywhere: run history entries have no date, and only the ranch has a guarded clock
+  (logic/ranch-clock.js ranchNow: a clock turned back stands still at the save's mark, `ranch.seen`; signed in, the
+  server's time raises the mark and the phone's skew is taken off). Festivals read that clock on the phone's own
+  calendar (its time zone), so they work offline. A phone set ahead offline does bring a festival early; the mark then
+  holds the clock there, and the stock can be bought once per occasion either way.
+- The square's day (rules.json square.day) was read straight from the rules in walk-view.js: a festival now hands in
+  its own (`squareDayNow`). Its slots need keys of their own: the people chosen are kept per slot key.
+- The middle stall had no act; it now takes `act: fest`.
+- **festivals.json** (schema, types, `dataFestivals` in check-data and the Studio's Check): each festival a `kind`
+  (`milestone` with a `when`, `date` with `from` MM-DD and `days`, `market` with `every`), a player-facing `name` and
+  `about`, its square `day`, and a `stock` of items or coins with `n` per occasion and a `price` in `cur` (Scrap).
+  One at a time: a milestone first, then a date, then a market day.
+- **logic/festival.js** (Node-tested: tools/test/festival.test.mjs): `festDate` (the calendar day in a time zone),
+  `festDateOn` (a week running into January keeps the year it began), `festivalOn`, `festStock` and `festBuy` (paid,
+  into the bag or the pyramids, counted on the occasion: the year a date festival began, or meta.runs), `festNext`.
+  `meta.fest {id, at, got}` keeps the latest occasion's sales (meta-state.js validFest; no migration).
+- **The `festival:<id>` condition** (conditions.js): the story state asks the page through a new hooks seam,
+  `festivalToday` (town-square.js; logic.test.mjs lists it), as the ranch clock and the phone's calendar are page
+  side. None on a run; none while a milestone's own condition is read. story-checks: the festival exists.
+- **Decorations**: `FESTIVAL_DRESS` in tools/square-props.mjs, 30 low-poly props (32 px/m) on six spots shared by the
+  festivals just outside the rim on grass, plus a pennant line across the south for every festival but a market day;
+  laid by `patch-copperleaf-square.mjs --edges` and build-copperleaf.mjs. hub-square.test.mjs keeps them on grass,
+  1.8 m from the edge props and stops, 1.2 m from whatever shows with them (the win bunting too), and models.
+- **Lines**: banter.json `square_fest` (16, two or three a festival, each `when: festival:<id>`); the square's folk say
+  them before the won/lost lines. The data check wants one for every festival.
+- **The festival market**: tap the middle stall (town-square.js `festivalMarketOpen`): the wares with how many are
+  left this time, bought one at a time for Scrap. On other days its keeper says to come back on a market day.
+- **The notice board**: a Festivals section, what is on today and what is coming (days to the next date festivals,
+  returns to the next market day). Coming home to one shows a toast once a session.
+- Debug: the debug log's scene has `festival` (`id@occasion`), the log notes `hub festival:` and each sale. A
+  festival can be forced (`setFestivalForce`, test globals' `festivalForce`): `python3 tools/island-shots.py OUT
+  --festival=<id>`; the in-game full test's "The square: festivals, their decorations, lines and market".
+- Not done: no Studio editor for festivals.json (RL-16 makes the editors for new sections); the decorations are
+  outside the rim, so from the hub's camera only a few show (HB-9's look pass, or HB-10f's rebuild, may move them
+  in); no festival music or sounds (the sound track); the hemisphere is the north's.
 
 ### HB-9 Look pass on the phone
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
