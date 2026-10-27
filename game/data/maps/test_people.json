@@ -46,7 +46,19 @@
   {"who":"chosen","x":9.6,"z":11.4,"dir":"side","walk":true},
   {"who":"folk:3","x":11.2,"z":11.4,"dir":"sideR","walk":true},
   {"who":"kappi","x":12.8,"z":11.4,"dir":"down","walk":true},
-  {"who":"girl","x":14.4,"z":11.4,"dir":"up","walk":true}
+  {"who":"girl","x":14.4,"z":11.4,"dir":"up","walk":true},
+  {"figure":"mannequin","x":6.15,"z":6.6,"dir":"down"},
+  {"figure":"mannequin","x":17.85,"z":6.6,"dir":"down"},
+  {"figure":"mannequin","x":7.8,"z":4.2,"face":0},
+  {"figure":"mannequin","x":9,"z":4.2,"face":45},
+  {"figure":"mannequin","x":10.2,"z":4.2,"face":90},
+  {"figure":"mannequin","x":11.4,"z":4.2,"face":135},
+  {"figure":"mannequin","x":12.6,"z":4.2,"face":180},
+  {"figure":"mannequin","x":13.8,"z":4.2,"face":225},
+  {"figure":"mannequin","x":15,"z":4.2,"face":270},
+  {"figure":"mannequin","x":16.2,"z":4.2,"face":315},
+  {"figure":"mannequin","x":7.6,"z":11.4,"dir":"side","walk":true},
+  {"figure":"mannequin","x":16.4,"z":11.4,"dir":"sideR","walk":true}
  ],
  "tiles": [
   "gggggggggggggggggggggggg",

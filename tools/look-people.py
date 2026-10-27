@@ -8,6 +8,10 @@
     python3 tools/look-people.py --frames=12        # frames counted a shot (default 6)
     python3 tools/look-people.py --out=DIR          # somewhere else (a "before" set from another worktree)
     python3 tools/look-people.py --scene=test_props # another test map
+    python3 tools/look-people.py --figures          # CH-2: Engine > People > Figures on (you and the mannequins as
+                                                    # baked figures); with --density=N (16-64), --steps=8|16, --outline=0
+    python3 tools/look-people.py --figures --lose   # then a forced loss of the game's context and of the figure baker's,
+                                                    # a shot after each (the figures must come back)
 
 The page is a 390 x 844 phone at 3 device pixels to the CSS pixel (the one the characters track's numbers are worked
 out for: the scene drawn into the same 860 x 1861 buffer as on the phone), with the game's own graphics, but auto
@@ -38,6 +42,9 @@ OUT = Path(arg('out', ROOT / 'validation' / 'look-people'))
 FRAMES = int(arg('frames', 6))
 CROWD = int(arg('crowd', 0))
 ONLY = set(arg('only', '').split(',')) - {''}
+FIGURES = '--figures' in ARGS
+LOSE = '--lose' in ARGS
+FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline'))) if v is not None}
 TIMES = [('day', 12.5), ('night', 22.0)]
 YAWS = [0, 35, 90]
 W, H, DPR = 390, 844, 3
@@ -58,14 +65,14 @@ COUNT = """(async (n)=>{
 # every walk frame of everyone in the lineup and you drawn now (person-art.js draws them a few a frame otherwise, which
 # at a headless frame every few seconds takes minutes); false while some art is still loading (person-art.js keeps
 # nothing drawn without it), so it is asked again
-WARM = """(()=>{const who=[...new Set(['me',...(walkView.sc.lineup||[]).map(L=>L.who)])];personArtMissing=false;
+WARM = """(()=>{const who=[...new Set(['me',...(walkView.sc.lineup||[]).map(L=>L.who).filter(w=>typeof w==='string')])];personArtMissing=false;
  for(const w of who){const F=personWalkFrames(w);if(!F)continue;
   for(const d of ['down','up','side','sideR']){const v=F[d];if(!v)continue;v[0];for(let i=0;i<6;i++)if(v.cyc)v.cyc[i]}}
  return !personArtMissing})()"""
 
 # how many scene-buffer pixels tall one of your art pixels is: you, 1.75 m upright, projected by this frame's camera
 DENSITY = """(()=>{const C=walkView.C,P=walkView.pl;if(!C||!C.vp||!P)return null;
- const y=P.yv??standingHeightAt(P.x,P.z),ppm=(wardrobeData()||{}).ppm||66.5,
+ const y=P.yv??standingHeightAt(P.x,P.z),ppm=(typeof figuresOn==='function'&&figuresOn()?engineSetting('people','density'):0)||(wardrobeData()||{}).ppm||66.5,
   sy=v=>{const m=C.vp,w=m[3]*v[0]+m[7]*v[1]+m[11]*v[2]+m[15],yc=m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13];return (1-yc/w)/2*C.rh};
  const px=Math.abs(sy([P.x,y,P.z])-sy([P.x,y+1.75,P.z]));
  return {buffer:[C.rw,C.rh],personPx:Math.round(px*10)/10,perArtPx:Math.round(px/(1.75*ppm)*100)/100}})()"""
@@ -75,6 +82,26 @@ def wanted(*names):
     """a shot is taken unless --only names something of its kind and not this one"""
     kinds = [{'close', 'normal', 'far'}, {'day', 'night'}, {f'yaw{y}' for y in YAWS}]
     return all(not (ONLY & k) or n in ONLY for n, k in zip(names, kinds))
+
+
+def lose(pg, t0):
+    """CH-2: the game's context lost and restored (engine/webgl.js forceContextLoss), then the figure baker's
+    (figures.js figureBakerLose), a shot and the counts after each: everyone, the figures among them, drawn again"""
+    out = []
+    pg.evaluate("walkRenderer.zoomT=walkRenderer.zoom=1;walkRenderer.yawT=walkRenderer.yaw=0;walkRenderer.camT=null;environment.force={time:12.5,weather:'clear',season:'summer'};0")
+    for what, js in (('game', 'forceContextLoss(1500)'), ('baker', 'figureBakerLose(1500)')):
+        ok = pg.evaluate(f'(()=>{{try{{return {js}!==false}}catch(e){{return String(e)}}}})()')
+        shots.settle(pg, 4)
+        pg.wait_for_timeout(2500)
+        shots.settle(pg, 6)
+        name = f'figures-lost-{what}'
+        pg.screenshot(path=str(OUT / f'{name}.png'))
+        r = pg.evaluate(f'{COUNT}({FRAMES})')
+        r.update(shot=name, lost=what, forced=ok, glLost=pg.evaluate('gpuState.lost||0'), figures=pg.evaluate('figureReport()'))
+        out.append(r)
+        print(f"[{time.time() - t0:5.0f}s] {name:>24}: forced {ok}, {r['drawn']} people drawn, {r['draws']} draws, "
+              f"figures {r['figures']}", flush=True)
+    return out
 
 
 def main():
@@ -96,7 +123,8 @@ def main():
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
         # the game's graphics, with auto quality and depth of field off, as a player's own expert dials set them, and no
         # see-through circle round you (the lineup in front of you would thin out)
-        pg.evaluate("(()=>{const p=saveData.preferences=saveData.preferences||{};p.expert=true;p.eng={quality:{auto:false},lens:{blur:0,bokeh:0},camera:{hideFade:false}};return 0})()")
+        people = {'figures': True, **{k: (v != '0' if k == 'outline' else int(v)) for k, v in FIG_DIALS.items()}} if FIGURES else {}
+        pg.evaluate(f"(()=>{{const p=saveData.preferences=saveData.preferences||{{}};p.expert=true;p.eng={{quality:{{auto:false}},lens:{{blur:0,bokeh:0}},camera:{{hideFade:false}},people:{json.dumps(people)}}};return 0}})()")
         if CROWD: pg.evaluate(f"walkView.sc.folk={CROWD};walkView.folkId='';0")
         hub = pg.evaluate('mapHub(walkView.sc)')
         # you at the hub, the camera's target reset (browser_check.stand, with island-shots' longer wait: at three
@@ -110,7 +138,8 @@ def main():
             if pg.evaluate(WARM): break
             shots.settle(pg, 2)
         else: print('  some art never loaded: those people are drawn without it', flush=True)
-        want = pg.evaluate('(walkView.sc.lineup||[]).length') + 1 + CROWD
+        # a lineup entry that is a figure (CH-2: `figure`, no `who`) is drawn only with the figures on
+        want = pg.evaluate(f"(walkView.sc.lineup||[]).filter(L=>typeof L.who==='string'||({'true' if FIGURES else 'false'}&&L.figure)).length") + 1 + CROWD
         if not fast.until(pg, f'peopleReport().drawn>={want}', 600):
             print(f"  only {pg.evaluate('peopleReport().drawn')} of {want} people drawn", flush=True)
         shots.settle(pg, 4)
@@ -124,14 +153,16 @@ def main():
                     if not wanted(sid, tname, f'yaw{yaw}'): continue
                     pg.evaluate(f"walkRenderer.zoomT=walkRenderer.zoom={zoom};walkRenderer.yawT=walkRenderer.yaw={math.radians(yaw)};walkRenderer.camT=null;0")
                     shots.settle(pg, 6)
-                    name = f"{'crowd%d-' % CROWD if CROWD else ''}{tname}-{sid}-yaw{yaw}"
+                    name = f"{'figures-' if FIGURES else ''}{'crowd%d-' % CROWD if CROWD else ''}{tname}-{sid}-yaw{yaw}"
                     pg.screenshot(path=str(OUT / f'{name}.png'))
                     r = pg.evaluate(f'{COUNT}({FRAMES})')
                     r.update(shot=name, time=tname, stop=sid, zoom=zoom, yaw=yaw, crowd=CROWD, **(pg.evaluate(DENSITY) or {}))
+                    if FIGURES: r['figures'] = pg.evaluate('figureReport()')
                     rows.append(r)
                     print(f"[{time.time() - t0:5.0f}s] {name:>24}: {r['drawn']} people drawn, {r['draws']} draws "
                           f"({r['peopleDraws']} people's: {r['people']}), {r['pictures']} pictures {r['mb']} MB, "
                           f"q{r['q']}, {r.get('perArtPx')} buffer px an art px", flush=True)
+        if LOSE: rows += lose(pg, t0)
         pg.evaluate("environment.force=null;0")
         ctx.close(); b.close()
     srv.shutdown()

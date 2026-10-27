@@ -401,7 +401,8 @@ def t_people():
     """people side by side on flat ground, for tools/look-people.py: the cast facing the camera in front; one look
     turned eight ways in the world in the middle (`face`, degrees from +x toward +z, as set pieces turn), so the
     camera's turn decides which side of each shows, with you in the gap at the hub, so the camera centres on the
-    lineup at every turn; four walking on the spot behind; two lantern posts for the night. The `lineup` is only drawn
+    lineup at every turn; four walking on the spot behind; two lantern posts for the night; CH-2's mannequins beside
+    them (only with the figures on). The `lineup` is only drawn
     (walk/frame-items.js): nobody wanders off, turns to you or can be tapped. Later sessions of the characters track
     stand their new figures beside these."""
     s = base('test_people', 'Test: people side by side', 24, 20, 'g', 944)
@@ -411,6 +412,12 @@ def t_people():
     L += [{'who': 'folk:7', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 9, 'face': i * 45} for i in range(8)]
     walkers = [('chosen', 'side'), ('folk:3', 'sideR'), ('kappi', 'down'), ('girl', 'up')]
     L += [{'who': w, 'x': round(12 + (i - 1.5) * 1.6, 2), 'z': 11.4, 'dir': d, 'walk': True} for i, (w, d) in enumerate(walkers)]
+    # characters track CH-2: the figure baker's mannequin (`figure`, no `who`: drawn only with Engine > People >
+    # Figures on): at each end of the cast facing the camera, turned eight ways in the nearest row, and walking at
+    # each end of the walkers
+    L += [{'figure': 'mannequin', 'x': x, 'z': 6.6, 'dir': 'down'} for x in (6.15, 17.85)]
+    L += [{'figure': 'mannequin', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 4.2, 'face': i * 45} for i in range(8)]
+    L += [{'figure': 'mannequin', 'x': x, 'z': 11.4, 'dir': d, 'walk': True} for x, d in ((7.6, 'side'), (16.4, 'sideR'))]
     s.d['lineup'] = L
     # lantern posts light the night (a street lamp would also fill the distance: grass-build.js buildFarProps takes
     # props whose group matches 'tree', and 'streetlamp' does)
