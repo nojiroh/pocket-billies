@@ -36,15 +36,6 @@
 .pb:hover:not(:disabled) {
   filter: brightness(1.06);
 }
-.pb:active:not(:disabled) {
-  box-shadow:
-    0 -3px 0 0 var(--line),
-    0 3px 0 0 var(--line),
-    -3px 0 0 0 var(--line),
-    3px 0 0 0 var(--line),
-    inset 3px 3px 0 0 var(--pl),
-    inset -3px -3px 0 0 var(--ph);
-}
 .pb.gold {
   --ph: #ffe59a;
   --pl: #c98a1b;
@@ -504,9 +495,6 @@ section > h2,
   font-size: 14px;
   min-height: 46px;
 }
-.pb.big {
-  font-family: var(--font-voice);
-}
 .pb.dark {
   --pb: #275c60;
   --ph: #4b8583;
@@ -618,9 +606,6 @@ section > h2,
   align-items: center;
   justify-content: center;
 }
-:is(.mon, .ware, .buddy, .dlg, .mapcard).px {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 38%);
-}
 /* interactive cards lift a little */
 .mon,
 .enc,
@@ -679,15 +664,6 @@ section > h2,
 /* ---------- pixel buttons: bevel + ledge, press sinks into the ledge ---------- */
 .pb:not(.wh-row .pb) {
   --dep: 3px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--pb), #fff 10%), var(--pb) 62%);
-  box-shadow:
-    0 -2px 0 0 var(--line),
-    0 2px 0 0 var(--line),
-    -2px 0 0 0 var(--line),
-    2px 0 0 0 var(--line),
-    0 calc(2px + var(--dep)) 0 0 var(--line),
-    inset 2px 2px 0 0 var(--ph),
-    inset -2px -3px 0 0 var(--pl);
 }
 .pb:not(.wh-row .pb):hover:not(:disabled) {
   --dep: 4px;
@@ -698,13 +674,6 @@ section > h2,
   --dep: 0px;
   transform: translateY(3px) scale(1.01, 0.97);
   filter: brightness(0.97);
-  box-shadow:
-    0 -2px 0 0 var(--line),
-    0 2px 0 0 var(--line),
-    -2px 0 0 0 var(--line),
-    2px 0 0 0 var(--line),
-    inset 2px 2px 0 0 var(--pl),
-    inset -2px -2px 0 0 var(--ph);
 }
 .pb.gold {
   --pb: #f4c653;
@@ -1263,8 +1232,6 @@ html[data-contrast='high'] .px {
 /* UI-9a: its one declaration was v05's width: 0 !important, and a keyframe ignores an !important declaration, so the
    Billie sheet's stat bars (billie-sheet.css .ms-bar b) never grew in: emptied, so nothing changes */
 @keyframes v05Grow {
-  from {
-  }
 }
 .seg {
   border-radius: var(--r1);

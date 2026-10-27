@@ -255,24 +255,7 @@ body:has(.topbar) .toast {
 .scrim {
   background: radial-gradient(140% 95% at 50% 105%, var(--scrim), color-mix(in srgb, var(--scrim) 50%, transparent));
 }
-.sheet.px {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 25%) 0, var(--panel-s) 90px), var(--panel-s);
-  box-shadow:
-    0 0 0 2px var(--line),
-    inset 0 4px 0 var(--gold),
-    inset 0 6px 0 color-mix(in srgb, var(--gold) 30%, transparent),
-    0 -10px 40px -14px rgba(0, 0, 0, 0.45);
-}
-:root[data-theme='dark'] .sheet.px {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 5%) 0, var(--panel-s) 90px), var(--panel-s);
-}
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .sheet.px {
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--panel-s), #fff 5%) 0, var(--panel-s) 90px), var(--panel-s);
-  }
 }
 .sheet::before {
   background: color-mix(in srgb, var(--line) 30%, transparent);

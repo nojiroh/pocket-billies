@@ -362,8 +362,6 @@ body.on-walk .wh-foot > * {
   min-height: 38px;
   padding: 0 14px;
   border-radius: var(--r-pill);
-  box-shadow: 0 0 0 2px var(--line);
-  background: color-mix(in srgb, var(--panel-s) 86%, transparent);
 }
 .wh-down {
   display: flex;

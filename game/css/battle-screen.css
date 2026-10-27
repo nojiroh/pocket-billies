@@ -720,10 +720,6 @@
   gap: var(--s1);
   align-items: center;
 }
-.pk-m .chip {
-  font-size: 10px;
-  padding: 2px var(--s1);
-}
 .pk-s {
   font: 400 13px/1 var(--font-voice);
   color: #ffd86a;
