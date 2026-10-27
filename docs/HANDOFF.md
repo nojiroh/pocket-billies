@@ -2,6 +2,162 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-1 - the bench and the fixes - 2026-10-27
+Branch `track/characters`, made 2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word. Plan
+approved in Plan Mode, with the owner's answers: the sprite-sheet exporter is retired ("Ask me before" 10); cutscene
+walks turn for real; the proposed `face Kappi you` went with the plan. Main merged in twice, as merges: before the work
+(37f7b8dc: PRs #268 and #272, HANDOFF's top the only conflict) and before the PR's checks (a0e4b141: #270, CH-0's own,
+#273, #274 and #275; HANDOFF as main had it, the generated files remade). Draft PR #277. Tag `ch-1-done` (the
+owner's) on this entry's commit. No art changed and no new renderer.
+- Changed (one cause per commit):
+  - Room exit: `leaveRoom` set `P.dir` to `'right'`/`'left'`, words no walk frame has, so an east or west door
+    (Kappi's lab, rot 90) left you facing down. The in-game test's Room phase expected the same wrong words
+    (self-test.js); fixed in the same commit.
+  - game/js/logic/person-view.js (new; on both pages and in the Studio's logic worker;
+    tools/test/person-view.test.mjs, 11 tests):
+    - `copiedAnchor`: the director's dark and mirrored copies keep ax, ay, ppm and noNormal. Before, the city
+      scene's silhouette was 1.58 times too tall and sunk into the ground.
+    - `facingWord`: directionOf's rule, moved, no change.
+    - `faceToward`, `faceWay`, `faceWord`: a heading per person (`head`, radians, 0 along +z, with `headDir`),
+      written on runtime records only, never on scene data.
+    - `seenFacing`, `seenToward`, `seenWord`: the side a camera sees. `personHeading`: the heading CH-2's figures
+      will turn to.
+    - `personPicture`: a person's picture is one with a `ppm` (Billies carry the items' `person` flag too).
+  - A cutscene's reach is mirrored for `side`. It mirrored `sideR`, but a side view as drawn faces right.
+  - Facing relative to the camera, in three commits (only the third changes a picture):
+    - every writer goes through the helpers;
+    - walk/camera.js returns `turn`, its yaw without the phone's tilt, so the tilt's sway never turns anyone. With
+      the camera unturned, every picture is today's;
+    - walk-view.js `seenYaw`, and the views picked by it: frame-items.js (map people, folk, you), prop-look.js (your
+      mount), friends.js, and director.js (its shot's own yaw, read before it builds its people).
+    - Plain words stay screen words: maps', rooms' and keepers' `dir`, a fresh view's `down`, cutscene and
+      story-scene words, the train ride. docs/CUTSCENES.md says which is which.
+    - A run's leader in its arena (WM-7, which came in with main's second merge) turns the same way, in a commit of
+      its own.
+  - opening.json: `face Kappi you`, once you are up.
+  - People in the debug log:
+    - a `person` draw tag (gpu-counters.js) in the sprites pass, the shadow maps, the reflection (both paths) and
+      your outline;
+    - walk-view-gl.js counts the people each frame draws. `peopleReport()` gives drawn, draws in all and by pass,
+      pictures and MB (webgl.js `gpuPictureBytes`: uploads only, with mip levels, and a normal map only where one
+      exists);
+    - debug-log.js: a `people` section, and `ppl: [drawn, draws, MB]` in the samples. Smoke checks the exported log
+      has the section, numbers only.
+  - Test maps' `lineup` (frame-items.js, map.schema.json): people who are only drawn (kind `line`: no taps, no talk,
+    no turning to you). Each faces a plain word (`dir`) or a world way (`face`, in degrees, as set pieces turn), and
+    can `walk` on the spot.
+  - `test_people` (build-test-scenes.py `t_people`, built with `--only=test_people`; the check-data snapshot
+    remade):
+    - the front row, the cast facing the camera: Chosen, Blake, Kappi, Juniper, Mo, Bertha, a clerk, an intern, two
+      folk, a boy, a girl;
+    - the middle row: one look at 8 world headings, 45 degrees apart, with you in its middle gap at the hub, so the
+      camera centres on the lineup at every turn;
+    - the back row: four people walking on the spot;
+    - two lantern posts for the night.
+  - tools/look-people.py (its output, validation/look-people/, is gitignored).
+  - Retired at the owner's word: tools/export-trainer-sprite-sheets.py, .github/workflows/trainer-sprite-sheets.yml
+    and docs/EDIT-TRAINER-SPRITES.md. ART-NOTES.md's wardrobe path is now game/data/wardrobe.json.
+  - Docs: the track file, ROADMAP, BRANCHES (the `track/characters` row), CHANGELOG, this entry.
+- The bench (look-people.py; a 390 x 844 phone at DPR 3, so the scene buffer is 860 x 1861, as CH-0 worked out; 25
+  people: the lineup's 24 and you; auto quality and depth of field off, quality step 0; means over 6 frames; counts
+  only, no timings):
+
+  | Stop (zoom) | Buffer px per art px, camera turned 0 / 35 / 90 degrees | A 1.75 m person, buffer px tall | Draws by day (people's) | By night (people's) |
+  | --- | --- | --- | --- | --- |
+  | Close (0.55) | 1.46 / 1.45 / 1.40 | 169 | 92-97 (64) | 131-136 (101) |
+  | Normal (1) | 0.74 / 0.74 / 0.73 | 86.5 | 97 (64) | 136 (101) |
+  | Far (1.7) | 0.39 / 0.39 / 0.39 | 45 | 97 (64) | 136 (101) |
+
+  - CH-0's arithmetic holds: 0.74 at Normal, 1.45 at Close, 0.39 at Far.
+  - People's draws, by pass: the sprites pass 25 (one each); the sun's two shadow maps 19 each (a shadow map draws
+    each picture once, as instances, for everyone showing it); your outline about 1. At night the two nearest lamps'
+    shadow maps add 19 and 18.
+  - People's pictures on the GPU: 41 uploaded (the walk frames drawn so far), 3 MB, the same at every shot.
+  - With 40 townsfolk wandering round them as well (`--crowd=40`, Normal, the camera unturned), 65 people drawn:
+    217 draws by day (184 people's: 65 sprites, 59 in each shadow map) and 332 at night (297 people's: the lamps'
+    maps add 57 and 56); 112 pictures, 8.4 MB (119 and 8.9 MB at night, as more walk frames are drawn). So a person
+    costs about 3 draws by day and 5 by lamplight, and a crowd under lamps is where people's draws add up.
+- Found (the brief and CH-0, checked):
+  - The exporter's cause: `game/data/gamedata.js` isn't gone. It is built by `npm run data` and gitignored, and the
+    workflow never built it, so all 30 runs failed (2026-10-24 to 27). SA-5's deletion of `game/art/people/` broke
+    nothing. CH-0's entry and the track file said otherwise; the track file is corrected.
+  - Room exit: only east and west doors were wrong, and the in-game test encoded the bug.
+  - Subtracting the camera's yaw everywhere would have broken the opening: its cameras look along -90 to -161
+    degrees, and its `face X down` means "toward the camera". Hence plain words stay screen words.
+  - Test maps draw no named people (the bench state has no map people), and tapping one can offer a Bean (a save
+    write). Hence the draw-only `lineup`.
+  - build-test-scenes.py without `--only` deletes 13 test maps other tools make (and gallery.json).
+  - Not fixed (outside this session): grass-build.js buildFarProps (:306) pools any prop whose group matches 'tree',
+    and 'streetlamp' does. So a scene with street lamps and no trees gets a ring of distant lamps (test_people showed
+    147 before it got lanterns; run towns with street lamps likely do too). A one-word fix for a renderer or towns
+    session.
+  - Not fixed (outside this session): the Studio's world map look and Camera section fail in CI's smoke on main as
+    here, with 404s for `game/art/billionaires/<species>.png` (musk0, kardashian0, ...): for a species with no rig
+    sheet, skeleton-rig.js `rigAtlas` (:501) falls back to a legacy picture the repo doesn't have. No fix exists yet;
+    PR #277's comment says so.
+  - Not fixed (not CH-1's): once a run's seam crossing fails on a page (the quick check's RL-8), a trainer battle
+    there never starts and a talk never opens: the quick check's RT-2 and Granny Juniper steps, which follow RL-8 on
+    its page, fail that way on main (07c9b284) too, and pass when run alone. The in-game test's "A run's road" fails
+    on main as here ("arrived but the view is still ...").
+  - Noted, not changed: the picture cap (`gpuState.texB`, webgl.js `trackTexture`) counts every picture with a
+    normal map, so people's pictures, which have none, count twice toward it.
+  - gamedata.js is 0.84 MB, not CLAUDE.md's 13 MB.
+  - In this container, Python Playwright must be 1.63.0: with the pinned 1.56.0, smoke skips its browser steps and
+    still passes.
+  - The quick check's picture baseline is not in git. One was made here from a worktree of the start (37f7b8dc, 42
+    pictures); it stays in this container.
+  - The edit hook gives `npm test` 50 s, and it takes about 94 s here, so the hook reports a failure that is only
+    its timeout.
+- Risky:
+  - Visible changes, for the owner's phone: the hub island's people and you, as the orbit camera turns; turned
+    rooms; the opening's walks and Kappi; leaving the lab. A person whose heading sits near the line between two
+    views turns as the orbit camera turns: correct, but new.
+  - Test maps can now draw named people, but only test maps (`test`) read `lineup`.
+  - Merges with other tracks that edit frame-items.js, walk-view.js or director.js.
+- Verified:
+  - After each change: lint, typecheck and `npm test` (1,582 unit tests on the merged tree, 13 of them new:
+    person-view 11, sprite-records 2). Smoke before each game commit, one at a time, its browser steps checked to
+    have run: 6 of 6 every time (3456d127, 09e00e64, 3a652cec, d56d41ad, a31f2d85, 6c9975f6, 0ee8ada7,
+    0a5b92b7, 912cfce2, df92c0bc, c98ad5aa).
+  - CI: the lint job green on every push (lint, types, unit and slow unit tests, data, modules, format, build).
+    Smoke on a0e4b141: 39 of 41, the two Studio checks failing as on main (see Found). Its two runs on c98ad5aa also
+    failed checks that passed on a0e4b141 and pass here on c98ad5aa: Behind things, Tall ground (it waits 20 s for
+    the GPU's answer on whether you're hidden) and the Studio's Model mode; on the slower run (28 minutes) also the
+    orbit, the pasture and a run's world (which main fails too).
+  - At the end of the phase, in this container (Python Playwright 1.63.0):
+    - look-people: the 18 shots and the crowd's 2, no page errors.
+    - A page check (a scratch script, not kept): the dark and mirrored copies of you and Chosen keep the frame's
+      width, anchor (mirrored: the width less ax), 66.5 px a metre and noNormal.
+    - The quick check against the "before" baseline (made from the start, 37f7b8dc): 36 of 41 steps pass. Its five
+      problems:
+      - three also in the baseline: Terraces (a prop in the air at the station), RL-8 (a run's seam crossing never
+        shows the next view) and room light;
+      - two new, not CH-1's: RT-2 (the pair talked but no battle started) and Granny Juniper (said nothing). They run
+        on the same page after RL-8 fails. Run alone on this branch, both pass; main (07c9b284) fails the same
+        three in a row the same way.
+      - The baseline's other two problems (the lab's room in place, the battle music's drums) passed here.
+      - Picture notes: 5 pictures differ (battle-double, battle-rain, phone-battle, phone-mast, room-lab); a re-run of
+        their steps flagged another 5 (battle-double, battle-rain, env-day, phone-battle, phone-walk). The ones
+        looked at show other moments (the battle camera's drift, the postcard, a battle menu still loading), not
+        people.
+    - The in-game full test (`--selftest`), here and on main (07c9b284) side by side under the same load: both fail
+      "A run's road" (arrived, but the view never changed) and "A room that opens in place" (the town's walking grid
+      changed after the room, 236 cells); that step's facing check, before it, passes, and run alone the step passes
+      on both. Here the opening's fall also drew 1 frame once: run alone three times each, the fall drew 19, 6 and 18
+      frames here and 18, 5 and 7 on main (the check wants 3), so that is the machine's load. The diagnostics test
+      didn't run on either (the full test's problems end the step first).
+    - The Studio check (`--only=sections,studio_test,checks`): ok, 32 sections, 0 errors on the game data.
+    - check:modules, format:check, check:data and build pass.
+- For the owner on the phone:
+  - New game: Chosen runs out of the lab face first, and Kappi turns to you once you're up.
+  - Walk round the hub island away from the camera: you show your back.
+  - Come out of Kappi's lab: you face out of the door.
+  - Turn the camera with people about.
+  - Export a debug log: its `people` section, and the samples' `ppl`.
+- Next: CH-2 (Spike 1, the figure baker) on `track/characters`. `personHeading` is the heading its figures turn to;
+  test_people and look-people are its bench. Its session was started at the owner's word; it plans only until this
+  entry is on the branch and the owner approves. Tag `ch-1-done` (the owner's).
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
