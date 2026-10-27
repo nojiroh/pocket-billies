@@ -211,6 +211,13 @@ town node needs it.
   (a small 3D texture, coarser on phones), AIR-3 the light-in-air march lights the fog (sun, shadows, lamps), AIR-4
   depth-aware edges and shadowed haze. AIR-0 (the plan and research) done 2026-10-26 on `ccr-c0505a05-bzef90`. Tags
   `air-N-done`. Branch `track/air`.
+- **Load track** (docs/phases/load-track.md, the owner's brief and answers 2026-10-26/27): no frame over 33 ms once
+  the title shows, loading screens included. LD-0 (the plan with research, the hitch list, the boot timeline, the load
+  check) done 2026-10-27 on `ccr-3df446bb-9jvdvq`; LD-1 (the debug log's picture on export, picture facts baked at
+  build time, portraits without PNG text) and LD-2 (shaders compiled at boot, checked once) next, then LD-3 (booting:
+  pictures per place, the bundle minified with test code loaded on use, precache), LD-4 (the run's scenes in a worker
+  from the pick), LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
+  `ld-N-done`. Branch `track/load`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
