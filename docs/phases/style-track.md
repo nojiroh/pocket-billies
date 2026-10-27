@@ -104,7 +104,9 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
 
 ## Sessions
 - **SY-0** the plan (this file), ROADMAP, BRANCHES, HANDOFF. Docs only.
-- **SY-1** flashes that obey the settings. `battleStageFlash` reads Flashes and Reduced motion: Flashes off caps a
+- **SY-1** flashes that obey the settings. Done 2026-10-27 on `ccr-86dc9cb1-odx2za` at the owner's word (built as
+  below, except the plan's "drops white to the palette's surface": a bright flash keeps its colour and is held to 15%;
+  a dark one, a faint's deep red, stays; the rule is `flashFor` in logic/smear.js). `battleStageFlash` reads Flashes and Reduced motion: Flashes off caps a
   flash at 15% and drops white to the palette's surface; Reduced shows no flash. The same rule for the impact frame's
   check (VFX-4) and the coat foil (SY-6). A unit test per setting. Small and on its own, so first: it is an
   accessibility fix.

@@ -260,8 +260,8 @@ town node needs it.
   events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in
   the world), numbers you feel beyond the UI track's (your HP rolls down, damage numbers sized by the hit), and the
   coat's prism foil carried onto Billies in battle and on the maps. First, battle flashes obey Flashes and Reduced
-  motion (they don't today). SY-0 (the plan, with research) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; next SY-1 (the
-  flashes). About 8 sessions. Tags `sy-N-done`. Branch `track/style` (the owner makes it).
+  motion (they don't today). SY-0 (the plan, with research) and SY-1 (battle flashes follow Flashes and Reduced
+  motion) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; next SY-2 (numbers you feel). About 8 sessions. Tags `sy-N-done`. Branch `track/style` (the owner makes it).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
