@@ -166,7 +166,14 @@ town node needs it.
   music: intros timed to the throw, leader and boss songs, the red zone's tense version, the run's arc by row, the
   deadline version, the map song's forecast) done 2026-10-22; SND-6 (a cry per Billie from eight kinds with a low-HP
   cry, four UI sounds, jingles for the run's beats, the mix as data; every new sound a placeholder) done 2026-10-23.
-  The track's planned sessions are done; what's next is the owner's listening pass.
+  **Part 2** (the owner's brief and answers 2026-10-27: richer music, not only 8-bit; gentle environment sounds;
+  better water): SND-7 (the plan with research, a private listening page) done 2026-10-27. Next SND-8 (the calm
+  pass: today's beds gentle and cheap, songs level-matched, the echo bugs, a loudness report), then SND-9 (the
+  engine: baked instruments, part buses and layers, reverb, a Sound Test page), then water (SND-10, taking WA-8's
+  water sounds if the owner agrees), instruments and arrangements in a Chip+ and DS-era mix with a GB Sounds switch
+  (SND-11, SND-12), layers in play (SND-13: a walking beat, street musicians, weather and night, building
+  intensity), nature and weather (SND-14), the mix and a phone pass (SND-15). Branch `track/sound` (the owner makes
+  it from main).
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the
   stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
