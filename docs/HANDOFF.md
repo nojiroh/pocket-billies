@@ -2,6 +2,44 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-10 - Part 2 planned: Living Semigloss (research, the colour code, palettes, a sampler) - 2026-10-27
+Branch `ccr-03a15a70-nd3yqu` (the session's own; `track/ui` holds UI-9b, PR #266). Main merged first (a fast-forward).
+Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game changed. Details: docs/phases/ui-track.md,
+"Part 2: Living Semigloss".
+- The owner's brief: keep the design, make it look and feel better; one design language; not cluttered; palette
+  samples; dynamic and alive; status effects and run pickups colour coded for at-a-glance reading; ideas welcome.
+- Changed: ui-track.md Part 2 (what the code does today with file refs, six rules, the colour code: channels and
+  families, five palettes and today's, alive, less clutter, sessions UI-11..UI-18, fits with other tracks, risks, Ask
+  me before, research); a ROADMAP line after the UI track's entry; a BRANCHES row.
+- The sampler (a private artifact the owner holds, nothing committed): https://claude.ai/artifact/89UBnLzgC5Uq99aytdb6SS.
+  60 real screens (battle, Team, walking in a run, the run map, the Perk pick; six palettes; light and dark) captured
+  headless at 390 x 844 on fixtures team, battle, run and relics, each palette applied after boot with
+  `applyUiTheme(theme, 'cand')`; backdrops with the UI hidden; mock screens of a battle turn, a run, rewards and Team;
+  the colour key; a colour-blind preview (Machado 2009 matrices as SVG filters); Animation Full / Calm / Reduced.
+- How the captures were made (for the next look tool): `node tools/build-data.mjs`; `pip install playwright==1.63.0`
+  (the pinned 1.56.0 can't find the container's chromium-1243); the game served by tools/browser_check.py `serve`;
+  with the walk view's frame tasks paused (`frameScheduler.tasks`) a palette shot takes 1-15 s instead of about 75 s
+  in SwiftShader, since the last frame stays on screen.
+- Found beyond the audit: the minimap takes the palette's hue (a purple palette gives a purple minimap); the real
+  battle shows Sandstorm as a gold chip with the bolt icon and Bag, Team and Run in green, blue and dark.
+- Where the plan was wrong (the review against the code caught it before writing): tools/build-ui-icons.py is retired
+  (SA-2b; the SVGs are the source); UI-9b was already built (#266); VFX-4 owns crits' impact frame (#257); Settings
+  already has Animation, Theme, Flashes and High contrast rows (extended, not added); in-game type pills are already
+  darkened to 4.5:1 (the 3.2-3.8:1 figure was the gallery's own pills); the HP trail exists (`.ghost`); `count` runs in
+  pb-coin and pb-payout; confusion is a short effect, not a status.
+- Risky: the colour code's hexes and the five palettes are proposals checked by script (contrast; per-screen OKLab
+  distance with the types; colour-blind simulation), not yet seen on a phone. The sampler's proposed screens are HTML
+  copies of the kit, not the game. #266 edits ui-track.md, ROADMAP, BRANCHES and this file: whichever PR merges
+  second takes a small merge (Part 2 sits after Part 1, the ROADMAP line after the UI entry, the BRANCHES row at the
+  end of the Keep table, so only this entry should meet #266's).
+- Verified: `npm run lint` (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), `npm test` 1475 of
+  1475, `npm run check:data` (172 files fine; its one warning, test_props_island's bridge, is main's). The sampler
+  opened headless at 390 x 844 in light and dark: no page or console errors, no sideways scroll; a battle turn
+  played; every palette switched.
+- Next: the owner's answers to Part 2's 11 questions (the palette first), written into the plan; then #266 merges and
+  UI-11 (the colour code as data) starts on `track/ui`.
+- Tag to suggest (sessions can't push tags): `ui-10-done` once the answers are written.
+
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
 owner's picks: delete all seven orphan groups; delete the loader's PNG copies too; retire the far backdrops; leave
