@@ -1,6 +1,6 @@
 // Routes track RT-2: route trainers on real runs' places (logic/route-trainers.js routeTrainersPlace on the scenes
 // logic/run-scenes.js makes from the run's seed, the game's own data): every trainer stands where you can walk to and
-// faces ground you can walk on (WM-2: all but a few, mapgen's to fix); the required ones' sight crosses the road (you can't pass them unseen); a required
+// faces ground you can walk on; the required ones' sight crosses the road (you can't pass them unseen); a required
 // one stands by the road, an optional one aside, with few left to fall back on; a pair's second stands where you can
 // walk too; the same run, the same spots.
 import assert from 'node:assert/strict';
@@ -85,10 +85,9 @@ test('RT-2: route trainers on real runs stand where you walk, face open ground, 
     }
   }
   assert.ok(n > 20, `${n} trainers`);
-  /* WM-2: a few face a wall: mapgen's spot points its `face` at one (3 of 179 trainers over 25 seeds before WM-2, 7 of
-     540 after: the same share; WM-2's runs have three times the route places, so 5 seeds now meet one or two). A
-     mapgen session's to fix (HANDOFF WM-2); until then the share is held */
-  assert.ok(walls / n <= 0.03, `${walls} of ${n} trainers face a wall`);
+  /* WM-3b: none faces a wall (WM-2 met 7 of 540 looking into a bush a set piece put in front of their spot after it
+     was found; mapgen.js mapgenSpotsFaceOpen turns them) */
+  assert.equal(walls, 0, `${walls} of ${n} trainers face a wall`);
   assert.ok(off / n < 0.1, `${off} of ${n} not on their own kind of spot`);
   /* the game stands the second at the walkable point nearest (walk/frame-items.js walkablePointNear) */
   assert.ok(!mates || matesOK / mates >= 0.75, `${matesOK} of ${mates} pairs' seconds stand where you walk`);
@@ -177,4 +176,59 @@ test("WM-7: a mini-boss's place has a line of trainers on the road before its le
     });
   }
   assert.ok(lines >= 3, `${lines} lines`);
+});
+
+test('WM-3b: places whose way on is north or south: tall grass across it, the plan’s walkable share, trainers by its road', () => {
+  const C = GAME_DATA.scenery;
+  /** @type {Record<string, number>} */
+  const sides = {};
+  let places = 0,
+    off = 0,
+    trainers = 0;
+  for (let k = 0; k < 8; k++) {
+    const seed = 'RT2SPOT' + k,
+      a = run(seed),
+      scenes = runScenesMake(a, DATA),
+      T = RT.runRouteTrainers(a, TD);
+    RT.routeTrainersPlace(a, T, scenes, TD.classes);
+    scenes.forEach((sc, i) => {
+      const A = sc && sc.gen && sc.gen.params.ahead;
+      if (!sc || sc.kind !== 'route' || (A !== 'N' && A !== 'S') || !sc.layout) return;
+      const where = `${seed} node ${i} (ahead ${A}, ${sc.w} x ${sc.h}, ${sc.layout.plan})`,
+        way = (sc.edgeExits || []).filter((/** @type {any} */ e) => e.side === A);
+      places++;
+      sides[A] = (sides[A] || 0) + 1;
+      assert.ok(way.length, `${where}: no exit on its way on`);
+      if (!sc.arena)
+        assert.ok(
+          (sc.grassPatches || []).some((/** @type {any} */ g) => g.across),
+          `${where}: no tall grass across the way on`
+        );
+      /* the plan's 55-65% (give or take 5): a few miss it, as many as on places going east (WM-3b: 4 of 73 north or
+         south, 7 of 157 east over 25 seeds; ledge drops and lanes most) */
+      const W = M.MAPGEN_WALKABLE;
+      if (sc.layout.walk < W[0] - 0.05 || sc.layout.walk > W[1] + 0.05) off++;
+      const R = M.mapgenReach(sc, C, sc.hub, { slope: true }),
+        road = way.flatMap((/** @type {any} */ e) => (e.path ? M.mapgenResample(e.path, 0.5) : []));
+      assert.deepEqual(M.mapgenUnreachable(sc, C, { slope: true }), [], where);
+      for (const t of Object.values(T))
+        if (t.runNode === i) {
+          trainers++;
+          assert.ok(M.mapgenReached(R, ...t.route.at), `${where}: ${t.id} can't be walked to`);
+          /* the line before a leader's ring stands on the road from the way in to the ring: the way on's road is
+             the rest of it */
+          if (t.route.spot === 'arena') continue;
+          if (t.route.spot === 'way')
+            assert.ok(
+              road.some(
+                (/** @type {number[]} */ p) => Math.hypot(p[0] - t.route.look[0], p[1] - t.route.look[1]) < 0.6
+              ),
+              `${where}: ${t.id} stands by another road than the way on`
+            );
+        }
+    });
+  }
+  assert.ok(places >= 5 && sides.N && sides.S, `${places} places going north or south: ${JSON.stringify(sides)}`);
+  assert.ok(trainers >= 10, `${trainers} trainers on them`);
+  assert.ok(off / places <= 0.15, `${off} of ${places} out of the plan's walkable share`);
 });

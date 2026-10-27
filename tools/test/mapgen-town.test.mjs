@@ -120,7 +120,10 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       }
       /* the houses: shut (no act, no room of their own), facing the camera, each a walk from the hub */
       const houses = sc.props.filter(p => HOUSE.test(p.k));
-      assert.ok(houses.length >= 3 && houses.length <= 7, `${where}: ${houses.length} houses`);
+      /* WM-3b: a town whose way on leaves north (WM-3) has that road on the houses' side: 2 at least (TW1F node 4;
+         WM-5 grows town streets anew) */
+      const fewest = sc.gen.params.ahead === 'N' ? 2 : 3;
+      assert.ok(houses.length >= fewest && houses.length <= 7, `${where}: ${houses.length} houses`);
       if (houses.length >= 4) four++;
       for (const p of houses) {
         const M = C.props[p.k];

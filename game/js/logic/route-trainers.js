@@ -227,8 +227,9 @@ export function routeTrainersPlace(run, trainers, scenes, classes) {
     const i = +ni,
       sc = scenes[i];
     if (!sc) continue;
-    /* WM-7: before a leader's ring they stand in a line on the road (routeArenaLine) */
-    if (sc.arena && sc.arena.mode === 'leader') {
+    /* WM-7: before a leader's ring they stand in a line on the road (routeArenaLine); WM-3b: on the generator's spots
+       as on any route when the ring is too near the way in for a line (3 leader places in 300) */
+    if (sc.arena && sc.arena.mode === 'leader' && list.every((_, k) => routeArenaLine(sc, k, list.length))) {
       list.sort((a, b) => a.route.k - b.route.k);
       list.forEach((T, k) => {
         const S = routeArenaLine(sc, k, list.length);
@@ -331,12 +332,17 @@ export function routeRareSpots(run, trainers, scenes) {
 export const routeUnderCanopy = (q, p) =>
   Math.hypot(q.x - p.x, q.z - p.z) < 4.5 || (q.z < p.z && p.z - q.z < 7 && Math.abs(q.x - p.x) < 3);
 
-/** a place with no spot left: on the way ahead (its east exit's road, else the first; WM-1: runs go west to east) at (k + 1) / (n + 1) of it, 3 m
+/** a place with no spot left: on the way ahead (the first exit by t on its way on's side, WM-3: the scene's `ahead`
+ * dial, north or south too, east without one; else the first exit with a road) at (k + 1) / (n + 1) of it, 3 m
  * to one side for even k and the other for odd ones, facing it @param {any} sc @param {number} k @param {number} n
  * @returns {{ at: [number, number], road: [number, number] } | null} */
 export function routeWaySpot(sc, k, n) {
-  const E = sc.edgeExits || [],
-    ahead = E.filter(e => e.side === 'E' && e.path && e.path.length > 1)[0] || E.find(e => e.path && e.path.length > 1);
+  const E = (sc.edgeExits || []).filter((/** @type {any} */ e) => e.path && e.path.length > 1),
+    A = (sc.gen && sc.gen.params && sc.gen.params.ahead) || 'E',
+    ahead =
+      E.filter((/** @type {any} */ e) => e.side === A).sort(
+        (/** @type {any} */ a, /** @type {any} */ b) => a.t - b.t
+      )[0] || E[0];
   if (!ahead) return null;
   const P = ahead.path,
     seg = [];

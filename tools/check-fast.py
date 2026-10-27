@@ -1590,7 +1590,12 @@ def run_test(pg, base):
         pg.evaluate('exportDebugLog();0')
     logged = (json.loads(Path(dl.value.path()).read_text(encoding='utf-8')).get('state') or {}).get('run') or {}
     if logged.get('seed') != 'TESTSEED' or logged.get('unlocks') != want['unlocks']: raise Exception(f"the debug log's run is {logged.get('seed')!r} with unlocks {logged.get('unlocks')}, not the run's {want['unlocks']}")
-    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks (in the debug log too), the party and Perks asked for; nothing saved"
+    # WM-3b: each place's making, [node, type, w, h, shape, ms], and nothing else
+    places = logged.get('places') or []
+    if len(places) != len(got['map']['nodes']) or any(len(t) != 6 or t[0] != i or not isinstance(t[1], str) or t[4] not in ('', 'L') or not all(isinstance(t[k], int) for k in (2, 3, 5)) for i, t in enumerate(places)):
+        raise Exception(f"the debug log's run.places isn't one [node, type, w, h, shape, ms] a place: {places[:3]}")
+    slow = max(places, key=lambda t: t[5])
+    return f"TESTSEED took off: {len(got['map']['nodes'])} places as runStartPlan makes them, {len(got['unlocks'])} unlocks (in the debug log too, with each place's time, the slowest {slow[2]} x {slow[3]} {slow[5]} ms), the party and Perks asked for; nothing saved"
 
 
 def hub_island(pg, base):
