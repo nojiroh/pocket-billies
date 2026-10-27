@@ -474,6 +474,8 @@ debugLog.state = () => {
             nodes: run.map.nodes.length,
             scenes: GAME.runWorld.scenes,
             makeMs: GAME.runWorld.ms,
+            /* WM-3b: each place's making: [node, type, w, h, shape ('L' or ''), ms] (logic/run-scenes.js RunPlaceTime) */
+            places: GAME.runWorld.places || [],
             /* LD-4: where they were made: 'helper' (the run's helper thread) or 'page', and if the thread is off, why */
             madeOn: GAME.runWorld.how || null,
             helperOff: (GAME.runWorldAhead && GAME.runWorldAhead.off) || null,

@@ -76,8 +76,17 @@ expose({
 provide({ runPlaceWeather, runWaterWeatherSync, runWorldSync });
 /* to-module: end */
 /** the world that is in: the seed of the run it was made from ('' for the hub's), its scenes and how long they took
- * to make (HB-2: ms the work, wall from start to swap when made over frames); live once boot has put the first world in (before that a swapped save waits for boot) */
-export const runWorld = { seed: '', scenes: 0, ms: 0, wall: 0, live: false, how: '' };
+ * to make (HB-2: ms the work, wall from start to swap when made over frames); live once boot has put the first world in (before that a swapped save waits for boot);
+ * WM-3b: places, each place's node, type, size, shape and ms (logic/run-scenes.js RunPlaceTime), for the debug log */
+export const runWorld = {
+  seed: '',
+  scenes: 0,
+  ms: 0,
+  wall: 0,
+  live: false,
+  how: '',
+  places: /** @type {import('./logic/run-scenes.js').RunPlaceTime[]} */ ([]),
+};
 provide({ runWorld }); /* to-module */
 /** put in the world the save needs, if it isn't in yet: the run's while one is on with its map, else the hub's.
  * Returns whether the world changed */
@@ -89,7 +98,9 @@ export function runWorldSync() {
     try {
       const t0 = performance.now(),
         data = runWorldData(),
-        scenes = runScenesMake(run, data);
+        /** @type {import('./logic/run-scenes.js').RunPlaceTime[]} */
+        places = [],
+        scenes = runScenesMake(run, data, places);
       runWorldPutRun(run, scenes, data);
       Object.assign(runWorld, {
         seed: want,
@@ -97,13 +108,14 @@ export function runWorldSync() {
         ms: Math.round(performance.now() - t0),
         wall: 0,
         how: 'page at once',
+        places,
       });
     } catch (e) {
       runWorldFailed(e);
     }
   else {
     worldHubBack();
-    Object.assign(runWorld, { seed: '', scenes: 0, ms: 0, wall: 0, how: '' });
+    Object.assign(runWorld, { seed: '', scenes: 0, ms: 0, wall: 0, how: '', places: [] });
   }
   runWorldLetGo();
   return true;
@@ -127,6 +139,8 @@ export function runWorldMake(onStep) {
       };
     let work = 0,
       slices = /** @type {Generator<[number, number], any[], void> | null} */ (null);
+    /** @type {import('./logic/run-scenes.js').RunPlaceTime[]} */
+    let places = [];
     /* the scenes made: put in (one tick), the world let go */
     const put = (/** @type {any[]} */ scenes, /** @type {string} */ how) => {
       if (saveData.run !== run || runWorld.seed === run.seed) return end(false);
@@ -141,6 +155,7 @@ export function runWorldMake(onStep) {
           ms: Math.round(work),
           wall: Math.round(performance.now() - t0),
           how,
+          places,
         });
       } catch (e) {
         runWorldFailed(e);
@@ -152,7 +167,7 @@ export function runWorldMake(onStep) {
     const step = () => {
       if (saveData.run !== run || runWorld.seed === run.seed) return end(false);
       try {
-        if (!slices) slices = runScenesSlices(run, data);
+        if (!slices) slices = runScenesSlices(run, data, (places = []));
         const a = performance.now();
         let r = slices.next();
         while (!r.done && performance.now() - a < 8) r = slices.next();
@@ -178,6 +193,7 @@ export function runWorldMake(onStep) {
       if (runWorldAhead.job === job) runWorldAhead.job = null;
       if (scenes) {
         work += job.ms;
+        places = job.places || [];
         put(scenes, 'helper');
       } else runWorldNextFrame(step);
     });
@@ -253,7 +269,17 @@ export function runWorldAheadStart(run) {
   const w = runWorldWorker();
   if (!w) return null;
   /** @type {any} */
-  const job = { id: ++A.id, seed: run.seed, scenes: [], ms: 0, failed: '', onStep: null, res: null, wait: null };
+  const job = {
+    id: ++A.id,
+    seed: run.seed,
+    scenes: [],
+    ms: 0,
+    places: [],
+    failed: '',
+    onStep: null,
+    res: null,
+    wait: null,
+  };
   job.wait = new Promise(res => (job.res = res));
   A.job = job;
   try {
@@ -272,6 +298,7 @@ function runWorldAheadMessage(m) {
   } else if (m.kind === 'scene') job.scenes[m.i] = m.scene;
   else if (m.kind === 'done') {
     job.ms = m.ms;
+    job.places = Array.isArray(m.places) ? m.places : [];
     job.res(job.scenes.length === m.n ? job.scenes : null);
   } else if (m.kind === 'failed') runWorldAheadFail(m.error);
 }
@@ -394,11 +421,16 @@ function runWorldLetGo() {
   if (airshipFlight.on) airshipFlight.on = false;
   airshipFlight.a = airshipFlight.b = -1;
   environment.id = null;
+  /* WM-3b: the slowest place (each place's time is in the log's run.places) */
+  const slow = runWorld.places.reduce(
+    (/** @type {any} */ a, /** @type {any} */ p) => (!a || p[5] > a[5] ? p : a),
+    /** @type {any} */ (null)
+  );
   if (typeof debugLog !== 'undefined')
     debugLog.add(
       'scene',
       runWorld.seed
-        ? `a run's world in: ${runWorld.scenes} scenes made in ${runWorld.ms} ms${runWorld.how === 'helper' ? ' on the helper thread' : ''}${runWorld.wall ? `, in ${runWorld.wall} ms after the swap was asked for` : ''}`
+        ? `a run's world in: ${runWorld.scenes} scenes made in ${runWorld.ms} ms${runWorld.how === 'helper' ? ' on the helper thread' : ''}${runWorld.wall ? `, in ${runWorld.wall} ms after the swap was asked for` : ''}${slow ? `; the slowest place node ${slow[0]} (${slow[1]}, ${slow[2]} x ${slow[3]}${slow[4] ? ' ' + slow[4] : ''}) ${slow[5]} ms` : ''}`
         : "the hub's world in"
     );
 }

@@ -189,9 +189,11 @@ test('the same seed makes the same scenes; every node its own', () => {
   assert.notDeepEqual(runScenesMake(runOf('RL7OTHER'), WORLD_DATA)[0].tiles, a[0].tiles);
 });
 
-test('HB-2: the scenes made one a step are the scenes made at once, each step counting up to the last', () => {
+test('HB-2: the scenes made one a step are the scenes made at once, each step counting up to the last; WM-3b: each place timed', () => {
   const run = runOf('HB2SLICES'),
-    it = runScenesSlices(run, WORLD_DATA),
+    /** @type {any[]} */
+    times = [],
+    it = runScenesSlices(run, WORLD_DATA, times),
     steps = [];
   let r = it.next();
   for (; !r.done; r = it.next()) steps.push(r.value);
@@ -201,6 +203,15 @@ test('HB-2: the scenes made one a step are the scenes made at once, each step co
     Array.from({ length: n - 1 }, (_, i) => [i + 1, n])
   );
   assert.deepEqual(r.value, runScenesMake(runOf('HB2SLICES'), WORLD_DATA));
+  /* WM-3b: the debug log's run.places: each place's node, type, size, shape and ms, nothing else (no names, nothing
+     of the save) */
+  assert.equal(times.length, n);
+  times.forEach((t, i) => {
+    const node = run.map.nodes[i];
+    assert.deepEqual(t.slice(0, 5), [i, node.type, r.value[i].w, r.value[i].h, node.cut ? 'L' : ''], `place ${i}`);
+    assert.ok(Number.isInteger(t[5]) && t[5] >= 0, `place ${i}: ${t[5]} ms`);
+    assert.equal(t.length, 6);
+  });
 });
 
 test("WM-7: a mini-boss's place has a leader's ring of its leader's type, gated until it is beaten; the boss's its own", () => {

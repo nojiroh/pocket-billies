@@ -548,22 +548,30 @@ export function runTownResident(scene, id, name) {
     { id: 'resident', who: id, name, x: at.x, z: at.z, dir: 'down', lines: [], resident: id },
   ]);
 }
+/** WM-3b: how long one place took to make, for the debug log: its node, type, size, shape ('L' with a cut corner,
+ * else '') and milliseconds. Nothing else: no names, nothing of the save
+ * @typedef {[number, string, number, number, string, number]} RunPlaceTime */
 /** every scene of a run's map, in order (each after its parents), by map node @param {Run} run
- * @param {RunWorldData} data @returns {any[]} */
-export function runScenesMake(run, data) {
-  const it = runScenesSlices(run, data);
+ * @param {RunWorldData} data @param {RunPlaceTime[]} [times] filled with each place's (WM-3b) @returns {any[]} */
+export function runScenesMake(run, data, times) {
+  const it = runScenesSlices(run, data, times);
   let r = it.next();
   while (!r.done) r = it.next();
   return r.value;
 }
 /** HB-2: the same scenes one at a time, so the page can make them over several frames behind its loading screen:
  * each step makes one and yields how many are made of how many; the last returns the scenes
- * @param {Run} run @param {RunWorldData} data @returns {Generator<[number, number], any[], void>} */
-export function* runScenesSlices(run, data) {
+ * @param {Run} run @param {RunWorldData} data @param {RunPlaceTime[]} [times] filled with each place's (WM-3b)
+ * @returns {Generator<[number, number], any[], void>} */
+export function* runScenesSlices(run, data, times) {
   const map = /** @type {RunMap} */ (run.map),
     scenes = /** @type {any[]} */ ([]);
   for (let i = 0; i < map.nodes.length; i++) {
-    scenes.push(runSceneMake(run, i, scenes, data).scene);
+    const t0 = Date.now(),
+      sc = runSceneMake(run, i, scenes, data).scene,
+      node = map.nodes[i];
+    scenes.push(sc);
+    if (times) times.push([i, node.type, sc.w, sc.h, node.cut ? 'L' : '', Date.now() - t0]);
     if (i + 1 < map.nodes.length) yield [i + 1, map.nodes.length];
   }
   return scenes;
