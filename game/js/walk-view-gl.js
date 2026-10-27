@@ -35,9 +35,10 @@ import {
   worldExtra,
   worldMapPrewarm,
 } from './hooks.js';
+import { personPicture } from './logic/person-view.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
-import { gpuPass } from './engine/gpu-counters.js';
+import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import {
   drawBubble,
@@ -80,6 +81,7 @@ import {
   ensurePrograms,
   gpuLoading,
   gpuOnRestore,
+  gpuPictureBytes,
   gpuState,
   initWebgl,
   normalize3,
@@ -146,6 +148,7 @@ expose({
   litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  peopleReport: [() => peopleReport, v => (peopleReport = v)],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
@@ -304,6 +307,27 @@ function groundBuiltBeforeShow(id, sc) {
 export function setMountWalkView(v) {
   mountWalkView = v; // eslint-disable-line no-func-assign
   provide({ mountWalkView });
+}
+/* CH-1: people in the debug log (debug-log.js `people` and the samples' `ppl`; tools/look-people.py): how many the last
+   frame drew, their draws in the last counted frame (engine/gpu-counters.js's `person` tag) in all and by pass, and
+   their pictures on the graphics card with their MB (engine/webgl.js gpuPictureBytes). Numbers only. */
+export function peopleReport() {
+  const g = gpuCountSummary(),
+    byPass = {};
+  let draws = 0;
+  for (const p in (g && g.dct) || {})
+    if (g.dct[p].person) {
+      byPass[p] = g.dct[p].person;
+      draws += g.dct[p].person;
+    }
+  const T = gpuPictureBytes(personPicture);
+  return {
+    drawn: walkRenderer.people || 0,
+    draws: Math.round(draws * 10) / 10,
+    byPass,
+    textures: T.n,
+    mb: Math.round((T.bytes / 1048576) * 10) / 10,
+  };
 }
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
@@ -624,6 +648,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     for (const it of BT.items) items.push(it);
   } else walkView.hits = hits;
   cullItems(items, C);
+  /* CH-1: the people in this frame, for the debug log (peopleReport); people are never culled (walk/quality-cull.js) */
+  let people = 0;
+  for (let i = 0; i < items.length; i++) if (personPicture(items[i].im)) people++;
+  walkRenderer.people = people;
   coverItems(items, C, dt);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = engineContext.env && !sc.indoor ? environment.lampK : 0,

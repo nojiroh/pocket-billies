@@ -1593,7 +1593,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:931",
    "game/js/ui-run-kit.js:1377",
-   "game/js/walk-view-gl.js:685"
+   "game/js/walk-view-gl.js:713"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1624,7 +1624,7 @@
    "game/js/walk/prop-look.js:55",
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
-   "game/js/walk/sprites.js:890",
+   "game/js/walk/sprites.js:894",
    "game/js/world-bowl.js:1706",
    "game/js/world-bowl.js:1736"
   ],
@@ -1677,13 +1677,13 @@
    "game/js/logic/cutscene-set.js:38",
    "game/js/logic/person-view.js:6",
    "game/js/logic/person-view.js:10",
-   "game/js/logic/person-view.js:54",
-   "game/js/logic/person-view.js:57",
-   "game/js/logic/person-view.js:72",
-   "game/js/logic/person-view.js:98",
-   "game/js/logic/person-view.js:112",
-   "game/js/logic/person-view.js:136",
-   "game/js/logic/person-view.js:146",
+   "game/js/logic/person-view.js:56",
+   "game/js/logic/person-view.js:59",
+   "game/js/logic/person-view.js:74",
+   "game/js/logic/person-view.js:100",
+   "game/js/logic/person-view.js:114",
+   "game/js/logic/person-view.js:138",
+   "game/js/logic/person-view.js:148",
    "game/js/logic/run-scenes.js:385",
    "game/js/logic/run-scenes.js:406",
    "game/js/logic/run-scenes.js:424",
@@ -1809,7 +1809,7 @@
    "game/js/battle-stage.js:2112"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:647",
+   "game/js/walk-view-gl.js:675",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1844,7 +1844,7 @@
    "game/js/game-data.js:159"
   ],
   "ring": [
-   "game/js/engine/webgl.js:784",
+   "game/js/engine/webgl.js:785",
    "game/js/walk/map-cache.js:78",
    "game/js/walk/map-cache.js:415"
   ],
@@ -1926,9 +1926,9 @@
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:242",
    "game/js/logic/person-view.js:5",
-   "game/js/logic/person-view.js:54",
-   "game/js/logic/person-view.js:57",
-   "game/js/logic/person-view.js:112",
+   "game/js/logic/person-view.js:56",
+   "game/js/logic/person-view.js:59",
+   "game/js/logic/person-view.js:114",
    "game/js/person-art.js:802",
    "game/js/person-art.js:881",
    "game/js/train-ride.js:272",

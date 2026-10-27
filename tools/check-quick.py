@@ -1011,6 +1011,12 @@ def phone_flow(P):
     if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
     names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
     if names: raise Exception(f'the exported debug log holds a name: {names}')
+    # characters track CH-1: the people in the log (walk-view-gl.js peopleReport): drawn, draws, pictures, MB: numbers only
+    ppl = (dlog.get('more') or {}).get('people')
+    nums = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+    if not isinstance(ppl, dict) or not all(nums(ppl.get(k)) for k in ('drawn', 'draws', 'textures', 'mb')) \
+            or not all(nums(v) for v in (ppl.get('byPass') or {}).values()):
+        raise Exception(f'the exported debug log has no people counters, or more than numbers in them: {ppl!r}'[:300])
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
     return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'

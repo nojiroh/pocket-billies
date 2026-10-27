@@ -37,6 +37,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   personHeading: [() => personHeading, v => (personHeading = v)],
   // @ts-expect-error -- replaced on purpose
+  personPicture: [() => personPicture, v => (personPicture = v)],
+  // @ts-expect-error -- replaced on purpose
   seenFacing: [() => seenFacing, v => (seenFacing = v)],
   // @ts-expect-error -- replaced on purpose
   seenToward: [() => seenToward, v => (seenToward = v)],
@@ -150,6 +152,16 @@ export function seenWord(o, yaw) {
 export function personHeading(o, yaw) {
   const h = ownHeading(o);
   return h != null ? h : yaw + wordHeading(o.dir);
+}
+
+/**
+ * whether a picture is a person's: person-art.js alone gives a picture its size in pixels a metre (`ppm`), and the
+ * director's copies keep it (copiedAnchor). Not an item's `person` flag: Billies in the world, the starters, the mount
+ * and the battle rigs carry that too, for people's light and shadows.
+ * @param {{ ppm?: number } | null | undefined} im @returns {boolean}
+ */
+export function personPicture(im) {
+  return !!(im && im.ppm && im.ppm > 0);
 }
 
 /**
