@@ -162,7 +162,7 @@ function bindWorldMap() {
 const WORLD_TABS = [
   ['pools', 'Wild encounters'],
   ['fishing', 'Fishing'],
-  ['regions', 'Map and notes (legacy)'],
+  ['regions', 'Map (legacy)'],
   ['backdrops', 'Battle backdrops'],
   ['look', 'World map look (legacy)'],
 ];
@@ -297,24 +297,7 @@ ACTIONS.poolDel = async d => {
    run's region themes now */
 function worldRegions() {
   afterRender(bindWorldMap);
-  return (
-    card('Map', worldMapHTML()) +
-    card(
-      'What’s new',
-      grid(textField('Version', 'meta.whatsNew.0.version', { opt: 1, ph: '0.1.0 alpha' })) +
-        textField('What changed (a line each)', 'meta.whatsNew.0.text', { area: 1, rows: 4, opt: 1 }),
-      { sub: 'Shown on the title under What’s new: the newest version, a few lines for players.' }
-    ) +
-    card(
-      'End of the road',
-      textField('Message at the last stop', 'meta.endText', {
-        area: 1,
-        rows: 2,
-        opt: 1,
-        ph: 'This is the end of the road for now. The Meadowlands lie ahead.',
-      })
-    )
-  );
+  return card('Map', worldMapHTML());
 }
 export const AMBIENT_PARTICLES = [
   ['pollen', 'Pollen'],
@@ -405,6 +388,14 @@ SECTIONS.rules = () => {
     )
     .join('')}</div>`;
   return `<div class="ed-col solo"><div class="ed-head"><h2>Rules</h2><p class="sub">Every number here changes how the game plays. Defaults match the original game.</p></div>
+ ${card(
+   'What’s new',
+   grid(textField('Version', 'meta.whatsNew.0.version', { opt: 1, ph: '0.1.0 alpha' })) +
+     textField('What changed (a line each)', 'meta.whatsNew.0.text', { area: 1, rows: 4, opt: 1 }),
+   {
+     sub: 'Shown on the title under What’s new: the newest version, a few lines for players. (SA-3: moved here from World & encounters.)',
+   }
+ )}
  ${card(
    'Starting out',
    grid(
