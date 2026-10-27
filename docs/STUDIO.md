@@ -61,7 +61,7 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 ## The Check: problems and notes (Studio plan Phase 1, T1.3)
 
 - The Check runs the same checks as `npm run check:data` (CI) where they overlap: they live in
-  `game/js/logic/data-checks.js`, so the run rules, ranch, robots, biomes, node types, relics (Loopholes), currencies,
+  `game/js/logic/data-checks.js`, so the run rules, ranch, robots, biomes, node types, Perks (perks.json), currencies,
   buildings, unlocks, scenes and roads are checked the same way in both.
 - A **Problem** (an error) is something check-data fails on. **Propose changes refuses while there is one**: it names
   the first few, and Show me opens the Check. Nothing is sent and your changes stay unsaved until you fix it.
@@ -98,6 +98,16 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 
 The Studio is built for wide screens (up to 3440 x 1440) and still works on a tablet.
 
+- **Workspaces** (Studio art track SA-4). The section list is in workspaces that fold away (the one you're in always
+  shows): **Game** (Rules, Check), **Art** (Art browser, Art workbench), **Creatures** (Billies, Roster board, Part
+  rules, Genes, Coats, Moves, Types, Battle preview), **World** (Walk scenes, Hub island, Props, World & encounters,
+  Engine, Camera), **People & story** (Trainers, Characters, Lore & story, Story scripts), **Runs** (Run Lab, Perks,
+  Unlocks & hub, Economy, Robots, Items & pyramids), **Sound & UI** (Music & sound, UI look) and **Legacy** (Legacy
+  world). **Characters** is one row for two sections, Looks and Wardrobe, with a switch on top of both. The list is
+  `STUDIO_WORKSPACES` in `game/js/logic/studio-layout.js` (unit-tested: every section in exactly one workspace); Find
+  shows each section's workspace. Labels only: the section keys (`people`, `parts`, `relics`) and the game's words
+  don't change.
+
 - **Handles.** Drag the edge of the section list, of a section's list (Billies, Moves, Props and the others with a
   list) and of the battle preview's side panel. A handle also takes the keyboard: Tab to it, then the arrow keys (8 px,
   Shift 32 px), Home and End for the smallest and largest, Delete or a double-click to go back. Each section keeps its
@@ -133,7 +143,7 @@ One canvas paints the Billies' sheets (Edit pixels) and props and ground tiles (
 
 ## Art workbench: Sheet mode (studio track ST-3)
 
-Cuts a sheet of art into parts (Billies & battles → Art workbench). Part mode is below. (SA-3: the never-enabled
+Cuts a sheet of art into parts (Art → Art workbench). Part mode is below. (SA-3: the never-enabled
 Pixels and Model buttons are gone: pixels are painted from the Art browser, models in Props.)
 
 - **Drop sheets anywhere** on the Studio (or Open sheets…); several at once, with an Aseprite JSON beside its PNG
@@ -326,7 +336,7 @@ World & encounters → **World map look** edits game/data/worldmap.json, the wor
 
 ## Hub island (island track IS-6a, IS-6b)
 
-World & places → **Hub island** edits the hub's island (the owner, 2026-10-22: the island is the main hub, never a run
+World → **Hub island** edits the hub's island (the owner, 2026-10-22: the island is the main hub, never a run
 node; shaped by hand, then locked). The logic is in game/js/logic/hub-island.js; the island's fields are
 logic/island.js's contract (docs/phases/island-track.md). It opens on the left only, like the other 3D views.
 
@@ -438,7 +448,7 @@ included. It changes nothing.
 - An edit made in the other pane (Rules beside it, for example) redraws the map at once.
 
 - **From the game's logic** (under a clicked place): its wild Billies (levels and odds), its mini-boss's or boss's
-  leader and team, a town's stock and Loophole on every day it can be open, and the run's Loophole picks after each
+  leader and team, a town's stock and Perk on every day it can be open, and the run's Perk picks after each
   mini-boss with none held. The game's own code works these out on your unsaved data in a background worker
   (`studio/js/logic-worker.js`); the first answer after an edit takes a moment longer.
 - **Over 1,000 seeds** (under the map): the map checks (every place reachable, no dead end, each role row holding the
@@ -462,11 +472,11 @@ The Run Lab's **Simulate** card plays whole runs with the game's own rules and a
 ...; at most 200 here, the CLI runs more). It plays the same seeds twice, in two logic workers: **Base**, the data as
 the Studio loaded it, and **Draft**, the data with your unsaved changes. Every difference is paired, seed by seed, so
 a small change shows without the noise of two separate samples.
-- Choices: seeds, the bot policy (`greedy-forward`, or `never-pick`, which takes and buys no Loophole), the party (who
+- Choices: seeds, the bot policy (`greedy-forward`, or `never-pick`, which takes and buys no Perk), the party (who
   waits at home, Potions packed) and the unlocks (none or all).
 - Tables: per run (won with its 95% Wilson interval; days, places, battles, catches, clinic and shop money, money left,
-  Capital, Loopholes held, top level, each with Draft − Base and a 95% interval and how many runs changed); where runs
-  were lost, by place and by row; money in and out; the Loopholes held at the end; the leaders beaten. Every table
+  Capital, Perks held, top level, each with Draft − Base and a 95% interval and how many runs changed); where runs
+  were lost, by place and by row; money in and out; the Perks held at the end; the leaders beaten. Every table
   carries the banner "Bot policy X: a lower bound on a careful player, not a prediction"; the rows the policy mostly
   decides say **policy-driven**.
 - Each side shows its data's hash. The same data gives "Every run is the same on both sides"; a re-run gives the same
@@ -476,20 +486,21 @@ a small change shows without the noise of two separate samples.
 
 ## Roguelite content editors (Studio plan Phase 4)
 
-The Runs group holds the Run Lab and three pages for what a run is made of. Each shows something the JSON can't: the
+The Runs workspace holds the Run Lab and three pages for what a run is made of (Robots and Items & pyramids sit
+there too). Each shows something the JSON can't: the
 game's own logic on your unsaved data (most of it in the Studio's logic worker), the limits that live in the code, a
 graph, or a value a run overrides. Edits are ordinary fields: saved, undone and proposed like any other.
 
-- **Loopholes** (relics.json, rules.json `run.relics`). The list shows each one's rarity, its weight and its chance to
+- **Perks** (perks.json, rules.json `run.perks`; the section's key is `relics`). The list shows each one's rarity, its weight and its chance to
   be drawn first at a pick. Each effect row is edited by its kind (money, price, catch, stat, damage, heal, payout;
   changing the kind puts that kind's fields in), with the code's limits beside the field: a factor from x0.1 to x4
   (effects.js `FX_LIMIT`), stages from -6 to +6 (`FX_STAGES`). A row outside them is a data error (check:data fails;
-  the message shows on the row). **On a sample build**: pick a Billie, a level and other Loopholes held with it; its
+  the message shows on the row). **On a sample build**: pick a Billie, a level and other Perks held with it; its
   stats before and as a battle starts, and what wins pay, shop and clinic prices, catch chance, damage, healing and
   the payout become, from the game's effect code; a kind whose rows multiply past the limit says what the code uses.
   **Offer order for a seed**: the picks after each mini-boss on a run of that seed (nothing taken, the first offered,
   or this one when offered), the same as the Run Lab's for that seed. **Rarity and the picks**: each rarity's weight,
-  shop price and how many Loopholes have it (a rarity nobody has, or Loopholes never offered, are flagged), the cap and
+  shop price and how many Perks have it (a rarity nobody has, or Perks never offered, are flagged), the cap and
   how many are offered.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
@@ -499,7 +510,7 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   `unlockAuto`), its currencies and building levels, what it can buy, and the biomes and wares a run can draw; the
   graph shades what it owns. Buildings and currencies are below, with their data-check messages.
 - **Economy** (read-mostly). Every source and sink of each currency (wild prizes, mini-boss and boss rewards, money
-  Loopholes, the clinic, run shop wares and Loopholes, the payout's rates, earned unlocks, unlock costs, the ranch),
+  Perks, the clinic, run shop wares and Perks, the payout's rates, earned unlocks, unlock costs, the ranch),
   each with its value and a link to the field that sets it. The money in and out of simulated runs (Phase 3's balance
   dashboard) will show here; until it lands the page says so.
 - **Trainers**: a mini-boss leader's card **In runs (overridden in runs)** shows what a run makes of it on each
@@ -585,7 +596,7 @@ only after a click). It stops by itself when the section is off screen.
 
 ## Art browser (Studio art track SA-1)
 
-The **Art browser** (section `art`, group Game) shows every picture under `game/art`: PNG, WebP, JPEG and SVG, about
+The **Art browser** (section `art`, workspace Art) shows every picture under `game/art`: PNG, WebP, JPEG and SVG, about
 3,600 files. It replaced the old Art files tabs, four of which named folders that no longer existed.
 
 - **Folders** come from the file list (the repository's tree), never from a list in the code. A new folder shows up
@@ -770,14 +781,14 @@ beside the painter (drawn again after each stroke). Lighting is flat: the sun, s
 | **Hub island** | Island track IS-6a: the hub's island in an orbit view and on a map: paint the ground, shape the land, move the coast's and zones' points, set a zone's kind and lock, place the orbit's pivot and dead zone; Walk the coast; lock the ground once it is right (Walk scenes then refuses its ground tools; props stay free). IS-6b: the generator's dials with a live draft and Use this island (locked zones kept; refused while the ground is locked). Above. |
 | **Engine** | Every dial of the 3D renderer, with a live preview of any walk scene: lens (sharp band, blur in front and behind, round highlights, chromatic aberration, vignette, grain, sharpen), color (exposure, highlight roll-off, contrast, saturation, warmth, bloom), sun and sky (direction, height, color, real-clock sun, sky light, ground bounce, clouds and their shadows, light shafts), shadows (strength, softness, color, contact shadows, solid building shadows, ambient occlusion), lights, haze and mist, horizon curve, ground bumpiness and shine, world map mountains, grass and wind, water and quality, plus colour grades. The camera's dials are in **Camera** (below). Set them for the **whole game**, override them for **one scene** (battles there follow it) or for the **world map**; ↺ puts back a single dial. Ready-made presets (Sunny, Overcast, Golden hour, Cave, Mall), your own presets, a "Hold to compare" button that shows the built-in look, and a frame meter. |
 | **Camera** | Every dial of the walking camera, in folders: **Framing** (tilt, height, distance, view width, turn limit, phone tilt, walk bob, the pixel grid, and the preview scene's own tilt, height and width), **Zoom stops** (CAM-4b: 3 to 5 named stops, a column each, with their zoom, tilt, distance, field of view, blur and look-ahead; + Add a stop puts one in the widest gap without moving the picture; × removes one (a scene that started at it starts at the stop nearest zoom 1); the curve graph draws one value against zoom through the stops: drag a stop's point up and down for its value, sideways for its zoom; Pull to stops and the two-finger tap's time and movement; the stops are the whole game's, so on one scene they are shown, not edited), **Zoom feel** (how long a zoom takes, eased so in and out feel alike; pinch and wheel sensitivity; a rubber band past the limits; zooming toward the point you pinch), **Follow**, **Moments**, **Visibility** and **Island orbit**. **Camera looks** above the folders (Diorama, Classic RPG, Close-up and your own, + Save as a look): presets of camera dials only (tilt, width shown, Pull to stops and the stops). Same scopes as Engine (the whole game, one scene), ↺ per dial, Reset per folder. Beside them the game's renderer on any walk scene, with the camera's real numbers under it (tilt, height above the aim, distance, field of view, metres across, and how many of the game's drawing pixels one art pixel covers; green when it's a whole number), **Frame** (Fill, Phone portrait, Phone landscape, Desktop: the preview at that shape, and the art pixel's size on that screen), **Your zoom** (a slider for the player's zoom, the stops marked on it), **Stops** (a button per stop; the scene's starting stop marked ·), **Snapshot** and **Hold** (hold to see the camera as at the snapshot, or the built-in camera; light and blur stay), Camera guides and Play moment. The data is the Engine's (`engine.defaults.camera`, its `stops`, a scene's `look.camera`), your own looks (`engine.cameraLooks`) and a scene's `cam` (its starting stop is `cam.stop`: Walk scenes → Starting zoom stop). |
-| **Trainers, Looks** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13). SA-3: the Stands at picker (the hub is the one stop) and the km First-win egg are gone; the badge id is what the save and the profile keep. |
-| **Run Lab** (group Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed; Simulate, Base against Draft (see Run Lab above). |
-| **Loopholes, Unlocks & hub, Economy** (group Runs) | Studio plan Phase 4: a run's Loopholes with a sample build and a seed's offers, the unlock graph with what a new save has, and every source and sink of each currency (see Roguelite content editors above). |
-| **Legacy world** (group Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore, and (test cleanup, 2026-10-23) a card of the maps parked without a place: the 16 rooms only old places' buildings opened, and `city_opening`. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map (or one of those rooms) back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
+| **Trainers, Characters (Looks)** | Trainer teams, their script (checked as you type), when they're there, rewards, badges, sandstorms; trainer and shopkeeper looks with a live preview. **Mini-boss** (RL-5): the trainer stands on no stop (the eight badge leaders, for the runs, RL-13). SA-3: the Stands at picker (the hub is the one stop) and the km First-win egg are gone; the badge id is what the save and the profile keep. |
+| **Run Lab** (workspace Runs) | Studio plan Phase 2: a run's map from a seed, on your unsaved data and beside the loaded data; a place's foes, shops and wild Billies from the game's logic; checks over 1,000 seeds; the run rules beside it; Play this seed; Simulate, Base against Draft (see Run Lab above). |
+| **Perks, Unlocks & hub, Economy** (workspace Runs) | Studio plan Phase 4: a run's Perks with a sample build and a seed's offers, the unlock graph with what a new save has, and every source and sink of each currency (see Roguelite content editors above). |
+| **Legacy world** (workspace Legacy) | RL-5: the old world outside the hub, parked in `game/data/legacy`, read-only: the 48 places with their old stop numbers, the trainers who stood there and their roads, plus counts of the parked shops, jobs and lore, and (test cleanup, 2026-10-23) a card of the maps parked without a place: the 16 rooms only old places' buildings opened, and `city_opening`. It is read beside the Studio, or from GitHub when signed in, and never enters the Studio's data, so Save, Undo and the Check never touch it. **Copy into game** brings a place's map (or one of those rooms) back as a walk scene of its own (no place, no roads) in one undo step and opens it in Walk scenes; whatever its people name that the game no longer has shows in the Check. |
 | **Story scripts** | Project Story S3: story.json's own scripts (Hazel's lab, after Blake's first battle, the ending): add, rename, remove and edit them in the script field; the story's flags, start presets (with ▶ Play) and quests to read. |
 | **Scripts everywhere** | Every script field (a trainer's, a person's, story.json's) shows the parser's error at once and the story checks a moment later, each on its line (click to go there); **Add line ids**; **Commands**, a reference built from the parser's own tables that puts a command in the script. Condition fields (when, unless, a place's requires) are checked the same way, and the Check lists every story finding. docs/SCRIPTS.md. |
 | **UI look** | The menus' look (uiTheme.json): colours light and dark with contrast grades, glass, depth, shapes, space, type and motion, for the whole game or one screen's colours and shapes; presets, Hold to compare, the UI gallery as a live preview. UI track UI-3, above. |
-| **Music & sound** (group Sound) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
+| **Music & sound** (workspace Sound & UI) | The songs (play, loop, the recipe's dials heard at once, a hook and countermelody roll), the where table with Try a place, the jingles, and (SND-6) the base cries, the button sounds and the mix (music.json). A Billy's cry is on its Billies page. Sound track SND-3, above. |
 | **Rules** | What's new (the title's, SA-3: moved here), starting items, starters and rival, wild Billies per place and how fast they come back, prize money, leveling curve, team size, damage, critical hits, type abilities, taxing, bargains. SA-3: the walk eggs' rules, the Free egg and the rest stop price are gone. The run's, the ranch's, parts' and robots' numbers are in their own sections. |
 | **Art browser** | Studio art track SA-1: every picture under `game/art` (see "Art browser" above): folders, search with tokens, what uses each picture, Edit pixels, Replace, Download, Open in its editor. SA-2a/2b: the ground tile set, frame strips, the UI icon editor, the icon atlas and the scene art previews (above). |
 | **Check** | Lists problems with "Show me" links (see "The Check" below); downloads or loads the game data; runs the Studio test. Earlier versions are in git: a proposal is a pull request. |
