@@ -2,6 +2,80 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Cutscenes and run screens (C, A, B), then loading (LD-5 in part) - 2026-10-27
+Branch `ccr-517fcc1e-p1asai` (one session at the owner's word; the plan was C, then A, then B, then loading). It merges
+the load track's `ccr-3df446bb-9jvdvq` (LD-0 to LD-5 in part). The only conflict was `run.js`'s generated imports.
+The load session was told.
+
+**What changed**
+- **C, the run's screens:**
+  - Ride home no longer turns the screen instantly white for up to 30 s. It shows `runHomeScreen` instead: the
+    carriage, "Heading home", and the run summary from `logic/run-card.js` `runCardHome`.
+  - `trainRideHome`'s `cover` lifts when the ride can film, on any stop, and after an error.
+  - `trainVeil` no longer flashes back on.
+  - A run's evolution waits while `trainRide.on` or `trainRide.cover` is set, and opens at the ride's end, before the
+    way home's story scene. It used to land on top of that scene and hold the save.
+  - The take-off's `pb-loading` has a dark `night` look, `tips` that turn over, a `card` slot with the region card
+    (`runCardOut`), and the stages folded into one line.
+  - `tools/look-run-screens.py` takes pictures of both screens.
+- **A, the station, track and portal:**
+  - Skyline Station faces out to sea, where the orbit camera looks in at it (`STATION_TURN` 0). It sits on the
+    headland's length, with its ground levelled (`tools/patch-station.mjs`, then a `build-copperleaf` rerun, which
+    re-rolled 18 dressing props).
+  - The track is a plain one: sleepers and two rails under the skids. One causeway piece (look `end`) has the buffer.
+  - `sky_portal` floats out at sea (prop `y`), with glowing layers stacked for depth and rings turning at their own
+    speeds. One ring must stay still: a model whose solid parts all spin draws as its flat picture. It has a gold look.
+  - `logic/train-path.js` was rewritten in the station's frame (glide, board, lift, turn, dash; home: open, out, turn,
+    down, off).
+  - `tools/station-place.mjs` is shared by the builder and the patch.
+  - `clear-windows --fix` was run after the rebuild.
+- **B, the opening:**
+  - The floating-island fall is now a dive onto `opening.json`'s `me`, with clouds and streaks drawn over it.
+  - The last picture is held, dazed (`#csHold`), while Copperleaf mounts. Its new first shot, `drop`, is on the same
+    spot. `copperleaf-town.json` holds that shot.
+  - The pick camera looks across the starters from the coins' side, aimed so the starter stands above the card.
+    Starters are no longer flipped, and the card is shorter.
+  - `tools/look-opening.py` takes pictures of the opening.
+- **Loading:**
+  - `bowl-worker.js` works out the world map's ground squares (`logic/bowl-terrain.js` `bowlTerrainRows`, moved out of
+    `world-bowl.js`). The ground's hash is unchanged.
+  - Headless take-off: the bowl stage went from 7.5 s to 6.3 s; Copperleaf's squares take 77 ms on the thread.
+  - The walking grid went from about 250 ms to 80 ms. The heights and bridges are held while it is built
+    (`walkView.navBuilding`), and `rawHeightAt` no longer makes closures. The grid's hash is unchanged.
+  - `debugLog.hook` now waits for `debug-log-names.js`. LD-0's early call sometimes logged "no function render to
+    wrap", which failed checks.
+
+**Risky**
+- The dive and its held frame were only seen headless. On a phone the hold should be short; the swap from the world
+  map's picture to the walk view is covered by the flash and the blur.
+- The portal's halo is dithered. Seen from the side it looks grainy.
+- Copperleaf was rebuilt: the dressing re-rolled (beach grass, one birch by the track's cutting).
+- The square's view of the old sky rail (HB-10a) now shows the portal instead.
+
+**Verified**
+- After each change: lint, typecheck, `check:modules`, `check:data`, `npm test` (1401 at the end).
+- `check-fast` steps: the train ride, packing, the lost run's scene, the world map, rooms, seams, tall ground.
+- `check:smoke` (before the loading work): 5 of 6. The sixth (Windows) was fixed and then passed run alone.
+- Pictures (not committed): the ride, the screens, the opening, the station from the walk.
+- `check-fast` "The run's places from the helper thread" fails on the load branch alone too ("made on the ?").
+  Reported to the load session.
+
+**Next**
+- The owner's phone test: a take-off, both ways home, New game's fall and the starter pick.
+- The load track's own LD-5 items: model meshes, uploads, and the next place's warm-up.
+### Load track fixes - the early debug-log hook, the helper-thread check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. Both found by the cutscenes session (ccr-517fcc1e-p1asai), which merged this branch and
+took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan's LD-5 say how).
+- boot.js: LD-0's early `debugLog.hook()` could run before debug-log-names.js had filled GAME (unbundled, each module
+  script is a task of its own), logging "no function render to wrap" and failing check-fast steps under two
+  browsers. It now hooks only once `render` is in GAME, else at DOMContentLoaded (after every module script), and again
+  (a no-op when done) when the loader is ready.
+- check-fast "The run's places from the helper thread": the boot's places may be made at once (`runWorldSync`, when the
+  fixture's save is swapped in) rather than on the thread, so the step now asks that the thread is on and makes places
+  equal to the page's, and reports where the boot's came from. `runWorld.how` says 'page at once' for that path.
+- Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
+  smoke 6 of 6.
+
 ### Region map track WM-1 - runs go west to east; the world map opens like the walk camera - 2026-10-27
 Branch `claude/worldmap-routes-towns-design-l31z1j` (the session's; the owner makes `track/worldmap` from it). The
 owner's brief: a better world map, routes and towns for runs, with online research and many questions; planned and

@@ -69,6 +69,14 @@ should hold.
 
 Slots work in commands too (`{place}`, `{name}`, `{starter}` ...: docs/SCRIPTS.md).
 
+### How New game begins (cutscenes track B)
+
+The fall ends in a dive straight down onto Copperleaf's island, onto the opening's own landing spot (`me`): the
+world map films it (opening-fall.js `fallFloatCamera`), clouds and streaks of air over it. Its last picture is held
+(dazed) behind the impact's flash while Copperleaf's walk view is made, and the opening's first shot, `drop`, looks
+down on the same spot before `wake` brings the camera down to the ground. `tools/look-opening.py` takes pictures of
+it and of the starter pick, which looks across the three starters from the side the coins came from.
+
 ### The opening's own
 
 `dressing-room` (you make yourself up), `throw-coins` (the professor's coins pop open on the spots star1 to star3),

@@ -7,7 +7,7 @@ import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { placedTurn, pointInProp, turnedBounds } from '../logic/prop-turn.js';
-import { bridgeAt, navGrid, setNavGrid, stepRaiseAt, terrainAt, walkData, walkView } from '../walk-view.js';
+import { bridgeAt, mapBridges, navGrid, setNavGrid, stepRaiseAt, terrainAt, walkData, walkView } from '../walk-view.js';
 import { smooth01 } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -18,7 +18,10 @@ expose({
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
+  heightCorner: [() => heightCorner, v => (heightCorner = v)],
+  heightCurve: [() => heightCurve, v => (heightCurve = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
+  navGridSteep: [() => navGridSteep, v => (navGridSteep = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
 });
@@ -80,8 +83,13 @@ function heightGrid(sc) {
       return (sc._hg = { H, sig: 'room', t: performance.now(), G, W, Hh: sc.h, base: B.G });
     }
   }
+  const c0 = sc._hg;
+  /* LD-5 (cutscenes session): while the walking grid is built (navGrid, one go: nothing can change meanwhile) the grid
+     made at its start is the one; asked hundreds of thousands of times, the clock and the props' signature cost more
+     than the grid's own sums */
+  if (walkView.navBuilding && c0 && c0.H === H) return c0;
   const now = performance.now(),
-    c = sc._hg;
+    c = c0;
   if (c && now - c.t < 120 && c.H === H) return c;
   const CP = walkData().sc.props;
   let sig = (sc._hv || 0) + '|' + (sc.props ? sc.props.length : 0);
@@ -149,6 +157,16 @@ function heightGrid(sc) {
   }
   return (sc._hg = { H, sig, t: now, G, W, Hh });
 }
+/** the height grid's corner (a, b), held at its edges @param {Float32Array} G @param {number} W @param {number} Hh
+ * @param {number} a @param {number} b */
+function heightCorner(G, W, Hh, a, b) {
+  return G[clamp(b, 0, Hh) * (W + 1) + clamp(a, 0, W)];
+}
+/** a Catmull-Rom curve through four heights, t of the way from p1 to p2 @param {number} p0 @param {number} p1
+ * @param {number} p2 @param {number} p3 @param {number} t */
+function heightCurve(p0, p1, p2, p3, t) {
+  return p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
+}
 export function rawHeightAt(sc, x, z) {
   const Q = heightGrid(sc);
   if (!Q) return 0;
@@ -161,18 +179,41 @@ export function rawHeightAt(sc, x, z) {
     j = Math.min(Hh - 1, Math.floor(fz)),
     u = fx - i,
     v = fz - j;
-  const g = (a, b) => G[clamp(b, 0, Hh) * (W + 1) + clamp(a, 0, W)],
-    cr = (p0, p1, p2, p3, t) =>
-      p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
-  const r0 = cr(g(i - 1, j - 1), g(i, j - 1), g(i + 1, j - 1), g(i + 2, j - 1), u),
-    r1 = cr(g(i - 1, j), g(i, j), g(i + 1, j), g(i + 2, j), u),
-    r2 = cr(g(i - 1, j + 1), g(i, j + 1), g(i + 1, j + 1), g(i + 2, j + 1), u),
-    r3 = cr(g(i - 1, j + 2), g(i, j + 2), g(i + 1, j + 2), g(i + 2, j + 2), u);
-  const a = g(i, j),
-    b = g(i + 1, j),
-    c = g(i, j + 1),
-    d = g(i + 1, j + 1);
-  return clamp(cr(r0, r1, r2, r3, v), Math.min(a, b, c, d), Math.max(a, b, c, d));
+  /* LD-5 (cutscenes session): the corner reads and the curve are plain functions (heightCorner, heightCurve), not
+     closures made on every call: the walking grid asks this hundreds of thousands of times */
+  const r0 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j - 1),
+      heightCorner(G, W, Hh, i, j - 1),
+      heightCorner(G, W, Hh, i + 1, j - 1),
+      heightCorner(G, W, Hh, i + 2, j - 1),
+      u
+    ),
+    r1 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j),
+      heightCorner(G, W, Hh, i, j),
+      heightCorner(G, W, Hh, i + 1, j),
+      heightCorner(G, W, Hh, i + 2, j),
+      u
+    ),
+    r2 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j + 1),
+      heightCorner(G, W, Hh, i, j + 1),
+      heightCorner(G, W, Hh, i + 1, j + 1),
+      heightCorner(G, W, Hh, i + 2, j + 1),
+      u
+    ),
+    r3 = heightCurve(
+      heightCorner(G, W, Hh, i - 1, j + 2),
+      heightCorner(G, W, Hh, i, j + 2),
+      heightCorner(G, W, Hh, i + 1, j + 2),
+      heightCorner(G, W, Hh, i + 2, j + 2),
+      u
+    );
+  const a = heightCorner(G, W, Hh, i, j),
+    b = heightCorner(G, W, Hh, i + 1, j),
+    c = heightCorner(G, W, Hh, i, j + 1),
+    d = heightCorner(G, W, Hh, i + 1, j + 1);
+  return clamp(heightCurve(r0, r1, r2, r3, v), Math.min(a, b, c, d), Math.max(a, b, c, d));
 }
 /* the visible ground (smooth land plus the terrace, cliff or stair raise of its half-metre cell) and the height you
    stand at (a bridge deck where there is one; a little lower in water) */
@@ -239,8 +280,20 @@ setNavGrid(function () {
       walkView.navSc === sc &&
       walkView.navG === walkView.gkey &&
       walkView.navP === (sc.props || []).length
-    ),
-    n = baseNavGrid();
+    );
+  if (!fresh || walkView.navBuilding) return navGridSteep(sc, fresh, baseNavGrid());
+  /* LD-5: the heights and bridges looked at once, then held for the build (heightGrid, mapBridges) */
+  heightGrid(sc);
+  mapBridges(sc);
+  walkView.navBuilding = true;
+  try {
+    return navGridSteep(sc, fresh, baseNavGrid());
+  } finally {
+    walkView.navBuilding = false;
+  }
+});
+/** the steep ground shut on a fresh walking grid (once per scene) @param {any} sc @param {boolean} fresh @param {any} n */
+function navGridSteep(sc, fresh, n) {
   if (!fresh || !sc.heights || !sc.heights.length || n._hk) return n;
   const { N, gw, gh, blk } = n;
   for (let j = 0; j < gh; j++)
@@ -257,4 +310,4 @@ setNavGrid(function () {
     }
   n._hk = 1;
   return n;
-});
+}

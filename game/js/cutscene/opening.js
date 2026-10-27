@@ -10,7 +10,7 @@
    Blake's battle after) and starts the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { fallPlay, landing, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
+import { fallHoldLift, fallPlay, landing, mapIdAt, provide, render, startGame, updateNav } from '../hooks.js';
 import { $, clamp } from '../util.js';
 import { CUTSCENES, LOCATIONS, RULES, SPECIES, START_NODE, locationFullName } from '../game-data.js';
 import { CHOSEN, FAST_SKIPS, FAST_SKIP_MS, hotTake, speedWatch } from '../logic/chosen.js';
@@ -220,6 +220,10 @@ export async function cutsceneStart(opts) {
     performance.now() - t0 < 15000
   )
     await new Promise(r => setTimeout(r, 120));
+  /* cutscenes track B: the dive's held picture lifts as the opening's first shot (the same spot) comes in under it */
+  setTimeout(() => {
+    if (typeof fallHoldLift === 'function') fallHoldLift(700);
+  }, 80);
   try {
     await openingScript(run);
   } catch (e) {
@@ -347,7 +351,7 @@ async function openingThrowCoins() {
         act: null,
         actT: 0,
         seed: i * 1.7 + 0.4,
-        flip: i === 0 ? -1 : 1,
+        flip: 1,
         white: 0,
       };
     cutscene.stars.push(s);

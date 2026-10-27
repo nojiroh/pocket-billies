@@ -1064,12 +1064,18 @@ else
       /* LD-0: the log's marks from here, so the loader's stalls have names too */
       if (typeof debugLog !== 'undefined') {
         debugLog.stage('maps ahead');
-        debugLog.hook();
+        /* only once debug-log-names.js (the page's last module) has handed the names over: unbundled, each module is a
+           task of its own and this can come first; module scripts all run before DOMContentLoaded */
+        if ('render' in GAME) debugLog.hook();
+        else addEventListener('DOMContentLoaded', () => debugLog.hook(), { once: true });
       }
       return bootLoad();
     })
     .then(async () => {
-      if (typeof debugLog !== 'undefined') debugLog.stage('loader ready');
+      if (typeof debugLog !== 'undefined') {
+        debugLog.stage('loader ready');
+        debugLog.hook();
+      }
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on the professor's scene (below), or,

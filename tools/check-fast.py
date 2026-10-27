@@ -127,10 +127,12 @@ def run_world(pg, base):
 
 
 def run_helper(pg, base):
-    """LD-4: the run fixture's places were made on the run's helper thread (run-worker.js) as the page booted, and the
-    thread makes the very places the page's own code makes from the run (the same JSON, place by place)"""
+    """LD-4: the run's helper thread (run-worker.js) is on and makes the very places the page's own code makes from the
+    run (the same JSON, place by place)"""
+    # where the boot made them depends on when the fixture's save came in (a save swapped in is made at once,
+    # runWorldSync); the thread must not be off, and its places must equal the page's
     how, off = pg.evaluate("[runWorld.how, runWorldAhead.off]")
-    if how != 'helper': raise Exception(f"the run's places were made on the {how or '?'}, not the helper thread ({off or 'not off'})")
+    if off: raise Exception(f"the run's helper thread is off: {off}")
     R = pg.evaluate("""async () => {
       const run = saveData.run, here = runScenesMake(run, runWorldData()),
         w = new Worker('js/run-worker.js', { type: 'module' }), got = [];
@@ -145,7 +147,7 @@ def run_helper(pg, base):
     }""")
     if R['end'] != 'done': raise Exception(f"the helper thread didn't finish: {R['end']} {R['error']}")
     if R['got'] != R['n'] or R['bad'] >= 0: raise Exception(f"the helper thread's places differ from the page's (place {R['bad']} of {R['n']}, {R['got']} came)")
-    return f"{R['n']} places from the helper thread, each equal to the page's"
+    return f"{R['n']} places from the helper thread, each equal to the page's (the boot's made: {how or '?'})"
 
 
 def bowl_map(pg, base):
@@ -1412,7 +1414,7 @@ def ride_home(pg):
 
 
 def train_ride(pg, base):
-    """HB-8: in Copperleaf, the sky train's ride played out (not skipped): the departure glides in, climbs and ends in
+    """HB-8: in Copperleaf, the sky train's ride played out (not skipped): the departure glides in, rises and ends in
     the white veil with its log line (the train's key and ms, nothing else); the carriage's canvas draws in the train's
     colours and moves; the ride home after a win leaves the gold-trimmed train at the platform and the tear as it was,
     after a loss the battered one with its smoke"""
@@ -1420,10 +1422,11 @@ def train_ride(pg, base):
     if not until(pg, "!document.getElementById('loader')&&walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});0")
     if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
-    # the ride runs on the clock: on a slow page a frame can fall either side of the climb, so one moment of it is held
-    # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end
-    pg.evaluate("trainRide.hold=7300;0")
-    if not until(pg, "trainRide.W&&trainRide.W.train.lift>5&&trainRide.W.train.x>200", 90): raise Exception(f'the train never climbed the rail: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
+    # the ride runs on the clock: on a slow page a frame can fall either side of the lift, so one moment of it is held
+    # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end.
+    # Cutscenes track A: by then it has risen straight up over the station on its engines
+    pg.evaluate("trainRide.hold=6900;0")
+    if not until(pg, "trainRide.W&&trainRide.W.train.lift>8&&Math.hypot(trainRide.W.train.x-trainRide.W.H.x,trainRide.W.train.z-trainRide.W.H.z)<3", 90): raise Exception(f'the train never rose over the station: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
     pg.evaluate("trainRide.hold=null;0")
     if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 90): raise Exception('the departure didn’t end in the white veil')
     line = pg.evaluate("(debugLog.ev.filter(e=>e.msg.startsWith('train ride departure')).pop()||{}).msg||''")
@@ -1654,10 +1657,10 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('ranch', [('Income: started at the first opening, Collect, a clock turned back and forward, a reload (RL-10b)', income)]),
     ('lab', [('The Lab: a milestone on load, the board, buying at the Lab, the ranch and the station, a reload (RL-11)', lab)]),
     ('ranch', [('Packing for a run: a Billie from storage, a packed bag; kept on a loss, the bag home on a win (RL-9b)', run_pack)]),
-    ('town', [('The train ride: the departure to the white veil, the carriage, the ride home gold and battered (HB-8)', train_ride)]),
+    ('town', [('The train ride: up on its engines into the portal, the white veil, the carriage, the ride home gold and battered (HB-8, cutscenes A)', train_ride)]),
     ('battle', [('A battle plays to the end', battle)]),
     ('run', [("A run's world: the landing, its places on the bowl, a seam walked a day later", run_world),
-             ("The run's places from the helper thread: made there at boot, equal to the page's (LD-4)", run_helper),
+             ("The run's places from the helper thread: equal to the page's (LD-4)", run_helper),
              ("A run town's shop opens (UI-5)", run_shop),
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),

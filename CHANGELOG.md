@@ -9,6 +9,20 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Cutscenes and run screens** (one session, the owner's brief, 2026-10-27):
+  - Going home after a run shows a "Heading home" screen in the train's carriage, with what the run came to, instead
+    of a plain white screen. A run's evolution waits until you're off the train.
+  - The loading screen before a run is a region card in the portal tunnel's dark colours: its zones, types, leaders,
+    regional dex, the weather ahead and tips that change.
+  - Skyline Station faces out to sea, toward the camera. It has a plain track instead of the climbing sky rail.
+  - The portal floats on its own out over the sea, with glowing layers and turning rings.
+  - The sky train rises on its engines, turns and shoots into the portal; coming home it flies across and sets down.
+  - New game's fall is a dive straight down onto the spot where the opening begins. Its last picture is held while
+    Copperleaf loads.
+  - The starter pick shows the three side by side, above a shorter card. No starter is mirrored.
+- **Loading** (load track LD-5, in part, from the same session):
+  - The world map's ground is worked out on a helper thread.
+  - The walking grid is built in about a third of the time.
 - **Kappi the Wise** replaces Hazel as Professor Chosen's assistant: a capybara (they/them) who does the real
   research, calm and unhurried, with Billies asleep on their back and a hot yuzu bath in the lab. New lines in the
   opening, the lab and the hub; their own talk-box portrait (it blinks and talks), a low soft voice, and a capybara

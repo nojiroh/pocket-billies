@@ -36,9 +36,9 @@ import {
   bowlSpotOf,
   bowlSun,
   bowlWaterLevel,
-  bowlWetAt,
   bowlXY,
 } from './logic/bowl.js';
+import { bowlTerrainRows } from './logic/bowl-terrain.js';
 import {
   BOWL_CAMERA,
   FLOAT_CAMERA,
@@ -133,7 +133,6 @@ import { clampZoom } from './walk/camera.js';
 import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
-  BOWL_BAYER: [() => BOWL_BAYER],
   BOWL_HAZE: [() => BOWL_HAZE],
   BOWL_INDEX: [() => BOWL_INDEX],
   BOWL_KIND_GROUND: [() => BOWL_KIND_GROUND],
@@ -157,9 +156,8 @@ expose({
   BOWL_WALL_W: [() => BOWL_WALL_W],
   WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
-  bowlHash: [() => bowlHash],
-  bowlNoise: [() => bowlNoise, v => (bowlNoise = v)],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
+  bowlWorker: [() => bowlWorker],
   runPinColors: [() => runPinColors],
   worldBowl: [() => worldBowl],
   worldBowlAtlas: [() => worldBowlAtlas, v => (worldBowlAtlas = v)],
@@ -228,8 +226,12 @@ expose({
   worldBowlStampMap: [() => worldBowlStampMap, v => (worldBowlStampMap = v)],
   worldBowlStampMaps: [() => worldBowlStampMaps, v => (worldBowlStampMaps = v)],
   worldBowlSunNow: [() => worldBowlSunNow, v => (worldBowlSunNow = v)],
+  worldBowlTerrainAhead: [() => worldBowlTerrainAhead, v => (worldBowlTerrainAhead = v)],
+  worldBowlTerrainBack: [() => worldBowlTerrainBack, v => (worldBowlTerrainBack = v)],
+  worldBowlTerrainDone: [() => worldBowlTerrainDone, v => (worldBowlTerrainDone = v)],
   worldBowlTerrainGpu: [() => worldBowlTerrainGpu, v => (worldBowlTerrainGpu = v)],
   worldBowlTerrainKinds: [() => worldBowlTerrainKinds, v => (worldBowlTerrainKinds = v)],
+  worldBowlTerrainOff: [() => worldBowlTerrainOff, v => (worldBowlTerrainOff = v)],
   worldBowlTerrainPictures: [() => worldBowlTerrainPictures, v => (worldBowlTerrainPictures = v)],
   worldBowlTerrainStart: [() => worldBowlTerrainStart, v => (worldBowlTerrainStart = v)],
   worldBowlThingScale: [() => worldBowlThingScale, v => (worldBowlThingScale = v)],
@@ -1057,25 +1059,6 @@ function worldBowlTerrainKinds() {
     keys = Object.keys(T);
   return { T, keys, layer: Object.fromEntries(keys.map((k, n) => [k, n])) };
 }
-/* a hash in 0-1 for a square, and a smooth value noise (patches of ground) */
-const bowlHash = (i, j) => {
-  const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
-  return v - Math.floor(v);
-};
-function bowlNoise(x, y) {
-  const i = Math.floor(x),
-    j = Math.floor(y),
-    u = x - i,
-    v = y - j,
-    a = bowlHash(i, j),
-    b = bowlHash(i + 1, j),
-    c = bowlHash(i, j + 1),
-    d = bowlHash(i + 1, j + 1),
-    su = u * u * (3 - 2 * u),
-    sv = v * v * (3 - 2 * v);
-  return (a * (1 - su) + b * su) * (1 - sv) + (c * (1 - su) + d * su) * sv;
-}
-const BOWL_BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
 /* the terrain between places, worked out in rows a frame at a time (the map shows its colours meanwhile) */
 function worldBowlTerrainStart() {
   const g = worldBowl.ground;
@@ -1161,76 +1144,99 @@ function worldBowlTerrainStart() {
     g.terrain.i0 = band[0];
     g.terrain.i1 = band[1];
   }
+  /* LD-5 (cutscenes session): what working out the ground's squares reads, as plain numbers (logic/bowl-terrain.js
+     bowlTerrainRows), so a helper thread can do it too (worldMapPrewarm) */
+  g.terrain.P = {
+    N,
+    C,
+    near: g.terrain.near,
+    lists: g.terrain.lists,
+    S: S.map(s => ({ x: s.x, y: s.y })),
+    G: { n: G.n, e: G.e, h: G.h, wet: G.wet || null, c: G.c || null },
+    slopeG,
+    L,
+    ox: g.terrain.ox,
+    oy: g.terrain.oy,
+    i0: g.terrain.i0 ?? 0,
+    i1: Math.min(N, g.terrain.i1 ?? N),
+    metres: BOWL_METRES,
+  };
   g.terrain.fill = rows => {
     const T = g.terrain,
       last = Math.min(N, T.rowEnd ?? N),
       end = Math.min(last, T.row + rows);
-    for (let j = T.row; j < end; j++)
-      for (let i = T.i0 ?? 0; i < Math.min(N, T.i1 ?? N); i++) {
-        const x = -1 + ((i + 0.5) / N) * 2,
-          y = 1 - ((j + 0.5) / N) * 2,
-          r = Math.hypot(x, y);
-        if (r > 1.01) continue;
-        /* the place this square belongs to: borders wander (a slow warp) and are dithered, so regions blend over a few
-           squares in a pixel-art way, never along a straight line */
-        const wx = (bowlNoise(x * 6 + 3.1, y * 6) - 0.5) * 7,
-          wy = (bowlNoise(x * 6, y * 6 - 5.7) - 0.5) * 7,
-          ci = Math.min(C - 1, Math.max(0, Math.floor(((x + 1) / 2) * C + wx + (bowlHash(i, j) - 0.5) * 3))),
-          cj = Math.min(C - 1, Math.max(0, Math.floor(((1 - y) / 2) * C + wy + (bowlHash(j, i) - 0.5) * 3))),
-          p = T.near[cj * C + ci],
-          s = S[p],
-          ls = T.lists[p],
-          d = Math.hypot(x - s.x, y - s.y),
-          rel = bowlGridHeight(g.G, x, y) - bowlHeight(Math.min(1, r)) /* the relief, read from the grid: cheap */,
-          m = (x * BOWL_METRES) / 9 + T.ox,
-          n = (y * BOWL_METRES) / 9 + T.oy,
-          th = BOWL_BAYER[(j & 3) * 4 + (i & 3)],
-          /* calm ground (fix 2026-10-19: it read as camouflage): mostly a list's first ground, the others in broad
-             patches some 40 m across, their edges dithered over a few squares; no outline rings */
-          patch = bowlNoise(m * 0.22 + p * 1.7, n * 0.22) * 0.75 + bowlNoise(m * 0.6, n * 0.6 + 9.1) * 0.25,
-          pick = list =>
-            list.length < 2 || patch < 0.58 + (th - 0.5) * 0.05
-              ? list[0]
-              : list[
-                  1 + Math.min(list.length - 2, Math.floor(bowlNoise(m * 0.1 + 4.4, n * 0.1 + p) * (list.length - 1)))
-                ];
-        let t = ls.k.length && d < 0.09 + bowlNoise(m * 0.3, n * 0.3) * 0.04 ? pick(ls.k) : pick(ls.r);
-        /* away from the places' own ground: wet lowland, dry slopes, high ground, rock on the steep, snow on top */
-        /* read smoothly between the grid's corners (not the nearest corner: that made blocks), changes dithered */
-        const wet = G.wet ? bowlWetAt(G, x, y) : 0,
-          steep = bowlGridHeight(slopeG, x, y),
-          inPlace = d < 0.07,
-          dz = (th - 0.5) * 0.12;
-        if (!inPlace) {
-          if (wet > 0.55 + dz && rel < 0.03 && ls.wet.length) t = pick(ls.wet);
-          else if (wet < 0.08 + dz * 0.3 && rel > 0.014 && ls.dry.length) t = pick(ls.dry);
-          if (rel > 0.048 + dz * 0.05 && ls.high.length) t = pick(ls.high);
-        }
-        if (steep > 1.6 + dz * 3) t = L.r ?? t;
-        if (rel > 0.088 + dz * 0.05 && 'n' in L) t = L.n;
-        /* the coast: a beach of dry then wet sand down to the water, and under it the sea floor (sand in the shallows,
-           pebbles and rock further out, coral sand in the coral regions) */
-        const cv = bowlCoastAt(g.G, x, y);
-        if (cv > -0.012 + th * 0.004) {
-          const coral = ls.r.includes(L.N);
-          if (cv <= 0 && rel > 0.01) t = L.r ?? t; /* a cliff, no beach */
-          else if (cv <= -0.004) t = L.s ?? t;
-          else if (cv <= 0.006 + th * 0.004) t = L.S ?? t;
-          else if (cv <= 0.03 + th * 0.01) t = (coral ? L.N : L.s) ?? t;
-          else t = (bowlNoise(m * 0.2, n * 0.2) > 0.55 ? L.r : L.P) ?? t;
-        }
-        if (r > 0.985 && cv <= 0) t = L.r ?? t;
-        T.idx[j * N + i] = t;
-      }
+    bowlTerrainRows(T.P, T.row, end, T.idx);
     T.row = end;
     T.dirty = true;
-    if (T.row >= last) {
-      worldBowlRiversInto(T);
-      worldBowlRoadsInto(T);
-      T.ready = true;
-    }
+    if (T.row >= last) worldBowlTerrainDone(T);
   };
   return g.terrain;
+}
+/** the ground's squares all worked out: its rivers and roads over them, and it is ready @param {any} T */
+function worldBowlTerrainDone(T) {
+  worldBowlRiversInto(T);
+  worldBowlRoadsInto(T);
+  T.ready = true;
+  T.dirty = true;
+  worldBowl.dirty = true;
+}
+/** LD-5 (cutscenes session): the world map's helper thread (bowl-worker.js): the ground's squares worked out there,
+ * so the page keeps drawing (the take-off's loading, the opening's fall and the Map tab worked them out in slices a
+ * frame); off, with why, where it can't run or once it has failed (the page works them out then, as before) */
+const bowlWorker = { w: /** @type {Worker | null} */ (null), off: '', id: 0 };
+/** the ground's squares asked of the helper thread (once a ground); true while they are on their way @param {any} T */
+function worldBowlTerrainAhead(T) {
+  if (T.ready) return false;
+  if (T.job) return true;
+  const B = bowlWorker;
+  if (B.off) return false;
+  if (!B.w)
+    try {
+      const w = new Worker(new URL('js/bowl-worker.js', document.baseURI), { type: 'module' });
+      w.onmessage = ev => worldBowlTerrainBack(ev.data);
+      w.onerror = () => worldBowlTerrainOff('the helper thread failed to load');
+      B.w = w;
+    } catch (e) {
+      B.off = 'no helper thread here';
+      return false;
+    }
+  const N = BOWL_INDEX,
+    j0 = T.row,
+    j1 = Math.min(N, T.rowEnd ?? N);
+  T.job = { id: ++B.id, j0, j1, t0: performance.now() };
+  try {
+    /** @type {Worker} */ (B.w).postMessage({ kind: 'rows', id: T.job.id, P: T.P, j0, j1 });
+  } catch (e) {
+    worldBowlTerrainOff(String((e && e.message) || e));
+    return false;
+  }
+  return true;
+}
+/** the helper thread's rows back: put in, the ground finished on the page @param {any} m */
+function worldBowlTerrainBack(m) {
+  const T = worldBowl.ground && worldBowl.ground.terrain;
+  /* a ground made again meanwhile (another world) asks again */
+  if (!m || !T || !T.job || m.id !== T.job.id) return;
+  if (m.kind === 'failed') return worldBowlTerrainOff(m.error);
+  if (m.kind !== 'rows' || T.ready) return;
+  T.idx.set(new Uint8Array(m.band), m.j0 * BOWL_INDEX);
+  T.row = m.j1;
+  const wall = Math.round(performance.now() - T.job.t0);
+  T.job = null;
+  T.worker = m.ms;
+  worldBowlTerrainDone(T);
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('load', `world map ground on the helper thread: ${m.ms} ms there, ${wall} ms to the page`);
+}
+/** the helper thread off for good: the page works the squares out from here @param {string} why */
+function worldBowlTerrainOff(why) {
+  const B = bowlWorker,
+    T = worldBowl.ground && worldBowl.ground.terrain;
+  if (B.w) B.w.terminate();
+  B.w = null;
+  B.off = why || 'failed';
+  if (T) T.job = null;
+  if (typeof debugLog !== 'undefined') debugLog.add('load', 'the world map helper thread is off: ' + B.off);
 }
 /* the rivers: water a few squares wide (wider and deeper as rivers join), muddy or sandy banks; the roads go over them
    afterwards, as fords and bridges */
@@ -2358,7 +2364,8 @@ function worldBowlGpu() {
   }
   const T = worldBowlTerrainStart();
   if (!T.ready) {
-    T.fill(96);
+    /* LD-5: on the helper thread, the map's colours meanwhile; else a slice a frame */
+    if (!worldBowlTerrainAhead(T)) T.fill(96);
     worldBowl.dirty = true;
   } else worldBowlStampMaps(T);
   if (!T.pix && !T.pixLoading) {
@@ -2489,6 +2496,8 @@ export function worldMapPrewarm(done, eager) {
       /* the island's heights first: when they come the ground is worked out again */
       if (M && bowlHasCoast(M) && !bowlIslandHeights(M)) return later(step);
       const T = worldBowlTerrainStart();
+      /* LD-5: the squares on the helper thread; the prewarm waits for them */
+      if (!T.ready && worldBowlTerrainAhead(T)) return later(step);
       if (!T.ready) {
         const t0 = performance.now();
         if (!worldMapWarm.eager) T.fill(48);
@@ -2524,15 +2533,26 @@ export function worldMapPrewarm(done, eager) {
 }
 /* the opening fall's frame (opening-fall.js): the floating island's middle, radius and height, and where you land
    (outside Professor Chosen's lab); null without the floating island */
-export function worldMapFallFrame() {
+/** the opening fall's frame: the floating island (its middle, radius and top) and where you land on it: `at` (a point
+ * of the island's map, cutscenes track B: the opening's own landing spot), else the lab; m, the bowl's units a metre
+ * there @param {number[]} [at] */
+export function worldMapFallFrame(at) {
   worldBowlSpots();
   const F = worldBowlFloatIsland();
   if (!F) return null;
   const M = gameData.maps[worldBowl.ground.islandMap],
     s = worldBowl.spots[F.i],
     lab = (M.props || []).find(p => p.k === 'lab'),
-    [x, y] = lab ? bowlMapPoint(s, M, lab.x, lab.z, BOWL_METRES) : F.c;
-  return { c: F.c, r: F.r, top: F.top, land: [x, y, Math.max(F.top, bowlSurface(x, y))] };
+    pt = at || (lab ? [lab.x, lab.z] : null),
+    [x, y] = pt ? bowlMapPoint(s, M, pt[0], pt[1], BOWL_METRES) : F.c,
+    [x1, y1] = pt ? bowlMapPoint(s, M, pt[0] + 1, pt[1], BOWL_METRES) : [x + F.r / 100, y];
+  return {
+    c: F.c,
+    r: F.r,
+    top: F.top,
+    land: [x, y, Math.max(F.top, bowlSurface(x, y))],
+    m: Math.hypot(x1 - x, y1 - y) || F.r / 100,
+  };
 }
 /* everything the map shows is in (for the opening fall, which films it) */
 export function worldMapReadyNow() {

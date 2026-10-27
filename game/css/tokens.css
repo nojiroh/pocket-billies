@@ -382,6 +382,14 @@
   --z-veil: 85; /* the lift's veil */
   --z-top: 2147483000; /* the no-WebGL notice */
 
+  /* cutscenes track C: the portal tunnel's dark, the run's loading screens (pb-loading night, the region card) */
+  --night-bg: #120c26;
+  --night-text: #f3ecff;
+  --night-text2: #c9bde6;
+  --night-ink: #1d1630;
+  --sky-a: #8cc6e6;
+  --sky-b: #f4e8c8;
+
   /* colour roles: the names the theme sets (logic/ui-theme.js), here on today's variables so a page without
      uiTheme.json keeps today's look. The HP bars read --c-hp-* with today's colours as fallbacks. */
   --c-ground: var(--bg);
