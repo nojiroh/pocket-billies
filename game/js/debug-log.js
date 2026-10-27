@@ -636,6 +636,135 @@ try {
     }
   }).observe({ type: 'longtask', buffered: true });
 } catch (e) {}
+/* LD-0 (docs/phases/load-track.md): the boot's timeline and the hitch list, from page start. A stage is a name and its
+   time since the page was asked for (performance.now(), not debugLog.now()). A hitch is a frame the page held for more
+   than HITCH_MS (33 ms, the track's goal, plus 3 ms for the display's timing): measured by a requestAnimationFrame
+   of its own, so it counts from before the game's modules run, on the loader, the title and in play alike */
+const HITCH_MS = 36;
+debugLog.boot = [['debug log', Math.round(performance.now())]];
+debugLog.stage = name => {
+  if (debugLog.boot.length < 80) debugLog.boot.push([name, Math.round(performance.now())]);
+};
+addEventListener('DOMContentLoaded', () => debugLog.stage('page parsed'));
+addEventListener('load', () => debugLog.stage('page loaded'));
+debugLog.hitch = { frames: 0, n: 0, ms: 0, max: 0, by: { '36-50': 0, '50-100': 0, '100-250': 0, '250+': 0 }, list: [] };
+/* Chrome's long animation frames name the scripts that held a frame (file and character position: the source map
+   finds the function in the built bundle); matched to the hitches when the log is built */
+debugLog.loaf = [];
+try {
+  new PerformanceObserver(l => {
+    for (const e of l.getEntries()) {
+      const s = Array.from(e.scripts || [])
+        .sort((a, b) => b.duration - a.duration)
+        .slice(0, 3)
+        .map(x => [
+          Math.round(x.duration),
+          `${x.sourceFunctionName || '?'} ${String(x.sourceURL || '')
+            .split('/')
+            .pop()}:${x.sourceCharPosition}`,
+          x.invokerType || '',
+        ]);
+      debugLog.loaf.push([Math.round(e.startTime), Math.round(e.duration), Math.round(e.blockingDuration || 0), s]);
+      if (debugLog.loaf.length > 80) debugLog.loaf.shift();
+    }
+  }).observe({ type: 'long-animation-frame', buffered: true });
+} catch (e) {}
+(() => {
+  const H = debugLog.hitch;
+  let last = 0,
+    walkSeen = false,
+    titleSeen = false;
+  document.addEventListener('visibilitychange', () => (last = 0));
+  const screenNow = () =>
+    document.getElementById('loader')
+      ? 'loader'
+      : document.getElementById('runload')
+        ? 'run loading'
+        : typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
+          ? 'battle'
+          : typeof GAME.titleScreen !== 'undefined' && GAME.titleScreen.on
+            ? 'title'
+            : typeof GAME.uiState !== 'undefined'
+              ? GAME.uiState.tab
+              : '-';
+  const tick = ts => {
+    requestAnimationFrame(tick);
+    if (document.hidden) return void (last = 0);
+    H.frames++;
+    if (!walkSeen && typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.frames > 0) {
+      walkSeen = true;
+      debugLog.stage('first walk frame');
+    }
+    if (!titleSeen && typeof GAME.titleScreen !== 'undefined' && GAME.titleScreen.on) {
+      titleSeen = true;
+      debugLog.stage('title on');
+    }
+    const gap = last ? ts - last : 0,
+      t0 = last;
+    last = ts;
+    if (gap <= HITCH_MS) return;
+    H.n++;
+    H.ms += gap;
+    H.max = Math.max(H.max, gap);
+    H.by[gap < 50 ? '36-50' : gap < 100 ? '50-100' : gap < 250 ? '100-250' : '250+']++;
+    const B = debugLog.boot;
+    H.list.push({
+      t: Math.round(t0),
+      ms: Math.round(gap),
+      why: debugLog.blame(t0, ts) || 'unmarked',
+      screen: screenNow(),
+      scene: typeof GAME.walkView !== 'undefined' ? GAME.walkView.id || null : null,
+      stage: B[B.length - 1][0],
+    });
+    if (H.list.length > 150) H.list.shift();
+  };
+  requestAnimationFrame(tick);
+})();
+/* the boot's timeline for the log: the stages, the page's own timings and the network's (sizes only, no addresses) */
+debugLog.bootReport = () => {
+  const o = { stages: debugLog.boot };
+  try {
+    const n = performance.getEntriesByType('navigation')[0];
+    if (n)
+      o.page = {
+        firstByte: Math.round(n.responseStart),
+        html: Math.round(n.responseEnd),
+        interactive: Math.round(n.domInteractive),
+        parsed: Math.round(n.domContentLoadedEventEnd),
+        loaded: Math.round(n.loadEventEnd),
+      };
+    const by = {};
+    for (const e of performance.getEntriesByType('resource')) {
+      const k = (String(e.name).split('?')[0].split('.').pop() || '?').slice(0, 12),
+        b = by[k] || (by[k] = { n: 0, kb: 0, cached: 0, lastMs: 0 });
+      b.n++;
+      b.kb += (e.encodedBodySize || 0) / 1024;
+      if (e.transferSize === 0 && e.decodedBodySize > 0) b.cached++;
+      b.lastMs = Math.max(b.lastMs, Math.round(e.responseEnd));
+    }
+    for (const b of Object.values(by)) b.kb = Math.round(b.kb);
+    o.files = by;
+  } catch (e) {
+    o.error = String(e.message || e);
+  }
+  return o;
+};
+/* the hitch list for the log: each hitch with the scripts Chrome says held its frame */
+debugLog.hitchReport = () => {
+  const H = debugLog.hitch;
+  return {
+    overMs: HITCH_MS,
+    frames: H.frames,
+    count: H.n,
+    totalMs: Math.round(H.ms),
+    maxMs: Math.round(H.max),
+    by: H.by,
+    list: H.list.map(h => {
+      const f = debugLog.loaf.find(x => x[0] < h.t + h.ms && x[0] + x[1] > h.t);
+      return f && f[3].length ? Object.assign({ scripts: f[3] }, h) : h;
+    }),
+  };
+};
 debugLog.more = () => {
   const o = {};
   const t = (k, f) => {
@@ -847,6 +976,9 @@ debugLog.build = () => ({
   state: debugLog.state(),
   more: debugLog.more(),
   load: debugLog.load,
+  /* LD-0: the boot's timeline and every frame held over 33 ms */
+  boot: debugLog.bootReport(),
+  hitches: debugLog.hitchReport(),
   summary: debugLog.summary(),
   bench: (debugLog.bench && debugLog.bench.result) || null,
   errors: debugLog.err,

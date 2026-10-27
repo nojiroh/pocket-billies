@@ -594,6 +594,7 @@ async function preloadAll(onTown) {
       files: byPh[ph].length,
       ms: Math.round(performance.now() - pt),
     });
+    if (typeof debugLog !== 'undefined') debugLog.stage('pictures: ' + phT[phT.length - 1].phase);
     if (ph === 0 && onTown && TP.size)
       try {
         onTown();
@@ -684,7 +685,10 @@ async function walkViewWarmup() {
     if (ok || !document.getElementById('dio')) break;
     await new Promise(r => setTimeout(r, 60));
   }
-  if (typeof debugLog !== 'undefined') debugLog.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
+  if (typeof debugLog !== 'undefined') {
+    debugLog.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
+    debugLog.stage('scene ready');
+  }
 }
 /* the town behind the loader: the title starts, its town is put up and grows in as the loading goes on */
 function mountLoaderTown() {
@@ -705,6 +709,7 @@ function loaderHide() {
   const end = () => {
     cancelAnimationFrame(loaderIsland.raf);
     el.remove();
+    if (typeof debugLog !== 'undefined') debugLog.stage('loader gone');
     loadingScreen.el = null;
     document.body.classList.remove('ld-on', 'ttl-reveal');
   };
@@ -973,6 +978,7 @@ function noWebGL(why) {
 /* RL-7: the world the save needs goes in before anything reads where you stand (a run's, made from its seed; the
    hub's is in already); from here a swapped save brings its own (game-state.js setSaveData). HB-2: a run's scenes are
    made over several frames behind the loader (run-world.js runWorldMake), which says how far it is */
+if (typeof debugLog !== 'undefined') debugLog.stage('modules ran');
 const bootWorldIn = runWorldMake((made, of) => {
   const ph = document.querySelector('#loader .ld-phase');
   if (ph) ph.textContent = `Making the run’s places ${made}/${of}`;
@@ -981,10 +987,23 @@ runWorld.live = true;
 if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
-  Promise.all([artCacheCheck(), bootWorldIn.then(() => loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE))])
-    .then(() => bootLoad())
+  Promise.all([
+    artCacheCheck(),
+    bootWorldIn.then(() => {
+      if (typeof debugLog !== 'undefined') debugLog.stage('world in');
+      return loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE);
+    }),
+  ])
+    .then(() => {
+      /* LD-0: the log's marks from here, so the loader's stalls have names too */
+      if (typeof debugLog !== 'undefined') {
+        debugLog.stage('maps ahead');
+        debugLog.hook();
+      }
+      return bootLoad();
+    })
     .then(async () => {
-      if (typeof debugLog !== 'undefined') debugLog.hook();
+      if (typeof debugLog !== 'undefined') debugLog.stage('loader ready');
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on the professor's scene (below), or,

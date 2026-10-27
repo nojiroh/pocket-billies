@@ -43,6 +43,8 @@ interface DebugLog {
   time(section: string, ms: number): void;
   /** the frame scheduler's report of a task it ran */
   task(name: string, work: number, ts: number): void;
+  /** LD-0: a step of the boot (or a run's loading) on the timeline, timed since the page was asked for */
+  stage(name: string): void;
   /** the loading screen's timings (boot.js) */
   load: { ms: number; files: number; failed: unknown[]; phases: unknown } | null;
   /** the full test's progress and result (self-test.js) */

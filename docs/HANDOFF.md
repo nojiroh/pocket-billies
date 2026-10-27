@@ -2,6 +2,40 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track LD-0 - the plan, the hitch list, the boot timeline, the load check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq` (`track/load` doesn't exist yet: the owner makes it from this branch or main). The
+owner's brief: loading without hitches, especially at the start, with online research. Planned, the owner's answers
+taken (docs/phases/load-track.md: a 33 ms goal on every screen once the title shows, loading screens included;
+debug-log pictures on export; test code loaded on use and a minified bundle; picture facts baked at build time;
+pictures per place; the run made in a worker from the pick), then LD-0 built.
+- **Claim corrected**: CLAUDE.md's "gamedata.js is a ~13 MB file, ~8 MB of it scenes" is out of date: 0.79 MB now;
+  the maps' ground and props are in data/maps/<id>.json (Copperleaf's 703 KB). CLAUDE.md is the owner's to change.
+  Also run-world.js's "about 30 ms" a scene: 18-600 ms in Node.
+- New: `debugLog.stage(name)` and the boot timeline (`debugLog.boot`, times since the page was asked for); the hitch
+  list (`debugLog.hitch`: every frame held over 36 ms, from a requestAnimationFrame of the log's own that starts
+  before the modules, with its blame, screen, scene and the last stage); Chrome's long animation frames
+  (`debugLog.loaf`: the scripts that held a frame, matched to the hitches). The export has `boot` (stages, page
+  timings, files by kind with counts, KB and cache hits: no addresses) and `hitches`. GAME has `titleScreen` now.
+- Changed: `debugLog.hook()` runs before the loader instead of after it (boot.js), so the loader's stalls are named
+  (opening a scene, compiling shaders...) instead of "outside the marked steps".
+- New tool: tools/check-load.py, on the built site (dist/, built when missing): a new player's boot and a run's
+  reload, phone-sized, the game's own graphics; prints the timeline and the longest held frames; reports in
+  validation/load/ (gitignored). A note, not a gate (LD-6).
+- Measured (software drawing; ranks causes, not phone times): a new player, title out of the loader at about 6 s,
+  28 held frames, 13 after the loader went: finishing a shader 8.1 s, finishing a shader plus reading the picture back
+  (the debug log's timed picture) 4.9 s, warming up a scene 3.6 s. A run's reload: 39 held frames; drawing items
+  (`leafCut`) plus the picture 7.4 s, finishing shaders 3-6.6 s a frame; the run's loading hit its 20 s cap. CPU
+  profile of a boot: `screenSnapshot` 5.2 s, `finishProgramCompile` 5.2 s, `pictureLightness` 4.6 s; on a run
+  `leafCut` 5.7 s and `portraitURL` 2.2 s.
+- Verified: lint, typecheck, format, check:modules, check:data, unit tests 1366 pass; the load check runs both boots
+  with no page errors; the fast check (debug log, boot) and smoke: running at commit time, see the next commit.
+- In this container: the checks' Python Playwright (1.56) runs against the preinstalled Chromium through
+  `PLAYWRIGHT_BROWSERS_PATH` pointing at a folder of links named for revision 1194 (nothing installed in the repo).
+- Risky: the hitch list's own requestAnimationFrame runs on every page with the debug log (a few comparisons a
+  frame); a 30 Hz display (iOS Low Power Mode) gives 33.3 ms frames, under the 36 ms line, so it isn't flooded.
+- Next: the owner's phone baseline (Export debug log after a cold start and after a run's start: `boot` and
+  `hitches`), then LD-1 and LD-2 on `track/load`. Tag `ld-0-done` for the owner.
+
 ### Air track AIR-2 - the fog grid: a density grid round the player as an R8 3D texture, unread - 2026-10-26
 Branch `track/air` (main merged in first: a conflict in AIR-1's Frame block, main's `uShFix` in the pad slot AIR-1
 kept and both test blocks: resolved side by side, 2272 bytes; AIR-1's work merged before each push). Plan Mode,

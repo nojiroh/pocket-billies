@@ -107,6 +107,16 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   (`tools/check-load.py`) boots the built site to the title and on a run, and prints the long frames, the late
   compiles and the timeline; picture-free, so it can run in CI as a note first and a gate once LD-1-LD-3 are in.
   The owner's phone baseline: Export debug log after a cold start (and once after a run start).
+  **Done 2026-10-27** on `ccr-3df446bb-9jvdvq`: `debugLog.stage` and `debugLog.boot` (the stages: debug log, page
+  parsed and loaded, modules ran, world in, maps ahead, each picture phase, title on, first walk frame, loader ready,
+  scene ready, loader gone, run loading and run loaded), the hitch list (`debugLog.hitch`: a requestAnimationFrame of
+  the log's own from page start; each held frame with its blame, screen, scene and stage; counts by 36-50, 50-100,
+  100-250 and 250+ ms) and Chrome's long animation frames (`debugLog.loaf`, matched to the hitches in the export).
+  The exported log has `boot` (the stages, the page's timings, files by kind: count, KB, from cache) and `hitches`.
+  `debugLog.hook()` now runs before the loader (boot.js), so the loader's stalls have names. `tools/check-load.py`.
+  First headless run (software drawing, 2026-10-27): a new player's boot, 28 held frames, 13 after the loader went
+  (the longest 8.1 s, finishing a shader); a run's reload, 39 (the longest 7.4 s, drawing items and reading the
+  picture back). Shaders compiled late: 0 (they are all on the list; they just block when finished).
 - **LD-1 the quick wins** (no change in looks). The debug log's picture is taken only on export. A build step
   (tools/build-data.mjs or a new `tools/bake-pixel-facts.mjs`) bakes each grass picture's lightness, each leaf
   picture's outline colour and the leaf cuts' boxes into the data, so `pictureLightness` and `leafCut` read numbers
