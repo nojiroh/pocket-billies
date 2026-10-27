@@ -197,7 +197,9 @@ function trackerRecipe(songs, name, run) {
 }
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
-    T = { ctx, bus, waves: {} };
+    /* SND-8a: started counts the voices started (the debug log's sources a minute), late the steps scheduled after
+       their time (a stall in the page) */
+    T = { ctx, bus, waves: {}, started: 0, late: 0 };
   /* a soft echo for the music (caves get more of it) */
   const d = c.createDelay(1),
     fb = c.createGain(),
@@ -245,6 +247,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       echo = 0,
     }
   ) => {
+    T.started++;
     const o = c.createOscillator(),
       g = c.createGain();
     if (T.waves[type]) o.setPeriodicWave(T.waves[type]);
@@ -286,6 +289,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     o.stop(t + Math.max(a + d, dur) + r + 0.02);
   };
   T.synthNoise = (out, { t, dur = 0.05, vol = 0.2, hp = 0, lp = 0, bp = 0, q = 1 }) => {
+    T.started++;
     const s = c.createBufferSource(),
       g = c.createGain();
     s.buffer = T.noise;
@@ -312,6 +316,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     s.stop(t + dur + 0.02);
   };
   T.synthKick = (out, t, v = 0.5) => {
+    T.started++;
     const o = c.createOscillator(),
       g = c.createGain();
     o.frequency.setValueAtTime(140, t);
@@ -420,6 +425,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       spb = 60 / D.bpm / 4;
     if (sg.hold && c.currentTime > sg.hold) sg.hold = 0;
     while (sg.next < c.currentTime + 0.14) {
+      if (sg.next < c.currentTime - 0.005) T.late++;
       /* SND-5: the intro, on the lead alone */
       if (sg.step < 0) {
         const N = D.introNotes[sg.step + D.introSteps];

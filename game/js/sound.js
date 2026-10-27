@@ -103,12 +103,14 @@ expose({
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
   runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
   soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
+  soundDebugLines: [() => soundDebugLines, v => (soundDebugLines = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
   soundLog: [() => soundLog, v => (soundLog = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
+  soundStarts: [() => soundStarts],
   soundWaterBuckets: [() => soundWaterBuckets],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
@@ -117,13 +119,17 @@ expose({
   uiButton: [() => uiButton, v => (uiButton = v)],
   uiSound: [() => uiSound, v => (uiSound = v)],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
-  updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
+  updateAmbience: [() => updateAmbience, v => setUpdateAmbience(v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ applyAmbienceVolume, applyVolumes, battleSoundEffect, jingle, soundEffect, soundEffectAt, testVolume });
+export function setUpdateAmbience(v) {
+  updateAmbience = v; // eslint-disable-line no-func-assign
+  provide({ updateAmbience });
+}
 /* to-module: end */
-export const soundEngine = {
+const soundEngine = {
   ctx: null,
   master: null,
   mus: null,
@@ -207,6 +213,14 @@ function applyVolumes() {
    'suspended') */
 function unlockSound() {
   if (!initSound()) return;
+  /* SND-8a: the context's state changes for the debug log (iOS: 'interrupted' after a call or Siri) */
+  if (!soundEngine.states) {
+    soundEngine.states = [];
+    soundEngine.ctx.addEventListener('statechange', () => {
+      soundEngine.states.push({ at: Math.round(performance.now() / 1000), state: soundEngine.ctx.state });
+      if (soundEngine.states.length > 12) soundEngine.states.shift();
+    });
+  }
   const st = soundEngine.ctx.state;
   if (st !== 'running' && st !== 'closed') soundEngine.ctx.resume().catch(() => {});
   if (soundEngine.want && !soundEngine.song) {
@@ -821,7 +835,17 @@ document.addEventListener(
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second
    bus carries the ambience (Settings → Sound → Ambience): birdsong by day, crickets and the odd owl at night, leaves
    in the wind near trees, a town's murmur, a cave's hum and a room's quiet with its clock ticking */
-export const ambience = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
+const ambience = {
+  bus: null,
+  amb: null,
+  beds: {},
+  flash: 0,
+  arrive: 0,
+  id: null,
+  lastCall: 0,
+  ev: {},
+  started: 0,
+};
 function ambienceFadeIn() {
   if (!soundEngine.ctx) return 1;
   return clamp((soundEngine.ctx.currentTime - ambience.arrive) / 2.8, 0, 1);
@@ -977,6 +1001,7 @@ function ambienceApply(T, pans, t) {
   for (const [k, b] of Object.entries(ambience.beds)) {
     /* SND-8a: a bed starts when wanted, and stops once it has faded to nothing */
     const step = ambienceLiveStep(b.st, T[k] || 0, t);
+    b.want = T[k] || 0;
     if (step === 'start') ambienceBedStart(b, t);
     else if (step === 'stop') ambienceBedStop(b, t);
     b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
@@ -1006,6 +1031,7 @@ function ambienceBedStart(b, t) {
     b.srcs.push(s);
   }
   b.srcs.push(...b.osc(t));
+  ambience.started += b.srcs.length;
 }
 /* SND-8a: a live bed's events due in the next 0.3 s: crickets' chirps, a fire's crackles (logic/ambience-sound.js) */
 function ambienceEvents(b, t) {
@@ -1021,6 +1047,7 @@ function ambienceEvents(b, t) {
       g.connect(b.evOut[e.who]);
       s.start(e.t);
       s.onended = () => g.disconnect();
+      ambience.started++;
     }
   if (b.events === 'crackles')
     for (const e of ambienceCrackles(b.ev, t, t + 0.3, r)) {
@@ -1041,6 +1068,7 @@ function ambienceEvents(b, t) {
       s.start(e.t, r() * (s.buffer.duration - 0.5));
       s.stop(e.t + 0.001 + e.d * 2.5);
       s.onended = () => g.disconnect();
+      ambience.started++;
     }
 }
 function ambienceBedStop(b, t) {
@@ -1091,7 +1119,7 @@ function nearestWaterSound(list, range) {
   const w = ambienceNearest(B, walkView.pl.x, walkView.pl.z, range);
   return w ? soundPlacement(w.cell[0], w.cell[1], range) : null;
 }
-function updateAmbience() {
+export function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   if (!ambience.bus && !initAmbience()) return;
   const c = soundEngine.ctx,
@@ -1204,6 +1232,39 @@ setInterval(() => {
     lowHpBeep();
   } catch (e) {}
 }, 200);
+/* SND-8a: the sources started in the last minute (the music's voices and the world's), for the debug log */
+const soundStarts = [];
+setInterval(() => {
+  if (!soundEngine.ctx) return;
+  soundStarts.push((soundEngine.tracker ? soundEngine.tracker.started : 0) + ambience.started);
+  if (soundStarts.length > 7) soundStarts.shift();
+  soundEngine.perMinute = soundStarts.length > 1 ? soundStarts[soundStarts.length - 1] - soundStarts[0] : null;
+}, 10000);
+/* SND-8a: what the debug log says about the sound (no save data): live beds and their levels, the bed noise's making */
+export function soundDebugLines() {
+  const c = soundEngine.ctx,
+    T = soundEngine.tracker;
+  if (!c) return null;
+  const live = Object.entries(ambience.beds).filter(([, b]) => b.st && b.st.live);
+  return {
+    state: c.state,
+    rate: c.sampleRate,
+    song: soundEngine.song ? soundEngine.song.name : null,
+    latencyMs: { base: Math.round((c.baseLatency || 0) * 1000), output: Math.round((c.outputLatency || 0) * 1000) },
+    states: soundEngine.states || [],
+    lateSteps: T ? T.late : 0,
+    sourcesLastMinute: soundEngine.perMinute ?? null,
+    worldBeds: Object.keys(ambience.beds).length,
+    liveBeds: Object.fromEntries(live.map(([k, b]) => [k, Math.round((b.want || 0) * 1000) / 1000])),
+    liveSources: live.reduce((a, [, b]) => a + b.srcs.length, 0),
+    bedNoise: ambience.noise
+      ? {
+          ms: ambience.noiseMs,
+          kb: Math.round(((ambience.noise.pink.length + ambience.noise.brown.length) * 4) / 1024),
+        }
+      : null,
+  };
+}
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
 function ambienceBeds(sc, E, T, pans, t) {
   const st = E || (typeof environmentState === 'function' ? environmentState(sc) : { night: 0, dusk: 0 }),
@@ -1304,6 +1365,7 @@ function ambienceHit(dest, t, h) {
   g.connect(dest);
   s.start(t, (ambience.rng || Math.random)() * (s.buffer.duration - 0.5));
   s.stop(t + h.dur + 0.02);
+  ambience.started++;
 }
 function ambienceOutput(pan, dry, lp = 0) {
   const c = soundEngine.ctx,
