@@ -156,6 +156,21 @@ test('the checks pass on the data, and catch a clash, a shade that fails, dark t
     { id: 'B', color: '#2C78C6' },
   ]);
   assert.ok(two.some(f => f.where === 'types' && f.rel === ''));
+  // UI-13: a type's white text under 4.5:1, and a type off the others' lightness (alpha 0.5's Flying, #7F9BE0: both)
+  const pale = uiSignalProblems(
+    THEME,
+    TYPES.map(T => (T.id === 'Flying' ? { ...T, color: '#7F9BE0' } : T))
+  ).filter(f => f.where === 'types');
+  assert.ok(
+    pale.some(f => /^Flying's text reads at 2\.7\d:1/.test(f.msg)),
+    JSON.stringify(pale)
+  );
+  assert.ok(
+    pale.some(f => /^Flying sits at lightness 0\.70/.test(f.msg)),
+    JSON.stringify(pale)
+  );
+  // Electric's dark ink keeps it out of the lightness rule
+  assert.ok(!pale.some(f => f.msg.startsWith('Electric')));
   // a pale shade on the light side, a pale fill under dark text
   const u = structuredClone(THEME);
   u.defaults.signals.light.growth = '#82D7FF';

@@ -78,8 +78,9 @@ export const UI_SIGNAL_SETS = /** @type {Record<string, {name: string, ids: stri
   rarity: { name: 'Rarity', ids: ['common', 'uncommon', 'rare', 'mythical'] },
 });
 /** the checks' minimums: OKLab distance (x100) within a set; a text shade on its side's surface and ground; dark text
- * (the dark side's ground) on a fill */
-export const UI_SIGNAL_MIN = { distance: 5, surface: 4.5, ground: 3, ink: 4.5 };
+ * (the dark side's ground) on a fill; UI-13: a type's text on its colour, and how far (OKLab L, x100) a type with light
+ * text may sit from the others' middle ("the types at one lightness"; Electric, with dark ink, is left out) */
+export const UI_SIGNAL_MIN = { distance: 5, surface: 4.5, ground: 3, ink: 4.5, typeText: 4.5, typeLightness: 3 };
 /** good -> --sig-good, and its text shade --sig-good-text */
 export const sigVar = (/** @type {string} */ id, text = false) => `--sig-${id}${text ? '-text' : ''}`;
 

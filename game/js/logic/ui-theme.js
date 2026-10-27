@@ -11,8 +11,16 @@
    DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { contrastRatio, hexRgb } from './colors.js';
-import { UI_SIGNALS, UI_SIGNAL_MIN, UI_SIGNAL_SETS, oklabDistance, signalSetColours, signalVars } from './signals.js';
+import { contrastRatio, hexRgb, rgbHex } from './colors.js';
+import {
+  UI_SIGNALS,
+  UI_SIGNAL_MIN,
+  UI_SIGNAL_SETS,
+  oklab,
+  oklabDistance,
+  signalSetColours,
+  signalVars,
+} from './signals.js';
 /* eslint-disable no-func-assign */
 expose({
   RING: [() => RING],
@@ -563,6 +571,30 @@ export function uiSignalProblems(theme, types = []) {
             msg: `dark text (the dark ground) on ${name(id)}'s fill reads at ${r.toFixed(2)}:1, under ${M.ink}:1`,
           });
       }
+  }
+  /* UI-13: every type's text reads on its colour, and the types with light text sit at one lightness */
+  const typeInk = (/** @type {any} */ t) => rgbHex(hexRgb(t.text || '#fff')),
+    typed = (types || []).filter(t => t && t.id && t.color),
+    light = typed.filter(t => uiRatio(typeInk(t), '#000000') > uiRatio(typeInk(t), '#ffffff')),
+    Ls = light.map(t => oklab(t.color)[0]).sort((a, b) => a - b),
+    mid = Ls.length ? (Ls[0] + Ls[Ls.length - 1]) / 2 : 0;
+  for (const t of typed) {
+    const r = uiRatio(typeInk(t), t.color);
+    if (r < M.typeText)
+      out.push({
+        where: 'types',
+        rel: '',
+        msg: `${t.id}'s text reads at ${r.toFixed(2)}:1 on its colour, under ${M.typeText}:1`,
+      });
+  }
+  for (const t of light) {
+    const L = oklab(t.color)[0];
+    if (Math.abs(L - mid) > M.typeLightness)
+      out.push({
+        where: 'types',
+        rel: '',
+        msg: `${t.id} sits at lightness ${(L / 100).toFixed(2)}, more than ${(M.typeLightness / 100).toFixed(2)} from the types' ${(mid / 100).toFixed(2)}`,
+      });
   }
   for (const [set, S] of Object.entries(UI_SIGNAL_SETS)) {
     const list = signalSetColours(sig, set, types);
