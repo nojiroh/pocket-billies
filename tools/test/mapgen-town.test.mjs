@@ -1,11 +1,14 @@
-// Towns track TW-1: a run town (mapgen.js mapgenStageTown, kind 'town'). On real runs' town nodes: a street off the
-// main road to a level square with its middle (a well or a fountain) and a notice board's spot, the clinic and the
-// shop on the square's north side facing the camera with their doors a walk from the hub and their rooms fitting
-// behind them, 4-7 shut houses (no act, no room) facing the camera, a vegetable plot south of the road, tall grass kept, no note,
-// nothing unreachable, the east and west edges still pinned; the same seed makes the same town; a route has none.
-// TW-2: its townsfolk by its houses, its biome's town animals on its ground, its biome's and region's chat, 1-2
+// Towns track TW-1: a run town (mapgen.js mapgenStageTown, kind 'town'). On real runs' town nodes: a level square at
+// the through road with its middle (a well or a fountain) and a notice board's spot, the clinic and the shop on the
+// square's north side facing the camera with their doors a walk from the hub and their rooms fitting behind them, its
+// size's shut houses (no act, no room) facing the camera, a vegetable plot south of a road or street, tall grass kept,
+// no note, nothing unreachable, the east and west edges still pinned; the same seed makes the same town; a route has
+// none. TW-2: its townsfolk by its houses, its biome's town animals on its ground, its biome's and region's chat, 1-2
 // named locals on its square and by a gate, each with a townsfolk look, a name and two of the biome's lines; a route
-// has no folk, no chat and no locals.
+// has no folk, no chat and no locals. WM-5: streets grown from the through road (mapgenTownPlan) at the three sizes
+// (MAPGEN_TOWN_SIZES): a village's and a town's market stall, a town's second quest giver's spot, the houses its size
+// asks for, every one facing the camera on the north side of its street; streets and houses south of a through road
+// that runs high in a place two cells tall; the town dial.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, GAME_DATA, modules } from './setup-real.mjs';
@@ -30,8 +33,12 @@ const C = GAME_DATA.scenery,
     visited: {},
   };
 const HOUSE = /house|cottage/,
-  /* half the deepest square's depth (MAPGEN_TOWN.squares) */
-  SQUARE_HALF_DEPTH = 4;
+  /* the road's tiles, whichever surface (mapgen.js MAPGEN_SURFACES) */
+  ROAD_TILES = Object.values(G.MAPGEN_SURFACES),
+  /* half the deepest square's depth (MAPGEN_TOWN_SIZES squares) */
+  SQUARE_HALF_DEPTH = 5,
+  /* half the widest square's width, and a metre */
+  SQUARE_HALF_WIDTH = 13;
 
 /** every scene of a run's map, with the nodes' types */
 function runScenes(/** @type {string} */ seed) {
@@ -61,9 +68,9 @@ test('a route has no square and no houses', () => {
   );
 });
 
-test('every run town has a street, a square with the clinic and the shop on it, and 4-7 shut houses', () => {
+test("every run town has a square with the clinic and the shop on it, streets and its size's shut houses", () => {
   let towns = 0,
-    four = 0;
+    full = 0;
   for (const seed of ['TW1A', 'TW1B', 'TW1C', 'TW1D', 'TW1E', 'TW1F']) {
     for (const { node, i, scene: sc, notes, run } of runScenes(seed)) {
       const where = `${seed} node ${i}`;
@@ -116,10 +123,15 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, ...step), `${where}: the ${k}'s door step can't be walked to`);
         assert.ok(step[0] >= 7 && step[0] <= sc.w - 7 && p.z <= sc.h - 10.4, `${where}: the ${k}'s room fits`);
       }
-      /* the houses: shut (no act, no room of their own), facing the camera, each a walk from the hub */
-      const houses = sc.props.filter(p => HOUSE.test(p.k));
-      assert.ok(houses.length >= 3 && houses.length <= 7, `${where}: ${houses.length} houses`);
-      if (houses.length >= 4) four++;
+      /* the houses: its size's (WM-5: a run's towns are 2 x 1 hamlets until WM-5b), shut (no act, no room of their
+         own), facing the camera, each a walk from the hub */
+      const houses = sc.props.filter(p => HOUSE.test(p.k)),
+        Z = G.MAPGEN_TOWN_SIZES[sc.town.size];
+      assert.equal(sc.town.size, 'hamlet', where);
+      assert.equal(sc.town.houses, houses.length, where);
+      assert.ok(houses.length >= 1 && houses.length <= Z.houses[1], `${where}: ${houses.length} houses`);
+      if (houses.length >= Z.houses[0]) full++;
+      assert.ok(sc.town.streets >= 1, `${where}: a street`);
       for (const p of houses) {
         const M = C.props[p.k];
         assert.ok(B.town.houses[p.k], `${where}: ${p.k} is in the ${node.biome} set`);
@@ -129,9 +141,17 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, p.x + dx, p.z - 0.55), `${where}: ${p.k}'s door step can't be walked to`);
       }
       assert.ok(sc.tiles.join('').includes(B.ground.tall), `${where}: tall grass`);
-      /* south of the road (the camera's side): a fenced vegetable plot in farm soil */
+      /* south of the road (the camera's side): a fenced vegetable plot in farm soil, the road (WM-5: or a street) a
+         few metres north of it at its own x (WM-3: a road may bend, so not by the square's z) */
+      const roadNorth = (/** @type {any} */ p) => {
+        for (let dz = 1; dz <= 12; dz++) {
+          const t = tile(p.x, p.z + dz);
+          if (ROAD_TILES.includes(t) || t === B.town.square) return true;
+        }
+        return false;
+      };
       assert.ok(
-        sc.props.some(p => p.k === 'planter_box' && p.z < sq.z - 8 && tile(p.x, p.z) === 'o'),
+        sc.props.some(p => p.k === 'planter_box' && tile(p.x, p.z) === 'o' && roadNorth(p)),
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
@@ -143,10 +163,10 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       sc.heights.forEach((row, r) => {
         for (const x of [0, sc.w]) assert.ok(row[x] === 0 || wetBy(x, r), `${where}: the edges pinned`);
       });
-      /* TW-2: townsfolk by its houses (2, one more every 2 houses, at most 6) */
+      /* TW-2: townsfolk by its houses (2, one more every 2 houses, at most 10: WM-5) */
       const F = G.MAPGEN_TOWN.folk;
       assert.equal(sc.folk, Math.min(F.most, F.base + Math.floor(houses.length / F.houses)), `${where}: folk`);
-      assert.ok(sc.folk >= 2 && sc.folk <= 6, where);
+      assert.ok(sc.folk >= 2 && sc.folk <= 10, where);
       /* its biome's town animals, on its ground (pigeons only with 5 houses or more, on the square) */
       for (const L of B.town.life || []) {
         const got = sc.life.find(l => l.k === L.k && l.area);
@@ -155,7 +175,11 @@ test('every run town has a street, a square with the clinic and the shop on it, 
           assert.ok(got && got.n === L.n, `${where}: ${L.k} in town`);
           const [x0, z0, x1, z1] = got.area;
           assert.ok(x0 < x1 && z0 < z1 && x0 >= 1 && z1 <= sc.h - 1, `${where}: ${L.k}'s ground`);
-          if (L.square) assert.ok(x0 >= sq.x - 9 && x1 <= sq.x + 9, `${where}: ${L.k} on the square`);
+          if (L.square)
+            assert.ok(
+              x0 >= sq.x - SQUARE_HALF_WIDTH && x1 <= sq.x + SQUARE_HALF_WIDTH,
+              `${where}: ${L.k} on the square`
+            );
         }
       }
       /* its chat: the biome's lines, then the region's */
@@ -185,7 +209,7 @@ test('every run town has a street, a square with the clinic and the shop on it, 
     }
   }
   assert.ok(towns >= 15, `${towns} towns`);
-  assert.ok(four >= towns * 0.9, `${four} of ${towns} towns with 4 houses or more`);
+  assert.ok(full >= towns * 0.9, `${full} of ${towns} towns with their size's houses`);
 });
 
 test('the same seed makes the same town', () => {
@@ -210,4 +234,155 @@ test("a run town's chat ends with its region's lines", () => {
     t.scene.people.filter(p => !p.quest),
     'the same locals: the region moves no draw'
   );
+});
+
+/* ---------- WM-5: the three sizes, at their places' sizes ---------- */
+const { RUN_TOWN_ROAD } = modules['run-scenes'];
+const SIZES = /** @type {Record<string, [number, number]>} */ ({
+    hamlet: [128, 64],
+    village: [128, 128],
+    town: [192, 128],
+  }),
+  BIOMES = ['meadow', 'thicket', 'lake', 'canyon', 'volcano', 'tundra', 'sea', 'ridge', 'autumn', 'badlands', 'jungle'],
+  CTX = { scenery: C, biomes: GAME_DATA.biomes, setPieces: GAME_DATA.setPieces };
+
+/** a town of `size` from seed s, as a run makes one: its way in by the west (at one cell's middle or the other's), its
+ * way on east (likewise), north or south, the land and water drawn as a run's are; `more`: other dials
+ * @param {string} size @param {number} s @param {string} way @param {any} [more] */
+function townAt(size, s, way, more = {}) {
+  const [w, h] = SIZES[size],
+    cell = (/** @type {number} */ t) => (h > 64 ? [32 / h, 1 - 32 / h][t % 2] : 0.5),
+    exits = [
+      { side: 'W', t: cell(s), width: 2 },
+      way === 'E' ? { side: 'E', t: cell(s >> 1), width: 2 } : { side: way, t: 0.6, width: 2 },
+    ];
+  const P = {
+    seed: 7000 + s * 13,
+    w,
+    h,
+    kind: 'town',
+    biome: BIOMES[s % BIOMES.length],
+    props: { clinic: 1, shop: 1 },
+    road: { ...RUN_TOWN_ROAD, exits },
+    pin: way === 'E' ? 'EW' : 'EW' + way,
+    ahead: way,
+    feature: 'none',
+    land: {
+      hills: 0.15 + (s % 5) * 0.12,
+      cliffs: 0.3,
+      water: ['none', 'none', 'stream', 'pond', 'none'][s % 5],
+      waterAmount: 0.5,
+    },
+    ...more,
+  };
+  return { P, ...G.mapgenScene(P, CTX) };
+}
+
+test('WM-5: every size grows streets from its through road, with its square, services and houses', () => {
+  const towns = /** @type {Record<string, number>} */ ({}),
+    full = /** @type {Record<string, number>} */ ({});
+  for (const size of Object.keys(SIZES))
+    for (const way of ['E', 'N', 'S'])
+      for (let s = 0; s < 8; s++) {
+        const { scene: sc, notes } = townAt(size, s, way),
+          where = `${size}, way on ${way}, seed ${s}`,
+          Z = G.MAPGEN_TOWN_SIZES[size],
+          B = GAME_DATA.biomes[sc.biome],
+          spots = (/** @type {string} */ k) => (sc.spots || []).filter((/** @type {any} */ p) => p.kind === k);
+        assert.deepEqual(notes, [], where);
+        assert.equal(sc.kind, 'town', where);
+        assert.equal(sc.town.size, size, where);
+        towns[size] = (towns[size] || 0) + 1;
+        assert.equal(spots('square').length, 1, `${where}: a square`);
+        assert.equal(spots('board').length, 1, `${where}: a notice board's spot`);
+        /* its streets: a main street and side streets off it (a village's and a town's two at least) */
+        assert.ok(sc.town.streets >= (size === 'hamlet' ? 1 : 2), `${where}: ${sc.town.streets} streets`);
+        /* the size's houses, shut, facing the camera, each door a walk from the hub */
+        const houses = sc.props.filter((/** @type {any} */ p) => HOUSE.test(p.k)),
+          reach = G.mapgenReach(sc, C),
+          step = (/** @type {any} */ p) => {
+            const M = C.props[p.k],
+              dx = ((M.door && M.door.x) || 0) / (C.ppu || 34);
+            return [p.x + dx, p.z - 0.55];
+          };
+        assert.equal(sc.town.houses, houses.length, where);
+        assert.ok(houses.length <= Z.houses[1], `${where}: ${houses.length} houses`);
+        if (houses.length >= Z.houses[0]) full[size] = (full[size] || 0) + 1;
+        for (const p of houses) {
+          assert.ok(B.town.houses[p.k], `${where}: ${p.k} is in the ${sc.biome} set`);
+          assert.ok(!p.act && !p.rot && !p.f, `${where}: ${p.k} shut, facing the camera`);
+          assert.ok(G.mapgenReached(reach, ...step(p)), `${where}: ${p.k}'s door step can't be walked to`);
+        }
+        /* the clinic and the shop, one each, facing the camera, their doors a walk away; a village's and a town's
+           market stall (act 'stall'); a town's second quest giver's spot */
+        for (const k of ['clinic', 'shop']) {
+          const b = sc.props.filter((/** @type {any} */ p) => p.k === k);
+          assert.equal(b.length, 1, `${where}: one ${k}`);
+          assert.ok(!b[0].rot && !b[0].f, `${where}: the ${k} faces the camera`);
+          assert.ok(G.mapgenReached(reach, ...step(b[0])), `${where}: the ${k}'s door step can't be walked to`);
+        }
+        const stalls = sc.props.filter((/** @type {any} */ p) => p.k === 'stall');
+        assert.equal(stalls.length, Z.stall, `${where}: ${stalls.length} market stalls`);
+        for (const p of stalls) {
+          assert.equal(p.act, 'stall', where);
+          assert.ok(G.mapgenReached(reach, p.x, p.z - 0.8), `${where}: the stall can't be walked to`);
+        }
+        const givers = spots('giver');
+        assert.equal(givers.length, Z.givers, `${where}: ${givers.length} quest givers' spots`);
+        for (const g of givers)
+          assert.ok(G.mapgenReached(reach, g.x, g.z), `${where}: a giver's spot can't be walked to`);
+        /* tall grass kept, a vegetable plot, every exit a walk from the hub */
+        assert.ok(sc.tiles.join('').includes(B.ground.tall), `${where}: tall grass`);
+        const tile = (/** @type {number} */ x, /** @type {number} */ z) =>
+          (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)];
+        assert.ok(
+          sc.props.some((/** @type {any} */ p) => p.k === 'planter_box' && tile(p.x, p.z) === 'o'),
+          `${where}: a vegetable plot`
+        );
+        assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
+        /* townsfolk by its houses, at most 10 */
+        const F = G.MAPGEN_TOWN.folk;
+        assert.equal(sc.folk, Math.min(F.most, F.base + Math.floor(houses.length / F.houses)), `${where}: folk`);
+      }
+  for (const size of Object.keys(SIZES))
+    assert.ok((full[size] || 0) >= towns[size] * 0.9, `${size}: ${full[size]} of ${towns[size]} with their houses`);
+});
+
+test('WM-5: a through road running high in a place two cells tall grows the town south of it too', () => {
+  let south = 0;
+  for (const size of ['village', 'town'])
+    for (const s of [1, 3, 5, 7, 9, 11]) {
+      /* seeds whose west exit is on the upper cell, and the east one too (s >> 1 odd) or the lower one */
+      const { scene: sc } = townAt(size, s, 'E'),
+        sq = (sc.spots || []).find((/** @type {any} */ p) => p.kind === 'square'),
+        road = sq.z - 5;
+      if (sc.props.some((/** @type {any} */ p) => HOUSE.test(p.k) && p.z < road - 6)) south++;
+    }
+  assert.ok(south >= 9, `${south} of 12 high-road towns have houses south of the road`);
+});
+
+test('WM-5: the same seed makes the same town at every size', () => {
+  for (const size of Object.keys(SIZES)) {
+    const a = townAt(size, 4, 'N').scene,
+      b = townAt(size, 4, 'N').scene;
+    assert.equal(JSON.stringify(a), JSON.stringify(b), size);
+  }
+});
+
+test('WM-5: a town is sized by its cells, and the town dial asks for its houses, stall and givers', () => {
+  assert.equal(G.mapgenTownSize({ w: 128, h: 64 }).size, 'hamlet');
+  assert.equal(G.mapgenTownSize({ w: 112, h: 64 }).size, 'hamlet', "the Studio's route size");
+  assert.equal(G.mapgenTownSize({ w: 128, h: 128 }).size, 'village');
+  assert.equal(G.mapgenTownSize({ w: 192, h: 128 }).size, 'town');
+  const T = G.mapgenTownSize({ w: 128, h: 64, town: { houses: [5, 6], stall: 1, givers: 2 } });
+  assert.deepEqual([T.size, T.houses, T.stall, T.givers], ['hamlet', [5, 6], 1, 2]);
+  assert.equal(G.mapgenTownSize({ w: 128, h: 64, town: { size: 'town' } }).size, 'town');
+  /* kept only when given, bad parts dropped */
+  assert.ok(!('town' in G.mapgenParams({})));
+  assert.deepEqual(G.mapgenParams({ town: { size: 'city', houses: [9, 2], stall: 3, givers: 2 } }).town, { givers: 2 });
+  /* a hamlet asked for a stall and two givers makes them */
+  const { scene: sc, notes } = townAt('hamlet', 2, 'E', { town: { stall: 1, givers: 2 } });
+  assert.deepEqual(notes, []);
+  assert.equal(sc.props.filter((/** @type {any} */ p) => p.k === 'stall').length, 1);
+  assert.equal((sc.spots || []).filter((/** @type {any} */ p) => p.kind === 'giver').length, 2);
 });

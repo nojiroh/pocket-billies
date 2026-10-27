@@ -63,6 +63,18 @@
     "minimum": 0,
     "maximum": 20
    },
+   "shapes": {
+    "description": "WM-3: the footprints its place may take on the region grid, by weight: WxH cells (wide x tall, 1-4 each) or L (two by two with a corner walled off); left out: two by one (logic/run-map.js runShapeSize)",
+    "type": "object",
+    "propertyNames": {
+     "pattern": "^([1-4]x[1-4]|L)$"
+    },
+    "minProperties": 1,
+    "additionalProperties": {
+     "type": "number",
+     "minimum": 0
+    }
+   },
    "weight": {
     "description": "how often it fills a free row (rows rules.json run.map gives no role); 0 or left out: never",
     "type": "number",

@@ -34,6 +34,9 @@ expose({
  * @property {number} bossTime seconds
  * @property {number} bossZoom
  * @property {number} bossLean metres
+ * @property {boolean} arenaOn WM-7: a leader's arena framed while its intro lasts
+ * @property {number} arenaZoom
+ * @property {number} arenaBlend seconds
  * @property {boolean} idleOn
  * @property {number} idleDelay seconds
  * @property {number} idleZoom
@@ -54,6 +57,9 @@ export const MOMENT_DIALS = {
   bossTime: 2.2,
   bossZoom: 0.85,
   bossLean: 3,
+  arenaOn: true,
+  arenaZoom: 1.2,
+  arenaBlend: 0.7,
   idleOn: true,
   idleDelay: 4,
   idleZoom: 0.9,
@@ -87,6 +93,7 @@ export function momentNew() {
  * @property {number[]} dir the way you push (length 0-1)
  * @property {number[] | null} talk who talks to you (x, z), while they do
  * @property {{id: string, x: number, z: number} | null} boss the run's boss in this place, if any
+ * @property {number[] | null} [arena] WM-7: a leader's arena's middle (x, z), while its intro frames it
  * @property {{w: number, lean: number[], zoom: number} | null} interest the strongest point of interest near you
  * @property {boolean} reduced reduced motion
  */
@@ -122,6 +129,7 @@ export function momentStep(st, I, D, dt) {
   }
   if (st.boss && st.boss.t > D.bossTime) st.boss = null;
   const want = {
+    arena: D.arenaOn && !!I.arena,
     talk: D.talkOn && !!I.talk,
     boss: !!(st.boss && I.boss),
     interest: may('interest', !!I.interest),
@@ -129,7 +137,8 @@ export function momentStep(st, I, D, dt) {
     run: may('run', D.runOn && !I.reduced && I.running && I.moving),
   };
   const id =
-    /** @type {(keyof typeof want)[]} */ (['talk', 'boss', 'interest', 'idle', 'run']).find(m => want[m]) || null;
+    /** @type {(keyof typeof want)[]} */ (['arena', 'talk', 'boss', 'interest', 'idle', 'run']).find(m => want[m]) ||
+    null;
   st.id = id;
   for (const m of Object.keys(want)) st.on[m] = m === id;
   /** @type {import('./camera-follow.js').CameraGoal[]} */
@@ -142,7 +151,10 @@ export function momentStep(st, I, D, dt) {
     return [I.px + dx * s, I.pz + dz * s];
   };
   /* only the moment picked asks; the one before ramps out as it last was, at its own pace (`out`) */
-  if (id === 'talk' && I.talk)
+  /* WM-7: a leader's arena: the ring framed, the camera eased out over it, while its intro lasts (before the talk) */
+  if (id === 'arena' && I.arena)
+    goals.push({ id: 'arena', w: k, blend: D.arenaBlend, out: 0.8, at: [I.arena[0], I.arena[1]], zoom: D.arenaZoom });
+  else if (id === 'talk' && I.talk)
     goals.push({
       id: 'talk',
       w: k,

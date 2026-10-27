@@ -97,6 +97,7 @@ test('WM-2: every Expedition’s paths, towns and grid; the checks name a broken
   assert.ok(has(far, `place 0 leads to place ${j}, which doesn’t share an edge`));
   const west = structuredClone(map);
   west.nodes[west.nodes[0].to[0]].at = [-2, 0];
+  west.nodes[west.nodes[0].to[0]].size = [2, 1];
   assert.ok(has(west, 'leads west'));
   assert.ok(has(west, 'not north and east'));
   const bare = structuredClone(map);

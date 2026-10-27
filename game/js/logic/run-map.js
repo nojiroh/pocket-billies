@@ -11,15 +11,18 @@
    Mini-boss rows and the boss row hold one node, so every path meets them. The other rows take a filler type by
    weight (nodeTypes.json; WM-2: towns weigh nothing, they come after leaders only); RL-14: a type with a chance
    instead (a scrapyard) takes a free node by it, from its fromRow on.
-   WM-2, the region grid: every main node also has a footprint on a coarse grid (RUN_GRID: cells about 64 m, x east, y
-   north), `at` its south-west cell and `size` its cells (every place 2 x 1, a route's, until WM-3). A link joins two
-   footprints that share an edge, going east, north or south from the node to the one it leads to, never west
-   (runLinkDir); the landing's two links go one north (up) and one east (right). Links can't cross, as footprints
-   don't overlap. Until WM-3 the scenes and the bowl don't read the grid: a link still leaves its node by the east side
-   and arrives by the next node's west (the owner, WM-1: runs go west to east), one
-   link at t 0.5, two at 0.15625 and 0.84375, 10 m and 54 m along (the seam rules allow two exits a side, 44 m apart, logic/seam-rules.js, and an
-   east or west edge is 64 m), so a node has at most two links each way. runExits' `ahead` is the way east,
-   `back` the way west. Two lanes run straight, split, merge, or switch once (one diagonal, never two).
+   WM-2, the region grid: every main node also has a footprint on a coarse grid (RUN_GRID: 64 m cells, x east, y
+   north), `at` its south-west cell and `size` its cells. A link joins two footprints that share an edge, going east,
+   north or south from the node to the one it leads to, never west (runLinkDir); the landing's two links go one north
+   (up) and one east (right). Links can't cross, as footprints don't overlap. WM-3: a footprint's size is its type's
+   shape (nodeTypes.json `shapes`: a route 2 x 1, 3 x 1, a north-going 1 x 2 or 1 x 3, or an L; a waystation 1 x 1),
+   and each link crosses its edge at a spot of its own (`ways`, runGridWays: a whole metre on the cells both share, 12
+   m from their ends, 44 m from another exit on either side, the seam rules' gap); an L is two by two with the corner
+   its road turns away from walled off (`cut`, runGridCut). A place is made at its footprint's size with its exits
+   where its links cross (runGridExits; logic/run-scenes.js), so the walk's joins are the grid's. A run's map from
+   before WM-3 has no `ways`: its links leave by the east side and arrive by the next node's west (WM-1: runs go west
+   to east), one at t 0.5, two at 0.15625 and 0.84375 (runExits), its places 112 x 64. A node has at most two links
+   each way. Two lanes run straight, split, merge, or switch once (one diagonal, never two).
    On the bowl (RUN_BOWL) the rows run straight across from the landing near the west rim to the boss near the east,
    every place's map facing the bowl's north (up 90), lane 0 the southern, and each node's exits run south to north
    in the order of its neighbours.
@@ -44,6 +47,7 @@ import { runSideAdd, runSideLinked, runSideMain } from './run-side.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL: [() => RUN_BOWL],
+  RUN_BOWL_GRID: [() => RUN_BOWL_GRID],
   RUN_EXIT_T: [() => RUN_EXIT_T],
   RUN_GRID: [() => RUN_GRID],
   // @ts-expect-error -- replaced on purpose
@@ -53,9 +57,22 @@ expose({
   runExits: [() => runExits, v => (runExits = v)],
   // @ts-expect-error -- replaced on purpose
   runForecastFill: [() => runForecastFill, v => (runForecastFill = v)],
+  // @ts-expect-error -- replaced on purpose
+  runGridCut: [() => runGridCut, v => (runGridCut = v)],
+  // @ts-expect-error -- replaced on purpose
+  runGridExits: [() => runGridExits, v => (runGridExits = v)],
+  // @ts-expect-error -- replaced on purpose
+  runGridLinks: [() => runGridLinks, v => (runGridLinks = v)],
   runGridOverlap: [() => runGridOverlap],
+  runGridPoint: [() => runGridPoint],
+  // @ts-expect-error -- replaced on purpose
+  runGridShared: [() => runGridShared, v => (runGridShared = v)],
   // @ts-expect-error -- replaced on purpose
   runGridSide: [() => runGridSide, v => (runGridSide = v)],
+  // @ts-expect-error -- replaced on purpose
+  runGridTurn: [() => runGridTurn, v => (runGridTurn = v)],
+  // @ts-expect-error -- replaced on purpose
+  runGridWays: [() => runGridWays, v => (runGridWays = v)],
   // @ts-expect-error -- replaced on purpose
   runLinkDir: [() => runLinkDir, v => (runLinkDir = v)],
   // @ts-expect-error -- replaced on purpose
@@ -81,8 +98,21 @@ expose({
   runNodeSeed: [() => runNodeSeed],
   // @ts-expect-error -- replaced on purpose
   runReveal: [() => runReveal, v => (runReveal = v)],
+  runSegDist: [() => runSegDist],
+  // @ts-expect-error -- replaced on purpose
+  runShapeSize: [() => runShapeSize, v => (runShapeSize = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSideLay: [() => runSideLay, v => (runSideLay = v)],
   // @ts-expect-error -- replaced on purpose
   runSpot: [() => runSpot, v => (runSpot = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotAt: [() => runSpotAt, v => (runSpotAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotBoxes: [() => runSpotBoxes, v => (runSpotBoxes = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotCells: [() => runSpotCells, v => (runSpotCells = v)],
+  // @ts-expect-error -- replaced on purpose
+  runSpotOutline: [() => runSpotOutline, v => (runSpotOutline = v)],
   runWeather: [() => runWeather],
   runWorldNode: [() => runWorldNode],
 });
@@ -130,10 +160,19 @@ export function runMapLength(seed, M, expedition) {
     minibosses = M.minibosses !== undefined ? M.minibosses : Math.max(lo, Math.min(hi, Math.floor((rows - 3) / 3)));
   return { rows, minibosses };
 }
-/** WM-2: the region grid: cells `cell` metres square (x east, y north), a place's footprint `place` cells (every one
- * a route's 2 x 1 until WM-3), the main path within `half` cells north and south of the landing's row; `tries`, how
- * many footprints the layout search may try before it gives up on a map's lane switches */
-export const RUN_GRID = { cell: 64, place: [2, 1], half: 3, tries: 4000 };
+/** WM-2: the region grid: cells `cell` metres square (x east, y north), the main path within `half` cells north and
+ * south of the landing's row; `tries`, how many footprints the layout search may try before it gives up on a map's
+ * lane switches. WM-3: a place's footprint is its type's shape (nodeTypes.json `shapes`, runShapeSize), `place` cells
+ * when it has none or its shape doesn't fit; an exit stands `edge` metres at least from a corner of its side and `gap`
+ * metres at least from another exit on that side (the seam rules' 44 m, logic/seam-rules.js) */
+export const RUN_GRID = { cell: 64, place: [2, 1], half: 3, tries: 6000, edge: 12, gap: 44 };
+/** WM-3: a shape's cells: 'WxH' (wide x tall), or 'L', two by two with a corner cut off (runGridCut) @param {string} id
+ * @returns {[number, number]} */
+export function runShapeSize(id) {
+  if (id === 'L') return [2, 2];
+  const m = /^([1-4])x([1-4])$/.exec(id || '');
+  return m ? [+m[1], +m[2]] : /** @type {[number, number]} */ (RUN_GRID.place.slice());
+}
 /** the side footprint b lies on from footprint a: 'E', 'W', 'N' or 'S' when they share an edge (a cell of it at
  * least), '' when they don't touch @param {{ at: number[], size: number[] }} a @param {{ at: number[], size: number[] }} b */
 export function runGridSide(a, b) {
@@ -148,6 +187,15 @@ export function runGridSide(a, b) {
   if (xs && by === ay + ah) return 'N';
   if (xs && by + bh === ay) return 'S';
   return '';
+}
+/** WM-3: the cells along the edge footprints a and b share, [from, to) on the grid's axis along it (y on an east or
+ * west side, x on a north or south one), or null when they share none @param {{ at: number[], size: number[] }} a
+ * @param {{ at: number[], size: number[] }} b @returns {[number, number] | null} */
+export function runGridShared(a, b) {
+  const d = runGridSide(a, b);
+  if (!d) return null;
+  const k = d === 'E' || d === 'W' ? 1 : 0;
+  return [Math.max(a.at[k], b.at[k]), Math.min(a.at[k] + a.size[k], b.at[k] + b.size[k])];
 }
 /** whether two footprints overlap @param {{ at: number[], size: number[] }} a @param {{ at: number[], size: number[] }} b */
 export const runGridOverlap = (a, b) =>
@@ -167,19 +215,38 @@ export function runLinkDir(map, i, j) {
  * on none already taken, within RUN_GRID.half of the landing's row, lane 0 south of lane 1; the landing's two links
  * one east (lane 0) and one north (lane 1). A seeded search: each node tries its spots in an order drawn on the stream
  * 'map|grid|row|lane|spot' (east twice as likely as north or south, half as likely again away from the landing's row)
- * and steps back when the next can't be placed.
- * Sets `at` and `size` on the nodes and returns true, or false (nothing set) when the search gives up
- * @param {string} seed @param {RunNode[]} nodes @returns {boolean} */
-export function runMapGrid(seed, nodes) {
-  const size = RUN_GRID.place,
-    H = RUN_GRID.half,
+ * and steps back when the next can't be placed. WM-3: each node's footprint is its type's shape (nodeTypes.json
+ * `shapes`, drawn on 'map|size|row|lane'), tried at every spot before RUN_GRID.place is; then every link's exit
+ * along the edge it crosses (runGridWays) and an L's cut corner (runGridCut).
+ * Sets `at`, `size`, `ways` (and an L's `cut`) on the nodes and returns true, or false (nothing set) when the search
+ * gives up
+ * @param {string} seed @param {RunNode[]} nodes @param {Record<string, NodeType>} [nodeTypes] @returns {boolean} */
+export function runMapGrid(seed, nodes, nodeTypes = {}) {
+  const H = RUN_GRID.half,
     from = nodes.map((_, i) => nodes.flatMap((p, k) => (p.to.includes(i) ? [k] : []))),
     /** @type {({ at: number[], size: number[] } | null)[]} */
     put = nodes.map(() => null),
+    /* each node's shape, and the sizes it tries in turn */
+    shape = nodes.map(n => {
+      const S = (nodeTypes[n.type] || {}).shapes;
+      return S && Object.values(S).some(w => w > 0) ? rngFrom(seed, `map|size|${n.row}|${n.lane}`).pick(S) : '';
+    }),
+    sizes = shape.map(s => {
+      const a = runShapeSize(s),
+        b = RUN_GRID.place;
+      return a[0] === b[0] && a[1] === b[1] ? [a] : [a, /** @type {[number, number]} */ (b.slice())];
+    }),
     W = { E: 2, N: 1, S: 1 };
   let tries = 0;
-  /** the spots node i can take, best first @param {number} i */
-  const spots = i => {
+  /** a spot's draw on 'map|grid|row|lane|spot', made once (the search asks again as it steps back) */
+  const drawn = /** @type {Map<string, number>} */ (new Map()),
+    draw = (/** @type {string} */ k) => {
+      let v = drawn.get(k);
+      if (v === undefined) drawn.set(k, (v = rngFrom(seed, `map|grid|${k}`).next()));
+      return v;
+    };
+  /** the spots node i of size [w, h] can take, best first @param {number} i @param {number[]} size */
+  const spots = (i, size) => {
     const n = nodes[i];
     if (!from[i].length) return [[0, 0]];
     const p = /** @type {{ at: number[], size: number[] }} */ (put[from[i][0]]),
@@ -190,16 +257,49 @@ export function runMapGrid(seed, nodes) {
       can = [];
     for (let y = py - h + 1; y <= py + ph - 1; y++) can.push(['E', px + pw, y]);
     for (let x = px; x <= px + pw - 1; x++) can.push(['N', x, py + ph], ['S', x, py - h]);
+    /* WM-3: after an L, the spots its road can bend to first (touching a cell diagonal to the one it comes in by) */
+    const bendTo = from[i].flatMap(l =>
+      shape[l] === 'L' && /** @type {any} */ (put[l]).size[0] === 2 && /** @type {any} */ (put[l]).size[1] === 2
+        ? lCells(l)
+        : []
+    );
     return can
       .map(([d, x, y]) => ({
         x,
         y,
         k:
-          rngFrom(seed, `map|grid|${n.row}|${n.lane}|${d}|${x - px}|${y - py}`).next() **
-          (1 / (W[/** @type {'E'} */ (d)] * (d === 'N' && py > 0 ? 0.5 : d === 'S' && py < 0 ? 0.5 : 1))),
+          draw(`${n.row}|${n.lane}|${d}|${x - px}|${y - py}`) **
+            (1 /
+              (W[/** @type {'E'} */ (d)] *
+                (d === 'N' && py > 0 ? 0.5 : d === 'S' && py < 0 ? 0.5 : 1) *
+                (d === 'E' && townish(i) ? 8 : 1))) +
+          (bendTo.some(c => runGridSide({ at: c, size: [1, 1] }, { at: [x, y], size })) ? 1 : 0) +
+          (shape[i] === 'L' && w === 2 && h === 2 && lIn(p, x, y, d) ? 1 : 0),
       }))
       .sort((a, b) => b.k - a.k)
       .map(c => [c.x, c.y]);
+  };
+  /** WM-3: does an L at (x, y) come in from p by one cell only, its south-west (from the west or the south) or its
+   * north-west (from the north), so the way on (mostly east or north) can leave from the cell diagonal to it?
+   * @param {{ at: number[], size: number[] }} p @param {number} x @param {number} y @param {string} d */
+  const lIn = (p, x, y, d) => {
+    const s = runGridShared(p, { at: [x, y], size: [2, 2] });
+    return !!s && s[1] - s[0] === 1 && s[0] === (d === 'E' ? y : x);
+  };
+  /** WM-3: a town or a place a town leads to: its links lean east (a town's through road and its street want a
+   * straight run west to east until the town sessions) @param {number} i */
+  const townish = i => nodes[i].type === 'town' || from[i].some(k => nodes[k].type === 'town');
+  /** the cells of L node l (placed 2 x 2) diagonal to a cell its first parent touches @param {number} l */
+  const lCells = l => {
+    const p = /** @type {{ at: number[], size: number[] }} */ (put[from[l][0]]),
+      f = /** @type {{ at: number[], size: number[] }} */ (put[l]),
+      ins = [0, 1].flatMap(dx =>
+        [0, 1].flatMap(dy => {
+          const c = [f.at[0] + dx, f.at[1] + dy];
+          return runGridSide(p, { at: c, size: [1, 1] }) ? [c] : [];
+        })
+      );
+    return ins.map(c => [2 * f.at[0] + 1 - c[0], 2 * f.at[1] + 1 - c[1]]);
   };
   /** whether node i may stand on f @param {number} i @param {{ at: number[], size: number[] }} f */
   const fits = (i, f) => {
@@ -218,14 +318,15 @@ export function runMapGrid(seed, nodes) {
   /** @param {number} i @returns {boolean} */
   const place = i => {
     if (i >= nodes.length) return true;
-    for (const [x, y] of spots(i)) {
-      if (++tries > RUN_GRID.tries) return false;
-      const f = { at: [x, y], size: size.slice() };
-      if (!fits(i, f)) continue;
-      put[i] = f;
-      if (place(i + 1)) return true;
-      put[i] = null;
-    }
+    for (const size of sizes[i])
+      for (const [x, y] of spots(i, size)) {
+        if (++tries > RUN_GRID.tries) return false;
+        const f = { at: [x, y], size: size.slice() };
+        if (!fits(i, f)) continue;
+        put[i] = f;
+        if (place(i + 1)) return true;
+        put[i] = null;
+      }
     return false;
   };
   if (!place(0)) return false;
@@ -233,8 +334,225 @@ export function runMapGrid(seed, nodes) {
     const f = /** @type {{ at: number[], size: number[] }} */ (put[i]);
     n.at = /** @type {[number, number]} */ (f.at);
     n.size = /** @type {[number, number]} */ (f.size);
+    delete n.cut;
+  });
+  runGridWays(
+    seed,
+    nodes,
+    new Set(nodes.flatMap((n, i) => (shape[i] === 'L' && n.size && n.size[0] === 2 && n.size[1] === 2 ? [i] : [])))
+  );
+  nodes.forEach((n, i) => {
+    if (shape[i] !== 'L' || /** @type {number[]} */ (n.size)[0] !== 2 || /** @type {number[]} */ (n.size)[1] !== 2)
+      return;
+    const c = runGridCut(nodes, i);
+    if (c) n.cut = c;
   });
   return true;
+}
+/** the node's links both ways in a place's exit order: the first back (the nodes that lead to it, by lane), the first
+ * ahead (the ones it leads to, by lane; the main road runs between those two), then the rest, back before ahead
+ * @param {RunNode[]} nodes @param {number} i @returns {{ node: number, ahead: boolean }[]} */
+export function runGridLinks(nodes, i) {
+  const byLane = (/** @type {number[]} */ js) => js.slice().sort((a, b) => nodes[a].lane - nodes[b].lane),
+    back = byLane(nodes.flatMap((p, k) => (p.to.includes(i) ? [k] : []))).map(node => ({ node, ahead: false })),
+    ahead = byLane(nodes[i].to).map(node => ({ node, ahead: true }));
+  return [back[0], ahead[0], ...back.slice(1), ...ahead.slice(1)].filter(e => !!e);
+}
+/** a point on the grid in metres (x east, y north) at `u` metres along the edge footprint a shares on side d @param
+ * {{ at: number[], size: number[] }} a @param {string} d @param {number} u */
+export const runGridPoint = (a, d, u) => {
+  const C = RUN_GRID.cell;
+  return d === 'E'
+    ? [(a.at[0] + a.size[0]) * C, u]
+    : d === 'W'
+      ? [a.at[0] * C, u]
+      : d === 'N'
+        ? [u, (a.at[1] + a.size[1]) * C]
+        : [u, a.at[1] * C];
+};
+/** the distance from point p to the segment a-b @param {number[]} p @param {number[]} a @param {number[]} b */
+export const runSegDist = (p, a, b) => {
+  const dx = b[0] - a[0],
+    dy = b[1] - a[1],
+    L = dx * dx + dy * dy,
+    t = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0;
+  return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t);
+};
+/** WM-3: an L's cut: the corner cell of node i's 2 x 2 footprint off its main road's bend. Only where the road bends:
+ * its first two exits (runGridLinks, where they cross: `ways`) open into cells diagonal to each other, so the road
+ * turns through one of the other two (the one nearer the corner where the two run-ins meet) and the last is cut, 32 m
+ * at least from the road's line (in, that corner, out) and with no exit of its own; null when the road doesn't bend
+ * (the place stays square). The cut is walled off in the place (mapgen's `cut` dial) and stays its own on the grid
+ * (no other place stands on it). Needs the nodes' `ways` (runGridWays)
+ * @param {RunNode[]} nodes @param {number} i @returns {[number, number] | null} */
+export function runGridCut(nodes, i) {
+  const n = /** @type {{ at: number[], size: number[], to: number[], ways: number[] }} */ (
+      /** @type {any} */ (nodes[i])
+    ),
+    [ax, ay] = n.at,
+    C = RUN_GRID.cell,
+    ends = runGridLinks(nodes, i).map(e => {
+      const b = /** @type {any} */ (nodes[e.node]),
+        d = runGridSide(n, b),
+        u = e.ahead ? n.ways[n.to.indexOf(e.node)] : b.ways[b.to.indexOf(i)],
+        p = runGridPoint(n, d, u),
+        /* the footprint's cell the exit opens into */
+        cell =
+          d === 'E' || d === 'W'
+            ? [d === 'E' ? ax + 1 : ax, Math.floor(u / C)]
+            : [Math.floor(u / C), d === 'N' ? ay + 1 : ay];
+      return { d, p, cell };
+    });
+  if (ends.length < 2) return null;
+  const [A, B] = ends;
+  if (A.cell[0] === B.cell[0] || A.cell[1] === B.cell[1]) return null;
+  const across = (/** @type {string} */ d) => d === 'N' || d === 'S',
+    bend = across(A.d) !== across(B.d) ? (across(A.d) ? [A.p[0], B.p[1]] : [B.p[0], A.p[1]]) : null,
+    line = bend ? [A.p, bend, B.p] : [A.p, B.p],
+    /* the two cells the road may turn through, the bend's first */
+    other = [
+      [A.cell[0], B.cell[1]],
+      [B.cell[0], A.cell[1]],
+    ].sort((p, q) =>
+      bend
+        ? Math.hypot((p[0] + 0.5) * C - bend[0], (p[1] + 0.5) * C - bend[1]) -
+          Math.hypot((q[0] + 0.5) * C - bend[0], (q[1] + 0.5) * C - bend[1])
+        : 0
+    );
+  /* the cut: the second when the road bends through the first; with no bend (an S through the middle), whichever lies
+     further from the road's line */
+  const cands = bend ? [other[1]] : other,
+    far = (/** @type {number[]} */ c) => {
+      const m = [(c[0] + 0.5) * C, (c[1] + 0.5) * C];
+      let d = 1e9;
+      for (let k = 0; k + 1 < line.length; k++) d = Math.min(d, runSegDist(m, line[k], line[k + 1]));
+      return d;
+    };
+  let best = /** @type {[number, number] | null} */ (null),
+    most = 32;
+  for (const c of cands) {
+    if (ends.some(e => e.cell[0] === c[0] && e.cell[1] === c[1])) continue;
+    const d = far(c);
+    if (d > most) {
+      most = d;
+      best = /** @type {[number, number]} */ (c.slice());
+    }
+  }
+  return best;
+}
+/** WM-3: where each link crosses its edge: `ways`, beside `to`, the metres along the grid (y for a link east, x for
+ * one north or south) of its exit, a whole metre on the cells both footprints share, RUN_GRID.edge from their ends at
+ * least and RUN_GRID.gap from another exit of either place's side; drawn on 'map|way|i|j' among the spots that fit
+ * (the one furthest from the others when none does: the seam check names it). Links are settled in node order. An L
+ * (`bend`: its node indices) takes its first way ahead, where it can, in the cell diagonal to the one its first way
+ * in opens into, so its road bends round the corner runGridCut walls off
+ * @param {string} seed @param {RunNode[]} nodes @param {Set<number>} [bend] */
+export function runGridWays(seed, nodes, bend = new Set()) {
+  const C = RUN_GRID.cell,
+    E = RUN_GRID.edge,
+    /** @type {Record<string, number[]>} the exits settled on each node's side, 'i|d' */
+    on = {},
+    opp = /** @type {Record<string, string>} */ ({ E: 'W', W: 'E', N: 'S', S: 'N' }),
+    links = nodes.map((_, i) => runGridLinks(nodes, i));
+  nodes.forEach((n, i) => {
+    const L = links[i],
+      first = L.find(e => e.ahead)?.node,
+      inn = L.find(e => !e.ahead),
+      din = inn ? runGridSide(/** @type {any} */ (n), /** @type {any} */ (nodes[inn.node])) : '';
+    n.ways = n.to.map(j => {
+      const a = /** @type {any} */ (n),
+        b = /** @type {any} */ (nodes[j]),
+        d = runGridSide(a, b),
+        s = /** @type {[number, number]} */ (runGridShared(a, b)),
+        mine = (on[`${i}|${d}`] = on[`${i}|${d}`] || []),
+        theirs = (on[`${j}|${opp[d]}`] = on[`${j}|${opp[d]}`] || []),
+        taken = mine.concat(theirs),
+        all = /** @type {number[]} */ ([]);
+      for (let u = s[0] * C + E; u <= s[1] * C - E; u++) all.push(u);
+      const room = (/** @type {number} */ u) => {
+          let m = 1e9;
+          for (const v of taken) m = Math.min(m, Math.abs(u - v));
+          return m;
+        },
+        spaced = taken.length ? all.filter(u => room(u) >= RUN_GRID.gap) : all,
+        main = j === first,
+        turn = bend.has(i) && main ? runGridTurn(nodes, i, d) : null,
+        bent = turn ? spaced.filter(turn) : [],
+        fit = bent.length ? bent : spaced,
+        /* the main road's way out on a side square to its way in: the far half of the edge from the way in's side,
+           so the road runs long (in from the west or south: east or north; from the north: south); the landing's
+           two ways on, the south and west halves (the road between them across the place) */
+        sq = (/** @type {string} */ x, /** @type {string} */ y) =>
+          (x === 'N' || x === 'S') !== (y === 'N' || y === 'S'),
+        far = main && din && sq(din, d) ? (din === 'N' ? -1 : 1) : !inn ? -1 : 0,
+        half = Math.ceil(fit.length / 2),
+        mine2 = far > 0 ? fit.slice(fit.length - half) : far < 0 ? fit.slice(0, half) : fit,
+        /* and the way into j when it is j's first way in and j's road turns: the half that makes j's road run long
+           (in by its west and on north: the south half; on south: the north; in by its south or north and on east:
+           the west half) */
+        jl = links[j],
+        jOn = jl.find(e => e.ahead),
+        jd = jOn && jl.find(e => !e.ahead)?.node === i ? runGridSide(b, /** @type {any} */ (nodes[jOn.node])) : '',
+        jin = opp[d],
+        lean = !jd || !sq(jin, jd) ? 0 : jin === 'W' ? (jd === 'N' ? -1 : 1) : jd === 'E' ? -1 : 0,
+        /* a town's turn first (its street and square want the room), else the leaving place's */
+        base = b.type === 'town' && lean ? fit : mine2,
+        h2 = Math.ceil(base.length / 2),
+        theirs2 = lean > 0 ? base.slice(base.length - h2) : lean < 0 ? base.slice(0, h2) : base,
+        ok = theirs2.length ? theirs2 : mine2,
+        u = ok.length
+          ? ok[rngFrom(seed, `map|way|${i}|${j}`).int(0, ok.length - 1)]
+          : all.reduce((m, v) => (room(v) > room(m) ? v : m), all[0]);
+      mine.push(u);
+      theirs.push(u);
+      return u;
+    });
+  });
+}
+/** WM-3: for an L (node i, 2 x 2) whose first way in is settled: which spots u (metres along the grid) on its side d
+ * open into a cell diagonal to the one that way in opens into; null when it has no way in yet
+ * @param {RunNode[]} nodes @param {number} i @param {string} d @returns {((u: number) => boolean) | null} */
+export function runGridTurn(nodes, i, d) {
+  const n = /** @type {any} */ (nodes[i]),
+    C = RUN_GRID.cell,
+    first = runGridLinks(nodes, i).find(e => !e.ahead);
+  if (!first) return null;
+  const p = /** @type {any} */ (nodes[first.node]),
+    k = p.to.indexOf(i);
+  if (!p.ways || p.ways[k] === undefined) return null;
+  const pd = runGridSide(n, p),
+    pu = p.ways[k],
+    cellOf = (/** @type {string} */ s, /** @type {number} */ u) =>
+      s === 'E' || s === 'W'
+        ? [s === 'E' ? n.at[0] + 1 : n.at[0], Math.floor(u / C)]
+        : [Math.floor(u / C), s === 'N' ? n.at[1] + 1 : n.at[1]],
+    a = cellOf(pd, pu);
+  return u => {
+    const b = cellOf(d, u);
+    return a[0] !== b[0] && a[1] !== b[1];
+  };
+}
+/** WM-3: node i's exits on the grid, in its place's exit order (runGridLinks): each one's side, where along it (t, 0
+ * to 1 from its south or west end), the node it leads to and whether that is ahead; null for a map or a neighbour
+ * with no footprint or no `ways` (a run's from before WM-3: runExits' east and west) @param {RunMap} map
+ * @param {number} i @returns {{ side: 'E' | 'W' | 'N' | 'S', t: number, node: number, ahead: boolean }[] | null} */
+export function runGridExits(map, i) {
+  const N = map.nodes,
+    n = N[i],
+    L = runGridLinks(N, i);
+  if (!n.at || !n.size || !n.ways || L.some(e => !N[e.node].at || !N[e.node].ways)) return null;
+  const C = RUN_GRID.cell;
+  return L.map(e => {
+    const b = N[e.node],
+      d = /** @type {'E' | 'W' | 'N' | 'S'} */ (runLinkDir(map, i, e.node)),
+      u = e.ahead
+        ? /** @type {number[]} */ (n.ways)[n.to.indexOf(e.node)]
+        : /** @type {number[]} */ (b.ways)[b.to.indexOf(i)],
+      k = d === 'E' || d === 'W' ? 1 : 0,
+      along = u - /** @type {number[]} */ (n.at)[k] * C,
+      len = /** @type {number[]} */ (n.size)[k] * C;
+    return { side: d, t: along / len, node: e.node, ahead: e.ahead };
+  });
 }
 /** the map for a seed. Each choice draws from a stream of its own (a row's shape, a node's type, a node's biome, keyed
  * by row and lane), so changing one rule moves only what it rules. RL-R1: with the region's zones in the rules (M.zones,
@@ -312,9 +630,14 @@ export function runMapMake(seed, nodeTypes, rules) {
     }
   });
   /* the links, then their layout on the grid (WM-2); when the grid can't hold the map's lane switches, the map is
-     linked again without them (nothing else changes) */
+     linked again without them (nothing else changes). WM-3: no two shops in a row is settled before the grid, as a
+     place's type gives its shape (each try starts from the types drawn) */
+  const drawn = nodes.map(n => n.type);
   for (const switches of [true, false]) {
-    for (const n of nodes) n.to = [];
+    nodes.forEach((n, i) => {
+      n.to = [];
+      n.type = drawn[i];
+    });
     for (let row = 0; row + 1 < at.length; row++) {
       const here = at[row],
         next = at[row + 1],
@@ -328,10 +651,10 @@ export function runMapMake(seed, nodeTypes, rules) {
       }
     }
     for (const n of nodes) n.to.sort((a, b) => a - b);
-    if (runMapGrid(seed, nodes)) break;
+    runMapNoTwoShops(seed, nodeTypes, roles, nodes);
+    if (runMapGrid(seed, nodes, nodeTypes)) break;
     if (!switches) throw new Error(`runMapMake: seed ${seed}'s map doesn't fit the grid`);
   }
-  runMapNoTwoShops(seed, nodeTypes, roles, nodes);
   return { nodes };
 }
 /** RL-12b: never two places that sell things (nodeTypes' `shop`: a town, a stall) one after the other. Going row by row,
@@ -450,9 +773,170 @@ export function runExits(map, i) {
  * north and south of it, lane 0 the southern. Every place's map faces the bowl's north (up 90), so a run's places read
  * west to east on the map as they are walked. RL-R2: a side area's places `side` lanes north of the line */
 export const RUN_BOWL = { x: 0.72, step: 0.18, lane: 0.1, bend: 0.06, side: 2 };
-/** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out from its row and lane, never stored
+/** WM-4: a run's places on the bowl at their region-grid cells (RUN_GRID), at the walk's own scale (`metres` to a
+ * bowl radius, as world-bowl.js BOWL_METRES), so their maps lie side by side as the walk joins them; the region's
+ * cells centred on the bowl. A side area's places (no footprint of their own) are laid by runSideLay */
+export const RUN_BOWL_GRID = { metres: 1000 };
+/** WM-4b: a side area laid on the region grid, worked out, never stored, so the walk and the world map agree: each of
+ * its places on two free cells (RUN_GRID.place) touching the one before, and the obstacle's door into the first on
+ * the edge they share. The first lies north of its obstacle's place (else south) on the cells whose shared edge has
+ * the door spot furthest from the side's other exits (a whole metre, RUN_GRID.edge from the ends of that edge and of
+ * the side, off an L's cut cell), the north's when it has RUN_GRID.gap of room, nearest the side's middle on a tie;
+ * each next place east of the one before, else north, else south, each link in the middle of the edge it crosses.
+ * When no cells touch (a crowded corner of the region): a step further north while those are taken, the door then in
+ * the north side's best spot (the walk lays such a place by its exits, off its cells). null for a map without a side
+ * area or without footprints
+ * @param {RunMap} map @returns {{ cells: { at: [number, number], size: [number, number] }[], door: { side: 'N' | 'S', t: number } } | null} */
+export function runSideLay(map) {
+  const S = map.side,
+    N = map.nodes;
+  if (!S || !S.nodes.length) return null;
+  const f = N[S.from];
+  if (!f || !f.at || !f.size || N.some(n => runSideMain(n) && !(n.at && n.size))) return null;
+  const C = RUN_GRID.cell,
+    E = RUN_GRID.edge,
+    size = /** @type {[number, number]} */ ([...RUN_GRID.place]),
+    fx = f.at[0],
+    fy = f.at[1],
+    L = f.size[0] * C,
+    main = N.filter(n => runSideMain(n) && n.at && n.size).map(n => ({
+      at: /** @type {number[]} */ (n.at),
+      size: /** @type {number[]} */ (n.size),
+    })),
+    /** @type {{ at: [number, number], size: [number, number] }[]} */
+    cells = [],
+    taken = (/** @type {{ at: number[], size: number[] }} */ c) =>
+      main.some(m => runGridOverlap(m, c)) || cells.some(m => runGridOverlap(m, c)),
+    /* the obstacle's other exits on its north and south sides (metres from its west end) */
+    G = N.some(n => n.ways) ? runGridExits(map, S.from) : null;
+  /** @type {{ side: 'N' | 'S', t: number, room: number, at: [number, number] | null }[]} */
+  const best = [];
+  for (const side of /** @type {('N' | 'S')[]} */ (['N', 'S'])) {
+    const y = side === 'N' ? fy + f.size[1] : fy - size[1],
+      others = (G || []).filter(e => e.side === side).map(e => e.t * L),
+      cut = f.cut && f.cut[1] === (side === 'N' ? fy + f.size[1] - 1 : fy) ? (f.cut[0] - fx) * C : null;
+    /** @type {{ side: 'N' | 'S', t: number, room: number, at: [number, number] | null }} */
+    let pick = { side, t: 0.5, room: -1, at: null };
+    for (let k = 1 - size[0]; k < f.size[0]; k++) {
+      const at = /** @type {[number, number]} */ ([fx + k, y]);
+      if (taken({ at, size })) continue;
+      const lo = Math.max(E, Math.max(0, k) * C + E),
+        hi = Math.min(L - E, Math.min(f.size[0], k + size[0]) * C - E);
+      for (let u = lo; u <= hi; u++) {
+        if (cut !== null && u > cut - E && u < cut + C + E) continue;
+        const room = Math.min(1e9, ...others.map(v => Math.abs(u - v))),
+          better =
+            !pick.at || room > pick.room || (room === pick.room && Math.abs(u - L / 2) < Math.abs(pick.t * L - L / 2));
+        if (better) pick = { side, t: u / L, room, at };
+      }
+    }
+    best.push(pick);
+  }
+  const ok = best.filter(p => p.at),
+    door = ok.find(p => p.room >= RUN_GRID.gap) || ok[0];
+  if (door && door.at) cells.push({ at: door.at, size });
+  else {
+    /* nothing touches: the north side's best spot and a cell further north */
+    const others = (G || []).filter(e => e.side === 'N').map(e => e.t * L);
+    let t = 0.5,
+      room = -1;
+    for (let u = E; u <= L - E; u++) {
+      const r = Math.min(1e9, ...others.map(v => Math.abs(u - v)));
+      if (r > room || (r === room && Math.abs(u - L / 2) < Math.abs(t * L - L / 2))) [t, room] = [u / L, r];
+    }
+    best[0] = { side: 'N', t, room, at: null };
+    let d = 1;
+    while (d < 64 && taken({ at: [fx, fy + f.size[1] + d], size })) d++;
+    cells.push({ at: [fx, fy + f.size[1] + d], size });
+  }
+  for (let k = 1; k < S.nodes.length; k++) {
+    const p = cells[k - 1],
+      north = (/** @type {number} */ d) => ({
+        at: /** @type {[number, number]} */ ([p.at[0], p.at[1] + p.size[1] + d]),
+        size,
+      }),
+      tries = [
+        { at: /** @type {[number, number]} */ ([p.at[0] + p.size[0], p.at[1]]), size },
+        north(0),
+        { at: /** @type {[number, number]} */ ([p.at[0], p.at[1] - size[1]]), size },
+      ];
+    let c = tries.find(t => !taken(t));
+    for (let d = 1; !c && d < 64; d++) if (!taken(north(d))) c = north(d);
+    cells.push(c || north(64));
+  }
+  const D = door && door.at ? door : best[0];
+  return { cells, door: { side: D.side, t: D.t } };
+}
+/** each node's footprint on the region grid ({ at, size } in cells), a side area's places' laid by runSideLay; null
+ * when the map's main places have none (a run from before WM-2)
+ * @param {RunMap} map @returns {{ at: [number, number], size: [number, number] }[] | null} */
+export function runSpotCells(map) {
+  const nodes = map.nodes;
+  if (!nodes.length || nodes.some(n => runSideMain(n) && !(n.at && n.size))) return null;
+  /** @type {({ at: [number, number], size: [number, number] } | null)[]} */
+  const cells = nodes.map(n =>
+      n.at && n.size && runSideMain(n)
+        ? { at: /** @type {[number, number]} */ ([...n.at]), size: /** @type {[number, number]} */ ([...n.size]) }
+        : null
+    ),
+    lay = runSideLay(map);
+  if (lay && map.side)
+    map.side.nodes.forEach((i, k) => (cells[i] = { at: [...lay.cells[k].at], size: [...lay.cells[k].size] }));
+  return cells.every(Boolean) ? /** @type {{ at: [number, number], size: [number, number] }[]} */ (cells) : null;
+}
+/** WM-4: a node's place on the bowl from the region grid: its middle and its size (bowl radii, x east, y north), the
+ * region's cells centred on the bowl; WM-4b: an L's `cut`, the corner its walled-off cell is in ([sx, sy], -1 west or
+ * south, 1 east or north), else null; null for a map without footprints @param {RunMap} map
+ * @returns {{ x: number, y: number, w: number, h: number, cut: [number, number] | null }[] | null} */
+export function runSpotBoxes(map) {
+  const cells = runSpotCells(map);
+  if (!cells) return null;
+  const c = RUN_GRID.cell / RUN_BOWL_GRID.metres,
+    x0 = Math.min(...cells.map(f => f.at[0])),
+    x1 = Math.max(...cells.map(f => f.at[0] + f.size[0])),
+    y0 = Math.min(...cells.map(f => f.at[1])),
+    y1 = Math.max(...cells.map(f => f.at[1] + f.size[1]));
+  return cells.map((f, i) => {
+    const cut = map.nodes[i].cut;
+    return {
+      x: (f.at[0] + f.size[0] / 2 - (x0 + x1) / 2) * c,
+      y: (f.at[1] + f.size[1] / 2 - (y0 + y1) / 2) * c,
+      w: f.size[0] * c,
+      h: f.size[1] * c,
+      cut: cut ? /** @type {[number, number]} */ ([cut[0] > f.at[0] ? 1 : -1, cut[1] > f.at[1] ? 1 : -1]) : null,
+    };
+  });
+}
+/** WM-4b: a place's outline on the bowl, corner by corner anticlockwise from its south-west (bowl radii): its box's
+ * four, an L's six (its cut cell, RUN_GRID.cell square, left out) @param {{ x: number, y: number, w: number,
+ * h: number, cut?: [number, number] | null }} b @returns {[number, number][]} */
+export function runSpotOutline(b) {
+  const c = RUN_GRID.cell / RUN_BOWL_GRID.metres,
+    /** @type {[number, number][]} */
+    out = [];
+  /** @type {[number, number][]} */ ([
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ]).forEach(([sx, sy], k) => {
+    const x = b.x + (sx * b.w) / 2,
+      y = b.y + (sy * b.h) / 2;
+    if (!b.cut || b.cut[0] !== sx || b.cut[1] !== sy) return void out.push([x, y]);
+    /* the cut corner: in along the edge we came by, round the cell, out along the next */
+    const along = /** @type {[number, number]} */ ([x - sx * c, y]),
+      up = /** @type {[number, number]} */ ([x, y - sy * c]),
+      inner = /** @type {[number, number]} */ ([x - sx * c, y - sy * c]);
+    out.push(...(k % 2 ? [along, inner, up] : [up, inner, along]));
+  });
+  return out;
+}
+/** a node's spot on the bowl ({a, r, up} as locations.json "bowl"), worked out, never stored: WM-4, from the region
+ * grid (runSpotBoxes); a run from before WM-2, from its row and lane (RUN_BOWL)
  * @param {RunMap} map @param {number} i @returns {{ a: number, r: number, up: number }} */
 export function runSpot(map, i) {
+  const B = runSpotBoxes(map);
+  if (B) return runSpotAt(B[i].x, B[i].y);
   const node = map.nodes[i],
     main = map.nodes.filter(runSideMain),
     rows = 1 + Math.max(...main.map(n => n.row)),
@@ -472,6 +956,10 @@ export function runSpot(map, i) {
     x = (node.row - (rows - 1) / 2) * step;
     y = RUN_BOWL.bend * Math.cos((x / RUN_BOWL.x) * (Math.PI / 2)) + (node.lane - (width - 1) / 2) * RUN_BOWL.lane;
   }
+  return runSpotAt(x, y);
+}
+/** a spot on the bowl at x east and y north (bowl radii), facing the bowl's north @param {number} x @param {number} y */
+export function runSpotAt(x, y) {
   const a = (Math.atan2(y, x) * 180) / Math.PI;
   return { a: Math.round((a < 0 ? a + 360 : a) * 1e9) / 1e9, r: Math.hypot(x, y), up: 90 };
 }

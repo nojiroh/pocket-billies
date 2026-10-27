@@ -16,6 +16,7 @@ import { makeBilly, makeRobot, maxHp, provide, saveData, storyAllows } from './h
 import { formSpeciesOf } from './logic/forms.js';
 /* eslint-disable no-func-assign */
 expose({
+  ARENAS: [() => ARENAS],
   BANTER: [() => BANTER],
   BATTLE_STAGES: [() => BATTLE_STAGES],
   BOSSES: [() => BOSSES],
@@ -426,6 +427,8 @@ export const GENES = /** @type {import('../types/game-data').Genes} */ (
 provide({ GENES }); /* to-module */
 /* RT-3: set pieces, prop groups placed as a unit on a laid-out place (setPieces.json; logic/mapgen.js) */
 export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData | null} */ (gameData.setPieces || null);
+/* WM-7: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's (arenas.json; logic/arena-gen.js) */
+export const ARENAS = /** @type {import('../types/game-data').ArenasData | null} */ (gameData.arenas || null);
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
 export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
