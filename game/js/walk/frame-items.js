@@ -28,7 +28,7 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
-import { seenToward, seenWord } from '../logic/person-view.js';
+import { seenFacing, seenToward, seenWord } from '../logic/person-view.js';
 import { WADE_DEPTH } from '../logic/wading.js';
 import { artImg } from '../art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from '../person-art.js';
@@ -414,6 +414,20 @@ export function gatherFrameItems(st, C, PPU, C0) {
       }
       if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));
     }
+  /* characters track CH-1: a test map's lineup (tools/build-test-scenes.py test_people, tools/look-people.py): people
+     stood side by side, only drawn (no taps, no talk, no turning to you; the data is never written to). Each faces a
+     plain word (`dir`, on the screen) or a way in the world (`face`: degrees from +x toward +z, as set pieces turn)
+     seen from the camera; `walk` walks them on the spot */
+  if (!st.battle && sc.test && Array.isArray(sc.lineup))
+    sc.lineup.forEach((/** @type {any} */ L, /** @type {number} */ i) => {
+      const fr = L && typeof L.who === 'string' ? personWalkFrames(L.who) : null;
+      if (!fr) return;
+      warmPerson(L.who);
+      const w = L.face != null ? seenFacing(Math.PI / 2 - (L.face * Math.PI) / 180, seenYaw()) : L.dir || 'down',
+        set = fr[w] || fr.down,
+        im = typeof pickWalkFrame === 'function' ? pickWalkFrame(set, !!L.walk, Math.floor(t / 110) % 6) : set[0];
+      if (im) out.push(personItem('line', im, L.x, L.z, C0, { line: i }));
+    });
   if (typeof lifeSprites === 'function')
     for (const L of lifeSprites())
       out.push({

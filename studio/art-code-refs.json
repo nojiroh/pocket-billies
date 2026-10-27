@@ -1701,7 +1701,8 @@
    "game/js/walk-view.js:3740",
    "game/js/walk-view.js:3851",
    "game/js/walk-view.js:4172",
-   "game/js/walk/frame-items.js:315"
+   "game/js/walk/frame-items.js:315",
+   "game/js/walk/frame-items.js:426"
   ],
   "drop": [
    "game/js/boot.js:162",
