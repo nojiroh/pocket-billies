@@ -255,8 +255,9 @@
     0 18px 40px -18px rgba(0, 0, 0, 0.65);
 }
 /* UI-15: every floating battle part sits in dark glass, in both themes (the owner's answer 6): the night tokens until
-   UI-12 gives each palette its own dark side */
-.battle {
+   UI-12 gives each palette its own dark side (on the plates too, for the gallery, which shows them on their own) */
+.battle,
+.bplate {
   --bt-glass: color-mix(in srgb, var(--night-ink) 86%, transparent);
   --bt-ink: var(--night-text);
   --bt-ink2: var(--night-text2);

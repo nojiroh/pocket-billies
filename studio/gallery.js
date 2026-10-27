@@ -58,10 +58,28 @@ const toastEl = /** @type {any} */ (document.getElementById('gToast'));
 toastEl.text = 'Found an item';
 toastEl.n = 1;
 
-// UI-2: the hand-written type pills get their glyphs, as typeBadgeHTML gives them in the game
+// UI-2: the hand-written type pills get their glyphs, as typeBadgeHTML gives them in the game (UI-15: and the move
+// tiles' names, and the move details' type line)
 document
-  .querySelectorAll('.chip[data-ty]')
+  .querySelectorAll('.chip[data-ty], .mv-top[data-ty]')
   .forEach(c => c.insertAdjacentHTML('afterbegin', typeGlyphHTML(/** @type {HTMLElement} */ (c).dataset.ty)));
+// UI-15: the hand-written UI icons (art/ui) get their whole address, as uiIconHTML gives them in the game (a relative
+// url() in a custom property would be read against the style sheet that uses it)
+document
+  .querySelectorAll('i.uico[data-ico]')
+  .forEach(i =>
+    /** @type {HTMLElement} */ (i).style.setProperty(
+      '--ico',
+      `url('${new URL(`../game/art/ui/${/** @type {HTMLElement} */ (i).dataset.ico}.svg`, location.href)}')`
+    )
+  );
+document
+  .querySelectorAll('[data-ty-g]')
+  .forEach(c =>
+    c.replaceWith(
+      document.createRange().createContextualFragment(typeGlyphHTML(/** @type {HTMLElement} */ (c).dataset.tyG))
+    )
+  );
 
 // UI-3: the Studio's UI section shows this page in a frame (gallery.html?studio=1, without the bar) and hands it the
 // look being edited: the theme, light or dark, the width, reduced motion, Settings' text size and the screen whose
