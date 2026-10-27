@@ -259,7 +259,6 @@ export function runCheck() {
       for (const it in T.seat.items || {})
         if (!items[it]) warn(`${T.name}’s badge gives an unknown item.`, 'trainers', g);
     }
-    if (T.egg && !D.eggs[T.egg]) warn(`${T.name} gives an egg size that doesn’t exist.`, 'trainers', g);
   }
   const seatIds = Object.values(D.trainers || {})
     .filter(T => T.seat)

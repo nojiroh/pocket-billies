@@ -1501,13 +1501,7 @@ SECTIONS.trainers = () => {
      numberField(T.miniboss ? 'Reward (Moneys), outside runs only' : 'Reward (Moneys)', `${p}.reward`, {
        min: 0,
        step: 50,
-     }),
-     selectField(
-       'First-win egg',
-       `${p}.egg`,
-       Object.keys(D.eggs).map(e => [e, e + ' km']),
-       { num: 1, none: 'None', opt: 1 }
-     )
+     })
    )}
   ${checkboxField('Double battle: two of theirs against two of yours', `${p}.double`, { help: 'Needs at least two Billies on their team.' })}${selectField(
     'Companion beside them in the world',
