@@ -2,6 +2,37 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-8b - the wide map tile - 2026-10-27
+Branch `track/ui`: main fast-forwarded in (UI-9b merged, #272), then UI-10's plan branch `ccr-03a15a70-nd3yqu` merged
+(docs only; PR #269 conflicted with main on HANDOFF alone: both entries kept). Plan approved in Plan Mode. Details:
+docs/phases/ui-track.md, "UI-8b as built".
+- The owner's answers at the start: the tile's edge stays gold only while the Map is open; narrow phones shrink the
+  whole tile, keeping its shape.
+- Changed: uiTheme.json `minimap` gains `tileW` 232, `tileH` 184, `tileCompact` 112 (schema, the Studio's Minimap
+  group, tokens.css; `--minimap-tile-aspect` written beside them). pb-nav-bar: the tile sizes from the host's width
+  (`100cqw`; the host is now the container), stands 60 px out of a plain cut 128 px bar on a 390 px phone (the
+  outline lost its tower), the buttons icon over word in 63 px columns; walking a 112 px square in a 76 px bar; the
+  320 px container query went. minimap.js scales from the tile's shorter side (`min(W, H) / span`, marks too).
+  shell.css `--nav-h` worked out from the same tokens: 224 px standing, 148 walking (172 and 102 before).
+- Checks changed on purpose: the gallery's run-hud pictures, and run-nodes, picks and payout under it (moved down by a
+  fraction of a pixel); the fast check's bar step now checks the tile is wide, stands 40 px or more out of the frame,
+  every button is 40 px and none overlaps the tile (seen failing on a planted tall tile); the fast check's Lab taps
+  run on a 400 x 760 page (on its 300 px page the new bar covered every Lab row: the click timed out).
+- Verified: `npm run lint`, `npm test` 1552 of 1552, `npm run check:data`; the game captured headless (fixture run) at
+  390, 360 and 320 px, standing and walking, light and dark: tile 232 x 184 / 208 x 165 / 168 x 133, walking 112 / 112
+  / 96, side buttons 60-63 x 52, no page errors. check:fast 37 of 40 then the Lab alone green: the other two (the
+  Studio's world map look and Camera section) fail the same on main (SA-5's deleted `art/billionaires/*.png`, the
+  Studio's `atlasPath` in studio/js/sprites.js). check:smoke green. check:ui: what differs (panels, cards, loading at
+  320) differs on main too, run to run. The full quick check: 38 of 41; the three (Terraces: the
+  train station floats in Copperleaf; RL-8: the Meadow Route seam's view never shows; Walking: the settings tabs'
+  counts) fail the same on main at 12942096 (its room-light failure here was once, under load: alone it passed).
+- Risky: the minimap canvas is 2.8 times today's pixels standing (drawn 5 times a second), unmeasured on a phone; at
+  320 px the tile rises only 13 px; `cqw` on the host and `max()`/`min()` in custom properties need a 2023+ browser
+  (Safari 16, Chrome 105).
+- Next: the owner's phone check (size, compact timing, the marks at 232 px, frame cost); then UI-11 (the colour code
+  as data) on `track/ui`.
+- Tag to suggest (sessions can't push tags): `ui-8b-done` on this entry's commit.
+
 ### UI track UI-10 - Part 2 planned: Living Semigloss (research, the colour code, palettes, a sampler) - 2026-10-27
 Branch `ccr-03a15a70-nd3yqu` (the session's own; `track/ui` holds UI-9b, PR #266). Main merged first (a fast-forward).
 Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game changed. Details: docs/phases/ui-track.md,
