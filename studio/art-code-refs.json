@@ -1967,8 +1967,8 @@
    "game/js/shop.js:106"
   ],
   "pow": [
-   "game/js/game-data.js:154",
-   "game/js/game-data.js:157"
+   "game/js/game-data.js:152",
+   "game/js/game-data.js:155"
   ],
   "ring": [
    "game/js/engine/webgl.js:735",
@@ -2020,8 +2020,8 @@
    "game/js/battle-stage.js:2127",
    "game/js/battle-stage.js:2394",
    "game/js/cutscene/opening.js:340",
-   "game/js/game-data.js:154",
-   "game/js/game-data.js:157"
+   "game/js/game-data.js:152",
+   "game/js/game-data.js:155"
   ],
   "tag": [
    "game/js/battle.js:568",

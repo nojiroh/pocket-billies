@@ -224,11 +224,6 @@ export function runCheck() {
       });
   }
   const people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {}));
-  for (const [k, E] of Object.entries(D.eggs))
-    E.list.forEach(([id]) => {
-      if (!sp.has(id))
-        missingSp(id, `The ${E.need / 1000} km egg lists ${id}, which doesn’t exist.`, 'world', { wtab: 'eggs' }, warn);
-    });
   const seats = new Set(
     Object.values(D.trainers || {})
       .filter(T => T.seat)

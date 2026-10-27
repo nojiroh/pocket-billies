@@ -15,7 +15,7 @@ exports[`check-data: planted field moves and side areas (RL-R2) 1`] = `
 `;
 
 exports[`check-data: planted fossils (RO-3e) 1`] = `
-"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  pools.json: cave has carnegie0, of a line never met wild (wild: false)\\n  eggs.json: 2 hatches vanderbilt0, of a line never met wild (wild: false)\\n  events.json: events.dig_site.options[0].then: \\"revive carnegie9 30\\": no species \\"carnegie9\\" (lines/)\\n  events.json: events.dig_site.options[0].then: \\"revive carnegie9 30\\": levels up of -20 to 20\\ngame data: 4 problem(s) in 174 files\\n(exit 1)"
+"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  pools.json: cave has carnegie0, of a line never met wild (wild: false)\\n  events.json: events.dig_site.options[0].then: \\"revive carnegie9 30\\": no species \\"carnegie9\\" (lines/)\\n  events.json: events.dig_site.options[0].then: \\"revive carnegie9 30\\": levels up of -20 to 20\\ngame data: 3 problem(s) in 174 files\\n(exit 1)"
 `;
 
 exports[`check-data: planted quests (TW-3) 1`] = `

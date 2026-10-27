@@ -347,17 +347,8 @@ function whereCard(L, li) {
           `<tr><td>Wild · ${escapeHtml(poolName(pk))}</td><td>${escapeHtml(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
         );
     });
-  for (const [ek, E] of Object.entries(D.eggs))
-    E.list.forEach(([id, w], j) => {
-      if (ids.includes(id))
-        rows.push(
-          `<tr><td>Egg · ${ek} km</td><td>${escapeHtml(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
-        );
-    });
   const add = `<div class="seg-row"><select id="whereTo">${Object.keys(D.pools)
     .map(k => `<option value="pools:${k}">Wild · ${escapeHtml(poolName(k))}</option>`)
-    .join('')}${Object.keys(D.eggs)
-    .map(k => `<option value="eggs:${k}">Egg · ${k} km</option>`)
     .join(
       ''
     )}</select><select id="whereSp">${ids.map((id, i) => `<option value="${id}">${escapeHtml(L.names[i])}</option>`).join('')}</select><button class="btn" data-act="whereAdd">Add</button></div>`;
@@ -469,8 +460,6 @@ function refsTo(ids) {
   const D = studioState.D,
     out = [];
   for (const [k, P] of Object.entries(D.pools)) if (P.list.some(([id]) => ids.includes(id))) out.push('wild pool ' + k);
-  for (const [k, E] of Object.entries(D.eggs))
-    if (E.list.some(([id]) => ids.includes(id))) out.push(D.eggs[k].need / 1000 + ' km egg');
   for (const [k, T] of Object.entries(D.trainers || {}))
     if (T.team.some(e => ids.includes(e.sp))) out.push('trainer ' + T.name);
   if (Object.values(D.rules.start.rival).some(v => ids.includes(v))) out.push('rival picks');
@@ -479,7 +468,6 @@ function refsTo(ids) {
 function removeRefs(ids) {
   const D = studioState.D;
   for (const P of Object.values(D.pools)) P.list = P.list.filter(([id]) => !ids.includes(id));
-  for (const E of Object.values(D.eggs)) E.list = E.list.filter(([id]) => !ids.includes(id));
   for (const T of Object.values(D.trainers || {})) T.team = T.team.filter(e => !ids.includes(e.sp));
   for (const k in D.rules.start.rival) if (ids.includes(D.rules.start.rival[k])) delete D.rules.start.rival[k];
   D.rules.start.starters = D.rules.start.starters.filter(l => !ids.includes(l + '0'));
