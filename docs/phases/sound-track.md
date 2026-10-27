@@ -1,5 +1,12 @@
 # Sound track (SND) - a Pokémon-style soundtrack, cries, and a Studio section for them
 
+Branch: track/sound (Part 2, SND-8 on; Part 1 was built on `sound`, before the branch rule; SND-7, Part 2's plan,
+was written on `ccr-1e8a9924-tt5x1q` because `track/sound` didn't exist yet)
+
+**Part 2 (SND-7 onward, planned 2026-10-27): layered music and a gentle world** is at the end of this file: music
+that mixes the chip sound with DS-era instruments and reacts in layers, environment sounds that never grate, and
+water rebuilt. Part 1 (SND-1..SND-6, below) is done.
+
 A track of its own, like the Studio, UI and Terrain tracks (owner's question and the research answer, 2026-10-21;
 planned in a chat session, not yet started in the repo). It fixes the sound settings, splits the tracker out of the
 game so the Studio can play it, moves the songs into data, and then reworks the music and the sound effects toward
@@ -436,3 +443,374 @@ Corrections to this section's plan, found in SND-6:
 ## Not in this track
 Recorded or sampled sound files (the game stays synthesized: no assets, no loading, no licensing); a music volume
 per song; voice; haptics beyond what exists; the step counter's sounds (removed with it).
+
+---
+
+# Part 2 (SND-7 onward): layered music and a gentle world
+
+The owner's brief (2026-10-27): "Make a plan how you could expand on the current sound system. It can have more
+layers and complexity. The music can have more style and layers for example, it doesn't have to fully be 8bit.
+Don't make environmental sounds too loud and obnoxious. Overall improve the sounds of water and stuff. Do research
+online and make suggestions." Planned in Plan Mode in SND-7 (branch `ccr-1e8a9924-tt5x1q`, docs and a private
+listening page only); every later session works on `track/sound`, made by the owner from main. Tags `snd-N-done`
+(the owner pushes tags).
+
+## The owner's answers (2026-10-27, Plan Mode)
+| Question | Answer |
+|---|---|
+| The music's direction | **A mix of Chip+ and DS-era Pokémon**: chip leads stay the signature; synthesized strings, brass, flutes, timpani, pads, bells, fuller drums and reverb around them |
+| Sound files | **Synth only** (no audio files; Part 1's rule stays) |
+| What bothers you today | **All four groups**: water; rain and wind; birds and crickets; steps, fire and the town's murmur |
+| Layer ideas | **All four**: a walking beat, street musicians you hear as you pass, weather and night versions, intensity that builds |
+
+## In short
+- **Why the world sounds grate**: every water, rain, wind and fire sound is the same 1-second white-noise loop with a
+  steady wobble; rain is about as loud as the music; crickets are two endless ~4.5 kHz tones; birds call every ~3 s;
+  footsteps are one identical click. And **the hub song is 19 dB quieter than every other song**, so in Copperleaf
+  the sea and the fountain drown it.
+- **SND-8, quick relief**: soft pink/brown noise that never audibly loops, random drift instead of wobbles; rain,
+  crickets, fire, birds and steps re-voiced and quieter; songs level-matched; silent sounds stopped (today they cost
+  the phone more than the music does); a loudness check so it stays that way.
+- **Music, Chip+ meets DS-era**: still synth only, but instruments are computed once into memory (a DS sound bank we
+  compute instead of load): strings, brass, flute, harp, accordion, bells, timpani, fuller drums and reverb around
+  the chip lead; longer songs with A and B sections. **GB Sounds** keeps the 8-bit versions as a switch.
+- **Layers that react**: a walking beat, street musicians, rain/snow/night versions, battles and runs that build up
+  instead of switching songs.
+- **Water rebuilt**: a sound for each of the 15 water kinds, placed in the world; far water soft and low, near water
+  bright.
+
+## What the music does today (checked at main 07c9b284, 2026-10-27)
+- `game/js/audio/tracker.js` (708 lines): three instruments (`synthVoice`: an oscillator, a linear ADSR, an optional
+  low-pass and vibrato; `synthNoise`; `synthKick`), three pulse PeriodicWaves (12.5, 25, 50 %), one echo (0.27 s,
+  feedback 0.28, wet 0.16). Every song is 8 bars of 16 steps that loop (16-20 s). The composer writes the lead, hook,
+  counter and intro; bass, arp, drums and the pad are fixed patterns in `tick`. The four-voice rule is
+  `four = !D.extra` (tracker.js:453).
+- `music.json`: 23 songs (17 with a placeholder hook), 12 jingles, 8 base cries, 4 UI sounds, the mix, `run`
+  (weather cut-offs, arc bands `mid` and `late`), 29 where-rules. Versions: night, tense (the red zone), arc bands.
+- A walking beat's seed is there: sound.js `L.drums` is 1 while walking or in battle, else 0.45, times 1 − 0.4·night.
+- No ConvolverNode, AudioWorklet or WaveShaper anywhere; StereoPanner on ambience and effects, never on music.
+- **Bugs** (SND-8): `echo: 0` plays as 0.15 (`D.echo || 0.15`, tracker.js:436, 479); the echo send is taken before
+  the song's gain, so echo tails ignore crossfades and jingle ducks; effects, jingles, cries and bird calls echo onto
+  the music bus (under the Music slider and the rain low-pass); `old.fade` is written and never read.
+- Tests: `tracker.test.mjs` (16), `sound.test.mjs` (17), levels, cries, ui-sounds, music-studio; `check-sound.py`'s
+  194 fingerprints (RMS per 50 ms, mono, 44.1 kHz, seeded random). The after-edit hook runs no unit test for edits to
+  tracker.js or sound.js: run `node --test tools/test/tracker.test.mjs tools/test/sound.test.mjs` by hand.
+- **Loudness** (each song's RMS over its fingerprint render, default sliders): copperleaf **−52.0 dBFS**; town −33.3,
+  route −34.3, the battle songs about −32, cave and hazel −37.9. Apart from the hub song they span about 6 dB.
+
+## What the world sounds do today, and why they grate (sound.js, 2026-10-27)
+- **One 1-second white-noise buffer** (`T.noise`, tracker.js:215) feeds every bed (`initAmbience`, sound.js:817),
+  looped at rates 0.5-1: each bed repeats every 1-2 s ("frozen noise" the ear learns), and white noise puts most of
+  its energy in the 2-8 kHz band where hearing is most sensitive.
+- **Regular sine tremolos** stand in for life: stream 2.7 Hz, fountain 5.5 Hz, fire 11 Hz (a buzz, not crackles),
+  sea 0.09 Hz (an even swell every 11 s), pond 0.35 Hz. LFO depths over 0.5 swing the gain negative (sea, pond, fire,
+  lava, wind, leaves): two uneven dips per cycle.
+- **The beds** (filters; gain at the source, times the World or Ambience bus): stream bp 1500 + hp 500 (0.5 within
+  10 m); falls lp 1000 + hp 90 (0.7, 14 m); sea lp 650 + hp 60 (0.35 anywhere in a sea scene, 0.6 near water); pond
+  bp 520 (0.22); fountain bp 2400 (0.45); fire bp 3000 (0.35); lava lp 260; **rain hp 1700 + lp 7500 (up to 0.42)**;
+  wind bp 360; leaves bp 3200 + hp 1200; town murmur bp 420 + lp 900 (0.13); cave lp 140 plus a constant 49 Hz sine;
+  room lp 260.
+- **Levels against the music** (estimated from the fingerprints at default sliders, the beds ducked 3 dB; SND-8
+  measures them): rain at full about **2 dB over the town song**, while the music is low-passed to 2.2 kHz in the
+  rain (sound.js:1160); a waterfall at its foot about level with the music; **in Copperleaf the always-on sea bed
+  about 6.5 dB over the hub song and the fountain about 14 dB over it**. Rain, fountain, leaves and crickets sit in
+  1.5-8 kHz, so they sound louder still.
+- **Crickets**: two pure sines at 4300 and 4650 Hz gated on and off by square LFOs (26 Hz and ~0.8 Hz), all night.
+- **Birds**: pure-sine chirps at 2.9-5.1 kHz with linear envelopes, a call every ~3.3 s outside towns (`dt*0.3` per
+  200 ms tick, sound.js:1213), every ~8 s in town.
+- **Footsteps**: one band-passed noise tick per step (about 0.35 s apart walking, 0.2 s running), the same every
+  time, on the Sound effects bus (default gain 0.64, against the World bus's 0.25). The "hard" click also covers
+  lawn, forest floor, sand, dirt, mud, marsh and water.
+- **Water gaps**: placed waterfalls (`sc.falls`, the big set pieces) are silent and a fall's height is ignored; in a
+  sea scene every water cell, rivers too, plays the sea; every still kind (lake, hot spring, bog, oasis, reef, cave,
+  ice) plays one 520 Hz "pond"; rapids sound like a stream; wading and Surf play the hard click; fishing's cast and
+  bite play a grass footstep; no reel or catch sound; rain on water is silent.
+- **Other gaps**: thunder is polled every 200 ms but a flash stays bright ~31 ms (environment.js:418), so about five
+  flashes in six are silent, and with reduced motion or flashes off there is no thunder at all; indoors the night
+  reads 0 (environment.js:396), so rooms hear daytime birds at night and never the rain on the roof;
+  `soundEffectAt` leaves its panner connected; no voice limit on birds, plops or one-shots.
+- **Placement**: one bed per kind, the nearest source wins (`nearestSoundSource`), volume `(1 − d/range)^1.6`, pan
+  from the camera's right vector; a room muffles the outside with a low-pass (620/850 Hz).
+- **Load**: the 14 beds start once and never stop, even silent: about 120 nodes always on (13 looping sources, 17
+  oscillators, 23 biquads), more than the music's 4-12 sources. Every 200 ms `updateAmbience` scans every water cell
+  (14,010 in Copperleaf) and walks the props three times. Only the legacy v31 note ("world sounds start at half the
+  loudness they had") ever touched their level.
+- The world already knows its water: 15 kinds (`logic/water-kinds.js`: pond, stream, canal, spring, swamp, lake,
+  sea, lava, ice, rapids, hotspring, oasis, bog, reef, cave), rivers with sources, mouths and rapids, `falls` with
+  their height, Copperleaf's fountain, wading (WA-6a), Surf (WA-6b), water life (WA-5b). Six water beds exist.
+- The water track's **WA-8** still lists "water sound beds (falls by height, rapids, surf, lapping, the plunge
+  pool) with SND-6's mix" (water-track.md). Part 2 proposes SND-10 takes them (Ask me before).
+
+## The research, in short (2026-10-27)
+Music that reacts:
+- **Pokémon Black 2/White 2**: street musicians whose instrument joins the town music "within earshot" (Nacrene's
+  accordion, Opelucid's keytar or erhu, Village Bridge's four players, Anville's flute); Virbank's Gym band gets
+  louder deeper in and loses instruments as you beat its members; **Route 1 adds a tambourine and most routes a
+  snare "when you make steps"** (Black/White did it too); seasons change arrangements (Undella's summer steel drums,
+  winter chimes on Routes 19 and 20); caves slow down and drop lower as you go deeper.
+  [Serebii B2W2 music](https://www.serebii.net/black2white2/bgmusic.shtml), [Serebii BW music](https://www.serebii.net/blackwhite/bgmusic.shtml)
+- **HeartGold/SoulSilver's GB Sounds**: a key item that swaps every song for a chip version (effects unchanged).
+  The model for keeping the 8-bit songs as a switch. [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/GB_Sounds)
+- **Super Mario World**: a bongo layer joins while you ride Yoshi, the classic vertical layer.
+  [Game Developer](https://www.gamedeveloper.com/audio/2-ways-to-create-interactive-music-in-your-games),
+  [Mario Wiki](https://www.mariowiki.com/Ground_BGM_(Super_Mario_World))
+- **Animal Crossing: New Horizons**: every hourly song has a rain version (a light ringing added) and a snow
+  version (sleigh bells). [VGC](https://videogameschronicle.com/news/gallery-heres-animal-crossings-huge-japan-only-music-collection),
+  [Nookipedia: Snow](https://nookipedia.com/wiki/Snow), [USC Scalar](https://scalar.usc.edu/works/video-game-music-transcription/animal-crossing-music-an-introduction)
+- **Breath of the Wild**'s day field music: solo piano with more silence than melody, so the world is heard.
+  [Zelda Dungeon](https://www.zeldadungeon.net/musical-musings-listening-closely-to-the-emptiness-of-breath-of-the-wilds-hyrule-field-day/)
+- **A Short Hike**: the score shifts with the weather and when you fly. [Wikipedia](https://en.wikipedia.org/wiki/A_Short_Hike), [press kit](https://ashorthike.com/press/)
+- **DS-era Pokémon** played sequences through sampled instruments (an SDAT holds sequences, instrument banks and
+  wave archives): the same model works with instruments we synthesize ourselves.
+  [ndspy: SDAT](https://ndspy.readthedocs.io/en/latest/appendices/sdat-structure.html)
+- Recipes for the DS-era palette: Sound On Sound's Synth Secrets (plucked strings, brass, simple flutes, string
+  machines and PWM pads, bowed strings, [timpani](https://www.soundonsound.com/techniques/practical-percussion-synthesis-timpani)).
+  [Index](https://www.soundonsound.com/synthesizers/synth-secrets)
+- Craft: layers written to combine, driven by progress, place or intensity ([Winifred Phillips, GDC 2021](https://www.gamedeveloper.com/game-platforms/pure-vertical-layering-for-game-music-composers-from-spyder-to-sackboy-gdc-2021-));
+  section changes on bar lines with bridges ([CRIWARE](https://blog.criware.com/index.php/2020/05/20/dynamic-music-with-adx2-part2-horizontal-sequencing/));
+  Celeste's whole FMOD project is published to study ([FMOD](https://www.fmod.com/docs/2.03/studio/appendix-a-celeste.html));
+  cozy game music sits at 60-100 bpm with extended chords, sustained chords and arpeggios, airy pads
+  ([Orchestral Tools](https://www.orchestraltools.com/tips-for-cozy-game-music)).
+
+Water and nature, synthesized:
+- **van den Doel, "Physically-based models for liquid sounds"** (ACM TAP 2005, [PDF](http://www.cs.ubc.ca/~kvdoel/publications/tap05.pdf)):
+  a bubble is `a·sin(2πft)·e^(−dt)` with f = 3/r (r in metres: 1 mm → 3 kHz), d = 0.13/r + 0.0072·r^−1.5, the pitch
+  rising f(t) = f0(1 + ξ·d·t) (ξ ≈ 0.1 for drops, 0.5-1 for bigger bubbles); radii of 2-7 mm sound most like "a water
+  drop"; rates ∝ 1/r^γ (γ 0-3 for streams, about 5 for rain); up to ~1,000 bubbles a second is a brook or light
+  rain, ~100,000 a waterfall. In Web Audio the rise is a `linearRampToValueAtTime` and the decay a
+  `setTargetAtTime(0, t, 1/d)`; baked into a bank, a bubble costs one buffer source.
+- **Andy Farnell, Designing Sound** (MIT Press; companion patches: [fire](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical11.html),
+  [bubbles](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical12.html),
+  [running water](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical13.html)):
+  running water is a sine whose pitch jumps at random in 800-2400 Hz every few ms with a short glide, its loudness
+  following how fast the pitch moves, three such layers (every 2, 6 and 12 ms; depths 800, 600, 400); a bubble is a
+  sine rising exponentially (×1 to ×2.7) with a 10 ms attack and 80 ms decay; cave drips are a "drip factory" through
+  reverb; fire is crackles (short noise bursts band-passed near 1.5-2 kHz at a random centre), hiss (high-passed
+  noise moved by slow noise) and lapping (noise low-passed near 30 Hz, clipped), from one noise source; rain, wind,
+  footsteps, insects and birds have practicals too. The patches state no licence: learn from them only.
+- **Ocean shore** (PortAudio's `paex_ocean_shore.c`, MIT-style licence, [source](https://files.portaudio.com/docs/v19-doxydocs/paex__ocean__shore_8c_source.html)):
+  each wave is pink noise rising over a random 2-6 s while a low-pass opens, falling about four times as long while
+  a high-pass closes, peak 0.1-1, a new wave every 1-4 s, overlapping, each panned at random.
+- **Pink and brown noise**: Paul Kellet's pink filter; brown = (last + 0.02·white)/1.02
+  ([noisehack](https://noisehack.com/generate-noise-web-audio-api/)). Fill long looping buffers once.
+- **Birds** as swept chirps with fitted frequency curves for ~130 ms chirps ([Cornell ECE 4760](https://people.ece.cornell.edu/land/courses/ece4760/labs/f2021/lab1birdsong/Birdsong_keypad.html));
+  DSP-only multi-species bird soundscapes with spatial placement ([arXiv 2511.19275](https://arxiv.org/abs/2511.19275v1)).
+- **Ambience that doesn't tire**: a bed plus occasional one-shot "sweeteners" 5-10 s apart, several variations
+  each, the next waiting for the last ([Eon Altar, Game Developer](https://www.gamedeveloper.com/audio/video-game-audio-under-the-hood-eon-altar-ambience-system));
+  a 9 s bed, a crow at 50 % chance with ±60 cents, a 90° pan spread and a 10 s lockout, 5 s of jitter so nothing
+  lines up with the loop ([CRIWARE](https://blog.criware.com/index.php/2020/12/14/ambience-design-in-atom-craft-part-1-2/)).
+  Cozy means nothing sudden or out of proportion: soft, continuous sound from sources you can see
+  ([Lost Garden, Cozy Games](https://lostgarden.com/2018/01/24/cozy-games/)).
+- **Phone speakers** roll off below ~600 Hz and above ~9 kHz: check a mix through a 400 Hz-6 kHz band
+  ([Sonarworks](https://www.sonarworks.com/blog/learn/make-your-mix-sound-great-on-small-speakers)). A bed's size
+  must come from its mids, not its lows.
+- **Mobile loudness**: about −18 LUFS ±2 integrated for portable games (Sony's Vita figure,
+  [interview](https://designingsound.org/2012/07/30/video-games-and-loudness-standards-interview-with-sonys-garry-taylor/);
+  [Audiokinetic](https://audiokinetic.com/ko/blog/mastering-a-game-with-wwise-part1)), −16 in the
+  [IESD levels](https://www.audiogang.org/wp-content/uploads/2015/04/IESD-Mix-Ref-Levels-v03.02.pdf), true peaks
+  under −1 dBTP; a small loudness range, a gentle master compressor (threshold under −40 dBFS, ratio 1.2-1.5, release
+  over 1 s), ambience ducked under important sounds ([Rodrigue, designingsound.org](https://designingsound.org/2013/02/20/different-loudness-ranges-for-console-and-mobile-games)).
+- **Instrument recipes**: an FM bell at 1:2.8 with the index falling 6 → 0, a trumpet at 1:1 with the index 5 → 0
+  ([Columbia](https://sites.music.columbia.edu/cmc/MusicAndComputers/chapter4/04_07.php)); the DX7 e-piano's 14:1
+  "tine" ([muzines](https://www.muzines.co.uk/articles/yamaha-dx7/4733)); extended Karplus-Strong
+  ([JOS, CCRMA](https://ccrma.stanford.edu/~jos/pasp/Extended_Karplus_Strong_Algorithm.html)). A DelayNode in a
+  feedback loop can't go under 128 samples ([the spec](https://www.w3.org/TR/webaudio/)), so a live Karplus-Strong
+  string tops out near 375 Hz at 48 kHz: one more reason to bake plucks in JS.
+- **Phone Web Audio** ([Adenot's performance notes](https://padenot.github.io/web-audio-perf/)): biquads and buffer
+  playback are cheap; a ConvolverNode is expensive and grows with its impulse (keep one, keep it short, or use a small
+  delay/all-pass reverb); render buffers at the context's own sample rate (WebKit has had distortion bugs on
+  mismatched rates). iOS: AudioWorklet from 14.5; a context can stay "interrupted" after Safari loses focus, fixed by
+  `suspend()` then `resume()` ([WebKit 276016](https://bugs.webkit.org/show_bug.cgi?id=276016)); the silent switch
+  mutes Web Audio unless `navigator.audioSession.type = 'playback'` (iOS 17+, experimental,
+  [WebKit 264473](https://bugs.webkit.org/show_bug.cgi?id=264473)).
+- **Code we may borrow** (permissive): Tone.js (MIT; its reverb renders a stereo noise impulse offline, decay 1.5
+  s), ZzFX and ZzFXM (MIT), jsfxr (Unlicense), the PortAudio ocean example (keep its notice). **Learn from only**:
+  Strudel (AGPL), WebPd (LGPL), Farnell's patches (no licence), van den Doel (write the maths ourselves).
+- Not confirmed, so not used: a standard "ambience N dB under the music" figure; Balatro switching its theme's
+  variants in play; Hades' and Slay the Spire's music systems.
+
+## The design
+1. **Baked instruments, still synth only.** Pure JS DSP (FM, Karplus-Strong plucks, detuned stacks, formant filters,
+   shaped noise) renders each instrument's notes once into memory (a sample per octave or so, loop points for
+   sustained sounds), like a DS sound bank we compute instead of load. A note then costs one buffer source and one
+   gain. Deterministic, so the fingerprints keep working; testable in Node. Built lazily per song or scene in idle
+   slices (or a Worker), never in a frame over 33 ms (the Load track's rule). Budget: about 6 MB resident.
+2. **Ensembles: Chip+ meets DS-era.** music.json gains `instruments` (presets) and `ensembles` (for each part: an
+   instrument, octave, pan, reverb send and level). The chip lead stays the voice of most songs; around it strings,
+   pizzicato, harp, brass, flute, clarinet, accordion, e-piano, mallets, bells, music box, a choir pad, timpani, an
+   orchestral kit, a brush kit, tambourine and shaker. Moods by place: Copperleaf cozy (music box, harp, flute, soft
+   strings); routes adventurous (chip lead, strings, pizzicato, snare); towns (accordion or e-piano, walking bass);
+   caves sparse (bells, a drone, reverb); battles DS-style (chip lead over a string ostinato, brass stabs, timpani,
+   a full kit); bosses grander (choir, hits). The `gb` ensemble is today's four voices, bit for bit until a song is
+   re-arranged; after that it plays the new arrangement on the four chip voices (HeartGold's GB Sounds were chip
+   re-arrangements too). **Settings → Sound → GB Sounds** switches every song to it.
+3. **Parts and layers.** Each part plays into its own small bus (gain, pan, reverb send). A layer is a set of parts
+   whose bus gain the game moves, always on a beat or a bar line. The four layer ideas:
+   - **Walking beat**: a tambourine (Copperleaf) or snare (routes) part fades in on your first steps and out about a
+     bar after you stop (today's `L.drums` 1/0.45 is its seed).
+   - **Street musicians**: a part placed in the world (the busker's case, HB-10d; festival players, HB-10e); its gain
+     follows your distance (earshot about 8 m), its pan your direction.
+   - **Weather and night**: rain adds a light ringing (bells) and brushes, snow sleigh bells, a storm low strings and
+     timpani rolls; night swaps the lead for flute or e-piano and thins the drums (today's night version stays).
+   - **Building intensity**: battles build from the intro to full as turns pass, KOs land, the red zone hits and a
+     boss changes phase; the run's arc (rows 3-5, 6-8) adds layers instead of swapping versions.
+4. **Longer songs.** Sections A and B (a contrasting progression), 16-32 bars a loop, fills and turnarounds at the
+   section ends, seeded variation on repeats. The composer stays pure; the hooks stay the owner's to edit.
+5. **Space.** One reverb bus that music, effects and the world send to: a single ConvolverNode with a short
+   generated impulse (stereo decaying noise, at most ~1.2 s: open air, town, forest, cave, room), swapped by place;
+   a small delay/all-pass reverb replaces it if the phone shows it costs too much. Stereo pans on the music's parts.
+   Every baked buffer is made at the context's own sample rate.
+6. **A world from data.** `soundscape.json` (schema, a Studio tab): each kind a recipe of layers: a **bed** (pink or
+   brown noise, filtered, moved slowly and at random), a **texture** (a baked loop played from random offsets) and
+   **events** (one-shots from a baked bank: bubbles, laps, drips, crackles, chirps; rate, pitch, level and pan
+   randomised; a minimum gap). Emitters come from the scene: river lines, shores, falls by height, props. The nearest
+   few per kind play, with distance, pan and air absorption (far water a soft low rumble, near water bright). Silent
+   beds stop.
+7. **Gentle by rule, checked by a tool.** No white-noise beds; beds high-shelved above ~6 kHz and high-passed where
+   they need no lows; random drift, never a regular LFO; one bird at a time; crickets sparse and low. A loudness
+   report (K-weighted, BS.1770-style) per bed and song in check-sound, with ceilings: the music near −18 LUFS at
+   default sliders, beds at least 12 dB under it, events at least 8 dB under.
+8. **A Sound Test for the phone.** A debug-menu page (the Studio is for a computer): every song by ensemble with its
+   layers as switches, every bed with a distance slider, GB Sounds on and off. Each session's listening list points
+   there.
+
+## Sessions
+| # | Session | Goal | Depends on |
+|---|---|---|---|
+| SND-7 (done 2026-10-27) | Plan and listening page | this Part 2; a private listening page (Today vs Calm, new water, the music styles and layers) | none |
+| SND-8 | Calm pass | today's beds made gentle and cheap: long pink/brown noise instead of the 1 s white loop, random drift instead of tremolos, rain, crickets, fire, stream and fountain re-voiced, birds rarer and softer, footsteps varied and lower, silent beds stopped; **songs level-matched** (a level trim per song in music.json from the loudness report: data, not the player setting Part 1 ruled out; the hub song up about 12-19 dB); the echo bugs; iOS's "interrupted" (suspend, then resume); the loudness report; the debug log's audio lines (beds and sources alive) | none |
+| SND-9 | The engine | baked instruments (`audio/bake.js`, pure, Node-tested), part buses, the layer controller (on bar lines), the reverb bus, `instruments` and `ensembles` in music.json with `gb` = today (fingerprints unchanged), the Sound Test page, bake time and memory in the debug log, the Studio's player on the game's chain (today it has no levels, low-pass or mix trims), a coarse brightness fingerprint beside the RMS | SND-8 |
+| SND-10 | Water | `soundscape.json` and emitters; a recipe per water kind (brook babble, river, rapids, falls by height, surf on the tide, lake and pond lapping, fountain, hot spring, bog, lava, cave drips, the plunge pool); wading, Surf, fishing and water-life sounds; rain on water. Takes WA-8's sound part if the owner agrees | SND-9 |
+| SND-11 | Instruments and ensembles | the Chip+ × DS palette (about 24 presets), ensembles by place, the GB Sounds switch, the Studio's Instruments tab | SND-9 |
+| SND-12 | Arrangements | A/B forms, 16-32 bars, fills; new parts (pad, strings, pizzicato, stabs, bells, timpani, percussion); every song re-voiced as named placeholders the owner edits | SND-11 |
+| SND-13 | Layers in play | the walking beat, weather and night, building intensity (battles, the run's arc), street musicians (the busker, festivals) | SND-12; the busker resident (RS-5) for the real busker |
+| SND-14 | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by distance (not tied to the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 |
+| SND-15 | Mix and phone pass | loudness targets and ducking (jingles, cries, talk), slider defaults, the owner's phone (glitches, sources alive, bake time), Studio polish, docs, the fingerprint baseline written again on purpose | all |
+| SND-16 (optional) | Effects pass | battle hits, throws and catches with body and space; sounds for things that have none (the airship's engine, the sky train and its rail, the world map, steam vents, wells) | SND-9 |
+
+World (SND-10, SND-14) and music (SND-11..SND-13) can swap order at the owner's word. Each is 1-2 sessions, about
+10-13 in all. Every audible change is the owner's call by ear (Claude can't listen): each session ends with a
+listening list for the Sound Test on the phone, and the fingerprints are written again only on purpose, in their own
+commit.
+
+## The listening page (SND-7)
+A private artifact (nothing committed), self-contained Web Audio, for the owner's phone; its link is in SND-7's
+HANDOFF entry.
+- **Today vs Calm**: rain, stream, fountain, sea, crickets, birds, fire, footsteps; "Today" ported as written from
+  sound.js, "Calm" as SND-8 would make it, the Route or Copperleaf tune under them at the game's default balance.
+- **New water**: brook, river, rapids, a small and a tall waterfall, surf, lake lapping, a pond at night (plops,
+  frogs), fountain, hot spring, cave drips with reverb; a distance slider (near and bright to far and low).
+- **Music**: the game's own Copperleaf and Route tunes (the real composer and notes, from tracker.js and music.json)
+  as GB (today's, and level-matched), Chip+, and Chip+ with DS-era strings, brass and timpani; switches for the four
+  layer ideas (hold to walk, a busker's distance, clear/rain/snow, night, intensity 1-3).
+- Every recipe was rendered offline in headless Chromium before publishing: no silence, no clipping, and its level
+  against the Route tune measured and shown beside it.
+
+## SND-8: the calm pass (draft steps; the session's own plan refines them)
+One cause per commit; the loudness report first, so every later commit shows its effect in numbers.
+1. **The loudness report** (tool only): `check-sound.py` also renders each bed at its loudest target and each song
+   (seeded, default sliders) through a K-weighting (BS.1770's two filters) and writes their loudness and each bed's
+   distance under the Route song to `validation/sound-baseline/loudness.json`. No ceilings yet: this is the
+   "before".
+2. **Beds get their own noise**: long pink and brown buffers (about 8 s, made once at the context's rate, from
+   `Math.random` so the tools' seed holds) for the beds only. `T.noise` stays white and 1 s for `synthNoise`
+   one-shots and the drums, so no song, jingle, cry or UI fingerprint changes.
+3. **Random drift instead of the sine LFOs**: each bed's level wanders to a random target at random times (from the
+   200 ms tick); this also ends the negative-gain dips.
+4. **Rain re-voiced**: pink noise, a high-pass near 350 Hz, a low-pass near 4.5 kHz, a high-shelf cut above 3 kHz,
+   lower; the music's rain low-pass softened from 2.2 kHz (Ask me before).
+5. **Crickets re-voiced**: chirps in groups with pauses (a third to half the time silent), softer pulse shapes, lower
+   and quieter, two or three at different distances and pans; none in rooms.
+6. **Fire re-voiced**: crackles as random one-shots near a fire plus a low soft hiss, not an 11 Hz buzz.
+7. **Stream and fountain re-voiced**: a band-pass whose centre wanders (babble) instead of a 2.7 Hz or 5.5 Hz
+   tremolo; lower; the fountain's centre lower and softer.
+8. **Leaves, wind and the town's murmur**: pink or brown noise, drift, lower.
+9. **Birds**: rarer (about one call in 10 s outside towns, one in 20 s in towns), never two at once, softer
+   envelopes (an exponential release), a gentle low-pass on the calls.
+10. **Footsteps**: a little random pitch and level per step, softer, and the natural grounds (lawn, forest floor,
+    sand, dirt, mud, marsh) on the soft step instead of the hard click (water's steps wait for SND-10).
+11. **Copperleaf's sea**: the constant "anywhere in a sea scene" level lowered to what the report says sits under the
+    level-matched hub song.
+12. **Silent beds stop**: a bed silent for a few seconds stops its sources and starts again with a fade when needed;
+    the full check's "≥ 9 world beds" (check-quick.py:1164) becomes "the beds this place needs are running".
+13. **Songs level-matched**: a `level` (dB) per song in music.json and its schema, set from the report, applied to the
+    song's gain; the hub song up about 12-19 dB. Songs with a level change their fingerprints: the baseline is written
+    again on purpose, in its own commit.
+14. **The echo bugs**: `echo: 0` honoured; the song's echo send after its gain (tails fade and duck with the song);
+    effects, jingles, cries and birds echo on their own bus, not the music's. Each changes some fingerprints:
+    written again on purpose after the three.
+15. **iOS**: back from hidden in the "interrupted" state, suspend then resume (WebKit 276016).
+16. **The debug log**: beds running, sources alive and the loudest bed in the `audio` section (no save data).
+17. **Ceilings on**: check-sound fails when a bed sits less than 12 dB under the Route song or a song is more than
+    3 dB from the others' middle (the hub may be set softer on purpose, in data).
+Verified by: the loudness report before and after; fingerprints unchanged where nothing was meant to change; the
+smoke check; the full check at the end; the owner's phone: Copperleaf by the sea and the fountain, a rainy route, a
+night by a campfire, a walk across grass, sand and a bridge.
+
+## SND-9: the engine (draft steps)
+1. `game/js/audio/bake.js`, pure and imported by nothing yet: band-limited oscillators, envelopes, a biquad and a
+   one-pole, 2-operator FM, Karplus-Strong, seeded noise, `bakeInstrument(preset, rate)` returning zones
+   (`{midi, data: Float32Array, loopStart, loopEnd}`); `tools/test/bake.test.mjs` (the same output every time, no
+   NaN, peaks at most 1, seamless loop points, a size budget).
+2. The tracker's bank: AudioBuffers from baked zones, made per ensemble in idle slices of a few ms, counted for
+   memory; `samplerVoice` (one buffer source and one gain per note, the nearest zone repitched).
+3. Part buses per song (gain, StereoPanner, a reverb send); the `gb` path through one bus at pan 0 with no send, so
+   every fingerprint stays the same (checked against the commit before).
+4. The reverb bus: one ConvolverNode with a generated stereo impulse per space; sends from the music's parts first.
+5. The layer controller: `T.layers({...})` moves part-bus gains from the next beat or bar line.
+6. music.json `instruments` and `ensembles` with their schema (both places a recipe key must go: `$defs.recipe` and the
+   song's own list), `MUSIC_CHOICES`, check-data's findings; every song `ensemble: gb` by default.
+7. The Sound Test in the debug menu (`debug-menu.js`): play any song by ensemble with its layers as switches; any bed
+   with a distance slider; GB Sounds on and off; the bank's numbers.
+8. The debug log: bake time (total, longest slice), memory, voices alive, the reverb on or off.
+9. The Studio's player on the game's own chain (levels, low-pass, mix trims, reverb), shared code in `audio/`.
+10. `check-sound.py`: a brightness fingerprint (zero crossings per 50 ms) beside the RMS; the baseline written again
+    with it, the RMS unchanged.
+Verified by: the bake tests; fingerprints unchanged (step 3); the Sound Test on the phone (bake time, no hitch in the
+Load track's hitch list); the Studio check (`check-studio-github.py --only=music`).
+
+## Ask me before (Part 2; the first three before SND-8)
+- WA-8's water sounds move here as SND-10 (recommended), or stay in the water track.
+- The music's rain low-pass (2.2 kHz today): soften it to about 4 kHz in SND-8 (recommended; SND-13's rain layer
+  then replaces it), keep it, or drop it.
+- Levels: lower the internal trims and keep your slider settings (recommended), or lower the sliders' defaults.
+- SND-9: bake in idle slices first and move to a Worker only if the phone's debug log shows slices over ~8 ms
+  (recommended), or a Worker from the start.
+- SND-11: the instruments per place (pick them on the listening page).
+- SND-12: Claude drafts the arrangements as named placeholders you edit in the Studio (recommended, as in SND-4); a
+  loop of 16-32 bars.
+- SND-13: the busker plays an instrument part inside Copperleaf's song as you pass (B2W2) and plays the last run's
+  theme only when you stop to listen (recommended), or today's switch within 5 m; what builds a battle's intensity
+  (turns, KOs, the red zone, a boss's phases).
+- SND-15: the loudness target (−18 LUFS recommended) and the sliders' new defaults; whether sound plays with the
+  iPhone's silent switch on (`navigator.audioSession`, iOS 17+; recommended: a setting, off by default).
+
+## Risks
+- Claude can't hear: the listening page, the Sound Test, the loudness report and the owner's phone are the checks.
+- The fingerprints compare loudness only (mono RMS): a change of timbre at the same loudness passes. SND-9 adds a
+  coarse brightness fingerprint beside the RMS.
+- Phone cost: baked memory, one ConvolverNode, voice counts. Budgets in the debug log; the reverb off on the low
+  graphics tier if needed.
+- Load: no baking in a frame over 33 ms (the Load track); bake per song or scene, in idle slices.
+- Shared files: sound.js is touched by the hub, water and run tracks; new work goes into `audio/` modules and data.
+- iPhones mute Web Audio with the ring/silent switch: expected; each listening list says so.
+- Checks built on today's beds: the full check's "≥ 9 world beds" fails once silent beds stop; SND-8 changes it in
+  the same commit.
+
+## Key files
+`game/js/audio/tracker.js`, `game/js/sound.js`, `game/js/audio/levels.js`, new `game/js/audio/bake.js`,
+`game/data/music.json` and `schema/music.schema.json`, new `game/data/soundscape.json` and its schema (listed in
+`game/data/index.json`), `game/js/settings-screen.js` (GB Sounds), `game/js/debug-menu.js` (the Sound Test),
+`game/js/debug-log.js` (the audio lines), `game/index.html` and `studio/index.html` (the audio script tags),
+`studio/js/music-editor.js`, `tools/check-sound.py`, `tools/check-quick.py`, `tools/test/tracker.test.mjs`,
+`tools/test/sound.test.mjs`, `validation/sound-baseline/`.
+
+## Verification
+- Each session: lint, typecheck, `node --test tools/test/tracker.test.mjs tools/test/sound.test.mjs` (the after-edit
+  hook skips them for sound.js and tracker.js), `npm test`, check:modules, check:data, `python3 tools/check-sound.py`
+  (fingerprints and, from SND-8, loudness), `npm run check:smoke` after each commit that touches game/, the full
+  `npm run check:quick` at the session's end; the owner's phone with the session's listening list.
+
+## Not in Part 2
+Recorded or sampled sound files (the owner: synth only; baked buffers are computed, never loaded); a volume setting
+per song (SND-8's levels are data); voice; haptics.
