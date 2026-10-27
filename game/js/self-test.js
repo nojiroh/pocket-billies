@@ -2845,7 +2845,7 @@ async function runFullTest(mode) {
                 walkRenderer.yawT === cam.yaw &&
                 walkRenderer.zoomT === cam.zoom;
             const o = I.out || [0, -1],
-              way = Math.abs(o[0]) > Math.abs(o[1]) ? (o[0] > 0 ? 'right' : 'left') : o[1] < 0 ? 'down' : 'up';
+              way = Math.abs(o[0]) > Math.abs(o[1]) ? (o[0] > 0 ? 'sideR' : 'side') : o[1] < 0 ? 'down' : 'up';
             if (pd > 0.01 || P.dir !== way)
               throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir} (not ${way})`);
             if (!camOk) throw new Error('the camera isn’t as it was when you went in');

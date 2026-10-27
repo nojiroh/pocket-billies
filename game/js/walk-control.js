@@ -304,7 +304,8 @@ export function leaveRoom() {
     P.z = fr[1];
     P.route = null;
     P.goal = null;
-    P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'right' : 'left') : out[1] < 0 ? 'down' : 'up';
+    /* CH-1: the walk frames' own words ('right'/'left' were none of them, so an east or west door left you facing down) */
+    P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'sideR' : 'side') : out[1] < 0 ? 'down' : 'up';
   }
   const B = mapById(I.base),
     o = (B && B.baseOff) || [0, 0];
