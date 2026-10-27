@@ -103,7 +103,8 @@ town node needs it.
 - **Region map track** (docs/phases/worldmap-track.md, the owner's brief and answers 2026-10-27): runs as a small
   Pokémon region. WM-1 (runs go west to east, reversing TR-2; the world map opens like the walk camera; done
   2026-10-27), WM-2 (a
-  region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town), WM-3
+  region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town, 9-12
+  places a path by Expedition, 2-3 towns; done 2026-10-27 on `claude/wm-2-region-grid`), WM-3
   (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines),
   WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
