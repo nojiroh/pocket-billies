@@ -1,6 +1,7 @@
 # ============================================================================= v28: A LADDER UP THE CLIFFS
 # Loaded by build-scene-props.py (exec) after the v27 props. A wooden ladder leaning on a cliff face; the game scales
-# it to the cliff's height and lets you climb it (tools/build-v28.py puts them in the scenes).
+# it to the cliff's height and lets you climb it (tools/build-v28.py put them in the scenes; it is on the legacy tag
+# since 2026-10-27).
 
 @vprop('ladder', 'Ladder', 0.2, 0, ['mountains', 'canyon'], solid=0)
 def p_ladder(rng):

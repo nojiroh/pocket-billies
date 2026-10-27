@@ -72,7 +72,7 @@ export const githubMode = {
 const GITHUB_TOKEN_KEY = 'pb-studio-gh-token';
 const RIG_FILE_HEADERS = {
   rigs: '/* Billionaire skeletons (bones, pivots, draw order) for art/billionaires/*.png. Edited by Pocket Billies Studio. */\n',
-  next: '/* v36: rigs for the new piece sheets (art/next/billionaires), made by tools/build-starter-sheets.py and edited by Pocket Billies Studio. k=1: pieces at the final scale. */\n',
+  next: '/* v36: rigs for the new piece sheets (art/next/billionaires), made by tools/build-starter-sheets.py and tools/build-roster-sheets.py (on the legacy tag since 2026-10-27), the bake tools (npm run bake:kits, npm run bake:placeholders) and Pocket Billies Studio. k=1: pieces at the final scale. */\n',
 };
 export async function githubFetch(path, opt = {}, raw) {
   const r = await fetch('https://api.github.com/' + path, {

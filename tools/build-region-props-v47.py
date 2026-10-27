@@ -24,7 +24,8 @@ Golden Hills
   minecart             a rusty mine cart with gold ore, on a stub of rail
 
 Pictures that exist are kept (yours); --force draws them again. Catalogue and props.json entries are added when
-missing. Placing them is tools/build-regions-v47.py's job.
+missing. Placing them was tools/build-regions-v47.py's job (on the legacy tag since 2026-10-27); the Studio's map
+editor places props now.
 
     python3 tools/build-region-props-v47.py                     # draw what's missing, add to the catalogue
     python3 tools/build-region-props-v47.py --preview out.png   # a sheet, writes nothing in the game
