@@ -184,7 +184,6 @@ export interface Meta {
   version: number;
   dataVersion: number;
   notes: string;
-  endText: string;
   worldV24?: number;
 }
 
