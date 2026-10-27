@@ -947,7 +947,25 @@
    ]
   },
   {
-   "p": "scene/next/decals/sky_portal_tear.png",
+   "p": "scene/next/decals/sky_portal_core.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_halo.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_rim.png",
+   "at": [
+    "game/art/scene/next/models/sky_portal.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/sky_portal_swirl.png",
    "at": [
     "game/art/scene/next/models/sky_portal.json"
    ]

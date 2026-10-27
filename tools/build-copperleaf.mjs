@@ -18,7 +18,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandPointIn, islandProblems } from '../game/js/logic/island.js';
-import { SKY_RAIL } from '../game/js/logic/island-gen.js';
+import { stationProps } from './station-place.mjs';
 import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
@@ -248,31 +248,13 @@ for (const [B, L] of pairs) {
     props.push(q);
   }
 }
-/* ---------- hub placing: Skyline Station on its headland plot, its sky rail out to sea and the portal at the top ----------
-   island-gen turns the plot side-on (STATION_TURN), so the rail out of the station's right-hand end runs straight out
-   (HB-7's pieces, one per look of sky_rail, 12 m apart, SKY_RAIL; then sky_portal). Every piece stands level with the
-   station (a placement's y: the plot's level), its pylons reaching down into the sea. landmarks.rail is the same rail. */
+/* ---------- hub placing: Skyline Station on its headland plot, its track and the portal ----------
+   cutscenes track A: island-gen faces the plot out to sea (STATION_TURN 0, where the orbit camera looks in at it); the
+   track runs out of the station's right-hand end and the portal floats out in front (tools/station-place.mjs, shared
+   with tools/patch-station.mjs). landmarks.rail is the same track. */
 const station = place({ k: 'train_station', x: 0, z: 0, act: 'station', label: 'Skyline Station' }, plotOf('station'));
 props.push(station);
-{
-  const L = plotOf('station'),
-    [, bd] = boxOf('train_station'),
-    /* the rail's start in the station's own metres: its right-hand end, SKY_RAIL.from behind the plot's middle */
-    u0 = SKY_RAIL.from[0],
-    v0 = bd / 2 + SKY_RAIL.from[1],
-    at = (k, u, extra) => {
-      const [x, z] = world(station, u0 + u, v0),
-        q = { k, x: r2(x), z: r2(z), ...extra, y: L.y };
-      if (station.rot) q.rot = station.rot;
-      return q;
-    };
-  SKY_RAIL.looks.forEach((look, i) => {
-    const v = look ? (C.sky_rail.variants || []).findIndex(V => V.form === look) + 1 : 0;
-    if (look && !v) throw new Error('sky_rail has no look ' + look);
-    props.push(at('sky_rail', SKY_RAIL.piece * (i + 0.5), v ? { v } : {}));
-  });
-  props.push(at('sky_portal', SKY_RAIL.piece * (SKY_RAIL.looks.length + 0.5)));
-}
+props.push(...stationProps(station, plotOf('station'), C, boxOf('train_station')[1]));
 const byStation = (x, z, m) => footDist(station, x, z) < m;
 
 /* the farm patch's crops by the barn, the barn in its zone beside the pasture */
@@ -358,7 +340,11 @@ const barnZone = G.zones.find(Z => Z.k === 'barn'),
       x = townZone.poly.reduce((m, p) => Math.min(m, p[0]), 1e9) + ((h % 1000) / 1000) * 100,
       z = townZone.poly.reduce((m, p) => Math.min(m, p[1]), 1e9) + ((Math.floor(h / 1000) % 1000) / 1000) * 90;
     if (!islandPointIn(townZone.poly, x, z) || !'gGE'.includes(tileAt(x, z))) continue;
-    if (plots.some(L => inPlot(L, x, z, 3)) || byStation(x, z, 3) || spots.some(s => Math.hypot(s[0] - x, s[1] - z) < 9))
+    if (
+      plots.some(L => inPlot(L, x, z, 3)) ||
+      byStation(x, z, 3) ||
+      spots.some(s => Math.hypot(s[0] - x, s[1] - z) < 9)
+    )
       continue;
     let near = false;
     for (let a = 0; a < 8 && !near; a++)

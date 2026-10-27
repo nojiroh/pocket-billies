@@ -1,13 +1,15 @@
 'use strict';
-/* ================= THE SKY TRAIN'S RIDE (hub track HB-8) =================
+/* ================= THE SKY TRAIN'S RIDE (hub track HB-8, cutscenes track A) =================
    A run leaves from Skyline Station on its region's sky train (regions.json themes.<id>.train, the Greenbelt
-   Sunrunner when the run has no region): the train glides in, you board, the camera follows it up the sky rail, the
-   portal's tear opens and the train flies in, then a white-out (the run's loading screen comes up behind it, as the
-   carriage's inside: train-carriage.js). Coming home it comes back out of the tear and down the rail to the station,
-   gold-trimmed after a won run (and the tear gold), battered and smoking after a lost one, and you step off.
-   Filmed in the hub's own walk view through its director hook (walkView.director: the camera, the people, the props
-   hidden; cutscene/director.js does the same for the story), the train a placement moved along its way each frame
-   (logic/train-path.js). A tap skips the ride (never the loading). Reduced motion: a short white fade, no ride. No hub
+   Sunrunner when the run has no region): filmed from the platform side (the station faces out to sea, where the hub's
+   camera looks in at it), the train glides in along the track, you board, it rises straight up on its engines over
+   the canopy, turns its nose to the portal floating out over the sea and shoots into it, the camera chasing it in;
+   then a white-out (the run's loading screen comes up behind it, as the carriage's inside: train-carriage.js). Coming
+   home it bursts out of the portal, flies across to the station, turns along the track and sets down, gold-trimmed
+   after a won run (and the portal gold), battered and smoking after a lost one, and you step off down the platform's
+   steps. Its way: logic/train-path.js. Filmed in the hub's own walk view through its director hook (walkView.director:
+   the camera, the people, the props hidden; cutscene/director.js does the same for the story), the train a placement
+   moved each frame. A tap skips the ride (never the loading). Reduced motion: a short white fade, no ride. No hub
    walk view to film in (the debug menu elsewhere, a test page): no ride either. trainRide.on is the signal the checks
    wait on; the debug log gets one 'scene' line a ride (the train's key and the ms, never a name). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -15,7 +17,18 @@ import { expose } from './test-globals.js';
 import { mapIdAt, showPendingWindows } from './hooks.js';
 import { clamp } from './util.js';
 import { gameData } from './game-data.js';
-import { TRAIN_RIDE, trainGlide, trainPathAt, trainPlace, trainRoute, trainRouteBack } from './logic/train-path.js';
+import {
+  TRAIN_DEPART,
+  TRAIN_HOME,
+  TRAIN_RIDE,
+  trainAt,
+  trainDepartAt,
+  trainEye,
+  trainFrame,
+  trainHomeAt,
+  trainHover,
+  trainPlace,
+} from './logic/train-path.js';
 import { reducedMotion, uiState } from './game-state.js';
 import { personWalkFrames } from './person-art.js';
 import { mapById, walkData, walkView } from './walk-view.js';
@@ -29,12 +42,12 @@ expose({
   TRAIN_FALLBACK: [() => TRAIN_FALLBACK],
   VEIL_MS: [() => VEIL_MS],
   chaseShot: [() => chaseShot, v => (chaseShot = v)],
-  easeIn: [() => easeIn],
   easeInOut: [() => easeInOut],
-  easeOut: [() => easeOut],
+  engineLight: [() => engineLight, v => (engineLight = v)],
   placeTrain: [() => placeTrain, v => (placeTrain = v)],
   portalBack: [() => portalBack, v => (portalBack = v)],
   portalLook: [() => portalLook, v => (portalLook = v)],
+  shotAt: [() => shotAt, v => (shotAt = v)],
   trainCoverOff: [() => trainCoverOff, v => (trainCoverOff = v)],
   trainName: [() => trainName, v => (trainName = v)],
   trainOfRun: [() => trainOfRun, v => (trainOfRun = v)],
@@ -82,13 +95,11 @@ export const trainRide = {
   cover: null,
 };
 
-/** the beats (ms): the departure and the way home */
-const DEPART = { glide: 2600, board: 1300, climb: 3800, open: 700, enter: 700 },
-  HOME = { open: 900, out: 800, down: 3800, off: 1300 },
+/** the beats (ms): the departure and the way home (logic/train-path.js) */
+const DEPART = TRAIN_DEPART,
+  HOME = TRAIN_HOME,
   VEIL_MS = 450;
-const easeIn = (/** @type {number} */ k) => k * k,
-  easeOut = (/** @type {number} */ k) => 1 - (1 - k) * (1 - k),
-  easeInOut = (/** @type {number} */ k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+const easeInOut = (/** @type {number} */ k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 /** a run's train (its catalogue key): its region's theme's, or the fallback @param {any} run */
 export function trainOfRun(run) {
@@ -106,7 +117,8 @@ export function trainName(key) {
   return (M && M.name) || 'the sky train';
 }
 
-/** where to film: the hub's walk view up with Skyline Station, its rail and the portal in it; null when it isn't */
+/** where to film: the hub's walk view up with Skyline Station, its track and the portal in it; null when it isn't.
+ * F the station's frame (logic/train-path.js), y0 its level, tear the portal's middle */
 function trainRideWorld() {
   const sc = walkView.sc;
   if (!walkView.ready || !walkView.cv || !sc || !sc.props) return null;
@@ -114,18 +126,15 @@ function trainRideWorld() {
     hub = typeof mapById === 'function' ? mapById(mapIdAt(0)) : null,
     L = (hub && hub.landmarks) || sc.landmarks;
   if (!st || !L || !Array.isArray(L.rail) || L.rail.length < 2 || !L.portal) return null;
-  const R = trainRoute(L.rail, L.portal, st.x + TRAIN_RIDE.stop),
-    stop = R.pts[0],
-    y0 = L.rail[0][2] - TRAIN_RIDE.railTop;
+  const y0 = L.rail[0][2] - TRAIN_RIDE.railTop,
+    F = trainFrame(st, y0);
   return {
     sc,
     st,
-    R,
-    B: trainRouteBack(R),
-    stop,
+    F,
     y0,
-    lip: R.at[R.pts.length - 2],
     tear: L.portal,
+    H: trainHover(F, L.portal),
     portal: sc.props.find((/** @type {any} */ p) => p.k === 'sky_portal') || null,
   };
 }
@@ -171,7 +180,7 @@ function trainCoverOff(ms) {
 /** the train's placement in the scene (one per ride, put in the walk view's props), moved each frame */
 function trainProp(W, key, v) {
   for (let i = W.sc.props.length - 1; i >= 0; i--) if (W.sc.props[i].trainRide) W.sc.props.splice(i, 1);
-  const p = { k: key, x: W.stop[0], z: W.stop[1], y: W.y0, lift: 0, moving: 1, trainRide: 1, ...(v ? { v } : {}) };
+  const p = { k: key, x: W.H.x, z: W.H.z, y: W.y0, lift: 0, moving: 1, trainRide: 1, ...(v ? { v } : {}) };
   W.sc.props.push(p);
   if (typeof walkRenderer !== 'undefined') walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   return p;
@@ -200,16 +209,25 @@ function portalBack(W) {
   }
 }
 
-/** a camera following the train: from behind it (its heading), out to its seaward side and above @param {any} at
- * @param {number} y0 the station's level (the camera never lower than a little over it) */
-function chaseShot(at, y0) {
-  const T = [at.x, at.h, at.z];
+/** a shot from the station's metres (u along its front, w back from it, h over its level) at a point [x, height, z]
+ * @param {any} W @param {number[]} eye [u, w, h] @param {number[]} tgt [x, height, z] @param {number} fov */
+function shotAt(W, eye, tgt, fov = 50) {
+  return { eye: trainEye(W.F, eye[0], eye[1], eye[2]), tgt, fov, hazeK: 1.8 };
+}
+/** a shot following the train from behind it (the way it faces) and above, looking past it at the portal
+ * @param {any} at @param {number[]} tear */
+function chaseShot(at, tear) {
   return {
-    eye: [T[0] - at.dx * 20, Math.max(y0 + 2.5, T[1] + 6), T[2] + 16],
-    tgt: [T[0] + at.dx * 4, T[1] + 1.2, T[2] - 1],
-    fov: 50,
+    eye: [at.x - at.dx * 15, at.h + 4.5, at.z - at.dz * 15],
+    tgt: [tear[0], tear[2], tear[1]],
+    fov: 52,
     hazeK: 1.8,
   };
+}
+/** the rockets' light under the train's tail (its middle 6 m back, 1.3 m up) while it flies @param {any} at
+ * @param {number} k how bright, 0-1 */
+function engineLight(at, k) {
+  return { p: [at.x - at.dx * 6, at.z - at.dz * 6, at.h + 1.1], r: 5 + 3 * k, c: [2.4 * k, 1.3 * k, 0.45 * k] };
 }
 
 /** what the walk view draws each frame of the ride (walkView.director.frame), and the ride's clock */
@@ -222,85 +240,87 @@ function trainRideFrame() {
     items = R.items,
     lights = R.lights,
     C0 = walkData().sc,
-    p = W.train;
+    p = W.train,
+    F = W.F,
+    T = W.tear,
+    stop = TRAIN_RIDE.stop,
+    /* the portal close: from the hover's side of it, a little above */
+    portalCam = {
+      eye: [T[0] + (W.H.x - T[0]) * 0.72, T[2] + 1, T[1] + (W.H.z - T[1]) * 0.72 - 9],
+      tgt: [T[0], T[2], T[1]],
+      fov: 50,
+      hazeK: 1.8,
+    },
+    tgtOf = (/** @type {any} */ at, up = 1.6) => [at.x, at.h + up, at.z];
   items.length = 0;
   lights.length = 0;
   /** @type {any} */
   let look;
-  const stop = W.stop,
-    h0 = stop[2],
-    rz = stop[1];
-  const portalCam = {
-    eye: [W.tear[0] - 27, W.tear[2] - 3, rz + 22],
-    tgt: [W.tear[0] - 2, W.tear[2] + 0.5, rz],
-    fov: 48,
-    hazeK: 1.8,
-  };
   if (R.kind === 'depart') {
-    const D = DEPART;
-    let s = t;
-    if (s < D.glide) {
-      /* from the sea side: it comes in from the west over the town and settles on the track bed */
-      const at = trainGlide(stop, s / D.glide);
-      placeTrain(p, at, W.y0);
-      look = {
-        eye: [stop[0] + 2, h0 + 7.5, rz + 9],
-        tgt: [at.x * 0.6 + stop[0] * 0.4, (at.h + h0) / 2 + 1, rz - 1],
-        fov: 54,
-      };
-    } else if ((s -= D.glide) < D.board) {
-      placeTrain(p, trainPathAt(W.R, 0), W.y0);
-      const k = clamp(s / (D.board * 0.75), 0, 1),
-        a = [stop[0] + 1.5, rz - TRAIN_RIDE.half - 2.6],
-        b = [stop[0] + 1.5, rz - TRAIN_RIDE.half - 0.4];
+    const B = trainDepartAt(F, T, t),
+      at = B.at;
+    if (B.beat === 'gone') return (trainRideEnd(false), null);
+    placeTrain(p, at, W.y0, B.s);
+    if (B.beat === 'glide') {
+      /* from the beach in front: it comes in along the track and settles behind the platform */
+      look = shotAt(W, [9, -13, 4.5], [(at.x + W.H.x) / 2, (at.h + W.y0) / 2 + 1.5, (at.z + W.H.z) / 2], 54);
+    } else if (B.beat === 'board') {
+      /* you walk up the steps onto the platform and into the train */
+      const k = clamp(B.k / 0.75, 0, 1),
+        a = trainAt(F, stop + 1.5, -0.4),
+        b = trainAt(F, stop + 1.5, TRAIN_RIDE.track - TRAIN_RIDE.half - 0.4);
       if (k < 1) items.push(trainRidePerson(a, b, k, 'up', C0, t));
-      look = { eye: [stop[0] - 7, h0 + 3.4, rz - 9], tgt: [stop[0] + 1, h0 + 1.4, rz - 1.5], fov: 50 };
-    } else if ((s -= D.board) < D.climb) {
-      const at = trainPathAt(W.R, W.lip * easeIn(s / D.climb));
-      placeTrain(p, at, W.y0);
-      look = chaseShot(at, W.y0);
-    } else if ((s -= D.climb) < D.open) {
-      const k = s / D.open;
-      placeTrain(p, trainPathAt(W.R, W.lip), W.y0);
-      portalLook(W, 1 + 0.35 * easeInOut(k), 0);
-      lights.push({ p: [W.tear[0], W.tear[2], W.tear[1]], r: 9, c: [0.6 + k, 0.9 + k, 1.6 + k] });
-      look = portalCam;
-    } else if ((s -= D.open) < D.enter) {
-      const k = s / D.enter;
-      placeTrain(p, trainPathAt(W.R, W.lip + (W.R.len - W.lip) * easeIn(k)), W.y0, 1 - 0.92 * easeIn(k));
-      lights.push({ p: [W.tear[0], W.tear[2], W.tear[1]], r: 12, c: [2, 2, 2.4] });
-      look = portalCam;
-    } else return (trainRideEnd(false), null);
+      look = shotAt(W, [2.5, -8.5, 2.6], trainEye(F, stop + 0.5, 2.5, 1.6), 50);
+    } else if (B.beat === 'lift') {
+      /* straight up on its engines, over the canopy */
+      lights.push(engineLight(at, 0.5 + 0.5 * B.k));
+      look = shotAt(W, [8, -14, 1.8], tgtOf(at, 1.2), 54);
+    } else if (B.beat === 'turn') {
+      /* hovering, it turns its nose to the portal; the portal stirs */
+      lights.push(engineLight(at, 1));
+      portalLook(W, 1 + 0.15 * B.k, 0);
+      look = shotAt(W, [-12, -14, 10], tgtOf(at, 1.5), 54);
+    } else {
+      /* into the portal: the camera chases it in */
+      const k = B.k;
+      portalLook(W, 1.15 + 0.25 * k, 0);
+      lights.push(engineLight(at, 1));
+      lights.push({ p: [T[0], T[1], T[2]], r: 9 + 4 * k, c: [0.8 + k, 1 + k, 1.6 + k] });
+      look = chaseShot(at, T);
+    }
   } else {
-    const H = HOME;
-    let s = t;
-    if (s < H.open) {
-      const k = s / H.open;
-      portalLook(W, 1 + 0.35 * easeInOut(k), R.won ? 1 : 0);
-      W.train.s = 0.01;
-      placeTrain(p, trainPathAt(W.B, 0), W.y0, 0.01);
-      lights.push({ p: [W.tear[0], W.tear[2], W.tear[1]], r: 9, c: [1 + k, 1 + k * 0.8, 1.4] });
+    const B = trainHomeAt(F, T, t),
+      at = B.at;
+    if (B.beat === 'gone') return (trainRideEnd(false), null);
+    placeTrain(p, at, W.y0, B.s);
+    if (B.beat === 'open') {
+      portalLook(W, 1 + 0.35 * easeInOut(B.k), R.won ? 1 : 0);
+      lights.push({ p: [T[0], T[1], T[2]], r: 9, c: [1 + B.k, 1 + B.k * 0.8, 1.4] });
       look = portalCam;
-    } else if ((s -= H.open) < H.out) {
-      const k = s / H.out,
-        back = W.R.len - W.lip;
-      placeTrain(p, trainPathAt(W.B, back * easeOut(k)), W.y0, 0.08 + 0.92 * easeOut(k));
-      portalLook(W, 1.35 - 0.35 * k, R.won ? 1 : 0);
-      look = portalCam;
-    } else if ((s -= H.out) < H.down) {
-      const back = W.R.len - W.lip,
-        at = trainPathAt(W.B, back + (W.B.len - back) * easeOut(s / H.down));
-      placeTrain(p, at, W.y0);
+    } else if (B.beat === 'out') {
+      /* out of the portal and across to the station, the camera turning to keep it */
+      portalLook(W, 1.35 - 0.35 * B.k, R.won ? 1 : 0);
+      lights.push(engineLight(at, 1));
+      const k = easeInOut(B.k);
+      look = {
+        ...portalCam,
+        tgt: [T[0] + (at.x - T[0]) * k, T[2] + (at.h + 1.5 - T[2]) * k, T[1] + (at.z - T[1]) * k],
+      };
+    } else if (B.beat === 'turn') {
       portalBack(W);
-      look = chaseShot(at, W.y0);
-    } else if ((s -= H.down) < H.off) {
-      placeTrain(p, trainPathAt(W.B, W.B.len), W.y0);
-      const k = clamp(s / (H.off * 0.8), 0, 1),
-        a = [stop[0] - 1.5, rz - TRAIN_RIDE.half - 0.4],
-        to = W.roam ? [W.roam.x, W.roam.z] : [stop[0] - 1.5, rz - TRAIN_RIDE.half - 2.6];
+      lights.push(engineLight(at, 1));
+      look = shotAt(W, [-12, -14, 10], tgtOf(at, 1.5), 54);
+    } else if (B.beat === 'down') {
+      lights.push(engineLight(at, 1 - 0.5 * B.k));
+      look = shotAt(W, [8, -14, 2.2], tgtOf(at, 1.2), 54);
+    } else {
+      /* you step off, down the platform's steps */
+      const k = clamp(B.k / 0.8, 0, 1),
+        a = trainAt(F, stop + 1.5, TRAIN_RIDE.track - TRAIN_RIDE.half - 0.4),
+        to = W.roam ? [W.roam.x, W.roam.z] : trainAt(F, stop + 1.5, -1.4);
       items.push(trainRidePerson(a, to, k, 'down', C0, t));
-      look = { eye: [stop[0] - 7, h0 + 3.4, rz - 10], tgt: [stop[0] - 1, h0 + 1.2, rz - 1.8], fov: 50 };
-    } else return (trainRideEnd(false), null);
+      look = shotAt(W, [2, -10, 2.8], trainEye(F, stop + 0.5, 1.2, 1.3), 50);
+    }
   }
   return {
     look,
@@ -312,8 +332,7 @@ function trainRideFrame() {
     blur: 0.12,
     center: [look.tgt[0], look.tgt[2]],
     cut: 2.6,
-    /* the shots out over the sea see further than a walk: the far rail and the tear stand clear of the haze (not the
-       level ones over the town: the far sea would show the world's curve) */
+    /* the shots out over the sea see further than a walk: the portal stands clear of the haze */
     hazeK: look.hazeK || 1,
   };
 }
@@ -359,7 +378,7 @@ function trainRideStart(kind, key, o, done) {
  * @param {number} t0 */
 function trainParkHome(key, v, t0) {
   const P = trainRideWorld();
-  if (P) placeTrain(trainProp(P, key, v), trainPathAt(P.B, P.B.len), P.y0);
+  if (P) placeTrain(trainProp(P, key, v), trainHomeAt(P.F, P.tear, Infinity).at, P.y0);
   else if (performance.now() - t0 < 30000) setTimeout(() => trainParkHome(key, v, t0), 300);
 }
 
@@ -403,7 +422,7 @@ function trainRideEnd(skip) {
       if (typeof soundEffect === 'function') soundEffect('throw');
     } else {
       /* home: it stays at the platform, still */
-      placeTrain(W.train, trainPathAt(W.B, W.B.len), W.y0);
+      placeTrain(W.train, trainHomeAt(W.F, W.tear, Infinity).at, W.y0);
       delete W.train.moving;
       if (skip) trainVeil(false, 200);
     }
