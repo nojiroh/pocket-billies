@@ -58,7 +58,8 @@ Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game c
 - Risky (the bar): the wide tile uses about 25% of the screen standing (20% today) and 16% walking (11%), the home-bar
   strip counted; the sizes are proposals for the phone check after UI-8b. The minimap draws 5 times a second at about
   2.8 times today's pixels (unmeasured on a phone), and its marks grow with the tile's width.
-- Next: #266 merges, then UI-8b (the wide tile) and UI-11 (the colour code as data) on `track/ui`.
+- Next: UI-8b (the wide tile) on `track/ui`, started 2026-10-27 in a new session at the owner's word (#266 merged);
+  then UI-11 (the colour code as data).
 - Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
 
 ### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
