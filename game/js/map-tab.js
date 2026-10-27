@@ -5,7 +5,7 @@
 import { expose } from './test-globals.js';
 import { nodeActions, provide, render, tripButtons, tripDest, tripStatus } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, POOLS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
+import { LOCATIONS, POOLS, RESIDENTS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -29,6 +29,7 @@ expose({
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
   renderWorldMapTab: [() => renderWorldMapTab, v => (renderWorldMapTab = v)],
   runForecastHTML: [() => runForecastHTML, v => (runForecastHTML = v)],
+  runRumourHTML: [() => runRumourHTML, v => (runRumourHTML = v)],
   runZoneHTML: [() => runZoneHTML, v => (runZoneHTML = v)],
   worldMapCardHTML: [() => worldMapCardHTML, v => (worldMapCardHTML = v)],
 });
@@ -73,6 +74,15 @@ function runZoneHTML(n) {
     B = (gameData.biomes || {})[Z ? Z.biome : ''];
   return `<p class="note">Zone ${node.zone + 1} of ${run.region.zones.length}${B ? ` · ${escapeHtml(B.name)}` : ''}</p>`;
 }
+/** RS-4: what a resident's rumour says about a run place (Bertha's service: logic/residents.js resRumour) */
+function runRumourHTML(n) {
+  const run = saveData.run,
+    R = run && run.rumour,
+    i = n && n.runNode;
+  if (!R || i === undefined || (R.node !== i && R.side !== i)) return '';
+  const who = (RESIDENTS[R.who] || { name: 'Someone' }).name.split(' ')[0];
+  return `<p class="note">${uiIconHTML('spark', 12)} ${escapeHtml(R.side === i ? `${who} heard a side path starts here.` : `${who} heard about this place.`)}</p>`;
+}
 function worldMapCardHTML() {
   const sel = uiState.mapSel == null ? saveData.trip.node : uiState.mapSel;
   /* RL-7: a run's place the map shows only as a '?' */
@@ -114,7 +124,7 @@ function worldMapCardHTML() {
     const to = worldBowlRunMark(e.to);
     return to && to.seen < 2 ? 'somewhere further on' : LOCATIONS[e.to].name;
   });
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div>${runZoneHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div>${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
 }
 function paintWorldMapCard() {
   const c = $('#mapcard');
