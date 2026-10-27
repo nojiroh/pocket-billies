@@ -465,9 +465,9 @@ listening page only); every later session works on `track/sound`, made by the ow
 
 ## In short
 - **Why the world sounds grate**: every water, rain, wind and fire sound is the same 1-second white-noise loop with a
-  steady wobble; rain is about as loud as the music; crickets are two endless ~4.5 kHz tones; birds call every ~3 s;
-  footsteps are one identical click. And **the hub song is 19 dB quieter than every other song**, so in Copperleaf
-  the sea and the fountain drown it.
+  steady wobble; rain is louder than the music (+7.8 LU, measured); crickets are two endless ~4.5 kHz tones; birds
+  call every ~3 s; footsteps are one identical click. And **the hub song is 15 LU quieter than the route song**, so in
+  Copperleaf the sea (+5 LU) and a fountain (+10 LU) drown it.
 - **SND-8a and SND-8b, quick relief**: soft pink/brown noise that never audibly loops, random drift instead of wobbles; rain,
   crickets, fire, birds and steps re-voiced and quieter; songs level-matched; silent sounds stopped (today they cost
   the phone more than the music does); a loudness check so it stays that way.
@@ -511,11 +511,14 @@ listening page only); every later session works on `track/sound`, made by the ow
   bp 520 (0.22); fountain bp 2400 (0.45); fire bp 3000 (0.35); lava lp 260; **rain hp 1700 + lp 7500 (up to 0.42)**;
   wind bp 360; leaves bp 3200 + hp 1200; town murmur bp 420 + lp 900 (0.13); cave lp 140 plus a constant 49 Hz sine;
   room lp 260.
-- **Levels against the music** (estimated from the fingerprints at default sliders, the beds ducked 3 dB; SND-8a
-  measures them): rain at full about **2 dB over the town song**, while the music is low-passed to 2.2 kHz in the
-  rain (sound.js:1160); a waterfall at its foot about level with the music; **in Copperleaf the always-on sea bed
-  about 6.5 dB over the hub song and the fountain about 14 dB over it**. Rain, fountain, leaves and crickets sit in
-  1.5-8 kHz, so they sound louder still.
+- **Levels against the music, measured** (SND-7's listening page: sound.js's beds ported line for line, rendered
+  offline at 48 kHz through the game's default mix, beds 3 dB under a song as in play, K-weighted per ITU-R BS.1770;
+  LU against the route song, −32.4 LUFS): **rain +7.8 LU** (louder than the music, while the music is low-passed to
+  2.2 kHz in the rain, sound.js:1160); crickets −4.1; a fountain at 3 m −5.1; a stream at 3 m −6.8; a campfire at
+  2 m −9.1; the sea anywhere in Copperleaf −9.8; storm wind −10.3; birds −22.6 (calls peaking at −14.8); steps on a
+  lawn −23.7 (peaks −20.5). **The hub song is 15 LU quieter than the route song** (copperleaf −47.4 LUFS; 19 dB by
+  plain RMS: the music box alone, short decays, no bass), so **in Copperleaf the sea sits 5.1 LU over the hub song
+  and a fountain at 3 m 9.9 LU over it**. Songs otherwise span about 6 dB of RMS (wild −31.5 dBFS to cave −37.9).
 - **Crickets**: two pure sines at 4300 and 4650 Hz gated on and off by square LFOs (26 Hz and ~0.8 Hz), all night.
 - **Birds**: pure-sine chirps at 2.9-5.1 kHz with linear envelopes, a call every ~3.3 s outside towns (`dt*0.3` per
   200 ms tick, sound.js:1213), every ~8 s in town.
@@ -703,17 +706,26 @@ nothing (`musicStem*`, `musicLayer*`, `soundBake*`: "layer" appears ~90 times in
 bakes' word).
 
 ## The listening page (SND-7)
-A private artifact (nothing committed), self-contained Web Audio, for the owner's phone; its link is in SND-7's
-HANDOFF entry.
-- **Today vs Calm**: rain, stream, fountain, sea, crickets, birds, fire, footsteps; "Today" ported as written from
-  sound.js, "Calm" as SND-8a would make it, the Route or Copperleaf tune under them at the game's default balance.
-- **New water**: brook, river, rapids, a small and a tall waterfall, surf, lake lapping, a pond at night (plops,
-  frogs), fountain, hot spring, cave drips with reverb; a distance slider (near and bright to far and low).
-- **Music**: the game's own Copperleaf and Route tunes (the real composer and notes, from tracker.js and music.json)
-  as GB (today's, and level-matched), Chip+, and Chip+ with DS-era strings, brass and timpani; switches for the four
-  layer ideas (hold to walk, a busker's distance, clear/rain/snow, night, intensity 1-3).
-- Every recipe was rendered offline in headless Chromium before publishing: no silence, no clipping, and its level
-  against the Route tune measured and shown beside it.
+A private artifact for the owner's phone (nothing committed): https://claude.ai/artifact/GuTVE9L1WfjFWVc4NPe9oh.
+Self-contained Web Audio (the game's tracker.js copied in unchanged, plus the sketch code); the owner's own link.
+- **Today vs Calm**: rain, stream, fountain, sea, crickets, birds, a campfire, footsteps, storm wind. "Today" is
+  sound.js ported line for line; "Calm" is what SND-8a would make of it. The route song or Copperleaf's (today or
+  level-matched) can play under them at the game's default balance.
+- **New water**: brook, river, rapids, a 1.6 m and a 10 m fall, surf, lake, a pond at night (plops, frogs,
+  crickets), fountain, hot spring, cave drips; a distance slider (1-40 m: quieter, duller and roomier further off).
+- **Music**: Copperleaf and Route with the real composer and notes, as GB today, GB level-matched (the hub song
+  +13.4 dB), Chip+ and Chip+ DS; layers: hold to walk (a tambourine in Copperleaf, a snare on the route), a busker
+  (an accordion playing Copperleaf's motif, 1-11 m), clear/rain/snow, night, intensity 1-3. In GB, intensity 2 and 3
+  are today's run versions (`@mid`, `@late`) and walking lifts today's drums from 0.45 to 1.
+- **Measured** (LU against the route song): Calm rain −14.0, stream −15.0, fountain −16.0, sea −18.0, crickets −19.4,
+  birds −31.1 (peaks −16.9), campfire −14.9, steps −27.2 (peaks −23.9), wind −14.0. New water at 3 m: −12 to −18 (a
+  brook at 20 m −20, the tall fall at 30 m −16.7). The bands sit at their songs' level (route −32.4, Copperleaf −34.0
+  LUFS), intensity 3 about 3.6 LU fuller; a band bakes 18-27 instrument zones in 50-370 ms on a computer and holds
+  1.2-4 MB.
+- Checked in headless Chromium: every sound rendered offline (no NaN, no clipping: peaks −14 dBFS or lower), the page
+  clicked through at 390 px in light and dark with no console errors and no sideways scroll.
+- Found while building it: a reverb's return must go back through the bus it serves (music, world), or the slider
+  doesn't scale the room; the page had that bug for a moment (cave drips measured 11 LU louder).
 
 ## SND-8a: calm beds (draft steps from the code review; the session's own plan refines them)
 Check-sound renders only songs, jingles, cries and UI sounds, through `initSound` with `Math.random` seeded per job;
