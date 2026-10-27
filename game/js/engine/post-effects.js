@@ -18,6 +18,7 @@ import { setLightUniforms } from './light.js';
 expose({
   COLOR_GRADES: [() => COLOR_GRADES],
   POST_EFFECT_SHADERS: [() => POST_EFFECT_SHADERS],
+  POST_MEDIUMP: [() => POST_MEDIUMP],
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
   drawDepthOfField: [() => drawDepthOfField, v => setDrawDepthOfField(v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
@@ -261,6 +262,34 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
   ],
 };
 provide({ POST_EFFECT_SHADERS }); /* to-module */
+/* phase 20 D2 (Engine > Quality "Medium precision", quality.mediump; engine/shader-precision.js): the post passes
+   whose maths is mostly colour, with highp kept on the screen places (vUV, uPx, offsets and taps), depth and its
+   linear distance (the blur's plane, the outlines), time, the sun's place on screen and every hash (grain, dither,
+   the rays' jitter). The colour samplers are mediump (16-bit floats hold the HDR range), depth highp. Left highp: dof,
+   dofnear and ao (depth maths nearly throughout), vol (world-space positions, the shadow maps and the fog grid),
+   dofgrow (integers and one read) */
+const POST_MEDIUMP = {
+  bright: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;',
+    ],
+  ],
+  down: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;',
+    ],
+  ],
+  up: [
+    [
+      'in vec2 vUV;out vec4 o;uniform sampler2D uCol;uniform vec2 uPx;uniform float uR;',
+      'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol;uniform highp vec2 uPx;uniform highp float uR;',
+    ],
+    ['void main(){vec2 d=uPx*uR;', 'void main(){highp vec2 d=uPx*uR;'],
+  ],
+};
+for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
 /* a post pass: its program on target F (null: the screen) at w x h; returns the uniforms */
 function postUse(name, F, w, h) {
   const gl = gpuState.gl,

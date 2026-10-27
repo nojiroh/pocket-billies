@@ -135,7 +135,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { attributeClashes, frameBlockCheck, gpuState } from './engine/webgl.js';
+import { attributeClashes, frameBlockCheck, gpuState, mediumpCheck } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -590,6 +590,10 @@ async function runFullTest(mode) {
           );
           if (r.bad.length) throw new Error('Frame block: ' + r.bad.slice(0, 4).join('; '));
           fb = `; ${r.n} with the Frame block`;
+          /* phase 20 D2: the medium-precision versions build too, whether or not the switch is on */
+          const m = mediumpCheck(all);
+          if (m.bad.length) throw new Error('Medium precision: ' + m.bad.slice(0, 4).join('; '));
+          fb += `; ${m.n} in medium precision`;
         }
         if (typeof buildingState !== 'undefined' && buildingState.fail)
           throw new Error('3D buildings are off on this device: ' + String(buildingState.fail).slice(0, 90));
