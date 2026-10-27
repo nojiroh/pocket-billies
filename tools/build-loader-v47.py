@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v47: the loading screen's little runner and its trail of coins, drawn as pixel art and written straight into
 game/css/loader.css as data (so they show on the first paint, before any game art or script has loaded, and work the
-same in the single-page version). Also writes the same pictures to game/art/ui/ for the Studio and the notes.
+same in the single-page version). (Until SA-5 it also wrote copies to game/art/ui/; nothing read them.)
 
 The runner: a young billionaire goat in a green tracksuit and a headband, jogging (4 frames). The coins: an empty
 outline that fills with gold as the game loads.
@@ -14,7 +14,6 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 CSS = ROOT / 'game' / 'css' / 'loader.css'
-OUT = ROOT / 'game' / 'art' / 'ui'
 
 PAL = {'k': (42, 34, 56), 'w': (246, 240, 226), 'c': (226, 214, 190), 'h': (184, 150, 104), 'H': (150, 116, 80), 'e': (42, 34, 56),
        'g': (63, 138, 99), 'G': (44, 104, 74), 'L': (98, 178, 130), 's': (246, 240, 226), 'r': (226, 74, 74), 'y': (242, 193, 78),
@@ -95,8 +94,7 @@ def uri(im):
 
 
 def main():
-    OUT.mkdir(parents=True, exist_ok=True); r, c = runner(), coins()
-    r.save(OUT / 'loader-runner.png'); c.save(OUT / 'loader-coins.png')
+    r, c = runner(), coins()  # SA-5: written into loader.css only (the copies in art/ui were deleted, the owner's pick)
     css = CSS.read_text(encoding='utf-8')
     block = (f"/* v47 sprites (tools/build-loader-v47.py) */\n:root{{--ld-runner:url({uri(r)});--ld-coins:url({uri(c)})}}\n")
     css = re.sub(r'/\* v47 sprites \(tools/build-loader-v47\.py\) \*/\n:root\{[^\n]*\}\n', '', css)

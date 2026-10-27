@@ -106,6 +106,70 @@ test('extra references count; one for a file not in the list is dropped', () => 
   assert.equal(ix.has('art/nope.png'), false);
 });
 
+test('SA-5: the keep list makes a file kept (a folder ends in /), art/legacy/ makes it legacy, live wins over kept', () => {
+  const paths = [...PATHS, 'art/next/portraits/eye.png', 'art/next/palette.png', 'art/legacy/postcards/marigold.webp'];
+  const ix = R.artRefIndex(paths, {
+    data: [{ from: 'coats', value: { pal: 'next/palette.png' } }],
+    kept: [
+      { p: 'next/portraits/', why: 'the portrait kit' },
+      { p: 'next/palette.png', why: 'a tool reads it' },
+      { p: 'people/old.png', why: 'kept' },
+    ],
+  });
+  const state = p => R.artRefState(ix.get(p));
+  assert.equal(state('art/next/portraits/eye.png'), 'kept');
+  assert.equal(ix.get('art/next/portraits/eye.png')[0].at, 'the portrait kit');
+  assert.equal(state('art/people/old.png'), 'kept');
+  assert.equal(state('art/next/palette.png'), 'used', 'the data names it too');
+  assert.equal(state('art/legacy/postcards/marigold.webp'), 'legacy');
+  assert.equal(state('art/robots/arm.png'), 'unused');
+});
+
+test('SA-5: artRefInputs builds the Studio’s inputs; artReport sorts by state and finds what is missing', () => {
+  const D = {
+    scenery: { props: { house: { img: 'scene/props/house.png' }, gone: { img: 'scene/props/gone.png' } } },
+    lines: [{ id: 'musk', names: ['Musk', 'Mega Musk'] }],
+    maps: { copperleaf: {} },
+  };
+  const o = R.artRefInputs({
+    D,
+    legacy: { mapIds: ['marigold'], lines: ['old'], locations: [{ id: 'marigold', card: 'postcards/marigold.webp' }] },
+    code: { refs: [{ p: 'scene/flags/*.png', at: ['walk-view.js:1'] }], recipes: [] },
+    kept: [
+      { p: 'people/', why: 'old walkers' },
+      { p: 'nope/', why: 'a folder that is gone' },
+    ],
+    sheet: (sp, v) => `art/rigs/${sp}_${v}.png`,
+  });
+  assert.deepEqual(
+    o.data.map(d => [d.from, d.legacy]),
+    [
+      ['scenery', false],
+      ['lines', false],
+      ['maps', false],
+      ['legacy locations', true],
+    ],
+    'the legacy map ids and lines are not data'
+  );
+  assert.deepEqual(
+    o.extra.map(e => e.path),
+    ['art/rigs/musk0_front.png', 'art/rigs/musk0_back.png', 'art/rigs/musk1_front.png', 'art/rigs/musk1_back.png']
+  );
+  assert.deepEqual(o.ids, { live: ['copperleaf'], legacy: ['marigold', 'marigold'] });
+  const ix = R.artRefIndex(PATHS, o),
+    rep = R.artReport(PATHS, ix, o);
+  assert.deepEqual(rep.unused, ['art/robots/arm.png']);
+  assert.deepEqual(rep.legacy, ['art/scene/flags/marigold.png', 'art/postcards/marigold.webp']);
+  assert.deepEqual(rep.kept, ['art/people/old.png']);
+  assert.deepEqual(
+    rep.missing.map(m => [m.path, m.from]),
+    [
+      ['art/scene/props/gone.png', 'scenery'],
+      ['art/nope/', 'art-keep'],
+    ]
+  );
+});
+
 test('studio/art-code-refs.json is what tools/art-code-refs.mjs makes from the code now', () => {
   assert.equal(readFileSync(join(ROOT, OUT), 'utf8'), artCodeRefsText());
 });
@@ -130,11 +194,25 @@ test('on the game: the code’s patterns and the data name most of the art; know
   const prop = Object.values(GAME_DATA.scenery.props).find(p => p.img).img;
   assert.equal(state('art/' + prop), 'used', prop);
   assert.equal(state('art/postcards/copperleaf.webp'), 'used');
-  assert.equal(state('art/postcards/marigold.webp'), 'legacy');
+  assert.equal(state('art/legacy/postcards/marigold.webp'), 'legacy', 'SA-5: the legacy folder');
+  assert.equal(state('art/scene/flags/default.png'), 'used');
   assert.equal(state('art/app/icon-512.png'), 'used', 'the web manifest names it');
   assert.equal(state('art/scene/next/decals/bakery_word.png'), 'used', 'the bakery recipe names it');
   assert.equal(state('art/ui/bag.svg') === 'unused', !paths.includes('art/ui/bag.svg'));
   for (const p of paths.filter(p => p.startsWith('art/people/'))) assert.equal(state(p), 'unused', p);
   const used = paths.filter(p => state(p) !== 'unused').length;
   assert.ok(used > paths.length / 2, `${used} of ${paths.length} named`);
+});
+
+test('SA-5: the unused-art report on the game: no orphan, nothing missing (tools/art-unused.mjs)', async () => {
+  const { artUnusedReport } = await import('../art-unused.mjs');
+  const r = artUnusedReport();
+  assert.deepEqual(r.unused, [], 'a picture nothing names: delete it, or put it on studio/art-keep.json with a reason');
+  assert.deepEqual(r.missing, [], 'a picture named that is not there');
+  assert.deepEqual(
+    r.legacy.filter(p => !p.startsWith('art/legacy/')),
+    [],
+    'legacy-only art lives in art/legacy'
+  );
+  assert.ok(r.kept.length > 0);
 });

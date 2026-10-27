@@ -144,6 +144,24 @@ over by SA-4 here).
 - Rules and Check weren't in the plan's workspace list: the owner's pick, a "Game" workspace on top. Items & pyramids
   went to Runs (the owner's pick).
 
+### Found in SA-5 (verified against the code, 2026-10-27)
+- **The index on the day:** 3,890 pictures, 144 unused, 21 legacy-only, 0 missing. Of the 144, 18 stay on purpose (now
+  the keep list, `studio/art-keep.json`): the portrait kit's 12 unused pieces, the two palette PNGs, Kappi's drawing
+  sheet, `detail-a04.png` (build-airship.py's input), the loader's two PNGs (deleted after all: the owner's pick).
+- **Where the lists were wrong:** `people/` held 15 pictures, not 18. `scene/props/flag_pole.png` is not an orphan
+  (props.json and 5 legacy maps place it). The hand archive was 27 sheets, 24 concepts and 29 JSON files: the index
+  counted 20 of the sheets as used through `hand/rigs-hand.json`, which nothing reads, so they showed up only once
+  that file was gone. `egg_5` read as used (the code's `eggs/egg_${tier}` pattern matches any number); only tiers 2
+  and 10 are drawn.
+- **Two counts became one:** check-quick.py's Unused step and the browser counted differently (SA-1); both now use
+  `artRefInputs` (logic/art-refs.js), the browser in the Studio, `tools/art-unused.mjs` outside it.
+- **Retired (the owner's picks):** the far backdrops (never drawn; `far` keeps picking sound, water and walls) and
+  the loader's PNG copies (loader.css carries the pictures). Kept: `art/manifest.js`'s `battle` layout
+  (tools/build-scenes.py reads it).
+- Left: `scenery.flags` still lists the six legacy towns (data the game reads: a live scene with one of those ids
+  would look for its flag in `scene/flags`; none has one). `farH` does nothing. The scene_art step's "the painter does
+  not outline the 12 wall cells" fails on main before SA-5 too (not looked into).
+
 ## Sessions
 | # | What | Checks before the tag |
 |---|------|-----------------------|
@@ -152,7 +170,7 @@ over by SA-4 here).
 | SA-2b | **The missing editors, part 2** (done 2026-10-27). A text-file save (SVG and manifest.js, kept as drafts). SVG icons: a small text editor with a live preview; `tools/build-ui-icons.py` retires (decision 6). The icon atlas's rectangles. Far backdrops, flags, building walls and rooms (a tiling preview for the wall and detail cells), each with a preview. | unit tests, Studio self-test, check-studio-github.py, smoke, the owner's look on the phone |
 | SA-3 | **Clean-up** (done 2026-10-27), one cause per commit (decision 3). Studio: Jobs and its Find entries; World & encounters without Route stops and Eggs, opening on Wild encounters, What's new moved to Game, Find without route stops; the dead Rules fields; the Trainers egg, badge and stop fields; the Workbench's disabled buttons; the Roster's stale text; the local-mode leftovers. Game: the walk-egg code and its rules and eggs.json tiers (ranch eggs stay), Jobs and Town shops data with the boutique names moved to the Wardrobe (data first, then readers, then the section). Each removal verified by grep before and the checks after. | lint, typecheck, check:modules, check:data, unit tests, smoke, Studio self-test |
 | SA-4 | **Navigation** (done 2026-10-27). Workspaces: Art (the browser, Workbench), Creatures, World, People & story, Runs (Robots join: bots are the enemy faction), Sound & UI, Legacy. Looks and Wardrobe as one "Characters" entry; "Part sizes" labelled "Part rules"; the Moneys group goes. Labels only (Studio words, no internal renames, no player-facing words). STUDIO.md's names brought up to date (Perks, not Loopholes). Takes over the improvement plan's T4.5 and T6.8. | studio-layout tests, Find finds every section, Studio self-test |
-| SA-5 | **Unused art.** The browser's missing/unused report (from SA-1's index). Then decision 2: orphans deleted, legacy postcards and flags moved under legacy (the Studio shows them read-only); each list checked again with grep and the full check first. | full quick check, the report shows 0 orphans |
+| SA-5 | **Unused art** (done 2026-10-27). The browser's missing/unused report (from SA-1's index). Then decision 2: orphans deleted, legacy postcards and flags moved under legacy (the Studio shows them read-only); each list checked again with grep and the full check first. | full quick check, the report shows 0 orphans |
 
 ## Pushing back
 - **3D models** stay where they are: made in Blender and the like; import and export are ST-7 and ST-8.

@@ -2306,9 +2306,23 @@ def art_browser_steps(pg, errs):
     if len(chips) != 1 or 'scene/props' not in chips[0]: errs.append(f'art browser: the chips read {chips}')
     t = search('dir:coins w:32', lambda t: len(t) == 4)
     if sorted(t) != sorted(f'art/coins/{k}_32.png' for k in ('capstone', 'gold_pyramid', 'pyramid', 'step_pyramid')): errs.append(f'art browser: dir:coins w:32 kept {t}')
-    t = search('unused dir:people', lambda t: len(t) > 0)
-    people = sorted('art/people/' + p.name for p in pics(art / 'people')) if (art / 'people').is_dir() else []
-    if sorted(t) != people: errs.append(f'art browser: unused dir:people kept {len(t)} of {len(people)}')
+    # SA-5: the unused search, and the Report, count as tools/art-unused.mjs does (one source for "unused")
+    rep = json.loads(subprocess.run(['node', str(ROOT / 'tools' / 'art-unused.mjs'), '--json'], capture_output=True, text=True, check=True).stdout)
+    t = search('unused', lambda t: len(t) == len(rep['unused']))
+    if sorted(t) != sorted(rep['unused']): errs.append(f"art browser: unused kept {len(t)}, tools/art-unused.mjs has {len(rep['unused'])}")
+    pg.evaluate("artBrowser.q = ''; ACTIONS.abReport()"); time.sleep(0.5)
+    heads = pg.evaluate("[...document.querySelectorAll('.ab-report h4')].map(e => e.textContent)")
+    want_heads = [f"Nothing uses it · {len(rep['unused'])}", f"Missing · {len(rep['missing'])}", f"Legacy · {len(rep['legacy'])}", f"Kept on purpose · {len(rep['kept'])}"]
+    if heads != want_heads: errs.append(f'art browser: the Report reads {heads}, the tool {want_heads}')
+    pg.evaluate("ACTIONS.abReport()"); time.sleep(0.3)
+    if pg.evaluate("artBrowser.reportOn || !!document.querySelector('.ab-report')"): errs.append('art browser: Report did not close')
+    old = next((p for p in rep['legacy'] if p.startswith('art/legacy/') and p.endswith('.png')), None)
+    if old:
+        pg.evaluate(f"ACTIONS.abPick({{ p: {json.dumps(old)} }})"); time.sleep(0.3)
+        acts = pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].map(b => b.textContent)")
+        if 'Edit pixels' in acts or 'Replace…' in acts: errs.append(f'art browser: legacy art {old} offers {acts}')
+        pg.evaluate(f"ACTIONS.abEdit({{ p: {json.dumps(old)} }})"); time.sleep(0.3)
+        if pg.evaluate('artBrowser.edit'): errs.append(f'art browser: legacy art {old} opened in the painter')
     tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
     path = 'art/' + tile
     pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
@@ -2334,7 +2348,7 @@ def art_browser_steps(pg, errs):
     hit = pg.evaluate("(() => { const r = findRun('pyramid_32.png').find(e => e.kind === 'art'); if (!r) return null; r.fn(); return [studioState.sec, artBrowser.sel] })()")
     if hit != ['art', 'art/coins/pyramid_32.png']: errs.append(f'art browser: Ctrl K on pyramid_32.png gave {hit}')
     pg.set_default_timeout(30000)
-    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, Used by, Edit pixels and its undo, Ctrl K', flush=True)
+    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, the Report, read-only legacy, Used by, Edit pixels and its undo, Ctrl K', flush=True)
 
 
 def tile_set_steps(pg, errs):
@@ -2532,12 +2546,11 @@ def atlas_steps(pg, errs):
 
 
 def scene_art_steps(pg, errs):
-    """Studio art track SA-2b: walls, the building sheet, rooms, a flag and a far backdrop each get their preview in
+    """Studio art track SA-2b: walls, the building sheet, rooms and a flag (SA-5: the far backdrops are retired) each get their preview in
     the picture panel; a stroke on walls.png in the painter redraws its preview (then undone)."""
     E = pg.evaluate
     for p, sel in [('art/scene/build/walls.png', 'canvas.sp-wall'), ('art/scene/build/detail-a04b.png', 'canvas.sp-wall'),
-                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/scene/flags/marigold.png', 'canvas.sp-flag'),
-                   ('art/scene/far/hills.png', 'canvas.sp-far')]:
+                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/legacy/scene/flags/marigold.png', 'canvas.sp-flag')]:
         E(f"artBrowserShow({json.dumps(p)})")
         try: pg.wait_for_selector('.ab-side ' + sel, timeout=15000)
         except Exception: errs.append(f'scene art: {p} has no preview'); continue
@@ -2554,7 +2567,7 @@ def scene_art_steps(pg, errs):
     E("undo()"); time.sleep(0.3)
     if E("loadedAtlas('art/scene/build/walls.png').toDataURL()") != sheet: errs.append('scene art: undo did not put walls.png back')
     E("ACTIONS.abEditDone()")
-    print('scene art: walls, building sheet, rooms, a flag and a far backdrop previewed; a wall stroke redraws it', flush=True)
+    print('scene art: walls, building sheet, rooms and a flag previewed; a wall stroke redraws it', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)

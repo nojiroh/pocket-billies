@@ -4,7 +4,7 @@
 The flag pole used to be one picture (pole and a teal flag) that swayed as a whole. Now the pole is rigid
 (art/scene/props/flag_mast.png, a new file; the old flag_pole.png stays on disk) and the cloth is a separate picture
 the game drapes from the top of the mast and waves in the wind (walk/frame-items.js, item kind 'flag'). Each stop's scene
-flies its own flag: art/scene/flags/<scene>.png, 48 x 32, a two-colour field with the town's emblem, plus default.png.
+flies its own flag: art/scene/flags/<scene>.png (SA-5: the legacy towns' in art/legacy/scene/flags), 48 x 32, a two-colour field with the town's emblem, plus default.png.
 Only towns have a flag of their own (scenery.flags lists them); every other pole flies the coin ring. A scene can pick
 another with "flag": "<name>" in the Studio (Walk scenes -> Look). Existing pictures are kept.
 
@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 spec = importlib.util.spec_from_file_location('bsp', os.path.join(HERE, 'build-scene-props.py')); bsp = importlib.util.module_from_spec(spec); spec.loader.exec_module(bsp)
 Cv, R, layer_out, finish, pole, prop_meta, save_png, write_json, OUT, META = bsp.Cv, bsp.R, bsp.layer_out, bsp.finish, bsp.pole, bsp.prop_meta, bsp.save_png, bsp.write_json, bsp.OUT, bsp.META
 FLAGS = os.path.join(ROOT, 'game', 'art', 'scene', 'flags'); DATA = os.path.join(ROOT, 'game', 'data', 'gamedata.js')
+LEGACY_FLAGS = os.path.join(ROOT, 'game', 'art', 'legacy', 'scene', 'flags')
 W, H = 48, 32
 
 # only towns fly a flag: field colours (ramp keys) and the emblem for each; every other scene's pole flies the coin ring
@@ -158,9 +159,10 @@ def main():
     if '--sheet' in args:
         i = args.index('--sheet'); sp = args[i + 1]; del args[i:i + 2]
     force = '--force' in args; fmast = '--force-mast' in args
-    os.makedirs(FLAGS, exist_ok=True); made = []
+    os.makedirs(FLAGS, exist_ok=True); os.makedirs(LEGACY_FLAGS, exist_ok=True); made = []
     for name in TOWNS:
-        path = os.path.join(FLAGS, name + '.png')
+        # SA-5: every town here but default is a legacy town; its flag lives in the legacy folder (read-only in the Studio)
+        path = os.path.join(FLAGS if name == 'default' else LEGACY_FLAGS, name + '.png')
         if os.path.exists(path) and not force: continue
         flag(name).save(path, optimize=True); made.append(name)
     cv, bx = mast(); img = finish(cv, bx, 0); mp = os.path.join(OUT, 'flag_mast.png')
@@ -182,7 +184,7 @@ def main():
         out = Image.new('RGBA', (cols * (W * S + 16) + 8, rows * (H * S + 26) + 8), (62, 54, 84, 255)); d = ImageDraw.Draw(out)
         for k, n in enumerate(names):
             x = 8 + (k % cols) * (W * S + 16); y = 8 + (k // cols) * (H * S + 26)
-            out.alpha_composite(Image.open(os.path.join(FLAGS, n + '.png')).resize((W * S, H * S), Image.NEAREST), (x, y)); d.text((x, y + H * S + 2), n, fill=(230, 226, 240))
+            out.alpha_composite(Image.open(os.path.join(FLAGS if n == 'default' else LEGACY_FLAGS, n + '.png')).resize((W * S, H * S), Image.NEAREST), (x, y)); d.text((x, y + H * S + 2), n, fill=(230, 226, 240))
         out.save(sp); print('sheet', sp)
 
 
