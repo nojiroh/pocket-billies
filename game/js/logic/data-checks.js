@@ -1265,6 +1265,31 @@ export function dataResidents(D, valid = () => true) {
       else if (!U[u].grant || U[u].grant.resident !== k || U[u].grant.level !== i + 2)
         problem(`${k}.levels: ${u} should grant {resident: ${k}, level: ${i + 2}}`);
     });
+    /* RS-4: one service entry per level (Lv 1 and each row), exactly one power level, and what it names exists */
+    const sv = /** @type {any[] | undefined} */ (/** @type {any} */ (r).service),
+      lvs = /** @type {any} */ (r).levels;
+    if (lvs.length && !sv) problem(`${k}.service: missing (they have levels to sell)`);
+    if (sv) {
+      if (sv.length !== lvs.length + 1)
+        problem(`${k}.service: ${sv.length} levels described, but Lv 1 and ${lvs.length} sold make ${lvs.length + 1}`);
+      const powers = sv.filter(L => L.power).length;
+      if (powers !== 1) problem(`${k}.service: ${powers} power levels (exactly one: half and half)`);
+      sv.forEach((L, i) => {
+        const at2 = `${k}.service[${i}]`;
+        for (const w of L.stock || []) {
+          if (w.item && !(D.items || {})[w.item]) problem(`${at2}.stock: no item "${w.item}" (items.json)`);
+          if (w.coin && !(D.pyramids || {})[w.coin]) problem(`${at2}.stock: no pyramid "${w.coin}" (pyramids.json)`);
+          if (!w.item === !w.coin) problem(`${at2}.stock: a ware is an item or a pyramid`);
+        }
+        for (const i2 of Object.keys(L.items || {}))
+          if (!(D.items || {})[i2]) problem(`${at2}.items: no item "${i2}" (items.json)`);
+        for (const [j, f] of (L.fx || []).entries()) {
+          if (!FX_KINDS.includes(f.kind)) problem(`${at2}.fx[${j}]: no effect kind "${f.kind}" (effects.js FX_KINDS)`);
+          if (f.mult != null && (f.mult < FX_LIMIT.lo || f.mult > FX_LIMIT.hi))
+            problem(`${at2}.fx[${j}].mult: ${f.mult} is outside ${FX_LIMIT.lo} to ${FX_LIMIT.hi}`);
+        }
+      });
+    }
     for (const [u, row] of Object.entries(U))
       if (row && row.grant && row.grant.resident === k && !(/** @type {any} */ (r).levels.includes(u)))
         problem(`${k}.levels: ${u} raises their service but isn't listed`);
