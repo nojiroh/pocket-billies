@@ -4,7 +4,7 @@
    items, the title's town rise and tap targets, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
+import { gameData, loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
@@ -1067,6 +1067,13 @@ const PICTURE_LIGHTNESS = new WeakMap();
 function pictureLightness(im) {
   let l = PICTURE_LIGHTNESS.get(im);
   if (l != null) return l;
+  /* LD-1: baked (tools/bake-pixel-facts.mjs) unless the Studio is painting the picture */
+  const F = typeof gameData !== 'undefined' && gameData.pixelFacts,
+    baked = F && !im._ver && im.__path ? F.lightness[im.__path] : undefined;
+  if (baked !== undefined) {
+    PICTURE_LIGHTNESS.set(im, baked);
+    return baked;
+  }
   l = 0.5;
   try {
     const w = im.naturalWidth || im.width,

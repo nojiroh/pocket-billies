@@ -106,6 +106,9 @@ export interface GameData {
   rules: Rules;
   battleStages: Record<DataId, BattleStage>;
   scenery: Scenery;
+  /** LD-1: what tools/bake-pixel-facts.mjs read out of pictures' pixels: the flat grass props' lightness by picture,
+      and the leaf clumps' baked cuts (logic/pixel-facts.js leafCutKey -> an art path) */
+  pixelFacts?: { lightness: Record<string, number>; cuts: Record<string, string> };
   /** every walkable map: towns, routes, rooms (int_*) and test maps (test_*) */
   maps: Record<DataId, MapData>;
   /** the walking network between the locations; a world without roads has none (RL-5: no chain made up) */

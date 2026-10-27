@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
-import { leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
+import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
@@ -1630,14 +1630,25 @@ function propModelImageItems(it, out) {
     turn: propTurn(it),
     bob: mooredBob(it),
   };
+  const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
-    if (!im0 || !(im0.naturalWidth || im0.width)) {
+    /* LD-1: a leaf clump's baked cut (tools/bake-pixel-facts.mjs), so its crown picture is never read (or even
+       loaded) in the page; the Studio painting the crown (_ver) or moving the clump (a key with no bake) cuts it here */
+    const baked = F && (L.clip || L.shade) && !(im0 && im0._ver) ? F.cuts[leafCutKey(L.img, L)] : null;
+    if (baked) {
+      const b = artImage(baked);
+      if (!b || !(b.naturalWidth || b.width)) {
+        artImg(baked);
+        continue;
+      }
+    }
+    if (!baked && (!im0 || !(im0.naturalWidth || im0.width))) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;
     }
-    const im = L.clip || L.shade ? leafCut(im0, L) : im0;
+    const im = baked ? artImage(baked) : L.clip || L.shade ? leafCut(im0, L) : im0;
     if (!im) continue;
     const d = decalPlace(it, L, m),
       s = d.s,
