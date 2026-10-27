@@ -534,7 +534,7 @@ def safety_step(P):
 def targets_step(P):
     """phase 06-4 accessibility: on a 390 px phone every visible control is at least 40 px each way, or one of the small
     icon controls that carry an invisible margin (game/css/menus.css: 7 px all round). 40 px is the game's rule; the
-    Studio's overlay marks under 44 px (WCAG 2.5.5)"""
+    Studio's overlay marks under 40 px too (UI-9a, the owner's answer)"""
     pg = P.pg
     small = """(where)=>{const out=[];const pad=e=>e.matches('.wh-x,.mbtn,.swatch,.tb-btn,.qb,.sw')?14:0;
       for(const e of document.querySelectorAll('button,a[href],[role=button],[role=tab],input,select,summary,[data-a]')){

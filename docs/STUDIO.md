@@ -538,7 +538,7 @@ Game → **UI look** edits game/data/uiTheme.json, the look of the game's menus 
   variable its rules read, with its value and the dials that write it (click one to go there).
 - **Connections** (Ctrl+L) on a dial: where its value comes from (the whole game, screens, presets), the variables it
   writes and the parts in the preview that read them (click one to see it outlined).
-- **Overlays**: Under 44 px (tap targets too small), Contrast (text under 4.5:1, or 3:1 for large text, worked out
+- **Overlays**: Under 40 px (tap targets too small: the game's rule), Contrast (text under 4.5:1, or 3:1 for large text, worked out
   through the see-through layers behind it; text over an image can't be told, text shadows aren't counted) and Glass
   (each blurred surface, red when more than two stack, and the count on screen against the budget of 3).
 - **Rule check**: the Check has one report line (not counted in its badge) with the raw values tools/ui-lint.mjs
