@@ -187,7 +187,8 @@ def check_ground(P=None):
 
 @step('Unused: art, props and songs nothing names', 30)
 def report_unused(P=None):
-    """v47: lists pictures and sounds no code, page or data names, and catalogue props no place uses and no code
+    """v47: lists pictures and sounds no code, page or data names (SA-5: pictures as the Studio's Art browser counts them,
+    tools/art-unused.mjs, with what the keep list holds on purpose left out), and catalogue props no place uses and no code
     names, so old things don't build up again. A report, not a failure. A folder the code builds names in (battle/
     plus a stage) counts as named as a whole, so the list holds only what nothing reaches"""
     D = gamedata(); SY = D['scenery']
@@ -205,10 +206,13 @@ def report_unused(P=None):
     dirs = {f.parent.relative_to(art).as_posix() for f in art.rglob('*') if f.is_file()}
     dynd = {d for d in dirs if any(d == x or x.endswith('/' + d) or d.endswith('/' + x) for x in dyn)}
     for f in art.rglob('*'):
-        if not f.is_file() or f.suffix.lower() not in ('.png', '.webp', '.jpg', '.vox', '.ogg', '.mp3', '.wav'): continue
+        # SA-5: pictures are counted by tools/art-unused.mjs (below), the Studio's Art browser's own index
+        if not f.is_file() or f.suffix.lower() not in ('.vox', '.ogg', '.mp3', '.wav'): continue
         rel = f.relative_to(art).as_posix(); d = f.parent.relative_to(art).as_posix(); stem = re.sub(r'(_\d+|_[a-z]+)$', '', f.stem)
         if {rel, f.name, f.stem, stem} & tokens or d in dynd or 'tiles' in d or any(rel.startswith(x) for x in pre if x.startswith(d)): continue
         unused.append(rel)
+    pics = json.loads(subprocess.run(['node', str(ROOT / 'tools' / 'art-unused.mjs'), '--json'], capture_output=True, text=True, check=True).stdout)
+    unused += [p[4:] for p in pics['unused']] + [f"{m['path'][4:]} (missing; named by {m['from']})" for m in pics['missing']]
     placed = {p['k'] for sc in D['maps'].values() for p in sc.get('props', [])}
     # RL-5: what the parked maps place counts as placed (game/data/legacy: kept for the Studio's Legacy section, and a map
     # copied back into the game brings its props with it)

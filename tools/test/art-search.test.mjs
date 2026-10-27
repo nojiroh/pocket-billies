@@ -83,6 +83,18 @@ test('unused and legacy read the reference state', () => {
   assert.equal(S.artMatch('art/a.png', { state: 'unused' }, L), false);
 });
 
+test('kept reads the reference state, and is a chip', () => {
+  const K = S.artQueryParse('kept dir:next');
+  assert.equal(K.kept, true);
+  assert.deepEqual(
+    K.chips.map(c => c.text),
+    ['Kept on purpose', 'In next']
+  );
+  assert.equal(S.artMatch('art/next/a.png', { state: 'kept' }, K), true);
+  assert.equal(S.artMatch('art/next/a.png', { state: 'unused' }, K), false);
+  assert.equal(S.artQueryEmpty(S.artQueryParse('kept')), false);
+});
+
 test('a chip comes off the text it was made from; an empty query keeps the folder view', () => {
   const q = 'house dir:scene w:>8 unused',
     Q = S.artQueryParse(q);

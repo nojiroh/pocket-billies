@@ -1029,6 +1029,9 @@ canvas.spr-prev.big {
   grid-template-columns: repeat(auto-fill, minmax(var(--ab-size, 96px), 1fr));
   gap: 8px;
 }
+.ab-report h4 {
+  margin: 12px 0 2px;
+}
 .ab-tile {
   display: flex;
   flex-direction: column;

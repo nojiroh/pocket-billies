@@ -7,20 +7,22 @@
      dir:scene/props   only files in a folder: a folder path, or any part of one ("dir:props")
      w:32  w:>32  w:<=64  w:16-64   the picture's width (h: its height): equal, more, at most, from-to
      unused            nothing in the data or the code names the file (the reference index, logic/art-refs.js)
-     legacy            only the legacy world names it
+     legacy            only the legacy world names it, or it sits in art/legacy/
+     kept              nothing loads it, and the keep list (studio/art-keep.json) holds it on purpose
    Every other word must be in the file's path (upper or lower case alike). A token with nothing after its colon is a
    word. Paths are the file list's: `art/<folder>/<name>`.
    Logic only: no DOM, runs in Node (tools/test/art-search.test.mjs). */
 /** @typedef {{ op: '=' | '<' | '<=' | '>' | '>=' | '-', a: number, b?: number }} SizeRule */
 /** @typedef {{ key: string, text: string, raw: string }} Chip */
-/** @typedef {{ words: string[], dirs: string[], w: SizeRule | null, h: SizeRule | null, unused: boolean, legacy: boolean, chips: Chip[] }} ArtQuery */
-/** @typedef {{ w?: number, h?: number, state?: 'used' | 'legacy' | 'unused' }} ArtMeta */
+/** @typedef {{ words: string[], dirs: string[], w: SizeRule | null, h: SizeRule | null, unused: boolean, legacy: boolean, kept: boolean, chips: Chip[] }} ArtQuery */
+/** @typedef {{ w?: number, h?: number, state?: 'used' | 'legacy' | 'kept' | 'unused' }} ArtMeta */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_BUILDERS: [() => ART_BUILDERS],
   ART_ROOT: [() => ART_ROOT],
+  STATE_CHIP: [() => STATE_CHIP],
   // @ts-expect-error -- replaced on purpose
   artFolderOf: [() => artFolderOf, v => (artFolderOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -90,6 +92,9 @@ export function sizeRuleTest(r, v) {
 /** @param {SizeRule} r */
 export const sizeRuleText = r => (r.op === '-' ? `${r.a}–${r.b}` : r.op === '=' ? String(r.a) : r.op + r.a);
 
+/* the state tokens' chips (SA-5: kept, a picture the keep list holds on purpose) */
+export const STATE_CHIP = { unused: 'Nothing uses it', legacy: 'Legacy only', kept: 'Kept on purpose' };
+
 /**
  * The search box's text into a query. Each token is also a chip (what it means, in words, and its own text) so the
  * browser can show it and take it off again (artQueryWithout).
@@ -98,14 +103,14 @@ export const sizeRuleText = r => (r.op === '-' ? `${r.a}–${r.b}` : r.op === '=
  */
 export function artQueryParse(q) {
   /** @type {ArtQuery} */
-  const Q = { words: [], dirs: [], w: null, h: null, unused: false, legacy: false, chips: [] };
+  const Q = { words: [], dirs: [], w: null, h: null, unused: false, legacy: false, kept: false, chips: [] };
   for (const raw of String(q || '').split(/\s+/)) {
     if (!raw) continue;
     const t = raw.toLowerCase(),
       m = /^(dir|w|h):(.+)$/.exec(t);
-    if (t === 'unused' || t === 'legacy') {
+    if (t === 'unused' || t === 'legacy' || t === 'kept') {
       Q[t] = true;
-      Q.chips.push({ key: t, text: t === 'unused' ? 'Nothing uses it' : 'Legacy only', raw });
+      Q.chips.push({ key: t, text: STATE_CHIP[t], raw });
     } else if (m && m[1] === 'dir') {
       const d = m[2].replace(/^\/+|\/+$/g, '').replace(/^art\//, '');
       if (!d) Q.words.push(t);
@@ -139,7 +144,8 @@ export function artQueryWithout(q, chip) {
 }
 
 /** a query that keeps every file (the browser then shows the folder, not a search) @param {ArtQuery} Q */
-export const artQueryEmpty = Q => !Q.words.length && !Q.dirs.length && !Q.w && !Q.h && !Q.unused && !Q.legacy;
+export const artQueryEmpty = Q =>
+  !Q.words.length && !Q.dirs.length && !Q.w && !Q.h && !Q.unused && !Q.legacy && !Q.kept;
 
 /** the query needs the pictures' sizes @param {ArtQuery} Q */
 export const artQueryNeedsSize = Q => !!(Q.w || Q.h);
@@ -164,6 +170,7 @@ export function artMatch(path, meta, Q) {
   for (const w of Q.words) if (!lower.includes(w)) return false;
   if (Q.unused && (!meta || meta.state !== 'unused')) return false;
   if (Q.legacy && (!meta || meta.state !== 'legacy')) return false;
+  if (Q.kept && (!meta || meta.state !== 'kept')) return false;
   if (Q.w || Q.h) {
     if (!meta || meta.w == null || meta.h == null) return 'size';
     if (Q.w && !sizeRuleTest(Q.w, meta.w)) return false;
