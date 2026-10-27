@@ -3,6 +3,7 @@
 // from the hook's JSON on stdin and runs only what that file can break:
 //   game/js, studio and the root's *.js     npm run lint, and npm run typecheck for game/js
 //   game/js/logic, game-data.js, tools/test npm test
+//   game/js/audio, game/js/sound.js         the tracker's and sound's tests (SND-8a: npm test never ran for them)
 //   game/data                                npm run check:data
 //   tools/*.py                               python3 -m py_compile
 // Anything else (docs, art, this file) runs nothing. A failure exits with 2 and the checks' last lines on stderr, which
@@ -27,6 +28,9 @@ const runs = [];
 if (/^(game\/js|studio)\/.*\.js$/.test(rel) || /^[^/]+\.js$/.test(rel)) runs.push(['npm', ['run', '-s', 'lint']]);
 if (/^game\/js\/.*\.js$/.test(rel)) runs.push(['npm', ['run', '-s', 'typecheck']]);
 if (/^game\/js\/(logic\/.*|game-data)\.js$/.test(rel) || /^tools\/test\//.test(rel)) runs.push(['npm', ['test', '-s']]);
+/* SND-8a: the music and world sounds aren't logic/, so npm test never ran on their edits: their own tests do */
+if (/^game\/js\/(audio\/.*|sound)\.js$/.test(rel))
+  runs.push(['node', ['--test', 'tools/test/tracker.test.mjs', 'tools/test/sound.test.mjs']]);
 /* Studio plan T6.4: npm test is the quick tier; an edited slow test (tools/unit-tests.mjs) runs on its own */
 if (/^tools\/test\/.*\.test\.mjs$/.test(rel) && SLOW_TESTS.includes(rel.slice('tools/test/'.length)))
   runs.push(['node', ['--test', rel]]);
