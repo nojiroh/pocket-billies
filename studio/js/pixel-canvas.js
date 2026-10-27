@@ -178,7 +178,7 @@ export function pixelCanvasPanelHTML(opts = {}) {
   ).join(
     ''
   )}</div><p class="help">Mirrors about the middle of the selection, else of the part under the pointer.</p><div class="pc-shift"><label>Move the axis ↔ <input type="number" step="1" data-pc="shift" data-i="0" value="0" title="In half pixels"></label><label>↕ <input type="number" step="1" data-pc="shift" data-i="1" value="0" title="In half pixels"></label></div></div>
-  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label></div>${opts.onion ? '<div class="px-sec pc-panel"><h4>Onion skin</h4><label class="chk"><input type="checkbox" data-pc="onion"> The other view faint underneath (O)</label><p class="help">The same part from the back (or front), centred under the part you point at.</p>' : ''}<div class="pc-ramps" hidden>${Object.entries(
+  <div class="px-sec pc-panel"><h4>Game palette</h4><label class="chk"><input type="checkbox" data-pc="lock"> Lock to the game palette (K)</label><label class="chk"><input type="checkbox" data-pc="off"> Show colours not on it <span class="pc-offn"></span></label></div>${opts.onion ? '<div class="px-sec pc-panel"><h4>Onion skin</h4><label class="chk"><input type="checkbox" data-pc="onion"> The other view faint underneath (O)</label><p class="help">The same part from the back (or front), centred under the part you point at.</p></div>' : ''}<div class="pc-ramps" hidden>${Object.entries(
     (window.NW_PALETTE && window.NW_PALETTE.ramps) || {}
   )
     .filter(([, v]) => Array.isArray(v))
@@ -186,7 +186,7 @@ export function pixelCanvasPanelHTML(opts = {}) {
       ([k, v]) =>
         `<div class="pc-ramp" title="${k}">${v.map(h => `<button class="sw" style="background:${h}" data-pc="sw" data-c="${h}" title="${k} ${h}"></button>`).join('')}</div>`
     )
-    .join('')}</div></div>`;
+    .join('')}</div>`;
 }
 export function pixelCanvasPanel(P, root) {
   P.panel = root;
