@@ -1531,7 +1531,12 @@ function bindOwnTexture(p, m) {
   if (!p.U.uOwn) return false;
   const im =
       (typeof artImage === 'function' && artImage(m.own)) || (typeof artImg === 'function' ? artImg(m.own) : null),
-    t = im && imageTexture(im, { noNormal: true, repeat: m.wrap });
+    t =
+      im &&
+      imageTexture(im, {
+        noNormal: true,
+        repeat: true,
+      }); /* nearest texels, no mip levels: a pixel-art texture stays itself, and a palette's swatches or a baked texture's empty margins never blend in */
   if (!t) return false;
   const gl = gpuState.gl;
   gl.activeTexture(gl.TEXTURE0 + OWN_UNIT);

@@ -150,7 +150,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2171",
+    "game/js/prop-models.js:2176",
     "game/js/walk-view.js:750"
    ]
   },
