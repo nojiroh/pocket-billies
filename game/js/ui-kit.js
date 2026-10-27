@@ -38,6 +38,7 @@ expose({
   html: [() => html],
   inboxShown: [() => inboxShown, v => (inboxShown = v)],
   nothing: [() => nothing],
+  patternVars: [() => patternVars],
   pbFloat: [() => pbFloat, v => (pbFloat = v)],
   pbInboxDot: [() => pbInboxDot, v => (pbInboxDot = v)],
   pbInboxPop: [() => pbInboxPop, v => (pbInboxPop = v)],
@@ -119,6 +120,21 @@ const shaped = css`
   }
 `;
 /* the three layers' markup around a part's content */
+/* UI-14a: the Colour shapes switch's patterns (the owner's answer 11; logic/marks.js MARK_PATTERNS says which colour
+   takes which). They are drawn in --pat-ink, which tokens.css keeps transparent until :root[data-shapes='on'], so they
+   cost nothing when off; defined on each part's host so a box that sets --pat-ink itself (the gallery) shows them too.
+   A part lays one over its colour: background: var(--pat-stripe), var(--fill) */
+export const patternVars = css`
+  :host {
+    --pat-stripe: repeating-linear-gradient(135deg, var(--pat-ink, transparent) 0 1.5px, transparent 1.5px 5px);
+    --pat-cross:
+      repeating-linear-gradient(45deg, var(--pat-ink, transparent) 0 1px, transparent 1px 5px),
+      repeating-linear-gradient(135deg, var(--pat-ink, transparent) 0 1px, transparent 1px 5px);
+    --pat-bars: repeating-linear-gradient(90deg, var(--pat-ink, transparent) 0 1.5px, transparent 1.5px 4px);
+    --pat-dots: radial-gradient(circle, var(--pat-ink, transparent) 0 1px, transparent 1.5px) 0 0 / 4px 4px;
+    --pat-rise: repeating-linear-gradient(0deg, var(--pat-ink, transparent) 0 1px, transparent 1px 4px);
+  }
+`;
 const shadowLayer = () => html`<span class="sh" part="shadow" aria-hidden="true"></span>`;
 const edgeLayer = () => html`<span class="edge" part="edge" aria-hidden="true"></span>`;
 
@@ -762,6 +778,7 @@ const PbStatBar = class extends LitElement {
   };
   static styles = [
     base,
+    patternVars,
     css`
       :host {
         display: block;
@@ -784,7 +801,7 @@ const PbStatBar = class extends LitElement {
       .fill {
         position: absolute;
         inset: 0 auto 0 0;
-        background: var(--bar-c);
+        background: var(--bar-p, none), var(--bar-c);
         transition: width var(--m-slow) var(--ease-out);
       }
       .fill::after {
@@ -822,6 +839,8 @@ const PbStatBar = class extends LitElement {
         : this.kind === 'hp' && p < 0.5
           ? 'var(--c-hp-mid, var(--gold-b))'
           : null;
+    /* UI-14a: the Colour shapes switch: mid HP striped (amber), low HP cross-hatched (red) */
+    const pat = c ? `;--bar-p:var(--pat-${p < 0.25 ? 'cross' : 'stripe'})` : '';
     const n = this.segments > 0 ? this.segments : 0;
     return html`<div
       class="track"
@@ -831,7 +850,7 @@ const PbStatBar = class extends LitElement {
       aria-valuemax=${this.max}
       aria-valuenow=${this.value}
     >
-      <i class="fill" style="width:${p * 100}%${c ? `;--bar-c:${c}` : ''}"></i>
+      <i class="fill" style="width:${p * 100}%${c ? `;--bar-c:${c}` : ''}${pat}"></i>
       ${n > 1 ? html`<i class="cells" style="--cell:${100 / n}%"></i>` : nothing}
     </div>`;
   }
