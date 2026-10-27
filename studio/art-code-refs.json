@@ -1625,8 +1625,8 @@
    "game/js/walk/prop-look.js:64",
    "game/js/walk/prop-look.js:415",
    "game/js/walk/sprites.js:890",
-   "game/js/world-bowl.js:1714",
-   "game/js/world-bowl.js:1744"
+   "game/js/world-bowl.js:1715",
+   "game/js/world-bowl.js:1745"
   ],
   "coin": [
    "game/js/art.js:180",
@@ -1783,7 +1783,7 @@
    "game/js/walk/effects.js:672",
    "game/js/walk/effects.js:780",
    "game/js/walk/fountains-weather.js:517",
-   "game/js/world-bowl.js:4075"
+   "game/js/world-bowl.js:4081"
   ],
   "moon": [
    "game/js/boot.js:167",
@@ -1794,7 +1794,7 @@
    "game/js/logic/bowl-things.js:139",
    "game/js/logic/bowl-things.js:154",
    "game/js/logic/bowl-things.js:156",
-   "game/js/world-bowl.js:1515"
+   "game/js/world-bowl.js:1516"
   ],
   "paper": [
    "game/js/opening-fall.js:922"

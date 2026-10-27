@@ -207,6 +207,7 @@ expose({
   worldBowlMixRgb: [() => worldBowlMixRgb],
   worldBowlModelInto: [() => worldBowlModelInto, v => (worldBowlModelInto = v)],
   worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
+  worldBowlName: [() => worldBowlName, v => (worldBowlName = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
@@ -3452,6 +3453,11 @@ function worldBowlShadowUniforms(U, g) {
   if (sh) gl.uniformMatrix4fv(U.uSM, false, sh.SM);
   gl.activeTexture(gl.TEXTURE0);
 }
+/* WM-6: a place's name on the map: a run's route-like place by its route number ("Route 3", as its signs read:
+   logic/run-scenes.js runRouteNumbers), a town and every other place by its name */
+function worldBowlName(l) {
+  return l && l.routeNo ? `Route ${l.routeNo}` : (l && l.name) || '';
+}
 /* the bowl seen from any eye, for the opening fall: the ground and the sky, no pins */
 export function worldBowlFilm(view, t) {
   worldMapWidth = view.W;
@@ -3558,9 +3564,9 @@ function worldBowlOverlay(t) {
       c.textBaseline = 'bottom';
       c.lineWidth = 3.5;
       c.strokeStyle = 'rgba(20,14,30,.75)';
-      c.strokeText(l.name, top.x, y);
+      c.strokeText(worldBowlName(l), top.x, y);
       c.fillStyle = locked ? '#cfc8d8' : '#fff8e8';
-      c.fillText(l.name, top.x, y);
+      c.fillText(worldBowlName(l), top.x, y);
     }
   });
   /* the airship on its way, or you standing at your place */
