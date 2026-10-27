@@ -289,8 +289,14 @@ export const AMBIENCE_BEDS = {
       {
         noise: 'pink',
         gain: 1,
-        filters: [['bandpass', 2400, 0.8]],
-        drift: [{ on: 'gain', base: 1, depth: 0.15, min: 0.3, max: 1.5, tau: 0.3 }],
+        filters: [
+          ['bandpass', 1300, 0.6],
+          ['highshelf', 3500, 0.7, -8],
+        ],
+        drift: [
+          { on: 0, base: 1300, depth: 0.25, min: 0.3, max: 1.2, tau: 0.3, oct: true },
+          { on: 'gain', base: 1, depth: 0.15, min: 0.3, max: 1.5, tau: 0.3 },
+        ],
       },
     ],
   },
