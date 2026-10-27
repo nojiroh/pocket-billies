@@ -872,7 +872,6 @@ export interface Rules {
     /** the starters' line ids */
     starters: DataId[];
     starterLevel: number;
-    starterEgg: number;
     starterEncounters: number;
     /** your starter's line -> the rival's species */
     rival: Record<DataId, SpeciesId>;
@@ -907,8 +906,6 @@ export interface Rules {
     slots: number;
     mythOdds: number;
     mythSpecies: SpeciesId;
-    dropChance: number;
-    dropTiers: Record<string, number>;
   };
   battle: {
     stab: number;
