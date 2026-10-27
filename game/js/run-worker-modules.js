@@ -5,5 +5,6 @@
    places it makes equal to the page's. */
 import './game-data.js';
 import './logic/water-gen.js';
+import './logic/arena-gen.js';
 export { runScenesSlices } from './logic/run-scenes.js';
 export { runWorldData } from './logic/run-world-data.js';

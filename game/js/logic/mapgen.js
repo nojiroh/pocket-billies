@@ -18,6 +18,10 @@
 import { expose } from '../test-globals.js';
 import {
   WATERGEN_SHALLOW_PROP,
+  arenaGenGround,
+  arenaGenParams,
+  arenaGenProps,
+  arenaGenPublish,
   waterGenCarve,
   waterGenClimbs,
   waterGenFalls,
@@ -477,6 +481,9 @@ export function mapgenParams(p) {
     P.layout = MAPGEN_LAYOUT_DIALS.layout;
   /* RT-3: how many set pieces, kept only when given (whole, 0-6) */
   if (P.pieces !== undefined) P.pieces = mapgenBetween(Math.round(+P.pieces || 0), 0, MAPGEN_PIECES_MOST);
+  /* WM-7: a leader's arena (logic/arena-gen.js), kept only when given */
+  if (P.arena !== undefined) P.arena = arenaGenParams(P.arena);
+  if (P.arena === undefined) delete P.arena;
   /* RL-14: the kind of place (a run's scrapyard) set pieces may favour, kept only when given */
   if (P.site !== undefined && (typeof P.site !== 'string' || !/^[a-z][a-z0-9_]{0,23}$/.test(P.site))) delete P.site;
   if (mapgenLaidOut(P)) {
@@ -4476,10 +4483,12 @@ export function mapgenBuild(P, ctx, aim) {
   mapgenStageEdgeGround(G);
   mapgenStageTown(G);
   mapgenStageLots(G);
+  arenaGenGround(G); /* WM-7: a leader's arena: the ring raised on the road (logic/arena-gen.js) */
   /* RT-3: a laid-out place with a pond gets a jetty when a set piece wants one (the fishing jetty) */
   if (mapgenLaidOut(P) && P.pieces > 0 && G.pond && !G.jetty && mapgenPiecesWant(P, ctx.setPieces, 'jetty'))
     mapgenJetty(G, true);
   if (mapgenLaidOut(P)) mapgenStageLayout(G, aim);
+  arenaGenProps(G); /* WM-7: its fence, posts and dressing (logic/arena-gen.js) */
   mapgenStagePlants(G);
   mapgenStageProps(G);
   mapgenPinSides(G, 6);
@@ -4550,6 +4559,7 @@ export function mapgenBuild(P, ctx, aim) {
     const hab = mapgenHabitats(G, sc, walk);
     if (hab) sc.habitats = hab;
   }
+  arenaGenPublish(G, sc); /* WM-7: scene.arena, and no spot left on it (logic/arena-gen.js) */
   waterGenClimbs(sc, ctx.scenery); /* WA-2b: which falls the Waterfall field move climbs (logic/water-gen.js) */
   waterGenReeds(G, sc); /* WA-5a: a reed or two in a marsh hides an item (logic/water-gen.js) */
   sc.gen = { v: MAPGEN_VERSION, params: P, seed: P.seed };

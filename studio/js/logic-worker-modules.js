@@ -8,6 +8,7 @@
    bundles this file into one (vite.config.js), with the one hooks.js its modules share. */
 import './logic-worker-page.js';
 import '../../game/js/game-data.js';
+import '../../game/js/logic/arena-gen.js';
 import '../../game/js/logic/art-refs.js';
 import '../../game/js/logic/art-search.js';
 import '../../game/js/logic/augments.js';
