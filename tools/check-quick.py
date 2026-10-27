@@ -46,9 +46,10 @@ CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Ma
 # over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
 BLUR_BUDGET = 3
 BLUR_CEILING = {'map': 10, 'shop': 5}
-# UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps; set from
-# UI-15's counts, lowered when a screen sheds pieces
-ELEMENT_CEILING = {}
+# UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
+# a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
+# battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in
+ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 28, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
