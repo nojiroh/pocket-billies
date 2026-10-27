@@ -118,7 +118,10 @@ test('every run town has a street, a square with the clinic and the shop on it, 
       }
       /* the houses: shut (no act, no room of their own), facing the camera, each a walk from the hub */
       const houses = sc.props.filter(p => HOUSE.test(p.k));
-      assert.ok(houses.length >= 3 && houses.length <= 7, `${where}: ${houses.length} houses`);
+      /* WM-3b: a town whose way on leaves north (WM-3) has that road on the houses' side: 2 at least (TW1F node 4;
+         WM-5 grows town streets anew) */
+      const fewest = sc.gen.params.ahead === 'N' ? 2 : 3;
+      assert.ok(houses.length >= fewest && houses.length <= 7, `${where}: ${houses.length} houses`);
       if (houses.length >= 4) four++;
       for (const p of houses) {
         const M = C.props[p.k];
@@ -129,9 +132,18 @@ test('every run town has a street, a square with the clinic and the shop on it, 
         assert.ok(G.mapgenReached(reach, p.x + dx, p.z - 0.55), `${where}: ${p.k}'s door step can't be walked to`);
       }
       assert.ok(sc.tiles.join('').includes(B.ground.tall), `${where}: tall grass`);
-      /* south of the road (the camera's side): a fenced vegetable plot in farm soil */
+      /* south of the road (the camera's side): a fenced vegetable plot in farm soil. WM-3b: south of the road where
+         the plot stands, not of the square: a road that comes in from the south (WM-3) can leave no room 8 m south
+         of the square, and the plot goes beside the road further on (TW1E node 10) */
+      const road = (sc.edgeExits || []).flatMap(e => (e.path ? G.mapgenResample(e.path, 0.5) : [])),
+        roadBy = (/** @type {any} */ p) =>
+          road.reduce((a, q) => (Math.hypot(q[0] - p.x, q[1] - p.z) < Math.hypot(a[0] - p.x, a[1] - p.z) ? q : a));
       assert.ok(
-        sc.props.some(p => p.k === 'planter_box' && p.z < sq.z - 8 && tile(p.x, p.z) === 'o'),
+        sc.props.some(p => {
+          if (p.k !== 'planter_box' || tile(p.x, p.z) !== 'o') return false;
+          const q = roadBy(p);
+          return q[1] - p.z >= 3 && Math.abs(q[0] - p.x) < q[1] - p.z;
+        }),
         `${where}: a vegetable plot south of the road`
       );
       assert.deepEqual(G.mapgenUnreachable(sc, C), [], where);
