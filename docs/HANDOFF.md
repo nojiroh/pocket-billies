@@ -2,6 +2,19 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track fixes - the early debug-log hook, the helper-thread check - 2026-10-27
+Branch `ccr-3df446bb-9jvdvq`. Both found by the cutscenes session (ccr-517fcc1e-p1asai), which merged this branch and
+took LD-5's walk grid and world map prewarm (its own HANDOFF entry and the plan's LD-5 say how).
+- boot.js: LD-0's early `debugLog.hook()` could run before debug-log-names.js had filled GAME (unbundled, each module
+  script is a task of its own), logging "no function render to wrap" and failing check-fast steps under two
+  browsers. It now hooks only once `render` is in GAME, else at DOMContentLoaded (after every module script), and again
+  (a no-op when done) when the loader is ready.
+- check-fast "The run's places from the helper thread": the boot's places may be made at once (`runWorldSync`, when the
+  fixture's save is swapped in) rather than on the thread, so the step now asks that the thread is on and makes places
+  equal to the page's, and reports where the boot's came from. `runWorld.how` says 'page at once' for that path.
+- Verified: unit tests 1371 pass; check-fast `--only=packing,bowl,helper,boots,debug,world` 8 of 8 (two browsers);
+  smoke 6 of 6.
+
 ### Load track LD-5 (in part) - one frame budget; the moves measured - 2026-10-27
 Branch `ccr-3df446bb-9jvdvq`. No look changes; models and buildings may take a frame or two longer to turn from their
 pictures into solids in a busy frame.
