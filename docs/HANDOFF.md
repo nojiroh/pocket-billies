@@ -71,6 +71,26 @@ win only, while the chapter is 1**; **the join intro on the battle stage**. Tag 
   - The boss parts have placeholder art only; `robots.json` art pictures would replace them.
 - Next: tag `rl-14b-done` (the owner's); RL-16 (content packs) is the roguelite track's next session; the Studio has
   no editor for `bosses.json` yet (RL-16's generic editors).
+### Water track - the hub island's golden test: hand patches marked (islandGen.patched) - 2026-10-27
+Branch `track/water` (main merged in first, twice: a fast-forward, then 3 commits). The owner's pick ("Patched marker",
+asked when PR #253's `lint` job failed). Not a numbered session: the docs fix that found WA-6a and WA-6b done (the
+table had not been updated), WA-11 (the hub island's fall) scheduled before WA-8, and this test fix.
+- Found: `npm run test:slow`'s "the game's island is the generator's own output" (island-gen.test.mjs) has failed on
+  main since WA-10's `3332015` (the pond outflow patched by hand; bisected). The HB-10a to 10c square patches add to
+  it (tiles 98 cells, heights 644 corners, spots, streams, plots, landmarks). Main's own Check runs were cancelled, so
+  nobody saw it; WA-10 ran `npm test` (quick), not the slow set.
+- Changed: `islandGen.patched` (map.schema.json): a list of the hand patches run on the generator's output. With it,
+  the test still checks `w`, `h`, `steps`, `stepm`, `island`, `zones`, `grassPatches`, the bridges and the orbit, and
+  skips `tiles`, `heights`, `spots`, `streams`, `plots` and `landmarks`. Copperleaf's list: water --river, WA-10's old
+  water --square, square --outline, --fountain, --edges, --hub, --folk. `patch-copperleaf-water.mjs --river` adds
+  its own tag; a rebuild (build-island writes a fresh islandGen) clears the list.
+- For the hub track (its file, not edited here): `patch-copperleaf-square.mjs` could add its tag the same way
+  (`M.islandGen.patched = [...new Set([...(M.islandGen.patched || []), 'square --x'])]`); the list is already set, so
+  nothing breaks meanwhile. HB-10f's reproducible rebuild clears it.
+- Verified: lint, typecheck, `npm test`, `npm run test:slow` 89/89 (was 88/89), check:data, check:modules,
+  format:check, `check:smoke` 6/6 (Playwright 1.63.0).
+- Next: WA-11 (the hub island's fall), then WA-8 alone.
+
 ### Air track AIR-3 - the lit march: the light-in-air march reads the fog grid - 2026-10-27
 Branch `track/air` (main merged in first; a HANDOFF conflict, both sides' entries kept). Plan Mode, approved ("Sounds
 good": the plan's recommendations taken as the owner's answers, written into the plan's asks): **no fog in battles**
