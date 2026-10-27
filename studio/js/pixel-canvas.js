@@ -273,13 +273,21 @@ export function artSteps(list, parts) {
   historyArtGroup(studioState, steps, parts);
   updateTopBar();
 }
-/* SA-2b: a text file changed (from `before`, null when new, to `after`): marked unsaved and a step of the undo */
-export function textStep(path, before, after) {
+/* SA-2b: a text file changed (from `before`, null when new, to `after`): marked unsaved and a step of the undo.
+   `parts`: the data as it is now (snapshotParts), when the change changed data too (an atlas key renamed where the
+   data names it); the data's change since the last step is then undone with it */
+export function textStep(path, before, after, parts) {
   const step = historyTextStep(path, before, after);
   if (!step) return;
   markText(path, after);
-  commit(true);
-  historyArt(studioState, step);
+  if (parts) {
+    clearTimeout(studioState.snapT);
+    studioState.snapT = null;
+    historyArtGroup(studioState, [step], parts);
+  } else {
+    commit(true);
+    historyArt(studioState, step);
+  }
   updateTopBar();
 }
 function artStepOf(path, before, after) {

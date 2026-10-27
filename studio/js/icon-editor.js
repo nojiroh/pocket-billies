@@ -101,7 +101,7 @@ async function iconEditOpen(name) {
   } catch (e) {
     return toast('Could not load ' + iconPath(name), 'err');
   }
-  Object.assign(artBrowser, { icon: name, tiles: false, edit: '', sel: iconPath(name), at: 'ui', q: '' });
+  Object.assign(artBrowser, { icon: name, tiles: false, atlas: false, edit: '', sel: iconPath(name), at: 'ui', q: '' });
   Object.assign(iconEd, { draft: null, pc: null, canvas: null });
   if (studioState.sec !== 'art') openSection('art');
   else render();

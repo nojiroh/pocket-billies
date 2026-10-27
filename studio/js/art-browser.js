@@ -9,7 +9,7 @@
    Studio's undo), Replace, Download and Open in its editor. Ctrl K finds art files (find.js). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { iconReplace, provide, tileSetOpen } from '../../game/js/hooks.js';
+import { atlasOverlay, iconReplace, provide, tileSetOpen } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { artURL } from '../../game/js/art.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
@@ -117,6 +117,8 @@ export const artBrowser = {
   tiles: false,
   /* SA-2b: the icon being edited (icon-editor.js), shown in this section's place; '' none */
   icon: '',
+  /* SA-2b: the icon atlas's rectangles (atlas-editor.js) in this section's place */
+  atlas: false,
   /* SA-2a: where Done goes back to when another editor opened the painter: { label, fn } */
   from: null,
   more: 0,
@@ -414,7 +416,7 @@ function detailHTML(path, ix) {
   <p class="mono ab-path">${escapeHtml(path)}</p>
   <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
   ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}
-  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
+  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button><button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
 function gridHTML(ix) {
@@ -561,6 +563,7 @@ async function artDetailNotes(path) {
 ACTIONS.abGo = d => {
   artBrowser.tiles = false;
   artBrowser.icon = '';
+  artBrowser.atlas = false;
   artBrowser.from = null;
   artBrowser.at = d.at || '';
   artBrowser.more = 0;
@@ -632,6 +635,7 @@ function artBrowserShow(path) {
   artBrowser.edit = '';
   artBrowser.tiles = false;
   artBrowser.icon = '';
+  artBrowser.atlas = false;
   artBrowser.from = null;
   openSection('art');
 }
@@ -669,7 +673,7 @@ ACTIONS.abEditDone = () => {
 };
 /** SA-2a: another editor's Edit pixels: the painter on a picture (art/...), and Done goes back with `back`
  * ({ label, fn }) */
-async function artPaint(path, back = null) {
+export async function artPaint(path, back = null) {
   try {
     await atlasGet(path);
   } catch (e) {
@@ -679,6 +683,7 @@ async function artPaint(path, back = null) {
   Object.assign(artBrowser, {
     tiles: false,
     icon: '',
+    atlas: false,
     edit: path,
     sel: path,
     at: artFolderOf(path),
@@ -699,6 +704,8 @@ function mountArtPixels() {
   const P = pixelCanvas(st, {
     get: () => loadedAtlas(path),
     path: () => path,
+    /* SA-2b: the icon atlas's rectangles over its sheet */
+    overlay: path === 'art/icons/icons.png' ? () => atlasOverlay() : undefined,
     tool: artBrowser.tool,
     color: artBrowser.color,
     changed: () => markArt(path, loadedAtlas(path)),
