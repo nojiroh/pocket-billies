@@ -1011,16 +1011,14 @@ body.battle-3d #camFg {
   padding: var(--s1) var(--s2) var(--s1);
   border: 0;
   border-radius: var(--r-xs);
-  background: rgba(16, 10, 32, 0.62);
+  background: var(--bt-glass);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.14),
     0 6px 16px rgba(0, 0, 0, 0.28);
-  color: #f6f2ff;
+  color: var(--bt-ink);
   text-align: left;
   font: inherit;
   pointer-events: none;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   transition:
     opacity 0.25s,
     box-shadow 0.2s;
@@ -1111,9 +1109,6 @@ body.battle-3d #camFg {
   background: linear-gradient(90deg, #5ba8f0, #a8e8ff);
   transition: width 0.8s;
 }
-.bplate.me {
-  background: rgba(14, 22, 40, 0.62);
-}
 .bplate.cur {
   box-shadow:
     0 0 0 2px #f4c542,
@@ -1164,10 +1159,8 @@ body.battle-3d #camFg {
   gap: var(--s1);
   padding: var(--s1) var(--s2);
   border-radius: var(--r-pill);
-  background: rgba(14, 20, 30, 0.62);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: #fff;
+  background: var(--bt-glass);
+  color: var(--bt-ink);
   font: 600 11px/1.2 var(--font, system-ui);
   white-space: nowrap;
   max-width: 92%;
