@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-3b - route layouts and trainers on any side, per-place times; WM-3 done - 2026-10-27
+Branch `claude/wm-3b-any-side` (from `track/worldmap` 7cd31f76, track/worldmap merged in again at the end), PR into
+`track/worldmap`. Planned in Plan Mode; the owner's answer: reword the town plot test now (WM-5 rewrites towns).
+- **Claims checked**: mapgen was already side-agnostic for the way on (`mapgenAhead`, the tall grass across it, the
+  pinches, the RT-1 layout plans and seams read `ahead` and `pin`); over 25 seeds 227 route places go on east, 66 north,
+  41 south, and every one has tall grass across its way on. **"The trainer facing a wall" was a bush**: all 6 of 561
+  trainers (25 seeds; 3 on places going north) looked into a hawthorn, bramble or berry bush that a set piece or the
+  plants put about 1 m in front of their spot after the spot was found.
+- route-trainers.js `routeWaySpot` (a place with no spot left; 0 of 561 trainers used it) takes the first exit on the
+  scene's `ahead` side, not the east one.
+- mapgen.js `mapgenSpotsFaceOpen` (after the set pieces, on the finished walk): a spot whose face finds no walkable
+  ground 1 m ahead (`MAPGEN_FACE_OPEN`) turns to the nearest open way, 15 degrees at a time, at most 90. Wall-facing
+  trainers 6 -> 0 of 561; route-trainer-spots' "faces a wall" is back to none. **MAPGEN_VERSION 23** (22 kept for
+  RT-4b: whichever merges second keeps the higher number and its note).
+- **Per-place times in the debug log**: `runScenesSlices`/`runScenesMake` fill an optional list, one
+  `[node, type, w, h, 'L' or '', ms]` a place (`RunPlaceTime`, Date.now in the logic); the helper thread sends it with
+  `done`, the page's slices and runWorldSync keep their own; `runWorld.places`, the log's `state.run.places`, and the
+  slowest place in the "a run's world in" line. Node types, sizes and ms only: no names, nothing of the save.
+- mapgen-town: track/worldmap's own fix for the plot (8c99940e: the road a few metres north of the plot at its own x)
+  kept at the merge, the same idea as this session's. **Found behind it** (failing on track/worldmap too, hidden by
+  the plot): TW1F node 4, a town whose way on leaves north, has 2 houses (the road takes the houses' side); the test
+  lets a town leaving north have 2 (3 otherwise). WM-5's to make better.
+- **Arenas, found re-running WM-7's checks** (both on track/worldmap too): check-fast's arena step failed: the run
+  fixture's first leader place (RL7FIXTURE node 3, way in and way on both on the south edge) had no spot on one
+  terrace, so the ring took the first spot that fits, where no barrier fits: no gate. arena-gen.js now takes a spot
+  its barrier fits before that fallback: leader places gated over 150 seeds 300 of 300 (296 before). And 3 leader
+  places in 300 (the ring about 13 m from a way in from the south) had no road before the ring for the trainers'
+  line, so their 3 required trainers got no spot: they now take ordinary route spots (route-trainers.js).
+- Tests: route-trainers (the fallback on a north road), route-trainer-spots (walls none; new: places going north or
+  south have tall grass across the way on, the plan's share, trainers reachable), run-world-real's HB-2 test (each
+  place timed: those six fields only), check-fast's Play this seed (the exported log's `run.places`). Remade on
+  purpose: rng's scene hash and run-start's snapshot (gen.v / mapgenV only).
+- **Found, not fixed**: a few laid-out places miss the 55-65% walkable band by more than 5 points, at the same rate
+  whichever way they go on (4 of 73 north/south, 7 of 157 east over 25 seeds; ledge drops and lanes most, lowest
+  32%); the new test holds the share at 15%. route-trainer-spots' RT-2 data carries no `arenas`, so its sweep has no
+  rings (the WM-7 test there does).
+- Verified: lint, typecheck, format, check:modules, check:data; unit tests quick tier 1477 pass; slow tier all but "the
+  game's island is the generator's own output" (fails on main too); check-fast's run pages 7 of 7 (the run's world,
+  the helper thread, waystations, the battle held, the arena, Blake, Play this seed with `run.places`: TESTSEED's
+  slowest place 128 x 64, 1341 ms headless); smoke passes (149 s); the full quick check 37 of 40 (1146 s). Its 3
+  problems fail the same on track/worldmap without this session's commits: Copperleaf's train_station "in the air",
+  "the town's shop has no Perk" (RL-8's mast run), and "Walking left and right" (room light here, the settings tabs
+  on the base run: it fails at a different point each time). Python Playwright 1.63 (the pin's 1.56 doesn't match
+  the container's Chromium).
+- **For the owner**: the leader's intro (route-sight.js, WM-7's new line) still says "Nobody goes east without beating
+  me" on places whose way on is north or south (the fixture's first leader goes on south); the hint was reworded in
+  d9e17e94, the intro not. A player-facing line, so left for you to word.
+- Next: WM-4b (merge this in; places' exits on any side are as before), WM-5 (town streets; the house floor above),
+  the owner looks at the debug log's `run.places` on the phone (the measurement WM-3's risk asked for).
+### Region map track WM-7 after WM-3 - the arena on any side - 2026-10-27
+No entry was written for these three commits (d9e17e94, 07c27a09, 5ebdcfb6, on `ccr-9477901d-w1h11w`, merged into
+`track/worldmap` with PR #248); written in WM-3b.
+- run.js and arenas.json's notes: the leader's hint says "the way on", not east.
+- arena-gen.js: the arena dial gets the exits that lead on (`on`, from run-scenes.js). The barrier is a straight line
+  or an L round a corner that keeps every way in on the ring's side and every way on past it, 6 m clear of every exit;
+  the ring stands where such a barrier fits, with room for its trainers, its roads crossing its rim square and on one
+  terrace where it can. Gate runs overlap the fence; fence pieces never stretched past 1.25 nor left a centimetre
+  apart. Over 300 leader places 296 were gated (35 of 80 at the merge before it). run-world-real's frozen dials
+  snapshot remade (the arena dial).
+- route-trainers.js `routeArenaLine`: the line before the ring from the way in (the scene's first exit) to the way on
+  (its second), on any side, out of water, at least 6 m apart (`ROUTE_ARENA_MIN`, 5 m from the way in on a short road).
+- Re-run in WM-3b on the new shapes (MAPGEN_VERSION 23): arena-gen, route-trainer-spots and run-world-real all pass
+  (21 tests). Over 150 seeds (WM3BARENA0-149): 300 leader places (237 going on east, 57 south, 6 north), all gated
+  after WM-3b's fix (296 before); 891 trainers in lines (189 on places going north or south), the other 9 on ordinary
+  spots (3 places with no room for a line, above).
 ### Region map track WM-4a (in part) - a run's places on the world map at their grid cells; fog - 2026-10-27
 Branch `ccr-9477901d-w1h11w`, from `track/worldmap` (made this session from WM-2's head, 5a1326a7; main since merged
 in, PR #243). The owner first chose to wait for WM-3, then asked to start now: WM-4a is the part that doesn't need WM-3;
