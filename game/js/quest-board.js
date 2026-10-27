@@ -22,6 +22,7 @@ import {
   favourTake,
   questArrive,
   questFill,
+  questKey,
   questOffer,
   questPay,
   questPayable,
@@ -41,6 +42,7 @@ expose({
   questListHTML: [() => questListHTML, v => (questListHTML = v)],
   questMarked: [() => questMarked, v => ((questMarked = v), provide({ questMarked }))],
   questOfferHere: [() => questOfferHere, v => (questOfferHere = v)],
+  questSlot: [() => questSlot],
   questTitle: [() => questTitle],
   questToasts: [() => questToasts, v => ((questToasts = v), provide({ questToasts }))],
   residentFill: [() => residentFill],
@@ -70,12 +72,14 @@ export function questData() {
 }
 /** the map node the player stands in (-1: none) */
 const questHere = () => (saveData.run && saveData.trip ? runMapNode(saveData.trip.node) : -1);
-/** this town's open offer (null: none, or taken) */
-function questOfferHere() {
+/** this town's open offer (null: none, or taken); WM-5: `slot` 1, a town's second giver's @param {number} [slot] */
+function questOfferHere(slot = 0) {
   const run = saveData.run,
     i = questHere();
-  return run && i >= 0 ? questOffer(run, i, questData()) : null;
+  return run && i >= 0 ? questOffer(run, i, questData(), slot) : null;
 }
+/** WM-5: which giver a person is (scene.people `quest`: 1 the first, 2 a town's second) @param {any} P */
+const questSlot = P => Math.max(0, ((P && P.quest) || 1) - 1);
 /** whether the giver shows a "!" (their offer is open); RS-2: the resident, while they can be met (not invited, their
  * favour not held, and offered here) @param {any} P the person */
 export function questMarked(P) {
@@ -84,7 +88,7 @@ export function questMarked(P) {
     const F = QUESTS.favours[P.resident];
     return !run.invited && !!F && (!F.kind || !!favourOffer(run, questHere(), P.resident, F, questData()));
   }
-  return !!(P && P.quest && run && questOfferHere());
+  return !!(P && P.quest && run && questOfferHere(questSlot(P)));
 }
 /** RS-2: a resident's line with their name filled in @param {string} line @param {string} id */
 const residentFill = (line, id) => line.replace(/\{name\}/g, (RESIDENTS[id] && RESIDENTS[id].name) || id);
@@ -138,9 +142,10 @@ export async function questGiverTalk(P) {
     i = questHere(),
     o = { name: P.name },
     say = QUESTS.say,
-    offer = questOfferHere();
+    slot = questSlot(P),
+    offer = questOfferHere(slot);
   if (!run || !offer) {
-    const done = run && run.quests && run.quests.took.includes(i);
+    const done = run && run.quests && run.quests.took.includes(questKey(i, slot));
     await talkLine(P.who, done ? say.taken : say.none, null, o);
     talkHide();
     return;
@@ -154,7 +159,7 @@ export async function questGiverTalk(P) {
   }
   await talkLine(P.who, say.take, null, o);
   const yes = (await talkChoose([{ text: 'Yes' }, { text: 'No' }])) === 0;
-  if (yes && questTake(run, i, offer, QUESTS)) {
+  if (yes && questTake(run, i, offer, QUESTS, slot)) {
     saveNow();
     if (typeof debugLog !== 'undefined') debugLog.add('run', `quest taken: ${offer.kind} (${offer.text})`);
     await talkLine(P.who, say.yes, null, o);

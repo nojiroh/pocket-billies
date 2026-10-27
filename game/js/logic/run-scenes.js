@@ -555,20 +555,32 @@ export function runTownLife(run, i, scene, data) {
 /** TW-3: a run town's quest giver (scene.people id 'quest', `quest: 1`: quest-board.js offers the town's quest),
  * from the node's own stream ('town|quest', so the locals' draws stay as they were): on the giver's spot by the notice
  * board (mapgen.js), a seeded townsfolk look and a name from run.town.names that none of the town's locals has. None
- * when the town has no board (its square didn't fit) @param {Run} run @param {number} i @param {any} scene
- * @param {RunWorldData} data */
+ * when the town has no board (its square didn't fit). WM-5: a town's (3 x 2) second giver on its second spot (id
+ * 'quest2', `quest: 2`: the town's second offer, run-quests.js questOffer slot 1), from its own stream ('town|quest2')
+ * @param {Run} run @param {number} i @param {any} scene @param {RunWorldData} data */
 export function runTownQuest(run, i, scene, data) {
   const T = data.rules.town,
-    at = (scene.spots || []).find((/** @type {any} */ s) => s.kind === 'giver');
-  if (!T || !at) return;
-  const rnd = rngFrom(runNodeSeed(run.seed, i), 'town|quest'),
-    taken = new Set((scene.people || []).map((/** @type {any} */ p) => p.name)),
-    names = T.names.filter(n => !taken.has(n));
-  if (!names.length) return;
-  const name = names[rnd.int(0, names.length - 1)];
-  scene.people = (scene.people || []).concat([
-    { id: 'quest', who: 'folk:' + rnd.int(1000, 99999), name, x: at.x, z: at.z, dir: 'down', lines: [], quest: 1 },
-  ]);
+    spots = (scene.spots || []).filter((/** @type {any} */ s) => s.kind === 'giver');
+  if (!T) return;
+  spots.slice(0, 2).forEach((/** @type {any} */ at, /** @type {number} */ k) => {
+    const rnd = rngFrom(runNodeSeed(run.seed, i), k ? 'town|quest' + (k + 1) : 'town|quest'),
+      taken = new Set((scene.people || []).map((/** @type {any} */ p) => p.name)),
+      names = T.names.filter(n => !taken.has(n));
+    if (!names.length) return;
+    const name = names[rnd.int(0, names.length - 1)];
+    scene.people = (scene.people || []).concat([
+      {
+        id: k ? 'quest' + (k + 1) : 'quest',
+        who: 'folk:' + rnd.int(1000, 99999),
+        name,
+        x: at.x,
+        z: at.z,
+        dir: 'down',
+        lines: [],
+        quest: k + 1,
+      },
+    ]);
+  });
 }
 /** RS-2: a run's resident standing in a town (scene.people id 'resident', `resident: <id>`: quest-board.js offers
  * their favour or their invite), on the first of the town's local spots nobody stands on (mapgen.js: the square's

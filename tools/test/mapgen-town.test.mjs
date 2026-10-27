@@ -398,3 +398,40 @@ test('WM-5: a town is sized by its cells, and the town dial asks for its houses,
   assert.equal(sc.props.filter((/** @type {any} */ p) => p.k === 'stall').length, 1);
   assert.equal((sc.spots || []).filter((/** @type {any} */ p) => p.kind === 'giver').length, 2);
 });
+
+test("WM-5b: an Expedition II run's last town is a 3 x 2 town: its market stall, two quest givers with names of their own, its houses and folk", () => {
+  const { runMapLength } = modules['run-map'];
+  let seen = 0;
+  for (const seed of ['WM5B1', 'WM5B2', 'WM5B3']) {
+    const run = newRun(seed, 2, G.MAPGEN_VERSION, START);
+    runMapStart(run, { ...MAP_DATA, rules: { ...R, map: { ...R.map, ...runMapLength(seed, R.map, 2) } } });
+    const made = /** @type {any[]} */ ([]);
+    run.map.nodes.forEach((node, i) => {
+      const { scene: sc, notes } = runSceneMake(run, i, made, WORLD_DATA);
+      made[i] = sc;
+      const want = runTownOf(run.map, i, WORLD_DATA);
+      if (!want || want.size !== 'town') return;
+      seen++;
+      const where = `${seed} node ${i}`;
+      assert.deepEqual(node.size, [3, 2], where);
+      assert.deepEqual(notes, [], where);
+      assert.equal(sc.w * sc.h, 6 * 64 * 64, `${where}: 192 x 128`);
+      assert.ok(sc.name.endsWith(' Town'), sc.name);
+      assert.equal(sc.town.size, 'town');
+      const givers = (sc.people || []).filter(p => p.quest);
+      assert.deepEqual(
+        givers.map(p => [p.id, p.quest]),
+        [
+          ['quest', 1],
+          ['quest2', 2],
+        ],
+        where
+      );
+      assert.notEqual(givers[0].name, givers[1].name, `${where}: two names`);
+      assert.equal(sc.props.filter(p => p.act === 'stall' && p.shop === runStallId(i)).length, 1, where);
+      assert.ok(sc.town.houses >= 10 && sc.town.houses <= 16, `${where}: ${sc.town.houses} houses`);
+      assert.ok(sc.folk >= 7 && sc.folk <= 10, `${where}: ${sc.folk} folk`);
+    });
+  }
+  assert.ok(seen >= 3, `${seen}: one town a run at least (two on a row of two)`);
+});
