@@ -73,6 +73,7 @@ expose({
   ambienceHit: [() => ambienceHit, v => (ambienceHit = v)],
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
   ambiencePreviewTick: [() => ambiencePreviewTick, v => (ambiencePreviewTick = v)],
+  ambienceStepPlay: [() => ambienceStepPlay, v => (ambienceStepPlay = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
   battleCry: [() => battleCry, v => (battleCry = v)],
@@ -129,7 +130,7 @@ export function setUpdateAmbience(v) {
   provide({ updateAmbience });
 }
 /* to-module: end */
-const soundEngine = {
+export const soundEngine = {
   ctx: null,
   master: null,
   mus: null,
@@ -211,7 +212,7 @@ function applyVolumes() {
 /* the first touch unlocks sound; the song that was asked for starts then. SND-1: any touch also wakes sound that
    stopped for something else, as iOS Safari does after a call or Siri (its state is then 'interrupted', not
    'suspended') */
-function unlockSound() {
+export function unlockSound() {
   if (!initSound()) return;
   /* SND-8a: the context's state changes for the debug log (iOS: 'interrupted' after a call or Siri) */
   if (!soundEngine.states) {
@@ -260,7 +261,7 @@ function synthKick(bus, t, v) {
 
 /* ---------- songs ---------- */
 /* SND-2: the songs' recipes are data (music.json songs) */
-const SONGS = MUSIC.songs;
+export const SONGS = MUSIC.songs;
 /* SND-2: the song plays on the tracker (audio/tracker.js); this keeps what was asked for (the first touch starts it) */
 /* SND-5: o as the tracker's play takes it ({ intro, hold, restart }: a battle's start) */
 export function music(name, o) {
@@ -325,8 +326,10 @@ function buskerSongNear(run, sc) {
   if (!c || Math.hypot(c.x - walkView.pl.x, c.z - walkView.pl.z) > K.near) return null;
   return squareBuskSong(saveData.meta.history, K.songs);
 }
-function musicSync() {
+export function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
+  /* SND-8a: the debug menu's Sound test is playing a song of its own */
+  if (soundEngine.test) return;
   if (soundEngine.jingle && performance.now() < soundEngine.jingle) return;
   /* SND-4: at night outdoors, the song's night version (logic/music-where.js songVariant); the switch crossfades */
   const st = musicState();
@@ -375,7 +378,7 @@ function musicParts(name) {
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
-function musicVariant(name, night) {
+export function musicVariant(name, night) {
   return songVariant(name, { night }, SONGS, null);
 }
 setInterval(() => {
@@ -456,28 +459,9 @@ export function soundEffect(name, o = {}) {
       });
       break;
     }
-    case 'step': {
-      /* SND-8a: each step a little different (its pitch and level), the feet a little left and right, the natural
-         grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep) */
-      soundEngine.foot = soundEngine.foot ? 0 : 1;
-      const S = ambienceStep(o.ter || 'g', ambience.rng || Math.random, soundEngine.foot);
-      /* SND-8a (the owner's pick, recommended): steps are the world's, on the World slider, not Sound effects */
-      const W = ambience.bus || F;
-      let dest = W;
-      if (c.createStereoPanner) {
-        const p = c.createStereoPanner();
-        p.pan.value = S.pan;
-        p.connect(W);
-        dest = p;
-        setTimeout(() => {
-          try {
-            p.disconnect();
-          } catch (e) {}
-        }, 1000);
-      }
-      for (const h of S.hits) ambienceHit(dest, t + h.at, h);
+    case 'step':
+      ambienceStepPlay(o.ter || 'g', t);
       break;
-    }
     case 'throw':
       synthVoice(F, { type: 'p25', freq: 600, t, dur: 0.18, vol: 0.06, slide: 2.4 });
       synthNoise(F, { t, dur: 0.15, vol: 0.05, hp: 3000 });
@@ -835,7 +819,7 @@ document.addEventListener(
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second
    bus carries the ambience (Settings → Sound → Ambience): birdsong by day, crickets and the odd owl at night, leaves
    in the wind near trees, a town's murmur, a cave's hum and a room's quiet with its clock ticking */
-const ambience = {
+export const ambience = {
   bus: null,
   amb: null,
   beds: {},
@@ -1011,12 +995,18 @@ function ambienceApply(T, pans, t) {
   }
 }
 /* SND-8a: the Sound Test and tools/check-sound.py --loudness play world sounds here as the game would: a list of
-   [kind, metres] (logic/ambience-sound.js ambiencePreview: a source at a distance, or a place's bed), and 'birds' (the
-   open country's) */
+   [kind, metres] (logic/ambience-sound.js ambiencePreview: a source at a distance, or a place's bed), 'birds' (the
+   open country's) and ['steps', 0, ground] */
 function ambiencePreviewTick(list, t) {
   if (!ambience.bus && !initAmbience()) return;
   ambienceApply(ambiencePreview(list), {}, t);
   if (list.some(([k]) => k === 'birds')) ambienceBirds(t, ['lark', 'lark', 'song'], false, 1, 0, 1);
+  /* footsteps ['steps', 0, ground], one every 0.35 s (walking) */
+  const st = list.find(([k]) => k === 'steps');
+  if (st) {
+    if (!ambience.stepAt || ambience.stepAt < t || ambience.stepAt > t + 1) ambience.stepAt = t;
+    for (; ambience.stepAt < t + 0.3; ambience.stepAt += 0.35) ambienceStepPlay(st[2] || 'l', ambience.stepAt);
+  }
 }
 /* SND-8a: a bed's sources start (each layer's noise from a random point of its loop) and stop */
 function ambienceBedStart(b, t) {
@@ -1125,6 +1115,12 @@ export function updateAmbience() {
   const c = soundEngine.ctx,
     t = c.currentTime,
     T = {};
+  /* SND-8a: the debug menu's Sound test plays its world sounds instead of the place's */
+  if (ambience.preview) {
+    applyAmbienceVolume();
+    ambiencePreviewTick(ambience.preview, t);
+    return;
+  }
   const walk =
     typeof walkView !== 'undefined' &&
     walkView.ready &&
@@ -1342,6 +1338,28 @@ function ambienceBirds(t, L, town, day, rain, thru) {
     if (Math.random() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
   }
   ambience.birdAt = end + ambienceBirdWait(r, town);
+}
+/* SND-8a: a footstep at time t: each a little different (its pitch and level), the feet a little left and right, the
+   natural grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep); on the
+   World bus (the owner's pick, recommended: steps follow the World slider, not Sound effects) */
+function ambienceStepPlay(ter, t) {
+  const c = soundEngine.ctx;
+  soundEngine.foot = soundEngine.foot ? 0 : 1;
+  const S = ambienceStep(ter, ambience.rng || Math.random, soundEngine.foot),
+    W = ambience.bus || soundEngine.fx;
+  let dest = W;
+  if (c.createStereoPanner) {
+    const p = c.createStereoPanner();
+    p.pan.value = S.pan;
+    p.connect(W);
+    dest = p;
+    setTimeout(() => {
+      try {
+        p.disconnect();
+      } catch (e) {}
+    }, 1000);
+  }
+  for (const h of S.hits) ambienceHit(dest, t + h.at, h);
 }
 /* SND-8a: a short hit of the beds' noise (brown under a low-pass, else pink), falling away as synthNoise's does;
    before the beds' noise exists, synthNoise itself */
