@@ -254,6 +254,9 @@ export const ENGINE_DEFAULTS = {
   /* HB-3: the hub's world map (the floating island): its lagoon and falls, and how much of the island's own detail it
      draws; the phone's fallbacks */
   worldMap: { lagoon: true, falls: 3, treeModels: true, treeFar: 0, fences: true, bridges: true },
+  /* characters track CH-2 (the spike): people as small 3D figures baked into pixel pictures (game/js/figures.js), off;
+     how many pixels a metre they are baked at, how many ways round, and their outline */
+  people: { figures: false, density: 32, yawSteps: 16, outline: true },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -1113,6 +1116,33 @@ export const ENGINE_SPEC = [
         'Tide',
         'bool',
         'On a sea coast the water comes in and goes out twice a day, covering the wet sand and leaving tide pools.',
+      ],
+    ],
+  ],
+  [
+    'people',
+    'People',
+    [
+      [
+        'figures',
+        'Figures (test)',
+        'bool',
+        'Characters track spike: you and the test maps’ mannequins drawn as small 3D figures baked into pixel pictures. Off: people as they are.',
+      ],
+      [
+        'density',
+        'Figure pixels a metre',
+        16,
+        64,
+        4,
+        'How fine the figures are baked: 32 matches the ground and props.',
+      ],
+      ['yawSteps', 'Figure turns', 8, 16, 8, 'How many ways round a figure is drawn (8 or 16).'],
+      [
+        'outline',
+        'Figure outline',
+        'bool',
+        'The dark plum outline round a figure, and inside it where one part stands in front of another.',
       ],
     ],
   ],
