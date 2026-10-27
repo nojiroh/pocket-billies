@@ -28,6 +28,7 @@ expose({
   DEX_ORDER: [() => DEX_ORDER],
   EVENTS: [() => EVENTS],
   FACTIONS: [() => FACTIONS],
+  FESTIVALS: [() => FESTIVALS],
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
@@ -454,6 +455,8 @@ export const RESIDENTS = /** @type {Record<string, import('../types/game-data').
   gameData.residents || {}
 );
 provide({ RESIDENTS }); /* to-module */
+/* hub track HB-10e: Copperleaf's festivals and market days (festivals.json; logic/festival.js, town-square.js) */
+export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData | null} */ (gameData.festivals || null);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 /** RL-12b: the reward pick's cards */

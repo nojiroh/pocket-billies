@@ -293,3 +293,37 @@ test('check-data: planted fossils (RO-3e)', t => {
     })
   );
 });
+
+test('check-data: planted festivals (HB-10e)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'festivals.json': FS => {
+        const F = FS.festivals;
+        FS.cur = 'money';
+        /* a milestone waiting on another festival; a date with an every; a market day with no every */
+        F.homecoming.when = 'festival:sprout_fair';
+        F.sprout_fair.every = 3;
+        delete F.market_day.every;
+        /* weeks that overlap; a day that doesn't exist */
+        F.longest_light.from = '03-24';
+        F.spire_supper.from = '02-30';
+        /* the square's day: a key of rules.json's own; slots out of order */
+        F.lantern_walk.day[0].k = 'market';
+        F.lantern_walk.day[2].from = 10;
+        /* wares: neither an item nor a coin, one that doesn't exist, one twice */
+        F.tenth_departure.stock[0] = { n: 1, price: 2 };
+        F.tenth_departure.stock[1].item = 'nosuchitem';
+        F.tenth_departure.stock[2] = { coin: 'step_pyramid', n: 1, price: 1 };
+        F.tenth_departure.stock.push({ coin: 'step_pyramid', n: 1, price: 1 });
+        /* a festival nothing is said for */
+        F.quiet = { ...F.market_day, kind: 'market', every: 4, name: 'Quiet day' };
+      },
+      'banter.json': B => {
+        B.sq_fest_market2.when = 'runs >= 1';
+      },
+      'maps/copperleaf.json': M => {
+        M.props.find(p => p.when && p.when.startsWith('festival:')).when = 'festival:nosuchfestival';
+      },
+    })
+  );
+});

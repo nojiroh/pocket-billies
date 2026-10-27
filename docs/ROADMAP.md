@@ -210,7 +210,11 @@ town node needs it.
   festivals, then a reproducible town rebuild) planned 2026-10-26 as HB-10a-f; HB-10a (the 10 m lobed square, the fountain) done 2026-10-26 on
   `ccr-144f3c08-vf09lo`; HB-10b (the edges and market, string lights, fireflies, the lit fountain) done 2026-10-26 on
   `track/hub`; HB-10c (the square's people by time of day, 6-10 drawn by the Engine's townFolk, ranch Billies
-  visiting) done 2026-10-26 on `track/hub`; HB-10d next. Tags `hb-N-done`. Branch `track/hub`.
+  visiting) done 2026-10-26 on `track/hub`; HB-10d (win bunting, loss gossip, the fountain's Chapter 2 look, the
+  notice board, the fountain's coin gamble, the busker's slot) done 2026-10-27 on `track/hub`; HB-10e (festivals: four
+  seasonal weeks by the ranch clock, two milestones, a market day every 3rd return, the festival market in Scrap) done
+  2026-10-27 on `track/hub`; HB-10f next. Tags
+  `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0
   (contract and test island) first and alone; then wave 1 (IS-1 orbit camera, IS-2 island generator, IS-3 sea all

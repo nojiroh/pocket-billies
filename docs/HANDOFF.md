@@ -307,6 +307,66 @@ win only, while the chapter is 1**; **the join intro on the battle stage**. Tag 
   - The boss parts have placeholder art only; `robots.json` art pictures would replace them.
 - Next: tag `rl-14b-done` (the owner's); RL-16 (content packs) is the roguelite track's next session; the Studio has
   no editor for `bosses.json` yet (RL-16's generic editors).
+
+### Hub track HB-10e: festivals - 2026-10-27
+Branch `track/hub` (main merged in twice: before HB-10d's entry, 69ac03a3, and after this session's work, f1e2c629).
+Plan given in Plan Mode; the owner answered the four questions (all the recommendations): four seasonal festivals and
+two milestones, a market day every 3rd return, the market in Scrap, looks, lines and stock only, HB-10d finished
+first. Tag to suggest: `hb-10e-done` (the owner pushes tags). Details: docs/phases/hub-track.md, "Done in HB-10e".
+- Changed: game/data/festivals.json (+ schema, types, `dataFestivals` in check-data and the Studio's Check);
+  `logic/festival.js` (Node-tested); `meta.fest` (validFest, no migration); the `festival:<id>` condition through a new
+  hooks seam `festivalToday` (town-square.js, by the ranch clock on the phone's calendar; tools/test/logic.test.mjs
+  lists the seam); the square's day per festival (`squareDayNow`, walk-view.js); banter.json `square_fest` (16 lines);
+  30 decorations (`FESTIVAL_DRESS`, tools/square-props.mjs, laid by `patch-copperleaf-square.mjs --edges`); the middle
+  stall `act: fest` (the festival market sheet); the notice board's Festivals section; a toast coming home to one;
+  the debug log's scene `festival`; island-shots.py `--festival=<id>`; the in-game full test's festival step.
+- Fixed on the way (own commit): tools/check-data-text.py treats a prop's `unless` as a condition like `when`:
+  HB-10d's fountain `unless: chapter >= 2` turned the PR's smoke job red.
+- Risky / check on the phone: the decorations stand on grass just outside the rim, and from the hub's camera only a
+  few show (pictures: `python3 tools/island-shots.py OUT --festival=lantern_walk --hour=21`); HB-9's look pass or
+  HB-10f's rebuild may want them nearer. The date: offline, a phone set ahead brings a festival early (the clock's
+  mark then holds it there); its market sells once per occasion either way. Northern seasons only. A festival's day
+  sends up to 0.9 of the folk out (the Engine's townFolk cap still holds). No Studio editor for festivals.json yet
+  (RL-16). How to see one now: the test globals' `festivalForce = {id: 'market_day'}`.
+- Verified (merged head f1e2c629): lint, typecheck, check:modules, format:check, check:data, check-data-text, build,
+  `npm test` 1497 of 1497, `npm run test:slow` 89 of 89 (main's island fix came in with the merge). Before the second
+  merge: smoke (check-quick --smoke) no problems; in-game full test whole: the new festival step passed; its failures
+  were the rooms' black screen and the grid after a room, as on main (HB-10d's entry). check-fast's "Behind things"
+  (red once on the PR's CI, "hidden where the player starts") passed alone twice here.
+- Next: HB-10f (the reproducible town rebuild, the store, inn and library fronting the square, the pinwheel entries),
+  then HB-9. PR #260 (track/hub to main) carries HB-10d and HB-10e.
+
+### Hub track HB-10d: the square's reactions and things to do - 2026-10-27
+Branch `track/hub`. Plan approved in Plan Mode with the owner's answers (the coin: 3 Scrap, once per return, 55% a
+small boon for the next run's first 3 places, 30% a joke, 10% a small curse for 2 places, 5% a big win; the fountain's
+look: colour and one piece; the busker: the slot and its hook only). The building session ended before this entry;
+it was written by the next session (HB-10e's) after merging main in (69ac03a3) and running the checks on the merged
+head. Tag to suggest: `hb-10d-done` on this entry's commit (the owner pushes tags). Details: docs/phases/hub-track.md,
+"Done in HB-10d".
+- Changed: win bunting (`pennant_line`, a new low-poly model, and two `flag_pole`s, `when: last:won`); the square's
+  folk cheer a win and gossip about a loss (banter.json `square_won` 6 and `square_lost` 11, `logic/square-talk.js`);
+  the fountain's Chapter 2 look (`fountain_ch2`, `when: chapter >= 2`; new scenery key `glowCol`); Copperleaf's
+  notice board (`act: hubnotice`, town-square.js); the fountain's coin (`act: wish`, `logic/fountain-wish.js`,
+  rules.json `square.wish`, `meta.wish`); the busker's slot (`busker_case`, the `busk` stop, `squareBusker`,
+  rules.json `square.busk`: the last run's region theme within 5 m once a resident with `busk: true` lives in town).
+  Tools: island-shots.py `--last=won|lost`, `--chapter=N`.
+- The merge with main: main renamed Hazel to Kappi; HB-10d's banter schema and game-data.d.ts said `hazel` and now
+  say `kappi`. `meta.wish` sits beside main's ON-2 `meta.boards`. The banter schema now lets a resident's id be a
+  `who` (RS-3); `square_won`/`square_lost` stay in its enum.
+- Risky / check on the phone: the bunting goes up the moment you come home from a win (props re-check every 0.2 s);
+  the coin's boon or curse joins the next run as an event boon (`run.enc.boons`, src `fountain`); a daily or weekly
+  (ON-2) returns before it in run-start.js, so the boon waits for your next ordinary run (checked on the merge). No busker
+  yet (RS-5). The coin uses the coin sound and a plop until the sound track replaces them.
+- Verified (merged head 69ac03a3): lint, typecheck, check:modules, format:check, check:data (2 old bridge warnings),
+  build, `npm test` 1478 of 1478. Full quick check (Python Playwright 1.63.0): 40 steps, 35 passed, 5 PROBLEMs:
+  - also red on main (rerun alone on main 2e74c89d's tree): Terraces "props in the air: train_station" (main moved
+    the station to face the sea); RL-8 "the town's shop has no Perk" and "room light" (red on main since HB-10b's entry);
+  - RT-2 "the pair talked but no battle started" and "Granny Juniper didn't say anything": passed alone on this head
+    and on main (load; Running and Actions sheet were over their boot budgets in the same run).
+  In-game full test whole (`--selftest`): the square's step passed; 2 failures, the same two on main's tree: a room
+  "isn't drawing (black screen): no frames in 3 s" (the barn here, a house on main) and "A room that opens in place:
+  the town's walking grid changed after the room" (236 cells here, 77 on main).
+- Next: the PR of `track/hub` (HB-10d) to main, then HB-10e (festivals; the owner's answers in hub-track.md).
 ### Residents track RS-4a - services, part 1: Mo's store and restock, Bertha's rumours and lunch, the room card - 2026-10-27
 Branch `track/residents` (main merged in twice: AIR-3 at the start, VFX-3 and #253 at the end). Plan Mode, plan
 approved. The owner's answers: the store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's

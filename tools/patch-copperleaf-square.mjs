@@ -15,7 +15,8 @@
 // carries on to the new one. The generator's square was level out to 12 m, so heights are untouched; plots, buildings
 // and props too. Replaces WA-10's `patch-copperleaf-water.mjs --square` (8 m).
 // --fountain: the fountain (a low-poly model, 1.75 m round) stands where the well stood; the signpost goes 4.5 m from
-// the middle on the side away from the lab, clear of the basin (build-copperleaf.mjs puts it there too).
+// the middle on the side away from the lab, clear of the basin (build-copperleaf.mjs puts it there too). HB-10d: with
+// its looks per chapter on the same spot (FOUNTAIN_LOOKS).
 // --edges: what stands round the rim (tools/square-props.mjs, which build-copperleaf.mjs uses too), laid again.
 // --hub: the hub's spot to squareHubSpot (a push up from it runs past the fountain), the walking checks' starts with it.
 // --folk: the town's folk (`folk`, kept by build-copperleaf.mjs on a rebuild): SQUARE_FOLK, the most the Engine's
@@ -26,7 +27,16 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { readGameData, ROOT } from './data-files.mjs';
 import { islandDress } from './island-dress.mjs';
-import { SQUARE_FOLK, SQUARE_R, moveHub, squareEdgeProps, squareHubSpot, squareRim } from './square-props.mjs';
+import {
+  FOUNTAIN_LOOKS,
+  SQUARE_FOLK,
+  SQUARE_R,
+  fountainLooks,
+  moveHub,
+  squareEdgeProps,
+  squareHubSpot,
+  squareRim,
+} from './square-props.mjs';
 
 const OLD_R = 12; /* the generator's square (paved and level out to here) */
 const STREET_HALF = 1.1; /* half a street's width (the island's paths are 2.2 m) */
@@ -96,7 +106,8 @@ const main = () => {
       l = Math.hypot(dx, dz) || 1;
     S.x = Math.round((sx + (dx / l) * SIGN_OUT) * 100) / 100;
     S.z = Math.round((sz + (dz / l) * SIGN_OUT) * 100) / 100;
-    notes.push(`the fountain at ${P.x}, ${P.z}; the signpost at ${S.x}, ${S.z}`);
+    M.props = fountainLooks(M);
+    notes.push(`the fountain at ${P.x}, ${P.z} (looks: ${FOUNTAIN_LOOKS.map(f => f[0]).join(', ')}); the signpost at ${S.x}, ${S.z}`);
   }
 
   if (args.includes('--edges')) {

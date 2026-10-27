@@ -118,9 +118,16 @@ export interface Meta {
   history: HistoryEntry[];
   /** RS-1: who lives in Copperleaf (residents.json id -> the run, by meta.runs, they moved in after) */
   residents: Record<string, number>;
+  /** HB-10d: the last coin tossed into the square's fountain (logic/fountain-wish.js): meta.runs then, the outcome's
+      id (rules.json square.wish), and `used` once its boon joined a run; null before the first */
+  wish: { at: number; out: string; used?: 1 } | null;
   /** ON-2: the last daily (day number) and weekly (week number) this save took off on: one attempt each
       (logic/daily.js) */
   boards: { d: number; w: number };
+  /** HB-10e: the festival market's sales on the latest occasion (logic/festival.js): the festival's id, its occasion
+      (the year a date festival began, or meta.runs) and how many of each ware (by its place in the stock) were
+      bought; null before the first */
+  fest: { id: string; at: number; got: Record<string, number> } | null;
   /** RL-14b: the bosses.json bosses beaten (the Voltron), by id: how many times; the first win gives its parts and
       plays its story script (logic/battle-rewards.js bossWin) */
   bosses: Record<string, number>;
