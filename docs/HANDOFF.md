@@ -47,6 +47,66 @@ last commit.
 - Next: the owner makes `track/characters` (from main, or from this branch before its PR merges). CH-1 (the bench and
   the facing fixes) starts there. Answer "Ask me before" 10 (mend or retire the sprite-sheet exporter) before CH-1.
 
+### UI track UI-10 - Part 2 planned: Living Semigloss (research, the colour code, palettes, a sampler) - 2026-10-27
+Branch `ccr-03a15a70-nd3yqu` (the session's own; `track/ui` holds UI-9b, PR #266). Main merged first (a fast-forward).
+Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game changed. Details: docs/phases/ui-track.md,
+"Part 2: Living Semigloss".
+- The owner's brief: keep the design, make it look and feel better; one design language; not cluttered; palette
+  samples; dynamic and alive; status effects and run pickups colour coded for at-a-glance reading; ideas welcome.
+- Changed: ui-track.md Part 2 (what the code does today with file refs, six rules, the colour code: channels and
+  families, five palettes and today's, alive, less clutter, sessions UI-11..UI-18, fits with other tracks, risks, Ask
+  me before, research); a ROADMAP line after the UI track's entry; a BRANCHES row.
+- The sampler (a private artifact the owner holds, nothing committed): https://claude.ai/artifact/89UBnLzgC5Uq99aytdb6SS.
+  60 real screens (battle, Team, walking in a run, the run map, the Perk pick; six palettes; light and dark) captured
+  headless at 390 x 844 on fixtures team, battle, run and relics, each palette applied after boot with
+  `applyUiTheme(theme, 'cand')`; backdrops with the UI hidden; mock screens of a battle turn, a run, rewards and Team;
+  the colour key; a colour-blind preview (Machado 2009 matrices as SVG filters); Animation Full / Calm / Reduced.
+- How the captures were made (for the next look tool): `node tools/build-data.mjs`; `pip install playwright==1.63.0`
+  (the pinned 1.56.0 can't find the container's chromium-1243); the game served by tools/browser_check.py `serve`;
+  with the walk view's frame tasks paused (`frameScheduler.tasks`) a palette shot takes 1-15 s instead of about 75 s
+  in SwiftShader, since the last frame stays on screen.
+- Found beyond the audit: the minimap takes the palette's hue (a purple palette gives a purple minimap); the real
+  battle shows Sandstorm as a gold chip with the bolt icon and Bag, Team and Run in green, blue and dark.
+- Where the plan was wrong (the review against the code caught it before writing): tools/build-ui-icons.py is retired
+  (SA-2b; the SVGs are the source); UI-9b was already built (#266); VFX-4 owns crits' impact frame (#257); Settings
+  already has Animation, Theme, Flashes and High contrast rows (extended, not added); in-game type pills are already
+  darkened to 4.5:1 (the 3.2-3.8:1 figure was the gallery's own pills); the HP trail exists (`.ghost`); `count` runs in
+  pb-coin and pb-payout; confusion is a short effect, not a status.
+- Risky: the colour code's hexes and the five palettes are proposals checked by script (contrast; per-screen OKLab
+  distance with the types; colour-blind simulation), not yet seen on a phone. The sampler's proposed screens are HTML
+  copies of the kit, not the game. #266 edits ui-track.md, ROADMAP, BRANCHES and this file: whichever PR merges
+  second takes a small merge (Part 2 sits after Part 1, the ROADMAP line after the UI entry, the BRANCHES row at the
+  end of the Keep table, so only this entry should meet #266's).
+- Verified: `npm run lint` (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), `npm test` 1475 of
+  1475, `npm run check:data` (172 files fine; its one warning, test_props_island's bridge, is main's). The sampler
+  opened headless at 390 x 844 in light and dark: no page or console errors, no sideways scroll; a battle turn
+  played; every palette switched.
+- The owner's answers (after the sampler; Part 2, "The owner's answers"): Field Guide by default, with Field Guide,
+  Copper Grove+ and Bureau Night in a Settings Palette row; Brass & Plum and Sunpunk Day as Studio presets; angled
+  status tags; the family table, tinted glyphs and one-lightness types; all four battle changes; the icon fixes; Full
+  motion by default with Calm added, no Follow the sky; rarity as the loot colour ladder, not metal frames (its look
+  settled below); the new UI sounds; the Colour shapes switch.
+- The owner's second brief, the same day: "I want you to rethink the bottom nav bar. I want the map to be bigger. Ask
+  questions and give me examples. Rarities for perks and stuff should also be clearly color codes." Examples: "Bottom
+  Bar Options" (private artifact, nothing committed): https://claude.ai/artifact/RnTqYhcn9KbPrThvY6uZ8A. Four layouts
+  (a bigger tile, a Pocket screen, a corner map, a pull-up map) at true phone size over a real run screen, with the
+  real minimap captured headless in Field Guide (light and dark, 44 m and 72 m) and today's bar standing and walking;
+  four rarity looks and three top-tier colours on real Perks.
+- Answers (Part 2, "The bottom bar, rethought" and answers 9, 12-14): the bigger tile, the bar shrinking a little
+  while walking: a new session, UI-8b, first after #266. Then the owner's note on it: "The map should be bigger than
+  the frame when it's big and wider." Three takes were added to the same page (Wide, Wider, Big, the minimap captured
+  at each size), and the owner picked Wide: 232 x 184 px standing, about 60 px out of the bar's frame (the outline
+  loses its tower), 44 m top to bottom and about 55 m across; the 112 px square walking. Rarity as frame, pill and name colour: common grey #A5ACB2, uncommon green #4AB962, rare blue #629BFF,
+  mythical orange #F77036 (text shades checked 5:1 or more on the three player palettes), on Perks, held items,
+  Augments, Genes and Billie cards (UI-14a/b; the held items', Augments' and Genes' tiers are new, the owner's call).
+  The sampler's decided box and rarity cards were updated to match.
+- Risky (the bar): the wide tile uses about 25% of the screen standing (20% today) and 16% walking (11%), the home-bar
+  strip counted; the sizes are proposals for the phone check after UI-8b. The minimap draws 5 times a second at about
+  2.8 times today's pixels (unmeasured on a phone), and its marks grow with the tile's width.
+- Next: UI-8b (the wide tile) on `track/ui`, started 2026-10-27 in a new session at the owner's word (#266 merged);
+  then UI-11 (the colour code as data).
+- Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
+
 ### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
 Branch `track/ui` (the owner made it from main after UI-9a merged, PR #247; it replaces `ccr-30c007a6-eol40p` for UI
 work, BRANCHES.md updated; the track file now has `Branch: track/ui`). Main merged in once (AIR-3, VFX-3: no CSS).
@@ -97,51 +157,6 @@ and 8 px), finish every file this session, switch v05Grow on. A second question 
 - **Tags to push (sessions can't):** `ui-9b-done` on this entry's commit.
 - **Next:** the owner's phone check; then the old parts (now base.css's end) onto the kit screen by screen, and the
   39 layout values named, as later UI sessions.
-
-### Characters track CH-0 - the plan, with research - 2026-10-27
-Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
-Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
-last commit.
-- Changed:
-  - **docs/phases/characters-track.md** (new): the brief; the numbers; what the game has; the research with links;
-    the directions (A: classic 2D redrawn, B: 3D figurines, C: 3D-driven pixel puppets, recommended); C's risks; the
-    art direction; the animation set; sessions CH-0..CH-14 with a two-session spike (CH-2, CH-3) before the owner's
-    pick; Ask me before; key files; verification.
-  - ROADMAP (the track under "Tracks alongside"), BRANCHES (this branch).
-- The arithmetic (a 390×844 CSS phone, DPR 3, portrait; engine.json and Copperleaf's `cam {pitch 34, h 9, fov 1}`):
-  - Scene buffer: R = min(DPR, 1.75) × `quality.resolution` 1.5 = 2.625, cut by the 1.6 MP cap to 2.205, so
-    860×1861 (0.73 of the device grid), stretched to the screen with `image-rendering: auto` (walk-view-gl.js:513-524).
-  - Camera at Normal: tilt 34 − 8 = 26°; height 9 × 2.1 = 18.9 m; distance 18.9 / sin 26° = 43.1 m; width at the
-    aim max(11, 15 × 390/844) / 0.68 = 16.18 m (camera.js:269-306).
-  - 390 / 16.18 = 24.1 CSS px a metre; a 1.75 m upright person × cos 26° (0.899) = 37.9 CSS px, 39.3 with the
-    perspective (the feet nearer than the aim) = 118 device px = 86.5 buffer px.
-  - Today's art is 116.4 px tall (66.5 px/m): 86.5 / 116.4 = 0.74 buffer px per art px (0.80 across). The ground (32
-    px/m) is 1.66, props (34 px/m) 1.56. At 32 px/m a person is 56 px tall: 86.5 / 56 = 1.55.
-  - Close (0.55): 77 CSS px, 169 buffer px: 1.45 today, 3.0 at 32 px/m. Far (1.7): 20.5 CSS px, 45 buffer px: 0.39
-    today, 0.8 at 32 px/m.
-  - Battle: the player's trainer (1.42 m at 2.85 m, focal 170 stage px, about 1.74 CSS px per stage px) is about 147
-    CSS px = 442 device px: 3.8 device px per art px today; about 4.9 at 64 px/m.
-- Found, not changed (for CH-1):
-  - `leaveRoom` sets `P.dir` to `'right'`/`'left'` (walk-control.js:306): not frame keys, so the player faces down
-    after leaving a room.
-  - Facing ignores the camera's yaw: `directionOf` (walk-view.js:3508) works in world space, and frame-items.js
-    picks the view from it, so the orbit camera and turned rooms can show the wrong side.
-  - The director's dark and mirrored copies lose `ax`/`ay`/`ppm` (director.js:172-199), falling back to anchor
-    (16, 40) and 42 px/m.
-  - tools/export-trainer-sprite-sheets.py reads `game/data/gamedata.js` (gone) and `game/art/people/` (deleted in
-    SA-5), so its workflow will fail; docs/EDIT-TRAINER-SPRITES.md is stale.
-  - Stale leftovers: `ppm || 42` (person-art.js:790) and the "~20 KB" frame comment (person-art.js:370; a frame is
-    about 55 KB now).
-- Claims checked: ART-NOTES' 116 px figures, 3.4 heads and 66.5 px/m are right. The HD-2D audit's "people at 42"
-  is only that fallback.
-- The Studio's rule "spinning and jointed parts; no skinning" (studio-track.md, 2026-10-19) shapes C: figures are
-  rigid jointed parts.
-- Risky: nothing ships. The recommendation rests on CH-3's pictures and the owner's phone; the track file says when
-  A is the better choice.
-- Verified: each figure above traced to its code line by read-only searches; the research links opened or returned
-  by search; `git diff` reviewed. No game checks apply to a docs-only change.
-- Next: the owner makes `track/characters` (from main, or from this branch before its PR merges). CH-1 (the bench and
-  the facing fixes) starts there. Answer "Ask me before" 10 (mend or retire the sprite-sheet exporter) before CH-1.
 
 ### Studio art track SA-5 - unused art - 2026-10-27
 Branch `track/studio-art` (main merged first: 57 behind, 0 ahead, a fast-forward). Plan approved in Plan Mode. The
@@ -843,13 +858,21 @@ WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until 
 - Tests: mapgen-town.test.mjs rewritten by size (8 tests: the run towns as before with the size's houses; 72 fixed-size
   towns, exits east, north or south at either cell; south growth; the same seed; the dial). Snapshots remade on purpose:
   rng's scene hash (a route: only gen.v), run-start (mapgenV), run-world-real's frozen dials (the town road's shape).
-- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1476 pass; slow tier all pass but
-  "the game's island is the generator's own output" (fails on the track's head too); check-fast's run pages 10 of 11
-  (the town's life, quest and shop, the helper thread's places equal to the page's); smoke 6 of 6 (156 s). Headless
-  pictures from the Studio's Generate card at each size (the preview and top-down plans).
-- **Not mine, found failing on the track's head too**: check-fast "A leader's arena" (the fixture's mini-boss place has
-  no gates: `gates: []`; WM-7 after WM-3) and the Studio check's `--only=generate` (a fixed 0.8 s wait races the
-  draft under software drawing: 2 of 3 runs fail on the track's head; with a longer wait it passes here).
+- Verified: lint, typecheck, format, check:modules, check:data, build; unit tests 1476 pass; slow tier 99 of 99;
+  check-fast's run pages 11 of 11 (the town's life, quest and shop, the helper thread's places equal to the page's, the
+  leader's arena); smoke 6 of 6 (156 s). Headless pictures from the Studio's Generate card at each size (the preview
+  and top-down plans).
+- **Not mine, found failing on the track's head too**:
+  - Ported, so they pass here (each does nothing once the track has it): main's island test fix (PR #253, 62bc12f8:
+    the hand patches marked in `islandGen.patched`; the slow tier's "the game's island is the generator's own
+    output") and WM-3b's pick for a leader's ring (PR #263, aebaa60e: check-fast's "A leader's arena", where the
+    fixture's mini-boss place had no gate, `gates: []`).
+  - Still failing: check-fast's "The Studio's world map look" and "The Studio's Camera section" (404s for
+    `game/art/billionaires/*0.png`, legacy art SA-5 deleted; main's own fast check fails both the same way, no fix
+    yet), and the Studio check's `--only=generate` (a fixed 0.8 s wait races the draft under software drawing: 2 of 3
+    runs fail on the track's head; with a longer wait it passes here).
+  - CI's smoke on a slow runner (every step 1.5-2 times slower) once also failed "Behind things" (Copperleaf) and "A
+    run's world" (the walk from the landing into a route); both passed on the same commit in the other run and here.
 - Measured in Node: over 205 run towns the square fits in all but 1 (20 before: the dogleg); generator notes the same
   (2); a run town about 30 ms as before. Fixed sizes: hamlet about 55 ms, village 60-70, town 80-100 (max about 230),
   so a run gains roughly 0.1-0.3 s with its sizes in WM-5b (a phone about 3-5 times that, on LD-4's helper thread).
