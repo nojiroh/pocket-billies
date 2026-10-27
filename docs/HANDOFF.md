@@ -20,8 +20,9 @@ ui-track.md, "UI-12: the palettes". **Visible change: the whole UI's colours** (
     palette, so the Studio's live draft and fixtures don't reset it. The debug log's state: `palette` and `side`.
   - **minimap.js:** the grass and water mix the palette's `mapGrass`/`mapWater` into the surface (primary and the HP
     teal without them); the cache key includes the grass.
-  - **CSS:** alpha 0.5's 34 `rgba(46, 33, 64, a)` became `--c-shadow` mixes (the plan said 32; 36 matches, two of
-    them the fallback `--line`/`--g-sh` that the theme replaces anyway); `color: #2e2140` on gold became `--c-ink`;
+  - **CSS:** every alpha 0.5 `rgba(46, 33, 64, a)` became a `--c-shadow` mix (36 lines; the plan said 32; four of
+    them are base.css's fallback `--line`, `--lo`, `--g-sh`, `--g-sh2`, the first, third and fourth replaced by the
+    theme anyway); `color: #2e2140` on gold became `--c-ink`;
     `.pb.dark` is ink. XP: `--sig-growth-text` (base.css `.pbar.xpb`, pb-stat-bar) and `--sig-growth` on the
     always-dark battle plate, whose HP bar now uses the colour code's fills. ui-lint's colour ceiling 650 -> 613.
   - The gallery's look buttons: the five palettes. Tests: ui-theme (Field Guide, the fallbacks, the list, full checks
