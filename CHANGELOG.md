@@ -14,6 +14,11 @@ kept aside in the browser).
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)
   win a Gold, Silver or Bronze ribbon, shown on the Billie and the Trainer card. Only the look goes online; nothing of
   value moves. Report or block from any entry; three reports hide one until the moderator looks.
+- **Residents' services** (residents track RS-4a): a resident's service opens when they move in, and their room card
+  sells its next levels for Research. Mo Stockley opens the General store (Potions, Pretzels and Pyramids for
+  Research; more stock at Lv 2; at Lv 3, once a run, a run shop fetches a fresh stock). Bertha Brew's rumours show a
+  hidden place on the next run's map (Lv 1) and later the place that hides a side path (Lv 3); at Lv 2 she packs a
+  Pretzel for every run. Prices are first guesses.
 - **Daily and weekly runs, friends' boards and ghosts** (online track ON-2): Skyline Station offers today's daily run
   and this week's run (after your first run), the same for everyone: the same places, every unlock open, Blake
   meeting you fresh; only your first try counts. Signed in, each run you finish goes on your friends' boards on the

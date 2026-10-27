@@ -278,3 +278,31 @@ test('every catch item has its icons and its model; a missing or empty one is na
     ['pyramids.json', 'capstone: its model art/coins/capstone.json is not JSON'],
   ]);
 });
+
+test('RS-4: a resident’s service and its rows: one entry a level, one power level, names that exist, rows in order', () => {
+  let D = copy();
+  D.residents.mo.service.pop();
+  found('dataResidents', D, 'Lv 1 and 2 sold make 3');
+  D = copy();
+  D.residents.mo.service[0].power = true;
+  found('dataResidents', D, '2 power levels');
+  D = copy();
+  D.residents.bertha.service[1].items = { nosuchitem: 1 };
+  found('dataResidents', D, 'no item "nosuchitem"');
+  D = copy();
+  D.residents.mo.service[0].stock.push({ coin: 'nosuchcoin', price: 1 });
+  found('dataResidents', D, 'no pyramid "nosuchcoin"');
+  D = copy();
+  D.residents.mo.levels.reverse();
+  found('dataResidents', D, 'should grant {resident: mo, level: 2}');
+  D = copy();
+  D.unlocks.mo_3.requires = [];
+  found('dataUnlocks', D, "mo's level 3 requires the level below");
+  D = copy();
+  D.unlocks.mo_2.at = 'inn';
+  found('dataUnlocks', D, 'sold at their home (shop)');
+  D = copy();
+  D.unlocks.mo_dup = structuredClone(D.unlocks.mo_2);
+  found('dataUnlocks', D, "mo's level 2 is sold by mo_2 already");
+  found('dataResidents', D, "mo_dup raises their service but isn't listed");
+});

@@ -12,7 +12,7 @@
  * before each run.
  * @typedef {{ modules: Record<string, any>, fn: (name: string) => any, hooks: any, data: any, gameData: any,
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
- * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all',
+ * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all', residents?: 'none' | 'all',
  *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number,
  *   badges?: 'none' | 'all' }} SimOptions
  */
@@ -264,6 +264,14 @@ export function runSimOn(env) {
     /* Studio plan T2.1: started as the mast starts a run (logic/run-start.js), with what the save has unlocked: none (a
        fresh save, the default) or every unlock (unlocks: 'all') */
     if (o.unlocks === 'all') for (const id of Object.keys(UNLOCK_DATA.unlocks)) s.meta.unlocks[id] = 1;
+    /* RS-4: the residents: none (a fresh save, the default) or everyone with a service moved in at their top level
+       (residents: 'all'), so their power levels ride along as the takeoff gives them (logic/residents.js) */
+    if (o.residents === 'all')
+      for (const [id, r] of Object.entries(GAME_DATA.residents || {}))
+        if (/** @type {any} */ (r).service) {
+          s.meta.residents[id] = 1;
+          for (const u of /** @type {any} */ (r).levels) s.meta.unlocks[u] = 1;
+        }
     /* RL-R2b: the badges kept: none (a fresh save, the default: the side area stays shut) or every field move's
        (badges: 'all') */
     if (o.badges === 'all') for (const M of Object.values(MOVES)) s.meta.badges[fieldBadgeKey(M.type)] = 1;

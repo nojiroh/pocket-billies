@@ -1260,9 +1260,41 @@ export function dataResidents(D, valid = () => true) {
       problem(`${k}.home: no building "${at}" (buildings.json or Copperleaf)`);
     /* RS-3: their look is a person of the same id (people/<id>.json), in a run town and in Copperleaf */
     if (!people[k]) problem(`${k}: no look (people/${k}.json)`);
-    for (const u of /** @type {any} */ (r).levels)
+    /* RS-4: levels[i] is the row granting their service level i + 2 (Lv 1 comes with moving in) */
+    /** @type {string[]} */ (/** @type {any} */ (r).levels).forEach((u, i) => {
       if (!U[u]) problem(`${k}.levels: no unlock "${u}" (unlocks.json)`);
       else if (U[u].at !== at) problem(`${k}.levels: ${u} is sold at ${U[u].at || 'no building'}, not at ${at}`);
+      else if (!U[u].grant || U[u].grant.resident !== k || U[u].grant.level !== i + 2)
+        problem(`${k}.levels: ${u} should grant {resident: ${k}, level: ${i + 2}}`);
+    });
+    /* RS-4: one service entry per level (Lv 1 and each row), exactly one power level, and what it names exists */
+    const sv = /** @type {any[] | undefined} */ (/** @type {any} */ (r).service),
+      lvs = /** @type {any} */ (r).levels;
+    if (lvs.length && !sv) problem(`${k}.service: missing (they have levels to sell)`);
+    if (sv) {
+      if (sv.length !== lvs.length + 1)
+        problem(`${k}.service: ${sv.length} levels described, but Lv 1 and ${lvs.length} sold make ${lvs.length + 1}`);
+      const powers = sv.filter(L => L.power).length;
+      if (powers !== 1) problem(`${k}.service: ${powers} power levels (exactly one: half and half)`);
+      sv.forEach((L, i) => {
+        const at2 = `${k}.service[${i}]`;
+        for (const w of L.stock || []) {
+          if (w.item && !(D.items || {})[w.item]) problem(`${at2}.stock: no item "${w.item}" (items.json)`);
+          if (w.coin && !(D.pyramids || {})[w.coin]) problem(`${at2}.stock: no pyramid "${w.coin}" (pyramids.json)`);
+          if (!w.item === !w.coin) problem(`${at2}.stock: a ware is an item or a pyramid`);
+        }
+        for (const i2 of Object.keys(L.items || {}))
+          if (!(D.items || {})[i2]) problem(`${at2}.items: no item "${i2}" (items.json)`);
+        for (const [j, f] of (L.fx || []).entries()) {
+          if (!FX_KINDS.includes(f.kind)) problem(`${at2}.fx[${j}]: no effect kind "${f.kind}" (effects.js FX_KINDS)`);
+          if (f.mult != null && (f.mult < FX_LIMIT.lo || f.mult > FX_LIMIT.hi))
+            problem(`${at2}.fx[${j}].mult: ${f.mult} is outside ${FX_LIMIT.lo} to ${FX_LIMIT.hi}`);
+        }
+      });
+    }
+    for (const [u, row] of Object.entries(U))
+      if (row && row.grant && row.grant.resident === k && !(/** @type {any} */ (r).levels.includes(u)))
+        problem(`${k}.levels: ${u} raises their service but isn't listed`);
   }
   return out;
 }
@@ -1899,6 +1931,17 @@ export function dataUnlocks(D, valid = () => true) {
           problem('unlocks.json', `${k}: ${G.building} level ${G.level} is sold by ${levelRow[key]} already`);
         levelRow[key] = k;
       }
+      /* RS-4: a resident's service level is sold at their home (residents.json), once per level, after the level below */
+      if (G.resident) {
+        const r = (D.residents || {})[G.resident];
+        if (D.residents && !r) problem('unlocks.json', `${k}.grant.resident: no resident "${G.resident}"`);
+        else if (r && R.at !== r.home)
+          problem('unlocks.json', `${k}: a level of ${G.resident}'s service is sold at their home (${r.home})`);
+        const key = `resident:${G.resident}:${G.level}`;
+        if (levelRow[key])
+          problem('unlocks.json', `${k}: ${G.resident}'s level ${G.level} is sold by ${levelRow[key]} already`);
+        levelRow[key] = k;
+      }
       if (G.shop && !(G.shop in pick))
         problem('unlocks.json', `${k}.grant.shop: "${G.shop}" is not in rules.json run.shop.pick`);
       if (G.shop && always.includes(G.shop))
@@ -1907,7 +1950,7 @@ export function dataUnlocks(D, valid = () => true) {
         problem('unlocks.json', `${k}.grant.biome: "${G.biome}" is not in rules.json run.map.biomes`);
       /* T1.3: a currency it grants is one of currencies.json kept between runs (not a list in the schema) */
       for (const c of Object.keys(G))
-        if (!['building', 'level', 'shop', 'biome'].includes(c) && D.currencies)
+        if (!['building', 'level', 'shop', 'biome', 'resident'].includes(c) && D.currencies)
           if (!(D.currencies[c] && D.currencies[c].kept === 'meta'))
             problem('unlocks.json', `${k}.grant.${c}: "${c}" is not a currency kept between runs (currencies.json)`);
     }
@@ -1921,6 +1964,16 @@ export function dataUnlocks(D, valid = () => true) {
             `${k}: ${b} level ${n} requires the level below (${levelRow[`${b}:${n - 1}`] || 'none sold'})`
           );
       }
+    for (const [k, R] of Object.entries(U)) {
+      const G = R.grant;
+      if (!G.resident || G.level <= 2) continue;
+      const below = levelRow[`resident:${G.resident}:${G.level - 1}`];
+      if (!below || !(R.requires || []).includes(below))
+        problem(
+          'unlocks.json',
+          `${k}: ${G.resident}'s level ${G.level} requires the level below (${below || 'none sold'})`
+        );
+    }
     const seen = {},
       loop = (k, path) => {
         if (seen[k] === 2 || !U[k]) return;

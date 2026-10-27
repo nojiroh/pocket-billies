@@ -22,6 +22,7 @@ import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural, speciesStep } from './rules.js';
 import { RIVAL_TRAINER, ghostTeam, rivalTeam } from './rival.js';
 import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
+import { resRerolls } from './residents.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
@@ -56,10 +57,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runRelease: [() => runRelease, v => (runRelease = v)],
   runReleasePays: [() => runReleasePays],
+  runRerollsLeft: [() => runRerollsLeft],
   // @ts-expect-error -- replaced on purpose
   runSheetStatus: [() => runSheetStatus, v => (runSheetStatus = v)],
   // @ts-expect-error -- replaced on purpose
   runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
+  // @ts-expect-error -- replaced on purpose
+  runShopReroll: [() => runShopReroll, v => (runShopReroll = v)],
+  runShopRerolled: [() => runShopRerolled],
   // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
   runWareHeals: [() => runWareHeals],
@@ -120,7 +125,8 @@ export function runClinic(s, each) {
  * as shop stock rows ({item} or {coin}) @param {Run} run @param {number} i the map node @param {number} day
  * @param {{ always: string[], more: number, pick: Record<string, number> }} rule */
 export function runShopStock(run, i, day, rule) {
-  const g = rngFrom(runNodeSeed(run.seed, i), 'shop|' + day),
+  /* RS-4: a shop asked for a fresh stock that day draws from a stream of its own (runShopReroll) */
+  const g = rngFrom(runNodeSeed(run.seed, i), 'shop|' + day + (runShopRerolled(run, i, day) ? '|r1' : '')),
     out = rule.always.slice(),
     left = Object.fromEntries(Object.entries(rule.pick).filter(([w, n]) => n > 0 && !out.includes(w)));
   for (let k = 0; k < rule.more && Object.keys(left).length; k++) {
@@ -131,6 +137,19 @@ export function runShopStock(run, i, day, rule) {
   return out.map(w => (w.startsWith('coin:') ? { coin: w.slice(5) } : { item: w }));
 }
 
+/** RS-4: whether a run shop was asked for a fresh stock on that day @param {Run} run @param {number} i @param {number} day */
+export const runShopRerolled = (run, i, day) => !!run.reshop && run.reshop.includes(i + ':' + day);
+/** RS-4: the fresh stocks a run has left (Mo's service, logic/residents.js resRerolls, less those used)
+ * @param {Run} run @param {Record<string, any>} R residents.json */
+export const runRerollsLeft = (run, R) => Math.max(0, resRerolls(run, R) - (run.reshop || []).length);
+/** RS-4: ask a run shop for a fresh stock today: once a shop a day, while the run has one left; its `more` wares are
+ * drawn again (the always-stocked ones stay). Returns whether it was done @param {Run} run @param {number} i
+ * @param {number} day @param {Record<string, any>} R residents.json */
+export function runShopReroll(run, i, day, R) {
+  if (runShopRerolled(run, i, day) || runRerollsLeft(run, R) < 1) return false;
+  (run.reshop || (run.reshop = [])).push(i + ':' + day);
+  return true;
+}
 /** Studio plan T3.3: a run town's wares on a day as its shop opens them (shop.js openShop, and the run's simulation):
  * runShopStock with only the wares the run has unlocked (its copy, run.unlocks; RL-11)
  * @param {Run} run @param {number} i @param {number} day

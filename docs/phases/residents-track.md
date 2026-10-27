@@ -109,7 +109,8 @@ Guides and forum posts, not design papers: read as examples, not facts.
 | RS-1 | Data and save (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | `residents.json` + schema, type, `check-data.mjs` rule (home and level rows exist); `meta.residents` and `run.invited` in the validators; `logic/residents.js` (pure: the run's candidate from its seed, invite, settle at the run's end); the `resident:` condition kind; Node tests | none | 1 |
 | RS-2 | Meeting in a run (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | the favour from a run town's named local and one event; quest payout = invite; the payout screen's line; candidates in the Run Lab and the sim; an in-game test step | RS-1 | 1 |
 | RS-3 | Living in Copperleaf (done 2026-10-26, on `ccr-65e11839-9p92dx` at the owner's word) | residents as people at their buildings or cottages, door acts switched, the room card's upgrades, banter lines; the Studio's hub editor shows them | RS-1 | 1-2 |
-| RS-4 | Services and upgrades | the first four residents' unlock rows and effects (`run.fx`, shops.json stock), the headcount milestones; balance by the run sim | RS-2, RS-3 | 1-2 |
+| RS-4a | Services, part 1 (done 2026-10-27 on `track/residents`) | the service machinery (`{resident, level}` rows, Lv 1 free on moving in, `service` in residents.json, the takeoff), Mo and Bertha, the room card, the sim's `--residents` | RS-2, RS-3 | 1 |
+| RS-4b | Services, part 2 | Dottie and Gus, the headcount milestones, the in-game full test's step | RS-4a | 1 |
 | RS-5 | The rest of the roster | the other residents, request gates, the look pass on the phone | RS-4 | 1 |
 
 About 5-7 sessions. RS-2 and RS-3 can run side by side after RS-1 (different files; `copperleaf.json` is RS-3's only).
@@ -232,6 +233,48 @@ in first; the owner's answers: wardrobe looks; residents near their house or wal
   before rows can be sold there (unchanged from RS-1). Residents have no portraits yet (the talk box shows an empty
   face): RS-5's look pass.
 
+**Done in RS-4a** (2026-10-27, on `track/residents` from main 2e74c89d with AIR-3 merged in; the owner's answers: the
+store, inn and library charge Research; Lv 1 comes free with moving in; Dottie's power level is Lv 2 (Research at the
+payout x1.1) and Gus's Lv 3 (Augments break half as often); RS-4 in two sessions):
+- **Where the plan and the code differed:** `shops.json` is gone (SA-3; `SHOPS` is filled by a run's towns only).
+  Moneys are `kept: run` (reset at takeoff), so they can't pay hub upgrades. The store, inn and library weren't
+  buildings.json rows. The Workshop already sells 3 levels (SP-5), so a resident's service can't be its building's
+  level, and Gus's planned "part upgrades" duplicated `workshop_3`. Dr. Helix's home is `gene_bank` (the prop's `k`)
+  while the building is `genebank`: left for RS-5 (nobody can meet her yet). Building levels gave no run effects;
+  the pattern copied is RL-S2's `relTakeoff`. No `run.fx` exists (effects are built on demand by `fxOfRun`).
+- **Machinery:** buildings.json `shop` (General store), `inn`, `library` (Research, level 1). An unlocks.json grant
+  `{resident, level}` raises a resident's service: `resLevel(s, id, U)` is 0 until they move in, 1 then, else the
+  highest owned row (derived from `meta.unlocks`: no save change). `unlockReady` refuses such a row (`resident`) while
+  they don't live there. residents.json `levels` lists those rows (Lv 2, 3, ...) and `service` says what each level
+  does (`about`, `power`, `stock`, `reroll`, `rumour`, `items`, `fx`). Checks: a row sold at their home, once a
+  level, after the level below, listed in order; one service entry a level; exactly one power level; items, pyramids
+  and effect kinds that exist. The Studio's unlock editor knows the new grant.
+- **The takeoff:** `resTakeoff` (after `relTakeoff` in `runStartOn`; not on a daily or weekly) puts `run.res` (each
+  resident's level) on the run and their items in the bag; `resFxRows` joins `fxOfRun` (tagged `res:<id>`); validRun
+  takes `res`, `reshop` and `rumour`.
+- **Mo** (General store): Lv 1 the store opens in Copperleaf (`shop.js residentShop`, `res_mo`, registered when his
+  building is entered): Potions 15, Pretzels 8, Pyramids 30 Research, into the hub bag (packed into a run as before);
+  Lv 2 (100 Research) Hi-Potions 40, Full Remedies 32, Revives 60; Lv 3 (200, *P*) once a run a run shop fetches a
+  fresh stock (`run-loop.js runShopReroll`: its `more` wares drawn again from `shop|<day>|r1`, the always-stocked
+  kept; `run.reshop`). A shop with a `currency` is paid from `saveData.meta`.
+- **Bertha** (inn): Lv 1 a rumour at takeoff (`resRumour`): one hidden main place two rows on or more (an event,
+  stall, scrapyard, rival or mini-boss first) shown on the map, from the run's 'rumour' stream; Lv 2 (120, *P*) a
+  Pretzel in the bag at each takeoff; Lv 3 (150) the place hiding the side area shown and named, nothing opened.
+  `run.rumour`; the map card says "Bertha heard about this place." / "Bertha heard a side path starts here."
+- **Room card:** a resident's card shows their service level, what each held level does, "Tap the counter to shop"
+  where they sell, and only their own rows, bought there.
+- **Run sim:** `--residents=all` (everyone with a service at their top level). 1000 seeds in balance mode: no change
+  in wins (`--team=3 --lvl=20 --pack=5 --unlocks=all` 128 both; `--lvl=30 --fights=4` 264 both); Research at the
+  payout +3 a run. The bot drinks only Potions and never asks for a fresh stock, so neither power level reaches its
+  fights: their size is a judgement until played (a Pretzel is 35 HP once a run; one fresh stock is 2 wares redrawn).
+- Tests: new resident-services.test.mjs (takeoff, items, effect rows, Mo's stock, the restock, the rumours, validRun,
+  a daily takes none); residents (`resLevel`), unlocks (the refusal), data-checks (planted services and rows);
+  check-data snapshot remade on purpose twice.
+- **For RS-4b:** Dottie's and Gus's `service` and rows; Gus's rows are sold at the Workshop beside SP-5's (his card
+  lists only his; the Workshop's sheet lists every row `at` it, so check it); his Scrap trickle reads `resLevel` in
+  `ranch-income.js incomeRate`; the milestones are `when: "residents >= 3"` rows. The Lab board now has General
+  store, Inn and Library sections with their rows priced (bought only at the building).
+
 ## Ask me before (recommendation first)
 1. The roster's looks and lines (names approved in RS-1). **Looks answered in RS-3: wardrobe looks
    (people/<id>.json); portraits wait for RS-5. Lines: Claude's drafts in banter.json and quests.json, waiting for the
@@ -239,7 +282,9 @@ in first; the owner's answers: wardrobe looks; residents near their house or wal
 2. Pace: one invite per run (rec) / two; residents capped by the 10 cottages (rec: no cap, the building residents
    don't need one). **Answered in RS-2: one invite per run.** **Answered in RS-3: no cottage cap.**
 3. The player-facing word: **answered in RS-1: "residents"**.
-4. The power level's size per resident (RS-4 proposes numbers from the sim).
+4. The power level's size per resident (RS-4 proposes numbers from the sim). **RS-4a: the owner chose the power
+   levels (Dottie's x1.1 Research, Gus's fewer breaks); the sim can't see Mo's or Bertha's (the bot never uses
+   them), so their prices and sizes are placeholders until played.**
 
 ## Risks
 - **Copperleaf's data**: the island's ground is locked (IS-6a); residents only add people and change door acts.
