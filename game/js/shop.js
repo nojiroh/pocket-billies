@@ -87,7 +87,7 @@ export function residentShop(id) {
     name: (B && B.name) || r.role,
     keeper: r.name,
     who: id,
-    greeting: `Welcome to ${(B && B.name) || 'the shop'}! Everything’s priced in ${(CURRENCIES[(B && B.currency) || 'research'] || { name: 'Research' }).name}.`,
+    greeting: `Welcome in! Everything’s priced in ${(CURRENCIES[(B && B.currency) || 'research'] || { name: 'Research' }).name}.`,
     stock: resStock(saveData, id, RESIDENTS, UNLOCK_DATA.unlocks),
     res: id,
     currency: (B && B.currency) || 'research',
@@ -129,7 +129,8 @@ function shopHTML(id) {
         price = warePrice(sh, w, it),
         locked = it.need && seats < it.need,
         cost = price * n,
-        deal = price < it.base;
+        /* RS-4: a price in another currency is no deal on the Moneys one */
+        deal = !sh.currency && price < it.base;
       return `<div class="ware2 k-card${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
