@@ -10,23 +10,23 @@ const { runScript } = modules.script;
 const { conditionHolds, storyStateOf } = modules.conditions;
 
 const B = {
-  a_low: { who: 'hazel', priority: 1, script: ['Low.'] },
-  b_won: { who: 'hazel', when: 'flag_won', priority: 5, script: ['Won.'] },
-  c_won: { who: 'hazel', when: 'flag_won', priority: 5, script: ['Also won.'] },
-  d_once: { who: 'hazel', when: 'flag_first', priority: 2, must: true, once: true, script: ['First!'] },
+  a_low: { who: 'kappi', priority: 1, script: ['Low.'] },
+  b_won: { who: 'kappi', when: 'flag_won', priority: 5, script: ['Won.'] },
+  c_won: { who: 'kappi', when: 'flag_won', priority: 5, script: ['Also won.'] },
+  d_once: { who: 'kappi', when: 'flag_first', priority: 2, must: true, once: true, script: ['First!'] },
   e_cool: { who: 'chosen', priority: 3, cooldown: 2, script: ['Cool.'] },
   f_plain: { who: 'chosen', priority: 1, script: ['Plain.'] },
 };
 const holdsOf = (/** @type {Record<string, any>} */ flags) => (/** @type {string} */ c) => !!flags[c];
 
 test('pick: the highest priority whose when holds; a must line first; nothing for a who without lines', () => {
-  assert.equal(storyPick('hazel', B, holdsOf({}), {}, 0), 'a_low');
-  const won = storyPick('hazel', B, holdsOf({ flag_won: 1 }), {}, 0);
+  assert.equal(storyPick('kappi', B, holdsOf({}), {}, 0), 'a_low');
+  const won = storyPick('kappi', B, holdsOf({ flag_won: 1 }), {}, 0);
   assert.ok(['b_won', 'c_won'].includes(won));
-  assert.equal(storyPick('hazel', B, holdsOf({ flag_won: 1 }), {}, 0), won, 'the same save picks the same line');
-  const draws = new Set([0, 1, 2, 3, 4, 5, 6, 7].map(r => storyPick('hazel', B, holdsOf({ flag_won: 1 }), {}, r)));
+  assert.equal(storyPick('kappi', B, holdsOf({ flag_won: 1 }), {}, 0), won, 'the same save picks the same line');
+  const draws = new Set([0, 1, 2, 3, 4, 5, 6, 7].map(r => storyPick('kappi', B, holdsOf({ flag_won: 1 }), {}, r)));
   assert.deepEqual([...draws].sort(), ['b_won', 'c_won'], 'a tie is drawn by the runs ended');
-  assert.equal(storyPick('hazel', B, holdsOf({ flag_won: 1, flag_first: 1 }), {}, 0), 'd_once', 'must beats priority');
+  assert.equal(storyPick('kappi', B, holdsOf({ flag_won: 1, flag_first: 1 }), {}, 0), 'd_once', 'must beats priority');
   assert.equal(storyPick('juniper', B, holdsOf({}), {}, 0), null);
 });
 
@@ -34,7 +34,7 @@ test('pick: once lines are said once; a cooldown counts the runs ended since', (
   const story = {};
   storyPickSaid('d_once', B, story, 1);
   assert.deepEqual(story, { said: { d_once: 1 }, once: { 'banter:d_once': 1 } });
-  assert.equal(storyPick('hazel', B, holdsOf({ flag_first: 1 }), story, 2), 'a_low');
+  assert.equal(storyPick('kappi', B, holdsOf({ flag_first: 1 }), story, 2), 'a_low');
   storyPickSaid('e_cool', B, story, 3);
   assert.equal(storyPick('chosen', B, holdsOf({}), story, 3), 'f_plain');
   assert.equal(storyPick('chosen', B, holdsOf({}), story, 4), 'f_plain');
@@ -45,13 +45,13 @@ test('the script command pick plays the picked line inline, with the speaker of 
   const said = [];
   const stage = { say: l => said.push(`${l.who}: ${l.text}`), choose: () => 0 };
   const save = { story: {}, items: {}, pyramids: {} };
-  await runScript(parseScript(['Before.', 'pick hazel', 'pick juniper', 'After.']), stage, {
+  await runScript(parseScript(['Before.', 'pick kappi', 'pick juniper', 'After.']), stage, {
     save,
     id: 'test',
-    speaker: 'hazel',
-    pick: who => (who === 'hazel' ? parseScript(['Picked.', 'Chosen: Me too.']) : null),
+    speaker: 'kappi',
+    pick: who => (who === 'kappi' ? parseScript(['Picked.', 'Chosen: Me too.']) : null),
   });
-  assert.deepEqual(said, ['hazel: Before.', 'hazel: Picked.', 'Chosen: Me too.', 'hazel: After.']);
+  assert.deepEqual(said, ['kappi: Before.', 'kappi: Picked.', 'Chosen: Me too.', 'kappi: After.']);
 });
 
 test("the game's lines: each who has lines, leaders and agents always have one, every when reads", () => {
@@ -87,8 +87,8 @@ test("the game's lines: each who has lines, leaders and agents always have one, 
   const T = storyStateOf({ meta: { runs: 1, history: [first] }, story: { met_juniper: 1 } });
   const h = c => conditionHolds(c, T);
   assert.equal(storyPick('chosen', G, h, {}, 1), 'chosen_first');
-  assert.equal(storyPick('hazel', G, h, {}, 1), 'ch1_drop', "RL-S2: Chapter 1's first beat");
-  assert.equal(storyPick('hazel', G, h, { once: { 'banter:ch1_drop': 1 } }, 1), 'hazel_rounder');
+  assert.equal(storyPick('kappi', G, h, {}, 1), 'ch1_drop', "RL-S2: Chapter 1's first beat");
+  assert.equal(storyPick('kappi', G, h, { once: { 'banter:ch1_drop': 1 } }, 1), 'kappi_rounder');
   assert.equal(storyPick('juniper', G, h, {}, 1), 'fav_juniper_ask', 'RL-S2: her favour, once');
   assert.equal(storyPick('juniper', G, h, { once: { 'banter:fav_juniper_ask': 1 } }, 1), 'juniper_lost');
   assert.ok(['lost_rescued', 'lost_reflexes'].includes(storyPick('back_lost', G, h, {}, 1)));
@@ -124,14 +124,14 @@ test('the lost run scene: the first time in full (and marked), later a picked pa
   const later = await play(story);
   assert.equal(later.length, 2);
   assert.match(later[0], /^Chosen: /);
-  assert.match(later[1], /^Hazel: /);
+  assert.match(later[1], /^Kappi: /);
 });
 
 test('RL-S2 part B: a thank-you is its hub person’s line; a leader’s, an agent’s and Blake’s name their speakers', () => {
   const { banterOwner } = modules['story-pick'];
   assert.deepEqual(
-    ['chosen', 'thanks_hazel', 'thanks_juniper', 'leader', 'rival', 'back_lost', 'thanks_blake'].map(banterOwner),
-    ['chosen', 'hazel', 'juniper', null, null, null, null]
+    ['chosen', 'thanks_kappi', 'thanks_juniper', 'leader', 'rival', 'back_lost', 'thanks_blake'].map(banterOwner),
+    ['chosen', 'kappi', 'juniper', null, null, null, null]
   );
 });
 
@@ -139,14 +139,14 @@ test("RL-S2 part B: a gift's thank-you: the level just reached first, once; then
   const G = GAME_DATA.banter,
     story = {};
   const pick = rel => {
-    const S = storyStateOf({ meta: { runs: 2, history: [], rel: { hazel: rel } }, story });
-    const k = storyPick('thanks_hazel', G, c => conditionHolds(c, S), story, 2);
+    const S = storyStateOf({ meta: { runs: 2, history: [], rel: { kappi: rel } }, story });
+    const k = storyPick('thanks_kappi', G, c => conditionHolds(c, S), story, 2);
     if (k) storyPickSaid(k, G, story, 2);
     return k;
   };
-  assert.equal(pick(1), 'thanks_hazel_1');
-  assert.equal(pick(1), 'thanks_hazel');
-  assert.equal(pick(4), 'thanks_hazel_3', 'a jump of two levels: the higher one first');
-  assert.equal(pick(4), 'thanks_hazel_2');
-  assert.equal(pick(4), 'thanks_hazel');
+  assert.equal(pick(1), 'thanks_kappi_1');
+  assert.equal(pick(1), 'thanks_kappi');
+  assert.equal(pick(4), 'thanks_kappi_3', 'a jump of two levels: the higher one first');
+  assert.equal(pick(4), 'thanks_kappi_2');
+  assert.equal(pick(4), 'thanks_kappi');
 });

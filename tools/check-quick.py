@@ -920,9 +920,9 @@ def phone_flow(P):
     if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
     R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
     if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
-    # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Hazel's, no battle of his; the welcome
+    # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Kappi's, no battle of his; the welcome
     # sheet comes straight after the pick
-    if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Hazel’s fight or his battle)')
+    if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Kappi’s fight or his battle)')
     if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
     R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
     pg.evaluate("closeModal();0")
@@ -970,7 +970,7 @@ def phone_flow(P):
     if names: raise Exception(f'the exported debug log holds a name: {names}')
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
-    return f'the fall, Hazel, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
 
 
 def all_maps(pg, sec=180):
@@ -1054,7 +1054,7 @@ def walking(P):
     pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();0")
     return f'walked to {roam}'
 
-@step('Time, weather and rooms: night, a storm, snow, autumn, walking into the lab', 240)   # RL-5: the dark cave (Fizzwell) is parked; the room is Hazel's lab (the hub has no shop)
+@step('Time, weather and rooms: night, a storm, snow, autumn, walking into the lab', 240)   # RL-5: the dark cave (Fizzwell) is parked; the room is Kappi's lab (the hub has no shop)
 def atmosphere(P):
     pg = P.pg
     if not pg.evaluate("typeof environment!=='undefined'"): return 'no time and weather in this build'
@@ -1079,7 +1079,7 @@ def atmosphere(P):
     odds =pg.evaluate("(()=>{const ps=Object.keys(SPECIES).find(k=>SPECIES[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
     out.append(f"night {seen['night']['night']:.2f} (day {seen['day']['night']:.2f}), storm {seen['storm']['storm']:.2f} with rain {seen['storm']['rain']:.2f}, snow {seen['snow']['snow']:.2f} lying {seen['snow']['sk'][3]:.2f}, autumn colour {seen['autumn']['sk'][0]:.2f}")
     # RL-5: the dark cave (Fizzwell, 'env-dark-cave') is retired with its place: no cave in the hub (a run's caves come with RL-7)
-    # walk into the lab and out again (RL-5: was the shop, parked with its town; the hub's public building is Hazel's lab)
+    # walk into the lab and out again (RL-5: was the shop, parked with its town; the hub's public building is Kappi's lab)
     pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0)
     p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
     pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'lab'})})();0")   # v46: as a tap does: at the door first
@@ -1385,7 +1385,7 @@ def nature_growth_exits(P):
     # RL-5: the join table (every road's ends name an exit of their place) is retired: ROADS is empty and the hub has no
     # exit; a run's roads bring it back (RL-7). The exits left are the rooms' doorways
     out.append(f'{n_ex} edge-relative exits')
-    # a resize keeps exits on their edge: grow a copy of Hazel's lab (RL-5: a room, the only scenes with an exit now;
+    # a resize keeps exits on their edge: grow a copy of Kappi's lab (RL-5: a room, the only scenes with an exit now;
     # Tallgrass Meadow is parked) by 6 m each way, then shrink it back
     r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=JSON.parse(JSON.stringify(mapById('int_lab')));delete sc._exk;const before=sc.exits.map(p=>p.slice());sc.w+=6;sc.h+=6;syncExits(sc);const after=sc.exits;
      const ok=sc.edgeExits.every((e,k)=>{const p=after[k],q=before[k],n=e.in==null?1.1:e.in;return e.side==='N'?Math.abs(p[1]-(sc.h-n))<.02:e.side==='S'?Math.abs(p[1]-n)<.02:e.side==='E'?Math.abs(p[0]-(sc.w-n))<.02:Math.abs(p[0]-n)<.02});return {ok,before,after,E:sc.edgeExits}})())"""))
@@ -1443,7 +1443,7 @@ def views_flags_wind_light(P):
 @step('Ground tiles, building plans and colours, rooms laid in at their doors', 300)
 def buildings_and_rooms(P):
     """every ground kind has its 12 tiles; the new buildings have a 3D plan or a low-poly model and every colour variant
-    loads; each kind of building has a room (in the game or parked); walking into Hazel's lab lays the room into Copperleaf where the lab stands (its doorway
+    loads; each kind of building has a room (in the game or parked); walking into Kappi's lab lays the room into Copperleaf where the lab stands (its doorway
     exactly at the lab's door, the hamlet dimmed around it, nowhere to walk but the floor) and walking out leaves you
     at the door with the lab back. RL-5: the hub's doors and its lab (the shop was Marigold Town's, parked)"""
     pg = P.pg
@@ -1478,7 +1478,7 @@ def buildings_and_rooms(P):
         nd += d['n']; bad += [place + ' ' + b for b in d['bad']]
     if bad: raise Exception(f'{len(bad)} of {nd} doors: the room’s doorway isn’t at the door, or the room leaves the view: {bad[:4]}')
     out.append(f'{nd} doors in Copperleaf: each room’s doorway within 0.1 m of its door')   # RL-5: the hub's doors alone
-    # walk into Hazel's lab: the room opens in place (RL-5: was Marigold Town's shop, parked with its town)
+    # walk into Kappi's lab: the room opens in place (RL-5: was Marigold Town's shop, parked with its town)
     pg.evaluate("uiState.inside=null;uiState.goingIn=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0)
     pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);window.__lab=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'lab'})})();0")   # a couple of steps from the door (walking is slow here)
     # this machine draws a frame a second: let the room be prepared in big slices (the poke)

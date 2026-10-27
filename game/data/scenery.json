@@ -12514,6 +12514,24 @@
     {"x":-37,"r":0.2},
     {"x":37,"r":0.2}
    ]
+  },
+  "yuzu_bath": {
+   "name": "Yuzu bath",
+   "img": "scene/next/island/yuzu_bath.png",
+   "ox": -21,
+   "oy": -27,
+   "shadow": 0.9,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["indoor"],
+   "group": "yuzu_bath",
+   "model": "scene/next/models/yuzu_bath.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "solid": 0.6,
+   "fx": [
+    {"k":"smoke","x":0,"y":-16}
+   ]
   }
  },
  "person": 1.75,
