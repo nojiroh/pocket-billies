@@ -19,6 +19,7 @@ those sessions; until then, follow the rule next to them.
 | (c) smoke | `npm run check:smoke` | about 3 min (188 s on 23 Oct 2026, a 4-core cloud container: the phone flow, the actions sheet, one in-game test step) | 1-2 min, not met | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 21 min (1282 s on 23 Oct 2026, all 37 steps passed, 13 pages, 2 browsers, about 500 s of the pages' time boots; 1217-1338 s over four runs; 41 min the same day before TC-4 round 3) | about 10 min, not met (see below) | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
+| load (LD-0) | `python3 tools/check-load.py` (`--only=cold` or `run`, `--max-hitches=N`) | about 1.5 min (92 s on 27 Oct 2026 in a cloud container, the build included) | none; a note until LD-6 makes it a gate | after a change to booting, loading or what a place builds; at the end of every load-track session |
 | rules | `cd firebase && npm test` | about 1 min | none | when firestore.rules or what the game writes changes |
 
 The quick check needs Python Playwright matching the installed Chromium (tools/requirements-check.txt). A phase that

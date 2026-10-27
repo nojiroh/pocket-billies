@@ -97,7 +97,8 @@ import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } 
 import { openShop, setOpenShop } from './shop.js';
 import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
-import { runWorld } from './run-world.js';
+import { titleScreen } from './title.js';
+import { runWorld, runWorldAhead } from './run-world.js';
 import { account } from './account.js';
 import { routeSight } from './route-sight.js';
 import { renderOverlay, setRenderOverlay, toast } from './overlay.js';
@@ -174,6 +175,7 @@ Object.defineProperties(GAME, {
   routeSight: { get: () => routeSight },
   runNormalMapJobs: { get: () => runNormalMapJobs, set: setRunNormalMapJobs },
   runWorld: { get: () => runWorld },
+  runWorldAhead: { get: () => runWorldAhead },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
   saveHeld: { get: () => saveHeld },
@@ -185,6 +187,7 @@ Object.defineProperties(GAME, {
   soundEngine: { get: () => soundEngine },
   spliceReport: { get: () => spliceReport },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
+  titleScreen: { get: () => titleScreen },
   toast: { get: () => toast },
   uiState: { get: () => uiState },
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },

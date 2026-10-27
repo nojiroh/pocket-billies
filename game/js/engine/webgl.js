@@ -25,6 +25,7 @@ expose({
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
   attributeClashes: [() => attributeClashes, v => ((attributeClashes = v), provide({ attributeClashes }))],
   beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
+  beginProgramCompile: [() => beginProgramCompile, v => (beginProgramCompile = v)],
   bindGridQuad: [() => bindGridQuad, v => (bindGridQuad = v)],
   bindQuad: [() => bindQuad, v => (bindQuad = v)],
   bleedEdges: [() => bleedEdges, v => (bleedEdges = v)],
@@ -70,6 +71,7 @@ expose({
   matrix4: [() => matrix4],
   normalMapWorkerState: [() => normalMapWorkerState],
   normalize3: [() => normalize3],
+  pendingPrograms: [() => pendingPrograms, v => (pendingPrograms = v)],
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
@@ -404,8 +406,13 @@ function lateCompile(i, name) {
   if (!L.includes(name)) L.push(name);
   if (L.length > 12) L.shift();
 }
-function startProgramCompile([vs, fs], name) {
+function startProgramCompile(def, name) {
   if (gpuState.loaded) lateCompile(1, name);
+  return beginProgramCompile(def, name);
+}
+/* LD-2: compile and link, no status read: reading one waits for the driver, so it is read once, after the link, and
+   a shader's own log only when the link failed (finishProgramCompile) */
+function beginProgramCompile([vs, fs], name) {
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gpuShader(t);
@@ -477,9 +484,12 @@ export function precompilePrograms(defs) {
         gpuState.pend.set(k, startProgramCompile(v, k));
       } catch (e) {}
 }
-export function pollPendingPrograms(max = 2) {
+/* finish up to max of the programs started in the background; LD-2: with a budget (ms), as many as fit in it (at
+   least one), for while a loading screen is up */
+export function pollPendingPrograms(max = 2, budget = 0) {
   const M = gpuState.pend;
   if (!M || !M.size) return;
+  const t0 = budget ? performance.now() : 0;
   const gl = gpuState.gl,
     X = gpuState.pcx === undefined ? (gpuState.pcx = gl.getExtension('KHR_parallel_shader_compile')) : gpuState.pcx;
   let n = 0;
@@ -496,63 +506,17 @@ export function pollPendingPrograms(max = 2) {
       try {
         gpuState.P[k] = finishProgramCompile(j);
       } catch (e) {}
-    if (++n >= max) break;
+    if (budget ? performance.now() - t0 >= budget : ++n >= max) break;
   }
 }
-function compileProgram([vs, fs], name) {
+/* LD-2: how many programs are still compiling in the background (the boot waits for none behind its loader) */
+export function pendingPrograms() {
+  return gpuState.pend ? gpuState.pend.size : 0;
+}
+/* a program needed now: compiled and linked, then read once (LD-2: no status read between the steps) */
+function compileProgram(def, name) {
   if (gpuState.loaded) lateCompile(0, name);
-  const gl = gpuState.gl,
-    made = [],
-    mk = (t, src) => {
-      const s = gpuShader(t);
-      made.push(s);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        const e = new Error(name + ': ' + gl.getShaderInfoLog(s));
-        made.forEach(gpuFree);
-        throw e;
-      }
-      return s;
-    };
-  const a = mk(gl.VERTEX_SHADER, vs),
-    b = mk(gl.FRAGMENT_SHADER, fs),
-    p = gpuMake('program', 'programs');
-  gl.attachShader(p, a);
-  gl.attachShader(p, b);
-  /* standard locations for the engine's own inputs; an input that declares layout(location=…) keeps its own (some
-    GPUs, Adreno for one, refuse to link when a bound location clashes with another input's) */
-  [
-    ['aPos', 0],
-    ['aC', 0],
-    ['aNrm', 1],
-    ['aShore', 1],
-    ['aI', 1],
-    ['aCol', 2],
-    ['aUV', 2],
-  ].forEach(([n, l]) => {
-    if (
-      new RegExp('in\\s+\\w+\\s+' + n + '\\b').test(vs) &&
-      !new RegExp('layout\\s*\\([^)]*\\)\\s*in\\s+\\w+\\s+' + n + '\\b').test(vs)
-    )
-      gl.bindAttribLocation(p, l, n);
-  });
-  gl.linkProgram(p);
-  const ok = gl.getProgramParameter(p, gl.LINK_STATUS);
-  if (!ok) {
-    const e = new Error(name + ': ' + gl.getProgramInfoLog(p));
-    dropProgramCompile({ p, a, b, gl }, true);
-    throw e;
-  }
-  dropProgramCompile({ p, a, b, gl }, false);
-  const U = {},
-    n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
-  for (let i = 0; i < n; i++) {
-    const u = gl.getActiveUniform(p, i),
-      nm = u.name.replace(/\[0\]$/, '');
-    U[nm] = gl.getUniformLocation(p, u.name);
-  }
-  return { p, U, name, frame: frameBlockBinding(gl, p) };
+  return finishProgramCompile(beginProgramCompile(def, name));
 }
 /* phase 20 C3, for the in-game test: every program with the light code compiles and links with the Frame block, and
    on this device the block's size and each member's offset are the ones engine/frame-block.js packs to. The test

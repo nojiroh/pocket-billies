@@ -103,6 +103,7 @@ export function runLoadBegin(why, node, train = '') {
       if (mine()) runLoadPart(L, id, f, performance.now());
     };
   Object.assign(runLoad, { on: true, ready: false, L, node: -1, train, part, more: {} });
+  if (typeof debugLog !== 'undefined') debugLog.stage('run loading: ' + why);
   if (node >= 0) runLoadLanding(node);
   runLoad.timer = setInterval(() => runLoadStep(gen), 100);
 }
@@ -229,6 +230,7 @@ function runLoadEnd(how) {
   const L = runLoad.L;
   if (L && how !== 'gone' && typeof debugLog !== 'undefined')
     debugLog.add('load', `run ${runLoadSummary(L, { ...runLoad.more, shown: runLoad.el ? 1 : 0 })}`);
+  if (how !== 'gone' && typeof debugLog !== 'undefined') debugLog.stage('run loaded: ' + how);
   Object.assign(runLoad, { on: false, ready: true });
   runLoadHide();
 }
