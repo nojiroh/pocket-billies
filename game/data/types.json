@@ -1,7 +1,7 @@
 [
  {
   "id": "Fire",
-  "color": "#E0603A",
+  "color": "#CC4C25",
   "glow": "#E0603A",
   "text": "#fff",
   "strong": ["Grass","Steel"],
@@ -13,7 +13,7 @@
  },
  {
   "id": "Water",
-  "color": "#3A86D6",
+  "color": "#1577D0",
   "glow": "#3A86D6",
   "text": "#fff",
   "strong": ["Fire","Ground"],
@@ -25,7 +25,7 @@
  },
  {
   "id": "Grass",
-  "color": "#4E9E42",
+  "color": "#418623",
   "glow": "#4E9E42",
   "text": "#fff",
   "strong": ["Water","Ground"],
@@ -49,7 +49,7 @@
  },
  {
   "id": "Ground",
-  "color": "#B4844A",
+  "color": "#A16B32",
   "glow": "#B4844A",
   "text": "#fff",
   "strong": ["Fire","Electric","Steel"],
@@ -61,7 +61,7 @@
  },
  {
   "id": "Flying",
-  "color": "#7F9BE0",
+  "color": "#5973BE",
   "glow": "#7F9BE0",
   "text": "#fff",
   "strong": ["Grass"],
@@ -73,7 +73,7 @@
  },
  {
   "id": "Psychic",
-  "color": "#CF4F88",
+  "color": "#C14B7F",
   "glow": "#CF4F88",
   "text": "#fff",
   "strong": ["Electric","Dragon"],
@@ -85,7 +85,7 @@
  },
  {
   "id": "Steel",
-  "color": "#7E8C9C",
+  "color": "#65798A",
   "glow": "#7E8C9C",
   "text": "#fff",
   "strong": ["Psychic","Flying"],
@@ -97,7 +97,7 @@
  },
  {
   "id": "Dragon",
-  "color": "#6550C8",
+  "color": "#7C63D6",
   "glow": "#6550C8",
   "text": "#fff",
   "strong": ["Dragon"],
