@@ -38,8 +38,10 @@ import {
   partHpLeft,
   partMaxHp,
 } from './logic/rules.js';
+import { rarityTier } from './logic/marks.js';
+import { rarityPillHTML, rarityRowAttr, statusTagHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData } from './game-state.js';
-import { uiIconHTML } from './art.js';
+import { glyphHTML, uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { typeBadgeHTML } from './ui-bits.js';
 import { needsCare, plateVars } from './team.js';
@@ -57,9 +59,11 @@ expose({
   unitBotSlotsHTML: [() => unitBotSlotsHTML, v => (unitBotSlotsHTML = v)],
   unitBuildHTML: [() => unitBuildHTML, v => ((unitBuildHTML = v), provide({ unitBuildHTML }))],
   unitCarryHTML: [() => unitCarryHTML, v => ((unitCarryHTML = v), provide({ unitCarryHTML }))],
+  unitHeldHTML: [() => unitHeldHTML],
   unitHeroHTML: [() => unitHeroHTML, v => ((unitHeroHTML = v), provide({ unitHeroHTML }))],
   unitHpHTML: [() => unitHpHTML, v => (unitHpHTML = v)],
   unitOpenRowHTML: [() => unitOpenRowHTML, v => ((unitOpenRowHTML = v), provide({ unitOpenRowHTML }))],
+  unitPrimeHTML: [() => unitPrimeHTML],
   unitRowHTML: [() => unitRowHTML, v => ((unitRowHTML = v), provide({ unitRowHTML }))],
   unitTagsHTML: [() => unitTagsHTML, v => (unitTagsHTML = v)],
 });
@@ -80,6 +84,7 @@ provide({
  *   hp: number, max: number, art: (px: number) => string, plate: string, down: boolean,
  *   lead: boolean, buddy: boolean, coat: string, prime: boolean, care: boolean,
  *   build: Record<string, string>, rel?: Record<string, number> | null, kg: number, wclass: string,
+ *   rarity: string, status: string, held: string, heldRar: string,
  *   slotNames: Record<string, string>,
  *   limbs: Record<string, number> | null
  * }} Unit */
@@ -113,8 +118,12 @@ function billyUnit(m) {
     prime: !bot && billyPrime(m),
     /* SP-2: the spliced slots' relative weights, for the balance meter */
     rel: bot ? null : billyRel(m),
-    /* RL-12c: the name of the item it holds */
+    /* RL-12c: the name of the item it holds; UI-14b: and its tier */
     held: m.held && ITEMS[m.held] ? ITEMS[m.held].n : '',
+    heldRar: m.held && ITEMS[m.held] ? rarityTier(ITEMS[m.held].rarity) : '',
+    /* UI-14b: the species' tier on the loot ladder (starter shows as common; a bot has none) and its status's tag */
+    rarity: bot ? '' : rarityTier(s && s.rar),
+    status: m.hp > 0 && m.status ? m.status : '',
     care: needsCare(m),
     build: b,
     kg,
@@ -145,23 +154,28 @@ function unitHpHTML(u) {
   const p = u.max ? Math.max(0, u.hp / u.max) : 0;
   return `<span class="u-hp${p < 0.25 ? ' low' : p < 0.5 ? ' mid' : ''}" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="${u.max}" aria-valuenow="${u.hp}"><i style="width:${p * 100}%"></i></span><span class="u-hpn tnum">${u.hp}/${u.max}</span>`;
 }
+/* UI-14b: the colour code on the tags: Lead neutral (the family table), Prime the teal ★ tag, a Coat its prism (gold
+   keeps only value and your choice), the held item teal with its glyph and its name in its tier's colour */
+const unitPrimeHTML = () => `<span class="u-tag prime"><b aria-hidden="true">★</b>Prime</span>`;
+const unitHeldHTML = (/** @type {Unit} */ u) =>
+  `<span class="u-tag held"${rarityRowAttr(u.heldRar)}>${glyphHTML('kind', 'held', 11)}<span class="rar-name">${escapeHtml(u.held)}</span></span>`;
 function unitTagsHTML(u) {
-  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}</span>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}${u.held ? `<span class="u-tag">${uiIconHTML('bag', 11)} ${escapeHtml(u.held)}</span>` : ''}`;
+  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}</span>` : ''}${u.prime ? unitPrimeHTML() : ''}${u.held ? unitHeldHTML(u) : ''}`;
 }
 
 /** the lead's big card at the top of a team */
 function unitHeroHTML(u) {
   return `<pb-panel class="u-hero m-enter" depth="raised"><button class="u-stage m-press" data-a="mon" data-u="${escapeHtml(u.id)}" style="${u.plate}" aria-label="${escapeHtml(u.name)}, details"><span class="u-tags">${unitTagsHTML(u)}</span><span class="u-art m-idle" style="--phase:0">${u.art(132)}</span></button>
-  <div class="u-head"><h2>${escapeHtml(u.name)}</h2><span class="u-lv tnum">Lv ${u.lvl}</span></div>${u.sub ? `<div class="u-sub">${escapeHtml(u.sub)}</div>` : ''}
-  <div class="u-types">${u.types.map(typeBadgeHTML).join('')}</div>
+  <div class="u-head"${rarityRowAttr(u.rarity)}><h2 class="rar-name">${escapeHtml(u.name)}</h2><span class="u-lv tnum">Lv ${u.lvl}</span></div>${u.sub ? `<div class="u-sub">${escapeHtml(u.sub)}</div>` : ''}
+  <div class="u-types">${u.types.map(typeBadgeHTML).join('')}${statusTagHTML(u.status)}${rarityPillHTML(u.rarity)}</div>
   <div class="u-hprow">${unitHpHTML(u)}</div>
   <div class="u-acts">${u.care ? `<button class="pb small green" data-a="mheal" data-u="${escapeHtml(u.id)}">${uiIconHTML('heart', 14)} Heal</button>` : ''}<button class="pb small quiet" data-a="mon" data-u="${escapeHtml(u.id)}">Details</button></div></pb-panel>`;
 }
 
 /** one row in a team or a list: tap for details */
 function unitRowHTML(u, i, act = 'mon', label = 'details') {
-  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}${u.kind === 'bot' ? ' bot' : ''}" style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
-  <span class="u-mid"><span class="u-head"><b>${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}${u.held ? `<i class="u-heart" title="Holding ${escapeHtml(u.held)}">${uiIconHTML('bag', 12)}</i>` : ''}</span>${u.limbs ? limbPipsHTML(u.limbs) : ''}</span>
+  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}${u.kind === 'bot' ? ' bot' : ''}"${rarityRowAttr(u.rarity)} style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
+  <span class="u-mid"><span class="u-head"><b class="rar-name">${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${statusTagHTML(u.status)}${u.prime ? unitPrimeHTML() : ''}${u.held ? `<i class="u-held"${rarityRowAttr(u.heldRar)} role="img" aria-label="Holding ${escapeHtml(u.held)}" title="Holding ${escapeHtml(u.held)}">${glyphHTML('kind', 'held', 12)}</i>` : ''}</span>${u.limbs ? limbPipsHTML(u.limbs) : ''}</span>
   <span class="u-right">${unitHpHTML(u)}</span></button>`;
 }
 

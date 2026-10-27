@@ -484,7 +484,7 @@ const PbRarity = class extends LitElement {
 const markAttr = (/** @type {unknown} */ v) => String(v ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 /** a status as its angled tag (BRN, PAR, SLP in their colours; its word the game's, statuses.json); '' for none
  * @param {string | null | undefined} st @param {{ big?: boolean }} [o] */
-const statusTagHTML = (st, o = {}) =>
+export const statusTagHTML = (st, o = {}) =>
   st
     ? `<pb-tag kind="status" mark="${markAttr(st)}" word="${markAttr(STATUS_NAMES[st] || st)}"${o.big ? ' big' : ''}></pb-tag>`
     : '';
@@ -504,12 +504,12 @@ const kindChipHTML = (kind, label, o = {}) =>
     o.icon ? ` icon="${markAttr(o.icon)}"` : ''
   }${o.value != null ? ` value="${Number(o.value) || 0}"` : ''}></pb-chip>`;
 /** a tier's pill; '' for none (rarities.json's starter shows as common) @param {string | undefined} tier */
-const rarityPillHTML = tier => {
+export const rarityPillHTML = tier => {
   const t = rarityTier(tier);
   return t ? `<pb-rarity tier="${t}"></pb-rarity>` : '';
 };
 /** a list row's rarity: ' data-rarity="rare"' for the row's element (with .rar-row: the bar and thin frame), or '' */
-const rarityRowAttr = (/** @type {string | undefined} */ tier) => {
+export const rarityRowAttr = (/** @type {string | undefined} */ tier) => {
   const t = rarityTier(tier);
   return t ? ` data-rarity="${t}"` : '';
 };

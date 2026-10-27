@@ -9,6 +9,7 @@ import { TYPE_COLORS } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName, billyTypes, formatNumber, maxHp, maxLevel, teamSize, xpFor } from './logic/rules.js';
+import { rarityRowAttr } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { workshopSectionHTML } from './workshop.js';
@@ -78,7 +79,7 @@ function boxSection() {
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
  <div class="bx-grid">${L.map(
    m =>
-     `<div class="bx k-card"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+     `<div class="bx k-card rar-row"${rarityRowAttr(speciesOf(m) && speciesOf(m).rar)}><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b class="rar-name">${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
        m
      )
        .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)

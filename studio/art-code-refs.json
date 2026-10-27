@@ -1556,9 +1556,7 @@
    "game/js/ui-run-kit.js:107",
    "game/js/ui.js:70",
    "game/js/ui.js:118",
-   "game/js/ui.js:196",
-   "game/js/unit-card.js:149",
-   "game/js/unit-card.js:164"
+   "game/js/ui.js:196"
   ],
   "barrel": [
    "game/js/prop-models.js:224",
@@ -1733,10 +1731,10 @@
    "game/js/robot-art.js:324",
    "game/js/robot-art.js:326",
    "game/js/robot-art.js:328",
-   "game/js/unit-card.js:210",
-   "game/js/unit-card.js:212",
-   "game/js/unit-card.js:214",
-   "game/js/unit-card.js:215",
+   "game/js/unit-card.js:224",
+   "game/js/unit-card.js:226",
+   "game/js/unit-card.js:228",
+   "game/js/unit-card.js:229",
    "game/js/workshop.js:73",
    "game/js/workshop.js:78",
    "game/js/workshop.js:80",
@@ -1769,9 +1767,9 @@
    "game/js/billie-sheet.js:309",
    "game/js/boot.js:151",
    "game/js/minimap.js:77",
-   "game/js/unit-card.js:149",
-   "game/js/unit-card.js:158",
-   "game/js/unit-card.js:164"
+   "game/js/unit-card.js:163",
+   "game/js/unit-card.js:172",
+   "game/js/unit-card.js:178"
   ],
   "leaf": [
    "game/js/battle.js:310",
@@ -1929,8 +1927,8 @@
    "game/js/person-art.js:881",
    "game/js/self-test.js:2848",
    "game/js/train-ride.js:272",
-   "game/js/unit-card.js:177",
-   "game/js/unit-card.js:204",
+   "game/js/unit-card.js:191",
+   "game/js/unit-card.js:218",
    "game/js/walk-control.js:307",
    "game/js/walk-view.js:3540",
    "game/js/walk-view.js:3729",
