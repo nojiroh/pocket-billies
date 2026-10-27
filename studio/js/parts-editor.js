@@ -77,7 +77,7 @@ SECTIONS.parts = () => {
     P = D.rules && D.rules.parts;
   if (!P)
     return card(
-      'Part sizes',
+      'Part rules',
       '<p class="help">rules.json has no "parts" yet. Pull the latest game data (phase 16) and reload the Studio.</p>'
     );
   const S = partsSel(),
@@ -142,7 +142,7 @@ SECTIONS.parts = () => {
   const preview = `<div class="parts-prev">${['front', 'back']
     .map(v => spritePreviewHTML({ sp: S.partsSp, view: v, build, cls: 'big' }))
     .join('')}</div>`;
-  return `<div class="ed-col parts-ed"><div class="ed-head"><div><small class="mono">rules.json → parts</small><h2>Part sizes</h2></div></div>
+  return `<div class="ed-col parts-ed"><div class="ed-head"><div><small class="mono">rules.json → parts</small><h2>Part rules</h2></div></div>
   ${card('Try a build', `${pick}<div class="parts-slots">${slots}</div><div class="seg-row"><button class="btn sm" data-act="partsRoll">Roll like a wild one</button><button class="btn sm" data-act="partsPrime">All Normal (Prime)</button></div>${preview}<div id="partsRead">${partsReadoutHTML()}</div>`, { sub: 'Every Billie has a size for each slot. Wild ones and eggs roll theirs; starters and trainers are all Normal, which is Prime.' })}
   ${card('Sizes', sizeRows + `<div id="partsChecks">${partsChecksHTML(P)}</div>`)}
   ${card('Weight shares', shares, { sub: 'How much of a Billie’s weight each slot carries. They should add up to 1.' })}

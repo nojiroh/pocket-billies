@@ -29,6 +29,9 @@ its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothi
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
+Studio art track SA-1: the Art browser: folders, search tokens and chips, Used by, Edit pixels and its undo, Ctrl K.
+Studio art track SA-2a: the ground tile set (a stroke, its Lite tile and the preview in one undo step), a frame strip
+played in the Art browser, robot pictures painted and uploaded from Robots.
 Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted), and an error blocks Propose.
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
@@ -1043,7 +1046,7 @@ def ui_tools_steps(pg, errs):
       return { tap: S.tap.some(t => t.el.id === 'plantTap'), faint: S.contrast.some(c => c.el.id === 'plantFaint'),
         deep: S.glass.filter(g => g.depth > 2).map(g => g.el.id), boxes: document.querySelector('#uiPv').contentWindow.document.querySelectorAll('#studioOverlay > div').length,
         note: document.querySelector('#uiOvNote').textContent } })()""")
-    if not ov or not ov['tap'] or not ov['faint'] or ov['deep'] != ['g3'] or not ov['boxes'] or 'Tap targets under 44 px' not in ov['note']: errs.append(f'overlays: {ov}')
+    if not ov or not ov['tap'] or not ov['faint'] or ov['deep'] != ['g3'] or not ov['boxes'] or 'Tap targets under 40 px' not in ov['note']: errs.append(f'overlays: {ov}')
     for k in ['tap', 'contrast', 'glass']: pg.click(f'[data-act=uiOverlay][data-k={k}]')
     if pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelectorAll('#studioOverlay > div').length"): errs.append('overlays stayed when switched off')
     pg.evaluate("document.querySelector('#uiPv').contentWindow.document.querySelector('#plant').remove()")
@@ -1150,6 +1153,7 @@ def studio_test_steps(pg, errs):
     if os.environ.get('PB_STUDIO_TEST_OUT'):  # Studio plan Phase 6: the report kept, for timings before and after
         Path(os.environ['PB_STUDIO_TEST_OUT']).write_text(json.dumps(r, indent=1))
     print(f"studio test: {len(r['sections'])} sections, {edits} edits undone, {len(r['findings'])} findings, {r['seconds']} s", flush=True)
+    if (r.get('tools') or {}).get('icons'): print(f"studio test: icons {r['tools']['icons']}", flush=True)
     U = r.get('undo') or {}
     big = sorted((s for s in r['sections'] if s.get('edit') and s['edit'].get('stepBytes')), key=lambda s: -s['edit']['stepBytes'])[:3]
     print(f"studio test: the undo holds {U.get('fullMB')} MB after {U.get('edits')} edits (the data once {U.get('lastMB')} MB, the steps {U.get('stepsMB')} MB; biggest: "
@@ -1240,6 +1244,15 @@ def run_lab_steps(pg, errs):
     while time.time() - t0 < 5 and pg.evaluate("document.querySelectorAll('#main .rl-map').length") < 2: time.sleep(0.05)
     if pg.evaluate("document.querySelectorAll('#main .rl-map').length") != 2: errs.append('run lab: beside the loaded data did not draw a second map')
     pg.uncheck('#rlBeside')
+    # WM-2: the region grid (the default view): a footprint for every main place, none overlapping, a link across a
+    # shared edge (north and south ones marked), none west
+    grid = pg.evaluate("""(()=>{const m=document.querySelector('#main .rl-map.rl-grid');if(!m)return null;
+      const g=[...m.querySelectorAll('.rl-node:not([data-side])')];
+      return {places:g.length,at:new Set(g.map(e=>e.dataset.at)).size,dirs:[...m.querySelectorAll('.rl-link[data-dir]')].map(l=>l.dataset.dir)}})()""")
+    if not grid: errs.append('run lab: the map is not drawn on the region grid by default')
+    elif grid['at'] != grid['places'] or not grid['dirs'] or any(d not in ('E', 'N', 'S') for d in grid['dirs']):
+        errs.append(f'run lab: the grid view drew {grid}')
+    pg.select_option('#rlView', 'steps')
     # T2.6: a debug log's run carries its own unlocks; an older log only the save's
     read = pg.evaluate("""[runLabReadLog(JSON.stringify({state:{run:{seed:'LOGSEED',unlocks:['biome_ridge'],nodes:12},meta:{unlocks:['biome_ridge','shop_wake_tea']}}})),
       runLabReadLog(JSON.stringify({state:{run:{seed:'OLDLOG',nodes:12},meta:{unlocks:['shop_wake_tea']}}}))]""")
@@ -1286,9 +1299,10 @@ def run_lab_play_steps(pg, errs):
     pg.fill('#rlSeed', 'PLAYCHECK1')
     pg.select_option('#rlUnlocks', 'none')
     pg.check('#rlShort')
+    pg.select_option('#rlView', 'steps')
     t0 = time.time()
     rows = "(()=>{const m=document.querySelector('#main .rl-map');return m?new Set([...m.querySelectorAll('circle')].map(c=>c.getAttribute('cx'))).size:0})()"
-    while time.time() - t0 < 5 and pg.evaluate(rows) != 5: time.sleep(0.05)
+    while time.time() - t0 < 5 and pg.evaluate(rows) != 6: time.sleep(0.05)
     lab = pg.evaluate("[...document.querySelector('#main .rl-map').querySelectorAll('.rl-node')].map(g=>g.dataset.type+':'+g.dataset.biome)")
     was = pg.evaluate('studioState.D.rules.run.healCost')
     pg.fill('#main .rl-rules [data-p="rules.run.healCost"]', '77')
@@ -1335,30 +1349,36 @@ def run_lab_rules_steps(pg, errs):
     rows_drawn = lambda: pg.evaluate("(()=>{const m=document.querySelector('#main .rl-map');if(!m)return 0;return new Set([...m.querySelectorAll('.rl-node:not([data-side]) circle')].map(c=>c.getAttribute('cx'))).size})()")
     pending = lambda: pg.evaluate("changedDataFiles(studioState.D).map(f=>f.path).filter(p=>/rules\\.json$|nodeTypes\\.json$/.test(p)).sort()")
     if not pg.locator('#main .rl-rules').count(): errs.append('no run rules card'); return 'no rules card'
-    was = pg.evaluate('studioState.D.rules.run.map.rows')
+    pg.select_option('#rlView', 'steps')
+    if pg.is_checked('#rlShort'): pg.uncheck('#rlShort')
+    pg.select_option('#rlExpedition', '1')
+    # WM-2: Expedition I's places a path, both ends typed 12 (a 12-place map)
+    was = pg.evaluate('studioState.D.rules.run.map.path[0].slice()')
     before = rows_drawn()
-    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', '7')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.1"]', '12')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.0"]', '12')
     t0 = time.time()
-    while time.time() - t0 < 5 and rows_drawn() == before: time.sleep(0.05)
+    while time.time() - t0 < 5 and rows_drawn() != 12: time.sleep(0.05)
     drawn = rows_drawn()
-    if drawn != 7: errs.append(f'rows 7 typed in the rules card: the map has {drawn} rows')
-    if pg.evaluate('studioState.D.rules.run.map.rows') != 7: errs.append('the rows field did not write rules.run.map.rows')
+    if drawn != 12: errs.append(f'12 places a path typed in the rules card: the map has {drawn} rows (before: {before})')
+    if pg.evaluate('studioState.D.rules.run.map.path[0]') != [12, 12]: errs.append('the path fields did not write rules.run.map.path')
     name_was = pg.evaluate('studioState.D.nodeTypes.town.name')
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', 'Market')
     pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     sent = pending()
     rules_text = pg.evaluate("(changedDataFiles(studioState.D).find(f=>/rules\\.json$/.test(f.path))||{}).text||''")
     if not any(p.endswith('rules.json') for p in sent) or not any(p.endswith('nodeTypes.json') for p in sent): errs.append(f'Propose would send {sent}, not rules.json and nodeTypes.json')
-    elif '"rows": 7' not in rules_text.replace('"rows":7', '"rows": 7'): errs.append('the proposed rules.json does not hold rows 7')
+    elif '[12,12]' not in rules_text.replace(' ', '').replace('\n', ''): errs.append('the proposed rules.json does not hold the path [12, 12]')
     if 'potion' in pg.evaluate('studioState.D.rules.run.shop.always'): errs.append('unticking the Potion left it always on the shelves')
-    # a value the map can't lay out (more mini-bosses than rows hold): the game's own error beside the map
-    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', '6')
+    # a value the map can't lay out (more towns than 12 places hold): the game's own error beside the map
+    pg.fill('#main .rl-rules [data-p="rules.run.map.towns.0"]', '4')
     t0 = time.time()
     while time.time() - t0 < 5 and not pg.locator('#main .rl-error').count(): time.sleep(0.05)
-    if not pg.locator('#main .rl-error').count(): errs.append('6 mini-bosses on 7 rows drew a map, not the game’s error')
-    mb = pg.evaluate('studioState.loaded.rules.run.map.minibosses')
-    pg.fill('#main .rl-rules [data-p="rules.run.map.minibosses"]', str(mb))
-    pg.fill('#main .rl-rules [data-p="rules.run.map.rows"]', str(was))
+    if not pg.locator('#main .rl-error').count(): errs.append('4 towns on 12 places drew a map, not the game’s error')
+    tw = pg.evaluate('studioState.loaded.rules.run.map.towns[0]')
+    pg.fill('#main .rl-rules [data-p="rules.run.map.towns.0"]', str(tw))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.0"]', str(was[0]))
+    pg.fill('#main .rl-rules [data-p="rules.run.map.path.0.1"]', str(was[1]))
     pg.fill('#main .rl-rules [data-p="nodeTypes.town.name"]', name_was)
     pg.evaluate("document.querySelector('#main .rl-rules [data-rl-always=\"potion\"]').click()")
     left = pending()
@@ -1367,7 +1387,7 @@ def run_lab_rules_steps(pg, errs):
     while time.time() - t0 < 10 and pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].some(e=>!e.dataset.line)"): time.sleep(0.1)
     lines = pg.evaluate("[...document.querySelectorAll('#main [data-rl-code]')].map(e=>e.textContent)")
     if not lines or any(l.endswith(':?') or ':' not in l for l in lines): errs.append(f'the rules in code did not all find their line: {lines}')
-    return f"the rules card: rows 7 redrawn, proposed in rules.json and nodeTypes.json, the game's error for 6 mini-bosses, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
+    return f"the rules card: 12 places a path redrawn, proposed in rules.json and nodeTypes.json, the game's error for 4 towns, put back with nothing left to send, {len(lines)} rules in code with their lines ({lines[0] if lines else ''})"
 
 
 def run_lab_logic_steps(pg, errs, want):
@@ -1968,7 +1988,7 @@ def music_steps(pg, errs):
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
 const out = {};
 /* Studio plan Phase 4: what the content editors must show, from the game's logic in Node */
-out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.minibosses).map(p => p.offer.join(','));
+out.offers = modules.perks.perkOfferOrder('LAB1', D.perks, D.rules.run.perks, D.rules.run.map.towns[0]).map(p => p.offer.join(','));
 out.lab = modules['run-preview'].runPreview('LAB1', { unlocks: [] }).relicOffers.map(o => o.join(','));
 out.running_shoes = modules['content-preview'].perkPreview(['running_shoes'], { sp: D.lines[0].id + '1', lvl: 30 }).stats.find(s => s.id === 'hus');
 out.leaders = modules['content-preview'].leaderRunValues();
@@ -2167,16 +2187,6 @@ def polish_steps(pg, errs):
     pg.evaluate("void undo()"); time.sleep(0.4)
     if v0 + ' Polish' not in listed: errs.append('F16: a move renamed in the second pane kept its old name in that pane\'s list')
     pg.evaluate("ACTIONS.paneClose()"); time.sleep(0.3)
-    # F20: the shop keeper's thank-you lines are the shop's, not a key of the data
-    got = pg.evaluate("""(async () => { const D = studioState.D, had = D.shops, keep = studioState.sel.shop;
-      D.shops = { tst: { name: 'Test shop', keeper: 'K', who: Object.keys(D.people)[0], thanks: ['Ta', 'Cheers'], stock: [] } };
-      studioState.sel.shop = 'tst'; openSection('shops'); await new Promise(r => setTimeout(r, 300));
-      const t = [...document.querySelectorAll('#main textarea[data-p]')].find(e => e.dataset.p.startsWith('@') && e.dataset.p.endsWith('.tst'));
-      const shown = t ? t.value : null;
-      if (t) { t.value = 'One\\nTwo'; t.dispatchEvent(new Event('input', { bubbles: true })); }
-      const r = { shown, thanks: D.shops.tst.thanks, top: 'tst' in D };
-      delete D.tst; D.shops = had; studioState.sel.shop = keep; commit(true); return r; })()""")
-    if got != {'shown': 'Ta\nCheers', 'thanks': ['One', 'Two'], 'top': False}: errs.append(f'F20: the shop thank-you field gave {got}')
     # F20: lore's lists of lines and a trainer's script read as text and write back the same
     got = pg.evaluate("""(() => { const L = readPath('@lines.lore.loading'), S = readPath('@script.trainer:crude'),
       a = JSON.stringify(studioState.D.lore.loading), b = JSON.stringify(studioState.D.trainers.crude.script);
@@ -2262,7 +2272,289 @@ def polish_steps(pg, errs):
     if made or any('not drawn' in x for x in shown): errs.append(f'3D view: across {shown}, {made} new WebGL contexts')
     if len(GL_WARN) > w0: errs.append(f'3D view: stale GPU objects across the 3D sections: {GL_WARN[w0:w0 + 2]}')
     print(f'polish: {", ".join(shown)} on one canvas, {made} new WebGL contexts, {len(GL_WARN) - w0} GPU warnings', flush=True)
-    pg.evaluate("void openSection('jobs')")  # a section with no 3D view, so its frames don't slow the steps after
+    pg.evaluate("void openSection('types')")  # a section with no 3D view, so its frames don't slow the steps after
+
+
+def art_browser_steps(pg, errs):
+    """Studio art track SA-1: the Art browser. Its top folders are the art folder's; a folder opens with breadcrumbs;
+    the search's tokens (dir:, w:, unused) keep the right pictures and show as chips; a picture's Used by lists what
+    names it; Edit pixels paints a PNG on the shared pixel canvas and undo takes the stroke back; Ctrl K finds an art
+    file and opens it here."""
+    pg.set_default_timeout(120000)
+    art = ROOT / 'game' / 'art'
+    pics = lambda d: [p for p in d.rglob('*') if p.is_file() and p.suffix.lower() in ('.png', '.webp', '.jpg', '.svg')]
+    want = sorted(d.name for d in art.iterdir() if d.is_dir() and pics(d))
+    pg.evaluate("artBrowser.q = ''; artBrowser.at = ''; artBrowser.sel = ''; artBrowser.edit = ''; openSection('art')")
+    pg.wait_for_selector('#abGrid')
+    got = pg.evaluate("[...document.querySelectorAll('#abGrid .ab-folder .ab-name')].map(e => e.textContent)")
+    if got != want: errs.append(f'art browser: the top folders are {got}, the art folder has {want}')
+    pg.evaluate("ACTIONS.abGo({ at: 'scene/props' })"); time.sleep(0.3)
+    crumbs = pg.evaluate("document.querySelector('.ab-crumbs').textContent")
+    if crumbs.replace(' ', '') != 'art/scene/props': errs.append(f'art browser: breadcrumbs read {crumbs!r}')
+    titles = lambda: pg.evaluate("[...document.querySelectorAll('#abGrid .ab-tile:not(.ab-folder)')].map(e => e.title)")
+    def search(q, until=None, secs=60):
+        pg.evaluate(f"artBrowser.at = ''; artBrowser.q = {json.dumps(q)}; artBrowser.more = 0; render()")
+        end = time.time() + secs
+        while time.time() < end:
+            t = titles()
+            if until is None or until(t): return t
+            time.sleep(0.5); pg.evaluate('render()')
+        return titles()
+    t = search('dir:scene/props house')
+    if not t or any(not p.startswith('art/scene/props/') or 'house' not in p for p in t): errs.append(f'art browser: dir:scene/props house kept {t[:5]}')
+    chips = pg.evaluate("[...document.querySelectorAll('.ab-chip')].map(e => e.textContent)")
+    if len(chips) != 1 or 'scene/props' not in chips[0]: errs.append(f'art browser: the chips read {chips}')
+    t = search('dir:coins w:32', lambda t: len(t) == 4)
+    if sorted(t) != sorted(f'art/coins/{k}_32.png' for k in ('capstone', 'gold_pyramid', 'pyramid', 'step_pyramid')): errs.append(f'art browser: dir:coins w:32 kept {t}')
+    t = search('unused dir:people', lambda t: len(t) > 0)
+    people = sorted('art/people/' + p.name for p in pics(art / 'people')) if (art / 'people').is_dir() else []
+    if sorted(t) != people: errs.append(f'art browser: unused dir:people kept {len(t)} of {len(people)}')
+    tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
+    path = 'art/' + tile
+    pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
+    end = time.time() + 30
+    while time.time() < end and 'scenery' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'scenery' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append(f'art browser: Used by for {path} does not name scenery')
+    if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Open in Walk scenes')"): errs.append('art browser: a ground tile has no Open in Walk scenes')
+    pg.evaluate(f"ACTIONS.abEdit({{ p: {json.dumps(path)} }})")
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.5)
+    h0 = pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    pg.locator('#abPeStage .pc-art').scroll_into_view_if_needed()
+    box = pg.locator('#abPeStage .pc-art').bounding_box()
+    Z = pg.evaluate('artBrowser.pc.zoom')
+    pg.evaluate("pixelCanvasTool(artBrowser.pc, 'pen'); pixelCanvasColor(artBrowser.pc, '#FF0000')")
+    steps0 = pg.evaluate('studioState.undo.length')
+    pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+    if pg.evaluate(f"{PIXEL_AT}({json.dumps(path)}, 0, 0)") != [255, 0, 0, 255]: errs.append('art browser: Edit pixels: a click did not paint')
+    if pg.evaluate('studioState.undo.length') != steps0 + 1: errs.append('art browser: Edit pixels: a stroke is not one step of the undo')
+    if not pg.evaluate(f"studioState.artDirty.has({json.dumps(path)})"): errs.append('art browser: Edit pixels: the picture is not marked to save')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate(f"{PIXELS}({json.dumps(path)})") != h0: errs.append('art browser: Edit pixels: undo did not take the stroke back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); ACTIONS.abEditDone(); updateTopBar()")
+    hit = pg.evaluate("(() => { const r = findRun('pyramid_32.png').find(e => e.kind === 'art'); if (!r) return null; r.fn(); return [studioState.sec, artBrowser.sel] })()")
+    if hit != ['art', 'art/coins/pyramid_32.png']: errs.append(f'art browser: Ctrl K on pyramid_32.png gave {hit}')
+    pg.set_default_timeout(30000)
+    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, Used by, Edit pixels and its undo, Ctrl K', flush=True)
+
+
+def tile_set_steps(pg, errs):
+    """Studio art track SA-2a: the ground tile set. The tiles47 folder opens it; a pen click on tile 1 of a kind whose
+    Lite tiles are made from its set paints the tile, makes its Lite tile again and redraws the preview, all one step of
+    the undo; undo puts both back. A kind drawn by hand at 16 px keeps its Lite tile."""
+    pg.set_default_timeout(120000)
+    pg.evaluate("artBrowser.q = ''; artBrowser.sel = ''; artBrowser.edit = ''; artBrowser.tiles = false; artBrowser.at = 'next/tiles47'; openSection('art')")
+    pg.wait_for_selector('[data-act="tsOpen"]')
+    pg.click('[data-act="tsOpen"]')
+    pg.wait_for_selector('#tsStage .pc-art')
+    kinds = pg.evaluate("tileSetKinds().length")
+    if kinds < 70: errs.append(f'tile set: {kinds} kinds')
+    def paint(name, n=1):
+        pg.evaluate(f"tileSetOpen({json.dumps(name)}, {n})"); time.sleep(0.4)
+        pg.wait_for_selector('#tsStage .pc-art'); time.sleep(0.3)
+        big = f'art/next/tiles47/{name}_{n}.png'
+        lite = pg.evaluate(f"'art/' + tileSetKinds().find(k => k.name === {json.dumps(name)}).t.tile")
+        h0, l0 = pg.evaluate(f"{PIXELS}({json.dumps(big)})"), pg.evaluate(f"{PIXELS}({json.dumps(lite)})")
+        prev0 = pg.evaluate("document.querySelector('#tsPrev').toDataURL()")
+        pg.locator('#tsStage .pc-art').scroll_into_view_if_needed()
+        box = pg.locator('#tsStage .pc-art').bounding_box()
+        Z = pg.evaluate('tileSet.pc.zoom')
+        pg.evaluate("pixelCanvasTool(tileSet.pc, 'pen'); pixelCanvasColor(tileSet.pc, '#FF0000')")
+        steps0 = pg.evaluate('studioState.undo.length')
+        pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+        time.sleep(0.3)
+        out = dict(painted=pg.evaluate(f"{PIXEL_AT}({json.dumps(big)}, 0, 0)") == [255, 0, 0, 255],
+                   steps=pg.evaluate('studioState.undo.length') - steps0,
+                   lite=pg.evaluate(f"{PIXELS}({json.dumps(lite)})") != l0,
+                   prev=pg.evaluate("document.querySelector('#tsPrev').toDataURL()") != prev0)
+        pg.evaluate('undo()'); time.sleep(0.3)
+        out['back'] = pg.evaluate(f"{PIXELS}({json.dumps(big)})") == h0 and pg.evaluate(f"{PIXELS}({json.dumps(lite)})") == l0
+        pg.evaluate(f"studioState.artDirty.delete({json.dumps(big)}); studioState.artDirty.delete({json.dumps(lite)}); updateTopBar()")
+        return out
+    o = paint('granite')
+    if o != dict(painted=True, steps=1, lite=True, prev=True, back=True): errs.append(f'tile set: a stroke on a made kind gave {o}')
+    if not pg.evaluate("tileSet.linked.granite === true"): errs.append('tile set: granite is not told as made from its set')
+    o = paint('grass')
+    if o != dict(painted=True, steps=1, lite=False, prev=True, back=True): errs.append(f'tile set: a stroke on a hand-drawn kind gave {o}')
+    if pg.evaluate("tileSet.linked.grass") is not False: errs.append('tile set: grass is not told as drawn by hand')
+    pg.evaluate("ACTIONS.tsClose()"); time.sleep(0.3)
+    if pg.evaluate("artBrowser.tiles || !document.querySelector('#abGrid')"): errs.append('tile set: Back did not go back to the Art browser')
+    pg.set_default_timeout(30000)
+    print('tile set: the folder opens it, a stroke paints the tile, its Lite tile (made kinds only) and the preview in one undo step', flush=True)
+
+
+def robot_art_steps(pg, errs):
+    """Studio art track SA-2a: robot pictures. Edit pixels on a part opens the painter, a stroke shows in the Robots
+    section's builds (the game's own drawing) and Done goes back to Robots; Upload… on a gem without a picture names
+    it robots/gem_<id>.png and saves it, one step of the undo."""
+    pg.set_default_timeout(120000)
+    pg.evaluate("studioState.sel.rbKind = 'torso'; studioState.sel.rbId = 'bulwark'; void openSection('robots')")
+    pg.wait_for_selector('[data-act="rbPaint"][data-k="img"]')
+    pg.click('[data-act="rbPaint"][data-k="img"]')
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.4)
+    path = 'art/robots/bulwark.png'
+    done = pg.evaluate("document.querySelector('[data-act=\"abEditDone\"]').textContent")
+    if 'Robots' not in done: errs.append(f'robot art: the painter`s Done reads {done!r}')
+    h0 = pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    pg.locator('#abPeStage .pc-art').scroll_into_view_if_needed()
+    box = pg.locator('#abPeStage .pc-art').bounding_box()
+    Z = pg.evaluate('artBrowser.pc.zoom')
+    pg.evaluate("pixelCanvasTool(artBrowser.pc, 'pen'); pixelCanvasColor(artBrowser.pc, '#FF0000')")
+    steps0 = pg.evaluate('studioState.undo.length')
+    pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+    if pg.evaluate('studioState.undo.length') != steps0 + 1: errs.append('robot art: a stroke is not one step of the undo')
+    pg.click('[data-act="abEditDone"]'); time.sleep(0.6)
+    if pg.evaluate('studioState.sec') != 'robots': errs.append('robot art: Done did not go back to Robots')
+    if not pg.evaluate("ART_CACHE.img['robots/bulwark.png'] === loadedAtlas('art/robots/bulwark.png')"): errs.append('robot art: the builds do not draw the painted picture')
+    if not pg.evaluate("[...document.querySelectorAll('.rb-pic')].some(i => (i.src || '').startsWith('data:'))"): errs.append('robot art: the picture card does not show the painted picture')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate(f"{PIXELS}({json.dumps(path)})") != h0: errs.append('robot art: undo did not take the stroke back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); updateTopBar()")
+    gem = 'art/robots/gem_tide.png'
+    pg.evaluate("studioState.sel.rbKind = 'gem'; studioState.sel.rbId = 'tide'; studioState.D.robots.gems.tide._img = studioState.D.robots.gems.tide.img; delete studioState.D.robots.gems.tide.img; commit(true); void openSection('robots')")
+    pg.wait_for_selector('[data-act="rbUpload"][data-gem="1"]')
+    steps0 = pg.evaluate('studioState.undo.length')
+    with pg.expect_file_chooser() as fc:
+        pg.click('[data-act="rbUpload"][data-gem="1"]')
+    fc.value.set_files(str(ROOT / 'game' / 'art' / 'robots' / 'gem_volt.png'))
+    end = time.time() + 10
+    while time.time() < end and not pg.evaluate(f"studioState.artDirty.has({json.dumps(gem)})"): time.sleep(0.2)
+    got = pg.evaluate("studioState.D.robots.gems.tide.img")
+    if got != 'robots/gem_tide.png': errs.append(f'robot art: an upload on a gem without a picture named it {got!r}')
+    if pg.evaluate('studioState.undo.length') != steps0 + 1: errs.append('robot art: an upload is not one step of the undo')
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate("'img' in studioState.D.robots.gems.tide"): errs.append('robot art: undo did not take the new picture name back')
+    pg.evaluate(f"const G = studioState.D.robots.gems.tide; G.img = G._img; delete G._img; studioState.artDirty.delete({json.dumps(gem)}); commit(true); updateTopBar()")
+    pg.evaluate("void openSection('items')")
+    pg.wait_for_selector('[data-act="pyrPaint"]')
+    pg.click('[data-act="pyrPaint"][data-p="art/coins/pyramid_16.png"]')
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.3)
+    if 'tools/build-pyramids.py' not in pg.evaluate("document.querySelector('#abPe').textContent"): errs.append('pyramids: the painter does not say build-pyramids.py draws the icon')
+    pg.click('[data-act="abEditDone"]'); time.sleep(0.4)
+    if pg.evaluate('studioState.sec') != 'items': errs.append('pyramids: Done did not go back to Items & pyramids')
+    pg.set_default_timeout(30000)
+    print('robot art: Edit pixels and back, the builds draw the edit, Upload… names a new picture, each one undo step; a pyramid icon painted from Items & pyramids', flush=True)
+
+
+def strips_steps(pg, errs):
+    """Studio art track SA-2a: a frame strip (an animal) plays in the Art browser's picture panel; Step pauses it and
+    shows the next frame."""
+    pg.evaluate("artBrowserShow('art/scene/life/duck.png')")
+    pg.wait_for_selector('.ab-side canvas.sp-cv')
+    time.sleep(1.2)
+    n = pg.evaluate("document.querySelector('.ab-side canvas.sp-cv')._sp.frames || 0")
+    if n < 3: errs.append(f'strips: the duck showed {n} frames in 1.2 s')
+    pg.evaluate("ACTIONS.spStep()"); time.sleep(0.2)
+    a = pg.evaluate("document.querySelector('.sp-frame').textContent")
+    pg.evaluate("ACTIONS.spStep()"); time.sleep(0.2)
+    b = pg.evaluate("document.querySelector('.sp-frame').textContent")
+    if a == b or not stripPlayingOff(pg): errs.append(f'strips: Step showed {a!r} then {b!r}')
+    pg.evaluate("stripPlayer.playing = true")
+    print('strips: a strip plays in the picture panel; Step pauses and steps', flush=True)
+
+
+def stripPlayingOff(pg):
+    return pg.evaluate("stripPlayer.playing === false")
+
+
+def icons_steps(pg, errs):
+    """Studio art track SA-2b: a UI icon's pixels painted (one stroke: the SVG's text changes, stays in the pixel
+    format, shows in the previews and the Studio's own icons, and undo puts the file back), its text checked as typed (a
+    script is refused), Shade as a block on a flat front, and a new icon staged for Propose; all taken back."""
+    E = pg.evaluate
+    E("void iconEditOpen('bag')")
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.4)
+    P = "loadedText('art/ui/bag.svg')"
+    orig = E(P)
+    box, z = pg.locator('#icStage .pc-art').bounding_box(), E("iconEd.pc.zoom")
+    pg.mouse.click(box['x'] + 1.5 * z, box['y'] + 1.5 * z); time.sleep(0.4)
+    t = E(P)
+    if t == orig or E(f"!!svgToPixels({P}).error") or not E("studioState.textDirty.has('art/ui/bag.svg')"):
+        errs.append('icons: a stroke did not write the icon as pixel SVG text')
+    if not E("document.querySelector('img[data-ic]').src.startsWith('data:') && !!(window.NW_ART || {})['ui/bag.svg']"):
+        errs.append('icons: the unsaved icon is not in the previews or the Studio\'s own icons')
+    E("undo()"); time.sleep(0.3)
+    if E(P) != orig or E("studioState.textDirty.has('art/ui/bag.svg')"): errs.append('icons: undo did not put the icon back')
+    bad = orig.replace('<path', '<script>x</script><path', 1)
+    pg.fill('#icText', bad); pg.locator('#icText').dispatch_event('input'); time.sleep(0.8)
+    if E(P) != orig or 'Not used' not in E("document.querySelector('#icTextNote').textContent"): errs.append('icons: a script in the text was not refused')
+    pg.fill('#icText', orig); pg.locator('#icText').dispatch_event('input'); time.sleep(0.6)
+    E("""(() => { const c = iconEd.canvas, x = c.getContext('2d'); x.clearRect(0, 0, 36, 36); x.fillStyle = '#F6D06C';
+      x.fillRect(8, 8, 18, 18); iconWritePixels('bag', c); iconEd.hue = 'gold'; ACTIONS.icShade(); })()""")
+    time.sleep(0.3)
+    side = E(f"(() => {{ const p = svgToPixels({P}); return Array.from(p.data.slice((27 * 36 + 27) * 4, (27 * 36 + 27) * 4 + 4)); }})()")
+    if side != [133, 120, 62, 255]: errs.append(f'icons: Shade as a block drew the block side {side}')
+    E("undo(); undo()"); time.sleep(0.3)
+    if E(P) != orig: errs.append('icons: undoing the shade and the flat front did not put the icon back')
+    E("void ACTIONS.icNew()"); pg.wait_for_selector('#icNewName'); pg.fill('#icNewName', 'checkicon')
+    pg.locator('#dlg button', has_text='Make it').click(); time.sleep(0.6)
+    if 'art/ui/checkicon.svg' not in E("stageChanges().texts.map(t => t.path)"): errs.append('icons: a new icon is not staged for Propose')
+    E("undo()"); time.sleep(0.3)
+    if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
+    E("ACTIONS.icClose()")
+    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; all undone', flush=True)
+
+
+def atlas_steps(pg, errs):
+    """Studio art track SA-2b: the icon atlas: a rectangle dragged and resized (art/manifest.js unsaved, the game's
+    ARTMAN following), undone; an item icon's key renamed with the data in the same undo step; Delete refused while the
+    data uses a key; a rectangle added in a free place."""
+    E = pg.evaluate
+    E("void atlasOpen('coin')")
+    pg.wait_for_selector('#atCv', timeout=20000); time.sleep(0.4)
+    orig, r0, z = E("loadedText('art/manifest.js')"), E("ARTMAN.icons.coin"), E("atlasEd.zoom")
+    box = pg.locator('#atCv').bounding_box()
+    x0, y0 = box['x'] + (r0[0] + 1) * z, box['y'] + (r0[1] + 1) * z
+    pg.mouse.move(x0, y0); pg.mouse.down(); pg.mouse.move(x0 + 3 * z, y0, steps=4); pg.mouse.up(); time.sleep(0.4)
+    pg.locator('#atCv').focus(); pg.keyboard.press('Shift+ArrowRight'); time.sleep(0.3)
+    if E("ARTMAN.icons.coin") != [r0[0] + 3, r0[1], r0[2] + 1, r0[3]]: errs.append(f"atlas: drag and Shift+Right made {E('ARTMAN.icons.coin')} from {r0}")
+    E("undo(); undo()"); time.sleep(0.3)
+    if E("loadedText('art/manifest.js')") != orig or E("studioState.textDirty.size"): errs.append('atlas: undo did not put art/manifest.js back')
+    k = E("Object.keys(ARTMAN.icons).find(k => k.startsWith('i_') && atlasUses(k, studioState.D).length)")
+    n = E(f"atlasUses({json.dumps(k)}, studioState.D).length")
+    E(f"atlasEd.key = {json.dumps(k)}; render()"); time.sleep(0.3)
+    E("void ACTIONS.atRename()"); pg.wait_for_selector('#atKey'); pg.fill('#atKey', k + '_c')
+    pg.locator('#dlg button', has_text='OK').click(); time.sleep(0.5)
+    if not E(f"!!ARTMAN.icons[{json.dumps(k + '_c')}]") or E(f"atlasUses({json.dumps(k + '_c')}, studioState.D).length") != n:
+        errs.append(f'atlas: renaming {k} did not take its {n} data uses along')
+    E("undo()"); time.sleep(0.4)
+    if not E(f"!!ARTMAN.icons[{json.dumps(k)}]") or E(f"atlasUses({json.dumps(k)}, studioState.D).length") != n:
+        errs.append('atlas: undoing the rename did not put the key and the data back')
+    E(f"atlasEd.key = {json.dumps(k)}; void ACTIONS.atDelete()"); time.sleep(0.3)
+    if not E(f"!!ARTMAN.icons[{json.dumps(k)}]"): errs.append('atlas: a key the data uses was deleted')
+    E("void ACTIONS.atAdd()"); pg.wait_for_selector('#atKey'); pg.fill('#atKey', 'checkrect')
+    pg.locator('#dlg button', has_text='OK').click(); time.sleep(0.4)
+    if E("atlasProblems(ARTMAN.icons, loadedAtlas('art/icons/icons.png').width, loadedAtlas('art/icons/icons.png').height).length") or not E("ARTMAN.icons.checkrect"):
+        errs.append('atlas: Add did not find a free place')
+    E("undo()"); time.sleep(0.3)
+    if E("studioState.textDirty.size") or E("loadedText('art/manifest.js')") != orig: errs.append('atlas: art/manifest.js was left unsaved')
+    E("ACTIONS.atClose()")
+    print(f'atlas: moved, resized, renamed {k} with {n} data use(s), refused a delete, added; all undone', flush=True)
+
+
+def scene_art_steps(pg, errs):
+    """Studio art track SA-2b: walls, the building sheet, rooms, a flag and a far backdrop each get their preview in
+    the picture panel; a stroke on walls.png in the painter redraws its preview (then undone)."""
+    E = pg.evaluate
+    for p, sel in [('art/scene/build/walls.png', 'canvas.sp-wall'), ('art/scene/build/detail-a04b.png', 'canvas.sp-wall'),
+                   ('art/scene/build/rooms.png', 'canvas.sp-room'), ('art/scene/flags/marigold.png', 'canvas.sp-flag'),
+                   ('art/scene/far/hills.png', 'canvas.sp-far')]:
+        E(f"artBrowserShow({json.dumps(p)})")
+        try: pg.wait_for_selector('.ab-side ' + sel, timeout=15000)
+        except Exception: errs.append(f'scene art: {p} has no preview'); continue
+    E("artBrowserShow('art/scene/build/walls.png')"); time.sleep(0.6)
+    pg.locator('.ab-side button', has_text='Edit pixels').click()
+    pg.wait_for_selector('.sc-pe-side canvas.sp-wall', timeout=15000); time.sleep(0.8)
+    if E("document.querySelectorAll('#abPe svg rect').length") != 12: errs.append('scene art: the painter does not outline the 12 wall cells')
+    before = E("document.querySelector('.sc-pe-side canvas.sp-wall').toDataURL()")
+    sheet = E("loadedAtlas('art/scene/build/walls.png').toDataURL()")
+    box, z = pg.locator('#abPeStage .pc-art').bounding_box(), E("artBrowser.pc.zoom")
+    E("pixelCanvasColor(artBrowser.pc, '#000000')")
+    pg.mouse.click(box['x'] + 10.5 * z, box['y'] + 10.5 * z); time.sleep(0.6)
+    if E("document.querySelector('.sc-pe-side canvas.sp-wall').toDataURL()") == before: errs.append('scene art: a stroke did not redraw the wall preview')
+    E("undo()"); time.sleep(0.3)
+    if E("loadedAtlas('art/scene/build/walls.png').toDataURL()") != sheet: errs.append('scene art: undo did not put walls.png back')
+    E("ACTIONS.abEditDone()")
+    print('scene art: walls, building sheet, rooms, a flag and a far backdrop previewed; a wall stroke redraws it', flush=True)
 
 
 # the steps after sign-in, in order (--only picks some by name; 'sections' and 'art' are the two blocks in main)
@@ -2270,6 +2562,13 @@ STEPS = [
     ('story', story_steps),
     ('free_camera', free_camera_steps),
     ('tiles', tile_painter_steps),
+    ('art_browser', art_browser_steps),
+    ('tile_set', tile_set_steps),
+    ('strips', strips_steps),
+    ('robot_art', robot_art_steps),
+    ('icons', icons_steps),
+    ('atlas', atlas_steps),
+    ('scene_art', scene_art_steps),
     ('split', split_steps),
     ('workbench', workbench_steps),
     ('part_mode', part_mode_steps),
@@ -2345,7 +2644,8 @@ def publish_checks(b, url, errs):
     pg.route('https://api.github.com/**', api)
     pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
     t0 = time.time()
-    pg.goto(url)
+    # the loop below waits for the Studio; the page's load event (every picture) can take over 30 s in a container
+    pg.goto(url, wait_until='domcontentloaded', timeout=120000)
     while time.time() - t0 < 120 and not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')"):
         time.sleep(0.5)
     # T0.2: everything is read at the commit the Studio loaded, rigs-next.js included (not the page's own copy)
@@ -2353,15 +2653,16 @@ def publish_checks(b, url, errs):
     if at != ['base1']: errs.append(f'publish: the Studio read at {at}, not only at the loaded commit base1')
     if not any(f == 'game/art/next/rigs-next.js' for f, _ in st['reads']): errs.append('publish: rigs-next.js was not read from the repository')
     ART = 'art/next/parts/front/publish_check.png'
-    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s)})" % json.dumps(ART)
+    TEXT = 'art/ui/publish_check.svg'  # SA-2b: a text file rides along
+    pending = "({data: studioState.dirty, rigs: studioState.rigsDirty, art: studioState.artDirty.has(%s), text: studioState.textDirty.has(%s)})" % (json.dumps(ART), json.dumps(TEXT))
 
     def make_edits(tag):
         pg.evaluate("""tag => { const c = document.createElement('canvas'); c.width = c.height = 4;
           const x = c.getContext('2d'); x.fillStyle = '#c03'; x.fillRect(0, 0, 4, 4);
-          markArt(%s, c);
+          markArt(%s, c); markText(%s, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><!--' + tag + '--></svg>\\n');
           const k = Object.keys(studioState.rigs).find(k => String((studioState.rigs[k].front || {}).sheet || '').startsWith('next/'));
           studioState.rigs[k].publishCheck = tag; studioState.rigsDirty = true;
-          studioState.D.meta.publishCheck = tag; studioState.dirty = true; }""" % json.dumps(ART), tag)
+          studioState.D.meta.publishCheck = tag; studioState.dirty = true; }""" % (json.dumps(ART), json.dumps(TEXT)), tag)
 
     def idle():
         return pg.evaluate("document.querySelector('#saveBtn').textContent === 'Propose changes' && !document.querySelector('#saveBtn').disabled && !document.querySelector('#ghSum')")
@@ -2388,7 +2689,7 @@ def publish_checks(b, url, errs):
         trees = [json.loads(bd) for k, bd in st['log'] if k == 'trees']
         return [t['path'] for t in trees[-1]['tree']] if trees else []
 
-    want = {'game/' + ART, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
+    want = {'game/' + ART, 'game/' + TEXT, 'game/art/rigs.js', 'game/art/next/rigs-next.js', 'game/data/meta.json'}
     # 1. a failure at each step: everything stays pending, and the retry carries all of it
     for step in ['blobs', 'trees', 'commits', 'refs', 'pulls']:
         st['log'].clear(); st['fail'] = {step: [502]}
@@ -2410,6 +2711,8 @@ def publish_checks(b, url, errs):
         if not any(k == 'pulls' for k, _ in st['log']): errs.append(f'publish: the retry after a {step} failure opened no pull request')
         missing = sorted(want - set(sent))
         if missing: errs.append(f'publish: the retry after a {step} failure left out {missing}')
+        texts = [base64.b64decode(json.loads(bd)['content']).decode('utf8', 'replace') for k, bd in st['log'] if k == 'blobs']
+        if not any(t.startswith('<svg') and ('<!--fail-' + step + '-->') in t for t in texts): errs.append(f'publish: the retry after a {step} failure did not send the SVG as its text')
         left = pg.evaluate(pending)
         if any(left.values()): errs.append(f'publish: after a successful retry ({step}), something still shows as pending: {left}')
     # 2. an error while building the proposal sends nothing

@@ -110,6 +110,25 @@ test('dragging moves the land with the finger, zoom and turn keep the limits', (
   assert.ok(bowlCamTurn(s, 0, 5).tilt <= BOWL_CAMERA.tiltMax);
 });
 
+test("WM-1: a run place's opening view looks the way its map's north faces, so the run reads west to east, left to right", () => {
+  for (const [x, y] of [
+    [-0.72, 0.03],
+    [0, 0.06],
+    [0.72, -0.1],
+  ]) {
+    const h = bowlCamHome(x, y, 2, 90),
+      v = bowlCamView(h, W, H),
+      west = bowlCamProject(v, bowlToGpu(x - 0.1, y, 0)),
+      east = bowlCamProject(v, bowlToGpu(x + 0.1, y, 0)),
+      north = bowlCamProject(v, bowlToGpu(x, y + 0.1, 0)),
+      south = bowlCamProject(v, bowlToGpu(x, y - 0.1, 0));
+    assert.ok(near(h.yaw, 0, 1e-9), `looks north at ${x}, ${y} (yaw ${h.yaw})`);
+    assert.ok(west && east && north && south);
+    assert.ok(west.x < east.x, 'west on the left, east on the right');
+    assert.ok(north.y < south.y, 'north up the screen');
+  }
+});
+
 test('the opening view: about 50 degrees, looking outward at the wall behind the place', () => {
   const h = bowlCamHome(0.6, 0);
   assert.ok(near(h.yaw, Math.PI / 2, 1e-9), 'faces east, away from the centre');

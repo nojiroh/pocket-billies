@@ -4,10 +4,11 @@
    items, the title's town rise and tap targets, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
+import { gameData, loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
+import { pixelLightness } from '../logic/pixel-facts.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
@@ -1066,22 +1067,21 @@ const PICTURE_LIGHTNESS = new WeakMap();
 function pictureLightness(im) {
   let l = PICTURE_LIGHTNESS.get(im);
   if (l != null) return l;
+  /* LD-1: baked (tools/bake-pixel-facts.mjs) unless the Studio is painting the picture */
+  const F = typeof gameData !== 'undefined' && gameData.pixelFacts,
+    baked = F && !im._ver && im.__path ? F.lightness[im.__path] : undefined;
+  if (baked !== undefined) {
+    PICTURE_LIGHTNESS.set(im, baked);
+    return baked;
+  }
   l = 0.5;
   try {
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       cv = makeCanvas(w, h),
-      cx = cv.getContext('2d');
+      cx = cv.getContext('2d', { willReadFrequently: true });
     cx.drawImage(im, 0, 0);
-    const d = cx.getImageData(0, 0, w, h).data;
-    let s = 0,
-      n = 0;
-    for (let i = 0; i < d.length; i += 4) {
-      if (d[i + 3] < 128) continue;
-      s += (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
-      n++;
-    }
-    if (n) l = s / n;
+    l = pixelLightness(cx.getImageData(0, 0, w, h).data);
   } catch {
     /* a picture that can't be read keeps the middle value */
   }

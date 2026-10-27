@@ -83,7 +83,7 @@
   height: 44px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   background: rgba(30, 26, 44, 0.55);
   color: rgba(255, 248, 230, 0.92);
   font-size: 16px;

@@ -21,6 +21,7 @@ test('a confirmed send marks saved only what is still as it was sent', () => {
       data: true,
       rigs: true,
       art: ['art/a.png', 'art/b.png'],
+      texts: [],
     }
   );
   // edited during the send: data changed, a picture painted again, a picture taken back
@@ -30,6 +31,7 @@ test('a confirmed send marks saved only what is still as it was sent', () => {
       data: false,
       rigs: true,
       art: [],
+      texts: [],
     }
   );
 });
@@ -41,8 +43,32 @@ test('nothing staged is never confirmed', () => {
     data: false,
     rigs: false,
     art: [],
+    texts: [],
   });
   assert.equal(P.publishEmpty({ dataText: null, rigsText: 'R', art: [] }), false);
+});
+
+test('SA-2b: a text file is confirmed by its version like a picture, and makes a stage worth sending', () => {
+  const staged = {
+    dataText: null,
+    rigsText: null,
+    art: [],
+    texts: [
+      { path: 'art/ui/bag.svg', ver: 2 },
+      { path: 'art/manifest.js', ver: 1 },
+    ],
+  };
+  assert.equal(P.publishEmpty(staged), false);
+  assert.deepEqual(
+    P.publishConfirm(staged, {
+      dataText: null,
+      rigsText: null,
+      art: {},
+      texts: { 'art/ui/bag.svg': 2, 'art/manifest.js': 5 },
+    }).texts,
+    ['art/ui/bag.svg']
+  );
+  assert.deepEqual(P.publishConfirm(staged, { dataText: null, rigsText: null, art: {} }).texts, []);
 });
 
 test('the files a proposal shares with main, sorted and once each', () => {

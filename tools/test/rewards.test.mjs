@@ -24,7 +24,6 @@ function setup(team = [['zuck0', 10]], seed = 'REWARDS001') {
     pyramids: {},
     trip: { node: 0, plan: [] },
     wild: {},
-    eggs: [],
     flags: {},
     seats: [],
     visited: {},

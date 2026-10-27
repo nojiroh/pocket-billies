@@ -21,27 +21,53 @@ expose({
 export const RUN_RULES_IN_CODE = [
   {
     what: 'Lanes a row may have',
-    value: 'at most 2; only filler and rest rows widen (rules.run.map.wide is the chance)',
+    value:
+      'at most 2; only filler and rest rows widen (rules.run.map.wide is the chance); the row after the landing always has 2 (its ways on, north and east)',
     file: 'game/js/logic/run-map.js',
-    code: "return { width: (role === '' || role === 'rest') && wide ? 2 : 1, cross, west };",
+    code: "return { width: (role === '' || role === 'rest') && (wide || row === 1) ? 2 : 1, cross, west };",
   },
   {
     what: 'Which way a cross-link goes',
-    value: 'even odds, west or east (rules.run.map.cross is whether there is one)',
+    value: 'even odds, west or east (rules.run.map.cross is whether there is one); dropped when the grid can’t hold it',
     file: 'game/js/logic/run-map.js',
     code: 'west = g.next() < 0.5;',
   },
   {
     what: 'Where the mini-boss rows fall',
-    value: 'evenly spaced: row round(k × rows / (mini-bosses + 1))',
+    value: 'the free rows shared out evenly before each mini-boss and before the boss, one at least each',
     file: 'game/js/logic/run-map.js',
-    code: "for (let k = 1; k <= M.minibosses; k++) rows[Math.round((k * M.rows) / (M.minibosses + 1))] = 'guard';",
+    code: 'at += Math.round(((k + 1) * free) / (T + 1)) - Math.round((k * free) / (T + 1));',
   },
   {
-    what: 'A rest stop before each mini-boss',
-    value: 'the row before a mini-boss row is a rest row (rules.run.map.rest), when it is a filler',
+    what: 'A town after each mini-boss',
+    value: 'the row after a mini-boss row is a rest row (rules.run.map.rest): the town is the reward',
     file: 'game/js/logic/run-map.js',
-    code: "if (role === 'guard' && g >= 2 && rows[g - 1] === '') rows[g - 1] = 'rest';",
+    code: "rows[at + 1] = 'guard';",
+  },
+  {
+    what: 'How many mini-bosses a run has',
+    value: 'as many as fit: one for every 3 places past 3, within rules.run.map.towns',
+    file: 'game/js/logic/run-map.js',
+    code: 'minibosses = M.minibosses !== undefined ? M.minibosses : Math.max(lo, Math.min(hi, Math.floor((rows - 3) / 3)));',
+  },
+  {
+    what: 'Routes before a mini-boss',
+    value: 'every lane of the free row before a mini-boss is route-like (nodeTypes.json routeLike), redrawn when not',
+    file: 'game/js/logic/run-map.js',
+    code: '? rngFrom(seed, `map|road|${row}|${lane}`).pick(road)',
+  },
+  {
+    what: 'The region grid',
+    value:
+      'cells 64 m; every place 2 × 1 cells (until WM-3); the main path within 3 cells north and south of the landing',
+    file: 'game/js/logic/run-map.js',
+    code: 'export const RUN_GRID = { cell: 64, place: [2, 1], half: 3, tries: 4000 };',
+  },
+  {
+    what: 'Which way a link goes on the grid',
+    value: 'east twice as likely as north or south, half as likely again away from the landing’s row; never west',
+    file: 'game/js/logic/run-map.js',
+    code: 'W = { E: 2, N: 1, S: 1 };',
   },
   {
     what: 'Where links meet a scene’s side',

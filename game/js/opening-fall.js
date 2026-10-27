@@ -13,7 +13,7 @@
 import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { START_NODE, typeEffectiveness } from './game-data.js';
+import { CUTSCENES, START_NODE, typeEffectiveness } from './game-data.js';
 import { CHOSEN, FAST_PICKS, FAST_PICK_MS, chosenTip, speedWatch } from './logic/chosen.js';
 import { actorTypes } from './logic/battle-engine.js';
 import { bowlSun } from './logic/bowl.js';
@@ -52,10 +52,14 @@ expose({
   fallCrust: [() => fallCrust, v => (fallCrust = v)],
   fallFloatCamera: [() => fallFloatCamera, v => (fallFloatCamera = v)],
   fallFont: [() => fallFont, v => (fallFont = v)],
+  fallHold: [() => fallHold, v => (fallHold = v)],
+  fallHoldLift: [() => fallHoldLift, v => ((fallHoldLift = v), provide({ fallHoldLift }))],
+  fallLandAt: [() => fallLandAt, v => (fallLandAt = v)],
   fallOverWorldMap: [() => fallOverWorldMap, v => (fallOverWorldMap = v)],
   fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
   fallRandom: [() => fallRandom],
   fallSky: [() => fallSky, v => (fallSky = v)],
+  fallStreaks: [() => fallStreaks, v => (fallStreaks = v)],
   fallStreet: [() => fallStreet, v => (fallStreet = v)],
   fallWorldMapCanvas: [() => fallWorldMapCanvas, v => (fallWorldMapCanvas = v)],
   landing: [() => landing],
@@ -67,7 +71,7 @@ expose({
   tutorSkip: [() => tutorSkip, v => (tutorSkip = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleTipHide, battleTutor, fallPlay, landingBurst, landingFrame });
+provide({ battleTipHide, battleTutor, fallHoldLift, fallPlay, landingBurst, landingFrame });
 /* to-module: end */
 const openingFall = { cv: null, x: null, raf: 0, run: 0, W: 0, H: 0 };
 provide({ openingFall }); /* to-module */
@@ -614,39 +618,115 @@ function fallCamera(k, W, H) {
   const roll = (k > 0.55 ? (k - 0.55) * 5.5 : 0) + Math.sin(k * 9) * 0.12;
   return bowlCamLookView(C, look, W, H, roll);
 }
-/* ---- 3. the floating island (the owner, 2026-10-23: shorter, more dynamic and natural): you drop out of the sky
-   above Copperleaf's island, faster and faster, tumbling and steadying as you fall, then swoop round it, slowing, down
-   to the lab where you land. P: world-bowl.js worldMapFallFrame (the bowl's coordinates) ---- */
+/* ---- 3. the floating island, cutscenes track B: a dive. You drop out of the sky over Copperleaf's island looking
+   down, faster and faster (the height goes with the square of the time), tumbling less as you fall, the island
+   swelling up at you until the spot where the opening begins (the opening's `me`) fills the picture, a few metres
+   up; the impact hides the swap to the walk view, which starts on the same spot (opening.json `drop`).
+   P: world-bowl.js worldMapFallFrame (the bowl's coordinates, m its units a metre) ---- */
 function fallFloatCamera(k, W, H, P) {
-  const { c, r, top, land } = P,
-    aL = Math.atan2(land[1] - c[1], land[0] - c[0]),
-    A = 0.55,
-    a0 = aL + 2.3,
-    aA = aL + 1.4,
-    rollA = Math.sin(7.5) * 0.3 * 0.4,
-    at = (a, d, h) => [c[0] + Math.cos(a) * d, c[1] + Math.sin(a) * d, h];
-  let C, look, roll;
-  if (k < A) {
-    /* the drop: gravity (the height goes with the square of the time), turning in towards the island */
-    const f = k / A,
-      shake = r * 0.006 * f * f;
-    C = at(a0 + (aA - a0) * f, r * (2.2 - 0.6 * f), top + r * (10 - 8.2 * (0.25 * f + 0.75 * f * f)));
-    C[0] += Math.sin(k * 97) * shake;
-    C[1] += Math.cos(k * 83) * shake;
-    C[2] += Math.sin(k * 71 + 1) * shake;
-    look = [c[0], c[1], top - r * 0.3 * (1 - f)];
-    roll = Math.sin(f * 7.5) * 0.3 * (1 - f * 0.6);
-  } else {
-    /* the swoop: round the island to where you land, slowing to a stop just above it */
-    const f = (k - A) / (1 - A),
-      e = 1 - Math.pow(1 - f, 3),
-      dl = Math.hypot(land[0] - c[0], land[1] - c[1]),
-      d0 = r * 1.6;
-    C = at(aA + (aL - aA) * e, d0 + (dl + r * 0.75 - d0) * e, top + r * 1.8 + (land[2] + r * 0.45 - top - r * 1.8) * e);
-    look = [c[0] + (land[0] - c[0]) * e, c[1] + (land[1] - c[1]) * e, top + (land[2] - top) * e];
-    roll = rollA * (1 - e);
-  }
+  const { r, land, m } = P,
+    f = Math.max(0, Math.min(1, k)),
+    g = f * f,
+    /* from high over the island to 24 m over the spot */
+    h0 = r * 7,
+    h1 = 24 * m,
+    hz = h0 + (h1 - h0) * g,
+    /* off to one side at first (the island at an angle), right over it at the end; turning slowly round as you fall */
+    off = r * 0.55 * (1 - g) + 5 * m,
+    a = 2.1 - f * 1.4,
+    shake = m * 1.6 * f * f * f,
+    C = [
+      land[0] + Math.cos(a) * off + Math.sin(f * 97) * shake,
+      land[1] + Math.sin(a) * off + Math.cos(f * 83) * shake,
+      land[2] + hz + Math.sin(f * 71) * shake,
+    ],
+    look = [land[0], land[1], land[2]],
+    roll = Math.sin(f * 8) * 0.35 * (1 - f) + (1 - f) * 0.6;
   return bowlCamLookView(bowlToGpu(C[0], C[1], C[2]), bowlToGpu(look[0], look[1], look[2]), W, H, roll);
+}
+/* cutscenes track B: the dive's rush, drawn over the picture as pixel art: clouds swelling past early on, then streaks
+   of air flying out from the middle, more and longer the faster you fall @param {number} k the dive, 0-1 */
+function fallStreaks(k) {
+  let cv = /** @type {HTMLCanvasElement | null} */ ($('#csStreaks'));
+  if (!cv) {
+    cv = document.createElement('canvas');
+    cv.id = 'csStreaks';
+    cv.className = 'cs-streaks';
+    const cs = $('#cs');
+    (cs || document.body).prepend(cv);
+  }
+  const w = 160,
+    h = Math.max(120, Math.round((160 * innerHeight) / Math.max(1, innerWidth)));
+  if (cv.width !== w || cv.height !== h) {
+    cv.width = w;
+    cv.height = h;
+  }
+  const x = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')),
+    cx = w / 2,
+    cy = h / 2,
+    sp = 0.3 + k * k * 2.2;
+  x.clearRect(0, 0, w, h);
+  /* clouds: big soft puffs swelling from the middle out past the edges, thinning out after the first third */
+  for (let i = 0; i < 7; i++) {
+    const ph = (k * 2.6 + fallRandom(i, 3)) % 1,
+      vis = Math.max(0, 1 - k / 0.4);
+    if (vis <= 0) break;
+    const ang = fallRandom(i, 5) * Math.PI * 2,
+      d = ph * ph * Math.max(w, h),
+      R = 6 + ph * ph * 90;
+    x.globalAlpha = 0.55 * vis * (1 - ph);
+    x.fillStyle = 'white';
+    x.beginPath();
+    x.arc(cx + Math.cos(ang) * d, cy + Math.sin(ang) * d, R, 0, Math.PI * 2);
+    x.fill();
+  }
+  /* streaks of air */
+  x.globalAlpha = 1;
+  const n = Math.round(10 + 40 * k);
+  for (let i = 0; i < n; i++) {
+    const ang = fallRandom(i, 11) * Math.PI * 2,
+      ph = (performance.now() / 1000) * sp * (0.6 + fallRandom(i, 13)) + fallRandom(i, 17),
+      t = ph % 1,
+      d0 = 12 + t * t * Math.max(w, h) * 0.7,
+      len = 2 + t * 18 * sp;
+    x.strokeStyle = t < 0.5 ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.7)';
+    x.lineWidth = 1;
+    x.beginPath();
+    x.moveTo(Math.round(cx + Math.cos(ang) * d0), Math.round(cy + Math.sin(ang) * d0));
+    x.lineTo(Math.round(cx + Math.cos(ang) * (d0 + len)), Math.round(cy + Math.sin(ang) * (d0 + len)));
+    x.stroke();
+  }
+  cv.hidden = false;
+}
+/* cutscenes track B: the dive's last picture, held still (and dazed) over the walk view while Copperleaf is made
+   behind it, so the impact never leaves a blank screen; cutsceneStart lifts it once the walk view has drawn */
+function fallHold() {
+  const src = /** @type {HTMLCanvasElement | null} */ ($('#dio'));
+  if (!src || !src.width) return;
+  const cv = document.createElement('canvas');
+  cv.id = 'csHold';
+  cv.className = 'cs-hold';
+  cv.width = src.width;
+  cv.height = src.height;
+  try {
+    const x = cv.getContext('2d');
+    if (x) x.drawImage(src, 0, 0);
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+  const fade = $('#csFade'),
+    cs = $('#cs');
+  if (fade && fade.parentNode) fade.parentNode.insertBefore(cv, fade);
+  else (cs || document.body).appendChild(cv);
+}
+/* the held picture lifts (the walk view has drawn underneath) @param {number} ms */
+function fallHoldLift(ms = 600) {
+  const cv = /** @type {HTMLElement | null} */ ($('#csHold'));
+  if (!cv) return;
+  cv.style.transition = `opacity ${ms}ms ease`;
+  cv.style.opacity = '0';
+  setTimeout(() => cv.remove(), ms + 50);
 }
 export function fallOverWorldMap(run, ms) {
   return new Promise(res => {
@@ -662,7 +742,7 @@ export function fallOverWorldMap(run, ms) {
       return;
     }
     const t0 = performance.now(),
-      P = worldMapFallFrame();
+      P = worldMapFallFrame(fallLandAt());
     let capA = 0,
       capB = P ? 1 : 0;
     const step = ts => {
@@ -673,6 +753,11 @@ export function fallOverWorldMap(run, ms) {
       const k = Math.min(1, (performance.now() - t0) / ms);
       try {
         worldBowlFilm(P ? fallFloatCamera(k, innerWidth, innerHeight, P) : fallCamera(k, innerWidth, innerHeight), ts);
+        if (P) {
+          if (!reducedMotion) fallStreaks(k);
+          /* the last picture, copied in the frame it was drawn (cutscenes track B) */
+          if (k >= 1) fallHold();
+        }
       } catch (e) {
         console.error(e);
         res();
@@ -695,7 +780,13 @@ export function fallOverWorldMap(run, ms) {
     openingFall.raf = requestAnimationFrame(step);
   });
 }
-/* the whole fall; resolves on a white screen, ready for Copperleaf */
+/* cutscenes track B: where the fall lands: the opening's own landing spot (cutscenes/opening.json `me`, in the hub's
+   map), so the dive ends where the opening begins */
+function fallLandAt() {
+  const C = typeof CUTSCENES !== 'undefined' ? CUTSCENES.opening : null;
+  return C && C.spots && C.spots.me ? C.spots.me : undefined;
+}
+/* the whole fall; resolves on a white screen (or the dive's last picture held: fallHold), ready for Copperleaf */
 /* o.from 'crust': the city opening (cutscenes/city.json) came before, so the fall starts in the crust; the street
    under the billboard plays only when the city couldn't */
 async function fallPlay(run, o = {}) {
@@ -765,7 +856,7 @@ async function fallPlay(run, o = {}) {
     if (fade) fade.classList.add('on');
     await new Promise(r => setTimeout(r, 350));
     /* the island whole before it shows: drawn behind the fade until it is in (world-bowl.js worldMapReadyNow) */
-    const P = worldMapFallFrame();
+    const P = worldMapFallFrame(fallLandAt());
     for (let w0 = performance.now(); alive() && P && !worldMapReadyNow() && performance.now() - w0 < 1500;) {
       try {
         worldBowlFilm(fallFloatCamera(0, innerWidth, innerHeight, P), performance.now());
@@ -780,12 +871,24 @@ async function fallPlay(run, o = {}) {
     if (openingFall.cv) openingFall.cv.hidden = true;
     if (fade) fade.classList.remove('on');
     if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 3 });
-    await fallOverWorldMap(run, worldMapFallFrame() ? 6500 : 9000);
+    await fallOverWorldMap(run, worldMapFallFrame() ? 5200 : 9000);
   }
   cancelAnimationFrame(openingFall.raf);
-  if (fade) fade.classList.add('on');
+  const streaks = $('#csStreaks');
+  if (streaks) streaks.remove();
   if (typeof soundEffect === 'function' && alive()) soundEffect('thud');
-  await new Promise(r => setTimeout(r, reducedMotion || cutscene.skip ? 0 : 500));
+  if (fade && $('#csHold') && alive()) {
+    /* the impact: a flash, then the landing's picture held, dazed, while Copperleaf is made behind it */
+    fade.style.transition = 'opacity 90ms ease-in';
+    fade.classList.add('on');
+    await new Promise(r => setTimeout(r, 220));
+    fade.style.transition = '';
+    fade.classList.remove('on');
+    document.body.classList.add('cs-dazed');
+  } else {
+    if (fade) fade.classList.add('on');
+    await new Promise(r => setTimeout(r, reducedMotion || cutscene.skip ? 0 : 500));
+  }
   if (openingFall.cv) {
     openingFall.cv.remove();
     openingFall.cv = null;

@@ -50,7 +50,7 @@ test('check-data: planted rules (battle, run, ranch)', t => {
         Object.assign(R.ranch, { slots: [3, 2], bogus: 1, levelsPerHour: 0 });
         Object.assign(R.ranch.breed, { riskyCost: 50, extra: 1 });
         R.ranch.breed.odds.safe = 0.9;
-        Object.assign(run.map, { rows: 4, first: 'nosuch', wide: 2, extra: 1 });
+        Object.assign(run.map, { path: [[4, 4]], first: 'nosuch', wide: 2, extra: 1 });
         run.map.biomes.nosuchbiome = 1;
         run.clock.slack = 3; /* RL-R2: the deadline's slack is gone */
         run.reveal.extra = 1;
@@ -171,7 +171,7 @@ test('check-data: planted story director lines (RL-S1)', t => {
       'banter.json': B => {
         B.leader_badge.when = 'wins >= 1';
         B.chosen_won.when = 'last:victory';
-        B.hazel_file.when = 'lastby:nobody';
+        B.kappi_file.when = 'lastby:nobody';
         B.chosen_first.cooldown = 2;
         /* RS-3: a line for nobody; a resident left with only lines that may not hold */
         B.mo_won.who = 'nobody';
@@ -186,7 +186,7 @@ test('check-data: planted relations, the rival and the hub folk in the story (RL
     checkDataOn({
       'relations.json': R => {
         R.people.nobody = { levels: [{ at: 1 }] };
-        R.people.hazel.levels[2].at = 1;
+        R.people.kappi.levels[2].at = 1;
         R.people.chosen.levels[1].fx = [{ kind: 'luck', mult: 9 }];
         R.people.juniper.levels[1].pyramids = { gold_brick: 1 };
         R.people.juniper.levels[3].wardrobe = 'no_such_hat';
@@ -196,7 +196,7 @@ test('check-data: planted relations, the rival and the hub folk in the story (RL
         R.run.rival.meet = [3];
       },
       'banter.json': B => {
-        B.hazel_file.when = 'rel:blake >= 1 or gifted:nobody';
+        B.kappi_file.when = 'rel:blake >= 1 or gifted:nobody';
       },
     })
   );
@@ -269,9 +269,6 @@ test('check-data: planted fossils (RO-3e)', t => {
     checkDataOn({
       'pools.json': P => {
         P.cave.list.push(['carnegie0', 1]);
-      },
-      'eggs.json': E => {
-        E['2'].list.push(['vanderbilt0', 5]);
       },
       'events.json': E => {
         E.events.dig_site.options[0].then[1] = 'revive carnegie9 30';

@@ -10,7 +10,7 @@ const { parseScript } = modules['script-parse'];
 const { runScript } = modules.script;
 const { cutsceneStep, cutsceneNames, cutsceneOffset, cutsceneShotAt, cutsceneCleared } = modules['cutscene-set'];
 const { storyFindings } = modules['story-checks'];
-/* 2026-10-23, the owner's new professor: the opening's words are the Chosen's and his assistant Hazel's, as approved */
+/* 2026-10-23, the owner's new professor: the opening's words are the Chosen's and his assistant Kappi's, as approved */
 const SAID = JSON.parse(readFileSync(new URL('./opening-said.json', import.meta.url), 'utf8')).said;
 const OPENING = GAME_DATA.cutscenes.opening;
 const SPEAKERS = GAME_DATA.story.speakers;
@@ -71,15 +71,15 @@ test('cutscene commands read the same way everywhere', () => {
     s: 1.5,
     nowait: true,
   });
-  assert.deepEqual(step('actor Hazel at door down'), { name: 'actor', who: 'Hazel', spot: 'door', dir: 'down' });
+  assert.deepEqual(step('actor Kappi at door down'), { name: 'actor', who: 'Kappi', spot: 'door', dir: 'down' });
   assert.deepEqual(step('wait Blake'), { name: 'wait', who: 'Blake' });
   assert.deepEqual(step('caption 3.4 The Hollow Earth | Copperleaf'), {
     name: 'caption',
     s: 3.4,
     text: ['The Hollow Earth', 'Copperleaf'],
   });
-  assert.match(step('actor Hazel door').problem, /who at spot/);
-  assert.match(step('act Hazel dance').problem, /pose dance/);
+  assert.match(step('actor Kappi door').problem, /who at spot/);
+  assert.match(step('act Kappi dance').problem, /pose dance/);
   assert.match(step('camera trio slowly').problem, /seconds or "on"/);
   assert.match(step('fade out red').problem, /colour/);
   /* the parser stops on a cutscene command that doesn't read, with the same words */
@@ -122,7 +122,7 @@ test('the story checks catch a cutscene’s mistakes, and cutscene commands outs
   G.cutscenes.opening.script = [
     ...G.cutscenes.opening.script,
     'camera nowhere',
-    'walk Hazel attic',
+    'walk Kappi attic',
     'actor Nobody at door',
   ];
   G.trainers.crude.script = ['actor Blake at door', ...G.trainers.crude.script];

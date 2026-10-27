@@ -11,7 +11,7 @@
 }
 .dbg details {
   border-top: 1px solid var(--lo);
-  padding: 8px 0;
+  padding: var(--s2) 0;
 }
 .dbg summary {
   cursor: pointer;
@@ -38,7 +38,7 @@
 .dbg-warn {
   font-size: 12.5px;
   color: var(--text2);
-  margin: 4px 0 0;
+  margin: var(--s1) 0 0;
   padding-left: 18px;
   max-height: 160px;
   overflow: auto;
@@ -48,7 +48,7 @@
   z-index: 60;
   top: calc(4px + env(safe-area-inset-top, 0px));
   right: 4px;
-  padding: 4px 8px;
+  padding: var(--s1) var(--s2);
   border-radius: 6px;
   background: rgba(8, 6, 16, 0.78);
   color: #7cf08a;
@@ -74,17 +74,17 @@
 }
 /* v11.1: debug log and quick test */
 .dbg-help {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
+  margin-top: var(--s3);
+  padding: var(--s3);
+  border-radius: var(--r-sm);
   border: 1px dashed color-mix(in srgb, var(--text2) 40%, transparent);
 }
 .dbg-help b {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: var(--s1);
 }
 .dbg-help .two {
-  margin-top: 8px;
+  margin-top: var(--s2);
 }
 .nw-bench {
   position: fixed;
@@ -94,10 +94,10 @@
   z-index: 60;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 6px 12px;
+  gap: 6px var(--s3);
   align-items: center;
   width: min(360px, calc(100vw - 32px));
-  padding: 12px 14px;
+  padding: var(--s3) 14px;
   border-radius: 14px;
 }
 .nw-bench b {
@@ -134,7 +134,7 @@
 .nb-table th,
 .nb-table td {
   text-align: left;
-  padding: 6px 4px;
+  padding: 6px var(--s1);
   border-bottom: 1px solid color-mix(in srgb, var(--text2) 20%, transparent);
 }
 .nb-table th {
@@ -160,7 +160,7 @@
   font-weight: 700;
 }
 .nb-errs {
-  margin: 4px 0 10px;
+  margin: var(--s1) 0 10px;
   padding-left: 18px;
   font-size: 13px;
   color: var(--text2);

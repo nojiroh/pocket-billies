@@ -5,7 +5,7 @@
    and never reaches an account (game-state.js FIXTURE), so a player's save is never touched.
      title   a new game on the title screen (the boot a new player sees)
      town    Copperleaf Town, the hub (RL-5: the route and the cave were parked with their places)
-     room    inside Professor Chosen's lab in Copperleaf (Hazel works there too)
+     room    inside Professor Chosen's lab in Copperleaf (Kappi works there too)
      battle  a trainer battle (Leader Rocco) in Copperleaf that the team wins
      stored  whatever the fixture saved last in this browser (the save round trip)
      run     on a run (RL-7): standing on its landing on day 1, its world made from the seed RL7FIXTURE
@@ -31,6 +31,7 @@ import { makeBilly } from './logic/rules.js';
 import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
 import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
+import { runWorldData } from './logic/run-world-data.js';
 import { perkOfferMake } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
@@ -41,7 +42,6 @@ import { LOOK_PRESETS, cleanLook } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { actionSpot, walkData, walkView } from './walk-view.js';
 import { talkLine } from './talk.js';
-import { runWorldData } from './run-world.js';
 import { renderOverlay } from './overlay.js';
 import { enterRoom } from './walk-control.js';
 import { render } from './ui.js';
@@ -169,7 +169,7 @@ export function fixtureStart() {
   if (FIXTURE === 'island') uiState.bench = { id: 'test_island', test: 1 };
   renderOverlay();
   render();
-  /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Hazel's lab in Copperleaf) */
+  /* phase 08b: into a room through its door, as soon as the town is on screen (RL-5: Kappi's lab in Copperleaf) */
   if (FIXTURE === 'room' || FIXTURE === 'ranch') {
     const act = FIXTURE === 'ranch' ? 'ranch' : 'lab';
     const go = (n = 0) => {

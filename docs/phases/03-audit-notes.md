@@ -181,7 +181,7 @@ replaces each mechanic. Ask the owner.
   (l.275-276) and clear-windows.py (l.349), and runs build-artifact.py and prop-sheet.py. These can't be deleted
   without changing the check. check-game.py is the long manual play-test.
 - Generators still meaningful: build-scene-props.py (`exec`s scene_props_v17/v24/v26/v27/v28.py, so those stay unless
-  it is refactored), build-terrain-v47, build-tiles, build-scenes, build-test-scenes, build-interiors, build-buildings
+  it is refactored), build-terrain-v47 (retired in SA-2a), build-tiles, build-scenes, build-test-scenes, build-interiors, build-buildings
   (+ -v46), build-vox-props, build-nature-props, build-prop-layers, build-flags, build-walls, build-map-minis,
   build-postcards, build-airship, build-world-relief, build-trainer-art, build-roster-sheets, build-starter-sheets,
   pixkit, build-palette, build-landmarks-v47, build-region-props-v47, build-props-a04, build-solarpunk, build-life-v47,

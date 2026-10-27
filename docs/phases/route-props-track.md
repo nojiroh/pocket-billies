@@ -3,9 +3,11 @@
 Branch: track/route-props
 
 The owner asked (2026-10-26) for more 3D props for the routes, researched online. Planned in Plan Mode on 2026-10-26
-and approved with the owner's answers below. RP-1 was built on the session's own branch `ccr-5d98165a-i1ustq` (a cloud
+and approved with the owner's answers below. RP-1 and RP-2 were built on the session's own branch `ccr-5d98165a-i1ustq` (a cloud
 session can push only to the branch it was started on; BRANCHES.md); later sessions start on `track/route-props`,
-made from it by the owner. Tag `rp-1-done`.
+made from it by the owner. Tags `rp-1-done`, `rp-2-done` (lost with that session's clone; RP-3 made them again on the
+same commits, e7954859 and b9cb51f9, but couldn't push tags: the git proxy refuses them, so they are local to RP-3's
+clone and the owner adds them on GitHub), `rp-3-done`.
 
 ## Verified facts (2026-10-26, main at b87b818d)
 
@@ -29,7 +31,10 @@ made from it by the owner. Tag `rp-1-done`.
   KayKit Forest, Quaternius's packs and Medieval Village MegaKit, padadu's CC0 voxel farm, the Environmental
   Suburbia pack (a small solar panel, a wind turbine, a vegetable patch: the solarpunk look). Their GLB/FBX meshes
   don't fit the recipe format or the palette. **This container can't reach kenney.nl, opengameart.org,
-  quaternius.com or itch.io** (only github.com answers), so the converter test waits for files the owner uploads.
+  quaternius.com or itch.io.** RP-1 wrote "only github.com answers", and RP-3 found that this was not quite right:
+  github.com's pages and API answer 403, but `git clone` and raw.githubusercontent.com work. Kenney's GitHub
+  starter kits are MIT-licensed repositories (not CC0) without a turbine, bridge or arch; KayKit's own repositories
+  are CC0 (each pack's LICENSE.txt) and had all three, so RP-3 needed no upload (validation/cc0-src/LICENSES.md).
 
 ## The owner's answers (2026-10-26)
 
@@ -47,7 +52,8 @@ made from it by the owner. Tag `rp-1-done`.
 | # | Session | Goal |
 |---|---|---|
 | RP-1 | Models and pieces (**done** 2026-10-26) | the 6 set-piece pictures as models; 20 new props; the pieces use them; two new pieces |
-| RP-2 | The converter test | `tools/glb-to-recipe.py`: a CC0 GLB to a recipe (simplified, our palette, our textures) for the wind turbine, the footbridge and the ruined arch, side by side with RP-1's on the showcase map. Needs the CC0 files uploaded (`validation/cc0-src/`, with a LICENSES.md) |
+| RP-2 | Structures in the props' style (**done** 2026-10-26) | bridges, jetties, rails, arches and tunnels (game/js/structures.js) restyled; wood bridges get a gentle hump. The owner asked after RP-1 |
+| RP-3 | The converter test (**done** 2026-10-26) | `tools/glb-to-recipe.py`: a CC0 glTF/GLB to a recipe (simplified, our palette, our textures) for the wind turbine, the footbridge and the ruined arch, side by side with RP-1's on the showcase map (`*_cc0`). Sources: three KayKit models from GitHub (`validation/cc0-src/`, LICENSES.md). The owner picks per prop |
 
 ## RP-1: what was built (tools/build-props-routes.py, rerunnable)
 
@@ -65,8 +71,44 @@ made from it by the owner. Tag `rp-1-done`.
   (shrine, milestone, trail post, roses) and `solar_garden` (turbine, vegetable bed, rain barrel, beehives, seed
   library, path light; farmland plans x2). MAPGEN_VERSION 18.
 
+## RP-2: structures in the props' style (the owner's answers, 2026-10-26)
+
+| Question | Answer |
+|---|---|
+| Approach | Restyle in structures.js (same renderer; the code that fits any length, width and bank height stays) |
+| Scope | Bridges and jetties, rails, arches and tunnels (not the city's escalators) |
+| Wood deck | A gentle hump (`BRIDGE_ARCH.wood` 0.12 -> 0.35; walking follows it) |
+| Stone | The ruins' cool grey, with a little moss |
+
+Verified facts: the structures already used the props' texture sheet and the buildings' shader; what differed was
+their shapes (half-metre deck slabs, posts without caps, smooth parapets) and their colours. Triangles a scene, main
+-> RP-2: Copperleaf 1040 -> 2296, test_bridges 1646 -> 3818, test_stairs 1130 -> 1904, test_hilltown 800 -> 1416;
+draws the same (one mesh, the same parts).
+
+## RP-3: the converter test (2026-10-26)
+
+`tools/glb-to-recipe.py` (rerunnable; `--selftest` checks the fitting; `--preview out.png` draws source and recipe
+side by side) reads a .glb or a .gltf with its .bin and texture. Colours: the texture at each triangle's UV centre,
+snapped (CIE Lab) to `CC0_PALETTE` in build-props-routes.py, whose entries pick the texture (stone, wood, metal, hay,
+plain) at 32 px/m; `use` keeps a model to some entries (the stones for a ruin). Each connected piece is fitted whole
+and by colour, the closer wins; a piece is the box, cyl, cone, dome, sphere or limb that lies closest (surface
+distance both ways, the shape built as the game builds it), else voxel boxes (winding-number fill, merged greedily),
+else cut in two. Shapes are fitted to the whole model, then cut at the ground; specks dropped, layers capped (the
+largest by surface kept). No new dependencies (numpy, Pillow).
+
+| Prop | Source (CC0, KayKit) | RP-1's recipe | Converted | Looks |
+|---|---|---|---|---|
+| Wind turbine | Space Base Bits `windturbine_tall` | 10 layers, 216 triangles | 55 layers, 1052 triangles | close to the source: blades as limbs, the shroud ring as boxes; KayKit's sci-fi turbine, not RP-1's slim three-blade one; one blade lost its gold tip |
+| Ruined arch | Halloween Bits `arch` | 22 layers, 572 triangles | 49 layers, 1196 triangles | a whole (not ruined) arch, its ring in stepped stone blocks; slimmer piers than the source's |
+| Footbridge | Medieval Hexagon `building_bridge_A` | 27 layers, 428 triangles | 63 layers, 796 triangles | wrong: the hex tile's stone bridge cut at the ground reads as a low stone lump on stubby piers, not a footbridge. RP-1's stays |
+
+Triangles from the island builder's mesh() (as prop-models.js builds them); each model is one draw either way.
+Nothing placed by the generator changed: the `*_cc0` props are on `test_props_routes` only (the "converter" row).
+
 ## Ask me before
 
 1. The Bureau's logo or mark on its props (none yet).
 2. Turning the turbine's blades (a spinning part, as the windmill's sails) - costs a draw a turbine each frame.
 3. Where the footbridge goes (a stream feature on routes, or towns).
+4. RP-3's pick, per prop: keep RP-1's recipe, or swap the converted one into the set pieces (and whether the `*_cc0`
+   props and validation/cc0-src stay, or go once picked).
