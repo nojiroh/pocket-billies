@@ -113,3 +113,17 @@ test('a moment that ends ramps out as it last was, at its own pace', () => {
   assert.ok(G.zoom > D.idleZoom && G.zoom < 1, `going: ${G.zoom}`);
   assert.ok(G.zoom > 1 - (1 - D.idleZoom) * 0.5, 'quickly: more than half gone in 0.3 s');
 });
+
+test("WM-7: a leader's arena frames the ring, eased out, and beats the talk its intro opens", () => {
+  const r = momentStep(momentNew(), input({ arena: [10, 6], talk: [3, 1], moving: true }), D, 1 / 60);
+  assert.equal(r.id, 'arena');
+  assert.deepEqual(r.goals[0].at, [10, 6]);
+  assert.equal(r.goals[0].zoom, D.arenaZoom);
+  assert.ok(D.arenaZoom > 1, 'eased out');
+  /* off, or once the intro is over, the talk frames you both again */
+  assert.equal(
+    momentStep(momentNew(), input({ arena: [10, 6], talk: [3, 1] }), { ...D, arenaOn: false }, 1 / 60).id,
+    'talk'
+  );
+  assert.equal(momentStep(momentNew(), input({ talk: [3, 1] }), D, 1 / 60).id, 'talk');
+});

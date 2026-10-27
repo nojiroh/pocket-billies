@@ -245,6 +245,11 @@ export interface RunNode {
       size in cells; a main place's only (none on a side area's or a run's from before WM-2) */
   at?: [number, number];
   size?: [number, number];
+  /** WM-3: an L's corner cell that is walled off in its place (x, y on the grid; logic/run-map.js runGridCut) */
+  cut?: [number, number];
+  /** WM-3: beside `to`, where each link crosses the edge the two footprints share: metres along the grid (y for a
+      link east, x for one north or south; logic/run-map.js runGridWays) */
+  ways?: number[];
 }
 
 /** roguelite track RL-R2: a run's side area (logic/run-side.js runSideAdd) */

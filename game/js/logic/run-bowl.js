@@ -18,6 +18,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { runZoneRegion } from './run-region.js';
+import { runSpotBoxes } from './run-map.js';
 /* eslint-disable no-func-assign */
 expose({
   RUN_BOWL_LAND: [() => RUN_BOWL_LAND],
@@ -26,13 +27,18 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runBowlLook: [() => runBowlLook, v => (runBowlLook = v)],
   // @ts-expect-error -- replaced on purpose
+  runBowlRelief: [() => runBowlRelief, v => (runBowlRelief = v)],
+  // @ts-expect-error -- replaced on purpose
   runBowlTrees: [() => runBowlTrees, v => (runBowlTrees = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the land under and round a run's places (bowl radii): each place's round, the lobes along its way, the islets */
+/** the land under and round a run's places (bowl radii): each place's round (WM-4: at least `cover` beyond its map),
+ * the lobes along its way, the islets; WM-4: the widest a place's bump or dip reaches (`relief`, half a cell) */
 export const RUN_BOWL_LAND = {
   place: [0.12, 0.17],
+  cover: 0.03,
+  relief: 0.032,
   lobes: [3, 5],
   lobe: [0.08, 0.16],
   lobeOff: [0.1, 0.22],
@@ -40,6 +46,22 @@ export const RUN_BOWL_LAND = {
   islet: [0.025, 0.06],
   rough: 0.9,
 };
+
+/** WM-4: the hub's relief for a run on the region grid: its places lie a cell or two apart (not the hub's 0.2), so each
+ * kind's bump or dip reaches at most RUN_BOWL_LAND.relief and is as much lower, its slopes as steep, and a lake beside
+ * a summit stays a dip. A run from before WM-2 keeps the hub's @param {any} relief worldmap.json relief
+ * @param {boolean} grid */
+export function runBowlRelief(relief, grid) {
+  if (!relief || !grid) return relief;
+  const cap = RUN_BOWL_LAND.relief,
+    fit = (/** @type {[number, number]} */ [h, r]) =>
+      /** @type {[number, number]} */ (r > cap ? [Math.round(((h * cap) / r) * 1e6) / 1e6, cap] : [h, r]);
+  return {
+    ...relief,
+    default: fit(relief.default),
+    kinds: Object.fromEntries(Object.entries(relief.kinds || {}).map(([k, v]) => [k, fit(/** @type {any} */ (v))])),
+  };
+}
 
 /** a biome's ground for the world map: its base three times, then each patch, twice when it covers a fifth or more
  * (the map's lists favour their first ground) @param {Biome | undefined} B */
@@ -78,8 +100,14 @@ export function runBowlLook(seed, map, spots, biomes, hub, styleOf, rng) {
     L = RUN_BOWL_LAND,
     /** @type {{ x: number, y: number, r: number }[]} */
     isles = [];
-  /* a round under each place (it covers the 112 x 64 m map: half its diagonal is 0.064) */
-  spots.forEach(([x, y]) => isles.push({ x, y, r: R.range(L.place[0], L.place[1]) }));
+  /* a round under each place, covering its map (a run from before WM-2: 112 x 64 m, half its diagonal 0.064; WM-4:
+     its cells on the region grid, L.cover beyond their half-diagonal) */
+  const boxes = runSpotBoxes(map);
+  spots.forEach(([x, y], i) => {
+    const r = R.range(L.place[0], L.place[1]),
+      b = boxes && boxes[i];
+    isles.push({ x, y, r: b ? Math.max(r, Math.hypot(b.w, b.h) / 2 + L.cover) : r });
+  });
   /* lobes along the way, north or south of it */
   const xs = spots.map(p => p[0]),
     x0 = Math.min(...xs),
@@ -135,7 +163,7 @@ export function runBowlLook(seed, map, spots, biomes, hub, styleOf, rng) {
   return {
     seed: R.int(1, 9972),
     sea: { ...((hub && hub.sea) || {}), seed: R.int(0, 9999), island: 0, rough: L.rough, isles, paint: [] },
-    relief: (hub && hub.relief) || null,
+    relief: runBowlRelief((hub && hub.relief) || null, !!boxes),
     regions: { ...hubRegions, starter: region, ...zones },
     kinds: { ...((hub && hub.kinds) || {}), ...kinds },
   };

@@ -3,7 +3,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAME_DATA } from './setup-real.mjs';
-import { RUN_BOWL_LAND, runBowlGround, runBowlLook, runBowlTrees } from '../../game/js/logic/run-bowl.js';
+import {
+  RUN_BOWL_LAND,
+  runBowlGround,
+  runBowlLook,
+  runBowlRelief,
+  runBowlTrees,
+} from '../../game/js/logic/run-bowl.js';
 import { runMapMake, runSpot } from '../../game/js/logic/run-map.js';
 import { rngFrom } from '../../game/js/logic/rng.js';
 import { bowlTreeStyle } from '../../game/js/logic/bowl-things.js';
@@ -73,4 +79,17 @@ test('the same seed makes the same look, another seed another', () => {
   assert.deepEqual(a, b);
   assert.notDeepEqual(a.sea.isles, c.sea.isles);
   assert.notEqual(a.seed, c.seed);
+});
+
+test("WM-4: a run on the region grid has its places' bumps and dips within half a cell, as steep as the hub's", () => {
+  const hub = worldmap.relief,
+    got = runBowlRelief(hub, true);
+  assert.equal(runBowlRelief(hub, false), hub, 'a run from before WM-2 keeps the hub’s');
+  for (const [k, [h, r]] of Object.entries(hub.kinds)) {
+    const [h2, r2] = got.kinds[k];
+    assert.ok(r2 <= RUN_BOWL_LAND.relief + 1e-12, `${k} within half a cell`);
+    assert.ok(Math.abs(h2 / r2 - h / r) < 1e-4, `${k} as steep`);
+  }
+  assert.equal(got.max, hub.max);
+  assert.notEqual(make('RL8BOWL0').look.relief, hub, "a gridded run's look has its own");
 });

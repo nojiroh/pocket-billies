@@ -328,3 +328,401 @@ the bar's tabs; the owner's phone check (the compact timing, the icon size, the 
 - Changing any decision above (palette, fonts, which shapes stay round, the tab sets).
 - Deleting an old CSS file in UI-6 while the unused-CSS list still names classes from it.
 - The uiTheme.json schema's first version (shown as a draft at the start of UI-1).
+
+# Part 2: Living Semigloss (UI-10 onward)
+
+Branch: track/ui
+
+The owner's brief (2026-10-27): "Make a new plan for the ui. I like the current design but I think it could be better
+looking and feeling. Think of the ux experience. Do research. Make sure everything is in the same design language.
+Make sure it's not too cluttered. Give me samples of different color pallets. It should feel dynamic and alive. Status
+effects and things you get in runs should be color coded so you can see what is what at a glance. If you have any
+design suggestions I'm open to it."
+
+Planned in UI-10 (Plan Mode, plan approved) on `ccr-03a15a70-nd3yqu`, since a cloud session pushes only to its own
+branch; from UI-11 on, sessions start on `track/ui` after UI-9b's PR #266 merges. Three read-only passes (the UI code;
+everything a run gives or a battle does; outside research) and a review of the draft against the code. Semigloss
+Angular stays the base: Part 2 changes meaning, colour, motion and density, not the shapes.
+
+Sampler: a private artifact the owner holds, "Living Semigloss Sampler"
+(https://claude.ai/artifact/89UBnLzgC5Uq99aytdb6SS): the palettes on real screens captured headless (battle, Team,
+walking in a run, the run map, the Perk pick; light and dark), the colour code, mock screens of a battle turn, a run,
+rewards and Team on backdrops from the game, a colour-blind preview, Animation Full / Calm / Reduced and the Colour
+shapes switch. The captures and the page live outside the repo (nothing committed).
+
+## What the code does today (read at 6a48215 and 60eef39, 2026-10-27; verify)
+Line refs to parts.css move to base.css with UI-9b (#266).
+- **Gold means about 15 things:** the main action; Prime and Coat (units.css 67-70); Lead (team.css 92-105); Damaged
+  (units.css 618-628); Moneys and Beans (pb-coin falls back to gold); shop and waystation nodes and the current node
+  (logic/run-marks.js 142-167); finished quests (map-tab.css 175-177); today in the forecast; crits and level-ups, both
+  #ffe27a (battle.js 582-585, battle-screen.css 27-51); the shield and Bedrock rings; Sandstorm, with the bolt icon
+  (battle.js 514-517, battle-screen.css 325-340); Alpha in the turn bar (battle-screen.css 1168-1171). Red means about
+  9 (burn, Fire, low HP, Broken, Crests, all five danger node types, stat drops, the foe in the turn bar). Purple: Sleep
+  #7b6be9, Dragon, Flying, the Perk and DNA icons, the Guide tab. Light blue #8FD8FF: stat up, Protect, the bot plate,
+  limb HP. Towns are green on the run map, orange on the hub map (world-bowl.js 3666-3671), blue in the places list
+  (map-tab.css 329-332); Alpha is crimson on its plate, gold in the turn bar.
+- **The battle's command buttons borrow type colours** for things that aren't types: Bag green, Team blue, Run dark
+  (battle.js 742-779, parts.css `.pb.green/.blue/.dark`).
+- **Most battle effects can't be seen:** Kindling, Undertow, Live Wire, Wild Mind and Alloy never show
+  (battle-engine.js 316-317, 393-413); Protect, the Alpha shield, Soaked, Fork, the delayed hit and sharp stones show
+  only on their turn (battle-engine.js 523-720); held-item, Perk and trait boosts at the start are applied silently
+  (battle-state.js 94-107); stat chips print the first three letters, so Sp. Atk and Sp. Def both read "SP." (battle.js
+  509). Statuses are square outlined badges with full words and three fixed hexes (ui-bits.js 29, parts.css 268-286),
+  with particles in the 3D scene (battle-stage.js 798-811); burn's `--red` follows the page theme on an always-dark
+  plate (battle-screen.css 968-990). Confusion is a short effect, not a status (statuses.json holds par, slp, brn).
+- **About 45 effect sources have no coding;** they share 16 effect kinds (logic/effects.js 5-18): 13 Perks (5 common, 5
+  uncommon, 3 rare, one lavender icon for all, rarity as caption text: perk-screen.js 36-40), 8 held items (items.json
+  `hold`), 11 gene traits (genes.json), Unstable, 5 Expeditions and 4 challenges (modifiers.json), residents' services,
+  timed event effects (run-enc.js 37-48, shown nowhere). Reward kinds are grey captions (reward-screen.js 41-61); item
+  icons are shared across kinds (the pretzel twice, trail mix three times, the tonic twice); event outcomes have no
+  good or bad look (encounter-screen.js 258).
+- **Type colours:** pills are darkened to 4.5:1 (colors.js `readableBg`, ui-bits.js 22-27), but move tiles, plates,
+  the Guide and battle effects use the raw types.json colours (white text 2.7:1 on Flying up to 5.9:1 on Dragon;
+  OKLCH lightness 0.52 to 0.80, so some types shout and others mumble).
+- **Two looks still mix:** 5 of the 17 kit elements appear only in the gallery (pb-button, pb-card, pb-tabs, pb-field,
+  pb-node); 32 literal `rgba(46,33,64)` (alpha 0.5's purple) shadows in 8 files; three XP blues (ui-kit.js 773,
+  parts.css 195, the battle plate); the top bar's `.tb-chip[title='Money']` rules never match (shell.css 214-222,
+  274-276: the markup says Moneys); battle plates are always dark while the cards beside them follow the theme.
+- **Clutter sits in battle and on the Map:** the command card holds about 30 labels and a ticker repeats the plates on
+  a 26 s loop (battle.js 520-564); the Map draws 10 blurred surfaces against the budget of 3 (check-quick.py 48), a
+  header with Give up, trip status and quests, four side buttons, three rotate buttons and a place card of up to 8
+  blocks; sheets stack to 12-14 blurred surfaces (heal pick, Bag). Walking is lean (no currencies or forecast), but the
+  hint pill never leaves (walk-tab.js 196), the Actions button bobs forever (walk-tab.css 366-382) and five animations
+  loop endlessly (walk-tab.css 20, 198, 230, 381, 473).
+- **The motion set is barely wired:** of the eight motions (06-plan.md 81-89, motion.css), sheet, nudge and done are
+  never used by game code; count only in pb-coin and pb-payout (ui-run-kit.js 450, 755); press, enter and idle only on
+  Team cards and the inbox (unit-card.js 154-163, overlay.js 93); nothing sets a pick card's `facedown`, so it never
+  flips. The kit's JS reads the game's Animation setting (`reduced()`, ui-kit.js 54), but its shadow CSS uses
+  `:host-context` (ui-run-kit.js 626, 761), which Safari and Firefox ignore. The low-HP bar animates a `filter`
+  forever (battle-screen.css 1049).
+- **Sound:** select, confirm, cancel and can't (sound.js 719-775), a coin per payout row, the run jingles, the Perk
+  jingle, the shop's buy; nothing for a sheet, a card flip, a count-up's end or a toast.
+- **Theme:** boot applies `defaults` only (boot.js 975, theme-sheet.js 56), but `applyUiTheme(theme, preset)`
+  (theme-sheet.js 27) already takes a preset: a palette at runtime is one call. A new colour role takes four edits
+  (`UI_ROLES`, the schema's palette, tokens.css's fallback, a Studio dial: ui-dials.js 74-87). The minimap mixes the
+  theme's roles (minimap.js), so a palette's hue reaches it (a purple palette gives a purple minimap: seen in the
+  sampler's captures).
+- **Icons are objects** in fixed colours, the owner's P5 (ART-NOTES.md, "UI icons, 36×36"); the SVGs are the source
+  since SA-2b (the Studio's icon editor, logic/icon-block.js, logic/svg-pixels.js). Every drawn pixel is opaque, so an
+  icon's SVG also works as an alpha mask.
+- **Settings** already has Animation (Device / Full / Reduced), Theme (Device / Light / Dark), Flashes and High
+  contrast (settings-screen.js 446-470).
+
+## Six rules for one design language
+1. **Calm chrome, loud meaning.** Panels, text and buttons use the palette's quiet colours; saturated colour is kept
+   for things that mean something. One gold main action per screen.
+2. **One meaning, one colour, everywhere.** A family means the same on every screen; nothing changes colour by view.
+3. **Never colour alone.** Every coded mark has colour, shape and glyph, and its word on tap (Game Accessibility
+   Guidelines; Xbox guideline 103), checked with a colour-blind simulation.
+4. **Glance, tap, sheet.** Glance: glyph and colour. Tap the plate or row (long-press in battle): a short explainer.
+   Sheet: the full details.
+5. **Motion has a cause.** Things move because something happened. Frequent motion is small and short; big moments
+   get the big effects; idle loops are slow, small and at most two on screen.
+6. **The world shows through.** The glass takes the sky's light, in small steps (no Follow the sky theme: the owner
+   turned it down).
+
+## The colour code (the same in every palette)
+Separate channels, as Hades, Balatro, Pokémon Showdown and Marvel Snap do:
+
+| Channel | Shows | Mark |
+| --- | --- | --- |
+| Fill colour + glyph | a type (9) | round pill, as today |
+| Status colour + glyph + code | a status: BRN, PAR, SLP | angled tag in a fixed slot by the HP bar |
+| Arrow first, colour second | a boost or drop | ▲ teal / ▼ red with Atk, Def, SpA, SpD, Spe and pips |
+| Small glyph + turns left | a short effect (Protect, the shield, confusion, Soaked, Fork, the delayed hit, stones) | pip on the plate or the field strip |
+| Family colour + frame shape | what kind of pickup | the card's ribbon and silhouette |
+| Frame, pill and name in the tier's colour | rarity | the loot ladder: common grey, uncommon green, rare blue, mythical orange (never a fill) |
+| Family colour + icon | currency, map node, message | chip, node outline, toast |
+
+Families. The fill is for tags, chips and bars on dark glass (dark text on it); the text shades are for words and bars
+on light and dark screens.
+
+| Family | Means | Fill | Text, light | Text, dark |
+| --- | --- | --- | --- | --- |
+| Good, teal | healthy HP, boosts, heals, held items, good outcomes, Protect and shields, towns | #40D9C1 | #007E6E | #57D6C0 |
+| Bad, red | low HP, drops, damage, bad outcomes, Broken, danger buttons, bosses, Crests | #EA5974 | #BD2C42 | #FF8A9F |
+| Caution, amber | mid HP, Damaged, costs, field hazards (stones, Sandstorm) | #FAAB3F | #9A5505 | #F5AD53 |
+| Value, gold | the main action, Moneys, shops and stalls, rewards | #FACA59 | #855E11 | #F6CB69 |
+| Special, violet | Perks, events and "?", rumours, timed event effects, friends' ghosts | #AE7EE2 | #7847A6 | #CFA3FF |
+| Growth, sky | XP, candy, evolution, level-ups, Research, the Lab | #82D7FF | #1774A4 | #8BD6FA |
+| Machine, gunmetal | Scrap, Augments, bot parts and limbs, scrapyards, the Workshop | #99AEBB | #546673 | #ABBECA |
+| Bio, magenta | DNA, Genes, splices, Unstable, quirks, the Gene Bank | #DA5AB6 | #A73189 | #FF8BDD |
+| BRN ember | Burned | #FF8F49 | #AF4803 | #FF9D61 |
+| PAR lemon | Paralyzed | #ECE95C | #756700 | #EBE86F |
+| SLP dusk | Asleep | #B3B3DD | #656390 | #B6B6DD |
+| Types | the 9 types at one lightness (white text 4.5:1; Electric keeps dark text), used everywhere | types.json | | |
+| Neutral | Lead, fainted, locked, plain routes, Beans, consumables (their own art), info | palette greys | | |
+
+The types at one lightness (OKLCH L about 0.58): Fire #CC4C25, Water #2C78C5, Grass #418623, Electric #E2B92C (dark
+text), Ground #A16B32, Flying #5973BE, Psychic #C14B7F, Steel #65798A, Dragon #7C63D6.
+
+Rarity (the owner's picks: the loot ladder over metal frames, then "frame and pill" from the bar examples): a thick
+frame in the tier's colour, a pill with the tier's name, and the item's name written in the tier's colour; the kind
+stays on the ribbon. Common #A5ACB2, uncommon #4AB962, rare #629BFF, mythical #F77036 (orange, clear of the Perks'
+violet). Text shades, light: #5F6469, #02782E, #2F5EB9, #AA3700; dark: #B9BEC4, #7CD68B, #8ABDFF, #FF9A6B (5:1 or more
+on all three player palettes' surfaces; dark text on every fill 6:1 or more). It shows on Perks (common, uncommon,
+rare), on held items, Augments and Genes (their tiers are new: proposed by price and effect size, the owner's call) and
+on Billie cards (each species' rarity, common to mythical, today shown only in the Guide). Common's grey sits close to
+the Machine family's gunmetal: on an Augment card both are quiet, and the pill names the tier.
+
+Checked by script (UI-10, OKLCH and OKLab, Machado 2009 for colour blindness): dark text on every fill is 5:1 or more;
+each text shade is 4.5:1 or more on every candidate palette's surface; within each screen's set (battle, pickups,
+map, types included) pairs are apart (OKLab distance 5.5 at the lowest, 94-100% of pairs 9+). The nearest pairs
+(amber and Electric, burn and amber, red and Psychic, gold and Electric) never share a kind of mark. Under simulated
+colour blindness the close pairs (burn and confusion, sky and teal, red and cocoa) always differ by glyph and code.
+
+Gold keeps only "value and your choice". Prime becomes a teal ★ tag; Coats get a prism foil; level-ups go sky;
+crits keep VFX-4's impact frame (the UI only recolours the crit number); the map's "you are here" is its own pin, not
+a gold node. Object icons keep their fixed colours (P5); only the new marks' glyphs are tinted, as CSS masks of the
+same SVGs (`-webkit-mask` with `mask`, shadows on a wrapper; no `mask-composite`).
+
+## Palettes (chrome only; the colour code never changes)
+Every palette sets ground, surface, text, text2, line, primary and the gold pair, light and dark; danger and the HP
+colours come from the families. Contrast (UI-10's script): text 12-16:1, muted text 5.8-8.8:1, primary and danger
+4.5:1 or more, dark text on gold 6.3:1 or more.
+
+| Palette | Mood | Light: ground, surface, text, text2, primary, gold | Dark: ground, surface, text, text2, primary, gold |
+| --- | --- | --- | --- |
+| Today | Copper Grove as it is | #F4EFE0 #FFFBF0 #22301F #55634F #3B8446 #F6D06C/#D99E33 | #17261E #1D2E25 #EEF2E2 #AEB9A4 #7DCB7B #F3CF6E/#DDA640 |
+| Copper Grove+ | today's, tuned: primary clear of Grass and the HP teal | #F4EFE0 #FFFBF1 #203020 #51604D #3A6B3D #F6CF6D/#DB9E38 | #15241D #1D2F26 #EEF2E2 #B1BCA7 #85CD75 #F3CF6E/#DEA640 |
+| Field Guide | a naturalist's journal: parchment, ink, moss | #F0E5CF #FAF3E3 #2E1F14 #625240 #5E721F #F2C36A/#D18E35 | #1A1611 #25211A #F1E7D2 #BCAF99 #B0CB67 #EEC469/#DB9D40 |
+| Brass & Plum | regal; purple chrome makes the green world pop | #F5EAE5 #FEF9F4 #361B34 #684E65 #763671 #F7CB65/#DB992E | #1F1120 #2B1B2C #F7EAF5 #C4ABC1 #DC95D5 #F4CC6A/#DEA13C |
+| Bureau Night | dark-first agency look: cool ink, cyan, form paper by day | #E6EAEF #F8FAFD #151E2F #4A5669 #0078A2 #F9C555/#E1961B | #0B111F #141B2C #E9EFF6 #A5B2C4 #31CFEE #F9C555/#E9A128 |
+| Sunpunk Day | bright sky and sunflower, the most Pokémon-bright | #E2F5F4 #F9FFFF #0C263A #415C6F #1777B8 #FBD452/#EBA503 | #071B2B #0F2638 #E6F3F7 #A1BCCA #61C3F9 #FACF4E/#EDA922 |
+
+Light `line` is the text colour at 18%, dark `line` white at 14%; the shadow tint stays as today (light: text; dark:
+black). The minimap takes the palette's hue, so a purple or blue palette needs its own minimap ground (UI-12).
+
+The owner's pick (2026-10-27): **Field Guide is the default**, and players choose between Field Guide, Copper Grove+ and
+Bureau Night in a new Palette row in Settings (the owner's words: "Bureau night and field guide, make them options in
+the settings"; the default question's Field Guide option named Copper Grove+ and Bureau Night as the other two). Brass
+& Plum and Sunpunk Day stay as Studio presets, not offered to players. Today's Copper Grove gives way to Copper
+Grove+.
+
+## Alive, without clutter
+- **First, wire what exists:** press, enter (rows staggered 35 ms), sheet, nudge (with the can't sound) and done on
+  every screen; the pick card flips. New sounds where there are none: a sheet opening, a card flip, a count-up's end,
+  a toast.
+- **Feedback (you caused it):** press squash and spring; the selection bar slides to its new row; numbers tick with a
+  pop in their family's colour; gains fly to where they go (coins to Moneys, an item to Bag, a Perk to Perks) and the
+  target bumps.
+- **Events (the game tells you):** a status tag stamps on; boosts rise, drops fall; a trigger gets a blip by its plate
+  (a Perk, held item, trait or type passive firing: its glyph in its family's colour, "Bubble Wrap −10%", "Kindling
+  ▲Atk"); short effects stay as pips with turns left; effectiveness banners slam in at the slant. The blips read what
+  the battle already reports, so the battle engine and its golden record (battle-golden.test.mjs) stay untouched; if
+  an event must be added, its snapshot is remade in a commit of its own with the end states shown unchanged.
+- **Idle life (slow, small, few):** a glint across the main action every 6-8 s; reachable map nodes breathe and the
+  "you are here" pin bobs (canvas work in the map code); Coats shimmer (a moving sheen layer, transform only); today's forecast icon moves; the glass shifts with the sky in steps, not every frame. Walking drops
+  from five endless loops to at most two; the low-HP pulse moves to opacity.
+- **Big moments:** payout, picks, catch, level-up, evolution, a boss's name banner (shared with RL-14b's stage intro).
+  Hit-stop stays only on crits, KOs and super-effective hits (the VFX track's).
+- **Timings** (NN/g; the research): press 80-120 ms; enter 220-280 ms with a 30-40 ms stagger, 400 ms at most; exit
+  150-200 ms; pops 150 ms then a 500-700 ms float; tick-ups 400-700 ms ending in a small pop. Transform and opacity
+  only: never animated blur or filters.
+- **Settings (today's rows extended):** Animation Device / Full / Calm (no idle loops) / Reduced (fades only), where
+  Device plays Full unless the phone asks for reduced motion (the owner: Full by default); a new Palette row (Field
+  Guide, Copper Grove+, Bureau Night); Theme stays Device / Light / Dark; Flashes also governs glints and foil; a
+  Colour shapes switch in Accessibility adds patterns to bars and tags. All of them go into the debug log's state with
+  the resolved light or dark side (debug-log.js 442-448), never save data.
+
+## Less clutter
+- **Battle:** the ticker goes; a field strip shows the weather and hazards as glyphs with turns left. Plates: name,
+  level, HP with its trail (the `.ghost` bar, battle.js 1161-1182), up to 3 tags and "+N". Move tiles: glyph, name,
+  power, effectiveness; accuracy and text on long-press (`-webkit-touch-callout: none`). The command buttons go quiet
+  (chrome with icons), so the moves are the loud choice.
+- **Walk:** the hint shows when it is relevant and fades; the Actions button bobs only when something is new; the
+  place card plays as a title on arrival, then folds into the top bar with today's weather glyph.
+- **Map:** 10 blurred surfaces down to 3 (a solid semigloss header and place card); Give up moves into a ⋯ menu; the
+  place card opens folded (name, today's weather, what's there) and unfolds for the 7-day forecast; + and − stay
+  (pinch alone fails WCAG 2.5.1).
+- **Sheets:** the screen under a sheet stops blurring.
+- **Everywhere:** each screen shows only the currencies it uses (Moneys in a run, Research at the Lab, Scrap at the
+  Workshop, DNA at the Gene Bank), with a wallet sheet for all; one-line hints; rarity and kind become frames and
+  ribbons instead of captions; tap areas are whole plates and rows (tags are smaller than the 40 px rule).
+
+## The bottom bar, rethought (UI-8b; the owner's brief 2026-10-27)
+The owner, after the sampler: "I want you to rethink the bottom nav bar. I want the map to be bigger. Ask questions and
+give me examples. Rarities for perks and stuff should also be clearly color codes." Four layouts were drawn at true
+phone size on a real run screen with the real minimap (captured headless in Field Guide), standing and walking, beside
+today's bar: a private artifact the owner holds, "Bottom Bar Options" (https://claude.ai/artifact/RnTqYhcn9KbPrThvY6uZ8A).
+They were a bigger tile (today's layout, larger), a Pocket screen (a full-width 72 m map with four buttons under it),
+a corner map (158 px at the top right, a slim bar of five buttons) and a pull-up map (a 150 px tile that opens a
+half-screen 72 m map).
+
+The owner's pick: **the bigger tile**; then, after a look at it: "The map should be bigger than the frame when it's big
+and wider." Three takes on the standing tile followed on the same page (Wide 232 x 184, Wider 264 x 184, Big 240 x 220,
+each with the minimap captured at its own size), and the owner picked **Wide**.
+- Standing: the tile is 232 x 184 px (120 x 128 today), wider than tall, and stands about 60 px out of the bar's frame:
+  the bar's outline loses its raised tower and runs straight under the tile, so the world shows on both sides of the
+  tile's top. The cuts and the edge stay (the examples drew the edge gold; today it turns gold while the Map is open).
+  Two buttons a side (Team, Guide; Bag, Perks or Lab), the icon over the word, in columns about 60 px wide.
+- Walking: the tile shrinks to a 112 px square (72 today) in a 76 px bar; the buttons drop their words and sit side by
+  side, as today.
+- The map keeps 44 m from top to bottom and shows about 55 m across while standing (`minimap.span` stays 44, measured
+  on the tile's shorter side).
+- Room on screen (390 x 844, the home-bar strip counted): about 25% standing (20% today), 16% walking (11% today).
+- Build:
+  - pb-nav-bar's sizes in ui-run-kit.js: `--tile-w` 120 to 232 and `--tile-h` 128 to 184, `--bar-h` 120 to about 124,
+    `--rise` (now the tile's overhang plus its 4 px top gap) 20 to about 64; compact `--tile-w` 72 to 112, `--tile-h`
+    66 to about 108, `--bar-h` 60 to about 76, `--rise` 10 to about 36. Best as dials beside uiTheme.json's `minimap`
+    group, so the Studio can tune them.
+  - The outline (`navStep`) without the tower: a plain cut bar from `--rise` down, the tile over its top edge.
+  - The side buttons stacked icon over word while standing; `--apart` (48 px) narrowed so each side keeps about 60 px;
+    the tile's width capped on narrow phones (about 200 px on a 360 px phone); the 320 px container query (a 96 px
+    tile today) rechecked.
+  - minimap.js: the scale from the tile's shorter side (`s = min(W, H) / span`; today `W / span`), so 44 m stays top
+    to bottom; the marks' size (`unit`, from the width today) checked at 232 px. It draws 5 times a second at its
+    canvas size, about 2.8 times today's pixels.
+  - shell.css `--nav-h` (172 to about 220 standing, 102 to about 144 compact), so the dialogue box, the hint, Actions,
+    sticky rows, the map's controls, the d-pad and the debug button clear the tile.
+- Not taken: the 176 px square (the first pick, before the owner's note), Wider (44 px buttons with small words), Big
+  (29% of the screen); of the first four layouts, the Pocket screen (a third of the screen), the corner map (away from
+  the thumb, a busier top) and the pull-up map (one more gesture).
+
+## The run map's icons (UI-8c; the owner's note 2026-10-27)
+The owner, after the bar: "I also want you to give the world map icons on the run more the style of all the others."
+What the code does today:
+- The run's places on the bowl are flat polygons in the theme's roles with a 1 px edge (run-marks.js `runMarkDraw`:
+  UI-4's ten outlines, `RUN_MARK_TONES`), 18 px and 22 px where you stand, on a 3 px stalk 22 px tall
+  (world-bowl.js `worldBowlRunPin`, `BOWL_PIN`). A place not yet seen prints "?" in the phone's font (700 10px
+  system-ui); the names are canvas text in system-ui at 11 and 12 px. The kit's `<pb-node>` (ui-run-kit.js) draws the
+  same outlines as SVG in the place card.
+- The map's buttons are the old look: 34 px squares in `rgba(20,14,30,.78)` with a near-black ring (map-tab.css
+  `.mbtn`), zoom as typed "+" and "−" (map-tab.js), and the look-around group (world-bowl.js) as typed ⟲ ◎ ⟳ at 28 px,
+  under the 40 px tap rule.
+- Every other icon is a 36 px pixel-art SVG in game/art/ui (51 of them: a rim in a darker tone of the same hue, a light
+  top-left edge, a shaded bottom-right, a shared muted palette). The map's canvas is drawn at most twice the screen's
+  pixels (world-bowl.js `worldMapSize`).
+
+Examples: a private artifact the owner holds, "Run Map Icons" (https://claude.ai/artifact/KjBa67X4gcVLGynRjj79dL): the
+run's map captured in the real game in Field Guide, light and dark, today and with a scratch painter put in through the
+test hooks (`window.runMarkDraw`), plus a key of every place in every state. Two takes: Badges and Pins (every place a
+map pin like art/ui/map.svg, coloured by family, the glyph on a cream face).
+
+The owner's pick: **Badges**, with the buttons and the names, built right after UI-8b. Then the owner: "I meant
+especially the map markers", and asked for UI-8c to start at once, beside UI-8b: the place markers come first; the
+other marks the run's map draws (the gold ring where you stand, the picked place's ring, the destination dot) follow
+them; whether the minimap's marks (trainers, wild Billies, you) follow too is asked in UI-8c's plan; the buttons and the
+names come last. UI-8c runs on `claude/ui-8c-map-markers` (from this branch, a PR into `track/ui`), as WM-4b, WM-5 and
+WM-7 ran beside their track's sessions.
+- Each place keeps UI-4's outline as a bevelled pixel plate on the 36 grid, like the coin, clock and mint icons, in the
+  icon set's own palette, one hue per colour family, with a glyph lit from the top left: the landing a blue octagon
+  (an airship), a road a plain cream chevron (no glyph, so the special places stand out), a town a teal hexagon (a
+  house), a shop a gold card (an awning), an event a violet card (a sparkle), a mini-boss a red notched diamond (a horned
+  skull), the boss a red diamond (a skull), the rival a red shield (crossed swords), a scrapyard a grey cog (a nut), a
+  place not yet seen a slate diamond with a pixel "?".
+- States: seen; where you stand a gold rim two art pixels wide with a soft glow; done dimmed with a small green check;
+  locked grey with a small padlock.
+- Sizes: 28 px a place and 34 px where you stand (18 and 22 today). On the map's canvas (at most twice the screen's
+  pixels) the 36 px art is sharpest at 18, 36 or 54 px; the phone check decides.
+- The names in Jersey 15, the game's own font, instead of system-ui.
+- The map's seven buttons as the kit's chips at 44 px with the set's icons: plus and minus to zoom, the footprints
+  (walk) back to you, the list for places, back and back mirrored to turn, the globe for the whole bowl.
+- Build: the ten place icons drawn as 36 px SVGs in the Studio's icon editor (art/ui, beside the others), so the owner
+  can repaint them; `runMarkLook` names each place's icon; the pin painter in world-bowl.js draws the icon (rasterized
+  once per size) in place of the flat shape, with the rim, the check and the padlock; run-marks.js stays logic only
+  (its unit test); `<pb-node>` shows the same SVG; the label font and the look-around buttons in world-bowl.js; the
+  buttons' markup in map-tab.js and their style in map-tab.css (the look-around group clears the place card, which it
+  overlaps today).
+- Not taken: Pins (one outline for every place, so places differ only by colour and the small glyph; the cream faces
+  brighten a busy map).
+
+## Sessions (Part 2; each starts on `track/ui` after #266 merges)
+
+| # | Session | Does | Visible change | Done when |
+| --- | --- | --- | --- | --- |
+| UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
+| UI-8b | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
+| UI-8c | The run map's icons | the ten place icons drawn as 36 px SVGs in the Studio's icon editor (Badges: UI-4's outlines as pixel plates, a glyph each, the icon set's palette by family); the bowl's pin painter (28 px, 34 px where you stand; the gold rim, the check, the padlock, the pixel "?"); `<pb-node>` the same; the names in Jersey 15; the map's seven buttons as 44 px chips with the set's icons | the run's map | run-marks and ui-icons tests; the gallery's pb-node pictures and the fast check's map step remade on purpose; tap targets; the owner's phone check (sizes, sharpness at 28 px, the art) |
+| UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
+| UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
+| UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
+| UI-14a | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), rarity as frame, pill and name colour on `pb-pick-card` and on list rows; every state in the gallery | gallery only | gallery pictures; smoke |
+| UI-14b | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
+| UI-15 | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
+| UI-16a | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
+| UI-16b | Alive: battle events | the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
+| UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
+| UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
+
+About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
+and on.
+
+How the sessions run (the owner, 2026-10-27: "Start each next step of the ui plan in a new session and automatically
+approve the plans. The choices are made and I want it done."): the planning session starts each step in a new session
+on `track/ui` when the one before has pushed its HANDOFF entry. A step writes its plan and goes on without waiting for
+approval; where it meets an open choice or an "Ask me before" item it takes the recommended option and lists it in its
+HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for. Each step tells
+the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
+main stay the owner's (the PR from `track/ui`).
+
+## Fits with other tracks
+- UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
+  39), and edits this file, ROADMAP, BRANCHES and HANDOFF; whichever of the two PRs merges second takes a small merge.
+- UI-8c touches world-bowl.js lightly (the run pin's painter, the label font, the look-around buttons), which the
+  world map track also edits (WM-4b, #267, on `track/worldmap`; WM-6): keep those edits small and merge main first.
+- VFX-4 (#257, #268) owns crits' impact frame; VFX-5 and VFX-6 work in battle-stage.js and need a rule for Calm.
+- RL-14b (#264) adds boss shield phases and a stage intro: the boss banner and the shield pip are shared with it.
+- ON-3 (#255) builds the Showcase on the kit: `pb-coin`'s API stays as it is.
+- WM-4b (#267) and WM-6 own world-bowl.js: UI-18 comes after them.
+
+## Risks
+- Phone frame cost: masks, more animations and blur. Measure on the Graphics bench; transform and opacity only.
+- Safari: `-webkit-mask` beside `mask`; a `filter` on a masked element runs before the mask; animate a wrapper.
+- The ui-lint ratchet after #266 (radius 0, space 39): tags and chips use tokens or 1-2 px hairlines; new timings use
+  the motion tokens.
+- i18n: the 3-letter codes, kinds and new settings need rows; text in a shadow tree goes through `i18nText`.
+- Any look change turns the picture baselines red: remake them once, in UI-12, and say so in the commit.
+- Retuned type colours reach battle's 3D rings and effects (battle-stage.js uses types.json): check them in UI-13.
+- Three player palettes triple what a look change can break: the gallery's pictures run on the default, and a smoke
+  step opens every screen in the other two (contrast, no page errors).
+
+## The owner's answers (2026-10-27, after the sampler)
+1. **Palette:** Field Guide by default; Field Guide, Copper Grove+ and Bureau Night offered in a Settings Palette row;
+   Brass & Plum and Sunpunk Day kept as Studio presets only.
+2. **Status marks:** angled tags with a glyph and a 3-letter code (BRN, PAR, SLP).
+3. **The family table:** as proposed (Perks violet, Research sky, held items teal, Scrap and Augments gunmetal, DNA and
+   Genes magenta, Crests red with bosses, Beans neutral).
+4. **Tinted glyphs:** yes, for the new marks only; object icons keep their fixed colours.
+5. **Types at one lightness:** yes, retune types.json.
+6. **Battle:** all four: quiet command buttons; a field strip instead of the ticker; every floating battle part in the
+   palette's dark glass, in both themes; move details on long-press.
+7. **Icon fixes:** yes: the bolt only for storms (Sandstorm and paralysis get their own glyphs); HP's heart icon teal.
+8. **Motion:** Full by default (through Device, which still honours the phone's reduced motion); Calm added. **Follow
+   the sky:** no.
+9. **Rarity:** the loot colour ladder (not metal frames), shown as frame and pill (after the bar examples): common
+   grey, uncommon green, rare blue, mythical orange (not purple); on Perks, held items, Augments, Genes and Billie
+   cards.
+10. **New UI sounds:** yes (a sheet opening, a card flip, a count-up's end, a toast).
+11. **Colour shapes switch:** yes, in Accessibility.
+12. **The bottom bar (after the bar examples):** the bigger tile; then, after the owner's note ("The map should be
+    bigger than the frame when it's big and wider"), **Wide**: 232 x 184 px standing, out of the bar's frame, and the
+    112 px square walking.
+13. **The map's area:** 44 m from top to bottom, drawn bigger (about 55 m across while standing).
+14. **Walking:** the bar shrinks a little (labels off, the tile at 112 px).
+15. **The run map's places (after the map examples):** Badges: UI-4's outlines as pixel plates with a glyph each, in
+    the icon set's palette by colour family.
+16. **The map's buttons and names:** both: the kit's 44 px chips with the set's icons, and the names in the game's font.
+17. **When:** UI-8c, started at once beside UI-8b at the owner's word (its own branch, a PR into `track/ui`); the map
+    markers first ("I meant especially the map markers").
+
+## Ask me before
+- Any change to the answers above (palettes, statuses, families, types, battle layout, rarity, motion defaults).
+- The exact hexes of the retuned types and the rarity ladder if the phone shows them differently from the sampler.
+- A fourth player palette, or dropping one of the three.
+- The tier of each held item, Augment and Gene (proposed by price and effect size).
+- The final art of the ten place icons (the examples' glyphs are a first pass, for the owner to repaint in the Studio).
+
+## Research (UI-10; sources)
+- Status colours: Pokémon Showdown's battle CSS (BRN #EE5533, PSN #A4009A, PAR #9AA400, SLP #AA77AA, FRZ #009AA4;
+  3-letter pills), Bulbapedia (paralysis), Smogon. Intents: Slay the Spire wiki (7 attack tiers by size).
+- Rarity and identity: Hades (rarity on the frame, the god on the symbol), Balatro wiki (joker rarity, editions as
+  shaders, seals), Marvel Snap (rarity as escalating effects), Game Informer on the loot colour ladder.
+- Colour blindness: Game Accessibility Guidelines ("no essential information by colour alone"), Xbox Accessibility
+  Guideline 103, Okabe-Ito and IBM palettes, Chrome's `prefers-reduced-transparency`; Machado, Oliveira and Fernandes
+  (2009) for the simulation matrices.
+- Motion: NN/g on animation duration, "Juice it or lose it" (Jonasson, Purho), "The art of screenshake" (Nijman),
+  Sakurai on hit-stop, Game Developer on juice; MDN on `navigator.vibrate` (no iOS Safari).
+- Layout and touch: Hoober's thumb study (UXmatters), Slay the Spire and Balatro mobile reviews, Pokémon Scarlet and
+  Violet UI notes.
+- Palettes: Evil Martians on OKLCH, Lospec (Patina, Verdigris, Hidden Library), solarpunk art direction notes.

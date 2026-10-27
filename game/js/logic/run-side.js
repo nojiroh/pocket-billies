@@ -167,9 +167,28 @@ export function runSideAdd(seed, map, S) {
       if (boss) return r === last - n;
       return r + n + 1 <= last;
     },
+    /* WM-4b: a place with two free cells by its north or south side, so the side area's first place touches its door
+       on the region grid (run-map.js runSideLay); any place when none has */
+    free = (/** @type {number} */ i) => {
+      const nd = map.nodes[i];
+      if (!nd.at || !nd.size) return true;
+      const [x, y] = nd.at,
+        [w, h] = nd.size,
+        main = map.nodes.filter(m => runSideMain(m) && m.at && m.size),
+        hit = (/** @type {number} */ cx, /** @type {number} */ cy) =>
+          main.some(m => {
+            const [mx, my] = /** @type {number[]} */ (m.at),
+              [mw, mh] = /** @type {number[]} */ (m.size);
+            return cx < mx + mw && mx < cx + 2 && cy < my + mh && my < cy + 1;
+          });
+      for (const cy of [y + h, y - 1]) for (let cx = x - 1; cx < x + w; cx++) if (!hit(cx, cy)) return true;
+      return false;
+    },
     plain = map.nodes.flatMap((nd, i) => (fits(i) && ['route', 'town'].includes(nd.type) ? [i] : [])),
     any = map.nodes.flatMap((nd, i) => (fits(i) ? [i] : [])),
-    spots = plain.length ? plain : any;
+    pool = plain.length ? plain : any,
+    roomy = pool.filter(free),
+    spots = roomy.length ? roomy : pool;
   if (!spots.length) return null;
   const from = spots[rngFrom(seed, 'side|from').int(0, spots.length - 1)],
     r = map.nodes[from].row,

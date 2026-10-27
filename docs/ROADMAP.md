@@ -106,7 +106,7 @@ town node needs it.
   2026-10-27), WM-2 (a
   region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town, 9-12
   places a path by Expedition, 2-3 towns; done 2026-10-27 on `claude/wm-2-region-grid`), WM-3
-  (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines),
+  (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines; side areas on the grid; done 2026-10-27),
   WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
@@ -143,6 +143,12 @@ town node needs it.
   ratchet) done 2026-10-22 (PR #112, written up 2026-10-26); UI-6b (lint down, blur budget, accessibility) done 2026-10-26: UI-6 and phase 06 end
   (tags `ui-6-done`, `phase-06-done`); UI-9a (parts.css shrunk in place: dead rules, 41 of its 48 !important, the type pill and keyframes out; tap targets stay 40 px) done 2026-10-27; UI-9b (parts.css appended to base.css and deleted at the owner's word, every corner and all but 39 spacing values on the scale, two small corner tokens, the stat bars' grow-in) done 2026-10-27 on `track/ui`; the owner's phone check next. UI-7 (settings and the debug menu made clearer, asked for by the owner 2026-10-23) in three steps: UI-7a
   (Sound: row mutes, a sound on release) done 2026-10-23; UI-7b (the settings tabs) done 2026-10-23; UI-7c (the debug menu) done 2026-10-23. UI-8 (the bottom bar with the minimap, the owner's brief 2026-10-26) built 2026-10-26; the owner's phone check next.
+  Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
+  run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
+  `ccr-03a15a70-nd3yqu`, answered (Field Guide by default, three palettes in Settings; rarity as frame and pill); UI-8b (the wide
+  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) first, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
+  beside it on `claude/ui-8c-map-markers`, then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
+  the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.

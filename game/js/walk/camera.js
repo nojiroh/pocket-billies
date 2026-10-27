@@ -178,6 +178,10 @@ function moments(sc, P, push, I, dt, snap) {
       st.still = Math.max(st.still, D.idleDelay);
     }
   }
+  /* WM-7: a leader's arena framed while its intro lasts (route-sight.js arenaEntered sets it) */
+  const ar = walkRenderer.arenaAt;
+  if (ar && walkView.t > ar.until) walkRenderer.arenaAt = null;
+  const arena = walkRenderer.arenaAt ? [walkRenderer.arenaAt.x, walkRenderer.arenaAt.z] : null;
   /* CAM-3: where the speaker and the boss are, for the blur's focus (walk-view-gl.js, logic/lens-focus.js focusAim) */
   walkRenderer.momSpots = { talk, boss: boss ? [boss.x, boss.z] : null };
   if ((freeCameraOn() && !walkView.opt.moments) || sc.indoor || sc.room) return { id: null, goals: [] };
@@ -191,6 +195,7 @@ function moments(sc, P, push, I, dt, snap) {
       dir: push,
       talk,
       boss,
+      arena,
       interest: I,
       reduced: !!reducedMotion,
     },
