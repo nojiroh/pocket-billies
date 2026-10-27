@@ -22,6 +22,7 @@ import {
   ambienceDrift,
   ambienceLiveStep,
   ambienceNoiseLoop,
+  ambiencePreview,
   ambienceRandom,
 } from './logic/ambience-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
@@ -51,12 +52,15 @@ expose({
   RARE_BIRDS: [() => RARE_BIRDS],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
+  ambienceApply: [() => ambienceApply, v => (ambienceApply = v)],
   ambienceBedStart: [() => ambienceBedStart, v => (ambienceBedStart = v)],
   ambienceBedStop: [() => ambienceBedStop, v => (ambienceBedStop = v)],
   ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
+  ambienceBirds: [() => ambienceBirds, v => (ambienceBirds = v)],
   ambienceDriftTick: [() => ambienceDriftTick, v => (ambienceDriftTick = v)],
   ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
+  ambiencePreviewTick: [() => ambiencePreviewTick, v => (ambiencePreviewTick = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
   battleCry: [() => battleCry, v => (battleCry = v)],
@@ -951,6 +955,26 @@ function initAmbience() {
 /* SND-8a: random drift instead of the regular wobbles (logic/ambience-sound.js ambienceDrift): each wandering level or
    filter of a bed gets a new random value every few seconds, scheduled a little ahead; no oscillator, and a level
    never swings below 0 */
+/* each bed to its level and pan (T and pans by bed name; a bed not named goes to 0) */
+function ambienceApply(T, pans, t) {
+  for (const [k, b] of Object.entries(ambience.beds)) {
+    /* SND-8a: a bed starts when wanted, and stops once it has faded to nothing */
+    const step = ambienceLiveStep(b.st, T[k] || 0, t);
+    if (step === 'start') ambienceBedStart(b, t);
+    else if (step === 'stop') ambienceBedStop(b, t);
+    b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
+    if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
+    if (b.st.live) ambienceDriftTick(b, t);
+  }
+}
+/* SND-8a: the Sound Test and tools/check-sound.py --loudness play world sounds here as the game would: a list of
+   [kind, metres] (logic/ambience-sound.js ambiencePreview: a source at a distance, or a place's bed), and 'birds' (the
+   open country's) */
+function ambiencePreviewTick(list, t) {
+  if (!ambience.bus && !initAmbience()) return;
+  ambienceApply(ambiencePreview(list), {}, t);
+  if (list.some(([k]) => k === 'birds')) ambienceBirds(t, ['lark', 'lark', 'song'], false, 1, 0, 1);
+}
 /* SND-8a: a bed's sources start (each layer's noise from a random point of its loop) and stop */
 function ambienceBedStart(b, t) {
   const c = soundEngine.ctx;
@@ -1108,15 +1132,7 @@ function updateAmbience() {
     }
   }
   if (sc) ambienceBeds(sc, E, T, pans, t);
-  for (const [k, b] of Object.entries(ambience.beds)) {
-    /* SND-8a: a bed starts when wanted, and stops once it has faded to nothing */
-    const step = ambienceLiveStep(b.st, T[k] || 0, t);
-    if (step === 'start') ambienceBedStart(b, t);
-    else if (step === 'stop') ambienceBedStop(b, t);
-    b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
-    if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
-    if (b.st.live) ambienceDriftTick(b, t);
-  }
+  ambienceApply(T, pans, t);
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
   const night = E ? (E.raw || E).night : 0,
     moving = sc && walkView.pl && walkView.pl.walk;
@@ -1178,17 +1194,7 @@ function ambienceBeds(sc, E, T, pans, t) {
       pans.town = 0;
     }
     /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS) */
-    {
-      const L = BIRD_CALLS[sc.biome] || BIRD_CALLS._;
-      if (
-        L.length &&
-        day > 0.3 &&
-        Math.random() < dt * (town ? 0.12 : 0.3) * day * (1 - Math.min(1, rain) * 0.8) * thru
-      ) {
-        const k = L[Math.floor(Math.random() * L.length)];
-        if (Math.random() < (RARE_BIRDS[k] || 1)) playBirdCall(t, k);
-      }
-    }
+    ambienceBirds(t, BIRD_CALLS[sc.biome] || BIRD_CALLS._, town, day, rain, thru);
     /* the farm's rooster at first light */
     const hr = typeof environmentHour === 'function' ? environmentHour() : 12;
     if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) playBirdCall(t, 'rooster');
@@ -1211,6 +1217,14 @@ function ambienceBeds(sc, E, T, pans, t) {
         ev.tick += 1;
       }
     }
+  }
+}
+/* birds of the list L now and then (by day, fewer in the rain and in towns) */
+function ambienceBirds(t, L, town, day, rain, thru) {
+  const dt = 0.2;
+  if (L.length && day > 0.3 && Math.random() < dt * (town ? 0.12 : 0.3) * day * (1 - Math.min(1, rain) * 0.8) * thru) {
+    const k = L[Math.floor(Math.random() * L.length)];
+    if (Math.random() < (RARE_BIRDS[k] || 1)) playBirdCall(t, k);
   }
 }
 function ambienceOutput(pan, dry) {
