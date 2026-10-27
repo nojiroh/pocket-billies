@@ -1,0 +1,31 @@
+{
+ "about": "Roguelite track RL-14b: a run's bosses that are not a leader's Billie (logic/bosses.js). The Retrieval Unit is the Bureau's first big retrieval unit, the Voltron: four bots (a leader torso, two arm-bots, a leg-bot: boss parts in robots.json) that lock together into one robot fought as an Alpha. It is the boss of the Expeditions it names (leaders stay the boss elsewhere). Its level is the boss row's level + boss.levels; boss.hp and boss.st multiply its HP and other stats; each phase fires once when its HP falls to `at` of the most: a shield for `shield` turns, stat stages, a limb that tears loose (`breaks`), and its line ({name}, {part}). Its first win gives one of its parts (`rewards.parts`) and plays the story script `story`. Numbers are placeholders for the sim.",
+ "bosses": {
+  "retrieval": {
+   "name": "The Retrieval Unit",
+   "expeditions": [1],
+   "who": "miner",
+   "fighter": {"gem":"volt","torso":"intake","armL":"seizer","armR":"franker","legs":"conveyor"},
+   "bots": {"torso":"Intake Clerk","armL":"Seizure Unit","armR":"Franking Unit","legs":"Conveyor Unit"},
+   "boss": {"hp":3,"st":1.3,"levels":3},
+   "phases": [
+    {
+     "at": 0.6,
+     "shield": 2,
+     "stages": {"lev":1,"lob":1},
+     "say": "{name} reroutes its power! A golden shield rises around it."
+    },
+    {
+     "at": 0.3,
+     "stages": {"hus":1},
+     "breaks": "armR",
+     "say": "The {part} tears loose! {name} runs lighter and faster."
+    }
+   ],
+   "join": "Four Bureau bots roll in... and lock together into {name}!",
+   "win": "Retrieval suspended. Claim filed as pending.",
+   "rewards": {"parts":1},
+   "story": "chapter1-end"
+  }
+ }
+}
