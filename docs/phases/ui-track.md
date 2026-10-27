@@ -420,7 +420,7 @@ Separate channels, as Hades, Balatro, Pokémon Showdown and Marvel Snap do:
 | Arrow first, colour second | a boost or drop | ▲ teal / ▼ red with Atk, Def, SpA, SpD, Spe and pips |
 | Small glyph + turns left | a short effect (Protect, the shield, confusion, Soaked, Fork, the delayed hit, stones) | pip on the plate or the field strip |
 | Family colour + frame shape | what kind of pickup | the card's ribbon and silhouette |
-| Frame colour + the word | rarity | the loot ladder on the card's edge: common plain, uncommon green, rare blue, mythical orange (never a fill) |
+| Frame, pill and name in the tier's colour | rarity | the loot ladder: common grey, uncommon green, rare blue, mythical orange (never a fill) |
 | Family colour + icon | currency, map node, message | chip, node outline, toast |
 
 Families. The fill is for tags, chips and bars on dark glass (dark text on it); the text shades are for words and bars
@@ -445,10 +445,14 @@ on light and dark screens.
 The types at one lightness (OKLCH L about 0.58): Fire #CC4C25, Water #2C78C5, Grass #418623, Electric #E2B92C (dark
 text), Ground #A16B32, Flying #5973BE, Psychic #C14B7F, Steel #65798A, Dragon #7C63D6.
 
-Rarity, on the card's edge only (the owner's pick over metal frames): common plain (the palette's line colour; a grey
-would sit 2 from the Machine family's gunmetal), uncommon #43B966, rare #4A78EA, mythical #FC6B33, and the word on the
-card. Checked: each tier is 9.8 or more from every family (OKLab distance; mythical is nearest to red and amber) and
-the tiers are 16 or more apart.
+Rarity (the owner's picks: the loot ladder over metal frames, then "frame and pill" from the bar examples): a thick
+frame in the tier's colour, a pill with the tier's name, and the item's name written in the tier's colour; the kind
+stays on the ribbon. Common #A5ACB2, uncommon #4AB962, rare #629BFF, mythical #F77036 (orange, clear of the Perks'
+violet). Text shades, light: #5F6469, #02782E, #2F5EB9, #AA3700; dark: #B9BEC4, #7CD68B, #8ABDFF, #FF9A6B (5:1 or more
+on all three player palettes' surfaces; dark text on every fill 6:1 or more). It shows on Perks (common, uncommon,
+rare), on held items, Augments and Genes (their tiers are new: proposed by price and effect size, the owner's call) and
+on Billie cards (each species' rarity, common to mythical, today shown only in the Guide). Common's grey sits close to
+the Machine family's gunmetal: on an Augment card both are quiet, and the pill names the tier.
 
 Checked by script (UI-10, OKLCH and OKLab, Machado 2009 for colour blindness): dark text on every fill is 5:1 or more;
 each text shade is 4.5:1 or more on every candidate palette's surface; within each screen's set (battle, pickups,
@@ -525,23 +529,50 @@ Grove+.
   Workshop, DNA at the Gene Bank), with a wallet sheet for all; one-line hints; rarity and kind become frames and
   ribbons instead of captions; tap areas are whole plates and rows (tags are smaller than the 40 px rule).
 
+## The bottom bar, rethought (UI-8b; the owner's brief 2026-10-27)
+The owner, after the sampler: "I want you to rethink the bottom nav bar. I want the map to be bigger. Ask questions and
+give me examples. Rarities for perks and stuff should also be clearly color codes." Four layouts were drawn at true
+phone size on a real run screen with the real minimap (captured headless in Field Guide), standing and walking, beside
+today's bar: a private artifact the owner holds, "Bottom Bar Options" (https://claude.ai/artifact/RnTqYhcn9KbPrThvY6uZ8A).
+They were a bigger tile (today's layout, larger), a Pocket screen (a full-width 72 m map with four buttons under it),
+a corner map (158 px at the top right, a slim bar of five buttons) and a pull-up map (a 150 px tile that opens a
+half-screen 72 m map).
+
+The owner's pick: **the bigger tile.**
+- The tile: 176 px standing (120 today, +47%), 112 px walking (72 today, +56%); still the raised tile with the cuts and
+  the gold edge in the middle, two buttons a side (Team, Guide; Bag, Perks or Lab).
+- The same area, 44 m across, drawn larger (`minimap.span` stays 44).
+- Walking: as today, the buttons drop their labels and sit side by side; the tile shrinks to 112 px.
+- Room on screen (390 x 844, the home-bar strip counted): about 24% standing (20% today), 16% walking (11% today).
+- Build: pb-nav-bar's sizes in ui-run-kit.js (`--tile-w` 120 to 176, `--tile-h` 128 to about 172, `--bar-h` 120 to
+  about 150, `--rise` 20 to about 26; compact `--tile-w` 72 to 112, `--tile-h` 66 to about 106, `--bar-h` 60 to about
+  76, `--rise` 10 to about 36), best as dials beside uiTheme.json's `minimap` group so the Studio can tune them; the
+  320 px container query's tile (96 px today) checked against the side buttons; shell.css `--nav-h` (172 to about 208
+  standing, 102 to about 144 compact) so the dialogue box, the hint, Actions, sticky rows, the map's controls, the
+  d-pad and the debug button clear it. minimap.js draws at its canvas size, so only the chevron's and the icons'
+  sizes at 176 px need a look.
+- Not taken: the Pocket screen (a third of the screen), the corner map (away from the thumb, a busier top), the pull-up
+  map (one more gesture).
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
-| UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler artifact; the owner's answers | none | the owner's answers written here |
+| UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
+| UI-8b | The bigger map tile | the bar's sizes as dials (176 px tile, 112 px walking), `--nav-h`, the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, frame cost) |
 | UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
 | UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
 | UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
-| UI-14a | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), the rarity ladder on `pb-pick-card`'s edge; every state in the gallery | gallery only | gallery pictures; smoke |
-| UI-14b | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere | tags and marks | each screen's UI test; the owner's phone check |
+| UI-14a | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), rarity as frame, pill and name colour on `pb-pick-card` and on list rows; every state in the gallery | gallery only | gallery pictures; smoke |
+| UI-14b | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
 | UI-15 | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
 | UI-16a | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
 | UI-16b | Alive: battle events | the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
 | UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 
-About 11 sessions in all, plus the owner's phone checks after UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done` and on.
+About 12 sessions in all, plus the owner's phone checks after UI-8b, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
+and on.
 
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
@@ -575,15 +606,20 @@ About 11 sessions in all, plus the owner's phone checks after UI-12, UI-14b, UI-
 7. **Icon fixes:** yes: the bolt only for storms (Sandstorm and paralysis get their own glyphs); HP's heart icon teal.
 8. **Motion:** Full by default (through Device, which still honours the phone's reduced motion); Calm added. **Follow
    the sky:** no.
-9. **Rarity:** the loot colour ladder on the card's edge (not metal frames): common plain, uncommon green, rare blue,
-   mythical orange.
+9. **Rarity:** the loot colour ladder (not metal frames), shown as frame and pill (after the bar examples): common
+   grey, uncommon green, rare blue, mythical orange (not purple); on Perks, held items, Augments, Genes and Billie
+   cards.
 10. **New UI sounds:** yes (a sheet opening, a card flip, a count-up's end, a toast).
 11. **Colour shapes switch:** yes, in Accessibility.
+12. **The bottom bar (after the bar examples):** the bigger tile, 176 px standing and 112 px walking.
+13. **The map's area:** the same 44 m, drawn bigger.
+14. **Walking:** the bar shrinks a little (labels off, the tile at 112 px).
 
 ## Ask me before
 - Any change to the answers above (palettes, statuses, families, types, battle layout, rarity, motion defaults).
 - The exact hexes of the retuned types and the rarity ladder if the phone shows them differently from the sampler.
 - A fourth player palette, or dropping one of the three.
+- The tier of each held item, Augment and Gene (proposed by price and effect size).
 
 ## Research (UI-10; sources)
 - Status colours: Pokémon Showdown's battle CSS (BRN #EE5533, PSN #A4009A, PAR #9AA400, SLP #AA77AA, FRZ #009AA4;
