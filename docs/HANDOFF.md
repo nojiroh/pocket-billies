@@ -45,7 +45,7 @@ now, main merged first.
   UI gallery: the same 38 pictures differ from the committed baseline before and after this session's changes, with
   the same shares (UI-8's bar and this container), so the baseline was not remade; pictures of the fixed tabs in light
   and dark. Full quick check: 32 of 40. Known reds
-  (earlier entries): Terraces ( floats, HB-7), RL-8 (never landed), room light; Time and weather, Animals,
+  (earlier entries): Terraces (`sky_portal` floats, HB-7), RL-8 (never landed), room light; Time and weather, Animals,
   RT-4a and Sound effects pass alone (one browser). "Running" (the joystick, walked 2.23 m) fails the same way on
   b7da6013, the commit before this session's changes: not this session's, for whoever owns walking.
 - **Risky:** the swaps tie hundreds of values to the Space and Motion dials: a dial moved in the Studio now moves them
