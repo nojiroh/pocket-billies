@@ -1,7 +1,22 @@
 // Characters track CH-1: how a person is seen (game/js/logic/person-view.js)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { copiedAnchor } from '../../game/js/logic/person-view.js';
+import { copiedAnchor, facingWord } from '../../game/js/logic/person-view.js';
+
+/* the walk view's rule as it was written in walk-view.js directionOf before CH-1 */
+const oldDirectionOf = (mx, mz) =>
+  Math.abs(mx) > Math.abs(mz) * 1.1 ? (mx > 0 ? 'sideR' : 'side') : mz > 0 ? 'up' : 'down';
+
+test('person view: facingWord is the walk view’s old rule, everywhere', () => {
+  for (let i = -40; i <= 40; i++)
+    for (let j = -40; j <= 40; j++)
+      assert.equal(facingWord(i / 7, j / 7), oldDirectionOf(i / 7, j / 7), `(${i}, ${j})`);
+  /* the edges: sideways only past 1.1 times as sideways as not; standing still faces down */
+  assert.equal(facingWord(1.1, 1), 'up');
+  assert.equal(facingWord(1.11, 1), 'sideR');
+  assert.equal(facingWord(-1.11, -1), 'side');
+  assert.equal(facingWord(0, 0), 'down');
+});
 
 /* a person's walk frame as person-art.js personFrame tags it: 64 px wide, feet at (30, 112), 66.5 px a metre */
 const FRAME = { width: 64, height: 120, ax: 30, ay: 112, ppm: 66.5, noNormal: true };

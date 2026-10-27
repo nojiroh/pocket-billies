@@ -79,6 +79,7 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, propDoor, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
+import { facingWord } from './logic/person-view.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
@@ -3536,8 +3537,9 @@ export function walkTo(pt, cb) {
     t: walkView.t,
   };
 }
+/* the word for a way along the ground as a camera at yaw 0 sees it (logic/person-view.js facingWord) */
 export function directionOf(mx, mz) {
-  return Math.abs(mx) > Math.abs(mz) * 1.1 ? (mx > 0 ? 'sideR' : 'side') : mz > 0 ? 'up' : 'down';
+  return facingWord(mx, mz);
 }
 export function turnToPlayer(f) {
   const P = walkView.pl;

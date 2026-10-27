@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:739"
+    "game/js/walk-view.js:740"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:740"
+    "game/js/walk-view.js:741"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:741"
+    "game/js/walk-view.js:742"
    ]
   },
   {
@@ -105,7 +105,7 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:504"
+    "game/js/walk-view.js:505"
    ]
   },
   {
@@ -151,41 +151,41 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2150",
-    "game/js/walk-view.js:763"
+    "game/js/walk-view.js:764"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:763"
+    "game/js/walk-view.js:764"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:738",
+    "game/js/walk-view.js:739",
     "game/js/walk/ground-draw.js:90"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:520"
+    "game/js/walk-view.js:521"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:773",
+    "game/js/walk-view.js:774",
     "game/js/walk/frame-items.js:195"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:742",
+    "game/js/walk-view.js:743",
     "game/js/walk/effects.js:253"
    ]
   },
@@ -1649,7 +1649,7 @@
    "game/js/ui-run-kit.js:83",
    "game/js/ui-run-kit.js:492",
    "game/js/ui.js:75",
-   "game/js/walk-view.js:3161"
+   "game/js/walk-view.js:3162"
   ],
   "cowboy": [
    "game/js/person-art.js:264"
@@ -1675,6 +1675,9 @@
    "game/js/fishing.js:168",
    "game/js/friends.js:629",
    "game/js/logic/cutscene-set.js:38",
+   "game/js/logic/person-view.js:6",
+   "game/js/logic/person-view.js:26",
+   "game/js/logic/person-view.js:29",
    "game/js/logic/run-scenes.js:385",
    "game/js/logic/run-scenes.js:406",
    "game/js/logic/run-scenes.js:424",
@@ -1690,11 +1693,10 @@
    "game/js/walk-control.js:424",
    "game/js/walk-control.js:516",
    "game/js/walk-control.js:534",
-   "game/js/walk-view.js:332",
-   "game/js/walk-view.js:3540",
-   "game/js/walk-view.js:3729",
-   "game/js/walk-view.js:3840",
-   "game/js/walk-view.js:4161",
+   "game/js/walk-view.js:333",
+   "game/js/walk-view.js:3731",
+   "game/js/walk-view.js:3842",
+   "game/js/walk-view.js:4163",
    "game/js/walk/frame-items.js:310"
   ],
   "drop": [
@@ -1708,7 +1710,7 @@
    "game/js/battle-stage.js:809",
    "game/js/battle-stage.js:2125",
    "game/js/battle-stage.js:2188",
-   "game/js/walk-view.js:395",
+   "game/js/walk-view.js:396",
    "game/js/walk/effects.js:371"
   ],
   "floppy": [
@@ -1777,8 +1779,8 @@
    "game/js/minimap.js:81",
    "game/js/minimap.js:82",
    "game/js/self-test.js:3499",
-   "game/js/walk-view.js:395",
-   "game/js/walk-view.js:4015",
+   "game/js/walk-view.js:396",
+   "game/js/walk-view.js:4017",
    "game/js/walk/effects.js:518",
    "game/js/walk/effects.js:672",
    "game/js/walk/effects.js:780",
@@ -1882,7 +1884,7 @@
    "game/js/logic/cutscene-set.js:44",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
-   "game/js/walk-view.js:395",
+   "game/js/walk-view.js:396",
    "game/js/walk/effects.js:337",
    "game/js/walk/effects.js:341"
   ],
@@ -1919,6 +1921,9 @@
    "game/js/logic/data-checks.js:887",
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:242",
+   "game/js/logic/person-view.js:5",
+   "game/js/logic/person-view.js:26",
+   "game/js/logic/person-view.js:29",
    "game/js/person-art.js:802",
    "game/js/person-art.js:881",
    "game/js/self-test.js:2848",
@@ -1926,8 +1931,7 @@
    "game/js/unit-card.js:177",
    "game/js/unit-card.js:204",
    "game/js/walk-control.js:308",
-   "game/js/walk-view.js:3540",
-   "game/js/walk-view.js:3729",
+   "game/js/walk-view.js:3731",
    "game/js/walk/prop-look.js:151",
    "game/js/workshop.js:102"
   ],
