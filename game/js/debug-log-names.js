@@ -74,6 +74,7 @@ import {
 import { setShadowPass, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
 import { effectsPass, setEffectsPass } from './walk/effects.js';
+import { fogGridReport } from './walk/fog-grid.js';
 import { mountWalkView, setMountWalkView } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
@@ -96,7 +97,8 @@ import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } 
 import { openShop, setOpenShop } from './shop.js';
 import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
-import { runWorld } from './run-world.js';
+import { titleScreen } from './title.js';
+import { runWorld, runWorldAhead } from './run-world.js';
 import { account } from './account.js';
 import { routeSight } from './route-sight.js';
 import { renderOverlay, setRenderOverlay, toast } from './overlay.js';
@@ -140,6 +142,7 @@ Object.defineProperties(GAME, {
   ensurePrograms: { get: () => ensurePrograms, set: setEnsurePrograms },
   environment: { get: () => environment },
   finishProgramCompile: { get: () => finishProgramCompile, set: setFinishProgramCompile },
+  fogGridReport: { get: () => fogGridReport },
   frameScheduler: { get: () => frameScheduler },
   gameData: { get: () => gameData },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
@@ -172,6 +175,7 @@ Object.defineProperties(GAME, {
   routeSight: { get: () => routeSight },
   runNormalMapJobs: { get: () => runNormalMapJobs, set: setRunNormalMapJobs },
   runWorld: { get: () => runWorld },
+  runWorldAhead: { get: () => runWorldAhead },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
   saveHeld: { get: () => saveHeld },
@@ -183,6 +187,7 @@ Object.defineProperties(GAME, {
   soundEngine: { get: () => soundEngine },
   spliceReport: { get: () => spliceReport },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
+  titleScreen: { get: () => titleScreen },
   toast: { get: () => toast },
   uiState: { get: () => uiState },
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },

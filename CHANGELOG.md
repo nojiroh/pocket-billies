@@ -9,6 +9,19 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Converted props to compare** (route props track RP-3, the test map only): a wind turbine, a stone bridge and an
+  arch turned from free (CC0) KayKit models into the props' own shapes, colours and textures, each beside the hand-made
+  one on the route props test map.
+- **Blur that spreads in front** (off until tested on the phone; Studio > Engine > Lens "Spread blur in front"): a
+  blurred thing in front of the focus, a prop's or a house's edge near the bottom of the screen, now softens over
+  what is behind it instead of stopping at a hard outline against the sharp ground.
+- **Bridges in the new style** (route props track RP-2): wooden bridges have planks with gaps, capped posts and
+  braced trestles and a gentle hump you walk over; rope bridges a dipping hand rope; stone bridges coursed parapets,
+  a coping, moss and an arch ring; jetties capped mooring posts; rails and arches match.
+- **Graphics: Off** (Settings → Display): a third card next to Balanced and Beautiful that turns every effect off:
+  no shadows, grass blades, mist, clouds, sun rays, blur, glow, colour grading, water reflections, far trees and
+  hills, and no time-of-day or weather tint (a steady midday light). The picture stays at full sharpness; Expert
+  dials wait untouched and come back when you pick another card. Map clouds on Auto are off with it.
 - **Easier to read and tap** (UI-6): the Field Guide's tabs have a panel behind them, so Lore and Postcards read over
   the world; in dark mode a chosen option (the Guide's tabs, segmented choices) is no longer white text on white; the
   Field Guide's arrows, Settings Help's sections, the dressing room's toggles and the title's links are 40 px tap

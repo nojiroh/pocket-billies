@@ -832,6 +832,19 @@ canvas.spr-prev.big {
   max-width: 26px;
   max-height: 26px;
 }
+.pyr-art {
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.pyr-fig {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+}
+.pyr-fig .seg-row {
+  align-items: end;
+}
 .item-ic {
   display: flex;
   flex-direction: column;
@@ -961,47 +974,203 @@ canvas.spr-prev.big {
   object-fit: cover;
   object-position: center 40%;
 }
-.files {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+/* SA-1: the Art browser */
+.ab-bar {
+  display: flex;
   gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
-.file {
-  margin: 0;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 8px;
+.ab-q {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.ab-size {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text2);
+}
+.ab-chips {
+  margin-bottom: 8px;
+}
+.ab-chip {
+  cursor: pointer;
+  border: 0;
+}
+.ab-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 12px;
+  align-items: start;
+}
+.ab-main {
+  min-width: 0;
+}
+.ab-crumbs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.ab-sep {
+  color: var(--text2);
+}
+.ab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ab-size, 96px), 1fr));
+  gap: 8px;
+}
+.ab-tile {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   background: var(--panel2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
-.fthumb {
-  height: 110px;
+.ab-tile.on {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 2px var(--acc2);
+}
+.ab-tile small,
+.ab-unused .ab-name {
+  color: var(--text2);
+  font-size: 11px;
+}
+.ab-thumb {
+  height: var(--ab-size, 96px);
   display: grid;
   place-items: center;
   background: repeating-conic-gradient(#e8ece6 0 25%, #fff 0 50%) 0 0/16px 16px;
-  border-radius: 7px;
+  border-radius: 6px;
   overflow: hidden;
 }
-.fthumb img {
-  max-width: 100%;
-  max-height: 110px;
+.sp-wrap {
+  margin: 8px 0;
 }
-.file figcaption {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+.ab-thumb.sp-stage {
+  height: auto;
+  min-height: 72px;
+  padding: 8px;
+  overflow: auto;
 }
-.file b {
+.sp-bar {
+  align-items: center;
+  margin-top: 6px;
+}
+.sp-fps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ab-note {
+  align-items: center;
+  margin: 6px 0;
+}
+.ts-bar {
+  align-items: end;
+  margin-bottom: 8px;
+}
+.ts-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ts-tile {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.ts-tile.on {
+  border-color: var(--acc);
+}
+.ts-thumb {
+  width: 64px;
+  height: 64px;
+}
+.ts-prev {
+  width: 100%;
+  max-width: 512px;
+  image-rendering: pixelated;
+}
+.ts-lite {
+  align-items: center;
+}
+.ts-lite4 {
+  width: 64px;
+  height: 64px;
+}
+.ab-folder .ab-thumb {
+  background: var(--acc2);
+  color: var(--acc);
+  font-size: 32px;
+}
+.ab-thumb img,
+.ab-big img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.ab-name {
   font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.file small {
-  color: var(--text2);
-  font-size: 11px;
+.ab-more {
+  grid-column: 1 / -1;
+}
+.ab-side {
+  position: sticky;
+  top: 0;
+}
+.ab-big {
+  height: 220px;
+  background: repeating-conic-gradient(#e8ece6 0 25%, #fff 0 50%) 0 0/16px 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ab-path {
+  word-break: break-all;
+  font-size: 12px;
+}
+.ab-acts {
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.ab-refs {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  max-height: 280px;
+  overflow: auto;
+}
+@media (max-width: 760px) {
+  .ab-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ab-side {
+    position: static;
+  }
 }
 .checks {
   list-style: none;
@@ -3412,6 +3581,16 @@ body.vp-has-big::after {
   margin: 0;
   text-align: center;
   font-size: 11px;
+}
+.rb-fig {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.rb-none {
+  display: grid;
+  place-items: center;
+  color: var(--text2);
 }
 .rb-pic {
   width: 96px;

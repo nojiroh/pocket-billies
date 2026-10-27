@@ -497,7 +497,9 @@ def safety_step(P):
       /* a friend (as the server would send it) and a friend request */
       accountOn=()=>true;friendsOn=()=>true;friends.code='C0DE'+X;friends.list=['u1'];
       friends.data.u1={name:'Friend'+X,at:{place:'Place'+X,node:0,t:Date.now()},partner:{sp:saveData.team[0].sp,name:'Pal'+X,lvl:5}};
-      friends.inc=[{id:'r1'+X,status:'pending',fromName:'Req'+X}];friends.out=[];
+      friends.inc=[{id:'r1'+X,from:'u9',status:'pending',fromName:'Req'+X}];friends.out=[];
+      /* ON-1: a blocked player's stored name */
+      friends.blocked=['u2'];friends.blockNames={u2:'Blocked'+X};
       notice({id:'pwn',title:'A letter',html:'<p>hello</p>'});0})()""")
     def check(where):
         n = pg.evaluate("""(()=>{let n=document.querySelectorAll('[data-pwn]').length;
@@ -507,6 +509,10 @@ def safety_step(P):
     shown = []
     for tab in ['walk', 'team', 'guide', 'profile', 'bag']:
         pg.evaluate(f"uiState.tab='{tab}';render();0"); ui(pg); check(tab); shown.append(tab)
+    # ON-1: the friend's sheet (remove, block, report), the request's and the report's
+    for name, js in [('friend sheet', "document.querySelector('[data-a=fr-rm]')?.click()"), ('request sheet', "document.querySelector('[data-a=fr-no]')?.click()"), ('report sheet', "reportSheet('u1',friends.data.u1.name)")]:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';render();{js};0"); ui(pg); check(name)
+    shown.append('friend sheets')
     for k in ['sum', 'build', 'moves', 'evo']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); ui(pg); check('details ' + k)
     shown.append('details')

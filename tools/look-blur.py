@@ -3,7 +3,8 @@
 judge a look). Opens Copperleaf (?fixture=town) with the game's own graphics, phone sized, stands at home and takes a
 picture per lens setting: the tilt of the sharp zone at 0 (the slab before CAM-3), 0.5, 0.7 and 1, the edge blur, the
 Miniature look, the player's slider at Off, Low and Strong, the cheap blur slow phones get, and the blur heatmap the
-Studio's blur guides show. The numbers go to validation/look-blur/notes.json.
+Studio's blur guides show, and the blur in front spread over what is behind it (lens.nearSpread) off and on. The
+numbers go to validation/look-blur/notes.json.
 
     python3 tools/look-blur.py                  # every picture, in validation/look-blur/
     python3 tools/look-blur.py --only=tilt      # only the pictures whose names hold these words
@@ -37,6 +38,10 @@ SHOTS = [
     # the Studio's Blur heatmap (green sharp, yellow, red full), at the game's own lens and at the Miniature preset
     ('9-heatmap', {}, 'walkView.opt.dofView=true'),
     ('9-heatmap-miniature', {'focusTilt': 1, 'focusBand': 0.35, 'blurFar': 1.8, 'blurNear': 0.7, 'blur': 2.2, 'miniature': 0.8}, 'walkView.opt.dofView=true'),
+    # Spread blur in front (lens.nearSpread): the Workshop's roof in front of the focus against the sharp square, off and
+    # on, at the strongest blur so the outline shows
+    ('10-spread-off', {'blur': 2.5}, ''),
+    ('10-spread-on', {'blur': 2.5, 'nearSpread': True}, ''),
 ]
 
 

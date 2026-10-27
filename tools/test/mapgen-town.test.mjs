@@ -62,14 +62,6 @@ test('a route has no square and no houses', () => {
   );
 });
 
-test('a run town draws 3 folk when busy, 5 on Balanced, 6 on Beautiful', () => {
-  const { runTownFolkCap } = modules['run-scenes'];
-  assert.equal(runTownFolkCap(R.town, 0, 'sharp'), 6);
-  assert.equal(runTownFolkCap(R.town, 1, 'smooth'), 5);
-  assert.equal(runTownFolkCap(R.town, 2, 'sharp'), 3);
-  assert.equal(runTownFolkCap(R.town, 4, 'smooth'), 3);
-});
-
 test('every run town has a street, a square with the clinic and the shop on it, and 4-7 shut houses', () => {
   let towns = 0,
     four = 0;

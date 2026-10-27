@@ -20,10 +20,12 @@ expose({
   LIGHT_GLSL: [() => LIGHT_GLSL],
   LOOK_GLSL: [() => LOOK_GLSL],
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
+  SKY_GLSL: [() => SKY_GLSL],
   SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
   attributeClashes: [() => attributeClashes, v => ((attributeClashes = v), provide({ attributeClashes }))],
   beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
+  beginProgramCompile: [() => beginProgramCompile, v => (beginProgramCompile = v)],
   bindGridQuad: [() => bindGridQuad, v => (bindGridQuad = v)],
   bindQuad: [() => bindQuad, v => (bindQuad = v)],
   bleedEdges: [() => bleedEdges, v => (bleedEdges = v)],
@@ -69,6 +71,7 @@ expose({
   matrix4: [() => matrix4],
   normalMapWorkerState: [() => normalMapWorkerState],
   normalize3: [() => normalize3],
+  pendingPrograms: [() => pendingPrograms, v => (pendingPrograms = v)],
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
@@ -263,6 +266,12 @@ export function windBendAt(x, z, t, g) {
     0.08 * windGustAt(x, z, t) * g
   );
 }
+/* air track AIR-1: the sky's three-colour gradient by view height e (the sine of the angle above the horizon), one
+   function for the sky shader (walk-shaders.js sky) and the haze (fogit), so they can't drift apart; JS twin:
+   tools/test/haze-twin.mjs skyGrad */
+export const SKY_GLSL = `
+vec3 skyGrad(vec3 s0,vec3 s1,vec3 s2,float e){return e<.18?mix(s2,s1,smoothstep(-.05,.18,e)):mix(s1,s0,smoothstep(.18,.75,e));}
+`;
 /* lighting shared by everything lit in the world: sun with soft contact-hardening shadows and cloud shadows, contact
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
 export const LIGHT_GLSL = `
@@ -329,15 +338,31 @@ vec3 snowOnF(vec3 c,vec3 p,float up,vec2 fol){if(uSeason.w<=0.||fol.y<=0.)return
 /* phase 20 E5: the same with the surface's foliage and snow as a parameter (the instanced sprites feed it per picture) */
 vec3 seasonal(vec3 c,vec3 p){return seasonalF(c,p,uFol);}
 vec3 snowOn(vec3 c,vec3 p,float up){return snowOnF(c,p,up,uFol);}
-vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);float f=1.-exp(-max(0.,d-uFogStart)/uFogD*1.6);
- float m=uMist*exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
+/* air track AIR-1: the average of exp(-b*(y-r)) along a stretch of a ray from height y0 to y1 (Quilez: the exact
+   integral of an exponential height density), capped; 1 when b is 0. JS twin: tools/test/haze-twin.mjs */
+${SKY_GLSL}float airAvg(float y0,float y1,float r,float b,float cap){float k=clamp(b*(y1-y0),-30.,30.),a=exp(clamp(-b*(y0-r),-30.,30.));return min(cap,abs(k)<1e-3?a*(1.-k*.5):a*(1.-exp(-k))/k);}
+vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);vec3 vd=(p-uEye)/max(d,.001);
+ /* AIR-1: the haze thins with height (uHazeFall, from where you stand) and fades red a little faster than blue (uHazeTint) */
+ float tau=max(0.,d-uFogStart)/uFogD*1.6*airAvg(uEye.y+vd.y*min(uFogStart,d),p.y,uHazeY,uHazeFall,3.);
+ vec3 f=1.-exp(-tau*vec3(1.+.3*uHazeTint,1.,1.-.12*uHazeTint));
+ /* the low mist where the surface is, or (uMistRay) thickening along the view over low ground */
+ float mp=exp(-max(0.,p.y-uMistY)*1.4)*smoothstep(4.,22.,d),mr=min(1.,max(0.,d-4.)/18.*airAvg(uEye.y+vd.y*min(4.,d),p.y,uMistY,1.4,1.));
+ /* AIR-3: inside the fog grid the lit march holds the low fog, so the mist steps aside there (uMistBox: its middle, half
+    size, on), fading back in toward its edge (logic/fog-grid.js FOG_EDGE, fogGridInside) */
+ float mo=uMistBox.w>0.?smoothstep(uMistBox.z*.7,uMistBox.z*.95,max(abs(p.x-uMistBox.x),abs(p.z-uMistBox.y))):1.;
+ float m=uMist*mo*mix(mp,mr,uMistRay)*(.55+.45*sin(p.x*.21+uTime*.00012)*sin(p.z*.17-uTime*.0001));f=clamp(f+m*(1.-f),0.,1.);
  /* v23: mist lying in a gorge or valley */
- if(uValley.y>0.){float v=uValley.y*smoothstep(0.,1.4,uValley.x-p.y)*smoothstep(1.5,9.,d)*(.62+.38*sin(p.x*.33+uTime*.00015)*sin(p.z*.27-uTime*.00011));f=clamp(f+v*.6*(1.-f),0.,1.);}
+ if(uValley.y>0.){float v=mo*uValley.y*smoothstep(0.,1.4,uValley.x-p.y)*smoothstep(1.5,9.,d)*(.62+.38*sin(p.x*.33+uTime*.00015)*sin(p.z*.27-uTime*.00011));f=clamp(f+v*.6*(1.-f),0.,1.);}
  c=mix(c,c*uTint,uTintAmt);
  /* v46: inside a building the town around the room is seen dimly (the room box, x0 z0 x1 z1) */
  if(uRoomDim>.001){float ob=max(max(uRoomB.x-p.x,p.x-uRoomB.z),max(uRoomB.y-p.z,p.z-uRoomB.w));float k=smoothstep(.05,.9,ob);float l=dot(c,vec3(.3,.59,.11));c=mix(c,mix(c,vec3(l)*vec3(.92,.95,1.08),.4*uRoomDim)*(1.-uRoomDim),k);}
- /* v43: the air takes the sun's colour where you look toward the sun (forward scattering), the sky's elsewhere */
- vec3 vd=(p-uEye)/max(d,.001);float toSun=pow(max(dot(vd,uSunDir),0.),6.);vec3 fc=mix(uFogCol,uFogCol*.45+uSunCol*.7,toSun*uFogSun);
+ /* AIR-1: the place's haze shaped by the sky's gradient in the view direction (uHazeSky): its own colour below the
+    horizon, leaning to the sky's middle and top above it */
+ vec3 fb=mix(uFogCol,max(uFogCol+skyGrad(uSkyTop,uSkyMid,uSkyLow,vd.y)-uSkyLow,vec3(0.)),uHazeSky);
+ /* v43: the air takes the sun's colour where you look toward the sun (forward scattering), the sky's elsewhere;
+    AIR-1: and a broad glow on the sun's whole side (uSkyGlow) */
+ float cs=max(dot(vd,uSunDir),0.);float toSun=pow(cs,6.);vec3 fc=mix(fb,fb*.45+uSunCol*.7,toSun*uFogSun);
+ fc=mix(fc,fc*.7+uSunCol*.4,pow(cs,1.5)*uSkyGlow*.35);
  return mix(c,fc,f);}
 `;
 /* v32: every thing's own look, on top of its picture: a colour variation (hue, saturation and value shifted only in
@@ -381,8 +406,13 @@ function lateCompile(i, name) {
   if (!L.includes(name)) L.push(name);
   if (L.length > 12) L.shift();
 }
-function startProgramCompile([vs, fs], name) {
+function startProgramCompile(def, name) {
   if (gpuState.loaded) lateCompile(1, name);
+  return beginProgramCompile(def, name);
+}
+/* LD-2: compile and link, no status read: reading one waits for the driver, so it is read once, after the link, and
+   a shader's own log only when the link failed (finishProgramCompile) */
+function beginProgramCompile([vs, fs], name) {
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gpuShader(t);
@@ -454,9 +484,12 @@ export function precompilePrograms(defs) {
         gpuState.pend.set(k, startProgramCompile(v, k));
       } catch (e) {}
 }
-export function pollPendingPrograms(max = 2) {
+/* finish up to max of the programs started in the background; LD-2: with a budget (ms), as many as fit in it (at
+   least one), for while a loading screen is up */
+export function pollPendingPrograms(max = 2, budget = 0) {
   const M = gpuState.pend;
   if (!M || !M.size) return;
+  const t0 = budget ? performance.now() : 0;
   const gl = gpuState.gl,
     X = gpuState.pcx === undefined ? (gpuState.pcx = gl.getExtension('KHR_parallel_shader_compile')) : gpuState.pcx;
   let n = 0;
@@ -473,63 +506,17 @@ export function pollPendingPrograms(max = 2) {
       try {
         gpuState.P[k] = finishProgramCompile(j);
       } catch (e) {}
-    if (++n >= max) break;
+    if (budget ? performance.now() - t0 >= budget : ++n >= max) break;
   }
 }
-function compileProgram([vs, fs], name) {
+/* LD-2: how many programs are still compiling in the background (the boot waits for none behind its loader) */
+export function pendingPrograms() {
+  return gpuState.pend ? gpuState.pend.size : 0;
+}
+/* a program needed now: compiled and linked, then read once (LD-2: no status read between the steps) */
+function compileProgram(def, name) {
   if (gpuState.loaded) lateCompile(0, name);
-  const gl = gpuState.gl,
-    made = [],
-    mk = (t, src) => {
-      const s = gpuShader(t);
-      made.push(s);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        const e = new Error(name + ': ' + gl.getShaderInfoLog(s));
-        made.forEach(gpuFree);
-        throw e;
-      }
-      return s;
-    };
-  const a = mk(gl.VERTEX_SHADER, vs),
-    b = mk(gl.FRAGMENT_SHADER, fs),
-    p = gpuMake('program', 'programs');
-  gl.attachShader(p, a);
-  gl.attachShader(p, b);
-  /* standard locations for the engine's own inputs; an input that declares layout(location=…) keeps its own (some
-    GPUs, Adreno for one, refuse to link when a bound location clashes with another input's) */
-  [
-    ['aPos', 0],
-    ['aC', 0],
-    ['aNrm', 1],
-    ['aShore', 1],
-    ['aI', 1],
-    ['aCol', 2],
-    ['aUV', 2],
-  ].forEach(([n, l]) => {
-    if (
-      new RegExp('in\\s+\\w+\\s+' + n + '\\b').test(vs) &&
-      !new RegExp('layout\\s*\\([^)]*\\)\\s*in\\s+\\w+\\s+' + n + '\\b').test(vs)
-    )
-      gl.bindAttribLocation(p, l, n);
-  });
-  gl.linkProgram(p);
-  const ok = gl.getProgramParameter(p, gl.LINK_STATUS);
-  if (!ok) {
-    const e = new Error(name + ': ' + gl.getProgramInfoLog(p));
-    dropProgramCompile({ p, a, b, gl }, true);
-    throw e;
-  }
-  dropProgramCompile({ p, a, b, gl }, false);
-  const U = {},
-    n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
-  for (let i = 0; i < n; i++) {
-    const u = gl.getActiveUniform(p, i),
-      nm = u.name.replace(/\[0\]$/, '');
-    U[nm] = gl.getUniformLocation(p, u.name);
-  }
-  return { p, U, name, frame: frameBlockBinding(gl, p) };
+  return finishProgramCompile(beginProgramCompile(def, name));
 }
 /* phase 20 C3, for the in-game test: every program with the light code compiles and links with the Frame block, and
    on this device the block's size and each member's offset are the ones engine/frame-block.js packs to. The test

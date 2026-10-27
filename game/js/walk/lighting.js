@@ -410,6 +410,10 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     ambHor,
     noSunLobe: !!roomSH,
     haze: hz,
+    /* air track AIR-1: the sky the haze follows, the height its falloff starts from (where you stand), and the cave */
+    sky,
+    hazeY: standingHeightAt(P.x, P.z),
+    cave,
     fogStart: C.df * engineSetting('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
     /* HB-8: a director's frame may see further than the walk (BT.hazeK: the train ride's shots out over the sea) */
     fogD:

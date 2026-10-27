@@ -28,6 +28,7 @@ import {
   cachedBuildingSignature,
   currentLocationMap,
   defaultWallMaterial,
+  engineSetting,
   environment,
   environmentSeason,
   environmentState,
@@ -51,7 +52,6 @@ import {
   rawHeightAt,
   reducedMotion,
   riderName,
-  runTownFolkCap,
   saveData,
   saveNow,
   seamlessMapById,
@@ -59,6 +59,7 @@ import {
   soundEffect,
   soundEffectAt,
   speciesOf,
+  squareVisitorsOut,
   standingHeightAt,
   storyAllows,
   talkFolk,
@@ -73,6 +74,7 @@ import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
+import { folkCap, squareGoers, squareSlot, squareStopFor, squareStops } from './logic/square-day.js';
 import { residentHomes, residentsHere } from './logic/residents.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
@@ -97,6 +99,7 @@ expose({
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
   GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
+  GROUND_DETAIL_TILES: [() => GROUND_DETAIL_TILES],
   LABEL_GOLD: [() => LABEL_GOLD],
   MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
   MAX_STEP_RISE: [() => MAX_STEP_RISE],
@@ -169,14 +172,18 @@ expose({
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
   folkAnchors: [() => folkAnchors, v => (folkAnchors = v)],
   folkCount: [() => folkCount, v => (folkCount = v)],
+  folkFace: [() => folkFace, v => (folkFace = v)],
   folkHello: [() => folkHello, v => (folkHello = v)],
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkSay: [() => folkSay, v => (folkSay = v)],
+  folkSquare: [() => folkSquare, v => (folkSquare = v)],
+  folkSquareStop: [() => folkSquareStop, v => (folkSquareStop = v)],
   folkStreetSpot: [() => folkStreetSpot, v => (folkStreetSpot = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
   groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
+  groundTileRole: [() => groundTileRole, v => (groundTileRole = v)],
   groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
   handleWalkClick: [() => handleWalkClick, v => (handleWalkClick = v)],
   hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
@@ -483,7 +490,7 @@ export function bigTilePaths(path, set) {
     f = set || groundTileFolder();
   return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => `next/${f}/${b}_${i}.png`);
 } /* v46: twelve per kind (tools/build-terrain.py) */
-/* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
+/* v47: which set of twelve: the catalogue's tileSet ('tiles47', painted in the Studio's ground tile set; tools/art-source/terrain-v47), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
 export function groundTileFolder() {
   const C = typeof walkData === 'function' && walkData();
@@ -982,7 +989,7 @@ export function pathWearFn(sc, wx0, wy0) {
 /* v47: the soft patches of light and shade, laid across the whole ground in world metres (in the v46 tiles they were
    cut at every tile's edge and repeated with the tile): a quarter of natural ground half a step darker and a touch
    richer, a fifth lighter and a touch paler, a checker where they meet. A kind's `tone` scales them (paved: none).
-   The same sums as tools/build-terrain-v47.py (tone_at, tone_px), so its sheets show what the game lays */
+   The retired tools/build-terrain-v47.py had the same sums; logic/lite-tile.js bakes them into the Lite tiles */
 export const TONE_DIRECTIONS = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
   TONE_DARK = [0.895, 0.905, 0.935],
   TONE_LIGHT = [1.05, 1.05, 1.04],
@@ -1031,6 +1038,17 @@ export function scaleColor(c, k) {
     (Math.min(255, ((c >> 8) & 255) * k) << 8) |
     Math.min(255, (c & 255) * k)
   );
+}
+/* v46: which of a kind's twelve tiles a metre of ground shows (0-11), at its spot (sx, sz) with the scene's salt sa:
+   the worn ones (10, 11) where people walk, the touched ones (1-5, 8, 9) gathered in slow patches of detail, the plain
+   ones (0, 6, 7) over the rest (v47: picked evenly, plainTileIndex). The ground painter and the Studio's tile set
+   preview (studio/js/tile-set.js, SA-2a) both pick with it */
+const GROUND_DETAIL_TILES = [1, 2, 3, 4, 5, 8, 9];
+export function groundTileRole(sx, sz, sa, worn, t47) {
+  const r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
+  if (worn) return r < 0.5 ? 10 : 11;
+  if (valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31) > 0.63) return GROUND_DETAIL_TILES[Math.floor(r * 7)];
+  return t47 ? plainTileIndex(sx, sz, sa) : r < 0.5 ? 0 : r < 0.75 ? 6 : 7;
 }
 export function plainTileIndex(sx, sz, sa) {
   const h = (x, z) => Math.floor(hash2d(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
@@ -1187,8 +1205,7 @@ export function* paintGroundSteps(sc, o) {
     ST = stableCells(sc, wx0, wy0, CW, CH);
   /* v46: with twelve tiles a kind, each has a role: plain ones (0, 6, 7) over most of the ground, the touched ones
     (1-5, 8, 9) gathered in slow patches of detail, the worn ones (10, 11) along the lines people walk */
-  const DET = [1, 2, 3, 4, 5, 8, 9],
-    wornAt = pathWearFn(sc, wx0, wy0);
+  const wornAt = pathWearFn(sc, wx0, wy0);
   /* alpha 0.4: the cells on such an edge, one bit per neighbour across it (left, right, up, down, then the corners):
     breaking paving with natural ground beside it, or natural ground beside breaking paving */
   const ND = [
@@ -1214,23 +1231,9 @@ export function* paintGroundSteps(sc, o) {
         sa = ST.salt[q],
         r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
       cellK[q] = k;
-      if (n >= 12) {
-        const det = valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31),
-          wr = !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz);
-        pick[q] = wr
-          ? r < 0.5
-            ? 10
-            : 11
-          : det > 0.63
-            ? DET[Math.floor(r * 7)]
-            : t47
-              ? plainTileIndex(sx, sz, sa)
-              : r < 0.5
-                ? 0
-                : r < 0.75
-                  ? 6
-                  : 7;
-      } else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
+      if (n >= 12)
+        pick[q] = groundTileRole(sx, sz, sa, !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz), t47);
+      else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
       fl[q] = flip[k] ? Math.floor(hash2d(sx + 71 + sa * 104729, sz + 13) * 4) : 0;
     }
   if (brkOn) {
@@ -2656,8 +2659,8 @@ export function stepWallAt(x, z, sc = walkView.sc) {
   return E ? E.M[stepCellAt(x, z, E)] : 0;
 }
 /* bridges: a deck from end a to end b, w wide; its height runs from the ground at one end to the other, with a hump
-   (stone), a slight crown (wood) or a sag (rope) */
-const BRIDGE_ARCH = { stone: 0.5, wood: 0.12, rope: -0.32 };
+   (stone), a gentle hump (wood; RP-2, the owner 2026-10-26: 0.12 -> 0.35, like the footbridge prop) or a sag (rope) */
+const BRIDGE_ARCH = { stone: 0.5, wood: 0.35, rope: -0.32 };
 export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
@@ -3940,7 +3943,7 @@ function movePlayer(st, dt) {
 const FOLK_WORK =
   /shop|clinic|lab\b|lab_|bakery|inn\b|inn_|bank|library|school|station|market|stall|cafe|mart|boutique|barn|greenhouse|windmill|office|city_hall|kiosk|ski_lodge/;
 const FOLK_HOME = /house|cottage|townhouse|apartment|cave_house|chalet|villa|cabin|hut/;
-function folkHour() {
+export function folkHour() {
   if (typeof environmentState !== 'function') return 13;
   try {
     const st = environmentState(typeof currentLocationMap === 'function' ? currentLocationMap() : null);
@@ -3994,6 +3997,32 @@ function folkAnchors(sc) {
   if (!A.work.length) A.work = A.hang.slice();
   if (!A.home.length) A.home = A.hang.slice();
   return A;
+}
+/* HB-10c: the square's day (logic/square-day.js, rules.json square): its stops in this scene, each on the walkable
+   point nearest (at), and per slot of the day who of the n folk go (index -> rank); null when the scene has no square */
+function folkSquare(sc, n) {
+  let S = walkView.square;
+  if (!S || S.id !== walkView.id || S.n !== n) {
+    const stops = folkTown(sc) && RULES.square ? squareStops(sc.props || [], mapHub(sc)) : [];
+    S = walkView.square = {
+      id: walkView.id,
+      n,
+      stops: stops.map(s => ({ ...s, at: walkablePointNear(s.x, s.z) })),
+      goers: {},
+    };
+  }
+  return S.stops.length ? S : null;
+}
+/* the stop a person stands at on the square at hour h (their own hours: h + their offset), or null */
+function folkSquareStop(S, f, h) {
+  const T = squareSlot(RULES.square.day, h + (f.off || 0));
+  if (!T) return null;
+  const G = S.goers[T.k] || (S.goers[T.k] = squareGoers(S.n, T, walkView.id)),
+    r = G.get(f.line);
+  return r == null ? null : squareStopFor(S.stops, T, r);
+}
+function folkFace(f, s) {
+  if (Math.hypot(s.fx - f.x, s.fz - f.z) > 0.05) f.dir = directionOf(s.fx - f.x, s.fz - f.z);
 }
 function initFolk(n) {
   const sc = walkView.sc,
@@ -4057,7 +4086,8 @@ function initFolk(n) {
                 : f.ph === 'owl'
                   ? [hub[0], hub[1]]
                   : null;
-      if (!at) f.in = true;
+      /* HB-10c: out about the streets (placed below) is out, not indoors */
+      if (!at) f.in = f.ph !== 'about';
       else {
         const q = walkablePointNear(at[0] + (((i * 0.37) % 1) - 0.5) * 2.4, at[1] + (((i * 0.61) % 1) - 0.5) * 1.8);
         f.x = q[0];
@@ -4067,6 +4097,14 @@ function initFolk(n) {
         const q = folkStreetSpot(f);
         f.x = q[0];
         f.z = q[1];
+      }
+      const S = folkSquare(sc, n),
+        s = S && folkSquareStop(S, f, h);
+      if (s) {
+        f.sq = s;
+        f.in = false;
+        [f.x, f.z] = s.at;
+        folkFace(f, s);
       }
     }
     walkView.folkAll.push(f);
@@ -4146,14 +4184,35 @@ function folkHello() {
 function stepFolk(dt) {
   const P = walkView.pl,
     h = folkHour(),
-    all = walkView.folkAll || walkView.folk;
+    all = walkView.folkAll || walkView.folk,
+    S = folkSquare(walkView.sc, all.length);
   let vis = false;
   for (const f of all) {
     f.sayT = Math.max(0, f.sayT - dt);
     f.waveT = Math.max(0, f.waveT - dt);
     f.walk = 0;
+    /* HB-10c: the square's day: a slot that takes them sends them to their stop (out of their door first); when it
+       ends, their own day takes them on */
+    if (S && f.A) {
+      const s = folkSquareStop(S, f, h);
+      if (s !== (f.sq || null)) {
+        const was = f.sq;
+        f.sq = s;
+        f.route = null;
+        if (s) {
+          if (f.in) {
+            f.in = false;
+            vis = true;
+            [f.x, f.z] = f.A.home;
+            if (typeof soundEffectAt === 'function') soundEffectAt('door', f.x, f.z);
+          }
+          f.wait = Math.random() * 3;
+          f.then = null;
+        } else if (was) f.ph = null;
+      }
+    }
     /* the day moves on: somewhere else to be */
-    if (f.A) {
+    if (f.A && !f.sq) {
       const ph = folkPhase(h + f.off, f.owl);
       if (ph !== f.ph) {
         f.ph = ph;
@@ -4196,6 +4255,7 @@ function stepFolk(dt) {
           if (f.ri >= f.route.length) {
             f.route = null;
             f.wait = 2 + Math.random() * 5;
+            if (f.sq) folkFace(f, f.sq);
             if (f.then === 'inside') {
               f.then = null;
               f.in = true;
@@ -4211,7 +4271,18 @@ function stepFolk(dt) {
       }
       f.walk = f.in ? 0 : 1;
     } else if ((f.wait -= dt) <= 0) {
-      if (f.A && (f.ph === 'home' || f.ph === 'in')) {
+      if (f.sq) {
+        const s = f.sq,
+          away = Math.hypot(f.x - s.at[0], f.z - s.at[1]);
+        f.wait = 5 + Math.random() * 9;
+        if (away > 1.2) {
+          if (!sendFolk(f, s.at)) f.wait = 2;
+        } else if (Math.random() < 0.35) {
+          const a = Math.random() * 6.283,
+            t = walkablePointNear(s.at[0] + Math.cos(a) * 0.5, s.at[1] + Math.sin(a) * 0.4);
+          if (!sendFolk(f, t)) folkFace(f, s);
+        } else folkFace(f, s);
+      } else if (f.A && (f.ph === 'home' || f.ph === 'in')) {
         if (!sendFolk(f, f.A.home, 'inside')) {
           f.in = true;
           vis = true;
@@ -4273,11 +4344,19 @@ export function updateFolk(n, dt) {
   const all = n + hubResidentWalkers(walkView.sc).length;
   if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== all) initFolk(n);
   stepFolk(dt);
-  /* TW-2: a run town draws only its first few folk, by the graphics (rules.json run.town.cap); the rest keep their day */
-  const b = walkView.sc.baseId ? mapById(walkView.sc.baseId) : walkView.sc;
-  if (b && b.gen && b.kind === 'town' && RULES.run.town) {
-    const cap = runTownFolkCap(RULES.run.town, walkRenderer.q, saveData.preferences && saveData.preferences.aim);
-    if (walkView.folk.length > cap) walkView.folk = walkView.folk.filter(f => walkView.folkAll.indexOf(f) < cap);
+  /* TW-2, HB-10c: a town (the hub, a run's) draws only its first few folk, by the Engine's quality.townFolk and the
+     graphics; the rest keep their day */
+  if (folkTown(walkView.sc)) {
+    /* HB-10c: the ranch's Billies visiting count toward it */
+    const cap =
+      folkCap(
+        engineSetting('quality', 'townFolk') ?? 10,
+        walkRenderer.q,
+        saveData.preferences && saveData.preferences.aim
+      ) - (typeof squareVisitorsOut === 'function' ? squareVisitorsOut() : 0);
+    /* from everyone each frame, so a cap raised again (or frames back on time) brings them back; RS-3's residents
+       (after the townsfolk) are always drawn */
+    walkView.folk = walkView.folkAll.filter((f, i) => !f.in && (f.res || i < cap));
   }
 }
 export function tallGrassProps(C0) {

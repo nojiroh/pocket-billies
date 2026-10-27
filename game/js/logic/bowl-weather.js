@@ -151,5 +151,6 @@ export function bowlSunAt(hour, night) {
  * ('sharp' is Beautiful) @returns {BowlCloudLevel} */
 export function bowlCloudLevel(pref, aim) {
   if (pref === 'off' || pref === 'low' || pref === 'high') return pref;
+  if (aim === 'off') return 'off';
   return aim === 'sharp' ? 'high' : 'low';
 }

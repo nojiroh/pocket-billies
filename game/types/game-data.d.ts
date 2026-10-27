@@ -106,6 +106,9 @@ export interface GameData {
   rules: Rules;
   battleStages: Record<DataId, BattleStage>;
   scenery: Scenery;
+  /** LD-1: what tools/bake-pixel-facts.mjs read out of pictures' pixels: the flat grass props' lightness by picture,
+      and the leaf clumps' baked cuts (logic/pixel-facts.js leafCutKey -> an art path) */
+  pixelFacts?: { lightness: Record<string, number>; cuts: Record<string, string> };
   /** every walkable map: towns, routes, rooms (int_*) and test maps (test_*) */
   maps: Record<DataId, MapData>;
   /** the walking network between the locations; a world without roads has none (RL-5: no chain made up) */
@@ -494,7 +497,6 @@ export interface RoadEnds {
 
 /** TW-2: rules.json run.town */
 export interface RunTownRules {
-  cap: { busy: number; balanced: number; best: number };
   locals: [number, number];
   names: string[];
   chat: Record<DataId, string[]>;
@@ -1107,6 +1109,26 @@ export interface Rules {
   };
   /** roguelite track RL-9: the ranch (logic/ranch.js). Placeholders until the owner has played it */
   ranch: RanchRules;
+  /** hub track HB-10c: the town square's day (logic/square-day.js) */
+  square: SquareRules;
+}
+
+/** rules.json square: when the square's folk stop where, and the ranch's Billies' visits (logic/square-day.js) */
+export interface SquareRules {
+  /** the slots of the day (hours 0-24, in order, none overlapping): a share of the town's folk go to stops of these
+   * kinds (keep, shop, sit, lamp, fountain), taken in turn */
+  day: { k: string; from: number; to: number; share: number; stops: string[] }[];
+  /** the ranch's Billies walking over from the pasture: at most `most` in a block of `every` seconds, leaving between
+   * the hours from and to, walking `walk` m/s, staying `stay` seconds (fewest, most) at stops of these kinds */
+  visit: {
+    most: number;
+    from: number;
+    to: number;
+    every: number;
+    walk: number;
+    stay: [number, number];
+    stops: string[];
+  };
 }
 
 /** RL-13: rules.json run.points: a Billie's cost in starter points and the budget a run has (logic/starter-points.js) */

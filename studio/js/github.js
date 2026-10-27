@@ -325,6 +325,8 @@ async function studioApiViaGithub(path, opt = {}) {
           path: t.path.slice(GITHUB_CONFIG.game ? GITHUB_CONFIG.game.length + 1 : 0),
           size: t.size,
           mtime: 0,
+          /* SA-1: the Art browser keeps a picture's size by its contents' hash */
+          sha: t.sha,
         }));
     }
     throw new Error('Unknown request.');
