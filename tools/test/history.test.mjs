@@ -227,3 +227,16 @@ test('every step, undo and redo moves the version on', () => {
   H.historyRedo(h);
   assert.equal(h.ver, v0 + 4);
 });
+
+test('SA-2b: a text file step undoes and redoes its texts, counts its characters, and is null when nothing changed', () => {
+  const Hs = fresh(),
+    st = H.historyTextStep('art/ui/bag.svg', 'ab', 'abc');
+  assert.equal(H.historyTextStep('art/ui/bag.svg', 'ab', 'ab'), null);
+  assert.equal(H.historyBytes(st), 10);
+  assert.equal(H.historyTextStep('art/ui/new.svg', null, 'x').text.before, null);
+  H.historyArt(Hs, st);
+  const u = H.historyUndo(Hs);
+  assert.equal(u.kind, 'art');
+  assert.equal(u.step.text.before, 'ab');
+  assert.equal(H.historyRedo(Hs).step, st);
+});

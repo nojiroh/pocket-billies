@@ -10,7 +10,18 @@
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
+import {
+  account,
+  accountOn,
+  boardsPost,
+  closeModal,
+  mapIdAt,
+  mapOffsetInView,
+  modal,
+  provide,
+  render,
+  toast,
+} from './hooks.js';
 import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
 import { REPORT_REASONS, blockListClean, friendListFrom, reportHidden, reportTarget } from './logic/online.js';
@@ -52,7 +63,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ friendWorldItems });
 /* to-module: end */
-const friends = {
+export const friends = {
   on: false,
   uid: null,
   me: null,
@@ -74,10 +85,10 @@ const friends = {
 };
 provide({ friends }); /* to-module */
 const FRIEND_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-function friendsOn() {
+export function friendsOn() {
   return typeof account !== 'undefined' && !!account.user && !!account.db;
 }
-function friendsDb() {
+export function friendsDb() {
   return account.db;
 }
 export async function initFriends() {
@@ -116,6 +127,8 @@ export async function initFriends() {
     friends.blockNames = bd.names && typeof bd.names === 'object' && !Array.isArray(bd.names) ? bd.names : {};
     publishToFriends(true);
     watchFriends();
+    /* ON-2: runs finished while offline go to my ghosts/<uid> now (boards.js) */
+    if (typeof boardsPost === 'function') boardsPost(null);
     friends.unsub.push(
       db
         .collection('requests')
@@ -247,7 +260,7 @@ function friendReportCheck(u) {
     .catch(() => {});
 }
 /** the name to show for a player: theirs, unless reports hid it @param {string} u @param {string} [name] @param {string} [or] */
-function friendShownName(u, name, or = 'Friend') {
+export function friendShownName(u, name, or = 'Friend') {
   return friends.hidden[u] ? 'Trainer' : name || or;
 }
 /* ON-1: block a player: they leave my friends, their requests go, and the rules refuse their new ones */
@@ -475,7 +488,7 @@ export function friendsHTML() {
   <form class="fr-add" data-a="fr-add"><input name="code" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Friend code" aria-label="Friend code"><button class="pb small gold" type="submit">Add</button></form>
   ${friends.err ? `<p class="note warn">${escapeHtml(friends.err)}</p>` : ''}</section>`;
 }
-function refreshFriends() {
+export function refreshFriends() {
   if (
     typeof uiState !== 'undefined' &&
     uiState.tab === 'profile' &&

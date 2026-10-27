@@ -197,8 +197,7 @@ export function runCheck() {
   (D.locations || []).forEach((r, i) => {
     const M = D.maps && D.maps[r.mapId];
     if (r.landmark && M && M.props && !M.props.some(q => q.k === r.landmark))
-      warn(`Stop ${i + 1}, ${r.name}: its landmark ${r.landmark} isn’t in its walk scene (it still shows).`, 'world', {
-        wtab: 'route',
+      warn(`Stop ${i + 1}, ${r.name}: its landmark ${r.landmark} isn’t in its walk scene (it still shows).`, 'hub', {
         stop: i,
       });
     if (WM && r.region && !WM.regions[r.region])
@@ -226,23 +225,18 @@ export function runCheck() {
       });
   }
   const people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {}));
-  for (const [k, E] of Object.entries(D.eggs))
-    E.list.forEach(([id]) => {
-      if (!sp.has(id))
-        missingSp(id, `The ${E.need / 1000} km egg lists ${id}, which doesn’t exist.`, 'world', { wtab: 'eggs' }, warn);
-    });
   const seats = new Set(
     Object.values(D.trainers || {})
       .filter(T => T.seat)
       .map(T => T.seat.id)
   );
   D.locations.forEach((r, i) => {
-    const g = { wtab: 'route', stop: i };
-    if (!D.pools[r.pool]) (r.pool ? err : warn)(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
-    if (r.battleStage && !D.battleStages[r.battleStage]) warn(`${r.name} uses an unknown battle backdrop.`, 'world', g);
-    if (r.shop && !(D.shops || {})[r.shop]) warn(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
+    const g = { stop: i };
+    if (!D.pools[r.pool]) (r.pool ? err : warn)(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'hub', g);
+    if (r.battleStage && !D.battleStages[r.battleStage]) warn(`${r.name} uses an unknown battle backdrop.`, 'hub', g);
+    if (r.shop && !(D.shops || {})[r.shop]) warn(`${r.name} uses a shop that doesn’t exist.`, 'hub', g);
     if (r.gate && !seats.has(r.gate))
-      warn(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);
+      warn(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'hub', g);
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
@@ -261,7 +255,6 @@ export function runCheck() {
       for (const it in T.seat.items || {})
         if (!items[it]) warn(`${T.name}’s badge gives an unknown item.`, 'trainers', g);
     }
-    if (T.egg && !D.eggs[T.egg]) warn(`${T.name} gives an egg size that doesn’t exist.`, 'trainers', g);
   }
   const seatIds = Object.values(D.trainers || {})
     .filter(T => T.seat)
@@ -286,23 +279,11 @@ export function runCheck() {
       if (P.who && !people.has(P.who))
         warn(`${P.name || k} (Lore & story) has a look that isn’t in People.`, 'lore', { ltab: 'people' });
   }
-  for (const [k, s] of Object.entries(D.shops || {}))
-    (s.stock || []).forEach(w => {
-      if (w.item && !items[w.item]) warn(`${s.name} sells an item that doesn’t exist.`, 'shops', { shop: k });
-      if (w.coin && !pyramids[w.coin]) warn(`${s.name} sells a pyramid that doesn’t exist.`, 'shops', { shop: k });
-    });
-  for (const [k, J] of Object.entries(D.jobs)) {
-    const [kind, key] = J.out;
-    if (kind === 'item' && !items[key]) warn(`Job ${J.n} pays an unknown item.`, 'jobs');
-    if (kind === 'coin' && !pyramids[key]) warn(`Job ${J.n} pays an unknown pyramid.`, 'jobs');
-  }
   const R = D.rules;
   R.start.starters.forEach(l => {
     if (!sp.has(l + '0')) warn(`Starter ${l} doesn’t exist.`, 'rules');
     if (!sp.has(R.start.rival[l])) warn(`The rival has no valid pick for starter ${l}.`, 'rules');
   });
-  if (!sp.has(R.eggs.mythSpecies) && !isLegacyRef(R.eggs.mythSpecies))
-    warn('The mythical egg species doesn’t exist.', 'rules');
   /* phase 16: parts */
   const PR = R.parts;
   if (!PR) warn('Rules have no part sizes (parts); every Billie is drawn at its normal size.', 'parts');
@@ -310,10 +291,10 @@ export function runCheck() {
     const odds = Object.values(PR.sizes || {}).reduce((a, s) => a + (+s.odds || 0), 0),
       share = (PR.slots || []).reduce((a, k) => a + (+(PR.share || {})[k] || 0), 0);
     if (Math.abs(odds - 1) > 0.001)
-      warn(`Part sizes: the chances add up to ${Math.round(odds * 100)}%, not 100%.`, 'parts');
+      warn(`Part rules: the chances add up to ${Math.round(odds * 100)}%, not 100%.`, 'parts');
     if (Math.abs(share - 1) > 0.001)
-      warn(`Part sizes: the weight shares add up to ${Math.round(share * 100)}%, not 100%.`, 'parts');
-    if (!PR.sizes || !PR.sizes.M) warn('Part sizes: there is no normal size (M), so no Billie can be Prime.', 'parts');
+      warn(`Part rules: the weight shares add up to ${Math.round(share * 100)}%, not 100%.`, 'parts');
+    if (!PR.sizes || !PR.sizes.M) warn('Part rules: there is no normal size (M), so no Billie can be Prime.', 'parts');
     D.lines.forEach(L =>
       L.names.forEach((n, i) => {
         const meta = studioState.rigs[L.id + i] && studioState.rigs[L.id + i].front;
@@ -336,10 +317,6 @@ export function runCheck() {
   /* T1.3: the scene and road checks are logic/data-checks.js's, so check-data (CI) runs them too */
   for (const f of [...dataSceneFindings(D, PB_DATA.road), ...dataRoadFindings(D, PB_DATA.road)])
     (f.lvl === 'error' ? err : warn)(f.msg, f.go, f.sel);
-  for (const [k, sh] of Object.entries(D.shops || {}))
-    (sh.sells || []).forEach(o => {
-      if (!(D.shops || {})[o]) warn(`${sh.name} sells the clothes of a shop that doesn’t exist (${o}).`, 'shops');
-    });
   if (!legacyIds && Object.keys(legacyRefs).length)
     warn(
       'The parked world (game/data/legacy) isn’t read yet, so Billies named like a legacy line are taken to be one. Open Legacy to read it.',
@@ -449,8 +426,8 @@ const CHECK_FILE_SECTIONS = {
   'robots.json': ['robots'],
   'uiTheme.json': ['ui'],
   'pools.json': ['world', { wtab: 'pools' }],
-  'locations.json': ['world', { wtab: 'route' }],
-  'roads.json': ['world', { wtab: 'route' }],
+  'locations.json': ['hub'],
+  'roads.json': ['hub'],
 };
 /** @param {string} where a file as check-data names it @returns {[string?, object?]} */
 function checkFilePlace(where) {

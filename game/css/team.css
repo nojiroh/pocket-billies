@@ -30,14 +30,6 @@
       color-mix(in srgb, var(--c2, #8bbdd2) 42%, var(--panel-s)) 64% 100%
     );
 }
-.badge.bud {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 4px;
-  background: var(--rose);
-  color: #fff;
-}
 /* ---------- Team: party cards ---------- */
 .tm-spr {
   position: relative;
@@ -104,8 +96,8 @@
   top: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 7px 4px;
+  gap: var(--s1);
+  padding: 3px 7px var(--s1);
   font: 400 12px/1 var(--font-voice);
   background: linear-gradient(180deg, var(--gold-hi, #ffe59a), var(--gold) 60%);
   color: #3a2408;
@@ -124,7 +116,7 @@
 .tm-meter {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: var(--s2);
   align-items: center;
 }
 .tm-meter > span {
@@ -142,7 +134,7 @@
 .qk {
   flex: 1;
   min-height: 38px;
-  padding: 8px 6px;
+  padding: var(--s2) 6px;
   border: 0;
   background: transparent;
   color: var(--text);
@@ -168,7 +160,7 @@
 }
 /* ---------- Team: storage ---------- */
 .fchips.tm-tools {
-  margin: 8px -14px 0;
+  margin: var(--s2) -14px 0;
   padding: 6px 14px 6px;
   align-items: center;
 }

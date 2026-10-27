@@ -336,8 +336,11 @@ same phase:
   (`--quick` for a sample; `robot-sim.test.mjs` checks it runs). Its bounds are still to be agreed with the owner.
 - **UI track** (docs/phases/ui-track.md): `npm run lint:ui` (tools/ui-lint.mjs, UI-1) counts raw values per UI rule
   and file next to the token uses (corners, space, shadows, keyframes, times, fonts, colours, `!important`, layers,
-  blur rules; colours, `innerHTML` and `style="` in game JS). A report until UI-6 makes it fail when a count rises.
-  Smoke's phone step ends with the blurred surfaces on each screen it visits (`uiBlurCount()`, budget 3). The look
+  blur rules; colours, `innerHTML` and `style="` in game JS). Since UI-6a `npm run lint` fails when a count rises
+  above its ceiling (`UI_LINT_CEILING`; `--save` lowers them). Smoke's phone step counts the blurred surfaces on each
+  screen it visits (`uiBlurCount()`) and, since UI-6b, fails above 3, or above `BLUR_CEILING` (tools/check-quick.py:
+  map 10, shop 5) for a screen that was over it. The tap-target step (40 px, or an icon with its invisible 7 px
+  margin) also opens a Field Guide entry and Settings' Display and Help tabs since UI-6b. The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
   UI-2: `npm run check:ui` (tools/check-ui-gallery.py) takes a picture of every `[data-shot]` section of
@@ -347,8 +350,8 @@ same phase:
   change to a cut is caught). A new kit part or state goes into the gallery as a section with `data-shot`; a look
   change on purpose is `python3 tools/check-ui-gallery.py --update`, said in the commit. Not in CI: the baseline is
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
-  copy equals the generator's) and `tools/test/ui-icons.test.mjs` keeps game/art/ui/*.svg equal to the grids in
-  tools/build-ui-icons.py.
+  copy equals the generator's) and `tools/test/ui-icons.test.mjs` checks game/art/ui/*.svg (51 icons, 36×36, the
+  pixel format the Studio's icon editor writes, every icon the code names; the SVGs are the source since SA-2b).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the

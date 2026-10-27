@@ -1,8 +1,8 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · find =================
    alpha 0.4.1: one search box for the whole Studio (Ctrl+K, or the Find button). It knows every engine dial, every
-   numbered setting on the Rules, Types, Items and Jobs pages, every section, and the things you edit: Billies, moves,
-   items, pyramids, trainers, shops, people, places, route stops, props and (SA-1) art files. Pick a result and the Studio opens it, scrolls
+   numbered setting on the Rules, Types and Items pages, every section, and the things you edit: Billies, moves,
+   items, pyramids, trainers, people, places, props and (SA-1) art files (SA-3: no route stops). Pick a result and the Studio opens it, scrolls
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -10,6 +10,7 @@ import { artBrowserShow, artPictures, noteConnectionsField, provide, uiRulesShow
 import { $, $$ } from '../../game/js/util.js';
 import { CAMERA_FOLDERS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { NAV_JOINED, navJoined, workspaceOf } from '../../game/js/logic/studio-layout.js';
 import { UI_DIALS, uiDialList } from '../../game/js/logic/ui-dials.js';
 import { artFolderOf } from '../../game/js/logic/art-search.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
@@ -102,7 +103,8 @@ function findPageFields(sec, add) {
   }
   const div = document.createElement('div');
   div.innerHTML = html;
-  const nav = (SECTION_LIST.find(n => n[0] === sec) || [])[1] || sec,
+  const j = navJoined(sec),
+    nav = (j ? j.name + ' › ' : '') + ((SECTION_LIST.find(n => n[0] === sec) || [])[1] || sec),
     seen = new Set();
   div.querySelectorAll('[data-p]').forEach(el => {
     const p = el.dataset.p;
@@ -139,7 +141,17 @@ export function buildSearchIndex() {
           x: normalizeForFind(where + ' ' + extra),
         });
     };
-  SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => openSection(k), d));
+  /* SA-4: a section says the workspace it is in (and its joined row: Characters); a joined row is found by its name
+     too. sec is the section an entry opens (the Studio self-test checks every section is found) */
+  SECTION_LIST.forEach(([k, n, d]) => {
+    const j = navJoined(k);
+    add(n, workspaceOf(k) + (j ? ' › ' + j.name : ''), 'section', () => openSection(k), d);
+    E[E.length - 1].sec = k;
+  });
+  NAV_JOINED.forEach(j => {
+    add(j.name, workspaceOf(j.keys[0]), 'section', () => openSection(j.keys[0]), j.d);
+    E[E.length - 1].sec = j.keys[0];
+  });
   if (typeof ENGINE_SPEC !== 'undefined')
     ENGINE_SPEC.forEach(([g, t, F]) =>
       F.forEach(f => {
@@ -178,7 +190,7 @@ export function buildSearchIndex() {
       openSection('ui');
     });
   }
-  ['rules', 'types', 'items', 'jobs'].forEach(s => findPageFields(s, add));
+  ['rules', 'types', 'items'].forEach(s => findPageFields(s, add));
   (D.lines || []).forEach(L =>
     L.names.forEach((n, st) =>
       add(
@@ -245,9 +257,6 @@ export function buildSearchIndex() {
       `${k} ${C.long || ''} ${C.about || ''}`
     )
   );
-  Object.entries(D.shops || {}).forEach(([k, S]) =>
-    add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => openSection('shops', { shop: k }), k)
-  );
   Object.keys(D.people || {}).forEach(k =>
     add(k, 'Look (People)', 'person', () => openSection('people', { person: k }))
   );
@@ -258,15 +267,6 @@ export function buildSearchIndex() {
       'scene',
       () => openSection('scenes', { scene: k }),
       k
-    )
-  );
-  (D.locations || []).forEach((r, i) =>
-    add(
-      r.name,
-      `Route stop ${i + 1}${r.town ? ' · town' : ''}`,
-      'stop',
-      () => openSection('world', { wtab: 'route', stop: i }),
-      r.id || ''
     )
   );
   Object.entries((D.scenery || {}).props || {}).forEach(([k, P]) =>
@@ -304,10 +304,8 @@ const FIND_KIND_LABELS = {
   move: 'Move',
   item: 'Item',
   trainer: 'Trainer',
-  shop: 'Shop',
   person: 'Look',
   scene: 'Place',
-  stop: 'Stop',
   prop: 'Prop',
   relic: 'Perk',
   unlock: 'Unlock',

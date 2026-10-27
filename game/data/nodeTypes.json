@@ -27,5 +27,6 @@
  "miniboss": {"name":"Mini-boss","engine":"scene","layout":true,"routeLike":true},
  "boss": {"name":"Boss","engine":"scene","layout":true},
  "rival": {"name":"Rival","place":"Route","engine":"scene","layout":true,"routeLike":true},
+ "ghost": {"name":"Friend's ghost","place":"Route","engine":"scene","layout":true,"mark":"rival","routeLike":true},
  "scrapyard": {"name":"Scrapyard","engine":"scene","layout":true,"chance":0.12,"fromRow":3,"routeLike":true}
 }

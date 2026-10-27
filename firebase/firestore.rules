@@ -10,6 +10,8 @@ rules_version = '2';
 //   blocks/<uid>            ON-1: the players this one blocked: { list, names }, read by nobody else
 //   reports/<target>        ON-1: { n, ok }: how many accounts reported a target ('user_<uid>'), each once
 //                           (reports/<target>/by/<uid>: { reason, t }), and up to which count the moderator cleared
+//   ghosts/<uid>            ON-2: { name, last, day, week, x, fast }: the last run (a friend's ghost) and the board
+//                           entries, read by the owner's friends
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -114,6 +116,50 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/reports/$(target)).data.n
             == (exists(/databases/$(database)/documents/reports/$(target)) ? count() + 1 : 1);
       }
+    }
+
+    // ON-2: a player's last run (their ghost, the record as JSON text, at most 8 KB) and their friends' board entries
+    // (js/boards.js, js/logic/run-record.js), written by its owner alone; read by the owner and the friends on the
+    // owner's own list, as users/<uid> is; never listed. A daily's (day) or weekly's (week) entry goes in only for the
+    // server's day or week, or the one before, and can't change once in. Spark has no server to replay a run, so a
+    // friend could post a faked entry within these caps (docs/SECURITY.md).
+    match /ghosts/{uid} {
+      allow get: if signedIn() && (me() == uid
+        || me() in get(/databases/$(database)/documents/users/$(uid)).data.get('friends', []));
+      allow delete: if signedIn() && me() == uid;
+      allow create, update: if signedIn() && me() == uid && validGhost(request.resource.data);
+    }
+    // the UTC day number (0 = 1970-01-01) and week number (weeks from Monday 00:00 UTC), as js/logic/daily.js
+    function today() { return math.floor(request.time.toMillis() / 86400000); }
+    function thisWeek() { return math.floor((today() + 3) / 7); }
+    function validEntry(e) {
+      return e is map && e.keys().hasOnly(['won', 'cleared', 'leaders', 'days', 'exp', 'lead', 't'])
+        && e.size() == 7
+        && e.won in [0, 1]
+        && e.cleared is int && e.cleared >= 0 && e.cleared <= 40
+        && e.leaders is int && e.leaders >= 0 && e.leaders <= 16
+        && e.days is int && e.days >= 1 && e.days <= 999
+        && e.exp is int && e.exp >= 1 && e.exp <= 9
+        && shortText(e.lead, 64)
+        && e.t is number;
+    }
+    // a day's or week's entry: { n, e }, n this one or the one before, or as it already stood
+    function dated(d, k, now) {
+      return !(k in d) || (d[k] is map && d[k].keys().hasOnly(['n', 'e']) && d[k].n is int && validEntry(d[k].e)
+        && (resource != null && k in resource.data && resource.data[k].n == d[k].n
+          ? resource.data[k] == d[k]
+          : (d[k].n == now || d[k].n == now - 1)));
+    }
+    function bestOk(x, k) { return !(k in x) || validEntry(x[k]); }
+    function validGhost(d) {
+      return d.keys().hasOnly(['name', 'last', 'day', 'week', 'x', 'fast'])
+        && shortText(d.name, 40)
+        && d.last is string && d.last.size() <= 8192
+        && dated(d, 'day', today()) && dated(d, 'week', thisWeek())
+        && (!('fast' in d) || validEntry(d.fast))
+        && (!('x' in d) || (d.x is map && d.x.keys().hasOnly(['1', '2', '3', '4', '5', '6', '7', '8', '9'])
+          && bestOk(d.x, '1') && bestOk(d.x, '2') && bestOk(d.x, '3') && bestOk(d.x, '4') && bestOk(d.x, '5')
+          && bestOk(d.x, '6') && bestOk(d.x, '7') && bestOk(d.x, '8') && bestOk(d.x, '9')));
     }
 
     function validRequest(d) {

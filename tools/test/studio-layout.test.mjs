@@ -1,7 +1,10 @@
 // Studio track ST-1: the Studio's pane sizes (game/js/logic/studio-layout.js): width classes, limits, the saved
-// layout read back from anything, presets.
+// layout read back from anything, presets. SA-4: the sidebar's workspaces.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { test } from 'node:test';
+import { ROOT } from './load-logic.mjs';
 import { modules } from './setup-real.mjs';
 
 const L = modules['studio-layout'];
@@ -62,4 +65,68 @@ test('a preset sets every section and clears the per-section sizes', () => {
   for (const [id, P] of Object.entries(L.LAYOUT_PRESETS))
     for (const [k, v] of Object.entries(P.sizes))
       assert.equal(L.layoutClamp(k, v), v, `${id} ${k} is inside its limits`);
+});
+
+/* SA-4: the section keys as studio/js/studio-app.js's SECTION_LIST names them (the page's module needs a DOM) */
+const appText = readFileSync(join(ROOT, 'studio', 'js', 'studio-app.js'), 'utf8'),
+  listText = appText.slice(
+    appText.indexOf('export const SECTION_LIST'),
+    appText.indexOf('];', appText.indexOf('export const SECTION_LIST'))
+  ),
+  KEYS = [...listText.matchAll(/\[\s*'(\w+)',\s*'([^']*)'/g)].map(m => m[1]),
+  NAMES = Object.fromEntries([...listText.matchAll(/\[\s*'(\w+)',\s*'([^']*)'/g)].map(m => [m[1], m[2]]));
+
+test('every section is in exactly one workspace, and every workspace key is a section', () => {
+  assert.ok(KEYS.length >= 30, `read ${KEYS.length} sections from SECTION_LIST`);
+  const seen = L.STUDIO_WORKSPACES.flatMap(w => w[1]);
+  assert.deepEqual([...new Set(seen)].length, seen.length, 'no section in two workspaces');
+  assert.deepEqual(
+    KEYS.filter(k => !seen.includes(k)),
+    [],
+    'no section left for More'
+  );
+  assert.deepEqual(
+    seen.filter(k => !KEYS.includes(k)),
+    [],
+    'no workspace names a missing section'
+  );
+  const names = L.STUDIO_WORKSPACES.map(w => w[0]);
+  assert.equal(new Set(names).size, names.length, 'workspace names are unique');
+  assert.ok(!names.includes('Moneys'), 'the Moneys group is gone');
+  for (const [t, ks] of L.STUDIO_WORKSPACES) assert.ok(ks.length, `${t} is not empty`);
+  assert.deepEqual(names, ['Game', 'Art', 'Creatures', 'World', 'People & story', 'Runs', 'Sound & UI', 'Legacy']);
+  assert.equal(L.workspaceOf('robots'), 'Runs', 'robots are in Runs (bots are the enemy faction)');
+  assert.equal(L.workspaceOf('items'), 'Runs');
+  assert.equal(L.workspaceOf('nope'), 'More');
+});
+
+test('the sidebar rows: Looks and Wardrobe are one Characters row, unknown keys are skipped, the rest is More', () => {
+  const rows = L.navRows(KEYS),
+    ppl = rows.find(w => w[0] === 'People & story')[1];
+  assert.deepEqual(
+    ppl.map(r => r.name || r.key),
+    ['trainers', 'Characters', 'lore', 'story']
+  );
+  assert.deepEqual(ppl[1].keys, ['people', 'wardrobe']);
+  assert.equal(ppl[1].key, 'people', 'the row opens its first section');
+  assert.ok(!rows.some(w => w[0] === 'More'), 'no More with every section placed');
+  assert.equal(L.navJoined('wardrobe').name, 'Characters');
+  assert.equal(L.navJoined('rules'), null);
+  /* a section no workspace names goes under More; a workspace with no known section is left out */
+  const r2 = L.navRows(['rules', 'wardrobe', 'extra']);
+  assert.deepEqual(
+    r2.map(([t, R]) => [t, R.map(r => r.keys)]),
+    [
+      ['Game', [['rules']]],
+      ['People & story', [['wardrobe']]],
+      ['More', [['extra']]],
+    ]
+  );
+});
+
+test('the labels say what they are (SA-4)', () => {
+  assert.equal(NAMES.parts, 'Part rules', 'T6.8: "Parts" says it holds the size rules');
+  assert.equal(NAMES.relics, 'Perks');
+  assert.equal(NAMES.people, 'Looks');
+  assert.equal(NAMES.wardrobe, 'Wardrobe');
 });

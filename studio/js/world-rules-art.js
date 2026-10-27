@@ -5,8 +5,6 @@ import { expose } from '../../game/js/test-globals.js';
 import { poolRunTag, runValuesFill, standInMark, worldMapLookTab } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { WILD_TYPE_BOOSTS } from '../../game/js/logic/weather.js';
-import { bowlLandmarkPick, bowlPropClass } from '../../game/js/logic/bowl-things.js';
-import { artURL } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
@@ -33,7 +31,6 @@ import {
   typeOptions,
   uniqueKey,
 } from './studio-app.js';
-import { conditionField } from './story-editor.js';
 import { mountPreviews, spritePreviewHTML } from './sprites.js';
 import { RARITY_LABELS } from './data-editors.js';
 /* eslint-disable no-func-assign */
@@ -42,20 +39,13 @@ expose({
   BOWL_SVG: [() => BOWL_SVG],
   FISHING_WATERS: [() => FISHING_WATERS],
   LOCATION_KINDS: [() => LOCATION_KINDS],
+  WORLD_TABS: [() => WORLD_TABS],
   bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
   bowlSpotXY: [() => bowlSpotXY],
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
-  landmarkField: [() => landmarkField, v => (landmarkField = v)],
-  locationRoads: [() => locationRoads, v => (locationRoads = v)],
-  moveRoadEnds: [() => moveRoadEnds, v => (moveRoadEnds = v)],
-  newStopBowlSpot: [() => newStopBowlSpot, v => (newStopBowlSpot = v)],
-  roadLengthText: [() => roadLengthText, v => (roadLengthText = v)],
-  roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
   worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
-  worldEggs: [() => worldEggs, v => (worldEggs = v)],
   worldFishing: [() => worldFishing, v => (worldFishing = v)],
-  worldLocations: [() => worldLocations, v => (worldLocations = v)],
   worldMapHTML: [() => worldMapHTML, v => (worldMapHTML = v)],
   worldPools: [() => worldPools, v => (worldPools = v)],
   worldRegions: [() => worldRegions, v => (worldRegions = v)],
@@ -167,362 +157,30 @@ function bindWorldMap() {
     }
   });
 }
+/* Studio plan T4.5: what a run reads (a run place's wild Billies come from the pool its biome names, biomes.json pool)
+   and what is legacy (the old world's regions and world map) */
+const WORLD_TABS = [
+  ['pools', 'Wild encounters'],
+  ['fishing', 'Fishing'],
+  ['regions', 'Map (legacy)'],
+  ['backdrops', 'Battle backdrops'],
+  ['look', 'World map look (legacy)'],
+];
 SECTIONS.world = () => {
   const D = studioState.D,
-    tab = studioState.sel.wtab || 'route';
-  /* Studio plan T4.5: what a run reads (a run place's wild Billies come from the pool its biome names, biomes.json
-     pool) and what is legacy (the old world's route, eggs, regions and world map) */
-  const tabs = [
-    ['route', 'Route stops (legacy)'],
-    ['pools', 'Wild encounters'],
-    ['fishing', 'Fishing'],
-    ['eggs', 'Eggs (legacy)'],
-    ['regions', 'Map and notes (legacy)'],
-    ['backdrops', 'Battle backdrops'],
-    ['look', 'World map look (legacy)'],
-  ];
+    /* SA-3: Route stops are gone (the hub's own place is edited under Hub island); the section opens on Wild encounters */
+    tab = WORLD_TABS.some(([k]) => k === studioState.sel.wtab) ? studioState.sel.wtab : 'pools';
   const body = {
-    route: worldLocations,
     pools: worldPools,
     fishing: worldFishing,
-    eggs: worldEggs,
     regions: worldRegions,
     backdrops: worldBackdrops,
     look: worldMapLookTab,
   }[tab]();
-  return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><p class="help world-run-note">A run reads the wild encounters of the pools its biomes name (<code>biomes.json pool</code>), at the run’s own levels, and the battle backdrops. The route stops, eggs, regions and world map are the old world’s (legacy).</p><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><p class="help world-run-note">A run reads the wild encounters of the pools its biomes name (<code>biomes.json pool</code>), at the run’s own levels, and the battle backdrops. The regions and world map are the old world’s (legacy); the hub’s own place is under Hub island.</p><div class="seg-row tabs">${WORLD_TABS.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
 ACTIONS.wtab = d => {
   studioState.sel.wtab = d.t;
-  render();
-};
-function worldLocations() {
-  const D = studioState.D;
-  let i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : 0;
-  if (!D.locations[i]) i = 0;
-  studioState.sel.stop = i;
-  const r = D.locations[i],
-    p = `locations.${i}`,
-    seatIds = Object.values(D.trainers || {})
-      .filter(T => T.seat)
-      .map(T => [T.seat.id, `${T.seat.title || T.seat.id} (${T.name})`]);
-  const list = `<table class="tbl route"><thead><tr><th>#</th><th>Stop</th><th>Roads to</th><th>Shop</th><th>Trainers</th><th></th></tr></thead><tbody>${D.locations
-    .map(
-      (
-        x,
-        j
-      ) => `<tr class="${j === i ? 'on' : ''}"><td>${j + 1}</td><td><button class="linkish" data-act="pickStop" data-i="${j}">${escapeHtml(x.name)}</button>${x.town ? ' <small>town</small>' : ''}${x.gate ? ' <small class="warn">gated</small>' : ''}</td><td><small>${
-        locationRoads(j)
-          .map(([o, c]) => `${escapeHtml(D.locations[o].name)} (${formatThousands(c)})`)
-          .join(', ') || '<span class="warn">no roads</span>'
-      }</small></td><td>${x.shop && D.shops[x.shop] ? escapeHtml(D.shops[x.shop].name) : ''}</td><td>${Object.values(
-        D.trainers || {}
-      )
-        .filter(T => T.node === j)
-        .map(T => escapeHtml(T.name))
-        .join(', ')}</td>
-  <td><button class="x" data-act="stopMove" data-i="${j}" data-d="-1" title="Move up">↑</button><button class="x" data-act="stopMove" data-i="${j}" data-d="1" title="Move down">↓</button></td></tr>`
-    )
-    .join(
-      ''
-    )}</tbody></table><div class="seg-row"><button class="btn" data-act="stopAdd">Add a stop after the selected one</button><button class="btn danger subtle" data-act="stopDel">Delete the selected stop</button></div>`;
-  const ed =
-    grid(
-      textField('Name', `${p}.name`),
-      textField('Route label', `${p}.route`, { help: 'Shown above the name, like “Route 2”.' }),
-      checkboxField('Town (free clinic)', `${p}.town`, { num: 1, rr: 1 }),
-      selectField(
-        'Wild encounters',
-        `${p}.pool`,
-        Object.keys(D.pools).map(k => [k, k]),
-        { help: 'Encounters come from the next stop’s list while you walk toward it.' }
-      ),
-      selectField(
-        'Battle backdrop',
-        `${p}.battleStage`,
-        Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k])
-      ),
-      selectField(
-        'Walk scene',
-        `${p}.mapId`,
-        Object.entries(D.maps || {}).map(([k, v]) => [k, v.name || k]),
-        { none: 'First scene', opt: 1, help: 'The tilt-shift view on the Walk screen. Edit scenes under Walk scenes.' }
-      ),
-      selectField(
-        'Shop',
-        `${p}.shop`,
-        Object.keys(D.shops || {})
-          .filter(k => D.shops[k].kind !== 'wardrobe')
-          .map(k => [k, D.shops[k].name]),
-        { none: 'No shop', opt: 1 }
-      ),
-      selectField(
-        'Boutique',
-        `${p}.boutique`,
-        Object.keys(D.shops || {})
-          .filter(k => D.shops[k].kind === 'wardrobe')
-          .map(k => [k, D.shops[k].name]),
-        { none: 'No boutique', opt: 1, help: 'Clothes and hair; edit what it sells under Wardrobe.' }
-      ),
-      selectField('Locked until', `${p}.gate`, seatIds, {
-        none: 'Always open',
-        opt: 1,
-        rr: 1,
-        help: 'Walking past this point needs that badge.',
-      }),
-      conditionField('Open only when (story)', `${p}.requires`, 'place:' + r.id, 'requires', {
-        ph: 'always',
-        help: 'A story condition (docs/SCRIPTS.md), e.g. met_juniper; the Check says if it can never come true.',
-      }),
-      textField('What the gate says while it is shut', `${p}.locked`, { opt: 1, ph: `${r.name} is closed for now.` }),
-      checkboxField('Water crossing: you ride a Billie', `${p}.ride`, {
-        num: 1,
-        rr: 1,
-        help: 'Needs a Water Billie big enough to ride (Rules → ride). Its walk scene lets you move over water.',
-      }),
-      selectField(
-        'Mood',
-        `${p}.mood`,
-        Object.entries(D.moods || {}).map(([k, v]) => [k, v.name || k]),
-        {
-          none: 'None (the plain look)',
-          opt: 1,
-          help: 'v47: the place’s colour mood: saturation, contrast, warmth and tints, eased in as you walk here. A walk scene can name its own.',
-        }
-      ),
-      selectField(
-        'Map landmarks',
-        `${p}.t`,
-        LOCATION_KINDS.map(k => [k, k])
-      ),
-      landmarkField(r, p),
-      textField('Banner picture', `${p}.banner`, {
-        opt: 1,
-        ph: 'background/sundown.webp',
-        help: 'Optional picture for the route card, inside game/art.',
-      }),
-      ...(r.bowl && 'under' in r.bowl
-        ? []
-        : [
-            numberField('On the bowl: degrees round from east', `${p}.bowl.a`, { step: 0.1 }),
-            numberField('On the bowl: out from the centre (0) to the rim (1)', `${p}.bowl.r`, { step: 0.005 }),
-          ])
-    ) +
-    (r.gate ? textField('Locked message', `${p}.gateText`, { opt: 1 }) : '') +
-    textField('Description', `${p}.blurb`, { area: 1, rows: 2 });
-  afterRender(bindWorldMap);
-  return (
-    card('The route', list, {
-      sub: 'Stops and the roads between them. Players pick where to walk on the world map. Trainers are placed on stops under Trainers.',
-    }) +
-    card(`${i + 1}. ${escapeHtml(r.name)}`, ed) +
-    card('Roads from here', roadsHTML(i), {
-      sub: 'Each road is walked in either direction. Its length is measured from the two exits it joins. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
-    }) +
-    card('Map', worldMapHTML())
-  );
-}
-/* phase 10, session 5: the place's landmark on the world map: Auto (the biggest landmark prop in its walk scene, else
-   its biggest building; logic/bowl-things.js bowlLandmarkPick) or one of the landmarks and buildings in its scene */
-function landmarkField(r, p) {
-  const D = studioState.D,
-    A = (D.scenery && D.scenery.props) || {},
-    M = D.maps && D.maps[r.mapId],
-    seen = new Set(),
-    opts = [];
-  for (const q of (M && M.props) || []) {
-    const a = A[q.k];
-    if (!a || !a.img || seen.has(q.k) || !(a.landmark || bowlPropClass(q.k, a) === 'building')) continue;
-    seen.add(q.k);
-    opts.push([q.k, `${a.name || q.k}${a.landmark ? ' (landmark)' : ''}`]);
-  }
-  opts.sort((x, y) => (A[y[0]].landmark ? 1 : 0) - (A[x[0]].landmark ? 1 : 0));
-  if (r.landmark && !seen.has(r.landmark)) opts.push([r.landmark, `${r.landmark} (not in this scene)`]);
-  const auto = bowlLandmarkPick({}, M, A),
-    shown = r.landmark ? A[r.landmark] : auto && A[auto.k],
-    pic = shown && shown.img ? `<img class="wml-lm" src="${escapeHtml(artURL(shown.img))}" alt="">` : '';
-  return (
-    selectField('Landmark on the world map', `${p}.landmark`, opts, {
-      none: `Auto${auto && A[auto.k] ? ` (${A[auto.k].name || auto.k})` : ' (none: the pin only)'}`,
-      opt: 1,
-      rr: 1,
-      help: 'Far out each place shows one landmark, standing up as its own picture. Auto picks the biggest landmark in its walk scene.',
-    }) + pic
-  );
-}
-/* phase 08: a road's length is measured, as the game does (game-data.js roadMetres): the walk from each place's middle
-   to the exit it leaves by (the exits' len) */
-function roadLengthText(k) {
-  const D = studioState.D,
-    r = PB_DATA.road(D, D.roads[k]),
-    len = (node, id) => {
-      const sc = D.maps[(D.locations[node] || {}).mapId],
-        e = sc && id ? (sc.edgeExits || []).find(x => x.id === id) : null;
-      return e && Number.isFinite(e.len) ? e.len : null;
-    },
-    a = len(r.a, r.exitA),
-    b = len(r.b, r.exitB);
-  return a != null && b != null ? `${Math.round(a + b)} m` : 'not joined (100 m)';
-}
-/* the roads of stop i: [the other stop, the road's index] (a glass lift is set on its lift prop, "Goes to") */
-function locationRoads(i) {
-  const D = studioState.D;
-  return (D.roads || [])
-    .map((l, k) => {
-      const r = PB_DATA.road(D, l);
-      return r.kind !== 'seam' ? null : r.a === i ? [r.b, k] : r.b === i ? [r.a, k] : null;
-    })
-    .filter(Boolean);
-}
-function roadsHTML(i) {
-  const D = studioState.D,
-    R = locationRoads(i),
-    opts = D.locations.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
-  return `<table class="tbl"><thead><tr><th>Road to</th><th>Length</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
-    ([o, k]) => {
-      const r = PB_DATA.road(D, D.roads[k]),
-        end = r.a === i ? 'a' : 'b',
-        exit = end === 'a' ? r.exitA : r.exitB,
-        sc = D.maps[(D.locations[i] || {}).mapId],
-        ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-road-to="${k}" data-end="${end === 'a' ? 'b' : 'a'}">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s map the road leaves by: the other end’s exit must face it (phase 08b: a road without both exits joins nothing)"><option value="">pick an exit</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${exit === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
-    }
-  ).join('')}</tbody></table>
- <div class="seg-row"><select id="roadTo">${opts
-   .filter(([j]) => !R.some(x => x[0] === j))
-   .map(([j, n]) => `<option value="${j}">${escapeHtml(n)}</option>`)
-   .join('')}</select><button class="btn" data-act="roadAdd" data-i="${i}">+ Add a road</button></div>`;
-}
-ACTIONS.roadAdd = d => {
-  const D = studioState.D,
-    i = +d.i,
-    j = +$('#roadTo').value;
-  if (!Number.isFinite(j) || j === i) return;
-  PB_DATA.addRoad(D, i, j);
-  changed();
-  commit(true);
-  render();
-};
-document.addEventListener('change', ev => {
-  const t = ev.target;
-  if (!t || (t.dataset.join == null && t.dataset.roadTo == null)) return;
-  const D = studioState.D,
-    l = D.roads[+(t.dataset.join ?? t.dataset.roadTo)];
-  if (!l) return;
-  if (t.dataset.join != null) PB_DATA.setRoadEnd(D, l, t.dataset.end, null, t.value || null);
-  else PB_DATA.setRoadEnd(D, l, t.dataset.end, +t.value);
-  changed();
-  commit(true);
-  render();
-});
-ACTIONS.roadDel = d => {
-  studioState.D.roads.splice(+d.k, 1);
-  changed();
-  commit(true);
-  render();
-};
-ACTIONS.pickStop = d => {
-  studioState.sel.stop = +d.i;
-  render();
-};
-/* phase 08b: the stops are renumbered by change(); each road's ends are read before it and set after it to where their
-   stop went (where(node): its new node, or null to drop the road), so this holds whatever shape roads.json has */
-function moveRoadEnds(D, where, change) {
-  const ends = (D.roads || []).map(l => /** @type {const} */ ([l, PB_DATA.road(D, l)]));
-  change();
-  D.roads = ends
-    .filter(([, r]) => where(r.a) != null && where(r.b) != null)
-    .map(([l, r]) => {
-      PB_DATA.setRoadEnd(D, l, 'a', where(r.a));
-      PB_DATA.setRoadEnd(D, l, 'b', where(r.b));
-      return l;
-    });
-}
-ACTIONS.stopMove = d => {
-  const D = studioState.D,
-    i = +d.i,
-    j = i + +d.d;
-  if (j < 0 || j >= D.locations.length) return;
-  moveRoadEnds(
-    D,
-    n => (n === i ? j : n === j ? i : n),
-    () => ([D.locations[i], D.locations[j]] = [D.locations[j], D.locations[i]])
-  );
-  Object.values(D.trainers || {}).forEach(T => {
-    if (T.node === i) T.node = j;
-    else if (T.node === j) T.node = i;
-  });
-  studioState.sel.stop = j;
-  changed();
-  render();
-};
-/* phase 10: a new stop's spot on the bowl (game/js/logic/bowl.js): halfway between its neighbours seen from above, or
-   a little further out than the one it follows; the bowl editor moves it from there */
-function newStopBowlSpot(a, b) {
-  const xy = s =>
-      s && 'a' in s ? [s.r * Math.cos((s.a * Math.PI) / 180), s.r * Math.sin((s.a * Math.PI) / 180)] : null,
-    p = xy(a.bowl),
-    q = xy(b && b.bowl);
-  if (!p) return a.bowl && 'under' in a.bowl ? { under: a.bowl.under } : { a: 0, r: 0.5 };
-  const [x, y] = q ? [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] : [p[0] * 1.1 + 0.02, p[1] * 1.1],
-    r = Math.min(1, Math.hypot(x, y));
-  return {
-    a: (Math.round((((Math.atan2(y, x) * 180) / Math.PI + 360) % 360) * 10) / 10) % 360,
-    r: Math.round(r * 1000) / 1000,
-  };
-}
-ACTIONS.stopAdd = () => {
-  const D = studioState.D,
-    i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.locations.length - 1,
-    a = D.locations[i],
-    b = D.locations[i + 1];
-  let k = 1;
-  while (D.locations.some(r => r.id === 'new_stop' + k)) k++;
-  const n = {
-    id: 'new_stop' + k /* phase 08b: a road names its places (by map, or by id until it has one) */,
-    name: 'New Stop',
-    pool: a.pool,
-    battleStage: a.battleStage,
-    route: a.route,
-    t: 'grass',
-    blurb: 'Describe this place.',
-    bowl: newStopBowlSpot(a, b),
-  };
-  moveRoadEnds(
-    D,
-    k => (k > i ? k + 1 : k),
-    () => D.locations.splice(i + 1, 0, n)
-  );
-  Object.values(D.trainers || {}).forEach(T => {
-    if (T.node > i) T.node++;
-  });
-  PB_DATA.addRoad(D, i, i + 1);
-  studioState.sel.stop = i + 1;
-  changed();
-  render();
-};
-ACTIONS.stopDel = async () => {
-  const D = studioState.D,
-    i = studioState.sel.stop;
-  if (D.locations.length < 2) return toast('The route needs at least one stop.');
-  const T = Object.values(D.trainers || {}).filter(t => t.node === i);
-  if (
-    !(await ask(
-      `Delete ${escapeHtml(D.locations[i].name)}?${T.length ? ` ${T.map(t => escapeHtml(t.name)).join(', ')} move to the previous stop.` : ''}`,
-      'Delete'
-    ))
-  )
-    return;
-  moveRoadEnds(
-    D,
-    k => (k === i ? null : k > i ? k - 1 : k),
-    () => D.locations.splice(i, 1)
-  );
-  Object.values(D.trainers || {}).forEach(t => {
-    if (t.node >= i) t.node = Math.max(0, t.node - 1);
-  });
-  studioState.sel.stop = Math.max(0, i - 1);
-  changed();
   render();
 };
 function weightTable(base, P) {
@@ -635,48 +293,11 @@ ACTIONS.poolDel = async d => {
   changed();
   render();
 };
-function worldEggs() {
-  const D = studioState.D;
-  afterRender(() => mountPreviews(paneRoot()));
-  return Object.entries(D.eggs)
-    .map(([k, E]) =>
-      card(
-        `${E.need / 1000} km egg`,
-        grid(
-          numberField('Metres to hatch', `eggs.${k}.need`, {
-            min: 100,
-            step: 100,
-            help: `${(E.need / 1000).toFixed(1)} km walked outdoors with it in an incubator.`,
-          }),
-          numberField('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
-        ) + weightTable(`eggs.${k}`, E),
-        { sub: 'Egg art is art/eggs/egg_' + k + '.png (Art browser).' }
-      )
-    )
-    .join('');
-}
 /* RL-R1: the old regions beyond the route are in game/data/legacy/regions.json (the Inner Sun); regions.json is the
    run's region themes now */
 function worldRegions() {
   afterRender(bindWorldMap);
-  return (
-    card('Map', worldMapHTML()) +
-    card(
-      'What’s new',
-      grid(textField('Version', 'meta.whatsNew.0.version', { opt: 1, ph: '0.1.0 alpha' })) +
-        textField('What changed (a line each)', 'meta.whatsNew.0.text', { area: 1, rows: 4, opt: 1 }),
-      { sub: 'Shown on the title under What’s new: the newest version, a few lines for players.' }
-    ) +
-    card(
-      'End of the road',
-      textField('Message at the last stop', 'meta.endText', {
-        area: 1,
-        rows: 2,
-        opt: 1,
-        ph: 'This is the end of the road for now. The Meadowlands lie ahead.',
-      })
-    )
-  );
+  return card('Map', worldMapHTML());
 }
 export const AMBIENT_PARTICLES = [
   ['pollen', 'Pollen'],
@@ -733,7 +354,6 @@ SECTIONS.rules = () => {
     R = D.rules,
     s = 'rules.start',
     pg = 'rules.progression',
-    eg = 'rules.eggs',
     bt = 'rules.battle',
     ca = 'rules.catching';
   const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`;
@@ -766,7 +386,15 @@ SECTIONS.rules = () => {
         .join('')
     )
     .join('')}</div>`;
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Rules</h2><p class="sub">Every number here changes how the game plays. Defaults match the original game.</p></div>
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Rules</h2><p class="sub">The game-wide numbers: starting out, encounters, levels, weather, battles, catching and riding. A run’s own numbers are in the Runs workspace (Run Lab, Perks, Unlocks &amp; hub, Economy).</p></div>
+ ${card(
+   'What’s new',
+   grid(textField('Version', 'meta.whatsNew.0.version', { opt: 1, ph: '0.1.0 alpha' })) +
+     textField('What changed (a line each)', 'meta.whatsNew.0.text', { area: 1, rows: 4, opt: 1 }),
+   {
+     sub: 'Shown on the title under What’s new: the newest version, a few lines for players. (SA-3: moved here from World & encounters.)',
+   }
+ )}
  ${card(
    'Starting out',
    grid(
@@ -778,13 +406,7 @@ SECTIONS.rules = () => {
      ),
      numberField('Moneys', `${s}.se`, { min: 0, step: 50 }),
      numberField('Starter’s level', `${s}.starterLevel`, { min: 1, max: 100, step: 1 }),
-     numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 }),
-     selectField(
-       'Free egg',
-       `${s}.starterEgg`,
-       Object.keys(D.eggs).map(k => [k, D.eggs[k].need / 1000 + ' km']),
-       { num: 1, none: 'None', opt: 1 }
-     )
+     numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 })
    ) +
      '<h4>Pyramids and items</h4>' +
      coinsStart +
@@ -851,19 +473,6 @@ SECTIONS.rules = () => {
      totals
  )}
  ${card(
-   'Eggs',
-   grid(
-     numberField('Eggs carried', `${eg}.capacity`, { min: 1, max: 30, step: 1 }),
-     numberField('Incubators', `${eg}.slots`, { min: 1, max: 6, step: 1 }),
-     numberField('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
-     selectField('The mythical', `${eg}.mythSpecies`, speciesOptions()),
-     numberField('Wild drop chance', `${eg}.dropChance`, { min: 0, max: 1, step: 0.01 })
-   ) +
-     `<div class="grid">${Object.keys(D.eggs)
-       .map(k => numberField(`Drop weight · ${k} km`, `${eg}.dropTiers.${k}`, { opt: 1, min: 0, max: 1, step: 0.05 }))
-       .join('')}</div>`
- )}
- ${card(
    'Time and weather',
    grid(
      checkboxField('Billies ignore the hour and the weather', `rules.env.off`, {
@@ -911,7 +520,6 @@ SECTIONS.rules = () => {
        step: 0.05,
        help: 'Chance a trainer picks its best move.',
      }),
-     numberField('Rest stop price (Moneys)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Losing fee', `${bt}.loseFee`, {
        min: 0,
        max: 1,

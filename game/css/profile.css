@@ -7,7 +7,7 @@
 }
 .tcard {
   position: relative;
-  margin: 16px 3px 0;
+  margin: var(--s4) 3px 0;
   overflow: hidden;
   background:
     radial-gradient(var(--dither, rgba(0, 0, 0, 0.05)) 1px, transparent 1.2px) 0 0/4px 4px,
@@ -26,7 +26,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   margin: 3px 3px 0;
   padding: 9px 13px 10px;
   background: repeating-linear-gradient(90deg, #275c60 0 6px, #2b6468 6px 12px);
@@ -45,13 +45,13 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 14px;
-  padding: 14px 15px 4px;
+  padding: 14px 15px var(--s1);
 }
 .tc-photo {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: var(--s2);
   width: 108px;
 }
 .tc-portrait {
@@ -68,7 +68,7 @@
 .tc-photo .pb {
   margin: 3px 0;
   min-height: 38px;
-  padding: 6px 8px;
+  padding: 6px var(--s2);
 }
 .tc-name {
   font-size: 27px;
@@ -84,7 +84,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   padding-bottom: 6px;
   border-bottom: 2px dotted color-mix(in srgb, var(--line) 25%, transparent);
 }
@@ -108,7 +108,7 @@
 }
 .tc-badges {
   margin: 10px 5px 5px;
-  padding: 10px 12px 14px;
+  padding: 10px var(--s3) 14px;
   background: color-mix(in srgb, var(--panel2) 80%, transparent);
   border-top: 2px dashed color-mix(in srgb, var(--line) 25%, transparent);
 }
@@ -127,11 +127,11 @@
 }
 .bdgs {
   list-style: none;
-  margin: 12px 0 0;
+  margin: var(--s3) 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px 6px;
+  gap: var(--s3) 6px;
 }
 .bdg {
   display: flex;
@@ -195,14 +195,14 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 .pf-tile {
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 10px var(--s3);
   border-radius: 10px;
   background: var(--panel-s);
   box-shadow:
@@ -240,8 +240,8 @@
   align-items: center;
   gap: 14px;
   width: calc(100% - 4px);
-  margin: 12px 2px 2px;
-  padding: 8px;
+  margin: var(--s3) 2px 2px;
+  padding: var(--s2);
   border: 0;
   border-radius: 10px;
   background: var(--panel-s);
@@ -279,15 +279,15 @@
 .pf-coins {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--s2);
+  margin-top: var(--s3);
 }
 .pf-coin {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 8px 4px;
+  padding: var(--s2) var(--s1);
   border-radius: 10px;
   background: var(--panel-s);
   box-shadow:
@@ -316,7 +316,7 @@
 .pf-items li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   min-width: 0;
   padding: 6px 10px;
   border-radius: 8px;
@@ -343,7 +343,7 @@
   }
   .tc-body {
     gap: 10px;
-    padding: 12px 12px 4px;
+    padding: var(--s3) var(--s3) var(--s1);
   }
   .tc-name {
     font-size: 23px;
@@ -389,11 +389,11 @@
 }
 /* ---------- 0.5 friends (Trainer screen, map pins) ---------- */
 .pf-friends {
-  margin-top: 12px;
+  margin-top: var(--s3);
 }
 .pf-friends .sec-h {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--s2);
 }

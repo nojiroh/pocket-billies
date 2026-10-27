@@ -2,7 +2,7 @@
 'use strict';
 /* ================= RUN STATE (roguelite track RL-3) =================
    The run in progress, kept in the save as saveData.run (null in the hub; roguelite-track.md 2a). While a run is
-   on, the save's working fields (team, se, items, pyramids, trip, wild, eggs, flags, seats, visited, buddy) are the
+   on, the save's working fields (team, se, items, pyramids, trip, wild, flags, seats, visited, buddy) are the
    run's: every engine and screen reads them as before. runBegin copies the hub's into run.start and gives the run its
    own: the Billies from home (RL-9b: picked at the mast, from the team or storage) and the bag packed from the hub's;
    runEnd pays out, puts the hub's back and keeps the Billies the player chose. Only the seed is stored for what can
@@ -49,6 +49,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   validRunFoe: [() => validRunFoe, v => (validRunFoe = v)],
   // @ts-expect-error -- replaced on purpose
+  validRunGhost: [() => validRunGhost, v => (validRunGhost = v)],
+  // @ts-expect-error -- replaced on purpose
   validRunQuests: [() => validRunQuests, v => (validRunQuests = v)],
   // @ts-expect-error -- replaced on purpose
   validRunRegion: [() => validRunRegion, v => (validRunRegion = v)],
@@ -63,7 +65,6 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'pyramids',
   'trip',
   'wild',
-  'eggs',
   'flags',
   'seats',
   'visited',
@@ -277,6 +278,18 @@ export function validRun(o) {
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
   /* RS-1: the resident invited (logic/residents.js) */
   if (o.invited !== undefined && !id(o.invited)) return false;
+  /* ON-2: a daily or weekly run (logic/daily.js), a friend's ghost team (logic/run-record.js) */
+  if (
+    o.board !== undefined &&
+    !(
+      plain(o.board) &&
+      Object.keys(o.board).length === 2 &&
+      (o.board.k === 'd' || o.board.k === 'w') &&
+      wholeIn(o.board.n, 1, 1e7)
+    )
+  )
+    return false;
+  if (o.ghost !== undefined && !validRunGhost(o.ghost)) return false;
   /* the hub as the run started: shapes only (validSave checks its Billies like the team's) */
   const st = o.start,
     counts = v => recordOf(v, 500, n => wholeIn(n, 0, META_MAX));
@@ -292,12 +305,31 @@ export function validRun(o) {
     list(st.trip.plan, 500) &&
     st.trip.plan.every(Number.isInteger) &&
     plain(st.wild) &&
-    list(st.eggs, 500) &&
     plain(st.flags) &&
     list(st.seats, 64) &&
     st.seats.every(v => typeof v === 'string') &&
     plain(st.visited) &&
     (st.buddy === undefined || st.buddy === null || (typeof st.buddy === 'string' && st.buddy.length <= 60))
+  );
+}
+/** ON-2: a run's friend's ghost (run.ghost, logic/run-record.js ghostPick): shapes only (its party passed
+ * validRunRecord when it was picked) @param {any} G @returns {boolean} */
+export function validRunGhost(G) {
+  const plain = (/** @type {any} */ v) =>
+    !!v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
+  return (
+    plain(G) &&
+    Object.keys(G).every(k => ['u', 'n', 'party', 'won'].includes(k)) &&
+    typeof G.u === 'string' &&
+    G.u.length >= 1 &&
+    G.u.length <= 128 &&
+    typeof G.n === 'string' &&
+    G.n.length <= 40 &&
+    Array.isArray(G.party) &&
+    G.party.length >= 1 &&
+    G.party.length <= 6 &&
+    G.party.every((/** @type {any} */ m) => plain(m) && typeof m.sp === 'string' && wholeIn(m.lvl, 1, 100)) &&
+    (G.won === undefined || G.won === 1)
   );
 }
 /** RL-12b: a run's events and reward picks (logic/run-enc.js): shapes only @param {any} e @returns {boolean} */
@@ -466,7 +498,6 @@ export function runBegin(s, give) {
   s.pyramids = add(Object.assign(zero(start.pyramids), give.pyramids || {}), pack.pyramids);
   s.trip = { node: 0, plan: [] };
   s.wild = {};
-  s.eggs = [];
   s.flags = copyOf(start.flags || {});
   s.seats = copyOf(start.seats || []);
   s.visited = { 0: 1 };

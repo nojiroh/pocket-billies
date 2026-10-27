@@ -104,14 +104,54 @@ over by SA-4 here).
 - Not confirmed by the searches (so not used as evidence): Unity's thumbnail slider, Godot's quick open, write-ups of
   the Witness's or Hades's editors.
 
+### Found in SA-2b (verified against the code, 2026-10-27)
+- **Far backdrops aren't drawn.** `scene/far/*.png` (10 strips, 640 × 120) are only preloaded (walk-view.js); `uFar` is
+  the edge ground tile. A place's `far` still picks its sound, water and default walls; `farH` does nothing. The Studio
+  shows them with that note; bringing them back or retiring them is the owner's call (SA-5's report is a good place).
+- Only `detail-a04b.png` is the live building sheet (scenery.buildArt); `detail.png` and `detail-a04.png` are builder
+  inputs. `art/manifest.js`'s `battle` layout is read by no game code (tools/build-scenes.py only). Both for SA-5.
+- The icons' builder wrote a fixed pixel format, so pixels ↔ SVG is exact (all 51 round-trip byte for byte); its block
+  shading is ported (`logic/icon-block.js`, matching all 51 pixel for pixel). The owner's picks (2026-10-26, SA-2b's
+  plan): text + Edit pixels, the shading as a button, no split.
+- More builders than `ART_BUILDERS` named: the far backdrops (build-scene-props.py), `detail-a04b.png` (build-airship.py,
+  build-props-batch1.py).
+
+### Found in SA-3 (verified against the code, 2026-10-27)
+- **The shops data was the legacy world's**, not shops.json (`{}`): `game/data/legacy/shops.json` holds 18 shops, 4 of
+  them boutiques. With shops.json empty the Wardrobe's Sold at listed nothing and the dressing room said "a boutique".
+  `SHOPS` is live: a run's towns and stalls fill it (run-scenes.js, `worldPut`), so it stays, starting empty.
+- **Trainers' badge (`seat`) is live** (the battle's payout, the profile); only its "route gates" help was stale.
+  `node` is read (`trainersAt`, the opening's trainers at 0); only the picker went. `egg` (8 mini-bosses) was dead.
+- **Route stops was the only editor of Copperleaf's own place** (name, pool, backdrop, mood, music, blurb): the owner's
+  pick, a card in Hub island. Check, Connections, Story scripts and data-checks' findings opened it; they open Hub
+  island now.
+- **The walk eggs were in the save too** (`saveData.eggs`, the run's working fields): gone, no SAVE_VERSION change.
+- `window.STUDIO_KEY` had a third reader (github.js's `on`). The roster has 53 entries, not 46.
+- The egg pictures stay (the ranch draws `egg_2` and `egg_10` by number); `egg_5` is only preloaded now (art.js
+  `EGG_ART`): for SA-5. The dressing room's inside-a-boutique mode can't be reached any more (no shop has
+  `kind: 'wardrobe'`): left, for later.
+
+### Found in SA-4 (verified against the code, 2026-10-27)
+- **T4.5 was mostly done before SA-4:** the Runs group existed (Studio plan Phase 2 and 4), Jobs and Town shops went in
+  SA-3 (removed, not moved to Legacy), and World & encounters' description already said what runs read. Left for SA-4:
+  Robots and Items into Runs, and Rules's stale "every number that tunes the game".
+- **STUDIO.md named the wrong files for Perks:** `relics.json` and `run.relics`; the data is `perks.json` and
+  `run.perks`. The section's key and the run URL's parameter stay `relics` (internal names). "Map art" (T6.8) was
+  already gone; the old group paths ("Billies & battles →", "World & places →", "group Game") were not.
+- **Nothing tested the nav:** `studio-layout.test.mjs` tested pane sizes only, and the self-test's Find step only timed
+  a search. The workspaces are data now (`STUDIO_WORKSPACES` in logic/studio-layout.js), unit-tested against
+  SECTION_LIST, and the self-test fails if Find misses a section.
+- Rules and Check weren't in the plan's workspace list: the owner's pick, a "Game" workspace on top. Items & pyramids
+  went to Runs (the owner's pick).
+
 ## Sessions
 | # | What | Checks before the tag |
 |---|------|-----------------------|
 | SA-1 | **Art browser** in place of Art files. Folders from the real file tree (never a hard-coded list), breadcrumbs. Thumbnail grid: size slider, nearest-neighbour, checkerboard. Search with tokens (`dir:`, `w:`, `h:`, `unused`, `legacy`) and chips from the same parser (a pure module in game/js/logic, unit-tested). A detail panel: path, size, frames, palette notes, **Used by** (a reference index from the data, scenery, rigs, model recipes and the art paths the code names). Actions: **Edit pixels** on any PNG (the shared pixel canvas, one undo), Replace, Download, **Open in its editor** (Billies, Workbench, Wardrobe, Props, Walk scenes, Robots). Ctrl K finds art files. STUDIO.md. | unit tests (search, reference index), Studio self-test, check-studio-github.py, smoke |
 | SA-2a | **The missing editors, part 1** (done 2026-10-26). Ground tiles: `tiles47` as a tile set (kind x 12), painted with a tiled live preview laid by the game's own pick; the Lite tiles made from it (decision 5); `tools/build-terrain-v47.py` retires (decision 1). Robot pictures: paint and upload from Robots and the browser. Pyramids. An animated preview for frame strips, so effects and life are previewed. The builder warning (decision 7). | unit tests, Studio self-test, check-studio-github.py, smoke |
-| SA-2b | **The missing editors, part 2.** A text-file save (SVG and manifest.js, kept as drafts). SVG icons: a small text editor with a live preview; `tools/build-ui-icons.py` retires (decision 6). The icon atlas's rectangles. Far backdrops, flags, building walls and rooms (a tiling preview for the wall and detail cells), each with a preview. | unit tests, Studio self-test, check-studio-github.py, smoke, the owner's look on the phone |
-| SA-3 | **Clean-up**, one cause per commit (decision 3). Studio: Jobs and its Find entries; World & encounters without Route stops and Eggs, opening on Wild encounters, What's new moved to Game, Find without route stops; the dead Rules fields; the Trainers egg, badge and stop fields; the Workbench's disabled buttons; the Roster's stale text; the local-mode leftovers. Game: the walk-egg code and its rules and eggs.json tiers (ranch eggs stay), Jobs and Town shops data with the boutique names moved to the Wardrobe (data first, then readers, then the section). Each removal verified by grep before and the checks after. | lint, typecheck, check:modules, check:data, unit tests, smoke, Studio self-test |
-| SA-4 | **Navigation.** Workspaces: Art (the browser, Workbench), Creatures, World, People & story, Runs (Robots join: bots are the enemy faction), Sound & UI, Legacy. Looks and Wardrobe as one "Characters" entry; "Part sizes" labelled "Part rules"; the Moneys group goes. Labels only (Studio words, no internal renames, no player-facing words). STUDIO.md's names brought up to date (Perks, not Loopholes). Takes over the improvement plan's T4.5 and T6.8. | studio-layout tests, Find finds every section, Studio self-test |
+| SA-2b | **The missing editors, part 2** (done 2026-10-27). A text-file save (SVG and manifest.js, kept as drafts). SVG icons: a small text editor with a live preview; `tools/build-ui-icons.py` retires (decision 6). The icon atlas's rectangles. Far backdrops, flags, building walls and rooms (a tiling preview for the wall and detail cells), each with a preview. | unit tests, Studio self-test, check-studio-github.py, smoke, the owner's look on the phone |
+| SA-3 | **Clean-up** (done 2026-10-27), one cause per commit (decision 3). Studio: Jobs and its Find entries; World & encounters without Route stops and Eggs, opening on Wild encounters, What's new moved to Game, Find without route stops; the dead Rules fields; the Trainers egg, badge and stop fields; the Workbench's disabled buttons; the Roster's stale text; the local-mode leftovers. Game: the walk-egg code and its rules and eggs.json tiers (ranch eggs stay), Jobs and Town shops data with the boutique names moved to the Wardrobe (data first, then readers, then the section). Each removal verified by grep before and the checks after. | lint, typecheck, check:modules, check:data, unit tests, smoke, Studio self-test |
+| SA-4 | **Navigation** (done 2026-10-27). Workspaces: Art (the browser, Workbench), Creatures, World, People & story, Runs (Robots join: bots are the enemy faction), Sound & UI, Legacy. Looks and Wardrobe as one "Characters" entry; "Part sizes" labelled "Part rules"; the Moneys group goes. Labels only (Studio words, no internal renames, no player-facing words). STUDIO.md's names brought up to date (Perks, not Loopholes). Takes over the improvement plan's T4.5 and T6.8. | studio-layout tests, Find finds every section, Studio self-test |
 | SA-5 | **Unused art.** The browser's missing/unused report (from SA-1's index). Then decision 2: orphans deleted, legacy postcards and flags moved under legacy (the Studio shows them read-only); each list checked again with grep and the full check first. | full quick check, the report shows 0 orphans |
 
 ## Pushing back

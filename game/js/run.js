@@ -11,6 +11,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  account,
+  boardsFetch,
+  boardsGhost,
+  boardsPost,
   closeModal,
   labMilestones,
   mapIdAt,
@@ -40,6 +44,8 @@ import { runCardHome } from './logic/run-card.js';
 import { runWorldData } from './logic/run-world-data.js';
 import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
+import { boardPlan, boardPlayed } from './logic/daily.js';
+import { runRecord } from './logic/run-record.js';
 import {
   BATTLE_RULES,
   battleHost,
@@ -69,6 +75,7 @@ expose({
   runArrivedHint: [() => runArrivedHint, v => (runArrivedHint = v)],
   runBattleAgain: [() => runBattleAgain, v => (runBattleAgain = v)],
   runBattleStart: [() => runBattleStart, v => ((runBattleStart = v), provide({ runBattleStart }))],
+  runBoardNow: [() => runBoardNow],
   runCatch: [() => runCatch],
   runChallengesOpen: [() => runChallengesOpen],
   runClinicEach: [() => runClinicEach],
@@ -81,6 +88,7 @@ expose({
   runHomeList: [() => runHomeList],
   runHomeTold: [() => runHomeTold, v => (runHomeTold = v)],
   runJump: [() => runJump, v => ((runJump = v), provide({ runJump }))],
+  runKindNow: [() => runKindNow],
   runModsNow: [() => runModsNow, v => (runModsNow = v)],
   runOver: [() => runOver, v => ((runOver = v), provide({ runOver }))],
   runPackStep: [() => runPackStep, v => (runPackStep = v)],
@@ -202,11 +210,23 @@ export function runEndHome(won, keep, itemPrice) {
  * @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice @param {string} train
  * @param {(pay: any) => HTMLElement} show */
 function runEndHomeGo(won, keep, itemPrice, train, show) {
-  /* RL-12: the Perks' payout rows, read before the run ends */
-  const rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
+  /* RL-12: the Perks' payout rows, read before the run ends. ON-2: the run's record for friends, read while the team
+     is the run's (logic/run-record.js; signed in only: boards.js posts it, or keeps it until it can) */
+  const user = typeof account !== 'undefined' && account.user,
+    rec = user
+      ? runRecord(
+          saveData,
+          saveData.run,
+          won,
+          { u: user.uid, n: (saveData.avatar && saveData.avatar.name) || user.name || 'Trainer' },
+          Date.now()
+        )
+      : null,
+    rates = fxPayoutRates(fxOfRun(saveData.run, PERKS), RULES.run.payout),
     opened = saveData.meta.expedition,
     pay = runEnd(saveData, { won, keep }, rates, itemPrice),
     cover = show(pay);
+  if (rec && typeof boardsPost === 'function') boardsPost(rec);
   /* a move waiting to be learned names a Billie by its uid, which a run's copy shares with the hub's */
   uiState.learnQ = [];
   runCatch.m = null;
@@ -294,6 +314,15 @@ function runModsNow() {
     uiState.runMonoType || TYPES[0]
   );
 }
+/** ON-2: which run the start sheet is set to (uiState.runKind): 'r' a run of your own, 'd' today's daily, 'w' this
+    week's (logic/daily.js); the daily and weekly show once a run has ended (the first run's sheet stays as it was) */
+const runKindNow = () =>
+  (saveData.meta.runs || 0) >= 1 && (uiState.runKind === 'd' || uiState.runKind === 'w') ? uiState.runKind : 'r';
+/** ON-2: the daily's or weekly's start as it stands now (null for a run of your own) */
+const runBoardNow = () => {
+  const k = runKindNow();
+  return k === 'r' ? null : boardPlan(k, Date.now(), RULES.run.boards);
+};
 /** RL-13: the challenges and whether each may be taken now (its `when`, logic/conditions.js) */
 const runChallengesOpen = () =>
   CHALLENGE_IDS.filter(id => MODIFIERS.challenges[id]).map(id => ({
@@ -373,9 +402,13 @@ function runPackStep(kind, k, d) {
  * ends. Opened again in place on every tap (the same sheet: no new scrim, the scroll kept) */
 export function runStartSheet() {
   if (!runStartable()) return;
+  /* ON-2: friends' last runs, for a ghost on the map (boards.js; cached) */
+  if (typeof boardsFetch === 'function') boardsFetch(false);
   const S = RULES.run.start,
-    expedition = runExpNow(),
-    mods = runModsNow(),
+    B = runBoardNow(),
+    played = !!B && boardPlayed(saveData.meta.boards, B.board),
+    expedition = B ? B.expedition : runExpNow(),
+    mods = B ? B.mods : runModsNow(),
     P = runPickNow(expedition, mods),
     gifts = [
       plural(S.se, 'Money'),
@@ -428,8 +461,26 @@ export function runStartSheet() {
     },
     trained = P.home.filter(trains);
   const E = MODIFIERS.expeditions[expedition - 1],
-    chal = runChallengesOpen().filter(c => mods.includes(c.id));
-  const html = `<p>A sky train flies you through the portal to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${(saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>Skyline Station adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
+    chal = runChallengesOpen().filter(c => mods.includes(c.id)),
+    /* ON-2: a run of your own, today's daily or this week's run */
+    kind = runKindNow(),
+    kindChips =
+      (saveData.meta.runs || 0) >= 1
+        ? `<h3>Which run</h3><div class="fchips">${[
+            ['r', 'Your own'],
+            ['d', 'Daily'],
+            ['w', 'Weekly'],
+          ]
+            .map(
+              ([k, l]) =>
+                `<button class="fchip k-btn${k === kind ? ' on' : ''}" data-kind="${k}" aria-pressed="${k === kind}">${l}</button>`
+            )
+            .join('')}</div>`
+        : '',
+    boardNote = B
+      ? `<p class="note">${B.board.k === 'd' ? 'Today’s daily' : 'This week’s run'}: ${escapeHtml(E ? E.name : '')}${B.mods.length ? `, ${escapeHtml(B.mods.map(id => (MODIFIERS.challenges[id] ? MODIFIERS.challenges[id].name : id)).join(', '))}` : ''}. The same run for everyone, with every unlock open; only your first try counts, and giving up counts as a loss. Your friends see how it went.</p>${played ? `<p class="note warn">You’ve played ${B.board.k === 'd' ? 'today’s daily. A new one starts at 00:00 UTC' : 'this week’s run. A new one starts on Monday at 00:00 UTC'}.</p>` : ''}`
+      : '';
+  const html = `<p>A sky train flies you through the portal to the wild lands past the island: a road of places, a town before each mini-boss, and a boss at the end.</p>${kindChips}${boardNote}${!B && (saveData.meta.expedition || 1) > 1 ? `<h3>Expedition</h3><div class="fchips">${expChips}</div><p class="note">${escapeHtml(E ? E.d : '')}</p>` : ''}${!B && chalChips ? `<h3>Challenges</h3><div class="fchips">${chalChips}</div>${monoChips}<p class="note">${chal.length ? escapeHtml(chal.map(c => c.C.d).join(' ')) : 'Harder runs pay more Research.'}</p>` : ''}<h3>Who comes from home</h3><p class="note">${P.spent} of ${P.budget} starter points spent${own ? '' : ' (a suggested party: tap a Billie to pick your own)'}. The rest stay at the ranch; on the run you catch wild ones.${trained.length ? ' Training stops while it is away (what it banked comes along).' : ''}</p><div class="bx-grid">${runHomeList().map(card).join('')}</div><h3>Pack the bag <small class="tnum">${P.n} of ${P.most}</small></h3>${things.length ? `<div class="bag-list px">${things.map(row).join('')}</div>` : '<p class="note">Copperleaf’s bag is empty.</p>'}<p>Skyline Station adds ${escapeHtml(gifts.join(', '))}.</p><p class="note">Every place you walk into takes a day. Beat the boss to win: everyone comes home with what they learned, and the bag goes into Copperleaf’s. If your whole party faints, the run is over: you keep one Billie, and the bag turns into Research.</p>`;
   const was = uiState.modal && uiState.modal.cls === 'fly-sheet run-start' ? uiState.modal : null,
     sheet = document.querySelector('#ov .sheet'),
     body = document.querySelector('#ov .sheet .body'),
@@ -441,15 +492,23 @@ export function runStartSheet() {
       {
         l: 'Take off',
         c: 'gold',
-        dis: !P.home.length,
-        f: () => runTakeOff(undefined, undefined, mods, runPickNow(expedition, mods), expedition),
+        dis: !P.home.length || played,
+        f: () =>
+          runTakeOff(
+            B ? B.seed : undefined,
+            undefined,
+            mods,
+            runPickNow(expedition, mods),
+            expedition,
+            B ? B.board : null
+          ),
       },
       {
         l: 'Not now',
         c: 'quiet',
         f: () => {
           uiState.runPick = uiState.runPack = null;
-          uiState.runExp = uiState.runChal = uiState.runMonoType = null;
+          uiState.runExp = uiState.runChal = uiState.runMonoType = uiState.runKind = null;
           closeModal();
         },
       },
@@ -462,6 +521,12 @@ export function runStartSheet() {
         b.addEventListener('click', () => {
           const d = /** @type {HTMLElement} */ (b).dataset;
           runPackStep(d.pk, d.k, Number(d.d));
+        });
+      /* ON-2: a run of your own, the daily or the weekly */
+      for (const b of document.querySelectorAll('#ov [data-kind]'))
+        b.addEventListener('click', () => {
+          uiState.runKind = /** @type {HTMLElement} */ (b).dataset.kind;
+          runStartSheet();
         });
       /* RL-13: the Expedition, a challenge on or off, a mono-type run's type */
       for (const b of document.querySelectorAll('#ov [data-exp]'))
@@ -507,23 +572,38 @@ export function runStartSheet() {
  * debug menu's short run) @param {string[]} [mods] the run's mods (the debug menu's mountains run: RUN_MOD_MOUNTAINS)
  * @param {{ home: string[], pack: { items: Record<string, number>, pyramids: Record<string, number> } }} [pick]
  * @param {number} [expedition] RL-13: the Expedition picked at the station (I by default)
+ * @param {{ k: 'd' | 'w', n: number } | null} [board] ON-2: a daily or weekly (its seed is `seed`): every unlock open,
+ * and the save marks the day or week taken (one attempt)
  */
-export function runTakeOff(seed, map, mods, pick, expedition) {
+export function runTakeOff(seed, map, mods, pick, expedition, board) {
   if (!runStartable()) return;
+  if (board && boardPlayed(saveData.meta.boards, board)) return;
   const P = pick || { home: runPickDefault(), pack: { items: {}, pyramids: {} } };
   if (!P.home.length) return;
   uiState.runPick = uiState.runPack = null;
-  uiState.runExp = uiState.runChal = uiState.runMonoType = null;
+  uiState.runExp = uiState.runChal = uiState.runMonoType = uiState.runKind = null;
   const s = saveData,
     sd = seed || runSeedRoll(),
     data = runWorldData();
   /* RL-11: the shop and biome unlocks it starts with; its map draws only the biomes open to it (Studio plan T2.1: one
-     start for every run, logic/run-start.js) */
-  const plan = runStartPlan(
-    sd,
-    { ...data, unlockData: UNLOCK_DATA },
-    { unlocks: runUnlocks(s, UNLOCK_DATA), map, mods, expedition }
-  );
+     start for every run, logic/run-start.js). ON-2: a daily or weekly opens them all, and a friend's ghost may wait
+     on the map (boards.js, from what was read when the start sheet opened) */
+  const ghost = typeof boardsGhost === 'function' ? boardsGhost(sd) : null,
+    plan = runStartPlan(
+      sd,
+      { ...data, unlockData: UNLOCK_DATA },
+      {
+        unlocks: board
+          ? runUnlocks({ meta: { unlocks: UNLOCK_DATA.unlocks } }, UNLOCK_DATA)
+          : runUnlocks(s, UNLOCK_DATA),
+        map,
+        mods,
+        expedition,
+        board: board || null,
+        ghost,
+      }
+    );
+  if (board) s.meta.boards = { ...(s.meta.boards || { d: 0, w: 0 }), [board.k]: board.n };
   if (RULES.ranch && s.ranch)
     for (const uid of P.home) ranchStop(s, uid, ranchNow(s, Date.now(), RULES.ranch).now, RULES.ranch, toast);
   healAll();

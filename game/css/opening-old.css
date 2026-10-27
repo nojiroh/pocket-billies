@@ -85,26 +85,26 @@ body.cs-dress .cs-skip {
   bottom: 14px;
   transform: translateX(-50%);
   width: min(460px, calc(100% - 24px));
-  padding: 12px 14px 14px;
-  border-radius: 16px;
+  padding: var(--s3) 14px 14px;
+  border-radius: var(--r-md);
   background: var(--panel-s);
   box-shadow: 0 10px 30px var(--shadow);
   cursor: default;
   animation: csUp 0.3s ease backwards;
 }
 .cs-pick .sd {
-  margin: 8px 0 0;
+  margin: var(--s2) 0 0;
   font-size: 14.5px;
   color: var(--text2);
 }
 .cs-pick .pb.wide {
-  margin-top: 12px;
+  margin-top: var(--s3);
   width: 100%;
 }
 .cs-pick .racts {
-  margin-top: 12px;
+  margin-top: var(--s3);
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
 }
 .cs-pick .racts .pb {
   flex: 1;
@@ -174,7 +174,7 @@ body.cs-falling #dioui {
 .cs-bars i {
   transition:
     transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1),
-    height 0.24s ease-out;
+    height var(--m-base) ease-out;
 }
 body.cs-blink .cs-bars i {
   height: 51vh;
@@ -200,7 +200,7 @@ body.cs-dazed #dio.gl {
   grid-template-columns: auto 1fr;
   gap: 10px;
   align-items: center;
-  padding: 8px 12px 8px 8px;
+  padding: var(--s2) var(--s3) var(--s2) var(--s2);
   border-radius: 14px;
   background: var(--panel-s);
   color: var(--text);

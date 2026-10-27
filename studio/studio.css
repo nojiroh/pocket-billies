@@ -547,6 +547,10 @@ textarea:focus {
 .seg-row:first-child {
   margin-top: 0;
 }
+/* SA-4: the switch between a joined row's sections (Characters: Looks | Wardrobe), above the section */
+.nav-switch {
+  margin-bottom: 14px;
+}
 .grow {
   flex: 1;
 }
@@ -5360,4 +5364,172 @@ body.wb-dropping::after {
 }
 .cam-gn {
   text-anchor: middle;
+}
+/* SA-2b: the UI icon editor (icon-editor.js) */
+.ic-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .ic-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ic-text {
+  width: 100%;
+  min-height: 9em;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.ic-panels {
+  display: grid;
+  gap: 6px;
+}
+.ic-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+}
+/* the game's light and dark panels (uiTheme.json's surfaces, as close as a fixed colour gets) */
+.ic-light {
+  background: #f3ecd9;
+  color: #2b3327;
+}
+.ic-dark {
+  background: #1d2620;
+  color: #e6ddc6;
+}
+.ic-size {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.ic-others {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ic-other {
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--bg2, none);
+  cursor: pointer;
+  line-height: 0;
+}
+.ic-other.on {
+  border-color: var(--acc);
+}
+.ic-swatches {
+  gap: 3px;
+}
+.ic-sw {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+/* SA-2b: the icon atlas's rectangles (atlas-editor.js) */
+.at-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .at-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.at-stage {
+  overflow: auto;
+  max-height: 70vh;
+  background: repeating-conic-gradient(#d9d9d9 0 25%, #f4f4f4 0 50%) 0 0 / 16px 16px;
+}
+.at-cv {
+  display: block;
+  cursor: crosshair;
+}
+.at-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-height: 40vh;
+  overflow: auto;
+  margin-top: 6px;
+}
+.at-key {
+  padding: 2px 6px;
+  border: 1px solid var(--line, #ccc);
+  border-radius: 4px;
+  background: none;
+  font: 12px/1.4 monospace;
+  cursor: pointer;
+}
+.at-key.on {
+  border-color: var(--acc);
+  background: var(--acc);
+  color: #fff;
+}
+.at-key.bad {
+  border-color: #c8492f;
+}
+.at-fields {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.at-cut {
+  align-items: end;
+  gap: 10px;
+  margin: 8px 0;
+}
+.at-probs {
+  color: #b23a24;
+  font-size: 13px;
+}
+/* SA-2b: scene art previews (scene-art-preview.js) */
+.sp-scene {
+  margin: 8px 0;
+}
+.sp-wall {
+  width: 100%;
+  max-width: 384px;
+  aspect-ratio: 3 / 2;
+}
+.sp-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.sp-rooms figure {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+.sp-rooms figcaption {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+.sp-room {
+  width: 100%;
+}
+.sp-flag {
+  width: 320px;
+  max-width: 100%;
+  background: linear-gradient(#9ccbe9, #e3eef1);
+}
+.sp-stamp {
+  width: 48px;
+  height: 32px;
+}
+.sp-far {
+  width: 100%;
 }

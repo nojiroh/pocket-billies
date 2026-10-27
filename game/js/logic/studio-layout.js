@@ -11,7 +11,9 @@ import { expose } from '../test-globals.js';
 expose({
   LAYOUT_LIMITS: [() => LAYOUT_LIMITS],
   LAYOUT_PRESETS: [() => LAYOUT_PRESETS],
+  NAV_JOINED: [() => NAV_JOINED],
   PANE_WIDTHS: [() => PANE_WIDTHS],
+  STUDIO_WORKSPACES: [() => STUDIO_WORKSPACES],
   // @ts-expect-error -- replaced on purpose
   layoutAdjusted: [() => layoutAdjusted, v => (layoutAdjusted = v)],
   // @ts-expect-error -- replaced on purpose
@@ -25,7 +27,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   layoutSizes: [() => layoutSizes, v => (layoutSizes = v)],
   // @ts-expect-error -- replaced on purpose
+  navJoined: [() => navJoined, v => (navJoined = v)],
+  // @ts-expect-error -- replaced on purpose
+  navRows: [() => navRows, v => (navRows = v)],
+  // @ts-expect-error -- replaced on purpose
   paneWidthClass: [() => paneWidthClass, v => (paneWidthClass = v)],
+  // @ts-expect-error -- replaced on purpose
+  workspaceOf: [() => workspaceOf, v => (workspaceOf = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -122,4 +130,67 @@ export function layoutAdjusted(lay) {
 export function layoutSizes(lay, sec) {
   const P = LAYOUT_PRESETS[lay.preset];
   return Object.assign({}, P ? P.sizes : {}, lay.sizes[sec] || {});
+}
+
+/* Studio art track SA-4: the sidebar's workspaces (Blender's idea: a workspace per kind of work), as section keys in
+   the order they show. studio/js/studio-app.js's SECTION_LIST names the sections; a section in no workspace shows
+   under More, which the Studio self-test reports */
+/** @type {[string, string[]][]} */
+export const STUDIO_WORKSPACES = [
+  ['Game', ['rules', 'check']],
+  ['Art', ['art', 'workbench']],
+  ['Creatures', ['billionaires', 'roster', 'parts', 'genes', 'coats', 'moves', 'types', 'preview']],
+  ['World', ['scenes', 'hub', 'props', 'world', 'engine', 'camera']],
+  ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
+  /* robots join the runs: bots are the runs' enemy faction (VISION.md); items are what a run's shops sell */
+  ['Runs', ['runlab', 'relics', 'unlocks', 'economy', 'robots', 'items']],
+  ['Sound & UI', ['music', 'ui']],
+  ['Legacy', ['legacy']],
+];
+/* sections that share one row in the sidebar, under the row's own name; each of them shows a switch to the others */
+export const NAV_JOINED = [
+  {
+    name: 'Characters',
+    d: 'Trainers’ and shopkeepers’ looks, and the wardrobe they are made from: body, hair, faces, clothes',
+    keys: ['people', 'wardrobe'],
+  },
+];
+
+/** the joined row a section belongs to, or null */
+export function navJoined(key) {
+  return NAV_JOINED.find(j => j.keys.includes(key)) || null;
+}
+
+/**
+ * The sidebar's rows: each workspace with its rows, a joined pair as one row (at its first section's place), the
+ * sections no workspace lists under More, workspaces with no known section left out.
+ * @param {string[]} keys the sections there are, in SECTION_LIST's order
+ * @param {[string, string[]][]} [workspaces]
+ * @param {{ name: string, d?: string, keys: string[] }[]} [joined]
+ * @returns {[string, { key: string, keys: string[], name: string | null }[]][]}
+ */
+export function navRows(keys, workspaces = STUDIO_WORKSPACES, joined = NAV_JOINED) {
+  const known = new Set(keys),
+    listed = new Set(workspaces.flatMap(w => w[1])),
+    all = workspaces.concat([['More', keys.filter(k => !listed.has(k))]]);
+  return all
+    .map(([t, L]) => {
+      /** @type {{ key: string, keys: string[], name: string | null }[]} */
+      const rows = [];
+      for (const k of L) {
+        if (!known.has(k)) continue;
+        const j = joined.find(x => x.keys.includes(k));
+        if (!j) rows.push({ key: k, keys: [k], name: null });
+        else if (!rows.some(r => r.keys.includes(k)))
+          rows.push({ key: k, keys: j.keys.filter(x => known.has(x)), name: j.name });
+      }
+      return /** @type {[string, typeof rows]} */ ([t, rows]);
+    })
+    .filter(w => w[1].length);
+}
+
+/** the workspace a section shows in ('More' when none lists it) */
+export function workspaceOf(key, workspaces = STUDIO_WORKSPACES) {
+  const w = workspaces.find(x => x[1].includes(key));
+  return w ? w[0] : 'More';
 }

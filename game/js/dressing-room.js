@@ -282,7 +282,8 @@ function owns(id) {
   return !!it && (!!it.starter || !!wardrobeState().owned[id]);
 }
 const wardrobeItemsInSlot = slot => Object.entries(wardrobeData().items).filter(([k, it]) => it.slot === slot);
-const shopName = id => (SHOPS[id] && SHOPS[id].name) || 'a boutique';
+/* SA-3: a boutique's name is the wardrobe's (wardrobe.json shops); a shop the player stands in is SHOPS's */
+const shopName = id => (((wardrobeData() || {}).shops || {})[id] || SHOPS[id] || {}).name || 'a boutique';
 /* does the open boutique sell this item? its own stock, or (an outlet) the stock of the shops it lists in "sells" */
 const boutiqueSells = it =>
   !!(
@@ -355,7 +356,7 @@ function dressingRoomHTML() {
   <div class="dr-foot" id="drFoot">${dressingFootHTML()}</div></div>`;
 }
 function colorSwatchesHTML(key, list, cur, ch) {
-  return `<div class="swatches">${list.map(c => `<button class="swatch" style="--sw:${c}" data-a="dr-col" data-k="${key}" data-c="${c}" ${ch != null ? `data-ch="${ch}"` : ''} aria-pressed="${String(cur).toLowerCase() === c.toLowerCase()}" aria-label="${c}"><span>✓</span></button>`).join('')}<label class="custom-color" title="Any colour">+<input type="color" data-dr-col="${key}" ${ch != null ? `data-ch="${ch}"` : ''} value="${cur}"></label></div>`;
+  return `<div class="swatches">${list.map(c => `<button class="swatch" style="--sw:${c}" data-a="dr-col" data-k="${key}" data-c="${c}" ${ch != null ? `data-ch="${ch}"` : ''} aria-pressed="${String(cur).toLowerCase() === c.toLowerCase()}" aria-label="${c}"><span>✓</span></button>`).join('')}<label class="custom-color" title="Any colour">+<input type="color" aria-label="Any colour" data-dr-col="${key}" ${ch != null ? `data-ch="${ch}"` : ''} value="${cur}"></label></div>`;
 }
 function wardrobeGridHTML(slot, crop) {
   const S0 = wardrobeData().slots.find(s => s.id === slot),

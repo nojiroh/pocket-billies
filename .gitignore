@@ -56,4 +56,5 @@ game/data/gamedata.js
 .eslintcache
 validation/st1/
 validation/st3/
+validation/terrain-look/
 validation/load/

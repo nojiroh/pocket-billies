@@ -13,7 +13,6 @@ const START = {
   pyramids: {},
   trip: { node: 0, plan: [] },
   wild: {},
-  eggs: [],
   flags: {},
   seats: [],
   visited: {},
