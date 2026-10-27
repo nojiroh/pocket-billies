@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Studio art track SA-3 - the clean-up - 2026-10-27
+Branch `track/studio-art` (main merged first, a merge commit: HANDOFF and art-code-refs.json conflicted; SA-2b kept on
+top, main's entries below, SA-2a and SA-1 once; the container's local branch was 165 commits stale, so the merge's
+first parent is main and its second the track branch: no history rewritten). Plan approved in Plan Mode. The owner's picks (all Claude's
+recommendations): Copperleaf's place as a card in Hub island; What's new at the top of Rules; the save's empty `eggs`
+list removed; the boutiques' names only into the wardrobe. One cause per commit (33), each removal grepped before and
+checked after (lint, typecheck, check:modules, check:data, unit tests). Tag `sa-3-done` for the owner.
+- Changed (Studio):
+  - **Jobs** gone, with its Find entries and checks. The self-test's and check-studio-github.py's quiet section is
+    Types now.
+  - **World & encounters** opens on Wild encounters; **Route stops** and **Eggs** are gone. Copperleaf's own place
+    (name, route label, wild encounters, backdrop, mood, music, description) is a card in **Hub island**; Check,
+    Connections, Story scripts and data-checks' findings open Hub island for a place. Find lists no route stops.
+  - **What's new** is the first card of Rules; the dead End of the road (`meta.endText`) is gone, from meta.json too.
+  - **Rules**: the Free egg, the wild drop chance and weights, the Eggs card, the rest stop price gone.
+  - **Trainers**: the km First-win egg (and the 8 mini-bosses' `egg`), the Stands at picker gone; the badge id's help
+    says the save and the profile keep it (not route gates).
+  - **Art workbench**: the always-disabled Pixels and Model buttons gone. **Roster board**: no count or version in
+    its words.
+  - **Local mode**: `window.STUDIO_KEY`, github.js's key check, the `X-Studio-Key` header, its global type and
+    STUDIO.md's "Saving in local mode" gone.
+  - **Town shops** gone, with its Find entries, Connections' shop kind, its checks, the Looks list's keepers, Walk
+    scenes' Which shop picker (a door opens its place's shop) and check-studio-github.py's shop thank-you step.
+- Changed (game):
+  - **The walk eggs**: `addEgg`, `hatchEgg`, `hatchable`, `autoSlot`, `eggSlotCount`, `eggKm` (logic/rules.js);
+    `saveData.eggs` (a new save has none, an old one's is dropped; no SAVE_VERSION change); the run's working field;
+    `rules.eggs`; `EGGS`/`EGG_TIERS`; **eggs.json**. Ranch eggs (breeding.js), `saveData.hatched` and the egg
+    pictures stay.
+  - **jobs.json** and **shops.json** gone. `SHOPS` starts empty; a run's world fills it as before. The boutiques'
+    names are in `wardrobe.json shops`: the dressing room names them, the Wardrobe's Sold at lists them.
+  - Types, the test fixture, check-data's snapshot (file count 175 to 172; the planted egg line gone) and
+    art-code-refs.json follow.
+- Where the plan was wrong: see the plan's "Found in SA-3" (the shops were the legacy world's; the badge and `node`
+  are live; Route stops was Copperleaf's only editor; the save held the walk eggs; the roster has 53).
+- Decisions I made:
+  - The quiet section of the two Studio checks is Types (no 3D view); Types now skips the second-pane step.
+  - The path-prefix test's floor is 2 claims (lore's, the story editor's): the shop's `@thanks.` went with its section.
+  - The landmark picker went with Route stops; `landmark` is still read and checked.
+  - A regional form's preview in the Studio uses its base stage's rig in the form's coat (sprites.js), as the game
+    does: Wild encounters, now the first tab, drew four forms (Trump, Zuckerberg, Swift, Kardashian) that asked for
+    missing pictures about 100 times each. Not saved into rigs.js.
+- Risky:
+  - The hub card edits `locations.json` from a 3D section; a field change redraws the section.
+  - The dressing room's inside-a-boutique mode can't be reached any more (no shop has `kind: 'wardrobe'`): left.
+  - `egg_5.png` is only preloaded now (SA-5).
+- Verified:
+  - lint, typecheck, format, check:modules, check:data after every commit; unit tests 1428 pass.
+  - Smoke: 5 of 6 in the full run (208 s). The Actions sheet step failed there with "debug log: no function render
+    to wrap" (the debug log's hook ran before the page's functions, with two browsers busy); alone it passed (57 s).
+    One re-run, as the rules allow; noted in case it comes back.
+  - `check-studio-github.py --only=sections,studio_test`: ok (32 sections, 21 edits undone, no problems). Its first
+    run found my Wardrobe bug (it read `D.shops`, gone with shops.json) and the forms' 404s: both fixed, then ok.
+  - `--only=wardrobe,workbench,leaders,checks,story,polish`: ok except `story: the reference didn't put heal in the
+    script`, which fails the same way on the merge commit before SA-3 (main's or SA-2b's; not looked into).
+  - Not run: the publish checks (they time out here, as in SA-2b) and the full quick check.
+  - In this container Python Playwright must be 1.63.0 to match the installed Chromium (tools/requirements-check.txt
+    pins 1.56.0, which can't find its browser; smoke then skips the browser steps and still says exit 0).
+- For the owner on the phone:
+  - Studio → Hub island: the Copperleaf card at the bottom; change the music or mood and play.
+  - Rules → What's new at the top; the title shows it.
+  - Wardrobe → an item sold at a boutique: Sold at lists the four; in the game's dressing room an item you don't own
+    says "sold at Second Chance Threads" (was "a boutique").
+  - An old save loads (its walk eggs dropped); a run starts and ends.
+- Next: SA-4 (navigation as workspaces), in a new session on `track/studio-art`, in Plan Mode.
+
 ### Studio art track SA-2b - the missing editors, part 2 - 2026-10-27
 Branch `track/studio-art` (SA-2a pulled first, then main merged: a merge commit, only HANDOFF conflicted, both top
 entries kept; art-code-refs.json made again for main's moved lines). Plan approved in Plan Mode. The owner's picks
