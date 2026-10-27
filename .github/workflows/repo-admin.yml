@@ -6,16 +6,17 @@
 # - create-tag: lightweight tags. `tag` is one name (on `commit`, default main) or several `name=commit` pairs (spaces,
 #   commas or new lines between them). Only `legacy` and `<something>-done` names; a tag that already exists is never
 #   moved. A tag made here doesn't start other workflows (GitHub's rule for its own token), so for a phase-* tag on the
-#   tip of main this workflow starts the Check workflow on the tag itself, the run a pushed phase tag starts. A phase-*
-#   tag on an older commit starts nothing: its picture baseline would replace today's.
-# - delete-branches: deletes the listed branches (spaces, commas or new lines between names; plain names only: letters,
-#   digits and . _ / -). Never main, legacy, the default branch, an archive/* branch, or a branch that an open pull
-#   request uses as its head or its base (deleting a base closes the pull request). A track/* branch (a long plan's
-#   branch, docs/BRANCHES.md) is kept too, unless allow_merged_tracks is on, the plan's `<plan>-done` tag exists
-#   (track/towns needs towns-done) and every commit of the branch is in the default branch. Each deleted branch's last
-#   commit goes in the run summary.
+#   tip of main this workflow starts the Check workflow on the tag by hand with the picture baseline on, as a pushed
+#   phase tag does (a run started by hand also runs the selftest job). A phase-* tag on an older commit starts
+#   nothing: its picture baseline would replace today's.
+# - delete-branches: deletes the listed branches (spaces, commas or new lines between names). Never main, legacy, the
+#   default branch, an archive/* branch, or a branch that an open pull request uses as its head or its base (deleting
+#   a base closes the pull request). A track/* branch (a long plan's branch, docs/BRANCHES.md) is kept too, unless
+#   allow_merged_tracks is on, the plan's `<plan>-done` tag exists (track/towns needs towns-done) and every commit of
+#   the branch is in the default branch. Each deleted branch's last commit goes in the run summary.
 # - restore-branch: brings deleted branches back. `branches` holds `name=commit` pairs (the commits from a delete run's
 #   summary or docs/BRANCHES.md); an existing branch is never moved.
+# Names must be plain (PLAIN_NAME below); a lookup that fails for any reason but "not found" fails the run.
 # dry_run (on by default) only reports what would happen.
 name: Repo admin
 
@@ -69,14 +70,24 @@ jobs:
       BRANCHES: ${{ inputs.branches }}
       ALLOW_TRACKS: ${{ inputs.allow_merged_tracks }}
       DRY_RUN: ${{ inputs.dry_run }}
-      # A name goes into an API path as it is, so ? # % and the like could point the call at another branch than the
-      # one the checks looked at: only letters, digits and . _ / - pass, and no "..".
-      PLAIN_NAME: '^[A-Za-z0-9_][A-Za-z0-9._/-]*$'
+      # A name goes into an API path as it is, so ? # % or a "." or empty part could point a call at another ref than
+      # the one the checks looked at. Each /-part of a name must start with a letter, digit or _ and hold only letters,
+      # digits and . _ -, with no ".." anywhere; a branch lookup must also answer with exactly refs/heads/<name>.
+      PLAIN_NAME: '^[A-Za-z0-9_][A-Za-z0-9_.-]*(/[A-Za-z0-9_][A-Za-z0-9_.-]*)*$'
     steps:
       - name: Create tags
         if: inputs.action == 'create-tag'
         run: |
           set -euo pipefail
+          # lookup PATH JQ: prints the value; exit 0 found, 1 not found (HTTP 404), 2 any other error (shown in the log)
+          lookup() {
+            local out err rc=0
+            err=$(mktemp)
+            out=$(gh api "$1" -q "$2" 2> "$err") || rc=$?
+            if [ "$rc" -eq 0 ]; then rm -f "$err"; printf '%s' "$out"; return 0; fi
+            if grep -q 'HTTP 404' "$err"; then rm -f "$err"; return 1; fi
+            cat "$err" >&2; rm -f "$err"; return 2
+          }
           default=$(gh api "repos/$REPO" -q .default_branch)
           tip=$(gh api "repos/$REPO/commits/$default" -q .sha)
           read -r -a items <<< "$(echo "$TAG" | tr ',\n' '  ')"
@@ -94,44 +105,51 @@ jobs:
             target="$COMMIT"
             if [[ "$item" == *=* ]]; then target="${item#*=}"; fi
             sha=""
+            rc=0
             if ! [[ "$name" =~ ^(legacy|[a-z0-9]+(-[a-z0-9]+)*-done)$ ]]; then
               result="not allowed: only legacy or <something>-done (lowercase, digits, dashes)"
               failed=1
             elif ! [[ "$target" =~ $PLAIN_NAME ]] || [[ "$target" == *..* ]]; then
               result="not a commit id or branch name: $target"
               failed=1
-            elif gh api "repos/$REPO/git/ref/tags/$name" > /dev/null 2>&1; then
-              result="exists: tags are never moved here"
-              failed=1
-            elif ! sha=$(gh api "repos/$REPO/commits/$target" -q .sha 2> /dev/null); then
-              sha=""
-              result="commit $target not found"
-              failed=1
-            elif [ "$DRY_RUN" = "true" ]; then
-              result="would make ($(gh api "repos/$REPO/commits/$sha" -q '.commit.message | split("\n")[0]' || true))"
-              if [[ "$name" == phase-* ]] && [ "$sha" = "$tip" ]; then
-                result="$result; would start the Check workflow on it (the picture baseline)"
-              elif [[ "$name" == phase-* ]]; then
-                result="$result; would not start the Check workflow (not the tip of $default)"
-              fi
-            elif gh api "repos/$REPO/git/refs" -f "ref=refs/tags/$name" -f "sha=$sha" > /dev/null; then
-              result="made"
-              if [[ "$name" == phase-* ]] && [ "$sha" != "$tip" ]; then
-                result="made; Check not started: not the tip of $default (its picture baseline would replace today's)"
-              elif [[ "$name" == phase-* ]]; then
-                if gh workflow run check.yml --repo "$REPO" --ref "$name" -f baseline=true; then
-                  result="made; started the Check workflow on it (the picture baseline, as a pushed phase tag does)"
-                else
-                  result="made; starting the Check workflow FAILED (start it by hand: Actions -> Check, on this tag)"
-                  failed=1
-                fi
-              fi
             else
-              result="FAILED"
-              failed=1
+              lookup "repos/$REPO/git/ref/tags/$name" .ref > /dev/null || rc=$?
+              if [ "$rc" -eq 0 ]; then
+                result="exists: tags are never moved here"
+                failed=1
+              elif [ "$rc" -ne 1 ]; then
+                result="FAILED: the tag lookup failed (see the log)"
+                failed=1
+              elif ! sha=$(gh api "repos/$REPO/commits/$target" -q .sha 2> /dev/null); then
+                sha=""
+                result="commit $target not found"
+                failed=1
+              elif [ "$DRY_RUN" = "true" ]; then
+                result="would make ($(gh api "repos/$REPO/commits/$sha" -q '.commit.message | split("\n")[0]' || true))"
+                if [[ "$name" == phase-* ]] && [ "$sha" = "$tip" ]; then
+                  result="$result; would start the Check workflow on it (the picture baseline)"
+                elif [[ "$name" == phase-* ]]; then
+                  result="$result; would not start the Check workflow (not the tip of $default)"
+                fi
+              elif gh api "repos/$REPO/git/refs" -f "ref=refs/tags/$name" -f "sha=$sha" > /dev/null; then
+                result="made"
+                if [[ "$name" == phase-* ]] && [ "$sha" != "$tip" ]; then
+                  result="made; Check not started: not the tip of $default (its picture baseline would replace today's)"
+                elif [[ "$name" == phase-* ]]; then
+                  if gh workflow run check.yml --repo "$REPO" --ref "$name" -f baseline=true; then
+                    result="made; started the Check workflow on it with the picture baseline on"
+                  else
+                    result="made; starting the Check workflow FAILED (start it by hand: Actions -> Check, on this tag)"
+                    failed=1
+                  fi
+                fi
+              else
+                result="FAILED"
+                failed=1
+              fi
             fi
             echo "$name ${sha:-—} $result"
-            echo "| \`$name\` | \`${sha:-—}\` | $result |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| \`${name//|/\\|}\` | \`${sha:-—}\` | ${result//|/\\|} |" >> "$GITHUB_STEP_SUMMARY"
           done
           exit $failed
 
@@ -139,6 +157,15 @@ jobs:
         if: inputs.action == 'delete-branches'
         run: |
           set -euo pipefail
+          # lookup PATH JQ: prints the value; exit 0 found, 1 not found (HTTP 404), 2 any other error (shown in the log)
+          lookup() {
+            local out err rc=0
+            err=$(mktemp)
+            out=$(gh api "$1" -q "$2" 2> "$err") || rc=$?
+            if [ "$rc" -eq 0 ]; then rm -f "$err"; printf '%s' "$out"; return 0; fi
+            if grep -q 'HTTP 404' "$err"; then rm -f "$err"; return 1; fi
+            cat "$err" >&2; rm -f "$err"; return 2
+          }
           default=$(gh api "repos/$REPO" -q .default_branch)
           used=$(gh pr list --repo "$REPO" --state open --limit 500 --json headRefName,baseRefName \
             -q '.[] | .headRefName, .baseRefName')
@@ -155,32 +182,58 @@ jobs:
           for b in "${names[@]}"; do
             result=""
             sha=""
-            if ! [[ "$b" =~ $PLAIN_NAME ]] || [[ "$b" == *..* ]] || [[ "$b" == */ ]]; then
-              result="kept: not a plain branch name (letters, digits and . _ / - only)"
+            rc=0
+            if ! [[ "$b" =~ $PLAIN_NAME ]] || [[ "$b" == *..* ]]; then
+              result="kept: not a plain branch name (see PLAIN_NAME)"
               failed=1
             elif [ "$b" = "main" ] || [ "$b" = "legacy" ] || [ "$b" = "$default" ] || [[ "$b" == archive/* ]]; then
               result="kept: protected name"
             elif grep -qxF -- "$b" <<< "$used"; then
               result="kept: an open pull request uses it"
-            elif ! sha=$(gh api "repos/$REPO/git/ref/heads/$b" -q .object.sha 2> /dev/null); then
-              sha=""
-              result="not found"
-            elif [[ "$b" == track/* ]] && [ "$ALLOW_TRACKS" != "true" ]; then
-              result="kept: track/* (allow_merged_tracks is off)"
-            elif [[ "$b" == track/* ]] && ! gh api "repos/$REPO/git/ref/tags/${b#track/}-done" > /dev/null 2>&1; then
-              result="kept: track/* without its ${b#track/}-done tag (tag the finished plan first)"
-            elif [[ "$b" == track/* ]] && [ "$(gh api "repos/$REPO/compare/$default...$sha" -q .ahead_by)" != "0" ]; then
-              result="kept: track/* with commits that are not in $default"
-            elif [ "$DRY_RUN" = "true" ]; then
-              result="would delete"
-            elif gh api -X DELETE "repos/$REPO/git/refs/heads/$b" > /dev/null; then
-              result="deleted"
             else
-              result="FAILED"
-              failed=1
+              got=$(lookup "repos/$REPO/git/ref/heads/$b" '.ref + " " + .object.sha') || rc=$?
+              if [ "$rc" -eq 1 ]; then
+                result="not found"
+              elif [ "$rc" -ne 0 ]; then
+                result="FAILED: the branch lookup failed (see the log)"
+                failed=1
+              elif [ "${got%% *}" != "refs/heads/$b" ]; then
+                result="kept: GitHub answered with ${got%% *}, not refs/heads/$b"
+                failed=1
+              else
+                sha="${got##* }"
+                trc=0
+                ahead=""
+                if [[ "$b" == track/* ]] && [ "$ALLOW_TRACKS" = "true" ]; then
+                  lookup "repos/$REPO/git/ref/tags/${b#track/}-done" .ref > /dev/null || trc=$?
+                  if [ "$trc" -eq 0 ]; then
+                    ahead=$(gh api "repos/$REPO/compare/$default...$sha" -q .ahead_by 2> /dev/null || true)
+                  fi
+                fi
+                if [[ "$b" == track/* ]] && [ "$ALLOW_TRACKS" != "true" ]; then
+                  result="kept: track/* (allow_merged_tracks is off)"
+                elif [[ "$b" == track/* ]] && [ "$trc" -eq 1 ]; then
+                  result="kept: track/* without its ${b#track/}-done tag (tag the finished plan first)"
+                elif [[ "$b" == track/* ]] && [ "$trc" -ne 0 ]; then
+                  result="kept: the ${b#track/}-done tag lookup failed (see the log)"
+                  failed=1
+                elif [[ "$b" == track/* ]] && ! [[ "$ahead" =~ ^[0-9]+$ ]]; then
+                  result="kept: the compare with $default failed"
+                  failed=1
+                elif [[ "$b" == track/* ]] && [ "$ahead" != "0" ]; then
+                  result="kept: track/* with $ahead commits that are not in $default"
+                elif [ "$DRY_RUN" = "true" ]; then
+                  result="would delete"
+                elif gh api -X DELETE "repos/$REPO/git/refs/heads/$b" > /dev/null; then
+                  result="deleted"
+                else
+                  result="FAILED"
+                  failed=1
+                fi
+              fi
             fi
             echo "$b ${sha:-—} $result"
-            echo "| \`$b\` | \`${sha:-—}\` | $result |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| \`${b//|/\\|}\` | \`${sha:-—}\` | ${result//|/\\|} |" >> "$GITHUB_STEP_SUMMARY"
           done
           exit $failed
 
@@ -188,6 +241,15 @@ jobs:
         if: inputs.action == 'restore-branch'
         run: |
           set -euo pipefail
+          # lookup PATH JQ: prints the value; exit 0 found, 1 not found (HTTP 404), 2 any other error (shown in the log)
+          lookup() {
+            local out err rc=0
+            err=$(mktemp)
+            out=$(gh api "$1" -q "$2" 2> "$err") || rc=$?
+            if [ "$rc" -eq 0 ]; then rm -f "$err"; printf '%s' "$out"; return 0; fi
+            if grep -q 'HTTP 404' "$err"; then rm -f "$err"; return 1; fi
+            cat "$err" >&2; rm -f "$err"; return 2
+          }
           read -r -a items <<< "$(echo "$BRANCHES" | tr ',\n' '  ')"
           if [ "${#items[@]}" -eq 0 ]; then
             echo "::error::No name=commit pairs given"
@@ -202,28 +264,35 @@ jobs:
             name="${item%%=*}"
             target="${item#*=}"
             sha=""
+            rc=0
             if [[ "$item" != *=* ]] || [ -z "$name" ] || ! [[ "$target" =~ ^[0-9a-f]{7,40}$ ]]; then
               result="not a name=commit pair"
               failed=1
-            elif ! [[ "$name" =~ $PLAIN_NAME ]] || [[ "$name" == *..* ]] || [[ "$name" == */ ]]; then
-              result="not a plain branch name (letters, digits and . _ / - only)"
+            elif ! [[ "$name" =~ $PLAIN_NAME ]] || [[ "$name" == *..* ]]; then
+              result="not a plain branch name (see PLAIN_NAME)"
               failed=1
-            elif gh api "repos/$REPO/git/ref/heads/$name" > /dev/null 2>&1; then
-              result="exists: branches are never moved here"
-              failed=1
-            elif ! sha=$(gh api "repos/$REPO/commits/$target" -q .sha 2> /dev/null); then
-              sha=""
-              result="commit $target not found (GitHub may have dropped it)"
-              failed=1
-            elif [ "$DRY_RUN" = "true" ]; then
-              result="would restore"
-            elif gh api "repos/$REPO/git/refs" -f "ref=refs/heads/$name" -f "sha=$sha" > /dev/null; then
-              result="restored"
             else
-              result="FAILED"
-              failed=1
+              lookup "repos/$REPO/git/ref/heads/$name" .ref > /dev/null || rc=$?
+              if [ "$rc" -eq 0 ]; then
+                result="exists: branches are never moved here"
+                failed=1
+              elif [ "$rc" -ne 1 ]; then
+                result="FAILED: the branch lookup failed (see the log)"
+                failed=1
+              elif ! sha=$(gh api "repos/$REPO/commits/$target" -q .sha 2> /dev/null); then
+                sha=""
+                result="commit $target not found (GitHub may have dropped it)"
+                failed=1
+              elif [ "$DRY_RUN" = "true" ]; then
+                result="would restore"
+              elif gh api "repos/$REPO/git/refs" -f "ref=refs/heads/$name" -f "sha=$sha" > /dev/null; then
+                result="restored"
+              else
+                result="FAILED"
+                failed=1
+              fi
             fi
             echo "$name ${sha:-—} $result"
-            echo "| \`$name\` | \`${sha:-—}\` | $result |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| \`${name//|/\\|}\` | \`${sha:-—}\` | ${result//|/\\|} |" >> "$GITHUB_STEP_SUMMARY"
           done
           exit $failed
