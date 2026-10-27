@@ -155,12 +155,14 @@ regions), and bumps `MAPGEN_VERSION` when generated scenes change.
 | 4 | WA-5b | R | (**done** 2026-10-26, notes below) **Kinds as a texture and water life.** Kind looks in a small texture (no cap at 9), the new kinds drawn (steam on hot springs, rapids' white water, bog's scum, reef, cave water lit by its own glow); lily pads that bob, reeds that sway, frogs, fish that jump (sprites), birds that dive. | look-water, smoke |
 | 4 | WA-9 | G | (**done** 2026-10-26, notes below) **Studio tools.** A river brush (source to mouth, regenerates its bed), a waterfall placer (lip, width, pool, climb), a water-kind painter, a live preview; STUDIO.md. | Studio check, a hand-placed fall survives a regenerate |
 | 4 | WA-10 | R | (**done** 2026-10-26, notes below) **Copperleaf's river, mouth and outflow** (the owner played it: weird river, weird mouth, weird fall). Kinds by connectivity (a pond behind a coast is a pond), a river runs only in its channel with an estuary blend into the sea, a river's surface at a never-rising level along its line, automatic sheets only down the flow with merged lips; Copperleaf's outflow and town square patched in the data (the owner's yes). | Copperleaf pictures, look-water numbers (test_water, test_island), unit tests, smoke |
+| 4 | WA-11 | G | **The hub island's waterfall** (the owner, 2026-10-27: its own session before WA-8). A `falls` entry on Copperleaf's island from the WA-9 falls placer, on the river WA-10 settled; pictures for the owner's yes (the island is locked once right). | Copperleaf pictures, look-water numbers, data check (the fall's lip and pool on its river), smoke |
 | 5 | WA-8 | (alone) | **Phone pass, sounds, baseline.** Quality tiers for water (bands, mist, reflections) measured at the bench; the owner's phone frame time; water sound beds (falls by height, rapids, surf, lapping, the plunge pool) with SND-6's mix; the quick-check baseline made again on purpose. | full quick check, the owner's phone |
 
 ## Ask me before
 - The hub island's waterfall (WA-2b): the island is locked once right. (Answered in WA-2b: after HB-4b rebuilds the
   island, from the same `falls` contract.) HB-4b is done (2026-10-25), but no session has placed the fall yet:
-  Copperleaf has no `falls` entry (2026-10-27). Ask again before placing it or dropping it.
+  Copperleaf has no `falls` entry (2026-10-27). The owner (2026-10-27): its own session, WA-11, before WA-8; the
+  placement still waits for the owner's yes on pictures.
 - Surf's details (WA-6b): which badge (the Water badge, as VISION's side areas), encounters while surfing, whether
   the existing "1.5 m tall Water Billie" rule stays. (Answered in WA-6b: the Water Badge and a Water Billie
   standing; the 1.5 m rule dropped; no encounters while surfing for now.)
