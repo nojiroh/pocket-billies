@@ -11,6 +11,8 @@ verdigris and brass, tools/build-props-hub.py).
                  the portal tear's violet in its water and its night glows (`glowCol`), a crack glowing violet up the
                  upper pedestal and the top bowl, and a brass Bureau plaque on the basin's front (made from batch 6's
                  recipe here, so batch 6 needn't run again: its run drifts other models)
+  busker_case    HB-10d: the busker's slot on the square: an open instrument case on the paving, red velvet inside, a
+                 few coins in it, its lid standing open behind; empty until a resident who busks moves in (RS-5)
 
 The new kinds get a picture baked from the model (scene/next/hub/<key>.png: the fallback when models are off).
 
@@ -139,6 +141,24 @@ def fountain_ch2():
     return B5.rec(L, 0.75)
 
 
+LEATHER, LEATHER_D, VELVET = '#5A3A2A', '#3E281E', '#A83A4A'
+
+
+def busker_case():
+    """an open case, 0.95 m long, lying across the view (x), its lid up behind it (+y, away from the viewer)"""
+    L = [B1.box(0, 0, 0, 0.95, 0.36, 0.1, LEATHER, 'cloth', 'case'),
+         B1.box(0, 0, 0.1, 0.87, 0.28, 0.005, VELVET, 'cloth', 'lining'),
+         B1.box(-0.3, 0, 0.1, 0.22, 0.2, 0.012, VELVET, 'cloth', 'neck well'),
+         B1.box(0, 0.19, 0.1, 0.95, 0.03, 0.34, LEATHER, 'cloth', 'lid'),
+         B1.box(0, 0.175, 0.13, 0.87, 0.005, 0.28, VELVET, 'cloth', 'lid lining'),
+         B1.box(0, -0.185, 0.04, 0.95, 0.01, 0.02, LEATHER_D, 'cloth', 'seam'),
+         B1.box(0.47, -0.1, 0.04, 0.03, 0.08, 0.04, BRASS, 'metal', 'clasp'),
+         B1.box(0.47, 0.08, 0.04, 0.03, 0.08, 0.04, BRASS, 'metal', 'clasp')]
+    for x, y in ((0.12, -0.04), (0.2, 0.05), (0.28, -0.07)):
+        L.append(cyl(x, y, 0.105, 0.03, 0.008, BRASS, 'metal', 'coin', 8))
+    return B5.rec(L)
+
+
 def main():
     ISL.PICS.mkdir(parents=True, exist_ok=True)
     D = gamedata.load()
@@ -150,8 +170,9 @@ def main():
     F = C['fountain']
     C['fountain_ch2'] = ISL.new_prop('fountain_ch2', 'Fountain (Chapter 2)', fountain_ch2(), shadow=F['shadow'],
                                      tags=('town',), solid=F['solid'], fx=B6.fountain_fx(), glowCol=TEAR_GLOW)
+    C['busker_case'] = ISL.new_prop('busker_case', 'Busker\'s case', busker_case(), shadow=0.3, tags=('town',))
     gamedata.save(D)
-    print('square props: string_lights, pennant_line, fountain_ch2')
+    print('square props: string_lights, pennant_line, fountain_ch2, busker_case')
 
 
 if __name__ == '__main__':

@@ -12188,6 +12188,20 @@
     {"k":"fireflies","x":0,"y":0,"n":7,"r":3.2}
    ],
    "glowCol": "#B494FF"
+  },
+  "busker_case": {
+   "name": "Busker's case",
+   "img": "scene/next/hub/busker_case.png",
+   "ox": -17,
+   "oy": -19,
+   "shadow": 0.3,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town"],
+   "group": "busker_case",
+   "model": "scene/next/models/busker_case.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0}
   }
  },
  "person": 1.75,
