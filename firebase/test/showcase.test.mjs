@@ -224,3 +224,21 @@ test('reports on an entry: each account once, raising its r; never your own; the
   await assertSucceeds(getDocs(collection(db(MOD), `reports/${target}/by`)));
   await assertFails(getDocs(collection(db('bob'), `reports/${target}/by`)));
 });
+
+test('entries the game itself makes (logic/showcase.js showEntry) pass the rules, spliced or not', async () => {
+  /* the game's logic on its own data, as tools/test does (no packages beyond Node's) */
+  const { fn, modules, GAME_DATA } = await import('../../tools/test/setup-real.mjs');
+  const S = modules.showcase,
+    SC = GAME_DATA.showcase,
+    makeBilly = fn('makeBilly'),
+    me = { u: 'ann', name: 'Ann' },
+    T = S.showTheme(WEEK, SC);
+  const plainOne = makeBilly('swift0', 20),
+    spliced = { ...makeBilly('swift0', 20), graft: { front: 'eagle_wing@hughes2' }, nick: 'Wings' };
+  let slot = 0;
+  for (const m of [plainOne, spliced]) {
+    const { e, why } = S.showEntry(m, me, WEEK, Date.now() + slot, T);
+    if (why) throw new Error(why);
+    await assertSucceeds(setDoc(doc(db('ann'), `showcase/ann_${slot++}`), e));
+  }
+});

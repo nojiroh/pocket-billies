@@ -1698,9 +1698,9 @@
  "atlas": {
   "bag": [
    "game/js/battle.js:778",
-   "game/js/billie-sheet.js:116",
-   "game/js/billie-sheet.js:168",
-   "game/js/billie-sheet.js:177",
+   "game/js/billie-sheet.js:118",
+   "game/js/billie-sheet.js:170",
+   "game/js/billie-sheet.js:179",
    "game/js/boot.js:141",
    "game/js/dressing-room.js:500",
    "game/js/dressing-room.js:726",
@@ -1914,8 +1914,8 @@
   ],
   "heart": [
    "game/js/bag.js:26",
-   "game/js/billie-sheet.js:106",
-   "game/js/billie-sheet.js:299",
+   "game/js/billie-sheet.js:108",
+   "game/js/billie-sheet.js:309",
    "game/js/boot.js:151",
    "game/js/minimap.js:77",
    "game/js/unit-card.js:149",
@@ -1982,7 +1982,7 @@
   ],
   "plus": [
    "game/js/battle-stage.js:2057",
-   "game/js/billie-sheet.js:192",
+   "game/js/billie-sheet.js:194",
    "game/js/boot.js:156",
    "game/js/shop.js:106"
   ],
@@ -2018,12 +2018,14 @@
    "game/js/battle-stage.js:2280",
    "game/js/battle-stage.js:2379",
    "game/js/battle.js:1133",
-   "game/js/billie-sheet.js:80",
-   "game/js/billie-sheet.js:154",
-   "game/js/billie-sheet.js:211",
-   "game/js/billie-sheet.js:234",
+   "game/js/billie-sheet.js:82",
+   "game/js/billie-sheet.js:156",
+   "game/js/billie-sheet.js:213",
+   "game/js/billie-sheet.js:236",
+   "game/js/billie-sheet.js:286",
    "game/js/boot.js:159",
    "game/js/lab-board.js:103",
+   "game/js/showcase.js:286",
    "game/js/ui-run-kit.js:104",
    "game/js/walk-tab.js:196"
   ],

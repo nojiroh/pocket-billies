@@ -27,6 +27,7 @@ import {
   runOver,
   runStartable,
   runTakeOff,
+  showModHTML,
   storyScriptIds,
   testMapChecks,
   testMaps,
@@ -311,6 +312,8 @@ function debugHTML() {
    debugSection('story', 'Story', story),
    debugSection('ranch', 'Ranch and time', ranch),
    debugSection('save', 'Save', saveRow),
+   /* ON-3: reports and hidden Showcase entries (the moderator's account only) */
+   debugSection('mod', 'Moderation', typeof showModHTML === 'function' ? showModHTML() : ''),
  ].join('\n ')}
  </div>`;
 }
@@ -359,7 +362,7 @@ function openDebug() {
     btns: [{ l: 'Close', c: 'quiet', f: closeModal }],
   });
 }
-function refreshDebugMenu(msg) {
+export function refreshDebugMenu(msg) {
   if (msg) toast(msg);
   if (!activeBattle) render();
   const M = uiState.modal;
