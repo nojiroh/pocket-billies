@@ -689,7 +689,7 @@ Water and nature, synthesized:
 | SND-11 | Stems and ensembles | the tick's patterns factored into pure functions; stems; `instruments` and `ensembles` in music.json; `gb` reserved for today's code; GB Sounds; the first ensembles; the Studio's Instruments tab and its mix on the game's chain | SND-9 | none: the new `gb` must equal the old by day and night |
 | SND-17 | Jingles and stingers | the 12 jingles given the new instruments (a DS fanfare for victory, a glockenspiel and harp run for a level-up, strings swelling into an evolution...), stingers on the song's beat and in its key, GB Sounds keeping today's 8-bit ones; added at the owner's question (2026-10-27) | SND-11 | the 12 jingles |
 | SND-13 | Layers in play | the walking beat, weather and night, building intensity, street musicians (simulated until the busker resident, RS-5) | SND-11 | the layers' renders |
-| SND-12 (part 1 done 2026-10-28; SND-12b, SND-12c next) | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves (part 1: the forms and batch 1, the hub, the route, towns) | SND-11 | the songs rewritten |
+| SND-12 (part 1 and SND-12b done 2026-10-28; SND-12c next) | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves (part 1: the forms and batch 1, the hub, the route, towns) | SND-11 | the songs rewritten |
 | SND-14 (done 2026-10-28) | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
 | SND-15 | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
 | SND-16 (optional) | Effects pass | sounds for things that have none: the airship's engine, the sky train and its rail, the world map, steam vents, wells. Battle sounds (moves, hits, throws, catches, hurt sounds, the recall) are the VFX track's VFX-19, on this track's tools (agreed 2026-10-28, "How the sessions run") | SND-9 | the effects |
@@ -1477,7 +1477,7 @@ bake. The K-weighted `--loudness` report was not run whole (over 90 minutes; its
 **Not done here**: festival players (HB-10e has none in the data); ensembles for other songs and their layers (SND-12);
 an e-piano night lead (only the route's flute so far); the mix of the layers on the phone (SND-15).
 
-## SND-12: arrangements (as built: the forms and batch 1; SND-12b and SND-12c below)
+## SND-12: arrangements (as built: the forms and batch 1, SND-12b's batch 2; SND-12c below)
 ### SND-12 as built, part 1 (2026-10-28, branch `track/sound`, the music lane, tag `snd-12a-done` for the owner to push)
 One cause per commit. The code commits moved no fingerprint (`check-sound.py --only=copperleaf,route,town,city,wild`:
 35, 0 changed); batch 1's data commit changed exactly its four songs' renders and added the new ensembles' renders,
@@ -1554,7 +1554,7 @@ more stingers bake on first play (8-bit until then, SND-17's rule). SND-15's pho
 
 **Not done here**: batches 2 and 3 (SND-12b, SND-12c); a fill for the layer drums that play `walk`; a phone listen.
 
-### SND-12b (next): batch 2, caves, biomes and the run's songs
+### SND-12b: batch 2, caves, biomes and the run's songs (as written; as built below)
 The forms and an ensemble each for `cave` (bells, a drone, reverb: chime, drone, softstrings, its triangle lead as a
 flute or chip), the biome songs `meadow`, `spore`, `trench`, `hills`, `innersun`, `crystal`, `spire` (by their moods, as
 Part 2's palette: lydian meadow a harp and flute, dorian spore and crystal bells and soft strings, trench a deep pad and
@@ -1563,6 +1563,104 @@ drone, hills an accordion and walking bass, innersun brass and timpani, spire a 
 arc versions inherit. Then the quick check's Run music step expects layers on an ensemble song (today it sees gb's
 `@mid`/`@late`). A run's place holds about 7 of the 8 MB already (SND-17): measure, and drop instruments rather than
 the budget.
+
+### SND-12b as built (2026-10-28, branch `track/sound`, the music lane, tag `snd-12b-done` for the owner to push)
+One cause per commit. No code changed; the data commit changed exactly the nine songs' renders and added their
+ensembles' renders, written once with plain `--baseline` (counts in the baseline commit, below).
+
+| Commit | What |
+|---|---|
+| 9fbd9c79 | batch 2: `cave`, `meadow`, `spore`, `trench`, `hills`, `innersun`, `crystal`, `spire` and `map` in forms, each on an ensemble of its own (same id) with `peak` parts and walk, rain and snow layers; trims; the quick check's Run music step (an ensemble song keeps its name in a band and hears it as its peak layer); music-form.test.mjs's batch-2 tests |
+| (next) | the sound baseline, written once with plain `--baseline` |
+
+**Batch 2** (Claude's drafts, named as placeholders; the owner's ears decide; GB Sounds compares). B is a seeded walk over
+its own chords (diatonic triads, so dorian's vi and lydian's #iv are diminished, as in the A sections) (no written hook, each with a placeholder hook name); every ensemble keeps the song's chip lead:
+- `cave` (A dorian, 80 bpm): ABA, 24 bars (72 s); B over IV-VII-i-IV-vi°-VII-v-v. The chip triangle, a bell chime, a drone
+  (root and fifth), a pizzicato drip, a flute an octave under the tune in B, heavy reverb; walk a woodblock and shaker,
+  rain brushes, snow sleigh bells; peak a choir and timpani. No night (the song has none).
+- `meadow` (G lydian, 112): AABA, 32 bars (69 s); B over II-II-I-I-vi-#iv°-II-V. The chip triangle, a harp arpeggio, a flute
+  on the tune in B, soft strings, a pizzicato bass, a brush kit; walk a tambourine; peak a march snare and strings.
+- `spore` (B dorian, 84): ABA, 24 bars (69 s); B over IV-IV-i-VII-vi°-VII-IV-v. The chip triangle, a bell chime, soft strings,
+  a pizzicato drip, a warm bass, brushes; peak a choir and timpani.
+- `trench` (G minor, 84): ABA, 24 bars; B over VI-VII-i-i-iv-VI-v-v. The chip lead (p50) over a drone and a deep soft-string
+  pad, a pizzicato arpeggio (half at night), a warm bass, a clarinet an octave under in B, brushes; peak brass stabs and
+  timpani.
+- `hills` (F mixolydian, 100): AABA, 32 bars (77 s); B over bVII-IV-I-v-bVII-IV-ii-v. The chip lead, an accordion on the
+  chords and the tune in B, a walking bass, a bossa kit with a woodblock on the rim; peak brass and timpani.
+- `innersun` (E mixolydian, 140): AABA, 32 bars (55 s); B over IV-bVII-I-I-IV-bVII-v-v. The chip lead over brass stabs,
+  timpani, a spiccato arpeggio and a spiccato ostinato in B, a warm bass, a full kit; rain brushes only; peak a choir and
+  orchestra hits (the wild battle's own peak, so its zones are shared).
+- `crystal` (A dorian, 90): ABA, 24 bars (64 s); B over IV-i-VII-vi°-IV-i-v-v. The chip triangle, a bell chime, a pizzicato
+  arpeggio, soft strings, a warm bass, brushes; rain a pizzicato drip an octave up; peak a choir and timpani.
+- `spire` (D lydian, 124): AABA, 32 bars (62 s); B over II-I-vi-#iv°-II-I-V-V. The chip lead (p12), a celesta chime, a
+  pizzicato arpeggio and bass, strings, a spiccato ostinato in B, a kit with the orchestral snare; walk the orchestral
+  snare; peak brass and timpani.
+- `map` (D mixolydian, 96): AABA, 32 bars (80 s); B over vi-IV-bVII-I-vi-IV-bVII-v. The chip lead, a harp arpeggio,
+  strings, a pizzicato bass, a brush kit, a flute on the tune in B; peak a march snare and timpani.
+- Unless named above: walk a tambourine (or tambourine and shaker) on the walk pattern; rain brushes and a pizzicato
+  drip an octave up; snow sleigh bells on the skip pattern; the kit to 0.7 standing still and 0.6 at night.
+
+**The run's arc** (SND-13's levels): out of a battle, `peak` is music.json run.arc's band where you stand: rows 3-5 0.6,
+rows 6-8 full, so from the first mini-boss's row the peak parts come in at 0.6 on a bar line, full from the second.
+The night, tense and arc versions inherit the ensemble; on an ensemble a band keeps the song's name (`meadow`, not
+`meadow@mid`), GB Sounds keeps `@mid` and `@late`. The fingerprints hear the peak parts as `layer:intensity3` (peak 1,
+the name SND-13's tests use; there is no render at 0.6).
+
+**Levels** (the loudness report's song rows run alone, as SND-12 did; stereo, K-weighted, whole songs, default
+sliders), gb before -> the ensemble after its trim: cave -35.2 -> -35.1 LUFS (trim +0.4 dB), meadow -34.3 -> -34.3
+(-2.8), spore -34.4 -> -34.4 (-1.8), trench -32.8 -> -32.8 (+0.4), hills -31.3 -> -31.3 (-0.7), innersun -29.6 -> -29.6
+(-4.0), crystal -34.5 -> -34.5 (-1.8), spire -30.9 -> -30.9 (+0.5), map -31.9 -> -31.8 (+3.2): every one within 0.1 LU.
+Their gb versions in the new forms moved 0.0-0.2 LU (cave -35.0, meadow -34.2, spore -34.3, trench -32.8, hills -31.3,
+innersun -29.7, crystal -34.3, spire -30.9, map -31.8). Peaks -14.9 to -23.9 dBFS. Before the trims the ensembles were
+-3.2 (map) to +4.0 LU (innersun) off. The layered rows were not measured (the owner said to skip the long checks).
+
+**Memory** (Node, 48 kHz, the zones a song's bars need; then with every layer; then a run's place: the song's bars,
+its walk, rain and peak parts with the wild battle's bars and peak, against the wild battle's 2.30 MB alone):
+
+| Song | Bars | With every layer | At night (bars) | A run's place, over the wild battle |
+|---|---|---|---|---|
+| cave | 1.54 MB (12 zones) | 2.82 | (no night) | +2.02 |
+| meadow | 1.33 (16) | 2.11 | 1.63 | +1.96 |
+| spore | 1.81 (13) | 2.87 | 1.88 | +1.48 |
+| trench | 1.99 (17) | 2.82 | 2.05 | +2.07 |
+| hills | 1.22 (11) | 2.16 | 1.11 | +1.00 |
+| innersun | 1.76 (14) | 2.67 | 2.05 | +0.28 |
+| crystal | 2.11 (15) | 2.96 | 1.91 | +1.78 |
+| spire | 1.65 (17) | 2.47 | 1.74 | +1.63 |
+| map | 1.30 (16) | 2.02 | 1.47 | +1.46 |
+
+50-160 ms of work each. A run's place before this held the water, the beds' noise and the reverb (about 2.8 MB, SND-11's
+browser measure less its two songs), the wild battle (2.3 with its peak) and the stingers baked ahead while 1.5 MB
+stayed free; it now holds about 5.4-7.2 MB before any stinger, so few or no stingers bake ahead there (they bake on
+first play, 8-bit until then, SND-17's rule), and on the map tab the map song's zones (1.3) push the least recently
+played out. The budget stays 8 MB. Instruments dropped to fit (the first drafts added 0.3-4.1 MB): the rain's celesta
+(about 0.6-1.1 MB a song) for a pizzicato drip, the cave's soft strings, spore's and crystal's glockenspiel drips,
+crystal's glockenspiel tune in B and its pizzicato bass (a warm bass instead), spire's celesta arpeggio (a celesta chime
+instead, the arpeggio on the pizzicato it already had), meadow's glockenspiel in B. Peak parts lean on the battle's own
+instruments (choir, orchestra hits, brass, timpani, the snare) where they fit. Measured with a scratch script (each
+song's `musicEnsembleNeeds`, the zones baked by `soundBakeZoneSteps`); it gives SND-12's figures exactly for town, city,
+the route, Copperleaf and the wild battle.
+
+**The Starters step** (SND-12's partial full check: "battle rig buffers nearly empty"): run alone on this branch it
+passed (99 s, both puppets drawn: 1351 and 3074 px), so it was not run on main. Its buffers are read 20 s after the
+move menu; under the full check's load they had not drawn yet. Not the sound's; noted for SND-15's full check.
+
+**Corrections found in SND-12b** (checked in the code):
+- "Within 1 LU using the per-song `trim`": a song's `trim` moves its gb version too (Copperleaf's 13.5 is one); the
+  ensemble's `trim` (SND-11: dB on top of the song's own) moves only the ensemble, and each of these ensembles plays one
+  song. The ensemble trims did it; no song trim changed.
+- "A run's place holds about 7 of the 8 MB": that 7 counts the stingers, which bake ahead only while 1.5 MB stays free
+  (SND-17). Without them a run's place held about 5.1 MB with a gb biome song; the biome songs' ensembles take the
+  stingers' room, never the budget.
+- The cave song has `night: false`: no night version, so the cave has no night dims.
+- The arc is heard on a peak layer at 0.6 or 1; the renders hear peak 1 alone (`layer:intensity3`): a render at 0.6
+  would need a new `MUSIC_LAYER_TESTS` entry, which would add renders to the wild battle too (not this batch's).
+- The quick check's "Run music" step: on an ensemble song it now expects the song's own name and its peak layer at its
+  band's level (musicLayerArc), the ensemble having peak parts, and at least one band heard so (15 places: 5 at 0.6,
+  3 full, in the fixture run).
+
+**Not done here**: SND-12c (battles, bosses and the rest); a storm layer for the run's songs (the bank's room); a render
+of the arc at 0.6; a phone listen.
 
 ### SND-12c: batch 3, battles, bosses and the rest
 `wild` (in a form, its `battle` ensemble kept), `trainer`, `rival`, `leader` (the chip lead over a string ostinato,
@@ -1604,8 +1702,8 @@ them later.
 - iPhones mute Web Audio with the ring/silent switch: expected; each listening list says so.
 - Quick-check steps that assert sound behaviour: Sound settings (slider → bus through a connect wrapper; birds must
   still reach `ambience.amb` or `lpA`), Animals (≥ 9 beds), Sound effects (the beds' duck equals `bedsUnderSong`),
-  Debug menu (its section list), Run music (expects `@mid`/`@late`: since SND-13 an ensemble song hears its arc as
-  layers instead, and the biome songs are still gb, so the step is unchanged), the
+  Debug menu (its section list), Run music (since SND-12b an ensemble song keeps its name in a band and hears its arc
+  as its peak layer, at 0.6 or 1; gb, and GB Sounds, keep `@mid`/`@late`), the
   40 px targets (the GB Sounds switch).
 
 ## Key files

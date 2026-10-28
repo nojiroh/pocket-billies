@@ -80,6 +80,15 @@ kept aside in the browser).
   and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
   of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
 
+- **The caves, the biomes and the run's map get their instruments** (sound track SND-12b): the cave's song is bells,
+  a low drone and dripping plucked strings in a lot of echo; the meadow a harp and a flute; the spore wood and the
+  crystal caves bells and soft strings; the trench a deep pad and a drone with a clarinet; the hills an accordion over a
+  walking bass; the inner sun brass, timpani and driving strings; the spire a celesta over strings; the run's map a
+  harp, strings and a flute. Each now has a second section (24-32 bars before it repeats). A run builds as you go
+  deeper: from the first mini-boss's row some of a song's big parts come in (a march snare, strings, brass or a choir,
+  timpani), and from the second all of them. Walking adds a light beat, and rain and snow add their own sounds. Each
+  sits as loud as before; GB Sounds plays the 8-bit versions. Every arrangement is a first draft, named as a
+  placeholder for the Studio.
 - **Longer songs** (sound track SND-12, part 1): Copperleaf, the routes and the towns' songs now have a second
   section with its own chords and tune, so they run 24-32 bars (up to a minute and a half) before they repeat. Each
   section ends with a drum fill and the bass walking into the next, repeats change a little, and the B section brings

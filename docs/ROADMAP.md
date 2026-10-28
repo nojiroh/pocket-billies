@@ -211,8 +211,9 @@ town node needs it.
   and frogs, fires by size, footsteps by surface, the town's life, rooms by kind; the world lane's last step) done
   2026-10-28. SND-12 part 1 (song forms: sections A and B of 16-32 bars, fills and turnarounds, varied repeats, new
   lines, a part's sections; the Studio's Form card; batch 1 re-voiced as placeholders: Copperleaf, the route, town and city)
-  done 2026-10-28; SND-12b (caves, biomes, the run's songs) and SND-12c (battles, bosses, the rest) next. Two lanes on
-  the branch since 2026-10-28: music (next SND-12b) and world (done with SND-14); then the mix and a phone
+  done 2026-10-28. SND-12b (batch 2 on ensembles in forms: the cave, the seven biome songs and the run's map, each with
+  peak parts so the run's arc is heard, and walk, rain and snow layers) done 2026-10-28; SND-12c (battles, bosses, the
+  rest) next. Two lanes on the branch since 2026-10-28: music (next SND-12c) and world (done with SND-14); then the mix and a phone
   pass (SND-15). Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
