@@ -117,7 +117,7 @@ const PERK_KINDS = {
   copy: 'Copies the Perk just above it in the list held (PK-6)',
   give: 'Moneys and Bag items at once, when it is taken (PK-6)',
   recoil: 'An attack of yours that deals damage costs its user HP (PK-7)',
-  loot: 'A random item from the reward picks’ item cards, at its moment (PK-7)',
+  loot: 'A random item from an events.json loot table, at its moment (PK-7)',
 };
 /** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
 const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
@@ -211,7 +211,7 @@ const PERK_ROW_NEW = {
   copy: () => ({ kind: 'copy' }),
   give: () => ({ kind: 'give', money: 150, when: 'take' }),
   recoil: () => ({ kind: 'recoil', share: 0.08 }),
-  loot: () => ({ kind: 'loot', what: 'item', when: 'arrive' }),
+  loot: () => ({ kind: 'loot', table: 'common', when: 'arrive' }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -347,8 +347,12 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       recoil: () => [share('Share of its HP an attack that dealt damage costs its user (at most 0.5)')],
       /* PK-7: Subscription Box's item */
       loot: () => [
-        selectField('What', `${p}.what`, [['item', 'The reward picks’ item cards (rewards.json), by weight']]),
-        numberField('Cards', `${p}.n`, { min: 1, max: 3, step: 1, opt: 1 }),
+        selectField(
+          'Loot table (events.json loot)',
+          `${p}.table`,
+          Object.keys((D.events && D.events.loot) || {}).map(t => [t, t])
+        ),
+        numberField('Items', `${p}.n`, { min: 1, max: 3, step: 1, opt: 1 }),
         `<p class="note">At its When (arrive): drawn from the run’s own stream for each place, so a reload brings the same.</p>`,
       ],
       level: () => [numberField('Foes’ levels +', `${p}.n`, { min: -20, max: 20, step: 1 })],

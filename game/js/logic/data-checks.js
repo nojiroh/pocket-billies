@@ -53,7 +53,6 @@ import {
   FX_IMMUNE,
   FX_KINDS,
   FX_LIMIT,
-  FX_LOOT,
   FX_LOOT_N,
   FX_ONCE,
   FX_PASSIVE_KEYS,
@@ -2282,12 +2281,13 @@ export function fxKindProblems(f, at, D, problem) {
         problem(`${at}.items.${id}: a whole number from 1 to 99`);
     }
   }
-  /* PK-7: a loot row brings 1 to FX_LOOT_N of the reward picks' item cards, at its moment (Subscription Box) */
+  /* PK-7: a loot row brings 1 to FX_LOOT_N items of an events.json loot table, at its moment (Subscription Box) */
   if (f.kind === 'loot') {
-    if (!(/** @type {readonly string[]} */ (FX_LOOT).includes(f.what)))
-      problem(`${at}.what: ${FX_LOOT.join(', ')} (effects.js FX_LOOT)`);
+    const E = D.events && D.events.loot;
+    if (E && !(typeof f.table === 'string' && E[f.table]))
+      problem(`${at}.table: no loot table "${f.table}" (events.json loot: ${Object.keys(E).join(', ')})`);
     if (f.n != null && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_LOOT_N))
-      problem(`${at}.n: a whole number of cards from 1 to ${FX_LOOT_N} (effects.js FX_LOOT_N)`);
+      problem(`${at}.n: a whole number of items from 1 to ${FX_LOOT_N} (effects.js FX_LOOT_N)`);
     if (f.when == null) problem(`${at}.when: a loot row needs a moment (arrive)`);
   }
   /* PK-5: a free row acts at a purchase (Punch Card) */

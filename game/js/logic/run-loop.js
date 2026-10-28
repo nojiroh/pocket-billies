@@ -32,10 +32,9 @@ import {
 import {
   BANTER,
   BOSSES,
+  EVENTS,
   ITEMS,
   POOLS,
-  PYRAMIDS,
-  REWARDS,
   SPECIES,
   TRAINERS,
   typeEffectiveness,
@@ -181,11 +180,10 @@ export function runFxMoment(s, perks, when, more, only) {
       if (f.add > 0) money += f.add;
       else cost -= f.add;
     }
-    /* PK-7: a loot row: n of the reward picks' item cards, drawn by weight (Subscription Box) */
+    /* PK-7: a loot row: n items from an events.json loot table, by weight (Subscription Box) */
     if (f.kind === 'loot')
       for (const [id, n] of Object.entries(runLoot(s, f))) {
-        if (id.startsWith('coin_')) s.pyramids[id.slice(5)] = (s.pyramids[id.slice(5)] || 0) + n;
-        else s.items[id] = (s.items[id] || 0) + n;
+        s.items[id] = (s.items[id] || 0) + n;
         items[id] = (items[id] || 0) + n;
       }
     /* PK-6: Boarding Pass */
@@ -203,38 +201,35 @@ export function runFxMoment(s, perks, when, more, only) {
   s.se -= cost;
   return { rows, hp, money, cost, items };
 }
-/** PK-7: what a loot row brings as it acts: its n cards drawn by weight, none twice, from rewards.json's item cards
- * (Bag items and pyramids, each with its stack), from the run's own stream for this row and this place
- * (rngFrom(run.seed, 'loot|<source>/<row>|<places visited>')), so a reload brings the same. By id; a pyramid as
- * 'coin_<id>' (as a reward card names it) @param {SaveData} s @param {any} f @returns {Record<string, number>} */
+/** PK-7: what a loot row brings as it acts: n items (1 when not given) drawn by weight from its events.json loot table
+ * (`table`: the events' `loot` command's tables, common...), from the run's own stream for the row and the place
+ * (rngFrom(run.seed, 'loot|<source>/<row>|<places visited>')), so a reload brings the same. By item id
+ * @param {SaveData} s @param {any} f @returns {Record<string, number>} */
 export function runLoot(s, f) {
   const run = /** @type {Run} */ (s.run),
-    cards = Object.values(/** @type {Record<string, any>} */ (REWARDS || {})).filter(
-      R => R.kind === 'item' && R.weight > 0 && (R.item || R.pyramid)
+    T = /** @type {Record<string, number>} */ ((EVENTS && EVENTS.loot && EVENTS.loot[f.table]) || {}),
+    W = Object.fromEntries(
+      Object.keys(T)
+        .sort()
+        .filter(k => T[k] > 0)
+        .map(k => [k, T[k]])
     ),
-    g = rngFrom(run.seed, `loot|${f.src}/${f.row || 0}|${(run.path || []).length}`),
     /** @type {Record<string, number>} */
     out = {};
-  let left = cards.map((R, i) => i);
-  for (let k = 0; k < (f.n || 1) && left.length; k++) {
-    const i = +g.pick(Object.fromEntries(left.map(j => [j, cards[j].weight]))),
-      R = cards[i],
-      id = R.pyramid ? 'coin_' + R.pyramid : R.item;
-    out[id] = (out[id] || 0) + (R.n || 1);
-    left = left.filter(j => j !== i);
+  if (!Object.keys(W).length) return out;
+  const g = rngFrom(run.seed, `loot|${f.src}/${f.row || 0}|${(run.path || []).length}`);
+  for (let k = 0; k < (f.n || 1); k++) {
+    const id = g.pick(W);
+    out[id] = (out[id] || 0) + 1;
   }
   return out;
 }
-/** PK-6: what a moment gave, in words ("150 Moneys and 2 Potions"; '' for nothing); PK-7: pyramids by name too
- * @param {{ money: number, items?: Record<string, number> }} m */
+/** PK-6: what a moment gave, in words ("150 Moneys and 2 Potions"; '' for nothing) @param {{ money: number,
+ * items?: Record<string, number> }} m */
 export function runGaveText(m) {
-  const name = (/** @type {string} */ id) =>
-    id.startsWith('coin_')
-      ? (PYRAMIDS[id.slice(5)] && PYRAMIDS[id.slice(5)].n) || id.slice(5)
-      : (ITEMS[id] && ITEMS[id].n) || id;
   const L = [
     ...(m.money > 0 ? [plural(m.money, 'Money')] : []),
-    ...Object.entries(m.items || {}).map(([id, n]) => plural(n, name(id))),
+    ...Object.entries(m.items || {}).map(([id, n]) => plural(n, (ITEMS[id] && ITEMS[id].n) || id)),
   ];
   return L.length > 1 ? L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1] : L.join('');
 }
