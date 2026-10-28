@@ -15,6 +15,7 @@ import {
 } from '../../game/js/logic/figure-kit.js';
 import {
   figureGpuMesh,
+  sdfAt,
   shapeSurface,
   FIGURE_PAL_MAX,
   figureFaceMarks,
@@ -190,19 +191,41 @@ test('figure kit: the GPU mesh: a matrix only for moving parts (at most 32), eve
   }
 });
 
-test('figure kit: under a hat no lock of hair comes out through its crown (every hat, every hair style)', () => {
+test('figure kit: under a hat no hair comes out through its crown (every hat, every hair style)', () => {
   const base = PEOPLE.chosen.look;
   for (const hat of ids('hat'))
     for (const hair of ids('hair')) {
       const F = lookFigure({ ...base, wear: { ...base.wear, hat, hair } }, W.items, { name: hat + hair }),
         H = F.parts.find(p => p.id === 'head').shape,
         band = H.c[1] + H.r[1] * 0.18,
-        zc = H.c[2] - H.r[2] * 0.06;
-      for (const p of F.parts.filter(q => /^(lock|curl)\d/.test(q.id)))
-        for (const v of shapeSurface(p.shape).pts) {
-          if (v[1] <= band + 0.005) continue;
-          const e = (v[0] / (H.r[0] * 1.1)) ** 2 + ((v[2] - zc) / (H.r[2] * 1.14)) ** 2;
-          assert.ok(e < 1.02, `${hat} ${hair} ${p.id}: ${v.map(x => x.toFixed(3))} (${e.toFixed(2)})`);
-        }
+        zc = H.c[2] - H.r[2] * 0.06,
+        hairPart = F.parts.find(q => q.id === 'hair');
+      for (const v of shapeSurface(hairPart.shape).pts) {
+        if (v[1] <= band + 0.005) continue;
+        const e = (v[0] / (H.r[0] * 1.1)) ** 2 + ((v[2] - zc) / (H.r[2] * 1.14)) ** 2;
+        assert.ok(e < 1.02, `${hat} ${hair}: ${v.map(x => x.toFixed(3))} (${e.toFixed(2)})`);
+      }
     }
+});
+
+test('figure kit: head and hair are blended shapes: one surface each, and the hair stays out of the head', () => {
+  for (const hair of ['hair_short', 'hair_long', 'hair_spiky', 'hair_pony', 'hair_bob']) {
+    const look = { ...PEOPLE.chosen.look, wear: { ...PEOPLE.chosen.look.wear, hat: null, hair } },
+      F = lookFigure(look, W.items, { name: 'x' + hair }),
+      head = F.parts.find(p => p.id === 'head').shape,
+      hairS = F.parts.find(p => p.id === 'hair').shape;
+    assert.equal(head.kind, 'sdf');
+    assert.equal(hairS.kind, 'sdf');
+    /* no separate nose, ears or jaw parts: they grow out of the head */
+    assert.ok(!F.parts.some(p => /^(nose|ntip|nwing|ear[AB]|jaw|chin|cheek[AB])$/.test(p.id)));
+    const H = shapeSurface(hairS);
+    assert.ok(H.tris.length > 500, `${hair}: ${H.tris.length} triangles`);
+    /* no strand goes into the head: none of the hair lies deep inside it (its shell's underside and a strand's
+       underside lie just under the scalp, hidden) */
+    const inside = H.pts.filter(p => sdfAt(head, p) < -0.05).length;
+    assert.ok(inside / H.pts.length < 0.01, `${hair}: ${inside} of ${H.pts.length} hair points deep in the head`);
+    /* the face marks sit on the blended face */
+    const eye = F.face.find(m => m.kind === 'eye');
+    assert.ok(Math.abs(sdfAt(head, eye.at)) < 0.01, JSON.stringify(eye.at));
+  }
 });

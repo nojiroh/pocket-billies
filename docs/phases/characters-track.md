@@ -276,6 +276,14 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     hair cap over the same skull; a beard as a shell over the jaw; under a hat every lock starts under its band (a
     test checks every hat with every hair style); long hair flows in layered, waving locks; the girl's look
     (people/girl.json) in a beanie with long hair, like the boy's beanie.
+  - round 6 ("Even more complex shapes make sure they flow into each other. Add more natural flowy shapes for the
+    hair"): the head and the hair are blended shapes (logic/figure-pose.js sdfSurface: signed distances joined by a
+    smooth minimum, meshed by surface nets). A head (figure-kit.js kitHeadShape) is its skull, face, jaw, chin,
+    cheekbones, brow, eye sockets, nose (bridge, tip, wings, nostrils), lips, ears and the top of its neck grown into
+    one surface; the hair (kitHair) a shell over the scalp with strands grown from it, combed from the whorl or a part,
+    lifting, falling by their weight, waving, curling, tapering, pushed out of the head and (long hair) the back, and
+    parting round the face; a beard grows from the jaw. Skin takes no deep tone and only shadows thrown from further
+    off. About 200 ms a figure to build (once, then kept).
 - **CH-3c The rest of the cast and the movement pass:** every person and a crowd of townsfolk checked on sheets
   and in the towns; shop keepers and the arena's leader in place; the walk's stride fitted to the game's speed;
   start, stop and turns; the dressing room's pictures still today's. **Phone gate:** the owner tries Figures on.

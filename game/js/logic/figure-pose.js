@@ -32,6 +32,7 @@ expose({
   FIGURE_LIGHT: [() => FIGURE_LIGHT],
   FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
   OUTLINE_RGB: [() => OUTLINE_RGB],
+  SDF_CORNERS: [() => SDF_CORNERS],
   TILT_STEP: [() => TILT_STEP],
   WALK_CYCLE_M: [() => WALK_CYCLE_M],
   // @ts-expect-error -- replaced on purpose
@@ -102,6 +103,24 @@ expose({
   restPose: [() => restPose, v => (restPose = v)],
   // @ts-expect-error -- replaced on purpose
   ringSurface: [() => ringSurface, v => (ringSurface = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfAt: [() => sdfAt, v => (sdfAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfBox: [() => sdfBox, v => (sdfBox = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfFrontOf: [() => sdfFrontOf, v => (sdfFrontOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfNormal: [() => sdfNormal, v => (sdfNormal = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfPrimAt: [() => sdfPrimAt, v => (sdfPrimAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfPrimFn: [() => sdfPrimFn, v => (sdfPrimFn = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfSmin: [() => sdfSmin, v => (sdfSmin = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfSurface: [() => sdfSurface, v => (sdfSurface = v)],
+  // @ts-expect-error -- replaced on purpose
+  sdfTop: [() => sdfTop, v => (sdfTop = v)],
   // @ts-expect-error -- replaced on purpose
   shapeSurface: [() => shapeSurface, v => (shapeSurface = v)],
   // @ts-expect-error -- replaced on purpose
@@ -232,7 +251,8 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86,
  *   | { kind: 'cone', a: Vec3, b: Vec3, r: number, seg?: number }
  *   | { kind: 'torus', c: Vec3, R: [number, number], r: number, seg?: number, rings?: number }
  *   | { kind: 'tube', a: Vec3, ctrl: Vec3, b: Vec3, r0: number, r1: number, flat?: number, n?: Vec3, seg?: number,
- *     steps?: number }} FigureShape
+ *     steps?: number }
+ *   | SdfShape} FigureShape
  * a part's shape, in its joint's space: an ellipsoid (centre, radii; a hair cap is one with a cut; `sq` 0..1 makes it
  * squarer, `taper` widens its bottom half and narrows its top, below 0 the other way: CH-3b's head shapes), a lathe (rings
  * round an upright axis through c at heights y, radii rx across and rz front to back; a radius of 0 closes it), a
@@ -317,10 +337,11 @@ export function toonBand(n) {
 /* ---------- the mannequin ---------- */
 /**
  * a point on the front of an ellipsoid at (x, y), and its outward normal: where a face mark sits
- * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: HeadDeform }} E @param {number} x @param {number} y
+ * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: HeadDeform, kind?: string, items?: SdfItem[] }} E @param {number} x @param {number} y
  * @returns {{ at: Vec3, n: Vec3 }}
  */
 export function frontOf(E, x, y) {
+  if (E.kind === 'sdf' && E.items) return sdfFrontOf(/** @type {SdfShape} */ (/** @type {unknown} */ (E)), x, y);
   if (E.deform) return headFrontOf(E, x, y);
   const { c, r } = E,
     u = (x - c[0]) / r[0],
@@ -825,11 +846,330 @@ export function hairCutAt(C, u, w) {
     v -= (C.depth || 0) * (0.5 + 0.5 * Math.cos(u * C.bangs * Math.PI)) * Math.min(1, (w - 0.3) / 0.4);
   return v;
 }
+/* ---------- blended shapes: signed distances, meshed ----------
+   CH-3b round 6 (the owner: "Even more complex shapes make sure they flow into each other. Add more natural flowy
+   shapes for the hair"): a head (its skull, face, jaw, chin, cheekbones, brow, nose, ears and the top of its neck) or
+   a head of hair (its cap and every lock) as one surface: simple shapes, each a signed distance (below 0 inside),
+   joined smoothly (a smooth minimum, so one form grows out of the next with no seam), cut away or carved, then meshed
+   on a grid (surface nets). The same distances answer where a face mark sits (sdfFrontOf) and keep hair out
+   of the head (sdfAt). */
+/** @typedef {{ t: 'ell', c: Vec3, r: Vec3 } | { t: 'cone', a: Vec3, b: Vec3, ra: number, rb: number }
+ *   | { t: 'cut', c: Vec3, r: Vec3, cut: HairCut } | { t: 'slab', y: number, below?: boolean }} SdfPrim a shape:
+ *   an ellipsoid, a tapered capsule (radius ra at a to rb at b), a hair cap's edge round an ellipsoid (keep above it,
+ *   or below with `cut.under`), or everything above (below) a height */
+/** @typedef {{ p: SdfPrim, op: 'add' | 'sub' | 'and', k?: number }} SdfItem one step: join (smoothly, over k
+ *   metres), carve away (smoothly) or keep only the inside of (a cut: everywhere) */
+/** @typedef {{ kind: 'sdf', items: SdfItem[], h: number, c: Vec3, r: Vec3 }} SdfShape a blended shape: its steps in
+ *   order, the grid's cell (metres), and the ellipsoid it is laid out round (a head's: the face marks and the hair go by
+ *   it) */
+/** a smooth minimum over k @param {number} a @param {number} b @param {number} k */
+export function sdfSmin(a, b, k) {
+  if (!(k > 0)) return Math.min(a, b);
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.min(a, b) - h * h * k * 0.25;
+}
+/** a shape's signed distance at (x, y, z) @param {SdfPrim} P @param {number} x @param {number} y @param {number} z */
+export function sdfPrimAt(P, x, y, z) {
+  if (P.t === 'ell') {
+    const px = (x - P.c[0]) / P.r[0],
+      py = (y - P.c[1]) / P.r[1],
+      pz = (z - P.c[2]) / P.r[2],
+      k0 = Math.hypot(px, py, pz),
+      k1 = Math.hypot(px / P.r[0], py / P.r[1], pz / P.r[2]);
+    return k1 > 1e-9 ? (k0 * (k0 - 1)) / k1 : -Math.min(P.r[0], P.r[1], P.r[2]);
+  }
+  if (P.t === 'cone') {
+    const bx = P.b[0] - P.a[0],
+      by = P.b[1] - P.a[1],
+      bz = P.b[2] - P.a[2],
+      L2 = bx * bx + by * by + bz * bz || 1e-12,
+      t = Math.max(0, Math.min(1, ((x - P.a[0]) * bx + (y - P.a[1]) * by + (z - P.a[2]) * bz) / L2));
+    return Math.hypot(x - P.a[0] - bx * t, y - P.a[1] - by * t, z - P.a[2] - bz * t) - (P.ra + (P.rb - P.ra) * t);
+  }
+  if (P.t === 'cut') {
+    const u = (x - P.c[0]) / P.r[0],
+      v = (y - P.c[1]) / P.r[1],
+      w = (z - P.c[2]) / P.r[2],
+      l = Math.hypot(u, w) || 1,
+      /* the edge's height at this way round (the cap's sphere seen from its upright axis) */
+      e = hairCutAt(P.cut, u / l, w / l);
+    return (P.cut.under ? v - e : e - v) * P.r[1];
+  }
+  return P.below ? y - P.y : P.y - y;
+}
+/** a shape's signed distance as a function with its numbers worked out once (the grid's inner loop)
+ * @param {SdfPrim} P @returns {(x: number, y: number, z: number) => number} */
+export function sdfPrimFn(P) {
+  if (P.t === 'ell') {
+    const [cx, cy, cz] = P.c,
+      [rx, ry, rz] = P.r,
+      mn = -Math.min(rx, ry, rz);
+    return (x, y, z) => {
+      const px = (x - cx) / rx,
+        py = (y - cy) / ry,
+        pz = (z - cz) / rz,
+        k0 = Math.sqrt(px * px + py * py + pz * pz),
+        qx = px / rx,
+        qy = py / ry,
+        qz = pz / rz,
+        k1 = Math.sqrt(qx * qx + qy * qy + qz * qz);
+      return k1 > 1e-9 ? (k0 * (k0 - 1)) / k1 : mn;
+    };
+  }
+  if (P.t === 'cone') {
+    const [ax, ay, az] = P.a,
+      bx = P.b[0] - ax,
+      by = P.b[1] - ay,
+      bz = P.b[2] - az,
+      L2 = bx * bx + by * by + bz * bz || 1e-12,
+      ra = P.ra,
+      dr = P.rb - P.ra;
+    return (x, y, z) => {
+      const px = x - ax,
+        py = y - ay,
+        pz = z - az;
+      let t = (px * bx + py * by + pz * bz) / L2;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = px - bx * t,
+        dy = py - by * t,
+        dz = pz - bz * t;
+      return Math.sqrt(dx * dx + dy * dy + dz * dz) - (ra + dr * t);
+    };
+  }
+  return (x, y, z) => sdfPrimAt(P, x, y, z);
+}
+/** a step's box: [x0, y0, z0, x1, y1, z1], or null for one that reaches everywhere @param {SdfPrim} P
+ * @returns {number[] | null} */
+export function sdfBox(P) {
+  if (P.t === 'ell')
+    return [P.c[0] - P.r[0], P.c[1] - P.r[1], P.c[2] - P.r[2], P.c[0] + P.r[0], P.c[1] + P.r[1], P.c[2] + P.r[2]];
+  if (P.t === 'cone') {
+    const m = Math.max(P.ra, P.rb);
+    return [0, 1, 2].map(i => Math.min(P.a[i], P.b[i]) - m).concat([0, 1, 2].map(i => Math.max(P.a[i], P.b[i]) + m));
+  }
+  return null;
+}
+/** how high a blended shape reaches (the top of its joined steps' boxes) @param {SdfShape} S */
+export function sdfTop(S) {
+  let y = -Infinity;
+  for (const it of S.items) {
+    const B = it.op === 'add' ? sdfBox(it.p) : null;
+    if (B) y = Math.max(y, B[4]);
+  }
+  return y;
+}
+/** the blended distance at a point (every step, wherever its box is) @param {SdfShape} S @param {number[]} p */
+export function sdfAt(S, p) {
+  let f = 1e9;
+  for (const it of S.items) {
+    const k = it.k || 0;
+    const d = sdfPrimAt(it.p, p[0], p[1], p[2]);
+    f = it.op === 'add' ? sdfSmin(f, d, k) : it.op === 'sub' ? -sdfSmin(-f, d, k) : Math.max(f, d);
+  }
+  return f;
+}
+/** the way out of a blended shape at a point (its distance's slope) @param {SdfShape} S @param {number[]} p @returns {Vec3} */
+export function sdfNormal(S, p) {
+  const e = S.h * 0.5,
+    d = (/** @type {number} */ i) => {
+      const a = [p[0], p[1], p[2]],
+        b = [p[0], p[1], p[2]];
+      a[i] += e;
+      b[i] -= e;
+      return sdfAt(S, a) - sdfAt(S, b);
+    };
+  return figureUnit([d(0), d(1), d(2)]);
+}
+/** where the surface is seen straight on at (x, y) (the face's way, +z), and the way out there: a face mark's place
+ * on a blended head @param {SdfShape} S @param {number} x @param {number} y @returns {{ at: Vec3, n: Vec3 }} */
+export function sdfFrontOf(S, x, y) {
+  const z0 = S.c[2] + S.r[2] * 1.8,
+    z1 = S.c[2] - S.r[2] * 0.5,
+    step = S.h * 0.5;
+  let zo = z0,
+    fo = sdfAt(S, [x, y, z0]);
+  for (let z = z0 - step; z >= z1; z -= step) {
+    const f = sdfAt(S, [x, y, z]);
+    if (f < 0) {
+      let a = z,
+        b = zo;
+      for (let i = 0; i < 12; i++) {
+        const m = (a + b) / 2;
+        if (sdfAt(S, [x, y, m]) < 0) a = m;
+        else b = m;
+      }
+      const at = /** @type {Vec3} */ ([x, y, (a + b) / 2]);
+      return { at, n: sdfNormal(S, at) };
+    }
+    zo = z;
+    fo = f;
+  }
+  void fo;
+  return { at: [x, y, S.c[2] + S.r[2]], n: [0, 0, 1] };
+}
+/** the eight corners of a grid cell */
+export const SDF_CORNERS = [
+  [0, 0, 0],
+  [1, 0, 0],
+  [1, 1, 0],
+  [0, 1, 0],
+  [0, 0, 1],
+  [1, 0, 1],
+  [1, 1, 1],
+  [0, 1, 1],
+];
+/**
+ * a blended shape's surface: the distances on a grid (each step laid only over its own box, so a head of hair's
+ * hundreds of strokes stay quick), then surface nets; each point with the distance's slope as its way out
+ * @param {SdfShape} S @returns {{ pts: Vec3[], out: Vec3[], tris: number[][] }}
+ */
+export function sdfSurface(S) {
+  const h = S.h,
+    m = 1.5 * h;
+  /* the grid round every joined step */
+  const lo = [Infinity, Infinity, Infinity],
+    hi = [-Infinity, -Infinity, -Infinity];
+  for (const it of S.items) {
+    const B = it.op === 'add' ? sdfBox(it.p) : null;
+    if (!B) continue;
+    for (let i = 0; i < 3; i++) {
+      lo[i] = Math.min(lo[i], B[i] - m - (it.k || 0));
+      hi[i] = Math.max(hi[i], B[i + 3] + m + (it.k || 0));
+    }
+  }
+  if (!(lo[0] < hi[0])) return { pts: [], out: [], tris: [] };
+  const nx = Math.ceil((hi[0] - lo[0]) / h) + 1,
+    ny = Math.ceil((hi[1] - lo[1]) / h) + 1,
+    nz = Math.ceil((hi[2] - lo[2]) / h) + 1,
+    F = new Float32Array(nx * ny * nz).fill(1e9),
+    at = (/** @type {number} */ i, /** @type {number} */ j, /** @type {number} */ k) => i + nx * (j + ny * k);
+  for (const it of S.items) {
+    const B = sdfBox(it.p),
+      k = it.k || 0,
+      r = m + k,
+      i0 = B ? Math.max(0, Math.floor((B[0] - r - lo[0]) / h)) : 0,
+      j0 = B ? Math.max(0, Math.floor((B[1] - r - lo[1]) / h)) : 0,
+      k0 = B ? Math.max(0, Math.floor((B[2] - r - lo[2]) / h)) : 0,
+      i1 = B ? Math.min(nx - 1, Math.ceil((B[3] + r - lo[0]) / h)) : nx - 1,
+      j1 = B ? Math.min(ny - 1, Math.ceil((B[4] + r - lo[1]) / h)) : ny - 1,
+      k1 = B ? Math.min(nz - 1, Math.ceil((B[5] + r - lo[2]) / h)) : nz - 1;
+    const op = it.op === 'add' ? 0 : it.op === 'sub' ? 1 : 2,
+      D = sdfPrimFn(it.p),
+      kk = k > 0 ? k : 1e-9;
+    for (let c = k0; c <= k1; c++) {
+      const z = lo[2] + c * h;
+      for (let b = j0; b <= j1; b++) {
+        const y = lo[1] + b * h;
+        let n = i0 + nx * (b + ny * c);
+        for (let a = i0; a <= i1; a++, n++) {
+          const d = D(lo[0] + a * h, y, z),
+            f = F[n];
+          if (op === 2) {
+            if (d > f) F[n] = d;
+            continue;
+          }
+          /* a smooth minimum (join) or maximum (carve) */
+          const p = op === 0 ? f : -f,
+            q = op === 0 ? d : d,
+            e = Math.max(kk - Math.abs(p - q), 0) / kk,
+            v = Math.min(p, q) - e * e * kk * 0.25;
+          F[n] = op === 0 ? v : -v;
+        }
+      }
+    }
+  }
+  /* surface nets: a point in each cell the surface passes through (the average of where it crosses the cell's
+     edges), and a quad round each grid edge it crosses, joining the four cells that share that edge */
+  /** @type {Vec3[]} */ const pts = [],
+    /** @type {Vec3[]} */ out = [],
+    /** @type {number[][]} */ tris = [],
+    cell = new Int32Array(nx * ny * nz).fill(-1),
+    V = new Float64Array(8),
+    EDGES = [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 0],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 4],
+      [0, 4],
+      [1, 5],
+      [2, 6],
+      [3, 7],
+    ];
+  for (let c = 0; c < nz - 1; c++)
+    for (let b = 0; b < ny - 1; b++)
+      for (let a = 0; a < nx - 1; a++) {
+        let inside = 0;
+        for (let q = 0; q < 8; q++) {
+          const o = SDF_CORNERS[q];
+          V[q] = F[at(a + o[0], b + o[1], c + o[2])];
+          if (V[q] < 0) inside++;
+        }
+        if (inside === 0 || inside === 8) continue;
+        let sx = 0,
+          sy = 0,
+          sz = 0,
+          n = 0;
+        for (const [p, q] of EDGES) {
+          if (V[p] < 0 === V[q] < 0) continue;
+          const t = V[p] / (V[p] - V[q]),
+            P = SDF_CORNERS[p],
+            Q = SDF_CORNERS[q];
+          sx += P[0] + (Q[0] - P[0]) * t;
+          sy += P[1] + (Q[1] - P[1]) * t;
+          sz += P[2] + (Q[2] - P[2]) * t;
+          n++;
+        }
+        cell[at(a, b, c)] = pts.length;
+        pts.push([lo[0] + (a + sx / n) * h, lo[1] + (b + sy / n) * h, lo[2] + (c + sz / n) * h]);
+        /* the slope across the cell: its way out */
+        out.push(
+          figureUnit([
+            V[1] + V[2] + V[5] + V[6] - V[0] - V[3] - V[4] - V[7],
+            V[2] + V[3] + V[6] + V[7] - V[0] - V[1] - V[4] - V[5],
+            V[4] + V[5] + V[6] + V[7] - V[0] - V[1] - V[2] - V[3],
+          ])
+        );
+      }
+  /** the quad round the grid edge from (a, b, c) one step along axis `ax`, if the surface crosses it */
+  const quad = (
+    /** @type {number} */ a,
+    /** @type {number} */ b,
+    /** @type {number} */ c,
+    /** @type {number} */ ax
+  ) => {
+    const f0 = F[at(a, b, c)],
+      f1 = ax === 0 ? F[at(a + 1, b, c)] : ax === 1 ? F[at(a, b + 1, c)] : F[at(a, b, c + 1)];
+    if (f0 < 0 === f1 < 0) return;
+    /* the four cells round the edge */
+    const C =
+      ax === 0
+        ? [at(a, b - 1, c - 1), at(a, b, c - 1), at(a, b, c), at(a, b - 1, c)]
+        : ax === 1
+          ? [at(a - 1, b, c - 1), at(a, b, c - 1), at(a, b, c), at(a - 1, b, c)]
+          : [at(a - 1, b - 1, c), at(a, b - 1, c), at(a, b, c), at(a - 1, b, c)];
+    const v = C.map(i => cell[i]);
+    if (v.some(i => i < 0)) return;
+    tris.push([v[0], v[1], v[2]], [v[0], v[2], v[3]]);
+  };
+  for (let c = 1; c < nz - 1; c++)
+    for (let b = 1; b < ny - 1; b++)
+      for (let a = 1; a < nx - 1; a++) {
+        quad(a, b, c, 0);
+        quad(a, b, c, 1);
+        quad(a, b, c, 2);
+      }
+  return { pts, out, tris };
+}
 /**
  * a shape's surface: points, a way out of the shape at each, and triangles
  * @param {FigureShape} sh @returns {{ pts: Vec3[], out: Vec3[], tris: number[][] }}
  */
 export function shapeSurface(sh) {
+  if (sh.kind === 'sdf') return sdfSurface(sh);
   /** @type {Vec3[][]} */ const R = [],
     /** @type {Vec3[][]} */ O = [];
   const ring = (/** @type {number} */ n, /** @type {(t: number) => [Vec3, Vec3]} */ f) => {
@@ -1070,9 +1410,11 @@ export function figureMesh(F, detail = 1) {
 export function finerShape(sh, k) {
   /** @type {any} */
   const o = { ...sh };
-  if ('seg' in sh || sh.kind !== 'lathe') o.seg = Math.max(4, Math.round((sh.seg || 12) * k));
+  if (sh.kind !== 'sdf' && ('seg' in sh || sh.kind !== 'lathe')) o.seg = Math.max(4, Math.round((sh.seg || 12) * k));
   if (sh.kind === 'ellipsoid' || sh.kind === 'torus') o.rings = Math.max(3, Math.round((sh.rings || 8) * k));
   if (sh.kind === 'tube') o.steps = Math.max(2, Math.round((sh.steps || 6) * k));
+  /* a blended shape: a finer grid (at most twice as fine: a portrait's grid is already a few hundred thousand points) */
+  if (sh.kind === 'sdf') o.h = sh.h / Math.min(2.2, Math.max(0.5, k));
   return o;
 }
 

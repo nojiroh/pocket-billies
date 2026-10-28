@@ -25,8 +25,11 @@ import {
   figurePose,
   figureUnit,
   frontOf,
-  headDeform,
+  hairCutAt,
   jointMatrices,
+  sdfAt,
+  sdfNormal,
+  sdfTop,
 } from './figure-pose.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -47,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kappiFigure: [() => kappiFigure, v => (kappiFigure = v)],
   // @ts-expect-error -- replaced on purpose
+  kitBeardShape: [() => kitBeardShape, v => (kitBeardShape = v)],
+  // @ts-expect-error -- replaced on purpose
   kitExtent: [() => kitExtent, v => (kitExtent = v)],
   // @ts-expect-error -- replaced on purpose
   kitFaceMarks: [() => kitFaceMarks, v => (kitFaceMarks = v)],
@@ -54,6 +59,8 @@ expose({
   kitHair: [() => kitHair, v => (kitHair = v)],
   // @ts-expect-error -- replaced on purpose
   kitHat: [() => kitHat, v => (kitHat = v)],
+  // @ts-expect-error -- replaced on purpose
+  kitHeadShape: [() => kitHeadShape, v => (kitHeadShape = v)],
   // @ts-expect-error -- replaced on purpose
   kitHex: [() => kitHex, v => (kitHex = v)],
   // @ts-expect-error -- replaced on purpose
@@ -327,8 +334,10 @@ export function lookFigure(look, items, opts = {}) {
   /* ---- the head ---- */
   /* the head (KIT_CHIBI.head, a direction's own): room for the face, hair and expressions, and the portraits'
      close-ups; it grows a little with the body too, so a small figure is smaller all over and a tall one taller.
-     One sculpted mesh (logic/figure-pose.js headDeform): the skull, the jaw line, the chin, cheekbones, the brow and
-     the eye sockets by the head shape, a little of each person's own on top; the nose and ears as parts on it */
+     CH-3b round 6 (the owner: "Even more complex shapes make sure they flow into each other"): one blended surface
+     (logic/figure-pose.js sdfSurface) of the skull, the face, the jaw, the chin, cheekbones, the brow, eye sockets
+     carved in, the nose, the lips, the ears and the top of the neck, each growing out of the next; by the head shape,
+     and a little of each person's own on top */
   const hk3 = headK * PR.head * Math.sqrt(hk),
     /* each person a little wider or narrower, longer or shorter, deeper or flatter than their head shape */
     hr = /** @type {Vec3} */ ([
@@ -336,23 +345,22 @@ export function lookFigure(look, items, opts = {}) {
       0.3 * hk3 * HD.r[1] * (0.95 + 0.1 * kitRnd(seed, 18)),
       0.29 * hk3 * HD.r[2] * (0.96 + 0.08 * kitRnd(seed, 19)),
     ]),
-    deform = {
+    sculpt = {
       jaw: HD.jaw + 0.16 * (kitRnd(seed, 15) - 0.5) - (shape.build === 'round' ? 0.25 : 0),
       chin: HD.chin * (0.85 + 0.3 * kitRnd(seed, 13)),
       cheek: HD.cheek * (0.85 + 0.3 * kitRnd(seed, 14)),
       crown: HD.crown,
       brow: 0.8 + 0.4 * kitRnd(seed, 16),
       face: HD.face + 0.3 * (kitRnd(seed, 20) - 0.5),
+      nose: Math.floor(kitRnd(seed, 21) * 4) % 4,
+      noseK: 0.85 + 0.4 * kitRnd(seed, 11),
+      noseLong: kitRnd(seed, 12),
+      ears: 0.85 + 0.35 * kitRnd(seed, 22),
     },
-    head = /** @type {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg: number, rings: number, deform: typeof deform }} */ ({
-      kind: 'ellipsoid',
-      c: [0, hr[1] + 0.005, 0.01],
-      r: hr,
-      seg: 30,
-      rings: 22,
-      deform,
-    });
-  /* a neck, longer on a beanpole, all but gone on a kid */
+    hc = /** @type {Vec3} */ ([0, hr[1] + 0.005, 0.01]),
+    neckR = 0.046 * Math.sqrt(girth),
+    head = kitHeadShape(hc, hr, sculpt, neckR);
+  /* a neck, longer on a beanpole, all but gone on a kid (the head's own neck grows down into it) */
   add(
     'neck',
     'torso',
@@ -362,80 +370,7 @@ export function lookFigure(look, items, opts = {}) {
   );
   add('head', 'torso', [0, 0.4 * tk + neckL, 0], head, 'skin');
   const c1 = head.c[1],
-    c2 = head.c[2],
-    hk1 = hr[0] / 0.31,
-    /* each person's own nose, from their seed */
-    noseK = 0.85 + 0.4 * kitRnd(seed, 11),
-    noseLong = kitRnd(seed, 12),
-    /** the face's surface straight ahead at height v (-1..1) on the head @param {number} v */
-    faceZ = v => c2 + hr[2] * headDeform([0, v, Math.sqrt(Math.max(0, 1 - v * v))], deform)[2];
-  /** a form on the head @param {string} id @param {Vec3} cc @param {Vec3} rr @param {Partial<FigureShape>} [o] */
-  const form = (id, cc, rr, o = {}, col = 'skin') =>
-    add(
-      id,
-      'head',
-      [0, 0, 0],
-      /** @type {FigureShape} */ ({ kind: 'ellipsoid', c: cc, r: rr, seg: 14, rings: 9, ...o }),
-      col
-    );
-  /* the nose: a bridge down from the brow, its tip and its wings, of the person's kind: a short upturned button, a
-     straight one, a long one with a bump on its bridge, or a broad one */
-  const noseKind = Math.floor(kitRnd(seed, 21) * 4) % 4,
-    tipV = -(noseKind === 0 ? 0.26 : noseKind === 2 ? 0.4 : 0.3 + 0.08 * noseLong),
-    nTip = /** @type {Vec3} */ ([
-      0,
-      c1 + hr[1] * tipV + (noseKind === 0 ? 0.008 * hk1 : 0),
-      faceZ(tipV) + (noseKind === 0 ? 0.022 : noseKind === 2 ? 0.04 : 0.03) * hk1 * noseK,
-    ]),
-    wingK = noseKind === 3 ? 1.45 : 1;
-  if (noseKind === 2)
-    form('nbump', [0, c1 - hr[1] * 0.16, faceZ(-0.16) + 0.012 * hk1], [0.014 * hk1, 0.022 * hk1, 0.014 * hk1], {
-      seg: 8,
-      rings: 5,
-    });
-  add(
-    'nose',
-    'head',
-    [0, 0, 0],
-    {
-      kind: 'capsule',
-      a: [0, c1 - hr[1] * 0.04, faceZ(-0.04) - 0.004],
-      b: nTip,
-      r0: 0.011 * hk1,
-      r1: 0.019 * hk1 * noseK,
-      seg: 8,
-    },
-    'skin'
-  );
-  form('ntip', nTip, [0.024 * hk1 * noseK, 0.022 * hk1 * noseK, 0.022 * hk1 * noseK], { seg: 10, rings: 6 });
-  for (const s of [1, -1])
-    form(
-      'nwing' + (s > 0 ? 'A' : 'B'),
-      [s * 0.022 * hk1 * noseK * wingK, nTip[1] - 0.006 * hk1, nTip[2] - 0.016 * hk1],
-      [0.015 * hk1 * noseK * wingK, 0.013 * hk1, 0.015 * hk1],
-      { seg: 8, rings: 5 }
-    );
-  /* ears, just showing past the hair: the ear and its inner fold, bigger or smaller by the person */
-  const earK = 0.85 + 0.35 * kitRnd(seed, 22);
-  for (const s of [1, -1]) {
-    const e = s > 0 ? 'A' : 'B';
-    form(
-      'ear' + e,
-      [s * hr[0] * 0.88, c1 - hr[1] * 0.1, c2 - hr[2] * 0.08],
-      [0.03 * hk1 * earK, 0.06 * hk1 * earK, 0.044 * hk1],
-      {
-        seg: 8,
-        rings: 6,
-      }
-    );
-    form(
-      'earin' + e,
-      [s * hr[0] * 0.92, c1 - hr[1] * 0.12, c2 - hr[2] * 0.05],
-      [0.012 * hk1, 0.033 * hk1, 0.022 * hk1],
-      { seg: 6, rings: 4 },
-      'nose'
-    );
-  }
+    c2 = head.c[2];
   /* the shoulders' slope up to the neck (the trapezius), so the head sits on a body, not a peg */
   add(
     'traps',
@@ -832,7 +767,15 @@ export function lookFigure(look, items, opts = {}) {
     !!hat,
     seed,
     !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie',
-    hat ? 1 : FL.hair || 1
+    hat ? 1 : FL.hair || 1,
+    {
+      ahoge: !!FL.ahoge,
+      /* the back and shoulders in the head's frame, for long hair to fall over (and a jacket's bulk) */
+      body: {
+        c: [0, -0.24 * tk - neckL, -0.01],
+        r: [xAt(3) + (outer ? 0.04 : 0.025), 0.26 * tk, zAt(3) + (outer ? 0.04 : 0.025)],
+      },
+    }
   );
   /* CH-3b's hybrid variants may redesign (the owner: "you don't have to base them on their original sprites"): a scarf
      with a tail that streams behind, a cape from the shoulders */
@@ -1026,26 +969,6 @@ export function lookFigure(look, items, opts = {}) {
         'gold'
       );
   if (FL.earrings || FL.detail) colours.gold = [232, 190, 84];
-  /* an antenna lock standing up off the crown */
-  if (FL.ahoge && !hat)
-    add(
-      'ahoge',
-      'head',
-      [0, 0, 0],
-      {
-        kind: 'tube',
-        a: [0, c1 + hr[1] * 0.98, -0.02],
-        ctrl: [0.06, c1 + hr[1] * 1.5, 0.04],
-        b: [0.14, c1 + hr[1] * 1.35, 0.1],
-        r0: 0.03 * (hr[0] / 0.31),
-        r1: 0.004,
-        flat: 0.5,
-        n: [0, 0, 1],
-        seg: 7,
-        steps: 7,
-      },
-      'hair'
-    );
   if (hat) kitHat(add, hat, head, HD.crown * 1.06);
   if (wear.glasses === 'headset') {
     colours.gear = itemCol('headset', 0, [40, 40, 48]);
@@ -1065,24 +988,9 @@ export function lookFigure(look, items, opts = {}) {
       'gear'
     );
   }
-  /* a beard: a shell over the jaw and chin (the head's own sculpted shape, a little out), cut below the cheeks and
-     round under the ears; so it follows a V jaw or a square one */
-  if (wear.facial === 'facial_beard')
-    add(
-      'beard',
-      'head',
-      [0, 0, 0],
-      {
-        kind: 'ellipsoid',
-        c: [head.c[0], head.c[1] - 0.004, head.c[2] + 0.006],
-        r: [hr[0] * 1.06, hr[1] * 1.04, hr[2] * 1.06],
-        seg: 24,
-        rings: 16,
-        deform: { ...deform, skull: true },
-        cut: { front: -0.42, side: -0.2, back: -1.5, under: true },
-      },
-      'hair'
-    );
+  /* a beard: a shell over the jaw and chin, the head's own jaw grown out a little, kept below the cheeks (so it
+     follows a V jaw or a square one) */
+  if (wear.facial === 'facial_beard') add('beard', 'head', [0, 0, 0], kitBeardShape(head.c, head.r, sculpt), 'hair');
   /* ---- the face ---- */
   const face = [...clothMarks, ...kitFaceMarks(head, wear, look, colours, seed)];
   if (wear.neck === 'nametag') {
@@ -1106,6 +1014,125 @@ export function lookFigure(look, items, opts = {}) {
   };
 }
 
+/** @typedef {{ jaw: number, chin: number, cheek: number, crown: number, brow: number, face: number, nose: number,
+ *   noseK: number, noseLong: number, ears: number }} KitSculpt a head's own forms: how V its jaw (below 0 wider at the
+ *   jaw than the cheeks), its chin, cheekbones, how big the back of the skull, its brow, how flat its face, its nose (0
+ *   a short upturned button, 1 straight, 2 long with a bump on the bridge, 3 broad), the nose's size and length, the
+ *   ears' size */
+/**
+ * a head as one blended surface (logic/figure-pose.js SdfShape), laid out round the ellipsoid at `c` with radii `r`
+ * (x across, y up, z the face's way): the skull, the face, the jaw from below each ear to the chin, the chin,
+ * cheekbones, the brow ridge, eye sockets carved in, the nose (bridge, tip, wings, nostrils), the lips, the ears with
+ * their hollows, and the top of the neck
+ * @param {Vec3} c @param {Vec3} r @param {KitSculpt} K @param {number} neckR the neck's radius
+ * @returns {import('./figure-pose.js').SdfShape}
+ */
+export function kitHeadShape(c, r, K, neckR) {
+  const k = r[0] / 0.31,
+    P = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) =>
+      /** @type {Vec3} */ ([c[0] + x * r[0], c[1] + y * r[1], c[2] + z * r[2]]),
+    /** @type {import('./figure-pose.js').SdfItem[]} */ items = [],
+    ell = (/** @type {Vec3} */ cc, /** @type {Vec3} */ rr, op = /** @type {'add' | 'sub'} */ ('add'), kk = 0) =>
+      items.push({ p: { t: 'ell', c: cc, r: rr }, op, k: kk * k }),
+    cone = (/** @type {Vec3} */ a, /** @type {Vec3} */ b, /** @type {number} */ ra, /** @type {number} */ rb, kk = 0) =>
+      items.push({ p: { t: 'cone', a, b, ra, rb }, op: 'add', k: kk * k }),
+    j = K.jaw,
+    fz = 0.84 * (1 - 0.12 * K.face),
+    /* the face's front at height v (its own ellipsoid's), in the head's z units */
+    front = (/** @type {number} */ v) => 0.1 + fz * Math.sqrt(Math.max(0, 1 - ((v + 0.12) / 0.8) ** 2));
+  /* the skull, fuller behind */
+  ell(P(0, 0.08 * K.crown, -0.1), [r[0] * 0.95, r[1] * 0.9 * K.crown, r[2] * 0.97]);
+  /* the face's mass, flatter on a flat face */
+  ell(P(0, -0.12, 0.1), [r[0] * 0.86, r[1] * 0.8, r[2] * fz], 'add', 0.08);
+  /* the jaw: from the angle below each ear to the chin; a V jaw's angles high and in, a square one's low and out */
+  const ax = 0.78 - 0.18 * j,
+    ay = -0.42 - 0.12 * (1 - Math.max(0, j)),
+    cx = Math.max(0.03, 0.16 - 0.1 * j),
+    cy = -0.86 - 0.1 * K.chin;
+  for (const s of [1, -1]) cone(P(s * ax, ay, -0.14), P(s * cx, cy, 0.48), r[0] * 0.22, r[0] * 0.13, 0.07);
+  /* the chin, standing a little forward */
+  ell(
+    P(0, cy - 0.04 * K.chin, 0.5 + 0.06 * K.chin),
+    [r[0] * (0.17 + 0.05 * (1 - j)), r[1] * 0.14, r[2] * 0.2],
+    'add',
+    0.05
+  );
+  /* cheekbones, high and out */
+  for (const s of [1, -1]) ell(P(s * 0.55, -0.22, 0.4), [r[0] * 0.26 * K.cheek, r[1] * 0.17, r[2] * 0.26], 'add', 0.1);
+  /* the brow ridge */
+  ell(P(0, 0.12, front(0.12) - 0.17), [r[0] * 0.62, r[1] * 0.11 * K.brow, r[2] * 0.2], 'add', 0.08);
+  /* eye sockets, carved in under it */
+  for (const s of [1, -1])
+    ell(P(s * 0.35, -0.08, front(-0.08) + 0.08), [r[0] * 0.15, r[1] * 0.09, r[2] * 0.1], 'sub', 0.05);
+  /* the nose: a bridge down from the brow to its tip, the tip, its wings, the nostrils carved under them */
+  const tipV = -(K.nose === 0 ? 0.26 : K.nose === 2 ? 0.4 : 0.3 + 0.08 * K.noseLong),
+    out = (K.nose === 0 ? 0.06 : K.nose === 2 ? 0.11 : 0.085) * K.noseK,
+    wing = K.nose === 3 ? 1.45 : 1,
+    tip = P(0, tipV + (K.nose === 0 ? 0.03 : 0), front(tipV) + out);
+  cone(P(0, 0, front(0) - 0.05), tip, r[0] * 0.035, r[0] * 0.05 * K.noseK, 0.02);
+  if (K.nose === 2) ell(P(0, -0.15, front(-0.15) + 0.06), [r[0] * 0.04, r[1] * 0.06, r[2] * 0.04], 'add', 0.015);
+  ell(tip, [r[0] * 0.075 * K.noseK, r[1] * 0.065 * K.noseK, r[2] * 0.07 * K.noseK], 'add', 0.02);
+  for (const s of [1, -1]) {
+    ell(
+      [tip[0] + s * r[0] * 0.07 * wing * K.noseK, tip[1] - r[1] * 0.025, tip[2] - r[2] * 0.06],
+      [r[0] * 0.05 * wing * K.noseK, r[1] * 0.045, r[2] * 0.05],
+      'add',
+      0.02
+    );
+    ell(
+      [tip[0] + s * r[0] * 0.04 * wing, tip[1] - r[1] * 0.06, tip[2] - r[2] * 0.03],
+      [r[0] * 0.025, r[1] * 0.02, r[2] * 0.03],
+      'sub',
+      0.008
+    );
+  }
+  /* the lips */
+  ell(P(0, -0.56, front(-0.56) + 0.01), [r[0] * 0.17, r[1] * 0.045, r[2] * 0.06], 'add', 0.03);
+  ell(P(0, -0.65, front(-0.65) + 0.01), [r[0] * 0.14, r[1] * 0.05, r[2] * 0.06], 'add', 0.03);
+  /* the ears and their hollows */
+  for (const s of [1, -1]) {
+    ell(P(s * 0.9, -0.12, -0.08), [r[0] * 0.08 * K.ears, r[1] * 0.2 * K.ears, r[2] * 0.15 * K.ears], 'add', 0.025);
+    ell(
+      P(s * (0.9 + 0.07 * K.ears), -0.13, -0.05),
+      [r[0] * 0.04, r[1] * 0.12 * K.ears, r[2] * 0.08 * K.ears],
+      'sub',
+      0.01
+    );
+  }
+  /* the top of the neck, the jaw and the skull growing down into it */
+  cone(P(0, -0.5, -0.2), [0, 0, c[2] - r[2] * 0.12], neckR * 1.1, neckR, 0.06);
+  return { kind: 'sdf', items, h: r[0] / 12, c, r };
+}
+
+/** a beard as a blended shape: the jaw and chin of kitHeadShape grown out, kept below the cheekbones
+ * @param {Vec3} c @param {Vec3} r @param {KitSculpt} K @returns {import('./figure-pose.js').SdfShape} */
+export function kitBeardShape(c, r, K) {
+  const k = r[0] / 0.31,
+    P = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) =>
+      /** @type {Vec3} */ ([c[0] + x * r[0], c[1] + y * r[1], c[2] + z * r[2]]),
+    j = K.jaw,
+    ax = 0.78 - 0.18 * j,
+    ay = -0.42 - 0.12 * (1 - Math.max(0, j)),
+    cx = Math.max(0.03, 0.16 - 0.1 * j),
+    cy = -0.86 - 0.1 * K.chin,
+    g = 0.015 * k,
+    /** @type {import('./figure-pose.js').SdfItem[]} */ items = [];
+  for (const s of [1, -1])
+    items.push({
+      p: { t: 'cone', a: P(s * ax, ay, -0.14), b: P(s * cx, cy, 0.48), ra: r[0] * 0.22 + g, rb: r[0] * 0.13 + g },
+      op: 'add',
+      k: 0.07 * k,
+    });
+  items.push({
+    p: { t: 'ell', c: P(0, cy - 0.06, 0.5), r: [r[0] * 0.24 + g, r[1] * 0.16 + g, r[2] * 0.22 + g] },
+    op: 'add',
+    k: 0.05 * k,
+  });
+  items.push({ p: { t: 'slab', y: c[1] - r[1] * 0.38, below: true }, op: 'and', k: 0 });
+  /* the mouth left bare */
+  items.push({ p: { t: 'ell', c: P(0, -0.6, 0.85), r: [r[0] * 0.2, r[1] * 0.1, r[2] * 0.3] }, op: 'sub', k: 0.02 * k });
+  return { kind: 'sdf', items, h: r[0] / 14, c, r };
+}
 /** where a part's top reaches in the rest pose (its joint's height above the ground plus its shape's top), metres
  * @param {FigurePart} p @param {FigurePart[]} parts */
 export function kitTopOf(p, parts) {
@@ -1117,341 +1144,339 @@ export function kitTopOf(p, parts) {
   if (s.kind === 'torus') return y + s.c[1] + s.r;
   if (s.kind === 'cone') return y + Math.max(s.a[1], s.b[1]);
   if (s.kind === 'tube') return y + Math.max(s.a[1] + s.r0, s.ctrl[1], s.b[1] + s.r1);
+  if (s.kind === 'sdf') return y + sdfTop(s);
   return y + Math.max(s.a[1] + s.r0, s.b[1] + s.r1);
 }
 
 /**
- * the hair's parts on the head (CH-3b's fidelity pass: "hair should read well as hair"): a close cap under it, then
- * locks, each a tapered, curved, flattened stroke (logic/figure-pose.js tube) that bulges off the head and ends in a
- * point, so the hair reads as clumps with lines between them (the outline pass inks where one stands in front of
- * another) and catches the shine band lock by lock. By style:
- * - short: locks from the crown swept down and back to the nape, a fringe of points over the brow, locks over the ears;
- * - buzz: the cap and a few short locks;
- * - sidepart: the fringe swept to one side from the part, the rest short;
- * - bob: a fringe, and locks falling to the jaw all round;
- * - long: a fringe, locks over the shoulders and down the back;
- * - spiky: locks standing up and out from the crown, a ragged fringe;
- * - curly: many short locks curled back on themselves;
- * - bun, pony, twin: locks swept to where the hair is tied, then a bun, a tail or two tails.
- * Under a hat, only what shows below it: a cap or a beanie keeps a fringe, a brim none.
+ * the hair (CH-3b round 6, the owner: "Add more natural flowy shapes for the hair"): one blended surface: a close cap
+ * over the skull to the hairline, and strands grown from the scalp joined into it and into each other, so the hair
+ * reads as one flowing mass with grooves between its locks (logic/figure-pose.js sdfSurface). Each strand starts
+ * combed away from the crown's whorl (or a part), lifts off the scalp, then falls by its own weight, waving and, for
+ * some styles, curling in at its tip; it tapers to a point, and is pushed back out wherever it would go into the head
+ * (or, for long hair, the back and shoulders: `body`). By style:
+ * - short: the crown combed down and back, a fringe over the brow, over the ears; sidepart: combed from a part;
+ * - buzz: the cap alone; bob: to the jaw, its ends curling in; long: down the back in waves;
+ * - spiky: thick strands standing up and out; curly: short strands coiling;
+ * - bun, pony, twin: swept to where the hair is tied, then a bun, a tail or two tails.
+ * Under a hat, only what shows below it, every strand starting under the hat's band; a fringe under a cap or a
+ * beanie, none under a brim.
  * @param {(id: string, parent: string | null, at: Vec3, sh: FigureShape, col: string) => void} add
- * @param {string | null} style @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: import('./figure-pose.js').HeadDeform }} H the head
+ * @param {string | null} style @param {import('./figure-pose.js').SdfShape} H the head (kitHeadShape)
  * @param {boolean} hat @param {number} seed @param {boolean} [brim] under a brimmed hat (no fringe)
- * @param {number} [vol] the locks' thickness and bow times this (a hybrid variant's fuller hair)
+ * @param {number} [vol] the strands' thickness and lift times this (a direction's fuller hair)
+ * @param {{ ahoge?: boolean, body?: { c: Vec3, r: Vec3 } }} [o] an antenna strand; the back and shoulders, in the
+ *   head's frame, for long hair to fall over
  */
-export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
+export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {}) {
   if (!style) return;
-  const { c, r } = H,
-    S = (r[0] / 0.31) * vol,
-    deg = Math.PI / 180,
-    /** a point on the hair's surface: around the head (`th`, 0 the front, +90 the figure's +x side), up it (`ph`,
-     * 90 the crown), `k` times out from the head's middle
-     * @param {number} th @param {number} ph @param {number} [k] @returns {Vec3} */
-    P = (th, ph, k = 1.06) =>
-      /** @type {Vec3} */ ([
-        Math.sin(th * deg) * Math.cos(ph * deg) * r[0] * k,
-        c[1] + Math.sin(ph * deg) * r[1] * k,
-        c[2] + Math.cos(th * deg) * Math.cos(ph * deg) * r[2] * k,
-      ]),
-    /** the way out from the head's middle at a point @param {Vec3} q @returns {Vec3} */
-    out = q => figureUnit([q[0] / r[0], (q[1] - c[1]) / r[1], (q[2] - c[2]) / r[2]]);
-  let n = 0;
-  /** a lock from `a` to `b`, bowing out by `bow` (metres) off the head, `w` thick at its root
-   * @param {Vec3} a @param {Vec3} b @param {number} bow @param {number} w @param {number} [tip] @param {number} [flat] */
-  const lock = (a, b, bow, w, tip = 0.15, flat = 0.5) => {
-    const m = /** @type {Vec3} */ ([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]),
-      o = out(m),
-      ctrl = /** @type {Vec3} */ ([m[0] + o[0] * bow, m[1] + o[1] * bow, m[2] + o[2] * bow]);
-    /* every other lock a shade darker, so locks read apart even in pale hair */
-    add(
-      'lock' + n,
-      'head',
-      [0, 0, 0],
-      { kind: 'tube', a, ctrl, b, r0: w * S, r1: w * S * tip, flat, n: out(a), seg: 7, steps: 7 },
-      n++ % 2 ? 'hair2' : 'hair'
-    );
-  };
-  const j = (/** @type {number} */ i, /** @type {number} */ amt) => (kitRnd(seed, 80 + i) - 0.5) * amt;
-  /* the cap: close to the head, cut at the style's hairline */
-  /* the cap sits just under the locks, so the locks are the hair's surface */
-  const capK = hat ? 1.0 : style === 'hair_buzz' ? 1.03 : 1.025,
+  const k = H.r[0] / 0.31,
+    sk = /** @type {{ t: 'ell', c: Vec3, r: Vec3 }} */ (H.items[0].p),
+    sc = sk.c,
+    sr = sk.r,
+    c1 = H.c[1],
+    /** @type {import('./figure-pose.js').SdfItem[]} */ items = [],
+    rnd = (/** @type {number} */ i) => kitRnd(seed, 300 + i),
+    add3 = (/** @type {number[]} */ a, /** @type {number[]} */ b, s = 1) =>
+      /** @type {Vec3} */ ([a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s]),
+    sub3 = (/** @type {number[]} */ a, /** @type {number[]} */ b) =>
+      /** @type {Vec3} */ ([a[0] - b[0], a[1] - b[1], a[2] - b[2]]),
+    dot3 = (/** @type {number[]} */ a, /** @type {number[]} */ b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    /* a point on the skull at a way round it (unit), and the way out there */
+    onSkull = (/** @type {number[]} */ d) =>
+      /** @type {Vec3} */ ([sc[0] + d[0] * sr[0], sc[1] + d[1] * sr[1], sc[2] + d[2] * sr[2]]),
+    outAt = (/** @type {number[]} */ d) => figureUnit([d[0] / sr[0], d[1] / sr[1], d[2] / sr[2]]),
     cut =
       style === 'hair_buzz'
         ? { front: 0.42, side: 0.1, back: -0.2 }
         : style === 'hair_bob' || style === 'hair_long'
-          ? { front: 0.3, side: -0.5, back: -0.8 }
-          : { front: 0.32, side: -0.15, back: -0.5 };
-  add(
-    'hair',
-    'head',
-    [0, 0, 0],
-    {
-      kind: 'ellipsoid',
-      c: [c[0], c[1] + r[1] * 0.03, c[2] - 0.004],
-      r: [r[0] * capK, r[1] * capK, r[2] * capK],
-      seg: 24,
-      rings: 16,
-      sq: H.sq,
-      taper: H.taper,
-      /* over a sculpted head, its skull's shape (no features) */
-      ...(H.deform ? { deform: { ...H.deform, skull: true } } : {}),
-      cut,
-    },
-    'hair'
-  );
-  const fringeOK = !brim;
-  /* the fringe: points from high on the brow curving down and out over the forehead */
-  const fringe = (
-    /** @type {number} */ count,
-    /** @type {number} */ spread,
-    /** @type {number} */ to = 18,
-    swept = 0
-  ) => {
-    if (!fringeOK) return;
-    for (let i = 0; i < count; i++) {
-      const t = count === 1 ? 0 : i / (count - 1) - 0.5,
-        th = t * spread + j(i, 8),
-        /* under a hat the fringe starts just under its band and only its ends show */
-        a = P(th * 0.4 + swept * 0.5, hat ? 10 : 72, hat ? 0.97 : 1.06),
-        b = P(th + swept + j(i + 20, 6), (hat ? to - 22 : to) + j(i + 40, 10), hat ? 1.04 : 1.1);
-      lock(a, b, (hat ? 0 : 0.065) * S, 0.072, 0.12, 0.45);
-    }
-  };
-  /* a ring of locks from the crown down to `ph` (degrees up the head; below -90 runs on down the back), skipping the
-     face */
-  const crown = (
-    /** @type {number} */ count,
-    /** @type {number} */ ph,
-    /** @type {number} */ bow,
-    face = 55,
-    w = 0.088
-  ) => {
-    count = Math.round(count * 1.4);
-    for (let i = 0; i < count; i++) {
-      const th = face + ((360 - 2 * face) * (i + 0.5)) / count + j(i + 60, 10),
-        a = P(th * 0.3, 84 + j(i + 70, 4), 1.0),
-        b =
-          ph < -90
-            ? [P(th, -60)[0] * 0.9, c[1] - r[1] * (1 + (-90 - ph) / 45), P(th, -60)[2] - r[2] * 0.3]
-            : P(th, ph + j(i + 90, 8), 1.08);
-      lock(a, /** @type {Vec3} */ (b), bow * 1.35 * S, w, 0.12, 0.5);
-    }
-  };
-  /* locks over each ear down to `ph` */
-  const sides = (/** @type {number} */ ph, /** @type {number} */ per = 2) => {
-    for (const sgn of [1, -1])
-      for (let i = 0; i < per; i++) {
-        const th = sgn * (70 + i * 18);
-        lock(
-          /* under a hat every lock starts under its band, so none comes out through its crown */
-          P(th * 0.6, hat ? 8 : 70, hat ? 0.98 : 1.06),
-          P(th + sgn * 6, ph + j(i + (sgn > 0 ? 100 : 110), 8), 1.1),
-          (hat ? 0 : 0.05) * S,
-          0.065,
-          0.15,
-          0.5
-        );
+          ? { front: 0.3, side: -0.4, back: -0.7 }
+          : { front: 0.32, side: -0.15, back: -0.5 },
+    /* the hat's band, as a height on the skull's sphere */
+    bandV = (c1 + H.r[1] * 0.18 - sc[1]) / sr[1],
+    /* the body's ellipsoid's distance at a point, roughly */
+    bodyD = (/** @type {Vec3} */ q) => {
+      if (!o.body) return 1;
+      const B = o.body,
+        u = [(q[0] - B.c[0]) / B.r[0], (q[1] - B.c[1]) / B.r[1], (q[2] - B.c[2]) / B.r[2]];
+      return (Math.hypot(u[0], u[1], u[2]) - 1) * Math.min(B.r[0], B.r[1], B.r[2]);
+    };
+  /* the cap: the skull, a little out, cut at the hairline */
+  const t = (style === 'hair_buzz' || hat ? 0.012 : 0.02 * vol) * k;
+  items.push({ p: { t: 'ell', c: sc, r: [sr[0] + t, sr[1] + t, sr[2] + t] }, op: 'add', k: 0 });
+  items.push({ p: { t: 'cut', c: sc, r: sr, cut }, op: 'and', k: 0 });
+  /* hollow: a shell over the scalp, nothing hidden inside the head */
+  items.push({ p: { t: 'ell', c: sc, r: [sr[0] - 0.012 * k, sr[1] - 0.012 * k, sr[2] - 0.012 * k] }, op: 'sub', k: 0 });
+  const blend = 0.014 * k;
+  /** a strand: grown from p0 the way d0 for `len` metres, `w` thick at its root
+   * @param {Vec3} p0 @param {number[]} d0 @param {number} len @param {number} w
+   * @param {{ grav?: number, stiff?: number, wave?: number, freq?: number, curl?: number, stop?: number,
+   *   to?: Vec3, phase?: number, hug?: number, frame?: boolean }} S `frame`: parts round the face (never falls
+   *   in front of it); `hug`: over that much of its length it lies along the head, pulled
+   *   back down to it wherever it lifts off */
+  const strand = (p0, d0, len, w, S) => {
+    const steps = Math.max(4, Math.min(16, Math.round(len / (0.022 * k)))),
+      step = len / steps,
+      ph = S.phase ?? rnd(items.length) * 6.28;
+    let p = p0,
+      d = figureUnit(d0),
+      rp = w * 0.85;
+    for (let i = 1; i <= steps; i++) {
+      const f = i / steps,
+        n = figureUnit(sub3(p, H.c)),
+        lat = figureUnit([d[1] * n[2] - d[2] * n[1], d[2] * n[0] - d[0] * n[2], d[0] * n[1] - d[1] * n[0]]);
+      let nd = d.map(v => v * (S.stiff ?? 0.8));
+      nd = add3(nd, [0, -1, 0], (S.grav ?? 0.5) * 0.45);
+      if (S.wave) nd = add3(nd, lat, S.wave * Math.cos(6.283 * (S.freq || 1) * f + ph));
+      if (S.curl && f > 0.55) nd = add3(nd, n, -S.curl * (f - 0.55) * 2);
+      if (S.to) nd = add3(nd, figureUnit(sub3(S.to, p)), 1.2);
+      d = figureUnit(nd);
+      let q = add3(p, d, step);
+      const rad = Math.max(0.004 * k, w * (1 - 0.92 * f ** 1.3));
+      /* not into the head, nor (long hair) the back and shoulders */
+      const dh = sdfAt(H, q) - rad * 0.7 - 0.003 * k;
+      if (dh < 0) q = add3(q, sdfNormal(H, q), -dh);
+      else if (S.hug && f <= S.hug && dh < 0.1 * k) q = add3(q, sdfNormal(H, q), -dh * 0.8);
+      const db = bodyD(q) - rad;
+      if (db < 0 && o.body) {
+        q = add3(q, figureUnit(sub3(q, o.body.c)), -db);
+        /* pushed off the back, not into the head */
+        const d2 = sdfAt(H, q) - rad * 0.7 - 0.003 * k;
+        if (d2 < 0) q = add3(q, sdfNormal(H, q), -d2);
       }
-  };
-  /* everything swept to a point (a bun, a ponytail's tie) */
-  const swept = (/** @type {Vec3} */ to, /** @type {number} */ count) => {
-    for (let i = 0; i < count; i++) {
-      const th = (360 * (i + 0.5)) / count + j(i + 120, 10);
-      if (Math.abs(((th + 180) % 360) - 180) < 40) continue;
-      lock(P(th, 20, 1.04), to, 0.04 * S, 0.06, 0.3, 0.45);
+      /* framing the face: below the brow and in front of the cheeks, pushed out to the side */
+      if (S.frame && q[1] < c1 + H.r[1] * 0.15 && q[2] > H.c[2] + H.r[2] * 0.05 && Math.abs(q[0]) < H.r[0] * 1.02)
+        q = [Math.sign(q[0] || 1) * H.r[0] * 1.02, q[1], q[2]];
+      if (S.stop != null && q[1] < S.stop) break;
+      items.push({ p: { t: 'cone', a: p, b: q, ra: rp, rb: rad }, op: 'add', k: blend });
+      d = figureUnit(sub3(q, p));
+      p = q;
+      rp = rad;
+      if (S.to && Math.hypot(...sub3(S.to, p)) < step) break;
     }
+    return p;
   };
-  /* long flowing hair (the owner: "Give the girl long flowing hair"): locks from all round the back and sides falling
-     past the shoulders in two waving lengths, flaring out a little, and a lock each side down in front of the
-     shoulders */
-  const flowing = (/** @type {number} */ from) => {
-    const N = 11;
-    for (let i = 0; i < N; i++) {
-      const th = 100 + (160 * i) / (N - 1) + j(i + 170, 6),
-        sn = Math.sin(th * deg),
-        cs = Math.cos(th * deg),
-        /* layered: longest down the middle of the back, shorter toward the sides, each lock its own length */
-        len = 1.75 + 0.45 * Math.max(0, -cs) + 0.25 * kitRnd(seed, 180 + i),
-        wave = (i % 2 ? 1 : -1) * 0.045 * S,
-        a = P(th, from, 1.03),
-        m = /** @type {Vec3} */ ([sn * r[0] * 1.2, c[1] - r[1] * 1.05, c[2] + cs * r[2] * 1.22]),
-        b = /** @type {Vec3} */ ([
-          sn * r[0] * (1.12 + 0.12 * kitRnd(seed, 190 + i)),
-          c[1] - r[1] * len,
-          c[2] + cs * r[2] * 1.18 - 0.03,
-        ]),
-        mid = (/** @type {Vec3} */ p, /** @type {Vec3} */ q) =>
-          /** @type {Vec3} */ ([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]);
-      const up = mid(a, m),
-        o1 = out(up),
-        k = n++ % 2 ? 'hair2' : 'hair';
-      add(
-        'lock' + n,
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'tube',
-          a,
-          ctrl: [up[0] + o1[0] * 0.05 * S, up[1] + o1[1] * 0.05 * S, up[2] + o1[2] * 0.05 * S],
-          b: m,
-          r0: 0.09 * S,
-          r1: 0.07 * S,
-          flat: 0.45,
-          n: out(a),
-          seg: 7,
-          steps: 6,
-        },
-        k
+  /* the roots: points spread over the scalp (a golden spiral), inside the hairline; under a hat only a ring just under
+     its band */
+  /** @type {{ d: Vec3, p: Vec3, n: Vec3, front: boolean }[]} */
+  const roots = [];
+  const M = hat ? 700 : 320;
+  for (let i = 0; i < M; i++) {
+    const y = 1 - (2 * (i + 0.5)) / M,
+      rr = Math.sqrt(1 - y * y),
+      a = i * 2.399963 + seed * 1e-4,
+      d = /** @type {Vec3} */ ([Math.cos(a) * rr, y, Math.sin(a) * rr]),
+      l = Math.hypot(d[0], d[2]) || 1,
+      edge = hairCutAt(cut, d[0] / l, d[2] / l);
+    if (d[1] < edge + 0.06) continue;
+    /* under a hat a ring low enough that even a thick strand's top stays under the band */
+    if (hat && (d[1] > bandV - 0.24 || d[1] < bandV - 0.44)) continue;
+    roots.push({ d, p: onSkull(d), n: outAt(d), front: d[2] > 0.45 && Math.abs(d[0]) < 0.7 && d[1] < edge + 0.35 });
+  }
+  /** the way along the scalp from a root away from a point on the sphere (the whorl, a part) @param {{ d: Vec3, n: Vec3 }} R @param {number[]} from */
+  const comb = (R, from) => {
+    const tv = sub3(R.d, from),
+      tn = sub3(
+        tv,
+        R.n.map(v => v * dot3(tv, R.n))
       );
-      const lo = mid(m, b);
-      add(
-        'lock' + n++,
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'tube',
-          a: m,
-          ctrl: [lo[0] + sn * wave, lo[1], lo[2] + cs * wave + wave * 0.5],
-          b,
-          r0: 0.07 * S,
-          r1: 0.004 * S,
-          flat: 0.45,
-          n: [sn, 0, cs],
-          seg: 7,
-          steps: 8,
-        },
-        k
-      );
-    }
-    for (const sgn of [1, -1]) {
-      const a = P(sgn * 72, from - 10, 1.04),
-        b = /** @type {Vec3} */ ([sgn * r[0] * 0.92, c[1] - r[1] * 2.2, c[2] + r[2] * 0.42]);
-      lock(a, [sgn * r[0] * 1.08, c[1] - r[1] * 0.9, c[2] + r[2] * 0.2], 0.03 * S, 0.075, 0.6, 0.5);
-      lock([sgn * r[0] * 1.08, c[1] - r[1] * 0.9, c[2] + r[2] * 0.2], b, 0.04 * S, 0.06, 0.15, 0.5);
-    }
+    return figureUnit(tn);
   };
+  const whorl = [0, 0.62, -0.78],
+    fringeOK = !brim,
+    browY = c1 + H.r[1] * 0.04,
+    /** grow every root (`every`: one in so many) as `S` with lengths `L` (metres at the usual head) */
+    grow = (
+      /** @type {number} */ every,
+      /** @type {[number, number]} */ L,
+      /** @type {number} */ w,
+      S,
+      lift = 0.3,
+      from = whorl
+    ) => {
+      roots.forEach((R, i) => {
+        if (i % every) return;
+        if (R.front && !fringeOK) return;
+        const dir = add3(R.front ? add3([0, -0.6, 0.55], R.n, 0.2) : comb(R, from), R.n, lift * vol),
+          len = (L[0] + (L[1] - L[0]) * rnd(i)) * k;
+        strand(add3(R.p, R.n, w * k * vol * 0.45), dir, R.front ? Math.min(len, 0.16 * k) : len, w * k * vol, {
+          ...S,
+          stop: R.front ? browY : S.stop,
+          frame: !R.front,
+        });
+      });
+    };
+  /** a tie (a ponytail's, a bun's): every root swept to it */
+  const sweep = (/** @type {Vec3} */ T, /** @type {number} */ every) =>
+    roots.forEach((R, i) => {
+      if (i % every) return;
+      if (R.front && fringeOK && R.d[1] < 0.75) {
+        strand(add3(R.p, R.n, 0.02 * k), add3([0, -0.6, 0.55], R.n, 0.2), 0.12 * k, 0.045 * k * vol, {
+          grav: 0.5,
+          stop: browY,
+        });
+        return;
+      }
+      strand(add3(R.p, R.n, 0.02 * k), add3(comb(R, [-T[0], 1, -T[2]]), R.n, 0.15), 0.5 * k, 0.045 * k * vol, {
+        to: T,
+        grav: 0,
+        stiff: 0.4,
+      });
+    });
+  /** a tail from a tie: strands bunched at it, falling and waving */
   const tail = (
-    /** @type {string} */ id,
-    /** @type {Vec3} */ a,
-    /** @type {Vec3} */ ctrl,
-    /** @type {Vec3} */ b,
-    /** @type {number} */ w
-  ) =>
-    add(
-      id,
-      'head',
-      [0, 0, 0],
-      { kind: 'tube', a, ctrl, b, r0: w * S, r1: w * S * 0.25, flat: 0.75, n: [0, 0, -1], seg: 8, steps: 8 },
-      'hair'
-    );
-  if (hat) {
-    /* under a hat: a fringe (not under a brim) and locks over the ears */
-    if (style !== 'hair_buzz') {
-      fringe(style === 'hair_bob' ? 5 : 4, 70);
-      if (style !== 'hair_long') sides(style === 'hair_bob' ? -60 : -20);
-    }
-    if (style === 'hair_long') flowing(6);
-    if (style === 'hair_pony')
-      tail('pony', P(180, 0, 1.0), P(180, -40, 1.5), [0, c[1] - r[1] * 1.3, c[2] - r[2] * 1.2], 0.08);
-    return;
-  }
-  switch (style) {
-    case 'hair_buzz':
-      crown(8, 20, 0.01, 50, 0.05);
-      break;
-    case 'hair_sidepart': {
-      const side = kitRnd(seed, 5) < 0.5 ? 1 : -1;
-      crown(10, -25, 0.045);
-      fringe(5, 60, 30, side * 35);
-      sides(-25);
-      break;
-    }
-    case 'hair_bob':
-      crown(10, -55, 0.05);
-      fringe(6, 90, 14);
-      sides(-60, 3);
-      break;
-    case 'hair_long':
-      crown(10, -45, 0.05);
-      fringe(5, 80, 14);
-      flowing(40);
-      break;
-    case 'hair_spiky': {
-      /* standing up and out from the crown, tips well off the head */
-      for (let i = 0; i < 9; i++) {
-        const th = -100 + (200 * i) / 8 + 180 + j(i + 130, 12),
-          a = P(th * 0.2, 75, 1.0),
-          b = P(th, 35 + j(i + 140, 20), 1.55 + j(i + 150, 0.3));
-        lock(a, b, 0.02 * S, 0.085, 0.08, 0.6);
-      }
-      crown(8, -15, 0.04);
-      fringe(5, 80, 22);
-      sides(-15);
-      break;
-    }
-    case 'hair_curly':
-      for (let i = 0; i < 16; i++) {
-        const th = (360 * i) / 16 + j(i + 160, 15),
-          ph = i % 2 ? 50 : 15,
-          a = P(th, ph + 25, 1.0),
-          b = P(th + 25, ph - 10, 1.2),
-          m = P(th + 40, ph + 10, 1.4);
-        add(
-          'curl' + i,
-          'head',
-          [0, 0, 0],
-          { kind: 'tube', a, ctrl: m, b, r0: 0.07 * S, r1: 0.03 * S, flat: 0.8, n: out(a), seg: 7, steps: 7 },
-          'hair'
-        );
-      }
-      fringe(5, 90, 20);
-      break;
-    case 'hair_bun': {
-      const at = /** @type {Vec3} */ ([0, c[1] + r[1] * 0.85, c[2] - r[2] * 0.55]);
-      swept(at, 12);
-      fringe(3, 50, 30);
-      add(
-        'bun',
-        'head',
-        [0, 0, 0],
+    /** @type {Vec3} */ T,
+    /** @type {number[]} */ dir,
+    /** @type {number} */ n,
+    /** @type {number} */ len
+  ) => {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * 6.283,
+        p0 = add3(T, [Math.cos(a) * 0.025 * k, Math.sin(a) * 0.025 * k, 0]);
+      strand(
+        p0,
+        add3(dir, [Math.cos(a) * 0.15, 0, Math.sin(a) * 0.15]),
+        len * k * (0.85 + 0.3 * rnd(400 + i)),
+        0.05 * k * vol,
         {
-          kind: 'ellipsoid',
-          c: [at[0], at[1] + 0.03 * S, at[2] - 0.04 * S],
-          r: [0.12 * S, 0.11 * S, 0.12 * S],
-          seg: 14,
-          rings: 9,
-        },
-        'hair'
+          grav: 1,
+          stiff: 0.75,
+          wave: 0.22,
+          freq: 1.3,
+        }
       );
-      break;
     }
-    case 'hair_pony': {
-      const at = /** @type {Vec3} */ ([0, c[1] + r[1] * 0.3, c[2] - r[2] * 1.02]);
-      swept(at, 12);
-      fringe(4, 70, 22);
-      tail('pony', at, [0, c[1] - r[1] * 0.2, c[2] - r[2] * 1.5], [0, c[1] - r[1] * 1.3, c[2] - r[2] * 1.25], 0.085);
-      break;
-    }
-    case 'hair_twin':
-      for (const sgn of [1, -1]) {
-        const at = /** @type {Vec3} */ ([sgn * r[0] * 1.0, c[1] + r[1] * 0.35, c[2] - r[2] * 0.3]);
-        swept(at, 6);
-        tail(
-          'tail' + (sgn > 0 ? 'A' : 'B'),
-          at,
-          [sgn * r[0] * 1.45, c[1] - r[1] * 0.1, c[2] - r[2] * 0.4],
-          [sgn * r[0] * 1.25, c[1] - r[1] * 1.1, c[2] - r[2] * 0.45],
-          0.08
-        );
+  };
+  const s = hat ? 'under' : style;
+  if (s === 'under') {
+    /* below the hat: a fringe (not under a brim), and what shows of the style below the band */
+    const L = /** @type {[number, number]} */ (
+      style === 'hair_long'
+        ? [0.5, 0.68]
+        : style === 'hair_bob'
+          ? [0.2, 0.26]
+          : style === 'hair_buzz'
+            ? [0, 0]
+            : [0.07, 0.11]
+    );
+    if (L[1] > 0)
+      grow(
+        1,
+        L,
+        style === 'hair_long' ? 0.07 : 0.055,
+        {
+          grav: 1,
+          stiff: 0.75,
+          wave: style === 'hair_long' ? 0.2 : 0.08,
+          freq: 1.3,
+          curl: style === 'hair_bob' ? 0.7 : 0,
+          hug: 0.3,
+        },
+        0.08
+      );
+    if (style === 'hair_pony')
+      tail(add3(onSkull([0, bandV - 0.45, -0.95]), [0, 0, -0.03 * k]), [0, -0.6, -0.8], 9, 0.36);
+  } else
+    switch (style) {
+      case 'hair_buzz':
+        break;
+      case 'hair_sidepart': {
+        const side = kitRnd(seed, 5) < 0.5 ? 1 : -1;
+        grow(3, [0.14, 0.2], 0.06, { grav: 0.7, wave: 0.12, hug: 0.7 }, 0.1, [side * 0.35, 0.94, 0.1]);
+        break;
       }
-      fringe(5, 80, 16);
-      break;
-    case 'hair_short':
-    default:
-      crown(10, -20, 0.05);
-      fringe(4, 70, 24);
-      sides(-25);
-  }
+      case 'hair_bob':
+        grow(
+          2,
+          [0.26, 0.32],
+          0.065,
+          { grav: 0.95, stiff: 0.75, wave: 0.08, curl: 0.8, hug: 0.35 },
+          0.15,
+          [0, 1, -0.05]
+        );
+        break;
+      case 'hair_long':
+        /* combed back from the brow, so the face shows between the falls */
+        grow(2, [0.55, 0.78], 0.065, { grav: 1, stiff: 0.75, wave: 0.25, freq: 1.4, hug: 0.25 }, 0.15, [0, 0.85, 0.55]);
+        break;
+      case 'hair_spiky':
+        /* big clumps swept back and up from the brow, curving as they go, the front ones flicked forward over it */
+        roots.forEach((R, i) => {
+          if (i % 7) return;
+          const front = R.d[2] > 0.4,
+            dir = front
+              ? add3(add3(R.n, [0, 0.5, 0.6]), [R.d[0], 0, 0], 0.5)
+              : add3(add3(comb(R, whorl), R.n, 0.55), [0, 0.35, 0]);
+          strand(add3(R.p, R.n, 0.035 * k), dir, (0.15 + 0.09 * rnd(i)) * k, 0.085 * k * vol, {
+            grav: 0.4,
+            stiff: 0.9,
+            wave: 0.12,
+            freq: 0.6,
+          });
+        });
+        grow(4, [0.1, 0.14], 0.06, { grav: 0.5, hug: 0.5 }, 0.15);
+        break;
+      case 'hair_curly':
+        grow(2, [0.1, 0.15], 0.05, { grav: 0.25, stiff: 0.6, wave: 0.9, freq: 2.6 }, 0.7);
+        break;
+      case 'hair_bun': {
+        const T = onSkull([0, 0.78, -0.62]);
+        sweep(add3(T, outAt([0, 0.78, -0.62]), 0.05 * k), 4);
+        const B = add3(T, outAt([0, 0.78, -0.62]), 0.1 * k);
+        items.push({
+          p: { t: 'ell', c: B, r: [0.11 * k * vol, 0.1 * k * vol, 0.11 * k * vol] },
+          op: 'add',
+          k: blend * 2,
+        });
+        /* the bun wound round: a coil of strands */
+        for (let i = 0; i < 14; i++) {
+          const a0 = (i / 14) * 6.283 * 1.6,
+            a1 = ((i + 1) / 14) * 6.283 * 1.6,
+            R0 = 0.1 * k * vol * (1 - i * 0.025),
+            R1 = 0.1 * k * vol * (1 - (i + 1) * 0.025);
+          items.push({
+            p: {
+              t: 'cone',
+              a: add3(B, [Math.cos(a0) * R0, (i / 14) * 0.06 * k, Math.sin(a0) * R0]),
+              b: add3(B, [Math.cos(a1) * R1, ((i + 1) / 14) * 0.06 * k, Math.sin(a1) * R1]),
+              ra: 0.035 * k,
+              rb: 0.035 * k,
+            },
+            op: 'add',
+            k: blend,
+          });
+        }
+        break;
+      }
+      case 'hair_pony': {
+        const T = add3(onSkull([0, 0.25, -0.97]), [0, 0, -0.03 * k]);
+        sweep(T, 4);
+        items.push({ p: { t: 'ell', c: T, r: [0.05 * k, 0.05 * k, 0.04 * k] }, op: 'add', k: blend });
+        tail(T, [0, -0.5, -0.85], 9, 0.42);
+        break;
+      }
+      case 'hair_twin':
+        for (const sg of [1, -1]) {
+          const T = add3(onSkull([sg * 0.95, 0.3, -0.25]), [sg * 0.02 * k, 0, 0]);
+          roots.forEach((R, i) => {
+            if (i % 5 || Math.sign(R.d[0] || 1) !== sg) return;
+            strand(add3(R.p, R.n, 0.02 * k), add3(comb(R, [0, 1, 0]), R.n, 0.15), 0.4 * k, 0.045 * k * vol, {
+              to: T,
+              grav: 0,
+              stiff: 0.4,
+            });
+          });
+          tail(T, [sg * 0.5, -0.8, -0.2], 7, 0.36);
+        }
+        grow(9, [0.1, 0.12], 0.045, { grav: 0.6 }, 0.2);
+        break;
+      case 'hair_short':
+      default:
+        grow(3, [0.13, 0.19], 0.06, { grav: 0.7, wave: 0.14, hug: 0.6 }, 0.12);
+    }
+  /* an antenna strand standing up off the crown */
+  if (o.ahoge && !hat) strand(onSkull([0, 0.97, 0.2]), [0.2, 1, 0.3], 0.16 * k, 0.03 * k, { grav: 1.4, stiff: 0.9 });
+  add('hair', 'head', [0, 0, 0], { kind: 'sdf', items, h: H.r[0] / 13, c: sc, r: sr }, 'hair');
 }
 
 /**
@@ -1705,7 +1730,7 @@ export function kitHat(add, hat, H, crown = 1) {
  * the face as marks on the head (logic/figure-pose.js figureFaceMarks paints them in whole pixels): eyes by style
  * with a glint and an iris, lashes, brows by style, the mouth by style (a grin's teeth), blush, freckles, a stache,
  * stubble, and glasses (round and square frames, sunglasses, a monocle)
- * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: import('./figure-pose.js').HeadDeform }} H @param {Record<string, string | null>} wear
+ * @param {{ c: Vec3, r: Vec3, kind?: string, items?: import('./figure-pose.js').SdfItem[] }} H @param {Record<string, string | null>} wear
  * @param {KitLook} look @param {Record<string, Vec3>} colours @param {number} seed @returns {FaceMark[]}
  */
 export function kitFaceMarks(H, wear, look, colours, seed) {

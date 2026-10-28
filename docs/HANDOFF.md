@@ -30,6 +30,10 @@ look round by round in the same session; docs/phases/characters-track.md (CH-3b)
 - Verified: lint, both type checks, format, 1,688 unit tests (the kit: every person and wardrobe item builds, faces
   at 48 px, hair never through a hat's crown, the GPU mesh; figureSceneLight's sides, turn, steps, lamps), the
   smoke checks (no problems); sheets of the cast, townsfolk, the boy and the girl in gouache night.
+- Round 6 (same entry): heads and hair as blended shapes (signed distances, surface nets): one flowing surface
+  each, strands grown from the scalp; tests: no hair through any hat, the hair stays out of the head, the face marks
+  on the blended face. Risky: a figure takes about 200 ms to build its mesh the first time (a hitch per new figure on
+  a phone; CH-4's atlas or a worker should take it off the frame), a portrait's finer grid longer.
 - Next: CH-4 (the live atlas), in a new session.
 
 ### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28

@@ -348,7 +348,7 @@ precision mediump float;out vec4 o;void main(){o=vec4(1.);}`;
    a white rim), 6 faceted (each triangle flat) */
 const FIGURE_FS = `#version 300 es
 precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;in vec3 vP;flat in int vC;uniform vec3 uPal[140];uniform vec3 uL;
-uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn,uH,uFlat;uniform int uMode;uniform vec4 uFx,uRim2;uniform vec3 uRimCol,uKeyT,uAmbT,uWarm;
+uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn,uH,uFlat;uniform int uMode,uSkinC;uniform vec4 uFx,uRim2;uniform vec3 uRimCol,uKeyT,uAmbT,uWarm;
 uniform sampler2D uTx;uniform highp sampler2D uSM;
 out vec4 o;
 void main(){vec3 n=normalize(vN);
@@ -356,7 +356,8 @@ void main(){vec3 n=normalize(vN);
  float d=mix(dot(n,uL),.3,uFlat*.45);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:(d>uB.w?0:-1)));
  /* a part in another's shadow (the light's depth map) drops to the shadow tone */
  bool shd=false;
- if(uShadowOn>.5&&d>uB.y){vec3 q=vLS*.5+.5;shd=q.x>0.&&q.y>0.&&q.x<1.&&q.y<1.&&q.z-.006>texture(uSM,q.xy).r;}
+ /* skin takes only shadows thrown from further off (a brim, an arm), not its own nose's or cheekbones' (smudges) */
+ if(uShadowOn>.5&&d>uB.y){vec3 q=vLS*.5+.5;shd=q.x>0.&&q.y>0.&&q.x<1.&&q.y<1.&&q.z-(vC==uSkinC?.016:.006)>texture(uSM,q.xy).r;}
  bool rim=!shd&&n.z>-.25&&dot(normalize(n.xy+1e-4),normalize(uL.xy))>.55;
  if(shd)b=min(b,0);else if(rim&&b>=0&&uMode!=1&&uMode!=6)b=max(b,2);
  vec3 base,sh,li,sn,dp;
@@ -377,6 +378,7 @@ void main(){vec3 n=normalize(vN);
  else if(uMode==7){ivec2 fp=ivec2(gl_FragCoord.xy)&1;float bay=(fp.x==fp.y?(fp.x==0?0.:.5):(fp.x==0?.75:.25))-.375;
   float dd=d+bay*uFx.x;int bb=dd>uB.z?3:(dd>uB.x?2:(dd>uB.y?1:(dd>uB.w?0:-1)));
   int b0=bb;if(shd)bb=min(bb,0);else if(rim&&bb>=0)bb=max(bb,2);
+  if(vC==uSkinC)bb=max(bb,0);
   c=bb==3?sn:(bb==2?li:(bb==1?base:(bb==0?sh:dp)));
   /* a cast shadow (a brim on a face) on a side that faces the light is lifted toward the base, so a face under a
      hat still reads */
@@ -1008,6 +1010,8 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
   gl.uniform3fv(U.uRimCol, new Float32Array(light ? light.rimCol : LK.rimCol || [255, 255, 255]));
   gl.uniform3fv(U.uL, new Float32Array(LT.L));
   gl.uniform1f(U.uFlat, LT.flat);
+  /* skin: no deep tone, and no shadows from its own small forms */
+  gl.uniform1i(U.uSkinC, code ? R.colours.indexOf('skin') : -1);
   gl.uniform3fv(U.uKeyT, new Float32Array(LT.keyT));
   gl.uniform3fv(U.uAmbT, new Float32Array(LT.ambT));
   gl.uniform3fv(U.uWarm, new Float32Array([255, 214, 150].map((v, i) => Math.min(255, v * LT.keyT[i]))));
