@@ -29,8 +29,10 @@ Plan approved in Plan Mode. One cause per commit. No test skipped or loosened; o
 - Risky: `drawing()` is shared by every browser check (more lenient only when the loop is alive and frames advance).
   A seam view that never builds now fails only if 60 s of extra build time don't finish it.
 - Verified: each failing check reproduced with check-fast.py `--only=` (or the page driven by script), then passed
-  after its fix; lint, typecheck, format, check:modules, 1633 unit tests; smoke (no problems). The full fast check:
-  see the PR.
+  after its fix; lint, typecheck, format, check:modules, 1633 unit tests; smoke (no problems). CI on the PR (#306):
+  every job green, the fast check's 42 checks in 17.5 min. A full local run in this 4-core container took 2100 s and
+  had 5 failures (pasture, Breeding, a battle stuck at choose, Tall ground's boot, the screens' Trainer card); the
+  pasture passed 2 of 2 alone and the other four passed on main's own CI, so read them as this container's load.
 - Next: open PRs merge main to pick this up. If Behind things fails again, its note now names what stood in front.
 
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
