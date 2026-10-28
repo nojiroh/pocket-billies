@@ -284,9 +284,31 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     lifting, falling by their weight, waving, curling, tapering, pushed out of the head and (long hair) the back, and
     parting round the face; a beard grows from the jaw. Skin takes no deep tone and only shadows thrown from further
     off. About 200 ms a figure to build (once, then kept).
-- **CH-3c The rest of the cast and the movement pass:** every person and a crowd of townsfolk checked on sheets
-  and in the towns; shop keepers and the arena's leader in place; the walk's stride fitted to the game's speed;
-  start, stop and turns; the dressing room's pictures still today's. **Phone gate:** the owner tries Figures on.
+- **CH-3c The rest of the cast and the movement pass.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314
+  grows; the owner's choice), after CH-4, CH-5 and CH-6; HANDOFF has the numbers. The owner's answers: **walk, jog,
+  sprint** (keep the game's speeds) and **keep today's keepers** (cashier, Vera and the townsfolk keepers stay).
+  - Checked against the code first: you walk at 3.4 m/s (run 5.78, a light push 2.04), townsfolk at 1.25; the walk
+    clip covered 2.4 m a cycle while the kit's legs reach about 0.77 m, so the feet slid about 68% of the body's
+    speed; townsfolk counted 1.4 m/s of wall time; a map's people were always posed idle (a trainer coming over
+    slid); turns, start and stop were instant. Copperleaf has no arena (leaders stand in a run's arenas). Keepers
+    already stood in their rooms (the npc path). 27 of 43 people had no `figure` block. The debug menu's Atlas
+    switch was drawn but not handled.
+  - logic/figure-pose.js: FIGURE_GAITS (walk 8 frames, jog 6, sprint 4), each build's stride from its own legs
+    (figureStride: the foot down `z0` ahead, up `z0` behind, a step 2 z0 in the gait's duty; at least the gait's
+    `min`, so a cycle shows four frames or more on the 12 fps clock: short legs reach further and stay longer in the
+    air), locoPose (the foot down moves straight back under the hip, solved for the knee, so it stays put; the body
+    as low as the leg down lets it, rising between a jog's steps), the step off and the settle (`start`, `stop`),
+    figureGaitFor (by speed, a gap at each edge: jog from 1.9 m/s, sprint from 4.6), figureTurn (a half turn in
+    about 0.25 s), figureMotion and figureMotionClip (a tick at a time: how far they went, by the caller's count or
+    where they stand; the step off on the tick they set off, the settle for two ticks after they stop).
+  - figures.js figurePersonPicture runs figureMotion for everyone (a model's figure only turns); townsfolk and the
+    lineup pass no clock-made count, so standing still is standing still; map people walked over now walk or
+    sprint. The debug log's figures line: on/off, everyone else, your figure, the kit, and person-ticks per gait.
+  - people/<id>.json `figure` for the 8 residents, cashier, Vera, Granny Juniper and the hiker; test_people's
+    row of the rest of the cast; look-people `--moves`; tools/look-places.py (Copperleaf by day and night, every
+    keeper's room, a run arena's leader, the dressing room with Figures on and off: the same).
+  - Not in it: slopes, stairs, hops, wading, Surf, mounts, friends (CH-9); gaits by role (CH-12).
+  - **Phone gate (owed, with CH-4's):** the owner turns Figures on in the debug menu and sends a debug log.
 - **CH-4 The live atlas.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314 grows; the owner's choice),
   ahead of CH-3c; HANDOFF has the numbers. The owner's answer to the conflict with CH-3b's scene-lit bakes (an "Ask
   me before"): **the unlit atlas, as briefed**.
@@ -375,7 +397,7 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
   - **CH-7** the dressing room: customisation on the figure (the sliders, every item, colours) with UI pictures from
     snapshots; saved outfits and shops kept.
   - **CH-8** the old pieces to `art/legacy` once nothing draws them.
-  - **CH-9** getting around: walk, run, start and stop, turns; slopes (lean as a spine bone), stairs, hops, wading,
+  - **CH-9** getting around (walk, jog, sprint, start, stop and turns came in CH-3c): slopes (lean as a spine bone), stairs, hops, wading,
     Surf, mounts; every NPC alive; the train ride, friends and the world-map pin. **Phone gate.**
   - **CH-10** battle and close-ups: trainers at 64 px/m, intros, the throw, the dressing room turntable.
   - **CH-11** acting: talk and emotes; sitting (sit spots in the data, the depth decision); sleeping, eating,
@@ -433,6 +455,10 @@ Tags `ch-N-done` (the owner pushes them).
 - Faces (CH-6): figureKit.json `faces`, figure-kit.js kitFaceMarks, kitFaceStyles, kitFaceSet and kitSkinRamp,
   figure-pose.js figureFaceState, figureBlinkAt and figureTalkFace, figures.js figureFaceFor,
   tools/test/figure-faces.test.mjs, look-people `--faces`, studio-shots `figure-faces`.
+
+- Movement (CH-3c): figure-pose.js FIGURE_GAITS, figureStride, locoPose, figureGaitFor, figureTurn,
+  figureMotion and figureMotionClip; figures.js figurePersonPicture; tools/test/figure-moves.test.mjs, look-people
+  `--moves`, tools/look-places.py.
 
 ## Verification
 - Every session: lint, typecheck and unit tests; smoke before each game commit; check:fast in CI; the full quick

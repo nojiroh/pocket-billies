@@ -7,6 +7,7 @@ Engine > People > Figures on (with Everyone else as figures); --off for the same
     python3 tools/look-places.py --only=rooms,arena  # some of: town, rooms, arena, dressing
     python3 tools/look-places.py --only=dressing     # the dressing room's pictures (every tab's thumbnails, and the
                                                      # preview where it holds still) with Figures on and off: they must be the same
+    python3 tools/look-places.py --only=rooms --room=int_shop   # one room
     python3 tools/look-places.py --off               # Figures off (today's people), for a before/after
     python3 tools/look-places.py --out=DIR
 
@@ -27,6 +28,7 @@ arg = lambda k, d=None: next((a.split('=', 1)[1] for a in ARGS if a.startswith(f
 OUT = Path(arg('out', ROOT / 'validation' / 'look-places'))
 ONLY = set((arg('only') or 'town,rooms,arena,dressing').split(','))
 OFF = '--off' in ARGS
+ROOM = arg('room')  # only this room (int_shop, ...)
 TAG = 'off' if OFF else 'fig'
 W, H, DPR = 390, 844, 2
 
@@ -42,7 +44,16 @@ def people(pg):
     return pg.evaluate("({drawn:peopleReport().drawn, figures:typeof figureReport==='function'?(r=>r&&{pictures:r.pictures,failed:r.failed,atlas:r.atlas&&r.atlas.cells}) (figureReport()):null})")
 
 
+# everyone's picture in: today's walk frames drawn (person-art.js draws a few a frame, slow headless), and with
+# Figures on no figure mesh still on its way from the helper thread
+READY = """(()=>{const npcs=(walkState().npcs||[]).length+1, m=typeof figureReport==='function'&&figuresOn()?(figureReport().meshes||{}):{};
+ return peopleReport().drawn>=npcs&&!personArtMissing&&!(m.waiting>0)})()"""
+
+
 def shot(pg, name, n=8):
+    for _ in range(30):
+        if pg.evaluate(READY): break
+        shots.settle(pg, 4)
     shots.settle(pg, n)
     pg.screenshot(path=str(OUT / f'{name}-{TAG}.png'))
     r = {'shot': f'{name}-{TAG}.png', **people(pg)}
@@ -63,7 +74,7 @@ def rooms(pg, notes):
     pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};0")
     doors = pg.evaluate("""(()=>{const seen=new Set(),out=[];walkView.sc.props.forEach((p,i)=>{if(!p.act||!PB_DATA.opensRoom(p.act))return;
       const q=doorBuildingOf(p.act,p),id=roomFor(p.act,q),R=id&&mapById(id);if(!R||!R.keeper||seen.has(id))return;seen.add(id);out.push({i,act:p.act,id,keeper:R.keeper})});return out})()""")
-    for d in doors:
+    for d in [d for d in doors if not ROOM or d['id'] == ROOM]:
         ok = pg.evaluate(f"""(()=>{{const p=walkView.sc.props[{d['i']}];if(!enterRoom(p.act,p))return false;const I=uiState.goingIn,P=walkView.pl;
           if(!I||uiState.inside)return !!uiState.inside;const fr=roomFrontOf(I);P.x=fr[0];P.z=fr[1];P.route=null;P.goal=null;roomStepIn(I);return true}})()""")
         if not ok or not fast.until(pg, 'uiState.inside&&walkView.ready||false', 120):
@@ -116,8 +127,8 @@ def arena(b, base, errs, notes):
     pg.evaluate(f"(o=>{{const P=walkView.pl,f={A['from']},c=[{A['x']},{A['z']}],d=Math.hypot(f[0]-c[0],f[1]-c[1])||1;P.x=f[0]+(f[0]-c[0])/d*2.5+o[0];P.z=f[1]+(f[1]-c[1])/d*2.5+o[1];P.route=null;P.goal=null;walkRenderer.camT=null;return 0}})(walkView.sc.baseOff||[0,0])")
     pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};0")
     # the camera at the ring, from its way in (walkView.opt.look, as look-hub-buildings.py aims it)
-    pg.evaluate(f"(o=>{{const f={A['from']},c=[{A['x']},{A['z']}],d=Math.hypot(f[0]-c[0],f[1]-c[1])||1,u=[(f[0]-c[0])/d,(f[1]-c[1])/d],x=c[0]+o[0],z=c[1]+o[1],y=groundHeightAt(x,z);
-      walkView.opt.look=()=>({{eye:[x+u[0]*(d+7),y+7,z+u[1]*(d+7)],tgt:[x,y+0.8,z],fov:50}});return 0}})(walkView.sc.baseOff||[0,0])")
+    pg.evaluate(f"""(o=>{{const f={A['from']},c=[{A['x']},{A['z']}],d=Math.hypot(f[0]-c[0],f[1]-c[1])||1,u=[(f[0]-c[0])/d,(f[1]-c[1])/d],x=c[0]+o[0],z=c[1]+o[1],y=groundHeightAt(x,z);
+      walkView.opt.look=()=>({{eye:[x+u[0]*(d+7),y+7,z+u[1]*(d+7)],tgt:[x,y+0.8,z],fov:50}});return 0}})(walkView.sc.baseOff||[0,0])""")
     r = shot(pg, 'arena', 16)
     r.update(leader=pg.evaluate(f"walkState().npcs.find(p=>p.id==='{foe}').who"))
     notes.append(r)
