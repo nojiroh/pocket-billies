@@ -453,3 +453,65 @@ test('PK-7 fine: a leader rule draws that rarity alone, evenly; ordinary picks, 
       for (const id of o.offer) assert.equal(data.PERKS[id].rarity, 'fine');
   });
 });
+
+/* ---------- the reward pick's Perk card ---------- */
+
+test('PK-7 the reward pick’s Perk card: an ordinary Perk not held, never Fine Print; taken through perkTake', () => {
+  const W = modules.rewards,
+    PK = modules.perks;
+  /* a made-up Fine Print Perk in the file: never on a card */
+  withPerks({ test_fine: { name: 'Test Fine', d: 'A test.', rarity: 'fine', fx: [] } }, () => {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30);
+    s.run = runOf();
+    const D = W.rewardDataGame(s.team);
+    let seen = 0;
+    for (let n = 0; n < 300 && seen < 25; n++) {
+      void n;
+      const R = W.rewardOfferMake(s.run, 'test', D);
+      for (const c of R.cards.filter(c => c.kind === 'perk')) {
+        seen++;
+        assert.ok(data.PERKS[c.perk], c.perk);
+        assert.notEqual(data.PERKS[c.perk].rarity, 'fine');
+        assert.ok(!s.run.perks.includes(c.perk));
+        assert.ok(modules['run-state'].validRunEnc(s.run.enc), 'the pick with a perk card is saved as valid');
+      }
+    }
+    assert.ok(seen >= 10, `a perk card turned up ${seen} times`);
+  });
+  /* taken: held; at the cap it needs the one to let go */
+  reseed(3);
+  const s = startedSave(ofType('Water'), 30),
+    fill = Object.keys(data.PERKS).filter(
+      k =>
+        data.PERKS[k].rarity !== 'fine' &&
+        !data.PERKS[k].fx.some(f => f.kind === 'rule' || f.kind === 'copy' || f.kind === 'give')
+    );
+  s.run = runOf();
+  const D = W.rewardDataGame(s.team),
+    card = id => ({ cards: [{ id: 'perk', kind: 'perk', perk: id }], rolls: 0, from: 'test' });
+  modules['run-enc'].encOf(s.run).reward = card(fill[0]);
+  assert.equal(W.rewardTake(s.run, s, 0, D), '');
+  assert.deepEqual(s.run.perks, [fill[0]]);
+  assert.equal(s.run.enc.reward, null);
+  s.run.perks = fill.slice(0, RULE.cap);
+  s.run.enc.reward = card(fill[RULE.cap]);
+  assert.equal(W.rewardTake(s.run, s, 0, D), 'full');
+  assert.ok(s.run.enc.reward, 'the pick stays open');
+  assert.equal(W.rewardTake(s.run, s, 0, D, { drop: fill[0] }), '');
+  assert.ok(s.run.perks.includes(fill[RULE.cap]) && !s.run.perks.includes(fill[0]));
+  /* the No Perks challenge: no perk card at all */
+  const none = runOf();
+  none.mods = ['noperks'];
+  for (let n = 0; n < 60; n++) {
+    void n;
+    const R = W.rewardOfferMake(none, 'test', D);
+    assert.ok(!R || !R.cards.some(c => c.kind === 'perk'));
+  }
+  /* a pick of one kind (an event's "reward tutor") never holds one */
+  assert.ok(
+    W.rewardOfferMake(s.run, 'test', D, { kind: 'tutor' }) == null ||
+      !s.run.enc.reward.cards.some(c => c.kind === 'perk')
+  );
+  void PK;
+});

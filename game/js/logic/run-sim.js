@@ -483,7 +483,8 @@ export function runSimOn(env) {
           const pick = run.enc && run.enc.reward,
             c =
               pick && P.rewards === 'first-item'
-                ? pick.cards.findIndex((/** @type {any} */ x) => x.kind !== 'tutor')
+                ? /* PK-7: items only: a perk card is no item */
+                  pick.cards.findIndex((/** @type {any} */ x) => x.kind !== 'tutor' && x.kind !== 'perk')
                 : -1;
           if (pick) rewardTake(run, s, c >= 0 ? c : null, rewardDataGame(s.team));
         }

@@ -142,7 +142,7 @@ function perkPickDone(id, drop) {
  * with a noDrop row held (Non-Refundable Ticket) it says none can go and shows no card.
  * @param {string} id @param {(drop: string) => void} then @param {() => void} back
  */
-function perkDropOpen(id, then, back) {
+export function perkDropOpen(id, then, back) {
   const run = saveData.run;
   if (!run || !PERKS[id]) return;
   /* PK-7: a noDrop row (Non-Refundable Ticket): none can go, so the new one can't be taken */

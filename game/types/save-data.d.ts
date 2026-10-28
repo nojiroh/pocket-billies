@@ -485,10 +485,12 @@ export interface RunReward {
 export interface RewardCard {
   id: string;
   /** RL-14: a salvage pick's `part` (item: a robots.json part, into saveData.parts) and `scrap` (n: Scrap) */
-  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap';
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap' | 'perk';
   item?: string;
   n?: number;
   move?: string;
+  /** PK-7: a perk card's Perk (perks.json, an ordinary one) */
+  perk?: string;
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

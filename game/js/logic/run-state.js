@@ -391,11 +391,13 @@ export function validRunEnc(e) {
       Object.values(f).every(v => num(v) || (typeof v === 'string' && v.length <= 20)),
     card = (/** @type {any} */ c) =>
       plain(c) &&
-      Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move'].includes(k)) &&
+      Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move', 'perk'].includes(k)) &&
       id(c.id) &&
-      ['item', 'candy', 'evo', 'tutor', 'held', 'part', 'scrap'].includes(c.kind) &&
+      ['item', 'candy', 'evo', 'tutor', 'held', 'part', 'scrap', 'perk'].includes(c.kind) &&
       (c.item === undefined || id(c.item)) &&
       (c.move === undefined || id(c.move)) &&
+      /* PK-7: a perk card's Perk */
+      (c.perk === undefined || id(c.perk)) &&
       (c.n === undefined || wholeIn(c.n, 1, 99));
   return (
     plain(e) &&

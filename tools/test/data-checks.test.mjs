@@ -719,6 +719,11 @@ test('PK-7: the fine rarity: a leader rule names a rarity some Perk has; an even
   /* fine has no weight or price of its own */
   F.rules.run.perks.rarity.fine = 1;
   assert.ok(C.dataPerks(F).some(p => p.join(': ').includes('run.perks.rarity.fine: no such rarity')));
+  /* a reward pick's perk card names no item */
+  const H = structuredClone(GAME_DATA);
+  assert.deepEqual(C.dataRewards(H), []);
+  H.rewards.perk.item = 'potion';
+  assert.ok(C.dataRewards(H).some(p => p.join(': ').includes('perk: a perk card names no item (it draws a Perk)')));
   /* an event's perk command never names Fine Print */
   const G = structuredClone(D);
   G.events.events.form_27b.options[0].then[0] = 'perk lucky_charm';

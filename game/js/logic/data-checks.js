@@ -1981,6 +1981,8 @@ export function dataRewards(D, valid = () => true) {
     if (r.kind === 'tutor' && (r.item || r.pyramid || r.n)) problem(`${k}: a tutor card names no item`);
     /* RL-12c: a held card draws its item from items.json's held items, so it names none, and there must be some */
     if (r.kind === 'held' && (r.item || r.pyramid || r.n)) problem(`${k}: a held card names no item (it draws one)`);
+    /* PK-7: a perk card draws an ordinary Perk, so it names none */
+    if (r.kind === 'perk' && (r.item || r.pyramid || r.n)) problem(`${k}: a perk card names no item (it draws a Perk)`);
     if (r.kind === 'held' && r.weight > 0 && !Object.values(items).some((/** @type {any} */ I) => I.hold))
       problem(`${k}: no held item in items.json (hold) for it to offer`);
   }
