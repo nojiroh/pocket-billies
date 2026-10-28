@@ -7,34 +7,40 @@
      is shown, so a reload shows the same ones; choosing one (or none) clears it;
    - one in each run shop, a day: drawn from the shop's node and the day the first time the shop opens that day, kept in
      run.shelf (so buying it doesn't put another on the shelf), '' once bought; its price by rarity;
-   - at most run.perks.cap held: a new one past the cap takes the place of one the player lets go.
+   - at most run.perks.cap held (PK-6: plus the cap rule rows, perkCap): a new one past the cap takes the place of one
+     the player lets go.
    They last the run: nothing of them is kept at the payout. Every Perk is on offer from the first run (the owner,
    RL-12); RL-11's unlocks may narrow the pool later. PK-4: a Perk with `needs` (a condition on the team, such as
    team:Fire) is offered only to a team it holds for (PokeRogue's rule: a type Perk needs a Billie of its type); the
    team is given as each Billie's types (perkTeamOf), and with none given (a preview from the seed alone) needs are
-   not asked. PK-5: `bots` holds while the run's map has a scrapyard not yet visited (perkRunBots).
+   not asked. PK-5: `bots` holds while the run's map has a scrapyard not yet visited (perkRunBots); PK-6: `side` while
+   a side area is still ahead (perkRunSide).
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
 /** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { toast } from '../hooks.js';
 import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
-import { runFxMoment } from './run-loop.js';
-import { fxCond } from './effects.js';
+import { runFxMoment, runGaveText } from './run-loop.js';
+import { fxCond, fxCopyOf, fxPerkRows, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
   perkBuy: [() => perkBuy, v => (perkBuy = v)],
+  perkCap: [() => perkCap],
   // @ts-expect-error -- replaced on purpose
   perkChoose: [() => perkChoose, v => (perkChoose = v)],
   // @ts-expect-error -- replaced on purpose
   perkCount: [() => perkCount, v => (perkCount = v)],
   // @ts-expect-error -- replaced on purpose
   perkDraw: [() => perkDraw, v => (perkDraw = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkDropOk: [() => perkDropOk, v => (perkDropOk = v)],
   // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
   perkOffer: [() => perkOffer],
@@ -47,6 +53,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   perkRunBots: [() => perkRunBots, v => (perkRunBots = v)],
   // @ts-expect-error -- replaced on purpose
+  perkRunSide: [() => perkRunSide, v => (perkRunSide = v)],
+  // @ts-expect-error -- replaced on purpose
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
   // @ts-expect-error -- replaced on purpose
   perkTake: [() => perkTake, v => (perkTake = v)],
@@ -57,18 +65,32 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
- * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither). A
- * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's)
+ * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither); PK-6: a
+ * growth as it stands ("+12%"). A
+ * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's). PK-6: a
+ * held copier says which Perk it copies ("copies Rubber Stamp", or "copies nothing") and counts the copied rows
  * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks */
 export function perkCount(run, id, perks) {
   const P = perks[id],
     M = /** @type {Record<string, { n?: number, used?: number }>} */ ((run && run.perkState) || {}),
-    out = /** @type {string[]} */ ([]);
+    out = /** @type {string[]} */ ([]),
+    held = run ? run.perks.indexOf(id) : -1;
   if (!P) return '';
-  P.fx.forEach((f, i) => {
+  /* PK-6: a copier shows what it copies, and the copied rows' counters (its own marks) */
+  if (P.fx.some(f => f.kind === 'copy') && run && held >= 0) {
+    const c = fxCopyOf(run.perks, held, perks);
+    out.push(c ? `copies ${perks[c].name}` : 'copies nothing');
+  }
+  (held >= 0 && run ? fxPerkRows(run.perks, held, perks) : P.fx).forEach((f, i) => {
     const m = M[`${id}/${i}`] || {};
     if (f.once === 'run' && m.used) out.push('VOID');
     else if (f.every) out.push(`${m.n || 0}/${f.every}`);
+    /* PK-6: a growth as it stands now ("+12%" for a factor or a share, "+2" for stages or a count), "+0%" at its start */
+    if (f.grow) {
+      const v = /** @type {any} */ (m).v || 0,
+        pct = 'mult' in f || 'share' in f;
+      out.push(`${v < 0 ? '−' : '+'}${pct ? Math.round(Math.abs(v) * 100) + '%' : Math.abs(v)}`);
+    }
   });
   return [...new Set(out)].join(' · ');
 }
@@ -95,13 +117,26 @@ export function perkRunBots(run) {
   if (!run || !run.map) return true;
   return run.map.nodes.some((n, i) => n.type === 'scrapyard' && !(run.path || []).includes(i));
 }
+/** PK-6: is a side area still ahead (for `needs: side`): one not open yet whose obstacle's place is here or on a row
+ * still ahead, or one open with a place not yet visited. True when the run or its map isn't known
+ * @param {Run | null | undefined} run */
+export function perkRunSide(run) {
+  if (!run || !run.map) return true;
+  const S = run.map.side,
+    path = run.path || [];
+  if (!S) return false;
+  if (S.open) return S.nodes.some(i => !path.includes(i));
+  const cur = path[path.length - 1],
+    N = run.map.nodes;
+  return cur == null || cur === S.from || (!!N[S.from] && !!N[cur] && N[S.from].row > N[cur].row);
+}
 /** PK-4: does a Perk's `needs` hold for a team (each of its conditions, effects.js fxCond, with the team alone)?
- * True without needs, or with no team given. PK-5: `bots` asks the run (perkRunBots)
+ * True without needs, or with no team given. PK-5: `bots` asks the run (perkRunBots); PK-6: `side` too (perkRunSide)
  * @param {Perk} P @param {string[][]} [team] @param {Run} [run] */
 export function perkFits(P, team, run) {
   if (P.needs == null || !team) return true;
   return (Array.isArray(P.needs) ? P.needs : [P.needs]).every(c =>
-    c === 'bots' ? perkRunBots(run) : fxCond(c, { team })
+    c === 'bots' ? perkRunBots(run) : c === 'side' ? perkRunSide(run) : fxCond(c, { team })
   );
 }
 /** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, in perks.json's order (RF-4:
@@ -172,12 +207,28 @@ export function perkShelf(run, i, day, perks, rule, team) {
   return run.shelf[key];
 }
 
+/** PK-6: how many Perks the run may hold: rules.json run.perks.cap plus its cap rule rows (Accordion File: +1; a
+ * Photocopier below one copies it), at least 1. The Perks held count, so letting a cap Perk go lowers it at once
+ * @param {Run | null | undefined} run @param {PerkRules} rule @param {Record<string, Perk>} perks */
+export const perkCap = (run, rule, perks) => Math.max(1, rule.cap + (run ? fxRunRule(run, 'cap', perks) : 0));
+/** PK-6: may `drop` be let go for `id`: with `id` in its place the run still holds no more than its cap (letting
+ * Accordion File go at 7 held would leave 7 over a cap of 6) @param {Run} run @param {string} drop @param {string} id
+ * @param {Record<string, Perk>} perks @param {PerkRules} rule */
+export function perkDropOk(run, drop, id, perks, rule) {
+  const at = run.perks.indexOf(drop);
+  if (at < 0) return false;
+  const after = run.perks.slice();
+  after[at] = id;
+  return after.length <= perkCap({ ...run, perks: after }, rule, perks);
+}
+
 /** what a shop asks for a Perk ($, by its rarity) @param {Perk} R @param {PerkRules} rule */
 export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
 
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
- * `drop` given), 'drop' (`drop` isn't held). With `drop`, it takes that one's place. PK-1: with the save it is
+ * `drop` given), 'drop' (`drop` isn't held), 'cap' (PK-6: letting `drop` go would leave more than the cap:
+ * perkDropOk). With `drop`, it takes that one's place. PK-1: with the save it is
  * taken on (`s`, s.run being `run`), its rows of the take moment act (run-loop.js runFxMoment)
  * @param {Run} run @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string} [drop]
  * @param {any} [s]
@@ -188,12 +239,19 @@ export function perkTake(run, id, perks, rule, drop, s) {
   if (drop != null) {
     const at = run.perks.indexOf(drop);
     if (at < 0) return 'drop';
+    /* PK-6: never left over the cap (a cap Perk let go) */
+    if (!perkDropOk(run, drop, id, perks, rule)) return 'cap';
     run.perks[at] = id;
   } else {
-    if (run.perks.length >= rule.cap) return 'full';
+    if (run.perks.length >= perkCap(run, rule, perks)) return 'full';
     run.perks.push(id);
   }
-  if (s && s.run === run) runFxMoment(s, perks, 'take', undefined, id);
+  if (s && s.run === run) {
+    const m = runFxMoment(s, perks, 'take', undefined, id),
+      gave = runGaveText(m);
+    /* PK-6: a give row (Boarding Pass) says what it gave */
+    if (gave && typeof toast === 'function') toast(`${perks[id].name}: ${gave}.`);
+  }
   /* PK-5: a mapReveal rule (Tour Brochure) shows the map at once */
   runRevealAll(run, perks);
   return '';
@@ -246,7 +304,7 @@ export function perkOfferOrder(seed, perks, rule, picks, take = 'none', team) {
   for (let k = 0; k < picks; k++) {
     const offer = (perkOfferMake(run, perks, rule, team) || []).slice(),
       want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
-      took = want && run.perks.length < rule.cap && !perkChoose(run, want, perks, rule) ? want : null;
+      took = want && run.perks.length < perkCap(run, rule, perks) && !perkChoose(run, want, perks, rule) ? want : null;
     if (!took && run.offer) perkChoose(run, null, perks, rule);
     out.push({ offer, took });
   }

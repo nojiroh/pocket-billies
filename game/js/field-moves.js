@@ -21,7 +21,7 @@ import { provide, render, toast } from './hooks.js';
 import { FIELD_MOVES, LOCATIONS, gameData } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyFieldTypes, billyName } from './logic/rules.js';
-import { fieldMoveState, fieldMoveText, runSideOpen } from './logic/run-side.js';
+import { fieldMoveState, fieldMoveText, fieldMoveUser, fieldRope, runSideOpen } from './logic/run-side.js';
 import { climbState, climbText, fallTop } from './logic/surf.js';
 import { runArrive } from './logic/run-map.js';
 import { runWorldData } from './logic/run-world-data.js';
@@ -67,8 +67,10 @@ export async function fieldMoveOpen(p) {
   if (p && p.cut) return fieldBrambleOpen(p);
   const F = fieldSideHere();
   if (!F || F.S.open || talkBox.on) return;
+  /* PK-6: Coil of Rope: the badge alone opens it */
   const team = fieldTeam(),
-    st = fieldMoveState(F.M, (saveData.meta || {}).badges, team);
+    rope = fieldRope(saveData.run),
+    st = fieldMoveState(F.M, (saveData.meta || {}).badges, team, rope);
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `field move ${F.S.move}: ${st.state}`);
   if (st.state !== 'ask') {
     const line = fieldMoveText(F.M, st.state);
@@ -80,7 +82,7 @@ export async function fieldMoveOpen(p) {
   await talkLine('me', ask, null);
   const yes = (await talkChoose([{ text: 'Yes' }, { text: 'No' }])) === 0;
   if (!yes) return talkHide();
-  const B = team.find(t => t.types.includes(F.M.type));
+  const B = fieldMoveUser(F.M, team, rope);
   await fieldMoveUse(B ? B.m : null, p);
 }
 /** the move is used: "Leafy used Cut!" in the talk box while the obstacle goes on the map (leaves fly off the bramble,
