@@ -8,6 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  BATTLE_ANIMS,
   COATS,
   PYRAMIDS,
   activeBattle,
@@ -21,6 +22,7 @@ import {
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
+import { battleAnimFrame, battleIconSprite, battlePathAt } from './logic/battle-anims.js';
 import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
@@ -50,21 +52,23 @@ import {
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
+import { battleStageLookFrame } from './battle-stage-look.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { BATTLE_FX_KIND } from './walk/battle-fx.js';
+import { BATTLE_FX_KIND, battleFxHasAnim } from './walk/battle-fx.js';
+import { battleScarsEnd } from './walk/battle-scars.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_RGB: [() => BATTLE_RGB],
-  EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
   PHONE_BATTLE: [() => PHONE_BATTLE],
   RIG_DARK: [() => RIG_DARK],
   RIG_HITS: [() => RIG_HITS],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
+  TRAIL_CELL_MS: [() => TRAIL_CELL_MS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dEffectLights: [() => battle3dEffectLights, v => (battle3dEffectLights = v)],
@@ -72,8 +76,10 @@ expose({
   battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
   battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
+  battle3dScenePoint: [() => battle3dScenePoint, v => ((battle3dScenePoint = v), provide({ battle3dScenePoint }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
+  battle3dTrail: [() => battle3dTrail, v => (battle3dTrail = v)],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
   battleFoil: [() => battleFoil, v => (battleFoil = v)],
@@ -87,7 +93,7 @@ expose({
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dStart, battle3dStop, ribbonColour });
+provide({ battle3dLayout, battle3dScenePoint, battle3dStart, battle3dStop, ribbonColour });
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -213,6 +219,8 @@ export function battle3dLayout() {
 export function battle3dStop() {
   if (!battle3d.on) return;
   battle3d.on = false;
+  /* VFX-15: the battle's scars go (walk/battle-scars.js, four dithered steps) */
+  if (typeof battleScarsEnd === 'function') battleScarsEnd();
   walkView.battle = null;
   walkRenderer.bt = null;
   walkRenderer.camT = null;
@@ -396,16 +404,37 @@ function battle3dFrame() {
   const fx = battle3d.fx || (battle3d.fx = []);
   fx.length = 0;
   for (const p of battleStage.parts) {
-    if (p.img) continue;
+    /* VFX-11: a light step's particle shows nothing */
+    if (p.img || p.hide) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
     if (a <= 0.01) continue;
     const [px, pz] = T(p.x, p.z),
       q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
-    if (p.spr) {
+    if (p.spr && !p.beam) {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
+      /* VFX-10: an icon with a strip like it (battleAnims.json iconSprites) is drawn as that strip, in its type's ramp
+         (else the icon's), its frame stepped on the stage clock; a strip that plays once carries its own fade (its
+         last frames erode), so only a looping one also erodes by its age. VFX-11: a particle may name its strip
+         (anim) itself; Electric's hold each frame twice (a stutter); a flipped one (flip -1) is mirrored */
+      const I =
+        p.anim && battleFxHasAnim(p.anim)
+          ? { sprite: p.anim, ramp: p.ramp }
+          : battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
+      if (I && battleFxHasAnim(I.sprite)) {
+        const S = BATTLE_ANIMS.sprites[I.sprite],
+          age = p.stutter ? p.age - (p.age % 167) : p.age;
+        q.anim = I.sprite;
+        q.ramp = I.ramp;
+        q.f = battleAnimFrame(S, age, p.life);
+        q.scale = p.k || 1;
+        q.flip = p.flip < 0 ? -1 : 1;
+        if (!S.loop) q.a = p.twinkle ? clamp(0.5 + 0.5 * Math.sin(p.age / 120), 0, 1) : 1;
+        /* VFX-11: a projectile's trail: copies of it where its path had it a cell (42 ms) ago, and before, eroding */
+        if (p.path && p.trail) battle3dTrail(fx, p, q, T);
+      }
     } else if (p.ring) {
       q.k = BATTLE_FX_KIND.ring;
       q.r = (p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) / 30;
@@ -421,6 +450,13 @@ function battle3dFrame() {
       q.z2 = z2;
       q.w = (p.w || 1) / 30;
       q.col = battle3dRgb(p.col);
+      /* VFX-11: a ray's strip (beam_strip), tiled along it in its ramp; else VFX-9's flat beam */
+      if (p.anim && battleFxHasAnim(p.anim)) {
+        q.anim = p.anim;
+        q.ramp = p.ramp;
+        q.f = battleAnimFrame(BATTLE_ANIMS.sprites[p.anim], p.age, p.life);
+        q.scale = p.k || 1;
+      }
     } else {
       q.k = BATTLE_FX_KIND.square;
       q.size = Math.max(1, (p.size || 2) * 0.6) / 30;
@@ -480,12 +516,18 @@ function battle3dFrame() {
     impact,
     /* VFX-9: the chromatic flash, a pulse in the grade pass */
     caPulse: battleStageChromaticPulse(),
+    /* VFX-15: the stage's mood, the battle's weather look and the Sandstorm (battle-stage-look.js) */
+    stageLook: typeof battleStageLookFrame === 'function' ? battleStageLookFrame() : null,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
+}
+/* VFX-15: a point of the battle (battle space, metres) in the walk scene (battle-stage-look.js lays scars there) */
+function battle3dScenePoint(x, z) {
+  return battleTurnPoint(x, z, battle3d.yaw || 0, actionCenter, battle3d.off);
 }
 /* VFX-9: a Billie's white and dark flashes (s.white, s.dark: 0..1, white first, then dark, as rigTint laid them on
    the picture) as one colour and amount after the light: [r, g, b, a], or null with none */
@@ -501,6 +543,18 @@ function battle3dHit(s, i) {
   H[3] = a;
   return H;
 }
+/* VFX-11: a projectile's trail: copies of its strip where its path had it 1, 2... cells (42 ms) ago, each eroded a
+   little more (the pool's fade), so it reads as Part 1's afterimages without a draw of its own */
+const TRAIL_CELL_MS = 42;
+function battle3dTrail(fx, p, q, T) {
+  for (let j = 1; j <= p.trail; j++) {
+    const u = (p.age - j * TRAIL_CELL_MS) / p.life;
+    if (u <= 0) break;
+    const w = battlePathAt(p.path, u),
+      [x, z] = T(w[0], w[2]);
+    fx.push({ ...q, x, y: battle3d.gy + w[1], z, a: q.a * (1 - j / (p.trail + 1)), glow: false });
+  }
+}
 /* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */
 const BATTLE_RGB = new Map();
 function battle3dRgb(col) {
@@ -512,15 +566,16 @@ function battle3dRgb(col) {
   return c;
 }
 /* VFX-9: the effect lights (glowing move particles with a colour, the newest first): 3 / 2 / 1 / 0 by the battle's
-   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines */
+   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines.
+   VFX-12: the numbers are battleAnims.json `budgets` (the Studio's Battle effects tunes them) */
 const PHONE_BATTLE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
-const EFFECT_LIGHT_BUDGET = [3, 2, 1, 0];
 function battle3dEffectLights(lights, at3) {
-  const P = battleStage.parts,
+  const B = BATTLE_ANIMS.budgets,
+    P = battleStage.parts,
     max = Math.min(
-      EFFECT_LIGHT_BUDGET[clamp(battleStage.q.lvl | 0, 0, 3)],
-      PHONE_BATTLE ? 2 : 3,
-      Math.max(0, 6 - lights.length)
+      B.lights[clamp(battleStage.q.lvl | 0, 0, 3)],
+      PHONE_BATTLE ? B.lightsPhone : 3,
+      Math.max(0, B.lightsAll - lights.length)
     ),
     pick = [];
   for (let i = P.length - 1; i >= 0 && pick.length < max; i--) {
@@ -537,7 +592,8 @@ function battle3dEffectLights(lights, at3) {
       p.lk = [8, 9, 10].find(k => !taken.has(k)) || 10;
       taken.add(p.lk);
     }
-    const k = Math.max(0, 1 - p.age / p.life),
+    /* VFX-11: a kit's light strength (lightK), and a flicker (Fire, Electric) stepped at 12 fps */
+    const k = Math.max(0, 1 - p.age / p.life) * (p.lightK || 1) * (p.flick && Math.floor(p.age / 83) % 2 ? 0.6 : 1),
       c = battle3dRgb(p.col);
     lights.push({
       p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
