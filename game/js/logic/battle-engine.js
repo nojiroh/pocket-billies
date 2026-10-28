@@ -1985,7 +1985,8 @@ export function heldSurvives(tk, r) {
   return true;
 }
 /** PK-10: what held items do after a hit lands: the one hit holds a reflect row (Cactus Keyring): the one hitting
- * loses its share of its HP, for a move of the row's category (any without one) @param {number} k @param {number} tk
+ * loses its share of its HP, for a move of the row's category (any without one); the one hitting holds a drain row
+ * (Costume Fangs): it heals its share of the damage dealt @param {number} k @param {number} tk
  * @param {any} M @param {{ dmg: number }} r */
 export function heldAfterHit(k, tk, M, r) {
   const u = fighter(k),
@@ -1997,6 +1998,15 @@ export function heldAfterHit(k, tk, M, r) {
     u.hp -= d;
     battleSay(`${billyName(u)} was hurt by ${billyName(t)}’s ${heldName(t)}.`, { k: 'hurt', si: k, dmg: d }).by = [
       { src: 'held:' + t.held, si: tk },
+    ];
+  }
+  /* the one hitting holds a drain row (Costume Fangs): it heals its share of the damage dealt */
+  const dr = u.held && u.hp > 0 ? fxHeldRow(fxOfBillie(u, ITEMS), 'drain') : null;
+  if (dr && u.hp < maxHp(u)) {
+    const g = Math.min(maxHp(u) - u.hp, Math.max(1, Math.floor(r.dmg * dr.share)));
+    u.hp += g;
+    battleSay(`${billyName(u)} restored HP with its ${heldName(u)}.`, { k: 'heal', si: k, amt: g }).by = [
+      { src: 'held:' + u.held, si: k },
     ];
   }
 }

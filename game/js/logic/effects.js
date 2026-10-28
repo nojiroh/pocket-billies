@@ -796,8 +796,9 @@ export function fxStateLog(run) {
  *   survive  once a battle, from full HP, its holder lives through a knockout hit with 1 HP (battle-engine.js
  *            heldSurvives)
  *   reflect  a Billie that hits its holder with a move (of its cat, if it names one) loses share of its own HP
- *            (heldAfterHit) */
-export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect']);
+ *            (heldAfterHit)
+ *   drain    its holder heals share of the damage it deals (heldAfterHit) */
+export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain']);
 /** PK-10: a holder's first row of a kind, or null @param {any[] | null | undefined} fx @param {string} kind */
 export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || null;
 /** PK-10: the moments a hold row can act at */

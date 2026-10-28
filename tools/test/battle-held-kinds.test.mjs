@@ -134,3 +134,21 @@ test('held reflect: a Billie hitting its holder with a move of its category lose
   fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 5 });
   assert.equal(foe.hp, 0, 'never below 0');
 });
+
+test('held drain: its holder heals its share of the damage it deals, never past full', () => {
+  const id = item('test_fangs', [{ kind: 'drain', share: 0.125 }]);
+  const { B, me } = battle(id),
+    mx = fn('maxHp')(me);
+  me.hp = 5;
+  fn('heldAfterHit')(0, 1, { c: 'H' }, { dmg: 40 });
+  assert.equal(me.hp, 10);
+  assert.match(texts(B), /Emberox restored HP with its test fangs/);
+  fn('heldAfterHit')(0, 1, { c: 'S' }, { dmg: 3 });
+  assert.equal(me.hp, 11, 'at least 1');
+  me.hp = mx;
+  fn('heldAfterHit')(0, 1, { c: 'H' }, { dmg: 400 });
+  assert.equal(me.hp, mx, 'never past full');
+  me.hp = 5;
+  fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 40 });
+  assert.equal(me.hp, 5, 'being hit drains nothing');
+});

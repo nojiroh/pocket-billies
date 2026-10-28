@@ -35,6 +35,7 @@ const HELD_KIND_NAMES = {
   pinchHeal: 'Once a battle, a share of HP when low',
   survive: 'Once a battle, from full HP, lives through a knockout hit with 1 HP (PK-10)',
   reflect: 'Billies that hit its holder lose a share of their HP (PK-10)',
+  drain: 'Its holder heals a share of the damage it deals (PK-10)',
 };
 /** a new row of a kind: its fields with values that change little */
 const HELD_ROW_NEW = {
@@ -46,6 +47,7 @@ const HELD_ROW_NEW = {
   pinchHeal: () => ({ kind: 'pinchHeal', at: 0.5, share: 0.25 }),
   survive: () => ({ kind: 'survive' }),
   reflect: () => ({ kind: 'reflect', share: 0.125, cat: 'H' }),
+  drain: () => ({ kind: 'drain', share: 0.125 }),
 };
 /** the data checks' messages about one item's rows (dataHeldItems, as CI runs it) */
 const heldProblems = (/** @type {string} */ k) => {
@@ -151,6 +153,7 @@ function heldRowHTML(k, f, n, P) {
           { none: 'Any', opt: 1 }
         ),
       ],
+      drain: () => [share('Share of the damage dealt it heals')],
     })[f.kind],
     rows = D.items[k].hold;
   const err = P.filter(m => m.startsWith(`${k}.hold[${n}]`))

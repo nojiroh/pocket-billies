@@ -1974,7 +1974,9 @@ export type HeldKindRow =
   /** once a battle, from full HP, its holder lives through a knockout hit with 1 HP */
   | { kind: 'survive' }
   /** a Billie that hits its holder (with a move of `cat`, any without) loses `share` of its own HP */
-  | { kind: 'reflect'; share: number; cat?: 'H' | 'S' };
+  | { kind: 'reflect'; share: number; cat?: 'H' | 'S' }
+  /** its holder heals `share` of the damage it deals */
+  | { kind: 'drain'; share: number };
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
 export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */

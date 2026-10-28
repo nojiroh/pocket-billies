@@ -2527,7 +2527,7 @@ export function heldRowProblems(f, at, D, problem) {
   }
 }
 /** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number; reflect a share (at most
- * half) and a category or none
+ * half) and a category or none; drain a share of the damage dealt
  * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function heldKindProblems(f, at, D, problem) {
   const extra = (/** @type {string[]} */ own) =>
@@ -2542,6 +2542,11 @@ export function heldKindProblems(f, at, D, problem) {
     if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
       problem(`${at}.share: a share of the hitter's HP above 0, at most 0.5`);
     if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+  }
+  if (f.kind === 'drain') {
+    extra(['share']);
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+      problem(`${at}.share: a share of the damage dealt above 0, at most 1`);
   }
 }
 // SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
