@@ -22,6 +22,8 @@
      revive  when your whole team has fainted, they all get back up with a share of their HP (its `once`) (PK-3)
      weather yours' moves are never weakened by the weather (noWeaken), or get its boosts mult times over (boost)
              (PK-4, calcDamage)
+     benchXp a share of a foe's XP more for yours who sat out (the bench; rules.json progression.teamXpShare plus
+             these, at most all of it) (PK-4, award)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
@@ -62,6 +64,7 @@ expose({
   FX_WHEN: [() => FX_WHEN],
   FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
   fxAt: [() => fxAt],
+  fxBenchXp: [() => fxBenchXp],
   fxCatch: [() => fxCatch],
   fxChip: [() => fxChip],
   // @ts-expect-error -- replaced on purpose
@@ -144,6 +147,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'revive',
   'passive',
   'weather',
+  'benchXp',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -372,6 +376,14 @@ export function fxWeather(fx, w) {
   const k = fxMult(L, f => /** @type {any} */ (f).what === 'boost');
   return k === 1 ? w : 1 + (w - 1) * k;
 }
+
+/** PK-4: the share of a foe's XP the benchXp rows add for yours who sat out (summed, at most 1; 0 when none)
+ * @param {Fx[] | null | undefined} fx */
+export const fxBenchXp = fx =>
+  Math.min(
+    1,
+    (fx || []).reduce((a, f) => a + (f.kind === 'benchXp' ? f.share : 0), 0)
+  );
 
 /** PK-4: the type passives a passive row can strengthen (types.json `passive`), each with the numbers it takes:
  *   kindling     rate    its turns in battle count this many times over (Kindling builds faster, to the same top)

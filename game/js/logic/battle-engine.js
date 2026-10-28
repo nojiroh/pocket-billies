@@ -91,6 +91,7 @@ import {
 import { factionBotOf } from './factions.js';
 import {
   fxAt,
+  fxBenchXp,
   fxCatch,
   fxChip,
   fxCrit,
@@ -961,7 +962,8 @@ export function award(e) {
     battleSay(`${billyName(bud)} gained ${formatNumber(got)} XP.`);
     gainXp(bud, got, battleSay);
   }
-  const share = Math.floor(amt * P.teamXpShare),
+  /* PK-4: the run's benchXp rows (Group Chat) add to the share, at most all of it */
+  const share = Math.floor(amt * Math.min(1, P.teamXpShare + fxBenchXp(fxBattleRows(battleNow())))),
     rest = mine.filter(m => !on.includes(m) && m !== bud && m.hp > 0);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, heldXp(m, share), () => {}));

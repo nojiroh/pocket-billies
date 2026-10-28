@@ -99,6 +99,7 @@ const PERK_KINDS = {
   revive: 'A wiped team gets back up, once (PK-3)',
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
+  benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -143,6 +144,7 @@ const PERK_ROW_NEW = {
   revive: () => ({ kind: 'revive', share: 0.5, once: 'run' }),
   passive: () => ({ kind: 'passive', passive: 'kindling', rate: 2 }),
   weather: () => ({ kind: 'weather', what: 'noWeaken' }),
+  benchXp: () => ({ kind: 'benchXp', share: 0.25 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -331,6 +333,11 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           { rr: 1 }
         ),
         ...(f.what === 'boost' ? [mult('Boosts counted × (×1.3 with 2 is ×1.6)')] : []),
+      ],
+      benchXp: () => [
+        share(
+          `Share of a foe’s XP more for those who sat out (rules.json gives them ${studioState.D.rules.progression.teamXpShare}; at most all of it)`
+        ),
       ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(

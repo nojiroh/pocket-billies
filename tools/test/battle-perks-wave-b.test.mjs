@@ -354,3 +354,37 @@ test('PK-4 weather boost: the weather’s boosts to yours count `mult` times ove
   );
   assert.equal(modules.effects.fxWeather(null, 0.7), 0.7);
 });
+
+/* ---------- benchXp ---------- */
+
+test('PK-4 benchXp: yours who sat out get the row’s share of a foe’s XP more, at most all of it', () => {
+  const { P, fx } = perks({ id: 'test_chat', fx: [{ kind: 'benchXp', share: 0.5 }] });
+  const sp = ofType('Water'),
+    T = data.RULES.progression.teamXpShare;
+  withPerks(P, () => {
+    const got = fxOn => {
+      const b = battle(fxOn ? fx : null, [sp, sp, sp], {}, 10, sp);
+      const bench = b.sides[0].team[1],
+        out = b.sides[0].team[2],
+        lead = mine(b),
+        w = [bench.xp, out.xp, lead.xp];
+      out.hp = 0;
+      foe(b).hp = 0;
+      fn('award')(foe(b));
+      return [bench.xp - w[0], out.xp - w[1], lead.xp - w[2]];
+    };
+    const [ab, ao, al] = got(true),
+      [nb, , nl] = got(false);
+    assert.equal(al, nl, 'the one who fought: the same');
+    assert.ok(Math.abs(nb - Math.floor(nl * T)) <= 1, `the bench without the row: ${nb} of ${nl}`);
+    assert.ok(Math.abs(ab - Math.floor(nl * Math.min(1, T + 0.5))) <= 1, `with it: ${ab} of ${nl}`);
+    assert.equal(ao, 0, 'a fainted one gets none');
+  });
+  assert.equal(
+    modules.effects.fxBenchXp([
+      { kind: 'benchXp', share: 0.75, src: 'a' },
+      { kind: 'benchXp', share: 0.75, src: 'b' },
+    ]),
+    1
+  );
+});

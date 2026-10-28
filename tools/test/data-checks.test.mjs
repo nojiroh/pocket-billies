@@ -478,6 +478,8 @@ const PK4_GOOD = [
   { kind: 'weather', what: 'noWeaken' },
   { kind: 'weather', what: 'boost', mult: 2 },
   { kind: 'weather', what: 'boost', mult: 1.5, if: 'type:Water' },
+  { kind: 'benchXp', share: 0.5 },
+  { kind: 'benchXp', share: 0.25, if: 'foe:trainer' },
 ];
 const PK4_BAD = [
   [{ kind: 'passive', passive: 'overheat', rate: 2 }, 'passive: kindling, undertow'],
@@ -499,6 +501,8 @@ const PK4_BAD = [
   [{ kind: 'weather', what: 'boost' }, "a boost row's mult is above 1"],
   [{ kind: 'weather', what: 'noWeaken', mult: 2 }, 'a noWeaken row has no mult'],
   [{ kind: 'weather', what: 'noWeaken', when: 'hit' }, "a weather row can't act at hit"],
+  [{ kind: 'benchXp', share: 0 }, 'share: a share of XP above 0, at most 1'],
+  [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
 ];
 test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

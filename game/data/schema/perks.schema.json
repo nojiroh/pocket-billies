@@ -151,6 +151,11 @@
        "description": "weather (PK-4): the weather never weakens your Billies' moves (noWeaken), or its boosts to them count mult times over (boost: x1.3 with mult 2 is x1.6)",
        "type": "object", "additionalProperties": false, "required": ["kind", "what"],
        "properties": {"kind": {"const": "weather"}, "what": {"enum": ["noWeaken", "boost"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "benchXp (PK-4): your Billies who sat out (the bench) get this share of a foe's XP more (added to rules.json progression.teamXpShare, at most all of it)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "share"],
+       "properties": {"kind": {"const": "benchXp"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

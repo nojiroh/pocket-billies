@@ -2050,6 +2050,8 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.mult: a boost row's mult is above 1 (the weather's boosts counted that many times over)`);
     if (f.what === 'noWeaken' && 'mult' in f) problem(`${at}.mult: a noWeaken row has no mult`);
   }
+  if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+    problem(`${at}.share: a share of XP above 0, at most 1`);
 }
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
