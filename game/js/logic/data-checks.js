@@ -2536,7 +2536,7 @@ export function heldRowProblems(f, at, D, problem) {
     }
   }
 }
-/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number; reflect a share (at most
+/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive and last take no number; reflect a share (at most
  * half) and a category or none; drain a share of the damage dealt;
  * immune a type (not a Perk's what), until: hurt or none; first a chance
  * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
@@ -2547,7 +2547,7 @@ export function heldKindProblems(f, at, D, problem) {
       .forEach(key =>
         problem(`${at}.${key}: ${fxA(f.kind)} row takes ${own.length ? own.join(', ') : 'no other field'}`)
       );
-  if (f.kind === 'survive') extra([]);
+  if (f.kind === 'survive' || f.kind === 'last') extra([]);
   if (f.kind === 'reflect') {
     extra(['share', 'cat']);
     if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))

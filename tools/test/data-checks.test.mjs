@@ -491,6 +491,8 @@ test("data checks: PK-10: a held item's row says when (a stat row at hit or hurt
     [{ kind: 'first', chance: 0.2 }, ''],
     [{ kind: 'first' }, "chance: a held first row's chance"],
     [{ kind: 'first', chance: 0.9 }, "chance: a held first row's chance"],
+    [{ kind: 'last' }, ''],
+    [{ kind: 'last', n: 1 }, 'n: a last row takes no other field'],
   ]) {
     const F = structuredClone(GAME_DATA);
     F.items.iron_vest.hold = [row];

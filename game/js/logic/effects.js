@@ -798,8 +798,9 @@ export function fxStateLog(run) {
  *            heldSurvives)
  *   reflect  a Billie that hits its holder with a move (of its cat, if it names one) loses share of its own HP
  *            (heldAfterHit)
- *   drain    its holder heals share of the damage it deals (heldAfterHit) */
-export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain']);
+ *   drain    its holder heals share of the damage it deals (heldAfterHit)
+ *   last     its holder moves after the others, within a move's priority (battle-engine.js heldLastActs) */
+export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain', 'last']);
 /** PK-10: the kinds of FX_KINDS a hold row reads its own way: immune names a type (its moves miss the holder, until
  * it is hit with `until: hurt`; battle-engine.js heldFloats); first a chance its holder moves first (heldFirstActs) */
 export const HELD_OWN_FORMS = /** @type {const} */ (['immune', 'first']);

@@ -203,3 +203,31 @@ test('held first: a roll for each act of its holder; a win puts it ahead, with a
   assert.equal(early.size, 0);
   assert.equal(JSON.stringify(B.rng), r0, 'nothing held: no roll');
 });
+
+test('held last: its holder moves after the others, even when faster; a priority move still goes first', () => {
+  const id = item('test_weights', [{ kind: 'last' }]);
+  const order = held => {
+    const { B, me } = battle(held);
+    fn('fieldState')(0).st.hus = 6;
+    B.sides[1].team[0].hp = 9999;
+    me.hp = 9999;
+    fn('runTurn')([{ who: 0, k: 'move', mid: attack(me), tk: 1 }], B);
+    return B.events.find(e => e.an && e.an.k === 'move').an.si;
+  };
+  assert.equal(order(null), 0, 'without it, the faster moves first');
+  assert.equal(order(id), 1, 'with it, last');
+  const { B, me, foe } = battle(id),
+    mid = attack(me),
+    fmid = attack(foe);
+  fn('fieldState')(0).st.hus = 6;
+  B.sides[1].team[0].hp = 9999;
+  me.hp = 9999;
+  const late = fn('heldLastActs')([{ who: 0 }, { who: 1 }]);
+  assert.equal(late.size, 1);
+  fn('chooseAI');
+  hooks.provide({ activeBattle: B });
+  const firstMover = () => B.events.find(e => e.an && e.an.k === 'move').an.si;
+  fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], B);
+  assert.equal(firstMover(), 1, 'the foe moved first: ' + texts(B).slice(0, 300));
+  assert.ok(fmid);
+});

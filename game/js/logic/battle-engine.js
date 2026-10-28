@@ -251,6 +251,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   heldHitMoments: [() => heldHitMoments, v => (heldHitMoments = v)],
   // @ts-expect-error -- replaced on purpose
+  heldLastActs: [() => heldLastActs, v => (heldLastActs = v)],
+  // @ts-expect-error -- replaced on purpose
   heldMarks: [() => heldMarks, v => (heldMarks = v)],
   // @ts-expect-error -- replaced on purpose
   heldMoment: [() => heldMoment, v => (heldMoment = v)],
@@ -2009,6 +2011,16 @@ export function heldFirstActs(acts, early) {
     battleSay(`${billyName(u)}’s ${heldName(u)} let it go first!`, null).by = [{ src: 'held:' + u.held, si: a.who }];
   }
 }
+/** PK-10: the acts whose fighter holds a last row (Ankle Weights) and didn't win a way to go first @param {any[]} acts
+ * @returns {Set<any>} */
+export function heldLastActs(acts) {
+  const out = new Set();
+  for (const a of acts) {
+    const u = fighter(a.who);
+    if (u && u.held && fxHeldRow(fxOfBillie(u, ITEMS), 'last')) out.add(a);
+  }
+  return out;
+}
 /** PK-10: does fighter k's held immune row keep moves of type `ty` off it now (not yet spent by a hit, with `until`)?
  * @param {number} k @param {string} ty */
 export function heldFloats(k, ty) {
@@ -2114,10 +2126,13 @@ export function runTurn(plan, b) {
     const early = fxFirstActs(acts);
     /* PK-10: a held first row (Express Pass), on either side: a roll for each of its acts */
     heldFirstActs(acts, early);
+    /* PK-10: a held last row (Ankle Weights): after the others, within a move's priority */
+    const late = heldLastActs(acts);
     acts.sort(
       (a, b) =>
         (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
         (early.has(b) ? 1 : 0) - (early.has(a) ? 1 : 0) ||
+        (late.has(a) ? 1 : 0) - (late.has(b) ? 1 : 0) ||
         (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
         effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
         a.r - b.r

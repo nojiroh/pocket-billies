@@ -38,6 +38,7 @@ const HELD_KIND_NAMES = {
   drain: 'Its holder heals a share of the damage it deals (PK-10)',
   immune: 'Moves of a type miss its holder (until it is hit) (PK-10)',
   first: 'A chance its holder moves first (PK-10)',
+  last: 'Its holder moves last (PK-10)',
 };
 /** a new row of a kind: its fields with values that change little */
 const HELD_ROW_NEW = {
@@ -52,6 +53,7 @@ const HELD_ROW_NEW = {
   drain: () => ({ kind: 'drain', share: 0.125 }),
   immune: () => ({ kind: 'immune', type: 'Ground', until: 'hurt' }),
   first: () => ({ kind: 'first', chance: 0.2 }),
+  last: () => ({ kind: 'last' }),
 };
 /** the data checks' messages about one item's rows (dataHeldItems, as CI runs it) */
 const heldProblems = (/** @type {string} */ k) => {
@@ -174,6 +176,7 @@ function heldRowHTML(k, f, n, P) {
           help: `Above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE). Within a move’s priority.`,
         }),
       ],
+      last: () => ['<p class="note">No number: after the others, within a move’s priority.</p>'],
     })[f.kind],
     rows = D.items[k].hold;
   const err = P.filter(m => m.startsWith(`${k}.hold[${n}]`))
