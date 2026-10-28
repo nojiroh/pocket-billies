@@ -573,8 +573,9 @@ session (2026-10-28):
 - Its steps from SY-4 on message this track's planning session before they change `hitFx`, the join intro,
   `battleStageFlash` or the sprite shader (SY-5: the Notice, stamps in battle, the Bureau's plates; SY-6: `uFoil`),
   naming the change and the commit; this track's steps do the same for it.
-- **Flashes:** SY-1 (built; on main through #289) already sends every battle flash through `flashFor` (logic/smear.js): Reduced
-  motion, no flash; Flashes off, a bright flash held to a 15% tint and a dark one kept, no chromatic flash, the impact
+- **Flashes:** SY-1 (built; on main through #289) already sends every battle flash through `flashFor`
+  (logic/smear.js): Reduced motion, no flash; Flashes off, a bright flash held to a 15% tint and a dark one kept, no
+  chromatic flash, the impact
   frame without its two-tone cells (a crit keeps its speed lines). That replaces VFX-8's "Flashes reaches the battle"
   and the Flashes-off half of rule 9. VFX-8 adds only the rate limit (at most 3 full-screen flashes in any second,
   333 ms apart, no saturated red), counting the flashes the runner asks for and passing each through `flashFor`; it
