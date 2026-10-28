@@ -2,7 +2,7 @@
 
 Pocket Billies, from the fresh base on. Versions are `0.MINOR.PATCH alpha`: MINOR for a finished phase or a batch of
 new features, PATCH for fix-only releases; "alpha" becomes "beta" once the planned features are all in. The version is
-written in one place, game/version.js. The legacy build's changelog is in docs/archive/LEGACY-CHANGELOG.md.
+written in one place, game/version.js. The legacy build's changelog is README.md on the `legacy` branch.
 
 ## 0.1.0 alpha (unreleased)
 
@@ -990,7 +990,7 @@ kept aside in the browser).
 - Under the hood: the modules no longer put their names on `window` (the game and the Studio reach each other's
   code through imports); for the console, add `?globals` to the address.
 - Under the hood: the code, the data and the files have descriptive names (docs/NAMING.md; the old -> new list is in
-  docs/archive/phase-05-renames.md). The places' ids match their names (Marigold Town is `marigold`, no longer
+  git history). The places' ids match their names (Marigold Town is `marigold`, no longer
   `sundown`), so a debug log, a `?scene=` link or a Studio export from an earlier build names places the old way.
   The save format is 2: a save from an earlier 0.1.0 build doesn't load (a new game starts and the old save is kept
   aside, as with legacy saves). No text changed, but the 43 places with a new id look a little different: the

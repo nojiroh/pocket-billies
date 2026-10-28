@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ================= PUBLISH PLAN (Studio plan Phase 0, docs/plans/studio-roguelite-improvement-plan.md) =================
+/* ================= PUBLISH PLAN (Studio plan Phase 0, docs/archive/tracks/studio-roguelite-improvement-plan.md) =================
    The Studio's Save / Propose as decisions, so no failure can drop a change. A save first stages what it will send
    (the data's text, the rigs' text, each picture and, SA-2b, each text file with the version it had), sends it, and only after the server said
    yes clears what is still the same as what was sent: a picture painted again, or data edited, while the send was on

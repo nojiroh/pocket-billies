@@ -291,7 +291,7 @@ it, or press **Add line ids** under a script in the Studio (the same rule).
 |---|---|---|
 | `when`, `unless` | a map's people, a trainer, a prop | there only while the condition holds / doesn't (a prop is neither drawn nor solid) |
 | `requires`, `locked` | a place (locations.json) | closed until the condition holds: walking in, the world map, the airship and the route finder all refuse, and you are told `locked` (or "<place> is closed for now.") |
-| `chapters` | story.json | `{ "<id>": { "when": cond, "maps": { "copperleaf": "copperleaf__ch2" } } }`: while `when` holds, the map loads the variant file's props and people (game/data/maps/copperleaf__ch2.json, not listed in index.json). Chosen as the map loads: a new chapter shows the next time the game starts |
+| `chapters` | story.json | `{ "<id>": { "when": cond, "maps": { "copperleaf": "copperleaf__ch2" } } }`: while `when` holds, the map loads the variant file's props and people (game/data/maps/<map>__<chapter>.json, not listed in index.json; none is committed). Chosen as the map loads: a new chapter shows the next time the game starts |
 
 ## Story checks
 

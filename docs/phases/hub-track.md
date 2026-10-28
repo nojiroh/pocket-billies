@@ -267,8 +267,8 @@ town square; the hub waterfall above the pond.**
   the ground first stands 4 m over the pond (`falls` contract draft `{x: 92.79, z: 89.67, dir: [0.83, -0.56], w: 3, h:
   4.15, pool: 4}` on B); a shelf has to be cut there (the generator's or the water track's, WA-2b decides which). Tell
   the water track's lane G.
-- Sketch tool: `python3 tools/island-sketches.py [OUT] [ids] [--above]` (relief maps, a sheet; `--above` the game's
-  own pictures from draft maps `hb4a_<id>` put in the game data and removed after). Output in validation/hub-sketches/.
+- Sketch tool: `tools/island-sketches.py` (relief maps, a sheet; `--above` the game's own pictures from draft maps
+  `hb4a_<id>`), deleted with island-sketches.mjs on 2026-10-28 once B2 was picked; git history has both.
 
 ### HB-4b The island rebuilt
 - The picked direction through the generator's dials and the build tools (build-island, build-copperleaf, the
