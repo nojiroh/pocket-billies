@@ -564,6 +564,17 @@ export function trackerCreate(ctx, bus, opts = {}) {
     for (const [id, R] of Object.entries(recipes || {}))
       if (!SOUND_BAKE_INSTRUMENTS[id] && !soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
   };
+  /* SND-10: a baked zone's buffer and the rate that moves it to midi (a texture loops it); null (and the bank asked)
+     when nothing of it is baked yet */
+  T.bankBuffer = (inst, midi) => {
+    const E = soundBakeEntry(inst, c);
+    if (!E) return null;
+    const P = soundBakeZoneFor(E.zones, midi);
+    if (!P || !P.own) soundBakeWant(E);
+    if (!P) return null;
+    E.used[P.zone.i] = ++soundBakeBank.clock;
+    return { buffer: P.zone.buffer, rate: P.rate };
+  };
   /* SND-10: a baked sound played once (a bubble, a drip): one buffer source and one gain, the nearest zone moved to
      midi and then by rate (a little faster or slower), never looped. null (and the bank asked) when nothing of it is
      baked yet */

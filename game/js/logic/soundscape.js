@@ -46,6 +46,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   soundscapeNearest: [() => soundscapeNearest, v => (soundscapeNearest = v)],
   // @ts-expect-error -- replaced on purpose
+  soundscapePreview: [() => soundscapePreview, v => (soundscapePreview = v)],
+  // @ts-expect-error -- replaced on purpose
   soundscapeTide: [() => soundscapeTide, v => (soundscapeTide = v)],
   // @ts-expect-error -- replaced on purpose
   soundscapeVoices: [() => soundscapeVoices, v => (soundscapeVoices = v)],
@@ -58,7 +60,7 @@ expose({
  * @typedef {[number, number, string, number, number]} SoundscapeCell a metre of water: [x, z, kind, shore 0/1, runs 0/1]
  * @typedef {[number, number, number]} SoundscapeEmitter where a recipe sounds: [x, z, height (m, falls; else 0)]
  * @typedef {{recipe: string, at?: 'shore' | 'all'}} SoundscapeKind a water kind's recipe, and which of its cells
- *   sound: its shores (still water laps at the bank) or all of them (thinned to one every 2 m)
+ *   sound: its shores (still water laps at the bank) or all of them (thinned to half, a checkerboard)
  * @typedef {{type: 'bubbles', bank: string, rate: number, rMin: number, rMax: number, gamma?: number,
  *   xi?: number, beta?: number, level: number, gap?: number, pan?: number}} SoundscapeBubbleSpec
  *   bubbles at random (a Poisson rate a second, never closer than gap s): radii in mm between rMin and rMax, more of
@@ -253,17 +255,22 @@ export function soundscapeEmitters(S, cells, sc, o = {}) {
         }
     return best;
   };
+  /* half the metres (a checkerboard, so a one-metre strip keeps half its cells) sound for running water, `all` kinds and
+     rain on water (every surface but lava and ice) */
+  const rain = S.rainOnWater;
   for (const [x, z, k, shore, run] of cells) {
     const K = S.kinds[k];
+    const half = (Math.floor(x) + Math.floor(z)) % 2 === 0;
+    if (rain && k !== 'lava' && k !== 'ice' && half) add(rain, x, z);
     if (run) {
       /* running water: the line's own recipe near a line, else the kind's (a canal, rapids painted as a kind) */
       const r = lineAt(x, z) || (K && K.at === 'all' ? K.recipe : R.brook);
-      if ((Math.floor(x) + Math.floor(z)) % 2 === 0) add(r, x, z);
+      if (half) add(r, x, z);
       continue;
     }
     if (!K) continue;
     if (K.at === 'all') {
-      if (Math.floor(x) % 2 === 0 && Math.floor(z) % 2 === 0) add(K.recipe, x, z);
+      if (half) add(K.recipe, x, z);
     } else if (shore) add(K.recipe, x, z);
   }
   /* placed falls by height (the falling sheet a little past the lip), their plunge pools; the automatic cascades */
@@ -382,6 +389,24 @@ export function soundscapeVoices(S, buckets, x, z) {
         level = soundscapeLevel(v.d, R.range * H.reach, !!R.line) * H.gain;
       if (level > 0.001) out.push({ recipe: id, k, x: v.x, z: v.z, d: v.d, level });
     });
+  }
+  return out;
+}
+
+/**
+ * the voices a list of water recipes at distances would play (the Sound test and the loudness report): [recipe,
+ * metres, height (a fall's, m)]; recipes not in the water table left out
+ * @param {SoundscapeWater} S
+ * @param {Array<[string, number, number?]>} list
+ * @returns {{recipe: string, k: number, d: number, level: number, pan: number}[]}
+ */
+export function soundscapePreview(S, list) {
+  const out = [];
+  for (const [id, d, h] of list) {
+    const R = S.water[id];
+    if (!R) continue;
+    const H = R.byHeight ? soundscapeHeight(h || 3) : { gain: 1, reach: 1 };
+    out.push({ recipe: id, k: 0, d, level: soundscapeLevel(d, R.range * H.reach, !!R.line) * H.gain, pan: 0 });
   }
   return out;
 }

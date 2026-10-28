@@ -1607,7 +1607,7 @@
   "bubble": [
    "game/js/logic/sound-bake.js:80",
    "game/js/logic/sound-bake.js:398",
-   "game/js/logic/soundscape.js:116",
+   "game/js/logic/soundscape.js:118",
    "game/js/logic/ui-dials.js:97"
   ],
   "building": [
@@ -1646,7 +1646,7 @@
    "game/js/shop.js:168",
    "game/js/shop.js:234",
    "game/js/sound.js:499",
-   "game/js/sound.js:1752",
+   "game/js/sound.js:1745",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:626",
    "game/js/ui-run-kit.js:83",
@@ -1853,7 +1853,7 @@
    "game/js/logic/ui-dials.js:206"
   ],
   "sheet": [
-   "game/js/logic/soundscape.js:107",
+   "game/js/logic/soundscape.js:109",
    "game/js/ui-kit.js:515"
   ],
   "spark": [
@@ -1904,7 +1904,7 @@
    "game/js/ui.js:206"
   ],
   "up": [
-   "game/js/audio/tracker.js:965",
+   "game/js/audio/tracker.js:976",
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
    "game/js/battle-stage.js:2175",

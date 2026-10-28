@@ -7,7 +7,7 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { cutscene, mapIdAt, provide } from './hooks.js';
+import { cutscene, mapIdAt, provide, soundscapeHere, soundscapeStart } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from './game-data.js';
 import { isRobotSp } from './logic/fighters.js';
@@ -32,6 +32,7 @@ import {
   ambienceRandom,
   ambienceStep,
 } from './logic/ambience-sound.js';
+import { soundscapePreview } from './logic/soundscape.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -47,7 +48,6 @@ import {
   walkView,
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
-import { walkRenderer } from './walk/walk-state.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
 import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
@@ -922,6 +922,8 @@ function initAmbience() {
   };
   ambience.noiseMs = Math.round(performance.now() - t0);
   ambience.rng = ambienceRandom(0x50d3);
+  /* SND-10: the water (soundscape.json `water`), its banks baked in the tracker's slices (soundscape-here.js) */
+  ambience.scape = soundscapeStart(c);
   /* a layer of a bed (soundscape.json beds): its filters and its gain, waiting for its noise (ambienceBedStart) */
   const layer = (L, dest, b) => {
     const F = [];
@@ -1036,6 +1038,8 @@ function ambienceApply(T, pans, t) {
 function ambiencePreviewTick(list, t) {
   if (!ambience.bus && !initAmbience()) return;
   ambienceApply(ambiencePreview(list), {}, t);
+  /* SND-10: water recipes [id, metres, a fall's height] */
+  if (ambience.scape) ambience.scape.update(soundscapePreview(SOUNDSCAPE, list), t);
   if (list.some(([k]) => k === 'birds')) ambienceBirds(t, ['lark', 'lark', 'song'], false, 1, 0, 1);
   /* footsteps ['steps', 0, ground], one every 0.35 s (walking) */
   const st = list.find(([k]) => k === 'steps');
@@ -1174,29 +1178,14 @@ export function updateAmbience() {
         pans[k] = w.pan;
       }
     };
-    put('stream', nearestWaterSound(walkRenderer.streamCells, 10), 0.5);
-    put(
-      'falls',
-      nearestSoundSource(walkRenderer.falls, q => [q[0], q[2]], 14),
-      0.7
-    );
+    /* SND-10: the water near you is soundscape-here.js's (every kind, falls by height, the surf); the sea's own bed
+       stays, coast-wide */
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
       T.sea = AMBIENCE_FIXED.sea_coast.gain;
       pans.sea = 0;
-      put('sea', nearestWaterSound(walkView.water, 8), 0.6);
-    } else put('pond', nearestWaterSound(walkView.water, 6), 0.22);
-    if (sc.waterKind === 'lava') put('lava', nearestWaterSound(walkView.water, 10), 0.5);
+    }
     const C0 = walkData().sc,
       props = sc.props || [];
-    put(
-      'fountain',
-      nearestSoundSource(
-        props.filter(p => /fountain/.test(p.k)),
-        p => [p.x, p.z],
-        9
-      ),
-      0.45
-    );
     put(
       'fire',
       nearestSoundSource(
@@ -1239,6 +1228,7 @@ export function updateAmbience() {
   }
   if (sc) ambienceBeds(sc, E, T, pans, t);
   ambienceApply(T, pans, t);
+  soundscapeHere(sc, E, t);
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
   const night = E ? (E.raw || E).night : 0,
     moving = sc && walkView.pl && walkView.pl.walk;
@@ -1302,6 +1292,9 @@ export function soundDebugLines() {
        time: a Worker comes only if these show hitches on the phone) and the reverb (its impulse's bake, its wait, the
        buffer's assignment) */
     bank: T && T.bankStats ? T.bankStats() : null,
+    /* SND-10: the water: live voices and their levels, sources, events played and dropped; the scene's emitters (made
+       in ms, from the renderer's grid or the tiles, how many of each) */
+    water: ambience.scape ? { ...ambience.scape.stats(), scene: ambience.scapeBuilt || null } : null,
     reverb: T && T.reverbStats ? T.reverbStats() : null,
   };
 }

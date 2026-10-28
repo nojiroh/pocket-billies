@@ -17,6 +17,7 @@ import {
   soundscapeLevel,
   soundscapeMidi,
   soundscapeNearest,
+  soundscapePreview,
   soundscapeTide,
   soundscapeVoices,
   soundscapeWaves,
@@ -288,4 +289,31 @@ test("the game's water (soundscape.json): every water kind has a recipe, every r
   bad.water.lake.events[0].bank = 'babble';
   bad.water.river.layers[1].drift[0].on = 5;
   assert.equal(soundscapeFindings(bad, WATER_KINDS).length, 5);
+});
+
+test('rain on water: every surface but lava and ice (half of them); a one-metre strip keeps half its cells', () => {
+  const R = { ...S, rainOnWater: 'rainOnWater', kinds: { ...S.kinds, canal: { recipe: 'canal', at: 'all' } } };
+  const C = [];
+  for (let x = 0; x < 10; x++) C.push([x + 0.5, 25.5, 'canal', 1, 0]);
+  C.push([40.5, 40.5, 'lava', 0, 0], [41.5, 40.5, 'ice', 1, 0]);
+  const E = soundscapeEmitters(R, C, {});
+  assert.equal(E.canal.length, 5);
+  assert.equal(E.rainOnWater.length, 5);
+  assert.ok(E.rainOnWater.every(e => e[1] === 25.5));
+});
+
+test('the preview: a recipe at a distance as the game would set it; a fall by its height; unknown ids left out', () => {
+  const V = soundscapePreview(S, [
+    ['surf', 3],
+    ['fallTall', 10, 12],
+    ['fallTall', 10, 3],
+    ['nosuch', 1],
+  ]);
+  assert.deepEqual(
+    V.map(v => v.recipe),
+    ['surf', 'fallTall', 'fallTall']
+  );
+  assert.equal(V[0].level, soundscapeLevel(3, 30, true));
+  assert.ok(V[1].level > V[2].level, 'a 12 m fall louder than a 3 m one at 10 m');
+  assert.equal(V[2].level, soundscapeLevel(10, 30));
 });
