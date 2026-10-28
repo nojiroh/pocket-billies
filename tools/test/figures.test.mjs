@@ -128,9 +128,10 @@ test('figures: one bake draws the mannequin and its outline, and gives a personâ
       draws.map(c => c.slice(1)),
       [
         ['TRIANGLES', 0, G.figureMesh(G.mannequinFigure()).count],
+        ['TRIANGLES', 0, G.figureMesh(G.mannequinFigure()).count],
         ['TRIANGLES', 0, 6],
       ],
-      'the figure, then the outline pass'
+      'the figure from the light (CH-3b: its own shadows), the figure, then the outline pass'
     );
     const J = calls.find(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ');
     assert.equal(J[3].length, G.mannequinFigure().parts.length * 16, 'a matrix for each part');
@@ -217,7 +218,11 @@ test('figures: the bakerâ€™s lost context bakes nothing, and bakes again once it
     G.gpuState.fr++;
     const b = G.figurePicture(rec, 'mannequin', 'idle', 1, Math.PI, 0, TILT);
     assert.ok(b && b !== a, 'baked again');
-    assert.equal(D.made.gl.programs(), progs + 2, 'its two programs made again');
+    assert.equal(
+      D.made.gl.programs(),
+      progs + 3,
+      'its three programs made again (the figure, its shadow, the outline)'
+    );
     assert.equal(G.figureReport().losses, 1);
     /* the pictures baked before the loss are plain canvases, still kept */
     assert.equal(G.figurePicture({}, 'mannequin', 'idle', 0, Math.PI, 0, TILT), a);
@@ -288,7 +293,11 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
     const calls = D.made.gl.calls;
     assert.deepEqual(
       calls.filter(c => c[0] === 'drawElements').map(c => c.slice(1)),
-      [['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0]]
+      [
+        ['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0],
+        ['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0],
+      ],
+      'from the light, then as seen'
     );
     assert.equal(calls.find(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ')[3].length, file.joints.length * 16);
     assert.equal(calls.find(c => c[0] === 'uniform1f' && c[1] === 'uTexOn')[2], 1, 'coloured by its texture');

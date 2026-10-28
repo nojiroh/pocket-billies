@@ -123,8 +123,9 @@ export const OUTLINE_RGB = Object.freeze([36, 25, 54]);
  * and a little from the viewer, as the props are painted */
 export const FIGURE_LIGHT = Object.freeze(figureUnit([-0.55, 0.7, -0.45]));
 /** where the toon bands split, on the light's dot with a face's normal: above LIGHT the light band, above BASE the base;
- * above SHINE a glossy colour's shine (CH-3b: hair, shoes, lenses: the anime hair highlight) */
-export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86 });
+ * above SHINE a glossy colour's shine (CH-3b: hair, shoes, lenses: the anime hair highlight); below DEEP the deep
+ * shadow (CH-3b's fidelity pass: a fourth tone, so forms turn) */
+export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86, deep: -0.55 });
 
 /** @typedef {[number, number, number]} Vec3 */
 /** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number }} HairCut where a hair cap
@@ -135,11 +136,15 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86 
  *   | { kind: 'lathe', c: Vec3, y: number[], rx: number[], rz: number[], seg?: number }
  *   | { kind: 'capsule', a: Vec3, b: Vec3, r0: number, r1: number, seg?: number }
  *   | { kind: 'cone', a: Vec3, b: Vec3, r: number, seg?: number }
- *   | { kind: 'torus', c: Vec3, R: [number, number], r: number, seg?: number, rings?: number }} FigureShape
+ *   | { kind: 'torus', c: Vec3, R: [number, number], r: number, seg?: number, rings?: number }
+ *   | { kind: 'tube', a: Vec3, ctrl: Vec3, b: Vec3, r0: number, r1: number, flat?: number, n?: Vec3, seg?: number,
+ *     steps?: number }} FigureShape
  * a part's shape, in its joint's space: an ellipsoid (centre, radii; a hair cap is one with a cut; `sq` 0..1 makes it
  * squarer, `taper` widens its bottom half and narrows its top, below 0 the other way: CH-3b's head shapes), a lathe (rings
  * round an upright axis through c at heights y, radii rx across and rz front to back; a radius of 0 closes it), a
- * capsule from a to b (radii r0 and r1), a cone from its base a to its tip b, or a torus round an upright axis */
+ * capsule from a to b (radii r0 and r1), a cone from its base a to its tip b, a torus round an upright axis, or
+ * (CH-3b) a tube: a stroke along the curve from a through ctrl's pull to b, its radius going from r0 to r1 (0: a
+ * point), squashed to `flat` of it along `n` (a lock of hair lying on the head, a ponytail, a coat's tail) */
 /** @typedef {{ id: string, parent: number, at: Vec3, shape: FigureShape, col: string,
  *   stripe?: { col: string, every: number, from?: number } }} FigurePart
  * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour; `stripe` bands it
@@ -726,6 +731,41 @@ export function shapeSurface(sh) {
     });
     return ringSurface(R, O);
   }
+  if (sh.kind === 'tube') {
+    /* a quadratic curve a -> ctrl -> b, rings of `seg` points round it at `steps` + 1 places, a cap at each end */
+    const steps = sh.steps || 6,
+      seg = sh.seg || 6,
+      at = (/** @type {number} */ t) =>
+        /** @type {Vec3} */ (
+          [0, 1, 2].map(i => (1 - t) * (1 - t) * sh.a[i] + 2 * (1 - t) * t * sh.ctrl[i] + t * t * sh.b[i])
+        ),
+      tangent = (/** @type {number} */ t) =>
+        figureUnit([0, 1, 2].map(i => 2 * (1 - t) * (sh.ctrl[i] - sh.a[i]) + 2 * t * (sh.b[i] - sh.ctrl[i]))),
+      up = sh.n || [0, 0, 1];
+    const T0 = tangent(0);
+    R.push([sh.a]);
+    O.push([[-T0[0], -T0[1], -T0[2]]]);
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps,
+        C = at(t),
+        T = tangent(t);
+      let p0 = figureUnit(vCross(T, up));
+      if (!Number.isFinite(p0[0]) || Math.hypot(...vCross(T, up)) < 1e-6) p0 = figureUnit(vCross(T, [1, 0, 0]));
+      const q0 = vCross(p0, T),
+        /* round at its root, tapering to its tip; a little fuller a third of the way along */
+        rad = (sh.r0 + (sh.r1 - sh.r0) * t) * (1 + 0.15 * Math.sin(Math.PI * Math.min(1, t * 1.5))),
+        fl = sh.flat ?? 1;
+      ring(seg, a => {
+        const d = /** @type {Vec3} */ ([0, 1, 2].map(i => p0[i] * Math.cos(a) + q0[i] * Math.sin(a) * fl)),
+          p = /** @type {Vec3} */ ([C[0] + d[0] * rad, C[1] + d[1] * rad, C[2] + d[2] * rad]);
+        return [p, vSub(p, C)];
+      });
+    }
+    const T1 = tangent(1);
+    R.push([sh.b]);
+    O.push([T1]);
+    return ringSurface(R, O);
+  }
   if (sh.kind === 'capsule' || sh.kind === 'cone') {
     const a = sh.a,
       b = sh.b,
@@ -857,6 +897,7 @@ export function finerShape(sh, k) {
   const o = { ...sh };
   if ('seg' in sh || sh.kind !== 'lathe') o.seg = Math.round((sh.seg || 12) * k);
   if (sh.kind === 'ellipsoid' || sh.kind === 'torus') o.rings = Math.round((sh.rings || 8) * k);
+  if (sh.kind === 'tube') o.steps = Math.round((sh.steps || 6) * k);
   return o;
 }
 

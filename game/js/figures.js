@@ -67,6 +67,9 @@ expose({
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
   FIGURE_PORTRAIT_PPM: [() => FIGURE_PORTRAIT_PPM],
+  FIGURE_SHADOW_FS: [() => FIGURE_SHADOW_FS],
+  FIGURE_SHADOW_SIZE: [() => FIGURE_SHADOW_SIZE],
+  FIGURE_SHADOW_VS: [() => FIGURE_SHADOW_VS],
   FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
   FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
@@ -87,6 +90,7 @@ expose({
   figureGl: [() => figureGl, v => (figureGl = v)],
   figureItems: [() => figureItems, v => (figureItems = v)],
   figureLast: [() => figureLast],
+  figureLightSpace: [() => figureLightSpace, v => (figureLightSpace = v)],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
   figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
@@ -125,6 +129,9 @@ const figureBaker = {
   failed: '',
   P: null,
   O: null,
+  Sh: null,
+  smTex: null,
+  smFb: null,
   oVao: null,
   fb: null,
   tex: null,
@@ -276,19 +283,35 @@ function figureFromFile(name, j) {
 }
 
 const FIGURE_VS = `#version 300 es
-in vec3 aP;in vec3 aN;in float aJ;in float aC;in vec2 aUV;uniform mat4 uJ[32];uniform mat4 uM;uniform mat3 uR;
-out vec3 vN;out vec2 vUV;flat out int vC;
-void main(){mat4 J=uJ[int(aJ)];vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;gl_Position=uM*(J*vec4(aP,1.));}`;
+layout(location=0) in vec3 aP;layout(location=1) in vec3 aN;layout(location=2) in float aJ;layout(location=3) in float aC;
+layout(location=4) in vec2 aUV;uniform mat4 uJ[32];uniform mat4 uM;uniform mat3 uR;uniform mat4 uLS;
+out vec3 vN;out vec2 vUV;out vec3 vLS;flat out int vC;
+void main(){mat4 J=uJ[int(aJ)];vec4 w=J*vec4(aP,1.);vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;
+ vLS=(uLS*vec4(uR*w.xyz+vN*.03,1.)).xyz;gl_Position=uM*w;}`;
+/* CH-3b's fidelity pass: the figure's depth seen from the light, so parts shade each other (hair on the brow, the
+   head on the neck, an arm on the body) */
+const FIGURE_SHADOW_VS = `#version 300 es
+layout(location=0) in vec3 aP;layout(location=2) in float aJ;uniform mat4 uJ[32];uniform mat3 uR;uniform mat4 uLS;
+void main(){gl_Position=uLS*vec4(uR*(uJ[int(aJ)]*vec4(aP,1.)).xyz,1.);}`;
+const FIGURE_SHADOW_FS = `#version 300 es
+precision mediump float;out vec4 o;void main(){o=vec4(1.);}`;
 /* a code figure's colours come from its palette (its ramps); a model's from its texture, ramped here as the props'
    ramp does it (logic/figure-pose.js figureRamp: the shadow darker and lavender, the light warmer). Smooth (the plain
    3D figure): a soft light, no bands */
 const FIGURE_FS = `#version 300 es
-precision highp float;in vec3 vN;in vec2 vUV;flat in int vC;uniform vec3 uPal[80];uniform vec3 uL;uniform vec3 uB;
-uniform float uTexOn,uSmooth;uniform sampler2D uTx;out vec4 o;
-void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:0));vec3 base,sh,li,sn;
- if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);sn=li;}
- else{sh=uPal[vC*4];base=uPal[vC*4+1];li=uPal[vC*4+2];sn=uPal[vC*4+3];}
- vec3 c=uSmooth>.5?base*clamp(.62+.5*d,.35,1.12):(b==3?sn:(b==2?li:(b==1?base:sh)));
+precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;flat in int vC;uniform vec3 uPal[100];uniform vec3 uL;uniform vec4 uB;
+uniform float uTexOn,uSmooth,uShadowOn;uniform sampler2D uTx;uniform highp sampler2D uSM;out vec4 o;
+void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:(d>uB.w?0:-1)));
+ /* a part in another's shadow (the light's depth map) drops to the shadow tone */
+ bool shd=false;
+ if(uShadowOn>.5&&b>0){vec3 q=vLS*.5+.5;shd=q.x>0.&&q.y>0.&&q.x<1.&&q.y<1.&&q.z-.006>texture(uSM,q.xy).r;}
+ if(shd)b=0;
+ /* a rim of light along the lit edge seen side-on (n.z: into the view) */
+ else if(b>=0&&n.z>-.25&&dot(normalize(n.xy+1e-4),normalize(uL.xy))>.55)b=max(b,2);
+ vec3 base,sh,li,sn,dp;
+ if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);sn=li;dp=mix(floor(base*.55),vec3(60.,42.,112.),.3);}
+ else{dp=uPal[vC*5];sh=uPal[vC*5+1];base=uPal[vC*5+2];li=uPal[vC*5+3];sn=uPal[vC*5+4];}
+ vec3 c=uSmooth>.5?base*clamp(.62+.5*d,.35,1.12):(b==3?sn:(b==2?li:(b==1?base:(b==0?sh:dp))));
 /* the depth, nearer larger, in alpha: 0 is no figure */
 o=vec4(c/255.,mix(1.,.08,gl_FragCoord.z));}`;
 const FIGURE_OUT_VS = `#version 300 es
@@ -306,7 +329,7 @@ void main(){ivec2 p=ivec2(gl_FragCoord.xy);vec4 c=at(p);
   o=best.a>0.?vec4(olc(best.rgb),1.):vec4(0.);return;}
  o=vec4(c.rgb,1.);
  /* a pixel of a part with a part well in front of it beside it: a line, half the outline's weight */
- if(uOut>.5){bool line=false;for(int i=0;i<4;i++)if(q[i].a>c.a+.03)line=true;if(line)o.rgb=mix(c.rgb,olc(c.rgb),.6);}}`;
+ if(uOut>.5){bool line=false;for(int i=0;i<4;i++)if(q[i].a>c.a+.016)line=true;if(line)o.rgb=mix(c.rgb,olc(c.rgb),.6);}}`;
 
 function figureCompile(gl, vs, fs) {
   const sh = (type, src) => {
@@ -380,6 +403,21 @@ function figureGl() {
 function figureBuild(gl) {
   const B = figureBaker;
   B.P = figureCompile(gl, FIGURE_VS, FIGURE_FS);
+  B.Sh = figureCompile(gl, FIGURE_SHADOW_VS, FIGURE_SHADOW_FS);
+  /* the light's depth map: FIGURE_SHADOW_SIZE square, depth only */
+  B.smTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, B.smTex);
+  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT24, FIGURE_SHADOW_SIZE, FIGURE_SHADOW_SIZE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  B.smFb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, B.smFb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, B.smTex, 0);
+  gl.drawBuffers([gl.NONE]);
+  gl.readBuffer(gl.NONE);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   B.O = figureCompile(gl, FIGURE_OUT_VS, FIGURE_OUT_FS);
   B.res = new Map();
   B.oVao = gl.createVertexArray();
@@ -477,18 +515,52 @@ function figureTarget(gl, w, h) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   B.size = [w, h];
 }
+/** the light's depth map's size (pixels square) */
+const FIGURE_SHADOW_SIZE = 512;
+/**
+ * the matrix from a figure's turned frame (x to the camera's right, y up, z into the view) to the light's clip space:
+ * an orthographic view along the light (FIGURE_LIGHT points to it) round the figure's middle, as big as its extent
+ */
+function figureLightSpace(ext) {
+  const L = FIGURE_LIGHT,
+    f = [-L[0], -L[1], -L[2]],
+    rr = (() => {
+      const x = [f[2], 0, -f[0]],
+        l = Math.hypot(x[0], x[2]) || 1;
+      return [x[0] / l, 0, x[2] / l];
+    })(),
+    up = [rr[1] * f[2] - rr[2] * f[1], rr[2] * f[0] - rr[0] * f[2], rr[0] * f[1] - rr[1] * f[0]],
+    E = ext || { r: 0.7, top: 1.9, bottom: 0 },
+    C = [0, ((E.top || 1.9) + (E.bottom || 0)) / 2, 0],
+    H = (E.top || 1.9) * 0.62 + (E.r || 0.7),
+    D = H * 1.2,
+    row = (/** @type {number[]} */ a, /** @type {number} */ k) => [
+      a[0] * k,
+      a[1] * k,
+      a[2] * k,
+      -(a[0] * C[0] + a[1] * C[1] + a[2] * C[2]) * k,
+    ],
+    X = row(rr, 1 / H),
+    Y = row(up, 1 / H),
+    Z = row(f, 1 / D);
+  return new Float32Array([X[0], Y[0], Z[0], 0, X[1], Y[1], Z[1], 0, X[2], Y[2], Z[2], 0, X[3], Y[3], Z[3], 1]);
+}
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
 function figurePalette(F, colours) {
-  /* FIGURE_PAL_MAX colours, four shades each (the shader's uPal[80]): the shadow, the base, the light and the shine,
-     which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light there */
-  const out = new Float32Array(FIGURE_PAL_MAX * 4 * 3),
+  /* FIGURE_PAL_MAX colours, five shades each (the shader's uPal[100]): the deep shadow, the shadow, the base, the
+     light and the shine, which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light */
+  const out = new Float32Array(FIGURE_PAL_MAX * 5 * 3),
     gloss = new Set(F.gloss || []);
   colours.forEach((k, i) => {
     const R = figureRamp(F.colours[k]),
       flat = k === 'eye' || k === 'glint';
-    [flat ? R[2] : R[1], R[2], flat ? R[2] : R[3], flat ? R[2] : gloss.has(k) ? R[4] : R[3]].forEach((c, b) =>
-      out.set(c, (i * 4 + b) * 3)
-    );
+    [
+      flat ? R[2] : R[0],
+      flat ? R[2] : R[1],
+      R[2],
+      flat ? R[2] : R[3],
+      flat ? R[2] : gloss.has(k) ? R[4] : R[3],
+    ].forEach((c, b) => out.set(c, (i * 5 + b) * 3));
   });
   return out;
 }
@@ -517,6 +589,32 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
     J = code ? jointMatrices(Fig.F, pose, ppm) : meshClipMatrices(Fig.clips[clip], frame, Fig.joints.length, ppm),
     c = Math.cos(V.rel),
     s = Math.sin(V.rel);
+  /* pass 0 (CH-3b): the figure's depth from the light, in the figure's turned frame; not for the plain 3D style */
+  const LS = figureLightSpace(Fig.ext),
+    shadows = !smooth && !!B.Sh;
+  if (shadows) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, B.smFb);
+    gl.viewport(0, 0, FIGURE_SHADOW_SIZE, FIGURE_SHADOW_SIZE);
+    gl.disable(gl.BLEND);
+    gl.disable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LESS);
+    gl.depthMask(true);
+    gl.clearDepth(1);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    /* pushed back a little, and looked up 3 cm out along the normal (FIGURE_VS vLS), so a surface doesn't shadow
+       itself in speckles */
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(2, 4);
+    gl.useProgram(B.Sh.p);
+    gl.uniformMatrix4fv(B.Sh.U.uJ, false, J);
+    gl.uniformMatrix3fv(B.Sh.U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
+    gl.uniformMatrix4fv(B.Sh.U.uLS, false, LS);
+    gl.bindVertexArray(R.vao);
+    if (R.indexed) gl.drawElements(gl.TRIANGLES, R.count, gl.UNSIGNED_SHORT, 0);
+    else gl.drawArrays(gl.TRIANGLES, 0, R.count);
+  }
+  gl.disable(gl.POLYGON_OFFSET_FILL);
   /* pass 1: the figure with its depth */
   gl.bindFramebuffer(gl.FRAMEBUFFER, B.fb);
   gl.viewport(0, 0, S.w, S.h);
@@ -536,7 +634,12 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.uniformMatrix3fv(U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
   if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours));
   gl.uniform3fv(U.uL, FIGURE_LIGHT);
-  gl.uniform3f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base, FIGURE_BANDS.shine);
+  gl.uniform4f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base, FIGURE_BANDS.shine, FIGURE_BANDS.deep);
+  gl.uniformMatrix4fv(U.uLS, false, LS);
+  gl.uniform1f(U.uShadowOn, shadows ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE2);
+  gl.bindTexture(gl.TEXTURE_2D, shadows ? B.smTex : null);
+  gl.uniform1i(U.uSM, 2);
   gl.uniform1f(U.uTexOn, code ? 0 : 1);
   gl.uniform1f(U.uSmooth, smooth ? 1 : 0);
   gl.activeTexture(gl.TEXTURE1);
