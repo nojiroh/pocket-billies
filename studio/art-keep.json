@@ -14,7 +14,7 @@
    "why": "the palette at 24x, written by tools/build-palette.py for viewing"
   },
   {
-   "p": "next/placeholders/kappi.png",
+   "p": "next/sketches/kappi.png",
    "why": "Kappi's drawing sheet (tools/paint-kappi.mjs); the game draws next/billionaires/kappi.png"
   },
   {

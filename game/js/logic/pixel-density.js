@@ -108,7 +108,7 @@ export function densityHeights(lines) {
   return out;
 }
 /**
- * The report: one row per species with a rig (its world numbers; a kit Billie's parts too; a placeholder Billie's
+ * The report: one row per species with a rig (its world numbers; a kit Billie's parts too; a sketch Billie's
  * plan and scale, RO-3b: its kit recipe is kept but not baked), and the scalings every Billie gets that are not whole
  * numbers (rules.json part sizes S and L, drawn nearest-neighbour).
  * @param {any} D the game data (lines, kitBuilds, bodyPlans, rules) @param {Record<string, any>} rigs
@@ -133,7 +133,7 @@ export function densityReport(D, rigs, species) {
       ...densityWorld(species[sp].ht, M.geo, M.BH),
       kit: f ? f.name : '',
       fit: f ? f.scale : null,
-      placeholder: p ? p.name : '',
+      sketch: p ? p.name : '',
       plan: p ? p.plan : null,
       scale: p ? (p.scale ?? 1) : null,
       parts,

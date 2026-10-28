@@ -1,19 +1,19 @@
-// Roster track RO-3a: bakes the placeholder Billies (game/data/bodyPlans.json forms) with the game's own baker
-// (game/js/logic/placeholder-art.js), and moves their drawing sheets out and in.
+// Roster track RO-3a: bakes the sketch Billies (game/data/bodyPlans.json forms) with the game's own baker
+// (game/js/logic/sketch-art.js), and moves their drawing sheets out and in.
 //
-// A Billie's cells are painted placeholders, with the cells of its drawing sheet on top when it has one
-// (game/art/next/placeholders/<name>.png, written by --import; a cell left empty keeps its placeholder). The bake
+// A Billie's cells are painted sketches, with the cells of its drawing sheet on top when it has one
+// (game/art/next/sketches/<name>.png, written by --import; a cell left empty keeps its sketch). The bake
 // writes what changed, as bake-kit-billies.mjs does: game/art/next/billionaires/<name>.png and its rig in
 // game/art/next/rigs-next.js.
 //
-//   node tools/bake-placeholders.mjs                         bake every form, write what changed
-//   node tools/bake-placeholders.mjs --only=emberox,...      only these forms
-//   node tools/bake-placeholders.mjs --check                 write nothing; list what would change (exit 1 if anything)
-//   node tools/bake-placeholders.mjs --export=emberox        a Billie's drawing sheet: a column per picture, a row per view
-//   node tools/bake-placeholders.mjs --export=plan:quad      a body plan's sheet: two rows per Billie on it (a sample
+//   node tools/bake-sketches.mjs                         bake every form, write what changed
+//   node tools/bake-sketches.mjs --only=emberox,...      only these forms
+//   node tools/bake-sketches.mjs --check                 write nothing; list what would change (exit 1 if anything)
+//   node tools/bake-sketches.mjs --export=emberox        a Billie's drawing sheet: a column per picture, a row per view
+//   node tools/bake-sketches.mjs --export=plan:quad      a body plan's sheet: two rows per Billie on it (a sample
 //                                                             Billie when none is on it yet)
-//        [--out=dir] (default tools/art-source/placeholders) [--scale=N] (each pixel as N x N, for drawing big)
-//   node tools/bake-placeholders.mjs --import=file.png       a drawn sheet back in: <name>.png is a Billie's,
+//        [--out=dir] (default tools/art-source/sketches) [--scale=N] (each pixel as N x N, for drawing big)
+//   node tools/bake-sketches.mjs --import=file.png       a drawn sheet back in: <name>.png is a Billie's,
 //        [--for=emberox | --for=plan:quad]                   <plan>-plan.png a plan's (or say which with --for); its
 //                                                             cells are stored per Billie, then those Billies baked
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -22,17 +22,17 @@ import vm from 'node:vm';
 import { readJson, ROOT } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
 import {
-  placeholderBake,
-  placeholderCellsWith,
-  placeholderSheet,
-  placeholderSheetCut,
-} from '../game/js/logic/placeholder-art.js';
+  sketchBake,
+  sketchCellsWith,
+  sketchSheet,
+  sketchSheetCut,
+} from '../game/js/logic/sketch-art.js';
 
 const ART = join(ROOT, 'game', 'art', 'next');
 const SHEETS = join(ART, 'billionaires');
-const DRAWN = join(ART, 'placeholders');
+const DRAWN = join(ART, 'sketches');
 const RIGS = join(ART, 'rigs-next.js');
-const OUT = join(ROOT, 'tools', 'art-source', 'placeholders');
+const OUT = join(ROOT, 'tools', 'art-source', 'sketches');
 
 /** do two pictures show the same: same size, same alpha, same colour where alpha is not 0 */
 function sameShown(a, b) {
@@ -50,11 +50,11 @@ function sameShown(a, b) {
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /** the data the baker needs */
-export function placeholderData() {
+export function sketchData() {
   return { P: readJson('bodyPlans.json'), D: readJson('kitBuilds.json').bake };
 }
 /** a sample Billie on a plan (its sheet before any Billie is on it) */
-export const samplePlaceholder = plan => ({
+export const sampleSketch = plan => ({
   name: `sample-${plan}`,
   rig: `sample-${plan}`,
   plan,
@@ -63,10 +63,10 @@ export const samplePlaceholder = plan => ({
 /** a form's cells: painted, with its stored drawing on top */
 export function formCells(P, form) {
   const file = join(DRAWN, `${form.name}.png`);
-  return placeholderCellsWith(
+  return sketchCellsWith(
     P,
     form,
-    existsSync(file) ? placeholderSheetCut(P, [form], readPng(file))[form.name] : null
+    existsSync(file) ? sketchSheetCut(P, [form], readPng(file))[form.name] : null
   );
 }
 
@@ -79,8 +79,8 @@ function readRigs() {
 }
 
 /** bakes the forms and returns what changed, writing it unless `check` */
-export function bakePlaceholders({ only = null, check = false, log = console.log } = {}) {
-  const { P, D } = placeholderData(),
+export function bakeSketches({ only = null, check = false, log = console.log } = {}) {
+  const { P, D } = sketchData(),
     forms = only ? P.forms.filter(f => only.includes(f.name)) : P.forms,
     changed = [],
     { head, rigs } = readRigs();
@@ -88,7 +88,7 @@ export function bakePlaceholders({ only = null, check = false, log = console.log
     for (const n of only) if (!P.forms.some(f => f.name === n)) throw new Error(`no form ${n} in bodyPlans.json`);
   let rigsChanged = false;
   for (const form of forms) {
-    const made = placeholderBake(P, form, D, formCells(P, form)),
+    const made = sketchBake(P, form, D, formCells(P, form)),
       what = [],
       png = join(SHEETS, `${form.name}.png`);
     if (!existsSync(png) || !sameShown(made.sheet, readPng(png))) {
@@ -116,7 +116,7 @@ function sheetForms(P, what) {
     const plan = what.slice(5);
     if (!P.plans[plan]) throw new Error(`no body plan ${plan} (${Object.keys(P.plans).join(', ')})`);
     const forms = P.forms.filter(f => f.plan === plan);
-    return { forms: forms.length ? forms : [samplePlaceholder(plan)], named: true, file: `${plan}-plan.png` };
+    return { forms: forms.length ? forms : [sampleSketch(plan)], named: true, file: `${plan}-plan.png` };
   }
   const f = P.forms.find(x => x.name === what);
   if (!f) throw new Error(`no form ${what} in bodyPlans.json`);
@@ -125,27 +125,27 @@ function sheetForms(P, what) {
 
 /** writes a drawing sheet and returns its path */
 export function exportSheet(what, { out = OUT, scale = 1 } = {}) {
-  const { P } = placeholderData(),
+  const { P } = sketchData(),
     { forms, named, file } = sheetForms(P, what),
     cells = Object.fromEntries(forms.map(f => [f.name, formCells(P, f)]));
   mkdirSync(out, { recursive: true });
   const path = join(out, file);
-  writeFileSync(path, encodePng(placeholderSheet(P, forms, cells, named, scale)));
+  writeFileSync(path, encodePng(sketchSheet(P, forms, cells, named, scale)));
   return path;
 }
 
 /** reads a drawn sheet, stores its cells per Billie (as a Billie's sheet at scale 1) and returns the Billies */
 export function importSheet(path, what = null) {
-  const { P } = placeholderData(),
+  const { P } = sketchData(),
     name = basename(path, '.png');
   what ||= name.endsWith('-plan') ? `plan:${name.slice(0, -5)}` : name;
   const { forms, named } = sheetForms(P, what);
   if (forms.some(f => !P.forms.includes(f))) throw new Error(`no Billie is on ${what.slice(5)} yet: nothing to store`);
-  const cut = placeholderSheetCut(P, forms, readPng(path), named);
+  const cut = sketchSheetCut(P, forms, readPng(path), named);
   mkdirSync(DRAWN, { recursive: true });
   for (const f of forms) {
-    const cells = placeholderCellsWith(P, f, cut[f.name]);
-    writeFileSync(join(DRAWN, `${f.name}.png`), encodePng(placeholderSheet(P, [f], { [f.name]: cells })));
+    const cells = sketchCellsWith(P, f, cut[f.name]);
+    writeFileSync(join(DRAWN, `${f.name}.png`), encodePng(sketchSheet(P, [f], { [f.name]: cells })));
   }
   return forms.map(f => f.name);
 }
@@ -160,19 +160,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log(`wrote ${exportSheet(arg('export'), { out: arg('out') || OUT, scale: Number(arg('scale') || 1) })}`);
     } else if (arg('import')) {
       const names = importSheet(arg('import'), arg('for'));
-      console.log(`stored ${names.join(', ')} in game/art/next/placeholders`);
-      bakePlaceholders({ only: names });
+      console.log(`stored ${names.join(', ')} in game/art/next/sketches`);
+      bakeSketches({ only: names });
     } else {
       const o = arg('only'),
         check = process.argv.includes('--check'),
-        changed = bakePlaceholders({ only: o ? o.split(',').filter(Boolean) : null, check });
-      if (!changed.length) console.log('every placeholder Billie bakes as committed');
+        changed = bakeSketches({ only: o ? o.split(',').filter(Boolean) : null, check });
+      if (!changed.length) console.log('every sketch Billie bakes as committed');
       else if (check) {
         console.log(
-          `${changed.length} placeholder Billie(s) would change (node tools/bake-placeholders.mjs writes them)`
+          `${changed.length} sketch Billie(s) would change (node tools/bake-sketches.mjs writes them)`
         );
         process.exit(1);
-      } else console.log(`${changed.length} placeholder Billie(s) baked and written (under game/art/next)`);
+      } else console.log(`${changed.length} sketch Billie(s) baked and written (under game/art/next)`);
     }
   } catch (e) {
     console.error(e.message);

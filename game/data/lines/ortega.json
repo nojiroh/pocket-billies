@@ -35,8 +35,8 @@
  ],
  "parody": "Amancio Ortega",
  "cry": [
-  {"base":"insect","pitch":76,"length":0.5,"name":"placeholder: a silky chirr (Claude's draft)"},
-  {"base":"insect","pitch":62,"length":0.7,"name":"placeholder: a muffled rustle in a garment bag (Claude's draft)"},
-  {"base":"insect","pitch":68,"length":1.1,"name":"placeholder: a moth's dusty flutter (Claude's draft)"}
+  {"base":"insect","pitch":76,"length":0.5,"name":"a silky chirr"},
+  {"base":"insect","pitch":62,"length":0.7,"name":"a muffled rustle in a garment bag"},
+  {"base":"insect","pitch":68,"length":1.1,"name":"a moth's dusty flutter"}
  ]
 }

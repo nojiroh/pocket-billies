@@ -58,7 +58,7 @@
    "additionalProperties": {"type": "number"}
   },
   "art": {
-   "description": "the placeholder picture",
+   "description": "the picture drawn from a colour and a shape",
    "type": "object",
    "required": ["color", "shape"],
    "additionalProperties": false,

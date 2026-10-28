@@ -74,6 +74,65 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 - A Billie named from a line parked in `game/data/legacy` is a note (the game stands a new line's Billie in for it).
   A name that is in neither, like a typo, is a problem.
 
+## Self-test (studio track, side session ST-T)
+
+A test of the Studio itself, not the game: it opens and edits every section, times every part of the Studio's own
+work and lists the slowest spots first, so later sessions know what to make faster. About 90 seconds. Runs on a
+desktop browser (and maybe an iPad); phone width is not a target. Start it from the Check section's button or open
+`studio/?selftest`.
+
+### Decisions (the owner, 2026-10-21)
+- Measure only. What it finds is fixed in later sessions, one cause per commit, the undo first.
+- About 90 s for a run.
+- Desktop and iPad only.
+
+### What was found by reading, before the test existed (the test measures each)
+- Every edit turns all the game data (about 8.5 MB on disk) into one JSON string for the undo
+  (`studio/js/studio-app.js`, `snapshot`). The undo's 64 MB cap counts pictures only (`historyBytes` is 0 for a data
+  step), so 80 steps can hold 80 copies of the data. (Fixed by Studio plan T1.2: a step holds only the entries an
+  edit changed, and data steps have their own cap.)
+- Every edit also posts the maps, scenery, engine, story, trainers and world map to an open game tab
+  (`studioBroadcast`, BroadcastChannel) and runs the whole Check half a second later (`scheduleCheck`).
+- A redraw rebuilds the whole section's HTML (`renderPane`).
+- Several previews run their own animation loops (robots, skeleton, workbench, sprite previews): the test lists any
+  loop still running after its section is left.
+- The Check is one long function (`runCheck`), so it can only be timed as a whole.
+
+### What a run does
+1. Loading (already done when the test starts, so read from the marks boot leaves and the browser's resource
+   timing): the data files, assembling them, the first draw; the page's scripts and their size.
+2. Every section, in the first pane: the time to open it, split into building the HTML, putting it on the page,
+   the after-draw steps and the previews; elements on the page; then about a second of frames (p50, p95, worst,
+   which animation loops and frame tasks ran, draw calls when a 3D view is up) and the time of the Connections
+   drawer's work for it. In the second pane too, for the sections that open there. Then, with no commit pending,
+   the data must be the last undo state (Studio plan T1.5): a section that changed it outside an edit fails the run
+   ("opening <section> changed the data outside an edit: <paths>"); the difference is then committed so each cause
+   is named once.
+3. An edit in each section that has a field: one number or text field changed through the Studio's own field code
+   (the same path a person's edit takes), then the snapshot (time, size), Check, live update, redraw, undo, redo
+   and undo again. The data must come back exactly. The undo's size is measured (Studio plan T1.2, report format
+   2): the data it holds once plus the step each edit added, as if all were kept (`fullMB`).
+4. Tools: Find's index and a search, the pixel editor and skeleton builder opening, a map generated from fixed dials,
+   a sheet sliced, the Check, and Save and Propose built as a dry run (nothing is sent or written).
+5. Leaks: every section opened a second time; memory, elements, animation loops and timers compared.
+
+While it runs, Save, Propose and every server call that writes are refused; at the end the data, undo history,
+unsaved marks, open sections and selection are put back. The report holds numbers, section ids and data paths only:
+no token, no GitHub name. A last row checks that.
+
+### The report
+The slowest sections and steps, a "Look here first" list made by fixed rules (game/js/logic/studio-test-report.js),
+a JSON download, and the change from the last run in this browser.
+
+### Files
+- `game/js/logic/studio-test-report.js`: the rules (numbers to findings), the comparison, the privacy check.
+  Unit tests: `tools/test/studio-test-report.test.mjs`.
+- `studio/js/studio-app.js`, `check.js`: `studioProbe`, timings recorded only while a test runs.
+- `studio/js/studio-test.js`: the run, on no page: loaded when it starts, handed what it reads.
+- `studio/js/studio-test-start.js`: the Check section's button and `studio/?selftest`.
+- `tools/check-studio-github.py`: runs it headless and fails on errors or data that doesn't come back, never on
+  times (a headless browser draws in software).
+
 ## How a section draws (for contributors; Studio plan Phase 6)
 
 - A section is a function returning HTML; `renderPane` puts it in its pane, then runs `afterRender` steps. If the
@@ -81,7 +140,7 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 - A redraw of the section a pane already shows keeps the focused control (found again by its `data-p`, or its tag and
   `data-*`) and the pane's scroll.
 - **Keep an element across redraws** with `data-keep="<key>"`: before the redraw it is put aside, then it replaces
-  the new HTML's placeholder with the same key (taking the placeholder's id and classes). The 3D previews (Walk scenes,
+  the new HTML's empty slot with the same key (taking the slot's id and classes). The 3D previews (Walk scenes,
   Generate, Hub island, Props, Engine) share `walk-gl`: one canvas, so one WebGL context, for the whole session. A new
   3D section needs only `<canvas id="..." data-keep="walk-gl">`.
 - **Section hooks** (`studioState.hooks[sec]`) run on every input event of a field in that section's pane (the second
@@ -158,7 +217,7 @@ Pixels and Model buttons are gone: pixels are painted from the Art browser, mode
   an Aseprite JSON's slices (else its frames), named by them.
 - **Background.** The colour around the edge (guessed), clear pixels, magenta, or a colour you pick on the sheet; with
   how close a colour counts. "Only background that joins the edge" keeps background colour inside a part.
-- **Snap to pixels.** Art drawn big (an AI image at about 4x) is found on dropping: its pixel size and where the grid
+- **Snap to pixels.** Art drawn big (a painted image at about 4x) is found on dropping: its pixel size and where the grid
   starts, drawn over the sheet and nudgeable. Each cell becomes one pixel of its most common colour.
 - **Names.** A template: {kit} {n} {row} {col} {name} {view}; a name ending in _front or _back puts the part in that
   view (front and back on one sheet). Click a part (on the sheet or in the list) to rename it or pick its kind. Back
@@ -187,7 +246,7 @@ Art workbench → **Part**: a part written by Sheet mode, its joints. The number
   to hang on itself instead. On the other side of the body the part is mirrored, or its copy is used.
 - **Mirror to other side** makes `<id>_r`: the pictures (and painted sizes) flipped, the pivot and sockets mirrored,
   L and R names swapped (shoulderL ↔ shoulderR), turn limits mirrored. Mirroring the copy gives the part back.
-  `sides` says which side each kind's art is drawn for (arms right, legs left, as the rework placeholders draw them).
+  `sides` says which side each kind's art is drawn for (arms right, legs left, as the rework's stand-in pictures draw them).
 - **S, M, L**: S and L are M scaled about the pivot (rules.json `parts.sizes`). **Paint S/L** makes its own picture
   beside M (`<id>_s.png`, `_l.png`), starting from M scaled: Points, Pencil, Eraser, Fill and Pick in the bar, and a
   colour. Points moved there belong to that size. **Back to scaled** stops using it (the picture stays in art/).
@@ -249,9 +308,9 @@ part's numbers (and when no part is picked): the stage scale, each bone kind's p
   Billie already is as baked it says so and changes nothing.
 - A recipe the baker can't make (a slot left empty, a missing picture) is not written; the card says why.
 - Edits by hand to a kit Billie's sheet or rig (pixels, pivots) are lost at its next bake: the recipe is the truth.
-- **Since roster track RO-3b every kit Billie is on its placeholder** (bodyPlans.json `forms`, below). Its recipe is
+- **Since roster track RO-3b every kit Billie is a sketch** (bodyPlans.json `forms`, below). Its recipe is
   kept in kitBuilds.json but not baked: Part mode shows it as **kept, not baked**, with nothing to edit or write, and
-  `npm run bake:kits` skips it ("kept: on its placeholder"). To bring a kit look back, take the Billie out of
+  `npm run bake:kits` skips it ("kept: a sketch"). To bring a kit look back, take the Billie out of
   bodyPlans.json `forms` and run `npm run bake:kits`. tools/test/kit-bake.json keeps every recipe's bake as
   fingerprints (`node tools/bake-kit-billies.mjs --fingerprints` writes it again), so the kit baker stays checked.
 
@@ -268,7 +327,7 @@ onion), fits its window when opened, and **Paint pixels** opens the sheet with t
 
 ## Art workbench: Model mode (studio track ST-7)
 
-A 3D model from Blender, Blockbench, MagicaVoxel or an AI generator made into a prop (studio/js/workbench-model.js;
+A 3D model from Blender, Blockbench or MagicaVoxel made into a prop (studio/js/workbench-model.js;
 the logic in game/js/logic/model-gltf.js, model-obj.js, model-vox.js, model-mesh.js, model-bake.js).
 
 - **In**: drop a **.glb**, a **.gltf** with its .bin and pictures, an **.obj** with its .mtl and pictures, or a
@@ -306,33 +365,33 @@ its own texture in 1/4096, byte 16 = 255, byte 18 = 1 for a face with no texture
 over 65,535 vertices is cut in pieces). The game draws it with its own texture (nearest texel), outside the instanced
 batches, one draw a part.
 
-## Placeholder Billies and their drawing sheets (roster track RO-3a)
+## Sketch Billies and their drawing sheets (roster track RO-3a)
 
-A placeholder Billie (game/data/bodyPlans.json `forms`) is built on one of the 14 body plans the game animates
+A sketch Billie (game/data/bodyPlans.json `forms`) is built on one of the 14 body plans the game animates
 (biped, quad, bird, flyer, fish, serpent, worm, octo, blob, insect, crab, hopper, plant, shell) and painted as an
-obvious placeholder: flat shapes in its colours, a thick outline, a diagonal hatch, each part's name written on it.
+obvious sketch: flat shapes in its colours, a thick outline, a diagonal hatch, each part's name written on it.
 Art workbench → Part mode, beside the kit recipe:
 
-- **Placeholder Billie** (when the open species is one): **Download drawing sheet**: a PNG with a column per picture
+- **Sketch Billie** (when the open species is one): **Download drawing sheet**: a PNG with a column per picture
   (`head`, `head blink`, `torso`, `legL`...; a mirrored bone such as `legR` uses its twin's picture, flipped) and a row
   per view (front, back, the back drawn as it shows on screen). Each cell is magenta with room round the part; the
   label strip says which part and view; yellow ticks on the cell's edge mark the pivot (where the part hangs).
   Draw over the cells in any app; magenta stays clear, so leave it round the drawing; keep the grid and labels where
   they are, and the picture's size (or a whole multiple of it). **Upload drawing sheet** cuts it back by the same
-  layout: a drawn cell replaces the placeholder, a cell left all magenta keeps it. The drawing is stored as
-  `art/next/placeholders/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
-  **Write Billie** bakes it again as it is. **Repack sheet** refuses a placeholder Billie (its plan packs the sheet).
+  layout: a drawn cell replaces the sketch, a cell left all magenta keeps it. The drawing is stored as
+  `art/next/sketches/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
+  **Write Billie** bakes it again as it is. **Repack sheet** refuses a sketch Billie (its plan packs the sheet).
 - **Body plan sheets**: pick a plan and a scale (1×, 2×, 4×, 8×: each pixel drawn as N × N, for drawing big),
   **Download**: every Billie on that plan, two rows each, a strip with its name above (a sample Billie while none is
   on the plan); **Upload** splits it back per Billie, stores and bakes each.
-- The same from the command line: `npm run bake:placeholders` (bake what changed), `-- --export=<name>` or
-  `-- --export=plan:<plan>` (to tools/art-source/placeholders; `--scale=4`), `-- --import=<file.png>` (a
+- The same from the command line: `npm run bake:sketches` (bake what changed), `-- --export=<name>` or
+  `-- --export=plan:<plan>` (to tools/art-source/sketches; `--scale=4`), `-- --import=<file.png>` (a
   `<plan>-plan.png` is a plan's sheet), `-- --check`.
 - A sheet only cuts back while the Billie's plan and part sizes are what they were when it was exported; change them
   and export again.
 - RO-3b put every Billie on its plan: a form's `colours` (main, accent), `scale` (the whole Billie, a stage's size),
   `size` (a bone and its mirror against the plan's), `add` (bones of its own: horns, ears, crests, packs...) and
-  `drop` (the plan's bones it leaves out). The Pixel density report shows a placeholder Billie's plan and scale.
+  `drop` (the plan's bones it leaves out). The Pixel density report shows a sketch Billie's plan and scale.
 
 ## Pixel density (Studio plan Phase 5, T5.7)
 

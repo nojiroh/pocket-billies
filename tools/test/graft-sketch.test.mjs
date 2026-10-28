@@ -1,6 +1,6 @@
-// Roster track RO-3c: placeholder Billies grafted by slot across body plans (game/js/logic/graft-art.js,
-// graftPlaceholder). Tested on sample Billies (tools/bake-placeholders.mjs samplePlaceholder), one per plan, until the
-// roster's own are placeholders. A slot's groups per plan; every plan gives every other plan its front, back and sig,
+// Roster track RO-3c: sketch Billies grafted by slot across body plans (game/js/logic/graft-art.js,
+// graftSketch). Tested on sample Billies (tools/bake-sketches.mjs sampleSketch), one per plan, until the
+// roster's own are sketches. A slot's groups per plan; every plan gives every other plan its front, back and sig,
 // inside the stage box, the same twice; the grafted bones wear the donor's colour and the rest keep their pixels; a
 // mirrored twin is its bone flipped; a chain takes the donor's bones spread along it, so every bone draws; a slot one
 // side lacks is refused; the donors are other lines with the slot.
@@ -10,8 +10,8 @@ import { readJson } from '../data-files.mjs';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import * as G from '../../game/js/logic/graft-art.js';
 import { kitFlipX } from '../../game/js/logic/kit-pixels.js';
-import * as PA from '../../game/js/logic/placeholder-art.js';
-import { samplePlaceholder } from '../bake-placeholders.mjs';
+import * as PA from '../../game/js/logic/sketch-art.js';
+import { sampleSketch } from '../bake-sketches.mjs';
 
 const P = readJson('bodyPlans.json');
 const D = readJson('kitBuilds.json').bake;
@@ -22,9 +22,9 @@ const bake = (plan, donor = false) => {
   const key = plan + (donor ? '+' : '');
   if (!baked.has(key)) {
     const form = donor
-      ? { ...samplePlaceholder(plan), name: `donor-${plan}`, rig: `donor-${plan}`, colours: { main: '#4a79c8' } }
-      : samplePlaceholder(plan);
-    baked.set(key, { form, ...PA.placeholderBake(P, form, D) });
+      ? { ...sampleSketch(plan), name: `donor-${plan}`, rig: `donor-${plan}`, colours: { main: '#4a79c8' } }
+      : sampleSketch(plan);
+    baked.set(key, { form, ...PA.sketchBake(P, form, D) });
   }
   return baked.get(key);
 };
@@ -35,7 +35,7 @@ const blue = pic => {
 };
 const same = (a, b) =>
   a.width === b.width && a.height === b.height && Buffer.compare(Buffer.from(a.data), Buffer.from(b.data)) === 0;
-const bonesOf = plan => PA.placeholderBones(P, samplePlaceholder(plan));
+const bonesOf = plan => PA.sketchBones(P, sampleSketch(plan));
 
 test('graftGroups: a slot as chains of its own bones, mirrors left out', () => {
   const g = (plan, slot) => G.graftGroups(bonesOf(plan), slot);
@@ -61,14 +61,14 @@ test('every plan grafts every other plan front, back and sig: inside the box, do
         const recv = bake(to),
           donor = bake(from, true),
           at = `${from} ${slot} -> ${to}`,
-          made = G.graftPlaceholder(P, D, recv, { [slot]: donor }),
+          made = G.graftSketch(P, D, recv, { [slot]: donor }),
           inSlot = new Set(
-            PA.placeholderBones(P, recv.form)
+            PA.sketchBones(P, recv.form)
               .filter(b => b.slot === slot)
               .map(b => b.n)
           );
         assert.equal(made.rig.front.graft, `${slot}=donor-${from}`, at);
-        for (const view of PA.PLACEHOLDER_VIEWS) {
+        for (const view of PA.SKETCH_VIEWS) {
           const R = made.rig[view],
             B = { form: recv.form, rig: made.rig, sheet: made.sheet };
           assert.deepEqual(
@@ -93,8 +93,8 @@ test('every plan grafts every other plan front, back and sig: inside the box, do
 
 test('a graft is the same twice, and several slots at once', () => {
   const g = { front: bake('octo', true), sig: bake('crab', true), back: bake('hopper', true) },
-    a = G.graftPlaceholder(P, D, bake('quad'), g),
-    b = G.graftPlaceholder(P, D, bake('quad'), g);
+    a = G.graftSketch(P, D, bake('quad'), g),
+    b = G.graftSketch(P, D, bake('quad'), g);
   assert.ok(same(a.sheet, b.sheet));
   assert.deepEqual(a.rig, b.rig);
   assert.equal(a.rig.back.graft, 'back=donor-hopper,front=donor-octo,sig=donor-crab');
@@ -102,9 +102,9 @@ test('a graft is the same twice, and several slots at once', () => {
 
 test("a mirrored twin wears its bone's new picture flipped", () => {
   const recv = bake('biped'),
-    made = G.graftPlaceholder(P, D, recv, { front: bake('octo', true) }),
+    made = G.graftSketch(P, D, recv, { front: bake('octo', true) }),
     B = { form: recv.form, rig: made.rig, sheet: made.sheet };
-  for (const view of PA.PLACEHOLDER_VIEWS) {
+  for (const view of PA.SKETCH_VIEWS) {
     const l = G.graftPic(B, view, 'armL'),
       r = G.graftPic(B, view, 'armR');
     assert.ok(blue(l.pic) && same(r.pic, { ...l.pic, data: kitFlipX(l.pic).data }), view);
@@ -114,12 +114,12 @@ test("a mirrored twin wears its bone's new picture flipped", () => {
 test("a chain takes the donor's bones spread along it (bone for bone when as long); one bone takes them whole", () => {
   const octo = bake('octo'),
     donor = bake('octo', true),
-    made = G.graftPlaceholder(P, D, octo, { front: donor }),
+    made = G.graftSketch(P, D, octo, { front: donor }),
     B = { form: octo.form, rig: made.rig, sheet: made.sheet };
   for (const n of ['t10', 't11', 't12'])
     assert.ok(same(G.graftPic(B, 'front', n).pic, G.graftPic(donor, 'front', n).pic), `${n} as the donor's`);
   /* a biped's one arm: the whole tentacle on it */
-  const biped = G.graftPlaceholder(P, D, bake('biped'), { front: donor }),
+  const biped = G.graftSketch(P, D, bake('biped'), { front: donor }),
     arm = G.graftPic({ form: bake('biped').form, rig: biped.rig, sheet: biped.sheet }, 'front', 'armL').pic,
     seg = G.graftPic(donor, 'front', 't10').pic;
   assert.ok(arm.height > seg.height * 1.5, 'longer than one tentacle segment');
@@ -129,26 +129,26 @@ test("a chain takes the donor's bones spread along it (bone for bone when as lon
     ['serpent', 'front', 'crab', ['n1', 'n2']],
     ['hopper', 'back', 'octo', ['thighL', 'footL', 'thighR', 'footR']],
   ]) {
-    const given = G.graftPlaceholder(P, D, bake(to), { [slot]: bake(from, true) });
-    for (const view of PA.PLACEHOLDER_VIEWS)
+    const given = G.graftSketch(P, D, bake(to), { [slot]: bake(from, true) });
+    for (const view of PA.SKETCH_VIEWS)
       for (const n of bones)
         assert.ok(given.rig[view].bones.find(b => b.n === n).i >= 0, `${from} -> ${to}: ${view} ${n} draws`);
   }
 });
 
 test('a slot one side lacks is refused; donors are other lines with the slot', () => {
-  assert.throws(() => G.graftPlaceholder(P, D, bake('octo'), { head: bake('biped', true) }), /octo.*has no head/);
-  assert.throws(() => G.graftPlaceholder(P, D, bake('biped'), { head: bake('blob', true) }), /blob.*no head to give/);
+  assert.throws(() => G.graftSketch(P, D, bake('octo'), { head: bake('biped', true) }), /octo.*has no head/);
+  assert.throws(() => G.graftSketch(P, D, bake('biped'), { head: bake('blob', true) }), /blob.*no head to give/);
   const forms = [
-    { ...samplePlaceholder('biped'), line: 'a' },
-    { ...samplePlaceholder('quad'), line: 'b' },
-    { ...samplePlaceholder('blob'), line: 'c' },
-    { ...samplePlaceholder('octo'), line: 'a', rig: 'octo-a' },
+    { ...sampleSketch('biped'), line: 'a' },
+    { ...sampleSketch('quad'), line: 'b' },
+    { ...sampleSketch('blob'), line: 'c' },
+    { ...sampleSketch('octo'), line: 'a', rig: 'octo-a' },
   ];
-  assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'sample-biped', 'front'), ['sample-quad', 'sample-blob']);
-  assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'sample-biped', 'head'), ['sample-quad']);
-  assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'sample-blob', 'head'), []);
-  assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'nobody', 'front'), []);
+  assert.deepEqual(G.graftSketchDonors(P, forms, 'sample-biped', 'front'), ['sample-quad', 'sample-blob']);
+  assert.deepEqual(G.graftSketchDonors(P, forms, 'sample-biped', 'head'), ['sample-quad']);
+  assert.deepEqual(G.graftSketchDonors(P, forms, 'sample-blob', 'head'), []);
+  assert.deepEqual(G.graftSketchDonors(P, forms, 'nobody', 'front'), []);
 });
 
 test('graftPicFit: turned to point the way of the bone it lands on and as long as it; a round one inside its box', () => {
@@ -166,8 +166,8 @@ test('graftPicFit: turned to point the way of the bone it lands on and as long a
   assert.equal(G.graftPicFit({ pic: pic(8, 4), pv: [4, 0] }, { pic: pic(4, 6), pv: [2, 0] }).pic.width, 9);
 });
 
-test('RO-3b: every real placeholder Billie takes every slot from a Billie of each other plan, inside the box', () => {
-  const real = new Map(P.forms.map(f => [f.name, { form: f, ...PA.placeholderBake(P, f, D) }])),
+test('RO-3b: every real sketch Billie takes every slot from a Billie of each other plan, inside the box', () => {
+  const real = new Map(P.forms.map(f => [f.name, { form: f, ...PA.sketchBake(P, f, D) }])),
     byPlan = new Map();
   for (const f of P.forms) if (!byPlan.has(f.plan)) byPlan.set(f.plan, real.get(f.name));
   let n = 0;
@@ -179,11 +179,11 @@ test('RO-3b: every real placeholder Billie takes every slot from a Billie of eac
           /* the octopus's mantle is its body and head (one shared bone): no head to take or give */
           headless = f => slot === 'head' && (f.plan === 'octo' || f.plan === 'blob');
         if (headless(recv.form) || headless(donor.form)) {
-          assert.throws(() => G.graftPlaceholder(P, D, recv, { [slot]: donor }), /head/, at);
+          assert.throws(() => G.graftSketch(P, D, recv, { [slot]: donor }), /head/, at);
           continue;
         }
-        const made = G.graftPlaceholder(P, D, recv, { [slot]: donor });
-        for (const view of PA.PLACEHOLDER_VIEWS)
+        const made = G.graftSketch(P, D, recv, { [slot]: donor });
+        for (const view of PA.SKETCH_VIEWS)
           assert.deepEqual(
             made.rig[view].bones.map(b => b.n),
             recv.rig[view].bones.map(b => b.n),

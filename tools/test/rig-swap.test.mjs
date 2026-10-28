@@ -2,7 +2,7 @@
 // three real species of art/next/rigs-next.js with the real kit parts and sheets: musk0 (a kit Billie, biped, horns on
 // its head), ma0 (hand-drawn, four legs) and trump0 (kit, no legs, a crest). Which parts fit, where the children go,
 // the frames (blink, squash), the sheet and geo.
-// Roster track RO-3b: musk0 and trump0 are placeholder Billies now; their kit recipes (kept in kitBuilds.json) are
+// Roster track RO-3b: musk0 and trump0 are sketch Billies now; their kit recipes (kept in kitBuilds.json) are
 // baked here (kitBakeWhole, as `npm run bake:kits` would) so the swaps are still tried on kit Billies.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

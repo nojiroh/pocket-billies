@@ -29,7 +29,7 @@
  "note": ["Never on sale. Not once."],
  "parody": "Bernard Arnault",
  "cry": [
-  {"base":"bird","pitch":50,"length":1.3,"name":"placeholder: a slow call that expects an answer (Claude's draft)"}
+  {"base":"bird","pitch":50,"length":1.3,"name":"a slow call that expects an answer"}
  ],
  "parts": [
   {"head":"bird_head","body":"bird_torso","front":"bird_arm","back":"bird_leg","sig":"bird_tail"}

@@ -130,7 +130,7 @@
    "p": "next/billionaires/*.png",
    "at": [
     "game/js/logic/kit-assemble.js:445",
-    "game/js/logic/placeholder-art.js:521"
+    "game/js/logic/sketch-art.js:520"
    ]
   },
   {
@@ -1231,7 +1231,7 @@
    "game/js/walk/effects.js:1146"
   ],
   "cup": [
-   "game/js/logic/placeholder-art.js:280"
+   "game/js/logic/sketch-art.js:279"
   ],
   "down": [
    "game/js/battle-stage.js:2213",
@@ -1371,7 +1371,7 @@
    "game/js/battle.js:389",
    "game/js/boot.js:137",
    "game/js/field-moves.js:148",
-   "game/js/logic/placeholder-art.js:270",
+   "game/js/logic/sketch-art.js:269",
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
    "game/js/self-test.js:3540",
