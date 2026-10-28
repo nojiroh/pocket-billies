@@ -432,6 +432,7 @@ export const UI_FONTS = {
   Oxanium: [
     [500, 'oxanium-500'],
     [600, 'oxanium-600'],
+    [700, 'oxanium-700'],
   ],
   'Chakra Petch': [
     [500, 'chakra-petch-500'],
