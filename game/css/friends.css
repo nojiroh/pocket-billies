@@ -94,3 +94,9 @@
   font-size: var(--fs-caption);
   padding: var(--s1) 0;
 }
+
+/* ON-4: a friend's Trade button, under their name (the row's own buttons are full at phone width) */
+.fr-t .fr-trade {
+  align-self: flex-start;
+  margin-top: var(--s1);
+}

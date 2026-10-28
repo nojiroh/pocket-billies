@@ -29,6 +29,7 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     wish: null,
     boards: { d: 0, w: 0 },
     show: { s: [], v: [], rw: 0, rib: [] },
+    trades: [],
     bosses: {},
     fest: null,
   });

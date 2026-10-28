@@ -4,7 +4,8 @@
    What a run's Perks (perks.json) change, as effect rows read at named points of the game (roguelite-track.md 2d;
    phase 19's handler-table idea). A Perk is data: a list of rows, each of one kind in FX_KINDS. fxRows turns the
    ids held into one list; each point asks only for its kind:
-     money   a won battle's money (battle-rewards.js)         price   a run shop's prices, a run clinic's charge
+     money   a won battle's money (battle-rewards.js); PK-5: at `when: arrive`, a share of the Moneys carried, at most
+             `max` (run-loop.js runFxMoment)                   price   a run shop's prices, a run clinic's charge
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
      payout  the payout's Research, or the share items count at
@@ -16,7 +17,8 @@
      unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
      crit    critical-hit stages for yours hitting (calcDamage); at `when: move` the move is a critical hit (PK-3)
      immune  yours can't get a status (brn, slp, par), or aren't hurt by the Sandstorm or sharp stones (PK-3)
-     inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3)
+     inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3), or
+             on each foe on the field as a battle starts (`when: battleStart`, PK-5: battle-engine.js sayBattleFx)
      chip    what a burn takes from yours at each turn's end, times mult (PK-3)
      first   yours move before the foe's (within a move's priority), where its `if` holds: `turn:1` (PK-3)
      revive  when your whole team has fainted, they all get back up with a share of their HP (its `once`) (PK-3)
@@ -24,10 +26,19 @@
              (PK-4, calcDamage)
      benchXp a share of a foe's XP more for yours who sat out (the bench; rules.json progression.teamXpShare plus
              these, at most all of it) (PK-4, award)
-     rule    a run rule changed by n (FX_RULES: forecastDays, the forecast shows n more days) (PK-4, run-map.js
+     rule    a run rule changed by n (FX_RULES: forecastDays, the forecast shows n more days; PK-5: rewardPick, reward
+             picks show n more cards, rewards.js rewardOfferMake; rerollFree, the first n rerolls of a reward pick are free,
+             rewards.js rewardRerollCost; mapReveal, the run map shows what every place is, run-map.js runRevealAll) (PK-4,
+             run-map.js
              runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
+     catchLevel  a Billie you catch joins n levels higher (PK-5, battle-engine.js catchKeep)
+     refund  a pyramid thrown that missed comes back (`when: throwMiss`) (PK-5, battle-engine.js catchRoll)
+     salvage what beaten bots leave: their parts offered and the Scrap, times mult (PK-5, battle-rewards.js
+             battleSalvage)
+     free    what was just bought in a run shop is free: its price back (`when: buy`, with `every`) (PK-5, run-loop.js
+             runBuyFx)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -47,6 +58,7 @@ import { resFxRows } from './residents.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_CATCH_LEVEL: [() => FX_CATCH_LEVEL],
   FX_CHANCE: [() => FX_CHANCE],
   FX_CHIP: [() => FX_CHIP],
   FX_CRIT: [() => FX_CRIT],
@@ -60,6 +72,7 @@ expose({
   FX_ONCE: [() => FX_ONCE],
   FX_PASSIVE_KEYS: [() => FX_PASSIVE_KEYS],
   FX_PER: [() => FX_PER],
+  FX_REFUND: [() => FX_REFUND],
   FX_RULES: [() => FX_RULES],
   FX_SAY: [() => FX_SAY],
   FX_STAGES: [() => FX_STAGES],
@@ -69,6 +82,7 @@ expose({
   fxAt: [() => fxAt],
   fxBenchXp: [() => fxBenchXp],
   fxCatch: [() => fxCatch],
+  fxCatchLevel: [() => fxCatchLevel],
   fxChip: [() => fxChip],
   // @ts-expect-error -- replaced on purpose
   fxCond: [() => fxCond, v => (fxCond = v)],
@@ -88,6 +102,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxLive: [() => fxLive, v => (fxLive = v)],
   fxMoney: [() => fxMoney],
+  fxMoneyShare: [() => fxMoneyShare],
   // @ts-expect-error -- replaced on purpose
   fxMult: [() => fxMult, v => (fxMult = v)],
   fxOfBillie: [() => fxOfBillie],
@@ -108,6 +123,8 @@ expose({
   fxRunMarks: [() => fxRunMarks],
   fxRunPrice: [() => fxRunPrice],
   fxRunRule: [() => fxRunRule],
+  // @ts-expect-error -- replaced on purpose
+  fxSalvage: [() => fxSalvage, v => (fxSalvage = v)],
   fxSources: [() => fxSources],
   // @ts-expect-error -- replaced on purpose
   fxSpend: [() => fxSpend, v => (fxSpend = v)],
@@ -156,6 +173,10 @@ export const FX_KINDS = /** @type {const} */ ([
   'weather',
   'benchXp',
   'rule',
+  'catchLevel',
+  'refund',
+  'free',
+  'salvage',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -223,7 +244,8 @@ export function fxMult(fx, test) {
 
 /** a won battle's money with the money rows (whole $) @param {Fx[] | null | undefined} fx @param {number} n */
 export const fxMoney = (fx, n) => {
-  const k = fxMult(fx, f => f.kind === 'money');
+  /* PK-5: a money share (paid on arrival) is no multiplier */
+  const k = fxMult(fx, f => f.kind === 'money' && typeof (/** @type {any} */ (f).mult) === 'number');
   return k === 1 ? n : Math.round(n * k);
 };
 
@@ -414,7 +436,7 @@ export const fxBenchXp = fx =>
   );
 
 /** PK-4: the run rules a rule row can change (by its n); later waves add theirs */
-export const FX_RULES = /** @type {const} */ (['forecastDays']);
+export const FX_RULES = /** @type {const} */ (['forecastDays', 'rewardPick', 'rerollFree', 'mapReveal']);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id
  * @param {Record<string, Perk>} [perks] */
@@ -472,6 +494,45 @@ export function fxPassive(fx, id) {
   }
   return o;
 }
+
+/** PK-5: the most levels catchLevel rows add together */
+export const FX_CATCH_LEVEL = 10;
+/** PK-5: how many levels higher a Billie you catch joins: the catchLevel rows' n summed (0 to FX_CATCH_LEVEL; 0 when
+ * none) @param {Fx[] | null | undefined} fx */
+export const fxCatchLevel = fx =>
+  Math.max(
+    0,
+    Math.min(
+      FX_CATCH_LEVEL,
+      (fx || []).reduce((a, f) => a + (f.kind === 'catchLevel' ? f.n || 0 : 0), 0)
+    )
+  );
+
+/** PK-5: what a money share row pays when it acts: its share of the Moneys carried (`se`), rounded down, at most its
+ * max (0 for a multiplier row) @param {any} f @param {number} se */
+export const fxMoneyShare = (f, se) =>
+  f.kind === 'money' && f.share > 0
+    ? Math.max(0, Math.min(f.max ?? Infinity, Math.floor(Math.max(0, se) * f.share)))
+    : 0;
+provide({ fxMoneyShare }); /* to-module */
+
+/** PK-5: a faction's salvage rules (factions.json salvage) with the salvage rows: the parts offered and the Scrap
+ * times their product (rounded; the rules themselves when none) @template {{ parts: number, scrap: number,
+ * scrapPerBot: number }} S @param {Fx[] | null | undefined} fx @param {S} S @returns {S} */
+export function fxSalvage(fx, S) {
+  const k = fxMult(fx, f => f.kind === 'salvage');
+  return k === 1
+    ? S
+    : {
+        ...S,
+        parts: Math.round(S.parts * k),
+        scrap: Math.round(S.scrap * k),
+        scrapPerBot: Math.round(S.scrapPerBot * k),
+      };
+}
+
+/** PK-5: what a refund row gives back (a pyramid thrown that missed) */
+export const FX_REFUND = /** @type {const} */ (['pyramid']);
 
 /* ---------- PK-1: when a row acts, on what condition, how often, how it grows (perks-track.md section 7) ----------
    Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):
