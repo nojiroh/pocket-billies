@@ -120,15 +120,16 @@ function natureRainHere(T, pans, t, k, thru, indoor, eaves, leafy) {
     A.drip(ambience.lpW, b, 1);
 }
 
-/** thunder for each bolt since the last update (at most two at once), muffled indoors */
-function natureThunderHere(E, t, indoor) {
+/** thunder for each bolt since the last update (at most two at once), muffled indoors; none heard in a cave (deaf) */
+function natureThunderHere(E, t, indoor, deaf) {
   const A = ambience.naturePlayer,
     st = ambience.natureSt,
     N = SOUNDSCAPE.nature;
   if (!A || !E) return;
   const n = E.bolts || 0;
-  /* the bolts before you arrived (or before the sound woke) are not heard */
-  if (st.bolts == null || n < st.bolts) st.bolts = n;
+  /* the bolts before you arrived, while the walk was not shown or the sound slept are not heard */
+  if (st.bolts == null || n < st.bolts || t - (st.boltAt ?? -9) > 3 || deaf) st.bolts = n;
+  st.boltAt = t;
   for (; st.bolts < n; st.bolts++) {
     const plan = natureThunder(N.thunder, ambience.natureRng);
     A.thunder(ambience.lpW, plan, t + plan.delay, N.thunder.cap, indoor ? 0.5 : 1);
@@ -233,7 +234,7 @@ function natureHere(sc, E, T, pans, t) {
     indoor ? null : natureEaves(sc, P),
     Math.min(1, (ambience.trees || 0) / 8)
   );
-  natureThunderHere(E, t, indoor);
+  natureThunderHere(E, t, indoor, sc.far === 'cave');
   natureWindHere(T, pans, E, sc, thru, town, g);
   const F = natureFireNear(sc);
   T.fire = F ? F.v : 0;
