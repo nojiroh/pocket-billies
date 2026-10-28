@@ -13,6 +13,7 @@ import {
   soundBakeZoneFor,
   soundBakeZoneSteps,
 } from '../logic/sound-bake.js';
+import { musicArpAt, musicBassAt, musicDrumsAt } from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
   SCALES: [() => SCALES],
@@ -21,6 +22,8 @@ expose({
   SOUND_BAKE_PLACES: [() => SOUND_BAKE_PLACES],
   SOUND_BAKE_ROOM_GAIN: [() => SOUND_BAKE_ROOM_GAIN],
   SOUND_BAKE_SLICE_MS: [() => SOUND_BAKE_SLICE_MS],
+  TRACKER_GB_ARP: [() => TRACKER_GB_ARP],
+  TRACKER_GB_BASS: [() => TRACKER_GB_BASS],
   midiToFrequency: [() => midiToFrequency],
   songRandom: [() => songRandom, v => (songRandom = v)],
   soundBakeBank: [() => soundBakeBank],
@@ -408,6 +411,25 @@ function soundBakeStats() {
     lastSlicesMs: B.lastSlicesMs.slice(),
   };
 }
+/* SND-11: how the `gb` path's chips play the patterns (logic/music-patterns.js): the bass by its pattern (bassVoice
+   then moves it to the triangle or the second pulse in a four-voice song), the arpeggio by its kind ('four:' the
+   four-voice song's). Today's sound, kept as it was */
+const TRACKER_GB_BASS = {
+  bounce: { type: 'triangle', vol: 0.2, s: 0.7 },
+  gallop: { type: 'triangle', vol: 0.2 },
+  long: { type: 'triangle', vol: 0.16, a: 0.2, s: 0.8, r: 0.4 },
+  walk: { type: 'triangle', vol: 0.2 },
+  drive: { type: 'p50', vol: 0.07, cut: 900 },
+  pedal: { type: 'p50', vol: 0.07, cut: 900 },
+};
+const TRACKER_GB_ARP = {
+  'four:drip': { type: 'p12', vol: 0.04, s: 0.2, r: 0.15, echo: 0.5 },
+  'four:chord7': { type: 'p12', vol: 0.035, s: 0.3, echo: 0.15 },
+  up: { type: 'p12', vol: 0.035, s: 0.3, echo: 0.2 },
+  updown: { type: 'p12', vol: 0.035, s: 0.3, echo: 0.15 },
+  drip: { type: 'sine', vol: 0.05, s: 0.2, r: 0.3, echo: 0.7 },
+  chord7: { type: 'sine', vol: 0.03, a: 0.02, s: 0.5, r: 0.2 },
+};
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
     /* SND-8a: started counts the voices started (the debug log's sources a minute), late the steps scheduled after
@@ -888,163 +910,29 @@ export function trackerCreate(ctx, bus, opts = {}) {
           echo: 0.1,
           echoTo: sg.echo,
         });
-      /* bass */ const bs = D.bass,
-        root = dg(ch) - 24;
-      if (bs === 'bounce' && i % 4 === 0)
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(i % 8 ? root + 7 : root),
-          t,
-          dur: spb * 3,
-          vol: 0.2,
-          s: 0.7,
-        });
-      else if (bs === 'gallop' && [0, 3, 4, 8, 11, 12].includes(i))
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(i % 8 === 4 ? root + 12 : root),
-          t,
-          dur: spb * 1.5,
-          vol: 0.2,
-        });
-      else if (bs === 'long' && i === 0)
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(root),
-          t,
-          dur: spb * 15,
-          vol: 0.16,
-          a: 0.2,
-          s: 0.8,
-          r: 0.4,
-        });
-      else if (bs === 'walk' && i % 4 === 0)
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(dg(ch + [0, 2, 4, 5][i / 4]) - 24),
-          t,
-          dur: spb * 3.5,
-          vol: 0.2,
-        });
-      else if (bs === 'drive' && i % 2 === 0)
-        bassVoice({
-          type: 'p50',
-          freq: midiToFrequency(root + (i % 8 === 6 ? 12 : 0)),
-          t,
-          dur: spb * 1.6,
-          vol: 0.07,
-          cut: 900,
-        });
-      else if (bs === 'pedal' && i % 2 === 0)
-        /* SND-5: the tense pedal, eighths on the key's flat seventh (under the bass's home) whatever the chord */
-        bassVoice({
-          type: 'p50',
-          freq: midiToFrequency(D.key - 26 + (i % 8 === 6 ? 12 : 0)),
-          t,
-          dur: spb * 1.6,
-          vol: 0.07,
-          cut: 900,
-        });
-      /* harmony (SND-5: arpOctave lifts the arp, the run's later rows) */ const ar = D.arp,
-        tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x) + 12 * (D.arpOctave || 0)),
-        pick = k => tri[((k % 4) + 4) % 4];
-      if (pulse2Busy) {
-        /* the second pulse plays the countermelody or the bass this bar */
-      } else if (four && ar === 'drip' && (i === 0 || i === 6 || i === 11))
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(pick(i) + 12),
-          t,
-          dur: spb * 1.5,
-          vol: 0.04,
-          s: 0.2,
-          r: 0.15,
-          echo: 0.5,
-          echoTo: sg.echo,
-        });
-      else if (four && ar === 'chord7' && i % 2 === 0)
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(tri[i % 4 ? 3 : 1] + 12),
-          t,
-          dur: spb * 1.2,
-          vol: 0.035,
-          s: 0.3,
-          echo: 0.15,
-          echoTo: sg.echo,
-        });
-      else if (ar === 'up' && i % 2 === 0)
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(pick(i / 2) + 12),
-          t,
-          dur: spb * 1.2,
-          vol: 0.035,
-          s: 0.3,
-          echo: 0.2,
-          echoTo: sg.echo,
-        });
-      else if (ar === 'updown' && i % 2 === 0) {
-        const k = i / 2,
-          seq = [0, 1, 2, 3, 2, 1, 0, 1];
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(pick(seq[k % 8]) + 12),
-          t,
-          dur: spb * 1.2,
-          vol: 0.035,
-          s: 0.3,
-          echo: 0.15,
-          echoTo: sg.echo,
-        });
-      } else if (ar === 'drip' && (i === 0 || i === 6 || i === 11))
-        T.synthVoice(bus, {
-          type: 'sine',
-          freq: midiToFrequency(pick(i) + 24),
-          t,
-          dur: spb * 2,
-          vol: 0.05,
-          s: 0.2,
-          r: 0.3,
-          echo: 0.7,
-          echoTo: sg.echo,
-        });
-      else if (ar === 'chord7' && (i === 0 || i === 6 || i === 10))
-        tri.forEach(n =>
+      /* bass (SND-11: the pattern is logic/music-patterns.js musicBassAt; here, how the chip plays it) */
+      const bn = musicBassAt(D, b, i);
+      if (bn) bassVoice({ ...TRACKER_GB_BASS[D.bass], freq: midiToFrequency(bn.m), t, dur: spb * bn.len });
+      /* harmony (SND-5: arpOctave lifts the arp, the run's later rows; SND-11: musicArpAt) */
+      const ap = pulse2Busy ? null : musicArpAt(D, b, i, four);
+      /* the second pulse plays the countermelody or the bass this bar when pulse2Busy */
+      if (ap) {
+        const V = TRACKER_GB_ARP[(four ? 'four:' : '') + ap.kind] || TRACKER_GB_ARP[ap.kind];
+        for (const n of ap.notes)
           T.synthVoice(bus, {
-            type: 'sine',
-            freq: midiToFrequency(n + 12),
+            ...V,
+            freq: midiToFrequency(n),
             t,
-            dur: spb * (i === 0 ? 5 : 3),
-            vol: 0.03,
-            a: 0.02,
-            s: 0.5,
-            r: 0.2,
-          })
-        );
-      /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw) */ const dr =
-          sg.hold ? 'none' : D.drums,
-        db = sg.drums || bus;
-      if (dr === 'soft') {
-        if (i === 0 || i === 8) T.synthKick(db, t, 0.25);
-        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.08, vol: 0.08, bp: 1800, q: 0.8 });
-        if (i % 4 === 2) T.synthNoise(db, { t, dur: 0.03, vol: 0.04, hp: 7000 });
-      } else if (dr === 'skip') {
-        if (i === 0 || i === 10) T.synthKick(db, t, 0.3);
-        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.1, vol: 0.1, bp: 2000, q: 0.7 });
-        if (i % 2 === 0) T.synthNoise(db, { t, dur: 0.025, vol: 0.035, hp: 8000 });
-      } else if (dr === 'drive') {
-        if (i % 4 === 0) T.synthKick(db, t, 0.42);
-        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.12, vol: 0.14, bp: 1800, q: 0.6 });
-        T.synthNoise(db, { t, dur: 0.02, vol: i % 2 ? 0.025 : 0.045, hp: 8000 });
-      } else if (dr === 'march') {
-        if (i === 0 || i === 8 || i === 11) T.synthKick(db, t, 0.42);
-        if (i % 4 === 2 || i === 14 || i === 15) T.synthNoise(db, { t, dur: 0.07, vol: 0.11, bp: 2400, q: 0.8 });
-        if (i % 2 === 0) T.synthNoise(db, { t, dur: 0.02, vol: 0.03, hp: 9000 });
-      } else if (dr === 'bossa') {
-        if (i === 0 || i === 6 || i === 8 || i === 14) T.synthKick(db, t, 0.2);
-        if ([3, 6, 10, 13].includes(i)) T.synthNoise(db, { t, dur: 0.03, vol: 0.05, bp: 3500, q: 2 });
+            dur: spb * ap.len,
+            ...(V.echo ? { echoTo: sg.echo } : {}),
+          });
       }
+      /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw; SND-11:
+         musicDrumsAt) */
+      const db = sg.drums || bus;
+      for (const h of musicDrumsAt(sg.hold ? 'none' : D.drums, i))
+        if (h.hit === 'kick') T.synthKick(db, t, h.vol);
+        else T.synthNoise(db, { t, ...h.gb, vol: h.vol });
       /* v27: a soft pad under the night (SND-4: an `extra` song's only; a four-voice song has its night version) */
       if (!four && i === 0 && (Lv = levels()) && Lv.pad > 0.05)
         [0, 2, 4].forEach(x =>
