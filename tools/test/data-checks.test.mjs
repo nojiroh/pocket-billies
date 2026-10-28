@@ -715,6 +715,7 @@ test('PK-7: the fine rarity: a leader rule names a rarity some Perk has; an even
   }
   const F = structuredClone(GAME_DATA);
   F.rules.run.perks.leader = { rarity: 'fine', pick: 3 };
+  for (const P of Object.values(F.perks)) if (P.rarity === 'fine') P.rarity = 'rare';
   assert.ok(C.dataPerks(F).some(p => p.join(': ').includes('no Perk in perks.json is fine')));
   /* fine has no weight or price of its own */
   F.rules.run.perks.rarity.fine = 1;
