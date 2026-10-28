@@ -37,6 +37,9 @@ validation/look-people/
 validation/style-diff/
 validation/ui-gallery-out/
 validation/sim/
+# Claude Code's Playwright MCP server (tools/mcp-playwright.mjs) and a debug log's picture (tools/read-debug-log.py)
+validation/mcp/
+validation/debug-log/
 results.json
 test-results/
 playwright-report/
