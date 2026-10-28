@@ -1,5 +1,5 @@
 // Roster track RO-3a: the body plans (game/data/bodyPlans.json) and the placeholder Billies baked from them
-// (game/js/logic/placeholder-art.js). Every plan the animation knows has a template whose bones the animation moves
+// (game/js/logic/sketch-art.js). Every plan the animation knows has a template whose bones the animation moves
 // (or that ride on one it moves); a sample Billie on each plan bakes inside the stage box, the same twice, with a
 // rig the renderer can read; its drawing sheets (a Billie's and a plan's, at any scale) cut back into the same cells;
 // a drawn cell wins over the placeholder, an empty one doesn't; the placeholders never use the sheets' magenta; and
@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readJson } from '../data-files.mjs';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
-import * as PA from '../../game/js/logic/placeholder-art.js';
+import * as PA from '../../game/js/logic/sketch-art.js';
 import { bakePlaceholders, samplePlaceholder } from '../bake-placeholders.mjs';
 
 const P = readJson('bodyPlans.json');

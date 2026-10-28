@@ -1,5 +1,5 @@
 // Roster track RO-3a: bakes the placeholder Billies (game/data/bodyPlans.json forms) with the game's own baker
-// (game/js/logic/placeholder-art.js), and moves their drawing sheets out and in.
+// (game/js/logic/sketch-art.js), and moves their drawing sheets out and in.
 //
 // A Billie's cells are painted placeholders, with the cells of its drawing sheet on top when it has one
 // (game/art/next/placeholders/<name>.png, written by --import; a cell left empty keeps its placeholder). The bake
@@ -26,7 +26,7 @@ import {
   placeholderCellsWith,
   placeholderSheet,
   placeholderSheetCut,
-} from '../game/js/logic/placeholder-art.js';
+} from '../game/js/logic/sketch-art.js';
 
 const ART = join(ROOT, 'game', 'art', 'next');
 const SHEETS = join(ART, 'billionaires');

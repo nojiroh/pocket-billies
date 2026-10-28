@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "bodyPlans.schema.json",
- "title": "game/data/bodyPlans.json: the body plans every Billie is built on and the placeholder Billies baked from them by game/js/logic/placeholder-art.js (roster track RO-3a)",
+ "title": "game/data/bodyPlans.json: the body plans every Billie is built on and the placeholder Billies baked from them by game/js/logic/sketch-art.js (roster track RO-3a)",
  "type": "object",
  "required": ["sheet", "paint", "plans", "forms"],
  "additionalProperties": false,

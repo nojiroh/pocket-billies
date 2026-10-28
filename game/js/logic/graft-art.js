@@ -8,15 +8,15 @@
    box). A slot is swapped only bone kind for bone kind (an arm for an arm or a wing, a leg for a leg or a foot, a tail
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
    not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs).
-   RO-3c: placeholder Billies (logic/placeholder-art.js, any of the 14 body plans) are grafted by slot across plans,
+   RO-3c: placeholder Billies (logic/sketch-art.js, any of the 14 body plans) are grafted by slot across plans,
    on their baked sheets and rigs (graftPlaceholder, below; tools/test/graft-placeholder.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
 /** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> Gene id, "part@donor" (SP-2) */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
-/** @typedef {import('./placeholder-art.js').BodyPlans} BodyPlans */
-/** @typedef {import('./placeholder-art.js').PlaceholderForm} PlaceholderForm */
-/** @typedef {import('./placeholder-art.js').PlaceholderBone} PlaceholderBone */
+/** @typedef {import('./sketch-art.js').BodyPlans} BodyPlans */
+/** @typedef {import('./sketch-art.js').PlaceholderForm} PlaceholderForm */
+/** @typedef {import('./sketch-art.js').PlaceholderBone} PlaceholderBone */
 /**
  * @typedef {{ form: PlaceholderForm, rig: Record<string, any>, sheet: Pixels }} PlaceholderBaked a placeholder Billie
  *   as baked (placeholderBake): its form, its sheet and both views' rigs

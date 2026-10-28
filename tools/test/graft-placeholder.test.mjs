@@ -10,7 +10,7 @@ import { readJson } from '../data-files.mjs';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import * as G from '../../game/js/logic/graft-art.js';
 import { kitFlipX } from '../../game/js/logic/kit-pixels.js';
-import * as PA from '../../game/js/logic/placeholder-art.js';
+import * as PA from '../../game/js/logic/sketch-art.js';
 import { samplePlaceholder } from '../bake-placeholders.mjs';
 
 const P = readJson('bodyPlans.json');

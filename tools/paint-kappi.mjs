@@ -10,7 +10,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { ROOT } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
-import { placeholderBones, placeholderCellSpecs, placeholderSheet } from '../game/js/logic/placeholder-art.js';
+import { placeholderBones, placeholderCellSpecs, placeholderSheet } from '../game/js/logic/sketch-art.js';
 import { bakePlaceholders, placeholderData } from './bake-placeholders.mjs';
 
 const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
