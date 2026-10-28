@@ -33,7 +33,7 @@ provide({ battleAnimPlay, battleFlashGate });
 /* to-module: end */
 /** the runner's state: the full-screen flashes shown in the last second (flashGate), the move playing (its id, its
  * timeline, the quality, the flashes held back) */
-const battleAnim = {
+export const battleAnim = {
   flashes: { times: /** @type {number[]} */ ([]) },
   /** @type {{ mid: string, T: any, q: number, held: string[], logged: boolean } | null} */
   cur: null,

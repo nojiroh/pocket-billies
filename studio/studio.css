@@ -1916,6 +1916,182 @@ table.keys td {
 .bp-ctl .seg-row {
   gap: 5px;
 }
+/* VFX-12: the Battle effects editor: the player and its 24 fps timeline under the stage, the panes below */
+.bp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+/* the stage scrolls with the player and panes under it (it was sticky when alone in its column) */
+.bp-main .bp-stage {
+  position: relative;
+}
+.bfx-player {
+  margin: 0;
+}
+.bfx-player .seg-row {
+  gap: 5px;
+  align-items: center;
+}
+.bfx-player output {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--text2);
+}
+.bfx-set {
+  display: grid;
+  gap: 4px;
+}
+.bfx-set .seg-row {
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.bfx-sum {
+  margin: 8px 0 6px;
+  font-size: 12.5px;
+  color: var(--text2);
+}
+.bfx-scroll {
+  overflow-x: auto;
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel2);
+}
+.bfx-body {
+  position: relative;
+  padding: 4px 0;
+  font-size: 11.5px;
+}
+.bfx-row {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+.bfx-lbl {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: 0 0 var(--bfx-lbl);
+  width: var(--bfx-lbl);
+  padding: 0 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--panel2);
+  color: var(--text);
+}
+.bfx-bars {
+  position: relative;
+  height: 100%;
+  flex: 0 0 auto;
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
+  background-size: 12px 100%;
+}
+.bfx-bar {
+  position: absolute;
+  top: 5px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--acc);
+  opacity: 0.75;
+}
+.bfx-bars b {
+  position: absolute;
+  top: 3px;
+  width: 2px;
+  height: 14px;
+  background: var(--text);
+}
+.bfx-ruler .bfx-bars {
+  background-size: 72px 100%;
+}
+.bfx-ruler em {
+  position: absolute;
+  top: 3px;
+  padding-left: 2px;
+  font-style: normal;
+  color: var(--text2);
+}
+.bfx-row input[type='range'] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.bfx-mark,
+.bfx-head {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  pointer-events: none;
+}
+.bfx-mark.hit {
+  background: var(--red);
+}
+.bfx-mark.dur {
+  background: var(--warn);
+}
+.bfx-head {
+  left: var(--bfx-lbl);
+  background: var(--text);
+  z-index: 3;
+}
+.bfx-panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.bfx-pane {
+  margin: 0;
+}
+.bfx-pane h4 {
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+.bfx-tw {
+  overflow-x: auto;
+}
+.bfx-t {
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.bfx-t th,
+.bfx-t td {
+  padding: 2px 6px;
+  text-align: left;
+}
+.bfx-q td .fld {
+  margin: 0;
+}
+.bfx-q td input {
+  width: 64px;
+}
+.bfx-list {
+  display: grid;
+  gap: 6px;
+}
+.bfx-ramp,
+.bfx-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+}
+.bfx-sw {
+  display: flex;
+}
+.bfx-sw i {
+  width: 14px;
+  height: 14px;
+}
+.bfx-strip {
+  max-height: 32px;
+  image-rendering: pixelated;
+}
 .btn.sm,
 .seg.sm,
 select.sm {
