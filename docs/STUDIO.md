@@ -320,7 +320,7 @@ Art workbench → Part mode, beside the kit recipe:
   Draw over the cells in any app; magenta stays clear, so leave it round the drawing; keep the grid and labels where
   they are, and the picture's size (or a whole multiple of it). **Upload drawing sheet** cuts it back by the same
   layout: a drawn cell replaces the placeholder, a cell left all magenta keeps it. The drawing is stored as
-  `art/next/placeholders/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
+  `art/next/sketches/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
   **Write Billie** bakes it again as it is. **Repack sheet** refuses a placeholder Billie (its plan packs the sheet).
 - **Body plan sheets**: pick a plan and a scale (1×, 2×, 4×, 8×: each pixel drawn as N × N, for drawing big),
   **Download**: every Billie on that plan, two rows each, a strip with its name above (a sample Billie while none is

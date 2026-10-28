@@ -84,7 +84,7 @@
     "required": ["name", "rig", "plan", "colours"],
     "additionalProperties": false,
     "properties": {
-     "name": {"description": "its sheet's name (game/art/next/billionaires/<name>.png) and drawing's (placeholders/<name>.png)", "$ref": "#/$defs/id"},
+     "name": {"description": "its sheet's name (game/art/next/billionaires/<name>.png) and drawing's (sketches/<name>.png)", "$ref": "#/$defs/id"},
      "rig": {"description": "its rig in rigs-next.js (the species id)", "$ref": "#/$defs/id"},
      "line": {"$ref": "#/$defs/id"},
      "stage": {"type": "integer", "minimum": 0},

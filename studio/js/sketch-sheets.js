@@ -3,7 +3,7 @@
    A placeholder Billie (one of game/data/bodyPlans.json's forms) is painted from its body plan and baked with the
    game's own baker (logic/sketch-art.js, as `npm run bake:sketches` does). Its drawing sheet (a column per
    picture, a row per view, on magenta) downloads, gets drawn on in any app and uploads back: the cells are cut by the
-   same layout (at any whole scale), stored as art/next/placeholders/<name>.png, and the Billie baked again (sheet and
+   same layout (at any whole scale), stored as art/next/sketches/<name>.png, and the Billie baked again (sheet and
    rig, one undo step). A body plan's sheet holds every Billie on that plan (a sample before any is), and splits back
    the same way. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -32,7 +32,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const SKETCH_DRAWN = name => `art/next/placeholders/${name}.png`;
+const SKETCH_DRAWN = name => `art/next/sketches/${name}.png`;
 const SKETCH_SHEET = name => `art/next/billionaires/${name}.png`;
 const sketchUi = { plan: 'biped', scale: 1 };
 /** the placeholder recipe of a species' rig */

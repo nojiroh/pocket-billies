@@ -1,4 +1,4 @@
-// Kappi the Wise (people/kappi.json creature): paints the capybara's drawing sheet (game/art/next/placeholders/kappi.png)
+// Kappi the Wise (people/kappi.json creature): paints the capybara's drawing sheet (game/art/next/sketches/kappi.png)
 // into the cells of its body-plan form (bodyPlans.json form `kappi`, quad, no tail, a talking face), then bakes it
 // (tools/bake-sketches.mjs) into game/art/next/billionaires/kappi.png and its rig in rigs-next.js.
 //   node tools/paint-kappi.mjs                 paint, store and bake
@@ -260,7 +260,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     form = P.forms.find(f => f.name === 'kappi');
   if (!form) throw new Error('no form kappi in bodyPlans.json');
   const cells = paintKappi(P, form),
-    dir = join(ROOT, 'game', 'art', 'next', 'placeholders');
+    dir = join(ROOT, 'game', 'art', 'next', 'sketches');
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'kappi.png'), encodePng(sketchSheet(P, [form], { kappi: cells })));
   bakeSketches({ only: ['kappi'] });

@@ -2,7 +2,7 @@
 // (game/js/logic/sketch-art.js), and moves their drawing sheets out and in.
 //
 // A Billie's cells are painted placeholders, with the cells of its drawing sheet on top when it has one
-// (game/art/next/placeholders/<name>.png, written by --import; a cell left empty keeps its placeholder). The bake
+// (game/art/next/sketches/<name>.png, written by --import; a cell left empty keeps its placeholder). The bake
 // writes what changed, as bake-kit-billies.mjs does: game/art/next/billionaires/<name>.png and its rig in
 // game/art/next/rigs-next.js.
 //
@@ -30,7 +30,7 @@ import {
 
 const ART = join(ROOT, 'game', 'art', 'next');
 const SHEETS = join(ART, 'billionaires');
-const DRAWN = join(ART, 'placeholders');
+const DRAWN = join(ART, 'sketches');
 const RIGS = join(ART, 'rigs-next.js');
 const OUT = join(ROOT, 'tools', 'art-source', 'sketches');
 
@@ -160,7 +160,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log(`wrote ${exportSheet(arg('export'), { out: arg('out') || OUT, scale: Number(arg('scale') || 1) })}`);
     } else if (arg('import')) {
       const names = importSheet(arg('import'), arg('for'));
-      console.log(`stored ${names.join(', ')} in game/art/next/placeholders`);
+      console.log(`stored ${names.join(', ')} in game/art/next/sketches`);
       bakeSketches({ only: names });
     } else {
       const o = arg('only'),
