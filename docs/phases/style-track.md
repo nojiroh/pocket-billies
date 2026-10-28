@@ -176,9 +176,48 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
   and the scrap heap's `life`; MAPGEN_VERSION 25): red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
   checkpoint's sign, loose forms blowing past near Bureau places (an ambient-life kind with the `fly` flag). Flat
   props stay flat (CLAUDE.md). Art from the Studio.
-- **SY-8** tuning and docs: Studio dials (stamp size and slant, the roll's time, the pop's sizes, the foil's speed and
+- **SY-8** tuning and docs. Done 2026-10-28 on `track/style`; **the track is done** (built as below: the dials are
+  uiTheme.json `style`, the Studio's UI section, group Style; logic/style-dials.js; the theme sheet writes them as
+  `--stamp-scale`, `--stamp-slant`, `--hp-roll`, `--pop-min`, `--pop-max`, `--foil-*`; theme-sheet.js `styleDials()`
+  reads them for battle.js and the foil, at most twice a second. The debug log's line is `state.style`: the state now
+  and, per "flashes on/off, full/calm/reduced" state that ran, counts of flashes shown, held to 15% and skipped, stamps,
+  pops, rolls and foil frames. Every default is the number SY-2 to SY-6 shipped, so nothing looks different until a
+  dial moves): Studio dials (stamp size and slant, the roll's time, the pop's sizes, the foil's speed and
   width), a debug-log line with the Flashes and Animation states that ran (never save data), HANDOFF. Tag
   `style-done`.
+
+## Decided for the owner, to review (SY-1 to SY-8, in one place)
+Every step ran without waiting (the owner, 2026-10-27). Each choice below is in that step's HANDOFF entry too.
+- **SY-1:** a bright flash with Flashes off keeps its colour, held to 15% (the plan said "drops white to the
+  palette's surface"); a dark flash (the faint's deep red) stays as it is.
+- **SY-2:** no beat added before a faint (it already waits for its own event; "Ask me before" 6); say if you want
+  150-250 ms. Sizes replace the kind's size (a small crit shows small, in the crit's colour). Status damage is sized
+  too. A heal's plate number rolls; its "+N" pop keeps its fixed size.
+- **SY-3:** the emblem's drawing (a draft; repaint in the Studio's icon editor). Form numbers "Form 7B", "Form 12-C",
+  "Form 4A-4", "Form 31", "Form 9-Lost", "Form 0" ("Ask me before" 2). Stamp words keyed by moment. The thunk is a
+  fifth UI sound (music.json `ui.sounds.stamp`, a placeholder). No Studio card for the Bureau's look (still not added:
+  see SY-8).
+- **SY-4:** which nine events are the Bureau's (`bureau` in events.json; Form 27-B is in). The redaction words. The
+  stamp rule (the last option DENIED, any other FILED, unless an option names its own). Form 27-B, 9-C and 9-G are
+  events' own `form`. Bars lift when the intro shows again on file (a tap lifts one early). Buttons work while it
+  types. The stamp sits under the summary. The manila colours are the file's own tokens. The lines are in Oxanium
+  in every look.
+- **SY-5:** UI-16a/b merged into `track/style` (so #289 carries them). The notice's stamp is FILED. RETRIEVED only on a
+  Bureau bot's own hit. The boss: DENIED in battle, PENDING on its sheet after. Stamps land on a paper slip. Serial
+  "No. NNNN-XX". The plate's paper is the case files' tokens. No gallery section for the plate and notice yet (UI-18).
+- **SY-6:** maps: foil off with Graphics Off (they have no quality level). Regional forms' coats have no foil.
+  Brightness step 0.3, sweep 3.5 s / 0.7 s, band along x + .6 y, hue turn per coat from a hash of its id, lift x1.25
+  + .06 at 0.55. A foiled Billie leaves the instanced run while its band crosses. Reflections get no foil.
+- **SY-7:** a new prop `bureau_sign` for the checkpoint (not the shared signpost). The tape is the scenery's red
+  #DE4048. Forms also in the scrap heap. A new `drift` flag; size 0.95, lift 1.6 m. MAPGEN_VERSION 25. The emblem
+  decal is made from art/ui/bureau.svg by the build script (rerun it after repainting).
+- **SY-8:** the dials live in uiTheme.json `style` (the UI section's Style group), not in factions.json or engine.json,
+  so palettes and presets can set them and the Studio's live preview shows them. Stamp size is a multiplier (x1) and
+  slant is degrees (8) that scales each page's own tilt (-7 and -8 stay apart). The roll dial times the fill's move
+  too, so number and bar land together. The foil dials are its period, sweep time and band half width; strength,
+  brightness step and hue stay in code. Pop sizes are the smallest and largest (a KO is the largest). The log counts
+  foil per frame drawn (a number that grows fast, but cheap). No Studio card for the Bureau's words and forms (edit
+  factions.json `bureau.look`); a small one would fit the factions' own editor when there is one.
 
 Optional, only if the owner asks (see "Ask me before" 4): **SY-9 Laminated**, a rarer finish, a second sheen on any
 coat, given by the Bureau (a field-lab event, a Showcase prize), saved as `Billy.finish`, shared by the Showcase and
