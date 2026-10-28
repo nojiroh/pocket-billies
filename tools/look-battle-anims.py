@@ -14,12 +14,19 @@ gives the same film.
   is printed, and the exit code is 1 when any differs.
 - With --sheets (and --only=, since a drawn frame takes a second or two in software): a contact sheet per film of 16
   frames, 84 ms apart (two 24 fps cells), the GL scene stepped on the same clock.
+- With --measure (and --only=; VFX-9): each film drawn frame by frame with the GPU counters on (engine/gpu-counters.js):
+  the effects pass's draws a frame (the most and the mean, and the same on the stage at rest before it), the battle
+  effects' own draws (the `battleFx` tag, where the build has it), the rigs' redraws and uploaded bytes (rigStats) and
+  the processor's time a frame (the stage's and the renderer's tasks, real time; headless, so only a comparison of two
+  builds on one machine means anything). measure.json, and a table on the console.
 
     python3 tools/look-battle-anims.py                       # traces of all moves, validation/look-battle-anims/
     python3 tools/look-battle-anims.py --out=DIR             # somewhere else (e.g. a film before a change)
     python3 tools/look-battle-anims.py --only=tackle,zip     # move ids, or H / S / X (a category)
     python3 tools/look-battle-anims.py --only=zip --sheets   # with contact sheets
     python3 tools/look-battle-anims.py --compare=DIR         # this folder's trace against DIR's
+    python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
+    python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
 
 Uses the browser checks' page set-up (tools/browser_check.py)."""
 import json
@@ -35,6 +42,9 @@ OPT = {a.split('=', 1)[0][2:]: (a.split('=', 1)[1] if '=' in a else True) for a 
 OUT = Path(OPT.get('out') or ROOT / 'validation' / 'look-battle-anims')
 ONLY = [s for s in str(OPT.get('only') or '').split(',') if s]
 OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked']
+# VFX-9: --outcomes=se,crit and --sides=0 narrow a run (sheets and measures take a while)
+if OPT.get('outcomes'): OUTCOMES = str(OPT['outcomes']).split(',')
+SIDES = [int(v) for v in str(OPT.get('sides') or '0,1').split(',')]
 FRAMES, EVERY = 96, 3
 
 # Math.random seeded from the start (util.js keeps the Math.random it finds when it loads), reseeded per film
@@ -57,12 +67,12 @@ __film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S
  const home={x:0,y:1.6,z:0,yaw:0,hz:0};Object.assign(S.cam,home);Object.assign(S.V,home);Object.assign(S.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});
  S.hand.a=0;S.css.r=0;S.css.z=0;S.camT=0;S.focusK=null;battleStageFocus('wide',true);
  const p=document.getElementById('pops');if(p)p.innerHTML='';const f=document.getElementById('flash');if(f){f.style.transition='none';f.style.opacity=0;f.style.background=''}
- const w=document.getElementById('camWorld');if(w)w.classList.remove('ca')};
+ const w=document.getElementById('camWorld');if(w)w.classList.remove('ca');S.ca=null};
 __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getElementById('camWorld'),p=document.getElementById('pops');
  return JSON.stringify([Math.round(S.t-t0),S.s.map(s=>[r3(s.ox),r3(s.oy),s.act&&s.act.k,Math.round(s.blinkUntil>t0?s.blinkUntil-t0:0),r3(s.white),r3(s.a),r3(s.sc),s.lunge?1:0,s.trail?s.trail.list.length:0]),
   S.parts.map(q=>[q.spr||q.col||'',q.ring?1:0,q.beam?1:0,r3(q.x),r3(q.y),r3(q.z),Math.round(q.age),Math.round(q.life)]),
   ['x','y','z','yaw','hz'].map(k=>r3(S.cam[k])),r3(S.css.r),r3(S.css.z),r3(S.shk),S.hold>vt?1:0,r3(S.hand.a),r3(S.dof.zf),r3(S.dof.ap),S.focusK,
-  f?[f.style.opacity,f.style.background]:0,w&&w.classList.contains('ca')?1:0,S.impact?1:0,
+  f?[f.style.opacity,f.style.background]:0,(w&&w.classList.contains('ca'))||S.ca?1:0,S.impact?1:0,
   p?[...p.children].map(e=>e.className+':'+e.textContent).join('|'):''])};
 /* an outcome's move event, as the Studio's battle preview builds it */
 __film.an=(mid,si,res)=>{const M=MOVES[mid],fx=M.fx||{},onFoe=M.c!=='X'||fx.status||fx.tgtStage||fx.hype||fx.spin||fx.wipe||fx.copyTypes,an={k:'move',si,ti:1-si,mid};
@@ -82,7 +92,21 @@ __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.v
  const ev={s:activeBattle.events[activeBattle.events.length-1].s};return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
+/* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
+__film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
+ TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[]};
+ const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);const dt=rn()-t0;const c=gpuCounters.cur;
+  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m)out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
+ __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
+ __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
+ Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
+ __film.start(key,mid,si,res);
+ __film.wrap(()=>{for(let i=0;i<frames;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();one(out.eff,true)}});
+ out.rig={redraws:rigStats.redraws,kb:Math.round(rigStats.bytes/1024),ms:Math.round(rigStats.ms*10)/10};return out};
 return 0})()"""
+
+
+HIDE_UI = "for(const q of ['#dock','.ticker','#mk','#plates']){const e=document.querySelector(q);if(e)e.style.visibility='hidden'};0"
 
 
 def pick(moves):
@@ -93,6 +117,8 @@ def pick(moves):
 def sheet(pg, key, mid, si, res):
     from PIL import Image, ImageDraw
     pg.evaluate(f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
+    # VFX-9: the battle's menu, ticker and plates hidden (they cover most of the stage at this size), the pops kept
+    pg.evaluate(HIDE_UI)
     shots = []
     for i in range(16):
         pg.evaluate('__film.step(5)' if i else '__film.step(1)')
@@ -109,6 +135,30 @@ def sheet(pg, key, mid, si, res):
         d.text((x + 4, y + 4), f'{key} {16 + 80 * (i - 1) if i else 16} ms', fill='white')
     W.save(OUT / f'{key}.png')
     (OUT / '_frame.png').unlink()
+
+
+def measure(pg, moves):
+    rows = {}
+    for m in moves:
+        for si in SIDES:
+            for res in OUTCOMES if OPT.get('outcomes') else ['hit', 'se', 'secrit']:
+                key = f"{m['id']}.{si}.{res}"
+                r = pg.evaluate(f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)")
+                mean = lambda L: round(sum(L) / max(1, len(L)), 2)
+                ms = sorted(r['ms'])
+                rows[key] = {'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
+                             'fxMax': max(r['fx'] or [0]), 'msMean': mean(r['ms']), 'msP90': ms[int(len(ms) * 0.9)],
+                             'restMs': mean(r['restMs']), 'rig': r['rig']}
+                x = rows[key]
+                print(f"{key:28} effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
+                      f"{x['fxMax']:2}  ms mean {x['msMean']:7} p90 {x['msP90']:7} (rest {x['restMs']:7})  rig redraws "
+                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB", flush=True)
+    (OUT / 'measure.json').write_text(json.dumps(rows, indent=1, sort_keys=True))
+    keys = list(rows)
+    tot = lambda f: round(sum(f(rows[k]) for k in keys) / max(1, len(keys)), 2)
+    print('mean over films: effects draws max', tot(lambda x: x['effMax']), 'battleFx max', tot(lambda x: x['fxMax']),
+          'ms', tot(lambda x: x['msMean']), 'p90', tot(lambda x: x['msP90']), 'rest ms', tot(lambda x: x['restMs']),
+          'rig redraws', tot(lambda x: x['rig']['redraws']), 'KB', tot(lambda x: x['rig']['kb']))
 
 
 def compare(a, b):
@@ -155,9 +205,12 @@ def main():
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
+        if 'measure' in OPT:
+            measure(pg, moves)
+            moves = []
         traces = {}
         for m in moves:
-            for si in (0, 1):
+            for si in SIDES:
                 for res in OUTCOMES:
                     key = f"{m['id']}.{si}.{res}"
                     if 'sheets' in OPT:
