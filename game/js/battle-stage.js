@@ -14,6 +14,7 @@ import {
   HIT_EFFECTS_BY_TYPE,
   MOVES,
   TYPE_COLORS,
+  TYPE_GLOW,
   activeBattle,
   battle3dLayout,
   battle3dStart,
@@ -37,11 +38,17 @@ import {
 import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
 import {
+  LUNGE_GHOSTS,
   RIBBON_CORE,
   flashFor,
   impactAt,
   impactFrame,
   impactLength,
+  lungeDash,
+  lungeGhostCount,
+  lungeLean,
+  lungeLeanOn,
+  lungeRibbonHalf,
   ribbonCells,
   ribbonEdges,
   ribbonTone,
@@ -108,6 +115,11 @@ expose({
   addParticle: [() => addParticle, v => (addParticle = v)],
   afterImpact: [() => afterImpact, v => (afterImpact = v)],
   battleImpact: [() => battleImpact, v => (battleImpact = v)],
+  battleLunge: [() => battleLunge, v => (battleLunge = v)],
+  battleLungeGhosts: [() => battleLungeGhosts, v => (battleLungeGhosts = v)],
+  battleLungeLean: [() => battleLungeLean, v => (battleLungeLean = v)],
+  battleLungeRecord: [() => battleLungeRecord, v => (battleLungeRecord = v)],
+  battleLungeRibbon: [() => battleLungeRibbon, v => (battleLungeRibbon = v)],
   battleRibbonCells: [() => battleRibbonCells, v => (battleRibbonCells = v)],
   battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
@@ -139,6 +151,7 @@ expose({
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
+  calmMotion: [() => calmMotion],
   camApply: [() => camApply, v => (camApply = v)],
   camAt: [() => camAt],
   camBusy: [() => camBusy],
@@ -166,6 +179,7 @@ expose({
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
   impactFx: [() => impactFx, v => (impactFx = v)],
+  lungeKind: [() => lungeKind, v => (lungeKind = v)],
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
@@ -270,7 +284,7 @@ const GROUND_CENTER_X = 0.55,
   GROUND_TEXTURE_SIZE = 512,
   GROUND_TEXTURE_PX_PER_METER = 16;
 /* ---------- scene state ---------- */
-export const EASE = {
+const EASE = {
   lin: t => t,
   out: t => 1 - (1 - t) * (1 - t),
   in: t => t * t,
@@ -296,6 +310,10 @@ const newActorState = () => ({
   st: null,
   big: 1,
   boss: false,
+  /* VFX-5: a lunge now (battleLunge: its window t0..t1 on the stage clock, its way on screen, a dash's colour) and
+     its places on the smear grid */
+  lunge: null,
+  trail: null,
 });
 export const battleStage = {
   on: false,
@@ -540,6 +558,11 @@ function battleStageFlush() {
       } else w.o[w.p] = w.to;
     });
   battleStage.tws = [];
+  /* VFX-5: a lunge cut short has no smears: its places would jump to the end */
+  for (const s of battleStage.s) {
+    s.lunge = null;
+    s.trail = null;
+  }
   glide.forEach((m, o) => {
     for (const p in m) tween(o, p, m[p], 170, 'out');
   });
@@ -677,6 +700,7 @@ function battleStageFrame(ts, rawDt) {
   E.length = n;
   for (let i = 0; i < dueEvents.length; i++) dueEvents[i].fn();
   dueEvents.length = 0;
+  if (dt > 0) battleLungeRecord(t);
   const s = dt / 1000,
     P = battleStage.parts;
   n = 0;
@@ -859,6 +883,77 @@ export function battleStretch(C) {
 export function battleRibbonCells() {
   return ribbonCells(!!reducedMotion, battleStage.q.lvl);
 }
+/* VFX-5: an attack's lunge, the step Part 2's runner reuses (its "lunge" and "dash"): Billie i moves dx stage px
+   toward the foe (dy up; dur ms, eased, after delay), then back home (backDur ms, from backAt); the same tweens a
+   lunge always had, so it takes no more time. While it runs its places are kept on the 24 fps grid
+   (battleLungeRecord) for its lean, its afterimages and, with dash, a ribbon in col ('#rrggbb'). Returns when it is
+   home (ms) */
+function battleLunge(i, o) {
+  const s = battleStage.s[i];
+  if (!s) return 0;
+  const { dx, dy = 0, dur, ease = 'out', delay = 0, backDur, backAt, dash = false, col = null } = o;
+  tween(s, 'ox', dx, dur, ease, delay);
+  if (dy) tween(s, 'oy', dy, dur, ease, delay);
+  tween(s, 'ox', 0, backDur, 'out', backAt);
+  if (dy) tween(s, 'oy', 0, backDur, 'out', backAt);
+  const V0 = actorPositions[1].x - actorPositions[0].x,
+    t = battleStage.t;
+  s.lunge = { t0: t + delay, t1: t + backAt + backDur, fwd: Math.sign(dx * V0) || 1, dash: !!dash, col };
+  s.trail = smearHistory();
+  return backAt + backDur;
+}
+/* VFX-5: a move's lunge kind: a dash (logic/smear.js LUNGE_DASH) leaves a ribbon in its type's colour */
+function lungeKind(mid, type) {
+  const c = lungeDash(mid) && TYPE_COLORS[type] && TYPE_COLORS[type][0];
+  return typeof c === 'string' && c[0] === '#' ? { dash: true, col: c } : {};
+}
+/* VFX-5: keeps each lunging Billie's place on the smear grid (the battle's frame, after its tweens) */
+function battleLungeRecord(t) {
+  for (let i = 0; i < battleStage.s.length; i++) {
+    const s = battleStage.s[i],
+      U = s.lunge;
+    if (!U || !s.trail || t < U.t0 || t > U.t1) continue;
+    const w = actorWorldPoint(i);
+    if (smearRecord(s.trail, t, { x: w.x, y: w.y, z: w.z }))
+      s.trail.list[0].lean = lungeLean(s.trail, t, actorMetersPerPixel[i], true, U.fwd);
+  }
+}
+/* VFX-5: Billie i's lean now (the sprite shader's uShear), 0 when it isn't lunging or the smears are off */
+export function battleLungeLean(i) {
+  const s = battleStage.s[i];
+  if (!s || !s.lunge) return 0;
+  const on = lungeLeanOn(!!reducedMotion, battleStage.q.lvl);
+  return lungeLean(s.trail, battleStage.t, actorMetersPerPixel[i], on, s.lunge.fwd);
+}
+/* VFX-5: its afterimages now (logic/smear.js smearGhosts with a lunge's looks): places in battle metres, each with its
+   lean, fade and glow */
+export function battleLungeGhosts(i) {
+  const s = battleStage.s[i];
+  if (!s || !s.trail) return [];
+  return smearGhosts(
+    s.trail,
+    battleStage.t,
+    lungeGhostCount(!!reducedMotion, battleStage.q.lvl),
+    battleStage.V,
+    LUNGE_GHOSTS
+  );
+}
+/* VFX-5: a dash's ribbon now, at the Billie's middle (points in battle metres, logic/smear.js smearRibbon), with its
+   colour; null when it isn't a dash, or the ribbon is off or gone */
+export function battleLungeRibbon(i) {
+  const s = battleStage.s[i],
+    U = s && s.lunge;
+  if (!U || !U.dash || !U.col || !s.trail) return null;
+  const t = battleStage.t,
+    w = actorWorldPoint(i),
+    c = actorCenter(i),
+    yc = c.y - w.y,
+    head = t >= U.t0 && t <= U.t1 ? w : null,
+    R = smearRibbon(s.trail, t, battleRibbonCells(), battleStage.V, head, lungeRibbonHalf(yc * 2));
+  if (R.length < 2) return null;
+  for (const p of R) p.y += yc;
+  return { R, col: U.col };
+}
 /* VFX-2: a thrown pyramid's ribbon on the 2D canvas, while its model can't be drawn: each span a flat four-sided
    piece in its colour with the white core inside, eroded by a 4x4 dither pattern (one a colour and step, made once) */
 const RIBBON_DITHER = new Map(),
@@ -935,7 +1030,10 @@ function camApply() {
     L = battleStage.L,
     u = L.u,
     el = battleStage.el,
-    still = reducedMotion;
+    still = reducedMotion,
+    /* UI-16a/b: Calm drops the idle loops: the camera's breathing zoom and slow roll (shakes and the handheld feel
+       follow the action and stay) */
+    calm = still || calmMotion();
   let sx = 0,
     sy = 0;
   if (battleStage.shk > 0.3 && !still) {
@@ -947,9 +1045,11 @@ function camApply() {
     sx += ha * (Math.sin(t * 0.0113) * 1.1 + Math.sin(t * 0.0271 + 1.7) * 0.55);
     sy += ha * (Math.sin(t * 0.0097 + 0.6) * 0.8 + Math.sin(t * 0.0233 + 2.9) * 0.45);
   }
-  const breathe = still ? 0 : 0.006 * Math.sin(t / 3100),
+  const breathe = calm ? 0 : 0.006 * Math.sin(t / 3100),
     z = 1 + (still ? 0 : battleStage.css.z) + breathe,
-    r = still ? 0 : battleStage.css.r + 0.004 * Math.sin(t / 4700) + ha * 0.0035 * Math.sin(t * 0.0079 + 0.3);
+    r = still
+      ? 0
+      : battleStage.css.r + (calm ? 0 : 0.004 * Math.sin(t / 4700)) + ha * 0.0035 * Math.sin(t * 0.0079 + 0.3);
   const V = battleStage.V,
     key =
       z.toFixed(4) + r.toFixed(4) + sx.toFixed(2) + sy.toFixed(2) + V.yaw.toFixed(4) + V.x.toFixed(3) + V.hz.toFixed(2);
@@ -963,6 +1063,9 @@ function camApply() {
   }
   if (el.bl) el.bl.style.transform = `translate(${(-V.yaw * 300 * u).toFixed(1)}px,${(V.hz * u * 0.5).toFixed(1)}px)`;
 }
+/* UI-16b: the Animation level is Calm (settings-screen.js writes it on <html data-motion>; ui-kit.js motionNow reads
+   it too, but the Studio runs this stage without the kit) */
+const calmMotion = () => typeof document !== 'undefined' && document.documentElement.dataset.motion === 'calm';
 /* ---------- camera life ----------
    battleStage.cam is the directed camera (camTo/camAt/camHome tween it); battleStage.V is the one rendered: the directed camera plus a slow idle orbit
    around the middle of the action while nothing happens. A guard keeps both billionaires inside the free frame. */
@@ -1036,8 +1139,10 @@ function camUpdate(dt) {
     busy = camBusy();
   if (busy) battleStage.camT = battleStage.t;
   const want =
-    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still) */
+    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still); UI-16b:
+       no idle orbit under Calm */
     !reducedMotion &&
+    !calmMotion() &&
     !busy &&
     !battleStage.calm &&
     battleStage.t - battleStage.camT > 650 &&
@@ -1919,7 +2024,6 @@ export function battleStagePlay(an, ev) {
         ti = an.ti ?? 1 - si,
         ss = actorTeam(si),
         M = MOVES[an.mid],
-        me = battleStage.s[si],
         dir = ss === 0 ? 1 : -1;
       an.t = M.t;
       const A = actorCenter(si),
@@ -1941,10 +2045,9 @@ export function battleStagePlay(an, ev) {
         camAt(ti, 0.45, 0.15, actorTeam(ti) === 1 ? 0.022 : -0.022, d, 'out3');
       };
       if (an.miss) {
-        if (M.c === 'H') {
-          tween(me, 'ox', dir * 22, 110);
-          tween(me, 'ox', 0, 160, 'out', 120);
-        } else
+        if (M.c === 'H')
+          battleLunge(si, { dx: dir * 22, dur: 110, backDur: 160, backAt: 120, ...lungeKind(an.mid, M.t) });
+        else
           for (let i = 0; i < 6; i++)
             scheduleAt(i * 45, () =>
               addParticle({
@@ -1992,10 +2095,17 @@ export function battleStagePlay(an, ev) {
         return { dur: 740, hit: 999 };
       }
       if (M.c === 'H') {
-        tween(me, 'ox', dir * 30, 120, 'in', 100);
-        tween(me, 'oy', -4, 120, 'in', 100);
-        tween(me, 'ox', 0, 200, 'out', 240);
-        tween(me, 'oy', 0, 200, 'out', 240);
+        /* VFX-5: leaning in, with afterimages (and a dash's ribbon) */
+        battleLunge(si, {
+          dx: dir * 30,
+          dy: -4,
+          dur: 120,
+          ease: 'in',
+          delay: 100,
+          backDur: 200,
+          backAt: 240,
+          ...lungeKind(an.mid, M.t),
+        });
         scheduleAt(120, () => {
           for (let i = 0; i < 5; i++)
             addParticle({
@@ -2023,8 +2133,8 @@ export function battleStagePlay(an, ev) {
         const n = 9,
           beamy = M.t === 'Electric' || M.t === 'Psychic' || M.t === 'Water';
         scheduleAt(140, () => {
-          ringFx(A, TYPE_COLORS[M.t][0], 0.15, 0.8, 300);
-          groundRing(si, TYPE_COLORS[M.t][0], 1.4, 420);
+          ringFx(A, TYPE_GLOW[M.t], 0.15, 0.8, 300);
+          groundRing(si, TYPE_GLOW[M.t], 1.4, 420);
         });
         if (beamy)
           scheduleAt(200, () =>
@@ -2036,7 +2146,7 @@ export function battleStagePlay(an, ev) {
               y2: T.y,
               z2: T.z,
               beam: 1,
-              col: TYPE_COLORS[M.t][0],
+              col: TYPE_GLOW[M.t],
               w: 3,
               life: 420,
               glow: 1,
@@ -2089,8 +2199,8 @@ export function battleStagePlay(an, ev) {
           });
         });
       scheduleAt(600, () => {
-        ringFx(Pp, TYPE_COLORS[M.t][0], 0.2, 1.1, 420);
-        groundRing(tgt, TYPE_COLORS[M.t][0], 1.6);
+        ringFx(Pp, TYPE_GLOW[M.t], 0.2, 1.1, 420);
+        groundRing(tgt, TYPE_GLOW[M.t], 1.6);
         if (!an.self) {
           blinkActor(tgt, 240);
           setActorAction(tgt, 'dizzy', 700);

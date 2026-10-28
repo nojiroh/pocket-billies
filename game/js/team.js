@@ -9,10 +9,10 @@ import { TYPE_COLORS } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { speciesOf } from './logic/fighters.js';
 import { billyName, billyTypes, formatNumber, maxHp, maxLevel, teamSize, xpFor } from './logic/rules.js';
+import { rarityRowAttr, statusTagHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { workshopSectionHTML } from './workshop.js';
-import { statusBadgeHTML } from './ui-bits.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
@@ -34,8 +34,9 @@ export const plateVars = m => {
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
 provide({ plateVars }); /* to-module */
+/* UI-14b: a status as the colour code's angled tag (BRN, PAR, SLP); fainted stays a plain badge (neutral) */
 export const billyConditionHTML = m =>
-  m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(m.status);
+  m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusTagHTML(m.status, { big: true });
 export const xpProgress = m => {
   if (m.lvl >= maxLevel()) return 1;
   const a = xpFor(m.lvl),
@@ -78,7 +79,7 @@ function boxSection() {
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
  <div class="bx-grid">${L.map(
    m =>
-     `<div class="bx k-card"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+     `<div class="bx k-card rar-row"${rarityRowAttr(speciesOf(m) && speciesOf(m).rar)}><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span><b class="rar-name">${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
        m
      )
        .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)

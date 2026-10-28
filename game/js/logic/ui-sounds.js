@@ -18,9 +18,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the four, in the order the Studio shows them; SY-3: then stamp, the thunk a pb-stamp makes as it lands (no button
- * makes it) */
-export const UI_SOUND_NAMES = ['select', 'confirm', 'cancel', 'cant', 'stamp'];
+/** the four, in the order the Studio shows them; UI-16a: then the UI's own four (a sheet opening, a card flip, a
+ * count-up's end, a toast), which ui-motion.js and overlay.js play through sound.js's uiSound; SY-3: then stamp, the
+ * thunk a pb-stamp makes as it lands (no button makes it) */
+export const UI_SOUND_NAMES = ['select', 'confirm', 'cancel', 'cant', 'sheet', 'flip', 'count', 'toast', 'stamp'];
 
 /**
  * which sound a pressed button makes

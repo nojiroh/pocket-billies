@@ -14,7 +14,8 @@ import { expose } from '../test-globals.js';
 import { ZOOM_STOPS, stopsProblems } from '../hooks.js';
 import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS } from './weather.js';
-import { uiThemeContrast } from './ui-theme.js';
+import { UI_SIGNALS } from './signals.js';
+import { uiSignalProblems, uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
@@ -49,6 +50,7 @@ import { parseScript, scriptProblem } from './script-parse.js';
 expose({
   GENE_KINDS: [() => GENE_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
+  RARITY_TIERS: [() => RARITY_TIERS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
@@ -982,18 +984,24 @@ export function dataRobots(D, valid = () => true) {
 }
 // UI-1: the UI's look: the schema, then the colours read on the ground and on a solid surface (UI-3: text and quiet
 // text at 4.5:1, danger and primary at 3:1) in the defaults, every preset and every screen's override, both sides
-// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too)
+// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too); UI-11: the colour code (uiSignalProblems)
 /** UI-1: uiTheme.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataUiTheme(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
-  if (D.uiTheme && valid('uiTheme.schema.json', D.uiTheme, 'uiTheme.json'))
+  if (D.uiTheme && valid('uiTheme.schema.json', D.uiTheme, 'uiTheme.json')) {
     for (const f of uiThemeContrast(D.uiTheme))
       problem(
         'uiTheme.json',
         `${f.where || 'defaults'} ${f.side}: ${f.fg} on ${f.bg} reads at ${f.ratio.toFixed(2)}:1, under ${f.min}`
       );
+    // UI-11: the colour code: its shades on every palette, dark text on its fills, and each screen's set apart
+    for (const f of uiSignalProblems(D.uiTheme, Array.isArray(D.types) ? D.types : [])) {
+      const where = f.where ? ' (' + f.where + ')' : '';
+      problem(f.where === 'types' ? 'types.json' : 'uiTheme.json', 'colour code' + where + ': ' + f.msg);
+    }
+  }
   return out;
 }
 // camera track CAM-4b: the zoom stops are the whole game's (engine.json defaults.camera.stops): 3-5 in zoom order,
@@ -1997,8 +2005,10 @@ export function fxRowProblems(f, at, kinds, D, problem) {
   if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
-// limits, and nothing else an item does (a held item is never used up)
+// limits, and nothing else an item does (a held item is never used up); UI-14b: each its rarity, and only they have one
 export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
+/** UI-14b: the loot ladder's tiers (the owner's answer 9): the colour code's rarity ids (logic/signals.js) */
+export const RARITY_TIERS = UI_SIGNALS.filter(s => s[2] === 'rarity').map(s => s[0]);
 /** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
 export function dataHeldItems(D) {
   /** @type {DataProblem[]} */
@@ -2006,11 +2016,17 @@ export function dataHeldItems(D) {
     problem = (/** @type {string} */ what) => out.push(['items.json', what]);
   for (const [k, I] of Object.entries(D.items || {})) {
     const H = /** @type {any} */ (I).hold;
-    if (H === undefined) continue;
+    if (H === undefined) {
+      if (/** @type {any} */ (I).rarity !== undefined) problem(`${k}.rarity: only a held item has a tier`);
+      continue;
+    }
     if (!Array.isArray(H) || !H.length || H.length > 4) {
       problem(`${k}.hold: a list of 1-4 effect rows`);
       continue;
     }
+    /* UI-14b: a held item's tier on the loot ladder (the colour code's rarity ids), by its price and effect size */
+    if (!RARITY_TIERS.includes(/** @type {any} */ (I).rarity))
+      problem(`${k}.rarity: one of ${RARITY_TIERS.join(', ')}`);
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
     H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>

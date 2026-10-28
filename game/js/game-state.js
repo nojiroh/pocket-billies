@@ -189,6 +189,11 @@ export const uiState = {
   mapSel: null,
   /* the Actions sheet over the world is open (walk-tab.js walkSheetSync) */
   walkSheet: false,
+  /* UI-15 (walk-tab.js): the hint on screen and when it came (it fades), what the Actions sheet showed when it was last
+     opened (its button bobs while there is something new), the place whose card plays as a title and when it came */
+  walkHint: /** @type {{ key: string, at: number } | null} */ (null),
+  walkSeen: '',
+  placeTitle: /** @type {{ key: string, at: number, t?: any } | null} */ (null),
 };
 provide({ uiState }); /* to-module */
 

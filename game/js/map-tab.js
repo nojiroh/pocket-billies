@@ -5,8 +5,9 @@
 import { expose } from './test-globals.js';
 import { nodeActions, provide, render, tripButtons, tripDest, tripStatus } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, POOLS, RESIDENTS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
+import { LOCATIONS, NODE_TYPES, POOLS, RESIDENTS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
+import { kindChipHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -45,11 +46,11 @@ export function renderWorldMapTab() {
     day = run
       ? `<pb-day-chip class="map-day" day="${run.clock}"></pb-day-chip><button class="pb small quiet" data-a="rungiveup">Give up the run</button>`
       : M && M.runs
-        ? `<p class="map-meta"><pb-coin kind="research" value="${M.research}" label="Research"></pb-coin>${M.scrap ? ` <pb-coin kind="scrap" value="${M.scrap}" label="Scrap"></pb-coin>` : ''}${M.crests ? ` <pb-coin kind="crests" value="${M.crests}" label="Crests"></pb-coin>` : ''}${M.dna ? ` <pb-coin kind="dna" value="${M.dna}" label="DNA"></pb-coin>` : ''}</p>`
+        ? `<p class="map-meta"><pb-chip kind="research" value="${M.research}" label="Research"></pb-chip>${M.scrap ? ` <pb-chip kind="scrap" value="${M.scrap}" label="Scrap"></pb-chip>` : ''}${M.crests ? ` <pb-chip kind="crests" value="${M.crests}" label="Crests"></pb-chip>` : ''}${M.dna ? ` <pb-chip kind="dna" value="${M.dna}" label="DNA"></pb-chip>` : ''}</p>`
         : '';
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass k-panel">${run && run.region ? `<div class="sub">World map</div><h1 class="where">${escapeHtml(run.region.name)}</h1>` : '<div class="sub">The Hollow Earth</div><h1 class="where">World map</h1>'}${day}<p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p>${run ? questListHTML() : ''}</div>
- <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
+ <div class="mapctl"><button class="mbtn k-btn" data-a="mzoom" data-k="in" aria-label="Zoom in" title="Zoom in">${uiIconHTML('plus', 24)}</button><button class="mbtn k-btn" data-a="mzoom" data-k="out" aria-label="Zoom out" title="Zoom out">${uiIconHTML('minus', 24)}</button><button class="mbtn k-btn" data-a="mreset" aria-label="Back to you" title="Back to you">${uiIconHTML('walk', 24)}</button></div>
  <div class="mapcard px glass k-panel" id="mapcard">${worldMapCardHTML()}</div></div>`;
 }
 function poolStrip(pool) {
@@ -124,7 +125,10 @@ function worldMapCardHTML() {
     const to = worldBowlRunMark(e.to);
     return to && to.seen < 2 ? 'somewhere further on' : LOCATIONS[e.to].name;
   });
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div>${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
+  /* UI-14b: a run place's kind as its chip: UI-8c's place icon in its family's tint (logic/marks.js chipLook) */
+  const kindChip =
+    rm && NODE_TYPES[rm.type] ? kindChipHTML(rm.type, NODE_TYPES[rm.type].name || locationSubtitle(n)) : '';
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2>${kindChip || `<span class="sub">${escapeHtml(locationSubtitle(n))}</span>`}</div>${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
 }
 function paintWorldMapCard() {
   const c = $('#mapcard');

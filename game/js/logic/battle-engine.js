@@ -89,8 +89,10 @@ import { factionBotOf } from './factions.js';
 import {
   fxCatch,
   fxDamage,
+  fxDamageBy,
   fxOfBillie,
   fxPinchHeal,
+  fxSources,
   fxSplice,
   fxStages,
   fxTurnHeal,
@@ -169,6 +171,8 @@ expose({
   endTurn: [() => endTurn, v => (endTurn = v)],
   // @ts-expect-error -- replaced on purpose
   enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
+  // @ts-expect-error -- replaced on purpose
+  fieldEffects: [() => fieldEffects, v => (fieldEffects = v)],
   fieldSlot: [() => fieldSlot],
   fieldState: [() => fieldState],
   fighter: [() => fighter],
@@ -351,6 +355,8 @@ export function actorSnapshot(k) {
     ty: actorTypes(k).slice(),
     xp: clamp((m.xp - a) / (b - a), 0, 1),
     stg: { ...f.v.st },
+    /* UI-16b: its short effects and the turns each has left (the plate's pips), only when it has any */
+    ...(fieldEffects(f.v) ? { fx: fieldEffects(f.v) } : {}),
     /* phase 17: a robot's limbs: which are broken (the stage dims them) and how much HP each has left (0 to 1);
        SP-5: a Billie's Augments the same way */
     bot: limbKeys(m).length
@@ -360,6 +366,17 @@ export function actorSnapshot(k) {
         }
       : null,
   };
+}
+/** UI-16b: a fighter's short effects for its plate (marks.js MARK_EFFECT_NAMES ids) with the turns left: Protect (this
+ * turn), the shield, confusion, Soaked and Fork; null when none. A report: nothing reads it back
+ * @param {any} v its field state */
+export function fieldEffects(v) {
+  const o = /** @type {Record<string, number>} */ ({});
+  if (v.protect) o.protect = 1;
+  if (v.shield > 0) o.shield = v.shield;
+  if (v.hyped > 0) o.confused = v.hyped;
+  if (v.ov && v.ovT > 0) o[v.ovBy === 'fork' ? 'fork' : 'soaked'] = v.ovT;
+  return Object.keys(o).length ? o : null;
 }
 export const allSnapshots = () => [0, 1, 2, 3, 4].map(k => (fieldSlot(k) ? actorSnapshot(k) : null));
 export function battleSay(t, an) {
@@ -431,7 +448,26 @@ export function calcDamage(k, tk, mid, src) {
     hm =
       (hk ? fxDamage(hk, { cat: M.c, type: M.t, deal: true, take: false }) : 1) *
       (ht ? fxDamage(ht, { cat: M.c, type: M.t, deal: false, take: true }) : 1);
-  return {
+  /* UI-16b: what fired on this hit, for the page's blips (a report only: the damage above is unchanged). Each: the
+     source (a Perk's id, held:id, gene:id, unstable, passive:id), the fighter it belongs to, its multiplier or stat */
+  const by = [];
+  if (battleNow().fx) {
+    if (!src && ACTOR_SIDE[k] === 0)
+      for (const b of fxDamageBy(battleNow().fx, { cat: M.c, type: M.t, deal: true, take: false }))
+        by.push({ ...b, si: k });
+    if (ACTOR_SIDE[tk] === 0)
+      for (const b of fxDamageBy(battleNow().fx, { cat: M.c, type: M.t, deal: false, take: true }))
+        by.push({ ...b, si: tk });
+  }
+  if (hk) for (const b of fxDamageBy(hk, { cat: M.c, type: M.t, deal: true, take: false })) by.push({ ...b, si: k });
+  if (ht) for (const b of fxDamageBy(ht, { cat: M.c, type: M.t, deal: false, take: true })) by.push({ ...b, si: tk });
+  if (!src && phys && hasPassive(aty, 'kindling') && fieldState(k).turnsIn > 0)
+    by.push({ src: 'passive:kindling', si: k, stat: 'lev' });
+  if (tow > 1) by.push({ src: 'passive:undertow', si: k, mult: BATTLE_RULES.undertowMult });
+  if (eco > 1) by.push({ src: 'passive:alloy', si: k, mult: Math.round(eco * 100) / 100 });
+  if (crit && hasPassive(aty, 'livewire')) by.push({ src: 'passive:livewire', si: k });
+  /** @type {{ dmg: number, te: number, crit: boolean, by?: any[], shield?: number }} */
+  const out = {
     dmg: Math.max(
       1,
       Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * tow * wx * gx * fm * hm)
@@ -439,6 +475,8 @@ export function calcDamage(k, tk, mid, src) {
     te,
     crit,
   };
+  if (by.length) out.by = by;
+  return out;
 }
 /** RF-3 Bedrock (Ground): once a battle, a hit that would knock a fighter out from full HP leaves it at 1 HP (the
  * side's `held` lists the team places that have used it). Lowers r.dmg; true when it held. @param {number} tk
@@ -619,9 +657,20 @@ export function useMove(k, mid, tk0, part) {
       /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked); SP-5: and on a
          Billie's Augments */
       const hit = limbKeys(t2).length && t2.hp > 0 ? hitPart(tk2, r.dmg, M, tk2 === tk ? part : null) : null;
-      if (tk2 === tk) Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit, part: hit || undefined });
-      else
-        battleSay(`${billyName(t2)} was hit too.`, { k: 'hurt', si: tk2, dmg: r.dmg, te: r.te, fx: 'spread', t: M.t });
+      if (tk2 === tk) {
+        Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit, part: hit || undefined });
+        if (r.by) ev.by = r.by;
+      } else {
+        const e2 = battleSay(`${billyName(t2)} was hit too.`, {
+          k: 'hurt',
+          si: tk2,
+          dmg: r.dmg,
+          te: r.te,
+          fx: 'spread',
+          t: M.t,
+        });
+        if (r.by) e2.by = r.by;
+      }
       refreshLastSnapshot();
       if (hit && hit !== 'torso' && partBroken(t2, hit))
         battleSay(`${billyName(t2)}’s ${ROBOT_SLOT_NAMES[hit]} broke!`, { k: 'break', si: tk2, part: hit });
@@ -633,7 +682,7 @@ export function useMove(k, mid, tk0, part) {
         battleSay(`${billyName(t2)} held on with ${passiveName(actorTypes(tk2), 'bedrock')}!`, {
           k: 'block',
           si: tk2,
-        });
+        }).by = [{ src: 'passive:bedrock', si: tk2 }];
       if (fx.drain && u.hp < maxHp(u)) {
         const g = Math.max(1, Math.floor(r.dmg * fx.drain));
         u.hp = Math.min(maxHp(u), u.hp + g);
@@ -758,7 +807,11 @@ export function endTurn() {
     if (m.hp > 0 && hasPassive(ty, 'regrowth') && m.hp < mx) {
       const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
       m.hp += g;
-      battleSay(`${billyName(m)}’s ${passiveName(ty, 'regrowth')} restored a little HP.`, { k: 'heal', si: k, amt: g });
+      battleSay(`${billyName(m)}’s ${passiveName(ty, 'regrowth')} restored a little HP.`, {
+        k: 'heal',
+        si: k,
+        amt: g,
+      }).by = [{ src: 'passive:regrowth', si: k }];
     }
     /* RL-12c: a held item's heals: a share at each turn's end, and once a battle a share when low */
     const hx = m.hp > 0 && fxOfBillie(m, ITEMS);
@@ -768,7 +821,10 @@ export function endTurn() {
       if (each > 0 && m.hp < mx) {
         const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx * each)));
         m.hp += g;
-        battleSay(`${billyName(m)}’s ${name} restored a little HP.`, { k: 'heal', si: k, amt: g });
+        battleSay(`${billyName(m)}’s ${name} restored a little HP.`, { k: 'heal', si: k, amt: g }).by = fxSources(
+          hx,
+          'turnHeal'
+        ).map(src => ({ src, si: k }));
       }
       const pinch = fxPinchHeal(hx),
         sd = battleNow().sides[ACTOR_SIDE[k]],
@@ -777,7 +833,10 @@ export function endTurn() {
         const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx * pinch.share)));
         sd.ate = [...ate, f.act];
         m.hp += g;
-        battleSay(`${billyName(m)} ate its ${name} and restored HP.`, { k: 'heal', si: k, amt: g });
+        battleSay(`${billyName(m)} ate its ${name} and restored HP.`, { k: 'heal', si: k, amt: g }).by = fxSources(
+          hx,
+          'pinchHeal'
+        ).map(src => ({ src, si: k }));
       }
       /* SP-2: an Unstable splice's drawback: a share of its HP at each turn's end (SP-6: on your side, times the run's
          unstable rows, Perks) */
@@ -785,7 +844,10 @@ export function endTurn() {
       if (hurt > 0 && m.hp > 0) {
         const d = Math.min(m.hp, Math.max(1, Math.floor(mx * hurt)));
         m.hp -= d;
-        battleSay(`${billyName(m)}’s unstable cells hurt it.`, { k: 'hurt', si: k, dmg: d });
+        battleSay(`${billyName(m)}’s unstable cells hurt it.`, { k: 'hurt', si: k, dmg: d }).by = fxSources(
+          hx,
+          'turnHurt'
+        ).map(src => ({ src, si: k }));
       }
     }
     f.v.turnsIn++;
@@ -808,17 +870,24 @@ export function endTurn() {
         const r = calcDamage(actorIndex(1 - si, 0), tk, h.mid || 'twoday', h),
           held = bedrockHolds(tk, r);
         t.hp = Math.max(0, t.hp - r.dmg);
-        battleSay(`${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${billyName(t)}.`, {
-          k: 'hurt',
-          si: tk,
-          fx: 'mail',
-          te: r.te,
-          dmg: r.dmg,
-        });
+        const e3 = battleSay(
+          `${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${billyName(t)}.`,
+          {
+            k: 'hurt',
+            si: tk,
+            fx: 'mail',
+            te: r.te,
+            dmg: r.dmg,
+          }
+        );
+        if (r.by) e3.by = r.by;
         if (r.te > 1) battleSay('It’s super effective!');
         else if (r.te < 1) battleSay('It’s not very effective.');
         if (held)
-          battleSay(`${billyName(t)} held on with ${passiveName(actorTypes(tk), 'bedrock')}!`, { k: 'block', si: tk });
+          battleSay(`${billyName(t)} held on with ${passiveName(actorTypes(tk), 'bedrock')}!`, {
+            k: 'block',
+            si: tk,
+          }).by = [{ src: 'passive:bedrock', si: tk }];
       }
       return false;
     });
@@ -925,7 +994,9 @@ export function doSwitch(k, idx, b) {
     if (roar) {
       f.v.st.lev += roar.lev;
       f.v.st.lob += roar.lob;
-      battleSay(`${roar.from}’s ${roar.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
+      battleSay(`${roar.from}’s ${roar.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true }).by = [
+        { src: 'passive:partingroar', si: k, stat: 'lev' },
+      ];
     }
   });
 }
@@ -1340,7 +1411,11 @@ export function sayBattleFx() {
   for (const s in up)
     battleSay(
       `${perkNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
-    );
+      /* UI-16b: a blip by each of yours for each Perk that raised it */
+    ).by = fxSources(
+      b.fx.filter(f => f.kind === 'stat' && f.stat === s),
+      'stat'
+    ).flatMap(src => K.map(si => ({ src, si, stat: s, stages: up[s] })));
 }
 /** the names of the Perks whose stat rows change stat s ("A and B") */
 export const perkNamesFor = (fx, s) =>
@@ -1378,7 +1453,7 @@ export function runTurn(plan, b) {
           k: 'recall',
           si: p.who,
         }
-      );
+      ).by = free ? [{ src: 'passive:slipstream', si: p.who }] : undefined;
       doSwitch(p.who, p.i);
       p.free = free;
     }

@@ -326,9 +326,10 @@ body.map-gl #dioui {
   background: #f2c14e;
   color: #3a2408;
 }
+/* UI-14b: towns are the good family's teal everywhere (they were blue here, green on the run map) */
 .mpl-row.town .mp-i {
-  background: #5da9e9;
-  color: #fff;
+  background: var(--sig-good);
+  color: var(--c-ink);
 }
 .mpl-n {
   font-weight: 600;
@@ -354,20 +355,43 @@ body.map-gl #dioui {
   }
 }
 /* v31: turn and tilt on the world map */
+/* UI-8c: the look-around group is three chips of their own (no glass panel round them), just above the place card
+   (world-bowl.js worldMapChrome writes the card's height as --mapcard-h), so it never covers the card's last line */
 .mapview {
   position: absolute;
   left: 12px;
-  bottom: calc(var(--nav-h) - 4px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + var(--mapcard-h, 0px) + var(--s2));
   z-index: 5;
   display: flex;
-  gap: var(--s1);
-  padding: var(--s1);
-  border-radius: var(--r-sm);
-  box-shadow: 0 0 0 2px var(--line);
+  gap: var(--s2);
 }
-.mapview .mbtn {
-  font-size: 17px;
-  line-height: 1;
+@media (min-width: 850px) {
+  /* the card stands on the right here */
+  .mapview {
+    bottom: calc(var(--nav-h) - 4px + env(safe-area-inset-bottom, 0px));
+  }
+}
+/* UI-8c: the map's seven buttons as the kit's chips: 44 px (the tap rule needs no hidden margin), the button outline
+   and its edge line (.k-btn), the panel's colour as the place card has it (no blur), the icon set's pictures */
+.map-full :is(.mapctl, .mapview) .mbtn {
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel-s) 92%, transparent);
+  box-shadow: var(--g-in);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.map-full :is(.mapctl, .mapview) .mbtn .uico {
+  width: 24px;
+  height: 24px;
+}
+.map-full :is(.mapctl, .mapview) .mbtn::before {
+  content: none;
+}
+.mbtn .flip {
+  display: grid;
+  transform: scaleX(-1);
 }
 .mapview[hidden] {
   display: none;

@@ -4,19 +4,55 @@
    Reduced motion (the phone's setting, or Settings in the game: [data-motion='reduced']) turns every one into a
    short fade; idle and stagger stop. */
 
+/* UI-16a: the Animation levels (Settings; logic/motion.js; <html data-motion> is full, calm or reduced). Shadow roots
+   read them as custom properties, which cross into them (Safari ignores :host-context): --m-k is 1, or 0 when reduced
+   (multiply a move's time by it: the move happens at once and a fade carries it); --m-loop is running, or paused
+   under Calm and Reduced (an idle loop's animation-play-state). Without data-motion (a page that never runs
+   applyPreferences) the phone's setting decides */
+:root {
+  --m-k: 1;
+  --m-loop: running;
+  /* UI-16b: the stamp's keyframes by level (a fade under Reduced), and its fall: slow at first, fast into the page */
+  --m-stamp: m-stamp;
+  --ease-stamp: cubic-bezier(0.5, 0, 0.9, 0.5);
+}
+[data-motion='calm'] {
+  --m-loop: paused;
+}
+[data-motion='reduced'] {
+  --m-k: 0;
+  --m-loop: paused;
+  --m-stamp: m-fade;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]) {
+    --m-k: 0;
+    --m-loop: paused;
+    --m-stamp: m-fade;
+  }
+}
+/* Calm: Full without idle loops (things that move with no cause: breathing, swaying, glows, the dialogue bubble's
+   drift). Loops that say something stay (a Billie hiding, the Actions button's news, an egg ready, aim and hints) */
+[data-motion='calm'] :is(.m-idle, .fgcam canvas, .title-coin, .bloom),
+[data-motion='calm'] .talk-box::before,
+[data-motion='calm'] .talk-box::after,
+[data-motion='calm'] .bt.fight::before {
+  animation: none;
+}
+
 /* press: every button and tappable card */
 .m-press {
   transition: transform var(--m-fast) var(--spring);
 }
 .m-press:active {
-  transform: scale(0.96);
   transition-duration: 80ms;
 }
 
-/* enter: fade and a small rise; list items stagger by --stagger (set --i on each, at most 8) */
+/* enter: fade and a small rise; list items stagger by --stagger (set --i on each). UI-16a: past the 4th row the rest
+   come in together, so the last is in by 400 ms (logic/motion.js motionStaggerCap; ui-motion.js pbEnterRows sets --i) */
 .m-enter {
   animation: m-enter var(--m-base) var(--ease-out) both;
-  animation-delay: calc(min(var(--i, 0), 8) * var(--stagger));
+  animation-delay: calc(min(var(--i, 0), 4) * var(--stagger));
 }
 @keyframes m-enter {
   from {
@@ -59,9 +95,15 @@
   }
 }
 
-/* count: a number that just changed (the roll itself is pbCount in js/ui-kit.js) */
+/* count: a number that just changed, its pop at the end of the tick-up (UI-16a: --m-pop, the doc's small pop; the roll
+   is logic/motion.js's count, in ui.js and pb-coin). While it ticks (m-ticking) it takes its family's colour: --tick,
+   Moneys' value gold by default */
 .m-count {
-  animation: m-count var(--m-base) var(--spring);
+  animation: m-count var(--m-pop) var(--spring);
+  display: inline-block;
+}
+.m-ticking {
+  color: var(--tick, var(--sig-value-text, currentColor));
 }
 @keyframes m-count {
   40% {
@@ -96,12 +138,25 @@
   }
 }
 
-/* float: an in-place number (+$120) rising from where it happened (pbFloat in js/ui-kit.js) */
+/* float: an in-place number (+$120) rising from where it happened (pbFloat in js/ui-kit.js). UI-16a: a pop
+   (--m-pop), then the float (--m-float), the doc's 150 ms and 500-700 ms */
 .m-float {
-  animation: m-float 1100ms var(--ease-out) forwards;
+  animation:
+    m-float-pop var(--m-pop) var(--spring) both,
+    m-float var(--m-float) var(--ease-out) var(--m-pop) forwards;
+}
+@keyframes m-float-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1);
+  }
 }
 @keyframes m-float {
-  15% {
+  from {
     opacity: 1;
     transform: translate(-50%, -6px) scale(1);
   }
@@ -203,6 +258,13 @@
 .scrim:not(.still) .sheet {
   animation: m-wipe var(--m-slow) var(--ease-out) backwards;
 }
+/* UI-16a: on a phone the sheet sits at the bottom edge (shell.css; centred from 700 px): it slides up with the spring
+   (m-sheet) instead of the wipe */
+@media (max-width: 699px) {
+  .scrim:not(.still) .sheet {
+    animation: m-sheet var(--m-slow) var(--spring) backwards;
+  }
+}
 
 /* slam and flip (UI-4): the rewards (payout, relic picks, the keep-one picker; owner: showy, Balatro-like). Slam: a
    row lands from the right and settles (stagger rows with --i); flip: a card turns face up. The kit's pb-payout and
@@ -224,32 +286,114 @@
 .m-flip {
   animation: m-flip var(--m-slow) var(--spring) both;
 }
+/* UI-16b: rise and fall: a boost's tag rises into place, a drop's falls into place (the battle plates' row) */
+.m-rise {
+  animation: m-rise var(--m-base) var(--spring) both;
+}
+.m-fall {
+  animation: m-fall var(--m-base) var(--spring) both;
+}
+@keyframes m-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes m-fall {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+/* UI-16b: stamp: one motion for everything stamped on (SY-3's pb-stamp, the battle's status tags): it drops from twice
+   its size, a little more turned, lands just under size at its slant (--tilt, 0 for a tag) and settles. --m-stamp is
+   m-fade under Reduced. The kit repeats the keyframes for shadow roots (ui-run-kit.js runKitMotion) */
+.m-stamp {
+  animation: var(--m-stamp) var(--m-base) var(--ease-stamp) both;
+}
+@keyframes m-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(calc(var(--tilt, 0deg) + 6deg)) scale(1.9);
+  }
+  55% {
+    opacity: var(--stamp-o, 1);
+    transform: rotate(var(--tilt, 0deg)) scale(0.94);
+  }
+  to {
+    transform: rotate(var(--tilt, 0deg)) scale(1);
+  }
+}
 @keyframes m-flip {
   from {
     transform: perspective(600px) rotateY(180deg);
   }
 }
+/* UI-15: title: a place's name plays on arrival, holds, then folds up toward the top bar (walk-tab.js sets how far in it
+   is after each render, so a render never starts it again) */
+.m-title {
+  animation: m-title var(--m-title) var(--ease-out) both;
+}
+@keyframes m-title {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  6%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-32px) scale(0.9);
+    visibility: hidden;
+  }
+}
+/* UI-15: linger: a hint stays a while, then fades away */
+.m-linger {
+  animation: m-linger var(--m-linger) linear both;
+}
+@keyframes m-linger {
+  0%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+/* UI-16a: the phone's setting only where the game has written no level (the game's own Full wins over the phone) */
 @media (prefers-reduced-motion: reduce) {
-  .m-wipe,
-  .m-wipe-r,
-  .screen.enter,
-  .scrim:not(.still) .sheet,
-  .m-enter,
-  .m-sheet,
-  .m-pop,
-  .m-count,
-  .m-nudge,
-  .m-float,
-  .m-slam,
-  .m-flip {
+  :root:not([data-motion]) .m-title {
+    animation-name: m-linger;
+  }
+  :root:not([data-motion])
+    :is(
+      .m-wipe,
+      .m-wipe-r,
+      .screen.enter,
+      .scrim:not(.still) .sheet,
+      .m-enter,
+      .m-sheet,
+      .m-pop,
+      .m-count,
+      .m-nudge,
+      .m-float,
+      .m-slam,
+      .m-flip,
+      .m-rise,
+      .m-fall
+    ) {
     animation: m-fade 120ms linear both !important;
   }
-  .m-idle,
-  .talk-box::before,
-  .talk-box::after {
+  :root:not([data-motion]) .m-idle,
+  :root:not([data-motion]) .talk-box::before,
+  :root:not([data-motion]) .talk-box::after {
     animation: none !important;
   }
-  .m-press:active {
+  :root:not([data-motion]) .m-press:active {
     transform: none;
   }
 }
@@ -266,9 +410,14 @@
     .m-nudge,
     .m-float,
     .m-slam,
-    .m-flip
+    .m-flip,
+    .m-rise,
+    .m-fall
   ) {
   animation: m-fade 120ms linear both !important;
+}
+[data-motion='reduced'] .m-title {
+  animation-name: m-linger;
 }
 [data-motion='reduced'] .m-idle,
 [data-motion='reduced'] .talk-box::before,
