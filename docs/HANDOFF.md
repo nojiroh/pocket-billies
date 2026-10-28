@@ -45,8 +45,16 @@ when moving from a route to another route", with their PC debug log (10:36, RTX 
   - A crossing now also waits for the next view's walking grid (built ahead in the frame's budget). Walking straight
     at a seam fast could hold a little longer; at the view's edge it is built on the spot, as before.
   - Not measured on a phone. Headless only ranks the causes.
+  - A walking grid a crossing waits for (the gate's urgent ask) is built first, with the ground's urgent budget.
+  - tools/check-fast.py "A run's world" pushes the held next view's preparation along while it waits: it failed on
+    main at 485674b5 the same way (CI's smoke and locally: the ground alone took 5 s of work over 56 s headless, past
+    its 60 s wait), and the walking grid added a few seconds.
 - **Verified:** lint, typecheck, check:modules, format:check, check:data and build clean; `npm test` 1,733 pass; the
-  new check before (fails) and after (passes); the full check-fast: see the PR (it was still running at the push).
+  new check before (fails) and after (passes); "A run's world" and the new check pass together; `check:smoke` 7 of 7
+  (422 s). On CI and in the full check-fast, for main's owners: "The Studio's world map look" and "The Studio's Camera
+  section" fail on main too (404s for game/art/billionaires/*.png); "Behind things" failed once under load on CI and
+  once locally beside `npm test`, and passed alone here and on main (its occlusion query answers late on a busy
+  machine).
 - Next: the owner's phone run below; then Copperleaf's opening hitch (the same ground build).
 - **For the owner on the phone:** start a run and walk two or three routes on foot over their seams (a day with a
   storm or snow on the forecast shows the water change), then export the debug log. "building the ground mesh",
