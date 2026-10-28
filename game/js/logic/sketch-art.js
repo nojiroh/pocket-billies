@@ -7,7 +7,7 @@
    cells go out as drawing sheets (one per Billie: a column per picture, a row per view; one per body plan: a column
    per picture, two rows per Billie) on a magenta ground with a label strip and pivot ticks, are drawn on in any tool,
    come back in (cut by the same layout), and bake into the Billie's sheet and rig, as kit-assemble.js bakes a kit
-   Billie. npm run bake:placeholders (tools/bake-placeholders.mjs) runs it.
+   Billie. npm run bake:placeholders (tools/bake-sketches.mjs) runs it.
    Logic only: no DOM, runs in Node. A picture is ImageData-shaped. */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
 /** @typedef {[number, number, number]} Rgb */

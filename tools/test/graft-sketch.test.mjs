@@ -1,5 +1,5 @@
 // Roster track RO-3c: placeholder Billies grafted by slot across body plans (game/js/logic/graft-art.js,
-// graftSketch). Tested on sample Billies (tools/bake-placeholders.mjs sampleSketch), one per plan, until the
+// graftSketch). Tested on sample Billies (tools/bake-sketches.mjs sampleSketch), one per plan, until the
 // roster's own are placeholders. A slot's groups per plan; every plan gives every other plan its front, back and sig,
 // inside the stage box, the same twice; the grafted bones wear the donor's colour and the rest keep their pixels; a
 // mirrored twin is its bone flipped; a chain takes the donor's bones spread along it, so every bone draws; a slot one
@@ -11,7 +11,7 @@ import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import * as G from '../../game/js/logic/graft-art.js';
 import { kitFlipX } from '../../game/js/logic/kit-pixels.js';
 import * as PA from '../../game/js/logic/sketch-art.js';
-import { sampleSketch } from '../bake-placeholders.mjs';
+import { sampleSketch } from '../bake-sketches.mjs';
 
 const P = readJson('bodyPlans.json');
 const D = readJson('kitBuilds.json').bake;

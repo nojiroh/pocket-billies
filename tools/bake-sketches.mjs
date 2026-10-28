@@ -6,14 +6,14 @@
 // writes what changed, as bake-kit-billies.mjs does: game/art/next/billionaires/<name>.png and its rig in
 // game/art/next/rigs-next.js.
 //
-//   node tools/bake-placeholders.mjs                         bake every form, write what changed
-//   node tools/bake-placeholders.mjs --only=emberox,...      only these forms
-//   node tools/bake-placeholders.mjs --check                 write nothing; list what would change (exit 1 if anything)
-//   node tools/bake-placeholders.mjs --export=emberox        a Billie's drawing sheet: a column per picture, a row per view
-//   node tools/bake-placeholders.mjs --export=plan:quad      a body plan's sheet: two rows per Billie on it (a sample
+//   node tools/bake-sketches.mjs                         bake every form, write what changed
+//   node tools/bake-sketches.mjs --only=emberox,...      only these forms
+//   node tools/bake-sketches.mjs --check                 write nothing; list what would change (exit 1 if anything)
+//   node tools/bake-sketches.mjs --export=emberox        a Billie's drawing sheet: a column per picture, a row per view
+//   node tools/bake-sketches.mjs --export=plan:quad      a body plan's sheet: two rows per Billie on it (a sample
 //                                                             Billie when none is on it yet)
 //        [--out=dir] (default tools/art-source/placeholders) [--scale=N] (each pixel as N x N, for drawing big)
-//   node tools/bake-placeholders.mjs --import=file.png       a drawn sheet back in: <name>.png is a Billie's,
+//   node tools/bake-sketches.mjs --import=file.png       a drawn sheet back in: <name>.png is a Billie's,
 //        [--for=emberox | --for=plan:quad]                   <plan>-plan.png a plan's (or say which with --for); its
 //                                                             cells are stored per Billie, then those Billies baked
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -169,7 +169,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (!changed.length) console.log('every placeholder Billie bakes as committed');
       else if (check) {
         console.log(
-          `${changed.length} placeholder Billie(s) would change (node tools/bake-placeholders.mjs writes them)`
+          `${changed.length} placeholder Billie(s) would change (node tools/bake-sketches.mjs writes them)`
         );
         process.exit(1);
       } else console.log(`${changed.length} placeholder Billie(s) baked and written (under game/art/next)`);

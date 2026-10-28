@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import { readJson } from '../data-files.mjs';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import * as PA from '../../game/js/logic/sketch-art.js';
-import { bakeSketches, sampleSketch } from '../bake-placeholders.mjs';
+import { bakeSketches, sampleSketch } from '../bake-sketches.mjs';
 
 const P = readJson('bodyPlans.json');
 const D = readJson('kitBuilds.json').bake;
