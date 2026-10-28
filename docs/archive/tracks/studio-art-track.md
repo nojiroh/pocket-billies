@@ -8,7 +8,7 @@ that don't fit into the current Vision of the game or if they don't really have 
 
 Planned 2026-10-26 on `ccr-a073cfde-ab64xh` (the track branch didn't exist yet; the owner makes `track/studio-art` from
 main, and SA-1 starts there). Reviewed at main b87b818d. Tags `sa-N-done`. Builds on the Studio track (ST-0..ST-6)
-and the Studio roguelite improvement plan (docs/plans/studio-roguelite-improvement-plan.md: T4.5 and T6.8 are taken
+and the Studio roguelite improvement plan (docs/archive/tracks/studio-roguelite-improvement-plan.md: T4.5 and T6.8 are taken
 over by SA-4 here).
 
 ## Decisions (owner, 2026-10-26)

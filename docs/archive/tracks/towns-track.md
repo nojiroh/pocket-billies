@@ -35,7 +35,7 @@ below against main and report what differs.
 - **Checks a town must pass:** `mapgen-lots.test.mjs` (each building placed or noted, faces the camera, door step
   reachable), `run-world-real.test.mjs` (no notes, exits match roads, nothing unreachable, seams agree),
   `check-data.mjs` doors lead to rooms, MAPGEN_VERSION's golden snapshots. The Studio's balance mode assumes every run
-  town has tall grass (docs/plans/studio-roguelite-improvement-plan.md, 344/344).
+  town has tall grass (docs/archive/tracks/studio-roguelite-improvement-plan.md, 344/344).
 - **Phone cost:** towns ran at 27-28 fps on the owner's phone (HANDOFF, phase 09): the folk count is capped.
 
 ## The owner's answers (2026-10-24)
