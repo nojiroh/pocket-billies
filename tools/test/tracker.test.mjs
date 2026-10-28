@@ -363,3 +363,17 @@ test("SND-8b: a song's echo send moves with its fader (the fade-in, a jingle's d
   }
   assert.ok(to.length && to.every(n => n === sg2.echo));
 });
+
+test("SND-8b: a jingle echoes on the effects' own echo; on the music bus (Settings' test) on the music's", () => {
+  const c = recordingContext(),
+    music = { name: 'music' },
+    fx = { name: 'fx' },
+    T = trackerCreate(c, music, { fx }),
+    to = [];
+  assert.ok(T.echoFx && T.echoFx !== T.echoIn);
+  T.synthVoice = (bus, v) => v.echo && to.push(v.echoTo);
+  T.jingle([[72, 4]], 150, 'p25', fx);
+  T.jingle([[72, 4]], 150, 'p25', music);
+  assert.deepEqual(to, [T.echoFx, T.echoIn]);
+  assert.equal(trackerCreate(recordingContext(), music).echoFx, null, 'no effects bus, no effects echo');
+});

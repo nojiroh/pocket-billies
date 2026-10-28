@@ -200,20 +200,28 @@ export function trackerCreate(ctx, bus, opts = {}) {
     /* SND-8a: started counts the voices started (the debug log's sources a minute), late the steps scheduled after
        their time (a stall in the page) */
     T = { ctx, bus, waves: {}, started: 0, late: 0 };
-  /* a soft echo for the music (caves get more of it) */
-  const d = c.createDelay(1),
-    fb = c.createGain(),
-    wet = c.createGain();
-  d.delayTime.value = 0.27;
-  fb.gain.value = 0.28;
-  wet.gain.value = 0.16;
-  T.echoIn = c.createGain();
-  T.echoIn.connect(d);
-  d.connect(fb);
-  fb.connect(d);
-  d.connect(wet);
-  wet.connect(bus);
-  T.echoWet = wet;
+  /* a soft echo for the music (caves get more of it). SND-8b: and one of its own for the effects (opts.fx, the Sound
+     effects bus: jingles and the heal and seal effects), so their echo follows the Sound effects slider, not Music's
+     and the rain's low-pass */
+  const echoLine = out => {
+    const d = c.createDelay(1),
+      fb = c.createGain(),
+      wet = c.createGain(),
+      input = c.createGain();
+    d.delayTime.value = 0.27;
+    fb.gain.value = 0.28;
+    wet.gain.value = 0.16;
+    input.connect(d);
+    d.connect(fb);
+    fb.connect(d);
+    d.connect(wet);
+    wet.connect(out);
+    return { input, wet };
+  };
+  const echoMusic = echoLine(bus);
+  T.echoIn = echoMusic.input;
+  T.echoWet = echoMusic.wet;
+  T.echoFx = opts.fx ? echoLine(opts.fx).input : null;
   const n = c.createBuffer(1, c.sampleRate, c.sampleRate),
     nd = n.getChannelData(0);
   for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -715,6 +723,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.12,
           s: 0.6,
           echo: 0.2,
+          /* SND-8b: on the effects' echo, unless it plays on the music bus (Settings' Music test) */
+          echoTo: out === bus ? T.echoIn : T.echoFx,
         }),
           n &&
             T.synthVoice(out, {

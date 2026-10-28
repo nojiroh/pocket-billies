@@ -1642,8 +1642,8 @@
    "game/js/shop.js:158",
    "game/js/shop.js:168",
    "game/js/shop.js:234",
-   "game/js/sound.js:473",
-   "game/js/sound.js:1708",
+   "game/js/sound.js:479",
+   "game/js/sound.js:1724",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:626",
    "game/js/ui-run-kit.js:83",
@@ -1900,7 +1900,7 @@
    "game/js/ui.js:206"
   ],
   "up": [
-   "game/js/audio/tracker.js:603",
+   "game/js/audio/tracker.js:611",
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
    "game/js/battle-stage.js:2175",

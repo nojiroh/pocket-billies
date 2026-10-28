@@ -186,8 +186,14 @@ function initSound() {
     soundEngine.musLP.connect(soundEngine.master);
     soundEngine.fx.connect(soundEngine.master);
     applyVolumes();
-    /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus */
-    const T = trackerCreate(c, soundEngine.mus, { songs: SONGS, run: MUSIC.run, levels: () => soundEngine.L });
+    /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus; SND-8b: the
+       effects have an echo of their own (T.echoFx) on the effects bus */
+    const T = trackerCreate(c, soundEngine.mus, {
+      songs: SONGS,
+      run: MUSIC.run,
+      levels: () => soundEngine.L,
+      fx: soundEngine.fx,
+    });
     soundEngine.tracker = T;
     soundEngine.echoIn = T.echoIn;
     soundEngine.echoWet = T.echoWet;
@@ -526,7 +532,16 @@ export function soundEffect(name, o = {}) {
       break;
     case 'heal':
       [0, 4, 7, 11, 14].forEach((n, i) =>
-        synthVoice(F, { type: 'sine', freq: midiToFrequency(79 + n), t: t + i * 0.06, dur: 0.12, vol: 0.06, echo: 0.4 })
+        synthVoice(F, {
+          type: 'sine',
+          freq: midiToFrequency(79 + n),
+          t: t + i * 0.06,
+          dur: 0.12,
+          vol: 0.06,
+          echo: 0.4,
+          /* SND-8b: the effects' echo, not the music's */
+          echoTo: soundEngine.tracker.echoFx,
+        })
       );
       break;
     case 'status':
@@ -562,6 +577,7 @@ export function soundEffect(name, o = {}) {
           dur: 0.14,
           vol: 0.045,
           echo: 0.35,
+          echoTo: soundEngine.tracker.echoFx,
         })
       );
       break;
