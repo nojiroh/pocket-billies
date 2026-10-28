@@ -313,3 +313,191 @@ test('PK-5 rule mapReveal: the run map shows every main place from the start, an
     for (const n of plain.map.nodes.filter(modules['run-side'].runSideMain)) assert.equal(n.seen, 2);
   });
 });
+
+/* ---------- the 12 Wave C Perks of perks.json ---------- */
+
+const WAVE_C = [
+  'bug_net',
+  'music_box',
+  'name_tags',
+  'pyramid_pouch',
+  'tip_jar',
+  'punch_card',
+  'gift_receipt',
+  'fortune_cookie',
+  'tour_brochure',
+  'bounty_poster',
+  'string_magnet',
+  'lab_goggles',
+];
+/** the rows of real Perks, as a run holding them gives them */
+const real = ids => fn('fxOfRun')({ perks: ids }, data.PERKS);
+
+test('PK-5 Wave C: all 12 are in perks.json after Wave B, each with a picture', () => {
+  assert.deepEqual(Object.keys(data.PERKS).slice(43, 55), WAVE_C);
+  for (const id of WAVE_C) assert.equal(data.PERKS[id].img, `perks/${id}.svg`);
+  assert.equal(data.PERKS.string_magnet.needs, 'bots');
+  assert.deepEqual(data.PERKS.lab_goggles.tags, ['lab']);
+});
+
+test('PK-5 Bug Net and Lab Goggles: a quarter easier to catch a species not on the team, or a spliced foe', () => {
+  const odds = (fx, team, spliced) => {
+    const b = battle(fx, team);
+    if (spliced) foe(b).graft = { torso: foe(b).sp };
+    return fn('catchOdds')('pyramid', 1, false, b);
+  };
+  const fire = [ofType('Fire')],
+    grass = [ofType('Grass')];
+  assert.ok(Math.abs(odds(real(['bug_net']), fire) / odds(null, fire) - 1.25) < 1e-9);
+  assert.equal(odds(real(['bug_net']), grass), odds(null, grass), 'its species is on the team');
+  assert.equal(odds(real(['lab_goggles']), fire), odds(null, fire), 'not spliced');
+  assert.ok(Math.abs(odds(real(['lab_goggles']), fire, true) / odds(null, fire, true) - 1.25) < 1e-9);
+});
+
+test('PK-5 Music Box: a wild foe falls asleep as the battle starts on a roll under 20%', () => {
+  const b = battle(real(['music_box']), [ofType('Fire')]);
+  rolls(b, [0.19, 0], () => fn('sayBattleFx')());
+  assert.equal(foe(b).status, 'slp');
+  assert.ok(lines(b).includes('Music Box kicked in!'));
+  const c = battle(real(['music_box']), [ofType('Fire')]);
+  rolls(c, [0.21], () => fn('sayBattleFx')());
+  assert.equal(foe(c).status, null);
+});
+
+test('PK-5 Name Tags: a caught Billie joins two levels higher', () => {
+  const b = battle(real(['name_tags']), [ofType('Fire')], {}, 15),
+    e = foe(b);
+  fn('catchKeep')(e);
+  assert.equal(e.lvl, 17);
+  assert.ok(lines(b).some(t => t.startsWith('Name Tags: ')));
+});
+
+test('PK-5 Pyramid Pouch: the first pyramid that misses in a battle comes back', () => {
+  const b = battle(real(['pyramid_pouch']), [ofType('Fire')]);
+  const miss = () => rolls(b, [0.99], () => fn('catchRoll')('pyramid', 1, false, b));
+  assert.equal(miss().refund, 'Pyramid Pouch');
+  assert.equal(miss().refund, undefined);
+});
+
+test('PK-5 Tip Jar, Punch Card: 10% of the Moneys carried on arrival up to 40; every 4th purchase free', () => {
+  const L = modules['run-loop'],
+    s = runSave(['tip_jar', 'punch_card']),
+    out = {};
+  s.se = 250;
+  L.runArriveFx(s, data.PERKS, out);
+  assert.deepEqual([s.se, out.money], [275, 25]);
+  s.se = 2000;
+  L.runArriveFx(s, data.PERKS, out);
+  assert.equal(out.money, 40);
+  const free = [1, 2, 3, 4, 5].map(() => L.runBuyFx(s, data.PERKS, 60).free);
+  assert.deepEqual(free, [0, 0, 0, 60, 0]);
+  assert.equal(fn('perkCount')(s.run, 'punch_card', data.PERKS), '1/4', 'the card counts');
+});
+
+test('PK-5 Gift Receipt and Fortune Cookie: a reward pick shows one more card; its first reroll is free', () => {
+  const W = modules.rewards,
+    RULE = GAME_DATA.rules.run.rewards,
+    s = runSave(['gift_receipt', 'fortune_cookie']);
+  s.se = 0;
+  W.rewardOfferMake(s.run, 'test', W.rewardDataGame(s.team));
+  assert.equal(s.run.enc.reward.cards.length, RULE.pick + 1);
+  assert.equal(W.rewardReroll(s.run, s, W.rewardDataGame(s.team)), '', 'free with no money');
+  assert.equal(W.rewardReroll(s.run, s, W.rewardDataGame(s.team)), 'money', 'the second costs');
+  assert.equal(s.run.enc.reward.cards.length, RULE.pick + 1);
+});
+
+test('PK-5 Tour Brochure: the run map shows every main place from the start', () => {
+  const RM = modules['run-map'],
+    G = GAME_DATA,
+    run = modules['run-state'].newRun('BROCHURE01', 1, 1, { team: [] });
+  run.perks = ['tour_brochure'];
+  RM.runMapStart(run, { nodeTypes: G.nodeTypes, biomes: G.biomes, rules: G.rules.run });
+  for (const n of run.map.nodes.filter(modules['run-side'].runSideMain)) assert.equal(n.seen, 2);
+});
+
+test('PK-5 Bounty Poster: a leader and the rival pay double; a route trainer and a wild win as before', () => {
+  const pay = (fx, runFoe) => {
+    reseed(7);
+    startedSave(ofType('Fire'), 20);
+    assert.ok(
+      fn('newBattle')('trainer', [fn('makeBilly')(ofType('Grass'), 20)], {
+        fmt: 'single',
+        seed: 'bounty',
+        ...(fx ? { fx } : {}),
+      })
+    );
+    const b = hooks.activeBattle;
+    b.T = { runFoe, reward: 300 };
+    b.over = 'win';
+    return fn('battleRewards')(
+      { kind: 'trainer', over: 'win', T: b.T, tid: 't', foe: b.sides[1].team, fx: fn('battleMoneyFx')(b) || undefined },
+      { se: 0, flags: {}, seats: [], run: {} },
+      null
+    ).reward;
+  };
+  assert.equal(pay(real(['bounty_poster']), 'miniboss'), 600);
+  assert.equal(pay(real(['bounty_poster']), 'rival'), 600);
+  assert.equal(pay(real(['bounty_poster']), 'route'), 300);
+  assert.equal(pay(null, 'miniboss'), 300);
+});
+
+test('PK-5 Magnet on a String: beaten bots leave twice the Scrap; offered only while a scrapyard is ahead', () => {
+  const F = modules.factions,
+    fac = GAME_DATA.factions.factions,
+    S = fac.bureau.salvage,
+    bot = B => fn('trainerTeam')({ team: [F.factionBotEntry(fac.bureau.bots[B], 10)] })[0];
+  reseed(7);
+  startedSave(ofType('Fire'), 20);
+  assert.ok(fn('newBattle')('wild', [bot('repo')], { fmt: 'single', seed: 'magnet', fx: real(['string_magnet']) }));
+  const run = { seed: 'MAGNETSEED', perks: [] };
+  fn('battleSalvage')(hooks.activeBattle, run);
+  assert.equal(run.enc.reward.cards.at(-1).n, 2 * S.scrap);
+  const r = modules['run-state'].newRun('MAGNETRUN1', 1, 1, { team: [] });
+  r.map = { nodes: [{ type: 'scrapyard' }] };
+  r.path = [];
+  assert.equal(modules.perks.perkFits(data.PERKS.string_magnet, [['Fire']], r), true);
+  r.path = [0];
+  assert.equal(modules.perks.perkFits(data.PERKS.string_magnet, [['Fire']], r), false);
+});
+
+test('PK-5 all Wave A, B and C Perks at once: whole battles end, every number finite, the stream replayable', () => {
+  const ids = Object.keys(data.PERKS).slice(13, 55);
+  assert.equal(ids.length, 42);
+  const team = [ofType('Fire'), ofType('Water'), ofType('Grass')];
+  const play = seed => {
+    const b = battle(real(ids), team, { perkState: {}, seed }),
+      out = [];
+    for (let t = 0; t < 200 && !b.over; t++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0),
+        mid = m.moves.find(id => data.MOVES[id] && data.MOVES[id].p > 0) || m.moves[0];
+      fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], b);
+      for (const side of b.sides)
+        for (const q of side.team) assert.ok(Number.isInteger(q.hp) && q.hp >= 0, `hp ${q.hp}`);
+      out.push(lines(b).length);
+    }
+    assert.ok(b.over, `${seed}: over within 200 turns`);
+    return [b.over, ...out].join();
+  };
+  for (const seed of ['all-abc-a', 'all-abc-b', 'all-abc-c']) assert.equal(play(seed), play(seed), seed);
+  /* a catch, a throw, the run's moments and rules: finite */
+  const b = battle(real(ids), team);
+  const odds = fn('catchOdds')('pyramid', 1, false, b);
+  assert.ok(odds > 0 && odds <= 1, String(odds));
+  const s = runSave(ids),
+    L = modules['run-loop'],
+    out = {};
+  s.se = 500;
+  for (let i = 0; i < 6; i++) {
+    L.runArriveFx(s, data.PERKS, out);
+    L.runBuyFx(s, data.PERKS, 50);
+  }
+  assert.ok(Number.isInteger(s.se) && s.se > 0, String(s.se));
+  for (const r of ['forecastDays', 'rewardPick', 'rerollFree', 'mapReveal'])
+    assert.ok(Number.isInteger(modules.effects.fxRunRule(s.run, r)), r);
+});
