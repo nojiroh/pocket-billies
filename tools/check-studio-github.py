@@ -2202,7 +2202,18 @@ def relics_steps(pg, errs):
     pg.evaluate("void openSection('relics', { relic: 'rusty_key' })"); time.sleep(0.3)
     rk = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"rusty_key\"]')||{}).value")
     if rk != 'side': errs.append(f'perks: Rusty Key shows Needs as {rk!r}')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs", flush=True)
+    # PK-7: Fine Print's kinds (recoil, loot, a money add, xp, the rules noDrop and faintPaysNothing, level, bossHp,
+    # damage with if lead / notLead): every row of the 12 Fine Print Perks shows its inputs with no error, its rarity
+    # reads fine; Subscription Box shows its loot table and its charge
+    fine = ['terms_conditions', 'energy_drink', 'glass_trophy', 'overclock_chip', 'ethics_waiver', 'hustle_planner', 'influencer_contract', 'nonrefundable_ticket', 'early_access', 'subscription_box', 'heavy_crown', 'paid_promotion']
+    for pid in fine:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value), (document.querySelector('#main [data-p=\"perks.{pid}.rarity\"], #main [data-path=\"perks.{pid}.rarity\"]')||{{}}).value]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)") or got[4] != 'fine': errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}, rarity {got[4]!r}')
+    pg.evaluate("void openSection('relics', { relic: 'subscription_box' })"); time.sleep(0.3)
+    sb = pg.evaluate("['fx.0.table','fx.1.add'].map(k=>(document.querySelector(`#main [data-p=\"perks.subscription_box.${k}\"], #main [data-path=\"perks.subscription_box.${k}\"]`)||{}).value)")
+    if sb != ['common', '-15']: errs.append(f'perks: Subscription Box shows its loot table and charge as {sb}')
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs; the 12 Fine Print Perks' rows with no error and their rarity fine, Subscription Box's loot table and charge", flush=True)
 
 
 def unlocks_steps(pg, errs):
