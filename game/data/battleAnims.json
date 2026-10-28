@@ -6,15 +6,8 @@
  "shortSpeed": 2.2,
  "maxMs": {"H":880,"S":1060,"X":1000,"miss":760,"protect":700,"blocked":740},
  "flashes": {"perSecond":3,"gapMs":333,"redShare":0.8},
- "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF"},
- "defaults": {
-  "H": "legacy_hit",
-  "S": "legacy_cast",
-  "X": "legacy_status",
-  "miss": "legacy_miss",
-  "protect": "legacy_guard",
-  "blocked": "legacy_blocked"
- },
+ "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF","heal":"#8DE3D6"},
+ "defaults": {"H":"strike","S":"shot","X":"hex","miss":"legacy_miss","protect":"guard","blocked":"legacy_blocked"},
  "intro": [
   {"do":"focus","on":"attacker"},
   {"do":"camAt","on":"attacker","amt":0.32,"z":0.08,"roll":0.012,"d":200},
@@ -123,6 +116,572 @@
     {"do":"camHome","d":400,"delay":520},
     {"at":900,"do":"focus","on":"wide"}
    ]
+  },
+  "charge": {
+   "about": "VFX-11: a run-up and a full-body hit: a long lunge, dust at the feet, the kit's impact",
+   "dur": 880,
+   "hit": 260,
+   "steps": [
+    {"do":"lunge","dx":44,"dy":-3,"dur":150,"ease":"in","delay":110,"backDur":220,"backAt":300},
+    {"at":90,"do":"impact","on":"attacker","spr":"dust","feet":1,"k":1,"life":420,"ramp":"None"},
+    {"at":200,"do":"toTarget","d":140},
+    {"at":260,"do":"spray","on":"target","spr":"bits","n":4,"speed":1.8,"up":1.4,"life":460},
+    {"at":260,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":260,"do":"light","on":"target","ms":240},
+    {"at":260,"do":"kit","part":"hit","on":"target"},
+    {"at":260,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 560,
+    "hit": 170,
+    "steps": [
+     {"do":"lunge","dx":40,"dy":-3,"dur":100,"ease":"in","delay":40,"backDur":160,"backAt":190},
+     {"at":120,"do":"toTarget","d":100},
+     {"at":170,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":170,"do":"light","on":"target","ms":240},
+     {"at":170,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":260},
+     {"at":680,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "dash": {
+   "about": "VFX-11: too fast to see: a dash's afterimages and ribbon (VFX-5, the dash list's moves), then the hit",
+   "dur": 880,
+   "hit": 180,
+   "steps": [
+    {"do":"lunge","dash":1,"dx":46,"dy":-2,"dur":90,"ease":"in","delay":60,"backDur":220,"backAt":240},
+    {"at":150,"do":"toTarget","d":120},
+    {"at":180,"do":"impact","on":"target","spr":"small","k":1,"life":300},
+    {"at":180,"do":"impact","on":"target","spr":"dust","feet":1,"k":1,"life":420,"ramp":"None"},
+    {"at":200,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":200,"do":"light","on":"target","ms":240},
+    {"at":200,"do":"kit","part":"hit","on":"target"},
+    {"at":180,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 520,
+    "hit": 130,
+    "steps": [
+     {"do":"lunge","dash":1,"dx":46,"dy":-2,"dur":70,"ease":"in","delay":30,"backDur":160,"backAt":170},
+     {"at":100,"do":"toTarget","d":90},
+     {"at":130,"do":"impact","on":"target","spr":"small","k":1,"life":300},
+     {"at":130,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":220},
+     {"at":640,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "dive": {
+   "about": "VFX-11: up and out of view, then down from above onto the target",
+   "dur": 880,
+   "hit": 420,
+   "steps": [
+    {"at":60,"do":"jump","on":"attacker","dy":110,"up":160,"hold":300,"down":220},
+    {"at":60,"do":"impact","on":"attacker","spr":"dust","feet":1,"k":1,"life":420,"ramp":"None"},
+    {"at":200,"do":"toTarget","d":160},
+    {"at":260,"do":"projectile","spr":"shot","path":"stamp","to":"target","h":3,"ms":160,"k":2,"trail":3,"lit":1},
+    {"at":420,"do":"groundRing","on":"target","color":"kit","r1":1.8,"life":420},
+    {"at":420,"do":"shake","amt":4},
+    {"at":420,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":420,"do":"light","on":"target","ms":240},
+    {"at":420,"do":"kit","part":"hit","on":"target"},
+    {"at":420,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 620,
+    "hit": 300,
+    "steps": [
+     {"at":30,"do":"jump","on":"attacker","dy":110,"up":120,"hold":220,"down":180},
+     {"at":150,"do":"toTarget","d":120},
+     {"at":180,"do":"projectile","spr":"shot","path":"stamp","to":"target","h":3,"ms":120,"k":2,"trail":2},
+     {"at":300,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":300,"do":"light","on":"target","ms":240},
+     {"at":300,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":320},
+     {"at":740,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "strike": {
+   "about": "VFX-11: a close punch, jab, drill or squeeze: a short lunge and an impact burst (an aimed move's on its part)",
+   "dur": 880,
+   "hit": 220,
+   "steps": [
+    {"do":"lunge","dx":28,"dy":-3,"dur":110,"ease":"in","delay":100,"backDur":200,"backAt":240},
+    {"at":120,"do":"dust","n":4,"life":380,"color":"dust"},
+    {"at":200,"do":"toTarget","d":140},
+    {"at":240,"do":"impact","on":"target","spr":"small","k":1,"life":300,"jitter":0.25},
+    {"at":220,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":220,"do":"light","on":"target","ms":240},
+    {"at":220,"do":"kit","part":"hit","on":"target"},
+    {"at":220,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 540,
+    "hit": 160,
+    "steps": [
+     {"do":"lunge","dx":26,"dy":-3,"dur":90,"ease":"in","delay":50,"backDur":160,"backAt":170},
+     {"at":130,"do":"toTarget","d":100},
+     {"at":160,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":160,"do":"light","on":"target","ms":240},
+     {"at":160,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":240},
+     {"at":660,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "slash": {
+   "about": "VFX-11: arcs across the target: a slash arc (two on a big move), sparks along it",
+   "dur": 880,
+   "hit": 260,
+   "steps": [
+    {"do":"lunge","dx":22,"dy":-2,"dur":110,"ease":"in","delay":80,"backDur":200,"backAt":220},
+    {"at":180,"do":"toTarget","d":140},
+    {"at":230,"do":"impact","on":"target","spr":"slash_arc","k":1,"life":420,"flip":1},
+    {"at":330,"do":"impact","on":"target","spr":"slash_arc","k":1,"life":420,"flip":-1,"dy":0.15,"if":["power80"]},
+    {"at":260,"do":"spray","on":"target","spr":"bits","n":4,"speed":2.4,"up":0.6,"life":360},
+    {"at":260,"do":"light","on":"target","ms":240},
+    {"at":260,"do":"kit","part":"hit","on":"target"},
+    {"at":260,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 560,
+    "hit": 200,
+    "steps": [
+     {"do":"lunge","dx":22,"dy":-2,"dur":90,"ease":"in","delay":40,"backDur":160,"backAt":170},
+     {"at":140,"do":"toTarget","d":100},
+     {"at":180,"do":"impact","on":"target","spr":"slash_arc","k":1,"life":360,"flip":1},
+     {"at":200,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":260},
+     {"at":680,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "quake": {
+   "about": "VFX-11: the ground: a stomp that shakes the stage, rocks falling, a dust ring and a thud at the target",
+   "dur": 880,
+   "hit": 320,
+   "steps": [
+    {"at":60,"do":"jump","on":"attacker","dy":16,"up":90,"hold":0,"down":80},
+    {"at":230,"do":"shake","amt":6},
+    {"at":230,"do":"groundRing","on":"attacker","color":"kit","r1":2.2,"life":460},
+    {"at":230,"do":"impact","on":"attacker","spr":"dust","feet":1,"k":2,"life":480,"ramp":"Ground"},
+    {"at":200,"n":4,"every":30,"do":"rain","on":"target","spr":"bits","r":0.7,"h":1.6,"life":260,"each":1},
+    {"at":280,"do":"toTarget","d":140},
+    {"at":320,"do":"impact","on":"target","spr":"dust","feet":1,"k":2,"life":480,"ramp":"Ground","each":1},
+    {"at":320,"do":"shake","amt":5},
+    {"at":320,"do":"impact","on":"target","spr":"impact","k":1,"life":420,"each":1},
+    {"at":320,"do":"light","on":"target","ms":240},
+    {"at":320,"do":"kit","part":"hit","on":"target","each":1},
+    {"at":320,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 600,
+    "hit": 240,
+    "steps": [
+     {"at":150,"do":"shake","amt":5},
+     {"at":150,"do":"groundRing","on":"attacker","color":"kit","r1":2,"life":380},
+     {"at":200,"do":"toTarget","d":100},
+     {"at":240,"do":"impact","on":"target","spr":"dust","feet":1,"k":2,"life":420,"ramp":"Ground","each":1},
+     {"at":240,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":300},
+     {"at":720,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "flurry": {
+   "about": "VFX-11: hits in a row: three quick lunges, an impact each",
+   "dur": 880,
+   "hit": 200,
+   "steps": [
+    {"at":40,"n":3,"every":150,"do":"lunge","dx":20,"dy":-2,"dur":60,"ease":"in","delay":0,"backDur":70,"backAt":70},
+    {"at":100,"do":"toTarget","d":120},
+    {"at":110,"n":3,"every":150,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
+    {"at":110,"n":3,"every":150,"do":"light","on":"target","ms":120},
+    {"at":410,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
+    {"at":410,"do":"kit","part":"hit","on":"target"},
+    {"at":200,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 600,
+    "hit": 160,
+    "steps": [
+     {"at":20,"n":2,"every":120,"do":"lunge","dx":20,"dy":-2,"dur":50,"ease":"in","delay":0,"backDur":60,"backAt":60},
+     {"at":80,"do":"toTarget","d":100},
+     {"at":80,"n":2,"every":120,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.35},
+     {"at":160,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":300},
+     {"at":720,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "shot": {
+   "about": "VFX-11: a projectile on the kit's path with a trail, lighting the stage as it flies; a drain flies back",
+   "dur": 1060,
+   "hit": 500,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":140,"do":"ring","on":"attacker","color":"kit","r0":0.15,"r1":0.7,"life":280},
+    {
+     "at": 180,
+     "do": "projectile",
+     "spr": "shot",
+     "path": "kit",
+     "from": "attacker",
+     "to": "target",
+     "ms": 300,
+     "k": 1,
+     "trail": 3,
+     "lit": 1,
+     "h": 0.9,
+     "amp": 0.35,
+     "turns": 2,
+     "each": 1,
+     "if": ["!drain"]
+    },
+    {"at":330,"do":"toTarget","d":220},
+    {
+     "at": 500,
+     "do": "projectile",
+     "spr": "shot",
+     "path": "kit",
+     "from": "target",
+     "to": "attacker",
+     "ms": 320,
+     "k": 1,
+     "trail": 3,
+     "lit": 1,
+     "h": 0.9,
+     "amp": 0.35,
+     "turns": 2,
+     "if": ["drain","dmg"]
+    },
+    {"at":820,"do":"rise","on":"attacker","spr":"plus","ramp":"heal","n":4,"life":420,"if":["drain","dmg"]},
+    {"at":500,"do":"impact","on":"target","spr":"impact","k":1,"life":420,"each":1},
+    {"at":500,"do":"light","on":"target","ms":240},
+    {"at":500,"do":"kit","part":"hit","on":"target","each":1},
+    {"at":500,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":480,"delay":820},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 700,
+    "hit": 360,
+    "steps": [
+     {
+      "at": 100,
+      "do": "projectile",
+      "spr": "shot",
+      "path": "kit",
+      "from": "attacker",
+      "to": "target",
+      "ms": 260,
+      "k": 1,
+      "trail": 2,
+      "lit": 1,
+      "h": 0.9,
+      "amp": 0.35,
+      "turns": 2,
+      "each": 1
+     },
+     {"at":220,"do":"toTarget","d":140},
+     {"at":360,"do":"impact","on":"target","spr":"impact","k":1,"life":360,"each":1},
+     {"at":360,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":400},
+     {"at":820,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "beam": {
+   "about": "VFX-11: a held ray: the attacker charges (a ring closing in), then a strip from one to the other with its caps",
+   "dur": 1060,
+   "hit": 520,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":120,"do":"ring","on":"attacker","color":"kit","r0":0.9,"r1":0.1,"life":220},
+    {"at":140,"do":"light","on":"attacker","ms":220},
+    {"at":320,"do":"ray","life":380,"k":1,"each":1},
+    {"at":330,"do":"toTarget","d":220},
+    {"at":400,"n":3,"every":70,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.3,"each":1},
+    {"at":520,"do":"impact","on":"target","spr":"impact","k":1,"life":420,"each":1},
+    {"at":520,"do":"light","on":"target","ms":240},
+    {"at":520,"do":"kit","part":"hit","on":"target","each":1},
+    {"at":520,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":480,"delay":820},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 700,
+    "hit": 360,
+    "steps": [
+     {"at":160,"do":"ray","life":260,"k":1,"each":1},
+     {"at":200,"do":"toTarget","d":140},
+     {"at":360,"do":"impact","on":"target","spr":"impact","k":1,"life":320,"each":1},
+     {"at":360,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":400},
+     {"at":820,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "breath": {
+   "about": "VFX-11: a cone or a jet: the kit's bits poured from the attacker at the target",
+   "dur": 1060,
+   "hit": 520,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":180,"do":"light","on":"attacker","ms":300},
+    {
+     "at": 200,
+     "n": 9,
+     "every": 30,
+     "do": "spray",
+     "on": "attacker",
+     "toward": "target",
+     "spr": "bits",
+     "n2": 2,
+     "speed": 5.5,
+     "cone": 0.5,
+     "life": 360
+    },
+    {"at":330,"do":"toTarget","d":220},
+    {"at":520,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":520,"do":"light","on":"target","ms":240},
+    {"at":520,"do":"kit","part":"hit","on":"target"},
+    {"at":520,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":480,"delay":820},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 700,
+    "hit": 360,
+    "steps": [
+     {
+      "at": 120,
+      "n": 6,
+      "every": 30,
+      "do": "spray",
+      "on": "attacker",
+      "toward": "target",
+      "spr": "bits",
+      "n2": 2,
+      "speed": 5.5,
+      "cone": 0.5,
+      "life": 300
+     },
+     {"at":200,"do":"toTarget","d":140},
+     {"at":360,"do":"impact","on":"target","spr":"impact","k":1,"life":320},
+     {"at":360,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":400},
+     {"at":820,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "wave": {
+   "about": "VFX-11: rings and pulses outward: rings travel from the attacker to the target; a heal's light comes back. 880 ms, so Premonition (H, a delayed hit: nothing lands on its turn) fits",
+   "dur": 880,
+   "hit": 480,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":140,"do":"groundRing","on":"attacker","color":"kit","r1":1.6,"life":420},
+    {"at":180,"n":3,"every":90,"do":"pulse","to":"foe","color":"kit","r0":0.25,"r1":0.8,"ms":280,"each":1},
+    {"at":330,"do":"toTarget","on":"foe","d":220},
+    {"at":480,"do":"ring","on":"target","color":"kit","r0":0.2,"r1":1.3,"life":380,"if":["dmg"],"each":1},
+    {"at":700,"do":"rise","on":"attacker","spr":"plus","ramp":"heal","n":4,"life":420,"if":["heal","dmg"]},
+    {"at":480,"do":"impact","on":"target","spr":"impact","k":1,"life":420,"each":1,"if":["dmg"]},
+    {"at":480,"do":"light","on":"target","ms":240,"if":["dmg"]},
+    {"at":480,"do":"kit","part":"hit","on":"target","each":1,"if":["dmg"]},
+    {"at":480,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":480,"delay":640},
+    {"at":1070,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 700,
+    "hit": 360,
+    "steps": [
+     {"at":100,"n":2,"every":90,"do":"pulse","to":"foe","color":"kit","r0":0.25,"r1":0.8,"ms":260,"each":1},
+     {"at":200,"do":"toTarget","on":"foe","d":140},
+     {"at":360,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":400},
+     {"at":820,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "storm": {
+   "about": "VFX-11: many things over an area: the kit's bits rain and whirl over the target (each foe on a spread move)",
+   "dur": 1060,
+   "hit": 540,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":160,"n":10,"every":30,"do":"rain","on":"target","spr":"bits","r":0.9,"h":2.4,"life":380,"each":1},
+    {"at":260,"n":4,"do":"orbit","on":"target","spr":"bits","r":0.7,"h":0.8,"turns":1,"life":520,"each":1},
+    {"at":330,"do":"toTarget","d":220},
+    {"at":540,"do":"impact","on":"target","spr":"impact","k":1,"life":420,"each":1},
+    {"at":540,"do":"light","on":"target","ms":240},
+    {"at":540,"do":"kit","part":"hit","on":"target","each":1},
+    {"at":540,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":480,"delay":820},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 700,
+    "hit": 380,
+    "steps": [
+     {"at":100,"n":6,"every":30,"do":"rain","on":"target","spr":"bits","r":0.9,"h":2.4,"life":320,"each":1},
+     {"at":200,"do":"toTarget","d":140},
+     {"at":380,"do":"impact","on":"target","spr":"impact","k":1,"life":320,"each":1},
+     {"at":380,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":360,"delay":400},
+     {"at":820,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "buff": {
+   "about": "VFX-11: an aura and rising chevrons on the attacker, in the kit's colours",
+   "dur": 1000,
+   "hit": 600,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":160,"n":4,"do":"orbit","on":"attacker","spr":"bits","r":0.6,"h":0.9,"turns":1,"life":640},
+    {"at":200,"n":6,"every":60,"do":"rise","on":"attacker","spr":"chevron","ramp":"up","life":520},
+    {"at":200,"do":"light","on":"attacker","ms":300},
+    {"at":600,"do":"ring","on":"attacker","color":"kit","r0":0.2,"r1":1.1,"life":420},
+    {"at":600,"do":"groundRing","on":"attacker","color":"kit","r1":1.6,"life":520},
+    {"do":"camHome","d":460,"delay":800},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 640,
+    "hit": 400,
+    "steps": [
+     {"at":100,"n":4,"every":50,"do":"rise","on":"attacker","spr":"chevron","ramp":"up","life":420},
+     {"at":400,"do":"ring","on":"attacker","color":"kit","r0":0.2,"r1":1.1,"life":360},
+     {"do":"camHome","d":360,"delay":340},
+     {"at":760,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "hex": {
+   "about": "VFX-11: at the foe: the kit's bits fly over, close round it, a ring; a stat drop's chevrons fall",
+   "dur": 1000,
+   "hit": 600,
+   "steps": [
+    {"at":120,"do":"kit","part":"cast","on":"attacker"},
+    {
+     "at": 200,
+     "n": 3,
+     "every": 60,
+     "do": "projectile",
+     "spr": "small",
+     "path": "kit",
+     "from": "attacker",
+     "to": "foe",
+     "ms": 280,
+     "k": 1,
+     "trail": 2,
+     "h": 0.7,
+     "amp": 0.3,
+     "turns": 2
+    },
+    {"at":260,"do":"toTarget","on":"foe","d":240},
+    {"at":420,"n":4,"do":"orbit","on":"foe","spr":"bits","r":0.7,"h":0.4,"turns":1,"life":420},
+    {"at":600,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":420},
+    {"at":600,"do":"groundRing","on":"foe","color":"kit","r1":1.6,"life":520},
+    {"at":600,"do":"light","on":"foe","ms":240},
+    {"at":600,"do":"blink","on":"target","ms":240,"if":["!self"]},
+    {"at":600,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
+    {"at":620,"n":4,"every":60,"do":"rise","on":"foe","spr":"chevron","ramp":"down","down":1,"life":460,"if":["drop"]},
+    {"do":"camHome","d":460,"delay":800},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 640,
+    "hit": 400,
+    "steps": [
+     {
+      "at": 100,
+      "n": 2,
+      "every": 60,
+      "do": "projectile",
+      "spr": "small",
+      "path": "kit",
+      "from": "attacker",
+      "to": "foe",
+      "ms": 240,
+      "k": 1,
+      "trail": 2,
+      "h": 0.7,
+      "amp": 0.3,
+      "turns": 2
+     },
+     {"at":160,"do":"toTarget","on":"foe","d":160},
+     {"at":400,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":360},
+     {"at":400,"do":"blink","on":"target","ms":200,"if":["!self"]},
+     {"do":"camHome","d":360,"delay":340},
+     {"at":760,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "guard": {
+   "about": "VFX-11: a shield: the hex shield comes up round the attacker, rings in the guard's colour",
+   "dur": 700,
+   "hit": 0,
+   "steps": [
+    {"at":120,"do":"impact","on":"attacker","spr":"shield_hex","k":2,"life":560,"ramp":"Water"},
+    {"at":140,"do":"ring","on":"attacker","color":"guard","r0":0.3,"r1":1.1,"life":600},
+    {"at":140,"do":"groundRing","on":"attacker","color":"guard","r1":1.8,"life":600},
+    {"at":140,"do":"light","on":"attacker","ms":260,"color":"guard"},
+    {"do":"camHome","d":400,"delay":500},
+    {"at":800,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 480,
+    "hit": 0,
+    "steps": [
+     {"at":80,"do":"impact","on":"attacker","spr":"shield_hex","k":2,"life":400,"ramp":"Water"},
+     {"at":80,"do":"groundRing","on":"attacker","color":"guard","r1":1.6,"life":400},
+     {"do":"camHome","d":360,"delay":180},
+     {"at":600,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "heal": {
+   "about": "VFX-11: sparkles rising, a mint light",
+   "dur": 1000,
+   "hit": 600,
+   "steps": [
+    {"at":120,"n":4,"every":90,"do":"rise","on":"attacker","spr":"heal_sparkle","ramp":"heal","life":600},
+    {"at":200,"n":5,"every":70,"do":"rise","on":"attacker","spr":"plus","ramp":"heal","life":520},
+    {"at":200,"do":"light","on":"attacker","ms":300,"color":"heal"},
+    {"at":600,"do":"ring","on":"attacker","color":"heal","r0":0.2,"r1":1.1,"life":420},
+    {"at":600,"do":"groundRing","on":"attacker","color":"heal","r1":1.6,"life":520},
+    {"do":"camHome","d":460,"delay":800},
+    {"at":1250,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 640,
+    "hit": 400,
+    "steps": [
+     {"at":100,"n":3,"every":70,"do":"rise","on":"attacker","spr":"heal_sparkle","ramp":"heal","life":420},
+     {"at":400,"do":"ring","on":"attacker","color":"heal","r0":0.2,"r1":1.1,"life":360},
+     {"do":"camHome","d":360,"delay":340},
+     {"at":760,"do":"focus","on":"wide"}
+    ]
+   }
   }
  },
  "scenes": {},
@@ -255,5 +814,161 @@
   "plus": {"sprite":"plus","ramp":"heal"},
   "zz": {"sprite":"zz","ramp":"None"},
   "sheet": {"sprite":"paper","ramp":"Bureau"}
+ },
+ "types": {
+  "about": "VFX-11: the type kits: what a family's steps draw with in each type (a step's spr names a role: shot, impact, small, bits; its ramp is the kit's unless it names one; path kit is the kit's path), the kit's motion (flicker: its bits float up; zigzag: a held frame doubled; the rest come from its path and its cast and hit steps) and its light (the ramp's light colour, k its strength, ms how long, at most 300). The Bureau's is a Bureau bot's move, whatever its type. cast plays at a family's wind-up on the attacker, hit at its hit on the target",
+  "Fire": {
+   "ramp": "Fire",
+   "shot": "flame_tongue",
+   "impact": "explosion",
+   "small": "burst",
+   "bits": ["ember","smoke"],
+   "path": "straight",
+   "motion": "flicker",
+   "light": {"k":1.2,"ms":260,"flicker":true},
+   "hit": [
+    {"do":"rise","spr":"ember","n":4,"life":560}
+   ]
+  },
+  "Water": {
+   "ramp": "Water",
+   "shot": "droplet",
+   "impact": "splash_crown",
+   "small": "bubble",
+   "bits": ["droplet","bubble"],
+   "path": "arc",
+   "motion": "arc",
+   "light": {"k":0.9,"ms":220},
+   "hit": [
+    {"do":"spray","spr":"bits","n":6,"speed":1.4,"up":2.6,"life":520}
+   ]
+  },
+  "Grass": {
+   "ramp": "Grass",
+   "shot": "leaf",
+   "impact": "burst",
+   "small": "swirl",
+   "bits": ["leaf","petal"],
+   "path": "spiral",
+   "motion": "spiral",
+   "light": {"k":0.8,"ms":220},
+   "hit": [
+    {"n":3,"do":"orbit","spr":"bits","r":0.5,"h":0.6,"turns":1,"life":480}
+   ]
+  },
+  "Electric": {
+   "ramp": "Electric",
+   "shot": "bolt",
+   "impact": "hit_spark",
+   "small": "spark",
+   "bits": ["spark","bolt"],
+   "path": "zigzag",
+   "motion": "zigzag",
+   "light": {"k":1.4,"ms":120,"flicker":true},
+   "hit": [
+    {"do":"spray","spr":"spark","n":5,"speed":3,"up":1,"life":300}
+   ]
+  },
+  "Ground": {
+   "ramp": "Ground",
+   "shot": "pebble",
+   "impact": "dust",
+   "small": "burst",
+   "bits": ["pebble","chip"],
+   "path": "arc",
+   "motion": "thud",
+   "light": {"k":0.6,"ms":200},
+   "hit": [
+    {"do":"shake","amt":4},
+    {"do":"spray","spr":"bits","n":5,"speed":1.4,"up":2.2,"life":600,"floor":1}
+   ]
+  },
+  "Flying": {
+   "ramp": "Flying",
+   "shot": "feather",
+   "impact": "swirl",
+   "small": "burst",
+   "bits": ["feather"],
+   "path": "wave",
+   "motion": "sweep",
+   "light": {"k":0.7,"ms":200},
+   "hit": [
+    {"do":"spray","spr":"feather","n":4,"speed":1.2,"up":1,"life":700,"sweep":1}
+   ]
+  },
+  "Psychic": {
+   "ramp": "Psychic",
+   "shot": "orb",
+   "impact": "shock_ring",
+   "small": "star",
+   "bits": ["star","orb"],
+   "path": "wave",
+   "motion": "wave",
+   "light": {"k":1,"ms":280},
+   "hit": [
+    {"do":"ring","color":"kit","r0":0.2,"r1":1.2,"life":380}
+   ]
+  },
+  "Steel": {
+   "ramp": "Steel",
+   "shot": "shard_a",
+   "impact": "hit_spark",
+   "small": "spark",
+   "bits": ["shard_a","shard_b","shard_c"],
+   "path": "straight",
+   "motion": "rings",
+   "light": {"k":1.1,"ms":150},
+   "icons": ["cog"],
+   "hit": [
+    {"do":"ring","color":"white","r0":0.1,"r1":0.9,"life":260},
+    {"do":"spray","icon":"cog","n":2,"speed":1.6,"up":1.6,"life":520}
+   ]
+  },
+  "Dragon": {
+   "ramp": "Dragon",
+   "shot": "flame_tongue",
+   "impact": "explosion",
+   "small": "burst",
+   "bits": ["ember","shard_b"],
+   "path": "straight",
+   "motion": "twotone",
+   "light": {"k":1.2,"ms":260},
+   "ramp2": "Fire",
+   "icons": ["scale"],
+   "cast": [
+    {"do":"ring","color":"kit","r0":0.3,"r1":1.6,"life":360}
+   ],
+   "hit": [
+    {"do":"spray","icon":"scale","n":2,"speed":1.6,"up":1.6,"life":520}
+   ]
+  },
+  "None": {
+   "ramp": "None",
+   "shot": "star",
+   "impact": "burst",
+   "small": "hit_spark",
+   "bits": ["star","chip"],
+   "path": "straight",
+   "motion": "plain",
+   "light": {"k":0.8,"ms":150},
+   "icons": ["pow"],
+   "hit": [
+    {"do":"spray","icon":"pow","n":1,"speed":0.6,"up":1.4,"life":420}
+   ]
+  },
+  "Bureau": {
+   "ramp": "Bureau",
+   "shot": "paper",
+   "impact": "stamp_frame",
+   "small": "burst",
+   "bits": ["paper"],
+   "path": "stamp",
+   "motion": "stamp",
+   "light": {"k":0.9,"ms":200},
+   "about": "a Bureau bot's move: paper, square, stamped in from above, in the red family; no drawn words (SY-5 owns them)",
+   "hit": [
+    {"n":4,"every":40,"do":"rain","spr":"paper","r":0.6,"h":1.4,"life":320}
+   ]
+  }
  }
 }
