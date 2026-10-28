@@ -18,5 +18,6 @@
    "neck": "nametag"
   },
   "colors": {"sweater":["#6A3A8A"],"leggings":["#2A2A3A"],"glasses_round":["#3F8A8A"],"nametag":["#F2EEE2","#3F8A8A"]}
- }
+ },
+ "figure": {"head":"oval","build":"tall","eyes":"sharp","brows":"angled"}
 }

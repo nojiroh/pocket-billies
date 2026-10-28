@@ -24,5 +24,6 @@
    "hat_cap": ["#D9434B","#F2EEE2"],
    "facial_stache": ["#2A2220"]
   }
- }
+ },
+ "figure": {"head":"broad","build":"round","eyes":"small","brows":"bushy"}
 }

@@ -23,5 +23,6 @@
    "boots": ["#5A3A24","#3A2214"],
    "scarf": ["#3E8FB0","#F2EEE2"]
   }
- }
+ },
+ "figure": {"head":"round","build":"pear","eyes":"big","brows":"arched"}
 }

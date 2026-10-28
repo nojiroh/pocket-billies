@@ -24,5 +24,6 @@
    "oxfords": ["#2A1A10","#1A0E08"],
    "bowtie": ["#E9B83C"]
   }
- }
+ },
+ "figure": {"head":"diamond","build":"elder","eyes":"hooded","brows":"thin"}
 }
