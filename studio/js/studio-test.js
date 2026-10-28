@@ -562,6 +562,43 @@ async function tools(G, T, fail, stopped, step) {
       if (T.music.timerLeft) throw new Error('Stop left the scheduler running');
     });
   }
+  /* VFX-12: the Battle effects editor: a move plays on the stage (a walk scene), its steps are listed, a seek holds it
+     on the 24 fps cell of its hit, and going on lets it play */
+  if (G.battleFxPlay && D.battleAnims) {
+    await run('battle effects', async () => {
+      const a = now(),
+        B = G.battleStage,
+        P = G.battlePreview,
+        was = { clip: P.clip, res: P.res, speed: P.speed, q: P.q, motion: P.motion, flashes: P.flashes },
+        loaded = () => B.on && B.L && document.getElementById('bpLoad') && document.getElementById('bpLoad').hidden;
+      Object.assign(P, { clip: 'move', res: 'se', speed: 1, q: 0, motion: 'full', flashes: true });
+      try {
+        G.openSection('preview');
+        await until(loaded, 30000);
+        const loadMs = r1(now() - a),
+          rows = document.querySelectorAll('#bfxTl .bfx-row').length;
+        if (!G.battleFxPlay(0)) throw new Error('the move did not start');
+        const TL = G.battleFx.T;
+        if (!TL || !TL.steps.length) throw new Error(`no steps for ${P.move} (${TL ? TL.id : 'no timeline'})`);
+        await wait(200);
+        const want = TL.hit < 999 ? TL.hit : TL.dur / 2,
+          b = now();
+        if (!G.battleFxSeek(want)) throw new Error('the seek did not run');
+        const seekMs = r1(now() - b),
+          at = G.battleFx.at;
+        if (!G.battleFx.paused || at < want - 0.01 || at > want + 1000 / 24 + 17)
+          throw new Error(`the seek to ${want} ms held at ${at} ms (paused: ${G.battleFx.paused})`);
+        G.battleFxPause(false);
+        await wait(400);
+        const moved = B.t - G.battleFx.t0 > at;
+        G.battleFx.clip = null;
+        if (!moved) throw new Error('the stage did not go on after the hold');
+        T.battleFx = { loadMs, rows, steps: TL.steps.length, seekMs, at: r1(at) };
+      } finally {
+        Object.assign(P, was);
+      }
+    });
+  }
   const sp = D.lines && D.lines[0] ? D.lines[0].id + '0' : null;
   if (sp) {
     await run('pixel', async () => {

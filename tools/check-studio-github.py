@@ -41,6 +41,9 @@ colour-blind preview, and a planted clash the Check finds.
 Island track IS-6a/IS-6b (a page of its own, after the proposal): the Hub island section on test_island draws (the
 orbit view and the map), a drag turns it, a stroke paints and undoes; the ground lock here and in Walk scenes; the
 dials: too big round the middle, a draft drawn, Use this island, Undo, read-only when locked.
+VFX track VFX-12: the Battle effects editor (the battle preview grown): a move's steps and tier, both sides, the 24 fps
+cell buttons and scrubber, speed, quality, Reduced motion and Flashes on the stage, an event seeked, a budget and a
+smear dial proposed and undone, the empty-safe ramps and cells panes, the Studio's settings back on leaving.
 
     python3 tools/check-studio-github.py           # the repository as it is (run `npm run data` first)
     python3 tools/check-studio-github.py dist      # the build (`npm run build` first)
@@ -2108,6 +2111,71 @@ def relics_steps(pg, errs):
     if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
 
 
+def battle_fx_steps(pg, errs):
+    """VFX track VFX-12: the Battle effects editor (the battle preview grown). A move in an outcome shows its steps (the
+    runner's timeline) and its tier; it plays from either side; the 24 fps cell buttons and the scrubber hold it on a
+    cell; speed, quality, Reduced motion and Flashes off reach the stage; an event plays and seeks too; a budget and a
+    smear dial are edits Propose would send in battleAnims.json, and undo; the ramps and sprite cells panes are empty-safe
+    (VFX-10 adds those sections); leaving the section gives the Studio its motion and Flashes back."""
+    n = len(errs)
+    # in-page clicks and changes: the 3D stage keeps the page too busy for Playwright's own (they wait for still frames)
+    clk = lambda sel: pg.evaluate(f"document.querySelector({json.dumps(sel)}).click()")
+    pick = lambda sel, v: pg.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(sel)});e.value={json.dumps(v)};e.dispatchEvent(new Event('change',{{bubbles:true}}))}})()")
+    pg.evaluate("void openSection('preview')")
+    if not wait_js(pg, "battleStage.on&&!!battleStage.L&&!!document.getElementById('bpLoad')&&document.getElementById('bpLoad').hidden", 60):
+        errs.append('battle effects: the stage never loaded'); return
+    mid = pg.evaluate("Object.keys(studioState.D.moves).find(k=>studioState.D.moves[k].c==='S'&&!(studioState.D.moves[k].fx||{}).protect)")
+    pg.evaluate(f"battlePreview.move={json.dumps(mid)};render()"); time.sleep(0.5)
+    wait_js(pg, "!!document.querySelector('#bfxTl .bfx-sum')&&battleStage.on", 30)
+    pick('#main [data-bp=res]', 'x4'); time.sleep(0.3)
+    sm = pg.evaluate("document.querySelector('#bfxTl .bfx-sum').textContent")
+    want = pg.evaluate(f"battleAnimTimeline(battleAnimPreviewEvent({json.dumps(mid)},studioState.D.moves[{json.dumps(mid)}],0,'x4'),studioState.D.moves[{json.dumps(mid)}],{{gl:!!battleStage.gl,reduced:false,q:0,speed:1}},studioState.D.battleAnims)")
+    rows = pg.evaluate("document.querySelectorAll('#bfxTl .bfx-row').length")
+    if 'tier super4' not in sm or want['id'] not in sm: errs.append(f'battle effects: the summary {sm!r} is not {want["id"]} at tier super4')
+    if rows < 3: errs.append(f'battle effects: {rows} timeline rows')
+    clk('#main [data-act=bfxPlay][data-side="1"]'); time.sleep(0.6)
+    if not pg.evaluate("!!battleFx.clip&&battleFx.clip.endsWith(':1')&&battleFx.T&&battleFx.T.tier==='super4'"): errs.append(f'battle effects: They use it played {pg.evaluate("battleFx.clip")}')
+    pg.evaluate("battleFxSeek(0)")
+    clk('#main [data-act=bfxStep][data-d="1"]'); clk('#main [data-act=bfxStep][data-d="1"]'); time.sleep(0.2)
+    at = pg.evaluate("[battleFx.at, battleFx.paused]")
+    cell = 1000 / 24
+    if not at[1] or at[0] < 2 * cell - 0.01 or at[0] > 2 * cell + 17: errs.append(f'battle effects: two cells on held at {at}')
+    hit = want['hit'] if want['hit'] < 999 else 300
+    pg.evaluate(f"(()=>{{const r=document.getElementById('bfxScrub');r.value='{hit}';r.dispatchEvent(new Event('input',{{bubbles:true}}))}})()"); time.sleep(0.3)
+    at = pg.evaluate("battleFx.at")
+    if at < hit - cell or at > hit + cell + 17: errs.append(f'battle effects: the scrubber at {hit} ms held the stage at {at} ms')
+    for k, v in (('speed', '2.2'), ('q', '2'), ('motion', 'reduced'), ('flashes', 'false')):
+        clk(f'#main [data-act=bfxSet][data-k={k}][data-v="{v}"]'); time.sleep(0.2)
+    got = pg.evaluate("[battleStage.speed, battleStage.q.lvl, reducedMotion, (saveData.preferences||{}).flashes||null, battleFx.paused]")
+    if got[:4] != [2.2, 2, True, 'off']: errs.append(f'battle effects: speed, quality, motion and Flashes reached the stage as {got}')
+    clk('#main [data-act=bfxSet][data-k=clip][data-v=event]'); time.sleep(0.5)
+    pick('#main [data-bp=ev]', 'catch'); time.sleep(0.2)
+    clk('#main [data-act=bfxPlay][data-side="0"]'); time.sleep(0.4)
+    pg.evaluate("battleFxSeek(600)")
+    ev = pg.evaluate("[battleFx.clip, battleFx.at>=599, battleFx.T]")
+    if ev[0] != 'event:catch:0' or not ev[1] or ev[2] is not None: errs.append(f'battle effects: the catch event played and seeked as {ev}')
+    clk('#main [data-act=bfxSet][data-k=clip][data-v=move]'); time.sleep(0.5)
+    pick('#main [data-p="battleAnims.budgets.burst.0"]', '20'); time.sleep(0.6)
+    if pg.evaluate("studioState.D.battleAnims.budgets.burst[0]") != 20: errs.append('battle effects: a burst budget of 20 did not reach the data')
+    if not pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after a budget edit Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    pick('#main [data-p="battleAnims.smears.ribbon.half"]', '0.3'); time.sleep(0.6)
+    live = pg.evaluate("RIBBON_HALF")
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if live != 0.3: errs.append(f'battle effects: the ribbon dial reached the stage as {live}')
+    if pg.evaluate("[studioState.D.battleAnims.budgets.burst[0], studioState.D.battleAnims.smears.ribbon.half]") != [24, 0.24]: errs.append('battle effects: undo did not put the budget and the dial back')
+    if pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after the undo Propose would still send battleAnims.json')
+    empty = pg.evaluate("[document.querySelector('#bfxPane-ramps').textContent, document.querySelector('#bfxPane-cells').textContent]")
+    has = pg.evaluate("[!!studioState.D.battleAnims.ramps, !!studioState.D.battleAnims.sprites]")
+    for (t, h, k) in zip(empty, has, ('ramps', 'cells')):
+        if not h and 'yet' not in t: errs.append(f'battle effects: the {k} pane without data says {t[:80]!r}')
+    pg.evaluate("void openSection('types')"); time.sleep(0.3)
+    back = pg.evaluate("[reducedMotion, (saveData.preferences||{}).flashes||null, document.documentElement.dataset.motion||null]")
+    if back != [False, None, None]: errs.append(f'battle effects: leaving the section left the motion and Flashes at {back}')
+    pg.evaluate("Object.assign(battlePreview,{clip:'move',speed:1,q:0,motion:'full',flashes:true,res:'hit'})")
+    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget and a smear dial proposed and undone, the empty ramps and cells panes, the settings back on leaving', flush=True)
+
+
 def unlocks_steps(pg, errs):
     """Studio plan T4.2: Unlocks & hub. The graph has a node per row and the edges unlocks.test.mjs expects; a need that
     would close a circle is refused, the data unchanged and the message naming the path; "what a new save has" is the
@@ -2628,6 +2696,7 @@ STEPS = [
     ('ui_tools', ui_tools_steps),
     ('ui_screens', ui_screens_steps),
     ('music', music_steps),
+    ('battle_fx', battle_fx_steps),
     ('studio_test', studio_test_steps),
     ('run_lab', run_lab_steps),
     ('run_lab_sim', run_lab_sim_steps),
