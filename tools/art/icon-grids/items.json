@@ -1,5 +1,5 @@
 {
-  "about": "Perks track PK-11 and PK-10: the 13 Bag items' and the 24 held items' pictures (perks-track.md 5.10, 5.8) as flat 34x34 fronts in the UI icon builder's letters (ICON_PALETTE in game/js/logic/icon-block.js; '.' is empty; digits 1-4 are the light, mid, dark and ink of the one ICON_RAMPS hue mono names, letters then accents). tools/build-icons.mjs shades each with iconBlockKeyed and writes game/art/items/<id>.svg once items.json names it (img); after that the SVG is the source (the Studio's icon editor), and the grid is kept as the first drawing. The ids are items.json's (bell is the Shining Stone, trailmix Trail Mix, repairkit the Repair Kit).",
+  "about": "Perks track PK-11 and PK-10: the 13 Bag items', the 24 held items' and Form 99-A's (transfer, ON-4) pictures (perks-track.md 5.10, 5.8) as flat 34x34 fronts in the UI icon builder's letters (ICON_PALETTE in game/js/logic/icon-block.js; '.' is empty; digits 1-4 are the light, mid, dark and ink of the one ICON_RAMPS hue mono names, letters then accents). tools/build-icons.mjs shades each with iconBlockKeyed and writes game/art/items/<id>.svg once items.json names it (img); after that the SVG is the source (the Studio's icon editor), and the grid is kept as the first drawing. The ids are items.json's (bell is the Shining Stone, trailmix Trail Mix, repairkit the Repair Kit).",
   "mono": {
     "max_revive": "gold",
     "bell": "violet",
@@ -1340,6 +1340,42 @@
       "..................................",
       "..................................",
       ".................................."
+    ],
+    "transfer": [
+      "..................................",
+      "....yyyyyyyyyyyyyyyyyy............",
+      "....yyyyyyyyyyyyyyyyyyo...........",
+      "....yyyyyyyyyyyyyyyyyyoo..........",
+      "....yyyVVVVVVVVVVVVVyyooo.........",
+      "....yyyVVVVVVVVVVVVVyyoooo........",
+      "....yyyVVVVVVVVVVVVVyyooooo.......",
+      "....yyyVVVVVVVVVVVVVyyoooooo......",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyykkkkkkkkkkkkkkkkkkyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyykkkkkkkkkkkkkkkkkkyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyyyyyyyy.....",
+      "....yyyyyyyyyyyyyyyyyyrrrrrrr.....",
+      "....yyykkkkkkkkkkkkkkrrrrrrrrr....",
+      "....yyyyyyyyyyyyyyyyrrrrrrrrrrr...",
+      "....yyyyyyyyyyyyyyyrrrrrrrrrrrrr..",
+      "....yyyyyyyyyyyyyyrrrrrryyyrrrrrr.",
+      "....yyyyyyyyyyyyyrrrrrryyyyyrrrrrr",
+      "....yyyyyyyyyyyyyrrrrryrrrrryrrrrr",
+      "....yyyyyyyyyyyyyrrrryyrrrrryyrrrr",
+      "....yyyyyyyyyyyyyrrrrryyyyyyyrrrrr",
+      "....yyyyyyyyyyyyyrrrrrryyyyyrrrrrr",
+      "....yyyyyyyyyyyyyyrrrrrryyyrrrrrr.",
+      "...................rrrrrrrrrrrrr..",
+      "....................rrrrrrrrrrr...",
+      ".....................rrrrrrrrr....",
+      "......................rrrrrrr....."
     ]
   }
 }

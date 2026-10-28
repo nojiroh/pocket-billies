@@ -17,7 +17,7 @@
   "price": 2500,
   "evoItem": 1,
   "d": "Change of Ownership, stamped by the Bureau. A Billie that evolves by being acquired takes this as a trade.",
-  "icon": "settlement"
+  "img": "items/transfer.svg"
  },
  "protein_bar": {
   "n": "Protein Bar",
