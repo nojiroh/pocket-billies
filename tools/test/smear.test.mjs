@@ -449,3 +449,15 @@ test('the dials are set from data and read back in its shape; what is missing st
   assert.deepEqual(S.smearDials(), before, 'put back');
   assert.equal(S.SMEAR_KEEP, Math.max(before.ghosts.length + 1, before.ribbon.cells));
 });
+
+test("battleAnims.json's smears name every dial (the game sets them from it)", async () => {
+  const S = await import('../../game/js/logic/smear.js'),
+    A = JSON.parse(readFileSync(new URL('../../game/data/battleAnims.json', import.meta.url), 'utf8')),
+    before = S.smearDials();
+  try {
+    S.smearDialsSet(A.smears);
+    assert.deepEqual(S.smearDials(), A.smears);
+  } finally {
+    S.smearDialsSet(before);
+  }
+});

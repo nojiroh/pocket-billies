@@ -2460,6 +2460,8 @@ export interface BattleAnimsData {
   flashes: { perSecond: number; gapMs: number; redShare: number };
   /** VFX-9's budgets by the battle's quality 0-3 (data since VFX-12) */
   budgets: BattleAnimBudgets;
+  /** Part 1's dials (logic/smear.js smearDialsSet; data since VFX-12) */
+  smears: BattleAnimSmears;
   colors: Record<string, Color>;
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
@@ -2480,6 +2482,15 @@ export interface BattleAnimBudgets {
   lightsAll: number;
   /** scars on the ground (VFX-15) */
   scars: number[];
+}
+/** VFX-12: Part 1's dials: the afterimages (newest first), the ribbon, a dash's ribbon, the stretch, a lunge's lean */
+export interface BattleAnimSmears {
+  ghosts: { fade: number; glow: number }[];
+  lungeGhosts: { fade: number; glow: number }[];
+  ribbon: { cells: number; half: number; twist: number; bright: number; core: number; fray: number; steps: number };
+  dashRibbon: { half: number; min: number; max: number };
+  stretch: { pace: number; k: number; max: number };
+  lean: { k: number; max: number; back: number };
 }
 export interface BattleAnimTimeline {
   dur: number;

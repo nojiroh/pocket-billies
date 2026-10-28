@@ -1,5 +1,5 @@
 {
- "about": "VFX-8 (the VFX track's Part 2): how the battle plays a move, as data (logic/battle-anims.js builds a move's timeline from it; battle-anim-run.js plays it on the stage). A move plays its anim (moves.json, a family or a scene id), else the default for its outcome or category (defaults). A timeline is intro then the family's steps; at is stage ms (the battle speed already scales the stage clock); n and every repeat a step; if lists gates that must all hold (a ! in front: must not): H, S, X (the category), self, protect, dmg, landed (no miss, Guard or block), power80 (power at least bigPower), gl (the 3D stage), motion (not Reduced motion). types keeps a step to those move types. Colours are named in colors, or type (the move type's colour, types.json). The six legacy families are the choreographies battle-stage.js had before VFX-8, step for step (H, S and X by category; a miss, Guard and a blocked move); VFX-11 replaces them with the 16 families. A family's short (a variant for the Faster speed, speed at least shortSpeed) is optional. maxMs: the longest a move may play, by outcome and category (the times moves took before VFX-8; a long move or a scene may add extraMs). dur and hit: what the stage returns to battle.js (hit 999: no hit; the plates repaint at hit). budgets (VFX-9's, data since VFX-12; the Studio's Battle effects tunes them): by the battle's quality 0-3, the particles alive in the one pool (ambient ones at most a quarter), a burst's most, the effect lights (lightsPhone at most on a phone, lightsAll battle lights in all), the scars on the ground (VFX-15).",
+ "about": "VFX-8 (the VFX track's Part 2): how the battle plays a move, as data (logic/battle-anims.js builds a move's timeline from it; battle-anim-run.js plays it on the stage). A move plays its anim (moves.json, a family or a scene id), else the default for its outcome or category (defaults). A timeline is intro then the family's steps; at is stage ms (the battle speed already scales the stage clock); n and every repeat a step; if lists gates that must all hold (a ! in front: must not): H, S, X (the category), self, protect, dmg, landed (no miss, Guard or block), power80 (power at least bigPower), gl (the 3D stage), motion (not Reduced motion). types keeps a step to those move types. Colours are named in colors, or type (the move type's colour, types.json). The six legacy families are the choreographies battle-stage.js had before VFX-8, step for step (H, S and X by category; a miss, Guard and a blocked move); VFX-11 replaces them with the 16 families. A family's short (a variant for the Faster speed, speed at least shortSpeed) is optional. maxMs: the longest a move may play, by outcome and category (the times moves took before VFX-8; a long move or a scene may add extraMs). dur and hit: what the stage returns to battle.js (hit 999: no hit; the plates repaint at hit). budgets (VFX-9's, data since VFX-12; the Studio's Battle effects tunes them): by the battle's quality 0-3, the particles alive in the one pool (ambient ones at most a quarter), a burst's most, the effect lights (lightsPhone at most on a phone, lightsAll battle lights in all), the scars on the ground (VFX-15). smears (Part 1's dials, VFX-1..VFX-5; data since VFX-12, logic/smear.js smearDialsSet): a throw's afterimages (fade, how much is drawn; glow, how much brighter) and a lunge's, the ribbon (its places, half width at the head in metres, twist, brightness, white core share, fray, erosion steps), a dash's ribbon (half width as a share of the Billie's height, its bounds), the stretch (from what pace, how far, at most) and a lunge's lean (per px/ms, at most, moving back).",
  "bigPower": 80,
  "longPower": 100,
  "extraMs": 500,
@@ -7,6 +7,21 @@
  "maxMs": {"H":880,"S":1060,"X":1000,"miss":760,"protect":700,"blocked":740},
  "flashes": {"perSecond":3,"gapMs":333,"redShare":0.8},
  "budgets": {"particles":[256,160,96,48],"burst":[24,16,10,6],"lights":[3,2,1,0],"lightsPhone":2,"lightsAll":6,"scars":[12,8,4,0]},
+ "smears": {
+  "ghosts": [
+   {"fade":0.6,"glow":0.45},
+   {"fade":0.4,"glow":0.7},
+   {"fade":0.25,"glow":0.95}
+  ],
+  "lungeGhosts": [
+   {"fade":0.5,"glow":0.35},
+   {"fade":0.28,"glow":0.6}
+  ],
+  "ribbon": {"cells":6,"half":0.24,"twist":0.35,"bright":1.35,"core":0.4,"fray":0.75,"steps":4},
+  "dashRibbon": {"half":0.3,"min":0.12,"max":0.45},
+  "stretch": {"pace":1.3,"k":0.6,"max":0.8},
+  "lean": {"k":1,"max":0.3,"back":0.5}
+ },
  "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF"},
  "defaults": {
   "H": "legacy_hit",

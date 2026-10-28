@@ -1344,7 +1344,7 @@ export function dataSetPieces(D, valid = () => true) {
 }
 // VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
 // named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
-// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit); VFX-12: the budgets in order
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit); VFX-12: the budgets in order, the dash ribbon's bounds
 /** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBattleAnims(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1384,6 +1384,7 @@ export function dataBattleAnims(D, valid = () => true) {
       if (B[k][q] > B[k][q - 1]) problem(`budgets.${k}: quality ${q} allows more (${B[k][q]}) than quality ${q - 1}`);
   for (let q = 0; q < 4; q++)
     if (B.burst[q] > B.particles[q]) problem(`budgets.burst: ${B.burst[q]} at quality ${q}, more than the pool`);
+  if (A.smears.dashRibbon.min > A.smears.dashRibbon.max) problem('smears.dashRibbon: min is above max');
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');

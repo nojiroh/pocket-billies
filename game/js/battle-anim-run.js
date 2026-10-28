@@ -10,6 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { BATTLE_ANIMS, MOVES, TYPE_GLOW, activeBattle, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
+import { smearDialsSet } from './logic/smear.js';
 import { battleAnimLogLine, battleAnimTimeline, flashGate } from './logic/battle-anims.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -37,6 +38,10 @@ const battleAnim = {
   /** @type {{ mid: string, T: any, q: number, held: string[], logged: boolean } | null} */
   cur: null,
 };
+
+/* VFX-12: Part 1's dials (the afterimages, the ribbon, the stretch, a lunge's lean) are battleAnims.json `smears`
+   (logic/smear.js): set once from the game's data as the page loads; the Studio sets them from its own as they're tuned */
+if (BATTLE_ANIMS && BATTLE_ANIMS.smears) smearDialsSet(BATTLE_ANIMS.smears);
 
 /** a step on the stage clock, ms from now; onSkip: what a skip runs instead (null: nothing) */
 function animAt(ms, fn, onSkip) {
