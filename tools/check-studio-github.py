@@ -2224,7 +2224,21 @@ def relics_steps(pg, errs):
     if not wait_js(pg, "/can't be known when a Perk is offered/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: a bad need showed no message')
     pg.evaluate("undo()"); time.sleep(0.3)
     if pg.evaluate("studioState.D.perks.bellows.needs") != 'team:Fire': errs.append('perks: undo left Bellows needing ' + str(pg.evaluate("studioState.D.perks.bellows.needs")))
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone", flush=True)
+    # PK-5: Wave C's kinds (catchLevel, refund, inflict at battleStart, a money share, free, salvage, the rules
+    # rewardPick, rerollFree, mapReveal): every row of the 12 Wave C Perks shows its inputs with no error; Tip Jar shows
+    # its share and its most; Magnet on a String's Needs read bots
+    wave_c = ['bug_net', 'music_box', 'name_tags', 'pyramid_pouch', 'tip_jar', 'punch_card', 'gift_receipt', 'fortune_cookie', 'tour_brochure', 'bounty_poster', 'string_magnet', 'lab_goggles']
+    for pid in wave_c:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    pg.evaluate("void openSection('relics', { relic: 'tip_jar' })"); time.sleep(0.3)
+    tj = pg.evaluate("['share','max'].map(k=>!!document.querySelector(`#main [data-p=\"perks.tip_jar.fx.0.${k}\"], #main [data-path=\"perks.tip_jar.fx.0.${k}\"]`))")
+    if tj != [True, True]: errs.append(f'perks: Tip Jar shows its share and most inputs as {tj}')
+    pg.evaluate("void openSection('relics', { relic: 'string_magnet' })"); time.sleep(0.3)
+    mg = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"string_magnet\"]')||{}).value")
+    if mg != 'bots': errs.append(f'perks: Magnet on a String shows Needs as {mg!r}')
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs", flush=True)
 
 
 def unlocks_steps(pg, errs):
