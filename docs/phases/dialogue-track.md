@@ -190,7 +190,8 @@ at the top bubble and read down.
 - **Choices** take the history's place above the newest bubble, so the tail never meets a button.
 - **The height budget** on a 390×844 phone: the bottom bar 96 px plus about 34 safe area, the newest bubble about
   146 (the 96 px slot, padding, the tail), two older ones about 64 each: about 300 px, capped at 40% of the screen
-  height (the oldest drops first). The CAM-2 two-shot (talk.js:316) keeps the speaker above it; phone-checked.
+  height (the oldest drops first). The CAM-2 two-shot (talk.js:316) keeps the speaker above it; phone-checked. (DL-4:
+  the two-shot is walk/camera.js and logic/camera-moments.js, and the hub's free camera has none; see "Done in DL-4".)
 
 ### 2. Every character has their own bubble
 Skins are data (`game/data/talkSkins.json`): a speaker or faction maps to a skin; a skin names its shape, edge,
@@ -392,6 +393,24 @@ skill), its HANDOFF entry, and the owner's phone check.
 - **DL-4 The stack.** Sides, links, interruptions, the "…" bubble, choices, the Log, the height budget, the gallery.
   Tests: talk-stack; check-fast and the quick check (element ceilings). On the phone: three bubbles at most; the
   speaker stays in view; a choice in a stack.
+  **Done in DL-4** (2026-10-28, `track/dialogue`): the owner's answer to Ask me before 4: **`[wait]` for anyone**,
+  the automatic "…" Kappi's (talkSkins.json `"wait": "first"`), **the stamp the Bureau's alone** (a `[stamp]` on
+  another skin does nothing; the Studio's story check warns, logic/story-checks.js). Built: logic/talk-stack.js
+  (`stackStep(prev, {who, skin, style, cut})` → side, linked, keep, drop and the next state; `stackFit`, `waitMs`,
+  `cutAt`, `knockOf`), tested. talk.js: `.talk-layer > .talk-stack` with the live `.talk-box` last; `talkDemote`
+  copies it up as `.talk-old was-1/was-2` (`.talk-was` in `.talk-said`, `data-one-piece`, inert, a small portrait drawn
+  from its own speaker), FLIP on the Web Animations API; `talkStackFit`; `talkCutLine`; the "…" in `.talk-wait`; the
+  Log (`.talk-logbtn`, `.talk-log`, `talkBox.log`, memory only); choices hide the older bubbles. Narration (the "me"
+  notes) sits in the middle, never links, never turns the sides. Choices made: the side mirror is
+  `translateX(var(--flip-dx)) scaleX(var(--flip))` in the layers' transform; a linked pair drops the older bubble's
+  portrait and name (the newest keeps the live portrait) with a `.talk-bridge`; a `[cut]` mid-line drops the rest and
+  ends in "—"; the "…" is off under Reduced. Corrections to this file: the height arithmetic (130 + 146 + 64 + 64 is
+  404 px, not about 300): the 40% cap counts the bubbles above the bar only, which keeps 2-3 bubbles; the bottom bar
+  with its minimap tile is about 190 px on a 390×844 phone, not 130, so three bubbles reach about 62% of the screen and
+  covered you at mid-screen: the camera now lifts the talk above the stack (`talkLiftShare` in
+  logic/camera-moments.js, applied in walk/camera.js while any talk is open, the hub's orbit camera included, followed
+  as a goal so the dead zone doesn't eat it). Older bubbles are about 61 px (a 40 px head window), a linked one 39.
+  Pictures: tools/look-talk.py `--only=stack`; the gallery's `talk-stack` section.
 - **DL-5 Faces.** The director, today's portrait (combined expressions, blinks, the mouth), emotes, the frame bounce,
   the listener dimmed. Tests: talk-director, expressions. On the phone: faces feel alive and stay crisp.
 - **DL-6 Figure close-ups.** The bust bake, the head spring in stepped angles, the face state (with CH-6). Tests:
@@ -410,7 +429,8 @@ Tags `dl-N-done` are not asked for per session (CLAUDE.md); the track gets `dial
 2. Each skin's final look, after the mockup (DL-0) and again on the phone (DL-3). **Answered 2026-10-28 (DL-3): the
    mockup's skins as they are; the player's lines wear a narration skin.** The phone check is still the owner's.
 3. The lines in DL-7, and any change to the approved opening text.
-4. Whether the "…" bubble and the stamp also show outside Kappi and the Bureau.
+4. Whether the "…" bubble and the stamp also show outside Kappi and the Bureau. **Answered 2026-10-28 (DL-4):
+   `[wait]` for anyone, the automatic "…" Kappi's; the stamp the Bureau's alone.**
 
 ## Risks
 - Tests that tap through talk: the interruption's auto-advance and the stack's renamed classes (`.talk-was`,

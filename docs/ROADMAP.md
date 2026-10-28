@@ -351,8 +351,10 @@ town node needs it.
   DL-2 (letters: the letter spans and effects, logic/talk-type.js timing, Text speed, blip styles, Oxanium 700 for
   bold) done 2026-10-28; DL-3 (bubbles: each speaker's skin from talkSkins.json, shout, whisper and think shapes, the
   tilt, the pop-in and grow spring, the Bureau's stamp, the bubble's dials; the owner kept the mockup's skins and gave
-  the player's lines a narration skin) done 2026-10-28; next DL-4 (the stack). About 8 sessions. Branch
-  `track/dialogue`.
+  the player's lines a narration skin) done 2026-10-28; DL-4 (the stack: sides, linked lines, the cut and its knock,
+  the "…" bubble, choices in the stack, the Log, the 40% height budget, the camera lifting the talk above it; the
+  owner's answer: `[wait]` for anyone, the stamp the Bureau's alone) done 2026-10-28; next DL-5 (faces). About 8
+  sessions. Branch `track/dialogue`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
