@@ -8,6 +8,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  battleCatchSoundPlay,
+  battleHurtSoundPlay,
+  battleMoveSoundPlay,
+  battleRecallSoundPlay,
   cutscene,
   mapIdAt,
   provide,
@@ -166,7 +170,7 @@ export const soundEngine = {
   seen: null,
   log: [],
 };
-function soundLog(e) {
+export function soundLog(e) {
   const L = soundEngine.log;
   L.push({ at: Math.round(performance.now()), e });
   if (L.length > 40) L.shift();
@@ -710,8 +714,9 @@ function battleSoundEffect(an, r, ev) {
     }
     case 'enter':
       battleDrumsIn();
-      soundEffect('throw');
-      at(380, () => soundEffect('pop'));
+      /* VFX-19: the throw and the pop from music.json battle.catch (audio/battle-sounds.js), else as before */
+      if (!battleCatchSoundPlay('throw')) soundEffect('throw');
+      at(380, () => battleCatchSoundPlay('pop') || soundEffect('pop'));
       /* SND-6: a Billie cries as it comes out (as in Gen 1), after the pop */
       at(520, () => battleCry(ev, an.si));
       break;
@@ -730,16 +735,27 @@ function battleSoundEffect(an, r, ev) {
     case 'stat':
       soundEffect('stat', { down: an.n < 0 || an.down });
       break;
-    case 'move':
+    case 'move': {
+      /* VFX-19: the move's family and type layer (music.json battle): the cast now, the hit at its hit; the tier's
+         sound below stays */
+      const own = battleMoveSoundPlay(an, r);
       if (an.miss) {
         at(r.hit || 300, () => soundEffect('miss'));
         break;
       }
       if (an.self || an.protect) {
-        soundEffect('status');
+        if (!own) soundEffect('status');
         break;
       }
       at(r.hit || 300, () => soundEffect(an.crit ? 'crit' : an.te > 1 ? 'super' : an.te < 1 ? 'weak' : 'hit'));
+      break;
+    }
+    /* VFX-19: a burn, recoil, a spread move's second target, the delayed hit; the recall's beam */
+    case 'hurt':
+      battleHurtSoundPlay(an, r);
+      break;
+    case 'recall':
+      battleRecallSoundPlay();
       break;
     case 'caught':
       jingle(JINGLES.caught);

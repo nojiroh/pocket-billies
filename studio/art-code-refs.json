@@ -1604,8 +1604,8 @@
    "game/js/opening-fall.js:922"
   ],
   "bolt": [
-   "game/js/battle-stage.js:890",
-   "game/js/battle-stage.js:2213",
+   "game/js/battle-stage.js:891",
+   "game/js/battle-stage.js:2214",
    "game/js/boot.js:142",
    "game/js/run-loading.js:396",
    "game/js/ui-run-kit.js:93"
@@ -1666,8 +1666,8 @@
   ],
   "coin": [
    "game/js/art.js:207",
-   "game/js/battle-stage.js:1582",
-   "game/js/battle-stage.js:2158",
+   "game/js/battle-stage.js:1583",
+   "game/js/battle-stage.js:2159",
    "game/js/battle.js:1250",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
@@ -1683,8 +1683,8 @@
    "game/js/shop.js:179",
    "game/js/shop.js:189",
    "game/js/shop.js:258",
-   "game/js/sound.js:522",
-   "game/js/sound.js:1768",
+   "game/js/sound.js:526",
+   "game/js/sound.js:1784",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",
@@ -1708,7 +1708,7 @@
    "game/js/logic/placeholder-art.js:280"
   ],
   "down": [
-   "game/js/battle-stage.js:2200",
+   "game/js/battle-stage.js:2201",
    "game/js/cutscene/director.js:131",
    "game/js/cutscene/director.js:167",
    "game/js/cutscene/stage.js:119",
@@ -1769,9 +1769,9 @@
    "game/js/logic/figure-pose.js:747"
   ],
   "flame": [
-   "game/js/battle-stage.js:890",
-   "game/js/battle-stage.js:2149",
-   "game/js/battle-stage.js:2213",
+   "game/js/battle-stage.js:891",
+   "game/js/battle-stage.js:2150",
+   "game/js/battle-stage.js:2214",
    "game/js/walk-view.js:397",
    "game/js/walk/effects.js:380"
   ],
@@ -1870,7 +1870,7 @@
    "game/js/opening-fall.js:922"
   ],
   "pebble": [
-   "game/js/battle-stage.js:2136"
+   "game/js/battle-stage.js:2137"
   ],
   "phone": [
    "game/js/walk-view-gl.js:684",
@@ -1899,7 +1899,7 @@
    "game/js/self-test.js:3227"
   ],
   "plus": [
-   "game/js/battle-stage.js:2177",
+   "game/js/battle-stage.js:2178",
    "game/js/billie-sheet.js:197",
    "game/js/boot.js:156",
    "game/js/map-tab.js:69",
@@ -1930,16 +1930,16 @@
   ],
   "spark": [
    "game/js/bag.js:29",
-   "game/js/battle-stage.js:857",
-   "game/js/battle-stage.js:871",
-   "game/js/battle-stage.js:890",
-   "game/js/battle-stage.js:1932",
-   "game/js/battle-stage.js:2177",
-   "game/js/battle-stage.js:2301",
-   "game/js/battle-stage.js:2330",
-   "game/js/battle-stage.js:2370",
-   "game/js/battle-stage.js:2393",
-   "game/js/battle-stage.js:2492",
+   "game/js/battle-stage.js:858",
+   "game/js/battle-stage.js:872",
+   "game/js/battle-stage.js:891",
+   "game/js/battle-stage.js:1933",
+   "game/js/battle-stage.js:2178",
+   "game/js/battle-stage.js:2302",
+   "game/js/battle-stage.js:2331",
+   "game/js/battle-stage.js:2371",
+   "game/js/battle-stage.js:2394",
+   "game/js/battle-stage.js:2496",
    "game/js/battle.js:1610",
    "game/js/billie-sheet.js:84",
    "game/js/billie-sheet.js:159",
@@ -1963,8 +1963,8 @@
    "game/js/walk/effects.js:350"
   ],
   "star": [
-   "game/js/battle-stage.js:2247",
-   "game/js/battle-stage.js:2507",
+   "game/js/battle-stage.js:2248",
+   "game/js/battle-stage.js:2511",
    "game/js/cutscene/opening.js:344",
    "game/js/game-data.js:165",
    "game/js/game-data.js:168"
@@ -1979,7 +1979,7 @@
    "game/js/audio/tracker.js:976",
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
-   "game/js/battle-stage.js:2200",
+   "game/js/battle-stage.js:2201",
    "game/js/cutscene/director.js:167",
    "game/js/engine/post-effects.js:484",
    "game/js/engine/post-effects.js:586",
@@ -1992,7 +1992,7 @@
    "game/js/logic/data-checks.js:939",
    "game/js/logic/data-checks.js:983",
    "game/js/logic/marks.js:109",
-   "game/js/logic/music-studio.js:71",
+   "game/js/logic/music-studio.js:72",
    "game/js/logic/online-legal.js:246",
    "game/js/logic/person-view.js:5",
    "game/js/logic/person-view.js:56",
@@ -2016,8 +2016,8 @@
    "game/js/walk/lighting.js:243"
   ],
   "zz": [
-   "game/js/battle-stage.js:890",
-   "game/js/battle-stage.js:2213"
+   "game/js/battle-stage.js:891",
+   "game/js/battle-stage.js:2214"
   ]
  }
 }

@@ -19,6 +19,7 @@ import {
   battle3dStart,
   battle3dStop,
   battleAnimPlay,
+  battleCatchSoundPlay,
   battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
@@ -2423,7 +2424,10 @@ export const PYRAMID_LIFT = 0.02,
    (res.edge, the critical catch: on its point), rocks on a base edge once a wobble (res.w), then seals (light climbs
    its edges to the tip, a glow, stars) or the Billie breaks out */
 /* RF-2: the catch's sounds (sound.js): the throw, the landing, a wobble each way, the seal or the pop out */
-const catchSound = k => typeof soundEffect === 'function' && soundEffect(k);
+/* VFX-19: music.json battle.catch's first (audio/battle-sounds.js), else as before */
+const catchSound = k =>
+  (typeof battleCatchSoundPlay === 'function' && battleCatchSoundPlay(k)) ||
+  (typeof soundEffect === 'function' && soundEffect(k));
 export function battleStageCatch(kind, res, spin, done) {
   battleStageFlush();
   const s1 = battleStage.s[1],
