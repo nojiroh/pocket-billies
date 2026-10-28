@@ -185,8 +185,10 @@ test("the debug menu's mountains run: a valid run whose every place has mountain
      over the two directions); recorded in HANDOFF for a terrain session. WM-3: the maps changed, TR2MTN1 is clean
      again and TR2MTN2 meets it (3 of 158 places over TR2MTN0-11, the same share). WM-5b: towns at their sizes moved
      the maps: TR2MTN0's village (node 7) has a river note now, so TR2MTN4 (clean) stands in; over 700 places of
-     ordinary runs the notes are as many as before (11 and 12) */
-  for (const seed of ['TR2MTN4', 'TR2MTN1']) {
+     ordinary runs the notes are as many as before (11 and 12). TR-5: 8 of 158 places then had a summit cut off (a
+     town's lot levelled a street a terrace up, or ledges and cliffs all round a tier); mapgenStairsUp cuts a flight
+     to it, so TR2MTN5 (two cut off before) joins in, every summit reached */
+  for (const seed of ['TR2MTN4', 'TR2MTN1', 'TR2MTN5']) {
     const run = newRun(seed, 1, G.MAPGEN_VERSION, start);
     run.mods = [RUN_MOD_MOUNTAINS];
     runMapStart(run, { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R });

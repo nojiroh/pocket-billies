@@ -147,7 +147,10 @@ function raiseAt(sc, x, z) {
   return S[j * sc.w * 2 + i] / 20;
 }
 /* rivers across terraces that step down toward them (the seeds of a sweep that made falls), and massifs whose cliffs
-   take a set piece (the cave's dials, Rock Smash's side area) */
+   take a set piece (the cave's dials, Rock Smash's side area). TR-5: the sweep's terraces were the old bands with
+   cliff fronts, so these keep them (land.lean 1, edges 'cliff'). Terraces along the contours make river falls less
+   often (2 of this sweep's 45 terraced scenes, against 5) and a massif's set piece more often (7 of 40 of the set
+   cases' dials, seeds 300-339, against 2) */
 const FALL_CASES = [917, 931, 933, 941].map(seed => {
   const i = seed - 900;
   return {
@@ -161,6 +164,8 @@ const FALL_CASES = [917, 931, 933, 941].map(seed => {
       mountains: i % 3 === 0 ? 1 : 0,
       massif: 'NS',
       cliffs: (i % 5) / 4,
+      lean: 1,
+      edges: 'cliff',
     },
   };
 });
@@ -168,7 +173,7 @@ const SET_CASES = [301, 305, 342].map(seed => ({
   seed,
   biome: seed % 2 ? 'cave' : 'ridge',
   pin: 'EW',
-  land: { water: 'none', mountains: 1, massif: 'NS', cliffs: 0.5, terraces: 0.5, ledges: 1 },
+  land: { water: 'none', mountains: 1, massif: 'NS', cliffs: 0.5, terraces: 0.5, ledges: 1, lean: 1, edges: 'cliff' },
 }));
 const FALLS_MADE = [...FALL_CASES, ...SET_CASES].map(c => ({ c, ...G.mapgenScene(c, ctx) }));
 

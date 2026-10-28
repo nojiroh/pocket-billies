@@ -17,6 +17,7 @@ import { waterToolsGenBarHTML, waterToolsGenMap } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import {
   MAPGEN_DEFAULTS,
+  MAPGEN_EDGES,
   MAPGEN_FEATURES,
   MAPGEN_LAYOUTS,
   MAPGEN_LAYOUT_DIALS,
@@ -27,6 +28,7 @@ import {
   MAPGEN_PIECES_MOST,
   MAPGEN_SHAPES,
   MAPGEN_SIZES,
+  MAPGEN_TERRACE_DIALS,
   MAPGEN_WATER,
   mapgenEdgeStrip,
   mapgenPairScene,
@@ -134,14 +136,16 @@ const GEN_DIALS = [
     'Land',
     [
       ['land.hills', 'Hilliness', 0, 1, 0.05, 'Flat to rolling hills, up to about 2.5 m'],
+      ['land.terraces', 'Terraces', 0, 1, 0.05, 'None, then one to three steps; the road ramps through them'],
       [
-        'land.terraces',
-        'Terraces',
+        'land.lean',
+        'Terrace lie',
         0,
         1,
         0.05,
-        'None, then one to three steps rising toward the back; the road ramps through them',
+        "Along the land's contours (a hill's top a step up) to bands rising toward the back (the most ledges)",
       ],
+      ['land.edges', 'Terrace fronts', 'sel', MAPGEN_EDGES],
       [
         'land.cliffs',
         'Terrace height',
@@ -251,10 +255,11 @@ function genSet(o, path, v) {
   t[last] = v;
 }
 /* TR-2: the mountains dials are not in MAPGEN_DEFAULTS (scenes made without them keep the dials they stored); nor are
-   RT-1's layout and RT-3's pieces */
+   TR-5's terrace lie and fronts, RT-1's layout and RT-3's pieces */
 const genDefault = path =>
   genGet(MAPGEN_DEFAULTS, path) ??
   genGet({ land: MAPGEN_MOUNTAIN_DIALS }, path) ??
+  genGet({ land: MAPGEN_TERRACE_DIALS }, path) ??
   genGet(MAPGEN_LAYOUT_DIALS, path) ??
   genGet(MAPGEN_PIECES_DIALS, path);
 const genDialValue = (v, step) => (typeof v === 'number' ? +v.toFixed(step < 0.1 ? 2 : 1) : v);
