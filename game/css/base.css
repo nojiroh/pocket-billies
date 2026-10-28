@@ -1191,6 +1191,10 @@ section > h2,
   flex: none;
   background: var(--ico) center/contain no-repeat;
 }
+/* PK-2: a Perk's picture (art.js artIconHTML), drawn at whole multiples of its 36 px */
+.art-ic {
+  image-rendering: pixelated;
+}
 /* RF-1: a run's money: the coin icon beside the number (art.js moneyHTML) */
 .money {
   display: inline-flex;

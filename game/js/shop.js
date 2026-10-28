@@ -13,7 +13,7 @@ import { runBuyFx, runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled }
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artIconHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
@@ -116,7 +116,7 @@ function shopPerkHTML(id, sh) {
   if (!L) return '';
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
-  return `<div class="ware2 k-card"><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card"><span class="w-ic">${artIconHTML(R.img, 36)}</span><span class="w-t"><b>${escapeHtml(R.name)}</b><small>${escapeHtml(R.d)}</small><small class="note">A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {

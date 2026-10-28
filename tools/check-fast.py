@@ -869,11 +869,16 @@ def relics(pg, base):
     the world shows, three cards; one taken: six held, the pick gone, stored; the Perks tab lists them; a battle
     starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
     day's Perk 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
-    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it"""
+    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it. PK-2: each card, row
+    and shop ware shows its Perk's own picture (72 px on the pick, 36 px in the tab, the shop and letting one go)"""
     pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
     stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
     if not until(pg, pick, 90): raise Exception('the waiting pick didn’t open')
     offer = pg.evaluate("saveData.run.offer.slice()")
+    # PK-2: each Perk's own picture, 72 px on a pick card, 36 px in a row (whole multiples of its 36 px)
+    pics = lambda sel: pg.evaluate(f"[...document.querySelectorAll({sel!r})].map(e=>[e.offsetWidth,(getComputedStyle(e).backgroundImage.match(/art\\/(perks\\/\\w+\\.svg)/)||[])[1]||''])")
+    got = pics('#ov pb-pick-card .art-ic')
+    if got != [[72, f'perks/{k}.svg'] for k in offer]: raise Exception(f'the pick cards’ pictures: {got}')
     pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[1].shadowRoot.querySelector('button').click();0")
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
@@ -883,6 +888,8 @@ def relics(pg, base):
     if len(stored()['perks']) != 6: raise Exception('the pick wasn’t stored')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='perks';render();0")
     if not until(pg, "document.querySelectorAll('.s-perks .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
+    got = pics('.s-perks .bag-row .art-ic')
+    if len(got) != 6 or any(w != 36 or not f for w, f in got): raise Exception(f'the Perks tab’s pictures: {got}')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
@@ -900,10 +907,14 @@ def relics(pg, base):
     pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
     if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Perk')
     shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
+    got = pics('#ov .shop-sheet .art-ic')
+    if got != [[36, f'perks/{shelf}.svg']]: raise Exception(f'the shop row’s picture: {got}')
     price = pg.evaluate(f"Math.round(RULES.run.perks.price[PERKS['{shelf}'].rarity]*0.85)")
     se, held = pg.evaluate("[saveData.se,saveData.run.perks.slice()]")
     pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
+    got = pics('#ov pb-pick-card .art-ic')
+    if len(got) != 6 or any(w != 36 for w, f in got): raise Exception(f'letting one go: the pictures {got}')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
     if not until(pg, f"saveData.run.perks.includes('{shelf}')&&!saveData.run.perks.includes('{held[0]}')", 10): raise Exception('the Perk wasn’t bought')
     after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")

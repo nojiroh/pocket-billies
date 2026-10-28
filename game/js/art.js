@@ -17,6 +17,7 @@ expose({
   PYRAMID_ART: [() => PYRAMID_ART],
   PYRAMID_KINDS: [() => PYRAMID_KINDS],
   artBoot: [() => artBoot, v => (artBoot = v)],
+  artIconHTML: [() => artIconHTML, v => (artIconHTML = v)],
   artImg: [() => artImg, v => (artImg = v)],
   artLoad: [() => artLoad, v => setArtLoad(v)],
   artPixels: [() => artPixels, v => setArtPixels(v)],
@@ -172,8 +173,16 @@ export const uiIconURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]
     ? window.NW_ART[`ui/${k}.svg`]
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
-export function uiIconHTML(key, size = 22) {
-  return `<i class="uico" style="--ico:url('${uiIconURL(key)}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+export function uiIconHTML(key, size = 22, url = uiIconURL(key), cls = 'uico') {
+  return `<i class="${cls}" style="--ico:url('${url}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+}
+/** PK-2: a picture drawn as the UI icons are (an `img`, a Perk's SVG in art's perks folder; items and boons later) at
+ * `size` px, a whole multiple of its 36 px so no pixel blurs; without one, the UI icon `fallback`
+ * @param {string | undefined} img @param {number} [size] @param {string} [fallback] */
+export function artIconHTML(img, size = 36, fallback = 'relic') {
+  return img
+    ? uiIconHTML(fallback, size, new URL(artURL(img), document.baseURI).href, 'uico art-ic')
+    : uiIconHTML(fallback, size);
 }
 /** RF-1: a run's money on screen: the coin icon and the number, read aloud as "120 Moneys" (plain text: plural(n, 'Money')) */
 export function moneyHTML(n, size = 14) {
