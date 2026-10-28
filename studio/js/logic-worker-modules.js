@@ -35,6 +35,7 @@ import '../../game/js/logic/camera-rise.js';
 import '../../game/js/logic/camera-zoom.js';
 import '../../game/js/logic/case-file.js';
 import '../../game/js/logic/chosen.js';
+import '../../game/js/logic/coat-foil.js';
 import '../../game/js/logic/coats.js';
 import '../../game/js/logic/colors.js';
 import '../../game/js/logic/conditions.js';
