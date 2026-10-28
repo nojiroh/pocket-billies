@@ -338,8 +338,12 @@ same phase:
   and file next to the token uses (corners, space, shadows, keyframes, times, fonts, colours, `!important`, layers,
   blur rules; colours, `innerHTML` and `style="` in game JS). Since UI-6a `npm run lint` fails when a count rises
   above its ceiling (`UI_LINT_CEILING`; `--save` lowers them). Smoke's phone step counts the blurred surfaces on each
-  screen it visits (`uiBlurCount()`) and, since UI-6b, fails above 3, or above `BLUR_CEILING` (tools/check-quick.py:
-  map 10, shop 5) for a screen that was over it. The tap-target step (40 px, or an icon with its invisible 7 px
+  screen it visits (`uiBlurCount()`) and, since UI-6b, fails above 3. Since the UI checks session after UI-18 the
+  counter walks shadow trees and reads `::before`/`::after`, so the top and bottom bars' glass counts too; the budget
+  is 3 besides the two bars (`uiBlurCount({bars:false})`), both numbers logged, and `BLUR_CEILING` is empty. Smoke's
+  palette step (UI-12's, written in that session) opens the walk, Team, Guide and profile screens in Field Guide,
+  Copper Grove+ and Bureau Night, light and dark: no page errors, the surface colour changes, and no text under 3:1
+  against what is behind it (a note under AA; glass read as its fill over mid-grey); it adds about 110 s to smoke. The tap-target step (40 px, or an icon with its invisible 7 px
   margin) also opens a Field Guide entry and Settings' Display and Help tabs since UI-6b. The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.
