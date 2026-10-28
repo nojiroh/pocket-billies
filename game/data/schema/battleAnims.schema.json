@@ -3,7 +3,7 @@
  "$id": "battleAnims.schema.json",
  "title": "game/data/battleAnims.json: how the battle plays a move, as data (VFX-8; logic/battle-anims.js, battle-anim-run.js)",
  "type": "object",
- "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "colors", "defaults", "intro", "families", "scenes", "sprites", "ramps", "iconSprites"],
+ "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "colors", "defaults", "intro", "families", "scenes", "sprites", "ramps", "iconSprites", "events"],
  "additionalProperties": false,
  "properties": {
   "about": {"type": "string"},
@@ -97,11 +97,38 @@
     "additionalProperties": false,
     "properties": {"sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}}
    }
+  },
+  "eventsAbout": {"type": "string"},
+  "events": {
+   "description": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js)",
+   "type": "object",
+   "required": ["pulseMs", "cells", "brn", "par", "slp", "confused", "broken", "stat", "protect", "shield", "soaked", "fork", "delayed", "stones", "glint"],
+   "additionalProperties": false,
+   "properties": {
+    "pulseMs": {"description": "ms a lasting loop pulses once a turn under Calm", "type": "number", "minimum": 0},
+    "cells": {"description": "the most lasting-look particles at once, by quality 0-3", "type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 4, "maxItems": 4},
+    "brn": {"$ref": "#/$defs/look"},
+    "par": {"$ref": "#/$defs/look"},
+    "slp": {"$ref": "#/$defs/look"},
+    "confused": {"$ref": "#/$defs/look"},
+    "broken": {"$ref": "#/$defs/look"},
+    "soaked": {"$ref": "#/$defs/look"},
+    "fork": {"$ref": "#/$defs/look"},
+    "stat": {"type": "object", "required": ["up", "down", "sharply"], "additionalProperties": false, "properties": {"up": {"$ref": "#/$defs/lookBurst"}, "down": {"$ref": "#/$defs/lookBurst"}, "sharply": {"description": "times as many chevrons for 2 stages or more", "type": "number", "minimum": 1}}},
+    "protect": {"$ref": "#/$defs/lookDome"},
+    "shield": {"$ref": "#/$defs/lookDome"},
+    "delayed": {"type": "object", "required": ["sprite", "ramp", "y"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "y": {"description": "m up", "type": "number", "minimum": 0}}},
+    "stones": {"type": "object", "required": ["sprite", "ramp", "n", "r"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "n": {"type": "integer", "minimum": 1}, "r": {"description": "m", "type": "number", "minimum": 0}, "frame": {"type": "integer", "minimum": 0}, "glint": {"$ref": "#/$defs/lookBurst"}}},
+    "glint": {"type": "object", "required": ["sprite", "life", "gapMs", "ramps"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "life": {"description": "ms", "type": "number", "minimum": 0}, "k": {"type": "integer", "minimum": 1}, "gapMs": {"description": "ms between two in one line", "type": "number", "minimum": 0}, "ramps": {"type": "object", "additionalProperties": {"type": "string"}}}}
+   }
   }
  },
  "$defs": {
   "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
   "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+  "lookBurst": {"description": "VFX-14: a burst of strips (eventsAbout)", "type": "object", "required": ["sprite"], "additionalProperties": false, "properties": {"sprite": {"$ref": "#/$defs/id"}, "ramp": {"description": "a ramps id, or type (the move's type)", "type": "string"}, "n": {"type": "integer", "minimum": 1}, "every": {"description": "ms apart", "type": "number", "minimum": 0}, "life": {"description": "ms each lives", "type": "number", "minimum": 0}, "vy": {"description": "m/s up (down below 0)", "type": "number"}, "spread": {"description": "m across", "type": "number", "minimum": 0}, "y": {"enum": ["feet", "mid", "top"]}, "k": {"description": "scale, a whole number", "type": "integer", "minimum": 1}, "frame": {"description": "a fixed frame (else it plays)", "type": "integer", "minimum": 0}, "flip": {"type": "boolean"}, "glow": {"type": "boolean"}}},
+  "look": {"description": "VFX-14: a status's or a short effect's look (eventsAbout)", "type": "object", "additionalProperties": false, "properties": {"about": {"type": "string"}, "tint": {"$ref": "#/$defs/hex"}, "tintA": {"type": "number", "minimum": 0, "maximum": 1}, "start": {"$ref": "#/$defs/lookBurst"}, "loop": {"$ref": "#/$defs/lookBurst"}, "tick": {"$ref": "#/$defs/lookBurst"}, "end": {"$ref": "#/$defs/lookBurst"}, "bonk": {"$ref": "#/$defs/lookBurst"}, "flicker": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1}, "minItems": 1}, "hold": {"description": "ms a lost turn's frame is held", "type": "number", "minimum": 0}, "edge": {"type": "object", "required": ["color", "a", "cells"], "additionalProperties": false, "properties": {"color": {"$ref": "#/$defs/hex"}, "a": {"type": "number", "minimum": 0, "maximum": 1}, "cells": {"type": "integer", "minimum": 1}}}, "idle": {"type": "object", "additionalProperties": false, "properties": {"slow": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "sink": {"description": "px lower", "type": "number", "minimum": 0}, "droop": {"type": "number"}}}, "hop": {"description": "px a pop hops", "type": "number", "minimum": 0}, "orbit": {"type": "object", "required": ["n", "r", "turnMs"], "additionalProperties": false, "properties": {"n": {"type": "integer", "minimum": 1}, "r": {"description": "half-heights", "type": "number", "minimum": 0}, "turnMs": {"type": "number", "exclusiveMinimum": 0}}}, "dx": {"description": "m", "type": "number", "minimum": 0}, "fade": {"type": "number", "minimum": 0, "maximum": 1}}},
+  "lookDome": {"description": "VFX-14: discs of hex cells round a Billie (protect, shield)", "type": "object", "required": ["sprite", "ramp", "frame", "flashFrame", "crackFrame", "cells", "r", "h", "flashMs"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "frame": {"type": "integer", "minimum": 0}, "flashFrame": {"type": "integer", "minimum": 0}, "crackFrame": {"type": "integer", "minimum": 0}, "cells": {"description": "cells by quality 0-3", "type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 4, "maxItems": 4}, "r": {"description": "half-heights out", "type": "number", "minimum": 0}, "h": {"description": "half-heights up", "type": "number", "minimum": 0}, "flashMs": {"description": "ms", "type": "number", "minimum": 0}, "end": {"$ref": "#/$defs/lookBurst"}}},
   "timeline": {
    "type": "object",
    "required": ["dur", "hit", "steps"],

@@ -2583,6 +2583,9 @@ export interface BattleAnimsData {
   ramps: Record<string, BattleAnimRamp>;
   /** VFX-10: icons.png particles drawn with a strip instead, and the ramp an untyped one takes */
   iconSprites: Record<string, { sprite: DataId; ramp: string }>;
+  eventsAbout?: string;
+  /** VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js) */
+  events: BattleAnimEvents;
 }
 /** VFX-10: a strip: frames side by side in 8 greys (index 7 the white core) */
 export interface BattleAnimSprite {
@@ -2608,6 +2611,98 @@ export interface BattleAnimRamp {
   ramp: string | Color[];
   /** a hex, or 'type' (the type's glow) */
   light: Color | 'type';
+}
+/** VFX-14: a burst of strips (battleAnims.json eventsAbout) */
+export interface BattleLookBurst {
+  sprite: DataId;
+  /** a ramps id, or 'type' (the move's type) */
+  ramp?: string;
+  n?: number;
+  /** ms apart (a loop: one every ms) */
+  every?: number;
+  /** ms each lives */
+  life?: number;
+  /** m/s up (down below 0) */
+  vy?: number;
+  /** m across */
+  spread?: number;
+  y?: 'feet' | 'mid' | 'top';
+  /** scale, a whole number */
+  k?: number;
+  /** a fixed frame (else it plays) */
+  frame?: number;
+  flip?: boolean;
+  glow?: boolean;
+}
+/** VFX-14: a status's or a short effect's look */
+export interface BattleLook {
+  about?: string;
+  /** the sprite's tint under Reduced motion */
+  tint?: Color;
+  tintA?: number;
+  start?: BattleLookBurst;
+  loop?: BattleLookBurst;
+  tick?: BattleLookBurst;
+  end?: BattleLookBurst;
+  bonk?: BattleLookBurst;
+  /** a burn's warm flicker: an amount per 12 fps cell */
+  flicker?: number[];
+  /** a lost turn's held frame, ms */
+  hold?: number;
+  edge?: { color: Color; a: number; cells: number };
+  /** asleep: slow x the clock, sink px lower, the head droops */
+  idle?: { slow?: number; sink?: number; droop?: number };
+  /** px a pop hops */
+  hop?: number;
+  /** stars round the head: r in half-heights, a turn in turnMs */
+  orbit?: { n: number; r: number; turnMs: number };
+  /** Fork's copy: dx m aside, fade its strength */
+  dx?: number;
+  fade?: number;
+}
+/** VFX-14: discs of hex cells round a Billie (Protect, the shield) */
+export interface BattleLookDome {
+  about?: string;
+  sprite: DataId;
+  ramp: string;
+  frame: number;
+  flashFrame: number;
+  crackFrame: number;
+  /** cells by quality 0-3 */
+  cells: [number, number, number, number];
+  /** half-heights out and up */
+  r: number;
+  h: number;
+  flashMs: number;
+  end?: BattleLookBurst;
+}
+/** VFX-14: battleAnims.json events */
+export interface BattleAnimEvents {
+  /** ms a lasting loop pulses once a turn under Calm */
+  pulseMs: number;
+  /** the most lasting-look particles at once, by quality 0-3 */
+  cells: [number, number, number, number];
+  brn: BattleLook;
+  par: BattleLook;
+  slp: BattleLook;
+  confused: BattleLook;
+  broken: BattleLook;
+  soaked: BattleLook;
+  fork: BattleLook;
+  stat: { up: BattleLookBurst; down: BattleLookBurst; sharply: number };
+  protect: BattleLookDome;
+  shield: BattleLookDome;
+  delayed: { about?: string; sprite: DataId; ramp: string; y: number };
+  stones: {
+    about?: string;
+    sprite: DataId;
+    ramp: string;
+    n: number;
+    r: number;
+    frame?: number;
+    glint?: BattleLookBurst;
+  };
+  glint: { about?: string; sprite: DataId; life: number; k?: number; gapMs: number; ramps: Record<string, string> };
 }
 export interface BattleAnimTimeline {
   dur: number;
