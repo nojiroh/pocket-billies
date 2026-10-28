@@ -76,7 +76,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -543,8 +543,9 @@ const FIELD_WEATHER_ICONS = {
    is on screen: the strip waits for the event, then reads the field when the turn is over) */
 const fieldUi = { stones: [false, false], mk: null };
 function fieldChipHTML(icon, words, turns, cls) {
-  /* a 40 px button (the tap rule) around a 24 px chip */
-  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${uiIconHTML(icon, 14)}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
+  /* a 40 px button (the tap rule) around a 24 px chip; `icon` is an icon set name or a glyph's markup (UI-13) */
+  const face = icon.startsWith('<') ? icon : uiIconHTML(icon, 14);
+  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${face}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
 }
 function fieldStripUpdate(mk) {
   const el = $('#fsRow');
@@ -571,7 +572,7 @@ function fieldStripUpdate(mk) {
             0,
             'wx'
           )
-        : '') + (m ? fieldChipHTML('bolt', `${shockName()}: ${plural(m.n, 'turn')} left`, m.n, 'warn') : '');
+        : '') + (m ? fieldChipHTML(glyphHTML('effect', 'sandstorm', 14, 'fill'), `${shockName()}: ${plural(m.n, 'turn')} left`, m.n, 'warn') : '');
   const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
   if (el.innerHTML !== h) el.innerHTML = h;
   $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
