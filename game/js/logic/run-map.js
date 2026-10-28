@@ -39,7 +39,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
-import { rngFrom } from './rng.js';
+import { rngFirst, rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
 import { runZoneOf } from './run-region.js';
@@ -266,7 +266,7 @@ export function runMapGrid(seed, nodes, nodeTypes = {}, want = []) {
   const drawn = /** @type {Map<string, number>} */ (new Map()),
     draw = (/** @type {string} */ k) => {
       let v = drawn.get(k);
-      if (v === undefined) drawn.set(k, (v = rngFrom(seed, `map|grid|${k}`).next()));
+      if (v === undefined) drawn.set(k, (v = rngFirst(seed, `map|grid|${k}`)));
       return v;
     };
   /** the spots node i of size [w, h] can take, best first @param {number} i @param {number[]} size */
