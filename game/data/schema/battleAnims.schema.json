@@ -1,0 +1,92 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "battleAnims.schema.json",
+ "title": "game/data/battleAnims.json: how the battle plays a move, as data (VFX-8; logic/battle-anims.js, battle-anim-run.js)",
+ "type": "object",
+ "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "colors", "defaults", "intro", "families", "scenes"],
+ "additionalProperties": false,
+ "properties": {
+  "about": {"type": "string"},
+  "bigPower": {"description": "a move of this power or more passes the power80 gate (a handheld wobble, the camera sweep)", "type": "number", "minimum": 0},
+  "longPower": {"description": "a move of this power or more (and a signature scene) may run extraMs longer than its default family", "type": "number", "minimum": 0},
+  "extraMs": {"description": "the most a long move or a scene may add (none under Reduced motion), stage ms", "type": "number", "minimum": 0, "maximum": 500},
+  "shortSpeed": {"description": "at this battle speed or more a family's short variant plays", "type": "number", "exclusiveMinimum": 1},
+  "maxMs": {
+   "description": "the longest a move may play, stage ms, by outcome and category (the times before VFX-8); a long move or a scene adds at most extraMs",
+   "type": "object",
+   "required": ["H", "S", "X", "miss", "protect", "blocked"],
+   "additionalProperties": false,
+   "properties": {
+    "H": {"type": "number", "minimum": 0}, "S": {"type": "number", "minimum": 0}, "X": {"type": "number", "minimum": 0},
+    "miss": {"type": "number", "minimum": 0}, "protect": {"type": "number", "minimum": 0}, "blocked": {"type": "number", "minimum": 0}
+   }
+  },
+  "flashes": {
+   "description": "the full-screen flash limiter (WCAG 2.3.1): at most perSecond in any second, gapMs apart, none whose red share R/(R+G+B) is redShare or more; a flash held back becomes a sprite flash",
+   "type": "object",
+   "required": ["perSecond", "gapMs", "redShare"],
+   "additionalProperties": false,
+   "properties": {
+    "perSecond": {"type": "integer", "minimum": 1, "maximum": 3},
+    "gapMs": {"type": "number", "minimum": 333},
+    "redShare": {"type": "number", "exclusiveMinimum": 0.33, "maximum": 1}
+   }
+  },
+  "colors": {"description": "named colours steps use (or `type`: the move type's)", "type": "object", "additionalProperties": {"$ref": "#/$defs/hex"}},
+  "defaults": {
+   "description": "the family for each outcome and category when a move names none",
+   "type": "object",
+   "required": ["H", "S", "X", "miss", "protect", "blocked"],
+   "additionalProperties": false,
+   "properties": {
+    "H": {"$ref": "#/$defs/id"}, "S": {"$ref": "#/$defs/id"}, "X": {"$ref": "#/$defs/id"},
+    "miss": {"$ref": "#/$defs/id"}, "protect": {"$ref": "#/$defs/id"}, "blocked": {"$ref": "#/$defs/id"}
+   }
+  },
+  "intro": {"description": "steps every move plays first", "type": "array", "items": {"$ref": "#/$defs/step"}},
+  "families": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}},
+  "scenes": {"description": "signature scenes by id (VFX-17); a family's shape", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}}
+ },
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+  "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+  "timeline": {
+   "type": "object",
+   "required": ["dur", "hit", "steps"],
+   "properties": {
+    "dur": {"description": "stage ms until the line may move on", "type": "number", "minimum": 0},
+    "hit": {"description": "stage ms when the plates repaint (999: no hit)", "type": "number", "minimum": 0},
+    "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}}
+   }
+  },
+  "family": {
+   "allOf": [{"$ref": "#/$defs/timeline"}],
+   "type": "object",
+   "properties": {
+    "about": {"type": "string"},
+    "dur": true, "hit": true, "steps": true,
+    "short": {"description": "the Faster variant", "$ref": "#/$defs/timeline"}
+   },
+   "additionalProperties": false
+  },
+  "step": {
+   "type": "object",
+   "required": ["do"],
+   "properties": {
+    "do": {"enum": ["focus", "camAt", "camTo", "camHome", "toTarget", "handheld", "action", "lunge", "dust", "ring", "groundRing", "beam", "lob", "fling", "converge", "blink", "dodge", "pop", "hit"]},
+    "at": {"description": "stage ms after the move starts (missing: at once)", "type": "number", "minimum": 0},
+    "n": {"description": "repeats (every ms apart)", "type": "integer", "minimum": 1},
+    "every": {"type": "number", "minimum": 0},
+    "if": {"type": "array", "items": {"enum": ["H", "S", "X", "self", "protect", "dmg", "landed", "power80", "gl", "motion", "!H", "!S", "!X", "!self", "!protect", "!dmg", "!landed", "!power80", "!gl", "!motion"]}},
+    "types": {"type": "array", "items": {"type": "string"}},
+    "on": {"enum": ["attacker", "target", "subject", "wide"]},
+    "color": {"type": "string"},
+    "pop": {"enum": ["miss", "hedged"]},
+    "pose": {"type": "string"},
+    "ease": {"type": "string"},
+    "cam": {"type": "object", "additionalProperties": {"type": "number"}}
+   },
+   "additionalProperties": {"type": "number"}
+  }
+ }
+}

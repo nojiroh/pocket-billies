@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
+  battleFxPass,
   buildingItems,
   buildingState,
   chimneySmoke,
@@ -784,27 +785,16 @@ export function effectsPass(C, items, X, dark, t, dt) {
       quad('smoke', 1, q.x, gy + q.y + 0.1, q.z, 0.25 + q.life * 0.6, 0.25 + q.life * 0.6, a * 0.35, [0.95, 0.9, 0.8]);
   }
   /* bright cores, added in HDR: the bloom spreads them into soft glows */
-  /* battle move effects as sprites in the world: hidden behind things, blurred by depth, glowing ones bloom */
-  const BP = walkRenderer.bt && walkRenderer.bt.parts;
-  if (BP && BP.length) {
-    gl.uniform1f(U.uLitFx, 0);
-    gl.uniform1f(U.uGlow, 0);
-    gl.uniform4f(U.uUV, 0, 0, 1, 1);
-    for (const pass of [0, 1]) {
-      if (pass) gl.blendFunc(gl.ONE, gl.ONE);
-      for (const q of BP) {
-        if (!!q.glow !== !!pass) continue;
-        const T = imageTexture(q.im, { noNormal: true });
-        if (!T) continue;
-        gl.bindTexture(gl.TEXTURE_2D, T.t);
-        gl.uniform3f(U.uP, q.x, q.y + worldCurveDrop(q.x, q.z), q.z);
-        gl.uniform2f(U.uS, q.w, q.h);
-        const k = pass ? 1.6 : 1;
-        gl.uniform4f(U.uCol, k, k, k, q.a);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-      }
-    }
+  /* VFX-9: the battle's particles in one pool, two draws (walk/battle-fx.js); the fx program in use again after */
+  const BT = walkRenderer.bt;
+  if (BT && BT.fx && BT.fx.length && battleFxPass(C, BT.fx, X)) {
+    gl.useProgram(p.p);
+    bindQuad();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.enable(gl.DEPTH_TEST);
   }
   gl.blendFunc(gl.ONE, gl.ONE);
   gl.uniform1f(U.uGlow, 1);
