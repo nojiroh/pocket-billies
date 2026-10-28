@@ -472,15 +472,19 @@ export function soundEffect(name, o = {}) {
       uiSound('select');
       break;
     case 'blip': {
+      /* DL-2: the voice follows the line's style: a shout higher and louder, a whisper softer; a [big] letter an accent
+         (a thought never blips: talk.js) */
+      const loud = o.style === 'shout' ? 1.5 : o.style === 'whisper' ? 0.45 : o.big ? 1.3 : 1,
+        up = o.style === 'shout' ? 5 : o.big ? 2 : 0;
       if (o.who === 'kappi') {
         /* Kappi, a capybara: a low, soft, falling note with a small click in front, like a capybara's purr and click */
-        synthNoise(F, { t, dur: 0.012, vol: 0.03, bp: 3200, q: 1.4 });
+        synthNoise(F, { t, dur: 0.012, vol: 0.03 * loud, bp: 3200, q: 1.4 });
         synthVoice(F, {
           type: 'triangle',
-          freq: midiToFrequency(53 + [0, 2, 3][Math.floor(Math.random() * 3)]),
+          freq: midiToFrequency(53 + up + [0, 2, 3][Math.floor(Math.random() * 3)]),
           t: t + 0.008,
           dur: 0.05,
-          vol: 0.07,
+          vol: 0.07 * loud,
           r: 0.03,
           slide: 0.88,
           cut: 1400,
@@ -493,10 +497,10 @@ export function soundEffect(name, o = {}) {
         o.who === 'chosen' ? 64 : o.who === 'me' ? 67 : /^folk/.test(o.who || '') ? 62 + (h % 10) : 60 + (h % 14);
       synthVoice(F, {
         type: 'p25',
-        freq: midiToFrequency(base + [0, 2, 4, 7][Math.floor(Math.random() * 4)]),
+        freq: midiToFrequency(base + up + [0, 2, 4, 7][Math.floor(Math.random() * 4)]),
         t,
         dur: 0.035,
-        vol: 0.045,
+        vol: 0.045 * loud,
         r: 0.02,
       });
       break;
