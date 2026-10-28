@@ -81,12 +81,12 @@
    ],
    "options": [
     {
-     "text": "Fill it in",
+     "text": "File a transfer",
      "then": [
       "It takes ages. Your team naps through most of it, badly.",
       "hurt 0.1",
-      "Clerk: Stamped. Here is your complimentary Found Item.",
-      "loot common"
+      "Clerk: Stamped. And a Form 99-A, Change of Ownership. Whose ownership? It does not say. That is the beauty of it.",
+      "give transfer"
      ]
     },
     {
@@ -312,13 +312,14 @@
      "then": [
       "Agent: Unregistered clones. I will have to inspect them. Personally.",
       "foe bureau_clerk",
-      "Agent: Everything appears to be in order. Suspiciously in order. Take this and move along.",
+      "Agent: Everything appears to be in order. Suspiciously in order. Sign here, and here. Keep the copy.",
+      "give transfer",
       "reward"
      ]
     },
     {"text":"Walk on","then":["Agent: We'll be in touch."]}
    ],
-   "weight": 0
+   "weight": 1
   },
   "speedrunner": {
    "title": "Speedrunner",
