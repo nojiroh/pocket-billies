@@ -274,3 +274,251 @@ test('PK-6 perkCount: a growing row shows its growth now (+0% at its start, neve
   );
   assert.equal(PK.perkCount({ perks: ['test_lvl'], perkState: { 'test_lvl/0': { v: 2 } } }, 'test_lvl', P), '+2');
 });
+
+/* ---------- the 11 Wave D Perks of perks.json ---------- */
+
+const WAVE_D = [
+  'accordion_file',
+  'photocopier',
+  'like_button',
+  'streak_tracker',
+  'selfie_stick',
+  'coil_of_rope',
+  'ten_foot_pole',
+  'rusty_key',
+  'time_card',
+  'boarding_pass',
+  'travel_pillow',
+];
+/** the rows of real Perks, as a run holding them gives them */
+const real = ids => fn('fxOfRun')({ perks: ids }, data.PERKS);
+/** a save on a run of this seed (its map made), holding these Perks */
+function runSave(perkIds, sp = ofType('Water')) {
+  reseed(3);
+  const s = startedSave(sp, 30),
+    G = GAME_DATA;
+  s.run = modules['run-state'].newRun('WAVEDSEED1', 1, 1, { team: [] });
+  s.run.perks = perkIds;
+  modules['run-map'].runMapStart(s.run, { nodeTypes: G.nodeTypes, biomes: G.biomes, rules: G.rules.run });
+  return s;
+}
+/** the team's HP as shares (the one Billie of a started save, and any added) */
+const hurt = (s, share) => {
+  for (const m of s.team) m.hp = Math.max(1, Math.floor(fn('maxHp')(m) * share));
+};
+const full = s => s.team.every(m => m.hp === fn('maxHp')(m));
+/** a growing damage row's factor now, as the battle reads it (fxAt with the run's marks) */
+const dealNow = (s, id) =>
+  modules.effects
+    .fxAt(real(s.run.perks), {}, { run: s.run.perkState || {} })
+    .filter(f => f.src === id && f.kind === 'damage')
+    .reduce((a, f) => a * f.mult, 1);
+
+test('PK-6 Wave D: all 11 are in perks.json after Wave C, each with a picture', () => {
+  assert.deepEqual(Object.keys(data.PERKS).slice(55, 66), WAVE_D);
+  for (const id of WAVE_D) assert.equal(data.PERKS[id].img, `perks/${id}.svg`);
+  assert.equal(data.PERKS.coil_of_rope.needs, 'side');
+  assert.equal(data.PERKS.rusty_key.needs, 'side');
+  assert.deepEqual(WAVE_D.map(id => data.PERKS[id].rarity).sort(), [
+    'common',
+    'common',
+    'common',
+    'common',
+    'common',
+    'rare',
+    'rare',
+    'rare',
+    'uncommon',
+    'uncommon',
+    'uncommon',
+  ]);
+});
+
+test('PK-6 Accordion File: hold 7 Perks; a Photocopier just below it makes 8', () => {
+  const PK = modules.perks;
+  assert.equal(PK.perkCap(runOf(), RULE, data.PERKS), 6);
+  assert.equal(PK.perkCap(runOf('accordion_file'), RULE, data.PERKS), 7);
+  assert.equal(PK.perkCap(runOf('accordion_file', 'photocopier'), RULE, data.PERKS), 8);
+  assert.equal(PK.perkCap(runOf('photocopier', 'accordion_file'), RULE, data.PERKS), 7);
+});
+
+test('PK-6 Like Button and Streak Tracker over a simulated run: growth by wins, the streak reset by a faint', () => {
+  const L = modules['run-loop'],
+    s = runSave(['like_button', 'streak_tracker', 'photocopier']);
+  const win = noFaint => L.runFxMoment(s, data.PERKS, 'win', { foe: ['wild'], noFaint });
+  for (let k = 0; k < 3; k++) win(true);
+  assert.equal(dealNow(s, 'like_button').toFixed(2), '1.03');
+  assert.equal(dealNow(s, 'streak_tracker').toFixed(2), '1.15');
+  /* the copier copies the Streak Tracker just above it, growing from when it came: here, from the start */
+  assert.equal(dealNow(s, 'photocopier').toFixed(2), '1.15');
+  assert.equal(modules.perks.perkCount(s.run, 'streak_tracker', data.PERKS), '+15%');
+  assert.equal(modules.perks.perkCount(s.run, 'photocopier', data.PERKS), 'copies Streak Tracker · +15%');
+  /* a win with a faint: Like Button grows, the streak doesn't */
+  win(false);
+  assert.equal(dealNow(s, 'like_button').toFixed(2), '1.04');
+  assert.equal(dealNow(s, 'streak_tracker').toFixed(2), '1.15');
+  /* a faint (the battle's faint moment, on the run's marks) starts the streak over */
+  L.runFxMoment(s, data.PERKS, 'faint');
+  assert.equal(dealNow(s, 'streak_tracker'), 1);
+  assert.equal(dealNow(s, 'like_button').toFixed(2), '1.04');
+  /* the tops: 25% each */
+  for (let k = 0; k < 40; k++) win(true);
+  assert.equal(dealNow(s, 'like_button').toFixed(2), '1.25');
+  assert.equal(dealNow(s, 'streak_tracker').toFixed(2), '1.25');
+  assert.equal(modules.perks.perkCount(s.run, 'like_button', data.PERKS), '+25%');
+});
+
+test('PK-6 Like Button and Streak Tracker in real battles: a won battle grows them, a Billie fainting resets the streak', () => {
+  const s = runSave(['like_button', 'streak_tracker']),
+    team = [ofType('Fire'), ofType('Water')];
+  for (const sp of team.slice(1)) s.team.push(fn('makeBilly')(sp, 30));
+  /* a whole battle with the run's marks, ended as battleSettle ends it (its win moment and noFaint) */
+  const fight = (seed, lvl) => {
+    reseed(5);
+    const foe = fn('makeBilly')(ofType('Grass'), lvl);
+    hooks.provide({ saveData: s });
+    assert.ok(
+      fn('newBattle')('wild', [foe], { fmt: 'single', seed, fx: real(s.run.perks), perkState: s.run.perkState })
+    );
+    const b = hooks.activeBattle;
+    for (let t = 0; t < 200 && !b.over; t++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0),
+        mid = m.moves.find(id => data.MOVES[id] && data.MOVES[id].p > 0) || m.moves[0];
+      fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], b);
+    }
+    if (b.over === 'win')
+      modules['run-loop'].runFxMoment(s, data.PERKS, 'win', { foe: ['wild'], noFaint: !((b.fainted || 0) > 0) });
+    return b;
+  };
+  s.run.perkState = {};
+  const b1 = fight('wave-d-1', 5);
+  assert.equal(b1.over, 'win');
+  assert.equal(b1.fainted || 0, 0);
+  assert.equal(dealNow(s, 'like_button').toFixed(2), '1.01');
+  assert.equal(dealNow(s, 'streak_tracker').toFixed(2), '1.05');
+  /* a hard foe: one of yours faints; the streak starts over whatever the end */
+  for (const m of s.team) m.hp = 1;
+  const b2 = fight('wave-d-2', 60);
+  assert.ok((b2.fainted || 0) > 0, 'one of yours fainted');
+  assert.equal(dealNow(s, 'streak_tracker'), 1);
+});
+
+test('PK-6 Selfie Stick: catching a Billie heals the team 10%', () => {
+  const s = runSave(['selfie_stick']);
+  hurt(s, 0.5);
+  const hp = s.team[0].hp,
+    m = modules['run-loop'].runFxMoment(s, data.PERKS, 'catch', { foe: ['wild'] });
+  assert.ok(m.hp > 0 && s.team[0].hp > hp, `${hp} -> ${s.team[0].hp}`);
+  assert.equal(s.team[0].hp - hp, Math.ceil(fn('maxHp')(s.team[0]) * 0.1));
+  /* a win heals nothing */
+  const h2 = s.team[0].hp;
+  modules['run-loop'].runFxMoment(s, data.PERKS, 'win', { foe: ['wild'] });
+  assert.equal(s.team[0].hp, h2);
+});
+
+test('PK-6 Coil of Rope, Ten-Foot Pole and Rusty Key: the rope, the safe event and the find more', () => {
+  const s = runSave(['coil_of_rope', 'ten_foot_pole', 'rusty_key']);
+  assert.equal(modules['run-side'].fieldRope(s.run), true);
+  assert.equal(modules['run-loop'].runEventSafe(s, data.PERKS), 'ten_foot_pole');
+  assert.equal(modules['route-finds'].routeFindsMore(s.run), 1);
+  const t = runSave([]);
+  assert.equal(modules['run-side'].fieldRope(t.run), false);
+  assert.equal(modules['run-loop'].runEventSafe(t, data.PERKS), '');
+  assert.equal(modules['route-finds'].routeFindsMore(t.run), 0);
+});
+
+test('PK-6 Time Card: every 5th place walked into heals the team fully; the card counts', () => {
+  const L = modules['run-loop'],
+    s = runSave(['time_card']);
+  const healed = [];
+  for (let k = 0; k < 10; k++) {
+    hurt(s, 0.5);
+    L.runArriveFx(s, data.PERKS, {});
+    healed.push(full(s));
+  }
+  assert.deepEqual(healed, [false, false, false, false, true, false, false, false, false, true]);
+  L.runArriveFx(s, data.PERKS, {});
+  assert.equal(modules.perks.perkCount(s.run, 'time_card', data.PERKS), '1/5');
+});
+
+test('PK-6 Boarding Pass: taking it gives 150 Moneys and 2 Potions, once', () => {
+  const s = runSave([]),
+    PK = modules.perks;
+  s.se = 10;
+  s.items.potion = 0;
+  assert.equal(PK.perkTake(s.run, 'boarding_pass', data.PERKS, RULE, undefined, s), '');
+  assert.equal(s.se, 160);
+  assert.equal(s.items.potion, 2);
+  modules['run-loop'].runArriveFx(s, data.PERKS, {});
+  assert.equal(s.se, 160);
+});
+
+test('PK-6 Travel Pillow: walking into a town heals the team 25%; another place, nothing', () => {
+  const L = modules['run-loop'],
+    s = runSave(['travel_pillow']),
+    nodes = s.run.map.nodes,
+    town = nodes.findIndex(n => n.type === 'town'),
+    route = nodes.findIndex(n => n.type === 'route');
+  assert.ok(town >= 0 && route >= 0);
+  const RM = modules['run-map'];
+  s.trip = { node: RM.runWorldNode(route), plan: [] };
+  hurt(s, 0.5);
+  let hp = s.team[0].hp;
+  L.runArriveFx(s, data.PERKS, {});
+  assert.equal(s.team[0].hp, hp);
+  s.trip = { node: RM.runWorldNode(town), plan: [] };
+  L.runArriveFx(s, data.PERKS, {});
+  assert.equal(s.team[0].hp - hp, Math.ceil(fn('maxHp')(s.team[0]) * 0.25));
+});
+
+test('PK-6 all Wave A, B, C and D Perks at once: whole battles end, every number finite, the stream replayable', () => {
+  const ids = Object.keys(data.PERKS).slice(13, 66);
+  assert.equal(ids.length, 53);
+  const team = [ofType('Fire'), ofType('Water'), ofType('Grass')];
+  const play = seed => {
+    reseed(7);
+    const s = startedSave(team[0], 20);
+    for (const sp of team.slice(1)) s.team.push(fn('makeBilly')(sp, 20));
+    const foe = fn('makeBilly')(ofType('Grass'), 20);
+    assert.ok(fn('newBattle')('wild', [foe], { fmt: 'single', seed, fx: real(ids), perkState: {} }));
+    const b = hooks.activeBattle,
+      out = [];
+    for (let t = 0; t < 200 && !b.over; t++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0),
+        mid = m.moves.find(id => data.MOVES[id] && data.MOVES[id].p > 0) || m.moves[0];
+      fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], b);
+      for (const side of b.sides)
+        for (const q of side.team) assert.ok(Number.isInteger(q.hp) && q.hp >= 0, `hp ${q.hp}`);
+      out.push(b.events.length);
+    }
+    assert.ok(b.over, `${seed}: over within 200 turns`);
+    return [b.over, ...out].join();
+  };
+  for (const seed of ['all-abcd-a', 'all-abcd-b', 'all-abcd-c']) assert.equal(play(seed), play(seed), seed);
+  /* the run's moments and rules, many times over: finite */
+  const s = runSave(ids),
+    L = modules['run-loop'];
+  s.se = 500;
+  for (let i = 0; i < 12; i++) {
+    L.runArriveFx(s, data.PERKS, {});
+    L.runBuyFx(s, data.PERKS, 50);
+    L.runFxMoment(s, data.PERKS, 'win', { foe: ['wild'], noFaint: true });
+    L.runFxMoment(s, data.PERKS, 'catch', { foe: ['wild'] });
+  }
+  assert.ok(Number.isInteger(s.se) && s.se > 0, String(s.se));
+  for (const r of modules.effects.FX_RULES) assert.ok(Number.isInteger(modules.effects.fxRunRule(s.run, r)), r);
+  for (const f of modules.effects.fxAt(real(ids), {}, { run: s.run.perkState }))
+    for (const k of ['mult', 'share', 'n', 'stages']) if (k in f) assert.ok(Number.isFinite(f[k]), `${f.src} ${k}`);
+});
