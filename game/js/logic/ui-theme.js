@@ -305,6 +305,9 @@ export const UI_SHAPE_FAMILIES = {
   // the dialogue box: a panel with a speech tail on its top edge, over the portrait; the tail is 1.5 cutLg high and
   // its upright side stands x from the left. Its layers reach up over the tail (dialogue.css: top: -tail)
   bubble: { kind: 'cut', size: 'cutLg', corners: ['tl', 'br'], radius: 22, tail: { x: 52, k: 1.5 } },
+  // DL-3: skins' own bubbles (talkSkins.json): Kappi's soft rounded one with the tail, narration's tail-less note
+  bubbleSoft: { kind: 'rounded', size: 'cutLg', corners: [], radius: 22, tail: { x: 52, k: 1.5 } },
+  bubbleNote: { kind: 'cut', size: 'cutMd', corners: ['tl', 'tr', 'br', 'bl'], radius: 12, lift: true },
   // DL-3: a shouted line's burst: a seeded zigzag (jag) whose top spike is the tail; a few variants held still, one
   // picked by the line (talk.js); its layers start the tail's height above the box like the bubble's
   bubbleShout: {

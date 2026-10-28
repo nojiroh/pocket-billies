@@ -1,0 +1,23 @@
+{
+ "about": "Dialogue track DL-3: each character's own speech bubble (docs/phases/dialogue-track.md, 'Every character has their own bubble'; logic/talk-skins.js, css/talk-skins.css). A speaker id (people, story.json speakers) or a run trainer's class (events.json classes) names a skin; anyone else wears the default. A skin: its shape family (logic/ui-theme.js UI_SHAPE_FAMILIES; a shout or a thought takes its own shape over it), a slant of the frame in degrees, how strongly the bubble tilts (0-2, times the Motion dial), its entrance (pop: the spring; soft: slower and gentler; still: a fade), its blip (voice: the speaker's pitch; typewriter: a key's clack; calm: softer) and its decorations (talk-skins.css draws them).",
+ "default": "folk",
+ "skins": {
+  "folk": {"name":"Townsfolk and trainers","family":"bubble","entrance":"pop","blip":"voice","deco":["accent"]},
+  "chosen": {"name":"Professor Chosen","family":"bubble","entrance":"pop","blip":"voice","deco":["gold","shine","laurel"]},
+  "kappi": {"name":"Kappi the Wise","family":"bubbleSoft","entrance":"soft","blip":"calm","deco":["leaf"]},
+  "blake": {
+   "name": "Blake",
+   "family": "bubble",
+   "slant": -6,
+   "tilt": 1.4,
+   "entrance": "pop",
+   "blip": "voice",
+   "deco": ["halftone","hardShadow"]
+  },
+  "bureau": {"name":"The Bureau","family":"bubble","entrance":"pop","blip":"typewriter","deco":["paper","form","stamp"]},
+  "you": {"name":"You (no lines yet)","family":"bubble","entrance":"pop","blip":"voice","deco":["neon"]},
+  "narration": {"name":"Narration (field moves, prompts)","family":"bubbleNote","tilt":0,"entrance":"still","blip":"voice","deco":[]}
+ },
+ "speakers": {"chosen":"chosen","kappi":"kappi","chad":"blake","me":"narration"},
+ "classes": {"bureau_clerk":"bureau","bureau_reclaimer":"bureau"}
+}

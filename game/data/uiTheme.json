@@ -81,6 +81,8 @@
     "tab": {"kind":"cut","size":"cutMd","corners":["tl","tr"],"radius":12},
     "toast": {"kind":"cut","size":"cutMd","radius":18},
     "bubble": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22},
+    "bubbleSoft": {"kind":"rounded","size":"cutLg","corners":[],"radius":22},
+    "bubbleNote": {"kind":"cut","size":"cutMd","corners":["tl","tr","br","bl"],"radius":12},
     "bubbleShout": {"kind":"jag","size":"cutLg","corners":[],"radius":22,"depth":9,"spikes":8},
     "bubbleThink": {"kind":"rounded","size":"cutLg","corners":[],"radius":30}
    }

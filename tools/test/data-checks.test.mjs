@@ -43,6 +43,7 @@ const FAMILIES = [
   'dataPerks',
   'dataEvents',
   'dataBanter',
+  'dataTalkSkins',
   'dataRewards',
   'dataCurrencies',
   'dataBuildings',
@@ -187,6 +188,18 @@ test('a planted fault is found by its family, in the file check-data names', () 
     D = copy();
     plant(D.banter);
     found('dataBanter', D, text);
+  }
+  // DL-3: the talk skins: a speaker or a class naming no skin, nobody, or no class
+  for (const [plant, text] of [
+    [T => (T.speakers.chosen = 'gold'), 'speakers.chosen: no skin "gold"'],
+    [T => (T.speakers.nobody_here = 'folk'), 'speakers.nobody_here: nobody of that id'],
+    [T => (T.classes.bureau_clerk = 'gold'), 'classes.bureau_clerk: no skin "gold"'],
+    [T => (T.classes.no_class = 'bureau'), 'classes.no_class: no trainer class of that id'],
+    [T => (T.default = 'gold'), 'default: no skin "gold"'],
+  ]) {
+    D = copy();
+    plant(D.talkSkins);
+    found('dataTalkSkins', D, text);
   }
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();

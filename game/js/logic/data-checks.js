@@ -168,6 +168,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
   // @ts-expect-error -- replaced on purpose
+  dataTalkSkins: [() => dataTalkSkins, v => (dataTalkSkins = v)],
+  // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
@@ -2075,6 +2077,31 @@ export function dataBanter(D, valid = () => true) {
   for (const id of Object.keys(R))
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
       problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
+  return out;
+}
+
+// DL-3: talkSkins.json: the schema; the default and every skin a speaker or a class names are skins; a speaker is
+// someone (people/*.json, story.json speakers, me) and a class is a run trainer's class (events.json classes)
+/** DL-3: talkSkins.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataTalkSkins(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['talkSkins.json', what]),
+    T = D.talkSkins;
+  if (!T) return [['talkSkins.json', 'missing']];
+  if (!valid('talkSkins.schema.json', T, 'talkSkins.json')) return out;
+  const skins = T.skins || {},
+    people = new Set(['me', ...Object.keys(D.people || {}), ...Object.values((D.story && D.story.speakers) || {})]),
+    classes = (D.events && D.events.classes) || {};
+  if (!skins[T.default]) problem(`default: no skin "${T.default}"`);
+  for (const [who, k] of Object.entries(/** @type {Record<string, string>} */ (T.speakers || {}))) {
+    if (!skins[k]) problem(`speakers.${who}: no skin "${k}"`);
+    if (!people.has(who)) problem(`speakers.${who}: nobody of that id (people/*.json, story.json speakers)`);
+  }
+  for (const [c, k] of Object.entries(/** @type {Record<string, string>} */ (T.classes || {}))) {
+    if (!skins[k]) problem(`classes.${c}: no skin "${k}"`);
+    if (!classes[c]) problem(`classes.${c}: no trainer class of that id (events.json classes)`);
+  }
   return out;
 }
 

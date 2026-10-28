@@ -1,0 +1,48 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "talkSkins.schema.json",
+ "title": "game/data/talkSkins.json: each character's own speech bubble (dialogue track DL-3; logic/talk-skins.js, css/talk-skins.css)",
+ "type": "object",
+ "required": ["default", "skins", "speakers", "classes"],
+ "additionalProperties": false,
+ "properties": {
+  "about": {"type": "string"},
+  "default": {"type": "string", "description": "the skin anyone without one of their own wears"},
+  "skins": {
+   "type": "object",
+   "minProperties": 1,
+   "propertyNames": {"pattern": "^[a-z][a-zA-Z0-9_]*$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "family", "entrance", "blip", "deco"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string", "description": "the Studio's name for it"},
+     "family": {"enum": ["bubble", "bubbleSoft", "bubbleNote"], "description": "its shape family (logic/ui-theme.js); a shout or a thought takes its own shape over it"},
+     "slant": {"type": "number", "minimum": -15, "maximum": 15, "description": "degrees the frame leans (a skew; the letters stay upright)"},
+     "tilt": {"type": "number", "minimum": 0, "maximum": 2, "description": "how strongly each bubble tilts, times the Motion dial (default 1; 0: never)"},
+     "entrance": {"enum": ["pop", "soft", "still"], "description": "pop: the spring from the speaker's side; soft: slower and gentler; still: a fade"},
+     "blip": {"enum": ["voice", "typewriter", "calm"], "description": "voice: the speaker's own pitch; typewriter: a key's clack; calm: softer and lower"},
+     "deco": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["accent", "gold", "shine", "laurel", "leaf", "halftone", "hardShadow", "paper", "form", "stamp", "neon"]},
+      "description": "what css/talk-skins.css draws: accent (a seeded colour per speaker), gold (edge), shine (one sweep as a bubble arrives), laurel (on the name tag), leaf (green), halftone (a dotted corner), hardShadow (an offset shadow), paper (form paper with ruled lines), form (a form number in the corner, factions.json bureau.look.forms), stamp (a line's [stamp] lands on it), neon (a dark bubble with a neon edge)"
+     }
+    }
+   }
+  },
+  "speakers": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+   "additionalProperties": {"type": "string"},
+   "description": "a speaker id (people/*.json, story.json speakers, me) and their skin"
+  },
+  "classes": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+   "additionalProperties": {"type": "string"},
+   "description": "a run trainer's class (events.json classes) and its skin: the Bureau's agents"
+  }
+ }
+}

@@ -66,6 +66,8 @@
       "tab": {"$ref": "#/$defs/familyShape"},
       "toast": {"$ref": "#/$defs/familyShape"},
       "bubble": {"$ref": "#/$defs/familyShape"},
+      "bubbleSoft": {"$ref": "#/$defs/familyShape"},
+      "bubbleNote": {"$ref": "#/$defs/familyShape"},
       "bubbleShout": {"$ref": "#/$defs/jagShape"},
       "bubbleThink": {"$ref": "#/$defs/familyShape"}
      }

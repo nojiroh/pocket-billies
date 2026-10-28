@@ -101,6 +101,8 @@ export const UI_FAMILY_LABELS = /** @type {[string, string, boolean][]} */ ([
   ['tab', 'Tabs', false],
   ['toast', 'Toasts', true],
   ['bubble', 'The dialogue bubble', false],
+  ['bubbleSoft', 'A soft bubble (Kappi)', false],
+  ['bubbleNote', 'A note (narration)', false],
   ['bubbleShout', 'A shouted line (burst)', false],
   ['bubbleThink', 'A thought (cloud)', false],
 ]);

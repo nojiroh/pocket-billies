@@ -58,6 +58,7 @@ import {
   dataShowcase,
   dataSpeciesKind,
   dataSquareRules,
+  dataTalkSkins,
   dataUnlocks,
 } from '../../game/js/logic/data-checks.js';
 import {
@@ -428,6 +429,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['relic', dataPerks],
   ['event', dataEvents],
   ['banter', dataBanter],
+  ['talk skin', dataTalkSkins],
   ['relations', dataRelations],
   ['showcase', dataShowcase],
   ['reward', dataRewards],
