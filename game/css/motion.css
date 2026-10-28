@@ -12,6 +12,9 @@
 :root {
   --m-k: 1;
   --m-loop: running;
+  /* UI-16b: the stamp's keyframes by level (a fade under Reduced), and its fall: slow at first, fast into the page */
+  --m-stamp: m-stamp;
+  --ease-stamp: cubic-bezier(0.5, 0, 0.9, 0.5);
 }
 [data-motion='calm'] {
   --m-loop: paused;
@@ -19,11 +22,13 @@
 [data-motion='reduced'] {
   --m-k: 0;
   --m-loop: paused;
+  --m-stamp: m-fade;
 }
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion]) {
     --m-k: 0;
     --m-loop: paused;
+    --m-stamp: m-fade;
   }
 }
 /* Calm: Full without idle loops (things that move with no cause: breathing, swaying, glows, the dialogue bubble's
@@ -280,6 +285,25 @@
 }
 .m-flip {
   animation: m-flip var(--m-slow) var(--spring) both;
+}
+/* UI-16b: stamp: one motion for everything stamped on (SY-3's pb-stamp, the battle's status tags): it drops from twice
+   its size, a little more turned, lands just under size at its slant (--tilt, 0 for a tag) and settles. --m-stamp is
+   m-fade under Reduced. The kit repeats the keyframes for shadow roots (ui-run-kit.js runKitMotion) */
+.m-stamp {
+  animation: var(--m-stamp) var(--m-base) var(--ease-stamp) both;
+}
+@keyframes m-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(calc(var(--tilt, 0deg) + 6deg)) scale(1.9);
+  }
+  55% {
+    opacity: var(--stamp-o, 1);
+    transform: rotate(var(--tilt, 0deg)) scale(0.94);
+  }
+  to {
+    transform: rotate(var(--tilt, 0deg)) scale(1);
+  }
 }
 @keyframes m-flip {
   from {
