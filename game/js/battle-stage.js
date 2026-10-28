@@ -63,7 +63,7 @@ import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './fra
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
-import { drawRig, rigFrame, rigFrameKey, rigParts, rigTint } from './skeleton-rig.js';
+import { drawRig, rigFrame, rigFrameKey, rigParts } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
@@ -1316,11 +1316,11 @@ export function actorBuffer(i) {
     tau = a ? battleStage.t - a.t0 : 0,
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
     t16 = Math.floor(battleStage.t / 16) * 16;
-  /* phase 20 R3: the same rig, pose, face, build, faint parts and tints as the last frame drawn here is the same
+  /* phase 20 R3: the same rig, pose, face, build, faint parts as the last frame drawn here is the same
      picture: the canvas stays, its counter too, so nothing is uploaded again */
   const key =
     rigFrameKey(R, ak, tau, t16, s.seed) +
-    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
+    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}`;
   if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
     rigStats.ms += performance.now() - t0;
     return { s, k, R, P: buf.__P, ak, buf };
@@ -1336,9 +1336,8 @@ export function actorBuffer(i) {
   const P = rigFrame(R, ak, tau, t16, s.seed);
   if (s.build) P.build = s.build;
   if (s.dim) P.dim = s.dim;
+  /* VFX-9: the white and dark flashes are laid on by the GPU (battle-3d.js battle3dHit, walk/sprites.js uHit) */
   drawRig(bx, R, P, view);
-  rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
-  rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
   buf.__R = R;
   buf.__key = key;

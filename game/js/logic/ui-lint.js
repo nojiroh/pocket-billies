@@ -94,7 +94,7 @@ export const UI_LINT_CEILING = {
   important: 153,
   zindex: 60,
   blur: 27,
-  jsColour: 633,
+  jsColour: 631,
   innerHtml: 55,
   styleAttr: 41,
 };

@@ -49,11 +49,14 @@ expose({
   BATTLE_RGB: [() => BATTLE_RGB],
   EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
   PHONE_BATTLE: [() => PHONE_BATTLE],
+  RIG_DARK: [() => RIG_DARK],
+  RIG_HITS: [() => RIG_HITS],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dEffectLights: [() => battle3dEffectLights, v => (battle3dEffectLights = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
+  battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
   battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
@@ -258,6 +261,8 @@ function battle3dFrame() {
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
+      /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
+      hit: battle3dHit(B.s, i),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -275,6 +280,7 @@ function battle3dFrame() {
         fade: g.fade * B.s.a,
         glow: g.glow,
         ghost: true,
+        hit: null,
       });
     }
     /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
@@ -439,6 +445,20 @@ function battle3dFrame() {
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
+}
+/* VFX-9: a Billie's white and dark flashes (s.white, s.dark: 0..1, white first, then dark, as rigTint laid them on
+   the picture) as one colour and amount after the light: [r, g, b, a], or null with none */
+const RIG_DARK = [12 / 255, 10 / 255, 22 / 255],
+  RIG_HITS = [];
+function battle3dHit(s, i) {
+  const w = clamp(s.white || 0, 0, 1),
+    d = clamp(s.dark || 0, 0, 1);
+  if (w <= 0.001 && d <= 0.001) return null;
+  const a = 1 - (1 - w) * (1 - d),
+    H = RIG_HITS[i] || (RIG_HITS[i] = [0, 0, 0, 0]);
+  for (let j = 0; j < 3; j++) H[j] = (w * (1 - d) + RIG_DARK[j] * d) / a;
+  H[3] = a;
+  return H;
 }
 /* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */
 const BATTLE_RGB = new Map();
