@@ -22,9 +22,10 @@ OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), RO
 TRAIN = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--train=')), 'train_greenbelt')
 PARTS = [a for a in ARGS if not a.startswith('--')] or ['depart', 'carriage', 'won', 'lost']
 # the moments (ms into the ride, train-ride.js DEPART and HOME) and what each shows
-DEPART = [(400, 'glide'), (1800, 'glide-low'), (3200, 'board'), (4800, 'lift'), (5900, 'lift-high'), (6700, 'turn'),
-          (7700, 'dash'), (8300, 'into-the-portal')]
-HOME = [(500, 'portal-opens'), (1300, 'out-of-the-portal'), (2300, 'across'), (3100, 'turn'), (4000, 'down'), (5600, 'step-off')]
+DEPART = [(400, 'glide'), (1800, 'glide-low'), (3000, 'board-street'), (4000, 'board-steps'), (5000, 'board-platform'),
+          (6600, 'lift'), (7600, 'lift-high'), (8500, 'turn'), (9600, 'dash'), (10200, 'into-the-portal')]
+HOME = [(500, 'portal-opens'), (1300, 'out-of-the-portal'), (2300, 'across'), (3100, 'turn'), (4000, 'down'),
+        (5800, 'step-off'), (7000, 'step-off-steps')]
 
 
 def settle(pg, frames=6):
