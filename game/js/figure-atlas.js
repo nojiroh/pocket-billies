@@ -39,6 +39,7 @@ import { engineContext, engineSetting } from './engine/settings.js';
 import {
   ensurePrograms,
   gpuBuffer,
+  gpuFree,
   gpuOnRestore,
   gpuSized,
   gpuState,
@@ -55,6 +56,7 @@ expose({
   FIGURE_ATLAS_FS: [() => FIGURE_ATLAS_FS],
   FIGURE_ATLAS_H: [() => FIGURE_ATLAS_H],
   FIGURE_ATLAS_KEEP: [() => FIGURE_ATLAS_KEEP],
+  FIGURE_ATLAS_MESH_BYTES: [() => FIGURE_ATLAS_MESH_BYTES],
   FIGURE_ATLAS_PROGRAMS: [() => FIGURE_ATLAS_PROGRAMS],
   FIGURE_ATLAS_W: [() => FIGURE_ATLAS_W],
   FIGURE_CELL_FS: [() => FIGURE_CELL_FS],
@@ -76,6 +78,7 @@ expose({
   figureAtlasRedrawAll: [() => figureAtlasRedrawAll, v => (figureAtlasRedrawAll = v)],
   figureAtlasReport: [() => figureAtlasReport, v => ((figureAtlasReport = v), provide({ figureAtlasReport }))],
   figureAtlasRes: [() => figureAtlasRes, v => (figureAtlasRes = v)],
+  figureAtlasTrim: [() => figureAtlasTrim, v => (figureAtlasTrim = v)],
   figureRampMake: [() => figureRampMake, v => (figureRampMake = v)],
   figureRampRows: [() => figureRampRows, v => (figureRampRows = v)],
   figureSpriteUniforms: [
@@ -95,7 +98,10 @@ const FIGURE_ATLAS_W = 2048,
   FIGURE_RAMP_ROWS = 256,
   FIGURE_RAMP_W = 8,
   /** the texture unit the sprite programs read the ramp from (0-1 the picture, 4-5 post and models, 6-13 shadows) */
-  FIGURE_RAMP_UNIT = 9;
+  FIGURE_RAMP_UNIT = 9,
+  /** the figures' meshes on the graphics card, at most this many bytes (a gouache-night figure's is about 4.6 MB):
+   * the longest unused go first, made again from figure-meshes.js when wanted */
+  FIGURE_ATLAS_MESH_BYTES = 64 * 1048576;
 /** the atlas: its targets, cells, ramp, each figure's buffers, the people in it and counts (debug log) */
 const figureAtlas = {
   gen: -1,
@@ -105,6 +111,8 @@ const figureAtlas = {
   scratch: [0, 0],
   quad: null,
   res: new Map(),
+  resBytes: 0,
+  trimmed: 0,
   ramp: { tex: null, rows: new Map(), n: 1, dirty: false, data: new Uint8Array(FIGURE_RAMP_W * FIGURE_RAMP_ROWS * 4) },
   /** each figure's ramp rows by its name and style */
   rowsOf: new Map(),
@@ -191,6 +199,7 @@ function figureAtlasReady() {
     A.pack = atlasPackNew(FIGURE_ATLAS_W, FIGURE_ATLAS_H, 1);
     A.scratch = [0, 0];
     A.res = new Map();
+    A.resBytes = 0;
     A.quad = gpuVao('meshes');
     gl.bindVertexArray(A.quad);
     const qb = gpuBuffer('meshes', 48);
@@ -278,7 +287,10 @@ function figureAtlasRes(Fig, detail) {
   const A = figureAtlas,
     key = Fig.name + '|' + detail;
   let R = A.res.get(key);
-  if (R) return R;
+  if (R) {
+    R.seen = A.frame;
+    return R;
+  }
   const M = figureMeshGet(key, Fig.F, detail);
   if (!M) return null;
   const gl = gpuState.gl,
@@ -299,9 +311,24 @@ function figureAtlasRes(Fig, detail) {
   });
   gl.disableVertexAttribArray(4);
   gl.bindVertexArray(null);
-  R = { vao, buf, count: M.count, colours: M.colours, slots: M.slots };
+  R = { vao, buf, count: M.count, colours: M.colours, slots: M.slots, bytes: M.data.byteLength, seen: A.frame };
   A.res.set(key, R);
+  A.resBytes += R.bytes;
   return R;
+}
+/** past FIGURE_ATLAS_MESH_BYTES, the meshes unused the longest (never one used this frame) are freed */
+function figureAtlasTrim() {
+  const A = figureAtlas;
+  if (A.resBytes <= FIGURE_ATLAS_MESH_BYTES) return;
+  const old = [...A.res].filter(([, R]) => R.seen < A.frame).sort((a, b) => a[1].seen - b[1].seen);
+  for (const [k, R] of old) {
+    if (A.resBytes <= FIGURE_ATLAS_MESH_BYTES) break;
+    gpuFree(R.vao);
+    gpuFree(R.buf);
+    A.res.delete(k);
+    A.resBytes -= R.bytes;
+    A.trimmed++;
+  }
 }
 /** the detail a figure is meshed at for a direction and density (figures.js bakeFigure's) */
 function figureAtlasDetail(style, ppm) {
@@ -382,6 +409,7 @@ export function figureAtlasPass() {
       E.drawnKey = '';
       A.live.delete(E);
     }
+  figureAtlasTrim();
   if (!A.queue.size) return;
   const gl = gpuState.gl,
     t0 = performance.now();
@@ -579,6 +607,8 @@ function figureAtlasReport() {
     use: A.pack ? Math.round(atlasPackUse(A.pack) * 100) / 100 : 0,
     rows: A.ramp.n - 1,
     figures: A.res.size,
+    meshMb: Math.round((A.resBytes / 1048576) * 10) / 10,
+    trimmed: A.trimmed,
     draws: A.draws,
     ms: Math.round(A.ms * 10) / 10,
     full: A.full,
@@ -591,5 +621,6 @@ if (typeof gpuOnRestore === 'function')
     figureAtlas.gen = -1;
     figureAtlas.T = null;
     figureAtlas.res = new Map();
+    figureAtlas.resBytes = 0;
     figureAtlas.queue.clear();
   });

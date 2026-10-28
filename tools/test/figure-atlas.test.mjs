@@ -145,3 +145,21 @@ test('the atlas: density by distance: a person twice as far as the camera target
     G.walkView.C = was;
   }
 });
+
+test("the atlas: past the cap, the figures' meshes unused the longest are freed (never one in use)", () => {
+  const gl = setup();
+  G.figurePicture({}, 'mannequin', 'idle', 0, 0, 0, TILT);
+  G.figureAtlasPass();
+  const A = G.figureAtlas,
+    [[key, R]] = [...A.res];
+  /* as if it were many figures' worth, unused since */
+  A.resBytes = R.bytes + 65 * 1048576;
+  G.figureAtlasPass();
+  gl.calls.length = 0;
+  G.figureAtlasPass();
+  assert.equal(A.res.has(key), false, 'freed');
+  assert.ok(G.figureAtlasReport().trimmed >= 1);
+  /* wanted again: made again */
+  G.figurePicture({}, 'mannequin', 'idle', 0, 0, 0, TILT);
+  assert.ok(A.res.has(key));
+});
