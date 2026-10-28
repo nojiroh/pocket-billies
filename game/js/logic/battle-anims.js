@@ -22,8 +22,10 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_ANIM_ART_DIR: [() => BATTLE_ANIM_ART_DIR],
   BATTLE_ANIM_SKIP: [() => BATTLE_ANIM_SKIP],
   HIT_TIERS: [() => HIT_TIERS],
   IMPACT_FRAME_MS: [() => IMPACT_FRAME_MS],
@@ -227,6 +229,9 @@ export function battleAnimLogLine(mid, T, q, held) {
    that loops plays round; one that doesn't plays once, ending with its particle's life (so its eroding last frames
    are its fade), or from its start when it is an impact or has no life. */
 export const IMPACT_FRAME_MS = 1000 / 24;
+/** the effect strips' folder, inside art/ (tools/build-battle-anims.py draws them; a strip is <id>.png) */
+export const BATTLE_ANIM_ART_DIR = 'battle/anims/';
+provide({ BATTLE_ANIM_ART_DIR }); /* to-module */
 /** the frame a strip shows ageMs into a particle's life (stage ms)
  * @param {{ frames: number, fps?: number, impact?: boolean, loop?: boolean }} S @param {number} age
  * @param {number} [life] */

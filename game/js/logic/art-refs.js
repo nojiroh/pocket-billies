@@ -24,9 +24,9 @@
 /** @typedef {{ p: string, at: string[] }} CodeRef */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { BATTLE_ANIM_ART_DIR } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
-  BATTLE_ANIM_ART_DIR: [() => BATTLE_ANIM_ART_DIR],
   LEGACY_DIR: [() => LEGACY_DIR],
   PICTURE_TEXT: [() => PICTURE_TEXT],
   // @ts-expect-error -- replaced on purpose
@@ -138,9 +138,6 @@ export function artRefIndex(paths, o) {
     if (path.startsWith(LEGACY_DIR)) add(path, { kind: 'folder', from: 'art/legacy', at: '', legacy: true });
   return ix;
 }
-
-/** VFX-10: the effect strips' folder, inside art/ (tools/build-battle-anims.py draws them) */
-export const BATTLE_ANIM_ART_DIR = 'battle/anims/';
 
 /** the legacy art folder: art of the legacy world, read-only in the Studio (SA-5) */
 export const LEGACY_DIR = 'art/legacy/';
