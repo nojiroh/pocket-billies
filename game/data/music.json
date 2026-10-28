@@ -1155,58 +1155,179 @@
  },
  "ensembles": {
   "copperleaf": {
-   "name": "placeholder: Copperleaf, cozy: the chip music box doubled by a music box, a harp counter an octave up, soft strings, a harp's root each bar (Claude's draft)",
+   "name": "placeholder: Copperleaf, cozy: chip and music box, harp counter, soft strings; layers: walking tambourine, rain celesta and brush, snow sleigh bells, storm strings, busker accordion (Claude's draft)",
    "trim": -11.3,
    "parts": [
     {"line":"lead","wave":"p12"},
     {"line":"lead","inst":"musicbox","pan":0.15,"verb":0.25,"level":0.6},
     {"line":"counter","inst":"harp","oct":1,"pan":-0.3,"verb":0.3,"level":0.8},
     {"line":"pad","inst":"softstrings","centre":62,"verb":0.3,"level":0.9},
-    {"line":"bass","inst":"harp","oct":1,"style":"long","pan":-0.1,"verb":0.2,"level":0.6}
+    {"line":"bass","inst":"harp","oct":1,"style":"long","pan":-0.1,"verb":0.2,"level":0.6},
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.8
+    },
+    {"line":"arp","inst":"celesta","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.35,"level":0.8},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.45
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.6
+    },
+    {"line":"pad","inst":"strings","centre":48,"layer":"storm","verb":0.3,"level":0.6},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"storm","verb":0.3,"level":0.6},
+    {"line":"counter","inst":"accordion","layer":"busker","verb":0.15,"level":0.9}
    ]
   },
   "copperleaf_night": {
-   "name": "placeholder: Copperleaf at night: a flute takes the tune over a quieter chip, the harp and soft strings stay (Claude's draft)",
+   "name": "placeholder: Copperleaf at night: a flute takes the tune over a quieter chip, the harp and soft strings stay; layers as by day, softer, brushes as you walk (Claude's draft)",
    "trim": -11.3,
    "parts": [
     {"line":"lead","wave":"p12","level":0.5},
     {"line":"lead","inst":"flute","oct":-1,"pan":0.15,"verb":0.3,"level":0.9},
     {"line":"counter","inst":"harp","oct":1,"pan":-0.3,"verb":0.3,"level":0.7},
     {"line":"pad","inst":"softstrings","centre":60,"verb":0.3,"level":0.8},
-    {"line":"bass","inst":"harp","oct":1,"style":"long","pan":-0.1,"verb":0.2,"level":0.5}
+    {"line":"bass","inst":"harp","oct":1,"style":"long","pan":-0.1,"verb":0.2,"level":0.5},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.2,
+     "level": 0.5
+    },
+    {"line":"arp","inst":"celesta","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.7},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.15,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.25,
+     "level": 0.5
+    },
+    {"line":"pad","inst":"strings","centre":48,"layer":"storm","verb":0.3,"level":0.5},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"storm","verb":0.3,"level":0.5},
+    {"line":"counter","inst":"accordion","layer":"busker","verb":0.2,"level":0.8}
    ]
   },
   "route": {
-   "name": "placeholder: a route, adventurous: the chip lead over strings, pizzicato arpeggios and bass, an orchestral snare (Claude's draft)",
+   "name": "placeholder: a route: chip lead, strings, pizzicato, a kit; layers: walking snare (thinner standing), night flute, rain celesta and brush, snow sleigh bells, storm strings and timpani (Claude's draft)",
    "trim": -1.4,
    "parts": [
-    {"line":"lead","wave":"p25"},
+    {
+     "line": "lead",
+     "wave": "p25",
+     "dim": {"night":0.35}
+    },
     {"line":"pad","inst":"strings","centre":62,"verb":0.25,"level":0.8},
     {"line":"arp","inst":"pizz","pan":0.3,"verb":0.2,"level":0.7},
     {"line":"bass","inst":"pizz","oct":1,"pan":-0.1,"verb":0.1,"level":0.9},
     {
      "line": "drums",
      "kit": {"kick":"kick","snare":"osnare","hat":"shaker"},
+     "dim": {"still":0.65,"night":0.6},
      "verb": 0.1,
      "level": 0.8
-    }
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"osnare","hat":"osnare"},
+     "style": "walk",
+     "layer": "walk",
+     "dim": {"night":0.5},
+     "pan": -0.15,
+     "verb": 0.1,
+     "level": 0.5
+    },
+    {"line":"lead","inst":"flute","layer":"night","pan":0.1,"verb":0.3,"level":0.8},
+    {"line":"arp","inst":"celesta","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.35,"level":0.8},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.4
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.45
+    },
+    {"line":"pad","inst":"strings","centre":48,"layer":"storm","verb":0.3,"level":0.6},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"storm","verb":0.3,"level":0.6}
    ]
   },
   "battle": {
-   "name": "placeholder: a wild battle, DS-style: the chip lead over a spiccato ostinato, brass stabs, timpani, a full kit (Claude's draft)",
+   "name": "placeholder: a wild battle, DS-style: chip lead, spiccato, brass, timpani, kit; brass and timpani build in from the intro, a choir and orchestra hits at the peak (Claude's draft)",
    "trim": -3.8,
    "parts": [
     {"line":"lead","wave":"p25"},
-    {"line":"arp","inst":"spiccato","pan":0.25,"verb":0.15,"level":0.8},
+    {
+     "line": "arp",
+     "inst": "spiccato",
+     "dim": {"calm":0.5},
+     "pan": 0.25,
+     "verb": 0.15,
+     "level": 0.8
+    },
     {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"level":0.8},
-    {"line":"stabs","inst":"brass","centre":60,"pan":-0.2,"verb":0.2,"level":0.8},
-    {"line":"timp","inst":"timpani","oct":1,"verb":0.25,"level":0.8},
+    {
+     "line": "stabs",
+     "inst": "brass",
+     "centre": 60,
+     "dim": {"calm":0},
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.8
+    },
+    {
+     "line": "timp",
+     "inst": "timpani",
+     "oct": 1,
+     "dim": {"calm":0.3},
+     "verb": 0.25,
+     "level": 0.8
+    },
     {
      "line": "drums",
      "kit": {"kick":"kick","snare":"snare","hat":"hat"},
+     "dim": {"calm":0.6},
      "verb": 0.05,
      "level": 0.8
-    }
+    },
+    {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.3,"level":1.2},
+    {"line":"stabs","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.8}
    ]
   },
   "fanfare": {
