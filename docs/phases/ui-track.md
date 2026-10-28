@@ -649,7 +649,7 @@ WM-7 ran beside their track's sessions.
 - Not taken: Pins (one outline for every place, so places differ only by colour and the small glyph; the cream faces
   brighten a busy map).
 
-## UI-15 as built (2026-10-27, `claude/ui-15-less-clutter`, into `track/ui`)
+## UI-15 as built (2026-10-27, `claude/ui-15-less-clutter`, PR #294 into main)
 Run beside UI-11 and UI-8c (the owner's waves), the plan approved in advance. Battle and walk only; the battle engine
 and its golden record untouched.
 - **Measured:** `uiElementCount()` (theme-sheet.js, beside `uiBlurCount`): visible elements with words of their own,
