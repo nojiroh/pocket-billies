@@ -2583,6 +2583,30 @@ export interface BattleAnimsData {
   ramps: Record<string, BattleAnimRamp>;
   /** VFX-10: icons.png particles drawn with a strip instead, and the ramp an untyped one takes */
   iconSprites: Record<string, { sprite: DataId; ramp: string }>;
+  /** the flow moments and the stage effects of statuses and stats (VFX-16's and VFX-14's keys) */
+  events?: BattleAnimEvents;
+}
+
+/** battleAnims.json `events`: each step adds its own keys (stage ms; counts are particles before the budget) */
+export interface BattleAnimEvents {
+  about?: string;
+  /** VFX-16: the VS splash: the run roles that get one, the trainer ids that are the rival, the portraits' whole-number
+      scale at most, how long it holds (inside trainerIn's 1150 ms) */
+  vs?: { foes: ('miniboss' | 'boss' | 'rival')[]; rivals: DataId[]; scale: number; hold: number };
+  /** VFX-16: the Billie dithers in from its feet up over riseMs, a burst in its type, each pyramid kind's ramp, glints */
+  sendOut?: {
+    riseMs: number;
+    burst: number;
+    kinds: Record<DataId, string>;
+    glint: { coat: string; prime: string; n: number };
+  };
+  recall?: { w: number; outMs: number };
+  catch?: { squash: number; dust: number; ringR: number; shards: number };
+  faint?: { holdMs: number; outMs: number; dust: number; bolts: number; smoke: number };
+  levelUp?: { ramp: string; n: number; h: number; ringR: number };
+  victory?: { sparkles: number; cheerMs: number };
+  defeat?: { fadeMs: number };
+  item?: { flyMs: number };
 }
 /** VFX-10: a strip: frames side by side in 8 greys (index 7 the white core) */
 export interface BattleAnimSprite {

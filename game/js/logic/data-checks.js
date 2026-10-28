@@ -94,6 +94,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBattleAnims: [() => dataBattleAnims, v => (dataBattleAnims = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBattleFlowEvents: [() => dataBattleFlowEvents, v => (dataBattleFlowEvents = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
@@ -1440,7 +1442,29 @@ export function dataBattleAnims(D, valid = () => true) {
     if (!A.sprites[I.sprite]) problem(`iconSprites.${k}.sprite: no sprite "${I.sprite}"`);
     if (!A.ramps[I.ramp]) problem(`iconSprites.${k}.ramp: no ramp "${I.ramp}"`);
   }
+  dataBattleFlowEvents(D, A, problem);
   return out;
+}
+/** VFX-16: the flow moments in battleAnims.json `events`: every pyramid kind has a ramp, each named ramp exists, the
+ * rivals are trainers @param {any} D @param {any} A @param {(what: string) => void} problem */
+export function dataBattleFlowEvents(D, A, problem) {
+  const E = A.events || {},
+    ramp = (/** @type {string} */ where, /** @type {string} */ r) => {
+      if (!A.ramps[r]) problem(`events.${where}: no ramp "${r}"`);
+    };
+  if (E.sendOut) {
+    for (const [k, r] of Object.entries(/** @type {Record<string, string>} */ (E.sendOut.kinds))) {
+      if (D.pyramids && !D.pyramids[k]) problem(`events.sendOut.kinds.${k}: no pyramid "${k}" (pyramids.json)`);
+      ramp(`sendOut.kinds.${k}`, r);
+    }
+    for (const k of Object.keys(D.pyramids || {}))
+      if (!E.sendOut.kinds[k]) problem(`events.sendOut.kinds: pyramid "${k}" has no ramp`);
+    ramp('sendOut.glint.coat', E.sendOut.glint.coat);
+    ramp('sendOut.glint.prime', E.sendOut.glint.prime);
+  }
+  if (E.levelUp) ramp('levelUp.ramp', E.levelUp.ramp);
+  if (E.vs && D.trainers)
+    for (const id of E.vs.rivals) if (!D.trainers[id]) problem(`events.vs.rivals: no trainer "${id}"`);
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds
 // scenery.json terrains; its fence and gate props with a box (logic/arena-gen.js lays them along the rim), its posts and
