@@ -102,9 +102,9 @@ __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=(
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
 __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
- TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[]};
+ TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],all:[],restEff:[],restMs:[]};
  const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);gl.finish();const dt=rn()-t0;const c=gpuCounters.cur;
-  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m)out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
+  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m){let d=0;for(let p=0;p<c.length/FIELD_COUNT;p++)d+=c[p*FIELD_COUNT+F_DRAW];out.all.push(d)}if(m)out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
@@ -154,17 +154,17 @@ def measure(pg, moves):
                 r = pg.evaluate(f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)")
                 mean = lambda L: round(sum(L) / max(1, len(L)), 2)
                 ms = sorted(r['ms'])
-                rows[key] = {'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
+                rows[key] = {'allMax': max(r['all'] or [0]), 'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
                              'fxMax': max(r['fx'] or [0]), 'msMean': mean(r['ms']), 'msP90': ms[int(len(ms) * 0.9)],
                              'restMs': mean(r['restMs']), 'rig': r['rig']}
                 x = rows[key]
-                print(f"{key:28} effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
+                print(f"{key:28} frame draws max {x['allMax']:4}  effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
                       f"{x['fxMax']:2}  ms mean {x['msMean']:7} p90 {x['msP90']:7} (rest {x['restMs']:7})  rig redraws "
                       f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB", flush=True)
     (OUT / 'measure.json').write_text(json.dumps(rows, indent=1, sort_keys=True))
     keys = list(rows)
     tot = lambda f: round(sum(f(rows[k]) for k in keys) / max(1, len(keys)), 2)
-    print('mean over films: effects draws max', tot(lambda x: x['effMax']), 'battleFx max', tot(lambda x: x['fxMax']),
+    print('mean over films: frame draws max', tot(lambda x: x['allMax']), 'effects draws max', tot(lambda x: x['effMax']), 'battleFx max', tot(lambda x: x['fxMax']),
           'ms', tot(lambda x: x['msMean']), 'p90', tot(lambda x: x['msP90']), 'rest ms', tot(lambda x: x['restMs']),
           'rig redraws', tot(lambda x: x['rig']['redraws']), 'KB', tot(lambda x: x['rig']['kb']))
 
