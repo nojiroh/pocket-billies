@@ -141,7 +141,14 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
   the form number, the emblem, the body typed in line by line (Oxanium, 20 ms a letter, a tap shows it all).
   **Redaction bars** cover flavour words only and lift when you choose; costs and outcomes are never hidden (verify in
   `encChoose` what each choice shows today). The event's result is stamped (FILED, DENIED).
-- **SY-5** the Bureau in battle:
+- **SY-5** the Bureau in battle. Done 2026-10-28 on `track/style` (built as below, with UI-16a/b merged in for their
+  plates; logic/bureau-battle.js, battle.js "THE BUREAU IN BATTLE", css/bureau-battle.css; bosses.json `faction`,
+  factions.json `look.notice` and `look.property`. Who fights for the Bureau: a bot whose build is one of its bots, or
+  a boss whose `faction` is `bureau`. RETRIEVED only when a Bureau bot's own hit (or a spread hit riding on its move)
+  knocks yours out, never a burn, the stones or a delayed hit. The win's DENIED replaces a knockout's stamp; against the
+  boss the win line's PENDING is on the sheet after the battle, a screen of its own. The join intro is 2,200 ms (its
+  bots lock at 1,300), not 900: the notice is gone by the lock. The notice is stamped FILED. Stamps land on a paper slip
+  so the red reads on any stage):
   - **Stamps:** RETRIEVED when a Bureau bot knocks out one of yours; VOID when you knock out a Bureau bot; DENIED on
     your win; PENDING over the Retrieval Unit's win line. One stamp per event, never two at once.
   - **Notice of Retrieval:** during the join intro (battle-stage.js 1808), a form slides up listing the four bots as
