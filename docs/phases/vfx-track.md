@@ -232,7 +232,8 @@ animation".
 3. **Stepped:** loops and holds at 12 fps, hits at 24 fps (`SMEAR_STEP`), all on the stage clock.
 4. **Value first, colour from the type:** sprites are 8 greys; a type's NW_PALETTE ramp colours them and pure white
    stays the core. Proposed ramps: Fire ember, Water sky, Grass leaf, Electric gold, Ground rust, Flying cobalt,
-   Psychic rose, Steel steel, Dragon indigo, None stone; the Bureau crimson with ink.
+   Psychic rose, Steel steel, Dragon indigo, None stone; the Bureau the red family (#EA5974, the style track's stamp
+   ink) with ink.
 5. **Hard edges:** fades are erosion (a hard step against a Bayer pattern on the effect's own texel grid, so holes are
    art-pixel sized, with a bright rim on the eroding edge), never smooth alpha. No blur, no soft glows.
 6. **Light:** effects light the stage in their colour; big ones darken the rest of it a little.
@@ -240,8 +241,9 @@ animation".
 8. **Time:** a normal move keeps today's timing; signature scenes and power 100+ moves get up to 0.5 s more; all of it
    on the stage clock (speed already scales it); a tap skips; Faster plays each family's short variant.
 9. **Safe:** at most 3 full-screen flashes in any second, 333 ms apart, peak .55, none in saturated red; a flash over
-   the limit becomes a sprite flash, never a late one. Flashes off: no full-screen flash, sprite flashes at most half
-   strength, blinks at most 3 a second. Calm (UI-16a; the rule ui-track.md asks VFX-5/6 for): what an action causes
+   the limit becomes a sprite flash, never a late one. Flashes off follows the style track's SY-1 (`flashFor`: a
+   bright flash held to a 15% tint, a dark one kept, no chromatic flash or two-tone cells), plus sprite flashes at
+   most half strength and blinks at most 3 a second. Calm (UI-16a; the rule ui-track.md asks VFX-5/6 for): what an action causes
    still plays, smears included; idle loops (status fizz, auras, motes) pulse once a turn. Reduced: the meaning
    without the motion (a dithered tint; no shake, camera, smears or extra time).
 10. **Original:** signature props allude through generic objects (a sneaker, a burger, a yacht), never a brand's logo
@@ -379,7 +381,7 @@ Spread moves play on every foe in the one move event; aimed moves (Auger Bore, G
 | Steel | steel | shard, cog, spark | hard rings, glints, sparks | white |
 | Dragon | indigo | scale, flame | two-tone; a roar ring | violet |
 | None | stone | pow star, dust | plain impacts | white |
-| the Bureau (its bots and agents) | crimson and ink | paper, stamp | stamped in, square | red, cold |
+| the Bureau (its bots and agents) | the red family and ink | paper | stamped in, square (its words are the style track's) | red, cold |
 
 ## Hit tiers (starting numbers; a cell is 42 ms)
 | Tier | Hit-stop | Shake | Full-screen | Burst | Light |
@@ -490,7 +492,7 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | --- | --- | --- | --- | --- |
 | VFX-5 | Attack lunges (Part 1) | as planned; the lean and afterimages as helpers the runner can call | lunges | as planned. Phone |
 | VFX-7 (done 2026-10-27) | The plan | Part 2, with research; the owner's answers | none | merged |
-| VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; Flashes reaches the battle; the debug-log line; the look tool, first version | none, but the tap skips and Flashes off works | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
+| VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; the flash rate limit on SY-1's `flashFor`; the debug-log line; the look tool, first version | none, but the tap skips | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
 | VFX-9 | One draw for effects | the atlas, the instanced pool, cutout drawing, the budgets; rings, dust and beams into GL; `uHit`; fixed light keys; the `uCA` pulse | rings sit in the scene; no CPU flash redraws | a move's effects in at most 3 draws (gpu counters); rig uploads down (`rigStats`); frame time not worse. Phone |
 | VFX-10 | Effect art | tools/build-battle-anims.py and the strips; ramps (texture and data); the texel rule; 24 fps steps; erosion; the Studio's previews per ramp | every particle redrawn | `--check`; an Edit pixels round trip; the contact sheet. Phone (the repaint list) |
 | VFX-11 | Families x types | the 16 families and their short variants; the type kits; every move's `anim` and the Moves editor's dropdown; beams and projectiles in GL; effect lights; spread and aimed moves | every move by family and type | the snapshot remade on purpose; contact sheets of all 122. Phone |
@@ -561,8 +563,27 @@ commit of its own.
 - **Shared:** SND-13 will read `hitTier` and `koAhead` from logic/battle-anims.js (VFX-8) for battle intensity
   (turns, KOs, the red zone, a boss's phases) once they are on main (accepted 2026-10-28).
 
+## Fitting with the style track (found 2026-10-28)
+The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
+on `track/style`) also works in battle. How the two split, as proposed to its planning session:
+- **Flashes:** SY-1 (#279, built) already sends every battle flash through `flashFor` (logic/smear.js): Reduced
+  motion, no flash; Flashes off, a bright flash held to a 15% tint and a dark one kept, no chromatic flash, the impact
+  frame without its two-tone cells (a crit keeps its speed lines). That replaces VFX-8's "Flashes reaches the battle"
+  and the Flashes-off half of rule 9. VFX-8 adds only the rate limit (at most 3 full-screen flashes in any second,
+  333 ms apart, no saturated red), counting the flashes the runner asks for and passing each through `flashFor`; it
+  leaves `battleStageFlash`'s settings code to SY-1 (merged from main once #279 is there).
+- **Numbers:** SY-2 sizes the damage pops by `hitWeight` and rolls the HP number (the HUD); VFX-13's `hitTier` is
+  offered to it. Hit-stop stays this track's (the tier table).
+- **The Bureau:** SY-5 owns its words in battle (the RETRIEVED, VOID, DENIED and PENDING stamps as the kit's
+  translatable `pb-stamp`), the Notice of Retrieval in the join intro and the bots' ID plates. This track's Bureau kit
+  is only its bots' move effects: paper sprites, square and stamped in, in the red family (#EA5974, the stamps' ink:
+  "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 900 ms with the Notice.
+- **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
+  same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
+
 ## Bugs found (VFX-7) and where they're fixed
-- Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe (VFX-8).
+- Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style
+  track's SY-1 (#279, `flashFor`); VFX-8 adds the rate limit on top.
 - The selection and target rings divide by `R.k2`, which no rig has (BS 1379; B3 228 uses `R.k`), so they never
   draw (VFX-8, seen on screen first; turning them on is an Ask me before).
 - `an.t = M.t` (BS 1917) writes into the engine's event; the runner passes the type itself (VFX-8).
@@ -584,6 +605,8 @@ commit of its own.
   Rule 9 is the Calm rule ui-track.md asks VFX-5/6 for. The UI plan's "hit-stop stays only on crits, KOs and
   super-effective hits" ("Alive, without clutter") is open: see Ask me before.
 - **RL-14b** (bosses, shield phases, the `join` intro): the shield dome and the boss's phases build on it.
+- **Style track:** flashes (SY-1), numbers (SY-2), the Bureau's words in battle (SY-5) and the foil (SY-6): see
+  "Fitting with the style track".
 - **Phase 20** (renderer): the atlas through `gpuTexture`, the programs in the warm-up, `spriteI` with `uHit`, fixed
   light keys for Steady lamps, the row wave on the Medium precision pass's highp list.
 - **Characters track:** battle trainers may be redrawn (throw poses); the VS splash uses portraits, not the battle

@@ -22,7 +22,8 @@ this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle e
   never lit anything (only particles with a hex `col` make light); rings, dust and beams are on the 2D canvas over
   the GL; a rig's hit flash redraws and uploads its canvas every frame; the chromatic flash is a CSS filter over the
   whole canvas; Flashes doesn't reach the battle; a tap only finishes the text and can't skip an animation.
-- Bugs found (none fixed here; each has its session in the track file): Flashes ignored in battle; the selection and
+- Bugs found (none fixed here; each has its session in the track file): Flashes ignored in battle (fixed meanwhile by
+  the style track's SY-1, #279, `flashFor`; VFX-8 adds only the rate limit); the selection and
   target rings divide by `R.k2`, which no rig has, so they never draw; a stat drop plays the rising sound (sound.js
   643 vs the engine's `up: false`); level-up plays on slot 0 (the engine sends `uid`); every status but par and slp
   shows flames; the XP bar moves a line late (an engine change, golden record remade alone); the reduced-motion tag
@@ -54,6 +55,9 @@ this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle e
   battle half of its optional SND-16 (moves, hits, throws, catches, hurt sounds, the recall) in a music.json `battle`
   section of the shape it proposed; SND-16 keeps the rest; its steps message this session when they change battle
   sounds; SND-13 will read `hitTier` and `koAhead`. Merges to main stay the owner's.
+- The style track (#279) also works in battle: SY-1's flashes, SY-2's numbers, SY-5's Bureau stamps and Notice, SY-6's
+  foil in the sprite shader. The split (vfx-track.md, "Fitting with the style track") was proposed to its planning
+  session (`session_019UpAFyAJSkEVjDLuVMFQkS`) on 2026-10-28.
 - Next: VFX-5 (attack lunges) in a new session on `track/vfx`, started by this session; then VFX-8 (anims as data).
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
