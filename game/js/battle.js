@@ -33,7 +33,16 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import {
+  ITEMS,
+  MOVES,
+  PYRAMIDS,
+  STATUS_NAMES,
+  STAT_NAMES,
+  TYPES,
+  TYPE_COLORS,
+  typeEffectiveness,
+} from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import {
@@ -51,7 +60,7 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
-import { MARK_STAT_SHORT } from './logic/marks.js';
+import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
 import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
@@ -164,6 +173,10 @@ expose({
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
   plateElement: [() => plateElement, v => (plateElement = v)],
+  plateTagHTML: [() => plateTagHTML, v => (plateTagHTML = v)],
+  plateTagId: [() => plateTagId],
+  plateTagSpecs: [() => plateTagSpecs, v => (plateTagSpecs = v)],
+  plateTags: [() => plateTags, v => (plateTags = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
   rollPlateNumber: [() => rollPlateNumber, v => (rollPlateNumber = v)],
@@ -1317,8 +1330,8 @@ function paintPlates(s, anim) {
     e.querySelector('.pl-lv').textContent = 'Lv ' + x.lvl;
     e.querySelector('.pl-cr').hidden = !x.alpha;
     e.classList.toggle('alpha', !!x.boss);
-    e.querySelector('.pl-st').innerHTML =
-      x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(x.st);
+    /* UI-16b: the status is a tag in the row (plateTags); this slot says Fainted */
+    e.querySelector('.pl-st').innerHTML = x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : '';
     const p = Math.max(0, (x.hp / x.max) * 100),
       f = e.querySelector('.fill'),
       g = e.querySelector('.ghost');
@@ -1345,25 +1358,9 @@ function paintPlates(s, anim) {
     }
     /* phase 06-4: what the corner cards used to show: stat changes, a robot's limbs, the party's dots (on the first
        plate of each side) */
-    /* UI-15: at most 3 tags on a plate (the status first, then the biggest stat changes), the rest as "+N" with
-       their words on it */
-    const stg = Object.entries(x.stg || {})
-        .filter(([q, v]) => v)
-        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
-        .map(([q, v]) => [`${statShortName(q)} ${v > 0 ? '+' : ''}${v}`, v > 0 ? 'up' : 'dn']),
-      room = PLATE_TAGS - (x.hp <= 0 || x.st ? 1 : 0),
-      rest = stg
-        .slice(room)
-        .map(t => t[0])
-        .join(', ');
-    e.querySelector('.pl-sg').innerHTML =
-      stg
-        .slice(0, room)
-        .map(([t, c]) => `<span class="stg ${c}">${t}</span>`)
-        .join('') +
-      (rest
-        ? `<span class="stg more" title="${escapeHtml(rest)}" aria-label="${escapeHtml('Also ' + rest)}">+${stg.length - room}</span>`
-        : '');
+    /* UI-16b: the tag row is the marks kit's (logic/marks.js markRow, pb-tag): the status first, then boosts and drops
+       (the biggest first), then short effects with their turns left; past 3 the last is "+N" with their words */
+    plateTags(e, x, anim);
     const pr = e.querySelector('.pl-parts');
     pr.hidden = !x.bot;
     /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
@@ -1387,6 +1384,64 @@ function paintPlates(s, anim) {
     }
   }
   turnBar();
+}
+/* UI-16b: a plate's tags as markRow orders them (TagSpecs: logic/marks.js). Fainted: none */
+function plateTagSpecs(x) {
+  if (!x || x.hp <= 0) return [];
+  const T = [];
+  if (x.st) T.push({ kind: 'status', mark: x.st, word: STATUS_NAMES[x.st] || x.st });
+  Object.entries(x.stg || {})
+    .filter(([, v]) => v)
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .forEach(([q, v]) => T.push({ kind: 'stat', stat: q, stages: v }));
+  for (const [id, n] of Object.entries(x.fx || {})) T.push({ kind: 'effect', mark: id, turns: Number(n) || 0 });
+  return T;
+}
+/* a tag's id in the row, so a repaint knows which one is new or changed */
+const plateTagId = t => (t.kind === 'stat' ? 'stat:' + t.stat : t.kind + ':' + (t.mark || ''));
+function plateTagHTML(t, cls) {
+  const a = [`kind="${t.kind}"`];
+  if (t.mark) a.push(`mark="${escapeHtml(t.mark)}"`);
+  if (t.stat) a.push(`stat="${escapeHtml(t.stat)}" stages="${t.stages}"`);
+  if (t.turns) a.push(`turns="${t.turns}"`);
+  if (t.n) a.push(`n="${t.n}"`);
+  if (t.word) a.push(`word="${escapeHtml(t.word)}"`, `title="${escapeHtml(t.word)}"`);
+  return `<pb-tag ${a.join(' ')}${cls ? ` class="${cls}"` : ''}></pb-tag>`;
+}
+/* UI-16b: the plate's tag row (.pl-sg; a faction label can sit beside it in .pl-bot). On a battle event (anim) a new
+   status stamps on (motion.css m-stamp), a boost rises and a drop falls (m-rise, m-fall), a new effect pops; a
+   repaint with nothing new leaves the row alone */
+function plateTags(e, x, anim) {
+  const el = e.querySelector('.pl-sg'),
+    all = plateTagSpecs(x),
+    row = markRow(all, PLATE_TAGS),
+    last = row[row.length - 1];
+  if (last && last.kind === 'more')
+    last.word =
+      'Also ' +
+      all
+        .slice(row.length - 1)
+        .map(t => tagLook(t).word)
+        .join(', ');
+  const key = row.map(t => JSON.stringify(t)).join('|'),
+    was = el._tags && el._tags.uid === x.uid ? el._tags.by : null;
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  const by = Object.fromEntries(all.map(t => [plateTagId(t), t]));
+  el._tags = { uid: x.uid, by };
+  el.innerHTML = row
+    .map(t => {
+      const p = was && anim && t.kind !== 'more' ? was[plateTagId(t)] : undefined;
+      let cls = '';
+      if (was && anim && t.kind !== 'more') {
+        if (t.kind === 'status' && !p) cls = 'm-stamp';
+        else if (t.kind === 'stat' && (!p || p.stages !== t.stages))
+          cls = t.stages > (p ? p.stages : 0) ? 'm-rise' : 'm-fall';
+        else if (t.kind === 'effect' && !p) cls = 'm-pop';
+      }
+      return plateTagHTML(t, cls);
+    })
+    .join('');
 }
 /* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
    (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without

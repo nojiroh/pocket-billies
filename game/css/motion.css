@@ -286,6 +286,25 @@
 .m-flip {
   animation: m-flip var(--m-slow) var(--spring) both;
 }
+/* UI-16b: rise and fall: a boost's tag rises into place, a drop's falls into place (the battle plates' row) */
+.m-rise {
+  animation: m-rise var(--m-base) var(--spring) both;
+}
+.m-fall {
+  animation: m-fall var(--m-base) var(--spring) both;
+}
+@keyframes m-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes m-fall {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
 /* UI-16b: stamp: one motion for everything stamped on (SY-3's pb-stamp, the battle's status tags): it drops from twice
    its size, a little more turned, lands just under size at its slant (--tilt, 0 for a tag) and settles. --m-stamp is
    m-fade under Reduced. The kit repeats the keyframes for shadow roots (ui-run-kit.js runKitMotion) */
@@ -363,7 +382,9 @@
       .m-nudge,
       .m-float,
       .m-slam,
-      .m-flip
+      .m-flip,
+      .m-rise,
+      .m-fall
     ) {
     animation: m-fade 120ms linear both !important;
   }
@@ -389,7 +410,9 @@
     .m-nudge,
     .m-float,
     .m-slam,
-    .m-flip
+    .m-flip,
+    .m-rise,
+    .m-fall
   ) {
   animation: m-fade 120ms linear both !important;
 }
