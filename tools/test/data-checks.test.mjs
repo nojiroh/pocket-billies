@@ -131,6 +131,13 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [E => (E.events.form_27b.options[0].then[0] = 'gene 9'), '1-5 Genes'],
     [E => (E.events.form_27b.options[0].then[0] = 'unsplice -1'), '0-1000 DNA'],
     [E => (E.events.form_27b.when = 'genez:x'), 'events.form_27b.when'],
+    /* SY-4: a case file's redaction covers flavour words of the intro only; a stamp only in a Bureau event */
+    [E => (E.events.form_27b.redact = ['27']), 'letters only'],
+    [E => (E.events.form_27b.redact = ['stapler']), 'not a word of the intro'],
+    [E => ((E.events.form_27b.intro[0] += ' Leave it.'), (E.events.form_27b.redact = ['Leave'])), 'the option "Leave"'],
+    [E => (E.events.beans_crate.redact = ['BEANS']), 'never covered'],
+    [E => (E.events.ring_light.redact = ['ring']), 'only a Bureau event'],
+    [E => (E.events.ring_light.options[0].stamp = 'filed'), 'only a Bureau event is stamped'],
   ]) {
     D = copy();
     plant(D.events);

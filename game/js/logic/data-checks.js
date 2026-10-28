@@ -19,6 +19,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
+import { caseFile, redactProblem } from './case-file.js';
 import {
   RUN_GRID,
   runGridExits,
@@ -1718,6 +1719,17 @@ export function dataEvents(D, valid = () => true) {
       }
     }
   };
+  /* SY-4: words a redaction bar never covers: what a cost or an outcome is named (currencies, items, pyramids) */
+  const guarded = new Set(
+    [
+      ...Object.values(/** @type {Record<string, any>} */ (D.currencies || {})).flatMap(c => [c.name, c.one, c.long]),
+      ...Object.values(/** @type {Record<string, any>} */ (items)).map(x => x.n),
+      ...Object.values(/** @type {Record<string, any>} */ (pyramids)).map(x => x.n),
+    ]
+      .filter(x => typeof x === 'string')
+      .flatMap(x => x.toLowerCase().split(/[^a-z]+/))
+      .filter(x => x.length > 2)
+  );
   for (const [k, V] of Object.entries(E.events)) {
     const ev = /** @type {any} */ (V);
     for (const b of ev.biomes || []) if (biomes.size && !biomes.has(b)) problem(`events.${k}.biomes: no biome "${b}"`);
@@ -1734,6 +1746,18 @@ export function dataEvents(D, valid = () => true) {
         parseScript(ev.intro),
         n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
       );
+    /* SY-4: a Bureau event's case file: the Bureau has a look to show it; its redaction bars cover flavour words of the
+       intro only (never an option's words, a cost or an outcome); a stamp moment only in a Bureau event */
+    if (ev.bureau === 1 && D.factions && !caseFile(k, ev, D.factions))
+      problem(`events.${k}.bureau: the Bureau has no look in factions.json (factions.bureau.look)`);
+    if (ev.redact && ev.bureau !== 1) problem(`events.${k}.redact: only a Bureau event (bureau: 1) is a case file`);
+    for (const w of ev.redact || []) {
+      const why = redactProblem(ev, w, guarded);
+      if (why) problem(`events.${k}.redact: "${w}": ${why}`);
+    }
+    ev.options.forEach((/** @type {any} */ o, i) => {
+      if (o.stamp && ev.bureau !== 1) problem(`events.${k}.options[${i}].stamp: only a Bureau event is stamped`);
+    });
     inviting = !!ev.resident;
     invites = 0;
     ev.options.forEach((/** @type {any} */ o, i) => {
