@@ -739,6 +739,29 @@ The plan approved in advance (the owner's standing instruction); the browser che
   something is new).
 - **For UI-16b and UI-17:** `--m-k`, `--m-loop`, `motionNow()`, `pbSound`, `pbBump`, `pbFlyTo`, `pbSlideBar`,
   `pbDoneHTML`/`pbDrawDone`, the motion tokens; the low-HP pulse's filter and the evolution flashes are left to them.
+## UI-18 as built (2026-10-28, `claude/ui-18-map-clutter`, a draft PR into main)
+Run with the plan approved in advance; the browser checks wait until the UI plan is done (the owner's word).
+- **The blur count, checked:** the "10" was right on 2026-10-26 (check-quick.py's `BLUR_CEILING`): the header, the place
+  card, the look-around group's glass panel and seven `.mbtn` buttons. UI-8c had already taken the buttons' and the
+  panel's blurs off, leaving 2 that smoke counts. `uiBlurCount` (theme-sheet.js) counts page elements only, not
+  pseudo-elements or shadow trees, so it never saw the top bar's glass (`.topbar.glass::before`) or the bottom bar's
+  (pb-nav-bar's `.glass`). Real blurred surfaces on the Map: 4 before (5 with the places list open), **2 now** (the
+  top bar and the bottom bar). Smoke's count for the map: **0** (it was 2); `BLUR_CEILING`'s map entry is gone, so the
+  budget of 3 applies.
+- **Solid semigloss:** the header, the place card and the places list are the surface colour with its sheen (a Team
+  card's gradient on `--g-solid`), no `.glass`/`.px`.
+- **Give up in ⋯:** the header's row holds the day chip and a 44 px ⋯ chip (a `<details>`, the new `more` icon in
+  the list icon's greys); opened, it shows Give up the run as a red button in the header's flow (the header is clipped
+  to its outline, so a popover can't hang out of it).
+- **The folded place card:** the name, today's weather (a run place's forecast, first day), the kind chip, one line of
+  what's there (shops, a clinic, trainers, how many kinds of Billie), the status and the main action. More (40 px)
+  unfolds the place's words, zone, rumour, the 7-day forecast, its Billies, roads and services. `uiState.mapCardOpen`
+  keeps the one unfolded place; every other place's card opens folded. + and − stay.
+- **One colour everywhere (UI-14b's leftovers):** the hub map's towns teal (they were orange `#ffb46b`), where you
+  stand value gold, plain places the road badge's cream, locked the list icon's grey; the run's flat markers (before
+  an icon loads) take their family (`runMarkLook`'s tone; `RUN_MARK_TONES` gone).
+- **WM-6's find:** the names are drawn after your figure (`worldBowlNames`), and a name that would touch the figure
+  rises clear of its head.
 
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
@@ -756,7 +779,7 @@ The plan approved in advance (the owner's standing instruction); the browser che
 | UI-16a (built 2026-10-28, `claude/ui-16a-motion`; checks after UI-18) | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
 | UI-16b | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
-| UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
+| UI-18 (done 2026-10-28, `claude/ui-18-map-clutter`) | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 
 About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
 and on.

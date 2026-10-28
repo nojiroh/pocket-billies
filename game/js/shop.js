@@ -9,7 +9,7 @@ import { clamp, random } from './util.js';
 import { CURRENCIES, ITEMS, PERKS, PYRAMIDS, RESIDENTS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { resStock } from './logic/residents.js';
-import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
+import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled, runStallStock } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
@@ -107,7 +107,8 @@ const warePrice = (sh, w, it) => {
  * null (not a run shop, bought, or none left) */
 function shopPerk(sh) {
   const run = saveData.run;
-  if (sh.runNode == null || !run) return null;
+  /* WM-5: a market stall sells no Perk (the owner) */
+  if (sh.runNode == null || !run || sh.stall) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !PERKS[id]) return null;
   return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.perks)) };
@@ -124,7 +125,8 @@ function shopPerkHTML(id, sh) {
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {
   const run = saveData.run;
-  if (sh.runNode == null || !run) return '';
+  /* WM-5: Mo's word is for the town's shop, not its market stall */
+  if (sh.runNode == null || !run || sh.stall) return '';
   const left = runRerollsLeft(run, RESIDENTS);
   if (!left && !runShopRerolled(run, sh.runNode, run.clock)) return '';
   return runShopRerolled(run, sh.runNode, run.clock)
@@ -134,7 +136,7 @@ function shopRerollHTML(id, sh) {
 function shopReroll(id) {
   const sh = SHOPS[id],
     run = saveData.run;
-  if (!sh || !run || sh.runNode == null) return;
+  if (!sh || !run || sh.runNode == null || sh.stall) return;
   if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS)) return;
   sh.stock = runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
   uiState.shopQty = {};
@@ -190,7 +192,10 @@ export function openShop(id) {
     return;
   }
   /* RL-8: a run town's shop has the day's stock (logic/run-loop.js runShopStock: its own stream for the day) */
-  if (sh.runNode != null && saveData.run) {
+  if (sh.runNode != null && saveData.run && sh.stall) {
+    /* WM-5: a village's or a town's market stall: the day's held items, no Perk (logic/run-loop.js runStallStock) */
+    sh.stock = runStallStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.town.stall);
+  } else if (sh.runNode != null && saveData.run) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */

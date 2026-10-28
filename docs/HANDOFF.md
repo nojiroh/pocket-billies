@@ -136,6 +136,241 @@ after three goes).
 - Next: UI-16b (battle events; the plates' marks first) and UI-17 (idle life and big moments); the planning session
   starts them.
 - Tag to suggest (sessions can't push tags): `ui-16a-done` on this entry's commit.
+### UI track UI-18 - less clutter on the Map (solid panels, Give up in ⋯, the folded place card, towns teal, names clear of you) - 2026-10-28
+Branch `claude/ui-18-map-clutter`, made from WM-6's `claude/wm-6-region-look` (main plus `track/worldmap` with WM-5b,
+#293, and WM-6, #296). Merged in, in order (merges, not rebases): main (nothing new); UI-14b's
+`claude/ui-14b-marks-screens` (UI-11, UI-12, UI-13, UI-14a, UI-14b, UI-8c: only HANDOFF and the generated
+art-code-refs.json conflicted, remade with its tool; hooks.js remade with `npm run modules`); UI-15's
+`claude/ui-15-less-clutter` (UI-15 and UI-8b). The UI-15 merge conflicted in docs (all entries and rows kept), in
+uiTheme.json (UI-8b's minimap tile dials beside UI-11's signals: both kept), theme-sheet.js (both bridges kept),
+battle.js (UI-15's field strip replaces the ticker and the storm chip; its chips drew Sandstorm with the bolt and the
+stones with scrap "until UI-13", so a commit of its own gives them UI-13's effect glyphs: the owner's answer 7),
+ui-lint.js (ceilings set to the merged tree's counts: colour 581, shadow 160, keyframes 52, duration 247, zindex 59,
+blur 24, innerHtml 54), art-code-refs.json (remade) and the four gallery pictures `run-nodes-*` (UI-8c's kept: they
+show the badges; remade with the gallery run). Draft PR into main; it shows the earlier steps' and the world map
+track's commits until their PRs merge. No Plan Mode (the owner's standing instruction for the UI plan); the browser
+checks are skipped until the UI plan is done (listed below). Suggested tag `ui-18-done` (sessions can't push tags).
+- **Claims checked against the code:**
+  - "The Map draws 10 blurred surfaces": true on 2026-10-26 (header, place card, the look-around group's glass panel,
+    seven `.mbtn` buttons). UI-8c had already removed 8 of them, leaving 2 that smoke counts. `uiBlurCount` counts page
+    elements only: the top bar's glass is a `::before` and the bottom bar's is inside pb-nav-bar's shadow tree, so smoke
+    never saw them. Real surfaces: 4 before UI-18 (5 with the places list open), **2 after** (the top and bottom bars).
+  - "Towns orange on the hub map (world-bowl.js 3666-3671)": the colour was `#ffb46b` in `worldBowlPin` and the
+    close-in dots, now at 3543 and 3877 before this session. The flat fallback still used `RUN_MARK_TONES` roles.
+  - "Give up, trip status and quests" in the header: true; "a place card of up to 8 blocks": up to 11 (name and kind,
+    zone, rumour, words, ride, status, buttons, forecast, Billies, roads, services).
+  - WM-6's find: true. Names were drawn in the places' loop and your figure after it, over the end of the name.
+- **Built** (one cause per commit):
+  - map-tab.css/js: the header, the place card and the places list are solid semigloss (`--g-solid` with a Team card's
+    sheen), with no `.glass`/`.px`. check-quick.py's `BLUR_CEILING` loses its `map: 10`, so the budget of 3 applies.
+  - Give up the run in a ⋯ menu: a `<details>` on the header's row beside the day chip, a 44 px chip with the new
+    36 px `more` icon (game/art/ui/more.svg, three bevelled dots in the list icon's greys; icon count 89 -> 90,
+    preloaded in boot.js). Opened, it shows Give up the run as a red button in the header's flow. The confirm sheet is
+    unchanged.
+  - The place card opens folded. It shows the name, today's weather (a run place: its forecast's first day, glyph and
+    word; ui-run-kit.js now exports `RUN_WEATHER_ICONS`), the kind chip, one line of what's there (shops, a clinic,
+    trainers, how many kinds of Billie), the status and the main action. More / Less (a 40 px row, `aria-expanded`)
+    unfolds the rest: the place's words, zone, rumour, the 7-day forecast, its Billies, roads and the place's own
+    buttons (shop, clinic, trainers). `uiState.mapCardOpen` holds the one unfolded place. The `mcfold` action goes
+    through ui.js to `mapTabAction`. + and − stay.
+  - world-bowl.js `worldBowlNames`: names are gathered in the loop and drawn after your figure. A name that would
+    touch the figure rises just clear of its head, using the head's highest point so the name doesn't bob.
+  - Colours: the hub's pins and close-in dots use the colour code. Towns are the good family's teal, where you stand
+    is value gold, plain places use the road badge's cream (#FFF8E6), and locked places use the list icon's grey
+    (#9AA7B4). The run's flat markers take their family: `runMarkLook().tone` is now the family (neutral for the
+    landing and roads, muted while locked; where you stand keeps its family and the glow marks it). `RUN_MARK_TONES`
+    is gone. `worldBowlRunColors` reads the `--sig-*` fills at most once a second (`worldBowlFill`). The run-marks
+    test was updated, and ui-lint's game-js colour ceiling went from 634 to 629.
+  - Small fix: more.svg ends in a newline (the svg-pixels round-trip test).
+- **Decided for the owner, to review:**
+  - **Where you stand on the hub map stays gold** (the value family), while a run place where you stand keeps its
+    family with UI-8c's gold rim. Both read as gold. The plan says "you are here" is its own pin (UI-17 adds its bob).
+  - **Neutral and locked on the bowl are fixed icon-set colours, not the palette's surface and text.** The bowl is
+    the world, not the chrome, and a dark palette's surface would vanish on the ground.
+  - **The ⋯ menu opens in the header's flow, not as a floating popover.** The header is clipped to its cut outline,
+    and a `<details>` needs no script.
+  - **The folded card keeps the status and the main action** (Travel here, the trip's buttons). Hiding the main action
+    behind More would cost a tap on the screen's one gold button. The place's own buttons (shop, clinic, trainers)
+    unfold with the rest.
+  - **"What's there" is a generated line** (shops, clinic, trainers, kinds of Billie). The place's words (its blurb)
+    unfold with More. A hub place has no weather on its card: only run places have a forecast. The top bar shows
+    the hub's weather where you stand.
+  - **The places list is solid too**, so opening it adds no blur.
+  - The new-place dot (pink `#ff9ec4`) and the lift marker (`#9fd3ff`) on the hub map are left as they are: no family
+    claims them yet.
+- **For UI-16a / UI-17:** the More/Less chevron turns with no motion (UI-16a owns motion; a turn of the `.mc-fold
+  .uico` fits its "press" or a short rotate). The ⋯ menu opens with no motion either. UI-17's breathing nodes and the
+  pin's bob go in world-bowl.js `worldBowlOverlay`: the names are now drawn last by `worldBowlNames`, so a bobbing
+  figure should feed its rest position into `meBox` (as now) to keep names still.
+- **Found, not fixed:** `uiBlurCount` misses pseudo-elements and shadow trees, so the top bar and bottom bar never
+  count on any screen. Counting them would put walk at about 5, over the budget, so it's left for the planning
+  session to decide. One commit (the names fix) left art-code-refs.json's line numbers stale; the next commit remade
+  them (no interactive rebase in sessions).
+- **Risky:** nobody has seen any of this in a browser (the owner's rule). The ⋯ chip's size beside the day chip on a
+  320 px phone, the solid panels' sheen in the three palettes, and the folded card's height (the look-around group
+  rides on `--mapcard-h`, so it should follow).
+- **Verified:** lint (ceilings at the merged tree's counts, then 629), typecheck, format:check, `npm test` 1603 of
+  1603, check:data, check:modules, art-code-refs, after the merges and after every change.
+- **Skipped until the UI plan is done (what each should show):**
+  - smoke: blurred surfaces per screen with **map 0** (was 2; budget 3, no ceiling); elements: map at or under 25,
+    likely fewer (the folded card).
+  - check-fast's map steps: the bowl opens, the place card names the picked place (check-fast.py 241, the name is in
+    the folded card), and the look-around group sits above the card (184).
+  - check-quick and its picture baselines: the Map's header and card change look (solid), so their pictures are
+    remade on purpose. The `run-nodes-*` gallery pictures are remade too (they were UI-8c's and UI-15's on two
+    branches).
+  - The Studio check: unchanged by UI-18 (the icon editor lists `more`).
+  - Phone: header and card solid in Field Guide, Copper Grove+ and Bureau Night, light and dark; ⋯ then Give up; More
+    and Less; towns teal on the hub map; "Route 1" and towns' names whole beside your figure; frame time on the Map.
+- **Next:** the planning session; after all of the UI plan, one session runs the skipped browser checks. UI-17 adds the
+  breathing nodes and the pin's bob.
+
+### Region map track WM-6 - a region's look: town districts, landmarks, route numbers on signposts and the map - 2026-10-27
+Branch `claude/wm-6-region-look` (made from main at 07c9b284, which held WM-3a/3b, WM-4a/4b, WM-5a and WM-7;
+`track/worldmap` with WM-5b merged in before the PR), PR into `track/worldmap`. Run with the plan approved in advance
+(the owner's standing instruction for this step). During the session the owner asked to be asked before design choices.
+Every choice made until then was put to them, and they kept all four as built (below). Suggested tag `wm-6-done` (sessions
+can't push tags).
+- **Claims checked against the code**: `mapgenTownPlan`/`mapgenStageTown` and the sizes (`MAPGEN_TOWN_SIZES`: hamlet 2
+  cells, village 4, town 6) are as WM-5a's entry says. **Signposts at the seams already existed** (RT-3,
+  `mapgenStageProps`: one by each exit, tapped "You're in <place>."). They were not tied to their exit, and nothing
+  numbered routes. Real water can't be painted at the town stage: the water stage lowers and carves it before the
+  streets. So "a park or pond" means a park, by the place's own pond when it has one. Props flagged `landmark: 1`
+  exist (the great oak with a swing, giant sunflower, windmill, lookout tower, lighthouse); the clock tower and the
+  great cherry are town props.
+- logic/mapgen.js (**MAPGEN_VERSION 25**; WM-5b kept 24, so 25 stands after the merge):
+  - `mapgenTownDistricts`, after the houses and before the plots, on its own random stream ('lots', '|districts'), so
+    houses and plots draw as before. **The park** is a lawn (10 x 7 m in a hamlet, 13 x 8 in a village, 16 x 9 in a
+    town) beside the through road, south of it first and as near the square as it fits. It goes by the place's pond
+    first, and anywhere within 64 m when the road has no room. It has the biome's trees at its back corners,
+    flowerbeds along its front, two benches facing the camera, a lamp, and **the landmark** in the middle.
+    **The farm edge** is a field of farm soil (10 x 6 to 16 x 8 m) toward the place's far end from the square. It has
+    crop rows, hay at its back (a second stack in a village or town), a scarecrow in a village or town, and a fence
+    along its front. Each district keeps off roads, verges, water, banks, tall grass, lots and exits, on ground
+    spreading at most 1.5 m. One with no room is left out (null, no note). `scene.town.districts` is `{ park, farm,
+    landmark }`.
+  - `MAPGEN_TOWN_SET.landmarks` by size: hamlet `tree_giant_swing`, village `tree_blossom_great`, town `clock_tower`,
+    each with `statue` as the fallback; a biome's town set may name its own. No new art.
+  - An exit's signpost carries `exit` (its edge exit's id).
+- logic/run-scenes.js:
+  - `runRouteNumbers` numbers the main path's route-like places (nodeTypes routeLike: route, rival, ghost, scrapyard,
+    leader) from the landing out: by step, then west to east, then south to north. A side area's places keep their
+    name.
+  - `runPlaceSign` reads "Route 3", or the place's name through `runPlaceName` (WM-5b's name function, not changed).
+  - `runSignposts`: each exit's sign shows that as a label over it in the walk (the label pill the notice board
+    uses; walk-view.js untouched). Tapped, it says "Route 1, Thicket Route. East: Route 3.", or for a town "Meadow
+    Hamlet. East: Route 6.". A sign by a side area's door, or out of one, names only its own place.
+  - A run's location row carries `routeNo`.
+- world-bowl.js `worldBowlName`: a numbered place's map label reads "Route 3", a town and the rest their names. Only the
+  label's text changed; UI-8c's font change (`worldBowlFont`, PR #281) merges with no conflict in world-bowl.js (tried
+  with `git merge-tree`; only the generated art-code-refs.json conflicts, regenerate it).
+- self-test.js: the in-game full test reads an exit's sign (its words now hold the number and the way on too).
+- Stall and givers: left where WM-5a/5b put them; no district moved them.
+- **The owner's answers** (asked during the session, each built before it was asked; all kept as built):
+  - all four districts at every size, the park and the farm edge scaling with size;
+  - the landmarks: oak / cherry / clock, the statue as the fallback;
+  - signposts: "Route 3" over the sign, the place and the way on when tapped;
+  - the map: "Route 3" for numbered places, names for towns.
+- Tests: mapgen-town (new: every size's 72 fixed towns have a park on lawn with the size's landmark and a farm edge on
+  farm soil with crops, apart and off the square, nothing unreachable, at least 95% / 90%; run towns have both), new
+  run-signs.test.mjs (slow tier: numbers 1..n with no gaps and never lower on a later step; every exit's sign label
+  and words). Remade on purpose: rng's scene hash (a route: gen.v, then the signs' `exit`), run-start (mapgenV),
+  mapgen-golden (props hashes only: the signs' `exit`; tiles, heights and counts unchanged).
+- Measured in Node at WM-5b's sizes, 40 runs over Expeditions I-V: 159 towns, every one with a park, 158 with a farm
+  edge. A run town's scene takes about 42 ms for a hamlet, 84 ms for a village and 126 ms for a town.
+- **Pictures for the owner** (headless Chromium, the Studio's Generate card as WM-5a made them; not in git): each size
+  from above and in the preview at its park, farm edge and square (hamlet in meadow, village in lake, town in autumn
+  with the clock tower), and the run fixture's Route 1 with its signpost's "Route 1" label and its words.
+- **Found, not fixed**: on the world map, your figure (drawn beside the pin after the label) covers the end of the
+  label where you stand ("Route 1" reads "Route"); towns' names the same. Older than WM-6; UI-18 (less clutter on
+  the Map) is the place for it. Unrevealed places keep their names to themselves as before, numbers included.
+- Verified: lint, typecheck, format, check:modules, art-code-refs; unit tests quick tier 1576 pass, slow tier 108 of 108
+  (after the WM-5b merge); check-fast's run pages 14 of 14 on the merged branch (the run's world and its seam, the
+  helper thread's places equal to the page's, waystations, the shop, held items, salvage, the town's life and quest,
+  the village's stall, the battle held, the leader's arena, Blake, Play this seed, the world map). Before the merge
+  one run had "A run's world" fail after the seam crossing (the known slow-runner failure); it passed after.
+  The full quick check: 36 of 41 (1469 s). RT-2's pair and Granny Juniper passed when run again alone (2 of 2). The
+  three left fail the same way on `track/worldmap` in WM-3b's and WM-4b's runs: Copperleaf's train station "in the
+  air", RL-8's town shop with no Perk, room light at night. No snapshot or baseline picture changed. Python Playwright
+  1.63, as before.
+- Risky: a run's towns are a little bigger in props (a park and a field: about 20-40 more props) and take slightly
+  longer to make; frame times in a 3 x 2 town on the phone (the clock tower, the park's trees) are unmeasured.
+- Next: UI-18 (less clutter on the Map) from this branch; WM-8 (ledges and loops). The owner looks at the pictures.
+
+### Region map track WM-5b - town sizes, services and names; WM-5 done - 2026-10-28
+Branch `track/worldmap` (main fast-forwarded in, 278 commits; then `claude/wm-5-town-streets`, WM-5a's last HANDOFF
+note 0f4046a7, merged with no conflict). Draft PR into main. Run with its plan approved in advance (the owner: "Also
+start WM-5b and WM-6 in new sessions", with the UI plan's auto-approval), beside WM-6 on `claude/wm-6-region-look`.
+The owner's WM-5 answers (worldmap-track.md) cover it. Mapgen untouched: sizes and services go through WM-5a's `town`
+dial, so MAPGEN_VERSION stays 24.
+- **Claims checked**: townsfolk were already "2 and 1 for every 2 houses, at most 10" (WM-5a's mapgen, the Engine's
+  townFolk setting still trims them); the stall prop (`act: 'stall'`) existed but would have opened the town's own shop
+  (walk-control.js reads a prop's `shop` first); a town's size needs no save field: its footprint says it; the whole of
+  rules.json `run` reaches the scenes (run-world-data.js). The strict sizes claim holds: 0 failures in 5,000 maps
+  (1,000 an Expedition), so the step-down never ran there.
+- **rules.json**: `run.map.townSizes` (each size's cells: hamlet 2x1, village 2x2, town 3x2, smallest first; and by
+  Expedition the sizes of a run's 2 or 3 towns in order: I hamlet+village / hamlet+village+village, II-III
+  hamlet+town / hamlet+village+town, IV-V village+town / hamlet+village+town); `run.town.sizes` (word, houses, stall,
+  givers); `run.town.stall` (2 held items a day, the 8 held items at weight 1). Data checks for all three.
+- **The grid** (run-map.js): runMapLength gives the run's `sizes`; runMapMake asks runMapGrid for each town's cells with
+  no 2x1 fallback (`want`); if the map can't be laid out even without its lane switches, every town steps down a size
+  at once, then again. runTownSize reads a town's size off its footprint (a side area's town, with none: a hamlet).
+- **Scenes and names** (run-scenes.js): runTownOf / runTownDial pass size, houses, stall and givers to mapgen;
+  **runPlaceName** is the one function a place's name comes from (WM-6 reads it): "Meadow Hamlet", "Thicket Village",
+  "Meadow Town"; a side area's town "Bramble Grove Hamlet"; a town's shop "Thicket Village Shop".
+- **The market stall**: a shop of its own (`run_<i>_stall`, LocationData `stall`, the prop's `shop`), "<name> Market
+  Stall"; run-loop.js runStallStock draws 2 held items a day on the node's 'stall' stream at their items.json prices
+  (Perks' price rows apply as in any run shop); shop.js gives it no Perk and no fresh stock on Mo's word.
+- **The second quest giver**: run-scenes.js runTownQuest puts a giver on each of mapgen's giver spots (a 3x2 town has
+  two; the second `quest2`, `quest: 2`, its own stream and name). run-quests.js questOffer/questTake take the giver's
+  slot: the second's offer draws on 'quest|2' and takes another kind than the first's when one can be done (in 90%+ of
+  towns); run.quests.took keeps it as questKey (node + RUN_NODES), validRun allows it; the cap of three counts both.
+  quest-board.js asks by the person's slot.
+- **The sim**: each town walked into logs its size and a stall's wares (looked at, not bought); stats and the report
+  count towns by size and stalls. Outcomes unchanged (balance, Expedition II: 5 of 40 won and 5.7 places, before and
+  after).
+- **check-fast**: a new run-page step, "A run's village" (its name, the stall's own shop of 2 held items, no Perk, no
+  fresh stock); the town's life step asks for 2 + houses/2 folk, at most 10 (was 2-6).
+- **Fixed, not WM-5's** (each its own commit):
+  - The ground painter's helper thread (0dd42c1e): `groundTileRole` and `GROUND_DETAIL_TILES` added to
+    ground-paint-worker.js `paintWorkerSource` (GROUND_DETAIL_TILES now exported); new ground-paint-worker.test.mjs runs
+    the helper's source in a sandbox and fails on any walk-view.js name it uses but leaves out (it failed before the fix).
+  - A leader's line of trainers stacked on one spot (713acb9a): on a short road before the ring, route-trainers.js
+    routeArenaLine clamped every trainer to ROUTE_ARENA_IN (0.0 m apart; 2 leader places in 60 over WM7LINE0-29, on the
+    base too). It now gives up and the trainers take ordinary route spots (WM-3b's fallback): 5 of 60 places.
+- **Tests**: new or extended: run-map-real (sizes by Expedition, strict; the step-down with a 4x4 size), run-scenes
+  (names, the dial, the stall's shop), run-loop (the stall's wares, untouched by Mo's fresh stock), run-quests (the
+  second giver), mapgen-town (each run town's size, name, stall and givers; an Expedition II 3x2 town with two givers,
+  10-16 houses, 7-10 folk), run-sim (sizes, stalls), data-checks (planted faults), ground-paint-worker. Remade on
+  purpose: run-start's snapshot and run-world-real's frozen dials (towns at their cells, the town dial). Seeds swapped
+  because the maps moved: mapgen-mountains TR2MTN0 -> TR2MTN4 (a village's river note; ordinary runs have as many notes
+  as before, 11 vs 12 in 700 places), route-trainer-spots' WM-7 test WM7LINE0-2 -> 0, 2, 6.
+- **Verified**: lint, typecheck, format, check:modules, check:data; unit tests quick 1576 of 1576, slow 104 of 104;
+  check-fast 40 of 42 (the two Studio steps' 404s for `art/billionaires/*.png`, failing the same on main; "A run's
+  world" passed); smoke 6 of 6 (166 s); the full quick check 37 of 41 (1228 s): "Battle music" passed when run alone; the other three are the ones WM-3b and WM-4b found failing on `track/worldmap` before them (Copperleaf's train_station in the air, RL-8's "the town's shop has no Perk", room light at night; not re-run on the base here). Headless pictures in a run (the run fixture: Meadow Hamlet,
+  Thicket Village with its Market stall label; an Expedition II run's Meadow Town, 192 x 128): not committed, as
+  before. Python Playwright 1.63; `npm ci` and `npm run data` first in a fresh container.
+- **PRs #263, #267, #271**: all three are closed and none is open, but GitHub lists them as closed, not merged; every
+  head commit (b38c8504, bdd119a0, 0f4046a7) is in `track/worldmap`. Not closed or reopened by this session.
+- **Decided for the owner, to review**:
+  - The step-down order: lane switches dropped first, then every town a size smaller at once (never needed in 5,000
+    maps). The alternative (step down before dropping switches) keeps more lane switches and fewer big towns.
+  - The stall's wares: all 8 held items at weight 1; their names "<town> Market Stall", greeting "Something for your
+    Billies to hold? Two new pieces every morning." (player-facing, yours to reword). Perks' shop price rows apply.
+  - No fresh stock (Mo's word) at the stall: his reroll stays the town shop's.
+  - The second giver offers another kind than the first when it can; its offer is keyed node + 64 in run.quests.took.
+  - A side area's town (no footprint) is a hamlet, named "<side> Hamlet" (was "<side> Town").
+  - The sim's bot looks at the stall and buys nothing (the policy object unchanged, so reports compare).
+  - The ground painter fix on this branch: no session owns that code now (WM-5a asked which branch should take it).
+  - The trainers' stacking fix (WM-7's code), and its new fallback (ordinary spots, some past the gate).
+- **Found, not fixed** (WM-7's, on the base too): about 1 leader place in 10 has a line trainer the walk can't reach
+  with the gate shut (6 of 60 over WM7LINE0-29; 10 of 60 before this session); seeds 1, 11, 15, 17, 19, 21 show it.
+- **Risky**: bigger towns in every run (a village 128 x 128, a town 192 x 128: WM-5a measured 60-100 ms each in Node, a
+  phone 3-5 times that on LD-4's helper thread); frame times in a 3x2 town with up to 16 houses and 10 folk on the phone;
+  any run in progress resumes with new sizes (remade from its seed); WM-6 merging second takes the next MAPGEN_VERSION
+  only if it changes the generator (this session didn't).
+- Next: the owner pushes tag `wm-5-done` and plays a village and a town on the phone (the stall, the second giver,
+  frame times); WM-6 (districts, landmarks, signposts and names on the world map, reading runPlaceName); WM-8.
 
 ### UI track UI-14b - the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, pb-chip, Colour shapes) - 2026-10-27
 Branch `claude/ui-14b-marks-screens`, made from UI-14a's `claude/ui-14a-marks-kit` (main plus UI-11, UI-12, UI-13 and
@@ -1505,8 +1740,18 @@ WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until 
     `game/art/billionaires/*0.png`, legacy art SA-5 deleted; main's own fast check fails both the same way, no fix
     yet), and the Studio check's `--only=generate` (a fixed 0.8 s wait races the draft under software drawing: 2 of 3
     runs fail on the track's head; with a longer wait it passes here).
-  - CI's smoke on a slow runner (every step 1.5-2 times slower) once also failed "Behind things" (Copperleaf) and "A
-    run's world" (the walk from the landing into a route); both passed on the same commit in the other run and here.
+  - check-fast's "A run's world" (`crossed but the view is still w:run_0_7i5p*`) fails in 3 of 4 CI runs here and in 3
+    of 4 on WM-3b's and WM-4b's PRs (#263, #267: the same base without WM-5). Reproduced locally pinned to 2 cores
+    (it passes on 4): after the crossing, seamless-world.js `seamlessGate` keeps the old view until the next one
+    (Thicket Route, 176 x 120 since WM-3a) is built on the card, and that build runs a few ms a frame
+    (`groundPrepWork`); with software drawing and two browsers on 2 cores the page draws about 2 frames a second, so
+    it isn't done in the step's 60 s. The hold has no time limit (a view's first build has 30 s); a 20 s limit passed 1
+    of 2 such runs, so it isn't the whole fix. Copperleaf's "Behind things" and orbit steps failed once each under load.
+  - Found while tracing it: the ground painter's helper thread fails every job (`ReferenceError: groundTileRole is not
+    defined`). e89c8131 moved the tile pick into `groundTileRole` (walk-view.js) without adding it and
+    `GROUND_DETAIL_TILES` to the helper's source (ground-paint-worker.js `paintWorkerSource`), so every square of ground
+    is painted on the page, on the phone too (main has it as well). Adding the two fixes it (38 jobs, 0 failures) but
+    alone doesn't fix the step above. Not fixed here: neither is WM-5's code.
 - Measured in Node: over 205 run towns the square fits in all but 1 (20 before: the dogleg); generator notes the same
   (2); a run town about 30 ms as before. Fixed sizes: hamlet about 55 ms, village 60-70, town 80-100 (max about 230),
   so a run gains roughly 0.1-0.3 s with its sizes in WM-5b (a phone about 3-5 times that, on LD-4's helper thread).

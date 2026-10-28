@@ -65,13 +65,15 @@ test('the SVG points and the clip-path are the same outline', () => {
   assert.equal(runMarkPoints('nope'), runMarkPoints('unknown'), 'a type it does not know reads as unknown');
 });
 
-test('states: hidden shows "?" whatever the type, current glows gold, visited and locked fade', () => {
+test('states: hidden shows "?" whatever the type, current glows, visited and locked fade', () => {
   assert.deepEqual(RUN_MARK_STATES, ['seen', 'current', 'visited', 'locked', 'hidden']);
   const hidden = runMarkLook('boss', 'hidden');
   assert.equal(hidden.shape, 'unknown');
   assert.equal(hidden.glyph, '?');
-  assert.equal(runMarkLook('town').tone, 'primary');
-  assert.equal(runMarkLook('boss').tone, 'danger');
+  /* UI-18: the flat shape's tone is its family (neutral for roads and the landing, muted while locked) */
+  assert.equal(runMarkLook('town').tone, 'good');
+  assert.equal(runMarkLook('boss').tone, 'bad');
+  assert.equal(runMarkLook('route').tone, 'neutral');
   /* UI-14b: the family table: towns good, bosses bad, shops value, events and "?" special, scrapyards machine */
   assert.equal(runMarkLook('town').family, 'good');
   assert.equal(runMarkLook('boss', 'hidden').family, 'special');
@@ -79,14 +81,14 @@ test('states: hidden shows "?" whatever the type, current glows gold, visited an
   for (const k of Object.keys(RUN_MARK_FAMILIES))
     if (MARK_CHIP_FAMILIES[k]) assert.equal(runMarkLook(k).family, MARK_CHIP_FAMILIES[k][0], `${k}: the chip's family`);
   const cur = runMarkLook('route', 'current');
-  assert.equal(cur.tone, 'gold');
+  assert.equal(cur.tone, 'neutral');
   assert.ok(cur.glow && !cur.faded);
   assert.ok(runMarkLook('town', 'visited').faded);
   assert.equal(runMarkLook('town', 'locked').tone, 'muted');
   assert.equal(runMarkLook('town', 'locked').glyph, 'lock');
 });
 
-test('the canvas painter: whole-pixel points, the role colours, one closed path', () => {
+test('the canvas painter: whole-pixel points, the family colours, one closed path', () => {
   const calls = [];
   const ctx = new Proxy(
     {},
@@ -96,8 +98,8 @@ test('the canvas painter: whole-pixel points, the role colours, one closed path'
     }
   );
   const colors = {
-    danger: { fill: '#c8492f', edge: '#5a1e12' },
-    surface: { fill: '#fffbf0', edge: '#22301f' },
+    bad: { fill: '#c8492f', edge: '#5a1e12' },
+    neutral: { fill: '#fffbf0', edge: '#22301f' },
   };
   runMarkDraw(ctx, 100.3, 50.7, 22, 'boss', 'seen', colors);
   const pts = calls.filter(c => c[0] === 'moveTo' || c[0] === 'lineTo');
@@ -109,7 +111,7 @@ test('the canvas painter: whole-pixel points, the role colours, one closed path'
     calls.filter(c => ['closePath', 'fill', 'stroke'].includes(c[0])).map(c => c[0]),
     ['closePath', 'fill', 'stroke']
   );
-  // a role the caller didn't give falls back to the surface colours
+  // a family the caller didn't give falls back to the neutral colours
   calls.length = 0;
   runMarkDraw(ctx, 0, 0, 22, 'event', 'seen', colors);
   assert.ok(calls.some(c => c[0] === 'set' && c[1] === 'fillStyle' && c[2] === '#fffbf0'));

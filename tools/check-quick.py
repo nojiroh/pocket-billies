@@ -45,7 +45,9 @@ CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Ma
 # UI-6b: blurred surfaces a screen may have (ui-track.md: at most 3; logic/ui-inspect.js UI_BLUR_BUDGET); the screens
 # over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
 BLUR_BUDGET = 3
-BLUR_CEILING = {'map': 10, 'shop': 5}
+# UI-18: the Map's ceiling (10) went: it has 0 blurred surfaces smoke can count (its header, card and places list are
+# solid), under the budget
+BLUR_CEILING = {'shop': 5}
 # UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
 # a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
 # battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in

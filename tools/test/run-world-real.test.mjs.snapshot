@@ -163,7 +163,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
         },
         {
           "side": "N",
-          "t": 0.4296875,
+          "t": 0.7265625,
           "width": 2
         }
       ]
@@ -224,8 +224,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.25,
+          "side": "S",
+          "t": 0.7578125,
           "width": 2
         }
       ]
@@ -235,12 +235,21 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "shop": 1
     },
     "kind": "town",
+    "town": {
+      "size": "hamlet",
+      "houses": [
+        3,
+        5
+      ],
+      "stall": 0,
+      "givers": 1
+    },
     "biome": "thicket",
     "w": 128,
     "h": 64,
     "seed": 1951062480,
-    "pin": "EW",
-    "ahead": "E",
+    "pin": "EWS",
+    "ahead": "S",
     "edges": 1
   },
   {
@@ -263,7 +272,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "S",
-          "t": 0.4296875,
+          "t": 0.2265625,
           "width": 2
         },
         {
@@ -278,6 +287,15 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "shop": 1
     },
     "kind": "town",
+    "town": {
+      "size": "hamlet",
+      "houses": [
+        3,
+        5
+      ],
+      "stall": 0,
+      "givers": 1
+    },
     "biome": "lake",
     "w": 128,
     "h": 64,
@@ -305,18 +323,18 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.73,
       "exits": [
         {
-          "side": "W",
-          "t": 0.625,
+          "side": "N",
+          "t": 0.2578125,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.171875,
+          "t": 0.125,
           "width": 2
         },
         {
           "side": "N",
-          "t": 0.1953125,
+          "t": 0.6796875,
           "width": 2
         }
       ]
@@ -331,12 +349,6 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "seed": 1581277298,
     "pin": "EWN",
     "ahead": "E",
-    "cut": [
-      64,
-      64,
-      128,
-      128
-    ],
     "edges": 1
   },
   {
@@ -363,8 +375,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.34375,
+          "side": "S",
+          "t": 0.7890625,
           "width": 2
         }
       ]
@@ -377,8 +389,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "w": 128,
     "h": 64,
     "seed": 63358577,
-    "pin": "EW",
-    "ahead": "E",
+    "pin": "EWS",
+    "ahead": "S",
     "edges": 1
   },
   {
@@ -401,12 +413,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.171875,
+          "t": 0.625,
           "width": 2
         },
         {
           "side": "N",
-          "t": 0.71875,
+          "t": 0.53125,
           "width": 2
         }
       ]
@@ -421,12 +433,6 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "seed": 577964397,
     "pin": "EWN",
     "ahead": "N",
-    "cut": [
-      0,
-      64,
-      64,
-      128
-    ],
     "edges": 1
   },
   {
@@ -449,17 +455,17 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "S",
-          "t": 0.1953125,
+          "t": 0.1796875,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.5625,
+          "side": "S",
+          "t": 0.65625,
           "width": 2
         },
         {
-          "side": "W",
-          "t": 0.34375,
+          "side": "N",
+          "t": 0.2890625,
           "width": 2
         }
       ]
@@ -473,8 +479,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "w": 128,
     "h": 64,
     "seed": 553133995,
-    "pin": "EWS",
-    "ahead": "E",
+    "pin": "EWSN",
+    "ahead": "S",
     "edges": 2
   },
   {
@@ -497,7 +503,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "S",
-          "t": 0.71875,
+          "t": 0.53125,
           "width": 2
         },
         {
@@ -506,13 +512,13 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
           "width": 2
         },
         {
-          "side": "W",
-          "t": 0.5625,
+          "side": "N",
+          "t": 0.15625,
           "width": 2
         },
         {
           "side": "N",
-          "t": 0.421875,
+          "t": 0.71875,
           "width": 2
         }
       ]
@@ -569,12 +575,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "W",
-          "t": 0.265625,
+          "t": 0.6328125,
           "width": 2
         },
         {
           "side": "N",
-          "t": 0.6796875,
+          "t": 0.890625,
           "width": 2
         }
       ]
@@ -584,9 +590,18 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "shop": 1
     },
     "kind": "town",
+    "town": {
+      "size": "village",
+      "houses": [
+        6,
+        10
+      ],
+      "stall": 1,
+      "givers": 1
+    },
     "biome": "meadow",
     "w": 128,
-    "h": 64,
+    "h": 128,
     "seed": 1020292343,
     "pin": "EWN",
     "ahead": "N",
@@ -612,12 +627,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "S",
-          "t": 0.421875,
+          "t": 0.21875,
           "width": 2
         },
         {
           "side": "E",
-          "t": 0.59375,
+          "t": 0.296875,
           "width": 2
         }
       ]
@@ -627,9 +642,18 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "shop": 1
     },
     "kind": "town",
+    "town": {
+      "size": "village",
+      "houses": [
+        6,
+        10
+      ],
+      "stall": 1,
+      "givers": 1
+    },
     "biome": "meadow",
     "w": 128,
-    "h": 64,
+    "h": 128,
     "seed": 137567764,
     "pin": "EWS",
     "ahead": "E",
@@ -655,12 +679,12 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "exits": [
         {
           "side": "S",
-          "t": 0.6796875,
+          "t": 0.390625,
           "width": 2
         },
         {
-          "side": "E",
-          "t": 0.640625,
+          "side": "S",
+          "t": 0.8125,
           "width": 2
         },
         {
@@ -679,7 +703,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "h": 64,
     "seed": 274119125,
     "pin": "EWS",
-    "ahead": "E",
+    "ahead": "S",
     "edges": 2
   },
   {
@@ -701,8 +725,8 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
       "wobble": 0.57,
       "exits": [
         {
-          "side": "W",
-          "t": 0.640625,
+          "side": "N",
+          "t": 0.3125,
           "width": 2
         }
       ]
@@ -731,7 +755,7 @@ exports[`a node's dials are frozen: a change to how they are drawn changes every
     "w": 128,
     "h": 64,
     "seed": 1019465122,
-    "pin": "EW",
+    "pin": "EWN",
     "ahead": "E",
     "edges": 1
   }

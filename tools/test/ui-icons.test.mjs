@@ -13,9 +13,9 @@ const NAMES = readdirSync(UI)
   .filter(f => f.endsWith('.svg'))
   .map(f => f.slice(0, -4));
 
-test('the 89 icons: names in the code’s style, each a 36 x 36 picture in the pixel format', () => {
-  /* a new icon (the Studio's New icon) raises this count on purpose; UI-13: 26 glyphs (g-*); UI-8c: 12 place icons and badges (node-*) */
-  assert.equal(NAMES.length, 89);
+test('the 90 icons: names in the code’s style, each a 36 x 36 picture in the pixel format', () => {
+  /* a new icon (the Studio's New icon) raises this count on purpose; UI-13: 26 glyphs (g-*); UI-8c: 12 place icons and badges (node-*); UI-18: more (the Map's ⋯ menu) */
+  assert.equal(NAMES.length, 90);
   for (const n of NAMES) {
     assert.match(n, /^[a-z][a-z0-9-]*$/, n);
     const text = readFileSync(join(UI, `${n}.svg`), 'utf8');

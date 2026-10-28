@@ -2025,8 +2025,8 @@ async function runFullTest(mode) {
                 if (!sc.props.some(o => o.k === q.k && Math.hypot(o.x - P.x, o.z - P.z) <= S.r + 0.5))
                   throw new Error(`the ${S.name} has no ${q.k}`);
             }
-            /* an exit's signpost reads the place's name */
-            const sign = sc.props.find(o => o.k === 'signpost' && o.act === 'sign' && !o.say),
+            /* an exit's signpost reads the place's name (WM-6: with its route number and where that way goes) */
+            const sign = sc.props.find(o => o.k === 'signpost' && o.act === 'sign' && (o.exit || !o.say)),
               toasts = () =>
                 [uiState.toastOn, ...(uiState.toastQ || [])]
                   .map(t => (t && typeof t === 'object' ? t.text : t))
