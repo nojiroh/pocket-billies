@@ -2,6 +2,195 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
+Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
+until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
+made by the track's own recommendations (written below). CH-1's last two commits (its HANDOFF entry, a run's leader
+turned through faceToward) merged in before the end-of-phase checks (c684d805, a merge; BRANCHES the only conflict).
+Draft PR #277 (`track/characters` -> main) carries CH-0 to CH-3. Tag `ch-3-done` (the owner's) on this entry's commit;
+`ch-2-done` on d642f6ba.
+- Changed (one cause per commit):
+  - tools/gltf-figure.mjs (7ee19071; plain Node, no new packages) and tools/test/gltf-figure.test.mjs (4 tests, on a
+    small rigged model the test builds):
+    - each vertex on its strongest joint (the Studio's rule: jointed parts, no skinning); a mesh that rides a bone
+      (a hat, a cape) on that bone; what a hand holds (under a `handslot` bone) left out unless named;
+    - only the joints that move something kept (the Rogue: 20 of 41); per clip and frame, each joint's 3 x 4 matrix,
+      the hips' lift (snapped to whole texels at bake time), a walk's metres a cycle from its feet, and the room every
+      pose takes;
+    - 1.75 m to the top, x flipped: glTF is right-handed and the game's camera mirrors x (walk/camera.js), so without
+      the flip a model is drawn as its mirror image (RP-3's prop converter, tools/glb-to-recipe.py, keeps x: whether
+      its props show mirrored is worth a look on an asymmetric one);
+    - the texture point-sampled to 128 x 128 (the source is a swatch atlas) and snapped to the master palette
+      (game/art/next/palette.js, 164 colours) in OKLab; its own PNG reader and writer.
+  - The stand-in (84092308): KayKit's Rogue (Adventurers 1.0, CC0; validation/cc0-src/LICENSES.md has the
+    repository, commit, path and licence text; the 3.6 MB .glb is not copied in), game/art/figures/rogue.json
+    (319 KB: 3,567 vertices, 4,347 triangles, 20 joints; idle 6 frames at 6 fps, walk 13 at 12, run 10, cheer 20,
+    throw 16, sit 22 at 6) and rogue.png (1.4 KB). Its body, head and cape; no knives or crossbows.
+  - The baker (figures.js) draws figures made from a model beside the code-built mannequin: fetched the first time
+    one is wanted (a data: link in a single-file build), triangles by index, coloured by the texture and ramped in
+    the shader as the props' ramp does it; each figure's buffers and texture in the baker's context, made again after
+    a loss. A picture is as big as the figure's poses reach (logic/figure-pose.js cardSize from an extent), so the
+    cheer's raised arm isn't cut off.
+  - A model's clip (logic/figure-pose.js meshClipFrame, meshClipMatrices): a walk or a run by the distance walked at
+    its own cadence, an idle or a sit on twos, a cheer or a throw on ones.
+  - The plain 3D figure (B) is a style of the same figure: a soft light, no outline, baked at 128 px a metre and
+    left to the GPU's mipmaps.
+  - Engine > People: Your figure (the stand-in by default, or the mannequin), Style (pixel puppet or plain 3D),
+    Townsfolk as figures, Figure turns up to 32. You are your figure anywhere; townsfolk with the dial on (strolling,
+    cheering for their wave); in battle (battle-stage.js trainerBattleFrame, battle-3d.js) you at 64 px a metre from
+    behind, throwing with the figure's throw, the rival too with Townsfolk on, as tall as today's trainers.
+  - The bench (4c7364f9): test_people's front row, side by side facing the camera: the stand-in cheering, the
+    mannequin, today's person (folk:3), the stand-in as the pixel puppet (C), as the plain 3D figure (B), a Billie
+    (Carnegiant), the stand-in throwing; the stand-in turned eight ways behind the walkers; walking and running at
+    their ends. The schema's lineup: `figure` rogue, `style`, `act`, `run`, `billie`. look-people: dusk, --figure,
+    --style, --folk, --sheet with density lists and the stand-in's clips, --battle.
+  - The debug menu's figure switches (2911aac7): the player's Expert dials are a set list of sliders, so Engine >
+    People can't be reached from Settings on a phone. A row of buttons steps each People dial for the session (the
+    game data's engine defaults, as TR-4's terrain switches do). The debug log's people section says which figure,
+    style, density and turns were on.
+  - Pictures kept by their bytes too, at most 48 MB (b6315f04): a plain 3D picture of the stand-in is about 340 KB.
+  - The baker keeps to the frame's work budget (c36bc4f0): the first bake of a frame always, up to 4 only while the
+    budget lasts (walk/quality-cull.js frameBudgetLeft), as a bake in the scene waits on the scene's own drawing (the
+    numbers below). Its header comment brought up to date (8d003c22, comments only).
+  - look-people --battle shoots the intro while both trainers stand on the stage (59c17a67: at the move menu they
+    have already left it); --no-shots skips the zoom stops' shots, for --battle or --lose alone.
+  - Docs: the track file (CH-2 and CH-3 done, "Ask me before" 2, 3, 5 and 7 answered, key files), ROADMAP,
+    BRANCHES, CHANGELOG ("Figures to try"), this entry and CH-2's.
+- Calls made by the track's recommendations (the owner said to follow the plan):
+  - No face decal from the wardrobe's pixels on the stand-in: its own painted face reads at 32 px a metre (its head
+    is about 26 pixels wide), and the owner said the new people don't have to look like today's. CH-6 does faces.
+  - The walk's feet slide: KayKit's stride is 0.62 m a cycle and you move at 3.4 m/s, so a walk keyed to the
+    distance would race through 70 frames a second. It plays at its own cadence at walking speed instead. A stride
+    that fits the game's speed is CH-9's problem (and the art's: short chibi legs).
+  - The stand-in is about 2.2 heads, not 2.75: a stand-in only.
+  - The figure's file is game/art/figures/ (fetched only with the figures on), not game/data/figures.json.
+- The numbers (look-people, the 390 x 844 phone at DPR 3; quality step 0; means over 6 frames; counts only):
+  - test_people with the figures on (you the stand-in, the townsfolk dial on, no crowd), the Normal stop: 53 people
+    drawn (today's 24, the 12 mannequins, the stand-ins, you). By day 171 draws, 138 of them people's (53 sprites, 42
+    in each sun shadow map, your outline about 1); at dusk the same; at night 250 (215 people's: the two lamps' maps
+    add 40 and 36). People's pictures 293-298, 11.2-11.4 MB. The camera turned 0, 35 and 90 degrees: the same counts;
+    1.55, 1.54 and 1.52 buffer pixels a figure pixel.
+  - The zoom stops, by day, unturned: Close 3.02 buffer pixels a figure pixel, Normal 1.55, Far 0.81 (CH-0 worked
+    out 3.0, 1.55 and 0.8 for 32 px a metre). The same 138 people's draws at each; pictures 343, 385 and 473 (12.9 to
+    17.6 MB), as each stop's tilt is baked anew.
+  - Crowds (test_people and N townsfolk as figures, Normal, by day): 10: 63 people, 189 draws (156 people's), 337
+    pictures, 12.6 MB; 20: 73, 203 (170), 330, 12.3 MB; 40: 93, 225 (192: 93 sprites, 49 in each shadow map), 348,
+    12.9 MB. CH-1's crowd of 40 with today's people: 65 people, 217 draws (184), 112 pictures, 8.4 MB. A figure costs
+    what a person costs in draws (one sprite, the shadow maps instanced); it has more pictures (more views).
+  - Copperleaf, the townsfolk as figures, every stop by day, at dusk and at night: 11 people drawn; the town's own
+    810-1,225 draws a frame, people's 25 by day, 29-32 at dusk, 30-36 at night (a lamp's map 5-7); pictures 70 to 384
+    (2.1 to 12 MB) over the nine shots.
+  - A forced loss of the game's context (forceContextLoss) and then of the baker's (figureBakerLose), the figures
+    on: everyone drawn again after each (53 people, 170-171 draws); the baker restored (1 loss counted) and baking
+    again in the battle after it.
+  - Bakes, headless (software drawing; the phone's will differ): on a sheet with nothing else drawn 0.65 ms a bake
+    (the mannequin, 160 in 105 ms) and 0.76 ms (the stand-in, 208 in 159 ms); in the scene 25 ms a bake (257 in 6,408
+    ms), as the read-back waits on the scene's own drawing. Hence c36bc4f0: one bake a frame, more only within the
+    frame's work budget.
+  - In battle (the intro, by day and at dusk, the townsfolk dial on): both trainers' figures 120 x 129 pixels at 64
+    px a metre, you from behind and the rival facing you; 31 draws in the battle's frame. By then 222 pictures had
+    been baked (test_people's and the battle's), 5.5 MB, in 9.3 s: 42 ms a bake headless in a scene.
+  - Sheets for the dials (look-people --sheet; in validation/look-people/ when made there): the stand-in at 16, 24,
+    32, 40, 48 and 64 px a metre, 8, 16 and 32 turns, without the outline, as the plain 3D figure, at the Far tilt
+    (36 degrees); the mannequin at 32 and 48. Faces read from 24 up; at 48 and 64 the 1-pixel outline thins against
+    the figure.
+- Risky or unfinished:
+  - Nothing is on by default: the switch, its dials and the debug menu's row only. With it off no figure code runs
+    and no figure file is fetched.
+  - Pictures still go through today's path: each figure picture is its own texture, uploaded with mip levels (CH-4's
+    live atlas is the fix). A figure has more pictures than today's person (one a view), and a picture the baker's
+    cache drops keeps its texture until the graphics card's picture cap (128 MB on a phone) trims the longest unused,
+    as any picture does; a plain 3D picture is about 15 times a pixel one. The baker reads its pictures back
+    (drawImage from its WebGL canvas) on the CPU: the phone's milliseconds will say what that costs.
+  - A second WebGL context on the phone (the baker's). Its loss and restore are handled and tested.
+  - A single-file build (art.js: its art inline in window.NW_ART) has the stand-in only if it inlines
+    figures/rogue.json and rogue.png; if not, you stay today's picture there, and the debug log says the figure wasn't
+    loaded.
+- Verified:
+  - After each change: lint, typecheck, `npm test`, check:modules, format:check, check:data and build.
+  - Smoke on each game commit, in a worktree of the commit: 6 of 6 each (84092308, 4c7364f9, 2911aac7).
+  - look-people's runs above (the normal set, the stops, Copperleaf, the crowds, the sheets, the losses, the battle):
+    no page errors.
+  - CI on 4c02b044 and 59c17a67: lint and rules green; smoke fails only the two Studio checks main fails too (404s for
+    legacy Billie pictures) and, in one run of each pair, timing checks that passed on the same commit in the other
+    run (PR #277's comment).
+  - Still running at this commit: the end-of-phase checks on 59c17a67 with the switch off (smoke, the full quick
+    check against CH-1's pictures from 0ac32751, --selftest with nothing beside it, the Studio check) and the game's
+    Diagnostics test with the figures on. Their results replace this line in the next commit.
+- For the owner on the phone:
+  - Open the debug menu, tap "Figures: off" to turn them on: you are the stand-in. Walk, run, turn the camera.
+  - Step "Style" to "plain 3D" for B, "Figure" to the mannequin, "Townsfolk" to figures (then a trainer battle shows
+    both trainers as figures), "Pixels a metre" 32 / 40 / 48 / 64, "Turns" 16 / 32 / 8, "Outline".
+  - In a battle: you from behind at 64 px a metre; the throw is the figure's own.
+  - Run the Diagnostics test with the figures on, and export a debug log: its people section has the bakes, their
+    milliseconds and the pictures' MB.
+  - Then the pick ("Ask me before" 1): C (the pixel puppet), B (the plain 3D figure), A (classic 2D redrawn) or more
+    tuning; and whether the KayKit look is a direction for your own models.
+- Next: the owner's phone and pick. If C: CH-4 (the live atlas) on `track/characters`.
+
+### Characters track CH-2 - Spike 1: the figure baker - 2026-10-28
+Branch `track/characters`. Started at the owner's word from the CH-1 session; planned read-only until CH-1's HANDOFF
+entry was on the branch; the plan approved ("Go") with the owner's answers to "Ask me before" 2 (jointed rigid parts,
+no skinning), 3 (32 px a metre, with a 16-64 dial), 5 (2.75 heads at 1.75 m) and 7 (a code-built mannequin first),
+and my recommendations taken for the rest (the baker in its own WebGL context, 16 turns, you as a figure behind the
+switch). Built on a0e4b141 while CH-1 finished; nothing pushed until its entry landed. Tag `ch-2-done` (the owner's)
+on d642f6ba.
+- Changed (one cause per commit):
+  - game/js/logic/figure-pose.js (413e30cf; on both pages and in the Studio's logic worker;
+    tools/test/figure-pose.test.mjs):
+    - the oblique projection: a point's height on the upright card is its height plus its depth into the view
+      times tan(tilt), so the camera's shortening gives back what it would see (no double squash; the test checks it
+      against a tilted camera); the heading seen from the camera in steps, the tilt in 2-degree steps (the tilt
+      changes with the zoom stop: 26 degrees at Normal, about 36 at Far); the lift snapped to whole texels;
+    - the 12 fps clock: an idle on twos, a walk by the distance walked, read once a tick;
+    - the scene props' ramps and outline (tools/build-scene-props.py ramp and olc, the same to the unit, checked
+      against Python's output) and three toon bands from a top-left light.
+  - Engine > People (334d1583): Figures (off), density, turns, outline.
+  - game/js/figures.js, the baker (46c1427d; both pages; tools/test/figures.test.mjs against a stand-in WebGL2
+    context):
+    - its own WebGL2 context (the owner's pick): pass 1 the figure with its depth in alpha; pass 2 at the same
+      pixels the plum outline (olc of the neighbour's colour) and a lighter line inside where a part stands well in
+      front of another; then a copy into a 2D canvas tagged `ax`/`ay`/`ppm`/`noNormal`, down today's sprite path;
+    - pictures kept by view (at most 600), at most 4 baked a frame, a person keeping their last one meanwhile;
+    - a lost baker context bakes nothing until it is back, then makes its programs again (figureBakerLose forces
+      one); the game's own lost context only drops textures, and the canvases go up again;
+    - you as the mannequin with the switch on (idle; walking by the distance walked; turned to personHeading);
+      peopleReport has the baker's numbers.
+  - The bench (814f9329): the lineup's `figure` entries (the schema's new key), test_people's mannequins (each end
+    of the cast, eight turns, two walkers), look-people --figures (with the dials) and --lose.
+  - The mannequin rounder and more charming (48fdab9d), at the owner's word ("They should be less boxy and have more
+    charming style"): rounded low-poly shapes (ellipsoids, a lathe, capsules, cones, a torus) smooth-shaded so the
+    bands follow their curves: an egg of a head under a hair cap with a three-point fringe and a cowlick, a bean
+    body with a coral scarf, capsule limbs, mitten hands, bean shoes. Its face painted on the picture in whole
+    pixels where the head faces the camera (logic/figure-pose.js figureFaceMarks): 3 x 4 eyes with a glint toward
+    the light, a line on the blink, one narrow eye side-on, a small mouth, blush. The idle nods; the walk bounces.
+  - look-people --sheet (d642f6ba): a figure's every turn and frame on one sheet, enlarged.
+- Found:
+  - The tilt changes with the zoom stop, so a bake is keyed by a tilt step as well as a turn: a single 26-degree view
+    would be squashed at Far.
+  - `renderTarget` is at webgl.js:1324 (the track said 1274).
+  - The player's Expert dials are a set list (settings-screen.js GRAPHICS_DIALS), not every engine dial: CH-3's
+    debug-menu row is how the owner reaches the figures on a phone.
+  - Running tools/build-test-scenes.py with `--help` runs the whole rebuild (CH-1's warning): it rewrote the
+    generated gamedata.js only (no source file), mended by `npm run data`.
+- The numbers: the mannequin at 32 px a metre is drawn at 1.55 buffer pixels a pixel at Normal (CH-0's figure for
+  32 px/m; today's people 0.74), the same grid as the ground (1.66) and props (1.56). test_people with the figures
+  on (Normal, day, unturned): 37 people drawn (today's 24, 12 mannequins, you), 129 draws (96 people's: 37 sprites,
+  29 in each sun shadow map, your outline 1.3), 159 pictures, 5.1 MB. A sheet of 160 bakes took 105 ms in headless
+  software drawing (0.65 ms a bake; the phone's will differ).
+- Verified:
+  - After each change: lint, typecheck, `npm test` (1,600 at CH-2's end, 23 of them new: figure-pose 13, figures 8,
+    plus the logic worker's list), check:modules, format:check, check:data, build.
+  - Smoke on each game commit: 6 of 6 each (413e30cf and 334d1583 on the working tree just before their commits;
+    46c1427d, 814f9329 and 48fdab9d in a worktree of the commit).
+  - The full quick check on 48fdab9d with the switch off: 38 of 41. Its three problems are CH-1's baseline's
+    (Terraces: the station prop in the air; RL-8: a run's seam crossing never shows the next view; the walking step's
+    room light or settings tabs): run alone on a0e4b141 (before CH-2) and here, the same three fail.
+  - `--selftest` on 48fdab9d, with unit tests running beside it: three frame-timing problems (the clinic "not
+    drawing", the walking grid after a room, the fall's 1 frame); CH-1 found the last two on main under load. Run
+    again at CH-3's end with nothing beside it (CH-3's entry).
+- Next: CH-3 (straight on, the owner's word).
+
 ### Characters track CH-1 - the bench and the fixes - 2026-10-27
 Branch `track/characters`, made 2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word. Plan
 approved in Plan Mode, with the owner's answers: the sprite-sheet exporter is retired ("Ask me before" 10); cutscene
