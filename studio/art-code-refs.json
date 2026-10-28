@@ -1767,7 +1767,7 @@
    "game/js/map-tab.js:152"
   ],
   "excl": [
-   "game/js/battle-anim-run.js:596"
+   "game/js/battle-anim-run.js:599"
   ],
   "eye": [
    "game/js/figures.js:429",

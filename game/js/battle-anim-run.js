@@ -585,6 +585,9 @@ function animSceneStep(S, c) {
       return;
     }
     case 'stamp': {
+      /* not against a Bureau bot: the style track's SY-5 stamps its knockout (and a win against the Bureau), and two
+         stamps must not land at once */
+      if (c.foes.some(f => animBureau(f))) return;
       const P = c.P[S.on || 'attacker'] || c.P.attacker;
       K.addParticle({
         x: P.x,
