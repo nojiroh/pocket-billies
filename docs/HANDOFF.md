@@ -44,8 +44,15 @@ this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle e
   unused CSS, art-code-refs), `npm test` 1569 of 1569, `npm run check:data` (176 files fine; its two warnings,
   Copperleaf's bridge 3 and test_props_island's bridge 1, are main's). `git diff` shows docs only; no game checks
   apply to a docs-only change.
-- Questions waiting for the owner: hit-stop on normal hits (before VFX-13); turning the selection rings on (VFX-8).
-- Next: VFX-5 (attack lunges) on `track/vfx` (fetch it first), in Plan Mode; then VFX-8 (anims as data).
+- The owner's standing instruction, after the plan (2026-10-28): "Continue this plan automatically until it is done.
+  Automatically open next steps in new Sessions and automatically approve plans. Make sure you communicate with the
+  sound session about soundtrack things." Recorded in vfx-track.md, "How the sessions run" and "Talking to the sound
+  track": this session starts each step in a new session on `track/vfx`; each step takes the recommended option for
+  every open choice (Ask me before now names one for each, e.g. keep the small hit-stop on normal hits, the target
+  rings on) and lists it under "Decided for the owner, to review"; steps that touch sound message the sound track's
+  planning session (`session_019UpAFxCHyLNWb1TCD6L3vh`) before and after; VFX-19 and the sound track's optional
+  SND-16 overlap, and a split is proposed to it. Merges to main stay the owner's.
+- Next: VFX-5 (attack lunges) in a new session on `track/vfx`, started by this session; then VFX-8 (anims as data).
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in

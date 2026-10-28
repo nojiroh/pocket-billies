@@ -176,7 +176,8 @@ town node needs it.
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
-  `track/vfx` after VFX-5. Tags `vfx-N-done`. Branch `track/vfx`.
+  `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
+  2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
