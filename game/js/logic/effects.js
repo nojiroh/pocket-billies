@@ -24,6 +24,8 @@
              (PK-4, calcDamage)
      benchXp a share of a foe's XP more for yours who sat out (the bench; rules.json progression.teamXpShare plus
              these, at most all of it) (PK-4, award)
+     rule    a run rule changed by n (FX_RULES: forecastDays, the forecast shows n more days) (PK-4, run-map.js
+             runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
@@ -58,6 +60,7 @@ expose({
   FX_ONCE: [() => FX_ONCE],
   FX_PASSIVE_KEYS: [() => FX_PASSIVE_KEYS],
   FX_PER: [() => FX_PER],
+  FX_RULES: [() => FX_RULES],
   FX_SAY: [() => FX_SAY],
   FX_STAGES: [() => FX_STAGES],
   FX_WEATHER: [() => FX_WEATHER],
@@ -102,6 +105,7 @@ expose({
   fxRunFoeLevels: [() => fxRunFoeLevels],
   fxRunMarks: [() => fxRunMarks],
   fxRunPrice: [() => fxRunPrice],
+  fxRunRule: [() => fxRunRule],
   // @ts-expect-error -- replaced on purpose
   fxSpend: [() => fxSpend, v => (fxSpend = v)],
   fxSplice: [() => fxSplice],
@@ -148,6 +152,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'passive',
   'weather',
   'benchXp',
+  'rule',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -384,6 +389,20 @@ export const fxBenchXp = fx =>
     1,
     (fx || []).reduce((a, f) => a + (f.kind === 'benchXp' ? f.share : 0), 0)
   );
+
+/** PK-4: the run rules a rule row can change (by its n); later waves add theirs */
+export const FX_RULES = /** @type {const} */ (['forecastDays']);
+/** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
+ * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id
+ * @param {Record<string, Perk>} [perks] */
+export const fxRunRule = (run, id, perks = PERKS) =>
+  run
+    ? fxAt(fxOfRun(run, perks), {}, { run: run.perkState }).reduce(
+        (a, f) => a + (f.kind === 'rule' && f.rule === id ? f.n || 0 : 0),
+        0
+      )
+    : 0;
+provide({ fxRunRule }); /* to-module */
 
 /** PK-4: the type passives a passive row can strengthen (types.json `passive`), each with the numbers it takes:
  *   kindling     rate    its turns in battle count this many times over (Kindling builds faster, to the same top)

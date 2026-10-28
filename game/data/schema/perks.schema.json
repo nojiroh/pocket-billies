@@ -156,6 +156,11 @@
        "description": "benchXp (PK-4): your Billies who sat out (the bench) get this share of a foe's XP more (added to rules.json progression.teamXpShare, at most all of it)",
        "type": "object", "additionalProperties": false, "required": ["kind", "share"],
        "properties": {"kind": {"const": "benchXp"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "rule (PK-4): a run rule changed by n (effects.js FX_RULES: forecastDays, the forecast shows n more days; later waves add rules)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "rule", "n"],
+       "properties": {"kind": {"const": "rule"}, "rule": {"enum": ["forecastDays"]}, "n": {"type": "integer", "minimum": -30, "maximum": 30}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

@@ -1993,7 +1993,9 @@ export type FxKindRow =
   /** PK-4: the weather never weakens your Billies' moves (noWeaken), or its boosts count mult times over (boost) */
   | { kind: 'weather'; what: 'noWeaken' | 'boost'; mult?: number }
   /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
-  | { kind: 'benchXp'; share: number };
+  | { kind: 'benchXp'; share: number }
+  /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days); later waves add rules */
+  | { kind: 'rule'; rule: 'forecastDays'; n: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

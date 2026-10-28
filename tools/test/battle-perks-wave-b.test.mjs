@@ -3,7 +3,7 @@
 // working, and a battle holding every Wave A and Wave B Perk at once staying finite.
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
+import { GAME_DATA, data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
 
 const { SPECIES } = data;
 /** a species of type T (one of that type alone when there is one) */
@@ -387,4 +387,31 @@ test('PK-4 benchXp: yours who sat out get the row’s share of a foe’s XP more
     ]),
     1
   );
+});
+
+/* ---------- rule forecastDays ---------- */
+
+test('PK-4 rule forecastDays: the forecast is rolled and shown n days more; the days already there don’t change', () => {
+  const RM = modules['run-map'],
+    { newRun } = modules['run-state'],
+    R = GAME_DATA.rules.run,
+    G = GAME_DATA,
+    MAPDATA = { nodeTypes: G.nodeTypes, biomes: G.biomes, rules: R };
+  const { P } = perks({ id: 'test_baro', fx: [{ kind: 'rule', rule: 'forecastDays', n: 3 }] });
+  withPerks(P, () => {
+    const plain = newRun('FCSTSEED01', 1, 1, { team: [] });
+    RM.runMapStart(plain, MAPDATA);
+    const run = newRun('FCSTSEED01', 1, 1, { team: [] });
+    RM.runMapStart(run, MAPDATA);
+    assert.equal(RM.runForecastDays(run, G.biomes, R.clock.ahead), R.clock.ahead, 'none held: rules.json’s days');
+    run.perks = ['test_baro'];
+    assert.equal(RM.runForecastDays(run, G.biomes, R.clock.ahead), R.clock.ahead + 3);
+    for (let i = 1; i < run.forecast.length; i++) {
+      assert.ok(run.forecast[i].length >= run.clock + R.clock.ahead + 3, `node ${i} rolled far enough`);
+      assert.deepEqual(run.forecast[i].slice(0, plain.forecast[i].length), plain.forecast[i], 'the same days');
+    }
+    /* a rule row with if never counts on the run (nothing there is known) */
+    assert.equal(modules.effects.fxRunRule({ perks: ['test_baro'] }, 'forecastDays', P), 3);
+    assert.equal(modules.effects.fxRunRule(null, 'forecastDays', P), 0);
+  });
 });

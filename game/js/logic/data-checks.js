@@ -53,6 +53,7 @@ import {
   FX_ONCE,
   FX_PASSIVE_KEYS,
   FX_PER,
+  FX_RULES,
   FX_SAY,
   FX_STAGES,
   FX_WEATHER,
@@ -2052,6 +2053,13 @@ export function fxKindProblems(f, at, D, problem) {
   }
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
+  /* PK-4: a run rule of FX_RULES and how much it changes (forecastDays: 1 to 14 more days) */
+  if (f.kind === 'rule') {
+    if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)))
+      problem(`${at}.rule: ${FX_RULES.join(', ')} (effects.js FX_RULES)`);
+    else if (f.rule === 'forecastDays' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= 14))
+      problem(`${at}.n: a whole number of days from 1 to 14`);
+  }
 }
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
@@ -2108,6 +2116,8 @@ export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
   splice: ['if', 'grow', 'per'],
   level: ['if', 'per'],
   bossHp: ['if', 'per'],
+  /* PK-4: a run rule is read on the run, where no battle or team is known */
+  rule: ['if', 'per'],
 });
 /** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
 export function fxCondProblem(c, D) {

@@ -100,6 +100,7 @@ const PERK_KINDS = {
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
   benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
+  rule: 'A run rule: the forecast shows more days (PK-4)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -145,6 +146,7 @@ const PERK_ROW_NEW = {
   passive: () => ({ kind: 'passive', passive: 'kindling', rate: 2 }),
   weather: () => ({ kind: 'weather', what: 'noWeaken' }),
   benchXp: () => ({ kind: 'benchXp', share: 0.25 }),
+  rule: () => ({ kind: 'rule', rule: 'forecastDays', n: 3 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -338,6 +340,15 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         share(
           `Share of a foe’s XP more for those who sat out (rules.json gives them ${studioState.D.rules.progression.teamXpShare}; at most all of it)`
         ),
+      ],
+      rule: () => [
+        selectField('Rule', `${p}.rule`, [['forecastDays', 'The forecast shows more days']], { rr: 1 }),
+        numberField('By', `${p}.n`, {
+          min: 1,
+          max: 14,
+          step: 1,
+          help: `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
+        }),
       ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
