@@ -1940,7 +1940,8 @@ export type FxKindRow =
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number }
-  /** RL-13 (modifiers.json only): foes' levels up by n; the boss's HP times mult */
+  /** RL-13 (modifiers.json; PK-1: any run row, effects.js fxRunFoeLevels, fxRunBossHp): foes' levels up by n; the
+      boss's HP times mult */
   | { kind: 'level'; n: number }
   | { kind: 'bossHp'; mult: number }
   /** RL-12c (held items only, for the holder): its XP times mult; a share of its HP at each turn's end; once a battle,

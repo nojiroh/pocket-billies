@@ -2054,6 +2054,8 @@ export function fxWhenProblems(f, at, D, problem) {
       problem(`${at}.side: take, at hurt (a hit on yours)`);
   }
   conds(f.if, `${at}.if`);
+  if (['level', 'bossHp'].includes(f.kind) && f.if != null)
+    problem(`${at}.if: a ${f.kind} row counts as the run's places and foes are made, where no condition is known`);
   if (f.every != null) {
     if (!(Number.isInteger(f.every) && f.every >= 2 && f.every <= FX_EVERY))
       problem(`${at}.every: a whole number from 2 to ${FX_EVERY}`);

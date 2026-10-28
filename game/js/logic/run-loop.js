@@ -15,13 +15,13 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
+import { encArrive, fxHealShare, fxOfRun, fxRunBossHp, fxRunFoeLevels, unlockOpen } from '../hooks.js';
 import { BANTER, BOSSES, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { healAll, maxHp, plural, speciesStep } from './rules.js';
 import { RIVAL_TRAINER, ghostTeam, rivalTeam } from './rival.js';
-import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
+import { modHas } from './modifiers.js';
 import { resRerolls } from './residents.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
@@ -261,7 +261,7 @@ export function runFoes(run, data) {
         rngFrom(runNodeSeed(run.seed, i), 'team'),
         lead,
         met++,
-        runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + RV.up,
+        runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + RV.up,
         RV,
         SPECIES,
         (run.region && run.region.dex) || null,
@@ -302,7 +302,7 @@ export function runFoes(run, data) {
         win: `“GG! My ghost will be back stronger.”`,
         lose: `“Not bad for a ghost, right?”`,
         reward: GH.reward,
-        team: ghostTeam(G.party, runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + GH.up),
+        team: ghostTeam(G.party, runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + GH.up),
         node: runWorldNode(i),
         blocks: false,
         runFoe: 'ghost',
@@ -321,7 +321,7 @@ export function runFoes(run, data) {
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
     used.add(T.id);
     const F = data.rules.foes[node.type],
-      top = runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + F.up,
+      top = runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + F.up,
       high = Math.max(...T.team.map(e => e.lvl || 1)),
       lv = (/** @type {number} */ l) => Math.max(1, Math.min(100, top - (high - (l || 1)))),
       /* RL-13: the leader's team is built for the run, of its own type (its file's team sets how many and the
@@ -352,7 +352,7 @@ export function runFoes(run, data) {
         blocks: false,
         double: false,
         alpha: true,
-        ...(modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
+        ...(fxRunBossHp(run) !== 1 ? { hpMult: fxRunBossHp(run) } : {}),
         boss: bid,
         runFoe: node.type,
         runNode: i,
@@ -375,8 +375,8 @@ export function runFoes(run, data) {
       blocks: !boss,
       double: !boss,
       ...(boss ? { alpha: true } : {}),
-      /* RL-13: the Expedition's boss HP (effects.js modBossHp) */
-      ...(boss && modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
+      /* RL-13: the Expedition's boss HP; PK-1: every run row's (effects.js fxRunBossHp) */
+      ...(boss && fxRunBossHp(run) !== 1 ? { hpMult: fxRunBossHp(run) } : {}),
       runFoe: node.type,
       runNode: i,
       from: T.id,

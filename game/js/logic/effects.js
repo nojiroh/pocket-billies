@@ -8,10 +8,10 @@
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
      payout  the payout's Research, or the share items count at
-     level   foes' levels      bossHp  the run's boss's HP   (RL-13, modifiers only: logic/modifiers.js modFoeLevels,
-                                                             modBossHp)
+     level   foes' levels      bossHp  the run's boss's HP   (RL-13; PK-1: every run row, fxRunFoeLevels,
+                                                             fxRunBossHp)
      xp      the holder's XP   turnHeal  a share of HP at each turn's end   pinchHeal  once a battle, low on HP
-                                                             (RL-12c, held items only)
+                                                             (RL-12c, held items; PK-1: a run's too)
      dna     a Gene Sample's DNA (battle-rewards.js spliceSample)    splice  the wild splice odds (rules.js, a run
      unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
@@ -26,7 +26,7 @@
 /** @typedef {FxRow & { src: string, row?: number }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
+import { PERKS, RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
 import { relFxRows } from './relations.js';
 import { modFxRows } from './modifiers.js';
 import { resFxRows } from './residents.js';
@@ -72,6 +72,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxRowNow: [() => fxRowNow, v => (fxRowNow = v)],
   fxRows: [() => fxRows],
+  fxRunBossHp: [() => fxRunBossHp],
+  fxRunFoeLevels: [() => fxRunFoeLevels],
   fxRunMarks: [() => fxRunMarks],
   fxRunPrice: [() => fxRunPrice],
   // @ts-expect-error -- replaced on purpose
@@ -125,7 +127,7 @@ export const fxOfRun = (run, perks) => {
   /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows; RL-13: the Expedition's and challenges' last */
   const rows = run
     ? [
-        ...fxRows(run.perks, perks),
+        ...fxRows(run.perks || [], perks),
         ...encBoonRows(/** @type {any} */ (run)),
         .../** @type {Fx[]} */ (modFxRows(run)),
         /* RL-S2: the hub folk's level bonuses (logic/relations.js) */
@@ -491,3 +493,20 @@ export const fxStateful = fx => (fx || []).some(f => f.every || f.grow || f.once
 
 /** a run's marks (run.perkState), made when first needed @param {any} run @returns {FxMarks} */
 export const fxRunMarks = run => run.perkState || (run.perkState = {});
+
+/** PK-1: how many levels foes are up on a run: the level rows of all its rows (Perks, boons, its Expedition and
+ * challenges, the hub folk's, residents'; was the Expedition's and challenges' alone, modifiers.js modFoeLevels),
+ * summed with their growth; 0 in the hub. Nothing a battle knows applies here, so a row with `if` never counts
+ * @param {any} run @param {Record<string, Perk>} [perks] */
+export const fxRunFoeLevels = (run, perks = PERKS) =>
+  run
+    ? fxAt(fxOfRun(run, perks), {}, { run: run.perkState }).reduce((a, f) => a + (f.kind === 'level' ? f.n : 0), 0)
+    : 0;
+provide({ fxRunFoeLevels }); /* to-module */
+/** PK-1: what the run's boss's HP is multiplied by: the product of all its bossHp rows (1 when none; was the
+ * modifiers' alone, modifiers.js modBossHp) @param {any} run @param {Record<string, Perk>} [perks] */
+export const fxRunBossHp = (run, perks = PERKS) =>
+  run
+    ? fxAt(fxOfRun(run, perks), {}, { run: run.perkState }).reduce((a, f) => a * (f.kind === 'bossHp' ? f.mult : 1), 1)
+    : 1;
+provide({ fxRunBossHp }); /* to-module */

@@ -361,6 +361,7 @@ test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other row
     [{ kind: 'heal', share: 0.1, once: 'day' }, 'once: battle, run, billie'],
     [{ kind: 'heal', share: 0.1, when: 'arrive', once: 'battle' }, 'once: battle needs a moment in battle'],
     [{ kind: 'heal', share: 0.1, once: 'run' }, 'once: run needs a when'],
+    [{ kind: 'level', n: 2, if: 'lead' }, 'a level row counts as the run’s places'.replace('’', "'")],
   ]) {
     const E = structuredClone(GAME_DATA);
     E.perks.lucky_charm.fx = [row];

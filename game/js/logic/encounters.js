@@ -22,11 +22,11 @@ import { expose } from '../test-globals.js';
 import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { speciesStep } from './rules.js';
-import { modFoeLevels } from './modifiers.js';
 import { factionBotEntry, factionBotPick, factionOfClass } from './factions.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
+import { fxRunFoeLevels } from './effects.js';
 import { perkDraw, perkPool } from './perks.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -254,7 +254,7 @@ export function encDexAt(run, species, lvl) {
 /** a place's top wild level @param {Run} run @param {number} i @param {{ wild: { lv: [number, number], perRow: number } }} rules */
 export const encPlaceLevel = (run, i, rules) =>
   run.map
-    ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }), modFoeLevels(run))[1]
+    ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }), fxRunFoeLevels(run))[1]
     : Math.max(1, rules.wild.lv[1]);
 
 /**

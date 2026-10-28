@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:204",
     "game/js/art.js:206",
-    "game/js/logic/data-checks.js:2224"
+    "game/js/logic/data-checks.js:2226"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:204",
-    "game/js/logic/data-checks.js:2224"
+    "game/js/logic/data-checks.js:2226"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:410",
-    "game/js/logic/data-checks.js:2226"
+    "game/js/logic/data-checks.js:2228"
    ]
   },
   {
@@ -1615,7 +1615,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2352",
+   "game/js/logic/data-checks.js:2354",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1675,9 +1675,9 @@
    "game/js/fishing.js:168",
    "game/js/friends.js:629",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/run-scenes.js:520",
-   "game/js/logic/run-scenes.js:541",
-   "game/js/logic/run-scenes.js:559",
+   "game/js/logic/run-scenes.js:521",
+   "game/js/logic/run-scenes.js:542",
+   "game/js/logic/run-scenes.js:560",
    "game/js/logic/train-path.js:193",
    "game/js/person-art.js:801",
    "game/js/person-art.js:881",
