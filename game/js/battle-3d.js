@@ -7,7 +7,7 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import { BATTLE_ANIMS, PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
@@ -48,7 +48,6 @@ import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_RGB: [() => BATTLE_RGB],
-  EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
   PHONE_BATTLE: [() => PHONE_BATTLE],
   RIG_DARK: [() => RIG_DARK],
   RIG_HITS: [() => RIG_HITS],
@@ -474,15 +473,16 @@ function battle3dRgb(col) {
   return c;
 }
 /* VFX-9: the effect lights (glowing move particles with a colour, the newest first): 3 / 2 / 1 / 0 by the battle's
-   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines */
+   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines.
+   VFX-12: the numbers are battleAnims.json `budgets` (the Studio's Battle effects tunes them) */
 const PHONE_BATTLE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
-const EFFECT_LIGHT_BUDGET = [3, 2, 1, 0];
 function battle3dEffectLights(lights, at3) {
-  const P = battleStage.parts,
+  const B = BATTLE_ANIMS.budgets,
+    P = battleStage.parts,
     max = Math.min(
-      EFFECT_LIGHT_BUDGET[clamp(battleStage.q.lvl | 0, 0, 3)],
-      PHONE_BATTLE ? 2 : 3,
-      Math.max(0, 6 - lights.length)
+      B.lights[clamp(battleStage.q.lvl | 0, 0, 3)],
+      PHONE_BATTLE ? B.lightsPhone : 3,
+      Math.max(0, B.lightsAll - lights.length)
     ),
     pick = [];
   for (let i = P.length - 1; i >= 0 && pick.length < max; i--) {

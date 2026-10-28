@@ -10,6 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  BATTLE_ANIMS,
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
   TYPE_COLORS,
@@ -72,7 +73,6 @@ expose({
   AREAS: [() => AREAS],
   BATTLE_STAGE_ART: [() => BATTLE_STAGE_ART],
   BAYER4: [() => BAYER4],
-  BURST_BUDGET: [() => BURST_BUDGET],
   CAMERA_KEYS: [() => CAMERA_KEYS],
   CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
@@ -92,7 +92,6 @@ expose({
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
   MONEY_ICON: [() => MONEY_ICON],
-  PARTICLE_BUDGET: [() => PARTICLE_BUDGET],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   PYRAMID_HIGH: [() => PYRAMID_HIGH],
   PYRAMID_LIFT: [() => PYRAMID_LIFT],
@@ -181,6 +180,7 @@ expose({
   dueEvents: [() => dueEvents],
   flashesOff: [() => flashesOff, v => (flashesOff = v)],
   formatFocus: [() => formatFocus],
+  fxBudget: [() => fxBudget],
   fxRandom: [() => fxRandom, v => (fxRandom = v)],
   groundRing: [() => groundRing, v => (groundRing = v)],
   handheld: [() => handheld, v => (handheld = v)],
@@ -754,7 +754,7 @@ function battleStageFrame(ts, rawDt) {
   P.length = n;
   let amb = 0;
   for (let i = 0; i < n; i++) if (P[i].amb) amb++;
-  if (dt > 0 && !reducedMotion && amb < PARTICLE_BUDGET[battleQuality()] / 4) {
+  if (dt > 0 && !reducedMotion && amb < fxBudget('particles') / 4) {
     ambientSpawning = true;
     try {
       spawnAmbientParticles(dt);
@@ -1637,14 +1637,14 @@ export const battleStageRingPhase = () =>
 /* ---------- effects (world space, y up) ---------- */
 /* VFX-9: the budgets (docs/phases/vfx-track.md "Budgets"): particles alive in the one pool at quality 0-3, a burst's
    most, and the ambient ones at most a quarter of the pool. A move's particle over the budget takes an ambient one's
-   place (the oldest), else it isn't made; an ambient one over its share isn't made */
-const PARTICLE_BUDGET = [256, 160, 96, 48],
-  BURST_BUDGET = [24, 16, 10, 6];
+   place (the oldest), else it isn't made; an ambient one over its share isn't made. VFX-12: the numbers are
+   battleAnims.json `budgets` (the Studio's Battle effects tunes them) */
 const battleQuality = () => clamp(battleStage.q.lvl | 0, 0, 3);
+const fxBudget = (/** @type {'particles' | 'burst'} */ k) => BATTLE_ANIMS.budgets[k][battleQuality()];
 let ambientSpawning = false;
 function addParticle(o) {
   const P = battleStage.parts;
-  if (P.length >= PARTICLE_BUDGET[battleQuality()]) {
+  if (P.length >= fxBudget('particles')) {
     if (ambientSpawning) return;
     const j = P.findIndex(p => p.amb);
     if (j < 0) return;
@@ -1669,7 +1669,7 @@ function battleFxSeed(key) {
 }
 const battleFxRandom = () => fxRandom();
 function burst(P, t, n = 10, sp = 2.2, k = 1) {
-  n = Math.min(n, BURST_BUDGET[battleQuality()]);
+  n = Math.min(n, fxBudget('burst'));
   for (let i = 0; i < n; i++) {
     const a = fxRandom() * Math.PI * 2,
       b = (fxRandom() - 0.3) * Math.PI * 0.6,
