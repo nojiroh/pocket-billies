@@ -2480,8 +2480,6 @@ export interface BattleAnimBudgets {
   lightsPhone: number;
   /** battle lights in all */
   lightsAll: number;
-  /** scars on the ground (VFX-15) */
-  scars: number[];
 }
 /** VFX-12: Part 1's dials: the afterimages (newest first), the ribbon, a dash's ribbon, the stretch, a lunge's lean */
 export interface BattleAnimSmears {

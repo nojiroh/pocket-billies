@@ -1379,7 +1379,7 @@ export function dataBattleAnims(D, valid = () => true) {
     }
   /* VFX-12: a budget never grows as the quality drops, and a burst fits in the pool */
   const B = A.budgets;
-  for (const k of ['particles', 'burst', 'lights', 'scars'])
+  for (const k of ['particles', 'burst', 'lights'])
     for (let q = 1; q < 4; q++)
       if (B[k][q] > B[k][q - 1]) problem(`budgets.${k}: quality ${q} allows more (${B[k][q]}) than quality ${q - 1}`);
   for (let q = 0; q < 4; q++)

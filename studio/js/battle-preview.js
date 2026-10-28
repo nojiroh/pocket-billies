@@ -933,7 +933,6 @@ battleFxPanes.push(
             ['particles', 'Particles alive (ambient: a quarter)'],
             ['burst', 'A burst’s most'],
             ['lights', 'Effect lights (3 slots)'],
-            ['scars', 'Scars on the ground (VFX-15)'],
           ]
             .map(
               ([k, n]) =>

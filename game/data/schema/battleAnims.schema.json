@@ -33,17 +33,16 @@
    }
   },
   "budgets": {
-   "description": "VFX-9's budgets, by the battle's quality 0-3 (VFX-12 made them data): particles alive in the one pool (ambient ones at most a quarter), a burst's most, effect lights (3 slots: keys 8-10), at most lightsPhone on a phone and lightsAll battle lights in all, scars on the ground (VFX-15)",
+   "description": "VFX-9's budgets, by the battle's quality 0-3 (VFX-12 made them data): particles alive in the one pool (ambient ones at most a quarter), a burst's most, effect lights (3 slots: keys 8-10), at most lightsPhone on a phone and lightsAll battle lights in all (the scars' cap is VFX-15's scars.cap)",
    "type": "object",
-   "required": ["particles", "burst", "lights", "lightsPhone", "lightsAll", "scars"],
+   "required": ["particles", "burst", "lights", "lightsPhone", "lightsAll"],
    "additionalProperties": false,
    "properties": {
     "particles": {"$ref": "#/$defs/byQuality"},
     "burst": {"$ref": "#/$defs/byQuality"},
     "lights": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 3}},
     "lightsPhone": {"type": "integer", "minimum": 0, "maximum": 3},
-    "lightsAll": {"type": "integer", "minimum": 0, "maximum": 8},
-    "scars": {"$ref": "#/$defs/byQuality"}
+    "lightsAll": {"type": "integer", "minimum": 0, "maximum": 8}
    }
   },
   "smears": {
