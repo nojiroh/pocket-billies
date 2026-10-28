@@ -147,6 +147,31 @@ body.on-map #bgfx {
   font-size: 26px;
   margin: 2px 0;
 }
+/* UI-18: the day chip and the ⋯ menu on one row; the menu opens in the header's flow (the header is clipped to its
+   outline, so nothing can hang out of it) */
+.map-hrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.map-more > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.map-more > summary::-webkit-details-marker {
+  display: none;
+}
+.map-full .map-more[open] > .mbtn {
+  box-shadow:
+    var(--g-in),
+    inset 0 0 0 2px var(--line);
+}
+.map-more-menu {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--s2) 0;
+}
 .map-trip {
   margin: 0;
   font-size: 13px;
@@ -378,7 +403,7 @@ body.map-gl #dioui {
 }
 /* UI-8c: the map's seven buttons as the kit's chips: 44 px (the tap rule needs no hidden margin), the button outline
    and its edge line (.k-btn), the panel's colour as the place card has it (no blur), the icon set's pictures */
-.map-full :is(.mapctl, .mapview) .mbtn {
+.map-full :is(.mapctl, .mapview, .map-more) .mbtn {
   width: 44px;
   height: 44px;
   color: var(--text);
@@ -387,11 +412,11 @@ body.map-gl #dioui {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.map-full :is(.mapctl, .mapview) .mbtn .uico {
+.map-full :is(.mapctl, .mapview, .map-more) .mbtn .uico {
   width: 24px;
   height: 24px;
 }
-.map-full :is(.mapctl, .mapview) .mbtn::before {
+.map-full :is(.mapctl, .mapview, .map-more) .mbtn::before {
   content: none;
 }
 .mbtn .flip {
