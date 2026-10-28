@@ -1854,6 +1854,8 @@ def music_steps(pg, errs):
     stops it too (no scheduler left running)."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
+    # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
+    pg.click('[data-act=musTab][data-t=songs]')
     try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
     except Exception:
         errs.append('music: the song list never showed'); return
