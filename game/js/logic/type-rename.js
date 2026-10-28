@@ -177,6 +177,25 @@ export function renameTypeIn(D, from, to) {
     for (const [k, r] of Object.entries(EV.sendOut.kinds)) if (r === from) EV.sendOut.kinds[k] = to || 'None';
   }
   if (EV && EV.levelUp && EV.levelUp.ramp === from) EV.levelUp.ramp = to || 'None';
+  /* VFX-11: a type's kit moves with it (a deleted type's goes); a kit or a step whose ramp named it names the new id, or
+     None */
+  if (BA && BA.types) {
+    /** @type {Record<string, any>} */
+    const out = {};
+    for (const [k, K] of Object.entries(BA.types))
+      if (k !== from) out[k] = K;
+      else if (to) out[to] = K;
+    BA.types = out;
+    const reRamp = (/** @type {any} */ o) => {
+      for (const f of ['ramp', 'ramp2']) if (o && o[f] === from) o[f] = to || 'None';
+    };
+    for (const K of Object.values(BA.types)) {
+      if (!K || typeof K !== 'object') continue;
+      reRamp(K);
+      for (const S of [...(K.cast || []), ...(K.hit || [])]) reRamp(S);
+    }
+    for (const T of timelines) for (const S of (T && T.steps) || []) reRamp(S);
+  }
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;
