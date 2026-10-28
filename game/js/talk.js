@@ -68,7 +68,9 @@ export const talkBox = {
   log: /** @type {{ name: string, text: string }[]} */ ([]),
   spoke: /** @type {Set<string>} */ (new Set()),
   /** the newest line's speaker, its name, the plain text shown and whether it was cut off (for its demotion) */
-  last: /** @type {{ who: string, name: string, text: string, cut: boolean } | null} */ (null),
+  last: /** @type {{ who: string, name: string, text: string, cut: boolean, expr?: string | null } | null} */ (null),
+  /** the share of the screen's height the stack covers, from the bottom (0 when the talk is closed) */
+  cover: 0,
 };
 provide({ talkBox }); /* to-module */
 const SPEAKER_NAMES = { chosen: 'Professor Chosen' };
@@ -289,7 +291,7 @@ export function talkLine(who, text, expr, o = {}) {
       !reducedMotion && (parsed.style.includes('wait') || (dress.S.wait === 'first' && !talkBox.spoke.has(skin))),
     waitFor = waits ? waitMs(dress.seed) : 0;
   talkBox.spoke.add(skin);
-  talkBox.last = { who, name, text, cut: cut >= 0 };
+  talkBox.last = { who, name, text, cut: cut >= 0, expr: expr || null };
   talkBox.log.push({ name, text });
   box.classList.toggle('waiting', waits);
   const letters = talkLetters(line, parsed),
@@ -444,6 +446,7 @@ export function talkHide() {
   }
   if (talkBox.cur?.wait) clearTimeout(talkBox.cur.wait);
   talkBox.cur = null;
+  talkBox.cover = 0;
   talkBox.on = false;
   document.body.classList.remove('talking');
 }
@@ -514,13 +517,18 @@ function talkStackClear(el) {
   talkBox.spoke = new Set();
   talkBox.last = null;
 }
-/** the portrait as it is now, small, for an older bubble: a whole number of device pixels per art pixel */
-function talkMiniPortrait() {
-  const src = talkBox.src,
+/** the speaker's portrait, small, for an older bubble: a whole number of device pixels per art pixel */
+function talkMiniPortrait(who, expr) {
+  const src = document.createElement('canvas'),
     cv = document.createElement('canvas');
   cv.className = 'talk-mini';
   cv.setAttribute('aria-hidden', 'true');
-  if (!src || !src.width) return cv;
+  try {
+    drawPortrait(src, who, expr, performance.now());
+  } catch (e) {
+    return cv;
+  }
+  if (!src.width || !src.height) return cv;
   const dpr = devicePixelRatio || 1,
     k = Math.max(1, Math.floor((44 * dpr) / src.width));
   cv.width = src.width * k;
@@ -551,7 +559,7 @@ function talkDemote(el, box, step) {
   c.dataset.onePiece = '';
   for (const q of c.querySelectorAll('.talk-more,.talk-logbtn,.talk-wait,.talk-choices,.talk-por')) q.remove();
   for (const q of c.querySelectorAll('pb-stamp')) q.setAttribute('still', '');
-  c.querySelector('.talk-slot')?.append(talkMiniPortrait());
+  c.querySelector('.talk-slot')?.append(talkMiniPortrait(L.who, L.expr));
   /* the name as a small tag at the start of the line, the line clamped to two rows (dialogue.css) */
   const said = document.createElement('p'),
     was = document.createElement('b');
@@ -605,10 +613,16 @@ function talkStackFit(el) {
   const box = el.querySelector('.talk-box:not(.talk-old)'),
     stack = el.querySelector('.talk-stack'),
     olds = [...el.querySelectorAll('.talk-old')].reverse();
-  if (!olds.length) return;
-  const gap = parseFloat(getComputedStyle(stack).rowGap) || 0,
-    k = stackFit([box.offsetHeight, ...olds.map(o => o.offsetHeight)], { vh: innerHeight, gap });
-  for (const o of olds.slice(k)) o.remove();
+  if (olds.length) {
+    const gap = parseFloat(getComputedStyle(stack).rowGap) || 0,
+      k = stackFit([box.offsetHeight, ...olds.map(o => o.offsetHeight)], { vh: innerHeight, gap });
+    for (const o of olds.slice(k)) o.remove();
+  }
+  /* the share of the screen's height the stack covers from the bottom (its top's tail included), for the camera's
+     two-shot (walk/camera.js) */
+  const top =
+    stack.getBoundingClientRect().top - (parseFloat(getComputedStyle(box).getPropertyValue('--bubble-tail')) || 18);
+  talkBox.cover = innerHeight > 0 ? Math.max(0, Math.min(1, 1 - top / innerHeight)) : 0;
 }
 /** the Log: the open conversation's lines so far, scrollable; a tap closes it */
 function talkLogOpen() {

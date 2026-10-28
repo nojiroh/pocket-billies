@@ -19,7 +19,7 @@ import {
   zoomEase,
 } from '../logic/camera-zoom.js';
 import { interestPick, zoneAt } from '../logic/camera-interest.js';
-import { MOMENT_DIALS, momentNew, momentStep } from '../logic/camera-moments.js';
+import { MOMENT_DIALS, momentNew, momentStep, talkLiftShare } from '../logic/camera-moments.js';
 import { orbitStart, orbitStep, wrapAngle } from '../logic/camera-orbit.js';
 import { BOB_M, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
@@ -421,6 +421,15 @@ export function walkCamera(rw, rh, st, dt) {
   const shown = visW * Z.dist * Z.fov,
     dead = zoneMetres(set('deadW'), set('deadH'), shown, rw, rh, pitch),
     soft = zoneMetres(set('softW'), set('softH'), shown, rw, rh, pitch);
+  /* DL-4: while a talk is open (the two-shot or not: the hub's free camera has none), the aim goes down the screen by
+     the share the speech bubbles' stack takes (talk.js talkBox.cover), so you and whoever talks sit in the space left
+     above it; the follow's spring eases it in and out */
+  const lift = talkBox?.on ? talkLiftShare(talkBox.cover || 0) : 0;
+  if (lift) {
+    const m = zoneMetres(0, 2 * lift, shown, rw, rh, pitch)[1];
+    gx -= bf[0] * m;
+    gz -= bf[1] * m;
+  }
   if (snap) walkRenderer.camT = [gx, gz, feet];
   [fol.x, fol.z, fol.y] = walkRenderer.camT;
   followStep(
@@ -435,7 +444,8 @@ export function walkCamera(rw, rh, st, dt) {
       smooth: snap ? 0 : set('smooth'),
       band: set('band'),
       moving: !!P.walk,
-      free: 1 - G.atW,
+      /* DL-4: a talk's lift is followed as a goal is, not eaten by the dead zone */
+      free: lift ? 0 : 1 - G.atW,
     },
     dt
   );
