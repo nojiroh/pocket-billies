@@ -183,7 +183,7 @@ def bowl_map(pg, base):
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
     # the zoom out lasts 1.5 s and ends on a drawn frame of the map
-    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled')
+    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled: ' + str(pg.evaluate("JSON.stringify({tween:worldBowl.tween&&{t0:worldBowl.tween.t0,dur:worldBowl.tween.dur},fadeOut:worldBowl.fadeOut,fadeAge:worldBowl.fadeAt!=null?performance.now()-worldBowl.fadeAt:null,mapfade:!!document.getElementById('mapfade'),fadeOp:(document.getElementById('mapfade')||{style:{}}).style.opacity,ready:worldBowlReady(),frames:worldBowl.frames,on:worldBowl.on,tab:uiState.tab})")))
     # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
     # phone-sized page: this page's 300 px are mostly card)
     pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
