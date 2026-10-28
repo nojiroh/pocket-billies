@@ -57,6 +57,7 @@ import { conditionNames, conditionProblem, conditionTree } from './conditions.js
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
+import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
 expose({
   FX_PLAIN: [() => FX_PLAIN],
@@ -103,6 +104,8 @@ expose({
   dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataPerkArt: [() => dataPerkArt, v => (dataPerkArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2255,6 +2258,34 @@ export function dataCatchArt(pyramids, read) {
     }
     if (!rec || !Array.isArray(rec.layers) || !rec.layers.length)
       problem(`${k}: its model art/coins/${k}.json has no shapes`);
+  }
+  return out;
+}
+/**
+ * PK-2: the Perks' pictures. A Perk's img (an SVG in the perks folder, its schema's pattern) must be there and be an icon
+ * (svgProblem: the 36 x 36 box, nothing that runs or loads); a Perk without one shows the `relic` icon (a warning:
+ * a pack's Perk may come without art). `read` gives a file's text under game/art, or null.
+ * @param {any} perks @param {(path: string) => string | null} read @returns {DataFinding[]}
+ */
+export function dataPerkArt(perks, read) {
+  /** @type {DataFinding[]} */
+  const out = [];
+  for (const [k, R] of Object.entries(perks || {})) {
+    if (!R || typeof R !== 'object') continue;
+    if (!R.img) {
+      out.push({
+        lvl: 'warn',
+        where: 'perks.json',
+        msg: `${k}: no img, so it shows the relic icon (tools/build-icons.mjs)`,
+      });
+      continue;
+    }
+    const t = read(R.img);
+    if (t == null) out.push({ lvl: 'error', where: 'perks.json', msg: `${k}.img: no picture art/${R.img}` });
+    else {
+      const bad = svgProblem(t);
+      if (bad) out.push({ lvl: 'error', where: 'perks.json', msg: `${k}.img: art/${R.img} is not an icon: ${bad}` });
+    }
   }
   return out;
 }

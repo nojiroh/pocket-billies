@@ -279,6 +279,29 @@ test('every catch item has its icons and its model; a missing or empty one is na
   ]);
 });
 
+// PK-2: a Perk's picture is there and is an icon; a Perk without one warns (it shows the relic icon)
+test('PK-2: dataPerkArt: a missing picture or a bad SVG is an error, no img a warning', () => {
+  const icon = readFileSync(join(import.meta.dirname, '../../game/art/ui/relic.svg'), 'utf8'),
+    files = { 'perks/a.svg': icon, 'perks/c.svg': '<svg viewBox="0 0 12 12"></svg>' },
+    read = (/** @type {string} */ p) => files[p] ?? null,
+    P = { a: { img: 'perks/a.svg' }, b: { img: 'perks/b.svg' }, c: { img: 'perks/c.svg' }, d: {} };
+  assert.deepEqual(
+    C.dataPerkArt(P, read).map(f => [f.lvl, f.msg]),
+    [
+      ['error', 'b.img: no picture art/perks/b.svg'],
+      ['error', 'c.img: art/perks/c.svg is not an icon: An icon’s box is viewBox="0 0 36 36".'],
+      ['warn', 'd: no img, so it shows the relic icon (tools/build-icons.mjs)'],
+    ]
+  );
+  const ART = join(import.meta.dirname, '../../game/art'),
+    disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
+  assert.deepEqual(
+    C.dataPerkArt(GAME_DATA.perks, disk),
+    [],
+    'every game Perk names a picture that is there (PK-2: the 13 drawn)'
+  );
+});
+
 test('RS-4: a resident’s service and its rows: one entry a level, one power level, names that exist, rows in order', () => {
   let D = copy();
   D.residents.mo.service.pop();

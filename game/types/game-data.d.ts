@@ -2255,6 +2255,8 @@ export interface Perk {
   fx: FxRow[];
   /** PK-1: its battle line when one of its rows acts at a moment (at most 40 letters; {name}: the Billie) */
   say?: string;
+  /** PK-2: its picture under game/art ('perks/<id>.svg'); without one it shows the `relic` UI icon */
+  img?: string;
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */

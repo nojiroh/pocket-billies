@@ -3,6 +3,7 @@
   "name": "Lucky Charm",
   "d": "Wins pay 20% more Moneys.",
   "rarity": "common",
+  "img": "perks/lucky_charm.svg",
   "fx": [
    {"kind":"money","mult":1.2}
   ]
@@ -11,6 +12,7 @@
   "name": "Clinic Loyalty Card",
   "d": "A town’s clinic charges half.",
   "rarity": "common",
+  "img": "perks/clinic_card.svg",
   "fx": [
    {"kind":"price","what":"heal","mult":0.5}
   ]
@@ -19,6 +21,7 @@
   "name": "Coupon Book",
   "d": "Shops on the run are 15% cheaper.",
   "rarity": "common",
+  "img": "perks/coupon_book.svg",
   "fx": [
    {"kind":"price","what":"shop","mult":0.85}
   ]
@@ -27,6 +30,7 @@
   "name": "Steady Hand",
   "d": "Pyramids catch 25% more often.",
   "rarity": "common",
+  "img": "perks/steady_hand.svg",
   "fx": [
    {"kind":"catch","mult":1.25}
   ]
@@ -35,6 +39,7 @@
   "name": "Running Shoes",
   "d": "Your Billies start each battle with their Speed up.",
   "rarity": "uncommon",
+  "img": "perks/running_shoes.svg",
   "fx": [
    {"kind":"stat","stat":"hus","stages":1}
   ]
@@ -43,6 +48,7 @@
   "name": "Power Gloves",
   "d": "Your physical moves hit 15% harder.",
   "rarity": "uncommon",
+  "img": "perks/power_gloves.svg",
   "fx": [
    {"kind":"damage","side":"deal","cat":"H","mult":1.15}
   ]
@@ -51,6 +57,7 @@
   "name": "Bubble Wrap",
   "d": "Your Billies take 10% less damage.",
   "rarity": "rare",
+  "img": "perks/bubble_wrap.svg",
   "fx": [
    {"kind":"damage","side":"take","mult":0.9}
   ]
@@ -59,6 +66,7 @@
   "name": "Trail Snacks",
   "d": "Each place you walk into heals your team by 15% of their HP.",
   "rarity": "uncommon",
+  "img": "perks/trail_snacks.svg",
   "fx": [
    {"kind":"heal","share":0.15}
   ]
@@ -67,6 +75,7 @@
   "name": "Field Notebook",
   "d": "The payout gives 15% more Research.",
   "rarity": "uncommon",
+  "img": "perks/field_notebook.svg",
   "fx": [
    {"kind":"payout","what":"research","mult":1.15}
   ]
@@ -75,6 +84,7 @@
   "name": "Lost Property Form",
   "d": "If the run is lost, the payout counts your items at their full price.",
   "rarity": "rare",
+  "img": "perks/lost_property.svg",
   "fx": [
    {"kind":"payout","what":"itemShare","mult":2}
   ]
@@ -83,6 +93,7 @@
   "name": "Petri Dish",
   "d": "Spliced wild Billies you knock out pay 50% more DNA.",
   "rarity": "common",
+  "img": "perks/petri_dish.svg",
   "fx": [
    {"kind":"dna","mult":1.5}
   ]
@@ -91,6 +102,7 @@
   "name": "Gene Lure",
   "d": "Wild Billies of the places you reach next are spliced twice as often.",
   "rarity": "uncommon",
+  "img": "perks/gene_lure.svg",
   "fx": [
    {"kind":"splice","mult":2}
   ]
@@ -99,6 +111,7 @@
   "name": "Stabilizer Gel",
   "d": "Your Unstable Billies lose half as much HP at each turn’s end.",
   "rarity": "rare",
+  "img": "perks/stabilizer_gel.svg",
   "fx": [
    {"kind":"unstable","mult":0.5}
   ]
