@@ -30,6 +30,6 @@
  "note": ["The line goes where it says. So do you."],
  "parody": "Cornelius Vanderbilt",
  "cry": [
-  {"base":"machine","pitch":50,"length":1.6,"name":"placeholder: a steam whistle with a hiss under it (Claude's draft)"}
+  {"base":"machine","pitch":50,"length":1.6,"name":"a steam whistle with a hiss under it"}
  ]
 }

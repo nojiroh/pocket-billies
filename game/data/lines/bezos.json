@@ -40,10 +40,10 @@
  ],
  "parody": "Jeff Bezos",
  "cry": [
-  {"base":"fish","pitch":62,"length":0.9,"name":"placeholder: a quick otter squeak (Claude's draft)"},
-  {"base":"fish","pitch":57,"length":1,"name":"placeholder: an otter's warble (Claude's draft)"},
-  {"base":"bird","pitch":60,"length":1,"name":"placeholder: a chirp that takes off (Claude's draft)"},
-  {"base":"machine","pitch":50,"length":1.3,"name":"placeholder: a warehouse of beeps (Claude's draft)"}
+  {"base":"fish","pitch":62,"length":0.9,"name":"a quick otter squeak"},
+  {"base":"fish","pitch":57,"length":1,"name":"an otter's warble"},
+  {"base":"bird","pitch":60,"length":1,"name":"a chirp that takes off"},
+  {"base":"machine","pitch":50,"length":1.3,"name":"a warehouse of beeps"}
  ],
  "parts": [
   {"head":"cat_head","body":"bear_torso","front":"cat_arm","back":"cat_leg","sig":"reptile_tail"},

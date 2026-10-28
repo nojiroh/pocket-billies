@@ -27,7 +27,7 @@
  "note": ["Answers before you finish asking."],
  "parody": "Sam Altman",
  "cry": [
-  {"base":"bird","pitch":58,"length":1.2,"name":"placeholder: a hoot that sounds sure of itself (Claude's draft)"}
+  {"base":"bird","pitch":58,"length":1.2,"name":"a hoot that sounds sure of itself"}
  ],
  "parts": [
   {"head":"owl_head","body":"owl_torso","front":"owl_wing","back":"owl_foot","sig":"owl_tail"}

@@ -38,9 +38,9 @@
  ],
  "parody": "Jensen Huang",
  "cry": [
-  {"base":"insect","pitch":78,"length":0.5,"name":"placeholder: a gecko's warm chirp (Claude's draft)"},
-  {"base":"machine","pitch":60,"length":0.9,"name":"placeholder: a hiss with a fan spinning up (Claude's draft)"},
-  {"base":"beast","pitch":44,"length":1.5,"name":"placeholder: a dragon's roar over a server hum (Claude's draft)"}
+  {"base":"insect","pitch":78,"length":0.5,"name":"a gecko's warm chirp"},
+  {"base":"machine","pitch":60,"length":0.9,"name":"a hiss with a fan spinning up"},
+  {"base":"beast","pitch":44,"length":1.5,"name":"a dragon's roar over a server hum"}
  ],
  "parts": [
   {"head":"reptile_head","body":"reptile_torso","front":"reptile_arm","back":"reptile_leg","sig":"reptile_tail"},
