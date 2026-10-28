@@ -737,6 +737,31 @@ plans." So, as the UI track's Part 2 does:
   `soundEffect`'s battle recipes or music.json's top-level shape: what will change, where and why before; the commit
   after the push. A session that hears of the other track's change merges it first once it lands on main.
 
+**Two lanes on one branch** (2026-10-28): the owner asked whether the plan's next parts can be worked on at the same
+time; the planning session answered with two lanes on `track/sound`, as the water track's lanes (water-track.md "Lanes:
+who owns which files"):
+- **Music lane**: SND-11, then SND-17, SND-13, SND-12, one session at a time. **World lane**: SND-10, then SND-14,
+  beside it. SND-15 waits for both lanes; SND-16 waits for the owner.
+- Both lanes work on `track/sound`. Before every push, `git pull --no-rebase origin track/sound` (a merge, never a
+  rebase or a force push); if the merge brought changes, lint, typecheck and the unit tests run again before the push.
+- Generated files are made again, never merged by hand, each in a commit of its own: `npm run modules` (hooks.js),
+  `node tools/art-code-refs.mjs`, and `node --test --test-update-snapshots tools/test/check-data-snapshot.test.mjs`
+  only when data files changed (the commit says so).
+- The music lane owns game/js/audio/tracker.js, game/data/music.json and its schema, new music logic files
+  (logic/music-patterns.js), the settings' sound section (GB Sounds), the music tests (tracker, music-studio,
+  music-patterns, cries, ui-sounds), validation/sound-baseline/ (only the music lane writes the baseline) and
+  check-sound.py's song, jingle and cry renders.
+- The world lane owns game/data/soundscape.json and its schema, logic/ambience-sound.js, logic/soundscape.js,
+  audio/soundscape-player.js, sound.js's ambience, weather, footstep and water code, the loudness report's world rows
+  and their tests.
+- Shared, each lane in its own section, pulling first: sound.js's music section, game/js/sound-test.js (each lane's own
+  rows), studio/js/music-editor.js (each lane's own cards and tab), tools/check-sound.py, the script tags in
+  game/index.html and studio/index.html, and the docs (each session's own HANDOFF entry at the top and "as built"
+  section; small lines in ROADMAP, TESTING and CHANGELOG).
+- A lane never edits the other's files: a change it needs there goes in its HANDOFF entry and a message to the
+  planning session. The music lane watches PR #292 for both lanes once the planning session says so; a CI failure from
+  a world-lane commit goes to the planning session, which relays it.
+
 ## The listening page (SND-7)
 A private artifact for the owner's phone (nothing committed): https://claude.ai/artifact/GuTVE9L1WfjFWVc4NPe9oh.
 Self-contained Web Audio (the game's tracker.js copied in unchanged, plus the sketch code); the owner's own link.

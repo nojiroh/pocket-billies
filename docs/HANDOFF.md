@@ -2,6 +2,20 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-11 - stems and ensembles: the tick's patterns as pure functions, stems, baked instruments, the first ensembles, GB Sounds, the Studio's Instruments tab - 2026-10-28
+Branch `track/sound`, the music lane (main merged first; the local clone was stale and was reset to origin/track/sound
+before any edit). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode,
+plan below, recommended options taken. Work in progress: this entry is finished at the session's end.
+- **Plan**: (a) bass, arpeggio and drums as pure "what plays at this step" functions (logic/music-patterns.js) the gb
+  path plays exactly as before (a Node record of every synth call, beside the fingerprints); (b) stems: each line into
+  its own plain gain under the fader, no panner on gb; (c) sound-bake.js's new kinds (partials, stack, wind, hit; fm
+  and osc sliced), music.json `instruments` (about two dozen, the harp moving from the code), `ensembles` and a song's
+  `ensemble` in the schema (gb reserved), MUSIC_CHOICES, musicFindings; the tracker's ensemble path (gb until the notes
+  are baked, a switch on a bar line), T.prepare baking only the notes a song plays, on arrival, with the reverb made
+  then; (d) Copperleaf (day and night), the route and the wild battle as ensembles; (e) GB Sounds in Settings -> Sound;
+  (f) the Studio's Instruments tab and its player on the game's chain; (g) the reverb at a load, off at Graphics Off;
+  check-sound: today's 194 (199 with main's UI sounds) unchanged, the ensembles as new parts; the baseline once.
+
 ### Sound track SND-10 - water: soundscape.json, emitters from the scene, a recipe per water kind, falls by height, the surf on the tide, rain on water, wading, Surf, fishing - 2026-10-28
 Branch `track/sound` (main merged first: already up to date; the local clone was stale and was reset to
 origin/track/sound before any edit). Started by the planning session under the owner's standing instruction
