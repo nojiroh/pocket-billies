@@ -4280,11 +4280,13 @@ function folkSay(f, force) {
 /** HB-10d: what the square says about your last run: every square_won / square_lost line that holds now; HB-10e: on
  * a festival or market day, its own lines (square_fest) first */
 function squareChat() {
-  const H = saveData && saveData.meta && saveData.meta.history,
+  /* the Studio's 3D previews load neither the game data nor logic/square-talk.js: no square lines there */
+  if (!gameData || typeof squareTalk !== 'function' || typeof squareMood !== 'function') return [];
+  const B = gameData.banter || {},
+    H = saveData && saveData.meta && saveData.meta.history,
     holds = (/** @type {string} */ c) => storyAllows({ when: c }),
-    fest =
-      typeof festivalToday === 'function' && festivalToday() ? squareTalk(gameData.banter || {}, 'fest', holds) : [];
-  return [...fest, ...squareTalk(gameData.banter || {}, squareMood(H), holds)];
+    fest = typeof festivalToday === 'function' && festivalToday() ? squareTalk(B, 'fest', holds) : [];
+  return [...fest, ...squareTalk(B, squareMood(H), holds)];
 }
 function sendFolk(f, to, then) {
   const rt = findPath(f.x, f.z, to[0], to[1], { noHop: true });
