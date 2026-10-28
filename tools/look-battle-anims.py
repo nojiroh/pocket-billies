@@ -14,7 +14,7 @@ gives the same film.
   is printed, and the exit code is 1 when any differs.
 - With --sheets (and --only=, since a drawn frame takes a second or two in software): a contact sheet per film of 16
   frames, 84 ms apart (two 24 fps cells), the GL scene stepped on the same clock.
-- With --measure (and --only=; VFX-9): each film drawn frame by frame with the GPU counters on (engine/gpu-counters.js):
+- With --measure (and --only=; VFX-9; VFX-10 adds the most particles drawn as strips in a frame): each film drawn frame by frame with the GPU counters on (engine/gpu-counters.js):
   the effects pass's draws a frame (the most and the mean, and the same on the stage at rest before it), the battle
   effects' own draws (the `battleFx` tag, where the build has it), the rigs' redraws and uploaded bytes (rigStats) and
   the time a frame (the stage's and the renderer's tasks and gl.finish, real time: headless the GPU is software, so
@@ -27,6 +27,13 @@ gives the same film.
     python3 tools/look-battle-anims.py --compare=DIR         # this folder's trace against DIR's
     python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
+    python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
+    python3 tools/look-battle-anims.py --bench                # time a frame on the Graphics bench (VFX-15)
+
+VFX-15: --weather=rain|storm|snow|ash|fog|clear (forced at noon in summer before the battle; clear by day is the
+battle's sunny), or sand (clear, with the Sandstorm blowing). --bench opens the Graphics bench (test_graphics) instead
+of a battle and times 120 frames of the walk renderer at its middle (gl.finish; software GPU headless, so only builds
+side by side compare); bench.json. --bot: the foe is a Bureau bot (the courier), so side 1's films are the Bureau's.
 
 Uses the browser checks' page set-up (tools/browser_check.py)."""
 import json
@@ -46,6 +53,7 @@ OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked']
 if OPT.get('outcomes'): OUTCOMES = str(OPT['outcomes']).split(',')
 SIDES = [int(v) for v in str(OPT.get('sides') or '0,1').split(',')]
 FRAMES, EVERY = 96, 3
+WEATHER = str(OPT.get('weather') or '')
 
 # Math.random seeded from the start (util.js keeps the Math.random it finds when it loads), reseeded per film
 SEEDED = """(()=>{let s=1;window.__seed=n=>{s=(n>>>0)%2147483646+1};Math.random=()=>{s=s*16807%2147483647;return (s-1)/2147483646}})()"""
@@ -74,11 +82,8 @@ __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getEle
   ['x','y','z','yaw','hz'].map(k=>r3(S.cam[k])),r3(S.css.r),r3(S.css.z),r3(S.shk),S.hold>vt?1:0,r3(S.hand.a),r3(S.dof.zf),r3(S.dof.ap),S.focusK,
   f?[f.style.opacity,f.style.background]:0,(w&&w.classList.contains('ca'))||S.ca?1:0,S.impact?1:0,
   p?[...p.children].map(e=>e.className+':'+e.textContent).join('|'):''])};
-/* an outcome's move event, as the Studio's battle preview builds it */
-__film.an=(mid,si,res)=>{const M=MOVES[mid],fx=M.fx||{},onFoe=M.c!=='X'||fx.status||fx.tgtStage||fx.hype||fx.spin||fx.wipe||fx.copyTypes,an={k:'move',si,ti:1-si,mid};
- if(fx.protect)an.protect=true;else if(!onFoe)an.self=true;else if(res==='miss')an.miss=true;else if(res==='blocked')an.blocked=true;
- else if(M.c!=='X'){an.dmg={crit:48,se:56,x4:80,nve:11,hit:24,secrit:70}[res];an.te={se:2,x4:4,nve:.5,secrit:2}[res]||1;an.crit=res==='crit'||res==='secrit'}
- return an};
+/* an outcome's move event, as the Studio's Battle effects builds it (VFX-12: logic/battle-anims.js) */
+__film.an=(mid,si,res)=>battleAnimPreviewEvent(mid,MOVES[mid],si,res);
 /* plays one film on the film's clock: frames of 16 ms; every k-th frame's state (sheet: the GL tasks too, and
    resolves after each block of k frames so a picture can be taken) */
 __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},pn=performance.now,st=window.setTimeout,timers=[];
@@ -94,9 +99,11 @@ __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=(
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
 __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
- TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[]};
+ TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],all:[],restEff:[],restMs:[],st:[]};
+ /* VFX-10: the instances drawn as strips (the ramp flag, 4) in the frame's pool */
+ const strips=()=>{if(typeof battleFxBatch==='undefined')return 0;const B=battleFxBatch;let n=0;for(let i=0;i<B.n;i++)if(B.d[i*BATTLE_FX_FLOATS+20]&4)n++;return n};
  const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);gl.finish();const dt=rn()-t0;const c=gpuCounters.cur;
-  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m)out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
+  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m){let d=0;for(let p=0;p<c.length/FIELD_COUNT;p++)d+=c[p*FIELD_COUNT+F_DRAW];out.all.push(d);out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);out.st.push(strips())}(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
@@ -146,19 +153,35 @@ def measure(pg, moves):
                 r = pg.evaluate(f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)")
                 mean = lambda L: round(sum(L) / max(1, len(L)), 2)
                 ms = sorted(r['ms'])
-                rows[key] = {'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
+                rows[key] = {'allMax': max(r['all'] or [0]), 'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
                              'fxMax': max(r['fx'] or [0]), 'msMean': mean(r['ms']), 'msP90': ms[int(len(ms) * 0.9)],
-                             'restMs': mean(r['restMs']), 'rig': r['rig']}
+                             'restMs': mean(r['restMs']), 'rig': r['rig'], 'stripMax': max(r['st'] or [0])}
                 x = rows[key]
-                print(f"{key:28} effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
+                print(f"{key:28} frame draws max {x['allMax']:4}  effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
                       f"{x['fxMax']:2}  ms mean {x['msMean']:7} p90 {x['msP90']:7} (rest {x['restMs']:7})  rig redraws "
-                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB", flush=True)
+                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB  strips max {x['stripMax']:3}", flush=True)
     (OUT / 'measure.json').write_text(json.dumps(rows, indent=1, sort_keys=True))
     keys = list(rows)
     tot = lambda f: round(sum(f(rows[k]) for k in keys) / max(1, len(keys)), 2)
-    print('mean over films: effects draws max', tot(lambda x: x['effMax']), 'battleFx max', tot(lambda x: x['fxMax']),
+    print('mean over films: frame draws max', tot(lambda x: x['allMax']), 'effects draws max', tot(lambda x: x['effMax']), 'battleFx max', tot(lambda x: x['fxMax']),
           'ms', tot(lambda x: x['msMean']), 'p90', tot(lambda x: x['msP90']), 'rest ms', tot(lambda x: x['restMs']),
           'rig redraws', tot(lambda x: x['rig']['redraws']), 'KB', tot(lambda x: x['rig']['kb']))
+
+
+def bench(pg):
+    """VFX-15: frame time on the Graphics bench (test_graphics), the walk renderer alone, 120 frames after 30 to settle"""
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';uiState.bench={id:'test_graphics',test:1};render();0")
+    if not CF.until(pg, "!!(walkView.ready&&walkView.id==='test_graphics')", 120): raise Exception('test_graphics didn’t open')
+    pg.wait_for_timeout(3000)
+    r = pg.evaluate("""(()=>{const T=frameScheduler.tasks,keep=new Map(T);T.clear();const gl=gpuState.gl,rn=performance.now.bind(performance),ms=[],draws=[];
+     let vt=rn()+1e7;const pn=performance.now;performance.now=()=>vt;
+     try{for(let i=0;i<150;i++){vt+=16;countersOn(gl);const t0=rn();for(const [,t] of keep)t.fn(vt,16);gl.finish();const dt=rn()-t0;
+      let d=0;const c=gpuCounters.cur;for(let p=0;p<c.length/FIELD_COUNT;p++)d+=c[p*FIELD_COUNT+F_DRAW];countersOff();if(i>=30){ms.push(dt);draws.push(d)}}}
+     finally{performance.now=pn;for(const [k,t] of keep)T.set(k,t)}
+     ms.sort((a,b)=>a-b);const m=L=>Math.round(L.reduce((a,b)=>a+b,0)/L.length*100)/100;
+     return {msMean:m(ms),msP90:Math.round(ms[Math.floor(ms.length*.9)]*100)/100,drawsMean:m(draws),drawsMax:Math.max(...draws)}})()""")
+    print('Graphics bench:', r, flush=True)
+    (OUT / 'bench.json').write_text(json.dumps(r, indent=1))
 
 
 def compare(a, b):
@@ -197,13 +220,23 @@ def main():
         ctx, pg = CF.new_page(b, errs, width=480, height=320, low=False, timeout=300000, init=(RENDER, SEEDED))
         pg.goto(base + '/index.html?fixture=town')
         if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')
+        if 'bench' in OPT:
+            bench(pg)
+            ctx.close(); b.close(); srv.shutdown()
+            return
+        if WEATHER:
+            w = 'clear' if WEATHER == 'sand' else WEATHER
+            pg.evaluate(f"environment.on=true;environment.force={{time:13,weather:{json.dumps(w)},season:'summer'}};0")
+            pg.wait_for_timeout(1500)
         pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});"
-                    "__seed(20261028);const q={id:'film',sp:Object.keys(SPECIES).find(k=>SPECIES[k].stage===0),lvl:20,no:1};encountersHere().splice(0,1e9,q);startWild(q);0")
+                    "__seed(20261028);const q={id:'film',sp:Object.keys(SPECIES).find(k=>SPECIES[k].stage===0),lvl:20,no:1};encountersHere().splice(0,1e9,q);"
+                    + ("q.sp=factionBotSp(FACTIONS.bureau.bots.courier);startWildBot(q);0" if 'bot' in OPT else "startWild(q);0"))
         if not CF.until(pg, "activeBattle&&activeBattle.phase==='choose'", 120, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"):
             raise Exception('the battle never reached the move menu')
         CF.until(pg, 'battleStage.gl', 30)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
+        if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
         if 'measure' in OPT:
             measure(pg, moves)

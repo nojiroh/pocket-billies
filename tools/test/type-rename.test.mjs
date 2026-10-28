@@ -69,7 +69,8 @@ test('a rename rewrites every field of the data that names the type', () => {
       typeFields(D)
         .filter(([, v]) => v === 'Zz' + id)
         .map(([p]) => p),
-      before.map(([p]) => p)
+      /* VFX-11: a type's kit (battleAnims.json types, keyed by the type) moves to the new key */
+      before.map(([p]) => p.replace(`battleAnims.types.${id}.`, `battleAnims.types.Zz${id}.`))
     );
   }
 });

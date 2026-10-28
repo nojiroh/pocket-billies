@@ -24,6 +24,7 @@
 /** @typedef {{ p: string, at: string[] }} CodeRef */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { BATTLE_ANIM_ART_DIR } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   LEGACY_DIR: [() => LEGACY_DIR],
@@ -172,6 +173,12 @@ export function artRefInputs(o) {
     (Ln.names || []).forEach((/** @type {string} */ _n, /** @type {number} */ i) => {
       for (const v of ['front', 'back'])
         extra.push({ path: o.sheet(Ln.id + i, v), ref: { kind: 'rig', from: 'lines', at: Ln.id + i, legacy: false } });
+    });
+  /* VFX-10: an effect strip is named by its id in battleAnims.json sprites (art/battle/anims/<id>.png) */
+  for (const id of Object.keys((D.battleAnims && D.battleAnims.sprites) || {}))
+    extra.push({
+      path: `art/${BATTLE_ANIM_ART_DIR}${id}.png`,
+      ref: { kind: 'data', from: 'battleAnims', at: 'sprites/' + id, legacy: false },
     });
   const ids = (/** @type {any[]} */ rows) => (rows || []).map(r => r && r.id).filter(Boolean);
   return {

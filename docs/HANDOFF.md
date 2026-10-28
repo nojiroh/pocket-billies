@@ -411,6 +411,410 @@ first and carried out. Details and the brief's corrections: perks-track.md 5.10,
 - Next: PK-10 (held items: 16 new, the 8 existing redrawn, the held kinds, rarity tiers) on `track/perks-items`; it
   retires i_pretzel, i_trailmix, i_bell and the other held rectangles the same way. Main moved on during this
   session (5b0d43e, #305: the Style track and the Perks PR #301 merged): PK-10 merges it first.
+
+### VFX track VFX-11 - Families x types: 16 families, 11 type kits, every move's anim, projectiles, rays and lights in GL - 2026-10-28
+Branch `track/vfx`, the main line of wave 2 (VFX-14 on `claude/vfx-14-statuses` and VFX-16 on
+`claude/vfx-16-battle-flow` ran beside it; both were told the sections before and the commits after). Main was
+already in; VFX-15's finished side branch merged first (6119639b, PR #311: HANDOFF kept both, art-code-refs
+regenerated; 1916 of 1916 unit tests). VFX-12 (`claude/vfx-12-studio-effects`, PR #313) hadn't been reported done, so
+it wasn't merged. Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here,
+recommended options taken and listed below. Draft PR #295 updated. No tag (CLAUDE.md since #283).
+- The plan: merge VFX-15; tell the siblings the shared sections; a browser-free layer first (kits, roles, kit steps,
+  paths, gates, with tests); the data (11 kits, 16 families with short variants, every move's `anim` checked against
+  its mechanics); the runner's steps, all in VFX-9's pool (no new draw); the Moves editor's dropdown; measure the old
+  build and this one side by side; the 122 contact sheets; the full check; docs. Two commits: the code that can play
+  families (no move used them yet), then the data that switches every move over.
+- Changed:
+  - game/data/battleAnims.json: `families` charge, dash, dive, strike, slash, quake, flurry, shot, beam, breath, wave,
+    storm, buff, hex, guard, heal, each with a `short` variant for Faster (520-700 ms); the six `legacy_*` families
+    stay (miss and blocked still default to them; the Studio's dropdown lists the others as "before VFX-11").
+    `defaults` H/S/X/protect -> strike/shot/hex/guard. `types` (new): a kit for each of the 9 types, None and the
+    Bureau: `ramp` (and `ramp2`, Dragon's two-tone with Fire's), strips by role (`shot`, `impact`, `small`, `bits`),
+    `icons` (Steel's cog, Dragon's scale, None's pow), `path`, `motion`, `light` {k, ms <= 300, flicker}, and `cast`
+    and `hit` steps. `colors.heal`. Schema (`$defs.kit`; the step enums widened: 12 new `do`s, 6 new gates, `foe`),
+    types (`BattleAnimKit`), checks (a kit for every type and None, its strips and ramps exist, a step's strip and
+    ramp exist, no kit step plays a kit, no move's family longer than its category's `maxMs`), the Studio's type
+    rename (a kit moves with its type; ramps that named it follow).
+  - moves.json: every move's `anim`, the track file's table: charge 6, dash 6, dive 6, strike 13, slash 5, quake 5,
+    flurry 5, shot 16, beam 7, breath 4, wave 13 (Premonition moved from strike), storm 8, buff 8, hex 13, guard 2,
+    heal 5 (122).
+  - logic/battle-anims.js: `battleKitFor` (the Bureau's kit for a Bureau bot, else the type's, else None's),
+    `battleKitSteps` (a `kit` step plays the kit's cast or hit steps at its time, on its Billie, behind both gates,
+    `each` carried), `battleKitRoles` (roles to strips, the kit's ramp unless the step names one, `path: kit`),
+    `battlePathAt` (straight, arc, zigzag, spiral, wave, stamp, orbit; each ends exactly on its target),
+    `battlePartOffset`; gates `drain`, `heal`, `drop` (a foe's stat lowered), `spread`, `aim`, `bureau`; the timeline
+    names its kit. `hitTier` and `koAhead` untouched (SND-13 reads them).
+  - battle-anim-run.js (`animFamilyStep`): projectile (a strip on a path from one Billie to another, `lit` lights the
+    stage as it flies), ray (VFX-10's beam strip tiled along the beam, its caps at both ends), impact (one strip,
+    flipped toward the target for slashes), spray (thrown out or poured `toward` a Billie; Fire's float up), rain,
+    orbit, rise (chevrons up or `down`, heal sparkles), light, shake, jump (up out of view and back), pulse (a ring
+    flying to a Billie). `each` steps play on every foe a spread move hits; an aimed move's target point is its part
+    (the stage's 'break' offsets); a move on itself still points at a foe (`foe`: Scatter Stones, Premonition).
+    Colour `kit`: the kit's ramp's light. Every random number is the event's own stream (VFX-9's fxRandom).
+  - battle-stage.js: a particle with a `path` sits where `battlePathAt` puts it; `hide` (a light's particle) draws
+    nothing on the 2D stage; `lungeKind(dash, type)`: the dash family's lunge flag replaces LUNGE_DASH (smear.js
+    keeps the list, unread, since VFX-12 moved that block: remove it after VFX-12 merges); 'Retail' fixed;
+    `burstMax` (sprays keep to the burst budget).
+  - battle-3d.js: a particle may name its strip (`anim`), mirrored (`flip`), Electric's frames held twice (a
+    stutter); a projectile's trail: copies where its path had it 42, 84, 126 ms ago, each eroded a little more (Part
+    1's afterimages, no draw of their own); the ray's strip; an effect light's kit strength and a 12 fps flicker
+    (Fire, Electric). walk/battle-fx.js: a mirrored strip; the beam kind tiles a strip along its length (a flat
+    varying `vR` with the frame's rect; same 2 draws).
+  - Studio: the Moves editor's Animation card (a dropdown of the 16, the scenes, then the legacy ones).
+  - Tests: every move x 8 outcomes x 3D or not x both speeds plays at most its old time and hits within it; the
+    family counts; kits, roles, kit steps, gates, paths, part offsets, every family's strips in every kit; the
+    snapshot remade on purpose (each line now `id/kit tier dur/hit do:sprite@at...`); the type-rename test follows a
+    kit to its new key.
+- The snapshot, what changed: every landed move now plays its family (was legacy_hit/cast/status by category) in its
+  kit; Guard and Skim Guard play `guard`; misses and blocks are unchanged (legacy_miss, legacy_blocked). Times, all at
+  most the old ones: H families 880 ms (hits at 180-420: dash 180, flurry 200, strike 220, charge and slash 260, quake
+  320, dive 420; was 200), S families 1060 (hits 500-540; was 500) but `wave` 880 (hit 480), X families 1000 (hit 600, as
+  before), guard 700 (hit 0); the short variants 480-700 at speed 2.2+.
+- Where the track file was wrong or vague (checked in the code):
+  - The family table (counts right, 122 in all) puts Premonition in `strike`; on its turn the engine marks a delayed
+    move `self` and nothing lands (battle-engine.js ~726), so a strike would lunge at nothing. It plays `wave`
+    (pulses toward the foe, no hit), so `wave` is 880 ms (it fits an H move's 880; wave's S moves are 180 ms
+    shorter). Everything else fits its mechanics: protect -> guard; heal (self) -> heal; selfStage -> buff; status,
+    tgtStage, hype, spin, copyTypes, stones -> hex (Scatter Stones is a move on itself in the engine: the hex aims at
+    the foe through `foe`); damaging heals (Drill Strike, Spring Tide) keep their attack family and add the heal's
+    plus signs (`heal` gate); Sap Drain's shot flies back (`drain` gate).
+  - "Dynasty" is the send-out's burst (battle-stage.js case 'enter'), VFX-16's step; its branch already fixes it, so
+    VFX-11 fixed only 'Retail' (case 'hurt', fx 'mail', the delayed hit landing: now the delayed move's type).
+  - "Part 1's ribbon" for projectiles: the ribbon pass is a draw of its own; the trail is drawn as eroding copies in
+    the pool instead, to stay in 3 draws.
+  - The kit table's sprites: no cog, scale or pow strips exist; they're `icons` (icons.png particles) in Steel,
+    Dragon and None's hit steps. "Ripples on battle water (WA-7)", "heat shimmer" and "the row wave" are VFX-15's moods
+    and the water track's; the kits don't repeat them.
+  - Line numbers: 'Dynasty' at BS 1986 (not 1798), 'Retail' at 2143 (not 2133).
+- Decided for the owner, to review:
+  - The kits as the table (recommended), with the strips by role: Fire flame tongue, explosion, ember and smoke,
+    flickering up, a flickering warm light; Water droplet on an arc, splash crown; Grass leaf on a spiral, petals
+    orbiting; Electric bolt on a zigzag, hit spark, held frames, a brief flickering light; Ground pebble on an arc,
+    dust, a shake on the hit; Flying feather on a wave, swirl; Psychic orb on a wave, shock ring, a ring on the hit;
+    Steel shard, hit spark, a white ring and cogs; Dragon flame tongue in indigo and ember (two-tone), explosion, a
+    roar ring on the wind-up, scales; None star, burst, a pow; the Bureau paper stamped down from above, the stamp's
+    frame (no words), paper raining, its red light.
+  - The Bureau's kit plays for a Bureau bot's every move, whatever the move's type (as VFX-15's mood does).
+  - Premonition plays `wave`, and `wave` is 880 ms (above).
+  - Light: a kit's light lasts 120-280 ms (Budgets: 300 at most), within VFX-9's light budget (3/2/1/0, 2 on phones).
+  - Impacts glow (their white cores add); bits glow only in the kits that move like light (Fire, Electric,
+    Psychic, Dragon); rocks, leaves, feathers, paper and shards are lit by the scene.
+  - The guard's shield is the hex strip in Water's sky ramp (the guard colour's family).
+  - Normal hit-stop, flashes and hitFx untouched (VFX-13's tier table); no move longer (recommended).
+- Measurements (headless, software GPU; 16 films, one move per family, super effective, side 0; before = 6119639b in
+  a worktree, after = this branch, one after the other):
+  - The battle effects' draws (`battleFx` tag, most in a film): 3 before and after in every film (pool 2 + scars 1;
+    the budget is 3). The effects pass a frame: 91 most before, 91-92 after.
+  - Strips drawn a frame (most): 0-23 before (VFX-10's icon swaps), 1-38 after (Inferno's breath 38, Petal Storm
+    33, Overcharge 28).
+  - Frame time during a move (stage and renderer tasks with gl.finish): 595 ms mean before, 776 after; p90 2273 ->
+    2668; but the stage at rest went 3440 -> 2366 in the same runs, so the noise is larger than the change. Rig
+    redraws rose 15.6 -> 27.2 a film, and the bisect shows why: Guard's film with its old animation on this
+    branch's data also redraws 18 (8 before), while this branch's code with the old data redraws 8: the count steps
+    with the near Billie being drawn in the film (the quirk VFX-10 and VFX-15 recorded), which the data's size
+    shifts, not with the families. Same-film controls (Guard, 3-5 runs each): 534-647 ms before, 550-714 after. So
+    frame time is "not worse" as far as software rendering can tell; the phone decides.
+- Films: contact sheets of all 122 moves (look-battle-anims `--sheets --outcomes=se --sides=0`, three batches in
+  validation/look-battle-anims-vfx11-1..3, gitignored; no errors), and a Bureau bot's Spark Shot (`--bot --sides=1`):
+  each family reads as itself (Overcharge's ray with its caps, Spark Shot's zigzag bolts with their trail, Vine
+  Lash's green arcs, Drake Dive's flame falling from above, Sand Squall's pebbles raining and whirling, Guard's hex
+  shield, Sunbathe's mint sparkles, the Bureau's red stamp frames and paper). The film camera frames the foe, so moves
+  on the attacker (buff, heal, guard) show only at the frame's edge: a phone check.
+- Risky:
+  - Draws stay 3 (the pool's 2 and the scars'), but a move shows more strips (up to 38 a frame against 23) and some
+    are 32 px at k 2 (the guard's shield, the dive's flame): fill rate on the phone is the open question.
+  - The ray's strip is tiled with `fract` in the pool's fragment shader (nearest filtering, the atlas packed with
+    gaps): a GPU that filters differently would show a seam at each tile.
+  - Spread moves and aimed moves never show in the film tool (a wild single battle): checked by tests only.
+  - Merging: VFX-12 (`claude/vfx-12-studio-effects`) changes battle-anims.test.mjs, battle-anim-run.js, battle-stage.js
+    (the budgets: `burstMax` should read its `fxBudget('burst')`) and moves LUNGE_DASH in smear.js; told the details.
+    VFX-14 and VFX-16 were told the sections and the commits.
+- Phone checks for the owner (listed, not waited for):
+  - A move of each family: Tackle (charge), Quick Strike (dash: afterimages and the ribbon), Wing Strike (dive),
+    Piston Jab (strike), Vine Lash (slash), Quake Stomp (quake), Assembly Line (flurry), Spark Shot (shot), Overcharge
+    (beam), Inferno (breath), Mind Pulse (wave), Petal Storm (storm), Charge Up (buff), Static Wave (hex), Guard,
+    Sunbathe (heal).
+  - A move of each type and a Bureau bot's move (red paper and stamp frames, no words).
+  - The dash moves: Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It.
+  - A spread move in a double or Alpha battle (Surge Wave, Petal Storm, Cyclone): the impacts on both foes.
+  - An aimed move on a bot's arm (Auger Bore, Grip Crush, Jet Blast): the impact on the arm.
+  - The Faster speed: the short variants; a tap still skips cleanly.
+  - Frame time in a battle with a big move (no slower), and the lights (warm flicker on Fire, brief gold on Electric).
+- Verified: lint, typecheck, check:modules, format:check, check:data, data text and build before the commits (ui-lint's
+  ceilings lowered with --save: two fewer motion times, four fewer colours in game JS); `npm test` 1921 of 1923
+  before the commits (art-code-refs then regenerated; the run-map "1,000 maps in 1.5 s" timing test under the films'
+  load, as earlier entries record), battle-anims 22 of 22 and type-rename 7 of 7 after. Smoke 7 of 7 (349 s) on the
+  final code before committing. The golden record untouched (the engine isn't changed). Sound files untouched (no
+  message to the sound track needed); `hitTier` and `koAhead` unchanged (SND-13). The sprite shader, battleStageFlash,
+  the `uCAP` pulse, hitFx and the join intro untouched (no message to the style track needed). Full quick check (at
+  7f957898): 39 of 42 in 1642 s; every battle step passed (doubles and Alpha at 4x, starters, battle weather, the
+  phone's battle, battle music); the three problems are on the known list: Terraces (`train_station` in the air), the
+  walking step's room light, and RL-8's run ("the town's shop has no Perk (RL-12)": the same alone on 6119639b, the
+  build before this step, so not this step's). CI at 7f957898: lint and rules green; smoke green on one run, and on
+  the other red only for "Camera follow ... the page stopped drawing" (the loaded-runner failure VFX-10 recorded;
+  that step never enters a battle).
+- After the report (the planning session's message that VFX-12 was done reached this session late):
+  - Merged main 4423a457 (PK-6, #318; HANDOFF kept both, art-code-refs regenerated; 1942 of 1942 tests), then
+    VFX-12's `claude/vfx-12-studio-effects` a1b94cb8 (PR #313; it had merged this step's 7f957898 and moved
+    `burstMax` onto its `fxBudget('burst')`; HANDOFF, ROADMAP and the track row kept both, art-code-refs
+    regenerated): 1946 of 1946 tests, lint, typecheck, modules, format, check:data clean, smoke no problems; pushed
+    59b8a6c7.
+  - The Studio's Battle effects: two read-only panes in VFX-12's `battleFxPanes`, Families (each one's moves, time
+    and hit, the short variant's) and Type kits (strips by role, ramp, path, motion, light) (e09901e7);
+    check-studio-github.py `--only=battle_fx` passes.
+  - logic/smear.js LUNGE_DASH and lungeDash removed (unread since the dash family; the smear test checks the
+    family's six moves) (05556f54). Smoke no problems before each commit.
+  - VFX-14 pushed its own `p.anim` branch in battle3dFrame before seeing mine: told it the shape to merge as one
+    superset (it must skip `p.beam`, keep `p.hide`, the stutter, `q.flip` and the trail).
+  - The merge coordinator asked whether to merge #295 at 6119639b or wait: answered that VFX-11 and VFX-12 are now
+    on the head; the owner decides.
+  - For VFX-13 (from VFX-17, `claude/vfx-17-scenes-1`, which started on 7f957898): VFX-17 fills `scenes`, adds
+    `word_*` strips, schema `$defs/scene`, step `do` `prop` and `stamp`, keys `prop`/`word`, `BattleAnimScene`; moves
+    ~18 signature moves' `anim` to scene ids; battleAnimTimeline falls back to a scene's `family` with 3D props off or
+    under Reduced motion and plays a repeat (`short`) from its second use (AnimCtx `props`, `seen`); animSceneStep
+    from animFamilyStep's default; propWorldItem in battle-3d.js. It leaves hitFx, the tiers, battleStageFlash and
+    the shaders alone: scenes use the plain `hit` step and take VFX-13's tiers.
+- Next: wave 2 goes on: VFX-14 and VFX-16 merge the latest `track/vfx` into their branches and report done; the next
+  main-line session merges them; then wave 3 (VFX-13 hit tiers, VFX-17 the first signature scenes, VFX-19 move
+  sounds: one sound per family, layered by type, now that the families exist). Left for later: the six legacy
+  families once nothing names them (miss and blocked still do: VFX-13's misses per family); editing the kits and
+  families in the Studio (the panes only show them).
+
+### VFX track VFX-12 - Battle effects in the Studio: the editor, the scrubber, budgets and smears as data - 2026-10-28
+Side branch `claude/vfx-12-studio-effects` (wave 1), made from `track/vfx` at VFX-9's head 1f5dfee7; draft PR #313 into
+`track/vfx`. `origin/track/vfx` (VFX-9's finish, VFX-10's effect art, main) merged in at the end (11458c5a): conflicts
+only in the schema's required list (both sides' keys), battle-3d.js's hooks import and art-code-refs.json; the
+check-data snapshot regenerated. Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended
+options taken and listed below. No per-session tag (main's CLAUDE.md since #283). Siblings told before and after:
+VFX-15 (session_019UpAFxKSpm8fdsCQYPExoh: battleAnims.json, battle-stage.js, battle-3d.js, the preview), VFX-10
+(session_019UpAFw3LgcE7Xrm7i2XZKS: the `sprites` / `ramps` key shapes). No sound file touched (no message to the sound
+track needed); nothing the style track owns touched.
+- The plan: check the Studio's preview first (it played nothing: fix it); then, one cause per commit, VFX-9's budgets
+  and Part 1's dials into battleAnims.json with the game reading them (same numbers, smoke on each); one function for
+  the 8 film outcomes; the editor (clip, settings, timeline, scrubber, panes, registry); the self-test row and a
+  check-studio-github.py step; docs; the full checks.
+- Changed:
+  - Fix: studio/js/game-stand-ins.js provides `BATTLE_ANIMS` (a live map over the Studio's battleAnims). Since VFX-8
+    the Studio page never had it, so `battleAnimTimeline` got no data and every previewed move returned {dur: 0} and
+    drew nothing (checked headless before and after: {dur: 0, hit: 999} -> {dur: 880, hit: 200}).
+  - battleAnims.json `budgets` (particles, burst, lights by quality 0-3, lightsPhone, lightsAll; a `scars` entry I
+    first added went again once VFX-15 kept its cap in its own `scars.cap`):
+    battle-stage.js `fxBudget(k)` and battle-3d.js `battle3dEffectLights` read them where they used the arrays (and the
+    phone's 2 and the 6 lights in all). Schema (`byQuality`), types (`BattleAnimBudgets`), `dataBattleAnims`: no budget
+    grows as the quality drops, a burst fits in the pool (a planted case in the check-data snapshot test).
+  - battleAnims.json `smears` (Part 1's dials, VFX-6 folded in): ghosts, lungeGhosts, ribbon (cells, half, twist,
+    bright, core, fray, steps), dashRibbon (half, min, max), stretch (pace, k, max), lean (k, max, back). logic/smear.js:
+    those constants are `export let`, `smearDials()` reads them in the data's shape, `smearDialsSet(d)` sets any part
+    (SMEAR_KEEP follows); battle-anim-run.js sets them once from the game's data at load. Tests: set, keep, put back;
+    the data names every dial.
+  - logic/battle-anims.js `BATTLE_ANIM_OUTCOMES` and `battleAnimPreviewEvent(mid, M, si, res)`: the made-up move event
+    for hit, se, x4, nve, crit, secrit, miss, blocked, which the look tool, the battle-anims tests and the Studio each
+    built (now one function; the timelines' snapshot unchanged; a tier test per outcome).
+  - The editor: Creatures › **Battle effects** (the menu's label; the section key stays `preview`). A move in any of
+    the 8 outcomes or one of 19 events (the old Effects and intro buttons), played from your side or theirs, at ¼×, ½×,
+    Normal, Fast, Faster or 4×, quality 0-3 (held), Full, Calm (the game's data-motion) or Reduced motion
+    (`setReducedMotion` in the stand-ins), Flashes on or off (the stand-in save's preference). The stage is a walk scene
+    by default (Copperleaf). Under the stage: ▶ You, ▶ They, ❚❚ (hold or go on), ◀ cell / cell ▶, the time and cell,
+    and the timeline: a summary (family or scene, tier, variant, dur against its maxMs, the hit, steps, cells), a ruler
+    of 24 fps cells, the scrubber, a row per step (repeats as ticks), the hit and the line's end marked, a playhead. A
+    seek plays the clip again from its start on a clock of its own, the stage's frame task stepped by hand 16 ms at a
+    time (performance.now and setTimeout read that clock meanwhile; the effects' per-event seed makes it look the same),
+    to the cell asked for, and holds there; timers still due run later in real time, times kept in real time (hit-stop,
+    the chromatic pulse, the impact frame, the flash limiter) move with the clock. Panes below (`battleFxPanes`, each
+    {id, title, sub, html(A, D)}; fields at `battleAnims.<key>` save, undo, draft and propose like any section):
+    Timing and flashes (shown, not tuned), Budgets, Smears (Part 1; they reach the stage at once), Ramps and Sprite
+    cells (read VFX-10's `ramps` / `sprites`: a ramp's NW_PALETTE colours or its hexes and light as swatches, a
+    strip's numbers and its PNG; any other shape shown the same way, a note when there are none). VFX-10 landed on
+    `track/vfx` during this step and is merged in, so both panes show its 44 strips and 12 ramps. Leaving the section puts the Studio's motion and Flashes back. The fighters stand before
+    the walk scene mounts. The Moves editor's ▶ Preview animation waits for the stage, then plays.
+  - The Studio self-test's `battle effects` row (a move plays, its steps, a seek to its hit holds on that cell, it goes
+    on); check-studio-github.py `battle_fx` (in-page clicks: a real click waits for still frames, which the software 3D
+    stage hardly gives). docs/STUDIO.md's row.
+- Where the brief or the track file was wrong or vague (checked in the code):
+  - The Studio's preview played no move since VFX-8 (above): "the Studio page has no gameData" held, and VFX-8's
+    `BATTLE_ANIMS` through hooks.js had no Studio provider.
+  - The preview's default "painted backdrop" draws a dark empty stage since phase 06-3 (no painted stage): the editor
+    defaults to a walk scene, the backdrop kept as the list's last choice.
+  - The budgets and Part 1's dials were code (battle-stage.js, battle-3d.js, logic/smear.js), not data; VFX-6 never
+    ran, so there was nothing to fold in but the constants.
+  - The Studio's main area is about 926 px wide at any window narrower than that (every section; not new): the editor
+    lays out inside it, the timeline and the tables scroll on their own.
+- Decided for the owner, to review:
+  - The menu says Battle effects (the key `preview`, the checks and the shortcuts unchanged).
+  - The default stage is a walk scene (Copperleaf; the editor is about effects, which draw in GL only).
+  - Timing (`maxMs`, `extraMs`, the long and big powers, Faster's speed) and the flash rule are shown, not editable: no
+    move may get longer (the owner's rule) and the limiter is the safety rule (rule 9).
+  - The dials made data: the afterimages' looks, the ribbon, the dash ribbon, the stretch, the lean. Not: the throw's
+    pace (Part 1's "the throw's easing stays as built"), SMEAR_MIN_GAP, SMEAR_NEAR, RIBBON_SUB (safety and drawing
+    details). The ghost counts follow the lists (1-4 in the schema); the pane edits the ones there.
+  - An event has no steps in the data yet (VFX-14, VFX-16): its scrubber runs 2400 ms with no rows.
+  - A seek steps only the stage's frame task; the GL view draws the result (its own per-frame state, like the walk
+    scene's ambient life, isn't stepped).
+  - A smear dial reaches the stage at once; an undo reaches it at the next play.
+- Measurements: the Studio self-test's row: the stage (Copperleaf) ready in 8.4 s headless, a seek to the hit
+  (512 ms, 13 timeline rows, 19 steps) in 7 ms; the whole self-test 311 s, passed (22 edits undone). A previewed move
+  before the fix {dur: 0, hit: 999}, after {dur: 880, hit: 200} (Rush) and 1060 / 500 (Overcharge). Smoke 343-351 s on
+  each commit here, 314 s on the last (VFX-9 noted 401 s). No move longer: the battle-anims tests keep every move x 8 outcomes' {dur,
+  hit}, the timelines' snapshot is unchanged, `maxMs` untouched; the game's budgets and dials are the same numbers.
+- Risky:
+  - Opening Battle effects mounts a walk scene (Copperleaf): heavier than the old dark stage in the Studio, the
+    self-test's 3D sections and on a phone-sized Studio (see the phone checks).
+  - battleAnims.json's schema, `about`, types and dataBattleAnims meet VFX-15's `moods`, `weather`, `scars` on its
+    merge: keep both sides (VFX-10's are merged already). battle-stage.js changed only in the budget lines, battle-3d.js
+    only in battle3dEffectLights, battle-anim-run.js only `export` on battleAnim and the smears line.
+  - Headless, a walk scene drawn in software keeps the Studio page busy: Playwright's real clicks right after opening
+    Battle effects can wait (my step clicks in the page). The fighters now go on a running stage at once (993cc4af),
+    and the move/event switch redraws only its fields (e8cadd2a): every whole redraw mounts the walk scene again.
+- Phone checks (listed, not waited for): the Battle effects section on a phone-sized Studio window (the stage, the
+  player under it, the timeline scrolling sideways, the panes); tuning a move: play Overcharge (super ×2), drag the
+  scrubber to its hit, step a cell each way, then Faster, quality 2, Reduced motion and Flashes off; change a smear
+  dial (the ribbon's width) and Throw: caught; a budget; undo; leave and come back (Studio motion and flashes normal).
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, build and `npm test`
+  (1877 of 1877 after the last merge) on each change; the smoke check (no problems, 7 of 7) on every commit that
+  touched game/ or studio/ and on the merged heads. check-studio-github.py: `battle_fx` passes (and proposes); the
+  self-test (with its new row) passes; split passes; robot joints failed once on the walk-scene stage's slow restart
+  (fixed in 993cc4af; rerun: robot joints and battle_fx pass, and after e8cadd2a battle_fx with the closing proposal
+  passes; the self-test row's wait after the hold went from a fixed 400 ms to up to 8 s for the stage's clock, 89bec70d,
+  after CI's runner, which now runs the Studio self-test in its smoke job, drew too slowly for it; the self-test then
+  passed here again in 1035 s); the full run stops at the `story` step, which fails the same way on `track/vfx`
+  without my changes (de249bd8: a real click on #scMap times out). Full quick check on 6bfc9e3f, run alone: 36 of 42
+  in 1599 s; Terraces, RL-8 and Room light fail on `track/vfx` too (its own run: 38 of 42 in 1665 s, those three and
+  Battle music); route trainers, Granny Juniper and the phone step's walk-screen piece count failed in mine and passed
+  when rerun (3 of 3 in 206 s): flaky under load, not mine. Battle music passed in mine. CI on the head: lint and
+  rules green; smoke red only on the Studio's world map look and Camera section (game/art/billionaires 404s; main's
+  known reds; commented on #313). CI on the final head 6d370b5e (run 40727189243): lint and rules green; smoke cancelled
+  at its 30-minute limit with nearly every step run; its only problem was "Camera follow (CAM-1): the page stopped
+  drawing", which VFX-10 found the same on track/vfx 868e6f30 and which passes alone there and on main (it never
+  enters a battle). The Studio steps, the battle, the Voltron and the run's world passed. The in-game full test (25 min) not run: its first step passes in every smoke run.
+  The look tool films with the shared outcome function (overload, 16 films, no errors).
+- Next: the planning session merges this into `track/vfx` (it holds track/vfx up to VFX-10's end, 05cfe7d8). The ramps and
+  cells panes only read; editing them (and an Edit pixels link per strip) is for a later main-line step. Later
+  steps push their panes into `battleFxPanes`: VFX-13 the tier table, VFX-15 moods and scars, VFX-11 families and
+  kits.
+
+### VFX track VFX-10 - Effect art: 44 grayscale strips, ramps, the strips in the battle's pool, the Art browser's previews - 2026-10-28
+Branch `track/vfx` (main merged in first, ad43878d: SY-6's `uFoil` and VFX-9's `uHit` joined in the sprite shader,
+SY-8's tally in battleStageFlash, SY-5's notice in tapMessage; then 7f99aec5 after main took VFX-5..9 in #312, taking
+main's resolution; then d36b6c7d for #306, #301, #304, #316). Run under the owner's standing instruction
+(2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. The main line of wave
+1; VFX-12 (`claude/vfx-12-studio-effects`) and VFX-15 (`claude/vfx-15-stage`) ran beside it and hadn't reported done,
+so no side branch was merged. Draft PR #295 updated. No tags (CLAUDE.md since #283).
+- The plan: merge main; agree names with VFX-15 (the ground marks) and VFX-12 (`sprites`, `ramps`) first; draw the
+  strips with a new tool and push them with their data first (VFX-15 waits on the scars); then the game side (the
+  strips in VFX-9's atlas, the ramps, the texel rule, the frames, the rim), the Studio (Art browser, the picker bug),
+  measure before and after side by side, films, the contact sheet, the full check, docs.
+- Changed:
+  - tools/build-battle-anims.py (new): 44 strips in game/art/battle/anims/, one PNG each, in 8 greys (36, 64, 96,
+    128, 160, 192, 224, 255; 255 the white core): 8 px spark, ember, droplet, chip, star, chevron, bubble, leaf,
+    petal, feather, pebble, shard_a/b/c, note, zz, plus, coin, paper, bolt (8x16); 16 px burst, hit_spark,
+    splash_crown, smoke, dust, flame_tongue (12x16), orb, claw, jaws, swirl, heal_sparkle, stamp_frame, slash_arc
+    (32x16); 32 px explosion, shock_ring, shield_hex, beam_cap, beam_strip; ground marks (one frame, at most 38 px)
+    scar_scorch, scar_puddle, scar_crack, scar_leaf, scar_sand, scar_dent. Small ones from character grids, the rest
+    procedural; fades erode against the same 4x4 Bayer pattern as the pool, with a bright rim. Only what's missing is
+    drawn (`--force`, `--only=`); `--check` holds the strips to the data (size, frames, the 8 greys, no orphan
+    either way); `--sheet` a contact sheet (validation/build-battle-anims/sheet.png: a panel per ramp); `--data`
+    prints the `sprites` entries. Its drawing helpers are its own (pixkit.py was deleted by #283).
+  - game/data/battleAnims.json (+ schema, types `BattleAnimSprite`/`BattleAnimRamp`, `dataBattleAnims` checks):
+    `sprites` (cell, frames, anchor, fps, impact, loop, ground), `ramps` (Fire ember, Water sky, Grass leaf, Electric
+    gold, Ground rust, Flying cobalt, Psychic rose, Steel steel, Dragon indigo, None stone, Bureau 8 hexes from ink
+    through #EA5974, up teal, down crimson, heal mint; light `type` = types.json's glow, or a hex), `iconSprites`
+    (15 icons drawn as their like-for-like strip, with the ramp an untyped one takes), `artAbout`. The checks: an
+    anchor inside its cell, an effect 3-8 frames, a ground mark at most 38 px, a ramp for every type and None, every
+    icon swap names a sprite and a ramp. The Studio's type rename moves a type's ramp. The art index names each strip
+    from its sprite (unused-art report).
+  - logic/battle-anims.js: `battleAnimFrame(sprite, age, life)` (12 fps or its fps; an impact's first two frames at
+    24 fps; a loop plays round; else it plays once, ending with its particle's life), `battleRampColors`,
+    `battleIconSprite`, `BATTLE_ANIM_ART_DIR`; tests.
+  - walk/battle-fx.js: the strips (loaded through artLoad) packed after the icons and the white block, then the ramps
+    as 8-texel rows, in one atlas (260 px wide, 260x393); a strip instance carries its ramp's row in its flags and the
+    fragment shader reads its grey's colour from that row (index 7, the white core, is what the glow draw adds); a
+    strip's texel is a stage pixel at its depth times a whole number (the rig pixels' size beside it), a ground strip
+    lies flat at 32 px/m; the erosion fade gets a rim two greys brighter on its eroding edge (and on the old kinds a
+    lighter colour). The atlas is made again when the strips have loaded, a strip is repainted or the ramps change.
+    `battleRampRgb(id)` gives a ramp's 8 colours (for VFX-15's scars). Still 2 draws a move.
+  - battle-3d.js: a particle whose icon has a strip (iconSprites) draws that strip: its frame stepped on the stage
+    clock, its type's ramp (burst, lob, fling and converge tag their particles with the move's type), else the icon's;
+    a strip that plays once carries its own fade. The families stay `legacy_*`; no timing changed.
+  - Studio: the Types editor's particle picker lists every icon a type uses (the bug list's 7 types); the Art browser
+    plays a strip (logic/frame-strips.js reads `sprites`), names its builder, shows it through every ramp (a pixel off
+    the 8 greys in magenta) and puts a repainted strip's unsaved canvas in the game's picture cache (the battle preview
+    draws it). check-studio-github.py `battle_anim_art`.
+  - tools/look-battle-anims.py `--measure` counts the particles drawn as strips.
+- Where the track file was wrong or vague (checked in the code):
+  - tools/pixkit.py was gone (main's #283); the tool takes no code from it (a disc, ring, star and erosion of its own).
+  - "sprites: each strip's cells, frames, size and anchor": `cell` is the frame's size; there is no separate size (a
+    texel's size comes from the rule, the stage pixel at its depth or 32 px/m on the ground).
+  - "the ramp texture": the ramps are rows in the pool's atlas, so a strip needs no second texture or bind.
+  - The Bureau's "red family": NW_PALETTE has no ramp through #EA5974 (crimson is near), so its ramp is 8 hexes.
+  - Type kits name a cog (Steel) and a scale (Dragon); the art list has neither: those icons stay icons (VFX-11).
+  - The strips reach the game only after `npm run data` rebuilds the (gitignored) gamedata.js; a stale one shows no
+    strips and no errors. logic/art-refs.js isn't loaded on the game page (an import from it is undefined there).
+  - data-editors.js 924 (the picker) and the atlas's 128 px (VFX-9) were right; the atlas is now 260 px.
+- Decided for the owner, to review:
+  - The ramp table and the Bureau's look as proposed (recommended): Bureau = ink, #6D0C39, #8B193D, #B22D43, #D04D56,
+    #EA5974, #F4C1B2, white; plus `up` teal, `down` crimson and `heal` mint for stat chevrons and heals.
+  - The repaint list (recommended: Claude's art stands until the owner repaints; nothing is frozen): all 44 strips
+    are Claude's, listed above; `python3 tools/build-battle-anims.py --sheet` shows them in every ramp.
+  - The ground marks are grayscale (VFX-15 colours them from its data or a ramp), told to VFX-15.
+  - Like-for-like swaps only: spark, star, flame (ember), drop (droplet), bubble, leaf, bolt, pebble, feather, orb,
+    up (chevron), coin, plus, zz, sheet (paper). pow, cog, scale, gem, bit and the rest stay icons; the 16-32 px art
+    (burst, explosion, slash arc...) waits for VFX-11's families.
+  - An untyped particle's ramp: the icon's own (sparks and stars gold, up teal, plus mint, zz stone, sheet Bureau); a
+    typed one takes its move's type, so a Grass move's sparks are green. "Dynasty" and "Retail" (not types) fall back
+    to the icon's ramp.
+  - A strip that plays once ends with its particle's life (its eroded last frames are its fade, no second fade);
+    a looping one (ember, pebble, coin, paper, orb, flame tongue, beams) also erodes by age.
+  - Scale: a strip's texel is the rig's pixel beside it (rule 2), so near effects are smaller than the old icons
+    (1/30 m a texel, about twice the near rig's pixel); `k` rounds to a whole number (lob's 1.2 is 1).
+  - The rim also lights the old kinds' eroding edges (rings, squares), as rule 5 asks.
+  - A picture particle (a bot's broken part, a boss's bots flying in) is always made over VFX-9's budget, in the
+    oldest plain particle's place (see the Voltron below).
+- The Voltron step (asked by the merge coordinator, session_019UpAFytFpjVzXdR9jiZsPL, at the owner's request): main's
+  in-game full test fails its Voltron phase now and then since #312. The failure caught here (1 in 16 runs alone on
+  main, 1 in 12 on this branch) was "the arm-bot tore loose but nothing dropped": VFX-9's budget, not VFX-8's tap. At
+  quality 3 (48 particles, a slow runner) the pool is full of sparks when the arm breaks and the part's falling picture
+  was refused. Fixed (daea9b49); with the quality pinned at 3 the step failed 2 of 2 before and passed 3 of 3 after.
+  "the boss is no boss robot" (the coordinator's report) didn't happen in 28 runs; ec4994ac makes it say what stood
+  there (kind, boss flag, HP, the slot, the line; no names). "the Notice of Retrieval listed 0 bots" (CI once) is
+  #306's, on main and merged here.
+- Measurements (headless, software GPU; 9 films: overload, deepdrill, tos x hit, super, super crit, the foe's side;
+  before = main a3bc2421 (VFX-9) in a worktree, after = this branch, one after the other on an idle machine):
+  - Effects pass draws a frame while a move plays: 90 max before and after; the pool's own draws (`battleFx`) 2 max in
+    every film, before and after (budget 3).
+  - Particles drawn as strips: 0 before; after up to 23 a frame (overload super), 7-17 in the others.
+  - Rig redraws a film: 26.1 mean (1671 KB) before and after (unchanged).
+  - Time a frame during a move (stage and renderer tasks plus gl.finish): 869 ms mean before, 690 after (p90 3280 ->
+    2233). Not worse; software rendering, so only the direction counts. The atlas grows from 128x123 to 260x393 px
+    (about 0.4 MB of texture).
+  - No move longer: battle-anims tests keep every move's {dur, hit} and `maxMs`; the families are untouched.
+- Risky:
+  - The pool's shader now reads the atlas with texelFetch for the ramp; a phone with a GL quirk there would show
+    wrong colours on the strips (white or black), not a crash.
+  - Films: the near Billie shows in some runs and not others, on the old build and the new one alike (the same
+    stage state in the traces; VFX-9 saw it too); also VFX-9's white reflection patches turn up in some runs on both.
+  - The first frames of a battle draw the old icons while the strips load (44 small PNGs), then swap.
+- Phone checks (listed, not waited for): the repaint list (which sprites to redraw: the contact sheet); the effects'
+  size beside the Billies (a texel is a rig pixel now); a Grass or Water move's sparks in its colour; Electric's
+  bolts; the eroding rim on fades; the 24 fps impacts (none plays in a battle until VFX-11 uses burst, hit spark,
+  explosion...: check in the Art browser's strip player); frame time in a battle (no slower); no white patches.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text and build before each commit;
+  `npm test` 1900 of 1900 on the last merge (the run-map timing test failed once under load mid-step, alone it
+  passes); `build-battle-anims.py --check` (44 sprites, all fine). Smoke: no problems on the art commit (in a
+  worktree), the game commit, both merges of main and the final head (326-384 s). check-studio-github.py
+  `--only=battle_anim_art` (the Edit pixels round trip on spark.png: painted grey 224 shows as ember step 6 in the Fire
+  preview and in the game's picture cache; undo). Films (look-battle-anims `--sheets`, overload and others): strips in
+  the type's ramp; traces before and after equal (the stage's state is unchanged). Full quick check (at 60360790):
+  38 of 42 in 1686 s; the 4 problems: Terraces, RL-8's seam and room light (main's, as listed), Battle music (the
+  wild drums vs the 8 s fallback under load: passes alone, 2 of 2). The Voltron step alone: 12 runs on this branch,
+  16 on main (see above). CI at 868e6f30: lint and rules green; smoke cancelled at its 30-minute limit after "Every
+  screen opens", with "The world map opens as the bowl" (the map's chips, main's UI side) and "Camera follow ... the
+  page stopped drawing" (263 s) red before it: Camera follow passes alone 2 of 2 here and 2 of 2 on main 76aea599, and
+  it never enters a battle (the pool and its atlas don't run), so it's the loaded runner. Main merged again for #317
+  (c3b342b8): unit tests 1910 of 1910, smoke no problems. CI: smoke on 7f99aec5 red for the data-text check (mine, fixed in 60360790); on 60360790 red
+  only for main's Studio 404s, Behind things and the Voltron (now fixed); the comments on PR #295 say so.
+- Next: wave 1 goes on: VFX-12 and VFX-15 merge the latest track/vfx into their branches and report done; the next
+  main-line session merges them. VFX-11 (families x types) assigns the 16-32 px strips to moves and tags each move.
+
 ### Perks track PK-6 - Wave D, rules, growth and adventure - 2026-10-28
 Branch `track/perks` (this session's outcome branch; main 2d862040, which holds PK-1..PK-5 through #316, merged first:
 a fast-forward, hooks.js unchanged; main 76aea599 merged again near the end, 4e8184a6). Started by PK-0's session under the owner's standing instruction (perks-track.md
@@ -712,6 +1116,137 @@ art/items was touched.
   Name Tags' level line after a catch; the 12 new pictures at 72 and 36 px, light and dark.
 - Next: PK-6 (Wave D: rules, growth and adventure; 11 Perks of 5.5, Correction Fluid waits for PK-9) on
   `track/perks`.
+### VFX track VFX-15 - The stage: a battle mood, the row wave, heat, weather on the stage, battle scars - 2026-10-28
+Side branch `claude/vfx-15-stage` (wave 1, beside VFX-10 on `track/vfx` and VFX-12 on `claude/vfx-12-studio-effects`),
+made from `track/vfx` at 1f5dfee7; draft PR #311 into `track/vfx`. Run under the owner's standing instruction
+(2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag (main's CLAUDE.md).
+- The plan: measure first (the film tool gains `--weather`, `--bot` and `--bench`; the old build in a worktree); the
+  data in keys of my own (`moods`, `weather`, `scars` in battleAnims.json) and a browser-free logic file with tests;
+  then, one cause per commit, the mood (grade pass), the weather on the stage, the scars (one draw); measure after,
+  side by side; films; the full check. Siblings told before touching shared files (VFX-12 the keys and the commit;
+  the planning session asked to pass the decal proposal to VFX-10, which had not started).
+- Changed:
+  - game/data/battleAnims.json: `moods` (dark .2, tint .3, in 160 / out 360 ms, superEffective, the Bureau's ink,
+    `wave` {Psychic, the Bureau, 2 px, 3 on a big move, rows 4 px}, `heat` {Fire, .8}), `weather` (rain splashes 16 a
+    second within 4 m, settling 1.6 s within 5 m at most 48, sunny warm .35 and shafts x1.4, sand 90 streaks, a 1.6x
+    gust over 1.3 s), `scars` (cap [12, 8, 4, 0], maxM 1.2, fade 400 ms in 4 steps, heavy .35, six kinds with their
+    types, size, sprite id and tint). Schema, types (`BattleMoods`, `BattleStageWeather`, `BattleScars`), checks in
+    `dataBattleAnims` (real types, one type per scar kind, sizes under maxM, one Sandstorm and one heavy kind) and the
+    Studio's type rename (logic/type-rename.js) for their type lists.
+  - game/js/logic/battle-stage-look.js (browser-free, in the game, the Studio and its worker): `battleMoodFor` (only a
+    landed move; power bigPower or a super-effective hit darkens and tints; the wave for the listed types and a Bureau
+    bot; heat for Fire's big ones; Reduced motion: the darken and tint, stepped, no wave, no heat), `scarKindFor`,
+    `scarCap`, `scarAdd` (the oldest replaced), `scarFadeShare` (1, .75, .5, .25, 0), `scarSize`.
+    tools/test/battle-stage-look.test.mjs: the decal cap at every quality, 1.2 m, the kinds, the four steps over
+    400 ms, the mood's rules (20% at most, only landed moves, the wave, the Bureau's ink, Reduced motion).
+  - game/js/battle-stage-look.js (new, after battle-anim-run.js): `battleMoodPlay` from `battleAnimPlay` tweens
+    `stageLook` (dark, tint, wave, heat) on the stage clock: in over 160 ms up to the move's hit, out over 360 ms to its
+    end, so hit-stop holds it, the speed scales it, a skip ends it, and no move is longer; `battleSandGust`;
+    `battleScarAt` (the scar a hit leaves at Billie i's feet, placed by a hash of the battle's place so the effects'
+    random stream is left as it was); `battleStageLookFrame` (what battle3dFrame hands the renderer as `stageLook`).
+  - engine/post-effects.js grade pass: the battle mood multiplies the grade's gain (darker by `dark`, at most .2;
+    tinted by `tint` toward the type's glow at full brightness), adds the sun's warmth; `uWave` (new, beside `uHeat`;
+    in the Medium precision pass's highp list): rows `uWave.y` pixels tall shift sideways by whole pixels, CSS pixels
+    as the picture is seen; the sun's shafts times `stageLook.rays`. walk-view-gl.js passes `stageLook` and takes the
+    larger of the place's heat and the move's. VFX-9's `uCAP` and its guard are untouched.
+  - Weather (walk/fountains-weather.js): in a battle, more rain splashes on the stage's ground (ripples where it's
+    water), snow and ash that land near the stage lie flat for 1.6 s and go in four steps; `drawBattleSand`: the
+    Sandstorm's streaks in the weather's batch (one draw), indoors too, with its gust when it starts. battle-stage.js:
+    the Sandstorm's 40 stage particles and its ambient stream are gone (the pool is freer); walk/effects.js: the cheap
+    shafts brighter under the battle's sun.
+  - Scars (walk/battle-scars.js, new, after battle-fx.js): its own program (`battleScar`, in the warm-up list), each
+    scar 24 vertices from a 3x3 grid on `standingHeightAt` with normals from the ground's slope, lit with the face
+    program's light (shade, shadowAtN, contactAO, points, fog), cutout with a 4x4 Bayer step on its own texels, alpha
+    0 out (no ink), depth offset, all in one draw inside the effects pass before the pool's (under the `battleFx`
+    tag); never on water (its middle or a corner); one per landed hit (a skipped hit too), one more on a KO (a dent),
+    a sand drift on the Sandstorm's hurt; the oldest replaced past the cap; battle3dStop starts the 400 ms fade, a new
+    battle clears them. The art: VFX-10's six decals (they landed on `track/vfx` during this step, under the ids
+    proposed to it: `scar_scorch` ... `scar_dent`, sprites with `ground`), their greys coloured by a ramp per kind
+    (`scars.kinds.*.ramp`: Fire, Water, Ground, Grass, Ground, None; VFX-10's `battleRampRgb`), sized by the picture at
+    32 px a metre (the puddle and sand drift 36x24 px, so 1.125 x 0.75 m); a procedural stand-in (`scarPlaceholder`)
+    only where a picture is missing. A scar's vertices are made once the decals have loaded.
+  - tools/look-battle-anims.py: `--weather=rain|storm|snow|ash|fog|clear|sand`, `--bot` (the foe a Bureau bot),
+    `--bench` (frame time and draws on the Graphics bench), and `--measure` counts the whole frame's draws.
+- Where the track file was wrong or vague (checked in the code):
+  - "a battle mood on top of the place mood (PE 724-772)": the place mood is eased in walk/quality-cull.js
+    `easedMood` (171-190, the 2 s ease) and added to the grade at PE ~790; `uHeat` PE 292-296 is right (294).
+  - "lit as the `face` program is (WS 478-486)": WS 480-489, and it draws one quad a call from uniforms, so one draw
+    for all scars needed a program of its own (same light functions).
+  - "Sandstorm moves into the weather batch (no 2D streaks)": the Sandstorm is the engine's `market` / `marketEnd`
+    events (`battleStage.oil`); since VFX-9 its streaks were already GL pool particles, not 2D. Moved anyway: out of
+    the particle pool into the weather batch.
+  - "rain splashes on the battle's ground": the walk weather already splashed where drops land (35% of them, 40 at
+    most, round you or the stage); VFX-15 adds splashes on the stage itself.
+  - "the Bureau's wave": the Bureau has no type; its moves are a bot's (sp `bot:`; every robot is the Bureau's today).
+  - The Graphics bench is a walk scene: only the grade pass's new branch (`uWave` 0) reaches it.
+- Decided for the owner, to review:
+  - A full-scene darken on big moves: at most 20% darker, on power 80+ moves and super-effective hits (recommended),
+    with a 30% tint toward the type's glow (the Bureau's bots: the stamp ink #EA5974). Strong in rose and blue on the
+    films; a dial for the Studio (VFX-12).
+  - Scars outliving the battle: no (recommended); they fade in four steps over 400 ms when it ends.
+  - The row wave on every landed Psychic move (2 px, 3 on a big one) and every Bureau bot's move, rows 4 px; heat .8
+    on Fire's big moves; none under Reduced motion (the tint and darken stay, stepped).
+  - Types with no scar kind (Electric, Psychic, Steel, Flying, Dragon, None) leave a dent only on a heavy hit (hitWeight
+    .35 or more); a KO's extra scar is always a dent (the faint doesn't know the move).
+  - A skipped hit still leaves its scar (it lasts the battle, like the plates' numbers a skip keeps).
+  - Calm: nothing VFX-15 adds loops while idle (the mood, wave and heat come with a move; the weather is the world's),
+    so Calm changes nothing here; Reduced motion turns off the stage's extra splashes and settling.
+  - The Sandstorm's 40-particle start became a 1.3 s gust of its streaks; its streaks show indoors too.
+  - The sun in battle: warmth +.35 and shafts x1.4.
+  - Scars count under the `battleFx` GPU tag: a move's effects are now 3 draws at most (2 pool + scars), the budget.
+- Measurements (headless, software GPU, quality 0, the town fixture; before = 1f5dfee7 in a worktree, after = this
+  branch, run one after the other; means over Inferno, Riptide and Vision Fund, super effective, side 0):
+  - The battle effects' draws (`battleFx` tag, most in a film): 2 -> 3 (the scars). The effects pass a frame (most):
+    90 -> 91 clear, 82.3 -> 83.3 in rain, 90 -> 92 in the Sandstorm (its streaks' draw and the scars'); a Bureau
+    bot's Inferno in rain 82 -> 83. The whole frame's draws vary with each film's framing (731-1230 in the same
+    build); means 898 / 891 / 965 before and 858 / 901 / 852 after (clear, rain, sand): no rise. These are the
+    desktop settings in software; the phone's 400 is with its lower quality settings, where VFX-15 adds at most 2
+    draws (scars, sand) and only while a battle has them.
+  - Rig redraws in a film: unchanged (15 or 25, the same spread in both builds).
+  - Frame time during a move (stage and renderer tasks with gl.finish): before 613-799 ms mean over the runs, after
+    625-735 ms; p90 1850-4392 before, 2899-3669 after. Software rendering and very noisy; no slowdown shows.
+  - Graphics bench (test_graphics, 120 frames, desktop settings): before 514 / 513 / 505 ms mean (three runs), 903
+    draws; after 531 / 532 ms, 903 draws; after with the wave's shader line taken out, 554 ms. Same draws; the time
+    moves 5-10% between runs of one build in software, and the bench (a walk scene) runs nothing of VFX-15's but the
+    grade pass's wave test (0 outside a battle). So the frame budget holds as far as headless can tell; the phone's
+    33 ms is a phone check.
+- Films (validation-style contact sheets made in the scratchpad, not committed): Inferno (Fire), Riptide (Water),
+  Vision Fund (Psychic) super effective with no weather, rain and snow; a Bureau bot's Inferno and Riptide with no
+  weather and in rain; the Sandstorm. The darken and tint ease in to the hit and out by the move's end; the scorch
+  under the hit Billie; a probe page showed all six placeholder decals on the cobbles, lit and depth-tested.
+- Risky:
+  - Scars lie 2 cm over the ground with a depth offset: on steep or broken ground a patch's edge may sink or float.
+  - The scar draw sits in the effects pass beside the pool's (VFX-9 found drawing after the pass spoiled the reused
+    reflection and shadow maps); if white patches show in battle on the phone, check here too.
+  - The tint at .3 may be too strong on some types (the films' rose and blue are clear); dial it down if so.
+  - Merging: hooks.js (`npm run modules`) and studio/art-code-refs.json (`node tools/art-code-refs.mjs`) regenerate;
+    battleAnims.json's new keys sit after `scenes`.
+- Phone checks (listed, not waited for): the darken and tint on a big move (power 80+) and on a super-effective hit,
+  gone by the move's end; the row wave on a Psychic move and a Bureau bot's move (and none under Reduced motion); heat
+  shimmer on a big Fire move; rain splashing on the battle's ground; snow settling; the Sandstorm's streaks; scars
+  after a few hits (scorch, puddle, crack, leaves, a dent on a heavy hit, one more on a KO) fading when the battle
+  ends; frame time in a battle with weather.
+- Verified: lint, typecheck, `npm test` (1648 of 1648 at the end; the run-map timing test failed once inside the
+  parallel run, as in VFX-9's entry), check:modules, format:check, check:data, build after each change; the smoke
+  check before each game/ commit (7 of 7, twice). The battle-anims tests keep every move's {dur, hit} (no move longer;
+  `maxMs` untouched). The golden record untouched (the engine isn't changed). Sound files untouched (no message to the
+  sound track needed); `uCAP`, battleStageFlash, the sprite shader and hitFx untouched (none to the style track).
+  Full quick check: 37 of 42 in 1541 s. Fails: terraces (`train_station` in the air), RL-8's run (crossed into Thicket
+  Route, never shown) and the walking step's room light, all on the known list; and two that pass alone on this
+  branch (run again side by side with the base build): Phone (the walk screen counted 20 pieces against 18, a
+  wandering Billie's hint) and Battle music (the drums waited past the 8 s fallback on the loaded machine). Every battle
+  step passed (double and Alpha at 4x, starters, weather, the phone's battle and debug log, the debug menu), and the
+  Studio's steps. Song fingerprints 199, 0 changed. Not run: the in-game full test (its first step passes in the
+  smoke check; nothing it plays changed but the battle's look).
+  Again after the merge with track/vfx and VFX-10's decals (fc7492eb): smoke 7 of 7 (twice), `npm test` 1879 of 1879,
+  the full quick check 38 of 42 in 1684 s: the same three known reds and Battle music's drums (a load flake many
+  entries record; it passed alone on this branch above).
+- Merged `origin/track/vfx` at 7f99aec5 (VFX-10's effect art and main) into this branch (a merge): conflicts kept both
+  in battleAnims.json, its schema and types, dataBattleAnims, type-rename, battle-3d.js's imports and the look tool's
+  --measure (my whole-frame draws beside VFX-10's strip count); studio/art-code-refs.json regenerated; walk/battle-fx.js
+  only gains an `export` on `battleRampRgb` (made for the scars). The next main-line session merges this branch.
+- Next: VFX-12's dials for `moods`, `weather` and `scars` (told the keys); a scar atlas made again when a decal is
+  repainted in the Studio (today: on the next page load).
 
 ### VFX track VFX-9 - One draw for effects: the GPU pool, the budgets, fixed light keys, uHit, the uCA pulse - 2026-10-28
 Branch `track/vfx` (it held main and PR #290's branch when the step began; main then moved 246 commits, #279, #283,

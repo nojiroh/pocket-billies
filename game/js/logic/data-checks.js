@@ -20,6 +20,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
+import { BATTLE_KIT_ROLES } from './battle-anims.js';
 import { caseFile, redactProblem } from './case-file.js';
 import {
   RUN_GRID,
@@ -1404,7 +1405,7 @@ export function dataSetPieces(D, valid = () => true) {
 }
 // VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
 // named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
-// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit)
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit); VFX-12: the budgets in order, the dash ribbon's bounds
 /** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBattleAnims(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1418,8 +1419,14 @@ export function dataBattleAnims(D, valid = () => true) {
     fam = (/** @type {string} */ id) => !!(A.families[id] || A.scenes[id]),
     steps = (/** @type {string} */ where, /** @type {any[]} */ L) =>
       L.forEach((S, i) => {
-        if (S.color && S.color !== 'type' && !A.colors[S.color])
+        if (S.color && S.color !== 'type' && S.color !== 'kit' && !A.colors[S.color])
           problem(`${where}[${i}].color: no colour "${S.color}" in colors`);
+        /* VFX-11: a strip a step names (not a kit role) is a sprite; its ramp is a ramp */
+        for (const sp of [S.spr].flat())
+          if (typeof sp === 'string' && !BATTLE_KIT_ROLES.includes(sp) && A.sprites && !A.sprites[sp])
+            problem(`${where}[${i}].spr: no sprite "${sp}"`);
+        for (const r of [S.ramp, S.ramp2])
+          if (typeof r === 'string' && A.ramps && !A.ramps[r]) problem(`${where}[${i}].ramp: no ramp "${r}"`);
         for (const t of S.types || [])
           if (types.size && !types.has(t)) problem(`${where}[${i}].types: no type "${t}" (types.json)`);
       });
@@ -1437,9 +1444,82 @@ export function dataBattleAnims(D, valid = () => true) {
           if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
         }
     }
+  /* VFX-12: a budget never grows as the quality drops, and a burst fits in the pool */
+  const B = A.budgets;
+  for (const k of ['particles', 'burst', 'lights'])
+    for (let q = 1; q < 4; q++)
+      if (B[k][q] > B[k][q - 1]) problem(`budgets.${k}: quality ${q} allows more (${B[k][q]}) than quality ${q - 1}`);
+  for (let q = 0; q < 4; q++)
+    if (B.burst[q] > B.particles[q]) problem(`budgets.burst: ${B.burst[q]} at quality ${q}, more than the pool`);
+  if (A.smears.dashRibbon.min > A.smears.dashRibbon.max) problem('smears.dashRibbon: min is above max');
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
+    /* VFX-11: no normal move longer than before: its family (full and short) ends within its category's maxMs */ else if (
+      M &&
+      typeof M.anim === 'string' &&
+      A.families[M.anim] &&
+      /** @type {Record<string, number>} */ (A.maxMs)[M.c] !== undefined
+    )
+      for (const V of [A.families[M.anim], A.families[M.anim].short])
+        if (V && V.dur > /** @type {Record<string, number>} */ (A.maxMs)[M.c])
+          problem(`${id}.anim: "${M.anim}" plays ${V.dur} ms, over ${M.c}'s ${A.maxMs[M.c]} (maxMs)`, 'moves.json');
+  /* VFX-11: a kit for every type and None; its strips are sprites, its ramps ramps, its light within the budget */
+  if (A.types) {
+    const K = /** @type {Record<string, any>} */ (A.types);
+    for (const t of [...types, 'None']) if (!K[/** @type {string} */ (t)]) problem(`types: no kit for the type "${t}"`);
+    for (const [id, k] of Object.entries(K)) {
+      if (id === 'about' || !k || typeof k !== 'object') continue;
+      if (id !== 'None' && id !== 'Bureau' && types.size && !types.has(id)) problem(`types.${id}: no type "${id}"`);
+      for (const sp of [k.shot, k.impact, k.small, ...(k.bits || [])])
+        if (sp !== undefined && A.sprites && !A.sprites[sp]) problem(`types.${id}: no sprite "${sp}"`);
+      for (const r of [k.ramp, k.ramp2]) if (r !== undefined && !A.ramps[r]) problem(`types.${id}: no ramp "${r}"`);
+      steps(`types.${id}.cast`, k.cast || []);
+      steps(`types.${id}.hit`, k.hit || []);
+      for (const S of [...(k.cast || []), ...(k.hit || [])])
+        if (S.do === 'kit') problem(`types.${id}: a kit's steps can't play a kit`);
+    }
+  }
+  // VFX-15: the stage's moods and scars name real types; a scar no wider than maxM; one Sandstorm kind, one heavy kind
+  const ty = (/** @type {string} */ where, /** @type {string[] | undefined} */ L) => {
+    for (const t of L || []) if (types.size && !types.has(t)) problem(`${where}: no type "${t}" (types.json)`);
+  };
+  if (A.moods) {
+    ty('moods.wave.types', A.moods.wave.types);
+    ty('moods.heat.types', A.moods.heat.types);
+  }
+  if (A.scars) {
+    const K = Object.entries(/** @type {Record<string, any>} */ (A.scars.kinds)),
+      seen = new Map();
+    for (const [k, S] of K) {
+      ty(`scars.kinds.${k}.types`, S.types);
+      for (const t of S.types || []) {
+        if (seen.has(t)) problem(`scars.kinds.${k}: type "${t}" already leaves ${seen.get(t)}`);
+        seen.set(t, k);
+      }
+      if (S.m > A.scars.maxM) problem(`scars.kinds.${k}.m: ${S.m} m, over maxM ${A.scars.maxM}`);
+      if (S.ramp && A.ramps && !A.ramps[S.ramp]) problem(`scars.kinds.${k}.ramp: no ramp "${S.ramp}"`);
+      if (A.sprites && A.sprites[S.sprite] && !A.sprites[S.sprite].ground)
+        problem(`scars.kinds.${k}.sprite: "${S.sprite}" is no mark on the ground`);
+    }
+    for (const f of ['sandstorm', 'heavy'])
+      if (K.filter(([, S]) => S[f]).length > 1) problem(`scars.kinds: more than one ${f} kind`);
+  }
+  /* VFX-10: the effect art: an anchor inside its cell; an effect has 3-8 frames, a mark on the ground at most 38 px
+     (1.2 m at 32 px/m); every type and None has a ramp; the icons drawn as strips name a sprite and a ramp */
+  for (const [id, S] of Object.entries(/** @type {Record<string, any>} */ (A.sprites))) {
+    if (S.anchor[0] >= S.cell[0] || S.anchor[1] >= S.cell[1])
+      problem(`sprites.${id}.anchor: [${S.anchor}] is outside its ${S.cell[0]}x${S.cell[1]} cell`);
+    if (!S.ground && S.frames < 3) problem(`sprites.${id}: an effect has 3 to 8 frames, not ${S.frames}`);
+    if (S.ground && Math.max(S.cell[0], S.cell[1]) > 38)
+      problem(`sprites.${id}: a mark on the ground is at most 38 px (1.2 m), not ${Math.max(S.cell[0], S.cell[1])}`);
+  }
+  for (const t of [...types, 'None'])
+    if (!A.ramps[/** @type {string} */ (t)]) problem(`ramps: no ramp for the type "${t}"`);
+  for (const [k, I] of Object.entries(/** @type {Record<string, any>} */ (A.iconSprites))) {
+    if (!A.sprites[I.sprite]) problem(`iconSprites.${k}.sprite: no sprite "${I.sprite}"`);
+    if (!A.ramps[I.ramp]) problem(`iconSprites.${k}.ramp: no ramp "${I.ramp}"`);
+  }
   return out;
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds
