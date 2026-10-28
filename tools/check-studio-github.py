@@ -2112,7 +2112,14 @@ def relics_steps(pg, errs):
     time.sleep(0.3)
     if 'relic icon' not in pg.evaluate("(document.querySelector('#main .perk-art')||{}).textContent||''"): errs.append('perks: a Perk without img doesn’t say it shows the relic icon')
     pg.evaluate("studioState.D.perks.petri_dish.img='perks/petri_dish.svg'")
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor", flush=True)
+    # PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): every row of the 15 Wave A Perks shows
+    # its inputs, with no error and no "No such kind"
+    wave = ['rubber_stamp', 'click_pen', 'laser_pointer', 'screen_protector', 'power_bank', 'mic_drop', 'joy_buzzer', 'hot_sauce', 'oven_mitts', 'noise_headphones', 'rubber_boots', 'hazmat_suit', 'alarm_clock', 'plot_armor', 'warranty_card']
+    for pid in wave:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error", flush=True)
 
 
 def unlocks_steps(pg, errs):
