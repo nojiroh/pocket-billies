@@ -21,6 +21,13 @@ expose({
   motionLevelOf: [() => motionLevelOf, v => (motionLevelOf = v)],
   // @ts-expect-error -- replaced on purpose
   motionStaggerCap: [() => motionStaggerCap, v => (motionStaggerCap = v)],
+  springArgs: [() => springArgs],
+  // @ts-expect-error -- replaced on purpose
+  springAt: [() => springAt, v => (springAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  springEase: [() => springEase, v => (springEase = v)],
+  // @ts-expect-error -- replaced on purpose
+  springMs: [() => springMs, v => (springMs = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -85,4 +92,51 @@ export function motionCountAt(from, to, k) {
 export function motionStaggerCap(enterMs, staggerMs) {
   if (!(staggerMs > 0)) return 0;
   return Math.max(0, Math.floor((MOTION_TIMES.enterMax - enterMs) / staggerMs));
+}
+
+/* DL-3: the dialogue bubble's spring (docs/phases/dialogue-track.md, "Motion with a cause"). A damped spring as a CSS
+   linear() easing, so the bubble's pop-in and its growing to fit can spring without a frame loop. The response is the
+   spring's period in seconds when it isn't damped (as on Apple's platforms); damping is the ratio, 1 for no overshoot,
+   lower for more bounce (clamped to 0.1-1). */
+/** @param {number} response @param {number} damping */
+export const springArgs = (response, damping) => ({
+  w: (2 * Math.PI) / Math.min(4, Math.max(0.05, Number(response) || 0.35)),
+  z: Math.min(1, Math.max(0.1, Number(damping) || 0.7)),
+});
+/**
+ * the spring's position at t seconds, from 0 to 1 (overshooting when damping < 1)
+ * @param {number} response
+ * @param {number} damping
+ * @param {number} t
+ */
+export function springAt(response, damping, t) {
+  const { w, z } = springArgs(response, damping);
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + ((z * w) / wd) * Math.sin(wd * t));
+}
+/**
+ * how long the spring takes to settle within 0.5% of its end, in whole ms
+ * @param {number} response
+ * @param {number} damping
+ */
+export function springMs(response, damping) {
+  const { w, z } = springArgs(response, damping);
+  /* the envelope e^(-zwt) falls under 0.005; critical damping's (1 + wt) factor needs about 1.5 times as long */
+  return Math.round((-Math.log(0.005) / (z * w)) * (z >= 1 ? 1.5 : 1) * 1000);
+}
+/**
+ * the spring as a CSS linear() easing over springMs: `steps` + 1 points, the last exactly 1
+ * @param {number} response
+ * @param {number} damping
+ * @param {number} [steps]
+ */
+export function springEase(response, damping, steps = 24) {
+  const n = Math.min(64, Math.max(4, Math.round(steps) || 24)),
+    T = springMs(response, damping) / 1000,
+    pts = [];
+  for (let i = 0; i <= n; i++)
+    pts.push(i === n ? 1 : Math.round(springAt(response, damping, (T * i) / n) * 1000) / 1000);
+  return `linear(${pts.join(', ')})`;
 }
