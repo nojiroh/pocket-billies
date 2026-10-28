@@ -70,6 +70,7 @@ expose({
   AREAS: [() => AREAS],
   BATTLE_STAGE_ART: [() => BATTLE_STAGE_ART],
   BAYER4: [() => BAYER4],
+  BURST_BUDGET: [() => BURST_BUDGET],
   CAMERA_KEYS: [() => CAMERA_KEYS],
   CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
@@ -89,6 +90,7 @@ expose({
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
   MONEY_ICON: [() => MONEY_ICON],
+  PARTICLE_BUDGET: [() => PARTICLE_BUDGET],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   PYRAMID_HIGH: [() => PYRAMID_HIGH],
   PYRAMID_LIFT: [() => PYRAMID_LIFT],
@@ -113,12 +115,14 @@ expose({
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
   afterImpact: [() => afterImpact, v => (afterImpact = v)],
+  ambientSpawning: [() => ambientSpawning, v => (ambientSpawning = v)],
   battleImpact: [() => battleImpact, v => (battleImpact = v)],
   battleLunge: [() => battleLunge, v => (battleLunge = v)],
   battleLungeGhosts: [() => battleLungeGhosts, v => (battleLungeGhosts = v)],
   battleLungeLean: [() => battleLungeLean, v => (battleLungeLean = v)],
   battleLungeRecord: [() => battleLungeRecord, v => (battleLungeRecord = v)],
   battleLungeRibbon: [() => battleLungeRibbon, v => (battleLungeRibbon = v)],
+  battleQuality: [() => battleQuality],
   battleRibbonCells: [() => battleRibbonCells, v => (battleRibbonCells = v)],
   battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
@@ -457,7 +461,6 @@ export function battleStageResize() {
 export function battleStageStart(area) {
   battleStage.area = AREAS[area] ? area : 'grass';
   const A = AREAS[battleStage.area];
-  if (battleStage.parts.length > 220) return;
   battleStage.cv = $('#cvWorld');
   battleStage.fgc = $('#cvFg');
   battleStage.props = [];
@@ -722,7 +725,16 @@ function battleStageFrame(ts, rawDt) {
     P[n++] = p;
   }
   P.length = n;
-  if (dt > 0 && !reducedMotion) spawnAmbientParticles(dt);
+  let amb = 0;
+  for (let i = 0; i < n; i++) if (P[i].amb) amb++;
+  if (dt > 0 && !reducedMotion && amb < PARTICLE_BUDGET[battleQuality()] / 4) {
+    ambientSpawning = true;
+    try {
+      spawnAmbientParticles(dt);
+    } finally {
+      ambientSpawning = false;
+    }
+  }
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (!battleStage.gl && battleStage.waitT) battleStageJoin3d();
   if (battleStage.cv && battleStage.cv.isConnected) {
@@ -1587,8 +1599,24 @@ function battleStageDrawEffects(c, skip0) {
 export const battleStageRingPhase = () =>
   battleStage.ring ? ((battleStage.t - battleStage.ring.t0) % 1300) / 1300 : 0;
 /* ---------- effects (world space, y up) ---------- */
+/* VFX-9: the budgets (docs/phases/vfx-track.md "Budgets"): particles alive in the one pool at quality 0-3, a burst's
+   most, and the ambient ones at most a quarter of the pool. A move's particle over the budget takes an ambient one's
+   place (the oldest), else it isn't made; an ambient one over its share isn't made */
+const PARTICLE_BUDGET = [256, 160, 96, 48],
+  BURST_BUDGET = [24, 16, 10, 6];
+const battleQuality = () => clamp(battleStage.q.lvl | 0, 0, 3);
+let ambientSpawning = false;
 function addParticle(o) {
-  battleStage.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o));
+  const P = battleStage.parts;
+  if (P.length >= PARTICLE_BUDGET[battleQuality()]) {
+    if (ambientSpawning) return;
+    const j = P.findIndex(p => p.amb);
+    if (j < 0) return;
+    P.splice(j, 1);
+  }
+  const p = Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o);
+  if (ambientSpawning) p.amb = 1;
+  P.push(p);
 }
 const HIT_SPRITES_BY_TYPE = HIT_EFFECTS_BY_TYPE;
 const GLOWING_PARTICLES = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
@@ -1597,6 +1625,7 @@ const typeSprite = (t, i) => {
   return l[i % l.length];
 };
 function burst(P, t, n = 10, sp = 2.2, k = 1) {
+  n = Math.min(n, BURST_BUDGET[battleQuality()]);
   for (let i = 0; i < n; i++) {
     const a = random() * Math.PI * 2,
       b = (random() - 0.3) * Math.PI * 0.6,
