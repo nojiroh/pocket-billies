@@ -114,6 +114,7 @@ const PERK_KINDS = {
   refund: 'A pyramid that missed comes back (PK-5)',
   free: 'What you just bought is free (PK-5)',
   salvage: 'Beaten bots leave more salvage (PK-5)',
+  copy: 'Copies the Perk just above it in the list held (PK-6)',
 };
 /** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
 const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
@@ -185,6 +186,7 @@ const PERK_ROW_NEW = {
   refund: () => ({ kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' }),
   free: () => ({ kind: 'free', when: 'buy', every: 4 }),
   salvage: () => ({ kind: 'salvage', mult: 2 }),
+  copy: () => ({ kind: 'copy' }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -403,6 +405,10 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         }),
       ],
       salvage: () => [mult('Parts offered and Scrap ×')],
+      /* PK-6: no numbers: the rows of the Perk above it, downsides too */
+      copy: () => [
+        `<p class="note">The rows of the Perk just above it in the list held count as this one’s (downsides too; never itself or another copier). Nothing when it is first.</p>`,
+      ],
       free: () => [
         `<p class="note">At buy (its When), with Every for every Nth thing bought in a run shop: one of it comes free (several of one ware at once are one buy).</p>`,
       ],

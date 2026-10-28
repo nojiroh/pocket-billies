@@ -65,3 +65,45 @@ test('PK-6 rule cap: n more Perks held; letting the cap Perk go never leaves mor
     assert.equal(PK.perkCap(null, RULE, data.PERKS), RULE.cap);
   });
 });
+
+/* ---------- copy ---------- */
+
+test('PK-6 copy: a copier gives the rows of the Perk just above it, as its own; never itself or another copier', () => {
+  const E = modules.effects,
+    PK = modules.perks,
+    { P } = perks(
+      { id: 'test_stamp', name: 'Test Stamp', fx: [{ kind: 'damage', side: 'deal', mult: 1.5 }] },
+      { id: 'test_count', name: 'Test Count', fx: [{ kind: 'heal', share: 0.5, when: 'arrive', every: 3 }] },
+      { id: 'test_copier', name: 'Test Copier', fx: [{ kind: 'copy' }] },
+      { id: 'test_copier2', name: 'Test Copier 2', fx: [{ kind: 'copy' }] }
+    );
+  const rows = ids => E.fxOfRun({ perks: ids }, P);
+  assert.deepEqual(
+    rows(['test_stamp', 'test_copier']).map(f => [f.src, f.kind, f.mult]),
+    [
+      ['test_stamp', 'damage', 1.5],
+      ['test_copier', 'damage', 1.5],
+    ]
+  );
+  assert.equal(
+    E.fxDamage(rows(['test_stamp', 'test_copier']), { cat: 'H', type: 'Fire', deal: true, take: false }),
+    2.25
+  );
+  /* first in the list, or under another copier: nothing */
+  assert.equal(rows(['test_copier', 'test_stamp']).length, 1);
+  assert.deepEqual(
+    rows(['test_stamp', 'test_copier', 'test_copier2']).map(f => f.src),
+    ['test_stamp', 'test_copier']
+  );
+  /* a counting row copied counts on its own mark (the copier's), numbered as the copier's row */
+  const c = rows(['test_count', 'test_copier']);
+  assert.deepEqual(
+    c.map(f => E.fxKey(f)),
+    ['test_count/0', 'test_copier/0']
+  );
+  /* the card says what it copies, and the copied counter */
+  const run = { perks: ['test_count', 'test_copier'], perkState: { 'test_copier/0': { n: 2 } } };
+  assert.equal(PK.perkCount(run, 'test_copier', P), 'copies Test Count · 2/3');
+  assert.equal(PK.perkCount({ perks: ['test_copier'], perkState: {} }, 'test_copier', P), 'copies nothing');
+  assert.equal(PK.perkCount({ perks: [], perkState: {} }, 'test_copier', P), '', 'not held: nothing');
+});

@@ -2356,6 +2356,8 @@ export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
   bossHp: ['if', 'per'],
   /* PK-4: a run rule is read on the run, where no battle or team is known */
   rule: ['if', 'per'],
+  /* PK-6: a copy row stands for the rows above it; it has no timing of its own (the schema refuses any) */
+  copy: ['if', 'grow', 'per', 'once'],
 });
 /** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
 export function fxCondProblem(c, D) {

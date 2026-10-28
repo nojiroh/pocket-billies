@@ -40,6 +40,8 @@
              battleSalvage)
      free    what was just bought in a run shop is free: its price back (`when: buy`, with `every`) (PK-5, run-loop.js
              runBuyFx)
+     copy    stands for the rows of the Perk just above it in the list held (PK-6, fxPerkRows: never itself or another
+             copier; the rows count as the copier's own, src its id)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -87,6 +89,8 @@ expose({
   fxChip: [() => fxChip],
   // @ts-expect-error -- replaced on purpose
   fxCond: [() => fxCond, v => (fxCond = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxCopyOf: [() => fxCopyOf, v => (fxCopyOf = v)],
   fxCrit: [() => fxCrit],
   // @ts-expect-error -- replaced on purpose
   fxDamage: [() => fxDamage, v => (fxDamage = v)],
@@ -114,6 +118,8 @@ expose({
   fxPayoutRates: [() => fxPayoutRates, v => (fxPayoutRates = v)],
   // @ts-expect-error -- replaced on purpose
   fxPeek: [() => fxPeek, v => (fxPeek = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxPerkRows: [() => fxPerkRows, v => (fxPerkRows = v)],
   fxPinchHeal: [() => fxPinchHeal],
   fxPrice: [() => fxPrice],
   // @ts-expect-error -- replaced on purpose
@@ -178,16 +184,39 @@ export const FX_KINDS = /** @type {const} */ ([
   'refund',
   'free',
   'salvage',
+  'copy',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
 /** stat stages from effects stay within these (the battle clamps again to its own stageMax) */
 export const FX_STAGES = 6;
 
-/** the effect rows of the Perks held, in the order held, each tagged with its Perk's id; an id with no entry
+/** PK-6: the rows the Perk at `i` of the list held gives: its own, a copy row standing for the rows of the Perk just
+ * above it (Photocopier: downsides too; nothing when it is the first, or the one above copies too, so never itself or
+ * another copier); [] for an id with no entry @param {string[]} ids @param {number} i
+ * @param {Record<string, Perk>} perks @returns {import('../../types/game-data').FxRow[]} */
+export function fxPerkRows(ids, i, perks) {
+  const P = perks[ids[i]];
+  if (!P) return [];
+  const copies = (/** @type {Perk | undefined} */ Q) => !!Q && Q.fx.some(f => f.kind === 'copy');
+  if (!copies(P)) return P.fx;
+  const up = i > 0 ? perks[ids[i - 1]] : undefined,
+    rows = up && !copies(up) ? up.fx : [];
+  return P.fx.flatMap(f => (f.kind === 'copy' ? rows : [f]));
+}
+/** PK-6: the Perk a copier at `i` copies ('' when none, or it copies nothing) @param {string[]} ids @param {number} i
+ * @param {Record<string, Perk>} perks */
+export function fxCopyOf(ids, i, perks) {
+  const P = perks[ids[i]],
+    up = i > 0 ? perks[ids[i - 1]] : undefined;
+  if (!P || !P.fx.some(f => f.kind === 'copy') || !up || up.fx.some(f => f.kind === 'copy')) return '';
+  return ids[i - 1];
+}
+/** the effect rows of the Perks held, in the order held, each tagged with its Perk's id (PK-6: a copier's are the
+ * copied Perk's, tagged with the copier's own id, so its counters and growth are its own); an id with no entry
  * gives none @param {string[]} ids @param {Record<string, Perk>} perks @returns {Fx[]} */
 export const fxRows = (ids, perks) =>
-  ids.flatMap(id => (perks[id] ? perks[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: id })) : []));
+  ids.flatMap((id, i) => fxPerkRows(ids, i, perks).map(f => /** @type {Fx} */ ({ ...f, src: id })));
 
 /** the effect rows of a run's Perks, its events' boons, its Expedition and challenges and (RL-S2) the hub folk's level
  * bonuses it took off with (null in the hub, or with

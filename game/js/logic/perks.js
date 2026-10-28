@@ -25,7 +25,7 @@ import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFxMoment } from './run-loop.js';
-import { fxCond, fxRunRule } from './effects.js';
+import { fxCond, fxCopyOf, fxPerkRows, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -62,14 +62,21 @@ expose({
 /* to-module: end */
 /** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
  * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither). A
- * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's)
+ * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's). PK-6: a
+ * held copier says which Perk it copies ("copies Rubber Stamp", or "copies nothing") and counts the copied rows
  * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks */
 export function perkCount(run, id, perks) {
   const P = perks[id],
     M = /** @type {Record<string, { n?: number, used?: number }>} */ ((run && run.perkState) || {}),
-    out = /** @type {string[]} */ ([]);
+    out = /** @type {string[]} */ ([]),
+    held = run ? run.perks.indexOf(id) : -1;
   if (!P) return '';
-  P.fx.forEach((f, i) => {
+  /* PK-6: a copier shows what it copies, and the copied rows' counters (its own marks) */
+  if (P.fx.some(f => f.kind === 'copy') && run && held >= 0) {
+    const c = fxCopyOf(run.perks, held, perks);
+    out.push(c ? `copies ${perks[c].name}` : 'copies nothing');
+  }
+  (held >= 0 && run ? fxPerkRows(run.perks, held, perks) : P.fx).forEach((f, i) => {
     const m = M[`${id}/${i}`] || {};
     if (f.once === 'run' && m.used) out.push('VOID');
     else if (f.every) out.push(`${m.n || 0}/${f.every}`);

@@ -182,6 +182,11 @@
        "properties": {"kind": {"const": "salvage"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
+       "description": "copy (PK-6): stands for the rows of the Perk just above it in the list held (downsides too; never itself or another copier); no other fields",
+       "type": "object", "additionalProperties": false, "required": ["kind"],
+       "properties": {"kind": {"const": "copy"}}
+      },
+      {
        "description": "free (PK-5): what was just bought in a run shop is free (one of it: its price comes back); it acts at buy, usually every N",
        "type": "object", "additionalProperties": false, "required": ["kind", "when"],
        "properties": {"kind": {"const": "free"}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}

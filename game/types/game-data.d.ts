@@ -2041,7 +2041,9 @@ export type FxKindRow =
   /** PK-5: what was just bought in a run shop is free (its price back), at buy */
   | { kind: 'free' }
   /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
-  | { kind: 'salvage'; mult: number };
+  | { kind: 'salvage'; mult: number }
+  /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
+  | { kind: 'copy' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
