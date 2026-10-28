@@ -33,12 +33,53 @@ test('relics: an offer is the same for the same run and counter, of distinct Per
   assert.equal(new Set(ids).size, ids.length);
   a.perks.push(ids[0]);
   assert.ok(!R.perkOffer(a, PERKS, RULE).includes(ids[0]), 'one held is never offered');
+});
+
+/** PK-4: a team holding every type (each Billie's types), so every Perk's needs hold */
+const EVERY_TYPE = GAME_DATA.types.map(t => [t.id]);
+test('PK-4 relics: with a team of every type, every Perk of each rarity turns up over 300 picks', () => {
+  /* rares weigh 1 of about 150 (43 Perks): 300 picks of 3 see each about 6 times */
   const seen = new Set();
-  for (let n = 0; n < 40; n++) {
-    const c = run('S' + n);
-    for (const id of R.perkOffer(c, PERKS, RULE)) seen.add(id);
+  for (let n = 0; n < 300; n++) for (const id of R.perkOffer(run('S' + n), PERKS, RULE, EVERY_TYPE)) seen.add(id);
+  for (const r of Object.keys(RULE.rarity)) {
+    const all = Object.keys(PERKS).filter(id => PERKS[id].rarity === r),
+      miss = all.filter(id => !seen.has(id));
+    assert.deepEqual(miss, [], `${r}: every one of ${all.length} turns up`);
   }
-  assert.ok(seen.size >= Object.keys(PERKS).length - 2, `most Perks turn up over 40 runs (${seen.size})`);
+});
+
+test('PK-4 relics: a Perk that needs a type is never offered without it, in a pick, a shelf or an event', () => {
+  const needy = Object.keys(PERKS).filter(id => PERKS[id].needs);
+  assert.ok(needy.length >= 9, 'the type Perks need their types');
+  for (const T of GAME_DATA.types.map(t => t.id)) {
+    const team = [[T]],
+      ok = new Set(needy.filter(id => R.perkFits(PERKS[id], team))),
+      got = new Set();
+    for (let n = 0; n < 120; n++) {
+      const r = run('N' + T + n);
+      for (const id of R.perkOffer(r, PERKS, RULE, team)) got.add(id);
+      got.add(R.perkShelf(r, 1, 1, PERKS, RULE, team));
+      got.add(modules.encounters.encPerk(r, undefined, PERKS, RULE, team));
+    }
+    for (const id of got) assert.ok(!PERKS[id] || !PERKS[id].needs || ok.has(id), `${id} offered to a ${T} team`);
+    assert.equal(ok.size, 1, `${T}: one type Perk fits`);
+    assert.ok(
+      [...ok].every(id => got.has(id)),
+      `${T}: its own type Perk turns up`
+    );
+  }
+});
+
+test('PK-4 relics: a type Perk whose type is on the team is offered about bias times as often as an untagged one', () => {
+  const team = [['Fire'], ['Water']],
+    count = { bellows: 0, joy_buzzer: 0 };
+  for (let n = 0; n < 1500; n++) {
+    const id = R.perkShelf(run('B' + n), 1, 1, PERKS, RULE, team);
+    if (id in count) count[id]++;
+  }
+  assert.equal(PERKS.bellows.rarity, PERKS.joy_buzzer.rarity);
+  const ratio = count.bellows / count.joy_buzzer;
+  assert.ok(Math.abs(ratio - RULE.bias) < 0.8, `${JSON.stringify(count)}: about ${RULE.bias} times`);
 });
 
 test('relics: making an offer saves it on the run and moves the counter; the next differs', () => {
@@ -143,4 +184,78 @@ test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in 
     [true, false, false, false],
     'past the cap nothing more is taken'
   );
+});
+
+test('PK-3 perkCount: a counter as n/every, VOID once a once-a-run row is spent, nothing otherwise', () => {
+  const r = run();
+  assert.equal(R.perkCount(r, 'click_pen', PERKS), '0/8');
+  r.perkState = { 'click_pen/0': { n: 5 }, 'warranty_card/0': { used: 1 } };
+  assert.equal(R.perkCount(r, 'click_pen', PERKS), '5/8');
+  assert.equal(R.perkCount(r, 'warranty_card', PERKS), 'VOID');
+  assert.equal(R.perkCount(run(), 'warranty_card', PERKS), '', 'not spent yet');
+  assert.equal(R.perkCount(r, 'lucky_charm', PERKS), '');
+  assert.equal(R.perkCount(null, 'click_pen', PERKS), '0/8');
+  assert.equal(R.perkCount(r, 'nope', PERKS), '');
+});
+
+// PK-4: offers ask a Perk's needs of the team (perkFits): a test-only Perk that needs a Fire Billie
+const NEEDY = {
+  test_fire_only: {
+    name: 'Test',
+    d: 'A test.',
+    rarity: 'common',
+    needs: 'team:Fire',
+    fx: [{ kind: 'money', mult: 1.1 }],
+  },
+  test_plain: { name: 'Test', d: 'A test.', rarity: 'common', fx: [{ kind: 'money', mult: 1.1 }] },
+};
+test('PK-4 needs: a Perk that needs team:Fire is drawn only for a team with a Fire Billie; with no team, it is', () => {
+  const r = run(),
+    water = [['Water'], ['Grass']],
+    fire = [['Water'], ['Fire', 'Steel']];
+  assert.deepEqual(R.perkPool(r, NEEDY, RULE, [], water), ['test_plain']);
+  assert.deepEqual(R.perkPool(r, NEEDY, RULE, [], fire), ['test_fire_only', 'test_plain']);
+  assert.deepEqual(R.perkPool(r, NEEDY, RULE), ['test_fire_only', 'test_plain'], 'no team given: needs not asked');
+  assert.equal(R.perkFits({ needs: ['team:Fire', 'mono'] }, [['Fire'], ['Fire', 'Water']]), true);
+  assert.equal(R.perkFits({ needs: ['team:Fire', 'mono'] }, [['Fire'], ['Water']]), false);
+  assert.deepEqual(R.perkTeamOf(startedSave('musk0', 10).team), [['Fire']]);
+  /* the pick, a shop's shelf and an event draw from the same pool */
+  for (let n = 0; n < 30; n++) {
+    const p = run('NEED' + n);
+    assert.ok(!(R.perkOffer(p, NEEDY, RULE, water) || []).includes('test_fire_only'), 'the pick');
+    assert.notEqual(R.perkShelf(p, 2, 1, NEEDY, RULE, water), 'test_fire_only', 'the shelf');
+    assert.notEqual(modules.encounters.encPerk(p, undefined, NEEDY, RULE, water), 'test_fire_only', 'an event');
+  }
+  assert.equal(modules.encounters.encPerk(r, 'test_fire_only', NEEDY, RULE, water), 'test_fire_only', 'named: given');
+});
+
+test('PK-4 tags: a Perk whose tag is a type on the team or a held Perk’s tag weighs run.perks.bias times more', () => {
+  const P = {
+      test_fire: { name: 'T', d: 'T.', rarity: 'common', tags: ['Fire'], fx: [{ kind: 'money', mult: 1.1 }] },
+      test_kit: { name: 'T', d: 'T.', rarity: 'common', tags: ['weather'], fx: [{ kind: 'money', mult: 1.1 }] },
+      test_umb: { name: 'T', d: 'T.', rarity: 'uncommon', tags: ['weather'], fx: [{ kind: 'money', mult: 1.1 }] },
+      test_none: { name: 'T', d: 'T.', rarity: 'common', fx: [{ kind: 'money', mult: 1.1 }] },
+    },
+    rule = { ...RULE, bias: 2 },
+    r = run(),
+    w = RULE.rarity.common;
+  assert.equal(R.perkWeight(r, 'test_fire', P, rule, [['Fire']]), 2 * w);
+  assert.equal(R.perkWeight(r, 'test_fire', P, rule, [['Water']]), w);
+  assert.equal(R.perkWeight(r, 'test_fire', P, rule), w, 'no team: no type lean');
+  assert.equal(R.perkWeight(r, 'test_kit', P, rule, [['Water']]), w);
+  r.perks = ['test_umb'];
+  assert.equal(R.perkWeight(r, 'test_kit', P, rule, [['Water']]), 2 * w, 'a held Perk’s theme');
+  assert.equal(R.perkWeight(r, 'test_none', P, rule, [['Fire']]), w, 'no tags');
+  assert.equal(R.perkWeight(r, 'test_kit', P, { ...rule, bias: 1 }, [['Water']]), w, 'bias 1: none');
+  /* over many shelves, the matching Perk is drawn about twice as often as the other common one */
+  const Q = { test_fire: P.test_fire, test_none: P.test_none },
+    count = team => {
+      let n = 0;
+      for (let k = 0; k < 400; k++) if (R.perkShelf(run('BIAS' + k), 1, 1, Q, rule, team) === 'test_fire') n++;
+      return n / 400;
+    };
+  const lean = count([['Fire']]),
+    even = count([['Water']]);
+  assert.ok(Math.abs(even - 0.5) < 0.08, `even ${even}`);
+  assert.ok(Math.abs(lean - 2 / 3) < 0.08, `lean ${lean}`);
 });

@@ -13,6 +13,8 @@ import { expose } from '../test-globals.js';
 expose({
   MUSIC_ENSEMBLE_DRUM_VEL: [() => MUSIC_ENSEMBLE_DRUM_VEL],
   MUSIC_ENSEMBLE_VEL: [() => MUSIC_ENSEMBLE_VEL],
+  MUSIC_JINGLE_HIT: [() => MUSIC_JINGLE_HIT],
+  MUSIC_JINGLE_KIT: [() => MUSIC_JINGLE_KIT],
   MUSIC_PATTERN_ARP: [() => MUSIC_PATTERN_ARP],
   MUSIC_PATTERN_BASS: [() => MUSIC_PATTERN_BASS],
   MUSIC_PATTERN_DRUMS: [() => MUSIC_PATTERN_DRUMS],
@@ -32,6 +34,17 @@ expose({
   musicEnsembleNeeds: [() => musicEnsembleNeeds, v => (musicEnsembleNeeds = v)],
   // @ts-expect-error -- replaced on purpose
   musicEnsembleStep: [() => musicEnsembleStep, v => (musicEnsembleStep = v)],
+  musicJingleKitNote: [() => musicJingleKitNote],
+  // @ts-expect-error -- replaced on purpose
+  musicJingleNeeds: [() => musicJingleNeeds, v => (musicJingleNeeds = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicJingleParts: [() => musicJingleParts, v => (musicJingleParts = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicJingleTune: [() => musicJingleTune, v => (musicJingleTune = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicStingerAt: [() => musicStingerAt, v => (musicStingerAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicStingerShift: [() => musicStingerShift, v => (musicStingerShift = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -287,4 +300,161 @@ export function musicEnsembleNeeds(D, E, instruments) {
     for (const N of musicEnsembleStep(D, E, st, { instruments }))
       if (N.inst) (need[N.inst] = need[N.inst] || new Set()).add(N.m);
   return Object.fromEntries(Object.entries(need).map(([k, v]) => [k, [...v].sort((a, c) => a - c)]));
+}
+
+/* ---------- SND-17: jingles on an ensemble ---------- */
+/**
+ * @typedef {{notes: number[][], ensemble?: string, harmony?: number[][], bass?: number[][], perc?: number[][],
+ *   stinger?: boolean}} MusicJingle
+ *   a music.json jingle: its tune (notes: [midi, sixteenths] one after another, 0 a rest) and (SND-17) the lines an
+ *   ensemble plays under it, each [step, midi, length in steps] as a hook's
+ * @typedef {MusicEnsembleNote & {at: number}} MusicJingleNote a note of a jingle, `at` steps from its start
+ */
+/** the perc line's General MIDI drum notes a kit part plays, by the kit piece they name; a timpani part plays every
+    other perc note */
+export const MUSIC_JINGLE_KIT = /** @type {Record<number, 'kick' | 'snare' | 'hat' | 'rim'>} */ ({
+  35: 'kick',
+  36: 'kick',
+  37: 'rim',
+  38: 'snare',
+  39: 'rim',
+  40: 'snare',
+  42: 'hat',
+  44: 'hat',
+  46: 'hat',
+});
+/** a kit hit's level in a jingle (as the songs' drum patterns hit them) */
+export const MUSIC_JINGLE_HIT = { kick: 0.4, snare: 0.1, hat: 0.04, rim: 0.05 };
+/** whether a perc note belongs to the kit (one MUSIC_JINGLE_KIT names) @param {number} m */
+export const musicJingleKitNote = m => m in MUSIC_JINGLE_KIT;
+
+/**
+ * a jingle's tune on a timeline: [step, midi, length], rests left out
+ * @param {number[][]} list
+ */
+export function musicJingleTune(list) {
+  /** @type {number[][]} */
+  const out = [];
+  let st = 0;
+  for (const [m, l] of list) {
+    if (m) out.push([st, m, l]);
+    st += l;
+  }
+  return out;
+}
+
+/**
+ * every note an ensemble plays for a jingle, from its start. A part's line says what it reads: lead and counter the
+ * tune; pad the harmony line held, stabs it short, arp each of its chords broken upward a note a step (an octave higher
+ * each time round) for the chord's length; bass the bass line; drums the perc line's kit notes (MUSIC_JINGLE_KIT) on its kit;
+ * timp the perc line's other notes. o.shift moves every pitched note (a stinger in the song's key, a coin a row up)
+ * @param {MusicJingle} J
+ * @param {MusicEnsemble} E
+ * @param {{shift?: number, instruments?: Record<string, {lo: number, hi: number}>}} [o]
+ * @returns {{notes: MusicJingleNote[], steps: number}}
+ */
+export function musicJingleParts(J, E, o = {}) {
+  /** @type {MusicJingleNote[]} */
+  const out = [];
+  const I = o.instruments || {},
+    shift = o.shift || 0,
+    tune = musicJingleTune(J.notes || []),
+    harmony = J.harmony || [],
+    perc = J.perc || [];
+  let steps = (J.notes || []).reduce((a, n) => a + n[1], 0);
+  E.parts.forEach((P, part) => {
+    const lv = P.level ?? 1,
+      up = 12 * (P.oct || 0) + shift,
+      base = /** @type {Record<string, number>} */ (MUSIC_ENSEMBLE_VEL)[P.line] || 0.1,
+      add = (/** @type {number} */ at, /** @type {number} */ m, /** @type {number} */ len, vel = 1) => {
+        out.push({
+          part,
+          at,
+          m: P.inst ? musicEnsembleFit(m + up, I[P.inst]) : m + up,
+          len,
+          vel: base * vel * lv,
+          inst: P.inst,
+          wave: P.wave,
+        });
+        steps = Math.max(steps, at + len);
+      };
+    if (P.line === 'lead' || P.line === 'counter') for (const [at, m, l] of tune) add(at, m, l);
+    else if (P.line === 'pad') for (const [at, m, l] of harmony) add(at, m, l);
+    else if (P.line === 'stabs') for (const [at, m, l] of harmony) add(at, m, Math.min(l, 1.6));
+    else if (P.line === 'arp') {
+      /** @type {Map<number, number[][]>} */
+      const chords = new Map();
+      for (const N of harmony) chords.set(N[0], [...(chords.get(N[0]) || []), N]);
+      for (const [at, ch] of chords) {
+        const tones = ch.map(N => N[1]).sort((a, c) => a - c),
+          len = Math.max(...ch.map(N => N[2]));
+        for (let k = 0; k < len; k++) add(at + k, tones[k % tones.length] + 12 * Math.floor(k / tones.length), 2);
+      }
+    } else if (P.line === 'bass') for (const [at, m, l] of J.bass || []) add(at, m, l);
+    else if (P.line === 'timp') for (const [at, m, l] of perc) !musicJingleKitNote(m) && add(at, m, l);
+    else if (P.line === 'drums' && P.kit)
+      for (const [at, m] of perc) {
+        const hit = musicJingleKitNote(m) ? MUSIC_JINGLE_KIT[m] : null,
+          k = hit && P.kit[hit];
+        if (!hit || !k) continue;
+        const R = I[k];
+        out.push({
+          part,
+          at,
+          m: R ? R.lo : 60,
+          len: 1,
+          vel: MUSIC_JINGLE_HIT[hit] * /** @type {Record<string, number>} */ (MUSIC_ENSEMBLE_DRUM_VEL)[hit] * lv,
+          inst: k,
+          hit,
+        });
+        steps = Math.max(steps, at + 1);
+      }
+  });
+  out.sort((a, c) => a.at - c.at || a.part - c.part);
+  return { notes: out, steps };
+}
+
+/**
+ * the baked notes a jingle's ensemble plays (at no shift and, for the payout's coins, o.shifts more): instrument ->
+ * midi notes, so the bank bakes those zones and no others
+ * @param {MusicJingle} J
+ * @param {MusicEnsemble} E
+ * @param {Record<string, {lo: number, hi: number}>} [instruments]
+ * @param {number[]} [shifts]
+ * @returns {Record<string, number[]>}
+ */
+export function musicJingleNeeds(J, E, instruments, shifts = [0]) {
+  /** @type {Record<string, Set<number>>} */
+  const need = {};
+  for (const shift of shifts)
+    for (const N of musicJingleParts(J, E, { shift, instruments }).notes)
+      if (N.inst) (need[N.inst] = need[N.inst] || new Set()).add(N.m);
+  return Object.fromEntries(Object.entries(need).map(([k, v]) => [k, [...v].sort((a, c) => a - c)]));
+}
+
+/**
+ * SND-17: when a stinger over a song starts: the song's first beat (a step a multiple of 4) at least `lead` seconds
+ * from now. The song's next step to schedule is `step`, at `next` (the steps before it are scheduled already, so a
+ * beat among them counts too)
+ * @param {number} now
+ * @param {number} next
+ * @param {number} step
+ * @param {number} spb seconds a step
+ * @param {number} [lead]
+ * @returns {{t: number, step: number}}
+ */
+export function musicStingerAt(now, next, step, spb, lead = 0.03) {
+  let s = step + Math.ceil((now + lead - next) / spb - 1e-9);
+  s += (4 - (((s % 4) + 4) % 4)) % 4;
+  return { t: next + (s - step) * spb, step: s };
+}
+
+/**
+ * SND-17: the semitones that move a stinger written in C (home) into a song's key, the nearer way (-5 to +6)
+ * @param {number} key the song's key (its tonic's midi note)
+ * @param {number} [home]
+ */
+export function musicStingerShift(key, home = 60) {
+  const d = (((key - home) % 12) + 12) % 12;
+  return d > 6 ? d - 12 : d;
 }

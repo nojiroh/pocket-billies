@@ -169,6 +169,13 @@ test("a run battle's start: its seed, the forecast's weather (clear is sunny), t
   }
   const fx = [{ kind: 'money', mult: 1.2, src: 'x' }];
   assert.equal(L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx).fx, fx);
+  /* PK-1: rows that keep state: the run's own marks go with the battle (made then); none without */
+  assert.ok(!('perkState' in L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, fx)));
+  assert.equal(run.perkState, undefined);
+  const counting = [{ kind: 'heal', share: 0.1, when: 'hit', every: 2, src: 'x', row: 0 }],
+    x = L.runBattleExtra(run, 0, 0, GAME_DATA.rules.env, counting);
+  assert.equal(x.perkState, run.perkState);
+  assert.deepEqual(run.perkState, {});
 });
 
 test("the Actions sheet's weather words: boosts first, then cuts, in whole percent; nothing when it changes nothing", () => {

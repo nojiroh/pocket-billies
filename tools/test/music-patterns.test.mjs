@@ -16,6 +16,12 @@ import {
   musicEnsembleFit,
   musicEnsembleNeeds,
   musicEnsembleStep,
+  MUSIC_JINGLE_KIT,
+  musicJingleNeeds,
+  musicJingleParts,
+  musicJingleTune,
+  musicStingerAt,
+  musicStingerShift,
 } from '../../game/js/logic/music-patterns.js';
 
 const schema = JSON.parse(readFileSync(new URL('../../game/data/schema/music.schema.json', import.meta.url), 'utf8'));
@@ -232,4 +238,125 @@ test('ensembles: the needs are every baked note the song plays, intro included, 
   assert.ok(N.musicbox.includes(88), 'the intro’s note');
   assert.deepEqual(N.kick, [60]);
   assert.ok(N.timpani.every(m => m >= 36 && m <= 60));
+});
+
+/* ---------- SND-17: jingles on an ensemble ---------- */
+const jingle = {
+  notes: [
+    [72, 2],
+    [0, 2],
+    [79, 4],
+  ],
+  harmony: [
+    [0, 60, 4],
+    [0, 64, 4],
+    [0, 67, 4],
+  ],
+  bass: [[0, 48, 8]],
+  perc: [
+    [0, 36, 1],
+    [2, 38, 1],
+    [4, 50, 4],
+    [6, 41, 1],
+  ],
+};
+const parts = lines => ({ parts: lines.map(l => (typeof l === 'string' ? { line: l, inst: 'harp' } : l)) });
+
+test('SND-17: a jingle on a timeline: rests left out, steps counted', () => {
+  assert.deepEqual(musicJingleTune(jingle.notes), [
+    [0, 72, 2],
+    [4, 79, 4],
+  ]);
+});
+
+test("SND-17: each part reads its line of the jingle: the tune, the harmony held, short or broken upward, the bass, the perc's kit and timpani notes", () => {
+  const E = parts([
+    'lead',
+    'counter',
+    'pad',
+    'stabs',
+    'arp',
+    'bass',
+    { line: 'timp', inst: 'timpani' },
+    { line: 'drums', kit: { kick: 'kick', snare: 'snare' } },
+  ]);
+  const { notes, steps } = musicJingleParts(jingle, E);
+  const of = p => notes.filter(N => N.part === p).map(N => [N.at, N.m, N.len]);
+  assert.deepEqual(of(0), [
+    [0, 72, 2],
+    [4, 79, 4],
+  ]);
+  assert.deepEqual(of(1), of(0));
+  assert.deepEqual(of(2), jingle.harmony);
+  assert.deepEqual(
+    of(3),
+    jingle.harmony.map(([a, m]) => [a, m, 1.6])
+  );
+  /* the chord C E G for 4 steps: C E G and C an octave up */
+  assert.deepEqual(of(4), [
+    [0, 60, 2],
+    [1, 64, 2],
+    [2, 67, 2],
+    [3, 72, 2],
+  ]);
+  assert.deepEqual(of(5), [[0, 48, 8]]);
+  /* the timpani skips the kit's notes (36, 38) and plays the others */
+  assert.deepEqual(of(6), [
+    [4, 50, 4],
+    [6, 41, 1],
+  ]);
+  assert.deepEqual(
+    notes.filter(N => N.part === 7).map(N => [N.at, N.inst, N.hit]),
+    [
+      [0, 'kick', 'kick'],
+      [2, 'snare', 'snare'],
+    ]
+  );
+  assert.equal(steps, 8);
+  assert.ok(notes.every(N => N.vel > 0 && Number.isFinite(N.vel)));
+});
+
+test('SND-17: a kit piece the kit lacks plays nothing; a part with no line of its own in the jingle plays nothing', () => {
+  const { notes } = musicJingleParts(
+    { notes: [[72, 4]], perc: [[0, 42, 1]] },
+    parts(['pad', 'bass', { line: 'drums', kit: { kick: 'kick' } }])
+  );
+  assert.deepEqual(notes, []);
+  assert.equal(MUSIC_JINGLE_KIT[42], 'hat');
+});
+
+test('SND-17: a shift moves every pitched note (not the kit); notes fit the instrument; the needs cover each shift', () => {
+  const E = {
+      parts: [
+        { line: 'lead', inst: 'glock' },
+        { line: 'drums', kit: { kick: 'kick' } },
+      ],
+    },
+    I = { glock: { lo: 67, hi: 108 }, kick: { lo: 60, hi: 60 } };
+  const at0 = musicJingleParts({ notes: [[60, 2]], perc: [[0, 36, 1]] }, E, { instruments: I }).notes,
+    at2 = musicJingleParts({ notes: [[60, 2]], perc: [[0, 36, 1]] }, E, { instruments: I, shift: 2 }).notes;
+  assert.equal(at0[0].m, 72);
+  assert.equal(at2[0].m, 74);
+  assert.equal(at0[1].m, 60);
+  assert.equal(at2[1].m, 60);
+  assert.deepEqual(musicJingleNeeds({ notes: [[60, 2]], perc: [[0, 36, 1]] }, E, I, [0, 2, 4]), {
+    glock: [72, 74, 76],
+    kick: [60],
+  });
+});
+
+test("SND-17: a stinger starts on the song's next beat, at least a moment from now, and moves to the song's key the nearer way", () => {
+  const spb = 0.1;
+  /* the next step to schedule is 5 at 1.0 s: steps 3 and 4 are scheduled; now 0.85: step 4 (0.9 s) is a beat */
+  assert.deepEqual(musicStingerAt(0.85, 1.0, 5, spb), { t: 0.9, step: 4 });
+  /* now 0.95: step 4 has gone, step 8 is the next beat */
+  const b = musicStingerAt(0.95, 1.0, 5, spb);
+  assert.equal(b.step, 8);
+  assert.ok(Math.abs(b.t - 1.3) < 1e-9);
+  /* an intro's steps are negative: beats still every 4 */
+  assert.equal(musicStingerAt(0, 0.1, -6, spb).step, -4);
+  assert.equal(musicStingerShift(62), 2);
+  assert.equal(musicStingerShift(67), -5);
+  assert.equal(musicStingerShift(66), 6);
+  assert.equal(musicStingerShift(48), 0);
 });

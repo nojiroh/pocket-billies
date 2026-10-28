@@ -404,56 +404,130 @@
  },
  "jingles": {
   "victory": {
-   "notes": [[72,2],[76,2],[79,2],[84,6],[83,2],[84,8]]
+   "notes": [[72,2],[76,2],[79,2],[84,6],[83,2],[84,8]],
+   "ensemble": "fanfare",
+   "harmony": [[0,60,6],[0,64,6],[0,67,6],[6,65,6],[6,69,6],[6,72,6],[12,67,2],[12,71,2],[12,74,2],[14,60,8],[14,64,8],[14,67,8]],
+   "bass": [[0,48,6],[6,53,6],[12,55,2],[14,48,8]],
+   "perc": [[0,48,2],[0,36,1],[6,38,1],[10,43,1],[11,43,1],[12,43,1],[13,43,1],[14,48,4],[14,36,1],[14,38,1]]
   },
   "levelup": {
-   "notes": [[72,1],[76,1],[79,1],[84,3]]
+   "notes": [[72,1],[76,1],[79,1],[84,3]],
+   "ensemble": "sparkle",
+   "harmony": [[0,60,6],[0,64,6],[0,67,6]]
   },
   "evolve": {
-   "notes": [[67,2],[71,2],[74,2],[79,2],[83,2],[86,6]]
+   "notes": [[67,2],[71,2],[74,2],[79,2],[83,2],[86,6]],
+   "ensemble": "swell",
+   "harmony": [[0,55,10],[0,59,10],[0,62,10],[10,67,6],[10,71,6],[10,74,6]]
   },
   "caught": {
-   "notes": [[79,2],[84,2],[88,4],[86,2],[88,6]]
+   "notes": [[79,2],[84,2],[88,4],[86,2],[88,6]],
+   "ensemble": "fanfare_pizz",
+   "harmony": [[0,60,2],[0,64,2],[0,67,2],[4,60,2],[4,64,2],[4,67,2],[8,59,2],[8,62,2],[8,67,2],[10,60,2],[10,64,2],[10,67,2]],
+   "bass": [[0,48,2],[4,48,2],[8,43,2],[10,48,4]],
+   "perc": [[0,38,1],[1,38,1],[2,38,1],[3,38,1],[4,38,1],[5,38,1],[6,38,1],[7,38,1],[10,36,1],[10,38,1]]
   },
   "hatch": {
-   "notes": [[76,2],[79,2],[84,4]]
+   "notes": [[76,2],[79,2],[84,4]],
+   "ensemble": "twinkle",
+   "harmony": [[4,60,4],[4,64,4],[4,67,4]]
   },
   "motif": {
    "name": "placeholder: the motif's first bar, home on D (Claude's draft)",
-   "notes": [[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
+   "notes": [[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]],
+   "ensemble": "motif",
+   "harmony": [[0,62,12],[0,66,12],[0,69,12],[12,60,4],[12,64,4],[12,67,4],[16,62,8],[16,66,8],[16,69,8]],
+   "bass": [[0,50,12],[12,48,4],[16,50,8]]
   },
   "relic": {
+   "stinger": true,
    "name": "placeholder: a Perk taken, a sly run up (Claude's draft)",
    "bpm": 170,
-   "notes": [[76,1],[79,1],[83,1],[88,3],[0,1],[87,1],[88,4]]
+   "notes": [[76,1],[79,1],[83,1],[88,3],[0,1],[87,1],[88,4]],
+   "ensemble": "sly",
+   "harmony": [[0,64,1],[0,67,1],[0,71,1],[6,64,1],[6,67,1],[6,71,1],[10,64,1],[10,67,1],[10,71,1]],
+   "bass": [[0,40,2],[3,47,2],[6,52,2],[10,40,2]]
   },
   "reveal": {
+   "stinger": true,
    "name": "placeholder: new places on the map, two pings (Claude's draft)",
    "bpm": 140,
    "wave": "p12",
-   "notes": [[84,2],[91,4]]
+   "notes": [[84,2],[91,4]],
+   "ensemble": "chime",
+   "harmony": [[0,60,6],[0,64,6],[0,67,6]]
   },
   "day": {
+   "stinger": true,
    "name": "placeholder: a day passing, the clock's tick and tock (Claude's draft)",
    "bpm": 120,
    "wave": "p12",
-   "notes": [[81,1],[0,3],[76,1]]
+   "notes": [[81,1],[0,3],[76,1]],
+   "ensemble": "tock"
   },
   "run_won": {
    "name": "placeholder: run won, the victory tune, then the motif (Claude's draft)",
-   "notes": [[72,2],[76,2],[79,2],[84,6],[83,2],[84,6],[0,2],[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]]
+   "notes": [[72,2],[76,2],[79,2],[84,6],[83,2],[84,6],[0,2],[74,3],[81,3],[79,2],[78,4],[76,2],[72,2],[74,8]],
+   "ensemble": "fanfare",
+   "harmony": [
+    [0,60,6],
+    [0,64,6],
+    [0,67,6],
+    [6,65,6],
+    [6,69,6],
+    [6,72,6],
+    [12,67,2],
+    [12,71,2],
+    [12,74,2],
+    [14,60,6],
+    [14,64,6],
+    [14,67,6],
+    [22,62,12],
+    [22,66,12],
+    [22,69,12],
+    [34,60,4],
+    [34,64,4],
+    [34,67,4],
+    [38,62,8],
+    [38,66,8],
+    [38,69,8]
+   ],
+   "bass": [[0,48,6],[6,53,6],[12,55,2],[14,48,6],[22,50,12],[34,48,4],[38,50,8]],
+   "perc": [
+    [0,48,2],
+    [0,36,1],
+    [6,38,1],
+    [10,43,1],
+    [11,43,1],
+    [12,43,1],
+    [13,43,1],
+    [14,48,4],
+    [14,36,1],
+    [14,38,1],
+    [22,50,2],
+    [22,36,1],
+    [34,48,1],
+    [38,50,4],
+    [38,36,1],
+    [38,38,1]
+   ]
   },
   "run_lost": {
    "name": "placeholder: run lost, the victory tune backwards in minor (Claude's draft)",
    "bpm": 100,
    "wave": "p12",
-   "notes": [[84,6],[82,2],[84,4],[79,2],[75,2],[72,8]]
+   "notes": [[84,6],[82,2],[84,4],[79,2],[75,2],[72,8]],
+   "ensemble": "lament",
+   "harmony": [[0,60,12],[0,63,12],[0,67,12],[12,56,4],[12,60,4],[12,63,4],[16,60,8],[16,63,8],[16,67,8]],
+   "bass": [[0,48,12],[12,44,4],[16,48,8]]
   },
   "payout_coin": {
+   "stinger": true,
    "name": "placeholder: a coin per payout row, a step higher each (Claude's draft)",
    "bpm": 320,
    "wave": "p50",
-   "notes": [[84,1],[91,2]]
+   "notes": [[84,1],[91,2]],
+   "ensemble": "coin"
   }
  },
  "cries": {
@@ -1133,6 +1207,119 @@
      "verb": 0.05,
      "level": 0.8
     }
+   ]
+  },
+  "fanfare": {
+   "name": "placeholder: a jingle's DS fanfare: the chip lead doubled by brass over strings, a warm bass, timpani and a kit (Claude's draft)",
+   "trim": -6.5,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {"line":"lead","inst":"brass","pan":-0.15,"verb":0.2,"level":0.7},
+    {"line":"pad","inst":"strings","verb":0.3,"level":0.9},
+    {"line":"bass","inst":"bass","level":0.8},
+    {"line":"timp","inst":"timpani","verb":0.25,"level":0.9},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"osnare"},
+     "verb": 0.1,
+     "level": 0.7
+    }
+   ]
+  },
+  "fanfare_pizz": {
+   "name": "placeholder: a jingle's catch fanfare: the chip lead and pizzicato, pizzicato chords and bass, a snare roll (Claude's draft)",
+   "trim": -7.5,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.8},
+    {"line":"lead","inst":"pizz","pan":0.2,"verb":0.15,"level":0.9},
+    {"line":"stabs","inst":"pizz","pan":-0.2,"verb":0.15,"level":0.8},
+    {"line":"bass","inst":"pizz","level":0.8},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"osnare"},
+     "verb": 0.1,
+     "level": 0.8
+    }
+   ]
+  },
+  "sparkle": {
+   "name": "placeholder: a jingle's glockenspiel and a harp's run up the chord (Claude's draft)",
+   "trim": -3.1,
+   "parts": [
+    {"line":"lead","inst":"glock","verb":0.3,"level":0.9},
+    {"line":"arp","inst":"harp","pan":-0.2,"verb":0.3,"level":0.9}
+   ]
+  },
+  "swell": {
+   "name": "placeholder: a jingle's string swell and a harp glissando into the reveal, the chip lead over them (Claude's draft)",
+   "trim": 3.4,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.7},
+    {"line":"pad","inst":"strings","verb":0.35,"level":1},
+    {"line":"arp","inst":"harp","pan":0.25,"verb":0.3,"level":0.8}
+   ]
+  },
+  "twinkle": {
+   "name": "placeholder: a jingle's music box with a celesta an octave under and its chord (Claude's draft)",
+   "trim": -2.6,
+   "parts": [
+    {"line":"lead","inst":"musicbox","pan":0.15,"verb":0.3,"level":0.9},
+    {"line":"counter","inst":"celesta","oct":-1,"pan":-0.15,"verb":0.3,"level":0.6},
+    {"line":"stabs","inst":"celesta","verb":0.3,"level":0.5}
+   ]
+  },
+  "motif": {
+   "name": "placeholder: the title's motif on the chip lead, a harp and strings (Claude's draft)",
+   "trim": 3.9,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {"line":"lead","inst":"harp","pan":-0.2,"verb":0.3,"level":0.6},
+    {"line":"pad","inst":"strings","verb":0.3,"level":0.8},
+    {"line":"bass","inst":"harp","pan":0.1,"verb":0.2,"level":0.6}
+   ]
+  },
+  "sly": {
+   "name": "placeholder: a stinger's sly run up on a clarinet and a flute over pizzicato (Claude's draft)",
+   "trim": -1,
+   "parts": [
+    {"line":"lead","inst":"clarinet","pan":-0.1,"verb":0.2,"level":0.9},
+    {"line":"lead","inst":"flute","pan":0.15,"verb":0.2,"level":0.5},
+    {"line":"stabs","inst":"pizz","pan":0.2,"verb":0.15,"level":0.7},
+    {"line":"bass","inst":"pizz","pan":-0.2,"level":0.8}
+   ]
+  },
+  "chime": {
+   "name": "placeholder: a stinger's two bell notes over a harp up the chord (Claude's draft)",
+   "trim": -1.6,
+   "parts": [
+    {"line":"lead","inst":"bell","verb":0.35,"level":0.8},
+    {"line":"arp","inst":"harp","pan":-0.2,"verb":0.3,"level":0.6}
+   ]
+  },
+  "tock": {
+   "name": "placeholder: a stinger's clock: a woodblock's tick and tock, a soft bell under (Claude's draft)",
+   "trim": 3.1,
+   "parts": [
+    {"line":"lead","inst":"woodblock","level":0.9},
+    {"line":"counter","inst":"bell","oct":-1,"verb":0.3,"level":0.4}
+   ]
+  },
+  "lament": {
+   "name": "placeholder: a jingle's lament on soft strings, the chip lead faint over them (Claude's draft)",
+   "trim": -0.9,
+   "parts": [
+    {"line":"lead","wave":"p12","level":0.5},
+    {"line":"lead","inst":"softstrings","verb":0.35,"level":0.9},
+    {"line":"pad","inst":"softstrings","verb":0.35,"level":0.8},
+    {"line":"bass","inst":"bass","level":0.6}
+   ]
+  },
+  "coin": {
+   "name": "placeholder: a stinger's coin: the chip and a glockenspiel (Claude's draft)",
+   "trim": -1.1,
+   "parts": [
+    {"line":"lead","wave":"p50","level":0.8},
+    {"line":"lead","inst":"glock","oct":-1,"verb":0.2,"level":0.8}
    ]
   }
  },

@@ -14,6 +14,10 @@ import {
   musicDrumsAt,
   musicEnsembleNeeds,
   musicEnsembleStep,
+  musicJingleNeeds,
+  musicJingleParts,
+  musicStingerAt,
+  musicStingerShift,
 } from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -234,7 +238,9 @@ export function trackerRecipe(songs, name, run) {
    bank and the other baked buffers (the beds' noise, the tracker's noise, the reverb's impulse) stay within
    SOUND_BAKE_BUDGET together: past it the least recently played zone is dropped (a note then plays from the nearest
    zone left, and the dropped one is baked again) */
-const SOUND_BAKE_BUDGET = 6 * 1024 * 1024;
+/* SND-11: 8 MB (SND-9's 6): Copperleaf's ensemble with the water's banks, or a route's with a battle's and a river's,
+   beside the beds' noise and the reverb (about 3 MB of those), measured in the browser */
+const SOUND_BAKE_BUDGET = 8 * 1024 * 1024;
 const SOUND_BAKE_SLICE_MS = 2;
 /* SND-9: the reverb. One ConvolverNode (a phone's costliest node: one, short), made the first time something sends to
    it, so a song that never asks (all of today's: the future `gb` ensemble) never makes it. Its impulse: 1.2 s of
@@ -569,6 +575,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     o.start(t);
     o.stop(t + Math.max(a + d, dur) + r + 0.02);
+    /* SND-17: its source and gain, as sampleVoice returns them (a jingle on an ensemble waits for its last note) */
+    return { source: o, gain: g };
   };
   T.synthNoise = (out, { t, dur = 0.05, vol = 0.2, hp = 0, lp = 0, bp = 0, q = 1 }) => {
     T.started++;
@@ -1128,10 +1136,154 @@ export function trackerCreate(ctx, bus, opts = {}) {
       sg.next += spb;
     }
   };
+  /* ---------- SND-17: jingles on an ensemble ----------
+     A jingle (music.json jingles) that names an ensemble plays on it once its notes are baked and while GB Sounds is
+     off: each part reads a line of the jingle (logic/music-patterns.js musicJingleParts) into a gain of its own (a
+     panner off centre, a send to the reverb), on the bus the jingle is given. Until then, and with GB Sounds on, the
+     8-bit jingle plays: today's code below, kept as it was */
+  T.jingleEnsemble = J => (J && J.ensemble && J.ensemble !== 'gb' && ensembles()[J.ensemble]) || null;
+  /* the baked notes it plays: instrument -> midi notes (null: an 8-bit jingle) */
+  T.jingleNeeds = J => {
+    const E = T.jingleEnsemble(J);
+    return E ? musicJingleNeeds(J, E, soundBakeBank.recipes) : null;
+  };
+  T.jingleReady = J => {
+    const N = T.jingleNeeds(J);
+    if (!N) return false;
+    for (const [id, notes] of Object.entries(N)) {
+      const B = soundBakeEntry(id, c);
+      if (!B || soundBakeZonesFor(B, notes).some(k => !B.zones[k])) return false;
+    }
+    return true;
+  };
+  /* its zones baked in the bank's slices (and the reverb made), as T.prepare does a song's. Resolves true when ready */
+  T.jinglePrepare = J => {
+    const N = T.jingleNeeds(J);
+    if (!N) return Promise.resolve(false);
+    const waits = Object.entries(N).map(([id, notes]) => {
+      const B = soundBakeEntry(id, c);
+      return B ? soundBakeWant(B, soundBakeZonesFor(B, notes)) : null;
+    });
+    if (T.verbOk() && T.jingleEnsemble(J).parts.some(P => P.verb > 0)) waits.push(T.reverbReady());
+    return Promise.all(waits).then(() => true);
+  };
+  /* the song's duck under a jingle, from t0 to its end: to 0.15 of its level, back over 0.8 s */
+  const duckUnder = (t0, end) => {
+    fader(T.song, g => {
+      g.cancelScheduledValues(t0);
+      g.setValueAtTime(g.value, t0);
+      g.linearRampToValueAtTime(0.15 * T.song.level, t0 + 0.1);
+    });
+    fader(T.song, g => {
+      g.linearRampToValueAtTime(0.15 * T.song.level, end);
+      g.linearRampToValueAtTime(T.song.level, end + 0.8);
+    });
+  };
+  /* SND-17: a stinger (a jingle marked `stinger`: a Perk, the reveal, a day, a coin) over a song drops the song's busy
+     parts (its tune, counter and arpeggio: the gb stems and the ensemble's parts) to 0.2 instead of ducking all of it,
+     from its beat to its end, back over 0.4 s. All at step times; a stinger that starts while one is still down keeps
+     them down */
+  const STING_BUSY = ['lead', 'counter', 'arp'],
+    sting = { at: -1, end: -1 };
+  const dropBusy = (sg, t0, end) => {
+    const nodes = [sg.stems.lead, sg.stems.counter, sg.stems.harmony];
+    if (sg.ens && sg.parts) sg.parts.forEach((g, i) => STING_BUSY.includes(sg.ens.parts[i].line) && nodes.push(g));
+    const low = sting.end > t0 - 0.03;
+    for (const n of nodes) {
+      const p = n.gain;
+      p.cancelScheduledValues(t0 - 0.03);
+      p.setValueAtTime(low ? 0.2 : 1, t0 - 0.03);
+      p.linearRampToValueAtTime(0.2, t0);
+      p.setValueAtTime(0.2, end);
+      p.linearRampToValueAtTime(1, end + 0.4);
+    }
+    sting.end = end;
+  };
+  const jingleOn = (J, E, bpm, out, o) => {
+    const spb = 60 / bpm / 4,
+      sg = T.song,
+      /* SND-17: a stinger over a song starts on its next beat (after the last stinger's), in its key */
+      over = !!(J.stinger && sg && sg.D),
+      at = over
+        ? musicStingerAt(Math.max(c.currentTime, sting.at), sg.next, sg.step, 60 / sg.D.bpm / 4)
+        : { t: c.currentTime + 0.05 },
+      t0 = at.t,
+      music = out === bus,
+      shift = (o.shift || 0) + (over ? musicStingerShift(sg.D.key) : 0),
+      { notes, steps } = musicJingleParts(J, E, { shift, instruments: soundBakeBank.recipes }),
+      trim = Math.pow(10, (E.trim || 0) / 20),
+      nodes = [];
+    const parts = E.parts.map(P => {
+      const g = c.createGain();
+      g.gain.value = trim;
+      nodes.push(g);
+      if (P.pan) {
+        const pn = c.createStereoPanner();
+        pn.pan.value = P.pan;
+        g.connect(pn);
+        pn.connect(out);
+        nodes.push(pn);
+      } else g.connect(out);
+      if (P.verb > 0 && T.verbOk()) {
+        const v = c.createGain();
+        v.gain.value = P.verb;
+        g.connect(v);
+        v.connect(T.reverbSend(music ? 'music' : 'sfx'));
+        nodes.push(v);
+      }
+      return g;
+    });
+    /* the parts' nodes go when the last note has ended (never on a timer: an offline render plays later) */
+    let live = 0;
+    const done = () => --live === 0 && nodes.forEach(n => n.disconnect());
+    for (const N of notes) {
+      const P = E.parts[N.part],
+        t = t0 + N.at * spb,
+        h = N.inst
+          ? T.sampleVoice(parts[N.part], {
+              inst: N.inst,
+              midi: N.m,
+              t,
+              dur: N.len * spb * 0.92,
+              vol: N.vel,
+              r: P.line === 'pad' ? 0.6 : 0.3,
+            })
+          : T.synthVoice(parts[N.part], {
+              type: N.wave,
+              freq: midiToFrequency(N.m),
+              t,
+              dur: N.len * spb * 0.9,
+              /* a chip lead at level 1 plays as loud as the 8-bit jingle's (0.12) */
+              vol: N.vel * (0.12 / MUSIC_ENSEMBLE_VEL.lead),
+              s: 0.6,
+              echo: P.line === 'lead' ? 0.2 : 0,
+              echoTo: music ? T.echoIn : T.echoFx,
+            });
+      if (h && h.source) {
+        live++;
+        const was = h.source.onended;
+        h.source.onended = e => {
+          if (was) was.call(h.source, e);
+          done();
+        };
+      }
+    }
+    if (!live) nodes.forEach(n => n.disconnect());
+    const end = t0 + steps * spb;
+    if (over) sting.at = t0 + 0.01;
+    /* a stinger drops the busy parts even when it leaves the song's level alone (o.duck false: the payout's coins) */
+    if (over) dropBusy(sg, t0, end);
+    else if (T.song && o.duck !== false) duckUnder(t0, end);
+    return end;
+  };
   /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
      of its level for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
-     leaves the song alone (a coin on the payout) */
+     leaves the song alone (a coin on the payout). SND-17: o.jingle, the jingle's record: on its ensemble when it names
+     one (its notes baked, GB Sounds off); the first time its notes are asked for and the 8-bit jingle plays */
   T.jingle = (notes, bpm, type, out, o = {}) => {
+    const E = !T.gbOn() && T.jingleEnsemble(o.jingle);
+    if (E && T.jingleReady(o.jingle)) return jingleOn(o.jingle, E, bpm, out, o);
+    if (E) T.jinglePrepare(o.jingle);
     const spb = 60 / bpm / 4,
       t0 = c.currentTime + 0.05,
       up = o.shift || 0,

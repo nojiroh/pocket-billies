@@ -241,3 +241,41 @@ test('SND-11: the data names only ensembles and instruments that exist', () => {
   const bad = musicFindings(MUSIC).filter(f => f.lvl === 'error');
   assert.deepEqual(bad, []);
 });
+
+test("SND-17: musicFindings: a jingle's ensemble must exist; lines no part plays and lines without an ensemble are warned", () => {
+  const M = JSON.parse(JSON.stringify(MUSIC)),
+    msgs = () => musicFindings(M).map(f => f.lvl + ': ' + f.msg),
+    has = (re, lvl) => msgs().some(m => m.startsWith(lvl) && re.test(m));
+  M.ensembles = { ...M.ensembles, tiny: { parts: [{ line: 'lead', inst: 'glock' }] } };
+  const tune = [[72, 4]];
+  M.jingles = {
+    a: { notes: tune, ensemble: 'nowhere' },
+    b: { notes: tune, harmony: [[0, 60, 4]] },
+    c: {
+      notes: tune,
+      ensemble: 'tiny',
+      harmony: [[0, 60, 4]],
+      bass: [[0, 48, 4]],
+      perc: [
+        [0, 36, 1],
+        [0, 50, 1],
+      ],
+    },
+    d: { notes: tune, ensemble: 'gb' },
+  };
+  assert.ok(has(/jingle "a": no ensemble "nowhere"/, 'error'));
+  assert.ok(has(/jingle "b": harmony, bass and perc play only on an ensemble/, 'warn'));
+  assert.ok(has(/jingle "c": no part of "tiny" plays its harmony/, 'warn'));
+  assert.ok(has(/jingle "c": no part of "tiny" plays its bass/, 'warn'));
+  assert.ok(has(/jingle "c": no drums part of "tiny" plays its kit notes/, 'warn'));
+  assert.ok(has(/jingle "c": no timp part of "tiny" plays its pitched perc notes/, 'warn'));
+  assert.ok(!msgs().some(m => /jingle "d"/.test(m)), 'gb is the 8-bit jingle');
+});
+
+test("SND-17: the jingles' schema has the ensemble's lines as a hook's", () => {
+  const S = json('schema/music.schema.json'),
+    P = S.properties.jingles.additionalProperties.properties;
+  for (const k of ['harmony', 'bass', 'perc']) assert.equal(P[k].$ref, '#/$defs/line', k);
+  assert.equal(P.ensemble.$ref, '#/$defs/id');
+  assert.equal(P.stinger.type, 'boolean');
+});

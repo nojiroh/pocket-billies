@@ -7,7 +7,7 @@
    (tools/test/music-studio.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { MUSIC_PATTERN_ARP, MUSIC_PATTERN_BASS, MUSIC_PATTERN_DRUMS } from './music-patterns.js';
+import { MUSIC_PATTERN_ARP, MUSIC_PATTERN_BASS, MUSIC_PATTERN_DRUMS, musicJingleKitNote } from './music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_CHOICES: [() => MUSIC_CHOICES],
@@ -271,6 +271,44 @@ export function musicFindings(music, more = {}) {
       if (P.style && !(MUSIC_STYLE_OF[P.line] || []).includes(P.style))
         out.push({ lvl: 'error', msg: `${at}: "${P.style}" is not a ${P.line} pattern` });
     });
+  /* SND-17: a jingle's ensemble and the lines its parts read */
+  for (const [id, J] of Object.entries(/** @type {Record<string, any>} */ (music.jingles || {}))) {
+    if (!ensOk(J.ensemble)) {
+      out.push({ lvl: 'error', msg: `jingle "${id}": no ensemble "${J.ensemble}"`, jingle: id });
+      continue;
+    }
+    const E = J.ensemble && J.ensemble !== 'gb' ? ens[J.ensemble] : null,
+      lines = (E && E.parts ? E.parts : []).map((/** @type {any} */ P) => P.line),
+      has = (/** @type {string[]} */ L) => L.some(l => lines.includes(l)),
+      perc = /** @type {number[][]} */ (J.perc || []);
+    if (!E && (J.harmony || J.bass || J.perc))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": harmony, bass and perc play only on an ensemble (it has none)`,
+        jingle: id,
+      });
+    if (!E) continue;
+    if (J.harmony && J.harmony.length && !has(['pad', 'stabs', 'arp']))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": no part of "${J.ensemble}" plays its harmony (pad, stabs or arp)`,
+        jingle: id,
+      });
+    if (J.bass && J.bass.length && !has(['bass']))
+      out.push({ lvl: 'warn', msg: `jingle "${id}": no part of "${J.ensemble}" plays its bass`, jingle: id });
+    if (perc.some(N => musicJingleKitNote(N[1])) && !has(['drums']))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": no drums part of "${J.ensemble}" plays its kit notes`,
+        jingle: id,
+      });
+    if (perc.some(N => !musicJingleKitNote(N[1])) && !has(['timp']))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": no timp part of "${J.ensemble}" plays its pitched perc notes`,
+        jingle: id,
+      });
+  }
   const uses = musicSongUses(music, more);
   for (const [id, u] of Object.entries(uses))
     if (!u.length) out.push({ lvl: 'warn', msg: `song "${id}": no where-rule, place or script plays it`, song: id });

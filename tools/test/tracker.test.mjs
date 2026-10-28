@@ -765,3 +765,140 @@ test('SND-11: only the zones an ensemble plays are baked; GB Sounds plays gb wha
   assert.equal(T.needs('g'), null);
   assert.equal(await T.prepare('g'), false);
 });
+
+/* ---------- SND-17: jingles on an ensemble ---------- */
+const JBAND = {
+  trim: -6,
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'lead', inst: 'glock', pan: 0.2, verb: 0.3 },
+    { line: 'pad', inst: 'strings' },
+    { line: 'drums', kit: { snare: 'snare' } },
+  ],
+};
+const JING = {
+  notes: [
+    [72, 2],
+    [76, 2],
+    [79, 4],
+  ],
+  ensemble: 'fan',
+  harmony: [
+    [0, 60, 8],
+    [0, 64, 8],
+  ],
+  perc: [[0, 38, 1]],
+};
+function jinglePlayer(rate, o = {}) {
+  const c = bankContext(rate);
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const gb = { on: !!o.gb },
+    T = trackerCreate(c, {}, { songs: { s: MUSIC.songs.route }, ensembles: { fan: JBAND }, gb: () => gb.on, fx: {} }),
+    seen = [];
+  const synth = T.synthVoice,
+    sample = T.sampleVoice;
+  T.synthVoice = (bus, v) => (seen.push(['chip', v.t, bus, v.type, v.vol]), synth(bus, v));
+  T.sampleVoice = (bus, v) => (seen.push(['baked', v.t, bus, v.inst, v.midi]), sample(bus, v));
+  /* the song's drums (the fake params have no exponential ramps) */
+  T.synthKick = T.synthNoise = () => {};
+  return { c, T, seen, gb };
+}
+
+test('SND-17: a jingle naming an ensemble plays the 8-bit jingle until its notes are baked, then on its parts', async () => {
+  const { c, T, seen } = jinglePlayer(13000);
+  const fx = { fx: true };
+  const end0 = T.jingle(JING.notes, 150, 'p25', fx, { jingle: JING });
+  assert.deepEqual(
+    seen.map(x => x[3]),
+    ['p25', 'triangle', 'p25', 'triangle', 'p25', 'triangle'],
+    'the first time: the 8-bit jingle (its notes asked for)'
+  );
+  await T.jinglePrepare(JING);
+  assert.ok(T.jingleReady(JING));
+  seen.length = 0;
+  const end = T.jingle(JING.notes, 150, 'p25', fx, { jingle: JING });
+  assert.ok(Math.abs(end - end0) < 1e-9, 'the same length (its tune is the longest line)');
+  const kinds = seen.map(x => x[0] + ':' + x[3]);
+  assert.equal(kinds.filter(k => k === 'chip:p25').length, 3, 'the chip lead plays the tune');
+  assert.ok(!kinds.includes('chip:triangle'), 'no triangle under it');
+  assert.equal(kinds.filter(k => k === 'baked:glock').length, 3);
+  assert.equal(kinds.filter(k => k === 'baked:strings').length, 2);
+  assert.equal(kinds.filter(k => k === 'baked:snare').length, 1);
+  /* the chip lead at level 1 plays as loud as the 8-bit jingle's (0.12) */
+  assert.ok(seen.filter(x => x[3] === 'p25').every(x => Math.abs(x[4] - 0.12) < 1e-9));
+  /* each part into a gain of its own carrying the ensemble's trim */
+  const buses = new Set(seen.map(x => x[2]));
+  assert.equal(buses.size, 4);
+  for (const g of buses) assert.ok(Math.abs(g.gain.value - Math.pow(10, -6 / 20)) < 1e-9);
+  void c;
+});
+
+test('SND-17: GB Sounds plays the 8-bit jingle whatever is baked; a jingle naming gb or nothing bakes nothing', async () => {
+  const { T, seen, gb } = jinglePlayer(14000, { gb: true });
+  await T.jinglePrepare(JING);
+  T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
+  assert.ok(seen.every(x => x[0] === 'chip') && seen.length === 6);
+  gb.on = false;
+  seen.length = 0;
+  T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
+  assert.ok(seen.some(x => x[0] === 'baked'));
+  assert.equal(T.jingleNeeds({ notes: [[72, 2]], ensemble: 'gb' }), null);
+  assert.equal(await T.jinglePrepare({ notes: [[72, 2]] }), false);
+});
+
+test("SND-17: a stinger over a song starts on the song's next beat, in its key, and drops its busy stems, not its fader", async () => {
+  const { c, T, seen } = jinglePlayer(15000);
+  const ST = { ...JING, stinger: true, perc: [] };
+  await T.jinglePrepare(ST);
+  const sg = T.play('s');
+  clearInterval(T.timer);
+  /* six steps scheduled: the next is step 6 */
+  for (let k = 0; k < 6; k++) {
+    c.currentTime = sg.next - 0.13;
+    T.tick();
+  }
+  clearInterval(T.timer);
+  const spb = 60 / sg.D.bpm / 4;
+  c.currentTime = sg.next - 0.05;
+  const fader0 = sg.gain.gain.calls.length;
+  seen.length = 0;
+  T.jingle(ST.notes, 150, 'p25', {}, { jingle: ST });
+  const first = Math.min(...seen.map(x => x[1]));
+  /* the beat after now: step 8 */
+  assert.ok(Math.abs(first - (sg.next + 2 * spb)) < 1e-9, 'on step 8');
+  const shift = ((((((sg.D.key - 60) % 12) + 12) % 12) + 6) % 12) - 6;
+  assert.equal(seen.filter(x => x[0] === 'chip').length, 3, 'the chip lead');
+  const glock = seen.filter(x => x[3] === 'glock').map(x => x[4]);
+  assert.deepEqual(
+    glock.map(m => (((m - 72 - shift) % 12) + 12) % 12),
+    [0, 4, 7],
+    "the tune moved into the song's key"
+  );
+  assert.equal(sg.gain.gain.calls.length, fader0, 'the fader is left alone');
+  for (const k of ['lead', 'counter', 'harmony']) {
+    const calls = sg.stems[k].gain.calls;
+    assert.ok(
+      calls.some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.2),
+      k + ' drops'
+    );
+    assert.equal(calls.at(-1)[1], 1, k + ' comes back');
+  }
+  assert.equal(sg.stems.bass.gain.calls.length, 0, 'the bass stays');
+  /* a second stinger at once goes to the beat after */
+  seen.length = 0;
+  T.jingle(ST.notes, 150, 'p25', {}, { jingle: ST });
+  assert.ok(Math.min(...seen.map(x => x[1])) > first + 0.01);
+});
+
+test('SND-17: a jingle that is no stinger ducks the song (the battle fanfares)', async () => {
+  const { c, T } = jinglePlayer(16000);
+  await T.jinglePrepare(JING);
+  const sg = T.play('s');
+  clearInterval(T.timer);
+  c.currentTime = 0.5;
+  T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
+  assert.ok(
+    sg.gain.gain.calls.some(([m, v]) => m === 'linearRampToValueAtTime' && Math.abs(v - 0.15 * sg.level) < 1e-9)
+  );
+  assert.equal(sg.stems.lead.gain.calls.length, 0);
+});

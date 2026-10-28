@@ -69,7 +69,12 @@ expose({
   BIRD_PITCH: [() => BIRD_PITCH],
   CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
+  JINGLES_ROOM_MB: [() => JINGLES_ROOM_MB],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
+  MUSIC_JINGLES_BATTLE: [() => MUSIC_JINGLES_BATTLE],
+  MUSIC_JINGLES_BOSS: [() => MUSIC_JINGLES_BOSS],
+  MUSIC_JINGLES_HUB: [() => MUSIC_JINGLES_HUB],
+  MUSIC_JINGLES_RUN: [() => MUSIC_JINGLES_RUN],
   RARE_BIRDS: [() => RARE_BIRDS],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
@@ -96,8 +101,9 @@ expose({
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
-  jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
-  jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
+  jingle: [() => jingle, v => (jingle = v)],
+  jinglePlay: [() => jinglePlay, v => ((jinglePlay = v), provide({ jinglePlay }))],
+  jinglesPrepare: [() => jinglesPrepare, v => (jinglesPrepare = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
@@ -139,7 +145,7 @@ provide({
   applyAmbienceVolume,
   applyVolumes,
   battleSoundEffect,
-  jingle,
+  jinglePlay,
   soundEffect,
   soundEffectAt,
   testVolume,
@@ -401,18 +407,42 @@ export function musicSync() {
   musicPrepare(st, name);
 }
 /* SND-11: baked on arrival: where you are changes (the song asked for does), the ensembles of the song, its night
-   version (from dusk) and a wild battle's song here are baked in the bank's slices (only the notes they play), and the reverb is
+   version (from dusk) and, in a run's place, a wild battle's song are baked in the bank's slices (only the notes they play), and the reverb is
    made then, at a load, not on a song's first note. Songs on gb bake nothing */
 function musicPrepare(st, name) {
   const T = soundEngine.tracker;
   if (!T || !T.prepare || !name || soundEngine.prepared === name) return;
   soundEngine.prepared = name;
   const base = name.split('@')[0],
-    wild = st.battle ? null : { ...st, battle: 'wild' },
+    /* a battle's song only where battles happen (a run's places; never the hub) */
+    wild = st.battle || !st.nodeType ? null : { ...st, battle: 'wild' },
     /* the night version once evening comes (by day its zones would only crowd the bank) */
     want = new Set([name, st.night > 0 ? songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run) : null]);
   if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));
   for (const n of want) if (n) T.prepare(n);
+  /* SND-17: the jingles this place can play: a run's stingers in its places, the title's motif in the hub (a run
+     starts there) */
+  jinglesPrepare(st.nodeType ? MUSIC_JINGLES_RUN : MUSIC_JINGLES_HUB);
+}
+/* SND-17: which jingles are baked ahead (their ensembles' notes), and when: a run's stingers on arriving in its places,
+   the battle's fanfares as a battle starts (the run's end ones too in a boss battle), the motif in the hub. One at a
+   time, in this order, while the bank keeps JINGLES_ROOM_MB free for the songs (a run's place already holds its songs,
+   water and beds near the budget); the rest bake on their first play, which plays 8-bit */
+const MUSIC_JINGLES_RUN = ['day', 'reveal', 'relic', 'payout_coin'],
+  MUSIC_JINGLES_HUB = ['motif'],
+  MUSIC_JINGLES_BATTLE = ['victory', 'levelup', 'caught', 'evolve'],
+  MUSIC_JINGLES_BOSS = ['run_won', 'run_lost'],
+  JINGLES_ROOM_MB = 1.5;
+function jinglesPrepare(ids) {
+  const T = soundEngine.tracker;
+  if (!T || !T.jinglePrepare || (T.gbOn && T.gbOn())) return;
+  const next = k => {
+    const S = k < ids.length && T.bankStats();
+    if (!S || S.withOtherMb > S.budgetMb - JINGLES_ROOM_MB) return;
+    const J = MUSIC.jingles[ids[k]];
+    (J ? T.jinglePrepare(J) : Promise.resolve()).then(() => next(k + 1));
+  };
+  next(0);
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
@@ -423,6 +453,8 @@ function battleMusicStart() {
   const st = musicState(),
     name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null, MUSIC.run);
   if (!name) return;
+  /* SND-17: its fanfares baked while it plays */
+  jinglesPrepare(st.battle === 'boss' ? [...MUSIC_JINGLES_BATTLE, ...MUSIC_JINGLES_BOSS] : MUSIC_JINGLES_BATTLE);
   music(name, { intro: true, hold: true, restart: true });
   const sg = soundEngine.song;
   soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
@@ -467,16 +499,26 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
 }
-/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave); o.shift moves it by
+/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave; SND-17: o.bpm, the battle's
+   level up at 180); on its ensemble when it names one (tracker.js T.jingle); o.shift moves it by
    semitones, o.duck false plays it over the song without ducking it (and doesn't hold the music sync). Logs
    'jingle <name>' in soundEngine.log (in memory, never sent). Returns how long it lasts (s), 0 when silent */
 export function jinglePlay(id, o = {}) {
   const J = MUSIC.jingles[id];
   if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
+  const T = soundEngine.tracker,
+    ens = T.jingleEnsemble(J);
+  soundEngine.lastJingle = {
+    id,
+    as: !ens ? 'gb' : T.gbOn() ? 'gb (GB Sounds)' : T.jingleReady(J) ? J.ensemble : 'gb (baking)',
+  };
   const out = o.bus || soundEngine.fx,
     end =
-      soundEngine.tracker.jingle(J.notes, J.bpm || 150, J.wave || 'p25', out, { shift: o.shift, duck: o.duck }) -
-      soundEngine.ctx.currentTime;
+      soundEngine.tracker.jingle(J.notes, o.bpm || J.bpm || 150, J.wave || 'p25', out, {
+        shift: o.shift,
+        duck: o.duck,
+        jingle: J,
+      }) - soundEngine.ctx.currentTime;
   if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
   soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
   return end;
@@ -489,7 +531,6 @@ export function runArriveSound(revealed) {
 }
 /* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
 export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));
-provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
 /* SND-2: the base cries are data (music.json cries.bases); a species picks one by its name */
 const CRIES = MUSIC.cries.bases;
@@ -770,10 +811,10 @@ function battleSoundEffect(an, r, ev) {
       at(r.hit || 300, () => soundEffect(an.crit ? 'crit' : an.te > 1 ? 'super' : an.te < 1 ? 'weak' : 'hit'));
       break;
     case 'caught':
-      jingle(JINGLES.caught);
+      jinglePlay('caught');
       break;
     case 'lvl':
-      jingle(JINGLES.levelup, 180);
+      jinglePlay('levelup', { bpm: 180 });
       break;
     case 'run':
       soundEffect('run');
@@ -1349,6 +1390,8 @@ function musicEnsembleLine() {
     playing: sg ? (sg.ensOn ? 'ensemble' : 'gb') : null,
     gbSounds: !!soundPreferences().gbSounds,
     prepared: soundEngine.prepared || null,
+    /* SND-17: the last jingle: its id and what played it (its ensemble, or gb: GB Sounds, none, its notes baking) */
+    jingle: soundEngine.lastJingle || null,
   };
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
@@ -1809,7 +1852,7 @@ function testVolume(k) {
       [72, 79].forEach((n, i) =>
         synthVoice(soundEngine.master, { type: 'p25', freq: midiToFrequency(n), t: t + i * 0.12, dur: 0.14, vol: 0.06 })
       );
-    else if (k === 'music') jingle(JINGLES.levelup, 150, 'p25', soundEngine.mus);
+    else if (k === 'music') jinglePlay('levelup', { bus: soundEngine.mus });
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
       synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });

@@ -882,6 +882,26 @@
       "description": "SND-4: a name for the jingle. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
       "type": "string",
       "maxLength": 80
+     },
+     "ensemble": {
+      "description": "SND-17: the ensemble that plays it (music.json ensembles) in place of the chip lead and its triangle, once its notes are baked and while GB Sounds is off; \"gb\" or none: the 8-bit jingle. Each part reads a line of the jingle: lead and counter the tune, pad the harmony held, stabs it short, arp its chords broken upward, bass the bass, drums the perc's kit notes, timp its other notes",
+      "$ref": "#/$defs/id"
+     },
+     "harmony": {
+      "description": "SND-17: chords under the tune for the ensemble's pad, stabs and arp parts (notes starting on the same step make a chord)",
+      "$ref": "#/$defs/line"
+     },
+     "bass": {
+      "description": "SND-17: the bass line for the ensemble's bass parts",
+      "$ref": "#/$defs/line"
+     },
+     "perc": {
+      "description": "SND-17: hits by step: General MIDI drum notes (35, 36 kick; 37, 39 rim; 38, 40 snare; 42, 44, 46 hat) on the ensemble's kit, any other note on its timpani",
+      "$ref": "#/$defs/line"
+     },
+     "stinger": {
+      "description": "SND-17: a short sting over a song (a Perk, the map's reveal, a day, a coin): as its ensemble it starts on the song's next beat, moves into the song's key (written in C) and drops the song's busy parts (the tune, the counter, the arpeggio) under it instead of ducking all of it. Without: the song ducks to 0.15 (the battle's fanfares)",
+      "type": "boolean"
      }
     }
    }

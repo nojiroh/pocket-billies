@@ -395,6 +395,22 @@ same phase:
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
   copy equals the generator's) and `tools/test/ui-icons.test.mjs` checks game/art/ui/*.svg (51 icons, 36×36, the
   pixel format the Studio's icon editor writes, every icon the code names; the SVGs are the source since SA-2b).
+  PK-2: `tools/test/build-icons.test.mjs` checks tools/build-icons.mjs (the 51 UI icon grids shade back to their SVGs
+  byte for byte; every grid file in tools/art/icon-grids passes `--check`, and every picture the data names is
+  written; a grid's faults; silhouettes; never over an SVG without `--force`), `data-checks.test.mjs` the Perks'
+  `img` (dataPerkArt), and check-fast's Perks step each card's and row's picture at 72 and 36 px.
+  PK-3: `tools/test/battle-perks-wave-a.test.mjs` checks the battle kit's kinds with test-only Perks (crit, immune,
+  inflict and its 50% cap on one roll of the battle's stream, chip, first, revive in singles and doubles), then each
+  of the 15 Wave A Perks of perks.json in a battle, and battles holding all 15 that end within 200 turns, replayable;
+  `data-checks.test.mjs` the kinds' rows (good ones pass check-data and the schema, planted faults named);
+  `perks.test.mjs` perkCount; check-fast's Perks step the tab's counters (Click Pen 5/8, Warranty Card VOID).
+  PK-4: `tools/test/battle-perks-wave-b.test.mjs` checks Wave B's kinds with test-only Perks (passive: each of the
+  nine type passives stronger for yours, the foe's unchanged; weather noWeaken and boost; benchXp; rule
+  forecastDays, the days already rolled unchanged), then each of the 15 Wave B Perks of perks.json, and battles
+  holding all 30 Wave A and B Perks; `perks.test.mjs` needs, tags and the bias (every Perk of each rarity over 300
+  picks with a team of every type, no type Perk offered without its type in a pick, a shelf or an event, a tagged
+  Perk about bias times as often); `type-rename.test.mjs` a Perk's tags, needs and conditions renamed;
+  `data-checks.test.mjs` the kinds' rows, needs, tags and the bias.
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
@@ -535,6 +551,21 @@ same phase:
   wind and gusts, birds by the hour, insects, bouts, lockouts, frogs, fire by size, every terrain's footstep surface,
   the town's life, rooms, findings, never `Math.random`); `ambience-sound.test.mjs` counts 13 beds. check:data runs
   `natureFindings`. `check-studio-github.py --only=music` plays steps on gravel from the World sounds card.
+  SND-11: check-sound renders every existing part with GB Sounds on (today's sound whatever a song's ensemble) and adds
+  parts `ensemble` and `ensemble-night` for a song (or its night version) naming an ensemble, its notes and the reverb
+  baked first (204 fingerprints: Copperleaf and the route by day and night, wild); `--loudness` adds each ensemble's
+  row against its gb version. Unit tests: `music-patterns.test.mjs` (the patterns, the ensembles' steps and needs),
+  `sound-bake.test.mjs` the new kinds and every music.json instrument, `tracker.test.mjs` the stems and the ensemble
+  path (gb until baked, GB Sounds, only the zones played), `music-studio.test.mjs` the new choices and findings.
+  SND-17: check-sound renders a jingle naming an ensemble once more on it (`jingles` `<name>@ensemble`: 216
+  fingerprints), every other jingle part with GB Sounds on (the 8-bit jingle); `--loudness` adds each jingle's row on
+  its ensemble against its 8-bit version, measured whole, on a page of its own. Unit tests: `music-patterns.test.mjs`
+  (a jingle's parts and needs, a stinger's beat and key), `tracker.test.mjs` (8-bit until baked, GB Sounds, a stinger
+  on the beat with its stems dropped and the fader alone, the fanfares' duck), `music-studio.test.mjs` (the jingles'
+  findings and schema), `logic.test.mjs` (`jinglePlay` a seam). `check-studio-github.py --only=music` plays hatch
+  8-bit and on its ensemble and draws a harmony note.
+  `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
+  the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
