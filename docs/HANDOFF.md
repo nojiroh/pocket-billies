@@ -57,13 +57,26 @@ origin/track/sound before any edit). Started by the planning session under the o
     refreshes it. Every other check passes on each commit.
   - CI `smoke` on PR #292: the failures that also fail on main (RL-8, the Studio's missing
     `game/art/billionaires/*.png`, the landmark field's Auto) are explained on the PR already.
-- **Verified** (so far; the last checks are running and this line is updated when they finish): `npm run lint` and
-  `npm run typecheck` after every commit (the one art-code-refs exception above); `npm test` 1627 of 1627;
-  `npm run check:modules`, `npm run format:check`, `npm run check:data` (177 files fine); `check-sound.py --loudness`
-  on every commit up to fbb3ec3e: 194, 0 changed, the first six reports identical to the base's, no ceiling warning
-  from fbb3ec3e on; `npm run check:smoke` on e5dafaaf: no problems; `check-studio-github.py --only=music`: ok (the
-  World sounds card plays and stops); browser probes on test_water and Copperleaf (voices by place, every touch sound,
-  rain on water, no page errors).
+  - Merging with the VFX track (VFX-8, e904ad77, PR #295; the planning session's trial merge): docs/HANDOFF.md (keep
+    both), studio/art-code-refs.json (`node tools/art-code-refs.mjs`) and the check-data snapshot (`node --test
+    --test-update-snapshots tools/test/check-data-snapshot.test.mjs`, said in the commit) conflict; whichever reaches
+    main second resolves them that way.
+  - The sound track now runs two lanes on `track/sound` (the planning session, 2026-10-28): this world lane and SND-11's
+    music lane. 8e5ecb67 (the sound baseline's ui.json) was written just before that rule reached this session.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit (the one art-code-refs exception above);
+  `npm test` 1627 of 1627 before the merge of main (after it 1689 of 1690: "1,000 maps in under a second" at 1045 ms,
+  timing on a loaded machine, as in SND-8a; CI's lint job failed on the same test); `npm run check:modules`,
+  `format:check`, `check:data` (177 files fine), `tools/check-data-text.py` (CI's fast check caught backticks in
+  soundscape.json's about text: fixed in 1bd0e58f). `check-sound.py --loudness` on every commit in a worktree: 194, 0
+  changed; the first six reports identical to the base's; no ceiling warning from fbb3ec3e on; after merging main
+  (653ba92c, the merge session's; 8e5ecb67 gives main's new UI sounds their brightness, RMS unchanged): 199, 0 changed,
+  no warning. `npm run check:smoke`: no problems on e5dafaaf and 4eaf48bc. `check-quick.py --steps=sound,song,music,
+  "debug menu",shoreline,animals` on 4eaf48bc: 9 of 10 (every sound step; "Walking left and right..." fails on main
+  too). The full `npm run check:quick` on 1bd0e58f: 36 of 41 (1630 s); every sound step passed; Terraces, RL-8 and
+  "Walking left and right..." fail on main too; RT-2's route trainers and Granny Juniper failed under load and passed
+  run alone on the merged head (as in SND-8b). `check-fast.py --only=pasture` passed alone (CI's fast check failed it
+  once on 1bd0e58f, beside Tall ground and Copperleaf's orbit walk, which SND-8b saw fail and pass the same way).
+  `check-studio-github.py --only=music`: ok (the World sounds card). Browser probes on test_water and Copperleaf.
 - **Decided for the owner, to review**:
   - WA-8's water sounds moved here (recommended, already decided in SND-8a); WA-8 keeps the water phone pass and the
     quick-check baseline (water-track.md's WA-8 row and Ask line say so).
