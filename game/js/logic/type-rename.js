@@ -9,10 +9,31 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  renameTypeConds: [() => renameTypeConds, v => (renameTypeConds = v)],
+  // @ts-expect-error -- replaced on purpose
   renameTypeIn: [() => renameTypeIn, v => (renameTypeIn = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** PK-4: the type names in a condition field (an effect row's `if`, a Perk's `needs`: one condition or a list) after
+ * type: and team: renamed; with `to` null a deleted type's name goes, a condition left with none goes, and a field
+ * left with none goes (the row or the Perk then asks nothing of that type) @param {any} o @param {string} key
+ * @param {string} from @param {string | null} to */
+export function renameTypeConds(o, key, from, to) {
+  if (o[key] == null) return;
+  const one = (/** @type {string} */ c) => {
+    const m = /^(type|team):(.*)$/.exec(c);
+    if (!m) return c;
+    const names = m[2]
+      .split('|')
+      .map(x => (x === from ? to : x))
+      .filter(Boolean);
+    return names.length ? `${m[1]}:${names.join('|')}` : null;
+  };
+  const L = (Array.isArray(o[key]) ? o[key] : [o[key]]).map(one).filter(Boolean);
+  if (!L.length) delete o[key];
+  else o[key] = Array.isArray(o[key]) ? L : L[0];
+}
 /** renames type `from` to `to` everywhere the data names it; `to` null removes it (a move or robot part becomes Normal, a
  * Billie loses it, a rule takes the first type left, a Perk's damage row counts for any type)
  * @param {any} D the game data @param {string} from @param {string | null} to */
@@ -58,12 +79,24 @@ export function renameTypeIn(D, from, to) {
     hab[k] = hab[k].map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
     if (!hab[k].length) delete hab[k];
   }
-  for (const L of Object.values(D.perks || {}))
-    for (const f of /** @type {any} */ (L).fx || [])
+  for (const L of Object.values(D.perks || {})) {
+    const P = /** @type {any} */ (L);
+    for (const f of P.fx || []) {
       if (f.type === from) {
         if (to) f.type = to;
         else delete f.type; /* a damage row for any type */
       }
+      /* PK-4: a row's conditions (and its growth's) name types after type: and team: */
+      renameTypeConds(f, 'if', from, to);
+      if (f.grow) renameTypeConds(f.grow, 'if', from, to);
+    }
+    /* PK-4: what a Perk needs to be offered (team:<Type>) and its tags (a deleted type's tag goes) */
+    renameTypeConds(P, 'needs', from, to);
+    if (Array.isArray(P.tags)) {
+      P.tags = P.tags.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+      if (!P.tags.length) delete P.tags;
+    }
+  }
   /* SP-2: a Gene's dominant type (a deleted one leaves the part with none, and a part with nothing left goes) and its
      traits' damage rows */
   const G = D.genes;

@@ -37,6 +37,7 @@ import {
   robotPartDef,
   saveData,
   soundEffect,
+  styleNote,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { hashString, rngFn } from './logic/rng.js';
@@ -623,9 +624,11 @@ function flashesOff() {
 /* VFX-8: who: the Billie a flash belongs to, which gets a sprite flash instead when the limiter holds the full-screen
    one back (battle-anim-run.js battleFlashGate: at most 3 in any second, 333 ms apart, no saturated red). SY-1's
    flashFor first: under Reduced motion nothing is shown, sprite-flashed or counted; with Flashes off the gate sees the
-   capped flash (and a held one's sprite flash uses its colour and amount) */
+   capped flash (and a held one's sprite flash uses its colour and amount). SY-8's tally sits between the two */
 function battleStageFlash(col, a, dur, who) {
   const F = flashFor(col, a, !!reducedMotion, flashesOff());
+  /* SY-8: what ran, for the debug log: at its strength, held by Flashes off, or none (the Studio has no theme sheet) */
+  if (a > 0 && typeof styleNote === 'function') styleNote(!F ? 'flashSkipped' : F.a < a ? 'flashHeld' : 'flash');
   if (!F) return;
   if (typeof battleFlashGate === 'function' && !battleFlashGate(F.col, F.a, dur, who)) return;
   const f = $('#flash');

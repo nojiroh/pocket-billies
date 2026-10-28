@@ -3,7 +3,9 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip, spliceReport } from './logic/rules.js';
+import { styleLog } from './theme-sheet.js';
 import { ranchSkew } from './logic/ranch-clock.js';
+import { fxStateLog } from './logic/effects.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
 import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
@@ -146,6 +148,7 @@ Object.defineProperties(GAME, {
   finishProgramCompile: { get: () => finishProgramCompile, set: setFinishProgramCompile },
   fogGridReport: { get: () => fogGridReport },
   frameScheduler: { get: () => frameScheduler },
+  fxStateLog: { get: () => fxStateLog },
   gameData: { get: () => gameData },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   gpuCountSummary: { get: () => gpuCountSummary },
@@ -189,6 +192,7 @@ Object.defineProperties(GAME, {
   solidPropState: { get: () => solidPropState },
   soundDebugLines: { get: () => soundDebugLines },
   spliceReport: { get: () => spliceReport },
+  styleLog: { get: () => styleLog },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   titleScreen: { get: () => titleScreen },
   toast: { get: () => toast },
