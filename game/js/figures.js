@@ -49,7 +49,7 @@ import {
   meshClipFrame,
   meshClipMatrices,
 } from './logic/figure-pose.js';
-import { figureKitData, figureSeed, kappiFigure, lookFigure } from './logic/figure-kit.js';
+import { figureKitData, figureSeed, kappiFigure, kitBuild, lookFigure } from './logic/figure-kit.js';
 import { artImg, artURL, makeCanvas } from './art.js';
 import { lookOf, wardrobeData } from './person-art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
@@ -59,7 +59,7 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
-import { figureMeshGet, figureMeshReport } from './figure-meshes.js';
+import { figureMeshGet, figureMeshKeep, figureMeshReport } from './figure-meshes.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_BAKES_A_FRAME: [() => FIGURE_BAKES_A_FRAME],
@@ -104,6 +104,7 @@ expose({
   figureFolk: [() => figureFolk, v => ((figureFolk = v), provide({ figureFolk }))],
   figureFor: [() => figureFor, v => (figureFor = v)],
   figureFromFile: [() => figureFromFile, v => (figureFromFile = v)],
+  figureFromLook: [() => figureFromLook, v => (figureFromLook = v)],
   figureGait: [() => figureGait],
   figureGl: [() => figureGl, v => (figureGl = v)],
   figureItems: [() => figureItems, v => (figureItems = v)],
@@ -123,6 +124,9 @@ expose({
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
   figurePicture: [() => figurePicture, v => (figurePicture = v)],
   figurePortrait: [() => figurePortrait, v => (figurePortrait = v)],
+  figurePreview: [() => figurePreview, v => (figurePreview = v)],
+  figurePreviewForget: [() => figurePreviewForget, v => (figurePreviewForget = v)],
+  figurePreviewState: [() => figurePreviewState],
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
   figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
@@ -287,38 +291,7 @@ function figureDef(name) {
       L = typeof lookOf === 'function' ? lookOf(who) : null,
       items = figureItems();
     if (!L || (!L.creature && !items)) return null;
-    const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
-      /* the owner (2026-10-28): no backpack unless the person's own look has a bag (the wardrobe gives everyone one
-         by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
-      own = p && p.look && p.look.wear,
-      look1 = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
-      /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's) */
-      wear0 = look0
-        ? {
-            ...((look0.flair && look0.flair.wear) || {}),
-            ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
-          }
-        : null,
-      look = wear0 && look1.wear && Object.keys(wear0).length ? { ...look1, wear: { ...look1.wear, ...wear0 } } : look1,
-      F = L.creature
-        ? kappiFigure({ name })
-        : lookFigure(look, items, {
-            kit: figureKitNow(),
-            name,
-            seed: figureSeed(who),
-            /* you: the main character's own head (figureKit.json heads.hero) */
-            figure:
-              p && p.figure
-                ? p.figure
-                : who === 'me'
-                  ? { head: 'hero' }
-                  : who.startsWith('folk:')
-                    ? { variety: true }
-                    : undefined,
-            chibi: look0 && look0.chibi ? look0.chibi : undefined,
-            /* a direction's flair, and its design for this person (its cast table) */
-            flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
-          });
+    const F = figureFromLook(name, who, L, look0, items, figureKitNow());
     /* CH-4: one build of its mesh, at the detail its direction draws it, gives its extent and its first GPU mesh, on
        the helper thread (figure-meshes.js): until it is in, the person keeps today's picture */
     const detail = (look0 || FIGURE_LOOKS[figureStyle()] || FIGURE_LOOKS.pixel).detail || 1,
@@ -334,6 +307,50 @@ function figureDef(name) {
   FIGURE_DEFS[name] = null;
   figureLoad(name);
   return null;
+}
+/**
+ * a person's figure from their look (CH-3b; CH-5: with this kit data): their bag only if their own look has one, a
+ * direction's redress and design for them (FIGURE_LOOKS: its flair, cast and proportions), their head and build
+ * (people/<id>.json `figure`; you the hero's head; townsfolk any build), Kappi as a capybara
+ * @param {string} name @param {string} who @param {any} L their look @param {any} look0 the direction (or null)
+ * @param {any} items the wardrobe's items @param {any} kit the kit's data @param {any} [fig] their `figure` (the
+ * Studio's draft), else the game data's
+ */
+function figureFromLook(name, who, L, look0, items, kit, fig) {
+  const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
+    /* the owner (2026-10-28): no backpack unless the person's own look has a bag (the wardrobe gives everyone one
+       by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
+    own = p && p.look && p.look.wear,
+    look1 = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
+    /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's) */
+    wear0 = look0
+      ? {
+          ...((look0.flair && look0.flair.wear) || {}),
+          ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
+        }
+      : null,
+    look = wear0 && look1.wear && Object.keys(wear0).length ? { ...look1, wear: { ...look1.wear, ...wear0 } } : look1,
+    F = L.creature
+      ? kappiFigure({ name })
+      : lookFigure(look, items, {
+          kit,
+          name,
+          seed: figureSeed(who),
+          /* you: the main character's own head (figureKit.json heads.hero) */
+          figure: fig
+            ? fig
+            : p && p.figure
+              ? p.figure
+              : who === 'me'
+                ? { head: 'hero' }
+                : who.startsWith('folk:')
+                  ? { variety: true }
+                  : undefined,
+          chibi: look0 && look0.chibi ? look0.chibi : undefined,
+          /* a direction's flair, and its design for this person (its cast table) */
+          flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
+        });
+  return F;
 }
 /** the wardrobe's items (their default colours), for the figure kit; null before the game data is in */
 function figureItems() {
@@ -644,7 +661,7 @@ function figureRes(gl, Fig, detail = 1) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
   gl.bindVertexArray(null);
-  R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null, slots: code ? M.slots : null };
+  R = { vao, vb, count, indexed: !code, tex, colours: code ? M.colours : null, slots: code ? M.slots : null };
   B.res.set(key, R);
   return R;
 }
@@ -1010,7 +1027,8 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
   /* a direction (FIGURE_LOOKS) or the plain 3D figure ('smooth') */
   const LK = FIGURE_LOOKS[style] || FIGURE_LOOKS.pixel;
   /* a close-up (a portrait, a battle) gets a code figure's finer mesh; a direction may ask for more or less */
-  const R = figureRes(gl, Fig, Fig.kind === 'code' ? (ppm >= 90 ? 2.5 : 1) * LK.detail : 1);
+  /* (the Studio's preview keeps one detail for every picture: figurePreview) */
+  const R = figureRes(gl, Fig, Fig.detail || (Fig.kind === 'code' ? (ppm >= 90 ? 2.5 : 1) * LK.detail : 1));
   if (!R) return null;
   const B = figureBaker,
     t0 = performance.now(),
@@ -1213,6 +1231,63 @@ function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
   const out = figureBust(im, Fig, FIGURE_PORTRAIT_PPM);
   out.figure = Fig.name;
   return out;
+}
+/** CH-5: the figure the Studio's preview shows (figurePreview): its name, its figure and how long it took to build */
+const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0 };
+/**
+ * CH-5: the Studio's figure preview: a person's figure built from a look with the Studio's kit data (figureKit.json as
+ * it is edited), baked in the studio light, turned `turn` (0 from behind, 1 facing you), as a canvas; null when the
+ * baker can't draw. The figure is built again only when `rev` (the Studio's count of its edits), the person or the
+ * style changes; its mesh is built on the page, the old one let go. `o`: look, items (the wardrobe's), kit, who (the
+ * person: their seed and a direction's design for them), figure (their head and build), rev, style, clip ('idle'),
+ * frame, turn (0.9), tilt (radians, 4 degrees), ppm (64), crop ('whole' or 'bust'). The canvas carries `ms`, the
+ * figure's build time, and `kit`, the head shape and build it has.
+ * @param {{ look: any, items: any, kit: any, who?: string, figure?: any, rev?: number, style?: string, clip?: string,
+ *   frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
+ */
+export function figurePreview(o) {
+  const style = o.style && (o.style === 'smooth' || o.style in FIGURE_LOOKS) ? o.style : 'pixel',
+    LK = FIGURE_LOOKS[style] || FIGURE_LOOKS.pixel,
+    who = o.who || 'preview',
+    name = 'preview:' + who + ':' + (o.rev || 0) + '@' + style,
+    P = figurePreviewState;
+  if (P.name !== name) {
+    figurePreviewForget();
+    const detail = LK.detail || 1,
+      look0 = figureDesign(style) ? LK : null,
+      F = figureFromLook(name, who, o.look, look0, o.items, o.kit, o.figure),
+      t0 = performance.now(),
+      M = kitBuild(F, detail);
+    figureMeshKeep(name + '|' + detail, M);
+    P.ms = performance.now() - t0;
+    P.name = name;
+    P.def = { kind: 'code', name, F, height: F.height, ext: M.ext, detail };
+  }
+  const ppm = o.ppm || 64,
+    V = figureView(Math.PI * (o.turn ?? 0.9), 0, o.tilt ?? (4 * Math.PI) / 180, 32);
+  let im = bakeFigure(P.def, o.clip || 'idle', o.frame || 0, V, ppm, true, style);
+  if (im && o.crop === 'bust') im = figureBust(im, P.def, ppm);
+  if (!im) return null;
+  im.ms = Math.round(P.ms);
+  im.kit = P.def.F.kit || null;
+  return im;
+}
+/** CH-5: let the preview's figure go (its GPU mesh; its built mesh ages out of figure-meshes.js) */
+function figurePreviewForget() {
+  const P = figurePreviewState,
+    B = figureBaker,
+    gl = B.gl;
+  if (!P.name) return;
+  for (const [k, R] of B.res)
+    if (k === P.name || k.startsWith(P.name + '|')) {
+      if (gl && !gl.isContextLost()) {
+        gl.deleteVertexArray(R.vao);
+        if (R.vb) gl.deleteBuffer(R.vb);
+      }
+      B.res.delete(k);
+    }
+  P.name = '';
+  P.def = null;
 }
 /** CH-4: the snapshots kept (figureSnapshot), the longest unused let go past this many */
 const FIGURE_SNAP_MAX = 48;

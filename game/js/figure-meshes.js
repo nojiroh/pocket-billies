@@ -91,7 +91,7 @@ function figureMeshMessage(m) {
   figureMeshKeep(key, { ext: m.ext, data: m.data, count: m.count, colours: m.colours, slots: m.slots });
 }
 /** keep a built mesh; the longest unused go past FIGURE_MESH_BYTES (one is always kept) */
-function figureMeshKeep(key, R) {
+export function figureMeshKeep(key, R) {
   const M = figureMeshes;
   M.done.set(key, R);
   M.bytes += R.data.byteLength;

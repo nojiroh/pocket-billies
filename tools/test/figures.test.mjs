@@ -465,3 +465,42 @@ test('CH-4: the snapshot service: a UI picture baked once in the studio light, t
     G.document.createElement = was;
   }
 });
+
+test('CH-5: the Studio’s figure preview: built once per edit with its own kit data, turned, the old one let go', () => {
+  try {
+    const D = freshBaker(),
+      W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+      kit = structuredClone(G.GAMEDATA.figureKit),
+      look = { body: {}, skin: '#E6B08A', wear: { hair: 'hair_bun', top: 'tee', hat: 'hat_cap' } },
+      o = { look, items: W.items, kit, who: 'clerk', figure: { head: 'square', build: 'round' }, rev: 1 };
+    const a = G.figurePreview({ ...o, turn: 1 });
+    assert.ok(a && a.ppm === 64 && a.figure === 'preview:clerk:1@pixel');
+    assert.deepEqual(a.kit, { head: 'square', build: 'round', bust: a.kit.bust }, 'the head and build asked for');
+    assert.ok(a.ms >= 0);
+    const built = G.figurePreviewState.def;
+    /* another turn, a close-up: the same figure, baked again */
+    const b = G.figurePreview({ ...o, turn: 0.25, ppm: 120 });
+    assert.ok(b && b !== a);
+    assert.equal(G.figurePreviewState.def, built, 'not built again for a turn');
+    assert.equal(G.figureBaker.res.size, 1, 'one mesh at one detail');
+    /* an edit (the Studio counts it): built again with the edited kit, the old mesh let go */
+    kit.accessories.hat_cap.rows = kit.accessories.hat_cap.rows.slice(0, 1);
+    const c = G.figurePreview({ ...o, rev: 2 });
+    assert.ok(c && c.figure === 'preview:clerk:2@pixel');
+    assert.notEqual(G.figurePreviewState.def, built);
+    assert.ok(!G.figurePreviewState.def.F.parts.some(p => p.id === 'peak'), 'the edited cap has no peak');
+    assert.ok(built.F.parts.some(p => p.id === 'peak'));
+    assert.deepEqual(
+      [...G.figureBaker.res.keys()].map(k => k.split('|')[0]),
+      ['preview:clerk:2@pixel']
+    );
+    assert.ok(
+      D.made.gl.calls.some(x => x[0] === 'deleteBuffer'),
+      'the old mesh’s buffer freed'
+    );
+    G.figurePreviewForget();
+    assert.equal(G.figureBaker.res.size, 0);
+  } finally {
+    G.document.createElement = was;
+  }
+});
