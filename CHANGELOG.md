@@ -72,6 +72,13 @@ kept aside in the browser).
   and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
   of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
 
+- **Longer songs** (sound track SND-12, part 1): Copperleaf, the routes and the towns' songs now have a second
+  section with its own chords and tune, so they run 24-32 bars (up to a minute and a half) before they repeat. Each
+  section ends with a drum fill and the bass walking into the next, repeats change a little, and the B section brings
+  its own colour: a flute and a glockenspiel in Copperleaf, a string ostinato on a route. Towns and cities have their own
+  instruments now: an accordion, an e-piano, a walking bass and brushes. GB Sounds plays the same new songs on the four
+  chip voices. Every arrangement is a first draft, named as a placeholder for the Studio.
+
 - **Music that listens** (sound track SND-13): the songs with the new instruments now change as you play, a beat or a
   bar at a time. Walk through Copperleaf and a tambourine joins in (a snare on a route), and it drops out about a bar
   after you stop. Rain adds a light celesta and brushes, snow sleigh bells, a storm low strings and timpani; on a

@@ -587,6 +587,12 @@ same phase:
   `sound.test.mjs` (an ensemble song keeps its name in an arc band, GB Sounds takes the band's version).
   `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
   the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
+  SND-12: a song with a form renders whole (its 16-32 bars: Copperleaf's 32 bars are about 87 s), so check-sound and
+  the loudness report take longer per song; the fingerprints of a re-arranged song change on purpose (gb plays the new
+  arrangement too). Unit tests: `music-form.test.mjs` (a song with no form composes as before, every one in
+  music.json; the plan, the hook kept, a repeat varied, the turnaround and the loop's end, the night's sections, the
+  fills, the bass's walk-up, the lift, the new lines, a part's `in`, the findings). `check-studio-github.py
+  --only=music` adds a section B on hills, hears it at once, changes its chord and undoes both.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
