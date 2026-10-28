@@ -1795,6 +1795,9 @@ def pasture(pg, base):
     fence (and still are a few seconds later); one brought beside you is a tap target, and tapping it opens the ranch's
     sheet; so does the gate; one moved to the team leaves the field"""
     drawing(pg)
+    # the square's visits off (HB-10c, rules.json square.visit): by the page's clock, which starts at 12:30, one of
+    # the three walks off to the square 73 s in, so a slow runner saw two leave the field, not one
+    pg.evaluate("RULES.square&&RULES.square.visit&&(RULES.square.visit.most=0);0")
     if not until(pg, "!document.getElementById('loader')&&worldBillies.pasture&&Object.keys(worldBillies.pasture.mons).length===3", 90):
         raise Exception(f"not three Billies in the pasture: {pg.evaluate('worldBillies.pasture&&worldBillies.pasture.list.length')}")
     inside = "(()=>{const L=pastureFenceLine(pastureZone(walkView.sc));return Object.values(worldBillies.pasture.mons).every(b=>pastureIn(L,b.x,b.z))})()"
