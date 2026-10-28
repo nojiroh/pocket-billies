@@ -602,6 +602,43 @@ unused-art gate.
   type, plus relevance (no type Perk without its type, in a pick, a shelf and an event) and the bias (a matching type
   Perk about twice as often as an untagged one of its rarity). Golden battles unchanged.
 
+**Corrected in PK-7** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- Section 5.6's claims checked at 4423a457 (main, PK-6 merged by #318). Terms and Conditions, Glass Trophy, Ethics
+  Waiver, Paid Promotion, Energy Drink and Heavy Crown needed data only (damage, price, splice, dna, bossHp, a stat row
+  as each takes the field, PK-1's `if: lead` / `notLead` on damage rows, both sides). **xp on a Perk** was missing:
+  battle-engine.js heldXp read a run's xp rows since RL-S2, but perks.schema.json didn't admit the kind (it does now).
+  Influencer Contract's "Trainers pay triple" is a money row with `if: foe:trainer` (every trainer battle: route
+  trainers, the rival, leaders, the boss); wild prizes are as before.
+- **recoil** (`share`, at most 0.5 together) costs one of yours that share of its max HP after an attack of its that
+  dealt damage, once a move (a spread move too); a miss, a block, a status move or the foe's attack costs nothing. It
+  can knock its user out. Overclock Chip's text says "every attack that lands".
+- **loot** names an events.json loot table (`table`: common...), as the plan's "`loot` common" meant: the first build
+  drew from the reward picks' item cards, then moved to the tables in its own commit. n items (1-3) by weight from the
+  run's stream for the row and the place (a reload brings the same). Subscription Box's charge is a **money row's
+  `add`** (-15 at arrive; paid first, then charged, never below none carried; the run sim counts it in moneyOut.perks).
+- **rule noDrop**: nothing held can be let go (perks.js perkNoDrop; perkTake answers 'noDrop'), so at the cap no new
+  Perk can be taken (the "Let one go" sheet says so and shows no card; a pick can still be answered with none). Taking
+  the Ticket itself may let one go. With Accordion File the cap is 9; a Photocopier just below the Ticket copies its +2
+  and its noDrop (11 with all three).
+- **rule faintPaysNothing**: a won battle in which one of yours fainted (b.fainted, so a Billie Warranty Card revived
+  counts) pays no Moneys; reward and salvage picks, badges and the rest stay.
+- **Foes' levels and the boss's HP taken mid-run** (PK-5/PK-6's note): they were worked out only when the run's world
+  was made. run-scenes.js runWorldTables now says what they were made with (`foeUp`, for the run `foeSeed`), worldPut
+  keeps it, and perkTake ends with run-loop.js runFoesSync: every pool, every trainer of the world and the boss's
+  hpMult move at once (and back when the Perk goes). A place already stocked this visit keeps its wild Billies.
+- **The fine rarity** has no weight or price in rules.json (the ordinary picks, shops, events and the reward card never
+  draw it; an event's `perk` naming a Fine Print Perk is a data error). rules.json `run.perks.leader` {rarity: fine,
+  pick: 3}: a leader's pick draws that rarity alone, **each Perk as likely** (no bias; perks.js perkLeaderRule), from
+  the same stream as before. The debug menu's mini-boss pick, the relics fixture, the run preview and the Studio's
+  offer order are the leader's pick too.
+- **The reward pick's Perk card** (rewards.json `perk`, weight 2 of 41) draws an ordinary Perk (perkPool, the bias)
+  from the pick's stream and is taken through perkTake (at the cap the "Let one go" sheet, "Keep them" back to the
+  pick). The run sim's "first item" policy skips it. Every reward pick's draw changed (one more card in the deck).
+- **On screen**: logic/marks.js MARK_RARITY gains `fine`, named "Fine Print", drawn in the ladder's top orange
+  (`rarityColour`: mythical's colour code; no new signal). A pick card shows a small red tilted "Fine Print" stamp
+  where the pill is; rows show the orange "Fine Print" pill; Fine Print has the foil. PK-6 had left four texts on
+  rules.json's cap of 6 (the pick's note, the shop's Perk row, the debug menu, the first-run hint): they read perkCap.
+
 ## 9. Sessions (one at a time, each on `track/perks`)
 | # | Session | Does | Done when |
 |---|---|---|---|
@@ -612,7 +649,7 @@ unused-art gate.
 | PK-4 | Wave B (**done 2026-10-28**, `track/perks`; "Corrected in PK-4" in section 8) | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
 | PK-5 | Wave C (**done 2026-10-28**, `track/perks`; "Corrected in PK-5" in section 7) | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
 | PK-6 | Wave D (**done 2026-10-28**, `track/perks`; "Corrected in PK-6" in section 7) | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
-| PK-7 | Fine Print | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
+| PK-7 | Fine Print (**done 2026-10-28**, `track/perks`; "Corrected in PK-7" in section 8) | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
 | PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
 | PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
 | PK-10 | Held items | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |

@@ -324,8 +324,11 @@ town node needs it.
   maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
   the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
   PK-6 (Wave D: rules, growth and adventure: 11 Perks, the kinds copy and give, the rules cap, sideOpen, sideFind and
-  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print)
-  next.
+  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print:
+  12 trade-off Perks of the `fine` rarity, offered only at leader wins, the kinds recoil and loot, a money add, xp on a
+  Perk, the rules noDrop and faintPaysNothing, foe levels and the boss's HP moved at once when taken mid-run, the
+  reward pick's Perk card, the orange cards with a red stamp, 11 new pictures) done 2026-10-28 on `track/perks`; PK-8
+  (Perk sets) next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas

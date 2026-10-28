@@ -566,6 +566,11 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   as `id:n` pairs, at take), and the rules cap (Perks held more), sideOpen, sideFind and eventHurt. Needs take **side**
   (a side area still ahead). `--only=relics` opens the 11 Wave D Perks, Boarding Pass's Moneys and items, Rusty Key's
   Needs.
+  **Fine Print** (PK-7): the Rarity choice has **fine** (a leader's win only: rules.json `run.perks.leader`; the list and
+  the head say so instead of a weight and a price). Kinds recoil (a share of HP an attack that lands costs its user),
+  loot (an events.json loot table, items 1-3, at arrive), xp (the XP from a battle), a money row's **add** (Moneys paid,
+  or charged below 0, at arrive) and the rules noDrop and faintPaysNothing. `--only=relics` opens the 12 Fine Print
+  Perks (rows, kinds, rarity fine), Subscription Box's loot table and charge.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,

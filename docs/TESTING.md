@@ -423,6 +423,15 @@ same phase:
   of the 11 Wave D Perks of perks.json, Like Button and Streak Tracker over a run of wins and faints and in real
   battles, a Photocopier copying a growing Perk, and battles holding all 53 Wave A-D Perks; `data-checks.test.mjs` the
   kinds' rows and needs side; the run sim counts a take's Moneys (moneyIn.perks).
+  PK-7: `tools/test/battle-perks-fine.test.mjs` checks Fine Print's kinds with test-only Perks (recoil, a money add on
+  arrival, loot from an events.json table, the rules noDrop with cap rows and a copier, faintPaysNothing, xp on a Perk),
+  a level and a bossHp row taken mid-run moving a run world's pools, trainers and boss at once and back, the `fine`
+  rarity (a leader rule draws it alone; ordinary picks, shops and events never), the reward pick's Perk card, then
+  each of the 12 Fine Print Perks of perks.json with its downside, Non-Refundable Ticket with Accordion File and
+  Photocopier, a mini-boss win offering only Fine Print, and battles holding all 65 Perks of Waves A-D and Fine Print;
+  `data-checks.test.mjs` the kinds' rows, the leader rule and an event never naming Fine Print; `ui-marks.test.mjs` the
+  Fine Print tier. The in-game full test checks the mini-boss's pick is all Fine Print; the run sim's "first item"
+  policy skips a Perk card and counts what Perks charge on arrival (moneyOut.perks).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
