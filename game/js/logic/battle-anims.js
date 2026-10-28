@@ -5,10 +5,11 @@
    steps at stage-ms times. This file turns a move event into its timeline: which family (battleAnimFor), the steps
    whose gates hold, repeats spread out, the Faster variant, the quality, and the cap on extra time; battle-anim-run.js
    plays it on the stage. Also the hit's tier (hitTier) and whether a KO follows (koAhead), which the sound track
-   (SND-13) and the UI track (UI-16b) read too, and the full-screen flash limiter (flashGate).
+   (SND-13) and the UI track (UI-16b) read too, how the hit lands by its tier (hitLook, VFX-13; the tier names stay
+   hitTier's, a KO only a flag on top), and the full-screen flash limiter (flashGate).
    The engine's events are only read, never written. Effects draw no random numbers here.
    Logic only: no DOM, runs in Node (tools/test/battle-anims.test.mjs). */
-/** @import { BattleAnimsData, BattleAnimStep, BattleAnimKit, Move } from '../../types/game-data' */
+/** @import { BattleAnimsData, BattleAnimStep, BattleAnimKit, BattleAnimFamily, Move } from '../../types/game-data' */
 /**
  * @typedef {{ k: string, si?: number, ti?: number, mid?: string, dmg?: number, te?: number, crit?: boolean,
  *   miss?: boolean, blocked?: boolean, protect?: boolean, self?: boolean, spread?: boolean, part?: string }} MoveAn a move event's `an`
@@ -17,7 +18,7 @@
  * @typedef {BattleAnimStep & { at: number, i: number, sync: boolean, skip: 'run' | 'info' | 'drop' }} AnimStep a
  *   timeline's step: when, which repeat, played at once (no `at` in the data) or on the stage clock, and what a skip
  *   does to it
- * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short', dur: number, hit: number,
+ * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short' | 'miss', dur: number, hit: number,
  *   tier: string, long: boolean, kit: string | null, steps: AnimStep[] }} AnimTimeline the kit: the type kit it plays
  *   in (battleAnims.json types; VFX-11)
  */
@@ -32,6 +33,7 @@ expose({
   BATTLE_KIT_ROLES: [() => BATTLE_KIT_ROLES],
   HIT_TIERS: [() => HIT_TIERS],
   IMPACT_FRAME_MS: [() => IMPACT_FRAME_MS],
+  TIER_ROWS: [() => TIER_ROWS],
   // @ts-expect-error -- replaced on purpose
   battleAnimFor: [() => battleAnimFor, v => (battleAnimFor = v)],
   // @ts-expect-error -- replaced on purpose
@@ -63,9 +65,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   flashGate: [() => flashGate, v => (flashGate = v)],
   // @ts-expect-error -- replaced on purpose
+  hitLook: [() => hitLook, v => (hitLook = v)],
+  // @ts-expect-error -- replaced on purpose
   hitTier: [() => hitTier, v => (hitTier = v)],
   // @ts-expect-error -- replaced on purpose
   koAhead: [() => koAhead, v => (koAhead = v)],
+  // @ts-expect-error -- replaced on purpose
+  lineAfterMove: [() => lineAfterMove, v => (lineAfterMove = v)],
   // @ts-expect-error -- replaced on purpose
   redShare: [() => redShare, v => (redShare = v)],
   // @ts-expect-error -- replaced on purpose
@@ -117,13 +123,21 @@ export function battleAnimOutcome(an, M) {
 
 /** which animation a move event plays: the move's own `anim` (a family or a scene) when it lands, else its outcome's
  * or category's default. null when the data has neither
- * @param {MoveAn} an @param {Move} M @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene' } | null} */
+ * @param {MoveAn} an @param {Move} M @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} */
 export function battleAnimFor(an, M, A) {
   if (!A || !M) return null;
   const out = battleAnimOutcome(an, M);
   if (out === M.c && M.anim) {
     if (A.scenes[M.anim]) return { id: M.anim, kind: 'scene' };
     if (A.families[M.anim]) return { id: M.anim, kind: 'family' };
+  }
+  /* VFX-13: a miss plays its family's own whiff when the family has one (a scene's, its family's) */
+  if (out === 'miss' && M.anim) {
+    /* a scene names its family (VFX-17's `family`) */
+    const S = /** @type {any} */ (A.scenes[M.anim]),
+      fid = S && S.family ? S.family : M.anim,
+      F = A.families[fid];
+    if (F && F.miss) return { id: fid, kind: 'family', miss: true };
   }
   const id = A.defaults[/** @type {keyof BattleAnimsData['defaults']} */ (out)];
   return id && A.families[id] ? { id, kind: 'family' } : null;
@@ -165,6 +179,104 @@ export function koAhead(events, i) {
   return { ko: true, si, last };
 }
 
+/** VFX-13: the rows of battleAnims.json `tiers` a hit can add on top of its tier: a KO, and the last KO (or a boss's) */
+export const TIER_ROWS = ['resisted', 'neutral', 'super', 'super4', 'crit', 'ko', 'last'];
+
+/**
+ * @typedef {{ tier: string, ko: null | 'ko' | 'last', stop: number, shake: number, kb: number, burst: number,
+ *   spread: number, light: number, lightCol: string, ring: number, punch: number, handheld: number,
+ *   flash: { col: string, a: number, ms: number } | null, ca: number, impact: string | null,
+ *   sprite: { white: number, dark: number, ms: number, darkMs: number } | null, puff: number, scar: number }} HitLook
+ *   what a hit shows: hit-stop ms (real time: the stage holds), shake, knockback px, the burst (particles, speed),
+ *   the light's strength (times the kit's) and colour ('kit', or a battleAnims.json colour), the ground ring (m),
+ *   the zoom punch and the handheld wobble, the full-screen flash (colour 'type' or a colour key; through flashFor
+ *   and the flash gate), the chromatic pulse (ms), the impact frame's kind, the sprite flash (white then dark), a
+ *   dull puff (dust particles) and the extra scars
+ */
+/** VFX-13: how a hit lands, from the tier table (battleAnims.json `tiers`): its tier's row (hitTier) with the hit's
+ * weight w (battle-stage.js hitWeight: the share of the target's HP it took), then the KO's row on top when it knocks
+ * the target out (koAhead), then the last KO's (no one comes in after and the battle ends, or a boss falls). A super
+ * crit takes the crit's row with the super's chromatic pulse, burst and shake. Only hit-stop adds time: a KO one cell,
+ * the last KO a freeze of `freeze` ms in all. null for no damage (a miss, a block, a status move)
+ * @param {MoveAn} an @param {{ ko?: boolean, last?: boolean } | null | undefined} ka koAhead's
+ * @param {number} w @param {BattleAnimsData} A @param {boolean} [boss] the target is a boss's
+ * @returns {HitLook | null} */
+export function hitLook(an, ka, w, A, boss = false) {
+  const T = A && A.tiers,
+    tier = hitTier(an);
+  if (!T || tier === 'none') return null;
+  const R = T[/** @type {'neutral'} */ (tier)],
+    ww = Math.max(0, Math.min(1, w || 0)),
+    lin = (/** @type {number | undefined} */ a, /** @type {number | undefined} */ k) => (a || 0) + (k || 0) * ww,
+    /** @type {HitLook} */ L = {
+      tier,
+      ko: null,
+      stop: lin(R.stop, R.stopW),
+      shake: lin(R.shake, R.shakeW),
+      kb: lin(R.kb, R.kbW),
+      burst: R.burst,
+      spread: R.spread,
+      light: R.light,
+      lightCol: R.lightCol || 'kit',
+      ring: lin(R.ring, R.ringW),
+      punch: R.punch || (R.punchW && ww > R.punchW ? 0.03 + ww * 0.04 : 0),
+      handheld: R.handheld || 0,
+      flash: R.flash ? { col: R.flash.color, a: R.flash.a, ms: R.flash.ms } : null,
+      ca: R.ca || 0,
+      impact: R.impact || null,
+      sprite: R.sprite ? { white: R.sprite.white || 0, dark: R.sprite.dark || 0, ms: R.sprite.ms, darkMs: 0 } : null,
+      puff: R.puff || 0,
+      scar: 0,
+    };
+  if (tier === 'crit' && (an.te ?? 1) > 1) {
+    const S = T.super;
+    L.ca = Math.max(L.ca, S.ca || 0);
+    L.burst = Math.max(L.burst, S.burst);
+    L.shake = Math.max(L.shake, S.shake);
+    L.punch += T.superCritPunch || 0;
+  }
+  if (!ka || !ka.ko) return L;
+  /** @param {any} K */
+  const add = K => {
+    L.stop += K.stop || 0;
+    L.shake = K.shakeTo ? Math.max(L.shake + (K.shake || 0), K.shakeTo) : L.shake + (K.shake || 0);
+    L.kb += K.kb || 0;
+    L.burst += K.burst || 0;
+    L.scar += K.scar || 0;
+    if (K.sprite) L.sprite = { white: K.sprite.white, dark: K.sprite.dark, ms: K.sprite.ms, darkMs: K.sprite.darkMs };
+    if (K.impact && !L.impact) L.impact = K.impact;
+  };
+  L.ko = 'ko';
+  add(T.ko);
+  if (ka.last || boss) {
+    L.ko = 'last';
+    add(T.last);
+    L.stop = Math.max(L.stop, T.last.freeze || 0);
+  }
+  return L;
+}
+
+/** VFX-13: what a heal or a hurt line follows: the move line before it in the same move's lines (a drain's heal, a
+ * crash's recoil), or null. drain: Billie si healed from the target of a move it used that drains (its fx.drain);
+ * recoil: si hurt after a move of its own that missed (fx.missCost: it crashed). Read only
+ * @param {{ an?: any }[]} events @param {number} i @param {Record<string, Move>} moves
+ * @returns {{ kind: 'drain' | 'recoil', from: number, mid: string } | null} */
+export function lineAfterMove(events, i, moves) {
+  const an = events[i] && events[i].an;
+  if (!an || (an.k !== 'heal' && an.k !== 'hurt')) return null;
+  for (let j = i - 1; j >= 0; j--) {
+    const e = events[j] && events[j].an;
+    if (!e || e.k !== 'move') continue;
+    const M = moves[e.mid],
+      fx = (M && M.fx) || {};
+    if (e.si !== an.si) return null;
+    if (an.k === 'heal' && fx.drain && !e.miss && e.dmg) return { kind: 'drain', from: e.ti, mid: e.mid };
+    if (an.k === 'hurt' && fx.missCost && e.miss) return { kind: 'recoil', from: e.ti, mid: e.mid };
+    return null;
+  }
+  return null;
+}
+
 /** the gates that hold for a move event (battleAnims.json's `if` words)
  * @param {MoveAn} an @param {Move} M @param {AnimCtx} ctx @param {BattleAnimsData} A @returns {Set<string>} */
 export function battleAnimGates(an, M, ctx, A) {
@@ -204,7 +316,9 @@ export function stepOn(S, G, type, q) {
 export function battleAnimTimeline(an, M, ctx, A) {
   const pick = battleAnimFor(an, M, A);
   if (!pick) return null;
-  const src = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
+  const fam = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
+    /* VFX-13: a family's miss is a timeline of its own (no Faster variant: its time is today's miss's) */
+    src = /** @type {BattleAnimFamily} */ ((pick.miss && fam.miss) || fam),
     short = !!src.short && (ctx.speed || 1) >= A.shortSpeed,
     V = short && src.short ? src.short : src,
     G = battleAnimGates(an, M, ctx, A),
@@ -234,7 +348,7 @@ export function battleAnimTimeline(an, M, ctx, A) {
   return {
     id: pick.id,
     kind: pick.kind,
-    variant: short ? 'short' : 'full',
+    variant: pick.miss ? 'miss' : short ? 'short' : 'full',
     dur,
     hit: V.hit >= 999 ? V.hit : Math.min(V.hit, dur),
     tier: hitTier(an),

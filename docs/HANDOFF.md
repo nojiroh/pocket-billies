@@ -123,6 +123,468 @@ recommended options taken and listed below. Agreed with the sound track's planni
   owner's listening pass replaces the placeholders; when SND-11 reaches main, sounds may name instruments (and the
   battle start calls bankReady).
 
+### VFX track VFX-16 - Battle flow: the VS splash, send-out, recall, catch, faint, level-up, items, victory and defeat - 2026-10-28
+Side branch `claude/vfx-16-battle-flow` (wave 2, beside VFX-11 on `track/vfx` and VFX-14 on `claude/vfx-14-statuses`),
+made from `track/vfx` at 868e6f30 (VFX-10's head); `track/vfx` merged in twice (438f9396: VFX-15 and main's #317;
+f1cc5808: VFX-11's families and type kits at 7f957898); draft PR #319 into `track/vfx`. Run under the owner's standing
+instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag
+(main's CLAUDE.md).
+- The plan: read the flow cases and their events in the code first; message VFX-14 (the shared `events` key, the
+  stage files) and the style coordinator (the sprite shader, the join intro, the boss banner) before editing; the
+  engine's XP fix alone in its own commit with the golden record; the data and a browser-free logic file with tests;
+  the renderer pieces (a dither from the feet up, particles naming a strip, a squash for the pyramid); then the stage
+  side of each moment, the VS splash, films of each moment with and without Reduced motion, measurements against
+  track/vfx's head, the full check, docs.
+- Changed (one cause per commit):
+  - Engine (e60b7091, alone): battle-engine.js `award` takes the `xp` line's snapshot with the XP added, so the plate's
+    bar moves with its own line. The golden record remade in that commit only: the six `xp` lines' `xp` share changed
+    (0 to the share after the gain), every end state and every other event equal.
+  - Data (95a3d513): battleAnims.json `events` with VFX-16's keys (about, vs, sendOut, recall, catch, faint, levelUp,
+    victory, defeat, item) and five ramps (`growth`, the level-up's sky; `pyr_pyramid`, `pyr_step`, `pyr_gold`,
+    `pyr_capstone` from tools/build-pyramids.py's colours); schema, types (`BattleAnimEvents`), `dataBattleFlowEvents`
+    (every pyramid kind has a ramp, each named ramp exists, the rivals are trainers). logic/battle-flow.js
+    (browser-free, game + Studio + worker): `lvlSlot`, `vsSplashFor`, `riseShare`, `pyramidRamp`, `vsPortraitScale`;
+    tools/test/battle-flow.test.mjs. Follow-ups: the Studio's worker loads it in its alphabetical place (d9bc9666);
+    the Studio's type rename renames the flow ramps that name a type (a4d99389).
+  - Renderer (b991c316, cbb98bd6): walk-shaders.js plain sprite fragment shader `uniform vec3 uRise` (the share hidden,
+    the feet's and the head's places down the picture): a hard step against the Bayer pattern on the art's own pixels,
+    a bright rim on the eroding edge, after the uFade discard; the rim is mixed in before `uHit`, so SY-6's order foil,
+    uHit, fog stays. walk/sprites.js: a record with `rise` leaves the instanced run like `hit` and `foil`.
+    battle-3d.js: a rig's `rise` from s.rise and its geo.base/top; a particle may name a strip (`strip`, `ramp`)
+    beside the iconSprites path; a landed pyramid's `squash`. prop-models.js SMEAR_GLSL: `uSquash` (flatter and
+    wider about the model's base; 0 for every other model).
+  - The level-up bug (934de3e5): the stage's case 'lvl' and battle.js hudMoment's level-up burst take the slot whose
+    snapshot has the engine's `uid` (it read `an.si ?? 0`: always slot 0); a Billie not on the field shows nothing.
+  - The stage (c3dd938d, dfd04e1a): battle-stage.js's VFX-16 block before battleStagePlay. Send-out: the landing
+    ringed in the pyramid kind's colour with chips in its ramp, a burst in the Billie's first type (it read
+    'Dynasty', not a type), the Billie dithering in from its feet up over 330 ms in 12 fps steps, a glint (gold for a
+    Coat, teal for a Prime build). Recall: a beam in its type's glow back to the trainer's hand as it whitens and
+    dithers out head first. Catch: each wobble squashes the pyramid and puffs dust; a seal adds a ring in the Billie's
+    type; an escape throws shards in the pyramid's colours. Faint: the hurt pose holds 330 ms, then it sinks and
+    dithers out with a dust puff (the lilac ring kept); a bot drops the limbs it still has (their pictures, sparks,
+    steel chips), then smoke. Level-up: a column of growth-sky sparks (two light the stage) and a ring in that colour.
+    Item: its icon (icons.png `i_<icon>`) arcs from the bag to the Billie of the heal line after it, then a mint
+    ring; `{dur: 0}`, inside the line's reading time. Victory and defeat: `battleStageOutcome` from battle.js
+    afterEvents (the end phase, which waits on the player): your Billies cheer with gold sparkles, or your side and
+    your trainer fade over 420 ms. Each event keeps its time: enter 900, recall 540, faint 1050, lvl 700, the catch's
+    timings. Under Reduced motion (or on the 2D stage) nothing dithers: a Billie stands whole at the landing (its
+    white tint fades) and a recalled one goes without the shrink; no squash or dust; a bot drops no pictures.
+  - The VS splash (47b0c9a9): UI-17's `pb-name-banner` takes `faces` and `color`; battle.js hudMoment's trainerIn plays
+    it for a mini-boss leader, Blake and a boss: your portrait on the left (mirrored, facing in), theirs on the right
+    (`portraitURL` at a whole-number scale: `vsPortraitScale`, 1x on a phone, 2x on a wide stage), in frames cut on the
+    kit's slant (`--slant`, an angle, across the frame's height), the name as the game has it, the run role's title
+    from nodeTypes.json (Mini-boss, Rival, Boss), the leader's type colour darkened under the white words (a boss the
+    red family, Blake the special family). 240 + hold 620 + out 180 = 1040 ms inside trainerIn's 1150; under Reduced
+    motion it fades in and out standing still. person-art.js exports `portraitURL` and `portraitSize`.
+  - tools/look-battle-anims.py: `--flow` (contact sheets of each moment, with and without Reduced motion; `--only=`
+    enter.0, enter.1, recall.0, faint.1, faint.bot, lvl.0, item.0, caught, escape, win, lose), `--vs` (the splash in
+    and out for crude, blake and a boss; its banner's timers stopped and its CSS animations stepped by hand),
+    `--flow --measure`.
+- Where the track file and the brief were wrong or vague (checked in the code):
+  - "UI-17's boss banner isn't on main, so you build the one component": it was on track/vfx already (main's UI-17,
+    ui-run-kit.js `pb-name-banner`, called from battle.js hudMoment for bosses); the splash extends it.
+  - The XP bug: BE 842 is now `award` at BE 1028. The plate's bar already eased (a .8 s CSS transition); only the
+    snapshot's timing was wrong. Level-up's uid: rules.js 793, right.
+  - The engine's `item` event carries only the item (`it`), not the Billie: the target is the heal line after it (or
+    your first Billie out). Items' icons aren't types.json keys but icons.png's `i_<icon>` cells, already in VFX-9's
+    atlas.
+  - "Send-out ... each pyramid kind in its own colours": a Billie doesn't remember which pyramid caught it, and the
+    send-out always throws the everyday pyramid; the kinds' colours show in the catch (the kind thrown) and in a
+    send-out whose event names `pyr` (none does: that would be a save change).
+  - "Prime": a Prime build (logic/rules.js `isPrime`), no flag of its own.
+  - Victory and defeat have no event: they play in the battle's end phase.
+  - The boss's join: trainerIn plays before 'join' (battle-engine.js startTrainer), so the splash is gone before SY-5's
+    Notice; case 'join' and its timing untouched.
+  - The stage's line refs had moved (battleStagePlay ~2040, case 'enter' ~2104, battleStageCatch ~2580).
+  - The send-out's 'Dynasty' burst (the bug list's BS 1798, left to VFX-11) is fixed here, since the send-out needed
+    its type anyway.
+  - The rig's picture has room above the figure (the near Billie's head halfway down its 128 px picture), so a dither
+    "from the feet up" needs the head's place too (uRise is a vec3).
+- Decided for the owner, to review:
+  - The VS splash (recommended option): portraits at whole-number scales, the trainer's name and the run role's title
+    as the game shows them, the type's colour, the kit's slant. Who: run mini-bosses and bosses, the hub's badge
+    leaders (the miniboss flag), Blake (blake and blake0, the opening's battle too); a friend's ghost and route
+    trainers none. Blake (no type) in the special family's purple; a boss in the red family; a leader's type colour
+    62% toward black under white words. Hold 620 ms.
+  - Pyramid kinds' ramps from build-pyramids.py's colours (with one lighter step added and white).
+  - Glints: a Coat's gold (the Electric ramp), a Prime build's teal (the `up` ramp), 5 stars; a coated Prime gets the
+    Coat's.
+  - The recall beam in its type's glow, 2 stage px; the Billie whitens to .6 as it dithers out.
+  - The faint: the hurt pose 330 ms, dust 8, the old lilac ring kept; a bot's shed limbs dim on the rig.
+  - The level-up in the growth sky (#82D7FF) instead of gold.
+  - The item's arc 420 ms from the bag (the throw's origin), then a mint (heal) ring; no sound of its own.
+  - Victory: your Billies' cheer and gold sparkles; defeat: your Billies and your trainer fade over 420 ms.
+  - Reduced motion: no dithers, the send-out stands whole, the recall without its shrink, no squash, dust or dropped
+    bot pictures; the splash fades in and out still. Particles that mean something (bursts, rings, the column) stay.
+  - No new sound (VFX-19's), no sound line edited; no flash added (the send-out's and catch's flashes as before).
+  - Any move or flow event longer: no (recommended): every case returns the time it had; the item and the outcome add
+    none.
+- Merging with VFX-14 (`claude/vfx-14-statuses`, PR #320; agreed by message): both add a top-level `events` to
+    battleAnims.json, with no key in common (mine: about, vs, sendOut, recall, catch, faint, levelUp, victory, defeat,
+    item; VFX-14's: pulseMs, cells, brn, par, slp, confused, broken, stat, protect, shield, soaked, fork, delayed,
+    stones, glint, plus its top-level `eventsAbout`). Merged: one `events` object with both key sets; the schema
+    keeps VFX-14's required list and additionalProperties:false with my properties added; one `BattleAnimEvents`
+    interface with both field sets (mine optional); both checks (`dataBattleFlowEvents` is a function of its own).
+    battle-3d.js: VFX-14's `if (p.anim)` branch goes first, then my `if (p.spr || p.strip)`; the rig item's `rise` beside
+    its `hit` (battle3dHit's body is VFX-14's). battle-stage.js: different cases (mine enter, recall, faint, lvl, item,
+    the catch; VFX-14's stat, status, hype, block, hurt).
+- Measurements (headless, software GPU, the town fixture, quality 0; `look-battle-anims.py --flow --measure`, 70
+  frames a moment after 10 at rest; before = track/vfx 868e6f30 in a worktree with this branch's tool, after = this
+  branch before the track/vfx merge, run one after the other on an idle machine; 11 moments: send-out both sides,
+  recall, faint, a bot's faint, level-up, item, caught, escape, win, lose):
+  - Effects pass draws a frame (most): 90.36 mean before and after (90-91 in every moment); the pool's own draws
+    (`battleFx`) 2 at most in every moment, before and after (budget 3).
+  - Particles drawn as strips (most a frame): send-out 5 -> 21 (near) and 5 -> 16 (far), a bot's faint 0 -> 16,
+    level-up 10 -> 12, victory 0 -> 10; the others 0 (their strips come after the 70 frames, or there are none).
+  - Rig redraws a moment: unchanged (12-19; a bot's faint 70 -> 71) but victory 8 -> 19 and defeat 8 -> 11 (the cheer
+    pose and the fade now animate the rigs); mean 19.7 -> 21.2 redraws, 1105 -> 1195 KB.
+  - Time a frame (stage and renderer tasks plus gl.finish): 580 ms mean before, 590 after (p90 2346 -> 2383); software
+    rendering and noisy: no slowdown shows. A dithering rig leaves the instanced run for the plain program (one draw
+    either way for a rig).
+  - No event longer: each case returns the time it had (enter 900, recall 540, faint 1050, lvl 700; the catch's
+    schedule unchanged); the item and the outcome add none; the VS splash ends at 1040 ms of trainerIn's 1150.
+    battle-anims tests still hold every move's {dur, hit} and `maxMs` (no move touched).
+- Risky:
+  - The dither reads the rig's geo.base and geo.top (its pose's box) at the moment it draws: a pose that reaches above
+    its box in the middle of a dither would clip a few pixels of the top early.
+  - The pyramid's squash is in the model shader's vertex code (prop-models.js, both model programs); 0 for every
+    other model, but a phone GL quirk there would show on every model, not only the pyramid (none seen in software).
+  - pb-name-banner's portrait frames use CSS `tan()` for the slant's offset (Chromium 111+, Safari 15.4+); an older
+    WebView would draw them unslanted (rectangles), nothing worse.
+  - The VS splash on a short landscape phone: the faces are 1x, but the bar's name is ellipsed if very long.
+  - VFX-14's branch uses the same `events` key and `BattleAnimEvents` name: see the merge recipe above.
+- Phone checks for the owner (listed, not waited for): the VS splash on a leader (portraits crisp at 1x, the type
+  colour, the slant; it leaves before the first line); Blake's and a boss's splash; a send-out (the dither climbing
+  from the feet, the burst in its type, a Coat's gold glint); a catch and an escape (the squash on each wobble, the
+  dust, the seal's ring in its type, the escape's shards); a faint (the hurt pose holding, the sink and dither, the
+  dust) and a bot's faint (its limbs dropping, then smoke); the level-up on the second Billie in a double battle (on
+  that Billie, the sky column); an item used (the icon popping to the Billie); a win (the cheer) and a loss (your side
+  fading); Reduced motion on for each (no dithers, the send-out stands whole, the splash fades).
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; the unit tests
+  (1923 of 1923 on the merged head 438f9396; tools/test/battle-flow.test.mjs new; the golden record changed only in
+  e60b7091). Smoke (in a worktree, each code commit's state): no problems on e60b7091 (345 s), 934de3e5 (346 s),
+  c3dd938d (449 s) and 47b0c9a9 (437 s); dfd04e1a and the merge are covered by the full check. Films
+  (validation/look-battle-anims/flow, gitignored): every moment with motion and under Reduced motion (`--flow`), the
+  VS splash for Leader Rocco, Blake and a boss, in and out, with and without Reduced motion (`--vs`). Full quick check
+  on the merged head (438f9396): 38 of 42 in 1575 s; the 4 problems are main's and load's, as VFX-10 listed them:
+  Terraces (train_station in the air), RL-8's run (crossed into Thicket Route, never shown), the walking step's room
+  light, and Battle music (the wild drums vs the 8 s fallback under load: passes alone, 41 s, its mini-boss battle
+  with the VS splash). CI on 95a3d513 and 934de3e5: lint red for my unit tests (the worker's load order, the type
+  rename: fixed in d9bc9666 and a4d99389); smoke red for "The world map opens as the bowl" (main's) in one run and
+  "Camera follow: the page stopped drawing" in the other (it passed in the first run on the same commit; VFX-10's
+  entry found it passes alone). Sound untouched (no sound file, no fingerprint), so no message to the sound track was
+  needed; the style coordinator was told before and after (no clash: the style track is done and on main).
+- The merge with VFX-11 (f1cc5808): battleAnims.json keeps both new keys (`events`, `types`); BattleAnimsData both
+  fields; battle-3d.js's particle loop takes VFX-11's `p.anim` strip first, then this step's `p.strip` (the same
+  idea, two names: VFX-20's clean-up can fold `strip` into `anim`); type-rename both blocks; the UI lint's lower
+  ceiling. After it: unit tests 1930 of 1930, smoke no problems (423 s), the send-out and a bot's faint filmed again
+  (validation/look-battle-anims/flow-merged): unchanged. CI's smoke at 438f9396 (two runs): one red for "The world map
+  opens as the bowl" (main's), the other for "Camera follow: the page stopped drawing", which passed in the first run
+  and passes alone here (check-fast.py --only, 2 of 2): load, not this step.
+- Next: VFX-14 and this branch both add battleAnims.json `events`: whichever main-line session merges them (VFX-11's
+  successor in wave 3, or VFX-11 if it finishes after) keeps both by the recipe above. VFX-19 gives the recall its
+  sound (and the item, if the owner wants one). The send-out's pyramid colours need a Billie to remember its pyramid
+  (a save field): not planned.
+
+### VFX track VFX-14 - Statuses and stats on the stage: lasting looks, chevrons and sharply, the bubble and the dome, glints - 2026-10-28
+Side branch `claude/vfx-14-statuses` (wave 2, beside VFX-11 on `track/vfx` and VFX-16 on `claude/vfx-16-battle-flow`),
+made from `track/vfx` at VFX-10's head 868e6f30; draft PR #320 into `track/vfx`. Run under the owner's standing
+instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag
+(main's CLAUDE.md). Told first: the sound coordinator (the stat-drop line in sound.js, before and after) and VFX-16
+(session_019UpAFvfWmFPGfiBg275J2R: the `events` key, the functions and cases touched); VFX-11 had not started. Nothing
+the style track owns was changed (`uHit`'s shader, battleStageFlash, `uCAP`, hitFx, the join intro and the HUD numbers
+untouched; battle3dHit, which feeds `uHit`, takes one more input).
+- The plan: read the engine's status, stat and effect lines and UI-16b's HUD side (both must read the same state);
+  data in a key of my own with its schema, types and checks; a browser-free logic file with tests; the two bugs, each
+  its own commit; the stage runner (lasting looks redrawn every 12 fps cell in VFX-9's pool, what each line does,
+  the rig's pose and tint, Fork's copy); films of each look through a new `--events` mode of the film tool, Calm and
+  Reduced filmed; tune from the films; measure; the full check and the in-game test; docs.
+- Changed:
+  - game/data/battleAnims.json `events` (+ `eventsAbout`): `pulseMs` 900 (Calm's pulse), `cells` [24, 16, 10, 6] (the
+    most lasting-look particles at once by quality); `brn`, `par`, `slp`, `confused`, `broken`, `soaked`, `fork`
+    (start, loop, tick, end, bonk bursts; `tint`/`tintA` for Reduced motion; `flicker`, `hold`, `edge`, `idle`, `hop`,
+    `orbit`, `dx`, `fade`); `stat` (up, down, `sharply` 2); `protect` and `shield` (hex-cell discs: frame, flashFrame,
+    crackFrame, cells by quality, `a` eroded strength, r, h, flashMs, end); `delayed`, `stones`, `glint` (ramps by
+    source kind). Schema defs `lookBurst`, `look`, `lookDome`; types `BattleAnimEvents`, `BattleLook`,
+    `BattleLookBurst`, `BattleLookDome`; `dataBattleAnims` checks every sprite, frame and ramp (`type` only for the
+    delayed hit) and that no count grows as the quality drops; the Studio's type rename moves a ramp that names a type.
+  - game/js/logic/battle-looks.js (browser-free; both pages and the Studio's logic worker): `lookSet`, `lookDiff`
+    (looks begun and ended between two lines' snapshots; a switch; a faint; the shield's turns), `lookStageChange`
+    (the stat that moved and by how many stages: sharply from the snapshots, the engine untouched), `lookChevrons`,
+    `lookStatusLine` (start, tick, or a broken part), `lookSelfHit`, `lookMoveLeaves` (stones, a delayed hit),
+    `lookGlints`, `lookCracks`, `lookDomeCells`, `lookOrbit`, `lookFlicker`, `lookForkOn`, `lookStonePlaces`,
+    `lookTint`, `lookMotion`, `lookLoopOn`, `LOOK_CELL_MS`, `BATTLE_LOOK_KEYS`. tools/test/battle-looks.test.mjs (12).
+  - game/js/battle-looks.js (new, after battle-anim-run.js on both pages): `battleLooksLine(ev)` takes a line's state
+    when its plates repaint (battle.js showEvent's hpT callback, and the tap's repaint), as UI-16b's plates and blips
+    do: ends (waking pops with a hop, a burn's smoke, confusion's stars), a shield wearing a turn (its dome flashes,
+    a cell cracks), a block (the bubble flashes), stones and a delayed hit from a landed move (and gone when it lands),
+    the report's glints one after another (`by`: a Perk, held item, Gene or passive, 140 ms apart; a passive in its
+    type's ramp). `battleLooksTick()` (the stage's frame, where the old status fizz was) redraws the still looks each
+    12 fps cell as particles living one cell (the dome, the bubble, the stones, the mark) and spawns the loops as they
+    come due (embers, sparks, Z's, drips, the orbit's three stars), and sets each sprite's tint (a burn's stepped
+    flicker; a lost turn's gold edge; Reduced motion's still tint). `battleLookStatus` and `battleLookStat` are cases
+    'status' and 'stat' (same 700 / 680 ms); `battleLookHurt` (a burn's lick of flame, a bonk star, a blocked spread
+    hit) and `battleLookBlock` (a shield taking the edge off) add to 'hurt' and 'block'; `battleLookPose` and
+    `battleLookSleepPose` in actorBuffer (a lost turn's held frame; asleep: the idle clock at half speed, 3 px lower,
+    head down, eyes shut, its own frame key); `battleLookGhost` gives battle3dFrame Fork's copy (an afterimage
+    0.14 m aside on two 12 fps cells of four). `battleLooksReset` at each battle's start.
+  - battle-3d.js: a particle can name a strip by id (`anim`), hold a `frame`, erode to `alpha` and flip (`flipY`);
+    battle3dHit folds a status tint (`s.tint`) under the white and dark flashes. walk/battle-fx.js: a flipped strip
+    (a falling stat's chevrons). battle-stage.js: the old status fizz and `stT` are gone; cases 'status' and 'stat'
+    hand over to battle-looks.js.
+  - Fixes (own commits): a broken part's status line (`{k:'status', si}` with no `st`) showed a burn's flames and wrote
+    `undefined` over the Billie's status (23e7f848); a stat drop played the rising sound (sound.js read `an.n` and
+    `an.down`; the engine sends `up: false`; ad6f804a).
+  - tools/look-battle-anims.py `--events` (EVENT_FILMS: brn, par, slp, confused, stat_up/up2/down/down2, protect,
+    shield, soaked, fork, delayed, stones, glint, broken; sheets 240 ms a frame, traces, `--measure`) and
+    `--motion=calm|reduced`.
+- Where the track file was wrong or vague (checked in the code):
+  - "Any status but par and slp shows flames": the game has only three statuses (statuses.json: par, slp, brn); the
+    flames came from a status line with no status at all, which the engine says when a broken part keeps a move from
+    a robot or an Augment (BE ~628). BS 2188 had moved to ~2199.
+  - "sound.js 643 reads an.n and an.down": it was ~731; the stat line is in applyStatStages (BE ~590, not 466-469).
+  - "Soaked", "Fork" and a shield fading are `stat` lines (up false, true, false) with no stage moved; the stage now
+    tells them apart from the snapshots and plays their own look instead of chevrons.
+  - "the shield": its turns left are in the snapshot's `fx.shield` (UI-16b's fieldEffects), so the dome cracks one
+    share for each turn used. Its golden point light (battle-3d.js) is unchanged.
+  - "the plates' tag row, pb-proc blips": UI-16b reads a line's snapshots (`st`, `stg`, `fx`) and its `by`; the stones
+    and delayed hits are side state the snapshots don't carry, so both sides read them from the lines (UI-15/16b: from
+    the `hurt` with `fx: 'stones'`/'mail' and the turn's end; the stage also from the landed move).
+  - A confused Billie hitting itself is only words to the engine (a plain `hurt`): `lookSelfHit` reads it from the
+    line before (it was confused; no move of its own just before).
+  - The Calm level is `<html data-motion="calm">` (UI-16a), read as battle-stage.js's own `calmMotion` does (not
+    exported, so read again in battle-looks.js).
+  - Found, not changed (the engine): Scatter Stones (category X) is aimed at its user, so the engine lays the stones on
+    the user's own side while saying "around their side" (BE useMove: `td` is the target's side, and an X move with no
+    foe effect targets itself). The stage mirrors what the engine does; worth an engine fix in its own commit with the
+    golden record remade.
+- Decided for the owner, to review:
+  - Lasting looks are redrawn as one-cell particles every 12 fps cell (stepped, rule 3), counted against `cells` by
+    quality and marked ambient, so a big move's particles take their place when the pool is full.
+  - Under Calm the still looks (the dome, the bubble, the stones, the mark) stay, as they don't move; the loops
+    (embers, sparks, Z's, drips, the orbit, Fork's copy, the stones' glint, the burn's flicker) pulse for 900 ms when
+    a turn's playback starts and when a look begins. Under Reduced motion nothing loops; the sprite takes the look's
+    tint (burned orange, paralyzed yellow, asleep lilac, confused and Fork purple, Soaked blue: the colour code's
+    status colours), and a status's start shows no burst (a broken part's sparks: two).
+  - Flashes off: no burn flicker (a still tint at half the Reduced one), the lost turn's gold edge at half strength,
+    the dome's and bubble's flash without its glow.
+  - Colours: Z's in the indigo ramp (`Dragon`: the Billies' ramps are keyed by type; sleep's lilac is near), stars and
+    sparks gold (`Electric`), Protect's bubble sky (`Water`), the shield gold, chevrons up teal / down crimson (VFX-10's
+    `up` and `down`), glints: Perks gold, held items steel, Genes rose, a passive its type's.
+  - The dome: up to 9 hex-cell discs (VFX-10's `shield_hex`, frame 3) round the Billie, eroded to .55 so the Billie
+    shows through (first films: at full strength it hid the foe); a worn cell shows the strip's breaking frame; a
+    flash is frame 2 at full strength; it shatters in shards when it fades. Protect's bubble: 3 discs in front, .5.
+  - Sharply: twice as many chevrons (10) and a wider teal ring for a rise; chevrons at the rigs' pixel size (k 1).
+  - Stones: 5 pebbles round each Billie's feet on that side, still, one glinting about every 1.5 s; the old Ground
+    burst on entry kept as the hit.
+  - The delayed hit's mark: VFX-10's orb in the move's type ramp, 2.6 m over the side's first Billie, until its hit
+    lands (`hurt` fx 'mail').
+  - Sleep's pose comes from the rig's own pose channels (body-plan-animation.js maps them for every body plan), so no
+    new pose was added to skeleton-rig.js.
+  - The paralysis edge is the whole sprite tinted gold for two cells (uHit has no edge mode); a true outline would be
+    a shader change (the style track's).
+  - Under Reduced motion the dome and bubble still flash on a block (a still frame swap, no glow with Flashes off);
+    the shield's first rise keeps the old alphaPhase sparks (that case is untouched).
+- Merges: origin/track/vfx merged twice (82fa34ff: VFX-10's finish, #317, VFX-15 through VFX-11's merge; 2c672752:
+  VFX-11's families and kits). Conflicts kept both sides: the pages' script tags, battle-3d.js (my strip-by-id branch
+  only for a particle with `anim` and no `spr`; VFX-11's `spr`+`anim` branch with its stutter, flip and trail after
+  it; VFX-11's `flip` mirrors across, my `flipY` turns upside down, both in battle-fx.js), type-rename.js (both
+  blocks), game-data.d.ts, battleAnims.json (VFX-11's families, defaults, colors and `types` taken whole, my
+  `eventsAbout` and `events` after `iconSprites`), look-battle-anims.py (`--events` and `--motion` beside VFX-15's
+  `--weather`, `--bench`, `--bot`), ROADMAP and vfx-track.md; hooks.js and art-code-refs.json regenerated.
+- The merge recipe with VFX-16 (`claude/vfx-16-battle-flow`, PR #319, which also adds `events`), agreed by message:
+  one `events` object with both key sets (mine: pulseMs, cells, brn, par, slp, confused, broken, stat, protect,
+  shield, soaked, fork, delayed, stones, glint; VFX-16's: about, vs, sendOut, recall, catch, faint, levelUp, victory,
+  defeat, item); the schema keeps my `required` list and `additionalProperties: false` and adds VFX-16's properties;
+  one `BattleAnimEvents` interface (VFX-16's fields optional), `events` required in BattleAnimsData; both check
+  functions (`dataBattleAnims`'s VFX-14 block and `dataBattleFlowEvents`) and both type-rename blocks; in battle-3d.js
+  my `if (p.anim && !p.spr && !p.beam)` branch, then VFX-11's / VFX-16's `p.spr || p.strip`; the rig item's `hit:`
+  (my tint is inside battle3dHit) then VFX-16's `rise:`.
+- The keys VFX-12's Studio editor can give dials (battleAnims.json `events`): `pulseMs`, `cells`; per status
+  (`brn`, `par`, `slp`, `confused`, `broken`, `soaked`, `fork`): `tint`, `tintA`, `start` / `loop` / `tick` / `end` /
+  `bonk` bursts (sprite, ramp, n, every, life, vy, spread, y, k, frame, flip, glow), `flicker`, `hold`, `edge`,
+  `idle`, `hop`, `orbit`, `dx`, `fade`; `stat.up`, `stat.down`, `stat.sharply`; `protect` and `shield` (sprite,
+  ramp, frame, flashFrame, crackFrame, cells by quality, a, r, h, flashMs, end); `delayed` (sprite, ramp, y);
+  `stones` (sprite, ramp, n, r, frame, glint); `glint` (sprite, life, k, gapMs, ramps by source).
+- Measurements (headless, software GPU, quality 0, the town fixture; the machine also ran smoke and the in-game test,
+  so frame times are noisy: only the direction counts):
+  - Moves before (track/vfx 868e6f30, a worktree) and after (40b16de9), overload and deepdrill, hit / se / secrit,
+    side 0: effects-pass draws a frame 90 max in all 12 films, before and after; the pool's own draws (`battleFx`)
+    2 max (budget 3); rig redraws 29.2 a film, 1867 KB, the same; time a frame 730 ms mean before, 653 after (p90
+    3158 -> 2489). No move longer (battle-anims tests: every move's {dur, hit} and `maxMs` unchanged; status 700,
+    stat 680 ms as before).
+  - The looks (`--events --measure`, 200 frames each): brn, slp, confused, stat_up2, protect, shield, fork, stones:
+    `battleFx` 2 max in every film (budget 3), effects-pass draws 90 max (rest 87-90); the most strips in a frame 42
+    (the shield: 9 dome cells plus its rise's sparks), 5-17 in the others; lasting-look particles capped at
+    `cells` [24, 16, 10, 6] by quality and drawn as ambient (a move takes their place when the pool is full).
+  - Sound: `python3 tools/check-sound.py`: 199 fingerprints, 0 changed (the stat-drop fix changes which variant a
+    battle line picks, not a fingerprinted recipe).
+- Films (look-battle-anims.py `--events --sheets`, in the scratchpad, not committed): all 16 under Full; brn,
+  confused and shield under Calm; brn, slp and shield under Reduced motion. Seen: embers and the warm flicker; the
+  lost turn's held frame and gold edge; Z's and the wake's stars and hop; three stars orbiting and the bonk; chevrons
+  down (flipped) and up sharply; the bubble flashing on a block ("Hedged"); the dome rising, flashing on the block
+  and on wearing down, a cracked share, shattering; drips; Fork's dithered copy on two cells of four; the delayed
+  hit's mark in its move's colour until the coin lands; pebbles at the feet and the hit on entry; glints one after
+  another; a broken part's sparks. Calm: the loops only in their pulse (confusion's stars show at its start, then
+  not; the bonk still plays). Reduced: a still orange tint while burned, no flames; the dome stands, no shards. A
+  page probe also read the sleep pose's own frame key, Fork's copy on 52% of frames, the Calm pulse and its end, the
+  Reduced tint through uHit, and no page errors.
+- Risky:
+  - Lasting looks are particles drawn again every 12 fps cell: on a slow phone frame (over 83 ms) a cell can be
+    skipped and its still look blink for a frame. They are marked ambient, so a big move at quality 3 can take their
+    place for its length (meant: the move matters more).
+  - The confused self-hit is guessed from the line before (a plain hurt on a confused Billie, not straight after its
+    own move); a Perk's plain hurt without a `by` report on a confused Billie would also bonk.
+  - A status line read with no battle around it (the Studio's preview, the films) compares with the last line the
+    stage took (or `ev.prev`); in a battle it reads the engine's line before.
+  - The sleep pose shifts pose channels (lower, head down, eyes shut); an odd body plan may look off: phone check.
+  - Merging: VFX-16 (`events`, battle-3d.js's particle loop and rig item), VFX-12 (the Studio's dials) follow the
+    recipes above.
+- Phone checks (listed, not waited for): each status's look on both sides (burned's embers and flicker, paralyzed's
+  sparks and a lost turn's gold edge, asleep's Z's and lower idle, waking's pop, confused's three stars and the bonk);
+  stat chevrons up and down, and sharply; Protect's bubble and its flash on a block; an Alpha's shield dome cracking
+  turn by turn and shattering; Soaked's drips; Fork's copy; the delayed hit's mark; stones at the feet; glints when a
+  Perk or held item fires; Calm (the loops pulse once a turn); Reduced motion (tints only); a stat drop now sounds
+  falling; frame time in a battle with a shield up.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text (added to my checks after CI
+  caught a backtick in `eventsAbout`), build before each commit; `npm test` 1935 of 1935 on the last merge (the
+  run-map timing test failed once under load and passes alone, as earlier entries record); tools/test/
+  battle-looks.test.mjs 12 of 12; the battle-anims tests (every move's {dur, hit}, `maxMs`) unchanged; the golden
+  record untouched (the engine isn't changed). Smoke before each game commit: no problems at 23e7f848, 895f4a23
+  (the runner), 82fa34ff and 2c672752 (the merges), 359-463 s. Full quick check (a2b24fda): 36 of 42 in 2216 s;
+  the problems: Terraces, RL-8's seam, room light, Battle music's drums (the known list), Ground tiles' lab room
+  (fails the same alone on track/vfx 868e6f30: main's) and Postcards (passes alone here and on the base: load).
+  In-game full test (82fa34ff): every battle step passed; two walking steps failed (the Gene Bank black, a room
+  that opens in place changing the town's grid): the same two (and "Inside the barn" black too) fail on track/vfx 868e6f30 in a worktree: not this branch's. CI: smoke red at 40b16de9 and b44bd098 for the
+  backtick (mine, fixed in c54b9d51); at 82fa34ff 41 of 42, the one red Camera follow (CAM-1, "the page stopped
+  drawing": passes alone here, 123 s; VFX-10 recorded it on CI at 868e6f30 too), re-run once, said on PR #320.
+- Next: the next main-line session merges this branch into `track/vfx` (and VFX-16's by the recipe above). VFX-12's
+  dials for `events`. Worth an engine fix (own commit, golden record remade): Scatter Stones on its user's side.
+
+### Hub track - the hub island polish: a natural mountain, the pond's fall, the station inland, boarding, the portal, Kappi framed - 2026-10-28
+Branch `claude/youthful-heisenberg-gq6ovv` (the cloud session's own; main merged in at the start). Plan approved in Plan
+Mode; the owner's notes in one session (docs/phases/hub-track.md "The hub island polish"; the water track's WA-11 done
+here). Tag `hub-polish-done` (for the owner to push) on this session's last commit.
+- Changed:
+  - Engine: a river's tiles are never the sea's in the tide (walk/sea-tide.js `tideCells` takes a running-water test,
+    ground-mesh.js passes the river's cells): the river no longer dries at low tide or floods its banks at high tide.
+    Raising the pond would not have fixed it (the cause was the tide's sea test, `kindAt(..., false)`).
+  - Island generator dials (island-gen.js, the Studio's hub editor): `mountain.smooth`, `curve`, `foot`, `rock`,
+    `shift`, `trail`; the old behaviour by default (the generator's own output for the old dials is unchanged).
+  - Copperleaf's ground, rebuilt by the tools: a broad mountain (peak about 24 m, a grassy foot to 40% of its height,
+    then a few rock ledges, lower spurs round it, no summit trail); tools/patch-copperleaf-terrain.mjs: the old
+    mountain's shelf and trail steps left in the locked town zone cleared and its edge eased, gentle rolling land (up to
+    0.9 m) faded out by plots, streets, water and sand, the pond lifted 3.2 m onto a terrace with a rock face, a 3.5 m
+    `falls` entry where the river leaves into a plunge pool by the bridge, a white-water stream down the mountain's foot
+    into the pond.
+  - Skyline Station inland (tools/patch-station.mjs): on the heather north of the library, facing east (out from the
+    island's middle, to the orbit camera), its own track only, a path from the street to its steps; the portal about
+    25 m up over the town's east side, 38 m out (at 55 m, over the sea, the haze swallowed it); station-place.mjs and
+    stationLandmarks take a placement's own rail and portal.
+  - The ride (logic/train-path.js `trainBoardPath`, `trainWalkAt`; train-ride.js): you walk from where you stand up the
+    steps onto the platform's top, between the benches, to its edge and in (3.2 s); home the same way back (2.4 s). The
+    ride's shots moved clear of the shop and the cottages (the glide-in from over the roofs).
+  - The portal (tools/build-station-trains.py, rerun): no rings, lamps or crystals; its layers lit at every hour (a
+    model layer's `day`), a tunnel-like core and an inner swirl for depth; walk/effects.js fx `portal`: a soft glow,
+    mist curling round its rim in front and behind, motes drawn in, glints; its light shines by day too (scenery
+    `glow.light` 0.5, walk/lighting.js). The dithered halo picture is gone. Tried and dropped: brighter layers that
+    cut through the haze (glow 2): the bloom whited out the whole frame.
+  - The opening (tools/data/copperleaf-town.json `opening`, opening.json): the shots aim between Chosen and Kappi
+    (`camera hazelRuns ... on hazel assist` from Kappi's entrance, `kappiTalk ... on Kappi Chosen` for Kappi's
+    introduction, `standing ... on Kappi Chosen` for the bath line); while the dressing room is up Kappi steps to a new
+    spot `beside` Chosen, clear of him from the new `kappiTalk` shot. Tried and dropped: a low close shot as Kappi
+    comes in (Kappi at 2 m faded as a near-camera sprite; at 3.5 m lost behind the door's dust). tools/look-opening.py
+    --lines: a picture at each line; its "a line on screen" test was `cutscene.say.on`, which never existed (the fall's
+    pictures always ran their 40 s out): now `cutscene.say`.
+  - Tests: sea-tide (a river into the sea), island-gen (the shape dials), hub-island (the summit walked to only with a
+    trail), hub-doors (the station inland, its portal at its landmark), island-dress (cairns only with a trail),
+    train-path (the boarding walk). Tools: island-shots pond, pond-fall, mountain and portal views; check-fast holds
+    the lift at 7.6 s and walks the orbit's circle at 32 m (at 30 m it now ends at the terrace's rock face);
+    look-train-ride's moments. After the rebuild `clear-windows --fix` moved the great oak off a cottage window (back
+    where it stood).
+- Found, not changed:
+  - tools/data/copperleaf-town.json still had Hazel in Granny Juniper's lines (the rename changed only the map); a
+    rebuild would have put Hazel back. Fixed in the source (its own commit).
+  - Chosen's opening line "See the airship at the mast? It flies out past the island" is out of date (runs leave by
+    sky train from the station); player-facing words, so left for the owner.
+  - There was never a ground lock (`islandGen.lock`); the town, barn and pasture zones' `lock` is what a rebuild keeps.
+    A patch inside the town zone stays through a rebuild, so the terrain patch refuses a map that already has the
+    pond's fall: rebuild from the map before it.
+- Risky:
+  - The portal's mist and glow are about 40 more quads a frame where it is in view; not measured on a phone.
+  - By day the portal is soft and pastel through the haze (pictures); at night it is a bright swirl. The world map
+    may show no portal now (it draws models without their picture layers; its only solid part is a hidden speck).
+  - The station's old headland is now open meadow; the great oak and the dressing re-rolled with the rebuild.
+  - The summit spot (the orbit's pivot) stays where it was, now on the mountain's south shoulder: the camera's middle
+    is unchanged on purpose (the doors face out from it).
+- Verified: lint, typecheck, check:modules, format:check, check:data (178 files), build; `npm test` 1856/1856 (one
+  timing test, "1,000 maps in under 1.5 seconds", failed once while two browsers drew, passed on an idle machine);
+  `npm run test:slow` 109/109; check-fast "The train ride" (departure 10421 ms, the carriage, home gold then battered),
+  the island's walking checks and the orbit (0.79 rad round at 32 m); `check:smoke` 6 of 7 (the seventh, a window
+  behind the great oak, fixed with clear-windows --fix and checked again); the full quick check 33 of 41 (2074 s): of
+  its 8 problems, "nothing floats" (the station, a check bug fixed in this session), the lab's room in place, Postcards
+  and Granny Juniper pass run alone (249 s, no problems); RL-8 "view never showed", RT-2 "no battle started", room
+  light and the battle music's drums are main's, as earlier entries record. Pictures (scratchpad, not committed):
+  island-shots pond, pond-fall, mountain, station, station-near, top-down, portal by day and at 23:00; the ride (the
+  walk up the steps and across the platform); the opening at every line (Kappi beside Chosen).
+- Next: the owner's look at the pictures and a phone test; then the ground lock (`islandGen.lock`, the Studio's "Lock
+  the ground") once the island is right; HB-10f, HB-9.
+- For the owner on the phone: walk round the island (the mountain, the pond's terrace and fall, the river at low and
+  high tide), start a run from the new station (the walk up the steps, the portal), come home, and New game's opening
+  (Kappi's shots); send the debug log.
+
+### UI fixes - the bottom bar, the Actions bar, battles on wide screens - 2026-10-28
+Branch `claude/determined-meitner-r58xng` (the session's own; made from main at 485674b5, main 5b0d43e1 merged in at
+7a341ed6). Plan approved in Plan Mode; one session from the owner's phone notes, no phase file. UI and layout only (no
+save or data change but one preference). No tag: not a phase or track step. Draft PR #309 into main.
+- Changed:
+  - The bottom bar (ui-run-kit.js pb-nav-bar, shell.css, tokens.css): one registered value, `--nav-k` (`@property`,
+    0 full, 1 compact), eases on `--m-base`. The tile, the bar's height and outline (`--rise`), and each tab's place,
+    size and word size are mixes by it, so the shrink is one smooth motion. Before, the tabs' layout, the words, the
+    outline and `--nav-h` snapped. The page's `--nav-h` follows its own `--nav-kr` (not inherited). Compact tabs keep
+    their words: 60x56 px, the compact bar 84 px (was 46 px, icon only, a 76 px bar).
+  - The open tab: a rounded gold pill that fades and grows in. Before, a slanted bar with `pbSlideBar`'s slanted
+    ghost; the owner called them angular. Pressing a tab squashes that tab, not the whole bar (ui-motion.js
+    `PRESS_INNER`).
+  - Settings > Controls: "Shrink the bar while walking" (`preferences.navShrink`, 'off' keeps it full; on by
+    default). minimap.js `minimapCompact` reads it.
+  - Actions (walk-tab.js, walk-tab.css, ui.js): `#walkSheet` is now a fixed row of small buttons (`.walk-tray`, a
+    `role=toolbar` div, not a `<pb-sheet>`) right over the bottom bar. It follows the shrink. While it's open, the
+    Actions button is lifted by its height (`--tray-k`), and the button toggles it. Buttons, in order:
+    - on a run: the day (a tap toasts today's and tomorrow's weather; the bar stays open) and the map;
+    - in the hub: Start a run (a toast when nobody can come), and the buildings' markers;
+    - the place's shops, clinic and trainers (`nodeActionItems`, which the map card's `nodeActions` now draws from);
+    - one per wild Billie, nearest first (`walkView.enc`). A tap walks you up to it and the battle starts there, as
+      a tap on its "?" does (`walkToEncounter`). The owner asked for this.
+    Esc closes it, Tab opens and closes it, and the arrows (now left and right too) move between buttons. The old
+    sheet's notes (blurb, trainers' hints) and the encounter cards' CSS are gone.
+  - Battles on wide screens (battle-stage.js `battleStageLayout`, battle.js `battleCardColumn`, `floatTick`): in
+    landscape with the cards in the scene, the fighters' frame and the card column next to it (32 px apart) are
+    centred together, and the camera keeps the fighters inside the frame (`L.free` narrowed to it, `L.beside`).
+    Before, at 1920 px the cards stood at x 1376-1862, ~300 px from the action. A phone on its side has no spare
+    room and is laid out as before.
+  - check-quick's Actions step ("Actions bar: ...") and TESTING.md follow. The step now also checks the bar is a row
+    over the bottom bar, nearest-first order, and the walk to a wild Billie. CHANGELOG, BRANCHES.
+- Found, not changed (fail on main 5b0d43e1 too, checked in a clean worktree):
+  - "Terraces ... nothing floats": copperleaf train_station@167.3,100.8 in the air.
+  - The phone step's walk screen shows 21 pieces on main against a ceiling of 18 (this branch: 20).
+  - "Walking left and right ...": every settings tab overflows the phone by 7 px (more than 4).
+  - RL-8: "crossed into Thicket Route but its view never showed".
+  RT-2 and Granny Juniper failed once under the full run's load and passed alone.
+- Risky: `@property` and `:has()` need iOS 16.4+; older iOS shrinks at once, as before. The battle's new layout
+  wasn't seen on a tablet in landscape (1024x768 and the like). Frame cost of easing `--nav-k` (an inherited value
+  restyles the bar's shadow tree for 240 ms) not measured on a phone.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build clean; unit tests 1854 pass (after the
+  merge); the Actions step alone passes; full quick check before the merge 35 of 42, the rest as above; smoke after
+  the merge 7 of 7 in 344 s (the phone step's piece counts within their ceilings this time). Screenshots: phone 390x844 (the bar full, part way and compact; Actions open in the hub
+  and on a run), battle at 1280x720, 1920x1080, 2560x1080 and 844x390.
+- Next: the owner's phone check. Then, if the labels in the compact bar feel busy, the words could go back to
+  icon-only at the new size.
+- For the owner on the phone: walk a few seconds and stop (the bar should fold and unfold smoothly, its buttons
+  still worded); Settings > Controls > Shrink the bar while walking off; tap Actions in Copperleaf and on a run, tap
+  a "?" button (you walk to it, then battle); a battle on a wide screen or a tablet on its side. Send a debug log
+  if anything stutters.
+
 ### VFX track VFX-11 - Families x types: 16 families, 11 type kits, every move's anim, projectiles, rays and lights in GL - 2026-10-28
 Branch `track/vfx`, the main line of wave 2 (VFX-14 on `claude/vfx-14-statuses` and VFX-16 on
 `claude/vfx-16-battle-flow` ran beside it; both were told the sections before and the commits after). Main was

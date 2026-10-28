@@ -66,6 +66,7 @@ expose({
   BATTLE_FX_CELL: [() => BATTLE_FX_CELL],
   BATTLE_FX_EVENTS: [() => BATTLE_FX_EVENTS],
   BATTLE_FX_EVENT_MS: [() => BATTLE_FX_EVENT_MS],
+  BATTLE_FX_KO: [() => BATTLE_FX_KO],
   BATTLE_FX_MOTION: [() => BATTLE_FX_MOTION],
   BATTLE_FX_OUTCOMES: [() => BATTLE_FX_OUTCOMES],
   BATTLE_FX_PX: [() => BATTLE_FX_PX],
@@ -238,6 +239,8 @@ const BATTLE_FX_OUTCOMES = {
   miss: 'Miss',
   blocked: 'Blocked by Guard',
 };
+/* VFX-13: whether the hit knocks the target out (the tier table's KO and last-KO rows; the line carries koAhead's) */
+const BATTLE_FX_KO = { '': 'No', ko: 'Yes (a KO)', last: 'The last KO (the freeze)' };
 const BATTLE_FX_EVENTS = [
   ['heal', 'Heal'],
   ['statup', 'Stat up'],
@@ -295,7 +298,7 @@ function battleFxWhatHTML() {
       )
       .join('');
   return battlePreview.clip === 'move'
-    ? `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), battlePreview.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(Object.entries(BATTLE_FX_OUTCOMES), battlePreview.res)}</select></label>`
+    ? `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), battlePreview.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(Object.entries(BATTLE_FX_OUTCOMES), battlePreview.res)}</select></label><label class="fld"><span>Knocks out</span><select data-bp="ko">${opt(Object.entries(BATTLE_FX_KO), battlePreview.ko || '')}</select></label>`
     : `<label class="fld"><span>Event</span><select data-bp="ev">${opt(BATTLE_FX_EVENTS, battlePreview.ev)}</select></label><select data-bp="who" class="sm" aria-label="The trainer (Trainer intro)">${opt(peopleOptions(), battlePreview.who)}</select>`;
 }
 SECTIONS.preview = () => {
@@ -474,7 +477,7 @@ document.addEventListener('change', ev => {
   }
   if (['me', 'foe', 'meCoat', 'foeCoat'].includes(k)) startBattlePreview();
   /* VFX-12: a new move, outcome or event: its steps */
-  if (['move', 'res', 'ev'].includes(k)) {
+  if (['move', 'res', 'ev', 'ko'].includes(k)) {
     battleFx.clip = null;
     battleFxDrawTimeline();
   }
@@ -484,7 +487,11 @@ function playBattlePreviewMove(si) {
     M = D.moves[battlePreview.move],
     fx = M.fx || {},
     an = battleAnimPreviewEvent(battlePreview.move, M, si, battlePreview.res),
-    r = battleStagePlay(an, battlePreviewEvent());
+    ko = battlePreview.ko,
+    r = battleStagePlay(an, {
+      ...battlePreviewEvent(),
+      ka: ko ? { ko: true, si: [1 - si], last: ko === 'last' } : null,
+    });
   if (!an.self && !an.protect && !an.miss && !an.blocked && fx.status)
     setTimeout(
       () => battleStagePlay({ k: 'status', si: 1 - si, st: fx.status }, battlePreviewEvent()),
@@ -1036,6 +1043,73 @@ battleFxPanes.push(
            max: 1,
            help: 'share of the lean',
          })
+       )}`;
+    },
+  },
+  {
+    id: 'tiers',
+    title: 'Hit tiers',
+    sub: 'How a hit lands by its tier (battleAnims.json tiers; VFX-13). Each number plus its “+w” times the hit’s weight (the share of the target’s HP it took). Hit-stop is real time the stage holds: no tier past 90 ms (a crit’s, today’s longest); a KO adds at most a cell, the last KO (or a boss’s) is the freeze. Play a move with an Outcome and Knocks out to see a row.',
+    html: A => {
+      const T = A.tiers;
+      if (!T) return '<p class="help">No tiers in battleAnims.json.</p>';
+      const cols = [
+          ['stop', 'Hit-stop ms', 1],
+          ['stopW', '+w', 1],
+          ['shake', 'Shake', 0.1],
+          ['shakeW', '+w', 0.1],
+          ['kb', 'Knockback px', 1],
+          ['kbW', '+w', 1],
+          ['burst', 'Burst', 1],
+          ['spread', 'Burst m/s', 0.1],
+          ['light', 'Light ×', 0.1],
+          ['ring', 'Ring m', 0.1],
+          ['ca', 'Chromatic ms', 10],
+        ],
+        rows = [
+          ['resisted', 'Resisted'],
+          ['neutral', 'Neutral'],
+          ['super', 'Super ×2'],
+          ['super4', 'Super ×4'],
+          ['crit', 'Crit'],
+        ];
+      return `<div class="bfx-tw"><table class="bfx-t"><tr><th></th>${cols.map(([, n]) => `<th>${escapeHtml(n)}</th>`).join('')}<th>Flash</th></tr>${rows
+        .map(
+          ([k, n]) =>
+            `<tr><th>${n}</th>${cols.map(([c, , st]) => `<td>${bfxNum('', `battleAnims.tiers.${k}.${c}`, { step: st, min: 0 })}</td>`).join('')}<td>${T[k].flash ? bfxNum('', `battleAnims.tiers.${k}.flash.a`, { step: 0.05, min: 0, max: 0.55 }) : '—'}</td></tr>`
+        )
+        .join('')}</table></div>
+       <h4>A KO adds</h4>${grid(
+         bfxNum('Hit-stop', 'battleAnims.tiers.ko.stop', {
+           step: 1,
+           min: 0,
+           max: T.cell,
+           unit: 'ms',
+           help: 'one cell at most',
+         }),
+         bfxNum('Shake', 'battleAnims.tiers.ko.shake', { step: 0.5, min: 0 }),
+         bfxNum('Knockback', 'battleAnims.tiers.ko.kb', { step: 1, min: 0, unit: 'px' }),
+         bfxNum('Burst', 'battleAnims.tiers.ko.burst', { step: 1, min: 0 }),
+         bfxNum('Scars', 'battleAnims.tiers.ko.scar', { step: 1, min: 0, max: 2 }),
+         bfxNum('White, then ink', 'battleAnims.tiers.ko.sprite.darkMs', { step: 10, min: 0, unit: 'ms' })
+       )}
+       <h4>The last KO (or a boss’s) adds</h4>${grid(
+         bfxNum('Freeze in all', 'battleAnims.tiers.last.freeze', {
+           step: 1,
+           min: 0,
+           max: 300,
+           unit: 'ms',
+           help: 'the one place time is added',
+         }),
+         bfxNum('Shake at least', 'battleAnims.tiers.last.shakeTo', { step: 0.5, min: 0 }),
+         bfxNum('Knockback', 'battleAnims.tiers.last.kb', { step: 1, min: 0, unit: 'px' }),
+         bfxNum('Burst', 'battleAnims.tiers.last.burst', { step: 1, min: 0 })
+       )}
+       <h4>Drain and recoil</h4>${grid(
+         bfxNum('Drain motes', 'battleAnims.tiers.drain.n', { step: 1, min: 0, max: 24 }),
+         bfxNum('Their flight', 'battleAnims.tiers.drain.ms', { step: 10, min: 0, unit: 'ms' }),
+         bfxNum('Recoil knockback', 'battleAnims.tiers.recoil.kb', { step: 1, min: 0, unit: 'px' }),
+         bfxNum('Recoil dust', 'battleAnims.tiers.recoil.puff', { step: 1, min: 0 })
        )}`;
     },
   },
