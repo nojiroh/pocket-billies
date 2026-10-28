@@ -36,7 +36,6 @@ import {
   figureClipMatrix,
   figureDark,
   figureFaceMarks,
-  figureGpuMesh,
   figureKey,
   figureMix,
   figurePose,
@@ -49,7 +48,7 @@ import {
   meshClipFrame,
   meshClipMatrices,
 } from './logic/figure-pose.js';
-import { figureSeed, kappiFigure, kitBuild, lookFigure } from './logic/figure-kit.js';
+import { figureSeed, kappiFigure, lookFigure } from './logic/figure-kit.js';
 import { artImg, artURL, makeCanvas } from './art.js';
 import { lookOf, wardrobeData } from './person-art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
@@ -59,6 +58,7 @@ import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
+import { figureMeshGet, figureMeshReport } from './figure-meshes.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_BAKES_A_FRAME: [() => FIGURE_BAKES_A_FRAME],
@@ -74,6 +74,7 @@ expose({
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
   FIGURE_PALETTES: [() => FIGURE_PALETTES],
+  FIGURE_PENDING: [() => FIGURE_PENDING],
   FIGURE_PORTRAIT_PPM: [() => FIGURE_PORTRAIT_PPM],
   FIGURE_SHADOW_FS: [() => FIGURE_SHADOW_FS],
   FIGURE_SHADOW_SIZE: [() => FIGURE_SHADOW_SIZE],
@@ -165,6 +166,8 @@ const FIGURE_CACHE = new Map();
 const figureLast = new WeakMap();
 /** the figures by name: a code figure at once; a model's once its file is in (null while it loads, false if it can't) */
 const FIGURE_DEFS = {};
+/** CH-4: the kit figures whose mesh is being built (figure-meshes.js), by name */
+const FIGURE_PENDING = new Map();
 
 /** whether people are drawn as figures (Engine > People > Figures) */
 export function figuresOn() {
@@ -221,6 +224,17 @@ function figureDef(name) {
   }
   /* CH-3b: a person's figure from their look (logic/figure-kit.js); Kappi, a creature person, as a capybara */
   if (name.startsWith('look:')) {
+    /* CH-4: a figure whose mesh is being built: made once, asked for again until it is in */
+    const F0 = FIGURE_PENDING.get(name);
+    if (F0) {
+      const at0 = name.indexOf('@'),
+        LK0 = (at0 > 0 && FIGURE_LOOKS[name.slice(at0 + 1)]) || FIGURE_LOOKS[figureStyle()] || FIGURE_LOOKS.pixel,
+        d0 = LK0.detail || 1,
+        G0 = figureMeshGet(name + '|' + d0, F0, d0, true);
+      if (!G0) return null;
+      FIGURE_PENDING.delete(name);
+      return (FIGURE_DEFS[name] = { kind: 'code', name, F: F0, height: F0.height, ext: G0.ext });
+    }
     const at = name.indexOf('@'),
       look0 = at > 0 ? FIGURE_LOOKS[name.slice(at + 1)] : null,
       who = (at > 0 ? name.slice(5, at) : name.slice(5)).split('#')[0],
@@ -258,11 +272,16 @@ function figureDef(name) {
             /* a direction's flair, and its design for this person (its cast table) */
             flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
           });
-    /* CH-4: one build of its mesh, at the detail its direction draws it, gives its extent and its first GPU mesh
-       (figureRes takes it once, then lets it go) */
+    /* CH-4: one build of its mesh, at the detail its direction draws it, gives its extent and its first GPU mesh, on
+       the helper thread (figure-meshes.js): until it is in, the person keeps today's picture */
     const detail = (look0 || FIGURE_LOOKS[figureStyle()] || FIGURE_LOOKS.pixel).detail || 1,
-      G = kitBuild(F, detail);
-    return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: G.ext, gpu: { ...G, detail } });
+      G = figureMeshGet(name + '|' + detail, F, detail, true);
+    if (!G) {
+      FIGURE_PENDING.set(name, F);
+      return null;
+    }
+    FIGURE_PENDING.delete(name);
+    return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: G.ext });
   }
   if (!(name in FIGURE_FILES)) return (FIGURE_DEFS[name] = false);
   FIGURE_DEFS[name] = null;
@@ -530,9 +549,10 @@ function figureRes(gl, Fig, detail = 1) {
   if (R) return R;
   if (Fig.kind === 'mesh' && !(Fig.tex && Fig.tex.complete && Fig.tex.naturalWidth > 0)) return null;
   const code = Fig.kind === 'code',
-    /* CH-4: the mesh figureDef built with the figure, if at this detail (taken once: a lost context builds again) */
-    M = code ? (Fig.gpu && Fig.gpu.detail === detail ? Fig.gpu : figureGpuMesh(Fig.F, detail)) : null,
-    vao = gl.createVertexArray();
+    /* CH-4: the figure's mesh at this detail, from the helper thread (figure-meshes.js); none yet: not drawn yet */
+    M = code ? figureMeshGet(Fig.name + '|' + detail, Fig.F, detail) : null;
+  if (code && !M) return null;
+  const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vb);
@@ -577,7 +597,6 @@ function figureRes(gl, Fig, detail = 1) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
   gl.bindVertexArray(null);
-  if (code) Fig.gpu = null;
   R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null, slots: code ? M.slots : null };
   B.res.set(key, R);
   return R;
@@ -1291,6 +1310,8 @@ export function figureReport() {
     losses: B.losses,
     failed: B.failed || null,
     figures: Object.keys(FIGURE_DEFS).filter(k => FIGURE_DEFS[k]).length,
+    /* CH-4: the meshes' helper thread: its builds and their ms, any built on the page, waiting, kept */
+    meshes: figureMeshReport(),
   };
 }
 /** the checks: lose the baker's context on purpose, back after `ms` (WEBGL_lose_context); false if it can't */
