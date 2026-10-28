@@ -65,6 +65,8 @@ export interface GameData {
   >;
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
+  /** PK-8: Perk sets (perkSets.json; logic/perks.js perkSetsOn) */
+  perkSets?: Record<DataId, PerkSet>;
   /** RL-12b: events.json */
   events?: EventsData;
   /** RL-S1: the story director's lines */
@@ -2429,9 +2431,22 @@ export interface Perk {
   img?: string;
   /** PK-4: offered only to a team this holds for (a condition or a list, all of which must hold: team:<Type>, mono) */
   needs?: string | string[];
-  /** PK-4: its types and themes (types.json ids; logic/perks.js PERK_THEMES): offers lean toward a Perk whose tag
-      matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
+  /** PK-4: its types and themes (types.json ids; PK-8: the themes are perkSets.json's ids, its set): offers lean toward a
+      Perk whose tag matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
   tags?: string[];
+}
+/** PK-8: perkSets.json: a Perk set. Its Perks are those tagged with its id (perks.json `tags`); while `need` of them are
+    held its rows join the run's (logic/effects.js fxOfRun, src `set:<id>`) */
+export interface PerkSet {
+  /** the set's name on its Perks' cards ("Office Supplies 2/3") */
+  name: string;
+  /** the bonus's name ("Middle Management"); battle lines name the set by it */
+  title: string;
+  /** how many of its Perks must be held (2-6) */
+  need: number;
+  /** what the bonus does, in one sentence */
+  d: string;
+  fx: FxRow[];
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */

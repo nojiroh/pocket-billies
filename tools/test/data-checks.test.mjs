@@ -41,6 +41,7 @@ const FAMILIES = [
   'dataQuests',
   'dataResidents',
   'dataPerks',
+  'dataPerkSets',
   'dataEvents',
   'dataBanter',
   'dataRewards',
@@ -880,5 +881,48 @@ test('PK-4: a Perk’s tags are types or themes; rules.json run.perks.bias a fac
   assert.ok(
     all.some(w => w.includes('run.perks.bias is not a factor from 1 to 10')),
     JSON.stringify(all)
+  );
+});
+
+test('PK-8: dataPerkSets: the schema, each row as a Perk’s, a need its Perks can meet, a Perk in one set at most', async () => {
+  assert.deepEqual(C.dataPerkSets(GAME_DATA), []);
+  assert.equal(Object.keys(GAME_DATA.perkSets).length, 7);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false });
+  for (const f of ['perks.schema.json', 'perkSets.schema.json'])
+    ajv.addSchema(JSON.parse(readFileSync(join(DATA, 'schema', f), 'utf8')));
+  assert.ok(ajv.validate('perkSets.schema.json', GAME_DATA.perkSets), JSON.stringify(ajv.errors));
+  const bad = structuredClone(GAME_DATA.perkSets);
+  bad.office.fx = [{ kind: 'money', mult: 1.2, sparkle: 1 }];
+  assert.equal(ajv.validate('perkSets.schema.json', bad), false, 'a row the Perks’ schema refuses');
+  delete bad.office.fx;
+  assert.equal(ajv.validate('perkSets.schema.json', bad), false, 'no rows');
+  for (const [plant, text, where = 'perkSets.json'] of [
+    [D => (D.perkSets.office.fx = [{ kind: 'money', mult: 9 }]), "office.fx[0].mult: 9 is outside the code's limits"],
+    [D => (D.perkSets.tech.fx = [{ kind: 'heldBoost', mult: 1.5, if: 'lead' }]), 'tech.fx[0].if: a heldBoost row'],
+    [D => (D.perkSets.lab.fx = [{ kind: 'copy' }]), 'lab.fx[0]: a set has no copy row'],
+    [D => (D.perkSets.lab.need = 5), 'lab.need: 5, but only 4 Perks are tagged "lab"'],
+    [
+      D => D.perks.umbrella.tags.push('lab'),
+      'umbrella.tags: a Perk is in one set at most (weather, lab)',
+      'perks.json',
+    ],
+  ]) {
+    const D = structuredClone(GAME_DATA);
+    plant(D);
+    const all = C.dataPerkSets(D).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.startsWith(where) && w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+  /* a tag is a type or a set's id: a set's tag goes with its set */
+  const D = structuredClone(GAME_DATA);
+  delete D.perkSets.weather;
+  assert.ok(
+    C.dataPerks(D).some(([, w]) =>
+      w.includes('umbrella.tags: "weather" is no type (types.json) or set (perkSets.json')
+    ),
+    JSON.stringify(C.dataPerks(D))
   );
 });

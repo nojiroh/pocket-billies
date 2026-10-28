@@ -49,6 +49,7 @@ expose({
   PASSIVE_INFO: [() => PASSIVE_INFO],
   PEOPLE: [() => PEOPLE],
   PERKS: [() => PERKS],
+  PERK_SETS: [() => PERK_SETS],
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
@@ -476,6 +477,8 @@ export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData |
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 provide({ PERKS }); /* to-module */
+/* perks track PK-8: Perk sets, a bonus for holding `need` of a set's Perks (perkSets.json; logic/perks.js perkSetsOn) */
+export const PERK_SETS = /** @type {Record<string, import('../types/game-data').PerkSet>} */ (gameData.perkSets || {});
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */

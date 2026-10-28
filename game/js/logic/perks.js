@@ -105,7 +105,7 @@ export function perkCount(run, id, perks) {
 }
 
 /** PK-4: a Perk's weight in a draw: its rarity's (rules.json run.perks.rarity), times run.perks.bias when one of its
- * tags is a type on the team (each Billie's types) or a tag of a Perk held (data-checks.js PERK_THEMES: the themes) (itemization's lean toward the build,
+ * tags is a type on the team (each Billie's types) or a tag of a Perk held (PK-8: a Perk set's id, perkSets.json) (itemization's lean toward the build,
  * the rest still offered) @param {Run} run @param {string} id @param {Record<string, Perk>} perks
  * @param {PerkRules} rule @param {string[][]} [team] */
 export function perkWeight(run, id, perks, rule, team) {

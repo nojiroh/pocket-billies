@@ -86,7 +86,6 @@ expose({
   HELD_WHEN_KINDS: [() => HELD_WHEN_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   PERK_NEEDS: [() => PERK_NEEDS],
-  PERK_THEMES: [() => PERK_THEMES],
   RARITY_TIERS: [() => RARITY_TIERS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
@@ -133,6 +132,8 @@ expose({
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerkArt: [() => dataPerkArt, v => (dataPerkArt = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataPerkSets: [() => dataPerkSets, v => (dataPerkSets = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
   // @ts-expect-error -- replaced on purpose
@@ -198,6 +199,8 @@ expose({
   heldRowProblems: [() => heldRowProblems, v => (heldRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   perkNeedsProblems: [() => perkNeedsProblems, v => (perkNeedsProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkRowProblems: [() => perkRowProblems, v => (perkRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   runMapProblems: [() => runMapProblems, v => (runMapProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2107,33 +2110,10 @@ export function dataPerks(D, valid = () => true) {
     const RR = D.rules && D.rules.run && D.rules.run.perks,
       RARITIES = ['common', 'uncommon', 'rare'],
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-      types = new Set((D.types || []).map(t => t.id)),
-      stats = new Set((D.stats || []).map(t => t.id));
+      types = new Set((D.types || []).map(t => t.id));
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks))
-        R.fx.forEach((f, n) => {
-          if (f.type && !types.has(f.type))
-            problem('perks.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
-          // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
-          // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
-          if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
-            problem(
-              'perks.json',
-              `${k}.fx[${n}].mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
-            );
-          if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
-            problem(
-              'perks.json',
-              `${k}.fx[${n}].stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
-            );
-          /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
-          if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
-            problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
-          /* PK-1: when, if, every, grow, per and once */
-          fxWhenProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
-          /* PK-3: the battle kit's kinds */
-          fxKindProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
-        });
+        R.fx.forEach((f, n) => perkRowProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what)));
     /* PK-1: a Perk's battle line */
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks))
@@ -2143,10 +2123,14 @@ export function dataPerks(D, valid = () => true) {
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks)) {
         perkNeedsProblems(R.needs, `${k}.needs`, D, w => problem('perks.json', w));
-        /* PK-4: its tags: types of types.json and the themes of perks.js PERK_THEMES */
+        /* PK-4: its tags: types of types.json and themes; PK-8: the themes are the Perk sets (perkSets.json) */
+        const themes = Object.keys(D.perkSets || {});
         for (const t of R.tags || [])
-          if (!types.has(t) && !(/** @type {readonly string[]} */ (PERK_THEMES).includes(t)))
-            problem('perks.json', `${k}.tags: "${t}" is no type (types.json) or theme (${PERK_THEMES.join(', ')})`);
+          if (!types.has(t) && !themes.includes(t))
+            problem(
+              'perks.json',
+              `${k}.tags: "${t}" is no type (types.json) or set (perkSets.json: ${themes.join(', ')})`
+            );
       }
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
@@ -2188,6 +2172,60 @@ export function dataPerks(D, valid = () => true) {
         }
       }
     }
+  }
+  return out;
+}
+/** RL-12: one effect row of a Perk (PK-8: or of a Perk set): the type and stat it names, its numbers within the code's
+ * limits, its timing (PK-1) and its kind's own fields (PK-3 on) @param {any} f @param {string} at @param {any} D
+ * @param {(what: string) => void} problem */
+export function perkRowProblems(f, at, D, problem) {
+  const types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id));
+  if (f.type && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
+  // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
+  // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
+  if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+    problem(
+      `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
+    );
+  if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
+    problem(
+      `${at}.stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
+    );
+  /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
+  if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
+    problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+  /* PK-1: when, if, every, grow, per and once */
+  fxWhenProblems(f, at, D, problem);
+  /* PK-3: the battle kit's kinds */
+  fxKindProblems(f, at, D, problem);
+}
+/** PK-8: perkSets.json, the Perk sets: the schema, each row as a Perk's (perkRowProblems; a copy row stands for a Perk
+ * above it, so a set has none), a need its Perks can meet (those tagged with its id in perks.json), and no Perk in two
+ * sets @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataPerkSets(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
+    S = D.perkSets;
+  if (!S || !valid('perkSets.schema.json', S, 'perkSets.json')) return out;
+  const perks = D.perks || {};
+  for (const [id, T] of Object.entries(S)) {
+    T.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+      if (f.kind === 'copy')
+        problem('perkSets.json', `${id}.fx[${n}]: a set has no copy row (it copies a Perk above it)`);
+      else perkRowProblems(f, `${id}.fx[${n}]`, D, what => problem('perkSets.json', what));
+    });
+    const members = Object.keys(perks).filter(k => (perks[k].tags || []).includes(id));
+    if (T.need > members.length)
+      problem(
+        'perkSets.json',
+        `${id}.need: ${T.need}, but only ${members.length} Perk${members.length === 1 ? ' is' : 's are'} tagged "${id}" in perks.json`
+      );
+  }
+  for (const [k, R] of Object.entries(perks)) {
+    const sets = /** @type {any} */ (R.tags || []).filter((/** @type {string} */ t) => Object.hasOwn(S, t));
+    if (sets.length > 1) problem('perks.json', `${k}.tags: a Perk is in one set at most (${sets.join(', ')})`);
   }
   return out;
 }
@@ -2388,9 +2426,6 @@ export function fxPassiveProblems(f, at, D, problem) {
       problem(`${at}.stages: a whole number of stages from 1 to ${FX_STAGES}`);
   }
 }
-/** PK-4: the themes a Perk's tags may name besides types: the Perk sets planned for PK-8 (perks-track.md 5.7, which
- * makes them a data section) */
-export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
 /** PK-4: the conditions a Perk's needs can name: those an offer knows (the team); PK-5: bots, a scrapyard still
  * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition); PK-6: side, a side area still
  * ahead (perks.js perkRunSide) */
