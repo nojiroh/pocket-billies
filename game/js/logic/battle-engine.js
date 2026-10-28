@@ -107,6 +107,7 @@ import {
   fxPassive,
   fxPeek,
   fxPinchHeal,
+  fxRecoil,
   fxSources,
   fxSpend,
   fxSplice,
@@ -229,6 +230,8 @@ expose({
   fxNames: [() => fxNames],
   // @ts-expect-error -- replaced on purpose
   fxPassiveOf: [() => fxPassiveOf, v => (fxPassiveOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxRecoilHurt: [() => fxRecoilHurt, v => (fxRecoilHurt = v)],
   // @ts-expect-error -- replaced on purpose
   fxRevive: [() => fxRevive, v => (fxRevive = v)],
   // @ts-expect-error -- replaced on purpose
@@ -702,6 +705,8 @@ export function useMove(k, mid, tk0, part) {
   v.last = mid;
   if (!onFoe) ev.an.self = true;
   const targets = spread ? liveActors(foeSide(k)) : [tk];
+  /* PK-7: whether this attack dealt damage (a recoil row costs its user HP then) */
+  let landed = false;
   for (const tk2 of targets) {
     const t2 = fighter(tk2),
       fv2 = fieldState(tk2);
@@ -748,6 +753,7 @@ export function useMove(k, mid, tk0, part) {
       }
       const held = bedrockHolds(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
+      if (r.dmg > 0) landed = true;
       alphaPhase(tk2);
       /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked); SP-5: and on a
          Billie's Augments */
@@ -840,6 +846,8 @@ export function useMove(k, mid, tk0, part) {
       }
     }
   }
+  /* PK-7: an attack of yours that dealt damage: the run's recoil rows cost its user HP (Overclock Chip) */
+  if (landed && ACTOR_SIDE[k] === 0 && battleNow().fx && u.hp > 0) fxRecoilHurt(k, M);
   if (fx.delay || (!spread && ev.an && (ev.an.miss || ev.an.blocked))) return;
   if (fx.selfStage && (!fx.selfChance || battleRoll() * 100 < fx.selfChance)) applyStatStages(k, fx.selfStage);
   if (
@@ -1594,6 +1602,23 @@ export function fxTurnEnd(k) {
     m.hp -= d;
     battleSay(`${fxNames(hurt)}: ${billyName(m)} lost a little HP.`, { k: 'hurt', si: k, dmg: d });
   }
+}
+/** PK-7: one of yours' attack dealt damage: the run's recoil rows (their conditions held for it: fxAt) cost it their
+ * share of its HP (at least 1, at most what it has: it can faint), with a line naming the Perks
+ * @param {number} k @param {any} M the move */
+export function fxRecoilHurt(k, M) {
+  const b = battleNow(),
+    m = fighter(k),
+    rows = fxAt(b.fx, fxBattleCtx(k, { cat: M.c }), fxBattleState(b)).filter(f => f.kind === 'recoil'),
+    share = fxRecoil(rows);
+  if (!(share > 0) || !m || m.hp <= 0) return 0;
+  const d = Math.min(m.hp, Math.max(1, Math.floor(maxHp(m) * share)));
+  m.hp -= d;
+  battleSay(`${fxNames(rows)}: ${billyName(m)} lost some HP.`, { k: 'hurt', si: k, dmg: d }).by = fxSources(
+    rows,
+    'recoil'
+  ).map(src => ({ src, si: k }));
+  return d;
 }
 /** PK-3: the acts of yours a run's first rows put ahead this turn (their conditions held for the one acting), with a
  * line naming the Perks; none without Perks @param {any[]} acts @returns {Set<any>} */

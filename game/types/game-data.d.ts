@@ -2052,7 +2052,9 @@ export type FxKindRow =
   /** PK-6: Moneys and Bag items (items.json ids) at once, when the Perk is taken */
   | { kind: 'give'; money?: number; items?: Record<string, number> }
   /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
-  | { kind: 'copy' };
+  | { kind: 'copy' }
+  /** PK-7: an attack of yours that deals damage costs its user this share of its HP */
+  | { kind: 'recoil'; share: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

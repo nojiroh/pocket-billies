@@ -116,6 +116,7 @@ const PERK_KINDS = {
   salvage: 'Beaten bots leave more salvage (PK-5)',
   copy: 'Copies the Perk just above it in the list held (PK-6)',
   give: 'Moneys and Bag items at once, when it is taken (PK-6)',
+  recoil: 'An attack of yours that deals damage costs its user HP (PK-7)',
 };
 /** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
 const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
@@ -198,6 +199,7 @@ const PERK_ROW_NEW = {
   salvage: () => ({ kind: 'salvage', mult: 2 }),
   copy: () => ({ kind: 'copy' }),
   give: () => ({ kind: 'give', money: 150, when: 'take' }),
+  recoil: () => ({ kind: 'recoil', share: 0.08 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -323,6 +325,8 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       turnHeal: () => [share('Share of HP healed at each turn’s end')],
       pinchHeal: () => [share('Low: at this share of HP or below', 'at'), share('Share of HP healed')],
       turnHurt: () => [share('Share of HP lost at each turn’s end (at most 0.5)')],
+      /* PK-7: Overclock Chip's cost */
+      recoil: () => [share('Share of its HP an attack that dealt damage costs its user (at most 0.5)')],
       level: () => [numberField('Foes’ levels +', `${p}.n`, { min: -20, max: 20, step: 1 })],
       bossHp: () => [mult('Boss HP ×')],
       /* PK-3: stages without a when; at a move (When) the move itself is a critical hit */

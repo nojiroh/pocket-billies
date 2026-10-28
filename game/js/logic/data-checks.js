@@ -2266,6 +2266,9 @@ export function fxKindProblems(f, at, D, problem) {
   /* PK-5: the levels a caught Billie joins higher, 1 to FX_CATCH_LEVEL */
   if (f.kind === 'catchLevel' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_CATCH_LEVEL))
     problem(`${at}.n: a whole number of levels from 1 to ${FX_CATCH_LEVEL} (effects.js FX_CATCH_LEVEL)`);
+  /* PK-7: what an attack of yours that deals damage costs its user, at most a half of its HP */
+  if (f.kind === 'recoil' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
+    problem(`${at}.share: a share of HP above 0, at most 0.5`);
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
   /* PK-4: a run rule of FX_RULES and how much it changes (FX_RULE_N: forecastDays 1 to 14 more days...) */

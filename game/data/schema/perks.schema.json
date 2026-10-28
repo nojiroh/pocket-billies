@@ -187,6 +187,11 @@
        "properties": {"kind": {"const": "give"}, "money": {"type": "integer", "minimum": 1, "maximum": 9999}, "items": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 99}}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
+       "description": "recoil (PK-7): an attack of yours that deals damage costs its user this share of its HP (Overclock Chip)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "share"],
+       "properties": {"kind": {"const": "recoil"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.5}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
        "description": "copy (PK-6): stands for the rows of the Perk just above it in the list held (downsides too; never itself or another copier); no other fields",
        "type": "object", "additionalProperties": false, "required": ["kind"],
        "properties": {"kind": {"const": "copy"}}

@@ -46,6 +46,8 @@
              runFxMoment)
      copy    stands for the rows of the Perk just above it in the list held (PK-6, fxPerkRows: never itself or another
              copier; the rows count as the copier's own, src its id)
+     recoil  an attack of yours that deals damage costs its user this share of its HP (PK-7, battle-engine.js
+             fxRecoilHurt; Overclock Chip)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -126,6 +128,7 @@ expose({
   fxPerkRows: [() => fxPerkRows, v => (fxPerkRows = v)],
   fxPinchHeal: [() => fxPinchHeal],
   fxPrice: [() => fxPrice],
+  fxRecoil: [() => fxRecoil],
   // @ts-expect-error -- replaced on purpose
   fxRowNow: [() => fxRowNow, v => (fxRowNow = v)],
   fxRows: [() => fxRows],
@@ -190,6 +193,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'salvage',
   'copy',
   'give',
+  'recoil',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -393,6 +397,14 @@ export const fxTurnHurt = fx =>
   Math.min(
     0.5,
     (fx || []).reduce((a, f) => a + (f.kind === 'turnHurt' ? f.share : 0), 0)
+  );
+
+/** PK-7: the share of its HP an attack of yours that dealt damage costs its user: the recoil rows' shares summed, at
+ * most a half (0 when none) @param {Fx[] | null | undefined} fx */
+export const fxRecoil = fx =>
+  Math.min(
+    0.5,
+    (fx || []).reduce((a, f) => a + (f.kind === 'recoil' ? f.share : 0), 0)
   );
 
 /** SP-6: what multiplies a Gene Sample's DNA, the wild splice odds and an Unstable splice's turn-end hurt: the run's
