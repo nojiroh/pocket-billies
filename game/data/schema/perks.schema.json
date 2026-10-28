@@ -41,10 +41,10 @@
     "items": {
      "oneOf": [
       {
-       "description": "money: what a won battle pays ($), times mult; PK-5: or at arrive, this share of the Moneys you carry, at most max",
+       "description": "money: what a won battle pays ($), times mult; PK-5: or at arrive, this share of the Moneys you carry, at most max; PK-7: or at arrive, add Moneys (charged when below 0, never below none)",
        "type": "object", "additionalProperties": false, "required": ["kind"],
-       "oneOf": [{"required": ["mult"], "not": {"required": ["share"]}}, {"required": ["share", "max", "when"], "not": {"required": ["mult"]}}],
-       "properties": {"kind": {"const": "money"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "max": {"type": "integer", "minimum": 1, "maximum": 9999}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+       "oneOf": [{"required": ["mult"], "not": {"anyOf": [{"required": ["share"]}, {"required": ["add"]}]}}, {"required": ["share", "max", "when"], "not": {"anyOf": [{"required": ["mult"]}, {"required": ["add"]}]}}, {"required": ["add", "when"], "not": {"anyOf": [{"required": ["mult"]}, {"required": ["share"]}]}}],
+       "properties": {"kind": {"const": "money"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "max": {"type": "integer", "minimum": 1, "maximum": 9999}, "add": {"type": "integer", "minimum": -9999, "maximum": 9999}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "price: a run shop's prices (shop) or a run town's clinic (heal), times mult",

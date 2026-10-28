@@ -2239,8 +2239,14 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.max: a money share needs its most, a whole number of Moneys from 1 to 9999`);
     if ('mult' in f) problem(`${at}.mult: a money share has no mult`);
     if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
+  } else if (f.kind === 'money' && 'add' in f) {
+    /* PK-7: Moneys paid or charged (below 0) on arrival (Subscription Box) */
+    if (!(Number.isInteger(f.add) && f.add !== 0 && Math.abs(f.add) <= 9999))
+      problem(`${at}.add: a whole number of Moneys from -9999 to 9999, not 0`);
+    if ('mult' in f) problem(`${at}.mult: a money add has no mult`);
+    if (f.when == null) problem(`${at}.when: a money add needs a moment (arrive)`);
   } else if (f.kind === 'money' && f.when != null)
-    problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
+    problem(`${at}.when: a money row at ${f.when} is a share (share, max) or an add`);
   /* PK-6: a give row's Moneys and Bag items (items.json), given when the Perk is taken */
   if (f.kind === 'give') {
     const items = f.items || {},

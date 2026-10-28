@@ -128,3 +128,36 @@ test('PK-7 recoil: an attack of yours that deals damage costs its user a share o
     0.5
   );
 });
+
+/* ---------- a money row's add on arrival ---------- */
+
+const ofType = T => {
+  const ids = Object.keys(SPECIES).filter(k => (SPECIES[k].types || []).includes(T));
+  return ids.find(k => SPECIES[k].types.length === 1) || ids[0];
+};
+
+test('PK-7 money add: walking in pays its Moneys, or charges them below 0 (never below none); none without the row', () => {
+  const L = modules['run-loop'],
+    { P } = perks(
+      { id: 'test_box', fx: [{ kind: 'money', add: -15, when: 'arrive' }] },
+      { id: 'test_tip', fx: [{ kind: 'money', add: 20, when: 'arrive' }] }
+    );
+  const walk = (se, ids) => {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30);
+    s.se = se;
+    s.run = { perks: ids, perkState: {} };
+    const out = {};
+    L.runArriveFx(s, P, out);
+    return [s.se, out.money, out.cost];
+  };
+  assert.deepEqual(walk(100, ['test_box']), [85, 0, 15]);
+  assert.deepEqual(walk(10, ['test_box']), [0, 0, 10], 'never below none: it takes what is there');
+  assert.deepEqual(walk(0, ['test_box']), [0, 0, 0]);
+  assert.deepEqual(walk(100, ['test_tip']), [120, 20, 0]);
+  /* both: what is paid comes first, then the charge */
+  assert.deepEqual(walk(0, ['test_box', 'test_tip']), [5, 20, 15]);
+  assert.deepEqual(walk(100, []), [100, 0, 0]);
+  /* a battle's money ignores an add row */
+  assert.equal(fn('fxMoney')([{ kind: 'money', add: -15, when: 'arrive', src: 'x' }], 100), 100);
+});

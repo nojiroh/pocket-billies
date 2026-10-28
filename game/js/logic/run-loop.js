@@ -138,24 +138,32 @@ export function fxRunCtx(s, more) {
  * (the one taken). PK-5: a money share row pays its share of the Moneys carried (effects.js fxMoneyShare: each row
  * from what was carried as the moment came, at most its max). Returns the rows that acted (for the caller's own
  * kinds), the HP healed and the Moneys paid. PK-6: a give row pays its Moneys and puts its items in the Bag (`items`:
- * what it gave, by id; the Moneys are in `money`).
+ * what it gave, by id; the Moneys are in `money`). PK-7: a money row's `add` pays that many Moneys, or charges them
+ * when below 0 (`cost`: what was taken, never more than was carried).
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} when @param {any} [more]
- * @param {string} [only] @returns {{ rows: any[], hp: number, money: number, items: Record<string, number> }}
+ * @param {string} [only]
+ * @returns {{ rows: any[], hp: number, money: number, cost: number, items: Record<string, number> }}
  */
 export function runFxMoment(s, perks, when, more, only) {
   const fx = s.run ? fxOfRun(s.run, perks) : null;
   /* nothing of that moment: no marks made */
   if (!fx || !fx.some(f => f.when === when || (f.grow && (f.grow.on === when || f.grow.reset === when))))
-    return { rows: [], hp: 0, money: 0, items: {} };
+    return { rows: [], hp: 0, money: 0, cost: 0, items: {} };
   const rows = fxFire(fx, when, fxRunCtx(s, more), { run: fxRunMarks(s.run) }, only),
     se = s.se,
     /** @type {Record<string, number>} */
     items = {};
   let hp = 0,
-    money = 0;
+    money = 0,
+    cost = 0;
   for (const f of rows) {
     if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
     money += fxMoneyShare(f, se);
+    /* PK-7: a money row's add: Moneys paid, or charged when below 0 (Subscription Box) */
+    if (f.kind === 'money' && typeof f.add === 'number') {
+      if (f.add > 0) money += f.add;
+      else cost -= f.add;
+    }
     /* PK-6: Boarding Pass */
     if (f.kind === 'give') {
       money += f.money || 0;
@@ -166,7 +174,10 @@ export function runFxMoment(s, perks, when, more, only) {
     }
   }
   s.se += money;
-  return { rows, hp, money, items };
+  /* PK-7: a charge takes what is carried, never below 0 */
+  cost = Math.min(cost, Math.max(0, s.se));
+  s.se -= cost;
+  return { rows, hp, money, cost, items };
 }
 /** PK-6: what a moment gave, in words ("150 Moneys and 2 Potions"; '' for nothing) @param {{ money: number,
  * items?: Record<string, number> }} m */
@@ -205,8 +216,8 @@ export const runBuyFx = (s, perks, price = 0) => {
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none). PK-1: the
  * heal rows whose conditions hold here, then the arrive moment's rows. PK-5: `out.money` gets the Moneys its money
- * share rows paid (Tip Jar) @param {SaveData} s @param {Record<string, any>} perks perks.json
- * @param {{ money?: number }} [out] */
+ * share rows paid (Tip Jar); PK-7: `out.cost` what they charged (Subscription Box) @param {SaveData} s
+ * @param {Record<string, any>} perks perks.json @param {{ money?: number, cost?: number }} [out] */
 export function runArriveFx(s, perks, out) {
   /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
   if (s.run) encArrive(s.run);
@@ -214,7 +225,11 @@ export function runArriveFx(s, perks, out) {
     share = fx ? fxHealShare(fxAt(fx, fxRunCtx(s), { run: s.run && s.run.perkState })) : 0;
   const healed = share ? runArriveHeal(s.team, share) : 0,
     m = runFxMoment(s, perks, 'arrive');
-  if (out) out.money = m.money;
+  if (out) {
+    out.money = m.money;
+    /* PK-7: what the Perks charged (Subscription Box) */
+    out.cost = m.cost;
+  }
   return healed + m.hp;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team

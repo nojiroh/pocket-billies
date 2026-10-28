@@ -264,7 +264,13 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
               numberField('At most', `${p}.max`, { min: 1, max: 9999, step: 1, unit: '$' }),
               `<p class="note">Paid at arrive (its When), from what you carry as you walk in.</p>`,
             ]
-          : [mult('Moneys ×')],
+          : 'add' in f
+            ? [
+                /* PK-7: Moneys paid, or charged below 0 (Subscription Box) */
+                numberField('Moneys (below 0 charges)', `${p}.add`, { min: -9999, max: 9999, step: 1, unit: '$' }),
+                `<p class="note">At arrive (its When): paid, or charged when below 0 (never below none carried).</p>`,
+              ]
+            : [mult('Moneys ×')],
       price: () => [
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],

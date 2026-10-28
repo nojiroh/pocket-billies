@@ -654,10 +654,16 @@ test('PK-6: dataPerks and the schema take Wave D’s kinds and name their faults
 const PK7_GOOD = [
   { kind: 'recoil', share: 0.08 },
   { kind: 'recoil', share: 0.1, if: 'cat:H' },
+  { kind: 'money', add: -15, when: 'arrive' },
+  { kind: 'money', add: 20, when: 'arrive', every: 2 },
 ];
 const PK7_BAD = [
   [{ kind: 'recoil', share: 0.6 }, 'share: a share of HP above 0, at most 0.5'],
   [{ kind: 'recoil', share: 0.1, when: 'hit' }, "a recoil row can't act at hit"],
+  [{ kind: 'money', add: 0, when: 'arrive' }, 'add: a whole number of Moneys from -9999 to 9999, not 0'],
+  [{ kind: 'money', add: -15 }, 'a money add needs a moment (arrive)'],
+  [{ kind: 'money', add: -15, mult: 1.2, when: 'arrive' }, 'a money add has no mult'],
+  [{ kind: 'money', add: -15, when: 'win' }, "a money row can't act at win"],
 ];
 test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

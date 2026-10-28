@@ -623,10 +623,11 @@ export function runSimOn(env) {
         else i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
-        const paid = { money: 0 };
+        const paid = { money: 0, cost: 0 };
         fxHealed = runArriveFx(s, data.PERKS, paid);
-        /* PK-5: a money share row (Tip Jar) */
+        /* PK-5: a money share row (Tip Jar); PK-7: what a Perk charges on arrival (Subscription Box) */
         stats.moneyIn.perks += paid.money || 0;
+        stats.moneyOut.perks += paid.cost || 0;
       }
     } finally {
       data.worldHubBack();
