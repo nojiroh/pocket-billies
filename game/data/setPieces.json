@@ -111,6 +111,9 @@
    "r": 4.2,
    "biomes": {"default":0},
    "sites": {"scrapyard":6},
+   "life": [
+    {"k":"form","n":2,"area":[-3.4,0.4,3.4,4.2]}
+   ],
    "props": [
     {"k":"scrap","x":-1.6,"z":2.4},
     {"k":"scrap","x":1.8,"z":3.2},
@@ -126,13 +129,16 @@
    "r": 3.8,
    "biomes": {"default":1},
    "sites": {"scrapyard":2},
+   "life": [
+    {"k":"form","n":3,"area":[-3,0.2,3,3.6]}
+   ],
    "props": [
     {"k":"tollbooth","x":-2.5,"z":1.2},
     {"k":"bollard","x":-0.9,"z":0.3},
     {"k":"bollard","x":1.7,"z":0.3},
     {"k":"flag_pole","x":2.6,"z":2.2},
     {"k":"crates","x":-1.2,"z":3},
-    {"k":"signpost","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."},
+    {"k":"bureau_sign","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."},
     {"k":"bureau_barrier","x":1.2,"z":3.3},
     {"k":"bureau_crate","x":-0.1,"z":2}
    ],

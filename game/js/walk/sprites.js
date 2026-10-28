@@ -78,6 +78,7 @@ expose({
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
+  drawFoilRecord: [() => drawFoilRecord, v => (drawFoilRecord = v)],
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawReflectionRuns: [() => drawReflectionRuns, v => ((drawReflectionRuns = v), provide({ drawReflectionRuns }))],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
@@ -520,6 +521,17 @@ function flushSpriteRun(ip) {
 }
 /* a picture whose blades or clock hands are drawn right after it */
 const spriteHasParts = it => !!(it.M && (it.M.blades || (it.M.hands && !it.far && !it.layer)));
+/* style track SY-6: a coated Billie while its foil's band crosses it (item.foil, logic/coat-foil.js) is drawn on its own
+   on the sprite program, with uFoil, which goes back to 0 after it; between sweeps it stays in its run */
+function drawFoilRecord(p, r) {
+  const gl = gpuState.gl,
+    U = p.U;
+  setSpriteRecord(p, r);
+  if (U.uFoil) gl.uniform4fv(U.uFoil, r.it.foil);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  if (U.uFoil) gl.uniform4f(U.uFoil, 0, 0, 0, 0);
+  if (r.dz) gl.uniform1f(U.uDZ, 0);
+}
 function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
   const gl = gpuState.gl,
     R = SPRITE_RUN;
@@ -539,7 +551,13 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
     const r = spriteRecordAt(i),
       it = r.it,
       tag = it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
-    if (r.mode === 'quad') {
+    if (r.mode === 'quad' && it.foil && !r.crossOn) {
+      flushSpriteRun(ip);
+      if (R.on) gl.useProgram(p.p);
+      R.on = false;
+      gpuTag(tag);
+      drawFoilRecord(p, r);
+    } else if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
       if (!R.n) {
         R.T = r.T;
@@ -604,6 +622,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       gpuTag(it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0);
       const mode = spriteRecord(it, F, r);
       if (mode === 'wave') drawSpriteWave(p, r);
+      else if (mode === 'quad' && it.foil && !r.crossOn) drawFoilRecord(p, r);
       else if (mode === 'quad') {
         setSpriteRecord(p, r);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
