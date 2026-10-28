@@ -186,7 +186,7 @@
    "range": 16,
    "line": true,
    "voices": 2,
-   "trim": 0.2,
+   "trim": 0.157,
    "send": 0.1,
    "layers": [
     {
@@ -207,7 +207,7 @@
    "range": 24,
    "line": true,
    "voices": 2,
-   "trim": 0.14,
+   "trim": 0.109,
    "send": 0.1,
    "layers": [
     {
@@ -236,7 +236,7 @@
    "range": 22,
    "line": true,
    "voices": 2,
-   "trim": 0.17,
+   "trim": 0.123,
    "send": 0.1,
    "layers": [
     {
@@ -269,7 +269,7 @@
   "canal": {
    "range": 12,
    "line": true,
-   "trim": 0.5,
+   "trim": 0.616,
    "send": 0.15,
    "layers": [
     {
@@ -287,7 +287,7 @@
   },
   "spring": {
    "range": 8,
-   "trim": 0.5,
+   "trim": 0.65,
    "send": 0.1,
    "layers": [
     {
@@ -304,7 +304,7 @@
   "pond": {
    "range": 10,
    "line": true,
-   "trim": 0.46,
+   "trim": 0.8,
    "send": 0.1,
    "layers": [
     {
@@ -314,7 +314,7 @@
     }
    ],
    "events": [
-    {"type":"laps","every":[3,7],"gain":0.5,"f":330,"plip":0.4,"bank":"drop"},
+    {"type":"laps","every":[3,7],"gain":0.5,"f":520,"plip":0.4,"bank":"drop"},
     {"type":"bubbles","bank":"bubble","rate":0.07,"rMin":9,"rMax":11,"gamma":0,"beta":0,"level":0.45}
    ]
   },
@@ -322,7 +322,7 @@
    "range": 14,
    "line": true,
    "voices": 2,
-   "trim": 0.63,
+   "trim": 0.388,
    "send": 0.1,
    "layers": [
     {
@@ -332,13 +332,13 @@
     }
    ],
    "events": [
-    {"type":"laps","every":[1.6,4.5],"gain":1.2,"f":380,"plip":0.7,"bank":"drop"}
+    {"type":"laps","every":[1.6,4.5],"gain":1.2,"f":480,"plip":0.7,"bank":"drop"}
    ]
   },
   "marsh": {
    "range": 10,
    "line": true,
-   "trim": 0.5,
+   "trim": 0.636,
    "send": 0.1,
    "layers": [
     {
@@ -354,7 +354,7 @@
   },
   "bog": {
    "range": 10,
-   "trim": 0.5,
+   "trim": 0.636,
    "send": 0.1,
    "layers": [
     {
@@ -370,7 +370,7 @@
   "oasis": {
    "range": 10,
    "line": true,
-   "trim": 0.5,
+   "trim": 0.6,
    "send": 0.1,
    "layers": [
     {
@@ -380,12 +380,12 @@
     }
    ],
    "events": [
-    {"type":"laps","every":[3,8],"gain":0.5,"f":400,"plip":0.3,"bank":"drop"}
+    {"type":"laps","every":[3,8],"gain":1,"f":400,"plip":0.3,"bank":"drop"}
    ]
   },
   "hotspring": {
    "range": 10,
-   "trim": 0.59,
+   "trim": 0.32,
    "send": 0.1,
    "layers": [
     {
@@ -404,7 +404,7 @@
   },
   "lava": {
    "range": 12,
-   "trim": 0.51,
+   "trim": 0.093,
    "send": 0.1,
    "layers": [
     {
@@ -423,7 +423,7 @@
   },
   "ice": {
    "range": 8,
-   "trim": 0.4,
+   "trim": 0.63,
    "send": 0.1,
    "layers": [],
    "events": [
@@ -434,7 +434,7 @@
    "range": 24,
    "line": true,
    "voices": 2,
-   "trim": 0.3,
+   "trim": 0.38,
    "send": 0.1,
    "layers": [
     {
@@ -466,7 +466,7 @@
   },
   "drips": {
    "range": 14,
-   "trim": 1.06,
+   "trim": 1,
    "send": 0.65,
    "layers": [
     {
@@ -482,7 +482,7 @@
   "fallSmall": {
    "range": 12,
    "byHeight": true,
-   "trim": 0.26,
+   "trim": 0.237,
    "send": 0.1,
    "layers": [
     {
@@ -506,7 +506,7 @@
   "fallTall": {
    "range": 30,
    "byHeight": true,
-   "trim": 0.17,
+   "trim": 0.07,
    "send": 0.18,
    "layers": [
     {
@@ -538,7 +538,7 @@
   "plunge": {
    "range": 12,
    "byHeight": true,
-   "trim": 0.25,
+   "trim": 0.21,
    "send": 0.15,
    "layers": [
     {
@@ -561,7 +561,7 @@
   },
   "fountain": {
    "range": 12,
-   "trim": 0.5,
+   "trim": 0.41,
    "send": 0.1,
    "layers": [
     {
@@ -584,7 +584,7 @@
   },
   "wake": {
    "range": 3,
-   "trim": 0.4,
+   "trim": 0.28,
    "layers": [
     {
      "noise": "pink",
@@ -607,7 +607,7 @@
   "rainOnWater": {
    "range": 12,
    "line": true,
-   "trim": 0.5,
+   "trim": 0.63,
    "layers": [],
    "events": [
     {"type":"bubbles","bank":"drop","rate":40,"rMin":1,"rMax":3.5,"gamma":3,"beta":2,"level":0.6,"pan":0.6}

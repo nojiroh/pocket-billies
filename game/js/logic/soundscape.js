@@ -286,14 +286,14 @@ export function soundscapeEmitters(S, cells, sc, o = {}) {
 }
 
 /**
- * a fall's loudness and reach by its height: a 3 m fall as its recipe, a 12 m one twice as loud and heard 1.8 times
- * as far, a half-metre cascade half as loud
+ * a fall's loudness and reach by its height: a 3 m fall as its recipe, a 12 m one 1.6 times as loud (4 dB; the loudness
+ * report keeps it near the ceiling) and heard 1.8 times as far, a half-metre cascade half as loud
  * @param {number} h
  * @returns {{gain: number, reach: number}}
  */
 export function soundscapeHeight(h) {
   const k = Math.sqrt(Math.max(0.1, h) / 3);
-  return { gain: Math.min(2, Math.max(0.4, k)), reach: Math.min(1.8, Math.max(0.7, k)) };
+  return { gain: Math.min(1.6, Math.max(0.4, k)), reach: Math.min(1.8, Math.max(0.7, k)) };
 }
 
 /**
