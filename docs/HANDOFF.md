@@ -60,10 +60,11 @@ session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The w
   worktree); the second trims measured on their rows alone. `npm run check:smoke` on 1edb2c77: 7 of 7, no problems.
   Browser probes (headless Chromium, Copperleaf): a storm at night (two bolts: thunder rolled, the far one 12.5 s
   later), dawn, and every new Sound test row: no page error. `check-quick.py --steps=sound,song,music,"debug
-  menu",weather,animals`: 10 of 12 (battle music failed under load and passed alone; Song fingerprints lists only
-  SND-11's 4-5 new ensemble parts as not in the baseline). `check-studio-github.py --only=music`: ok (steps on gravel
+  menu",weather,animals`: 10 of 12 (battle music failed under load and passed alone; Song fingerprints listed
+  SND-11's new ensemble parts as not in the baseline: the tested commit 323fc0c2 had SND-11's ensemble code but not its
+  baseline commit 32f497c4, which came later; origin/track/sound has those renders). `check-studio-github.py --only=music`: ok (steps on gravel
   on the World sounds card). The full `npm run check:quick` on 323fc0c2: 38 of 42 in 2152 s; every sound step passed;
-  Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (SND-11's baseline).
+  Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (the baseline commit 32f497c4 was not yet in the tested tree).
   CI on 4874a99d (the session's merge push): lint and rules green; smoke still running when this entry was
   written (locally: smoke 7 of 7, the full quick check as above). Tag `snd-14-done` on this entry's commit.
 - **Decided for the owner, to review**:
