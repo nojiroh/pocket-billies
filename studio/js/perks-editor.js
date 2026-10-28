@@ -149,6 +149,11 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
   ],
   eventHurt: ['Events never cost your team HP', () => 'On (1): an event’s hurt command does nothing.'],
   /* PK-7: Non-Refundable Ticket */
+  /* PK-7: Influencer Contract */
+  faintPaysNothing: [
+    'A win in which one of yours fainted pays nothing',
+    () => 'On (1): a won battle in which one of yours fainted pays no Moneys (a wild prize or a trainer’s reward).',
+  ],
   noDrop: [
     'No Perk held can be let go',
     () => 'On (1): at the cap no new Perk can be taken (the “Let one go” sheet offers none).',

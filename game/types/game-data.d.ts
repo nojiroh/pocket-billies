@@ -2037,7 +2037,8 @@ export type FxKindRow =
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
    * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
    * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds;
-   * eventHurt, an event's hurt does nothing; PK-7: noDrop, no Perk held can be let go) */
+   * eventHurt, an event's hurt does nothing; PK-7: noDrop, no Perk held can be let go; faintPaysNothing, a win in which one of
+   * yours fainted pays no Moneys) */
   | {
       kind: 'rule';
       rule:
@@ -2049,7 +2050,8 @@ export type FxKindRow =
         | 'sideOpen'
         | 'sideFind'
         | 'eventHurt'
-        | 'noDrop';
+        | 'noDrop'
+        | 'faintPaysNothing';
       n: number;
     }
   /** PK-5: a Billie you catch joins n levels higher */

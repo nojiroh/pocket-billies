@@ -264,3 +264,47 @@ test('PK-7 rule noDrop: no Perk held can be let go, so at the cap nothing more i
     assert.equal(PK.perkNoDrop(runOf(fill[0], 'test_copier'), data.PERKS), '');
   });
 });
+
+/* ---------- rule faintPaysNothing ---------- */
+
+test('PK-7 rule faintPaysNothing: a win in which one of yours fainted pays no Moneys; a clean win pays', () => {
+  const BR = modules['battle-rewards'],
+    { fx } = perks({
+      id: 'test_contract',
+      name: 'Test Contract',
+      fx: [
+        { kind: 'money', mult: 3, if: 'foe:trainer' },
+        { kind: 'rule', rule: 'faintPaysNothing', n: 1 },
+      ],
+    });
+  reseed(3);
+  const s = startedSave(ofType('Water'), 30),
+    T = { reward: 100 },
+    pay = (kind, fainted, rows) =>
+      BR.battleRewards({ kind, over: 'win', T, tid: 'x', foe: [{ lvl: 10 }], fx: rows, fainted }, s, null);
+  /* the contract's rows as a trainer battle reads them (foe:trainer holds) */
+  const trainer = fx.map(f => ({ ...f })),
+    wildRows = fx.filter(f => f.kind === 'rule');
+  assert.equal(pay('trainer', 0, trainer).reward, 300, 'trainers pay triple');
+  const lost = pay('trainer', 1, trainer);
+  assert.equal(lost.reward, 0);
+  assert.equal(lost.noPay, 'test_contract');
+  const w = pay('wild', 0, wildRows);
+  assert.ok(w.prize > 0);
+  assert.equal(pay('wild', 2, wildRows).prize, 0);
+  /* without the rule a faint changes nothing */
+  assert.equal(pay('trainer', 1, null).reward, 100);
+  assert.equal(pay('trainer', 1, null).noPay, undefined);
+  /* in a real battle: one of yours fainted, then the win */
+  withPerks(
+    perks({ id: 'test_contract', name: 'Test Contract', fx: [{ kind: 'rule', rule: 'faintPaysNothing', n: 1 }] }).P,
+    () => {
+      const b = battle(fn('fxOfRun')({ perks: ['test_contract'] }, data.PERKS));
+      b.fainted = 1;
+      b.over = 'win';
+      const r = BR.battleSettle(b, hooks.saveData || startedSave(ofType('Water'), 30));
+      assert.equal(r.pay.prize, 0);
+      assert.equal(r.pay.noPay, 'test_contract');
+    }
+  );
+});

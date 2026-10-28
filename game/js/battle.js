@@ -96,6 +96,7 @@ import {
   effectiveStat,
   enemyOnly,
   fighter,
+  fxSrcName,
   fxWeatherFor,
   isMulti,
   liveActors,
@@ -1480,6 +1481,8 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* PK-7: a faintPaysNothing row (Influencer Contract) kept the win's Moneys */
+  if (pay.noPay) toast(`${fxSrcName(pay.noPay)}: one of yours fainted, so the battle paid nothing.`);
   /* SP-3: a spliced wild Billie knocked out: its DNA, and a sheet for a Gene sampled for the first time */
   const spliced =
     /** @type {{ dna?: number, sampled?: { gene: string, words: string }[], parts?: { id: string, words: string }[] }} */ (
