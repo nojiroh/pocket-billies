@@ -814,7 +814,7 @@ function musicMixHTML() {
       numberField('Compressor ratio', `${p}.compressor.ratio`, { opt: 1, min: 1, max: 20, step: 0.5, unit: ': 1' })
     ),
     {
-      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound. The game uses these; the Studio’s own player does not, so try a change in the game.',
+      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound. The game uses these, and (SND-11) so does the Studio’s player, at the game’s default sliders.',
     }
   );
 }
