@@ -710,6 +710,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   effectsPass(C, items, X, dark, t, dt);
   /* VFX-2: a thrown pyramid's motion lines (battle-3d.js) */
   if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
+  /* VFX-5: a dashing Billie's (battle-3d.js) */
+  if (BT && BT.rigRibbons) for (const R of BT.rigRibbons) ribbonPass(C, R, X);
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
