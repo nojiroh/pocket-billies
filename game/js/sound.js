@@ -57,7 +57,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
-import { midiToFrequency, trackerCreate } from './audio/tracker.js';
+import { midiToFrequency, trackerCreate, trackerRecipe } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
@@ -439,6 +439,11 @@ function musicParts(name) {
   /* a run's songs (a biome's): each arc band */
   if (S && S.arc !== false && MUSIC.where.some(W => W.biome && W.song === name))
     for (const B of (MUSIC.run && MUSIC.run.arc) || []) out.push(B.name);
+  /* SND-11: a song (or its night version) that names an ensemble, as its ensemble plays it: new fingerprints beside the
+     gb ones (which check-sound renders with GB Sounds on) */
+  const ens = D => D && D.ensemble && D.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[D.ensemble];
+  if (ens(S)) out.push('ensemble');
+  if (S && S.night !== false && ens(trackerRecipe(SONGS, musicVariant(name, 1), MUSIC.run))) out.push('ensemble-night');
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */

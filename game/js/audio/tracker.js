@@ -211,7 +211,7 @@ function trackerArc(D, band) {
 /* SND-5: the recipe a song name plays: 'town' itself, 'town@night' its night version; null for a song or a part that
    doesn't exist; 'wild@tense' its tense version, 'meadow@late' its arc band's (run.arc), 'meadow@late@night' both. `run` is music.json's run (the arc's bands), for the parts that need
    it */
-function trackerRecipe(songs, name, run) {
+export function trackerRecipe(songs, name, run) {
   const [base, ...parts] = String(name).split('@');
   let D = (songs && songs[base]) || null;
   for (const p of parts) {
