@@ -69,6 +69,7 @@ expose({
   FIGURE_LOOK_NAMES: [() => FIGURE_LOOK_NAMES],
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
+  FIGURE_PALETTES: [() => FIGURE_PALETTES],
   FIGURE_PORTRAIT_PPM: [() => FIGURE_PORTRAIT_PPM],
   FIGURE_SHADOW_FS: [() => FIGURE_SHADOW_FS],
   FIGURE_SHADOW_SIZE: [() => FIGURE_SHADOW_SIZE],
@@ -76,6 +77,7 @@ expose({
   FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
   FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
+  HD2D_BODY: [() => HD2D_BODY],
   bakeFigure: [() => bakeFigure, v => (bakeFigure = v)],
   figureBaker: [() => figureBaker],
   figureBakerLose: [() => figureBakerLose, v => (figureBakerLose = v)],
@@ -95,6 +97,7 @@ expose({
   figureLast: [() => figureLast],
   figureLightSpace: [() => figureLightSpace, v => (figureLightSpace = v)],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
+  figureLookColour: [() => figureLookColour, v => (figureLookColour = v)],
   figureLookRamp: [() => figureLookRamp, v => (figureLookRamp = v)],
   figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
@@ -211,7 +214,12 @@ function figureDef(name) {
       /* the owner (2026-10-28): no backpack unless the person's own look has a bag (the wardrobe gives everyone one
          by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
       own = p && p.look && p.look.wear,
-      look = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
+      look1 = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
+      /* a hybrid variant can redress everyone (its flair's wear) */
+      look =
+        look0 && look0.flair && look0.flair.wear && look1.wear
+          ? { ...look1, wear: { ...look1.wear, ...look0.flair.wear } }
+          : look1,
       F = L.creature
         ? kappiFigure({ name })
         : lookFigure(look, items, {
@@ -219,6 +227,7 @@ function figureDef(name) {
             seed: figureSeed(who),
             figure: p && p.figure ? p.figure : who.startsWith('folk:') ? { variety: true } : undefined,
             chibi: look0 && look0.chibi ? look0.chibi : undefined,
+            flair: look0 && look0.flair ? look0.flair : undefined,
           });
     return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
   }
@@ -310,7 +319,8 @@ precision mediump float;out vec4 o;void main(){o=vec4(1.);}`;
    a white rim), 6 faceted (each triangle flat) */
 const FIGURE_FS = `#version 300 es
 precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;in vec3 vP;flat in int vC;uniform vec3 uPal[100];uniform vec3 uL;
-uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn;uniform int uMode;uniform sampler2D uTx;uniform highp sampler2D uSM;
+uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn,uH;uniform int uMode;uniform vec4 uFx,uRim2;uniform vec3 uRimCol;
+uniform sampler2D uTx;uniform highp sampler2D uSM;
 out vec4 o;
 void main(){vec3 n=normalize(vN);
  if(uMode==6){n=normalize(cross(dFdx(vP),dFdy(vP)));if(n.z>0.)n=-n;}
@@ -332,6 +342,18 @@ void main(){vec3 n=normalize(vN);
  else if(uMode==4){c*=1.+.07*(fract(sin(float(vC)*12.9898)*43758.5)-.5);if(rim)c=mix(c,vec3(255.,214.,150.),.35);}
  else if(uMode==5){if(shd||d<=uB.y){vec2 g=fract(gl_FragCoord.xy/3.)-.5;float r=d<uB.w?.62:.38;c=length(g)<r?sh*.88:base;}
   else c=base;if(rim)c=mix(c,vec3(255.),.55);}
+ /* 7: HD-2D painted (CH-3b's hybrid): the bands with their edges dithered (a 2 x 2 Bayer step on the light, uFx.x), a
+    gradient from cool feet to a warm head (uFx.y), grain (uFx.z), the warm rim (uFx.w) and a second, cool rim from
+    behind (uRim2: its way and strength, uRimCol) */
+ else if(uMode==7){ivec2 fp=ivec2(gl_FragCoord.xy)&1;float bay=(fp.x==fp.y?(fp.x==0?0.:.5):(fp.x==0?.75:.25))-.375;
+  float dd=d+bay*uFx.x;int bb=dd>uB.z?3:(dd>uB.x?2:(dd>uB.y?1:(dd>uB.w?0:-1)));
+  if(shd)bb=min(bb,0);else if(rim&&bb>=0)bb=max(bb,2);
+  c=bb==3?sn:(bb==2?li:(bb==1?base:(bb==0?sh:dp)));
+  float hy=clamp(vP.y/max(uH,.5),0.,1.);c*=mix(vec3(.9,.93,1.05),vec3(1.05,1.02,.95),mix(.5,hy,uFx.y));
+  float g=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)-.5;c*=1.+g*uFx.z;
+  if(rim)c=mix(c,vec3(255.,214.,150.),.32*uFx.w);
+  if(uRim2.w>0.&&dot(n,normalize(uRim2.xyz))>.5&&n.z>-.5)c=mix(c,uRimCol,uRim2.w);
+  c=clamp(c,0.,255.);}
 /* the depth, nearer larger, in alpha: 0 is no figure */
 o=vec4(c/255.,mix(1.,.08,gl_FragCoord.z));}`;
 const FIGURE_OUT_VS = `#version 300 es
@@ -340,7 +362,7 @@ in vec2 aQ;void main(){gl_Position=vec4(aQ*2.-1.,0.,1.);}`;
    the props' olc) or one ink (uInk); inside, where a part stands `uInner` (alpha's depth) in front of another, a line */
 const FIGURE_OUT_FS = `#version 300 es
 precision highp float;uniform sampler2D uT;uniform float uOut,uInk,uInner;uniform int uOutW;uniform vec3 uOL;uniform ivec2 uS;out vec4 o;
-vec3 olc(vec3 c){return uInk>.5?uOL*.55:mix(floor(c*255.*.45)/255.,uOL,.8);}
+vec3 olc(vec3 c){return uInk>1.5?mix(c*.42,uOL,.35):uInk>.5?uOL*.55:mix(floor(c*255.*.45)/255.,uOL,.8);}
 vec4 at(ivec2 p){return (p.x<0||p.y<0||p.x>=uS.x||p.y>=uS.y)?vec4(0.):texelFetch(uT,p,0);}
 void main(){ivec2 p=ivec2(gl_FragCoord.xy);vec4 c=at(p);
  vec4 q[4]=vec4[4](at(p+ivec2(1,0)),at(p-ivec2(1,0)),at(p+ivec2(0,1)),at(p-ivec2(0,1)));
@@ -593,6 +615,90 @@ const FIGURE_LOOKS = {
     chibi: { head: 1.05, legs: 0.92, torso: 0.95, arms: 0.95, neck: 0.9 },
   },
 };
+/* CH-3b: HD-2D crossed with the painterly direction (the owner: "Try hd 2d with painterly ... really go nuts. Give me
+   5 variants"): FIGURE_FS mode 7, each pushing a different way */
+const HD2D_BODY = { head: 0.94, legs: 1.04, torso: 1.0, arms: 1.0, neck: 1.0 };
+Object.assign(FIGURE_LOOKS, {
+  /* 1 dusk: warm light on violet shadow in big shapes, dithered edges, a soft coloured line; long coats all round */
+  dusk: {
+    mode: 7,
+    ramp: 'hue',
+    palette: 'dusk',
+    fx: [0.22, 0.7, 0.05, 1],
+    bands: { light: 0.42, base: 0.08, shine: 0.84, deep: -0.4 },
+    outline: 1,
+    ink: 2,
+    inner: 0.016,
+    detail: 1.2,
+    ppm: 32,
+    chibi: HD2D_BODY,
+    flair: { hair: 1.15, wear: { outer: 'trench' } },
+  },
+  /* 2 storybook: a tall, slender illustration (four heads), paper grain, warm head to cool feet, pastel coats and
+     scarves, no line */
+  story: {
+    mode: 7,
+    ramp: 'hue',
+    palette: 'story',
+    fx: [0.08, 1, 0.12, 0.6],
+    bands: { light: 0.38, base: -0.15, shine: 0.9, deep: -0.6 },
+    outline: 0,
+    inner: 0,
+    detail: 1.3,
+    ppm: 36,
+    chibi: { head: 0.78, legs: 1.32, torso: 1.08, arms: 1.12, neck: 1.6 },
+    flair: { hair: 1.12, scarf: true, wear: { outer: 'labcoat' }, col: '#e8a5a0' },
+  },
+  /* 3 lantern night: half the figure in deep violet shadow, a warm key, a hard cyan rim from behind, scarves */
+  night: {
+    mode: 7,
+    ramp: 'hue',
+    palette: 'night',
+    fx: [0.14, 0.3, 0.03, 0.9],
+    bands: { light: 0.55, base: 0.22, shine: 0.86, deep: -0.2 },
+    rim2: [0.85, 0.25, 0.5, 0.85],
+    rimCol: [110, 236, 246],
+    outline: 1,
+    ink: 0,
+    inner: 0.016,
+    detail: 1.2,
+    ppm: 32,
+    chibi: HD2D_BODY,
+    flair: { hair: 1.15, scarf: true, col: '#5fb7c0' },
+  },
+  /* 4 Octopath travellers: chunky 24 px a metre, three and a half heads, five tones dithered hard, a thin dark
+     line, everyone a traveller in a cape */
+  octo: {
+    mode: 7,
+    ramp: 'hue',
+    palette: 'octo',
+    fx: [0.34, 0.45, 0, 0.8],
+    outline: 1,
+    ink: 0,
+    inner: 0.016,
+    detail: 1,
+    ppm: 24,
+    chibi: { head: 0.86, legs: 1.12, torso: 1.02, arms: 1.02, neck: 1.0 },
+    flair: { cape: true, col: '#b13e53' },
+  },
+  /* 5 gouache bold: saturated, a big head and huge hair on a small body, a coloured line, a cape and a streaming
+     scarf */
+  gouache: {
+    mode: 7,
+    ramp: 'hue',
+    palette: 'gouache',
+    sat: 1.3,
+    fx: [0, 0.5, 0.05, 1],
+    bands: { light: 0.4, base: -0.05, shine: 0.8, deep: -0.45 },
+    outline: 1,
+    ink: 2,
+    inner: 0.016,
+    detail: 1.4,
+    ppm: 40,
+    chibi: { head: 1.18, legs: 0.86, torso: 0.92, arms: 0.92, neck: 0.8 },
+    flair: { hair: 1.4, scarf: true, cape: true, col: '#e63946' },
+  },
+});
 /** the light's depth map's size (pixels square) */
 const FIGURE_SHADOW_SIZE = 512;
 /**
@@ -623,6 +729,44 @@ function figureLightSpace(ext) {
     Z = row(f, 1 / D);
   return new Float32Array([X[0], Y[0], Z[0], 0, X[1], Y[1], Z[1], 0, X[2], Y[2], Z[2], 0, X[3], Y[3], Z[3], 1]);
 }
+/** CH-3b's hybrid variants: curated palettes a figure's colours are pulled to, so a whole cast sits in one painting */
+const FIGURE_PALETTES = {
+  dusk: '2b1d3a 45305e 6b4a8a 3c5b7a 4f8a8b 8fc1a9 f2e3c6 f6c38e e8955e c4573f 8c3b3b d9a441 f4d27a a3c46c 5f8f4e 7a5a3f b88b5a 1f2a44 e6e1d7',
+  story:
+    'f7efe2 e9d8c4 f2c7c2 e8a5a0 c98a9b a7b8d8 7f97c4 5d6f9e b9d6c3 88b49b 5f8c74 f2dfa0 e2b867 c68f5a 8e6a52 5a4a5e 3e3550 d8c1e0 a98cc4',
+  night:
+    '0f1226 1c2147 2e356b 47508f 6b78b8 9fb3e0 f2c46d e8954a c2603a 7a3a4a 4a2a4a 2c1f3a 3f7f8f 5fb7c0 b8e6e0 f2e6d0 a87a6a 6a4a5a',
+  octo: '1a1c2c 5d275d b13e53 ef7d57 ffcd75 a7f070 38b764 257179 29366f 3b5dc9 41a6f6 73eff7 f4f4f4 94b0c2 566c86 333c57 8b5a3c 7a4841',
+  gouache:
+    '1d3557 457b9d a8dadc f1faee e63946 f4a261 e9c46a 2a9d8f 264653 6a994e a7c957 bc4749 f2e8cf 8d5a97 c08497 6d4c41 ffbe0b 3a0ca3',
+};
+/** a figure's colour as a direction takes it: its saturation pushed (LK.sat), then pulled toward the nearest colour of
+ * the direction's palette (LK.palette; skin only a little, eyes and shines not at all) */
+function figureLookColour(c, key, LK) {
+  if (!LK || (!LK.palette && !LK.sat)) return c;
+  let v = [c[0], c[1], c[2]];
+  if (LK.sat) {
+    const l = 0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2];
+    v = v.map(x => Math.max(0, Math.min(255, Math.round(l + (x - l) * LK.sat))));
+  }
+  const P = LK.palette && FIGURE_PALETTES[LK.palette];
+  if (!P || key === 'eye' || key === 'glint' || key === 'iris') return v;
+  let best = null,
+    bd = Infinity;
+  for (const h of P.split(' ')) {
+    const q = [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)],
+      dr = q[0] - v[0],
+      dg = q[1] - v[1],
+      db = q[2] - v[2],
+      dist = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+    if (dist < bd) {
+      bd = dist;
+      best = q;
+    }
+  }
+  const k = key === 'skin' || key === 'nose' || key === 'blush' ? 0.3 : 0.85;
+  return v.map((x, i) => Math.round(x + (best[i] - x) * k));
+}
 /** a colour's five shades for a direction's ramp: the props' (figureRamp), a stronger hue shift (warm lights, cool
  * violet shadows: HD-2D, painterly), or cel's (one shadow, no light band) */
 function figureLookRamp(b, ramp) {
@@ -641,13 +785,13 @@ function figureLookRamp(b, ramp) {
   return figureRamp(b);
 }
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
-function figurePalette(F, colours, ramp = 'props') {
+function figurePalette(F, colours, ramp = 'props', LK = null) {
   /* FIGURE_PAL_MAX colours, five shades each (the shader's uPal[100]): the deep shadow, the shadow, the base, the
      light and the shine, which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light */
   const out = new Float32Array(FIGURE_PAL_MAX * 5 * 3),
     gloss = new Set(F.gloss || []);
   colours.forEach((k, i) => {
-    const R = figureLookRamp(F.colours[k], ramp),
+    const R = figureLookRamp(figureLookColour(F.colours[k], k, LK), ramp),
       flat = k === 'eye' || k === 'glint';
     [
       flat ? R[2] : R[0],
@@ -729,10 +873,15 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.uniformMatrix4fv(U.uM, false, figureClipMatrix(V.rel, V.tilt, ppm, S));
   /* the figure's turn in the camera's frame, for the normals (logic/figure-pose.js cardPoint) */
   gl.uniformMatrix3fv(U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
-  if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours, LK.ramp));
+  if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours, LK.ramp, LK));
   gl.uniform1i(U.uMode, smooth ? 0 : LK.mode);
+  gl.uniform1f(U.uH, Fig.height || 1.7);
+  gl.uniform4fv(U.uFx, new Float32Array(LK.fx || [0, 0, 0, 0]));
+  gl.uniform4fv(U.uRim2, new Float32Array(LK.rim2 || [0, 0, 1, 0]));
+  gl.uniform3fv(U.uRimCol, new Float32Array(LK.rimCol || [255, 255, 255]));
   gl.uniform3fv(U.uL, FIGURE_LIGHT);
-  gl.uniform4f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base, FIGURE_BANDS.shine, FIGURE_BANDS.deep);
+  const BD = LK.bands || FIGURE_BANDS;
+  gl.uniform4f(U.uB, BD.light, BD.base, BD.shine, BD.deep);
   gl.uniformMatrix4fv(U.uLS, false, LS);
   gl.uniform1f(U.uShadowOn, shadows ? 1 : 0);
   gl.activeTexture(gl.TEXTURE2);

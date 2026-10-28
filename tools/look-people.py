@@ -141,6 +141,8 @@ STYLES_JS = """((looks, whos, tilt) => {const T=tilt*Math.PI/180, out=[];
   for (const who of whos){const Fig=figureDef('look:'+who+'@'+L); if(!Fig) return 'loading';
    const im=bakeFigure(Fig,'idle',0,figureView(Math.PI*0.82,0,T,16),lk.ppm,true,L); if(!im) return 'loading';
    row.push(im.toDataURL('image/png'))}
+  const bk=bakeFigure(figureDef('look:'+whos[0]+'@'+L),'walk',2,figureView(Math.PI*0.2,0,T,16),lk.ppm,true,L); if(!bk) return 'loading';
+  row.push(bk.toDataURL('image/png'));
   const pt=figurePortrait(whos[0],0,0.9,L); if(!pt) return 'loading';
   out.push({look:L, ppm:lk.ppm, row, portrait:pt.toDataURL('image/png')})}
  return out})"""

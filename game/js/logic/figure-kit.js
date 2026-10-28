@@ -173,7 +173,9 @@ export function figureShapeFor(look, seed, choice = {}) {
  * arm/forearm/hand A and B), dressed from the wardrobe, its face as marks
  * @param {KitLook} look @param {Record<string, KitItem>} items the wardrobe's items (their default colours)
  * @param {{ name?: string, seed?: number, figure?: FigureShapeChoice,
- *   chibi?: { head: number, legs: number, torso: number, arms: number, neck: number } }} [opts] `chibi`: proportions
+ *   chibi?: { head: number, legs: number, torso: number, arms: number, neck: number },
+ *   flair?: { hair?: number, scarf?: boolean, cape?: boolean, col?: string, wear?: Record<string, string> } }} [opts]
+ * `chibi`: proportions
  * other than KIT_CHIBI (a direction of figures.js FIGURE_LOOKS)
  * @returns {Figure}
  */
@@ -723,7 +725,64 @@ export function lookFigure(look, items, opts = {}) {
   if (hat) colours.hat = itemCol(hat, 0, [217, 67, 75]);
   if (hat) colours.hat2 = itemCol(hat, 1, colours.hat);
   /* a fringe shows under a cap or a beanie, not under a brim */
-  kitHair(add, wear.hair || null, head, !!hat, seed, !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie');
+  const FL = opts.flair || {};
+  kitHair(add, wear.hair || null, head, !!hat, seed, !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie', FL.hair || 1);
+  /* CH-3b's hybrid variants may redesign (the owner: "you don't have to base them on their original sprites"): a scarf
+     with a tail that streams behind, a cape from the shoulders */
+  if (FL.scarf || FL.cape) colours.flair = kitHex(FL.col, figureMix(colours.top, [196, 64, 72], 0.6));
+  if (FL.scarf && !wear.neck) {
+    add(
+      'fscarf',
+      'torso',
+      [0, 0.36 * tk, 0],
+      {
+        kind: 'torus',
+        c: [0, 0, 0.005],
+        R: [0.11 * Math.sqrt(girth), 0.095 * Math.sqrt(girth)],
+        r: 0.048,
+        seg: 14,
+        rings: 7,
+      },
+      'flair'
+    );
+    add(
+      'ftail',
+      'torso',
+      [0.06, 0.35 * tk, -0.08],
+      {
+        kind: 'tube',
+        a: [0, 0, 0],
+        ctrl: [0.12, -0.05, -0.16],
+        b: [0.2, -0.26 * tk, -0.2],
+        r0: 0.05,
+        r1: 0.035,
+        flat: 0.35,
+        n: [0, 0, -1],
+        seg: 8,
+        steps: 7,
+      },
+      'flair'
+    );
+  }
+  if (FL.cape)
+    add(
+      'cape',
+      'torso',
+      [0, 0.36 * tk, -zAt(4) - 0.02],
+      {
+        kind: 'tube',
+        a: [0, 0, 0],
+        ctrl: [0, -0.2 * tk, -0.1],
+        b: [0, -0.36 * tk - thighL * 0.85, -0.06],
+        r0: xAt(4) * 1.05,
+        r1: xAt(3) * 1.5,
+        flat: 0.16,
+        n: [0, 0, -1],
+        seg: 10,
+        steps: 8,
+      },
+      'flair'
+    );
   if (hat) kitHat(add, hat, head);
   if (wear.glasses === 'headset') {
     colours.gear = itemCol('headset', 0, [40, 40, 48]);
@@ -811,11 +870,12 @@ export function kitTopOf(p, parts) {
  * @param {(id: string, parent: string | null, at: Vec3, sh: FigureShape, col: string) => void} add
  * @param {string | null} style @param {{ c: Vec3, r: Vec3, sq: number, taper: number }} H the head
  * @param {boolean} hat @param {number} seed @param {boolean} [brim] under a brimmed hat (no fringe)
+ * @param {number} [vol] the locks' thickness and bow times this (a hybrid variant's fuller hair)
  */
-export function kitHair(add, style, H, hat, seed, brim = false) {
+export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
   if (!style) return;
   const { c, r } = H,
-    S = r[0] / 0.31,
+    S = (r[0] / 0.31) * vol,
     deg = Math.PI / 180,
     /** a point on the hair's surface: around the head (`th`, 0 the front, +90 the figure's +x side), up it (`ph`,
      * 90 the crown), `k` times out from the head's middle
