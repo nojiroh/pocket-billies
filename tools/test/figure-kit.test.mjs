@@ -74,26 +74,31 @@ test('figure kit: every wardrobe item in every slot builds', () => {
 test('figure kit: the face faces the camera and blinks; glasses frame the eyes', () => {
   const look = { ...PEOPLE.chosen.look, wear: { ...PEOPLE.chosen.look.wear, glasses: 'glasses_round' } },
     F = lookFigure(look, W.items, { name: 'chosen' }),
-    S = cardSize(32, 0.45, 1.9),
+    S = cardSize(48, 0.45, 1.9),
     marks = (frame, rel) => {
       const P = figurePose(F, 'idle', frame);
-      return figureFaceMarks(F, jointMatrices(F, P, 32), P, { rel, tilt: 0.45 }, 32, S);
+      return figureFaceMarks(F, jointMatrices(F, P, 48), P, { rel, tilt: 0.45 }, 48, S);
     };
   const front = marks(0, Math.PI),
     eyes = front.filter(m => m.kind === 'eye');
   assert.equal(eyes.length, 2);
+  /* at 48 px a metre: a pupil 2 by 3 or more, with a glint; an iris wider round it; a lash line over it */
   assert.ok(
-    eyes.every(e => e.w >= 2 && e.h >= 2),
+    eyes.every(e => e.w >= 2 && e.h >= 3),
     JSON.stringify(eyes)
   );
+  assert.equal(front.filter(m => m.kind === 'glint').length, 2);
+  assert.ok(front.filter(m => m.kind === 'iris').every(m => m.w >= 3));
+  assert.equal(front.filter(m => m.kind === 'lash').length >= 2, true);
   assert.equal(front.filter(m => m.kind === 'glasses' && m.hollow).length, 2);
   assert.ok(front.some(m => m.kind === 'iris'));
   /* the back of the head shows no face */
   assert.equal(marks(0, 0).length, 0);
-  /* a blink: the eyes are lines, no iris */
+  /* a blink: the eyes are lines, no iris, no glint; the lash lines stay */
   const blink = marks(14, Math.PI);
   assert.ok(blink.filter(m => m.kind === 'eye').every(e => e.h === 1));
-  assert.ok(!blink.some(m => m.kind === 'iris'));
+  assert.ok(!blink.some(m => m.kind === 'iris' || m.kind === 'glint'));
+  assert.ok(blink.some(m => m.kind === 'lash'));
 });
 
 test('figure kit: shapes, builds and heights vary; a person’s choice wins', () => {
@@ -105,6 +110,11 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
   /* over many townsfolk seeds every head shape turns up */
   const heads = new Set();
   for (let s = 0; s < 200; s++) heads.add(figureShapeFor(look, figureSeed('folk:' + s)).head);
+  /* townsfolk (variety) take every build; anyone else their sliders' (an average look stays average) */
+  const builds = new Set();
+  for (let s = 0; s < 200; s++) builds.add(figureShapeFor({}, figureSeed('folk:' + s), { variety: true }).build);
+  assert.equal(builds.size, 8, [...builds].join());
+  assert.equal(figureShapeFor({}, 12345).build, 'average');
   assert.deepEqual([...heads].sort(), Object.keys(FIGURE_HEADS).sort());
   /* a tall build stands taller than a small one, a round one is wider */
   const by = build => lookFigure(look, W.items, { name: 'x', figure: { build, head: 'round' } }),
@@ -114,7 +124,18 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
     };
   assert.ok(by('tall').height > by('small').height + 0.2, `${by('tall').height} ${by('small').height}`);
   assert.ok(width(by('round')) > width(by('slim')) * 1.4);
-  assert.deepEqual(Object.keys(FIGURE_BUILDS), ['average', 'slim', 'stocky', 'round', 'tall', 'small']);
+  assert.deepEqual(Object.keys(FIGURE_BUILDS), [
+    'average',
+    'slim',
+    'stocky',
+    'round',
+    'tall',
+    'small',
+    'athletic',
+    'pear',
+    'lanky',
+    'elder',
+  ]);
   /* each build moves its own way */
   assert.ok(by('round').gait.swing < by('tall').gait.swing);
 });
