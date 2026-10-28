@@ -65,7 +65,8 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
- * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither). A
+ * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither); PK-6: a
+ * growth as it stands ("+12%"). A
  * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's). PK-6: a
  * held copier says which Perk it copies ("copies Rubber Stamp", or "copies nothing") and counts the copied rows
  * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks */
@@ -84,6 +85,12 @@ export function perkCount(run, id, perks) {
     const m = M[`${id}/${i}`] || {};
     if (f.once === 'run' && m.used) out.push('VOID');
     else if (f.every) out.push(`${m.n || 0}/${f.every}`);
+    /* PK-6: a growth as it stands now ("+12%" for a factor or a share, "+2" for stages or a count), "+0%" at its start */
+    if (f.grow) {
+      const v = /** @type {any} */ (m).v || 0,
+        pct = 'mult' in f || 'share' in f;
+      out.push(`${v < 0 ? '−' : '+'}${pct ? Math.round(Math.abs(v) * 100) + '%' : Math.abs(v)}`);
+    }
   });
   return [...new Set(out)].join(' · ');
 }

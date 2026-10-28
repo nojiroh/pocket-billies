@@ -258,3 +258,19 @@ test('PK-6 needs side: offered only while a side area is ahead (not open and rea
   assert.equal(PK.perkFits(P, [['Fire']], r), false);
   assert.equal(PK.perkFits(P, undefined, r), true, 'no team: needs not asked');
 });
+
+/* ---------- a growth on the card ---------- */
+
+test('PK-6 perkCount: a growing row shows its growth now (+0% at its start, never hidden)', () => {
+  const PK = modules.perks,
+    { P } = perks(
+      { id: 'test_like', fx: [{ kind: 'damage', side: 'deal', mult: 1, grow: { on: 'win', by: 0.01, max: 0.25 } }] },
+      { id: 'test_lvl', fx: [{ kind: 'stat', stat: 'lev', stages: 0, grow: { on: 'win', by: 1, max: 3 } }] }
+    );
+  assert.equal(PK.perkCount({ perks: ['test_like'], perkState: {} }, 'test_like', P), '+0%');
+  assert.equal(
+    PK.perkCount({ perks: ['test_like'], perkState: { 'test_like/0': { v: 0.12 } } }, 'test_like', P),
+    '+12%'
+  );
+  assert.equal(PK.perkCount({ perks: ['test_lvl'], perkState: { 'test_lvl/0': { v: 2 } } }, 'test_lvl', P), '+2');
+});
