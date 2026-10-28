@@ -355,14 +355,9 @@ export function ambienceNearest(B, x, z, range) {
   return best;
 }
 
-/** the sources placed in a scene: how far each is heard (m) and its level at the source */
+/** the sources placed in a scene: how far each is heard (m) and its level at the source (SND-10: the water is
+ * logic/soundscape.js's now: only the fire is left here) */
 export const AMBIENCE_SOURCES = {
-  stream: { range: 10, gain: 0.5 },
-  falls: { range: 14, gain: 0.7 },
-  sea: { range: 8, gain: 0.6 },
-  pond: { range: 6, gain: 0.22 },
-  lava: { range: 10, gain: 0.5 },
-  fountain: { range: 9, gain: 0.45 },
   fire: { range: 7, gain: 0.35 },
 };
 /** the beds set by the place, not by a distance (as updateAmbience and ambienceBeds set them at their fullest) */

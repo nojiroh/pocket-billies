@@ -89,7 +89,8 @@ test('drift wanders around its base within its depth, a new value within its tim
 
 test('every bed recipe is sound: a known bus, layers of pink or brown with filters, drifts on what exists', () => {
   const types = ['lowpass', 'highpass', 'bandpass', 'highshelf'];
-  assert.equal(Object.keys(AMBIENCE_BEDS).length, 14);
+  /* SND-10: the five water beds went to soundscape.json `water` */
+  assert.equal(Object.keys(AMBIENCE_BEDS).length, 9);
   for (const [k, B] of Object.entries(AMBIENCE_BEDS)) {
     assert.ok(['world', 'amb'].includes(B.bus), k);
     assert.ok(B.trim > 0 && B.trim <= 4, `${k} trim ${B.trim}`);
@@ -221,17 +222,18 @@ test('water in buckets finds the same nearest cell as a scan of every cell', () 
 test('the preview sets the beds as the game would: by distance for a source, the place gain for the rest', () => {
   assert.equal(ambiencePlace(0, 10), 1);
   assert.equal(ambiencePlace(11, 10), 0);
+  /* SND-10: the water is logic/soundscape.js's (soundscapePreview): a water id here is left out */
   const T = ambiencePreview([
-    ['stream', 3],
+    ['fire', 3],
     ['sea_coast', 0],
-    ['sea', 3],
+    ['brook', 3],
     ['rain', 0],
     ['birds', 0],
   ]);
-  assert.equal(T.stream, Math.pow(0.7, 1.6) * AMBIENCE_SOURCES.stream.gain);
-  assert.equal(T.sea, Math.max(AMBIENCE_FIXED.sea_coast.gain, Math.pow(1 - 3 / 8, 1.6) * AMBIENCE_SOURCES.sea.gain));
+  assert.equal(T.fire, Math.pow(1 - 3 / 7, 1.6) * AMBIENCE_SOURCES.fire.gain);
+  assert.equal(T.sea, AMBIENCE_FIXED.sea_coast.gain);
   assert.equal(T.rain, AMBIENCE_FIXED.rain.gain);
-  assert.deepEqual(Object.keys(T).sort(), ['rain', 'sea', 'stream']);
+  assert.deepEqual(Object.keys(T).sort(), ['fire', 'rain', 'sea']);
   for (const k of [...Object.keys(AMBIENCE_SOURCES), ...Object.values(AMBIENCE_FIXED).map(f => f.bed)])
     assert.ok(AMBIENCE_BEDS[k], k);
 });

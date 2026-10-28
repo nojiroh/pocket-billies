@@ -38,20 +38,53 @@ const SOUND_TEST_WORLD = [
   ['town', 'A town’s murmur', [['town', 0]]],
   ['cave', 'A cave', [['cave', 0]]],
   ['room', 'A room', [['room', 0]]],
-  ['stream', 'A stream', [['stream', 'd']]],
-  ['falls', 'A waterfall', [['falls', 'd']]],
-  ['fountain', 'A fountain', [['fountain', 'd']]],
-  ['pond', 'Still water', [['pond', 'd']]],
+  /* SND-10: the water, a recipe each (soundscape.json `water`): [recipe, metres, a fall's height] */
+  ['brook', 'A brook', [['brook', 'd']]],
+  ['river', 'A river', [['river', 'd']]],
+  ['rapids', 'Rapids', [['rapids', 'd']]],
+  ['fallSmall', 'A small waterfall (1.5 m)', [['fallSmall', 'd', 1.5]]],
+  ['fallTall', 'A waterfall (6 m)', [['fallTall', 'd', 6]]],
+  ['fallTall12', 'A tall waterfall (12 m)', [['fallTall', 'd', 12]]],
+  ['plunge', 'A plunge pool', [['plunge', 'd', 6]]],
   [
-    'sea',
-    'The sea',
+    'surf',
+    'The sea at the shore',
     [
       ['sea_coast', 0],
-      ['sea', 'd'],
+      ['surf', 'd'],
     ],
   ],
-  ['fire', 'A campfire', [['fire', 'd']]],
+  ['reef', 'A reef', [['reef', 'd']]],
+  ['lake', 'A lake', [['lake', 'd']]],
+  ['pond', 'A pond', [['pond', 'd']]],
+  ['marsh', 'A marsh', [['marsh', 'd']]],
+  ['bog', 'A bog', [['bog', 'd']]],
+  ['oasis', 'An oasis', [['oasis', 'd']]],
+  ['spring', 'A spring', [['spring', 'd']]],
+  ['canal', 'A canal', [['canal', 'd']]],
+  ['hotspring', 'A hot spring', [['hotspring', 'd']]],
+  ['fountain', 'A fountain', [['fountain', 'd']]],
+  ['ice', 'Ice', [['ice', 'd']]],
   ['lava', 'Lava', [['lava', 'd']]],
+  [
+    'drips',
+    'Cave drips',
+    [
+      ['cave', 0],
+      ['drips', 'd'],
+    ],
+  ],
+  [
+    'rain_lake',
+    'Rain on a lake',
+    [
+      ['rain', 0],
+      ['rainOnWater', 'd'],
+      ['lake', 'd'],
+    ],
+  ],
+  ['wake', 'Surfing (the wake)', [['wake', 1]]],
+  ['fire', 'A campfire', [['fire', 'd']]],
   ['steps_l', 'Steps on a lawn', [['steps', 0, 'l']]],
   ['steps_e', 'Steps on stone', [['steps', 0, 'e']]],
   ['steps_b', 'Steps on boards', [['steps', 0, 'b']]],
@@ -145,6 +178,9 @@ function soundTestAction(x) {
     const d = +(v('sndDist') || 3);
     soundTest.world = { id: W[0], d };
     ambience.preview = W[2].map(([k, m, ter]) => [k, m === 'd' ? d : m, ter]);
+    /* SND-10: cave drips ring in a cave's room (the tracker's reverb), the rest in the open */
+    if (soundEngine.tracker && soundEngine.tracker.reverbPlace)
+      soundEngine.tracker.reverbPlace(W[0] === 'drips' ? 'cave' : 'open');
     ambience.arrive = -9;
     toast(`Playing ${W[1].toLowerCase()}${W[2].some(e => e[1] === 'd') ? `, ${d} m away` : ''}.`);
   } else if (x === 'sndHarp') {

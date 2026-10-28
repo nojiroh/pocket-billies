@@ -67,33 +67,6 @@
     }
    ]
   },
-  "stream": {
-   "bus": "world",
-   "trim": 1,
-   "layers": [
-    {
-     "noise": "pink",
-     "gain": 1,
-     "filters": [["bandpass",950,1.1],["highshelf",4000,0.7,-6]],
-     "drift": [
-      {"on":0,"base":950,"depth":0.55,"min":0.12,"max":0.5,"tau":0.08,"oct":true},
-      {"on":"gain","base":1,"depth":0.25,"min":0.2,"max":0.9,"tau":0.12}
-     ]
-    }
-   ]
-  },
-  "falls": {
-   "bus": "world",
-   "trim": 0.37,
-   "layers": [
-    {
-     "noise": "brown",
-     "rate": 0.8,
-     "gain": 1,
-     "filters": [["lowpass",1000],["highpass",90]]
-    }
-   ]
-  },
   "sea": {
    "bus": "world",
    "trim": 0.56,
@@ -116,35 +89,6 @@
     }
    ]
   },
-  "pond": {
-   "bus": "world",
-   "trim": 1.6,
-   "layers": [
-    {
-     "noise": "pink",
-     "gain": 1,
-     "filters": [["bandpass",520,1.4]],
-     "drift": [
-      {"on":"gain","base":1,"depth":0.35,"min":2,"max":5,"tau":1}
-     ]
-    }
-   ]
-  },
-  "fountain": {
-   "bus": "world",
-   "trim": 1,
-   "layers": [
-    {
-     "noise": "pink",
-     "gain": 1,
-     "filters": [["bandpass",1300,0.6],["highshelf",3500,0.7,-8]],
-     "drift": [
-      {"on":0,"base":1300,"depth":0.25,"min":0.3,"max":1.2,"tau":0.3,"oct":true},
-      {"on":"gain","base":1,"depth":0.15,"min":0.3,"max":1.5,"tau":0.3}
-     ]
-    }
-   ]
-  },
   "fire": {
    "bus": "world",
    "trim": 1,
@@ -163,21 +107,6 @@
      "noise": "pink",
      "gain": 0.12,
      "filters": [["highpass",1200],["highshelf",4000,0.7,-8]]
-    }
-   ]
-  },
-  "lava": {
-   "bus": "world",
-   "trim": 0.51,
-   "layers": [
-    {
-     "noise": "brown",
-     "rate": 0.6,
-     "gain": 1,
-     "filters": [["lowpass",260]],
-     "drift": [
-      {"on":"gain","base":1,"depth":0.4,"min":1,"max":3,"tau":0.6}
-     ]
     }
    ]
   },
@@ -245,7 +174,7 @@
   "oasis": {"recipe":"oasis"},
   "bog": {"recipe":"bog","at":"all"},
   "reef": {"recipe":"reef"},
-  "cave": {"recipe":"cave","at":"all"}
+  "cave": {"recipe":"drips","at":"all"}
  },
  "running": {"brook":"brook","river":"river","rapids":"rapids","spring":"spring","riverWidth":2.5,"near":3},
  "falls": {"small":"fallSmall","tall":"fallTall","tallFrom":3,"pool":"plunge","sheet":"fallSmall"},
@@ -535,7 +464,7 @@
     {"type":"waves","every":[5,14],"rise":[2,4.5],"fall":[3,4],"peak":[0.35,1],"fizz":60,"bank":"drop"}
    ]
   },
-  "cave": {
+  "drips": {
    "range": 14,
    "trim": 1.06,
    "send": 0.65,

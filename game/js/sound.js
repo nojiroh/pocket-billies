@@ -20,13 +20,11 @@ import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
   AMBIENCE_FIXED,
   ambienceBirdWait,
-  ambienceBuckets,
   ambienceChirp,
   ambienceCrackles,
   ambienceCrickets,
   ambienceDrift,
   ambienceLiveStep,
-  ambienceNearest,
   ambienceNoiseLoop,
   ambiencePreview,
   ambienceRandom,
@@ -96,7 +94,6 @@ expose({
   musicSync: [() => musicSync, v => (musicSync = v)],
   musicVariant: [() => musicVariant, v => (musicVariant = v)],
   nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
-  nearestWaterSound: [() => nearestWaterSound, v => (nearestWaterSound = v)],
   playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
@@ -112,7 +109,6 @@ expose({
   soundPreferences: [() => soundPreferences],
   soundStarts: [() => soundStarts],
   soundWake: [() => soundWake, v => (soundWake = v)],
-  soundWaterBuckets: [() => soundWaterBuckets],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
@@ -1138,16 +1134,6 @@ function nearestSoundSource(list, get, range) {
     if (w && (!best || w.d < best.d)) best = w;
   }
   return best;
-}
-/* SND-8a: the nearest of many water cells (the scene's water, its streams: 14,010 in Copperleaf, scanned every 200 ms
-   before), found in buckets made once per list (logic/ambience-sound.js); the same answer as nearestSoundSource */
-const soundWaterBuckets = new WeakMap();
-function nearestWaterSound(list, range) {
-  if (!list || !list.length || !walkView.pl) return null;
-  let B = soundWaterBuckets.get(list);
-  if (!B || B.n !== list.length) soundWaterBuckets.set(list, (B = ambienceBuckets(list)));
-  const w = ambienceNearest(B, walkView.pl.x, walkView.pl.z, range);
-  return w ? soundPlacement(w.cell[0], w.cell[1], range) : null;
 }
 export function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
