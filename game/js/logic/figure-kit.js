@@ -18,7 +18,7 @@
    Logic only: no DOM, runs in Node (tools/test/figure-kit.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { figureDark, figureMix, frontOf } from './figure-pose.js';
+import { figureDark, figureMesh, figureMix, figurePose, frontOf, jointMatrices } from './figure-pose.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_BUILDS: [() => FIGURE_BUILDS],
@@ -35,6 +35,8 @@ expose({
   figureShapeFor: [() => figureShapeFor, v => (figureShapeFor = v)],
   // @ts-expect-error -- replaced on purpose
   kappiFigure: [() => kappiFigure, v => (kappiFigure = v)],
+  // @ts-expect-error -- replaced on purpose
+  kitExtent: [() => kitExtent, v => (kitExtent = v)],
   // @ts-expect-error -- replaced on purpose
   kitFaceMarks: [() => kitFaceMarks, v => (kitFaceMarks = v)],
   // @ts-expect-error -- replaced on purpose
@@ -163,13 +165,16 @@ export function lookFigure(look, items, opts = {}) {
         bk = /** @type {Record<string, number>} */ (BD.k)[k] ?? 1;
       return (k === 'chest' ? v : 1 + (v - 1) * FIGURE_SLIDER_GAIN) * bk;
     },
-    hk = sl('height'),
+    /* the tallest and shortest a build and slider make (an exaggerated tall build would tower over the town) */
+    hk = Math.max(0.8, Math.min(1.14, sl('height'))),
     legK = sl('legs') * hk,
     armK = sl('arms') * hk,
-    girth = sl('body'),
+    /* the widest and thinnest (a round build on a big body slider would be a ball) */
+    girth = Math.max(0.75, Math.min(1.5, sl('body'))),
     shK = sl('shoulders'),
     hipK = sl('hips'),
-    headK = sl('head'),
+    /* heads vary a little from person to person, beyond the slider */
+    headK = sl('head') * (0.96 + 0.08 * kitRnd(seed, 3)),
     chest = Math.max(0, Math.min(1, sl('chest', 0.2))),
     belly = /** @type {Record<string, number>} */ (BD.k).belly || 0,
     tk = hk * (0.96 + 0.04 * girth);
@@ -269,6 +274,21 @@ export function lookFigure(look, items, opts = {}) {
       });
   add('head', 'torso', [0, 0.4 * tk, 0], head, 'skin');
   const c1 = head.c[1];
+  /* a nose: a button, or longer on a long or square face */
+  const nose = shape.head === 'long' || shape.head === 'square' || kitRnd(seed, 4) < 0.3 ? 1.4 : 1;
+  add(
+    'nose',
+    'head',
+    [0, 0, 0],
+    {
+      kind: 'ellipsoid',
+      c: [0, c1 - hr[1] * 0.3, head.c[2] + hr[2] * 0.93],
+      r: [0.03, 0.03 * nose, 0.035 * nose],
+      seg: 8,
+      rings: 5,
+    },
+    'skin'
+  );
   /* ears, just showing past the hair */
   for (const s of [1, -1])
     add(
@@ -424,9 +444,10 @@ export function lookFigure(look, items, opts = {}) {
       {
         kind: 'ellipsoid',
         c: [0, 0.02 * tk, (R ? R.rz[3] : 0.12) * 0.9],
-        r: [(R ? R.rx[3] : 0.17) * 0.78, 0.28 * tk, 0.035],
+        r: [(R ? R.rx[3] : 0.17) * 0.8, 0.28 * tk, 0.035],
         seg: 10,
         rings: 6,
+        sq: 0.8,
       },
       'outer'
     );
@@ -484,15 +505,31 @@ export function lookFigure(look, items, opts = {}) {
   const bag = wear.bag || null;
   if (bag) {
     colours.bag = itemCol(bag, 0, [212, 156, 70]);
-    if (bag === 'backpack')
+    colours.bag2 = itemCol(bag, 1, figureDark(colours.bag, 0.7));
+    if (bag === 'backpack') {
       add(
         'pack',
         'torso',
-        [0, 0.2 * tk, -torsoZ - 0.06],
-        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.14 * Math.sqrt(girth), 0.16 * tk, 0.075], seg: 10, rings: 6, sq: 0.6 },
+        [0, 0.2 * tk, -torsoZ - 0.055],
+        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.13 * Math.sqrt(girth), 0.15 * tk, 0.07], seg: 10, rings: 6, sq: 0.9 },
         'bag'
       );
-    else if (bag === 'satchel')
+      add(
+        'flap',
+        'pack',
+        [0, 0.07 * tk, -0.045],
+        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.12 * Math.sqrt(girth), 0.07 * tk, 0.04], seg: 10, rings: 5, sq: 0.8 },
+        'bag2'
+      );
+      for (const s of [1, -1])
+        add(
+          'strap' + (s > 0 ? 'A' : 'B'),
+          'torso',
+          [s * 0.09 * Math.sqrt(girth), 0.36 * tk, 0],
+          { kind: 'torus', c: [0, -0.1 * tk, 0], R: [0.03, torsoZ + 0.012], r: 0.014, seg: 10, rings: 4 },
+          'bag2'
+        );
+    } else if (bag === 'satchel') {
       add(
         'satchel',
         'hips',
@@ -500,7 +537,14 @@ export function lookFigure(look, items, opts = {}) {
         { kind: 'ellipsoid', c: [0, 0, 0], r: [0.04, 0.08, 0.11], seg: 8, rings: 5, sq: 0.6 },
         'bag'
       );
-    else
+      add(
+        'sling',
+        'torso',
+        [0, 0.12 * tk, 0],
+        { kind: 'torus', c: [0, 0, 0], R: [0.19 * girth, torsoZ + 0.015], r: 0.013, seg: 14, rings: 4 },
+        'bag2'
+      );
+    } else
       add(
         'fanny',
         'hips',
@@ -583,7 +627,8 @@ export function kitTopOf(p, parts) {
 export function kitHair(add, style, H, hat, seed) {
   if (!style) return;
   const { c, r } = H,
-    k = style === 'hair_curly' ? 1.13 : style === 'hair_buzz' ? 1.025 : style === 'hair_bob' ? 1.1 : 1.065,
+    /* under a hat the hair sits close to the head, so the hat covers it */
+    k = hat ? 1.02 : style === 'hair_curly' ? 1.13 : style === 'hair_buzz' ? 1.025 : style === 'hair_bob' ? 1.1 : 1.065,
     cap = (/** @type {import('./figure-pose.js').HairCut} */ cut, /** @type {number[]} */ m = [1, 1, 1]) =>
       add(
         'hair',
@@ -750,9 +795,9 @@ export function kitHair(add, style, H, hat, seed) {
  */
 export function kitHat(add, hat, H) {
   const { c, r } = H,
-    top = c[1] + r[1] * 0.42,
-    w = r[0] * 1.08,
-    d = r[2] * 1.08,
+    top = c[1] + r[1] * 0.45,
+    w = r[0] * 1.13,
+    d = r[2] * 1.13,
     dome = (/** @type {number} */ h, /** @type {number} */ cut) =>
       add(
         'hat',
@@ -760,7 +805,7 @@ export function kitHat(add, hat, H) {
         [0, 0, 0],
         {
           kind: 'ellipsoid',
-          c: [0, top - h * 0.15, -0.005],
+          c: [0, c[1] + r[1] * 0.3, -0.005],
           r: [w, h, d],
           seg: 14,
           rings: 8,
@@ -815,17 +860,23 @@ export function kitHat(add, hat, H) {
       );
   switch (hat) {
     case 'hat_cap':
-      dome(r[1] * 0.62, -0.1);
+      dome(r[1] * 0.84, -0.1);
       add(
         'peak',
         'head',
         [0, 0, 0],
-        { kind: 'ellipsoid', c: [0, top - 0.02, d * 0.92], r: [w * 0.72, 0.022, r[2] * 0.62], seg: 12, rings: 4 },
+        {
+          kind: 'ellipsoid',
+          c: [0, c[1] + r[1] * 0.24, d * 0.92],
+          r: [w * 0.72, 0.022, r[2] * 0.62],
+          seg: 12,
+          rings: 4,
+        },
         'hat2'
       );
       break;
     case 'hat_beanie':
-      dome(r[1] * 0.7, -0.15);
+      dome(r[1] * 0.86, -0.15);
       add(
         'fold',
         'head',
@@ -837,13 +888,13 @@ export function kitHat(add, hat, H) {
         'bobble',
         'head',
         [0, 0, 0],
-        { kind: 'ellipsoid', c: [0, top + r[1] * 0.58, 0], r: [0.06, 0.06, 0.06], seg: 8, rings: 5 },
+        { kind: 'ellipsoid', c: [0, c[1] + r[1] * 1.2, 0], r: [0.065, 0.065, 0.065], seg: 8, rings: 5 },
         'hat2'
       );
       break;
     case 'hat_hardhat':
-      dome(r[1] * 0.66, -0.05);
-      disc('brim', top - r[1] * 0.12, w * 1.12, d * 1.22, 0.03, 'hat', 0.03);
+      dome(r[1] * 0.86, -0.05);
+      disc('brim', c[1] + r[1] * 0.28, w * 1.12, d * 1.22, 0.03, 'hat', 0.03);
       break;
     case 'hat_bucket':
       drum('hat', top - 0.06, r[1] * 0.42, w * 0.98, w * 0.86, 'hat');
@@ -851,7 +902,7 @@ export function kitHat(add, hat, H) {
       break;
     case 'hat_cowboy':
       drum('hat', top - 0.05, r[1] * 0.55, w * 0.9, w * 0.78, 'hat');
-      disc('brim', top - 0.05, w * 1.7, d * 1.45, 0.025, 'hat');
+      disc('brim', top - 0.05, w * 1.42, d * 1.3, 0.025, 'hat');
       add(
         'band',
         'head',
@@ -861,13 +912,13 @@ export function kitHat(add, hat, H) {
       );
       break;
     case 'hat_tophat':
-      drum('hat', top - 0.06, r[1] * 1.15, w * 0.82, w * 0.86, 'hat');
-      disc('brim', top - 0.06, w * 1.18, d * 1.12, 0.022, 'hat');
+      drum('hat', top + 0.02, r[1] * 1.35, w * 0.78, w * 0.84, 'hat');
+      disc('brim', top + 0.03, w * 1.2, d * 1.15, 0.025, 'hat');
       add(
         'band',
         'head',
         [0, 0, 0],
-        { kind: 'torus', c: [0, top + 0.01, 0], R: [w * 0.84, w * 0.8], r: 0.025, seg: 14, rings: 4 },
+        { kind: 'torus', c: [0, top + 0.08, 0], R: [w * 0.8, w * 0.76], r: 0.03, seg: 14, rings: 4 },
         'hat2'
       );
       break;
@@ -901,7 +952,7 @@ export function kitHat(add, hat, H) {
       }
       break;
     default:
-      dome(r[1] * 0.62, -0.1);
+      dome(r[1] * 0.84, -0.1);
   }
 }
 
@@ -997,6 +1048,9 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
           min: 0.3,
         });
     if (g !== 'glasses_monocle') mark('bridge', 0, ey + 0.01, ex * 2 - gw + 0.02, 0.03, { col: 'frame', min: 0.3 });
+    if (g === 'glasses_sun')
+      for (const s of [1, -1])
+        mark('shine', s * ex - gw * 0.25, ey + gh * 0.22, 0.03, 0.03, { col: 'glint', min: 0.5 });
   }
   return out;
 }
@@ -1109,4 +1163,44 @@ export function kappiFigure(opts = {}) {
     },
     gait: { swing: 1, bounce: 0.6 },
   };
+}
+
+/**
+ * the room a code figure's poses take (logic/figure-pose.js FigureExtent): its reach round its upright axis, its
+ * depth, its top and bottom, over the idle, the walk, a cheer's raised arms and a throw's wind-up, with a margin
+ * @param {Figure} F @returns {import('./figure-pose.js').FigureExtent}
+ */
+export function kitExtent(F) {
+  const M = figureMesh(F),
+    poses = [
+      ['idle', 0],
+      ['walk', 0],
+      ['walk', 2],
+      ['walk', 6],
+      ['cheer', 0],
+      ['cheer', 1],
+      ['throw', 3],
+      ['throw', 7],
+      ['sit', 0],
+    ];
+  let r = 0,
+    top = 0,
+    bottom = 0;
+  for (const [clip, f] of poses) {
+    const J = jointMatrices(F, figurePose(F, /** @type {string} */ (clip), /** @type {number} */ (f)), 0);
+    for (let v = 0; v < M.count; v++) {
+      const o = v * 8,
+        j = M.data[o + 6] * 16,
+        x = M.data[o],
+        y = M.data[o + 1],
+        z = M.data[o + 2],
+        X = J[j] * x + J[j + 4] * y + J[j + 8] * z + J[j + 12],
+        Y = J[j + 1] * x + J[j + 5] * y + J[j + 9] * z + J[j + 13],
+        Z = J[j + 2] * x + J[j + 6] * y + J[j + 10] * z + J[j + 14];
+      r = Math.max(r, Math.hypot(X, Z));
+      top = Math.max(top, Y);
+      bottom = Math.min(bottom, Y);
+    }
+  }
+  return { r: r + 0.04, depth: r + 0.04, top: top + 0.04, bottom: Math.min(-0.04, bottom - 0.02) };
 }
