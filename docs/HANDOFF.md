@@ -4,7 +4,8 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 
 ### VFX track VFX-16 - Battle flow: the VS splash, send-out, recall, catch, faint, level-up, items, victory and defeat - 2026-10-28
 Side branch `claude/vfx-16-battle-flow` (wave 2, beside VFX-11 on `track/vfx` and VFX-14 on `claude/vfx-14-statuses`),
-made from `track/vfx` at 868e6f30 (VFX-10's head); draft PR #319 into `track/vfx`. Run under the owner's standing
+made from `track/vfx` at 868e6f30 (VFX-10's head); `track/vfx` merged in twice (438f9396: VFX-15 and main's #317;
+f1cc5808: VFX-11's families and type kits at 7f957898); draft PR #319 into `track/vfx`. Run under the owner's standing
 instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag
 (main's CLAUDE.md).
 - The plan: read the flow cases and their events in the code first; message VFX-14 (the shared `events` key, the
@@ -152,6 +153,13 @@ instruction (2026-10-28): no Plan Mode, the plan written here, recommended optio
   "Camera follow: the page stopped drawing" in the other (it passed in the first run on the same commit; VFX-10's
   entry found it passes alone). Sound untouched (no sound file, no fingerprint), so no message to the sound track was
   needed; the style coordinator was told before and after (no clash: the style track is done and on main).
+- The merge with VFX-11 (f1cc5808): battleAnims.json keeps both new keys (`events`, `types`); BattleAnimsData both
+  fields; battle-3d.js's particle loop takes VFX-11's `p.anim` strip first, then this step's `p.strip` (the same
+  idea, two names: VFX-20's clean-up can fold `strip` into `anim`); type-rename both blocks; the UI lint's lower
+  ceiling. After it: unit tests 1930 of 1930, smoke no problems (423 s), the send-out and a bot's faint filmed again
+  (validation/look-battle-anims/flow-merged): unchanged. CI's smoke at 438f9396 (two runs): one red for "The world map
+  opens as the bowl" (main's), the other for "Camera follow: the page stopped drawing", which passed in the first run
+  and passes alone here (check-fast.py --only, 2 of 2): load, not this step.
 - Next: VFX-14 and this branch both add battleAnims.json `events`: whichever main-line session merges them (VFX-11's
   successor in wave 3, or VFX-11 if it finishes after) keeps both by the recipe above. VFX-19 gives the recall its
   sound (and the item, if the owner wants one). The send-out's pyramid colours need a Billie to remember its pyramid
