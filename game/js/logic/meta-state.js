@@ -29,6 +29,7 @@ expose({
   SHOW_SLOTS: [() => SHOW_SLOTS],
   SHOW_VOTES_MOST: [() => SHOW_VOTES_MOST],
   SHOW_WEEK_KEY: [() => SHOW_WEEK_KEY],
+  TRADES_MOST: [() => TRADES_MOST],
   // @ts-expect-error -- replaced on purpose
   metaFill: [() => metaFill, v => (metaFill = v)],
   // @ts-expect-error -- replaced on purpose
@@ -38,12 +39,14 @@ expose({
   recordOf: [() => recordOf],
   ribbonOk: [() => ribbonOk],
   ribbonsShapeOk: [() => ribbonsShapeOk],
+  tradeLabelOk: [() => tradeLabelOk],
   // @ts-expect-error -- replaced on purpose
   validFest: [() => validFest, v => (validFest = v)],
   // @ts-expect-error -- replaced on purpose
   validMeta: [() => validMeta, v => (validMeta = v)],
   // @ts-expect-error -- replaced on purpose
   validShowMeta: [() => validShowMeta, v => (validShowMeta = v)],
+  validTrades: [() => validTrades],
   // @ts-expect-error -- replaced on purpose
   validWish: [() => validWish, v => (validWish = v)],
   wholeIn: [() => wholeIn],
@@ -74,6 +77,7 @@ export function newMeta() {
     wish: null,
     boards: { d: 0, w: 0 },
     show: newShowMeta(),
+    trades: [],
     bosses: {},
     fest: null,
   };
@@ -139,6 +143,41 @@ export function validShowMeta(o) {
       r.nick.length <= SHOW_NICK_MOST
   );
 }
+/* ON-4: friend trades the save remembers (logic/trade.js TRADE_HISTORY_MOST) */
+export const TRADES_MOST = 20;
+/** a trade's thing as the history keeps it @param {any} t */
+export const tradeLabelOk = t =>
+  plainRecord(t) &&
+  Object.keys(t).every(k => ['k', 'sp', 'lvl', 'nick'].includes(k)) &&
+  typeof t.k === 'string' &&
+  t.k.length <= 1 &&
+  typeof t.sp === 'string' &&
+  t.sp.length <= 64 &&
+  wholeIn(t.lvl, 0, 999) &&
+  (t.nick === undefined || (typeof t.nick === 'string' && t.nick.length <= SHOW_NICK_MOST));
+/** meta.trades as stored: the latest friend trades (logic/trade.js) @param {unknown} v */
+export const validTrades = v =>
+  Array.isArray(v) &&
+  v.length <= TRADES_MOST &&
+  v.every(
+    (/** @type {any} */ r) =>
+      plainRecord(r) &&
+      Object.keys(r).every(k => ['k', 'at', 'u', 'n', 'st', 'gave', 'got'].includes(k)) &&
+      typeof r.k === 'string' &&
+      r.k.length <= 300 &&
+      wholeIn(r.at, 0, 1e13) &&
+      typeof r.u === 'string' &&
+      r.u.length <= 128 &&
+      typeof r.n === 'string' &&
+      r.n.length <= SHOW_NAME_MOST &&
+      ['open', 'gave', 'done', 'back'].includes(r.st) &&
+      Array.isArray(r.gave) &&
+      r.gave.length <= 3 &&
+      r.gave.every(tradeLabelOk) &&
+      Array.isArray(r.got) &&
+      r.got.length <= 3 &&
+      r.got.every(tradeLabelOk)
+  );
 /** a Billie's ribbons as a save holds them (saves.js billiesOk): none, or up to SHOW_RIBBONS_MOST @param {unknown} v */
 export const ribbonsShapeOk = v =>
   v == null || (Array.isArray(v) && v.length <= SHOW_RIBBONS_MOST && v.every(ribbonOk));
@@ -162,6 +201,8 @@ export function validMeta(o) {
     Object.keys(o.boards).every(k => k === 'd' || k === 'w') &&
     /* ON-3: the Showcase (logic/showcase.js) */
     validShowMeta(o.show) &&
+    /* ON-4: the latest friend trades (logic/trade.js) */
+    validTrades(o.trades) &&
     /* RL-14b: the bosses.json bosses beaten, by id: how many times (logic/battle-rewards.js bossWin) */
     recordOf(o.bosses, 32, v => wholeIn(v, 1, META_MAX)) &&
     Array.isArray(o.genes) &&
@@ -211,5 +252,7 @@ export function metaFill(o) {
   if (!validHistory(filled.history)) filled.history = [];
   /* ON-3: a broken Showcase record is dropped on its own too */
   if (!validShowMeta(filled.show)) filled.show = newShowMeta();
+  /* ON-4: and a broken trade history */
+  if (!validTrades(filled.trades)) filled.trades = [];
   return validMeta(filled) ? filled : newMeta();
 }

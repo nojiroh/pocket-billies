@@ -433,5 +433,117 @@
    {"kind":"rule","rule":"forecastDays","n":3},
    {"kind":"heal","share":0.1,"when":"arrive","if":"weather:rain|storm"}
   ]
+ },
+ "bug_net": {
+  "name": "Bug Net",
+  "d": "Billies of a species not on your team are 25% easier to catch.",
+  "rarity": "common",
+  "img": "perks/bug_net.svg",
+  "fx": [
+   {"kind":"catch","mult":1.25,"if":"newSpecies"}
+  ]
+ },
+ "music_box": {
+  "name": "Music Box",
+  "d": "Wild Billies fall asleep as a battle starts 20% of the time.",
+  "rarity": "uncommon",
+  "img": "perks/music_box.svg",
+  "fx": [
+   {"kind":"inflict","status":"slp","chance":0.2,"when":"battleStart","if":"foe:wild"}
+  ]
+ },
+ "name_tags": {
+  "name": "Name Tags",
+  "d": "Billies you catch join two levels higher.",
+  "rarity": "common",
+  "img": "perks/name_tags.svg",
+  "fx": [
+   {"kind":"catchLevel","n":2}
+  ]
+ },
+ "pyramid_pouch": {
+  "name": "Pyramid Pouch",
+  "d": "The first pyramid that misses in each battle comes back.",
+  "rarity": "uncommon",
+  "img": "perks/pyramid_pouch.svg",
+  "fx": [
+   {"kind":"refund","what":"pyramid","when":"throwMiss","once":"battle"}
+  ]
+ },
+ "tip_jar": {
+  "name": "Tip Jar",
+  "d": "Each place you walk into adds 1 Money for every 10 you carry, up to 40.",
+  "rarity": "uncommon",
+  "img": "perks/tip_jar.svg",
+  "fx": [
+   {"kind":"money","share":0.1,"max":40,"when":"arrive"}
+  ]
+ },
+ "punch_card": {
+  "name": "Punch Card",
+  "d": "Every 4th thing you buy in a run shop is free.",
+  "rarity": "common",
+  "img": "perks/punch_card.svg",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"free","when":"buy","every":4}
+  ]
+ },
+ "gift_receipt": {
+  "name": "Gift Receipt",
+  "d": "Reward picks show one more card.",
+  "rarity": "rare",
+  "img": "perks/gift_receipt.svg",
+  "fx": [
+   {"kind":"rule","rule":"rewardPick","n":1}
+  ]
+ },
+ "fortune_cookie": {
+  "name": "Fortune Cookie",
+  "d": "The first reroll at every reward pick is free.",
+  "rarity": "common",
+  "img": "perks/fortune_cookie.svg",
+  "fx": [
+   {"kind":"rule","rule":"rerollFree","n":1}
+  ]
+ },
+ "tour_brochure": {
+  "name": "Tour Brochure",
+  "d": "The run map shows what every place is.",
+  "rarity": "common",
+  "img": "perks/tour_brochure.svg",
+  "fx": [
+   {"kind":"rule","rule":"mapReveal","n":1}
+  ]
+ },
+ "bounty_poster": {
+  "name": "Bounty Poster",
+  "d": "Leaders and the rival pay double Moneys.",
+  "rarity": "uncommon",
+  "img": "perks/bounty_poster.svg",
+  "tags": ["adventurer"],
+  "fx": [
+   {"kind":"money","mult":2,"if":"foe:leader|rival"}
+  ]
+ },
+ "string_magnet": {
+  "name": "Magnet on a String",
+  "d": "Beaten bots leave twice the salvage.",
+  "rarity": "common",
+  "img": "perks/string_magnet.svg",
+  "needs": "bots",
+  "fx": [
+   {"kind":"salvage","mult":2}
+  ]
+ },
+ "lab_goggles": {
+  "name": "Lab Goggles",
+  "d": "Spliced wild Billies are 25% easier to catch.",
+  "rarity": "common",
+  "img": "perks/lab_goggles.svg",
+  "tags": ["lab"],
+  "fx": [
+   {"kind":"catch","mult":1.25,"if":"foe:spliced"}
+  ]
  }
 }
