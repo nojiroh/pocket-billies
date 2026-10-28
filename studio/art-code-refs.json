@@ -1803,7 +1803,7 @@
   "moon": [
    "game/js/battle.js:579",
    "game/js/boot.js:168",
-   "game/js/environment.js:658"
+   "game/js/environment.js:659"
   ],
   "palm": [
    "game/js/logic/bowl-things.js:135",
