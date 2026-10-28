@@ -21,7 +21,7 @@ import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop, runFxMoment } from './run-loop.js';
 import { fxMoney, fxOfBillie, fxSplice } from './effects.js';
-import { perkOfferMake } from './perks.js';
+import { perkOfferMake, perkTeamOf } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
 import { battleRoll, fxBattleRows, fxFoeTags } from './battle-engine.js';
 import { questCatch, questWin } from './run-quests.js';
@@ -192,7 +192,7 @@ export function battleSettleWin(b, s, pay, run) {
     /* RL-S2: a side area's leader beaten finds Beans */
     if (run && b.T && run.map && run.map.side && b.T.from && b.T.from === run.map.side.leader)
       runBeans(s, (RULES.run.beans || {}).side, run);
-    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
+    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks, perkTeamOf(s.team));
     /* RL-12b: a route trainer (or the rival, or ON-2's ghost) leaves a reward pick (logic/rewards.js), saved with the
        battle's end */
     if (!salvage && run && b.T && ['route', 'rival', 'ghost'].includes(b.T.runFoe))

@@ -46,6 +46,7 @@ import { runHome } from './logic/run-state.js';
 import { runMapNode } from './logic/run-map.js';
 import { runImmune } from './logic/run-loop.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
+import { perkTeamOf } from './logic/perks.js';
 import {
   encChanges,
   encEventFoe,
@@ -370,7 +371,7 @@ function encounterStage(id, i) {
     },
     perk: async ([arg]) => {
       const run = saveData.run,
-        pid = encPerk(run, arg, PERKS, RULES.run.perks);
+        pid = encPerk(run, arg, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
       if (!pid) {
         encNote('There was nothing left to give you.');
         await encStep(title, 'Go on');

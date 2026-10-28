@@ -229,11 +229,13 @@ export function encPickBilly(run, team) {
 }
 
 /** the Perk an event offers: that id (if not held), else drawn by rarity weight from the events stream among those
- * not held (of that rarity when one is given); '' when none is left @param {Run} run @param {string | undefined} arg
- * @param {Record<string, Perk>} perks @param {PerkRules} rule */
-export function encPerk(run, arg, perks, rule) {
+ * not held (of that rarity when one is given); '' when none is left. PK-4: drawn only from those whose needs hold for
+ * the team (its types, perks.js perkTeamOf; an event naming an id gives it anyway) @param {Run} run
+ * @param {string | undefined} arg @param {Record<string, Perk>} perks @param {PerkRules} rule
+ * @param {string[][]} [team] */
+export function encPerk(run, arg, perks, rule, team) {
   if (arg && perks[arg]) return run.perks.includes(arg) ? '' : arg;
-  const pool = perkPool(run, perks, rule).filter(id => !arg || perks[id].rarity === arg);
+  const pool = perkPool(run, perks, rule, [], team).filter(id => !arg || perks[id].rarity === arg);
   return perkDraw(encRng(run), pool, perks, rule, 1)[0] || '';
 }
 

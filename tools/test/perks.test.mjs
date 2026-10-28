@@ -157,3 +157,34 @@ test('PK-3 perkCount: a counter as n/every, VOID once a once-a-run row is spent,
   assert.equal(R.perkCount(null, 'click_pen', PERKS), '0/8');
   assert.equal(R.perkCount(r, 'nope', PERKS), '');
 });
+
+// PK-4: offers ask a Perk's needs of the team (perkFits): a test-only Perk that needs a Fire Billie
+const NEEDY = {
+  test_fire_only: {
+    name: 'Test',
+    d: 'A test.',
+    rarity: 'common',
+    needs: 'team:Fire',
+    fx: [{ kind: 'money', mult: 1.1 }],
+  },
+  test_plain: { name: 'Test', d: 'A test.', rarity: 'common', fx: [{ kind: 'money', mult: 1.1 }] },
+};
+test('PK-4 needs: a Perk that needs team:Fire is drawn only for a team with a Fire Billie; with no team, it is', () => {
+  const r = run(),
+    water = [['Water'], ['Grass']],
+    fire = [['Water'], ['Fire', 'Steel']];
+  assert.deepEqual(R.perkPool(r, NEEDY, RULE, [], water), ['test_plain']);
+  assert.deepEqual(R.perkPool(r, NEEDY, RULE, [], fire), ['test_fire_only', 'test_plain']);
+  assert.deepEqual(R.perkPool(r, NEEDY, RULE), ['test_fire_only', 'test_plain'], 'no team given: needs not asked');
+  assert.equal(R.perkFits({ needs: ['team:Fire', 'mono'] }, [['Fire'], ['Fire', 'Water']]), true);
+  assert.equal(R.perkFits({ needs: ['team:Fire', 'mono'] }, [['Fire'], ['Water']]), false);
+  assert.deepEqual(R.perkTeamOf(startedSave('musk0', 10).team), [['Fire']]);
+  /* the pick, a shop's shelf and an event draw from the same pool */
+  for (let n = 0; n < 30; n++) {
+    const p = run('NEED' + n);
+    assert.ok(!(R.perkOffer(p, NEEDY, RULE, water) || []).includes('test_fire_only'), 'the pick');
+    assert.notEqual(R.perkShelf(p, 2, 1, NEEDY, RULE, water), 'test_fire_only', 'the shelf');
+    assert.notEqual(modules.encounters.encPerk(p, undefined, NEEDY, RULE, water), 'test_fire_only', 'an event');
+  }
+  assert.equal(modules.encounters.encPerk(r, 'test_fire_only', NEEDY, RULE, water), 'test_fire_only', 'named: given');
+});

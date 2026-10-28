@@ -527,3 +527,23 @@ test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults
     );
   }
 });
+
+test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () => {
+  const D = structuredClone(GAME_DATA);
+  D.perks.lucky_charm.needs = 'team:Fire';
+  D.perks.clinic_card.needs = ['team:Water|Grass', 'mono'];
+  assert.deepEqual(C.dataPerks(D), []);
+  for (const [v, text] of [
+    ['lead', '"lead" can\'t be known when a Perk is offered'],
+    ['team:Fyre', 'team: no "Fyre"'],
+    [[], 'one condition, or a list of 1-4'],
+  ]) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.needs = v;
+    const all = C.dataPerks(E, () => true).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.needs') && w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+});

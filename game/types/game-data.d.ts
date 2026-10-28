@@ -2298,6 +2298,8 @@ export interface Perk {
   say?: string;
   /** PK-2: its picture under game/art ('perks/<id>.svg'); without one it shows the `relic` UI icon */
   img?: string;
+  /** PK-4: offered only to a team this holds for (a condition or a list, all of which must hold: team:<Type>, mono) */
+  needs?: string | string[];
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */

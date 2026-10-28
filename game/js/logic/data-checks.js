@@ -74,6 +74,7 @@ expose({
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
+  PERK_NEEDS: [() => PERK_NEEDS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
@@ -174,6 +175,8 @@ expose({
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   fxWhenProblems: [() => fxWhenProblems, v => (fxWhenProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkNeedsProblems: [() => perkNeedsProblems, v => (perkNeedsProblems = v)],
   // @ts-expect-error -- replaced on purpose
   runMapProblems: [() => runMapProblems, v => (runMapProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1955,6 +1958,10 @@ export function dataPerks(D, valid = () => true) {
       for (const [k, R] of Object.entries(D.perks))
         if (R.say != null && !(typeof R.say === 'string' && R.say.length >= 1 && R.say.length <= FX_SAY))
           problem('perks.json', `${k}.say: a line of 1-${FX_SAY} letters`);
+    /* PK-4: what a Perk needs to be offered: conditions an offer can know (the team's types) */
+    if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
+      for (const [k, R] of Object.entries(D.perks))
+        perkNeedsProblems(R.needs, `${k}.needs`, D, w => problem('perks.json', w));
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
@@ -2093,6 +2100,22 @@ export function fxPassiveProblems(f, at, D, problem) {
       problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
     if (!(Number.isInteger(f.stages) && f.stages >= 1 && f.stages <= FX_STAGES))
       problem(`${at}.stages: a whole number of stages from 1 to ${FX_STAGES}`);
+  }
+}
+/** PK-4: the conditions a Perk's needs can name: those an offer knows (the team) */
+export const PERK_NEEDS = ['team', 'mono'];
+/** PK-4: a Perk's needs: one condition or a list of 1-4, each a condition word (fxCondProblem) of PERK_NEEDS
+ * @param {any} v @param {string} at @param {any} D @param {(what: string) => void} problem */
+export function perkNeedsProblems(v, at, D, problem) {
+  if (v == null) return;
+  const L = Array.isArray(v) ? v : [v];
+  if (!L.length || L.length > 4) problem(`${at}: one condition, or a list of 1-4`);
+  for (const c of L) {
+    const why = fxCondProblem(c, D),
+      key = typeof c === 'string' ? c.split(':')[0] : '';
+    if (why) problem(`${at}: ${why}`);
+    else if (!PERK_NEEDS.includes(key))
+      problem(`${at}: "${c}" can't be known when a Perk is offered (${PERK_NEEDS.join(', ')})`);
   }
 }
 /** PK-1: the timing fields of an effect row (logic/effects.js) */

@@ -9,7 +9,10 @@
      run.shelf (so buying it doesn't put another on the shelf), '' once bought; its price by rarity;
    - at most run.perks.cap held: a new one past the cap takes the place of one the player lets go.
    They last the run: nothing of them is kept at the payout. Every Perk is on offer from the first run (the owner,
-   RL-12); RL-11's unlocks may narrow the pool later.
+   RL-12); RL-11's unlocks may narrow the pool later. PK-4: a Perk with `needs` (a condition on the team, such as
+   team:Fire) is offered only to a team it holds for (PokeRogue's rule: a type Perk needs a Billie of its type); the
+   team is given as each Billie's types (perkTeamOf), and with none given (a preview from the seed alone) needs are
+   not asked.
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
@@ -17,9 +20,11 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
+import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed } from './run-map.js';
 import { runFxMoment } from './run-loop.js';
+import { fxCond } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -30,6 +35,8 @@ expose({
   perkCount: [() => perkCount, v => (perkCount = v)],
   // @ts-expect-error -- replaced on purpose
   perkDraw: [() => perkDraw, v => (perkDraw = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkFits: [() => perkFits, v => (perkFits = v)],
   perkOffer: [() => perkOffer],
   // @ts-expect-error -- replaced on purpose
   perkOfferMake: [() => perkOfferMake, v => (perkOfferMake = v)],
@@ -41,6 +48,7 @@ expose({
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
   // @ts-expect-error -- replaced on purpose
   perkTake: [() => perkTake, v => (perkTake = v)],
+  perkTeamOf: [() => perkTeamOf],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -61,15 +69,29 @@ export function perkCount(run, id, perks) {
   return [...new Set(out)].join(' · ');
 }
 
+/** PK-4: a team as the offers see it: each Billie's types @param {any[]} team the save's team
+ * @returns {string[][]} */
+export const perkTeamOf = team => (team || []).map(m => billyTypes(m));
+/** PK-4: does a Perk's `needs` hold for a team (each of its conditions, effects.js fxCond, with the team alone)?
+ * True without needs, or with no team given @param {Perk} P @param {string[][]} [team] */
+export function perkFits(P, team) {
+  if (P.needs == null || !team) return true;
+  return (Array.isArray(P.needs) ? P.needs : [P.needs]).every(c => fxCond(c, { team }));
+}
 /** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, in perks.json's order (RF-4:
- * was by id; the data's order lets an id change without changing a seed's offers)
- * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[]} [also] left out too */
-export const perkPool = (run, perks, rule, also = []) =>
+ * was by id; the data's order lets an id change without changing a seed's offers); PK-4: whose needs hold for the
+ * team (perkFits) @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
+ * @param {string[]} [also] left out too @param {string[][]} [team] the team's types (perkTeamOf) */
+export const perkPool = (run, perks, rule, also = [], team) =>
   /* RL-13: the "No Perks" challenge offers none at all (logic/modifiers.js) */
   modHas(run, 'noperks')
     ? []
     : Object.keys(perks).filter(
-        id => !run.perks.includes(id) && !also.includes(id) && (rule.rarity[perks[id].rarity] || 0) > 0
+        id =>
+          !run.perks.includes(id) &&
+          !also.includes(id) &&
+          (rule.rarity[perks[id].rarity] || 0) > 0 &&
+          perkFits(perks[id], team)
       );
 
 /** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
@@ -86,14 +108,16 @@ export function perkDraw(g, pool, perks, rule, n) {
 }
 
 /** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held
- * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @returns {string[]} */
-export const perkOffer = (run, perks, rule) =>
-  perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, rule), perks, rule, rule.pick);
+ * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[][]} [team]
+ * @returns {string[]} */
+export const perkOffer = (run, perks, rule, team) =>
+  perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, rule, [], team), perks, rule, rule.pick);
 
 /** make the next pick: run.offer is set (null when nothing is left to offer) and the counter moves on; the caller
- * saves before showing it @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule */
-export function perkOfferMake(run, perks, rule) {
-  const ids = perkOffer(run, perks, rule);
+ * saves before showing it @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
+ * @param {string[][]} [team] the team's types (perkTeamOf) */
+export function perkOfferMake(run, perks, rule, team) {
+  const ids = perkOffer(run, perks, rule, team);
   run.offerN++;
   run.offer = ids.length ? ids : null;
   return run.offer;
@@ -101,13 +125,14 @@ export function perkOfferMake(run, perks, rule) {
 
 /** a run shop's Perk on a day ('' when bought or none is left): drawn once from the shop's node and the day, then
  * kept in run.shelf @param {Run} run @param {number} i the shop's map node @param {number} day
- * @param {Record<string, Perk>} perks @param {PerkRules} rule @returns {string} */
-export function perkShelf(run, i, day, perks, rule) {
+ * @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[][]} [team] the team's types
+ * @returns {string} */
+export function perkShelf(run, i, day, perks, rule, team) {
   const key = i + ':' + day;
   if (Object.hasOwn(run.shelf, key)) return run.shelf[key];
   const id = perkDraw(
     rngFrom(runNodeSeed(run.seed, i), 'relic|shop|' + day),
-    perkPool(run, perks, rule),
+    perkPool(run, perks, rule, [], team),
     perks,
     rule,
     1
@@ -178,14 +203,15 @@ export function perkBuy(run, i, day, perks, rule, drop, s) {
  * run of that seed, then perkChoose): what is offered at each pick and what is taken. `take` is who chooses: 'none'
  * takes nothing (the Run Lab's preview), 'first' the first offered, or a Perk's id, taken when offered (else
  * nothing). A taken one leaves the pool of the picks after it; past the cap nothing more is taken. Shops are left out.
+ * PK-4: `team` (each Billie's types) asks the Perks' needs; without one they are not asked
  * @param {string} seed @param {Record<string, Perk>} perks @param {PerkRules} rule @param {number} picks
- * @param {string} [take] @returns {{ offer: string[], took: string | null }[]}
+ * @param {string} [take] @param {string[][]} [team] @returns {{ offer: string[], took: string | null }[]}
  */
-export function perkOfferOrder(seed, perks, rule, picks, take = 'none') {
+export function perkOfferOrder(seed, perks, rule, picks, take = 'none', team) {
   const run = /** @type {Run} */ (/** @type {any} */ ({ seed, perks: [], offer: null, offerN: 0, shelf: {} })),
     out = [];
   for (let k = 0; k < picks; k++) {
-    const offer = (perkOfferMake(run, perks, rule) || []).slice(),
+    const offer = (perkOfferMake(run, perks, rule, team) || []).slice(),
       want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
       took = want && run.perks.length < rule.cap && !perkChoose(run, want, perks, rule) ? want : null;
     if (!took && run.offer) perkChoose(run, null, perks, rule);

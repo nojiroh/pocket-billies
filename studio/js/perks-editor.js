@@ -508,6 +508,7 @@ SECTIONS.relics = () => {
        opt: 1,
        ph: 'Approved, {name}!',
      }) +
+     `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
@@ -681,6 +682,23 @@ document.addEventListener('change', ev => {
     make = PERK_ROW_NEW[el.value];
   if (!R || !make) return;
   R.fx[+(el.dataset.n || 0)] = make();
+  changed();
+  render();
+});
+/* PK-4: a Perk's Needs, as a row's If: words split at commas */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLInputElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.relicNeeds) return;
+  const R = /** @type {any} */ (studioState.D.perks[el.dataset.relicNeeds]);
+  if (!R) return;
+  const was = JSON.stringify(R.needs),
+    L = el.value
+      .split(',')
+      .map(w => w.trim())
+      .filter(Boolean);
+  if (!L.length) delete R.needs;
+  else R.needs = L.length === 1 ? L[0] : L;
+  if (JSON.stringify(R.needs) === was) return;
   changed();
   render();
 });

@@ -150,7 +150,7 @@ export function runSimOn(env) {
     { runUnlocks } = modules.unlocks,
     { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
     { rewardDataGame, rewardTake } = modules.rewards,
-    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
+    { perkBuy, perkChoose, perkPrice, perkShelf, perkTeamOf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
     { modTypeFits } = modules.modifiers,
     { residentCandidate } = modules.residents,
@@ -383,7 +383,7 @@ export function runSimOn(env) {
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
              reserve (shop.js shopPerkBuy: its price with the price rows) */
-          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks);
+          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks, perkTeamOf(s.team));
           if (shelf) {
             const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
               c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;

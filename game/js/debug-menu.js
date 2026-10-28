@@ -82,7 +82,7 @@ import { heldIds } from './logic/held.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
 import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { perkOfferMake, perkTake } from './logic/perks.js';
+import { perkOfferMake, perkTake, perkTeamOf } from './logic/perks.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { buildingLevel, unlockGrant } from './logic/unlocks.js';
@@ -745,7 +745,8 @@ function debugAction(x) {
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks)) return refreshDebugMenu('Every Perk is held.');
+      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks, perkTeamOf(saveData.team)))
+        return refreshDebugMenu('Every Perk is held.');
       saveNow();
       uiState.modal = null;
       perkPickOpen();

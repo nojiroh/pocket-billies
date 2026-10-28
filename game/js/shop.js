@@ -11,7 +11,7 @@ import { formatNumber, plural } from './logic/rules.js';
 import { resStock } from './logic/residents.js';
 import { runBuyFx, runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
+import { perkBuy, perkPrice, perkShelf, perkTeamOf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artIconHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -188,7 +188,7 @@ export function openShop(id) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
-    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks);
+    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
   }
   /* RS-4: a resident's shop sells what their level has now */
   if (sh.res && !saveData.run) sh.stock = resStock(saveData, sh.res, RESIDENTS, UNLOCK_DATA.unlocks);
