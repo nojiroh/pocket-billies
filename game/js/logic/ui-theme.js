@@ -251,6 +251,12 @@ export function sharedVars(look) {
   // UI-8: the minimap (js/minimap.js reads these where its canvas sits): its span, the compact bar's timing, its marks
   const mm = look.minimap || {};
   if (typeof mm.span === 'number') out.push(`--minimap-span: ${mm.span};`);
+  // UI-8b: the tile's sizes (pb-nav-bar and shell.css's --nav-h read them)
+  if (typeof mm.tileW === 'number') out.push(`--minimap-tile-w: ${mm.tileW}px;`);
+  if (typeof mm.tileH === 'number') out.push(`--minimap-tile-h: ${mm.tileH}px;`);
+  if (typeof mm.tileW === 'number' && typeof mm.tileH === 'number' && mm.tileW > 0)
+    out.push(`--minimap-tile-aspect: ${+(mm.tileH / mm.tileW).toFixed(4)};`);
+  if (typeof mm.tileCompact === 'number') out.push(`--minimap-tile-compact: ${mm.tileCompact}px;`);
   if (typeof mm.compactAfter === 'number') out.push(`--minimap-compact-after: ${mm.compactAfter};`);
   if (typeof mm.fullAfter === 'number') out.push(`--minimap-full-after: ${mm.fullAfter};`);
   for (const k of /** @type {const} */ (['facilities', 'trainers', 'billies']))

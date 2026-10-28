@@ -24,6 +24,7 @@ import { LOOK_PRESETS, cleanLook, portraitHTML } from './person-art.js';
 import { openSettings } from './settings-screen.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { EASE } from './battle-stage.js';
+import { environment, environmentIcon } from './environment.js';
 import { fishStart } from './fishing.js';
 import { battleResize, battleShell, tapMessage } from './battle.js';
 import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from './world-bowl.js';
@@ -42,7 +43,16 @@ import { guideAction, renderGuide } from './guide.js';
 import { renderTeam, teamAction } from './team.js';
 import { billieSheetAction } from './billie-sheet.js';
 import { mapTabAction, renderWorldMapTab } from './map-tab.js';
-import { renderWalk, walkSheetClose, walkSheetOpen, walkSheetSync, walkTabAction, walkTipOnce } from './walk-tab.js';
+import {
+  placeCardState,
+  renderWalk,
+  walkAfterRender,
+  walkSheetClose,
+  walkSheetOpen,
+  walkSheetSync,
+  walkTabAction,
+  walkTipOnce,
+} from './walk-tab.js';
 import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 import { battleAction } from './battle-input.js';
 /* eslint-disable no-func-assign */
@@ -70,9 +80,12 @@ export function setRender(v) {
 const TABS = ['walk', 'map', 'team', 'guide', 'bag', 'perks', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
-  const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
-    walk = uiState.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Moneys"><span class="money">${uiIconHTML('coin', 16)}</span><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
+  const walk = uiState.tab === 'walk',
+    shut = walk && !placeCardState().show,
+    inRoom = !!(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState()),
+    /* UI-15: the folded place card leaves its name and today's weather in the top bar */
+    wx = walk && !inRoom && environment.on ? uiIconHTML(environmentIcon(), 14) : '';
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${wx}${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Moneys"><span class="money">${uiIconHTML('coin', 16)}</span><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
 }
 export function render() {
   const app = $('#app');
@@ -132,7 +145,10 @@ export function render() {
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
-  if (T === 'walk') walkTipOnce();
+  if (T === 'walk') {
+    walkTipOnce();
+    walkAfterRender();
+  }
   pbInboxPop(uiState.inbox.length);
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,

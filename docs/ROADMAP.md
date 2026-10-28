@@ -146,7 +146,7 @@ town node needs it.
   Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
   run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
   `ccr-03a15a70-nd3yqu`, answered (Field Guide by default, three palettes in Settings; rarity as frame and pill); UI-8b (the wide
-  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) first, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
+  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) done 2026-10-27 on `track/ui`, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
   beside it on `claude/ui-8c-map-markers` (done 2026-10-27, draft PR #281 into main; the owner's phone check after UI-18), then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
   the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266). UI-11 (the colour code as data) done
   2026-10-27 on `ccr-dab4e0cd-6re1eb` (#280); UI-12 (the palettes: Field Guide by default, a Settings Palette row)
@@ -155,8 +155,10 @@ town node needs it.
   `pb-chip`, `pb-proc`, `pb-info`, rarity, the Colour shapes patterns; gallery only) done 2026-10-27 on
   `claude/ui-14a-marks-kit`; UI-14b (the marks on every screen: status tags, Prime teal, Lead neutral, towns teal,
   rarity on held items, Augments, Genes and Billies, pb-coin's screens on pb-chip, the Colour shapes switch; the
-  battle plates left to UI-16b) done 2026-10-27 on `claude/ui-14b-marks-screens`; the browser and phone checks wait
-  until UI-18 (the owner's word).
+  battle plates left to UI-16b) done 2026-10-27 on `claude/ui-14b-marks-screens`; UI-15 (less clutter in battle and
+  walking: the field strip, plates' "+N", long-press move details, quiet commands, dark battle glass; the place card
+  as a title, the fading hint, the Actions bob) done 2026-10-27 on `claude/ui-15-less-clutter`; the browser and phone
+  checks wait until UI-18 (the owner's word).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.

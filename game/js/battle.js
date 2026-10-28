@@ -6,9 +6,11 @@
 import { expose } from './test-globals.js';
 import {
   JINGLES,
+  WEATHER_BATTLE_NOTES,
   battleSoundEffect,
   battleTipHide,
   battleTutor,
+  battleWeather,
   battleWeatherMultiplier,
   closeModal,
   fieldBadgeLine,
@@ -50,6 +52,7 @@ import {
   plural,
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
+import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -73,7 +76,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artURL, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -97,13 +100,15 @@ import {
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
+import { WEATHER_NAMES } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
-  TICKER_LAST: [() => TICKER_LAST],
+  FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
+  MOVE_HOLD_MS: [() => MOVE_HOLD_MS],
+  PLATE_TAGS: [() => PLATE_TAGS],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
@@ -118,11 +123,17 @@ expose({
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
+  bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
+  cmdButtonHTML: [() => cmdButtonHTML, v => (cmdButtonHTML = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
+  fieldChipHTML: [() => fieldChipHTML, v => (fieldChipHTML = v)],
+  fieldStripUpdate: [() => fieldStripUpdate, v => (fieldStripUpdate = v)],
+  fieldTip: [() => fieldTip, v => (fieldTip = v)],
+  fieldUi: [() => fieldUi],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
   floatPos: [() => floatPos],
   floatTick: [() => floatTick, v => (floatTick = v)],
@@ -131,7 +142,11 @@ expose({
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   logLine: [() => logLine, v => (logLine = v)],
+  moveInfoHide: [() => moveInfoHide, v => (moveInfoHide = v)],
+  moveInfoNodes: [() => moveInfoNodes, v => (moveInfoNodes = v)],
+  moveInfoShow: [() => moveInfoShow, v => (moveInfoShow = v)],
   moveTilesHTML: [() => moveTilesHTML, v => (moveTilesHTML = v)],
+  moveWeatherMark: [() => moveWeatherMark],
   needsPart: [() => needsPart, v => (needsPart = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   nextEvent: [() => nextEvent, v => (nextEvent = v)],
@@ -161,7 +176,6 @@ expose({
   stopTimers: [() => stopTimers, v => ((stopTimers = v), provide({ stopTimers }))],
   tapMessage: [() => tapMessage, v => (tapMessage = v)],
   teamPick: [() => teamPick, v => (teamPick = v)],
-  tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
   turnBar: [() => turnBar, v => (turnBar = v)],
   typeText: [() => typeText, v => (typeText = v)],
 });
@@ -186,8 +200,7 @@ export function battleShell() {
   <div class="pops" id="pops" aria-hidden="true"></div>
   <div class="bplates" id="plates"></div>
  </div>
- <div class="ticker" aria-hidden="true"><div class="tk-in" id="tk"></div></div>
- <div class="mk glassy" id="mk"></div>
+ <div class="fstrip" id="fstrip" role="group" aria-label="The field"><div class="fs-row" id="fsRow"></div><p class="fs-tip" id="fsTip" role="status" hidden></p></div>
  <div class="dock glassy" id="dock">
   <button class="bmsg" id="msg" data-a="adv" aria-live="polite"><span id="msgT"></span><i class="more"></i></button>
   <div class="cmd" id="acts"></div>
@@ -203,7 +216,7 @@ function battleFreeArea(vw, vh, lay) {
     },
     dock = r('#dock'),
     foe = r('#hb1'),
-    tk = r('.ticker');
+    tk = r('#fstrip');
   /* phase 06-3: with the cards floating in the scene the dock has no fixed place, so the action is framed in a fixed
      share of the screen (above the cards in portrait, left of them in landscape) */
   const floating = $('#battle').classList.contains('ui3d');
@@ -503,66 +516,75 @@ export function tapMessage() {
 function boxAnims(ev) {
   const an = ev.an;
   if (!an) return;
+  /* UI-15: stones that hurt someone are on the field (the strip shows them from here, not a turn early) */
+  if (an.fx === 'stones' && an.si != null) fieldUi.stones[ACTOR_SIDE[an.si]] = true;
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
 }
 const statShortName = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
 export function paintBoxes(s, mk, anim) {
   paintPlates(s, anim);
-  tickerUpdate(s, mk);
-  const m = $('#mk');
-  if (m) {
-    m.innerHTML = mk
-      ? `${glyphHTML('effect', 'sandstorm', 14, 'fill')} ${escapeHtml(shockName())} · ${plural(mk.n, 'turn')}`
-      : '';
-    m.classList.toggle('on', !!mk);
-  }
+  fieldStripUpdate(mk);
 }
-const TICKER_LAST = {};
-function tickerUpdate(s, mk) {
-  const el = $('#tk');
+/* UI-15: the field strip (in the ticker's place, at the top): the weather and the field's hazards as glyphs, with the
+   turns left where they run out; your side's hazards on the left, the foe's on the right. A chip's words show under the
+   strip when it is tapped. The icon set's icons for now (UI-13 draws the strip's own glyphs) */
+const FIELD_WEATHER_ICONS = {
+  rain: 'rain',
+  storm: 'rain',
+  snow: 'snow',
+  fog: 'fog',
+  ash: 'ash',
+  sunny: 'sun',
+  night: 'moon',
+  cloudy: 'cloud',
+};
+/* the sharp stones each side has, as the turn's playback has shown them so far (the battle runs a turn ahead of what
+   is on screen: the strip waits for the event, then reads the field when the turn is over) */
+const fieldUi = { stones: [false, false], mk: null };
+function fieldChipHTML(icon, words, turns, cls) {
+  /* a 40 px button (the tap rule) around a 24 px chip */
+  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${uiIconHTML(icon, 14)}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
+}
+function fieldStripUpdate(mk) {
+  const el = $('#fsRow');
   if (!el) return;
-  const items = [];
-  [1, 3, 0, 2, 4].forEach(i => {
-    const x = s[i];
-    if (!x) return;
-    const p = Math.round((Math.max(0, x.hp) / x.max) * 100),
-      k = x.uid,
-      prev = TICKER_LAST[k],
-      d = prev == null ? 0 : p - prev;
-    TICKER_LAST[k] = p;
-    items.push(
-      `<span class="tki"><b>${escapeHtml(x.name.toUpperCase())}</b> Lv ${x.lvl} <em class="${d < 0 ? 'dn' : d > 0 ? 'up' : ''}">HP ${p}%</em></span>`
-    );
-  });
-  if (mk)
-    items.push(
-      `<span class="tki warn"><b>${escapeHtml(shockName().toUpperCase())}</b> ${plural(mk.n, 'turn')} left</span>`
-    );
-  const sunTxt = (() => {
-    if (typeof environmentState !== 'function' || !environment.on) return 'noon, steady';
-    const st = environmentState(currentLocationMap());
-    return (
-      (st.night > 0.5
-        ? 'night, dim'
-        : st.dusk > 0.35
-          ? 'dusk, glowing'
-          : st.dawn > 0.35
-            ? 'dawn, rising'
-            : st.h < 11
-              ? 'morning, climbing'
-              : st.h < 15
-                ? 'noon, steady'
-                : 'afternoon, mellow') +
-      (st.wx !== 'clear' ? ` · <b>WEATHER</b> ${(WEATHER_NAMES[st.wx] || st.wx).toLowerCase()}` : '')
-    );
-  })();
-  items.push(
-    `<span class="tki"><b>INNER SUN</b> ${sunTxt}</span>`,
-    `<span class="tki"><b>MONEYS</b> ${moneyHTML(saveData.se, 12)}</span>`
-  );
-  const h = items.join('<i>•</i>');
-  el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
+  if (mk !== undefined) fieldUi.mk = mk;
+  if (activeBattle && activeBattle.phase !== 'playing')
+    fieldUi.stones = [0, 1].map(i => !!(activeBattle.sides[i] && activeBattle.sides[i].stones));
+  const w = typeof battleWeather === 'function' ? battleWeather() : null,
+    side = i =>
+      fieldUi.stones[i]
+        ? fieldChipHTML(
+            'scrap',
+            `Sharp stones on ${i ? 'their' : 'your'} side: they hurt each Billie that comes in`,
+            0,
+            'bad'
+          )
+        : '',
+    m = fieldUi.mk,
+    mid =
+      (w
+        ? fieldChipHTML(
+            FIELD_WEATHER_ICONS[w.k] || 'cloud',
+            WEATHER_BATTLE_NOTES[w.k] || WEATHER_NAMES[w.k] || w.k,
+            0,
+            'wx'
+          )
+        : '') + (m ? fieldChipHTML('bolt', `${shockName()}: ${plural(m.n, 'turn')} left`, m.n, 'warn') : '');
+  const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
+  if (el.innerHTML !== h) el.innerHTML = h;
+  $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
+}
+/* a chip's words under the strip for a few seconds (rule 3: never colour alone; the word on tap) */
+function fieldTip(ev) {
+  const b = ev.target && ev.target.closest && ev.target.closest('.fs-chip'),
+    t = $('#fsTip');
+  if (!b || !t) return;
+  t.textContent = b.dataset.tip;
+  t.hidden = false;
+  clearTimeout(fieldUi.tipT);
+  fieldUi.tipT = setTimeout(() => (t.hidden = true), 3500);
 }
 /* floating numbers and tags over the billionaires */
 function hudPop(si, text, kind) {
@@ -740,7 +762,17 @@ export const itemIcon = (k, size = 30) => {
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
     : `<img class="pxi" src="${iconURL('i_' + (I.icon || k))}" width="${size}" height="${size}" alt="">`;
 };
-/* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming */
+/* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming. UI-15: a
+   tile shows the type's glyph, the name, the power and the effectiveness; the rest (type, accuracy, same-type bonus,
+   weather, the move's text) on a long press, or on hover and keyboard focus (moveInfoShow) */
+const moveWeatherMark = M =>
+  M.p && typeof battleWeatherMultiplier === 'function'
+    ? battleWeatherMultiplier(M.t) > 1
+      ? ' ▲'
+      : battleWeatherMultiplier(M.t) < 1
+        ? ' ▼'
+        : ''
+    : '';
 function moveTilesHTML(m) {
   /* SP-5: and the moves its Augments bring */
   return `<div class="moves">${movesOf(m)
@@ -748,14 +780,126 @@ function moveTilesHTML(m) {
       const M = MOVES[id],
         c = TYPE_COLORS[M.t],
         P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
-        stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t),
         /* phase 17: a robot can't use the move of a broken part */
-        off = !moveUsable(m, id);
+        off = !moveUsable(m, id),
+        top = `<span class="mv-top">${typeGlyphHTML(M.t)}<b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span>`;
       if (off)
-        return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>`;
-      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
+        return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-m="${id}">${top}<span class="mv-meta"><span>Part broken</span></span></button>`;
+      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}">${top}<span class="mv-meta"><span class="tnum">${P}${M.p ? ' pow' : ''}${moveWeatherMark(M)}</span></span>${effectivenessLabel(id)}</button>`;
     })
     .join('')}</div>`;
+}
+/** UI-15: a move's details: its type (and the same-type bonus), power, accuracy, what the weather does to it, its text
+ * (built as nodes: the words are the data's, never markup) */
+function moveInfoNodes(id) {
+  const M = MOVES[id],
+    stab = M.t !== 'None' && activeBattle && actorTypes(activeBattle.cur).includes(M.t),
+    wx = moveWeatherMark(M).trim(),
+    acc = M.c === 'X' && !(M.a < 100) ? '' : `${M.a || 100}% accuracy`,
+    pow = M.p ? `${M.p} power` : M.fx && M.fx.vary ? 'power varies' : 'no damage',
+    part = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      e.textContent = text;
+      return e;
+    },
+    ty = part(
+      'span',
+      'mi-ty',
+      `${M.t === 'None' ? 'Normal' : M.t}${stab ? ` · ★ same type, ×${BATTLE_RULES.stab}` : ''}`
+    ),
+    g = document.createElement('i');
+  g.className = 'ty-g';
+  g.setAttribute('aria-hidden', 'true');
+  g.style.setProperty('--glyph', `url('${typeGlyphURL(M.t)}')`);
+  ty.prepend(g);
+  return [
+    part('b', '', M.n),
+    ty,
+    part(
+      'span',
+      'mi-n tnum',
+      [pow, acc, wx && `${wx === '▲' ? 'stronger' : 'weaker'} in this weather`].filter(Boolean).join(' · ')
+    ),
+    part('span', 'mi-d', M.d || ''),
+  ];
+}
+function moveInfoShow(b) {
+  const B = $('#battle'),
+    id = b && b.dataset.m;
+  if (!B || !id || !MOVES[id]) return;
+  let e = $('#mvInfo');
+  if (!e) {
+    e = document.createElement('div');
+    e.id = 'mvInfo';
+    e.className = 'mv-info';
+    e.setAttribute('role', 'tooltip');
+    B.appendChild(e);
+  }
+  e.replaceChildren(...moveInfoNodes(id));
+  e.hidden = false;
+  /* over the whole grid of tiles (it covers the message line, not the other moves); under it when there's no room */
+  const r = (b.closest('.moves') || b).getBoundingClientRect(),
+    t = b.getBoundingClientRect(),
+    o = B.getBoundingClientRect(),
+    w = e.offsetWidth,
+    h = e.offsetHeight;
+  let y = r.top - o.top - h - 8;
+  if (y < 8) y = r.bottom - o.top + 8;
+  e.style.left = clamp(t.left - o.left + t.width / 2 - w / 2, 8, o.width - w - 8) + 'px';
+  e.style.top = y + 'px';
+  b.setAttribute('aria-describedby', 'mvInfo');
+}
+function moveInfoHide() {
+  const e = $('#mvInfo');
+  if (e) e.hidden = true;
+}
+/* a press held this long on a tile shows its details instead of picking it */
+const MOVE_HOLD_MS = 420;
+function bindMoveInfo(el) {
+  $$('.mv', el).forEach(b => {
+    let t = 0;
+    const end = () => {
+      clearTimeout(t);
+      if (b.dataset.held) moveInfoHide();
+    };
+    b.addEventListener('pointerdown', ev => {
+      delete b.dataset.held;
+      if (ev.pointerType === 'mouse') return;
+      t = setTimeout(() => {
+        b.dataset.held = '1';
+        moveInfoShow(b);
+      }, MOVE_HOLD_MS);
+    });
+    b.addEventListener('pointerup', end);
+    b.addEventListener('pointercancel', end);
+    b.addEventListener('pointerleave', ev => {
+      end();
+      if (ev.pointerType === 'mouse') moveInfoHide();
+    });
+    b.addEventListener('pointerenter', ev => {
+      if (ev.pointerType === 'mouse') moveInfoShow(b);
+    });
+    b.addEventListener('focus', () => b.matches(':focus-visible') && moveInfoShow(b));
+    b.addEventListener('blur', moveInfoHide);
+    b.addEventListener('contextmenu', ev => ev.preventDefault());
+    /* the press that showed the details doesn't also pick the move */
+    b.addEventListener(
+      'click',
+      ev => {
+        if (!b.dataset.held) return;
+        delete b.dataset.held;
+        ev.stopPropagation();
+        ev.preventDefault();
+      },
+      true
+    );
+  });
+}
+/* UI-15: the command row is quiet chrome, an icon over a word, so the moves are the loud choice; what the small line
+   under each word said (pyramids left, items, who can fight, why one is off) is the button's title and spoken name */
+function cmdButtonHTML(cls, act, icon, word, note, key, on) {
+  return `<button class="bt ${cls}" data-a="${act}" ${on ? '' : 'disabled'} title="${escapeHtml(note)}" aria-label="${escapeHtml(`${word}: ${note}`)}">${uiIconHTML(icon, 18)}<b>${word}</b><kbd>${key}</kbd></button>`;
 }
 export function paintActions() {
   const el = $('#acts');
@@ -776,10 +920,7 @@ export function paintActions() {
     /* RL-14: a bot is never caught */
     const bot = wild && !catchable(fighter(1));
     h = `<div class="c-choose">${moveTilesHTML(m)}
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first && !bot ? '' : 'disabled'}>${uiIconHTML('pyramid', 18)}<b>Catch it</b><small>${bot ? 'Not a Billie' : wild ? (first ? pyramids + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
-  <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
-  <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
-  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  <div class="bt-row">${cmdButtonHTML('coin', 'bcoins', 'pyramid', 'Catch it', bot ? 'Not a Billie' : wild ? (first ? plural(pyramids, 'pyramid') + ' left' : 'First pick only') : 'Wild only', 'X', wild && first && !bot)}${cmdButtonHTML('items', 'bitems', 'bag', 'Bag', plural(items, 'item'), 'I', true)}${cmdButtonHTML('team', 'bteam', 'team', 'Team', `${alive} of ${crew.length} can fight`, 'T', true)}${cmdButtonHTML('run', 'brun', 'run', 'Run', wild ? 'Walk away' : 'No way out of a trainer battle', 'R', wild)}</div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'part') {
     const t = fighter(activeBattle.tk);
     /* SP-5: a Billie's Augments are its limbs */
@@ -857,14 +998,8 @@ export function paintActions() {
   void el.offsetWidth;
   el.classList.add('swap');
   if (ph === 'aim') bindAim();
-  if (ph === 'fight')
-    $$('.mv', el).forEach(b => {
-      const tip = () => {
-        if (activeBattle && activeBattle.phase === 'fight') $('#msgT').textContent = b.dataset.tip;
-      };
-      b.addEventListener('pointerenter', tip);
-      b.addEventListener('focus', tip);
-    });
+  moveInfoHide();
+  bindMoveInfo(el);
 }
 function bindAim() {
   const c = $('#aimCoin');
@@ -1119,6 +1254,8 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
+/* UI-15: the most tags a plate shows (a status and stat changes); more fold into "+N" */
+const PLATE_TAGS = 3;
 /* phase 06-3: always the plates in the scene (the classic corner cards and their setting are gone) */
 const stagePlatesOn = () => !!activeBattle;
 function plateElement(k) {
@@ -1186,10 +1323,25 @@ function paintPlates(s, anim) {
     }
     /* phase 06-4: what the corner cards used to show: stat changes, a robot's limbs, the party's dots (on the first
        plate of each side) */
-    e.querySelector('.pl-sg').innerHTML = Object.entries(x.stg || {})
-      .filter(([q, v]) => v)
-      .map(([q, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${statShortName(q)} ${v > 0 ? '+' : ''}${v}</span>`)
-      .join('');
+    /* UI-15: at most 3 tags on a plate (the status first, then the biggest stat changes), the rest as "+N" with
+       their words on it */
+    const stg = Object.entries(x.stg || {})
+        .filter(([q, v]) => v)
+        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+        .map(([q, v]) => [`${statShortName(q)} ${v > 0 ? '+' : ''}${v}`, v > 0 ? 'up' : 'dn']),
+      room = PLATE_TAGS - (x.hp <= 0 || x.st ? 1 : 0),
+      rest = stg
+        .slice(room)
+        .map(t => t[0])
+        .join(', ');
+    e.querySelector('.pl-sg').innerHTML =
+      stg
+        .slice(0, room)
+        .map(([t, c]) => `<span class="stg ${c}">${t}</span>`)
+        .join('') +
+      (rest
+        ? `<span class="stg more" title="${escapeHtml(rest)}" aria-label="${escapeHtml('Also ' + rest)}">+${stg.length - room}</span>`
+        : '');
     const pr = e.querySelector('.pl-parts');
     pr.hidden = !x.bot;
     /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
@@ -1271,7 +1423,7 @@ function floatTick() {
     vh = L.vh,
     pad = 16,
     land = L.lay === 'landscape',
-    tk = $('.ticker'),
+    tk = $('#fstrip'),
     top0 = (tk ? tk.getBoundingClientRect().bottom - B.getBoundingClientRect().top : 24) + 8,
     who = activeBattle.cur != null && battleStage.s[activeBattle.cur] ? activeBattle.cur : 0,
     w0 = actorWorldPoint(who),
@@ -1315,7 +1467,7 @@ function platesTick() {
   if (!L || !activeBattle || !battleStage.L || !L.firstChild) return;
   const tgt = activeBattle.phase === 'target',
     placed = [],
-    tk = $('.ticker'),
+    tk = $('#fstrip'),
     top0 = (tk ? tk.getBoundingClientRect().bottom - $('#battle').getBoundingClientRect().top : 24) + 4;
   const list = [...L.children]
     .map(e => ({ e, k: +e.dataset.k }))
@@ -1371,6 +1523,9 @@ function stageTap(ev) {
   }
   if (best != null && bd < 160) pickTarget(best);
 }
+document.addEventListener('click', e => {
+  if (e.target && e.target.closest && e.target.closest('#fstrip')) fieldTip(e);
+});
 document.addEventListener('pointerup', e => {
   if (
     activeBattle &&

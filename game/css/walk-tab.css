@@ -342,6 +342,8 @@ body.on-walk .wh-foot > * {
   flex-direction: column;
   align-items: center;
   gap: var(--s2);
+  /* UI-15: stays at the bottom when the place card has folded away */
+  margin-top: auto;
 }
 .wh-hint {
   margin: 0;
@@ -378,6 +380,9 @@ body.on-walk .wh-foot > * {
     0 0 0 2px var(--line),
     0 10px 24px -12px var(--shadow);
   cursor: pointer;
+}
+/* UI-15: it bobs only while its sheet holds something you haven't opened it for (a new place, a Billie wandering in) */
+.wh-down.new {
   animation: whBob 2.4s ease-in-out infinite;
 }
 .wh-down .uico {

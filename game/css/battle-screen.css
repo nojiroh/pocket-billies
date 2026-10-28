@@ -66,14 +66,6 @@
     transform: translate(calc(-50% + var(--dx)), -240%) scale(0.94);
   }
 }
-@keyframes tick {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
 /* HP cards */
 @keyframes cardhit {
   20% {
@@ -262,52 +254,89 @@
     inset 0 0 0 1px var(--g-line),
     0 18px 40px -18px rgba(0, 0, 0, 0.65);
 }
-.battle .ticker {
+/* UI-15: every floating battle part sits in dark glass, in both themes (the owner's answer 6): the night tokens until
+   UI-12 gives each palette its own dark side (on the plates too, for the gallery, which shows them on their own) */
+.battle,
+.bplate {
+  --bt-glass: color-mix(in srgb, var(--night-ink) 86%, transparent);
+  --bt-ink: var(--night-text);
+  --bt-ink2: var(--night-text2);
+}
+/* UI-15: the field strip (battle.js fieldStripUpdate), where the ticker was: the weather and the hazards as glyph chips
+   in dark glass, your side's on the left, the foe's on the right; empty, it keeps its place (the stage frames the
+   action under it) but shows nothing */
+.battle .fstrip {
   position: absolute;
-  z-index: 4;
+  z-index: 7;
   top: var(--st);
   left: 0;
   right: 0;
-  height: 24px;
+  height: 28px;
+  padding: var(--s1) var(--s2) 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.battle .fstrip.on {
+  visibility: visible;
+}
+.fs-row {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s2);
+  height: 40px;
+}
+.fs-side,
+.fs-mid {
+  display: flex;
+  gap: var(--s1);
+}
+.fs-chip {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.fs-face {
+  display: inline-flex;
   align-items: center;
-  overflow: hidden;
-  background: rgba(6, 4, 14, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  gap: var(--s1);
+  height: 24px;
+  min-width: 30px;
+  padding: 0 var(--s2);
+  font: 400 13px/1 var(--font-voice);
+  color: var(--bt-ink);
+  background: var(--bt-glass);
+  clip-path: var(--clip-chip);
 }
-.tk-in {
-  display: flex;
-  gap: var(--s3);
-  white-space: nowrap;
-  font: 400 12px/1 var(--font-voice);
-  color: #c8c0e0;
-  animation: tick 26s linear infinite;
-  padding-left: var(--s3);
+.fs-chip.warn b {
+  color: var(--gold-a);
 }
-.tk-in i {
-  font-style: normal;
-  color: #5a5080;
+.fs-chip.bad .fs-face {
+  background:
+    linear-gradient(var(--red), var(--red)) bottom / 100% 2px no-repeat,
+    var(--bt-glass);
 }
-.tki b {
-  color: #f3eef8;
-  font-weight: 400;
+.fs-tip {
+  position: relative;
+  width: fit-content;
+  max-width: min(360px, 100%);
+  margin: calc(-1 * var(--s3)) auto 0;
+  padding: var(--s1) var(--s3);
+  font: 600 13px/1.35 var(--font-voice);
+  color: var(--bt-ink);
+  background: var(--bt-glass);
+  clip-path: var(--clip-chip);
+  visibility: visible;
 }
-.tki em {
-  font-style: normal;
-  color: #c8c0e0;
-}
-.tki em.up {
-  color: #5dff8a;
-}
-.tki em.dn {
-  color: #ff6a6a;
-}
-.tki.warn b {
-  color: #f2c14e;
+.fs-tip[hidden] {
+  display: none;
 }
 .pip {
   width: 8px;
@@ -321,22 +350,6 @@
 }
 .pip.st {
   background: radial-gradient(circle at 35% 35%, #ffd0a0, #e06a3a);
-}
-.battle .mk {
-  position: absolute;
-  z-index: 5;
-  top: calc(var(--st) + 32px);
-  right: 12px;
-  padding: var(--s2) var(--s3);
-  font: 400 12.5px/1 var(--font-voice);
-  color: #ffd86a;
-  display: none;
-  align-items: center;
-  gap: var(--s2);
-}
-.battle .mk.on {
-  display: flex;
-  animation: pop 0.4s cubic-bezier(0.3, 1.7, 0.5, 1);
 }
 /* dock: your card, the message, the commands */
 .dock {
@@ -501,15 +514,20 @@
   min-height: 70px;
   font-size: 15px;
 }
+/* UI-15: the command row is quiet chrome (an icon over a word, the glass's own ink), so the moves are the loud
+   choice; Catch it, Bag, Team and Run look alike (they borrowed gold and the types' green and blue before) */
+.battle .bt-row .bt {
+  min-height: 52px;
+  font-size: 14px;
+  color: var(--bt-ink);
+  background: color-mix(in srgb, var(--bt-ink) 10%, transparent);
+}
+.battle .bt-row .bt .uico {
+  opacity: 0.9;
+}
 .bt.coin {
   background: linear-gradient(180deg, #ffe27a, #f2b43c 60%, #d18e1e);
   color: #3a2408;
-}
-.bt.items {
-  background: linear-gradient(180deg, #5adb9c, #2e9c66);
-}
-.bt.team {
-  background: linear-gradient(180deg, #7aa8ff, #3f6bd6);
 }
 .bt.end {
   background: linear-gradient(180deg, #5a4a8a, #30264f);
@@ -528,6 +546,9 @@
 }
 .mv {
   position: relative;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   border: 0;
   border-radius: var(--r-xs);
   text-align: left;
@@ -570,8 +591,19 @@
 }
 .mv-top {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--s2);
+}
+/* UI-15: the type's glyph leads the name (the type's word is in the long-press details) */
+.mv-top .ty-g {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.mv-top b {
+  flex: 1;
+  min-width: 0;
 }
 .mv b {
   font: 400 16.5px/1.1 var(--font-voice);
@@ -582,10 +614,6 @@
   gap: var(--s2);
   font: 600 11.5px/1 var(--font-voice);
   opacity: 0.92;
-}
-.mv-ty {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 .mv em {
   position: absolute;
@@ -604,6 +632,37 @@
 .mv:has(em) .mv-meta {
   padding-right: 0;
   margin-bottom: var(--s4);
+}
+/* UI-15: a move's details (battle.js moveInfoShow): over the tile held down, in the battle's dark glass */
+.mv-info {
+  position: absolute;
+  z-index: var(--z-hud);
+  display: grid;
+  gap: var(--s1);
+  width: min(300px, calc(100% - 2 * var(--s2)));
+  padding: var(--s2) var(--s3);
+  color: var(--bt-ink);
+  background: var(--bt-glass);
+  clip-path: var(--clip-card);
+  font: 400 13px/1.35 var(--font-voice);
+  pointer-events: none;
+}
+.mv-info[hidden] {
+  display: none;
+}
+.mv-info b {
+  font: 400 16px/1.1 var(--font-voice);
+}
+.mv-info .mi-ty,
+.mv-info .mi-n {
+  color: var(--bt-ink2);
+}
+.mv-info .ty-g {
+  vertical-align: -1px;
+}
+.mv-info .mi-d {
+  font-family: var(--font-prose);
+  font-weight: 500;
 }
 .coins {
   display: grid;
@@ -789,9 +848,6 @@
   border-radius: var(--r-sm);
   max-height: calc(100% - 48px - var(--st) - var(--sb));
 }
-.battle[data-layout='landscape'] .mk {
-  right: calc(clamp(300px, 31vw, 420px) + 24px);
-}
 .battle[data-layout='landscape'] .cmd {
   height: auto;
   min-height: 180px;
@@ -803,9 +859,6 @@
     gap: var(--s2);
     padding: var(--s2) var(--s3);
     width: clamp(290px, 40vw, 380px);
-  }
-  .battle[data-layout='landscape'] .mk {
-    right: calc(clamp(290px, 40vw, 380px) + 24px);
   }
   .battle[data-layout='landscape'] .cmd {
     min-height: 0;
@@ -855,14 +908,12 @@
   }
 }
 @media (min-height: 820px) and (min-width: 1100px) {
-  .battle[data-layout='landscape'] .dock,
-  .battle[data-layout='landscape'] .mk {
+  .battle[data-layout='landscape'] .dock {
     zoom: 1.18;
   }
 }
 @media (min-height: 1000px) and (min-width: 1500px) {
-  .battle[data-layout='landscape'] .dock,
-  .battle[data-layout='landscape'] .mk {
+  .battle[data-layout='landscape'] .dock {
     zoom: 1.35;
   }
 }
@@ -977,24 +1028,31 @@ body.battle-3d #camFg {
   padding: var(--s1) var(--s2) var(--s1);
   border: 0;
   border-radius: var(--r-xs);
-  background: rgba(16, 10, 32, 0.62);
+  background: var(--bt-glass);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.14),
     0 6px 16px rgba(0, 0, 0, 0.28);
-  color: #f6f2ff;
+  color: var(--bt-ink);
   text-align: left;
   font: inherit;
   pointer-events: none;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   transition:
-    opacity 0.25s,
+    opacity var(--m-base),
+    visibility 0s var(--m-base),
     box-shadow 0.2s;
   will-change: transform;
 }
+/* UI-15: a plate is a button, disabled unless you are aiming at it; it stays solid (base.css fades a disabled button
+   to 42%) */
+.bplate:disabled {
+  opacity: 1;
+  cursor: default;
+}
+/* hidden plates also leave the page's count of what is on screen (uiElementCount), after their fade */
 .bplate.off,
 .bplate.gone {
   opacity: 0;
+  visibility: hidden;
 }
 .bplate .pl-top {
   display: flex;
@@ -1079,9 +1137,6 @@ body.battle-3d #camFg {
   background: linear-gradient(90deg, var(--sig-growth), color-mix(in srgb, var(--sig-growth) 55%, #ffffff));
   transition: width 0.8s;
 }
-.bplate.me {
-  background: rgba(14, 22, 40, 0.62);
-}
 .bplate.cur {
   box-shadow:
     0 0 0 2px #f4c542,
@@ -1111,9 +1166,6 @@ body.battle-3d #camFg {
 .bplate.hit {
   animation: cardhit 0.38s;
 }
-.battle.hud-scene .ticker {
-  opacity: 0.85;
-}
 .pick em.alpha {
   color: #ff7a9a;
   font-style: normal;
@@ -1135,10 +1187,8 @@ body.battle-3d #camFg {
   gap: var(--s1);
   padding: var(--s1) var(--s2);
   border-radius: var(--r-pill);
-  background: rgba(14, 20, 30, 0.62);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: #fff;
+  background: var(--bt-glass);
+  color: var(--bt-ink);
   font: 600 11px/1.2 var(--font, system-ui);
   white-space: nowrap;
   max-width: 92%;
@@ -1270,13 +1320,13 @@ html[data-flash='off'] .hatch.flash {
 #battle.bt-rise :is(#dock, .cmd, .bmsg) {
   animation: btRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-#battle.bt-rise :is(#hb0, #hb1, .ticker) {
+#battle.bt-rise :is(#hb0, #hb1, .fstrip) {
   animation: btRiseTop 0.55s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 #battle.bt-leave :is(#dock, .cmd, .bmsg) {
   animation: btLeave 0.34s ease-in both;
 }
-#battle.bt-leave :is(#hb0, #hb1, .ticker) {
+#battle.bt-leave :is(#hb0, #hb1, .fstrip) {
   animation: btLeaveTop 0.34s ease-in both;
 }
 @media (prefers-reduced-motion: reduce) {

@@ -55,7 +55,8 @@ const minimap = {
 };
 
 /** the dials (uiTheme.json minimap, written as --minimap-* by the theme; tokens.css holds the defaults): metres
- * across the tile (the same in both sizes, so going compact only scales the picture), ms of walking before the bar
+ * across the tile's shorter side (UI-8b: top to bottom on the wide tile; the same in both sizes, so going compact only
+ * scales the picture), ms of walking before the bar
  * goes compact and of standing before it comes back, and which marks show */
 function minimapDials() {
   const cs = getComputedStyle(/** @type {HTMLCanvasElement} */ (minimap.cv)),
@@ -304,7 +305,9 @@ function minimapDraw(now = performance.now()) {
   const c = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')),
     W = cv.width,
     H = cv.height,
-    s = W / D.span,
+    /* UI-8b: metres per pixel from the shorter side, so the wide tile keeps span top to bottom and shows more across */
+    S = Math.min(W, H),
+    s = S / D.span,
     Pl = walkView.pl,
     P = minimap.pal,
     /* a place's metres on the canvas (north up: z grows upward) */
@@ -324,12 +327,13 @@ function minimapDraw(now = performance.now()) {
     c.fillStyle = minimapCss(P.surface);
     c.fill('evenodd');
   }
-  const unit = Math.max(1, W / 120),
+  /* the marks keep their size in metres (a 120 px side makes unit the device pixel ratio) */
+  const unit = Math.max(1, S / 120),
     inView = (/** @type {number} */ x, /** @type {number} */ y, m = 8 * unit) =>
       x > -m && y > -m && x < W + m && y < H + m;
   /* the facilities' icons, upright and the same size at any zoom */
   if (!RR && D.facilities) {
-    const icon = Math.round((W >= 100 * dpr ? 16 : 11) * dpr);
+    const icon = Math.round((S >= 100 * dpr ? 16 : 11) * dpr);
     for (const m of minimap.marks || []) {
       const x = toX(m.x),
         y = toY(m.z),

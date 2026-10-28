@@ -46,6 +46,10 @@ CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Ma
 # over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
 BLUR_BUDGET = 3
 BLUR_CEILING = {'map': 10, 'shop': 5}
+# UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
+# a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
+# battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in
+ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 28, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -982,20 +986,28 @@ def phone_flow(P):
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
     # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
     # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
-    blur = {}
+    blur, elems = {}, {}
     for tab in ['walk', 'map', 'team', 'guide', 'profile']:
         pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0")
         if tab == 'walk': drawn(pg)
         elif tab == 'map' and not until(pg, BOWL_OPEN, 30): raise Exception('the map tab didn’t open the bowl')
         ui(pg); shot(pg, f'phone-{tab}')
         blur[tab] = pg.evaluate('uiBlurCount()')
+        elems[tab] = pg.evaluate('uiElementCount()')
     pg.evaluate(CHECK_SHOP + "uiState.tab='walk';saveData.trip.node=0;render();openShop('check_shop');0"); ui(pg); shot(pg, 'phone-shop')
     blur['shop'] = pg.evaluate('uiBlurCount()')
+    elems['shop'] = pg.evaluate('uiElementCount()')
     pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
     if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
     shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount()')
+    elems['battle'] = pg.evaluate('uiElementCount()')
     R['blurPerScreen'] = blur
+    # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going
+    # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
+    R['elementsPerScreen'] = elems
+    more = [f'{k} {v} (at most {ELEMENT_CEILING[k]})' for k, v in elems.items() if k in ELEMENT_CEILING and v > ELEMENT_CEILING[k]]
+    if more: raise Exception('a screen shows more pieces than its ceiling (ui-track.md, less clutter): ' + ', '.join(more))
     over = [f'{k} {v} (at most {max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))})' for k, v in blur.items() if v > max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))]
     if over: raise Exception('more surfaces blur what is behind them than allowed (ui-track.md, the blur budget): ' + ', '.join(over))
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -1013,7 +1025,7 @@ def phone_flow(P):
     if names: raise Exception(f'the exported debug log holds a name: {names}')
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
-    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
 
 
 def all_maps(pg, sec=180):
