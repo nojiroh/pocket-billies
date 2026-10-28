@@ -78,6 +78,7 @@ import '../../game/js/logic/model-mesh.js';
 import '../../game/js/logic/model-obj.js';
 import '../../game/js/logic/model-vox.js';
 import '../../game/js/logic/modifiers.js';
+import '../../game/js/logic/motion.js';
 import '../../game/js/logic/music-studio.js';
 import '../../game/js/logic/music-where.js';
 import '../../game/js/logic/occlude.js';

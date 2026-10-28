@@ -44,6 +44,7 @@ import {
 } from './hooks.js';
 import { gameData } from './game-data.js';
 import { metresToKm, today } from './logic/rules.js';
+import { motionLevelOf } from './logic/motion.js';
 import { uiPalettes } from './logic/ui-theme.js';
 import { setUiPalette } from './theme-sheet.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
@@ -53,7 +54,6 @@ import {
   escapeHtml,
   flushSave,
   pauseSaving,
-  reducedMotion,
   resumeSaving,
   save,
   saveData,
@@ -116,10 +116,11 @@ export function applyPreferences() {
     else delete root.dataset.theme;
     themeOwned = false;
   }
-  setReducedMotion(
-    p.motion === 'reduced' || (p.motion !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches)
-  );
-  document.documentElement.dataset.motion = reducedMotion ? 'reduced' : 'full';
+  /* UI-16a: the level (logic/motion.js): Device plays Full unless the phone asks for reduced motion; Calm is Full
+     without idle loops; Reduced keeps fades only. motion.css and the kit read it on <html data-motion> */
+  const level = motionLevelOf(p.motion, matchMedia('(prefers-reduced-motion: reduce)').matches);
+  setReducedMotion(level === 'reduced');
+  document.documentElement.dataset.motion = level;
   /* v30: accessibility: text size, high contrast, no flashing, bigger buttons */ root.dataset.text =
     p.textSize || 'normal';
   root.dataset.contrast = p.contrast === 'high' ? 'high' : 'normal';
@@ -464,10 +465,11 @@ function settingsHTML() {
       ) +
       settingsRowHTML(
         'Animation',
-        'Reduced keeps things still: no camera sway, fewer moving effects.',
+        'Calm stops the idle loops; Reduced keeps things still: fades only, no camera sway, fewer moving effects.',
         segmentedHTML('motion', p.motion || 'system', [
           ['system', 'Device'],
           ['full', 'Full'],
+          ['calm', 'Calm'],
           ['reduced', 'Reduced'],
         ])
       ) +

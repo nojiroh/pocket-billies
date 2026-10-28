@@ -476,7 +476,7 @@ export interface Trip {
 /** settings kept in the save (a new game on this device keeps them) */
 export interface Preferences {
   theme: 'system' | 'light' | 'dark';
-  motion: 'system' | 'reduced' | 'full';
+  motion: 'system' | 'reduced' | 'calm' | 'full';
   fps: 30 | 60 | 90 | 120;
   effects: 'full';
   /** graphics: 'sharp' (best) or 'smooth' */

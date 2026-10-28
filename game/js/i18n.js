@@ -170,6 +170,8 @@ Uncommon|Ongewoon|Ungewöhnlich|Poco común|Peu commun
 Rare|Zeldzaam|Selten|Raro|Rare
 Mythical|Mythisch|Mythisch|Mítico|Mythique
 Stripes, dots and hatching on coloured tags and bars, so they differ without their colour.|Strepen, stippen en arcering op gekleurde labels en balken, zodat ze ook zonder kleur verschillen.|Streifen, Punkte und Schraffuren auf farbigen Markierungen und Balken, damit sie sich auch ohne Farbe unterscheiden.|Rayas, puntos y tramas en etiquetas y barras de color, para distinguirlas sin su color.|Rayures, points et hachures sur les étiquettes et barres colorées, pour les distinguer sans leur couleur.
+Calm stops the idle loops; Reduced keeps things still: fades only, no camera sway, fewer moving effects.|Rustig stopt de herhalende bewegingen; Beperkt houdt alles stil: alleen vervagen, geen camerazwaai, minder bewegende effecten.|Ruhig stoppt die Dauerschleifen; Reduziert hält alles still: nur Überblendungen, kein Kameraschwanken, weniger bewegte Effekte.|Calma detiene los bucles en reposo; Reducida lo deja quieto: solo fundidos, sin vaivén de cámara, menos efectos en movimiento.|Calme arrête les boucles au repos ; Réduite garde tout immobile : fondus seulement, pas de balancement de caméra, moins d’effets animés.
+Calm|Rustig|Ruhig|Calma|Calme
 No flashing|Geen flitsen|Kein Blinken|Sin destellos|Pas de flash
 Normal size|Normale grootte|Normale Größe|Tamaño normal|Taille normale
 Bigger, easier to tap|Groter, makkelijker aan te tikken|Größer, leichter zu tippen|Más grandes, más fáciles de pulsar|Plus grands, plus faciles à toucher
