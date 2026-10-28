@@ -848,6 +848,8 @@ export function evolutionHint(m) {
     }
     case 'item':
       return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
+    case 'acquire':
+      return `Evolves when another trainer acquires it in a trade, once it reaches level ${e.min}. Or file ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}.`;
     case 'donate':
       return `Evolves after it gives away ${e.n} items, once it reaches level ${e.min}. ${m.donated || 0} of ${e.n} given.`;
     case 'merge':

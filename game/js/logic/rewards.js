@@ -72,13 +72,14 @@ export function tutorMoves(m, D) {
 /** the Billies of the team that can learn a move (tutorMoves has it) @param {string} move @param {RewardData} D */
 export const tutorWho = (move, D) => D.team.filter(m => tutorMoves(m, D).includes(move));
 
-/** whether a Billie of the team evolves with this item (its species' evolution is by item, that item)
+/** whether a Billie of the team evolves with this item (its species' evolution is by item, that item; ON-4: or by
+ * a trade, whose item is its route without one)
  * @param {string} item @param {RewardData} D */
 export const evoUsable = (item, D) =>
   D.team.some(m => {
     const S = m.kind === 'robot' ? null : D.species[m.sp],
       e = S && S.evo;
-    return !!e && e.k === 'item' && (e.item || 'bell') === item;
+    return !!e && (e.k === 'item' || e.k === 'acquire') && (e.item || 'bell') === item;
   });
 
 /**

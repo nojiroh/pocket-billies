@@ -279,6 +279,8 @@ export interface MoveEffect {
 export type Evolution =
   | { k: 'lvl' | 'split'; at: number }
   | { k: 'item'; item?: DataId; min: number }
+  /** ON-4: evolves when it arrives by a friend trade at `min` or above, or with the item (the route without friends) */
+  | { k: 'acquire'; item: DataId; min: number }
   | { k: 'idle'; ms: number; min: number }
   | { k: 'streak' | 'donate'; n: number; min: number }
   | { k: 'merge' | 'rename'; min: number };

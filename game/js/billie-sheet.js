@@ -149,7 +149,8 @@ function billySheet(m) {
             },
           }
     );
-  if (e && e.k === 'item' && m.lvl >= e.min) {
+  /* ON-4: an `acquire` evolution's item is its route without a trade */
+  if (e && (e.k === 'item' || e.k === 'acquire') && m.lvl >= e.min) {
     const ik = e.item || 'bell',
       I = ITEMS[ik] || { n: 'Shining Stone' },
       have = saveData.items[ik] || 0;
