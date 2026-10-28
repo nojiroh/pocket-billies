@@ -69,6 +69,7 @@ import {
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
 import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
+import { lvlSlot } from './logic/battle-flow.js';
 import { popSize, rollValue } from './logic/hit-numbers.js';
 import {
   JOIN_LOCK_MS,
@@ -504,7 +505,7 @@ function showEvent() {
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
-  if (ev.an) hudMoment(ev.an);
+  if (ev.an) hudMoment(ev.an, ev);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
@@ -721,12 +722,13 @@ function hudPop(si, text, kind, w) {
    sky (the growth family) round its plate's level, a catch bursts teal (good) round the pyramid, and a boss's name
    banner slams in as its trainer comes in, inside the trainer's own 1150 ms (no time added). The banner is the kit's
    pb-name-banner, which RL-14b's stage intro and VFX-16's VS splash can call the same way */
-function hudMoment(an) {
+function hudMoment(an, ev) {
   const L = $('#pops');
   if (!L) return;
   const box = L.getBoundingClientRect();
   if (an.k === 'lvl') {
-    const lv = $(`#plates .bplate[data-k="${an.si ?? 0}"] .pl-lv`);
+    /* VFX-16: the Billie the line is about (the engine names it by uid; it read slot 0) */
+    const lv = $(`#plates .bplate[data-k="${lvlSlot(an, ev)}"] .pl-lv`);
     if (!lv) return;
     const r = lv.getBoundingClientRect();
     if (r.width) pbBurst(r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top, HUD_BURSTS.lvl(L));

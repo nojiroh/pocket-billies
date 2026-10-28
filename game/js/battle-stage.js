@@ -65,6 +65,7 @@ import {
   smearStretch,
   throwArcEase,
 } from './logic/smear.js';
+import { lvlSlot } from './logic/battle-flow.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
@@ -2370,8 +2371,10 @@ export function battleStagePlay(an, ev) {
       return { dur: 720, hit: 0 };
     }
     case 'lvl': {
-      const li = an.si ?? 0;
-      if (!battleStage.s[li] || !battleStage.s[li].show) return { dur: 0, hit: 0 };
+      /* VFX-16: on the Billie the line is about: the engine names it by uid (rules.js gainXp), so the slot is the one
+         whose snapshot has it (it read an.si, never sent, and so always played on slot 0) */
+      const li = lvlSlot(an, ev);
+      if (li < 0 || !battleStage.s[li] || !battleStage.s[li].show) return { dur: 0, hit: 0 };
       const T = actorCenter(li);
       setActorAction(li, 'cheer', 900);
       battleStageFocus('me');
