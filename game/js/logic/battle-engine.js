@@ -101,6 +101,7 @@ import {
   fxDamageBy,
   fxFire,
   fxHeldAt,
+  fxHeldRow,
   fxImmune,
   fxInflictPick,
   fxLive,
@@ -250,6 +251,8 @@ expose({
   heldName: [() => heldName],
   // @ts-expect-error -- replaced on purpose
   heldStages: [() => heldStages, v => (heldStages = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldSurvives: [() => heldSurvives, v => (heldSurvives = v)],
   heldXp: [() => heldXp],
   // @ts-expect-error -- replaced on purpose
   hitPart: [() => hitPart, v => (hitPart = v)],
@@ -755,7 +758,9 @@ export function useMove(k, mid, tk0, part) {
         r.dmg = Math.max(1, Math.floor(r.dmg * (BATTLE_RULES.alphaShieldMult ?? 0.5)));
         r.shield = 1;
       }
-      const held = bedrockHolds(tk2, r);
+      /* PK-10: else a held survive row (Seatbelt) */
+      const held = bedrockHolds(tk2, r),
+        belt = !held && heldSurvives(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
       /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked); SP-5: and on a
@@ -787,6 +792,10 @@ export function useMove(k, mid, tk0, part) {
           k: 'block',
           si: tk2,
         }).by = [{ src: 'passive:bedrock', si: tk2 }];
+      if (belt)
+        battleSay(`${billyName(t2)} held on with its ${heldName(t2)}!`, { k: 'block', si: tk2 }).by = [
+          { src: 'held:' + t2.held, si: tk2 },
+        ];
       if (fx.drain && u.hp < maxHp(u)) {
         const g = Math.max(1, Math.floor(r.dmg * fx.drain));
         u.hp = Math.min(maxHp(u), u.hp + g);
@@ -1958,6 +1967,19 @@ export function heldMoment(when, k, more) {
       ).by = [{ src: f.src, si: k, stat: f.stat, stages: f.stages }];
   }
   return rows;
+}
+/** PK-10: a held survive row (Seatbelt): once a battle, a hit that would knock its holder out from full HP leaves it at
+ * 1 HP. Lowers r.dmg; true when it held @param {number} tk @param {{ dmg: number }} r */
+export function heldSurvives(tk, r) {
+  const t = fighter(tk),
+    mx = maxHp(t);
+  if (!t.held || r.dmg < t.hp || t.hp < mx || mx < 2) return false;
+  const f = fxHeldRow(fxOfBillie(t, ITEMS), 'survive'),
+    M = heldMarks(tk);
+  if (!f || M.survive) return false;
+  M.survive = 1;
+  r.dmg = t.hp - 1;
+  return true;
 }
 /** PK-10: after a hit lands: hit for the holder hitting, hurt for the holder hit @param {number} k @param {number} tk
  * @param {any} M @param {{ te: number }} r */

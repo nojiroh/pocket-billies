@@ -755,7 +755,7 @@ export interface Item {
   repair?: number;
   /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
       never used up, never used in battle */
-  hold?: FxRow[];
+  hold?: HeldRow[];
   /** UI-14b: a held item's tier on the loot ladder (frame, pill and name colour), by price and effect size */
   rarity?: RarityTier;
 }
@@ -1966,6 +1966,13 @@ export interface FxTiming {
   per?: 'teamTypes';
   once?: 'battle' | 'run' | 'billie';
 }
+/** PK-10: items.json: one held item's row: an effect row, or one of the kinds only a held item has (effects.js
+ * HELD_FX_KINDS) */
+export type HeldRow = FxRow | (FxTiming & HeldKindRow);
+/** PK-10: the held items' own kinds and their numbers */
+export type HeldKindRow =
+  /** once a battle, from full HP, its holder lives through a knockout hit with 1 HP */
+  { kind: 'survive' };
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
 export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */

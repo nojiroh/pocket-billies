@@ -474,6 +474,9 @@ test("data checks: PK-10: a held item's row says when (a stat row at hit or hurt
     [{ ...ok, every: 2 }, 'can say when, if and once only'],
     [{ kind: 'stat', stat: 'lev', stages: 1, if: 'superEffective' }, 'if: only with a when'],
     [{ kind: 'stat', stat: 'lev', stages: 1, once: 'battle' }, 'once: only with a when'],
+    [{ kind: 'survive' }, ''],
+    [{ kind: 'survive', share: 0.5 }, 'share: a survive row takes no other field'],
+    [{ kind: 'survive', when: 'hurt' }, "can't act at hurt"],
   ]) {
     const F = structuredClone(GAME_DATA);
     F.items.iron_vest.hold = [row];

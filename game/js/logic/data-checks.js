@@ -63,6 +63,7 @@ import {
   FX_WEATHER,
   FX_WHEN,
   FX_WHEN_BATTLE,
+  HELD_FX_KINDS,
   HELD_IFS,
   HELD_WHEN,
 } from './effects.js';
@@ -189,6 +190,8 @@ expose({
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   fxWhenProblems: [() => fxWhenProblems, v => (fxWhenProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldKindProblems: [() => heldKindProblems, v => (heldKindProblems = v)],
   // @ts-expect-error -- replaced on purpose
   heldRowProblems: [() => heldRowProblems, v => (heldRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2463,7 +2466,7 @@ export function fxWhenProblems(f, at, D, problem) {
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up); UI-14b: each its rarity, and only they have one
-export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
+export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal', ...HELD_FX_KINDS];
 /** UI-14b: the loot ladder's tiers (the owner's answer 9): the colour code's rarity ids (logic/signals.js) */
 export const RARITY_TIERS = UI_SIGNALS.filter(s => s[2] === 'rarity').map(s => s[0]);
 /** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
@@ -2503,6 +2506,7 @@ export function heldRowProblems(f, at, D, problem) {
   fxRowProblems(plain, at, HOLD_KINDS, D, problem);
   for (const key of ['every', 'grow', 'per'])
     if (key in f) problem(`${at}.${key}: a held item's row can say when, if and once only`);
+  heldKindProblems(f, at, D, problem);
   if (f.when != null && !(HELD_WHEN_KINDS[f.kind] || []).includes(f.when))
     problem(
       `${at}.when: a held ${f.kind} row can't act at ${f.when} (${HELD_WHEN_KINDS[f.kind] ? HELD_WHEN_KINDS[f.kind].join(', ') : 'no moment'})`
@@ -2521,6 +2525,17 @@ export function heldRowProblems(f, at, D, problem) {
         problem(`${at}.if: "${c}" isn't known at a held item's moment (${HELD_IFS.join(', ')})`);
     }
   }
+}
+/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number
+ * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
+export function heldKindProblems(f, at, D, problem) {
+  const extra = (/** @type {string[]} */ own) =>
+    Object.keys(f)
+      .filter(key => !['kind', 'when', 'if', 'once', ...own].includes(key))
+      .forEach(key =>
+        problem(`${at}.${key}: ${fxA(f.kind)} row takes ${own.length ? own.join(', ') : 'no other field'}`)
+      );
+  if (f.kind === 'survive') extra([]);
 }
 // SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
 // recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are

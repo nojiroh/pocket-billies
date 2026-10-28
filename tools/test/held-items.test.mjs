@@ -14,7 +14,7 @@ test('held items: the game has some, each a known kind, priced and never used up
   for (const k of HELD) {
     const I = ITEMS[k];
     assert.ok(I.price > 0, `${k} has a price (the payout counts it)`);
-    for (const f of I.hold) assert.ok(E.FX_KINDS.includes(f.kind), `${k}: ${f.kind}`);
+    for (const f of I.hold) assert.ok([...E.FX_KINDS, ...E.HELD_FX_KINDS].includes(f.kind), `${k}: ${f.kind}`);
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp'])
       assert.equal(I[use], undefined, `${k}.${use}`);
   }

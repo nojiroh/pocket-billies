@@ -27,10 +27,10 @@ afterEach(() => {
 });
 
 /** a single wild battle, your lead holding `held` (and the foe `foeHeld`) */
-function battle(held, foeHeld) {
+function battle(held, foeHeld, foeLvl = 12) {
   const s = startedSave(starter(), 12);
   if (held) s.team[0].held = held;
-  const foe = fn('makeBilly')(wildSpecies(), 12);
+  const foe = fn('makeBilly')(wildSpecies(), foeLvl);
   if (foeHeld) foe.held = foeHeld;
   fn('newBattle')('wild', [foe], { fmt: 'single', seed: 'held' });
   return { s, B: hooks.activeBattle, me: s.team[0], foe };
@@ -79,4 +79,38 @@ test('held moments: a real hit runs them (useMove)', () => {
   fn('useMove')(0, mid, 1);
   const hit = B.events.some(e => e.an && e.an.dmg > 0);
   assert.equal(B.sides[0].f[0].v.st.pr || 0, hit ? 1 : 0, texts(B));
+});
+
+test('held survive: once a battle, from full HP, a knockout hit leaves its holder at 1 HP', () => {
+  const id = item('test_belt', [{ kind: 'survive' }]);
+  const { B, me } = battle(id),
+    mx = fn('maxHp')(me),
+    r = { dmg: mx * 3 };
+  assert.equal(fn('heldSurvives')(0, r), true);
+  assert.equal(r.dmg, mx - 1);
+  assert.equal(fn('heldSurvives')(0, { dmg: mx * 3 }), false, 'once a battle');
+  const { me: me2 } = battle(id);
+  me2.hp = mx - 1;
+  assert.equal(fn('heldSurvives')(0, { dmg: mx * 3 }), false, 'not from below full HP');
+  me2.hp = mx;
+  assert.equal(fn('heldSurvives')(0, { dmg: 1 }), false, 'not a hit it lives through anyway');
+  battle(null);
+  assert.equal(fn('heldSurvives')(0, { dmg: mx * 3 }), false, 'nothing held');
+  assert.ok(B);
+});
+
+test('held survive: a real knockout hit on the holder (useMove) leaves it at 1 HP with a line', () => {
+  const id = item('test_belt2', [{ kind: 'survive' }]);
+  const { B, foe } = battle(null, id, 2),
+    me = B.sides[0].team[0],
+    mid = attack(me);
+  fn('fieldState')(0).st.lev = 6;
+  fn('fieldState')(0).st.lob = 6;
+  for (let i = 0; i < 6 && !B.events.some(e => /held on with its test belt2/.test(e.t || '')); i++) {
+    foe.hp = fn('maxHp')(foe);
+    delete B.heldState;
+    fn('useMove')(0, mid, 1);
+  }
+  assert.match(texts(B), /held on with its test belt2/);
+  assert.ok(foe.hp >= 1);
 });
