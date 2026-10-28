@@ -325,7 +325,7 @@ test('PK-2: dataPerkArt: a missing picture or a bad SVG is an error, no img a wa
   );
 });
 
-test('PK-11: dataItemArt: an img off items/<id>.svg, missing or not an icon is an error, a Bag item without one a warning', () => {
+test('PK-11: dataItemArt: an img off items/<id>.svg, missing or not an icon is an error, an item without one a warning (PK-10: held ones too)', () => {
   const icon = readFileSync(join(import.meta.dirname, '../../game/art/ui/relic.svg'), 'utf8'),
     files = { 'items/a.svg': icon, 'items/c.svg': '<svg viewBox="0 0 12 12"></svg>', 'items/z.svg': icon },
     read = (/** @type {string} */ p) => files[p] ?? null,
@@ -344,6 +344,7 @@ test('PK-11: dataItemArt: an img off items/<id>.svg, missing or not an icon is a
       ['error', 'c.img: art/items/c.svg is not an icon: An icon’s box is viewBox="0 0 36 36".'],
       ['warn', "d: no img, so it draws the old atlas's i_tonic (tools/build-icons.mjs)"],
       ['error', 'e.img: items/e.svg (its id, in the items folder), not "items/z.svg"'],
+      ['warn', "f: no img, so it draws the old atlas's i_bell (tools/build-icons.mjs)"],
     ]
   );
   const ART = join(import.meta.dirname, '../../game/art'),
@@ -351,7 +352,7 @@ test('PK-11: dataItemArt: an img off items/<id>.svg, missing or not an icon is a
   assert.deepEqual(
     C.dataItemArt(GAME_DATA.items, disk),
     [],
-    'every Bag item names a picture that is there (PK-11: the 13 drawn; the held items wait for PK-10)'
+    'every item names a picture that is there (PK-11: the 13 Bag items; PK-10: the 24 held items)'
   );
 });
 

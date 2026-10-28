@@ -116,7 +116,7 @@
   {
    "p": "items/*.svg",
    "at": [
-    "game/js/logic/data-checks.js:2753"
+    "game/js/logic/data-checks.js:2751"
    ]
   },
   {
@@ -1657,7 +1657,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2874",
+   "game/js/logic/data-checks.js:2872",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",

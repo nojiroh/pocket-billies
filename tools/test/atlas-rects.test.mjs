@@ -54,7 +54,11 @@ test('a rename keeps the order; the data’s item icons and type particles follo
   ]);
   const D = structuredClone({ items: GAME_DATA.items, types: GAME_DATA.types }),
     icons = A.manifestParse(TEXT).icons,
-    item = Object.keys(D.items).find(k => !D.items[k].img && icons['i_' + (D.items[k].icon || k)]),
+    /* PK-10: every item has its own picture now: one is planted on an atlas rectangle */
+    atlasKey = Object.keys(icons).find(k => k.startsWith('i_')) || 'i_planted';
+  D.items._atlas = { n: 'A', price: 1, d: 'A', icon: atlasKey.replace(/^i_/, '') };
+  if (!icons[atlasKey]) icons[atlasKey] = [0, 0, 1, 1];
+  const item = Object.keys(D.items).find(k => !D.items[k].img && icons['i_' + (D.items[k].icon || k)]),
     key = 'i_' + (D.items[item].icon || item),
     type = D.types.find(t => (t.fx || []).length);
   assert.ok(item && type);

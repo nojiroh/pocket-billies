@@ -2731,8 +2731,7 @@ export function dataPerkArt(perks, read) {
 /**
  * PK-11: the items' pictures, as dataPerkArt checks the Perks'. items.json has no schema, so the path's form is checked
  * here: an item's img is `items/<its id>.svg`, there, and an icon (svgProblem). An item without one draws its old atlas
- * rectangle (`i_` + its icon; battle.js itemIcon): a warning for a Bag item; a held item is left alone until PK-10
- * draws them.
+ * rectangle (`i_` + its icon; battle.js itemIcon): a warning (PK-10: held items too, now that each has its own).
  * @param {any} items @param {(path: string) => string | null} read @returns {DataFinding[]}
  */
 export function dataItemArt(items, read) {
@@ -2742,7 +2741,6 @@ export function dataItemArt(items, read) {
   for (const [k, I] of Object.entries(items || {})) {
     if (!I || typeof I !== 'object') continue;
     if (I.img === undefined) {
-      if (I.hold) continue;
       out.push({
         lvl: 'warn',
         where: 'items.json',

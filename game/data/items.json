@@ -52,7 +52,7 @@
   "price": 1200,
   "rarity": "rare",
   "d": "Held: heals 1/16 of its HP at the end of each turn.",
-  "icon": "pretzel",
+  "img": "items/leftover_sandwich.svg",
   "hold": [
    {"kind":"turnHeal","share":0.0625}
   ]
@@ -62,7 +62,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: once a battle, heals a quarter of its HP at a turn’s end when at half HP or below.",
-  "icon": "trailmix",
+  "img": "items/snack_pack.svg",
   "hold": [
    {"kind":"pinchHeal","at":0.5,"share":0.25}
   ]
@@ -72,7 +72,7 @@
   "price": 1000,
   "rarity": "common",
   "d": "Held: a win pays 25% more Moneys while its holder is standing.",
-  "icon": "bell",
+  "img": "items/lucky_coin.svg",
   "hold": [
    {"kind":"money","mult":1.25}
   ]
@@ -82,7 +82,7 @@
   "price": 1000,
   "rarity": "common",
   "d": "Held: its holder gains 50% more XP.",
-  "icon": "appeal",
+  "img": "items/study_notes.svg",
   "hold": [
    {"kind":"xp","mult":1.5}
   ]
@@ -92,7 +92,7 @@
   "price": 1200,
   "rarity": "uncommon",
   "d": "Held: its holder takes 15% less damage.",
-  "icon": "settlement",
+  "img": "items/iron_vest.svg",
   "hold": [
    {"kind":"damage","side":"take","mult":0.85}
   ]
@@ -102,7 +102,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: its holder’s Speed goes up as it comes in.",
-  "icon": "taxbreak",
+  "img": "items/quick_laces.svg",
   "hold": [
    {"kind":"stat","stat":"hus","stages":1}
   ]
@@ -112,7 +112,7 @@
   "price": 1200,
   "rarity": "rare",
   "d": "Held: its holder’s physical moves hit 20% harder.",
-  "icon": "bailout",
+  "img": "items/brass_knuckles.svg",
   "hold": [
    {"kind":"damage","side":"deal","cat":"H","mult":1.2}
   ]
@@ -122,7 +122,7 @@
   "price": 1200,
   "rarity": "rare",
   "d": "Held: its holder’s special moves hit 20% harder.",
-  "icon": "loophole",
+  "img": "items/smart_specs.svg",
   "hold": [
    {"kind":"damage","side":"deal","cat":"S","mult":1.2}
   ]
@@ -132,6 +132,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Fire moves hit 20% harder.",
+  "img": "items/matchbook.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Fire","mult":1.2}
   ]
@@ -141,6 +142,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Water moves hit 20% harder.",
+  "img": "items/water_bottle.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Water","mult":1.2}
   ]
@@ -150,6 +152,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Grass moves hit 20% harder.",
+  "img": "items/seed_packet.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Grass","mult":1.2}
   ]
@@ -159,6 +162,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Electric moves hit 20% harder.",
+  "img": "items/spare_battery.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Electric","mult":1.2}
   ]
@@ -168,6 +172,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Ground moves hit 20% harder.",
+  "img": "items/garden_trowel.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Ground","mult":1.2}
   ]
@@ -177,6 +182,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Flying moves hit 20% harder.",
+  "img": "items/paper_plane.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Flying","mult":1.2}
   ]
@@ -186,6 +192,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Psychic moves hit 20% harder.",
+  "img": "items/tarot_card.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Psychic","mult":1.2}
   ]
@@ -195,6 +202,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Steel moves hit 20% harder.",
+  "img": "items/socket_wrench.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Steel","mult":1.2}
   ]
@@ -204,6 +212,7 @@
   "price": 800,
   "rarity": "common",
   "d": "Held: its holder’s Dragon moves hit 20% harder.",
+  "img": "items/dragon_fruit.svg",
   "hold": [
    {"kind":"damage","side":"deal","type":"Dragon","mult":1.2}
   ]
@@ -213,6 +222,7 @@
   "price": 1200,
   "rarity": "uncommon",
   "d": "Held: once a battle, at full HP, its holder survives a knockout hit with 1 HP.",
+  "img": "items/seatbelt.svg",
   "hold": [
    {"kind":"survive"}
   ]
@@ -222,6 +232,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: Billies that hit its holder with a physical move lose 1/8 of their HP.",
+  "img": "items/cactus_keyring.svg",
   "hold": [
    {"kind":"reflect","share":0.125,"cat":"H"}
   ]
@@ -231,6 +242,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: when a super-effective hit lands on its holder, its Attack and Sp. Atk rise sharply, once a battle.",
+  "img": "items/complaint_form.svg",
   "hold": [
    {"kind":"stat","stat":"lev","stages":2,"when":"hurt","if":"superEffective","once":"battle"},
    {"kind":"stat","stat":"lob","stages":2,"when":"hurt","if":"superEffective","once":"battle"}
@@ -241,6 +253,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: Ground moves miss its holder until it is hit.",
+  "img": "items/party_balloon.svg",
   "hold": [
    {"kind":"immune","type":"Ground","until":"hurt"}
   ]
@@ -250,6 +263,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: its holder heals 1/8 of the damage it deals.",
+  "img": "items/costume_fangs.svg",
   "hold": [
    {"kind":"drain","share":0.125}
   ]
@@ -259,6 +273,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: a 20% chance each turn that its holder moves first.",
+  "img": "items/express_pass.svg",
   "hold": [
    {"kind":"first","chance":0.2}
   ]
@@ -268,6 +283,7 @@
   "price": 1000,
   "rarity": "uncommon",
   "d": "Held: its holder moves after the others, but hits 30% harder.",
+  "img": "items/ankle_weights.svg",
   "hold": [
    {"kind":"last"},
    {"kind":"damage","side":"deal","mult":1.3}
