@@ -132,7 +132,12 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
     PENDING, FILED, VOID; the owner's to edit), `forms` (form numbers for events: "Form 7B", ...).
   - `pb-stamp`: a word in a rough red border, slammed on at a small slant with UI-16b's stamp motion, a thunk (a
     placeholder sound in the sound track's set). In the gallery in every palette.
-- **SY-4** case files: Bureau events (`bureau: 1`, or an event in a Bureau set piece) open in a manila-folder sheet:
+- **SY-4** case files. Done 2026-10-28 on `track/style` (built as below; events.json `bureau: 1` on nine events, `redact`
+  words, `form` where the intro names its form, an option's `stamp`; logic/case-file.js; `pb-typed`; css/case-file.css.
+  The Bureau set piece needs no code: its event, the checkpoint, is marked. The bars lift when you choose: the intro
+  stays on file above the script's lines, its bars lifted. Unless an option names its stamp, the last option, the one
+  that walks away, is DENIED and any other is FILED):
+  Bureau events (`bureau: 1`, or an event in a Bureau set piece) open in a manila-folder sheet:
   the form number, the emblem, the body typed in line by line (Oxanium, 20 ms a letter, a tap shows it all).
   **Redaction bars** cover flavour words only and lift when you choose; costs and outcomes are never hidden (verify in
   `encChoose` what each choice shows today). The event's result is stamped (FILED, DENIED).
