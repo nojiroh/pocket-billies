@@ -164,6 +164,12 @@ Normal|Normaal|Normal|Normal|Normal
 Large|Groot|Groß|Grande|Grand
 Larger|Groter|Größer|Más grande|Plus grand
 High contrast|Hoog contrast|Hoher Kontrast|Alto contraste|Contraste élevé
+Colour shapes|Kleurvormen|Farbmuster|Formas de color|Motifs de couleur
+Common|Gewoon|Häufig|Común|Commun
+Uncommon|Ongewoon|Ungewöhnlich|Poco común|Peu commun
+Rare|Zeldzaam|Selten|Raro|Rare
+Mythical|Mythisch|Mythisch|Mítico|Mythique
+Stripes, dots and hatching on coloured tags and bars, so they differ without their colour.|Strepen, stippen en arcering op gekleurde labels en balken, zodat ze ook zonder kleur verschillen.|Streifen, Punkte und Schraffuren auf farbigen Markierungen und Balken, damit sie sich auch ohne Farbe unterscheiden.|Rayas, puntos y tramas en etiquetas y barras de color, para distinguirlas sin su color.|Rayures, points et hachures sur les étiquettes et barres colorées, pour les distinguer sans leur couleur.
 No flashing|Geen flitsen|Kein Blinken|Sin destellos|Pas de flash
 Normal size|Normale grootte|Normale Größe|Tamaño normal|Taille normale
 Bigger, easier to tap|Groter, makkelijker aan te tikken|Größer, leichter zu tippen|Más grandes, más fáciles de pulsar|Plus grands, plus faciles à toucher

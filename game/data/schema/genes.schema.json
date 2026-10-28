@@ -63,7 +63,8 @@
     "required": [
      "name",
      "d",
-     "fx"
+     "fx",
+     "rarity"
     ],
     "properties": {
      "name": {
@@ -77,6 +78,10 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 120
+     },
+     "rarity": {
+      "description": "UI-14b: its tier on the loot ladder, by effect size: a Gene that brings it shows it (frame, pill and name colour)",
+      "enum": ["common", "uncommon", "rare", "mythical"]
      },
      "fx": {
       "description": "its effects on the Billie that wears it (logic/effects.js fxOfBillie)",

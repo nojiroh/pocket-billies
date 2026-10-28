@@ -17,7 +17,7 @@
   overflow: hidden;
   border: 0;
   background:
-    radial-gradient(60% 14% at 50% 92%, rgba(46, 33, 64, 0.22), transparent 70%),
+    radial-gradient(60% 14% at 50% 92%, color-mix(in srgb, var(--c-shadow) 22%, transparent), transparent 70%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--c1, var(--gold-b)) 22%, var(--g-solid)) 0%,
@@ -64,10 +64,27 @@
 .u-tag.bud {
   color: var(--t-profile);
 }
-.u-tag.coat,
+/* UI-14b: gold keeps only value and your choice (ui-track.md Part 2): Prime is the good family's teal ★ tag, a Coat
+   its prism (UI-17 makes the foil shimmer), the held item teal by its glyph with its name in its tier's colour */
 .u-tag.prime {
-  color: var(--goldink, #3a2408);
-  background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+  color: var(--c-ink);
+  background: var(--sig-good);
+}
+.u-tag.prime b {
+  font-weight: 400;
+}
+.u-tag.coat {
+  color: var(--text);
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--sig-special) 40%, var(--g-solid)),
+    color-mix(in srgb, var(--sig-growth) 40%, var(--g-solid)) 35%,
+    color-mix(in srgb, var(--sig-good) 40%, var(--g-solid)) 65%,
+    color-mix(in srgb, var(--sig-value) 40%, var(--g-solid))
+  );
+}
+.u-held {
+  display: inline-grid;
 }
 .u-head {
   display: flex;
@@ -191,6 +208,15 @@
 .u-row::after {
   clip-path: var(--edge-card);
   background: var(--edge);
+}
+/* UI-14b: a Billie's rarity on its row (the species' tier, the loot ladder): a 4 px bar of the tier's fill on the
+   leading edge and the edge line in it, the name in its text shade (ui-kit.css data-rarity, .rar-name); .rar-row
+   can't be used here, since the row's own ::before and ::after draw its fill and edge */
+.u-row[data-rarity]::before {
+  background: linear-gradient(90deg, var(--rar) 0 4px, transparent 4px), var(--k-fill);
+}
+.u-row[data-rarity]::after {
+  background: var(--rar);
 }
 /* UI-2: a bot's row is the shared bot plate: steel, the panel's two bigger cuts, a light-blue mark, its limb pips */
 .u-row.bot {
@@ -615,16 +641,16 @@
   font: 500 var(--fs-caption) / 1.2 var(--font-prose);
   color: var(--text2);
 }
+/* UI-14b: Broken is the bad family, Damaged caution: the fills with dark text, as the colour code's tags */
 .u-brk {
   padding: 1px var(--s2);
   border-radius: var(--r-pill);
   font: 700 var(--fs-caption) / 1.4 var(--font-voice);
-  color: #fff;
-  background: var(--red);
+  color: var(--c-ink);
+  background: var(--sig-bad);
 }
 .u-brk.dmg {
-  color: var(--goldink, #3a2408);
-  background: var(--gold-b);
+  background: var(--sig-caution);
 }
 .u-carry {
   display: grid;

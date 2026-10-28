@@ -13,7 +13,7 @@ import {
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
   MOVES,
-  TYPE_COLORS,
+  TYPE_GLOW,
   activeBattle,
   battle3dLayout,
   battle3dStart,
@@ -2016,8 +2016,8 @@ export function battleStagePlay(an, ev) {
         const n = 9,
           beamy = M.t === 'Electric' || M.t === 'Psychic' || M.t === 'Water';
         scheduleAt(140, () => {
-          ringFx(A, TYPE_COLORS[M.t][0], 0.15, 0.8, 300);
-          groundRing(si, TYPE_COLORS[M.t][0], 1.4, 420);
+          ringFx(A, TYPE_GLOW[M.t], 0.15, 0.8, 300);
+          groundRing(si, TYPE_GLOW[M.t], 1.4, 420);
         });
         if (beamy)
           scheduleAt(200, () =>
@@ -2029,7 +2029,7 @@ export function battleStagePlay(an, ev) {
               y2: T.y,
               z2: T.z,
               beam: 1,
-              col: TYPE_COLORS[M.t][0],
+              col: TYPE_GLOW[M.t],
               w: 3,
               life: 420,
               glow: 1,
@@ -2082,8 +2082,8 @@ export function battleStagePlay(an, ev) {
           });
         });
       scheduleAt(600, () => {
-        ringFx(Pp, TYPE_COLORS[M.t][0], 0.2, 1.1, 420);
-        groundRing(tgt, TYPE_COLORS[M.t][0], 1.6);
+        ringFx(Pp, TYPE_GLOW[M.t], 0.2, 1.1, 420);
+        groundRing(tgt, TYPE_GLOW[M.t], 1.6);
         if (!an.self) {
           blinkActor(tgt, 240);
           setActorAction(tgt, 'dizzy', 700);

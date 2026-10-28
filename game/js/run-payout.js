@@ -13,7 +13,9 @@ import { expose } from './test-globals.js';
 import { boardsFetch, boardsPayoutHTML, provide, renderOverlay } from './hooks.js';
 import { CURRENCIES, PERKS, QUESTS, RESIDENTS, RULES } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
+import { speciesOf } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
+import { rarityTier } from './logic/marks.js';
 import { payoutOf } from './logic/run-state.js';
 import { runItemPrice, runKept, runPayoutRows, runReleasePays } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates } from './logic/effects.js';
@@ -24,6 +26,7 @@ import { trainName, trainOfRun } from './train-ride.js';
 import { runEndHome } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
+  payoutRarity: [() => payoutRarity],
   runPayoutDone: [() => runPayoutDone, v => (runPayoutDone = v)],
   runPayoutNow: [() => runPayoutNow, v => (runPayoutNow = v)],
   runPayoutOpen: [() => runPayoutOpen, v => ((runPayoutOpen = v), provide({ runPayoutOpen }))],
@@ -31,6 +34,11 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runPayoutOpen });
 /* to-module: end */
+/** UI-14b: a Billie card's species tier (starter shows as common; a bot has none) @param {any} m */
+const payoutRarity = m => {
+  const t = rarityTier((speciesOf(m) || {}).rar);
+  return t ? ` rarity="${t}"` : '';
+};
 /** what the run pays as it stands: the same sum runEnd pays */
 function runPayoutNow() {
   const s = saveData,
@@ -59,14 +67,14 @@ function runPayoutOpen() {
       : `<p class="note">Pick one Billie to bring its run home. One from Copperleaf keeps what it learned; one caught on the run comes home with you. Everyone else from Copperleaf comes back as they left.</p><div class="bx-grid">${saveData.team
           .map(
             m =>
-              `<pb-pick-card data-u="${m.uid}" heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
+              `<pb-pick-card data-u="${m.uid}"${payoutRarity(m)} heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
           )
           .join('')}</div>`;
   const M = {
     title: won ? 'You beat the run' : 'The run is over',
     cls: 'run-payout',
     lock: true,
-    html: `<p>${won ? `The boss is down. The ${escapeHtml(trainName(trainOfRun(run)))} takes everyone home, with all they learned, and your bag goes into Copperleaf’s.` : 'A train comes for you through the portal. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${moving}${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-coin kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-coin> ` : ''}${pay.crests ? `<pb-coin kind="crests" value="${pay.crests}" label="Crest"></pb-coin> ` : ''}${beans ? `<pb-coin kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-coin>` : ''}</p>` : ''}${typeof boardsPayoutHTML === 'function' ? boardsPayoutHTML(run.board) : ''}${cards}`,
+    html: `<p>${won ? `The boss is down. The ${escapeHtml(trainName(trainOfRun(run)))} takes everyone home, with all they learned, and your bag goes into Copperleaf’s.` : 'A train comes for you through the portal. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${moving}${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-chip kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-chip> ` : ''}${pay.crests ? `<pb-chip kind="crests" value="${pay.crests}" label="Crest"></pb-chip> ` : ''}${beans ? `<pb-chip kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-chip>` : ''}</p>` : ''}${typeof boardsPayoutHTML === 'function' ? boardsPayoutHTML(run.board) : ''}${cards}`,
     btns: [{ l: 'Ride home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));

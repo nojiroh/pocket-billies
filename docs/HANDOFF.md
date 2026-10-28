@@ -149,6 +149,390 @@ dial, so MAPGEN_VERSION stays 24.
 - Next: the owner pushes tag `wm-5-done` and plays a village and a town on the phone (the stall, the second giver,
   frame times); WM-6 (districts, landmarks, signposts and names on the world map, reading runPlaceName); WM-8.
 
+### UI track UI-14b - the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, pb-chip, Colour shapes) - 2026-10-27
+Branch `claude/ui-14b-marks-screens`, made from UI-14a's `claude/ui-14a-marks-kit` (main plus UI-11, UI-12, UI-13 and
+UI-14a; draft PR #286); main merged in first (nothing new), then UI-8c's `claude/ui-8c-map-markers` (#281: only docs,
+an import line, the icon count and ui-lint's ceiling conflicted; both HANDOFF entries kept; art-code-refs.json
+remade with its tool; hooks.js unchanged). Its PR goes to main and shows UI-8c's, UI-11's, UI-12's, UI-13's and
+UI-14a's commits until #281, #280, #282, #284 and #286 merge. No Plan Mode (the owner's standing instruction); the
+plan was written as a message and carried out, one screen per commit. **Visible change: the marks on the screens
+below; the battle plates are unchanged.**
+- Changed:
+  - **Data:** items.json `rarity` on the eight held items; robots.json `rar` made real (the four tiers or `boss`);
+    genes.json `rarity` on every trait (a Gene shows its trait's). Schemas (robots, genes), types (`RarityTier`),
+    check:data (a held item names a tier, nothing else in items.json has one: data-checks.js `RARITY_TIERS` from
+    the colour code's rarity ids), the Studio's Genes editor (a Rarity select per trait).
+  - **logic/marks.js:** node chips show UI-8c's `node-*` place icons (a stall and a ghost have none and keep the
+    family glyph); `rarityHighest`; `fxTags` (an effect's stat rows as boost and drop tags: Atk, Def, SpA, SpD, Spe).
+    **run-marks.js** `RUN_MARK_FAMILIES` and `runMarkLook().family` (the family table; a test holds them equal to
+    the chips').
+  - **ui-marks-kit.js:** markup helpers for the screens (`statusTagHTML`, `statTagHTML`, `fxTagsHTML`,
+    `kindChipHTML`, `rarityPillHTML`, `rarityRowAttr`); pb-rarity's tier name through `i18nText`.
+    **ui-run-kit.js:** `pb-pick-card kind="..."` (perk, held, item, candy, evo, tutor, part, scrap): the sub line as
+    a ribbon in the kind's family with its glyph; pb-payout's total in its currency's family (Research sky), a cost
+    in the bad family's text shade.
+  - **Settings, Accessibility:** a Colour shapes switch under High contrast (`preferences.shapes`, `:root[data-shapes]`,
+    off by default); the debug log's preferences state names it (never save data). i18n rows for the row and the
+    four tiers.
+  - **The screens** (one commit each): Team (status tags beside the types; Prime the teal ★ tag; a Coat a prism;
+    Lead neutral; the held item's glyph teal and its name in its tier's colour; each Billie's species tier as a row
+    frame and name colour, the pill on the lead's card; storage cards too); the Billie sheet (the status as a big
+    tag; the plate's Lead neutral and Prime teal ★; the species' pill; the held item's tier, stat tags and pill); the
+    build tab (Prime teal ★; a bot's parts by tier; Broken red, Damaged amber, which was gold); the Workshop and the
+    Gene Bank (each Augment's and Gene's tier, worn, listed and previewed); the shop (the Perk's and held items'
+    tiers and stat tags, the Perk glyph); the reward pick (every card's kind ribbon, held items' and parts' tiers);
+    Perks (rarity as frame, pill and name colour instead of a grey caption; the Perk ribbon; stat tags); the Bag
+    (held items' tiers and stat tags; the status tag in Use on); map nodes (the place card names a run place's kind
+    with its chip; the places list's town dot teal, it was blue); the payout (the total's family, the keep-one cards'
+    tiers).
+  - **pb-coin -> pb-chip** on its nine screens, one commit each (the payout, the Ranch, an event's DNA cost, the
+    Workshop, the splice sheet after a battle, the Map, the Gene Bank, the square, the Lab). pb-coin itself and its
+    API are unchanged (ON-3 uses it).
+  - ui-lint ceilings lowered: CSS colours 613 -> 607, game-js colours 635 -> 634.
+- Decided for the owner, to review:
+  - **The tiers** (Ask me before; by price and effect size): held items: Snack Pack, Lucky Coin, Study Notes common;
+    Quick Laces, Iron Vest uncommon; Leftover Sandwich, Brass Knuckles, Smart Specs rare. Augments (every arm has 50
+    stat points and every legs 70-80, so effect decides): Piston, Cinder, Tesla common; Clamp uncommon (tears parts
+    off); Auger and Hydrant rare (their field moves open side paths); Treads common; Striders and Hover uncommon;
+    torsos and gems common; the boss's own parts stay `boss` (no tier shown). Gene traits: Grip, Barbed, Lure,
+    Swimmer common; Counterweight, Stride, Showy, Keen, Gore, Armored uncommon; Airborne rare. Nothing is mythical.
+  - **The battle plates went to UI-16b:** UI-15 had no commits on `claude/ui-15-less-clutter` when this session got
+    there (checked twice), so its tag row wasn't there to move onto `markRow`. UI-16b's row in ui-track.md now
+    starts with them: the plates' tag row on `markRow`/`pb-tag`, Atk..Spe on the stage chips (battle.js
+    `statShortName` still prints "SP." twice), statuses as tags on the plates, and **Alpha one colour** (the bad
+    family; battle-screen.css has the plate crimson and the turn bar gold).
+  - A Coat's "prism foil" is a static four-hue gradient for now (UI-17 makes it shimmer); Prime's ★ is the text star.
+  - A Billie row's rarity frame is its edge line and a 4 px bar inside its fill (`.u-row` uses both pseudo-elements,
+    so `.rar-row` can't be used there).
+  - Pyramids on the reward pick take the neutral item ribbon; the payout's total keeps gold for Moneys (value).
+  - The place card shows the node chip only for run places; the hub's places keep their grey subtitle.
+- Found (figures checked): pb-coin was in 9 game files (10 tags; town-square has two), not 10 files. Towns: teal on the
+  run map (UI-8c's badge), blue in the places list (map-tab.css), orange `#ffb46b` on the hub map (world-bowl.js 3537
+  and 3871, WM-6's file: not changed here, for WM-6 or UI-18). The bowl's flat fallback shape (before an icon
+  loads) still uses `RUN_MARK_TONES` roles via world-bowl.js's colours: also left. Lead was already neutral on the
+  Team card (`.u-tag.lead`); only the sheet's ribbon was gold. None of these screens has a UI unit test (the tests
+  are DOM-free), so the logic tests cover the marks' data.
+- Risky: every screen named above changes look and nobody has looked at them (no browser run, the owner's rule).
+  pb-tag inside `<small>` text lines and pills in column layouts are new to those screens: expect spacing nits.
+  pb-chip is wider than pb-coin (the fill bar), on the Map's header and the Lab board especially. data-shapes now
+  always has a value (off).
+- Verified: lint (ceilings lowered), typecheck, format:check, `npm test` 1596 of 1596, check:data (a planted bad
+  `rar` fails), check:modules.
+- Skipped until after UI-18 (the owner's rule), needed later: the gallery check and its pictures (`marks-*` and `picks`:
+  pb-pick-card's kind ribbon isn't in the gallery yet, add a row then; the payout's total colour); the fast check
+  and the quick check (Team, the sheet and build tab, the Workshop, the Gene Bank, the shop, the reward and Perk
+  picks, the Perks tab, the Bag, the Map's place card and list, the payout, Settings' Accessibility tab with the new
+  row, and every pb-chip screen); the Studio check (the Genes editor's Rarity select); the smoke step; the owner's
+  phone check (status tags at 16 and 22 px, rarity frames on rows, the prism Coat, Prime's teal, the kind ribbons,
+  Colour shapes on and off).
+- Next: UI-16a and UI-16b (the planning session starts them; UI-16b takes the battle plates' marks above), then UI-17.
+- Tag to suggest: `ui-14b-done` on this entry's commit.
+
+### UI track UI-14a - the marks kit (pb-tag, pb-chip, pb-proc, pb-info, rarity, Colour shapes patterns) - 2026-10-27
+Branch `claude/ui-14a-marks-kit`, made from UI-13's `claude/ui-13-glyphs-types` (main plus UI-11 and UI-13, draft PR
+#284); main merged in first (nothing new), then UI-12's `claude/ui-12-palettes` (#282; only docs conflicted, both sides
+kept; hooks.js unchanged; check:data passes with UI-12's player presets against UI-13's type colours), then UI-13's
+branch again before the PR (nothing new). Its PR goes to main and shows UI-11's, UI-12's and UI-13's commits until
+#280, #282 and #284 merge. No Plan Mode (the owner's standing instruction); the plan was written as a message and
+carried out. **Visible change: none in the game** (the kit and the gallery only; UI-14b puts the marks on screens).
+- Changed:
+  - **game/js/logic/marks.js** (new, logic, in the Studio's logic worker): what each mark shows, so the parts and
+    UI-14b's screens agree. `tagLook` (status: glyph, BRN/PAR/SLP, its own colour; stat: ▲ teal or ▼ red first, the
+    short name from stats.json's ids `lev law lob pr hus` = Atk Def SpA SpD Spe, pips up to stageMax 6; effect: its
+    glyph and turns left; more: "+N"), each with its spoken word ("Speed up 2 stages", "Protect, 1 turn left");
+    `markRow` (status first, then boosts and drops, then effects; past 3 the last spot is "+N", so a row is never
+    wider than 3 tags); `rarityTier` and `MARK_RARITY`; `chipLook` and `MARK_CHIP_FAMILIES` (the six currencies with
+    currencies.json's icons, every nodeTypes.json id, the eight families and `info` for messages); `MARK_PATTERNS`.
+  - **game/js/ui-marks-kit.js** (new, after ui-run-kit.js): `<pb-tag>` (16 px tall, 11 px text, for the plate's row;
+    `big` 22 px for explainers and sheets), `<pb-chip>` (a subclass of `PbCoin`: kind, value and label and the same
+    count; the face tinted by family with a fill bar on the slanted edge; a currency's own icon, else its family's
+    glyph in the text shade; no value = a label chip for nodes and messages; `family`, `icon`, `small`), `<pb-proc>`
+    (glyph in its family's fill, a short line and an optional coloured ▲Spe, on dark glass; the look only),
+    `<pb-info>` (the mark as a big pb-tag or the `mark` slot, its word, one line; a tap or Escape closes it and sends
+    `pb-close`), `<pb-rarity>` (the tier's pill). Glyphs are UI-13's `g-*` SVGs as masks; colours UI-11's `--sig-*`;
+    fills always carry `--c-ink` text. Every mark has `role="img"` and its word.
+  - **Rarity:** `pb-pick-card rarity="..."`: a 3 px frame in the tier's fill along the card's cut outline (a ring
+    polygon, under the selected card's gold edge line), the pill at the top right, the name in the tier's text shade;
+    face down shows no tier. List rows: `.rar-row` with `data-rarity` (a 4 px bar and a thin inside frame; outline and
+    `::before`, since `.bag-row`'s borders are `!important`), `.rar-name`, and `<pb-rarity>` (ui-kit.css).
+  - **Colour shapes patterns** (the owner's answer 11): tokens.css `--pat-ink` is transparent until
+    `:root[data-shapes='on']`; ui-kit.js `patternVars` (stripe, cross, bars, dots, rise) on each part's host, so they
+    reach shadow roots without `:host-context`. Tags: burn and caution striped, paralysis barred, sleep and special
+    dotted, bad (drops) cross-hatched, growth lined; `pb-stat-bar` HP striped under half, cross-hatched under a quarter.
+  - ui-run-kit.js exports `PbCoin`, `runKitMotion` and `runNumber` (to-module's export; no change in behaviour).
+  - **The gallery:** six sections (`marks-tags`, `marks-chips`, `marks-procs`, `marks-info`, `marks-rarity`,
+    `marks-shapes`: every status, stat at ±1..6 and 0, every effect, "+N", the plate's dark glass, the six currencies,
+    node and message chips, small chips, blips, explainers, tiers on cards and rows, patterns always on) and a Colour
+    shapes button in the bar.
+  - tools/test/ui-marks.test.mjs (9 tests): every status, stat, effect, currency, node type and rarity tier in the data
+    has a mark, glyph or icon that exists and a word; the row's "+N"; the patterns' ids; the kit has no
+    `:host-context`, keyframes, loops, its own counting or hex colours.
+- Decided for the owner, to review:
+  - rarities.json's **`starter` shows as common** (grey, "Common" on the pill): the ladder keeps four colours, and a
+    starter isn't rarer than a common to the player. A fifth colour is one line in marks.js `rarityTier` if wanted.
+  - **pb-chip is a pb-coin** (a subclass), and pb-coin itself is unchanged: its tones (Research and DNA in the
+    palette's primary) differ from the families (sky and magenta). UI-14b should switch those screens to `pb-chip` (or
+    turn `pb-coin` into it), one screen per commit; ON-3 can build on either.
+  - Chip families where Part 2 names none: landing and route neutral, rival bad (a fight, as bosses), Beans neutral
+    (answer 3), messages by family name plus `info` neutral.
+  - Node and message chips use the family's glyph (`g-*`) until UI-8c's place icons merge; `icon="..."` takes them.
+  - The patterns per colour (above) and their ink (black at 30%), my picks; the switch's Settings row is UI-14b's,
+    which puts the marks on screens (Accessibility; `preferences` and the debug log's state as Part 2 says).
+  - Fills always take dark text, on light screens too (Part 2 says "on dark glass"; on a light card the fill still
+    reads 4.5:1 or more with ink, and a tag looks the same everywhere: rule 2).
+  - pb-info is a `role="note"` with `aria-live="polite"` (read when it opens), not a modal dialog.
+- Found (figures checked): the brief's "about ten screens use pb-coin": 10 game files (plus the gallery). stats.json's
+  stat ids are `lev law lob pr hus`, not atk..spe; rules.json `battle.stageMax` is 6; `.bag-row` sets its borders and
+  background with `!important` (units.css), so a row frame can't be a border. pb-pick-card already had a
+  `:host-context` rule (UI-16a's to remove); nothing new adds one.
+- Risky: little in the game (nothing uses the parts yet; pb-pick-card without `rarity` and pb-stat-bar with the switch
+  off draw as before). `--pat-*` lists in a `background` shorthand are new to the page. pb-info listens for Escape on
+  the document while connected.
+- Verified: lint (ui-lint at its ceilings), typecheck, format:check, `npm test` (1591 pass after the logic-worker
+  list was fixed), check:data, check:modules. One headless load of the gallery for page errors (none) and a look at
+  the six sections, light and dark; not the gallery check or its pictures.
+- Skipped until after UI-18 (the owner's rule), needed later: the gallery check and its pictures (`check:ui`, the six
+  new `marks-*` shots and the changed `picks` section's neighbours; the whole gallery's baselines are remade once
+  then); the Studio check (its UI section shows the gallery); check-fast and check-quick (nothing in the game changed,
+  but the pages load two new modules); the smoke step; the owner's phone check (the tags at 16 px on a plate, the
+  patterns, the rarity frames).
+- Next: UI-14b (the marks on every screen, one screen per commit; the Colour shapes row in Accessibility; pb-coin's
+  screens to pb-chip; UI-15's tag row takes `markRow` and pb-tag).
+- Tag to suggest: `ui-14a-done` on this entry's commit.
+
+### UI track UI-13 - glyphs and types (the marks' glyphs, the types at one lightness, the teal heart, the bolt for storms) - 2026-10-27
+Branch `claude/ui-13-glyphs-types`, made from UI-11's `ccr-dab4e0cd-6re1eb` (main plus UI-11, draft PR #280); main
+merged in first (nothing new). Its PR goes to main and shows UI-11's commits until #280 merges. No Plan Mode (the
+owner's standing instruction); the plan was written as a message and carried out.
+- Changed:
+  - **Types at one lightness** (types.json `color`): Part 2's hexes, OKLCH L 0.55-0.59, white text 4.5-4.6:1 on all
+    eight; Electric keeps #E2B92C with dark ink. Water is **#1577D0**, not Part 2's #2C78C5 (same hue and lightness, a
+    little more chroma), since #2C78C5 sat 4.2 from Flying, under the colour code's 5 (UI-11's finding); now 5.6.
+    Normal (untyped.json) #7A7764, its hue at the same lightness. Move tiles, plates (`plateVars`), the Guide and the
+    pills all read `color`, so they follow without markup changes; `readableBg` on pills now has nothing to darken.
+  - **The 3D rings checked:** battle-stage.js drew rings and beams in the type colour, and the darker colours would
+    dim them on the dark stage (the beams add light). types.json `glow` keeps each type's old colour; game-data.js
+    `TYPE_GLOW` (and the Studio's stand-in) feeds the rings and beams, so battle looks as before.
+  - **A check for it** (logic/ui-theme.js `uiSignalProblems`, check-data and the Studio's Check): every type's text on
+    its colour at 4.5:1, and every light-text type within OKLab L 0.03 of the others' middle; a test plants alpha 0.5's
+    Flying, which fails both.
+  - **HP's heart teal:** heart.svg's red ramp swapped for the icon set's teal (`t`, "healthy HP"), same mixes; the
+    builder-grid fixture follows (mono `teal`). It marks Heal, the Bag's Healing, the clinic and the Buddy tag.
+  - **26 glyphs** (art/ui/g-*.svg, one colour each, 12 x 12 drawn and tripled to 36 x 36 in the editor's pixel
+    format): statuses (burn, paralysis, sleep), short effects (Protect, the shield, confusion, Soaked, Fork, the
+    delayed hit, stones, Sandstorm), the eight families, pickup kinds (Perk, held item, item, candy, evolution item,
+    move tutor, bot part, Scrap). logic/signals.js `UI_GLYPHS` and `glyphOf` name each with its colour code id;
+    art.js `glyphHTML(group, id, size, tint)` draws it as a mask (`.ugl`, `-webkit-mask` and `mask`) filled with
+    `--sig-<id>-text` ('text'), `--sig-<id>` ('fill', on dark glass) or the text's colour ('current'); it shares one
+    tag builder with `uiIconHTML`.
+  - **The bolt for storms only:** the battle's Sandstorm chip shows g-sand (caution fill); status badges start with
+    their glyph in the badge's colour, so paralysis has its own. The weather tables keep `storm: 'bolt'`.
+  - ui-icons test: 77 icons; every glyph exists, is one colour and has a colour code; the heart's colours; no code
+    names the bolt but a storm.
+- Decided for the owner, to review:
+  - Water #1577D0 (above), and Normal retuned too (Part 2 names the nine types only).
+  - `glow` keeps battle's effects on the old colours rather than dimming them (no picture to judge by, checks skipped).
+  - The glyphs' tints where Part 2 names none: confusion and Fork violet (special), Soaked sky (growth), the delayed
+    hit amber (caution), the item kind neutral, the move tutor sky. The glyph art is a first pass for the owner to
+    repaint in the Studio's icon editor (names `g-*`).
+  - The heart turns teal everywhere it is used, the Buddy tag included (one icon, one meaning: HP).
+  - Status badges keep today's colours (`.st-*`) with the glyph in the badge's colour; the colour code's status
+    colours on angled tags are UI-14a/b's `pb-tag`. battle-stage.js's paralysis particles still use the VFX bolt
+    sprite (a particle, not an icon; the VFX track's).
+- Found (figures checked): Part 2's old types: OKLCH L 0.52-0.80 and white text 2.7:1 (Flying) to 5.9:1 (Dragon), as
+  written; 51 icons before this; the bolt was the storm weather's (ui-run-kit.js, run-loading.js) and Sandstorm's
+  (battle.js); paralysis had no icon, only the 3D bolt particle. The UI lint's colour ceiling counts hexes in logic
+  files too (the first version of the check went 3 over; fixed in its own commit).
+- Risky: the type colours change every type pill, tile and Guide screen at once; the masks are new to the page
+  (Safari takes `-webkit-mask`; no filter on `.ugl`). The ui-icons test and UI-8c's new place icons both raise the
+  icon count: expect a one-line merge.
+- Verified: lint, typecheck, format, `npm test` (1580 pass; the known 1,000-maps timing test went over 1 s on one earlier run),
+  check:data, check:modules.
+- Skipped until UI-18 (the owner's instruction), needed later: check-fast and check-quick (type colours in battle,
+  Team and the Guide; the status badges; the Sandstorm chip), the Studio check (its `ui` step, the icon editor opening a
+  `g-*` glyph, the Check's types rule), the gallery (pills, `pb-pill` types, `pb-node`), the picture baselines (every
+  screen with a type colour), and the owner's phone check (the types' look, the glyphs at 11-14 px, the teal heart).
+- Next: UI-14a (the marks kit: `pb-tag`, `pb-chip`, `pb-proc`, `pb-info`, rarity), which can use `glyphHTML` and
+  `UI_GLYPHS`.
+- Tag to suggest: `ui-13-done` on this entry's commit.
+
+### UI track UI-12 - the palettes (Field Guide by default, the Settings Palette row) - 2026-10-27
+Branch `claude/ui-12-palettes` (the session's own), made from UI-11's `ccr-dab4e0cd-6re1eb` (PR #280, not merged), so
+its PR to main carries UI-11's commits until #280 merges. No Plan Mode (the owner's standing rule); the plan is in
+ui-track.md, "UI-12: the palettes". **Visible change: the whole UI's colours** (Field Guide replaces Copper Grove).
+- Changed:
+  - **uiTheme.json:** `defaults` are Field Guide (`name` "Field Guide"; every role of Part 2's table; `line` the text at
+    18% light, white at 14% dark); `danger`, `hpOk`, `hpMid`, `hpLow` left out. Presets `copper_grove` (Copper
+    Grove+) and `bureau_night` with `player: true`; `brass_plum` and `sunpunk_day` for the Studio; alpha05 and stepped
+    kept. Two new optional roles, `mapGrass` and `mapWater` (schema, types, Studio dials).
+  - **logic/ui-theme.js:** `paletteFor` fills danger and hpLow from the side's red shade, hpMid amber, hpOk teal
+    (`UI_FROM_SIGNALS`); `--c-ink` (the dark side's ground: dark text on gold and fills); `uiPalettes` (Settings'
+    list); a preset marked `player` is checked in full like the defaults (contrast and the colour code), the
+    Studio's presets as before; `prefers-reduced-transparency: reduce` makes the glass solid without blur.
+  - **Settings:** a Palette row at the top of the Display tab; `preferences.palette` (a preset id, '' the defaults);
+    `applyPreferences` calls theme-sheet.js `setUiPalette`; `applyUiTheme` without a preset keeps the player's
+    palette, so the Studio's live draft and fixtures don't reset it. The debug log's state: `palette` and `side`.
+  - **minimap.js:** the grass and water mix the palette's `mapGrass`/`mapWater` into the surface (primary and the HP
+    teal without them); the cache key includes the grass.
+  - **CSS:** every alpha 0.5 `rgba(46, 33, 64, a)` became a `--c-shadow` mix (36 lines; the plan said 32; four of
+    them are base.css's fallback `--line`, `--lo`, `--g-sh`, `--g-sh2`, the first, third and fourth replaced by the
+    theme anyway); `color: #2e2140` on gold became `--c-ink`;
+    `.pb.dark` is ink. XP: `--sig-growth-text` (base.css `.pbar.xpb`, pb-stat-bar) and `--sig-growth` on the
+    always-dark battle plate, whose HP bar now uses the colour code's fills. ui-lint's colour ceiling 650 -> 613.
+  - The gallery's look buttons: the five palettes. Tests: ui-theme (Field Guide, the fallbacks, the list, full checks
+    for player presets, reduced transparency), ui-signals and ui-dials updated (`uiDialShown`: a dial left to the
+    colour code shows and nudges what it resolves to).
+- Decided for the owner, to review:
+  - HP bars on light screens use the families' **light text shades** (Part 2: "the text shades are for words and bars
+    on light and dark screens"): HP under half is #9A5505, a brown-amber, on Team cards. The always-dark battle plate
+    uses the fills instead (#40D9C1, #FAAB3F, #EA5974). If the brown reads badly on the phone, set `hpMid` in the
+    defaults' light palette (one value).
+  - The Palette row went in the **Display** tab (the plan's word), while Theme stays in Accessibility.
+  - The minimap's grass and water per palette as two new colour roles; my picks: Field Guide #5E721F / #2F7F86
+    (dark #9DBB55 / #5FB4BC), Copper Grove+ today's primary and teal, Bureau Night #4E8A3E / its cyan, Brass & Plum
+    #5C8A3A / #3A7FA8, Sunpunk Day #4A9A3A / its blue. Not seen on screen yet.
+  - `--c-ink` is the dark side's ground on both sides (the colour code's "dark text").
+  - Reduced transparency follows the phone's setting only (no Settings switch); High contrast already does the same
+    and more.
+- Found (figures checked): the five palettes and the colour code pass every check in full: the shades' worst is
+  3.99:1 on Field Guide's light ground (good teal, min 3) and 4.5:1+ on every surface; dark text on fills 4.70:1 at
+  worst (Copper Grove+). The plan's Settings "Display tab" exists as the `graphics` key labelled Display.
+- Risky: every screen's colours change and nobody has looked at them: no browser run this session (the owner's rule).
+  Places still drawn in the old purple or in Copper Grove's green by literal colours will show up in the pictures.
+  The picture baselines (gallery, quick check) are now out of date on purpose.
+- Verified: `npm run lint` (ceilings lowered), typecheck, format:check, `npm test` (1579 pass), check:data (176 files
+  fine; the two bridge warnings are main's), check:modules.
+- Skipped until after UI-18 (the owner's rule), for the final checks session: the gallery and quick-check pictures
+  remade once for Field Guide; the smoke step that opens screens in each of the three player palettes (contrast, no
+  page errors), not written yet; check-fast and the Studio check (the colour dials, `mapGrass`/`mapWater`, the
+  empty danger and HP dials); the owner's phone check of the three palettes, light and dark, and the minimap.
+- Next: UI-13 (glyphs and types), started from this branch in a new session.
+- Tag to suggest: `ui-12-done` on this entry's commit.
+
+### UI track UI-11 - the colour code as data (signals, --sig-* tokens, the checks, the Studio) - 2026-10-27
+Branch `ccr-dab4e0cd-6re1eb` (the session's own: a cloud session pushes only there), from main at 07c9b284, which
+already holds `track/ui`; its PR goes to main, as UI-10's did. No Plan Mode (the owner's standing instruction); the
+plan is in ui-track.md, "UI-11: the colour code as data". No visible change.
+- Changed:
+  - **uiTheme.json `defaults.signals`**: `fill`, `light`, `dark` for 15 ids (good, bad, caution, value, special,
+    growth, machine, bio; brn, par, slp; common, uncommon, rare, mythical), the hexes of Part 2's tables. Schema
+    (required in the defaults; a preset may not set it; overrides already can't), types (`UiSignals`).
+  - **game/js/logic/signals.js** (new, on both pages and in the logic worker): the ids, the screens' sets, OKLab
+    distance, Machado 2009 colour-blind simulation, the sheet lines.
+  - **ui-theme.js**: `--sig-<id>` (fills, :root) and `--sig-<id>-text` (each side); `paletteFor`: a palette
+    without `danger` takes the red family's shade (the defaults keep theirs, so nothing changes now);
+    `uiSignalProblems`, used by check-data and the Studio's Check. tokens.css holds the same values as a fallback.
+  - **The Studio**: a "Colour code" group (whole game only): fill and both shades a row, contrast badges, a
+    colour-blind preview (as it is, protan, deutan, tritan) with each screen's closest pair. Save as preset drops it.
+  - Tests: tools/test/ui-signals.test.mjs (8); the Studio check's `ui` step (a fill in the preview and undone, the
+    colour-blind preview, a planted clash the Check finds and points at its dial).
+- Decided for the owner, to review:
+  - The checks' minimums: shades 4.5:1 on the surface and 3:1 on the ground; dark text (the dark ground) 4.5:1 on
+    fills; OKLab 5 within a set. Presets are held only to the shades on their surface, as the old contrast check does
+    (alpha05's dark ground puts magenta's fill at 4.46:1); UI-12 should check the player palettes in full.
+  - Rarity is its own set (common is 1.9 from Machine's gunmetal, as Part 2 accepts). Sets: battle (good, bad,
+    caution, special, growth, the statuses, the types), pickups (the families, the types), map (the families).
+  - The PR goes to main, not `track/ui` (that would carry 220 of main's commits).
+- Found (figures checked):
+  - Part 2's "each text shade 4.5:1" holds on surfaces only: on today's light ground teal reads 4.34:1 and sky
+    4.49:1, so the ground gets 3:1 (words sit on cards).
+  - Part 2's retuned types put Water (#2C78C5) and Flying (#5973BE) 4.2 apart, under its own "5.5 at the lowest":
+    UI-13 must move one of them, or this check fails. With today's types the nearest pair is amber and Electric,
+    5.5, as written.
+  - "Dark text on every fill 5:1" holds on Field Guide's dark ground (5.2 lowest); on today's it is 4.6 (red, bio).
+- From a second UI-11 session the planning session started by mistake (stopped, nothing pushed), checked here:
+  rarities.json has a fifth tier, `starter`, which the four-step ladder doesn't cover (UI-14a/b: give it a colour or
+  treat it as common, the owner's call); Electric sits at OKLCH L 0.80, so "types at one lightness" (UI-13) must leave
+  out the type with dark ink; that session darkened the ground-failing shades in OKLCH for 4.6:1 on every ground
+  (teal #007263, sky #056C9B, burn #AC4600, dusk #62608D, uncommon #00762C), an option if the owner wants 4.5:1 on the
+  ground too (not taken: it changes the owner's hexes).
+- Risky: little; nothing reads the tokens yet. A preset with `signals` now fails check-data.
+- Verified: lint, typecheck, format, `npm test` (1577; one timing flake in run-map-checks passed on re-run),
+  check:data, check:modules; the Studio check `--only=ui` passes and the section was looked at in a screenshot.
+  `check-fast` boot, screens, debug log and Studio checks pass, except "The Studio's world map look" and "The Studio's
+  Camera section", and the Studio check's `ui_tools` step (a UI rule warning it wants as an error): all three fail the
+  same way on main without this change (missing game/art/billionaires art, a tilt readout).
+- Next: UI-12 (the palettes): Field Guide as the defaults without its own `danger`, the Settings Palette row.
+- The owner, after this entry: "Automatically start the next session after done, skip the checks until after all ui
+  is done." Written in ui-track.md (after "How the sessions run"). UI-12 was started from this branch in a new session.
+- Tag to suggest: `ui-11-done` on this entry's commit.
+### UI track UI-8c - the run map's icons: pixel badges, 44 px chips, the voice font - 2026-10-27
+Branch `claude/ui-8c-map-markers`, made from the UI-10 planning branch (main plus the UI-8c plan, PR #275); main merged
+first (already up to date). Run beside UI-8b at the owner's word. First meant as a PR into `track/ui`; then the owner's UI sessions moved to main
+(the planning session's note), so it is draft PR #281 into main, with main merged in (cleanly) and not `track/ui`:
+UI-8b's commits stay on `track/ui` for its own PR. The plan was approved in advance (the owner's standing word for the UI plan). One
+cause per commit. Details: docs/phases/ui-track.md, "The run map's icons", "Built".
+- Changed:
+  - **The art** (art/ui, 51 -> 63 icons): `node-landing`, `node-route`, `node-town`, `node-miniboss`, `node-boss`,
+    `node-event`, `node-shop`, `node-rival`, `node-scrapyard`, `node-unknown` (Badges: UI-4's outlines as bevelled
+    plates, a glyph each, the icon set's palette by family), and the badges `node-check` and `node-lock`. 36 px SVGs in
+    the pixel format, so the Studio's icon editor opens them as pixels. Painted once by a scratch port of the examples'
+    painter ("Run Map Icons") on the repo's own `RUN_MARK_SHAPES`; nothing generates them now.
+  - **run-marks.js**: `runMarkLook` names `icon`, `badge` and `size` (`RUN_MARK_SIZES`: 28, 34 where you stand);
+    `runMarkPixels` makes a state's picture (a gold rim two art pixels wide along the outline where you stand, done
+    faded 0.62 under a check, locked grey under a padlock); `RUN_MARK_ART` its numbers and colours.
+  - **The bowl** (world-bowl.js, small edits): the run pin draws that picture (made once per icon, state and size at
+    the canvas's own pixels, put on whole pixels; a gold glow where you stand); the flat shape until an icon loads;
+    the head 4 px higher on its stalk. The rings where you stand and the picked place take a dark rim under their
+    colour; the trip's end is the set's flag. The names are in the theme's voice font (`--font-voice`, Jersey 15 in
+    Field Guide) at 13 and 14 px instead of system-ui at 11 and 12.
+  - **`<pb-node>`** paints the same picture on a canvas (`--size` is the 36 grid, 36 px by default).
+  - **The map's seven buttons**: 44 px `.mbtn.k-btn` chips (the kit's button outline and edge line, the card's panel
+    colour, no blur) with plus, minus, walk, list, back, back mirrored and globe. The look-around group is three
+    chips riding just above the place card (`--mapcard-h`, from a ResizeObserver), so it no longer covers the card's
+    last line.
+  - Checks: run-marks tests (the look, the picture per state, every SVG inside its outline), ui-icons counts 63; the
+    gallery's run-nodes row gains rival and scrapyard and waits for the markers to paint; the fast check's map steps
+    check the 44 px chips with icons, the group clear of the card, the run's places drawn as icons and the names in
+    the voice font. UI lint ceilings lowered: raw colours in game js 638 -> 636, shadows 161 -> 160.
+- Decided for the owner, to review:
+  - **The minimap's marks stay as they are** (trainers a red diamond, wild Billies a teal dot, you a gold chevron): at
+    5-8 px a plate with a rim and a glyph turns to mush, the shapes already carry the meaning (a diamond is danger, as
+    the boss; round is wild; the chevron points the way you face), and UI-8b is reworking minimap.js's scale right now.
+    Revisit after UI-8b's phone check if they read small on the wide tile.
+  - The corner badges are two more SVGs (`node-check`, `node-lock`), so they can be repainted too, rather than code.
+  - The chips use the kit's button outline (`.k-btn`, 4 px cuts) and the place card's panel colour; no new chip
+    class, so UI-14a's `pb-chip` isn't pre-empted (the planning session's note). The chips lost their blur (7 fewer
+    blurred surfaces on the Map).
+  - The glyphs are the examples' first pass, unchanged ("Ask me before": the final art is the owner's to repaint).
+  - The picked ring is cream on a darker gold rim (it was plain white); the trip's end is the flag icon (a gold dot).
+- Found:
+  - The run map never gives a place the `locked` state (`worldBowlRunMark`: current, hidden, visited, seen), so the
+    padlock shows only in the gallery for now.
+  - `<pb-node>` is on no game screen (ui-track.md said the place card; corrected).
+  - The doc's claims checked: the 18/22 px sizes, `BOWL_PIN` 22, the 3 px stalk, system-ui names at 11/12 and the
+    "?" at 10, the 34 px and 28 px buttons, `worldMapSize`'s 2x cap and the 51 icons were all right.
+- Risky:
+  - 28 px from a 36 grid is 1.56 device pixels per art pixel on a 2x phone: nearest-neighbour scaling makes some art
+    pixels a device pixel wider than others. 36 (or 18/54) would be exact; the phone check decides.
+  - UI-8b changes `--nav-h`; `.mapview` now sits on `--nav-h` plus the card's height, so it should follow, but the
+    merge of this PR and UI-8b will meet in map-tab.css and maybe ui-lint.js's ceilings.
+  - world-bowl.js is shared with the world map track (WM-6): the edits are the run pin, the rings, the flag, the
+    label font and worldMapChrome's buttons.
+- Verified: `npm run lint`, `npm run typecheck`, `npm test` 1572 of 1572, `npm run check:data` (its one warning,
+  test_props_island's bridge, is main's), `npm run check:modules`, on the final merge with main. Before the owner's
+  rule to skip browser checks came in: the gallery check (run-nodes remade on purpose; the rest unchanged); smoke (no
+  problems, 258 s); the fast check (63 steps fine; this change's map steps passed; of the 6 problems, the 2 Studio
+  steps are main's 404s, the run's seam walk fails the same on the commit before this work, and Behind things, the
+  island orbit, Tall ground and the pasture passed when re-run with fewer pages or alone: load on this container); the
+  full quick check was stopped after 14 minutes under the new rule (15 steps fine; 4 problems, none on the map: a
+  floating train station prop on the terraces, the run's seam walk again, a route trainer pair that talked but didn't
+  battle, Granny Juniper silent). The run's map captured headless at 390 x 844, 2x, light and dark: no page errors.
+- Browser checks this change needs after UI-18 (skipped under the owner's rule): the gallery check (run-nodes is
+  remade here; once UI-8b is in too, remake run-nodes on the merged code, and picks and payout, which the run-nodes
+  section's new height moves a pixel down: seen on a trial merge with `track/ui`); the fast check (the map steps: the
+  44 px chips, the look-around group clear of the card, the run's icons and the voice font); smoke; the full quick
+  check (the 4 problems above, to see whether they hold); the tap-target step; the owner's phone check.
+- Merges to expect: UI-8b (`track/ui`) meets this in map-tab.css (`.mapview` on `--nav-h`), the gallery's run-nodes
+  pictures, ui-lint.js's ceilings and the docs. UI-13 (`claude/ui-13-glyphs-types`) also adds art/ui SVGs: the names
+  here all start `node-`, and the ui-icons test's count (63) will need the sum of both.
+- For the owner's phone: the markers' sizes (28 and 34) and sharpness, the glyphs (repaint in the Studio: Art ->
+  UI icons -> node-*), the gold rim and glow where you stand, the names in Jersey 15 at 13-14 px, the chips' tap feel
+  and the look-around group above the card, the done check on a visited place.
+- Next: the planning session starts the next steps (UI-11 is PR #280); after UI-18, one session runs the skipped
+  browser checks above.
+- Tag to suggest (sessions can't push tags): `ui-8c-done` on this entry's last commit.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's

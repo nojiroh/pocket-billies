@@ -6,6 +6,7 @@
 import { expose } from './test-globals.js';
 import { PYRAMIDS, formatNumber, plural, provide } from './hooks.js';
 import { clamp } from './util.js';
+import { glyphOf, sigVar } from './logic/signals.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_CACHE: [() => ART_CACHE],
@@ -26,10 +27,12 @@ expose({
   darkCopy: [() => darkCopy, v => (darkCopy = v)],
   eggCanvas: [() => eggCanvas, v => (eggCanvas = v)],
   eggHTML: [() => eggHTML, v => (eggHTML = v)],
+  glyphHTML: [() => glyphHTML, v => (glyphHTML = v)],
   hexChannels: [() => hexChannels, v => (hexChannels = v)],
   hexLuminance: [() => hexLuminance, v => (hexLuminance = v)],
   hexToRgb: [() => hexToRgb],
   iconCanvas: [() => iconCanvas, v => (iconCanvas = v)],
+  iconTag: [() => iconTag],
   iconURL: [() => iconURL, v => (iconURL = v)],
   makeCanvas: [() => makeCanvas, v => (makeCanvas = v)],
   makeSeededRandom: [() => makeSeededRandom, v => (makeSeededRandom = v)],
@@ -172,8 +175,21 @@ export const uiIconURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]
     ? window.NW_ART[`ui/${k}.svg`]
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
+/* an icon's tag: `uico` shows the picture, `ugl` (UI-13) uses it as a mask; `vars` adds custom properties */
+const iconTag = (cls, key, size, vars = '') =>
+  `<i class="${cls}" style="--ico:url('${uiIconURL(key)}')${vars};width:${size}px;height:${size}px" aria-hidden="true"></i>`;
 export function uiIconHTML(key, size = 22) {
-  return `<i class="uico" style="--ico:url('${uiIconURL(key)}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+  return iconTag('uico', key, size);
+}
+/** UI-13: a mark's glyph (logic/signals.js UI_GLYPHS: a status, a short effect, a family, a pickup's kind), its SVG
+ * as a mask filled with its colour code. `tint`: 'text' the side's text shade (light and dark screens), 'fill' the
+ * fill (on dark glass), 'current' the text's colour (inside a tag that has its own); a neutral one always takes the
+ * text's colour. '' for an unknown mark
+ * @param {string} group @param {string} id @param {number} [size] @param {'text' | 'fill' | 'current'} [tint] */
+export function glyphHTML(group, id, size = 14, tint = 'text') {
+  const G = glyphOf(group, id);
+  if (!G) return '';
+  return iconTag('ugl', G[0], size, G[1] && tint !== 'current' ? `;--tone:var(${sigVar(G[1], tint === 'text')})` : '');
 }
 /** RF-1: a run's money on screen: the coin icon and the number, read aloud as "120 Moneys" (plain text: plural(n, 'Money')) */
 export function moneyHTML(n, size = 14) {

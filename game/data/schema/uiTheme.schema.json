@@ -20,10 +20,12 @@
     "primary": {"$ref": "#/$defs/hex", "description": "the green: success, primary marks (--ok)"},
     "goldA": {"$ref": "#/$defs/hex", "description": "the main action's gradient, top"},
     "goldB": {"$ref": "#/$defs/hex", "description": "the main action's gradient, bottom (--gold-b, --gold)"},
-    "danger": {"$ref": "#/$defs/hex", "description": "(--red)"},
-    "hpOk": {"$ref": "#/$defs/hex", "description": "healthy HP: teal, so primary, the Grass pill and HP stay apart"},
-    "hpMid": {"$ref": "#/$defs/hex", "description": "HP under half"},
-    "hpLow": {"$ref": "#/$defs/hex", "description": "HP under a quarter"}
+    "danger": {"$ref": "#/$defs/hex", "description": "(--red); left out: the colour code's red (signals, the side's bad shade)"},
+    "hpOk": {"$ref": "#/$defs/hex", "description": "healthy HP; left out (UI-12): the colour code's teal (good)"},
+    "hpMid": {"$ref": "#/$defs/hex", "description": "HP under half; left out (UI-12): the colour code's amber (caution)"},
+    "hpLow": {"$ref": "#/$defs/hex", "description": "HP under a quarter; left out (UI-12): the colour code's red (bad)"},
+    "mapGrass": {"$ref": "#/$defs/hex", "description": "UI-12: the minimap's grass, mixed into the surface (left out: primary)"},
+    "mapWater": {"$ref": "#/$defs/hex", "description": "UI-12: the minimap's water, mixed into the surface (left out: healthy HP)"}
    }
   },
   "color": {
@@ -99,7 +101,8 @@
    "type": "object",
    "additionalProperties": false,
    "properties": {
-    "name": {"type": "string", "maxLength": 40, "description": "a preset's name in the Studio"},
+    "name": {"type": "string", "maxLength": 40, "description": "a preset's name in the Studio; the defaults' and a player preset's in Settings' Palette row"},
+    "player": {"type": "boolean", "description": "UI-12: a preset players pick in Settings' Palette row (checked in full, like the defaults)"},
     "color": {"$ref": "#/$defs/color"},
     "surface": {"$ref": "#/$defs/surface"},
     "depth": {"$ref": "#/$defs/depth"},
@@ -108,7 +111,8 @@
     "space": {"$ref": "#/$defs/space"},
     "type": {"$ref": "#/$defs/type"},
     "motion": {"$ref": "#/$defs/motion"},
-    "minimap": {"$ref": "#/$defs/minimap"}
+    "minimap": {"$ref": "#/$defs/minimap"},
+    "signals": {"$ref": "#/$defs/signals"}
    }
   },
   "surfaceSide": {
@@ -191,12 +195,22 @@
     "trainers": {"type": "boolean", "description": "--minimap-trainers: trainers not yet beaten"},
     "billies": {"type": "boolean", "description": "--minimap-billies: the wild Billies out in the world"}
    }
+  },
+  "signals": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "UI-11: the colour code, the same in every palette (docs/phases/ui-track.md, \"The colour code\"; logic/signals.js): the eight families, the three statuses and the four rarity tiers; only the defaults set it",
+   "properties": {
+    "fill": {"type": "object", "additionalProperties": false, "description": "tags, chips and bars on dark glass, dark text on them: --sig-<id>, both sides", "properties": {"good": {"$ref": "#/$defs/hex"}, "bad": {"$ref": "#/$defs/hex"}, "caution": {"$ref": "#/$defs/hex"}, "value": {"$ref": "#/$defs/hex"}, "special": {"$ref": "#/$defs/hex"}, "growth": {"$ref": "#/$defs/hex"}, "machine": {"$ref": "#/$defs/hex"}, "bio": {"$ref": "#/$defs/hex"}, "brn": {"$ref": "#/$defs/hex"}, "par": {"$ref": "#/$defs/hex"}, "slp": {"$ref": "#/$defs/hex"}, "common": {"$ref": "#/$defs/hex"}, "uncommon": {"$ref": "#/$defs/hex"}, "rare": {"$ref": "#/$defs/hex"}, "mythical": {"$ref": "#/$defs/hex"}}},
+    "light": {"type": "object", "additionalProperties": false, "description": "the text shade on light screens: --sig-<id>-text", "properties": {"good": {"$ref": "#/$defs/hex"}, "bad": {"$ref": "#/$defs/hex"}, "caution": {"$ref": "#/$defs/hex"}, "value": {"$ref": "#/$defs/hex"}, "special": {"$ref": "#/$defs/hex"}, "growth": {"$ref": "#/$defs/hex"}, "machine": {"$ref": "#/$defs/hex"}, "bio": {"$ref": "#/$defs/hex"}, "brn": {"$ref": "#/$defs/hex"}, "par": {"$ref": "#/$defs/hex"}, "slp": {"$ref": "#/$defs/hex"}, "common": {"$ref": "#/$defs/hex"}, "uncommon": {"$ref": "#/$defs/hex"}, "rare": {"$ref": "#/$defs/hex"}, "mythical": {"$ref": "#/$defs/hex"}}},
+    "dark": {"type": "object", "additionalProperties": false, "description": "the text shade on dark screens: --sig-<id>-text", "properties": {"good": {"$ref": "#/$defs/hex"}, "bad": {"$ref": "#/$defs/hex"}, "caution": {"$ref": "#/$defs/hex"}, "value": {"$ref": "#/$defs/hex"}, "special": {"$ref": "#/$defs/hex"}, "growth": {"$ref": "#/$defs/hex"}, "machine": {"$ref": "#/$defs/hex"}, "bio": {"$ref": "#/$defs/hex"}, "brn": {"$ref": "#/$defs/hex"}, "par": {"$ref": "#/$defs/hex"}, "slp": {"$ref": "#/$defs/hex"}, "common": {"$ref": "#/$defs/hex"}, "uncommon": {"$ref": "#/$defs/hex"}, "rare": {"$ref": "#/$defs/hex"}, "mythical": {"$ref": "#/$defs/hex"}}}
+   }
   }
  },
  "properties": {
   "version": {"const": 2},
-  "defaults": {"$ref": "#/$defs/look", "required": ["color", "surface", "depth", "drop", "shape", "space", "type", "motion"]},
-  "presets": {"type": "object", "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"}, "additionalProperties": {"$ref": "#/$defs/look"}},
+  "defaults": {"$ref": "#/$defs/look", "required": ["color", "surface", "depth", "drop", "shape", "space", "type", "motion", "signals"]},
+  "presets": {"type": "object", "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"}, "additionalProperties": {"allOf": [{"$ref": "#/$defs/look"}, {"not": {"required": ["signals"]}, "description": "UI-11: the colour code is the same in every palette"}]}},
   "overrides": {
    "type": "object",
    "description": "per screen: colour and shape over the defaults on that screen only (logic/ui-theme.js UI_SCREENS names each screen's root)",

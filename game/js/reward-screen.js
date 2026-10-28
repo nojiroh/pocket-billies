@@ -11,13 +11,16 @@ import { closeModal, provide, render, renderOverlay, toast, typeBadgeHTML } from
 import { CURRENCIES, ITEMS, MOVES, PYRAMIDS, RULES } from './game-data.js';
 import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
+import { rarityTier } from './logic/marks.js';
 import { rewardDataGame, rewardReroll, rewardRerollCost, rewardTake, tutorWho } from './logic/rewards.js';
+import { fxTagsHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
+  rarityAttr: [() => rarityAttr],
   rewardAnswer: [() => rewardAnswer, v => (rewardAnswer = v)],
   rewardCardHTML: [() => rewardCardHTML, v => (rewardCardHTML = v)],
   rewardDone: [() => rewardDone, v => (rewardDone = v)],
@@ -34,6 +37,9 @@ provide({ rewardPickOpen });
 /** what to do once the pick is answered (an event waits on it; lost on a reload) */
 let rewardThen = /** @type {(() => void) | null} */ (null);
 
+/** UI-14b: a pick card's rarity attribute ('' for none: rarities' starter shows as common, boss parts none)
+ * @param {string | undefined} r */
+const rarityAttr = r => (rarityTier(r) ? ` rarity="${rarityTier(r)}"` : '');
 /** a card as a pick card @param {import('../types/save-data').RewardCard} c @param {number} k @param {boolean} on */
 function rewardCardHTML(c, k, on) {
   const n = c.n && c.n > 1 ? `${c.n} × ` : '';
@@ -42,23 +48,25 @@ function rewardCardHTML(c, k, on) {
     const P = robotPartDef(/** @type {string} */ (c.item)) || { name: c.item, d: '', type: 'None' },
       M = P.move && MOVES[P.move],
       img = P.art && P.art.img;
-    return `<pb-pick-card data-k="${k}" heading="${escapeHtml(P.name)}" sub="Bot part · ${escapeHtml(ROBOT_SLOT_NAMES[P.slot === 'arm' ? 'armL' : P.slot] || P.slot || '')}"${on ? ' selected' : ''}><span slot="art">${img ? `<img class="part-pic" src="${escapeHtml(artURL(img))}" width="40" height="40" alt="">` : typeBadgeHTML(P.type)}</span>${escapeHtml(P.d || '')}${M ? ` Gives ${escapeHtml(M.n)}.` : ''} Kept for the Workshop.</pb-pick-card>`;
+    /* UI-14b: each card's kind as its ribbon (pb-pick-card kind), and a held item's or part's tier as its frame */
+    return `<pb-pick-card data-k="${k}" kind="part"${rarityAttr(P.rar)} heading="${escapeHtml(P.name)}" sub="Bot part · ${escapeHtml(ROBOT_SLOT_NAMES[P.slot === 'arm' ? 'armL' : P.slot] || P.slot || '')}"${on ? ' selected' : ''}><span slot="art">${img ? `<img class="part-pic" src="${escapeHtml(artURL(img))}" width="40" height="40" alt="">` : typeBadgeHTML(P.type)}</span>${escapeHtml(P.d || '')}${M ? ` Gives ${escapeHtml(M.n)}.` : ''} Kept for the Workshop.</pb-pick-card>`;
   }
   if (c.kind === 'scrap') {
     const C = CURRENCIES.scrap || { name: 'Scrap' };
-    return `<pb-pick-card data-k="${k}" heading="${escapeHtml(`${c.n || 1} ${C.name}`)}" sub="Salvage"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('scrap', 40)}</span>Melted down and sent home: ${escapeHtml(C.name)} builds up the ranch and the Workshop.</pb-pick-card>`;
+    return `<pb-pick-card data-k="${k}" kind="scrap" heading="${escapeHtml(`${c.n || 1} ${C.name}`)}" sub="Salvage"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('scrap', 40)}</span>Melted down and sent home: ${escapeHtml(C.name)} builds up the ranch and the Workshop.</pb-pick-card>`;
   }
   if (c.kind === 'tutor') {
     const M = MOVES[/** @type {string} */ (c.move)] || { n: c.move, t: 'None', d: '' };
-    return `<pb-pick-card data-k="${k}" heading="${escapeHtml(M.n)}" sub="Move tutor"${on ? ' selected' : ''}><span slot="art">${typeBadgeHTML(M.t)}</span>${escapeHtml(M.d || '')}${M.p ? ` Power ${M.p}.` : ''}</pb-pick-card>`;
+    return `<pb-pick-card data-k="${k}" kind="tutor" heading="${escapeHtml(M.n)}" sub="Move tutor"${on ? ' selected' : ''}><span slot="art">${typeBadgeHTML(M.t)}</span>${escapeHtml(M.d || '')}${M.p ? ` Power ${M.p}.` : ''}</pb-pick-card>`;
   }
   if (c.item && c.item.startsWith('coin_')) {
     const P = PYRAMIDS[c.item.slice(5)] || { n: c.item, d: '' };
-    return `<pb-pick-card data-k="${k}" heading="${escapeHtml(n + P.n)}" sub="Pyramid"${on ? ' selected' : ''}><span slot="art">${pyramidHTML(c.item.slice(5), 40)}</span>${escapeHtml(P.d || '')}</pb-pick-card>`;
+    return `<pb-pick-card data-k="${k}" kind="item" heading="${escapeHtml(n + P.n)}" sub="Pyramid"${on ? ' selected' : ''}><span slot="art">${pyramidHTML(c.item.slice(5), 40)}</span>${escapeHtml(P.d || '')}</pb-pick-card>`;
   }
-  const I = ITEMS[/** @type {string} */ (c.item)] || { n: c.item, d: '' },
-    sub = c.kind === 'candy' ? 'Candy' : c.kind === 'evo' ? 'Evolution item' : c.kind === 'held' ? 'Held item' : 'Item';
-  return `<pb-pick-card data-k="${k}" heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 40)}</span>${escapeHtml(I.d || '')}</pb-pick-card>`;
+  const I = /** @type {any} */ (ITEMS[/** @type {string} */ (c.item)] || { n: c.item, d: '' }),
+    sub = c.kind === 'candy' ? 'Candy' : c.kind === 'evo' ? 'Evolution item' : c.kind === 'held' ? 'Held item' : 'Item',
+    kind = c.kind === 'candy' || c.kind === 'evo' || c.kind === 'held' ? c.kind : 'item';
+  return `<pb-pick-card data-k="${k}" kind="${kind}"${c.kind === 'held' ? rarityAttr(I.rarity) : ''} heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 40)}</span>${escapeHtml(I.d || '')}${c.kind === 'held' ? fxTagsHTML(I.hold) : ''}</pb-pick-card>`;
 }
 /** show the pick's sheet (in place when it is up; ahead of any other) */
 function rewardSheet(M) {

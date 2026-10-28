@@ -453,7 +453,7 @@ on light and dark screens.
 | Types | the 9 types at one lightness (white text 4.5:1; Electric keeps dark text), used everywhere | types.json | | |
 | Neutral | Lead, fainted, locked, plain routes, Beans, consumables (their own art), info | palette greys | | |
 
-The types at one lightness (OKLCH L about 0.58): Fire #CC4C25, Water #2C78C5, Grass #418623, Electric #E2B92C (dark
+The types at one lightness (OKLCH L about 0.58): Fire #CC4C25, Water #1577D0 (UI-13; #2C78C5 sat 4.2 from Flying), Grass #418623, Electric #E2B92C (dark
 text), Ground #A16B32, Flying #5973BE, Psychic #C14B7F, Steel #65798A, Dragon #7C63D6.
 
 Rarity (the owner's picks: the loot ladder over metal frames, then "frame and pill" from the bar examples): a thick
@@ -586,7 +586,8 @@ What the code does today:
   UI-4's ten outlines, `RUN_MARK_TONES`), 18 px and 22 px where you stand, on a 3 px stalk 22 px tall
   (world-bowl.js `worldBowlRunPin`, `BOWL_PIN`). A place not yet seen prints "?" in the phone's font (700 10px
   system-ui); the names are canvas text in system-ui at 11 and 12 px. The kit's `<pb-node>` (ui-run-kit.js) draws the
-  same outlines as SVG in the place card.
+  same outlines as SVG; no game screen uses it, only the Studio's UI gallery (UI-8c: the place card's corner shows
+  `locationSubtitle`'s text, not a marker).
 - The map's buttons are the old look: 34 px squares in `rgba(20,14,30,.78)` with a near-black ring (map-tab.css
   `.mbtn`), zoom as typed "+" and "−" (map-tab.js), and the look-around group (world-bowl.js) as typed ⟲ ◎ ⟳ at 28 px,
   under the 40 px tap rule.
@@ -627,21 +628,41 @@ WM-7 ran beside their track's sessions.
 - Not taken: Pins (one outline for every place, so places differ only by colour and the small glyph; the cream faces
   brighten a busy map).
 
+Built (UI-8c, 2026-10-27, on `claude/ui-8c-map-markers`):
+- The art: twelve 36 px SVGs in art/ui in the pixel format (svg-pixels.js), so the Studio's icon editor opens them:
+  `node-landing`, `node-route`, `node-town`, `node-miniboss`, `node-boss`, `node-event`, `node-shop`, `node-rival`,
+  `node-scrapyard`, `node-unknown`, and the badges `node-check` and `node-lock` (in the grid's bottom-right corner).
+  Painted once from the examples' painter on `RUN_MARK_SHAPES`; the SVGs are the source now, for the owner to repaint.
+- run-marks.js: `runMarkLook` gives `icon`, `badge` and `size` (`RUN_MARK_SIZES` 28 and 34); `runMarkPixels` makes a
+  state's picture from an icon's pixels (the rim, faded, grey, the badge), `RUN_MARK_ART` its numbers and colours.
+- The bowl (world-bowl.js): the run pin draws that picture, made once per icon, state and size at the canvas's own
+  pixels, a gold glow where you stand, the flat shape until the icon loads; the head stands 4 px higher. The ground
+  rings (where you stand, picked) take a dark rim under their colour; the trip's end is the set's flag. The names are
+  in the theme's voice font (`--font-voice`, Jersey 15 in Field Guide) at 13 and 14 px.
+- `<pb-node>` paints the same picture (the gallery shows every type and state).
+- The seven buttons: `.mbtn.k-btn` at 44 px (the kit's button outline and edge line, the card's panel colour, no
+  blur), with plus, minus, walk, list, back, back mirrored and globe; the look-around group is three chips of their own
+  riding just above the place card (`--mapcard-h`, written by a ResizeObserver).
+- The minimap's marks (trainers, wild Billies, you) stay as they are: at 5 to 8 px a plate with a rim and a glyph
+  doesn't read; their shapes already carry the meaning (a diamond for danger, a round dot for wild, a chevron for you).
+- Found: the run map never gives a place the `locked` state (world-bowl.js `worldBowlRunMark`: current, hidden,
+  visited or seen), so the padlock shows only in the gallery for now.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
 | UI-10 (done 2026-10-27) | Plan and sampler | this part; the sampler and the bar examples (artifacts); the owner's answers | none | the owner's answers written here |
 | UI-8b | The wide map tile | the bar's sizes as dials (232 x 184 standing, out of the frame; the 112 px square walking), the outline without the tower, the side buttons stacked, the minimap's scale from the shorter side, `--nav-h`, narrow phones and the 320 px query; small and on its own, so first | the bar | gallery run-hud pictures and the fast check's bar step remade on purpose; tap targets; the owner's phone check (size, compact timing, the marks at 232 px, frame cost) |
-| UI-8c | The run map's icons | the ten place icons drawn as 36 px SVGs in the Studio's icon editor (Badges: UI-4's outlines as pixel plates, a glyph each, the icon set's palette by family); the bowl's pin painter (28 px, 34 px where you stand; the gold rim, the check, the padlock, the pixel "?"); `<pb-node>` the same; the names in Jersey 15; the map's seven buttons as 44 px chips with the set's icons | the run's map | run-marks and ui-icons tests; the gallery's pb-node pictures and the fast check's map step remade on purpose; tap targets; the owner's phone check (sizes, sharpness at 28 px, the art) |
-| UI-11 | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
-| UI-12 | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
-| UI-13 | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
-| UI-14a | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), rarity as frame, pill and name colour on `pb-pick-card` and on list rows; every state in the gallery | gallery only | gallery pictures; smoke |
-| UI-14b | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
+| UI-8c (built 2026-10-27, `claude/ui-8c-map-markers`) | The run map's icons | the ten place icons drawn as 36 px SVGs in the Studio's icon editor (Badges: UI-4's outlines as pixel plates, a glyph each, the icon set's palette by family); the bowl's pin painter (28 px, 34 px where you stand; the gold rim, the check, the padlock, the pixel "?"); `<pb-node>` the same; the names in Jersey 15; the map's seven buttons as 44 px chips with the set's icons | the run's map | run-marks and ui-icons tests; the gallery's pb-node pictures and the fast check's map step remade on purpose; tap targets; the owner's phone check (sizes, sharpness at 28 px, the art) |
+| UI-11 (done 2026-10-27) | Colour code as data | `signals` in uiTheme.json (schema, types, check), `--sig-*` tokens, a Studio "Colour code" dial group with a colour-blind preview; checks: contrast and per-screen distance with the types; danger = the red family | none (data and the Studio) | check:data and the Studio check step pass; a planted clash fails the distance check |
+| UI-12 (built 2026-10-27; checks after UI-18) | The palettes | Field Guide as `defaults` (every role); Copper Grove+ and Bureau Night as presets players pick in a Settings Palette row (Display tab; `preferences.palette`, applied with `applyUiTheme(theme, preset)`, in the debug log); Brass & Plum and Sunpunk Day as Studio presets; the 32 purple literals and the three XP blues; reduced transparency; the minimap's ground per palette | the palette | gallery and quick-check pictures remade once for Field Guide; a smoke step switches the three palettes (contrast check, no page errors); the owner's phone check |
+| UI-13 (done 2026-10-27) | Glyphs and types | tinted glyphs for the new marks (masks of the SVGs, drawn in the Studio's icon editor): statuses, short effects, kinds, families; the bolt only for storms (Sandstorm and paralysis get their own); HP's heart icon teal, like its bar; types at one lightness, used by tiles, plates and the Guide (the 3D rings checked) | glyphs, type colours | ui-icons test and the gallery updated; contrast check green |
+| UI-14a (built 2026-10-27; checks after UI-18) | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), rarity as frame, pill and name colour on `pb-pick-card` and on list rows; every state in the gallery | gallery only | gallery pictures; smoke |
+| UI-14b (built 2026-10-27, `claude/ui-14b-marks-screens`; checks after UI-18; the battle plates went to UI-16b) | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
 | UI-15 | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
 | UI-16a | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
-| UI-16b | Alive: battle events | the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
+| UI-16b | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
 | UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 
@@ -655,6 +676,69 @@ approval; where it meets an open choice or an "Ask me before" item it takes the 
 HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for. Each step tells
 the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
 main stay the owner's (the PR from `track/ui`).
+
+The owner, 2026-10-27, after UI-11: "Automatically start the next session after done, skip the checks until after
+all ui is done." So each step, when its HANDOFF entry is pushed, starts the next step itself in a new session (from
+its own branch, since main may not hold it yet), with these same rules. Until UI-18 is done the browser checks
+(check-fast, check-quick, the Studio check, the gallery, the picture baselines) and the phone checks are skipped;
+the seconds-long ones (lint, typecheck, unit tests, check:data, check:modules) still run, as the edit hook runs them
+anyway. After UI-18, one session runs every skipped check and fixes what they find.
+
+## UI-11: the colour code as data (the plan, 2026-10-27)
+Built on the session's own branch (a cloud session pushes only there), from main, which already holds `track/ui`;
+its PR goes to main, as UI-10's did (a PR into `track/ui` would carry main's 220 newer commits with it).
+- **Data:** `defaults.signals` in uiTheme.json, so the Studio's dials, ↺, Find and Connections work on it as on every
+  other group: `fill.<id>` (tags, chips, bars on dark glass, dark text on them) and `light.<id>` / `dark.<id>` (the
+  text shades). Ids: the eight families (good, bad, caution, value, special, growth, machine, bio), the three statuses
+  (brn, par, slp) and the four rarity tiers (common, uncommon, rare, mythical), with the hexes in the tables above.
+  Neutral is the palette's greys and the types stay in types.json (UI-13 retunes them), so neither is here.
+- **The same in every palette:** a preset or a screen's override can't set `signals` (the schema for overrides; the
+  check and the Studio's Save as preset for presets).
+- **Tokens:** `--sig-<id>` (the fill, both sides) and `--sig-<id>-text` (the side's shade), written by the theme sheet
+  and in tokens.css as the fallback for a page without the data. Nothing reads them yet: no visible change.
+- **Danger is the red family:** a palette that leaves `danger` out gets the red family's text shade for its side. The
+  defaults keep today's `danger` for now (no visible change); UI-12's palettes drop it.
+- **Checks** (logic/signals.js; check-data and the Studio's Check share them): each text shade reads at 4.5:1 on its
+  side's surface and 3:1 on its ground, in the defaults, every preset and every screen's colours; dark text (the dark
+  side's ground) on every fill at 4.5:1; within each screen's set the fills, the types included, at least OKLab 5
+  apart (the nearest today: amber and Electric, 5.5). The sets: battle (good, bad, caution, special, growth, the three
+  statuses, the types), pickups (the eight families and the types), map (the eight families), rarity (the four
+  tiers, on their own: common sits by Machine's gunmetal on purpose, and the pill names the tier).
+- **The Studio:** a "Colour code" group (the whole game only): a row each, the fill and both text shades, each shade
+  with its contrast badge; a colour-blind preview (none, protan, deutan, tritan; Machado 2009 at full strength) that
+  shows every screen's set as swatches and its nearest pair.
+- **Tests:** unit tests for the data, the sheet, the fallback, the checks (a planted clash fails); the Studio check's
+  `ui` step changes a fill and sees it in the preview, plants a clash for the Check, then undoes.
+
+## UI-12: the palettes (the plan, 2026-10-27)
+Built on the session's own branch `claude/ui-12-palettes`, from UI-11's (`ccr-dab4e0cd-6re1eb`, PR #280 not merged
+yet); its PR goes to main and carries UI-11's commits until #280 merges. No Plan Mode, no browser checks (the
+owner's rules above).
+- **Field Guide is `defaults`:** every role of the table above, light and dark; `line` the text at 18% (light) and
+  white at 14% (dark); `danger` and the HP colours left out, so they come from the colour code (`paletteFor`: danger
+  and hpLow from bad, hpMid from caution, hpOk from good; each side's text shade, as the table says for bars on light
+  and dark screens). `defaults.name` "Field Guide".
+- **Presets:** `copper_grove` (Copper Grove+) and `bureau_night` with `player: true` (a new look field: offered in
+  Settings); `brass_plum` and `sunpunk_day` for the Studio only. Each sets every role but danger and HP. alpha05 and
+  stepped stay.
+- **Settings:** a Palette row at the top of the Display tab (Field Guide, Copper Grove+, Bureau Night, read from the
+  data); `preferences.palette` (a preset id; none is the defaults); `applyPreferences` re-applies the theme sheet with
+  it (theme-sheet.js `setUiPalette`), and so do the Studio's live draft and the fixtures. The debug log's state gets
+  `palette` and the resolved `side` (light or dark), never save data.
+- **The minimap's ground per palette:** two new optional roles, `mapGrass` and `mapWater` (UI_ROLES, the schema,
+  tokens.css's fallback, a Studio dial), which minimap.js mixes into the surface instead of primary and the HP teal;
+  without them it falls back as today. Bureau Night's cyan primary would otherwise paint blue grass.
+- **The literals:** the alpha 0.5 purple `rgba(46, 33, 64, a)` shadows and tints become `--c-shadow` mixes; dark text
+  on gold (`#2e2140`) becomes a new `--c-ink` (the dark side's ground, the colour code's "dark text"); `.pb.dark`'s
+  purple gradient becomes ink. The three XP blues become the Growth family: `--sig-growth-text` on the theme's
+  screens, `--sig-growth` on the always-dark battle plate.
+- **Reduced transparency:** `prefers-reduced-transparency: reduce` makes the glass solid and drops its blur, as High
+  contrast does (base.css).
+- **Checks:** a preset with `player: true` is checked in full, like the defaults (contrast and the colour code on
+  ground and surface, dark text on fills); the Studio-only presets as before. Unit tests for the data, the fallbacks,
+  the Settings row and the preference.
+- **Skipped for now (the owner's rule):** the gallery and quick-check pictures, the smoke step that opens the three
+  palettes, the phone check. Listed in HANDOFF for the session after UI-18.
 
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space

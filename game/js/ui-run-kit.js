@@ -8,7 +8,8 @@
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
      <pb-coin kind="money|research|scrap|crests|beans|dna" value="340" label="Moneys">   a currency chip that counts to a new value
-     <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
+     <pb-pick-card heading="..." facedown selected rarity="rare">   the relic pick and keep-one card; turning it face up
+                                                       flips it; UI-14a: rarity shows as a frame, pill and name colour
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
@@ -21,7 +22,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
-import { runMarkLook } from './logic/run-marks.js';
+import { glyphOf, sigVar } from './logic/signals.js';
+import { chipLook, rarityTier } from './logic/marks.js';
+import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
 expose({
   PbCoin: [() => PbCoin],
@@ -37,6 +40,8 @@ expose({
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
   navStep: [() => navStep],
   runIcon: [() => runIcon],
+  runIconPixels: [() => runIconPixels],
+  runIconPx: [() => runIconPx],
   runIconURL: [() => runIconURL],
   runKitBase: [() => runKitBase],
   runKitMotion: [() => runKitMotion],
@@ -66,7 +71,7 @@ const runMsVar = (/** @type {Element} */ el, /** @type {string} */ name, dflt) =
   return Number.isFinite(n) ? (v.endsWith('ms') ? n : v.endsWith('s') ? n * 1000 : n) : dflt;
 };
 /** numbers as the game writes them: 12,400 */
-const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
+export const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
 
 /* the weather's icons and names (environment.js WEATHER_NAMES gives the game's; these are the fallbacks) */
 const RUN_WEATHER_ICONS = {
@@ -144,7 +149,7 @@ const runKitBase = css`
   }
 `;
 /* the reward motions (css/motion.css m-slam, m-flip), repeated for the shadow styles */
-const runKitMotion = css`
+export const runKitMotion = css`
   @keyframes m-slam {
     from {
       opacity: 0;
@@ -282,72 +287,48 @@ const PbForecast = class extends LitElement {
 };
 
 /* ---------- a run map marker ---------- */
+/** UI-8c: a UI icon's pixels (36 x 36 RGBA), loaded once each */
+const runIconPx = /** @type {Record<string, Promise<Uint8ClampedArray>>} */ ({});
+const runIconPixels = (/** @type {string} */ k) =>
+  runIconPx[k] ||
+  (runIconPx[k] = new Promise((ok, no) => {
+    const im = new Image(),
+      N = RUN_MARK_ART.grid;
+    im.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = N;
+      const x = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+      x.drawImage(im, 0, 0, N, N);
+      ok(x.getImageData(0, 0, N, N).data);
+    };
+    im.onerror = no;
+    im.src = runIconURL(k);
+  }));
+/* UI-8c: the place's pixel icon (art/ui/node-<shape>.svg, Badges) for its state, painted as the bowl paints it
+   (logic/run-marks.js runMarkPixels: the gold rim where you stand, done faded with a check, locked grey with a
+   padlock); --size is the icon's 36 grid, the rim reaches two art pixels past it */
 const PbNode = class extends LitElement {
   static properties = { type: { reflect: true }, state: { reflect: true }, weather: {}, label: {} };
   static styles = [
     runKitBase,
     css`
       :host {
-        --size: 44px;
+        --size: 36px;
         display: inline-grid;
         position: relative;
         width: var(--size);
         height: var(--size);
-        --fill: var(--c-surface);
-        --line: var(--c-text);
-        --ink: var(--c-text);
       }
-      :host([data-tone='primary']) {
-        --fill: var(--c-primary);
-        --line: color-mix(in srgb, var(--c-primary) 55%, black);
-        --ink: var(--c-surface);
-      }
-      :host([data-tone='danger']) {
-        --fill: var(--c-danger);
-        --line: color-mix(in srgb, var(--c-danger) 55%, black);
-        --ink: var(--c-surface);
-      }
-      :host([data-tone='gold']) {
-        --fill: var(--gold-b);
-        --line: color-mix(in srgb, var(--gold-b) 50%, black);
-        --ink: var(--goldink, #3a2408);
-      }
-      :host([data-tone='muted']) {
-        --fill: color-mix(in srgb, var(--c-text) 22%, var(--c-surface));
-        --line: color-mix(in srgb, var(--c-text) 45%, transparent);
-        --ink: var(--c-text2);
-      }
-      svg {
+      canvas {
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
+        left: calc(var(--size) / -18);
+        top: calc(var(--size) / -18);
+        width: calc(var(--size) * 40 / 36);
+        height: calc(var(--size) * 40 / 36);
+        image-rendering: pixelated;
       }
-      polygon {
-        fill: var(--fill);
-        stroke: var(--line);
-        stroke-width: 1.5px;
-        stroke-linejoin: miter;
-        vector-effect: non-scaling-stroke;
-      }
-      :host([state='current']) svg {
-        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold-a) 80%, transparent));
-      }
-      :host([state='visited']) svg,
-      :host([state='locked']) svg {
-        opacity: 0.6;
-      }
-      .g {
-        place-self: center;
-        position: relative;
-        color: var(--ink);
-        font-size: calc(var(--size) * 0.45);
-        line-height: 1;
-      }
-      .g.ic {
-        width: calc(var(--size) * 0.4);
-        height: calc(var(--size) * 0.4);
+      :host([state='current']) canvas {
+        filter: drop-shadow(0 0 calc(var(--size) / 8) color-mix(in srgb, var(--gold-a) 80%, transparent));
       }
       .wx {
         position: absolute;
@@ -373,36 +354,47 @@ const PbNode = class extends LitElement {
     this.state = 'seen';
     this.weather = '';
     this.label = '';
+    /** the picture drawn once its icons have loaded (a promise, for the gallery's pictures) */
+    this.painted = Promise.resolve();
   }
   get look() {
     return runMarkLook(this.type, this.state);
   }
   updated() {
-    this.dataset.tone = this.look.tone;
+    const L = this.look,
+      state = this.state,
+      cv = /** @type {HTMLCanvasElement | null} */ (this.renderRoot.querySelector('canvas'));
+    if (!cv) return;
+    this.painted = Promise.all([runIconPixels(L.icon), L.badge ? runIconPixels(L.badge) : null])
+      .then(([icon, badge]) => {
+        if (this.look.icon !== L.icon || this.state !== state) return;
+        const p = runMarkPixels(icon, badge, state);
+        cv.width = p.w;
+        cv.height = p.h;
+        /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).putImageData(
+          new ImageData(p.data, p.w, p.h),
+          0,
+          0
+        );
+      })
+      .catch(() => {});
   }
   render() {
-    const L = this.look,
-      pts = L.points.map(([x, y]) => `${x},${y}`).join(' '),
-      wx = this.weather && this.state !== 'hidden' && /** @type {any} */ (RUN_WEATHER_ICONS)[this.weather],
+    const wx = this.weather && this.state !== 'hidden' && /** @type {any} */ (RUN_WEATHER_ICONS)[this.weather],
       said =
         this.state === 'hidden'
           ? 'Not yet seen'
           : [this.label || this.type, this.state !== 'seen' ? this.state : '', this.weather].filter(Boolean).join(', ');
     return html`<span role="img" aria-label=${said} style="display:contents"
-      ><svg viewBox="0 0 100 100" aria-hidden="true">${runSvg`<polygon points=${pts}></polygon>`}</svg
-      >${
-        L.glyph === '?'
-          ? html`<span class="g" aria-hidden="true">?</span>`
-          : L.glyph
-            ? runIcon(L.glyph, 'g ic')
-            : nothing
-      }${wx ? html`<span class="wx" aria-hidden="true">${runIcon(wx)}</span>` : nothing}</span
+      ><canvas width="40" height="40" aria-hidden="true"></canvas>${
+        wx ? html`<span class="wx" aria-hidden="true">${runIcon(wx)}</span>` : nothing
+      }</span
     >`;
   }
 };
 
 /* ---------- a currency chip ---------- */
-const PbCoin = class extends LitElement {
+export const PbCoin = class extends LitElement {
   static properties = { kind: { reflect: true }, value: { type: Number }, label: {}, _shown: { state: true } };
   static styles = [
     runKitBase,
@@ -507,6 +499,8 @@ const PbPickCard = class extends LitElement {
     facedown: { type: Boolean, reflect: true },
     selected: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
+    rarity: { reflect: true },
+    kind: { reflect: true },
   };
   static styles = [
     runKitBase,
@@ -516,6 +510,70 @@ const PbPickCard = class extends LitElement {
         display: block;
         min-width: 0;
         --w: 100%;
+      }
+      /* UI-14a: rarity (the owner's answer 9, the loot ladder as frame and pill): a 3 px frame in the tier's fill along
+         the card's cut outline, the tier's pill at the top right, the name in the tier's text shade. The selected card
+         keeps its gold edge line over the frame */
+      .rar {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: var(--rar);
+        clip-path: polygon(
+          evenodd,
+          0 8px,
+          8px 0,
+          calc(100% - 8px) 0,
+          100% 8px,
+          100% calc(100% - 8px),
+          calc(100% - 8px) 100%,
+          8px 100%,
+          0 calc(100% - 8px),
+          0 8px,
+          3px 12.24px,
+          12.24px 3px,
+          calc(100% - 12.24px) 3px,
+          calc(100% - 3px) 12.24px,
+          calc(100% - 3px) calc(100% - 12.24px),
+          calc(100% - 12.24px) calc(100% - 3px),
+          12.24px calc(100% - 3px),
+          3px calc(100% - 12.24px),
+          3px 12.24px
+        );
+      }
+      .tier {
+        position: absolute;
+        top: var(--s2);
+        right: var(--s3);
+        z-index: 2;
+      }
+      :host([rarity]) h3 {
+        color: var(--rar-t, inherit);
+      }
+      /* UI-14b: what kind of pickup (the colour code's "family colour + frame shape: the card's ribbon"): kind="..." (a
+         UI_GLYPHS.kind id: perk, held, item, candy, evo, tutor, part, scrap) draws the sub line as a slanted ribbon
+         in its family's tint with a bar of its fill and its glyph in its text shade; a neutral kind (item) stays
+         plain grey */
+      .sub.rib {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s1);
+        margin-top: var(--s1);
+        padding: 1px var(--s2) 1px calc(var(--s2) + 3px);
+        clip-path: var(--clip-chip);
+        background:
+          linear-gradient(90deg, var(--kind, var(--text2)) 0 3px, transparent 3px),
+          color-mix(in srgb, var(--kind, var(--c-text)) 14%, transparent);
+        color: var(--kind-t, var(--text2));
+      }
+      .sub .gl {
+        flex: none;
+        width: 12px;
+        height: 12px;
+        background-color: currentColor;
+        -webkit-mask: var(--ico) center / contain no-repeat;
+        mask: var(--ico) center / contain no-repeat;
       }
       button {
         position: relative;
@@ -640,6 +698,8 @@ const PbPickCard = class extends LitElement {
     this.facedown = false;
     this.selected = false;
     this.disabled = false;
+    this.rarity = '';
+    this.kind = '';
   }
   /** turns it face up (the flip); with reduced motion it fades instead */
   reveal() {
@@ -654,7 +714,17 @@ const PbPickCard = class extends LitElement {
     if (this.facedown) return this.reveal();
     this.dispatchEvent(new CustomEvent('pb-pick', { bubbles: true, composed: true }));
   }
+  /** the sub line, as the kind's ribbon when it has a kind (UI-14b) */
+  _sub() {
+    const K = this.kind ? glyphOf('kind', this.kind) : null;
+    if (!K) return html`<p class="sub">${this.sub}</p>`;
+    return html`<p class="sub rib" style=${K[1] ? `--kind:var(${sigVar(K[1])});--kind-t:var(${sigVar(K[1], true)})` : nothing}>
+      <i class="gl" style=${`--ico:url('${runIconURL(K[0])}')`} aria-hidden="true"></i>${this.sub}
+    </p>`;
+  }
   render() {
+    const t = rarityTier(this.rarity),
+      rar = t ? `--rar:var(--sig-${t});--rar-t:var(--sig-${t}-text)` : '';
     return html`<button
       part="button"
       ?disabled=${this.disabled}
@@ -663,11 +733,16 @@ const PbPickCard = class extends LitElement {
       @click=${this._pick}
     >
       <span class="card">
-        <span class="face" aria-hidden=${this.facedown ? 'true' : nothing}>
+        <span class="face" style=${rar || nothing} aria-hidden=${this.facedown ? 'true' : nothing}>
+          ${
+            t
+              ? html`<span class="rar" aria-hidden="true"></span><pb-rarity class="tier" tier=${t}></pb-rarity>`
+              : nothing
+          }
           <span class="art"><slot name="art"></slot></span>
           <span>
             <h3>${this.heading}</h3>
-            ${this.sub ? html`<p class="sub">${this.sub}</p>` : nothing}
+            ${this.sub ? this._sub() : nothing}
             <span class="text"><slot></slot></span>
           </span>
         </span>
@@ -732,8 +807,9 @@ const PbPayout = class extends LitElement {
         font-size: 20px;
         font-variant-numeric: tabular-nums;
       }
+      /* UI-14b: a cost is the bad family's text shade (4.5:1 on surfaces, the colour code's check) */
       .v.neg {
-        color: color-mix(in srgb, var(--c-danger) 70%, var(--c-text)); /* danger alone reads 3.7:1 here */
+        color: var(--sig-bad-text);
       }
       .tot {
         display: flex;
@@ -742,8 +818,8 @@ const PbPayout = class extends LitElement {
         margin-top: var(--s3);
         padding: var(--s3) var(--s4);
         clip-path: var(--clip-action);
-        background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
-        color: var(--goldink, #3a2408);
+        background: var(--tot, linear-gradient(180deg, var(--gold-a), var(--gold-b)));
+        color: var(--c-ink);
       }
       .tot .lab {
         font-size: 19px;
@@ -847,7 +923,9 @@ const PbPayout = class extends LitElement {
     const rows = this.rows || [],
       n = Math.min(this._n, rows.length),
       t = this._t ?? this.total,
-      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research';
+      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research',
+      /* UI-14b: the total in its currency's family (Research sky, Moneys gold: logic/marks.js chipLook) */
+      tone = chipLook(this.kind).sig;
     return html`<ol aria-label="Payout" @click=${() => this.finish()}>
         ${rows.map((r, i) => {
           const v = Number(r.value) || 0;
@@ -857,7 +935,12 @@ const PbPayout = class extends LitElement {
           </li>`;
         })}
       </ol>
-      <div class="tot" role="status" aria-label=${`${this.totalLabel}: ${runNumber(this.total)}`}>
+      <div
+        class="tot"
+        style=${tone ? `--tot:var(${sigVar(tone)})` : nothing}
+        role="status"
+        aria-label=${`${this.totalLabel}: ${runNumber(this.total)}`}
+      >
         ${runIcon(k)}<span class="lab" aria-hidden="true">${this.totalLabel}</span
         ><span class="v" aria-hidden="true" @animationend=${e => e.target.classList.remove('bump')}
           >${runNumber(t)}</span

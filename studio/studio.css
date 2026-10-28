@@ -4699,6 +4699,38 @@ body.wb-dropping::after {
   background: var(--red);
   color: #fff;
 }
+/* UI-11: the colour code: its table's group rows, and each screen's colours as swatches */
+.ui-sig-head th {
+  padding-top: 10px;
+  color: var(--text);
+}
+.ui-sig-set h4 {
+  margin: 10px 0 4px;
+}
+.ui-sig-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ui-sig-sw {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+  font-size: 11px;
+  color: var(--text2);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.ui-sig-sw i {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+}
+.ui-sig-set .help.bad {
+  color: var(--red);
+}
 .ui-sides {
   display: grid;
   grid-template-columns: 1fr 1fr;

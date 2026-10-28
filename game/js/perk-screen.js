@@ -10,14 +10,15 @@
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { PERKS, RULES } from './game-data.js';
+import { rarityTier } from './logic/marks.js';
 import { perkChoose } from './logic/perks.js';
+import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { jinglePlay } from './sound.js';
 import { runHint } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
-  PERK_RARITY: [() => PERK_RARITY],
   perkCardHTML: [() => perkCardHTML, v => (perkCardHTML = v)],
   perkCardsOn: [() => perkCardsOn, v => (perkCardsOn = v)],
   perkDropOpen: [() => perkDropOpen, v => ((perkDropOpen = v), provide({ perkDropOpen }))],
@@ -32,12 +33,13 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ perkDropOpen, perkPickOpen });
 /* to-module: end */
-/** a rarity as the player reads it */
-const PERK_RARITY = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare' };
-/** a Perk as a pick card (the pick, letting one go) @param {string} id @param {boolean} on */
+/** a Perk as a pick card (the pick, letting one go) @param {string} id @param {boolean} on
+ * UI-14b: its rarity as the card's frame, pill and name colour (it was the caption), its kind as the Perk ribbon
+ * (violet), its stat rows as Atk..Spe tags */
 function perkCardHTML(id, on) {
-  const R = PERKS[id];
-  return `<pb-pick-card data-id="${escapeHtml(id)}" heading="${escapeHtml(R.name)}" sub="${PERK_RARITY[R.rarity] || ''}"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('relic', 40)}</span>${escapeHtml(R.d)}</pb-pick-card>`;
+  const R = PERKS[id],
+    t = rarityTier(R.rarity);
+  return `<pb-pick-card data-id="${escapeHtml(id)}" kind="perk"${t ? ` rarity="${t}"` : ''} heading="${escapeHtml(R.name)}" sub="Perk"${on ? ' selected' : ''}><span slot="art">${uiIconHTML('relic', 40)}</span>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</pb-pick-card>`;
 }
 /** show a sheet of this class in place when it is already up; otherwise ahead of any other (as the payout does) */
 function perkSheet(M) {
@@ -161,7 +163,7 @@ export function renderPerks() {
       ? `<div class="bag-list">${held
           .map(
             id =>
-              `<div class="bag-row k-card"><span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b>${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}</small></span><small class="note">${PERK_RARITY[PERKS[id].rarity] || ''}</small></div>`
+              `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}><span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}</div>`
           )
           .join('')}</div>`
       : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.perks.pick}, or buy one in a town’s shop. They last the run.</p>`

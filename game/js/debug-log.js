@@ -446,7 +446,16 @@ debugLog.state = () => {
     const p = GAME.saveData.preferences || {};
     s.preferences = {
       theme: p.theme || 'system',
+      /* UI-12: the palette (a uiTheme.json preset id; default: the defaults) and the side the screen shows */
+      palette: p.palette || 'default',
+      side:
+        document.documentElement.dataset.theme === 'dark' ||
+        (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          ? 'dark'
+          : 'light',
       motion: p.motion || 'system',
+      /* UI-14b: the Colour shapes switch (patterns on the marks and bars) */
+      shapes: p.shapes === 'on' ? 'on' : 'off',
       fps: p.fps || 60,
       effects: p.effects || 'full',
       tilt: p.tilt !== false,
