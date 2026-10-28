@@ -16,6 +16,8 @@ import {
   musicEnsembleStep,
   musicJingleNeeds,
   musicJingleParts,
+  musicStingerAt,
+  musicStingerShift,
 } from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1177,11 +1179,38 @@ export function trackerCreate(ctx, bus, opts = {}) {
       g.linearRampToValueAtTime(T.song.level, end + 0.8);
     });
   };
+  /* SND-17: a stinger (a jingle marked `stinger`: a Perk, the reveal, a day, a coin) over a song drops the song's busy
+     parts (its tune, counter and arpeggio: the gb stems and the ensemble's parts) to 0.2 instead of ducking all of it,
+     from its beat to its end, back over 0.4 s. All at step times; a stinger that starts while one is still down keeps
+     them down */
+  const STING_BUSY = ['lead', 'counter', 'arp'],
+    sting = { at: -1, end: -1 };
+  const dropBusy = (sg, t0, end) => {
+    const nodes = [sg.stems.lead, sg.stems.counter, sg.stems.harmony];
+    if (sg.ens && sg.parts) sg.parts.forEach((g, i) => STING_BUSY.includes(sg.ens.parts[i].line) && nodes.push(g));
+    const low = sting.end > t0 - 0.03;
+    for (const n of nodes) {
+      const p = n.gain;
+      p.cancelScheduledValues(t0 - 0.03);
+      p.setValueAtTime(low ? 0.2 : 1, t0 - 0.03);
+      p.linearRampToValueAtTime(0.2, t0);
+      p.setValueAtTime(0.2, end);
+      p.linearRampToValueAtTime(1, end + 0.4);
+    }
+    sting.end = end;
+  };
   const jingleOn = (J, E, bpm, out, o) => {
     const spb = 60 / bpm / 4,
-      t0 = c.currentTime + 0.05,
+      sg = T.song,
+      /* SND-17: a stinger over a song starts on its next beat (after the last stinger's), in its key */
+      over = !!(J.stinger && sg && sg.D),
+      at = over
+        ? musicStingerAt(Math.max(c.currentTime, sting.at), sg.next, sg.step, 60 / sg.D.bpm / 4)
+        : { t: c.currentTime + 0.05 },
+      t0 = at.t,
       music = out === bus,
-      { notes, steps } = musicJingleParts(J, E, { shift: o.shift || 0, instruments: soundBakeBank.recipes }),
+      shift = (o.shift || 0) + (over ? musicStingerShift(sg.D.key) : 0),
+      { notes, steps } = musicJingleParts(J, E, { shift, instruments: soundBakeBank.recipes }),
       trim = Math.pow(10, (E.trim || 0) / 20),
       nodes = [];
     const parts = E.parts.map(P => {
@@ -1241,7 +1270,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     if (!live) nodes.forEach(n => n.disconnect());
     const end = t0 + steps * spb;
-    if (T.song && o.duck !== false) duckUnder(t0, end);
+    if (over) sting.at = t0 + 0.01;
+    /* a stinger drops the busy parts even when it leaves the song's level alone (o.duck false: the payout's coins) */
+    if (over) dropBusy(sg, t0, end);
+    else if (T.song && o.duck !== false) duckUnder(t0, end);
     return end;
   };
   /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
