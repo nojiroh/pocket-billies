@@ -29,6 +29,14 @@ gives the same film.
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
     python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
     python3 tools/look-battle-anims.py --bench                # time a frame on the Graphics bench (VFX-15)
+    python3 tools/look-battle-anims.py --events --sheets     # VFX-14: statuses, stats and short effects (EVENT_FILMS)
+    python3 tools/look-battle-anims.py --events --only=shield,brn --sheets --motion=calm   # Calm, or reduced
+    python3 tools/look-battle-anims.py --events --measure    # their draws and frame time
+
+VFX-14: with --events, each film is a few battle lines (EVENT_FILMS: a status beginning, its loop, its turn and its
+end; stat chevrons, sharply; Protect's bubble and a block; the shield's dome wearing down and shattering; Soaked, Fork,
+a delayed hit, stones, glints, a broken part) on the foe, the snapshots changed as the engine would; a sheet's 16
+frames are 240 ms apart. --motion=calm or --motion=reduced films under that Animation level.
 
 VFX-15: --weather=rain|storm|snow|ash|fog|clear (forced at noon in summer before the battle; clear by day is the
 battle's sunny), or sand (clear, with the Sandstorm blowing). --bench opens the Graphics bench (test_graphics) instead
@@ -95,10 +103,20 @@ __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[acti
 /* a sheet's film: the same, the walk renderer's frame task stepped with the stage's, a picture after every block */
 __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
  const ev={s:activeBattle.events[activeBattle.events.length-1].s};return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
+/* VFX-14: an events film: lines at film times (ms), each an event (or none) and the snapshot changes it brings (mods:
+   [{i, st, fx, stg, hp}]) on the snapshots before; its looks take the line when its plates would repaint */
+__film.snaps=(base,mods)=>{const s=JSON.parse(JSON.stringify(base));for(const m of mods||[]){const x=s[m.i];if(!x)continue;if('st' in m)x.st=m.st;
+ if('fx' in m){if(m.fx)x.fx=m.fx;else delete x.fx}if(m.stg)x.stg=m.stg;if(m.hp!=null)x.hp=m.hp}return s};
+__film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleLooksReset==='function')battleLooksReset();
+ let cur=activeBattle.events[activeBattle.events.length-1].s;
+ const play=x=>{const prev=cur;cur=__film.snaps(cur,x.mods);const ev={an:x.an||null,s:cur,by:x.by,prev};const r=ev.an?battleStagePlay(ev.an,ev):{dur:0,hit:0};
+  const go=()=>battleLooksLine(ev);if(r.hit>=999||!r.hit)go();else S.evs.push({t:S.t+r.hit,fn:go,onSkip:go})};
+ for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
+__film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
-__film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
+__film.measure=(key,mid,si,res,frames,rest,go)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
  TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],all:[],restEff:[],restMs:[],st:[]};
  /* VFX-10: the instances drawn as strips (the ramp flag, 4) in the frame's pool */
  const strips=()=>{if(typeof battleFxBatch==='undefined')return 0;const B=battleFxBatch;let n=0;for(let i=0;i<B.n;i++)if(B.d[i*BATTLE_FX_FLOATS+20]&4)n++;return n};
@@ -107,10 +125,43 @@ __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
- __film.start(key,mid,si,res);
+ if(go)go();else __film.start(key,mid,si,res);
  __film.wrap(()=>{for(let i=0;i<frames;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();one(out.eff,true)}});
  out.rig={redraws:rigStats.redraws,kb:Math.round(rigStats.bytes/1024),ms:Math.round(rigStats.ms*10)/10};return out};
 return 0})()"""
+
+
+# VFX-14: the events films (on the foe, slot 1): lines at film ms, each an event and the snapshot changes it brings
+def _st(st, at=0, **o): return {'at': at, 'an': {'k': 'status', 'si': 1, **({'st': st} if st else {})}, 'mods': [{'i': 1, 'st': st}] if st else [], **o}
+EVENT_FILMS = {
+    'brn': [_st('brn'), {'at': 2000, 'an': {'k': 'hurt', 'si': 1, 'fx': 'brn', 'dmg': 3}}, {'at': 3200, 'mods': [{'i': 1, 'st': None}]}],
+    'par': [_st('par'), _st('par', 1800)],
+    'slp': [_st('slp'), _st('slp', 1800), {'at': 3000, 'mods': [{'i': 1, 'st': None}]}],
+    'confused': [{'an': {'k': 'hype', 'si': 1}, 'mods': [{'i': 1, 'fx': {'confused': 3}}]},
+                 {'at': 1900, 'an': {'k': 'hurt', 'si': 1, 'dmg': 4}, 'mods': [{'i': 1, 'fx': {'confused': 2}}]},
+                 {'at': 3200, 'mods': [{'i': 1, 'fx': None}]}],
+    'stat_up': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 1}}]}],
+    'stat_up2': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 2}}]}],
+    'stat_down': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'stg': {'law': -1}}]}],
+    'stat_down2': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'stg': {'law': -2}}]}],
+    'protect': [{'an': {'k': 'move', 'si': 1, 'ti': 1, 'mid': 'hedge', 'protect': True}, 'mods': [{'i': 1, 'fx': {'protect': 1}}]},
+                {'at': 1500, 'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'quakestomp', 'blocked': True}}],
+    'shield': [{'an': {'k': 'alphaPhase', 'si': 1}, 'mods': [{'i': 1, 'fx': {'shield': 2}}]},
+               {'at': 1500, 'an': {'k': 'block', 'si': 1}}, {'at': 2100, 'mods': [{'i': 1, 'fx': {'shield': 1}}]},
+               {'at': 3000, 'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'fx': None}]}],
+    'soaked': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'fx': {'soaked': 3}}]}],
+    'fork': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'fx': {'fork': 3}}]}],
+    'delayed': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'twoday', 'self': True}}, {'at': 2600, 'an': {'k': 'hurt', 'si': 1, 'fx': 'mail', 'dmg': 5}}],
+    'stones': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'quakestomp', 'dmg': 8, 'te': 1}}, {'at': 2400, 'an': {'k': 'hurt', 'si': 1, 'fx': 'stones', 'dmg': 3}}],
+    'glint': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 1}}],
+               'by': [{'src': 'perk:x', 'si': 1}, {'src': 'held:y', 'si': 1}, {'src': 'passive:kindling', 'si': 1}]}],
+    'broken': [{'an': {'k': 'status', 'si': 1}}],
+}
+MOTION = str(OPT.get('motion') or 'full')
+# VFX-14: the Animation level for the films: Calm on <html data-motion>, Reduced through the game's own setter
+MOTION_JS = {'full': "document.documentElement.dataset.motion='full';setReducedMotion(false);0",
+             'calm': "document.documentElement.dataset.motion='calm';setReducedMotion(false);0",
+             'reduced': "document.documentElement.dataset.motion='reduced';setReducedMotion(true);0"}
 
 
 HIDE_UI = "for(const q of ['#dock','.ticker','#mk','#plates']){const e=document.querySelector(q);if(e)e.style.visibility='hidden'};0"
@@ -121,14 +172,14 @@ def pick(moves):
     return [m for m in moves if m['id'] in ONLY or m['c'] in ONLY]
 
 
-def sheet(pg, key, mid, si, res):
+def sheet(pg, key, mid, si, res, start=None, step=5):
     from PIL import Image, ImageDraw
-    pg.evaluate(f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
+    pg.evaluate(start or f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
     # VFX-9: the battle's menu, ticker and plates hidden (they cover most of the stage at this size), the pops kept
     pg.evaluate(HIDE_UI)
     shots = []
     for i in range(16):
-        pg.evaluate('__film.step(5)' if i else '__film.step(1)')
+        pg.evaluate(f'__film.step({step})' if i else '__film.step(1)')
         pg.wait_for_timeout(30)
         p = OUT / '_frame.png'
         pg.screenshot(path=str(p))
@@ -139,18 +190,30 @@ def sheet(pg, key, mid, si, res):
     for i, im in enumerate(shots):
         x, y = (i % 4) * w, (i // 4) * h
         W.paste(im, (x, y))
-        d.text((x + 4, y + 4), f'{key} {16 + 80 * (i - 1) if i else 16} ms', fill='white')
+        d.text((x + 4, y + 4), f'{key} {16 + 16 * step * (i - 1) if i else 16} ms', fill='white')
     W.save(OUT / f'{key}.png')
     (OUT / '_frame.png').unlink()
 
 
-def measure(pg, moves):
-    rows = {}
+def measure_films(moves):
+    if 'events' in OPT:
+        for k, L in EVENT_FILMS.items():
+            if not ONLY or k in ONLY:
+                key = f'{k}.{MOTION}'
+                yield key, f"__film.measure({json.dumps(key)},'',1,'',200,10,()=>__film.startLines({json.dumps(key)},{json.dumps(L)}))"
+        return
     for m in moves:
         for si in SIDES:
             for res in OUTCOMES if OPT.get('outcomes') else ['hit', 'se', 'secrit']:
                 key = f"{m['id']}.{si}.{res}"
-                r = pg.evaluate(f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)")
+                yield key, f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)"
+
+
+def measure(pg, moves):
+    rows = {}
+    if True:
+        for key, js in measure_films(moves):
+                r = pg.evaluate(js)
                 mean = lambda L: round(sum(L) / max(1, len(L)), 2)
                 ms = sorted(r['ms'])
                 rows[key] = {'allMax': max(r['all'] or [0]), 'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
@@ -236,8 +299,23 @@ def main():
         CF.until(pg, 'battleStage.gl', 30)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
+        pg.evaluate(MOTION_JS[MOTION])
         if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
+        if 'events' in OPT and 'measure' not in OPT:
+            # VFX-14: the events films: sheets, or traces like the moves'
+            traces = {}
+            for k, L in EVENT_FILMS.items():
+                if ONLY and k not in ONLY: continue
+                key = f'{k}.{MOTION}'
+                start = f"__film.startLines({json.dumps(key)},{json.dumps(L)})"
+                if 'sheets' in OPT:
+                    sheet(pg, key, '', 1, '', start, 15)
+                else:
+                    traces[key] = pg.evaluate(f"(()=>{{{start};const out={{key:{json.dumps(key)},trace:[]}};const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}return out}})()")
+                print(key, 'filmed', flush=True)
+            if traces: (OUT / 'trace-events.json').write_text(json.dumps(traces, indent=0, sort_keys=True))
+            moves = []
         if 'measure' in OPT:
             measure(pg, moves)
             moves = []

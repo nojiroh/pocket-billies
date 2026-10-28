@@ -128,6 +128,7 @@ import {
   camAt,
 } from './battle-stage.js';
 import { battleAnimSkip } from './battle-anim-run.js';
+import { battleLooksLine } from './battle-looks.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES } from './environment.js';
@@ -510,6 +511,8 @@ function showEvent() {
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
     paintBoxes(ev.s, ev.mk, true);
     eventBlips(ev);
+    /* VFX-14: the stage's statuses and short effects take the same line's state (battle-looks.js) */
+    battleLooksLine(ev);
   });
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
@@ -582,6 +585,8 @@ export function tapMessage() {
   battleAnimSkip();
   const ev = activeBattle.events[activeBattle.ev];
   if (ev) paintBoxes(ev.s, ev.mk, true);
+  /* VFX-14: and the stage's looks */
+  if (ev) battleLooksLine(ev);
   lineReady();
 }
 /* phase 06-4: the corner cards are gone (the plates in the scene show everything); a Billie coming in repaints them */

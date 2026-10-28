@@ -169,6 +169,15 @@ export function renameTypeIn(D, from, to) {
   }
   for (const I of Object.values((BA && BA.iconSprites) || {}))
     if (/** @type {any} */ (I).ramp === from) /** @type {any} */ (I).ramp = to || 'None';
+  /* VFX-14: a status's or effect's ramp (battleAnims.json events) that named it names the new id, or None */
+  const looks = (/** @type {any} */ o) => {
+    if (!o || typeof o !== 'object') return;
+    for (const [k, v] of Object.entries(o))
+      if ((k === 'ramp' || o === (BA && BA.events && BA.events.glint && BA.events.glint.ramps)) && v === from)
+        o[k] = to || 'None';
+      else looks(v);
+  };
+  if (BA) looks(BA.events);
   /* VFX-11: a type's kit moves with it (a deleted type's goes); a kit or a step whose ramp named it names the new id, or
      None */
   if (BA && BA.types) {

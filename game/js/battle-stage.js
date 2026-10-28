@@ -23,6 +23,14 @@ import {
   battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
+  battleLookBlock,
+  battleLookHurt,
+  battleLookPose,
+  battleLookSleepPose,
+  battleLookStat,
+  battleLookStatus,
+  battleLooksReset,
+  battleLooksTick,
   battleSandGust,
   battleScarAt,
   battleStageLookReset,
@@ -389,7 +397,6 @@ export const battleStage = {
   q: { lvl: 0, since: 0, lowT: 0, highT: 0 },
   /* VFX-4: the impact frame playing (impactFx), or null */
   impact: /** @type {any} */ (null),
-  stT: 0,
   speed: 1,
   /* phase 06-3: the camera holds still while the player chooses (battle.js floatTick) */
   calm: false,
@@ -498,6 +505,8 @@ export function battleStageStart(area) {
   battleStage.tws = [];
   battleStage.evs = [];
   battleStage.parts = [];
+  /* VFX-14: no statuses, stones or delayed hits on the stage yet */
+  if (typeof battleLooksReset === 'function') battleLooksReset();
   battleStage.cam = Object.assign({}, homeCamera);
   Object.assign(battleStage.V, homeCamera);
   Object.assign(battleStage.drift, { w: 0, tq: -1, x: 0, y: 0, z: 0, yaw: 0, hz: 0 });
@@ -785,6 +794,8 @@ function battleStageFrame(ts, rawDt) {
       ambientSpawning = false;
     }
   }
+  /* VFX-14: statuses and short effects that last (battle-looks.js), every 12 fps cell; Reduced motion too (a tint) */
+  if (typeof battleLooksTick === 'function') battleLooksTick();
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (!battleStage.gl && battleStage.waitT) battleStageJoin3d();
   if (battleStage.cv && battleStage.cv.isConnected) {
@@ -800,7 +811,7 @@ function battleStageFrame(ts, rawDt) {
   frameCount(work);
   adaptBattleStageQuality(work);
 }
-/* ambient life: motes, drips, falling leaves, glints, status fizz */
+/* ambient life: motes, drips, falling leaves, glints */
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
@@ -880,26 +891,7 @@ function spawnAmbientParticles(dt) {
     for (const i of battleStage.wetFeet)
       if (battleStage.s[i] && battleStage.s[i].show) groundRing(i, undefined, 0.9, 800);
   }
-  battleStage.stT += dt;
-  if (battleStage.stT > 700) {
-    battleStage.stT = 0;
-    for (let i = 0; i < battleStage.s.length; i++) {
-      const sd = battleStage.s[i];
-      if (!sd.show || !sd.st || sd.a < 0.5) continue;
-      const T = actorTop(i);
-      const sp = sd.st === 'par' ? 'bolt' : sd.st === 'slp' ? 'zz' : sd.st === 'brn' ? 'flame' : 'spark';
-      addParticle({
-        x: T.x + (random() - 0.5) * 0.6,
-        y: T.y + 0.2,
-        z: T.z,
-        vx: (random() - 0.5) * 0.3,
-        vy: sd.st === 'par' ? -0.6 : 0.7,
-        life: 900,
-        spr: sp,
-        k: 0.9,
-      });
-    }
-  }
+  /* VFX-14: the status fizz moved to battle-looks.js (battleLooksTick) */
   for (let i = 0; i < battleStage.s.length; i++) {
     const sd = battleStage.s[i];
     if (sd.boss && sd.show && sd.a > 0.5 && random() < dt / 90) {
@@ -1363,15 +1355,19 @@ export function actorBuffer(i) {
   if (!R) return null;
   const t0 = performance.now();
   rigStats.calls++;
-  const a = s.act,
-    tau = a ? battleStage.t - a.t0 : 0,
+  /* VFX-14: a lost turn holds its frame; asleep, a slower clock and a lower pose (battle-looks.js) */
+  const Lp = typeof battleLookPose === 'function' ? battleLookPose(i) : null,
+    now = Lp ? Lp.now : battleStage.t,
+    a = s.act,
+    tau = a ? now - a.t0 : 0,
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
-    t16 = Math.floor(battleStage.t / 16) * 16;
+    sleep = Lp && !ak ? Lp.sleep : null,
+    t16 = Math.floor((sleep ? sleep.t : now) / 16) * 16;
   /* phase 20 R3: the same rig, pose, face, build, faint parts as the last frame drawn here is the same
      picture: the canvas stays, its counter too, so nothing is uploaded again */
   const key =
     rigFrameKey(R, ak, tau, t16, s.seed) +
-    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}`;
+    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}${sleep ? '|z' : ''}`;
   if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
     rigStats.ms += performance.now() - t0;
     return { s, k, R, P: buf.__P, ak, buf };
@@ -1385,6 +1381,7 @@ export function actorBuffer(i) {
   bx.setTransform(1, 0, 0, 1, 0, 0);
   bx.clearRect(0, 0, buf.width, buf.height);
   const P = rigFrame(R, ak, tau, t16, s.seed);
+  if (sleep) battleLookSleepPose(P, sleep);
   if (s.build) P.build = s.build;
   if (s.dim) P.dim = s.dim;
   /* VFX-9: the white and dark flashes are laid on by the GPU (battle-3d.js battle3dHit, walk/sprites.js uHit) */
@@ -2136,7 +2133,9 @@ export function battleStagePlay(an, ev) {
             k: kk,
           });
       if (an.fx === 'stones') burst(T, 'Ground', 7, 1.6, kk);
-      if (an.fx === 'brn')
+      /* VFX-14: a burn's lick of flame, a confused Billie's bonk, a blocked spread hit's bubble (battle-looks.js) */
+      const looked = typeof battleLookHurt === 'function' && battleLookHurt(an, ev);
+      if (an.fx === 'brn' && !looked)
         for (let i = 0; i < 4; i++)
           scheduleAt(i * 70, () =>
             addParticle({
@@ -2184,50 +2183,12 @@ export function battleStagePlay(an, ev) {
       tween(battleStage.s[an.si], 'white', 0, 260, 'lin', 160);
       return { dur: 720, hit: 200 };
     }
-    case 'stat': {
-      const T = actorCenter(an.si),
-        kk = 1;
-      setActorAction(an.si, an.up ? 'buff' : 'dizzy', 700);
-      for (let i = 0; i < 9; i++)
-        scheduleAt(i * 55, () =>
-          addParticle({
-            x: T.x + (random() - 0.5) * 1.4,
-            y: an.up ? 0.2 : T.y + 0.8,
-            z: T.z + (random() - 0.5) * 0.6,
-            vy: an.up ? 2.6 : -2.6,
-            life: 540,
-            spr: an.up ? 'up' : 'down',
-            k: kk,
-            glow: an.up ? 1 : 0,
-          })
-        );
-      if (an.up) groundRing(an.si, '#8FD8FF', 1.6, 520);
-      tween(battleStage.s[an.si], 'white', 0.3, 120);
-      tween(battleStage.s[an.si], 'white', 0, 240, 'lin', 140);
-      return { dur: 680, hit: 0 };
-    }
-    case 'status': {
-      const T = actorCenter(an.si),
-        kk = 1,
-        sp = an.st === 'par' ? 'bolt' : an.st === 'slp' ? 'zz' : 'flame';
-      setActorAction(an.si, 'dizzy', 800);
-      for (let i = 0; i < 8; i++)
-        scheduleAt(i * 60, () =>
-          addParticle({
-            x: T.x + (random() - 0.5) * 1.2,
-            y: T.y + 0.9,
-            z: T.z,
-            vx: (random() - 0.5) * 0.8,
-            vy: an.st === 'par' ? -1.6 : 1.4,
-            life: 620,
-            spr: sp,
-            k: kk,
-          })
-        );
-      battleStage.s[an.si].st = an.st;
-      blinkActor(an.si, 300);
-      return { dur: 700, hit: 0 };
-    }
+    case 'stat':
+      /* VFX-14: chevrons up or down, twice as many when it moved sharply; Soaked, Fork, a shield fading */
+      return battleLookStat(an, ev);
+    case 'status':
+      /* VFX-14: a status beginning, a turn of one, or a broken part (battle-looks.js) */
+      return battleLookStatus(an, ev);
     case 'hype': {
       const T = actorCenter(an.si),
         kk = 1;
@@ -2307,6 +2268,8 @@ export function battleStagePlay(an, ev) {
       return { dur: 1200, hit: 0 };
     }
     case 'block': {
+      /* VFX-14: a shield taking the edge off a hit flashes its dome */
+      if (battleLookBlock(an, ev)) return { dur: 300, hit: 0 };
       const T = actorCenter(an.si);
       ringFx(T, '#FFD860', 0.25, 1.4, 380);
       return { dur: 300, hit: 0 };

@@ -1505,6 +1505,52 @@ export function dataBattleAnims(D, valid = () => true) {
     if (!A.sprites[I.sprite]) problem(`iconSprites.${k}.sprite: no sprite "${I.sprite}"`);
     if (!A.ramps[I.ramp]) problem(`iconSprites.${k}.ramp: no ramp "${I.ramp}"`);
   }
+  /* VFX-14: the stage's statuses and short effects: every sprite a strip, every ramp a ramp (`type` only where the
+     move's type is known: the delayed hit), a fixed frame inside its strip, no count growing as the quality drops */
+  const E = A.events,
+    strip = (
+      /** @type {string} */ where,
+      /** @type {string} */ id,
+      /** @type {number | undefined} */ frame = undefined
+    ) => {
+      const S = A.sprites[id];
+      if (!S) problem(`${where}.sprite: no sprite "${id}"`);
+      else if (frame !== undefined && frame >= S.frames)
+        problem(`${where}: frame ${frame}, but "${id}" has ${S.frames} frames`);
+    },
+    ramp = (/** @type {string} */ where, /** @type {string | undefined} */ r, typeOk = false) => {
+      if (r !== undefined && !A.ramps[r] && !(typeOk && r === 'type')) problem(`${where}.ramp: no ramp "${r}"`);
+    },
+    burst = (/** @type {string} */ where, /** @type {any} */ b) => {
+      if (!b) return;
+      strip(where, b.sprite, b.frame);
+      ramp(where, b.ramp);
+    },
+    falls = (/** @type {string} */ where, /** @type {number[]} */ L) => {
+      if (L.some((v, i) => i && v > L[i - 1])) problem(`${where}: [${L}] grows as the quality drops`);
+    };
+  if (E) {
+    falls('events.cells', E.cells);
+    for (const k of ['brn', 'par', 'slp', 'confused', 'broken', 'soaked', 'fork'])
+      for (const b of ['start', 'loop', 'tick', 'end', 'bonk']) burst(`events.${k}.${b}`, E[k][b]);
+    burst('events.stat.up', E.stat.up);
+    burst('events.stat.down', E.stat.down);
+    for (const k of ['protect', 'shield']) {
+      const D = E[k];
+      for (const f of ['frame', 'flashFrame', 'crackFrame']) strip(`events.${k}.${f}`, D.sprite, D[f]);
+      ramp(`events.${k}`, D.ramp);
+      falls(`events.${k}.cells`, D.cells);
+      burst(`events.${k}.end`, D.end);
+    }
+    strip('events.delayed', E.delayed.sprite);
+    ramp('events.delayed', E.delayed.ramp, true);
+    strip('events.stones', E.stones.sprite, E.stones.frame);
+    ramp('events.stones', E.stones.ramp);
+    burst('events.stones.glint', E.stones.glint);
+    strip('events.glint', E.glint.sprite);
+    for (const [k, r] of Object.entries(/** @type {Record<string, string>} */ (E.glint.ramps)))
+      ramp(`events.glint.ramps.${k}`, r);
+  }
   return out;
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds
