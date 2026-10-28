@@ -1680,8 +1680,8 @@
    "game/js/shop.js:179",
    "game/js/shop.js:189",
    "game/js/shop.js:258",
-   "game/js/sound.js:665",
-   "game/js/sound.js:1982",
+   "game/js/sound.js:666",
+   "game/js/sound.js:1991",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",
@@ -1831,7 +1831,7 @@
    "game/js/unit-card.js:178"
   ],
   "key": [
-   "game/js/logic/music-studio.js:115",
+   "game/js/logic/music-studio.js:121",
    "game/js/ui-run-kit.js:1794"
   ],
   "leaf": [
@@ -1916,7 +1916,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
-   "game/js/logic/music-studio.js:116",
+   "game/js/logic/music-studio.js:122",
    "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
@@ -1988,9 +1988,9 @@
    "game/js/logic/data-checks.js:938",
    "game/js/logic/data-checks.js:982",
    "game/js/logic/marks.js:109",
-   "game/js/logic/music-patterns.js:64",
-   "game/js/logic/music-patterns.js:116",
-   "game/js/logic/music-studio.js:75",
+   "game/js/logic/music-patterns.js:75",
+   "game/js/logic/music-patterns.js:135",
+   "game/js/logic/music-studio.js:76",
    "game/js/logic/online-legal.js:246",
    "game/js/logic/person-view.js:5",
    "game/js/logic/person-view.js:56",
