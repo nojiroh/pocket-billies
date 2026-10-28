@@ -218,7 +218,11 @@ town node needs it.
   12/24 fps frames, the eroding rim; the Art browser's ramp previews; the particle picker fixed) built 2026-10-28;
   wave 1 goes on with VFX-12 and VFX-15 on side branches. VFX-15 (the stage: a battle mood that darkens and tints on
   big moves, the row wave, heat, the weather on the stage, battle scars in VFX-10's decals) built 2026-10-28 on
-  `claude/vfx-15-stage` (PR #311 into `track/vfx`). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  `claude/vfx-15-stage` (PR #311 into `track/vfx`). VFX-16 (battle flow, wave 2, side branch
+  `claude/vfx-16-battle-flow`: the VS splash for leaders, Blake and bosses inside trainerIn's time, the send-out's
+  dither from the feet up and its pyramid's colours, the recall beam, the catch's squash, seal ring and shards, the
+  faint and the bots' shed, the level-up's column on the right Billie, an item's pop, victory and defeat; the XP bar
+  and level-up bugs fixed) built 2026-10-28. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
