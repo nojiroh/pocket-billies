@@ -12,7 +12,7 @@
 //   node tools/bake-sketches.mjs --export=emberox        a Billie's drawing sheet: a column per picture, a row per view
 //   node tools/bake-sketches.mjs --export=plan:quad      a body plan's sheet: two rows per Billie on it (a sample
 //                                                             Billie when none is on it yet)
-//        [--out=dir] (default tools/art-source/placeholders) [--scale=N] (each pixel as N x N, for drawing big)
+//        [--out=dir] (default tools/art-source/sketches) [--scale=N] (each pixel as N x N, for drawing big)
 //   node tools/bake-sketches.mjs --import=file.png       a drawn sheet back in: <name>.png is a Billie's,
 //        [--for=emberox | --for=plan:quad]                   <plan>-plan.png a plan's (or say which with --for); its
 //                                                             cells are stored per Billie, then those Billies baked
@@ -32,7 +32,7 @@ const ART = join(ROOT, 'game', 'art', 'next');
 const SHEETS = join(ART, 'billionaires');
 const DRAWN = join(ART, 'placeholders');
 const RIGS = join(ART, 'rigs-next.js');
-const OUT = join(ROOT, 'tools', 'art-source', 'placeholders');
+const OUT = join(ROOT, 'tools', 'art-source', 'sketches');
 
 /** do two pictures show the same: same size, same alpha, same colour where alpha is not 0 */
 function sameShown(a, b) {

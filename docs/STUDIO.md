@@ -326,7 +326,7 @@ Art workbench → Part mode, beside the kit recipe:
   **Download**: every Billie on that plan, two rows each, a strip with its name above (a sample Billie while none is
   on the plan); **Upload** splits it back per Billie, stores and bakes each.
 - The same from the command line: `npm run bake:sketches` (bake what changed), `-- --export=<name>` or
-  `-- --export=plan:<plan>` (to tools/art-source/placeholders; `--scale=4`), `-- --import=<file.png>` (a
+  `-- --export=plan:<plan>` (to tools/art-source/sketches; `--scale=4`), `-- --import=<file.png>` (a
   `<plan>-plan.png` is a plan's sheet), `-- --check`.
 - A sheet only cuts back while the Billie's plan and part sizes are what they were when it was exported; change them
   and export again.
