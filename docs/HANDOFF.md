@@ -385,6 +385,106 @@ cause per commit. Details: docs/phases/ui-track.md, "The run map's icons", "Buil
 - Next: the planning session starts the next steps (UI-11 is PR #280); after UI-18, one session runs the skipped
   browser checks above.
 - Tag to suggest (sessions can't push tags): `ui-8c-done` on this entry's last commit.
+### UI track UI-15 - less clutter in battle and walking - 2026-10-27
+Branch `claude/ui-15-less-clutter`, made from `track/ui` after UI-8b (2b50b6e8) for the owner's parallel waves (beside
+UI-11 on `track/ui` and UI-8c on `claude/ui-8c-map-markers`; it stays out of uiTheme.json's signals, the Studio's
+colour dials, run-marks.js, world-bowl.js and the map's buttons). Main merged in first (a merge; docs conflicted only:
+both sides kept). The plan was approved in advance (the owner's standing instruction for Part 2). PR into `track/ui`.
+Details: docs/phases/ui-track.md, "UI-15 as built".
+- Changed:
+  - Counting: `uiElementCount()` (theme-sheet.js) and smoke's per-screen log and `ELEMENT_CEILING` (check-quick.py).
+  - Battle: the field strip in place of the ticker and the storm chip (weather glyph, the storm's turns left, stones per
+    side; a tap gives the words; 40 px tap areas); plates with at most 3 tags and "+N"; move tiles with the type glyph,
+    name, power and effectiveness, the rest in a long-press panel (420 ms; hover and focus on a desktop); quiet command
+    buttons (an icon over a word, the small lines in title and aria-label); every floating part in dark glass in both
+    themes (`.battle` `--bt-glass`/`--bt-ink`/`--bt-ink2` from the night tokens).
+  - Walk: the place card as a title on arrival (motion.css `m-title`, 4.5 s), then folded into the top bar with today's
+    weather glyph; the hint shown when it says something new, faded after 6 s (`m-linger`); the Actions button bobs only
+    while its sheet holds something new (`uiState.walkSeen`). tokens.css `--m-title`, `--m-linger`.
+  - The gallery's battle and plates sections as the game draws them now.
+- Counts (smoke, 390 x 844), before and after: walk 27 to 14, battle 42 to 23, shop 73 to 66; map 25, team 28, guide
+  39, profile 55 unchanged.
+- Found and fixed on the way: battle plates were `<button disabled>`, so base.css faded them to 42% nearly all battle;
+  by day the battle's team, items and pyramid lists were white text on the cream card; with the place card folded,
+  the walk hero's `space-between` put Actions at the top.
+- Where the plan was wrong: the command buttons' colours were battle-screen.css `.bt.coin/.items/.team` and
+  battle-ui.css `.bt.run`, not parts.css `.pb.green/.blue/.dark`; the ticker also carried the inner sun and Moneys.
+- Checks changed on purpose: the gallery's battle and plates pictures (the new look), and picks, payout, run-hud,
+  run-nodes, starter, tip and dialogue, which sit under the battle section and moved by a fraction of a pixel (side by
+  side the same); loading left as main's (it differs run to run on main too). ui-lint ceilings lowered (raw colours
+  650 to 624, blur rules 27 to 24, keyframes 53 to 52, motion times 249 to 247, layers 60 to 59, innerHTML 55 to 54).
+- Verified: `npm run lint` (ui-lint at its lowered ceilings), `npm run typecheck`, `npm test` 1569 of 1569 after every
+  change (one timing test, "1,000 maps ... in under a second", failed twice under load and passes alone),
+  `check:modules`; each change seen in the game headless at 390 x 844 (battle and town fixtures, light and dark; a
+  touch hold of 600 ms showed the details and didn't pick the move, a tap picked it; a room's Go outside while folded;
+  × folds and the top bar's name unfolds). check:smoke green (6 of 6, the counts above). check:ui: only loading differs
+  (as on main). check:fast: the known reds (the island orbit's timing, a run's seam view, the Studio's world map look
+  and Camera section: SA-5's 404s), plus "a battle plays to the end: stuck at playing" and "the pasture: a Billie moved
+  to the team still wanders", which fail the same at this branch's start with main merged (6503fd49, before any UI-15
+  change); the Studio's Model mode failed once in the full run and passes alone. The full quick check (run in two
+  parts: the container restarted at 1,530 s): 37 of 40, the reds main's (Terraces: the train station floats; RL-8: the
+  seam's view; Walking: the settings tabs' counts, which stops that step before its place-card part: that part, × then
+  the top bar's name, checked on its own: it folds and comes back); room light failed once under load, passed on the rerun.
+- Risky: the title's fold changes `.wh-card`, which walk-control.js reads for the camera's safe area, so the camera's
+  framing may ease once 4.5 s after arriving; the long press is checked with simulated pointer events, not a finger;
+  `checkVisibility` (Chrome 105, Safari 17.4) only in the counter, which smoke runs in Chromium.
+- Decided for the owner, to review:
+  - the dark glass is the night tokens (`--night-ink` at 86%, `--night-text`), not a palette's own dark side (UI-12
+    can point `--bt-glass` at it); the plates and the turn bar lost their 6 px blur (the glass is nearly opaque); your
+    plate and the foe's are one glass now (yours was a bluer tint);
+  - plates keep the limb pips, the party's dots, your HP number and the XP line (not tags); the tags are the status and
+    stat changes, sorted by size; `statShortName` still prints "SP." for both Sp. stats (UI-14b's);
+  - the move tile drops the type's word (the glyph and colour say it), the same-type ★ and accuracy (in the panel);
+    the panel sits over the tile grid, on the message line;
+  - the command row's small lines went to title and aria-label (a touch player sees why Catch it is off only from its
+    look); Catch it lost its gold;
+  - the strip's stones use the scrap icon and the storm stays the bolt until UI-13's glyphs; the strip's words show
+    for 3.5 s;
+  - the place card's arrival title plays even after × (× folds it now; "closed stays closed" became "folded until you
+    unfold it"); the top bar's weather glyph is the environment's (`environmentIcon`), not shown in rooms;
+  - the walking hint shows on arriving and when more Billies hide than before, then fades; the Actions bob counts a new
+    place or a new Billie as new;
+  - smoke's walk ceiling is 18 (14 counted, room for the hint).
+- Phone check wanted: a battle by day and night (the glass, the strip, the tags, the quiet row), holding a move (420 ms
+  feel, the panel's place), tapping a strip chip; walking: the arrival title's timing, the fold, the top bar's glyph,
+  the hint's fade, the Actions bob; a room (Go outside while folded).
+- Next: the owner's phone check; UI-16a (motion) on `track/ui` when this PR and UI-11's are in.
+- Tag to suggest (sessions can't push tags): `ui-15-done` on this entry's commit.
+
+### UI track UI-8b - the wide map tile - 2026-10-27
+Branch `track/ui`: main fast-forwarded in (UI-9b merged, #272), then UI-10's plan branch `ccr-03a15a70-nd3yqu` merged
+(docs only; PR #269 conflicted with main on HANDOFF alone: both entries kept). Plan approved in Plan Mode. Details:
+docs/phases/ui-track.md, "UI-8b as built".
+- The owner's answers at the start: the tile's edge stays gold only while the Map is open; narrow phones shrink the
+  whole tile, keeping its shape.
+- Changed: uiTheme.json `minimap` gains `tileW` 232, `tileH` 184, `tileCompact` 112 (schema, the Studio's Minimap
+  group, tokens.css; `--minimap-tile-aspect` written beside them). pb-nav-bar: the tile sizes from the host's width
+  (`100cqw`; the host is now the container), stands 60 px out of a plain cut 128 px bar on a 390 px phone (the
+  outline lost its tower), the buttons icon over word in 63 px columns; walking a 112 px square in a 76 px bar; the
+  320 px container query went. minimap.js scales from the tile's shorter side (`min(W, H) / span`, marks too).
+  shell.css `--nav-h` worked out from the same tokens: 224 px standing, 148 walking (172 and 102 before).
+- Checks changed on purpose: the gallery's run-hud pictures, and run-nodes, picks and payout under it (moved down by a
+  fraction of a pixel); the fast check's bar step now checks the tile is wide, stands 40 px or more out of the frame,
+  every button is 40 px and none overlaps the tile (seen failing on a planted tall tile); the fast check's Lab taps
+  run on a 400 x 760 page (on its 300 px page the new bar covered every Lab row: the click timed out).
+- Verified: `npm run lint`, `npm test` 1552 of 1552, `npm run check:data`; the game captured headless (fixture run) at
+  390, 360 and 320 px, standing and walking, light and dark: tile 232 x 184 / 208 x 165 / 168 x 133, walking 112 / 112
+  / 96, side buttons 60-63 x 52, no page errors. check:fast 37 of 40 then the Lab alone green: the other two (the
+  Studio's world map look and Camera section) fail the same on main (SA-5's deleted `art/billionaires/*.png`, the
+  Studio's `atlasPath` in studio/js/sprites.js). check:smoke green. check:ui: what differs (panels, cards, loading at
+  320) differs on main too, run to run. The full quick check: 38 of 41; the three (Terraces: the
+  train station floats in Copperleaf; RL-8: the Meadow Route seam's view never shows; Walking: the settings tabs'
+  counts) fail the same on main at 12942096 (its room-light failure here was once, under load: alone it passed).
+- Risky: the minimap canvas is 2.8 times today's pixels standing (drawn 5 times a second), unmeasured on a phone; at
+  320 px the tile rises only 13 px; `cqw` on the host and `max()`/`min()` in custom properties need a 2023+ browser
+  (Safari 16, Chrome 105).
+- Decided for the owner, to review: the bar 128 px tall (a 4 px gap under the tile, as before); the marks sized
+  from the tile's shorter side (same size in metres, so 1.53x on screen standing); `--nav-h` keeps its 26 px gap over
+  the bar; a narrow phone's side column floor 60 px; the gallery's loading pictures left as main's (they differ run
+  to run on main too).
+- Next: the owner's phone check (size, compact timing, the marks at 232 px, frame cost); then UI-11 (the colour code
+  as data) on `track/ui`.
+- Tag to suggest (sessions can't push tags): `ui-8b-done` on this entry's commit.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in

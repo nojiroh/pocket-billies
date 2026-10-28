@@ -229,7 +229,45 @@
     transform: perspective(600px) rotateY(180deg);
   }
 }
+/* UI-15: title: a place's name plays on arrival, holds, then folds up toward the top bar (walk-tab.js sets how far in it
+   is after each render, so a render never starts it again) */
+.m-title {
+  animation: m-title var(--m-title) var(--ease-out) both;
+}
+@keyframes m-title {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  6%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-32px) scale(0.9);
+    visibility: hidden;
+  }
+}
+/* UI-15: linger: a hint stays a while, then fades away */
+.m-linger {
+  animation: m-linger var(--m-linger) linear both;
+}
+@keyframes m-linger {
+  0%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
+  .m-title {
+    animation-name: m-linger;
+  }
   .m-wipe,
   .m-wipe-r,
   .screen.enter,
@@ -269,6 +307,9 @@
     .m-flip
   ) {
   animation: m-fade 120ms linear both !important;
+}
+[data-motion='reduced'] .m-title {
+  animation-name: m-linger;
 }
 [data-motion='reduced'] .m-idle,
 [data-motion='reduced'] .talk-box::before,

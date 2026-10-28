@@ -984,7 +984,7 @@ const TYPE_GLYPHS = {
 };
 const GLYPH_URLS = {};
 /** a type's glyph as an SVG data URL ('' for a type with none) @param {string} t */
-function typeGlyphURL(t) {
+export function typeGlyphURL(t) {
   if (t in GLYPH_URLS) return GLYPH_URLS[t];
   const rows = TYPE_GLYPHS[t];
   if (!rows) return (GLYPH_URLS[t] = '');

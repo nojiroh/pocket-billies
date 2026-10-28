@@ -21,6 +21,8 @@ import { closeModal, modal, toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
   HUB_MARKS: [() => HUB_MARKS],
+  PLACE_TITLE_MS: [() => PLACE_TITLE_MS],
+  WALK_HINT_MS: [() => WALK_HINT_MS],
   WEATHER_ICONS: [() => WEATHER_ICONS],
   boardNote: [() => boardNote, v => (boardNote = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
@@ -31,14 +33,22 @@ expose({
   hubHTML: [() => hubHTML, v => (hubHTML = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
   nodeActions: [() => nodeActions, v => ((nodeActions = v), provide({ nodeActions }))],
+  nowMs: [() => nowMs],
+  placeCardState: [() => placeCardState, v => (placeCardState = v)],
+  placeKey: [() => placeKey],
+  placeTitleEnd: [() => placeTitleEnd, v => (placeTitleEnd = v)],
+  placeTitleFold: [() => placeTitleFold, v => (placeTitleFold = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   roomHero: [() => roomHero, v => (roomHero = v)],
   runStatusHTML: [() => runStatusHTML, v => (runStatusHTML = v)],
   tripButtons: [() => tripButtons, v => ((tripButtons = v), provide({ tripButtons }))],
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
+  walkAfterRender: [() => walkAfterRender, v => (walkAfterRender = v)],
   walkHero: [() => walkHero, v => (walkHero = v)],
+  walkHintHTML: [() => walkHintHTML, v => (walkHintHTML = v)],
   walkMarkTo: [() => walkMarkTo, v => (walkMarkTo = v)],
+  walkNewKey: [() => walkNewKey],
   walkSheetClose: [() => walkSheetClose, v => (walkSheetClose = v)],
   walkSheetHTML: [() => walkSheetHTML, v => (walkSheetHTML = v)],
   walkSheetOpen: [() => walkSheetOpen, v => (walkSheetOpen = v)],
@@ -162,19 +172,85 @@ function roomHero() {
       }[I.kind] || '',
     /* RS-3: a resident's home: who they are, Talk, and their upgrades */
     res = I.res && typeof residentCardHTML === 'function' ? residentCardHTML(I.res) : '',
-    /* towns track TW-0: with the card closed its "Go outside" goes too, so the way out stays on screen */
-    shut = !!(saveData.preferences && saveData.preferences.cardClosed);
+    /* towns track TW-0: with the card closed its "Go outside" goes too, so the way out stays on screen (UI-15: folded) */
+    shut = !placeCardState().show;
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), res || `<p class="wh-gate">${escapeHtml(what)}</p>`, `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>${res ? `<button class="pb small" data-a="restalk" data-r="${escapeHtml(I.res)}">Talk</button>` : ''}`)}
  <div class="wh-foot"><div class="wh-row">${shut ? `<button class="pb small glass" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>` : ''}<button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button></div></div></div>`;
 }
+/* UI-15: walking shows less. The place card plays as a title when you arrive, then folds into the top bar (its name
+   and today's weather glyph); the hint shows when it says something new, then fades; the Actions button bobs only
+   while its sheet has something you haven't opened it for. tokens.css --m-title and --m-linger hold the same times */
+const PLACE_TITLE_MS = 4500,
+  WALK_HINT_MS = 6000;
+const nowMs = () => performance.now();
+/** the place card's key: the room you are in, or the place */
+const placeKey = () =>
+  uiState.inside && !uiState.bench && roomState() ? 'in:' + uiState.inside.id : 'at:' + saveData.trip.node;
+/** is the place card on screen, and is it the arrival title (how far in, ms; -1 when it isn't). The top bar's name
+ * unfolds it and it stays (preferences.cardClosed false) until × or the name again folds it (true) */
+export function placeCardState() {
+  const key = placeKey(),
+    now = nowMs();
+  let T = uiState.placeTitle;
+  if (!T || T.key !== key) {
+    if (T) clearTimeout(T.t);
+    T = uiState.placeTitle = { key, at: now };
+  }
+  const age = now - T.at;
+  /* folds itself: the page is drawn again once the title is over */
+  if (age < PLACE_TITLE_MS && !T.t) T.t = setTimeout(placeTitleFold, PLACE_TITLE_MS - age + 40);
+  if (saveData.preferences && saveData.preferences.cardClosed === false) return { show: true, title: -1 };
+  return age < PLACE_TITLE_MS ? { show: true, title: age } : { show: false, title: -1 };
+}
+function placeTitleFold() {
+  if (uiState.placeTitle) uiState.placeTitle.t = 0;
+  if (uiState.tab === 'walk' && saveData.started && !activeBattle && !uiState.title) render();
+}
+/** the arrival title ends now (× or the top bar's name folded the card) */
+function placeTitleEnd() {
+  const T = uiState.placeTitle;
+  if (!T) return;
+  clearTimeout(T.t);
+  T.t = 0;
+  T.at = -Infinity;
+}
+/** after each render: the title and the hint carry on from where they were (the page is made again often) */
+export function walkAfterRender() {
+  const go = (el, at) => {
+    if (el && at != null && isFinite(at)) for (const a of el.getAnimations()) a.currentTime = nowMs() - at;
+  };
+  go($('.wh-card.m-title'), uiState.placeTitle && uiState.placeTitle.at);
+  go($('.wh-hint.m-linger'), uiState.walkHint && uiState.walkHint.at);
+}
+/** the hint under the world: the Billies hiding here when there are more than before, or how to walk when you arrive */
+function walkHintHTML(n) {
+  const key = saveData.trip.node + (n ? ':hiding' : ':walk');
+  let H = uiState.walkHint;
+  if (!H || H.key !== key || n > (H.n || 0)) H = uiState.walkHint = { key, at: nowMs(), n };
+  H.n = n;
+  if (nowMs() - H.at >= WALK_HINT_MS) return '';
+  return n
+    ? `<p class="wh-hint glass m-linger">${uiIconHTML('spark', 12)} ${plural(n, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>`
+    : `<p class="wh-hint glass m-linger">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`;
+}
+/** what the Actions sheet would show that matters: where you are and the Billies hiding there */
+const walkNewKey = () =>
+  saveData.trip.node +
+  ':' +
+  encountersHere()
+    .map(q => q.id)
+    .sort()
+    .join(',');
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
-   under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
+   under More), closable with ×, and brought back by tapping the place's name in the top bar. UI-15: it plays as a
+   title on arrival, then folds (placeCardState) */
 function locationCardHTML(sub, name, mid, btns) {
-  if (saveData.preferences && saveData.preferences.cardClosed) return '';
+  const C = placeCardState();
+  if (!C.show) return '';
   const all = String(btns).match(/<button[\s\S]*?<\/button>/g) || [],
     main = all[0] || '',
     more = all.slice(1).join('');
-  return `<div class="wh-card glass compact k-panel"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}${main ? `<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div>` : ''}</div>`;
+  return `<div class="wh-card glass compact k-panel${C.title >= 0 ? ' m-title' : ''}"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}${main ? `<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div>` : ''}</div>`;
 }
 function environmentLine() {
   if (typeof environmentLabel !== 'function' || !environment.on) return '';
@@ -193,8 +269,8 @@ function walkHero() {
     here = LOCATIONS[node],
     q = encountersHere();
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine(), '')}
- <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
+ <div class="wh-foot">${walkHintHTML(q.length)}
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn${walkNewKey() !== uiState.walkSeen ? ' new' : ''}" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 export function renderWalk() {
   return walkHero();
@@ -313,6 +389,7 @@ export function walkTipOnce() {
 }
 export function walkSheetOpen() {
   walkView.mark = null;
+  uiState.walkSeen = walkNewKey();
   uiState.walkSheet = true;
   walkSheetSync();
 }
@@ -327,6 +404,7 @@ export function walkTabAction(a, d) {
     case 'card-close':
       saveData.preferences = saveData.preferences || {};
       saveData.preferences.cardClosed = true;
+      placeTitleEnd();
       save();
       render();
       requestAnimationFrame(() => {
@@ -334,12 +412,16 @@ export function walkTabAction(a, d) {
         if (t) t.focus({ preventScroll: true });
       });
       break;
-    case 'card-open':
+    case 'card-open': {
       saveData.preferences = saveData.preferences || {};
-      saveData.preferences.cardClosed = !saveData.preferences.cardClosed;
+      /* UI-15: shown (the title, or unfolded) folds; folded unfolds and stays */
+      const open = placeCardState().show;
+      saveData.preferences.cardClosed = open;
+      if (open) placeTitleEnd();
       save();
       render();
       break;
+    }
     case 'enc': {
       const q = encountersHere().find(x => x.id === d.id);
       if (q) startWild(q);
