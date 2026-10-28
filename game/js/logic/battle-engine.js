@@ -214,6 +214,8 @@ expose({
   fxMoment: [() => fxMoment, v => (fxMoment = v)],
   fxNames: [() => fxNames],
   // @ts-expect-error -- replaced on purpose
+  fxRevive: [() => fxRevive, v => (fxRevive = v)],
+  // @ts-expect-error -- replaced on purpose
   fxSrcName: [() => fxSrcName, v => (fxSrcName = v)],
   // @ts-expect-error -- replaced on purpose
   fxStageLines: [() => fxStageLines, v => (fxStageLines = v)],
@@ -1050,7 +1052,9 @@ export function checkFaints() {
       if (!battleNow().over) (battleNow().needSwitch || (battleNow().needSwitch = [])).push(k);
     } else f.on = false;
   }
-  if (!battleNow().over && !liveActors(0).length && !(battleNow().needSwitch || []).length) battleNow().over = 'lose';
+  /* PK-3: a run's revive row gets a wiped team back up instead (Warranty Card, once a run) */
+  if (!battleNow().over && !liveActors(0).length && !(battleNow().needSwitch || []).length && !fxRevive())
+    battleNow().over = 'lose';
   if (any && !battleNow().over && liveActors(1).some(k => fighter(k).hp <= 0)) checkFaints();
   return any;
 }
@@ -1495,6 +1499,34 @@ export function fxFirstActs(acts) {
   }
   if (K.length) battleSay(`${fxNames(rows)}: ${joinNames(K)} ${K.length > 1 ? 'move' : 'moves'} first.`, null);
   return out;
+}
+/** PK-3: your whole team has fainted: the first revive row that may act (its once mark not spent) spends it, and every
+ * Billie of yours gets back up with its share of HP, no status, back on the field where it stood (as if sent out
+ * again). False with none (the battle is lost) @returns {boolean} */
+export function fxRevive() {
+  const b = battleNow();
+  if (!b || !b.fx) return false;
+  const ctx = fxBattleCtx(null),
+    st = fxBattleState(b, true),
+    f = fxAt(b.fx, ctx, st).find(r => r.kind === 'revive');
+  if (!f) return false;
+  fxSpend(f, ctx, st);
+  for (const m of b.sides[0].team) {
+    if (m.hp > 0) continue;
+    m.hp = Math.max(1, Math.floor(maxHp(m) * f.share));
+    m.status = null;
+    m.sTurns = 0;
+  }
+  battleSay(`${fxSrcName(f.src)}: your team got back up!`, null);
+  /* each field place of yours that held a Billie sends it out again (a place off the field reads no fighter) */
+  const back = new Set();
+  for (const k of allActors().filter(q => ACTOR_SIDE[q] === 0)) {
+    const at = fieldSlot(k).act;
+    if (!b.sides[0].team[at] || back.has(at)) continue;
+    back.add(at);
+    doSwitch(k, at);
+  }
+  return true;
 }
 /** PK-3: the run's immune rows against `what` that hold for one of yours (none for a foe, or without Perks)
  * @param {number} k @param {string} what @returns {any[]} */

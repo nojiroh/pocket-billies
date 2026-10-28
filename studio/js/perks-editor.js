@@ -17,7 +17,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { FX_CHANCE, FX_CRIT, FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
-import { FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
+import { FX_ONCE_KINDS, FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -95,6 +95,7 @@ const PERK_KINDS = {
   inflict: 'A chance to give the foe a status when one of yours hits it (PK-3)',
   chip: 'What a burn takes from your Billies at each turn’s end (PK-3)',
   first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
+  revive: 'A wiped team gets back up, once (PK-3)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -136,6 +137,7 @@ const PERK_ROW_NEW = {
   inflict: () => ({ kind: 'inflict', status: 'par', chance: 0.1, when: 'hit' }),
   chip: () => ({ kind: 'chip', what: 'burn', mult: 0.9 }),
   first: () => ({ kind: 'first', if: 'turn:1' }),
+  revive: () => ({ kind: 'revive', share: 0.5, once: 'run' }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -278,6 +280,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       ],
       chip: () => [selectField('Which hurt', `${p}.what`, [['burn', 'A burn’s, at each turn’s end']]), mult('Hurt ×')],
       first: () => [`<p class="note">Within a move’s priority, yours act before the foe’s wherever its If holds.</p>`],
+      revive: () => [share('Share of HP each gets back up with')],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS
@@ -332,7 +335,7 @@ function perkTimingHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type
     out.push(
       selectField('Per', `${p}.per`, [['teamTypes', 'Each different type on your team']], { none: 'Once', opt: 1 })
     );
-  if (f.when || ['stat', 'pinchHeal'].includes(f.kind))
+  if (f.when || FX_ONCE_KINDS.includes(f.kind))
     out.push(
       selectField(
         'Once',

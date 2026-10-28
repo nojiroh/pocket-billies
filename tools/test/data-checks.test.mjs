@@ -419,6 +419,8 @@ const PK3_GOOD = [
   { kind: 'inflict', status: 'brn', chance: 0.5, when: 'hit' },
   { kind: 'chip', what: 'burn', mult: 0.5 },
   { kind: 'first', if: 'turn:1' },
+  { kind: 'revive', share: 0.5, once: 'run' },
+  { kind: 'revive', share: 0.25, once: 'battle' },
 ];
 const PK3_BAD = [
   [{ kind: 'crit', stages: 4 }, 'stages: a whole number of critical-hit stages from 1 to 3'],
@@ -435,6 +437,9 @@ const PK3_BAD = [
   [{ kind: 'chip', what: 'poison', mult: 0.5 }, 'what: burn (effects.js FX_CHIP)'],
   [{ kind: 'chip', what: 'burn', mult: 9 }, 'mult: 9 is outside the code'],
   [{ kind: 'first', when: 'battleStart' }, "a first row can't act at battleStart"],
+  [{ kind: 'revive', share: 0.5 }, 'a revive row needs once (battle or run)'],
+  [{ kind: 'revive', share: 0.5, once: 'billie' }, 'a revive row needs once (battle or run)'],
+  [{ kind: 'revive', share: 1.5, once: 'run' }, 'share: a share of HP above 0, at most 1'],
 ];
 test('PK-3: dataPerks and the schema take the battle kit’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

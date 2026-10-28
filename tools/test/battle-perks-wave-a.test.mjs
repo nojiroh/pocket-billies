@@ -343,3 +343,58 @@ test('PK-3 first: on turn 1 yours move before a faster foe (with a line); from t
       assert.match(order(b), /^1,0/, `turn 2, held ${held}`);
     });
 });
+
+/* ---------- revive ---------- */
+
+test('PK-3 revive: once a run a wiped team gets back up with half its HP, back on the field; the next wipe loses', () => {
+  const { P, fx } = perks({
+    id: 'test_warranty',
+    name: 'Test Warranty',
+    fx: [{ kind: 'revive', share: 0.5, once: 'run' }],
+  });
+  withPerks(P, () => {
+    const marks = {},
+      b = battle(fx, { perkState: marks }),
+      team = b.sides[0].team;
+    team.forEach(m => ((m.hp = 0), (m.status = 'brn')));
+    fn('checkFaints')();
+    assert.ok(!b.over, 'not lost');
+    for (const m of team) {
+      assert.equal(m.hp, Math.max(1, Math.floor(fn('maxHp')(m) * 0.5)));
+      assert.equal(m.status, null);
+    }
+    assert.equal(b.sides[0].f[0].on, true);
+    assert.equal(b.sides[0].f[0].down, false);
+    assert.ok(lines(b).includes('Test Warranty: your team got back up!'), lines(b).join('\n'));
+    assert.deepEqual(marks['test_warranty/0'], { used: 1 }, 'spent for the run');
+    /* the battle goes on: a move works */
+    tough(foe(b));
+    fn('useMove')(0, anyHit('H'), 1);
+    team.forEach(m => (m.hp = 0));
+    fn('checkFaints')();
+    assert.equal(b.over, 'lose', 'the second wipe');
+    /* a later battle of the same run: spent */
+    const again = battle(fx, { perkState: marks });
+    again.sides[0].team.forEach(m => (m.hp = 0));
+    fn('checkFaints')();
+    assert.equal(again.over, 'lose');
+  });
+  const none = battle(null);
+  none.sides[0].team.forEach(m => (m.hp = 0));
+  fn('checkFaints')();
+  assert.equal(none.over, 'lose', 'no Perk');
+});
+
+test('PK-3 revive: in a double battle both of your places come back, each with its own Billie', () => {
+  const { P, fx } = perks({ id: 'test_warranty', fx: [{ kind: 'revive', share: 0.5, once: 'battle' }] });
+  withPerks(P, () => {
+    const b = battle(fx, { fmt: 'double' }, 3);
+    b.sides[0].team.forEach(m => (m.hp = 0));
+    fn('checkFaints')();
+    assert.ok(!b.over);
+    const on = b.sides[0].f.filter(f => f.on).map(f => f.act);
+    assert.equal(on.length, 2);
+    assert.equal(new Set(on).size, 2, on.join());
+    assert.equal(fn('liveActors')(0).length, 2);
+  });
+});

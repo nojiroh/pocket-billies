@@ -136,6 +136,11 @@
        "description": "first (PK-3): your Billies move before the foe's (within a move's priority) where its if holds (turn:1: a battle's first turn)",
        "type": "object", "additionalProperties": false, "required": ["kind"],
        "properties": {"kind": {"const": "first"}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "revive (PK-3): when your whole team has fainted in a battle, they all get back up with this share of their HP (once: run or battle, which it needs)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "share", "once"],
+       "properties": {"kind": {"const": "revive"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

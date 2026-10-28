@@ -1964,7 +1964,9 @@ export type FxKindRow =
   /** PK-3: what a burn takes from your Billies at each turn's end, times mult */
   | { kind: 'chip'; what: 'burn'; mult: number }
   /** PK-3: your Billies move before the foe's (within a move's priority) where its `if` holds */
-  | { kind: 'first' };
+  | { kind: 'first' }
+  /** PK-3: when your whole team has fainted, they all get back up with this share of their HP (needs `once`) */
+  | { kind: 'revive'; share: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

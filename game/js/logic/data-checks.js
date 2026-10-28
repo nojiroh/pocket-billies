@@ -64,6 +64,7 @@ import { parseScript, scriptProblem } from './script-parse.js';
 import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_ONCE_KINDS: [() => FX_ONCE_KINDS],
   FX_PLAIN: [() => FX_PLAIN],
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
@@ -2008,7 +2009,8 @@ export function fxRowProblems(f, at, kinds, D, problem, timing = false) {
 }
 /** PK-3: the battle kit's kinds (perks-track.md 5.2): crit gives 1 to FX_CRIT stages without a when, and none at
  * when: move (that move is critical); immune names what it keeps off (FX_IMMUNE); inflict a status of statuses.json
- * with a chance up to FX_CHANCE, at a moment; chip a turn-end hurt of FX_CHIP @param {any} f @param {string} at @param {any} D
+ * with a chance up to FX_CHANCE, at a moment; chip a turn-end hurt of FX_CHIP; revive a share and a once (battle or
+ * run: without one it would get a team up at every wipe) @param {any} f @param {string} at @param {any} D
  * @param {(what: string) => void} problem */
 export function fxKindProblems(f, at, D, problem) {
   if (!f || typeof f !== 'object') return;
@@ -2029,6 +2031,11 @@ export function fxKindProblems(f, at, D, problem) {
   }
   if (f.kind === 'chip' && !(/** @type {readonly string[]} */ (FX_CHIP).includes(f.what)))
     problem(`${at}.what: ${FX_CHIP.join(', ')} (effects.js FX_CHIP)`);
+  if (f.kind === 'revive') {
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+      problem(`${at}.share: a share of HP above 0, at most 1`);
+    if (!['battle', 'run'].includes(f.once)) problem(`${at}.once: a revive row needs once (battle or run)`);
+  }
 }
 /** PK-1: the timing fields of an effect row (logic/effects.js) */
 export const FX_TIMING = ['when', 'if', 'every', 'grow', 'per', 'once'];
@@ -2078,6 +2085,9 @@ export function fxCondProblem(c, D) {
   const bad = any.filter(a => !known[k].includes(a));
   return bad.length ? `${k}: no "${bad.join('", "')}" (${known[k].join(', ')})` : '';
 }
+/** PK-1, PK-3: the kinds without a when that can still be once (a stat row as yours take the field, a pinchHeal row
+ * when low, a revive row at a wipe) */
+export const FX_ONCE_KINDS = ['stat', 'pinchHeal', 'revive'];
 /** PK-3: a kind with its article ("a crit", "an immune") @param {string} kind */
 export const fxA = kind => (/^[aeiou]/.test(kind) ? 'an ' : 'a ') + kind;
 /** PK-1: an effect row's when, if, every, grow, per and once (logic/effects.js) @param {any} f @param {string} at
@@ -2139,13 +2149,13 @@ export function fxWhenProblems(f, at, D, problem) {
   if (f.once != null) {
     if (!(/** @type {readonly string[]} */ (FX_ONCE).includes(f.once))) problem(`${at}.once: ${FX_ONCE.join(', ')}`);
     else if (f.once !== 'run') {
-      const inBattle = f.when != null ? FX_WHEN_BATTLE.includes(f.when) : ['stat', 'pinchHeal'].includes(f.kind);
+      const inBattle = f.when != null ? FX_WHEN_BATTLE.includes(f.when) : FX_ONCE_KINDS.includes(f.kind);
       if (!inBattle)
         problem(
-          `${at}.once: ${f.once} needs a moment in battle (${FX_WHEN_BATTLE.join(', ')}), or a stat or pinchHeal row`
+          `${at}.once: ${f.once} needs a moment in battle (${FX_WHEN_BATTLE.join(', ')}), or a ${FX_ONCE_KINDS.join(', ')} row`
         );
-    } else if (f.when == null && !['stat', 'pinchHeal'].includes(f.kind))
-      problem(`${at}.once: run needs a when, or a stat or pinchHeal row`);
+    } else if (f.when == null && !FX_ONCE_KINDS.includes(f.kind))
+      problem(`${at}.once: run needs a when, or a ${FX_ONCE_KINDS.join(', ')} row`);
   }
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
