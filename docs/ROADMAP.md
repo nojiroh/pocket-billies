@@ -197,7 +197,9 @@ town node needs it.
   choreographies as legacy families, the tap that skips, sounds on the stage clock, the flash limiter, the rings) built
   2026-10-28; VFX-9 (one draw for effects: the battle's particles in a GPU pool over one atlas, two draws a move,
   the budgets, fixed light keys, the rig's flash on the GPU, the chromatic flash in the grade pass) built 2026-10-28;
-  VFX-10 next. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  VFX-10 next. VFX-15 (the stage: a battle mood that darkens and tints on big moves, the row wave, heat, the weather
+  on the stage, battle scars on placeholder art) built 2026-10-28 on `claude/vfx-15-stage` (wave 1, beside VFX-10 and
+  VFX-12; PR #311 into `track/vfx`). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
