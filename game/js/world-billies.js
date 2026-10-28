@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { provide, ranchOpen, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
-import { RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
+import { COATS, RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { speciesById } from './logic/fighters.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
@@ -25,6 +25,7 @@ import {
   pastureZone,
 } from './logic/pasture.js';
 import { squareStops, squareVisitAt, squareVisits } from './logic/square-day.js';
+import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { densityWorldMpp } from './logic/pixel-density.js';
 import { reducedMotion, save, saveData, uiState } from './game-state.js';
@@ -32,6 +33,7 @@ import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { findPath, folkHour, mapHub, walkData, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
+import { graphicsOff } from './engine/settings.js';
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk/heights.js';
 import { addRipple } from './walk/water.js';
@@ -61,6 +63,7 @@ expose({
   worldBillyLabels: [() => worldBillyLabels, v => ((worldBillyLabels = v), provide({ worldBillyLabels }))],
   worldBillyMetersPerPixel: [() => worldBillyMetersPerPixel, v => (worldBillyMetersPerPixel = v)],
   worldBillyRig: [() => worldBillyRig, v => (worldBillyRig = v)],
+  worldFoilOn: [() => worldFoilOn, v => (worldFoilOn = v)],
 });
 /* eslint-enable no-func-assign */
 provide({
@@ -166,6 +169,12 @@ function worldBillyFrame(sp, view, pose, t, seed, build, coat, graft) {
 function worldBillyMetersPerPixel(sp, R, big = 1) {
   return densityWorldMpp(speciesById(sp).ht, R.geo, R.BH, big);
 }
+/* style track SY-6: the coat's foil on a coated Billie (logic/coat-foil.js), on the walk's clock: off under Reduced
+   motion, with Flashes off and with Graphics Off (the maps have no quality level of their own) */
+function worldFoilOn() {
+  const p = (saveData && saveData.preferences) || {};
+  return foilOn({ reduced: !!reducedMotion, flashesOff: p.flashes === 'off', graphicsOff: graphicsOff() });
+}
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat, o.graft);
   if (!im) return null;
@@ -191,6 +200,7 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
       aoR: Math.max(0.2, R.geo.hw * mpp * 0.7),
       person: 1,
       fade: o.fade ?? 1,
+      foil: o.coat ? coatFoil(o.coat, COATS, walkView.t, `${k}:${seed}`, worldFoilOn()) : null,
     },
     o.extra || {}
   );

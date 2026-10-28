@@ -58,7 +58,7 @@
   {
    "p": "coins/*.json",
    "at": [
-    "game/js/battle-3d.js:439",
+    "game/js/battle-3d.js:456",
     "game/js/logic/data-checks.js:2152"
    ]
   },
@@ -1624,7 +1624,7 @@
    "game/js/walk/prop-look.js:54",
    "game/js/walk/prop-look.js:64",
    "game/js/walk/prop-look.js:415",
-   "game/js/walk/sprites.js:890",
+   "game/js/walk/sprites.js:909",
    "game/js/world-bowl.js:1723",
    "game/js/world-bowl.js:1753"
   ],

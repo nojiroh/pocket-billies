@@ -7,10 +7,11 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import { COATS, PYRAMIDS, activeBattle, fieldState, provide, reducedMotion, saveData } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
+import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
@@ -39,6 +40,7 @@ import {
   trainerMetersPerPixel,
 } from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
+import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
@@ -54,6 +56,7 @@ expose({
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
+  battleFoilOn: [() => battleFoilOn, v => (battleFoilOn = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
@@ -211,6 +214,17 @@ export function battle3dStop() {
     if (cv) cv.after(walkRenderer.ui);
   }
 }
+/* style track SY-6: the coat's foil in battle (logic/coat-foil.js): off under Reduced motion, with Flashes off, with
+   Graphics Off and at the battle's quality level 2 and up */
+function battleFoilOn() {
+  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
+  return foilOn({
+    reduced: !!reducedMotion,
+    flashesOff: p.flashes === 'off',
+    graphicsOff: graphicsOff(),
+    level: battleStage.q.lvl,
+  });
+}
 /* what the engine draws this frame, in walk-scene meters (battle space shifted by battle3d.off) */
 function battle3dFrame() {
   if (!battleStage.on || !battleStage.L) return null;
@@ -252,6 +266,8 @@ function battle3dFrame() {
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
+      /* style track SY-6: a coated Billie's foil, on the scene's clock */
+      foil: B.s.coat ? coatFoil(B.s.coat, COATS, battleStage.t, `b${i}:${B.s.seed || 0}`, battleFoilOn()) : null,
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -269,6 +285,7 @@ function battle3dFrame() {
         fade: g.fade * B.s.a,
         glow: g.glow,
         ghost: true,
+        foil: null,
       });
     }
     /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
