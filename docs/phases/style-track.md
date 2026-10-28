@@ -121,7 +121,11 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
     track's rule, UI-16b; this only sizes the number).
   - Builds on UI-16a's tick-up and UI-16b's pops; runs after them, or lands its sizes in their component if they come
     later.
-- **SY-3** the Bureau's mark, as data and kit:
+- **SY-3** the Bureau's mark, as data and kit. Done 2026-10-28 on `track/style` (built as below; the emblem is
+  art/ui/bureau.svg; the stamp words are keyed by moment, `look.stamps.retrieved` ...; the ink is today's `--redink`,
+  since the red family's hexes are UI-11's, not built; the stamp motion is pb-stamp's own, since UI-16b isn't built; the
+  thunk is music.json `ui.sounds.stamp`; "every palette" is the gallery's three looks, since Field Guide, Copper Grove+
+  and Bureau Night are UI-12's):
   - The emblem: a bean on a lost-property tag, with a string hole (the owner's pick), drawn as SVG in the Studio's
     icon editor.
   - `bureau.look` in factions.json (schema, types, data check): `emblem`, `stamps` (the words: RETRIEVED, DENIED,
