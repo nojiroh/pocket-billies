@@ -10,24 +10,36 @@
    numbers battleAnims.json's `moods`, `weather` and `scars`. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { BATTLE_ANIMS, TYPE_GLOW, battleWeather, provide, reducedMotion } from './hooks.js';
-import { battleMoodFor } from './logic/battle-stage-look.js';
+import {
+  BATTLE_ANIMS,
+  TYPE_GLOW,
+  activeBattle,
+  battle3dScenePoint,
+  battleScarAdd,
+  battleScarsClear,
+  battleWeather,
+  provide,
+  reducedMotion,
+} from './hooks.js';
+import { battleMoodFor, scarKindFor } from './logic/battle-stage-look.js';
 import { hexToRgb } from './art.js';
-import { battleStage, battleStageKit } from './battle-stage.js';
+import { actorWorldPoint, battleStage, battleStageKit } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
   battleMoodPlay: [() => battleMoodPlay, v => ((battleMoodPlay = v), provide({ battleMoodPlay }))],
   battleSandGust: [() => battleSandGust, v => ((battleSandGust = v), provide({ battleSandGust }))],
+  battleScarAt: [() => battleScarAt, v => ((battleScarAt = v), provide({ battleScarAt }))],
   battleStageLookFrame: [() => battleStageLookFrame, v => (battleStageLookFrame = v)],
   battleStageLookReset: [
     () => battleStageLookReset,
     v => ((battleStageLookReset = v), provide({ battleStageLookReset })),
   ],
   rgb01: [() => rgb01],
+  scarPlaceHash: [() => scarPlaceHash],
   stageLook: [() => stageLook],
 });
 /* eslint-enable no-func-assign */
-provide({ battleMoodPlay, battleSandGust, battleStageLookReset });
+provide({ battleMoodPlay, battleSandGust, battleScarAt, battleStageLookReset });
 /* to-module: end */
 /** the stage's look now: the mood's darken, tint (its colour 0..1) and row wave (whole CSS pixels), heat, and the
  * Sandstorm's gust (times more streaks, over 1). Tweened on the stage clock (battleStage.tws) */
@@ -74,9 +86,29 @@ function battleSandGust() {
   stageLook.gust = W.sand.gust - 1;
   battleStageKit.tween(stageLook, 'gust', 0, W.sand.gustMs, 'in');
 }
-/** VFX-15: a new battle starts with the stage as the place has it */
+/** VFX-15: a new battle starts with the stage as the place has it, and no scars */
 function battleStageLookReset() {
   Object.assign(stageLook, { dark: 0, tint: 0, wave: 0, heat: 0, gust: 0 });
+  if (typeof battleScarsClear === 'function') battleScarsClear();
+}
+/* a scar's place, turn and mirror from the battle's place in it (the same every time, so films repeat; the effects'
+   random stream is left as it was) */
+const scarPlaceHash = (/** @type {number} */ a, /** @type {number} */ b) => {
+  let h = Math.imul(a + 1, 2654435761) ^ Math.imul(b + 7, 1597334677);
+  h = Math.imul(h ^ (h >>> 15), 2246822519);
+  return ((h ^ (h >>> 13)) >>> 0) / 4294967296;
+};
+/** VFX-15: the scar a hit on Billie i leaves at its feet (hit: {type, w, sandstorm, ko}, logic/battle-stage-look.js
+ * scarKindFor), laid in the walk scene (walk/battle-scars.js); only on the 3D stage */
+function battleScarAt(i, hit) {
+  const S = BATTLE_ANIMS.scars;
+  if (!S || !battleStage.gl || typeof battleScarAdd !== 'function' || typeof battle3dScenePoint !== 'function') return;
+  const kind = scarKindFor(S, hit);
+  if (!kind) return;
+  const n = typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0,
+    w = actorWorldPoint(i),
+    [x, z] = battle3dScenePoint(w.x + (scarPlaceHash(n, i) - 0.5) * 0.6, w.z + (scarPlaceHash(i, n) - 0.5) * 0.4);
+  battleScarAdd(kind, x, z, battleStage.q.lvl, Math.floor(scarPlaceHash(n + 3, i) * 4), scarPlaceHash(n, i + 5) < 0.5);
 }
 /** what the renderer reads this frame (battle-3d.js battle3dFrame): the mood, the sun's warmth and shafts (the
  * battle's sunny weather), the Sandstorm (0 none, 1 steady, more in a gust); the wave's phase on the stage clock */

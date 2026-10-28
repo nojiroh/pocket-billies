@@ -15,6 +15,7 @@ import {
   TYPE_GLOW,
   activeBattle,
   battleMoodPlay,
+  battleScarAt,
   hudHit,
   hudPop,
   provide,
@@ -27,6 +28,7 @@ expose({
   animAt: [() => animAt, v => (animAt = v)],
   animColor: [() => animColor],
   animLog: [() => animLog, v => (animLog = v)],
+  animScar: [() => animScar, v => (animScar = v)],
   animStep: [() => animStep, v => (animStep = v)],
   animStepInfo: [() => animStepInfo, v => (animStepInfo = v)],
   battleAnim: [() => battleAnim],
@@ -220,12 +222,20 @@ function animStep(S, c) {
       return;
     case 'hit':
       K.hitFx(c.ti, c.hitAn);
+      animScar(c);
       return;
   }
 }
 /** what a skipped step still does: the hit's numbers */
 function animStepInfo(S, c) {
   if (S.do === 'hit' && typeof hudHit === 'function') hudHit(c.ti, c.hitAn);
+  /* VFX-15: a scar stays for the battle, so a skipped hit leaves its scar too */
+  if (S.do === 'hit') animScar(c);
+}
+/** VFX-15: the scar a landed hit leaves at the target's feet (battle-stage-look.js) */
+function animScar(c) {
+  if (typeof battleScarAt === 'function' && c.an.dmg)
+    battleScarAt(c.ti, { type: c.type, w: battleStageKit.hitWeight(c.ti, c.an) });
 }
 /** the move's `anim` line in the debug log, once (when its time is up, or a skip ends it) */
 function animLog(C) {

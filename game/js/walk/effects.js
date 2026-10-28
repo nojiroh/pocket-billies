@@ -6,6 +6,8 @@
 import { expose } from '../test-globals.js';
 import {
   battleFxPass,
+  battleScarPass,
+  battleScars,
   buildingItems,
   buildingState,
   chimneySmoke,
@@ -795,6 +797,16 @@ export function effectsPass(C, items, X, dark, t, dt) {
   /* bright cores, added in HDR: the bloom spreads them into soft glows */
   /* VFX-9: the battle's particles in one pool, two draws (walk/battle-fx.js); the fx program in use again after */
   const BT = walkRenderer.bt;
+  /* VFX-15: the battle's scars (walk/battle-scars.js, one draw; they fade a moment after it ends); state put back */
+  if (battleScars.list.length && battleScarPass(C, X)) {
+    gl.useProgram(p.p);
+    bindQuad();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.enable(gl.DEPTH_TEST);
+  }
   if (BT && BT.fx && BT.fx.length && battleFxPass(C, BT.fx, X)) {
     gl.useProgram(p.p);
     bindQuad();

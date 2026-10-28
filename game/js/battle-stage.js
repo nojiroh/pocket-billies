@@ -22,6 +22,7 @@ import {
   battleFreeArea,
   battleLayoutChanged,
   battleSandGust,
+  battleScarAt,
   battleStageLookReset,
   fighter,
   hudHit,
@@ -2057,6 +2058,8 @@ export function battleStagePlay(an, ev) {
         s = battleStage.s[i],
         si = actorTeam(i);
       setActorAction(i, 'faint', 99999);
+      /* VFX-15: one more scar on a KO */
+      if (typeof battleScarAt === 'function') battleScarAt(i, { ko: true });
       battleStageFocus(si === 0 ? 'me' : 'foe');
       camAt(i, 0.3, 0.08, si === 0 ? 0.02 : -0.02, 500);
       if (!reducedMotion) camTo(PULL_BACK_CAMERA, 520, 'io', 480);
@@ -2086,6 +2089,8 @@ export function battleStagePlay(an, ev) {
       battleStage.shk = 2.5;
       if (an.dmg && typeof hudPop === 'function')
         scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg', hitWeight(an.si, an)));
+      /* VFX-15: the Sandstorm's hurt leaves a sand drift */
+      if (an.fx === 'oil' && typeof battleScarAt === 'function') battleScarAt(an.si, { sandstorm: true });
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           addParticle({
@@ -2513,4 +2518,6 @@ export const battleStageKit = {
   GLOWING_PARTICLES,
   fxSeed: battleFxSeed,
   fxRandom: battleFxRandom,
+  /* VFX-15: a hit's weight, for its scar */
+  hitWeight,
 };
