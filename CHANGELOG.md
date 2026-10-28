@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Terraces that follow the land** (terrain track TR-5): on routes with terraces, a hill's top is now a terrace above
+  its foot instead of bands that always rise toward the back (the ledge-drop routes keep mostly bands, for their
+  ledges). A terrace's front may be a cliff, a grassy bank, a stepped front with a shelf halfway up, or in a town a
+  dressed-stone wall. Any terrace you couldn't get onto (or off again), and any building door or mountain summit that
+  was cut off, gets a short flight of stone steps; no summit trail is a dead end any more. In the Studio's map
+  generator: Terrace lie and Terrace fronts.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

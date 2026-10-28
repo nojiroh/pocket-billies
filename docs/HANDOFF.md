@@ -2,6 +2,39 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Terrain track TR-5 - terraces along the land's contours, their fronts, stairs up; the summit fix - 2026-10-28
+Branch `track/terrain` (made by the owner from `ccr-6e23f760-mdbx5x`; TR-4 is in main by PR #250, so main merged in as
+a fast-forward). The owner's answers, relayed from their progress-check session (checked in its transcript): option
+A, and merge `track/worldmap` in first (done: a fast-forward to its 91b45dfe, which held main 5f6d01ae). So this
+branch carries WM-3..WM-7 and WM-5b/WM-6 until `track/worldmap` reaches main. Tag to suggest: `tr-5-done`. Details:
+docs/phases/terrain-track.md, "TR-5 as built".
+- Changed (mapgen.js): terraces follow the smooth land's height (new `land.lean`, default 0; 1 = the old bands, same
+  formula; RT-1's ledge drop sets 0.7), crumbs under 16 m² merged; fronts by `land.edges` (cliff, bank, stepped, wall,
+  mixed; auto = walls in a town, mixed in the wild); `mapgenStairsUp` cuts a 1 m flight of stone steps to any stranded
+  piece of 50 m² off the massif, any summit and any building's front; a summit still cut off loses its spot;
+  `mapgenUntrap` repeats until no trap is left. `MAPGEN_VERSION` 26. Studio: Terrace lie and Terrace fronts.
+- **Found:** the summit bug was 8 of 158 places of the debug mountains run (TR2MTN0-11) at this base, not 1 in 50.
+  Causes: a town lot levelled at the road's raise left a 1 m riser inside its street (`mapgenLevelLot` on terraces,
+  WM-5), and tiers ringed by ledges and cliffs. Fixed by the stairs; the lot riser itself stays (towns/worldmap
+  track's to look at). Ordinary runs: 17 terraced places of six seeds got 48 flights (ground nobody could reach before;
+  the tests only checked exits). One pass of `mapgenUntrap` could leave a trap (630 cells, the ledge sweep's seed 8023)
+  once the terraces moved.
+- **Risky:** the look of contour terraces, banks and stepped fronts is untested on a phone (only a software picture
+  of the mountains fixture, `python3 tools/look-terrain.py`); a flight is placed by the walk rules only, so it may sit
+  in an odd spot (by a hedge, half under a bank). River falls off terraces come less often with contours (2 of a
+  sweep's 45 terraced scenes, against 5; the water track's), a massif's set-piece fall more often. The debug mountains
+  run takes about 19% longer to make (ordinary runs the same, within noise; the stairs cost 40-190 ms on a terraced
+  place, in the helper thread). A saved run made before is remade from its seed with the new terraces.
+- Verified: lint, typecheck, format, check:modules, check:data, build; `npm test` 1638 pass (mapgen-terraces 5 new);
+  `npm run test:slow` 108 pass (mountains run with TR2MTN5 back: every summit reached; the 40 ledge sets: no trap);
+  smoke 7 of 7 (333 s); check-fast `--only=tall,world,town,behind,island` all ok but "The Studio's world map
+  look" (Copperleaf's landmark field has no Auto), which fails the same on main 5f6d01ae and on `track/worldmap`.
+  Snapshots remade on purpose: the golden terraced scene, rng's scene hash (only gen.v), run-start's mapgenV.
+- Container: Python Playwright 1.63 installed for the browser checks (the pin says 1.56; its Chromium is build 1243).
+- Next: the owner on the phone: a ledge-drop route or the debug menu's "Mountains and ledges" run (contour terraces,
+  banks, walls in towns, the flights); a debug log. Then TR-6 (vines, cave doors) or, once `track/worldmap` is in
+  main, TR-2c part 2 as recipes on RT-1's plans.
+
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
 Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
 step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines

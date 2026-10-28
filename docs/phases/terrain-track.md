@@ -191,7 +191,7 @@ Sources: [pret/pokeemerald](https://github.com/pret/pokeemerald) (map data, deco
 | TR-2c | (ledges, stairs, no-trap check and pockets done in the TR-2 session; split by the owner 2026-10-22) Part 1, done 2026-10-22: the dust puff off a ledge (the hop arc was already in); tall grass as 3-6 patches, one across the way west (was "north": runs go east to west), wild Billies in any patch. Part 2: the road pathfinder through tiers and the massif; the four mountain route types (valley floor, pass, ledge path, gorge with a rope bridge) as recipes of these parts. | unreachable check counting ledges one way; grass on the way west; sweep; phone frame time |
 | TR-3 | (done, TR-3 session, branch `terrain-generation`) Camera for tall ground: rock fade, camera rise on tall ground, player silhouette; the near shadow map at your height. | visual check steps, smoke |
 | TR-4 | Look: painting by height and steepness (rock, snow line per biome, scree, grass lip), strata bands on cliff faces per biome. | picture notes, smoke |
-| TR-5 | Terraces that follow the contours of the land (the old "rise toward the back" kept as a dial), edge styles. (Generated ledges moved to TR-2c.) | unit tests |
+| TR-5 | (done 2026-10-28, branch `track/terrain`) Terraces that follow the contours of the land (the old "rise toward the back" kept as a dial), edge styles. (Generated ledges moved to TR-2c.) Also: stairs up to any stranded tier, summit or door, which fixes the summits cut off since WM-1. | unit tests |
 | TR-6 | Cliff extras: climbable vines (ladders converted or retired), cave/mine entrances as room doors, waterfalls off terrace edges. | unit tests, room door check |
 | TR-7 | Studio: raise/lower brush as a mask that survives regenerate, the ridge-line tool, feature presets. STUDIO.md. | MG-4 style test: a hand edit survives a regenerate |
 | TR-8 | Height as gameplay: altitude encounter pools, trainers on ledges with sight down, items on hard-to-reach terraces, snow and storms by height; levelled battle arena. Roguelite hooks: node altitude rising toward a peak boss, climbing gear unlock gating paths. | unit tests, run sim |
@@ -329,4 +329,41 @@ as before until the owner turns them on after a phone check. The debug menu has 
 - Tests: `tools/test/terrain-look.test.mjs` (the atlas's first three rows frozen by hash, the cliff blocks and snow
   lines, the switch gating, the uniforms sent, scree and turf on a 1.2 m step with nothing else changed). Pictures:
   `python3 tools/look-terrain.py` (validation/terrain-look/, the mountains fixture, each switch on in turn).
+
+## TR-5 as built (2026-10-28, branch `track/terrain`)
+The owner's answer (relayed from their progress-check session): option A, TR-5 plus the summit fix, with
+`track/worldmap` merged in first so it builds on WM-3's shapes. TR-2c part 2 waits: its road pathfinder rewrites the
+road code WM-3 changed, and its four route types overlap RT-1's plans (a "ledge drop" already) and WM-8's ledges and
+loops; done after `track/worldmap` reaches main, as recipes on RT-1's plans.
+- **Contours** (mapgen.js `mapgenTerraces`, `mapgenTerraceContour`): a cell's level is the smooth land's height spread
+  so its 5th-95th percentile spans the levels (on land flatter than 0.3 m, broad noise of the terraces' own), plus the
+  bands' old wobble. New dial `land.lean` (0-1, kept only when given, default 0): 0 contours, 1 the old bands exactly
+  (same formula), between a blend. RT-1's ledge drop sets 0.7 (south fronts for its ledges). Crumbs (a piece of one
+  level under `MAPGEN_TERRACE_MIN`, 64 cells, 16 m²) take their neighbours' level (`mapgenTerraceCrumbs`). The road
+  reads the level the ground got, so it never ramps up to a level that was taken away. The exits' zones (ground level
+  within 8 m of a joined stretch, a level more every 6 m) are unchanged.
+- **Fronts** (`mapgenTerraceEdges`, new dial `land.edges`, kept only when given): `cliff` (as before), `bank` (the rise
+  spread over the 1-3 upper cells nearest the front as a ramp, stepm 32: steeper than you walk from about a metre of
+  rise; no ledge on it), `stepped` (a 1 m shelf halfway up where each half is still 0.35 m or more), `wall` (dressed
+  stone, wall material 5), `mixed` (by place in pieces of a few metres: half cliffs, banks, stepped) and `auto` (the
+  default: walls in a town, mixed in the wild).
+- **Stairs up** (`mapgenStairsUp`, after the scene is finished, before `mapgenUntrap` and the pockets): a piece of
+  ground the hub can't reach or can't get back from (`MAPGEN_STRANDED_MIN` 200 cells and mostly off the massif, or with
+  a summit, or the 1.2 m before a building's lot) gets a 1 m flight of stone steps (material 8, at most 0.28 m a step)
+  up the gentlest wall of 0.35-1.8 m to home ground, laid on the lower side's level ground or cut down into the upper
+  side's; one a piece a round, at most six rounds. A summit still cut off loses its spot (`G.summitsDropped`); its
+  trail stays.
+- **The summit bug, found:** at main 5f6d01ae with WM-3's shapes, 8 of the debug mountains run's 158 places
+  (TR2MTN0-11) had a summit you could walk down from but not up to, not 1 in 50. Two causes: in towns a lot levelled at
+  the road's raise where its path meets the road left a 1 m riser inside its street (WM-5's lots on terraces), and on
+  routes a tier was ringed by ledges and cliffs. The stairs fix both; the town riser itself is left for the towns or
+  worldmap track (it is the lot levelling, `mapgenLevelLot`).
+- **`mapgenUntrap` repeats** (up to six passes): taking a hop away can strand ground whose only way back went down it;
+  one pass left a 630-cell trap in the ledge sweep's seed 8023 once the terraces moved.
+- `MAPGEN_VERSION` 26. Studio: Terrace lie and Terrace fronts on the Generate card.
+- Corrections to the facts above: the terraces' ledges and stairs need south fronts, which contours give less often
+  (the ledge drop keeps lean 0.7); runs get terraces only from RT-1's ledge drop, the Dig side area (fieldMoves.json)
+  and the debug mountains run, so most run places don't change. River falls off terraces (water track) come less often
+  with contours (2 of a sweep's 45 terraced scenes, against 5), a massif's set-piece fall more often (7 of 40, against
+  2); water-gen.test.mjs's fixtures keep the old bands and cliffs they were found with.
 
