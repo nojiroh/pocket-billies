@@ -91,13 +91,13 @@
   {
    "p": "figures/rogue.json",
    "at": [
-    "game/js/figures.js:169"
+    "game/js/figures.js:176"
    ]
   },
   {
    "p": "figures/rogue.png",
    "at": [
-    "game/js/figures.js:170"
+    "game/js/figures.js:177"
    ]
   },
   {
@@ -1740,8 +1740,8 @@
    "game/js/walk-view.js:3859",
    "game/js/walk-view.js:4180",
    "game/js/walk/frame-items.js:319",
-   "game/js/walk/frame-items.js:468",
-   "game/js/walk/frame-items.js:488"
+   "game/js/walk/frame-items.js:469",
+   "game/js/walk/frame-items.js:489"
   ],
   "drop": [
    "game/js/boot.js:163",
@@ -1754,22 +1754,22 @@
    "game/js/walk-tab.js:324"
   ],
   "eye": [
-   "game/js/figures.js:981",
-   "game/js/figures.js:1027",
+   "game/js/figures.js:988",
+   "game/js/figures.js:1034",
    "game/js/logic/figure-kit.js:1493",
    "game/js/logic/figure-kit.js:1547",
    "game/js/logic/figure-kit.js:1577",
    "game/js/logic/figure-kit.js:1602",
    "game/js/logic/figure-kit.js:1812",
    "game/js/logic/figure-kit.js:1828",
-   "game/js/logic/figure-pose.js:287",
-   "game/js/logic/figure-pose.js:565",
-   "game/js/logic/figure-pose.js:566",
-   "game/js/logic/figure-pose.js:1543",
-   "game/js/logic/figure-pose.js:1550",
-   "game/js/logic/figure-pose.js:1552",
-   "game/js/logic/figure-pose.js:1567",
-   "game/js/logic/figure-pose.js:1579"
+   "game/js/logic/figure-pose.js:369",
+   "game/js/logic/figure-pose.js:647",
+   "game/js/logic/figure-pose.js:648",
+   "game/js/logic/figure-pose.js:1848",
+   "game/js/logic/figure-pose.js:1855",
+   "game/js/logic/figure-pose.js:1857",
+   "game/js/logic/figure-pose.js:1872",
+   "game/js/logic/figure-pose.js:1884"
   ],
   "flame": [
    "game/js/battle-stage.js:897",

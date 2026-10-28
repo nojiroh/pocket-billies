@@ -442,7 +442,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
           figureFor(who),
           t,
           f.waveT > 0 ? 'cheer' : f.walk ? 'walk' : 'idle',
-          (figureTick(t) / FIGURE_FPS) * 1.4,
+          /* CH-3c: their walk counted from where they stand (figure-pose.js figureMotion) */
+          0,
           personHeading(f, seenYaw()),
           figureStyle(),
           [f.x, f.z],
@@ -467,7 +468,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
               ? Math.PI / 2 - (L.face * Math.PI) / 180
               : personHeading({ dir: L.dir || 'down' }, seenYaw()),
           act = L.walk ? (L.run ? 'run' : 'walk') : L.act || 'idle',
-          pace = (figureTick(t) / FIGURE_FPS) * WALK_SPEED * (L.run ? RUN_FACTOR : 1),
+          pace = L.walk ? (figureTick(t) / FIGURE_FPS) * WALK_SPEED * (L.run ? RUN_FACTOR : 1) : 0,
           /* CH-3b: `figure: 'look'` with a `who` is that person's own figure (the figure kit) */
           name = L.figure === 'look' && typeof L.who === 'string' ? figureFor(L.who) : L.figure,
           im = figurePersonPicture(L, name, t, act, pace, head, L.style || figureStyle(), [L.x, L.z]);

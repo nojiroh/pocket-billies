@@ -28,11 +28,14 @@ expose({
   CLIP_FRAMES: [() => CLIP_FRAMES],
   FIGURE_BANDS: [() => FIGURE_BANDS],
   FIGURE_FPS: [() => FIGURE_FPS],
+  FIGURE_GAITS: [() => FIGURE_GAITS],
+  FIGURE_GAIT_SPEEDS: [() => FIGURE_GAIT_SPEEDS],
   FIGURE_JOINTED: [() => FIGURE_JOINTED],
   FIGURE_LIGHT: [() => FIGURE_LIGHT],
   FIGURE_MARK_HIDE: [() => FIGURE_MARK_HIDE],
   FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
   FIGURE_TALK_MS: [() => FIGURE_TALK_MS],
+  FIGURE_TURN_RATE: [() => FIGURE_TURN_RATE],
   OUTLINE_RGB: [() => OUTLINE_RGB],
   SDF_CORNERS: [() => SDF_CORNERS],
   TILT_STEP: [() => TILT_STEP],
@@ -60,15 +63,23 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureFaceState: [() => figureFaceState, v => (figureFaceState = v)],
   // @ts-expect-error -- replaced on purpose
+  figureGaitFor: [() => figureGaitFor, v => (figureGaitFor = v)],
+  // @ts-expect-error -- replaced on purpose
   figureGpuMesh: [() => figureGpuMesh, v => (figureGpuMesh = v)],
   // @ts-expect-error -- replaced on purpose
   figureKey: [() => figureKey, v => (figureKey = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureLegs: [() => figureLegs, v => (figureLegs = v)],
   // @ts-expect-error -- replaced on purpose
   figureMarkHidden: [() => figureMarkHidden, v => (figureMarkHidden = v)],
   // @ts-expect-error -- replaced on purpose
   figureMesh: [() => figureMesh, v => (figureMesh = v)],
   // @ts-expect-error -- replaced on purpose
   figureMix: [() => figureMix, v => (figureMix = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureMotion: [() => figureMotion, v => (figureMotion = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureMotionClip: [() => figureMotionClip, v => (figureMotionClip = v)],
   // @ts-expect-error -- replaced on purpose
   figurePose: [() => figurePose, v => (figurePose = v)],
   // @ts-expect-error -- replaced on purpose
@@ -78,9 +89,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureSceneLight: [() => figureSceneLight, v => (figureSceneLight = v)],
   // @ts-expect-error -- replaced on purpose
+  figureStride: [() => figureStride, v => (figureStride = v)],
+  // @ts-expect-error -- replaced on purpose
   figureTalkFace: [() => figureTalkFace, v => (figureTalkFace = v)],
   // @ts-expect-error -- replaced on purpose
   figureTick: [() => figureTick, v => (figureTick = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureTurn: [() => figureTurn, v => (figureTurn = v)],
   // @ts-expect-error -- replaced on purpose
   figureUnit: [() => figureUnit, v => (figureUnit = v)],
   // @ts-expect-error -- replaced on purpose
@@ -97,6 +112,12 @@ expose({
   headFrontOf: [() => headFrontOf, v => (headFrontOf = v)],
   // @ts-expect-error -- replaced on purpose
   jointMatrices: [() => jointMatrices, v => (jointMatrices = v)],
+  // @ts-expect-error -- replaced on purpose
+  legAngle: [() => legAngle, v => (legAngle = v)],
+  // @ts-expect-error -- replaced on purpose
+  legReach: [() => legReach, v => (legReach = v)],
+  // @ts-expect-error -- replaced on purpose
+  locoPose: [() => locoPose, v => (locoPose = v)],
   // @ts-expect-error -- replaced on purpose
   mannequinFigure: [() => mannequinFigure, v => (mannequinFigure = v)],
   // @ts-expect-error -- replaced on purpose
@@ -147,10 +168,71 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the walk's length a cycle (two steps), metres: at the player's 3.4 m/s a frame every 0.3 m, 11 a second */
+/** the walk's length a cycle (two steps), metres, for a figure made from a model (a code figure's own legs give its
+ * stride: figureStride): at the player's 3.4 m/s a frame every 0.3 m, 11 a second */
 export const WALK_CYCLE_M = 2.4;
-/** frames in each clip */
-export const CLIP_FRAMES = Object.freeze({ idle: 16, walk: 8, cheer: 8, throw: 8, sit: 1 });
+/** frames in each clip (CH-3c: jog and sprint, the step off and the settle) */
+export const CLIP_FRAMES = Object.freeze({
+  idle: 16,
+  walk: 8,
+  jog: 6,
+  sprint: 4,
+  start: 1,
+  stop: 2,
+  cheer: 8,
+  throw: 8,
+  sit: 1,
+});
+/**
+ * CH-3c: the ways a two-legged figure gets around, each its own length a cycle from the figure's legs, so the foot on
+ * the ground stays where it was put (figureStride). `duty`: the share of a cycle each foot is down (a walk always has
+ * one down; a jog and a sprint leave the ground between steps); `reach`: how far the thigh swings forward at a step,
+ * radians (times the build's swing); `knee`: the swinging knee's bend; `flex`: the knee giving as the foot takes the
+ * weight; `air`: how high the body rises between steps (m); `arms` their swing and `elbow` their bend; `lean` forward.
+ * The frames are picked so the usual speed shows about one a tick (12 fps): townsfolk walk at 1.25 m/s (a walk
+ * cycle about 0.77 m: 8 frames in 0.6 s), you at 3.4 (a jog about 1.5 m: 6 in 0.45 s) and run at 5.8 (a sprint about
+ * 1.9 m: 4 in 0.33 s).
+ */
+export const FIGURE_GAITS = Object.freeze({
+  walk: Object.freeze({
+    min: 0.45,
+    duty: 0.5,
+    reach: 0.55,
+    knee: 0.75,
+    flex: 0.1,
+    air: 0,
+    arms: 0.45,
+    elbow: -0.3,
+    lean: -0.06,
+  }),
+  jog: Object.freeze({
+    min: 1.15,
+    duty: 0.27,
+    reach: 0.6,
+    knee: 1.45,
+    flex: 0.2,
+    air: 0.03,
+    arms: 0.55,
+    elbow: -1.2,
+    lean: 0.06,
+  }),
+  sprint: Object.freeze({
+    min: 1.9,
+    duty: 0.26,
+    reach: 0.72,
+    knee: 1.9,
+    flex: 0.26,
+    air: 0.045,
+    arms: 0.9,
+    elbow: -1.45,
+    lean: 0.18,
+  }),
+});
+/** CH-3c: the speeds (m/s) a walk turns into a jog and a jog into a sprint, [up, down] (a gap, so a speed on the edge
+ * doesn't flicker between them) */
+export const FIGURE_GAIT_SPEEDS = Object.freeze({ jog: Object.freeze([1.9, 1.7]), sprint: Object.freeze([4.6, 4.3]) });
+/** CH-3c: how fast a figure turns to face a new way (radians a second: about a quarter second for a half turn) */
+export const FIGURE_TURN_RATE = 4 * Math.PI;
 /** the most colours a figure's parts may use (the baker's palette: three shades each) */
 export const FIGURE_PAL_MAX = 28;
 /** the clock poses step on (frames a second) */
@@ -625,29 +707,31 @@ export function figurePose(F, clip, frame) {
     ['A', 1],
     ['B', -1],
   ]);
-  if (clip === 'walk') {
-    const a = (2 * Math.PI * f) / n,
-      s = Math.sin(a),
-      c = Math.cos(a),
-      swing = 0.55 * G.swing;
-    /* a forward swing is a turn about x by minus the angle (a turn by +a sends a hanging limb toward -z) */
+  if (clip === 'walk' || clip === 'jog' || clip === 'sprint') return locoPose(F, P, G, clip, f / n, at, rx, rot);
+  if (clip === 'start' || clip === 'stop') {
+    /* CH-3c: the step off (the weight forward, the first knee coming up) and the settle (feet together, the knees
+       giving, then straightening), each on the figure's own legs, the feet on the ground */
+    const legs = figureLegs(F),
+      go = clip === 'start',
+      knees = go ? [0.55, 0.12] : f === 0 ? [0.32, 0.3] : [0.12, 0.1];
+    let drop = 0;
     for (const [k, sg] of sides) {
-      const th = swing * s * sg,
-        knee = 0.75 * G.swing * Math.max(0, c * sg);
+      const i = k === 'A' ? 0 : 1,
+        kn = knees[i],
+        z = go ? (i === 0 ? 0.25 : -0.12) * legs.L : 0,
+        th = legAngle(legs, z, kn);
       rx('thigh' + k, -th);
-      rx('shin' + k, knee);
-      rx('foot' + k, th - knee);
-      rx('arm' + k, 0.45 * G.arms * s * sg);
-      rot('arm' + k, 2, sg * G.hang);
-      rx('forearm' + k, -0.3);
+      rx('shin' + k, kn);
+      rx('foot' + k, th - kn);
+      rx('arm' + k, (go ? 0.25 : 0.08) * G.arms * (i === 0 ? 1 : -1));
+      rot('arm' + k, 2, sg * (0.06 + G.hang));
+      rx('forearm' + k, go ? -0.45 : -0.2);
+      /* the leg down (B on the step off, both on the settle) sets how low the body comes */
+      if (!go || i === 1) drop = Math.max(drop, legs.L - legReach(legs, th, kn));
     }
-    P.rot[at('torso')][1] = 0.12 * G.swing * s;
-    P.rot[at('head')][1] = -0.08 * s;
-    P.rot[at('head')][0] = G.head;
-    P.rot[at('torso')][0] = -0.06 + G.lean;
-    /* the body drops as the legs part and bounces up as they pass (a spring in the step) */
-    P.rootY = -0.5 * (1 - Math.cos(swing * s)) + 0.02 * G.bounce * (1 - Math.abs(s));
-    P.rot[at('head')][2] = 0.03 * s;
+    P.rot[at('torso')][0] = G.lean + (go ? 0.1 : f === 0 ? -0.04 : 0);
+    P.rot[at('head')][0] = G.head + (go ? -0.04 : 0.04);
+    P.rootY = -drop;
     return P;
   }
   if (clip === 'cheer') {
@@ -700,6 +784,227 @@ export function figurePose(F, clip, frame) {
     rx('forearm' + k, -0.12);
   }
   if (f === 14) P.blink = true;
+  return P;
+}
+/**
+ * CH-3c: a two-legged figure's legs: the thigh and shin lengths (m, hip to knee to ankle) and their sum
+ * @param {Figure} F @returns {{ tL: number, sL: number, L: number }}
+ */
+export function figureLegs(F) {
+  const at = (/** @type {string} */ id) => F.parts.find(p => p.id === id),
+    shin = at('shinA'),
+    foot = at('footA'),
+    tL = shin ? Math.abs(shin.at[1]) : 0.24,
+    sL = foot ? Math.abs(foot.at[1]) : 0.19;
+  return { tL, sL, L: tL + sL };
+}
+/** how far below the hip the ankle is with the thigh at `th` and the knee bent by `k` @param {{ tL: number, sL:
+ * number }} legs @param {number} th @param {number} k @returns {number} */
+export function legReach(legs, th, k) {
+  return legs.tL * Math.cos(th) + legs.sL * Math.cos(th - k);
+}
+/**
+ * the thigh's angle (forward positive) that puts the ankle `z` metres ahead of the hip with the knee bent by `k`
+ * (bisection: the ankle moves forward as the thigh does)
+ * @param {{ tL: number, sL: number }} legs @param {number} z @param {number} k @returns {number}
+ */
+export function legAngle(legs, z, k) {
+  let lo = -1.5,
+    hi = 1.5 + k;
+  for (let i = 0; i < 30; i++) {
+    const m = (lo + hi) / 2;
+    if (legs.tL * Math.sin(m) + legs.sL * Math.sin(m - k) < z) lo = m;
+    else hi = m;
+  }
+  return (lo + hi) / 2;
+}
+/**
+ * CH-3c: how far ahead of the hip a foot comes down, and how far a cycle (two steps) of `gait` carries the figure
+ * (m): the foot is put down `z0` ahead and leaves the ground `z0` behind while the body passes over it, so a step is
+ * 2 z0 in the share `duty` of the cycle that foot is down. A cycle is at least the gait's `min`, so at its usual
+ * speed a cycle shows four frames or more on the 12 fps clock (fewer and the legs seem to flicker): short legs reach
+ * further (up to 0.9 radians) and, jogging or sprinting, stay longer in the air. A four-legged figure's from its legs'
+ * length. @param {Figure} F @param {string} [gait] walk, jog or sprint
+ * @returns {{ z0: number, cycle: number, duty: number }}
+ */
+export function figureStride(F, gait = 'walk') {
+  const quad = F.parts.find(p => p.id === 'legFL');
+  if (quad) {
+    const sh = /** @type {any} */ (quad.shape),
+      len = sh && sh.b ? Math.hypot(sh.b[0] - sh.a[0], sh.b[1] - sh.a[1], sh.b[2] - sh.a[2]) : 0.15,
+      z0 = len * Math.sin(0.5);
+    return { z0, cycle: 4 * z0, duty: 0.5 };
+  }
+  const W = FIGURE_GAITS[/** @type {keyof typeof FIGURE_GAITS} */ (gait)] || FIGURE_GAITS.walk,
+    G = { swing: 1, ...(F.gait || {}) },
+    L = figureLegs(F).L,
+    far = L * Math.sin(0.9);
+  let z0 = L * Math.sin(W.reach * G.swing),
+    duty = /** @type {number} */ (W.duty);
+  /* short legs: a jog or a sprint spends longer in the air, then (and a walk at once) reaches further */
+  if (duty < 0.5 && (2 * z0) / duty < W.min) duty = Math.max(0.15, (2 * z0) / W.min);
+  if ((2 * z0) / duty < W.min) z0 = Math.min(far, (W.min * duty) / 2);
+  return { z0, cycle: (2 * z0) / duty, duty };
+}
+/**
+ * CH-3c: the way a figure moving at `speed` m/s gets around, from the way it was (`prev`), with a gap at each edge
+ * (FIGURE_GAIT_SPEEDS) @param {number} speed @param {string} [prev] @returns {'walk' | 'jog' | 'sprint'}
+ */
+export function figureGaitFor(speed, prev = 'walk') {
+  const S = FIGURE_GAIT_SPEEDS,
+    rank = prev === 'sprint' ? 2 : prev === 'jog' ? 1 : 0,
+    up = (/** @type {readonly number[]} */ e, /** @type {number} */ r) => speed >= (rank >= r ? e[1] : e[0]);
+  return up(S.sprint, 2) ? 'sprint' : up(S.jog, 1) ? 'jog' : 'walk';
+}
+/**
+ * CH-3c: a heading eased toward `to` by at most `dt` seconds of FIGURE_TURN_RATE, the shorter way round
+ * @param {number} from @param {number} to @param {number} dt @returns {number}
+ */
+export function figureTurn(from, to, dt) {
+  const d = Math.atan2(Math.sin(to - from), Math.cos(to - from)),
+    most = FIGURE_TURN_RATE * Math.max(0, dt);
+  return Math.abs(d) <= most ? to : from + Math.sign(d) * most;
+}
+/**
+ * @typedef {{ tick: number, gait: number, x: number | null, z: number | null, phase: number, speed: number,
+ *   moving: boolean, kind: 'walk' | 'jog' | 'sprint', start: number, stop: number, head: number }} FigureMotion a
+ * person's movement as of a tick: the caller's count of metres walked, where they stood, how far through their gait's
+ * cycle, their speed (m/s, smoothed), whether they move and how, the tick they set off and stopped, the way they face
+ */
+/**
+ * CH-3c: a person's movement brought to `o.tick` (12 fps), from `M` (null at first): how far they went since the last
+ * tick is the caller's count (`gait`, metres walked, when above 0: you, an actor's walk, a lineup walking on the spot)
+ * or else how far `at` moved (townsfolk, a map's people walked over; a jump of 3 m or more is a move, not a walk).
+ * Moving faster than 0.2 m/s they walk, jog or sprint by speed (figureGaitFor), through `cycle(kind)` metres a cycle;
+ * setting off starts the cycle at a foot coming down; the way they face eases toward `heading` (figureTurn). A gap of
+ * a second or more starts afresh. The same tick again changes nothing.
+ * @param {FigureMotion | null | undefined} M
+ * @param {{ tick: number, gait?: number | null, at?: number[] | null, heading: number,
+ *   cycle: (kind: string) => number }} o @returns {FigureMotion}
+ */
+export function figureMotion(M, o) {
+  const x = o.at ? o.at[0] : null,
+    z = o.at ? o.at[1] : null,
+    gait = o.gait || 0;
+  if (!M || o.tick - M.tick > FIGURE_FPS || o.tick < M.tick)
+    return {
+      tick: o.tick,
+      gait,
+      x,
+      z,
+      phase: 0,
+      speed: 0,
+      moving: false,
+      kind: 'walk',
+      start: -9,
+      stop: -9,
+      head: o.heading,
+    };
+  if (o.tick === M.tick) return M;
+  const dt = (o.tick - M.tick) / FIGURE_FPS,
+    jump = x != null && M.x != null && z != null && M.z != null ? Math.hypot(x - M.x, z - M.z) : 0,
+    d = gait > 0 ? (gait >= M.gait ? gait - M.gait : gait) : jump < 3 ? jump : 0,
+    now = d / dt,
+    moving = now > 0.2,
+    speed = M.moving ? M.speed * 0.4 + now * 0.6 : now,
+    kind = moving ? figureGaitFor(speed, M.moving ? M.kind : 'walk') : M.kind,
+    phase = moving ? (M.moving ? M.phase + d / Math.max(0.05, o.cycle(kind)) : 0) : M.phase;
+  return {
+    tick: o.tick,
+    gait,
+    x,
+    z,
+    phase: phase % 1,
+    speed: moving ? speed : 0,
+    moving,
+    kind,
+    start: moving && !M.moving ? o.tick : M.start,
+    stop: !moving && M.moving ? o.tick : M.stop,
+    head: figureTurn(M.head, o.heading, dt),
+  };
+}
+/**
+ * CH-3c: the clip and frame a person's movement shows at its tick: the step off for the tick they set off, then their
+ * walk, jog or sprint by how far through its cycle they are; the settle for two ticks after they stop, then `rest`
+ * (the idle, by the clock). A four-legged figure only walks (`quad`).
+ * @param {FigureMotion} M @param {boolean} quad @returns {{ clip: string, frame: number } | null} null: at rest
+ */
+export function figureMotionClip(M, quad = false) {
+  if (M.moving) {
+    if (!quad && M.tick === M.start) return { clip: 'start', frame: 0 };
+    const clip = quad ? 'walk' : M.kind,
+      n = CLIP_FRAMES[clip];
+    return { clip, frame: Math.floor(M.phase * n) % n };
+  }
+  if (!quad && M.tick - M.stop < CLIP_FRAMES.stop) return { clip: 'stop', frame: M.tick - M.stop };
+  return null;
+}
+/**
+ * CH-3c: a walk, jog or sprint at `p` (0..1) through its cycle. Each foot is down for the gait's `duty` of the cycle
+ * (A from 0, B from a half), moving straight back under the hip from z0 ahead to z0 behind as the body goes 2 z0, so
+ * on the ground it stays put; then it swings forward with the knee bent. The body sits as low as the leg that is down
+ * lets it (and gives a little as the weight lands); between steps it rises (a jog's and a sprint's moment in the air).
+ * The arms swing against the legs, the body twists and the head rocks against it, leaning by the gait and the build.
+ * @param {Figure} F @param {FigurePose} P @param {Record<string, number>} G the build's gait @param {string} clip
+ * @param {number} p @param {(id: string) => number} at @param {(id: string, a: number) => void} rx
+ * @param {(id: string, ax: number, a: number) => void} rot @returns {FigurePose}
+ */
+export function locoPose(F, P, G, clip, p, at, rx, rot) {
+  const W = FIGURE_GAITS[/** @type {keyof typeof FIGURE_GAITS} */ (clip)] || FIGURE_GAITS.walk,
+    legs = figureLegs(F),
+    { z0, duty } = figureStride(F, clip),
+    D = { ...W, duty };
+  /** @type {number[]} */
+  const zs = [];
+  let low = -1,
+    air = 0;
+  for (const [k, ph] of /** @type {[string, number][]} */ ([
+    ['A', p],
+    ['B', p + 0.5],
+  ])) {
+    const q = ((ph % 1) + 1) % 1;
+    let z, kn;
+    if (q < D.duty) {
+      /* down: straight back under the hip, the knee giving as the weight lands */
+      const u = q / D.duty;
+      z = z0 * (1 - 2 * u);
+      kn = W.flex * G.bounce * Math.sin(Math.PI * u);
+    } else {
+      /* swinging forward, the knee bent most halfway */
+      const u = (q - D.duty) / (1 - D.duty);
+      z = -z0 * Math.cos(Math.PI * u);
+      kn = W.knee * G.swing * Math.sin(Math.PI * u);
+    }
+    const th = legAngle(legs, z, kn);
+    rx('thigh' + k, -th);
+    rx('shin' + k, kn);
+    rx('foot' + k, th - kn);
+    zs.push(z);
+    if (q < D.duty) low = Math.max(low, legs.L - legReach(legs, th, kn));
+    else {
+      /* in the air: how far through the gap between one foot leaving and the other landing */
+      const gap = 0.5 - D.duty,
+        v = gap > 0 ? (q - D.duty) / gap : 1;
+      if (v < 1) air = Math.max(air, Math.sin(Math.PI * v));
+    }
+  }
+  /* no foot down (a jog's moment in the air): the body at the height it leaves and lands at, lifted */
+  const drop = low >= 0 ? low : legs.L - legReach(legs, legAngle(legs, z0, 0), 0);
+  P.rootY = -drop + (low >= 0 ? 0 : W.air * G.bounce * air);
+  const sA = z0 > 0 ? zs[0] / z0 : 0;
+  for (const [k, sg] of /** @type {[string, number][]} */ ([
+    ['A', 1],
+    ['B', -1],
+  ])) {
+    rx('arm' + k, W.arms * G.arms * sA * sg);
+    rot('arm' + k, 2, sg * (G.hang + (clip === 'walk' ? 0 : 0.12)));
+    rx('forearm' + k, W.elbow);
+  }
+  P.rot[at('torso')][1] = 0.12 * G.swing * sA;
+  P.rot[at('torso')][0] = W.lean + G.lean;
+  P.rot[at('head')][1] = -0.08 * sA;
+  P.rot[at('head')][0] = G.head - (clip === 'walk' ? 0 : W.lean * 0.6);
+  P.rot[at('head')][2] = 0.03 * sA;
   return P;
 }
 /**

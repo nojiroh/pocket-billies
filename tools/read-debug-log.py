@@ -55,11 +55,15 @@ def main():
               f"{ppl.get('textures')} pictures {ppl.get('mb')} MB")
         fg = ppl.get('figures')
         if isinstance(fg, dict):
-            print(f"  figures: style {fg.get('style')}, {fg.get('density')} px/m, {fg.get('bakes')} baked ({num(fg.get('ms'))} ms), "
+            # CH-3c: whether Figures and Everyone else were on, and whose figure you were (a phone log names it)
+            print(f"  figures: {'ON' if fg.get('on') else 'off'}, everyone else {'on' if fg.get('folk') else 'off'}, you {fg.get('figure')}, kit {fg.get('kit')}, "
+                  f"style {fg.get('style')}, {fg.get('density')} px/m, {fg.get('bakes')} baked ({num(fg.get('ms'))} ms), "
                   f"{fg.get('pictures')} kept {fg.get('mb')} MB, lost {fg.get('losses')}" + (f", FAILED {fg.get('failed')}" if fg.get('failed') else ''))
             m = fg.get('meshes') or {}
             if m: print(f"  meshes: thread {m.get('thread')}, {m.get('builds')} built ({num(m.get('ms'))} ms), {m.get('page')} on the page "
                         f"({num(m.get('pageMs'))} ms), {m.get('waiting')} waiting, {m.get('kept')} kept {m.get('mb')} MB")
+            mv = fg.get('moves') or {}
+            if mv: print('  moves (person-ticks): ' + ', '.join(f'{k} {v}' for k, v in mv.items()))
             a = fg.get('atlas') or {}
             if a: print(f"  atlas: {'on' if a.get('on') else 'off'}, {a.get('people')} people in {a.get('cells')} cells ({a.get('use')} of it), "
                         f"{a.get('draws')} drawn ({num(a.get('ms'))} ms; {a.get('faceDraws', 0)} for a face: talking, blinks, expressions), {a.get('rows')} ramp rows, full {a.get('full')}"

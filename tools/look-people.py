@@ -33,6 +33,11 @@
                                                     # expression and talking frame (figureKit.json faces), up close
                                                     # (160 px a metre) and at walking size (48), at 4 screen pixels a
                                                     # pixel (figure-faces-*.png), no shots
+    python3 tools/look-people.py --moves[=chosen]   # CH-3c: one person in every build (figureKit.json builds), a row a
+                                                    # build: the walk's 8 frames, the jog's 6, the sprint's 4, the step
+                                                    # off and the settle, side on at the Normal tilt (48 px a metre),
+                                                    # at 3 screen pixels a pixel
+                                                    # (figure-moves-*.png), no shots
     python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
                                                     # (and with --folk=1 the rival) as figures at 64 px a metre
                                                     # (battle-*.png); --no-shots for the battle (or --lose) alone
@@ -74,6 +79,7 @@ SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a
 CAST = arg('cast')
 STYLES = arg('styles')
 FACES = next((a.split('=', 1)[1] if '=' in a else 'chosen' for a in ARGS if a.startswith('--faces')), None)
+MOVES = next((a.split('=', 1)[1] if '=' in a else 'chosen' for a in ARGS if a.startswith('--moves')), None)
 PLAYER = arg('player')  # boy or girl: you in that preset (people/<id>.json's look) instead of the save's look
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
@@ -164,6 +170,49 @@ FACES_JS = """((who, rows, style) => {const L=lookOf(who), D=GAMEDATA, base=(PEO
    if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
   out.push({label, row})}
  return out})"""
+
+
+# CH-3c: one person in each build, every frame of the walk, jog and sprint, the step off and the settle, side on
+MOVES_JS = """((who, tilt, ppm) => {const L=lookOf(who), D=GAMEDATA, base=(PEOPLE[who]&&PEOPLE[who].figure)||{}, out=[];
+ const clips=[['walk',8],['jog',6],['sprint',4],['start',1],['stop',2]];
+ Object.keys(D.figureKit.builds).forEach((build, b)=>{const row=[];
+  for (const [clip,n] of clips) for (let f=0;f<n;f++){
+   const im=figurePreview({who, look:L, items:D.wardrobe.items, kit:D.figureKit, figure:{...base,build}, rev:100+b, style:'pixel', ppm, turn:0.5, tilt:tilt*Math.PI/180, clip, frame:f});
+   if(!im) return; row.push([clip, im.toDataURL('image/png')])}
+  out.push({build, row})});
+ return out.length===Object.keys(D.figureKit.builds).length&&out.every(r=>r.row.length===21)?out:'loading'})"""
+
+
+def moves(pg, t0):
+    """the --moves sheet: a row a build, each frame of each gait"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    ppm = int(FIG_DIALS.get('density') or 48)
+    for _ in range(240):
+        r = pg.evaluate(f'{MOVES_JS}({json.dumps(MOVES)},{TILT},{ppm})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no moves for {MOVES}')
+    S, lab = 3, 14
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1])))
+    rows = [(R, [(c, dec(u)) for c, u in R['row']]) for R in r]
+    cw = max(i.width for _, ims in rows for _, i in ims) + 2
+    ch = max(i.height for _, ims in rows for _, i in ims) + 2
+    out = Image.new('RGBA', (cw * 21 * S, (ch * S + lab) * len(rows) + lab), (196, 214, 170, 255))
+    d = ImageDraw.Draw(out)
+    x = 0
+    for c, n in (('walk', 8), ('jog', 6), ('sprint', 4), ('start', 1), ('stop', 2)):
+        d.text((x * cw * S + 4, 1), c, fill=(36, 25, 54, 255))
+        x += n
+    for y, (R, ims) in enumerate(rows):
+        oy = lab + y * (ch * S + lab)
+        d.text((4, oy + 1), R['build'], fill=(36, 25, 54, 255))
+        for x, (_, i) in enumerate(ims):
+            out.alpha_composite(i.resize((i.width * S, i.height * S), Image.NEAREST), (x * cw * S + (cw * S - i.width * S) // 2, oy + lab + (ch * S - i.height * S)))
+    name = f'figure-moves-{MOVES}-{ppm}ppm-{int(TILT)}deg.png'
+    out.save(OUT / name)
+    print(f'[{time.time() - t0:5.0f}s] {name}: {len(rows)} builds', flush=True)
+    return {'shot': name, 'builds': [R['build'] for R, _ in rows]}
 
 
 def faces(pg, t0):
@@ -428,6 +477,12 @@ def main():
             rows.append(styles(pg, t0))
             ctx.close(); b.close(); srv.shutdown()
             (OUT / 'notes.json').write_text(json.dumps({'styles': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
+        if MOVES:
+            rows.append(moves(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'moves': rows, 'errors': errs[:6]}, indent=1))
             print('errors:', errs[:6])
             return
         if FACES:

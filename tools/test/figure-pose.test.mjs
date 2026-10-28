@@ -179,12 +179,14 @@ test('figure pose: the walk swings the legs against each other and the arms agai
   const F = mannequinFigure(),
     at = id => F.parts.findIndex(p => p.id === id);
   assert.equal(CLIP_FRAMES.walk, 8);
-  const P2 = figurePose(F, 'walk', 2),
-    P6 = figurePose(F, 'walk', 6);
-  assert.ok(P2.rot[at('thighA')][0] < -0.5 && P2.rot[at('thighB')][0] > 0.5, 'frame 2: A forward, B back');
-  assert.ok(P2.rot[at('armA')][0] > 0.4, 'the arm on the side of the forward leg swings back');
-  assert.deepEqual(P6.rot[at('thighA')], P2.rot[at('thighB')]);
-  assert.ok(P2.rootY < 0 && figurePose(F, 'walk', 0).rootY > 0, 'it drops as the legs part and bounces as they pass');
+  /* CH-3c: frame 0 is A's foot coming down ahead, B's leaving the ground behind */
+  const P0 = figurePose(F, 'walk', 0),
+    P4 = figurePose(F, 'walk', 4);
+  assert.ok(P0.rot[at('thighA')][0] < -0.4 && P0.rot[at('thighB')][0] > 0.4, 'frame 0: A forward, B back');
+  assert.ok(P0.rot[at('armA')][0] > 0.3, 'the arm on the side of the forward leg swings back');
+  assert.ok(Math.abs(P4.rot[at('thighA')][0] - P0.rot[at('thighB')][0]) < 1e-6, 'half a cycle on, the other leg');
+  assert.ok(P0.rootY < figurePose(F, 'walk', 2).rootY, 'it drops as the legs part and rises as they pass');
+  for (let f = 0; f < 8; f++) assert.ok(figurePose(F, 'walk', f).rootY <= 1e-9, `frame ${f}: a foot on the ground`);
   for (let f = 0; f < 8; f++) {
     const P = figurePose(F, 'walk', f);
     for (const k of ['A', 'B']) {
@@ -412,7 +414,17 @@ test('figure pose: a squarer ellipsoid reaches further on the diagonal, a tapere
 test('figure pose: cheer, throw and sit; a gait of its own; on the clock', () => {
   const F = mannequinFigure(),
     i = id => F.parts.findIndex(p => p.id === id);
-  assert.deepEqual(Object.keys(CLIP_FRAMES), ['idle', 'walk', 'cheer', 'throw', 'sit']);
+  assert.deepEqual(Object.keys(CLIP_FRAMES), [
+    'idle',
+    'walk',
+    'jog',
+    'sprint',
+    'start',
+    'stop',
+    'cheer',
+    'throw',
+    'sit',
+  ]);
   /* both arms up in a cheer */
   const C = figurePose(F, 'cheer', 0);
   assert.ok(C.rot[i('armA')][2] > 2 && C.rot[i('armB')][2] < -2);
@@ -424,8 +436,8 @@ test('figure pose: cheer, throw and sit; a gait of its own; on the clock', () =>
   assert.ok(S.rot[i('thighA')][0] < -1.2 && S.rot[i('shinA')][0] > 1.2);
   /* a bigger stride and a forward lean */
   const G = { ...F, gait: { swing: 1.4, lean: 0.1 } },
-    w0 = figurePose(F, 'walk', 2),
-    w1 = figurePose(G, 'walk', 2);
+    w0 = figurePose(F, 'walk', 0),
+    w1 = figurePose(G, 'walk', 0);
   assert.ok(Math.abs(w1.rot[i('thighA')][0]) > Math.abs(w0.rot[i('thighA')][0]) * 1.3);
   assert.ok(Math.abs(w1.rot[i('torso')][0] - (w0.rot[i('torso')][0] + 0.1)) < 1e-9);
   /* the default gait is the spike's walk */

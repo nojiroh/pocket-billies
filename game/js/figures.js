@@ -38,6 +38,7 @@ import {
   FIGURE_LIGHT,
   FIGURE_PAL_MAX,
   OUTLINE_RGB,
+  WALK_CYCLE_M,
   cardSize,
   clipFrameAt,
   codeExtent,
@@ -50,9 +51,12 @@ import {
   figureKey,
   figureMarkHidden,
   figureMix,
+  figureMotion,
+  figureMotionClip,
   figurePose,
   figureRamp,
   figureSceneLight,
+  figureStride,
   figureTalkFace,
   figureTick,
   figureView,
@@ -110,6 +114,7 @@ expose({
   figureCacheClear: [() => figureCacheClear, v => (figureCacheClear = v)],
   figureChoice: [() => figureChoice, v => (figureChoice = v)],
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
+  figureCycle: [() => figureCycle, v => (figureCycle = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
   figureDensity: [() => figureDensity],
   figureDesign: [() => figureDesign, v => (figureDesign = v)],
@@ -134,6 +139,7 @@ expose({
   figureLookHash: [() => figureLookHash, v => (figureLookHash = v)],
   figureLookRamp: [() => figureLookRamp, v => (figureLookRamp = v)],
   figureMarkClip: [() => figureMarkClip, v => (figureMarkClip = v)],
+  figureMoves: [() => figureMoves],
   figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
@@ -146,6 +152,7 @@ expose({
   figureRes: [() => figureRes, v => (figureRes = v)],
   figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
   figureSnapshot: [() => figureSnapshot, v => (figureSnapshot = v)],
+  figureStrides: [() => figureStrides],
   figureStyle: [() => figureStyle, v => (figureStyle = v)],
   figureStyledName: [() => figureStyledName, v => (figureStyledName = v)],
   figureTarget: [() => figureTarget, v => (figureTarget = v)],
@@ -1489,8 +1496,19 @@ function figureFarPpm(rec, ppm, at) {
   figureDensity.set(rec, k);
   return Math.max(16, Math.round((ppm * k) / 4) * 4);
 }
-/** each person's distance walked at the last tick of the 12 fps clock: the walk is read once a tick */
+/** each person's movement at the last tick of the 12 fps clock (CH-3c: logic/figure-pose.js figureMotion: how far
+ * they went, their speed and gait, when they set off and stopped, the way they face, eased) */
 const figureGait = new WeakMap();
+/** CH-3c: the ticks people spent in each way of moving (the debug log's figures line: walk, jog, sprint, start, stop) */
+const figureMoves = { walk: 0, jog: 0, sprint: 0, start: 0, stop: 0 };
+/** CH-3c: each kit figure's cycle a gait (figure-pose.js figureStride), worked out once */
+const figureStrides = new WeakMap();
+/** @param {any} F a code figure @param {string} kind @returns {number} metres a cycle */
+function figureCycle(F, kind) {
+  let S = figureStrides.get(F);
+  if (!S) figureStrides.set(F, (S = {}));
+  return S[kind] || (S[kind] = figureStride(F, kind).cycle);
+}
 /** the camera's tilt this frame (walk/camera.js), radians; the Normal zoom's 26 degrees with no camera */
 function figureTilt() {
   const C = typeof walkView !== 'undefined' ? walkView.C : null;
@@ -1522,35 +1540,48 @@ export function figureFaceFor(who, x, z, me = false) {
 /** CH-6: how far (metres) from where the talk began the one talking may stand */
 const FIGURE_TALK_NEAR = 1.5;
 /**
- * a person drawn as figure `name` this frame, doing `act`: 'idle', 'walk' or 'run' (by the distance walked, `gait`
- * metres, as it was at the last tick), or another of the figure's clips ('cheer', 'throw', 'sit': a code figure has
- * only idle and walk); turned to `heading` in the world (logic/person-view.js personHeading), seen from this frame's
- * camera, in `style`. `rec` keeps their last picture and their gait at the last tick (nothing is written on it). Null
- * until a first picture is baked (or while a model's file loads).
+ * a person drawn as figure `name` this frame, doing `act`: 'idle', 'walk' or 'run', or another of the figure's clips
+ * ('cheer', 'throw', 'sit'); turned toward `heading` in the world (logic/person-view.js personHeading), seen from
+ * this frame's camera, in `style`. CH-3c: a kit figure moves by how far it went a tick (`gait`, the caller's count of
+ * metres walked when above 0, else how far `at` moved: logic/figure-pose.js figureMotion), walking, jogging or
+ * sprinting by its speed with its feet where it put them, stepping off and settling, and turning to a new heading
+ * over a few ticks (a figure from a model too). `rec` keeps their last picture and their movement (nothing is written
+ * on it). Null until a first picture is baked (or while a model's file loads).
  */
 export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'pixel', at = null, face = null) {
   const Fig = figureDef(name);
   if (!Fig) return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
-  const tick = figureTick(t);
-  let g = figureGait.get(rec);
-  if (!g || g.tick !== tick) figureGait.set(rec, (g = { tick, gait }));
+  const tick = figureTick(t),
+    code = Fig.kind === 'code',
+    quad = code && Fig.F.parts.some((/** @type {any} */ p) => p.id === 'legFL'),
+    was = figureGait.get(rec),
+    M = figureMotion(was, {
+      tick,
+      gait,
+      at,
+      heading,
+      cycle: kind => (code ? figureCycle(Fig.F, quad ? 'walk' : kind) : WALK_CYCLE_M),
+    });
+  figureGait.set(rec, M);
   let clip = act,
     frame;
-  if (Fig.kind === 'code') {
+  if (code) {
     /* CH-3b: a kit figure cheers and sits too; each breathes at its own time, not in step with the crowd */
-    clip =
-      act === 'walk' || act === 'run' ? 'walk' : act === 'cheer' || act === 'sit' || act === 'throw' ? act : 'idle';
-    frame = clipFrameAt(clip, t + (figureSeed(name) % 2700), g.gait);
+    const moves = act === 'cheer' || act === 'sit' || act === 'throw' ? null : figureMotionClip(M, quad);
+    if (moves && M !== was && moves.clip in figureMoves)
+      figureMoves[/** @type {keyof typeof figureMoves} */ (moves.clip)]++;
+    clip = moves ? moves.clip : act === 'cheer' || act === 'sit' || act === 'throw' ? act : 'idle';
+    frame = moves ? moves.frame : clipFrameAt(clip, t + (figureSeed(name) % 2700));
   } else {
     if (!Fig.clips[clip]) clip = act === 'run' && Fig.clips.walk ? 'walk' : 'idle';
     if (!Fig.clips[clip]) clip = Object.keys(Fig.clips)[0];
     const speed = clip === 'run' ? WALK_SPEED * RUN_FACTOR : WALK_SPEED;
-    frame = meshClipFrame(Fig.clips[clip], t, g.gait, speed);
+    frame = meshClipFrame(Fig.clips[clip], t, M.gait, speed);
   }
   /* CH-6: everyone blinks on the portrait kit's timing (a kit figure: walking too), each at their own time */
-  const blink = Fig.kind === 'code' && Fig.F.faceSet ? figureBlinkAt(t, figureSeed(name)) : 0,
+  const blink = code && Fig.F.faceSet ? figureBlinkAt(t, figureSeed(name)) : 0,
     fc = blink ? { ...(face || {}), blink } : face;
-  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style, 0, at, fc);
+  return figurePicture(rec, name, clip, frame, M.head, seenYaw(), figureTilt(), style, 0, at, fc);
 }
 /**
  * a battle's trainer drawn as your figure (battle-stage.js trainerBattleFrame): you from behind (i 0) or the rival
@@ -1603,6 +1634,8 @@ export function figureReport() {
     meshes: figureMeshReport(),
     /* CH-4: the live atlas: people in it, cells, draws and their ms */
     atlas: typeof figureAtlasReport === 'function' ? figureAtlasReport() : null,
+    /* CH-3c: the ticks people spent walking, jogging, sprinting, stepping off and settling */
+    moves: { ...figureMoves },
   };
 }
 /** the checks: lose the baker's context on purpose, back after `ms` (WEBGL_lose_context); false if it can't */
