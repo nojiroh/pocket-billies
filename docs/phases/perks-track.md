@@ -332,6 +332,38 @@ The 8 existing (Leftover Sandwich, Snack Pack, Lucky Coin, Study Notes, Iron Ves
 Specs) get their own pictures. Held items' rarity tiers follow UI-14's ladder (recommendation: type boosters common,
 tricks uncommon).
 
+**Corrected in PK-10** (built 2026-10-28 on `track/perks-items`, the items lane):
+- **Rarity tiers already existed** (UI-14b: `rarity` on every held item, data-checks.js `RARITY_TIERS`, the loot
+  ladder's common, uncommon, rare, mythical); the new items take the recommendation: type boosters common, tricks
+  uncommon. The reward pick's `held` card draws among held items evenly (rewards.js), not by tier; that was kept.
+- **The held kinds are not FX_KINDS**: `survive`, `reflect`, `drain` and `last` live in effects.js `HELD_FX_KINDS`
+  (no Perk, boon, modifier or event row can name them); `immune` and `first` are FX_KINDS read their own way on a
+  hold row (`HELD_OWN_FORMS`): immune names a `type` (with `until: hurt`), not a Perk's `what`; first takes a
+  `chance` (at most FX_CHANCE). data-checks.js `HOLD_KINDS` lists them; `heldKindProblems` checks their fields.
+  game-data.d.ts `HeldRow` (an FxRow or a `HeldKindRow`) types `Item.hold`. Their engine code is its own section of
+  battle-engine.js (`heldSurvives`, `heldAfterHit`, `heldFloats`, `heldFirstActs`, `heldLastActs`, `heldMoment`),
+  so merges with the Perk lane stay small.
+- **A held item acts on either side** (a foe's Billie may hold one; a trainer's could): every held kind is read for
+  the fighter holding it, unlike the run's rows (yours only). Its once-a-battle marks are the battle's `b.heldState`,
+  one set per holder.
+- **when, if and once on hold rows** (Complaint Form): a hold row may say `when` hit or hurt (stat rows only:
+  data-checks.js `HELD_WHEN_KINDS`), and only with one an `if` of what a hit knows about the holder (effects.js
+  `HELD_IFS`: superEffective, cat, type, hp<) and `once: battle`; no every, grow or per. A row with a when is left out
+  of fxOfBillie (it acts only at its moment: `fxHeldAt`). Complaint Form is two such stat rows (Attack, Sp. Atk +2).
+- Seatbelt's survive is Bedrock's rule for a held item (full HP, once a battle; Bedrock goes first). Cactus Keyring's
+  reflect takes `cat: H` ("physical"). Party Balloon blocks damaging moves of its type with no accuracy roll and is
+  spent by the first damaging hit ("popped"); the foe AI's damage estimate sees 0 while it floats. Express Pass rolls
+  once per act of its holder, after the Perks' first rows (no roll without one held). Ankle Weights' last sorts after
+  priority and the early acts, before Speed; its text says "moves after the others" (a priority move still goes
+  first, so "always" was dropped); its damage is an ordinary deal row x1.3.
+- The Studio's items editor had **no hold rows at all** (held items were edited as JSON only): studio/js/held-editor.js
+  gives a held item its tier and rows by kind (with When, If and Once), Make it a held item and back.
+- The Studio's type rename now reaches hold rows (a type booster's type, Party Balloon's, a row's `type:` condition).
+- All 24 pictures drawn (the 8 existing redrawn); every i_ item rectangle retired (i_pretzel, i_trailmix, i_bell and
+  the finance-era i_appeal, i_settlement, i_taxbreak, i_bailout, i_loophole, i_apology): no item draws from the atlas.
+  dataItemArt now warns for any item without a picture. Main's ON-4 (merged mid-step) had added Form 99-A
+  (`transfer`) on i_settlement: it got its own picture too (a stamped carbon-copy form).
+
 ### 5.9 Boons and curses (PK-9; data section `boons`; 20)
 Named from today's rows: Glittering Water (fountain, Moneys +10%, 3 places), Lucky Ripples (fountain, catch +5%, 3),
 Stamped Insufficient (fountain curse, shops +10%, 2), Camera-Ready (ring_light, Speed +1, 1), Surge Pricing
@@ -609,7 +641,7 @@ unused-art gate.
 | PK-7 | Fine Print | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
 | PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
 | PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
-| PK-10 | Held items | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
+| PK-10 | Held items (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-10" in 5.8) | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
 | PK-11 | Bag item icons (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-11" in 5.10) | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
 | PK-12 | Collection and wrap-up | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
 

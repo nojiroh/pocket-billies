@@ -585,6 +585,24 @@ art pipeline (phase 17 task 11).
   card (`itemIcon`, `.pxi` pixelated). The old atlas (`art/icons/icons.png`) keeps only what held items still draw
   until PK-10.
 
+## Held item pictures, 36x36 (Perks track PK-10, 2026-10-28)
+- The 24 held items have their own pictures too (`game/art/items/<id>.svg`, `img` in items.json), the same rules and
+  pipeline as "Bag item pictures" above (grids in `tools/art/icon-grids/items.json`, drawn with octagons, 45-degree
+  lines and 3 px strokes). No item draws from the old atlas any more: every `i_` rectangle left `art/manifest.js` and
+  `art/icons/icons.png`.
+- Shapes: Leftover Sandwich a triangle half (lettuce, tomato), Snack Pack a puffed blue chip bag, Lucky Coin a gold
+  octagon with a clover, Study Notes a spiral notebook (rings down the side), Iron Vest a steel plated vest, Quick Laces
+  a red running shoe, Brass Knuckles four gold rings over a grip, Smart Specs slate glasses with ice lenses; the type
+  boosters Matchbook (a red book, a match alight on the 45-degree line), Water Bottle (a blue sports bottle), Seed
+  Packet (a green packet cut open, a sprout), Spare Battery (slate and gold, a plus), Garden Trowel (a steel blade, a
+  wood handle), Paper Plane (ice and blue), Tarot Card (deep violet, a gold star), Socket Wrench (steel, slate grip),
+  Dragon Fruit (red with green scales); the tricks Seatbelt (a steel buckle and red button on a slate strap), Cactus
+  Keyring (a potted cactus on a gold ring), Complaint Form (a clipboard, a red stamp), Party Balloon (red, on a
+  string), Costume Fangs (a wide mouth, cream fangs), Express Pass (a gold ticket, a red double arrow), Ankle Weights
+  (a teal cuff with steel pockets and a gold buckle).
+- `--check`'s silhouette rule made four of them change shape (the notebook, the chip bag and the seed packet were
+  three boxes alike; the fangs were the coin's octagon).
+
 ## Terrain TR-4 (2026-10-26): the biomes' cliff faces
 - `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept
   pixel for pixel; the fourth row is new, drawn by `python3 tools/build-walls.py --extend` (from its own seed, so it
