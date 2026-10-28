@@ -114,7 +114,7 @@ __film.snaps=(base,mods)=>{const s=JSON.parse(JSON.stringify(base));for(const m 
  if('fx' in m){if(m.fx)x.fx=m.fx;else delete x.fx}if(m.stg)x.stg=m.stg;if(m.hp!=null)x.hp=m.hp}return s};
 __film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleLooksReset==='function')battleLooksReset();
  let cur=activeBattle.events[activeBattle.events.length-1].s;
- const play=x=>{const prev=cur;cur=__film.snaps(cur,x.mods);const ev={an:x.an||null,s:cur,by:x.by,prev};const r=ev.an?battleStagePlay(ev.an,ev):{dur:0,hit:0};
+ const play=x=>{const prev=cur;cur=__film.snaps(cur,x.mods);const ev={an:x.an||null,s:cur,by:x.by,prev,after:x.after};const r=ev.an?battleStagePlay(ev.an,ev):{dur:0,hit:0};
   const go=()=>battleLooksLine(ev);if(r.hit>=999||!r.hit)go();else S.evs.push({t:S.t+r.hit,fn:go,onSkip:go})};
  for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
 __film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
@@ -160,6 +160,11 @@ return 0})()"""
 # VFX-14: the events films (on the foe, slot 1): lines at film ms, each an event and the snapshot changes it brings
 def _st(st, at=0, **o): return {'at': at, 'an': {'k': 'status', 'si': 1, **({'st': st} if st else {})}, 'mods': [{'i': 1, 'st': st}] if st else [], **o}
 EVENT_FILMS = {
+    # VFX-13: a drain (Sap Drain's hit, then its heal with the motes) and a crash's recoil (a miss, then the hurt)
+    'drain': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'harvest', 'dmg': 12, 'te': 1}},
+              {'at': 1000, 'an': {'k': 'heal', 'si': 0, 'amt': 6}, 'after': {'kind': 'drain', 'from': 1, 'mid': 'harvest'}}],
+    'recoil': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'margincall', 'miss': True}},
+               {'at': 900, 'an': {'k': 'hurt', 'si': 0, 'dmg': 20}, 'after': {'kind': 'recoil', 'from': 1, 'mid': 'margincall'}}],
     'brn': [_st('brn'), {'at': 2000, 'an': {'k': 'hurt', 'si': 1, 'fx': 'brn', 'dmg': 3}}, {'at': 3200, 'mods': [{'i': 1, 'st': None}]}],
     'par': [_st('par'), _st('par', 1800)],
     'slp': [_st('slp'), _st('slp', 1800), {'at': 3000, 'mods': [{'i': 1, 'st': None}]}],

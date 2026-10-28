@@ -71,6 +71,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   koAhead: [() => koAhead, v => (koAhead = v)],
   // @ts-expect-error -- replaced on purpose
+  lineAfterMove: [() => lineAfterMove, v => (lineAfterMove = v)],
+  // @ts-expect-error -- replaced on purpose
   redShare: [() => redShare, v => (redShare = v)],
   // @ts-expect-error -- replaced on purpose
   stepOn: [() => stepOn, v => (stepOn = v)],
@@ -244,6 +246,27 @@ export function hitLook(an, ka, w, A, boss = false) {
     L.stop = Math.max(L.stop, T.last.freeze || 0);
   }
   return L;
+}
+
+/** VFX-13: what a heal or a hurt line follows: the move line before it in the same move's lines (a drain's heal, a
+ * crash's recoil), or null. drain: Billie si healed from the target of a move it used that drains (its fx.drain);
+ * recoil: si hurt after a move of its own that missed (fx.missCost: it crashed). Read only
+ * @param {{ an?: any }[]} events @param {number} i @param {Record<string, Move>} moves
+ * @returns {{ kind: 'drain' | 'recoil', from: number, mid: string } | null} */
+export function lineAfterMove(events, i, moves) {
+  const an = events[i] && events[i].an;
+  if (!an || (an.k !== 'heal' && an.k !== 'hurt')) return null;
+  for (let j = i - 1; j >= 0; j--) {
+    const e = events[j] && events[j].an;
+    if (!e || e.k !== 'move') continue;
+    const M = moves[e.mid],
+      fx = (M && M.fx) || {};
+    if (e.si !== an.si) return null;
+    if (an.k === 'heal' && fx.drain && !e.miss && e.dmg) return { kind: 'drain', from: e.ti, mid: e.mid };
+    if (an.k === 'hurt' && fx.missCost && e.miss) return { kind: 'recoil', from: e.ti, mid: e.mid };
+    return null;
+  }
+  return null;
 }
 
 /** the gates that hold for a move event (battleAnims.json's `if` words)

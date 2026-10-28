@@ -2811,6 +2811,13 @@ export interface BattleAnimTiers {
   superCritPunch?: number;
   ko: BattleTierKo;
   last: BattleTierKo;
+  drainAbout?: string;
+  /** a drain's motes, from the target to the one draining */
+  drain?: { n: number; every: number; ms: number; sprite: DataId; ramp: string };
+  /** a heal's sparkles and its ground ring's colour (a colours key) */
+  heal?: { n: number; every: number; sprite: DataId; ramp: string; color: string };
+  /** a crash's recoil: knocked back kb px, a dust puff, a dull flash */
+  recoil?: { kb: number; puff: number; sprite: BattleTierSprite };
 }
 /** battleAnims.json `events`: each step adds its own keys (VFX-14: statuses and stats; VFX-16: the flow moments, optional) */
 export interface BattleAnimEvents {
