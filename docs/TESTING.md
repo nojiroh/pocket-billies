@@ -417,6 +417,12 @@ same phase:
   of perks.json (catch odds, a catch, a throw, arrivals, purchases, reward picks, the map, a leader's pay, salvage),
   and battles holding all 42 Wave A-C Perks; `perks.test.mjs` needs bots (a scrapyard ahead, behind, none);
   `data-checks.test.mjs` the kinds' rows; the run sim's money ledger counts what Perks pay (moneyIn.perks).
+  PK-6: `tools/test/battle-perks-wave-d.test.mjs` checks Wave D's kinds with test-only Perks (the cap and letting a cap
+  Perk go; copy, never itself or another copier, its own marks and the card's words; give at take, once; sideOpen;
+  sideFind's finds more in a side place, the rest unchanged; eventHurt; needs side; a growth on the card), then each
+  of the 11 Wave D Perks of perks.json, Like Button and Streak Tracker over a run of wins and faints and in real
+  battles, a Photocopier copying a growing Perk, and battles holding all 53 Wave A-D Perks; `data-checks.test.mjs` the
+  kinds' rows and needs side; the run sim counts a take's Moneys (moneyIn.perks).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
