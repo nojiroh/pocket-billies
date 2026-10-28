@@ -167,6 +167,15 @@ function soundscapeHere(sc, E, t) {
     v.pan = clamp(((v.x - P.x) * R[0] + (v.z - P.z) * R[2]) / 7, -1, 1) * 0.75;
     want.push(v);
   }
+  /* cave drips ring in a cave's room (the tracker's reverb, SND-9), everything else in the open air's */
+  const T = soundEngine.tracker,
+    room = sc.indoor && sc.far === 'cave' ? 'cave' : 'open',
+    R0 = T && T.reverbStats ? T.reverbStats() : null;
+  /* (the Sound test's harp may have set another place: the room's own word is checked, not a copy) */
+  if (T && T.reverbPlace && (R0 ? R0.place : ambience.scapeRoom) !== room) {
+    ambience.scapeRoom = room;
+    T.reverbPlace(room);
+  }
   /* Surf: the wake round you while you ride and move */
   if (S.wake && P.surf && P.walk) want.push({ recipe: S.wake, k: 0, level: 1, d: 0.5, pan: 0 });
   A.update(want, t);
