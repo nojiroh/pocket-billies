@@ -97,3 +97,39 @@ test('deleting the type the battle rules name gives them a type that is left', (
       );
   }
 });
+
+test('PK-4: a rename reaches a Perk’s tags, its needs and the type names in its rows’ conditions; a delete drops them', () => {
+  const D = copy(),
+    [a, b] = D.types.map(t => t.id);
+  D.perks._p = {
+    name: 'P',
+    d: 'P',
+    rarity: 'common',
+    needs: [`team:${a}|${b}`, 'mono'],
+    tags: [a, 'weather'],
+    fx: [
+      {
+        kind: 'damage',
+        side: 'deal',
+        mult: 1.1,
+        if: `type:${a}`,
+        grow: { on: 'win', by: 0.1, max: 1, if: [`team:${a}`] },
+      },
+    ],
+  };
+  T.renameTypeIn(D, a, 'Zz');
+  assert.deepEqual(D.perks._p.needs, [`team:Zz|${b}`, 'mono']);
+  assert.deepEqual(D.perks._p.tags, ['Zz', 'weather']);
+  assert.equal(D.perks._p.fx[0].if, 'type:Zz');
+  assert.deepEqual(D.perks._p.fx[0].grow.if, ['team:Zz']);
+  T.renameTypeIn(D, 'Zz', null);
+  assert.deepEqual(D.perks._p.needs, [`team:${b}`, 'mono']);
+  assert.deepEqual(D.perks._p.tags, ['weather']);
+  assert.equal(D.perks._p.fx[0].if, undefined, 'a condition left with no type goes');
+  assert.equal(D.perks._p.fx[0].grow.if, undefined);
+  D.perks._p.needs = `team:${b}`;
+  D.perks._p.tags = [b];
+  T.renameTypeIn(D, b, null);
+  assert.equal(D.perks._p.needs, undefined);
+  assert.equal(D.perks._p.tags, undefined);
+});
