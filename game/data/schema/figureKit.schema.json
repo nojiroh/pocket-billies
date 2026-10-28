@@ -3,7 +3,7 @@
  "$id": "figureKit.schema.json",
  "title": "game/data/figureKit.json: the figure kit's shapes as data (characters track CH-5; game/js/logic/figure-kit.js builds everyone's figure with them, logic/kit-shapes.js reads the shape lists)",
  "type": "object",
- "required": ["heads", "vary", "builds", "folk", "proportions", "hair", "accessories"],
+ "required": ["heads", "vary", "builds", "folk", "proportions", "hair", "accessories", "faces"],
  "additionalProperties": false,
  "$defs": {
   "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
@@ -20,6 +20,25 @@
     {"type": "array", "items": {"$ref": "#/$defs/value"}},
     {"type": "object", "additionalProperties": {"$ref": "#/$defs/value"}}
    ]
+  },
+  "faceMark": {
+   "description": "a face mark: its kind, x and y from its anchor, w by h (metres on the usual head), shape, a slant's dir and thickness t, how much it must face the camera (min), close-ups only (close), its colour slot (col)",
+   "type": "object",
+   "required": ["kind", "w", "h"],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {"type": "string", "pattern": "^[a-zA-Z]+$"},
+    "x": {"type": "number"},
+    "y": {"type": "number"},
+    "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+    "h": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+    "t": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1},
+    "shape": {"enum": ["oval", "arc", "cap", "slant"]},
+    "dir": {"enum": [-1, 1]},
+    "min": {"type": "number", "minimum": -1, "maximum": 1},
+    "close": {"type": "boolean"},
+    "col": {"type": "string", "pattern": "^[a-zA-Z]+$"}
+   }
   },
   "vars": {"description": "named values, worked out in order", "type": "object", "propertyNames": {"pattern": "^[A-Za-z_]\\w*$"}, "additionalProperties": {"$ref": "#/$defs/sum"}},
   "strand": {
@@ -256,6 +275,85 @@
      "fringe": {"description": "a hat a fringe shows under (a cap, a beanie)", "type": "boolean"},
      "colour": {"description": "the slot's own colour over the item's", "$ref": "#/$defs/vec3"},
      "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}}
+    }
+   }
+  },
+  "faces": {
+   "description": "CH-6: the face as marks (logic/figure-kit.js kitFaceMarks); sizes in metres on the usual head",
+   "type": "object",
+   "required": ["eyes", "brows", "mouths", "moods", "rest", "wardrobe", "defaults"],
+   "additionalProperties": false,
+   "properties": {
+    "note": {"type": "string"},
+    "eyes": {
+     "description": "each eye style: its white (w, h), a heavy lid ([y, w, h] as parts of the eye), lash flicks, whether its wearer blushes",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["w", "h"],
+      "additionalProperties": false,
+      "properties": {
+       "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+       "h": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+       "lid": {"$ref": "#/$defs/vec3"},
+       "flicks": {"type": "integer", "minimum": 0, "maximum": 3},
+       "blush": {"type": "boolean"}
+      }
+     }
+    },
+    "brows": {
+     "description": "each brow style: its width (w) and thickness (t)",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["w", "t"],
+      "additionalProperties": false,
+      "properties": {
+       "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+       "t": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1}
+      }
+     }
+    },
+    "mouths": {
+     "description": "each mouth frame's marks",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/faceMark"}}
+    },
+    "moods": {
+     "description": "a resting face: where the upper lid sits (a part of the eye's height), the brows' tilt (above 0 down to the nose) and lift",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["lid"],
+      "additionalProperties": false,
+      "properties": {"lid": {"type": "number", "minimum": -1, "maximum": 1}, "tilt": {"type": "number", "minimum": -4, "maximum": 4}, "lift": {"type": "number", "minimum": -0.1, "maximum": 0.1}}
+     }
+    },
+    "rest": {
+     "description": "a look's resting mood: the first rule whose wardrobe ids it wears",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["mood"],
+      "additionalProperties": false,
+      "properties": {
+       "eyes": {"type": "array", "items": {"type": "string"}},
+       "brows": {"type": "array", "items": {"type": "string"}},
+       "mouth": {"type": "array", "items": {"type": "string"}},
+       "mood": {"$ref": "#/$defs/id"}
+      }
+     }
+    },
+    "wardrobe": {"description": "the style or mouth frame each wardrobe id draws", "type": "object", "additionalProperties": {"$ref": "#/$defs/id"}},
+    "defaults": {
+     "type": "object",
+     "required": ["eyes", "brows", "mouth"],
+     "additionalProperties": false,
+     "properties": {"eyes": {"$ref": "#/$defs/id"}, "brows": {"$ref": "#/$defs/id"}, "mouth": {"$ref": "#/$defs/id"}}
     }
    }
   }

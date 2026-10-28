@@ -613,5 +613,73 @@
     }
    ]
   }
+ },
+ "faces": {
+  "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h), a heavy lid over it (lid: [y, w, h] as parts of the eye), how many lash flicks (flicks) and whether its wearer blushes (blush). brows: each style's width (w) and thickness (t). mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height) and brows (tilt: above 0 down to the nose, below 0 up; lift). rest: a look's resting mood, the first rule its wardrobe ids match. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
+  "eyes": {
+   "round": {"w":0.072,"h":0.048},
+   "big": {"w":0.076,"h":0.06},
+   "sharp": {"w":0.078,"h":0.034},
+   "hooded": {"w":0.072,"h":0.032,"lid":[0.3,1.08,0.55]},
+   "lashes": {"w":0.072,"h":0.048,"flicks":2,"blush":true}
+  },
+  "brows": {
+   "soft": {"w":0.075,"t":0.016},
+   "flat": {"w":0.09,"t":0.022},
+   "thick": {"w":0.09,"t":0.03},
+   "arched": {"w":0.09,"t":0.022},
+   "angled": {"w":0.09,"t":0.022}
+  },
+  "mouths": {
+   "smile": [
+    {"kind":"mouth","w":0.085,"h":0.03,"shape":"arc"},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "neutral": [
+    {"kind":"mouth","w":0.06,"h":0.014},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "grin": [
+    {"kind":"mouth","w":0.105,"h":0.05,"shape":"oval"},
+    {"kind":"teeth","y":0.014,"w":0.08,"h":0.018,"min":0.3}
+   ],
+   "o": [
+    {"kind":"mouth","w":0.042,"h":0.046,"shape":"oval"},
+    {"kind":"tongue","y":-0.012,"w":0.03,"h":0.016,"min":0.3,"shape":"oval","close":true}
+   ],
+   "smirk": [
+    {"kind":"mouth","x":0.016,"w":0.07,"h":0.024,"shape":"slant","dir":-1,"t":0.014},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ]
+  },
+  "moods": {
+   "calm": {"lid":0.46},
+   "cross": {"lid":0.46,"tilt":2,"lift":-0.004},
+   "glad": {"lid":0.52},
+   "worried": {"lid":0.52,"tilt":-2,"lift":0.006}
+  },
+  "rest": [
+   {"brows":["brows_stern"],"mood":"cross"},
+   {"mouth":["mouth_grin","mouth_open"],"mood":"glad"},
+   {"brows":["brows_arched"],"mood":"worried"}
+  ],
+  "wardrobe": {
+   "eyes_round": "round",
+   "eyes_wide": "big",
+   "eyes_sharp": "sharp",
+   "eyes_sleepy": "hooded",
+   "eyes_lashes": "lashes",
+   "brows_soft": "soft",
+   "brows_straight": "flat",
+   "brows_thick": "thick",
+   "brows_arched": "arched",
+   "brows_stern": "angled",
+   "mouth_smile": "smile",
+   "mouth_neutral": "neutral",
+   "mouth_grin": "grin",
+   "mouth_open": "o",
+   "mouth_smirk": "smirk"
+  },
+  "defaults": {"eyes":"round","brows":"flat","mouth":"smile"}
  }
 }

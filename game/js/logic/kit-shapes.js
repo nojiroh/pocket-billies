@@ -27,6 +27,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitExpr: [() => kitExpr, v => (kitExpr = v)],
   // @ts-expect-error -- replaced on purpose
+  kitFaceProblems: [() => kitFaceProblems, v => (kitFaceProblems = v)],
+  // @ts-expect-error -- replaced on purpose
   kitParse: [() => kitParse, v => (kitParse = v)],
   // @ts-expect-error -- replaced on purpose
   kitShapeOf: [() => kitShapeOf, v => (kitShapeOf = v)],
@@ -331,6 +333,33 @@ export function figureKitProblems(kit, items, people = {}) {
     } catch (e) {
       out.push(`accessories: ${id}: ${/** @type {Error} */ (e).message}`);
     }
+  }
+  out.push(...kitFaceProblems(kit, items));
+  return out;
+}
+/**
+ * CH-6: the faces section's references: each wardrobe id is in the wardrobe and draws a style its slot has, the
+ * defaults and the resting moods exist
+ * @param {any} kit @param {Record<string, { slot?: string }>} items @returns {string[]}
+ */
+export function kitFaceProblems(kit, items) {
+  /** @type {string[]} */
+  const out = [];
+  const FC = kit.faces;
+  if (!FC) return ['faces: missing'];
+  /** @type {Record<string, any>} */
+  const bySlot = { eyes: FC.eyes, brows: FC.brows, mouth: FC.mouths };
+  for (const [id, v] of Object.entries(FC.wardrobe || {})) {
+    const slot = items[id] && items[id].slot;
+    if (!slot || !bySlot[slot]) out.push(`faces.wardrobe: ${id} is no eyes, brows or mouth in the wardrobe`);
+    else if (!bySlot[slot][v]) out.push(`faces.wardrobe: ${id} draws ${v}, which faces has no ${slot} of`);
+  }
+  for (const [slot, v] of Object.entries(FC.defaults || {}))
+    if (!bySlot[slot] || !bySlot[slot][v]) out.push(`faces.defaults: no ${slot} ${v}`);
+  for (const R of FC.rest || []) {
+    if (!(FC.moods || {})[R.mood]) out.push(`faces.rest: no mood ${R.mood}`);
+    for (const slot of ['eyes', 'brows', 'mouth'])
+      for (const id of R[slot] || []) if (!items[id]) out.push(`faces.rest: ${id} is not in the wardrobe`);
   }
   return out;
 }

@@ -1635,6 +1635,34 @@ export interface FigureKit {
     DataId,
     { rows: any[]; vars?: Record<string, string | number>; fringe?: boolean; colour?: number[] }
   >;
+  /** CH-6: the face's marks (logic/figure-kit.js kitFaceMarks) */
+  faces: FigureKitFaces;
+}
+/** figureKit.json faces (characters track CH-6): eye and brow styles, mouth frames, moods, which style a wardrobe id
+ * draws */
+export interface FigureKitFaces {
+  note?: string;
+  eyes: Record<DataId, { w: number; h: number; lid?: number[]; flicks?: number; blush?: boolean }>;
+  brows: Record<DataId, { w: number; t: number }>;
+  mouths: Record<DataId, FigureKitMouthMark[]>;
+  moods: Record<DataId, { lid: number; tilt?: number; lift?: number }>;
+  rest: { eyes?: string[]; brows?: string[]; mouth?: string[]; mood: DataId }[];
+  wardrobe: Record<string, DataId>;
+  defaults: { eyes: DataId; brows: DataId; mouth: DataId };
+}
+/** a mark of a mouth frame: sizes in metres on the usual head, x and y from the mouth's middle */
+export interface FigureKitMouthMark {
+  kind: string;
+  x?: number;
+  y?: number;
+  w: number;
+  h: number;
+  t?: number;
+  shape?: 'oval' | 'arc' | 'cap' | 'slant';
+  dir?: number;
+  min?: number;
+  close?: boolean;
+  col?: string;
 }
 
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */

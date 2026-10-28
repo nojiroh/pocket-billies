@@ -57,6 +57,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitFaceMarks: [() => kitFaceMarks, v => (kitFaceMarks = v)],
   // @ts-expect-error -- replaced on purpose
+  kitFaceStyles: [() => kitFaceStyles, v => (kitFaceStyles = v)],
+  // @ts-expect-error -- replaced on purpose
   kitHair: [() => kitHair, v => (kitHair = v)],
   // @ts-expect-error -- replaced on purpose
   kitHat: [() => kitHat, v => (kitHat = v)],
@@ -875,7 +877,7 @@ export function lookFigure(look, items, opts = {}) {
      follows a V jaw or a square one) */
   if (wear.facial === 'facial_beard') add('beard', 'head', [0, 0, 0], kitBeardShape(head.c, head.r, sculpt), 'hair');
   /* ---- the face ---- */
-  const face = [...clothMarks, ...kitFaceMarks(head, wear, look, colours, seed)];
+  const face = [...clothMarks, ...kitFaceMarks(head, wear, look, colours, seed, KIT)];
   if (wear.neck === 'nametag') {
     colours.tag = [246, 244, 236];
     const R = torso.kind === 'lathe' ? torso : null,
@@ -1352,16 +1354,42 @@ export function kitHat(add, hat, H, crown = 1, kit = figureKitData()) {
 }
 
 /**
+ * CH-6: the face styles a look's wardrobe ids draw (figureKit.json faces.wardrobe, else faces.defaults), and its resting
+ * mood (the first of faces.rest its ids match; else calm); no brows when it wears none
+ * @param {Record<string, string | null>} wear @param {FigureKitData['faces']} FC
+ * @returns {{ eyes: string, brows: string | null, mouth: string, mood: string }}
+ */
+export function kitFaceStyles(wear, FC) {
+  const pick = (/** @type {'eyes' | 'brows' | 'mouth'} */ slot) => {
+    const id = wear[slot];
+    if (slot === 'brows' && !id) return null;
+    const v = id ? FC.wardrobe[id] : undefined;
+    return v && (slot === 'mouth' ? FC.mouths : slot === 'eyes' ? FC.eyes : FC.brows)[v] ? v : FC.defaults[slot];
+  };
+  const rule = FC.rest.find(R =>
+    /** @type {('eyes' | 'brows' | 'mouth')[]} */ (['eyes', 'brows', 'mouth']).every(
+      sl => !R[sl] || R[sl].includes(String(wear[sl] || ''))
+    )
+  );
+  return {
+    eyes: /** @type {string} */ (pick('eyes')),
+    brows: pick('brows'),
+    mouth: /** @type {string} */ (pick('mouth')),
+    mood: rule && FC.moods[rule.mood] ? rule.mood : 'calm',
+  };
+}
+/**
  * the face as marks on the head (logic/figure-pose.js figureFaceMarks paints them in whole pixels): eyes by style
  * with a glint and an iris, lashes, brows by style, the mouth by style (a grin's teeth), blush, freckles, a stache,
  * stubble, and glasses (round and square frames, sunglasses, a monocle)
  * @param {{ c: Vec3, r: Vec3, kind?: string, items?: import('./figure-pose.js').SdfItem[] }} H @param {Record<string, string | null>} wear
  * @param {KitLook} look @param {Record<string, Vec3>} colours @param {number} seed @returns {FaceMark[]}
  */
-export function kitFaceMarks(H, wear, look, colours, seed) {
+export function kitFaceMarks(H, wear, look, colours, seed, kit = figureKitData()) {
   /** @type {FaceMark[]} */
   const out = [];
-  const { c, r } = H,
+  const FC = kit.faces,
+    { c, r } = H,
     /** @param {string} kind @param {number} x @param {number} y @param {number} w @param {number} h @param {Partial<FaceMark>} [o] */
     mark = (kind, x, y, w, h, o = {}) => out.push({ part: 'head', kind, ...frontOf(H, x, y), w, h, ...o }),
     /* every size is the spike's head's times how big this head is */
@@ -1369,29 +1397,15 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
     /* eyes set wider or closer, higher or lower, by the person */
     ex = r[0] * (0.32 + 0.06 * kitRnd(seed, 23)),
     ey = c[1] - r[1] * (0.07 + 0.07 * kitRnd(seed, 24)),
-    eyes = wear.eyes || 'eyes_round',
+    /* CH-6: each wardrobe id draws a style of the kit's data (figureKit.json faces) */
+    style = kitFaceStyles(wear, FC),
+    ES = FC.eyes[style.eyes],
     /* the owner (2026-10-28: "the eyes look way too chibi and cute"): almond eyes, wider than tall, under a heavy lid;
        wide ones open more, sharp and sleepy ones narrower */
-    [ew, eh] = (
-      eyes === 'eyes_wide'
-        ? [0.076, 0.06]
-        : eyes === 'eyes_sharp'
-          ? [0.078, 0.034]
-          : eyes === 'eyes_sleepy'
-            ? [0.072, 0.032]
-            : [0.072, 0.048]
-    ).map(v => v * k),
-    /* the face's mood from the look's brows and mouth: -1 cross, 0 calm, 1 glad, 2 worried */
-    brows = wear.brows || null,
-    mouth = wear.mouth || 'mouth_smile',
-    mood =
-      brows === 'brows_stern'
-        ? -1
-        : mouth === 'mouth_grin' || mouth === 'mouth_open'
-          ? 1
-          : brows === 'brows_arched'
-            ? 2
-            : 0;
+    ew = ES.w * k,
+    eh = ES.h * k,
+    /* the face's resting mood from the look's brows and mouth (faces.rest) */
+    MD = FC.moods[style.mood];
   colours.irisD = figureMix(figureDark(colours.iris, 0.5), [30, 20, 70], 0.3);
   colours.irisL = figureMix(colours.iris, [255, 255, 240], 0.3);
   colours.tongue = [214, 92, 104];
@@ -1399,7 +1413,7 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
   colours.lip = figureMix(colours.skin, [196, 96, 104], 0.32);
   colours.blush = figureMix(colours.skin, [230, 120, 120], 0.3);
   /* a little colour on the cheeks, in a close-up only */
-  if (kitRnd(seed, 40) < 0.3 || /lashes/.test(eyes))
+  if (kitRnd(seed, 40) < 0.3 || ES.blush)
     for (const s of [1, -1])
       mark('blush', s * r[0] * 0.58, c[1] - r[1] * 0.36, 0.08 * k, 0.03 * k, { shape: 'oval', close: true, min: 0.35 });
   if (wear.facial === 'facial_freckles')
@@ -1415,7 +1429,7 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
   /* an eye, in layers: its white, an almond; the iris, a round half hidden under the lid, shaded across its top; a
      small pupil and one small shine; a sleepy eye's heavy lid; the upper lid as a thick line with its outer corner
      drawn out (the closed eye's line in a blink: the 'eye' mark); in a close-up the lid's crease and the lower lid */
-  const lidY = ey + eh * (mood === 1 || mood === 2 ? 0.52 : 0.46);
+  const lidY = ey + eh * MD.lid;
   for (const s of [1, -1]) {
     const ix = s * (ex - ew * 0.06);
     mark('white', s * ex, ey, ew, eh, { col: 'sclera', shut: true, narrow: true, shape: 'oval' });
@@ -1424,7 +1438,7 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
     mark('irisL', ix, ey - eh * 0.28, ew * 0.3, eh * 0.2, { col: 'irisL', shut: true, narrow: true, close: true });
     mark('pupil', ix, ey + eh * 0.02, ew * 0.2, eh * 0.46, { col: 'eye', shut: true, narrow: true, shape: 'oval' });
     mark('shine', ix + s * ew * 0.1, ey + eh * 0.22, ew * 0.13, ew * 0.13, { col: 'glint', shut: true, min: 0.55 });
-    if (eyes === 'eyes_sleepy') mark('lid', s * ex, ey + eh * 0.3, ew * 1.08, eh * 0.55, { col: 'skin', shut: true });
+    if (ES.lid) mark('lid', s * ex, ey + eh * ES.lid[0], ew * ES.lid[1], eh * ES.lid[2], { col: 'skin', shut: true });
     mark('eye', s * (ex + ew * 0.06), lidY, ew * 1.16, Math.max(eh * 0.32, 0.016 * k), {
       glint: false,
       shape: 'cap',
@@ -1437,7 +1451,7 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
       t: 0.014 * k,
       min: 0.35,
     });
-    if (eyes === 'eyes_lashes')
+    if ((ES.flicks ?? 1) > 1)
       mark('flick', s * (ex + ew * 0.7), lidY + eh * 0.04, ew * 0.22, eh * 0.36, {
         col: 'lash',
         shape: 'slant',
@@ -1458,38 +1472,32 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
   /* brows close over the eyes that carry the mood: cross ones slant down to the nose, worried ones up, calm ones a
      low arch */
   const by = lidY + 0.034 * k + eh * 0.25;
-  if (brows)
+  if (style.brows) {
+    const BS = FC.brows[style.brows];
     for (const s of [1, -1]) {
-      const thick = brows === 'brows_thick' ? 0.03 : brows === 'brows_soft' ? 0.016 : 0.022;
-      if (mood === -1 || mood === 2)
-        mark('brow', s * (ex + 0.008 * k), by + (mood === 2 ? 0.006 : -0.004) * k, 0.092 * k, 0.034 * k, {
+      const thick = BS.t;
+      if (MD.tilt)
+        mark('brow', s * (ex + 0.008 * k), by + (MD.lift || 0) * k, 0.092 * k, 0.034 * k, {
           col: 'brow',
           shape: 'slant',
-          dir: mood === -1 ? -s : s,
+          dir: MD.tilt > 0 ? -s : s,
           t: thick * k,
         });
       else
-        mark('brow', s * (ex + 0.008 * k), by, (brows === 'brows_soft' ? 0.075 : 0.09) * k, (0.016 + thick * 0.7) * k, {
+        mark('brow', s * (ex + 0.008 * k), by, BS.w * k, (0.016 + thick * 0.7) * k, {
           col: 'brow',
           shape: 'cap',
         });
     }
-  /* the mouth: a smile's arc; a grin open on teeth; an open mouth; a smirk tucked to one side; a neutral line; and in
-     a close-up the lower lip's shade */
+  }
+  /* the mouth, a frame of faces.mouths (a smile's arc; a grin open on teeth; an open mouth; a smirk tucked to one side;
+     a neutral line; and in a close-up the lower lip's shade) */
   const my = c[1] - r[1] * (0.56 + 0.08 * kitRnd(seed, 25));
   if (wear.facial === 'facial_stache') mark('stache', 0, my + 0.04 * k, 0.1 * k, 0.034 * k, { col: 'brow', min: 0.25 });
-  if (mouth === 'mouth_grin') {
-    mark('mouth', 0, my, 0.105 * k, 0.05 * k, { shape: 'oval' });
-    mark('teeth', 0, my + 0.014 * k, 0.08 * k, 0.018 * k, { min: 0.3 });
-  } else if (mouth === 'mouth_open') {
-    mark('mouth', 0, my, 0.042 * k, 0.046 * k, { shape: 'oval' });
-    mark('tongue', 0, my - 0.012 * k, 0.03 * k, 0.016 * k, { min: 0.3, shape: 'oval', close: true });
-  } else if (mouth === 'mouth_neutral') mark('mouth', 0, my, 0.06 * k, 0.014 * k);
-  else if (mouth === 'mouth_smirk') {
-    mark('mouth', 0.016 * k, my, 0.07 * k, 0.024 * k, { shape: 'slant', dir: -1, t: 0.014 * k });
-  } else mark('mouth', 0, my, 0.085 * k, 0.03 * k, { shape: 'arc' });
-  if (mouth !== 'mouth_grin' && mouth !== 'mouth_open')
-    mark('lip', 0, my - 0.03 * k, 0.05 * k, 0.014 * k, { col: 'lip', close: true, min: 0.35, shape: 'oval' });
+  for (const m of FC.mouths[style.mouth]) {
+    const { kind, x = 0, y = 0, w, h, t, ...o } = m;
+    mark(kind, x * k, my + y * k, w * k, h * k, t === undefined ? o : { ...o, t: t * k });
+  }
   /* glasses over the eyes */
   const g = wear.glasses;
   if (g && g !== 'headset') {
