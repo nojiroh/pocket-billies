@@ -294,15 +294,23 @@ export const KIT_FRAME_SAMPLE = Object.freeze({
 });
 
 /**
- * what is wrong with the figure kit's data, as sentences (tools/check-data.mjs): every sum works out on the frames,
+ * what is wrong with the figure kit's data, as sentences (tools/check-data.mjs): people's head shapes and builds are
+ * the kit's, every sum works out on the frames,
  * every build townsfolk pick and every head's build exists, some head can be picked at random, and every hair style and
  * accessory is a wardrobe item
  * @param {any} kit game/data/figureKit.json @param {Record<string, { slot?: string }>} items the wardrobe's items
+ * @param {Record<string, { figure?: { head?: string, build?: string } }>} [people] people/<id>.json: their `figure`'s
+ *   head shape and build are the kit's
  * @returns {string[]}
  */
-export function figureKitProblems(kit, items) {
+export function figureKitProblems(kit, items, people = {}) {
   /** @type {string[]} */
   const out = [];
+  for (const [who, p] of Object.entries(people)) {
+    const f = (p && p.figure) || {};
+    if (f.head && !(kit.heads || {})[f.head]) out.push(`people/${who}.json: figure.head ${f.head} is no head shape`);
+    if (f.build && !(kit.builds || {})[f.build]) out.push(`people/${who}.json: figure.build ${f.build} is no build`);
+  }
   for (const b of kit.folk || []) if (!(kit.builds || {})[b]) out.push(`folk: no build ${b}`);
   if (!Object.values(kit.heads || {}).some(H => /** @type {any} */ (H).random !== false))
     out.push('heads: none can be picked at random');

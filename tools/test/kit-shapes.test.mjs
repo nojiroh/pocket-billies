@@ -105,4 +105,13 @@ test('kit shapes: the game data has no problems; a broken kit has', () => {
   const P = figureKitProblems(bad, W.items).join('\n');
   for (const s of ['no build giant', 'hair_mohawk', 'hat_cap', 'none can be picked'])
     assert.ok(P.includes(s), `${s} in:\n${P}`);
+  /* people's head shapes and builds are the kit's (person.schema.json no longer lists them) */
+  const who = figureKitProblems(KIT, W.items, {
+    a: { figure: { head: 'diamond', build: 'lanky' } },
+    b: { figure: { head: 'cube', build: 'giant' } },
+  });
+  assert.deepEqual(who, [
+    'people/b.json: figure.head cube is no head shape',
+    'people/b.json: figure.build giant is no build',
+  ]);
 });

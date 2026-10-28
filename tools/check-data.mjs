@@ -568,7 +568,7 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
 // characters track CH-5: the figure kit's shapes (figureKit.json): the schema, then every sum works out and every id
 // it names is a build or a wardrobe item
 if (D.figureKit && check('figureKit.schema.json', D.figureKit, 'figureKit.json'))
-  for (const p of figureKitProblems(D.figureKit, (D.wardrobe && D.wardrobe.items) || {})) problem('figureKit.json', p);
+  for (const p of figureKitProblems(D.figureKit, (D.wardrobe && D.wardrobe.items) || {}, D.people || {})) problem('figureKit.json', p);
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,
