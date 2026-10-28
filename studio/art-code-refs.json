@@ -1634,6 +1634,9 @@
    "game/js/world-bowl.js:1737",
    "game/js/world-bowl.js:1767"
   ],
+  "cart": [
+   "game/js/audio/nature-player.js:243"
+  ],
   "coin": [
    "game/js/art.js:197",
    "game/js/battle-stage.js:1523",
@@ -1653,8 +1656,8 @@
    "game/js/shop.js:172",
    "game/js/shop.js:182",
    "game/js/shop.js:251",
-   "game/js/sound.js:521",
-   "game/js/sound.js:1763",
+   "game/js/sound.js:524",
+   "game/js/sound.js:1765",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:96",
