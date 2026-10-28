@@ -2074,8 +2074,28 @@ def relics_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.perks.lucky_charm.fx)") != '[{"kind":"money","mult":1.2}]':
         errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.perks.lucky_charm.fx)')}")
+    # PK-1: a row's When and If: a stat row gets a moment from its kind's list, the If text becomes a list, a bad
+    # condition shows data-checks' message on its row, and undo takes each back
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    whens = pg.evaluate("[...document.querySelectorAll('#main [data-p=\"perks.running_shoes.fx.0.when\"] option')].map(o=>o.value)")
+    if 'ko' not in whens or 'arrive' in whens: errs.append(f'perks: a stat row offers the moments {whens}')
+    sel = '#main [data-p="perks.running_shoes.fx.0.when"]'
+    pg.select_option(sel, 'ko')
+    wait_js(pg, "!!document.querySelector('#main [data-p=\"perks.running_shoes.fx.0.every\"]')", 10)
+    sel = '#main [data-relic-if="running_shoes"][data-n="0"]'
+    pg.fill(sel, 'lead, foe:dragon'); pg.dispatch_event(sel, 'change')
+    wait_js(pg, "/foe: no/.test((document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||'')", 10)
+    row = pg.evaluate("JSON.stringify(studioState.D.perks.running_shoes.fx[0])")
+    if row != '{"kind":"stat","stat":"hus","stages":1,"when":"ko","if":["lead","foe:dragon"]}': errs.append(f'perks: When and If made {row}')
+    msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
+    if 'foe: no "dragon"' not in msg: errs.append(f'perks: a bad condition showed no message on its row ({msg!r})')
+    if not pg.query_selector('#main [data-relic-grow="running_shoes"]') or not pg.query_selector('#main [data-p="perks.running_shoes.fx.0.once"]'):
+        errs.append('perks: no Grows or Once input on a stat row')
+    pg.evaluate("undo()"); time.sleep(0.3); pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("JSON.stringify(studioState.D.perks.running_shoes.fx)") != '[{"kind":"stat","stat":"hus","stages":1}]':
+        errs.append(f"perks: undo left {pg.evaluate('JSON.stringify(studioState.D.perks.running_shoes.fx)')}")
     if pending_files(pg, 'perks\\.json$'): errs.append('perks: after every undo Propose would still send perks.json')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone", flush=True)
 
 
 def unlocks_steps(pg, errs):

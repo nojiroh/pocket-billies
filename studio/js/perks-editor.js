@@ -14,9 +14,9 @@
    which puts that kind's fields in with neutral values. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { FX_LIMIT, FX_STAGES } from '../../game/js/logic/effects.js';
+import { FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { dataPerks } from '../../game/js/logic/data-checks.js';
+import { FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -39,6 +39,7 @@ expose({
   PERK_KINDS: [() => PERK_KINDS],
   PERK_RARITIES: [() => PERK_RARITIES],
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
+  PERK_WHEN: [() => PERK_WHEN],
   perkCoverage: [() => perkCoverage, v => (perkCoverage = v)],
   perkEd: [() => perkEd],
   perkFill: [() => perkFill, v => (perkFill = v)],
@@ -51,6 +52,7 @@ expose({
   perkProblems: [() => perkProblems],
   perkRarityHTML: [() => perkRarityHTML, v => (perkRarityHTML = v)],
   perkRowHTML: [() => perkRowHTML, v => (perkRowHTML = v)],
+  perkTimingHTML: [() => perkTimingHTML, v => (perkTimingHTML = v)],
   perkX: [() => perkX],
 });
 /* eslint-enable no-func-assign */
@@ -78,6 +80,29 @@ const PERK_KINDS = {
   dna: 'A Gene Sample’s DNA (SP-6)',
   splice: 'How often wild Billies are spliced (SP-6)',
   unstable: 'The HP Unstable splices lose at each turn’s end (SP-6)',
+  turnHeal: 'Heal a share of HP at each turn’s end (PK-1)',
+  pinchHeal: 'Heal once a battle when low on HP (PK-1)',
+  turnHurt: 'Lose a share of HP at each turn’s end (PK-1)',
+  level: 'Foes’ levels on the run (PK-1)',
+  bossHp: 'The run’s boss’s HP (PK-1)',
+};
+/** PK-1: what each moment means, for the When select */
+const PERK_WHEN = {
+  battleStart: 'as a battle starts',
+  switchIn: 'one of yours comes in',
+  move: 'one of yours makes a move',
+  hit: 'one of yours lands a hit',
+  hurt: 'one of yours is hit',
+  crit: 'one of yours lands a critical hit',
+  ko: 'one of yours knocks a foe out',
+  faint: 'one of yours faints',
+  turnEnd: 'a turn ends',
+  throwMiss: 'a throw misses',
+  catch: 'a Billie is caught',
+  win: 'a battle is won',
+  arrive: 'you walk into a place',
+  buy: 'you buy in a run shop',
+  take: 'the Perk is taken',
 };
 /** a new row of a kind: its fields with values that change little */
 const PERK_ROW_NEW = {
@@ -91,6 +116,11 @@ const PERK_ROW_NEW = {
   dna: () => ({ kind: 'dna', mult: 1.1 }),
   splice: () => ({ kind: 'splice', mult: 1.1 }),
   unstable: () => ({ kind: 'unstable', mult: 0.9 }),
+  turnHeal: () => ({ kind: 'turnHeal', share: 0.05 }),
+  pinchHeal: () => ({ kind: 'pinchHeal', at: 0.25, share: 0.25 }),
+  turnHurt: () => ({ kind: 'turnHurt', share: 0.05 }),
+  level: () => ({ kind: 'level', n: 1 }),
+  bossHp: () => ({ kind: 'bossHp', mult: 1.1 }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -128,6 +158,8 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
     lim = `×${FX_LIMIT.lo} to ×${FX_LIMIT.hi} (effects.js FX_LIMIT; a kind’s rows multiply, and the product stays within it too)`,
     mult = (/** @type {string} */ l) =>
       numberField(l, `${p}.mult`, { min: FX_LIMIT.lo, max: FX_LIMIT.hi, step: 0.05, help: lim }),
+    share = (/** @type {string} */ l, key = 'share') =>
+      numberField(l, `${p}.${key}`, { min: 0.01, max: 1, step: 0.01, help: 'Above 0, at most 1.' }),
     stats = (D.stats || [])
       .filter((/** @type {any} */ s) => s.id !== 'hp')
       .map((/** @type {any} */ s) => [s.id, s.name]),
@@ -190,6 +222,11 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       dna: () => [mult('Gene Sample DNA ×')],
       splice: () => [mult('Wild splice odds × (Graft and Chimera together never past 100%)')],
       unstable: () => [mult('Unstable turn-end hurt ×')],
+      turnHeal: () => [share('Share of HP healed at each turn’s end')],
+      pinchHeal: () => [share('Low: at this share of HP or below', 'at'), share('Share of HP healed')],
+      turnHurt: () => [share('Share of HP lost at each turn’s end (at most 0.5)')],
+      level: () => [numberField('Foes’ levels +', `${p}.n`, { min: -20, max: 20, step: 1 })],
+      bossHp: () => [mult('Boss HP ×')],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS
@@ -197,7 +234,67 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
     .map(([v, l]) => `<option value="${v}"${v === f.kind ? ' selected' : ''}>${v}: ${escapeHtml(l)}</option>`)
     .join(
       ''
-    )}</select>${D.perks[k].fx.length > 1 ? `<button class="x" data-act="relicRowDel" data-k="${escapeHtml(k)}" data-n="${n}" title="Remove this effect">✕</button>` : ''}</div>${fields ? grid(...fields()) : `<p class="err">No such kind: ${escapeHtml(String(f.kind))}</p>`}${perkProblemHTML(P, `${k}.fx[${n}]`)}</div>`;
+    )}</select>${D.perks[k].fx.length > 1 ? `<button class="x" data-act="relicRowDel" data-k="${escapeHtml(k)}" data-n="${n}" title="Remove this effect">✕</button>` : ''}</div>${perkTimingHTML(k, f, n)}${fields ? grid(...fields()) : `<p class="err">No such kind: ${escapeHtml(String(f.kind))}</p>`}${perkProblemHTML(P, `${k}.fx[${n}]`)}</div>`;
+}
+
+/** PK-1: a row's When, If, Every, Grows, Per and Once (logic/effects.js), the ones its kind can have
+ * (data-checks.js FX_WHEN_KINDS, FX_PLAIN) */
+function perkTimingHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {number} */ n) {
+  const p = `perks.${k}.fx.${n}`,
+    whens = /** @type {readonly string[]} */ (FX_WHEN_KINDS[f.kind] || []),
+    plain = FX_PLAIN[f.kind] || [],
+    can = (/** @type {string} */ key) => !plain.includes(key),
+    numbered = ['mult', 'stages', 'share', 'n'].some(q => q in f),
+    moments = (/** @type {readonly string[]} */ L) => L.map(w => [w, `${w}: ${PERK_WHEN[w] || w}`]),
+    ifs = f.if == null ? '' : Array.isArray(f.if) ? f.if.join(', ') : f.if,
+    g = f.grow,
+    out = [];
+  if (whens.length)
+    out.push(selectField('When', `${p}.when`, moments(whens), { none: 'Where its kind always acts', opt: 1, rr: 1 }));
+  if (can('if'))
+    out.push(
+      `<label class="fld"><span>If (all must hold)</span><input type="text" data-relic-if="${escapeHtml(k)}" data-n="${n}" value="${escapeHtml(ifs)}" placeholder="lead, hp<0.5, foe:leader|rival"></label>`
+    );
+  if (f.when)
+    out.push(
+      numberField('Every Nth time', `${p}.every`, {
+        min: 2,
+        max: FX_EVERY,
+        step: 1,
+        opt: 1,
+        help: 'Counted over the run.',
+      })
+    );
+  if (numbered && can('grow'))
+    out.push(
+      `<label class="fld"><span>Grows on</span><select data-relic-grow="${escapeHtml(k)}" data-n="${n}"><option value="">Doesn’t grow</option>${FX_WHEN.map(
+        w => `<option value="${w}"${g && g.on === w ? ' selected' : ''}>${w}: ${escapeHtml(PERK_WHEN[w] || w)}</option>`
+      ).join('')}</select></label>`
+    );
+  if (g)
+    out.push(
+      numberField('Grows by', `${p}.grow.by`, { step: 0.01, help: 'Added to its number each time.' }),
+      numberField('Up to', `${p}.grow.max`, { step: 0.01 }),
+      selectField('Back to 0 when', `${p}.grow.reset`, moments(FX_WHEN), { none: 'Never', opt: 1 })
+    );
+  if (numbered && can('per'))
+    out.push(
+      selectField('Per', `${p}.per`, [['teamTypes', 'Each different type on your team']], { none: 'Once', opt: 1 })
+    );
+  if (f.when || ['stat', 'pinchHeal'].includes(f.kind))
+    out.push(
+      selectField(
+        'Once',
+        `${p}.once`,
+        [
+          ['battle', 'Once a battle'],
+          ['billie', 'Once a battle for each Billie'],
+          ['run', 'Once a run'],
+        ],
+        { none: 'Every time', opt: 1 }
+      )
+    );
+  return out.length ? `<div class="relic-when">${grid(...out)}</div>` : '';
 }
 
 /** the rarity table: weights, prices, coverage, and the pick rules */
@@ -270,6 +367,11 @@ SECTIONS.relics = () => {
      )
    ) +
      textField('What it does (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 }) +
+     textField('Its line in battle (PK-1: when a row acts at a moment; {name} is the Billie)', `${p}.say`, {
+       max: 40,
+       opt: 1,
+       ph: 'Approved, {name}!',
+     }) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
      sub: `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
@@ -442,6 +544,28 @@ document.addEventListener('change', ev => {
     make = PERK_ROW_NEW[el.value];
   if (!R || !make) return;
   R.fx[+(el.dataset.n || 0)] = make();
+  changed();
+  render();
+});
+/* PK-1: a row's If: words split at commas (one is kept as a word, more as a list, none removes it) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLInputElement} */ (ev.target);
+  if (!el.dataset || (!el.dataset.relicIf && !el.dataset.relicGrow)) return;
+  const R = studioState.D.perks[el.dataset.relicIf || el.dataset.relicGrow || ''],
+    f = R && R.fx[+(el.dataset.n || 0)];
+  if (!f) return;
+  /* a second change for the same value (the box blurs as the page redraws): nothing to do */
+  const was = JSON.stringify(f);
+  if (el.dataset.relicIf) {
+    const L = el.value
+      .split(',')
+      .map(w => w.trim())
+      .filter(Boolean);
+    if (!L.length) delete f.if;
+    else f.if = L.length === 1 ? L[0] : L;
+  } else if (!el.value) delete f.grow;
+  else f.grow = { ...(f.grow || { by: 0.05, max: 0.25 }), on: el.value };
+  if (JSON.stringify(f) === was) return;
   changed();
   render();
 });
