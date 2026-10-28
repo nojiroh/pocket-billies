@@ -77,11 +77,11 @@ export const BATTLE_FX_SHADERS = {
   battleFx: [
     `#version 300 es
 precision highp float;layout(location=0) in vec2 aC;layout(location=1) in vec3 iP;layout(location=2) in vec3 iA;layout(location=3) in vec3 iB;layout(location=4) in vec4 iUV;layout(location=5) in vec4 iCol;layout(location=6) in vec4 iK;
-uniform mat4 uVP;uniform float uCore;out vec2 vC;out vec2 vUV;out vec3 vW;flat out vec4 vCol;flat out vec4 vK;
-void main(){vec2 c=aC*2.-1.;vec3 p=iP+iA*c.x+iB*(-c.y);vW=p;vC=aC;vUV=vec2(iUV.x+aC.x*iUV.z,iUV.y+aC.y*iUV.w);vCol=iCol;vK=iK;
+uniform mat4 uVP;uniform float uCore;out vec2 vC;out vec2 vUV;out vec3 vW;flat out vec4 vCol;flat out vec4 vK;flat out vec4 vR;
+void main(){vec2 c=aC*2.-1.;vec3 p=iP+iA*c.x+iB*(-c.y);vW=p;vC=aC;vUV=vec2(iUV.x+aC.x*iUV.z,iUV.y+aC.y*iUV.w);vCol=iCol;vK=iK;vR=iUV;
  gl_Position=uCore>.5&&mod(floor(iK.w/2.),2.)<.5?vec4(2.,2.,2.,1.):uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vC;in vec2 vUV;in vec3 vW;flat in vec4 vCol;flat in vec4 vK;out vec4 o;uniform sampler2D uTex;uniform float uCore;uniform vec2 uRamp;${LIGHT_GLSL}
+precision highp float;in vec2 vC;in vec2 vUV;in vec3 vW;flat in vec4 vCol;flat in vec4 vK;flat in vec4 vR;out vec4 o;uniform sampler2D uTex;uniform float uCore;uniform vec2 uRamp;${LIGHT_GLSL}
 float fxBayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){int k=int(vK.x+.5),fl=int(vK.w+.5),gi=-1;vec3 c=vCol.rgb;bool core=false;vec2 cell=gl_FragCoord.xy;
  /* VFX-10: a strip's grey (8 greys, 36..255) picks its colour from its ramp's row */
@@ -89,6 +89,9 @@ void main(){int k=int(vK.x+.5),fl=int(vK.w+.5),gi=-1;vec3 c=vCol.rgb;bool core=f
   if((fl&4)!=0){gi=clamp(int(floor((t.r*255.-32.)/32.+.5)),0,7);core=gi==7;c*=texelFetch(uTex,ivec2(uRamp)+ivec2(gi,fl>>3),0).rgb;}
   else{core=min(t.r,min(t.g,t.b))>.75;c*=t.rgb;}}
  else if(k==2){float n=max(vK.y,1.);vec2 q=floor(vC*n);vec2 g=(q+.5)/n*2.-1.;float d=length(g);if(d>1.||d<1.-2.*max(vK.z,1.)/n)discard;cell=q;}
+ /* VFX-11: a ray's strip, tiled vK.y times along it (its frame's rect in vR), coloured by its ramp as a strip is */
+ else if(k==3&&(fl&4)!=0){vec2 ts=vec2(textureSize(uTex,0));vec2 uv=vec2(vR.x+fract(vC.x*max(vK.y,1.))*vR.z,vR.y+vC.y*vR.w);vec4 t=texture(uTex,uv);if(t.a<.5)discard;cell=floor(uv*ts);
+  gi=clamp(int(floor((t.r*255.-32.)/32.+.5)),0,7);core=gi==7;c*=texelFetch(uTex,ivec2(uRamp)+ivec2(gi,fl>>3),0).rgb;}
  else if(k==3){core=abs(vC.y*2.-1.)<.35;if(core)c=vec3(1.);}
  else core=true;
  float bv=fxBayer(cell);if(bv>=vCol.a)discard;
@@ -349,16 +352,17 @@ function battleFxPass(C, F, X) {
       uv[1] = N.y / A.h;
       uv[2] = N.w / A.w;
       uv[3] = N.h / A.h;
-      /* on the ground: flat, its top row the far side */
+      /* on the ground: flat, its top row the far side. VFX-11: a flipped strip (q.flip -1) is mirrored across */
+      const fw = q.flip === -1 ? -1 : 1;
       if (S.ground) battleFxPut(q.x + ox, q.y + 0.02, q.z - oy, hw, 0, 0, 0, 0, -hh, uv, BATTLE_FX_ONE, a, 0, 1, 0, fr);
       else
         battleFxPut(
-          q.x + R[0] * ox,
-          q.y + R[1] * ox + oy,
-          q.z + R[2] * ox,
-          R[0] * hw,
-          R[1] * hw,
-          R[2] * hw,
+          q.x + R[0] * ox * fw,
+          q.y + R[1] * ox * fw + oy,
+          q.z + R[2] * ox * fw,
+          R[0] * hw * fw,
+          R[1] * hw * fw,
+          R[2] * hw * fw,
           0,
           hh,
           0,
@@ -407,7 +411,42 @@ function battleFxPass(C, F, X) {
         cy = dz * vx - dx * vz,
         cz = dx * vy - dy * vx;
       const cl = Math.hypot(cx, cy, cz) || 1,
-        h = q.w / 2 / cl;
+        N = q.anim ? A.anims[q.anim] : null;
+      if (N) {
+        /* VFX-11: a ray's strip: as wide as its cell at the stage pixel's size at its depth (the texel rule), its
+           frame tiled along its length */
+        const z = Math.max(0.3, vx * W[0] + vy * W[1] + vz * W[2]),
+          px = (z / S0) * Math.max(1, Math.round(q.scale || 1)),
+          h = (N.h * px) / 2 / cl,
+          f = Math.min(N.n - 1, Math.max(0, q.f | 0)),
+          uv = BATTLE_FX_UV,
+          row = A.rampRow[q.ramp] ?? A.rampRow.None ?? 0;
+        uv[0] = (N.x + f * N.w) / A.w;
+        uv[1] = N.y / A.h;
+        uv[2] = N.w / A.w;
+        uv[3] = N.h / A.h;
+        const tiles = Math.max(1, Math.round(Math.hypot(dx, dy, dz) / (N.w * px)));
+        battleFxPut(
+          mx,
+          my,
+          mz,
+          dx / 2,
+          dy / 2,
+          dz / 2,
+          cx * h,
+          cy * h,
+          cz * h,
+          uv,
+          BATTLE_FX_ONE,
+          a,
+          3,
+          tiles,
+          0,
+          fl | BATTLE_FX_RAMP | (row << 3)
+        );
+        continue;
+      }
+      const h = q.w / 2 / cl;
       cx *= h;
       cy *= h;
       cz *= h;
