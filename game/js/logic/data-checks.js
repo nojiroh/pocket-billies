@@ -59,6 +59,7 @@ import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_PLAIN: [() => FX_PLAIN],
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
@@ -2003,6 +2004,14 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   heal: FX_WHEN,
   damage: ['hit', 'hurt', 'crit'],
 });
+/** PK-1: the timing fields a kind read outside any moment can't have */
+export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
+  price: ['if', 'grow', 'per'],
+  payout: ['if', 'grow', 'per'],
+  splice: ['if', 'grow', 'per'],
+  level: ['if', 'per'],
+  bossHp: ['if', 'per'],
+});
 /** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
 export function fxCondProblem(c, D) {
   if (typeof c !== 'string' || !c) return 'not a condition';
@@ -2054,8 +2063,14 @@ export function fxWhenProblems(f, at, D, problem) {
       problem(`${at}.side: take, at hurt (a hit on yours)`);
   }
   conds(f.if, `${at}.if`);
-  if (['level', 'bossHp'].includes(f.kind) && f.if != null)
-    problem(`${at}.if: a ${f.kind} row counts as the run's places and foes are made, where no condition is known`);
+  /* kinds read where no moment, Billie or team is known (a price, the payout, a place's stocking; foes' levels and
+     the boss's HP as the run's places and foes are made): no condition there, and nothing to count per type */
+  if (FX_PLAIN[f.kind])
+    for (const key of FX_PLAIN[f.kind])
+      if (f[key] != null)
+        problem(
+          `${at}.${key}: a ${f.kind} row is read where no battle, Billie or team is known (no ${FX_PLAIN[f.kind].join(', ')})`
+        );
   if (f.every != null) {
     if (!(Number.isInteger(f.every) && f.every >= 2 && f.every <= FX_EVERY))
       problem(`${at}.every: a whole number from 2 to ${FX_EVERY}`);
