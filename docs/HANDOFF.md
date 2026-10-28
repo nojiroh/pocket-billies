@@ -2,6 +2,44 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Clean-up track CU-0 - the plan: a tidy main laid out like a game repo, no "placeholder" or "AI" in the Studio - 2026-10-28
+Branch `ccr-4d35b293-6rc24z` (the cloud session's own; main fast-forwarded to 3f559c3b first). Plan approved in Plan
+Mode. Docs only: the plan, research and three read-only audits; nothing deleted or renamed yet. `track/cleanup` made
+from this branch for the lanes.
+- Changed: docs/phases/cleanup-track.md (new: the owner's answers, the research with sources, the rules for running
+  lanes at once with the live-branch script, every file's verdict and evidence, lanes S, D, R, T, round 2, what waits
+  on whom); ROADMAP's "Clean-up track" row (top of "Tracks alongside", clear of every live hunk); BRANCHES rows for
+  `track/cleanup` and this branch.
+- The owner's answers: HANDOFF keeps each track's newest 3 entries, the rest to docs/archive/HANDOFF-2026-10.md;
+  legacy docs deleted, finished plans archived; plain sound names, no "not named yet" list (replaces SND-4's naming);
+  LICENSE "all rights reserved" + CREDITS.md; "placeholder Billies" become sketch Billies, everywhere (words, data,
+  code, files, art folder, npm script, STUDIO.md); the region word "Placeholder" becomes "Untitled"; the portrait kit's
+  sources (20.5 MB) deleted; the orphan art (40 layer PNGs, 53 voxel recipes) deleted and the count fixed; the test map
+  test_props_city deleted.
+- Found, not changed (all in the track file):
+  - Players can read dev notes: robots.json's four boss parts end "RL-14b: ... Placeholder art." on the salvage card
+    (lane S fixes them).
+  - The unused-art report says 0 unused because tools/art-code-refs.mjs counts the Python tools' build lists
+    (scene/props.json, layers.json, life.json, build.json) as users (lane T).
+  - boot.js and friends.js point players at README sections that don't exist ("Start-Game", "Friends") (lane R).
+  - README says "Save to game" (the button is "Propose changes") and `npm test` "about 20 s" (about 2 minutes now).
+  - The "versioned" tools are chained generators, not copies (build-scene-props execs scene_props_v17..v28, the batch
+    files load each other): kept, as the owner decided on 2026-10-27.
+  - PR #291 (`ccr-24be55e6-2bmqci`, PK-0) is still open; merging it would bring back docs/samples/perk-icons.*, which
+    lane D deletes (superseded by tools/art/icon-grids/perks.json).
+  - Not in this track: the code that keeps saves older than format 5 loading (a behaviour change in live files), and
+    the Studio's builder map crediting scene/life/*.png to build-life-v47 (art-search.js, its test asserts it).
+  - VISION.md still says airship, brackets and relics (now the sky train, Expeditions and Perks): for the owner.
+- Risky: other tracks' open PRs (#292 sound, #295/#326 VFX, #323 perks, #322 dialogue, #314 characters, #308) touch
+  HANDOFF, ROADMAP, BRANCHES, the Studio and the checks; the lanes skip anything within 3 lines of their changes, and
+  the music names wait for #292 and #325 (both rewrite those very lines).
+- Verified: lint, format:check and the unit tests' version-source test pass (docs only); the plan's numbers re-checked
+  on 3f559c3b (350 HANDOFF headings: 145 entries stay, 205 move; 53 cry names in 22 files; 40 music names; 130 rig
+  keys; 4 robot blurbs).
+- Next: round 1, four new sessions at once, each started on `track/cleanup`: "Clean-up track, lane S", "lane D",
+  "lane R", "lane T". Then round 2 alone. Tag `cleanup-done` when the track ends.
+- For the owner: close PR #291 if PK-0's plan is no longer needed there (it is in main as docs/phases/perks-track.md).
+
 ### Hub track - the hub island polish: a natural mountain, the pond's fall, the station inland, boarding, the portal, Kappi framed - 2026-10-28
 Branch `claude/youthful-heisenberg-gq6ovv` (the cloud session's own; main merged in at the start). Plan approved in Plan
 Mode; the owner's notes in one session (docs/phases/hub-track.md "The hub island polish"; the water track's WA-11 done
