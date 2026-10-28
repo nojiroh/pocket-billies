@@ -145,6 +145,18 @@ export function renameTypeIn(D, from, to) {
     for (const S of (T && T.steps) || [])
       if (Array.isArray(S.types))
         S.types = S.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  /* VFX-10: a type's ramp moves with it (a deleted type's goes), and an icon's ramp that named it names the new id, or
+     None */
+  if (BA && BA.ramps && Object.hasOwn(BA.ramps, from)) {
+    /** @type {Record<string, any>} */
+    const out = {};
+    for (const [k, R] of Object.entries(BA.ramps))
+      if (k !== from) out[k] = R;
+      else if (to) out[to] = R;
+    BA.ramps = out;
+  }
+  for (const I of Object.values((BA && BA.iconSprites) || {}))
+    if (/** @type {any} */ (I).ramp === from) /** @type {any} */ (I).ramp = to || 'None';
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;

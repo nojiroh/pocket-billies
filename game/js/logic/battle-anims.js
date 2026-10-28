@@ -26,8 +26,11 @@ import { expose } from '../test-globals.js';
 expose({
   BATTLE_ANIM_SKIP: [() => BATTLE_ANIM_SKIP],
   HIT_TIERS: [() => HIT_TIERS],
+  IMPACT_FRAME_MS: [() => IMPACT_FRAME_MS],
   // @ts-expect-error -- replaced on purpose
   battleAnimFor: [() => battleAnimFor, v => (battleAnimFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleAnimFrame: [() => battleAnimFrame, v => (battleAnimFrame = v)],
   // @ts-expect-error -- replaced on purpose
   battleAnimGates: [() => battleAnimGates, v => (battleAnimGates = v)],
   // @ts-expect-error -- replaced on purpose
@@ -36,6 +39,10 @@ expose({
   battleAnimOutcome: [() => battleAnimOutcome, v => (battleAnimOutcome = v)],
   // @ts-expect-error -- replaced on purpose
   battleAnimTimeline: [() => battleAnimTimeline, v => (battleAnimTimeline = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleIconSprite: [() => battleIconSprite, v => (battleIconSprite = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleRampColors: [() => battleRampColors, v => (battleRampColors = v)],
   // @ts-expect-error -- replaced on purpose
   flashGate: [() => flashGate, v => (flashGate = v)],
   // @ts-expect-error -- replaced on purpose
@@ -214,4 +221,45 @@ export function flashGate(L, now, col, rule) {
 export function battleAnimLogLine(mid, T, q, held) {
   if (!T) return `${mid} none`;
   return `${mid} ${T.kind}:${T.id} ${T.tier} ${T.variant} q${q}${T.long ? ' long' : ''}${held.length ? ' held:' + held.join(',') : ''}`;
+}
+/* ===== VFX-10: the effect art's timing and colour =====
+   A strip's frames are stepped on the stage clock: 12 fps (its fps), an impact's first two frames at 24 fps. A strip
+   that loops plays round; one that doesn't plays once, ending with its particle's life (so its eroding last frames
+   are its fade), or from its start when it is an impact or has no life. */
+export const IMPACT_FRAME_MS = 1000 / 24;
+/** the frame a strip shows ageMs into a particle's life (stage ms)
+ * @param {{ frames: number, fps?: number, impact?: boolean, loop?: boolean }} S @param {number} age
+ * @param {number} [life] */
+export function battleAnimFrame(S, age, life = 0) {
+  const n = S.frames | 0;
+  if (n <= 1) return 0;
+  const step = 1000 / (S.fps || 12),
+    lead = S.impact ? Math.min(2, n) : 0,
+    len = lead * IMPACT_FRAME_MS + (n - lead) * step;
+  let t = Math.max(0, age);
+  if (S.loop) t %= len;
+  else if (!S.impact && life > 0) t = Math.max(0, len - Math.max(0, life - age));
+  const f =
+    t < lead * IMPACT_FRAME_MS
+      ? Math.floor(t / IMPACT_FRAME_MS)
+      : lead + Math.floor((t - lead * IMPACT_FRAME_MS) / step);
+  return Math.min(n - 1, Math.max(0, f));
+}
+/** a ramp's 8 colours (index 7 the white core) and its light colour
+ * @param {{ ramp: string | string[], light: string }} R @param {Record<string, string[] | string>} paletteRamps
+ *   NW_PALETTE.ramps @param {string} white the core's colour (battleAnims.json colors.white)
+ * @param {string} [glow] the type's glow (types.json), for light 'type' (white without one)
+ * @returns {{ steps: string[], light: string } | null} */
+export function battleRampColors(R, paletteRamps, white, glow) {
+  const S = !R ? null : Array.isArray(R.ramp) ? R.ramp : paletteRamps && paletteRamps[R.ramp];
+  if (!Array.isArray(S) || S.length < 7) return null;
+  return { steps: [...S.slice(0, 7), white], light: R.light === 'type' ? glow || white : R.light };
+}
+/** the strip an icons.png particle is drawn with (battleAnims.json iconSprites) and its ramp: its type's when it has
+ * one with a ramp, else the icon's own; null when the icon stays an icon
+ * @param {BattleAnimsData} A @param {string} key @param {string} [type] */
+export function battleIconSprite(A, key, type) {
+  const I = A && A.iconSprites && A.iconSprites[key];
+  if (!I || !A.sprites[I.sprite]) return null;
+  return { sprite: I.sprite, ramp: type && A.ramps[type] ? type : I.ramp };
 }

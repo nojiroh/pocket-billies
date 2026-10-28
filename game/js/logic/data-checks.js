@@ -1422,6 +1422,21 @@ export function dataBattleAnims(D, valid = () => true) {
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
+  /* VFX-10: the effect art: an anchor inside its cell; an effect has 3-8 frames, a mark on the ground at most 38 px
+     (1.2 m at 32 px/m); every type and None has a ramp; the icons drawn as strips name a sprite and a ramp */
+  for (const [id, S] of Object.entries(/** @type {Record<string, any>} */ (A.sprites))) {
+    if (S.anchor[0] >= S.cell[0] || S.anchor[1] >= S.cell[1])
+      problem(`sprites.${id}.anchor: [${S.anchor}] is outside its ${S.cell[0]}x${S.cell[1]} cell`);
+    if (!S.ground && S.frames < 3) problem(`sprites.${id}: an effect has 3 to 8 frames, not ${S.frames}`);
+    if (S.ground && Math.max(S.cell[0], S.cell[1]) > 38)
+      problem(`sprites.${id}: a mark on the ground is at most 38 px (1.2 m), not ${Math.max(S.cell[0], S.cell[1])}`);
+  }
+  for (const t of [...types, 'None'])
+    if (!A.ramps[/** @type {string} */ (t)]) problem(`ramps: no ramp for the type "${t}"`);
+  for (const [k, I] of Object.entries(/** @type {Record<string, any>} */ (A.iconSprites))) {
+    if (!A.sprites[I.sprite]) problem(`iconSprites.${k}.sprite: no sprite "${I.sprite}"`);
+    if (!A.ramps[I.ramp]) problem(`iconSprites.${k}.ramp: no ramp "${I.ramp}"`);
+  }
   return out;
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds

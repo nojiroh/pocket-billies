@@ -2565,6 +2565,38 @@ export interface BattleAnimsData {
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
   scenes: Record<DataId, BattleAnimFamily>;
+  artAbout?: string;
+  /** VFX-10: the effect strips (game/art/battle/anims/<id>.png) */
+  sprites: Record<DataId, BattleAnimSprite>;
+  /** VFX-10: what colours a sprite, by a type id, None, Bureau, up, down or heal */
+  ramps: Record<string, BattleAnimRamp>;
+  /** VFX-10: icons.png particles drawn with a strip instead, and the ramp an untyped one takes */
+  iconSprites: Record<string, { sprite: DataId; ramp: string }>;
+}
+/** VFX-10: a strip: frames side by side in 8 greys (index 7 the white core) */
+export interface BattleAnimSprite {
+  about?: string;
+  /** one frame's width and height, px */
+  cell: [number, number];
+  frames: number;
+  /** the px, from the top left, on the effect's place */
+  anchor: [number, number];
+  /** frames a second (12) */
+  fps?: number;
+  /** its first two frames at 24 fps */
+  impact?: boolean;
+  /** plays round while it lives (else once, ending with its life) */
+  loop?: boolean;
+  /** a mark on the ground at 32 px/m */
+  ground?: boolean;
+}
+/** VFX-10: grey index i is the ramp's step i (0-6), 7 stays white */
+export interface BattleAnimRamp {
+  about?: string;
+  /** an NW_PALETTE ramp name or 8 hexes, darkest first */
+  ramp: string | Color[];
+  /** a hex, or 'type' (the type's glow) */
+  light: Color | 'type';
 }
 export interface BattleAnimTimeline {
   dur: number;
