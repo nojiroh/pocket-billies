@@ -50,8 +50,10 @@ this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle e
   track": this session starts each step in a new session on `track/vfx`; each step takes the recommended option for
   every open choice (Ask me before now names one for each, e.g. keep the small hit-stop on normal hits, the target
   rings on) and lists it under "Decided for the owner, to review"; steps that touch sound message the sound track's
-  planning session (`session_019UpAFxCHyLNWb1TCD6L3vh`) before and after; VFX-19 and the sound track's optional
-  SND-16 overlap, and a split is proposed to it. Merges to main stay the owner's.
+  planning session (`session_019UpAFxCHyLNWb1TCD6L3vh`) before and after. It agreed (2026-10-28): VFX-19 takes the
+  battle half of its optional SND-16 (moves, hits, throws, catches, hurt sounds, the recall) in a music.json `battle`
+  section of the shape it proposed; SND-16 keeps the rest; its steps message this session when they change battle
+  sounds; SND-13 will read `hitTier` and `koAhead`. Merges to main stay the owner's.
 - Next: VFX-5 (attack lunges) in a new session on `track/vfx`, started by this session; then VFX-8 (anims as data).
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27

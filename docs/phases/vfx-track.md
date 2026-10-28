@@ -426,7 +426,7 @@ The stage side of UI-16b's tags, blips and pips; both read the same events, so t
   motion. One component with UI-17's boss banner: whichever lands first builds it.
 - **Send-out:** the pyramid's landing (Part 1), a burst in the Billie's type, the Billie dithering in from the feet
   up; each pyramid kind in its own colours; Prime and Coats a glint.
-- **Recall:** a beam from the Billie back to the trainer's hand while it dithers out; a sound.
+- **Recall:** a beam from the Billie back to the trainer's hand while it dithers out; its sound comes with VFX-19.
 - **Catch:** each wobble squashes the pyramid and puffs dust; caught: sparks up its edges, stars, the type's ring;
   an escape: the pyramid's shards in its colours.
 - **Faint:** the hurt pose holds, the Billie sinks and dithers out with a dust puff; bots shed their limbs with sparks
@@ -454,9 +454,11 @@ The first batch (VFX-17) is the 12 of power 100+ (Tower Drop, Zero to One, Visio
 Blast Furnace, Hallucinate, Developers!, Siu!, Full Steam, Standard Oil, Golden Caravan) and about 6 more.
 
 ## Move sounds (the owner's pick)
-A sound per family, layered by type, as data in music.json (notes like SND-6's UI sounds, plus a noise voice for
-hits, whooshes and splashes), edited in the Studio's Sounds tab and played on the stage clock; placeholders until
-the owner's listening pass. Hurt events (a burn, recoil, a spread move's second target, the delayed hit) get a sound.
+A sound per family, layered by type, in music.json's `battle` section (the shape agreed with the sound track, "Talking
+to the sound track": voices in the cries' shape, noise voices for hits, whooshes and splashes, baked instruments
+once SND-11 is on main), edited in the Studio's Sounds tab and played on the stage clock through the Sound effects
+bus; placeholders until the owner's listening pass. Hurt events (a burn, recoil, a spread move's second target, the
+delayed hit) and the recall get a sound; throws and catches get body and space (the battle half of SND-16, agreed).
 `python3 tools/check-sound.py` fingerprints every one (a new baseline in its own commit).
 
 ## The effect art
@@ -496,10 +498,10 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | VFX-13 | Hit tiers | the tier table; resisted, x4, KO and last-KO looks; the rhythm of multi-hits; drain, heal, recoil; misses per family | hits read by tier | tier tests; films. Phone |
 | VFX-14 | Statuses and stats | the lasting looks, "sharply", Protect, the shield dome, Soaked, Fork, the delayed hit, stones, glints (with UI-16b's events if they have landed) | statuses visible | the golden record untouched; Calm read if UI-16a has landed. Phone |
 | VFX-15 | The stage | moods, the row wave, heat, weather on the stage, scars | the stage reacts | decal cap tests; frame budget on the Graphics bench. Phone |
-| VFX-16 | Battle flow | the VS splash; send-out per pyramid; the recall beam; catch; faint and bots' faint; level-up, victory, defeat; items used; XP | the flow | films; Reduced motion seen in each. Phone |
+| VFX-16 | Battle flow | the VS splash; send-out per pyramid; the recall beam (its sound in VFX-19); catch; faint and bots' faint; level-up, victory, defeat; items used; XP | the flow | films; Reduced motion seen in each. Phone |
 | VFX-17 | Signature scenes 1 | `propWorldItem`, the stamp, the +0.5 s rule; the 12 power 100+ scenes and about 6 more | first scenes | storyboards approved first; films. Phone |
 | VFX-18 | Signature scenes 2 | the other 38 (split in two if it runs long); the bots' and the boss's specials | every scene | films. Phone |
-| VFX-19 | Move sounds | music.json's battle sounds, the noise voice, family x type, hurt sounds, the Studio's Sounds tab | sounds | check-sound.py fingerprints. Phone (listen) |
+| VFX-19 | Move sounds | music.json's `battle` section (the shape agreed with the sound track): family x type, hurt sounds, the recall, throws and catches; its schema, enums and checks; the Studio's Battle card | sounds | check-sound.py fingerprints; music-studio tests. Phone (listen) |
 | VFX-20 | Phone pass | tuning from the owner's phone notes, the quality ladder, a flash audit of filmed frames, the old 2D effect code and types.json `fx` removed (Ask me before), docs; tag `vfx-done` | tuning | the owner's phone log |
 
 ## How the sessions run (the owner, 2026-10-28)
@@ -533,14 +535,31 @@ commit of its own.
 - A VFX step that will touch sound.js, game/js/audio/, music.json (or its schema) or the check-sound baseline sends
   that session a message first (what, where, why) and another after pushing (the commit). The steps that do: VFX-8
   (battleSoundEffect's timing moves onto the stage clock; a tap that skips drops the pending sounds), VFX-14 (the
-  stat-down sound), VFX-16 (a recall sound), VFX-19 (move sounds).
-- VFX-19 overlaps the sound track's optional SND-16 ("battle hits, throws and catches with body and space"). Proposed
-  to the sound session (2026-10-28): VFX-19 takes the battle half (moves, hits, throws, catches, hurt sounds) on the
-  sound track's own tools (SND-9's bake and reverb, SND-11's instruments, whichever are on main by then) and its buses
-  (so SND-15's ducking applies), and SND-16 keeps the rest (the airship, the sky train, the world map, steam vents,
-  wells). Its answer is recorded here when it comes.
-- Offered to the sound track: logic/battle-anims.js's `hitTier` and `koAhead` (VFX-8) for SND-13's battle intensity
-  (turns, KOs, the red zone, a boss's phases).
+  stat-down sound), VFX-19 (move sounds and the recall's).
+- **Agreed with the sound session (2026-10-28):** VFX-19 takes the battle half (moves, hits, throws, catches, hurt
+  sounds, the recall) on the sound track's own tools (SND-9's bake and reverb, SND-11's instruments, whichever are on
+  main by then); SND-16 keeps the rest (the airship's engine, the sky train, the world map, steam vents, wells). VFX-8
+  and VFX-14 as described are fine with it.
+- **music.json's battle section (its proposal, taken):** a top-level `battle` (added to music.schema.json's
+  properties, since the top level has `additionalProperties: false`) with `families` (one per move family), `types` (a
+  layer per type), `hurt` (a burn, recoil, a spread move's second target, the delayed hit) and `recall`. Each sound is
+  a list of voices in the cries' shape (`{at, note, len, wave, vol, slide, vib}`: music.json `cries.bases`,
+  logic/cries.js), so one voice format serves cries, UI sounds, jingles and battle sounds; from SND-11 a voice may
+  name `inst` (a baked instrument) instead of `wave`; noise voices take synthNoise's options (`{noise: {bp|hp|lp, q},
+  dur, vol}`). New enums go in `MUSIC_CHOICES` (logic/music-studio.js; music-studio.test.mjs holds them to the
+  schema), checks in `musicFindings`. The Studio: a "Battle" card on the Sounds tab beside the base cries, button
+  sounds and mix (studio/js/music-editor.js ~650-758), a play button per sound. They play on the Sound effects bus
+  (`soundEngine.fx`), so SND-15's ducking covers them.
+- **Names the sound track takes (avoid them):** logic/sound-bake.js (SND-9: pure DSP, zones, impulses),
+  `T.sampleVoice` and a bank cache in tracker.js, the reverb living with the tracker (post-fader sends per bus), and
+  the prefixes `musicStem*`, `musicLayer*`, `soundBake*`.
+- **Its side of the protocol:** every SND step that changes battleSoundEffect, soundEffect's battle recipes (hit,
+  super, weak, crit, faint, heal, seal, status, stat, wobble, throw, pop) or music.json's top level messages this
+  track's planning session before and after it pushes. Its next step, SND-8b (mix fixes), gives the jingles and the
+  heal and seal effects their own echo (soundEffect, sound.js ~504 and ~539) and songs a `trim`, and rewrites the
+  jingles' fingerprints; the next SND step writes this agreement into docs/phases/sound-track.md too.
+- **Shared:** SND-13 will read `hitTier` and `koAhead` from logic/battle-anims.js (VFX-8) for battle intensity
+  (turns, KOs, the red zone, a boss's phases) once they are on main (accepted 2026-10-28).
 
 ## Bugs found (VFX-7) and where they're fixed
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe (VFX-8).
@@ -569,7 +588,8 @@ commit of its own.
   light keys for Steady lamps, the row wave on the Medium precision pass's highp list.
 - **Characters track:** battle trainers may be redrawn (throw poses); the VS splash uses portraits, not the battle
   sprites.
-- **Sound track:** move sounds in music.json and its Studio tab; check-sound.py's baseline.
+- **Sound track:** move sounds in music.json's `battle` section and its Studio tab, check-sound.py's baseline; the
+  split with SND-16 and the protocol agreed with its planning session (see "Talking to the sound track").
 - **Water track** (WA-7): ripples and splashes on battle water.
 - **The quick check** plays battles at 4x speed (check-quick.py 778-786): the tap that skips changes its timing, so
   VFX-8 rechecks those steps.
