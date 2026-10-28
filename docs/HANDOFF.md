@@ -2,6 +2,80 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-5 - The kit's data - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (level with main at the start: main was already merged in; the owner chose to
+continue here, so PR #314 grows). Plan approved in Plan Mode. Data, logic and Studio work; figures still off by
+default, so the game's pictures are unchanged. Done ahead of CH-3c. No session tag (CLAUDE.md).
+docs/phases/characters-track.md (CH-5, and the new CH-5b) has the design.
+- The owner's answers: continue on #314's branch; **hybrid** data (accessories as shape lists, heads and builds as
+  tables of knobs, hair as recipes, the head sculptor and the strand grower kept in code); **clothes in a CH-5b**.
+- Found (checked against the code):
+  - The helper thread was never in the way. The page builds a figure from its look and the thread meshes the finished
+    figure, which is already plain data, so the kit's data never reaches the thread.
+  - person.schema.json listed 6 head shapes; the kit has 8 and `hero` (diamond, broad and hero were refused).
+  - Glasses and the name tag are painted marks, not shapes; they stay marks (faces are CH-6).
+  - **The brief's "a bake cached by the look" can't share figures between people**: the seed picks each person's head
+    shape and its variation, so two people with the same look still differ. What CH-5 caches by is everything a
+    figure is built from (see below).
+- Changed:
+  - game/data/figureKit.json, with its schema and check:data's figureKitProblems:
+    - heads; vary (how far each person strays); builds (a round build's squarer jaw is now the build's own `jaw`);
+      folk; proportions;
+    - hair: each style's hairline, what shows under a hat, and its steps (grow, spikes, bun, tie, twin);
+    - accessories: the 8 hats, the headset, scarf, chain, tie, bow tie and the 3 bags, as rows of shapes on a part.
+  - game/js/logic/kit-shapes.js (new): reads the rows. Every place and size is a number or a sum of the head's or
+    body's frame (`bx * 0.98`), parsed (never run as code) in JavaScript's order.
+  - logic/figure-kit.js reads all of it (`opts.kit`, else `GAMEDATA.figureKit`): FIGURE_HEADS, FIGURE_BUILDS,
+    KIT_RANDOM_HEADS (now kitRandomHeads), KIT_CHIBI and FIGURE_SLIDER_GAIN are gone; kitHat's switch and kitHair's
+    switch became the data.
+  - figures.js:
+    - Every figure is named `look:<who>#<hash>`, a hash of the look, the `figure` choice and the kit data's revision
+      (portraits and snapshots too), so an edit makes a new figure, never a stale one. figureKitUse(kit) builds with
+      other kit data. The debug log's figures line has `kit` (the revision).
+    - figureFromLook is figureDef's look-to-figure code, shared. figurePreview is the Studio's turntable picture: a
+      figure from a look with the Studio's data, built on the page once per edit, the old mesh freed (the baker now
+      keeps each mesh's buffer).
+  - person.schema.json: `figure.head` and `build` take any id; check:data checks it is the kit's.
+  - The Studio's Figures section (studio/js/figure-editor.js; the Characters row is now Looks | Wardrobe | Figures):
+    - a turntable with person, head shape, build, style and clip pickers, whole or the head close up;
+    - tabs: head shapes (sliders, copy as new), builds, hair (each step's numbers), hats and things (rows, each value a
+      number or a sum; duplicate, delete, give a wardrobe item shapes), variety and proportions;
+    - "Give <who> this head and build".
+  - tools/studio-shots.py: the `figures` and `figure-hats` views.
+- Risky:
+  - Untested by a person: the Studio section's editing. Headless, it built Professor Chosen in 694 ms and the boy's
+    head close up in 390-400 ms; an edit (a bigger bobble on the beanie) showed on the next draw.
+  - A sum typed wrong (a name the frame doesn't have) makes that figure fail to build. The preview says why and
+    check:data reports it, but in the game that person keeps today's picture.
+  - The Studio's number fields write numbers and its text fields strings: an edited accessory value is saved as a
+    string ("0.07"), which the schema and the parser accept.
+  - CH-4's risks stand: 4.6 MB a gouache-night mesh, one draw a person in the main sprite pass; its phone gate is still
+    owed.
+- Verified:
+  - lint, both type checks, format:check, check:modules, check:data, build.
+  - 1,945 unit tests pass. The map-checks timing test failed once while a smoke ran beside it, and passed alone.
+  - New tests: the golden figures (a hash of 485 figures: every person, item, hat with each hair style, head with each
+    build and the directions' extras; it held through every move commit), the sum parser (JavaScript's order, refusals),
+    the rows (sides, repeat, vars, curls), figureKitProblems, the cache names, the preview.
+  - Smoke after each game commit (4 runs, no problems, 471-553 s).
+  - The full quick check on a40c5c2a was stopped from outside the session after 36 of its 42 steps (it stopped at
+    Sound settings): 28 ok, 8 problems.
+    - Five are the ones recorded on main: Terraces (train_station), RL-8's seam, RT-2's pair, Granny Juniper, room light.
+    - Starters and Ground tiles passed when run alone on the same commit (Ground tiles had failed twice in a busy run:
+      the lab's room didn't open within its 90 s wait).
+    - Battle music (the drums on a throw) fails alone at the session's starting commit 2154f97f too, so it isn't this
+      session's.
+    - The last 6 steps did not run.
+  - Headless pictures of the Studio's Figures section (studio-shots `figures`, `figure-hats`).
+- Next:
+  - The owner's call: CH-3c (the rest of the cast and the movement pass) or CH-5b (clothes as data), in a new
+    session. The recommended branch is `track/characters` after #314 merges.
+  - Still owed: CH-4's phone gate.
+- For the owner:
+  - In the Studio: Characters > Figures. Try a head shape or build on someone, then edit a hat's rows and watch the
+    turntable.
+  - On the phone (CH-4's gate): turn on Engine > People > Figures, walk Copperleaf by day and at night, and send a
+    debug log.
 ### Characters track CH-4 - The live atlas - 2026-10-28
 Branch `claude/laughing-tesla-roy32r` (CH-3b's branch, main merged in first at db0bbcdc; the owner chose to continue
 here, so PR #314 grows). Plan approved in Plan Mode. Engine and figure work, behind Engine > People > Figures (still

@@ -319,10 +319,33 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     figureReport().atlas and .meshes in the debug log, read by tools/read-debug-log.py.
   - Not in the atlas: the plain 3D style, a battle's close-ups and the CC0 stand-in (baked as before).
   - **Phone gate (owed):** the owner turns Figures on and walks a town at night.
+- **CH-5 The kit's data.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314 grows; the owner's choice),
+  ahead of CH-3c; HANDOFF has the numbers. The owner's answers (Ask me before): **hybrid** data (accessories as shape
+  lists, heads and builds as tables of knobs, hair as recipes; the head sculptor and the strand grower stay code), and
+  **clothes split into CH-5b**.
+  - Checked against the code first: the helper thread is not in the way (the page builds a figure from its look, the
+    thread only meshes the finished figure, already plain data, so the kit's data never reaches it);
+    person.schema.json listed 6 head shapes where the kit has 8 and `hero`; glasses and the name tag are painted
+    marks, not shapes; two people with the same look still differ by their seed (head shape and its variation), so a
+    figure can't be shared by look alone.
+  - game/data/figureKit.json (its schema, check:data's figureKitProblems): heads, vary (how far each person strays),
+    builds (a round build's squarer jaw is its own `jaw`), folk, proportions, hair (each style's hairline, what shows
+    under a hat, and steps: grow, spikes, bun, tie, twin), accessories (the 8 hats, the headset, the 4 neckwear
+    shapes, the 3 bags as rows of shapes on a part).
+  - logic/kit-shapes.js reads the rows: every place and size a number or a sum of the head's or body's frame
+    (`bx * 0.98`), parsed (never run as code) in JavaScript's order, so the move is exact: a golden test hashes 485
+    figures (every person, item, hat with hair style, head with build, the directions' extras) and held through
+    every commit.
+  - Cached by what makes it: every figure's name is `look:<who>#<hash>` of the look, the `figure` choice and the
+    kit data's revision (portraits and snapshots too); figures.js figureKitUse(kit) builds with other kit data.
+  - The Studio's Figures section (studio/js/figure-editor.js; Characters: Looks | Wardrobe | Figures): a turntable
+    (figures.js figurePreview: the game's baker on the unsaved data, built on the page once an edit), person, head
+    shape, build, style and clip pickers, whole or the head close up; tabs for head shapes, builds, hair, hats and
+    things (rows: duplicate, delete, give an item shapes), variety and proportions; "Give <who> this head and build".
+- **CH-5b Clothes as data:** tops, jackets, coats, skirts and trousers (fitted to the arms and the build in
+  figure-kit.js lookFigure) as shape lists in figureKit.json, with the same rows and the Studio's same editor; the
+  directions' flair (FIGURE_LOOKS: scarves, capes, gloves) too if it fits.
 - **After CH-3c:**
-  - **CH-5 The kit's data:** the figure kit's shapes as data the Studio can edit (head shapes, builds, hair, hats
-    and clothes as shape lists, not code), a per-look bake cached by the look; the Studio's figure preview
-    (turntable, head and build pickers). (Was: the glTF importer; the owner picked code-built figures.)
   - **CH-6** faces: talking mouths and every dialogue expression tag as marks; the portrait kit's eye and brow
     styles matched; skin ramps.
   - **CH-7** the dressing room: customisation on the figure (the sliders, every item, colours) with UI pictures from
@@ -380,6 +403,9 @@ Tags `ch-N-done` (the owner pushes them).
   menu's figure switches (debug-menu.js FIGURE_SWITCHES), battle-stage.js trainerBattleFrame.
 - The kit (CH-3b): game/js/logic/figure-kit.js, people/<id>.json `figure`, figures.js `figureFor`, look-people
   `--cast`.
+- The kit's data (CH-5): game/data/figureKit.json (schema/figureKit.schema.json), game/js/logic/kit-shapes.js,
+  studio/js/figure-editor.js (the Figures section), figures.js figurePreview and figureKitUse,
+  tools/test/figure-kit-golden.test.mjs (the 485 figures' hashes), tools/studio-shots.py `figures`, `figure-hats`.
 
 ## Verification
 - Every session: lint, typecheck and unit tests; smoke before each game commit; check:fast in CI; the full quick

@@ -309,7 +309,10 @@ town node needs it.
   as a capybara and you as your look, behind Figures) done 2026-10-28; CH-4 (the live atlas: figures drawn each
   step by the game's renderer into one shared unlit atlas and lit where they stand; meshes on a helper thread;
   density by distance; the snapshot service) done 2026-10-28 on `claude/laughing-tesla-roy32r` ahead of CH-3c (the
-  plan approved in Plan Mode), its phone gate owed; next CH-3c (the rest of the cast, the movement pass, the owner's phone).
+  plan approved in Plan Mode), its phone gate owed; CH-5 (the kit's data: head shapes, builds, hair recipes and the
+  hats, headset, neckwear and bags as shape lists in game/data/figureKit.json, figures cached by what makes them, the
+  Studio's Figures section with a turntable; clothes split into CH-5b) done 2026-10-28 there too, ahead of CH-3c; next
+  CH-3c (the rest of the cast, the movement pass, the owner's phone) or CH-5b (clothes as data).
   About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
