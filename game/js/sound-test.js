@@ -6,20 +6,25 @@
    the save, and stops when the menu closes: the place's own music and world sounds come back. SND-9: and the first
    baked instrument, the harp, playing Copperleaf's tune and chords with a little reverb, as in a chosen place. SND-11:
    any instrument (music.json instruments; a drum plays a beat), and a song as its ensemble or with GB Sounds. SND-17:
-   any jingle on its ensemble or 8-bit, or every jingle both ways, over the place's song. */
+   any jingle on its ensemble or 8-bit, or every jingle both ways, over the place's song. SND-13: the song's layers as
+   switches (walking, the weather, night, a battle's intensity 1-3) and the busker at a distance, for the song the test
+   plays (logic/music-layers.js; an ensemble's layered parts move on their beat or bar line). */
 /* the world sounds it can play: [id, label, [[kind, metres or 'd' for the distance picked], ...]] */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
 import { MUSIC } from './game-data.js';
 import { musicEnsembleFit } from './logic/music-patterns.js';
+import { MUSIC_LAYER_TESTS, musicLayerBusker } from './logic/music-layers.js';
 import { uiState } from './game-state.js';
 import { SONGS, ambience, jinglePlay, music, musicSync, musicVariant, soundEngine, unlockSound } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   SOUND_TEST_AS: [() => SOUND_TEST_AS],
+  SOUND_TEST_BUSKER: [() => SOUND_TEST_BUSKER],
   SOUND_TEST_DISTANCES: [() => SOUND_TEST_DISTANCES],
   SOUND_TEST_HARP: [() => SOUND_TEST_HARP],
+  SOUND_TEST_LAYERS: [() => SOUND_TEST_LAYERS],
   SOUND_TEST_PLACES: [() => SOUND_TEST_PLACES],
   SOUND_TEST_WORLD: [() => SOUND_TEST_WORLD],
   soundTest: [() => soundTest],
@@ -29,6 +34,7 @@ expose({
   soundTestHarp: [() => soundTestHarp, v => (soundTestHarp = v)],
   soundTestHarpStop: [() => soundTestHarpStop, v => (soundTestHarpStop = v)],
   soundTestJingle: [() => soundTestJingle, v => (soundTestJingle = v)],
+  soundTestLayers: [() => soundTestLayers, v => (soundTestLayers = v)],
   soundTestSelect: [() => soundTestSelect],
   soundTestStop: [() => soundTestStop, v => (soundTestStop = v)],
 });
@@ -205,6 +211,41 @@ const SOUND_TEST_AS = [
   ['ensemble', 'As its ensemble'],
   ['gb', 'GB Sounds'],
 ];
+/* SND-13: the layer switches: [select id, [value, label]...]; the busker's distances (m; 'off' out of earshot) */
+const SOUND_TEST_LAYERS = [
+  [
+    'sndWalk',
+    [
+      ['still', 'Standing'],
+      ['walk', 'Walking'],
+    ],
+  ],
+  [
+    'sndWeather',
+    [
+      ['clear', 'Clear'],
+      ['rain', 'Rain'],
+      ['snow', 'Snow'],
+      ['storm', 'A storm'],
+    ],
+  ],
+  [
+    'sndNightLayer',
+    [
+      ['day', 'Day layers'],
+      ['night', 'Night layer'],
+    ],
+  ],
+  [
+    'sndIntensity',
+    [
+      ['intensity2', 'Intensity 2 (full)'],
+      ['intensity1', 'Intensity 1 (a battle’s intro)'],
+      ['intensity3', 'Intensity 3 (the peak)'],
+    ],
+  ],
+];
+const SOUND_TEST_BUSKER = ['off', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const soundTest = {
   song: null,
   world: null,
@@ -214,7 +255,27 @@ const soundTest = {
   inst: 'harp',
   jingle: 'victory',
   queue: 0,
+  /* SND-13: the layer switches' values (SOUND_TEST_LAYERS ids, sndBusk) */
+  layers: { sndWalk: 'still', sndWeather: 'clear', sndNightLayer: 'day', sndIntensity: 'intensity2', sndBusk: 'off' },
 };
+/* SND-13: the layer levels the switches make (logic/music-layers.js MUSIC_LAYER_TESTS; the busker by distance, a
+   little to the right) */
+function soundTestLayers(V) {
+  const T = MUSIC_LAYER_TESTS,
+    d = V.sndBusk === 'off' ? null : +V.sndBusk,
+    w = V.sndWeather === 'clear' ? {} : T[V.sndWeather] || {};
+  return {
+    walk: V.sndWalk === 'walk' ? 1 : 0,
+    rain: 0,
+    snow: 0,
+    storm: 0,
+    ...w,
+    night: V.sndNightLayer === 'night' ? 1 : 0,
+    ...(T[V.sndIntensity] || T.intensity2),
+    busker: d == null ? 0 : musicLayerBusker(d, true).level,
+    buskerPan: 0.4,
+  };
+}
 const soundTestSelect = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${v}"${v === val ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
 const soundTestButton = (x, l) => `<button class="pb small" data-a="dbg" data-x="${x}">${l}</button>`;
@@ -229,6 +290,11 @@ function soundTestHTML() {
     ],
     soundTest.song && soundTest.song.endsWith('@night') ? 'night' : 'day'
   )}${soundTestSelect('sndAs', SOUND_TEST_AS, soundTest.as)}${soundTestButton('sndSong', 'Play the song')}</div>
+  <div class="dbg-row">${SOUND_TEST_LAYERS.map(([id, opts]) => soundTestSelect(id, opts, soundTest.layers[id])).join('')}${soundTestSelect(
+    'sndBusk',
+    SOUND_TEST_BUSKER.map(d => [String(d), d === 'off' ? 'No busker' : `The busker ${d} m away`]),
+    soundTest.layers.sndBusk
+  )}${soundTestButton('sndLayers', 'Set the layers')}</div>
   <div class="dbg-row">${soundTestSelect(
     'sndWorld',
     SOUND_TEST_WORLD.map(([id, l]) => [id, l]),
@@ -264,7 +330,23 @@ function soundTestAction(x) {
     return e ? /** @type {HTMLSelectElement} */ (e).value : null;
   };
   unlockSound();
-  if (x === 'sndSong') {
+  /* SND-13: the layer switches as they stand, for the song the test plays (soundEngine.testLayers) */
+  const readLayers = () => {
+    for (const id of [...SOUND_TEST_LAYERS.map(L => L[0]), 'sndBusk']) {
+      const val = v(id);
+      if (val != null) soundTest.layers[id] = val;
+    }
+    soundEngine.testLayers = soundTestLayers(soundTest.layers);
+  };
+  if (x === 'sndSong' || x === 'sndLayers') readLayers();
+  if (x === 'sndLayers') {
+    const L = soundTest.layers;
+    toast(
+      soundEngine.test && soundTest.song
+        ? `Layers: ${L.sndWalk}, ${L.sndWeather}, ${L.sndNightLayer} layers, ${L.sndIntensity.replace('intensity', 'intensity ')}, ${L.sndBusk === 'off' ? 'no busker' : 'the busker ' + L.sndBusk + ' m away'} (on the next beat or bar).`
+        : 'Layers set: play a song with an ensemble to hear them.'
+    );
+  } else if (x === 'sndSong') {
     const name = v('sndSong');
     if (!name) return;
     soundTest.song = v('sndTime') === 'night' ? musicVariant(name, 1) : name;
@@ -354,6 +436,7 @@ function soundTestStop() {
   soundTestHarpStop();
   ambience.preview = null;
   soundEngine.testGb = null;
+  soundEngine.testLayers = null;
   if (soundEngine.test) {
     soundEngine.test = false;
     musicSync();
