@@ -261,7 +261,10 @@ town node needs it.
   and weather; catching, cash and maps; rules, growth and adventure) plus 12 **Fine Print** trade-off Perks offered at
   leader wins, 7 Perk sets, 16 new held items, every Bag item and held item redrawn, 20 named boons and curses (the
   Bureau's Red Tape), the Field Guide's Perks tab; the effects gain triggers, conditions, counters and growth. PK-0
-  (the plan, research and 8 sample icons) done 2026-10-27 on `ccr-24be55e6-2bmqci`; PK-1 (the effects core) next.
+  (the plan, research and 8 sample icons) done 2026-10-27 on `ccr-24be55e6-2bmqci`; PK-1 (the effects core: when,
+  if, every, grow, per and once on effect rows, run.perkState, the switch-in fix, every run row of turnHeal, pinchHeal,
+  turnHurt, level and bossHp read, battle lines naming boons, the Studio's row inputs) done 2026-10-28 on
+  `track/perks`; PK-2 (the art pipeline) next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).

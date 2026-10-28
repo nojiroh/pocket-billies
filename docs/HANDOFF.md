@@ -2,6 +2,89 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-1 - the effects core - 2026-10-28
+Branch `track/perks` (made in this session from `ccr-24be55e6-2bmqci`, main merged first: already up to date at
+07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 7, "Corrected
+in PK-1".
+- The plan (as set at the start): (1) effects.js gets the fields `when`, `if`, `every`, `grow`, `per`, `once` with
+  fixed lists and the functions that read them, tested alone; (2) the schema, data checks and types; (3)
+  `run.perkState` in validRun; (4) the switch-in fix; (5) a run's turnHeal, pinchHeal, turnHurt rows read; (6) level
+  and bossHp through every run row; (7) the battle moments and conditions on every battle reader; (8) the run
+  moments; (9) battle lines naming boons; (10) the Studio's row inputs; (11) the debug log's `relicState`; (12)
+  docs. One cause per commit, test-only Perks (perks.json unchanged), the golden battles as the proof that a battle
+  without Perks plays as before.
+- Changed (12 commits, each with its tests):
+  - **effects.js**: `FX_WHEN` (15 moments: battleStart, switchIn, move, hit, hurt, crit, ko, faint, turnEnd,
+    throwMiss, catch, win, arrive, buy, take), `FX_ONCE`, `FX_PER`, `FX_FOES`, the condition words; `fxCond`,
+    `fxLive`, `fxSpend`, `fxRowNow` (growth and per-type counting, within FX_LIMIT), `fxAt` (rows read at their
+    kind's point), `fxPeek`, `fxFire` (a moment: counters, growth, once marks); `fxRunFoeLevels`, `fxRunBossHp`;
+    `fxStateLog`. `fxOfRun` numbers the rows that keep state.
+  - **Battle** (battle-engine.js): `fxBattleStart` and `fxFieldStages` (a Perk's stat rows for every Billie of
+    yours that takes the field: **the switch-in fix**, Running Shoes now does what it says), `fxMoment` (each battle
+    moment; stat and heal rows act, a Perk's `say` is its line), `fxHitMult`/`fxHitMoments` (damage rows of a hit),
+    `fxTurnEnd` (a run's turnHeal, pinchHeal, turnHurt), `fxBattleRows` (money, a coin's chance, XP, DNA take only rows
+    whose conditions hold), `fxBattleCtx`, `fxFoeTags`, `fxSrcName` (lines say "Ring Light Shrine: ...", not
+    "event:ring_light"). makeBattle no longer gives the Perks' stages (the engine does, at newBattle).
+  - **Run** (run-loop.js): `runFxMoment`, `runBuyFx`, `fxRunCtx`; arrival's heal rows check their condition; the win
+    and catch moments in battleSettle; the take moment in perkTake (an optional last `s`, passed on by perkChoose and
+    perkBuy; perk-screen, the shop, the debug menu and the simulation pass it); the buy moment in shop.js and the
+    simulation; a run battle carries `run.perkState` when a row keeps state. Foes' levels and the boss's HP read every
+    run row (run-scenes, encounters, runFoes).
+  - **Data**: perks.schema.json (`$defs` for the fields on every kind, a Perk's `say` of 40 letters, the kinds
+    turnHeal, pinchHeal, turnHurt, level, bossHp); data-checks.js `fxWhenProblems`, `fxCondProblem`,
+    `FX_WHEN_KINDS`, `FX_PLAIN` (used by dataPerks; fxRowProblems refuses the fields on held items, Genes and the
+    fountain, where nothing reads them); game-data.d.ts `FxWhen`, `FxTiming`, `Perk.say`; save-data.d.ts
+    `Run.perkState`; run-state.js `validPerkState`.
+  - **Studio**: the Perks editor's When, If, Every, Grows (on, by, up to, reset), Per and Once inputs per row (only
+    those the kind can have), the Perk's battle line, the five run-read kinds; check-studio-github.py's relics step
+    sets a When and an If, sees a bad condition's message and undoes both.
+  - **Debug log**: `relicState` beside `relics` (counters only: n, v, used by '<source>/<row>').
+  - Tests: effects-when.test.mjs (new: each condition word, every, grow, per, the three once scopes, peek, the plain
+    row unchanged), battle-perks.test.mjs (new: the switch-in fix, every battle moment, ko, every counted over two
+    battles on the run's marks, once a battle with a say line, conditions in battle, a growth's reset on a faint, the
+    turn-end kinds, boon names, a battle without Perks making no marks), run-fx (the run moments, conditions on
+    arrival, buy, take, win, catch, once a run, growth with noFaint), run-state (perkState bounds), run-loop
+    (runBattleExtra's marks), encounters (a level row from a boon and a Perk), data-checks (good rows pass, 25
+    planted faults named, the schema with ajv).
+- Risky:
+  - Every battle with Perks now builds a small context per hit (`fxBattleCtx`); fine in the tests' timing, not
+    measured on the phone.
+  - **A level or bossHp row taken mid-run shows after the run's world is made again** (run-world.js builds places
+    and foes once per seed, and on a reload). Nothing has such a row yet; PK-7's Early Access Pass needs this handled.
+  - A Perk's stat stages now come after a held item's at a battle's start (they were before); the totals differ only
+    when the stage cap clips them.
+  - The start's Perk lines wait in `b.fxSay` for `sayBattleFx`; a battle begun another way says them at its first
+    turn.
+- Verified: after every change lint (eslint, names, ui-lint, unused CSS, art-code-refs), typecheck and `npm test`
+  (1569 at the start, 1595 at the end, all passing); before every commit check:modules, format:check, check:data
+  (176 files fine) and build; `check:smoke` 6/6 on every commit touching game/ (run in a second worktree on the
+  commit itself; Python Playwright 1.63.0 as UI-10's entry says). `check:fast --only=perks` passed (61 s);
+  `npm run test:slow` 103 of 103; `python3 tools/check-studio-github.py --only=relics` ok (with its new When/If step).
+  Golden battles unchanged (no snapshot remade). Faults planted once each and seen red: `every` firing one late, the
+  switch-in line removed. Full quick check on 1418be7e: 41 steps, 37 passed; the 4 PROBLEMs: Terraces "props in the
+  air: train_station", RL-8 "crossed into Thicket Route but its view never showed" and "room light" (all three red on
+  main per the HB-10 and RS entries), Battle music "the drums never came in on a throw" (passes alone here, as
+  HANDOFF records for full runs). RL-8 rerun alone: "the town's shop has no Perk" (red on main too, as the brief
+  says). `--selftest` whole: the same two failures as main's tree (a room "isn't drawing (black screen)", "the
+  town's walking grid changed after the room", 236 cells as on main's last run). Phone checks to do (listed, not
+  waited for): a run battle holding Running Shoes, then a switch: the Billie coming in gets "Running Shoes: X's
+  Speed rose."; an event's boon line says the event's name; the exported debug log has `relicState` (null with no
+  counting Perk).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - The line a firing Perk says: "<Perk name>: <say>" ({name} is the Billie, "your team" for more than one); without
+    a `say`, a stat row says "<Perk>: X's Speed rose." and a heal row "<Perk>: X restored HP."; a modifier row (a
+    damage row on a hit) says nothing without a `say`.
+  - A run's pinchHeal row heals each Billie once a battle (as a held item's), unless its `once` says otherwise.
+  - `every` counts over the whole run, and only the times its condition holds.
+  - `lead` is whoever stands in your first field place; `newSpecies` is "none of that species on your team".
+  - A growth stays between 0 and its max (a negative max for a shrinking value).
+  - Buying several of a ware at once is one `buy`; Perk purchases count too.
+  - `turnHurt` from the run says "<source>: X lost a little HP."
+- Next: PK-2 (the art pipeline: `tools/build-icons.mjs`, `img` on Perks, cards at 72 px and rows at 36 px, the 13
+  existing Perks drawn) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-1-done` on this entry's commit.
+
 ### Perks track PK-0 - the plan, research and art samples - 2026-10-27
 Branch `ccr-24be55e6-2bmqci` (the session's own), made from main at 07c9b284; `track/perks` doesn't exist yet (PK-1's
 session makes it). Plan Mode, plan approved. Docs and samples only: no game code, data or art changed. Details:

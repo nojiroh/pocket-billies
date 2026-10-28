@@ -411,6 +411,42 @@ unused-art gate.
   faintPaysNothing, the `fine` rarity; PK-8 the set rows (`heldBoost`); PK-9 boons and curses (`rule` shopClosed,
   muteNewest, curseShorter, `last`); PK-10 held `survive`, `reflect`, `drain`, `immune` type, `first` chance, `last`.
 
+**Corrected in PK-1** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- Section 2's claims held at 07c9b28: `doSwitch` gave a Billie coming in only its held item's stages; run rows of
+  turnHeal, pinchHeal and turnHurt were read from held items only; level and bossHp from modifiers only;
+  `sayBattleFx` printed "event:ring_light". The golden battle holding Running Shoes has no switch, so the fix left it
+  unchanged (no snapshot remade).
+- `run.perkState` is keyed `'<source>/<row>'` (effects.js `fxKey`), not `<src>`: a Perk can hold two counting rows.
+  `fxOfRun` numbers only the rows that keep state (`row`); the others are the objects they were. Marks: `n` (every),
+  `v` (grow), `used` (once a run); the battle's own `b.fxState` holds once-a-battle `used` and once-for-each-Billie
+  `by` (uids). A run battle carries `run.perkState` itself (`runBattleExtra`'s `perkState`) when a row keeps state,
+  so a battle's counts and growth are the run's at once.
+- The perks schema now admits turnHeal, pinchHeal, turnHurt, level and bossHp on Perks (the core reads them from the
+  run); no Perk uses them yet. The Studio editor got a **Per** input too (the plan listed When, If, Every, Grows, Once).
+- Where each kind can take a `when` (data-checks.js `FX_WHEN_KINDS`): stat at the battle moments but throwMiss, heal
+  at every moment, damage at hit and crit (side deal) or hurt (side take). Later waves add kinds to that table.
+  Kinds read where no battle, Billie or team is known take no condition (`FX_PLAIN`): price, payout and splice no
+  `if`, `grow` or `per`; level and bossHp no `if` or `per` (they count as the run's places and foes are made).
+  `every` needs a `when`; `once: battle|billie` needs a battle moment (or a stat or pinchHeal row); `once: run`
+  needs a `when` (or a stat or pinchHeal row).
+- Conditions as built: `lead` is whoever stands in your first field place (a Billie that switches in there leads);
+  `turn:1` holds during the first turn's moves (battleStart is turn 0); **`weather:clear` never holds on a run**: a run
+  battle's clear forecast is `sunny` (run-loop.js `runBattleWeather`), so the Weather Kit's "any weather but clear"
+  must list the others; `newSpecies` is "no Billie of the foe's species on your team" (a run keeps no list of what it
+  caught); `foe:leader` is a mini-boss (`runFoe` miniboss), `foe:boss` the final boss; a condition the moment can't
+  know is false.
+- A row without `when` acts where its kind always acts: a stat row now as **each** of your Billies takes the field (the
+  start and every switch in, moved from `makeBattle` into the engine: `fxBattleStart`, `fxFieldStages`); a heal row on
+  arrival (where its condition holds). A damage row of hit, crit or hurt counts for that one hit (`fxHitMult` with
+  `fxPeek`); the moment is counted after the hit lands (`fxHitMoments`).
+- A stat or heal row at a moment acts on the Billie the moment is about, else on yours on the field; on the run a heal
+  row heals the team (rounded up, as arrival). A Perk with `say` says "<Perk>: <say>" once instead of the kind's own
+  lines ({name}: the Billie, or "your team").
+- A run pinchHeal row acts once a battle for each Billie unless its `once` says otherwise. Buying several of one ware
+  at once is one `buy`.
+- The take moment needs the save: `perkTake`, `perkChoose` and `perkBuy` take an optional last `s`; the page's
+  callers and the simulation pass it.
+
 ## 8. Offers (PK-4, PK-7)
 - `needs` on a Perk (a condition: `team:Fire`, `bots`, `side`, `spliced`): unmet, its weight is 0, so a Fire Perk is
   never offered to a team without a Fire Billie. `tags` (types and themes): a tag matching the team's types, or a set
@@ -425,7 +461,7 @@ unused-art gate.
 | # | Session | Does | Done when |
 |---|---|---|---|
 | PK-0 | Plan (done 2026-10-27) | this file, the 8 art samples, ROADMAP, BRANCHES, HANDOFF | merged by the owner |
-| PK-1 | Effects core | section 7's fields and state, the switch-in fix, run rows of every kind read, schema, data checks, types, the Studio's row inputs, battle lines; tests for each trigger, counter, growth and condition (test-only Perks) | a battle without Perks unchanged; every tier green |
+| PK-1 | Effects core (**done 2026-10-28**, `track/perks`; "Corrected in PK-1" in section 7) | section 7's fields and state, the switch-in fix, run rows of every kind read, schema, data checks, types, the Studio's row inputs, battle lines; tests for each trigger, counter, growth and condition (test-only Perks) | a battle without Perks unchanged; every tier green |
 | PK-2 | Art pipeline | `tools/build-icons.mjs` and its test, `img` on Perks (schema, checks, types), cards at 72 px and rows at 36 px, the Studio's icon editor and art browser on the new folders, the 13 existing Perks drawn | 13 pictures in game, contact sheets committed |
 | PK-3 | Wave A | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
 | PK-4 | Wave B | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
