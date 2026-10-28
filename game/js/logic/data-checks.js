@@ -13,7 +13,7 @@
 import { expose } from '../test-globals.js';
 import { ZOOM_STOPS, stopsProblems } from '../hooks.js';
 import { lineSpeciesIds } from './forms.js';
-import { CLIMATE_WEATHER_ODDS } from './weather.js';
+import { CLIMATE_WEATHER_ODDS, WEATHER_TYPE_BOOSTS } from './weather.js';
 import { uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
@@ -39,13 +39,28 @@ import {
   MAPGEN_WATER,
 } from './mapgen.js';
 import { fxRowOf } from './run-enc.js';
-import { FX_KINDS, FX_LIMIT, FX_STAGES } from './effects.js';
+import {
+  FX_EVERY,
+  FX_FOES,
+  FX_IF_KEYS,
+  FX_IF_WORDS,
+  FX_KINDS,
+  FX_LIMIT,
+  FX_ONCE,
+  FX_PER,
+  FX_SAY,
+  FX_STAGES,
+  FX_WHEN,
+  FX_WHEN_BATTLE,
+} from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_TIMING: [() => FX_TIMING],
+  FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   ROBOT_FITS: [() => ROBOT_FITS],
@@ -136,7 +151,11 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataUnlocks: [() => dataUnlocks, v => (dataUnlocks = v)],
   // @ts-expect-error -- replaced on purpose
+  fxCondProblem: [() => fxCondProblem, v => (fxCondProblem = v)],
+  // @ts-expect-error -- replaced on purpose
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxWhenProblems: [() => fxWhenProblems, v => (fxWhenProblems = v)],
   // @ts-expect-error -- replaced on purpose
   runMapProblems: [() => runMapProblems, v => (runMapProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1908,7 +1927,14 @@ export function dataPerks(D, valid = () => true) {
           /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
           if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
             problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+          /* PK-1: when, if, every, grow, per and once */
+          fxWhenProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
         });
+    /* PK-1: a Perk's battle line */
+    if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
+      for (const [k, R] of Object.entries(D.perks))
+        if (R.say != null && !(typeof R.say === 'string' && R.say.length >= 1 && R.say.length <= FX_SAY))
+          problem('perks.json', `${k}.say: a line of 1-${FX_SAY} letters`);
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
@@ -1935,7 +1961,13 @@ export function dataPerks(D, valid = () => true) {
 /** RL-12c, SP-2: one effect row a Billie has (a held item's or a Gene's): one of `kinds`, its numbers within the code's
  * limits @param {any} f @param {string} at @param {string[]} kinds @param {any} D
  * @param {(what: string) => void} problem */
-export function fxRowProblems(f, at, kinds, D, problem) {
+export function fxRowProblems(f, at, kinds, D, problem, timing = false) {
+  /* PK-1: when, if, every, grow, per and once act only on a run's rows (Perks); elsewhere they would be ignored */
+  if (f && typeof f === 'object')
+    if (timing) fxWhenProblems(f, at, D, problem);
+    else
+      for (const key of FX_TIMING)
+        if (key in f) problem(`${at}.${key}: only a run's rows (Perks) can say when, if, every, grow, per or once`);
   const types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
     share = (/** @type {any} */ v) => typeof v === 'number' && v > 0 && v <= 1;
@@ -1960,6 +1992,102 @@ export function fxRowProblems(f, at, kinds, D, problem) {
   if (['turnHeal', 'pinchHeal', 'turnHurt'].includes(f.kind) && !share(f.share))
     problem(`${at}.share: a share of HP above 0, at most 1`);
   if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
+}
+/** PK-1: the timing fields of an effect row (logic/effects.js) */
+export const FX_TIMING = ['when', 'if', 'every', 'grow', 'per', 'once'];
+/** PK-1: the kinds a `when` may be given to, and at which moments: a stat row's stages land on a Billie in battle, a
+ * heal row heals at any moment (in battle the Billie it is about, or yours on the field; on the run the team), a damage
+ * row counts for one hit (hit and crit: what yours deal; hurt: what yours take). Later waves add kinds here. */
+export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
+  stat: FX_WHEN_BATTLE.filter(w => w !== 'throwMiss'),
+  heal: FX_WHEN,
+  damage: ['hit', 'hurt', 'crit'],
+});
+/** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
+export function fxCondProblem(c, D) {
+  if (typeof c !== 'string' || !c) return 'not a condition';
+  if (c.startsWith('hp<')) {
+    const x = Number(c.slice(3));
+    return c.length > 3 && x > 0 && x <= 1 ? '' : 'hp<x: a share of HP above 0, at most 1';
+  }
+  if (/** @type {readonly string[]} */ (FX_IF_WORDS).includes(c)) return '';
+  const i = c.indexOf(':'),
+    k = i < 0 ? c : c.slice(0, i),
+    any = i < 0 ? [] : c.slice(i + 1).split('|');
+  if (!(/** @type {readonly string[]} */ (FX_IF_KEYS).includes(k)) || !any.length || any.some(a => !a))
+    return `no condition "${c}" (${FX_IF_WORDS.join(', ')}, hp<x, or ${FX_IF_KEYS.join(', ')} with a colon)`;
+  const types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    known = /** @type {Record<string, string[]>} */ ({
+      weather: ['clear', ...Object.keys(WEATHER_TYPE_BOOSTS)],
+      type: [...types],
+      team: [...types],
+      foe: [...FX_FOES],
+      place: Object.keys(D.nodeTypes || {}),
+      cat: ['H', 'S'],
+    });
+  if (k === 'turn') return any.every(n => /^\d{1,2}$/.test(n) && +n >= 1) ? '' : 'turn:N, a turn from 1 to 99';
+  const bad = any.filter(a => !known[k].includes(a));
+  return bad.length ? `${k}: no "${bad.join('", "')}" (${known[k].join(', ')})` : '';
+}
+/** PK-1: an effect row's when, if, every, grow, per and once (logic/effects.js) @param {any} f @param {string} at
+ * @param {any} D @param {(what: string) => void} problem */
+export function fxWhenProblems(f, at, D, problem) {
+  const numbered = ['mult', 'stages', 'share', 'n'].some(k => k in f),
+    whens = /** @type {readonly string[]} */ (FX_WHEN),
+    conds = (/** @type {any} */ v, /** @type {string} */ where) => {
+      const L = v == null ? [] : Array.isArray(v) ? v : [v];
+      if (v != null && (!L.length || L.length > 4)) problem(`${where}: one condition, or a list of 1-4`);
+      for (const c of L) {
+        const why = fxCondProblem(c, D);
+        if (why) problem(`${where}: ${why}`);
+      }
+    };
+  if (f.when != null) {
+    if (!whens.includes(f.when)) problem(`${at}.when: no moment "${f.when}" (${FX_WHEN.join(', ')})`);
+    else if (!(FX_WHEN_KINDS[f.kind] || []).includes(f.when))
+      problem(
+        `${at}.when: a ${f.kind} row can't act at ${f.when} (${FX_WHEN_KINDS[f.kind] ? FX_WHEN_KINDS[f.kind].join(', ') : 'no moment yet'})`
+      );
+    if (f.kind === 'damage' && ['hit', 'crit'].includes(f.when) && f.side !== 'deal')
+      problem(`${at}.side: deal, at ${f.when} (a hit of yours)`);
+    if (f.kind === 'damage' && f.when === 'hurt' && f.side !== 'take')
+      problem(`${at}.side: take, at hurt (a hit on yours)`);
+  }
+  conds(f.if, `${at}.if`);
+  if (f.every != null) {
+    if (!(Number.isInteger(f.every) && f.every >= 2 && f.every <= FX_EVERY))
+      problem(`${at}.every: a whole number from 2 to ${FX_EVERY}`);
+    if (f.when == null) problem(`${at}.every: needs a when to count`);
+  }
+  const g = f.grow;
+  if (g != null) {
+    if (!g || typeof g !== 'object' || Array.isArray(g)) problem(`${at}.grow: {on, by, max, reset?, if?}`);
+    else {
+      if (!whens.includes(g.on)) problem(`${at}.grow.on: a moment (${FX_WHEN.join(', ')})`);
+      if (g.reset != null && (!whens.includes(g.reset) || g.reset === g.on))
+        problem(`${at}.grow.reset: a moment other than its on`);
+      if (!(typeof g.by === 'number' && g.by !== 0 && Number.isFinite(g.by))) problem(`${at}.grow.by: a number, not 0`);
+      if (!(typeof g.max === 'number' && Number.isFinite(g.max) && g.max * (g.by || 0) > 0))
+        problem(`${at}.grow.max: a number of the same sign as by`);
+      conds(g.if, `${at}.grow.if`);
+    }
+    if (!numbered) problem(`${at}.grow: a ${f.kind} row has no number to grow`);
+  }
+  if (f.per != null) {
+    if (!(/** @type {readonly string[]} */ (FX_PER).includes(f.per))) problem(`${at}.per: ${FX_PER.join(' or ')}`);
+    if (!numbered) problem(`${at}.per: a ${f.kind} row has no number to count`);
+  }
+  if (f.once != null) {
+    if (!(/** @type {readonly string[]} */ (FX_ONCE).includes(f.once))) problem(`${at}.once: ${FX_ONCE.join(', ')}`);
+    else if (f.once !== 'run') {
+      const inBattle = f.when != null ? FX_WHEN_BATTLE.includes(f.when) : ['stat', 'pinchHeal'].includes(f.kind);
+      if (!inBattle)
+        problem(
+          `${at}.once: ${f.once} needs a moment in battle (${FX_WHEN_BATTLE.join(', ')}), or a stat or pinchHeal row`
+        );
+    } else if (f.when == null && !['stat', 'pinchHeal'].includes(f.kind))
+      problem(`${at}.once: run needs a when, or a stat or pinchHeal row`);
+  }
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up)

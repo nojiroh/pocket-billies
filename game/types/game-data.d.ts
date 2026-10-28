@@ -1900,8 +1900,39 @@ export interface Music {
 
 /** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
 export type PerkRarity = 'common' | 'uncommon' | 'rare';
-/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
-export type FxRow =
+/** PK-1: the moments a row can act at (logic/effects.js FX_WHEN) */
+export type FxWhen =
+  | 'battleStart'
+  | 'switchIn'
+  | 'move'
+  | 'hit'
+  | 'hurt'
+  | 'crit'
+  | 'ko'
+  | 'faint'
+  | 'turnEnd'
+  | 'throwMiss'
+  | 'catch'
+  | 'win'
+  | 'arrive'
+  | 'buy'
+  | 'take';
+/** PK-1: when a row acts, on what condition, how often and how it grows (logic/effects.js; all optional) */
+export interface FxTiming {
+  when?: FxWhen;
+  /** a condition or a list that must all hold (effects.js fxCond: 'lead', 'hp<0.25', 'foe:leader|rival', ...) */
+  if?: string | string[];
+  /** acts on every Nth time its `when` comes */
+  every?: number;
+  /** builds by `by` each time `on` comes (when `if` holds), up to `max`, back to 0 at `reset` */
+  grow?: { on: FxWhen; by: number; max: number; reset?: FxWhen; if?: string | string[] };
+  per?: 'teamTypes';
+  once?: 'battle' | 'run' | 'billie';
+}
+/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
+export type FxRow = FxTiming & FxKindRow;
+/** one effect row's kind and numbers */
+export type FxKindRow =
   | { kind: 'money'; mult: number }
   | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
   | { kind: 'catch'; mult: number }
@@ -2221,6 +2252,8 @@ export interface Perk {
   d: string;
   rarity: PerkRarity;
   fx: FxRow[];
+  /** PK-1: its battle line when one of its rows acts at a moment (at most 40 letters; {name}: the Billie) */
+  say?: string;
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */

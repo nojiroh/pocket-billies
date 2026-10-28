@@ -7,6 +7,19 @@
   "pattern": "^[a-z][a-z0-9_]*$"
  },
  "minProperties": 1,
+ "$defs": {
+  "when": {"description": "PK-1: the moment the row acts at (logic/effects.js FX_WHEN); without one it acts where its kind always acts", "enum": ["battleStart", "switchIn", "move", "hit", "hurt", "crit", "ko", "faint", "turnEnd", "throwMiss", "catch", "win", "arrive", "buy", "take"]},
+  "cond": {"description": "PK-1: one condition (effects.js fxCond; data-checks.js checks the names after the colon)", "type": "string", "pattern": "^(mono|alone|lead|notLead|newSpecies|superEffective|noFaint|hp<(0(\\.[0-9]+)?|1)|(weather|type|team|foe|place|cat):[A-Za-z_]+(\\|[A-Za-z_]+)*|turn:[0-9]{1,2})$"},
+  "if": {"description": "PK-1: a condition, or a list of them that must all hold", "oneOf": [{"$ref": "#/$defs/cond"}, {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/cond"}}]},
+  "every": {"description": "PK-1: it acts on every Nth time its when comes (the count lasts the run)", "type": "integer", "minimum": 2, "maximum": 99},
+  "grow": {
+   "description": "PK-1: a value that builds over the run: by `by` each time `on` comes (when `if` holds), up to `max`, back to 0 at `reset`; added to the row's number",
+   "type": "object", "additionalProperties": false, "required": ["on", "by", "max"],
+   "properties": {"on": {"$ref": "#/$defs/when"}, "by": {"type": "number"}, "max": {"type": "number"}, "reset": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}}
+  },
+  "per": {"description": "PK-1: its number counts once for each different type on your team", "enum": ["teamTypes"]},
+  "once": {"description": "PK-1: it acts once a battle, once a run, or once a battle for each of your Billies", "enum": ["battle", "run", "billie"]}
+ },
  "additionalProperties": {
   "type": "object",
   "required": ["name", "d", "rarity", "fx"],
@@ -14,6 +27,7 @@
   "properties": {
    "name": {"description": "what the player reads", "type": "string", "minLength": 1, "maxLength": 40},
    "d": {"description": "what it does, in one sentence", "type": "string", "minLength": 1, "maxLength": 160},
+   "say": {"description": "PK-1: the line it says in battle when one of its rows acts at a moment ({name}: the Billie it acted on); without one a stat or heal row says what it did", "type": "string", "minLength": 1, "maxLength": 40},
    "rarity": {"description": "how often it is offered (rules.json run.perks.rarity) and what a shop asks (run.perks.price)", "enum": ["common", "uncommon", "rare"]},
    "fx": {
     "description": "its effects (logic/effects.js FX_KINDS)",
@@ -25,52 +39,77 @@
       {
        "description": "money: what a won battle pays ($), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
-       "properties": {"kind": {"const": "money"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "money"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "price: a run shop's prices (shop) or a run town's clinic (heal), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "what", "mult"],
-       "properties": {"kind": {"const": "price"}, "what": {"enum": ["shop", "heal"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "price"}, "what": {"enum": ["shop", "heal"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "catch: a coin's chance to catch, times mult (never past 1)",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
-       "properties": {"kind": {"const": "catch"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "catch"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "dna (SP-6): the DNA a spliced wild Billie knocked out pays (a Gene Sample), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
-       "properties": {"kind": {"const": "dna"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "dna"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "splice (SP-6): how often a run place's wild Billies are spliced (genes.json wild's Graft and Chimera odds), times mult, on the places stocked after it is held",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
-       "properties": {"kind": {"const": "splice"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "splice"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "unstable (SP-6): the HP an Unstable splice's drawback takes from your Billies at each turn's end, times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
-       "properties": {"kind": {"const": "unstable"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "unstable"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "stat: your Billies on the field when a battle starts get stages of a stat (stats.json; not HP)",
        "type": "object", "additionalProperties": false, "required": ["kind", "stat", "stages"],
-       "properties": {"kind": {"const": "stat"}, "stat": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"}, "stages": {"type": "integer", "minimum": -6, "maximum": 6}}
+       "properties": {"kind": {"const": "stat"}, "stat": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "a stat of stats.json other than hp (check-data and the Studio check it against the data)"}, "stages": {"type": "integer", "minimum": -6, "maximum": 6}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "damage: what your Billies deal (deal) or take (take), times mult; only moves of a category (H physical, S special) or a type when given",
        "type": "object", "additionalProperties": false, "required": ["kind", "side", "mult"],
-       "properties": {"kind": {"const": "damage"}, "side": {"enum": ["deal", "take"]}, "cat": {"enum": ["H", "S"]}, "type": {"type": "string", "minLength": 1}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "damage"}, "side": {"enum": ["deal", "take"]}, "cat": {"enum": ["H", "S"]}, "type": {"type": "string", "minLength": 1}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "heal: each place you walk into heals every Billie on your team that hasn't fainted by this share of its HP",
        "type": "object", "additionalProperties": false, "required": ["kind", "share"],
-       "properties": {"kind": {"const": "heal"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}}
+       "properties": {"kind": {"const": "heal"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "payout: the payout's Research (research) or the share of their price items count at (itemShare), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "what", "mult"],
-       "properties": {"kind": {"const": "payout"}, "what": {"enum": ["research", "itemShare"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}}
+       "properties": {"kind": {"const": "payout"}, "what": {"enum": ["research", "itemShare"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "turnHeal (PK-1 on a run): each of your Billies on the field heals this share of its HP at each turn's end",
+       "type": "object", "additionalProperties": false, "required": ["kind", "share"],
+       "properties": {"kind": {"const": "turnHeal"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "pinchHeal (PK-1 on a run): once a battle for each of your Billies (or as `once` says), at `at` of its HP or below at a turn's end, it heals `share` of its HP",
+       "type": "object", "additionalProperties": false, "required": ["kind", "at", "share"],
+       "properties": {"kind": {"const": "pinchHeal"}, "at": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "turnHurt (PK-1 on a run): each of your Billies on the field loses this share of its HP at each turn's end",
+       "type": "object", "additionalProperties": false, "required": ["kind", "share"],
+       "properties": {"kind": {"const": "turnHurt"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.5}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "level (PK-1 on a run): foes' levels on the run, up (or down) by n",
+       "type": "object", "additionalProperties": false, "required": ["kind", "n"],
+       "properties": {"kind": {"const": "level"}, "n": {"type": "integer", "minimum": -20, "maximum": 20}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "bossHp (PK-1 on a run): the run's boss's HP, times mult",
+       "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
+       "properties": {"kind": {"const": "bossHp"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

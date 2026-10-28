@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PB_DATA } from '../data-files.mjs';
+import { DATA, PB_DATA } from '../data-files.mjs';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
 const C = modules['data-checks'];
@@ -305,4 +305,80 @@ test('RS-4: a resident’s service and its rows: one entry a level, one power le
   D.unlocks.mo_dup = structuredClone(D.unlocks.mo_2);
   found('dataUnlocks', D, "mo's level 2 is sold by mo_2 already");
   found('dataResidents', D, "mo_dup raises their service but isn't listed");
+});
+
+// PK-1: a Perk row's when, if, every, grow, per and once, its battle line, and the schema that allows them
+test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other rows refuse them', async () => {
+  const D = structuredClone(GAME_DATA),
+    good = [
+      { kind: 'damage', side: 'deal', mult: 1.5, when: 'hit', once: 'battle' },
+      { kind: 'stat', stat: 'lev', stages: 1, when: 'ko', if: ['foe:leader|rival', 'hp<0.5'] },
+      { kind: 'heal', share: 1, when: 'arrive', every: 5, if: 'place:town' },
+      {
+        kind: 'damage',
+        side: 'deal',
+        mult: 1,
+        grow: { on: 'win', by: 0.05, max: 0.25, reset: 'faint', if: 'noFaint' },
+      },
+      { kind: 'damage', side: 'deal', mult: 1.03, per: 'teamTypes', if: 'weather:rain|storm' },
+      { kind: 'pinchHeal', at: 0.25, share: 0.25, once: 'battle' },
+      { kind: 'stat', stat: 'hus', stages: 1, once: 'billie', if: ['mono', 'turn:1'] },
+      { kind: 'damage', side: 'take', mult: 0.7, if: 'alone' },
+      { kind: 'level', n: 3 },
+      { kind: 'bossHp', mult: 1.3 },
+      { kind: 'turnHeal', share: 0.05 },
+      { kind: 'turnHurt', share: 0.05, if: 'type:Fire' },
+    ];
+  D.perks.test_good = { name: 'Test', d: 'A test.', rarity: 'common', fx: good.slice(0, 4), say: 'Approved!' };
+  D.perks.test_good2 = { name: 'Test 2', d: 'A test.', rarity: 'common', fx: good.slice(4, 8) };
+  D.perks.test_good3 = { name: 'Test 3', d: 'A test.', rarity: 'common', fx: good.slice(8) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    schema = JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')),
+    ok = ajv.compile(schema);
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of [
+    [{ kind: 'money', mult: 1.2, when: 'win' }, 'a money row can’t act at win'.replace('’', "'")],
+    [{ kind: 'heal', share: 0.1, when: 'later' }, 'no moment "later"'],
+    [{ kind: 'damage', side: 'take', mult: 2, when: 'hit' }, 'side: deal, at hit'],
+    [{ kind: 'damage', side: 'deal', mult: 2, when: 'hurt' }, 'side: take, at hurt'],
+    [{ kind: 'heal', share: 0.1, if: 'foe:dragon' }, 'foe: no "dragon"'],
+    [{ kind: 'heal', share: 0.1, if: 'weather:hail' }, 'weather: no "hail"'],
+    [{ kind: 'heal', share: 0.1, if: 'type:Plastic' }, 'type: no "Plastic"'],
+    [{ kind: 'heal', share: 0.1, if: 'place:mall' }, 'place: no "mall"'],
+    [{ kind: 'heal', share: 0.1, if: 'hp<2' }, 'hp<x'],
+    [{ kind: 'heal', share: 0.1, if: 'turn:0' }, 'turn:N'],
+    [{ kind: 'heal', share: 0.1, if: 'sunnyish' }, 'no condition "sunnyish"'],
+    [{ kind: 'heal', share: 0.1, if: [] }, 'one condition, or a list of 1-4'],
+    [{ kind: 'heal', share: 0.1, every: 3 }, 'every: needs a when'],
+    [{ kind: 'heal', share: 0.1, when: 'arrive', every: 1 }, 'every: a whole number from 2'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'win', by: 0.1, max: -1 } }, 'grow.max: a number of the same sign'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'win', by: 0, max: 1 } }, 'grow.by: a number, not 0'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'win', by: 0.1, max: 1, reset: 'win' } }, 'grow.reset'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'soon', by: 0.1, max: 1 } }, 'grow.on: a moment'],
+    [{ kind: 'heal', share: 0.1, per: 'teamSize' }, 'per: teamTypes'],
+    [{ kind: 'heal', share: 0.1, once: 'day' }, 'once: battle, run, billie'],
+    [{ kind: 'heal', share: 0.1, when: 'arrive', once: 'battle' }, 'once: battle needs a moment in battle'],
+    [{ kind: 'heal', share: 0.1, once: 'run' }, 'once: run needs a when'],
+  ]) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+  const E = structuredClone(GAME_DATA);
+  E.perks.lucky_charm.say = 'x'.repeat(41);
+  assert.ok(C.dataPerks(E).some(p => p[1].includes('lucky_charm.say')));
+  /* a held item's rows are a Billie's own: no timing there (it would be ignored) */
+  const F = structuredClone(GAME_DATA),
+    held = Object.keys(F.items).find(k => F.items[k].hold);
+  F.items[held].hold[0].when = 'hit';
+  assert.ok(
+    C.dataHeldItems(F).some(p => p[1].includes(`${held}.hold[0].when: only a run's rows`)),
+    JSON.stringify(C.dataHeldItems(F))
+  );
 });
