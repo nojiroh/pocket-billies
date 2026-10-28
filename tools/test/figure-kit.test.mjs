@@ -89,7 +89,9 @@ test('figure kit: the face faces the camera and blinks; glasses frame the eyes',
   );
   assert.equal(front.filter(m => m.kind === 'glint').length, 2);
   assert.ok(front.filter(m => m.kind === 'iris').every(m => m.w >= 3));
-  assert.equal(front.filter(m => m.kind === 'lash').length >= 2, true);
+  /* behind clear glasses the frame is the line over the eye (no lash line); a lens shine on each */
+  assert.equal(front.filter(m => m.kind === 'lash').length, 0);
+  assert.equal(front.filter(m => m.kind === 'shine').length, 2);
   assert.equal(front.filter(m => m.kind === 'glasses' && m.hollow).length, 2);
   assert.ok(front.some(m => m.kind === 'iris'));
   /* the back of the head shows no face */
@@ -98,7 +100,11 @@ test('figure kit: the face faces the camera and blinks; glasses frame the eyes',
   const blink = marks(14, Math.PI);
   assert.ok(blink.filter(m => m.kind === 'eye').every(e => e.h === 1));
   assert.ok(!blink.some(m => m.kind === 'iris' || m.kind === 'glint'));
-  assert.ok(blink.some(m => m.kind === 'lash'));
+  /* without glasses the lash lines stay through a blink */
+  const bare = lookFigure({ ...look, wear: { ...look.wear, glasses: null } }, W.items, { name: 'chosen' }),
+    P14 = figurePose(bare, 'idle', 14),
+    shut = figureFaceMarks(bare, jointMatrices(bare, P14, 48), P14, { rel: Math.PI, tilt: 0.45 }, 48, S);
+  assert.equal(shut.filter(m => m.kind === 'lash').length, 2);
 });
 
 test('figure kit: shapes, builds and heights vary; a person’s choice wins', () => {

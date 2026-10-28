@@ -343,7 +343,7 @@ export function lookFigure(look, items, opts = {}) {
     upperCol = sleeved ? 'outer' : KIT_SLEEVELESS.has(wear.top || '') ? 'skin' : 'top',
     lowerCol = sleeved ? 'outer' : KIT_LONG_SLEEVES.has(wear.top || '') ? 'top' : 'skin',
     puff = outer === 'puffer' ? 1.3 : sleeved ? 1.08 : 1,
-    armR = 0.056 * Math.sqrt(girth) * puff;
+    armR = 0.058 * Math.sqrt(girth) * Math.pow(shK, 0.7) * puff;
   if (outer) colours.outer = itemCol(outer, 0, [200, 200, 200]);
   for (const s of [1, -1]) {
     const k = s > 0 ? 'A' : 'B',
@@ -1190,7 +1190,9 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
   for (const s of [1, -1]) {
     mark('iris', s * ex, ey, ew, eh, { col: 'iris', narrow: true });
     mark('eye', s * (ex - ew * 0.08), ey - eh * 0.12, ew * 0.52, Math.max(eh * 0.62, 0.064));
-    mark('lash', s * ex, ey + eh * 0.5, ew * 1.25, 0.024, { col: 'eye' });
+    /* behind clear glasses the frame is the line over the eye */
+    if (!wear.glasses || wear.glasses === 'glasses_sun' || wear.glasses === 'headset')
+      mark('lash', s * ex, ey + eh * 0.5, ew * 1.25, 0.024, { col: 'eye' });
     if (eyes === 'eyes_lashes') mark('lash', s * (ex + ew * 0.7), ey + eh * 0.42, 0.024, 0.024, { col: 'eye' });
     if (eyes === 'eyes_sleepy') mark('lid', s * ex, ey + eh * 0.25, ew * 1.1, 0.026, { col: 'brow' });
   }
@@ -1233,7 +1235,8 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
       (look.colors && look.colors[g] && look.colors[g][0]) || undefined,
       g === 'glasses_sun' ? [30, 26, 34] : [58, 46, 42]
     );
-    colours.frame = frameCol;
+    /* clear frames a little lighter than the eye's dark, so a glasses wearer's eyes still show through them */
+    colours.frame = g === 'glasses_sun' ? frameCol : figureMix(frameCol, colours.skin, 0.25);
     colours.lens = [34, 30, 44];
     const gw = ew + 0.06,
       gh = Math.max(eh, 0.07) + 0.05;
@@ -1246,9 +1249,9 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
           min: 0.3,
         });
     if (g !== 'glasses_monocle') mark('bridge', 0, ey + 0.01, ex * 2 - gw + 0.02, 0.03, { col: 'frame', min: 0.3 });
-    if (g === 'glasses_sun')
-      for (const s of [1, -1])
-        mark('shine', s * ex - gw * 0.25, ey + gh * 0.22, 0.03, 0.03, { col: 'glint', min: 0.5 });
+    /* a shine on every lens, high on its outer side */
+    for (const s of g === 'glasses_monocle' ? [-1] : [1, -1])
+      mark('shine', s * (ex + gw * 0.28), ey + gh * 0.28, 0.024, 0.024, { col: 'glint', min: 0.5 });
   }
   return out;
 }

@@ -565,7 +565,13 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   if (code)
     for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S)) {
       x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
-      x.fillRect(m.x, m.y, m.w, m.h);
+      /* a hollow mark (a glasses frame) is its edge only, so the eye shows through */
+      if (m.hollow && m.w > 2 && m.h > 2) {
+        x.fillRect(m.x, m.y, m.w, 1);
+        x.fillRect(m.x, m.y + m.h - 1, m.w, 1);
+        x.fillRect(m.x, m.y + 1, 1, m.h - 2);
+        x.fillRect(m.x + m.w - 1, m.y + 1, 1, m.h - 2);
+      } else x.fillRect(m.x, m.y, m.w, m.h);
     }
   out.ax = S.ax;
   out.ay = S.ay;

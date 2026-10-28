@@ -1747,10 +1747,10 @@
   "eye": [
    "game/js/figures.js:484",
    "game/js/logic/figure-kit.js:1192",
-   "game/js/logic/figure-kit.js:1193",
-   "game/js/logic/figure-kit.js:1194",
-   "game/js/logic/figure-kit.js:1328",
-   "game/js/logic/figure-kit.js:1344",
+   "game/js/logic/figure-kit.js:1195",
+   "game/js/logic/figure-kit.js:1196",
+   "game/js/logic/figure-kit.js:1331",
+   "game/js/logic/figure-kit.js:1347",
    "game/js/logic/figure-pose.js:150",
    "game/js/logic/figure-pose.js:351",
    "game/js/logic/figure-pose.js:352",
@@ -1957,7 +1957,7 @@
   "tag": [
    "game/js/battle.js:665",
    "game/js/logic/figure-kit.js:745",
-   "game/js/logic/figure-kit.js:1347",
+   "game/js/logic/figure-kit.js:1350",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"

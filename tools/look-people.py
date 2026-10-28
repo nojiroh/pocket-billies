@@ -120,7 +120,7 @@ SHEET_JS = """((name, tilt, dials) => {const Fig=figureDef(name); if(!Fig) retur
 
 # CH-3b: each person's figure (figures.js figureFor, the figure kit) baked as the game does: today's picture first, then
 # the figure turned to the front, three quarters, the side and the back standing, walking and cheering
-CAST_JS = """((whos, tilt, dials) => {const ppm=dials.density||32, steps=16, outline=dials.outline!==false, rows=[];
+CAST_JS = """((whos, tilt, dials) => {const ppm=dials.density||engineSetting('people','density')||48, steps=16, outline=dials.outline!==false, rows=[];
  const T=tilt*Math.PI/180, view=h=>figureView(h,0,T,steps);
  const cols=[[Math.PI,'idle',0],[Math.PI*0.75,'idle',0],[Math.PI*0.5,'idle',0],[0,'idle',0],[Math.PI*0.75,'walk',2],[Math.PI,'cheer',1]];
  for (const who of whos){const name=figureFor(who), Fig=figureDef(name); if(!Fig) return 'loading';
