@@ -475,6 +475,16 @@ same phase:
   seamless loops, strings within 3 cents, a size budget, the impulse); `tracker.test.mjs` adds the bank (slices, once
   per rate, the least recently played zone dropped and baked again), `sampleVoice` (one source, one gain) and the
   reverb (made only on a send, post-fader sends, one impulse per rate).
+  SND-10: `--loudness` adds every water recipe (game/data/soundscape.json `water`) at 1, 3 and 10 m (a fall at its
+  height), its banks baked once before the jobs; a water row warns over either ceiling (its level -12 LU, its loudest
+  3 s -8 LU); the old stream, falls, fountain, pond, lava and near-sea rows are gone (their beds went). Unit tests:
+  `soundscape.test.mjs` (logic/soundscape.js: cells from the grid and the tiles, emitters, falls by height, level and
+  air, the nearest few, bubbles, laps, waves and the tide, a splash, the preview, the game's soundscape.json findings);
+  `sound-bake.test.mjs` adds bubbles and the babble loop, `tracker.test.mjs` `bankAdd`, `sampleShot` and the World
+  send; `ambience-sound.test.mjs` reads the beds from soundscape.json (9 beds). check:data checks soundscape.json's
+  schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
+  `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
+  Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

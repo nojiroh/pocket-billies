@@ -27,6 +27,15 @@ kept aside in the browser).
   forest, a room or a cave. The songs themselves sound as before. The debug log says how long the instruments took to
   make and how much memory they use.
 
+- **Water you can hear** (sound track SND-10): every kind of water has its own sound now: a babbling brook, a river,
+  rapids, waterfalls by their height with their splashing pool, waves on the shore that grow at high tide and in a
+  storm, a lake's laps, a pond's plops, a bubbling hot spring, a marsh, a bog, lava, a canal, a fountain and drips
+  echoing in a cave. Water far off is a soft low rumble and near water is bright; a river you walk beside sounds in
+  front of you. Rain makes little plinks on water, wading splashes by how deep you are (no more clicks), Surf
+  splashes as you get on and off with a wake while you ride, fishing has a cast, nibbles, a bite, a reel and a
+  splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
+  debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

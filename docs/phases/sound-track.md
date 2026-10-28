@@ -685,7 +685,7 @@ Water and nature, synthesized:
 | SND-8a | Calm beds | the beds gentle and cheap (their own pink/brown noise, drift instead of LFOs; rain, crickets, fire, stream, fountain, sea, leaves and town re-voiced; birds one at a time and rarer; footsteps varied and soft; rooms read the place's night; beds start and stop), the loudness report, the debug log's audio lines, the Sound Test v1 | none | none |
 | SND-8b (done 2026-10-28) | Mix fixes | the echo bugs, a level trim per song (the hub song up, from the report: data, not the player setting Part 1 ruled out), the rain's music low-pass, iOS's "interrupted"; the baseline written again in its own commit | SND-8a | the jingles; every song's first ~1.5 s; copperleaf |
 | SND-9 (done 2026-10-28) | Bake and reverb | `logic/sound-bake.js` (pure DSP, Node-tested), the tracker's bank and `sampleVoice`, the reverb bus, one proof instrument in the Sound Test, bake time and memory in the debug log, a brightness fingerprint (a tool commit first) | SND-8b | none (brightness added) |
-| SND-10 | Water | `soundscape.json` and emitters, a recipe per water kind, the placed falls by height, rain on water, wading, Surf, fishing and water life; takes WA-8's water sounds if the owner agrees | SND-9 (WA-11 for the hub's fall) | none |
+| SND-10 (done 2026-10-28) | Water | `soundscape.json` and emitters, a recipe per water kind, the placed falls by height, rain on water, wading, Surf, fishing and water life; takes WA-8's water sounds (decided as recommended) | SND-9 (WA-11 for the hub's fall) | none |
 | SND-11 | Stems and ensembles | the tick's patterns factored into pure functions; stems; `instruments` and `ensembles` in music.json; `gb` reserved for today's code; GB Sounds; the first ensembles; the Studio's Instruments tab and its mix on the game's chain | SND-9 | none: the new `gb` must equal the old by day and night |
 | SND-17 | Jingles and stingers | the 12 jingles given the new instruments (a DS fanfare for victory, a glockenspiel and harp run for a level-up, strings swelling into an evolution...), stingers on the song's beat and in its key, GB Sounds keeping today's 8-bit ones; added at the owner's question (2026-10-27) | SND-11 | the 12 jingles |
 | SND-13 | Layers in play | the walking beat, weather and night, building intensity, street musicians (simulated until the busker resident, RS-5) | SND-11 | the layers' renders |
@@ -980,6 +980,104 @@ harp), with a cave's -31.7 (about 2.5 dB under).
 - `fm` and `osc` zones render in one step (no instrument uses them yet); SND-11 slices them like the string when one
   does.
 
+## SND-10: water (as built)
+### SND-10 as built (2026-10-28, branch `track/sound`, tag `snd-10-done` for the owner to push)
+Twelve change commits, one cause each, plus docs; no song, jingle, cry or UI sound changed (194 fingerprints, 0
+changed on every commit, each rendered with `check-sound.py --loudness` in a worktree).
+
+| Commit | What |
+|---|---|
+| e4c03f10 | the beds' recipes move from logic/ambience-sound.js `AMBIENCE_BEDS` to **game/data/soundscape.json** `beds` (its schema, index.json, check:data, `SOUNDSCAPE` in game-data.js, the check-data snapshot's file count): the loudness report identical |
+| ef3ef5bc | logic/sound-bake.js bakes water: `bubble` zones (van den Doel: a bubble at each zone's pitch, radius 3/f m, played once, never looped) and a `babble` zone (after Farnell's running water: sines jumping in pitch and gliding, loud only while they rise; a seamless loop); `sound-bake.test.mjs` +3 |
+| f5a45b33 | the tracker's bank takes recipes from data (`T.bankAdd`), plays a baked sound once (`T.sampleShot`); the reverb has a World send (`T.reverbLevels(music, sfx, world)`); `tracker.test.mjs` +2 |
+| ee1090c9 | **logic/soundscape.js** (pure, seeded): water cells by kind from the renderer's grid or the tiles, emitters, the nearest few in buckets, level, air, bubbles, laps, the surf's waves on the tide; `soundscape.test.mjs` |
+| 46960a99 | soundscape.json gets the water: `banks`, `kinds` (each of logic/water-kinds.js's 15), `running`, `falls`, `fountain`, `wake`, `rainOnWater` and the `water` recipes, ported from SND-7's listening page; the schema and check:data's `soundscapeFindings` |
+| 473e89cc | water's bakes yield every chunk (a page's slice ran a whole bubble) |
+| e5dafaaf | **the water plays**: audio/soundscape-player.js (voices per recipe and place: layers, a texture, events; distance, pan, air), game/js/soundscape-here.js (the scene's emitters, the nearest few, rain on water, Surf's wake); sound.js's stream, falls, pond, lava, fountain and near-sea beds give way to it (thin calls) |
+| 351a528e | the Sound test and the loudness report play the water recipes (the report: every recipe at 1, 3 and 10 m, its banks baked first, both ceilings); the five old water beds and the near sea go; the cave kind's recipe is `drips` |
+| fbb3ec3e | the water's trims from the report; a fall's height gain at most 1.6 |
+| e9d6d54c | **the water you touch**: wading splashes by depth, Surf splashes on and off with its wake between (no steps), fishing's cast, nibble, bite, reel, fight and catch, plops by size; `soundscape.json` `splash` and `touch` |
+| 4eaf48bc | the Studio's Sounds tab: a **World sounds** card (each recipe at 1, 3 or 10 m through the game's own player); the Studio check plays the brook and stops it |
+| b603a2bb | cave drips ring in a cave's room (the place's reverb send) |
+
+**How it works.** Each update (200 ms) soundscape-here.js takes the scene's emitters (made once per scene and water
+grid, in buckets of 4 m by recipe) and asks logic/soundscape.js for the nearest one or two of each recipe within its
+range (a second voice at least 8 m from the first); a river or a shore is placed at the level-weighted middle of the
+emitters round it, so it sounds in front of you rather than from one cell. A voice's level is 1 within 2 m, then
+falls 6 dB a doubling (a point) or 3.6 dB (a line or a shore), fading to 0 at its range; a fall's level and reach grow
+with its height (√(h/3), at most 1.6× and 1.8×). The air's low-pass is 16 kHz / (1 + d/4), at least 900 Hz: near water
+bright, far water a low rumble. audio/soundscape-player.js makes a voice when it is wanted and stops it 2.5 s after it
+has faded (SND-8a's rule): its layers of the beds' own noise with drift, the babble texture from a random point at a
+rate (a river 0.7, rapids 1.2), and events 0.3 s ahead: bubbles from the bank (radius, rise, level and pan at
+random, a minimum gap; one too quiet to hear here is never made; at most 48 an update), laps at a bank (a soft
+low-passed wash and now and then a plip), the surf's waves (pink noise rising while a low-pass opens and falling while
+a high-pass closes, after PortAudio's ocean shore; bigger and more often at high tide, 9:00 and 21:00, and in a storm)
+with foam fizzing as each draws back. A recipe's big reverb send (cave drips, 0.65) makes the tracker's room; smaller
+sends use it only when something else made it.
+
+**Emitters.** Still water laps at its shores; running water sounds along half its cells (a checkerboard, so a
+one-metre strip keeps half), as a brook, a river (a line 2.5 m wide or more) or rapids (its `rapids` stretches) by the
+nearest river line within 3 m, a spring at a spring's source; `all` kinds (lava, a hot spring, bog, canal, spring,
+cave water) on half their cells; placed falls 0.6 m past the lip by height (`fallSmall` under 3 m, `fallTall` from 3
+m), their plunge pool `pool + 0.25` m past the lip, the automatic cascades as small falls at their height; fountains;
+rain on any surface but lava and ice. The renderer's grid (walk/ground-mesh.js `wgrid`, each half metre's kind as
+drawn) is read when there is one: in Copperleaf the river runs through cells whose data kind is `sea`, and only the
+grid (WA-10's kinds by flow) knows it is a river.
+
+**Loudness** (LU under the route song, -31.9 LUFS, beds 3 dB under a song as in play; `check-sound.py --loudness`,
+the water rows; a fall at its height, small 1.5 m, tall and its pool 6 m; "—" silent there):
+
+| Recipe | 1 m | 3 m | 10 m | loudest 3 s at 1 m | phone band at 1 m (dB) |
+|---|---|---|---|---|---|
+| brook | -13.6 | -15.9 | -26.1 | -13.1 | -45.7 |
+| river | -13.5 | -15.7 | -23.5 | -13.1 | -49.0 |
+| rapids | -13.1 | -15.3 | -23.3 | -12.7 | -47.4 |
+| canal | -18.0 | -20.6 | -34.2 | -16.9 | -54.3 |
+| spring | -19.0 | -23.7 | — | -16.7 | -52.4 |
+| pond | -19.6 | -22.5 | — | -17.7 | -59.2 |
+| lake | -15.8 | -18.3 | -28.6 | -18.6 | -57.8 |
+| marsh | -19.0 | -21.8 | — | -16.1 | -55.3 |
+| bog | -20.0 | -24.3 | — | -17.6 | -56.4 |
+| oasis | -19.6 | -22.6 | — | -17.2 | -59.8 |
+| hotspring | -15.0 | -19.4 | — | -14.4 | -53.7 |
+| lava | -15.9 | -20.0 | -39.4 | -14.4 | -59.8 |
+| ice | -28.2 | -32.7 | — | -36.9 | -77.1 |
+| reef | -15.3 | -17.5 | -25.1 | -13.2 | -51.0 |
+| surf | -14.2 | -16.3 | -23.4 | -9.9 | -50.6 |
+| drips | -15.9 | -19.8 | -36.0 | -15.3 | -57.6 |
+| fallSmall | -14.0 | -18.5 | — | -13.6 | -48.9 |
+| fallTall | -13.5 | -17.0 | -27.9 | -12.7 | -52.2 |
+| plunge | -14.0 | -17.7 | -31.6 | -12.9 | -49.7 |
+| fountain | -14.0 | -17.9 | -37.8 | -13.4 | -48.7 |
+| wake | -14.1 | — | — | -13.5 | -49.0 |
+| rainOnWater | -18.0 | -20.5 | -35.7 | -16.5 | -50.9 |
+
+No warning: every water bed 12 LU or more under the route song at 1 m, every loudest 3 s 8 LU or more under (the
+surf's waves the closest, -9.9). Copperleaf's square (the coast's sea, the fountain at 3 m, the town, birds) -12.8 LU
+(-11.2 before: SND-8a's fountain bed was louder at 3 m). A 12 m fall at 1 m is about 1 LU louder than the 6 m row.
+
+**Memory and cost** (headless Chromium, 44.1 kHz): the water's banks 1.32 MB (two bubble banks of 11 zones, 0.36 MB
+each at 48 kHz; the babble's 4 s loop 0.75 MB at 48 kHz); with the beds' noise and the tracker's noise 3.84 MB of the 6
+MB budget, about 5.5 MB with SND-9's harp and impulse too. Baked on the first sound (initAmbience) in the bank's
+slices: about 75 ms of work in Node (drops 16, bubbles 4, babble 55), every step under 1.7 ms in Node; in a busy
+headless page one step ran 15-33 ms (the page's own pauses: the same steps are under 2 ms in Node). Copperleaf's
+emitters: 14,010 water cells, 20.7 ms the first time (cold), 2.3 ms warm; the nearest voices 0.1 ms an update. Events
+at the foot of test_water's 6 m fall about 45 a second (before the quiet ones were left out, 90).
+
+**Corrections found in SND-10** (checked in the code and in the browser):
+- Copperleaf's river is `sea` in its data (no `waters` rectangle): its kind comes from WA-10's flow map; the emitters
+  read the renderer's grid for that reason, and the tiles only without one.
+- test_water's canal is one row of tiles: "one cell every 2 m on both axes" left it silent; the thinning is a
+  checkerboard.
+- The beds' ids clash with water ids in a preview list (`fountain`, `lava`, `cave`): the old water beds went in the same
+  commit that moved the Sound test and the report to the recipes, and the cave kind's recipe is `drips`.
+- `soundEffect('step', {hard: 1})` (fishing, a ledge's landing) plays a grass step: `hard` was never read. Fishing has
+  its own sounds now; the landing keeps it.
+- The Studio loads its data through a stubbed GitHub API in the checks: a probe of a Studio card belongs in
+  `check-studio-github.py`'s steps.
+- Frogs, insects and birds by water stay SND-14's; the pond at night is the pond's laps and plops under SND-8a's
+  crickets.
+
 ## SND-11's seams (from the code review)
 - **Stems**: the tick plays into `sg.stems.*`, `drums` being the existing `sg.drums` (sound.js:1157 drives it). Plain
   gain-1 nodes change only the summing order, far under the tolerance. **No StereoPanner on the `gb` path**: a centred
@@ -1059,8 +1157,9 @@ them later.
 
 ## Key files
 `game/js/audio/tracker.js`, `game/js/sound.js`, `game/js/audio/levels.js`, new `game/js/logic/sound-bake.js`,
-`game/data/music.json` and `schema/music.schema.json`, new `game/data/soundscape.json` and its schema (listed in
-`game/data/index.json`), `game/js/settings-screen.js` (GB Sounds), `game/js/debug-menu.js` and new `game/js/sound-test.js` (the Sound Test),
+`game/data/music.json` and `schema/music.schema.json`, `game/data/soundscape.json` and its schema (listed in
+`game/data/index.json`; SND-10), `game/js/logic/soundscape.js`, `game/js/audio/soundscape-player.js`,
+`game/js/soundscape-here.js` (SND-10), `game/js/settings-screen.js` (GB Sounds), `game/js/debug-menu.js` and new `game/js/sound-test.js` (the Sound Test),
 `game/js/debug-log.js` (the audio lines), `game/index.html` and `studio/index.html` (the audio script tags),
 `studio/js/music-editor.js`, `tools/check-sound.py`, `tools/check-quick.py`, `tools/test/tracker.test.mjs`,
 `tools/test/sound.test.mjs`, `tools/after-edit.mjs`, `validation/sound-baseline/`.
