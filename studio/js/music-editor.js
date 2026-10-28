@@ -12,10 +12,20 @@ import { MUSIC_BATTLE_KINDS, MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from
 import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
 import { UI_SOUND_NAMES, uiSoundVoices } from '../../game/js/logic/ui-sounds.js';
 import { ambienceNoiseLoop, ambienceRandom } from '../../game/js/logic/ambience-sound.js';
-import { soundscapePreview } from '../../game/js/logic/soundscape.js';
+import { soundscapeBubbles, soundscapePreview } from '../../game/js/logic/soundscape.js';
+import {
+  natureBouts,
+  natureEvery,
+  naturePatter,
+  natureRain,
+  natureStep,
+  natureThunder,
+  natureTown,
+} from '../../game/js/logic/nature-sound.js';
 import { soundLevels } from '../../game/js/audio/levels.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { soundscapePlayerCreate } from '../../game/js/audio/soundscape-player.js';
+import { naturePlayerCreate } from '../../game/js/audio/nature-player.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   MUSIC_CHOICES,
@@ -51,6 +61,7 @@ import { legacyLoad, legacyView } from './legacy-view.js';
 expose({
   MUSIC_CRY_PREVIEW: [() => MUSIC_CRY_PREVIEW],
   MUSIC_JINGLE_BPM: [() => MUSIC_JINGLE_BPM],
+  MUSIC_NATURE: [() => MUSIC_NATURE],
   MUSIC_SCAPE_AT: [() => MUSIC_SCAPE_AT],
   MUSIC_SCAPE_HEIGHT: [() => MUSIC_SCAPE_HEIGHT],
   MUSIC_TABS: [() => MUSIC_TABS],
@@ -79,6 +90,8 @@ expose({
   musicLoopHTML: [() => musicLoopHTML],
   musicMixApply: [() => musicMixApply, v => (musicMixApply = v)],
   musicMixHTML: [() => musicMixHTML, v => (musicMixHTML = v)],
+  musicNature: [() => musicNature, v => (musicNature = v)],
+  musicNatureTick: [() => musicNatureTick, v => (musicNatureTick = v)],
   musicNoteHear: [() => musicNoteHear, v => (musicNoteHear = v)],
   musicNowShow: [() => musicNowShow, v => (musicNowShow = v)],
   musicPartHTML: [() => musicPartHTML],
@@ -135,6 +148,8 @@ export const musicStudio = {
   }),
   /** SND-10: the World sounds card's player (audio/soundscape-player.js), what it plays and its timer */
   /** @type {any} */ scape: null,
+  /** SND-14: the card's nature player (audio/nature-player.js), what it plays and its timer */
+  /** @type {any} */ nature: null,
 };
 const musicData = () => studioState.D.music;
 /** the line the hook roll edits */
@@ -821,14 +836,109 @@ function musicScapeHTML() {
         ).join('')}</div>`
     )
     .join('');
+  /* SND-14: nature's one-shots (soundscape.json nature, audio/nature-player.js); its beds play in the game's Sound test */
+  const nat = S.nature
+    ? MUSIC_NATURE.map(
+        ([k, label]) =>
+          `<div class="seg-row"><b class="grow">${escapeHtml(label)}</b><button class="btn subtle${musicStudio.nature && musicStudio.nature.want === k ? ' on' : ''}" data-act="musNature" data-k="${k}" aria-label="Play ${escapeHtml(label)}">▶ Play</button></div>`
+      ).join('')
+    : '';
   return card(
     'World sounds',
-    `${rows}<div class="seg-row"><button class="btn" data-act="musScapeStop">■ Stop</button></div>`,
+    `${rows}${nat}<div class="seg-row"><button class="btn" data-act="musScapeStop">■ Stop</button></div>`,
     {
-      sub: 'Each water recipe in soundscape.json at a distance (a fall at its height: small 1.5 m, tall and its pool 6 m), through the game’s own player. Its level here is the Studio’s; the game’s World slider and the loudness report (tools/check-sound.py --loudness) say how it sits under a song.',
+      sub: 'Each water recipe in soundscape.json at a distance (a fall at its height: small 1.5 m, tall and its pool 6 m), then nature’s one-shots (thunder, patter, insects, frogs, the town, rooms, footsteps), through the game’s own players. Its level here is the Studio’s; the game’s World slider and the loudness report (tools/check-sound.py --loudness) say how it sits under a song. Nature’s beds (the rain’s wash, wind, a room’s tone) play in the game’s debug menu → Sound test.',
     }
   );
 }
+/* SND-14: nature's one-shots the card plays: [id, label] (steps: on a surface of soundscape.json nature.steps) */
+const MUSIC_NATURE = [
+  ['thunderNear', 'Thunder, near (0.6 km)'],
+  ['thunderFar', 'Thunder, far off (4 km)'],
+  ['patterLight', 'Patter, light rain'],
+  ['patterHeavy', 'Patter, a storm'],
+  ['drips', 'Drips off the eaves'],
+  ['grasshopper', 'Grasshoppers'],
+  ['cicada', 'Cicadas'],
+  ['frogs', 'Frogs'],
+  ['town', 'A town’s life'],
+  ['page', 'A library’s pages'],
+  ['clink', 'An inn’s cups'],
+  ['tool', 'A workshop’s tools'],
+  ['straw', 'A barn’s straw'],
+  ...['grass', 'sand', 'dirt', 'gravel', 'stone', 'wood', 'snow', 'mud', 'wet', 'carpet'].map(k => [
+    'step:' + k,
+    'Steps on ' + k,
+  ]),
+];
+/** nature's player on the Studio's context (the scape's noise and tracker), its seeded random and where each stream
+ * left off */
+function musicNature() {
+  if (musicStudio.nature) return musicStudio.nature;
+  const M = musicScape(),
+    c = /** @type {AudioContext} */ (musicStudio.ctx);
+  musicStudio.nature = {
+    P: naturePlayerCreate(c, { noise: M.noise, tracker: musicTracker(), rng: ambienceRandom(0x50d6) }),
+    r: ambienceRandom(0x50d7),
+    st: {},
+    want: /** @type {string | null} */ (null),
+    timer: 0,
+  };
+  return musicStudio.nature;
+}
+/** what a nature row plays in the next 0.3 s (every 200 ms, as the game's updateAmbience) */
+function musicNatureTick(/** @type {any} */ M, /** @type {number} */ t) {
+  const N = studioState.D.soundscape.nature,
+    out = musicTracker().bus,
+    k = M.want,
+    st = M.st,
+    r = M.r;
+  if (k === 'thunderNear' || k === 'thunderFar') {
+    if (st.at == null || t >= st.at) {
+      M.P.thunder(out, natureThunder(N.thunder, r, k === 'thunderNear' ? 0.6 : 4), t + 0.1, N.thunder.cap, 1);
+      st.at = t + 12;
+    }
+  } else if (k === 'patterLight' || k === 'patterHeavy') {
+    const R = natureRain(N.rain, k === 'patterLight' ? 0.3 : 1.6);
+    for (const e of naturePatter(N.rain.patter, (st.p = st.p || {}), t, t + 0.3, r, R.patter, 0.5))
+      M.P.drop(out, e, 1, N.rain.patter.bank);
+  } else if (k === 'drips') {
+    for (const b of soundscapeBubbles(N.rain.drips, (st.d = st.d || {}), t, t + 0.3, r, 1)) M.P.drip(out, b, 1);
+  } else if (k === 'grasshopper') {
+    const G = N.insects.grasshopper;
+    for (const e of natureBouts((st.h = st.h || [{}, {}]), t, t + 0.3, r, G))
+      M.P.chirr(out, e.t, G, e.gain, e.who ? 0.45 : -0.4);
+  } else if (k === 'cicada') {
+    const C = N.insects.cicada;
+    for (const at of natureEvery((st.c = st.c || { next: t }), t, t + 0.3, r, C.every)) M.P.cicada(out, at, C, 1, 0);
+  } else if (k === 'frogs') {
+    const F = N.frogs;
+    for (const e of natureBouts((st.f = st.f || [{}, {}]), t, t + 0.3, r, F))
+      M.P.croak(out, e.t, F, e.gain, e.who ? 0.25 : -0.25, e.who);
+  } else if (k === 'town') {
+    for (const e of natureTown(N.town, (st.w = st.w || { next: t }), t, t + 0.3, r, 0))
+      M.P.town(out, e, N.town.kinds[e.kind].gain);
+  } else if (['page', 'clink', 'tool', 'straw'].includes(String(k))) {
+    for (const at of natureEvery((st.o = st.o || { next: t }), t, t + 0.3, r, [2, 5])) M.P.room(out, k, 1, at);
+  } else if (String(k).startsWith('step:')) {
+    if (st.s == null || st.s < t) st.s = t;
+    for (; st.s < t + 0.3; st.s += 0.35)
+      M.P.step(out, natureStep(N.steps, String(k).slice(5), r, (st.foot = st.foot ? 0 : 1)), st.s);
+  }
+}
+ACTIONS.musNature = d => {
+  ACTIONS.musScapeStop({});
+  const M = musicNature();
+  if (musicStudio.ctx && musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  M.want = d.k;
+  M.st = {};
+  clearInterval(M.timer);
+  M.timer = setInterval(() => {
+    if (!sectionShown('music') || !M.want) return ACTIONS.musScapeStop({});
+    musicNatureTick(M, /** @type {AudioContext} */ (musicStudio.ctx).currentTime);
+  }, 200);
+  render();
+};
 /** the player on the Studio's context, made once: the beds' noise, the water's banks baked in the tracker's slices */
 function musicScape() {
   if (musicStudio.scape) return musicStudio.scape;
@@ -854,7 +964,7 @@ function musicScape() {
   T.bankAdd(env.S.banks);
   const P = soundscapePlayerCreate(c, env);
   T.bankReady(P.banks());
-  musicStudio.scape = { P, want: null, timer: 0 };
+  musicStudio.scape = { P, want: null, timer: 0, noise: env.noise };
   return musicStudio.scape;
 }
 ACTIONS.musScape = d => {
@@ -874,6 +984,12 @@ ACTIONS.musScape = d => {
   render();
 };
 ACTIONS.musScapeStop = () => {
+  /* SND-14: nature's one-shots stop too (what is ringing dies away) */
+  const Nm = musicStudio.nature;
+  if (Nm) {
+    clearInterval(Nm.timer);
+    Nm.want = null;
+  }
   const M = musicStudio.scape;
   if (!M) return;
   M.want = null;

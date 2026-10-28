@@ -1,5 +1,5 @@
 {
- "about": "Sound track SND-10: the world's sounds as recipes (sound.js plays them; logic/ambience-sound.js and logic/soundscape.js hold the logic). beds: a place's beds of sound, each a few layers of the beds' own pink or brown noise through filters [type, Hz, Q, gain dB] at a gain, with drift (what wanders: the gain or a filter's frequency, by depth, a new value every min-max seconds); bus world or amb (the World or Ambience slider); trim from tools/check-sound.py --loudness; tone a low hum (Hz); events crickets or crackles at eventGain. SND-10, water: banks are baked once (logic/sound-bake.js through the tracker's bank): bubbles (van den Doel) at every pitch, a drop's rise and a bubble's, and a babble loop (after Farnell). kinds: each water kind's recipe and which of its cells sound (its shores, or all of them); running: a river line's recipe by width and rapids; falls: a placed fall's by height, its plunge pool's and the automatic cascades'; fountain; wake (Surf riding) and rainOnWater (rain on water surfaces). water: the recipes, each heard within range m (line: a river or a shore, falling off slower), its nearest voices playing, with a trim from the loudness report, a reverb send, bed layers (as beds'), a baked texture played from a random point and events (bubbles, laps at a bank, the surf's waves on the tide); byHeight: a fall louder and heard further by its height. splash: a splash from small (size 0) to big (1): a low slosh and a brighter one, then a burst of bubbles. touch: the water you touch, as splash sizes (wading at full depth, mounting and leaving Surf, a plop in the water, fishing's cast, nibble, bite, the fish fighting and the catch), fishing's reel clicks and the cast's swish.",
+ "about": "Sound track SND-10: the world's sounds as recipes (sound.js plays them; logic/ambience-sound.js and logic/soundscape.js hold the logic). beds: a place's beds of sound, each a few layers of the beds' own pink or brown noise through filters [type, Hz, Q, gain dB] at a gain, with drift (what wanders: the gain or a filter's frequency, by depth, a new value every min-max seconds); bus world or amb (the World or Ambience slider); trim from tools/check-sound.py --loudness; tone a low hum (Hz); events crickets or crackles at eventGain. SND-10, water: banks are baked once (logic/sound-bake.js through the tracker's bank): bubbles (van den Doel) at every pitch, a drop's rise and a bubble's, and a babble loop (after Farnell). kinds: each water kind's recipe and which of its cells sound (its shores, or all of them); running: a river line's recipe by width and rapids; falls: a placed fall's by height, its plunge pool's and the automatic cascades'; fountain; wake (Surf riding) and rainOnWater (rain on water surfaces). water: the recipes, each heard within range m (line: a river or a shore, falling off slower), its nearest voices playing, with a trim from the loudness report, a reverb send, bed layers (as beds'), a baked texture played from a random point and events (bubbles, laps at a bank, the surf's waves on the tide); byHeight: a fall louder and heard further by its height. splash: a splash from small (size 0) to big (1): a low slosh and a brighter one, then a burst of bubbles. touch: the water you touch, as splash sizes (wading at full depth, mounting and leaving Surf, a plop in the water, fishing's cast, nibble, bite, the fish fighting and the catch), fishing's reel clicks and the cast's swish. SND-14, nature (logic/nature-sound.js; nature-here.js reads the place, audio/nature-player.js plays the one-shots): dry beds (a room's or a cave's tone) skip the outdoors' muffle; rain by how hard it falls (the wash, the heavy roar, patter, roofs and the eaves' drips), thunder after the weather's bolts by distance, the wind and its gusts, birds by the hour (a dawn chorus, an owl at night), insects by biome and hour, frogs by still water at night, a fire by its size, footsteps by surface, the town's life as rare quiet events, a room's tone by its kind.",
  "beds": {
   "crickets": {"bus":"amb","trim":0.74,"layers":[],"events":"crickets"},
   "leaves": {
@@ -41,6 +41,7 @@
   },
   "cave": {
    "bus": "amb",
+   "dry": true,
    "trim": 0.54,
    "tone": 49,
    "layers": [
@@ -57,6 +58,7 @@
   },
   "room": {
    "bus": "amb",
+   "dry": true,
    "trim": 0.59,
    "layers": [
     {
@@ -140,6 +142,92 @@
      "drift": [
       {"on":"gain","base":0.7,"depth":0.6,"min":1.5,"max":5,"tau":1},
       {"on":0,"base":520,"depth":0.5,"min":1.5,"max":5,"tau":1.2,"oct":true}
+     ]
+    }
+   ]
+  },
+  "rainHeavy": {
+   "bus": "world",
+   "trim": 0.5,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 1,
+     "filters": [["lowpass",650],["highpass",60]],
+     "drift": [
+      {"on":"gain","base":0.9,"depth":0.25,"min":1.5,"max":5,"tau":1.2}
+     ]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.35,
+     "filters": [["bandpass",1000,0.6],["highshelf",3000,0.7,-9]]
+    }
+   ]
+  },
+  "rainRoof": {
+   "bus": "world",
+   "trim": 0.6,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.7,
+     "filters": [["bandpass",1100,0.8],["highshelf",2800,0.7,-10]],
+     "drift": [
+      {"on":"gain","base":0.7,"depth":0.35,"min":0.2,"max":0.9,"tau":0.15}
+     ]
+    },
+    {
+     "noise": "brown",
+     "gain": 0.8,
+     "filters": [["lowpass",320],["highpass",70]],
+     "drift": [
+      {"on":"gain","base":0.8,"depth":0.3,"min":1,"max":4,"tau":0.8}
+     ]
+    }
+   ]
+  },
+  "roomHum": {
+   "bus": "amb",
+   "dry": true,
+   "trim": 0.6,
+   "layers": [
+    {
+     "noise": "brown",
+     "rate": 0.6,
+     "gain": 1,
+     "filters": [["lowpass",240],["highpass",40]]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.25,
+     "filters": [["bandpass",240,9],["bandpass",240,4]],
+     "drift": [
+      {"on":"gain","base":0.25,"depth":0.2,"min":3,"max":9,"tau":2}
+     ]
+    }
+   ]
+  },
+  "roomBarn": {
+   "bus": "amb",
+   "dry": true,
+   "trim": 0.6,
+   "layers": [
+    {
+     "noise": "brown",
+     "rate": 0.7,
+     "gain": 1,
+     "filters": [["lowpass",380],["highpass",50]],
+     "drift": [
+      {"on":"gain","base":0.9,"depth":0.25,"min":2,"max":6,"tau":1.5}
+     ]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.12,
+     "filters": [["bandpass",1600,0.5],["highshelf",3500,0.7,-9]],
+     "drift": [
+      {"on":"gain","base":0.12,"depth":0.6,"min":1,"max":4,"tau":0.6}
      ]
     }
    ]
@@ -631,5 +719,134 @@
   "catch": 0.85,
   "reel": {"every":0.07,"f":3200,"q":2,"d":0.012,"gain":0.03},
   "swish": {"f":2600,"q":0.7,"d":0.18,"gain":0.05}
+ },
+ "nature": {
+  "rain": {
+   "wash": [[0,0],[0.05,0],[0.3,0.2],[1,0.42],[1.6,0.48]],
+   "heavy": [[0.6,0],[1,0.12],[1.6,0.3]],
+   "patter": {
+    "rate": [[0,0],[0.1,2],[0.4,5],[1,12],[1.6,20]],
+    "f": [1300,3800],
+    "q": [0.8,2.2],
+    "d": [0.005,0.02],
+    "gain": 0.4,
+    "leaves": 0.7,
+    "plink": 0.1,
+    "bank": "drop"
+   },
+   "roof": {"near":1.5,"range":8,"level":0.32,"indoor":0.36},
+   "drips": {"type":"bubbles","bank":"drop","rate":1.6,"rMin":3,"rMax":6,"gamma":1,"beta":1,"level":0.35,"gap":0.08,"pan":0.5}
+  },
+  "thunder": {
+   "km": [0.4,4.5],
+   "speed": 0.343,
+   "nearKm": 1.2,
+   "level": [0.12,0.6],
+   "lp": [160,700],
+   "rolls": [3,6],
+   "dur": [3,7],
+   "crack": 0.6,
+   "attack": [0.04,0.25],
+   "cap": 2
+  },
+  "wind": {"breeze":0.07,"town":0.5,"alpine":0.16,"storm":0.4,"snow":0.1,"gust":[0.6,0.4],"leaves":[0.55,0.45]},
+  "birds": {
+   "wait": [6,14],
+   "townWait": [14,30],
+   "hours": [[0,1.5],[4.5,1.5],[5,0.3],[7,0.3],[8.5,1],[11,1.6],[12.5,2.6],[14.5,2.6],[16,1.4],[18,1],[20,1.5],[24,1.5]],
+   "chorus": [4.8,7.6],
+   "chorusAdd": ["song","thrush","song"],
+   "owlNight": 0.6,
+   "owlWait": [25,60]
+  },
+  "insects": {
+   "crickets": {"gain":0.11,"town":0.05,"winter":0.2},
+   "day": {
+    "cicada": {
+     "biomes": ["jungle","desert","badlands","canyon","mangrove","saltflat","volcano","vineyard"],
+     "hours": [11,19],
+     "seasons": ["summer"]
+    },
+    "grasshopper": {
+     "biomes": ["meadow","grass","farm","golf","vineyard","blossom","park","autumn"],
+     "hours": [9.5,18.5],
+     "seasons": ["spring","summer","autumn"]
+    }
+   },
+   "grasshopper": {"count":[10,24],"step":[0.045,0.06],"gap":[4,11],"f":4200,"q":2.5,"gain":0.05,"callers":2},
+   "cicada": {"every":[10,25],"dur":[3,6],"rate":45,"f":3300,"q":3,"gain":0.03}
+  },
+  "frogs": {
+   "near": ["pond","marsh","bog","lake","oasis"],
+   "night": 0.45,
+   "seasons": ["spring","summer","autumn"],
+   "rain": 0.3,
+   "count": [3,9],
+   "step": [0.35,0.7],
+   "gap": [2.5,8],
+   "f": [110,190],
+   "formant": 700,
+   "gain": 0.16,
+   "callers": 2
+  },
+  "fire": {
+   "sizes": {"campfire":1,"fireplace":0.55,"bakery_oven":0.45},
+   "range": 7,
+   "gain": 0.35,
+   "crackle": 3.5
+  },
+  "steps": {
+   "ground": {
+    "grass": "gGftlCEBHJyLFM",
+    "sand": "sSN4zZ",
+    "dirt": "puoA",
+    "gravel": "vPx",
+    "wood": "b58!%+$[",
+    "snow": "n",
+    "mud": "DR",
+    "carpet": "671)~U"
+   },
+   "fallback": "stone",
+   "surfaces": {
+    "grass": [[0,"lp",380,0.7,0.07,0.12],[0.006,"bp",1500,0.6,0.07,0.16,0.01],[0.03,"hp",3000,0.7,0.05,0.035,0.01]],
+    "sand": [[0,"lp",300,0.7,0.06,0.1],[0.01,"bp",2400,0.5,0.11,0.12,0.02],[0.05,"bp",3400,0.8,0.06,0.045,0.01]],
+    "dirt": [[0,"lp",420,0.8,0.07,0.15],[0.008,"bp",1100,0.9,0.05,0.2]],
+    "gravel": [
+     [0,"lp",400,0.7,0.05,0.1],
+     [0.005,"bp",2600,1.2,0.04,0.09],
+     [0.03,"bp",3200,1.4,0.04,0.065],
+     [0.06,"bp",2200,1.2,0.035,0.045]
+    ],
+    "stone": [[0,"bp",2200,1.4,0.035,0.07],[0,"lp",500,0.8,0.04,0.05]],
+    "wood": [[0,"bp",520,2.2,0.06,0.08],[0.004,"bp",1250,3,0.05,0.03]],
+    "snow": [[0,"lp",300,0.7,0.05,0.06],[0,"bp",2600,0.9,0.07,0.07],[0.025,"bp",4200,1.2,0.05,0.05],[0.05,"bp",3000,1,0.05,0.035]],
+    "mud": [[0,"lp",500,0.7,0.12,0.14,0.02],[0.05,"bp",900,2,0.08,0.06,0.02]],
+    "wet": [[0,"bp",1500,0.5,0.09,0.07],[0.03,"hp",5000,0.7,0.06,0.04]],
+    "carpet": [[0,"lp",300,0.7,0.06,0.09]]
+   }
+  },
+  "town": {
+   "every": [6,16],
+   "nightEvery": 2.5,
+   "kinds": {
+    "door": {"weight":3,"night":0.4,"gain":0.35},
+    "cart": {"weight":2,"night":0.1,"gain":0.3},
+    "voice": {"weight":3,"night":0.3,"gain":0.22},
+    "dog": {"weight":1.5,"night":0.6,"gain":0.22},
+    "bell": {"weight":1,"night":0.2,"gain":0.12}
+   }
+  },
+  "rooms": {
+   "_": {"bed":"room","level":0.16},
+   "house": {"bed":"room","level":0.16},
+   "shop": {"bed":"room","level":0.14},
+   "library": {"bed":"room","level":0.12,"events":"page","every":[12,30]},
+   "inn": {"bed":"town","level":0.06,"events":"clink","every":[5,14]},
+   "lab": {"bed":"roomHum","level":0.12},
+   "clinic": {"bed":"roomHum","level":0.1},
+   "gene_bank": {"bed":"roomHum","level":0.12},
+   "workshop": {"bed":"roomHum","level":0.08,"events":"tool","every":[6,16]},
+   "barn": {"bed":"roomBarn","level":0.14,"events":"straw","every":[5,12]}
+  }
  }
 }

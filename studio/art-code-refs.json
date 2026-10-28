@@ -1652,6 +1652,9 @@
    "game/js/world-bowl.js:1737",
    "game/js/world-bowl.js:1767"
   ],
+  "cart": [
+   "game/js/audio/nature-player.js:243"
+  ],
   "coin": [
    "game/js/art.js:197",
    "game/js/battle-stage.js:1533",
@@ -1671,8 +1674,8 @@
    "game/js/shop.js:172",
    "game/js/shop.js:182",
    "game/js/shop.js:251",
-   "game/js/sound.js:552",
-   "game/js/sound.js:1809",
+   "game/js/sound.js:554",
+   "game/js/sound.js:1810",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:96",
@@ -1841,7 +1844,7 @@
   "moon": [
    "game/js/battle.js:579",
    "game/js/boot.js:168",
-   "game/js/environment.js:658"
+   "game/js/environment.js:659"
   ],
   "palm": [
    "game/js/logic/bowl-things.js:135",

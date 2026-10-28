@@ -35,6 +35,11 @@ SND-10: the report adds every water recipe (soundscape.json `water`) at 1, 3 and
 Sound Test plays them; its banks are baked once before the jobs. A water row warns over either ceiling (its level 12 LU
 under the route song, its loudest 3 s 8 LU under).
 
+SND-14: and nature's rows (soundscape.json `nature`, as the Sound Test plays them: nature-here.js naturePreviewTick):
+rain by how hard it falls, on a roof and indoors, thunder near and far, wind and gusts, birds by the hour, insects,
+frogs, fires by size, the town's life, rooms by kind, steps on each surface. A bed row warns over either ceiling, an
+event row (thunder, birds, insects, frogs, the town, steps) over the events'.
+
 SND-9: beside each RMS array, a brightness fingerprint (`zc:<part>` in the same file): the zero crossings in each 50 ms
 window, so a change of timbre at the same loudness shows too (a brighter sound crosses zero more often). A crossing
 counts when the signal passes from under -0.0001 to over +0.0001 or back (so a near-silent tail's rounding never
@@ -238,8 +243,22 @@ LOUD_BEDS = [('rain', [['rain', 0]]), ('wind (storm)', [['wind', 0]]), ('leaves 
              ('crickets', [['crickets', 0]]), ('town murmur', [['town', 0]]), ('cave', [['cave', 0]]), ('room', [['room', 0]]),
              ('fire 2 m', [['fire', 2]]), ('sea, the coast', [['sea_coast', 0]]),
              ('birds', [['birds', 0]]), ('steps (lawn)', [['steps', 0]])]   # SND-10: the water is the water rows'
-LOUD_SCENES = [('Copperleaf square', [['sea_coast', 0], ['fountain', 3], ['town', 0], ['birds', 0]]),
-               ('a route in rain', [['rain', 0], ['leaves', 0]]), ('a meadow at night', [['crickets', 0], ['leaves', 0]])]
+# SND-14: nature (soundscape.json `nature`, nature-here.js naturePreviewTick): rain by how hard it falls (0.3 light, 1,
+# 1.6 a storm's), on a roof 1 m from its eaves and indoors; thunder at 0.6 and 4 km; the wind's gusts and a storm's;
+# birds at dawn and noon, the owl; insects, frogs at 3 m; fires by size; steps on each surface; the town's life; rooms
+LOUD_NATURE = [('light rain', [['rain', 0, 0.3]]), ('heavy rain', [['rain', 0, 1.6]]), ('rain on a roof 1 m', [['roof', 1, 1]]),
+               ('rain indoors', [['roofIn', 0, 1]]), ('thunder 0.6 km', [['thunder', 0, 0.6]]), ('thunder 4 km', [['thunder', 0, 4]]),
+               ('breeze and gusts', [['gusts', 0]]), ('wind in a forest', [['gusts', 0], ['leaves', 0]]),
+               ('dawn chorus', [['birds', 0, 6]]), ('birds at noon', [['birds', 0, 13]]), ('owl', [['owl', 0]]),
+               ('grasshoppers', [['grasshopper', 0]]), ('cicadas', [['cicada', 0]]), ('frogs 3 m', [['frogs', 3]]),
+               ('fireplace 2 m', [['fire', 2, 0.55]]), ('campfire 2 m', [['fire', 2, 1]]), ('bonfire 3 m', [['fire', 3, 2]]),
+               ('town life', [['townLife', 0]])] + \
+              [(f'room: {k}', [['roomTone', 0, k]]) for k in ('house', 'inn', 'library', 'lab', 'workshop', 'barn')] + \
+              [(f'steps: {k}', [['steps', 0, k]]) for k in ('grass', 'sand', 'dirt', 'gravel', 'stone', 'wood', 'snow', 'mud', 'wet', 'carpet')]
+# rows that are events (their loudest 3 s against the events' ceiling), not beds
+LOUD_EVENTS = ('birds', 'steps (lawn)', 'thunder', 'dawn chorus', 'birds at noon', 'owl', 'grasshoppers', 'cicadas', 'frogs', 'town life', 'steps:')
+LOUD_SCENES = [('Copperleaf square', [['sea_coast', 0], ['fountain', 3], ['townLife', 0], ['birds', 0]]),
+               ('a route in rain', [['rain', 0], ['gusts', 0], ['leaves', 0]]), ('a meadow at night', [['crickets', 0], ['leaves', 0]])]
 CEILING_BED, CEILING_EVENT = -12, -8   # LU under the route song (design rule 7: beds at least 12 under, events 8)
 # SND-10: every water recipe (soundscape.json `water`) at 1, 3 and 10 m, a fall at its height; both ceilings apply (its
 # bed's integrated level and its events' loudest 3 s)
@@ -263,10 +282,11 @@ def loudness(b, base, only=None):
         duck = pg.evaluate("Math.round(20*Math.log10(bedDuck(MUSIC.mix,true))*100)/100")
         water = pg.evaluate("typeof SOUNDSCAPE!=='undefined'&&SOUNDSCAPE.water?Object.keys(SOUNDSCAPE.water):[]")
         rows_w = [(f'{w} {d} m', [[w, d, WATER_HEIGHT.get(w, 0)]]) for w in water for d in WATER_AT]
+        nature = LOUD_NATURE if pg.evaluate("typeof naturePreviewTick==='function'") else []   # SND-14
         # SND-11: each song whose day version names an ensemble, once more as its ensemble
         ens = pg.evaluate("Object.keys(SONGS).filter(s => { const D = trackerRecipe(SONGS, s, MUSIC.run); return D && D.ensemble && D.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[D.ensemble]; })") if pg.evaluate("typeof MUSIC !== 'undefined' && !!MUSIC.ensembles") else []
         ens = [s for s in ens if s in songs]
-        jobs = [{'song': s} for s in songs] + [{'song': s, 'ens': True} for s in ens] + [{'beds': B} for _, B in LOUD_BEDS + LOUD_SCENES + rows_w]
+        jobs = [{'song': s} for s in songs] + [{'song': s, 'ens': True} for s in ens] + [{'beds': B} for _, B in LOUD_BEDS + nature + LOUD_SCENES + rows_w]
         res = []
         for i in range(0, len(jobs), 6):
             res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
@@ -284,16 +304,18 @@ def loudness(b, base, only=None):
         lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS   {L["lufs"] - S[s]["lufs"]:+5.1f} LU on gb' for s, L in SE.items()]
     warn = []
     at = len(songs) + len(ens)
-    for title, rows in (('world sounds', LOUD_BEDS), ('scenes', LOUD_SCENES), ('water (SND-10: each recipe at 1, 3 and 10 m)', rows_w)):
+    for title, rows in (('world sounds', LOUD_BEDS), ('nature (SND-14)', nature), ('scenes', LOUD_SCENES), ('water (SND-10: each recipe at 1, 3 and 10 m)', rows_w)):
         if not rows: continue
         lines.append(f'  {title}:')
         for (name, B), L in zip(rows, res[at:at + len(rows)]):
             lu, mx = L['lufs'] + duck - ref, L['short'] + duck - ref
-            event = name in ('birds', 'steps (lawn)')
+            event = name.startswith(LOUD_EVENTS)
             lines.append(f'    {name:20} {lu:+6.1f} LU   max 3 s {mx:+6.1f}   phone band {L["phone"] + duck:6.1f} dB   2-6 kHz {L["share"] * 100:4.0f} %   peak {L["peak"] + duck:6.1f}')
             if L.get('nan'): warn.append(f'{name}: NaN in the render')
-            if title == 'world sounds' and (mx if event else lu) > (CEILING_EVENT if event else CEILING_BED):
+            if title in ('world sounds', 'nature (SND-14)') and (mx if event else lu) > (CEILING_EVENT if event else CEILING_BED):
                 warn.append(f'{name}: {(mx if event else lu):+.1f} LU, over the ceiling of {CEILING_EVENT if event else CEILING_BED} LU')
+            if title.startswith('nature') and not event and mx > CEILING_EVENT:
+                warn.append(f'{name}: its loudest 3 s {mx:+.1f} LU, over the event ceiling of {CEILING_EVENT} LU')
             if title.startswith('water'):
                 if lu > CEILING_BED: warn.append(f'{name}: {lu:+.1f} LU, over the bed ceiling of {CEILING_BED} LU')
                 if mx > CEILING_EVENT: warn.append(f'{name}: its loudest 3 s {mx:+.1f} LU, over the event ceiling of {CEILING_EVENT} LU')

@@ -78,6 +78,8 @@ export const environment = {
   cloud: 0.4,
   wet: 0,
   flash: 0,
+  /* SND-14: the storm's bolts so far (the thunder follows the count, not the flash) */
+  bolts: 0,
   season: 'summer',
   weather: 'clear',
   climate: 'mild',
@@ -414,15 +416,14 @@ export function environmentFrame(sc, dt) {
   environment.wet = snap
     ? wetT
     : Math.max(0, Math.min(1, environment.wet + (wetT > environment.wet ? dt * 0.08 : -dt * 0.01)));
-  /* lightning: a rare flash in a storm */
+  /* lightning: a rare bolt in a storm. SND-14: every bolt counts (environment.bolts, the thunder's), seen or not; the
+     flash shows only with motion and the flashes on */
   environment.flash = Math.max(0, environment.flash - dt * 3.2);
-  if (
-    environment.storm > 0.5 &&
-    !(typeof reducedMotion !== 'undefined' && reducedMotion) &&
-    document.documentElement.dataset.flash !== 'off' &&
-    Math.random() < dt * 0.06
-  )
-    environment.flash = 1;
+  if (environment.storm > 0.5 && Math.random() < dt * 0.06) {
+    environment.bolts++;
+    if (!(typeof reducedMotion !== 'undefined' && reducedMotion) && document.documentElement.dataset.flash !== 'off')
+      environment.flash = 1;
+  }
   /* the season as four dials for the shaders: autumn colour, spring freshness, winter paleness, snow lying on the ground */
   const son = environment.on || !!(environment.force && environment.force.season),
     snowLie = Math.max(

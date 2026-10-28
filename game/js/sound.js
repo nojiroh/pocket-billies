@@ -10,6 +10,9 @@ import { expose } from './test-globals.js';
 import {
   cutscene,
   mapIdAt,
+  natureHere,
+  naturePreviewTick,
+  natureStart,
   provide,
   soundscapeFish,
   soundscapeHere,
@@ -40,6 +43,7 @@ import {
   ambienceStep,
 } from './logic/ambience-sound.js';
 import { soundscapePreview } from './logic/soundscape.js';
+import { natureBetween, natureBirdWait, natureBirds, natureStep, natureStepSurface } from './logic/nature-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -105,7 +109,6 @@ expose({
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
   musicVariant: [() => musicVariant, v => (musicVariant = v)],
-  nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
   playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
@@ -983,6 +986,8 @@ function initAmbience() {
   ambience.rng = ambienceRandom(0x50d3);
   /* SND-10: the water (soundscape.json `water`), its banks baked in the tracker's slices (soundscape-here.js) */
   ambience.scape = soundscapeStart(c);
+  /* SND-14: the weather's, the wild's and the town's one-shots (nature-here.js, audio/nature-player.js) */
+  ambience.naturePlayer = natureStart(c);
   /* a layer of a bed (soundscape.json beds): its filters and its gain, waiting for its noise (ambienceBedStart) */
   const layer = (L, dest, b) => {
     const F = [];
@@ -1013,7 +1018,8 @@ function initAmbience() {
     const g = c.createGain(),
       p = c.createStereoPanner ? c.createStereoPanner() : null,
       tr = c.createGain(),
-      bus = B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW,
+      /* SND-14: a dry bed (a room's or a cave's own tone) never goes through the outdoors' muffle */
+      bus = B.bus === 'amb' ? (B.dry ? ambience.amb : ambience.lpA) : ambience.lpW,
       b = { g, p, tr, drifts: [], parts: [], srcs: [], st: {}, eventGain: B.eventGain || 1 };
     g.gain.value = 0;
     /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
@@ -1096,11 +1102,20 @@ function ambienceApply(T, pans, t) {
    open country's) and ['steps', 0, ground] */
 function ambiencePreviewTick(list, t) {
   if (!ambience.bus && !initAmbience()) return;
-  ambienceApply(ambiencePreview(list), {}, t);
+  /* SND-14: and nature's (rain by how hard, roofs, thunder, wind and gusts, insects, frogs, a fire by its size, the
+     town's life, a room's tone: nature-here.js) */
+  const T = ambiencePreview(list);
+  naturePreviewTick(list, T, t);
+  ambienceApply(T, {}, t);
   /* SND-10: water recipes [id, metres, a fall's height] */
   if (ambience.scape) ambience.scape.update(soundscapePreview(SOUNDSCAPE, list), t);
-  if (list.some(([k]) => k === 'birds')) ambienceBirds(t, ['lark', 'lark', 'song'], false, 1, 0, 1);
-  /* footsteps ['steps', 0, ground], one every 0.35 s (walking) */
+  /* birds ['birds', 0, hour] (the open country's); SND-14: ['owl'] a night's */
+  const B = list.find(([k]) => k === 'birds' || k === 'owl');
+  if (B) {
+    const owl = B[0] === 'owl';
+    ambienceBirds(t, ['lark', 'lark', 'song'], false, owl ? 0 : 1, 0, 1, owl ? 23 : (B[2] ?? 9), owl ? 1 : 0);
+  }
+  /* footsteps ['steps', 0, ground or surface], one every 0.35 s (walking) */
   const st = list.find(([k]) => k === 'steps');
   if (st) {
     if (!ambience.stepAt || ambience.stepAt < t || ambience.stepAt > t + 1) ambience.stepAt = t;
@@ -1139,7 +1154,7 @@ function ambienceEvents(b, t) {
       ambience.started++;
     }
   if (b.events === 'crackles')
-    for (const e of ambienceCrackles(b.ev, t, t + 0.3, r)) {
+    for (const e of ambienceCrackles(b.ev, t, t + 0.3, r, b.crackle)) {
       /* a few milliseconds of noise, band-passed at a random pitch, snapping in and dying away */
       const s = c.createBufferSource(),
         F = c.createBiquadFilter(),
@@ -1179,7 +1194,7 @@ function ambienceDriftTick(b, t) {
   }
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
-function soundPlacement(x, z, range) {
+export function soundPlacement(x, z, range) {
   const P = walkView.pl,
     C = walkView.C;
   if (!P) return null;
@@ -1188,15 +1203,6 @@ function soundPlacement(x, z, range) {
   const R = (C && C.right) || [1, 0, 0],
     dx = (x - P.x) * R[0] + (z - P.z) * R[2];
   return { v: Math.pow(1 - d / range, 1.6), pan: clamp(dx / 7, -1, 1) * 0.75, d };
-}
-function nearestSoundSource(list, get, range) {
-  let best = null;
-  for (const it of list || []) {
-    const [x, z] = get(it);
-    const w = soundPlacement(x, z, range);
-    if (w && (!best || w.d < best.d)) best = w;
-  }
-  return best;
 }
 export function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
@@ -1219,47 +1225,16 @@ export function updateAmbience() {
     (uiState.tab === 'walk' || (typeof activeBattle !== 'undefined' && activeBattle));
   const E = typeof environment !== 'undefined' && environment.on ? environment : null,
     sc = walk ? walkView.sc : null;
-  let pans = {};
+  const pans = {};
   if (sc) {
-    const put = (k, w, mul = 1) => {
-      if (w && w.v * mul > (T[k] || 0)) {
-        T[k] = w.v * mul;
-        pans[k] = w.pan;
-      }
-    };
     /* SND-10: the water near you is soundscape-here.js's (every kind, falls by height, the surf); the sea's own bed
        stays, coast-wide */
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
       T.sea = AMBIENCE_FIXED.sea_coast.gain;
       pans.sea = 0;
     }
-    const C0 = walkData().sc,
-      props = sc.props || [];
-    put(
-      'fire',
-      nearestSoundSource(
-        props.filter(p => {
-          const M = C0.props[p.k];
-          return M && (M.fx || []).some(e => e.k === 'fire');
-        }),
-        p => [p.x, p.z],
-        7
-      ),
-      0.35
-    );
-    const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
-    if (E && thru) {
-      T.rain = Math.min(1, E.rain) * 0.42 * thru;
-      T.wind = (E.storm * 0.4 + (E.climate === 'alpine' ? 0.16 : 0) + E.snow * 0.1) * thru;
-      pans.rain = pans.wind = 0;
-    }
-    /* thunder a moment after the flash */
-    if (E && E.flash > 0.9 && !ambience.flash) {
-      ambience.flash = 1;
-      const d = 0.5 + Math.random() * 1.6;
-      synthNoise(ambience.bus, { t: t + d, dur: 2.6, vol: 0.55, lp: 180 });
-      synthNoise(ambience.bus, { t: t + d + 0.1, dur: 1.2, vol: 0.25, lp: 420 });
-    } else if (E && E.flash < 0.5) ambience.flash = 0;
+    /* SND-14: the fire by its size, the rain, the wind and the thunder (from the weather's bolts, not the flash) are
+       nature-here.js's */
   }
   /* arriving somewhere: everything fades in */
   const sid = sc ? baseMapId() : null;
@@ -1275,7 +1250,10 @@ export function updateAmbience() {
       ambience.lpW.frequency.setTargetAtTime(muf ? 850 : 20000, t, 0.3);
     }
   }
-  if (sc) ambienceBeds(sc, E, T, pans, t);
+  if (sc) {
+    ambienceBeds(sc, E, T, pans, t);
+    natureHere(sc, E, T, pans, t);
+  }
   ambienceApply(T, pans, t);
   soundscapeHere(sc, E, t);
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
@@ -1344,6 +1322,15 @@ export function soundDebugLines() {
     /* SND-10: the water: live voices and their levels, sources, events played and dropped; the scene's emitters (made
        in ms, from the renderer's grid or the tiles, how many of each) */
     water: ambience.scape ? { ...ambience.scape.stats(), scene: ambience.scapeBuilt || null } : null,
+    /* SND-14: nature's one-shots (sources started, thunder rolls so far and now), the bolts heard, the last thunder's
+       distance and delay */
+    nature: ambience.naturePlayer
+      ? {
+          ...ambience.naturePlayer.stats(),
+          bolts: ambience.natureSt ? ambience.natureSt.bolts : null,
+          lastThunder: ambience.lastThunder || null,
+        }
+      : null,
     reverb: T && T.reverbStats ? T.reverbStats() : null,
     /* SND-11: the music's ensemble: which one the song names, whether it plays (or gb: GB Sounds, its notes not baked
        yet), GB Sounds, the songs made ready on arrival */
@@ -1373,8 +1360,7 @@ function ambienceBeds(sc, E, T, pans, t) {
     dt = 0.2,
     ev = ambience.ev,
     room = !!sc.room,
-    cave = sc.indoor && sc.far === 'cave',
-    ss = st.season || st.ss;
+    cave = sc.indoor && sc.far === 'cave';
   /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in updateAmbience) */
   const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
   const node =
@@ -1382,6 +1368,9 @@ function ambienceBeds(sc, E, T, pans, t) {
         ? LOCATIONS[saveData.trip.node]
         : null,
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
+  /* SND-14: nature-here.js reads these (the town's life, the patter on leaves) */
+  ambience.town = town;
+  ambience.trees = 0;
   if (thru) {
     const C0 = walkData().sc,
       P = walkView.pl;
@@ -1391,30 +1380,27 @@ function ambienceBeds(sc, E, T, pans, t) {
       const g = (C0.props[p.k] || {}).group || p.k;
       if (/tree|bush|hedge/.test(g)) trees++;
     }
+    ambience.trees = trees;
     T.leaves = Math.min(1, trees / 8) * 0.22 * (0.5 + 0.5 * (sc.wind || 1)) * (1 + (E ? E.storm : 0) * 0.8) * thru;
     pans.leaves = 0;
-    T.crickets = night * (1 - Math.min(1, rain)) * (town ? 0.05 : 0.11) * (ss === 'winter' ? 0.2 : 1) * thru;
+    /* SND-14: the crickets (insects by the biome and hour) and the town's life instead of its murmur are
+       nature-here.js's */
     pans.crickets = 0;
-    if (town) {
-      T.town = 0.13 * (1 - night * 0.6) * thru;
-      pans.town = 0;
-    }
-    /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS) */
-    ambienceBirds(t, BIRD_CALLS[sc.biome] || BIRD_CALLS._, town, day, rain, thru);
-    /* the farm's rooster at first light */
     const hr = typeof environmentHour === 'function' ? environmentHour() : 12;
+    /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS); SND-14: by
+       the hour, a dawn chorus, quiet at noon, the owl at night (one at a time) */
+    ambienceBirds(t, BIRD_CALLS[sc.biome] || BIRD_CALLS._, town, day, rain, thru, hr, night);
+    /* the farm's rooster at first light */
     if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) playBirdCall(t, 'rooster');
     /* the scrap yard: metal shifting somewhere, the crane's cable creaking when nobody is looking */
     if (sc.biome === 'bins' && Math.random() < dt * 0.035 * thru) playScrapClank(t);
-    if (night > 0.6 && !town && Math.random() < dt * 0.025 * thru) playOwlCall(t);
   }
   if (cave) {
     T.cave = 0.3;
     pans.cave = 0;
   }
+  /* SND-14: a room's tone by its kind is nature-here.js's; its clock ticks here */
   if (room) {
-    T.room = 0.16;
-    pans.room = 0;
     if ((sc.props || []).some(p => /clock/.test(p.k))) {
       if (!ev.tick || ev.tick < t - 1) ev.tick = t + 0.05;
       while (ev.tick < t + 0.25) {
@@ -1425,20 +1411,26 @@ function ambienceBeds(sc, E, T, pans, t) {
     }
   }
 }
-/* birds of the list L now and then (by day, fewer in the rain and in towns) */
-function ambienceBirds(t, L, town, day, rain, thru) {
+/* birds of the list L now and then (by day, fewer in the rain and in towns). SND-14: by the hour (hr): a dawn chorus
+   with short gaps, quiet at noon, by night the owl alone (logic/nature-sound.js natureBirds, natureBirdWait) */
+function ambienceBirds(t, L, town, day, rain, thru, hr = 10, night = 1 - day) {
   /* SND-8a: one at a time: the next call waits for the last to end, then a gap of about 10 s outside towns (rarer in
      one: logic/ambience-sound.js ambienceBirdWait); fewer by dusk, in the rain and through a wall */
-  if (!L.length || day <= 0.3 || thru <= 0) return;
-  const r = ambience.rng || Math.random;
-  if (ambience.birdAt == null || ambience.birdAt > t + 60) ambience.birdAt = t + ambienceBirdWait(r, town) * r();
+  const B = SOUNDSCAPE.nature && SOUNDSCAPE.nature.birds,
+    list = B ? natureBirds(B, L, hr, night, town) : L,
+    owl = list.length === 1 && list[0] === 'owl';
+  if (!list.length || (!owl && day <= 0.3) || thru <= 0) return;
+  const r = ambience.rng || Math.random,
+    wait = () => (!B ? ambienceBirdWait(r, town) : owl ? natureBetween(B.owlWait, r) : natureBirdWait(B, r, hr, town));
+  if (ambience.birdAt == null || ambience.birdAt > t + 90) ambience.birdAt = t + wait() * r();
   if (t < ambience.birdAt) return;
   let end = t;
-  if (r() < day * (1 - Math.min(1, rain) * 0.8) * thru) {
-    const k = L[Math.floor(Math.random() * L.length)];
-    if (Math.random() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
+  if (r() < (owl ? 1 : day) * (1 - Math.min(1, rain) * 0.8) * thru) {
+    const k = list[Math.floor(r() * list.length)];
+    if (k === 'owl') end = playOwlCall(t);
+    else if (r() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
   }
-  ambience.birdAt = end + ambienceBirdWait(r, town);
+  ambience.birdAt = end + wait();
 }
 /* SND-8a: a footstep at time t: each a little different (its pitch and level), the feet a little left and right, the
    natural grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep); on the
@@ -1446,6 +1438,14 @@ function ambienceBirds(t, L, town, day, rain, thru) {
 function ambienceStepPlay(ter, t) {
   const c = soundEngine.ctx;
   soundEngine.foot = soundEngine.foot ? 0 : 1;
+  /* SND-14: by the surface (soundscape.json nature.steps: grass, sand, dirt, gravel, stone, wood, snow, mud, wet,
+     carpet), played by audio/nature-player.js; ter is a terrain code or a surface's name */
+  const N = SOUNDSCAPE.nature;
+  if (ambience.naturePlayer && N && N.steps) {
+    const surface = N.steps.surfaces[ter] ? ter : natureStepSurface(N.steps, ter);
+    ambience.naturePlayer.step(ambience.bus, natureStep(N.steps, surface, ambience.natureRng, soundEngine.foot), t);
+    return;
+  }
   const S = ambienceStep(ter, ambience.rng || Math.random, soundEngine.foot),
     W = ambience.bus || soundEngine.fx;
   let dest = W;
@@ -1770,8 +1770,9 @@ function playScrapClank(t) {
       cut: 900,
     });
 }
+/* SND-14: it says when its call ends (the birds' one at a time) */
 function playOwlCall(t) {
-  const g = ambienceOutput((Math.random() - 0.5) * 1.2);
+  const g = ambienceOutput(((ambience.rng || Math.random)() - 0.5) * 1.2);
   [0, 0.42].forEach((d, i) =>
     synthVoice(g, {
       type: 'sine',
@@ -1784,6 +1785,7 @@ function playOwlCall(t) {
       vib: 3,
     })
   );
+  return t + 1;
 }
 function playClockTick(t, tock) {
   const g = ambienceOutput(0.15, true);

@@ -228,15 +228,16 @@ export function ambienceChirp(rate, f, seed) {
 }
 
 /**
- * a fire's crackles: clusters of one to three snaps, about 3.5 clusters a second at random (Poisson), each snap a
- * few milliseconds of band-passed noise at a random pitch and mostly quiet
+ * a fire's crackles: clusters of one to three snaps, about 3.5 clusters a second at random (Poisson; SND-14: rate, by
+ * the fire's size), each snap a few milliseconds of band-passed noise at a random pitch and mostly quiet
  * @param {{next: number}} st
  * @param {number} t0
  * @param {number} t1
  * @param {() => number} r
+ * @param {number} [rate] clusters a second
  * @returns {Array<{t: number, f: number, q: number, d: number, gain: number, pan: number}>}
  */
-export function ambienceCrackles(st, t0, t1, r) {
+export function ambienceCrackles(st, t0, t1, r, rate = 3.5) {
   const out = [];
   if (st.next < t0) st.next = t0;
   while (st.next < t1) {
@@ -251,7 +252,7 @@ export function ambienceCrackles(st, t0, t1, r) {
         gain: 0.15 + 0.85 * Math.pow(r(), 2.5),
         pan: pan * 0.25,
       });
-    st.next += -Math.log(1 - r()) / 3.5;
+    st.next += -Math.log(1 - r()) / (rate || 3.5);
   }
   return out;
 }
