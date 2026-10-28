@@ -333,7 +333,8 @@ const runIconPixels = (/** @type {string} */ k) =>
     im.onload = () => {
       const c = document.createElement('canvas');
       c.width = c.height = N;
-      const x = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+      /* read back once: kept off the GPU, so the read doesn't wait on the GPU's queue */
+      const x = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d', { willReadFrequently: true }));
       x.drawImage(im, 0, 0, N, N);
       ok(x.getImageData(0, 0, N, N).data);
     };

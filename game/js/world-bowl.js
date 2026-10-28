@@ -3858,8 +3858,9 @@ function worldBowlRunArt(name) {
   runPinArt.px[name] = null;
   const im = new Image();
   im.onload = () => {
+    /* read back once: kept off the GPU, so the read doesn't wait on the bowl's own drawing (6 s in software) */
     const cv = makeCanvas(36, 36),
-      x = cv.getContext('2d');
+      x = cv.getContext('2d', { willReadFrequently: true });
     x.drawImage(im, 0, 0, 36, 36);
     runPinArt.px[name] = x.getImageData(0, 0, 36, 36).data;
     worldBowl.dirty = true;
