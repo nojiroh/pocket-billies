@@ -16,6 +16,7 @@ import {
 import { musicArpAt, musicBassAt, musicDrumsAt } from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
+  MUSIC_STEM_LINES: [() => MUSIC_STEM_LINES],
   SCALES: [() => SCALES],
   SOUND_BAKE_BUDGET: [() => SOUND_BAKE_BUDGET],
   SOUND_BAKE_IMPULSE_SEC: [() => SOUND_BAKE_IMPULSE_SEC],
@@ -25,6 +26,7 @@ expose({
   TRACKER_GB_ARP: [() => TRACKER_GB_ARP],
   TRACKER_GB_BASS: [() => TRACKER_GB_BASS],
   midiToFrequency: [() => midiToFrequency],
+  musicStemsMake: [() => musicStemsMake, v => (musicStemsMake = v)],
   songRandom: [() => songRandom, v => (songRandom = v)],
   soundBakeBank: [() => soundBakeBank],
   soundBakeBytes: [() => soundBakeBytes, v => (soundBakeBytes = v)],
@@ -430,6 +432,19 @@ const TRACKER_GB_ARP = {
   drip: { type: 'sine', vol: 0.05, s: 0.2, r: 0.3, echo: 0.7 },
   chord7: { type: 'sine', vol: 0.03, a: 0.02, s: 0.5, r: 0.2 },
 };
+/* SND-11: a song's stems, each line's own small bus: lead (and the intro), counter, bass, harmony (the arpeggio),
+   pad (the night pad), and drums (the drums' own bus, which the game turns down standing still or at night). Plain
+   gains of 1, no panner (a centred StereoPanner costs 3 dB), so the gb path is today's sound */
+const MUSIC_STEM_LINES = ['lead', 'counter', 'bass', 'harmony', 'pad'];
+function musicStemsMake(c, out, drums) {
+  /** @type {Record<string, any>} */
+  const S = { drums };
+  for (const k of MUSIC_STEM_LINES) {
+    S[k] = c.createGain();
+    S[k].connect(out);
+  }
+  return S;
+}
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
     /* SND-8a: started counts the voices started (the debug log's sources a minute), late the steps scheduled after
@@ -784,6 +799,9 @@ export function trackerCreate(ctx, bus, opts = {}) {
     T.song.drums = c.createGain();
     T.song.drums.gain.value = L ? L.drums : 1;
     T.song.drums.connect(T.song.gain);
+    /* SND-11: each line plays into its own stem (the drums' is the drums' bus): plain gains of 1 under the fader, so the
+       gb path sounds as before; the layers (SND-13) move them */
+    T.song.stems = musicStemsMake(c, T.song.gain, T.song.drums);
     const now = c.currentTime;
     fader(T.song, g => {
       g.setValueAtTime(0, now);
@@ -840,7 +858,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       if (sg.step < 0) {
         const N = D.introNotes[sg.step + D.introSteps];
         if (N)
-          T.synthVoice(sg.gain, {
+          T.synthVoice(sg.stems.lead, {
             type: D.lead,
             freq: midiToFrequency(N[0]),
             t: sg.next,
@@ -861,7 +879,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         b = Math.floor(st / 16),
         i = st % 16,
         t = sg.next + (i % 2 ? spb * (D.swing || 0) : 0),
-        bus = sg.gain,
+        S = sg.stems,
         ch = D.prog[b],
         dg = D.deg,
         /* SND-4: four voices, as on the Game Boy: a pulse for the lead, a second pulse for the countermelody or the
@@ -873,7 +891,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         bassVoice = o =>
           !(waveLead && D.counterBars && D.counterBars[b]) &&
           T.synthVoice(
-            bus,
+            S.bass,
             !four
               ? o
               : waveLead
@@ -882,7 +900,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           );
       /* lead */ const L = D.notes[st];
       if (L)
-        T.synthVoice(bus, {
+        T.synthVoice(S.lead, {
           type: D.lead,
           freq: midiToFrequency(L[0]),
           t,
@@ -898,7 +916,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         });
       /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
       if (C)
-        T.synthVoice(bus, {
+        T.synthVoice(S.counter, {
           type: 'p12',
           freq: midiToFrequency(C[0]),
           t,
@@ -919,7 +937,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       if (ap) {
         const V = TRACKER_GB_ARP[(four ? 'four:' : '') + ap.kind] || TRACKER_GB_ARP[ap.kind];
         for (const n of ap.notes)
-          T.synthVoice(bus, {
+          T.synthVoice(S.harmony, {
             ...V,
             freq: midiToFrequency(n),
             t,
@@ -929,14 +947,13 @@ export function trackerCreate(ctx, bus, opts = {}) {
       }
       /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw; SND-11:
          musicDrumsAt) */
-      const db = sg.drums || bus;
       for (const h of musicDrumsAt(sg.hold ? 'none' : D.drums, i))
-        if (h.hit === 'kick') T.synthKick(db, t, h.vol);
-        else T.synthNoise(db, { t, ...h.gb, vol: h.vol });
+        if (h.hit === 'kick') T.synthKick(S.drums, t, h.vol);
+        else T.synthNoise(S.drums, { t, ...h.gb, vol: h.vol });
       /* v27: a soft pad under the night (SND-4: an `extra` song's only; a four-voice song has its night version) */
       if (!four && i === 0 && (Lv = levels()) && Lv.pad > 0.05)
         [0, 2, 4].forEach(x =>
-          T.synthVoice(bus, {
+          T.synthVoice(S.pad, {
             type: 'sine',
             freq: midiToFrequency(dg(ch + x) - 12),
             t,

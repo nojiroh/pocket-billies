@@ -616,3 +616,58 @@ test('SND-10: the reverb has a World send, scaled by the World slider', async ()
   T.reverbLevels(0.5, 0.25);
   assert.ok(Math.abs(w.gain.calls.at(-1)[1] - 0.2 * 0.8) < 1e-9, 'left out, the World level stays');
 });
+
+/* SND-11: a context whose nodes remember what they connect to and what made them */
+function wireContext() {
+  const made = [],
+    param = () => new Proxy({ value: 1 }, { get: (t, k) => (k in t ? t[k] : () => {}) }),
+    node = kind => {
+      const n = { kind, to: [], gain: param(), connect: x => n.to.push(x), disconnect: () => (n.to = []) };
+      made.push(n);
+      return n;
+    };
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() });
+  const c = new Proxy(
+    { currentTime: 0, sampleRate: 8000, made },
+    {
+      get: (t, k) =>
+        k in t
+          ? t[k]
+          : k === 'createGain'
+            ? () => node('gain')
+            : k === 'createStereoPanner'
+              ? () => node('panner')
+              : k === 'createBuffer'
+                ? () => ({ getChannelData: () => new Float32Array(8), length: 8 })
+                : any(),
+    }
+  );
+  return c;
+}
+
+test('SND-11: the gb path plays each line into its own stem: plain gains under the fader, no panner', () => {
+  const D = { ...MUSIC.songs.route, extra: false },
+    c = wireContext(),
+    T = trackerCreate(c, {}, { songs: { s: { ...D, night: false } } }),
+    seen = new Map();
+  const tap = k => (bus, o) => seen.set(bus, (seen.get(bus) || new Set()).add(k));
+  T.synthVoice = (bus, o) => tap(o.type)(bus);
+  T.synthNoise = tap('noise');
+  T.synthKick = tap('kick');
+  T.play('s');
+  clearInterval(T.timer);
+  c.currentTime = 4;
+  T.tick();
+  clearInterval(T.timer);
+  const S = T.song.stems;
+  assert.deepEqual(Object.keys(S).sort(), ['bass', 'counter', 'drums', 'harmony', 'lead', 'pad']);
+  assert.equal(S.drums, T.song.drums, "the drums' stem is the drums' own bus");
+  for (const k of ['lead', 'counter', 'bass', 'harmony', 'pad']) {
+    assert.equal(S[k].gain.value, 1, k);
+    assert.deepEqual(S[k].to, [T.song.gain], k + ' goes straight to the fader');
+  }
+  assert.ok(!seen.has(T.song.gain), 'nothing plays on the fader itself');
+  assert.ok(seen.get(S.lead).has(D.lead) && seen.get(S.bass).has('triangle') && seen.get(S.harmony).has('p12'));
+  assert.ok(seen.get(S.drums).has('kick') && seen.get(S.drums).has('noise'));
+  assert.ok(!c.made.some(n => n.kind === 'panner'), 'no StereoPanner on the gb path (a centred one costs 3 dB)');
+});
