@@ -937,7 +937,11 @@ def relics(pg, base):
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
     odds = pg.evaluate("[catchOdds('pyramid',1,false),(activeBattle.fx=null,catchOdds('pyramid',1,false))]")
-    if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
+    # PK-8: Steady Hand's 1.25, and Old School's 1.1 (the fixture holds three Trainer Classics: Steady Hand, Running
+    # Shoes, Trail Snacks)
+    sets = pg.evaluate("fxSetsOn(saveData.run.perks,PERKS)")
+    if sets != ['classics']: raise Exception(f'the Perk sets on: {sets}')
+    if abs(odds[0] - min(1, odds[1] * 1.25 * 1.1)) > 1e-9: raise Exception(f'the catch row: {odds}')
     pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
     if not until(pg, "!activeBattle", 20): raise Exception('the battle didn’t end')
     heal = pg.evaluate("uiState.modal=null;uiState.mq=[];saveData.team[0].hp=1;runArrivedFx();saveData.team[0].hp")
