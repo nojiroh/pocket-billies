@@ -562,6 +562,10 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   row as a **share** of the Moneys carried and its **most** (paid at arrive), inflict at battleStart, and the rules
   rewardPick, rerollFree and mapReveal (each rule's range from data-checks.js FX_RULE_N). Needs take **bots** (a
   scrapyard still ahead). `--only=relics` opens the 12 Wave C Perks, Tip Jar's share and most, Magnet's Needs.
+  **Wave D's kinds** (PK-6): copy (the Perk just above it in the list held; no fields), give (Moneys and **Bag items**
+  as `id:n` pairs, at take), and the rules cap (Perks held more), sideOpen, sideFind and eventHurt. Needs take **side**
+  (a side area still ahead). `--only=relics` opens the 11 Wave D Perks, Boarding Pass's Moneys and items, Rusty Key's
+  Needs.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,
