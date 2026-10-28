@@ -162,8 +162,8 @@ export function render() {
        reward, an event's answer) the coins fly there from what you pressed first */
     if (k === 'tse' && from != null && to > from) {
       pbFloat(el.closest('.tb-chip') || el, '+' + plural(to - from, 'Money'));
-      const from = recentPress();
-      if (from) pbGainFly(from, 'money', 'coin');
+      const at = recentPress();
+      if (at) pbGainFly(at, 'money', 'coin');
     }
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);
