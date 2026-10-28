@@ -156,6 +156,7 @@ import '../../game/js/logic/story-checks.js';
 import '../../game/js/logic/story-pick.js';
 import '../../game/js/logic/studio-layout.js';
 import '../../game/js/logic/studio-test-report.js';
+import '../../game/js/logic/style-dials.js';
 import '../../game/js/logic/surf.js';
 import '../../game/js/logic/svg-pixels.js';
 import '../../game/js/logic/time-of-day.js';
