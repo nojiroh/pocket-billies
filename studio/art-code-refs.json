@@ -130,7 +130,7 @@
   {
    "p": "next/palette.js",
    "at": [
-    "game/index.html:83"
+    "game/index.html:84"
    ]
   },
   {
@@ -149,7 +149,7 @@
   {
    "p": "next/rigs-next.js",
    "at": [
-    "game/index.html:82"
+    "game/index.html:83"
    ]
   },
   {
@@ -1677,8 +1677,8 @@
    "game/js/shop.js:179",
    "game/js/shop.js:189",
    "game/js/shop.js:258",
-   "game/js/sound.js:522",
-   "game/js/sound.js:1768",
+   "game/js/sound.js:526",
+   "game/js/sound.js:1772",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",

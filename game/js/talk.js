@@ -9,7 +9,8 @@ import { expose } from './test-globals.js';
 import { mapChatLines, playStoryScript, provide, residentHomeTalk, storyFreshTake, storyGiftOffer } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { parseLine, plainOf } from './logic/line-markup.js';
-import { reducedMotion } from './game-state.js';
+import { letterTimes } from './logic/talk-type.js';
+import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
@@ -20,6 +21,7 @@ expose({
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
   SPEAKER_NAMES: [() => SPEAKER_NAMES],
+  TALK_FX: [() => TALK_FX],
   TALK_PORTRAIT_SCALE: [() => TALK_PORTRAIT_SCALE],
   drawTalkPortrait: [() => drawTalkPortrait, v => (drawTalkPortrait = v)],
   talk: [() => talk, v => (talk = v)],
@@ -29,6 +31,7 @@ expose({
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => ((talkFolk = v), provide({ talkFolk }))],
   talkHide: [() => talkHide, v => (talkHide = v)],
+  talkLetters: [() => talkLetters, v => (talkLetters = v)],
   talkLine: [() => talkLine, v => (talkLine = v)],
   talkName: [() => talkName, v => (talkName = v)],
   talkTick: [() => talkTick, v => (talkTick = v)],
@@ -105,11 +108,62 @@ function talkEl() {
   talkBox.el = el;
   return el;
 }
+/** the effects a run's letters carry, as classes (game/css/talk-text.css); [slow] and [fast] only change the timing */
+const TALK_FX = ['b', 'i', 'big', 'small', 'wave', 'shake'];
+/* DL-2: the line's letters as spans (createElement and textContent only, never innerHTML: a name is text). A
+   visually hidden copy of the plain line is what a screen reader hears; the letters are hidden from it. Each word is
+   a span that doesn't break, so the line wraps between words as before and the box has its final size before the
+   first letter shows. Returns the letter spans by the parse's letter index (null for a space or a line break). */
+function talkLetters(line, parsed) {
+  line.textContent = '';
+  line.dataset.onePiece = '';
+  const sr = document.createElement('span');
+  sr.className = 'talk-sr';
+  sr.textContent = parsed.plain;
+  const glyphs = document.createElement('span');
+  glyphs.className = 'talk-glyphs';
+  glyphs.setAttribute('aria-hidden', 'true');
+  line.append(sr, glyphs);
+  const chars = [...parsed.plain],
+    fx = new Array(chars.length).fill('');
+  for (const r of parsed.runs) {
+    const cls = [];
+    for (const [k, v] of Object.entries(r.fx))
+      if (TALK_FX.includes(k)) cls.push(`fx-${k}`);
+      else if (k === 'c') cls.push(`fx-c-${v}`);
+    for (let i = r.from; i < r.to; i++) fx[i] = cls.join(' ');
+  }
+  /** @type {(HTMLElement | null)[]} */
+  const out = [];
+  let word = null,
+    k = 0;
+  chars.forEach((ch, i) => {
+    if (/\s/.test(ch)) {
+      word = null;
+      glyphs.append(ch);
+      out.push(null);
+      return;
+    }
+    if (!word) {
+      word = document.createElement('span');
+      word.className = 'w';
+      glyphs.append(word);
+    }
+    const l = document.createElement('span');
+    l.className = fx[i] ? `l ${fx[i]}` : 'l';
+    /* --i counts the letters of each effect run's wave and the order they arrive in */
+    l.style.setProperty('--i', String(k++));
+    l.textContent = ch;
+    word.append(l);
+    out.push(l);
+  });
+  return out;
+}
 /* one line; the box stays open for the next one until talkHide() */
 export function talkLine(who, text, expr, o = {}) {
   const el = talkEl();
-  /* DL-1: the line's markup read once (logic/line-markup.js); the box types its plain text until DL-2 draws the
-     effects, so talkBox.cur.text stays plain */
+  /* DL-1: the line's markup read once (logic/line-markup.js); talkBox.cur.text stays the plain line. DL-2: its letters
+     drawn as spans with their effects (talkLetters), shown on the times logic/talk-type.js gives */
   const parsed = parseLine(text || '');
   expr = expr || parsed.expr;
   text = parsed.plain;
@@ -122,7 +176,13 @@ export function talkLine(who, text, expr, o = {}) {
     line = el.querySelector('.talk-line');
   el.querySelector('.talk-who').textContent = o.name || talkName(who);
   box.classList.remove('done');
-  line.textContent = '';
+  const letters = talkLetters(line, parsed),
+    chars = [...text],
+    speed = reducedMotion
+      ? 'instant'
+      : (typeof saveData !== 'undefined' && saveData?.preferences?.textSpeed) || 'normal',
+    times = letterTimes(parsed, speed).at,
+    style = parsed.style.find(s => s === 'shout' || s === 'whisper' || s === 'think') || '';
   /* UI-2: each new line in an open box, the bubble pops a little: a squash, then a spring back (the `scale`
      property, so the box's own transform stays) */
   if (shown && !reducedMotion && box.animate)
@@ -142,19 +202,24 @@ export function talkLine(who, text, expr, o = {}) {
     let blipN = 0;
     const step = () => {
       if (talkBox.cur !== st) return;
-      const n0 = st.n;
-      st.n = reducedMotion ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
-      line.textContent = text.slice(0, st.n);
+      const n0 = st.n,
+        now = performance.now() - st.t0;
+      let n = n0;
+      while (n < chars.length && times[n] <= now) n++;
+      st.n = n;
+      for (let i = n0; i < n; i++) letters[i]?.classList.add('on');
       /* phase 06-3: the typing hook (phase 07's mouth animation listens here): each new character, who says it */
       if (talkBox.onType.length)
-        for (let i = n0; i < st.n; i++)
-          for (const f of talkBox.onType) f({ who, ch: text[i], n: i + 1, done: i + 1 >= text.length });
-      const b = Math.floor(st.n / 3);
-      if (b > blipN && st.n < text.length) {
+        for (let i = n0; i < n; i++)
+          for (const f of talkBox.onType) f({ who, ch: chars[i], n: i + 1, done: i + 1 >= chars.length });
+      /* the voice every 3 letters, in the line's style (a thought is silent) */
+      const b = Math.floor(n / 3);
+      if (b > blipN && n < chars.length) {
         blipN = b;
-        if (typeof soundEffect === 'function' && /\w/.test(text[st.n] || '')) soundEffect('blip', { who });
+        if (typeof soundEffect === 'function' && style !== 'think' && /\w/.test(chars[n] || ''))
+          soundEffect('blip', { who, style, big: !!letters[n]?.classList.contains('fx-big') });
       }
-      if (st.n >= text.length) {
+      if (n >= chars.length) {
         st.typing = false;
         box.classList.add('done');
         return;

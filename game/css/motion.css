@@ -31,6 +31,20 @@
     --m-stamp: m-fade;
   }
 }
+/* DL-2: a spoken line's letters (talk-text.css) under Reduced: they just appear (no rise, pop, shake or wave). Calm
+   keeps them: they move because the line says so */
+[data-motion='reduced'] .talk-glyphs .l {
+  transition: none;
+  translate: none;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]) .talk-glyphs .l {
+    transition: none;
+    translate: none;
+    animation: none;
+  }
+}
 /* Calm: Full without idle loops (things that move with no cause: breathing, swaying, glows, the dialogue bubble's
    drift). Loops that say something stay (a Billie hiding, the Actions button's news, an egg ready, aim and hints) */
 [data-motion='calm'] :is(.m-idle, .fgcam canvas, .title-coin, .bloom),
@@ -719,5 +733,44 @@ html:not([data-idle~='bloom']) .bloom {
 @keyframes v05Grow {
   from {
     width: 0;
+  }
+}
+
+/* DL-2: a spoken line's letters (talk-text.css): [b]'s pop, [shake]'s once-only jitter in whole pixels, [wave]'s bob */
+@keyframes talk-pop {
+  from {
+    scale: 1.3;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes talk-shake {
+  0% {
+    transform: translate(2px, 0);
+  }
+  20% {
+    transform: translate(-2px, 1px);
+  }
+  40% {
+    transform: translate(1px, -1px);
+  }
+  60% {
+    transform: translate(-1px, 0);
+  }
+  80% {
+    transform: translate(1px, 1px);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes talk-wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
   }
 }
