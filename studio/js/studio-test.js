@@ -589,10 +589,13 @@ async function tools(G, T, fail, stopped, step) {
         if (!G.battleFx.paused || at < want - 0.01 || at > want + 1000 / 24 + 17)
           throw new Error(`the seek to ${want} ms held at ${at} ms (paused: ${G.battleFx.paused})`);
         G.battleFxPause(false);
-        await wait(400);
-        const moved = B.t - G.battleFx.t0 > at;
+        /* a frame drawn in software can take seconds: wait for the stage's clock to move, not a fixed time */
+        const moved = await until(() => B.t - G.battleFx.t0 > at, 8000).then(
+          () => true,
+          () => false
+        );
         G.battleFx.clip = null;
-        if (!moved) throw new Error('the stage did not go on after the hold');
+        if (!moved) throw new Error('the stage did not go on after the hold (8 s)');
         T.battleFx = { loadMs, rows, steps: TL.steps.length, seekMs, at: r1(at) };
       } finally {
         Object.assign(P, was);
