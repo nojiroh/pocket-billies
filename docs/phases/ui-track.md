@@ -878,6 +878,22 @@ its own branch, since main may not hold it yet), with these same rules. Until UI
 the seconds-long ones (lint, typecheck, unit tests, check:data, check:modules) still run, as the edit hook runs them
 anyway. After UI-18, one session runs every skipped check and fixes what they find.
 
+As run (2026-10-27 to 28):
+- `track/ui` was about 220 commits behind main. So from UI-11 on, each step branched from the finished branch it built
+  on (`claude/ui-<nn>-<words>`), merged main and the other finished branches it needed, and opened its draft PR into
+  main. Each PR shows the earlier steps' commits until they merge.
+- After UI-11 the owner added: "Automatically start the next session after done, skip the checks until after all ui
+  is done". From then on the steps ran lint, typecheck, unit tests, check:data and check:modules, and left the browser
+  checks to one last session on `claude/ui-checks-all`.
+- They finished in this order:
+  - UI-8b (#276), UI-11 (#280), UI-12 (#282), UI-8c (#281), UI-13 (#284), UI-14a (#286);
+  - UI-14b (#288). It left the battle plates to UI-16b, because UI-15 had not pushed yet;
+  - UI-15 (#294), UI-16a (#297);
+  - UI-18 (#298), after the world map track's WM-5b (#293) and WM-6 (#296), which the owner asked to start;
+  - UI-16b (#299), with the style track's SY-1 to SY-3 (#289) and the VFX track's VFX-5 (#295) merged in;
+  - UI-17 (#300);
+  - then the check session.
+
 ## UI-11: the colour code as data (the plan, 2026-10-27)
 Built on the session's own branch (a cloud session pushes only there), from main, which already holds `track/ui`;
 its PR goes to main, as UI-10's did (a PR into `track/ui` would carry main's 220 newer commits with it).
