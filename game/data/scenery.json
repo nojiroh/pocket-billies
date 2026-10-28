@@ -11823,7 +11823,7 @@
    "model": "scene/next/models/sky_portal.json",
    "ppm": 32,
    "vary": {"rot":0,"lean":0,"size":0},
-   "glow": {"c":"#8FD8FF","r":9,"y":6.5,"day":0.6},
+   "glow": {"c":"#8FD8FF","r":9,"y":6.5,"day":0.6,"light":0.5},
    "fx": [
     {"k":"portal","x":0,"y":-208,"r":4.2}
    ],
@@ -11835,7 +11835,7 @@
       "scene/next/decals/sky_portal_inner.png": "scene/next/decals/sky_portal_inner_gold.png",
       "scene/next/decals/sky_portal_core.png": "scene/next/decals/sky_portal_core_gold.png"
      },
-     "glow": {"c":"#FFC94A","r":9,"y":6.5,"day":0.6},
+     "glow": {"c":"#FFC94A","r":9,"y":6.5,"day":0.6,"light":0.5},
      "name": "Sky portal (gold)"
     }
    ],

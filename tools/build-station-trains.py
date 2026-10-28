@@ -688,9 +688,9 @@ def add_props(C):
     blue = [portal_disc(f'sky_portal_{k}', blue_c, k, m) for k, m in zip(kinds, sizes)]
     gold = [portal_disc(f'sky_portal_{k}_gold', gold_c, k, m) for k, m in zip(kinds, sizes)]
     C['sky_portal'] = ISL.new_prop('sky_portal', 'Sky portal', sky_portal(blue), shadow=0, tags=('hub', 'station'),
-                                   vary=FIXED, glow={'c': '#8FD8FF', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6},
+                                   vary=FIXED, glow={'c': '#8FD8FF', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6, 'light': 0.5},
                                    fx=[{'k': 'portal', 'x': 0, 'y': -round(PORTAL_ZC * PPM), 'r': 4.2}],
-                                   variants=[{'swap': dict(zip(blue, gold)), 'glow': {'c': '#FFC94A', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6},
+                                   variants=[{'swap': dict(zip(blue, gold)), 'glow': {'c': '#FFC94A', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6, 'light': 0.5},
                                               'name': 'Sky portal (gold)'}], tunnel=TUNNEL,
                                    about='The portal (cutscenes track A): floating on its own in the sky out to sea, its '
                                    'glowing layers stacked for depth, nothing but light; its glow, mist and motes are the fx portal (walk/effects.js); '
