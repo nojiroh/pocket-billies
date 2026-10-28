@@ -2,6 +2,93 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-3 - Wave A, the battle kit - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-2's d6649d4; main already merged: nothing new at
+07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 7, "Corrected
+in PK-3".
+- The plan (as set at the start): (1) the six kinds Wave A needs, one kind per commit with its tests, schema, data
+  checks, types and Studio input: crit (stages; at `when: move` the move is critical, for Click Pen's every 8),
+  immune (brn, slp, par, sandstorm, stones), inflict (a status with a chance at a hit, on the battle's seeded stream,
+  chances together at most 50%), chip (Hazmat's half burn), first (Alarm Clock on turn 1), revive (Warranty Card at a
+  wipe in checkFaints); (2) the 11 other pictures as grids; (3) the 15 Perks in perks.json with their pictures, fixing
+  tests that pinned offers; (4) a battle test per Perk and all 15 at once; (5) the counters on screen ("5/8",
+  "VOID"); (6) the contact sheets; (7) the Studio check; (8) docs. Plot Armor, Rubber Stamp, Screen Protector, Power
+  Bank and Mic Drop use PK-1's kinds with conditions and once.
+- Changed (14 commits):
+  - **effects.js**: kinds `crit` (`FX_CRIT` 3, `fxCrit`), `immune` (`FX_IMMUNE`, `fxImmune`), `inflict` (`FX_CHANCE`
+    0.5, `fxInflictPick`: one roll for the rows acting at a hit), `chip` (`FX_CHIP`, `fxChip`), `first`, `revive`.
+  - **Battle** (battle-engine.js): calcDamage adds crit stages and a forced crit (`b.fxCritK`, set at the move moment;
+    the roll is still made); `inflict` and a move's self-status check `fxImmuneSay`; the Sandstorm and stones check
+    `fxImmuneTo`; endTurn's burn takes `fxChip`; `fxInflict` after the hit moment; `fxFirstActs` in the turn's order
+    (within priority); `fxRevive` before a loss in checkFaints (every Billie back with its share, sent out again).
+    With no Perks nothing changes: no new roll, the same order, the same sums.
+  - **Run**: run-loop.js `runImmune`: an event's `status` skips a team holding the guard (encounter-screen.js).
+  - **Data**: perks.json the 15 Wave A Perks (6 common, 5 uncommon, 4 rare) with `img`, three with a `say` line;
+    perks.schema.json the six kinds; data-checks.js `fxKindProblems`, `FX_WHEN_KINDS` crit (move) and inflict (hit),
+    `FX_ONCE_KINDS`, "an immune row" in the messages (`fxA`); game-data.d.ts the six kinds.
+  - **Screens**: perks.js `perkCount`; the Perks tab's row and the "Let one go" cards show it after the rarity
+    ("Uncommon · 5/8", "Rare · VOID").
+  - **Art**: tools/art/icon-grids/perks.json the 11 new grids; game/art/perks/ 15 SVGs written by build-icons;
+    validation/icon-sheets/perks-{light,dark}.png regenerated.
+  - **Studio**: the Perks editor's inputs for the six kinds (Once offered for revive); check-studio-github.py
+    `--only=relics` opens the 15 and checks every row renders with no error.
+  - Tests: battle-perks-wave-a.test.mjs (new, 25 tests), data-checks (good rows and 15 planted faults, the schema with
+    ajv), perks.test.mjs (perkCount; "most Perks turn up" over 120 runs, was 40), check-fast's Perks step (the tab's
+    counters).
+  - Docs: perks-track.md (PK-3 done, "Corrected in PK-3"), ROADMAP, STUDIO.md, TESTING.md.
+- Risky:
+  - Every run battle holding a Perk builds a context per hit for crit and per turn for first (`fxBattleCtx`); fine in
+    the tests' timing, not measured on a phone.
+  - Revive sends the Billies out again through doSwitch: the foe's sharp stones hit them, and switch-in Perks fire. In
+    a double battle both places come back (tested); the Alpha format (three of yours) is not tested.
+  - Click Pen's forced crit is spent if that attack misses or is blocked.
+  - Balance: every number is a placeholder; Hot Sauce and Joy Buzzer stack to 25% on the hits each covers, the cap
+    only matters past 50%.
+  - UI-14a/b (#286, #288) restyle the same Perks tab row and cards: whoever lands second merges `perkCardHTML` and
+    `renderPerks`.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1605 at the start, 1630 at the end, all passing); before every commit check:modules, format:check,
+  check:data (176 files fine; its two bridge warnings are main's) and build; `check:smoke` 6/6 on every commit
+  touching game/ (Python Playwright 1.63.0). Golden battles unchanged (no snapshot remade). Faults planted once and
+  seen red: Click Pen's forced crit removed (2 tests), the Studio's chip input removed ("No such kind: chip").
+  `check:fast --only=perks` ok (its new counter step was red once: the row's `data-count` attribute fed ui.js's
+  count-up, now `data-perk-count`). `check-studio-github.py --only=relics` ok with its new Wave A step. `npm run
+  test:slow` 103 of 103. `node tools/build-icons.mjs perks --check` fine (closest silhouettes 88%: Field Notebook and
+  Lost Property Form, and the new Clinic Card and Power Bank). **The run sim**: `run-sim.mjs --runs=50` stops in scene
+  mode with "runSceneParams: node 8 has no exit south2" on main 07c9b28 too (from 5 runs; not this step's, recorded
+  in a PR #301 comment); `--runs=50 --balance` finishes on this branch (50 runs, all lost before a Perk pick, as
+  before). Full quick check on beb5c39: 41 steps, 38 passed; the 3 PROBLEMs are main's as PK-1 and PK-2 recorded (Terraces "props in the air: train_station", RL-8 "crossed into Lakeside Route but its view never showed", "room light"). CI on #301: lint and rules green; smoke red only on the two Studio steps with 404s for `game/art/billionaires/*.png` (main's, PK-1's PR comment; noted again in PK-3's). One local `npm test` run while the quick check ran had the 1,000-map timing test at 1691 ms of its 1,000 ms budget (CPU shared; PK-2 saw the same on CI); it passed on every other run.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 11 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Laser Pointer (a steel pointer on the diagonal, a 3 px red beam, a red dot with a cream centre), Screen
+    Protector (a slate phone, an ice screen cracked across: the crack reads as an X, a candidate to redraw), Power
+    Bank (a slate brick, a gold bolt, a green light, a steel port), Joy Buzzer (a steel octagon disc, a red button,
+    two gold-dark zaps), Hot Sauce (a red bottle, green cap, a cream label with a red chili), Oven Mitts (one-colour
+    red, quilted with dark diagonals, the thumb a seamed letter, a dark cuff and loop), Noise-Cancelling Headphones
+    (one-colour violet, a band and two cups with dark cushions), Rubber Boots (one-colour gold wellington, dark band,
+    sole and pull tab, a seamed toe cap: its pale top half is the weakest read), Hazmat Suit (a gold suit, a wide hood
+    with a band of ice visor, a slate filter, a dark belt and gloves), Alarm Clock (a red octagon, cream face, slate
+    hands and feet, gold bells), Plot Armor (a steel breastplate with a gold trim and a stone ridge). The 4 PK-0
+    samples (Rubber Stamp, Click Pen, Warranty Card, Mic Drop) are written as drawn.
+  - Texts changed from the drafts: Click Pen "Every 8th attack" (status moves don't count), Power Bank "ends a turn
+    below a quarter of its HP heals 25% of it" (it is read at a turn's end), Alarm Clock without "always" (a foe's
+    priority move still goes first). Lines: "Rubber Stamp: Approved!", "Click Pen: Click! X lines up a critical
+    hit.", "Screen Protector: X took only half the hit.", "Joy Buzzer kicked in!", "Oven Mitts kept X from being
+    burned.", "Alarm Clock: X moves first.", "Warranty Card: your team got back up!".
+  - Rarities as the plan: Rubber Stamp, Laser Pointer, Screen Protector, Oven Mitts, Headphones, Rubber Boots common;
+    Click Pen, Power Bank, Joy Buzzer, Hot Sauce, Hazmat Suit uncommon; Mic Drop, Alarm Clock, Plot Armor, Warranty
+    Card rare.
+  - "VOID" for any spent once-a-run row (only Warranty Card has one now); counters on held Perks only.
+  - An event's status skips the whole team when a guard holds; the Sandstorm and stones are kept off without a line.
+  - Every seed's offers changed (the pool follows the file's order; accepted, as SP-6 did).
+- Phone checks to do (listed, not waited for): a run battle holding Click Pen: the Perks tab counts "n/8" and the 8th
+  attack is critical with its line; Warranty Card at a wipe: the team gets up, the tab says VOID; Alarm Clock against
+  a faster foe on turn 1; the 11 new pictures crisp at 72 and 36 px, light and dark.
+- Next: PK-4 (Wave B: types, team and weather; `needs`, `tags` and the bias; perks.test.mjs:41 rewritten for
+  relevance) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-3-done` on this entry's commit.
+
 ### Perks track PK-2 - the art pipeline - 2026-10-28
 Branch `track/perks` (this session's outcome branch, from PK-1's c5e12cc1; main already merged: nothing new at
 07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
