@@ -640,7 +640,7 @@ html[data-targets='big'] .set-tabs button {
   --t-team: #d9532f;
   --t-guide: #7d52c2;
   --t-bag: #b97a12;
-  --t-profile: #c24a86;
+  --t-profile: #b03d78;
   --spring: cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 @media (prefers-color-scheme: dark) {
