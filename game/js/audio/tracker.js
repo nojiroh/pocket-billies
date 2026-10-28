@@ -14,6 +14,8 @@ import {
   musicDrumsAt,
   musicEnsembleNeeds,
   musicEnsembleStep,
+  musicJingleNeeds,
+  musicJingleParts,
 } from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -571,6 +573,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     o.start(t);
     o.stop(t + Math.max(a + d, dur) + r + 0.02);
+    /* SND-17: its source and gain, as sampleVoice returns them (a jingle on an ensemble waits for its last note) */
+    return { source: o, gain: g };
   };
   T.synthNoise = (out, { t, dur = 0.05, vol = 0.2, hp = 0, lp = 0, bp = 0, q = 1 }) => {
     T.started++;
@@ -1130,10 +1134,124 @@ export function trackerCreate(ctx, bus, opts = {}) {
       sg.next += spb;
     }
   };
+  /* ---------- SND-17: jingles on an ensemble ----------
+     A jingle (music.json jingles) that names an ensemble plays on it once its notes are baked and while GB Sounds is
+     off: each part reads a line of the jingle (logic/music-patterns.js musicJingleParts) into a gain of its own (a
+     panner off centre, a send to the reverb), on the bus the jingle is given. Until then, and with GB Sounds on, the
+     8-bit jingle plays: today's code below, kept as it was */
+  T.jingleEnsemble = J => (J && J.ensemble && J.ensemble !== 'gb' && ensembles()[J.ensemble]) || null;
+  /* the baked notes it plays: instrument -> midi notes (null: an 8-bit jingle) */
+  T.jingleNeeds = J => {
+    const E = T.jingleEnsemble(J);
+    return E ? musicJingleNeeds(J, E, soundBakeBank.recipes) : null;
+  };
+  T.jingleReady = J => {
+    const N = T.jingleNeeds(J);
+    if (!N) return false;
+    for (const [id, notes] of Object.entries(N)) {
+      const B = soundBakeEntry(id, c);
+      if (!B || soundBakeZonesFor(B, notes).some(k => !B.zones[k])) return false;
+    }
+    return true;
+  };
+  /* its zones baked in the bank's slices (and the reverb made), as T.prepare does a song's. Resolves true when ready */
+  T.jinglePrepare = J => {
+    const N = T.jingleNeeds(J);
+    if (!N) return Promise.resolve(false);
+    const waits = Object.entries(N).map(([id, notes]) => {
+      const B = soundBakeEntry(id, c);
+      return B ? soundBakeWant(B, soundBakeZonesFor(B, notes)) : null;
+    });
+    if (T.verbOk() && T.jingleEnsemble(J).parts.some(P => P.verb > 0)) waits.push(T.reverbReady());
+    return Promise.all(waits).then(() => true);
+  };
+  /* the song's duck under a jingle, from t0 to its end: to 0.15 of its level, back over 0.8 s */
+  const duckUnder = (t0, end) => {
+    fader(T.song, g => {
+      g.cancelScheduledValues(t0);
+      g.setValueAtTime(g.value, t0);
+      g.linearRampToValueAtTime(0.15 * T.song.level, t0 + 0.1);
+    });
+    fader(T.song, g => {
+      g.linearRampToValueAtTime(0.15 * T.song.level, end);
+      g.linearRampToValueAtTime(T.song.level, end + 0.8);
+    });
+  };
+  const jingleOn = (J, E, bpm, out, o) => {
+    const spb = 60 / bpm / 4,
+      t0 = c.currentTime + 0.05,
+      music = out === bus,
+      { notes, steps } = musicJingleParts(J, E, { shift: o.shift || 0, instruments: soundBakeBank.recipes }),
+      trim = Math.pow(10, (E.trim || 0) / 20),
+      nodes = [];
+    const parts = E.parts.map(P => {
+      const g = c.createGain();
+      g.gain.value = trim;
+      nodes.push(g);
+      if (P.pan) {
+        const pn = c.createStereoPanner();
+        pn.pan.value = P.pan;
+        g.connect(pn);
+        pn.connect(out);
+        nodes.push(pn);
+      } else g.connect(out);
+      if (P.verb > 0 && T.verbOk()) {
+        const v = c.createGain();
+        v.gain.value = P.verb;
+        g.connect(v);
+        v.connect(T.reverbSend(music ? 'music' : 'sfx'));
+        nodes.push(v);
+      }
+      return g;
+    });
+    /* the parts' nodes go when the last note has ended (never on a timer: an offline render plays later) */
+    let live = 0;
+    const done = () => --live === 0 && nodes.forEach(n => n.disconnect());
+    for (const N of notes) {
+      const P = E.parts[N.part],
+        t = t0 + N.at * spb,
+        h = N.inst
+          ? T.sampleVoice(parts[N.part], {
+              inst: N.inst,
+              midi: N.m,
+              t,
+              dur: N.len * spb * 0.92,
+              vol: N.vel,
+              r: P.line === 'pad' ? 0.6 : 0.3,
+            })
+          : T.synthVoice(parts[N.part], {
+              type: N.wave,
+              freq: midiToFrequency(N.m),
+              t,
+              dur: N.len * spb * 0.9,
+              /* a chip lead at level 1 plays as loud as the 8-bit jingle's (0.12) */
+              vol: N.vel * (0.12 / MUSIC_ENSEMBLE_VEL.lead),
+              s: 0.6,
+              echo: P.line === 'lead' ? 0.2 : 0,
+              echoTo: music ? T.echoIn : T.echoFx,
+            });
+      if (h && h.source) {
+        live++;
+        const was = h.source.onended;
+        h.source.onended = e => {
+          if (was) was.call(h.source, e);
+          done();
+        };
+      }
+    }
+    if (!live) nodes.forEach(n => n.disconnect());
+    const end = t0 + steps * spb;
+    if (T.song && o.duck !== false) duckUnder(t0, end);
+    return end;
+  };
   /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
      of its level for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
-     leaves the song alone (a coin on the payout) */
+     leaves the song alone (a coin on the payout). SND-17: o.jingle, the jingle's record: on its ensemble when it names
+     one (its notes baked, GB Sounds off); the first time its notes are asked for and the 8-bit jingle plays */
   T.jingle = (notes, bpm, type, out, o = {}) => {
+    const E = !T.gbOn() && T.jingleEnsemble(o.jingle);
+    if (E && T.jingleReady(o.jingle)) return jingleOn(o.jingle, E, bpm, out, o);
+    if (E) T.jinglePrepare(o.jingle);
     const spb = 60 / bpm / 4,
       t0 = c.currentTime + 0.05,
       up = o.shift || 0,

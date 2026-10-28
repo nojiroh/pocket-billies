@@ -468,7 +468,8 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
 }
-/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave); o.shift moves it by
+/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave; SND-17: o.bpm, the battle's
+   level up at 180); on its ensemble when it names one (tracker.js T.jingle); o.shift moves it by
    semitones, o.duck false plays it over the song without ducking it (and doesn't hold the music sync). Logs
    'jingle <name>' in soundEngine.log (in memory, never sent). Returns how long it lasts (s), 0 when silent */
 export function jinglePlay(id, o = {}) {
@@ -476,8 +477,11 @@ export function jinglePlay(id, o = {}) {
   if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
   const out = o.bus || soundEngine.fx,
     end =
-      soundEngine.tracker.jingle(J.notes, J.bpm || 150, J.wave || 'p25', out, { shift: o.shift, duck: o.duck }) -
-      soundEngine.ctx.currentTime;
+      soundEngine.tracker.jingle(J.notes, o.bpm || J.bpm || 150, J.wave || 'p25', out, {
+        shift: o.shift,
+        duck: o.duck,
+        jingle: J,
+      }) - soundEngine.ctx.currentTime;
   if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
   soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
   return end;
