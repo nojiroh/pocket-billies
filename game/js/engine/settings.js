@@ -254,6 +254,10 @@ export const ENGINE_DEFAULTS = {
   /* HB-3: the hub's world map (the floating island): its lagoon and falls, and how much of the island's own detail it
      draws; the phone's fallbacks */
   worldMap: { lagoon: true, falls: 3, treeModels: true, treeFar: 0, fences: true, bridges: true },
+  /* characters track CH-2 and CH-3 (the spike): people as small 3D figures baked into pixel pictures
+     (game/js/figures.js), off; which figure you are, the style (the pixel puppet or the plain 3D figure), how many
+     pixels a metre they are baked at, how many ways round, their outline, and townsfolk as figures too */
+  people: { figures: false, figure: 'rogue', style: 'pixel', density: 32, yawSteps: 16, outline: true, folk: false },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -1114,6 +1118,54 @@ export const ENGINE_SPEC = [
         'bool',
         'On a sea coast the water comes in and goes out twice a day, covering the wet sand and leaving tide pools.',
       ],
+    ],
+  ],
+  [
+    'people',
+    'People',
+    [
+      [
+        'figures',
+        'Figures (test)',
+        'bool',
+        'Characters track spike: you and the test maps’ figures drawn as small 3D figures baked into pixel pictures. Off: people as they are.',
+      ],
+      [
+        'figure',
+        'Your figure',
+        'sel',
+        [
+          ['rogue', 'Stand-in (CC0 model)'],
+          ['mannequin', 'Mannequin (code)'],
+        ],
+        'Which figure you are (and townsfolk, with them on).',
+      ],
+      [
+        'style',
+        'Figure style',
+        'sel',
+        [
+          ['pixel', 'Pixel puppet'],
+          ['smooth', 'Plain 3D'],
+        ],
+        'Pixel puppet: toon bands and an outline on the pixel grid. Plain 3D: the same figure, smooth, for comparison.',
+      ],
+      [
+        'density',
+        'Figure pixels a metre',
+        16,
+        64,
+        4,
+        'How fine the figures are baked: 32 matches the ground and props.',
+      ],
+      ['yawSteps', 'Figure turns', 8, 32, 8, 'How many ways round a figure is drawn: 8, 16 or 32 (24 draws 16).'],
+      [
+        'outline',
+        'Figure outline',
+        'bool',
+        'The dark plum outline round a figure, and inside it where one part stands in front of another.',
+      ],
+      ['folk', 'Townsfolk as figures', 'bool', 'Townsfolk walking about are figures too (yours).'],
     ],
   ],
   [

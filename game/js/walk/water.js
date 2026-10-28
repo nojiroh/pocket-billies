@@ -18,6 +18,7 @@ import {
   spriteFrame,
 } from '../hooks.js';
 import { pictureRight } from '../logic/prop-turn.js';
+import { personPicture } from '../logic/person-view.js';
 import { gpuTag } from '../engine/gpu-counters.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
@@ -163,7 +164,8 @@ export function reflectionPass(items, C, rw, rh, X) {
   /* phase 20 E10: as instances while Engine > Quality "Pictures in batches" is on (walk/sprites.js) */
   if (drawReflectionRuns(RC, C, Object.assign({}, X, { shadow: null }), pics, SF)) pics.length = 0;
   for (const it of pics) {
-    gpuTag(it.voxImg ? 'modelPic' : 0); /* R1 measure: a model's picture layer counted apart */
+    /* R1 measure: a model's picture layer counted apart; CH-1: and a person's */
+    gpuTag(it.voxImg ? 'modelPic' : personPicture(it.im) ? 'person' : 0);
     const T = imageTexture(it.im);
     if (!T) continue;
     /* phase 09 batch 9: a turned picture's reflection turns with it (logic/prop-turn.js pictureRight) */
@@ -259,7 +261,8 @@ function waterLife() {
           y: walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0,
           a: 0,
         });
-        if (typeof soundEffectAt === 'function') soundEffectAt('plop', x, z);
+        /* SND-10: a jumping fish's splash */
+        if (typeof soundEffectAt === 'function') soundEffectAt('plop', x, z, { size: 0.4 });
       }
     });
   if (engineSetting('water', 'rings') && !walkRenderer.bt && !reducedMotion) {
