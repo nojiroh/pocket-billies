@@ -282,3 +282,337 @@ test('restart starts a playing song again (a new battle with the same song); wit
   assert.equal(again.step, -16, 'from its intro');
   assert.ok(again.hold);
 });
+
+test('SND-8b: a song with echo 0 sends nothing to the echo; one with none written sends 0.15', () => {
+  const leadEcho = D => {
+    const c = fakeContext(),
+      T = trackerCreate(c, {}, { songs: { s: D } }),
+      out = [];
+    T.synthVoice = (bus, v) => v.type === D.lead && out.push(v.echo);
+    T.synthNoise = T.synthKick = () => {};
+    T.play('s');
+    clearInterval(T.timer);
+    for (let i = 0; i < 32; i++) {
+      c.currentTime = T.song.next - 0.13;
+      T.tick();
+    }
+    return [...new Set(out)];
+  };
+  const plain = { ...town };
+  delete plain.echo;
+  assert.deepEqual(leadEcho({ ...town, echo: 0 }), [0]);
+  assert.deepEqual(leadEcho(plain), [0.15]);
+});
+
+/** a context whose gains record what is scheduled on them: [method, value, time] */
+function recordingContext() {
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() }),
+    gains = [];
+  const param = () => {
+    const p = { value: 0, calls: [] };
+    for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'cancelScheduledValues', 'setTargetAtTime'])
+      p[m] = (...a) => p.calls.push([m, ...a]);
+    return p;
+  };
+  const c = new Proxy(
+    { currentTime: 0, sampleRate: 8000, gains },
+    {
+      get: (t, k) =>
+        k in t
+          ? t[k]
+          : k === 'createBuffer'
+            ? () => ({ getChannelData: () => new Float32Array(8) })
+            : k === 'createGain'
+              ? () => {
+                  const g = { gain: param(), to: [], connect: n => g.to.push(n), disconnect: () => (g.to = []) };
+                  gains.push(g);
+                  return g;
+                }
+              : any(),
+    }
+  );
+  return c;
+}
+
+test("SND-8b: a song's echo send moves with its fader (the fade-in, a jingle's duck, a stop)", () => {
+  const c = recordingContext(),
+    T = trackerCreate(c, {}, { songs: { s: town } }),
+    sg = T.play('s');
+  clearInterval(T.timer);
+  assert.ok(sg.echo.to.includes(T.echoIn), 'the send goes to the echo');
+  const moves = n => n.gain.calls.map(([m, v]) => [m, v]);
+  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the fade-in');
+  assert.deepEqual(moves(sg.gain).at(-1), ['linearRampToValueAtTime', 1]);
+  T.jingle([[72, 4]], 150, 'p25', {});
+  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the duck');
+  assert.ok(moves(sg.echo).some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.15));
+  T.stop();
+  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the stop');
+  assert.deepEqual(moves(sg.echo).at(-1), ['linearRampToValueAtTime', 0]);
+  // the song's voices send their echo to the song's send, not straight to the echo
+  const c2 = fakeContext(),
+    T2 = trackerCreate(c2, {}, { songs: { s: town } }),
+    to = [];
+  T2.synthVoice = (bus, v) => v.echo && to.push(v.echoTo);
+  T2.synthNoise = T2.synthKick = () => {};
+  const sg2 = T2.play('s');
+  clearInterval(T2.timer);
+  for (let i = 0; i < 32; i++) {
+    c2.currentTime = T2.song.next - 0.13;
+    T2.tick();
+  }
+  assert.ok(to.length && to.every(n => n === sg2.echo));
+});
+
+test("SND-8b: a jingle echoes on the effects' own echo; on the music bus (Settings' test) on the music's", () => {
+  const c = recordingContext(),
+    music = { name: 'music' },
+    fx = { name: 'fx' },
+    T = trackerCreate(c, music, { fx }),
+    to = [];
+  assert.ok(T.echoFx && T.echoFx !== T.echoIn);
+  T.synthVoice = (bus, v) => v.echo && to.push(v.echoTo);
+  T.jingle([[72, 4]], 150, 'p25', fx);
+  T.jingle([[72, 4]], 150, 'p25', music);
+  assert.deepEqual(to, [T.echoFx, T.echoIn]);
+  assert.equal(trackerCreate(recordingContext(), music).echoFx, null, 'no effects bus, no effects echo');
+});
+
+test("SND-8b: a song's trim (dB) is its fader's top; a jingle ducks it to 0.15 of that; none written is exactly 1", () => {
+  const c = recordingContext(),
+    T = trackerCreate(c, {}, { songs: { up: { ...town, trim: 6 }, plain: town } }),
+    tops = n => n.gain.calls.filter(([m]) => m === 'linearRampToValueAtTime').map(([, v]) => Math.round(v * 1e4) / 1e4);
+  const sg = T.play('up');
+  clearInterval(T.timer);
+  const lv = Math.round(Math.pow(10, 6 / 20) * 1e4) / 1e4;
+  assert.deepEqual(tops(sg.gain), [lv]);
+  T.jingle([[72, 4]], 150, 'p25', {});
+  assert.deepEqual(tops(sg.echo), [lv, Math.round(0.15 * lv * 1e4) / 1e4, Math.round(0.15 * lv * 1e4) / 1e4, lv]);
+  const p = T.play('plain');
+  clearInterval(T.timer);
+  assert.equal(p.level, 1);
+  assert.equal(trackerNight({ ...town, trim: 6 }).trim, 6, 'the night version keeps it');
+});
+
+/** a context that makes real buffers and records the sources and gains it makes (the bank's tests) */
+function bankContext(rate) {
+  const made = { sources: [], gains: [] },
+    param = () => {
+      const p = { value: 0, calls: [] };
+      for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'cancelScheduledValues', 'setTargetAtTime'])
+        p[m] = (...a) => p.calls.push([m, ...a]);
+      return p;
+    },
+    node = () => ({
+      to: [],
+      connect(n) {
+        this.to.push(n);
+      },
+      disconnect() {},
+    });
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() });
+  const t = {
+    currentTime: 0,
+    sampleRate: rate,
+    made,
+    createBuffer: (ch, n, r) => {
+      const d = Array.from({ length: ch }, () => new Float32Array(n));
+      return { length: n, sampleRate: r, getChannelData: i => d[i], copyToChannel: (a, i) => d[i].set(a) };
+    },
+    createBufferSource: () => {
+      const s = {
+        ...node(),
+        playbackRate: param(),
+        started: null,
+        start: at => (s.started = at),
+        stop: at => (s.stopped = at),
+      };
+      made.sources.push(s);
+      return s;
+    },
+    createGain: () => {
+      const g = { ...node(), gain: param() };
+      made.gains.push(g);
+      return g;
+    },
+  };
+  return new Proxy(t, { get: (o, k) => (k in o ? o[k] : any()) });
+}
+const { soundBakeBank, SOUND_BAKE_BUDGET } = /** @type {any} */ (globalThis);
+
+test('SND-9: the bank bakes in slices, once per rate; bankReady resolves when every zone is in', async () => {
+  const c = bankContext(22050),
+    T = trackerCreate(c, {}, {}),
+    slices = soundBakeBank.slices;
+  await T.bankReady('harp');
+  const E = soundBakeBank.entries.get('harp@22050');
+  assert.ok(E.zones.every(Boolean));
+  assert.ok(soundBakeBank.slices - slices > 1, 'more than one slice');
+  for (const z of E.zones) assert.equal(z.buffer.sampleRate, 22050, "a buffer at the context's own rate");
+  /* a second context at the same rate bakes nothing again */
+  const zones = soundBakeBank.zones,
+    T2 = trackerCreate(bankContext(22050), {}, {});
+  await T2.bankReady(['harp']);
+  assert.equal(soundBakeBank.zones, zones);
+  /* the stats say what the debug log needs */
+  const S = T.bankStats();
+  assert.ok(S.instruments.includes('harp@22050 10/10'));
+  assert.ok(S.slices > 0 && S.sliceMaxMs >= 0 && S.lastSlicesMs.length > 0 && S.mb > 0);
+  /* an instrument that doesn't exist is null, not an error */
+  assert.deepEqual(await T.bankReady('nothing'), [null]);
+});
+
+test('SND-9: sampleVoice is one buffer source and one gain, the nearest zone moved to the note, its loop held', async () => {
+  const c = bankContext(16000),
+    T = trackerCreate(c, {}, {}),
+    out = {};
+  assert.equal(T.sampleVoice(out, { inst: 'harp', midi: 60, t: 0, dur: 1 }), null, 'nothing baked yet');
+  await T.bankReady('harp');
+  const s0 = c.made.sources.length,
+    g0 = c.made.gains.length,
+    started = T.started,
+    v = T.sampleVoice(out, { inst: 'harp', midi: 61, t: 1, dur: 2, vol: 0.3 });
+  assert.equal(c.made.sources.length - s0, 1);
+  assert.equal(c.made.gains.length - g0, 1);
+  assert.equal(T.started, started + 1);
+  const E = soundBakeBank.entries.get('harp@16000'),
+    Z = E.zones.find(z => z.lo <= 61 && z.hi >= 61);
+  assert.equal(v.source.buffer, Z.buffer);
+  assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (61 - Z.root) / 12)) < 1e-12);
+  assert.ok(v.source.loop && v.source.loopStart === Z.loopStart && v.source.loopEnd === Z.loopEnd);
+  assert.deepEqual(v.source.to, [v.gain]);
+  assert.deepEqual(v.gain.to, [out]);
+  assert.equal(v.source.started, 1);
+  assert.ok(v.source.stopped > 3);
+  /* the gain: its level, then the pluck's tail once the loop starts, then the release at the note's end */
+  const calls = v.gain.gain.calls;
+  assert.deepEqual(calls[0], ['setValueAtTime', 0.3, 1]);
+  assert.equal(calls.at(-1)[0], 'setTargetAtTime');
+  assert.equal(calls.at(-1)[2], 3);
+});
+
+test('SND-9: past the budget the least recently played zone goes; a note there plays from the nearest and bakes it again', async () => {
+  /* the earlier tests' zones are older than these: only this test's count */
+  soundBakeBank.entries.clear();
+  const c = bankContext(12000),
+    T = trackerCreate(c, {}, {});
+  await T.bankReady('harp');
+  const E = soundBakeBank.entries.get('harp@12000');
+  /* play every zone but the lowest, so the lowest is the one played longest ago */
+  for (const z of E.zones.slice(1)) T.sampleVoice({}, { inst: 'harp', midi: z.root, t: 0, dur: 0.1 });
+  const other = soundBakeBank.other,
+    low = E.zones[0];
+  const bank = () =>
+    [...soundBakeBank.entries.values()].reduce((a, e) => a + e.zones.reduce((b, z) => b + (z ? z.bytes : 0), 0), 0);
+  try {
+    /* the other buffers fill the budget but for less than the bank holds: something must go */
+    const room = SOUND_BAKE_BUDGET - bank() + 1;
+    soundBakeBank.other = () => room;
+    const dropped = soundBakeBank.dropped;
+    /* baking one more zone (a fresh rate's single zone) prunes */
+    E.zones[E.zones.length - 1] = null;
+    await T.bankReady('harp');
+    assert.ok(soundBakeBank.dropped > dropped);
+    assert.equal(E.zones[0], null, 'the least recently played zone went');
+    soundBakeBank.other = () => 0;
+    const v = T.sampleVoice({}, { inst: 'harp', midi: low.root, t: 0, dur: 0.1 });
+    assert.ok(v && v.source.buffer !== low.buffer, 'the nearest zone left plays it');
+    await T.bankReady('harp');
+    assert.ok(E.zones[0], 'and the dropped zone is baked again');
+  } finally {
+    soundBakeBank.other = other;
+  }
+});
+
+test('SND-9: the reverb is made only when something sends to it; sends follow the sliders and the place; one impulse per rate', async () => {
+  const c = bankContext(11025),
+    made = { conv: 0 },
+    master = { name: 'master' };
+  c.createConvolver = () => (
+    made.conv++,
+    {
+      to: [],
+      connect(n) {
+        this.to.push(n);
+      },
+      buffer: null,
+    }
+  );
+  const T = trackerCreate(c, {}, { songs: { s: town }, master });
+  /* a song plays its bars and never makes it (today's songs, the future gb) */
+  T.synthVoice = T.synthNoise = T.synthKick = () => {};
+  T.play('s');
+  clearInterval(T.timer);
+  for (let i = 0; i < 64; i++) {
+    c.currentTime = T.song.next - 0.13;
+    T.tick();
+  }
+  T.reverbLevels(0.5, 0.25);
+  assert.equal(made.conv, 0);
+  assert.equal(T.reverbStats(), null);
+  /* the first send makes it: the room returns to the master */
+  const send = T.reverbSend('music');
+  assert.equal(made.conv, 1);
+  assert.equal(T.reverbSend('sfx') !== send, true);
+  const conv = await T.reverbReady();
+  assert.equal(made.conv, 1, 'one convolver');
+  assert.ok(conv.buffer && conv.buffer.length <= 1.2 * 11025 + 1);
+  assert.equal(conv.buffer.sampleRate, 11025);
+  assert.deepEqual(c.made.gains.find(g => g.to.includes(master)).to, [master]);
+  /* post-fader: the music send is the Music slider times the place (a town 0.8); a cave sends more */
+  assert.ok(Math.abs(send.gain.value - 0.4) < 1e-9);
+  T.reverbPlace('cave');
+  assert.ok(Math.abs(send.gain.calls.at(-1)[1] - 0.9) < 1e-9);
+  T.reverbLevels(0, 0);
+  assert.equal(send.gain.calls.at(-1)[1], 0, 'a slider at 0 sends nothing');
+  const S = T.reverbStats();
+  assert.equal(S.place, 'cave');
+  assert.ok(S.sec <= 1.2 && S.kb > 0);
+  /* a second context at the rate reuses the impulse */
+  const c2 = bankContext(11025);
+  c2.createConvolver = c.createConvolver;
+  const T2 = trackerCreate(c2, {}, {});
+  assert.equal((await T2.reverbReady()).buffer, conv.buffer);
+});
+
+test('SND-10: the bank takes recipes from data; sampleShot plays a zone once, moved to the note and by rate', async () => {
+  const c = bankContext(16000),
+    T = trackerCreate(c, {}, {}),
+    out = { name: 'out' };
+  T.bankAdd({
+    tdrop: { kind: 'bubble', lo: 60, hi: 84, every: 6, xi: 0.1, level: 0.9 },
+    harp: { kind: 'bubble', lo: 1, hi: 2, every: 1, xi: 0, level: 1 },
+  });
+  assert.equal(T.sampleShot(out, { inst: 'nothing', midi: 60, t: 0 }), null);
+  assert.equal(T.sampleShot(out, { inst: 'tdrop', midi: 70, t: 0 }), null, 'nothing baked yet');
+  await T.bankReady('tdrop');
+  assert.ok(T.bankStats().instruments.some(k => k.startsWith('tdrop@16000')));
+  /* the harp keeps its own recipe (an id the bank has is never replaced) */
+  assert.equal(soundBakeBank.recipes.harp, undefined);
+  const v = T.sampleShot(out, { inst: 'tdrop', midi: 71, t: 2, vol: 0.4, rate: 1.1 });
+  const z = soundBakeBank.entries.get('tdrop@16000').zones.find(q => 71 >= q.lo && 71 <= q.hi);
+  assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (71 - z.root) / 12) * 1.1) < 1e-9);
+  assert.equal(v.source.loop, undefined, 'never looped');
+  assert.equal(v.source.started, 2);
+  assert.ok(Math.abs(v.source.stopped - (2 + z.buffer.length / 16000 / v.source.playbackRate.value + 0.01)) < 1e-9);
+  assert.equal(v.gain.gain.value, 0.4);
+  assert.deepEqual(v.gain.to, [out]);
+});
+
+test('SND-10: the reverb has a World send, scaled by the World slider', async () => {
+  const c = bankContext(11025);
+  c.createConvolver = () => ({
+    to: [],
+    connect(n) {
+      this.to.push(n);
+    },
+    buffer: null,
+  });
+  const T = trackerCreate(c, {}, { master: {} });
+  T.reverbLevels(0.5, 0.25, 0.2);
+  const w = T.reverbSend('world');
+  assert.ok(w !== T.reverbSend('music') && w !== T.reverbSend('sfx'));
+  assert.ok(Math.abs(w.gain.value - 0.2 * 0.8) < 1e-9, 'a town sends 0.8 of the slider');
+  T.reverbLevels(0.5, 0.25);
+  assert.ok(Math.abs(w.gain.calls.at(-1)[1] - 0.2 * 0.8) < 1e-9, 'left out, the World level stays');
+});

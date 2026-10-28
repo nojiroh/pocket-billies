@@ -497,6 +497,37 @@ same phase:
   makes which sound), `sound-levels.test.mjs` (the mix's trims, `bedDuck`), `music-studio.test.mjs` (placeholder base
   cries and Billie cries). `check-studio-github.py --only=music` plays a base cry and a button sound on the Sounds
   tab, changes the mix and undoes it, and changes a stage's own cry, hearing its base's notes and the low-HP version.
+  Since RL-R2 (594a094e) there is no deadline version: `musicParts` names none, "Run music" no longer looks for one,
+  and `sound.test.mjs` asserts there is none (the SND-5 lines above are history). The baseline holds 194 fingerprints
+  (checked in SND-7, 2026-10-27).
+  SND-8a: `python3 tools/check-sound.py --loudness` adds a loudness report after the comparison (never its exit
+  status): every song's day version and 17 world sounds and three made-up scenes, rendered in stereo at default
+  sliders through the game's code (sound.js `ambiencePreviewTick`, as the debug menu's Sound test plays them) and
+  measured by `tools/sound-loudness.mjs` (BS.1770), in LU under the route song; a bed over -12 LU or an event's 3 s
+  maximum over -8 LU warns (ceilings warn until SND-15). Unit tests: `sound-loudness.test.mjs`,
+  `ambience-sound.test.mjs`; the after-edit hook runs `tracker.test.mjs` and `sound.test.mjs` for `audio/` and sound.js.
+  The full check's Debug menu step expects eleven sections (`sound` after `places`); the Animals step names the live
+  beds (never all 14, never the crickets by day).
+  SND-8b: the baseline was written again on purpose (a song's echo after its fader, the jingles' own echo, Copperleaf's
+  trim); each commit was rendered against the one before it in a worktree. `tracker.test.mjs` adds `echo: 0`, the
+  echo send moving with the fader, the jingles' echo bus and a song's `trim`.
+  SND-9: each fingerprint file holds, beside every part's RMS array, its brightness `zc:<part>` (zero crossings per
+  50 ms, ±0.0001 hysteresis, 0 under 0.0001 RMS; a window may differ by 2 % or 2 crossings), so a change of timbre at
+  the same loudness fails too; the summary still counts 194 fingerprints. Written once with plain `--baseline`.
+  `sound-bake.test.mjs` (logic/sound-bake.js: the same bake every time, never `Math.random`, no NaN, peaks at most 1,
+  seamless loops, strings within 3 cents, a size budget, the impulse); `tracker.test.mjs` adds the bank (slices, once
+  per rate, the least recently played zone dropped and baked again), `sampleVoice` (one source, one gain) and the
+  reverb (made only on a send, post-fader sends, one impulse per rate).
+  SND-10: `--loudness` adds every water recipe (game/data/soundscape.json `water`) at 1, 3 and 10 m (a fall at its
+  height), its banks baked once before the jobs; a water row warns over either ceiling (its level -12 LU, its loudest
+  3 s -8 LU); the old stream, falls, fountain, pond, lava and near-sea rows are gone (their beds went). Unit tests:
+  `soundscape.test.mjs` (logic/soundscape.js: cells from the grid and the tiles, emitters, falls by height, level and
+  air, the nearest few, bubbles, laps, waves and the tide, a splash, the preview, the game's soundscape.json findings);
+  `sound-bake.test.mjs` adds bubbles and the babble loop, `tracker.test.mjs` `bankAdd`, `sampleShot` and the World
+  send; `ambience-sound.test.mjs` reads the beds from soundscape.json (9 beds). check:data checks soundscape.json's
+  schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
+  `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
+  Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

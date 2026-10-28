@@ -1002,16 +1002,8 @@ debugLog.more = () => {
   t('glExtensions', () =>
     typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gl ? GAME.gpuState.gl.getSupportedExtensions() : null
   );
-  t('audio', () =>
-    typeof GAME.soundEngine !== 'undefined' && GAME.soundEngine.ctx
-      ? {
-          state: GAME.soundEngine.ctx.state,
-          rate: GAME.soundEngine.ctx.sampleRate,
-          song: GAME.soundEngine.song ? GAME.soundEngine.song.name : null,
-          worldBeds: typeof GAME.ambience !== 'undefined' ? Object.keys(GAME.ambience.beds).length : 0,
-        }
-      : null
-  );
+  /* SND-8a: the sound's own lines (sound.js soundDebugLines): live beds, sources a minute, late steps, state changes */
+  t('audio', () => (typeof GAME.soundDebugLines === 'function' ? GAME.soundDebugLines() : null));
   return o;
 };
 debugLog.build = () => ({
@@ -1189,6 +1181,8 @@ debugLog.hook = () => {
     ['buildGroundMesh', 'building the ground mesh'],
     ['navGrid', 'working out where you can walk'],
     ['screenSnapshot', 'reading the picture back'],
+    /* SND-8a: the world sounds' 200 ms update */
+    ['updateAmbience', 'world sounds'],
   ])
     timed(n, l);
   /* the renderer's own sections, timed every frame */

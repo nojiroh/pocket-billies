@@ -3193,6 +3193,8 @@ function surfMount(P, on, quiet) {
   P.surfId = walkView.id;
   P.surfT = walkView.t;
   if (quiet) return;
+  /* SND-10: a splash as you mount or leave (sound.js, soundscape-here.js) */
+  if (typeof soundEffect === 'function') soundEffect('splash', { size: on ? 'surfOn' : 'surfOff' });
   if (typeof debugLog !== 'undefined') debugLog.add('scene', on ? 'surf on' : 'surf off');
   if (!reducedMotion && typeof addRipple === 'function')
     for (let k = 0; k < 3; k++) setTimeout(() => addRipple(P.x, P.z - 0.05, 0.6 + k * 0.4), k * 140);

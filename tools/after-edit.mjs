@@ -4,6 +4,7 @@
 //   game/js, studio and the root's *.js     npm run lint, and npm run typecheck for game/js
 //   game/js/logic/<name>.js                  the unit test files for <name> (testsFor below)
 //   tools/test/<file>.test.mjs               that test file
+//   game/js/audio, game/js/sound.js         the tracker's and sound's tests (SND-8a: npm test never ran for them)
 //   game/data                                npm run check:data
 //   tools/*.py                               python3 -m py_compile
 // Anything else (docs, art, this file) runs nothing. A failure exits with 2 and the checks' last lines on stderr, which
@@ -39,6 +40,9 @@ if (!rel || rel.startsWith('..') || !existsSync(join(ROOT, 'node_modules'))) pro
  * (`<name>.test.mjs`, `<name>-real.test.mjs`), then those that use `modules['<name>']` or `modules.<name>`, then
  * those named `<name>-*`; the slow tier left out (CI and npm run test:slow run it). An edited test file is itself. */
 function testsFor(rel) {
+  /* SND-8a: the music and world sounds aren't logic/, so their own tests run on their edits */
+  if (/^game\/js\/(audio\/.*|sound)\.js$/.test(rel))
+    return { files: ['tools/test/tracker.test.mjs', 'tools/test/sound.test.mjs'], more: 0 };
   if (/^tools\/test\/.*\.test\.mjs$/.test(rel)) return { files: [rel], more: 0 };
   const m = /^game\/js\/logic\/(.+)\.js$/.exec(rel);
   if (!m) return { files: [], more: 0 };

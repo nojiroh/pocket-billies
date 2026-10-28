@@ -28,6 +28,8 @@ import {
   runStartable,
   runTakeOff,
   showModHTML,
+  soundTestAction,
+  soundTestHTML,
   storyScriptIds,
   testMapChecks,
   testMaps,
@@ -391,6 +393,8 @@ function debugHTML() {
    debugSection('battle', `Battle${inB ? '' : ' (start one first)'}`, battle, false, inB),
    debugSection('run', 'Run', run),
    debugSection('places', 'Places and test scenes', places, false, inTest),
+   /* SND-8a: the Sound test (sound-test.js) */
+   debugSection('sound', 'Sound test', typeof soundTestHTML === 'function' ? soundTestHTML() : ''),
    debugSection('story', 'Story', story),
    debugSection('ranch', 'Ranch and time', ranch),
    debugSection('save', 'Save', saveRow),
@@ -501,6 +505,8 @@ function debugChimeraFor(sp) {
   return g && Object.keys(g).length > 1 ? graftKey(g) : '';
 }
 function debugAction(x) {
+  /* SND-8a: the Sound test's buttons play and stop sounds; they never change the save */
+  if (/^snd[A-Z]/.test(x)) return soundTestAction(x);
   const v = id => {
       const e = $('#' + id);
       return e ? e.value : null;

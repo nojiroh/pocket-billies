@@ -8,6 +8,7 @@
    bundles this file into one (vite.config.js), with the one hooks.js its modules share. */
 import './logic-worker-page.js';
 import '../../game/js/game-data.js';
+import '../../game/js/logic/ambience-sound.js';
 import '../../game/js/logic/arena-gen.js';
 import '../../game/js/logic/art-refs.js';
 import '../../game/js/logic/art-search.js';
@@ -148,6 +149,8 @@ import '../../game/js/logic/showcase.js';
 import '../../game/js/logic/signals.js';
 import '../../game/js/logic/sim-compare.js';
 import '../../game/js/logic/smear.js';
+import '../../game/js/logic/sound-bake.js';
+import '../../game/js/logic/soundscape.js';
 import '../../game/js/logic/square-day.js';
 import '../../game/js/logic/square-talk.js';
 import '../../game/js/logic/starter-points.js';

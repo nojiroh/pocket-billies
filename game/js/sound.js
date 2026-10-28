@@ -7,9 +7,18 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { cutscene, mapIdAt, provide } from './hooks.js';
+import {
+  cutscene,
+  mapIdAt,
+  provide,
+  soundscapeFish,
+  soundscapeHere,
+  soundscapeSplashPlay,
+  soundscapeStart,
+  soundscapeWade,
+} from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SPECIES } from './game-data.js';
+import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from './game-data.js';
 import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
 import { squareBuskSong, squareBusker } from './logic/square-day.js';
@@ -17,6 +26,20 @@ import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
+import {
+  AMBIENCE_FIXED,
+  ambienceBirdWait,
+  ambienceChirp,
+  ambienceCrackles,
+  ambienceCrickets,
+  ambienceDrift,
+  ambienceLiveStep,
+  ambienceNoiseLoop,
+  ambiencePreview,
+  ambienceRandom,
+  ambienceStep,
+} from './logic/ambience-sound.js';
+import { soundscapePreview } from './logic/soundscape.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -28,25 +51,36 @@ import {
   mapById,
   stepWallAt,
   terrainAt,
+  wadeDepthHere,
   walkData,
   walkView,
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
-import { walkRenderer } from './walk/walk-state.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
 import { midiToFrequency, trackerCreate } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
+  BIRD_LEVEL: [() => BIRD_LEVEL],
+  BIRD_PITCH: [() => BIRD_PITCH],
   CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
   RARE_BIRDS: [() => RARE_BIRDS],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
+  ambienceApply: [() => ambienceApply, v => (ambienceApply = v)],
+  ambienceBedStart: [() => ambienceBedStart, v => (ambienceBedStart = v)],
+  ambienceBedStop: [() => ambienceBedStop, v => (ambienceBedStop = v)],
   ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
+  ambienceBirds: [() => ambienceBirds, v => (ambienceBirds = v)],
+  ambienceDriftTick: [() => ambienceDriftTick, v => (ambienceDriftTick = v)],
+  ambienceEvents: [() => ambienceEvents, v => (ambienceEvents = v)],
   ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
+  ambienceHit: [() => ambienceHit, v => (ambienceHit = v)],
   ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
+  ambiencePreviewTick: [() => ambiencePreviewTick, v => (ambiencePreviewTick = v)],
+  ambienceStepPlay: [() => ambienceStepPlay, v => (ambienceStepPlay = v)],
   applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
   battleCry: [() => battleCry, v => (battleCry = v)],
@@ -76,12 +110,15 @@ expose({
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
   runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
   soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
+  soundDebugLines: [() => soundDebugLines, v => (soundDebugLines = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
   soundLog: [() => soundLog, v => (soundLog = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
+  soundStarts: [() => soundStarts],
+  soundWake: [() => soundWake, v => (soundWake = v)],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
@@ -89,7 +126,7 @@ expose({
   uiButton: [() => uiButton, v => (uiButton = v)],
   uiSound: [() => uiSound, v => ((uiSound = v), provide({ uiSound }))],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
-  updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
+  updateAmbience: [() => updateAmbience, v => setUpdateAmbience(v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
 });
 /* eslint-enable no-func-assign */
@@ -103,6 +140,10 @@ provide({
   testVolume,
   uiSound,
 });
+export function setUpdateAmbience(v) {
+  updateAmbience = v; // eslint-disable-line no-func-assign
+  provide({ updateAmbience });
+}
 /* to-module: end */
 export const soundEngine = {
   ctx: null,
@@ -160,8 +201,21 @@ function initSound() {
     soundEngine.musLP.connect(soundEngine.master);
     soundEngine.fx.connect(soundEngine.master);
     applyVolumes();
-    /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus */
-    const T = trackerCreate(c, soundEngine.mus, { songs: SONGS, run: MUSIC.run, levels: () => soundEngine.L });
+    /* SND-2: the echo, the noise and the waves are the tracker's (audio/tracker.js), on the music bus; SND-8b: the
+       effects have an echo of their own (T.echoFx) on the effects bus */
+    const T = trackerCreate(c, soundEngine.mus, {
+      songs: SONGS,
+      run: MUSIC.run,
+      levels: () => soundEngine.L,
+      fx: soundEngine.fx,
+      /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
+      memory: () => (ambience.noise ? (ambience.noise.pink.length + ambience.noise.brown.length) * 4 : 0),
+      /* SND-9: the reverb returns to the master, after the sliders' own buses */
+      master: soundEngine.master,
+    });
+    /* SND-9: the reverb's sends follow the sliders (applyVolumes; nothing is made until something sends) */
+    const L0 = soundLevels(soundPreferences(), MUSIC.mix);
+    T.reverbLevels(L0.music, L0.sfx, L0.world);
     soundEngine.tracker = T;
     soundEngine.echoIn = T.echoIn;
     soundEngine.echoWet = T.echoWet;
@@ -182,14 +236,23 @@ function applyVolumes() {
   soundEngine.master.gain.setTargetAtTime(L.master, t, 0.05);
   soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
   soundEngine.fx.gain.setTargetAtTime(L.sfx, t, 0.05);
+  /* SND-9: the reverb's sends, post-fader: a slider at 0 leaves no reverb of its sounds behind */
+  if (soundEngine.tracker) soundEngine.tracker.reverbLevels(L.music, L.sfx, L.world);
 }
 /* the first touch unlocks sound; the song that was asked for starts then. SND-1: any touch also wakes sound that
    stopped for something else, as iOS Safari does after a call or Siri (its state is then 'interrupted', not
    'suspended') */
-function unlockSound() {
+export function unlockSound() {
   if (!initSound()) return;
-  const st = soundEngine.ctx.state;
-  if (st !== 'running' && st !== 'closed') soundEngine.ctx.resume().catch(() => {});
+  /* SND-8a: the context's state changes for the debug log (iOS: 'interrupted' after a call or Siri) */
+  if (!soundEngine.states) {
+    soundEngine.states = [];
+    soundEngine.ctx.addEventListener('statechange', () => {
+      soundEngine.states.push({ at: Math.round(performance.now() / 1000), state: soundEngine.ctx.state });
+      if (soundEngine.states.length > 12) soundEngine.states.shift();
+    });
+  }
+  soundWake();
   if (soundEngine.want && !soundEngine.song) {
     /* SND-4: the night level first (updateAmbience), so a night starts on the night version, not a second of day */
     if (!soundEngine.L && soundEngine.ctx.state === 'running')
@@ -200,6 +263,18 @@ function unlockSound() {
     music(w.includes('@') ? w : songVariant(w, musicState(), SONGS, null, MUSIC.run));
   }
 }
+/* SND-8b: wakes the context. iOS Safari can leave it 'interrupted' after a call or Siri, where resume() alone does
+   nothing (WebKit bug 276016): suspend it first, then resume. Otherwise resume, even when it reads 'running' (a
+   suspend() from hiding the page may still be on its way) */
+function soundWake() {
+  const c = soundEngine.ctx,
+    st = c.state;
+  if (st === 'interrupted')
+    c.suspend()
+      .then(() => c.resume())
+      .catch(() => {});
+  else if (st !== 'closed') c.resume().catch(() => {});
+}
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
 document.addEventListener('visibilitychange', () => {
   if (!soundEngine.ctx) return;
@@ -209,7 +284,7 @@ document.addEventListener('visibilitychange', () => {
     soundEngine.ctx.suspend();
     if (T) T.idle();
   } else {
-    soundEngine.ctx.resume();
+    soundWake();
     if (T) T.wake();
   }
   soundEngine.timer = T ? T.timer : null;
@@ -227,7 +302,7 @@ function synthKick(bus, t, v) {
 
 /* ---------- songs ---------- */
 /* SND-2: the songs' recipes are data (music.json songs) */
-const SONGS = MUSIC.songs;
+export const SONGS = MUSIC.songs;
 /* SND-2: the song plays on the tracker (audio/tracker.js); this keeps what was asked for (the first touch starts it) */
 /* SND-5: o as the tracker's play takes it ({ intro, hold, restart }: a battle's start) */
 export function music(name, o) {
@@ -292,8 +367,10 @@ function buskerSongNear(run, sc) {
   if (!c || Math.hypot(c.x - walkView.pl.x, c.z - walkView.pl.z) > K.near) return null;
   return squareBuskSong(saveData.meta.history, K.songs);
 }
-function musicSync() {
+export function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
+  /* SND-8a: the debug menu's Sound test is playing a song of its own */
+  if (soundEngine.test) return;
   if (soundEngine.jingle && performance.now() < soundEngine.jingle) return;
   /* SND-4: at night outdoors, the song's night version (logic/music-where.js songVariant); the switch crossfades */
   const st = musicState();
@@ -342,7 +419,7 @@ function musicParts(name) {
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
-function musicVariant(name, night) {
+export function musicVariant(name, night) {
   return songVariant(name, { night }, SONGS, null);
 }
 setInterval(() => {
@@ -423,29 +500,16 @@ export function soundEffect(name, o = {}) {
       });
       break;
     }
-    case 'step': {
-      if (o.ter === 'n') {
-        synthNoise(F, { t, dur: 0.07, vol: 0.07, bp: 2600, q: 0.9 });
-        synthNoise(F, { t: t + 0.025, dur: 0.05, vol: 0.05, bp: 4200, q: 1.2 });
-        break;
-      }
-      if (o.ter === 'wet') {
-        synthNoise(F, { t, dur: 0.09, vol: 0.07, bp: 1500, q: 0.5 });
-        synthNoise(F, { t: t + 0.03, dur: 0.06, vol: 0.04, hp: 5000 });
-        break;
-      }
-      const k = o.ter || 'g',
-        soft = /[gGftn]/.test(k),
-        wood = k === 'b';
-      synthNoise(F, {
-        t,
-        dur: soft ? 0.05 : wood ? 0.06 : 0.035,
-        vol: soft ? 0.05 : wood ? 0.08 : 0.07,
-        bp: soft ? 900 : wood ? 520 : 2200,
-        q: soft ? 0.6 : wood ? 2.2 : 1.4,
-      });
+    case 'step':
+      ambienceStepPlay(o.ter || 'g', t);
       break;
-    }
+    /* SND-10: the water you touch (soundscape-here.js): a splash by size or name, fishing's sounds */
+    case 'splash':
+      soundscapeSplashPlay(o.size ?? 0.5, t);
+      break;
+    case 'fish':
+      soundscapeFish(o.k);
+      break;
     case 'throw':
       synthVoice(F, { type: 'p25', freq: 600, t, dur: 0.18, vol: 0.06, slide: 2.4 });
       synthNoise(F, { t, dur: 0.15, vol: 0.05, hp: 3000 });
@@ -510,7 +574,16 @@ export function soundEffect(name, o = {}) {
       break;
     case 'heal':
       [0, 4, 7, 11, 14].forEach((n, i) =>
-        synthVoice(F, { type: 'sine', freq: midiToFrequency(79 + n), t: t + i * 0.06, dur: 0.12, vol: 0.06, echo: 0.4 })
+        synthVoice(F, {
+          type: 'sine',
+          freq: midiToFrequency(79 + n),
+          t: t + i * 0.06,
+          dur: 0.12,
+          vol: 0.06,
+          echo: 0.4,
+          /* SND-8b: the effects' echo, not the music's */
+          echoTo: soundEngine.tracker.echoFx,
+        })
       );
       break;
     case 'status':
@@ -546,6 +619,7 @@ export function soundEffect(name, o = {}) {
           dur: 0.14,
           vol: 0.045,
           echo: 0.35,
+          echoTo: soundEngine.tracker.echoFx,
         })
       );
       break;
@@ -694,6 +768,10 @@ setInterval(() => {
     if (g < footstepAt) footstepAt = g; /* a new view starts its count again */
     if (g - footstepAt < FOOTSTEP_M) return;
     footstepAt = g;
+    /* SND-10: on Surf the wake plays instead of steps; wading splashes by its depth (soundscape-here.js) */
+    if (P.surf) return;
+    const wd = typeof wadeDepthHere === 'function' ? wadeDepthHere(P.x, P.z) : 0;
+    if (wd > 0 && soundscapeWade(wd)) return;
     let ter = typeof terrainAt === 'function' ? terrainAt(P.x, P.z) : 'g';
     /* v18: hollow boards on wooden and rope bridges, stone on stone bridges and stairs */
     if (typeof bridgeAt === 'function' && bridgeAt(P.x, P.z) != null) {
@@ -805,7 +883,17 @@ document.addEventListener(
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second
    bus carries the ambience (Settings → Sound → Ambience): birdsong by day, crickets and the odd owl at night, leaves
    in the wind near trees, a town's murmur, a cave's hum and a room's quiet with its clock ticking */
-export const ambience = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
+export const ambience = {
+  bus: null,
+  amb: null,
+  beds: {},
+  flash: 0,
+  arrive: 0,
+  id: null,
+  lastCall: 0,
+  ev: {},
+  started: 0,
+};
 function ambienceFadeIn() {
   if (!soundEngine.ctx) return 1;
   return clamp((soundEngine.ctx.currentTime - ambience.arrive) / 2.8, 0, 1);
@@ -848,183 +936,216 @@ function initAmbience() {
   ambience.lpA = lp(ambience.amb);
   ambience.lpW = lp(ambience.bus);
   applyAmbienceVolume();
-  const loop =
-    (filters, lfo, rate = 1) =>
-    dest => {
-      const s = c.createBufferSource();
-      s.buffer = soundEngine.noise;
-      s.loop = true;
-      s.playbackRate.value = rate;
-      let n = s;
-      for (const [type, f, q] of filters) {
-        const F = c.createBiquadFilter();
-        F.type = type;
-        F.frequency.value = f;
-        F.Q.value = q || 0.7;
-        n.connect(F);
-        n = F;
-      }
-      if (lfo) {
-        const m = c.createGain();
-        m.gain.value = 1 - lfo[1];
-        const o = c.createOscillator();
-        o.frequency.value = lfo[0];
-        const og = c.createGain();
-        og.gain.value = lfo[1];
-        o.connect(og);
-        og.connect(m.gain);
-        o.start();
-        n.connect(m);
-        n = m;
-      }
-      n.connect(dest);
-      s.start(0, Math.random() * 0.9);
-    };
-  const bed = (name, make, bus = ambience.lpW) => {
-    const g = c.createGain();
+  const buffer = data => {
+    const b = c.createBuffer(1, data.length, c.sampleRate);
+    b.getChannelData(0).set(data);
+    return b;
+  };
+  /* SND-8a: the beds' own noise, long seamless loops of pink and brown made once from a seed (logic/ambience-sound.js),
+     at the context's own rate; the music's one second of white noise is no longer looped under them */
+  const t0 = performance.now();
+  ambience.noise = {
+    pink: buffer(ambienceNoiseLoop('pink', c.sampleRate, 6, 0x50d1)),
+    brown: buffer(ambienceNoiseLoop('brown', c.sampleRate, 8, 0x50d2)),
+  };
+  ambience.noiseMs = Math.round(performance.now() - t0);
+  ambience.rng = ambienceRandom(0x50d3);
+  /* SND-10: the water (soundscape.json `water`), its banks baked in the tracker's slices (soundscape-here.js) */
+  ambience.scape = soundscapeStart(c);
+  /* a layer of a bed (soundscape.json beds): its filters and its gain, waiting for its noise (ambienceBedStart) */
+  const layer = (L, dest, b) => {
+    const F = [];
+    let n = null,
+      head = null;
+    for (const [type, f, q, gain] of L.filters) {
+      const bq = c.createBiquadFilter();
+      bq.type = type;
+      bq.frequency.value = f;
+      bq.Q.value = q || 0.7;
+      if (gain) bq.gain.value = gain;
+      if (n) n.connect(bq);
+      else head = bq;
+      n = bq;
+      F.push(bq);
+    }
+    const m = c.createGain();
+    m.gain.value = L.gain;
+    /* SND-8a: what wanders (its gain, or a filter's frequency), moved by ambienceDriftTick */
+    for (const D of L.drift || []) b.drifts.push({ D, param: D.on === 'gain' ? m.gain : F[D.on].frequency, next: 0 });
+    if (n) n.connect(m);
+    m.connect(dest);
+    b.parts.push({ buffer: ambience.noise[L.noise], rate: L.rate || 1, head: head || m });
+  };
+  /* SND-8a: each bed is a level (g), a pan and its trim, its layers' filters and the drifts; its sources are made
+     when it starts and stopped when it stops (ambienceLiveStep), so a silent bed costs nothing */
+  for (const [name, B] of Object.entries(SOUNDSCAPE.beds)) {
+    const g = c.createGain(),
+      p = c.createStereoPanner ? c.createStereoPanner() : null,
+      tr = c.createGain(),
+      bus = B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW,
+      b = { g, p, tr, drifts: [], parts: [], srcs: [], st: {}, eventGain: B.eventGain || 1 };
     g.gain.value = 0;
-    const p = c.createStereoPanner ? c.createStereoPanner() : null;
-    make(g);
+    /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
+    tr.gain.value = B.trim;
+    tr.connect(g);
     if (p) {
       g.connect(p);
       p.connect(bus);
     } else g.connect(bus);
-    ambience.beds[name] = { g, p };
-  };
-  /* crickets: a high tone chopped fast, then gated in slow pulses; two of them, slightly apart */
-  const cricket = (f, r1, r2) => dest => {
-    const o = c.createOscillator();
-    o.frequency.value = f;
-    const a = c.createGain(),
-      b = c.createGain();
-    a.gain.value = 0.5;
-    b.gain.value = 0.5;
-    const l1 = c.createOscillator();
-    l1.type = 'square';
-    l1.frequency.value = r1;
-    const g1 = c.createGain();
-    g1.gain.value = 0.5;
-    l1.connect(g1);
-    g1.connect(a.gain);
-    const l2 = c.createOscillator();
-    l2.type = 'square';
-    l2.frequency.value = r2;
-    const g2 = c.createGain();
-    g2.gain.value = 0.5;
-    l2.connect(g2);
-    g2.connect(b.gain);
-    o.connect(a);
-    a.connect(b);
-    b.connect(dest);
-    o.start();
-    l1.start();
-    l2.start();
-  };
-  bed(
-    'crickets',
-    d => {
-      cricket(4300, 26, 0.9)(d);
-      cricket(4650, 23, 0.7)(d);
-    },
-    ambience.lpA
-  );
-  bed(
-    'leaves',
-    loop(
-      [
-        ['bandpass', 3200, 0.5],
-        ['highpass', 1200],
-      ],
-      [0.13, 0.8]
-    ),
-    ambience.lpA
-  );
-  bed(
-    'town',
-    loop(
-      [
-        ['bandpass', 420, 0.7],
-        ['lowpass', 900],
-      ],
-      [0.21, 0.5],
-      0.9
-    ),
-    ambience.lpA
-  );
-  bed(
-    'cave',
-    d => {
-      loop([['lowpass', 140]], [0.05, 0.4], 0.5)(d);
-      const o = c.createOscillator();
-      o.frequency.value = 49;
-      const g = c.createGain();
-      g.gain.value = 0.18;
-      o.connect(g);
-      g.connect(d);
-      o.start();
-    },
-    ambience.amb
-  );
-  bed(
-    'room',
-    loop(
-      [
-        ['lowpass', 260],
-        ['highpass', 40],
-      ],
-      null,
-      0.6
-    ),
-    ambience.amb
-  );
-  bed(
-    'stream',
-    loop(
-      [
-        ['bandpass', 1500, 0.9],
-        ['highpass', 500],
-      ],
-      [2.7, 0.4]
-    )
-  );
-  bed(
-    'falls',
-    loop(
-      [
-        ['lowpass', 1000],
-        ['highpass', 90],
-      ],
-      null,
-      0.8
-    )
-  );
-  bed(
-    'sea',
-    loop(
-      [
-        ['lowpass', 650],
-        ['highpass', 60],
-      ],
-      [0.09, 0.8],
-      0.7
-    )
-  );
-  bed('pond', loop([['bandpass', 520, 1.4]], [0.35, 0.6]));
-  bed('fountain', loop([['bandpass', 2400, 0.8]], [5.5, 0.3]));
-  bed('fire', loop([['bandpass', 3000, 1.6]], [11, 0.9]));
-  bed('lava', loop([['lowpass', 260]], [0.6, 0.7], 0.6));
-  bed(
-    'rain',
-    loop(
-      [
-        ['highpass', 1700],
-        ['lowpass', 7500],
-      ],
-      null
-    )
-  );
-  bed('wind', loop([['bandpass', 360, 0.6]], [0.06, 0.85]));
+    for (const L of B.layers) layer(L, tr, b);
+    /* SND-8a: a bed's events (ambienceEvents) play at a few places around it */
+    if (B.events === 'crickets') {
+      /* two crickets in different places, chirping in groups (no endless tone), through a low-pass */
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 5000;
+      lp.Q.value = 0.5;
+      lp.connect(tr);
+      b.events = B.events;
+      b.ev = [
+        { next: 0, left: 0 },
+        { next: 1.3, left: 0 },
+      ];
+      b.chirps = [buffer(ambienceChirp(c.sampleRate, 3600, 1)), buffer(ambienceChirp(c.sampleRate, 3850, 2))];
+      b.chirpGain = [1, 0.65];
+      b.evOut = [-0.45, 0.35].map(v => {
+        const q = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+        if (q.pan) q.pan.value = v;
+        q.connect(lp);
+        return q;
+      });
+    }
+    if (B.events === 'crackles') {
+      b.events = B.events;
+      b.ev = { next: 0 };
+      b.evOut = [-0.25, 0, 0.25].map(v => {
+        const q = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+        if (q.pan) q.pan.value = v;
+        q.connect(tr);
+        return q;
+      });
+    }
+    b.osc = t => {
+      const out = [];
+      if (B.tone) {
+        const o = c.createOscillator();
+        o.frequency.value = B.tone;
+        const og = c.createGain();
+        og.gain.value = 0.18;
+        o.connect(og);
+        og.connect(tr);
+        o.start(t);
+        out.push(o);
+      }
+      return out;
+    };
+    ambience.beds[name] = b;
+  }
   return true;
+}
+/* SND-8a: random drift instead of the regular wobbles (logic/ambience-sound.js ambienceDrift): each wandering level or
+   filter of a bed gets a new random value every few seconds, scheduled a little ahead; no oscillator, and a level
+   never swings below 0 */
+/* each bed to its level and pan (T and pans by bed name; a bed not named goes to 0) */
+function ambienceApply(T, pans, t) {
+  for (const [k, b] of Object.entries(ambience.beds)) {
+    /* SND-8a: a bed starts when wanted, and stops once it has faded to nothing */
+    const step = ambienceLiveStep(b.st, T[k] || 0, t);
+    b.want = T[k] || 0;
+    if (step === 'start') ambienceBedStart(b, t);
+    else if (step === 'stop') ambienceBedStop(b, t);
+    b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
+    if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
+    if (b.st.live) ambienceDriftTick(b, t);
+    if (b.st.live && b.events) ambienceEvents(b, t);
+  }
+}
+/* SND-8a: the Sound Test and tools/check-sound.py --loudness play world sounds here as the game would: a list of
+   [kind, metres] (logic/ambience-sound.js ambiencePreview: a source at a distance, or a place's bed), 'birds' (the
+   open country's) and ['steps', 0, ground] */
+function ambiencePreviewTick(list, t) {
+  if (!ambience.bus && !initAmbience()) return;
+  ambienceApply(ambiencePreview(list), {}, t);
+  /* SND-10: water recipes [id, metres, a fall's height] */
+  if (ambience.scape) ambience.scape.update(soundscapePreview(SOUNDSCAPE, list), t);
+  if (list.some(([k]) => k === 'birds')) ambienceBirds(t, ['lark', 'lark', 'song'], false, 1, 0, 1);
+  /* footsteps ['steps', 0, ground], one every 0.35 s (walking) */
+  const st = list.find(([k]) => k === 'steps');
+  if (st) {
+    if (!ambience.stepAt || ambience.stepAt < t || ambience.stepAt > t + 1) ambience.stepAt = t;
+    for (; ambience.stepAt < t + 0.3; ambience.stepAt += 0.35) ambienceStepPlay(st[2] || 'l', ambience.stepAt);
+  }
+}
+/* SND-8a: a bed's sources start (each layer's noise from a random point of its loop) and stop */
+function ambienceBedStart(b, t) {
+  const c = soundEngine.ctx;
+  for (const P of b.parts) {
+    const s = c.createBufferSource();
+    s.buffer = P.buffer;
+    s.loop = true;
+    s.playbackRate.value = P.rate;
+    s.connect(P.head);
+    s.start(t, ambience.rng() * P.buffer.duration);
+    b.srcs.push(s);
+  }
+  b.srcs.push(...b.osc(t));
+  ambience.started += b.srcs.length;
+}
+/* SND-8a: a live bed's events due in the next 0.3 s: crickets' chirps, a fire's crackles (logic/ambience-sound.js) */
+function ambienceEvents(b, t) {
+  const c = soundEngine.ctx,
+    r = ambience.rng;
+  if (b.events === 'crickets')
+    for (const e of ambienceCrickets(b.ev, t, t + 0.3, r)) {
+      const s = c.createBufferSource(),
+        g = c.createGain();
+      s.buffer = b.chirps[e.who];
+      g.gain.value = e.gain * b.chirpGain[e.who] * b.eventGain;
+      s.connect(g);
+      g.connect(b.evOut[e.who]);
+      s.start(e.t);
+      s.onended = () => g.disconnect();
+      ambience.started++;
+    }
+  if (b.events === 'crackles')
+    for (const e of ambienceCrackles(b.ev, t, t + 0.3, r)) {
+      /* a few milliseconds of noise, band-passed at a random pitch, snapping in and dying away */
+      const s = c.createBufferSource(),
+        F = c.createBiquadFilter(),
+        g = c.createGain();
+      s.buffer = ambience.noise.pink;
+      F.type = 'bandpass';
+      F.frequency.value = e.f;
+      F.Q.value = e.q;
+      g.gain.setValueAtTime(0, e.t);
+      g.gain.linearRampToValueAtTime(e.gain * b.eventGain, e.t + 0.001);
+      g.gain.setTargetAtTime(0, e.t + 0.001, e.d / 3);
+      s.connect(F);
+      F.connect(g);
+      g.connect(b.evOut[1 + Math.sign(e.pan)]);
+      s.start(e.t, r() * (s.buffer.duration - 0.5));
+      s.stop(e.t + 0.001 + e.d * 2.5);
+      s.onended = () => g.disconnect();
+      ambience.started++;
+    }
+}
+function ambienceBedStop(b, t) {
+  for (const s of b.srcs)
+    try {
+      s.stop(t);
+    } catch (e) {}
+  b.srcs = [];
+  for (const w of b.drifts) w.next = 0;
+}
+function ambienceDriftTick(b, t) {
+  for (const w of b.drifts) {
+    if (w.next < t) w.next = t;
+    while (w.next < t + 0.3) {
+      const { value, wait } = ambienceDrift(w.D, ambience.rng);
+      w.param.setTargetAtTime(value, w.next, w.D.tau);
+      w.next += wait;
+    }
+  }
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
 function soundPlacement(x, z, range) {
@@ -1046,12 +1167,18 @@ function nearestSoundSource(list, get, range) {
   }
   return best;
 }
-function updateAmbience() {
+export function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   if (!ambience.bus && !initAmbience()) return;
   const c = soundEngine.ctx,
     t = c.currentTime,
     T = {};
+  /* SND-8a: the debug menu's Sound test plays its world sounds instead of the place's */
+  if (ambience.preview) {
+    applyAmbienceVolume();
+    ambiencePreviewTick(ambience.preview, t);
+    return;
+  }
   const walk =
     typeof walkView !== 'undefined' &&
     walkView.ready &&
@@ -1069,47 +1196,14 @@ function updateAmbience() {
         pans[k] = w.pan;
       }
     };
-    put(
-      'stream',
-      nearestSoundSource(walkRenderer.streamCells, q => q, 10),
-      0.5
-    );
-    put(
-      'falls',
-      nearestSoundSource(walkRenderer.falls, q => [q[0], q[2]], 14),
-      0.7
-    );
+    /* SND-10: the water near you is soundscape-here.js's (every kind, falls by height, the surf); the sea's own bed
+       stays, coast-wide */
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
-      T.sea = 0.35;
+      T.sea = AMBIENCE_FIXED.sea_coast.gain;
       pans.sea = 0;
-      put(
-        'sea',
-        nearestSoundSource(walkView.water, q => q, 8),
-        0.6
-      );
-    } else
-      put(
-        'pond',
-        nearestSoundSource(walkView.water, q => q, 6),
-        0.22
-      );
-    if (sc.waterKind === 'lava')
-      put(
-        'lava',
-        nearestSoundSource(walkView.water, q => q, 10),
-        0.5
-      );
+    }
     const C0 = walkData().sc,
       props = sc.props || [];
-    put(
-      'fountain',
-      nearestSoundSource(
-        props.filter(p => /fountain/.test(p.k)),
-        p => [p.x, p.z],
-        9
-      ),
-      0.45
-    );
     put(
       'fire',
       nearestSoundSource(
@@ -1151,10 +1245,8 @@ function updateAmbience() {
     }
   }
   if (sc) ambienceBeds(sc, E, T, pans, t);
-  for (const [k, b] of Object.entries(ambience.beds)) {
-    b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
-    if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
-  }
+  ambienceApply(T, pans, t);
+  soundscapeHere(sc, E, t);
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
   const night = E ? (E.raw || E).night : 0,
     moving = sc && walkView.pl && walkView.pl.walk;
@@ -1168,7 +1260,9 @@ function updateAmbience() {
   if (soundEngine.musLP) {
     const cut = musicMapCut();
     soundEngine.musLP.frequency.setTargetAtTime(
-      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 2200 : 20000,
+      /* SND-8b: the rain's muffle softened from 2.2 to 4 kHz (the owner's pick, 2026-10-27; SND-13's rain layer
+         replaces it) */
+      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 4000 : 20000,
       t,
       0.8
     );
@@ -1180,10 +1274,54 @@ setInterval(() => {
     lowHpBeep();
   } catch (e) {}
 }, 200);
+/* SND-8a: the sources started in the last minute (the music's voices and the world's), for the debug log */
+const soundStarts = [];
+setInterval(() => {
+  if (!soundEngine.ctx) return;
+  soundStarts.push((soundEngine.tracker ? soundEngine.tracker.started : 0) + ambience.started);
+  if (soundStarts.length > 7) soundStarts.shift();
+  soundEngine.perMinute = soundStarts.length > 1 ? soundStarts[soundStarts.length - 1] - soundStarts[0] : null;
+}, 10000);
+/* SND-8a: what the debug log says about the sound (no save data): live beds and their levels, the bed noise's making;
+   SND-9: the bank and the reverb */
+export function soundDebugLines() {
+  const c = soundEngine.ctx,
+    T = soundEngine.tracker;
+  if (!c) return null;
+  const live = Object.entries(ambience.beds).filter(([, b]) => b.st && b.st.live);
+  return {
+    state: c.state,
+    rate: c.sampleRate,
+    song: soundEngine.song ? soundEngine.song.name : null,
+    latencyMs: { base: Math.round((c.baseLatency || 0) * 1000), output: Math.round((c.outputLatency || 0) * 1000) },
+    states: soundEngine.states || [],
+    lateSteps: T ? T.late : 0,
+    sourcesLastMinute: soundEngine.perMinute ?? null,
+    worldBeds: Object.keys(ambience.beds).length,
+    liveBeds: Object.fromEntries(live.map(([k, b]) => [k, Math.round((b.want || 0) * 1000) / 1000])),
+    liveSources: live.reduce((a, [, b]) => a + b.srcs.length, 0),
+    bedNoise: ambience.noise
+      ? {
+          ms: ambience.noiseMs,
+          kb: Math.round(((ambience.noise.pink.length + ambience.noise.brown.length) * 4) / 1024),
+        }
+      : null,
+    /* SND-9: the baked instruments (their bake's work in ms, MB alone and with the other baked buffers, each slice's
+       time: a Worker comes only if these show hitches on the phone) and the reverb (its impulse's bake, its wait, the
+       buffer's assignment) */
+    bank: T && T.bankStats ? T.bankStats() : null,
+    /* SND-10: the water: live voices and their levels, sources, events played and dropped; the scene's emitters (made
+       in ms, from the renderer's grid or the tiles, how many of each) */
+    water: ambience.scape ? { ...ambience.scape.stats(), scene: ambience.scapeBuilt || null } : null,
+    reverb: T && T.reverbStats ? T.reverbStats() : null,
+  };
+}
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
 function ambienceBeds(sc, E, T, pans, t) {
   const st = E || (typeof environmentState === 'function' ? environmentState(sc) : { night: 0, dusk: 0 }),
-    night = st.night || 0,
+    /* SND-8a: a room reads the place's own night (environment.raw), not the room's light (0 indoors): no daytime birds
+       through the walls at night, and the crickets outside instead */
+    night = (E && E.raw ? E.raw.night : st.night) || 0,
     day = 1 - night,
     rain = E ? E.rain : 0,
     dt = 0.2,
@@ -1216,17 +1354,7 @@ function ambienceBeds(sc, E, T, pans, t) {
       pans.town = 0;
     }
     /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS) */
-    {
-      const L = BIRD_CALLS[sc.biome] || BIRD_CALLS._;
-      if (
-        L.length &&
-        day > 0.3 &&
-        Math.random() < dt * (town ? 0.12 : 0.3) * day * (1 - Math.min(1, rain) * 0.8) * thru
-      ) {
-        const k = L[Math.floor(Math.random() * L.length)];
-        if (Math.random() < (RARE_BIRDS[k] || 1)) playBirdCall(t, k);
-      }
-    }
+    ambienceBirds(t, BIRD_CALLS[sc.biome] || BIRD_CALLS._, town, day, rain, thru);
     /* the farm's rooster at first light */
     const hr = typeof environmentHour === 'function' ? environmentHour() : 12;
     if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) playBirdCall(t, 'rooster');
@@ -1251,7 +1379,68 @@ function ambienceBeds(sc, E, T, pans, t) {
     }
   }
 }
-function ambienceOutput(pan, dry) {
+/* birds of the list L now and then (by day, fewer in the rain and in towns) */
+function ambienceBirds(t, L, town, day, rain, thru) {
+  /* SND-8a: one at a time: the next call waits for the last to end, then a gap of about 10 s outside towns (rarer in
+     one: logic/ambience-sound.js ambienceBirdWait); fewer by dusk, in the rain and through a wall */
+  if (!L.length || day <= 0.3 || thru <= 0) return;
+  const r = ambience.rng || Math.random;
+  if (ambience.birdAt == null || ambience.birdAt > t + 60) ambience.birdAt = t + ambienceBirdWait(r, town) * r();
+  if (t < ambience.birdAt) return;
+  let end = t;
+  if (r() < day * (1 - Math.min(1, rain) * 0.8) * thru) {
+    const k = L[Math.floor(Math.random() * L.length)];
+    if (Math.random() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
+  }
+  ambience.birdAt = end + ambienceBirdWait(r, town);
+}
+/* SND-8a: a footstep at time t: each a little different (its pitch and level), the feet a little left and right, the
+   natural grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep); on the
+   World bus (the owner's pick, recommended: steps follow the World slider, not Sound effects) */
+function ambienceStepPlay(ter, t) {
+  const c = soundEngine.ctx;
+  soundEngine.foot = soundEngine.foot ? 0 : 1;
+  const S = ambienceStep(ter, ambience.rng || Math.random, soundEngine.foot),
+    W = ambience.bus || soundEngine.fx;
+  let dest = W;
+  if (c.createStereoPanner) {
+    const p = c.createStereoPanner();
+    p.pan.value = S.pan;
+    p.connect(W);
+    dest = p;
+    setTimeout(() => {
+      try {
+        p.disconnect();
+      } catch (e) {}
+    }, 1000);
+  }
+  for (const h of S.hits) ambienceHit(dest, t + h.at, h);
+}
+/* SND-8a: a short hit of the beds' noise (brown under a low-pass, else pink), falling away as synthNoise's does;
+   before the beds' noise exists, synthNoise itself */
+function ambienceHit(dest, t, h) {
+  if (!ambience.noise) {
+    synthNoise(dest, { t, dur: h.dur, vol: h.vol, lp: h.lp || 0, bp: h.bp || 0, hp: h.hp || 0, q: h.q || 1 });
+    return;
+  }
+  const c = soundEngine.ctx,
+    s = c.createBufferSource(),
+    F = c.createBiquadFilter(),
+    g = c.createGain();
+  s.buffer = h.lp ? ambience.noise.brown : ambience.noise.pink;
+  F.type = h.lp ? 'lowpass' : h.hp ? 'highpass' : 'bandpass';
+  F.frequency.value = h.lp || h.hp || h.bp;
+  F.Q.value = h.q || 1;
+  g.gain.setValueAtTime(h.vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + h.dur);
+  s.connect(F);
+  F.connect(g);
+  g.connect(dest);
+  s.start(t, (ambience.rng || Math.random)() * (s.buffer.duration - 0.5));
+  s.stop(t + h.dur + 0.02);
+  ambience.started++;
+}
+function ambienceOutput(pan, dry, lp = 0) {
   const c = soundEngine.ctx,
     g = c.createGain();
   let out = g;
@@ -1260,6 +1449,15 @@ function ambienceOutput(pan, dry) {
     p.pan.value = pan;
     g.connect(p);
     out = p;
+  }
+  /* SND-8a: the birds come through a gentle low-pass, so no call is shrill */
+  if (lp) {
+    const F = c.createBiquadFilter();
+    F.type = 'lowpass';
+    F.frequency.value = lp;
+    F.Q.value = 0.5;
+    out.connect(F);
+    out = F;
   }
   out.connect(dry ? ambience.amb : ambience.lpA || ambience.amb);
   setTimeout(() => {
@@ -1317,11 +1515,14 @@ const BIRD_CALLS = {
   sun: [],
 };
 const RARE_BIRDS = { hawk: 0.3, woodpecker: 0.45, rooster: 1 };
+/* SND-8a: a little lower and quieter than before, and it says when its call ends (so the next bird waits) */
+const BIRD_PITCH = 0.88,
+  BIRD_LEVEL = 0.6;
 function playBirdCall(t, kind) {
-  const g = ambienceOutput((Math.random() - 0.5) * 1.4),
+  const g = ambienceOutput((Math.random() - 0.5) * 1.4, false, 6000),
     r = Math.random,
-    V = o => synthVoice(g, o);
-  g.gain.value = 0.5 + r() * 0.5;
+    V = o => synthVoice(g, { ...o, freq: o.freq * BIRD_PITCH });
+  g.gain.value = (0.5 + r() * 0.5) * BIRD_LEVEL;
   if (kind === 'sparrow') {
     const n = 3 + Math.floor(r() * 5),
       f = 3600 + r() * 700;
@@ -1339,7 +1540,7 @@ function playBirdCall(t, kind) {
       });
       s += 0.07 + r() * 0.09;
     }
-    return;
+    return s;
   }
   if (kind === 'lark') {
     const n = 12 + Math.floor(r() * 12);
@@ -1357,7 +1558,7 @@ function playBirdCall(t, kind) {
       });
       s += 0.045 + r() * 0.03;
     }
-    return;
+    return s;
   }
   if (kind === 'thrush') {
     const m = [1700 + r() * 500, 2300 + r() * 500, 1900 + r() * 400],
@@ -1368,7 +1569,7 @@ function playBirdCall(t, kind) {
         V({ type: 'sine', freq: f, t: s, dur: 0.11, vol: 0.035, a: 0.01, r: 0.04, slide: r() < 0.5 ? 1.2 : 0.85 });
         s += 0.15;
       }
-    return;
+    return s;
   }
   if (kind === 'reed') {
     const n = 8 + Math.floor(r() * 8);
@@ -1377,7 +1578,7 @@ function playBirdCall(t, kind) {
       V({ type: 'triangle', freq: i % 2 ? 2400 : 1900, t: s, dur: 0.04, vol: 0.022, a: 0.004, r: 0.02, cut: 5000 });
       s += 0.07;
     }
-    return;
+    return s;
   }
   if (kind === 'gull') {
     const n = 2 + Math.floor(r() * 3);
@@ -1396,7 +1597,7 @@ function playBirdCall(t, kind) {
       });
       s += 0.32 + r() * 0.1;
     }
-    return;
+    return s;
   }
   if (kind === 'crow') {
     const n = 2 + Math.floor(r() * 2);
@@ -1416,7 +1617,7 @@ function playBirdCall(t, kind) {
       synthNoise(g, { t: s, dur: 0.18, vol: 0.02, bp: 900, q: 1.2 });
       s += 0.34 + r() * 0.12;
     }
-    return;
+    return s;
   }
   if (kind === 'pigeon') {
     [
@@ -1426,7 +1627,7 @@ function playBirdCall(t, kind) {
     ].forEach(([f, d], i) =>
       V({ type: 'sine', freq: f, t: t + i * 0.3, dur: d, vol: 0.035, a: 0.04, r: 0.08, slide: 0.92, vib: 2 })
     );
-    return;
+    return t + 0.95;
   }
   if (kind === 'chough') {
     for (let i = 0; i < 2; i++)
@@ -1440,17 +1641,17 @@ function playBirdCall(t, kind) {
         r: 0.04,
         slide: 0.65,
       });
-    return;
+    return t + 0.5;
   }
   if (kind === 'hawk') {
     V({ type: 'sine', freq: 3000, t, dur: 0.75, vol: 0.026, a: 0.03, r: 0.15, slide: 0.7, vib: 1.5 });
-    return;
+    return t + 0.9;
   }
   if (kind === 'woodpecker') {
     const n = 12 + Math.floor(r() * 6);
     for (let i = 0; i < n; i++)
       synthNoise(g, { t: t + i * 0.055, dur: 0.03, vol: 0.07 * (1 - (i / n) * 0.5), bp: 1100, q: 3 });
-    return;
+    return t + n * 0.055;
   }
   if (kind === 'rooster') {
     let s = t;
@@ -1473,7 +1674,7 @@ function playBirdCall(t, kind) {
       });
       s += d + 0.03;
     });
-    return;
+    return s;
   }
   const base = 2200 + r() * 1800,
     n = 2 + Math.floor(r() * 4),
@@ -1491,6 +1692,7 @@ function playBirdCall(t, kind) {
       slide: kd < 0.5 ? 1.25 : 0.8,
     });
   }
+  return t + n * 0.15 + 0.11;
 }
 /* v47: the scrap yard: a sheet of metal shifting, or a slow creak of cable */
 function playScrapClank(t) {
@@ -1603,8 +1805,11 @@ export function soundEffectAt(name, x, z, o = {}) {
   const F = g;
   const k = o.k;
   if (name === 'plop') {
-    synthVoice(F, { type: 'sine', freq: 900, t, dur: 0.08, vol: 0.12, slide: 0.35 });
-    synthNoise(F, { t: t + 0.03, dur: 0.12, vol: 0.06, bp: 1200, q: 1 });
+    /* SND-10: a splash by its size (a frog's 0.3, a fish's 0.4, a diving bird's 0.55; soundscape-here.js) */
+    if (!soundscapeSplashPlay(o.size ?? 'plop', t, F)) {
+      synthVoice(F, { type: 'sine', freq: 900, t, dur: 0.08, vol: 0.12, slide: 0.35 });
+      synthNoise(F, { t: t + 0.03, dur: 0.12, vol: 0.06, bp: 1200, q: 1 });
+    }
   } else if (name === 'rustle') synthNoise(F, { t, dur: 0.18, vol: 0.035, bp: 2600, q: 0.5 });
   else if (name === 'door') {
     synthVoice(F, { type: 'sawtooth', freq: 170, t, dur: 0.24, vol: 0.018, slide: 1.35 });

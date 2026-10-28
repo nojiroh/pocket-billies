@@ -261,7 +261,8 @@ function waterLife() {
           y: walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0,
           a: 0,
         });
-        if (typeof soundEffectAt === 'function') soundEffectAt('plop', x, z);
+        /* SND-10: a jumping fish's splash */
+        if (typeof soundEffectAt === 'function') soundEffectAt('plop', x, z, { size: 0.4 });
       }
     });
   if (engineSetting('water', 'rings') && !walkRenderer.bt && !reducedMotion) {
