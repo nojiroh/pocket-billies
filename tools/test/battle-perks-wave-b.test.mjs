@@ -415,3 +415,205 @@ test('PK-4 rule forecastDays: the forecast is rolled and shown n days more; the 
     assert.equal(modules.effects.fxRunRule(null, 'forecastDays', P), 0);
   });
 });
+
+/* ---------- the 15 Wave B Perks of perks.json ---------- */
+
+const WAVE_B = [
+  'bellows',
+  'snorkel',
+  'watering_can',
+  'static_socks',
+  'knee_pads',
+  'kite',
+  'mood_ring',
+  'union_card',
+  'heirloom_locket',
+  'matching_hoodies',
+  'rainbow_lanyard',
+  'group_chat',
+  'umbrella',
+  'snow_globe',
+  'barometer',
+];
+/** the run's rows of these Perks of perks.json */
+const real = ids => fn('fxOfRun')({ perks: ids }, data.PERKS);
+
+test('PK-4 Wave B: all 15 are in perks.json with a picture; the type Perks need and are tagged with their type', () => {
+  for (const id of WAVE_B) {
+    assert.ok(data.PERKS[id], id);
+    assert.equal(data.PERKS[id].img, `perks/${id}.svg`);
+  }
+  assert.equal(Object.keys(data.PERKS).length, 43, '13 + Wave A’s 15 + Wave B’s 15');
+  const typed = WAVE_B.filter(id => data.PERKS[id].needs);
+  assert.equal(typed.length, 9);
+  for (const id of typed) {
+    const T = data.PERKS[id].needs.slice(5);
+    assert.deepEqual(data.PERKS[id].tags, [T], id);
+    assert.equal(data.PERKS[id].fx[0].passive, GAME_DATA.types.find(t => t.id === T).passive, id);
+  }
+});
+
+test('PK-4 Bellows, Snorkel, Watering Can, Static Socks: their passives, stronger for yours', () => {
+  const R = data.RULES.battle;
+  /* Bellows: Kindling at 3 turns counts 6 */
+  let b = battle(real(['bellows']), [ofType('Fire')]);
+  fn('fieldState')(0).turnsIn = 3;
+  fn('fieldState')(0).st = {};
+  assert.ok(Math.abs(fn('effectiveStat')(0, 'lev') / fn('stat')(mine(b), 'lev') - (1 + R.kindlingBoost * 6)) < 1e-9);
+  /* Snorkel: Undertow at 45% */
+  const hitAt = (fx, share) => {
+    const q = battle(fx, [ofType('Water')]);
+    tough(foe(q));
+    mine(q).hp = Math.floor(fn('maxHp')(mine(q)) * share);
+    return dmg(q, 0, 1, moveOf('Water'));
+  };
+  assert.ok(Math.abs(hitAt(real(['snorkel']), 0.45) / hitAt(null, 0.45) - R.undertowMult) < 0.05);
+  /* Watering Can: twice the heal */
+  const heal = fx => {
+    const q = battle(fx, [ofType('Grass')], {}, 40);
+    mine(q).hp = Math.floor(fn('maxHp')(mine(q)) / 2);
+    const was = mine(q).hp;
+    fn('endTurn')();
+    return mine(q).hp - was;
+  };
+  assert.ok(Math.abs(heal(real(['watering_can'])) - 2 * heal(null)) <= 1);
+  /* Static Socks: a roll between stage 1 and 2 crits */
+  const C = R.critChances;
+  b = battle(real(['static_socks']), [ofType('Electric')]);
+  assert.equal(
+    rolls(b, [(C[1] + C[2]) / 2, 0.5], () => fn('calcDamage')(0, 1, moveOf('Electric')).crit),
+    true
+  );
+});
+
+test('PK-4 Knee Pads, Kite, Mood Ring, Union Card, Heirloom Locket: their passives, stronger for yours', () => {
+  /* Knee Pads: holds at 80% HP, twice */
+  let b = battle(real(['knee_pads']), [ofType('Ground')]);
+  const m = mine(b),
+    mx = fn('maxHp')(m);
+  m.hp = Math.ceil(mx * 0.8);
+  assert.equal(fn('bedrockHolds')(0, { dmg: 99999 }), true);
+  m.hp = mx;
+  assert.equal(fn('bedrockHolds')(0, { dmg: 99999 }), true);
+  m.hp = mx;
+  assert.equal(fn('bedrockHolds')(0, { dmg: 99999 }), false);
+  /* Kite: two free switches */
+  b = battle(real(['kite']), [ofType('Flying'), ofType('Flying')]);
+  tough(foe(b));
+  let free = 0;
+  for (const i of [1, 0]) {
+    fn('runTurn')([{ who: 0, k: 'switch', i }], b);
+    if (lines(b).some(t => t.includes('without losing the turn'))) free++;
+  }
+  assert.equal(free, 2);
+  /* Mood Ring: the better of two rolls */
+  const psy = fx => {
+    const q = battle(fx, [ofType('Psychic')]);
+    tough(foe(q));
+    return dmg(q, 0, 1, moveOf('Psychic'), [0.99, 0.05, 0.95, 0.5]);
+  };
+  assert.ok(psy(real(['mood_ring'])) > psy(null));
+  /* Union Card: a non-Steel teammate counts */
+  const steel = fx => {
+    const q = battle(fx, [ofType('Steel'), notOf('Steel')]);
+    tough(foe(q));
+    return dmg(q, 0, 1, moveOf('None') || moveOf('Steel'));
+  };
+  assert.ok(steel(real(['union_card'])) > steel(null));
+  /* Heirloom Locket: Speed too */
+  b = battle(real(['heirloom_locket']), [ofType('Dragon'), ofType('Dragon')]);
+  fn('inherit')(0);
+  fn('doSwitch')(0, 1);
+  assert.equal(fn('fieldState')(0).st.hus, 1);
+  assert.ok(lines(b).some(t => t.includes('fired up')));
+});
+
+test('PK-4 Matching Hoodies: a team all of one type takes 15% less; a mixed team doesn’t', () => {
+  const M = data.MOVES[moveOf('None') || moveOf('Fire')];
+  battle(real(['matching_hoodies']), [ofType('Fire'), ofType('Fire')]);
+  assert.equal(fn('fxHitMult')(1, 0, M, { crit: false, te: 1 }), 0.85);
+  battle(real(['matching_hoodies']), [ofType('Fire'), ofType('Water')]);
+  assert.equal(fn('fxHitMult')(1, 0, M, { crit: false, te: 1 }), 1);
+});
+
+test('PK-4 Rainbow Lanyard: 3% harder for each different type on the team', () => {
+  const M = data.MOVES[moveOf('None') || moveOf('Fire')];
+  battle(real(['rainbow_lanyard']), [ofType('Fire'), ofType('Water'), ofType('Grass')]);
+  assert.ok(Math.abs(fn('fxHitMult')(0, 1, M, { crit: false, te: 1 }) - 1.09) < 1e-9);
+  battle(real(['rainbow_lanyard']), [ofType('Fire')]);
+  assert.ok(Math.abs(fn('fxHitMult')(0, 1, M, { crit: false, te: 1 }) - 1.03) < 1e-9);
+});
+
+test('PK-4 Group Chat: the bench gets the full XP of a foe', () => {
+  const sp = ofType('Water'),
+    b = battle(real(['group_chat']), [sp, sp], {}, 10, sp),
+    bench = b.sides[0].team[1],
+    lead = mine(b),
+    w = [bench.xp, lead.xp];
+  foe(b).hp = 0;
+  fn('award')(foe(b));
+  assert.ok(Math.abs(bench.xp - w[0] - (lead.xp - w[1])) <= 1, `${bench.xp - w[0]} vs ${lead.xp - w[1]}`);
+});
+
+test('PK-4 Umbrella and Snow Globe: no weakening; boosts twice over', () => {
+  wet(real(['umbrella']), [ofType('Fire')]);
+  assert.equal(fn('fxWeatherFor')(0, 'Fire'), 1);
+  assert.equal(fn('fxWeatherFor')(0, 'Water'), 1.3);
+  wet(real(['snow_globe']), [ofType('Water')]);
+  assert.ok(Math.abs(fn('fxWeatherFor')(0, 'Water') - 1.6) < 1e-9);
+  assert.equal(fn('fxWeatherFor')(0, 'Fire'), 0.5);
+});
+
+test('PK-4 Barometer: 3 more forecast days; walking in in rain or a storm heals 10%, not in the sun', () => {
+  const L = modules['run-loop'];
+  assert.equal(modules.effects.fxRunRule({ perks: ['barometer'] }, 'forecastDays'), 3);
+  const heal = weather => {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30),
+      top = fn('maxHp')(s.team[0]);
+    s.team[0].hp = 1;
+    s.run = { perks: ['barometer'], perkState: {} };
+    const got = L.runFxMoment(s, data.PERKS, 'arrive', { weather }).hp;
+    return [got, Math.ceil(top * 0.1)];
+  };
+  const [rain, want] = heal('rain');
+  assert.equal(rain, want);
+  assert.equal(heal('storm')[0], want);
+  assert.equal(heal('sunny')[0], 0);
+});
+
+test('PK-4 all Wave A and B Perks at once: whole battles end, every number finite, the stream replayable', () => {
+  const ids = Object.keys(data.PERKS).slice(13);
+  assert.equal(ids.length, 30);
+  const team = [ofType('Fire'), ofType('Water'), ofType('Grass')];
+  const play = seed => {
+    const marks = {},
+      b = battle(real(ids), team, { perkState: marks, seed }),
+      out = [];
+    for (let t = 0; t < 200 && !b.over; t++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0),
+        mid = m.moves.find(id => data.MOVES[id] && data.MOVES[id].p > 0) || m.moves[0];
+      fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], b);
+      for (const side of b.sides)
+        for (const q of side.team) assert.ok(Number.isInteger(q.hp) && q.hp >= 0, `hp ${q.hp}`);
+      out.push(lines(b).length);
+    }
+    assert.ok(b.over, `${seed}: over within 200 turns`);
+    return [b.over, ...out].join();
+  };
+  for (const seed of ['all-ab-a', 'all-ab-b', 'all-ab-c']) assert.equal(play(seed), play(seed), seed);
+  /* the damage and weather numbers of all 30 together stay within FX_LIMIT */
+  const b = wet(real(ids), team),
+    { lo, hi } = modules.effects.FX_LIMIT,
+    M = data.MOVES[moveOf('Water')];
+  const m = fn('fxHitMult')(0, 1, M, { crit: true, te: 2 });
+  assert.ok(m >= lo && m <= hi, String(m));
+  assert.ok(Number.isFinite(fn('fxWeatherFor')(0, 'Water')));
+  assert.ok(b);
+});
