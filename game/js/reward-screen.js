@@ -12,7 +12,14 @@ import { CURRENCIES, ITEMS, MOVES, PYRAMIDS, RULES } from './game-data.js';
 import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
 import { rarityTier } from './logic/marks.js';
-import { rewardDataGame, rewardReroll, rewardRerollCost, rewardTake, tutorWho } from './logic/rewards.js';
+import {
+  rewardDataGame,
+  rewardReroll,
+  rewardRerollCost,
+  rewardRerollFree,
+  rewardTake,
+  tutorWho,
+} from './logic/rewards.js';
 import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
@@ -97,7 +104,7 @@ export function rewardPickOpen(then) {
   const flipKey = `reward:${R.from}:${R.rolls || 0}`,
     flip = pbFlipFresh(flipKey);
   const sel = typeof uiState.rewardSel === 'number' && R.cards[uiState.rewardSel] ? uiState.rewardSel : null,
-    cost = rewardRerollCost(R, RULES.run.rewards),
+    cost = rewardRerollCost(R, RULES.run.rewards, rewardRerollFree(run)),
     /* RL-14: what the bots left (logic/rewards.js salvageOfferMake): never rerolled */
     salvage = R.kind === 'salvage';
   rewardSheet({
@@ -111,7 +118,8 @@ export function rewardPickOpen(then) {
         ? []
         : [
             {
-              l: `Reroll ${moneyHTML(cost, 12)}`,
+              /* PK-5: a free reroll (Fortune Cookie) says so */
+              l: cost ? `Reroll ${moneyHTML(cost, 12)}` : 'Reroll free',
               c: 'dark',
               dis: saveData.se < cost,
               f: () => {

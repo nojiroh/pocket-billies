@@ -27,7 +27,8 @@
      benchXp a share of a foe's XP more for yours who sat out (the bench; rules.json progression.teamXpShare plus
              these, at most all of it) (PK-4, award)
      rule    a run rule changed by n (FX_RULES: forecastDays, the forecast shows n more days; PK-5: rewardPick, reward
-             picks show n more cards, rewards.js rewardOfferMake) (PK-4, run-map.js
+             picks show n more cards, rewards.js rewardOfferMake; rerollFree, the first n rerolls of a reward pick are free,
+             rewards.js rewardRerollCost) (PK-4, run-map.js
              runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
@@ -434,7 +435,7 @@ export const fxBenchXp = fx =>
   );
 
 /** PK-4: the run rules a rule row can change (by its n); later waves add theirs */
-export const FX_RULES = /** @type {const} */ (['forecastDays', 'rewardPick']);
+export const FX_RULES = /** @type {const} */ (['forecastDays', 'rewardPick', 'rerollFree']);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id
  * @param {Record<string, Perk>} [perks] */

@@ -520,7 +520,7 @@ const PK4_BAD = [
   [{ kind: 'weather', what: 'noWeaken', when: 'hit' }, "a weather row can't act at hit"],
   [{ kind: 'benchXp', share: 0 }, 'share: a share of XP above 0, at most 1'],
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
-  [{ kind: 'rule', rule: 'cap', n: 1 }, 'rule: forecastDays, rewardPick (effects.js FX_RULES)'],
+  [{ kind: 'rule', rule: 'cap', n: 1 }, 'rule: forecastDays, rewardPick, rerollFree (effects.js FX_RULES)'],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
 ];
@@ -555,6 +555,7 @@ const PK5_GOOD = [
   { kind: 'free', when: 'buy', every: 4 },
   { kind: 'salvage', mult: 2 },
   { kind: 'rule', rule: 'rewardPick', n: 1 },
+  { kind: 'rule', rule: 'rerollFree', n: 1 },
 ];
 const PK5_BAD = [
   [{ kind: 'catchLevel', n: 0 }, 'n: a whole number of levels from 1 to 10'],
@@ -572,6 +573,7 @@ const PK5_BAD = [
   [{ kind: 'salvage', mult: 9 }, 'mult: 9 is outside the code'],
   [{ kind: 'salvage', mult: 2, when: 'win' }, "a salvage row can't act at win"],
   [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from 1 to 2'],
+  [{ kind: 'rule', rule: 'rerollFree', n: 0 }, 'n: a whole number of rerolls from 1 to 3'],
 ];
 test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

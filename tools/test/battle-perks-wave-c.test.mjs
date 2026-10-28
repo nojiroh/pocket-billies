@@ -262,3 +262,28 @@ test('PK-5 rule rewardPick: reward picks show n more cards, rerolls too; as befo
     assert.equal(t.run.enc.reward.n, undefined, 'no count kept without the row');
   });
 });
+
+/* ---------- rule rerollFree ---------- */
+
+test('PK-5 rule rerollFree: the first n rerolls of each reward pick are free, then the price grows as before', () => {
+  const W = modules.rewards,
+    RULE = GAME_DATA.rules.run.rewards,
+    { P } = perks({ id: 'test_cookie', fx: [{ kind: 'rule', rule: 'rerollFree', n: 1 }] });
+  withPerks(P, () => {
+    const s = runSave(['test_cookie']);
+    s.se = 1000;
+    W.rewardOfferMake(s.run, 'test', W.rewardDataGame(s.team));
+    assert.equal(W.rewardRerollCost(s.run.enc.reward, RULE, W.rewardRerollFree(s.run)), 0);
+    assert.equal(W.rewardReroll(s.run, s, W.rewardDataGame(s.team)), '');
+    assert.equal(s.se, 1000, 'the first was free');
+    assert.equal(W.rewardRerollCost(s.run.enc.reward, RULE, W.rewardRerollFree(s.run)), RULE.reroll);
+    assert.equal(W.rewardReroll(s.run, s, W.rewardDataGame(s.team)), '');
+    assert.equal(s.se, 1000 - RULE.reroll, 'then the first price');
+    /* the next pick: free again */
+    W.rewardOfferMake(s.run, 'test', W.rewardDataGame(s.team));
+    assert.equal(W.rewardRerollCost(s.run.enc.reward, RULE, W.rewardRerollFree(s.run)), 0);
+    const t = runSave([]);
+    W.rewardOfferMake(t.run, 'test', W.rewardDataGame(t.team));
+    assert.equal(W.rewardRerollCost(t.run.enc.reward, RULE, W.rewardRerollFree(t.run)), RULE.reroll);
+  });
+});
