@@ -435,3 +435,22 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
     for (const k of Object.keys(G.FIGURE_DEFS)) if (k.startsWith('look:')) delete G.FIGURE_DEFS[k];
   }
 });
+
+test('CH-4: the snapshot service: a UI picture baked once in the studio light, then kept', () => {
+  const look = G.engineContext.look;
+  try {
+    freshBaker();
+    G.engineContext.look = { people: { figure: 'mannequin', style: 'pixel' } };
+    const a = G.figureSnapshot('me', { crop: 'whole', turn: 1 });
+    assert.ok(a && a.figure === 'mannequin', 'your figure (here the mannequin) as a canvas');
+    assert.equal(a.ppm, G.FIGURE_PORTRAIT_PPM);
+    assert.equal(G.figureReport().bakes, 1);
+    assert.equal(G.figureSnapshot('me', { crop: 'whole', turn: 1 }), a, 'kept');
+    assert.equal(G.figureReport().bakes, 1);
+    assert.notEqual(G.figureSnapshot('me', { crop: 'whole', turn: 0 }), a, 'another turn, another picture');
+    assert.equal(G.figureReport().bakes, 2);
+  } finally {
+    G.engineContext.look = look;
+    G.document.createElement = was;
+  }
+});

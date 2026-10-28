@@ -91,13 +91,13 @@
   {
    "p": "figures/rogue.json",
    "at": [
-    "game/js/figures.js:140"
+    "game/js/figures.js:144"
    ]
   },
   {
    "p": "figures/rogue.png",
    "at": [
-    "game/js/figures.js:141"
+    "game/js/figures.js:145"
    ]
   },
   {
@@ -1757,8 +1757,8 @@
    "game/js/map-tab.js:152"
   ],
   "eye": [
-   "game/js/figures.js:905",
-   "game/js/figures.js:947",
+   "game/js/figures.js:909",
+   "game/js/figures.js:951",
    "game/js/logic/figure-kit.js:1795",
    "game/js/logic/figure-kit.js:1803",
    "game/js/logic/figure-kit.js:1806",

@@ -81,6 +81,8 @@ expose({
   FIGURE_SHADOW_SIZE: [() => FIGURE_SHADOW_SIZE],
   FIGURE_SHADOW_VS: [() => FIGURE_SHADOW_VS],
   FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
+  FIGURE_SNAPS: [() => FIGURE_SNAPS],
+  FIGURE_SNAP_MAX: [() => FIGURE_SNAP_MAX],
   FIGURE_STUDIO_LIGHT: [() => FIGURE_STUDIO_LIGHT],
   FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
@@ -90,6 +92,7 @@ expose({
   figureBakerLose: [() => figureBakerLose, v => (figureBakerLose = v)],
   figureBattlePicture: [() => figureBattlePicture, v => ((figureBattlePicture = v), provide({ figureBattlePicture }))],
   figureBuild: [() => figureBuild, v => (figureBuild = v)],
+  figureBust: [() => figureBust, v => (figureBust = v)],
   figureBytes: [() => figureBytes, v => (figureBytes = v)],
   figureCacheClear: [() => figureCacheClear, v => (figureCacheClear = v)],
   figureChoice: [() => figureChoice, v => (figureChoice = v)],
@@ -118,6 +121,7 @@ expose({
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
   figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
+  figureSnapshot: [() => figureSnapshot, v => (figureSnapshot = v)],
   figureStyle: [() => figureStyle, v => (figureStyle = v)],
   figureTarget: [() => figureTarget, v => (figureTarget = v)],
   figureTilt: [() => figureTilt, v => (figureTilt = v)],
@@ -1160,18 +1164,60 @@ function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
     im = bakeFigure(Fig, 'idle', frame, V, FIGURE_PORTRAIT_PPM, true, style);
   if (!im) return null;
   /* from the first row with anything on it (a top hat's crown and all) down to just under the shoulders (the kit's
-     `bust`, metres from the ground), or a head and a bit for a figure without one */
+     `bust`, metres from the ground; Kappi, with no kit, whole) */
+  const out = figureBust(im, Fig, FIGURE_PORTRAIT_PPM);
+  out.figure = Fig.name;
+  return out;
+}
+/** CH-4: the snapshots kept (figureSnapshot), the longest unused let go past this many */
+const FIGURE_SNAP_MAX = 48;
+const FIGURE_SNAPS = new Map();
+/**
+ * CH-4's snapshot service: a picture of a person's figure for the UI (the dressing room, a dialogue, a card), lit in
+ * the fixed studio light, as a canvas, kept by what it shows. `o`: clip ('idle'), frame (0), turn (0.9: three quarters;
+ * 0 from behind, 1 facing you), tilt (radians, 4 degrees), ppm (FIGURE_PORTRAIT_PPM), style (Engine > People > Figure
+ * style) and crop: 'bust' (head and shoulders, figurePortrait's cut) or 'whole'. Null while the figure's mesh is built
+ * (figure-meshes.js) or the baker can't draw: ask again. The live atlas is unlit, so these come from the figure baker's
+ * own context, which already lights a picture whole (a canvas the page can keep, draw and save without the game's
+ * renderer).
+ */
+function figureSnapshot(who, o = {}) {
+  const style = o.style || figureStyle(),
+    clip = o.clip || 'idle',
+    frame = o.frame || 0,
+    turn = o.turn ?? 0.9,
+    tilt = o.tilt ?? (4 * Math.PI) / 180,
+    ppm = o.ppm || FIGURE_PORTRAIT_PPM,
+    crop = o.crop === 'whole' ? 'whole' : 'bust',
+    name = style === 'pixel' ? figureFor(who) : 'look:' + (who === 'boy' || who === 'girl' ? 'me' : who) + '@' + style,
+    key = [name, clip, frame, turn, Math.round(tilt * 1000), ppm, crop, style].join('|');
+  let im = FIGURE_SNAPS.get(key);
+  if (im) {
+    FIGURE_SNAPS.delete(key);
+    FIGURE_SNAPS.set(key, im);
+    return im;
+  }
+  const Fig = figureDef(name);
+  if (!Fig) return null;
+  im = bakeFigure(Fig, clip, frame, figureView(Math.PI * turn, 0, tilt, 32), ppm, true, style);
+  if (im && crop === 'bust') im = figureBust(im, Fig, ppm);
+  if (!im) return null;
+  im.figure = Fig.name;
+  FIGURE_SNAPS.set(key, im);
+  while (FIGURE_SNAPS.size > FIGURE_SNAP_MAX) FIGURE_SNAPS.delete(FIGURE_SNAPS.keys().next().value);
+  return im;
+}
+/** a baked picture cut from the first row with anything on it down to just under the shoulders (the kit's `bust`) */
+function figureBust(im, Fig, ppm) {
   const x = im.getContext('2d'),
     d = x.getImageData(0, 0, im.width, im.height).data;
   let top = 0;
   findTop: for (; top < im.height; top++)
     for (let i = 0; i < im.width; i++) if (d[(top * im.width + i) * 4 + 3] > 0) break findTop;
-  /* Kappi (no kit) whole */
   const bust = Fig.F && Fig.F.kit && Fig.F.kit.bust != null ? Fig.F.kit.bust : 0,
-    h = Math.max(8, Math.min(im.height - top, Math.round(im.ay - bust * FIGURE_PORTRAIT_PPM) - top)),
+    h = Math.max(8, Math.min(im.height - top, Math.round(im.ay - bust * ppm) - top)),
     out = makeCanvas(im.width, h);
   out.getContext('2d').drawImage(im, 0, top, im.width, h, 0, 0, im.width, h);
-  out.figure = Fig.name;
   return out;
 }
 /**
