@@ -151,7 +151,7 @@ export function runSimOn(env) {
     { runUnlocks } = modules.unlocks,
     { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
     { rewardDataGame, rewardTake } = modules.rewards,
-    { perkBuy, perkChoose, perkPrice, perkShelf, perkTeamOf } = modules.perks,
+    { perkBuy, perkCap, perkChoose, perkPrice, perkShelf, perkTeamOf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
     { modTypeFits } = modules.modifiers,
     { residentCandidate } = modules.residents,
@@ -402,7 +402,16 @@ export function runSimOn(env) {
           const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks, perkTeamOf(s.team));
           if (shelf) {
             const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
-              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
+              c =
+                s.se >= cost + P.reserve
+                  ? simPerkChoice(
+                      [shelf],
+                      run.perks,
+                      data.PERKS,
+                      { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+                      P
+                    )
+                  : null;
             at.relic = { id: shelf, price: cost };
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
               s.se -= cost;
@@ -579,7 +588,13 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
+            const c = simPerkChoice(
+              run.offer,
+              run.perks,
+              data.PERKS,
+              { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+              P
+            );
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
             perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
           }

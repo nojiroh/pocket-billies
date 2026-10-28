@@ -109,7 +109,7 @@ const PERK_KINDS = {
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
   benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
-  rule: 'A run rule: the forecast, reward picks, rerolls, the map shown (PK-4, PK-5)',
+  rule: 'A run rule: the forecast, reward picks, rerolls, the map shown, Perks held (PK-4..PK-6)',
   catchLevel: 'A Billie you catch joins levels higher (PK-5)',
   refund: 'A pyramid that missed comes back (PK-5)',
   free: 'What you just bought is free (PK-5)',
@@ -131,6 +131,10 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
       `Rerolls free at each reward pick; then rules.json’s ${studioState.D.rules.run.rewards.reroll} Moneys, growing.`,
   ],
   mapReveal: ['The run map shows what every place is', () => 'On (1): every place of the main map shows its type.'],
+  cap: [
+    'Hold more Perks',
+    () => `Perks more than rules.json’s ${studioState.D.rules.run.perks.cap} (the online run record still keeps 6).`,
+  ],
 });
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {

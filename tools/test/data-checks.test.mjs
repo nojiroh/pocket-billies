@@ -527,7 +527,10 @@ const PK4_BAD = [
   [{ kind: 'weather', what: 'noWeaken', when: 'hit' }, "a weather row can't act at hit"],
   [{ kind: 'benchXp', share: 0 }, 'share: a share of XP above 0, at most 1'],
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
-  [{ kind: 'rule', rule: 'cap', n: 1 }, 'rule: forecastDays, rewardPick, rerollFree, mapReveal (effects.js FX_RULES)'],
+  [
+    { kind: 'rule', rule: 'luck', n: 1 },
+    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap (effects.js FX_RULES)',
+  ],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
 ];
@@ -594,6 +597,31 @@ test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults
     ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
   assert.ok(ok(D.perks), JSON.stringify(ok.errors));
   for (const [row, text] of PK5_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+const PK6_GOOD = [{ kind: 'rule', rule: 'cap', n: 1 }];
+const PK6_BAD = [
+  [{ kind: 'rule', rule: 'cap', n: 3 }, 'n: a whole number of Perks from 1 to 2'],
+  [{ kind: 'rule', rule: 'cap', n: 1, if: 'lead' }, 'a rule row is read where no battle'],
+];
+test('PK-6: dataPerks and the schema take Wave D’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK6_GOOD.length; i += 4)
+    D.perks['test_pk6_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK6_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK6_BAD) {
     const E = structuredClone(GAME_DATA);
     E.perks.lucky_charm.fx = [row];
     const all = C.dataPerks(E).map(p => p.join(': '));

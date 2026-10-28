@@ -7,7 +7,8 @@
      is shown, so a reload shows the same ones; choosing one (or none) clears it;
    - one in each run shop, a day: drawn from the shop's node and the day the first time the shop opens that day, kept in
      run.shelf (so buying it doesn't put another on the shelf), '' once bought; its price by rarity;
-   - at most run.perks.cap held: a new one past the cap takes the place of one the player lets go.
+   - at most run.perks.cap held (PK-6: plus the cap rule rows, perkCap): a new one past the cap takes the place of one
+     the player lets go.
    They last the run: nothing of them is kept at the payout. Every Perk is on offer from the first run (the owner,
    RL-12); RL-11's unlocks may narrow the pool later. PK-4: a Perk with `needs` (a condition on the team, such as
    team:Fire) is offered only to a team it holds for (PokeRogue's rule: a type Perk needs a Billie of its type); the
@@ -24,17 +25,20 @@ import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFxMoment } from './run-loop.js';
-import { fxCond } from './effects.js';
+import { fxCond, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
   perkBuy: [() => perkBuy, v => (perkBuy = v)],
+  perkCap: [() => perkCap],
   // @ts-expect-error -- replaced on purpose
   perkChoose: [() => perkChoose, v => (perkChoose = v)],
   // @ts-expect-error -- replaced on purpose
   perkCount: [() => perkCount, v => (perkCount = v)],
   // @ts-expect-error -- replaced on purpose
   perkDraw: [() => perkDraw, v => (perkDraw = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkDropOk: [() => perkDropOk, v => (perkDropOk = v)],
   // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
   perkOffer: [() => perkOffer],
@@ -172,12 +176,28 @@ export function perkShelf(run, i, day, perks, rule, team) {
   return run.shelf[key];
 }
 
+/** PK-6: how many Perks the run may hold: rules.json run.perks.cap plus its cap rule rows (Accordion File: +1; a
+ * Photocopier below one copies it), at least 1. The Perks held count, so letting a cap Perk go lowers it at once
+ * @param {Run | null | undefined} run @param {PerkRules} rule @param {Record<string, Perk>} perks */
+export const perkCap = (run, rule, perks) => Math.max(1, rule.cap + (run ? fxRunRule(run, 'cap', perks) : 0));
+/** PK-6: may `drop` be let go for `id`: with `id` in its place the run still holds no more than its cap (letting
+ * Accordion File go at 7 held would leave 7 over a cap of 6) @param {Run} run @param {string} drop @param {string} id
+ * @param {Record<string, Perk>} perks @param {PerkRules} rule */
+export function perkDropOk(run, drop, id, perks, rule) {
+  const at = run.perks.indexOf(drop);
+  if (at < 0) return false;
+  const after = run.perks.slice();
+  after[at] = id;
+  return after.length <= perkCap({ ...run, perks: after }, rule, perks);
+}
+
 /** what a shop asks for a Perk ($, by its rarity) @param {Perk} R @param {PerkRules} rule */
 export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
 
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
- * `drop` given), 'drop' (`drop` isn't held). With `drop`, it takes that one's place. PK-1: with the save it is
+ * `drop` given), 'drop' (`drop` isn't held), 'cap' (PK-6: letting `drop` go would leave more than the cap:
+ * perkDropOk). With `drop`, it takes that one's place. PK-1: with the save it is
  * taken on (`s`, s.run being `run`), its rows of the take moment act (run-loop.js runFxMoment)
  * @param {Run} run @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string} [drop]
  * @param {any} [s]
@@ -188,9 +208,11 @@ export function perkTake(run, id, perks, rule, drop, s) {
   if (drop != null) {
     const at = run.perks.indexOf(drop);
     if (at < 0) return 'drop';
+    /* PK-6: never left over the cap (a cap Perk let go) */
+    if (!perkDropOk(run, drop, id, perks, rule)) return 'cap';
     run.perks[at] = id;
   } else {
-    if (run.perks.length >= rule.cap) return 'full';
+    if (run.perks.length >= perkCap(run, rule, perks)) return 'full';
     run.perks.push(id);
   }
   if (s && s.run === run) runFxMoment(s, perks, 'take', undefined, id);
@@ -246,7 +268,7 @@ export function perkOfferOrder(seed, perks, rule, picks, take = 'none', team) {
   for (let k = 0; k < picks; k++) {
     const offer = (perkOfferMake(run, perks, rule, team) || []).slice(),
       want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
-      took = want && run.perks.length < rule.cap && !perkChoose(run, want, perks, rule) ? want : null;
+      took = want && run.perks.length < perkCap(run, rule, perks) && !perkChoose(run, want, perks, rule) ? want : null;
     if (!took && run.offer) perkChoose(run, null, perks, rule);
     out.push({ offer, took });
   }
