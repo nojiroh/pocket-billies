@@ -356,7 +356,7 @@ export function islandGenDials(d) {
   D.mountain.foot = num(D.mountain.foot, 2, 30, 6);
   D.mountain.rock = num(D.mountain.rock, 0, 0.9, 0);
   D.mountain.shift = [0, 1].map(k => num((D.mountain.shift || [])[k], -40, 40, 0));
-  D.mountain.trail = D.mountain.trail === 0 ? 0 : 1;
+  D.mountain.trail = D.mountain.trail === undefined || D.mountain.trail ? 1 : 0;
   D.organic = num(D.organic, 0, 1, 0.7);
   D.hills = num(D.hills, 0, 1, 0.4);
   D.cove.on = D.cove.on ? 1 : 0;
