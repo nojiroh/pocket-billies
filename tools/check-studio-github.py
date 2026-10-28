@@ -2119,7 +2119,22 @@ def relics_steps(pg, errs):
         pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
         got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
         if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error", flush=True)
+    # PK-4: Wave B's kinds (passive, weather, benchXp, rule): every row of the 15 Wave B Perks shows its inputs with no
+    # error; Bellows shows its Needs and Tags, and a bad need's message shows and is undone
+    wave_b = ['bellows', 'snorkel', 'watering_can', 'static_socks', 'knee_pads', 'kite', 'mood_ring', 'union_card', 'heirloom_locket', 'matching_hoodies', 'rainbow_lanyard', 'group_chat', 'umbrella', 'snow_globe', 'barometer']
+    for pid in wave_b:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    pg.evaluate("void openSection('relics', { relic: 'bellows' })"); time.sleep(0.3)
+    nt = pg.evaluate("[(document.querySelector('#main [data-relic-needs=\"bellows\"]')||{}).value, (document.querySelector('#main [data-relic-tags=\"bellows\"]')||{}).value]")
+    if nt != ['team:Fire', 'Fire']: errs.append(f'perks: Bellows shows Needs and Tags as {nt}')
+    sel = '#main [data-relic-needs="bellows"]'
+    pg.fill(sel, 'lead'); pg.dispatch_event(sel, 'change')
+    if not wait_js(pg, "/can't be known when a Perk is offered/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: a bad need showed no message')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.perks.bellows.needs") != 'team:Fire': errs.append('perks: undo left Bellows needing ' + str(pg.evaluate("studioState.D.perks.bellows.needs")))
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone", flush=True)
 
 
 def unlocks_steps(pg, errs):
