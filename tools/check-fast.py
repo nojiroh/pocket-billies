@@ -48,6 +48,16 @@ def nav_tap(t):
     return f"(()=>{{const b={NAV_BUTTON.format(t=t)};if(!b)return false;b.click();return true}})()"
 
 
+def until_drawn(pg, cond, frames, sec, n, cap=300):
+    """wait for the JS condition cond for sec seconds and, on a slow machine, until n more frames (the JS count frames)
+    have drawn, at most cap seconds: what the game does in its own time moves by frames (its clock moves at most 60 ms
+    a frame), so a fast page keeps the limit of sec seconds and a slow one gets the frames the game needs"""
+    f0 = pg.evaluate(frames)
+    if until(pg, cond, sec): return True
+    until(pg, f"({cond})||({frames})>={f0 + n}", max(1, cap - sec))
+    return bool(pg.evaluate(f"!!({cond})"))
+
+
 def no_errors(errs):
     if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
 
@@ -127,7 +137,11 @@ def run_world(pg, base):
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
-    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
+    # the next view is held (seamless-world.js seamlessGate) until it is built, a few ms a frame: about 140 frames, a
+    # minute or more at this machine's frame rate and 2 s on a phone. While waiting, give it the build time a phone's
+    # frames would (check-quick.py's cross(prep_ms=...) does the same)
+    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke='groundPrepWork(50)'):
+        raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
@@ -168,7 +182,8 @@ def bowl_map(pg, base):
     pg.evaluate("uiState.mapSel=null;0"); pg.evaluate(nav_tap('map'))
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
-    if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
+    # the zoom out lasts 1.5 s and ends on a drawn frame of the map
+    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled: ' + str(pg.evaluate("JSON.stringify({tween:worldBowl.tween&&{t0:worldBowl.tween.t0,dur:worldBowl.tween.dur},fadeOut:worldBowl.fadeOut,fadeAge:worldBowl.fadeAt!=null?performance.now()-worldBowl.fadeAt:null,mapfade:!!document.getElementById('mapfade'),fadeOp:(document.getElementById('mapfade')||{style:{}}).style.opacity,ready:worldBowlReady(),frames:worldBowl.frames,on:worldBowl.on,tab:uiState.tab})")))
     # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
     # phone-sized page: this page's 300 px are mostly card)
     pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
@@ -298,6 +313,7 @@ WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
 # the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
 # keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
 ORBIT_R = 30
+ORBIT_FRAMES = 300   # the hold-right walk's frames on a slow machine, four times what it needs
 
 
 def hub_orbit_walk(pg, c):
@@ -329,14 +345,16 @@ def hub_orbit_walk(pg, c):
     f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
     pg.evaluate("walkView.stick={x:1,y:0};walkView.run=true;0")
     gone = f"Math.abs(Math.atan2(walkView.pl.x-{cx},walkView.pl.z-{cz}))"
-    t0 = time.time(); ys = []
-    while time.time() - t0 < 60:
+    # the walk is game time (67 frames measured, at the game clock's 60 ms a frame): 60 s, and on a slow machine up to
+    # ORBIT_FRAMES frames (at most 300 s)
+    t0 = time.time(); ys = []; f0 = pg.evaluate('walkRenderer.frames')
+    while time.time() - t0 < 300 and (time.time() - t0 < 60 or pg.evaluate('walkRenderer.frames') < f0 + ORBIT_FRAMES):
         ys.append(pg.evaluate("walkView.C.yaw"))
         if pg.evaluate(f"{gone}<Math.PI*0.75"): break
         pg.wait_for_timeout(100)
     pg.evaluate("walkView.stick=null;walkView.run=false;0")
     turned = pg.evaluate(f"Math.PI-{gone}")
-    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in 60 s')
+    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in {time.time() - t0:.0f} s ({pg.evaluate("walkRenderer.frames") - f0} frames)')
     r = pg.evaluate(f"Math.hypot(walkView.pl.x-{cx},walkView.pl.z-{cz})")
     if abs(r - R) > 1: raise Exception(f'holding right drifted from the {R} m circle to {r:.2f} m')
     jump = max((abs((ys[k] - ys[k - 1] + math.pi) % (2 * math.pi) - math.pi) for k in range(1, len(ys))), default=0)
@@ -569,7 +587,7 @@ def tall_ground(pg, base):
     stand(pg, spot['x'], spot['z'])
     # the silhouette counts once the GPU's occlusion query says you're hidden (walk/sprites.js readHideQueries): its
     # results come back a number of frames later, more on a busy machine's software drawing, so wait for it
-    until(pg, "window.__sil>0", 20)
+    until_drawn(pg, "window.__sil>0", 'walkRenderer.frames', 20, 60)
     rise, k, circle, sil = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
     if not (rise > 1): raise Exception(f'the camera didn’t rise at the foot of {spot["up"]} m of rock: {rise}')
     if not (k > 0.9 and circle > 0): raise Exception(f'the rock fade isn’t on there: rockK {k}, circle {circle}')
@@ -604,6 +622,9 @@ def behind_things(pg, base):
     silhouette is shown and the see-through circle is on, frame after frame; back where you started, in the open,
     none of it"""
     drawing(pg)
+    # your buddy off: it stays within a metre of you and, now and then just between the camera and you, covers you
+    # (anything does), so "in the open nothing" would depend on where it happens to stand (the pasture check does the same)
+    pg.evaluate("saveData.preferences.buddyWalk='off';0")
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 30)
     if pg.evaluate('walkRenderer.hidK || 0') > 0.05: raise Exception('hidden where the player starts, in the open')
@@ -628,8 +649,11 @@ def behind_things(pg, base):
     until(pg, '(walkRenderer.hidK||0)<=0.05&&rockUniformsFor(walkView.C).rock[2]<=0', 30)
     k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')
     if k > 0.05 or circle > 0:
-        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,near=(walkView.folkAll||walkView.folk||[]).map(f=>Math.hypot(f.x-P.x,f.z-P.z)).sort((a,b)=>a-b)[0];
-          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},nearestFolk:near}}}})()""")
+        # what stands near the line from the camera to you: t is how far along it (1 = you), off how far beside it
+        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,e=walkView.C.eye,dx=P.x-e[0],dz=P.z-e[2],L=dx*dx+dz*dz,
+            line=(x,z)=>{{const t=((x-e[0])*dx+(z-e[2])*dz)/L;return {{t:+t.toFixed(2),off:+Math.hypot(x-e[0]-dx*t,z-e[2]-dz*t).toFixed(2),d:+Math.hypot(x-P.x,z-P.z).toFixed(2)}}}},
+            b=worldBillies.bud,folk=(walkView.folkAll||walkView.folk||[]).map(f=>line(f.x,f.z)).sort((a,b)=>a.d-b.d).slice(0,3);
+          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},buddy:b?line(b.x,b.z):null,folk}}}})()""")
         raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle}): {seen}')
     return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
@@ -882,11 +906,17 @@ def relics(pg, base):
     the world shows, three cards; one taken: six held, the pick gone, stored; the Perks tab lists them; a battle
     starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
     day's Perk 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
-    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it"""
+    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it. PK-2: each card, row
+    and shop ware shows its Perk's own picture (72 px on the pick, 36 px in the tab, the shop and letting one go).
+    PK-3: the tab shows a held Perk's counter (Click Pen 5/8, a spent Warranty Card VOID)"""
     pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
     stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
     if not until(pg, pick, 90): raise Exception('the waiting pick didn’t open')
     offer = pg.evaluate("saveData.run.offer.slice()")
+    # PK-2: each Perk's own picture, 72 px on a pick card, 36 px in a row (whole multiples of its 36 px)
+    pics = lambda sel: pg.evaluate(f"[...document.querySelectorAll({sel!r})].map(e=>[e.offsetWidth,(getComputedStyle(e).backgroundImage.match(/art\\/(perks\\/\\w+\\.svg)/)||[])[1]||''])")
+    got = pics('#ov pb-pick-card .art-ic')
+    if got != [[72, f'perks/{k}.svg'] for k in offer]: raise Exception(f'the pick cards’ pictures: {got}')
     pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[1].shadowRoot.querySelector('button').click();0")
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
@@ -896,6 +926,11 @@ def relics(pg, base):
     if len(stored()['perks']) != 6: raise Exception('the pick wasn’t stored')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='perks';render();0")
     if not until(pg, "document.querySelectorAll('.s-perks .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
+    got = pics('.s-perks .bag-row .art-ic')
+    if len(got) != 6 or any(w != 36 or not f for w, f in got): raise Exception(f'the Perks tab’s pictures: {got}')
+    # PK-3: a held Perk's counter on its row: Click Pen at 5 of 8, a spent Warranty Card VOID (put back after)
+    cnt = pg.evaluate("(()=>{const r=saveData.run,keep=[r.perks.slice(),r.perkState];r.perks=['click_pen','warranty_card',...r.perks.slice(2)];r.perkState={'click_pen/0':{n:5},'warranty_card/0':{used:1}};render();const got=[...document.querySelectorAll('.s-perks .bag-row .note')].slice(0,2).map(e=>e.textContent);r.perks=keep[0];if(keep[1])r.perkState=keep[1];else delete r.perkState;render();return got})()")
+    if cnt != ['5/8', 'VOID']: raise Exception(f'the Perks tab’s counters: {cnt}')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
@@ -913,10 +948,14 @@ def relics(pg, base):
     pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
     if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Perk')
     shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
+    got = pics('#ov .shop-sheet .art-ic')
+    if got != [[36, f'perks/{shelf}.svg']]: raise Exception(f'the shop row’s picture: {got}')
     price = pg.evaluate(f"Math.round(RULES.run.perks.price[PERKS['{shelf}'].rarity]*0.85)")
     se, held = pg.evaluate("[saveData.se,saveData.run.perks.slice()]")
     pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
+    got = pics('#ov pb-pick-card .art-ic')
+    if len(got) != 6 or any(w != 36 for w, f in got): raise Exception(f'letting one go: the pictures {got}')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
     if not until(pg, f"saveData.run.perks.includes('{shelf}')&&!saveData.run.perks.includes('{held[0]}')", 10): raise Exception('the Perk wasn’t bought')
     after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
@@ -1136,16 +1175,19 @@ def studio(pg, base):
     return 'scripts and the shared renderer loaded, the GitHub sign-in is there'
 
 
+# the Studio as it loads the repository (studio-app.js): the data files and the Billies' piece sheets (art/next/rigs-next.js),
+# so a section that draws Billies finds their pictures
 STUDIO_DATA = """(async()=>{const ix=await (await fetch('../game/data/index.json')).json(),paths=[];
  for(const k of ix.keys){const sp=ix.split&&ix.split[k];if(!sp)paths.push(k+'.json');else for(const id of sp.ids)paths.push(k+'/'+id+'.json')}
  const F={};await Promise.all(paths.map(async p=>{F[p]=await (await fetch('../game/data/'+p)).json()}));
- const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs={};studioState.files=[];studioState.last=null;commit(true);
+ const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs=window.RIGS={...(window.RIGS_NEXT||{})};studioState.files=[];studioState.last=null;commit(true);
  document.querySelectorAll('.dlg,.modal,.overlay').forEach(e=>e.remove());return Object.keys(D).length})()"""
 
 
 def studio_worldmap(pg, base):
     """phase 10, session 5: World & encounters → World map look: the picture of the bowl from the game's own code, a
-    land brush stroke that is one undo step, and each place's landmark field"""
+    land brush stroke that is one undo step (each place's landmark picker went with Route stops in SA-3; studio/js/check.js
+    still checks the landmark)"""
     if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
     pg.evaluate(STUDIO_DATA)
     pg.evaluate("studioState.sel.wtab='look';openSection('world');0")
@@ -1160,10 +1202,7 @@ def studio_worldmap(pg, base):
     if n1 != n0 + 1: raise Exception(f'a land brush stroke made {n1 - n0} strokes')
     pg.evaluate("undo();0")
     if pg.evaluate("(studioState.D.worldmap.sea.paint||[]).length") != n0: raise Exception('Undo didn’t take the stroke back')
-    pg.evaluate("studioState.sel.wtab='route';studioState.sel.stop=LOCATIONS_STUDIO_PROBE=studioState.D.locations.findIndex(l=>l.id==='copperleaf');render();0")
-    if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Great oak'))", 10):
-        raise Exception('the landmark field doesn’t offer Auto (the great oak) for Copperleaf')
-    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
+    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo'
 
 
 # CAM-4a: the camera dials the Camera section shows, by key, and how many times each (after opening every folder)
@@ -1409,15 +1448,20 @@ def run_town_quests(pg, base):
 
 def run_village_stall(pg, base):
     """WM-5: the run fixture's village (Expedition I's last town): its name says Village; its market stall, tapped,
-    opens a shop of its own with 2 held items at their prices, no Perk and no fresh stock; the town's shop is another"""
-    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!LOCATIONS[runWorldNode(i)].stall)")
+    opens a shop of its own with 2 held items at their prices and no Perk (Mo's fresh stock, when the run has one, its own);
+    the town's shop is another"""
+    # the run's world in (the page's first check, alone, starts before it is)
+    if not until(pg, "!!(saveData.run&&saveData.run.map&&runWorld.seed===saveData.run.seed&&LOCATIONS.length>saveData.run.map.nodes.length)", 120):
+        raise Exception("the run's world never came in")
+    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!(LOCATIONS[runWorldNode(i)]||{}).stall)")
     if i < 0: raise Exception("no town on the run fixture's map has a market stall")
     node = pg.evaluate(f"runWorldNode({i})")
     name = pg.evaluate(f"LOCATIONS[{node}].name")
     if not name.endswith(' Village'): raise Exception(f'the town with a stall is called {name}')
     go_scene(pg, node, 120)
     if not pg.evaluate("walkView.sc.props.some(p=>p.act==='stall')"): raise Exception('the village has no market stall')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+    # Mo at Lv 3 on this run (one fresh stock a run: logic/residents.js resRerolls), so the stall's own is tried below
+    pg.evaluate("saveData.run.res=Object.assign(saveData.run.res||{},{mo:3});saveData.run.reshop=[];uiState.modal=null;uiState.mq=[];renderOverlay();"
                 "(()=>{const p=walkView.sc.props.find(q=>q.act==='stall');walkPick({k:'act',p,act:'stall'});return 0})()")
     if not until(pg, "uiState.modal&&uiState.modal.shop&&document.querySelectorAll('#ov .shop-sheet .ware2').length>0", 15):
         raise Exception('tapping the market stall opened no shop')
@@ -1428,9 +1472,17 @@ def run_village_stall(pg, base):
     if len(wares) != 2 or not pg.evaluate(f"{json.dumps(wares)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
         raise Exception(f'the stall sells {wares}, not 2 held items')
     if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the stall offers a Perk')
-    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers a fresh stock')
+    # the owner: Mo's fresh stock works at the stall too (one of the run's rerolls), its own apart from the shop's
+    if pg.evaluate("runRerollsLeft(saveData.run,RESIDENTS)<1"): raise Exception('Mo at Lv 3 gave the run no fresh stock')
+    if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers no fresh stock with a reroll left')
+    pg.evaluate("document.querySelector('#ov .shop-sheet [data-a=shopreroll]').click();0")
+    if not until(pg, f"saveData.run.reshop&&saveData.run.reshop.includes('{i}:'+saveData.run.clock+':s')", 10): raise Exception('the fresh stock wasn’t kept as the stall’s')
+    again = pg.evaluate(f"SHOPS['{sid}'].stock.map(w=>w.item)")
+    if len(again) != 2 or not pg.evaluate(f"{json.dumps(again)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
+        raise Exception(f'the fresh stock is {again}, not 2 held items')
+    fresh = f'; a fresh stock: {", ".join(again)}'
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
-    return f'{name}: its stall sells {", ".join(wares)}'
+    return f'{name}: its stall sells {", ".join(wares)}{fresh}'
 
 
 def waystations(pg, base):
@@ -1743,6 +1795,9 @@ def pasture(pg, base):
     fence (and still are a few seconds later); one brought beside you is a tap target, and tapping it opens the ranch's
     sheet; so does the gate; one moved to the team leaves the field"""
     drawing(pg)
+    # the square's visits off (HB-10c, rules.json square.visit): by the page's clock, which starts at 12:30, one of
+    # the three walks off to the square 73 s in, so a slow runner saw two leave the field, not one
+    pg.evaluate("RULES.square&&RULES.square.visit&&(RULES.square.visit.most=0);0")
     if not until(pg, "!document.getElementById('loader')&&worldBillies.pasture&&Object.keys(worldBillies.pasture.mons).length===3", 90):
         raise Exception(f"not three Billies in the pasture: {pg.evaluate('worldBillies.pasture&&worldBillies.pasture.list.length')}")
     inside = "(()=>{const L=pastureFenceLine(pastureZone(walkView.sc));return Object.values(worldBillies.pasture.mons).every(b=>pastureIn(L,b.x,b.z))})()"
@@ -1781,6 +1836,8 @@ def pasture(pg, base):
 
 
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
+    # the Studio's page first: its four checks run one after another for about 6 minutes on CI (Model mode alone 2-4)
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
               ('The exported debug log holds no names, a camera line with the moment and a lens line (CAM-1, CAM-2, CAM-3)', debug_log),
@@ -1810,14 +1867,13 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
-             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk (WM-5)", run_village_stall)]),
+             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk, Mo's fresh stock (WM-5)", run_village_stall)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
 

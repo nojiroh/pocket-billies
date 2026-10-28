@@ -3,7 +3,9 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip, spliceReport } from './logic/rules.js';
+import { styleLog } from './theme-sheet.js';
 import { ranchSkew } from './logic/ranch-clock.js';
+import { fxStateLog } from './logic/effects.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
 import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
@@ -95,7 +97,7 @@ import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
 import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } from './world-bowl.js';
 import { openShop, setOpenShop } from './shop.js';
-import { ambience, soundEngine } from './sound.js';
+import { setUpdateAmbience, soundDebugLines, updateAmbience } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { titleScreen } from './title.js';
 import { runWorld, runWorldAhead } from './run-world.js';
@@ -110,7 +112,6 @@ Object.defineProperties(GAME, {
   TRAINERS: { get: () => TRAINERS },
   account: { get: () => account },
   activeBattle: { get: () => activeBattle },
-  ambience: { get: () => ambience },
   ambientLife: { get: () => ambientLife },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
@@ -147,6 +148,7 @@ Object.defineProperties(GAME, {
   finishProgramCompile: { get: () => finishProgramCompile, set: setFinishProgramCompile },
   fogGridReport: { get: () => fogGridReport },
   frameScheduler: { get: () => frameScheduler },
+  fxStateLog: { get: () => fxStateLog },
   gameData: { get: () => gameData },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   gpuCountSummary: { get: () => gpuCountSummary },
@@ -188,12 +190,14 @@ Object.defineProperties(GAME, {
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },
-  soundEngine: { get: () => soundEngine },
+  soundDebugLines: { get: () => soundDebugLines },
   spliceReport: { get: () => spliceReport },
+  styleLog: { get: () => styleLog },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   titleScreen: { get: () => titleScreen },
   toast: { get: () => toast },
   uiState: { get: () => uiState },
+  updateAmbience: { get: () => updateAmbience, set: setUpdateAmbience },
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },
   updateNearRing: { get: () => updateNearRing, set: setUpdateNearRing },
   updatePlayer: { get: () => updatePlayer, set: setUpdatePlayer },

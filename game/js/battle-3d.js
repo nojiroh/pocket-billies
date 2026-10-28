@@ -7,13 +7,25 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import {
+  COATS,
+  PYRAMIDS,
+  activeBattle,
+  fieldState,
+  provide,
+  reducedMotion,
+  saveData,
+  styleDials,
+  styleNote,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
+import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
+  EASE,
   FOCAL_LENGTH,
   PYRAMID_HIGH,
   PYRAMID_LIFT,
@@ -33,27 +45,39 @@ import {
   battleRibbonCells,
   battleSmearCount,
   battleStage,
+  battleStageChromaticPulse,
   battleStretch,
-  particleSprite,
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
+import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
+import { BATTLE_FX_KIND } from './walk/battle-fx.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_RGB: [() => BATTLE_RGB],
+  EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
+  PHONE_BATTLE: [() => PHONE_BATTLE],
+  RIG_DARK: [() => RIG_DARK],
+  RIG_HITS: [() => RIG_HITS],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
+  battle3dEffectLights: [() => battle3dEffectLights, v => (battle3dEffectLights = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
+  battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
+  battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
+  battleFoil: [() => battleFoil, v => (battleFoil = v)],
+  battleFoilOn: [() => battleFoilOn, v => (battleFoilOn = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
@@ -211,6 +235,26 @@ export function battle3dStop() {
     if (cv) cv.after(walkRenderer.ui);
   }
 }
+/* style track SY-6: the coat's foil in battle (logic/coat-foil.js): off under Reduced motion, with Flashes off, with
+   Graphics Off and at the battle's quality level 2 and up */
+function battleFoilOn() {
+  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
+  return foilOn({
+    reduced: !!reducedMotion,
+    flashesOff: p.flashes === 'off',
+    graphicsOff: graphicsOff(),
+    level: battleStage.q.lvl,
+  });
+}
+/** SY-8: the foil with the Studio's dials (uiTheme.json style), counted for the debug log
+ * @param {string} coat @param {string} seed */
+function battleFoil(coat, seed) {
+  /* the Studio's battle preview has no theme sheet: today's numbers, nothing counted */
+  const sheet = typeof styleDials === 'function',
+    f = coatFoil(coat, COATS, battleStage.t, seed, battleFoilOn(), sheet ? styleDials() : {});
+  if (f && sheet) styleNote('foil');
+  return f;
+}
 /* what the engine draws this frame, in walk-scene meters (battle space shifted by battle3d.off) */
 function battle3dFrame() {
   if (!battleStage.on || !battleStage.L) return null;
@@ -252,6 +296,10 @@ function battle3dFrame() {
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
+      /* style track SY-6: a coated Billie's foil, on the scene's clock */
+      foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
+      /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
+      hit: battle3dHit(B.s, i),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -269,6 +317,8 @@ function battle3dFrame() {
         fade: g.fade * B.s.a,
         glow: g.glow,
         ghost: true,
+        foil: null,
+        hit: null,
       });
     }
     /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
@@ -305,19 +355,23 @@ function battle3dFrame() {
       person: 1,
     });
   }
-  /* v33: a warm light picks out the one choosing */
+  /* VFX-9: battle lights have fixed keys (walk/lighting.js, engine/light-pick.js: the selection 0, an Alpha's light
+     and its shield 1-4, the thrown pyramid 5, effects 8-10 from a pool), so with Steady lamps on none swaps with
+     another when one comes or goes */
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show) {
     const w = actorWorldPoint(battleStage.sel),
       k = 0.5 + 0.12 * Math.sin(battleStage.t / 300);
-    lights.push({ p: at3(w.x, battle3d.gy + 1.4, w.z), r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
+    lights.push({ p: at3(w.x, battle3d.gy + 1.4, w.z), r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k], kind: 0 });
   }
   /* v33: an Alpha glows from below */
+  let bossN = 0;
   for (let i = 0; i < battleStage.s.length; i++) {
     const s = battleStage.s[i];
-    if (!s.boss || !s.show || s.a < 0.4) continue;
+    if (!s.boss || !s.show || s.a < 0.4 || bossN >= 2) continue;
     const w = actorWorldPoint(i),
-      k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
-    lights.push({ p: at3(w.x, battle3d.gy + 0.5, w.z), r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
+      k = 0.55 + 0.2 * Math.sin(battleStage.t / 260),
+      key = 1 + 2 * bossN++;
+    lights.push({ p: at3(w.x, battle3d.gy + 0.5, w.z), r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k], kind: key });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
       typeof fieldState === 'function' && typeof activeBattle !== 'undefined' && activeBattle
         ? (() => {
@@ -329,41 +383,50 @@ function battle3dFrame() {
           })()
         : null;
     if (fv && fv.shield > 0)
-      lights.push({ p: at3(w.x, battle3d.gy + 1.2, w.z - 0.6), r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
+      lights.push({
+        p: at3(w.x, battle3d.gy + 1.2, w.z - 0.6),
+        r: 2.6,
+        c: [1.3 * k, 1.05 * k, 0.35 * k],
+        kind: key + 1,
+      });
   }
-  /* glowing move effects light what's around them */
-  for (let i = battleStage.parts.length - 1; i >= 0 && lights.length < 6; i--) {
-    const p = battleStage.parts[i];
-    if (!p.glow || typeof p.col !== 'string' || p.col[0] !== '#') continue;
-    const k = Math.max(0, 1 - p.age / p.life),
-      c = hexToRgb(p.col);
-    lights.push({
-      p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
-      r: 2.4,
-      c: [(c[0] / 255) * 1.1 * k, (c[1] / 255) * 1.1 * k, (c[2] / 255) * 1.1 * k],
-    });
-  }
-  /* icon particles (sparks, stars, coins of effect) live in the world */
-  const parts = battle3d.parts || (battle3d.parts = []);
-  parts.length = 0;
+  battle3dEffectLights(lights, at3);
+  /* VFX-9: the particles in one pool (walk/battle-fx.js: one cutout draw and the white cores'); a bot's dropped part
+     (a picture) stays on battle-stage.js's canvas */
+  const fx = battle3d.fx || (battle3d.fx = []);
+  fx.length = 0;
   for (const p of battleStage.parts) {
-    if (!p.spr) continue;
+    if (p.img) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
-    const im = particleSprite(p.spr);
-    if (!im || a <= 0.01) continue;
-    const s = (p.k || 1) / 30;
-    const [px, pz] = T(p.x, p.z);
-    parts.push({
-      im,
-      x: px,
-      y: battle3d.gy + p.y,
-      z: pz,
-      w: im.width * s,
-      h: im.height * s,
-      a: clamp(a, 0, 1),
-      glow: !!p.glow,
-    });
+    if (a <= 0.01) continue;
+    const [px, pz] = T(p.x, p.z),
+      q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
+    if (p.spr) {
+      q.k = BATTLE_FX_KIND.sprite;
+      q.key = p.spr;
+      q.s = (p.k || 1) / 30;
+    } else if (p.ring) {
+      q.k = BATTLE_FX_KIND.ring;
+      q.r = (p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) / 30;
+      q.col = battle3dRgb(p.col);
+      q.ground = !!p.ground;
+      q.th = p.ground ? 2 : 1;
+      if (p.ground) q.y = standingHeightAt(px, pz) + 0.03;
+    } else if (p.beam) {
+      const [x2, z2] = T(p.x2, p.z2);
+      q.k = BATTLE_FX_KIND.beam;
+      q.x2 = x2;
+      q.y2 = battle3d.gy + p.y2;
+      q.z2 = z2;
+      q.w = (p.w || 1) / 30;
+      q.col = battle3dRgb(p.col);
+    } else {
+      q.k = BATTLE_FX_KIND.square;
+      q.size = Math.max(1, (p.size || 2) * 0.6) / 30;
+      q.col = battle3dRgb(p.col);
+    }
+    fx.push(q);
   }
   /* RF-2: the thrown pyramid, a lit 3D model; battle-stage.js draws its flat icon instead while it can't be */
   const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, T) : null;
@@ -380,7 +443,7 @@ function battle3dFrame() {
       py.smear = { d: [x1 - x0, S.d[1], z1 - z0], seed: S.seed };
     }
     items.push(py);
-    if (py.light) lights.push(py.light);
+    if (py.light) lights.push(Object.assign(py.light, { kind: 5 }));
     /* VFX-1: its afterimages, the same model at its older places, dithered and brighter in its own colours (the
        low-poly shader's look, walk/prop-look.js; a voxel recipe's emission), casting no shadow */
     for (const g of smearGhosts(battleStage.coin.trail, battleStage.t, battleSmearCount(), battleStage.V)) {
@@ -405,7 +468,7 @@ function battle3dFrame() {
   }
   const d = battleStage.dof;
   return {
-    parts,
+    fx,
     cam: battle3d.yaw ? battle3dTurnedCam() : battleStage.V,
     L: battleStage.L,
     foc: FOCAL_LENGTH,
@@ -415,12 +478,74 @@ function battle3dFrame() {
     ribbon,
     rigRibbons,
     impact,
+    /* VFX-9: the chromatic flash, a pulse in the grade pass */
+    caPulse: battleStageChromaticPulse(),
     hide: battle3d.hide,
     lights,
     focus: d.zf,
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
+}
+/* VFX-9: a Billie's white and dark flashes (s.white, s.dark: 0..1, white first, then dark, as rigTint laid them on
+   the picture) as one colour and amount after the light: [r, g, b, a], or null with none */
+const RIG_DARK = [12 / 255, 10 / 255, 22 / 255],
+  RIG_HITS = [];
+function battle3dHit(s, i) {
+  const w = clamp(s.white || 0, 0, 1),
+    d = clamp(s.dark || 0, 0, 1);
+  if (w <= 0.001 && d <= 0.001) return null;
+  const a = 1 - (1 - w) * (1 - d),
+    H = RIG_HITS[i] || (RIG_HITS[i] = [0, 0, 0, 0]);
+  for (let j = 0; j < 3; j++) H[j] = (w * (1 - d) + RIG_DARK[j] * d) / a;
+  H[3] = a;
+  return H;
+}
+/* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */
+const BATTLE_RGB = new Map();
+function battle3dRgb(col) {
+  let c = BATTLE_RGB.get(col);
+  if (!c) {
+    const h = typeof col === 'string' && col[0] === '#' ? hexToRgb(col) : [255, 255, 255];
+    BATTLE_RGB.set(col, (c = [h[0] / 255, h[1] / 255, h[2] / 255]));
+  }
+  return c;
+}
+/* VFX-9: the effect lights (glowing move particles with a colour, the newest first): 3 / 2 / 1 / 0 by the battle's
+   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines */
+const PHONE_BATTLE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+const EFFECT_LIGHT_BUDGET = [3, 2, 1, 0];
+function battle3dEffectLights(lights, at3) {
+  const P = battleStage.parts,
+    max = Math.min(
+      EFFECT_LIGHT_BUDGET[clamp(battleStage.q.lvl | 0, 0, 3)],
+      PHONE_BATTLE ? 2 : 3,
+      Math.max(0, 6 - lights.length)
+    ),
+    pick = [];
+  for (let i = P.length - 1; i >= 0 && pick.length < max; i--) {
+    const p = P[i];
+    if (p.glow && !p.amb && typeof p.col === 'string' && p.col[0] === '#') pick.push(p);
+  }
+  /* a slot stays with its particle; a new one takes a free slot */
+  const taken = new Set();
+  for (const p of pick)
+    if (p.lk && !taken.has(p.lk)) taken.add(p.lk);
+    else p.lk = 0;
+  for (const p of pick) {
+    if (!p.lk) {
+      p.lk = [8, 9, 10].find(k => !taken.has(k)) || 10;
+      taken.add(p.lk);
+    }
+    const k = Math.max(0, 1 - p.age / p.life),
+      c = battle3dRgb(p.col);
+    lights.push({
+      p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
+      r: 2.4,
+      c: [c[0] * 1.1 * k, c[1] * 1.1 * k, c[2] * 1.1 * k],
+      kind: p.lk,
+    });
+  }
 }
 /* WA-7: the battle camera turned with the battle (walk/camera.js battleCamera adds battle3d.off to its place) */
 function battle3dTurnedCam() {

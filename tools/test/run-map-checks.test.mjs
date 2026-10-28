@@ -13,13 +13,15 @@ const T = GAME_DATA.nodeTypes,
   M = GAME_DATA.rules.run.map,
   rules = (/** @type {object} */ o) => ({ ...M, ...o });
 
-test('the game’s rules: 1,000 maps hold every check, in under a second', () => {
+/* the owner (2026-10-28, WM-5b): 1.5 s, as CI's runner takes this sweep about three times as long as a container
+   under the parallel tier (1034-1105 ms there with towns at their sizes; about 335 ms here) */
+test('the game’s rules: 1,000 maps hold every check, in under 1.5 seconds', () => {
   const t0 = performance.now(),
     S = C.runMapSweep(T, M, { n: 1000 }),
     ms = performance.now() - t0;
   assert.deepEqual(S.problems, []);
   assert.equal(S.maps, 1000);
-  assert.ok(ms < 1000, `${Math.round(ms)} ms`);
+  assert.ok(ms < 1500, `${Math.round(ms)} ms`);
   assert.deepEqual([S.path.min, S.path.max], M.path[0], 'Expedition I’s places a path');
   assert.ok(S.nodes.min >= S.path.min && S.nodes.max <= 2 * S.path.max);
   assert.equal(S.types.boss, 1000);

@@ -18,6 +18,7 @@ import { formSpeciesOf } from './logic/forms.js';
 expose({
   ARENAS: [() => ARENAS],
   BANTER: [() => BANTER],
+  BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
   BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
@@ -63,6 +64,7 @@ expose({
   SET_PIECES: [() => SET_PIECES],
   SHOPS: [() => SHOPS],
   SHOWCASE: [() => SHOWCASE],
+  SOUNDSCAPE: [() => SOUNDSCAPE],
   SPECIES: [() => SPECIES],
   SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
@@ -405,6 +407,8 @@ export const SHOPS = /** @type {Record<string, import('../types/game-data').Shop
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
+/* sound track SND-10: the world's sounds as recipes (soundscape.json; sound.js plays them) */
+export const SOUNDSCAPE = gameData.soundscape || { beds: {} };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 provide({ FIELD_MOVES }); /* to-module */
@@ -435,6 +439,9 @@ provide({ GENES }); /* to-module */
 export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData | null} */ (gameData.setPieces || null);
 /* WM-7: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's (arenas.json; logic/arena-gen.js) */
 export const ARENAS = /** @type {import('../types/game-data').ArenasData | null} */ (gameData.arenas || null);
+/* VFX-8: how the battle plays a move, as data (battleAnims.json; logic/battle-anims.js, battle-anim-run.js) */
+export const BATTLE_ANIMS = /** @type {import('../types/game-data').BattleAnimsData} */ (gameData.battleAnims);
+provide({ BATTLE_ANIMS }); /* to-module */
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
 export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
@@ -468,6 +475,7 @@ provide({ RESIDENTS }); /* to-module */
 export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData | null} */ (gameData.festivals || null);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
+provide({ PERKS }); /* to-module */
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */

@@ -671,16 +671,16 @@ def sound_step(P):
         except Exception: pass
 
 
-@step('Debug menu: ten sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
+@step('Debug menu: eleven sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
 def debug_menu_step(P):
-    """UI-7c: the debug menu on a 390 px phone: the ten sections in their order (ON-3 added Moderation), no phase or track code in what it
+    """UI-7c: the debug menu on a 390 px phone: the eleven sections in their order (ON-3 added Moderation, SND-8a the Sound test), no phase or track code in what it
     says, one copy of each test, the search box narrowing the buttons and putting the sections back, the open sections
     kept across closing and opening, and a button saying what it changed (not "Done.")"""
     pg = P.pg
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
     pg.evaluate("localStorage.removeItem('pb-debug-open');uiState.modal=null;uiState.mq=[];renderOverlay();openDebug();0"); until(pg, "!!document.querySelector('.dbg details[data-k]')", 10); ui(pg)
     keys = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].map(d=>d.dataset.k)")
-    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save', 'mod']
+    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'sound', 'story', 'ranch', 'save', 'mod']
     if keys != want: raise Exception(f'sections {keys}, wanted {want}')
     text = pg.evaluate("document.querySelector('.dbg').textContent")
     codes = sorted(set(re.findall(r'\b(?:[Pp]hase \d+|(?:RL|UI|TR|ST|MG|IS|SND|CAM)-\d+|v\d{2}\b|S\d\b)', text)))
@@ -703,7 +703,7 @@ def debug_menu_step(P):
     said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
     if 'Moneys.' not in said or 'Done.' in said: raise Exception(f'+1,000 Moneys said {said[:160]}')
     if pg.evaluate("saveData.se") != se + 1000: raise Exception('+1,000 Moneys didn’t add 1,000')
-    return 'ten sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
+    return 'eleven sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
 
 
 @step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
@@ -862,7 +862,8 @@ def sound_effects_step(P):
     # a cry as each side's Billie comes out; the lead in the red zone cries low
     clear()
     pg.evaluate("screenWipe=f=>f();const q={id:'tse',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});saveData.team[0].hp=1;startWild(q);0")
-    if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 20, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
+    # VFX-8: the send-out's cry waits on the battle stage's clock (frames), not real time: a busy machine draws slowly
+    if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 45, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
     cries = [e for e in log() if e.startswith('cry ')]
     if 'cry swift1' not in cries: raise Exception(f'the wild Swift did not cry: {cries}')
     out.append('cries: ' + ', '.join(cries[:3]))
@@ -1049,6 +1050,10 @@ def phone_flow(P):
     # TC-4: the screens as the opening left them (play() gave the team, money and encounters the old step counter
     # brought; nothing below needs them): only the messages and toasts are cleared, as play() did
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
+    # PK-5: Copperleaf's postcard comes after 3 s of calm walking in town (postcards.js postcardCheck); held off while the
+    # screens are pictured and counted, so whether it slid in yet doesn't move the walk screen's count (it did after
+    # main's style track met PK-5: walk 20 of 18, the card's four pieces); let go after the battle's count
+    pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=true;0")
     # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
     # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
     blur, blurAll, elems = {}, {}, {}
@@ -1068,6 +1073,7 @@ def phone_flow(P):
     ui(pg); shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
     elems['battle'] = pg.evaluate('uiElementCount()')
+    pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=false;0")
     R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
     # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going
     # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
@@ -1249,6 +1255,14 @@ def animals(P):
     until(pg, "typeof soundEngine==='undefined'||!soundEngine.ctx||(soundEngine.ctx.state==='running'&&typeof ambience!=='undefined'&&Object.keys(ambience.beds).length>=9)", 8)
     snd = pg.evaluate("typeof soundEngine==='undefined'||!soundEngine.ctx?'no sound in this browser':soundEngine.ctx.state!=='running'?'sound not started ('+soundEngine.ctx.state+')':(typeof ambience!=='undefined'&&Object.keys(ambience.beds).length>=9?'ok':'beds missing')")
     if snd == 'beds missing': raise Exception('the world sound beds didn’t start')
+    if snd == 'ok':
+        # SND-8a: a bed starts only when wanted: by a snowy late morning in Copperleaf some play, never all 14, never
+        # the crickets
+        until(pg, "Object.values(ambience.beds).some(b=>b.st&&b.st.live)", 6)
+        live = pg.evaluate("Object.keys(ambience.beds).filter(k=>ambience.beds[k].st&&ambience.beds[k].st.live)")
+        if not live: raise Exception('no world sound bed is live in Copperleaf')
+        if len(live) == len(pg.evaluate("Object.keys(ambience.beds)")) or 'crickets' in live: raise Exception(f'beds live that shouldn’t be: {live}')
+        snd = 'ok, live: ' + ', '.join(live)
     pg.evaluate("environment.force=null;0")
     return f'animals at the pond: {", ".join(kinds)}; a rabbit bolted; {prints} footprints; world sounds: {snd}'   # RL-5: a rabbit, not a frog
 
