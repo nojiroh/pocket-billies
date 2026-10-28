@@ -33,13 +33,53 @@ test('relics: an offer is the same for the same run and counter, of distinct Per
   assert.equal(new Set(ids).size, ids.length);
   a.perks.push(ids[0]);
   assert.ok(!R.perkOffer(a, PERKS, RULE).includes(ids[0]), 'one held is never offered');
+});
+
+/** PK-4: a team holding every type (each Billie's types), so every Perk's needs hold */
+const EVERY_TYPE = GAME_DATA.types.map(t => [t.id]);
+test('PK-4 relics: with a team of every type, every Perk of each rarity turns up over 300 picks', () => {
+  /* rares weigh 1 of about 150 (43 Perks): 300 picks of 3 see each about 6 times */
   const seen = new Set();
-  /* PK-3: 28 Perks (rares at weight 1 of about 100): 120 runs, was 40 for 13 (PK-4 rewrites this for relevance) */
-  for (let n = 0; n < 120; n++) {
-    const c = run('S' + n);
-    for (const id of R.perkOffer(c, PERKS, RULE)) seen.add(id);
+  for (let n = 0; n < 300; n++) for (const id of R.perkOffer(run('S' + n), PERKS, RULE, EVERY_TYPE)) seen.add(id);
+  for (const r of Object.keys(RULE.rarity)) {
+    const all = Object.keys(PERKS).filter(id => PERKS[id].rarity === r),
+      miss = all.filter(id => !seen.has(id));
+    assert.deepEqual(miss, [], `${r}: every one of ${all.length} turns up`);
   }
-  assert.ok(seen.size >= Object.keys(PERKS).length - 2, `most Perks turn up over 120 runs (${seen.size})`);
+});
+
+test('PK-4 relics: a Perk that needs a type is never offered without it, in a pick, a shelf or an event', () => {
+  const needy = Object.keys(PERKS).filter(id => PERKS[id].needs);
+  assert.ok(needy.length >= 9, 'the type Perks need their types');
+  for (const T of GAME_DATA.types.map(t => t.id)) {
+    const team = [[T]],
+      ok = new Set(needy.filter(id => R.perkFits(PERKS[id], team))),
+      got = new Set();
+    for (let n = 0; n < 120; n++) {
+      const r = run('N' + T + n);
+      for (const id of R.perkOffer(r, PERKS, RULE, team)) got.add(id);
+      got.add(R.perkShelf(r, 1, 1, PERKS, RULE, team));
+      got.add(modules.encounters.encPerk(r, undefined, PERKS, RULE, team));
+    }
+    for (const id of got) assert.ok(!PERKS[id] || !PERKS[id].needs || ok.has(id), `${id} offered to a ${T} team`);
+    assert.equal(ok.size, 1, `${T}: one type Perk fits`);
+    assert.ok(
+      [...ok].every(id => got.has(id)),
+      `${T}: its own type Perk turns up`
+    );
+  }
+});
+
+test('PK-4 relics: a type Perk whose type is on the team is offered about bias times as often as an untagged one', () => {
+  const team = [['Fire'], ['Water']],
+    count = { bellows: 0, joy_buzzer: 0 };
+  for (let n = 0; n < 1500; n++) {
+    const id = R.perkShelf(run('B' + n), 1, 1, PERKS, RULE, team);
+    if (id in count) count[id]++;
+  }
+  assert.equal(PERKS.bellows.rarity, PERKS.joy_buzzer.rarity);
+  const ratio = count.bellows / count.joy_buzzer;
+  assert.ok(Math.abs(ratio - RULE.bias) < 0.8, `${JSON.stringify(count)}: about ${RULE.bias} times`);
 });
 
 test('relics: making an offer saves it on the run and moves the counter; the next differs', () => {

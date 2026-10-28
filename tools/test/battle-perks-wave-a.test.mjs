@@ -425,12 +425,12 @@ const real = (ids, extra = {}, n = 2) => {
   return { b, marks };
 };
 
-test('PK-3 Wave A: all 15 are in perks.json with a picture, and nothing else is new', () => {
+test('PK-3 Wave A: all 15 are in perks.json with a picture', () => {
   for (const id of WAVE_A) {
     assert.ok(data.PERKS[id], id);
     assert.equal(data.PERKS[id].img, `perks/${id}.svg`);
   }
-  assert.equal(Object.keys(data.PERKS).length, 28);
+  /* PK-4: the count of all the Perks is Wave B's test's (battle-perks-wave-b.test.mjs) */
 });
 
 test('PK-3 Rubber Stamp: the first hit of the battle deals 50% more, then not; it says “Approved!”', () => {

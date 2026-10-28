@@ -257,5 +257,164 @@
   "fx": [
    {"kind":"revive","share":0.5,"once":"run"}
   ]
+ },
+ "bellows": {
+  "name": "Bellows",
+  "d": "Your Fire Billies’ Kindling builds twice as fast.",
+  "rarity": "uncommon",
+  "img": "perks/bellows.svg",
+  "needs": "team:Fire",
+  "tags": ["Fire"],
+  "fx": [
+   {"kind":"passive","passive":"kindling","rate":2}
+  ]
+ },
+ "snorkel": {
+  "name": "Snorkel",
+  "d": "Your Water Billies’ Undertow kicks in from half their HP.",
+  "rarity": "uncommon",
+  "img": "perks/snorkel.svg",
+  "needs": "team:Water",
+  "tags": ["Water"],
+  "fx": [
+   {"kind":"passive","passive":"undertow","hp":0.5}
+  ]
+ },
+ "watering_can": {
+  "name": "Watering Can",
+  "d": "Your Grass Billies’ Regrowth heals twice as much.",
+  "rarity": "uncommon",
+  "img": "perks/watering_can.svg",
+  "needs": "team:Grass",
+  "tags": ["Grass"],
+  "fx": [
+   {"kind":"passive","passive":"regrowth","mult":2}
+  ]
+ },
+ "static_socks": {
+  "name": "Static Socks",
+  "d": "Your Electric Billies’ Live Wire lands critical hits twice as often.",
+  "rarity": "uncommon",
+  "img": "perks/static_socks.svg",
+  "needs": "team:Electric",
+  "tags": ["Electric"],
+  "fx": [
+   {"kind":"passive","passive":"livewire","mult":2}
+  ]
+ },
+ "knee_pads": {
+  "name": "Knee Pads",
+  "d": "Your Ground Billies’ Bedrock works twice a battle, and from 75% of their HP.",
+  "rarity": "uncommon",
+  "img": "perks/knee_pads.svg",
+  "needs": "team:Ground",
+  "tags": ["Ground"],
+  "fx": [
+   {"kind":"passive","passive":"bedrock","uses":2,"hp":0.75}
+  ]
+ },
+ "kite": {
+  "name": "Kite",
+  "d": "Your Flying Billies’ Slipstream works on every switch, not just the first.",
+  "rarity": "uncommon",
+  "img": "perks/kite.svg",
+  "needs": "team:Flying",
+  "tags": ["Flying"],
+  "fx": [
+   {"kind":"passive","passive":"slipstream","always":true}
+  ]
+ },
+ "mood_ring": {
+  "name": "Mood Ring",
+  "d": "Your Psychic Billies’ Wild Mind rolls twice and keeps the better.",
+  "rarity": "uncommon",
+  "img": "perks/mood_ring.svg",
+  "needs": "team:Psychic",
+  "tags": ["Psychic"],
+  "fx": [
+   {"kind":"passive","passive":"wildmind","rolls":2}
+  ]
+ },
+ "union_card": {
+  "name": "Union Card",
+  "d": "Your Steel Billies’ Alloy counts every teammate on their feet, not only Steel ones.",
+  "rarity": "uncommon",
+  "img": "perks/union_card.svg",
+  "needs": "team:Steel",
+  "tags": ["Steel"],
+  "fx": [
+   {"kind":"passive","passive":"alloy","all":true}
+  ]
+ },
+ "heirloom_locket": {
+  "name": "Heirloom Locket",
+  "d": "Your Dragon Billies’ Parting Roar raises the next one’s Speed too.",
+  "rarity": "uncommon",
+  "img": "perks/heirloom_locket.svg",
+  "needs": "team:Dragon",
+  "tags": ["Dragon"],
+  "fx": [
+   {"kind":"passive","passive":"partingroar","stat":"hus","stages":1}
+  ]
+ },
+ "matching_hoodies": {
+  "name": "Matching Hoodies",
+  "d": "If all your Billies share a type, they take 15% less damage.",
+  "rarity": "common",
+  "img": "perks/matching_hoodies.svg",
+  "tags": ["influencer"],
+  "fx": [
+   {"kind":"damage","side":"take","mult":0.85,"if":"mono"}
+  ]
+ },
+ "rainbow_lanyard": {
+  "name": "Rainbow Lanyard",
+  "d": "Your Billies hit 3% harder for each different type on your team.",
+  "rarity": "common",
+  "img": "perks/rainbow_lanyard.svg",
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.03,"per":"teamTypes"}
+  ]
+ },
+ "group_chat": {
+  "name": "Group Chat",
+  "d": "Your Billies on the bench get the full XP from each foe, not half.",
+  "rarity": "common",
+  "img": "perks/group_chat.svg",
+  "tags": ["tech"],
+  "fx": [
+   {"kind":"benchXp","share":0.5}
+  ]
+ },
+ "umbrella": {
+  "name": "Umbrella",
+  "d": "Weather never weakens your Billies’ moves.",
+  "rarity": "common",
+  "img": "perks/umbrella.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"weather","what":"noWeaken"}
+  ]
+ },
+ "snow_globe": {
+  "name": "Snow Globe",
+  "d": "Your Billies get the weather’s boosts twice over.",
+  "rarity": "rare",
+  "img": "perks/snow_globe.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"weather","what":"boost","mult":2}
+  ]
+ },
+ "barometer": {
+  "name": "Barometer",
+  "d": "The forecast shows 3 more days, and walking into a place in rain or a storm heals your team 10%.",
+  "rarity": "common",
+  "img": "perks/barometer.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"rule","rule":"forecastDays","n":3},
+   {"kind":"heal","share":0.1,"when":"arrive","if":"weather:rain|storm"}
+  ]
  }
 }
