@@ -109,6 +109,7 @@ import {
   fxStateful,
   fxTurnHeal,
   fxTurnHurt,
+  fxWeather,
   fxXp,
 } from './effects.js';
 import { makeBattle, newFieldState } from './battle-state.js';
@@ -224,6 +225,8 @@ expose({
   fxStageLines: [() => fxStageLines, v => (fxStageLines = v)],
   // @ts-expect-error -- replaced on purpose
   fxTurnEnd: [() => fxTurnEnd, v => (fxTurnEnd = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxWeatherFor: [() => fxWeatherFor, v => (fxWeatherFor = v)],
   // @ts-expect-error -- replaced on purpose
   heldStages: [() => heldStages, v => (heldStages = v)],
   heldXp: [() => heldXp],
@@ -490,7 +493,8 @@ export function calcDamage(k, tk, mid, src) {
   const ut = pas('undertow'),
     low = !src && fighter(k).hp <= maxHp(fighter(k)) * Math.max(BATTLE_RULES.undertowHp, (ut && ut.hp) || 0),
     tow = low && PASSIVE[M.t] === 'undertow' && aty.includes(M.t) ? BATTLE_RULES.undertowMult : 1;
-  const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
+  /* v28: the weather where you stand; PK-4: with the run's weather rows for one of yours (Umbrella, Snow Globe) */
+  const wx = src ? battleHost().weather(M.t) : fxWeatherFor(k, M.t);
   /* phase 17: a robot's move of its gem's type hits harder */
   const me = src ? null : fighter(k),
     gem = isRobot(me) ? robotGemDef(me.gem) : null,
@@ -1572,6 +1576,15 @@ export function fxPassiveOf(k, id) {
   if (!b || !b.fx || ACTOR_SIDE[k] !== 0 || !fighter(k) || !b.fx.some(f => f.kind === 'passive' && f.passive === id))
     return null;
   return fxPassive(fxAt(b.fx, fxBattleCtx(k), fxBattleState(b)), id);
+}
+/** PK-4: the weather's multiplier for fighter k's move of type t: the battle host's, with the run's weather rows that
+ * hold for one of yours (effects.js fxWeather); the host's alone for a foe or without such a row
+ * @param {number} k @param {string} t */
+export function fxWeatherFor(k, t) {
+  const b = battleNow(),
+    w = battleHost(b).weather(t);
+  if (w === 1 || !b || !b.fx || ACTOR_SIDE[k] !== 0 || !fighter(k) || !b.fx.some(f => f.kind === 'weather')) return w;
+  return fxWeather(fxAt(b.fx, fxBattleCtx(k), fxBattleState(b)), w);
 }
 /** PK-3: a status kept off one of yours by the run's immune rows, with its line ("Oven Mitts kept Emberox from being
  * burned."); false when nothing keeps it off @param {number} k @param {string} st */

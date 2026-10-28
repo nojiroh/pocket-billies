@@ -302,3 +302,55 @@ test('PK-4 passive: a row for a passive yours don’t have changes nothing; merg
     assert.ok(b);
   });
 });
+
+/* ---------- weather ---------- */
+
+/** a battle whose weather weakens Fire (x0.5) and boosts Water (x1.3) */
+const wet = (fx, team) => {
+  const b = battle(fx, team);
+  b.host = { ...modules['battle-engine'].SILENT_HOST, weather: t => ({ Fire: 0.5, Water: 1.3 })[t] || 1 };
+  return b;
+};
+
+test('PK-4 weather noWeaken: the weather never weakens yours’ moves; the foe’s still are; boosts stay', () => {
+  const { P, fx } = perks({ id: 'test_brolly', fx: [{ kind: 'weather', what: 'noWeaken' }] });
+  const fire = ofType('Fire'),
+    mid = moveOf('Fire');
+  withPerks(P, () => {
+    wet(fx, [fire]);
+    assert.equal(fn('fxWeatherFor')(0, 'Fire'), 1);
+    assert.equal(fn('fxWeatherFor')(1, 'Fire'), 0.5, 'the foe’s');
+    assert.equal(fn('fxWeatherFor')(0, 'Water'), 1.3, 'a boost is kept');
+    const b = wet(fx, [fire]);
+    tough(foe(b));
+    const a = dmg(b, 0, 1, mid);
+    const n = wet(null, [fire]);
+    tough(foe(n));
+    assert.ok(a > dmg(n, 0, 1, mid), 'more than in the rain without it');
+    n.host = modules['battle-engine'].SILENT_HOST;
+    assert.equal(a, dmg(n, 0, 1, mid), 'as in no weather');
+  });
+});
+
+test('PK-4 weather boost: the weather’s boosts to yours count `mult` times over; weakening and the foe’s unchanged', () => {
+  const { P, fx } = perks({ id: 'test_globe', fx: [{ kind: 'weather', what: 'boost', mult: 2 }] });
+  withPerks(P, () => {
+    wet(fx, [ofType('Water')]);
+    assert.ok(Math.abs(fn('fxWeatherFor')(0, 'Water') - 1.6) < 1e-9);
+    assert.equal(fn('fxWeatherFor')(1, 'Water'), 1.3);
+    assert.equal(fn('fxWeatherFor')(0, 'Fire'), 0.5);
+    assert.equal(fn('fxWeatherFor')(0, 'Grass'), 1);
+  });
+  /* both rows: no weakening, boosts doubled */
+  assert.equal(
+    modules.effects.fxWeather(
+      [
+        { kind: 'weather', what: 'noWeaken', src: 'a' },
+        { kind: 'weather', what: 'boost', mult: 2, src: 'b' },
+      ],
+      0.7
+    ),
+    1
+  );
+  assert.equal(modules.effects.fxWeather(null, 0.7), 0.7);
+});

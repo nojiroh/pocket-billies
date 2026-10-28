@@ -20,6 +20,8 @@
      chip    what a burn takes from yours at each turn's end, times mult (PK-3)
      first   yours move before the foe's (within a move's priority), where its `if` holds: `turn:1` (PK-3)
      revive  when your whole team has fainted, they all get back up with a share of their HP (its `once`) (PK-3)
+     weather yours' moves are never weakened by the weather (noWeaken), or get its boosts mult times over (boost)
+             (PK-4, calcDamage)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
@@ -56,6 +58,7 @@ expose({
   FX_PER: [() => FX_PER],
   FX_SAY: [() => FX_SAY],
   FX_STAGES: [() => FX_STAGES],
+  FX_WEATHER: [() => FX_WEATHER],
   FX_WHEN: [() => FX_WHEN],
   FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
   fxAt: [() => fxAt],
@@ -106,6 +109,8 @@ expose({
   fxStateful: [() => fxStateful],
   fxTurnHeal: [() => fxTurnHeal],
   fxTurnHurt: [() => fxTurnHurt],
+  // @ts-expect-error -- replaced on purpose
+  fxWeather: [() => fxWeather, v => (fxWeather = v)],
   fxXp: [() => fxXp],
   growClamp: [() => growClamp],
   mark: [() => mark],
@@ -138,6 +143,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'first',
   'revive',
   'passive',
+  'weather',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -353,6 +359,19 @@ export const fxPinchHeal = fx => {
   const f = (fx || []).find(r => r.kind === 'pinchHeal');
   return f && f.kind === 'pinchHeal' ? { at: f.at, share: f.share } : null;
 };
+
+/** PK-4: what a weather row does for yours' moves: noWeaken (the weather's multiplier never under 1), boost (its
+ * boosts, a multiplier over 1, count mult times over: x1.3 with mult 2 is x1.6) */
+export const FX_WEATHER = /** @type {const} */ (['noWeaken', 'boost']);
+/** PK-4: the weather's multiplier `w` for a move of yours with the weather rows that count now (fxAt): `w` itself with
+ * none @param {any[] | null | undefined} fx @param {number} w */
+export function fxWeather(fx, w) {
+  const L = (fx || []).filter(f => f.kind === 'weather');
+  if (!L.length || w === 1) return w;
+  if (w < 1) return L.some(f => f.what === 'noWeaken') ? 1 : w;
+  const k = fxMult(L, f => /** @type {any} */ (f).what === 'boost');
+  return k === 1 ? w : 1 + (w - 1) * k;
+}
 
 /** PK-4: the type passives a passive row can strengthen (types.json `passive`), each with the numbers it takes:
  *   kindling     rate    its turns in battle count this many times over (Kindling builds faster, to the same top)

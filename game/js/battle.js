@@ -9,7 +9,6 @@ import {
   battleSoundEffect,
   battleTipHide,
   battleTutor,
-  battleWeatherMultiplier,
   closeModal,
   fieldBadgeLine,
   jingle,
@@ -65,6 +64,7 @@ import {
   effectiveStat,
   enemyOnly,
   fighter,
+  fxWeatherFor,
   isMulti,
   liveActors,
   runTurn,
@@ -747,11 +747,13 @@ function moveTilesHTML(m) {
         c = TYPE_COLORS[M.t],
         P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
         stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t),
+        /* the weather's arrow; PK-4: with the run's weather rows (Umbrella: no arrow down) */
+        wm = fxWeatherFor(activeBattle.cur, M.t),
         /* phase 17: a robot can't use the move of a broken part */
         off = !moveUsable(m, id);
       if (off)
         return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>`;
-      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
+      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p ? (wm > 1 ? ' ▲' : wm < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
     })
     .join('')}</div>`;
 }

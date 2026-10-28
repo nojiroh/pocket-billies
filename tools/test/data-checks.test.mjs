@@ -475,6 +475,9 @@ const PK4_GOOD = [
   { kind: 'passive', passive: 'alloy', all: true },
   { kind: 'passive', passive: 'partingroar', stat: 'hus', stages: 1 },
   { kind: 'passive', passive: 'regrowth', mult: 1.5, if: 'lead' },
+  { kind: 'weather', what: 'noWeaken' },
+  { kind: 'weather', what: 'boost', mult: 2 },
+  { kind: 'weather', what: 'boost', mult: 1.5, if: 'type:Water' },
 ];
 const PK4_BAD = [
   [{ kind: 'passive', passive: 'overheat', rate: 2 }, 'passive: kindling, undertow'],
@@ -491,6 +494,11 @@ const PK4_BAD = [
   [{ kind: 'passive', passive: 'partingroar', stat: 'hp', stages: 1 }, 'stat: no stat "hp"'],
   [{ kind: 'passive', passive: 'partingroar', stat: 'hus' }, 'a partingroar row needs stat and stages'],
   [{ kind: 'passive', passive: 'kindling', rate: 2, when: 'hit' }, "a passive row can't act at hit"],
+  [{ kind: 'weather', what: 'fog' }, 'what: noWeaken, boost'],
+  [{ kind: 'weather', what: 'boost', mult: 1 }, "a boost row's mult is above 1"],
+  [{ kind: 'weather', what: 'boost' }, "a boost row's mult is above 1"],
+  [{ kind: 'weather', what: 'noWeaken', mult: 2 }, 'a noWeaken row has no mult'],
+  [{ kind: 'weather', what: 'noWeaken', when: 'hit' }, "a weather row can't act at hit"],
 ];
 test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

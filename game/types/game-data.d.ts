@@ -1989,7 +1989,9 @@ export type FxKindRow =
       all?: true;
       stat?: 'lev' | 'law' | 'lob' | 'pr' | 'hus';
       stages?: number;
-    };
+    }
+  /** PK-4: the weather never weakens your Billies' moves (noWeaken), or its boosts count mult times over (boost) */
+  | { kind: 'weather'; what: 'noWeaken' | 'boost'; mult?: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

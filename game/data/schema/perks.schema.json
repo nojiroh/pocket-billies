@@ -146,6 +146,11 @@
        "description": "passive (PK-4): a type passive (types.json passive) works better for your Billies that have it, by its own numbers (effects.js FX_PASSIVE_KEYS: kindling rate, undertow hp, regrowth mult, livewire mult, bedrock uses and hp, slipstream always, wildmind rolls, alloy all, partingroar stat and stages)",
        "type": "object", "additionalProperties": false, "required": ["kind", "passive"],
        "properties": {"kind": {"const": "passive"}, "passive": {"enum": ["kindling", "undertow", "regrowth", "livewire", "bedrock", "slipstream", "wildmind", "alloy", "partingroar"]}, "rate": {"type": "number", "minimum": 1, "maximum": 4}, "hp": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "uses": {"type": "integer", "minimum": 1, "maximum": 9}, "always": {"const": true}, "rolls": {"type": "integer", "minimum": 2, "maximum": 3}, "all": {"const": true}, "stat": {"enum": ["lev", "law", "lob", "pr", "hus"]}, "stages": {"type": "integer", "minimum": 1, "maximum": 6}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "weather (PK-4): the weather never weakens your Billies' moves (noWeaken), or its boosts to them count mult times over (boost: x1.3 with mult 2 is x1.6)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "what"],
+       "properties": {"kind": {"const": "weather"}, "what": {"enum": ["noWeaken", "boost"]}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

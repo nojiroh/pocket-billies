@@ -98,6 +98,7 @@ const PERK_KINDS = {
   first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
   revive: 'A wiped team gets back up, once (PK-3)',
   passive: 'A type passive works better for your Billies that have it (PK-4)',
+  weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -141,6 +142,7 @@ const PERK_ROW_NEW = {
   first: () => ({ kind: 'first', if: 'turn:1' }),
   revive: () => ({ kind: 'revive', share: 0.5, once: 'run' }),
   passive: () => ({ kind: 'passive', passive: 'kindling', rate: 2 }),
+  weather: () => ({ kind: 'weather', what: 'noWeaken' }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -316,6 +318,19 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           : f.passive === 'alloy'
             ? ['<p class="note">It counts every teammate on its feet (all: true), not only those of its type.</p>']
             : []),
+      ],
+      /* PK-4: noWeaken has no number; boost a mult over 1 */
+      weather: () => [
+        selectField(
+          'What',
+          `${p}.what`,
+          [
+            ['noWeaken', 'Never weakens their moves (no ×under 1)'],
+            ['boost', 'Its boosts count more times over'],
+          ],
+          { rr: 1 }
+        ),
+        ...(f.what === 'boost' ? [mult('Boosts counted × (×1.3 with 2 is ×1.6)')] : []),
       ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(

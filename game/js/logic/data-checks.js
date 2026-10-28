@@ -55,6 +55,7 @@ import {
   FX_PER,
   FX_SAY,
   FX_STAGES,
+  FX_WEATHER,
   FX_WHEN,
   FX_WHEN_BATTLE,
 } from './effects.js';
@@ -2041,6 +2042,14 @@ export function fxKindProblems(f, at, D, problem) {
     if (!['battle', 'run'].includes(f.once)) problem(`${at}.once: a revive row needs once (battle or run)`);
   }
   if (f.kind === 'passive') fxPassiveProblems(f, at, D, problem);
+  /* PK-4: noWeaken alone; boost with a mult over 1 (its boosts counted more times over) */
+  if (f.kind === 'weather') {
+    if (!(/** @type {readonly string[]} */ (FX_WEATHER).includes(f.what)))
+      problem(`${at}.what: ${FX_WEATHER.join(', ')} (effects.js FX_WEATHER)`);
+    if (f.what === 'boost' && !(typeof f.mult === 'number' && f.mult > 1))
+      problem(`${at}.mult: a boost row's mult is above 1 (the weather's boosts counted that many times over)`);
+    if (f.what === 'noWeaken' && 'mult' in f) problem(`${at}.mult: a noWeaken row has no mult`);
+  }
 }
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
