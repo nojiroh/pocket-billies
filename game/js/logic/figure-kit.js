@@ -172,11 +172,14 @@ export function figureShapeFor(look, seed, choice = {}) {
  * a person's figure from their look: parts on the joints figurePose moves (hips, torso, head, thigh/shin/foot and
  * arm/forearm/hand A and B), dressed from the wardrobe, its face as marks
  * @param {KitLook} look @param {Record<string, KitItem>} items the wardrobe's items (their default colours)
- * @param {{ name?: string, seed?: number, figure?: FigureShapeChoice }} [opts]
+ * @param {{ name?: string, seed?: number, figure?: FigureShapeChoice,
+ *   chibi?: { head: number, legs: number, torso: number, arms: number, neck: number } }} [opts] `chibi`: proportions
+ * other than KIT_CHIBI (a direction of figures.js FIGURE_LOOKS)
  * @returns {Figure}
  */
 export function lookFigure(look, items, opts = {}) {
-  const seed = opts.seed ?? figureSeed(opts.name || 'person'),
+  const PR = opts.chibi || KIT_CHIBI,
+    seed = opts.seed ?? figureSeed(opts.name || 'person'),
     shape = figureShapeFor(look, seed, opts.figure),
     HD = FIGURE_HEADS[/** @type {keyof typeof FIGURE_HEADS} */ (shape.head)],
     BD = FIGURE_BUILDS[/** @type {keyof typeof FIGURE_BUILDS} */ (shape.build)],
@@ -190,8 +193,8 @@ export function lookFigure(look, items, opts = {}) {
     },
     /* the tallest and shortest a build and slider make (an exaggerated tall build would tower over the town) */
     hk = Math.max(0.8, Math.min(1.14, sl('height'))),
-    legK = sl('legs') * hk * KIT_CHIBI.legs,
-    armK = sl('arms') * hk * KIT_CHIBI.arms,
+    legK = sl('legs') * hk * PR.legs,
+    armK = sl('arms') * hk * PR.arms,
     /* the widest and thinnest (a round build on a big body slider would be a ball) */
     girth = Math.max(0.75, Math.min(1.5, sl('body'))),
     shK = sl('shoulders'),
@@ -203,8 +206,8 @@ export function lookFigure(look, items, opts = {}) {
     belly = BK.belly || 0,
     waist = BK.waist || 1,
     chestOut = BK.chestOut || 0,
-    neckL = 0.035 * (BK.neck ?? 1) * KIT_CHIBI.neck,
-    tk = hk * (0.96 + 0.04 * girth) * KIT_CHIBI.torso;
+    neckL = 0.035 * (BK.neck ?? 1) * PR.neck,
+    tk = hk * (0.96 + 0.04 * girth) * PR.torso;
   /* colours: the look's own, else each item's first */
   /** @type {Record<string, Vec3>} */
   const colours = {};
@@ -301,7 +304,7 @@ export function lookFigure(look, items, opts = {}) {
   /* ---- the head ---- */
   /* the Gen 5 head (KIT_CHIBI.head): room for big eyes, hair and expressions, and the portraits' close-ups */
   /* a head grows a little with the body too, so a small figure is smaller all over and a tall one taller */
-  const hk3 = headK * KIT_CHIBI.head * Math.sqrt(hk),
+  const hk3 = headK * PR.head * Math.sqrt(hk),
     hr = /** @type {Vec3} */ ([0.31 * hk3 * HD.r[0], 0.3 * hk3 * HD.r[1], 0.29 * hk3 * HD.r[2]]),
     head =
       /** @type {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg: number, rings: number, sq: number, taper: number }} */ ({

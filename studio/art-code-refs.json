@@ -91,13 +91,13 @@
   {
    "p": "figures/rogue.json",
    "at": [
-    "game/js/figures.js:121"
+    "game/js/figures.js:125"
    ]
   },
   {
    "p": "figures/rogue.png",
    "at": [
-    "game/js/figures.js:122"
+    "game/js/figures.js:126"
    ]
   },
   {
@@ -1568,9 +1568,9 @@
    "game/js/dressing-room.js:726",
    "game/js/fixture.js:129",
    "game/js/fixture.js:206",
-   "game/js/logic/figure-kit.js:579",
-   "game/js/logic/figure-kit.js:602",
-   "game/js/logic/figure-kit.js:617",
+   "game/js/logic/figure-kit.js:582",
+   "game/js/logic/figure-kit.js:605",
+   "game/js/logic/figure-kit.js:620",
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
    "game/js/reward-screen.js:240",
@@ -1692,7 +1692,7 @@
    "game/js/walk/effects.js:1090"
   ],
   "cup": [
-   "game/js/logic/figure-kit.js:729",
+   "game/js/logic/figure-kit.js:732",
    "game/js/logic/placeholder-art.js:280"
   ],
   "down": [
@@ -1745,12 +1745,12 @@
    "game/js/map-tab.js:148"
   ],
   "eye": [
-   "game/js/figures.js:556",
-   "game/js/logic/figure-kit.js:1257",
-   "game/js/logic/figure-kit.js:1267",
-   "game/js/logic/figure-kit.js:1279",
-   "game/js/logic/figure-kit.js:1421",
-   "game/js/logic/figure-kit.js:1437",
+   "game/js/figures.js:651",
+   "game/js/logic/figure-kit.js:1260",
+   "game/js/logic/figure-kit.js:1270",
+   "game/js/logic/figure-kit.js:1282",
+   "game/js/logic/figure-kit.js:1424",
+   "game/js/logic/figure-kit.js:1440",
    "game/js/logic/figure-pose.js:160",
    "game/js/logic/figure-pose.js:361",
    "game/js/logic/figure-pose.js:362",
@@ -1957,14 +1957,14 @@
   ],
   "tag": [
    "game/js/battle.js:665",
-   "game/js/logic/figure-kit.js:763",
-   "game/js/logic/figure-kit.js:1440",
+   "game/js/logic/figure-kit.js:766",
+   "game/js/logic/figure-kit.js:1443",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"
   ],
   "thumb": [
-   "game/js/logic/figure-kit.js:392"
+   "game/js/logic/figure-kit.js:395"
   ],
   "up": [
    "game/js/audio/tracker.js:577",

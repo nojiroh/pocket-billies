@@ -34,9 +34,11 @@ import {
   clipFrameAt,
   codeExtent,
   figureClipMatrix,
+  figureDark,
   figureFaceMarks,
   figureKey,
   figureMesh,
+  figureMix,
   figurePose,
   figureRamp,
   figureTick,
@@ -63,6 +65,7 @@ expose({
   FIGURE_DEFS: [() => FIGURE_DEFS],
   FIGURE_FILES: [() => FIGURE_FILES],
   FIGURE_FS: [() => FIGURE_FS],
+  FIGURE_LOOKS: [() => FIGURE_LOOKS],
   FIGURE_LOOK_NAMES: [() => FIGURE_LOOK_NAMES],
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
@@ -92,6 +95,7 @@ expose({
   figureLast: [() => figureLast],
   figureLightSpace: [() => figureLightSpace, v => (figureLightSpace = v)],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
+  figureLookRamp: [() => figureLookRamp, v => (figureLookRamp = v)],
   figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
@@ -197,7 +201,9 @@ function figureDef(name) {
   }
   /* CH-3b: a person's figure from their look (logic/figure-kit.js); Kappi, a creature person, as a capybara */
   if (name.startsWith('look:')) {
-    const who = name.slice(5).split('#')[0],
+    const at = name.indexOf('@'),
+      look0 = at > 0 ? FIGURE_LOOKS[name.slice(at + 1)] : null,
+      who = (at > 0 ? name.slice(5, at) : name.slice(5)).split('#')[0],
       L = typeof lookOf === 'function' ? lookOf(who) : null,
       items = figureItems();
     if (!L || (!L.creature && !items)) return null;
@@ -212,6 +218,7 @@ function figureDef(name) {
             name,
             seed: figureSeed(who),
             figure: p && p.figure ? p.figure : who.startsWith('folk:') ? { variety: true } : undefined,
+            chibi: look0 && look0.chibi ? look0.chibi : undefined,
           });
     return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
   }
@@ -285,9 +292,9 @@ function figureFromFile(name, j) {
 const FIGURE_VS = `#version 300 es
 layout(location=0) in vec3 aP;layout(location=1) in vec3 aN;layout(location=2) in float aJ;layout(location=3) in float aC;
 layout(location=4) in vec2 aUV;uniform mat4 uJ[32];uniform mat4 uM;uniform mat3 uR;uniform mat4 uLS;
-out vec3 vN;out vec2 vUV;out vec3 vLS;flat out int vC;
-void main(){mat4 J=uJ[int(aJ)];vec4 w=J*vec4(aP,1.);vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;
- vLS=(uLS*vec4(uR*w.xyz+vN*.03,1.)).xyz;gl_Position=uM*w;}`;
+out vec3 vN;out vec2 vUV;out vec3 vLS;out vec3 vP;flat out int vC;
+void main(){mat4 J=uJ[int(aJ)];vec4 w=J*vec4(aP,1.);vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;vP=uR*w.xyz;
+ vLS=(uLS*vec4(vP+vN*.03,1.)).xyz;gl_Position=uM*w;}`;
 /* CH-3b's fidelity pass: the figure's depth seen from the light, so parts shade each other (hair on the brow, the
    head on the neck, an arm on the body) */
 const FIGURE_SHADOW_VS = `#version 300 es
@@ -297,39 +304,55 @@ const FIGURE_SHADOW_FS = `#version 300 es
 precision mediump float;out vec4 o;void main(){o=vec4(1.);}`;
 /* a code figure's colours come from its palette (its ramps); a model's from its texture, ramped here as the props'
    ramp does it (logic/figure-pose.js figureRamp: the shadow darker and lavender, the light warmer). Smooth (the plain
-   3D figure): a soft light, no bands */
+   3D figure): a soft light, no bands. CH-3b's directions (FIGURE_LOOKS: uMode): 0 the pixel puppet's bands, 1 cel
+   (two hard tones), 2 HD-2D (the bands on a hue-shifted ramp), 3 toy (a soft stepped gradient and a gloss dot),
+   4 painterly (bands, a warm rim, each part's colour a touch off), 5 comic (flat colour, halftone dots in the shadow,
+   a white rim), 6 faceted (each triangle flat) */
 const FIGURE_FS = `#version 300 es
-precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;flat in int vC;uniform vec3 uPal[100];uniform vec3 uL;uniform vec4 uB;
-uniform float uTexOn,uSmooth,uShadowOn;uniform sampler2D uTx;uniform highp sampler2D uSM;out vec4 o;
-void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:(d>uB.w?0:-1)));
+precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;in vec3 vP;flat in int vC;uniform vec3 uPal[100];uniform vec3 uL;
+uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn;uniform int uMode;uniform sampler2D uTx;uniform highp sampler2D uSM;
+out vec4 o;
+void main(){vec3 n=normalize(vN);
+ if(uMode==6){n=normalize(cross(dFdx(vP),dFdy(vP)));if(n.z>0.)n=-n;}
+ float d=dot(n,uL);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:(d>uB.w?0:-1)));
  /* a part in another's shadow (the light's depth map) drops to the shadow tone */
  bool shd=false;
- if(uShadowOn>.5&&b>0){vec3 q=vLS*.5+.5;shd=q.x>0.&&q.y>0.&&q.x<1.&&q.y<1.&&q.z-.006>texture(uSM,q.xy).r;}
- if(shd)b=0;
- /* a rim of light along the lit edge seen side-on (n.z: into the view) */
- else if(b>=0&&n.z>-.25&&dot(normalize(n.xy+1e-4),normalize(uL.xy))>.55)b=max(b,2);
+ if(uShadowOn>.5&&d>uB.y){vec3 q=vLS*.5+.5;shd=q.x>0.&&q.y>0.&&q.x<1.&&q.y<1.&&q.z-.006>texture(uSM,q.xy).r;}
+ bool rim=!shd&&n.z>-.25&&dot(normalize(n.xy+1e-4),normalize(uL.xy))>.55;
+ if(shd)b=min(b,0);else if(rim&&b>=0&&uMode!=1&&uMode!=6)b=max(b,2);
  vec3 base,sh,li,sn,dp;
  if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);sn=li;dp=mix(floor(base*.55),vec3(60.,42.,112.),.3);}
  else{dp=uPal[vC*5];sh=uPal[vC*5+1];base=uPal[vC*5+2];li=uPal[vC*5+3];sn=uPal[vC*5+4];}
- vec3 c=uSmooth>.5?base*clamp(.62+.5*d,.35,1.12):(b==3?sn:(b==2?li:(b==1?base:(b==0?sh:dp))));
+ vec3 c=b==3?sn:(b==2?li:(b==1?base:(b==0?sh:dp)));
+ if(uSmooth>.5)c=base*clamp(.62+.5*d,.35,1.12);
+ else if(uMode==1){c=(d>-.05&&!shd)?((d>uB.z&&sn!=li)?sn:base):sh;}
+ else if(uMode==3){float l=shd?min(d,-.15):d;float v=clamp(.6+.48*l,.32,1.08);v=floor(v*7.+.5)/7.;
+  c=mix(sh,base,clamp(v*1.4-.4,0.,1.))*mix(1.,v+.2,.35);
+  vec3 h=normalize(uL+vec3(0.,0.,-1.));float sp=pow(max(dot(n,h),0.),36.);if(!shd&&sp>.55)c=mix(c,vec3(255.,252.,240.),.75);}
+ else if(uMode==4){c*=1.+.07*(fract(sin(float(vC)*12.9898)*43758.5)-.5);if(rim)c=mix(c,vec3(255.,214.,150.),.35);}
+ else if(uMode==5){if(shd||d<=uB.y){vec2 g=fract(gl_FragCoord.xy/3.)-.5;float r=d<uB.w?.62:.38;c=length(g)<r?sh*.88:base;}
+  else c=base;if(rim)c=mix(c,vec3(255.),.55);}
 /* the depth, nearer larger, in alpha: 0 is no figure */
 o=vec4(c/255.,mix(1.,.08,gl_FragCoord.z));}`;
 const FIGURE_OUT_VS = `#version 300 es
 in vec2 aQ;void main(){gl_Position=vec4(aQ*2.-1.,0.,1.);}`;
+/* the outline: `uOutW` pixels thick (1 or 2), each pixel the outline of its nearest neighbour's colour (selective,
+   the props' olc) or one ink (uInk); inside, where a part stands `uInner` (alpha's depth) in front of another, a line */
 const FIGURE_OUT_FS = `#version 300 es
-precision highp float;uniform sampler2D uT;uniform float uOut;uniform vec3 uOL;uniform ivec2 uS;out vec4 o;
-vec3 olc(vec3 c){return mix(floor(c*255.*.45)/255.,uOL,.8);}
+precision highp float;uniform sampler2D uT;uniform float uOut,uInk,uInner;uniform int uOutW;uniform vec3 uOL;uniform ivec2 uS;out vec4 o;
+vec3 olc(vec3 c){return uInk>.5?uOL*.55:mix(floor(c*255.*.45)/255.,uOL,.8);}
 vec4 at(ivec2 p){return (p.x<0||p.y<0||p.x>=uS.x||p.y>=uS.y)?vec4(0.):texelFetch(uT,p,0);}
 void main(){ivec2 p=ivec2(gl_FragCoord.xy);vec4 c=at(p);
  vec4 q[4]=vec4[4](at(p+ivec2(1,0)),at(p-ivec2(1,0)),at(p+ivec2(0,1)),at(p-ivec2(0,1)));
  if(c.a==0.){
   if(uOut<.5){o=vec4(0.);return;}
-  /* beside the figure: the outline of the nearest neighbour's colour */
-  vec4 best=vec4(0.);for(int i=0;i<4;i++)if(q[i].a>best.a)best=q[i];
+  /* beside the figure (within uOutW): the outline of the nearest neighbour's colour */
+  vec4 best=vec4(0.);
+  for(int y=-2;y<=2;y++)for(int x=-2;x<=2;x++){if(abs(x)+abs(y)>uOutW||(x==0&&y==0))continue;vec4 v=at(p+ivec2(x,y));if(v.a>best.a)best=v;}
   o=best.a>0.?vec4(olc(best.rgb),1.):vec4(0.);return;}
  o=vec4(c.rgb,1.);
- /* a pixel of a part with a part well in front of it beside it: a line, half the outline's weight */
- if(uOut>.5){bool line=false;for(int i=0;i<4;i++)if(q[i].a>c.a+.016)line=true;if(line)o.rgb=mix(c.rgb,olc(c.rgb),.6);}}`;
+ /* a pixel of a part with a part well in front of it beside it: a line, half the outline's weight (ink: full) */
+ if(uOut>.5&&uInner>0.){bool line=false;for(int i=0;i<4;i++)if(q[i].a>c.a+uInner)line=true;if(line)o.rgb=mix(c.rgb,olc(c.rgb),uInk>.5?.85:.6);}}`;
 
 function figureCompile(gl, vs, fs) {
   const sh = (type, src) => {
@@ -436,7 +459,7 @@ function figureBuild(gl) {
 /** a figure's buffers (and a model's texture) in the baker's context; null while a model's texture loads */
 function figureRes(gl, Fig, detail = 1) {
   const B = figureBaker,
-    key = detail > 1 ? Fig.name + '|fine' : Fig.name;
+    key = detail !== 1 ? Fig.name + '|' + Math.round(detail * 100) : Fig.name;
   let R = B.res.get(key);
   if (R) return R;
   if (Fig.kind === 'mesh' && !(Fig.tex && Fig.tex.complete && Fig.tex.naturalWidth > 0)) return null;
@@ -515,6 +538,61 @@ function figureTarget(gl, w, h) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   B.size = [w, h];
 }
+/**
+ * CH-3b's six directions, to sample and combine (the owner, 2026-10-28: "give me 6 samples of new directions that you
+ * can later combine"): each a set of axes: the shader's mode (FIGURE_FS), the ramp its colours take (figurePalette),
+ * the outline's width, ink and inner lines, the mesh's detail, the proportions (the kit's chibi) and the density.
+ * 'pixel' is where CH-3b's fidelity pass stood.
+ */
+const FIGURE_LOOKS = {
+  pixel: { mode: 0, ramp: 'props', outline: 1, ink: 0, inner: 0.016, detail: 1, ppm: 48 },
+  /* Link's Awakening (2019): a figurine in a diorama, chunky, glossy, no line */
+  toy: {
+    mode: 3,
+    ramp: 'props',
+    outline: 0,
+    inner: 0,
+    detail: 1.6,
+    ppm: 48,
+    chibi: { head: 1.3, legs: 0.74, torso: 0.86, arms: 0.84, neck: 0.4 },
+  },
+  /* Octopath Traveler: a sprite in a lit world: taller, coarser, hue-shifted ramps, a selective outline */
+  hd2d: {
+    mode: 2,
+    ramp: 'hue',
+    outline: 1,
+    ink: 0,
+    inner: 0.016,
+    detail: 1,
+    ppm: 30,
+    chibi: { head: 0.92, legs: 1.04, torso: 1.0, arms: 1.0, neck: 1.0 },
+  },
+  /* Sugimori's Gen 5: two hard tones, a thick ink line, bright flat colour */
+  cel: {
+    mode: 1,
+    ramp: 'cel',
+    outline: 2,
+    ink: 1,
+    inner: 0.012,
+    detail: 1.3,
+    ppm: 48,
+    chibi: { head: 1.2, legs: 0.82, torso: 0.9, arms: 0.88, neck: 0.7 },
+  },
+  /* Ghibli and Ni no Kuni: soft bands, warm light against cool shadow, no line, a warm rim */
+  paint: { mode: 4, ramp: 'hue', outline: 0, inner: 0, detail: 1.3, ppm: 48 },
+  /* Hi-Fi Rush and comics: flat colour, halftone dots in the shadow, thick ink, a white rim */
+  comic: { mode: 5, ramp: 'cel', outline: 2, ink: 1, inner: 0.01, detail: 1.3, ppm: 48 },
+  /* low-poly art: flat-shaded triangles, angular forms, no line */
+  facet: {
+    mode: 6,
+    ramp: 'props',
+    outline: 0,
+    inner: 0,
+    detail: 0.45,
+    ppm: 48,
+    chibi: { head: 1.05, legs: 0.92, torso: 0.95, arms: 0.95, neck: 0.9 },
+  },
+};
 /** the light's depth map's size (pixels square) */
 const FIGURE_SHADOW_SIZE = 512;
 /**
@@ -545,14 +623,31 @@ function figureLightSpace(ext) {
     Z = row(f, 1 / D);
   return new Float32Array([X[0], Y[0], Z[0], 0, X[1], Y[1], Z[1], 0, X[2], Y[2], Z[2], 0, X[3], Y[3], Z[3], 1]);
 }
+/** a colour's five shades for a direction's ramp: the props' (figureRamp), a stronger hue shift (warm lights, cool
+ * violet shadows: HD-2D, painterly), or cel's (one shadow, no light band) */
+function figureLookRamp(b, ramp) {
+  if (ramp === 'hue')
+    return [
+      figureMix(figureDark(b, 0.42), [38, 28, 104], 0.45),
+      figureMix(figureDark(b, 0.7), [78, 58, 168], 0.34),
+      [b[0], b[1], b[2]],
+      figureMix(b, [255, 224, 150], 0.36),
+      figureMix(b, [255, 246, 214], 0.62),
+    ];
+  if (ramp === 'cel') {
+    const sh = figureMix(figureDark(b, 0.74), [90, 70, 160], 0.22);
+    return [sh, sh, [b[0], b[1], b[2]], [b[0], b[1], b[2]], figureMix(b, [255, 255, 255], 0.5)];
+  }
+  return figureRamp(b);
+}
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
-function figurePalette(F, colours) {
+function figurePalette(F, colours, ramp = 'props') {
   /* FIGURE_PAL_MAX colours, five shades each (the shader's uPal[100]): the deep shadow, the shadow, the base, the
      light and the shine, which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light */
   const out = new Float32Array(FIGURE_PAL_MAX * 5 * 3),
     gloss = new Set(F.gloss || []);
   colours.forEach((k, i) => {
-    const R = figureRamp(F.colours[k]),
+    const R = figureLookRamp(F.colours[k], ramp),
       flat = k === 'eye' || k === 'glint';
     [
       flat ? R[2] : R[0],
@@ -572,8 +667,10 @@ function figurePalette(F, colours) {
 function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   const gl = figureGl();
   if (!gl) return null;
-  /* a close-up (a portrait, a battle) gets a code figure's finer mesh */
-  const R = figureRes(gl, Fig, Fig.kind === 'code' && ppm >= 90 ? 2.5 : 1);
+  /* a direction (FIGURE_LOOKS) or the plain 3D figure ('smooth') */
+  const LK = FIGURE_LOOKS[style] || FIGURE_LOOKS.pixel;
+  /* a close-up (a portrait, a battle) gets a code figure's finer mesh; a direction may ask for more or less */
+  const R = figureRes(gl, Fig, Fig.kind === 'code' ? (ppm >= 90 ? 2.5 : 1) * LK.detail : 1);
   if (!R) return null;
   const B = figureBaker,
     t0 = performance.now(),
@@ -632,7 +729,8 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.uniformMatrix4fv(U.uM, false, figureClipMatrix(V.rel, V.tilt, ppm, S));
   /* the figure's turn in the camera's frame, for the normals (logic/figure-pose.js cardPoint) */
   gl.uniformMatrix3fv(U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
-  if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours));
+  if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours, LK.ramp));
+  gl.uniform1i(U.uMode, smooth ? 0 : LK.mode);
   gl.uniform3fv(U.uL, FIGURE_LIGHT);
   gl.uniform4f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base, FIGURE_BANDS.shine, FIGURE_BANDS.deep);
   gl.uniformMatrix4fv(U.uLS, false, LS);
@@ -657,7 +755,10 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, B.tex);
   gl.uniform1i(B.O.U.uT, 0);
-  gl.uniform1f(B.O.U.uOut, outline && !smooth ? 1 : 0);
+  gl.uniform1f(B.O.U.uOut, outline && !smooth && LK.outline > 0 ? 1 : 0);
+  gl.uniform1i(B.O.U.uOutW, Math.max(1, LK.outline));
+  gl.uniform1f(B.O.U.uInk, LK.ink || 0);
+  gl.uniform1f(B.O.U.uInner, LK.inner || 0);
   gl.uniform3f(B.O.U.uOL, OUTLINE_RGB[0] / 255, OUTLINE_RGB[1] / 255, OUTLINE_RGB[2] / 255);
   gl.uniform2i(B.O.U.uS, S.w, S.h);
   gl.bindVertexArray(B.oVao);
@@ -726,11 +827,13 @@ const FIGURE_PORTRAIT_PPM = 160;
  * blinks), cut from the top of their head to a little below the shoulders. A canvas, or null while the figure or the
  * baker isn't ready. Baked every call (a dialogue keeps its own).
  */
-function figurePortrait(who, frame = 0, turn = 0.9) {
-  const Fig = figureDef(figureFor(who));
+function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
+  const Fig = figureDef(
+    style === 'pixel' ? figureFor(who) : 'look:' + (who === 'boy' || who === 'girl' ? 'me' : who) + '@' + style
+  );
   if (!Fig) return null;
   const V = figureView(Math.PI * turn, 0, (12 * Math.PI) / 180, 32),
-    im = bakeFigure(Fig, 'idle', frame, V, FIGURE_PORTRAIT_PPM, true, 'pixel');
+    im = bakeFigure(Fig, 'idle', frame, V, FIGURE_PORTRAIT_PPM, true, style);
   if (!im) return null;
   /* from the first row with anything on it (a top hat's crown and all) down to just under the shoulders (the kit's
      `bust`, metres from the ground), or a head and a bit for a figure without one */

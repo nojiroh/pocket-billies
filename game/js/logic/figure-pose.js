@@ -877,7 +877,7 @@ export function figureMesh(F, detail = 1) {
     const ci = Math.max(0, colours.indexOf(p.col)),
       S = p.stripe,
       si = S ? colours.indexOf(S.col) : -1;
-    for (const tri of shapeTriangles(detail > 1 ? finerShape(p.shape, detail) : p.shape)) {
+    for (const tri of shapeTriangles(detail !== 1 ? finerShape(p.shape, detail) : p.shape)) {
       /* CH-3b: a striped part's triangles take the stripe's colour in every other band of its height */
       const y = (tri[0][1] + tri[1][1] + tri[2][1]) / 3,
         c = S && si >= 0 && Math.floor((y - (S.from || 0)) / S.every) % 2 === 1 ? si : ci;
@@ -895,9 +895,9 @@ export function figureMesh(F, detail = 1) {
 export function finerShape(sh, k) {
   /** @type {any} */
   const o = { ...sh };
-  if ('seg' in sh || sh.kind !== 'lathe') o.seg = Math.round((sh.seg || 12) * k);
-  if (sh.kind === 'ellipsoid' || sh.kind === 'torus') o.rings = Math.round((sh.rings || 8) * k);
-  if (sh.kind === 'tube') o.steps = Math.round((sh.steps || 6) * k);
+  if ('seg' in sh || sh.kind !== 'lathe') o.seg = Math.max(4, Math.round((sh.seg || 12) * k));
+  if (sh.kind === 'ellipsoid' || sh.kind === 'torus') o.rings = Math.max(3, Math.round((sh.rings || 8) * k));
+  if (sh.kind === 'tube') o.steps = Math.max(2, Math.round((sh.steps || 6) * k));
   return o;
 }
 

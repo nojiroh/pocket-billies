@@ -23,6 +23,10 @@
                                                     # screen pixels a pixel (figure-cast-*.png), no shots; --cast=npcs
                                                     # for everyone in game/data/people, --cast=folk for 12 townsfolk,
                                                     # 'me' for you; with --density, --tilt and --outline
+    python3 tools/look-people.py --styles=toy,hd2d,cel,paint,comic,facet --cast=me,chosen,marina,vault
+                                                    # CH-3b: the directions to choose from (figures.js FIGURE_LOOKS):
+                                                    # a panel each, the people three quarters on at the direction's
+                                                    # density and proportions, and a portrait (figure-styles-*.png)
     python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
                                                     # (and with --folk=1 the rival) as figures at 64 px a metre
                                                     # (battle-*.png); --no-shots for the battle (or --lose) alone
@@ -62,6 +66,7 @@ BATTLE = '--battle' in ARGS
 NO_SHOTS = '--no-shots' in ARGS
 SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
 CAST = arg('cast')
+STYLES = arg('styles')
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
                                ('figure', arg('figure')), ('style', arg('style')), ('folk', arg('folk'))) if v is not None}
@@ -129,6 +134,58 @@ CAST_JS = """((whos, tilt, dials) => {const ppm=dials.density||engineSetting('pe
   const pt=figurePortrait(who); if(!pt) return 'loading';
   rows.push({who, name, kit: Fig.F.kit||null, height: Math.round(Fig.F.height*100)/100, row, portrait: pt.toDataURL('image/png')})}
  return {rows, ppm, report: figureReport()}})"""
+
+
+STYLES_JS = """((looks, whos, tilt) => {const T=tilt*Math.PI/180, out=[];
+ for (const L of looks){const lk=FIGURE_LOOKS[L], row=[];
+  for (const who of whos){const Fig=figureDef('look:'+who+'@'+L); if(!Fig) return 'loading';
+   const im=bakeFigure(Fig,'idle',0,figureView(Math.PI*0.82,0,T,16),lk.ppm,true,L); if(!im) return 'loading';
+   row.push(im.toDataURL('image/png'))}
+  const pt=figurePortrait(whos[0],0,0.9,L); if(!pt) return 'loading';
+  out.push({look:L, ppm:lk.ppm, row, portrait:pt.toDataURL('image/png')})}
+ return out})"""
+
+
+def styles(pg, t0):
+    """the --styles sheet: a panel a direction, its people scaled so a metre is as tall on the sheet whatever the
+    density (a coarser direction shows bigger pixels), and the first person's portrait in it"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    looks = STYLES.split(',')
+    whos = (CAST or 'me,chosen,marina,vault').split(',')
+    for _ in range(60):
+        r = pg.evaluate(f'{STYLES_JS}({json.dumps(looks)},{json.dumps(whos)},{TILT})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no styles {STYLES}')
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1])))
+    PX_M = 200  # sheet pixels a metre
+    panels = []
+    for R in r:
+        k = max(1, round(PX_M / R['ppm']))
+        figs = [dec(u) for u in R['row']]
+        figs = [f.resize((f.width * k, f.height * k), Image.NEAREST) for f in figs]
+        pt = dec(R['portrait'])
+        pt = pt.resize((pt.width * 2, pt.height * 2), Image.NEAREST)
+        w = sum(f.width for f in figs) + pt.width + 40 * (len(figs) + 1)
+        h = max(max(f.height for f in figs), pt.height) + 60
+        P = Image.new('RGBA', (w, h), (214, 222, 196, 255))
+        d = ImageDraw.Draw(P)
+        d.text((12, 8), f"{R['look']}  ({R['ppm']} px a metre)", fill=(36, 25, 54, 255))
+        x = 20
+        for f in figs:
+            P.alpha_composite(f, (x, h - f.height - 10)); x += f.width + 40
+        P.alpha_composite(pt, (x, h - pt.height - 10))
+        panels.append(P)
+    W = max(p.width for p in panels)
+    out = Image.new('RGBA', (W, sum(p.height + 12 for p in panels)), (240, 236, 226, 255))
+    y = 0
+    for p in panels:
+        out.alpha_composite(p, (0, y)); y += p.height + 12
+    name = f"figure-styles-{STYLES.replace(',', '-')}.png"
+    out.save(OUT / name)
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(panels)} directions", flush=True)
+    return {'shot': name, 'looks': looks, 'people': whos}
 
 
 def cast(pg, t0):
@@ -298,6 +355,12 @@ def main():
         shots.settle(pg, 4)
         # you face the camera (a plain word: logic/person-view.js faceWord), as a fresh view stands you
         pg.evaluate("(()=>{const P=walkView.pl;if(typeof faceWord==='function')faceWord(P,'down');else P.dir='down';return 0})()")
+        if STYLES:
+            rows.append(styles(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'styles': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
         if CAST:
             rows.append(cast(pg, t0))
             ctx.close(); b.close(); srv.shutdown()
