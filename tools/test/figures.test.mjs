@@ -542,3 +542,30 @@ test('figures: CH-6 the one talking moves their mouth with their line’s expres
     G.walkRenderer.talkAt = at;
   }
 });
+
+test('figures: CH-6 a face mark is left out where something nearer covers it (a brim over the eyes)', async () => {
+  const figureMarkClip = G.figureMarkClip;
+  const { FIGURE_MARK_HIDE, figureMarkHidden } = await import('../../game/js/logic/figure-pose.js');
+  const S = { w: 4, h: 3 },
+    depth = new Uint8Array(S.w * S.h * 4),
+    /* the picture's depth alpha at (x, y from the top), rows from the bottom as read back */
+    put = (x, y, a) => (depth[((S.h - 1 - y) * S.w + x) * 4 + 3] = Math.round(a * 255)),
+    d = 0.5;
+  for (let y = 0; y < 3; y++) for (let x = 0; x < 4; x++) put(x, y, d);
+  put(1, 0, d + FIGURE_MARK_HIDE + 0.02);
+  const calls = [],
+    x = { fillRect: (...a) => calls.push(a) };
+  /* nothing in front of the bottom row: one rect */
+  figureMarkClip(x, depth, S, d).fillRect(0, 2, 4, 1);
+  assert.deepEqual(calls, [[0, 2, 4, 1]]);
+  calls.length = 0;
+  /* the brim at (1, 0): the top row painted round it */
+  figureMarkClip(x, depth, S, d).fillRect(0, 0, 3, 1);
+  assert.deepEqual(calls, [
+    [0, 0, 1, 1],
+    [2, 0, 1, 1],
+  ]);
+  /* the face itself (a little nearer than the smooth surface the mark sits on) doesn't hide it */
+  assert.equal(figureMarkHidden(d + FIGURE_MARK_HIDE * 0.5, d), false);
+  assert.equal(figureMarkHidden(0.9, undefined), false);
+});

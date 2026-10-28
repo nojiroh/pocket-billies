@@ -25,6 +25,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import {
   FIGURE_BANDS,
+  FIGURE_MARK_HIDE,
   FIGURE_PAL_MAX,
   OUTLINE_RGB,
   cardSize,
@@ -160,12 +161,16 @@ void main(){ivec2 l=ivec2(gl_FragCoord.xy)-uO,p=ivec2(l.x,uS.y-1-l.y);vec4 c=at(
   vec2 gp=floor(vec2(p)*vec2(1.,.5));m*=1.+(fract(sin(dot(gp,vec2(12.9898,78.233)))*43758.5453)-.5)*uFx.z;}
  o0=vec4(clamp(m*.5,0.,1.),1.);o1=vec4(nr.xyz,c.r);}`;
 /* the face's marks: whole-pixel rects in the atlas's pixels, unlit */
+/* CH-6: each pixel left out where the person's own depth (pass 1's alpha, still in the scratch target) is nearer than
+   the mark by more than uHide (logic/figure-pose.js FIGURE_MARK_HIDE): a brim over the eyes, a hand before the mouth */
 const FIGURE_MARK_VS = `#version 300 es
-layout(location=0) in vec2 aQ;layout(location=1) in vec4 aR;layout(location=2) in vec3 aCol;uniform vec2 uA;flat out vec3 vCol;
-void main(){vCol=aCol;gl_Position=vec4((aR.xy+aQ*aR.zw)/uA*2.-1.,0.,1.);}`;
+layout(location=0) in vec2 aQ;layout(location=1) in vec4 aR;layout(location=2) in vec3 aCol;layout(location=3) in float aD;uniform vec2 uA;flat out vec3 vCol;flat out float vD;
+void main(){vCol=aCol;vD=aD;gl_Position=vec4((aR.xy+aQ*aR.zw)/uA*2.-1.,0.,1.);}`;
 const FIGURE_MARK_FS = `#version 300 es
-precision highp float;flat in vec3 vCol;layout(location=0) out vec4 o0;layout(location=1) out vec4 o1;
-void main(){o0=vec4(vCol,1.);o1=vec4(.5,.5,1.,0.);}`;
+precision highp float;flat in vec3 vCol;flat in float vD;uniform sampler2D uT0;uniform ivec2 uS,uO;uniform float uHide;layout(location=0) out vec4 o0;layout(location=1) out vec4 o1;
+void main(){ivec2 l=ivec2(gl_FragCoord.xy)-uO,p=ivec2(l.x,uS.y-1-l.y);
+ float a=(p.x<0||p.y<0||p.x>=uS.x||p.y>=uS.y)?0.:texelFetch(uT0,p,0).a;if(vD>=0.&&a>vD+uHide)discard;
+ o0=vec4(vCol,1.);o1=vec4(.5,.5,1.,0.);}`;
 const FIGURE_ATLAS_PROGRAMS = {};
 
 /** whether people are drawn through the atlas: Figures and Live atlas on, the game's renderer up, nothing failed */
@@ -212,11 +217,14 @@ function figureAtlasReady() {
     A.markBuf = gpuBuffer('meshes', 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, A.markBuf);
     gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 28, 0);
+    gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 0);
     gl.vertexAttribDivisor(1, 1);
     gl.enableVertexAttribArray(2);
-    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 28, 16);
+    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 32, 16);
     gl.vertexAttribDivisor(2, 1);
+    gl.enableVertexAttribArray(3);
+    gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 32, 28);
+    gl.vertexAttribDivisor(3, 1);
     gl.bindVertexArray(null);
     figureRampMake();
     /* every person is drawn again into their new cell */
@@ -425,7 +433,6 @@ export function figureAtlasPass() {
   gl.disable(gl.BLEND);
   gl.disable(gl.CULL_FACE);
   gl.enable(gl.SCISSOR_TEST);
-  A.marks.length = 0;
   for (const E of A.queue)
     try {
       figureAtlasDraw(E);
@@ -435,7 +442,6 @@ export function figureAtlasPass() {
       break;
     }
   A.queue.clear();
-  figureAtlasMarks();
   gl.disable(gl.SCISSOR_TEST);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
@@ -516,7 +522,8 @@ function figureAtlasDraw(E) {
   gl.bindVertexArray(A.quad);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   /* the face's marks (logic/figure-pose.js figureFaceMarks), painted as the baker paints them, as rects */
-  let col = [0, 0, 0];
+  let col = [0, 0, 0],
+    dep = -1;
   const M = A.marks,
     x = {
       fillRect: (
@@ -524,12 +531,16 @@ function figureAtlasDraw(E) {
         /** @type {number} */ my,
         /** @type {number} */ w,
         /** @type {number} */ h
-      ) => M.push(cell.x + mx, cell.y + my, w, h, col[0] / 255, col[1] / 255, col[2] / 255),
+      ) => M.push(cell.x + mx, cell.y + my, w, h, col[0] / 255, col[1] / 255, col[2] / 255, dep),
     };
+  M.length = 0;
   for (const m of figureFaceMarks(Fig.F, J, pose, J0.V, J0.ppm, S, J0.face)) {
     col = m.rgb;
+    dep = m.d ?? -1;
     figurePaintMark(x, m, J0.ppm);
   }
+  /* CH-6: drawn now, while the scratch target still holds this person's depth */
+  figureAtlasMarks(cell, S, W.c);
   /* the picture as the sprites take it */
   const p = E.pic;
   p.width = S.w;
@@ -548,19 +559,26 @@ function figureAtlasDraw(E) {
   A.draws++;
   if (J0.face && J0.face.key) A.faceDraws++;
 }
-/** the frame's face marks over their cells, in one draw */
-function figureAtlasMarks() {
+/** CH-6: a person's face marks into their cell, in one draw, each pixel hidden where their own depth is nearer
+ * @param {{ x: number, y: number }} cell @param {{ w: number, h: number }} S @param {WebGLTexture} depthTex */
+function figureAtlasMarks(cell, S, depthTex) {
   const A = figureAtlas,
-    n = A.marks.length / 7;
+    n = A.marks.length / 8;
   if (!n) return;
   const gl = gpuState.gl,
     P = gpuState.P.figMark;
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget('figAtlas', FIGURE_ATLAS_W, FIGURE_ATLAS_H).f);
   gl.viewport(0, 0, FIGURE_ATLAS_W, FIGURE_ATLAS_H);
-  gl.disable(gl.SCISSOR_TEST);
+  gl.scissor(cell.x, cell.y, S.w, S.h);
   gl.disable(gl.DEPTH_TEST);
   gl.useProgram(P.p);
   gl.uniform2f(P.U.uA, FIGURE_ATLAS_W, FIGURE_ATLAS_H);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, depthTex);
+  gl.uniform1i(P.U.uT0, 0);
+  gl.uniform2i(P.U.uS, S.w, S.h);
+  gl.uniform2i(P.U.uO, cell.x, cell.y);
+  gl.uniform1f(P.U.uHide, FIGURE_MARK_HIDE);
   gl.bindVertexArray(A.quad);
   gl.bindBuffer(gl.ARRAY_BUFFER, A.markBuf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(A.marks), gl.DYNAMIC_DRAW);
