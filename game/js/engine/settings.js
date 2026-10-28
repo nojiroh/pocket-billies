@@ -257,7 +257,7 @@ export const ENGINE_DEFAULTS = {
   /* characters track CH-2 and CH-3 (the spike): people as small 3D figures baked into pixel pictures
      (game/js/figures.js), off; which figure you are, the style (the pixel puppet or the plain 3D figure), how many
      pixels a metre they are baked at, how many ways round, their outline, and townsfolk as figures too */
-  people: { figures: false, figure: 'look', style: 'pixel', density: 32, yawSteps: 16, outline: true, folk: true },
+  people: { figures: false, figure: 'look', style: 'pixel', density: 48, yawSteps: 16, outline: true, folk: true },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -1157,7 +1157,7 @@ export const ENGINE_SPEC = [
         16,
         64,
         4,
-        'How fine the figures are baked: 32 matches the ground and props.',
+        'How fine the figures are baked: 32 matches the ground and props, 48 (the default) shows more detail and stays sharp at the Normal zoom; above that they blur on a phone.',
       ],
       ['yawSteps', 'Figure turns', 8, 32, 8, 'How many ways round a figure is drawn: 8, 16 or 32 (24 draws 16).'],
       [

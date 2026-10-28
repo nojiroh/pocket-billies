@@ -106,8 +106,9 @@ const FIGURE_CACHE_MAX = 600,
   FIGURE_BAKES_A_FRAME = 4,
   /** the plain 3D figure (B, the style "smooth") is baked this fine and left to the GPU's mipmaps to smooth */
   FIGURE_SMOOTH_PPM = 128,
-  /** figures in battle: twice the world's grid (the old style guide's "32 px/m in the world, 64 in battle") */
-  FIGURE_BATTLE_PPM = 64;
+  /** figures in battle, where a trainer stands 150 CSS px tall: twice the world's 48 (CH-3b: the owner's "high
+   * resolution"; CH-3 baked them at 64) */
+  FIGURE_BATTLE_PPM = 96;
 /** the figures made from models (tools/gltf-figure.mjs; their CC0 sources in validation/cc0-src/LICENSES.md), each
  * a JSON file and its texture */
 const FIGURE_FILES = { rogue: 'figures/rogue.json' };
@@ -191,9 +192,17 @@ function figureDef(name) {
       items = figureItems();
     if (!L || (!L.creature && !items)) return null;
     const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
+      /* the owner (2026-10-28): no backpack unless the person's own look has a bag (the wardrobe gives everyone one
+         by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
+      own = p && p.look && p.look.wear,
+      look = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
       F = L.creature
         ? kappiFigure({ name })
-        : lookFigure(L, items, { name, seed: figureSeed(who), figure: p && p.figure ? p.figure : undefined });
+        : lookFigure(look, items, {
+            name,
+            seed: figureSeed(who),
+            figure: p && p.figure ? p.figure : who.startsWith('folk:') ? { variety: true } : undefined,
+          });
     return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
   }
   if (!(name in FIGURE_FILES)) return (FIGURE_DEFS[name] = false);
@@ -271,12 +280,12 @@ void main(){mat4 J=uJ[int(aJ)];vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;gl_Position
    ramp does it (logic/figure-pose.js figureRamp: the shadow darker and lavender, the light warmer). Smooth (the plain
    3D figure): a soft light, no bands */
 const FIGURE_FS = `#version 300 es
-precision highp float;in vec3 vN;in vec2 vUV;flat in int vC;uniform vec3 uPal[60];uniform vec3 uL;uniform vec2 uB;
+precision highp float;in vec3 vN;in vec2 vUV;flat in int vC;uniform vec3 uPal[80];uniform vec3 uL;uniform vec3 uB;
 uniform float uTexOn,uSmooth;uniform sampler2D uTx;out vec4 o;
-void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.x?2:(d>uB.y?1:0);vec3 base,sh,li;
- if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);}
- else{sh=uPal[vC*3];base=uPal[vC*3+1];li=uPal[vC*3+2];}
- vec3 c=uSmooth>.5?base*clamp(.62+.5*d,.35,1.12):(b==2?li:(b==1?base:sh));
+void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:0));vec3 base,sh,li,sn;
+ if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);sn=li;}
+ else{sh=uPal[vC*4];base=uPal[vC*4+1];li=uPal[vC*4+2];sn=uPal[vC*4+3];}
+ vec3 c=uSmooth>.5?base*clamp(.62+.5*d,.35,1.12):(b==3?sn:(b==2?li:(b==1?base:sh)));
 /* the depth, nearer larger, in alpha: 0 is no figure */
 o=vec4(c/255.,mix(1.,.08,gl_FragCoord.z));}`;
 const FIGURE_OUT_VS = `#version 300 es
@@ -466,12 +475,16 @@ function figureTarget(gl, w, h) {
 }
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
 function figurePalette(F, colours) {
-  /* FIGURE_PAL_MAX colours, three shades each (the shader's uPal[60]) */
-  const out = new Float32Array(FIGURE_PAL_MAX * 3 * 3);
+  /* FIGURE_PAL_MAX colours, four shades each (the shader's uPal[80]): the shadow, the base, the light and the shine,
+     which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light there */
+  const out = new Float32Array(FIGURE_PAL_MAX * 4 * 3),
+    gloss = new Set(F.gloss || []);
   colours.forEach((k, i) => {
     const R = figureRamp(F.colours[k]),
       flat = k === 'eye' || k === 'glint';
-    [flat ? R[2] : R[1], R[2], flat ? R[2] : R[3]].forEach((c, b) => out.set(c, (i * 3 + b) * 3));
+    [flat ? R[2] : R[1], R[2], flat ? R[2] : R[3], flat ? R[2] : gloss.has(k) ? R[4] : R[3]].forEach((c, b) =>
+      out.set(c, (i * 4 + b) * 3)
+    );
   });
   return out;
 }
@@ -518,7 +531,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.uniformMatrix3fv(U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
   if (code) gl.uniform3fv(U.uPal, figurePalette(Fig.F, R.colours));
   gl.uniform3fv(U.uL, FIGURE_LIGHT);
-  gl.uniform2f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base);
+  gl.uniform3f(U.uB, FIGURE_BANDS.light, FIGURE_BANDS.base, FIGURE_BANDS.shine);
   gl.uniform1f(U.uTexOn, code ? 0 : 1);
   gl.uniform1f(U.uSmooth, smooth ? 1 : 0);
   gl.activeTexture(gl.TEXTURE1);

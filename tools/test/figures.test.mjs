@@ -94,7 +94,9 @@ function fakeDocument(opts = {}) {
   return { made, createElement };
 }
 
-/* a fresh baker on a stand-in document; the engine's dials at their defaults (density 32, 16 turns, the outline) */
+/* a fresh baker on a stand-in document; the engine's dials at their defaults (density 48 since CH-3b, 16 turns, the
+   outline) */
+const PPM = 48;
 function freshBaker(opts) {
   const D = fakeDocument(opts),
     B = G.figureBaker;
@@ -117,8 +119,8 @@ test('figures: one bake draws the mannequin and its outline, and gives a person�
       rec = {},
       im = G.figurePicture(rec, 'mannequin', 'idle', 0, Math.PI, 0, TILT);
     assert.ok(im, 'a picture');
-    const S = G.cardSize(32, 13 * G.TILT_STEP);
-    assert.deepEqual([im.width, im.height, im.ax, im.ay, im.ppm, im.noNormal], [S.w, S.h, S.ax, S.ay, 32, true]);
+    const S = G.cardSize(PPM, 13 * G.TILT_STEP);
+    assert.deepEqual([im.width, im.height, im.ax, im.ay, im.ppm, im.noNormal], [S.w, S.h, S.ax, S.ay, PPM, true]);
     assert.ok(G.personPicture(im), 'counted as a person’s picture (logic/person-view.js)');
     const calls = D.made.gl.calls,
       draws = calls.filter(c => c[0] === 'drawArrays');
@@ -280,8 +282,8 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
     assert.equal(Fig.clips.walk.mats.length, file.clips.walk.frames * file.joints.length * 12);
     G.FIGURE_DEFS.rogue = Fig;
     const im = G.figurePersonPicture({}, 'rogue', 0, 'idle', 0, Math.PI);
-    assert.ok(im && im.ppm === 32, 'a person’s picture at 32 px a metre');
-    const S = G.cardSize(32, 13 * G.TILT_STEP, file.extent);
+    assert.ok(im && im.ppm === PPM, 'a person’s picture at the dial’s pixels a metre');
+    const S = G.cardSize(PPM, 13 * G.TILT_STEP, file.extent);
     assert.deepEqual([im.width, im.height], [S.w, S.h], 'as big as its extent');
     const calls = D.made.gl.calls;
     assert.deepEqual(
@@ -307,17 +309,22 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
     G.gpuState.fr++;
     assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'cheer', 0, Math.PI));
     assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'dance', 0, Math.PI));
-    /* in battle: at 64 px a metre, square to the level camera, the throw by how far through it the battle is (you
+    /* in battle: at FIGURE_BATTLE_PPM (96), square to the level camera, the throw by how far through it the battle is (you
        as the stand-in: Engine > People > Your figure; CH-3b's default is your own look) */
     G.figureChoice = () => 'rogue';
     G.gpuState.fr++;
     const T = {},
       bp = G.figureBattlePicture(T, 0, 0, 'throw', 0.5);
-    assert.ok(bp && bp.ppm === 64 && bp.figure === 'rogue');
-    const S0 = G.cardSize(64, 0, file.extent);
+    assert.ok(bp && bp.ppm === G.FIGURE_BATTLE_PPM && bp.figure === 'rogue');
+    const S0 = G.cardSize(G.FIGURE_BATTLE_PPM, 0, file.extent);
     assert.deepEqual([bp.width, bp.height], [S0.w, S0.h], 'no tilt: the card as tall as the figure');
     const J = calls.filter(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ').pop()[3],
-      want = G.meshClipMatrices(Fig.clips.throw, Math.floor(0.5 * Fig.clips.throw.frames), file.joints.length, 64);
+      want = G.meshClipMatrices(
+        Fig.clips.throw,
+        Math.floor(0.5 * Fig.clips.throw.frames),
+        file.joints.length,
+        G.FIGURE_BATTLE_PPM
+      );
     assert.ok(
       J.every((v, k) => Math.abs(v - want[k]) < 1e-5),
       'the throw half way through'
@@ -398,7 +405,7 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
     assert.equal(G.figureFor('me'), 'mannequin', 'or the spike’s figure you picked');
     /* built by the kit, baked as a person's picture; Kappi on four legs */
     const im = G.figurePersonPicture({}, 'look:clerk', 0, 'idle', 0, Math.PI);
-    assert.ok(im && im.ppm === 32 && im.figure === 'look:clerk');
+    assert.ok(im && im.ppm === PPM && im.figure === 'look:clerk');
     assert.ok(im.x.fills.length >= 6, 'a face: eyes, glints, irises, a mouth, glasses');
     assert.ok(G.FIGURE_DEFS['look:clerk'].F.kit, 'the head and build the kit chose');
     G.gpuState.fr++;
