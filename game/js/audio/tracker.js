@@ -6,17 +6,26 @@
    noise buffer through filters, and a kick; a soft echo that every voice can send to. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { SOUND_BAKE_INSTRUMENTS, soundBakeRoots, soundBakeZoneFor, soundBakeZoneSteps } from '../logic/sound-bake.js';
+import {
+  SOUND_BAKE_INSTRUMENTS,
+  soundBakeImpulse,
+  soundBakeRoots,
+  soundBakeZoneFor,
+  soundBakeZoneSteps,
+} from '../logic/sound-bake.js';
 /* eslint-disable no-func-assign */
 expose({
   SCALES: [() => SCALES],
   SOUND_BAKE_BUDGET: [() => SOUND_BAKE_BUDGET],
+  SOUND_BAKE_IMPULSE_SEC: [() => SOUND_BAKE_IMPULSE_SEC],
+  SOUND_BAKE_PLACES: [() => SOUND_BAKE_PLACES],
   SOUND_BAKE_SLICE_MS: [() => SOUND_BAKE_SLICE_MS],
   midiToFrequency: [() => midiToFrequency],
   songRandom: [() => songRandom, v => (songRandom = v)],
   soundBakeBank: [() => soundBakeBank],
   soundBakeBytes: [() => soundBakeBytes, v => (soundBakeBytes = v)],
   soundBakeEntry: [() => soundBakeEntry, v => (soundBakeEntry = v)],
+  soundBakeImpulseFor: [() => soundBakeImpulseFor, v => (soundBakeImpulseFor = v)],
   soundBakeKeep: [() => soundBakeKeep, v => (soundBakeKeep = v)],
   soundBakeNow: [() => soundBakeNow],
   soundBakePrune: [() => soundBakePrune, v => (soundBakePrune = v)],
@@ -218,9 +227,17 @@ function trackerRecipe(songs, name, run) {
    zone left, and the dropped one is baked again) */
 const SOUND_BAKE_BUDGET = 6 * 1024 * 1024;
 const SOUND_BAKE_SLICE_MS = 2.5;
+/* SND-9: the reverb. One ConvolverNode (a phone's costliest node: one, short), made the first time something sends to
+   it, so a song that never asks (all of today's: the future `gb` ensemble) never makes it. Its impulse: 1.2 s of
+   stereo decaying noise (logic/sound-bake.js). A place changes how much is sent, not the room: open air, a town, a
+   forest, a room, a cave (no second convolver for caves until a cave needs a longer room) */
+const SOUND_BAKE_IMPULSE_SEC = 1.2;
+const SOUND_BAKE_PLACES = { open: 0.6, town: 0.8, forest: 1, room: 0.7, cave: 1.8 };
 const soundBakeBank = {
   /** 'harp@48000' -> { id, R, rate, ctx, zones: (zone | null)[], used: number[], queued: Set, wait: [] } */
   entries: new Map(),
+  /** the reverb's impulse by sample rate: a Promise of its AudioBuffer */
+  impulses: new Map(),
   queue: [],
   timer: 0,
   /* a play counts up: the zone played longest ago has the smallest count */
@@ -317,6 +334,26 @@ function soundBakeKeep(E, i, Z) {
   soundBakeBank.zones++;
   soundBakePrune(E.zones[i]);
   if (!E.queued.size) for (const res of E.wait.splice(0)) res(E);
+}
+/* the reverb's impulse at a context's rate, baked in the same slices (once per rate) */
+function soundBakeImpulseFor(c) {
+  const B = soundBakeBank;
+  if (!B.impulses.has(c.sampleRate))
+    B.impulses.set(
+      c.sampleRate,
+      new Promise(res => {
+        B.queue.push({
+          make: () => soundBakeImpulse(c.sampleRate, { sec: SOUND_BAKE_IMPULSE_SEC }),
+          keep: ([L, R]) => {
+            const b = c.createBuffer(2, L.length, c.sampleRate);
+            [L, R].forEach((d, ch) => (b.copyToChannel ? b.copyToChannel(d, ch) : b.getChannelData(ch).set(d)));
+            res(b);
+          },
+        });
+        soundBakeStart();
+      })
+    );
+  return B.impulses.get(c.sampleRate);
 }
 /* the bank's bytes, its zones' alone */
 function soundBakeBytes() {
@@ -536,6 +573,61 @@ export function trackerCreate(ctx, bus, opts = {}) {
     s.stop(end + r * 1.5);
     return { source: s, gain: g };
   };
+  /* SND-9: the reverb's sends. A part that wants reverb connects to T.reverbSend('music') or ('sfx') after its own
+     gain; each send is scaled by its slider (reverbLevels, from sound.js applyVolumes: post-fader, so a slider at 0
+     leaves no reverb behind) and by the place (reverbPlace), and the room returns to the master (opts.master; the
+     Studio, which has none, to the bus). Made on the first send */
+  const room = { conv: null, sends: null, level: { music: 1, sfx: 1 }, place: 'town', bakeMs: 0, setMs: 0, sec: 0 };
+  const roomGain = k => room.level[k] * (SOUND_BAKE_PLACES[room.place] ?? 1);
+  const roomApply = () => {
+    if (room.sends)
+      for (const k of ['music', 'sfx']) room.sends[k].gain.setTargetAtTime(roomGain(k), c.currentTime, 0.05);
+  };
+  T.reverbSend = (kind = 'music') => {
+    if (!room.conv) {
+      room.conv = c.createConvolver();
+      const ret = c.createGain();
+      room.conv.connect(ret);
+      ret.connect(opts.master || bus);
+      room.sends = {};
+      for (const k of ['music', 'sfx']) {
+        room.sends[k] = c.createGain();
+        room.sends[k].gain.value = roomGain(k);
+        room.sends[k].connect(room.conv);
+      }
+      const t0 = soundBakeNow();
+      room.ready = soundBakeImpulseFor(c).then(b => {
+        room.bakeMs = Math.round(soundBakeNow() - t0);
+        const t1 = soundBakeNow();
+        room.conv.buffer = b;
+        room.setMs = Math.round((soundBakeNow() - t1) * 100) / 100;
+        room.sec = b.length / b.sampleRate;
+        T.reverbBytes = b.length * 2 * 4;
+        return room.conv;
+      });
+    }
+    return room.sends[kind] || room.sends.music;
+  };
+  /* resolves once the room has its impulse (and makes it, as a send would) */
+  T.reverbReady = () => (T.reverbSend(), room.ready);
+  T.reverbLevels = (music, sfx) => {
+    room.level = { music, sfx };
+    roomApply();
+  };
+  T.reverbPlace = p => {
+    room.place = p in SOUND_BAKE_PLACES ? p : 'town';
+    roomApply();
+  };
+  T.reverbStats = () =>
+    room.conv
+      ? {
+          place: room.place,
+          sec: room.sec,
+          bakeMs: room.bakeMs,
+          setMs: room.setMs,
+          kb: Math.round((T.reverbBytes || 0) / 1024),
+        }
+      : null;
   /* ---------- the player ---------- */
   /* a song starts 80 ms from now and fades in; the songs before it fade out. levels() is the game's say on the drums
      (softer standing still or at night) and the night pad; with none, drums are full and there is no pad */

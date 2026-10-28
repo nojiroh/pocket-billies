@@ -523,3 +523,54 @@ test('SND-9: past the budget the least recently played zone goes; a note there p
     soundBakeBank.other = other;
   }
 });
+
+test('SND-9: the reverb is made only when something sends to it; sends follow the sliders and the place; one impulse per rate', async () => {
+  const c = bankContext(11025),
+    made = { conv: 0 },
+    master = { name: 'master' };
+  c.createConvolver = () => (
+    made.conv++,
+    {
+      to: [],
+      connect(n) {
+        this.to.push(n);
+      },
+      buffer: null,
+    }
+  );
+  const T = trackerCreate(c, {}, { songs: { s: town }, master });
+  /* a song plays its bars and never makes it (today's songs, the future gb) */
+  T.synthVoice = T.synthNoise = T.synthKick = () => {};
+  T.play('s');
+  clearInterval(T.timer);
+  for (let i = 0; i < 64; i++) {
+    c.currentTime = T.song.next - 0.13;
+    T.tick();
+  }
+  T.reverbLevels(0.5, 0.25);
+  assert.equal(made.conv, 0);
+  assert.equal(T.reverbStats(), null);
+  /* the first send makes it: the room returns to the master */
+  const send = T.reverbSend('music');
+  assert.equal(made.conv, 1);
+  assert.equal(T.reverbSend('sfx') !== send, true);
+  const conv = await T.reverbReady();
+  assert.equal(made.conv, 1, 'one convolver');
+  assert.ok(conv.buffer && conv.buffer.length <= 1.2 * 11025 + 1);
+  assert.equal(conv.buffer.sampleRate, 11025);
+  assert.deepEqual(c.made.gains.find(g => g.to.includes(master)).to, [master]);
+  /* post-fader: the music send is the Music slider times the place (a town 0.8); a cave sends more */
+  assert.ok(Math.abs(send.gain.value - 0.4) < 1e-9);
+  T.reverbPlace('cave');
+  assert.ok(Math.abs(send.gain.calls.at(-1)[1] - 0.9) < 1e-9);
+  T.reverbLevels(0, 0);
+  assert.equal(send.gain.calls.at(-1)[1], 0, 'a slider at 0 sends nothing');
+  const S = T.reverbStats();
+  assert.equal(S.place, 'cave');
+  assert.ok(S.sec <= 1.2 && S.kb > 0);
+  /* a second context at the rate reuses the impulse */
+  const c2 = bankContext(11025);
+  c2.createConvolver = c.createConvolver;
+  const T2 = trackerCreate(c2, {}, {});
+  assert.equal((await T2.reverbReady()).buffer, conv.buffer);
+});

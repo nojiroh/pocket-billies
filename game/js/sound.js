@@ -196,7 +196,12 @@ function initSound() {
       fx: soundEngine.fx,
       /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
       memory: () => (ambience.noise ? (ambience.noise.pink.length + ambience.noise.brown.length) * 4 : 0),
+      /* SND-9: the reverb returns to the master, after the sliders' own buses */
+      master: soundEngine.master,
     });
+    /* SND-9: the reverb's sends follow the sliders (applyVolumes; nothing is made until something sends) */
+    const L0 = soundLevels(soundPreferences(), MUSIC.mix);
+    T.reverbLevels(L0.music, L0.sfx);
     soundEngine.tracker = T;
     soundEngine.echoIn = T.echoIn;
     soundEngine.echoWet = T.echoWet;
@@ -217,6 +222,8 @@ function applyVolumes() {
   soundEngine.master.gain.setTargetAtTime(L.master, t, 0.05);
   soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
   soundEngine.fx.gain.setTargetAtTime(L.sfx, t, 0.05);
+  /* SND-9: the reverb's sends, post-fader: a slider at 0 leaves no reverb of its sounds behind */
+  if (soundEngine.tracker) soundEngine.tracker.reverbLevels(L.music, L.sfx);
 }
 /* the first touch unlocks sound; the song that was asked for starts then. SND-1: any touch also wakes sound that
    stopped for something else, as iOS Safari does after a call or Siri (its state is then 'interrupted', not
