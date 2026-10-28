@@ -418,7 +418,7 @@
    }
   },
   "ui": {
-   "description": "SND-6: the buttons' four sounds and which button makes which (logic/ui-sounds.js)",
+   "description": "SND-6: the buttons' four sounds and which button makes which (logic/ui-sounds.js); SY-3: stamp, the thunk when a pb-stamp lands",
    "type": "object",
    "required": [
     "sounds"
@@ -438,7 +438,7 @@
      ],
      "additionalProperties": false,
      "patternProperties": {
-      "^(select|confirm|cancel|cant)$": {
+      "^(select|confirm|cancel|cant|stamp)$": {
        "type": "object",
        "required": [
         "notes"

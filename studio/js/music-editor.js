@@ -707,7 +707,7 @@ function musicUiSoundsHTML() {
     )
     .join('');
   return card('Button sounds', rows + which, {
-    sub: 'Every button makes one: can’t when it is disabled, else cancel or confirm by its class or action (listed below; music.json ui), else select. Their notes are in music.json ui.',
+    sub: 'Every button makes one: can’t when it is disabled, else cancel or confirm by its class or action (listed below; music.json ui), else select. stamp is the thunk of a Bureau stamp landing (SY-3). Their notes are in music.json ui.',
   });
 }
 function musicMixHTML() {

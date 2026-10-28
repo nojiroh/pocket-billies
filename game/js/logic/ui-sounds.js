@@ -18,8 +18,9 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-/** the four, in the order the Studio shows them */
-export const UI_SOUND_NAMES = ['select', 'confirm', 'cancel', 'cant'];
+/** the four, in the order the Studio shows them; SY-3: then stamp, the thunk a pb-stamp makes as it lands (no button
+ * makes it) */
+export const UI_SOUND_NAMES = ['select', 'confirm', 'cancel', 'cant', 'stamp'];
 
 /**
  * which sound a pressed button makes
