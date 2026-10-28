@@ -150,7 +150,8 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1 });
  * figure moves (figurePose): its legs' and arms' swing and its bounce as parts of the usual (1), its lean forward
  * (radians, below 0 back) and how far out its arms hang (radians) */
 /** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[],
- *   gait?: FigureGait }} Figure */
+ *   gait?: FigureGait, kit?: { head: string, build: string } }} Figure (`kit`: the head shape and build the figure
+ * kit chose, logic/figure-kit.js) */
 /** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
  * parts order); `blink` closes the eyes */
 
@@ -854,6 +855,8 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
       facing = -(n[1] * -st + nz * ct) / (Math.hypot(nx, n[1], nz) || 1);
     /* the camera looks down, so a face's lower half faces it less: the eyes show the longest, the mouth the least */
     if (facing < (m.min ?? (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2))) continue;
+    /* an iris is on an open eye */
+    if (m.kind === 'iris' && P.blink) continue;
     let w = Math.max(1, Math.round(m.w * ppm)),
       h = Math.max(1, Math.round(m.h * ppm));
     if (m.kind === 'eye') {
