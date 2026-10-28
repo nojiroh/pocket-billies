@@ -39,6 +39,7 @@ expose({
   talkLine: [() => talkLine, v => (talkLine = v)],
   talkMotion: [() => talkMotion, v => (talkMotion = v)],
   talkName: [() => talkName, v => (talkName = v)],
+  talkStamp: [() => talkStamp, v => (talkStamp = v)],
   talkTick: [() => talkTick, v => (talkTick = v)],
 });
 /* eslint-enable no-func-assign */
