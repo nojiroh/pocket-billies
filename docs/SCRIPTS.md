@@ -72,9 +72,18 @@ tag, a value not in the list, a closing tag that closes nothing, crossed tags (`
 a style in the middle of a line. A choice's option may use `[b]` only. Brackets that aren't tag-shaped (`[if …]`,
 `[B2]`) are plain text.
 
-Since DL-1 every surface shows the line's plain text (the tags taken out); the dialogue box draws the effects from
-DL-2 on (docs/phases/dialogue-track.md). The battle box, the walk speech, event intros and the opening's hot takes
-stay plain until DL-8.
+Since DL-1 every surface shows the line's plain text (the tags taken out). Since DL-2 the dialogue box draws the
+effects: `[b]` in Oxanium 700 with a small pop, `[big]` in the voice font, wave, shake and the colours
+(game/css/talk-text.css). The face, emote, stamp and cut tags are read but act from DL-4 and DL-5
+(docs/phases/dialogue-track.md). The battle box, the walk speech, event intros and the opening's hot takes stay plain
+until DL-8.
+
+How a line types (game/js/logic/talk-type.js): one letter every 28 ms at the Normal Text speed (Settings, Game: Slow
+42, Fast 14, Instant shows the line whole; Reduced motion is always Instant). The reader gets a beat for free: about 4
+letters' time after `, ; :` and 8 after `. ! ?` when a space follows (none inside `3.5` or `?!`, none at the line's
+end); an ellipsis (`…` or `...`) types three times slower. So write `[p]` only for a beat the punctuation doesn't
+give. A tap shows the rest of the line at once, pauses included. The voice follows the style: a shout blips higher
+and louder, a whisper softer, a thought not at all.
 
 ## Blocks
 

@@ -357,6 +357,19 @@ skill), its HANDOFF entry, and the owner's phone check.
 - **DL-2 Letters.** The span renderer, the effects, pauses and speeds, the screen-reader copy, Text speed, blip
   styles, the element count rule. Tests: idle-life, the Safety step, settings, motion. The full quick check. On the
   phone: bold, wave, shake and the pauses read well; the Reduced setting.
+  **Done in DL-2** (2026-10-28, `track/dialogue`): bold is **Oxanium 700** (the owner's answer to Ask me before 1;
+  game/fonts/oxanium-700.woff2, 8.8 KB, in ui-theme.js `UI_FONTS`). The timing is its own logic module,
+  game/js/logic/talk-type.js (`TEXT_SPEEDS` slow 42 / normal 28 / fast 14 / instant 0 ms a letter; `letterTimes`:
+  [slow] ×2, [fast] ×0.5, [p] seconds, beats of 4 letters after `, ; :` and 8 after `. ! ? …` only where a space
+  follows, an ellipsis ×3), tested in talk-type.test.mjs. talk.js `talkLetters` builds `.talk-line[data-one-piece]` >
+  `span.talk-sr` (the plain line) + `span.talk-glyphs[aria-hidden]` > `span.w` > `span.l` (`--i`, `fx-*`); the box
+  keeps its `aria-live`, which now reads the whole line once. The effects compose through custom properties
+  (`--talk-pop`, `--talk-shake`, `--talk-wave` in one `animation` list); their keyframes are in motion.css (ui-lint:
+  keyframes live there only). Wave is the signal loop `.talk-glyphs .fx-wave`. Reduced: Instant typing (as before) and
+  no rise, pop, shake or wave; Calm keeps them (they have a cause). Colours are the colour code's text shades
+  (`--sig-value-text`, `-bad-`, `-good-`, `-machine-`). Battle speed's default lives in settings-screen.js, not saves.js
+  (the track said saves.js); Text speed's default is in saves.js as asked. Face, emote, stamp and cut events are parsed
+  but act in DL-4/DL-5.
 - **DL-3 Bubbles.** Pop-in from the side, the grow spring, the tilt, shout, whisper and think, the skins and the
   stamp, the dials. Tests: ui-theme, the skins' schema and data, springEase. On the phone: every character's bubble.
 - **DL-4 The stack.** Sides, links, interruptions, the "…" bubble, choices, the Log, the height budget, the gallery.
@@ -375,7 +388,8 @@ skill), its HANDOFF entry, and the owner's phone check.
 Tags `dl-N-done` are not asked for per session (CLAUDE.md); the track gets `dialogue-done` when it ends.
 
 ## Ask me before
-1. Bold: add Oxanium 700 (one small woff2), or show stressed words in the voice font.
+1. Bold: add Oxanium 700 (one small woff2), or show stressed words in the voice font. **Answered 2026-10-28 (DL-2):
+   Oxanium 700.**
 2. Each skin's final look, after the mockup (DL-0) and again on the phone (DL-3).
 3. The lines in DL-7, and any change to the approved opening text.
 4. Whether the "…" bubble and the stamp also show outside Kappi and the Bureau.
