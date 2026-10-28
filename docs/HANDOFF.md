@@ -405,6 +405,73 @@ checks are skipped until the UI plan is done (listed below). Suggested tag `ui-1
 - **Next:** the planning session; after all of the UI plan, one session runs the skipped browser checks. UI-17 adds the
   breathing nodes and the pin's bob.
 
+### Style track SY-3 - the Bureau's mark: the emblem, bureau.look, pb-stamp - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` and main (07c9b284) were
+already merged in (no merge needed). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1, SY-2, SY-3). Tag
+`sy-3-done` is for the owner to push (the git proxy refuses tags).
+- Changed:
+  - **game/art/ui/bureau.svg** (new): the emblem, a bean on a lost-property tag with its string hole, red tape across
+    it and the string running off to the top right. 36 x 36 in the UI icons' pixel format: drawn as a flat front (paper
+    tag, stone edge, red tape and string, wood bean) and shaded by logic/icon-block.js, the Studio's "Shade as a block",
+    so the Studio's icon editor opens it as pixels and the owner can repaint it. ui-icons.test.mjs counts 52; STUDIO.md.
+  - **factions.json `bureau.look`** (schema, `FactionLook` and `StampMoment` types, `dataFactions`, 2 unit tests):
+    `emblem` (a UI icon name; the test checks the file), `stamps` keyed by moment (`retrieved`, `void`, `denied`,
+    `pending`, `filed`, the owner's placeholder words; a `stampWord` is at most 12 letters; the data check flags two
+    moments with the same word), `forms` (form numbers, unique). `look` is optional, so a later faction can bring its own.
+  - **game/js/ui-run-kit.js `pb-stamp`**: `<pb-stamp word tilt size="sm|lg" still>`. A word in a double border in
+    `--redink` (`--stamp-ink` sets another), rough from a pinhole mask, at a slant (`tilt`, -8 deg by default). It slams
+    on when it joins the page (from 1.9x to 0.94x then 1x over `--m-base`), `play()` again for another, and sends
+    `pb-stamp-land` as it lands (55% in, about 130 ms). `still` shows it already stamped, with no slam and no sound.
+    Under Reduced motion it fades in and lands at once.
+  - **The thunk:** music.json `ui.sounds.stamp` (a placeholder: a falling triangle with a low square and a click; the
+    schema takes it as an optional fifth UI sound), `UI_SOUND_NAMES` (so the Studio's Button sounds card plays and names
+    it), and sound.js plays it on `pb-stamp-land`. Its fingerprint was added to validation/sound-baseline/ui.json, merged
+    in by hand so the other four sounds' fingerprints stay as they were.
+  - **The UI gallery's "Bureau stamps"**: the emblem at 22, 36 and 72 px, the form line, the five stamps with
+    factions.json's words (gallery.js reads them, and the first form number, from the data), three sizes and a "Stamp
+    them again" button. tools/check-ui-gallery.py has a list of extra looks per section (`LOOKS`): the stamps are pictured
+    in Copper Grove (320 and 390), alpha 0.5 and Stepped (390), light and dark: 8 new baselines. The other pictures are
+    taken as before.
+  - studio/art-code-refs.json regenerated (moved lines); the track file and ROADMAP mark SY-3 done.
+- Claims checked against the code:
+  - Right: factions.json has `bureau` with six bots and no emblem anywhere. The icon editor edits art/ui/*.svg as pixels.
+    pb-payout fires events and the page plays the sounds (SND-6), and pb-stamp works the same way.
+  - Wrong, or not built yet: the red family's hexes (#EA5974, #BD2C42, #FF8A9F) are UI-11's proposal, not in the CSS.
+    The stamp uses today's red, `--redink` (#c8323c light, #ff8d9c dark), so it changes with UI-11's tokens.
+  - UI-16b's stamp motion isn't built, so pb-stamp has its own slam (UI-16b can take it over).
+  - "Every palette": Field Guide, Copper Grove+ and Bureau Night are UI-12's and not built. The gallery has Copper
+    Grove, alpha 0.5 and Stepped, so those are the ones pictured.
+  - No Studio editor reads or writes factions.json, so the words are edited in the file for now.
+- Found, not changed:
+  - The UI gallery's `loading-*` pictures differ from run to run (2.4% at 390, the whole picture at 320), also without
+    this change. Its animated stage makes it a flaky baseline; for the UI track.
+  - The quick check's RL-8 failed once with `runSceneParams: node 7 has no exit south2`. That is a seed the run's map
+    generator can't build (RL-8's seed changes each run). Re-run alone, here and on SY-2's last commit (d425066a, before
+    SY-3), it fails the same known way ("crossed into ... Route but its view never showed"). For the roguelite track.
+- Fixed after review: my first `look` push put backticks in factions.json's `about`, and CI's first smoke step
+  (`python3 tools/check-data-text.py`, "text values could become HTML") failed. The planning session caught it, fixed
+  in 74973429. That check is now part of this step's list.
+- Risky: low. Nothing in the game shows a stamp yet (SY-4 and SY-5 place them). The sound listener only plays when a
+  stamp lands. The mask needs `mask-composite` (Chrome 120+, Safari 15.4+): an older browser shows smooth ink.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,580 of 1,581
+  alongside the smoke run; the one red was the known "1,000 maps in under a second" timing test, which passed alone),
+  `npm run check:smoke` (6 of 6). check-ui-gallery: 101 pictures, the only differences are the flaky `loading` ones above.
+  check-sound for the UI sounds (no change in the four old ones). A headless gallery run: no page errors; the slam
+  lands at about 130 ms one stamp after another; Reduced motion fades in and lands at once; a `still` stamp sends
+  nothing. `npm run check:quick`: 33 of 41. Five are the known ones (Terraces train_station, RT-2, Granny Juniper,
+  room light, Battle music). Postcards and "rooms laid in" passed alone. RL-8: see above.
+- Decided for the owner, to review:
+  - **The emblem's drawing** (Claude's draft in the icon set's style; repaint it in the Studio's icon editor):
+    `bureau` names it in factions.json.
+  - **Form numbers** ("Ask me before" 2): placeholders "Form 7B" (lore.json's pamphlet already says "form 7B"),
+    "Form 12-C", "Form 4A-4", "Form 31", "Form 9-Lost", "Form 0". Edit `bureau.look.forms`.
+  - **The stamp words are keyed by moment**, not a plain list, so SY-4 and SY-5 can find each one by meaning. The words
+    are the owner's placeholders.
+  - **The thunk is a fifth UI sound** (music.json `ui.sounds.stamp`, a placeholder) rather than a new sound system.
+  - Not added: a Studio card for the Bureau's look (words, forms). It fits SY-8's dials.
+- Next: SY-4 (case files: the Bureau's events in a manila-folder sheet with the form number, the emblem and the result
+  stamped), in its own session on `track/style`.
+
 ### Region map track WM-6 - a region's look: town districts, landmarks, route numbers on signposts and the map - 2026-10-27
 Branch `claude/wm-6-region-look` (made from main at 07c9b284, which held WM-3a/3b, WM-4a/4b, WM-5a and WM-7;
 `track/worldmap` with WM-5b merged in before the PR), PR into `track/worldmap`. Run with the plan approved in advance
@@ -2141,6 +2208,8 @@ WM-5a is the generator; runs still make 2 x 1 towns (hamlets, 3-5 houses) until 
     `game/art/billionaires/*0.png`, legacy art SA-5 deleted; main's own fast check fails both the same way, no fix
     yet), and the Studio check's `--only=generate` (a fixed 0.8 s wait races the draft under software drawing: 2 of 3
     runs fail on the track's head; with a longer wait it passes here).
+  - CI's smoke on a slow runner (every step 1.5-2 times slower) once also failed "Behind things" (Copperleaf) and "A
+    run's world" (the walk from the landing into a route); both passed on the same commit in the other run and here.
   - check-fast's "A run's world" (`crossed but the view is still w:run_0_7i5p*`) fails in 3 of 4 CI runs here and in 3
     of 4 on WM-3b's and WM-4b's PRs (#263, #267: the same base without WM-5). Reproduced locally pinned to 2 cores
     (it passes on 4): after the crossing, seamless-world.js `seamlessGate` keeps the old view until the next one
