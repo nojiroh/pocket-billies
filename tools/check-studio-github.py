@@ -2213,7 +2213,27 @@ def relics_steps(pg, errs):
     pg.evaluate("void openSection('relics', { relic: 'subscription_box' })"); time.sleep(0.3)
     sb = pg.evaluate("['fx.0.table','fx.1.add'].map(k=>(document.querySelector(`#main [data-p=\"perks.subscription_box.${k}\"], #main [data-path=\"perks.subscription_box.${k}\"]`)||{}).value)")
     if sb != ['common', '-15']: errs.append(f'perks: Subscription Box shows its loot table and charge as {sb}')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs; the 12 Fine Print Perks' rows with no error and their rarity fine, Subscription Box's loot table and charge", flush=True)
+    # PK-8: the Perk sets: Running Shoes's Set reads Trainer Classics; picked Tech Gear its tags swap the set's id and
+    # undo puts it back; the sets card shows the 7 with no message; a set's title edit is proposed in perkSets.json and
+    # undone; a need past its Perks shows its message
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    st = pg.evaluate("[(document.querySelector('#main [data-relic-set=\"running_shoes\"]')||{}).value, document.querySelectorAll('#main [data-p$=\".need\"][data-p^=\"perkSets.\"]').length, [...document.querySelectorAll('#main .relic-err')].map(e=>e.textContent)]")
+    if st != ['classics', 7, []]: errs.append(f'perks: sets: Running Shoes reads set, sets shown, messages {st}')
+    sel = '#main [data-relic-set="running_shoes"]'
+    pg.select_option(sel, 'tech'); time.sleep(0.3)
+    tg = pg.evaluate("studioState.D.perks.running_shoes.tags")
+    if 'tech' not in tg or 'classics' in tg: errs.append(f'perks: sets: Running Shoes picked Tech Gear has tags {tg}')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if 'classics' not in pg.evaluate("studioState.D.perks.running_shoes.tags"): errs.append('perks: sets: undo left Running Shoes out of Trainer Classics')
+    edit_undo(pg, errs, 'perks: sets', '#main [data-p="perkSets.office.title"]', 'Upper Management', 'perkSets.office.title', 'perkSets\\.json$')
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    sel = '#main [data-p="perkSets.lab.need"]'
+    pg.fill(sel, '6'); pg.dispatch_event(sel, 'change'); time.sleep(0.3)
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })")
+    if not wait_js(pg, "/lab.need: 6, but only 4 Perks/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: sets: a need past its Perks showed no message')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.perkSets.lab.need") != 3: errs.append('perks: sets: undo left the Lab Kit needing ' + str(pg.evaluate("studioState.D.perkSets.lab.need")))
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs; the 12 Fine Print Perks' rows with no error and their rarity fine, Subscription Box's loot table and charge; the 7 Perk sets, Running Shoes's set swapped and undone, a set's title proposed and undone, a need past its Perks named", flush=True)
 
 
 def unlocks_steps(pg, errs):

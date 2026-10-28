@@ -25,7 +25,14 @@ import {
 } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
-import { FX_ONCE_KINDS, FX_PLAIN, FX_RULE_N, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
+import {
+  FX_ONCE_KINDS,
+  FX_PLAIN,
+  FX_RULE_N,
+  FX_WHEN_KINDS,
+  dataPerkSets,
+  dataPerks,
+} from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -67,6 +74,8 @@ expose({
   perkProblems: [() => perkProblems],
   perkRarityHTML: [() => perkRarityHTML, v => (perkRarityHTML = v)],
   perkRowHTML: [() => perkRowHTML, v => (perkRowHTML = v)],
+  perkSetPickHTML: [() => perkSetPickHTML, v => (perkSetPickHTML = v)],
+  perkSetsHTML: [() => perkSetsHTML, v => (perkSetsHTML = v)],
   perkTimingHTML: [() => perkTimingHTML, v => (perkTimingHTML = v)],
   perkX: [() => perkX],
 });
@@ -244,7 +253,8 @@ const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 /** the data checks' messages about perks.json and rules.json run.perks (dataPerks, as CI runs it) */
 const perkProblems = () => {
   try {
-    return dataPerks(studioState.D).map(([f, m]) => ({ f, m }));
+    /* PK-8: and the Perk sets' (perkSets.json; a Perk in two sets is a perks.json message) */
+    return [...dataPerks(studioState.D), ...dataPerkSets(studioState.D)].map(([f, m]) => ({ f, m }));
   } catch (e) {
     return [{ f: 'perks.json', m: `the check stopped: ${e.message || e}` }];
   }
@@ -664,6 +674,7 @@ SECTIONS.relics = () => {
      }) +
      `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono; PK-5: bots, a scrapyard still ahead; PK-6: side, a side area still ahead)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
      `<label class="fld"><span>Tags (PK-4: types and themes; offers lean ×${D.rules.run.perks.bias || 1} toward a match with the team’s types or a Perk held)</span><input type="text" data-relic-tags="${escapeHtml(k)}" value="${escapeHtml((R.tags || []).join(', '))}" placeholder="Fire, weather"></label>` +
+     perkSetPickHTML(D, k, R) +
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
@@ -717,9 +728,62 @@ SECTIONS.relics = () => {
      sub: 'The picks after each mini-boss on a run of this seed (perks.js), as the Run Lab shows them for the same seed with nothing taken. Shops are left out.',
    }
  )}
+ ${perkSetsHTML(D, P)}
  ${perkRarityHTML(D, cov, P)}</div></div>`;
 };
 
+/** PK-8: a Perk's set: its tag that is a set's id (perkSets.json), picked here; the tag is written in its Tags */
+function perkSetPickHTML(/** @type {any} */ D, /** @type {string} */ k, /** @type {any} */ R) {
+  const S = D.perkSets || {},
+    on = (R.tags || []).find((/** @type {string} */ t) => Object.hasOwn(S, t)) || '';
+  return `<label class="fld"><span>Set (PK-8: holding ${on ? S[on].need : 'its need'} of a set’s Perks gives its bonus; the set’s id goes in the Tags)</span><select data-relic-set="${escapeHtml(k)}"><option value="">No set</option>${Object.keys(
+    S
+  )
+    .map(
+      id =>
+        `<option value="${escapeHtml(id)}"${id === on ? ' selected' : ''}>${escapeHtml(S[id].name)} (${escapeHtml(S[id].title)})</option>`
+    )
+    .join('')}</select></label>`;
+}
+/** PK-8: the Perk sets (perkSets.json): each set's name, its bonus's title and text, how many are needed, its Perks
+ * and its rows (as words: edit the rows in perkSets.json), with perkSets.json's messages */
+function perkSetsHTML(/** @type {any} */ D, /** @type {{ f: string, m: string }[]} */ P) {
+  const S = D.perkSets || {},
+    L = D.perks || {};
+  if (!Object.keys(S).length) return '';
+  const rowWords = (/** @type {any} */ f) =>
+    [
+      f.kind,
+      f.what || f.rule || f.side || '',
+      'mult' in f ? `×${f.mult}` : '',
+      f.when ? `at ${f.when}` : '',
+      f.if ? `if ${[].concat(f.if).join(', ')}` : '',
+      f.once ? `once a ${f.once}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  return card(
+    'Perk sets',
+    Object.keys(S)
+      .map(id => {
+        const p = `perkSets.${id}`,
+          members = Object.keys(L).filter(x => (L[x].tags || []).includes(id));
+        return `<div data-perk-set="${escapeHtml(id)}"><h4 class="mono">${escapeHtml(id)}</h4>${grid(
+          textField('Name', `${p}.name`, { max: 40 }),
+          textField('Bonus title', `${p}.title`, { max: 40 }),
+          numberField('Perks needed', `${p}.need`, { min: 2, max: 6, step: 1 })
+        )}${textField('What the bonus does (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 })}<p class="help">Its Perks (${members.length}): ${escapeHtml(members.map(x => L[x].name || x).join(', ') || 'none tagged yet')}</p><p class="help mono">${S[id].fx.map((/** @type {any} */ f) => escapeHtml(rowWords(f))).join(' · ')}</p>${P.filter(
+          q => q.f === 'perkSets.json' && q.m.startsWith(id + '.')
+        )
+          .map(q => `<p class="err relic-err">${escapeHtml(q.m)}</p>`)
+          .join('')}</div>`;
+      })
+      .join(''),
+    {
+      sub: 'PK-8: holding a set’s Perks (those tagged with its id) up to its need adds its bonus’s rows to the run. A Photocopier counts as itself, never as the Perk it copies. The rows are edited in perkSets.json.',
+    }
+  );
+}
 /** the preview and the offers, from the logic worker, a little after the last edit */
 function perkFillSoon() {
   clearTimeout(perkEd.t);
@@ -859,6 +923,22 @@ document.addEventListener('change', ev => {
   if (!L.length) delete R[key];
   else R[key] = key === 'tags' || L.length > 1 ? L : L[0];
   if (JSON.stringify(R[key]) === was) return;
+  changed();
+  render();
+});
+/* PK-8: a Perk's set: the set ids leave its tags, the one picked goes in (none removes them; no tags left, none) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLSelectElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.relicSet) return;
+  const R = /** @type {any} */ (studioState.D.perks[el.dataset.relicSet]),
+    S = studioState.D.perkSets || {};
+  if (!R) return;
+  const was = JSON.stringify(R.tags),
+    L = (R.tags || []).filter((/** @type {string} */ t) => !Object.hasOwn(S, t));
+  if (el.value) L.push(el.value);
+  if (L.length) R.tags = L;
+  else delete R.tags;
+  if (JSON.stringify(R.tags) === was) return;
   changed();
   render();
 });
