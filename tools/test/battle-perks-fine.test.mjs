@@ -308,3 +308,104 @@ test('PK-7 rule faintPaysNothing: a win in which one of yours fainted pays no Mo
     }
   );
 });
+
+/* ---------- foe levels and the boss's HP, taken mid-run ---------- */
+
+test('PK-7 level and bossHp rows taken mid-run move the foes at once (pools, trainers, the boss); let go, back', () => {
+  const PK = modules.perks,
+    L = modules['run-loop'],
+    R = GAME_DATA.rules.run,
+    MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
+    WORLD = {
+      nodeTypes: GAME_DATA.nodeTypes,
+      biomes: GAME_DATA.biomes,
+      pools: data.POOLS,
+      scenery: GAME_DATA.scenery,
+      rules: R,
+      region: modules['run-region'].runRegionData(GAME_DATA, data.TRAINERS),
+    },
+    { P } = perks(
+      { id: 'test_early', name: 'Test Early', fx: [{ kind: 'level', n: 3 }] },
+      { id: 'test_promo', name: 'Test Promo', fx: [{ kind: 'bossHp', mult: 1.3 }] }
+    );
+  withPerks(P, () => {
+    const run = modules['run-state'].newRun('FINELEVEL1', 1, 1, {
+      team: [],
+      se: 0,
+      items: {},
+      pyramids: {},
+      trip: { node: 0, plan: [] },
+      wild: {},
+      flags: {},
+      seats: [],
+      visited: {},
+    });
+    modules['run-map'].runMapStart(run, MAP_DATA);
+    const W = modules['run-scenes'].runWorldTables(run, data.LOCATIONS[0], WORLD),
+      foes = L.runFoes(run, { leaders: Object.values(data.TRAINERS).filter(T => T.miniboss), rules: R });
+    assert.equal(W.foeUp, 0);
+    try {
+      data.worldPut({
+        ...W,
+        maps: Object.fromEntries(W.locations.slice(1).map(p => [p.mapId, { _lite: { tiles: 't' } }])),
+        trainers: foes,
+      });
+      const pools = () => Object.keys(W.pools).map(id => data.POOLS[id].lv.join('-')),
+        teams = () => Object.keys(foes).map(id => data.TRAINERS[id].team.map(e => e.lvl).join(',')),
+        boss = Object.keys(foes).find(id => foes[id].runFoe === 'boss'),
+        p0 = pools(),
+        t0 = teams();
+      assert.ok(boss, 'the run has a boss');
+      assert.equal(data.TRAINERS[boss].hpMult, undefined);
+      /* Early Access Pass's row: every pool and trainer three levels up, at once */
+      assert.equal(PK.perkTake(run, 'test_early', data.PERKS, RULE), '');
+      assert.deepEqual(
+        pools(),
+        p0.map(r =>
+          r
+            .split('-')
+            .map(v => Math.min(100, +v + 3))
+            .join('-')
+        )
+      );
+      const t3 = teams();
+      for (const [i, id] of Object.keys(foes).entries())
+        assert.deepEqual(
+          t3[i],
+          t0[i]
+            .split(',')
+            .map(v => Math.min(100, +v + 3))
+            .join(','),
+          id
+        );
+      assert.notDeepEqual(pools(), p0);
+      /* Paid Promotion's row: the boss's HP */
+      assert.equal(PK.perkTake(run, 'test_promo', data.PERKS, RULE), '');
+      assert.equal(data.TRAINERS[boss].hpMult, 1.3);
+      assert.deepEqual(teams(), t3, 'a bossHp row moves no level');
+      /* let go: back to as made */
+      run.perks = [];
+      assert.equal(L.runFoesSync(run, data.PERKS), -3);
+      assert.deepEqual(pools(), p0);
+      assert.deepEqual(teams(), t0);
+      assert.equal(data.TRAINERS[boss].hpMult, undefined);
+      /* the world made again with the Perk held agrees with the one moved */
+      run.perks = ['test_early'];
+      L.runFoesSync(run, data.PERKS);
+      const W2 = modules['run-scenes'].runWorldTables(run, data.LOCATIONS[0], WORLD);
+      assert.equal(W2.foeUp, 3);
+      assert.deepEqual(
+        pools(),
+        Object.keys(W2.pools).map(id => W2.pools[id].lv.join('-'))
+      );
+      /* another run's take leaves this world alone */
+      const other = runOf();
+      other.seed = 'ANOTHER001';
+      assert.equal(PK.perkTake(other, 'test_promo', data.PERKS, RULE), '');
+      assert.equal(data.TRAINERS[boss].hpMult, undefined);
+    } finally {
+      data.worldHubBack();
+    }
+    assert.equal(L.runFoesSync(run, data.PERKS), 0, 'no run world in: nothing');
+  });
+});

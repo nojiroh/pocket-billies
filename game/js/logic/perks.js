@@ -26,7 +26,7 @@ import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
-import { runFxMoment, runGaveText } from './run-loop.js';
+import { runFoesSync, runFxMoment, runGaveText } from './run-loop.js';
 import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -266,6 +266,9 @@ export function perkTake(run, id, perks, rule, drop, s) {
   }
   /* PK-5: a mapReveal rule (Tour Brochure) shows the map at once */
   runRevealAll(run, perks);
+  /* PK-7: a level or bossHp row (Early Access Pass, Paid Promotion) moves the foes at once, not when the world is
+     made again */
+  runFoesSync(run, perks);
   return '';
 }
 

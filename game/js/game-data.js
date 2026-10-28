@@ -602,15 +602,20 @@ export const worldExtra = {
   pools: /** @type {string[]} */ ([]),
   shops: /** @type {string[]} */ ([]),
   trainers: /** @type {string[]} */ ([]),
+  /* PK-7: the levels its foes were made with (run-scenes.js runWorldTables' foeUp; null: the hub's, or none given) */
+  foeUp: /** @type {number | null} */ (null),
+  foeSeed: '',
 };
 provide({ worldExtra }); /* to-module */
 /** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
  * RL-8b: and its own world map look
  * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
- *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any }} w */
+ *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any, foeUp?: number, foeSeed?: string }} w */
 export function worldPut(w) {
   worldHubBack();
   worldExtra.look = w.look || null;
+  worldExtra.foeUp = typeof w.foeUp === 'number' ? w.foeUp : null;
+  worldExtra.foeSeed = w.foeSeed || '';
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
@@ -630,6 +635,8 @@ export function worldAddTrainers(trainers) {
 }
 export function worldHubBack() {
   worldExtra.look = null;
+  worldExtra.foeUp = null;
+  worldExtra.foeSeed = '';
   for (const id of Object.keys(worldExtra.maps)) {
     delete gameData.maps[id];
     delete worldExtra.maps[id];

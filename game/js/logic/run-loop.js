@@ -29,7 +29,18 @@ import {
   fxStateful,
   unlockOpen,
 } from '../hooks.js';
-import { BANTER, BOSSES, ITEMS, PYRAMIDS, REWARDS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
+import {
+  BANTER,
+  BOSSES,
+  ITEMS,
+  POOLS,
+  PYRAMIDS,
+  REWARDS,
+  SPECIES,
+  TRAINERS,
+  typeEffectiveness,
+  worldExtra,
+} from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { billyTypes, healAll, maxHp, plural, speciesStep } from './rules.js';
@@ -63,6 +74,10 @@ expose({
   runFoeWinText: [() => runFoeWinText],
   // @ts-expect-error -- replaced on purpose
   runFoes: [() => runFoes, v => (runFoes = v)],
+  // @ts-expect-error -- replaced on purpose
+  runFoesRelevel: [() => runFoesRelevel, v => (runFoesRelevel = v)],
+  // @ts-expect-error -- replaced on purpose
+  runFoesSync: [() => runFoesSync, v => (runFoesSync = v)],
   // @ts-expect-error -- replaced on purpose
   runFragileDrop: [() => runFragileDrop, v => (runFragileDrop = v)],
   // @ts-expect-error -- replaced on purpose
@@ -569,6 +584,44 @@ export function runFoes(run, data) {
   return out;
 }
 
+/** PK-7: the run's foes moved `by` levels (1-100) and its boss's HP set to `bossHp` (none at 1), in place: each pool's
+ * wild levels, each trainer's team (its mini-bosses and boss, the rival, ghosts, route trainers and event foes), and
+ * the boss (runFoe 'boss') @param {Record<string, any>} trainers @param {Record<string, any>} pools
+ * @param {number} by @param {number} bossHp */
+export function runFoesRelevel(trainers, pools, by, bossHp) {
+  const lv = (/** @type {number} */ v) => Math.max(1, Math.min(100, v + by));
+  if (by) {
+    for (const P of Object.values(pools)) if (P && Array.isArray(P.lv)) P.lv = P.lv.map(lv);
+    for (const T of Object.values(trainers))
+      for (const e of (T && T.team) || []) if (typeof e.lvl === 'number') e.lvl = lv(e.lvl);
+  }
+  for (const T of Object.values(trainers))
+    if (T && T.runFoe === 'boss') {
+      if (bossHp !== 1) T.hpMult = bossHp;
+      else delete T.hpMult;
+    }
+}
+/**
+ * PK-7: a Perk taken (or let go) mid-run changes the foes' levels (a level row: Early Access Pass) or the boss's HP (a
+ * bossHp row: Paid Promotion): the run's world that is in (game-data.js worldExtra, put in by the page or the run
+ * sim with the levels it was made with, foeUp) moves to the run's rows now, at once: the wild Billies of every place
+ * stocked from then on (a place already stocked this visit keeps its own), every trainer and leader still ahead, the
+ * boss. Event foes are made as they come (encounters.js). Returns the levels moved (0: none, or no run world in)
+ * @param {Run | null | undefined} run @param {Record<string, any>} [perks]
+ */
+export function runFoesSync(run, perks) {
+  if (!run || worldExtra.foeUp == null || worldExtra.foeSeed !== run.seed) return 0;
+  const up = fxRunFoeLevels(run, perks),
+    by = up - worldExtra.foeUp;
+  runFoesRelevel(
+    Object.fromEntries(worldExtra.trainers.map(id => [id, TRAINERS[id]])),
+    Object.fromEntries(worldExtra.pools.map(id => [id, POOLS[id]])),
+    by,
+    fxRunBossHp(run, perks)
+  );
+  worldExtra.foeUp = up;
+  return by;
+}
 /** RL-14b: the bosses.json boss of an Expedition, as [id, its entry], or null (a leader is the boss)
  * @param {Record<string, import('../../types/game-data').BossDef>} bosses @param {number} expedition
  * @returns {[string, import('../../types/game-data').BossDef] | null} */
