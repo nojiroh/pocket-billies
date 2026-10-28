@@ -245,6 +245,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       vib = 0,
       cut = 0,
       echo = 0,
+      echoTo = null,
     }
   ) => {
     T.started++;
@@ -279,11 +280,13 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     o.connect(g);
     o2.connect(out);
-    if (echo && T.echoIn) {
+    /* SND-8b: echoTo is the echo it sends to (a song's send, after its fader); the music's echo when not given */
+    const to = echoTo || T.echoIn;
+    if (echo && to) {
       const e = c.createGain();
       e.gain.value = echo;
       o2.connect(e);
-      e.connect(T.echoIn);
+      e.connect(to);
     }
     o.start(t);
     o.stop(t + Math.max(a + d, dur) + r + 0.02);
@@ -339,6 +342,11 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.timer = null;
   /* SND-4: 'town@night' is town's night version (trackerNight); SND-5: any name trackerRecipe knows */
   T.recipe = name => trackerRecipe(songs, name, opts.run);
+  /* SND-8b: a song's fader. Its gain and its echo send move together, so the echo follows the fade-in, a crossfade, a
+     stop and a jingle's duck (the send used to be taken before the fader). f moves one AudioParam and runs for both;
+     unplug disconnects both after ms */
+  const fader = (sg, f) => [sg.gain, sg.echo].forEach(n => f(n.gain)),
+    unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo].forEach(n => n.disconnect()), ms);
   T.compose = name => {
     const D = T.recipe(name);
     if (!D) return null;
@@ -372,21 +380,27 @@ export function trackerCreate(ctx, bus, opts = {}) {
       step: o.intro ? -(D.introSteps || 0) : 0,
       next: c.currentTime + 0.08,
       gain: c.createGain(),
+      echo: c.createGain(),
       /* a song that takes over a held one (the red zone during the intro) keeps the drums out too */
       hold: o.hold ? c.currentTime + 8 : (T.song && T.song.hold) || 0,
     };
     T.song.gain.connect(bus);
+    T.song.echo.connect(T.echoIn);
     T.song.drums = c.createGain();
     T.song.drums.gain.value = L ? L.drums : 1;
     T.song.drums.connect(T.song.gain);
-    T.song.gain.gain.setValueAtTime(0, c.currentTime);
-    T.song.gain.gain.linearRampToValueAtTime(1, c.currentTime + 0.6);
+    const now = c.currentTime;
+    fader(T.song, g => {
+      g.setValueAtTime(0, now);
+      g.linearRampToValueAtTime(1, now + 0.6);
+    });
     for (const v of T.voices) {
-      const t = c.currentTime;
-      v.gain.gain.cancelScheduledValues(t);
-      v.gain.gain.setValueAtTime(v.gain.gain.value, t);
-      v.gain.gain.linearRampToValueAtTime(0, t + 0.5);
-      setTimeout(() => v.gain.disconnect(), 700);
+      fader(v, g => {
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(g.value, now);
+        g.linearRampToValueAtTime(0, now + 0.5);
+      });
+      unplug(v, 700);
     }
     T.voices = [T.song];
     if (!T.timer) T.timer = setInterval(T.tick, 25);
@@ -394,11 +408,12 @@ export function trackerCreate(ctx, bus, opts = {}) {
   };
   T.stop = () => {
     if (T.song) {
-      const t = c.currentTime,
-        g = T.song.gain;
-      g.gain.setValueAtTime(g.gain.value, t);
-      g.gain.linearRampToValueAtTime(0, t + 0.4);
-      setTimeout(() => g.disconnect(), 600);
+      const t = c.currentTime;
+      fader(T.song, g => {
+        g.setValueAtTime(g.value, t);
+        g.linearRampToValueAtTime(0, t + 0.4);
+      });
+      unplug(T.song, 600);
     }
     T.song = null;
     T.voices = [];
@@ -440,6 +455,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
             s: 0.7,
             r: 0.04,
             echo: D.echo ?? 0.15,
+            echoTo: sg.echo,
           });
         sg.step++;
         sg.next += spb;
@@ -483,6 +499,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           r: D.pluck ? 0.12 : 0.06,
           vib: !D.pluck && L[1] >= 6 ? 1 : 0,
           echo: D.echo ?? 0.15,
+          echoTo: sg.echo,
         });
       /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
       if (C)
@@ -496,6 +513,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.5,
           r: 0.06,
           echo: 0.1,
+          echoTo: sg.echo,
         });
       /* bass */ const bs = D.bass,
         root = dg(ch) - 24;
@@ -569,6 +587,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.2,
           r: 0.15,
           echo: 0.5,
+          echoTo: sg.echo,
         });
       else if (four && ar === 'chord7' && i % 2 === 0)
         T.synthVoice(bus, {
@@ -579,6 +598,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.035,
           s: 0.3,
           echo: 0.15,
+          echoTo: sg.echo,
         });
       else if (ar === 'up' && i % 2 === 0)
         T.synthVoice(bus, {
@@ -589,6 +609,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.035,
           s: 0.3,
           echo: 0.2,
+          echoTo: sg.echo,
         });
       else if (ar === 'updown' && i % 2 === 0) {
         const k = i / 2,
@@ -601,6 +622,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.035,
           s: 0.3,
           echo: 0.15,
+          echoTo: sg.echo,
         });
       } else if (ar === 'drip' && (i === 0 || i === 6 || i === 11))
         T.synthVoice(bus, {
@@ -612,6 +634,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.2,
           r: 0.3,
           echo: 0.7,
+          echoTo: sg.echo,
         });
       else if (ar === 'chord7' && (i === 0 || i === 6 || i === 10))
         tri.forEach(n =>
@@ -676,12 +699,12 @@ export function trackerCreate(ctx, bus, opts = {}) {
       up = o.shift || 0,
       duck = o.duck !== false;
     let t = t0;
-    if (T.song && duck) {
-      const g = T.song.gain.gain;
-      g.cancelScheduledValues(t0);
-      g.setValueAtTime(g.value, t0);
-      g.linearRampToValueAtTime(0.15, t0 + 0.1);
-    }
+    if (T.song && duck)
+      fader(T.song, g => {
+        g.cancelScheduledValues(t0);
+        g.setValueAtTime(g.value, t0);
+        g.linearRampToValueAtTime(0.15, t0 + 0.1);
+      });
     for (const [n, l] of notes) {
       if (n)
         (T.synthVoice(out, {
@@ -703,11 +726,11 @@ export function trackerCreate(ctx, bus, opts = {}) {
             }));
       t += l * spb;
     }
-    if (T.song && duck) {
-      const g = T.song.gain.gain;
-      g.linearRampToValueAtTime(0.15, t);
-      g.linearRampToValueAtTime(1, t + 0.8);
-    }
+    if (T.song && duck)
+      fader(T.song, g => {
+        g.linearRampToValueAtTime(0.15, t);
+        g.linearRampToValueAtTime(1, t + 0.8);
+      });
     return t;
   };
   return T;

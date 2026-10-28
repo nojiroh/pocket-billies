@@ -303,3 +303,63 @@ test('SND-8b: a song with echo 0 sends nothing to the echo; one with none writte
   assert.deepEqual(leadEcho({ ...town, echo: 0 }), [0]);
   assert.deepEqual(leadEcho(plain), [0.15]);
 });
+
+/** a context whose gains record what is scheduled on them: [method, value, time] */
+function recordingContext() {
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() }),
+    gains = [];
+  const param = () => {
+    const p = { value: 0, calls: [] };
+    for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'cancelScheduledValues', 'setTargetAtTime'])
+      p[m] = (...a) => p.calls.push([m, ...a]);
+    return p;
+  };
+  const c = new Proxy(
+    { currentTime: 0, sampleRate: 8000, gains },
+    {
+      get: (t, k) =>
+        k in t
+          ? t[k]
+          : k === 'createBuffer'
+            ? () => ({ getChannelData: () => new Float32Array(8) })
+            : k === 'createGain'
+              ? () => {
+                  const g = { gain: param(), to: [], connect: n => g.to.push(n), disconnect: () => (g.to = []) };
+                  gains.push(g);
+                  return g;
+                }
+              : any(),
+    }
+  );
+  return c;
+}
+
+test("SND-8b: a song's echo send moves with its fader (the fade-in, a jingle's duck, a stop)", () => {
+  const c = recordingContext(),
+    T = trackerCreate(c, {}, { songs: { s: town } }),
+    sg = T.play('s');
+  clearInterval(T.timer);
+  assert.ok(sg.echo.to.includes(T.echoIn), 'the send goes to the echo');
+  const moves = n => n.gain.calls.map(([m, v]) => [m, v]);
+  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the fade-in');
+  assert.deepEqual(moves(sg.gain).at(-1), ['linearRampToValueAtTime', 1]);
+  T.jingle([[72, 4]], 150, 'p25', {});
+  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the duck');
+  assert.ok(moves(sg.echo).some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.15));
+  T.stop();
+  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the stop');
+  assert.deepEqual(moves(sg.echo).at(-1), ['linearRampToValueAtTime', 0]);
+  // the song's voices send their echo to the song's send, not straight to the echo
+  const c2 = fakeContext(),
+    T2 = trackerCreate(c2, {}, { songs: { s: town } }),
+    to = [];
+  T2.synthVoice = (bus, v) => v.echo && to.push(v.echoTo);
+  T2.synthNoise = T2.synthKick = () => {};
+  const sg2 = T2.play('s');
+  clearInterval(T2.timer);
+  for (let i = 0; i < 32; i++) {
+    c2.currentTime = T2.song.next - 0.13;
+    T2.tick();
+  }
+  assert.ok(to.length && to.every(n => n === sg2.echo));
+});
