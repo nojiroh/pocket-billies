@@ -8,6 +8,7 @@ import { readdirSync } from 'node:fs';
 import { figureKitData, kitFaceStyles, lookFigure } from '../../game/js/logic/figure-kit.js';
 import {
   cardSize,
+  figureBlinkAt,
   figureFaceMarks,
   figureFaceState,
   figurePose,
@@ -157,4 +158,32 @@ test('faces: every expression tag a line uses in the game data is one of the kit
   walk(new URL('../../game/data', import.meta.url).pathname);
   assert.ok(used.size > 0);
   for (const tag of used) assert.ok(FC.expressions[tag], `[${tag}] has no expression in figureKit.json faces`);
+});
+
+test('faces: people blink on the portrait kit’s timing, each at their own time', () => {
+  for (const seed of [1, 77, 4242, 99991, 2 ** 31 + 5]) {
+    let blinks = 0,
+      prev = 0,
+      run = [];
+    const seq = [];
+    for (let t = 0; t < 60000; t += 10) {
+      const b = figureBlinkAt(t, seed);
+      if (b && !prev) blinks++;
+      if (b) run.push(b);
+      else if (run.length) {
+        seq.push(run);
+        run = [];
+      }
+      prev = b;
+    }
+    assert.ok(blinks >= 10 && blinks <= 24, `${seed}: ${blinks} blinks a minute`);
+    /* each: half shut, shut, half shut, 200 ms */
+    for (const r of seq) {
+      assert.equal(r.length, 20, `${seed}`);
+      assert.deepEqual([r[0], r[10], r[19]], [1, 2, 1]);
+    }
+  }
+  /* two people don't blink in step */
+  const at = s => Array.from({ length: 600 }, (_, i) => figureBlinkAt(i * 100, s)).join('');
+  assert.notEqual(at(11), at(12));
 });

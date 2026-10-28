@@ -33,6 +33,7 @@ import {
   cardSize,
   clipFrameAt,
   codeExtent,
+  figureBlinkAt,
   figureClipMatrix,
   figureDark,
   figureDensityStep,
@@ -1476,7 +1477,10 @@ export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'p
     const speed = clip === 'run' ? WALK_SPEED * RUN_FACTOR : WALK_SPEED;
     frame = meshClipFrame(Fig.clips[clip], t, g.gait, speed);
   }
-  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style, 0, at, face);
+  /* CH-6: everyone blinks on the portrait kit's timing (a kit figure: walking too), each at their own time */
+  const blink = Fig.kind === 'code' && Fig.F.faceSet ? figureBlinkAt(t, figureSeed(name)) : 0,
+    fc = blink ? { ...(face || {}), blink } : face;
+  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style, 0, at, fc);
 }
 /**
  * a battle's trainer drawn as your figure (battle-stage.js trainerBattleFrame): you from behind (i 0) or the rival

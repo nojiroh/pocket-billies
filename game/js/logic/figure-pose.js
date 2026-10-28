@@ -46,6 +46,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   ellipsoidWarp: [() => ellipsoidWarp, v => (ellipsoidWarp = v)],
   // @ts-expect-error -- replaced on purpose
+  figureBlinkAt: [() => figureBlinkAt, v => (figureBlinkAt = v)],
+  // @ts-expect-error -- replaced on purpose
   figureClipMatrix: [() => figureClipMatrix, v => (figureClipMatrix = v)],
   // @ts-expect-error -- replaced on purpose
   figureDark: [() => figureDark, v => (figureDark = v)],
@@ -1694,6 +1696,20 @@ export function figureDensityStep(k, prev = 1) {
   return s;
 }
 /** the tick a time falls in on the 12 fps clock @param {number} t ms */
+/**
+ * CH-6: a person's blink at time `t` (ms), on the portrait kit's timing: one every 2.6 to 5.2 seconds (the gap set by
+ * the person's seed and varied each time), half shut, shut, half shut over 200 ms; 0 open, 1 half, 2 shut
+ * @param {number} t @param {number} seed @returns {number}
+ */
+export function figureBlinkAt(t, seed) {
+  const gap = 2600 + (seed % 2600),
+    u = t + (seed % 9973),
+    n = Math.floor(u / gap),
+    /* where in this gap the blink falls, by the gap's number */
+    j = (Math.abs(Math.sin(n * 12.9898 + (seed % 997) * 0.731) * 43758.5453) % 1) * (gap - 200),
+    o = u - n * gap - j;
+  return o < 0 || o >= 200 ? 0 : o < 50 || o >= 150 ? 1 : 2;
+}
 export function figureTick(t) {
   return Math.floor(t / (1000 / FIGURE_FPS));
 }
