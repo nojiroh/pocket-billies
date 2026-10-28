@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import { readGameData } from '../data-files.mjs';
 import { readFileSync } from 'node:fs';
 import {
+  BATTLE_ANIM_OUTCOMES,
   battleAnimFor,
   battleAnimFrame,
   battleIconSprite,
   battleRampColors,
   battleAnimLogLine,
+  battleAnimPreviewEvent,
   battleAnimTimeline,
   battleKitFor,
   battleKitRoles,
@@ -24,24 +26,10 @@ import {
 const D = readGameData(),
   A = D.battleAnims,
   MOVES = D.moves,
-  OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked'];
-/** a move event for an outcome, as the Studio's battle preview (and tools/look-battle-anims.py) build it */
-function moveAn(mid, res, si = 0) {
-  const M = MOVES[mid],
-    fx = M.fx || {},
-    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes,
-    an = { k: 'move', si, ti: 1 - si, mid };
-  if (fx.protect) an.protect = true;
-  else if (!onFoe) an.self = true;
-  else if (res === 'miss') an.miss = true;
-  else if (res === 'blocked') an.blocked = true;
-  else if (M.c !== 'X') {
-    an.dmg = { crit: 48, se: 56, x4: 80, nve: 11, hit: 24, secrit: 70 }[res];
-    an.te = { se: 2, x4: 4, nve: 0.5, secrit: 2 }[res] || 1;
-    an.crit = res === 'crit' || res === 'secrit';
-  }
-  return an;
-}
+  OUTCOMES = BATTLE_ANIM_OUTCOMES;
+/** a move event for an outcome, as the Studio's Battle effects (and tools/look-battle-anims.py) build it (VFX-12: one
+ * function, logic/battle-anims.js) */
+const moveAn = (mid, res, si = 0) => battleAnimPreviewEvent(mid, MOVES[mid], si, res);
 /** what battle-stage.js's case 'move' returned before VFX-8, by outcome and category */
 function legacyDurHit(an, M) {
   if (an.miss) return { dur: 760, hit: 999 };
@@ -51,11 +39,16 @@ function legacyDurHit(an, M) {
 }
 
 /* VFX-11: the gates, repeats and variants below were written against the legacy families: they run on a move with
-   no anim of its own, with the legacy families as the defaults (as before VFX-11) */
-const L = {
-  ...A,
-  defaults: { ...A.defaults, H: 'legacy_hit', S: 'legacy_cast', X: 'legacy_status', protect: 'legacy_guard' },
-};
+   no anim of its own, with the legacy families as the defaults (as before VFX-11). VFX-13 took them out of the game's
+   data (nothing named them): they are a fixture here */
+const LEGACY = JSON.parse(
+    readFileSync(new URL('./fixtures/battle-anims-legacy.json', import.meta.url), 'utf8')
+  ).families,
+  L = {
+    ...A,
+    families: { ...A.families, ...LEGACY },
+    defaults: { ...A.defaults, H: 'legacy_hit', S: 'legacy_cast', X: 'legacy_status', protect: 'legacy_guard' },
+  };
 const bare = mid => {
   const { anim: _a, ...M } = MOVES[mid];
   return M;
@@ -107,8 +100,10 @@ test('VFX-11: every move names one of the 16 families, the table’s counts', ()
     guard: 2,
     heal: 5,
   });
+  /* the outcome families (a miss's whiff, a block) keep today's one timing, as the legacy ones did */
   for (const [id, F] of Object.entries(A.families))
-    if (!id.startsWith('legacy_')) assert.ok(F.short, `${id} has a short variant`);
+    if (!id.startsWith('legacy_') && id !== 'whiff' && id !== 'blocked')
+      assert.ok(F.short, `${id} has a short variant`);
 });
 
 test('the family: a move’s own anim when it lands, else its outcome’s or category’s default', () => {
@@ -116,12 +111,12 @@ test('the family: a move’s own anim when it lands, else its outcome’s or cat
     M = bare(H);
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'strike', kind: 'family' });
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), MOVES[H], A), { id: MOVES[H].anim, kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'legacy_miss', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'legacy_blocked', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'whiff', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'blocked', kind: 'family' });
   M.anim = 'legacy_cast';
-  assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'legacy_cast', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'legacy_miss', kind: 'family' }, 'a miss is a miss');
-  const S = { ...A, scenes: { big: A.families.legacy_hit } };
+  assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, L), { id: 'legacy_cast', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, L), { id: 'whiff', kind: 'family' }, 'a miss is a miss');
+  const S = { ...A, scenes: { big: LEGACY.legacy_hit } };
   M.anim = 'big';
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, S), { id: 'big', kind: 'scene' });
   M.anim = 'nosuch';
@@ -140,6 +135,16 @@ test('hit tiers', () => {
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 4 }), 'super4');
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 2, crit: true }), 'crit');
   assert.equal(hitTier({ k: 'move', dmg: 5, miss: true }), 'none');
+});
+
+test('the 8 preview outcomes land in their tiers (VFX-12)', () => {
+  const H = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && !(MOVES[k].fx || {}).protect),
+    tiers = OUTCOMES.map(r => hitTier(moveAn(H, r)));
+  assert.deepEqual(tiers, ['neutral', 'super', 'super4', 'resisted', 'crit', 'crit', 'none', 'none']);
+  assert.ok(moveAn(H, 'miss').miss && moveAn(H, 'blocked').blocked);
+  assert.deepEqual(moveAn(H, 'hit', 1), { k: 'move', si: 1, ti: 0, mid: H, dmg: 24, te: 1, crit: false });
+  const G = Object.keys(MOVES).find(k => (MOVES[k].fx || {}).protect);
+  if (G) assert.ok(moveAn(G, 'miss').protect && !moveAn(G, 'miss').miss, 'Guard is always a protect');
 });
 
 test('a KO ahead: the target faints before the next move; the last when no one comes in after and nothing moves', () => {
@@ -200,7 +205,7 @@ test('gates, repeats, a skip’s classes and the order steps start in', () => {
 test('the Faster variant, the quality and the cap on extra time', () => {
   const H = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && (MOVES[k].p || 0) < A.longPower),
     Lg = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && (MOVES[k].p || 0) >= A.longPower),
-    fam = A.families.legacy_hit,
+    fam = LEGACY.legacy_hit,
     B = {
       ...L,
       families: {

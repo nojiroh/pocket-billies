@@ -1,13 +1,29 @@
 {
- "about": "VFX-8 (the VFX track's Part 2): how the battle plays a move, as data (logic/battle-anims.js builds a move's timeline from it; battle-anim-run.js plays it on the stage). A move plays its anim (moves.json, a family or a scene id), else the default for its outcome or category (defaults). A timeline is intro then the family's steps; at is stage ms (the battle speed already scales the stage clock); n and every repeat a step; if lists gates that must all hold (a ! in front: must not): H, S, X (the category), self, protect, dmg, landed (no miss, Guard or block), power80 (power at least bigPower), gl (the 3D stage), motion (not Reduced motion). types keeps a step to those move types. Colours are named in colors, or type (the move type's colour, types.json). The six legacy families are the choreographies battle-stage.js had before VFX-8, step for step (H, S and X by category; a miss, Guard and a blocked move); VFX-11 replaces them with the 16 families. A family's short (a variant for the Faster speed, speed at least shortSpeed) is optional. maxMs: the longest a move may play, by outcome and category (the times moves took before VFX-8; a long move or a scene may add extraMs). dur and hit: what the stage returns to battle.js (hit 999: no hit; the plates repaint at hit).",
+ "about": "VFX-8 (the VFX track's Part 2): how the battle plays a move, as data (logic/battle-anims.js builds a move's timeline from it; battle-anim-run.js plays it on the stage). A move plays its anim (moves.json, a family or a scene id), else the default for its outcome or category (defaults). A timeline is intro then the family's steps; at is stage ms (the battle speed already scales the stage clock); n and every repeat a step; if lists gates that must all hold (a ! in front: must not): H, S, X (the category), self, protect, dmg, landed (no miss, Guard or block), power80 (power at least bigPower), gl (the 3D stage), motion (not Reduced motion). types keeps a step to those move types. Colours are named in colors, or type (the move type's colour, types.json). The six legacy families are the choreographies battle-stage.js had before VFX-8, step for step (H, S and X by category; a miss, Guard and a blocked move); VFX-11 replaces them with the 16 families. A family's short (a variant for the Faster speed, speed at least shortSpeed) is optional. maxMs: the longest a move may play, by outcome and category (the times moves took before VFX-8; a long move or a scene may add extraMs). dur and hit: what the stage returns to battle.js (hit 999: no hit; the plates repaint at hit). budgets (VFX-9's, data since VFX-12; the Studio's Battle effects tunes them): by the battle's quality 0-3, the particles alive in the one pool (ambient ones at most a quarter), a burst's most, the effect lights (lightsPhone at most on a phone, lightsAll battle lights in all). smears (Part 1's dials, VFX-1..VFX-5; data since VFX-12, logic/smear.js smearDialsSet): a throw's afterimages (fade, how much is drawn; glow, how much brighter) and a lunge's, the ribbon (its places, half width at the head in metres, twist, brightness, white core share, fray, erosion steps), a dash's ribbon (half width as a share of the Billie's height, its bounds), the stretch (from what pace, how far, at most) and a lunge's lean (per px/ms, at most, moving back).",
  "bigPower": 80,
  "longPower": 100,
  "extraMs": 500,
  "shortSpeed": 2.2,
  "maxMs": {"H":880,"S":1060,"X":1000,"miss":760,"protect":700,"blocked":740},
  "flashes": {"perSecond":3,"gapMs":333,"redShare":0.8},
+ "budgets": {"particles":[256,160,96,48],"burst":[24,16,10,6],"lights":[3,2,1,0],"lightsPhone":2,"lightsAll":6},
+ "smears": {
+  "ghosts": [
+   {"fade":0.6,"glow":0.45},
+   {"fade":0.4,"glow":0.7},
+   {"fade":0.25,"glow":0.95}
+  ],
+  "lungeGhosts": [
+   {"fade":0.5,"glow":0.35},
+   {"fade":0.28,"glow":0.6}
+  ],
+  "ribbon": {"cells":6,"half":0.24,"twist":0.35,"bright":1.35,"core":0.4,"fray":0.75,"steps":4},
+  "dashRibbon": {"half":0.3,"min":0.12,"max":0.45},
+  "stretch": {"pace":1.3,"k":0.6,"max":0.8},
+  "lean": {"k":1,"max":0.3,"back":0.5}
+ },
  "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF","heal":"#8DE3D6"},
- "defaults": {"H":"strike","S":"shot","X":"hex","miss":"legacy_miss","protect":"guard","blocked":"legacy_blocked"},
+ "defaults": {"H":"strike","S":"shot","X":"hex","miss":"whiff","protect":"guard","blocked":"blocked"},
  "intro": [
   {"do":"focus","on":"attacker"},
   {"do":"camAt","on":"attacker","amt":0.32,"z":0.08,"roll":0.012,"d":200},
@@ -35,50 +51,7 @@
   {"do":"action","on":"attacker","pose":"cast","ms":800,"if":["!protect","X","!self"]}
  ],
  "families": {
-  "legacy_hit": {
-   "about": "category H: a lunge (afterimages; a dash's ribbon, logic/smear.js), dust, the hit at 200 ms",
-   "dur": 880,
-   "hit": 200,
-   "steps": [
-    {"do":"lunge","dx":30,"dy":-4,"dur":120,"ease":"in","delay":100,"backDur":200,"backAt":240},
-    {"at":120,"do":"dust","n":5,"life":420,"color":"dust"},
-    {"at":200,"do":"toTarget","d":140},
-    {"at":200,"do":"hit","if":["dmg"]},
-    {"do":"camHome","d":460,"delay":620},
-    {"at":1050,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_cast": {
-   "about": "category S: rings on the attacker, a straight beam (Electric, Psychic, Water), 9 type icons lobbed 34 ms apart, the hit at 500 ms",
-   "dur": 1060,
-   "hit": 500,
-   "steps": [
-    {"at":140,"do":"ring","on":"attacker","color":"type","r0":0.15,"r1":0.8,"life":300},
-    {"at":140,"do":"groundRing","on":"attacker","color":"type","r1":1.4,"life":420},
-    {"at":200,"do":"beam","types":["Electric","Psychic","Water"],"w":3,"life":420},
-    {"at":160,"n":9,"every":34,"do":"lob","time":0.32,"up":2.4,"ay":-15,"jitter":0.2,"life":320,"k":1.2},
-    {"at":330,"do":"toTarget","d":220},
-    {"at":500,"do":"hit","if":["dmg"]},
-    {"do":"camHome","d":480,"delay":820},
-    {"at":1250,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_status": {
-   "about": "category X: 10 type icons converge on the target (on the attacker for a move on itself), a ring at 600 ms",
-   "dur": 1000,
-   "hit": 600,
-   "steps": [
-    {"at":260,"do":"toTarget","d":240,"if":["!self"]},
-    {"at":200,"n":10,"every":48,"do":"converge","on":"subject","r":0.8,"life":440},
-    {"at":600,"do":"ring","on":"subject","color":"type","r0":0.2,"r1":1.1,"life":420},
-    {"at":600,"do":"groundRing","on":"subject","color":"type","r1":1.6,"life":520},
-    {"at":600,"do":"blink","on":"target","ms":240,"if":["!self"]},
-    {"at":600,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
-    {"do":"camHome","d":460,"delay":800},
-    {"at":1250,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_miss": {
+  "whiff": {
    "about": "a miss: the lunge (H) or 6 icons flung past (S, X); the target sidesteps, 'Miss'",
    "dur": 760,
    "hit": 999,
@@ -92,19 +65,7 @@
     {"at":900,"do":"focus","on":"wide"}
    ]
   },
-  "legacy_guard": {
-   "about": "Guard (a move with fx.protect): rings round the attacker",
-   "dur": 700,
-   "hit": 0,
-   "steps": [
-    {"at":140,"do":"ring","on":"attacker","color":"guard","r0":0.3,"r1":1.1,"life":600},
-    {"at":140,"do":"ring","on":"attacker","color":"white","r0":0.1,"r1":0.8,"life":450},
-    {"at":140,"do":"groundRing","on":"attacker","color":"guard","r1":1.8,"life":600},
-    {"do":"camHome","d":400,"delay":500},
-    {"at":800,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_blocked": {
+  "blocked": {
    "about": "a move into a Guard: a ring on the target, its block pose, 'Hedged'",
    "dur": 740,
    "hit": 999,
@@ -1758,7 +1719,28 @@
   },
   "up": {"about":"a stat rising (the colour code's teal)","ramp":"teal","light":"#61B1C3"},
   "down": {"about":"a stat falling (the colour code's red)","ramp":"crimson","light":"#D04D56"},
-  "heal": {"about":"healing","ramp":"mint","light":"#8DE3D6"}
+  "heal": {"about":"healing","ramp":"mint","light":"#8DE3D6"},
+  "growth": {"about":"VFX-16: a level-up's column and ring (the colour code's growth sky)","ramp":"sky","light":"#82D7FF"},
+  "pyr_pyramid": {
+   "about": "VFX-16: the everyday pyramid's own colours (tools/build-pyramids.py), for its send-out burst and its shards",
+   "ramp": ["#2E1408","#6B3218","#A5532A","#D47A3E","#F0A066","#FFD2A8","#FFE9D6","#FFFFFF"],
+   "light": "#F0A066"
+  },
+  "pyr_step": {
+   "about": "VFX-16: the Step Pyramid's stone",
+   "ramp": ["#252C33","#5F6B75","#8C97A2","#B4BEC7","#D4DCE2","#E9EEF1","#F6F8FA","#FFFFFF"],
+   "light": "#D4DCE2"
+  },
+  "pyr_gold": {
+   "about": "VFX-16: the Gold Pyramid's gold",
+   "ramp": ["#3A2405","#9C6A0C","#C98A1B","#F0BB40","#FFD866","#FFF6C8","#FFFBE6","#FFFFFF"],
+   "light": "#FFD866"
+  },
+  "pyr_capstone": {
+   "about": "VFX-16: the Capstone's blue",
+   "ramp": ["#0E1230","#33449A","#5D6FD0","#8FA0F0","#B4C0FF","#EEF1FF","#F7F8FF","#FFFFFF"],
+   "light": "#8FA0F0"
+  }
  },
  "iconSprites": {
   "spark": {"sprite":"spark","ramp":"Electric"},
@@ -1776,6 +1758,141 @@
   "plus": {"sprite":"plus","ramp":"heal"},
   "zz": {"sprite":"zz","ramp":"None"},
   "sheet": {"sprite":"paper","ramp":"Bureau"}
+ },
+ "eventsAbout": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js picks what plays; battle-looks.js plays it). A burst: sprite (a strip in sprites), ramp (a ramps id, or type: the move's type), n of them every ms apart, each living life ms, rising vy m/s, spread m apart, at y (feet, mid or top of the Billie), scale k (a whole number), a fixed frame (else it plays), flip (upside down), glow (its white core adds). A status (brn, par, slp, confused) and an effect (soaked, fork): start when it begins, loop while it lasts (one every ms), tick on its turn (a burn's hurt, a lost turn, a turn asleep), end when it goes; tint and tintA: the sprite's tint under Reduced motion (the meaning without the motion); flicker: a burn's warm flicker on the sprite, an amount per 12 fps cell; hold: a lost turn's held frame (ms) and edge its flash; idle: asleep's slower (slow x the clock), lower (sink px) idle with its head down (droop); orbit: n stars round its head, r its half-heights, a turn in turnMs; bonk: hitting itself. stat: chevrons up or down, sharply times as many for a change of 2 stages or more. protect and shield: discs of hex cells (shield_hex) round it, cells by quality 0-3, r and h in its half-heights, frame (shown, eroded to a: dithered, so the Billie shows through), flashFrame (a block, flashMs, at full strength), crackFrame (a worn cell: the shield's turns used up). delayed: a mark in the sky over the side it will land on, y m up; stones: n pebbles r m round each Billie's feet on that side, glint now and then. glint: a Perk, held item, Gene or type passive firing (the battle's by report), one after another gapMs apart, in the source's ramp (a passive: its type's). pulseMs: under Calm, a lasting loop pulses once a turn for this long; cells: the most lasting-look particles at once by quality 0-3.",
+ "events": {
+  "pulseMs": 900,
+  "cells": [24,16,10,6],
+  "brn": {
+   "about": "burned: embers rise, a warm flicker, a lick of flame on its turn",
+   "tint": "#FF8F49",
+   "tintA": 0.22,
+   "start": {"sprite":"flame_tongue","ramp":"Fire","n":6,"every":50,"life":620,"vy":0.9,"spread":1,"y":"mid"},
+   "loop": {"sprite":"ember","ramp":"Fire","every":280,"life":1300,"vy":0.5,"spread":0.7,"y":"mid"},
+   "flicker": [0,0.12,0,0.2,0.06,0,0.16,0],
+   "tick": {"sprite":"flame_tongue","ramp":"Fire","n":3,"every":70,"life":520,"vy":0.8,"spread":0.6,"y":"mid"},
+   "end": {"sprite":"smoke","ramp":"None","n":3,"every":60,"life":500,"vy":0.6,"spread":0.5,"y":"top"}
+  },
+  "par": {
+   "about": "paralyzed: sparks jump; a lost turn holds a frame and flashes a gold edge",
+   "tint": "#ECE95C",
+   "tintA": 0.2,
+   "start": {"sprite":"bolt","ramp":"Electric","n":6,"every":50,"life":420,"spread":1,"y":"mid","glow":true},
+   "loop": {"sprite":"spark","ramp":"Electric","every":520,"life":170,"spread":0.8,"y":"mid","glow":true},
+   "tick": {"sprite":"bolt","ramp":"Electric","n":4,"every":40,"life":300,"spread":0.9,"y":"mid","glow":true},
+   "hold": 300,
+   "edge": {"color":"#FFD860","a":0.45,"cells":2},
+   "end": {"sprite":"spark","ramp":"Electric","n":4,"every":40,"life":300,"vy":0.8,"spread":0.6,"y":"mid","glow":true}
+  },
+  "slp": {
+   "about": "asleep: Z's rise from a slower, lower idle, head down; a pop on waking",
+   "tint": "#B3B3DD",
+   "tintA": 0.2,
+   "start": {"sprite":"zz","ramp":"Dragon","n":3,"every":160,"life":1100,"vy":0.5,"spread":0.3,"y":"top"},
+   "loop": {"sprite":"zz","ramp":"Dragon","every":950,"life":1500,"vy":0.35,"spread":0.25,"y":"top"},
+   "idle": {"slow":0.5,"sink":3,"droop":0.14},
+   "tick": {"sprite":"zz","ramp":"Dragon","n":2,"every":200,"life":1000,"vy":0.5,"spread":0.3,"y":"top"},
+   "end": {"sprite":"star","ramp":"Electric","n":6,"life":420,"vy":1.4,"spread":0.6,"y":"top","glow":true},
+   "hop": 5
+  },
+  "confused": {
+   "about": "confused: three stars orbit its head; hitting itself, a bonk star",
+   "tint": "#AE7EE2",
+   "tintA": 0.18,
+   "loop": {"sprite":"star","ramp":"Electric","glow":true},
+   "orbit": {"n":3,"r":0.32,"turnMs":1400},
+   "bonk": {"sprite":"hit_spark","ramp":"Electric","n":1,"life":340,"k":2,"y":"top","glow":true},
+   "end": {"sprite":"star","ramp":"Electric","n":3,"every":40,"life":360,"vy":1,"spread":0.5,"y":"top","glow":true}
+  },
+  "broken": {
+   "about": "a robot's (or an Augment's) broken part keeps a move from it: sparks sputter (it showed flames before)",
+   "start": {"sprite":"spark","ramp":"Steel","n":6,"every":40,"life":420,"vy":1.2,"spread":0.6,"y":"mid","glow":true}
+  },
+  "stat": {
+   "up": {"sprite":"chevron","ramp":"up","n":5,"every":55,"life":540,"vy":2,"spread":1.2,"y":"feet","glow":true},
+   "down": {"sprite":"chevron","ramp":"down","n":5,"every":55,"life":540,"vy":-2,"spread":1.2,"y":"top","flip":true},
+   "sharply": 2
+  },
+  "protect": {
+   "about": "Protect and Skim Guard: a hex bubble in front of it while it lasts (this turn), flashing on a block",
+   "sprite": "shield_hex",
+   "ramp": "Water",
+   "frame": 3,
+   "flashFrame": 2,
+   "crackFrame": 5,
+   "cells": [3,3,2,1],
+   "a": 0.5,
+   "r": 0.9,
+   "h": 1.8,
+   "flashMs": 250
+  },
+  "shield": {
+   "about": "an Alpha's (or a boss phase's) shield: a dome of hex cells round it; a cell cracks for each turn it wears down; it flashes when it takes the edge off a hit; it shatters when it fades",
+   "sprite": "shield_hex",
+   "ramp": "Electric",
+   "frame": 3,
+   "flashFrame": 2,
+   "crackFrame": 5,
+   "cells": [9,7,5,4],
+   "a": 0.55,
+   "r": 1.1,
+   "h": 1.2,
+   "flashMs": 250,
+   "end": {"sprite":"shard_a","ramp":"Electric","n":8,"life":520,"vy":1.6,"spread":1.4,"y":"mid","glow":true}
+  },
+  "soaked": {
+   "about": "Soaked: drips fall off it while it lasts",
+   "tint": "#82D7FF",
+   "tintA": 0.2,
+   "start": {"sprite":"droplet","ramp":"Water","n":6,"every":40,"life":520,"vy":-1.5,"spread":0.9,"y":"top"},
+   "loop": {"sprite":"droplet","ramp":"Water","every":380,"life":600,"vy":-1.2,"spread":0.6,"y":"mid"}
+  },
+  "fork": {
+   "about": "Fork: a flickering copy of it (two 12 fps cells shown in every four), offset dx m; fade its strength",
+   "tint": "#AE7EE2",
+   "tintA": 0.18,
+   "dx": 0.14,
+   "fade": 0.5,
+   "start": {"sprite":"spark","ramp":"Psychic","n":5,"every":30,"life":360,"vy":0.6,"spread":0.8,"y":"mid","glow":true}
+  },
+  "delayed": {
+   "about": "a delayed hit: a mark in the sky over the side it lands on, in the move's type, until it lands",
+   "sprite": "orb",
+   "ramp": "type",
+   "y": 2.6
+  },
+  "stones": {
+   "about": "sharp stones: pebbles round the feet on that side; one glints now and then",
+   "sprite": "pebble",
+   "ramp": "Ground",
+   "n": 5,
+   "r": 0.7,
+   "frame": 0,
+   "glint": {"sprite":"spark","ramp":"None","every":1500,"life":250,"glow":true}
+  },
+  "glint": {
+   "about": "a Perk, held item, Gene or type passive firing: a small glint on its Billie in the source's colour",
+   "sprite": "spark",
+   "life": 420,
+   "k": 1,
+   "gapMs": 140,
+   "ramps": {"perk":"Electric","held":"Steel","gene":"Psychic","unstable":"Psychic"}
+  },
+  "about": "VFX-16: the battle's flow moments (stage ms; counts are particles before the budget): vs the VS splash (foes: the run roles that get one, rivals: trainer ids that are the rival, scale: the portraits' whole-number scale at most, hold: ms it stays, all inside trainerIn's 1150); sendOut the Billie dithering in from its feet up over riseMs after the pyramid lands, a burst in its type, the pyramid kind's ramp (kinds), a glint for a Coat or a Prime build; recall a beam back to the trainer's hand (w stage px) while it dithers out over outMs; catch each wobble squashes the pyramid (squash) and puffs dust, a seal rings in the type, an escape throws shards in the pyramid's colours; faint the hurt pose held holdMs, it sinks and dithers out over outMs with a dust puff, a bot sheds its limbs with sparks and bolts, then smoke; levelUp a column of light (n motes over h m) and a ring on the right Billie; victory the winners cheer with sparkles; defeat your side fades over fadeMs; item the item's icon flies from the bag to the Billie over flyMs (inside the line's reading time: no time added). Each keeps its event's time or less.",
+  "vs": {"foes":["miniboss","boss","rival"],"rivals":["blake","blake0"],"scale":2,"hold":620},
+  "sendOut": {
+   "riseMs": 330,
+   "burst": 10,
+   "kinds": {"pyramid":"pyr_pyramid","step_pyramid":"pyr_step","gold_pyramid":"pyr_gold","capstone":"pyr_capstone"},
+   "glint": {"coat":"Electric","prime":"up","n":5}
+  },
+  "recall": {"w":2,"outMs":330},
+  "catch": {"squash":0.16,"dust":6,"ringR":1.8,"shards":12},
+  "faint": {"holdMs":330,"outMs":420,"dust":8,"bolts":6,"smoke":4},
+  "levelUp": {"ramp":"growth","n":12,"h":2.2,"ringR":2},
+  "victory": {"sparkles":10,"cheerMs":900},
+  "defeat": {"fadeMs":420},
+  "item": {"flyMs":420}
  },
  "types": {
   "about": "VFX-11: the type kits: what a family's steps draw with in each type (a step's spr names a role: shot, impact, small, bits; its ramp is the kit's unless it names one; path kit is the kit's path), the kit's motion (flicker: its bits float up; zigzag: a held frame doubled; the rest come from its path and its cast and hit steps) and its light (the ramp's light colour, k its strength, ms how long, at most 300). The Bureau's is a Bureau bot's move, whatever its type. cast plays at a family's wind-up on the attacker, hit at its hit on the target",

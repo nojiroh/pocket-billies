@@ -27,10 +27,20 @@ gives the same film.
     python3 tools/look-battle-anims.py --compare=DIR         # this folder's trace against DIR's
     python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
+    python3 tools/look-battle-anims.py --flow [--only=enter.0,caught]    # VFX-16: the flow moments' sheets
+    python3 tools/look-battle-anims.py --vs [--only=crude,blake,boss]    # VFX-16: the VS splash, in and out
     python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
     python3 tools/look-battle-anims.py --bench                # time a frame on the Graphics bench (VFX-15)
     python3 tools/look-battle-anims.py --only=towerdrop --sheets --cells=20 --outcomes=hit --sides=0   # a scene (VFX-17)
     python3 tools/look-battle-anims.py --only=towerdrop --sheets --repeat   # its second use: the short version
+    python3 tools/look-battle-anims.py --events --sheets     # VFX-14: statuses, stats and short effects (EVENT_FILMS)
+    python3 tools/look-battle-anims.py --events --only=shield,brn --sheets --motion=calm   # Calm, or reduced
+    python3 tools/look-battle-anims.py --events --measure    # their draws and frame time
+
+VFX-14: with --events, each film is a few battle lines (EVENT_FILMS: a status beginning, its loop, its turn and its
+end; stat chevrons, sharply; Protect's bubble and a block; the shield's dome wearing down and shattering; Soaked, Fork,
+a delayed hit, stones, glints, a broken part) on the foe, the snapshots changed as the engine would; a sheet's 16
+frames are 240 ms apart. --motion=calm or --motion=reduced films under that Animation level.
 
 VFX-15: --weather=rain|storm|snow|ash|fog|clear (forced at noon in summer before the battle; clear by day is the
 battle's sunny), or sand (clear, with the Sandstorm blowing). --bench opens the Graphics bench (test_graphics) instead
@@ -77,7 +87,7 @@ __film.hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);
 __film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;S.ring=null;S.calm=false;S.t=1e5;
  S.props=[];if(S.scenesSeen)S.scenesSeen.clear();
  S.leafy.length=0;S.glint.length=0;if(typeof battleAnim!=='undefined'){battleAnim.flashes.times.length=0;battleAnim.cur=null}
- S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1})});
+ S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1,rise:null})});
  const home={x:0,y:1.6,z:0,yaw:0,hz:0};Object.assign(S.cam,home);Object.assign(S.V,home);Object.assign(S.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});
  S.hand.a=0;S.css.r=0;S.css.z=0;S.camT=0;S.focusK=null;battleStageFocus('wide',true);
  const p=document.getElementById('pops');if(p)p.innerHTML='';const f=document.getElementById('flash');if(f){f.style.transition='none';f.style.opacity=0;f.style.background=''}
@@ -90,11 +100,8 @@ __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getEle
   p?[...p.children].map(e=>e.className+':'+e.textContent).join('|'):''])};
 /* VFX-17: with --repeat, the move's scene counts as played before in this battle (its short version plays) */
 __film.seen=mid=>{if(__film.rep&&MOVES[mid]&&MOVES[mid].anim){S.scenesSeen=S.scenesSeen||new Set();S.scenesSeen.add(MOVES[mid].anim)}};
-/* an outcome's move event, as the Studio's battle preview builds it */
-__film.an=(mid,si,res)=>{const M=MOVES[mid],fx=M.fx||{},onFoe=M.c!=='X'||fx.status||fx.tgtStage||fx.hype||fx.spin||fx.wipe||fx.copyTypes,an={k:'move',si,ti:1-si,mid};
- if(fx.protect)an.protect=true;else if(!onFoe)an.self=true;else if(res==='miss')an.miss=true;else if(res==='blocked')an.blocked=true;
- else if(M.c!=='X'){an.dmg={crit:48,se:56,x4:80,nve:11,hit:24,secrit:70}[res];an.te={se:2,x4:4,nve:.5,secrit:2}[res]||1;an.crit=res==='crit'||res==='secrit'}
- return an};
+/* an outcome's move event, as the Studio's Battle effects builds it (VFX-12: logic/battle-anims.js) */
+__film.an=(mid,si,res)=>battleAnimPreviewEvent(mid,MOVES[mid],si,res);
 /* plays one film on the film's clock: frames of 16 ms; every k-th frame's state (sheet: the GL tasks too, and
    resolves after each block of k frames so a picture can be taken) */
 __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},pn=performance.now,st=window.setTimeout,timers=[];
@@ -106,10 +113,40 @@ __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[acti
 /* a sheet's film: the same, the walk renderer's frame task stepped with the stage's, a picture after every block */
 __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
  const ev={s:activeBattle.events[activeBattle.events.length-1].s};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
+/* VFX-14: an events film: lines at film times (ms), each an event (or none) and the snapshot changes it brings (mods:
+   [{i, st, fx, stg, hp}]) on the snapshots before; its looks take the line when its plates would repaint */
+__film.snaps=(base,mods)=>{const s=JSON.parse(JSON.stringify(base));for(const m of mods||[]){const x=s[m.i];if(!x)continue;if('st' in m)x.st=m.st;
+ if('fx' in m){if(m.fx)x.fx=m.fx;else delete x.fx}if(m.stg)x.stg=m.stg;if(m.hp!=null)x.hp=m.hp}return s};
+__film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleLooksReset==='function')battleLooksReset();
+ let cur=activeBattle.events[activeBattle.events.length-1].s;
+ const play=x=>{const prev=cur;cur=__film.snaps(cur,x.mods);const ev={an:x.an||null,s:cur,by:x.by,prev};const r=ev.an?battleStagePlay(ev.an,ev):{dur:0,hit:0};
+  const go=()=>battleLooksLine(ev);if(r.hit>=999||!r.hit)go();else S.evs.push({t:S.t+r.hit,fn:go,onSkip:go})};
+ for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
+__film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
+/* VFX-16: a flow moment's film (--flow): the stage call for each moment, with Reduced motion on or off; the battle's
+   own Billies (a bot stands in for the foe in faint.bot) */
+__film.flow=(kind,red)=>{if(typeof battleStageOutcome==='undefined'&&(kind==='win'||kind==='lose'))return;const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
+ setReducedMotion(!!red);S.s.forEach((s,i)=>{if(i<2)s.show=true});if(!__film.sp1)__film.sp1=S1.sp;S1.sp=__film.sp1;S1.dim=null;
+ const shown=k=>{S.tr[0]={who:'me',show:true,x:0,a:1};return k};
+ switch(kind){
+  case 'enter.0':return battleStagePlay({k:'enter',si:0},ev);
+  case 'enter.1':return battleStagePlay({k:'enter',si:1},ev);
+  case 'recall.0':return battleStagePlay({k:'recall',si:0},ev);
+  case 'faint.1':return battleStagePlay({k:'faint',si:1},ev);
+  case 'faint.bot':S1.sp='bot:ember.bulwark.piston.auger.treads';return battleStagePlay({k:'faint',si:1},{s:ev.s.map((x,i)=>i===1&&x?{...x,sp:S1.sp,bot:{brk:['armR']}}:x)});
+  case 'lvl.0':return battleStagePlay({k:'lvl',uid:ev.s[0].uid},ev);
+  case 'item.0':return battleStagePlay({k:'item',it:'potion'},ev);
+  case 'caught':return battleStageCatch('gold_pyramid',{w:1,caught:true,edge:false},false,()=>0);
+  case 'escape':return battleStageCatch('capstone',{w:2,caught:false,edge:false},false,()=>0);
+  case 'win':return battleStageOutcome('win');
+  case 'lose':shown();return battleStageOutcome('lose');
+ }};
+__film.flowStart=(key,kind,red)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
+ return __film.wrap(()=>__film.flow(kind,red))};
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
-__film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
+__film.measure=(key,mid,si,res,frames,rest,go)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
  TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],all:[],restEff:[],restMs:[],st:[]};
  /* VFX-10: the instances drawn as strips (the ramp flag, 4) in the frame's pool */
  const strips=()=>{if(typeof battleFxBatch==='undefined')return 0;const B=battleFxBatch;let n=0;for(let i=0;i<B.n;i++)if(B.d[i*BATTLE_FX_FLOATS+20]&4)n++;return n};
@@ -118,10 +155,44 @@ __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
- __film.start(key,mid,si,res);
+ /* VFX-16: a flow moment's ('flow:<kind>') */
+ if(go)go();else if(mid.startsWith('flow:'))__film.flowStart(key,mid.slice(5),0);else __film.start(key,mid,si,res);
  __film.wrap(()=>{for(let i=0;i<frames;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();one(out.eff,true)}});
  out.rig={redraws:rigStats.redraws,kb:Math.round(rigStats.bytes/1024),ms:Math.round(rigStats.ms*10)/10};return out};
 return 0})()"""
+
+
+# VFX-14: the events films (on the foe, slot 1): lines at film ms, each an event and the snapshot changes it brings
+def _st(st, at=0, **o): return {'at': at, 'an': {'k': 'status', 'si': 1, **({'st': st} if st else {})}, 'mods': [{'i': 1, 'st': st}] if st else [], **o}
+EVENT_FILMS = {
+    'brn': [_st('brn'), {'at': 2000, 'an': {'k': 'hurt', 'si': 1, 'fx': 'brn', 'dmg': 3}}, {'at': 3200, 'mods': [{'i': 1, 'st': None}]}],
+    'par': [_st('par'), _st('par', 1800)],
+    'slp': [_st('slp'), _st('slp', 1800), {'at': 3000, 'mods': [{'i': 1, 'st': None}]}],
+    'confused': [{'an': {'k': 'hype', 'si': 1}, 'mods': [{'i': 1, 'fx': {'confused': 3}}]},
+                 {'at': 1900, 'an': {'k': 'hurt', 'si': 1, 'dmg': 4}, 'mods': [{'i': 1, 'fx': {'confused': 2}}]},
+                 {'at': 3200, 'mods': [{'i': 1, 'fx': None}]}],
+    'stat_up': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 1}}]}],
+    'stat_up2': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 2}}]}],
+    'stat_down': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'stg': {'law': -1}}]}],
+    'stat_down2': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'stg': {'law': -2}}]}],
+    'protect': [{'an': {'k': 'move', 'si': 1, 'ti': 1, 'mid': 'hedge', 'protect': True}, 'mods': [{'i': 1, 'fx': {'protect': 1}}]},
+                {'at': 1500, 'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'quakestomp', 'blocked': True}}],
+    'shield': [{'an': {'k': 'alphaPhase', 'si': 1}, 'mods': [{'i': 1, 'fx': {'shield': 2}}]},
+               {'at': 1500, 'an': {'k': 'block', 'si': 1}}, {'at': 2100, 'mods': [{'i': 1, 'fx': {'shield': 1}}]},
+               {'at': 3000, 'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'fx': None}]}],
+    'soaked': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'fx': {'soaked': 3}}]}],
+    'fork': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'fx': {'fork': 3}}]}],
+    'delayed': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'twoday', 'self': True}}, {'at': 2600, 'an': {'k': 'hurt', 'si': 1, 'fx': 'mail', 'dmg': 5}}],
+    'stones': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'quakestomp', 'dmg': 8, 'te': 1}}, {'at': 2400, 'an': {'k': 'hurt', 'si': 1, 'fx': 'stones', 'dmg': 3}}],
+    'glint': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 1}}],
+               'by': [{'src': 'perk:x', 'si': 1}, {'src': 'held:y', 'si': 1}, {'src': 'passive:kindling', 'si': 1}]}],
+    'broken': [{'an': {'k': 'status', 'si': 1}}],
+}
+MOTION = str(OPT.get('motion') or 'full')
+# VFX-14: the Animation level for the films: Calm on <html data-motion>, Reduced through the game's own setter
+MOTION_JS = {'full': "document.documentElement.dataset.motion='full';setReducedMotion(false);0",
+             'calm': "document.documentElement.dataset.motion='calm';setReducedMotion(false);0",
+             'reduced': "document.documentElement.dataset.motion='reduced';setReducedMotion(true);0"}
 
 
 HIDE_UI = "for(const q of ['#dock','.ticker','#mk','#plates']){const e=document.querySelector(q);if(e)e.style.visibility='hidden'};0"
@@ -132,36 +203,95 @@ def pick(moves):
     return [m for m in moves if m['id'] in ONLY or m['c'] in ONLY]
 
 
-def sheet(pg, key, mid, si, res):
+FLOWS = ['enter.0', 'enter.1', 'recall.0', 'faint.1', 'faint.bot', 'lvl.0', 'item.0', 'caught', 'escape', 'win', 'lose']
+
+
+def sheet(pg, key, mid, si, res, start=None, n=None, every=5):
     from PIL import Image, ImageDraw
-    pg.evaluate(f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
+    pg.evaluate(start or f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
+    n = n or CELLS  # VFX-17: --cells= for a longer sheet
     # VFX-9: the battle's menu, ticker and plates hidden (they cover most of the stage at this size), the pops kept
     pg.evaluate(HIDE_UI)
     shots = []
-    for i in range(CELLS):
-        pg.evaluate('__film.step(5)' if i else '__film.step(1)')
+    for i in range(n):
+        pg.evaluate(f'__film.step({every})' if i else '__film.step(1)')
         pg.wait_for_timeout(30)
         p = OUT / '_frame.png'
         pg.screenshot(path=str(p))
         shots.append(Image.open(p).convert('RGB'))
     w, h = shots[0].size
-    W = Image.new('RGB', (w * 4, h * ((CELLS + 3) // 4)), 'black')
+    W = Image.new('RGB', (w * 4, h * ((len(shots) + 3) // 4)), 'black')
     d = ImageDraw.Draw(W)
     for i, im in enumerate(shots):
         x, y = (i % 4) * w, (i // 4) * h
         W.paste(im, (x, y))
-        d.text((x + 4, y + 4), f'{key} {16 + 80 * (i - 1) if i else 16} ms', fill='white')
+        d.text((x + 4, y + 4), f'{key} {16 + 16 * every * (i - 1) if i else 16} ms', fill='white')
     W.save(OUT / f'{key}.png')
     (OUT / '_frame.png').unlink()
 
 
+# VFX-16: the VS splash as a trainer comes in (a phone-sized page; its banner's own timers stopped and its CSS
+# animations stepped by hand, since a software screenshot takes longer than the splash): yours and theirs, the name and
+# title, going in and out; `boss` stands a bosses.json boss in for a leader
+VS_FOES = ['crude', 'blake', 'boss']
+
+
+def vs_films(b, base, errs):
+    from PIL import Image
+    for who in [w for w in VS_FOES if not ONLY or w in ONLY]:
+        for red in (0, 1):
+            key = f"vs.{who}{'.reduced' if red else ''}"
+            ctx, pg = CF.new_page(b, errs, width=390, height=760, low=False, timeout=300000, init=(RENDER, SEEDED))
+            pg.goto(base + '/index.html?fixture=town')
+            if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')
+            # catch the banner the moment it is added, before its timers can take it away
+            pg.evaluate("new MutationObserver((L,o)=>{for(const r of L)for(const n of r.addedNodes)if(n.tagName==='PB-NAME-BANNER'){window.__vs=n;n.updateComplete.then(()=>setTimeout(()=>n._timers.forEach(clearTimeout),0));o.disconnect()}}).observe(document.body,{childList:true,subtree:true});0")
+            pg.evaluate(f"setReducedMotion({'true' if red else 'false'});uiState.toastQ=[];uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});0")
+            if who == 'boss':
+                pg.evaluate("TRAINERS.vsboss={...TRAINERS.crude,id:'vsboss',name:'Boss',boss:Object.keys(BOSSES)[0],alpha:true,miniboss:false};startTrainer('vsboss');0")
+            else:
+                pg.evaluate(f"startTrainer({json.dumps(who)});0")
+            if not CF.until(pg, "!!window.__vs", 30):
+                print(key, 'no splash', flush=True)
+                ctx.close()
+                continue
+            pg.wait_for_timeout(100)
+            shots, pre = [], 'f-' if red else ''
+            for cls, ms in [(pre + 'in', 40), (pre + 'in', 120), (pre + 'in', 400), (pre + 'out', 60), (pre + 'out', 120), (pre + 'out', 400)]:
+                pg.evaluate(f"(async()=>{{const e=__vs;e._at={json.dumps(cls)};await e.updateComplete;for(const a of e.shadowRoot.getAnimations()){{a.pause();a.currentTime={ms}}}return 0}})()")
+                pg.wait_for_timeout(50)
+                pg.screenshot(path=str(OUT / '_vs.png'))
+                shots.append(Image.open(OUT / '_vs.png').convert('RGB'))
+            w, h = shots[0].size
+            W = Image.new('RGB', (w * 3, h * 2))
+            for i, im in enumerate(shots): W.paste(im, ((i % 3) * w, (i // 3) * h))
+            W.save(OUT / f'{key}.png')
+            (OUT / '_vs.png').unlink()
+            print(key, 'filmed', flush=True)
+            ctx.close()
+
+
+def measure_films(moves):
+    if 'events' in OPT:
+        for k, L in EVENT_FILMS.items():
+            if not ONLY or k in ONLY:
+                key = f'{k}.{MOTION}'
+                yield key, f"__film.measure({json.dumps(key)},'',1,'',200,10,()=>__film.startLines({json.dumps(key)},{json.dumps(L)}))"
+        return
+    # VFX-16: with --flow, the flow moments (side 0's, or the foe's where the moment is theirs)
+    if 'flow' in OPT: moves = [{'id': 'flow:' + k, 'flow': 1} for k in FLOWS if not ONLY or k in ONLY]
+    for m in moves:
+        for si in ([0] if m.get('flow') else SIDES):
+            for res in (['-'] if m.get('flow') else OUTCOMES if OPT.get('outcomes') else ['hit', 'se', 'secrit']):
+                key = f"{m['id']}.{si}.{res}"
+                yield key, f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)"
+
+
 def measure(pg, moves):
     rows = {}
-    for m in moves:
-        for si in SIDES:
-            for res in OUTCOMES if OPT.get('outcomes') else ['hit', 'se', 'secrit']:
-                key = f"{m['id']}.{si}.{res}"
-                r = pg.evaluate(f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)")
+    if True:
+        for key, js in measure_films(moves):
+                r = pg.evaluate(js)
                 mean = lambda L: round(sum(L) / max(1, len(L)), 2)
                 ms = sorted(r['ms'])
                 rows[key] = {'allMax': max(r['all'] or [0]), 'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
@@ -228,6 +358,11 @@ def main():
     errs = []
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=CF.LAUNCH)
+        if 'vs' in OPT:
+            vs_films(b, base, errs)
+            b.close()
+            srv.shutdown()
+            return
         ctx, pg = CF.new_page(b, errs, width=480, height=320, low=False, timeout=300000, init=(RENDER, SEEDED))
         pg.goto(base + '/index.html?fixture=town')
         if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')
@@ -247,9 +382,33 @@ def main():
         CF.until(pg, 'battleStage.gl', 30)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
+        pg.evaluate(MOTION_JS[MOTION])
         if 'repeat' in OPT: pg.evaluate("__film.rep=true;0")
         if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
+        if 'events' in OPT and 'measure' not in OPT:
+            # VFX-14: the events films: sheets, or traces like the moves'
+            traces = {}
+            for k, L in EVENT_FILMS.items():
+                if ONLY and k not in ONLY: continue
+                key = f'{k}.{MOTION}'
+                start = f"__film.startLines({json.dumps(key)},{json.dumps(L)})"
+                if 'sheets' in OPT:
+                    sheet(pg, key, '', 1, '', start, every=15)
+                else:
+                    traces[key] = pg.evaluate(f"(()=>{{{start};const out={{key:{json.dumps(key)},trace:[]}};const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}return out}})()")
+                print(key, 'filmed', flush=True)
+            if traces: (OUT / 'trace-events.json').write_text(json.dumps(traces, indent=0, sort_keys=True))
+        # VFX-16: --flow films the flow moments (--only= picks some), each with motion and under Reduced motion
+        if 'flow' in OPT and 'measure' not in OPT:
+            for kind in [k for k in FLOWS if not ONLY or k in ONLY]:
+                for red in (0, 1):
+                    key = f"flow.{kind}{'.reduced' if red else ''}"
+                    n = 20 if kind in ('caught', 'escape') else 16
+                    sheet(pg, key, '', 0, '', f"__film.flowStart({json.dumps(key)},{json.dumps(kind)},{red})", n, 4 if n == 16 else 13)
+                    print(key, 'filmed', flush=True)
+            pg.evaluate('setReducedMotion(false)')
+            moves = []
         if 'measure' in OPT:
             measure(pg, moves)
             moves = []

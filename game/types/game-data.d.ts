@@ -2033,8 +2033,14 @@ export type FxKindRow =
   /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
   | { kind: 'benchXp'; share: number }
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
-   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place) */
-  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal'; n: number }
+   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
+   * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds;
+   * eventHurt, an event's hurt does nothing) */
+  | {
+      kind: 'rule';
+      rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap' | 'sideOpen' | 'sideFind' | 'eventHurt';
+      n: number;
+    }
   /** PK-5: a Billie you catch joins n levels higher */
   | { kind: 'catchLevel'; n: number }
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
@@ -2042,7 +2048,11 @@ export type FxKindRow =
   /** PK-5: what was just bought in a run shop is free (its price back), at buy */
   | { kind: 'free' }
   /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
-  | { kind: 'salvage'; mult: number };
+  | { kind: 'salvage'; mult: number }
+  /** PK-6: Moneys and Bag items (items.json ids) at once, when the Perk is taken */
+  | { kind: 'give'; money?: number; items?: Record<string, number> }
+  /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
+  | { kind: 'copy' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
@@ -2573,6 +2583,10 @@ export interface BattleAnimsData {
   maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
   /** the full-screen flash limiter */
   flashes: { perSecond: number; gapMs: number; redShare: number };
+  /** VFX-9's budgets by the battle's quality 0-3 (data since VFX-12) */
+  budgets: BattleAnimBudgets;
+  /** Part 1's dials (logic/smear.js smearDialsSet; data since VFX-12) */
+  smears: BattleAnimSmears;
   colors: Record<string, Color>;
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
@@ -2591,9 +2605,13 @@ export interface BattleAnimsData {
   ramps: Record<string, BattleAnimRamp>;
   /** VFX-10: icons.png particles drawn with a strip instead, and the ramp an untyped one takes */
   iconSprites: Record<string, { sprite: DataId; ramp: string }>;
+  eventsAbout?: string;
+  /** VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js) */
+  events: BattleAnimEvents;
   /** VFX-11: the type kits, by type id, None and Bureau: what a family's steps draw with in that type */
   types?: Record<string, BattleAnimKit>;
 }
+
 /** VFX-11: a type kit: its sprites (strips) by role, its ramp, its path and motion, its light, and steps of its own a
  * family plays at its wind-up (cast) and its hit */
 export interface BattleAnimKit {
@@ -2637,6 +2655,140 @@ export interface BattleAnimRamp {
   ramp: string | Color[];
   /** a hex, or 'type' (the type's glow) */
   light: Color | 'type';
+}
+/** VFX-12: the battle's effect budgets, each list by quality level 0-3 */
+export interface BattleAnimBudgets {
+  /** particles alive in the one pool (ambient ones at most a quarter) */
+  particles: number[];
+  /** a burst's most */
+  burst: number[];
+  /** effect lights (3 slots) */
+  lights: number[];
+  /** at most this many effect lights on a phone */
+  lightsPhone: number;
+  /** battle lights in all */
+  lightsAll: number;
+}
+/** VFX-12: Part 1's dials: the afterimages (newest first), the ribbon, a dash's ribbon, the stretch, a lunge's lean */
+export interface BattleAnimSmears {
+  ghosts: { fade: number; glow: number }[];
+  lungeGhosts: { fade: number; glow: number }[];
+  ribbon: { cells: number; half: number; twist: number; bright: number; core: number; fray: number; steps: number };
+  dashRibbon: { half: number; min: number; max: number };
+  stretch: { pace: number; k: number; max: number };
+  lean: { k: number; max: number; back: number };
+}
+/** VFX-14: a burst of strips (battleAnims.json eventsAbout) */
+export interface BattleLookBurst {
+  sprite: DataId;
+  /** a ramps id, or 'type' (the move's type) */
+  ramp?: string;
+  n?: number;
+  /** ms apart (a loop: one every ms) */
+  every?: number;
+  /** ms each lives */
+  life?: number;
+  /** m/s up (down below 0) */
+  vy?: number;
+  /** m across */
+  spread?: number;
+  y?: 'feet' | 'mid' | 'top';
+  /** scale, a whole number */
+  k?: number;
+  /** a fixed frame (else it plays) */
+  frame?: number;
+  flip?: boolean;
+  glow?: boolean;
+}
+/** VFX-14: a status's or a short effect's look */
+export interface BattleLook {
+  about?: string;
+  /** the sprite's tint under Reduced motion */
+  tint?: Color;
+  tintA?: number;
+  start?: BattleLookBurst;
+  loop?: BattleLookBurst;
+  tick?: BattleLookBurst;
+  end?: BattleLookBurst;
+  bonk?: BattleLookBurst;
+  /** a burn's warm flicker: an amount per 12 fps cell */
+  flicker?: number[];
+  /** a lost turn's held frame, ms */
+  hold?: number;
+  edge?: { color: Color; a: number; cells: number };
+  /** asleep: slow x the clock, sink px lower, the head droops */
+  idle?: { slow?: number; sink?: number; droop?: number };
+  /** px a pop hops */
+  hop?: number;
+  /** stars round the head: r in half-heights, a turn in turnMs */
+  orbit?: { n: number; r: number; turnMs: number };
+  /** Fork's copy: dx m aside, fade its strength */
+  dx?: number;
+  fade?: number;
+}
+/** VFX-14: discs of hex cells round a Billie (Protect, the shield) */
+export interface BattleLookDome {
+  about?: string;
+  sprite: DataId;
+  ramp: string;
+  frame: number;
+  flashFrame: number;
+  crackFrame: number;
+  /** cells by quality 0-3 */
+  cells: [number, number, number, number];
+  /** how much of a cell shows (eroded, dithered); a flash shows it all */
+  a?: number;
+  /** half-heights out and up */
+  r: number;
+  h: number;
+  flashMs: number;
+  end?: BattleLookBurst;
+}
+/** battleAnims.json `events`: each step adds its own keys (VFX-14: statuses and stats; VFX-16: the flow moments, optional) */
+export interface BattleAnimEvents {
+  /** ms a lasting loop pulses once a turn under Calm */
+  pulseMs: number;
+  /** the most lasting-look particles at once, by quality 0-3 */
+  cells: [number, number, number, number];
+  brn: BattleLook;
+  par: BattleLook;
+  slp: BattleLook;
+  confused: BattleLook;
+  broken: BattleLook;
+  soaked: BattleLook;
+  fork: BattleLook;
+  stat: { up: BattleLookBurst; down: BattleLookBurst; sharply: number };
+  protect: BattleLookDome;
+  shield: BattleLookDome;
+  delayed: { about?: string; sprite: DataId; ramp: string; y: number };
+  stones: {
+    about?: string;
+    sprite: DataId;
+    ramp: string;
+    n: number;
+    r: number;
+    frame?: number;
+    glint?: BattleLookBurst;
+  };
+  glint: { about?: string; sprite: DataId; life: number; k?: number; gapMs: number; ramps: Record<string, string> };
+  about?: string;
+  /** VFX-16: the VS splash: the run roles that get one, the trainer ids that are the rival, the portraits' whole-number
+      scale at most, how long it holds (inside trainerIn's 1150 ms) */
+  vs?: { foes: ('miniboss' | 'boss' | 'rival')[]; rivals: DataId[]; scale: number; hold: number };
+  /** VFX-16: the Billie dithers in from its feet up over riseMs, a burst in its type, each pyramid kind's ramp, glints */
+  sendOut?: {
+    riseMs: number;
+    burst: number;
+    kinds: Record<DataId, string>;
+    glint: { coat: string; prime: string; n: number };
+  };
+  recall?: { w: number; outMs: number };
+  catch?: { squash: number; dust: number; ringR: number; shards: number };
+  faint?: { holdMs: number; outMs: number; dust: number; bolts: number; smoke: number };
+  levelUp?: { ramp: string; n: number; h: number; ringR: number };
+  victory?: { sparkles: number; cheerMs: number };
+  defeat?: { fadeMs: number };
+  item?: { flyMs: number };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {
