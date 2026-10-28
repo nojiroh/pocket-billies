@@ -17,7 +17,7 @@ import { battleStage, battleStageKit } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
   battleMoodPlay: [() => battleMoodPlay, v => ((battleMoodPlay = v), provide({ battleMoodPlay }))],
-  battleSandGust: [() => battleSandGust, v => (battleSandGust = v)],
+  battleSandGust: [() => battleSandGust, v => ((battleSandGust = v), provide({ battleSandGust }))],
   battleStageLookFrame: [() => battleStageLookFrame, v => (battleStageLookFrame = v)],
   battleStageLookReset: [
     () => battleStageLookReset,
@@ -27,7 +27,7 @@ expose({
   stageLook: [() => stageLook],
 });
 /* eslint-enable no-func-assign */
-provide({ battleMoodPlay, battleStageLookReset });
+provide({ battleMoodPlay, battleSandGust, battleStageLookReset });
 /* to-module: end */
 /** the stage's look now: the mood's darken, tint (its colour 0..1) and row wave (whole CSS pixels), heat, and the
  * Sandstorm's gust (times more streaks, over 1). Tweened on the stage clock (battleStage.tws) */

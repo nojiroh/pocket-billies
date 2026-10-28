@@ -42,7 +42,13 @@ import { WATER_KIND_LOOKS } from './water-data.js';
 import { drawRoomEffects, roomSkyLight, windowLightShare } from './rooms.js';
 import { addRipple, waterAt } from './water.js';
 import { lampLit } from './lighting.js';
-import { drawFootprints, drawFountainEffects, drawLifeEffects, drawWeather } from './fountains-weather.js';
+import {
+  drawBattleSand,
+  drawFootprints,
+  drawFountainEffects,
+  drawLifeEffects,
+  drawWeather,
+} from './fountains-weather.js';
 /* eslint-disable no-func-assign */
 expose({
   RIBBON_FLOATS: [() => RIBBON_FLOATS],
@@ -700,6 +706,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
   drawClimbSpray(quad, tq, g32);
   if (engineContext.env && !sc.indoor && engineSetting('air', 'weather') > 0)
     drawWeather(quad, glows, U, R, Up, dt, rm);
+  /* VFX-15: the battle's Sandstorm in the weather's batch */
+  if (walkRenderer.bt) drawBattleSand(quad, R, dt, rm);
   if (!walkRenderer.bt) drawFootprints(quad, U, R, Up, dt);
   drawFountainEffects(quad, t, rm, dt);
   drawRoomEffects(C, U, items, glows, t, rm);
@@ -814,7 +822,10 @@ export function effectsPass(C, items, X, dark, t, dt) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* phase 20 R2 (D7): cheap light shafts while the light in the air (the vol pass) is off */
-  const sk = engineSetting('air', 'cheapShafts') || 0;
+  /* VFX-15: the sun in battle brightens them (battle-stage-look.js, its sunny weather) */
+  const sk =
+    (engineSetting('air', 'cheapShafts') || 0) *
+    (walkRenderer.bt && walkRenderer.bt.stageLook ? walkRenderer.bt.stageLook.rays || 1 : 1);
   if (sk > 0.01 && !sc.indoor && !volumeAirOn(X)) {
     const smart = !!engineSetting('air', 'shaftPick'),
       S = smart ? smartLightShafts(items, C, walkRenderer.sun, sk, dt) : lightShafts(items, C, walkRenderer.sun, sk);

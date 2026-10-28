@@ -21,6 +21,7 @@ import {
   battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
+  battleSandGust,
   battleStageLookReset,
   fighter,
   hudHit,
@@ -784,17 +785,7 @@ function battleStageFrame(ts, rawDt) {
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
-  if (battleStage.oil && random() < dt / 18)
-    addParticle({
-      x: GROUND_CENTER_X - 7 + random() * 3,
-      y: 0.1 + random() * 2.6,
-      z: GROUND_CENTER_Z + (random() - 0.3) * 7,
-      vx: 6 + random() * 4,
-      vy: (random() - 0.4) * 0.6,
-      life: 1500,
-      col: random() < 0.5 ? '#E8CF96' : '#C9A866',
-      size: 1,
-    });
+  /* VFX-15: the Sandstorm's streaks are the weather's now (walk/fountains-weather.js drawBattleSand) */
   if (random() < dt / 150) {
     const am = A.amb,
       x = GROUND_CENTER_X + (random() - 0.5) * 12,
@@ -2237,17 +2228,8 @@ export function battleStagePlay(an, ev) {
     }
     case 'market': {
       battleStage.oil = true;
-      for (let i = 0; i < 40; i++)
-        addParticle({
-          x: GROUND_CENTER_X - 8 + random() * 4,
-          y: 0.1 + random() * 3,
-          z: GROUND_CENTER_Z + (random() - 0.4) * 7,
-          vx: 8 + random() * 5,
-          vy: (random() - 0.3) * 0.8,
-          life: 1300,
-          col: random() < 0.5 ? '#E8CF96' : '#C9A866',
-          size: 1 + (random() < 0.3 ? 1 : 0),
-        });
+      /* VFX-15: its gust in the weather's batch (battle-stage-look.js), not 40 particles */
+      if (typeof battleSandGust === 'function') battleSandGust();
       battleStageFlash('#C8A060', 0.35, 500);
       battleStage.shk = 3;
       return { dur: 760, hit: 0 };
