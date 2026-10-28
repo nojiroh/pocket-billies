@@ -2,6 +2,125 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-10 - Effect art: 44 grayscale strips, ramps, the strips in the battle's pool, the Art browser's previews - 2026-10-28
+Branch `track/vfx` (main merged in first, ad43878d: SY-6's `uFoil` and VFX-9's `uHit` joined in the sprite shader,
+SY-8's tally in battleStageFlash, SY-5's notice in tapMessage; then 7f99aec5 after main took VFX-5..9 in #312, taking
+main's resolution; then d36b6c7d for #306, #301, #304, #316). Run under the owner's standing instruction
+(2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. The main line of wave
+1; VFX-12 (`claude/vfx-12-studio-effects`) and VFX-15 (`claude/vfx-15-stage`) ran beside it and hadn't reported done,
+so no side branch was merged. Draft PR #295 updated. No tags (CLAUDE.md since #283).
+- The plan: merge main; agree names with VFX-15 (the ground marks) and VFX-12 (`sprites`, `ramps`) first; draw the
+  strips with a new tool and push them with their data first (VFX-15 waits on the scars); then the game side (the
+  strips in VFX-9's atlas, the ramps, the texel rule, the frames, the rim), the Studio (Art browser, the picker bug),
+  measure before and after side by side, films, the contact sheet, the full check, docs.
+- Changed:
+  - tools/build-battle-anims.py (new): 44 strips in game/art/battle/anims/, one PNG each, in 8 greys (36, 64, 96,
+    128, 160, 192, 224, 255; 255 the white core): 8 px spark, ember, droplet, chip, star, chevron, bubble, leaf,
+    petal, feather, pebble, shard_a/b/c, note, zz, plus, coin, paper, bolt (8x16); 16 px burst, hit_spark,
+    splash_crown, smoke, dust, flame_tongue (12x16), orb, claw, jaws, swirl, heal_sparkle, stamp_frame, slash_arc
+    (32x16); 32 px explosion, shock_ring, shield_hex, beam_cap, beam_strip; ground marks (one frame, at most 38 px)
+    scar_scorch, scar_puddle, scar_crack, scar_leaf, scar_sand, scar_dent. Small ones from character grids, the rest
+    procedural; fades erode against the same 4x4 Bayer pattern as the pool, with a bright rim. Only what's missing is
+    drawn (`--force`, `--only=`); `--check` holds the strips to the data (size, frames, the 8 greys, no orphan
+    either way); `--sheet` a contact sheet (validation/build-battle-anims/sheet.png: a panel per ramp); `--data`
+    prints the `sprites` entries. Its drawing helpers are its own (pixkit.py was deleted by #283).
+  - game/data/battleAnims.json (+ schema, types `BattleAnimSprite`/`BattleAnimRamp`, `dataBattleAnims` checks):
+    `sprites` (cell, frames, anchor, fps, impact, loop, ground), `ramps` (Fire ember, Water sky, Grass leaf, Electric
+    gold, Ground rust, Flying cobalt, Psychic rose, Steel steel, Dragon indigo, None stone, Bureau 8 hexes from ink
+    through #EA5974, up teal, down crimson, heal mint; light `type` = types.json's glow, or a hex), `iconSprites`
+    (15 icons drawn as their like-for-like strip, with the ramp an untyped one takes), `artAbout`. The checks: an
+    anchor inside its cell, an effect 3-8 frames, a ground mark at most 38 px, a ramp for every type and None, every
+    icon swap names a sprite and a ramp. The Studio's type rename moves a type's ramp. The art index names each strip
+    from its sprite (unused-art report).
+  - logic/battle-anims.js: `battleAnimFrame(sprite, age, life)` (12 fps or its fps; an impact's first two frames at
+    24 fps; a loop plays round; else it plays once, ending with its particle's life), `battleRampColors`,
+    `battleIconSprite`, `BATTLE_ANIM_ART_DIR`; tests.
+  - walk/battle-fx.js: the strips (loaded through artLoad) packed after the icons and the white block, then the ramps
+    as 8-texel rows, in one atlas (260 px wide, 260x393); a strip instance carries its ramp's row in its flags and the
+    fragment shader reads its grey's colour from that row (index 7, the white core, is what the glow draw adds); a
+    strip's texel is a stage pixel at its depth times a whole number (the rig pixels' size beside it), a ground strip
+    lies flat at 32 px/m; the erosion fade gets a rim two greys brighter on its eroding edge (and on the old kinds a
+    lighter colour). The atlas is made again when the strips have loaded, a strip is repainted or the ramps change.
+    `battleRampRgb(id)` gives a ramp's 8 colours (for VFX-15's scars). Still 2 draws a move.
+  - battle-3d.js: a particle whose icon has a strip (iconSprites) draws that strip: its frame stepped on the stage
+    clock, its type's ramp (burst, lob, fling and converge tag their particles with the move's type), else the icon's;
+    a strip that plays once carries its own fade. The families stay `legacy_*`; no timing changed.
+  - Studio: the Types editor's particle picker lists every icon a type uses (the bug list's 7 types); the Art browser
+    plays a strip (logic/frame-strips.js reads `sprites`), names its builder, shows it through every ramp (a pixel off
+    the 8 greys in magenta) and puts a repainted strip's unsaved canvas in the game's picture cache (the battle preview
+    draws it). check-studio-github.py `battle_anim_art`.
+  - tools/look-battle-anims.py `--measure` counts the particles drawn as strips.
+- Where the track file was wrong or vague (checked in the code):
+  - tools/pixkit.py was gone (main's #283); the tool takes no code from it (a disc, ring, star and erosion of its own).
+  - "sprites: each strip's cells, frames, size and anchor": `cell` is the frame's size; there is no separate size (a
+    texel's size comes from the rule, the stage pixel at its depth or 32 px/m on the ground).
+  - "the ramp texture": the ramps are rows in the pool's atlas, so a strip needs no second texture or bind.
+  - The Bureau's "red family": NW_PALETTE has no ramp through #EA5974 (crimson is near), so its ramp is 8 hexes.
+  - Type kits name a cog (Steel) and a scale (Dragon); the art list has neither: those icons stay icons (VFX-11).
+  - The strips reach the game only after `npm run data` rebuilds the (gitignored) gamedata.js; a stale one shows no
+    strips and no errors. logic/art-refs.js isn't loaded on the game page (an import from it is undefined there).
+  - data-editors.js 924 (the picker) and the atlas's 128 px (VFX-9) were right; the atlas is now 260 px.
+- Decided for the owner, to review:
+  - The ramp table and the Bureau's look as proposed (recommended): Bureau = ink, #6D0C39, #8B193D, #B22D43, #D04D56,
+    #EA5974, #F4C1B2, white; plus `up` teal, `down` crimson and `heal` mint for stat chevrons and heals.
+  - The repaint list (recommended: Claude's art stands until the owner repaints; nothing is frozen): all 44 strips
+    are Claude's, listed above; `python3 tools/build-battle-anims.py --sheet` shows them in every ramp.
+  - The ground marks are grayscale (VFX-15 colours them from its data or a ramp), told to VFX-15.
+  - Like-for-like swaps only: spark, star, flame (ember), drop (droplet), bubble, leaf, bolt, pebble, feather, orb,
+    up (chevron), coin, plus, zz, sheet (paper). pow, cog, scale, gem, bit and the rest stay icons; the 16-32 px art
+    (burst, explosion, slash arc...) waits for VFX-11's families.
+  - An untyped particle's ramp: the icon's own (sparks and stars gold, up teal, plus mint, zz stone, sheet Bureau); a
+    typed one takes its move's type, so a Grass move's sparks are green. "Dynasty" and "Retail" (not types) fall back
+    to the icon's ramp.
+  - A strip that plays once ends with its particle's life (its eroded last frames are its fade, no second fade);
+    a looping one (ember, pebble, coin, paper, orb, flame tongue, beams) also erodes by age.
+  - Scale: a strip's texel is the rig's pixel beside it (rule 2), so near effects are smaller than the old icons
+    (1/30 m a texel, about twice the near rig's pixel); `k` rounds to a whole number (lob's 1.2 is 1).
+  - The rim also lights the old kinds' eroding edges (rings, squares), as rule 5 asks.
+  - A picture particle (a bot's broken part, a boss's bots flying in) is always made over VFX-9's budget, in the
+    oldest plain particle's place (see the Voltron below).
+- The Voltron step (asked by the merge coordinator, session_019UpAFytFpjVzXdR9jiZsPL, at the owner's request): main's
+  in-game full test fails its Voltron phase now and then since #312. The failure caught here (1 in 16 runs alone on
+  main, 1 in 12 on this branch) was "the arm-bot tore loose but nothing dropped": VFX-9's budget, not VFX-8's tap. At
+  quality 3 (48 particles, a slow runner) the pool is full of sparks when the arm breaks and the part's falling picture
+  was refused. Fixed (daea9b49); with the quality pinned at 3 the step failed 2 of 2 before and passed 3 of 3 after.
+  "the boss is no boss robot" (the coordinator's report) didn't happen in 28 runs; ec4994ac makes it say what stood
+  there (kind, boss flag, HP, the slot, the line; no names). "the Notice of Retrieval listed 0 bots" (CI once) is
+  #306's, on main and merged here.
+- Measurements (headless, software GPU; 9 films: overload, deepdrill, tos x hit, super, super crit, the foe's side;
+  before = main a3bc2421 (VFX-9) in a worktree, after = this branch, one after the other on an idle machine):
+  - Effects pass draws a frame while a move plays: 90 max before and after; the pool's own draws (`battleFx`) 2 max in
+    every film, before and after (budget 3).
+  - Particles drawn as strips: 0 before; after up to 23 a frame (overload super), 7-17 in the others.
+  - Rig redraws a film: 26.1 mean (1671 KB) before and after (unchanged).
+  - Time a frame during a move (stage and renderer tasks plus gl.finish): 869 ms mean before, 690 after (p90 3280 ->
+    2233). Not worse; software rendering, so only the direction counts. The atlas grows from 128x123 to 260x393 px
+    (about 0.4 MB of texture).
+  - No move longer: battle-anims tests keep every move's {dur, hit} and `maxMs`; the families are untouched.
+- Risky:
+  - The pool's shader now reads the atlas with texelFetch for the ramp; a phone with a GL quirk there would show
+    wrong colours on the strips (white or black), not a crash.
+  - Films: the near Billie shows in some runs and not others, on the old build and the new one alike (the same
+    stage state in the traces; VFX-9 saw it too); also VFX-9's white reflection patches turn up in some runs on both.
+  - The first frames of a battle draw the old icons while the strips load (44 small PNGs), then swap.
+- Phone checks (listed, not waited for): the repaint list (which sprites to redraw: the contact sheet); the effects'
+  size beside the Billies (a texel is a rig pixel now); a Grass or Water move's sparks in its colour; Electric's
+  bolts; the eroding rim on fades; the 24 fps impacts (none plays in a battle until VFX-11 uses burst, hit spark,
+  explosion...: check in the Art browser's strip player); frame time in a battle (no slower); no white patches.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text and build before each commit;
+  `npm test` 1900 of 1900 on the last merge (the run-map timing test failed once under load mid-step, alone it
+  passes); `build-battle-anims.py --check` (44 sprites, all fine). Smoke: no problems on the art commit (in a
+  worktree), the game commit, both merges of main and the final head (326-384 s). check-studio-github.py
+  `--only=battle_anim_art` (the Edit pixels round trip on spark.png: painted grey 224 shows as ember step 6 in the Fire
+  preview and in the game's picture cache; undo). Films (look-battle-anims `--sheets`, overload and others): strips in
+  the type's ramp; traces before and after equal (the stage's state is unchanged). Full quick check (at 60360790):
+  38 of 42 in 1686 s; the 4 problems: Terraces, RL-8's seam and room light (main's, as listed), Battle music (the
+  wild drums vs the 8 s fallback under load: passes alone, 2 of 2). The Voltron step alone: 12 runs on this branch,
+  16 on main (see above). CI: smoke on 7f99aec5 red for the data-text check (mine, fixed in 60360790); on 60360790 red
+  only for main's Studio 404s, Behind things and the Voltron (now fixed); the comments on PR #295 say so.
+- Next: wave 1 goes on: VFX-12 and VFX-15 merge the latest track/vfx into their branches and report done; the next
+  main-line session merges them. VFX-11 (families x types) assigns the 16-32 px strips to moves and tags each move.
+
 ### Terrain track TR-5 - terraces along the land's contours, their fronts, stairs up; the summit fix - 2026-10-28
 Branch `track/terrain` (made by the owner from `ccr-6e23f760-mdbx5x`; TR-4 is in main by PR #250, so main merged in as
 a fast-forward). The owner's answers, relayed from their progress-check session (checked in its transcript): option
