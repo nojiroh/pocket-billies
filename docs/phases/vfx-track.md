@@ -506,8 +506,8 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | --- | --- | --- | --- | --- |
 | VFX-5 (done 2026-10-28) | Attack lunges (Part 1) | as planned; the lean and afterimages as helpers the runner can call | lunges | as planned. Phone |
 | VFX-7 (done 2026-10-27) | The plan | Part 2, with research; the owner's answers | none | merged |
-| VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; the flash rate limit on SY-1's `flashFor`; the debug-log line; the look tool, first version | none, but the tap skips | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
-| VFX-9 | One draw for effects | the atlas, the instanced pool, cutout drawing, the budgets; rings, dust and beams into GL; `uHit`; fixed light keys; the `uCA` pulse | rings sit in the scene; no CPU flash redraws | a move's effects in at most 3 draws (gpu counters); rig uploads down (`rigStats`); frame time not worse. Phone |
+| VFX-8 (done 2026-10-28) | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; the flash rate limit on SY-1's `flashFor`; the debug-log line; the look tool, first version. As built: six `legacy_*` families plus shared `intro` steps, `maxMs` (today's times) caps every family; battle-anim-run.js (`battleAnimPlay`, `battleStageKit` from battle-stage.js); the limiter in front of `battleStageFlash` alone (SY-1 not on main yet); sounds via `battleStageAt`; rings fixed and on; moves.json has no schema, so `anim` is checked in `dataBattleAnims`; 1952 films equal but super crits (one flash held) | none, but the tap skips | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
+| VFX-9 (done 2026-10-28) | One draw for effects | the atlas, the instanced pool, cutout drawing, the budgets; rings, dust and beams into GL; `uHit`; fixed light keys; the `uCA` pulse. As built: walk/battle-fx.js (`battleFxPass`: icons.png's 119 cells and a white block in a 128 px kitPack atlas; sprite, square, ring and beam kinds; a cutout draw and a white-core draw), called inside the effects pass (as the last draw before the post pass it spoiled the reused reflection and shadow maps, headless); bot parts' pictures and the selection, target and catch rings stay 2D; budgets in battle-stage.js; light kinds 0 / 1-4 / 5 / 8-10; `uHit` after the light; `uCAP` in the grade pass with SY-1's guard; effects' random stream per event (logic/rng.js); a move's effects 2 draws (was 9-23), super crits' rig redraws about halved; hitFx itself never flashed the rig (the tinted flashes are send-out, join, recall, heal, status and the limiter's) | rings sit in the scene; no CPU flash redraws | a move's effects in at most 3 draws (gpu counters); rig uploads down (`rigStats`); frame time not worse. Phone |
 | VFX-10 | Effect art | tools/build-battle-anims.py and the strips; ramps (texture and data); the texel rule; 24 fps steps; erosion; the Studio's previews per ramp | every particle redrawn | `--check`; an Edit pixels round trip; the contact sheet. Phone (the repaint list) |
 | VFX-11 | Families x types | the 16 families and their short variants; the type kits; every move's `anim` and the Moves editor's dropdown; beams and projectiles in GL; effect lights; spread and aimed moves | every move by family and type | the snapshot remade on purpose; contact sheets of all 122. Phone |
 | VFX-12 | Battle effects in the Studio | the editor on the battle preview (steps, scrubber, tiers, ramps, cells, budgets; Part 1's dials); more preview outcomes | Studio | check-studio-github.py; the Studio self-test's row |
@@ -577,7 +577,15 @@ commit of its own.
   jingles' fingerprints; the next SND step writes this agreement into docs/phases/sound-track.md too.
 - **Shared:** SND-13 will read `hitTier` and `koAhead` from logic/battle-anims.js (VFX-8) for battle intensity
   (turns, KOs, the red zone, a boss's phases) once they are on main (accepted 2026-10-28).
+- **Echo and trim (SND-8b, track/sound):** battle sounds (VFX-19) echo with `echoTo: soundEngine.tracker.echoFx` as
+  heal and seal do (747adc6a); music.json songs now have a `trim` in `$defs.recipe` (the top level is unchanged, so the
+  `battle` section still goes there).
 
+- **Merging track/vfx and track/sound** (the sound track's test merge of e904ad77 into SND-10's e4c03f10, 2026-10-28):
+  conflicts only in docs/HANDOFF.md (keep both entries), studio/art-code-refs.json (`node tools/art-code-refs.mjs`) and
+  tools/test/check-data-snapshot.test.mjs.snapshot (`node --test --test-update-snapshots
+  tools/test/check-data-snapshot.test.mjs`, said in the commit message); sound.js, hooks.js and both index pages merge
+  clean. Whichever track reaches main second resolves it so.
 ## Fitting with the style track (found 2026-10-28)
 The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
 on `track/style`, merged to main through PR #289) also works in battle. How the two split, agreed with its planning
@@ -595,23 +603,35 @@ session (2026-10-28):
   and the Flashes-off half of rule 9. VFX-8 adds only the rate limit (at most 3 full-screen flashes in any second,
   333 ms apart, no saturated red), counting the flashes the runner asks for and passing each through `flashFor`; it
   leaves `battleStageFlash`'s settings code to SY-1 (merged from main once #289 or #279 is there).
+  When `flashFor` and the gate meet (whichever session merges #289 or main with it): `flashFor` first, the gate on
+  what it returns: under Reduced motion nothing is shown, sprite-flashed or counted; with Flashes off the gate sees the
+  capped flash (and a held flash's sprite fallback uses F's colour and amount).
 - **Numbers:** SY-2 sizes the damage pops by `hitWeight` and rolls the HP number (the HUD); VFX-13's `hitTier` is
   offered to it. Hit-stop stays this track's (the tier table).
 - **The Bureau:** SY-5 owns its words in battle (the RETRIEVED, VOID, DENIED and PENDING stamps as the kit's
   translatable `pb-stamp`), the Notice of Retrieval in the join intro and the bots' ID plates. This track's Bureau kit
   is only its bots' move effects: paper sprites, square and stamped in, in the red family (#EA5974, the stamps' ink:
-  "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 900 ms with the Notice.
+  "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 2200 ms (`LOCK` 1300 + 900) with SY-5's Notice, a DOM card in the
+  lower middle of the stage from 0 to 1300 ms; the VS splash fits around it.
 - **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
   same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
-  SY-6 landed first (2026-10-28, `track/style`): `uniform vec4 uFoil` and one `if(uFoil.x>0.){...}` block just
-  before the final `fogit`; spriteI carries the text but never sets it. `uHit` can go right before or after it.
+  VFX-9 landed first on track/vfx (d7a64e60): `uniform vec4 uGhost,uHit;` and, after the light and vRip, before the
+  final fogit, `col=mix(col,uHit.rgb,uHit.a);`. The order agreed: SY-6's `if(uFoil.x>0.){...}` block goes before that
+  line (a hit's flash reads over the sheen). A rig item with `hit` draws on the plain sprite program (walk/sprites.js),
+  as a coated rig whose band is crossing will. `uHit` shows the same sprite flashes rigTint baked in before (send-out,
+  recall, heal, the limiter's held flash), under the same settings: none of them was gated by Reduced motion, and
+  VFX-9 doesn't change that (VFX-13/14 can).
+- **battleStageFlash's order** (main has SY-1 since #279; VFX-9 merged it): `F = flashFor(col, a, !!reducedMotion,
+  flashesOff())` first; then SY-8's debug-log tally line (track/style, not on main yet: it counts what flashFor let
+  through); then `if (!F) return;`; then `battleFlashGate(F.col, F.a, dur, who)`; then the #flash element. A flash the
+  limiter holds back is in VFX-8's anim line (`held:`), so the two logs together are complete.
 
 ## Bugs found (VFX-7) and where they're fixed
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style
   track's SY-1 (#279, `flashFor`); VFX-8 adds the rate limit on top.
 - The selection and target rings divide by `R.k2`, which no rig has (BS 1379; B3 228 uses `R.k`), so they never
-  draw (VFX-8, seen on screen first; turning them on is an Ask me before).
-- `an.t = M.t` (BS 1917) writes into the engine's event; the runner passes the type itself (VFX-8).
+  draw (VFX-8, seen on screen first; turning them on is an Ask me before). Fixed in VFX-8 (on).
+- `an.t = M.t` (BS 1917) writes into the engine's event; the runner passes the type itself (VFX-8) Fixed in VFX-8.
 - "Dynasty" and "Retail" aren't types (BS 1798, 2133), so those bursts fall back to None (VFX-11).
 - The Studio's particle picker misses the sprites of 7 types (data-editors.js 924) (VFX-10).
 - Under Reduced motion the tags still pop: `kind === 'tag'` never matches 'tag crit' (B 568) (VFX-13).
