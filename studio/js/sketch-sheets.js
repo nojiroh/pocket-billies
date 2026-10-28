@@ -1,7 +1,7 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · Placeholder Billies and their drawing sheets (roster track RO-3a) =========
    A placeholder Billie (one of game/data/bodyPlans.json's forms) is painted from its body plan and baked with the
-   game's own baker (logic/sketch-art.js, as `npm run bake:placeholders` does). Its drawing sheet (a column per
+   game's own baker (logic/sketch-art.js, as `npm run bake:sketches` does). Its drawing sheet (a column per
    picture, a row per view, on magenta) downloads, gets drawn on in any app and uploads back: the cells are cut by the
    same layout (at any whole scale), stored as art/next/placeholders/<name>.png, and the Billie baked again (sheet and
    rig, one undo step). A body plan's sheet holds every Billie on that plan (a sample before any is), and splits back

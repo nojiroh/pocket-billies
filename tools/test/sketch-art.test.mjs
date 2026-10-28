@@ -3,7 +3,7 @@
 // (or that ride on one it moves); a sample Billie on each plan bakes inside the stage box, the same twice, with a
 // rig the renderer can read; its drawing sheets (a Billie's and a plan's, at any scale) cut back into the same cells;
 // a drawn cell wins over the placeholder, an empty one doesn't; the placeholders never use the sheets' magenta; and
-// every committed placeholder Billie bakes as committed (npm run bake:placeholders --check).
+// every committed placeholder Billie bakes as committed (npm run bake:sketches --check).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readJson } from '../data-files.mjs';
