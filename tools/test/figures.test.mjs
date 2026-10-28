@@ -1,5 +1,6 @@
 // Characters track CH-2: the figure baker (game/js/figures.js) against a stand-in WebGL2 context: what one bake sends,
 // the pictures it keeps, how many it bakes a frame, and a lost context (the baker's own) and its return. No graphics.
+import './figure-kit-data.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

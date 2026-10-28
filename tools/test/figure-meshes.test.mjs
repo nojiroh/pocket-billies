@@ -1,5 +1,6 @@
 // Characters track CH-4: a figure's mesh built on the helper thread (game/js/figure-worker.js, figure-meshes.js) is the
 // very mesh the page builds, and the page builds it itself where there is no thread
+import './figure-kit-data.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

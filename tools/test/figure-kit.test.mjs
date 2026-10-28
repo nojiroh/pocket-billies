@@ -1,5 +1,6 @@
 // Characters track CH-3b: the figure kit (game/js/logic/figure-kit.js): every person in the game data and townsfolk
 // built as figures from their looks
+import './figure-kit-data.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';

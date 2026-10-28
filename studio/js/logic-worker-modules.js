@@ -76,6 +76,7 @@ import '../../game/js/logic/island-gen.js';
 import '../../game/js/logic/island.js';
 import '../../game/js/logic/kit-assemble.js';
 import '../../game/js/logic/kit-pixels.js';
+import '../../game/js/logic/kit-shapes.js';
 import '../../game/js/logic/lens-focus.js';
 import '../../game/js/logic/lite-tile.js';
 import '../../game/js/logic/mapgen.js';

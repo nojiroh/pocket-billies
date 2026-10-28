@@ -4,6 +4,7 @@
 // style, every head with every build, and the directions' extras (flair, proportions). Update the snapshot only for a
 // change meant to alter how figures look:
 //   node --test --test-update-snapshots tools/test/figure-kit-golden.test.mjs
+import './figure-kit-data.mjs';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';

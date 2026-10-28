@@ -125,6 +125,9 @@ export interface GameData {
   roads?: RoadLink[];
   engine: Engine;
   wardrobe: Wardrobe;
+  /** characters track CH-5: the figure kit's shapes as data (game/data/figureKit.json; its schema has every field,
+   * logic/figure-kit.js and logic/kit-shapes.js read it) */
+  figureKit?: FigureKit;
   /** fishing spots' encounter lists, keyed by the water ('pond', 'sea'...) */
   fishing: Record<string, Pool>;
   moods: Record<DataId, Mood>;
@@ -1601,6 +1604,37 @@ export interface Mood {
 export interface Engine {
   defaults: Record<string, any>;
   presets: Record<string, any>;
+}
+
+/** figureKit.json (characters track CH-5): head shapes, how far people vary, builds, the builds townsfolk are picked
+ * from, proportions, hair recipes and the accessories' shape lists (game/data/schema/figureKit.schema.json) */
+export interface FigureKit {
+  note?: string;
+  heads: Record<
+    DataId,
+    {
+      r: number[];
+      jaw: number;
+      chin: number;
+      cheek: number;
+      crown: number;
+      face: number;
+      nose?: number;
+      random?: boolean;
+    }
+  >;
+  vary: Record<string, number | number[]>;
+  builds: Record<DataId, { k: Record<string, number>; gait: Record<string, number>; jaw?: number }>;
+  folk: DataId[];
+  proportions: { chibi: Record<'head' | 'legs' | 'torso' | 'arms' | 'neck', number>; sliderGain: number };
+  hair: Record<
+    DataId,
+    { cut?: { front: number; side: number; back: number }; thin?: boolean; under?: any; steps: any[] }
+  >;
+  accessories: Record<
+    DataId,
+    { rows: any[]; vars?: Record<string, string | number>; fringe?: boolean; colour?: number[] }
+  >;
 }
 
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */

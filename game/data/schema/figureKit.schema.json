@@ -1,0 +1,262 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "figureKit.schema.json",
+ "title": "game/data/figureKit.json: the figure kit's shapes as data (characters track CH-5; game/js/logic/figure-kit.js builds everyone's figure with them, logic/kit-shapes.js reads the shape lists)",
+ "type": "object",
+ "required": ["heads", "vary", "builds", "folk", "proportions", "hair", "accessories"],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+  "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+  "range": {"description": "[base, spread]: base + spread times a number from the person's seed", "type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+  "sum": {
+   "description": "a number, or a sum of the frame's values like 'bx * 0.98' (numbers, names, + - * / and brackets, sqrt, sin, cos, pi)",
+   "anyOf": [{"type": "number"}, {"type": "string", "pattern": "^[-+*/(). 0-9A-Za-z_]+$"}]
+  },
+  "value": {
+   "anyOf": [
+    {"$ref": "#/$defs/sum"},
+    {"type": "boolean"},
+    {"type": "array", "items": {"$ref": "#/$defs/value"}},
+    {"type": "object", "additionalProperties": {"$ref": "#/$defs/value"}}
+   ]
+  },
+  "vars": {"description": "named values, worked out in order", "type": "object", "propertyNames": {"pattern": "^[A-Za-z_]\\w*$"}, "additionalProperties": {"$ref": "#/$defs/sum"}},
+  "strand": {
+   "description": "how a strand grows: grav (how much it falls), stiff (how much it keeps its way), wave and freq, curl (in at its tip), hug (over that much of its length it lies along the head)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "grav": {"type": "number", "minimum": 0, "maximum": 3},
+    "stiff": {"type": "number", "minimum": 0, "maximum": 1.5},
+    "wave": {"type": "number", "minimum": 0, "maximum": 2},
+    "freq": {"type": "number", "minimum": 0, "maximum": 6},
+    "curl": {"type": "number", "minimum": 0, "maximum": 2},
+    "hug": {"type": "number", "minimum": 0, "maximum": 1}
+   }
+  },
+  "tail": {
+   "description": "a tail of strands from a tie: its way (dir), how many strands (n) and how long (metres at the usual head)",
+   "type": "object",
+   "required": ["dir", "n", "len"],
+   "additionalProperties": false,
+   "properties": {
+    "at": {"description": "under a hat: where it is tied, on the skull (y from the hat's band)", "$ref": "#/$defs/vec3"},
+    "back": {"type": "number"},
+    "dir": {"$ref": "#/$defs/vec3"},
+    "n": {"type": "integer", "minimum": 1, "maximum": 24},
+    "len": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.5}
+   }
+  },
+  "lengths": {"description": "[shortest, longest] metres at the usual head", "type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1.5}, "minItems": 2, "maxItems": 2},
+  "step": {
+   "type": "object",
+   "required": ["op"],
+   "properties": {"op": {"enum": ["grow", "spikes", "bun", "tie", "twin"]}},
+   "allOf": [
+    {"if": {"properties": {"op": {"const": "grow"}}}, "then": {
+     "description": "every root (one in `every`) grown as a strand, combed from the whorl or `from` (mirrored to a side picked by the seed)",
+     "required": ["every", "len", "w", "strand", "lift"],
+     "additionalProperties": false,
+     "properties": {"op": true, "every": {"type": "integer", "minimum": 1}, "len": {"$ref": "#/$defs/lengths"}, "w": {"type": "number", "exclusiveMinimum": 0}, "strand": {"$ref": "#/$defs/strand"}, "lift": {"type": "number"}, "from": {"$ref": "#/$defs/vec3"}, "mirror": {"type": "boolean"}}
+    }},
+    {"if": {"properties": {"op": {"const": "spikes"}}}, "then": {
+     "description": "thick clumps swept back and up, the front ones (past `front` on the skull) flicked forward",
+     "required": ["every", "front", "root", "len", "lenVar", "w", "strand"],
+     "additionalProperties": false,
+     "properties": {"op": true, "every": {"type": "integer", "minimum": 1}, "front": {"type": "number"}, "root": {"type": "number"}, "len": {"type": "number"}, "lenVar": {"type": "number"}, "w": {"type": "number"}, "strand": {"$ref": "#/$defs/strand"}}
+    }},
+    {"if": {"properties": {"op": {"const": "bun"}}}, "then": {
+     "description": "every root (one in `every`) swept to a bun at `at` on the skull, and the bun wound round",
+     "required": ["at", "every", "tie", "out", "size", "coil", "turns", "coilR", "coilShrink", "coilRise", "coilW"],
+     "additionalProperties": false,
+     "properties": {"op": true, "at": {"$ref": "#/$defs/vec3"}, "every": {"type": "integer", "minimum": 1}, "tie": {"type": "number"}, "out": {"type": "number"}, "size": {"$ref": "#/$defs/vec3"}, "coil": {"type": "integer", "minimum": 0, "maximum": 40}, "turns": {"type": "number"}, "coilR": {"type": "number"}, "coilShrink": {"type": "number"}, "coilRise": {"type": "number"}, "coilW": {"type": "number"}}
+    }},
+    {"if": {"properties": {"op": {"const": "tie"}}}, "then": {
+     "description": "every root swept to a tie at `at` on the skull (`back` behind it), a knot, and a tail",
+     "required": ["at", "back", "every", "knot", "tail"],
+     "additionalProperties": false,
+     "properties": {"op": true, "at": {"$ref": "#/$defs/vec3"}, "back": {"type": "number"}, "every": {"type": "integer", "minimum": 1}, "knot": {"$ref": "#/$defs/vec3"}, "tail": {"$ref": "#/$defs/tail"}}
+    }},
+    {"if": {"properties": {"op": {"const": "twin"}}}, "then": {
+     "description": "two ties at each side (`at`, mirrored), each side's roots swept to its tie, and a tail from each",
+     "required": ["at", "out", "every", "len", "tail"],
+     "additionalProperties": false,
+     "properties": {"op": true, "at": {"$ref": "#/$defs/vec3"}, "out": {"type": "number"}, "every": {"type": "integer", "minimum": 1}, "len": {"type": "number"}, "tail": {"$ref": "#/$defs/tail"}}
+    }}
+   ]
+  },
+  "row": {
+   "type": "object",
+   "required": ["id", "shape", "col"],
+   "additionalProperties": false,
+   "properties": {
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "parent": {"description": "the part it hangs from (the head for a hat or the headset when none)", "type": "string"},
+    "at": {"type": "array", "items": {"$ref": "#/$defs/sum"}, "minItems": 3, "maxItems": 3},
+    "shape": {
+     "type": "object",
+     "required": ["kind"],
+     "properties": {"kind": {"enum": ["ellipsoid", "lathe", "torus", "cone", "capsule", "tube", "dome", "disc", "band", "curls"]}},
+     "additionalProperties": {"$ref": "#/$defs/value"}
+    },
+    "col": {"description": "its colour slot (hat, hat2, neck, bag, bag2, gear...)", "type": "string", "minLength": 1},
+    "sides": {"description": "an A and a B, mirrored: s is 1, then -1", "type": "boolean"},
+    "repeat": {"description": "this many copies, id0, id1...: i counts them", "type": "integer", "minimum": 1, "maximum": 32},
+    "vars": {"$ref": "#/$defs/vars"}
+   }
+  }
+ },
+ "properties": {
+  "note": {"type": "string"},
+  "heads": {
+   "description": "the head shapes: each head's knobs",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "minProperties": 1,
+   "additionalProperties": {
+    "type": "object",
+    "required": ["r", "jaw", "chin", "cheek", "crown", "face"],
+    "additionalProperties": false,
+    "properties": {
+     "r": {"description": "its radii (across, up, front to back) as parts of the usual head's", "type": "array", "items": {"type": "number", "minimum": 0.6, "maximum": 1.5}, "minItems": 3, "maxItems": 3},
+     "jaw": {"description": "how V its jaw (below 0 wider at the jaw than the cheeks)", "type": "number", "minimum": -1, "maximum": 1.5},
+     "chin": {"description": "how far its chin drops", "type": "number", "minimum": 0, "maximum": 2},
+     "cheek": {"description": "its cheekbones", "type": "number", "minimum": 0, "maximum": 2.5},
+     "crown": {"description": "how big the back of its skull", "type": "number", "minimum": 0.6, "maximum": 1.5},
+     "face": {"description": "how flat its face", "type": "number", "minimum": 0, "maximum": 1.5},
+     "nose": {"description": "a fixed nose (0 a button, 1 straight, 2 long, 3 broad); else each person's own", "enum": [0, 1, 2, 3]},
+     "random": {"description": "false: never picked by a seed (the main character's)", "type": "boolean"}
+    }
+   }
+  },
+  "vary": {
+   "description": "how far each person strays from their head shape",
+   "type": "object",
+   "required": ["rx", "ry", "rz", "jaw", "chin", "cheek", "brow", "face", "noseK", "ears"],
+   "additionalProperties": false,
+   "properties": {
+    "rx": {"$ref": "#/$defs/range"},
+    "ry": {"$ref": "#/$defs/range"},
+    "rz": {"$ref": "#/$defs/range"},
+    "jaw": {"description": "plus or minus half this", "type": "number", "minimum": 0},
+    "chin": {"$ref": "#/$defs/range"},
+    "cheek": {"$ref": "#/$defs/range"},
+    "brow": {"$ref": "#/$defs/range"},
+    "face": {"description": "plus or minus half this", "type": "number", "minimum": 0},
+    "noseK": {"$ref": "#/$defs/range"},
+    "ears": {"$ref": "#/$defs/range"}
+   }
+  },
+  "builds": {
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "required": ["average"],
+   "additionalProperties": {
+    "type": "object",
+    "required": ["k", "gait"],
+    "additionalProperties": false,
+    "properties": {
+     "k": {
+      "description": "multipliers on the look's sliders (height, legs, arms, body, shoulders, hips, head, neck), and a belly, a waist and a chest out",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "height": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "legs": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "arms": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "body": {"type": "number", "minimum": 0.5, "maximum": 1.8},
+       "shoulders": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "hips": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "head": {"type": "number", "minimum": 0.6, "maximum": 1.4},
+       "neck": {"type": "number", "minimum": 0, "maximum": 3},
+       "belly": {"type": "number", "minimum": 0, "maximum": 2},
+       "waist": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "chestOut": {"type": "number", "minimum": 0, "maximum": 2}
+      }
+     },
+     "gait": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "swing": {"type": "number", "minimum": 0, "maximum": 2},
+       "arms": {"type": "number", "minimum": 0, "maximum": 2},
+       "bounce": {"type": "number", "minimum": 0, "maximum": 3},
+       "lean": {"type": "number", "minimum": -0.4, "maximum": 0.4},
+       "head": {"type": "number", "minimum": -0.4, "maximum": 0.4},
+       "hang": {"type": "number", "minimum": 0, "maximum": 0.5}
+      }
+     },
+     "jaw": {"description": "added to the head's jaw (below 0 squarer)", "type": "number", "minimum": -1, "maximum": 1}
+    }
+   }
+  },
+  "folk": {"description": "the builds townsfolk are picked from (a build twice is twice as likely)", "type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1},
+  "proportions": {
+   "type": "object",
+   "required": ["chibi", "sliderGain"],
+   "additionalProperties": false,
+   "properties": {
+    "chibi": {
+     "description": "the head, legs, torso, arms and neck against a real body's",
+     "type": "object",
+     "required": ["head", "legs", "torso", "arms", "neck"],
+     "additionalProperties": false,
+     "properties": {
+      "head": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "legs": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "torso": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "arms": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "neck": {"type": "number", "minimum": 0, "maximum": 3}
+     }
+    },
+    "sliderGain": {"description": "how much more a look's slider counts on a figure (1 as the wardrobe draws it)", "type": "number", "minimum": 0, "maximum": 4}
+   }
+  },
+  "hair": {
+   "description": "each hair style's recipe (wardrobe ids); a style missing here grows as hair_short",
+   "type": "object",
+   "required": ["hair_short"],
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["steps"],
+    "additionalProperties": false,
+    "properties": {
+     "cut": {
+      "description": "the hairline: how far down the skull it reaches at the front, side and back (1 the top, -1 the bottom)",
+      "type": "object",
+      "required": ["front", "side", "back"],
+      "additionalProperties": false,
+      "properties": {"front": {"type": "number", "minimum": -1, "maximum": 1}, "side": {"type": "number", "minimum": -1, "maximum": 1}, "back": {"type": "number", "minimum": -1, "maximum": 1}}
+     },
+     "thin": {"description": "a close cap (a buzz cut's)", "type": "boolean"},
+     "under": {
+      "description": "what shows under a hat",
+      "type": "object",
+      "required": ["len", "w", "strand", "lift"],
+      "additionalProperties": false,
+      "properties": {"len": {"$ref": "#/$defs/lengths"}, "w": {"type": "number", "exclusiveMinimum": 0}, "strand": {"$ref": "#/$defs/strand"}, "lift": {"type": "number"}, "tail": {"$ref": "#/$defs/tail"}}
+     },
+     "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}}
+    }
+   }
+  },
+  "accessories": {
+   "description": "each wardrobe id's shapes (hats, the headset, neckwear, bags); a hat missing here is a plain crown",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["rows"],
+    "additionalProperties": false,
+    "properties": {
+     "vars": {"$ref": "#/$defs/vars"},
+     "fringe": {"description": "a hat a fringe shows under (a cap, a beanie)", "type": "boolean"},
+     "colour": {"description": "the slot's own colour over the item's", "$ref": "#/$defs/vec3"},
+     "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}}
+    }
+   }
+  }
+ }
+}

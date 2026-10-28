@@ -18,6 +18,7 @@
    Logic only: no DOM, runs in Node (tools/test/figure-kit.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { kitAccessory } from './kit-shapes.js';
 import {
   figureDark,
   figureGpuMesh,
@@ -44,6 +45,8 @@ expose({
   KIT_LONG_SLEEVES: [() => KIT_LONG_SLEEVES],
   KIT_RANDOM_HEADS: [() => KIT_RANDOM_HEADS],
   KIT_SLEEVELESS: [() => KIT_SLEEVELESS],
+  // @ts-expect-error -- replaced on purpose
+  figureKitData: [() => figureKitData, v => (figureKitData = v)],
   // @ts-expect-error -- replaced on purpose
   figureSeed: [() => figureSeed, v => (figureSeed = v)],
   // @ts-expect-error -- replaced on purpose
@@ -148,6 +151,18 @@ export const KIT_SLEEVELESS = new Set(['tank', 'crop']),
   KIT_JACKETS = new Set(['blazer', 'denim_jacket', 'track_top', 'puffer']),
   KIT_LONG_COATS = new Set(['labcoat', 'trench']);
 
+/** @typedef {import('../../types/game-data').FigureKit} FigureKitData */
+/**
+ * the figure kit's data (game/data/figureKit.json: CH-5): the game's own, from the game data on the page (the figures'
+ * helper thread never needs it: it meshes figures already built)
+ * @returns {FigureKitData}
+ */
+export function figureKitData() {
+  const D = /** @type {any} */ (globalThis).GAMEDATA;
+  if (!D || !D.figureKit) throw new Error('figure kit: no game data (game/data/figureKit.json)');
+  return D.figureKit;
+}
+
 /** a string's seed (FNV-1a, 32 bits) @param {string} s */
 export function figureSeed(s) {
   let h = 2166136261;
@@ -202,17 +217,18 @@ export function figureShapeFor(look, seed, choice = {}) {
  * a person's figure from their look: parts on the joints figurePose moves (hips, torso, head, thigh/shin/foot and
  * arm/forearm/hand A and B), dressed from the wardrobe, its face as marks
  * @param {KitLook} look @param {Record<string, KitItem>} items the wardrobe's items (their default colours)
- * @param {{ name?: string, seed?: number, figure?: FigureShapeChoice,
+ * @param {{ kit?: FigureKitData, name?: string, seed?: number, figure?: FigureShapeChoice,
  *   chibi?: { head: number, legs: number, torso: number, arms: number, neck: number },
  *   flair?: { hair?: number, scarf?: boolean, cape?: boolean, col?: number[], wear?: Record<string, string>,
  *     detail?: boolean, gloves?: boolean, gloveCol?: number[], goggles?: boolean, fur?: boolean, earrings?: boolean,
  *     ahoge?: boolean, glossy?: boolean } }} [opts]
- * `chibi`: proportions
+ * `kit`: the kit's data (game/data/figureKit.json; the game's own when not given). `chibi`: proportions
  * other than KIT_CHIBI (a direction of figures.js FIGURE_LOOKS)
  * @returns {Figure}
  */
 export function lookFigure(look, items, opts = {}) {
-  const PR = opts.chibi || KIT_CHIBI,
+  const KIT = opts.kit || figureKitData(),
+    PR = opts.chibi || KIT_CHIBI,
     seed = opts.seed ?? figureSeed(opts.name || 'person'),
     shape = figureShapeFor(look, seed, opts.figure),
     HD = FIGURE_HEADS[/** @type {keyof typeof FIGURE_HEADS} */ (shape.head)],
@@ -558,106 +574,23 @@ export function lookFigure(look, items, opts = {}) {
       'outer'
     );
   }
-  /* ---- neckwear ---- */
+  /* ---- neckwear and bags (CH-5: their shapes in game/data/figureKit.json accessories) ---- */
   const neck = wear.neck || null,
-    torsoZ = torso.kind === 'lathe' ? torso.rz[4] : 0.11;
+    torsoZ = torso.kind === 'lathe' ? torso.rz[4] : 0.11,
+    /* the body's frame the shapes are laid out in */
+    bodyFrame = { tk, girth, hipK, torsoZ };
   if (neck) colours.neck = itemCol(neck, 0, [217, 67, 75]);
-  if (neck === 'scarf')
-    add(
-      'scarf',
-      'torso',
-      [0, 0.36 * tk, 0],
-      {
-        kind: 'torus',
-        c: [0, 0, 0.005],
-        R: [0.105 * Math.sqrt(girth), 0.085 * Math.sqrt(girth)],
-        r: 0.042,
-        seg: 12,
-        rings: 6,
-      },
-      'neck'
-    );
-  if (neck === 'chain') {
-    colours.neck = [226, 184, 74];
-    add(
-      'chain',
-      'torso',
-      [0, 0.33 * tk, 0.01],
-      { kind: 'torus', c: [0, 0, 0], R: [0.1 * girth, torsoZ + 0.005], r: 0.012, seg: 12, rings: 4 },
-      'neck'
-    );
+  const neckKit = neck ? KIT.accessories[neck] : null;
+  if (neckKit) {
+    if (neckKit.colour) colours.neck = [neckKit.colour[0], neckKit.colour[1], neckKit.colour[2]];
+    kitAccessory(add, neckKit, bodyFrame, 'torso');
   }
-  if (neck === 'tie' || neck === 'bowtie') {
-    const z = torsoZ + 0.012;
-    if (neck === 'tie')
-      add(
-        'tie',
-        'torso',
-        [0, 0.36 * tk, z],
-        { kind: 'capsule', a: [0, 0, 0], b: [0, -0.2 * tk, 0.015], r0: 0.02, r1: 0.032, seg: 6 },
-        'neck'
-      );
-    else
-      for (const s of [1, -1])
-        add(
-          'bow' + (s > 0 ? 'A' : 'B'),
-          'torso',
-          [0, 0.365 * tk, z],
-          { kind: 'ellipsoid', c: [s * 0.03, 0, 0], r: [0.032, 0.022, 0.016], seg: 8, rings: 5 },
-          'neck'
-        );
-  }
-  /* ---- bags ---- */
   const bag = wear.bag || null;
   if (bag) {
     colours.bag = itemCol(bag, 0, [212, 156, 70]);
     colours.bag2 = itemCol(bag, 1, figureDark(colours.bag, 0.7));
-    if (bag === 'backpack') {
-      add(
-        'pack',
-        'torso',
-        [0, 0.2 * tk, -torsoZ - 0.055],
-        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.13 * Math.sqrt(girth), 0.15 * tk, 0.07], seg: 10, rings: 6, sq: 0.9 },
-        'bag'
-      );
-      add(
-        'flap',
-        'pack',
-        [0, 0.07 * tk, -0.045],
-        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.12 * Math.sqrt(girth), 0.07 * tk, 0.04], seg: 10, rings: 5, sq: 0.8 },
-        'bag2'
-      );
-      for (const s of [1, -1])
-        add(
-          'strap' + (s > 0 ? 'A' : 'B'),
-          'torso',
-          [s * 0.09 * Math.sqrt(girth), 0.36 * tk, 0],
-          { kind: 'torus', c: [0, -0.1 * tk, 0], R: [0.03, torsoZ + 0.012], r: 0.014, seg: 10, rings: 4 },
-          'bag2'
-        );
-    } else if (bag === 'satchel') {
-      add(
-        'satchel',
-        'hips',
-        [-0.17 * girth * hipK - 0.02, 0.0, 0.02],
-        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.04, 0.08, 0.11], seg: 8, rings: 5, sq: 0.6 },
-        'bag'
-      );
-      add(
-        'sling',
-        'torso',
-        [0, 0.12 * tk, 0],
-        { kind: 'torus', c: [0, 0, 0], R: [0.19 * girth, torsoZ + 0.015], r: 0.013, seg: 14, rings: 4 },
-        'bag2'
-      );
-    } else
-      add(
-        'fanny',
-        'hips',
-        [0, 0.05, 0.105 * girth + 0.02],
-        { kind: 'ellipsoid', c: [0, 0, 0], r: [0.09, 0.045, 0.04], seg: 8, rings: 5, sq: 0.4 },
-        'bag'
-      );
+    /* a bag the kit has no shapes for is a bum bag */
+    kitAccessory(add, KIT.accessories[bag] || KIT.accessories.fannypack, bodyFrame, 'torso');
   }
   /* ---- the details that make clothes read at 48 px a metre ---- */
   const R4 = torso.kind === 'lathe' ? torso : null,
@@ -769,7 +702,7 @@ export function lookFigure(look, items, opts = {}) {
     head,
     !!hat,
     seed,
-    !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie',
+    !!hat && !(KIT.accessories[hat] && KIT.accessories[hat].fringe),
     hat ? 1 : FL.hair || 1,
     {
       ahoge: !!FL.ahoge,
@@ -972,24 +905,12 @@ export function lookFigure(look, items, opts = {}) {
         'gold'
       );
   if (FL.earrings || FL.detail) colours.gold = [232, 190, 84];
-  if (hat) kitHat(add, hat, head, HD.crown * 1.06);
-  if (wear.glasses === 'headset') {
-    colours.gear = itemCol('headset', 0, [40, 40, 48]);
-    for (const s of [1, -1])
-      add(
-        'cup' + (s > 0 ? 'A' : 'B'),
-        'head',
-        [0, 0, 0],
-        { kind: 'ellipsoid', c: [s * hr[0] * 1.02, c1 - hr[1] * 0.05, 0], r: [0.035, 0.07, 0.065], seg: 8, rings: 5 },
-        'gear'
-      );
-    add(
-      'band',
-      'head',
-      [0, 0, 0],
-      { kind: 'torus', c: [0, c1 + hr[1] * 0.1, 0], R: [hr[0] * 1.06, 0.05], r: 0.018, seg: 14, rings: 4 },
-      'gear'
-    );
+  if (hat) kitHat(add, hat, head, HD.crown * 1.06, KIT);
+  /* something worn round the head in the glasses' slot (a headset); glasses are the face's marks */
+  const gearKit = wear.glasses ? KIT.accessories[wear.glasses] : null;
+  if (gearKit) {
+    colours.gear = itemCol(wear.glasses, 0, [40, 40, 48]);
+    kitAccessory(add, gearKit, { k: hr[0] / 0.31, hx: hr[0], hy: hr[1], c1 }, 'head');
   }
   /* a beard: a shell over the jaw and chin, the head's own jaw grown out a little, kept below the cheeks (so it
      follows a V jaw or a square one) */
@@ -1489,244 +1410,24 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {})
  * @param {string} hat @param {{ c: Vec3, r: Vec3 }} H the head @param {number} [crown] how high its cranium rises
  * (FIGURE_HEADS)
  */
-export function kitHat(add, hat, H, crown = 1) {
+export function kitHat(add, hat, H, crown = 1, kit = figureKitData()) {
   /* the owner (2026-10-28: "hats also look weird"): a hat is its own forms fitted round the head and the hair under
-     it: a crown from a band at the forehead up over the top of the head, then a bill, a brim, a band, a fold */
+     it: a crown from a band at the forehead up over the top of the head, then a bill, a brim, a band, a fold. CH-5:
+     its shapes are game/data/figureKit.json's (a hat the kit has no shapes for is a plain crown, a cap's) */
   const { c, r } = H,
-    k = r[0] / 0.31,
-    yb = c[1] + r[1] * 0.18,
-    zc = c[2] - r[2] * 0.06,
     bx = r[0] * 1.1,
     bz = r[2] * 1.14,
-    top = c[1] + r[1] * (Math.max(1.04, crown) + 0.06),
-    /** @param {string} id @param {number} y0 @param {number} h @param {number} sx @param {number} sz @param {string} col */
-    dome = (id, y0, h, sx, sz, col, dz = 0, cut = -0.04) =>
-      add(
-        id,
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'ellipsoid',
-          c: [0, y0, zc + dz],
-          r: [sx, h, sz],
-          seg: 18,
-          rings: 10,
-          cut: { front: cut, side: cut, back: cut },
-        },
-        col
-      ),
-    /** a closed solid of rings round the head's upright axis @param {string} id @param {number[]} ys @param {number[]} rxs @param {string} col */
-    lathe = (id, ys, rxs, col, dz = 0) =>
-      add(
-        id,
-        'head',
-        [0, 0, 0],
-        { kind: 'lathe', c: [0, 0, zc + dz], y: ys, rx: rxs, rz: rxs.map(v => (v * bz) / bx), seg: 18 },
-        col
-      ),
-    /** a flat oval (a brim, a peak) @param {string} id @param {number} y @param {number} rx @param {number} rz @param {number} th @param {string} col */
-    disc = (id, y, rx, rz, th, col, dz = 0) =>
-      add(id, 'head', [0, 0, 0], { kind: 'ellipsoid', c: [0, y, zc + dz], r: [rx, th, rz], seg: 22, rings: 6 }, col),
-    /** @param {string} id @param {number} y @param {number} R @param {number} th @param {string} col */
-    band = (id, y, R, th, col) =>
-      add(
-        id,
-        'head',
-        [0, 0, 0],
-        { kind: 'torus', c: [0, y, zc], R: [R, (R * bz) / bx], r: th, seg: 18, rings: 5 },
-        col
-      ),
-    /** a brim's edge rolled up at each side (a cowboy hat's, a top hat's) @param {number} y @param {number} wx @param {number} wz @param {number} lift @param {number} th */
-    curls = (y, wx, wz, lift, th) => {
-      for (const s of [1, -1])
-        add(
-          'curl' + (s > 0 ? 'A' : 'B'),
-          'head',
-          [0, 0, 0],
-          {
-            kind: 'tube',
-            a: [s * wx * 0.78, y, zc + wz * 0.62],
-            ctrl: [s * wx * 1.16, y + lift * 2, zc],
-            b: [s * wx * 0.78, y, zc - wz * 0.62],
-            r0: th,
-            r1: th,
-            flat: 0.6,
-            n: [s, 0, 0],
-            seg: 7,
-            steps: 8,
-          },
-          'hat'
-        );
+    frame = {
+      k: r[0] / 0.31,
+      rx: r[0],
+      /* the band at the forehead, the head's middle front to back, the crown's radii, the top of the head */
+      yb: c[1] + r[1] * 0.18,
+      zc: c[2] - r[2] * 0.06,
+      bx,
+      bz,
+      top: c[1] + r[1] * (Math.max(1.04, crown) + 0.06),
     };
-  switch (hat) {
-    case 'hat_cap':
-      /* a fitted crown, its button, and a bill curving down a little over the eyes */
-      dome('hat', yb - 0.01, top - yb + 0.02, bx * 0.98, bz * 0.98, 'hat', 0, -0.05);
-      disc('button', top + 0.008, 0.022 * k, 0.022 * k, 0.012 * k, 'hat2');
-      add(
-        'peak',
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'tube',
-          a: [0, yb + 0.012, zc + bz * 0.8],
-          ctrl: [0, yb + 0.004, zc + bz * 1.3],
-          b: [0, yb - 0.035 * k, zc + bz * 1.6],
-          r0: bx * 0.66,
-          r1: bx * 0.56,
-          flat: 0.06,
-          n: [0, 1, 0],
-          seg: 14,
-          steps: 6,
-        },
-        'hat2'
-      );
-      break;
-    case 'hat_beanie':
-      /* knit, a little slouched behind, its cuff turned up and a bobble */
-      /* fitted to the skull (its own crown hugs, a knit hat does not flare) */
-      dome('hat', yb - 0.03, top - yb + 0.04, bx * 0.97, bz * 0.99, 'hat', -0.008, -0.02);
-      add(
-        'slouch',
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'ellipsoid',
-          c: [0, top - 0.05 * k, zc - bz * 0.28],
-          r: [bx * 0.6, 0.065 * k, bz * 0.55],
-          seg: 14,
-          rings: 8,
-        },
-        'hat'
-      );
-      band('fold', yb - 0.012, bx * 0.96, 0.034 * k, 'hat');
-      add(
-        'bobble',
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'ellipsoid',
-          c: [0, top + 0.06 * k, zc - 0.04 * k],
-          r: [0.07 * k, 0.065 * k, 0.07 * k],
-          seg: 10,
-          rings: 7,
-        },
-        'hat2'
-      );
-      break;
-    case 'hat_hardhat':
-      dome('hat', yb, top - yb + 0.035, bx * 1.04, bz * 1.04, 'hat');
-      add(
-        'ridge',
-        'head',
-        [0, 0, 0],
-        { kind: 'ellipsoid', c: [0, top + 0.028, zc], r: [0.028 * k, 0.022 * k, bz * 0.55], seg: 8, rings: 8 },
-        'hat'
-      );
-      disc('brim', yb + 0.004, bx * 1.24, bz * 1.3, 0.014 * k, 'hat', bz * 0.08);
-      break;
-    case 'hat_bucket': {
-      /* a soft crown tapering to a round top, and a brim that slopes down all round */
-      const m = (yb + top) / 2;
-      lathe('hat', [yb - 0.012, yb - 0.006, m, top - 0.012, top + 0.012], [0, bx, bx * 0.97, bx * 0.86, 0], 'hat');
-      lathe(
-        'brim',
-        [yb + 0.008, yb, yb - 0.05 * k, yb - 0.064 * k, yb - 0.02, yb - 0.012],
-        [0, bx * 1.01, bx * 1.42, bx * 1.42, bx * 0.98, 0],
-        'hat'
-      );
-      band('band', yb + 0.02, bx * 1.0, 0.016 * k, 'hat2');
-      break;
-    }
-    case 'hat_cowboy': {
-      /* a tall creased crown, a wide brim rolled up at the sides, a band */
-      const t = top + 0.1 * k;
-      lathe(
-        'hat',
-        [yb - 0.01, yb - 0.004, (yb + t) / 2, t - 0.01, t - 0.03 * k],
-        [0, bx * 0.98, bx * 0.95, bx * 0.74, 0],
-        'hat'
-      );
-      disc('brim', yb - 0.006, bx * 1.72, bz * 1.56, 0.016 * k, 'hat');
-      curls(yb - 0.006, bx * 1.72, bz * 1.56, 0.04 * k, 0.026 * k);
-      band('band', yb + 0.026 * k, bx * 0.97, 0.02 * k, 'hat2');
-      break;
-    }
-    case 'hat_tophat': {
-      const t = top + 0.34 * k;
-      lathe('hat', [yb - 0.01, yb - 0.004, (yb + t) / 2, t, t + 0.006], [0, bx * 0.93, bx * 0.9, bx * 0.99, 0], 'hat');
-      disc('brim', yb - 0.004, bx * 1.36, bz * 1.28, 0.014 * k, 'hat');
-      curls(yb - 0.004, bx * 1.36, bz * 1.28, 0.025 * k, 0.02 * k);
-      band('band', yb + 0.05 * k, bx * 0.93, 0.03 * k, 'hat2');
-      break;
-    }
-    case 'hat_chef': {
-      /* a straight band and a pleated puff of a top */
-      lathe('hat', [yb - 0.01, yb - 0.004, top - 0.01, top], [0, bx, bx * 1.03, 0], 'hat');
-      add(
-        'puff',
-        'head',
-        [0, 0, 0],
-        { kind: 'ellipsoid', c: [0, top + 0.1 * k, zc], r: [bx * 1.18, 0.15 * k, bz * 1.12], seg: 18, rings: 9 },
-        'hat'
-      );
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2;
-        add(
-          'pleat' + i,
-          'head',
-          [0, 0, 0],
-          {
-            kind: 'ellipsoid',
-            c: [Math.sin(a) * bx * 0.72, top + 0.15 * k, zc + Math.cos(a) * bz * 0.68],
-            r: [0.11 * k, 0.12 * k, 0.11 * k],
-            seg: 10,
-            rings: 6,
-          },
-          'hat'
-        );
-      }
-      break;
-    }
-    case 'hat_crown': {
-      /* a small crown sat on top of the hair: a band, five points, a jewel on the front */
-      const y = top - 0.06 * k,
-        R = r[0] * 0.62;
-      band('hat', y, R, 0.026 * k, 'hat');
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2;
-        add(
-          'point' + i,
-          'head',
-          [0, 0, 0],
-          {
-            kind: 'cone',
-            a: [Math.sin(a) * R, y, zc + Math.cos(a) * R * (bz / bx)],
-            b: [Math.sin(a) * R * 1.08, y + 0.11 * k, zc + Math.cos(a) * R * 1.08 * (bz / bx)],
-            r: 0.035 * k,
-            seg: 5,
-          },
-          'hat'
-        );
-      }
-      add(
-        'jewel',
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'ellipsoid',
-          c: [0, y + 0.01, zc + R * (bz / bx) + 0.02 * k],
-          r: [0.025 * k, 0.025 * k, 0.015 * k],
-          seg: 8,
-          rings: 5,
-        },
-        'hat2'
-      );
-      break;
-    }
-    default:
-      dome('hat', yb - 0.01, top - yb + 0.02, bx * 0.98, bz * 0.98, 'hat', 0, -0.05);
-  }
+  kitAccessory(add, kit.accessories[hat] || { rows: [kit.accessories.hat_cap.rows[0]] }, frame, 'head');
 }
 
 /**
