@@ -45,6 +45,37 @@ A line that starts with a small letter is a command or a keyword. An unknown one
 "sett", did you mean "set"?"), never a line of dialogue. A line of dialogue starts with a capital, a quote, a digit,
 `[expression]` or `Name:`.
 
+### Markup (dialogue track DL-1)
+
+A line can carry bracket tags (game/js/logic/line-markup.js, `MARKUP_TAGS`; the Studio's script reference lists them
+under Markup). A bubble style goes at the start, before or after the expression; the rest go anywhere in the text:
+
+    [happy][shout] Chosen: Get [b]out[/b] of my lab![p] [face=angry]Now.
+
+| Tag | Does |
+|---|---|
+| `[b]…[/b]` | bold, for the stressed word |
+| `[i]…[/i]` | a slant |
+| `[big]…[/big]`, `[small]…[/small]` | bigger; smaller and fainter |
+| `[c=gold]…[/c]` | a colour: gold, red, teal, grey |
+| `[wave]…[/wave]`, `[shake]…[/shake]` | the letters bob in a wave; a short jitter |
+| `[slow]…[/slow]`, `[fast]…[/fast]` | typed at half or double speed |
+| `[p]`, `[p=0.8]` | a pause (0.4 s, or the seconds given, up to 3) |
+| `[face=angry]` | changes the face here (any expression) |
+| `[emote=sweat]` | pops an emote: ! ? sweat anger sparkle note heart |
+| `[stamp=denied]` | the Bureau's stamp: denied, approved, pending, filed, void |
+| `[cut]` | the line breaks off here; a line ending in `—` does too |
+| `[shout]`, `[whisper]`, `[think]`, `[wait]` | the bubble's style (only at the start of the line) |
+
+A bad tag is an error on its line, with a did-you-mean (`unknown tag "[wav]", did you mean "[wave]"?`): an unknown
+tag, a value not in the list, a closing tag that closes nothing, crossed tags (`[b][i]x[/b][/i]`), a tag left open,
+a style in the middle of a line. A choice's option may use `[b]` only. Brackets that aren't tag-shaped (`[if …]`,
+`[B2]`) are plain text.
+
+Since DL-1 every surface shows the line's plain text (the tags taken out); the dialogue box draws the effects from
+DL-2 on (docs/phases/dialogue-track.md). The battle box, the walk speech, event intros and the opening's hot takes
+stay plain until DL-8.
+
 ## Blocks
 
 ```

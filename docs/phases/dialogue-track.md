@@ -70,6 +70,10 @@ branch before its PR merges).
 - **Text elsewhere** (not through `talkLine`): the battle box `#msgT` with its own typer (battle.js:445-468), walk
   speech drawn on the canvas (`drawSpeech`, walk-view.js), event intros (`encLineHTML`, encounter-screen.js:140), the
   opening's hot takes `#csBubble` (opening.js:462).
+- Corrected at DL-1: `#csBubble` is filled in game/js/cutscene/opening.js:462 (declared in cutscene/director.js:333);
+  `drawSpeech` is walk-view.js:4758, called from walk-view-gl.js; the three leading-expression readings disagreed
+  (talk.js `\w+`, script-parse.js `[\w-]+`, expressions.test.mjs `\w+` plus a space, and it skipped indented script
+  lines). All now go through `leadingExpr`.
 - **About 600 spoken lines** (banter 143, events 131, biome chat 72, maps 48, story 30, trainers 28, lore 23,
   cutscenes 21, quests about 40, about 30 in JS). `*`, `_`, `~`, `^`, `|`, `<`, `>` and backticks appear in none;
   `[` only as the leading expression; `{word}` is a slot (unknown slots are a parse error, script-parse.js:297).
@@ -344,6 +348,12 @@ skill), its HANDOFF entry, and the owner's phone check.
 - **DL-1 Markup.** line-markup.js, `leadingExpr`, plain text on every other surface, the data checks, SCRIPTS.md.
   Tests: line-markup, line-markup-real (every spoken string in game/data parses), expressions, script,
   opening-script. On the phone: nothing looks different; a bad tag shows in the Studio's script box.
+  **Done in DL-1** (2026-10-28, `track/dialogue`): as planned, with these choices. Unknown tags stay in the plain
+  text as typed (a mistake shows). A point tag between two spaces leaves one space. `[face=x]` is checked for shape
+  only in `parseLine`; that the face has wardrobe pieces is the expressions test's job (it now collects `[face=x]`).
+  `sayLine` keeps the line's markup in `text`, with the styles put back in front after the speaker
+  (`[happy][shout] Chosen: …` → expr happy, who Chosen, text `[shout]…`). The "under about 25 words" data warning
+  waits for DL-7. The Studio GitHub check (tools/check-studio-github.py, `--only=story`) types a bad tag.
 - **DL-2 Letters.** The span renderer, the effects, pauses and speeds, the screen-reader copy, Text speed, blip
   styles, the element count rule. Tests: idle-life, the Safety step, settings, motion. The full quick check. On the
   phone: bold, wave, shake and the pauses read well; the Reduced setting.

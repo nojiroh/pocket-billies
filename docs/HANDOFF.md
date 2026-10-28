@@ -2,6 +2,45 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-1: line markup (bracket tags), plain text everywhere, script errors - 2026-10-28
+Branch `track/dialogue` (made by the owner from `ccr-2d53c4cf-8w7kd2`, so it carries DL-0; main 76aea599 already in,
+nothing to merge). Plan approved in Plan Mode. Code, tests and docs; nothing in the game looks different. No session
+tag (CLAUDE.md: the track gets `dialogue-done` when it ends). Details: docs/phases/dialogue-track.md, "Done in DL-1".
+- Changed:
+  - New game/js/logic/line-markup.js: `MARKUP_TAGS` (wrap `b i big small c wave shake slow fast`, point `p face
+    emote stamp cut`, style `shout whisper think wait`, each with its use and a line about it), `leadingExpr` (the
+    one reading of a line's leading expression and styles, in either order), `parseLine` → `{plain, expr, style,
+    runs, events, errors}`, `plainOf`, `markupProblem`. Started from the mockup's parser; adds crossed and repeated
+    tags, values checked with a did-you-mean, styles only at the start, a trailing `—` as a cut.
+  - talk.js `talkLine` types the plain line (`talkBox.cur.text` stays plain; the parse is kept on `st.parsed` for
+    DL-2); choice buttons show plain text.
+  - script-parse.js `sayLine`: `leadingExpr` instead of its own regex; a bad tag is a script error on its line
+    (`unknown tag "[wav]", did you mean "[wave]"?`), shown in the Studio's script box; options allow `[b]` only;
+    the styles stay in the node's text after the speaker. The script reference has a Markup section.
+  - Plain text on the other surfaces: the battle typer (battle.js `typeText`), walk speech (walk-view.js
+    `drawSpeech`), event intros (`encLineHTML`), the opening's hot takes (cutscene/opening.js).
+  - Pages: the module in game/index.html, studio/index.html and studio/js/logic-worker-modules.js.
+  - Tests: new line-markup (11) and line-markup-real (every tag-shaped string in game/data and every script);
+    expressions reads lines with `leadingExpr` (now indented script lines too, which it skipped before), collects
+    `[face=x]`, and checks no expression is also a tag; opening-script compares plain text; the Studio GitHub check
+    (`--only=story`) types a bad tag.
+  - Docs: SCRIPTS.md "Markup"; the track file (corrections, Done in DL-1); ROADMAP; BRANCHES.
+- Found, not changed: the track file's paths for `#csBubble` (it is cutscene/opening.js:462) and `drawSpeech`
+  (walk-view.js:4758); the three leading-expression regexes disagreed (fixed by `leadingExpr`). The full Studio
+  GitHub check stops at the story preview's `#scStoryOn` uncheck in this container (a known stall, its `--only`
+  comment says so); the markup step before it passes.
+- Risky: a nickname or name that happens to contain a real tag (`[b]`) loses it in battle text and speech (unknown
+  tags stay as typed). `plainOf` runs per frame in `drawSpeech`, but returns at once when there is no `[`.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build clean; unit tests 1917 pass; smoke 7 of 7
+  (388 s); the Studio script box shows the did-you-mean on the right line (headless). Full quick check: 36 of 42 in
+  1651 s. Of the 6 problems, Terraces (train_station in the air), RL-8 (never landed) and the room-light/settings
+  step fail on main 76aea599 too (same steps run side by side); Granny Juniper, RT-2 and Battle music pass on
+  re-run (a busy machine: the battle's cries came 7.5 s late, past the 8 s drums fallback).
+- Next: DL-2 (letters: the span renderer, effects, pauses, Text speed) on `track/dialogue`; Ask me before 1 (bold:
+  Oxanium 700 or the voice font) is needed then.
+- For the owner on the phone: nothing should look different. In the Studio, type `A [wav]wave[/wav].` in a script:
+  the box says line N, did you mean "[wave]"; the Commands list has a Markup section.
+
 ### Dialogue track DL-0: the plan, the research and a playable mockup - 2026-10-28
 Branch `ccr-2d53c4cf-8w7kd2` (from main 76aea599; `track/dialogue` doesn't exist yet). Docs only, plus the mockup
 page. Planned in Plan Mode and approved by the owner. Details: docs/phases/dialogue-track.md.

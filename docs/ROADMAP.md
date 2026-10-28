@@ -340,8 +340,9 @@ town node needs it.
   Kappi's leaf, Blake's pop-art slant, your neon), shout, whisper and think shapes, bracket tags for text that acts
   (bold, slant, size, colour, wave, shake, speed, pauses, mid-line faces, emotes), a Text speed setting, and portraits
   that perform (random blinks, a mouth synced to the voice, the head on a spring on the characters track's figures,
-  emotes, the frame bouncing). DL-0 (the plan, with research) done 2026-10-28 on `ccr-2d53c4cf-8w7kd2`; next DL-1
-  (markup) on `track/dialogue`, which the owner makes. About 8 sessions. Branch `track/dialogue`.
+  emotes, the frame bouncing). DL-0 (the plan, with research) done 2026-10-28 on `ccr-2d53c4cf-8w7kd2`; DL-1 (markup:
+  logic/line-markup.js, plain text on every surface, script errors for bad tags) done 2026-10-28 on `track/dialogue`;
+  next DL-2 (letters). About 8 sessions. Branch `track/dialogue`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
