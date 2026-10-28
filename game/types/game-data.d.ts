@@ -2611,6 +2611,7 @@ export interface BattleAnimsData {
   /** VFX-11: the type kits, by type id, None and Bureau: what a family's steps draw with in that type */
   types?: Record<string, BattleAnimKit>;
 }
+
 /** VFX-11: a type kit: its sprites (strips) by role, its ramp, its path and motion, its light, and steps of its own a
  * family plays at its wind-up (cast) and its hit */
 export interface BattleAnimKit {
@@ -2743,7 +2744,7 @@ export interface BattleLookDome {
   flashMs: number;
   end?: BattleLookBurst;
 }
-/** VFX-14: battleAnims.json events */
+/** battleAnims.json `events`: each step adds its own keys (VFX-14: statuses and stats; VFX-16: the flow moments, optional) */
 export interface BattleAnimEvents {
   /** ms a lasting loop pulses once a turn under Calm */
   pulseMs: number;
@@ -2770,6 +2771,24 @@ export interface BattleAnimEvents {
     glint?: BattleLookBurst;
   };
   glint: { about?: string; sprite: DataId; life: number; k?: number; gapMs: number; ramps: Record<string, string> };
+  about?: string;
+  /** VFX-16: the VS splash: the run roles that get one, the trainer ids that are the rival, the portraits' whole-number
+      scale at most, how long it holds (inside trainerIn's 1150 ms) */
+  vs?: { foes: ('miniboss' | 'boss' | 'rival')[]; rivals: DataId[]; scale: number; hold: number };
+  /** VFX-16: the Billie dithers in from its feet up over riseMs, a burst in its type, each pyramid kind's ramp, glints */
+  sendOut?: {
+    riseMs: number;
+    burst: number;
+    kinds: Record<DataId, string>;
+    glint: { coat: string; prime: string; n: number };
+  };
+  recall?: { w: number; outMs: number };
+  catch?: { squash: number; dust: number; ringR: number; shards: number };
+  faint?: { holdMs: number; outMs: number; dust: number; bolts: number; smoke: number };
+  levelUp?: { ramp: string; n: number; h: number; ringR: number };
+  victory?: { sparkles: number; cheerMs: number };
+  defeat?: { fadeMs: number };
+  item?: { flyMs: number };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {

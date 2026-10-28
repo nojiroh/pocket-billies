@@ -178,6 +178,14 @@ export function renameTypeIn(D, from, to) {
       else looks(v);
   };
   if (BA) looks(BA.events);
+  /* VFX-16: the flow moments' ramps that name a type (a Coat's glint, the level-up's) likewise */
+  const EV = BA && BA.events;
+  if (EV && EV.sendOut) {
+    const G = EV.sendOut.glint;
+    for (const k of ['coat', 'prime']) if (G[k] === from) G[k] = to || 'None';
+    for (const [k, r] of Object.entries(EV.sendOut.kinds)) if (r === from) EV.sendOut.kinds[k] = to || 'None';
+  }
+  if (EV && EV.levelUp && EV.levelUp.ramp === from) EV.levelUp.ramp = to || 'None';
   /* VFX-11: a type's kit moves with it (a deleted type's goes); a kit or a step whose ramp named it names the new id, or
      None */
   if (BA && BA.types) {

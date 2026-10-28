@@ -1414,7 +1414,7 @@ function drawPropModelMesh(m) {
 const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
 uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}${SMEAR_GLSL}
-void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=smearDrag(p,cr,sr,mPos);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
+void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=squashY(smearDrag(p,cr,sr,mPos));vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
 /* a window's glass (vTex.z 2-32: window 1-31): by day the sky in it, more of it at a grazing look, and a glint of the
    sun; lit from its room when its bit of uWinOn is set, as strongly as uWinK says (1 after dark), a warm lamp, a cooler
@@ -1556,12 +1556,13 @@ const SPIN_GLSL = `vec3 voxSpin(vec3 d){float a=uSpin.w;if(a==0.)return d;vec3 k
    side facing away from the motion (from the spin's pivot, placed, scaled and turned as p is) is dragged back by up to
    uSmear.xyz (the scene's metres), the more the further round it is, broken up by noise on its own model place m
    (uSmear.w: the cell's seed); 0 for every other model. After voxSpin and the turn (cr, sr), before the base */
-const SMEAR_GLSL = `uniform vec4 uSmear;vec3 smearDrag(vec3 p,float cr,float sr,vec3 m){if(dot(uSmear.xyz,uSmear.xyz)<1e-8)return p;vec3 c=vec3(uSpinC.x*uFlip,uSpinC.y,uSpinC.z)*uS;vec3 r=p-vec3(c.x*cr-c.z*sr,c.y,c.x*sr+c.z*cr);float l=length(r);if(l<1e-4)return p;float f=clamp(dot(r/l,normalize(uSmear.xyz)),0.,1.),h=fract(sin(dot(m,vec3(12.9898,78.233,37.719))+uSmear.w*61.7)*43758.5453);return p+uSmear.xyz*f*(.7+.3*h);}`;
+const SMEAR_GLSL = `uniform vec4 uSmear;vec3 smearDrag(vec3 p,float cr,float sr,vec3 m){if(dot(uSmear.xyz,uSmear.xyz)<1e-8)return p;vec3 c=vec3(uSpinC.x*uFlip,uSpinC.y,uSpinC.z)*uS;vec3 r=p-vec3(c.x*cr-c.z*sr,c.y,c.x*sr+c.z*cr);float l=length(r);if(l<1e-4)return p;float f=clamp(dot(r/l,normalize(uSmear.xyz)),0.,1.),h=fract(sin(dot(m,vec3(12.9898,78.233,37.719))+uSmear.w*61.7)*43758.5453);return p+uSmear.xyz*f*(.7+.3*h);}
+uniform float uSquash;vec3 squashY(vec3 p){return uSquash==0.?p:vec3(p.x*(1.+uSquash*.5),p.y*(1.-uSquash),p.z*(1.+uSquash*.5));}`;
 const PROP_MODEL_SHADERS = {
   vox: [
     `#version 300 es
 precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}${SMEAR_GLSL}
-void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=smearDrag(p,cr,sr,qPos);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
+void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=squashY(smearDrag(p,cr,sr,qPos));vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${LIGHT_GLSL}${ROCK_GLSL}
@@ -1820,6 +1821,8 @@ function setItemSpin(p, it) {
 function setItemSmear(p, it) {
   const S = it.smear;
   if (p.U.uSmear) gpuState.gl.uniform4f(p.U.uSmear, S ? S.d[0] : 0, S ? S.d[1] : 0, S ? S.d[2] : 0, S ? S.seed : 0);
+  /* VFX-16: a landed pyramid's squash on a catch's wobble (it.squash: flatter and wider about its base), else none */
+  if (p.U.uSquash) gpuState.gl.uniform1f(p.U.uSquash, it.squash || 0);
 }
 function setPropModelUniforms(p, it) {
   const gl = gpuState.gl,

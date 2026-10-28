@@ -195,7 +195,7 @@
   },
   "eventsAbout": {"type": "string"},
   "events": {
-   "description": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js)",
+   "description": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js); the battle's flow moments and the stage effects of statuses and stats, by event: each step adds its own keys (VFX-16: vs, sendOut, recall, catch, faint, levelUp, victory, defeat, item; VFX-14: its own)",
    "type": "object",
    "required": ["pulseMs", "cells", "brn", "par", "slp", "confused", "broken", "stat", "protect", "shield", "soaked", "fork", "delayed", "stones", "glint"],
    "additionalProperties": false,
@@ -214,7 +214,17 @@
     "shield": {"$ref": "#/$defs/lookDome"},
     "delayed": {"type": "object", "required": ["sprite", "ramp", "y"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "y": {"description": "m up", "type": "number", "minimum": 0}}},
     "stones": {"type": "object", "required": ["sprite", "ramp", "n", "r"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "n": {"type": "integer", "minimum": 1}, "r": {"description": "m", "type": "number", "minimum": 0}, "frame": {"type": "integer", "minimum": 0}, "glint": {"$ref": "#/$defs/lookBurst"}}},
-    "glint": {"type": "object", "required": ["sprite", "life", "gapMs", "ramps"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "life": {"description": "ms", "type": "number", "minimum": 0}, "k": {"type": "integer", "minimum": 1}, "gapMs": {"description": "ms between two in one line", "type": "number", "minimum": 0}, "ramps": {"type": "object", "additionalProperties": {"type": "string"}}}}
+    "glint": {"type": "object", "required": ["sprite", "life", "gapMs", "ramps"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "life": {"description": "ms", "type": "number", "minimum": 0}, "k": {"type": "integer", "minimum": 1}, "gapMs": {"description": "ms between two in one line", "type": "number", "minimum": 0}, "ramps": {"type": "object", "additionalProperties": {"type": "string"}}}},
+    "about": {"type": "string"},
+    "vs": {"type": "object", "required": ["foes", "rivals", "scale", "hold"], "additionalProperties": false, "properties": {"foes": {"type": "array", "items": {"enum": ["miniboss", "boss", "rival"]}}, "rivals": {"type": "array", "items": {"$ref": "#/$defs/id"}}, "scale": {"type": "integer", "minimum": 1, "maximum": 4}, "hold": {"type": "number", "minimum": 0, "maximum": 700}}},
+    "sendOut": {"type": "object", "required": ["riseMs", "burst", "kinds", "glint"], "additionalProperties": false, "properties": {"riseMs": {"type": "number", "minimum": 0}, "burst": {"type": "integer", "minimum": 0}, "kinds": {"type": "object", "additionalProperties": {"type": "string"}}, "glint": {"type": "object", "required": ["coat", "prime", "n"], "additionalProperties": false, "properties": {"coat": {"type": "string"}, "prime": {"type": "string"}, "n": {"type": "integer", "minimum": 0}}}}},
+    "recall": {"type": "object", "required": ["w", "outMs"], "additionalProperties": false, "properties": {"w": {"type": "number", "minimum": 0}, "outMs": {"type": "number", "minimum": 0}}},
+    "catch": {"type": "object", "required": ["squash", "dust", "ringR", "shards"], "additionalProperties": false, "properties": {"squash": {"type": "number", "minimum": 0, "maximum": 0.5}, "dust": {"type": "integer", "minimum": 0}, "ringR": {"type": "number", "minimum": 0}, "shards": {"type": "integer", "minimum": 0}}},
+    "faint": {"type": "object", "required": ["holdMs", "outMs", "dust", "bolts", "smoke"], "additionalProperties": false, "properties": {"holdMs": {"type": "number", "minimum": 0}, "outMs": {"type": "number", "minimum": 0}, "dust": {"type": "integer", "minimum": 0}, "bolts": {"type": "integer", "minimum": 0}, "smoke": {"type": "integer", "minimum": 0}}},
+    "levelUp": {"type": "object", "required": ["ramp", "n", "h", "ringR"], "additionalProperties": false, "properties": {"ramp": {"type": "string"}, "n": {"type": "integer", "minimum": 0}, "h": {"type": "number", "minimum": 0}, "ringR": {"type": "number", "minimum": 0}}},
+    "victory": {"type": "object", "required": ["sparkles", "cheerMs"], "additionalProperties": false, "properties": {"sparkles": {"type": "integer", "minimum": 0}, "cheerMs": {"type": "number", "minimum": 0}}},
+    "defeat": {"type": "object", "required": ["fadeMs"], "additionalProperties": false, "properties": {"fadeMs": {"type": "number", "minimum": 0}}},
+    "item": {"type": "object", "required": ["flyMs"], "additionalProperties": false, "properties": {"flyMs": {"type": "number", "minimum": 0}}}
    }
   }
  },

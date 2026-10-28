@@ -227,7 +227,11 @@ town node needs it.
   built 2026-10-28 on `claude/vfx-12-studio-effects` (PR #313, merged by VFX-13). VFX-14 (statuses and stats on the stage: burned,
   paralyzed, asleep and confused looks, stat chevrons with sharply, Protect's bubble, the shield's cracking dome, Soaked,
   Fork, the delayed hit's mark, sharp stones, glints; Calm and Reduced; the broken-part and stat-drop-sound bugs) built
-  2026-10-28 on the side branch `claude/vfx-14-statuses` (wave 2; PR #320, merged by VFX-13). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  2026-10-28 on the side branch `claude/vfx-14-statuses` (wave 2; PR #320, merged by VFX-13). VFX-16 (battle flow, wave 2, side branch
+  `claude/vfx-16-battle-flow`: the VS splash for leaders, Blake and bosses inside trainerIn's time, the send-out's
+  dither from the feet up and its pyramid's colours, the recall beam, the catch's squash, seal ring and shards, the
+  faint and the bots' shed, the level-up's column on the right Billie, an item's pop, victory and defeat; the XP bar
+  and level-up bugs fixed) built 2026-10-28 (PR #319, merged by VFX-13). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
