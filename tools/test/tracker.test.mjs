@@ -439,6 +439,8 @@ function bankContext(rate) {
   return new Proxy(t, { get: (o, k) => (k in o ? o[k] : any()) });
 }
 const { soundBakeBank, SOUND_BAKE_BUDGET } = /** @type {any} */ (globalThis);
+/* SND-11: the instruments are music.json's, given to a tracker as opts.instruments (the bank's recipes are shared) */
+trackerCreate(fakeContext(), {}, { instruments: MUSIC.instruments });
 
 test('SND-9: the bank bakes in slices, once per rate; bankReady resolves when every zone is in', async () => {
   const c = bankContext(22050),
@@ -588,7 +590,7 @@ test('SND-10: the bank takes recipes from data; sampleShot plays a zone once, mo
   await T.bankReady('tdrop');
   assert.ok(T.bankStats().instruments.some(k => k.startsWith('tdrop@16000')));
   /* the harp keeps its own recipe (an id the bank has is never replaced) */
-  assert.equal(soundBakeBank.recipes.harp, undefined);
+  assert.equal(soundBakeBank.recipes.harp, MUSIC.instruments.harp);
   const v = T.sampleShot(out, { inst: 'tdrop', midi: 71, t: 2, vol: 0.4, rate: 1.1 });
   const z = soundBakeBank.entries.get('tdrop@16000').zones.find(q => 71 >= q.lo && 71 <= q.hi);
   assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (71 - z.root) / 12) * 1.1) < 1e-9);

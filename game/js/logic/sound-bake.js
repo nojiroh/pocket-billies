@@ -15,14 +15,13 @@
      Math.random, so a bake is the same every time and nothing the song fingerprints read moves.
    Every bake is a generator that yields every SOUND_BAKE_CHUNK samples, so the tracker can spread it over setTimeout
    slices of at most 4 ms (game/js/audio/tracker.js, the bank). Logic only: plays nothing; runs in Node
-   (tools/test/sound-bake.test.mjs). SND-11 moves the recipes to music.json `instruments`. */
+   (tools/test/sound-bake.test.mjs). SND-11: the recipes are data, music.json `instruments`. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { ambienceNoise, ambienceRandom } from './ambience-sound.js';
 /* eslint-disable no-func-assign */
 expose({
   SOUND_BAKE_CHUNK: [() => SOUND_BAKE_CHUNK],
-  SOUND_BAKE_INSTRUMENTS: [() => SOUND_BAKE_INSTRUMENTS],
   // @ts-expect-error -- replaced on purpose
   soundBakeAds: [() => soundBakeAds, v => (soundBakeAds = v)],
   // @ts-expect-error -- replaced on purpose
@@ -145,29 +144,6 @@ export const SOUND_BAKE_CHUNK = 1024;
  *   one baked note: played from root's pitch for the notes lo-hi; it loops loopStart-loopEnd (samples) for as long as
  *   the note holds; tau (s) is how fast a voice keeps fading once the loop starts (0: a sustained sound that holds)
  */
-
-/**
- * the instruments (SND-9: the proof instrument only; SND-11 adds the rest from music.json `instruments`)
- * @type {Record<string, SoundBakeRecipe>}
- */
-export const SOUND_BAKE_INSTRUMENTS = {
-  /* Copperleaf's harp: a soft, warm pluck (Chip+ meets DS, docs/phases/sound-track.md "The design" 2) */
-  harp: {
-    kind: 'pluck',
-    lo: 43,
-    hi: 98,
-    every: 6,
-    sec: 0.9,
-    minSec: 0.35,
-    maxSec: 1.2,
-    t60: 3.2,
-    bright: 3200,
-    pick: 0.18,
-    tone: 5200,
-    level: 0.8,
-    seed: 0x4a72,
-  },
-};
 
 /**
  * the zones' roots and ranges for a recipe: one every `every` semitones from lo, the last reaching hi

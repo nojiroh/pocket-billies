@@ -6,13 +6,7 @@
    noise buffer through filters, and a kick; a soft echo that every voice can send to. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import {
-  SOUND_BAKE_INSTRUMENTS,
-  soundBakeImpulse,
-  soundBakeRoots,
-  soundBakeZoneFor,
-  soundBakeZoneSteps,
-} from '../logic/sound-bake.js';
+import { soundBakeImpulse, soundBakeRoots, soundBakeZoneFor, soundBakeZoneSteps } from '../logic/sound-bake.js';
 import { musicArpAt, musicBassAt, musicDrumsAt } from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -247,7 +241,8 @@ const soundBakeBank = {
   entries: new Map(),
   /** the reverb's impulse by sample rate: a Promise of its AudioBuffer */
   impulses: new Map(),
-  /** SND-10: recipes from data beside SOUND_BAKE_INSTRUMENTS (soundscape.json `banks`: water's bubbles and babble) */
+  /** the recipes by id, from data: SND-10 soundscape.json `banks` (water's bubbles and babble); SND-11 music.json
+      `instruments` (opts.instruments, given to every tracker) */
   recipes: /** @type {Record<string, any>} */ ({}),
   queue: [],
   timer: 0,
@@ -269,7 +264,7 @@ const soundBakeBank = {
 const soundBakeNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 /* the bank's entry for an instrument at a context's rate (made empty the first time) */
 function soundBakeEntry(id, c) {
-  const R = SOUND_BAKE_INSTRUMENTS[id] || soundBakeBank.recipes[id];
+  const R = soundBakeBank.recipes[id];
   if (!R) return null;
   const key = id + '@' + c.sampleRate;
   let E = soundBakeBank.entries.get(key);
@@ -598,9 +593,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.bankStats = soundBakeStats;
   /* SND-10: recipes from data (soundscape.json `banks`) the bank may bake, by id; an id it already has keeps its own */
   T.bankAdd = recipes => {
-    for (const [id, R] of Object.entries(recipes || {}))
-      if (!SOUND_BAKE_INSTRUMENTS[id] && !soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
+    for (const [id, R] of Object.entries(recipes || {})) if (!soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
   };
+  /* SND-11: music.json's instruments (sound.js, the Studio) */
+  if (opts.instruments) T.bankAdd(opts.instruments);
   /* SND-10: a baked zone's buffer and the rate that moves it to midi (a texture loops it); null (and the bank asked)
      when nothing of it is baked yet */
   T.bankBuffer = (inst, midi) => {

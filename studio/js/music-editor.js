@@ -161,6 +161,7 @@ function musicTracker() {
   /* SND-5: the run's arc as the data has it now (an edit or an undo replaces it) */
   const T = trackerCreate(ctx, out, {
     songs: musicData().songs,
+    instruments: musicData().instruments,
     get run() {
       return musicData().run;
     },

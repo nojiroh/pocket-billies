@@ -2,10 +2,10 @@
 // peaks at most 1, seamless loops, strings in tune, a size budget, and the reverb's impulse. SND-10: water's bubbles and
 // babble.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   SOUND_BAKE_CHUNK,
-  SOUND_BAKE_INSTRUMENTS,
   soundBakeAll,
   soundBakeBabble,
   soundBakeBiquad,
@@ -25,7 +25,8 @@ import {
 import { ambienceRandom } from '../../game/js/logic/ambience-sound.js';
 
 const RATE = 48000;
-const harp = SOUND_BAKE_INSTRUMENTS.harp;
+/* SND-11: the harp is data now (music.json instruments) */
+const harp = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8')).instruments.harp;
 /* a pad and a bell, so the other two kinds are tested before SND-11 gives them instruments */
 const pad = {
   kind: 'osc',
@@ -583,7 +584,10 @@ test('SND-11: one-shots never loop and end in silence; sustained ones loop seaml
       const q = R.kind === 'stack' ? Math.round(RATE * 0.02) : Math.floor((z.loopEnd - z.loopStart) / 4),
         rms = (a, b) => Math.sqrt(d.subarray(a, b).reduce((s, x) => s + x * x, 0) / (b - a));
       const dB = 20 * Math.log10(rms(z.loopStart, z.loopStart + q) / rms(z.loopEnd - q, z.loopEnd));
-      assert.ok(Math.abs(dB) < (R.kind === 'stack' ? 3 : 1.5), `${id} ${z.root}: the loop's level moves ${dB} dB at its seam`);
+      assert.ok(
+        Math.abs(dB) < (R.kind === 'stack' ? 3 : 1.5),
+        `${id} ${z.root}: the loop's level moves ${dB} dB at its seam`
+      );
     }
 });
 
@@ -644,4 +648,19 @@ test('SND-11: fm is sliced and keeps its sound; a tine adds a bark that dies at 
   const it = soundBakeZoneSteps(K11.epiano, RATE, 0);
   while (!it.next().done) steps++;
   assert.ok(steps > 20, 'fm zones are sliced');
+});
+
+test('SND-11: every instrument in music.json bakes: its lowest and highest zones finite, at their level, a zone at most 0.4 MB at 48 kHz', () => {
+  const I = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8')).instruments;
+  assert.ok(Object.keys(I).length >= 24, 'about two dozen instruments');
+  for (const [id, R] of Object.entries(I)) {
+    const n = soundBakeRoots(R).length;
+    for (const z of new Set([0, n - 1])) {
+      const Z = soundBakeRun(soundBakeZoneSteps(R, RATE, z));
+      assert.ok(finite(Z.data), id + ': NaN');
+      const p = peak(Z.data);
+      assert.ok(p <= R.level + 1e-6 && p > R.level * 0.99, `${id}: peak ${p}`);
+      assert.ok(Z.data.length * 4 <= 0.4 * 1048576, `${id} zone ${z}: ${Z.data.length * 4} bytes`);
+    }
+  }
 });
