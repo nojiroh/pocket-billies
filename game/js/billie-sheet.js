@@ -342,7 +342,7 @@ function healPick(m, back) {
     title: `Heal ${escapeHtml(billyName(m))}`,
     html: `<div class="ms-meters">${meter('HP', hpBar(m.hp, maxHp(m)), `${m.hp}/${maxHp(m)}`)}</div>${
       its.length
-        ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 34)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`
+        ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 36)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`
         : `<p>None of your items can help right now.</p><p class="note">Rest at a town clinic for free, or buy Potions at a town shop.</p>`
     }`,
     btns: [
@@ -364,7 +364,7 @@ function heldPick(m) {
   const its = heldIds(ITEMS).filter(k => saveData.items[k] > 0 && k !== m.held);
   modal({
     title: `Give ${escapeHtml(billyName(m))} an item to hold`,
-    html: `${m.held ? `<p class="note">It gives back its ${escapeHtml(ITEMS[m.held].n)}.</p>` : ''}<div class="list">${its.map(k => `<button class="pickrow" data-a="mheldgive" data-u="${m.uid}" data-it="${k}">${itemIcon(k, 34)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`,
+    html: `${m.held ? `<p class="note">It gives back its ${escapeHtml(ITEMS[m.held].n)}.</p>` : ''}<div class="list">${its.map(k => `<button class="pickrow" data-a="mheldgive" data-u="${m.uid}" data-it="${k}">${itemIcon(k, 36)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`,
     btns: [
       {
         l: 'Cancel',

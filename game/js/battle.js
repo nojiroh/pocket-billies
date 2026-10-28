@@ -879,7 +879,10 @@ function teamPick(back) {
 }
 const backButtonHTML = () =>
   `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
-export const itemIcon = (k, size = 30) => {
+/* PK-11: an item's own picture (its img, a 36 px icon in art/items) at a whole multiple of 36 px, pixelated (.pxi);
+   without one, its rectangle of the old atlas (`i_` + its icon). The Bag, a shop and the battle's Bag draw 36 px, a
+   reward card 72 */
+export const itemIcon = (k, size = 36) => {
   const I = ITEMS[k] || {};
   return I.img
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
@@ -1090,7 +1093,7 @@ export function paintActions() {
             .map(k => {
               const I = ITEMS[k],
                 ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(k, m));
-              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
+              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 36)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'

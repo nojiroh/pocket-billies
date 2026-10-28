@@ -56,7 +56,7 @@ export function renderBag() {
             on = sel === k,
             /* UI-14b: a held item's tier (row frame, name colour, pill) and its stat rows as tags */
             held = p !== 'pyramids' && I.hold;
-          return `<button class="bag-row k-card${held ? ' rar-row' : ''} ${on ? 'on' : ''}"${held ? rarityRowAttr(I.rarity) : ''} data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}">${held ? rarityFoilHTML(I.rarity) : ''}<span class="bag-ic">${p === 'pyramids' ? pyramidHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}${held ? fxTagsHTML(I.hold) : ''}</small></span>${held ? rarityPillHTML(I.rarity) : ''}<b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
+          return `<button class="bag-row k-card${held ? ' rar-row' : ''} ${on ? 'on' : ''}"${held ? rarityRowAttr(I.rarity) : ''} data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}">${held ? rarityFoilHTML(I.rarity) : ''}<span class="bag-ic">${p === 'pyramids' ? pyramidHTML(k, 30) : itemIcon(k, 36)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}${held ? fxTagsHTML(I.hold) : ''}</small></span>${held ? rarityPillHTML(I.rarity) : ''}<b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
       : `<p class="note bag-empty">${p === 'pyramids' ? 'No pyramids. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   /* what the chosen thing can do */

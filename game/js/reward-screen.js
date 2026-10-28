@@ -69,7 +69,7 @@ function rewardCardHTML(c, k, on) {
   const I = /** @type {any} */ (ITEMS[/** @type {string} */ (c.item)] || { n: c.item, d: '' }),
     sub = c.kind === 'candy' ? 'Candy' : c.kind === 'evo' ? 'Evolution item' : c.kind === 'held' ? 'Held item' : 'Item',
     kind = c.kind === 'candy' || c.kind === 'evo' || c.kind === 'held' ? c.kind : 'item';
-  return `<pb-pick-card data-k="${k}" kind="${kind}"${c.kind === 'held' ? rarityAttr(I.rarity) : ''} heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 40)}</span>${escapeHtml(I.d || '')}${c.kind === 'held' ? fxTagsHTML(I.hold) : ''}</pb-pick-card>`;
+  return `<pb-pick-card data-k="${k}" kind="${kind}"${c.kind === 'held' ? rarityAttr(I.rarity) : ''} heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 72)}</span>${escapeHtml(I.d || '')}${c.kind === 'held' ? fxTagsHTML(I.hold) : ''}</pb-pick-card>`;
 }
 /** show the pick's sheet (in place when it is up; ahead of any other) */
 function rewardSheet(M) {

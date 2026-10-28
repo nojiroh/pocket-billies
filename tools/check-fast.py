@@ -1517,6 +1517,13 @@ def screens(pg, base):
                     ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
         need(t, screen(t, part))
+    # PK-11: the Bag's rows draw each item's own picture (art/items) at 36 px, a whole multiple of the icon's 36
+    pg.evaluate(nav_tap('bag'))
+    need('the Bag again', screen('bag', '.bag-list'))
+    pics = pg.evaluate("[...document.querySelectorAll('.screen.s-bag .bag-row .bag-ic img')].filter(e=>/art\\/items\\//.test(e.getAttribute('src'))).map(e=>e.getBoundingClientRect().width)")
+    if not pics or any(w != 36 for w in pics): raise Exception(f'the Bag rows’ item pictures: {pics} (36 px each)')
+    pg.evaluate(nav_tap('lab'))
+    need('lab again', screen('lab', '.lab-sec .lab-row'))
     # the world is the base view: the open tab tapped again, or Esc, goes back to it
     pg.evaluate(nav_tap('lab'))
     need('the world (the open tab again)', screen('walk', '#walkHero'))
