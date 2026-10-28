@@ -53,8 +53,11 @@ import {
 import {
   musicLayerArc,
   musicLayerBattle,
+  musicLayerBusker,
   musicLayerFight,
   musicLayerFightStart,
+  musicLayerListen,
+  musicLayerPan,
   musicLayerWalk,
   musicLayerWeather,
 } from './logic/music-layers.js';
@@ -113,6 +116,7 @@ expose({
   battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
   battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
+  buskerCase: [() => buskerCase, v => (buskerCase = v)],
   buskerSongNear: [() => buskerSongNear, v => (buskerSongNear = v)],
   cryPlay: [() => cryPlay, v => (cryPlay = v)],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
@@ -123,6 +127,7 @@ expose({
   jinglesPrepare: [() => jinglesPrepare, v => (jinglesPrepare = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
+  musicBuskerNow: [() => musicBuskerNow, v => (musicBuskerNow = v)],
   musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
   musicLayersIntensity: [() => musicLayersIntensity, v => (musicLayersIntensity = v)],
@@ -402,14 +407,43 @@ function musicState() {
   };
 }
 /* HB-10d: near the square's busker (a resident who busks, logic/square-day.js squareBusker) your last run's region
-   theme plays in place of the town's own song, within rules.json square.busk.near metres of the busker's case */
+   theme plays in place of the town's own song. SND-13: only when you stop to listen (still within rules.json
+   square.busk.near metres for 3 s, until you are 2 m further off: musicBuskerNow); passing by, its accordion plays inside Copperleaf's song instead (the busker layer) */
 function buskerSongNear(run, sc) {
   const K = RULES.square && RULES.square.busk;
-  if (!K || run || !sc || sc.indoor || typeof walkView === 'undefined' || !walkView.pl) return null;
-  if (!squareBusker(saveData.meta, /** @type {any} */ (RESIDENTS))) return null;
-  const c = (sc.props || []).find(p => p.k === 'busker_case');
-  if (!c || Math.hypot(c.x - walkView.pl.x, c.z - walkView.pl.z) > K.near) return null;
+  if (!K || run || !sc || sc.indoor || !soundEngine.busk || !soundEngine.busk.listen) return null;
   return squareBuskSong(saveData.meta.history, K.songs);
+}
+/* SND-13: the busker's case in this scene, while someone busks there: the resident who busks (HB-10d, RS-5), or,
+   while no resident in the data busks yet, the case alone (simulated: a fixed spot) */
+function buskerCase(run, sc) {
+  if (run || !sc || sc.indoor || typeof walkView === 'undefined' || !walkView.pl || !saveData) return null;
+  const c = (sc.props || []).find(p => p.k === 'busker_case');
+  if (!c) return null;
+  const R = /** @type {Record<string, any>} */ (RESIDENTS || {}),
+    anyBusks = Object.values(R).some(r => r && r.busk);
+  return !anyBusks || squareBusker(saveData.meta, /** @type {any} */ (R)) ? c : null;
+}
+/* SND-13: the busker as you pass (logic/music-layers.js): its level by distance (in earshot under 8 m, out past 9,
+   full within 2 m), its pan from where it stands, and whether you stopped to listen */
+function musicBuskerNow(sc, stillSec) {
+  const B = soundEngine.busk || (soundEngine.busk = { on: false, listen: false, level: 0, pan: 0 }),
+    run = typeof saveData !== 'undefined' && saveData ? saveData.run : null,
+    c = buskerCase(run, sc),
+    P = c ? soundPlacement(c.x, c.z, 1e6) : null;
+  if (!P) return Object.assign(B, { on: false, listen: false, level: 0, pan: 0 });
+  const r = musicLayerBusker(P.d, B.on);
+  return Object.assign(B, {
+    on: r.on,
+    level: r.level,
+    pan: musicLayerPan(P.pan),
+    listen: musicLayerListen(
+      P.d,
+      stillSec,
+      B.listen,
+      RULES.square && RULES.square.busk ? RULES.square.busk.near : undefined
+    ),
+  });
 }
 export function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
@@ -1361,13 +1395,17 @@ export function updateAmbience() {
 function musicLayersNow(sc, E, moving, night) {
   const now = performance.now();
   if (moving || soundEngine.walkAt == null) soundEngine.walkAt = now;
-  const W = musicLayerWeather(E, !sc || !!sc.indoor);
+  const W = musicLayerWeather(E, !sc || !!sc.indoor),
+    still = (now - soundEngine.walkAt) / 1000,
+    busk = musicBuskerNow(sc, still);
   return {
-    walk: sc ? musicLayerWalk(moving, (now - soundEngine.walkAt) / 1000) : 0,
+    walk: sc ? musicLayerWalk(moving, still) : 0,
     rain: W.rain,
     snow: W.snow,
     storm: W.storm,
     night: Math.round(night * 50) / 50,
+    busker: busk.level,
+    buskerPan: busk.pan,
     ...musicLayersIntensity(),
   };
 }

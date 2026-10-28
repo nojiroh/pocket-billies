@@ -106,6 +106,8 @@ test('listening to the busker: still within 5 m for 3 s, until 7 m off', () => {
   assert.equal(musicLayerListen(6, 9, false), false);
   assert.equal(musicLayerListen(6, 0, true), true);
   assert.equal(musicLayerListen(7.5, 0, true), false);
+  assert.equal(musicLayerListen(5.5, 3, false, 6), true, "rules.json's near");
+  assert.equal(musicLayerListen(7.5, 0, true, 6), true);
   assert.equal(musicLayerPan(0.33), 0.35);
   assert.equal(musicLayerPan(-3), -1);
 });

@@ -172,13 +172,14 @@ export function musicLayerBusker(d, on) {
 }
 
 /**
- * whether you are listening to the busker (then its whole song, the last run's theme, plays): you stood still within 5 m
- * for 3 s, and until you are 7 m off
- * @param {number} d @param {number} stillSec @param {boolean} was @returns {boolean}
+ * whether you are listening to the busker (then its whole song, the last run's theme, plays): you stood still within
+ * `near` m (rules.json square.busk.near, 5) for 3 s, and until you are 2 m further off
+ * @param {number} d @param {number} stillSec @param {boolean} was @param {number} [near]
+ * @returns {boolean}
  */
-export function musicLayerListen(d, stillSec, was) {
+export function musicLayerListen(d, stillSec, was, near = MUSIC_LAYER_BUSKER.listen) {
   const K = MUSIC_LAYER_BUSKER;
-  return was ? d < K.leave : d < K.listen && stillSec >= K.listenSec;
+  return was ? d < near + (K.leave - K.listen) : d < near && stillSec >= K.listenSec;
 }
 
 /**
