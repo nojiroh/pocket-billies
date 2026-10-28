@@ -623,7 +623,7 @@ const FIGURE_PORTRAIT_PPM = 160;
  * blinks), cut from the top of their head to a little below the shoulders. A canvas, or null while the figure or the
  * baker isn't ready. Baked every call (a dialogue keeps its own).
  */
-function figurePortrait(who, frame = 0, turn = 0.82) {
+function figurePortrait(who, frame = 0, turn = 0.9) {
   const Fig = figureDef(figureFor(who));
   if (!Fig) return null;
   const V = figureView(Math.PI * turn, 0, (12 * Math.PI) / 180, 32),
