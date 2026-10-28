@@ -168,7 +168,7 @@ town node needs it.
   your figure) done 2026-10-28 on `claude/ui-18-map-clutter`; UI-17 (alive: idle life kept to two loops a screen and
   counted by a test, the 7 s glint, the Coats' and rare frames' foil, today's forecast icon, the Map's breathing
   places and bobbing pin, low HP on opacity, catch and level-up bursts, the boss's name banner) done 2026-10-28 on
-  `claude/ui-17-idle-life`; the browser and phone checks wait until the UI plan is done (the owner's word).
+  `claude/ui-17-idle-life`; Part 2 checked 2026-10-28 on `claude/ui-checks-all` (every skipped browser check run on all of Part 2 merged, the fixes they called for, the gallery's baselines remade; one draft PR into main brings every Part 2 PR); the owner's phone checks next (HANDOFF, "Part 2 checked").
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.

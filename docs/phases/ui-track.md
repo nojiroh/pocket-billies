@@ -829,6 +829,16 @@ plan is done.
   640 held, 180 out). `<pb-name-banner>` and `pbNameBanner(host, {name, kicker, tone, hold})` (ui-run-kit.js) are
   the one component RL-14b's stage intro and VFX-16's VS splash call.
 
+## Part 2 checked (2026-10-28, `claude/ui-checks-all`, a draft PR into main)
+Every browser check the steps skipped, run once on all of Part 2 merged (with WM-5b, WM-6, SY-1..SY-3 and VFX-5):
+smoke 7 of 7, check-fast 40 of 42 (the 2 are main's), the gallery green on its remade baseline, the full quick check
+with only main's reds left, the Studio check's UI steps green (its full run is not green on main either here). Fixed:
+the Prime ★ and the Map's fold (smoke's piece ceilings), the blur counter (it sees the bars; 3 besides them), UI-12's
+palette step written (it found the Actions button's ink in dark mode and the Buddy pink on cream), the Studio's
+Inspect preview under the taller bar, the Studio music step's tab, the run Map's 7 s stall on opening (UI-8c's icon
+readbacks waited on the GPU), UI-16a's sounds in the sound baseline. Details and the owner's phone list: HANDOFF,
+"Part 2 checked".
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
@@ -892,7 +902,7 @@ As run (2026-10-27 to 28):
   - UI-18 (#298), after the world map track's WM-5b (#293) and WM-6 (#296), which the owner asked to start;
   - UI-16b (#299), with the style track's SY-1 to SY-3 (#289) and the VFX track's VFX-5 (#295) merged in;
   - UI-17 (#300);
-  - then the check session.
+  - then the check session (`claude/ui-checks-all`, 2026-10-28): Part 2 checked, see "Part 2 checked" above.
 
 ## UI-11: the colour code as data (the plan, 2026-10-27)
 Built on the session's own branch (a cloud session pushes only there), from main, which already holds `track/ui`;

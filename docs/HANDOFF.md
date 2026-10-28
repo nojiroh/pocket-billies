@@ -2,6 +2,158 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
+Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
+step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines
+kept, two of UI-8b's HANDOFF lines that earlier merges had dropped put back); `track/style` at SY-3's HANDOFF commit
+06d0baa (#289; the branch has moved on to SY-4 and SY-5, which are not Part 2 and stay out); `ccr-03a15a70-nd3yqu`
+(#278, twice: it gained "the waves as run" during the session). hooks.js and art-code-refs.json were already in step.
+No Plan Mode (the owner's standing instruction for the UI plan): the plan was written as a message and carried out.
+- **Part 2, one line a step:**
+  - UI-8b: the bottom bar's minimap tile 232 x 184 standing, out of the bar's frame; 112 px walking; `--nav-h`.
+  - UI-8c: the run map's ten place icons as 36 px pixel badges (bowl pins and `pb-node`), the Map's buttons as 44 px
+    chips, place names in Jersey 15.
+  - UI-11: the colour code as data (`signals`, `--sig-*`), its checks, the Studio's Colour code group.
+  - UI-12: Field Guide by default; Copper Grove+ and Bureau Night in Settings' Palette row; `--c-ink`.
+  - UI-13: the marks' glyphs, the nine types at one lightness, the teal heart, the bolt for storms only.
+  - UI-14a: the marks kit (`pb-tag`, `pb-chip`, `pb-proc`, `pb-info`, rarity, Colour shapes patterns).
+  - UI-14b: the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, Prime teal).
+  - UI-15: less clutter in battle and walking (the field strip, "+N", long-press details, the fold).
+  - UI-16a: the feedback motions, four UI sounds, Animation Calm.
+  - UI-16b: battle events (stamps, rises and falls, blips, effect pips, banners).
+  - UI-17: idle life (two loops a screen at most) and big moments (bursts, the boss banner).
+  - UI-18: less clutter on the Map (solid panels, Give up in ⋯, the folded place card, towns teal).
+  - With them: WM-5b (town sizes, services, names) and WM-6 (districts, landmarks, route numbers), SY-1 (flashes follow
+    the settings), SY-2 (damage numbers by the hit), SY-3 (the Bureau's emblem and `pb-stamp`), VFX-5 (attack lunges).
+- **Checks run** (Python Playwright 1.63.0 installed; the pinned 1.56.0 can't find the container's Chromium):
+  - lint, typecheck, format:check, check:data, check:modules, build, check-data-text: pass. `npm test` 1632 of 1632
+    (99 s here, cold); `npm run test:slow` 108 of 108 (238 s).
+  - smoke: 7 of 7 after the fixes (341 s on the last run). Blurred surfaces per screen besides the two bars (with
+    them): walk 1-2 (3-4), map 0 (2), team 3 (5), guide 3 (5), profile 2 (4), shop 3 (5), battle 0 (0). Pieces per
+    screen: walk 14-15, map 25, team 29, guide 39, profile 55, shop 66, battle 23 (counted once the move buttons have
+    risen in). The palette step: 162 texts read, none under 3:1.
+  - check-fast: 40 of 42 (1489 s). The 2 reds are main's: the Studio's `art/billionaires/*.png` 404s (its world map
+    look and Camera section) and the landmark field without Auto.
+  - The full quick check: 38 of 42 after the fixes (1705 s; the first run, before them, 37 of 42). The 4 reds are
+    main's or load: the Terraces floating station, RL-8 ("the town's shop has no Perk" this run; "crossed into
+    Thicket Route but its view never showed" the run before), room light in the walking step, and Postcards (passes
+    alone, here and on main, as SY-3 saw). Every UI, battle, map, palette, sound and phone step passes.
+  - The Studio check: `--only=ui` passes; `--only=ui_screens` passes (after the fix below; 2 hangs in 6 runs alone,
+    see Found); `--only=music` passes. The full run gets through every step up to ui_screens and music; it then
+    stopped on a hang at a preview click (main does the same, below). Main's full run stops earlier still, at the
+    story preview's Pick the spot (2 of 2 runs here).
+  - The UI gallery: 129 pictures, every one matching the remade baseline (two runs).
+  - check-sound for the nine UI sounds: 0 changed after the baseline below.
+  - The Graphics bench: smoke's "graphics test ready (not run)" passes (125 steps over 23 settings, the report saves
+    without names). The frame check itself is the graphics test, which docs/graphics-bench.md and TESTING.md keep for a
+    person on a real device ("Claude's checks never run it": software drawing makes its numbers meaningless), so it is
+    on the phone list below.
+- **Found and fixed** (one cause per commit, each with the check that showed it):
+  - Smoke, pieces: team 30 over its ceiling 28. UI-14b's Prime tag held its ★ in a `<b>` of its own (two pieces for
+    one tag): the ★ is now the tag's `::before` (the sheet's ribbon too). Team then 29: the lead card's "Common" pill,
+    the owner's answer 9, so the ceiling is 29 (to review below).
+  - Smoke, pieces: map 26 over 25. UI-18's fold button was a word and a chevron; now the word alone.
+  - The blur counter (UI-18's finding): `uiBlurCount()` walks shadow trees and reads `::before`/`::after`, so the top
+    bar's glass and the bottom bar's count; `uiBlurCount({bars:false})` leaves the two bars out, and smoke holds each
+    screen to 3 besides them. The shop's old ceiling (5) went: every screen is at 3 or under.
+  - UI-12's smoke step, never written: the palettes step (Field Guide, Copper Grove+, Bureau Night; light and dark;
+    walk, Team, Guide, profile). It found: the walk's Actions button in light text on gold in dark mode, 1.9:1 (the same
+    on main; now `--c-ink`), and the Buddy tag's pink 4.1-4.4:1 on the three light surfaces (UI-12's cream; it passed
+    on main's white): the light Profile pink #c24a86 -> #b03d78, 5.0:1 or more.
+  - The Studio check's ui_screens: with Inspect on, the UI preview shrank to 364 px, and UI-8b's 192 px bar covered
+    the Team screen and caught the tap. Inspect now keeps the frame at least 520 px (studio.css), and the step taps the
+    card's corner.
+  - The Studio check's music step: the section opens on the tab last used, and the full run left it on Where they
+    play (seen in a picture of the failure). The step now picks Songs first.
+  - The full check's "Run map music hears the forecast" (here every time; main passes): a run's Map tab blocked the
+    page 7.3 s on opening (main 1 s). A CPU profile put 4.3 s in getImageData: UI-8c's pins read each 36 px icon back
+    from a GPU canvas, waiting on the bowl's shader compiles. Both of UI-8c's readbacks (the bowl and `pb-node`) now
+    use `willReadFrequently`: the Map's first filter comes after 0.44 s. Likely a real gain on phones too.
+  - The full check's "Song fingerprints": UI-16a's four sounds (sheet, flip, count, toast) were not in the sound
+    baseline; written for the nine UI sounds, the five already there unchanged.
+- **Main's, left as they are** (each run on main, failing the same way): the Terraces floating station
+  (`train_station` in Copperleaf); RL-8's "crossed into Thicket Route but its view never showed"; the walking step's
+  settings tabs (main fails it on every run here; in the full run here it stopped one line earlier, on room light,
+  which passes alone, the known one); check-fast's two Studio steps (above). The Studio check's preview hang (a click
+  on the Dialogue view times out while the game in the preview switches screens) happens on main too (1 of 1 runs of
+  `--only=ui_screens` there), and main's full Studio run stops at the story preview's Pick the spot (2 of 2).
+- **Picture baselines:** the gallery's remade once, in a commit of its own after the fixes (129 pictures; 48 that
+  differed, 28 new). Changed on purpose: marks-* and alive (new sections), pills, plates, team-rows, build and bars
+  (UI-13's types and glyphs, UI-14b's tags, rarity, the teal heart, Prime), picks and payout (rarity frames, ribbons,
+  the face-down card), run-nodes (UI-8c's badges), battle and messages in dark (UI-15's dark glass, Field Guide),
+  stamps (SY-3 pictured them before Field Guide became the defaults), loading (differs run to run on main too). The
+  quick check's baseline (`validation/quick-baseline/`) is git-ignored and was absent in this container, so there is
+  nothing to commit for it: the full check compared nothing, and its pictures were looked at instead (below).
+- **Looked at:** every gallery section at 390 px in Field Guide, Copper Grove+ and Bureau Night, light and dark, and
+  the quick check's 35 pictures (the phone's eight screens, battles, rooms, weather, the palettes step's Bureau
+  Night). One fix came of it: phone-battle showed an empty move panel because the picture was taken while UI-16a's
+  buttons were still rising in (the game was right; smoke now waits for the screen's animations before the picture
+  and the counts). Seen but not changed: at 390 px the gallery's selected pick card loses 2 px of its ring at the
+  section's edge (the gallery's tight row, not the game); the lead card's name in common grey (#5F6469) reads quieter
+  than before (the owner's rarity rule).
+- **Do not break (CLAUDE.md):** Start-Game (smoke's phone flow: the fall, the dressing room, a starter, the welcome
+  sheet, Copperleaf), phone mode (smoke's 390 x 844 phone pages and the palettes step), the Studio (check-fast's "The
+  Studio loads", `--only=ui`, the full run's steps), the in-game full test (smoke's Shaders step, nothing saved while it
+  runs, the save written back) and the exported debug log (smoke exports it: 183 KB, a planted trainer name and Billie
+  nickname absent; its keys are game, device, graphics, state, load, boot, hitches, summary, bench, errors, events,
+  samples, screenshot; `state` holds counts and preferences, `palette` and `motionLevel` among them, no save, names or
+  step history; the "steps" in it are frame-timing steps) all pass.
+- **Decided for the owner, to review:**
+  - **The blur budget is 3 besides the two bars** (the counter now sees them; the budget was set while they existed).
+  - **Team's piece ceiling 28 -> 29** for the lead card's "Common" rarity pill (the owner's answer 9). Hiding the pill
+    for common would keep 28.
+  - **The Prime ★ drawn by CSS** (`::before`, empty alt text), so a tag is one piece; same look.
+  - **The Map's fold is "More"/"Less" without a chevron.**
+  - **Smoke counts the battle once its buttons have risen in** (battle 23, at its ceiling of 23).
+  - **Profile pink in light mode #b03d78** (was #c24a86): it also tints the profile ring, the badge dot and the title's
+    profile accent a shade darker.
+  - **The Actions button's word in `--c-ink`** on its gold in every palette.
+  - **The Studio's Inspect keeps the UI preview at least 520 px tall.**
+  - **The Graphics bench's frame check is left to the phone** (the project's rule for the graphics test).
+  - **SY-4 and SY-5 stay out of this branch** (they came on `track/style` after Part 2; #289 brings them).
+- **Risky:** the palette step adds about 110 s to smoke (302 s now). Glass is read as its fill over mid-grey, so its
+  AA notes (about 70, the Guide's secondary text at 3.5-4.4:1) are estimates, not findings. The ui_screens preview hang
+  is still there (main's too); the full Studio run is not green in this container on either branch.
+- **The PRs, in merge order** (each shows the earlier ones' commits until they merge; merging this one PR into main
+  brings all of them, the world map, style and VFX pieces included):
+  1. #276 UI-8b (`track/ui`); 2. #278 UI-10's follow-up (docs); 3. #280 UI-11; 4. #282 UI-12; 5. #281 UI-8c;
+  6. #284 UI-13; 7. #286 UI-14a; 8. #288 UI-14b; 9. #294 UI-15; 10. #297 UI-16a; 11. #293 WM-5b (`track/worldmap`);
+  12. #296 WM-6 (into `track/worldmap`); 13. #298 UI-18; 14. #289 SY-1..SY-3 (`track/style`, which now also holds
+  SY-4 and SY-5: merging #289 brings those too); 15. #295 VFX-5 and VFX-7 (`track/vfx`, which now also holds VFX-8);
+  16. #299 UI-16b; 17. #300 UI-17; 18. this PR. Merging only this PR brings Part 2 and SY-1..SY-3, VFX-5, VFX-7,
+  WM-5b and WM-6, but not SY-4, SY-5 or VFX-8 (still on their own PRs).
+- **Next:** the owner's phone checks below; then merge (this PR alone is enough). The style track's SY-6 can reuse
+  `pb-foil`; VFX-16 and RL-14b can call `pbNameBanner`.
+- **Tags to suggest** (sessions can't push tags): `ui-8b-done`, `ui-8c-done`, `ui-11-done` .. `ui-18-done` on their
+  entries' commits, and `ui-part-2-done` on this entry's commit.
+- **The owner's phone checks** (from every Part 2 entry, by screen):
+  - **Everywhere:** the three palettes (Settings, Display, Palette), light and dark; the glint every 7 s and the foil on
+    rare rows and Coats; Animation Full, Calm (no idle loops, the battle camera still) and Reduced (fades only); Flashes
+    off softening the glint and foil; the press squash, the sheet sliding up, tick-ups and fly-to; the four new sounds
+    (sheet, flip, count, toast) and the stamp's thunk; Colour shapes on and off; the types' look and the glyphs at
+    11-14 px; the teal heart; the Profile pink (now darker).
+  - **The bottom bar:** the 232 x 184 tile's size and its marks; the compact 112 px tile walking and its timing; frame
+    cost of the bigger minimap; the marks at 232 px (UI-8c kept the minimap's marks).
+  - **Walk:** the arrival title's timing, the place card's fold, the top bar's glyph, the hint fading, the Actions
+    button's bob (only when something is new) and its dark ink in dark mode; a room (Go outside while folded).
+  - **The run's Map:** the markers at 28 and 34 px and their sharpness, the glyphs (repaint in the Studio: Art, UI
+    icons, node-*), the gold rim and glow where you stand, the names in Jersey 15 at 13-14 px and whole beside your
+    figure; the chips' tap feel; the look-around group above the folded card; ⋯ then Give up; More and Less; header and
+    card solid in all three palettes; the breathing places and the pin's bob; today's forecast icon; frame rate with the
+    Map's life playing; how fast the Map opens (should be quicker now).
+  - **The hub map:** towns teal; "Route 1" and towns' names clear of you.
+  - **Battle** (by day and night): the dark glass, the field strip and tapping a chip, the quiet command row; holding
+    a move (420 ms, the panel's place); tags on the plates at 16 px, "+N"; a status stamping on, boosts rising, drops
+    falling; the blips' place and time; the effectiveness banners' size and slant; Alpha's red; the boss's name banner;
+    the catch and level-up bursts; the low-HP pulse; the lean, your own Billie's afterimage, the dash ribbon (Quick
+    Strike, Zip); damage numbers by the hit and your HP rolling.
+  - **Team, the sheet, Bag, shop, Perks, Workshop, Gene Bank, picks, payout:** status tags at 16 and 22 px, rarity frames
+    and the "Common" pill on rows and cards, Prime's teal ★, the prism Coat, the kind ribbons, the face-down pick that
+    turns over, the payout's tick-ups; HP under half in light mode (#9A5505 on Team cards: `hpMid` if it reads badly).
+  - **Run towns:** a village and a town (the stall, the second giver, the districts, the clock tower and park), frame
+    times in a 3 x 2 town; route numbers on signposts.
+  - **The Graphics bench's frame check** (debug menu, Tests and performance): frame cost of masks, motions and blur.
+
 ### UI track UI-17 - alive: idle life and big moments (two idle loops at most, glint, foil, forecast, the Map's life, low HP, bursts, the boss banner) - 2026-10-28
 Branch `claude/ui-17-idle-life`, made from UI-16a's `claude/ui-16a-motion` (main plus every finished UI step through
 UI-16a: draft PRs #276, #281, #280, #282, #284, #286, #288, #294 and #297). Merged in, in order (merges, not rebases):
