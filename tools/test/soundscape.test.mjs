@@ -18,6 +18,7 @@ import {
   soundscapeMidi,
   soundscapeNearest,
   soundscapePreview,
+  soundscapeSplash,
   soundscapeTide,
   soundscapeVoices,
   soundscapeWaves,
@@ -316,4 +317,19 @@ test('the preview: a recipe at a distance as the game would set it; a fall by it
   assert.equal(V[0].level, soundscapeLevel(3, 30, true));
   assert.ok(V[1].level > V[2].level, 'a 12 m fall louder than a 3 m one at 10 m');
   assert.equal(V[2].level, soundscapeLevel(10, 30));
+});
+
+test('a splash: bigger means longer, louder and more bubbles, bigger ones; seeded', () => {
+  const D = JSON.parse(readFileSync(new URL('../../game/data/soundscape.json', import.meta.url), 'utf8'));
+  const small = soundscapeSplash(D.splash, 0.1, ambienceRandom(4)),
+    big = soundscapeSplash(D.splash, 1, ambienceRandom(4)),
+    sum = a => a.reduce((s, b) => s + b.gain, 0),
+    low = a => Math.min(...a.map(b => b.midi));
+  assert.deepEqual(soundscapeSplash(D.splash, 1, ambienceRandom(4)), big);
+  assert.ok(big.hits[0].d > small.hits[0].d && big.hits[0].gain > small.hits[0].gain);
+  assert.ok(big.bubbles.length > small.bubbles.length && sum(big.bubbles) > sum(small.bubbles));
+  assert.ok(low(big.bubbles) < low(small.bubbles), 'bigger bubbles ring lower');
+  assert.ok([...small.bubbles, ...big.bubbles].every(b => b.bank === D.splash.bubbles.bank && b.at >= 0.01));
+  /* sizes past the ends are the ends */
+  assert.deepEqual(soundscapeSplash(D.splash, 3, ambienceRandom(4)), big);
 });

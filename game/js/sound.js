@@ -7,7 +7,16 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { cutscene, mapIdAt, provide, soundscapeHere, soundscapeStart } from './hooks.js';
+import {
+  cutscene,
+  mapIdAt,
+  provide,
+  soundscapeFish,
+  soundscapeHere,
+  soundscapeSplashPlay,
+  soundscapeStart,
+  soundscapeWade,
+} from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from './game-data.js';
 import { isRobotSp } from './logic/fighters.js';
@@ -42,6 +51,7 @@ import {
   mapById,
   stepWallAt,
   terrainAt,
+  wadeDepthHere,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -484,6 +494,13 @@ export function soundEffect(name, o = {}) {
     case 'step':
       ambienceStepPlay(o.ter || 'g', t);
       break;
+    /* SND-10: the water you touch (soundscape-here.js): a splash by size or name, fishing's sounds */
+    case 'splash':
+      soundscapeSplashPlay(o.size ?? 0.5, t);
+      break;
+    case 'fish':
+      soundscapeFish(o.k);
+      break;
     case 'throw':
       synthVoice(F, { type: 'p25', freq: 600, t, dur: 0.18, vol: 0.06, slide: 2.4 });
       synthNoise(F, { t, dur: 0.15, vol: 0.05, hp: 3000 });
@@ -742,6 +759,10 @@ setInterval(() => {
     if (g < footstepAt) footstepAt = g; /* a new view starts its count again */
     if (g - footstepAt < FOOTSTEP_M) return;
     footstepAt = g;
+    /* SND-10: on Surf the wake plays instead of steps; wading splashes by its depth (soundscape-here.js) */
+    if (P.surf) return;
+    const wd = typeof wadeDepthHere === 'function' ? wadeDepthHere(P.x, P.z) : 0;
+    if (wd > 0 && soundscapeWade(wd)) return;
     let ter = typeof terrainAt === 'function' ? terrainAt(P.x, P.z) : 'g';
     /* v18: hollow boards on wooden and rope bridges, stone on stone bridges and stairs */
     if (typeof bridgeAt === 'function' && bridgeAt(P.x, P.z) != null) {
@@ -1773,8 +1794,11 @@ export function soundEffectAt(name, x, z, o = {}) {
   const F = g;
   const k = o.k;
   if (name === 'plop') {
-    synthVoice(F, { type: 'sine', freq: 900, t, dur: 0.08, vol: 0.12, slide: 0.35 });
-    synthNoise(F, { t: t + 0.03, dur: 0.12, vol: 0.06, bp: 1200, q: 1 });
+    /* SND-10: a splash by its size (a frog's 0.3, a fish's 0.4, a diving bird's 0.55; soundscape-here.js) */
+    if (!soundscapeSplashPlay(o.size ?? 'plop', t, F)) {
+      synthVoice(F, { type: 'sine', freq: 900, t, dur: 0.08, vol: 0.12, slide: 0.35 });
+      synthNoise(F, { t: t + 0.03, dur: 0.12, vol: 0.06, bp: 1200, q: 1 });
+    }
   } else if (name === 'rustle') synthNoise(F, { t, dur: 0.18, vol: 0.035, bp: 2600, q: 0.5 });
   else if (name === 'door') {
     synthVoice(F, { type: 'sawtooth', freq: 170, t, dur: 0.24, vol: 0.018, slide: 1.35 });

@@ -1,5 +1,5 @@
 {
- "about": "Sound track SND-10: the world's sounds as recipes (sound.js plays them; logic/ambience-sound.js and logic/soundscape.js hold the logic). beds: a place's beds of sound, each a few layers of the beds' own pink or brown noise through filters [type, Hz, Q, gain dB] at a gain, with drift (what wanders: the gain or a filter's frequency, by depth, a new value every min-max seconds); bus world or amb (the World or Ambience slider); trim from tools/check-sound.py --loudness; tone a low hum (Hz); events crickets or crackles at eventGain. SND-10, water: banks are baked once (logic/sound-bake.js through the tracker's bank): bubbles (van den Doel) at every pitch, a drop's rise and a bubble's, and a babble loop (after Farnell). kinds: each water kind's recipe and which of its cells sound (its shores, or all of them); running: a river line's recipe by width and rapids; falls: a placed fall's by height, its plunge pool's and the automatic cascades'; fountain; wake (Surf riding) and rainOnWater (rain on water surfaces). water: the recipes, each heard within range m (line: a river or a shore, falling off slower), its nearest `voices` playing, with a trim from the loudness report, a reverb send, bed layers (as beds'), a baked texture played from a random point and events (bubbles, laps at a bank, the surf's waves on the tide); byHeight: a fall louder and heard further by its height.",
+ "about": "Sound track SND-10: the world's sounds as recipes (sound.js plays them; logic/ambience-sound.js and logic/soundscape.js hold the logic). beds: a place's beds of sound, each a few layers of the beds' own pink or brown noise through filters [type, Hz, Q, gain dB] at a gain, with drift (what wanders: the gain or a filter's frequency, by depth, a new value every min-max seconds); bus world or amb (the World or Ambience slider); trim from tools/check-sound.py --loudness; tone a low hum (Hz); events crickets or crackles at eventGain. SND-10, water: banks are baked once (logic/sound-bake.js through the tracker's bank): bubbles (van den Doel) at every pitch, a drop's rise and a bubble's, and a babble loop (after Farnell). kinds: each water kind's recipe and which of its cells sound (its shores, or all of them); running: a river line's recipe by width and rapids; falls: a placed fall's by height, its plunge pool's and the automatic cascades'; fountain; wake (Surf riding) and rainOnWater (rain on water surfaces). water: the recipes, each heard within range m (line: a river or a shore, falling off slower), its nearest `voices` playing, with a trim from the loudness report, a reverb send, bed layers (as beds'), a baked texture played from a random point and events (bubbles, laps at a bank, the surf's waves on the tide); byHeight: a fall louder and heard further by its height. splash: a splash from small (size 0) to big (1): a low slosh and a brighter one, then a burst of bubbles. touch: the water you touch, as splash sizes (wading at full depth, mounting and leaving Surf, a plop in the water, fishing's cast, nibble, bite, the fish fighting and the catch), fishing's reel clicks and the cast's swish.",
  "beds": {
   "crickets": {"bus":"amb","trim":0.74,"layers":[],"events":"crickets"},
   "leaves": {
@@ -613,5 +613,23 @@
     {"type":"bubbles","bank":"drop","rate":40,"rMin":1,"rMax":3.5,"gamma":3,"beta":2,"level":0.6,"pan":0.6}
    ]
   }
+ },
+ "splash": {
+  "slosh": {"lp":520,"bp":1100,"dur":[0.08,0.4],"gain":[0.04,0.22]},
+  "bubbles": {"bank":"bubble","n":[2,12],"rMin":[1.5,3],"rMax":[4,12],"spread":[0.04,0.35],"level":[0.12,0.45]}
+ },
+ "touch": {
+  "wade": 0.5,
+  "wadeMin": 0.12,
+  "surfOn": 1,
+  "surfOff": 0.7,
+  "plop": 0.3,
+  "cast": 0.18,
+  "nibble": 0.06,
+  "bite": 0.35,
+  "fight": 0.22,
+  "catch": 0.85,
+  "reel": {"every":0.07,"f":3200,"q":2,"d":0.012,"gain":0.03},
+  "swish": {"f":2600,"q":0.7,"d":0.18,"gain":0.05}
  }
 }

@@ -232,9 +232,47 @@ export function soundscapePlayerCreate(c, env) {
           wave(V, E, e);
     });
   };
+  /* a short wash of noise at t into dest: {a, d, f, type, q, gain} (a reel's click, a splash's slosh) */
+  P.hit = (dest, t, h) => {
+    const s = c.createBufferSource(),
+      F = filt(h.type || 'bandpass', h.f, h.q || 0.8),
+      g = c.createGain();
+    s.buffer = h.type === 'lowpass' ? env.noise.brown : env.noise.pink;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(h.gain, t + h.a);
+    g.gain.setTargetAtTime(0, t + h.a, h.d / 3);
+    s.connect(F);
+    F.connect(g);
+    g.connect(dest);
+    s.start(t, r() * (s.buffer.duration - 2));
+    s.stop(t + h.a + h.d * 2);
+    s.onended = () => g.disconnect();
+    P.events++;
+  };
+  /* a splash (logic/soundscape.js soundscapeSplash) at t into dest: its washes and its burst of bubbles, each bubble a
+     little left or right */
+  P.splash = (S, dest, t) => {
+    for (const h of S.hits) P.hit(dest, t + h.at, h);
+    const pans = c.createStereoPanner
+      ? [-0.3, 0.3].map(v => {
+          const q = c.createStereoPanner();
+          q.pan.value = v;
+          q.connect(dest);
+          return q;
+        })
+      : [dest, dest];
+    for (const b of S.bubbles)
+      if (
+        T &&
+        T.sampleShot &&
+        T.sampleShot(pans[b.pan < 0 ? 0 : 1], { inst: b.bank, midi: b.midi, t: t + b.at, vol: b.gain, rate: b.rate })
+      )
+        P.events++;
+  };
   /* the banks this player's recipes use, so the tracker bakes them before they are needed */
   P.banks = () => {
     const ids = new Set();
+    if (env.S.splash) ids.add(env.S.splash.bubbles.bank);
     for (const R of Object.values(env.S.water || {})) {
       if (R.texture) ids.add(R.texture.bank);
       for (const E of R.events || []) if (E.bank) ids.add(E.bank);

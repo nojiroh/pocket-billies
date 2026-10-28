@@ -571,6 +571,236 @@
    "additionalProperties": {
     "$ref": "#/$defs/recipe"
    }
+  },
+  "splash": {
+   "description": "SND-10: a splash from small (size 0) to big (1): a low slosh (low-pass lp Hz) and a brighter one (band-pass bp Hz), each lasting and as loud as the pair's two by size; then n bubbles from the bank, radii rMin-rMax mm, spread over that many seconds, at level",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "slosh",
+    "bubbles"
+   ],
+   "properties": {
+    "slosh": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "lp",
+      "bp",
+      "dur",
+      "gain"
+     ],
+     "properties": {
+      "lp": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "bp": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "dur": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "gain": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    },
+    "bubbles": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "bank",
+      "n",
+      "rMin",
+      "rMax",
+      "spread",
+      "level"
+     ],
+     "properties": {
+      "bank": {
+       "type": "string"
+      },
+      "n": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "rMin": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "rMax": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "spread": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "level": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    }
+   }
+  },
+  "touch": {
+   "description": "SND-10: the water you touch, as splash sizes (0-1): wading at full depth (wadeMin at the edge), mounting and leaving Surf, a plop, fishing's cast, nibble, bite, fight (the fish splashing as you reel) and catch; the reel's clicks (one every `every` s while you hold) and the cast's swish (noise washes: f Hz, q, d s, gain)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "wade": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "wadeMin": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "surfOn": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "surfOff": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "plop": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "cast": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "nibble": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "bite": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "fight": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "catch": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "reel": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "f",
+      "d",
+      "gain"
+     ],
+     "properties": {
+      "every": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "f": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "q": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "d": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      }
+     }
+    },
+    "swish": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "f",
+      "d",
+      "gain"
+     ],
+     "properties": {
+      "every": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "f": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "q": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "d": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      }
+     }
+    }
+   }
   }
  }
 }

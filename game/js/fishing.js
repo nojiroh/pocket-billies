@@ -202,7 +202,8 @@ export function fishStart() {
   };
   addEventListener('keydown', fishing.key);
   addEventListener('keyup', fishing.key);
-  if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+  /* SND-10: the cast's swish and the float landing (sound.js, soundscape-here.js) */
+  if (typeof soundEffect === 'function') soundEffect('fish', { k: 'cast' });
   fishing.last = performance.now();
   fishing.raf = requestAnimationFrame(fishLoop);
 }
@@ -256,10 +257,11 @@ function fishLoop(ts) {
       fishing.phase = 'bite';
       fishing.t0 = ts;
       fishMsg('A bite! Tap now!');
-      if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+      if (typeof soundEffect === 'function') soundEffect('fish', { k: 'bite' });
       if (typeof addRipple === 'function') addRipple(fishing.spot.x, fishing.spot.z, 1);
     } else if (random() < dt * 0.6) {
       fishing.nib = 0.18;
+      if (typeof soundEffect === 'function') soundEffect('fish', { k: 'nibble' });
       if (typeof addRipple === 'function') addRipple(fishing.spot.x, fishing.spot.z, 0.35);
     }
   } else if (fishing.phase === 'bite') {
@@ -269,6 +271,11 @@ function fishLoop(ts) {
     }
   } else if (fishing.phase === 'reel') {
     const hard = fishing.hard || 1;
+    /* SND-10: the reel clicks while you hold; the fish splashes now and then */
+    if (typeof soundEffect === 'function') {
+      if (fishing.hold) soundEffect('fish', { k: 'reel' });
+      if (random() < dt * 0.7 * hard) soundEffect('fish', { k: 'fight' });
+    }
     fishing.zv += (fishing.hold ? 2.6 : -2.2) * dt;
     fishing.zv *= Math.pow(0.15, dt);
     fishing.zone = clamp(fishing.zone + fishing.zv * dt, 0, 0.7);
@@ -383,6 +390,8 @@ function fishDraw(ts) {
   }
 }
 function fishCaught() {
+  /* SND-10: the fish lifted out with a splash */
+  if (typeof soundEffect === 'function') soundEffect('fish', { k: 'catch' });
   const q = fishing.q;
   fishEnd(null);
   if (!q) return;

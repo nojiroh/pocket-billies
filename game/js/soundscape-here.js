@@ -10,12 +10,13 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { SOUNDSCAPE } from './game-data.js';
-import { wadeKindAt } from './logic/wading.js';
+import { WADE_DEPTH, wadeKindAt } from './logic/wading.js';
 import { ambienceBuckets, ambienceRandom } from './logic/ambience-sound.js';
 import {
   soundscapeCells,
   soundscapeCellsFromTiles,
   soundscapeEmitters,
+  soundscapeSplash,
   soundscapeTide,
   soundscapeVoices,
 } from './logic/soundscape.js';
@@ -27,14 +28,20 @@ import { soundscapePlayerCreate } from './audio/soundscape-player.js';
 import { ambience, soundEngine } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
+  soundscapeFish: [() => soundscapeFish, v => ((soundscapeFish = v), provide({ soundscapeFish }))],
   soundscapeHere: [() => soundscapeHere, v => ((soundscapeHere = v), provide({ soundscapeHere }))],
   soundscapeOf: [() => soundscapeOf, v => (soundscapeOf = v)],
   soundscapeRuns: [() => soundscapeRuns],
   soundscapeScenes: [() => soundscapeScenes],
+  soundscapeSplashPlay: [
+    () => soundscapeSplashPlay,
+    v => ((soundscapeSplashPlay = v), provide({ soundscapeSplashPlay })),
+  ],
   soundscapeStart: [() => soundscapeStart, v => ((soundscapeStart = v), provide({ soundscapeStart }))],
+  soundscapeWade: [() => soundscapeWade, v => ((soundscapeWade = v), provide({ soundscapeWade }))],
 });
 /* eslint-enable no-func-assign */
-provide({ soundscapeHere, soundscapeStart });
+provide({ soundscapeFish, soundscapeHere, soundscapeSplashPlay, soundscapeStart, soundscapeWade });
 /* to-module: end */
 /* the scene's emitters in buckets, by scene, made again when the renderer's water grid changes */
 const soundscapeScenes = new WeakMap();
@@ -56,7 +63,54 @@ function soundscapeStart(c) {
     storm: () => (typeof environment !== 'undefined' && environment.on ? environment.storm || 0 : 0),
   });
   T.bankReady(P.banks());
+  /* the water you touch has its own seeded random (never Math.random: logic/soundscape.js soundscapeSplash) */
+  ambience.touchRng = ambienceRandom(0x50d5);
   return P;
+}
+
+/** a splash at t into dest (the World bus unless given): size 0-1, or a name in soundscape.json `touch` */
+function soundscapeSplashPlay(size, t, dest) {
+  const A = ambience.scape,
+    S = SOUNDSCAPE.splash,
+    k = typeof size === 'number' ? size : (SOUNDSCAPE.touch || {})[size];
+  if (!A || !S || typeof k !== 'number' || !soundEngine.ctx) return false;
+  A.splash(soundscapeSplash(S, k, ambience.touchRng), dest || ambience.bus, t ?? soundEngine.ctx.currentTime + 0.01);
+  return true;
+}
+
+/** wading: a splash by how deep you stand (WA-6a), instead of a step's click */
+function soundscapeWade(depth) {
+  const U = SOUNDSCAPE.touch || {};
+  if (U.wade == null) return false;
+  const lo = U.wadeMin ?? 0.1;
+  return soundscapeSplashPlay(lo + (U.wade - lo) * Math.min(1, depth / WADE_DEPTH));
+}
+
+/** fishing's sounds: the cast (a swish, then the float landing), a nibble, the bite, the reel's clicks while you hold
+ * (one every touch.reel.every s however often it is asked), the fish fighting, the catch */
+function soundscapeFish(k) {
+  const U = SOUNDSCAPE.touch || {},
+    A = ambience.scape,
+    c = soundEngine.ctx;
+  if (!A || !c) return;
+  const t = c.currentTime + 0.01;
+  if (k === 'cast') {
+    if (U.swish)
+      A.hit(ambience.bus, t, {
+        type: 'highpass',
+        f: U.swish.f,
+        q: U.swish.q,
+        a: 0.04,
+        d: U.swish.d,
+        gain: U.swish.gain,
+      });
+    soundscapeSplashPlay('cast', t + 0.55);
+  } else if (k === 'reel') {
+    const R = U.reel;
+    if (!R || t - (ambience.reelAt || 0) < R.every) return;
+    ambience.reelAt = t;
+    A.hit(ambience.bus, t, { type: 'bandpass', f: R.f, q: R.q, a: 0.001, d: R.d, gain: R.gain });
+  } else soundscapeSplashPlay(k, t);
 }
 
 /** the scene's emitters in buckets (made once per scene and water grid; the time and counts kept for the debug log) */

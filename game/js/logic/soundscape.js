@@ -48,6 +48,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   soundscapePreview: [() => soundscapePreview, v => (soundscapePreview = v)],
   // @ts-expect-error -- replaced on purpose
+  soundscapeSplash: [() => soundscapeSplash, v => (soundscapeSplash = v)],
+  // @ts-expect-error -- replaced on purpose
   soundscapeTide: [() => soundscapeTide, v => (soundscapeTide = v)],
   // @ts-expect-error -- replaced on purpose
   soundscapeVoices: [() => soundscapeVoices, v => (soundscapeVoices = v)],
@@ -111,6 +113,9 @@ export function soundscapeFindings(S, kinds) {
     const v = /** @type {any} */ (S)[k];
     if (v != null) rec(v, k);
   }
+  const sp = /** @type {any} */ (S).splash;
+  if (sp && (!banks[sp.bubbles.bank] || banks[sp.bubbles.bank].kind !== 'bubble'))
+    out.push(`splash: its bank "${sp.bubbles.bank}" is no bubble bank`);
   for (const [id, R] of Object.entries(W)) {
     if (R.texture && (!banks[R.texture.bank] || banks[R.texture.bank].kind !== 'babble'))
       out.push(`water.${id}: its texture's bank "${R.texture.bank}" is no babble bank`);
@@ -481,6 +486,57 @@ export function soundscapeLaps(E, st, t0, t1, r) {
     st.next += E.every[0] + r() * (E.every[1] - E.every[0]);
   }
   return out;
+}
+
+/**
+ * @typedef {{slosh: {lp: number, bp: number, dur: number[], gain: number[]}, bubbles: {bank: string, n: number[],
+ *   rMin: number[], rMax: number[], spread: number[], level: number[]}}} SoundscapeSplashSpec
+ *   a splash from small (size 0) to big (1): a soft low slosh and a brighter one (each its length and gain between the
+ *   pair's two by size), then a burst of n bubbles from the bank (radii between rMin and rMax mm, spread over that many
+ *   seconds, mostly early), bigger and more of them for a bigger splash
+ */
+/**
+ * a splash's sounds: noise washes ({at, a, d, f, type, q, gain}) and bubbles ({at, bank, midi, gain, rate, pan}); size
+ * 0-1 (a frog's plop 0.3, mounting Surf 1); seeded
+ * @param {SoundscapeSplashSpec} E
+ * @param {number} size
+ * @param {() => number} r
+ */
+export function soundscapeSplash(E, size, r) {
+  const k = Math.min(1, Math.max(0, size)),
+    by = (/** @type {number[]} */ a) => a[0] + (a[1] - a[0]) * k,
+    L = E.slosh,
+    B = E.bubbles,
+    d = by(L.dur),
+    g = by(L.gain);
+  const hits = [
+    { at: 0, a: 0.004 + 0.02 * k, d, f: L.lp * (0.85 + 0.3 * r()), type: 'lowpass', q: 0.7, gain: g },
+    {
+      at: 0.008 + 0.02 * r(),
+      a: 0.003,
+      d: d * 0.6,
+      f: L.bp * (0.8 + 0.4 * r()),
+      type: 'bandpass',
+      q: 0.8,
+      gain: g * 0.6,
+    },
+  ];
+  const bubbles = [],
+    n = Math.round(by(B.n)),
+    lo = by(B.rMin),
+    hi = by(B.rMax);
+  for (let i = 0; i < n; i++) {
+    const rad = lo + r() * (hi - lo);
+    bubbles.push({
+      at: 0.01 + r() * r() * by(B.spread),
+      bank: B.bank,
+      midi: soundscapeMidi(rad),
+      gain: by(B.level) * (0.4 + 0.6 * r()),
+      rate: 0.96 + r() * 0.08,
+      pan: (r() * 2 - 1) * 0.3,
+    });
+  }
+  return { hits, bubbles };
 }
 
 /**

@@ -1607,7 +1607,8 @@
   "bubble": [
    "game/js/logic/sound-bake.js:80",
    "game/js/logic/sound-bake.js:398",
-   "game/js/logic/soundscape.js:118",
+   "game/js/logic/soundscape.js:117",
+   "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:97"
   ],
   "building": [
@@ -1645,8 +1646,8 @@
    "game/js/shop.js:158",
    "game/js/shop.js:168",
    "game/js/shop.js:234",
-   "game/js/sound.js:495",
-   "game/js/sound.js:1731",
+   "game/js/sound.js:512",
+   "game/js/sound.js:1752",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:626",
    "game/js/ui-run-kit.js:83",
@@ -1662,7 +1663,7 @@
   ],
   "crown": [
    "game/js/logic/shaft-pick.js:40",
-   "game/js/walk/effects.js:1090"
+   "game/js/walk/effects.js:1091"
   ],
   "cup": [
    "game/js/logic/placeholder-art.js:280"
@@ -1694,10 +1695,10 @@
    "game/js/walk-control.js:531",
    "game/js/walk-control.js:549",
    "game/js/walk-view.js:332",
-   "game/js/walk-view.js:3540",
-   "game/js/walk-view.js:3729",
-   "game/js/walk-view.js:3840",
-   "game/js/walk-view.js:4161",
+   "game/js/walk-view.js:3542",
+   "game/js/walk-view.js:3731",
+   "game/js/walk-view.js:3842",
+   "game/js/walk-view.js:4163",
    "game/js/walk/frame-items.js:310"
   ],
   "drop": [
@@ -1781,7 +1782,7 @@
    "game/js/minimap.js:82",
    "game/js/self-test.js:3499",
    "game/js/walk-view.js:395",
-   "game/js/walk-view.js:4015",
+   "game/js/walk-view.js:4017",
    "game/js/walk/effects.js:518",
    "game/js/walk/effects.js:672",
    "game/js/walk/effects.js:780",
@@ -1853,7 +1854,7 @@
    "game/js/logic/ui-dials.js:206"
   ],
   "sheet": [
-   "game/js/logic/soundscape.js:109",
+   "game/js/logic/soundscape.js:111",
    "game/js/ui-kit.js:515"
   ],
   "spark": [
@@ -1930,8 +1931,8 @@
    "game/js/unit-card.js:177",
    "game/js/unit-card.js:204",
    "game/js/walk-control.js:307",
-   "game/js/walk-view.js:3540",
-   "game/js/walk-view.js:3729",
+   "game/js/walk-view.js:3542",
+   "game/js/walk-view.js:3731",
    "game/js/walk/prop-look.js:151",
    "game/js/workshop.js:102"
   ],
