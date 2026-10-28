@@ -2,6 +2,94 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-16b - alive: battle events (the plates' marks, stamps, rises and falls, blips, effect pips, banners; one stamp motion; Calm) - 2026-10-28
+Branch `claude/ui-16b-battle-events`, made from UI-16a's `claude/ui-16a-motion` (main plus UI-8b, UI-8c, UI-11 to
+UI-16a; draft PRs #276, #281, #280, #282, #284, #286, #288, #294, #297). Main merged in first (nothing new), then
+`track/style` (#289: SY-1, SY-2, SY-3) and `track/vfx` (#295: VFX-5, VFX-7), as merges. The style merge conflicted
+in docs (both kept), music.json, its schema and logic/ui-sounds.js (UI-16a's four sounds and SY-3's `stamp`: all
+five kept), battle.js's imports, the gallery (both buttons and styles), the Studio's sounds card and the icon count
+(89 + SY-3's bureau = 90). The VFX merge conflicted in docs (VFX-5's and VFX-7's entries added below UI-16a's;
+SY-3 has no HANDOFF entry on `track/style`, only style-track.md's) and logic/smear.js (SY-1's flash rules and
+VFX-5's lunge helpers, both appended at the end: both kept); battle-stage.js merged on its own with both tracks'
+calls. art-code-refs.json and hooks.js remade by their tools. Its PR goes to main and shows all those commits until
+their PRs merge. No Plan Mode (the owner's standing instruction); the plan was written as a message and carried out.
+Details: docs/phases/ui-track.md, "UI-16b as built". **Visible change: the battle's plates, events and banners.**
+- Changed:
+  - **One stamp motion:** after the style merge, UI-16a's motion test failed: SY-3's `pb-stamp` used `:host-context`.
+    Its slam is now motion.css `m-stamp` (and the kit's shadow copy in `runKitMotion`), run as `var(--m-stamp)` (m-fade
+    under Reduced) with `--ease-stamp`; pb-stamp restarts it by toggling a class. The status tags use it too.
+  - **The plates (UI-14b's leftovers):** the tag row is `markRow` + `pb-tag` (status, boosts and drops biggest first,
+    effects; 3 at most, "+N" with the hidden ones' words); `.pl-st` now only says Fainted. `statShortName` is Atk,
+    Def, SpA, SpD, Spe. Alpha in the bad family: plate, turn bar (was gold), aim list. The `.stg` chips' CSS is gone;
+    the gallery's plate shows the tags.
+  - **The battle's report** (logic/battle-engine.js, annotations only, one commit): `actorSnapshot().fx` (effects
+    with turns left; `fieldEffects`) and an event's `by` (what fired; effects.js `fxDamageBy` and `fxSources`). Then
+    the golden record remade alone (see Verified). Tests in effects.test.mjs and battle-engine-state.test.mjs.
+  - **Events** (battle.js): a new status stamps on, a boost rises, a drop falls (motion.css `m-rise`, `m-fall`), a new
+    effect pops; `pb-proc` blips over the plate from `by` ("Bubble Wrap −10%", "Kindling ▲Atk"; a type passive shows
+    its type glyph: pb-proc `type`, `tone`), a shield phase blips "Shield −50%"; the strip's stones wear UI-13's
+    glyph (were the scrap icon) and a delayed hit shows with its turns left; a new battle's strip starts clear (the
+    last battle's stones stayed until the first menu); effectiveness banners slam in at the slant (`hudBanner`;
+    they were text pops, hidden under Reduced).
+  - **Calm:** battle-stage.js's camera breathing, slow roll and idle orbit stop under Calm (`calmMotion`, reading
+    `<html data-motion>`: the Studio runs the stage without the kit, so no ui-kit import there).
+  - ui-lint ceilings lowered: CSS colours 576 -> 564.
+- Found (figures checked):
+  - `statShortName` printed "SP." for both Sp. stats (as UI-14b said); the plate's crimson and the turn bar's gold for
+    Alpha were as the doc said; the aim list's "Alpha" word was a third pink.
+  - The battle did not report short effects or triggers: the snapshot carried only `stg` and the status, and the
+    Perk, held item and Kindling multipliers were silent inside calcDamage. Reading them on the page would have
+    meant re-running the engine's maths, so the engine reports them (the row's own exception: "if an event must be
+    added").
+  - The field strip read stones from the side and showed them with the scrap icon; delayed hits ("mail") were in no
+    UI at all.
+  - VFX-4/5 already stop under Reduced (`reducedMotion`); Calm didn't exist for them (VFX-5's note), and the battle
+    camera's idle loops ignored it.
+- Decided for the owner, to review:
+  - **The engine reports `fx` and `by`** (annotations, no new rolls): the golden record changed in its own commit.
+  - **Effects go after the status and stat tags,** so a full row folds them into "+N" (markRow's order).
+  - **Protect shows as "1 turn"** during the turn it is up (it ends at the turn's end).
+  - **The delayed hit is a strip pip by side** (it lands on whoever is first on that side), shown once the turn that
+    sent it is over, gone when it lands.
+  - **Blips:** two at most per plate, 1.5 s each, over the plate (not beside it: the plates move with the camera);
+    Kindling blips on every physical hit once it has built up; the shield phase blip is mine (RL-14b's shield also
+    shows as a pip with its turns).
+  - **No thunk on a status tag's stamp:** the battle already plays a status sound; the thunk stays pb-stamp's.
+  - **Banners:** Super effective in the caution fill (dark ink), Not very effective in the plates' glass; 4 degrees
+    of slant; the crit keeps its pop (the impact frame is the VFX track's).
+  - **Under Calm, the lunges, afterimages, ribbons and the impact frame play** (they follow a move; Part 2's rule 5,
+    VFX-5's own call); under Reduced they stop, as before.
+- For UI-17 (the stage intro's boss banner, not built here): the battle gives it the boss's `alphaPhase` events (with
+  `shield`), the plates' Alpha look (`.bplate.alpha`, the bad family) and `hudBanner`'s slanted strip if it wants
+  the same shape. For SY-5: a faction label can go in `.pl-bot` beside `.pl-sg`; no Bureau looks were added.
+- Risky:
+  - pb-tags on a plate are new (16 px tall); a row of three with pips may be wider than a 118 px plate.
+  - The blips sit above the plate and may cover the Billie's head or another plate in doubles and triples.
+  - The banner is placed at the target's top like the old pop; near the top of the screen it is clamped to 40 px.
+  - The engine change touches calcDamage's return; nothing reads `by`, but a later engine change must keep it a
+    report.
+  - Nothing here has been seen on a phone.
+- Verified:
+  - lint (ceilings lowered), typecheck, format, check:data, check:modules after each change; `npm test` all pass
+    (the golden record remade). One slip, fixed in its own commit: the banner commit went over two ui-lint ceilings
+    (raw padding, one innerHTML write), which I misread in lint's output until the unit test caught it.
+  - The golden record: loaded old and new, `fx` and `by` removed: all 7 records identical, every end state equal.
+    The new keys hold the Alpha's shield 2 then 1, Kindling, Bubble Wrap x0.9, Power Gloves x1.15, Iron Vest x0.85,
+    Running Shoes' Spe +1, the Leftover Sandwich, Regrowth and Bedrock.
+  - One headless run of the battle fixture (Node Playwright, 390 x 844, not a check): won in 4 turns, a Live Wire blip,
+    two Not very effective banners, PAR stamped on, no page errors, one 404 (the known missing art).
+- Skipped until after UI-18 (the owner's rule), needed later:
+  - check-fast: "A battle plays to the end" and the Voltron (its shield phases: the pip and the blip), the relics
+    battle (Perk blips, the start's stat rises), held items (their blips);
+  - check-quick and smoke: the battle's element count (blips and banners come and go; a count taken while one shows
+    is one or two higher);
+  - the Studio check (its battle preview runs battle-stage.js: Calm reads `<html data-motion>`);
+  - the gallery: the plates section (pb-tags), pb-stamp's stamps (now on m-stamp) and their pictures;
+  - the owner's phone check: tags on the plates at 16 px, the stamp and rise and fall, the blips' place and time, the
+    banners' size and slant, Alpha's red, Calm (the camera holds still), Reduced (fades only).
+- Next: UI-18 (running) and then UI-17; the planning session starts them.
+- Tag to suggest (sessions can't push tags): `ui-16b-done` on this entry's commit.
+
 ### UI track UI-16a - alive: the feedback motions (press, enter, sheet, nudge, done, flip; slide, tick-ups, fly-to; four sounds; Calm) - 2026-10-28
 Branch `claude/ui-16a-motion`, made from UI-14b's `claude/ui-14b-marks-screens` (main plus UI-11, UI-12, UI-13,
 UI-14a, UI-14b and UI-8c; draft PRs #280, #282, #284, #286, #288 and #281). Main merged in first (nothing new), then
@@ -371,6 +459,122 @@ dial, so MAPGEN_VERSION stays 24.
   only if it changes the generator (this session didn't).
 - Next: the owner pushes tag `wm-5-done` and plays a village and a town on the phone (the stall, the second giver,
   frame times); WM-6 (districts, landmarks, signposts and names on the world map, reading runPlaceName); WM-8.
+
+### VFX track VFX-5 - Attack lunges: the lean, afterimages, the dash ribbon - 2026-10-28
+Branch `track/vfx` (main and `ccr-7526d712-gliikp`, PR #290, merged in first, both clean; main was a fast-forward).
+Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options
+taken and listed below. Draft PR #295 (`track/vfx` to main) opened for the track. Tag `vfx-5-done` for the owner (the
+git proxy refuses tag pushes) on this entry's commit.
+- The plan: VFX-5 as Part 1 planned it, built as helpers Part 2's runner (VFX-8) calls: logic/smear.js gets a lunge's
+  lean, its afterimages and the dash list; battle-stage.js gets one callable step (`battleLunge`) that both H-move
+  lunges (the hit and the miss) go through with their old tweens; battle-3d.js draws from it. Nothing added to any
+  move's time.
+- Changed:
+  - logic/smear.js: `LUNGE_GHOSTS` (two looks: fade .5 / .28, glow .35 / .6), `lungeGhostCount` (2 / 2 / 1 / 0 by
+    `battleStage.q.lvl`, none under Reduced motion), `lungeLeanOn`, `lungeLeanFor` / `lungeLean` (the sideways speed
+    between the two newest places, in stage px a ms, x 1, capped at 0.3, half that moving back home, rounded to
+    hundredths and held for its 24 fps cell), `LUNGE_DASH` / `lungeDash`, `lungeRibbonHalf` (0.3 of the Billie's
+    height, 0.12-0.45 m). `smearGhosts` takes the copies' looks, `smearRibbon` a half width; the throw's defaults stay.
+    Five new tests in tools/test/smear.test.mjs (the lean held per cell, the same for the near and far Billie and
+    mirrored for the foe; the afterimages; the quality ladder; the dash ids are real H moves).
+  - battle-stage.js: `battleLunge(i, {dx, dy, dur, ease, delay, backDur, backAt, dash, col})`; the Billie's
+    `lunge` (its window, its way on screen) and `trail`; `battleLungeRecord` in the stage frame after the tweens;
+    `battleLungeLean`, `battleLungeGhosts`, `battleLungeRibbon`; `battleStageFlush` drops the lunges' places (they
+    would jump to the end). The unused `me` in case `move` is gone.
+  - battle-3d.js: the rig item's `shear` is the lean; the afterimages are copies of the rig item (its own posed
+    picture) at the older places with their lean, `fade`, `glow` and `ghost`; `BT.rigRibbons` for dashes.
+    walk-view-gl.js draws them with Part 1's `ribbonPass`. walk/shadows.js, walk/lighting.js and walk/ground-draw.js
+    skip ghosts (no shadow, contact shade or grass push).
+- Where the track file was wrong or vague (checked in the code): the H lunge starts 100 ms in (+30 px in 120 ms eased
+  in, back from 240 ms in 200), not at 0; `uShear` was indeed 0 for every battle rig; there is no dash family in the
+  code or data yet (VFX-8/11), so the six dash moves are a list of ids for now; Part 1's 0.12 m gap means the near
+  Billie (65 px/m) shows one afterimage for its lunge and the far one two; Calm doesn't exist yet in the code
+  (UI-16a), so "plays under Calm" holds by nothing reading it.
+- Decided for the owner, to review:
+  - The lean: at most 0.3 (about 17 degrees at the top), into the lunge; moving back home half as much (it settles
+    rather than leaning back hard). Off at quality 3 with the afterimages (it costs nothing, but Part 1's rule is
+    "every smear thins out").
+  - Two afterimages (one at quality 2), fainter than a throw's three (a Billie is far bigger on screen).
+  - Dash moves = the family table's six (Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It): their
+    ribbon is the type's colour (`TYPE_COLORS[t][0]`, brightened) with the white core, at the Billie's middle.
+  - The miss's lunge smears too (it is the same step).
+  - Under Calm the smears play (Part 2's rule 9). No move is longer.
+- Risky: the near Billie fills much of a phone's screen, so its afterimage may read as a flicker over itself rather
+  than a copy behind; the lean on wide creatures (it bends the whole picture from the feet). A slow device drops the
+  battle's quality to 3 and turns all smears off (seen headless: films need `battleStage.lockQ` and `q.lvl = 0`).
+- Phone checks (listed, not waited for): the lean's strength; your own Billie's afterimage; the dash ribbon's width
+  (Quick Strike or Zip); a normal move's time unchanged; Reduced motion shows none of it.
+- Verified: lint, typecheck, `npm test` 1574 of 1574, check:modules, format:check, check:data (its two bridge
+  warnings are main's), build. A headless film (390 x 844, phone, Quick Strike from both sides, quality locked at 0,
+  the clock slowed): the lean climbs 0.02, 0.09, 0.21 into the hit and settles at -0.09 to -0.03 going home; two
+  afterimages, then one, then none about 125 ms after the lunge; the ribbon shows and erodes; no page errors (one
+  404: data/gamedata.js isn't built in a checkout, and the game then reads the JSON files, data-files.js). Smoke check: 6 of 6 in 252 s. Full quick check: 38 of 41 in 1972 s, every battle step
+  passed (doubles and Alpha, starters, weather, the phone's battle, battle music); the three failures fail on main
+  too (07c9b284, those steps run alone there: 0 of 3): terraces (`train_station` in the air), RL-8's run (crossed into
+  Thicket Route but its view never showed) and the walking step (room light here; settings tabs on main). CI's fast
+  check (`smoke`) is red on three steps that are red on main's latest Check run too (a run's seam, the Studio's world
+  map look and Camera section): one comment on PR #295, one re-run.
+  Python Playwright was missing: 1.63.0 installed (the pinned 1.56.0 can't find the container's Chromium).
+- Next: VFX-8 (anims as data), started by the planning session. It wraps `battleLunge` as the runner's lunge and dash
+  steps and moves `LUNGE_DASH` into battleAnims.json's families.
+
+### VFX track VFX-7 - Part 2 planned: battle effects (research, the owner's answers) - 2026-10-27
+Branch `ccr-7526d712-gliikp` (the session's own, made from main at 07c9b284; main had not moved). Plan Mode, plan
+approved. Docs only, one cause per commit; nothing in the game changed. Tag `vfx-7-done` (for the owner to push) on
+this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle effects".
+- The owner's brief: "Make a plan to improve the art and effects of attacks and other things in battle. Do research
+  online. Make suggestions for additions."
+- The owner's answers (asked this session): Part 2 of the VFX track, VFX-6 folded in; Claude draws the effect art and
+  the owner repaints any in the Studio; all four additions (signature scenes, leader/rival/boss VS intros, battle
+  scars, move sounds); signature scenes and power 100+ moves may run up to 0.5 s longer.
+- Changed: vfx-track.md (a pointer to Part 2 in the title and header; VFX-5's lean and afterimages built as helpers the
+  runner reuses; VFX-6 folded into VFX-8 and VFX-12; Part 1's "anything longer" item answered; Part 2: what a battle
+  shows today with refs, the research, ten art rules, the build, 16 families for all 122 moves, type kits, hit tiers,
+  statuses, the stage, the flow, signature scenes, move sounds, the effect art, budgets, sessions VFX-8..VFX-20, the
+  bugs found, fits with other tracks, risks, not taken, ideas for later, Ask me before, sources); ROADMAP's VFX entry;
+  BRANCHES (this branch; Part 2 on `track/vfx`).
+- Found: the 122 moves share three choreographies picked by category (H, S, X), recoloured by type; icon particles
+  are 30 px/m beside your Billie's ~65 (twice its pixel size), fade smoothly, take a draw and a texture bind each, and
+  never lit anything (only particles with a hex `col` make light); rings, dust and beams are on the 2D canvas over
+  the GL; a rig's hit flash redraws and uploads its canvas every frame; the chromatic flash is a CSS filter over the
+  whole canvas; Flashes doesn't reach the battle; a tap only finishes the text and can't skip an animation.
+- Bugs found (none fixed here; each has its session in the track file): Flashes ignored in battle (fixed meanwhile by
+  the style track's SY-1, #279, `flashFor`; VFX-8 adds only the rate limit); the selection and
+  target rings divide by `R.k2`, which no rig has, so they never draw; a stat drop plays the rising sound (sound.js
+  643 vs the engine's `up: false`); level-up plays on slot 0 (the engine sends `uid`); every status but par and slp
+  shows flames; the XP bar moves a line late (an engine change, golden record remade alone); the reduced-motion tag
+  check misses 'tag crit'; "Dynasty" and "Retail" aren't types; the Studio's particle picker misses 7 types' sprites;
+  `an.t = M.t` writes into the engine's event.
+- Where the review against the code corrected the draft: the stage clock already multiplies by speed (timelines stay
+  in stage ms); KO can't be read from `ev.s` (`refreshLastSnapshot` refreshes only the last event): a look-ahead
+  instead; the pool needs one atlas (`kitPack`, `gpuTexture`, the warm-up) and cutout drawing in GL; the rigs' `uHit`
+  keeps the plain sprite program (the instanced one has no slot); battle lights need fixed keys for Steady lamps;
+  snapping positions buys nothing (the camera moves smoothly), so time is stepped instead; drawn words can't be
+  translated.
+- Pushback, left to the owner (Ask me before): the UI plan says hit-stop only on crits, KOs and super-effective hits;
+  Sakurai's research favours a small stop on every hit, and today's (20-90 ms) costs under 0.1 s. Recommended: keep it.
+- Risky: nothing ships. The numbers (tiers, budgets, ramps) are placeholders; the art will be placeholder art until
+  the owner's repaint; the 56 scenes need storyboards first; the tap that skips (VFX-8) changes the quick check's
+  battle timing (it plays battles at 4x).
+- Verified: every file:line the track file cites printed at this branch's head; the family table checked by script
+  against moves.json (16 families, 122 moves, each once); `npm run lint` (eslint, names, ui-lint at its ceilings,
+  unused CSS, art-code-refs), `npm test` 1569 of 1569, `npm run check:data` (176 files fine; its two warnings,
+  Copperleaf's bridge 3 and test_props_island's bridge 1, are main's). `git diff` shows docs only; no game checks
+  apply to a docs-only change.
+- The owner's standing instruction, after the plan (2026-10-28): "Continue this plan automatically until it is done.
+  Automatically open next steps in new Sessions and automatically approve plans. Make sure you communicate with the
+  sound session about soundtrack things." Recorded in vfx-track.md, "How the sessions run" and "Talking to the sound
+  track": this session starts each step in a new session on `track/vfx`; each step takes the recommended option for
+  every open choice (Ask me before now names one for each, e.g. keep the small hit-stop on normal hits, the target
+  rings on) and lists it under "Decided for the owner, to review"; steps that touch sound message the sound track's
+  planning session (`session_019UpAFxCHyLNWb1TCD6L3vh`) before and after. It agreed (2026-10-28): VFX-19 takes the
+  battle half of its optional SND-16 (moves, hits, throws, catches, hurt sounds, the recall) in a music.json `battle`
+  section of the shape it proposed; SND-16 keeps the rest; its steps message this session when they change battle
+  sounds; SND-13 will read `hitTier` and `koAhead`. Merges to main stay the owner's.
+- The style track (#279) also works in battle: SY-1's flashes, SY-2's numbers, SY-5's Bureau stamps and Notice, SY-6's
+  foil in the sprite shader. The split (vfx-track.md, "Fitting with the style track") was proposed to its planning
+  session (`session_019UpAFyAJSkEVjDLuVMFQkS`) on 2026-10-28.
+- Next: VFX-5 (attack lunges) in a new session on `track/vfx`, started by this session; then VFX-8 (anims as data).
 
 ### UI track UI-14b - the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, pb-chip, Colour shapes) - 2026-10-27
 Branch `claude/ui-14b-marks-screens`, made from UI-14a's `claude/ui-14a-marks-kit` (main plus UI-11, UI-12, UI-13 and

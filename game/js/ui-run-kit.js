@@ -183,6 +183,20 @@ export const runKitMotion = css`
       transform: scale(1.12);
     }
   }
+  /* UI-16b: the stamp (motion.css m-stamp; run it as var(--m-stamp), which is m-fade under Reduced) */
+  @keyframes m-stamp {
+    from {
+      opacity: 0;
+      transform: rotate(calc(var(--tilt, 0deg) + 6deg)) scale(1.9);
+    }
+    55% {
+      opacity: var(--stamp-o, 1);
+      transform: rotate(var(--tilt, 0deg)) scale(0.94);
+    }
+    to {
+      transform: rotate(var(--tilt, 0deg)) scale(1);
+    }
+  }
 `;
 
 /* ---------- the day chip (RL-R2: the owner dropped the deadline; the day clock stays) ---------- */
@@ -1023,6 +1037,7 @@ const PbStamp = class extends LitElement {
         text-transform: uppercase;
         white-space: nowrap;
         opacity: 0.92;
+        --stamp-o: 0.92;
         transform: rotate(var(--tilt));
         /* the rough ink: three grids of pinholes at odd steps, so the gaps never line up */
         -webkit-mask:
@@ -1039,42 +1054,9 @@ const PbStamp = class extends LitElement {
         border: max(1px, 0.05em) solid currentColor;
         pointer-events: none;
       }
-      .ink.a {
-        animation: pb-stamp-a var(--m-base) cubic-bezier(0.5, 0, 0.9, 0.5) both;
-      }
-      .ink.b {
-        animation: pb-stamp-b var(--m-base) cubic-bezier(0.5, 0, 0.9, 0.5) both;
-      }
-      /* reduced motion fades it in (render() reads the game's level: no :host-context, which Safari ignores) */
-      .ink.f {
-        animation: m-fade var(--m-fast) linear both;
-      }
-      /* two names for one slam, so play() can start it again */
-      @keyframes pb-stamp-a {
-        from {
-          opacity: 0;
-          transform: rotate(calc(var(--tilt) + 6deg)) scale(1.9);
-        }
-        55% {
-          opacity: 0.92;
-          transform: rotate(var(--tilt)) scale(0.94);
-        }
-        to {
-          transform: rotate(var(--tilt)) scale(1);
-        }
-      }
-      @keyframes pb-stamp-b {
-        from {
-          opacity: 0;
-          transform: rotate(calc(var(--tilt) + 6deg)) scale(1.9);
-        }
-        55% {
-          opacity: 0.92;
-          transform: rotate(var(--tilt)) scale(0.94);
-        }
-        to {
-          transform: rotate(var(--tilt)) scale(1);
-        }
+      /* UI-16b: the shared stamp motion (motion.css m-stamp; a fade under Reduced, through --m-stamp) */
+      .ink.go {
+        animation: var(--m-stamp, m-stamp) var(--m-base) var(--ease-stamp, ease-in) both;
       }
     `,
   ];
@@ -1100,6 +1082,13 @@ const PbStamp = class extends LitElement {
     clearTimeout(this._timer);
     this.still = false;
     this._go++;
+    /* UI-16b: one keyframes name, so a stamp already on the page restarts it (the class off, a reflow, on again) */
+    const ink = this.renderRoot && /** @type {any} */ (this.renderRoot).querySelector?.('.ink.go');
+    if (ink) {
+      ink.classList.remove('go');
+      void ink.offsetWidth;
+      ink.classList.add('go');
+    }
     const land = reduced() ? 0 : runMsVar(this, '--m-base', 240) * 0.55;
     this._timer = setTimeout(
       () =>
@@ -1113,7 +1102,7 @@ const PbStamp = class extends LitElement {
     this.style.setProperty('--tilt', `${Number(this.tilt) || 0}deg`);
   }
   render() {
-    const go = this.still || !this._go ? '' : reduced() ? 'f' : this._go % 2 ? 'a' : 'b';
+    const go = this.still || !this._go ? '' : 'go';
     return html`<span class="ink ${go}">${this.word}</span>`;
   }
 };

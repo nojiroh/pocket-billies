@@ -169,19 +169,33 @@
   }
 }
 
-/* phase 06-4: the plates carry what the corner cards did: stat changes, a robot's limbs, the party's dots */
+/* phase 06-4: the plates carry what the corner cards did: stat changes, a robot's limbs, the party's dots. UI-16b: the
+   tag row is pb-tags (a status, boosts and drops, effects, "+N"), one line; the slot before it (.pl-st) says Fainted,
+   and a faction label can sit beside the row in .pl-bot */
 .bplate .pl-sg {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
-}
-.bplate .pl-sg .stg {
-  font-size: 10px;
-  padding: 0 var(--s1);
-}
-.bplate .pl-sg .stg.more {
-  background: color-mix(in srgb, var(--bt-ink) 16%, transparent);
+  min-width: 0;
+  margin-right: auto;
   color: var(--bt-ink);
+}
+.bplate .pl-sg pb-tag {
+  flex: none;
+}
+/* UI-16b: the trigger blips (pb-proc) stack over the plate, the newest nearest it */
+.bplate .pl-procs {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--s1));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  pointer-events: none;
+}
+.bplate .pl-procs:empty {
+  display: none;
 }
 .bplate .pl-parts {
   display: flex;

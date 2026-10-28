@@ -62,11 +62,12 @@ document.addEventListener('click', ev => {
   } else if (b.id === 'gInfoTag') {
     const i = /** @type {any} */ (document.getElementById('gInfo'));
     i.open = !i.open;
-  } else if (b.id === 'gStampPlay')
+  } else if (b.id === 'gStampPlay') {
     // SY-3: each stamp slams on again, one after another
     document
       .querySelectorAll('#gStamps pb-stamp')
       .forEach((el, i) => setTimeout(() => /** @type {any} */ (el).play(), i * 160));
+  }
   // UI-17: the idle loops (the game's ui-idle.js picks two of them; here all three kinds) and the big moments
   else if (b.id === 'gIdlePlay') {
     const on = root.dataset.idle ? '' : 'foil glint forecast';

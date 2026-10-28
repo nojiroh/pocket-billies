@@ -33,7 +33,21 @@ import {
   typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
-import { ITEMS, MOVES, PYRAMIDS, STAT_NAMES, TYPES, TYPE_COLORS, typeEffectiveness } from './game-data.js';
+import {
+  GENES,
+  ITEMS,
+  MOVES,
+  PASSIVE,
+  PASSIVE_INFO,
+  PERKS,
+  PYRAMIDS,
+  STATUS_NAMES,
+  STAT_NAMES,
+  TYPES,
+  TYPE_COLORS,
+  TYPE_GLOW,
+  typeEffectiveness,
+} from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import {
@@ -51,6 +65,7 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
+import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
 import { pbBurst, typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
@@ -108,6 +123,8 @@ import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
+  BLIP_MAX: [() => BLIP_MAX],
+  BLIP_MS: [() => BLIP_MS],
   FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
   HUD_BURSTS: [() => HUD_BURSTS],
   MOVE_HOLD_MS: [() => MOVE_HOLD_MS],
@@ -127,12 +144,14 @@ expose({
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
+  blipLook: [() => blipLook, v => (blipLook = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
   cmdButtonHTML: [() => cmdButtonHTML, v => (cmdButtonHTML = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
+  eventBlips: [() => eventBlips, v => (eventBlips = v)],
   fieldChipHTML: [() => fieldChipHTML, v => (fieldChipHTML = v)],
   fieldStripUpdate: [() => fieldStripUpdate, v => (fieldStripUpdate = v)],
   fieldTip: [() => fieldTip, v => (fieldTip = v)],
@@ -141,6 +160,7 @@ expose({
   floatPos: [() => floatPos],
   floatTick: [() => floatTick, v => (floatTick = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
+  hudBanner: [() => hudBanner, v => (hudBanner = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudMoment: [() => hudMoment, v => (hudMoment = v)],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
@@ -166,6 +186,10 @@ expose({
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
   plateElement: [() => plateElement, v => (plateElement = v)],
+  plateTagHTML: [() => plateTagHTML, v => (plateTagHTML = v)],
+  plateTagId: [() => plateTagId],
+  plateTagSpecs: [() => plateTagSpecs, v => (plateTagSpecs = v)],
+  plateTags: [() => plateTags, v => (plateTags = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
   rollPlateNumber: [() => rollPlateNumber, v => (rollPlateNumber = v)],
@@ -256,6 +280,9 @@ export function battleResize() {
   });
 }
 export function openBattle() {
+  /* UI-16b: a new battle's strip starts clear (the last battle's stones and delayed hits stayed until the first menu) */
+  fieldUi.stones = [false, false];
+  fieldUi.mail = [0, 0];
   const bs = (saveData.preferences || {}).battleSpeed;
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = activeBattle.area || 'grass',
@@ -456,7 +483,10 @@ function showEvent() {
   if (ev.an) hudMoment(ev.an);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
-  afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
+  afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
+    paintBoxes(ev.s, ev.mk, true);
+    eventBlips(ev);
+  });
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
   /* the next line waits for the animation on the scene's own clock (a slow device draws fewer frames, so it takes
@@ -525,10 +555,13 @@ function boxAnims(ev) {
   if (!an) return;
   /* UI-15: stones that hurt someone are on the field (the strip shows them from here, not a turn early) */
   if (an.fx === 'stones' && an.si != null) fieldUi.stones[ACTOR_SIDE[an.si]] = true;
+  /* UI-16b: a delayed hit that lands leaves the strip */
+  if (an.fx === 'mail' && an.si != null) fieldUi.mail[ACTOR_SIDE[an.si]] = 0;
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
 }
-const statShortName = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
+/* UI-16b: Atk, Def, SpA, SpD, Spe (logic/marks.js, as Pokémon Showdown writes them; it printed "SP." for both Sp. stats) */
+const statShortName = k => (MARK_STAT_SHORT[k] || [(STAT_NAMES[k] || k).slice(0, 3)])[0];
 export function paintBoxes(s, mk, anim) {
   paintPlates(s, anim);
   fieldStripUpdate(mk);
@@ -548,28 +581,43 @@ const FIELD_WEATHER_ICONS = {
 };
 /* the sharp stones each side has, as the turn's playback has shown them so far (the battle runs a turn ahead of what
    is on screen: the strip waits for the event, then reads the field when the turn is over) */
-const fieldUi = { stones: [false, false], mk: null };
-function fieldChipHTML(face, words, turns, cls) {
-  /* a 40 px button (the tap rule) around a 24 px chip; face is the icon's or glyph's markup (UI-18's merge: UI-13's
-     glyphs for Sandstorm and the stones, the weather from the icon set) */
+/* UI-16b: and the delayed hits aimed at each side (the turns until the first lands; 0 none) */
+const fieldUi = { stones: [false, false], mail: [0, 0], mk: null };
+function fieldChipHTML(icon, words, turns, cls) {
+  /* a 40 px button (the tap rule) around a 24 px chip; `icon` is an icon set name or a glyph's markup (UI-13) */
+  const face = icon.startsWith('<') ? icon : uiIconHTML(icon, 14);
   return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${face}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
 }
 function fieldStripUpdate(mk) {
   const el = $('#fsRow');
   if (!el) return;
   if (mk !== undefined) fieldUi.mk = mk;
-  if (activeBattle && activeBattle.phase !== 'playing')
+  if (activeBattle && activeBattle.phase !== 'playing') {
     fieldUi.stones = [0, 1].map(i => !!(activeBattle.sides[i] && activeBattle.sides[i].stones));
+    fieldUi.mail = [0, 1].map(i => {
+      const M = (activeBattle.sides[i] && activeBattle.sides[i].mail) || [];
+      return M.length ? Math.min(...M.map(h => h.n)) : 0;
+    });
+  }
   const w = typeof battleWeather === 'function' ? battleWeather() : null,
+    /* UI-16b: the effects' glyphs (UI-13), stones and a delayed hit with its turns left */
     side = i =>
-      fieldUi.stones[i]
+      (fieldUi.stones[i]
         ? fieldChipHTML(
             glyphHTML('effect', 'stones', 14, 'fill'),
             `Sharp stones on ${i ? 'their' : 'your'} side: they hurt each Billie that comes in`,
             0,
             'bad'
           )
-        : '',
+        : '') +
+      (fieldUi.mail[i]
+        ? fieldChipHTML(
+            glyphHTML('effect', 'delayed', 14, 'fill'),
+            `A delayed hit lands on ${i ? 'their' : 'your'} side in ${plural(fieldUi.mail[i], 'turn')}`,
+            fieldUi.mail[i],
+            'warn'
+          )
+        : ''),
     m = fieldUi.mk,
     mid =
       (w
@@ -590,7 +638,10 @@ function fieldStripUpdate(mk) {
         : '');
   const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
   if (el.innerHTML !== h) el.innerHTML = h;
-  $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
+  $('#fstrip').classList.toggle(
+    'on',
+    !!(mid || fieldUi.stones[0] || fieldUi.stones[1] || fieldUi.mail[0] || fieldUi.mail[1])
+  );
 }
 /* a chip's words under the strip for a few seconds (rule 3: never colour alone; the word on tap) */
 function fieldTip(ev) {
@@ -655,8 +706,30 @@ function hudHit(ti, an, w = 0.3) {
   const kind = 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : '');
   hudPop(ti, '−' + an.dmg, kind, w);
   if (an.crit) setTimeout(() => hudPop(ti, 'Critical hit', 'tag crit'), 90);
-  else if (an.te > 1) setTimeout(() => hudPop(ti, 'Super effective', 'tag se'), 90);
-  else if (an.te < 1) setTimeout(() => hudPop(ti, 'Not very effective', 'tag nve'), 90);
+  else if (an.te > 1) setTimeout(() => hudBanner(ti, 'Super effective', 'se'), 90);
+  else if (an.te < 1) setTimeout(() => hudBanner(ti, 'Not very effective', 'nve'), 90);
+}
+/* UI-16b: an effectiveness banner over the target: a slanted strip that slams in (motion.css m-slam; a fade under
+   Reduced), holds, and fades. Super effective in the caution fill, not very effective in the plates' glass */
+function hudBanner(si, text, kind) {
+  const L = $('#pops');
+  if (!L || !battleStage.L) return;
+  const q = battleStageToCss(actorTop(si));
+  if (!q) return;
+  const e = document.createElement('div');
+  e.className = 'bt-banner ' + kind;
+  const w = document.createElement('b');
+  w.className = 'm-slam';
+  w.textContent = text;
+  e.appendChild(w);
+  e.style.left = clamp(q.x, 80, battleStage.L.vw - 80) + 'px';
+  e.style.top = Math.max(40, q.y - 26) + 'px';
+  L.appendChild(e);
+  setTimeout(() => {
+    const out = e.animate ? e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }) : null;
+    if (out) out.onfinish = () => e.remove();
+    else e.remove();
+  }, 1100);
 }
 function afterEvents() {
   if (!activeBattle) return;
@@ -1319,7 +1392,7 @@ function plateElement(k) {
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}<span class="pl-procs"></span>`;
   L.appendChild(e);
   return e;
 }
@@ -1345,8 +1418,8 @@ function paintPlates(s, anim) {
     e.querySelector('.pl-lv').textContent = 'Lv ' + x.lvl;
     e.querySelector('.pl-cr').hidden = !x.alpha;
     e.classList.toggle('alpha', !!x.boss);
-    e.querySelector('.pl-st').innerHTML =
-      x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(x.st);
+    /* UI-16b: the status is a tag in the row (plateTags); this slot says Fainted */
+    e.querySelector('.pl-st').innerHTML = x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : '';
     const p = Math.max(0, (x.hp / x.max) * 100),
       f = e.querySelector('.fill'),
       g = e.querySelector('.ghost');
@@ -1373,25 +1446,9 @@ function paintPlates(s, anim) {
     }
     /* phase 06-4: what the corner cards used to show: stat changes, a robot's limbs, the party's dots (on the first
        plate of each side) */
-    /* UI-15: at most 3 tags on a plate (the status first, then the biggest stat changes), the rest as "+N" with
-       their words on it */
-    const stg = Object.entries(x.stg || {})
-        .filter(([q, v]) => v)
-        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
-        .map(([q, v]) => [`${statShortName(q)} ${v > 0 ? '+' : ''}${v}`, v > 0 ? 'up' : 'dn']),
-      room = PLATE_TAGS - (x.hp <= 0 || x.st ? 1 : 0),
-      rest = stg
-        .slice(room)
-        .map(t => t[0])
-        .join(', ');
-    e.querySelector('.pl-sg').innerHTML =
-      stg
-        .slice(0, room)
-        .map(([t, c]) => `<span class="stg ${c}">${t}</span>`)
-        .join('') +
-      (rest
-        ? `<span class="stg more" title="${escapeHtml(rest)}" aria-label="${escapeHtml('Also ' + rest)}">+${stg.length - room}</span>`
-        : '');
+    /* UI-16b: the tag row is the marks kit's (logic/marks.js markRow, pb-tag): the status first, then boosts and drops
+       (the biggest first), then short effects with their turns left; past 3 the last is "+N" with their words */
+    plateTags(e, x, anim);
     const pr = e.querySelector('.pl-parts');
     pr.hidden = !x.bot;
     /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
@@ -1415,6 +1472,114 @@ function paintPlates(s, anim) {
     }
   }
   turnBar();
+}
+/* UI-16b: the blips: a Perk, held item, Gene or type passive firing shows by its fighter's plate as a pb-proc (its
+   glyph in its family's colour, "Bubble Wrap −10%", "Kindling ▲Atk"), read from the event's `by` (the battle's own
+   report, logic/battle-engine.js); a boss's shield phase (RL-14b) blips its shield. Two at most on a plate; each
+   pops in (motion.css m-pop), stays BLIP_MS and fades out */
+const BLIP_MS = 1500,
+  BLIP_MAX = 2;
+/** what a `by` entry's blip shows: pb-proc's attributes @param {{ src: string, mult?: number, stat?: string,
+ * stages?: number }} b */
+function blipLook(b) {
+  const src = String(b.src || ''),
+    cut = src.indexOf(':'),
+    kind = cut < 0 ? (src === 'unstable' ? 'unstable' : 'perk') : src.slice(0, cut),
+    id = cut < 0 ? src : src.slice(cut + 1),
+    pct = b.mult && b.mult !== 1 ? ` ${b.mult > 1 ? '+' : '−'}${Math.round(Math.abs(b.mult - 1) * 100)}%` : '',
+    o = { stat: b.stat || '', stages: b.stat ? b.stages || 1 : 0 };
+  if (kind === 'perk') return { ...o, group: 'kind', mark: 'perk', text: ((PERKS[id] || {}).name || id) + pct };
+  if (kind === 'held') return { ...o, group: 'kind', mark: 'held', text: ((ITEMS[id] || {}).n || id) + pct };
+  if (kind === 'gene')
+    return { ...o, group: 'family', mark: 'bio', text: (((GENES.traits || {})[id] || {}).name || id) + pct };
+  if (kind === 'unstable') return { ...o, group: 'family', mark: 'bio', text: 'Unstable' + pct };
+  const ty = Object.keys(PASSIVE).find(t => PASSIVE[t] === id) || '';
+  return { ...o, type: ty, tone: ty ? TYPE_GLOW[ty] : '', text: ((PASSIVE_INFO[ty] || {}).name || id) + pct };
+}
+function eventBlips(ev) {
+  const list = (ev.by || []).map(b => [b.si, blipLook(b)]),
+    an = ev.an;
+  if (an && an.k === 'alphaPhase' && an.shield !== false && an.si != null)
+    list.push([
+      an.si,
+      {
+        group: 'effect',
+        mark: 'shield',
+        text: `Shield −${Math.round((1 - (BATTLE_RULES.alphaShieldMult ?? 0.5)) * 100)}%`,
+      },
+    ]);
+  for (const [si, L] of list) {
+    const P = $(`#plates .bplate[data-k="${si}"]:not(.gone) .pl-procs`);
+    if (!P) continue;
+    const el = document.createElement('pb-proc');
+    for (const [a, v] of Object.entries(L)) if (v) el.setAttribute(a, String(v));
+    el.className = 'm-pop';
+    P.appendChild(el);
+    while (P.children.length > BLIP_MAX) P.firstElementChild.remove();
+    setTimeout(() => {
+      const out = el.animate ? el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }) : null;
+      if (out) out.onfinish = () => el.remove();
+      else el.remove();
+    }, BLIP_MS);
+  }
+}
+/* UI-16b: a plate's tags as markRow orders them (TagSpecs: logic/marks.js). Fainted: none */
+function plateTagSpecs(x) {
+  if (!x || x.hp <= 0) return [];
+  const T = [];
+  if (x.st) T.push({ kind: 'status', mark: x.st, word: STATUS_NAMES[x.st] || x.st });
+  Object.entries(x.stg || {})
+    .filter(([, v]) => v)
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .forEach(([q, v]) => T.push({ kind: 'stat', stat: q, stages: v }));
+  for (const [id, n] of Object.entries(x.fx || {})) T.push({ kind: 'effect', mark: id, turns: Number(n) || 0 });
+  return T;
+}
+/* a tag's id in the row, so a repaint knows which one is new or changed */
+const plateTagId = t => (t.kind === 'stat' ? 'stat:' + t.stat : t.kind + ':' + (t.mark || ''));
+function plateTagHTML(t, cls) {
+  const a = [`kind="${t.kind}"`];
+  if (t.mark) a.push(`mark="${escapeHtml(t.mark)}"`);
+  if (t.stat) a.push(`stat="${escapeHtml(t.stat)}" stages="${t.stages}"`);
+  if (t.turns) a.push(`turns="${t.turns}"`);
+  if (t.n) a.push(`n="${t.n}"`);
+  if (t.word) a.push(`word="${escapeHtml(t.word)}"`, `title="${escapeHtml(t.word)}"`);
+  return `<pb-tag ${a.join(' ')}${cls ? ` class="${cls}"` : ''}></pb-tag>`;
+}
+/* UI-16b: the plate's tag row (.pl-sg; a faction label can sit beside it in .pl-bot). On a battle event (anim) a new
+   status stamps on (motion.css m-stamp), a boost rises and a drop falls (m-rise, m-fall), a new effect pops; a
+   repaint with nothing new leaves the row alone */
+function plateTags(e, x, anim) {
+  const el = e.querySelector('.pl-sg'),
+    all = plateTagSpecs(x),
+    row = markRow(all, PLATE_TAGS),
+    last = row[row.length - 1];
+  if (last && last.kind === 'more')
+    last.word =
+      'Also ' +
+      all
+        .slice(row.length - 1)
+        .map(t => tagLook(t).word)
+        .join(', ');
+  const key = row.map(t => JSON.stringify(t)).join('|'),
+    was = el._tags && el._tags.uid === x.uid ? el._tags.by : null;
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  const by = Object.fromEntries(all.map(t => [plateTagId(t), t]));
+  el._tags = { uid: x.uid, by };
+  el.innerHTML = row
+    .map(t => {
+      const p = was && anim && t.kind !== 'more' ? was[plateTagId(t)] : undefined;
+      let cls = '';
+      if (was && anim && t.kind !== 'more') {
+        if (t.kind === 'status' && !p) cls = 'm-stamp';
+        else if (t.kind === 'stat' && (!p || p.stages !== t.stages))
+          cls = t.stages > (p ? p.stages : 0) ? 'm-rise' : 'm-fall';
+        else if (t.kind === 'effect' && !p) cls = 'm-pop';
+      }
+      return plateTagHTML(t, cls);
+    })
+    .join('');
 }
 /* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
    (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without
