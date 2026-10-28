@@ -439,7 +439,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
             d: 0.06,
             s: 0.7,
             r: 0.04,
-            echo: D.echo || 0.15,
+            echo: D.echo ?? 0.15,
           });
         sg.step++;
         sg.next += spb;
@@ -482,7 +482,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: D.pluck ? 0.12 : 0.55,
           r: D.pluck ? 0.12 : 0.06,
           vib: !D.pluck && L[1] >= 6 ? 1 : 0,
-          echo: D.echo || 0.15,
+          echo: D.echo ?? 0.15,
         });
       /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
       if (C)

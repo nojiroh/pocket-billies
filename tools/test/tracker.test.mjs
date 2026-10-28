@@ -282,3 +282,24 @@ test('restart starts a playing song again (a new battle with the same song); wit
   assert.equal(again.step, -16, 'from its intro');
   assert.ok(again.hold);
 });
+
+test('SND-8b: a song with echo 0 sends nothing to the echo; one with none written sends 0.15', () => {
+  const leadEcho = D => {
+    const c = fakeContext(),
+      T = trackerCreate(c, {}, { songs: { s: D } }),
+      out = [];
+    T.synthVoice = (bus, v) => v.type === D.lead && out.push(v.echo);
+    T.synthNoise = T.synthKick = () => {};
+    T.play('s');
+    clearInterval(T.timer);
+    for (let i = 0; i < 32; i++) {
+      c.currentTime = T.song.next - 0.13;
+      T.tick();
+    }
+    return [...new Set(out)];
+  };
+  const plain = { ...town };
+  delete plain.echo;
+  assert.deepEqual(leadEcho({ ...town, echo: 0 }), [0]);
+  assert.deepEqual(leadEcho(plain), [0.15]);
+});
