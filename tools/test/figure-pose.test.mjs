@@ -17,12 +17,14 @@ import {
   figureRamp,
   figureTick,
   figureView,
+  frontOf,
   jointMatrices,
   mannequinFigure,
   meshClipFrame,
   meshClipMatrices,
   outlineOf,
   restPose,
+  shapeSurface,
   toonBand,
 } from '../../game/js/logic/figure-pose.js';
 
@@ -130,7 +132,9 @@ test('figure pose: the mesh: rounded shapes, each vertex on one joint, wound out
     { data, count, colours } = figureMesh(F);
   assert.equal(count % 3, 0);
   assert.ok(count > 2000 && count < 20000, `${count} vertices`);
-  assert.deepEqual(colours, Object.keys(F.colours));
+  /* CH-3b: the colours its parts use, in the order first used (the face marks' are painted, not shaded) */
+  assert.deepEqual(colours, [...new Set(F.parts.map(p => p.col))]);
+  assert.ok(!colours.includes('eye') && !colours.includes('blush'));
   const seen = new Set();
   for (let v = 0; v < count; v++) {
     const j = data[v * 8 + 6];
@@ -376,4 +380,113 @@ test('figure pose: a model’s clip matrices: 3 x 4 to 4 x 4, the hips’ lift s
   /* lift 0.513 m is 16.4 texels: snapped to 16, so every joint is 0.013 m lower */
   assert.ok(Math.abs(M[13] - (0.5 + 0.013 + 16 / 32 - 0.513)) < 1e-6, `${M[13]}`);
   assert.deepEqual(meshClipMatrices(c, 3, 2, 32), M, 'the frames wrap');
+});
+
+/* CH-3b: head shapes, the new clips, a figure's own gait, four legs, marks of any colour */
+test('figure pose: a squarer ellipsoid reaches further on the diagonal, a tapered one is wider at the bottom', () => {
+  const reach = sh => {
+    const S = shapeSurface(sh);
+    let diag = 0,
+      low = 0,
+      high = 0;
+    for (const p of S.pts) {
+      diag = Math.max(diag, Math.min(Math.abs(p[0]), Math.abs(p[1])));
+      if (p[1] < -0.3) low = Math.max(low, Math.abs(p[0]));
+      if (p[1] > 0.3) high = Math.max(high, Math.abs(p[0]));
+    }
+    return { diag, low, high };
+  };
+  const E = { kind: 'ellipsoid', c: [0, 0, 0], r: [0.5, 0.5, 0.5], seg: 16, rings: 12 },
+    round = reach(E),
+    box = reach({ ...E, sq: 1 }),
+    pear = reach({ ...E, taper: 0.3 });
+  assert.ok(box.diag > round.diag + 0.05, `${box.diag} > ${round.diag}`);
+  assert.ok(pear.low > pear.high + 0.05, `${pear.low} > ${pear.high}`);
+  assert.ok(Math.abs(round.low - round.high) < 1e-6);
+  /* a face mark sits on the shape's front: further forward on a squarer head */
+  assert.ok(frontOf({ ...E, sq: 1 }, 0.2, 0.2).at[2] > frontOf(E, 0.2, 0.2).at[2]);
+});
+
+test('figure pose: cheer, throw and sit; a gait of its own; on the clock', () => {
+  const F = mannequinFigure(),
+    i = id => F.parts.findIndex(p => p.id === id);
+  assert.deepEqual(Object.keys(CLIP_FRAMES), ['idle', 'walk', 'cheer', 'throw', 'sit']);
+  /* both arms up in a cheer */
+  const C = figurePose(F, 'cheer', 0);
+  assert.ok(C.rot[i('armA')][2] > 2 && C.rot[i('armB')][2] < -2);
+  /* the throwing arm back over the shoulder, then forward past the hip */
+  assert.ok(figurePose(F, 'throw', 3).rot[i('armB')][0] > 1.5);
+  assert.ok(figurePose(F, 'throw', 7).rot[i('armB')][0] < -0.5);
+  /* sitting: thighs forward, shins down */
+  const S = figurePose(F, 'sit', 0);
+  assert.ok(S.rot[i('thighA')][0] < -1.2 && S.rot[i('shinA')][0] > 1.2);
+  /* a bigger stride and a forward lean */
+  const G = { ...F, gait: { swing: 1.4, lean: 0.1 } },
+    w0 = figurePose(F, 'walk', 2),
+    w1 = figurePose(G, 'walk', 2);
+  assert.ok(Math.abs(w1.rot[i('thighA')][0]) > Math.abs(w0.rot[i('thighA')][0]) * 1.3);
+  assert.ok(Math.abs(w1.rot[i('torso')][0] - (w0.rot[i('torso')][0] + 0.1)) < 1e-9);
+  /* the default gait is the spike's walk */
+  assert.deepEqual(figurePose({ ...F, gait: {} }, 'walk', 3), figurePose(F, 'walk', 3));
+  /* a cheer on ones, the idle on twos */
+  const tick = 1000 / 12;
+  assert.equal(clipFrameAt('cheer', tick * 3), 3);
+  assert.equal(clipFrameAt('idle', tick * 3), 1);
+});
+
+test('figure pose: four legs walk in diagonal pairs', () => {
+  const leg = (id, at) => ({
+      id,
+      parent: 0,
+      at,
+      shape: { kind: 'capsule', a: [0, 0, 0], b: [0, -0.2, 0], r0: 0.05, r1: 0.05 },
+      col: 'fur',
+    }),
+    F = {
+      name: 'quad',
+      height: 0.8,
+      colours: { fur: [150, 100, 60] },
+      parts: [
+        {
+          id: 'body',
+          parent: -1,
+          at: [0, 0.4, 0],
+          shape: { kind: 'ellipsoid', c: [0, 0, 0], r: [0.2, 0.2, 0.4] },
+          col: 'fur',
+        },
+        {
+          id: 'head',
+          parent: 0,
+          at: [0, 0.1, 0.4],
+          shape: { kind: 'ellipsoid', c: [0, 0, 0], r: [0.1, 0.1, 0.1] },
+          col: 'fur',
+        },
+        leg('legFL', [0.1, -0.1, 0.25]),
+        leg('legFR', [-0.1, -0.1, 0.25]),
+        leg('legBL', [0.1, -0.1, -0.25]),
+        leg('legBR', [-0.1, -0.1, -0.25]),
+      ],
+    },
+    P = figurePose(F, 'walk', 2);
+  assert.ok(Math.abs(P.rot[2][0]) > 0.3);
+  assert.equal(P.rot[2][0], P.rot[5][0], 'front left with back right');
+  assert.equal(P.rot[3][0], P.rot[4][0], 'front right with back left');
+  assert.equal(P.rot[2][0], -P.rot[3][0]);
+  assert.ok(figurePose(F, 'idle', 14).blink);
+});
+
+test('figure pose: marks in their own colour, hollow, and how much they must face the camera', () => {
+  const F = mannequinFigure(),
+    head = F.parts.find(p => p.id === 'head').shape;
+  F.colours.frame = [10, 20, 30];
+  F.face = [
+    { part: 'head', kind: 'glasses', col: 'frame', hollow: true, ...frontOf(head, 0.11, 0.255), w: 0.12, h: 0.12 },
+    { part: 'head', kind: 'tag', ...frontOf(head, 0, 0.255), w: 0.06, h: 0.03, min: 0.99 },
+  ];
+  const P = restPose(F),
+    S = cardSize(32, 0.45),
+    M = figureFaceMarks(F, jointMatrices(F, P, 32), P, { rel: Math.PI, tilt: 0.45 }, 32, S);
+  assert.equal(M.length, 1, 'the tag needs the head square to the camera');
+  assert.equal(M[0].hollow, true);
+  assert.deepEqual(M[0].rgb, [10, 20, 30]);
 });

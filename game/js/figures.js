@@ -28,6 +28,7 @@ import { provide } from './hooks.js';
 import {
   FIGURE_BANDS,
   FIGURE_LIGHT,
+  FIGURE_PAL_MAX,
   OUTLINE_RGB,
   cardSize,
   clipFrameAt,
@@ -228,7 +229,7 @@ void main(){mat4 J=uJ[int(aJ)];vN=uR*(mat3(J)*aN);vC=int(aC);vUV=aUV;gl_Position
    ramp does it (logic/figure-pose.js figureRamp: the shadow darker and lavender, the light warmer). Smooth (the plain
    3D figure): a soft light, no bands */
 const FIGURE_FS = `#version 300 es
-precision highp float;in vec3 vN;in vec2 vUV;flat in int vC;uniform vec3 uPal[48];uniform vec3 uL;uniform vec2 uB;
+precision highp float;in vec3 vN;in vec2 vUV;flat in int vC;uniform vec3 uPal[60];uniform vec3 uL;uniform vec2 uB;
 uniform float uTexOn,uSmooth;uniform sampler2D uTx;out vec4 o;
 void main(){vec3 n=normalize(vN);float d=dot(n,uL);int b=d>uB.x?2:(d>uB.y?1:0);vec3 base,sh,li;
  if(uTexOn>.5){base=floor(texture(uTx,vUV).rgb*255.+.5);sh=mix(floor(base*.79),vec3(96.,74.,152.),.17);li=mix(base,vec3(255.,244.,196.),.3);}
@@ -423,7 +424,8 @@ function figureTarget(gl, w, h) {
 }
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
 function figurePalette(F, colours) {
-  const out = new Float32Array(48 * 3);
+  /* FIGURE_PAL_MAX colours, three shades each (the shader's uPal[60]) */
+  const out = new Float32Array(FIGURE_PAL_MAX * 3 * 3);
   colours.forEach((k, i) => {
     const R = figureRamp(F.colours[k]),
       flat = k === 'eye' || k === 'glint';

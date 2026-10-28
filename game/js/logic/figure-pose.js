@@ -29,6 +29,7 @@ expose({
   FIGURE_BANDS: [() => FIGURE_BANDS],
   FIGURE_FPS: [() => FIGURE_FPS],
   FIGURE_LIGHT: [() => FIGURE_LIGHT],
+  FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
   OUTLINE_RGB: [() => OUTLINE_RGB],
   TILT_STEP: [() => TILT_STEP],
   WALK_CYCLE_M: [() => WALK_CYCLE_M],
@@ -40,6 +41,8 @@ expose({
   clipFrameAt: [() => clipFrameAt, v => (clipFrameAt = v)],
   // @ts-expect-error -- replaced on purpose
   codeExtent: [() => codeExtent, v => (codeExtent = v)],
+  // @ts-expect-error -- replaced on purpose
+  ellipsoidWarp: [() => ellipsoidWarp, v => (ellipsoidWarp = v)],
   // @ts-expect-error -- replaced on purpose
   figureClipMatrix: [() => figureClipMatrix, v => (figureClipMatrix = v)],
   // @ts-expect-error -- replaced on purpose
@@ -83,6 +86,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   partMatrix: [() => partMatrix, v => (partMatrix = v)],
   // @ts-expect-error -- replaced on purpose
+  quadPose: [() => quadPose, v => (quadPose = v)],
+  // @ts-expect-error -- replaced on purpose
   restPose: [() => restPose, v => (restPose = v)],
   // @ts-expect-error -- replaced on purpose
   ringSurface: [() => ringSurface, v => (ringSurface = v)],
@@ -90,6 +95,8 @@ expose({
   shapeSurface: [() => shapeSurface, v => (shapeSurface = v)],
   // @ts-expect-error -- replaced on purpose
   shapeTriangles: [() => shapeTriangles, v => (shapeTriangles = v)],
+  // @ts-expect-error -- replaced on purpose
+  taperAt: [() => taperAt, v => (taperAt = v)],
   // @ts-expect-error -- replaced on purpose
   toonBand: [() => toonBand, v => (toonBand = v)],
   vCross: [() => vCross],
@@ -101,7 +108,9 @@ expose({
 /** the walk's length a cycle (two steps), metres: at the player's 3.4 m/s a frame every 0.3 m, 11 a second */
 export const WALK_CYCLE_M = 2.4;
 /** frames in each clip */
-export const CLIP_FRAMES = Object.freeze({ idle: 16, walk: 8 });
+export const CLIP_FRAMES = Object.freeze({ idle: 16, walk: 8, cheer: 8, throw: 8, sit: 1 });
+/** the most colours a figure's parts may use (the baker's palette: three shades each) */
+export const FIGURE_PAL_MAX = 20;
 /** the clock poses step on (frames a second) */
 export const FIGURE_FPS = 12;
 /** the tilt is stepped by this much (radians: 2 degrees), so zooming between stops bakes a few views, not hundreds */
@@ -118,19 +127,30 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1 });
 /** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number }} HairCut where a hair cap
  * ends, as a height on its own sphere (-1 the bottom, 1 the top) at the front, the sides and the back, its fringe in
  * `bangs` points `depth` deep */
-/** @typedef {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg?: number, rings?: number, cut?: HairCut }
+/** @typedef {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg?: number, rings?: number, cut?: HairCut, sq?: number,
+ *     taper?: number }
  *   | { kind: 'lathe', c: Vec3, y: number[], rx: number[], rz: number[], seg?: number }
  *   | { kind: 'capsule', a: Vec3, b: Vec3, r0: number, r1: number, seg?: number }
  *   | { kind: 'cone', a: Vec3, b: Vec3, r: number, seg?: number }
  *   | { kind: 'torus', c: Vec3, R: [number, number], r: number, seg?: number, rings?: number }} FigureShape
- * a part's shape, in its joint's space: an ellipsoid (centre, radii; a hair cap is one with a cut), a lathe (rings
+ * a part's shape, in its joint's space: an ellipsoid (centre, radii; a hair cap is one with a cut; `sq` 0..1 makes it
+ * squarer, `taper` widens its bottom half and narrows its top, below 0 the other way: CH-3b's head shapes), a lathe (rings
  * round an upright axis through c at heights y, radii rx across and rz front to back; a radius of 0 closes it), a
  * capsule from a to b (radii r0 and r1), a cone from its base a to its tip b, or a torus round an upright axis */
 /** @typedef {{ id: string, parent: number, at: Vec3, shape: FigureShape, col: string }} FigurePart
  * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour */
-/** @typedef {{ part: string, kind: 'eye' | 'mouth' | 'blush', at: Vec3, n: Vec3, w: number, h: number }} FaceMark
- * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres */
-/** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[] }} Figure */
+/** @typedef {{ part: string, kind: string, at: Vec3, n: Vec3, w: number, h: number, col?: string,
+ *   hollow?: boolean, min?: number }} FaceMark
+ * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres, in colour `col`
+ * (else the figure's colour named as its kind); `hollow` paints only its edge (a glasses frame); `min` how much it
+ * must face the camera to show (else by kind: an eye 0.15, a mouth 0.25, anything else 0.2). An 'eye' blinks and
+ * narrows to a pixel seen from the side; an eye 2 pixels wide and 3 tall or more gets a glint (CH-3b: brows, lashes,
+ * glasses, a stache, freckles, a name tag are marks too) */
+/** @typedef {{ swing?: number, arms?: number, bounce?: number, lean?: number, hang?: number }} FigureGait how a
+ * figure moves (figurePose): its legs' and arms' swing and its bounce as parts of the usual (1), its lean forward
+ * (radians, below 0 back) and how far out its arms hang (radians) */
+/** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[],
+ *   gait?: FigureGait }} Figure */
 /** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
  * parts order); `blink` closes the eyes */
 
@@ -185,15 +205,24 @@ export function toonBand(n) {
 /* ---------- the mannequin ---------- */
 /**
  * a point on the front of an ellipsoid at (x, y), and its outward normal: where a face mark sits
- * @param {{ c: Vec3, r: Vec3 }} E @param {number} x @param {number} y @returns {{ at: Vec3, n: Vec3 }}
+ * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number }} E @param {number} x @param {number} y
+ * @returns {{ at: Vec3, n: Vec3 }}
  */
 export function frontOf(E, x, y) {
   const { c, r } = E,
     u = (x - c[0]) / r[0],
     v = (y - c[1]) / r[1],
     w = Math.sqrt(Math.max(0, 1 - u * u - v * v)),
-    z = c[2] + r[2] * w;
+    z = c[2] + r[2] * ellipsoidWarp(w, E.sq) * taperAt(v, E.taper);
   return { at: [x, y, z], n: figureUnit([u / r[0], v / r[1], w / r[2]]) };
+}
+/** a squarer ellipsoid's reach along an axis (`sq` 0..1: 0 round, 1 nearly a box) @param {number} d @param {number} [sq] */
+export function ellipsoidWarp(d, sq) {
+  return sq ? Math.sign(d) * Math.pow(Math.abs(d), 1 - 0.6 * sq) : d;
+}
+/** a tapered ellipsoid's width at height v on it (-1 the bottom, 1 the top) @param {number} v @param {number} [taper] */
+export function taperAt(v, taper) {
+  return taper ? 1 - taper * v : 1;
 }
 /**
  * the spike's mannequin, 1.75 m to the tip of its cowlick: the head and hair 0.6 m (about 2.9 heads), legs 0.5 m,
@@ -345,62 +374,145 @@ export function restPose(F) {
   };
 }
 /**
- * a clip's pose at one of its frames. A swing forward is toward the figure's +z.
+ * a clip's pose at one of its frames. A swing forward is toward the figure's +z. A figure's `gait` gives it its own
+ * way of moving (CH-3b: a stiff clerk, a bouncy kid, a swagger): how far the legs and arms swing, how much it bounces,
+ * how it leans, and how wide its arms hang.
  * - idle (16 frames, two ticks each: 2.7 s): the chest and head rise a little for half the breath, the arms ease out,
  *   the head nods and leans; a blink on frame 14.
- * - walk (8 frames): the legs swing 0.55 rad, the knee of the leg coming forward bends, the feet stay level, the arms
- *   swing against the legs with the elbows a little bent, the body twists and drops as the legs part and bounces as
- *   they pass, the head rocks.
+ * - walk (8 frames): the legs swing, the knee of the leg coming forward bends, the feet stay level, the arms swing
+ *   against the legs with the elbows a little bent, the body twists and drops as the legs part and bounces as they
+ *   pass, the head rocks.
+ * - cheer (8 frames, on ones): both arms up and waving, a little hop on every other beat.
+ * - throw (8 frames): the throwing arm (B, the figure's right) winds back and over, the body turns into it.
+ * - sit (1 frame): thighs forward, shins down, the arms resting.
+ * A four-legged figure (CH-3b's Kappi: parts legFL, legFR, legBL, legBR) walks its legs in diagonal pairs and nods.
  * @param {Figure} F @param {string} clip @param {number} frame @returns {FigurePose}
  */
 export function figurePose(F, clip, frame) {
   const P = restPose(F),
     at = (/** @type {string} */ id) => F.parts.findIndex(p => p.id === id),
-    rx = (/** @type {string} */ id, /** @type {number} */ a) => {
+    rot = (/** @type {string} */ id, /** @type {number} */ ax, /** @type {number} */ a) => {
       const i = at(id);
-      if (i >= 0) P.rot[i][0] = a;
-    };
+      if (i >= 0) P.rot[i][ax] = a;
+    },
+    rx = (/** @type {string} */ id, /** @type {number} */ a) => rot(id, 0, a),
+    G = { swing: 1, arms: 1, bounce: 1, lean: 0, hang: 0, ...(F.gait || {}) };
   const n = CLIP_FRAMES[/** @type {keyof typeof CLIP_FRAMES} */ (clip)] || 1,
     f = ((Math.floor(frame) % n) + n) % n;
+  if (at('legFL') >= 0) return quadPose(F, P, clip, f, n, rx);
+  const sides = /** @type {[string, number][]} */ ([
+    ['A', 1],
+    ['B', -1],
+  ]);
   if (clip === 'walk') {
     const a = (2 * Math.PI * f) / n,
       s = Math.sin(a),
       c = Math.cos(a),
-      swing = 0.55;
+      swing = 0.55 * G.swing;
     /* a forward swing is a turn about x by minus the angle (a turn by +a sends a hanging limb toward -z) */
-    for (const [k, sg] of /** @type {[string, number][]} */ ([
-      ['A', 1],
-      ['B', -1],
-    ])) {
+    for (const [k, sg] of sides) {
       const th = swing * s * sg,
-        knee = 0.75 * Math.max(0, c * sg);
+        knee = 0.75 * G.swing * Math.max(0, c * sg);
       rx('thigh' + k, -th);
       rx('shin' + k, knee);
       rx('foot' + k, th - knee);
-      rx('arm' + k, 0.45 * s * sg);
+      rx('arm' + k, 0.45 * G.arms * s * sg);
+      rot('arm' + k, 2, sg * G.hang);
       rx('forearm' + k, -0.3);
     }
-    P.rot[at('torso')][1] = 0.12 * s;
+    P.rot[at('torso')][1] = 0.12 * G.swing * s;
     P.rot[at('head')][1] = -0.08 * s;
-    P.rot[at('torso')][0] = -0.06;
+    P.rot[at('torso')][0] = -0.06 + G.lean;
     /* the body drops as the legs part and bounces up as they pass (a spring in the step) */
-    P.rootY = -0.5 * (1 - Math.cos(swing * s)) + 0.02 * (1 - Math.abs(s));
+    P.rootY = -0.5 * (1 - Math.cos(swing * s)) + 0.02 * G.bounce * (1 - Math.abs(s));
     P.rot[at('head')][2] = 0.03 * s;
-  } else {
-    const up = f >= 4 && f < 12 ? 1 : 0;
-    P.lift[at('torso')][1] = up * 0.02;
-    /* a slow nod and a lean of the head with the breath */
-    P.rot[at('head')][0] = up ? -0.05 : 0.02;
-    P.rot[at('head')][2] = f >= 8 ? 0.05 : -0.03;
-    for (const [k, sg] of /** @type {[string, number][]} */ ([
-      ['A', 1],
-      ['B', -1],
-    ])) {
-      P.rot[at('arm' + k)][2] = sg * (0.06 + up * 0.03);
-      rx('forearm' + k, -0.12);
-    }
-    if (f === 14) P.blink = true;
+    return P;
   }
+  if (clip === 'cheer') {
+    const wave = f % 2 ? 0.28 : -0.12;
+    for (const [k, sg] of sides) {
+      rot('arm' + k, 2, sg * (2.55 + (k === 'A' ? wave : -wave)));
+      rx('forearm' + k, -0.35);
+    }
+    P.rootY = f % 4 < 2 ? 0.04 * G.bounce : 0;
+    P.rot[at('head')][0] = -0.12;
+    P.rot[at('torso')][0] = G.lean - 0.04;
+    return P;
+  }
+  if (clip === 'throw') {
+    const k = f / (n - 1),
+      /* back over the shoulder by frame 3, then forward and down past the hip */
+      arm = k < 0.45 ? 2.4 * (k / 0.45) : 2.4 - 3.6 * Math.min(1, (k - 0.45) / 0.4);
+    rx('armB', arm);
+    rx('forearmB', k < 0.45 ? -0.9 : -0.2);
+    rx('armA', -0.5 * k);
+    rot('armA', 2, 0.3);
+    P.rot[at('torso')][1] = k < 0.45 ? -0.35 * (k / 0.45) : -0.35 + 0.75 * Math.min(1, (k - 0.45) / 0.4);
+    P.rot[at('torso')][0] = G.lean + (k < 0.45 ? 0.05 : -0.12);
+    rx('thighA', -0.25);
+    rx('shinA', 0.2);
+    rx('footA', 0.05);
+    rx('thighB', 0.15);
+    return P;
+  }
+  if (clip === 'sit') {
+    for (const [k, sg] of sides) {
+      rx('thigh' + k, -1.5);
+      rx('shin' + k, 1.45);
+      rx('foot' + k, 0.05);
+      rx('arm' + k, -0.35);
+      rot('arm' + k, 2, sg * 0.12);
+      rx('forearm' + k, -0.7);
+    }
+    P.rot[at('torso')][0] = G.lean;
+    return P;
+  }
+  const up = f >= 4 && f < 12 ? 1 : 0;
+  P.lift[at('torso')][1] = up * 0.02;
+  P.rot[at('torso')][0] = G.lean;
+  /* a slow nod and a lean of the head with the breath */
+  P.rot[at('head')][0] = up ? -0.05 : 0.02;
+  P.rot[at('head')][2] = f >= 8 ? 0.05 : -0.03;
+  for (const [k, sg] of sides) {
+    P.rot[at('arm' + k)][2] = sg * (0.06 + G.hang + up * 0.03);
+    rx('forearm' + k, -0.12);
+  }
+  if (f === 14) P.blink = true;
+  return P;
+}
+/**
+ * a four-legged figure's pose (figurePose): the walk's legs in diagonal pairs (front left with back right), the body
+ * rocking and the head bobbing; a cheer is a hop with the head up; anything else the idle, its breath lifting the
+ * body, the head nodding, a blink on frame 14
+ * @param {Figure} F @param {FigurePose} P @param {string} clip @param {number} f @param {number} n
+ * @param {(id: string, a: number) => void} rx @returns {FigurePose}
+ */
+export function quadPose(F, P, clip, f, n, rx) {
+  const at = (/** @type {string} */ id) => F.parts.findIndex(p => p.id === id),
+    head = at('head');
+  if (clip === 'walk') {
+    const s = Math.sin((2 * Math.PI * f) / n);
+    rx('legFL', -0.5 * s);
+    rx('legBR', -0.5 * s);
+    rx('legFR', 0.5 * s);
+    rx('legBL', 0.5 * s);
+    P.rot[at('body')][2] = 0.04 * s;
+    if (head >= 0) P.rot[head][0] = 0.06 * Math.abs(s) - 0.03;
+    P.rootY = 0.015 * (1 - Math.abs(s));
+    return P;
+  }
+  if (clip === 'cheer') {
+    P.rootY = f % 4 < 2 ? 0.05 : 0;
+    if (head >= 0) P.rot[head][0] = -0.3;
+    return P;
+  }
+  const up = f >= 4 && f < 12 ? 1 : 0;
+  P.lift[at('body')][1] = up * 0.012;
+  if (head >= 0) {
+    P.rot[head][0] = up ? -0.06 : 0.04;
+    P.rot[head][1] = f >= 8 ? 0.08 : -0.04;
+  }
+  if (f === 14 && clip !== 'sit') P.blink = true;
   return P;
 }
 
@@ -562,8 +674,14 @@ export function shapeSurface(sh) {
         O.push([[0, cp, 0]]);
       } else
         ring(seg, t => {
-          const d = /** @type {Vec3} */ ([sp * Math.sin(t), cp, sp * Math.cos(t)]);
-          return [[c[0] + r[0] * d[0], c[1] + r[1] * d[1], c[2] + r[2] * d[2]], d];
+          const d = /** @type {Vec3} */ ([sp * Math.sin(t), cp, sp * Math.cos(t)]),
+            k = taperAt(cp, sh.taper),
+            q = /** @type {Vec3} */ ([
+              ellipsoidWarp(d[0], sh.sq) * k,
+              ellipsoidWarp(d[1], sh.sq),
+              ellipsoidWarp(d[2], sh.sq) * k,
+            ]);
+          return [[c[0] + r[0] * q[0], c[1] + r[1] * q[1], c[2] + r[2] * q[2]], d];
         });
     }
     const S = ringSurface(R, O);
@@ -690,12 +808,14 @@ export function shapeTriangles(sh) {
 }
 /**
  * the figure's shapes as triangles, each vertex with its part (one joint) and colour: 8 numbers a vertex (x, y, z, the
- * smooth normal, the part, the colour's place in `colours`)
+ * smooth normal, the part, the colour's place in `colours`: the colours its parts use, at most FIGURE_PAL_MAX)
  * @param {Figure} F @returns {{ data: Float32Array, count: number, colours: string[] }}
  */
 export function figureMesh(F) {
-  const colours = Object.keys(F.colours),
+  /* only the colours the parts use (face marks are painted, not shaded): the baker's palette holds FIGURE_PAL_MAX */
+  const colours = [...new Set(F.parts.map(p => p.col))].filter(k => k in F.colours),
     /** @type {number[]} */ v = [];
+  if (colours.length > FIGURE_PAL_MAX) throw new Error(`figure ${F.name}: ${colours.length} colours`);
   F.parts.forEach((p, j) => {
     const ci = Math.max(0, colours.indexOf(p.col));
     for (const tri of shapeTriangles(p.shape)) for (const q of tri) v.push(...q, j, ci);
@@ -711,10 +831,10 @@ export function figureMesh(F) {
  * its top left, toward the light
  * @param {Figure} F @param {Float32Array} J the pose's joint matrices (jointMatrices) @param {FigurePose} P
  * @param {{ rel: number, tilt: number }} V @param {number} ppm @param {{ ax: number, ay: number }} S
- * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string }[]}
+ * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]}
  */
 export function figureFaceMarks(F, J, P, V, ppm, S) {
-  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string }[]} */
+  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]} */
   const out = [];
   const c = Math.cos(V.rel),
     s = Math.sin(V.rel),
@@ -733,7 +853,7 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
       nz = -n[0] * s + n[2] * c,
       facing = -(n[1] * -st + nz * ct) / (Math.hypot(nx, n[1], nz) || 1);
     /* the camera looks down, so a face's lower half faces it less: the eyes show the longest, the mouth the least */
-    if (facing < (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2)) continue;
+    if (facing < (m.min ?? (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2))) continue;
     let w = Math.max(1, Math.round(m.w * ppm)),
       h = Math.max(1, Math.round(m.h * ppm));
     if (m.kind === 'eye') {
@@ -743,7 +863,8 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
     const q = cardPoint(at, V.rel, V.tilt),
       x = Math.round(S.ax + q.u * ppm - w / 2),
       y = Math.round(S.ay - q.v * ppm - h / 2);
-    out.push({ x, y, w, h, rgb: F.colours[m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]], kind: m.kind });
+    const rgb = F.colours[m.col || m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]];
+    out.push(m.hollow ? { x, y, w, h, rgb, kind: m.kind, hollow: true } : { x, y, w, h, rgb, kind: m.kind });
     if (m.kind === 'eye' && !P.blink && w >= 2 && h >= 3)
       out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint' });
   }
@@ -854,7 +975,8 @@ export function clipFrameAt(clip, t, gait = 0) {
   const n = CLIP_FRAMES[/** @type {keyof typeof CLIP_FRAMES} */ (clip)] || 1;
   if (clip === 'walk') return ((Math.floor((gait / WALK_CYCLE_M) * n) % n) + n) % n;
   const tick = Math.floor(t / (1000 / FIGURE_FPS));
-  return ((Math.floor(tick / 2) % n) + n) % n;
+  /* a cheer or a throw on ones, the idle (and the sit) on twos */
+  return ((Math.floor(clip === 'cheer' || clip === 'throw' ? tick : tick / 2) % n) + n) % n;
 }
 /** the tick a time falls in on the 12 fps clock @param {number} t ms */
 export function figureTick(t) {
