@@ -544,6 +544,35 @@ test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults
   }
 });
 
+// PK-5: Wave C's kinds (catching, cash and maps): good rows pass check-data and the schema, planted faults are named
+const PK5_GOOD = [
+  { kind: 'catchLevel', n: 2 },
+  { kind: 'catchLevel', n: 1, if: 'foe:spliced' },
+];
+const PK5_BAD = [
+  [{ kind: 'catchLevel', n: 0 }, 'n: a whole number of levels from 1 to 10'],
+  [{ kind: 'catchLevel', n: 2, when: 'catch' }, "a catchLevel row can't act at catch"],
+];
+test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK5_GOOD.length; i += 4)
+    D.perks['test_pk5_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK5_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK5_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
 test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () => {
   const D = structuredClone(GAME_DATA);
   D.perks.lucky_charm.needs = 'team:Fire';

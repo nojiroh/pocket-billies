@@ -64,6 +64,7 @@ import {
   brokenParts,
   coatPrefix,
   encounterBuild,
+  feedLevels,
   findBilly,
   formatNumber,
   gainXp,
@@ -93,6 +94,7 @@ import {
   fxAt,
   fxBenchXp,
   fxCatch,
+  fxCatchLevel,
   fxChip,
   fxCrit,
   fxDamage,
@@ -201,6 +203,8 @@ expose({
   fxBattleStart: [() => fxBattleStart, v => (fxBattleStart = v)],
   // @ts-expect-error -- replaced on purpose
   fxBattleState: [() => fxBattleState, v => (fxBattleState = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxCatchLevelUp: [() => fxCatchLevelUp, v => (fxCatchLevelUp = v)],
   // @ts-expect-error -- replaced on purpose
   fxFieldStages: [() => fxFieldStages, v => (fxFieldStages = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2056,9 +2060,30 @@ export function catchKeep(e) {
     e.hp = Math.max(1, Math.round(maxHp(e) * f));
   }
   e.hp = Math.max(1, e.hp);
+  /* PK-5: a run's catchLevel rows (Name Tags): it joins that many levels higher, learning its moves on the way */
+  fxCatchLevelUp(e);
   const where = addBilly(e);
   battleNow().over = 'caught';
   return { where, alpha };
+}
+/** PK-5: a caught foe joins the levels the run's catchLevel rows give (fxBattleRows: those whose conditions hold
+ * here), as a Protein Bar's would (rules.js feedLevels: its moves learned on the way, its HP up by what it gained);
+ * one line names the Perks instead of a line a level. The levels gained (0 with none) @param {any} e */
+export function fxCatchLevelUp(e) {
+  const b = battleNow();
+  if (!b || !b.fx) return 0;
+  const rows = (fxBattleRows(b) || []).filter(f => f.kind === 'catchLevel'),
+    n = fxCatchLevel(rows);
+  if (!n) return 0;
+  const got = feedLevels(e, n, (t, o) => {
+    if (!o || o.k !== 'lvl') battleSay(t, o);
+  });
+  if (got)
+    battleSay(
+      `${[...new Set(rows.map(f => fxSrcName(f.src)))].join(' and ')}: ${billyName(e)} joins at level ${e.lvl}.`,
+      null
+    );
+  return got;
 }
 /* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));

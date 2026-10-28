@@ -28,6 +28,7 @@
              runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
+     catchLevel  a Billie you catch joins n levels higher (PK-5, battle-engine.js catchKeep)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -47,6 +48,7 @@ import { resFxRows } from './residents.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_CATCH_LEVEL: [() => FX_CATCH_LEVEL],
   FX_CHANCE: [() => FX_CHANCE],
   FX_CHIP: [() => FX_CHIP],
   FX_CRIT: [() => FX_CRIT],
@@ -69,6 +71,7 @@ expose({
   fxAt: [() => fxAt],
   fxBenchXp: [() => fxBenchXp],
   fxCatch: [() => fxCatch],
+  fxCatchLevel: [() => fxCatchLevel],
   fxChip: [() => fxChip],
   // @ts-expect-error -- replaced on purpose
   fxCond: [() => fxCond, v => (fxCond = v)],
@@ -156,6 +159,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'weather',
   'benchXp',
   'rule',
+  'catchLevel',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -472,6 +476,19 @@ export function fxPassive(fx, id) {
   }
   return o;
 }
+
+/** PK-5: the most levels catchLevel rows add together */
+export const FX_CATCH_LEVEL = 10;
+/** PK-5: how many levels higher a Billie you catch joins: the catchLevel rows' n summed (0 to FX_CATCH_LEVEL; 0 when
+ * none) @param {Fx[] | null | undefined} fx */
+export const fxCatchLevel = fx =>
+  Math.max(
+    0,
+    Math.min(
+      FX_CATCH_LEVEL,
+      (fx || []).reduce((a, f) => a + (f.kind === 'catchLevel' ? f.n || 0 : 0), 0)
+    )
+  );
 
 /* ---------- PK-1: when a row acts, on what condition, how often, how it grows (perks-track.md section 7) ----------
    Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):

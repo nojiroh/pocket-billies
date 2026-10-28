@@ -14,7 +14,15 @@
    which puts that kind's fields in with neutral values. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { FX_CHANCE, FX_CRIT, FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
+import {
+  FX_CATCH_LEVEL,
+  FX_CHANCE,
+  FX_CRIT,
+  FX_EVERY,
+  FX_LIMIT,
+  FX_STAGES,
+  FX_WHEN,
+} from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import { FX_ONCE_KINDS, FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
@@ -101,6 +109,7 @@ const PERK_KINDS = {
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
   benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
   rule: 'A run rule: the forecast shows more days (PK-4)',
+  catchLevel: 'A Billie you catch joins levels higher (PK-5)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -147,6 +156,7 @@ const PERK_ROW_NEW = {
   weather: () => ({ kind: 'weather', what: 'noWeaken' }),
   benchXp: () => ({ kind: 'benchXp', share: 0.25 }),
   rule: () => ({ kind: 'rule', rule: 'forecastDays', n: 3 }),
+  catchLevel: () => ({ kind: 'catchLevel', n: 2 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -348,6 +358,14 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           max: 14,
           step: 1,
           help: `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
+        }),
+      ],
+      catchLevel: () => [
+        numberField('Levels', `${p}.n`, {
+          min: 1,
+          max: FX_CATCH_LEVEL,
+          step: 1,
+          help: `Levels higher it joins at, learning its moves on the way (at most ${FX_CATCH_LEVEL} together).`,
         }),
       ],
     }[f.kind];

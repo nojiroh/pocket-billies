@@ -41,6 +41,7 @@ import {
 } from './mapgen.js';
 import { fxRowOf } from './run-enc.js';
 import {
+  FX_CATCH_LEVEL,
   FX_CHANCE,
   FX_CHIP,
   FX_CRIT,
@@ -2159,6 +2160,9 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.mult: a boost row's mult is above 1 (the weather's boosts counted that many times over)`);
     if (f.what === 'noWeaken' && 'mult' in f) problem(`${at}.mult: a noWeaken row has no mult`);
   }
+  /* PK-5: the levels a caught Billie joins higher, 1 to FX_CATCH_LEVEL */
+  if (f.kind === 'catchLevel' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_CATCH_LEVEL))
+    problem(`${at}.n: a whole number of levels from 1 to ${FX_CATCH_LEVEL} (effects.js FX_CATCH_LEVEL)`);
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
   /* PK-4: a run rule of FX_RULES and how much it changes (forecastDays: 1 to 14 more days) */
