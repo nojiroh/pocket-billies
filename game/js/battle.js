@@ -76,7 +76,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -528,7 +528,7 @@ export function paintBoxes(s, mk, anim) {
 }
 /* UI-15: the field strip (in the ticker's place, at the top): the weather and the field's hazards as glyphs, with the
    turns left where they run out; your side's hazards on the left, the foe's on the right. A chip's words show under the
-   strip when it is tapped. The icon set's icons for now (UI-13 draws the strip's own glyphs) */
+   strip when it is tapped. The weather from the icon set; Sandstorm and the stones in UI-13's glyphs */
 const FIELD_WEATHER_ICONS = {
   rain: 'rain',
   storm: 'rain',
@@ -542,9 +542,10 @@ const FIELD_WEATHER_ICONS = {
 /* the sharp stones each side has, as the turn's playback has shown them so far (the battle runs a turn ahead of what
    is on screen: the strip waits for the event, then reads the field when the turn is over) */
 const fieldUi = { stones: [false, false], mk: null };
-function fieldChipHTML(icon, words, turns, cls) {
-  /* a 40 px button (the tap rule) around a 24 px chip */
-  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${uiIconHTML(icon, 14)}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
+function fieldChipHTML(face, words, turns, cls) {
+  /* a 40 px button (the tap rule) around a 24 px chip; face is the icon's or glyph's markup (UI-18's merge: UI-13's
+     glyphs for Sandstorm and the stones, the weather from the icon set) */
+  return `<button class="fs-chip ${cls || ''}" type="button" data-tip="${escapeHtml(words)}" aria-label="${escapeHtml(words)}"><span class="fs-face">${face}${turns ? `<b class="tnum">${turns}</b>` : ''}</span></button>`;
 }
 function fieldStripUpdate(mk) {
   const el = $('#fsRow');
@@ -556,7 +557,7 @@ function fieldStripUpdate(mk) {
     side = i =>
       fieldUi.stones[i]
         ? fieldChipHTML(
-            'scrap',
+            glyphHTML('effect', 'stones', 14, 'fill'),
             `Sharp stones on ${i ? 'their' : 'your'} side: they hurt each Billie that comes in`,
             0,
             'bad'
@@ -566,12 +567,20 @@ function fieldStripUpdate(mk) {
     mid =
       (w
         ? fieldChipHTML(
-            FIELD_WEATHER_ICONS[w.k] || 'cloud',
+            uiIconHTML(FIELD_WEATHER_ICONS[w.k] || 'cloud', 14),
             WEATHER_BATTLE_NOTES[w.k] || WEATHER_NAMES[w.k] || w.k,
             0,
             'wx'
           )
-        : '') + (m ? fieldChipHTML('bolt', `${shockName()}: ${plural(m.n, 'turn')} left`, m.n, 'warn') : '');
+        : '') +
+      (m
+        ? fieldChipHTML(
+            glyphHTML('effect', 'sandstorm', 14, 'fill'),
+            `${shockName()}: ${plural(m.n, 'turn')} left`,
+            m.n,
+            'warn'
+          )
+        : '');
   const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
   if (el.innerHTML !== h) el.innerHTML = h;
   $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
