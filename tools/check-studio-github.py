@@ -2343,6 +2343,13 @@ def art_browser_steps(pg, errs):
         if 'Edit pixels' in acts or 'Replace…' in acts: errs.append(f'art browser: legacy art {old} offers {acts}')
         pg.evaluate(f"ACTIONS.abEdit({{ p: {json.dumps(old)} }})"); time.sleep(0.3)
         if pg.evaluate('artBrowser.edit'): errs.append(f'art browser: legacy art {old} opened in the painter')
+    # PK-2: a Perk's picture: Used by names perks.json, and Edit icon opens it
+    pg.evaluate("artBrowser.q = ''; ACTIONS.abPick({ p: 'art/perks/lucky_charm.svg' })")
+    end = time.time() + 30
+    while time.time() < end and 'perks' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'perks' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('art browser: Used by for a Perk’s picture does not name perks.json')
+    if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Edit icon' && b.dataset.n === 'perks/lucky_charm')"):
+        errs.append('art browser: a Perk’s picture has no Edit icon')
     tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
     path = 'art/' + tile
     pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
@@ -2368,7 +2375,7 @@ def art_browser_steps(pg, errs):
     hit = pg.evaluate("(() => { const r = findRun('pyramid_32.png').find(e => e.kind === 'art'); if (!r) return null; r.fn(); return [studioState.sec, artBrowser.sel] })()")
     if hit != ['art', 'art/coins/pyramid_32.png']: errs.append(f'art browser: Ctrl K on pyramid_32.png gave {hit}')
     pg.set_default_timeout(30000)
-    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, the Report, read-only legacy, Used by, Edit pixels and its undo, Ctrl K', flush=True)
+    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, the Report, read-only legacy, Used by (a Perk’s picture too, with Edit icon), Edit pixels and its undo, Ctrl K', flush=True)
 
 
 def tile_set_steps(pg, errs):
@@ -2525,7 +2532,29 @@ def icons_steps(pg, errs):
     E("undo()"); time.sleep(0.3)
     if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
     E("ACTIONS.icClose()")
-    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; all undone', flush=True)
+    # PK-2: a Perk's picture opens the same way (its folder's others beside it, its sizes 72 and 36); a stroke shows in
+    # the game's artURL (NW_ART keyed by the path in art/); a new picture there is named with _ and staged in art/perks
+    E("void iconEditOpen('perks/lucky_charm')")
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.4)
+    P = "loadedText('art/perks/lucky_charm.svg')"
+    orig = E(P)
+    if E("document.querySelectorAll('#main .ic-other').length") != E("iconNames('perks').length") or E("iconNames('perks').length") < 13:
+        errs.append(f"icons: a Perk's picture shows {E('document.querySelectorAll(\'#main .ic-other\').length')} beside it")
+    if '72' not in E("[...document.querySelectorAll('#main .ic-size small')].map(e=>e.textContent).join()"): errs.append('icons: a Perk’s picture isn’t previewed at 72 px')
+    box, z = pg.locator('#icStage .pc-art').bounding_box(), E("iconEd.pc.zoom")
+    pg.mouse.click(box['x'] + 1.5 * z, box['y'] + 1.5 * z); time.sleep(0.4)
+    if E(P) == orig or not E("(window.NW_ART || {})['perks/lucky_charm.svg'] && artURL('perks/lucky_charm.svg').startsWith('data:')"):
+        errs.append('icons: a stroke on a Perk’s picture did not write it or reach the previews')
+    E("undo()"); time.sleep(0.3)
+    if E(P) != orig: errs.append('icons: undo did not put the Perk’s picture back')
+    E("void ACTIONS.icNew()"); pg.wait_for_selector('#icNewName'); pg.fill('#icNewName', 'check_perk')
+    pg.locator('#dlg button', has_text='Make it').click(); time.sleep(0.6)
+    if 'art/perks/check_perk.svg' not in E("stageChanges().texts.map(t => t.path)") or E("artBrowser.icon") != 'perks/check_perk':
+        errs.append('icons: a new picture in art/perks is not staged and open')
+    E("undo()"); time.sleep(0.3)
+    if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
+    E("ACTIONS.icClose()")
+    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; a Perk’s picture painted and a new one in art/perks staged; all undone', flush=True)
 
 
 def atlas_steps(pg, errs):

@@ -17,12 +17,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { ICON_FRONT, ICON_PALETTE, ICON_RAMPS, ICON_SIZE, iconBlockKeyed } from '../game/js/logic/icon-block.js';
-import { pixelsToSvg, svgProblem, svgToPixels } from '../game/js/logic/svg-pixels.js';
+import { ICON_DIRS, pixelsToSvg, svgProblem, svgToPixels } from '../game/js/logic/svg-pixels.js';
 import { readGameData } from './data-files.mjs';
 
 export const ROOT = join(import.meta.dirname, '..');
 /** the folders a grid file may draw into (art/ui keeps its 51 icons; tools/test/ui-icons.test.mjs) */
-export const ICON_FOLDERS = ['perks', 'items', 'boons'];
+export const ICON_FOLDERS = ICON_DIRS.filter(d => d !== 'ui');
 /** two pictures whose filled shapes overlap this much (iconOverlap) read as one at 36 px */
 export const ICON_SAME = 0.9;
 const ID = /^[a-z][a-z0-9_]*$/;

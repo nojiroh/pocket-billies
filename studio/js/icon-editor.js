@@ -1,7 +1,9 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · the UI icons (Studio art track SA-2b) =================
    The interface icons are art/ui/<name>.svg: 36 x 36 pixel art in fixed colours, the "block and split" look. Since
-   SA-2b these SVG files are the source (tools/build-ui-icons.py retired, decision 6). Here an icon is edited three ways,
+   SA-2b these SVG files are the source (tools/build-ui-icons.py retired, decision 6). PK-2: the Perks' pictures
+   (art/perks, and art/items and art/boons later: logic/svg-pixels.js ICON_DIRS) are drawn the same way and edited here
+   too; an icon outside art/ui is known by its key 'perks/<id>' (svgIconKey). Here an icon is edited three ways,
    each change one step of the Studio's undo and saved as text (Propose sends it):
    - its pixels on the shared pixel canvas (an icon in the pixel format: logic/svg-pixels.js writes the same text back);
    - Shade as a block: a front painted flat on 34 x 34 gets the set's block side, split and seams (logic/icon-block.js);
@@ -16,7 +18,7 @@ import { $ } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
-import { pixelsToSvg, svgProblem, svgToPixels } from '../../game/js/logic/svg-pixels.js';
+import { pixelsToSvg, svgIconKey, svgIconPath, svgProblem, svgToPixels } from '../../game/js/logic/svg-pixels.js';
 import {
   ICON_FRONT,
   ICON_PALETTE,
@@ -43,6 +45,7 @@ import { artBrowser, artPictures } from './art-browser.js';
 expose({
   ICON_BOX: [() => ICON_BOX],
   artSectionBefore: [() => artSectionBefore],
+  iconDir: [() => iconDir],
   iconDrawPreviews: [() => iconDrawPreviews, v => (iconDrawPreviews = v)],
   iconEd: [() => iconEd],
   iconEditOpen: [() => iconEditOpen, v => (iconEditOpen = v)],
@@ -77,17 +80,16 @@ const iconEd = {
   t: 0,
 };
 const ICON_BOX = 36;
-const iconPath = name => `art/ui/${name}.svg`;
-/* the icons in the file list, and any made here and not saved */
-export function iconNames() {
+/* an icon's path: 'bag' is art/ui/bag.svg, 'perks/lucky_charm' a Perk's picture (PK-2) */
+const iconPath = name => svgIconPath(name);
+/* an icon's folder ('ui', 'perks', ...) */
+const iconDir = name => (name.includes('/') ? name.slice(0, name.indexOf('/')) : 'ui');
+/* the icons of a folder in the file list, and any made here and not saved, by key ('ui': plain names) */
+export function iconNames(dir = 'ui') {
   const out = new Set();
-  for (const p of artPictures()) {
-    const m = /^art\/ui\/([\w-]+)\.svg$/.exec(p);
-    if (m) out.add(m[1]);
-  }
-  for (const p of studioState.textDirty.keys()) {
-    const m = /^art\/ui\/([\w-]+)\.svg$/.exec(p);
-    if (m) out.add(m[1]);
+  for (const p of [...artPictures(), ...studioState.textDirty.keys()]) {
+    const k = svgIconKey(p);
+    if (k && iconDir(k) === dir) out.add(k);
   }
   return [...out].sort();
 }
@@ -95,13 +97,21 @@ export function iconNames() {
 const iconText = name => loadedText(iconPath(name)) || '';
 
 /* opens an icon (loads its text first) */
-async function iconEditOpen(name) {
+export async function iconEditOpen(name) {
   try {
     await textGet(iconPath(name));
   } catch (e) {
     return toast('Could not load ' + iconPath(name), 'err');
   }
-  Object.assign(artBrowser, { icon: name, tiles: false, atlas: false, edit: '', sel: iconPath(name), at: 'ui', q: '' });
+  Object.assign(artBrowser, {
+    icon: name,
+    tiles: false,
+    atlas: false,
+    edit: '',
+    sel: iconPath(name),
+    at: iconDir(name),
+    q: '',
+  });
   Object.assign(iconEd, { draft: null, pc: null, canvas: null });
   if (studioState.sec !== 'art') openSection('art');
   else render();
@@ -136,13 +146,14 @@ function iconEditorHTML() {
     px = svgToPixels(text),
     path = iconPath(name);
   afterRender(mountIconEditor);
-  const sizes = [14, 22, 36, 108]
+  /* PK-2: a Perk's picture shows at 36 and 72 px (rows and pick cards); the UI icons mostly at 14-22 */
+  const sizes = (iconDir(name) === 'ui' ? [14, 22, 36, 108] : [18, 36, 72, 108])
     .map(
       s =>
         `<span class="ic-size"><img class="pix" data-ic="1" alt="" style="width:${s}px;height:${s}px"><small>${s} px</small></span>`
     )
     .join('');
-  const others = iconNames()
+  const others = iconNames(iconDir(name))
     .map(
       n =>
         `<button class="ic-other${n === name ? ' on' : ''}" data-act="icOpen" data-n="${escapeHtml(n)}" title="${escapeHtml(n)}"><img class="pix" ${n === name ? 'data-ic="1"' : `src="${escapeHtml(iconSrc(n))}"`} alt="" width="22" height="22"></button>`
@@ -164,7 +175,7 @@ function iconEditorHTML() {
   <p class="help mono">${escapeHtml(path)}${studioState.textDirty.has(path) ? ' · edited, not saved' : ''}</p>
   <div class="ic-wrap"><div class="ic-main">${card('Pixels', paint)}
   ${card('Text', `<textarea id="icText" class="mono ic-text" rows="8" spellcheck="false">${escapeHtml(draft)}</textarea><p class="help" id="icTextNote">${escapeHtml(iconTextNote(draft))}</p>`)}</div>
-  <aside class="ic-side">${card('As the game shows it', `<div class="ic-panels"><div class="ic-panel ic-light">${sizes}</div><div class="ic-panel ic-dark">${sizes}</div></div><p class="help">The menus mostly draw icons at 14-22 px, on both themes in the same colours.</p>`)}
+  <aside class="ic-side">${card('As the game shows it', `<div class="ic-panels"><div class="ic-panel ic-light">${sizes}</div><div class="ic-panel ic-dark">${sizes}</div></div><p class="help">${iconDir(name) === 'ui' ? 'The menus mostly draw icons at 14-22 px' : 'The game draws these at 36 px in rows and 72 px on pick cards'}, on both themes in the same colours.</p>`)}
   ${card('Beside the others', `<div class="ic-others">${others}</div>`)}</aside></div></div>`;
 }
 /* the set's colours to paint with: the palette and the one-colour ramps */
@@ -192,7 +203,7 @@ function svgParseProblem(text) {
   return '';
 }
 /* an icon's picture for an <img>: the unsaved text, else the file */
-const iconSrc = name => {
+export const iconSrc = name => {
   const p = iconPath(name);
   return studioState.textDirty.has(p) ? svgDataUrl(studioState.textDirty.get(p).text) : `../game/${p}`;
 };
@@ -259,12 +270,12 @@ function mountIconEditor() {
 /* an undo or redo of the icon's text draws it again (the canvas from the text, the box with it) */
 document.addEventListener('studio-text', ev => {
   const p = ev.detail && ev.detail.path,
-    m = p && /^art\/ui\/([\w-]+)\.svg$/.exec(p);
-  if (m) iconShowUnsaved(m[1]);
+    k = p && svgIconKey(p);
+  if (k) iconShowUnsaved(k);
   /* an icon made here and taken back (undo of New icon): nothing to show, and no file to ask the site for */
   if (p && !studioState.textDirty.has(p) && textAsLoaded(p) == null) {
     if (artBrowser.sel === p) artBrowser.sel = '';
-    if (m && artBrowser.icon === m[1]) {
+    if (k && artBrowser.icon === k) {
       artBrowser.icon = '';
       iconEd.pc = null;
       if (studioState.sec === 'art') render();
@@ -282,12 +293,14 @@ document.addEventListener('studio-text', ev => {
   else if (!svgToPixels(t).error !== !!$('#icStage')) render();
   iconDrawPreviews();
 });
-/* the Studio's own previews of the game's menus draw an unsaved icon (art.js uiIconURL reads window.NW_ART) */
+/* the Studio's own previews of the game's menus draw an unsaved icon (art.js uiIconURL and artURL read
+   window.NW_ART, keyed by the path inside art/) */
 function iconShowUnsaved(name) {
   const p = iconPath(name),
-    A = (window.NW_ART = window.NW_ART || {});
-  if (studioState.textDirty.has(p)) A[`ui/${name}.svg`] = svgDataUrl(studioState.textDirty.get(p).text);
-  else delete A[`ui/${name}.svg`];
+    A = (window.NW_ART = window.NW_ART || {}),
+    key = p.slice('art/'.length);
+  if (studioState.textDirty.has(p)) A[key] = svgDataUrl(studioState.textDirty.get(p).text);
+  else delete A[key];
 }
 
 /* ---------- actions ---------- */
@@ -328,23 +341,32 @@ ACTIONS.icShade = () => {
 };
 /* a new icon: blank or a copy of the open one, saved with the next proposal */
 ACTIONS.icNew = async () => {
+  const dir = iconDir(artBrowser.icon),
+    ui = dir === 'ui',
+    ok = ui ? /^[a-z][a-z0-9-]*$/ : /^[a-z][a-z0-9_]*$/,
+    keyOf = (/** @type {string} */ n) => (ui ? n : `${dir}/${n}`);
   const name = await dialog(
-    'New icon',
-    `<label class="fld"><span>Name (lower case, digits and -)</span><input type="text" id="icNewName" maxlength="32" placeholder="lantern"></label>
+    ui ? 'New icon' : `New picture in art/${dir}`,
+    `<label class="fld"><span>Name (lower case, digits and ${ui ? '-' : '_'})</span><input type="text" id="icNewName" maxlength="32" placeholder="${ui ? 'lantern' : 'rubber_stamp'}"></label>
     <label class="chk"><input type="checkbox" id="icNewCopy"> Start as a copy of ${escapeHtml(artBrowser.icon)}</label>
-    <p class="help">The game finds an icon by its name (uiIconHTML('lantern')). The unit test counts the set (51 now): its owner raises that count when the new icon goes in.</p>`,
+    <p class="help">${
+      ui
+        ? 'The game finds an icon by its name (uiIconHTML(&#39;lantern&#39;)). The unit test counts the set (51 now): its owner raises that count when the new icon goes in.'
+        : `Name it after what it shows: a Perk’s picture is its id, and the Perk names it (img “${escapeHtml(dir)}/&lt;id&gt;.svg”). A picture nothing names counts as unused.`
+    }</p>`,
     [
       { l: 'Cancel', v: null },
       {
         l: 'Make it',
         c: 'primary',
         f: m => {
-          const n = (m.querySelector('#icNewName').value || '').trim();
-          if (!/^[a-z][a-z0-9-]*$/.test(n) || iconNames().includes(n)) {
-            toast(iconNames().includes(n) ? `There is an icon ${n} already.` : 'Lower case letters, digits and -.');
+          const n = (m.querySelector('#icNewName').value || '').trim(),
+            had = iconNames(dir).includes(keyOf(n));
+          if (!ok.test(n) || had) {
+            toast(had ? `There is an icon ${n} already.` : `Lower case letters, digits and ${ui ? '-' : '_'}.`);
             return false;
           }
-          return { n, copy: m.querySelector('#icNewCopy').checked };
+          return { n: keyOf(n), copy: m.querySelector('#icNewCopy').checked };
         },
       },
     ]
