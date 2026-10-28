@@ -1107,6 +1107,8 @@ export interface Rules {
       pick: number;
       rarity: Record<PerkRarity, number>;
       price: Record<PerkRarity, number>;
+      /** PK-4: a Perk whose tags match the team's types or a held Perk's tags is drawn this many times as often */
+      bias?: number;
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
@@ -1928,8 +1930,39 @@ export interface Music {
 
 /** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
 export type PerkRarity = 'common' | 'uncommon' | 'rare';
-/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
-export type FxRow =
+/** PK-1: the moments a row can act at (logic/effects.js FX_WHEN) */
+export type FxWhen =
+  | 'battleStart'
+  | 'switchIn'
+  | 'move'
+  | 'hit'
+  | 'hurt'
+  | 'crit'
+  | 'ko'
+  | 'faint'
+  | 'turnEnd'
+  | 'throwMiss'
+  | 'catch'
+  | 'win'
+  | 'arrive'
+  | 'buy'
+  | 'take';
+/** PK-1: when a row acts, on what condition, how often and how it grows (logic/effects.js; all optional) */
+export interface FxTiming {
+  when?: FxWhen;
+  /** a condition or a list that must all hold (effects.js fxCond: 'lead', 'hp<0.25', 'foe:leader|rival', ...) */
+  if?: string | string[];
+  /** acts on every Nth time its `when` comes */
+  every?: number;
+  /** builds by `by` each time `on` comes (when `if` holds), up to `max`, back to 0 at `reset` */
+  grow?: { on: FxWhen; by: number; max: number; reset?: FxWhen; if?: string | string[] };
+  per?: 'teamTypes';
+  once?: 'battle' | 'run' | 'billie';
+}
+/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
+export type FxRow = FxTiming & FxKindRow;
+/** one effect row's kind and numbers */
+export type FxKindRow =
   | { kind: 'money'; mult: number }
   | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
   | { kind: 'catch'; mult: number }
@@ -1937,7 +1970,8 @@ export type FxRow =
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number }
-  /** RL-13 (modifiers.json only): foes' levels up by n; the boss's HP times mult */
+  /** RL-13 (modifiers.json; PK-1: any run row, effects.js fxRunFoeLevels, fxRunBossHp): foes' levels up by n; the
+      boss's HP times mult */
   | { kind: 'level'; n: number }
   | { kind: 'bossHp'; mult: number }
   /** RL-12c (held items only, for the holder): its XP times mult; a share of its HP at each turn's end; once a battle,
@@ -1950,7 +1984,48 @@ export type FxRow =
   /** SP-6: a Gene Sample's DNA, the wild splice odds, an Unstable splice's turn-end hurt (Perks), times mult */
   | { kind: 'dna'; mult: number }
   | { kind: 'splice'; mult: number }
-  | { kind: 'unstable'; mult: number };
+  | { kind: 'unstable'; mult: number }
+  /** PK-3: critical-hit stages for your Billies' hits (without a when); at `when: move` that move is critical */
+  | { kind: 'crit'; stages?: number }
+  /** PK-3: your Billies can't get a status, or aren't hurt by the Sandstorm or sharp stones */
+  | { kind: 'immune'; what: 'brn' | 'slp' | 'par' | 'sandstorm' | 'stones' }
+  /** PK-3: at a hit of yours, a status on the foe with a chance (rows together at most 0.5) */
+  | { kind: 'inflict'; status: string; chance: number }
+  /** PK-3: what a burn takes from your Billies at each turn's end, times mult */
+  | { kind: 'chip'; what: 'burn'; mult: number }
+  /** PK-3: your Billies move before the foe's (within a move's priority) where its `if` holds */
+  | { kind: 'first' }
+  /** PK-3: when your whole team has fainted, they all get back up with this share of their HP (needs `once`) */
+  | { kind: 'revive'; share: number }
+  /** PK-4: a type passive works better for your Billies that have it, by its own numbers (effects.js FX_PASSIVE_KEYS) */
+  | {
+      kind: 'passive';
+      passive:
+        | 'kindling'
+        | 'undertow'
+        | 'regrowth'
+        | 'livewire'
+        | 'bedrock'
+        | 'slipstream'
+        | 'wildmind'
+        | 'alloy'
+        | 'partingroar';
+      rate?: number;
+      hp?: number;
+      mult?: number;
+      uses?: number;
+      always?: true;
+      rolls?: number;
+      all?: true;
+      stat?: 'lev' | 'law' | 'lob' | 'pr' | 'hus';
+      stages?: number;
+    }
+  /** PK-4: the weather never weakens your Billies' moves (noWeaken), or its boosts count mult times over (boost) */
+  | { kind: 'weather'; what: 'noWeaken' | 'boost'; mult?: number }
+  /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
+  | { kind: 'benchXp'; share: number }
+  /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days); later waves add rules */
+  | { kind: 'rule'; rule: 'forecastDays'; n: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
@@ -2275,6 +2350,15 @@ export interface Perk {
   d: string;
   rarity: PerkRarity;
   fx: FxRow[];
+  /** PK-1: its battle line when one of its rows acts at a moment (at most 40 letters; {name}: the Billie) */
+  say?: string;
+  /** PK-2: its picture under game/art ('perks/<id>.svg'); without one it shows the `relic` UI icon */
+  img?: string;
+  /** PK-4: offered only to a team this holds for (a condition or a list, all of which must hold: team:<Type>, mono) */
+  needs?: string | string[];
+  /** PK-4: its types and themes (types.json ids; logic/perks.js PERK_THEMES): offers lean toward a Perk whose tag
+      matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
+  tags?: string[];
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */

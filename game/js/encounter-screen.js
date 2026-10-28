@@ -60,7 +60,9 @@ import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
 import { caseFile, caseStampMoment, redactSplit } from './logic/case-file.js';
 import { runMapNode } from './logic/run-map.js';
+import { runImmune } from './logic/run-loop.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
+import { perkTeamOf } from './logic/perks.js';
 import {
   encChanges,
   encEventFoe,
@@ -395,7 +397,8 @@ function encounterStage(id, i) {
       encHurt(team(), +s, maxHp);
     },
     status: ([sid]) => {
-      encStatus(team(), sid);
+      /* PK-3: a Perk that keeps the status off (Oven Mitts) keeps it off the whole team */
+      if (!runImmune(saveData, PERKS, sid)) encStatus(team(), sid);
     },
     fx: ([n, ...row]) => {
       encBoon(saveData.run, [fxRowOf(row)], +n, id);
@@ -441,7 +444,7 @@ function encounterStage(id, i) {
     },
     perk: async ([arg]) => {
       const run = saveData.run,
-        pid = encPerk(run, arg, PERKS, RULES.run.perks);
+        pid = encPerk(run, arg, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
       if (!pid) {
         encNote('There was nothing left to give you.');
         await encStep(title, 'Go on');

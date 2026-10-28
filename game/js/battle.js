@@ -11,7 +11,6 @@ import {
   battleTipHide,
   battleTutor,
   battleWeather,
-  battleWeatherMultiplier,
   closeModal,
   fieldBadgeLine,
   jingle,
@@ -97,6 +96,7 @@ import {
   effectiveStat,
   enemyOnly,
   fighter,
+  fxWeatherFor,
   isMulti,
   liveActors,
   runTurn,
@@ -1084,14 +1084,11 @@ export const itemIcon = (k, size = 30) => {
 /* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming. UI-15: a
    tile shows the type's glyph, the name, the power and the effectiveness; the rest (type, accuracy, same-type bonus,
    weather, the move's text) on a long press, or on hover and keyboard focus (moveInfoShow) */
-const moveWeatherMark = M =>
-  M.p && typeof battleWeatherMultiplier === 'function'
-    ? battleWeatherMultiplier(M.t) > 1
-      ? ' ▲'
-      : battleWeatherMultiplier(M.t) < 1
-        ? ' ▼'
-        : ''
-    : '';
+/* PK-4: the weather's arrow for the fighter choosing, with the run's weather rows (Umbrella: no arrow down) */
+const moveWeatherMark = M => {
+  const w = M.p && activeBattle ? fxWeatherFor(activeBattle.cur, M.t) : 1;
+  return w > 1 ? ' ▲' : w < 1 ? ' ▼' : '';
+};
 function moveTilesHTML(m) {
   /* SP-5: and the moves its Augments bring */
   return `<div class="moves">${movesOf(m)

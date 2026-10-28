@@ -535,6 +535,8 @@ debugLog.state = () => {
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
             /* RL-12: the Perks held (perks.json ids, not names), the pick waiting (how many) and offers made */
             relics: (run.perks || []).slice(),
+            /* PK-1: the Perks' counters, growth and once marks (logic/effects.js fxStateLog: numbers only) */
+            relicState: GAME.fxStateLog ? GAME.fxStateLog(run) : null,
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
             /* RL-12b: events (ids played, the one playing, draws so far), the boons on, reward picks made and the

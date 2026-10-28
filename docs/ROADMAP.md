@@ -302,6 +302,24 @@ town node needs it.
   Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; next **the owner's phone
   and pick** ("Ask me before" 1). About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
+- **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
+  relics) with lots of variety, each with its own picture in the UI icon set's 36 px block-and-split look, drawn as
+  flat 34x34 grids and shaded by the game's own `icon-block.js`. 66 new Perks in four waves (battle kit; types, team
+  and weather; catching, cash and maps; rules, growth and adventure) plus 12 **Fine Print** trade-off Perks offered at
+  leader wins, 7 Perk sets, 16 new held items, every Bag item and held item redrawn, 20 named boons and curses (the
+  Bureau's Red Tape), the Field Guide's Perks tab; the effects gain triggers, conditions, counters and growth. PK-0
+  (the plan, research and 8 sample icons) done 2026-10-27 on `ccr-24be55e6-2bmqci`; PK-1 (the effects core: when,
+  if, every, grow, per and once on effect rows, run.perkState, the switch-in fix, every run row of turnHeal, pinchHeal,
+  turnHurt, level and bossHp read, battle lines naming boons, the Studio's row inputs) done 2026-10-28 on
+  `track/perks`; PK-2 (the art pipeline: tools/build-icons.mjs, `img` on Perks, the 13 existing Perks drawn, pictures
+  at 72 px on pick cards and 36 px in rows, the Studio's icon editor and art browser on art/perks, Edit art in the
+  Perks editor) done 2026-10-28 on `track/perks`; PK-3 (Wave A, the battle kit: 15 Perks, the kinds crit, immune,
+  inflict, chip, first and revive, 11 new pictures, counters on the Perks tab) done 2026-10-28 on `track/perks`; PK-4
+  (Wave B: types, team and weather: 15 Perks, the kinds passive, weather, benchXp and rule forecastDays, `needs` and
+  `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
+  maps) next.
+  The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
+  sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
   picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
   events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in

@@ -1204,6 +1204,10 @@ section > h2,
   flex: none;
   background: var(--ico) center/contain no-repeat;
 }
+/* PK-2: a Perk's picture (art.js artIconHTML), drawn at whole multiples of its 36 px */
+.art-ic {
+  image-rendering: pixelated;
+}
 /* UI-13: a mark's glyph (art/ui/g-*.svg, art.js glyphHTML): the SVG as a mask, filled with its colour code (--tone,
    a --sig-* token) or the text's colour; -webkit-mask for Safari, and no filter here (it would run before the mask) */
 .ugl {
