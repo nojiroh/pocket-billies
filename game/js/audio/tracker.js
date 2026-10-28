@@ -377,10 +377,6 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (T.song && T.song.name === name && !o.restart) return T.song;
     const D = T.compose(name);
     if (!D) return null;
-    if (T.song) {
-      const old = T.song;
-      old.fade = c.currentTime;
-    }
     const L = levels();
     T.song = {
       name,
