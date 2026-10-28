@@ -9,7 +9,18 @@
    (battleFlashGate) and the debug log's `anim` line per move (no names, no save data). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { BATTLE_ANIMS, MOVES, TYPE_GLOW, activeBattle, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
+import {
+  BATTLE_ANIMS,
+  MOVES,
+  TYPE_GLOW,
+  activeBattle,
+  battleMoodPlay,
+  battleScarAt,
+  hudHit,
+  hudPop,
+  provide,
+  reducedMotion,
+} from './hooks.js';
 import { battleAnimLogLine, battleAnimTimeline, flashGate } from './logic/battle-anims.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -17,6 +28,7 @@ expose({
   animAt: [() => animAt, v => (animAt = v)],
   animColor: [() => animColor],
   animLog: [() => animLog, v => (animLog = v)],
+  animScar: [() => animScar, v => (animScar = v)],
   animStep: [() => animStep, v => (animStep = v)],
   animStepInfo: [() => animStepInfo, v => (animStepInfo = v)],
   battleAnim: [() => battleAnim],
@@ -213,12 +225,20 @@ function animStep(S, c) {
       return;
     case 'hit':
       K.hitFx(c.ti, c.hitAn);
+      animScar(c);
       return;
   }
 }
 /** what a skipped step still does: the hit's numbers */
 function animStepInfo(S, c) {
   if (S.do === 'hit' && typeof hudHit === 'function') hudHit(c.ti, c.hitAn);
+  /* VFX-15: a scar stays for the battle, so a skipped hit leaves its scar too */
+  if (S.do === 'hit') animScar(c);
+}
+/** VFX-15: the scar a landed hit leaves at the target's feet (battle-stage-look.js) */
+function animScar(c) {
+  if (typeof battleScarAt === 'function' && c.an.dmg)
+    battleScarAt(c.ti, { type: c.type, w: battleStageKit.hitWeight(c.ti, c.an) });
 }
 /** the move's `anim` line in the debug log, once (when its time is up, or a skip ends it) */
 function animLog(C) {
@@ -262,6 +282,8 @@ function battleAnimPlay(an, ev) {
   battleStageKit.fxSeed(
     `${an.mid}|${si}|${ti}|${typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0}`
   );
+  /* VFX-15: the stage's mood for this move (battle-stage-look.js), on the stage clock, within its time */
+  if (typeof battleMoodPlay === 'function') battleMoodPlay(an, M, c, T);
   for (const S of T.steps) {
     const run = () => animStep(S, c);
     if (S.sync) run();

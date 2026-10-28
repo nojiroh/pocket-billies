@@ -287,6 +287,8 @@ export interface MoveEffect {
 export type Evolution =
   | { k: 'lvl' | 'split'; at: number }
   | { k: 'item'; item?: DataId; min: number }
+  /** ON-4: evolves when it arrives by a friend trade at `min` or above, or with the item (the route without friends) */
+  | { k: 'acquire'; item: DataId; min: number }
   | { k: 'idle'; ms: number; min: number }
   | { k: 'streak' | 'donate'; n: number; min: number }
   | { k: 'merge' | 'rename'; min: number };
@@ -2576,6 +2578,12 @@ export interface BattleAnimsData {
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
   scenes: Record<DataId, BattleAnimFamily>;
+  /** VFX-15: the battle mood (logic/battle-stage-look.js battleMoodFor) */
+  moods?: BattleMoods;
+  /** VFX-15: the walk weather on the battle stage */
+  weather?: BattleStageWeather;
+  /** VFX-15: battle scars */
+  scars?: BattleScars;
   artAbout?: string;
   /** VFX-10: the effect strips (game/art/battle/anims/<id>.png) */
   sprites: Record<DataId, BattleAnimSprite>;
@@ -2632,6 +2640,47 @@ export interface BattleAnimRamp {
   ramp: string | Color[];
   /** a hex, or 'type' (the type's glow) */
   light: Color | 'type';
+}
+/** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
+export interface BattleMoods {
+  about?: string;
+  dark: number;
+  tint: number;
+  inMs: number;
+  outMs: number;
+  superEffective: boolean;
+  bureau: Color;
+  wave: { types: string[]; bureau: boolean; px: number; bigPx: number; rowPx: number; speed: number };
+  heat: { types: string[]; amount: number };
+}
+/** VFX-15: battleAnims.json `weather` */
+export interface BattleStageWeather {
+  about?: string;
+  rain: { splash: number; r: number };
+  settle: { ms: number; cap: number; r: number };
+  sunny: { warm: number; rays: number };
+  sand: { n: number; gust: number; gustMs: number; colors: Color[] };
+}
+/** VFX-15: a kind of battle scar: the types that leave it, or the Sandstorm's, or a heavy hit's */
+export interface BattleScarKind {
+  types?: string[];
+  sandstorm?: boolean;
+  heavy?: boolean;
+  m: number;
+  sprite: DataId;
+  /** VFX-10's ramp that colours its decal's greys */
+  ramp?: string;
+  color: Color;
+}
+/** VFX-15: battleAnims.json `scars` */
+export interface BattleScars {
+  about?: string;
+  cap: [number, number, number, number];
+  maxM: number;
+  fadeMs: number;
+  fadeSteps: number;
+  heavy: number;
+  kinds: Record<DataId, BattleScarKind>;
 }
 export interface BattleAnimTimeline {
   dur: number;
