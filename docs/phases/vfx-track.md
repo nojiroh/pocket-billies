@@ -565,13 +565,20 @@ commit of its own.
 
 ## Fitting with the style track (found 2026-10-28)
 The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
-on `track/style`) also works in battle. How the two split, as proposed to its planning session:
-- **Flashes:** SY-1 (#279, built) already sends every battle flash through `flashFor` (logic/smear.js): Reduced
+on `track/style`, merged to main through PR #289) also works in battle. How the two split, agreed with its planning
+session (2026-10-28):
+- `flashFor` reaches main through #289 (SY-1 and SY-2; #279 carries the same SY-1 commit): merge whichever lands
+  first. Its signature stays `(col, a, reduced, flashesOff)`. SY-2 is built: logic/hit-numbers.js (a pop's size by
+  `hitWeight`, 24-40 px, 40 on a KO; the plate's HP roll over .38 s).
+- Its steps from SY-4 on message this track's planning session before they change `hitFx`, the join intro,
+  `battleStageFlash` or the sprite shader (SY-5: the Notice, stamps in battle, the Bureau's plates; SY-6: `uFoil`),
+  naming the change and the commit; this track's steps do the same for it.
+- **Flashes:** SY-1 (built; on main through #289) already sends every battle flash through `flashFor` (logic/smear.js): Reduced
   motion, no flash; Flashes off, a bright flash held to a 15% tint and a dark one kept, no chromatic flash, the impact
   frame without its two-tone cells (a crit keeps its speed lines). That replaces VFX-8's "Flashes reaches the battle"
   and the Flashes-off half of rule 9. VFX-8 adds only the rate limit (at most 3 full-screen flashes in any second,
   333 ms apart, no saturated red), counting the flashes the runner asks for and passing each through `flashFor`; it
-  leaves `battleStageFlash`'s settings code to SY-1 (merged from main once #279 is there).
+  leaves `battleStageFlash`'s settings code to SY-1 (merged from main once #289 or #279 is there).
 - **Numbers:** SY-2 sizes the damage pops by `hitWeight` and rolls the HP number (the HUD); VFX-13's `hitTier` is
   offered to it. Hit-stop stays this track's (the tier table).
 - **The Bureau:** SY-5 owns its words in battle (the RETRIEVED, VOID, DENIED and PENDING stamps as the kit's
