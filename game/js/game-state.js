@@ -187,6 +187,8 @@ export const uiState = {
   disp: { se: null },
   seenEnc: new Set(),
   mapSel: null,
+  /* UI-18: the place whose card on the Map is unfolded (map-tab.js); every other place's card opens folded */
+  mapCardOpen: /** @type {number | null} */ (null),
   /* the Actions sheet over the world is open (walk-tab.js walkSheetSync) */
   walkSheet: false,
   /* UI-15 (walk-tab.js): the hint on screen and when it came (it fades), what the Actions sheet showed when it was last

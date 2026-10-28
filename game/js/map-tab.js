@@ -5,8 +5,19 @@
 import { expose } from './test-globals.js';
 import { nodeActions, provide, render, tripButtons, tripDest, tripStatus } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, NODE_TYPES, POOLS, RESIDENTS, ROADS_BY_NODE, gameData, locationSubtitle } from './game-data.js';
+import {
+  LOCATIONS,
+  NODE_TYPES,
+  POOLS,
+  RESIDENTS,
+  ROADS_BY_NODE,
+  SHOPS,
+  gameData,
+  locationSubtitle,
+  trainersAt,
+} from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
+import { RUN_WEATHER_ICONS } from './ui-run-kit.js';
 import { kindChipHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -27,10 +38,12 @@ import { toast } from './overlay.js';
 expose({
   mapTabAction: [() => mapTabAction, v => (mapTabAction = v)],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
+  placeHasHTML: [() => placeHasHTML, v => (placeHasHTML = v)],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
   renderWorldMapTab: [() => renderWorldMapTab, v => (renderWorldMapTab = v)],
   runForecastHTML: [() => runForecastHTML, v => (runForecastHTML = v)],
   runRumourHTML: [() => runRumourHTML, v => (runRumourHTML = v)],
+  runTodayHTML: [() => runTodayHTML, v => (runTodayHTML = v)],
   runZoneHTML: [() => runZoneHTML, v => (runZoneHTML = v)],
   worldMapCardHTML: [() => worldMapCardHTML, v => (worldMapCardHTML = v)],
 });
@@ -129,7 +142,31 @@ function worldMapCardHTML() {
   /* UI-14b: a run place's kind as its chip: UI-8c's place icon in its family's tint (logic/marks.js chipLook) */
   const kindChip =
     rm && NODE_TYPES[rm.type] ? kindChipHTML(rm.type, NODE_TYPES[rm.type].name || locationSubtitle(n)) : '';
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2>${kindChip || `<span class="sub">${escapeHtml(locationSubtitle(n))}</span>`}</div>${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
+  /* UI-18: the card opens folded: the name, today's weather and what's there, the status and the main action; More
+     unfolds the rest (the place's words, its zone and rumour, the week's forecast, its Billies, roads and services) */
+  const open = uiState.mapCardOpen === sel,
+    more = `${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2>${rm ? runTodayHTML(sel) : ''}${kindChip || `<span class="sub">${escapeHtml(locationSubtitle(n))}</span>`}</div>${placeHasHTML(sel)}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${open ? `<div class="mc-more">${more}</div>` : ''}<button class="mc-fold" data-a="mcfold" aria-expanded="${open}">${open ? 'Less' : 'More'}${uiIconHTML('chev', 12)}</button>`;
+}
+/** UI-18: a run place's weather today (its forecast's first day), glyph and word, for the folded card */
+function runTodayHTML(node) {
+  const run = saveData.run,
+    w = run && run.forecast && (run.forecast[node] || [])[run.clock - 1];
+  return w
+    ? `<span class="mc-wx">${uiIconHTML(/** @type {any} */ (RUN_WEATHER_ICONS)[w] || 'cloud', 14)}${escapeHtml(WEATHER_NAMES[w] || w)}</span>`
+    : '';
+}
+/** UI-18: what's at a place, one line for the folded card: its shops, a clinic in a town, its trainers and how many
+ * kinds of Billie live there; nothing when it has none */
+function placeHasHTML(i) {
+  const n = LOCATIONS[i],
+    has = [n.shop, n.boutique].filter(k => k && SHOPS[k]).map(k => SHOPS[k].name);
+  if (n.town) has.push('a clinic');
+  const T = trainersAt(i).length,
+    P = POOLS[n.pool];
+  if (T) has.push(T === 1 ? 'a trainer' : `${T} trainers`);
+  if (P && P.list.length) has.push(P.list.length === 1 ? 'one kind of Billie' : `${P.list.length} kinds of Billie`);
+  return has.length ? `<p class="note mc-has">${escapeHtml(has.join(' · '))}</p>` : '';
 }
 function paintWorldMapCard() {
   const c = $('#mapcard');
@@ -154,6 +191,12 @@ export function mapTabAction(a, d) {
       toast(`You’re staying in ${LOCATIONS[saveData.trip.node].name}.`);
       render();
       break;
+    case 'mcfold': {
+      const sel = uiState.mapSel == null ? saveData.trip.node : uiState.mapSel;
+      uiState.mapCardOpen = uiState.mapCardOpen === sel ? null : sel;
+      paintWorldMapCard();
+      break;
+    }
     case 'mzoom':
       worldMapZoom(d.k === 'in' ? 0.8 : 1.25);
       break;

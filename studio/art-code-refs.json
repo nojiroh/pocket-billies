@@ -1705,7 +1705,7 @@
    "game/js/logic/perks.js:104",
    "game/js/logic/perks.js:112",
    "game/js/logic/ui-dials.js:147",
-   "game/js/map-tab.js:132"
+   "game/js/map-tab.js:148"
   ],
   "flame": [
    "game/js/battle-stage.js:809",
@@ -1837,7 +1837,7 @@
    "game/js/battle-stage.js:2152",
    "game/js/billie-sheet.js:195",
    "game/js/boot.js:156",
-   "game/js/map-tab.js:54",
+   "game/js/map-tab.js:67",
    "game/js/shop.js:169"
   ],
   "pow": [
@@ -1879,7 +1879,7 @@
    "game/js/billie-sheet.js:287",
    "game/js/boot.js:160",
    "game/js/lab-board.js:107",
-   "game/js/map-tab.js:86",
+   "game/js/map-tab.js:99",
    "game/js/showcase.js:286",
    "game/js/ui-run-kit.js:109",
    "game/js/walk-tab.js:233"

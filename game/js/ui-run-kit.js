@@ -74,7 +74,7 @@ const runMsVar = (/** @type {Element} */ el, /** @type {string} */ name, dflt) =
 export const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
 
 /* the weather's icons and names (environment.js WEATHER_NAMES gives the game's; these are the fallbacks) */
-const RUN_WEATHER_ICONS = {
+export const RUN_WEATHER_ICONS = {
   clear: 'sun',
   cloudy: 'cloud',
   rain: 'rain',

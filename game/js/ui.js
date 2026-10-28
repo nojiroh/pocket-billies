@@ -350,6 +350,7 @@ document.addEventListener('click', ev => {
     case 'msel':
     case 'travel':
     case 'stoptrip':
+    case 'mcfold':
     case 'mzoom':
     case 'mreset':
       mapTabAction(a, d);
