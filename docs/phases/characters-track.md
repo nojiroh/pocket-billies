@@ -345,9 +345,33 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
 - **CH-5b Clothes as data:** tops, jackets, coats, skirts and trousers (fitted to the arms and the build in
   figure-kit.js lookFigure) as shape lists in figureKit.json, with the same rows and the Studio's same editor; the
   directions' flair (FIGURE_LOOKS: scarves, capes, gloves) too if it fits.
+- **CH-6 Faces.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314 grows; the owner's choice), ahead of
+  CH-3c; HANDOFF has the pictures. The owner's answers (Ask me before): **the face's data in figureKit.json with a
+  Studio Faces tab**, and **every one of the portrait kit's styles** (13 eyes, 12 brows) for figures, the wardrobe's
+  5 + 5 ids each drawing its nearest.
+  - Checked against the code first: portraits.json (the 32-bit portrait kit) is used by nothing but check-data (the
+    dialogue box draws the wardrobe rig's portraits); figurePortrait has no callers; figures didn't draw
+    `facial_goatee`; the expression tags in the non-legacy data are `[happy]` 46, `[surprised]` 5, `[angry]` 3 and
+    `[sad]` 1; talk.js's typing hook (`talkBox.onType`) had no listener; `who` on a line is a person, look,
+    `folk:<seed>` or `me`, never a map person's own id; a face change redraws a person's whole atlas cell.
+  - figureKit.json `faces` (schema, check:data's kitFaceProblems): eye styles (w, h, a heavy lid, gap, iris, lash
+    flicks and wing, shaded lids, bags, lines, blush), eye frames (open, half, closed, happy, angry, wide, narrow,
+    bored, look_l, look_r), brows (width, thickness, arch, tilt, flat, peak, uneven, knit, bushy), the kit's 15 mouth
+    frames as rows of marks, its 7 expressions (eyes, mouth, brow tilt and lift, blush, talking frames), the talking
+    frames, the resting moods, skin ramps (five hand-picked shades for each of the wardrobe's 8 swatches; another skin
+    the nearest's, shifted) and which style each wardrobe id draws; people/<id>.json `figure.eyes` and `figure.brows`.
+  - Faces as tagged marks (logic/figure-kit.js kitFaceMarks): every eye frame, every expression's brows and every
+    mouth frame built once per figure, each tagged (`when`); a face state (figure-pose.js figureFaceState: the
+    expression, a blink, a talking frame) shows its own. It is part of a picture's name and an atlas cell's key, so
+    only a changed face draws again (the debug log's atlas line counts them).
+  - Blinks for everyone on the kit's timing (figureBlinkAt), walking too. Talking: figures.js figureFaceFor finds the
+    one on the dialogue box (you, a cutscene actor, a townsperson or resident or map person near where the talk began)
+    and figureTalkFace runs the expression's talking frames about 8 times a second while the line types, resting on
+    punctuation and under Reduced motion; the expression holds until the box closes or the next speaker's line.
+  - The Studio's Faces tab (studio/js/figure-editor.js) and look-people `--faces`.
+  - Not in it: figure portraits in the dialogue box (it keeps the wardrobe rig's), glances driven, nods and talk
+    gestures (CH-11), emote bubbles.
 - **After CH-3c:**
-  - **CH-6** faces: talking mouths and every dialogue expression tag as marks; the portrait kit's eye and brow
-    styles matched; skin ramps.
   - **CH-7** the dressing room: customisation on the figure (the sliders, every item, colours) with UI pictures from
     snapshots; saved outfits and shops kept.
   - **CH-8** the old pieces to `art/legacy` once nothing draws them.
@@ -406,6 +430,9 @@ Tags `ch-N-done` (the owner pushes them).
 - The kit's data (CH-5): game/data/figureKit.json (schema/figureKit.schema.json), game/js/logic/kit-shapes.js,
   studio/js/figure-editor.js (the Figures section), figures.js figurePreview and figureKitUse,
   tools/test/figure-kit-golden.test.mjs (the 485 figures' hashes), tools/studio-shots.py `figures`, `figure-hats`.
+- Faces (CH-6): figureKit.json `faces`, figure-kit.js kitFaceMarks, kitFaceStyles, kitFaceSet and kitSkinRamp,
+  figure-pose.js figureFaceState, figureBlinkAt and figureTalkFace, figures.js figureFaceFor,
+  tools/test/figure-faces.test.mjs, look-people `--faces`, studio-shots `figure-faces`.
 
 ## Verification
 - Every session: lint, typecheck and unit tests; smoke before each game commit; check:fast in CI; the full quick

@@ -311,8 +311,11 @@ town node needs it.
   density by distance; the snapshot service) done 2026-10-28 on `claude/laughing-tesla-roy32r` ahead of CH-3c (the
   plan approved in Plan Mode), its phone gate owed; CH-5 (the kit's data: head shapes, builds, hair recipes and the
   hats, headset, neckwear and bags as shape lists in game/data/figureKit.json, figures cached by what makes them, the
-  Studio's Figures section with a turntable; clothes split into CH-5b) done 2026-10-28 there too, ahead of CH-3c; next
-  CH-3c (the rest of the cast, the movement pass, the owner's phone) or CH-5b (clothes as data).
+  Studio's Figures section with a turntable; clothes split into CH-5b) done 2026-10-28 there too, ahead of CH-3c; CH-6
+  (faces: the portrait kit's 13 eye and 12 brow styles, its 15 mouth frames and 7 expressions as marks, blinks for
+  everyone, talking mouths with the line's [tag], hand-picked skin ramps, all in figureKit.json `faces` with the
+  Studio's Faces tab) done 2026-10-28 there too, ahead of CH-3c; next CH-3c (the rest of the cast, the movement pass,
+  the owner's phone) or CH-5b (clothes as data).
   About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's

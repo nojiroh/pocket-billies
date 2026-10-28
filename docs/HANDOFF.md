@@ -2,6 +2,73 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-6 - Faces - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (main merged in at the start, c7dc2c23: the Perks PK-6 merge; the owner chose to
+continue here, so PR #314 grows). Plan approved in Plan Mode. Data, figure, game and Studio work; figures still off by
+default, so the game's pictures are unchanged. Done ahead of CH-3c. No session tag (CLAUDE.md).
+docs/phases/characters-track.md (CH-6) has the design.
+- The owner's answers: continue on #314's branch; the face's data **in figureKit.json with a Studio Faces tab**;
+  **all of the portrait kit's styles** for figures (13 eyes, 12 brows), the wardrobe's ids each drawing its nearest.
+- Found (checked against the code):
+  - portraits.json (the 32-bit portrait kit) is used by nothing but check-data. The dialogue box draws the wardrobe
+    rig's portraits (person-art.js drawPortrait). So "matched" means figures now share the kit's style names, frames
+    and expressions; wiring a portrait is still open.
+  - figurePortrait has no callers; figures didn't draw `facial_goatee`.
+  - Expression tags in the non-legacy data: `[happy]` 46, `[surprised]` 5, `[angry]` 3, `[sad]` 1.
+  - talk.js's typing hook had no listener. A line's `who` is a person, look, `folk:<seed>` or `me`. Copperleaf's people
+    are in `walkView.folk`; `st.npcs` is route trainers and the like.
+  - A face change redraws the person's whole atlas cell (no separate face layer); with one speaker that is cheap.
+- Changed:
+  - game/data/figureKit.json `faces` (schema, types, check:data's kitFaceProblems): eye styles, eye frames, brows,
+    the kit's 15 mouth frames as rows of marks, its 7 expressions, the talking frames, resting moods, skin ramps (five
+    shades for each of the wardrobe's 8 swatches) and the wardrobe's styles; people/<id>.json `figure.eyes` and
+    `figure.brows` (person.schema.json).
+  - logic/figure-kit.js: kitFaceMarks draws every eye frame, each expression's brows and every mouth frame once, each
+    mark tagged (`when`); kitFaceStyles, kitFaceSet, kitSkinRamp; a goatee; a brow's rim its own thickness
+    (figures.js figurePaintMark, figure-pose.js).
+  - logic/figure-pose.js: figureFaceState (expression, blink, talking frame; part of a picture's name and an atlas
+    cell's key), figureBlinkAt (the kit's timing, everyone, walking too; replaces the idle's frame-14 blink in the
+    world), figureTalkFace (about 8 frames a second while typing; rests on punctuation and under Reduced motion).
+  - figures.js figureFaceFor: the one on the dialogue box (you; a cutscene actor by who; a townsperson, resident or map
+    person within 1.5 m of where the talk began) talks with their line's expression until the box closes.
+    frame-items.js and cutscene/director.js pass it. figurePreview repaints a face on the same mesh.
+  - The Studio's Faces tab (studio/js/figure-editor.js): eye styles and frames, brows, mouths, expressions, skin,
+    wardrobe; on the turntable Eyes, Brows, Face, Talk, Blink and "Give <who> these eyes and brows".
+  - The debug log: figureReport().atlas.faceDraws (atlas redraws for a face), printed by read-debug-log.py.
+  - tools/look-people.py `--faces[=who]`; tools/studio-shots.py `figure-faces`.
+- Risky:
+  - Untested on a phone: a talker's cell redraws about 8 times a second and everyone's blink adds 2 or 3 redraws every
+    few seconds a person. faceDraws in the debug log will show it.
+  - The speaker usually faces you, so the camera often sees their back or side, and a face shows only from the front.
+    In a headless Copperleaf talk the townsperson's cell was drawn with happy eyes and talking frames (its atlas key),
+    but the camera saw the back of their head.
+  - Faces at walking size are a few pixels: the styles and expressions read best in close-ups (the --faces sheet at
+    160 px a metre). The fringe hides many brows.
+  - Resting moods changed: stern brows are the kit's angled style (slanting down) and arched brows an arch, no longer
+    a worried slant. Grin and open mouths still raise the lids.
+  - A figure's face is about 200 marks (was 37); lookFigure went from about 19 to 33 ms in Node (once per figure).
+  - The skin ramps are a first pick, generated from the swatches and tuned by eye; tune them in the Studio.
+- Verified:
+  - lint, both type checks, format, check:modules, check:data and build.
+  - Unit tests: 1,975 passed at the Studio commit (the golden hashes remade in their own commits: 4f4c636b held them,
+    15fe1e4c, 6445f2d0, 67fa5e8c remade them). New tests in tools/test/figure-faces.test.mjs and figures.test.mjs:
+    the data and its problems, every style at 32, 48 and 96 px a metre, expressions, the face state, blinks, talking,
+    the speaker lookup, every expression tag in the data, skin ramps.
+  - Smoke after the blinks commit: no problems (367 s).
+  - Not run, at the owner's word ("Skip the checks"): the full quick check was stopped after 3 steps, and a last `npm
+    test` (after the docs) showed 1 failure while the quick check ran beside it. That failure wasn't identified; the
+    map-checks timing test has failed this way before when a browser check ran beside it.
+  - Headless pictures: the --faces sheet (broker), the Studio's Faces tab, a Copperleaf talk.
+- Also read: the owner's Diagnostics (Android, Adreno 750, 2026-10-28 21:42). Copperleaf runs at 13-17 fps by day
+  (the 2026-10-26 baseline was 17 and 12.5), with about 700 sprite draws, 650 of them model leaf pictures: the
+  renderer track's known cost, not the figures. The Diagnostics file has no figures line, so CH-4's phone gate needs
+  the debug log with Figures on.
+- Next: CH-3c (the rest of the cast and the movement pass) or CH-5b (clothes as data), in a new session.
+- For the owner:
+  - In the Studio: Characters > Figures > Faces. Try a Face, Talk and Blink on the turntable.
+  - On the phone (CH-4's gate and this one): turn on Engine > People > Figures, walk Copperleaf by day and at night,
+    talk to a townsperson, then send the debug log (Settings > Help), not the Diagnostics.
+
 ### Characters track CH-5 - The kit's data - 2026-10-28
 Branch `claude/laughing-tesla-roy32r` (level with main at the start: main was already merged in; the owner chose to
 continue here, so PR #314 grows). Plan approved in Plan Mode. Data, logic and Studio work; figures still off by
