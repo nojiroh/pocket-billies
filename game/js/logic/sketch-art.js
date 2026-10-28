@@ -518,7 +518,7 @@ export function sketchBake(P, form, D, cells = sketchPaintCells(P, form)) {
       bones,
       clock: 12,
       sheet: `next/billionaires/${form.name}.png`,
-      placeholder: 'bodyPlans.json',
+      sketch: 'bodyPlans.json',
     };
   }
   return { sheet, rig, views };

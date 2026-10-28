@@ -479,7 +479,7 @@ function debugFps() {
 /* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits; RO-3c:
    a placeholder Billie takes a slot from any placeholder Billie of another line, whatever its body plan */
 function debugGraftFor(sp) {
-  const ph = s => !!(RIGS[s] && RIGS[s].front && RIGS[s].front.placeholder),
+  const ph = s => !!(RIGS[s] && RIGS[s].front && RIGS[s].front.sketch),
     donors = slot =>
       ph(sp)
         ? graftSketchDonors(gameData.bodyPlans, gameData.bodyPlans.forms, sp, slot).filter(ph)

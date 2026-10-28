@@ -721,7 +721,7 @@ function graftBake(sp, graft) {
 }
 /* RO-3c: a species whose rig is a placeholder (bodyPlans.json), and its form there */
 const graftSketchRig = sp =>
-  !!(typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp].front && RIGS[sp].front.placeholder);
+  !!(typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp].front && RIGS[sp].front.sketch);
 const graftSketchForm = sp => ((gameData.bodyPlans && gameData.bodyPlans.forms) || []).find(f => f.rig === sp);
 /* RO-3c: a placeholder Billie grafted from its donors' sheets and rigs; a kit Billie with a placeholder donor (or the
    other way round) isn't grafted */
