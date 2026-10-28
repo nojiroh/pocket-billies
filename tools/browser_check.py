@@ -109,14 +109,25 @@ def drawing(pg, n=3, sec=40):
     """the walk view is ready (a boot may take a while: 90 s) and draws n more frames"""
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&walkRenderer.on", 90): raise Exception('the walk view never got ready')
     f0 = pg.evaluate('walkRenderer.frames')
-    if not until(pg, f'walkRenderer.frames>={f0 + n}', sec): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
+    if until(pg, f'walkRenderer.frames>={f0 + n}', sec): return
+    # slow isn't black: on a busy machine one frame can take 20 s or more (see go_scene). While the draw loop is alive
+    # and frames still come, wait for the rest a while longer and say so; no frame, or no draw loop, is a black screen
+    alive = "typeof frameScheduler!=='undefined'&&frameScheduler.tasks.has('dio')"
+    if pg.evaluate(f'({alive})&&walkRenderer.frames>{f0}') and until(pg, f'walkRenderer.frames>={f0 + n}', 60):
+        log(f'{pg.evaluate("walkView.id")}: {n} frames took over {sec} s (a slow machine)'); return
+    raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
 
 
 def stand(pg, x, z, frames=30):
     """put the player at (x, z) and let the camera settle there (no glide in: its target is reset)"""
     pg.evaluate(f"(()=>{{const P=walkView.pl;P.x={x};P.z={z};P.route=null;P.yv=null;walkRenderer.camT=null;return 0}})()")
     f0 = pg.evaluate('walkRenderer.frames')
-    if not until(pg, f'walkRenderer.frames>={f0 + frames}', 60): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing')
+    if until(pg, f'walkRenderer.frames>={f0 + frames}', 60): return
+    # slow isn't black (as in drawing): while the draw loop is alive and frames come, wait for the rest, at most 120 s more
+    alive = "typeof frameScheduler!=='undefined'&&frameScheduler.tasks.has('dio')"
+    if pg.evaluate(f'({alive})&&walkRenderer.frames>{f0}') and until(pg, f'walkRenderer.frames>={f0 + frames}', 120):
+        log(f'{pg.evaluate("walkView.id")}: {frames} frames took over 60 s (a slow machine)'); return
+    raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing')
 
 
 def go_scene(pg, node, sec=40, slow=None):
