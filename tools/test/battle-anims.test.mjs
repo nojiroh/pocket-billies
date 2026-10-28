@@ -21,6 +21,7 @@ import {
   hitLook,
   hitTier,
   koAhead,
+  lineAfterMove,
   TIER_ROWS,
   redShare,
 } from '../../game/js/logic/battle-anims.js';
@@ -217,6 +218,35 @@ test('VFX-13 time: no tier’s hit-stop past today’s longest (90 ms); only the
         assert.ok(hitLook(hit({ crit }), { ko: true }, w, A).stop <= L0.stop + A.tiers.cell || k !== 'neutral');
       }
   }
+});
+
+test('VFX-13 drain and recoil: a heal after a draining hit, a hurt after a crash; nothing else', () => {
+  const drain = Object.keys(MOVES).find(k => (MOVES[k].fx || {}).drain),
+    crash = Object.keys(MOVES).find(k => (MOVES[k].fx || {}).missCost),
+    plain = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && !MOVES[k].fx);
+  assert.ok(drain && crash && plain);
+  const L = (/** @type {any[]} */ ...an) => an.map(a => ({ an: a }));
+  assert.deepEqual(
+    lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, dmg: 9 }, null, { k: 'heal', si: 0, amt: 4 }), 2, MOVES),
+    { kind: 'drain', from: 1, mid: drain }
+  );
+  assert.equal(
+    lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, miss: true }, { k: 'heal', si: 0 }), 1, MOVES),
+    null
+  );
+  assert.equal(lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: plain, dmg: 9 }, { k: 'heal', si: 0 }), 1, MOVES), null);
+  assert.equal(lineAfterMove(L({ k: 'move', si: 1, ti: 0, mid: drain, dmg: 9 }, { k: 'heal', si: 0 }), 1, MOVES), null);
+  assert.deepEqual(
+    lineAfterMove(L({ k: 'move', si: 1, ti: 0, mid: crash, miss: true }, { k: 'hurt', si: 1, dmg: 20 }), 1, MOVES),
+    {
+      kind: 'recoil',
+      from: 0,
+      mid: crash,
+    }
+  );
+  assert.equal(lineAfterMove(L({ k: 'move', si: 1, ti: 0, mid: crash, dmg: 5 }, { k: 'hurt', si: 1 }), 1, MOVES), null);
+  assert.equal(lineAfterMove(L({ k: 'hurt', si: 0 }), 0, MOVES), null, 'no move before it');
+  assert.equal(lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, dmg: 9 }), 0, MOVES), null, 'a move is no heal');
 });
 
 test('the 8 preview outcomes land in their tiers (VFX-12)', () => {

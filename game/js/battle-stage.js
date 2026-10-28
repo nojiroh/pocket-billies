@@ -81,7 +81,7 @@ import {
   smearStretch,
   throwArcEase,
 } from './logic/smear.js';
-import { battlePathAt, hitLook } from './logic/battle-anims.js';
+import { battlePathAt, hitLook, lineAfterMove } from './logic/battle-anims.js';
 import { FLOW_CELL_MS, lvlSlot, pyramidRamp, riseShare } from './logic/battle-flow.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
@@ -193,6 +193,7 @@ expose({
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
   catchSound: [() => catchSound],
   delayedMoveType: [() => delayedMoveType, v => (delayedMoveType = v)],
+  drainFx: [() => drainFx, v => (drainFx = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
@@ -225,11 +226,13 @@ expose({
   homeCamera: [() => homeCamera],
   impactCut: [() => impactCut, v => (impactCut = v)],
   impactFx: [() => impactFx, v => (impactFx = v)],
+  lineAfterLook: [() => lineAfterLook, v => (lineAfterLook = v)],
   lungeKind: [() => lungeKind, v => (lungeKind = v)],
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
   punch: [() => punch, v => (punch = v)],
   pyramidArc: [() => pyramidArc, v => (pyramidArc = v)],
+  recoilFx: [() => recoilFx, v => (recoilFx = v)],
   ribbonDither: [() => ribbonDither, v => (ribbonDither = v)],
   rigStats: [() => rigStats],
   ringFx: [() => ringFx, v => (ringFx = v)],
@@ -1869,6 +1872,69 @@ function hitFx(ti, an, imp0 = null, ka = null) {
   if (typeof hudHit === 'function') hudHit(ti, an, w);
   return L;
 }
+/* VFX-13: what a heal or hurt line follows (logic/battle-anims.js lineAfterMove), on the battle's lines; a preview's
+   line (tools/look-battle-anims.py) may carry its own (`after`) */
+function lineAfterLook(ev) {
+  if (ev && ev.after) return ev.after;
+  const B = typeof activeBattle !== 'undefined' ? activeBattle : null,
+    i = B && B.events ? B.events.indexOf(ev) : -1;
+  return i < 0 ? null : lineAfterMove(B.events, i, MOVES);
+}
+/* VFX-13: a drain: motes of the target's life fly to the one draining (battleAnims.json tiers.drain) */
+function drainFx(from, to) {
+  const D = BATTLE_ANIMS.tiers && BATTLE_ANIMS.tiers.drain;
+  if (!D || from == null || !battleStage.s[from]) return;
+  const A = actorCenter(from),
+    B = actorCenter(to),
+    t = D.ms / 1000;
+  for (let i = 0; i < D.n; i++)
+    scheduleAt(i * D.every, () => {
+      const j = (fxRandom() - 0.5) * 0.5;
+      addParticle({
+        x: A.x,
+        y: A.y + j,
+        z: A.z,
+        vx: (B.x - A.x) / t,
+        vy: (B.y - A.y - j) / t,
+        vz: (B.z - A.z) / t,
+        life: D.ms,
+        spr: 'plus',
+        anim: D.sprite,
+        ramp: D.ramp,
+        k: 1,
+        glow: 1,
+      });
+    });
+}
+/* VFX-13: a crash's recoil on Billie i (battleAnims.json tiers.recoil): knocked back from the foe, dust, a dull flash */
+function recoilFx(i) {
+  const R = BATTLE_ANIMS.tiers && BATTLE_ANIMS.tiers.recoil,
+    s = battleStage.s[i];
+  if (!R || !s) return;
+  const back = actorTeam(i) === 0 ? -R.kb : R.kb,
+    w = actorWorldPoint(i);
+  tween(s, 'ox', back, 70);
+  tween(s, 'ox', 0, 260, 'out', 80);
+  const k = flashesOff() ? 0.5 : 1;
+  s.white = Math.max(s.white || 0, (R.sprite.white || 0) * k);
+  s.dark = Math.max(s.dark || 0, (R.sprite.dark || 0) * k);
+  tween(s, 'white', 0, R.sprite.ms, 'in');
+  tween(s, 'dark', 0, R.sprite.ms, 'in');
+  for (let j = 0; j < R.puff; j++)
+    addParticle({
+      x: w.x + (fxRandom() - 0.5) * 0.5,
+      y: 0.1,
+      z: w.z + (fxRandom() - 0.5) * 0.4,
+      vx: (fxRandom() - 0.5) * 1.2,
+      vy: 0.5 + fxRandom() * 0.5,
+      vz: (fxRandom() - 0.5) * 0.8,
+      life: 420,
+      anim: 'dust',
+      ramp: 'None',
+      spr: 'pow',
+      k: 1,
+    });
+}
 export function camHome(d = 420, delay = 0) {
   camTo(homeCamera, d, 'io', delay);
   if (!reducedMotion) tween(battleStage.css, 'r', 0, d, 'io', delay);
@@ -2406,6 +2472,9 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, 'hurt', 600);
       blinkActor(an.si, 360);
       battleStage.shk = 2.5;
+      /* VFX-13: a crash after a miss (fx.missCost): knocked back from the foe, a dust puff, a dull flash */
+      const after = lineAfterLook(ev);
+      if (after && after.kind === 'recoil') recoilFx(an.si);
       if (an.dmg && typeof hudPop === 'function')
         scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg', hitWeight(an.si, an)));
       /* VFX-15: the Sandstorm's hurt leaves a sand drift */
@@ -2452,10 +2521,14 @@ export function battleStagePlay(an, ev) {
     }
     case 'heal': {
       const T = actorCenter(an.si),
-        kk = 1;
+        kk = 1,
+        /* VFX-13: a heal's sparkles in the heal ramp (battleAnims.json tiers.heal); a drain's motes stream in first */
+        H = (BATTLE_ANIMS.tiers && BATTLE_ANIMS.tiers.heal) || null,
+        after = lineAfterLook(ev);
+      if (after && after.kind === 'drain') drainFx(after.from, an.si);
       setActorAction(an.si, 'cheer', 700);
-      for (let i = 0; i < 12; i++)
-        scheduleAt(i * 45, () =>
+      for (let i = 0; i < (H ? H.n : 12); i++)
+        scheduleAt(i * (H ? H.every : 45), () =>
           addParticle({
             x: T.x + (random() - 0.5) * 1.2,
             y: 0.2,
@@ -2463,12 +2536,13 @@ export function battleStagePlay(an, ev) {
             vy: 2 + random(),
             life: 650,
             spr: i % 3 ? 'plus' : 'spark',
+            ...(H && i % 3 ? { anim: H.sprite, ramp: H.ramp } : {}),
             k: kk,
             glow: i % 3 ? 0 : 1,
           })
         );
       if (an.amt && typeof hudPop === 'function') scheduleAt(120, () => hudPop(an.si, '+' + an.amt, 'heal'));
-      groundRing(an.si, '#5DFF8A', 1.5, 600);
+      groundRing(an.si, H ? BATTLE_ANIMS.colors[H.color] || BATTLE_ANIMS.colors.heal : '#5DFF8A', 1.5, 600);
       tween(battleStage.s[an.si], 'white', 0.35, 150);
       tween(battleStage.s[an.si], 'white', 0, 260, 'lin', 160);
       return { dur: 720, hit: 200 };
