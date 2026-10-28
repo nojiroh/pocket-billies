@@ -12615,7 +12615,8 @@
   "cat": {"name":"Cat","img":"scene/life/cat.png","w":32,"h":26,"frames":4,"where":"town"},
   "crab": {"name":"Crab","img":"scene/life/crab.png","w":24,"h":16,"frames":3,"where":"coast"},
   "lizard": {"name":"Lizard","img":"scene/life/lizard.png","w":30,"h":12,"frames":3,"where":"volcano"},
-  "crow": {"name":"Crow","img":"scene/life/crow.png","w":24,"h":22,"frames":5,"where":"junk"}
+  "crow": {"name":"Crow","img":"scene/life/crow.png","w":24,"h":22,"frames":5,"where":"junk"},
+  "form": {"name":"Loose form","img":"scene/life/form.png","w":20,"h":14,"frames":4,"where":"bureau"}
  },
  "buildArt": {"detail":"scene/build/detail-a04b.png","rooms":"scene/build/rooms.png"},
  "wallArt": "scene/build/walls.png",
