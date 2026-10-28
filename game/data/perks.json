@@ -31,6 +31,7 @@
   "d": "Pyramids catch 25% more often.",
   "rarity": "common",
   "img": "perks/steady_hand.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"catch","mult":1.25}
   ]
@@ -40,6 +41,7 @@
   "d": "Your Billies start each battle with their Speed up.",
   "rarity": "uncommon",
   "img": "perks/running_shoes.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"stat","stat":"hus","stages":1}
   ]
@@ -49,6 +51,7 @@
   "d": "Your physical moves hit 15% harder.",
   "rarity": "uncommon",
   "img": "perks/power_gloves.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"damage","side":"deal","cat":"H","mult":1.15}
   ]
@@ -67,6 +70,7 @@
   "d": "Each place you walk into heals your team by 15% of their HP.",
   "rarity": "uncommon",
   "img": "perks/trail_snacks.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"heal","share":0.15}
   ]
@@ -76,6 +80,7 @@
   "d": "The payout gives 15% more Research.",
   "rarity": "uncommon",
   "img": "perks/field_notebook.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"payout","what":"research","mult":1.15}
   ]
@@ -94,6 +99,7 @@
   "d": "Spliced wild Billies you knock out pay 50% more DNA.",
   "rarity": "common",
   "img": "perks/petri_dish.svg",
+  "tags": ["lab"],
   "fx": [
    {"kind":"dna","mult":1.5}
   ]
@@ -103,6 +109,7 @@
   "d": "Wild Billies of the places you reach next are spliced twice as often.",
   "rarity": "uncommon",
   "img": "perks/gene_lure.svg",
+  "tags": ["lab"],
   "fx": [
    {"kind":"splice","mult":2}
   ]
@@ -112,6 +119,7 @@
   "d": "Your Unstable Billies lose half as much HP at each turn’s end.",
   "rarity": "rare",
   "img": "perks/stabilizer_gel.svg",
+  "tags": ["lab"],
   "fx": [
    {"kind":"unstable","mult":0.5}
   ]
@@ -122,6 +130,7 @@
   "rarity": "common",
   "img": "perks/rubber_stamp.svg",
   "say": "Approved!",
+  "tags": ["office"],
   "fx": [
    {"kind":"damage","side":"deal","mult":1.5,"when":"hit","once":"battle"}
   ]
@@ -132,6 +141,7 @@
   "rarity": "uncommon",
   "img": "perks/click_pen.svg",
   "say": "Click! {name} lines up a critical hit.",
+  "tags": ["office"],
   "fx": [
    {"kind":"crit","when":"move","every":8,"if":"cat:H|S"}
   ]
@@ -141,6 +151,7 @@
   "d": "Your Billies land critical hits more often.",
   "rarity": "common",
   "img": "perks/laser_pointer.svg",
+  "tags": ["tech"],
   "fx": [
    {"kind":"crit","stages":1}
   ]
@@ -151,6 +162,7 @@
   "rarity": "common",
   "img": "perks/screen_protector.svg",
   "say": "{name} took only half the hit.",
+  "tags": ["tech"],
   "fx": [
    {"kind":"damage","side":"take","mult":0.5,"when":"hurt","once":"billie"}
   ]
@@ -160,6 +172,7 @@
   "d": "Once a battle, a Billie of yours that ends a turn below a quarter of its HP heals 25% of it.",
   "rarity": "uncommon",
   "img": "perks/power_bank.svg",
+  "tags": ["tech"],
   "fx": [
    {"kind":"pinchHeal","at":0.25,"share":0.25,"once":"battle"}
   ]
@@ -169,6 +182,7 @@
   "d": "When one of your Billies knocks a foe out, its Attack and Sp. Atk rise.",
   "rarity": "rare",
   "img": "perks/mic_drop.svg",
+  "tags": ["influencer"],
   "fx": [
    {"kind":"stat","stat":"lev","stages":1,"when":"ko"},
    {"kind":"stat","stat":"lob","stages":1,"when":"ko"}
@@ -206,6 +220,7 @@
   "d": "Your Billies can’t fall asleep.",
   "rarity": "common",
   "img": "perks/noise_headphones.svg",
+  "tags": ["tech"],
   "fx": [
    {"kind":"immune","what":"slp"}
   ]
@@ -215,6 +230,7 @@
   "d": "Your Billies can’t be paralyzed.",
   "rarity": "common",
   "img": "perks/rubber_boots.svg",
+  "tags": ["weather"],
   "fx": [
    {"kind":"immune","what":"par"}
   ]
@@ -244,6 +260,7 @@
   "d": "Your last Billie standing takes 30% less damage and hits 30% harder.",
   "rarity": "rare",
   "img": "perks/plot_armor.svg",
+  "tags": ["adventurer"],
   "fx": [
    {"kind":"damage","side":"take","mult":0.7,"if":"alone"},
    {"kind":"damage","side":"deal","mult":1.3,"if":"alone"}
