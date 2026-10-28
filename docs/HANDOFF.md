@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-7 - the Bureau in the world: red tape, its checkpoint sign with the emblem, loose forms - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-6, 9c5fbe5d) was
+fast-forwarded in; main had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-7, plus
+UI-16a/b from SY-5). Tag `sy-7-done` is for the owner to push (the git proxy refuses tags). Nothing in battle was
+touched (no hitFx, join intro, battleStageFlash or sprite shader), so the VFX session wasn't messaged.
+- Changed:
+  - **Red tape** (tools/build-props-routes.py, the props' own build script; rerun, models and baked pictures remade):
+    `bureau_barrier` gets two red wraps round its board, a hanging end and a tape strung between its legs in a stepped
+    sag; `bureau_crate` gets two bands crossed over it like a parcel and one over the small crate. The tape is the
+    scenery's red (#DE4048, `TAPE`), the wax seal's family.
+  - **`bureau_sign`** (new prop, same script): a slate board on two posts, mustard edges, a red tape strip at its
+    foot, and the emblem as a fixed decal (`face: 'fixed'`, never mirrored). The decal,
+    scene/next/decals/bureau_emblem.png, is made from art/ui/bureau.svg by the script (`emblem_decal`), at 1 px a
+    pixel (36 px, 1.1 m on the board); the baked fallback picture gets the emblem pasted on, since the bake draws no
+    decals. On the route props showcase map's Bureau row.
+  - **The checkpoint** (setPieces.json `bureau_checkpoint`): its sign is `bureau_sign`, same spot, same words.
+    **MAPGEN_VERSION 25** (the route props track bumped it for its set piece change too); the rng scene hash and the
+    run-start snapshot change only by `mapgenV` (checked by setting it back).
+  - **Loose forms** (ambient-life.js kind `form`: `fly` plus a new `drift` flag): lies flat (frame 1 a corner lifting
+    now and then), lifts on a gust (more often than a gull takes off) or when you come within 1.6 m, blows along low
+    (1.2 m) and sideways across the view (one way per scene), wobbling, for 2.5-4.5 s, and comes down ahead of itself
+    inside its piece's area. Never walks, leaves no footprints, rustles instead of calling. art/scene/life/form.png
+    (4 frames, 20 x 14) and scenery.json `life.form` from tools/build-bureau-forms.py (new). setPieces.schema.json's
+    life enum takes `form`. Three in the checkpoint's `life`, two in the scrap heap's (its sign is the Bureau's
+    "Unclaimed property"); `extra` life, so fewer on lower graphics and none with Graphics Off (RT-4b).
+- Claims checked against the code:
+  - Right: setPieces.json's checkpoint (123-142) and the scrap heap's Bureau sign; scenery.json `bureau_barrier` and
+    `bureau_crate` (both low-poly models with baked pictures, not flat props).
+  - Wrong-ish: "the emblem on the checkpoint's sign": the checkpoint had no sign of its own, only the shared
+    `signpost` (every exit's sign uses it). Branding that would put the emblem everywhere, so the checkpoint got its
+    own prop.
+  - Partly: "an ambient-life kind with the `fly` flag": `fly` is the gull's (wheels 4.5 m up for 4-7 s, picks a far
+    landing spot, walks about when landed, calls). Paper needed its own behaviour on top: the `drift` flag.
+  - "Art from the Studio": the props here are built by their build scripts (as every low-poly prop is); the models,
+    the decal and the strip are ordinary art the Studio paints and moves. Rerunning the scripts overwrites Studio
+    edits to those files, as for every scripted prop.
+- Found, not changed: tools/build-props-routes.py's header said "no logo: the Bureau's look is the owner's call";
+  updated now that SY-3 made the emblem.
+- Risky:
+  - The forms are small (a sheet about 0.37 m) and placeholder pixel art; never seen on a phone.
+  - MAPGEN_VERSION 25: a run saved mid-way records 24; it carries on with today's generator either way (the version
+    is recorded, not branched on).
+  - A form's gust direction is per scene (from its id); forms in one scene all blow the same way, by design.
+- Verified: lint, typecheck, check:modules (`npm run modules` for `lifeGust`), format:check, check:data,
+  check-data-text, art-code-refs regenerated, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6 (the known Phone
+  "team 30"). Headless look (900 x 600, the route props showcase's Bureau row): the three props draw as low-poly
+  models, the sign's emblem shows, four forms lie about and then blow along at 1.2 m with the flutter frames; no page
+  errors.`npm run check:quick`: 34 of 41. Five are the
+  known ones (Terraces train_station, RL-8 "Lakeside Route view never showed", room light, Phone "team 30", UI-16a's
+  four sounds). Postcards ("no postcard came") passes alone. "Run map music ... 1400, not 1400" fails alone too, and
+  fails the same on SY-6's tip (9c5fbe5d) with none of this step's changes: not SY-7's (a float compare in the check,
+  it seems; for the sound track).
+- Decided for the owner, to review:
+  - **A new prop `bureau_sign`** for the checkpoint in place of putting the emblem on the shared signpost.
+  - **The tape is the scenery's red #DE4048**, not the UI's red family (#EA5974): it sits beside the props' wax seal
+    and the tollbooth's red; one shade of red per palette.
+  - **Forms also in the scrap heap** (its sign is the Bureau's), not only the checkpoint; 3 and 2.
+  - **The `drift` flag** (new behaviour) rather than reusing the gull's flight; **size 0.95**, lift 1.6 m away.
+  - **MAPGEN_VERSION bumped** to 25.
+  - **The emblem decal is made from art/ui/bureau.svg by the build script**: repaint the emblem in the Studio's icon
+    editor, then rerun `python3 tools/build-props-routes.py` to carry it onto the sign.
+  - Not added: a unit test for the forms' flight (ambient-life.js runs on the walk view; the headless look covered it).
+- Next: SY-8 (tuning and docs: the Studio dials, a debug-log line with the Flashes and Animation states, HANDOFF; tag
+  `style-done`), in its own session on `track/style`.
+
 ### Style track SY-6 - the coat's foil in the world: a dithered sheen band on coated Billies, maps and battle - 2026-10-28
 Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-5) was fast-forwarded
 in; main (07c9b284) had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-6, plus
