@@ -44,9 +44,12 @@ session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The w
   - In headless Chromium the page's frames block the 200 ms timer for seconds, so in-page counts of one-shots are
     much lower than on a phone; the offline report is the measure. The debug log's `audio.nature` line (sources
     started, thunder rolls, the bolts heard, the last thunder's km and delay) shows the phone's.
-  - `check-sound.py --loudness` on the merged head took over 90 min here and the full fingerprint pass did not finish
-    in an hour (SND-11's ensemble parts bake per job while the game page draws in software); `--only=route` takes
-    6 s and lists the two new ensemble parts as "not in the baseline" (SND-11's to write). For the music lane.
+  - `check-sound.py --loudness` on the merged head takes over 90 min (25 before), for SND-15 to fix: since SND-11 each
+    job waits a tick before it renders, so the game page's software-drawn frames run between jobs, about 10 s per job
+    here (measured: batches of six world rows took 40-70 s each, steady, so nothing piles up per page), and this
+    session's 39 nature rows join SND-10's 66 water rows. A fix (fewer frames between jobs, or the world rows on a page
+    of their own that never starts the walk view) belongs in a commit of its own with the report's numbers identical.
+    The fingerprint pass alone (`check-sound.py`, no `--loudness`) takes 3 min.
   - The merge of SND-11 (0ba9f941) regenerated studio/art-code-refs.json and hooks.js inside the merge commit, not in
     a commit of their own.
 - **Verified**: `npm run lint`, `typecheck`, `check:modules`, `format:check` and `check:data` after every commit (the
