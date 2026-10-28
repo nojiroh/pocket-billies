@@ -168,9 +168,14 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
   every 3-4 s on the 24 fps grid, Bayer-dithered edges, only on pixels above a brightness step, hue shifted from the
   coat's own colours. A `uFoil` uniform set in walk/sprites.js from the Billie's coat; off at quality 2 and up, under
   Reduced motion and with Flashes off. Graphics bench before and after.
-- **SY-7** the Bureau in the world: red tape on `bureau_barrier` and `bureau_crate`, the emblem on the checkpoint's
-  sign, loose forms blowing past near Bureau places (an ambient-life kind with the `fly` flag). Flat props stay flat
-  (CLAUDE.md). Art from the Studio.
+- **SY-7** the Bureau in the world. Done 2026-10-28 on `track/style` (built in tools/build-props-routes.py, the
+  props' own build script, so the art stays editable in the Studio: red tape layers on both models; the checkpoint had
+  a plain `signpost`, so the emblem went on a new low-poly `bureau_sign` as a fixed decal made from art/ui/bureau.svg
+  (scene/next/decals/bureau_emblem.png); the forms are ambient-life kind `form` with `fly` and a new `drift` flag
+  (low, sideways, never walks, rustles), art/scene/life/form.png from tools/build-bureau-forms.py, in the checkpoint's
+  and the scrap heap's `life`; MAPGEN_VERSION 25): red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
+  checkpoint's sign, loose forms blowing past near Bureau places (an ambient-life kind with the `fly` flag). Flat
+  props stay flat (CLAUDE.md). Art from the Studio.
 - **SY-8** tuning and docs: Studio dials (stamp size and slant, the roll's time, the pop's sizes, the foil's speed and
   width), a debug-log line with the Flashes and Animation states that ran (never save data), HANDOFF. Tag
   `style-done`.
