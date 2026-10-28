@@ -14,7 +14,7 @@ gives the same film.
   is printed, and the exit code is 1 when any differs.
 - With --sheets (and --only=, since a drawn frame takes a second or two in software): a contact sheet per film of 16
   frames, 84 ms apart (two 24 fps cells), the GL scene stepped on the same clock.
-- With --measure (and --only=; VFX-9): each film drawn frame by frame with the GPU counters on (engine/gpu-counters.js):
+- With --measure (and --only=; VFX-9; VFX-10 adds the most particles drawn as strips in a frame): each film drawn frame by frame with the GPU counters on (engine/gpu-counters.js):
   the effects pass's draws a frame (the most and the mean, and the same on the stage at rest before it), the battle
   effects' own draws (the `battleFx` tag, where the build has it), the rigs' redraws and uploaded bytes (rigStats) and
   the time a frame (the stage's and the renderer's tasks and gl.finish, real time: headless the GPU is software, so
@@ -94,9 +94,11 @@ __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=(
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
 __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
- TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[]};
+ TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[],st:[]};
+ /* VFX-10: the instances drawn as strips (the ramp flag, 4) in the frame's pool */
+ const strips=()=>{if(typeof battleFxBatch==='undefined')return 0;const B=battleFxBatch;let n=0;for(let i=0;i<B.n;i++)if(B.d[i*BATTLE_FX_FLOATS+20]&4)n++;return n};
  const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);gl.finish();const dt=rn()-t0;const c=gpuCounters.cur;
-  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m)out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
+  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m){out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);out.st.push(strips())}(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
@@ -148,11 +150,11 @@ def measure(pg, moves):
                 ms = sorted(r['ms'])
                 rows[key] = {'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
                              'fxMax': max(r['fx'] or [0]), 'msMean': mean(r['ms']), 'msP90': ms[int(len(ms) * 0.9)],
-                             'restMs': mean(r['restMs']), 'rig': r['rig']}
+                             'restMs': mean(r['restMs']), 'rig': r['rig'], 'stripMax': max(r['st'] or [0])}
                 x = rows[key]
                 print(f"{key:28} effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
                       f"{x['fxMax']:2}  ms mean {x['msMean']:7} p90 {x['msP90']:7} (rest {x['restMs']:7})  rig redraws "
-                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB", flush=True)
+                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB  strips max {x['stripMax']:3}", flush=True)
     (OUT / 'measure.json').write_text(json.dumps(rows, indent=1, sort_keys=True))
     keys = list(rows)
     tot = lambda f: round(sum(f(rows[k]) for k in keys) / max(1, len(keys)), 2)
