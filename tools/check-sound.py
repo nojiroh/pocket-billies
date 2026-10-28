@@ -44,6 +44,13 @@ SND-17: a jingle naming an ensemble (music.json jingles' `ensemble`) renders onc
 jingles.json: GB Sounds off, its notes baked first); every other jingle part, as every song part, with GB Sounds on,
 so it stays today's 8-bit jingle.
 
+SND-13: a song whose ensemble has layers (music.json ensembles, a part's `layer` or `dim`) renders once more for each
+layer in play ('layer:walk', 'layer:rain', ... 'layer:intensity3', and 'layer:<name>@night' on a night version with an
+ensemble of its own; sound.js musicParts): GB Sounds off, its notes and its layers' baked first, the layer levels as
+logic/music-layers.js MUSIC_LAYER_TESTS gives them from the first step. Every other part hears no layer levels, so its
+layer parts stay silent and nothing is dimmed: today's sound. --loudness adds each layered render's row against the
+ensemble's.
+
 SND-9: beside each RMS array, a brightness fingerprint (`zc:<part>` in the same file): the zero crossings in each 50 ms
 window, so a change of timbre at the same loudness shows too (a brighter sound crosses zero more often). A crossing
 counts when the signal passes from under -0.0001 to over +0.0001 or back (so a near-silent tail's rounding never
@@ -76,7 +83,10 @@ RENDER = r"""async ({jobs, rate, win}) => {
   /* SND-11: a song's ensemble renders (parts 'ensemble' and 'ensemble-night') play with GB Sounds off, their notes and
      the reverb baked first on a tracker of their own at this rate (the bank is shared); every other part with GB Sounds
      on, so it is today's sound whatever the song's ensemble */
-  const ens = p => p === 'ensemble' || p === 'ensemble-night';
+  const ens = p => p === 'ensemble' || p === 'ensemble-night' || (!!p && p.startsWith('layer:'));
+  /* SND-13: a layer part's levels ('layer:walk@night': the walk test on the night version) */
+  const layerOf = p => (p && p.startsWith('layer:') ? MUSIC_LAYER_TESTS[p.slice(6).split('@')[0]] : null);
+  const nightPart = p => p === 'ensemble-night' || (!!p && p.startsWith('layer:') && p.endsWith('@night'));
   const prefs = typeof saveData !== 'undefined' && saveData ? saveData.preferences : null;
   let T0 = null;
   const prepare = async (name, night, kind) => {
@@ -89,6 +99,8 @@ RENDER = r"""async ({jobs, rate, win}) => {
       return;
     }
     if (!(await T0.prepare(play)) || !T0.ensembleReady(play)) throw new Error('the ensemble of ' + play + ' did not bake (the budget?)');
+    /* SND-13: and every layer's parts */
+    if (kind === 'layer') await T0.layersPrepare(play, MUSIC_LAYER_NAMES);
   };
   const schedule = ({kind, name, night, part}) => {
     let seed = 0x5eed;
@@ -98,7 +110,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
     /* SND-4: at night the game asks for the song's night version (sound.js musicVariant), which can be slower: the
        render is as long as the recipe that plays (tracker.js trackerNight) */
     const extra = part && part !== 'day' && part !== 'night' && part !== 'intro' && !ens(part),
-      play = extra ? name + '@' + part : kind === 'song' && (night || part === 'ensemble-night') && typeof musicVariant === 'function' ? musicVariant(name, 1) : name;
+      play = extra ? name + '@' + part : kind === 'song' && (night || nightPart(part)) && typeof musicVariant === 'function' ? musicVariant(name, 1) : name;
     let steps = 0;
     /* SND-5: the recipe as the tracker makes it (variants, the intro's bars) when the code has trackerRecipe */
     if (kind === 'song' && typeof trackerRecipe === 'function') {
@@ -119,7 +131,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
     Object.defineProperty(oc, 'state', { get: () => 'running', configurable: true });
     if (E.timer) clearInterval(E.timer);
     Object.assign(E, { ctx: null, waves: {}, song: null, want: null, timer: null, voices: [], jingle: 0,
-      L: { drums: 1, pad: night ? 1 : 0 } });
+      L: layerOf(part) ? { drums: 1, pad: night ? 1 : 0, layers: layerOf(part) } : { drums: 1, pad: night ? 1 : 0 } });
     window.AudioContext = function () { return oc; };
     if (prefs) saveData.preferences = Object.assign({}, prefs, { gbSounds: !ens(part) });
     try {
@@ -160,7 +172,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
     return [out, zc];
   };
   const ctxs = [];
-  for (const j of jobs) { if (ens(j.part)) await prepare(j.name, j.part === 'ensemble-night', j.kind); ctxs.push(schedule(j)); }
+  for (const j of jobs) { if (ens(j.part)) await prepare(j.name, nightPart(j.part), layerOf(j.part) ? 'layer' : j.kind); ctxs.push(schedule(j)); }
   /* SND-11: the reverb's impulse goes into its convolver a moment after a song starts (a promise): let it */
   await new Promise(r => setTimeout(r, 0));
   return (await Promise.all(ctxs.map(c => c.startRendering()))).map(prints);
@@ -194,6 +206,8 @@ LOUD = r"""async ({jobs, rate}) => {
       /* SND-17: a jingle's ensemble row */
       if (job.jingle) { if (!(await T1.jinglePrepare(MUSIC.jingles[job.jingle]))) throw new Error('no ensemble for the jingle ' + job.jingle); }
       else if (!(await T1.prepare(job.song))) throw new Error('no ensemble for ' + job.song);
+      /* SND-13: a layered row: every layer's parts baked too */
+      if (job.layers) await T1.layersPrepare(job.song, MUSIC_LAYER_NAMES);
     }
     if (job.song) {
       const D = trackerCompose(trackerRecipe(SONGS, job.song, MUSIC.run));
@@ -204,7 +218,8 @@ LOUD = r"""async ({jobs, rate}) => {
     Object.defineProperty(oc, 'currentTime', { get: () => now, configurable: true });
     Object.defineProperty(oc, 'state', { get: () => 'running', configurable: true });
     if (E.timer) clearInterval(E.timer);
-    Object.assign(E, { ctx: null, waves: {}, song: null, want: null, timer: null, voices: [], jingle: 0, L: { drums: 1, pad: 0 } });
+    Object.assign(E, { ctx: null, waves: {}, song: null, want: null, timer: null, voices: [], jingle: 0,
+      L: job.layers ? { drums: 1, pad: 0, layers: MUSIC_LAYER_TESTS[job.layers] } : { drums: 1, pad: 0 } });
     const prefs = saveData.preferences, amb = Object.assign({}, ambience);
     saveData.preferences = (job.song || job.jingle) && !job.ens ? { gbSounds: true } : {};
     window.AudioContext = function () { return oc; };
@@ -311,7 +326,10 @@ def loudness(b, base, only=None):
         # SND-17: each jingle naming an ensemble, as its 8-bit version and on its ensemble
         jens = pg.evaluate("typeof musicJingleParts === 'function' ? Object.keys(MUSIC.jingles).filter(j => { const J = MUSIC.jingles[j]; return J.ensemble && J.ensemble !== 'gb' && MUSIC.ensembles[J.ensemble]; }) : []")
         jens = [j for j in jens if not only or j in only]
-        jobs = [{'song': s} for s in songs] + [{'song': s, 'ens': True} for s in ens] + [{'beds': B} for _, B in LOUD_BEDS + nature + LOUD_SCENES + rows_w]
+        # SND-13: each ensemble's layers in play (musicParts' layer:<name> parts), against the ensemble as written
+        lay = [(s, p) for s in ens for p in pg.evaluate("s => musicParts(s).filter(p => p.startsWith('layer:'))", s)]
+        lay_jobs = [{'song': pg.evaluate("s => musicVariant(s, 1)", s) if p.endswith('@night') else s, 'ens': True, 'layers': p[6:].split('@')[0]} for s, p in lay]
+        jobs = [{'song': s} for s in songs] + [{'song': s, 'ens': True} for s in ens] + lay_jobs + [{'beds': B} for _, B in LOUD_BEDS + nature + LOUD_SCENES + rows_w]
         res = []
         for i in range(0, len(jobs), 6):
             res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
@@ -331,6 +349,7 @@ def loudness(b, base, only=None):
             ctx.close()
     S = dict(zip(songs, res[:len(songs)]))
     SE = dict(zip(ens, res[len(songs):len(songs) + len(ens)]))
+    SL = list(zip(lay, res[len(songs) + len(ens):len(songs) + len(ens) + len(lay)]))
     ref = S['route']['lufs']
     lines = [f'loudness at default sliders, stereo, K-weighted (LUFS; LU against the route song, {ref:.1f} LUFS; beds {duck:+.1f} dB under a song)',
              '  songs (day):']
@@ -338,13 +357,16 @@ def loudness(b, base, only=None):
     if SE:
         lines.append('  songs (SND-11: as their ensemble, against their gb version):')
         lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS   {L["lufs"] - S[s]["lufs"]:+5.1f} LU on gb' for s, L in SE.items()]
-    warn = []
+    if SL:
+        lines.append('  songs (SND-13: each layer in play, against the ensemble as written):')
+        lines += [f'    {s + " " + p:28} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   peak {L["peak"]:6.1f} dBFS   {L["lufs"] - SE[s]["lufs"]:+5.1f} LU on the ensemble' for (s, p), L in SL]
+    warn = [f'{s} {p}: NaN in the render' for (s, p), L in SL if L.get('nan')]
     if jens:
         J0, J1 = res[-2 * len(jens):-len(jens)], res[-len(jens):]
         lines.append('  jingles (SND-17: on their ensemble, against their 8-bit version):')
         lines += [f'    {j:12} {b["lufs"]:7.1f} LUFS {b["lufs"] - ref:+6.1f} LU   peak {b["peak"]:6.1f} dBFS   {b["lufs"] - a["lufs"]:+5.1f} LU on the 8-bit ({a["lufs"]:.1f})' for j, a, b in zip(jens, J0, J1)]
         warn += [f'jingle {j}: NaN in the render' for j, b in zip(jens, J1) if b.get('nan')]
-    at = len(songs) + len(ens)
+    at = len(songs) + len(ens) + len(lay)
     for title, rows in (('world sounds', LOUD_BEDS), ('nature (SND-14)', nature), ('scenes', LOUD_SCENES), ('water (SND-10: each recipe at 1, 3 and 10 m)', rows_w)):
         if not rows: continue
         lines.append(f'  {title}:')

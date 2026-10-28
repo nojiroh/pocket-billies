@@ -58,6 +58,7 @@ import {
   musicLayerFightStart,
   musicLayerListen,
   musicLayerPan,
+  musicLayerTests,
   musicLayerWalk,
   musicLayerWeather,
 } from './logic/music-layers.js';
@@ -541,6 +542,12 @@ function musicParts(name) {
   const ens = D => D && D.ensemble && D.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[D.ensemble];
   if (ens(S)) out.push('ensemble');
   if (S && S.night !== false && ens(trackerRecipe(SONGS, musicVariant(name, 1), MUSIC.run))) out.push('ensemble-night');
+  /* SND-13: its ensemble's layers each in play (layer:walk, layer:rain, ... logic/music-layers.js musicLayerTests) by
+     day, and its night version's (layer:walk@night ...) when the night names an ensemble of its own */
+  const E = ens(S),
+    N = S && S.night !== false ? ens(trackerRecipe(SONGS, musicVariant(name, 1), MUSIC.run)) : null;
+  if (E) for (const k of musicLayerTests(E)) out.push('layer:' + k);
+  if (N && N !== E) for (const k of musicLayerTests(N)) out.push('layer:' + k + '@night');
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
