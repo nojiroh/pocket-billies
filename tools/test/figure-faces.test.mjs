@@ -6,7 +6,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readdirSync } from 'node:fs';
 import { figureKitData, kitFaceStyles, lookFigure } from '../../game/js/logic/figure-kit.js';
-import { cardSize, figureFaceMarks, figurePose, jointMatrices } from '../../game/js/logic/figure-pose.js';
+import {
+  cardSize,
+  figureFaceMarks,
+  figureFaceState,
+  figurePose,
+  jointMatrices,
+} from '../../game/js/logic/figure-pose.js';
 import { kitFaceProblems } from '../../game/js/logic/kit-shapes.js';
 
 const W = JSON.parse(readFileSync(new URL('../../game/data/wardrobe.json', import.meta.url), 'utf8'));
@@ -94,4 +100,61 @@ test('faces: a broken faces section has problems', () => {
   const P = kitFaceProblems(bad, W.items).join('\n');
   for (const s of ['eyes_round draws nope', 'hat_cap is no eyes', 'no mouth yawn', 'no mood giddy', 'brows_none'])
     assert.ok(P.includes(s), `${s} in:\n${P}`);
+});
+
+test('faces: a face state shows its expression, talking frames and a blink; the rest has no key', () => {
+  const F = lookFigure(PEOPLE.broker.look, W.items, { name: 'broker' }),
+    FC = figureKitData().faces;
+  const rest = figureFaceState(F);
+  assert.equal(rest.key, '');
+  assert.ok(rest.when.has('eyes:open') && rest.when.has('brows:idle') && rest.when.has('mouth:' + F.faceSet.mouth));
+  const happy = figureFaceState(F, { expr: 'happy' });
+  assert.ok(happy.when.has('eyes:happy') && happy.when.has('mouth:smile') && happy.when.has('blush'));
+  /* talking runs through the expression's own frames, else the kit's */
+  assert.deepEqual(
+    [0, 1, 2, 3].map(i => [...figureFaceState(F, { expr: 'happy', talk: i }).when].find(w => w.startsWith('mouth:'))),
+    ['mouth:smile', 'mouth:talk_b', 'mouth:talk_c', 'mouth:smile']
+  );
+  assert.ok(figureFaceState(F, { talk: 1 }).when.has('mouth:' + FC.talk[1]));
+  /* a blink half shuts then shuts open eyes; happy eyes don't blink */
+  assert.ok(figureFaceState(F, { blink: 1 }).when.has('eyes:half'));
+  assert.ok(figureFaceState(F, { blink: 2 }).when.has('eyes:closed'));
+  assert.ok(figureFaceState(F, { expr: 'happy', blink: 2 }).when.has('eyes:happy'));
+  /* an unknown tag is the rest */
+  assert.equal(figureFaceState(F, { expr: 'giddy' }).key, '');
+});
+
+test('faces: every expression and mouth frame paints its own marks; only the state’s show', () => {
+  const F = lookFigure(PEOPLE.broker.look, W.items, { name: 'broker' }),
+    FC = figureKitData().faces,
+    ppm = 96,
+    S = cardSize(ppm, 0.45, 1.9),
+    P = figurePose(F, 'idle', 0),
+    J = jointMatrices(F, P, ppm),
+    paint = o => JSON.stringify(figureFaceMarks(F, J, P, { rel: Math.PI, tilt: 0.45 }, ppm, S, figureFaceState(F, o)));
+  const seen = new Set(Object.keys(FC.expressions).map(expr => paint({ expr })));
+  assert.equal(seen.size, Object.keys(FC.expressions).length, 'each expression looks its own');
+  const mouths = new Set(Object.keys(FC.mouths).map((_, i) => paint({ talk: i, expr: 'x' })));
+  assert.ok(mouths.size >= FC.talk.length);
+  /* the rest is a pose's own blink-free face; one eye frame at a time */
+  const m = figureFaceMarks(F, J, P, { rel: Math.PI, tilt: 0.45 }, ppm, S);
+  assert.equal(m.filter(x => x.kind === 'eye').length, 2);
+  assert.equal(m.filter(x => x.kind === 'mouth').length, 1);
+});
+
+test('faces: every expression tag a line uses in the game data is one of the kit', () => {
+  const FC = figureKitData().faces,
+    used = new Set(),
+    walk = d => {
+      for (const f of readdirSync(d, { withFileTypes: true })) {
+        const p = `${d}/${f.name}`;
+        if (f.isDirectory()) {
+          if (f.name !== 'legacy' && f.name !== 'schema') walk(p);
+        } else if (f.name.endsWith('.json'))
+          for (const m of readFileSync(p, 'utf8').matchAll(/"\[(\w+)\]\s/g)) used.add(m[1]);
+      }
+    };
+  walk(new URL('../../game/data', import.meta.url).pathname);
+  assert.ok(used.size > 0);
+  for (const tag of used) assert.ok(FC.expressions[tag], `[${tag}] has no expression in figureKit.json faces`);
 });

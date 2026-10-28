@@ -615,7 +615,7 @@
   }
  },
  "faces": {
-  "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks), in the portrait kit's styles (portraits.json). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h); a heavy lid over it (lid: [y, w, h] as parts of the eye); how far apart (gap); the iris's size (iris); lash flicks (flicks: 0 to 3) and how long the outer one (wing); a shaded lid (shade), bags under (bags) and lines (lines, close-ups); whether its wearer blushes (blush). brows: each style's width (w) and thickness (t), how high it arches (arch), its own tilt (tilt: above 0 down to the nose, below 0 up), a peak, one side raised (uneven), a crease between (knit), tufts (bushy), flat. mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height). rest: a look's resting mood, the first rule its wardrobe ids match. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
+  "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks), in the portrait kit's styles (portraits.json). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h); a heavy lid over it (lid: [y, w, h] as parts of the eye); how far apart (gap); the iris's size (iris); lash flicks (flicks: 0 to 3) and how long the outer one (wing); a shaded lid (shade), bags under (bags) and lines (lines, close-ups); whether its wearer blushes (blush). brows: each style's width (w) and thickness (t), how high it arches (arch), its own tilt (tilt: above 0 down to the nose, below 0 up), a peak, one side raised (uneven), a crease between (knit), tufts (bushy), flat. mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). eyeFrames: how each frame of an eye (the portrait kit's) changes it: open (how much of it shows), scale, iris, shut, happy (shut, curved up), slant (an angry lid), flat (a bored lid), look (a glance). expressions: the portrait kit's seven, as figures show them: the eyes frame, the mouth frame (else the look's), the brows' tilt and lift (metres up), blush, and the talking frames. talk: the talking frames when an expression has none. moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height). rest: a look's resting mood, the first rule its wardrobe ids match. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
   "eyes": {
    "lashes": {"w":0.072,"h":0.048,"flicks":2,"blush":true},
    "round": {"w":0.072,"h":0.048},
@@ -630,6 +630,18 @@
    "shadowed": {"w":0.074,"h":0.04,"shade":true},
    "tired": {"w":0.072,"h":0.036,"bags":true},
    "weary": {"w":0.072,"h":0.036,"bags":true,"lines":true}
+  },
+  "eyeFrames": {
+   "open": {},
+   "half": {"open":0.55},
+   "closed": {"shut":true},
+   "happy": {"happy":true},
+   "angry": {"open":0.8,"slant":1},
+   "wide": {"scale":1.12,"iris":0.82},
+   "narrow": {"open":0.4},
+   "bored": {"open":0.5,"flat":true},
+   "look_l": {"look":-1},
+   "look_r": {"look":1}
   },
   "brows": {
    "soft": {"w":0.075,"t":0.016},
@@ -646,12 +658,16 @@
    "sharp": {"w":0.088,"t":0.014,"tilt":-1}
   },
   "mouths": {
-   "smile": [
-    {"kind":"mouth","w":0.085,"h":0.03,"shape":"arc"},
+   "closed": [
+    {"kind":"mouth","w":0.055,"h":0.012},
     {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
    ],
    "neutral": [
     {"kind":"mouth","w":0.06,"h":0.014},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "smile": [
+    {"kind":"mouth","w":0.085,"h":0.03,"shape":"arc"},
     {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
    ],
    "grin": [
@@ -662,11 +678,57 @@
     {"kind":"mouth","w":0.042,"h":0.046,"shape":"oval"},
     {"kind":"tongue","y":-0.012,"w":0.03,"h":0.016,"min":0.3,"shape":"oval","close":true}
    ],
+   "shout": [
+    {"kind":"mouth","w":0.08,"h":0.07,"shape":"oval"},
+    {"kind":"teeth","y":0.024,"w":0.06,"h":0.014,"min":0.3},
+    {"kind":"tongue","y":-0.022,"w":0.048,"h":0.018,"min":0.3,"shape":"oval","close":true}
+   ],
+   "talk_a": [
+    {"kind":"mouth","w":0.06,"h":0.03,"shape":"oval"},
+    {"kind":"tongue","y":-0.008,"w":0.034,"h":0.012,"min":0.3,"shape":"oval","close":true}
+   ],
+   "talk_b": [
+    {"kind":"mouth","w":0.072,"h":0.046,"shape":"oval"},
+    {"kind":"teeth","y":0.014,"w":0.052,"h":0.012,"min":0.3}
+   ],
+   "talk_c": [
+    {"kind":"mouth","w":0.044,"h":0.04,"shape":"oval"}
+   ],
+   "angry": [
+    {"kind":"mouth","w":0.09,"h":0.036,"shape":"oval"},
+    {"kind":"teeth","w":0.072,"h":0.016,"min":0.3}
+   ],
+   "frown": [
+    {"kind":"mouth","w":0.075,"h":0.026,"shape":"cap"},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "kiss": [
+    {"kind":"mouth","w":0.03,"h":0.03,"shape":"oval"},
+    {"kind":"lip","y":-0.022,"w":0.036,"h":0.012,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "wince": [
+    {"kind":"mouth","w":0.08,"h":0.026},
+    {"kind":"teeth","w":0.066,"h":0.012,"min":0.3}
+   ],
    "smirk": [
     {"kind":"mouth","x":0.016,"w":0.07,"h":0.024,"shape":"slant","dir":-1,"t":0.014},
     {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "tongue": [
+    {"kind":"mouth","w":0.085,"h":0.03,"shape":"arc"},
+    {"kind":"tongue","y":-0.02,"w":0.03,"h":0.022,"min":0.3,"shape":"oval"}
    ]
   },
+  "expressions": {
+   "idle": {"eyes":"open"},
+   "happy": {"eyes":"happy","mouth":"smile","lift":0.006,"blush":true,"talk":["smile","talk_b","talk_c"]},
+   "sad": {"eyes":"bored","mouth":"frown","tilt":-2},
+   "angry": {"eyes":"angry","mouth":"angry","tilt":2,"lift":-0.004},
+   "surprised": {"eyes":"wide","mouth":"o","lift":0.012},
+   "hurt": {"eyes":"narrow","mouth":"wince","tilt":-2,"lift":-0.004},
+   "smug": {"eyes":"half","mouth":"smirk","tilt":1}
+  },
+  "talk": ["talk_a","talk_b","talk_c"],
   "moods": {
    "calm": {"lid":0.46},
    "glad": {"lid":0.52}

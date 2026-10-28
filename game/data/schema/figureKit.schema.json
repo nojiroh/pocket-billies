@@ -281,7 +281,7 @@
   "faces": {
    "description": "CH-6: the face as marks (logic/figure-kit.js kitFaceMarks); sizes in metres on the usual head",
    "type": "object",
-   "required": ["eyes", "brows", "mouths", "moods", "rest", "wardrobe", "defaults"],
+   "required": ["eyes", "eyeFrames", "brows", "mouths", "expressions", "talk", "moods", "rest", "wardrobe", "defaults"],
    "additionalProperties": false,
    "properties": {
     "note": {"type": "string"},
@@ -308,6 +308,46 @@
       }
      }
     },
+    "eyeFrames": {
+     "description": "how each frame of an eye changes it: open (how much shows), scale, iris, shut, happy (shut, curved up), slant (an angry lid), flat (a bored lid), look (a glance: -1 or 1)",
+     "type": "object",
+     "required": ["open", "half", "closed"],
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "open": {"type": "number", "minimum": 0.2, "maximum": 1},
+       "scale": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "iris": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "shut": {"type": "boolean"},
+       "happy": {"type": "boolean"},
+       "slant": {"type": "number", "minimum": -1, "maximum": 1},
+       "flat": {"type": "boolean"},
+       "look": {"type": "number", "minimum": -1, "maximum": 1}
+      }
+     }
+    },
+    "expressions": {
+     "description": "the portrait kit's expressions as figures show them (a dialogue line's [tag]): the eyes frame, the mouth frame (else the look's own), the brows' tilt (above 0 down to the nose) and lift (metres up), blush, the talking frames",
+     "type": "object",
+     "required": ["idle"],
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["eyes"],
+      "additionalProperties": false,
+      "properties": {
+       "eyes": {"$ref": "#/$defs/id"},
+       "mouth": {"$ref": "#/$defs/id"},
+       "tilt": {"type": "number", "minimum": -4, "maximum": 4},
+       "lift": {"type": "number", "minimum": -0.05, "maximum": 0.05},
+       "blush": {"type": "boolean"},
+       "talk": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}}
+      }
+     }
+    },
+    "talk": {"description": "the talking mouth frames when an expression has none of its own", "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}},
     "brows": {
      "description": "each brow style: its width (w) and thickness (t), arch, its own tilt (above 0 down to the nose), flat, a peak, one side raised (uneven), a crease between (knit), tufts (bushy)",
      "type": "object",

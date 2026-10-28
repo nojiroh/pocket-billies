@@ -37,6 +37,7 @@ import {
   figureDark,
   figureDensityStep,
   figureFaceMarks,
+  figureFaceState,
   figureKey,
   figureMix,
   figurePose,
@@ -1021,7 +1022,7 @@ export function figurePalette(F, colours, ramp = 'props', LK = null) {
  * toon bands and the outline as `outline` says; 'smooth': the plain 3D figure, a soft light and no outline). A canvas
  * tagged as a person's picture, or null if the baker can't draw it now.
  */
-function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = null) {
+function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = null, face = null) {
   const gl = figureGl();
   if (!gl) return null;
   /* a direction (FIGURE_LOOKS) or the plain 3D figure ('smooth') */
@@ -1147,7 +1148,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
   /* a code figure's face, painted in whole pixels where its head faces the camera (logic/figure-pose.js
      figureFaceMarks); a model's face is in its texture */
   if (code)
-    for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S)) {
+    for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S, face)) {
       x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
       figurePaintMark(x, m, ppm);
     }
@@ -1246,7 +1247,7 @@ const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0, fa
  * figure's build time, and `kit`, the head shape and build it has. CH-6: a change of the face alone (`faceRev`, the
  * Studio's count of its face edits, or the figure's eye and brow styles) paints the face again on the same mesh.
  * @param {{ look: any, items: any, kit: any, who?: string, figure?: any, rev?: number, faceRev?: number,
- *   style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
+ *   face?: { expr?: string, talk?: number, blink?: number, mouth?: string }, style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
  */
 export function figurePreview(o) {
   const style = o.style && (o.style === 'smooth' || o.style in FIGURE_LOOKS) ? o.style : 'pixel',
@@ -1278,7 +1279,9 @@ export function figurePreview(o) {
   P.face = face;
   const ppm = o.ppm || 64,
     V = figureView(Math.PI * (o.turn ?? 0.9), 0, o.tilt ?? (4 * Math.PI) / 180, 32);
-  let im = bakeFigure(P.def, o.clip || 'idle', o.frame || 0, V, ppm, true, style);
+  /* CH-6: a face state (an expression, a talking frame, a blink) */
+  const st = o.face && P.def.F.faceSet ? figureFaceState(P.def.F, o.face) : null;
+  let im = bakeFigure(P.def, o.clip || 'idle', o.frame || 0, V, ppm, true, style, null, st);
   if (im && o.crop === 'bust') im = figureBust(im, P.def, ppm);
   if (!im) return null;
   im.ms = Math.round(P.ms);
@@ -1360,7 +1363,7 @@ function figureBust(im, Fig, ppm) {
  * `tilt` the camera's tilt, `style` 'pixel' or 'smooth' (the plain 3D figure, baked at FIGURE_SMOOTH_PPM); a pixel
  * figure at `ppmAt` pixels a metre if given (a battle's), else at the dial's.
  */
-function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixel', ppmAt = 0, at = null) {
+function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixel', ppmAt = 0, at = null, face = null) {
   const Fig = figureDef(name);
   let im = null;
   if (Fig) {
@@ -1373,11 +1376,14 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
       V = figureView(heading, yaw, tilt, steps),
       /* CH-3b: lit by the scene (its sun, sky and lamps), kept by that light too */
       light = smooth ? null : figureLightNow(at),
-      key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, style + (light ? '~' + light.key : ''));
+      /* CH-6: the face's state (an expression, talking, a blink), part of the picture's name when not at rest */
+      FS = Fig.kind === 'code' ? figureFaceState(Fig.F, face || {}) : null,
+      fk = FS && FS.key ? '|' + FS.key : '',
+      key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, style + (light ? '~' + light.key : '')) + fk;
     /* CH-4: the live atlas (figure-atlas.js): a kit figure in the world drawn by the game's renderer each step and
        lit where it stands (not a battle's close-up, nor the plain 3D style, which keep their baked pictures) */
     if (!ppmAt && !smooth && Fig.kind === 'code' && typeof figureAtlasOn === 'function' && figureAtlasOn()) {
-      const p = figureAtlasPicture(rec, Fig, clip, frame, V, steps, figureFarPpm(rec, ppm, at), outline, style);
+      const p = figureAtlasPicture(rec, Fig, clip, frame, V, steps, figureFarPpm(rec, ppm, at), outline, style, FS);
       if (p) {
         if (rec && typeof rec === 'object') figureLast.set(rec, p);
         return p;
@@ -1404,7 +1410,7 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
         (B.frameBakes === 0 || typeof frameBudgetLeft !== 'function' || frameBudgetLeft())
       ) {
         B.frameBakes++;
-        im = bakeFigure(Fig, clip, frame, V, ppm, outline, style, light);
+        im = bakeFigure(Fig, clip, frame, V, ppm, outline, style, light, FS);
         if (im) {
           FIGURE_CACHE.set(key, im);
           B.bytes += im.width * im.height * 4;
@@ -1451,7 +1457,7 @@ function figureTilt() {
  * camera, in `style`. `rec` keeps their last picture and their gait at the last tick (nothing is written on it). Null
  * until a first picture is baked (or while a model's file loads).
  */
-export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'pixel', at = null) {
+export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'pixel', at = null, face = null) {
   const Fig = figureDef(name);
   if (!Fig) return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
   const tick = figureTick(t);
@@ -1470,7 +1476,7 @@ export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'p
     const speed = clip === 'run' ? WALK_SPEED * RUN_FACTOR : WALK_SPEED;
     frame = meshClipFrame(Fig.clips[clip], t, g.gait, speed);
   }
-  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style, 0, at);
+  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style, 0, at, face);
 }
 /**
  * a battle's trainer drawn as your figure (battle-stage.js trainerBattleFrame): you from behind (i 0) or the rival

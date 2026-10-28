@@ -1672,7 +1672,25 @@ export interface FigureKitFaces {
       bushy?: boolean;
     }
   >;
+  eyeFrames: Record<
+    DataId,
+    {
+      open?: number;
+      scale?: number;
+      iris?: number;
+      shut?: boolean;
+      happy?: boolean;
+      slant?: number;
+      flat?: boolean;
+      look?: number;
+    }
+  >;
   mouths: Record<DataId, FigureKitMouthMark[]>;
+  expressions: Record<
+    DataId,
+    { eyes: DataId; mouth?: DataId; tilt?: number; lift?: number; blush?: boolean; talk?: DataId[] }
+  >;
+  talk: DataId[];
   moods: Record<DataId, { lid: number; tilt?: number; lift?: number }>;
   rest: { eyes?: string[]; brows?: string[]; mouth?: string[]; mood: DataId }[];
   wardrobe: Record<string, DataId>;

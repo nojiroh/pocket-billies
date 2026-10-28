@@ -54,6 +54,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureFaceMarks: [() => figureFaceMarks, v => (figureFaceMarks = v)],
   // @ts-expect-error -- replaced on purpose
+  figureFaceState: [() => figureFaceState, v => (figureFaceState = v)],
+  // @ts-expect-error -- replaced on purpose
   figureGpuMesh: [() => figureGpuMesh, v => (figureGpuMesh = v)],
   // @ts-expect-error -- replaced on purpose
   figureKey: [() => figureKey, v => (figureKey = v)],
@@ -266,7 +268,7 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86,
  * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour; `stripe` bands it
  * in a second colour every `every` metres of its height (from `from`) */
 /** @typedef {{ part: string, kind: string, at: Vec3, n: Vec3, w: number, h: number, col?: string,
- *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' | 'slant', dir?: number, t?: number, close?: boolean }}
+ *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' | 'slant', dir?: number, t?: number, close?: boolean, when?: string }}
  * FaceMark
  * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres, in colour `col`
  * (else the figure's colour named as its kind); `hollow` paints only its edge (a glasses frame); `min` how much it
@@ -276,13 +278,19 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86,
  * way up) once it is 3 pixels or more (a portrait); `close` shows it only in a close-up (90 px a metre or more: a
  * portrait, a battle). An 'eye' blinks and
  * narrows to a pixel seen from the side; an eye 2 pixels wide and 3 tall or more gets a glint (CH-3b: brows, lashes,
- * glasses, a stache, freckles, a name tag are marks too) */
+ * glasses, a stache, freckles, a name tag are marks too). CH-6: `when` shows it only in a face state that has it
+ * ('eyes:half', 'mouth:talk_a', 'brows:angry', 'blush': figureFaceState) */
+/** @typedef {{ mouth: string, talk: string[], expr: Record<string, { eyes: string, mouth: string | null,
+ *   blush: boolean, talk?: string[] }> }} FaceSet CH-6: a kit figure's faces (logic/figure-kit.js kitFaceSet): its
+ *   resting mouth, the talking frames, and each expression's eyes, mouth, blush and talking frames */
+/** @typedef {{ when: Set<string>, key: string }} FaceState the tags a face shows and a short key for a picture's
+ *   name ('' at rest) */
 /** @typedef {{ swing?: number, arms?: number, bounce?: number, lean?: number, hang?: number, head?: number }}
  * FigureGait how a figure moves (figurePose): its legs' and arms' swing and its bounce as parts of the usual (1), its
  * lean forward (radians, below 0 back), how far out its arms hang (radians) and how its head is held (radians, a
  * stoop's forward) */
 /** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[],
- *   gloss?: string[],
+ *   gloss?: string[], faceSet?: FaceSet,
  *   gait?: FigureGait, kit?: { head: string, build: string, bust?: number } }} Figure (`kit`: the head shape and build the figure
  * kit chose, logic/figure-kit.js) */
 /** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
@@ -1462,15 +1470,46 @@ export function figureGpuMesh(F, detail = 1, M0) {
 
 /* ---------- the face ---------- */
 /**
+ * CH-6: a kit figure's face state: the expression's (faces.expressions; `idle` when it has none of that name) eyes,
+ * brows, mouth and blush; a blink (1 half shut, 2 shut) over open eyes; talking (`talk`, a count) runs through the
+ * expression's talking frames; `mouth` names a frame outright (the Studio); null for a figure with no face set (Kappi,
+ * the mannequin)
+ * @param {Figure} F @param {{ expr?: string | null, blink?: number, talk?: number | null, mouth?: string }} [o]
+ * @returns {FaceState | null}
+ */
+export function figureFaceState(F, o = {}) {
+  const FS = F.faceSet;
+  if (!FS) return null;
+  const xid = o.expr && FS.expr[o.expr] ? o.expr : 'idle',
+    X = FS.expr[xid] || { eyes: 'open', mouth: null, blush: false },
+    /* a blink closes open eyes (half, then shut); happy and shut ones stay as they are */
+    eyes = o.blink && X.eyes !== 'happy' && X.eyes !== 'closed' ? (o.blink > 1 ? 'closed' : 'half') : X.eyes,
+    talk = X.talk || FS.talk,
+    mouth = o.mouth
+      ? o.mouth
+      : o.talk != null && o.talk >= 0 && talk.length
+        ? talk[o.talk % talk.length]
+        : X.mouth || FS.mouth,
+    when = new Set(['eyes:' + eyes, 'mouth:' + mouth, 'brows:' + xid]);
+  if (X.blush) when.add('blush');
+  const rest = xid === 'idle' && eyes === (FS.expr.idle ? FS.expr.idle.eyes : 'open') && mouth === FS.mouth;
+  return { when, key: rest ? '' : `${xid}.${eyes}.${mouth}` };
+}
+/**
  * the face marks to paint on a baked picture, in its pixels (x, y from the top left, w by h): each mark where its part
  * holds it this pose, seen in view V, if it faces the camera enough (eyes most, the mouth least); an eye seen from the
  * side is a pixel wide; a closed eye (`blink`) a line; an open eye 2 pixels or wider and 3 or taller gets a glint at
- * its top left, toward the light
+ * its top left, toward the light. CH-6: a kit figure's marks in face state `face` (figureFaceState; its rest when not
+ * given, a pose's blink closing its eyes)
  * @param {Figure} F @param {Float32Array} J the pose's joint matrices (jointMatrices) @param {FigurePose} P
  * @param {{ rel: number, tilt: number }} V @param {number} ppm @param {{ ax: number, ay: number }} S
+ * @param {FaceState | null} [face]
  * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]}
  */
-export function figureFaceMarks(F, J, P, V, ppm, S) {
+export function figureFaceMarks(F, J, P, V, ppm, S, face = null) {
+  const tagged = !!F.faceSet,
+    FS = tagged ? face || figureFaceState(F, { blink: P.blink ? 2 : 0 }) : null,
+    blink = !tagged && P.blink;
   /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
    *   dir?: number, t?: number }[]} */
   const out = [];
@@ -1494,12 +1533,13 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
     if (facing < (m.min ?? (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2))) continue;
     if (m.close && ppm < 90) continue;
     /* an iris is on an open eye, and so is anything `shut` (an eye's shines) */
-    if ((m.kind === 'iris' || m.shut) && P.blink) continue;
+    if ((m.kind === 'iris' || m.shut) && blink) continue;
+    if (m.when && !(FS && FS.when.has(m.when))) continue;
     let w = Math.max(1, Math.round(m.w * ppm)),
       h = Math.max(1, Math.round(m.h * ppm));
     if ((m.kind === 'eye' || m.narrow) && facing < 0.6) w = 1;
     /* a closed eye is a line, a pixel thick at walking size and thicker in a close-up (a portrait) */
-    if (m.kind === 'eye' && P.blink) h = Math.max(1, Math.round(0.022 * ppm));
+    if (m.kind === 'eye' && blink) h = Math.max(1, Math.round(0.022 * ppm));
     const q = cardPoint(at, V.rel, V.tilt),
       x = Math.round(S.ax + q.u * ppm - w / 2),
       y = Math.round(S.ay - q.v * ppm - h / 2);
@@ -1510,7 +1550,7 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
     if (m.hollow) o.hollow = true;
     /* CH-3b: an oval (an eye, a pupil, a shine) or a smile's arc, painted as such once it is 3 pixels or more (a
        portrait's close-up); smaller, a block */
-    if (m.shape && w >= 3 && h >= 3 && !(m.kind === 'eye' && P.blink)) {
+    if (m.shape && w >= 3 && h >= 3 && !(m.kind === 'eye' && blink)) {
       o.shape = m.shape;
       /* CH-6: a rim (a brow's cap) as thick as its own `t` */
       if (m.t && m.shape !== 'oval') o.t = Math.max(1, Math.round(m.t * ppm));
@@ -1522,7 +1562,7 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
       o.t = Math.max(1, Math.round((m.t || 0.02) * ppm));
     }
     out.push(o);
-    if (m.kind === 'eye' && !P.blink && w >= 2 && h >= 3 && m.glint !== false)
+    if (m.kind === 'eye' && !blink && w >= 2 && h >= 3 && m.glint !== false)
       out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint' });
   }
   return out;

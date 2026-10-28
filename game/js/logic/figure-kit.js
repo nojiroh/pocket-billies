@@ -57,6 +57,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitFaceMarks: [() => kitFaceMarks, v => (kitFaceMarks = v)],
   // @ts-expect-error -- replaced on purpose
+  kitFaceSet: [() => kitFaceSet, v => (kitFaceSet = v)],
+  // @ts-expect-error -- replaced on purpose
   kitFaceStyles: [() => kitFaceStyles, v => (kitFaceStyles = v)],
   // @ts-expect-error -- replaced on purpose
   kitHair: [() => kitHair, v => (kitHair = v)],
@@ -891,6 +893,8 @@ export function lookFigure(look, items, opts = {}) {
     height: Math.max(0.6, tallest),
     parts,
     face,
+    /* CH-6: which tagged marks each face state shows (figure-pose.js figureFaceState) */
+    faceSet: kitFaceSet(kitFaceStyles(wear, KIT.faces, opts.figure), KIT.faces),
     colours,
     gait,
     /* where a portrait's cut is (figures.js figurePortrait), metres from the ground: just under the shoulders */
@@ -1354,6 +1358,23 @@ export function kitHat(add, hat, H, crown = 1, kit = figureKitData()) {
 }
 
 /**
+ * CH-6: a figure's face set: its resting mouth, the talking frames, and each expression's eyes, mouth, blush and
+ * talking frames (faces.expressions), for figure-pose.js figureFaceState
+ * @param {{ mouth: string }} style @param {FigureKitData['faces']} FC @returns {import('./figure-pose.js').FaceSet}
+ */
+export function kitFaceSet(style, FC) {
+  return {
+    mouth: style.mouth,
+    talk: FC.talk.slice(),
+    expr: Object.fromEntries(
+      Object.entries(FC.expressions).map(([id, X]) => [
+        id,
+        { eyes: X.eyes, mouth: X.mouth || null, blush: !!X.blush, ...(X.talk ? { talk: X.talk.slice() } : {}) },
+      ])
+    ),
+  };
+}
+/**
  * CH-6: the face styles a look's wardrobe ids draw (figureKit.json faces.wardrobe, else faces.defaults), and its resting
  * mood (the first of faces.rest its ids match; else calm); no brows when it wears none. A person's `figure` choice
  * (people/<id>.json) picks any of the kit's eye and brow styles over the look's
@@ -1416,10 +1437,16 @@ export function kitFaceMarks(H, wear, look, colours, seed, kit = figureKitData()
   colours.crease = figureMix(figureDark(colours.skin, 0.74), [120, 70, 90], 0.15);
   colours.lip = figureMix(colours.skin, [196, 96, 104], 0.32);
   colours.blush = figureMix(colours.skin, [230, 120, 120], 0.3);
-  /* a little colour on the cheeks, in a close-up only */
-  if (kitRnd(seed, 40) < 0.3 || ES.blush)
-    for (const s of [1, -1])
-      mark('blush', s * r[0] * 0.58, c[1] - r[1] * 0.36, 0.08 * k, 0.03 * k, { shape: 'oval', close: true, min: 0.35 });
+  /* a little colour on the cheeks, in a close-up only: some people's always, everyone's when glad (CH-6: an
+     expression's `blush`) */
+  const blushes = kitRnd(seed, 40) < 0.3 || ES.blush;
+  for (const s of [1, -1])
+    mark('blush', s * r[0] * 0.58, c[1] - r[1] * 0.36, 0.08 * k, 0.03 * k, {
+      shape: 'oval',
+      close: true,
+      min: 0.35,
+      ...(blushes ? {} : { when: 'blush' }),
+    });
   if (wear.facial === 'facial_freckles')
     for (const s of [1, -1])
       for (const [dx, dy] of [
@@ -1438,76 +1465,134 @@ export function kitFaceMarks(H, wear, look, colours, seed, kit = figureKitData()
     flicks = ES.flicks ?? 1,
     wing = ES.wing ?? 1;
   if (ES.shade) colours.lidShade = figureMix(colours.skin, [128, 84, 140], 0.38);
+  /* CH-6: the eyes in every frame of faces.eyeFrames (open, half, closed, happy, angry, wide, narrow, bored and
+     glancing), each mark tagged with its frame (`when`; figureFaceMarks shows the face state's) */
+  for (const [fr, EF] of Object.entries(FC.eyeFrames)) {
+    const when = 'eyes:' + fr,
+      /** @param {string} kind @param {number} x @param {number} y @param {number} w @param {number} h @param {Partial<FaceMark>} [o] */
+      em = (kind, x, y, w, h, o = {}) => mark(kind, x, y, w, h, { ...o, when }),
+      op = EF.open ?? 1,
+      sc = EF.scale ?? 1,
+      ew2 = ew * sc,
+      eh2 = eh * sc,
+      /* a lid coming down covers the eye's top: the line drops, what shows of the eye is lower and shorter */
+      top = (1 - op) * eh2,
+      ly = lidY + (sc - 1) * eh * 0.5 - top,
+      cy = ey - top * 0.5;
+    for (const s of [1, -1]) {
+      const ix = s * (ex - ew2 * 0.06) + (EF.look || 0) * ew2 * 0.22,
+        ik = irisK * (EF.iris ?? 1),
+        lash = (/** @type {number} */ y) => {
+          /* the lashes: the outer corner's flick drawn out (an almond's and a sharp eye's longer, a wing), a second
+             below it, a third on top (lashy) */
+          if (flicks > 0)
+            em('flick', s * (ex + ew * (0.48 + 0.12 * wing)), y - eh * 0.12, ew * 0.24 * wing, eh * 0.4, {
+              col: 'lash',
+              shape: 'slant',
+              dir: s,
+              t: 0.014 * k,
+              min: 0.35,
+            });
+          if (flicks > 1)
+            em('flick', s * (ex + ew * 0.7), y + eh * 0.04, ew * 0.22, eh * 0.36, {
+              col: 'lash',
+              shape: 'slant',
+              dir: s,
+              t: 0.014 * k,
+              min: 0.35,
+            });
+          if (flicks > 2)
+            em('flick', s * (ex + ew * 0.28), y + eh * 0.24, ew * 0.18, eh * 0.34, {
+              col: 'lash',
+              shape: 'slant',
+              dir: s,
+              t: 0.012 * k,
+              min: 0.4,
+            });
+        };
+      if (EF.shut || EF.happy) {
+        /* shut: the lid's line curved down (a blink, a sleeper); happy: curved up, the kit's ^ ^ */
+        em(
+          'eye',
+          s * (ex + ew * 0.06),
+          EF.happy ? ey + eh * 0.05 : ey - eh * 0.1,
+          ew * 1.12,
+          Math.max(eh * 0.4, 0.022),
+          {
+            glint: false,
+            shape: EF.happy ? 'cap' : 'arc',
+            t: 0.016 * k,
+            col: 'lash',
+          }
+        );
+        lash(EF.happy ? ey + eh * 0.3 : ey);
+      } else {
+        em('white', s * ex, cy, ew2, eh2 * op, { col: 'sclera', shut: true, narrow: true, shape: 'oval' });
+        em('iris', ix, cy + eh2 * 0.04, ew2 * 0.48 * ik, eh2 * 1.02 * op, { col: 'iris', narrow: true, shape: 'oval' });
+        em('irisD', ix, cy + eh2 * 0.3 * op, ew2 * 0.48 * ik, eh2 * 0.36 * op, {
+          col: 'irisD',
+          shut: true,
+          narrow: true,
+          shape: 'cap',
+        });
+        if (op >= 0.7)
+          em('irisL', ix, cy - eh2 * 0.28, ew2 * 0.3 * ik, eh2 * 0.2, {
+            col: 'irisL',
+            shut: true,
+            narrow: true,
+            close: true,
+          });
+        em('pupil', ix, cy + eh2 * 0.02, ew2 * 0.2 * ik, eh2 * 0.46 * Math.min(1, op * 1.3), {
+          col: 'eye',
+          shut: true,
+          narrow: true,
+          shape: 'oval',
+        });
+        if (op >= 0.6)
+          em('shine', ix + s * ew2 * 0.1, cy + eh2 * 0.22, ew2 * 0.13, ew2 * 0.13, {
+            col: 'glint',
+            shut: true,
+            min: 0.55,
+          });
+        if (ES.lid)
+          em('lid', s * ex, ey + eh * ES.lid[0] - top * 0.5, ew * ES.lid[1], eh * ES.lid[2], {
+            col: 'skin',
+            shut: true,
+          });
+        /* a shadowed eye's lid, tinted, over the eye's top */
+        if (ES.shade)
+          em('shade', s * ex, ly + eh * 0.3, ew2 * 1.12, eh * 0.42, {
+            col: 'lidShade',
+            shape: 'oval',
+            close: true,
+            min: 0.4,
+          });
+        /* the upper lid: an arch, flat when bored; an angry eye's lid slants down to the nose */
+        em('eye', s * (ex + ew2 * 0.06), ly, ew2 * 1.16, Math.max(eh * 0.32, 0.016 * k), {
+          glint: false,
+          col: 'lash',
+          ...(EF.flat ? {} : { shape: 'cap' }),
+        });
+        if (EF.slant)
+          em('lidS', s * ex, ly - eh2 * 0.06, ew2 * 1.1, eh2 * 0.4, {
+            col: 'lash',
+            shape: 'slant',
+            dir: EF.slant > 0 ? -s : s,
+            t: 0.018 * k,
+            min: 0.35,
+          });
+        lash(ly);
+        em('under', s * ex, ey - eh * 0.56, ew * 0.66, 0.01 * k, { col: 'crease', shut: true, close: true, min: 0.5 });
+      }
+    }
+  }
   for (const s of [1, -1]) {
-    const ix = s * (ex - ew * 0.06);
-    mark('white', s * ex, ey, ew, eh, { col: 'sclera', shut: true, narrow: true, shape: 'oval' });
-    mark('iris', ix, ey + eh * 0.04, ew * 0.48 * irisK, eh * 1.02, { col: 'iris', narrow: true, shape: 'oval' });
-    mark('irisD', ix, ey + eh * 0.3, ew * 0.48 * irisK, eh * 0.36, {
-      col: 'irisD',
-      shut: true,
-      narrow: true,
-      shape: 'cap',
-    });
-    mark('irisL', ix, ey - eh * 0.28, ew * 0.3 * irisK, eh * 0.2, {
-      col: 'irisL',
-      shut: true,
-      narrow: true,
-      close: true,
-    });
-    mark('pupil', ix, ey + eh * 0.02, ew * 0.2 * irisK, eh * 0.46, {
-      col: 'eye',
-      shut: true,
-      narrow: true,
-      shape: 'oval',
-    });
-    mark('shine', ix + s * ew * 0.1, ey + eh * 0.22, ew * 0.13, ew * 0.13, { col: 'glint', shut: true, min: 0.55 });
-    if (ES.lid) mark('lid', s * ex, ey + eh * ES.lid[0], ew * ES.lid[1], eh * ES.lid[2], { col: 'skin', shut: true });
-    /* a shadowed eye's lid, tinted, over the eye's top */
-    if (ES.shade)
-      mark('shade', s * ex, lidY + eh * 0.3, ew * 1.12, eh * 0.42, {
-        col: 'lidShade',
-        shape: 'oval',
-        close: true,
-        min: 0.4,
-      });
-    mark('eye', s * (ex + ew * 0.06), lidY, ew * 1.16, Math.max(eh * 0.32, 0.016 * k), {
-      glint: false,
-      shape: 'cap',
-      col: 'lash',
-    });
-    /* the lashes: the outer corner's flick drawn out (an almond's and a sharp eye's longer, a wing), a second below
-       it, a third on top (lashy) */
-    if (flicks > 0)
-      mark('flick', s * (ex + ew * (0.48 + 0.12 * wing)), lidY - eh * 0.12, ew * 0.24 * wing, eh * 0.4, {
-        col: 'lash',
-        shape: 'slant',
-        dir: s,
-        t: 0.014 * k,
-        min: 0.35,
-      });
-    if (flicks > 1)
-      mark('flick', s * (ex + ew * 0.7), lidY + eh * 0.04, ew * 0.22, eh * 0.36, {
-        col: 'lash',
-        shape: 'slant',
-        dir: s,
-        t: 0.014 * k,
-        min: 0.35,
-      });
-    if (flicks > 2)
-      mark('flick', s * (ex + ew * 0.28), lidY + eh * 0.24, ew * 0.18, eh * 0.34, {
-        col: 'lash',
-        shape: 'slant',
-        dir: s,
-        t: 0.012 * k,
-        min: 0.4,
-      });
     mark('crease', s * (ex + ew * 0.04), lidY + eh * 0.42 + 0.008 * k, ew * 0.9, 0.012 * k, {
       col: 'crease',
       shape: 'cap',
       close: true,
       min: 0.45,
     });
-    mark('under', s * ex, ey - eh * 0.56, ew * 0.66, 0.01 * k, { col: 'crease', shut: true, close: true, min: 0.5 });
     /* a tired eye's bags show at any size; a weary one's lines in a close-up */
     if (ES.bags) mark('bags', s * ex, ey - eh * 0.72, ew * 0.74, 0.012 * k, { col: 'crease', shape: 'arc', min: 0.5 });
     if (ES.lines)
@@ -1527,42 +1612,50 @@ export function kitFaceMarks(H, wear, look, colours, seed, kit = figureKitData()
   if (style.brows) {
     const BS = FC.brows[style.brows],
       thick = BS.t,
-      tilt = (BS.tilt || 0) + (MD.tilt || 0),
       bw = (0.092 * BS.w) / 0.09;
-    for (const s of [1, -1]) {
-      const bx = s * (ex + 0.008 * k),
-        y = by + (MD.lift || 0) * k + (s < 0 ? BS.uneven || 0 : 0) * k;
-      if (Math.abs(tilt) >= 0.5)
-        mark('brow', bx, y, bw * k, 0.017 * Math.abs(tilt) * k, {
-          col: 'brow',
-          shape: 'slant',
-          dir: tilt > 0 ? -s : s,
-          t: thick * k,
-        });
-      else if (BS.peak)
-        for (const [dx, dir] of [
-          [-0.25, -s],
-          [0.25, s],
-        ])
-          mark('brow', bx + s * dx * BS.w * k, y + 0.004 * k, BS.w * 0.5 * k, (0.02 + thick * 0.5) * k, {
+    /* CH-6: a pair for each expression (faces.expressions: its tilt and lift over the style's own) */
+    for (const [xid, X] of Object.entries(FC.expressions)) {
+      const when = 'brows:' + xid,
+        tilt = (BS.tilt || 0) + (X.tilt || 0);
+      for (const s of [1, -1]) {
+        const bx = s * (ex + 0.008 * k),
+          y = by + (X.lift || 0) * k + (s < 0 ? BS.uneven || 0 : 0) * k;
+        if (Math.abs(tilt) >= 0.5)
+          mark('brow', bx, y, bw * k, 0.017 * Math.abs(tilt) * k, {
             col: 'brow',
             shape: 'slant',
-            dir,
+            dir: tilt > 0 ? -s : s,
             t: thick * k,
+            when,
           });
-      else if (BS.flat) mark('brow', bx, y, BS.w * k, thick * k, { col: 'brow' });
-      else
-        mark('brow', bx, y, BS.w * k, (0.016 + thick * 0.7 + (BS.arch || 0)) * k, {
-          col: 'brow',
-          shape: 'cap',
-          t: thick * k,
-        });
-      if (BS.bushy)
-        for (const dx of [-0.22, 0.18])
-          mark('brow', bx + s * dx * BS.w * k, y + (0.012 + thick * 0.5) * k, 0.014 * k, 0.012 * k, {
+        else if (BS.peak)
+          for (const [dx, dir] of [
+            [-0.25, -s],
+            [0.25, s],
+          ])
+            mark('brow', bx + s * dx * BS.w * k, y + 0.004 * k, BS.w * 0.5 * k, (0.02 + thick * 0.5) * k, {
+              col: 'brow',
+              shape: 'slant',
+              dir,
+              t: thick * k,
+              when,
+            });
+        else if (BS.flat) mark('brow', bx, y, BS.w * k, thick * k, { col: 'brow', when });
+        else
+          mark('brow', bx, y, BS.w * k, (0.016 + thick * 0.7 + (BS.arch || 0)) * k, {
             col: 'brow',
-            close: true,
+            shape: 'cap',
+            t: thick * k,
+            when,
           });
+        if (BS.bushy)
+          for (const dx of [-0.22, 0.18])
+            mark('brow', bx + s * dx * BS.w * k, y + (0.012 + thick * 0.5) * k, 0.014 * k, 0.012 * k, {
+              col: 'brow',
+              close: true,
+              when,
+            });
+      }
     }
     if (BS.knit) mark('brow', 0, by - 0.012 * k, 0.008 * k, 0.024 * k, { col: 'crease', close: true, min: 0.45 });
   }
@@ -1573,10 +1666,16 @@ export function kitFaceMarks(H, wear, look, colours, seed, kit = figureKitData()
   /* a goatee under the lower lip, down the chin */
   if (wear.facial === 'facial_goatee')
     mark('goatee', 0, my - 0.05 * k, 0.044 * k, 0.046 * k, { col: 'brow', min: 0.25, shape: 'oval' });
-  for (const m of FC.mouths[style.mouth]) {
-    const { kind, x = 0, y = 0, w, h, t, ...o } = m;
-    mark(kind, x * k, my + y * k, w * k, h * k, t === undefined ? o : { ...o, t: t * k });
-  }
+  /* CH-6: every mouth frame, tagged (the resting one is the look's; talking runs through others) */
+  for (const [fr, rows] of Object.entries(FC.mouths))
+    for (const m of rows) {
+      const { kind, x = 0, y = 0, w, h, t, ...o } = m;
+      mark(kind, x * k, my + y * k, w * k, h * k, {
+        ...o,
+        ...(t === undefined ? {} : { t: t * k }),
+        when: 'mouth:' + fr,
+      });
+    }
   /* glasses over the eyes */
   const g = wear.glasses;
   if (g && g !== 'headset') {

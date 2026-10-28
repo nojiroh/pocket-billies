@@ -360,6 +360,12 @@ export function kitFaceProblems(kit, items) {
   }
   for (const [slot, v] of Object.entries(FC.defaults || {}))
     if (!bySlot[slot] || !bySlot[slot][v]) out.push(`faces.defaults: no ${slot} ${v}`);
+  for (const [id, X] of Object.entries(FC.expressions || {})) {
+    if (!(FC.eyeFrames || {})[X.eyes]) out.push(`faces.expressions: ${id}'s eyes ${X.eyes} is no eye frame`);
+    for (const m of [X.mouth, ...(X.talk || [])])
+      if (m && !(FC.mouths || {})[m]) out.push(`faces.expressions: ${id}'s mouth ${m} is no mouth frame`);
+  }
+  for (const m of FC.talk || []) if (!(FC.mouths || {})[m]) out.push(`faces.talk: ${m} is no mouth frame`);
   for (const R of FC.rest || []) {
     if (!(FC.moods || {})[R.mood]) out.push(`faces.rest: no mood ${R.mood}`);
     for (const slot of ['eyes', 'brows', 'mouth'])

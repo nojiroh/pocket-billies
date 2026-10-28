@@ -340,7 +340,7 @@ function figureAtlasDetail(style, ppm) {
  * `rec`, drawn into its cell by figureAtlasPass when it changes; null when it can't be shown yet (no mesh, a full
  * atlas: the caller keeps the person's last picture)
  */
-function figureAtlasPicture(rec, Fig, clip, frame, V, steps, ppm, outline, style) {
+function figureAtlasPicture(rec, Fig, clip, frame, V, steps, ppm, outline, style, face = null) {
   const A = figureAtlas;
   if (!rec || typeof rec !== 'object' || Fig.kind !== 'code' || !figureAtlasReady()) return null;
   let E = A.byRec.get(rec);
@@ -359,12 +359,14 @@ function figureAtlasPicture(rec, Fig, clip, frame, V, steps, ppm, outline, style
   A.live.add(E);
   E.seen = A.frame;
   E.pic.atlasT = A.T;
-  const key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, style);
+  /* CH-6: a new face (a mouth while talking, a blink) draws the cell again */
+  const key =
+    figureKey(Fig.name, clip, frame, V, steps, ppm, outline, style) + (face && face.key ? '|' + face.key : '');
   if (key !== E.drawnKey) {
     /* the mesh first: without it the cell can't be drawn (the last picture stays, or the caller's) */
     if (!figureAtlasRes(Fig, figureAtlasDetail(style, ppm))) return E.drawn ? E.pic : null;
     const S = cardSize(ppm, V.tilt, Fig.ext);
-    E.job = { Fig, clip, frame, V, ppm, outline, style, S, key };
+    E.job = { Fig, clip, frame, V, ppm, outline, style, S, key, face };
     A.queue.add(E);
   }
   return E.drawn || A.queue.has(E) ? E.pic : null;
@@ -522,7 +524,7 @@ function figureAtlasDraw(E) {
         /** @type {number} */ h
       ) => M.push(cell.x + mx, cell.y + my, w, h, col[0] / 255, col[1] / 255, col[2] / 255),
     };
-  for (const m of figureFaceMarks(Fig.F, J, pose, J0.V, J0.ppm, S)) {
+  for (const m of figureFaceMarks(Fig.F, J, pose, J0.V, J0.ppm, S, J0.face)) {
     col = m.rgb;
     figurePaintMark(x, m, J0.ppm);
   }
