@@ -1837,7 +1837,7 @@
    "game/js/logic/placeholder-art.js:270",
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
-   "game/js/self-test.js:3526",
+   "game/js/self-test.js:3534",
    "game/js/walk-view.js:397",
    "game/js/walk-view.js:4028",
    "game/js/walk/effects.js:519",
@@ -1885,10 +1885,10 @@
    "game/js/ranch-screen.js:210",
    "game/js/ranch-screen.js:235",
    "game/js/ranch-screen.js:269",
-   "game/js/self-test.js:3111",
-   "game/js/self-test.js:3138",
-   "game/js/self-test.js:3185",
-   "game/js/self-test.js:3213"
+   "game/js/self-test.js:3119",
+   "game/js/self-test.js:3146",
+   "game/js/self-test.js:3193",
+   "game/js/self-test.js:3221"
   ],
   "plus": [
    "game/js/battle-stage.js:2157",
