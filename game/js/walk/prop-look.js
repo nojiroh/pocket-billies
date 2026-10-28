@@ -7,9 +7,10 @@ import { expose } from '../test-globals.js';
 import { SPECIES, propBaseHeight, provide, reducedMotion, riderOf, saveData } from '../hooks.js';
 import { clamp } from '../util.js';
 import { spanFit, tiltSpin, turnedPoint } from '../logic/prop-turn.js';
+import { seenWord } from '../logic/person-view.js';
 import { hexToRgb, makeCanvas } from '../art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from '../skeleton-rig.js';
-import { artImage, hash2d, imageReady, terrainAt, walkView } from '../walk-view.js';
+import { artImage, hash2d, imageReady, seenYaw, terrainAt, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { SURFACE_MATERIALS, gpuState, windBendAt } from '../engine/webgl.js';
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
@@ -148,7 +149,9 @@ export function rideMountItem(P, t) {
     saveData.team.find(x => x.hp > 0 && SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) ||
     saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water'));
   if (!m || !SPECIES[m.sp]) return null;
-  const back = P.dir === 'up',
+  /* CH-1: the side of you the camera sees (logic/person-view.js), so the mount turns with its rider */
+  const seen = seenWord(P, seenYaw()),
+    back = seen === 'up',
     R = rigParts(m.sp, back ? 2 : 1, m.coat);
   if (!R) {
     if (!walkRenderer.mountLoad) {
@@ -200,7 +203,7 @@ export function rideMountItem(P, t) {
       oy: -R.base,
       w: R.BW,
       h: R.BH,
-      flip: P.dir === 'side' ? -1 : 1,
+      flip: seen === 'side' ? -1 : 1,
       shear: 0,
       sh: 0,
       aoR: 0,

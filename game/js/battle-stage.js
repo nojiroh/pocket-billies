@@ -22,6 +22,9 @@ import {
   battleFreeArea,
   battleLayoutChanged,
   fighter,
+  figureBattlePicture,
+  figureFolk,
+  figuresOn,
   hudHit,
   hudPop,
   maxHp,
@@ -34,6 +37,7 @@ import {
   robotPartDef,
   saveData,
   soundEffect,
+  styleNote,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
@@ -606,6 +610,8 @@ function flashesOff() {
 function battleStageFlash(col, a, dur) {
   const f = $('#flash'),
     F = flashFor(col, a, !!reducedMotion, flashesOff());
+  /* SY-8: what ran, for the debug log: at its strength, held by Flashes off, or none (the Studio has no theme sheet) */
+  if (a > 0 && typeof styleNote === 'function') styleNote(!F ? 'flashSkipped' : F.a < a ? 'flashHeld' : 'flash');
   if (!f || !F) return;
   f.style.transition = 'none';
   f.style.background = F.col;
@@ -1355,6 +1361,13 @@ export function trainerBattleFrame(i) {
   const T = battleStage.tr[i];
   if (!T || !T.who) return null;
   const view = i === 0 ? 'back' : 'front';
+  /* characters track CH-3: with Engine > People > Figures on, you are your figure here too (figures.js, 64 px a metre),
+     and the rival with Townsfolk as figures on; today's picture until it is baked */
+  if (typeof figuresOn === 'function' && figuresOn() && (i === 0 || figureFolk())) {
+    const on = T.act && battleStage.t - T.t0 < T.dur,
+      f = figureBattlePicture(T, i, battleStage.t, on ? T.act : null, on ? (battleStage.t - T.t0) / T.dur : 0);
+    if (f) return f;
+  }
   if (T.act && battleStage.t - T.t0 < T.dur && typeof personBattlePose === 'function')
     return personBattlePose(T.who, view, T.act, (battleStage.t - T.t0) / T.dur, battleStage.t - T.t0);
   const fr = personBattleFrames(T.who, view);

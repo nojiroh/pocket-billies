@@ -1,0 +1,107 @@
+/* SY-4: case files (docs/phases/style-track.md). A Bureau event's sheet (encounter-screen.js, logic/case-file.js) is a
+   manila folder: a tab with the emblem, the Bureau's name and the form number, the lines typed in Oxanium (pb-typed),
+   black redaction bars over a few flavour words, and the result stamped under the summary (pb-stamp). Only where the
+   Bureau is: a plain event keeps the plain sheet. The bars never cover an option, a cost or the summary. */
+@font-face {
+  font-family: 'Oxanium';
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/oxanium-500.woff2) format('woff2');
+}
+:root {
+  --case-paper: #ecdcae;
+  --case-tab: #e2cb8e;
+  --case-edge: #b8975a;
+  --case-bar: #1c1712;
+  --font-case: 'Oxanium', var(--font-prose);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --case-paper: #3f3626;
+    --case-tab: #4c412c;
+    --case-edge: #7a6640;
+    --case-bar: #0b0907;
+  }
+}
+:root[data-theme='dark'] {
+  --case-paper: #3f3626;
+  --case-tab: #4c412c;
+  --case-edge: #7a6640;
+  --case-bar: #0b0907;
+}
+
+/* the folder: manila paper in place of the sheet's glass (the .sheet.px rules paint --g-bg and blur by --g-blur) */
+.sheet.event-sheet:has(> .case-tab) {
+  --g-bg: var(--case-paper);
+  --g-blur: none;
+  border-top: 3px solid var(--case-edge);
+}
+.case-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: fit-content;
+  max-width: 100%;
+  margin: calc(-1 * var(--s2)) 0 var(--s2);
+  padding: var(--s1) var(--s3) var(--s1) var(--s1);
+  background: var(--case-tab);
+  border: 1px solid var(--case-edge);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  color: var(--text);
+  font: 600 var(--fs-caption) / 1.15 var(--font-voice);
+}
+.case-emblem {
+  flex: none;
+  image-rendering: pixelated;
+}
+.case-who {
+  min-width: 0;
+  color: var(--text2);
+}
+.case-form {
+  flex: none;
+  color: var(--redink);
+  white-space: nowrap;
+}
+/* the typed body: a red margin rule, as on a form */
+.event-sheet:has(> .case-tab) .body {
+  border-left: 2px solid color-mix(in srgb, var(--redink) 45%, transparent);
+  padding-left: var(--s3);
+}
+.event-sheet:has(> .case-tab) .ev-line {
+  font-family: var(--font-case);
+}
+/* the intro, on file once you chose: quieter, its bars lifted */
+.ev-line.case-intro {
+  color: var(--text2);
+  font-size: var(--fs-caption);
+}
+pb-typed {
+  display: block;
+}
+/* letters not typed in yet hold their place, so the lines never jump */
+.tw-rest,
+.redact.tw-wait {
+  visibility: hidden;
+}
+.redact {
+  padding: 0 2px;
+  border-radius: 1px;
+  background: var(--case-bar);
+  color: transparent;
+  cursor: pointer;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition:
+    background-color var(--m-fast),
+    color var(--m-fast);
+}
+.redact.lifted {
+  background: color-mix(in srgb, var(--case-bar) 14%, transparent);
+  color: inherit;
+}
+/* the result's stamp: under the summary, never over it */
+.case-stamp {
+  margin: var(--s2) var(--s1) 0;
+  text-align: right;
+}

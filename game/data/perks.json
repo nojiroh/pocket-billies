@@ -3,6 +3,7 @@
   "name": "Lucky Charm",
   "d": "Wins pay 20% more Moneys.",
   "rarity": "common",
+  "img": "perks/lucky_charm.svg",
   "fx": [
    {"kind":"money","mult":1.2}
   ]
@@ -11,6 +12,7 @@
   "name": "Clinic Loyalty Card",
   "d": "A town’s clinic charges half.",
   "rarity": "common",
+  "img": "perks/clinic_card.svg",
   "fx": [
    {"kind":"price","what":"heal","mult":0.5}
   ]
@@ -19,6 +21,7 @@
   "name": "Coupon Book",
   "d": "Shops on the run are 15% cheaper.",
   "rarity": "common",
+  "img": "perks/coupon_book.svg",
   "fx": [
    {"kind":"price","what":"shop","mult":0.85}
   ]
@@ -27,6 +30,8 @@
   "name": "Steady Hand",
   "d": "Pyramids catch 25% more often.",
   "rarity": "common",
+  "img": "perks/steady_hand.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"catch","mult":1.25}
   ]
@@ -35,6 +40,8 @@
   "name": "Running Shoes",
   "d": "Your Billies start each battle with their Speed up.",
   "rarity": "uncommon",
+  "img": "perks/running_shoes.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"stat","stat":"hus","stages":1}
   ]
@@ -43,6 +50,8 @@
   "name": "Power Gloves",
   "d": "Your physical moves hit 15% harder.",
   "rarity": "uncommon",
+  "img": "perks/power_gloves.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"damage","side":"deal","cat":"H","mult":1.15}
   ]
@@ -51,6 +60,7 @@
   "name": "Bubble Wrap",
   "d": "Your Billies take 10% less damage.",
   "rarity": "rare",
+  "img": "perks/bubble_wrap.svg",
   "fx": [
    {"kind":"damage","side":"take","mult":0.9}
   ]
@@ -59,6 +69,8 @@
   "name": "Trail Snacks",
   "d": "Each place you walk into heals your team by 15% of their HP.",
   "rarity": "uncommon",
+  "img": "perks/trail_snacks.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"heal","share":0.15}
   ]
@@ -67,6 +79,8 @@
   "name": "Field Notebook",
   "d": "The payout gives 15% more Research.",
   "rarity": "uncommon",
+  "img": "perks/field_notebook.svg",
+  "tags": ["classics"],
   "fx": [
    {"kind":"payout","what":"research","mult":1.15}
   ]
@@ -75,6 +89,7 @@
   "name": "Lost Property Form",
   "d": "If the run is lost, the payout counts your items at their full price.",
   "rarity": "rare",
+  "img": "perks/lost_property.svg",
   "fx": [
    {"kind":"payout","what":"itemShare","mult":2}
   ]
@@ -83,6 +98,8 @@
   "name": "Petri Dish",
   "d": "Spliced wild Billies you knock out pay 50% more DNA.",
   "rarity": "common",
+  "img": "perks/petri_dish.svg",
+  "tags": ["lab"],
   "fx": [
    {"kind":"dna","mult":1.5}
   ]
@@ -91,6 +108,8 @@
   "name": "Gene Lure",
   "d": "Wild Billies of the places you reach next are spliced twice as often.",
   "rarity": "uncommon",
+  "img": "perks/gene_lure.svg",
+  "tags": ["lab"],
   "fx": [
    {"kind":"splice","mult":2}
   ]
@@ -99,8 +118,320 @@
   "name": "Stabilizer Gel",
   "d": "Your Unstable Billies lose half as much HP at each turn’s end.",
   "rarity": "rare",
+  "img": "perks/stabilizer_gel.svg",
+  "tags": ["lab"],
   "fx": [
    {"kind":"unstable","mult":0.5}
+  ]
+ },
+ "rubber_stamp": {
+  "name": "Rubber Stamp",
+  "d": "The first hit your team lands in each battle deals 50% more damage.",
+  "rarity": "common",
+  "img": "perks/rubber_stamp.svg",
+  "say": "Approved!",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.5,"when":"hit","once":"battle"}
+  ]
+ },
+ "click_pen": {
+  "name": "Click Pen",
+  "d": "Every 8th attack your team makes is a critical hit.",
+  "rarity": "uncommon",
+  "img": "perks/click_pen.svg",
+  "say": "Click! {name} lines up a critical hit.",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"crit","when":"move","every":8,"if":"cat:H|S"}
+  ]
+ },
+ "laser_pointer": {
+  "name": "Laser Pointer",
+  "d": "Your Billies land critical hits more often.",
+  "rarity": "common",
+  "img": "perks/laser_pointer.svg",
+  "tags": ["tech"],
+  "fx": [
+   {"kind":"crit","stages":1}
+  ]
+ },
+ "screen_protector": {
+  "name": "Screen Protector",
+  "d": "Each of your Billies takes half damage from the first hit it takes in a battle.",
+  "rarity": "common",
+  "img": "perks/screen_protector.svg",
+  "say": "{name} took only half the hit.",
+  "tags": ["tech"],
+  "fx": [
+   {"kind":"damage","side":"take","mult":0.5,"when":"hurt","once":"billie"}
+  ]
+ },
+ "power_bank": {
+  "name": "Power Bank",
+  "d": "Once a battle, a Billie of yours that ends a turn below a quarter of its HP heals 25% of it.",
+  "rarity": "uncommon",
+  "img": "perks/power_bank.svg",
+  "tags": ["tech"],
+  "fx": [
+   {"kind":"pinchHeal","at":0.25,"share":0.25,"once":"battle"}
+  ]
+ },
+ "mic_drop": {
+  "name": "Mic Drop",
+  "d": "When one of your Billies knocks a foe out, its Attack and Sp. Atk rise.",
+  "rarity": "rare",
+  "img": "perks/mic_drop.svg",
+  "tags": ["influencer"],
+  "fx": [
+   {"kind":"stat","stat":"lev","stages":1,"when":"ko"},
+   {"kind":"stat","stat":"lob","stages":1,"when":"ko"}
+  ]
+ },
+ "joy_buzzer": {
+  "name": "Joy Buzzer",
+  "d": "Your physical hits have a 15% chance to paralyze.",
+  "rarity": "uncommon",
+  "img": "perks/joy_buzzer.svg",
+  "fx": [
+   {"kind":"inflict","status":"par","chance":0.15,"when":"hit","if":"cat:H"}
+  ]
+ },
+ "hot_sauce": {
+  "name": "Hot Sauce",
+  "d": "Your special hits have a 10% chance to burn.",
+  "rarity": "uncommon",
+  "img": "perks/hot_sauce.svg",
+  "fx": [
+   {"kind":"inflict","status":"brn","chance":0.1,"when":"hit","if":"cat:S"}
+  ]
+ },
+ "oven_mitts": {
+  "name": "Oven Mitts",
+  "d": "Your Billies can’t be burned.",
+  "rarity": "common",
+  "img": "perks/oven_mitts.svg",
+  "fx": [
+   {"kind":"immune","what":"brn"}
+  ]
+ },
+ "noise_headphones": {
+  "name": "Noise-Cancelling Headphones",
+  "d": "Your Billies can’t fall asleep.",
+  "rarity": "common",
+  "img": "perks/noise_headphones.svg",
+  "tags": ["tech"],
+  "fx": [
+   {"kind":"immune","what":"slp"}
+  ]
+ },
+ "rubber_boots": {
+  "name": "Rubber Boots",
+  "d": "Your Billies can’t be paralyzed.",
+  "rarity": "common",
+  "img": "perks/rubber_boots.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"immune","what":"par"}
+  ]
+ },
+ "hazmat_suit": {
+  "name": "Hazmat Suit",
+  "d": "Sandstorm and sharp stones don’t hurt your Billies, and burns hurt them half as much.",
+  "rarity": "uncommon",
+  "img": "perks/hazmat_suit.svg",
+  "fx": [
+   {"kind":"immune","what":"sandstorm"},
+   {"kind":"immune","what":"stones"},
+   {"kind":"chip","what":"burn","mult":0.5}
+  ]
+ },
+ "alarm_clock": {
+  "name": "Alarm Clock",
+  "d": "Your Billies move first on a battle’s first turn.",
+  "rarity": "rare",
+  "img": "perks/alarm_clock.svg",
+  "fx": [
+   {"kind":"first","if":"turn:1"}
+  ]
+ },
+ "plot_armor": {
+  "name": "Plot Armor",
+  "d": "Your last Billie standing takes 30% less damage and hits 30% harder.",
+  "rarity": "rare",
+  "img": "perks/plot_armor.svg",
+  "tags": ["adventurer"],
+  "fx": [
+   {"kind":"damage","side":"take","mult":0.7,"if":"alone"},
+   {"kind":"damage","side":"deal","mult":1.3,"if":"alone"}
+  ]
+ },
+ "warranty_card": {
+  "name": "Warranty Card",
+  "d": "Once a run, when your whole team faints, they all get back up with half their HP. Then the card is void.",
+  "rarity": "rare",
+  "img": "perks/warranty_card.svg",
+  "fx": [
+   {"kind":"revive","share":0.5,"once":"run"}
+  ]
+ },
+ "bellows": {
+  "name": "Bellows",
+  "d": "Your Fire Billies’ Kindling builds twice as fast.",
+  "rarity": "uncommon",
+  "img": "perks/bellows.svg",
+  "needs": "team:Fire",
+  "tags": ["Fire"],
+  "fx": [
+   {"kind":"passive","passive":"kindling","rate":2}
+  ]
+ },
+ "snorkel": {
+  "name": "Snorkel",
+  "d": "Your Water Billies’ Undertow kicks in from half their HP.",
+  "rarity": "uncommon",
+  "img": "perks/snorkel.svg",
+  "needs": "team:Water",
+  "tags": ["Water"],
+  "fx": [
+   {"kind":"passive","passive":"undertow","hp":0.5}
+  ]
+ },
+ "watering_can": {
+  "name": "Watering Can",
+  "d": "Your Grass Billies’ Regrowth heals twice as much.",
+  "rarity": "uncommon",
+  "img": "perks/watering_can.svg",
+  "needs": "team:Grass",
+  "tags": ["Grass"],
+  "fx": [
+   {"kind":"passive","passive":"regrowth","mult":2}
+  ]
+ },
+ "static_socks": {
+  "name": "Static Socks",
+  "d": "Your Electric Billies’ Live Wire lands critical hits twice as often.",
+  "rarity": "uncommon",
+  "img": "perks/static_socks.svg",
+  "needs": "team:Electric",
+  "tags": ["Electric"],
+  "fx": [
+   {"kind":"passive","passive":"livewire","mult":2}
+  ]
+ },
+ "knee_pads": {
+  "name": "Knee Pads",
+  "d": "Your Ground Billies’ Bedrock works twice a battle, and from 75% of their HP.",
+  "rarity": "uncommon",
+  "img": "perks/knee_pads.svg",
+  "needs": "team:Ground",
+  "tags": ["Ground"],
+  "fx": [
+   {"kind":"passive","passive":"bedrock","uses":2,"hp":0.75}
+  ]
+ },
+ "kite": {
+  "name": "Kite",
+  "d": "Your Flying Billies’ Slipstream works on every switch, not just the first.",
+  "rarity": "uncommon",
+  "img": "perks/kite.svg",
+  "needs": "team:Flying",
+  "tags": ["Flying"],
+  "fx": [
+   {"kind":"passive","passive":"slipstream","always":true}
+  ]
+ },
+ "mood_ring": {
+  "name": "Mood Ring",
+  "d": "Your Psychic Billies’ Wild Mind rolls twice and keeps the better.",
+  "rarity": "uncommon",
+  "img": "perks/mood_ring.svg",
+  "needs": "team:Psychic",
+  "tags": ["Psychic"],
+  "fx": [
+   {"kind":"passive","passive":"wildmind","rolls":2}
+  ]
+ },
+ "union_card": {
+  "name": "Union Card",
+  "d": "Your Steel Billies’ Alloy counts every teammate on their feet, not only Steel ones.",
+  "rarity": "uncommon",
+  "img": "perks/union_card.svg",
+  "needs": "team:Steel",
+  "tags": ["Steel"],
+  "fx": [
+   {"kind":"passive","passive":"alloy","all":true}
+  ]
+ },
+ "heirloom_locket": {
+  "name": "Heirloom Locket",
+  "d": "Your Dragon Billies’ Parting Roar raises the next one’s Speed too.",
+  "rarity": "uncommon",
+  "img": "perks/heirloom_locket.svg",
+  "needs": "team:Dragon",
+  "tags": ["Dragon"],
+  "fx": [
+   {"kind":"passive","passive":"partingroar","stat":"hus","stages":1}
+  ]
+ },
+ "matching_hoodies": {
+  "name": "Matching Hoodies",
+  "d": "If all your Billies share a type, they take 15% less damage.",
+  "rarity": "common",
+  "img": "perks/matching_hoodies.svg",
+  "tags": ["influencer"],
+  "fx": [
+   {"kind":"damage","side":"take","mult":0.85,"if":"mono"}
+  ]
+ },
+ "rainbow_lanyard": {
+  "name": "Rainbow Lanyard",
+  "d": "Your Billies hit 3% harder for each different type on your team.",
+  "rarity": "common",
+  "img": "perks/rainbow_lanyard.svg",
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.03,"per":"teamTypes"}
+  ]
+ },
+ "group_chat": {
+  "name": "Group Chat",
+  "d": "Your Billies on the bench get the full XP from each foe, not half.",
+  "rarity": "common",
+  "img": "perks/group_chat.svg",
+  "tags": ["tech"],
+  "fx": [
+   {"kind":"benchXp","share":0.5}
+  ]
+ },
+ "umbrella": {
+  "name": "Umbrella",
+  "d": "Weather never weakens your Billies’ moves.",
+  "rarity": "common",
+  "img": "perks/umbrella.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"weather","what":"noWeaken"}
+  ]
+ },
+ "snow_globe": {
+  "name": "Snow Globe",
+  "d": "Your Billies get the weather’s boosts twice over.",
+  "rarity": "rare",
+  "img": "perks/snow_globe.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"weather","what":"boost","mult":2}
+  ]
+ },
+ "barometer": {
+  "name": "Barometer",
+  "d": "The forecast shows 3 more days, and walking into a place in rain or a storm heals your team 10%.",
+  "rarity": "common",
+  "img": "perks/barometer.svg",
+  "tags": ["weather"],
+  "fx": [
+   {"kind":"rule","rule":"forecastDays","n":3},
+   {"kind":"heal","share":0.1,"when":"arrive","if":"weather:rain|storm"}
   ]
  }
 }

@@ -29,3 +29,24 @@ Checked and not used: Kenney's GitHub starter kits (Starter-Kit-City-Builder, -3
 
 Adding a file: CC0 only. Read the licence in the pack itself (not a mirror's word for it), copy the file unchanged,
 and add a row here.
+
+## The characters track's stand-in (CH-3)
+
+The figure baker's stand-in, game/art/figures/rogue.json and rogue.png, is made by tools/gltf-figure.mjs from
+KayKit's Rogue (KayKit : Adventurers Character Pack 1.0, by Kay Lousberg), downloaded 2026-10-27 with a shallow
+`git clone` of github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0 @
+672074b73ba276876a19e8816ecdc5241817ab47, path addons/kaykit_character_pack_adventures/Characters/gltf/Rogue.glb.
+Its `LICENSE.txt` (and the copy in addons/kaykit_character_pack_adventures/) says:
+
+> License: (Creative Commons Zero, CC0)
+> http://creativecommons.org/publicdomain/zero/1.0/
+> This content is free to use in personal, educational and commercial projects.
+> Support me by using a brand resource provided in this pack or by crediting Kay Lousberg, www.kaylousberg.com (this
+> is not mandatory)
+
+and its README: "Licensed under CC0 1.0 Universal". The .glb (3.6 MB, most of it the pack's 76 clips) is not copied
+here: to make the figure again, clone the pack at that commit and run
+`node tools/gltf-figure.mjs <the pack>/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue.glb rogue`
+(its body, head and cape; the knives and crossbows in its hands left out; the clips Idle, Walking_A, Running_A, Cheer,
+Throw and Sit_Chair_Idle). The pack's Knight, Mage, Barbarian and Rogue_Hooded are CC0 too and go through the same
+tool.

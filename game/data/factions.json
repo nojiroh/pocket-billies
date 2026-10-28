@@ -19,7 +19,9 @@
    "look": {
     "emblem": "bureau",
     "stamps": {"retrieved":"RETRIEVED","void":"VOID","denied":"DENIED","pending":"PENDING","filed":"FILED"},
-    "forms": ["Form 7B","Form 12-C","Form 4A-4","Form 31","Form 9-Lost","Form 0"]
+    "forms": ["Form 7B","Form 12-C","Form 4A-4","Form 31","Form 9-Lost","Form 0"],
+    "notice": "Notice of Retrieval",
+    "property": "Property of the Bureau"
    }
   }
  }

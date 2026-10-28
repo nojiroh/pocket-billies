@@ -89,8 +89,9 @@ const FIELD_COUNT = GPU_FIELDS.length,
   [F_DRAW, F_INST, F_PROG, F_TEX, F_VAO, F_UNI, F_TEXB, F_BUFB, F_TEXK, F_VAOK] = GPU_FIELDS.keys(),
   PASS_INDEX = Object.fromEntries(GPU_PASSES.map((p, i) => [p, i]));
 /* R1 measure: what a draw belongs to across the passes (0: untagged): a low-poly model's mesh, or a picture layer of a
-   model (its leaf clumps and vines, drawn as sprites); each pass keeps the draws and instances of each tag */
-const GPU_TAGS = ['', 'model', 'modelPic'];
+   model (its leaf clumps and vines, drawn as sprites); each pass keeps the draws and instances of each tag. CH-1: a
+   person's picture (logic/person-view.js personPicture), in every pass that draws one */
+const GPU_TAGS = ['', 'model', 'modelPic', 'person'];
 const TAG_INDEX = Object.fromEntries(GPU_TAGS.map((t, i) => [t, i])),
   TAG_SLOTS = GPU_PASSES.length * GPU_TAGS.length * 2;
 export const gpuCounters = {

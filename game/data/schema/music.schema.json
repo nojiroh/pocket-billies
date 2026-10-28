@@ -153,6 +153,12 @@
      "minimum": 0,
      "maximum": 1
     },
+    "trim": {
+     "description": "SND-8b: the song's level in dB (0 when left out), set from the loudness report (tools/check-sound.py --loudness) so the songs sit level with each other; the night and tense versions keep it unless they write their own",
+     "type": "number",
+     "minimum": -24,
+     "maximum": 24
+    },
     "seventh": {
      "description": "1: the arpeggios and chords add the seventh",
      "enum": [
@@ -220,6 +226,7 @@
        "seed": true,
        "swing": true,
        "echo": true,
+       "trim": true,
        "seventh": true,
        "hook": {
         "description": "SND-4: a written hook for bars 1-2 (none yet: the lead is composed)",
