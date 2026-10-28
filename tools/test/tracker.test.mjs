@@ -766,6 +766,113 @@ test('SND-11: only the zones an ensemble plays are baked; GB Sounds plays gb wha
   assert.equal(await T.prepare('g'), false);
 });
 
+/* ---------- SND-13: layers in play ---------- */
+/* the band and a walking hat (a layer), a bass that thins at night (a dim) */
+const LBAND = {
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'bass', inst: 'pizz', dim: { night: 0.5 } },
+    { line: 'drums', kit: { hat: 'hat' }, style: 'walk', layer: 'walk' },
+  ],
+};
+function layerPlay(rate, L) {
+  const c = bankContext(rate);
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const S = { ...MUSIC.songs.route, ensemble: 'lband', night: false },
+    T = trackerCreate(c, {}, { songs: { s: S }, ensembles: { lband: LBAND }, levels: () => L }),
+    seen = [];
+  T.synthVoice = () => {};
+  const sample = T.sampleVoice;
+  T.sampleVoice = (bus, v) => (seen.push([T.song.step, bus, v.inst]), sample(bus, v));
+  return { c, T, seen };
+}
+
+test('SND-13: with no layer levels a layer part is silent and nothing is dimmed; its notes are not in the bar bake', async () => {
+  const { c, T, seen } = layerPlay(11025, { drums: 1 });
+  assert.deepEqual(Object.keys(T.needs('s')).sort(), ['pizz'], 'the walking hat bakes when it is wanted');
+  await T.prepare('s');
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T, 2);
+  const sg = T.song;
+  assert.ok(!seen.some(([, , i]) => i === 'hat'), 'no hat');
+  assert.ok(seen.some(([, , i]) => i === 'pizz'));
+  assert.equal(sg.lay[1].cur, 1, 'the bass undimmed');
+  assert.equal(sg.lay[2].cur, 0);
+  assert.equal(sg.lay[0], undefined, 'a part with no layer has no layer gain');
+  /* the part's own gain (a stinger's) goes into the layer's gain, and that one on to the drums' bus */
+  assert.deepEqual(sg.parts[2].to, [sg.lay[2].g]);
+  assert.deepEqual(sg.lay[2].g.to, [sg.drums]);
+});
+
+test('SND-13: walking brings the hat in on the next beat once baked, out from a bar line; night dims the bass on a bar line; every ramp at a step time', async () => {
+  const L = { drums: 1, layers: { walk: 0, night: 0 } },
+    { c, T, seen } = layerPlay(11030, L);
+  await T.prepare('s');
+  await T.layersPrepare('s', ['walk']);
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  const sg = T.song,
+    spb = 60 / sg.D.bpm / 4,
+    t0 = sg.next - sg.step * spb;
+  /* you start walking at step 17 (mid-beat): the hat comes in on step 20, over a beat */
+  c.currentTime = sg.next - 0.13;
+  T.tick();
+  L.layers.walk = 1;
+  run16(c, T);
+  const hat = sg.lay[2].g.gain.calls;
+  const up = hat.find(x => x[0] === 'linearRampToValueAtTime' && x[1] === 1);
+  assert.ok(up, 'a ramp up');
+  const start = hat[hat.indexOf(up) - 1];
+  assert.equal(start[0], 'setValueAtTime');
+  const stepOf = t => Math.round((t - t0) / spb);
+  assert.equal(stepOf(start[2]) % 4, 0, 'on a beat');
+  assert.ok(Math.abs(up[2] - start[2] - 4 * spb) < 1e-9, 'over a beat');
+  assert.ok(
+    seen.some(([st, , i]) => i === 'hat' && st >= stepOf(start[2])),
+    'the hat plays'
+  );
+  assert.ok(!seen.some(([st, , i]) => i === 'hat' && st < stepOf(start[2])));
+  /* you stop and night falls: both go on the next bar line (the hat over two beats, the bass over a bar) */
+  L.layers.walk = 0;
+  L.layers.night = 1;
+  run16(c, T, 2);
+  const down = hat.find(x => x[0] === 'linearRampToValueAtTime' && x[1] === 0);
+  assert.ok(down);
+  assert.equal(stepOf(hat[hat.indexOf(down) - 1][2]) % 16, 0, 'from a bar line');
+  const bass = sg.lay[1].g.gain.calls.find(x => x[0] === 'linearRampToValueAtTime');
+  assert.equal(bass[1], 0.5);
+  assert.equal(stepOf(sg.lay[1].g.gain.calls[0][2]) % 16, 0);
+  assert.ok(!hat.some(x => x[0] === 'setTargetAtTime' || x[0] === 'cancelScheduledValues'));
+  /* once out, the hat plays nothing */
+  seen.length = 0;
+  run16(c, T, 2);
+  assert.ok(!seen.some(([, , i]) => i === 'hat'));
+  assert.deepEqual(
+    T.layerStats().map(x => [x.layer, x.gain]),
+    [
+      [null, 0.5],
+      ['walk', 0],
+    ]
+  );
+});
+
+test('SND-13: a layer wanted before its notes are baked stays out and asks for them; it comes in once they are', async () => {
+  const L = { drums: 1, layers: { walk: 1 } },
+    { c, T, seen } = layerPlay(11040, L);
+  await T.prepare('s');
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.equal(T.song.lay[2].cur, 0);
+  assert.ok(!seen.some(([, , i]) => i === 'hat'));
+  await T.layersPrepare('s', ['walk']);
+  run16(c, T);
+  assert.equal(T.song.lay[2].cur, 1);
+  assert.ok(seen.some(([, , i]) => i === 'hat'));
+});
+
 /* ---------- SND-17: jingles on an ensemble ---------- */
 const JBAND = {
   trim: -6,

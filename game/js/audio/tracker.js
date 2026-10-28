@@ -19,6 +19,7 @@ import {
   musicStingerAt,
   musicStingerShift,
 } from '../logic/music-patterns.js';
+import { musicLayerGain, musicLayerHas, musicLayerMove } from '../logic/music-layers.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_STEM_LINES: [() => MUSIC_STEM_LINES],
@@ -842,19 +843,40 @@ export function trackerCreate(ctx, bus, opts = {}) {
   };
   /* the reverb may be used (opts.reverb: sound.js keeps it off the low graphics tier) */
   T.verbOk = () => !opts.reverb || !!opts.reverb();
-  /* a song's ensemble's stems: a gain each, a panner where it isn't centred, a send to the song's reverb fader */
+  /* a song's ensemble's stems: a gain each, a panner where it isn't centred, a send to the song's reverb fader.
+     SND-13: a part that moves with the layers (logic/music-layers.js: a `layer` or a `dim`) has a gain of its own after
+     the part's (sg.lay[i]): the layers move that one, a stinger the part's, so neither undoes the other. A busker's part
+     always has a panner (its pan follows where it stands) */
   const partsMake = sg => {
-    const E = sg.ens;
-    if (sg.parts) setTimeout(() => sg.parts.forEach(g => g.disconnect()), 1500);
-    sg.parts = E.parts.map(P => {
+    const E = sg.ens,
+      L = levels(),
+      lv = L && L.layers;
+    if (sg.parts) {
+      const old = [...sg.parts, ...(sg.lay || []).filter(Boolean).map(Y => Y.g)];
+      setTimeout(() => old.forEach(g => g.disconnect()), 1500);
+    }
+    sg.lay = [];
+    sg.parts = E.parts.map((P, i) => {
       const g = c.createGain(),
-        to = P.line === 'drums' ? sg.drums : sg.gain;
-      if (P.pan) {
+        to = P.line === 'drums' ? sg.drums : sg.gain,
+        busk = P.layer === 'busker';
+      let src = g;
+      if (musicLayerHas(P)) {
+        const Y = { g: c.createGain(), pn: null, cur: 0, until: 0, pan: P.pan || 0, ready: !P.layer, asked: false };
+        sg.lay[i] = Y;
+        Y.ready = Y.ready || layerReady(sg, i);
+        Y.cur = Y.ready ? musicLayerGain(P, lv) : 0;
+        Y.g.gain.value = Y.cur;
+        g.connect(Y.g);
+        src = Y.g;
+      }
+      if (P.pan || busk) {
         const pn = c.createStereoPanner();
-        pn.pan.value = P.pan;
-        g.connect(pn);
+        pn.pan.value = P.pan || 0;
+        if (busk && sg.lay[i]) sg.lay[i].pn = pn;
+        src.connect(pn);
         pn.connect(to);
-      } else g.connect(to);
+      } else src.connect(to);
       if (P.verb > 0 && T.verbOk()) {
         if (!sg.verb) {
           sg.verb = c.createGain();
@@ -863,12 +885,99 @@ export function trackerCreate(ctx, bus, opts = {}) {
         }
         const v = c.createGain();
         v.gain.value = P.verb;
-        g.connect(v);
+        src.connect(v);
         v.connect(sg.verb);
       }
       return g;
     });
     sg.ensGain = Math.pow(10, (E.trim || 0) / 20);
+  };
+  /* ---------- SND-13: layers ----------
+     The game says how much of each layer it wants (levels().layers, sound.js musicLayersNow: walk, rain, snow, storm,
+     night, busker, build, peak, and the busker's pan); each layered part's gain moves to it on its beat or bar line
+     (logic/music-layers.js musicLayerMove), ramped from that step's time, never from currentTime (check-sound
+     schedules whole bars in one tick). A layer's part plays nothing while it is out, and its notes are baked when it
+     is first wanted (until then it stays out) */
+  const layerNeeds = new Map();
+  const layerReady = (sg, i) => {
+    const key = sg.name + '#' + i;
+    if (!layerNeeds.has(key)) layerNeeds.set(key, musicEnsembleNeeds(sg.D, sg.ens, soundBakeBank.recipes, { part: i }));
+    for (const [id, notes] of Object.entries(layerNeeds.get(key))) {
+      const B = soundBakeEntry(id, c);
+      if (!B || soundBakeZonesFor(B, notes).some(k => !B.zones[k])) return false;
+    }
+    return true;
+  };
+  /* a layer's part asked for: its notes baked in the bank's slices */
+  const layerBake = (sg, i) => {
+    const key = sg.name + '#' + i;
+    if (!layerNeeds.has(key)) layerReady(sg, i);
+    return Promise.all(
+      Object.entries(layerNeeds.get(key)).map(([id, notes]) => {
+        const B = soundBakeEntry(id, c);
+        return B ? soundBakeWant(B, soundBakeZonesFor(B, notes)) : null;
+      })
+    );
+  };
+  /* at step st (t its time, unswung): each layered part's gain and the busker's pan */
+  const layersAt = (sg, st, t, spb) => {
+    if (!sg.lay || !sg.lay.length) return;
+    const L = levels(),
+      lv = L && L.layers;
+    sg.lay.forEach((Y, i) => {
+      if (!Y) return;
+      const P = sg.ens.parts[i];
+      let to = musicLayerGain(P, lv);
+      if (to > 0 && !Y.ready) {
+        Y.ready = layerReady(sg, i);
+        if (!Y.ready && !Y.asked) {
+          Y.asked = true;
+          layerBake(sg, i);
+        }
+        if (!Y.ready) to = 0;
+      }
+      const mv = t >= Y.until - 1e-6 ? musicLayerMove(P, st, Y.cur, to) : null;
+      if (mv) {
+        const p = Y.g.gain,
+          end = t + mv.beats * 4 * spb;
+        p.setValueAtTime(Y.cur, t);
+        p.linearRampToValueAtTime(to, end);
+        Y.cur = to;
+        Y.until = end;
+      }
+      const pan = lv && typeof lv.buskerPan === 'number' ? lv.buskerPan : null;
+      if (Y.pn && pan != null && pan !== Y.pan && st >= 0 && st % 4 === 0) {
+        Y.pn.pan.setValueAtTime(Y.pan, t);
+        Y.pn.pan.linearRampToValueAtTime(pan, t + 4 * spb);
+        Y.pan = pan;
+      }
+    });
+  };
+  /* the layers' parts of a song baked ahead (sound.js on arrival: the walking beat, the weather and night there) */
+  T.layersPrepare = (name, layers) => {
+    const D = T.compose(name),
+      E = T.ensembleOf(D);
+    if (!E) return Promise.resolve(false);
+    const sg = { name, D, ens: E },
+      want = E.parts.map((P, i) => (P.layer && layers.includes(P.layer) ? i : -1)).filter(i => i >= 0);
+    return Promise.all(want.map(i => layerBake(sg, i))).then(() => true);
+  };
+  /* what the layers are doing (the debug log): each layered part's layer and gain now */
+  T.layerStats = () => {
+    const sg = T.song;
+    if (!sg || !sg.lay || !sg.ens) return null;
+    return sg.lay
+      .map(
+        (Y, i) =>
+          Y && {
+            part: i,
+            line: sg.ens.parts[i].line,
+            layer: sg.ens.parts[i].layer || null,
+            gain: Y.cur,
+            ready: Y.ready,
+          }
+      )
+      .filter(Boolean);
   };
   /* whether the ensemble plays this bar: it has one, GB Sounds is off and its notes are baked (asked for if not) */
   const ensembleNow = sg => {
@@ -882,7 +991,12 @@ export function trackerCreate(ctx, bus, opts = {}) {
   const ensembleStep = (sg, st, t, spb) => {
     const D = sg.D,
       E = sg.ens;
-    for (const N of musicEnsembleStep(D, E, st, { held: !!sg.hold, instruments: soundBakeBank.recipes })) {
+    /* SND-13: a layer's part that is out (and done fading) plays nothing */
+    const skip = i => {
+      const Y = sg.lay && sg.lay[i];
+      return !!Y && Y.cur === 0 && t >= Y.until - 1e-6;
+    };
+    for (const N of musicEnsembleStep(D, E, st, { held: !!sg.hold, instruments: soundBakeBank.recipes, skip })) {
       const P = E.parts[N.part],
         out = sg.parts[N.part],
         vol = N.vel * sg.ensGain;
@@ -918,6 +1032,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (table) songs = table;
     composed.clear();
     needs.clear();
+    layerNeeds.clear();
     if (!T.song) return;
     const D = T.compose(T.song.name);
     if (!D) return T.stop();
@@ -1017,6 +1132,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
       /* SND-11: on a bar line, the ensemble or gb (GB Sounds, or its notes not baked yet) */
       if (sg.step >= 0 && sg.step % 16 === 0) sg.ensOn = ensembleNow(sg);
       if (sg.ensOn) {
+        /* SND-13: the layers move on this step's beat or bar line */
+        layersAt(sg, sg.step, sg.next, spb);
         ensembleStep(sg, sg.step, sg.next + (sg.step >= 0 && sg.step % 2 ? spb * (D.swing || 0) : 0), spb);
         sg.step++;
         sg.next += spb;
