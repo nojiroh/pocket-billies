@@ -1129,7 +1129,8 @@ STUDIO_DATA = """(async()=>{const ix=await (await fetch('../game/data/index.json
 
 def studio_worldmap(pg, base):
     """phase 10, session 5: World & encounters → World map look: the picture of the bowl from the game's own code, a
-    land brush stroke that is one undo step, and each place's landmark field"""
+    land brush stroke that is one undo step (each place's landmark picker went with Route stops in SA-3; studio/js/check.js
+    still checks the landmark)"""
     if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
     pg.evaluate(STUDIO_DATA)
     pg.evaluate("studioState.sel.wtab='look';openSection('world');0")
@@ -1144,10 +1145,7 @@ def studio_worldmap(pg, base):
     if n1 != n0 + 1: raise Exception(f'a land brush stroke made {n1 - n0} strokes')
     pg.evaluate("undo();0")
     if pg.evaluate("(studioState.D.worldmap.sea.paint||[]).length") != n0: raise Exception('Undo didn’t take the stroke back')
-    pg.evaluate("studioState.sel.wtab='route';studioState.sel.stop=LOCATIONS_STUDIO_PROBE=studioState.D.locations.findIndex(l=>l.id==='copperleaf');render();0")
-    if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Great oak'))", 10):
-        raise Exception('the landmark field doesn’t offer Auto (the great oak) for Copperleaf')
-    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
+    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo'
 
 
 # CAM-4a: the camera dials the Camera section shows, by key, and how many times each (after opening every folder)
