@@ -1,0 +1,123 @@
+/* SY-5: the Bureau in battle (docs/phases/style-track.md; battle.js "THE BUREAU IN BATTLE", logic/bureau-battle.js).
+   Only where the Bureau is: its bots' plates are form paper (a serial, the red property line), its stamps land on a
+   paper slip, and its boss's join intro shows the Notice of Retrieval. The paper is the case files' (case-file.css
+   --case-*), so it follows light and dark the same way; the ink is the red family (--redink). Never colour alone: a
+   stamp is a word in a border, the property line is words. */
+:root {
+  --form-rule: color-mix(in srgb, var(--case-edge) 30%, var(--case-paper));
+}
+
+/* the ID plate: form paper with faint ruled lines, its words in the page's ink (the plates' glass is always dark) */
+.bplate.form,
+.bplate.form.bot,
+.bplate.form.alpha {
+  --bt-ink: var(--text);
+  background: repeating-linear-gradient(180deg, var(--case-paper) 0 9px, var(--form-rule) 9px 10px), var(--case-paper);
+  color: var(--text);
+}
+.bplate.form::after {
+  background: var(--case-edge);
+}
+/* a boss's plate keeps its red edge: the bad family stays its meaning */
+.bplate.form.alpha::after {
+  background: var(--sig-bad);
+}
+.bplate.form .pl-lv,
+.bplate.form.alpha .pl-n,
+.bplate.form .pl-cr {
+  color: var(--redink);
+}
+.bplate.form .pl-serial {
+  flex: none;
+  margin: 0 var(--s1);
+  color: var(--text2);
+  font: 400 10px/1 var(--font-voice);
+  letter-spacing: 0.04em;
+}
+.bplate .pl-serial[hidden],
+.bplate .pl-prop[hidden] {
+  display: none;
+}
+.bplate.form .pl-prop {
+  padding-top: var(--s1);
+  border-top: 1px solid var(--redink);
+  color: var(--redink);
+  font: 400 10px/1 var(--font-voice);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bplate.form .pl-parts .pb-limb {
+  --limb-bg: var(--case-tab);
+  --limb-ink: var(--text);
+  --limb-off: var(--form-rule);
+}
+
+/* a stamp in battle: on a paper slip over the one it is about (or the stage's middle), so its red always reads */
+.bt-stamp {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: var(--s1) var(--s2);
+  background: var(--case-paper);
+  border-top: 2px solid var(--case-edge);
+  pointer-events: none;
+}
+.bt-stamp.big {
+  padding: var(--s2) var(--s3);
+}
+
+/* the Notice of Retrieval: a form in the stage's lower middle (battle.js sets its top just above the dock), its bots as numbered line items, stamped */
+.bt-notice {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: min(260px, 78%);
+  transform: translate(-50%, 0);
+  padding: var(--s2) var(--s3) var(--s3);
+  background: var(--case-paper);
+  border-top: 3px solid var(--case-edge);
+  color: var(--text);
+  font: 500 var(--fs-caption) / 1.35 var(--font-case);
+  pointer-events: none;
+}
+.bt-notice .bn-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  margin: 0 0 var(--s1);
+  font: 400 14px/1.1 var(--font-voice);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bt-notice .bn-emblem {
+  flex: none;
+  image-rendering: pixelated;
+}
+.bt-notice .bn-form {
+  margin-left: auto;
+  color: var(--text2);
+  font-size: 11px;
+}
+.bt-notice ol {
+  margin: 0;
+  padding: var(--s1) 0 0 var(--s4);
+  border-top: 1px solid var(--redink);
+}
+.bt-notice li {
+  opacity: 0;
+  transition: opacity var(--m-fast);
+}
+.bt-notice li.in,
+.bt-notice.all li {
+  opacity: 1;
+}
+.bt-notice pb-stamp {
+  position: absolute;
+  right: var(--s2);
+  bottom: var(--s2);
+}
+
+/* the boss's win line on its sheet: PENDING stamped over its end */
+.win-line pb-stamp {
+  margin-left: var(--s1);
+}

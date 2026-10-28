@@ -603,6 +603,8 @@ session (2026-10-28):
   "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 900 ms with the Notice.
 - **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
   same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
+  SY-6 landed first (2026-10-28, `track/style`): `uniform vec4 uFoil` and one `if(uFoil.x>0.){...}` block just
+  before the final `fogit`; spriteI carries the text but never sets it. `uHit` can go right before or after it.
 
 ## Bugs found (VFX-7) and where they're fixed
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style

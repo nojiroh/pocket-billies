@@ -21,6 +21,7 @@ import {
   signalSetColours,
   signalVars,
 } from './signals.js';
+import { styleVarsCss } from './style-dials.js';
 /* eslint-disable no-func-assign */
 expose({
   RING: [() => RING],
@@ -267,6 +268,8 @@ export function sharedVars(look) {
   for (const k of /** @type {const} */ (['facilities', 'trainers', 'billies']))
     if (typeof mm[k] === 'boolean') out.push(`--minimap-${k}: ${mm[k] ? 1 : 0};`);
   // UI-11: the colour code's fills (each side's text shades: uiThemeCss)
+  // SY-8: the style track's dials (pb-stamp, the HP fill; battle.js and the foil read them through styleDials)
+  out.push(...styleVarsCss(look.style));
   if (look.signals) out.push(...signalVars(look.signals).shared);
   // UI-12: dark text on gold and on the colour code's fills, the same on both sides: the dark side's ground
   const ink = ((look.color || {}).dark || {}).ground;

@@ -43,6 +43,8 @@ expose({
   runRestore: [() => runRestore, v => (runRestore = v)],
   runSnapshot: [() => runSnapshot],
   // @ts-expect-error -- replaced on purpose
+  validPerkState: [() => validPerkState, v => (validPerkState = v)],
+  // @ts-expect-error -- replaced on purpose
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
   validRunEnc: [() => validRunEnc, v => (validRunEnc = v)],
@@ -142,6 +144,26 @@ export function validRunRegion(R) {
     recordOf(R.forms, 100, id) &&
     Object.keys(R.forms).every(id) &&
     ids(R.leaders, 16)
+  );
+}
+/** PK-1: run.perkState: at most 200 marks by '<source>/<row>', each a count (n, 0-99), a growth (v, within +-100)
+ * and a once-a-run mark (used: 1), nothing else @param {any} P @returns {boolean} */
+export function validPerkState(P) {
+  if (!P || typeof P !== 'object' || Array.isArray(P) || Object.hasOwn(P, '__proto__')) return false;
+  const keys = Object.keys(P);
+  return (
+    keys.length <= 200 &&
+    keys.every(k => /^[a-z0-9_:]{1,64}\/\d{1,2}$/.test(k)) &&
+    Object.values(P).every(
+      m =>
+        !!m &&
+        typeof m === 'object' &&
+        !Array.isArray(m) &&
+        Object.keys(m).every(q => ['n', 'v', 'used'].includes(q)) &&
+        (m.n === undefined || wholeIn(m.n, 0, 99)) &&
+        (m.v === undefined || (Number.isFinite(m.v) && Math.abs(m.v) <= 100)) &&
+        (m.used === undefined || m.used === 1)
+    )
   );
 }
 /** the load check for saveData.run: strict, like validSave (the Billies in run.start.team are checked there) */
@@ -296,6 +318,8 @@ export function validRun(o) {
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* RO-3f: a mythical met this run */
   if (o.myth !== undefined && o.myth !== 1) return false;
+  /* PK-1: the Perks' counters, growth and once-a-run marks (logic/effects.js; missing until a row keeps state) */
+  if (o.perkState !== undefined && !validPerkState(o.perkState)) return false;
   /* TW-3: its quests (missing until the first is taken) */
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
   /* RS-1: the resident invited (logic/residents.js) */

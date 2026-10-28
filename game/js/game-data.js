@@ -471,6 +471,7 @@ provide({ RESIDENTS }); /* to-module */
 export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData | null} */ (gameData.festivals || null);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
+provide({ PERKS }); /* to-module */
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */

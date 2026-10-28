@@ -21,6 +21,7 @@
 /** @import { Biome, LocationData, NodeType, Pool, RoadLink, RunSceneRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { fxRunFoeLevels } from '../hooks.js';
 import { hashString, rngFrom } from './rng.js';
 import { modFoeLevels } from './modifiers.js';
 import { runZoneRegion } from './run-region.js';
@@ -690,7 +691,7 @@ export function* runScenesSlices(run, data, times) {
   return scenes;
 }
 /** node i's wild levels: rules.json run.wild's on the landing's row, perRow more on each row after, and `more` (RL-13:
- * the run's Expedition, effects.js modFoeLevels) on all of them (1-100)
+ * the run's Expedition, effects.js fxRunFoeLevels) on all of them (1-100)
  * @param {RunMap} map @param {number} i @param {RunWorldData} data @param {number} [more] @returns {[number, number]} */
 export function runWildLevels(map, i, data, more = 0) {
   const W = data.rules.wild,
@@ -726,7 +727,8 @@ export function runWorldTables(run, hub, data) {
     /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
     const own = node.side && map.side && map.side.dex ? map.side.dex : null;
     pools[id] = {
-      lv: runWildLevels(map, i, data, modFoeLevels(run)),
+      /* PK-1: every run row's levels (logic loaded alone, without the effects module: the modifiers' alone) */
+      lv: runWildLevels(map, i, data, typeof fxRunFoeLevels === 'function' ? fxRunFoeLevels(run) : modFoeLevels(run)),
       list: own ? wildPoolList(source.list, own, null) : wildPoolList(source.list, dex, region ? region.swap : null),
     };
     /** @type {LocationData} */
