@@ -50,7 +50,7 @@ function battleStageAt(ms, fn) {
   animAt(Math.max(0, ms), fn, null);
 }
 /** VFX-8: skips what is playing: the stage's flush, where the runner's steps do what their skip says */
-function battleAnimSkip() {
+export function battleAnimSkip() {
   battleStageKit.flush();
 }
 

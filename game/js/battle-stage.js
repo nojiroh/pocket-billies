@@ -541,7 +541,7 @@ function tween(o, p, to, dur, ease = 'out', delay = 0) {
 function scheduleAt(ms, fn) {
   battleStage.evs.push({ t: battleStage.t + ms, fn });
 }
-/* skip to the end of whatever is still playing. Camera, lens and zoom glide to where they were headed instead of cutting there */
+/* skip to the end of whatever is still playing (a tap, or the next line). Camera, lens and zoom glide to where they were headed instead of cutting there */
 function battleStageFlush() {
   const glide = new Map(),
     G = [battleStage.cam, battleStage.css, battleStage.dof, battleStage.hand];
@@ -565,7 +565,9 @@ function battleStageFlush() {
   });
   const ev = battleStage.evs.sort((a, b) => a.t - b.t);
   battleStage.evs = [];
-  ev.forEach(e => e.fn());
+  /* VFX-8: a runner's step (battle-anim-run.js) does what its skip says (its end framing, the hit's numbers, or
+     nothing: pictures and sounds still to come are dropped); any other event still runs at once */
+  ev.forEach(e => ('onSkip' in e ? e.onSkip && e.onSkip() : e.fn()));
 }
 function setActorAction(i, k, dur = 1000) {
   battleStage.s[i].act = { k, t0: battleStage.t, dur };
