@@ -52,6 +52,18 @@ pushes (only art-code-refs conflicted: made again).
     passed the same step; nothing of this session draws on the walk screen. Noted, not fixed (UI track's ceiling).
   - Tense and arc versions inherit the song's ensemble; the arc's run versions (`@mid`, `@late`) are rendered only as
     gb (no `ensemble` part for them yet: SND-13 turns the arc into layers).
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 1771 of 1771 (after the last
+  merge); `node --test` tracker 29, sound-bake 23, music-studio 15, music-patterns 8, sound 17; `npm run check:modules`
+  (0 changed), `npm run check:data` (178 files fine), the check-data snapshot (unchanged by the data). `check-sound.py
+  --loudness` on every change commit (above). `npm run check:smoke` twice: 6 of 7, the walk screen's piece count (the
+  postcard, above; main's smoke passed it). `check-quick.py --steps=sound,song,music,"debug menu"`: 8 of 9, "Battle
+  music" failing under load and passing alone (drums in 4.7 s, on the throw). `check-studio-github.py --only=music`: ok
+  (the compressor, an instrument, route as its ensemble, GB Sounds, a part's level undone). The full `npm run
+  check:quick`: 37 of 42 (1352 s): Copperleaf's train_station in the air, RL-8's "the town's shop has no Perk", room
+  light at night (all main's, explained on PR #292 or in earlier entries), the walk screen's postcard count, and
+  "Battle music" (the known full-run timing flake, passing alone). Browser probes (headless Chromium, a real
+  AudioContext): Copperleaf plays as its ensemble after its bake, GB Sounds turns it to gb at the next bar, nothing
+  dropped from the bank, the debug log's `ensemble` line.
 - **Decided for the owner, to review**:
   - The instruments per place, as Part 2's design and the listening page proposed: Copperleaf a music box doubling the
     chip, a harp counter, soft strings, a harp's root each bar, and at night a flute taking the tune; a route the chip
