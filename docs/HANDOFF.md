@@ -30,6 +30,9 @@ docs/phases/terrain-track.md, "TR-5 as built".
   smoke 7 of 7 (333 s); check-fast `--only=tall,world,town,behind,island` all ok but "The Studio's world map
   look" (Copperleaf's landmark field has no Auto), which fails the same on main 5f6d01ae and on `track/worldmap`.
   Snapshots remade on purpose: the golden terraced scene, rng's scene hash (only gen.v), run-start's mapgenV.
+  Full quick check: 37 of 42 (1766 s). The five: Terraces (Copperleaf's train_station in the air: the same alone on
+  main 5f6d01ae; Copperleaf is hand-made and uses none of this code), RL-8's shop Perk, RT-2's pair, Granny Juniper
+  and room light, all four listed on main or as failing only in the long run in ON-2's and TR-4's entries.
 - Container: Python Playwright 1.63 installed for the browser checks (the pin says 1.56; its Chromium is build 1243).
 - Next: the owner on the phone: a ledge-drop route or the debug menu's "Mountains and ledges" run (contour terraces,
   banks, walls in towns, the flights); a debug log. Then TR-6 (vines, cave doors) or, once `track/worldmap` is in
