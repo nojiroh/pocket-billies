@@ -48,6 +48,7 @@ import {
   figureFaceMarks,
   figureFaceState,
   figureKey,
+  figureMarkHidden,
   figureMix,
   figurePose,
   figureRamp,
@@ -132,6 +133,7 @@ expose({
   figureLookColour: [() => figureLookColour, v => (figureLookColour = v)],
   figureLookHash: [() => figureLookHash, v => (figureLookHash = v)],
   figureLookRamp: [() => figureLookRamp, v => (figureLookRamp = v)],
+  figureMarkClip: [() => figureMarkClip, v => (figureMarkClip = v)],
   figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
@@ -1137,6 +1139,12 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
   gl.bindVertexArray(R.vao);
   if (R.indexed) gl.drawElements(gl.TRIANGLES, R.count, gl.UNSIGNED_SHORT, 0);
   else gl.drawArrays(gl.TRIANGLES, 0, R.count);
+  /* CH-6: the figure's depth (pass 1's alpha), read back for its face's marks: a brim or a hand in front hides them */
+  let depth = null;
+  if (code && Fig.F.face && Fig.F.face.length) {
+    depth = new Uint8Array(S.w * S.h * 4);
+    gl.readPixels(0, 0, S.w, S.h, gl.RGBA, gl.UNSIGNED_BYTE, depth);
+  }
   /* pass 2: the outline, to the canvas */
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, S.w, S.h);
@@ -1166,7 +1174,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
   if (code)
     for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S, face)) {
       x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
-      figurePaintMark(x, m, ppm);
+      figurePaintMark(depth ? figureMarkClip(x, depth, S, m.d) : x, m, ppm);
     }
   out.ax = S.ax;
   out.ay = S.ay;
@@ -1176,6 +1184,28 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
   B.bakes++;
   B.ms += performance.now() - t0;
   return out;
+}
+/**
+ * CH-6: a painter that leaves out a mark's pixels where something nearer stands (the picture's depth, pass 1's alpha,
+ * rows from the bottom): the brim of a hat over the eyes, a hand in front of the mouth
+ * @param {{ fillRect: (x: number, y: number, w: number, h: number) => void }} x
+ * @param {Uint8Array} depth @param {{ w: number, h: number }} S @param {number | undefined} d the mark's depth
+ */
+function figureMarkClip(x, depth, S, d) {
+  return {
+    fillRect(/** @type {number} */ mx, /** @type {number} */ my, /** @type {number} */ w, /** @type {number} */ h) {
+      const hid = (/** @type {number} */ i, /** @type {number} */ j) =>
+        figureMarkHidden(
+          i >= 0 && j >= 0 && i < S.w && j < S.h ? depth[((S.h - 1 - j) * S.w + i) * 4 + 3] / 255 : 0,
+          d
+        );
+      let any = false;
+      for (let j = my; j < my + h && !any; j++) for (let i = mx; i < mx + w && !any; i++) any = hid(i, j);
+      /* nothing in front: the rect as it is; else pixel by pixel */
+      if (!any) x.fillRect(mx, my, w, h);
+      else for (let j = my; j < my + h; j++) for (let i = mx; i < mx + w; i++) if (!hid(i, j)) x.fillRect(i, j, 1, 1);
+    },
+  };
 }
 /**
  * a face mark painted in whole pixels (logic/figure-pose.js figureFaceMarks): a block; a hollow one (a glasses frame)

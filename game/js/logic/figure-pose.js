@@ -30,6 +30,7 @@ expose({
   FIGURE_FPS: [() => FIGURE_FPS],
   FIGURE_JOINTED: [() => FIGURE_JOINTED],
   FIGURE_LIGHT: [() => FIGURE_LIGHT],
+  FIGURE_MARK_HIDE: [() => FIGURE_MARK_HIDE],
   FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
   FIGURE_TALK_MS: [() => FIGURE_TALK_MS],
   OUTLINE_RGB: [() => OUTLINE_RGB],
@@ -62,6 +63,8 @@ expose({
   figureGpuMesh: [() => figureGpuMesh, v => (figureGpuMesh = v)],
   // @ts-expect-error -- replaced on purpose
   figureKey: [() => figureKey, v => (figureKey = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureMarkHidden: [() => figureMarkHidden, v => (figureMarkHidden = v)],
   // @ts-expect-error -- replaced on purpose
   figureMesh: [() => figureMesh, v => (figureMesh = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1518,7 +1521,7 @@ export function figureFaceMarks(F, J, P, V, ppm, S, face = null) {
     FS = tagged ? face || figureFaceState(F, { blink: P.blink ? 2 : 0 }) : null,
     blink = !tagged && P.blink;
   /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
-   *   dir?: number, t?: number }[]} */
+   *   dir?: number, t?: number, d?: number }[]} */
   const out = [];
   const c = Math.cos(V.rel),
     s = Math.sin(V.rel),
@@ -1547,13 +1550,17 @@ export function figureFaceMarks(F, J, P, V, ppm, S, face = null) {
     if ((m.kind === 'eye' || m.narrow) && facing < 0.6) w = 1;
     /* a closed eye is a line, a pixel thick at walking size and thicker in a close-up (a portrait) */
     if (m.kind === 'eye' && blink) h = Math.max(1, Math.round(0.022 * ppm));
+    /* CH-6: its depth as a picture's pass 1 keeps it (the alpha: nearer larger; figureClipMatrix's depth), so a
+       painter can leave out the pixels something nearer covers (a brim, a hand) */
+    const zc = (-s * ct * at[0] - st * at[1] + c * ct * at[2]) / 2.5,
+      d = 1 - 0.92 * (zc * 0.5 + 0.5);
     const q = cardPoint(at, V.rel, V.tilt),
       x = Math.round(S.ax + q.u * ppm - w / 2),
       y = Math.round(S.ay - q.v * ppm - h / 2);
     const rgb = F.colours[m.col || m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]];
     /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
-     *   dir?: number, t?: number }} */
-    const o = { x, y, w, h, rgb, kind: m.kind };
+     *   dir?: number, t?: number, d?: number }} */
+    const o = { x, y, w, h, rgb, kind: m.kind, d };
     if (m.hollow) o.hollow = true;
     /* CH-3b: an oval (an eye, a pupil, a shine) or a smile's arc, painted as such once it is 3 pixels or more (a
        portrait's close-up); smaller, a block */
@@ -1570,7 +1577,7 @@ export function figureFaceMarks(F, J, P, V, ppm, S, face = null) {
     }
     out.push(o);
     if (m.kind === 'eye' && !blink && w >= 2 && h >= 3 && m.glint !== false)
-      out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint' });
+      out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint', d });
   }
   return out;
 }
@@ -1701,6 +1708,17 @@ export function figureDensityStep(k, prev = 1) {
   return s;
 }
 /** the tick a time falls in on the 12 fps clock @param {number} t ms */
+/**
+ * CH-6: how much nearer (in a picture's depth alpha) something must be than a face mark to hide it: about 4 cm, past
+ * the head's own mesh against the smooth surface the mark sits on and the 8-bit depth (about 2 cm a step), so a brim,
+ * a hat's crown or a hand in front hides the eyes and mouth and the face itself doesn't
+ */
+export const FIGURE_MARK_HIDE = (0.92 * 0.5 * 0.04) / 2.5;
+/** CH-6: whether a mark of depth `d` is hidden where the picture's depth alpha is `a` (0: nothing there)
+ * @param {number} a @param {number | undefined} d */
+export function figureMarkHidden(a, d) {
+  return d != null && a > d + FIGURE_MARK_HIDE;
+}
 /** CH-6: how often a talking mouth changes (ms; the portrait kit's about 8 a second) */
 export const FIGURE_TALK_MS = 125;
 /**
