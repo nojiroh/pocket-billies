@@ -759,7 +759,7 @@ function battleStamp(si, word, big) {
   st.setAttribute('size', 'lg');
   st.setAttribute('tilt', String(si == null ? -6 : ACTOR_SIDE[si] ? 8 : -8));
   e.appendChild(st);
-  e.style.left = clamp(q.x, 90, battleStage.L.vw - 90) + 'px';
+  e.style.left = clamp(q.x, 120, battleStage.L.vw - 120) + 'px';
   e.style.top = clamp(q.y + (si == null ? 0 : 40), 60, battleStage.L.vh - 60) + 'px';
   L.appendChild(e);
   bureauUi.stamp = e;
@@ -832,6 +832,11 @@ function bureauNotice(an) {
   e.append(head, ol);
   L.appendChild(e);
   bureauUi.notice = e;
+  /* just above the message box (the dock and the stage run under it), in the lower middle where your side comes out after the join */
+  const msg = $('#msg'),
+    sr = L.getBoundingClientRect(),
+    dt = msg ? msg.getBoundingClientRect().top - sr.top : sr.height * 0.8;
+  e.style.top = Math.max(48, Math.min(sr.height * 0.62, dt) - e.offsetHeight - 12) + 'px';
   if (reducedMotion) {
     /* Reduced: no slide, every line at once, the stamp already on */
     e.classList.add('all');

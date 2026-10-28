@@ -1541,7 +1541,7 @@
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:1202",
+   "game/js/battle.js:1207",
    "game/js/billie-sheet.js:119",
    "game/js/billie-sheet.js:171",
    "game/js/billie-sheet.js:180",
@@ -1581,7 +1581,7 @@
    "game/js/ui-run-kit.js:88"
   ],
   "box": [
-   "game/js/battle.js:1366",
+   "game/js/battle.js:1371",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
@@ -1632,7 +1632,7 @@
    "game/js/art.js:197",
    "game/js/battle-stage.js:1523",
    "game/js/battle-stage.js:2251",
-   "game/js/battle.js:1202",
+   "game/js/battle.js:1207",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
    "game/js/logic/marks.js:179",
@@ -1686,7 +1686,7 @@
    "game/js/logic/train-path.js:193",
    "game/js/person-art.js:801",
    "game/js/person-art.js:881",
-   "game/js/self-test.js:2860",
+   "game/js/self-test.js:2873",
    "game/js/story-stage.js:219",
    "game/js/train-ride.js:313",
    "game/js/train-ride.js:321",
@@ -1785,7 +1785,7 @@
    "game/js/logic/placeholder-art.js:270",
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
-   "game/js/self-test.js:3511",
+   "game/js/self-test.js:3524",
    "game/js/walk-view.js:395",
    "game/js/walk-view.js:4015",
    "game/js/walk/effects.js:518",
@@ -1820,8 +1820,8 @@
   "pick": [
    "game/js/augment-screen.js:208",
    "game/js/augment-screen.js:230",
-   "game/js/battle.js:1017",
-   "game/js/battle.js:1252",
+   "game/js/battle.js:1022",
+   "game/js/battle.js:1257",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
    "game/js/logic/data-checks.js:800",
@@ -1832,10 +1832,10 @@
    "game/js/ranch-screen.js:210",
    "game/js/ranch-screen.js:235",
    "game/js/ranch-screen.js:269",
-   "game/js/self-test.js:3096",
-   "game/js/self-test.js:3123",
-   "game/js/self-test.js:3170",
-   "game/js/self-test.js:3198"
+   "game/js/self-test.js:3109",
+   "game/js/self-test.js:3136",
+   "game/js/self-test.js:3183",
+   "game/js/self-test.js:3211"
   ],
   "plus": [
    "game/js/battle-stage.js:2270",
@@ -1877,7 +1877,7 @@
    "game/js/battle-stage.js:2472",
    "game/js/battle-stage.js:2495",
    "game/js/battle-stage.js:2594",
-   "game/js/battle.js:1556",
+   "game/js/battle.js:1561",
    "game/js/billie-sheet.js:83",
    "game/js/billie-sheet.js:157",
    "game/js/billie-sheet.js:214",
@@ -1933,7 +1933,7 @@
    "game/js/logic/online-legal.js:242",
    "game/js/person-art.js:802",
    "game/js/person-art.js:881",
-   "game/js/self-test.js:2860",
+   "game/js/self-test.js:2873",
    "game/js/train-ride.js:272",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",

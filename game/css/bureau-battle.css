@@ -66,11 +66,11 @@
   padding: var(--s2) var(--s3);
 }
 
-/* the Notice of Retrieval: a form in the stage's lower middle, its bots as numbered line items, stamped */
+/* the Notice of Retrieval: a form in the stage's lower middle (battle.js sets its top just above the dock), its bots as numbered line items, stamped */
 .bt-notice {
   position: absolute;
   left: 50%;
-  top: 46%;
+  top: 40%;
   width: min(260px, 78%);
   transform: translate(-50%, 0);
   padding: var(--s2) var(--s3) var(--s3);
