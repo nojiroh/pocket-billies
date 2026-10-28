@@ -118,7 +118,12 @@ the commits). No sound file touched.
   commit in a worktree 6 of 7 (the Actions sheet's "town fixture never got ready" at 322 s, while the films loaded the
   machine); CI smoke on 516a7327, 6e3421ab and 313a1e99: red only on "Camera follow ... the page stopped drawing"
   (known), once "The world map opens as the bowl" (known) and once "Every screen opens" (passes alone here 2 of 2;
-  it never enters a battle); CI lint red on 8bc5197a (art-code-refs, fixed in 64cc6a91). Full quick check: see below.
+  it never enters a battle); CI lint red on 8bc5197a (art-code-refs, fixed in 64cc6a91). Full quick check on the
+  merged head ef0696af: 36 of 42 in 2393 s. Main's or load's: Terraces (train_station in the air), RL-8's seam (never
+  shown), the walking step's room light (all three on the known list); "Starters ... battle rig buffers nearly empty",
+  "Run map music hears the forecast" and "Ground tiles ... the lab's room didn't open in place" each pass alone here
+  (Starters and the music once, Ground tiles 2 of 2 on this head and once on track/vfx's 8dc9583d): the machine
+  had just run the films. The in-game battle steps (A battle plays to the end, the Voltron, a run's battles) passed.
 - Next: VFX-13 merges this branch into `track/vfx`; VFX-18 builds the other 38 scenes (and the bots' and the boss's
   specials) on these primitives.
 
