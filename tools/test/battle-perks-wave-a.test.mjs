@@ -3,7 +3,7 @@
 // battle, and a battle holding all of them at once staying finite.
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { data, fn, hooks, reseed, said, startedSave } from './setup-real.mjs';
+import { data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
 
 const { RULES, SPECIES } = data;
 const starter = () => Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0]);
@@ -397,4 +397,239 @@ test('PK-3 revive: in a double battle both of your places come back, each with i
     assert.equal(new Set(on).size, 2, on.join());
     assert.equal(fn('liveActors')(0).length, 2);
   });
+});
+
+/* ---------- the 15 Wave A Perks of perks.json, each in a battle ---------- */
+
+const WAVE_A = [
+  'rubber_stamp',
+  'click_pen',
+  'laser_pointer',
+  'screen_protector',
+  'power_bank',
+  'mic_drop',
+  'joy_buzzer',
+  'hot_sauce',
+  'oven_mitts',
+  'noise_headphones',
+  'rubber_boots',
+  'hazmat_suit',
+  'alarm_clock',
+  'plot_armor',
+  'warranty_card',
+];
+/** a battle holding these Perks of perks.json, with the run's marks */
+const real = (ids, extra = {}, n = 2) => {
+  const marks = {},
+    b = battle(fn('fxOfRun')({ perks: ids }, data.PERKS), { perkState: marks, ...extra }, n);
+  return { b, marks };
+};
+
+test('PK-3 Wave A: all 15 are in perks.json with a picture, and nothing else is new', () => {
+  for (const id of WAVE_A) {
+    assert.ok(data.PERKS[id], id);
+    assert.equal(data.PERKS[id].img, `perks/${id}.svg`);
+  }
+  assert.equal(Object.keys(data.PERKS).length, 28);
+});
+
+test('PK-3 Rubber Stamp: the first hit of the battle deals 50% more, then not; it says “Approved!”', () => {
+  const { b } = real(['rubber_stamp']),
+    M = data.MOVES[anyHit('H')];
+  tough(foe(b));
+  assert.equal(fn('fxHitMult')(0, 1, M, { crit: false, te: 1 }), 1.5);
+  fn('useMove')(0, anyHit('H'), 1);
+  assert.ok(lines(b).includes('Rubber Stamp: Approved!'), lines(b).join('\n'));
+  assert.equal(fn('fxHitMult')(0, 1, M, { crit: false, te: 1 }), 1);
+});
+
+test('PK-3 Click Pen: every 8th attack is critical (the run’s count), status moves don’t count', () => {
+  const { b, marks } = real(['click_pen']),
+    H = anyHit('H'),
+    X = Object.keys(data.MOVES).find(id => data.MOVES[id].c === 'X' && data.MOVES[id].fx && data.MOVES[id].fx.tgtStage);
+  tough(foe(b));
+  const crits = [];
+  fixedRoll(b, 0.99, () => {
+    for (let i = 0; i < 8; i++) {
+      if (i === 3 && X) fn('useMove')(0, X, 1);
+      b.events.length = 0;
+      fn('useMove')(0, H, 1);
+      crits.push(lines(b).includes('A critical hit!'));
+    }
+  });
+  assert.deepEqual(crits, [false, false, false, false, false, false, false, true]);
+  assert.ok(
+    lines(b).some(t => /^Click Pen: Click! .* lines up a critical hit\.$/.test(t)),
+    lines(b).join('\n')
+  );
+  assert.equal(marks['click_pen/0'].n, 0);
+});
+
+test('PK-3 Laser Pointer: a roll that misses stage 0 lands at stage 1', () => {
+  const { b } = real(['laser_pointer']),
+    C = data.RULES.battle.critChances,
+    r = (C[0] + C[1]) / 2;
+  assert.equal(
+    fixedRoll(b, r, () => fn('calcDamage')(0, 1, anyHit('H')).crit),
+    true
+  );
+  const none = battle(null);
+  assert.equal(
+    fixedRoll(none, r, () => fn('calcDamage')(0, 1, anyHit('H')).crit),
+    false
+  );
+});
+
+test('PK-3 Screen Protector: each of yours takes half from the first hit on it, once a battle', () => {
+  const { b } = real(['screen_protector']),
+    H = anyHit('H'),
+    M = data.MOVES[H];
+  tough(mine(b));
+  assert.equal(fn('fxHitMult')(1, 0, M, { crit: false, te: 1 }), 0.5);
+  fn('useMove')(1, H, 0);
+  assert.ok(
+    lines(b).some(t => /^Screen Protector: .* took only half the hit\.$/.test(t)),
+    lines(b).join('\n')
+  );
+  assert.equal(fn('fxHitMult')(1, 0, M, { crit: false, te: 1 }), 1, 'spent for this one');
+  fn('doSwitch')(0, 1);
+  assert.equal(fn('fxHitMult')(1, 0, M, { crit: false, te: 1 }), 0.5, 'the next Billie has its own');
+});
+
+test('PK-3 Power Bank: once a battle, one of yours ending a turn under a quarter heals 25%', () => {
+  const { b } = real(['power_bank']),
+    m = mine(b),
+    mx = fn('maxHp')(m);
+  m.hp = 1;
+  fn('endTurn')();
+  assert.equal(m.hp, 1 + Math.max(1, Math.floor(mx * 0.25)));
+  assert.ok(lines(b).some(t => /^Power Bank: .* restored HP\.$/.test(t)));
+  m.hp = 1;
+  fn('endTurn')();
+  assert.equal(m.hp, 1, 'once a battle');
+});
+
+test('PK-3 Mic Drop: knocking a foe out raises the knocker’s Attack and Sp. Atk', () => {
+  const { b } = real(['mic_drop']);
+  foe(b).hp = 1;
+  fn('useMove')(0, anyHit('H'), 1);
+  assert.equal(foe(b).hp, 0);
+  assert.equal(b.sides[0].f[0].v.st.lev, 1);
+  assert.equal(b.sides[0].f[0].v.st.lob, 1);
+  assert.ok(lines(b).some(t => /^Mic Drop: .*Attack rose\.$/.test(t)));
+});
+
+test('PK-3 Joy Buzzer and Hot Sauce: physical hits may paralyze, special hits may burn', () => {
+  let { b } = real(['joy_buzzer']);
+  tough(foe(b));
+  fixedRoll(b, 0.1, () => fn('useMove')(0, anyHit('H'), 1));
+  assert.equal(foe(b).status, 'par');
+  assert.ok(lines(b).includes('Joy Buzzer kicked in!'));
+  ({ b } = real(['hot_sauce']));
+  tough(foe(b));
+  fixedRoll(b, 0.05, () => fn('useMove')(0, anyHit('S'), 1));
+  assert.equal(foe(b).status, 'brn');
+  ({ b } = real(['hot_sauce']));
+  tough(foe(b));
+  fixedRoll(b, 0.05, () => fn('useMove')(0, anyHit('H'), 1));
+  assert.equal(foe(b).status ?? null, null, 'not on a physical hit');
+});
+
+test('PK-3 Oven Mitts, Noise-Cancelling Headphones, Rubber Boots: each keeps its status off yours', () => {
+  for (const [id, st] of [
+    ['oven_mitts', 'brn'],
+    ['noise_headphones', 'slp'],
+    ['rubber_boots', 'par'],
+  ]) {
+    const { b } = real([id]);
+    fn('inflict')(0, st, true);
+    assert.equal(mine(b).status ?? null, null, id);
+    assert.ok(lines(b).some(t => t.startsWith(data.PERKS[id].name + ' kept ')));
+    fn('inflict')(1, st, true);
+    assert.equal(foe(b).status, st, `${id}: the foe`);
+  }
+});
+
+test('PK-3 Hazmat Suit: no Sandstorm or stones hurt, a burn half', () => {
+  const { b } = real(['hazmat_suit']),
+    shock = data.RULES.battle.shockType,
+    fr = Math.max(2, data.RULES.battle.drainFraction),
+    m = mine(b),
+    mx = fn('maxHp')(m);
+  if (!fn('billyTypes')(m).includes(shock)) {
+    b.market = { k: 'sand', n: 3 };
+    m.status = 'brn';
+    const hp = m.hp;
+    fn('endTurn')();
+    assert.equal(hp - m.hp, Math.max(1, Math.floor((mx / fr) * 0.5)), 'half a burn, no Sandstorm');
+  }
+  b.market = null;
+  b.sides[0].stones = true;
+  const next = b.sides[0].team[1],
+    hp2 = next.hp;
+  fn('doSwitch')(0, 1);
+  assert.equal(next.hp, hp2, 'no stones');
+});
+
+test('PK-3 Alarm Clock: yours move first on turn 1 only', () => {
+  const { b } = real(['alarm_clock']),
+    H = anyHit('H');
+  tough(mine(b));
+  tough(foe(b));
+  b.sides[0].f[0].v.st.hus = -6;
+  b.sides[1].f[0].v.st.hus = 6;
+  const first = () => b.events.find(e => e.an && e.an.k === 'move').an.si;
+  fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
+  assert.equal(first(), 0);
+  fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
+  assert.equal(first(), 1);
+});
+
+test('PK-3 Plot Armor: your last Billie standing deals 30% more and takes 30% less', () => {
+  const { b } = real(['plot_armor']),
+    M = data.MOVES[anyHit('H')],
+    h = { crit: false, te: 1 };
+  assert.equal(fn('fxHitMult')(0, 1, M, h), 1, 'two standing');
+  b.sides[0].team[1].hp = 0;
+  assert.equal(fn('fxHitMult')(0, 1, M, h), 1.3);
+  assert.equal(fn('fxHitMult')(1, 0, M, h), 0.7);
+});
+
+test('PK-3 Warranty Card: once a run, a wiped team gets back up with half its HP; then it is void', () => {
+  const { b, marks } = real(['warranty_card']);
+  b.sides[0].team.forEach(m => (m.hp = 0));
+  fn('checkFaints')();
+  assert.ok(!b.over);
+  assert.ok(b.sides[0].team.every(m => m.hp === Math.max(1, Math.floor(fn('maxHp')(m) * 0.5))));
+  assert.ok(lines(b).includes('Warranty Card: your team got back up!'));
+  assert.deepEqual(marks['warranty_card/0'], { used: 1 });
+});
+
+test('PK-3 all 15 at once: whole battles end, every number finite, the stream replayable', () => {
+  const play = seed => {
+    const { b } = real(WAVE_A, { seed }, 3),
+      out = [];
+    for (let t = 0; t < 200 && !b.over; t++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0);
+      fn('runTurn')([{ who: 0, k: 'move', mid: sureHit(m) || m.moves[0], tk: 1 }], b);
+      for (const side of b.sides)
+        for (const q of side.team) assert.ok(Number.isInteger(q.hp) && q.hp >= 0, `hp ${q.hp}`);
+      out.push(lines(b).length);
+    }
+    assert.ok(b.over, `${seed}: over within 200 turns`);
+    return [b.over, ...out].join();
+  };
+  for (const seed of ['all-a', 'all-b', 'all-c']) assert.equal(play(seed), play(seed), seed);
+  /* the damage rows of all 15 together stay within FX_LIMIT */
+  const { b } = real(WAVE_A),
+    M = data.MOVES[anyHit('H')];
+  b.sides[0].team[1].hp = 0;
+  const m = fn('fxHitMult')(0, 1, M, { crit: true, te: 2 });
+  assert.ok(m >= modules.effects.FX_LIMIT.lo && m <= modules.effects.FX_LIMIT.hi, String(m));
 });
