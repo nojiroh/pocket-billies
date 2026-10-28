@@ -29,6 +29,7 @@ expose({
   pressScale: [() => pressScale, v => (pressScale = v)],
   pressTarget: [() => pressTarget, v => (pressTarget = v)],
   pressed: [() => pressed, v => (pressed = v)],
+  recentPress: [() => recentPress, v => (recentPress = v)],
   sameControl: [() => sameControl, v => (sameControl = v)],
   soundAt: [() => soundAt],
 });
@@ -61,7 +62,7 @@ const pressMs = () => {
 };
 let pressed = /** @type {{ el: Element, k: { x: number, y: number }, a: Animation } | null} */ (null);
 /** where the last press was, for a gain that comes of it (coins fly from there to Moneys) */
-export const lastPress = { rect: /** @type {DOMRect | null} */ (null), at: 0 };
+const lastPress = { rect: /** @type {DOMRect | null} */ (null), at: 0 };
 function isDisabled(/** @type {Element} */ el) {
   const e = /** @type {any} */ (el);
   return !!(e.disabled || el.getAttribute('aria-disabled') === 'true' || el.hasAttribute('disabled'));
@@ -188,6 +189,10 @@ export function pbFlipIn(key) {
 }
 
 /* ---------- gains fly to where they go ---------- */
+/** where you pressed last, if it was just now (a gain that comes of a press flies from there) */
+export function recentPress() {
+  return lastPress.rect && performance.now() - lastPress.at < 1500 ? lastPress.rect : null;
+}
 /** the Moneys chip in the top bar, or a tab of the bottom bar (bag, perks, team...) @param {string} k */
 function gainTarget(k) {
   if (k === 'money') {

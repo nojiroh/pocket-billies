@@ -1553,11 +1553,12 @@
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
    "game/js/reward-screen.js:240",
+   "game/js/shop.js:252",
    "game/js/ui-run-kit.js:102",
    "game/js/ui-run-kit.js:109",
    "game/js/ui.js:81",
    "game/js/ui.js:132",
-   "game/js/ui.js:226"
+   "game/js/ui.js:227"
   ],
   "barrel": [
    "game/js/prop-models.js:224",
@@ -1638,11 +1639,11 @@
    "game/js/logic/smear.js:315",
    "game/js/logic/story-checks.js:348",
    "game/js/lore.js:209",
-   "game/js/shop.js:58",
-   "game/js/shop.js:78",
-   "game/js/shop.js:163",
-   "game/js/shop.js:173",
-   "game/js/shop.js:239",
+   "game/js/shop.js:59",
+   "game/js/shop.js:79",
+   "game/js/shop.js:164",
+   "game/js/shop.js:174",
+   "game/js/shop.js:240",
    "game/js/sound.js:457",
    "game/js/sound.js:1559",
    "game/js/town-square.js:159",
@@ -1650,7 +1651,7 @@
    "game/js/ui-run-kit.js:89",
    "game/js/ui-run-kit.js:498",
    "game/js/ui.js:89",
-   "game/js/ui.js:165",
+   "game/js/ui.js:166",
    "game/js/walk-view.js:3161"
   ],
   "cowboy": [
@@ -1838,7 +1839,7 @@
    "game/js/billie-sheet.js:195",
    "game/js/boot.js:156",
    "game/js/map-tab.js:53",
-   "game/js/shop.js:167"
+   "game/js/shop.js:168"
   ],
   "pow": [
    "game/js/game-data.js:162",
@@ -1905,8 +1906,8 @@
   "tag": [
    "game/js/battle.js:601",
    "game/js/opening-fall.js:922",
-   "game/js/ui.js:235",
-   "game/js/ui.js:236"
+   "game/js/ui.js:236",
+   "game/js/ui.js:237"
   ],
   "up": [
    "game/js/audio/tracker.js:577",

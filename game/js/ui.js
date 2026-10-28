@@ -9,7 +9,7 @@ import { speciesOf } from './logic/fighters.js';
 import { formatNumber, makeBilly, plural, spawn } from './logic/rules.js';
 import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { pbFloat, pbInboxDot, pbInboxPop, pbSound } from './ui-kit.js';
-import { lastPress, pbEnterRows, pbGainFly } from './ui-motion.js';
+import { pbEnterRows, pbGainFly, recentPress } from './ui-motion.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   activeBattle,
@@ -162,7 +162,8 @@ export function render() {
        reward, an event's answer) the coins fly there from what you pressed first */
     if (k === 'tse' && from != null && to > from) {
       pbFloat(el.closest('.tb-chip') || el, '+' + plural(to - from, 'Money'));
-      if (lastPress.rect && performance.now() - lastPress.at < 1500) pbGainFly(lastPress.rect, 'money', 'coin');
+      const from = recentPress();
+      if (from) pbGainFly(from, 'money', 'coin');
     }
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);

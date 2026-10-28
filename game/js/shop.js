@@ -13,6 +13,7 @@ import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './l
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { pbGainFly, recentPress } from './ui-motion.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -247,6 +248,8 @@ function shopBuy(id, k) {
   uiState.shopQty[k] = 1;
   shopRefresh();
   toast(`Bought ${n} × ${it.n}.`);
+  /* UI-16a: what you bought flies from the Buy button to the Bag tab */
+  pbGainFly(recentPress(), 'bag', 'bag');
 }
 /** RL-12: buy the shop's Perk (past the cap, which to let go first); a checkpoint, as every run purchase */
 function shopPerkBuy(id, drop) {
