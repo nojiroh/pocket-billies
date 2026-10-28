@@ -76,6 +76,7 @@ import '../../game/js/logic/kit-assemble.js';
 import '../../game/js/logic/kit-pixels.js';
 import '../../game/js/logic/lens-focus.js';
 import '../../game/js/logic/line-markup.js';
+import '../../game/js/logic/talk-type.js';
 import '../../game/js/logic/lite-tile.js';
 import '../../game/js/logic/mapgen.js';
 import '../../game/js/logic/marks.js';
