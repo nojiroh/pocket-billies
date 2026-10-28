@@ -1000,12 +1000,11 @@ export function endTurn() {
         ).map(src => ({ src, si: k }));
       }
       /* SP-2: an Unstable splice's drawback: a share of its HP at each turn's end (SP-6: on your side, times the run's
-         unstable rows, Perks) */
-      const hurt =
-        fxTurnHurt(hx) *
-        (ACTOR_SIDE[k] === 0 && battleNow().fx
-          ? fxSplice(fxAt(battleNow().fx, fxBattleCtx(k), fxBattleState()), 'unstable')
-          : 1);
+         unstable rows, Perks; PK-8: none at all under an unstableSafe rule, the Lab Kit set) */
+      const mineFx =
+          ACTOR_SIDE[k] === 0 && battleNow().fx ? fxAt(battleNow().fx, fxBattleCtx(k), fxBattleState()) : null,
+        safe = !!mineFx && mineFx.some(f => f.kind === 'rule' && f.rule === 'unstableSafe' && f.n > 0),
+        hurt = safe ? 0 : fxTurnHurt(hx) * (mineFx ? fxSplice(mineFx, 'unstable') : 1);
       if (hurt > 0 && m.hp > 0) {
         const d = Math.min(m.hp, Math.max(1, Math.floor(mx * hurt)));
         m.hp -= d;

@@ -34,7 +34,8 @@
              run-side.js fieldRope; sideFind, side areas hold n more finds, route-finds.js routeFindsMore; eventHurt,
              an event's hurt does nothing, run-loop.js runEventSafe; PK-7: noDrop, no Perk held can be let go,
              perks.js perkNoDrop; faintPaysNothing, a win in which one of yours fainted pays no Moneys,
-             battle-rewards.js battleRewards) (PK-4,
+             battle-rewards.js battleRewards; PK-8: unstableSafe, an Unstable splice of yours loses no HP at a turn's
+             end, battle-engine.js endTurn) (PK-4,
              run-map.js
              runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
@@ -536,6 +537,7 @@ export const FX_RULES = /** @type {const} */ ([
   'eventHurt',
   'noDrop',
   'faintPaysNothing',
+  'unstableSafe',
 ]);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id

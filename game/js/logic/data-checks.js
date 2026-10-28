@@ -2349,6 +2349,8 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   noDrop: [1, 1, 'times (it is on or off)'],
   /* PK-7: a win in which one of yours fainted pays no Moneys (Influencer Contract) */
   faintPaysNothing: [1, 1, 'times (it is on or off)'],
+  /* PK-8: an Unstable splice of yours loses no HP at a turn's end (the Lab Kit set) */
+  unstableSafe: [1, 1, 'times (it is on or off)'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];

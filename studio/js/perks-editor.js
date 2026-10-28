@@ -156,6 +156,11 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'A win in which one of yours fainted pays nothing',
     () => 'On (1): a won battle in which one of yours fainted pays no Moneys (a wild prize or a trainer’s reward).',
   ],
+  /* PK-8: the Lab Kit set */
+  unstableSafe: [
+    'Unstable splices lose no HP',
+    () => 'On (1): an Unstable splice of yours loses nothing at a turn’s end (its cells never hurt it).',
+  ],
   noDrop: [
     'No Perk held can be let go',
     () => 'On (1): at the cap no new Perk can be taken (the “Let one go” sheet offers none).',

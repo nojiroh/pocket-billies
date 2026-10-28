@@ -2076,7 +2076,8 @@ export type FxKindRow =
         | 'sideFind'
         | 'eventHurt'
         | 'noDrop'
-        | 'faintPaysNothing';
+        | 'faintPaysNothing'
+        | 'unstableSafe';
       n: number;
     }
   /** PK-5: a Billie you catch joins n levels higher */

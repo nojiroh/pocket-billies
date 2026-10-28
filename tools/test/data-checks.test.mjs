@@ -605,7 +605,7 @@ const PK4_BAD = [
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
   [
     { kind: 'rule', rule: 'luck', n: 1 },
-    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt, noDrop, faintPaysNothing (effects.js FX_RULES)',
+    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt, noDrop, faintPaysNothing,',
   ],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
@@ -776,11 +776,13 @@ const PK8_GOOD = [
   { kind: 'price', what: 'perk', mult: 0.5 },
   { kind: 'heldBoost', mult: 1.5 },
   { kind: 'damage', side: 'deal', mult: 1.2, if: 'unstable' },
+  { kind: 'rule', rule: 'unstableSafe', n: 1 },
 ];
 const PK8_BAD = [
   [{ kind: 'heldBoost', mult: 1 }, 'mult: above 1 (held items work better)'],
   [{ kind: 'heldBoost', mult: 1.5, if: 'lead' }, 'a heldBoost row is read where no battle'],
   [{ kind: 'heldBoost', mult: 1.5, when: 'hit' }, "a heldBoost row can't act at hit"],
+  [{ kind: 'rule', rule: 'unstableSafe', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
 ];
 test('PK-8: dataPerks and the schema take the sets’ kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

@@ -125,3 +125,19 @@ test('PK-8 if: unstable holds for an Unstable splice acting, not for a stable Bi
   battle(null, null, rows);
   assert.equal(E.fxAt(rows, fn('fxBattleCtx')(0), {}).length, 0);
 });
+
+test('PK-8 rule unstableSafe: an Unstable splice of yours loses no HP at a turn’s end', () => {
+  const share = data.GENES.unstable.fx[0].share,
+    hurtWith = fx => {
+      const { me, B } = unstableBattle(fx),
+        mx = fn('maxHp')(me);
+      me.hp = mx;
+      fn('endTurn')();
+      return { lost: mx - me.hp, said: JSON.stringify(B.events), mx };
+    };
+  const plain = hurtWith(null);
+  assert.equal(plain.lost, Math.max(1, Math.floor(plain.mx * share)));
+  const safe = hurtWith([{ kind: 'rule', rule: 'unstableSafe', n: 1, src: 'test' }]);
+  assert.equal(safe.lost, 0);
+  assert.doesNotMatch(safe.said, /unstable cells hurt it/);
+});
