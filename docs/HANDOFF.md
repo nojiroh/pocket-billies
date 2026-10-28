@@ -2,6 +2,106 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-8 - Anims as data: battleAnims.json, the resolver, the runner, the tap that skips - 2026-10-28
+Branch `track/vfx` (main was already in; `ccr-7526d712-gliikp`, PR #290, merged in: clean). Run under the owner's
+standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below.
+Draft PR #295 updated. Tag `vfx-8-done` for the owner (sessions can't push tags) on this entry's commit.
+- The plan: film today's moves first (a new look tool), then the data and the browser-free resolver with tests, then
+  the runner playing today's choreographies from the data (films before and after equal), then, one cause per
+  commit, the tap that skips, sounds on the stage clock, the flash limiter, the rings; docs. No move gets longer.
+- Changed:
+  - tools/look-battle-anims.py: films every move from both sides in 8 outcomes (hit, super x2, x4, not very
+    effective, crit, super crit, miss, blocked) on the real stage of a wild battle in Copperleaf: Math.random seeded
+    per film (and before the battle starts), the battle's quality locked at 0, the stage's frame task stepped by
+    hand at 16 ms on a clock of its own. A trace of the stage's state every third frame (Billies' offsets, poses,
+    tints, every particle, the camera, shake, hit-stop, the flash, the impact frame, the pops) and what
+    battleStagePlay returns; `--compare=DIR`; `--sheets` (with `--only=`) for contact sheets. About 15-25 minutes
+    for all 1952 films. validation/look-battle-anims*/ gitignored.
+  - game/data/battleAnims.json (+ schema, `BattleAnimsData`, `BATTLE_ANIMS`, index.json, `dataBattleAnims` in
+    check-data and the Studio's Check, the check-data snapshot with a planted copy, the Studio's type rename): the
+    `intro` steps every move starts with, six legacy families (`legacy_hit`, `legacy_cast`, `legacy_status`,
+    `legacy_miss`, `legacy_guard`, `legacy_blocked`: today's choreographies step for step), `defaults` by outcome and
+    category, gates (`if`), named colours (the hexes left the JS: ui-lint's ceiling lowered), `maxMs` (the longest a
+    move may play by outcome: today's times), `extraMs` 500 for a long move or a scene, `shortSpeed` 2.2 (Faster),
+    the flash rule, `scenes` (empty). moves.json may name an `anim` (a family or a scene); the check requires it to
+    resolve (no move names one yet: VFX-11 tags them).
+  - game/js/logic/battle-anims.js (browser-free, exported, pure): `battleAnimFor`, `hitTier` (none, resisted,
+    neutral, super, super4, crit), `koAhead(events, i)` (a faint of the target, any foe for a spread move, before the
+    next move; last: no later enter on that side and no later move), `battleAnimGates`, `battleAnimTimeline` (gates,
+    types, repeats spread out, the short variant, quality, the cap: `maxMs` plus `extraMs` only for a scene or power
+    100+ and not under Reduced motion), `flashGate`, `redShare`, `battleAnimLogLine`. Loaded in the game, the Studio
+    and its logic worker. tools/test/battle-anims.test.mjs: every move x 8 outcomes x 3D or not keeps today's
+    {dur, hit}; families, tiers, KOs ahead, gates, repeats, skip classes, the Faster variant, the cap, the limiter,
+    the log line; a snapshot of every move x outcome's timeline.
+  - game/js/battle-anim-run.js (loaded after battle-stage.js): `battleAnimPlay` builds and plays the timeline with
+    the stage's own helpers (`battleStageKit`, one export from battle-stage.js) and returns {dur, hit}; case 'move'
+    is one line. hitFx gets the move's type on a copy of the event (`an.t = M.t` into the engine's event is gone).
+    VFX-5's `battleLunge` is its lunge step; the dash list stays in logic/smear.js until VFX-11.
+  - The tap that skips (battle.js `tapMessage`, `lineReady`; battle-stage.js `battleStageFlush`): a tap while a line
+    plays drops what the animation still had to show (pictures, camera moves, poses, sounds), keeps its end framing
+    (focus) and the hit's numbers (hudHit), paints the line's plates, shows its text whole and marks the line ready;
+    a second tap moves on (or it moves on by itself as before). The next line's flush skips the same way. Events
+    other cases schedule (send-out, catch, faint...) still run at once on a flush, as before.
+  - sound.js `battleSoundEffect`: its delays go through `battleStageAt` (the stage clock; setTimeout as before when
+    the stage isn't running), so they keep step with hit-stop and a skip drops them. Agreed with the sound track's
+    planning session before; check-sound.py 194 fingerprints, 0 changed.
+  - The flash limiter: `battleStageFlash(col, a, dur, who)` asks `battleFlashGate` first (3 in any second, 333 ms
+    apart, no R/(R+G+B) >= 0.8); one held back becomes a white sprite flash on `who` (bright colours only), never a
+    late one, and is named in the anim line. hitFx passes `ti`. Told the style track's planning session before and
+    after.
+  - The selection and target rings: `R.k2` -> `R.k` (they never drew).
+  - The debug log: an `anim` event per move, written when its time is up or a skip ends it: `<move id>
+    <family|scene>:<id> <tier> <full|short> q<quality>[ long][ held:<why>,...]`. No names, no save data.
+- Where the track file was wrong or vague (checked in the code):
+  - moves.json has no schema, so "moves.json's optional `anim` key in the schema" became types (`Move.anim`) and the
+    data check (`dataBattleAnims` checks every move's `anim`).
+  - Line numbers moved with VFX-5: `battleStagePlay` started at BS 1778 (not 1685), case 'move' 2003-2193 (not
+    1910-2095), `battleStageFlush` 544-567 (not 528-547), the rings' `R.k2` at 1472 (not 1379). sound.js 609,
+    battle.js `tapMessage` 492-501 and check-quick.py's 4x speed (780) were right.
+  - The H lunge starts 100 ms in (VFX-5 found it); a status move (X) never calls hitFx; Guard's dur is 700 with hit 0
+    (the plates repaint at once).
+  - Flashes off is already SY-1's (`flashFor`), but #289 isn't on main yet: the limiter sits in front of
+    `battleStageFlash` alone; nothing reads Flashes or Reduced for battle flashes here.
+  - "Effects use their own seeded random numbers": kept as `random()` (util.js, Math.random, never `b.rng`), so the
+    films before and after could be equal; the films seed Math.random. A per-event stream belongs with the new art
+    (VFX-9/11), when the films change anyway.
+  - Today a super-effective crit started two full-screen flashes at the same moment (white .55 and warm .6); rule 9's
+    peak .55 isn't met by the crit's .6 (left to SY-1 and VFX-13).
+- Decided for the owner, to review:
+  - The rings on (recommended), seen on a film first: a gold ring at the choosing Billie's feet, white under the foes
+    it may aim at.
+  - The limiter as in rule 9 (recommended), on every battle flash (also the Alpha's, the boss's, the catch's), timed
+    on real time (what the eye sees), a held flash a white sprite flash on the hit Billie, a dark one dropped. Its one
+    visible effect today: a super-effective crit's warm flash becomes the target's white flash.
+  - What a skip keeps: the end framing (focus) and the hit's damage numbers and tags; a Miss / Hedged pop still shows.
+    Dropped: particles, rings, beams, camera pushes, poses, blinks, the hit's shake and flashes, pending sounds.
+  - A tap now skips even while the text types (before it only finished the text): one tap shows the whole line and
+    its result, the next moves on.
+  - The short variant keys on speed 2.2 and up (Faster; the debug 4x too); no family has one yet.
+  - Normal hit-stop unchanged (recommended); no move longer (recommended): `maxMs` caps every family at today's times.
+- Risky: battle.js and battle-stage.js are shared with UI-15/16b/17 and RL-14b (merge main first next session). The
+  tap that skips changes how the quick check's battles flow (it taps every 150-250 ms): rechecked in the full quick
+  check below. A legacy event from another case (a catch's arc step) still reschedules itself on a flush, as before.
+- Phone checks (listed, not waited for): tap during a move: the picture stops cleanly, the plates and the damage
+  number show, a second tap moves on; the hit sound in step with the hit (hit-stop); the rings when choosing and
+  aiming in a double battle; a super-effective crit (one flash, the target flashes white); nothing longer than before.
+- Verified: lint, typecheck, `npm test` 1584 of 1584, check:modules, format:check, check:data (its two bridge
+  warnings are main's), check-data-text, build, after each change; the smoke check (6 of 6) before each commit that
+  touched game/. Films (tools/look-battle-anims.py, 1952: 122 moves x 2 sides x 8 outcomes): the old stage (worktree
+  at d7225fdc) and the runner equal in every film, {dur, hit} included; two runs of the same code equal; after the
+  limiter only the 188 super crits differ (as above). The golden record (battle-golden.test.mjs) untouched (the
+  engine isn't changed). check-sound.py: 194 fingerprints, 0 changed. A tap mid-move in a real battle: 16 pending
+  steps dropped to the legacy one, the line ready, its text whole, focus wide, the next tap moved on; the anim line
+  `post3am family:legacy_cast resisted full q0 long`. Full quick check: 37 of 41 in 1380 s; every battle step passed
+  (double and Alpha at 4x, starters, weather, the phone's battle and debug log, battle music, the debug menu). Fails:
+  terraces (`train_station` in the air), RL-8's run (crossed into Thicket Route, never shown) and the walking step
+  (room light), which fail on main too (VFX-5's entry); and Sound effects (no low-HP cry within 20 s): the send-out
+  cry now waits on the stage clock, slower on a loaded machine; the wait is 45 s now (6dc70295) and the step passes
+  alone (103 s) and beside two other pages (133 s). Python Playwright 1.63.0 installed (1.56.0 can't find the
+  container's Chromium). Not run: the in-game full test (25 min; its first step passes in the smoke check).
+- Next: VFX-9 (one draw for effects), started by the planning session. It moves the runner's ring, dust, beam and
+  icon steps into the GL pool; the families stay `legacy_*` until VFX-11.
+
 ### VFX track VFX-5 - Attack lunges: the lean, afterimages, the dash ribbon - 2026-10-28
 Branch `track/vfx` (main and `ccr-7526d712-gliikp`, PR #290, merged in first, both clean; main was a fast-forward).
 Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options

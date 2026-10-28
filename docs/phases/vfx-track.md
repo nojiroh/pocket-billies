@@ -506,7 +506,7 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | --- | --- | --- | --- | --- |
 | VFX-5 (done 2026-10-28) | Attack lunges (Part 1) | as planned; the lean and afterimages as helpers the runner can call | lunges | as planned. Phone |
 | VFX-7 (done 2026-10-27) | The plan | Part 2, with research; the owner's answers | none | merged |
-| VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; the flash rate limit on SY-1's `flashFor`; the debug-log line; the look tool, first version | none, but the tap skips | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
+| VFX-8 (done 2026-10-28) | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; the flash rate limit on SY-1's `flashFor`; the debug-log line; the look tool, first version. As built: six `legacy_*` families plus shared `intro` steps, `maxMs` (today's times) caps every family; battle-anim-run.js (`battleAnimPlay`, `battleStageKit` from battle-stage.js); the limiter in front of `battleStageFlash` alone (SY-1 not on main yet); sounds via `battleStageAt`; rings fixed and on; moves.json has no schema, so `anim` is checked in `dataBattleAnims`; 1952 films equal but super crits (one flash held) | none, but the tap skips | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
 | VFX-9 | One draw for effects | the atlas, the instanced pool, cutout drawing, the budgets; rings, dust and beams into GL; `uHit`; fixed light keys; the `uCA` pulse | rings sit in the scene; no CPU flash redraws | a move's effects in at most 3 draws (gpu counters); rig uploads down (`rigStats`); frame time not worse. Phone |
 | VFX-10 | Effect art | tools/build-battle-anims.py and the strips; ramps (texture and data); the texel rule; 24 fps steps; erosion; the Studio's previews per ramp | every particle redrawn | `--check`; an Edit pixels round trip; the contact sheet. Phone (the repaint list) |
 | VFX-11 | Families x types | the 16 families and their short variants; the type kits; every move's `anim` and the Moves editor's dropdown; beams and projectiles in GL; effect lights; spread and aimed moves | every move by family and type | the snapshot remade on purpose; contact sheets of all 122. Phone |
@@ -608,8 +608,8 @@ session (2026-10-28):
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style
   track's SY-1 (#279, `flashFor`); VFX-8 adds the rate limit on top.
 - The selection and target rings divide by `R.k2`, which no rig has (BS 1379; B3 228 uses `R.k`), so they never
-  draw (VFX-8, seen on screen first; turning them on is an Ask me before).
-- `an.t = M.t` (BS 1917) writes into the engine's event; the runner passes the type itself (VFX-8).
+  draw (VFX-8, seen on screen first; turning them on is an Ask me before). Fixed in VFX-8 (on).
+- `an.t = M.t` (BS 1917) writes into the engine's event; the runner passes the type itself (VFX-8) Fixed in VFX-8.
 - "Dynasty" and "Retail" aren't types (BS 1798, 2133), so those bursts fall back to None (VFX-11).
 - The Studio's particle picker misses the sprites of 7 types (data-editors.js 924) (VFX-10).
 - Under Reduced motion the tags still pop: `kind === 'tag'` never matches 'tag crit' (B 568) (VFX-13).
