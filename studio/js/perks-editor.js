@@ -137,6 +137,10 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'Hold more Perks',
     () => `Perks more than rules.json’s ${studioState.D.rules.run.perks.cap} (the online run record still keeps 6).`,
   ],
+  sideOpen: [
+    'A side area opens with its badge alone',
+    () => 'On (1): no Billie of the field move’s type needed at a side area’s obstacle (not brambles, not Surf).',
+  ],
 });
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {

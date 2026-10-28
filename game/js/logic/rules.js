@@ -22,6 +22,7 @@ import {
   factionWildChance,
   fieldMoveState,
   fieldMoveText,
+  fieldRope,
   fxOfRun,
   fxSplice,
   jingle,
@@ -951,7 +952,8 @@ export function gateText(n) {
     const team = saveData.team
         .filter(m => m.hp > 0 && speciesOf(m))
         .map(m => ({ name: billyName(m), types: billyFieldTypes(m) })),
-      st = fieldMoveState(M, (saveData.meta || {}).badges, team);
+      /* PK-6: Coil of Rope: the badge alone opens it */
+      st = fieldMoveState(M, (saveData.meta || {}).badges, team, fieldRope(saveData.run));
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }
   if (n.ride && !canRide()) {

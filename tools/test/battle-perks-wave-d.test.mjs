@@ -146,3 +146,29 @@ test('PK-6 give: taking the Perk pays its Moneys and puts its items in the Bag, 
   assert.equal(modules['run-loop'].runGaveText({ money: 0, items: {} }), '');
   assert.equal(modules['run-loop'].runGaveText({ money: 1, items: {} }), '1 Money');
 });
+
+/* ---------- rule sideOpen ---------- */
+
+test('PK-6 rule sideOpen: a side area’s obstacle opens with the badge alone; never without the badge', () => {
+  const S = modules['run-side'],
+    M = { type: 'Grass', name: 'Cut' },
+    team = [
+      { name: 'Wave', types: ['Water'] },
+      { name: 'Leafy', types: ['Grass'] },
+    ],
+    noGrass = [team[0]],
+    badges = { grass: 1 },
+    { P } = perks({ id: 'test_rope', fx: [{ kind: 'rule', rule: 'sideOpen', n: 1 }] });
+  /* as before without it */
+  assert.deepEqual(S.fieldMoveState(M, badges, noGrass), { state: 'needType', billie: '' });
+  assert.deepEqual(S.fieldMoveState(M, badges, team), { state: 'ask', billie: 'Leafy' });
+  /* with it: anyone uses it (the type's first still first) */
+  assert.deepEqual(S.fieldMoveState(M, badges, noGrass, true), { state: 'ask', billie: 'Wave' });
+  assert.deepEqual(S.fieldMoveState(M, badges, team, true), { state: 'ask', billie: 'Leafy' });
+  assert.deepEqual(S.fieldMoveState(M, {}, noGrass, true), { state: 'needBadge', billie: '' });
+  withPerks(P, () => {
+    assert.equal(S.fieldRope(runOf('test_rope')), true);
+    assert.equal(S.fieldRope(runOf()), false);
+    assert.equal(S.fieldRope(null), false);
+  });
+});

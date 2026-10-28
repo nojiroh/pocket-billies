@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2617"
+    "game/js/logic/data-checks.js:2619"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2617"
+    "game/js/logic/data-checks.js:2619"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:565",
-    "game/js/logic/data-checks.js:2619"
+    "game/js/logic/data-checks.js:2621"
    ]
   },
   {
@@ -1610,7 +1610,7 @@
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
    "game/js/logic/cutscene-set.js:142",
-   "game/js/logic/rules.js:936",
+   "game/js/logic/rules.js:937",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:220",
    "game/js/prop-models.js:349",
@@ -1645,7 +1645,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2773",
+   "game/js/logic/data-checks.js:2775",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1779,11 +1779,11 @@
    "game/js/logic/robot-joints.js:48",
    "game/js/logic/robot-joints.js:87",
    "game/js/logic/robot-joints.js:193",
-   "game/js/logic/rules.js:673",
-   "game/js/logic/rules.js:689",
-   "game/js/logic/rules.js:714",
-   "game/js/logic/rules.js:716",
-   "game/js/logic/rules.js:723",
+   "game/js/logic/rules.js:674",
+   "game/js/logic/rules.js:690",
+   "game/js/logic/rules.js:715",
+   "game/js/logic/rules.js:717",
+   "game/js/logic/rules.js:724",
    "game/js/robot-art.js:324",
    "game/js/robot-art.js:326",
    "game/js/robot-art.js:328",
@@ -1833,7 +1833,7 @@
   "leaf": [
    "game/js/battle.js:378",
    "game/js/boot.js:137",
-   "game/js/field-moves.js:146",
+   "game/js/field-moves.js:148",
    "game/js/logic/placeholder-art.js:270",
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",

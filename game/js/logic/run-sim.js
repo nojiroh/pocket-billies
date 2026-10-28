@@ -138,7 +138,7 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runTownSize, runWorldNode, runWeather } = modules['run-map'],
-    { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
+    { fieldBadgeKey, fieldMoveState, fieldRope, runSideOpen } = modules['run-side'],
     MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
@@ -612,7 +612,7 @@ export function runSimOn(env) {
         /* on: into the side area when its field move can be used here (the policy takes it), out by its way out
            at its last place, else a lane drawn from the seed */
         const next = runNext(run.map, i),
-          side = simSideNext(run.map, i, s.meta.badges, simTypes());
+          side = simSideNext(run.map, i, s.meta.badges, simTypes(), fieldRope(run));
         if (side) {
           if (side.open) {
             runSideOpen(run.map);
@@ -759,12 +759,13 @@ export function runSimOn(env) {
    * RL-R2b: the policy at a side area: from the obstacle's place into the side when its field move can be used (the
    * badge kept and a Billie of the type standing: `open`), from its last place out by its way out; else null (the
    * lane as usual) @param {any} map @param {number} i @param {Record<string, number>} badges
-   * @param {{ name: string, types: string[] }[]} team @returns {{ to: number, open?: boolean } | null}
+   * @param {{ name: string, types: string[] }[]} team @param {boolean} [rope] PK-6: a sideOpen rule held (Coil of
+   * Rope: the badge alone) @returns {{ to: number, open?: boolean } | null}
    */
-  function simSideNext(map, i, badges, team) {
+  function simSideNext(map, i, badges, team, rope = false) {
     const S = map.side;
     if (!S) return null;
-    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team).state === 'ask')
+    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team, rope).state === 'ask')
       return { to: S.nodes[0], open: true };
     if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) return { to: S.to };
     return null;

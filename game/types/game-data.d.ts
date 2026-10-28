@@ -2032,8 +2032,8 @@ export type FxKindRow =
   | { kind: 'benchXp'; share: number }
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
    * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
-   * PK-6: cap, n more Perks held) */
-  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap'; n: number }
+   * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone) */
+  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap' | 'sideOpen'; n: number }
   /** PK-5: a Billie you catch joins n levels higher */
   | { kind: 'catchLevel'; n: number }
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
