@@ -13,6 +13,7 @@ import { pbFlyTo, pbNudge, pbSlideBar, pbSound, reduced } from './ui-kit.js';
 /* eslint-disable no-func-assign */
 expose({
   ENTER_ROWS: [() => ENTER_ROWS],
+  PRESS_INNER: [() => PRESS_INNER],
   PRESS_SEL: [() => PRESS_SEL],
   SEL_GROUP: [() => SEL_GROUP],
   SEL_ON: [() => SEL_ON],
@@ -40,13 +41,18 @@ expose({
 const PRESS_SEL =
   'button, [role="button"], [role="tab"], [role="radio"], a[href], .k-card, .bag-row, .pickrow, .mon, .bx, .ccard, ' +
   '.pick, .option, .fchip, .qb, .pc-thumb, .gfx-pre, .tb-me, .ttl-cont, .pk-arrow, .ware';
+/* kit parts that hold several buttons: the button pressed squashes, not the whole part (the bottom bar squashed whole,
+   its cut outline and all, which read as angular on the owner's phone) */
+const PRESS_INNER = new Set(['pb-nav-bar']);
 /** the control a pointer is on: a kit part's host when the press is inside its shadow root @param {Event} ev */
 function pressTarget(ev) {
   const path = ev.composedPath ? ev.composedPath() : [ev.target];
   for (const el of path) {
     if (!(el instanceof Element) || !el.matches(PRESS_SEL)) continue;
     const root = el.getRootNode();
-    return root instanceof ShadowRoot && root.host.localName.startsWith('pb-') ? root.host : el;
+    return root instanceof ShadowRoot && root.host.localName.startsWith('pb-') && !PRESS_INNER.has(root.host.localName)
+      ? root.host
+      : el;
   }
   return null;
 }

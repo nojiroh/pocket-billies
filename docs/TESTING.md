@@ -417,6 +417,12 @@ same phase:
   of perks.json (catch odds, a catch, a throw, arrivals, purchases, reward picks, the map, a leader's pay, salvage),
   and battles holding all 42 Wave A-C Perks; `perks.test.mjs` needs bots (a scrapyard ahead, behind, none);
   `data-checks.test.mjs` the kinds' rows; the run sim's money ledger counts what Perks pay (moneyIn.perks).
+  PK-6: `tools/test/battle-perks-wave-d.test.mjs` checks Wave D's kinds with test-only Perks (the cap and letting a cap
+  Perk go; copy, never itself or another copier, its own marks and the card's words; give at take, once; sideOpen;
+  sideFind's finds more in a side place, the rest unchanged; eventHurt; needs side; a growth on the card), then each
+  of the 11 Wave D Perks of perks.json, Like Button and Streak Tracker over a run of wins and faints and in real
+  battles, a Photocopier copying a growing Perk, and battles holding all 53 Wave A-D Perks; `data-checks.test.mjs` the
+  kinds' rows and needs side; the run sim counts a take's Moneys (moneyIn.perks).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
@@ -431,13 +437,15 @@ same phase:
   alone with `python3 tools/check-studio-github.py --only=ui` (about a minute; `--only=` takes any names from its
   `STEPS`, plus `sections` and `art` for the two blocks before them). A new uiTheme.json group needs its schema,
   its dials in logic/ui-dials.js and its writer in logic/ui-theme.js together, or the tests fail.
-  The Actions sheet (walk-tab.js walkSheetSync, a `<pb-sheet id="walkSheet">` over the world since 2026-10-23):
-  smoke and the full check run "Actions sheet: ..." (`actions_sheet_step`, about 22 s in smoke) on the `town`
-  fixture at 1280x800: four mouse-wheel turns leave it closed and the page unscrolled; the Actions button opens it;
-  Esc closes it; Tab opens it with the focus on its first button and closes it; "show me the way" to the ranch closes
-  it and sets `walkView.mark`. The full check also opens it on the `run` fixture for the day chip, today's weather
-  and "Open the map to move on". The words (logic/run-loop.js `runSheetStatus`, `weatherEffectText`) are unit-tested
-  in run-loop.test.mjs.
+  The Actions bar (walk-tab.js walkSheetSync, a row of small buttons `#walkSheet.walk-tray` right on top of the
+  bottom bar since 2026-10-28; a `<pb-sheet>` over half the screen before): smoke and the full check run "Actions
+  bar: ..." (`actions_sheet_step`, about 25 s in smoke) on the `town` fixture at 1280x800: four mouse-wheel turns
+  leave it closed and the page unscrolled; the Actions button opens it (a row whose top is in the screen's lower part,
+  over the bottom bar) and closes it; Esc closes it; Tab opens it with the focus on its first button and closes it;
+  "show me the way" to the ranch closes it and sets `walkView.mark`; a wild Billie's button (nearest first) closes it
+  and walks you there (`walkView.pl.route`, no battle yet). The full check also opens it on the `run` fixture for the
+  day button (its toast says today's weather, the bar stays open) and the map. The words (logic/run-loop.js
+  `runSheetStatus`, `weatherEffectText`) are unit-tested in run-loop.test.mjs.
 - **Roguelite track** (docs/phases/roguelite-track.md): RL-5 parked every place but Copperleaf. The fast check
   (`tools/check-fast.py`, CI) and its fixtures start there (`town`, `room` = Kappi's lab, `battle` = Leader Rocco); the
   `route` and `cave` fixtures and checks, the full check's road walks, seams, close-ups and the flight to another town

@@ -527,6 +527,34 @@ unused-art gate.
   not a row's condition. The run sim's ledger gained `moneyIn.perks` (Tip Jar, Punch Card), so money still adds up.
 - `run-sim.mjs --runs=50` still stops in scene mode on main too ("node 8 has no exit north3" at 485674b5).
 
+**Corrected in PK-6** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- Section 5.5's claims checked at 2d862040 (main, PK-1..PK-5 merged by #316): Like Button, Streak Tracker, Selfie
+  Stick, Time Card and Travel Pillow needed data only (PK-1's grow with its reset and `if`, a heal at catch, `every` at
+  arrive, `place:town`). The faint moment resets growth on the run's marks in battle (a battle carries
+  `run.perkState`), so Streak Tracker starts over as soon as one of yours faints, even in a battle then won.
+- **rule cap**: `perks.js perkCap` (rules.json's cap plus the rows) is read wherever the cap was (perkTake, the pick, the
+  "Let one go" sheet and the Perks tab's count, the shop, the debug menu, the run sim). **Letting a cap Perk go is
+  refused** when it would leave more held than the lower cap (`perkDropOk`, perkTake's `'cap'`); the "Let one go"
+  sheet doesn't offer it. The online run record still keeps 6 (`run-record.js`): a 7th or 8th is left out of it.
+- **copy** is a row standing for the rows of the Perk just above it in `run.perks` (`effects.js fxPerkRows`), tagged
+  with the copier's own id: its counters and growth are its own marks, starting when it starts copying (a Photocopier
+  under Like Button grows from 0), and battle lines name the Photocopier. Taken under Boarding Pass it gives again;
+  under Accordion File it holds one more (cap 8). The card says "copies <Perk>" or "copies nothing" and the copied
+  rows' counters. A copy row takes no other field.
+- **give** (`money`, `items`: items.json ids) acts at `take` only; perkTake toasts what it gave. Without the save (a
+  preview) nothing is given. The run sim counts a take's Moneys (moneyIn.perks).
+- **rule sideOpen** works at a run's side area obstacle only (`run-side.js fieldMoveState`'s `anyone`, `fieldRope`):
+  the badge is still needed, then the type's first Billie, else the team's first, uses the move. A route's brambles
+  and Surf still need a Billie of the type (the plan said "side areas"). Coil of Rope's text says "way".
+- **rule sideFind**: finds are put into the scenes when the run's world is made, not when a Perk is taken, so a side
+  place always gets up to 2 more finds (`route-finds.js ROUTE_FIND_MORE`, their own stream, `more: k`) that show only
+  while the rule counts that many (`routeFindsMore`). The main path's finds and brambles are unchanged.
+- **rule eventHurt** (n 1) keeps an event's `hurt` command off (`run-loop.js runEventSafe`); the sheet says "Ten-Foot
+  Pole kept your team out of harm's way." Statuses from events are Oven Mitts' and others' (`immune`), not this.
+- **needs: side** holds while a side area is ahead: one not open whose obstacle's place is here or on a row ahead, or
+  one open with a place not visited (`perks.js perkRunSide`).
+- A growing row's card shows its growth ("+12%", PK-1's rule 4); Like Button and Streak Tracker are the first.
+
 ## 8. Offers (PK-4, PK-7)
 - `needs` on a Perk (a condition: `team:Fire`, `bots`, `side`, `spliced`): unmet, its weight is 0, so a Fire Perk is
   never offered to a team without a Fire Billie. `tags` (types and themes): a tag matching the team's types, or a set
@@ -583,7 +611,7 @@ unused-art gate.
 | PK-3 | Wave A (**done 2026-10-28**, `track/perks`; "Corrected in PK-3" in section 7) | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
 | PK-4 | Wave B (**done 2026-10-28**, `track/perks`; "Corrected in PK-4" in section 8) | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
 | PK-5 | Wave C (**done 2026-10-28**, `track/perks`; "Corrected in PK-5" in section 7) | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
-| PK-6 | Wave D | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
+| PK-6 | Wave D (**done 2026-10-28**, `track/perks`; "Corrected in PK-6" in section 7) | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
 | PK-7 | Fine Print | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
 | PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
 | PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
