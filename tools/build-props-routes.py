@@ -11,7 +11,7 @@ in the style of phase 09's batches (tools/build-props-batch1.py .. batch11b.py a
     wayside    milestone, waymarker_post, shrine_small (a stone niche, a solar cell on its roof, a glowing seed)
     farm       haystack, rain_barrel, water_pump, beehive_stand, tool_shed, veg_patch_frame
     solarpunk  wind_turbine_small, solar_post_light, seed_library_box
-    Bureau     bureau_barrier, bureau_crate (no logo: the Bureau's look is the owner's call)
+    Bureau     bureau_barrier, bureau_crate (SY-7: red tape on both)
   RP-3, the converter test (tools/glb-to-recipe.py from CC0 models in validation/cc0-src; showcase only):
                wind_turbine_small_cc0, footbridge_wood_cc0, arch_ruin_cc0
 
@@ -64,6 +64,7 @@ HAY, HAY_D = BI.HAY, BI.HAY_D
 SOLAR = '#3E5A8C'
 SLATE, SLATE_D, MUSTARD = '#7E8496', '#5E6274', '#E0B040'
 WHITE = '#F4F0E8'
+TAPE, TAPE_D = RED, RED_D  # SY-7: the Bureau's red tape (the scenery's red, beside the wax seal)
 # RP-3: the colours a converted CC0 model snaps to (tools/glb-to-recipe.py), each with the texture it is drawn with
 CC0_PALETTE = {
     'stone': (STONE, 'stone'), 'stone dark': (STONE_D, 'stone'), 'stone light': (STONE_L, 'stone'),
@@ -553,7 +554,7 @@ def seed_library_box():
 # ================================================================ new: the Bureau
 def bureau_barrier():
     """A Bureau road barrier: two grey A-frame legs holding a board striped slate and mustard, a laminated notice
-    clipped to it, a warning lamp on top. No logo (to be decided)."""
+    clipped to it, a warning lamp on top, red tape round it (SY-7)."""
     w = 1.6
     L = []
     for sx in (-1, 1):
@@ -567,12 +568,20 @@ def bureau_barrier():
           box(0.0, -0.07, 0.88, 0.1, 0.02, 0.03, '#3A3448', 'metal', 'clip'),
           cyl(w / 2 - 0.2, -0.03, 0.94, 0.06, 0.1, '#F49A3A', 'plain', 'warning lamp', 8),
           cyl(w / 2 - 0.2, -0.03, 1.04, 0.07, 0.02, '#3A3448', 'metal', 'lamp cap', 8)]
+    # SY-7: red tape, wound twice round the board, one end hanging, and strung between the legs in a stepped sag
+    L += [box(sx * 0.45, -0.03, 0.71, 0.05, 0.07, 0.24, TAPE, 'plain', 'red tape') for sx in (-1, 1)]
+    L.append(box(0.47, -0.07, 0.55, 0.05, 0.01, 0.16, TAPE_D, 'plain', 'red tape end'))
+    x0, n = w / 2 - 0.16, 7
+    for i in range(n):
+        u = (i + 0.5) / n
+        L.append(box(-x0 + 2 * x0 * u, -0.03, r2(0.5 - 0.12 * 4 * u * (1 - u)), 2 * x0 / n + 0.005, 0.02, 0.06, TAPE,
+                     'plain', 'red tape'))
     return rec(B1.shift_y(L, 0.25))
 
 
 def bureau_crate():
     """A Bureau evidence crate: grey ribbed metal with mustard corner guards, a white label with a barcode, a red wax
-    seal over the lid and a smaller crate on top."""
+    seal over the lid and a smaller crate on top, all taped up in red (SY-7)."""
     L = [box(0, 0, 0, 0.9, 0.7, 0.62, SLATE, 'metal', 'crate'),
          box(0, 0, 0.62, 0.94, 0.74, 0.05, SLATE_D, 'metal', 'lid')]
     for sx in (-1, 1):
@@ -585,6 +594,11 @@ def bureau_crate():
           {**sphere(0, -0.37, 0.64, 0.07, '#B0303C', 'plain', 'wax seal', 8, 3), 'ry': 0.03},
           box(0.1, 0.05, 0.67, 0.46, 0.4, 0.3, SLATE_D, 'metal', 'small crate'),
           box(0.1, -0.16, 0.76, 0.2, 0.01, 0.1, WHITE, 'plain', 'label')]
+    # SY-7: red tape crossed over it like a parcel (each band a shell just outside the crate and lid), one more over
+    # the small crate
+    L += [box(-0.3, 0, 0, 0.07, 0.76, 0.68, TAPE, 'plain', 'red tape'),
+          box(0, 0.12, 0, 0.96, 0.07, 0.68, TAPE, 'plain', 'red tape'),
+          box(0.22, 0.05, 0.67, 0.07, 0.42, 0.31, TAPE, 'plain', 'red tape')]
     return rec(L)
 
 
