@@ -789,6 +789,68 @@ the speaker and on headphones: Copperleaf (the sea never covers the hub song), f
 campfire, walking and running; no hiss, whine or buzz; one bird at a time; soft, varied steps; in the debug log few
 beds live and 0 late steps.
 
+### SND-8a as built (2026-10-27/28, branch `track/sound`, tag `snd-8a-done` for the owner to push)
+27 commits, one cause each; no fingerprint changed (194, 0 changed at the end; nothing the renders call was
+touched, the tracker only gained two counters).
+- **Tools**: the after-edit hook runs `tracker.test.mjs` and `sound.test.mjs` for `audio/` and sound.js;
+  `tools/sound-loudness.mjs` (BS.1770 K-weighting at any rate, gated integrated LUFS, the 3 s maximum, peak, the
+  400 Hz-6 kHz phone band, the 2-6 kHz share; `sound-loudness.test.mjs`: the standard's 48 kHz coefficients, a 997 Hz
+  sine at -3.01 LUFS); `check-sound.py --loudness` (stereo renders at default sliders through the game's own code,
+  every song's day version, 17 world sounds, three made-up scenes, LU under the route song with the beds' -3 dB duck;
+  ceilings warn only).
+- **logic/ambience-sound.js** (`ambience-sound.test.mjs`, 13 tests): seeded noise colours and seamless loops, drift,
+  start/stop with 2.5 s of hysteresis, crickets, crackles, the bird wait, footsteps by ground, water buckets, the bed
+  recipes `AMBIENCE_BEDS`, `AMBIENCE_SOURCES`, `AMBIENCE_FIXED`, `ambiencePreview`.
+- **sound.js**: the beds' own pink (6 s) and brown (8 s) loops (43 ms and 2.4 MB in headless Chromium); beds built
+  from the recipes; drift instead of the 10 LFOs; sources made on start and stopped once faded (the Animals step
+  saw 5 of 14 live in Copperleaf); water by buckets (0.93 to 0.006 ms per lookup, the same answers at 2,400 probes);
+  rain, stream, fountain, leaves, town, wind, sea (the coast-wide level 0.35 to 0.2), fire (roar, hiss, crackles)
+  and crickets (chirp groups) re-voiced; birds one at a time (about one call in 10 s outside towns, 14-30 s in one),
+  0.88 of the pitch and 0.6 of the level, through a 6 kHz low-pass; rooms read `environment.raw.night`; footsteps
+  varied, the natural grounds (`AMBIENCE_SOFT_GROUND`) on a soft thump and scuff, on the World bus; trims from the
+  report; `ambiencePreviewTick` for the report and the Sound test.
+- **Debug log** `audio` (debugLog.more, from sound.js `soundDebugLines`): state, rate, song, latency, state changes,
+  late steps (the tracker's `late`), sources in the last minute, live beds and their levels, live sources, the bed
+  noise's ms and KB; `updateAmbience` timed as "world sounds".
+- **Sound test** (debug menu, section `sound`, game/js/sound-test.js): a song by day or at night; 21 world sounds
+  or scenes at 1-20 m; Stop; stops when the menu closes (`musicSync` waits while `soundEngine.test`; `updateAmbience`
+  plays `ambience.preview` instead of the place).
+
+Loudness (LU against the route song, -31.9 LUFS, at default sliders, beds 3 dB under a song; before = code at
+0b6ea1df):
+
+| Sound | Before | After | | Sound | Before | After |
+|---|---|---|---|---|---|---|
+| rain | +4.6 | -13.9 | | fountain 3 m | -8.3 | -15.2 |
+| storm wind | -12.5 | -15.2 | | pond 3 m | -30.1 | -24.2 |
+| leaves | -7.1 | -18.2 | | lava 3 m | -20.8 | -16.1 |
+| crickets | -7.4 | -19.0 | | fire 2 m | -12.3 | -16.8 |
+| town murmur | -24.1 | -20.0 | | sea, the coast | -13.5 | -18.0 |
+| cave | -15.9 | -16.0 | | sea 3 m | -13.5 | -15.0 |
+| room | -21.5 | -19.9 | | birds (max 3 s) | -20.0 | -27.1 |
+| stream 3 m | -10.1 | -14.7 | | steps on a lawn | -29.5 | -27.4 |
+| falls 3 m | -5.2 | -13.0 | | | | |
+
+The 2-6 kHz share fell where it grated: rain 50 to 11 %, fountain 54 to 20 %, stream 41 to 12 %, fire 65 to 7 %.
+Scenes: Copperleaf's square -7.1 to -11.2, a route in rain +4.9 to -12.3, a meadow at night -4.7 to -16.6. The hub
+song is still -15.2 LU (SND-8b's trim).
+
+**Corrections found in SND-8a** (checked in the code):
+- The report's "before" levels sit 3-4 LU under the listening page's (rain +4.6 here against +7.8 there, a stream
+  -10.1 against -6.8): this report renders through the game's own code at 44.1 kHz with each bed at its own source
+  gain; the page ported the beds by hand at 48 kHz. Both agree on the order and on rain over the music.
+- `check-sound.py` takes about 1-3.5 min here (TESTING's "about 1 min" holds on a quiet machine).
+- The loudness meter is in `tools/`, not `logic/`: ui-lint's page walk and the Studio's logic worker expect every
+  logic module to be loaded by a page, and nothing in the game needs a meter.
+- A new `logic/` module needs a script tag on game/index.html (to-module finds modules by the pages' tags) and a line
+  in studio/js/logic-worker-modules.js.
+- Headless Chromium's audio clock ran about 2.7 times faster than the wall clock: anything scheduled per 200 ms tick
+  needs a lookahead longer than the tick (the Sound test's steps had 0.2 s; now 0.3 s like the drift and events).
+- `studio/art-code-refs.json` records sound.js line numbers, so commits from the beds' recipes up to the debug lines
+  fail `npm run lint`'s art-code-refs check; the Sound test commit refreshes it. Run `node tools/art-code-refs.mjs`
+  after moving lines in sound.js.
+- Footsteps on the World bus also fade in on arrival and sit 3 dB lower under a four-voice song, like the beds.
+
 ## SND-8b: mix fixes (draft)
 Each commit rendered against the one before it in a worktree, as SND-6 did; then the baseline written once, with plain
 `--baseline` (never `--baseline --only=X` for a jingle or a cry: it rewrites X's whole file, keeping only X).

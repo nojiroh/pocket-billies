@@ -457,6 +457,14 @@ same phase:
   Since RL-R2 (594a094e) there is no deadline version: `musicParts` names none, "Run music" no longer looks for one,
   and `sound.test.mjs` asserts there is none (the SND-5 lines above are history). The baseline holds 194 fingerprints
   (checked in SND-7, 2026-10-27).
+  SND-8a: `python3 tools/check-sound.py --loudness` adds a loudness report after the comparison (never its exit
+  status): every song's day version and 17 world sounds and three made-up scenes, rendered in stereo at default
+  sliders through the game's code (sound.js `ambiencePreviewTick`, as the debug menu's Sound test plays them) and
+  measured by `tools/sound-loudness.mjs` (BS.1770), in LU under the route song; a bed over -12 LU or an event's 3 s
+  maximum over -8 LU warns (ceilings warn until SND-15). Unit tests: `sound-loudness.test.mjs`,
+  `ambience-sound.test.mjs`; the after-edit hook runs `tracker.test.mjs` and `sound.test.mjs` for `audio/` and sound.js.
+  The full check's Debug menu step expects eleven sections (`sound` after `places`); the Animals step names the live
+  beds (never all 14, never the crickets by day).
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

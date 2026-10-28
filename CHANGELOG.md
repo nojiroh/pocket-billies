@@ -9,6 +9,13 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Calmer world sounds** (sound track SND-8a): rain, streams, fountains, the sea, wind, leaves, a town's murmur, a
+  campfire and crickets are re-made from soft noise that wanders instead of wobbling, and sit well under the music
+  (rain was louder than the songs; now every one is at least 12 LU under the route song). Crickets chirp in groups
+  with rests, a fire crackles, birds call one at a time about every ten seconds, footsteps differ a little each step
+  and are soft on grass, sand and earth, and follow the World slider. Rooms hear the place's night outside. Sounds
+  that aren't heard stop running, which saves the phone work. The debug menu has a Sound test.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)
