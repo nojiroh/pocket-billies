@@ -95,9 +95,10 @@
   background: rgba(255, 90, 90, 0.2);
   color: #ffb8b8;
 }
+/* UI-17: the low-HP fill pulses on opacity (Part 2: never an animated filter), on the screen edge's own 1.3 s beat */
 @keyframes low {
   50% {
-    filter: brightness(1.5);
+    opacity: 0.55;
   }
 }
 @keyframes bob {
@@ -1099,7 +1100,7 @@ body.battle-3d #camFg {
 }
 .bplate .pl-hp .fill.low {
   background: linear-gradient(color-mix(in srgb, var(--sig-bad) 55%, #ffffff), var(--sig-bad));
-  animation: low 0.7s steps(2) infinite;
+  animation: low 1.3s ease-in-out infinite;
 }
 .bplate .pl-bot {
   display: flex;
