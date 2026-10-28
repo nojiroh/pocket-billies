@@ -53,6 +53,40 @@
   --m-exit: 180ms;
   --m-pop: 150ms;
   --m-float: 600ms;
+  /* DL-3: the dialogue bubble (uiTheme.json motion bubble*; logic/ui-theme.js writes the same from the data): its
+     spring (logic/motion.js springEase(0.35, 0.7)) and how long it takes, the size it pops in from, the most its frame
+     tilts, its idle loops' strength */
+  --bubble-spring: linear(
+    0,
+    0.043,
+    0.147,
+    0.282,
+    0.426,
+    0.565,
+    0.688,
+    0.793,
+    0.877,
+    0.94,
+    0.986,
+    1.016,
+    1.035,
+    1.044,
+    1.046,
+    1.044,
+    1.039,
+    1.033,
+    1.026,
+    1.02,
+    1.014,
+    1.009,
+    1.005,
+    1.003,
+    1
+  );
+  --bubble-spring-ms: 422ms;
+  --bubble-pop: 0.6;
+  --bubble-tilt: 3deg;
+  --bubble-idle: 0.6;
   /* UI-15: a place's arrival title before it folds into the top bar, and a walking hint before it fades (walk-tab.js
      PLACE_TITLE_MS and WALK_HINT_MS hold the same numbers) */
   --m-title: 4500ms;

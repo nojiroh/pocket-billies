@@ -21,9 +21,11 @@ import {
   signalSetColours,
   signalVars,
 } from './signals.js';
+import { springEase, springMs } from './motion.js';
 import { styleVarsCss } from './style-dials.js';
 /* eslint-disable no-func-assign */
 expose({
+  BUBBLE_MOTION: [() => BUBBLE_MOTION],
   RING: [() => RING],
   UI_CONTRAST: [() => UI_CONTRAST],
   UI_DERIVED: [() => UI_DERIVED],
@@ -261,6 +263,16 @@ export function sharedVars(look) {
     ['spring', '--spring'],
   ]))
     if (Array.isArray(mo[k]) && mo[k].length === 4) out.push(`${v}: cubic-bezier(${mo[k].join(', ')});`);
+  // DL-3: the dialogue bubble's spring (logic/motion.js springEase), its pop-in's first size, its tilt and its idle
+  // loops' strength (dialogue.css, motion.css)
+  if (typeof mo.bubbleResponse === 'number' || typeof mo.bubbleDamping === 'number') {
+    const r = mo.bubbleResponse ?? BUBBLE_MOTION.bubbleResponse,
+      z = mo.bubbleDamping ?? BUBBLE_MOTION.bubbleDamping;
+    out.push(`--bubble-spring: ${springEase(r, z)};`, `--bubble-spring-ms: ${springMs(r, z)}ms;`);
+  }
+  if (typeof mo.bubblePop === 'number') out.push(`--bubble-pop: ${mo.bubblePop};`);
+  if (typeof mo.bubbleTilt === 'number') out.push(`--bubble-tilt: ${mo.bubbleTilt}deg;`);
+  if (typeof mo.bubbleIdle === 'number') out.push(`--bubble-idle: ${mo.bubbleIdle};`);
   // UI-8: the minimap (js/minimap.js reads these where its canvas sits): its span, the compact bar's timing, its marks
   const mm = look.minimap || {};
   if (typeof mm.span === 'number') out.push(`--minimap-span: ${mm.span};`);
@@ -322,6 +334,15 @@ export const UI_SHAPE_FAMILIES = {
   },
   // DL-3: a thought: a soft rounded cloud with no tail (a trail of dots stands in for it, span.talk-dots)
   bubbleThink: { kind: 'rounded', size: 'cutLg', corners: [], radius: 30, lift: true },
+};
+/** DL-3: the dialogue bubble's motion without data (uiTheme.json motion; tokens.css holds the same): the spring's
+ * response (s) and damping, the pop-in's first size, the tilt's most (degrees) and the idle loops' strength */
+export const BUBBLE_MOTION = {
+  bubbleResponse: 0.35,
+  bubbleDamping: 0.7,
+  bubblePop: 0.6,
+  bubbleTilt: 3,
+  bubbleIdle: 0.6,
 };
 export const UI_SHAPE_DEFAULTS = { cutSm: 4, cutMd: 8, cutLg: 12, slant: 10, step: 4, stepped: false };
 export const RING = 48;

@@ -98,6 +98,11 @@
    "exit": 180,
    "pop": 150,
    "float": 600,
+   "bubbleResponse": 0.35,
+   "bubbleDamping": 0.7,
+   "bubblePop": 0.6,
+   "bubbleTilt": 3,
+   "bubbleIdle": 0.6,
    "easeOut": [0.2,0.8,0.2,1],
    "easeIn": [0.4,0,1,1],
    "spring": [0.3,1.6,0.5,1]

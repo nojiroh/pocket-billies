@@ -25,6 +25,7 @@ import {
   UI_FROM_SIGNALS,
   UI_ROLES,
   UI_SHAPE_DEFAULTS,
+  BUBBLE_MOTION,
 } from '../../game/js/logic/ui-theme.js';
 
 const THEME = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/uiTheme.json'), 'utf8'));
@@ -459,4 +460,17 @@ test('seededRandom: the same seed, the same numbers, all in [0, 1)', () => {
     assert.equal(x, b());
     assert.ok(x >= 0 && x < 1);
   }
+});
+
+test('DL-3: tokens.css holds the bubble motion the data writes (a page without uiTheme.json moves the same)', () => {
+  const tok = readFileSync(join(import.meta.dirname, '../../game/css/tokens.css'), 'utf8')
+    .replace(/\s+/g, ' ')
+    .replace(/\( /g, '(')
+    .replace(/,? \)/g, ')');
+  const light = blockOf(uiThemeCss(THEME), ':root');
+  for (const k of ['--bubble-spring', '--bubble-spring-ms', '--bubble-pop', '--bubble-tilt', '--bubble-idle']) {
+    assert.ok(light[k], `${k} is written`);
+    assert.ok(tok.includes(`${k}: ${light[k]};`), `tokens.css ${k}: ${light[k]}`);
+  }
+  for (const [k, v] of Object.entries(BUBBLE_MOTION)) assert.equal(THEME.defaults.motion[k], v, k);
 });

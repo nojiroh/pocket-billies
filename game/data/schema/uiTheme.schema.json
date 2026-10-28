@@ -189,6 +189,11 @@
     "exit": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-exit, ms: things leaving (a toast, a sheet's fly-to)"},
     "pop": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-pop, ms: a number's or a target's pop"},
     "float": {"type": "number", "minimum": 0, "maximum": 2000, "description": "UI-16a: --m-float, ms: a floating number's rise after its pop"},
+    "bubbleResponse": {"type": "number", "minimum": 0.1, "maximum": 1, "description": "DL-3: s, the dialogue bubble's spring: how long one swing takes (--bubble-spring, logic/motion.js springEase)"},
+    "bubbleDamping": {"type": "number", "minimum": 0.3, "maximum": 1, "description": "DL-3: the bubble's spring's damping: 1 never overshoots, lower bounces more"},
+    "bubblePop": {"type": "number", "minimum": 0.3, "maximum": 1, "description": "DL-3: --bubble-pop, the size a bubble pops in from (1: no pop)"},
+    "bubbleTilt": {"type": "number", "minimum": 0, "maximum": 8, "description": "DL-3: --bubble-tilt, degrees: the most a bubble's frame tilts (each line picks its own, a skin may lean more or less)"},
+    "bubbleIdle": {"type": "number", "minimum": 0, "maximum": 2, "description": "DL-3: --bubble-idle: the active bubble's float, wiggle and breathing, times UI-2's"},
     "easeOut": {"$ref": "#/$defs/ease"},
     "easeIn": {"$ref": "#/$defs/ease"},
     "spring": {"$ref": "#/$defs/ease"}
