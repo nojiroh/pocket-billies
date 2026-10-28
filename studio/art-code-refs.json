@@ -118,7 +118,7 @@
   {
    "p": "next/palette.js",
    "at": [
-    "game/index.html:82"
+    "game/index.html:83"
    ]
   },
   {
@@ -137,7 +137,7 @@
   {
    "p": "next/rigs-next.js",
    "at": [
-    "game/index.html:81"
+    "game/index.html:82"
    ]
   },
   {
@@ -1541,7 +1541,7 @@
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:1016",
+   "game/js/battle.js:1202",
    "game/js/billie-sheet.js:119",
    "game/js/billie-sheet.js:171",
    "game/js/billie-sheet.js:180",
@@ -1581,7 +1581,7 @@
    "game/js/ui-run-kit.js:88"
   ],
   "box": [
-   "game/js/battle.js:1180",
+   "game/js/battle.js:1366",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
@@ -1632,7 +1632,7 @@
    "game/js/art.js:197",
    "game/js/battle-stage.js:1523",
    "game/js/battle-stage.js:2251",
-   "game/js/battle.js:1016",
+   "game/js/battle.js:1202",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
    "game/js/logic/marks.js:179",
@@ -1779,7 +1779,7 @@
    "game/js/ui-run-kit.js:1628"
   ],
   "leaf": [
-   "game/js/battle.js:353",
+   "game/js/battle.js:372",
    "game/js/boot.js:137",
    "game/js/field-moves.js:146",
    "game/js/logic/placeholder-art.js:270",
@@ -1795,7 +1795,7 @@
    "game/js/world-bowl.js:4202"
   ],
   "moon": [
-   "game/js/battle.js:575",
+   "game/js/battle.js:601",
    "game/js/boot.js:167",
    "game/js/environment.js:658"
   ],
@@ -1820,8 +1820,8 @@
   "pick": [
    "game/js/augment-screen.js:208",
    "game/js/augment-screen.js:230",
-   "game/js/battle.js:831",
-   "game/js/battle.js:1066",
+   "game/js/battle.js:1017",
+   "game/js/battle.js:1252",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
    "game/js/logic/data-checks.js:800",
@@ -1877,7 +1877,7 @@
    "game/js/battle-stage.js:2472",
    "game/js/battle-stage.js:2495",
    "game/js/battle-stage.js:2594",
-   "game/js/battle.js:1365",
+   "game/js/battle.js:1556",
    "game/js/billie-sheet.js:83",
    "game/js/billie-sheet.js:157",
    "game/js/billie-sheet.js:214",
@@ -1907,7 +1907,7 @@
    "game/js/game-data.js:166"
   ],
   "tag": [
-   "game/js/battle.js:661",
+   "game/js/battle.js:687",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"

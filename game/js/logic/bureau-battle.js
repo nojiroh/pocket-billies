@@ -15,6 +15,7 @@ import { expose } from '../test-globals.js';
 import { factionBotOf } from './factions.js';
 /* eslint-disable no-func-assign */
 expose({
+  JOIN_LOCK_MS: [() => JOIN_LOCK_MS],
   NOTICE_SLOTS: [() => NOTICE_SLOTS],
   // @ts-expect-error -- replaced on purpose
   battleFactionOf: [() => battleFactionOf, v => (battleFactionOf = v)],
@@ -31,6 +32,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** when a boss's bots lock together in its join intro, in ms (battle-stage.js case 'join', its LOCK; a test reads it
+ * there): the notice is gone by then */
+export const JOIN_LOCK_MS = 1300;
+
 /** the bots of a boss, in the order the notice lists them (the leader first) */
 export const NOTICE_SLOTS = /** @type {const} */ (['torso', 'armL', 'armR', 'legs']);
 

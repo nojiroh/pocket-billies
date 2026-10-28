@@ -128,3 +128,11 @@ test('bureau-battle: the notice plays inside the join, before the bots lock: up,
       assert.equal(t.gone, lock, 'gone as they lock: no added time');
     }
 });
+
+test("bureau-battle: JOIN_LOCK_MS is the join intro's own lock time (battle-stage.js)", async () => {
+  const { readFileSync } = await import('node:fs'),
+    src = readFileSync(new URL('../../game/js/battle-stage.js', import.meta.url), 'utf8'),
+    m = src.match(/case 'join': \{[\s\S]*?LOCK = (\d+);/);
+  assert.ok(m, "battle-stage.js case 'join' names its LOCK");
+  assert.equal(Number(m[1]), modules['bureau-battle'].JOIN_LOCK_MS);
+});
