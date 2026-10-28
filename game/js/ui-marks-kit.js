@@ -230,7 +230,11 @@ const PbChip = class extends PbCoin {
         font-variant-numeric: tabular-nums;
       }
       .n.bump {
-        animation: m-count var(--m-base) var(--spring);
+        animation: m-count var(--m-pop) var(--spring);
+      }
+      /* UI-16a: ticking up (pb-coin's count), the number takes its family's text shade */
+      .n.tick {
+        color: var(--tone-t, var(--text));
       }
       .l {
         color: var(--text2);
@@ -263,7 +267,10 @@ const PbChip = class extends PbCoin {
       aria-label=${has ? `${runNumber(self.value)} ${name}` : name}
       >${L.icon ? (L.glyph ? markGlyph(L.icon, s, L.sig ? 'var(--tone-t)' : '') : markIcon(L.icon, s)) : nothing}${
         has
-          ? html`<span class="n" aria-hidden="true" @animationend=${e => e.target.classList.remove('bump')}
+          ? html`<span
+              class="n ${self._ticking ? 'tick' : ''}"
+              aria-hidden="true"
+              @animationend=${e => e.target.classList.remove('bump')}
             >${runNumber(self._shown ?? self.value)}</span
           >`
           : nothing

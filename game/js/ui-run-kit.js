@@ -24,8 +24,9 @@ import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { glyphOf, sigVar } from './logic/signals.js';
 import { chipLook, rarityTier } from './logic/marks.js';
+import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
-import { LitElement, css, html, nothing, pbSlideBar, reduced } from './ui-kit.js';
+import { LitElement, css, html, nothing, pbSlideBar, pbSound, reduced } from './ui-kit.js';
 expose({
   PbCoin: [() => PbCoin],
   PbDayChip: [() => PbDayChip],
@@ -439,7 +440,11 @@ export const PbCoin = class extends LitElement {
         font-variant-numeric: tabular-nums;
       }
       .n.bump {
-        animation: m-count var(--m-base) var(--spring);
+        animation: m-count var(--m-pop) var(--spring);
+      }
+      /* UI-16a: ticking up, the number takes its family's colour */
+      .n.tick {
+        color: var(--tone);
       }
       .l {
         color: var(--text2);
@@ -455,7 +460,9 @@ export const PbCoin = class extends LitElement {
     this._shown = null;
     this._raf = 0;
   }
-  /** counts from what it showed to the new value over --m-slow (at once with reduced motion or the first time) */
+  /** counts from what it showed to the new value (at once with reduced motion or the first time). UI-16a: the shared
+   * count (logic/motion.js: 400-700 ms by the size of the change), the number in its family's colour while it ticks,
+   * then a small pop and the count sound; pb-chip (ui-marks-kit.js) counts with this same code */
   willUpdate(ch) {
     if (!ch.has('value')) return;
     const from = this._shown,
@@ -463,15 +470,22 @@ export const PbCoin = class extends LitElement {
     cancelAnimationFrame(this._raf);
     if (from == null || from === to || reduced() || !this.isConnected) {
       this._shown = to;
+      this._ticking = false;
       return;
     }
     const t0 = performance.now(),
-      ms = Math.max(200, runMsVar(this, '--m-slow', 360) * 2);
+      ms = motionCountMs(from, to);
+    this._ticking = true;
     const step = (/** @type {number} */ t) => {
       const k = Math.min(1, (t - t0) / ms);
-      this._shown = from + (to - from) * (1 - (1 - k) ** 3);
+      this._shown = motionCountAt(from, to, k);
       if (k < 1) this._raf = requestAnimationFrame(step);
-      else this.renderRoot.querySelector('.n')?.classList.add('bump');
+      else {
+        this._ticking = false;
+        /* after the redraw, whose class binding would drop it */
+        this.updateComplete.then(() => this.renderRoot.querySelector('.n')?.classList.add('bump'));
+        pbSound('count');
+      }
     };
     this._raf = requestAnimationFrame(step);
   }
@@ -484,7 +498,10 @@ export const PbCoin = class extends LitElement {
     const k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'coin',
       name = this.label || this.kind;
     return html`<span class="chip" role="img" aria-label=${`${runNumber(this.value)} ${name}`}
-      >${runIcon(k)}<span class="n" aria-hidden="true" @animationend=${e => e.target.classList.remove('bump')}
+      >${runIcon(k)}<span
+        class="n ${this._ticking ? 'tick' : ''}"
+        aria-hidden="true"
+        @animationend=${e => e.target.classList.remove('bump')}
         >${runNumber(this._shown ?? this.value)}</span
       >${this.label ? html`<span class="l" aria-hidden="true">${this.label}</span>` : nothing}</span
     >`;
