@@ -429,6 +429,8 @@ export interface LocationData {
   music?: string;
   /** a key of SHOPS */
   shop?: DataId;
+  /** WM-5: a village's or a town's market stall's shop (logic/run-scenes.js runStallId) */
+  stall?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
   gate?: string;
@@ -450,6 +452,8 @@ export interface LocationData {
   side?: 1;
   /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
   waystation?: 1;
+  /** WM-6: a run's route-like place's route number (logic/run-scenes.js runRouteNumbers), on its signs and the map */
+  routeNo?: number;
   /** WA-5a: a run's place with marsh or bog water: its wild Billies weighted toward the marsh's (logic/water-play.js) */
   marsh?: string;
   v47region?: number;
@@ -507,6 +511,11 @@ export interface RunTownRules {
   locals: [number, number];
   names: string[];
   chat: Record<DataId, string[]>;
+  /** WM-5: what each town size (rules.json run.map.townSizes.cells) has: the word in its name ("Meadow Village"), its
+      houses (fewest, most), a market stall (0 or 1) and its quest givers (1 or 2) */
+  sizes?: Record<string, { word: string; houses: [number, number]; stall: number; givers: number }>;
+  /** WM-5: a market stall's wares: `more` a day drawn by weight from `pick` (held items), no Perk */
+  stall?: { more: number; pick: Record<string, number> };
 }
 
 /** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
@@ -1226,6 +1235,12 @@ export interface RunMapRules {
   minibosses: number;
   /** WM-2: the places a path by Expedition (index 0 = Expedition I; past the end, the last): [fewest, most] */
   path?: [number, number][];
+  /** WM-5: the town sizes: each one's cells on the region grid ([wide, tall], smallest first: the step-down's order),
+      and by Expedition (index 0 = Expedition I; past the end, the last) the sizes of a run's towns in order, by how
+      many towns it has ("2", "3") */
+  townSizes?: { cells: Record<string, [number, number]>; order: Record<string, string[]>[] };
+  /** WM-5: the run's own towns' sizes in order (logic/run-map.js runMapLength, from townSizes), unless given */
+  sizes?: string[];
   /** WM-2: the fewest and most towns (each after a mini-boss) a run */
   towns?: [number, number];
   /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */

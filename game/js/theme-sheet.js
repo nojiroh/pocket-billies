@@ -104,17 +104,35 @@ export function styleLog() {
   return styleReport(styleStateNow());
 }
 
-/** UI-1: how many surfaces on screen blur what's behind them (the plan's budget: 3 per screen); the smoke run logs
- * it per screen */
-function uiBlurCount() {
+/** UI-1: how many surfaces on screen blur what's behind them (the plan's budget: 3 per screen besides the two bars);
+ * the smoke run logs it per screen. The checks session after UI-18: pseudo-elements (the top bar's glass is its
+ * `::before`) and shadow trees (the bottom bar's glass is inside pb-nav-bar) count too.
+ * @param {{bars?: boolean}} [o] bars: false leaves out the top bar and the bottom bar (the budget's count) */
+function uiBlurCount(o = {}) {
   let n = 0;
-  for (const el of document.querySelectorAll('body *')) {
-    const s = getComputedStyle(el);
+  const blurs = /** @param {CSSStyleDeclaration} s */ s => {
     const f = s.backdropFilter || s.getPropertyValue('-webkit-backdrop-filter');
-    if (!f || f === 'none') continue;
+    return !!f && f !== 'none' && s.display !== 'none' && s.visibility !== 'hidden';
+  };
+  const onScreen = /** @param {Element} el */ el => {
     const r = el.getBoundingClientRect();
-    if (r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && r.bottom > 0 && r.top < innerHeight) n++;
-  }
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
+  };
+  /** @param {Element | ShadowRoot} root @param {boolean} bar inside a bar */
+  const walk = (root, bar) => {
+    for (const el of root.querySelectorAll('*')) {
+      const inBar = bar || !!el.closest('.topbar, pb-nav-bar');
+      if (el.shadowRoot) walk(el.shadowRoot, inBar);
+      if (inBar && o.bars === false) continue;
+      if (!onScreen(el)) continue;
+      if (blurs(getComputedStyle(el))) n++;
+      for (const p of ['::before', '::after']) {
+        const s = getComputedStyle(el, p);
+        if (s.content && s.content !== 'none' && blurs(s)) n++;
+      }
+    }
+  };
+  walk(document.body, false);
   return n;
 }
 

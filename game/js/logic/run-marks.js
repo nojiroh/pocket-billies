@@ -2,7 +2,7 @@
 'use strict';
 /* ================= RUN MARKS (UI track UI-4) =================
    The run map's node markers as data: one outline per node type on a 100 x 100 box (ui-track.md "Meaning, lightly":
-   diamond boss, hexagon town, chevron route, slanted event; RL-14 a cog for a scrapyard), the colour role each type and state takes, and a canvas
+   diamond boss, hexagon town, chevron route, slanted event; RL-14 a cog for a scrapyard), the colour each type and state takes (UI-18: its family), and a canvas
    painter for the bowl, which draws its pins on a 2D canvas (world-bowl.js worldBowlPin), not in the page. The kit's
    <pb-node> (js/ui-run-kit.js) draws the same outlines as SVG, so a marker reads the same on the bowl and in a list.
    UI-8c (Badges, the owner's pick): each place is also a 36 px pixel icon in art/ui (node-<shape>.svg, painted in the
@@ -20,7 +20,6 @@ expose({
   RUN_MARK_SHAPES: [() => RUN_MARK_SHAPES],
   RUN_MARK_SIZES: [() => RUN_MARK_SIZES],
   RUN_MARK_STATES: [() => RUN_MARK_STATES],
-  RUN_MARK_TONES: [() => RUN_MARK_TONES],
   RUN_MARK_TYPES: [() => RUN_MARK_TYPES],
   // @ts-expect-error -- replaced on purpose
   runMarkClip: [() => runMarkClip, v => (runMarkClip = v)],
@@ -143,20 +142,6 @@ export const RUN_MARK_SHAPES = {
 export const RUN_MARK_TYPES = /** @type {(keyof typeof RUN_MARK_SHAPES)[]} */ (Object.keys(RUN_MARK_SHAPES));
 /** the states a marker can be in: seen (its type shown), current (you are here), visited, locked, hidden ("?") */
 export const RUN_MARK_STATES = ['seen', 'current', 'visited', 'locked', 'hidden'];
-/** each type's colour role (uiTheme.json's roles: primary, gold, danger; surface is the plain card) */
-export const RUN_MARK_TONES = {
-  landing: 'primary',
-  route: 'surface',
-  town: 'primary',
-  miniboss: 'danger',
-  boss: 'danger',
-  event: 'gold',
-  shop: 'gold',
-  rival: 'danger',
-  scrapyard: 'danger',
-  unknown: 'muted',
-};
-
 /** UI-14b: each type's colour family (ui-track.md Part 2, the family table; the same as its chip's, logic/marks.js
  * chipLook): towns good, bosses and the rival bad, shops value, events and "?" special, scrapyards machine; the
  * landing and roads neutral (''). UI-8c's icons are painted in these families; the place card's chip and the list
@@ -184,7 +169,9 @@ export function runMarkLook(type, state = 'seen') {
   return {
     shape: shown,
     points: runMarkShape(shown),
-    tone: state === 'locked' ? 'muted' : state === 'current' ? 'gold' : /** @type {any} */ (RUN_MARK_TONES)[shown],
+    /* UI-18: the flat shape's colours (the bowl's fallback until the icon loads) are its family's too, neutral for the
+       landing and roads, muted while locked; where you stand keeps its family (the glow marks it) */
+    tone: state === 'locked' ? 'muted' : RUN_MARK_FAMILIES[shown] || 'neutral',
     glow: state === 'current',
     /* UI-14b: its colour family (none while locked) */
     family: state === 'locked' ? '' : RUN_MARK_FAMILIES[shown] || '',
@@ -288,15 +275,15 @@ export function runMarkClip(type) {
     .join(', ')})`;
 }
 
-/** draws a marker centred on (x, y), size px across, on a 2D canvas. colors maps a role (primary, gold, danger,
- * surface, muted) to {fill, edge}; the caller reads them from the look (getComputedStyle) so the marker follows
- * uiTheme.json. Pixel-snapped so the 1 px edge stays sharp next to the 32 px art.
+/** draws a marker centred on (x, y), size px across, on a 2D canvas. colors maps a colour family (good, bad, value,
+ * special, machine...; UI-18) and neutral and muted to {fill, edge}; the caller reads them from the look
+ * (getComputedStyle: the --sig-* fills) so the marker follows uiTheme.json's colour code. Pixel-snapped so the 1 px edge stays sharp next to the 32 px art.
  * @param {any} ctx a CanvasRenderingContext2D (or anything with its path calls)
  * @param {number} x @param {number} y @param {number} size @param {string} type @param {string} state
  * @param {Record<string, {fill: string, edge: string}>} colors */
 export function runMarkDraw(ctx, x, y, size, type, state, colors) {
   const look = runMarkLook(type, state),
-    c = colors[look.tone] || colors.surface,
+    c = colors[look.tone] || colors.neutral,
     k = size / 100,
     ox = Math.round(x - size / 2) + 0.5,
     oy = Math.round(y - size / 2) + 0.5;

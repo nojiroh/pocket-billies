@@ -1119,7 +1119,9 @@ def ui_screens_steps(pg, errs):
         pg.click('[data-act=uiPv][data-g=mode][data-v=light]')
         # inspect a team row, and the overlays, on the game itself
         pg.click('#uiInsp')
-        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click()
+        # its top corner: since UI-8b the bottom bar stands 192 px tall (its minimap tile 60 px out of the bar), over the
+        # lead card's middle in the preview (where a plain click taps)
+        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click(position={'x': 24, 'y': 16})
         try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
         except Exception: errs.append('inspect found nothing on the Team screen')
         where = pg.evaluate("(document.querySelector('#uiInspect .ui-insp-h') || {}).textContent || ''")
@@ -1852,6 +1854,8 @@ def music_steps(pg, errs):
     stops it too (no scheduler left running)."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
+    # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
+    pg.click('[data-act=musTab][data-t=songs]')
     try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
     except Exception:
         errs.append('music: the song list never showed'); return

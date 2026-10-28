@@ -66,6 +66,7 @@ import '../../game/js/logic/history.js';
 import '../../game/js/logic/hit-numbers.js';
 import '../../game/js/logic/hub-island.js';
 import '../../game/js/logic/icon-block.js';
+import '../../game/js/logic/idle-life.js';
 import '../../game/js/logic/island-gen.js';
 import '../../game/js/logic/island.js';
 import '../../game/js/logic/kit-assemble.js';

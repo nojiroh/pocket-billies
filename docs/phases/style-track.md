@@ -173,7 +173,7 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
   a plain `signpost`, so the emblem went on a new low-poly `bureau_sign` as a fixed decal made from art/ui/bureau.svg
   (scene/next/decals/bureau_emblem.png); the forms are ambient-life kind `form` with `fly` and a new `drift` flag
   (low, sideways, never walks, rustles), art/scene/life/form.png from tools/build-bureau-forms.py, in the checkpoint's
-  and the scrap heap's `life`; MAPGEN_VERSION 25): red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
+  and the scrap heap's `life`; MAPGEN_VERSION 25 at SY-7, 26 after main's WM-6 took 25): red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
   checkpoint's sign, loose forms blowing past near Bureau places (an ambient-life kind with the `fly` flag). Flat
   props stay flat (CLAUDE.md). Art from the Studio.
 - **SY-8** tuning and docs. Done 2026-10-28 on `track/style`; **the track is done** (built as below: the dials are
@@ -209,7 +209,7 @@ Every step ran without waiting (the owner, 2026-10-27). Each choice below is in 
   Brightness step 0.3, sweep 3.5 s / 0.7 s, band along x + .6 y, hue turn per coat from a hash of its id, lift x1.25
   + .06 at 0.55. A foiled Billie leaves the instanced run while its band crosses. Reflections get no foil.
 - **SY-7:** a new prop `bureau_sign` for the checkpoint (not the shared signpost). The tape is the scenery's red
-  #DE4048. Forms also in the scrap heap. A new `drift` flag; size 0.95, lift 1.6 m. MAPGEN_VERSION 25. The emblem
+  #DE4048. Forms also in the scrap heap. A new `drift` flag; size 0.95, lift 1.6 m. MAPGEN_VERSION 25 (26 since SY-8's merge of main, where WM-6 had taken 25). The emblem
   decal is made from art/ui/bureau.svg by the build script (rerun it after repainting).
 - **SY-8:** the dials live in uiTheme.json `style` (the UI section's Style group), not in factions.json or engine.json,
   so palettes and presets can set them and the Studio's live preview shows them. Stamp size is a multiplier (x1) and
@@ -231,7 +231,8 @@ plans are automatically approved"): the planning session (SY-0, SY-1) starts eac
 `track/style` once the step before has pushed its HANDOFF entry. A step writes its plan and goes on without waiting for
 approval. At an open choice or an "Ask me before" item it takes the recommended option and lists it in HANDOFF under
 "Decided for the owner, to review". Each step tells the planning session it is done with a one-shot scheduled task,
-and an hourly check covers a missed one. Merges to main stay the owner's (the PR from `track/style`).
+and an hourly check covers a missed one. Merges to main stay the owner's (the PR from `track/style`). The prompt
+is in docs/phases/style-track-sessions.md.
 
 ## Fits with other tracks
 - **UI track:** SY-2 after UI-16a/b; SY-5's plates after UI-14b; SY-6 after UI-17's menu foil (the same look, so one

@@ -83,6 +83,8 @@
   .g-stamps { gap: var(--s4); padding: var(--s2) var(--s1); }
   /* SY-4: a case file's sheet, still, at the column's width */
   .g-case { width: 100%; max-height: none; margin: 0; animation: none; }
+  /* UI-17: the box the bursts and the banner play in */
+  .g-alive { position: relative; height: 160px; overflow: hidden; }
   /* UI-3: inside the Studio's UI section the Studio holds the switches */
   .g-studio .g-bar { display: none; }
   .g-studio body { padding-top: var(--s2); }
@@ -333,6 +335,15 @@
   <div class="g-stack">
     <div class="sheet px event-sheet g-case"><div class="case-tab"><img class="case-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt=""><span class="case-who">Bureau of Lost, Found and Beans</span><span class="case-form tnum" data-case="form">Form 4A-4</span></div><h2>Bureau Checkpoint</h2><div class="body"><pb-typed key="gallery" skip="9"><div class="ev-lines"><p class="ev-line">A striped barrier, a <span class="redact">tollbooth</span> and a flag with a bean on it. An agent in a grey coat steps out with a <span class="redact">clipboard</span>.</p><p class="ev-line"><b>Agent</b> Routine check, Bureau of Lost, Found and Beans. Lost anything? Found anything? Beans of any kind?</p></div></pb-typed></div><div class="btns"><button class="pb dark wide">Declare everything</button><button class="pb dark wide">Let them inspect your team</button><button class="pb quiet wide">Walk on</button></div></div>
     <div class="sheet px event-sheet g-case"><div class="case-tab"><img class="case-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt=""><span class="case-who">Bureau of Lost, Found and Beans</span><span class="case-form tnum" data-case="form">Form 4A-4</span></div><h2>Bureau Checkpoint</h2><div class="body"><div class="ev-lines"><p class="ev-line case-intro">A striped barrier, a <span class="redact lifted">tollbooth</span> and a flag with a bean on it. An agent in a grey coat steps out with a <span class="redact lifted">clipboard</span>.</p><p class="ev-line">You declare everything. It takes a while. The agent stamps a form in three places.</p><p class="ev-line">You got Pretzel.</p></div><p class="ev-sum">+1 Pretzel</p><p class="case-stamp"><pb-stamp still data-case="filed" word="FILED" size="lg" tilt="-8"></pb-stamp></p></div><div class="btns"><button class="pb dark wide">Keep walking</button></div></div>
+<!-- UI-17: idle life and big moments (docs/phases/ui-track.md Part 2, "Alive, without clutter") -->
+<section class="g-sec" data-shot="alive"><h2>Idle life and big moments</h2><p>UI-17: pb-foil, the prism sheen on a Coat's tag and on a rare or mythical frame; the main action's glint; today's forecast icon. In the game at most two kinds of idle loop play at once (ui-idle.js, logic/idle-life.js), none under Calm or Reduced, and Flashes off softens the glint and the foil. Here they stay still (as in the pictures) until Play the idle loops. pbBurst (a catch, a level-up) and pb-name-banner (a boss's name) on demand.</p>
+  <div class="g-stack">
+    <pb-panel><div class="g-stack">
+      <div class="g-row"><span class="u-tag coat">Sunset Coat<pb-foil></pb-foil></span><button class="pb gold small">Travel here</button><pb-button kind="gold">Start the run</pb-button><span class="mc-wx"><span class="wx-now"><i class="uico" data-ico="sun" style="width:14px;height:14px" aria-hidden="true"></i></span>Sunny</span></div>
+      <div class="g-row"><pb-pick-card heading="Lucky Coin" sub="Perk" rarity="rare">Found Moneys go up a tenth.</pb-pick-card><pb-pick-card heading="Golden Bean" sub="Perk" rarity="mythical">Every Billie heals a little each turn.</pb-pick-card></div>
+      <div class="g-alive" id="gAliveBox"></div>
+    </div></pb-panel>
+    <div class="g-row"><button class="pb small" id="gIdlePlay">Play the idle loops</button><button class="pb small" id="gBurstPlay">Catch and level-up bursts</button><button class="pb small" id="gBannerPlay">A boss's banner</button></div>
   </div>
 </section>
 

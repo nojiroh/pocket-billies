@@ -42,7 +42,7 @@ import {
   maxHp,
   stat,
 } from './logic/rules.js';
-import { rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -126,7 +126,7 @@ function workPreviewHTML(D, s, m, slot, p) {
       : st.unstable
         ? `Stability ${st.cost} of ${st.limit}: past the limit, so it turns Unstable (one stat ×${GENES.unstable.up}, one ×${GENES.unstable.down}, ${GENES.unstable.d.replace(/\.$/, '').toLowerCase()})`
         : `Stability ${st.cost} of ${st.limit}`;
-  return `<div class="bx k-card ranch-card gene-preview rar-row"${workRar(p.id)}><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b><span class="rar-name">${escapeHtml(augWords(D, p.id))}</span>${workUp(p.up)}</b>${rarityPillHTML(workTier(p.id))}<span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(billyTypes(q).join(' / '))}</span><span class="bx-sub">${escapeHtml(workPartLine(D, p.id))}</span>${gene ? `<span class="bx-sub">Takes off ${escapeHtml(geneWords(D, slot, gene))} (it stays in the Gene library)</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-w="fit"${why ? ' disabled' : ''}>Fit · ${price} Scrap</button></div>${why ? `<p class="note">${WORK_WHY[why]}.</p>` : ''}`;
+  return `<div class="bx k-card ranch-card gene-preview rar-row"${workRar(p.id)}>${rarityFoilHTML(workTier(p.id))}<div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b><span class="rar-name">${escapeHtml(augWords(D, p.id))}</span>${workUp(p.up)}</b>${rarityPillHTML(workTier(p.id))}<span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(billyTypes(q).join(' / '))}</span><span class="bx-sub">${escapeHtml(workPartLine(D, p.id))}</span>${gene ? `<span class="bx-sub">Takes off ${escapeHtml(geneWords(D, slot, gene))} (it stays in the Gene library)</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-w="fit"${why ? ' disabled' : ''}>Fit · ${price} Scrap</button></div>${why ? `<p class="note">${WORK_WHY[why]}.</p>` : ''}`;
 }
 /** the picked Billie's part of the sheet @param {any} D @param {any} s @param {any} m */
 function workBillieHTML(D, s, m) {
@@ -145,14 +145,14 @@ function workBillieHTML(D, s, m) {
     upWhy = now ? workUpWhy(D, s, m, P.slot) : 'none',
     upPrice = now ? workUpPrice(D, now) : 0,
     worn = now
-      ? `<div class="bx k-card ranch-card rar-row"${workRar(now.id)}><div class="bx-main"><b>Now: <span class="rar-name">${escapeHtml(augWords(D, now.id))}</span>${workUp(now.up)}</b>${rarityPillHTML(workTier(now.id))}<span class="bx-sub">${escapeHtml(workPartLine(D, now.id))}</span>${upWhy && upWhy !== 'scrap' ? `<span class="bx-sub">${WORK_WHY[upWhy]}.</span>` : ''}</div><button class="qk k-btn" data-w="up"${upWhy ? ' disabled' : ''}>Upgrade${Number.isFinite(upPrice) ? ` · ${upPrice} Scrap` : ''}</button><button class="qk k-btn" data-w="off">Take off · free</button></div>`
+      ? `<div class="bx k-card ranch-card rar-row"${workRar(now.id)}>${rarityFoilHTML(workTier(now.id))}<div class="bx-main"><b>Now: <span class="rar-name">${escapeHtml(augWords(D, now.id))}</span>${workUp(now.up)}</b>${rarityPillHTML(workTier(now.id))}<span class="bx-sub">${escapeHtml(workPartLine(D, now.id))}</span>${upWhy && upWhy !== 'scrap' ? `<span class="bx-sub">${WORK_WHY[upWhy]}.</span>` : ''}</div><button class="qk k-btn" data-w="up"${upWhy ? ' disabled' : ''}>Upgrade${Number.isFinite(upPrice) ? ` · ${upPrice} Scrap` : ''}</button><button class="qk k-btn" data-w="off">Take off · free</button></div>`
       : '',
     list = P.slot ? workSpares(D, s, m, P.slot) : [];
   if (P.part && !list.some(p => p.uid === P.part)) P.part = '';
   const rows = list
       .map(
         p =>
-          `<button class="pickrow rar-row${P.part === p.uid ? ' on' : ''}"${workRar(p.id)} data-w="part" data-k="${escapeHtml(p.uid)}"><span class="pr-t"><b><span class="rar-name">${escapeHtml(augWords(D, p.id))}</span>${workUp(p.up)}</b><small>${escapeHtml(workPartLine(D, p.id))}</small></span><span class="pr-n tnum">${GENES.augment.price.fit} Scrap</span></button>`
+          `<button class="pickrow rar-row${P.part === p.uid ? ' on' : ''}"${workRar(p.id)} data-w="part" data-k="${escapeHtml(p.uid)}">${rarityFoilHTML(workTier(p.id))}<span class="pr-t"><b><span class="rar-name">${escapeHtml(augWords(D, p.id))}</span>${workUp(p.up)}</b><small>${escapeHtml(workPartLine(D, p.id))}</small></span><span class="pr-n tnum">${GENES.augment.price.fit} Scrap</span></button>`
       )
       .join(''),
     shutNote =

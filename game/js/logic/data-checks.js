@@ -452,7 +452,7 @@ export function dataRunMapRules(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const M = D.rules && D.rules.run && D.rules.run.map,
-      KEYS = ['path', 'towns', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'],
+      KEYS = ['path', 'towns', 'townSizes', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'],
       whole = (/** @type {any} */ r, /** @type {number} */ lo, /** @type {number} */ hi) =>
         Array.isArray(r) && r.length === 2 && r.every(v => Number.isInteger(v) && v >= lo && v <= hi) && r[0] <= r[1];
     if (!M || typeof M !== 'object') problem('rules.json', 'run.map missing');
@@ -473,6 +473,40 @@ export function dataRunMapRules(D) {
               );
           }
         });
+      /* WM-5: the town sizes: each one's cells ([wide, tall], 1-4 by 1-4, growing), and by Expedition a list of sizes
+         for every town count run.map.towns allows; run.town.sizes has each of them */
+      const TS = M.townSizes;
+      if (TS !== undefined) {
+        const C = TS && TS.cells && typeof TS.cells === 'object' ? TS.cells : null,
+          names = C ? Object.keys(C) : [];
+        if (!TS || !C || !names.length)
+          problem('rules.json', 'run.map.townSizes: cells (size to [wide, tall]) and order');
+        else {
+          for (const k of Object.keys(TS))
+            if (k !== 'cells' && k !== 'order') problem('rules.json', `run.map.townSizes.${k}: no such rule`);
+          let last = 0;
+          for (const k of names) {
+            const c = C[k];
+            if (!Array.isArray(c) || c.length !== 2 || !c.every(v => Number.isInteger(v) && v >= 1 && v <= 4))
+              problem('rules.json', `run.map.townSizes.cells.${k}: [wide, tall], whole, 1-4`);
+            else if (c[0] * c[1] < last)
+              problem('rules.json', `run.map.townSizes.cells.${k}: smaller than the size before (smallest first)`);
+            else last = c[0] * c[1];
+            if (!((D.rules.run.town || {}).sizes || {})[k])
+              problem('rules.json', `run.map.townSizes.cells.${k}: not in run.town.sizes`);
+          }
+          if (!Array.isArray(TS.order) || !TS.order.length)
+            problem('rules.json', 'run.map.townSizes.order: a list, an Expedition each');
+          else
+            TS.order.forEach((/** @type {any} */ by, /** @type {number} */ e) => {
+              for (let n = towns ? M.towns[0] : 0; towns && n <= M.towns[1]; n++) {
+                const L = by && by[String(n)];
+                if (n && (!Array.isArray(L) || L.length !== n || L.some(k => !names.includes(k))))
+                  problem('rules.json', `run.map.townSizes.order[${e}]["${n}"]: ${n} sizes of cells`);
+              }
+            });
+        }
+      }
       for (const k of ['first', 'rest', 'guard', 'last'])
         if (!(D.nodeTypes || {})[M[k]]) problem('rules.json', `run.map.${k}: no node type "${M[k]}" (nodeTypes.json)`);
       for (const k of ['wide', 'cross'])
@@ -928,7 +962,45 @@ export function dataRunLoop(D) {
     const TN = R.town;
     if (!rec(TN)) problem('rules.json', 'run.town missing');
     else {
-      only(TN, ['locals', 'names', 'chat'], 'run.town');
+      only(TN, ['locals', 'sizes', 'stall', 'names', 'chat'], 'run.town');
+      /* WM-5: each size's word, houses (fewest, most: whole, 1-24), market stall (0 or 1) and quest givers (1 or 2), as
+         mapgen.js mapgenTownDial takes them; the stall's wares: held items (items.json with hold rows) by weight */
+      if (TN.sizes !== undefined) {
+        if (!rec(TN.sizes)) problem('rules.json', 'run.town.sizes: size to its word, houses, stall and givers');
+        else
+          for (const [k, Z] of Object.entries(TN.sizes)) {
+            const H = rec(Z) && Z.houses;
+            if (
+              !rec(Z) ||
+              typeof Z.word !== 'string' ||
+              !/^[A-Z][A-Za-z ]{1,19}$/.test(Z.word) ||
+              !Array.isArray(H) ||
+              H.length !== 2 ||
+              !whole(H[0], 1, 24) ||
+              !whole(H[1], H[0], 24) ||
+              (Z.stall !== 0 && Z.stall !== 1) ||
+              (Z.givers !== 1 && Z.givers !== 2)
+            )
+              problem(
+                'rules.json',
+                `run.town.sizes.${k}: word, houses [fewest, most] (1-24), stall 0 or 1, givers 1 or 2`
+              );
+            else only(Z, ['word', 'houses', 'stall', 'givers'], `run.town.sizes.${k}`);
+          }
+      }
+      if (TN.stall !== undefined) {
+        const P = rec(TN.stall) && rec(TN.stall.pick) ? Object.entries(TN.stall.pick) : [];
+        if (!rec(TN.stall) || !whole(TN.stall.more, 1, 6) || !P.some(([, w]) => w > 0))
+          problem('rules.json', 'run.town.stall: more (whole, 1-6) and pick (held items by weight)');
+        else only(TN.stall, ['more', 'pick'], 'run.town.stall');
+        for (const [w, n] of P) {
+          const I = (D.items || {})[w];
+          if (!I || !Array.isArray(I.hold) || !I.hold.length || !(I.price > 0))
+            problem('rules.json', `run.town.stall.pick.${w}: not a held item with a price (items.json)`);
+          if (typeof n !== 'number' || !(n >= 0))
+            problem('rules.json', `run.town.stall.pick.${w}: a weight of 0 or more`);
+        }
+      }
       const L = TN.locals;
       if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
         problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');

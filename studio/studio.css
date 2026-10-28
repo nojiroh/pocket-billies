@@ -4824,10 +4824,11 @@ body.wb-dropping::after {
   margin-top: 10px;
   font-size: 12px;
 }
-/* the frame makes room for the panel while it shows */
+/* the frame makes room for the panel while it shows; at least 520 px, so a phone screen still shows above the bottom bar
+   (UI-8b's minimap tile makes the bar 192 px tall standing) */
 .eng-side:has(.ui-inspect:not([hidden])) .ui-pv {
-  height: calc(66vh - 230px);
-  min-height: 300px;
+  height: calc(100vh - 330px);
+  min-height: 520px;
 }
 .ui-insp-h {
   margin-bottom: 6px;

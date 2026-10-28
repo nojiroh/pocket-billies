@@ -39,7 +39,7 @@ import {
   partMaxHp,
 } from './logic/rules.js';
 import { rarityTier } from './logic/marks.js';
-import { rarityPillHTML, rarityRowAttr, statusTagHTML } from './ui-marks-kit.js';
+import { rarityFoilHTML, rarityPillHTML, rarityRowAttr, statusTagHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData } from './game-state.js';
 import { glyphHTML, uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -156,11 +156,11 @@ function unitHpHTML(u) {
 }
 /* UI-14b: the colour code on the tags: Lead neutral (the family table), Prime the teal ★ tag, a Coat its prism (gold
    keeps only value and your choice), the held item teal with its glyph and its name in its tier's colour */
-const unitPrimeHTML = () => `<span class="u-tag prime"><b aria-hidden="true">★</b>Prime</span>`;
+const unitPrimeHTML = () => `<span class="u-tag prime">Prime</span>`;
 const unitHeldHTML = (/** @type {Unit} */ u) =>
   `<span class="u-tag held"${rarityRowAttr(u.heldRar)}>${glyphHTML('kind', 'held', 11)}<span class="rar-name">${escapeHtml(u.held)}</span></span>`;
 function unitTagsHTML(u) {
-  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}</span>` : ''}${u.prime ? unitPrimeHTML() : ''}${u.held ? unitHeldHTML(u) : ''}`;
+  return `${u.lead ? '<span class="u-tag lead">Lead</span>' : ''}${u.buddy ? `<span class="u-tag bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${u.coat ? `<span class="u-tag coat">${escapeHtml(u.coat)}<pb-foil></pb-foil></span>` : ''}${u.prime ? unitPrimeHTML() : ''}${u.held ? unitHeldHTML(u) : ''}`;
 }
 
 /** the lead's big card at the top of a team */
@@ -174,7 +174,7 @@ function unitHeroHTML(u) {
 
 /** one row in a team or a list: tap for details */
 function unitRowHTML(u, i, act = 'mon', label = 'details') {
-  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}${u.kind === 'bot' ? ' bot' : ''}"${rarityRowAttr(u.rarity)} style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
+  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}${u.kind === 'bot' ? ' bot' : ''}"${rarityRowAttr(u.rarity)} style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}">${rarityFoilHTML(u.rarity)}<span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
   <span class="u-mid"><span class="u-head"><b class="rar-name">${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${statusTagHTML(u.status)}${u.prime ? unitPrimeHTML() : ''}${u.held ? `<i class="u-held"${rarityRowAttr(u.heldRar)} role="img" aria-label="Holding ${escapeHtml(u.held)}" title="Holding ${escapeHtml(u.held)}">${glyphHTML('kind', 'held', 12)}</i>` : ''}</span>${u.limbs ? limbPipsHTML(u.limbs) : ''}</span>
   <span class="u-right">${unitHpHTML(u)}</span></button>`;
 }

@@ -25,6 +25,7 @@ expose({
   PbButton: [() => PbButton],
   PbCard: [() => PbCard],
   PbField: [() => PbField],
+  PbFoil: [() => PbFoil],
   PbPanel: [() => PbPanel],
   PbPill: [() => PbPill],
   PbSheet: [() => PbSheet],
@@ -42,6 +43,7 @@ expose({
   nothing: [() => nothing],
   patternVars: [() => patternVars],
   pbBump: [() => pbBump, v => (pbBump = v)],
+  pbBurst: [() => pbBurst, v => (pbBurst = v)],
   pbDoneHTML: [() => pbDoneHTML, v => (pbDoneHTML = v)],
   pbDrawDone: [() => pbDrawDone, v => (pbDrawDone = v)],
   pbFloat: [() => pbFloat, v => (pbFloat = v)],
@@ -63,7 +65,7 @@ export const { LitElement, css, html, nothing } = /** @type {any} */ (self).PB_L
 
 /* UI-16a: the Animation level the page plays at (settings-screen.js writes it on <html data-motion>: full, calm or
    reduced); a page that never wrote one follows the phone */
-const motionNow = () => {
+export const motionNow = () => {
   const m = document.documentElement.dataset.motion;
   if (m === 'full' || m === 'calm' || m === 'reduced') return m;
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -343,6 +345,27 @@ const PbButton = class extends LitElement {
       }
       :host([kind='gold']) .edge {
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), color-mix(in srgb, var(--gold-b) 60%, #000));
+      }
+      /* UI-17: the main action's glint, idle life (ui-idle.js: --idle-glint names the keyframes only while it is one of
+         the screen's two idle loops; --sheen-a is SY-1's flash rule) */
+      :host([kind='gold']) .face::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: var(--glint-band);
+        transform: translateX(-120%);
+        opacity: var(--sheen-a, 0);
+        animation: var(--idle-glint, none) var(--idle-glint-ms, 7s) linear infinite;
+      }
+      @keyframes pb-glint {
+        0%,
+        88% {
+          transform: translateX(-120%);
+        }
+        100% {
+          transform: translateX(120%);
+        }
       }
       :host([kind='dark']) .face {
         color: #fff;
@@ -1016,6 +1039,50 @@ export function typeGlyphHTML(t) {
   return u ? `<i class="ty-g" style="--glyph:url('${u}')" aria-hidden="true"></i>` : '';
 }
 
+/* ---------- UI-17: the foil, a prism sheen sweeping across what wears it ---------- */
+/* One layer for every foil (ui-track.md Part 2: Coats shimmer, rare frames too; the style track's SY-6 carries the
+   same look onto the Billie in battle and on the maps): put <pb-foil></pb-foil> inside a positioned box and it fills
+   it, clipped to it (the box's own clip-path or radius clips it too). A band of the colour code's prism (special,
+   growth, good, value) sweeps across every --idle-foil-ms, transform only. It is idle life: it plays only while foil
+   is one of the screen's two idle kinds (ui-idle.js sets --idle-foil to the keyframes' name), and is as bright as
+   SY-1's flash rule lets it be (--sheen-a: softer with Flashes off, none under Calm and Reduced). --foil-delay offsets
+   one foil from its neighbours. */
+const PbFoil = class extends LitElement {
+  static styles = css`
+    :host {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .band {
+      position: absolute;
+      top: -40%;
+      bottom: -40%;
+      left: 0;
+      width: 55%;
+      background: var(--foil-band);
+      opacity: var(--sheen-a, 0);
+      transform: translateX(-200%) skewX(-20deg);
+      animation: var(--idle-foil, none) var(--idle-foil-ms, 5.6s) linear var(--foil-delay, 0s) infinite;
+    }
+    @keyframes pb-foil-sweep {
+      0%,
+      58% {
+        transform: translateX(-200%) skewX(-20deg);
+      }
+      100% {
+        transform: translateX(300%) skewX(-20deg);
+      }
+    }
+  `;
+  render() {
+    return html`<i class="band" aria-hidden="true"></i>`;
+  }
+};
+
 for (const [tag, cls] of /** @type {const} */ ([
   ['pb-panel', PbPanel],
   ['pb-pill', PbPill],
@@ -1026,8 +1093,32 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-tabs', PbTabs],
   ['pb-stat-bar', PbStatBar],
   ['pb-field', PbField],
+  ['pb-foil', PbFoil],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
+
+/** UI-17: a big moment's burst (a catch, a level-up; the stage's 3D side is the VFX track's): a ring and eight rays
+ * in the moment's family from (x, y): page pixels, or pixels inside `o.in` (a positioned box). Reduced: the ring fades
+ * @param {number} x @param {number} y @param {{ tone?: string, size?: number, in?: Element | null }} [o] */
+export function pbBurst(x, y, o = {}) {
+  const el = document.createElement('i'),
+    still = reduced();
+  el.className = 'pb-burst' + (o.in ? ' in' : '') + (still ? ' still' : '');
+  el.setAttribute('aria-hidden', 'true');
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  if (o.tone) el.style.setProperty('--burst', o.tone);
+  if (o.size) el.style.setProperty('--burst-r', o.size + 'px');
+  if (!still)
+    for (let i = 0; i < 8; i++) {
+      const ray = document.createElement('b');
+      ray.style.setProperty('--rot', `${i * 45 + 22.5}deg`);
+      el.appendChild(ray);
+    }
+  (o.in || document.body).appendChild(el);
+  setTimeout(() => el.remove(), msOf('--burst-ms', 560) + 60);
+  return el;
+}
 
 /* a number (+120 Moneys) rising from an element: feedback where the action happened, instead of a toast */
 export function pbFloat(anchor, text, tone) {

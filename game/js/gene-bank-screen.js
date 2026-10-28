@@ -43,7 +43,7 @@ import {
   spliceWords,
   stat,
 } from './logic/rules.js';
-import { rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -124,7 +124,7 @@ function bankPreviewHTML(D, s, m, slot, id) {
       : st.unstable
         ? `Stability ${st.cost} of ${st.limit}: past the limit, so it turns Unstable (one stat ×${GENES.unstable.up}, one ×${GENES.unstable.down}, ${GENES.unstable.d.replace(/\.$/, '').toLowerCase()})`
         : `Stability ${st.cost} of ${st.limit}`;
-  return `<div class="bx k-card ranch-card gene-preview rar-row"${rarityRowAttr(bankTier(D, slot, id))}><div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b class="rar-name">${escapeHtml(geneWords(D, slot, id))}</b>${rarityPillHTML(bankTier(D, slot, id))}<span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(types.join(' / '))}</span><span class="bx-sub">${traits.length ? `Traits: ${traits.map(t => `<b>${escapeHtml(GENES.traits[t].name)}</b> (${escapeHtml(GENES.traits[t].d)})`).join(', ')}` : 'No trait'}</span>${move ? `<span class="bx-sub">Teaches ${escapeHtml(move.name)}</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-g="splice"${why ? ' disabled' : ''}>Splice · ${price} DNA</button></div>${why && why !== 'same' ? `<p class="note">${BANK_WHY[why]}.</p>` : ''}`;
+  return `<div class="bx k-card ranch-card gene-preview rar-row"${rarityRowAttr(bankTier(D, slot, id))}>${rarityFoilHTML(bankTier(D, slot, id))}<div class="bx-main"><span class="bx-spr">${rigCanvasHTML(m.sp, 56, { build: m.build, coat: m.coat, graft: graftLook(q) })}</span><b class="rar-name">${escapeHtml(geneWords(D, slot, id))}</b>${rarityPillHTML(bankTier(D, slot, id))}<span class="bx-sub tnum">${billyWeight(m)} kg → ${billyWeight(q)} kg · ${escapeHtml(types.join(' / '))}</span><span class="bx-sub">${traits.length ? `Traits: ${traits.map(t => `<b>${escapeHtml(GENES.traits[t].name)}</b> (${escapeHtml(GENES.traits[t].d)})`).join(', ')}` : 'No trait'}</span>${move ? `<span class="bx-sub">Teaches ${escapeHtml(move.name)}</span>` : ''}<span class="bx-sub">${escapeHtml(stLine)}</span>${bars}</div><button class="qk k-btn" data-g="splice"${why ? ' disabled' : ''}>Splice · ${price} DNA</button></div>${why && why !== 'same' ? `<p class="note">${BANK_WHY[why]}.</p>` : ''}`;
 }
 /** the picked Billie's part of the sheet @param {any} D @param {any} s @param {any} m */
 function bankBillieHTML(D, s, m) {
@@ -145,14 +145,14 @@ function bankBillieHTML(D, s, m) {
       .join(''),
     now = P.slot && g[P.slot],
     worn = now
-      ? `<div class="bx k-card ranch-card rar-row"${rarityRowAttr(bankTier(D, P.slot, now))}><div class="bx-main"><b>Now: <span class="rar-name">${escapeHtml(geneWords(D, P.slot, now))}</span></b>${rarityPillHTML(bankTier(D, P.slot, now))}<span class="bx-sub">${escapeHtml(bankGeneLine(D, m, P.slot, now)) || 'Its trait'}</span></div><button class="qk k-btn" data-g="off">Take off · free</button></div>`
+      ? `<div class="bx k-card ranch-card rar-row"${rarityRowAttr(bankTier(D, P.slot, now))}>${rarityFoilHTML(bankTier(D, P.slot, now))}<div class="bx-main"><b>Now: <span class="rar-name">${escapeHtml(geneWords(D, P.slot, now))}</span></b>${rarityPillHTML(bankTier(D, P.slot, now))}<span class="bx-sub">${escapeHtml(bankGeneLine(D, m, P.slot, now)) || 'Its trait'}</span></div><button class="qk k-btn" data-g="off">Take off · free</button></div>`
       : '',
     list = P.slot ? bankGenes(D, s, m, P.slot).filter(id => id !== now) : [];
   if (P.gene && !list.includes(P.gene)) P.gene = '';
   const rows = list
       .map(
         id =>
-          `<button class="pickrow rar-row${P.gene === id ? ' on' : ''}"${rarityRowAttr(bankTier(D, P.slot, id))} data-g="gene" data-k="${escapeHtml(id)}"><span class="pr-t"><b class="rar-name">${escapeHtml(geneWords(D, P.slot, id))}</b><small>${escapeHtml(bankGeneLine(D, m, P.slot, id))}</small></span><span class="pr-n tnum">${bankPrice(D, m.sp, P.slot, id)} DNA</span></button>`
+          `<button class="pickrow rar-row${P.gene === id ? ' on' : ''}"${rarityRowAttr(bankTier(D, P.slot, id))} data-g="gene" data-k="${escapeHtml(id)}">${rarityFoilHTML(bankTier(D, P.slot, id))}<span class="pr-t"><b class="rar-name">${escapeHtml(geneWords(D, P.slot, id))}</b><small>${escapeHtml(bankGeneLine(D, m, P.slot, id))}</small></span><span class="pr-n tnum">${bankPrice(D, m.sp, P.slot, id)} DNA</span></button>`
       )
       .join(''),
     shutNote =

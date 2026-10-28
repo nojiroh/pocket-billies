@@ -739,6 +739,29 @@ The plan approved in advance (the owner's standing instruction); the browser che
   something is new).
 - **For UI-16b and UI-17:** `--m-k`, `--m-loop`, `motionNow()`, `pbSound`, `pbBump`, `pbFlyTo`, `pbSlideBar`,
   `pbDoneHTML`/`pbDrawDone`, the motion tokens; the low-HP pulse's filter and the evolution flashes are left to them.
+## UI-18 as built (2026-10-28, `claude/ui-18-map-clutter`, a draft PR into main)
+Run with the plan approved in advance; the browser checks wait until the UI plan is done (the owner's word).
+- **The blur count, checked:** the "10" was right on 2026-10-26 (check-quick.py's `BLUR_CEILING`): the header, the place
+  card, the look-around group's glass panel and seven `.mbtn` buttons. UI-8c had already taken the buttons' and the
+  panel's blurs off, leaving 2 that smoke counts. `uiBlurCount` (theme-sheet.js) counts page elements only, not
+  pseudo-elements or shadow trees, so it never saw the top bar's glass (`.topbar.glass::before`) or the bottom bar's
+  (pb-nav-bar's `.glass`). Real blurred surfaces on the Map: 4 before (5 with the places list open), **2 now** (the
+  top bar and the bottom bar). Smoke's count for the map: **0** (it was 2); `BLUR_CEILING`'s map entry is gone, so the
+  budget of 3 applies.
+- **Solid semigloss:** the header, the place card and the places list are the surface colour with its sheen (a Team
+  card's gradient on `--g-solid`), no `.glass`/`.px`.
+- **Give up in ⋯:** the header's row holds the day chip and a 44 px ⋯ chip (a `<details>`, the new `more` icon in
+  the list icon's greys); opened, it shows Give up the run as a red button in the header's flow (the header is clipped
+  to its outline, so a popover can't hang out of it).
+- **The folded place card:** the name, today's weather (a run place's forecast, first day), the kind chip, one line of
+  what's there (shops, a clinic, trainers, how many kinds of Billie), the status and the main action. More (40 px)
+  unfolds the place's words, zone, rumour, the 7-day forecast, its Billies, roads and services. `uiState.mapCardOpen`
+  keeps the one unfolded place; every other place's card opens folded. + and − stay.
+- **One colour everywhere (UI-14b's leftovers):** the hub map's towns teal (they were orange `#ffb46b`), where you
+  stand value gold, plain places the road badge's cream, locked the list icon's grey; the run's flat markers (before
+  an icon loads) take their family (`runMarkLook`'s tone; `RUN_MARK_TONES` gone).
+- **WM-6's find:** the names are drawn after your figure (`worldBowlNames`), and a name that would touch the figure
+  rises clear of its head.
 
 ## UI-16b as built (2026-10-28, `claude/ui-16b-battle-events`, into main)
 The plan approved in advance (the owner's standing instruction); the browser checks skipped until UI-18. Main,
@@ -768,6 +791,54 @@ The plan approved in advance (the owner's standing instruction); the browser che
 - **For UI-17:** the boss banner of the stage intro is UI-17's; the battle side gives it the boss's `alphaPhase`
   events (each with `shield`) and the plates' Alpha look.
 
+## UI-17 as built (2026-10-28, `claude/ui-17-idle-life`, into main)
+The plan approved in advance (the owner's standing instruction); the browser and phone checks skipped until the UI
+plan is done.
+- **The budget as code:** logic/idle-life.js lists the kinds of idle loop in the order they win (map, foil, forecast,
+  glint, bubble, stage, breathe, coin, logo, bloom; loops that mean something before decoration) and `idlePick` keeps
+  at most two (`IDLE_MAX`), none under Calm or Reduced. ui-idle.js (a page module) looks at what shows every 600 ms
+  (and at once when Animation or Flashes change), writes the picked kinds on `<html data-idle>`, and motion.css stops
+  every other idle loop. A kit part's loop (in a shadow root) takes its keyframes' name from `--idle-<kind>`, set only
+  while its kind plays. A page without ui-idle.js (the Studio, the gallery until its button) plays none.
+- **Counted:** `IDLE_LOOPS` and `SIGNAL_LOOPS` name every endless CSS loop in the game (38 rules: 14 idle, 24 that
+  say something: low HP, aim, news, loading, weather, a Billie's own frames); idle-life.test.mjs fails on a new
+  `infinite` animation until it is listed, and on an idle loop motion.css doesn't stop. Before UI-17 the title had
+  three idle loops (the coin, the logo, the gold sheen), the battle three (the camera's sway, the bloom, Fight's
+  glow), and the top bar's turning coin added one to every screen.
+- **Flashes, through SY-1's rule:** `sheenAlpha` is smear.js `flashFor` for a white flash: the glint and the foil at
+  full strength, at `FLASH_SOFT_MAX` (0.15) with Flashes off, none under Reduced (and Calm). ui-idle.js writes it as
+  `--sheen-a`.
+- **Glint:** the gold main action's sheen ran every 3.4 s (the doc: 6-8 s); now every 7 s, the sweep in its last
+  0.8 s, on `.pb.gold` and on pb-button gold. The red pulse keeps its own 3.4 s (it says "act now").
+- **Foil:** `<pb-foil>` (ui-kit.js), one layer: it fills its positioned box and sweeps the colour code's prism
+  (special, growth, good, value) across it every 5.6 s, transform only; `--foil-delay` offsets neighbours. On a Coat's
+  tag (unit-card.js), rare and mythical rows (`rarityFoilHTML`: Bag, shop, Perks, Workshop, Gene Bank, Team) and rare
+  and mythical pick cards. SY-6 can put the same element over the Billie, or copy its look into the sprite shader.
+- **Forecast:** today's icon (the Map's place card, the walk sheet's Today row, pb-forecast's today) sways 1 px and
+  6° every 3.6 s.
+- **The Map:** on one 2.4 s beat (`BOWL_LIFE`), the run's places you can reach next (a road from where you stand,
+  shown) grow up to 8% and back, your place's head bobs 3 px, the ring there pulses and your figure steps in place.
+  `worldBowlRunPin` returns the head's resting top and `meBox` keeps the figure's resting box, so UI-18's names stay
+  still. With nothing else moving only the flat overlay redraws, about 24 times a second; the old ring pulse and step
+  ran whenever the bowl redrew, under Calm too.
+- **Low HP:** the plate's red fill pulsed `brightness(1.5)` in two steps every 0.7 s; now opacity to 55% on the screen
+  edge's 1.3 s beat. (The screen edge's own pulse was already opacity.)
+- **Big moments, the HUD side** (battle.js `hudMoment`, from `showEvent`; battle-stage.js untouched): a level-up
+  bursts sky round its plate's level, a catch bursts teal round the pyramid (`pbBurst`: a ring and eight rays, 560 ms;
+  Reduced: the ring fades), and a boss or Alpha trainer's name banner plays inside `trainerIn`'s 1150 ms (240 in,
+  640 held, 180 out). `<pb-name-banner>` and `pbNameBanner(host, {name, kicker, tone, hold})` (ui-run-kit.js) are
+  the one component RL-14b's stage intro and VFX-16's VS splash call.
+
+## Part 2 checked (2026-10-28, `claude/ui-checks-all`, a draft PR into main)
+Every browser check the steps skipped, run once on all of Part 2 merged (with WM-5b, WM-6, SY-1..SY-3 and VFX-5):
+smoke 7 of 7, check-fast 40 of 42 (the 2 are main's), the gallery green on its remade baseline, the full quick check
+with only main's reds left, the Studio check's UI steps green (its full run is not green on main either here). Fixed:
+the Prime ★ and the Map's fold (smoke's piece ceilings), the blur counter (it sees the bars; 3 besides them), UI-12's
+palette step written (it found the Actions button's ink in dark mode and the Buddy pink on cream), the Studio's
+Inspect preview under the taller bar, the Studio music step's tab, the run Map's 7 s stall on opening (UI-8c's icon
+readbacks waited on the GPU), UI-16a's sounds in the sound baseline. Details and the owner's phone list: HANDOFF,
+"Part 2 checked".
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
@@ -783,19 +854,32 @@ The plan approved in advance (the owner's standing instruction); the browser che
 | UI-15 (done 2026-10-27, `claude/ui-15-less-clutter`) | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
 | UI-16a (built 2026-10-28, `claude/ui-16a-motion`; checks after UI-18) | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
 | UI-16b (built 2026-10-28, `claude/ui-16b-battle-events`; checks after UI-18) | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
-| UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
-| UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
+| UI-17 (built 2026-10-28, `claude/ui-17-idle-life`; checks after the UI plan) | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
+| UI-18 (done 2026-10-28, `claude/ui-18-map-clutter`) | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 
 About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`
 and on.
 
 How the sessions run (the owner, 2026-10-27: "Start each next step of the ui plan in a new session and automatically
-approve the plans. The choices are made and I want it done."): the planning session starts each step in a new session
-on `track/ui` when the one before has pushed its HANDOFF entry. A step writes its plan and goes on without waiting for
-approval; where it meets an open choice or an "Ask me before" item it takes the recommended option and lists it in its
-HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for. Each step tells
-the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
-main stay the owner's (the PR from `track/ui`).
+approve the plans. The choices are made and I want it done."; then parallel waves, the owner's pick): the planning
+session starts each step in a new session as soon as the steps it builds on are finished. A step writes its plan and
+goes on without waiting for approval; where it meets an open choice or an "Ask me before" item it takes the recommended
+option and lists it in its HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not
+waited for. Each step tells the planning session it is done (a message), and an hourly check covers a missed one.
+Merges to main stay the owner's (the PR from `track/ui`, #276).
+
+The waves: one session at a time works on `track/ui` (the main line) and first merges main and every finished side
+branch; a step that runs beside it works on a side branch `claude/ui-<nn>-<words>` made from `track/ui`, with a PR into
+it (as WM-4b, WM-5 and WM-7 did on their track).
+
+| Wave | Steps | Starts when |
+| --- | --- | --- |
+| 1 | UI-11 (the owner's own session, on `ccr-dab4e0cd-6re1eb` from main), UI-8c and UI-15 (side branches) | now (UI-8b done) |
+| 2 | UI-12 (`track/ui`, merging UI-11's branch and the finished side branches) and UI-13 | UI-11 is done |
+| 3 | UI-14a; UI-16a | UI-13 is done; UI-12 and UI-15 are done |
+| 4 | UI-14b; UI-17 | UI-14a is done; UI-14a, UI-16a and UI-8c are done |
+| 5 | UI-16b | UI-14b, UI-15 and UI-16a are done |
+| 6 | UI-18 | UI-8c and the world map track's WM-6 are done |
 
 The owner, 2026-10-27, after UI-11: "Automatically start the next session after done, skip the checks until after
 all ui is done." So each step, when its HANDOFF entry is pushed, starts the next step itself in a new session (from
@@ -803,6 +887,22 @@ its own branch, since main may not hold it yet), with these same rules. Until UI
 (check-fast, check-quick, the Studio check, the gallery, the picture baselines) and the phone checks are skipped;
 the seconds-long ones (lint, typecheck, unit tests, check:data, check:modules) still run, as the edit hook runs them
 anyway. After UI-18, one session runs every skipped check and fixes what they find.
+
+As run (2026-10-27 to 28):
+- `track/ui` was about 220 commits behind main. So from UI-11 on, each step branched from the finished branch it built
+  on (`claude/ui-<nn>-<words>`), merged main and the other finished branches it needed, and opened its draft PR into
+  main. Each PR shows the earlier steps' commits until they merge.
+- After UI-11 the owner added: "Automatically start the next session after done, skip the checks until after all ui
+  is done". From then on the steps ran lint, typecheck, unit tests, check:data and check:modules, and left the browser
+  checks to one last session on `claude/ui-checks-all`.
+- They finished in this order:
+  - UI-8b (#276), UI-11 (#280), UI-12 (#282), UI-8c (#281), UI-13 (#284), UI-14a (#286);
+  - UI-14b (#288). It left the battle plates to UI-16b, because UI-15 had not pushed yet;
+  - UI-15 (#294), UI-16a (#297);
+  - UI-18 (#298), after the world map track's WM-5b (#293) and WM-6 (#296), which the owner asked to start;
+  - UI-16b (#299), with the style track's SY-1 to SY-3 (#289) and the VFX track's VFX-5 (#295) merged in;
+  - UI-17 (#300);
+  - then the check session (`claude/ui-checks-all`, 2026-10-28): Part 2 checked, see "Part 2 checked" above.
 
 ## UI-11: the colour code as data (the plan, 2026-10-27)
 Built on the session's own branch (a cloud session pushes only there), from main, which already holds `track/ui`;

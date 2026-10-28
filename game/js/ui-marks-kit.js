@@ -39,6 +39,7 @@ expose({
   markGlyph: [() => markGlyph],
   markIcon: [() => markIcon],
   marksBase: [() => marksBase],
+  rarityFoilHTML: [() => rarityFoilHTML],
   rarityPillHTML: [() => rarityPillHTML],
   rarityRowAttr: [() => rarityRowAttr],
   statTagHTML: [() => statTagHTML],
@@ -529,6 +530,12 @@ export const kindChipHTML = (kind, label, o = {}) =>
 export const rarityPillHTML = tier => {
   const t = rarityTier(tier);
   return t ? `<pb-rarity tier="${t}"></pb-rarity>` : '';
+};
+/** UI-17: a rare or mythical row's foil (pb-foil, idle life: the frame shimmers), put just inside the row; '' below
+ * rare @param {string | undefined} tier */
+export const rarityFoilHTML = tier => {
+  const t = rarityTier(tier);
+  return t === 'rare' || t === 'mythical' ? '<pb-foil></pb-foil>' : '';
 };
 /** a list row's rarity: ' data-rarity="rare"' for the row's element (with .rar-row: the bar and thin frame), or '' */
 export const rarityRowAttr = (/** @type {string | undefined} */ tier) => {

@@ -122,6 +122,16 @@
   "map": {
    "path": [[9,10],[9,11],[10,11],[10,12],[11,12]],
    "towns": [2,3],
+   "townSizes": {
+    "cells": {"hamlet":[2,1],"village":[2,2],"town":[3,2]},
+    "order": [
+     {"2":["hamlet","village"],"3":["hamlet","village","village"]},
+     {"2":["hamlet","town"],"3":["hamlet","village","town"]},
+     {"2":["hamlet","town"],"3":["hamlet","village","town"]},
+     {"2":["village","town"],"3":["hamlet","village","town"]},
+     {"2":["village","town"],"3":["hamlet","village","town"]}
+    ]
+   },
    "first": "landing",
    "rest": "town",
    "guard": "miniboss",
@@ -188,6 +198,24 @@
   "pack": [5],
   "town": {
    "locals": [1,2],
+   "sizes": {
+    "hamlet": {"word":"Hamlet","houses":[3,5],"stall":0,"givers":1},
+    "village": {"word":"Village","houses":[6,10],"stall":1,"givers":1},
+    "town": {"word":"Town","houses":[10,16],"stall":1,"givers":2}
+   },
+   "stall": {
+    "more": 2,
+    "pick": {
+     "leftover_sandwich": 1,
+     "snack_pack": 1,
+     "lucky_coin": 1,
+     "study_notes": 1,
+     "iron_vest": 1,
+     "quick_laces": 1,
+     "brass_knuckles": 1,
+     "smart_specs": 1
+    }
+   },
    "names": [
     "Old Tam",
     "Auntie Rue",

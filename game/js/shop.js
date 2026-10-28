@@ -9,10 +9,10 @@ import { clamp, random } from './util.js';
 import { CURRENCIES, ITEMS, PERKS, PYRAMIDS, RESIDENTS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { resStock } from './logic/residents.js';
-import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
+import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled, runStallStock } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
-import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
@@ -107,7 +107,8 @@ const warePrice = (sh, w, it) => {
  * null (not a run shop, bought, or none left) */
 function shopPerk(sh) {
   const run = saveData.run;
-  if (sh.runNode == null || !run) return null;
+  /* WM-5: a market stall sells no Perk (the owner) */
+  if (sh.runNode == null || !run || sh.stall) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !PERKS[id]) return null;
   return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.perks)) };
@@ -119,12 +120,13 @@ function shopPerkHTML(id, sh) {
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
   /* UI-14b: the Perk's tier (frame, name colour, pill), its stat rows as tags, its kind by the Perk glyph (violet) */
-  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {
   const run = saveData.run;
-  if (sh.runNode == null || !run) return '';
+  /* WM-5: Mo's word is for the town's shop, not its market stall */
+  if (sh.runNode == null || !run || sh.stall) return '';
   const left = runRerollsLeft(run, RESIDENTS);
   if (!left && !runShopRerolled(run, sh.runNode, run.clock)) return '';
   return runShopRerolled(run, sh.runNode, run.clock)
@@ -134,7 +136,7 @@ function shopRerollHTML(id, sh) {
 function shopReroll(id) {
   const sh = SHOPS[id],
     run = saveData.run;
-  if (!sh || !run || sh.runNode == null) return;
+  if (!sh || !run || sh.runNode == null || sh.stall) return;
   if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS)) return;
   sh.stock = runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
   uiState.shopQty = {};
@@ -161,7 +163,7 @@ function shopHTML(id) {
       /* UI-14b: a held item's tier (frame, name colour, pill) and its stat rows as tags */
       const I = it.kind === 'item' ? ITEMS[it.key] : null,
         rar = I && I.hold ? I.rarity : '';
-      return `<div class="ware2 k-card${rar ? ' rar-row' : ''}${locked ? ' locked' : ''}"${rarityRowAttr(rar)}><span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(it.n)}</b>${rarityPillHTML(rar)}<small>${escapeHtml(it.d)}${I ? fxTagsHTML(I.hold) : ''}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2 k-card${rar ? ' rar-row' : ''}${locked ? ' locked' : ''}"${rarityRowAttr(rar)}>${rarityFoilHTML(rar)}<span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(it.n)}</b>${rarityPillHTML(rar)}<small>${escapeHtml(it.d)}${I ? fxTagsHTML(I.hold) : ''}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
@@ -190,7 +192,10 @@ export function openShop(id) {
     return;
   }
   /* RL-8: a run town's shop has the day's stock (logic/run-loop.js runShopStock: its own stream for the day) */
-  if (sh.runNode != null && saveData.run) {
+  if (sh.runNode != null && saveData.run && sh.stall) {
+    /* WM-5: a village's or a town's market stall: the day's held items, no Perk (logic/run-loop.js runStallStock) */
+    sh.stock = runStallStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.town.stall);
+  } else if (sh.runNode != null && saveData.run) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
