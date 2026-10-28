@@ -2538,7 +2538,7 @@ export function heldRowProblems(f, at, D, problem) {
 }
 /** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number; reflect a share (at most
  * half) and a category or none; drain a share of the damage dealt;
- * immune a type (not a Perk's what), until: hurt or none
+ * immune a type (not a Perk's what), until: hurt or none; first a chance
  * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function heldKindProblems(f, at, D, problem) {
   const extra = (/** @type {string[]} */ own) =>
@@ -2559,6 +2559,11 @@ export function heldKindProblems(f, at, D, problem) {
     if (!(D.types || []).some((/** @type {any} */ t) => t.id === f.type))
       problem(`${at}.type: a held immune row names a type its moves miss the holder with (types.json)`);
     if (f.until != null && f.until !== 'hurt') problem(`${at}.until: hurt (until its holder is hit), or none`);
+  }
+  if (f.kind === 'first') {
+    extra(['chance']);
+    if (!(typeof f.chance === 'number' && f.chance > 0 && f.chance <= FX_CHANCE))
+      problem(`${at}.chance: a held first row's chance, above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE)`);
   }
   if (f.kind === 'drain') {
     extra(['share']);

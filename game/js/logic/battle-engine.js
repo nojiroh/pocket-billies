@@ -245,6 +245,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   heldCtx: [() => heldCtx, v => (heldCtx = v)],
   // @ts-expect-error -- replaced on purpose
+  heldFirstActs: [() => heldFirstActs, v => (heldFirstActs = v)],
+  // @ts-expect-error -- replaced on purpose
   heldFloats: [() => heldFloats, v => (heldFloats = v)],
   // @ts-expect-error -- replaced on purpose
   heldHitMoments: [() => heldHitMoments, v => (heldHitMoments = v)],
@@ -1995,6 +1997,18 @@ export function heldSurvives(tk, r) {
   r.dmg = t.hp - 1;
   return true;
 }
+/** PK-10: the acts whose fighter holds a first row (Express Pass) and wins its roll (one of the battle's stream for
+ * each, in the acts' order: none rolled without such an item) join `early`, each with a line @param {any[]} acts
+ * @param {Set<any>} early */
+export function heldFirstActs(acts, early) {
+  for (const a of acts) {
+    const u = fighter(a.who),
+      f = u && u.held ? fxHeldRow(fxOfBillie(u, ITEMS), 'first') : null;
+    if (!f || !(battleRoll() < f.chance)) continue;
+    early.add(a);
+    battleSay(`${billyName(u)}’s ${heldName(u)} let it go first!`, null).by = [{ src: 'held:' + u.held, si: a.who }];
+  }
+}
 /** PK-10: does fighter k's held immune row keep moves of type `ty` off it now (not yet spent by a hit, with `until`)?
  * @param {number} k @param {string} ty */
 export function heldFloats(k, ty) {
@@ -2098,6 +2112,8 @@ export function runTurn(plan, b) {
     acts.forEach(a => (a.r = battleRoll()));
     /* PK-3: a run's first rows put yours ahead of the foe's, within a move's priority (Alarm Clock) */
     const early = fxFirstActs(acts);
+    /* PK-10: a held first row (Express Pass), on either side: a roll for each of its acts */
+    heldFirstActs(acts, early);
     acts.sort(
       (a, b) =>
         (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||

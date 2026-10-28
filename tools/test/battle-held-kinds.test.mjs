@@ -177,3 +177,29 @@ test('held immune: a real Ground move on the holder misses with a line and no ac
   fn('useMove')(1, ground, 0);
   assert.equal(me.hp, hp, 'without until it lasts');
 });
+
+test('held first: a roll for each act of its holder; a win puts it ahead, with a line', () => {
+  const id = item('test_pass', [{ kind: 'first', chance: 0.5 }]);
+  let won = 0,
+    lost = 0;
+  for (let i = 0; i < 40; i++) {
+    reseed(100 + i);
+    const { B } = battle(id),
+      acts = [{ who: 0 }, { who: 1 }],
+      early = new Set();
+    B.rng = null;
+    fn('heldFirstActs')(acts, early);
+    assert.ok(!early.has(acts[1]), 'the foe holds nothing');
+    if (early.has(acts[0])) {
+      won++;
+      assert.match(texts(B), /Emberox’s test pass let it go first/);
+    } else lost++;
+  }
+  assert.ok(won > 5 && lost > 5, `${won} won, ${lost} lost`);
+  const { B } = battle(null),
+    early = new Set(),
+    r0 = JSON.stringify(B.rng);
+  fn('heldFirstActs')([{ who: 0 }, { who: 1 }], early);
+  assert.equal(early.size, 0);
+  assert.equal(JSON.stringify(B.rng), r0, 'nothing held: no roll');
+});

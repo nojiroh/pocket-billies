@@ -8,7 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
-import { FX_LIMIT, FX_STAGES, HELD_IFS } from '../../game/js/logic/effects.js';
+import { FX_CHANCE, FX_LIMIT, FX_STAGES, HELD_IFS } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { HELD_WHEN_KINDS, HOLD_KINDS, RARITY_TIERS, dataHeldItems } from '../../game/js/logic/data-checks.js';
 import { ACTIONS, changed, grid, numberField, render, selectField, studioState } from './studio-app.js';
@@ -37,6 +37,7 @@ const HELD_KIND_NAMES = {
   reflect: 'Billies that hit its holder lose a share of their HP (PK-10)',
   drain: 'Its holder heals a share of the damage it deals (PK-10)',
   immune: 'Moves of a type miss its holder (until it is hit) (PK-10)',
+  first: 'A chance its holder moves first (PK-10)',
 };
 /** a new row of a kind: its fields with values that change little */
 const HELD_ROW_NEW = {
@@ -50,6 +51,7 @@ const HELD_ROW_NEW = {
   reflect: () => ({ kind: 'reflect', share: 0.125, cat: 'H' }),
   drain: () => ({ kind: 'drain', share: 0.125 }),
   immune: () => ({ kind: 'immune', type: 'Ground', until: 'hurt' }),
+  first: () => ({ kind: 'first', chance: 0.2 }),
 };
 /** the data checks' messages about one item's rows (dataHeldItems, as CI runs it) */
 const heldProblems = (/** @type {string} */ k) => {
@@ -163,6 +165,14 @@ function heldRowHTML(k, f, n, P) {
           D.types.map((/** @type {any} */ t) => [t.id, t.id])
         ),
         selectField('Until', `${p}.until`, [['hurt', 'It is hit (then it is spent)']], { none: 'Always', opt: 1 }),
+      ],
+      first: () => [
+        numberField('Chance each turn', `${p}.chance`, {
+          min: 0.01,
+          max: FX_CHANCE,
+          step: 0.01,
+          help: `Above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE). Within a move’s priority.`,
+        }),
       ],
     })[f.kind],
     rows = D.items[k].hold;

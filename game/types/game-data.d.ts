@@ -1978,7 +1978,9 @@ export type HeldKindRow =
   /** its holder heals `share` of the damage it deals */
   | { kind: 'drain'; share: number }
   /** moves of `type` miss its holder (until it is hit, with `until: 'hurt'`) */
-  | { kind: 'immune'; type: string; until?: 'hurt' };
+  | { kind: 'immune'; type: string; until?: 'hurt' }
+  /** a `chance` each turn that its holder moves first (within a move's priority) */
+  | { kind: 'first'; chance: number };
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
 export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */
