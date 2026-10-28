@@ -6,533 +6,13 @@ branching node map of short walkable scenes reached by airship, mini-bosses and 
 as an Alpha, four currencies, relics, difficulty tiers, a ranch between runs, data-driven unlocks and content packs,
 and later friend ghost teams and daily seeds. This file is the plan, approved by the owner on 2026-10-20 (session
 RL-0, planning only; nothing was built). It is a track like the Studio and Map generator tracks: one session per
-row of the table in section 1, each in Plan Mode first, one cause per commit, the quick check tiers of
+row of docs/ROADMAP.md's roguelite table, each in Plan Mode first, one cause per commit, the quick check tiers of
 docs/TESTING.md after every change, a docs/HANDOFF.md entry and a tag `rl-N-done` at the end (tags are pushed from
 the owner's machine; sessions can't push them). Every number and line below was read at HEAD e3df43a; verify again
 before each session and correct this file where the code disagrees. **Section 9 (2026-10-23) restructures the track
-after RL-12a around regions, encounters and a story director; its order wins over section 1's.**
-
-## 0. What the repo says today (verified at HEAD e3df43a, 2026-10-20)
-
-**State of the repo.** Latest merges: PR #78 (Studio Billie part-library picker) and PR #77 (back-view rig and bot HP
-fixes), both 2026-10-20. The #78 HANDOFF entry says its validation could not run (no Node suite, no browser), so it is
-unverified work sitting on main. Before that: map generator MG-1 (routes only; towns MG-3 not built), Studio track
-ST-6, Project Story S1-S3 and the city opening, world-map bowl done, phase 17 robots prototype "in progress, not
-tagged", phase 16 prototype part 1, phase 12 ranch and phase 18 friends not started.
-
-**Tags.** The remote holds no `phase-NN-done` tag at all, only `Baseline`; every HANDOFF since phase 03 says tag pushes
-get HTTP 403 from these sessions. The `legacy` branch exists at 0314a22. So "never start a phase from an untagged state"
-has not held for a while, and the CI full run "on phase-* tags" never fires. (The plan asks the owner to push tags.)
-
-**Tools in this container.** No `node_modules`, no Python Playwright: `npm test`, lint, typecheck and the quick check
-could not be run here. The audit's "263 tests pass" is now 279 per HANDOFF (52 files, ~280 `test(` calls).
-
-**Corrected in RL-1 (2026-10-20, read and run at c2d51d6).** `npm ci` and `pip install -r tools/requirements-check.txt`
-work in the container (the pinned `playwright==1.56.0` matches /opt/pw-browsers; the newest Playwright does not), so
-every tier ran. 285 tests passed before RL-1 (290 after). PR #78 left `check:modules` and `format:check` red (fixed);
-the smoke check's one red step was older than #78 (the world map's `mthing` shader, aCol on location 7, from phase
-10; fixed). `CLAUDE.md:30` had already been corrected in RL-0. The "16 version-stamped tools" are **not** dead weight:
-`build-scene-props.py` execs the five `scene_props_v*.py`, `build-props-a04.py` imports `build-buildings-v46.py`,
-`build-terrain-v47.py` was the ground generator the game's painter mirrors (retired in SA-2a), and 03-audit-notes lists most of the rest
-as live generators; only a few are one-off migrations (owner's decision pending, HANDOFF RL-1). Direct `Math.random`
-calls: 172, not 177.
-
-**Corrected in RL-2 (2026-10-21).** `dailySeed` went into `logic/rng.js`, not rules.js (it is seed code; rules.js
-has none). No old-name re-export from mapgen: only mapgen.js and its test called `mapgenHashString`/`mapgenRandom`, and
-the hash is the same wherever it lives (`rng.test.mjs` freezes values taken before the move, a generated scene's hash
-included). `rng-baseline.test.mjs` does not change in RL-2: `util.random` stays `Math.random` until RL-4's `b.rng`.
-`game/index.html` did not load mapgen.js; both pages now load `rng.js` first among the logic modules. Battles at
-equal-ish levels last 2-5 turns, so the golden record's seeds and levels were picked to include a crit, the Alpha's
-shield and a robot part breaking. `spawn`'s species odds also pass through `environmentOdds` (the real-clock weather):
-a run's spawn needs `extra.wx`-style weather from `run.forecast` too (RL-6/7).
-
-**Corrected in RL-3 (2026-10-21).** The save already had a field `v: 4` (read nowhere, apart from `saveVersion`):
-deleted first, so "format 4" means one thing. The trip reset is one line (`saves.js:146`), not 146-148. `rules.json`
-had no `run` block: RL-3 adds `run.payout` (placeholders). The run does not store its own position (`run.at` holds the
-phase and the battle only): `trip.node` is the position, one copy. `trip.node` in a run counts Copperleaf as 0 and map
-node i as i + 1, as 2e says, so `run.path` holds map indices. The set-aside slot kept the *first* unloadable save, so
-SAVE_VERSION 4 would have lost a format 3 save on a phone that already had one set aside: fixed (the latest wins).
-The account's older save goes to `-cloud-set-aside`, which nothing reads (not fixed: one slot, two saves; owner's
-call). Keep-one in `runEnd` follows option 3 of 8.2 by shape (travellers come back as they left, kept ones keep their
-gains); how many are kept on a win or a loss is still the owner's call.
-
-**Corrected in RL-4 (2026-10-21).** The engine read `activeBattle` 64 times (68 with the import and comments), not 56.
-It drew chances in 18 places, not 16: two `pickWeighted` calls (the AI's weighted pick, the limb a hit lands on)
-used the default `random`. "No save writes" covered items too (`applyItem` spent `saveData.items`, `award` read
-`saveData.buddy` and the save's team). `B()` breaks the naming rule (no top-level name of one or two characters):
-the engine reads `battleNow()`, and `withBattle(b, f)` plays a battle given to an entry point. `setActiveBattle` did
-not need to call anything: `battleNow()` falls back to the page's `activeBattle`. `seen` is not copied by `endBattle`:
-a battle on the save's own team (every battle the page starts) marks the save as before, a battle on a copied team
-keeps `b.seen`, `b.bag`, `b.buddy`. `b.rng` is made by `makeBattle` from `b.seed` (`rngFn(seed, 'battle')`); with no
-seed the engine still draws `util.random`, so ordinary play and the golden record are unchanged. Owner's answers:
-turn cap 40, a draw (wild = walked away, trainer = loss) (8.9); a killed battle restarts from its seed (8.7, built in
-RL-8); Lullaby's text fixed to 2-4 turns.
-
-**Corrected in MG-2 (2026-10-21).** "Seams decided by the code" holds: run scenes 112×64, forward links N to S at t
-0.25/0.5/0.75 join with whole-metre offsets, and a child generated from its parent's strip (`mapgenEdgeStrip` into
-`params.edges`) meets it with no height gap or step and a straight walk across (docs/phases/mapgen-track.md, MG-2). Two
-things the plan didn't say: terraces must stay at ground level by every exit's edge, not only joined ones (a parent is
-made before its children), and a node with two parents shares its south side at the midpoint between the exits.
-`logic/seam-rules.js` is check-data's seam rules moved into one module (check-data is already Node), not a
-re-implementation; a02_joins compares views, so on raw data the numbers are heights, step and the walk. The hub's
-buildings for RL-8's towns are the props dials `mast`, `clinic`, `shop` (a lot beside the main road facing the camera,
-level, with a path to the door). The terrain track's TR-1 (smooth roads) was folded in by the owner.
-**Corrected in RL-5 (2026-10-21).** 48 places and 48 maps were parked, not 47 (49 locations, Copperleaf index 46,
-now 0); 39 trainers moved, 10 stayed (the 8 leaders, now `miniboss: true` with no `node`, and the tutorials blake0
-and tinker). Trainers name their place by a numeric `node`, so a leader without one needed the `miniboss` branch in
-`worldSetGraph`, the schema (`node` only for a trainer that stands somewhere) and both checks (check-data and the
-Studio's; neither exempted tutorials: they passed because node 0 existed). More of story.json named parked things
-than lines 38 and 66: 47 (Fizzwell), 48-49 (`beat:chad`, `!beat:chad2`, Clovercrest), 67 (Tallgrass), and the
-`before-cass` preset (moved to legacy); Copperleaf's own signpost, a townsfolk line and one of Granny Juniper's
-pointed at Marigold too (cut, the owner's answer). A place with no exits opened as its plain map, where no room
-opens in place (`roomLayIn` needs a hub view's parts): Pearlantis had that bug, and Copperleaf would have; fixed in
-`seamlessRoamView`. `worldSetGraph` is pure (game-data.js is logic): it does **not** bump `seamlessWorld.gen` or call
-`worldBowlReset()` (2e said so); RL-7's install does that, and must also reset what holds a node or a place:
-`worldBowl.sel`/`marks`, `uiState.mapSel`, `airshipFlight.a/b`, the walk view's composite (a `gen` bump with the same
-view id keeps it), `watchMapsAhead`'s cached node, things-to-do's node keys (`saveData.x` is not a run field),
-`mapIdAt`'s fallback to the first map (Copperleaf, listed first since RL-5), and `walk-view.js mapMoodName`, which
-reads `gameData.locations` (the hub's; shared with the Studio, so a run scene should carry its own `mood`). Hub
-trainers attach by node number in whatever world is in (none stand anywhere after RL-5; a run puts its trainers in
-`TRAINERS` first). A world without roads now has none (an empty list made up a chain). check-data's seam offset
-rule rejects only an offset of exactly x.5 m (now `logic/seam-rules.js:122`, moved there by MG-2): a small fix for later.
-`gamedata.js` was 0.76 MB (lite maps), not 13 MB (CLAUDE.md's gotcha is stale): 0.59 MB after; game/data/maps 7.3 MB
--> 0.8 MB. Kept, against this plan: fishing.json (keyed by water, not place; Copperleaf has water) and the postcard
-pictures (loaded only on arrival). Left dead in the data: `rules.json legends[].scene` (cinderpeak, frostcrown),
-`scenery.json` flags (parked towns), `biomes.json from`, the parked places' pools.
-**Corrected in RL-6 (2026-10-21).** The climate odds can't make a forecast alone: no place, map or biome had a climate
-(`environmentClimate` guesses one from a scene's fields, and a node's weather is needed before its scene exists), so
-biomes.json rows got `climate` (today's guess for each biome's generated scene, default dials; a map with coast water
-guesses coast whatever its biome, so RL-7 writes `scene.climate` from the biome). `weatherPick(climate, rnd)` became
-`weatherPick(climate, roll, season)`: the page's pick changes the mild odds by season first; environment.js is on the
-Studio page too, so logic/weather.js loads on both. `runMapMake` takes no tier (RL-13: an Expedition changes the foes and the prices, and its region's zones the rows, not the map's shape).
-The seam rules cap a node at two links each way (two exits a side, 44 m apart: t 0.5, or 0.25 and 0.75). On the bowl
-every map's north faces the centre, so a run's rows go from the rim (r 0.94) towards it (0.12), on the south side;
-the hub's 30-degree seam rule holds for straight links and splits, not for a lane switch (45 is tested; 34 seen on the
-game's rules). `runEnd` paid per node cleared from the path's length, which counts backtracks: now distinct nodes.
-`forecast[node][day]` is `forecast[world node][day - 1]`; the node seed uses the map's numbering. "About 14 nodes"
-needs two lanes on almost every free or town row: with the 70% chosen, a map has 12.5 on average (9 to 14), and towns
-are 4.4 of them (the two rows before the mini-boss rows, plus a filler at weight 1 of 5).
-**Corrected in RL-7 (2026-10-21).** A scene takes about 30 ms to make in Node, not 136-451 ms (MG-1's numbers, before
-MG-2); a run's 12-14 took 0.4-0.9 s in headless Chromium, so a run's world makes all its scenes when it goes in,
-not "lazily one hop ahead" (which can't work per node anyway: a child is made from every parent's edge, so the order
-is row by row). 501 scenes of 40 runs with the scene dials varied all joined with no gap and a straight walk, all
-reachable. The world follows the save, not boot alone: the save is swapped in many places (New game, an account or
-backup restore, the debug menu, the in-game test), so `setSaveData` calls `runWorldSync` once boot has (RL-8's run
-start calls it too). `runArrive` took where you stand from `run.path`; `trip.node` is the one copy (RL-3), so it reads
-that. `migrate`/`validSave` bounded a hub save by the installed world's places: the hub's own now (`HUB_LOCATIONS`).
-Not in 2e: a crossing counts `run.seamIn` (6) metres in, so a step over a seam and back costs no day; a run place's
-pool is its own (its biome's species at its row's levels: the source places' pools carry old levels, Russetwood
-41-45); biomes.json rows got `pool`, `battleStage`, `mood`. 2a's "a run made by another generator version is
-abandoned" became "kept" (the owner's J: the map and position don't depend on the generator). The walked view copies
-a scene's `climate` (LOOK_KEYS). Things that would misfire on run nodes were kept to the hub: postcards, things-to-do's
-visits and requests, friends' presence (node 0, "a run"). Run trainers, the landing's mast and towns' clinic and shop
-moved to RL-8 with their behaviour; RL-7's scenes are plain routes. A place's landmark picture on the bowl draws as a
-red block in headless Chromium, Copperleaf's in the hub too (not RL-7's; HANDOFF).
-
-**Corrected in RL-8 (2026-10-21).** No battle had a seed and `extra.wx` didn't exist; battle weather already
-followed the forecast (RL-7) except sunny and night (the real hour); a run's battles now take the forecast alone (clear
-counts as sunny). Run towns offered a free clinic on the place card, and no run scene had a mast, clinic or shop
-building (mapgen's MG-2 dials make them, by node type). "You hurried back to the clinic" healed where you stood. The
-in-game test had no airship step (a04's model check was the only one). The debug menu's "Go there" skipped the run's
-arrival. Leaks the plan didn't list: storage (`box`) isn't a run field, so a 7th catch or a move to or from storage
-leaked Billies into Copperleaf (storage is closed on a run; a 7th catch waits until one is released, as `validSave`
-refuses a team of 7); today's challenges kept counting and paid into the run's money; releasing a Billie from
-Copperleaf would have been paid though it comes home; moves waiting to be learned are kept by Billie id (cleared at a
-run's start and end). The account upload runs about 5 s after a save, so a checkpoint is uploaded at once (`saveNow`).
-No trainer stood anywhere; the leaders have `blocks: false` and scripts that fight the real leader (badge included),
-so a run copies them with ids of its own and no script, badge, egg or story conditions. The wild odds followed the real
-hour and new ids came from the clock (a run wasn't reproducible from its seed): both now come from the run. Section 5
-put Capital "in the Lab": the Lab's board is RL-11, so Capital shows in the Map header. `pb-payout` has one total and
-no Seals line, and there is no keep-one component: the payout lays out `pb-pick-card`s. The owner's answers: the full
-9-row map (8.8; the debug menu has a 5-row short run), formats by node type with an Alpha boss and the 40-turn cap
-(8.9), and the opening is the fall only (8.20). The owner's play found a trap RL-7 had left: a run's bridges couldn't be
-walked where a stream's banks are steep (walk/heights.js blocked the steep ground under the deck), and mapgen laid a
-bridge along a stream where the road ran beside it, often ending in the water; both fixed (MAPGEN_VERSION 4).
-
-**Corrected in RL-9 (2026-10-22).** Copperleaf had no barn and no live map used `int_barn` (no acts in it); the barn's
-opening hours (`OPEN_HOURS.barn`) would have closed the ranch at night; `meta.scrap` and `meta.buildings` were never
-used; storage is the Team tab, not a building. The ranch is a barn by Copperleaf's farm patch (act `ranch`) into
-`int_barn`, with a training board; training is `logic/ranch.js` with `rules.ranch` (placeholders); Scrap comes from the
-payout (`scrapNode`, `scrapWin`). No `buildings.json` stub (RL-11). The owner's answers: 8.2, 1 home Billie a run at
-Bracket I, and a bag packed at the mast from Copperleaf's bag, which keeps everything gathered (RL-9b builds both); the
-ranch's sheet shows storage and the Team tab keeps it. Rooms were made a little smaller at the owner's word (12 x 10
-and 16 x 11 m). A `runEnd` trap for RL-9b: a kept Billie that travelled from storage isn't in the restored team and
-would be pushed in twice.
-
-**Corrected in RL-9b (2026-10-22).** Before RL-9b the whole hub team travelled and the run's bag was only the rules'
-gift. The trap above was real and had two more faces: `runReleasePays` and the payout's cards called a Billie "from
-Copperleaf" by `run.start.team`, so one from storage would have been paid as caught on the run if released; and
-`saveData.buddy` was not a run field, so with one traveller the hub's buddy wasn't on the run. Built: `rules.run.home`
-[1] and `run.pack` [5] by Bracket; `runBegin` takes `home` (uids from the team or storage) and `pack` (taken from the
-hub's bag, so `run.start` keeps what stays home); `run.home`, `run.pack`, the buddy a run field; `runEnd` puts a kept
-Billie back where it lives (team or storage) and, on a win, the run's items and coins into the hub's bag, which then
-pay no Capital. The owner's answers: items and coins pack, 5 in all, on top of the gift; a win's bag goes home unpaid;
-the pick from the team or storage (a trainee stops, healed); the run fixture follows the rule (its lead alone). The
-sim (`--team`, `--pack`): one Lv 5 starter loses on the landing in 31 of 50 runs, as on main; packing 5 Potions
-changes little (balance is for the owner's play).
-
-**Corrected in RL-10a (2026-10-22).** RL-10 split in two at the owner's word: RL-10a breeding and hatching, RL-10b
-passive income and the cloud `t` anchor. Where section 3 and RL-10 were wrong: eggs hatched by metres walked
-(`addWalked`), not by time, and nothing gave eggs any more on the hub's terms; `eggs.json` lists legacy species
-(played by stand-ins, `standInSpecies`); no Billie has a passive of its own (only types do), so a quirk's or an
-abomination's "passive" waits for RL-12's effects; an abomination can't look mixed (the art is built per species
-offline; `logic/parts.js` is size arithmetic); `account.js` writes the cloud save in two places (`flushAccountSave`,
-`accountSignOut`), not one; and training's rollback guard (RL-9) moves a trainee's start back to a turned-back clock,
-so turning it forward again pays the gap (RL-10b's shared guard should fix it). The owner's answers (the
-recommendations): you pick the parents and the ranch picks the parts (16's 5.1: both); an abomination wears one
-parent's art with its own name and a stat swing; the walking eggs are retired; the parents stay free. Built:
-`rules.ranch.breed`; `logic/breeding.js` (the egg rolled from the parents' uids and `ranch.bred` when the pair starts,
-kept in the nursery entry, its ready time never moving); `m.mut` (a quirk, or an abomination's name, one stat
-`abomUp`, another `abomDown`) read by `stat()` and `billyName`; the ranch sheet's Nursery and "Breed a pair"; the
-hatch window moved to the ranch. The old eggs no longer drop, are no longer given or hatched by walking, and their
-screens are gone; their data (`eggs.json`, `saveData.eggs`, trainers' `egg`, the Studio's editors, the incubators'
-CSS) is dormant, for a cleanup session. The sim's first numbers: 59/31/11 % (odds 60/30/10); a bred Billie's mark
-is about even against its unmarked twin, but mixed part sizes lose phase 16's Prime bonus (0.11-0.17 against a plain
-Billie; the duel's control is 0.43).
-
-**Corrected in RL-10b (2026-10-23).** Section 3's `ranch.income = {rate, cap: 24 h, lastAt, bank}`: the save already
-held `{rate, bank, lastAt}` (RL-3) and no cap; the rate and the cap are rules (`rules.ranch.income`: 1/2/3 Scrap an hour
-by ranch level, 24 h; placeholders), so the save drops `rate` (a stored rate would go stale on an upgrade) and `bank`
-holds what an old level earned (buying an unlock banks the income first). `lastAt` 0 on a new save would have paid a
-full pile at once: income starts at the ranch's first opening. "`lastAt = max(lastAt, t)` on load" only stops a clock
-turned back across devices, not a clock set forward; the owner chose the anchor plus a measured skew. Built: one ranch
-clock, `logic/ranch-clock.js` (`ranchNow`: the phone time less the session's skew; more than `guardMs` behind the
-save's high-water mark `ranch.seen`, time stands still at the mark; `ranchAnchor`, `clockSkew`, a session floor from the
-cloud save's `t`), read by training, eggs and income; training's start never moves back (the RL-9 bug RL-10a found);
-`logic/ranch-income.js` and the sheet's Income row with Collect (the owner's pick over collecting on opening); both
-cloud writes (`accountSaveDoc`) carry `t: serverTimestamp()`, read back once a session for the skew. 8.12: the
-`saves/{uid}` key whitelist with `t == request.time`, 14 emulator tests; publish it only after the build is live.
-"Working offline" needed nothing new: the service worker was there, and the sums run on the phone's clock with the mark.
-
-**Corrected in RL-11 (2026-10-22).** There is no `hub.js`: the board is `lab-board.js` in the hub's Lab tab (hidden
-since UI-5 for it), and Hazel's lab machine (now act `board`) opens it. `won:bracket_N` can't be built yet: meta keeps a
-win count and the highest tier, and nothing raises the tier (RL-13 does, on a win); RL-11 added the condition kinds `unlock:<id>`,
-`runs` and `wins`. The three doors are one field each: a row with `at` (and `cost`) is sold at that building in its
-currency (the Lab's rows are the board), a row with `when` is earned (a milestone; no `door` field). A grant is one of a
-building's level, an item into run shops, a biome onto run maps, or a currency; nothing else needed effects (RL-12).
-`meta.buildings` stays where a level lives (`ranchLevel` read it already); the load step rebuilds it from the owned
-rows. A run copies its shop and biome unlocks at the start (`run.unlocks`), so a run is still made by its seed and that
-copy; a run from before RL-11 has none and keeps everything open. Milestones are granted in the hub only (after the
-payout and when the world shows at boot), never on a run. Building looks per level: no art, so the label shows the level
-(the owner's answer). The Workshop is a row "coming later" (the owner's answer). The run sim, the fixture's run and the
-in-game test's run are made without `runTakeOff`, so they keep everything open. The owner's answers: 8.5 the
-recommendation; the first unlocks ranch levels, run shop wares, new biomes and milestones.
-
-**Corrected in RL-12 (RL-12a, 2026-10-22).** The owner let RL-12 go before RL-11 (every Loophole on offer from the
-first run; RL-11's unlocks may narrow the pool later) and split it: RL-12a is the effects, the Loopholes, the
-mini-boss pick and the shops; RL-12b is `events.json` (`relic`, `wager`) and the event and shop places. The calls named
-in 4 were all there (`calcDamage`, `catchOdds`, `newBattle` with the run's `runBattleStart`), and the save already had
-`run.relics`, `run.offer` and the `menu` phase; RL-12a added `run.offerN` (the offers' stream) and `run.shelf` (a run
-shop's Loophole by node and day, so buying it doesn't put another on the shelf), filled by `migrate` for a run saved
-before. The effect kinds built are `money`, `price` (shop, heal), `catch`, `stat`, `damage` (deal, take, by category or
-type), `heal` (walking in) and `payout` (Capital, the items' share); RL-13 added `level` and `bossHp` (modifiers only); `rule`, `clock` and `start` wait for RL-14
-and RL-14. Stat rows apply as the battle is made (yours on the field), said after the sides come out. UI-4 had already
-built the run bar's fourth tab (hidden) and the pick card: the tab opens as "Loopholes" and the pick shows its cards
-one to a row (three across cut the names). "Tiny waystation scenes" (8.6) can't be: every run scene is 112 x 64 m for
-the seams; the owner chose a normal-sized place with a stand (RL-12b). RL-9b (merged during RL-12) brings a won run's
-items home, so Write-off (items at full price) counts only on a loss. Names: "Loophole" on screen, `relics` in the data
-(the item id `loophole` is the Hi-Potion).
-
-**Corrected in RL-12b (part 1, 2026-10-23, branch `track/encounters`).** Checked in the code first: nothing read
-nodeTypes' `engine: "menu"` or the run's `menu` phase (both left for part 2); the map had no rule against two shops in
-a row (a town is forced before each mini-boss, and filler rows roll towns too); there were no route trainers, no line
-of sight and no "!" until spotted (the only walk-up was the story's `runsUp`); only a mini-boss win left a pick;
-there was one evolution item (the Shining Stone) and no line used it, no candy, no tutor; conditions couldn't test
-money or a type in the team; `give` handled items only. Built: `events.json` (the owner's 18 events, loot tables,
-seven trainer classes) with options as conditions, costs and scripts in the story language; the event commands
-(`perk`, `money`, `hurt`, `heal`, `status`, `fx`, `wager`, `loot`, `level`, `recall`, `foe`, `wild`, `reward`) and
-conditions (`type:`, `money`, `team`, `badge:`); `run.enc` (no SAVE_VERSION bump: missing on an older run) with timed
-boons read by `fxOfRun`; the reward pick (`rewards.json`, a paid reroll that doubles; the owner's option B: Versewift
-and Feedopus evolve with the Shining Stone from level 20); route trainers on every route who walk up on sight. Not
-"a day passes": RL-R2 drops the deadline, so the drafts' day costs became a tenth of the team's HP. Part 2 (after
-RL-R2 merges): the waystation places, the no-two-shops rule, the check-fast page and the in-game test's step.
-
-**Changed in the TR-2 session (2026-10-21, the owner: "runs should go from east to west").** A run scene is entered
-by its east side and left ahead by its west: `east`/`east2` back, `west`/`west2` ahead (logic/run-scenes.js
-runSceneExits; runExits' `ahead`/`back`, renamed from north/south). Two links a side sit 10 m and 54 m along the 64 m
-edge (t 0.15625 and 0.84375, the seam rules' 44 m apart). Every run scene's east and west edges are pinned to height
-0 (mapgen `pin`), because on a 64 m edge the strips of two parents overlap and one scene can't follow both. On the
-bowl west is clockwise, so the run is an arc on the south side, landing in the south-east, boss in the south-west
-(RUN_BOWL a 270, span 120, r 0.62). **Changed in RL-8b:** the run runs straight across the bowl, the landing near the
-east rim and the boss near the west (RUN_BOWL x 0.72, step 0.18, lane 0.1, bend 0.06), every run place's map facing
-the bowl's north (a spot's `up` 90), on land of its own made from the seed (logic/run-bowl.js); Copperleaf is off a
-run's map. MAPGEN_VERSION 5 (merged after RL-8 took 4) leaves a run saved going north. The free sides of a run scene
-are now north (the back, behind what the camera looks at) and south (toward the camera); the lines below that say
-N to S describe the layout before this change. **Changed in WM-1 (2026-10-27, the owner: "runs go from west to
-east"; docs/phases/worldmap-track.md):** entered by the west side and left ahead by the east (`west`/`west2` back,
-`east`/`east2` ahead), the landing near the bowl's west rim and the boss near the east, mapgen's `ahead` dial `E`
-(the tall grass across the way on, the pinches along it), MAPGEN_VERSION 19; the world map opens looking north like
-the walk camera.
-
-### Findings A: battle, state, randomness, saves (verified)
-
-- `game/js/hooks.js` is generated by `tools/to-module.mjs` (one `export let` slot per name, ~274 slots, `provide()`
-  fills them). `saveData` and `activeBattle` live in `game-state.js:115-128` with `setSaveData`/`setActiveBattle`,
-  which assign and re-`provide`. Each name therefore exists as two live bindings (hooks.js and game-state.js), in sync
-  only through the setters.
-- `logic/battle-engine.js` reads `activeBattle` as a module global from hooks (56 references), never as an argument.
-  `newBattle(kind, foe, extra)` (line 876) installs it with `setActiveBattle`. Side 0's team **is `saveData.team` by
-  reference** (line 906): damage and XP land on the save directly. The engine also calls UI seams (`toast`, `save`,
-  `openBattle`, `playTurnEvents`, `uiState.dbgCatch`). Battle-end rewards, the lose fee, egg drops and badges live in
-  `battle.js endBattle`/`finishThrow`, not in logic/.
-- Logic files reading hooks: battle-engine (10 names), rules (14), saves (`saveData`), script, coats, game-data.
-  `tools/test/logic.test.mjs:12-29` lists the allowed seams.
-- **Randomness: `util.js:11` is `export const random = Math.random`.** Not seedable. The unit tests seed by replacing
-  `Math.random` with Park-Miller in `tools/test/load-logic.mjs` *before* util.js loads. The engine calls `random()`
-  ~16 times (crit 286, damage 288-289, sleep, retarget, paralysis, confusion, accuracy, effects, AI pick, speed
-  tiebreak, catch rolls); `rules.js pickWeighted` too. 177 direct `Math.random` calls in game/+studio/ (rendering,
-  sound, ambient life mostly; also `battle.js` bribe/egg drops and `things-to-do.js` rewards, which are game outcomes).
-  `logic/mapgen.js` has its own pure sfc32 (`mapgenRandom(seed, salt)` from an FNV-1a string hash, per-stage streams).
-  Logic is also not deterministic for other reasons: `newUid` and `met` use `Date.now()`, battle weather follows the
-  real clock, wild refill uses `playMs`.
-- **Saves:** `SAVE_VERSION = 3` (`saves.js:161`); `migrate()` fills same-version defaults and drops stale ids (not a
-  format converter); `validSave` (174-250) is strict (team 1..6, box ≤ 5000, species/uid/lvl/moves checks, `trip.node`
-  an index, `se` money, coins/items records, `wild`, `seen`, `caught`, `flags`, `seats`). Top-level keys of
-  `newSave()`: `saveVersion, gameVersion, avatar, preferences, started, gender, starter, team, box, parts, seen, caught,
-  se (money), coins, items, trip{node,plan}, wild, buddy, flags, seats (badges), visited, serial, eggs, savedAt, tid,
-  since, hatched` plus `playMs, story, stats, x, cards, wardrobe` added by other modules. No `unlocks`, no ranch, no
-  run, no `day`. Storage key `networth-save-v1[-u-<account>]` in localStorage; cloud copy at Firestore `saves/<uid>`
-  (`{json, savedAt, saveVersion, name, game}`, < 1 MB). Save is event-driven (~95 `save()` sites) plus a minute tick.
-- **Alpha fights:** actors 0,2,4 vs 1 (`SIDE_ACTORS`), `alphaTeam = 3`, the Alpha acts twice a turn, `makeAlpha`
-  sets `m.boss = {hp: 3, st: 1.3}` and +3 levels; `alphaPhase` at 50% HP raises a 2-turn shield and +1 Atk/SpA.
-  Wild only today (1/45 with ≥ 2 members). Formats `single|double|alpha` are hard-coded (not in rules.json).
-- **Robot parts:** `kind:'robot'`, `gem`, `fit {torso, armL, armR, legs}`, `partDmg` per limb, limb HP = maxHp × 0.4
-  × dur, every hit also calls `hitPart` (weights 0.25 each incl. torso), 3 aimed moves, broken limb disables its
-  moves, broken legs halve Speed, `aiAimPart` targets the weakest limb.
-- **Weather:** `battleWeatherMultiplier` is in `things-to-do.js:705` (reached by the engine through hooks as an
-  optional function, line 304). It reads `environmentState(map)` = place climate × the real clock (3-hour blocks,
-  hashed, deterministic from wall time). `environmentForecast` exists in environment.js. `logic/bowl-weather.js` is
-  bowl visuals only (sky blend, clouds, wind, the Inner Sun); `walk/fountains-weather.js` is rendering only.
-- Statuses are `aud` (Paralyzed, "audit"), `sub` (Asleep, "subpoena"), `scn` (Burned, "scandal"). 9 types, 6 stats.
-- **Economy:** money is `saveData.se` (start $600). Sources: wild win lvl × $20, trainer reward, bribe after a failed
-  catch, things-to-do rewards. Sinks: shops, 10% lose fee, $100 rest stop, airship tickets, clothes. **Healing at the
-  clinic is free.** `jobs.json` is dead data. 18 shops (per location, `stock: [{item|coin, price}]`), 12 items, 4 catch
-  coins (silver/gold need badges), eggs hatch by metres walked (2/4/8 km) from wild wins (12%) and trainer firsts.
-- **Roster:** the game reads `game/data/lines/*.json`: 7 lines, 24 species (roster.json is not read). Legacy ids in
-  pools/trainers are stood in by hash onto the 4 uncommon lines, so the effective wild roster is small. 121 moves.
-- **Battle length:** no telemetry; an AI-vs-AI simulation (run in memory by the explorer) gave a median of 2 turns
-  for equal-level 1v1, with rare 70-190-turn stalls. Playback paces 820 ms per event. So a battle is well under the
-  2-3 minute target; a turn cap is advisable for ghost replays.
-- **Bug found:** `game-state.js:109-112` and `account.js:304-319` both write `SAVE_KEY-set-aside` with different
-  shapes; the account overwrites the game-state copy and the restore UI never shows the game-state one.
-
-### Findings B: world, hub, flow, map generator, content pipeline (verified)
-
-- **Seamless world** (`seamless-world.js`): a place's own map plus a band of each neighbour, built on the fly as a
-  composite view (`seamlessHubMap(node)`, view ids `w:<scene>*`); crossing shifts the player by the view-origin
-  difference (`shiftWalkView`). Neighbours come from `ROADS`/`ROADS_BY_NODE` derived **once at import** in
-  `game-data.js:288-358` (only `kind:'seam'` roads; lifts dropped), looked up by `LOCATIONS.findIndex(mapId)`.
-  Caches key on `seamlessWorld.gen`; `boot.js studioLive` already swaps `gameData.maps` live and bumps `gen`. There is
-  **no API to swap the location/road graph**; `LOCATION_BY_ID`, `START_NODE`, trainer→node attach are frozen copies.
-- **Node indices are identity everywhere**: `trip.node`, `trip.plan`, `visited`, trainer `node`, ROADS entries, the
-  world-graph snapshot. `validSave` rejects `trip.node >= LOCATIONS.length` (`saves.js:146, 204`). One location per map
-  is assumed (`mapIdAt` falls back to the first map).
-- **Data counts:** 96 map files (49 location maps, 23 `int_*` rooms, 22 `test_*`, `gallery`, `city_opening`); 49
-  locations; 57 roads (56 seam + 1 lift). **Copperleaf** is index 46, bowl `{a:0, r:0}` (the centre), kind town,
-  88×76, **one exit (south)** → `road:hedgerow-copperleaf` ("Route 1") → Hedgerow Lane → Marigold. Props: 5 houses,
-  Juniper's home, `lab`, `sign`, `airship_station` (act `fly`). `rules.start.locationId = "copperleaf"`. **No islands**:
-  `regions.json` has one entry; the location field `region` groups 28 of 49 places, Copperleaf has none.
-- **Map loading:** `build-data.mjs` writes one `gamedata.js` with "lite" maps; `map-files.js loadMapFile(id)` fetches
-  `data/maps/<id>.json` lazily (2 roads ahead, then all). A map injected at runtime with no `_lite` is never fetched
-  (good for generated scenes). `game/data/legacy/` holds the 55 old Billie lines, not maps.
-- **Rooms** open from `ui.js enterRoom` (not walk/rooms.js, which only draws): `seamlessRoomMap(view, roomId, door)`.
-- **Travel:** walking across seams (`walkCross`, ui.js:1388) sets `trip.node` and calls `arrivedAt`. "Travel here"
-  only sets a guide plan. Glass lift is a prop `act:'lift'`. **No day/step clock remains**; `today()` is the real date;
-  weather and time of day follow the real clock.
-- **Bowl:** a place's spot is `locations.json bowl {a, r}`; pins from `LOCATIONS` (`world-bowl.js:507, 2409`); the
-  module imports `LOCATIONS, LOCATION_BY_ID, ROADS, gameData` and uses them in ~10 places; the logic layer
-  (`bowlSeaInput(places, roads, mapOf)`, `bowlReliefFeatures(places)`, `bowlClumps`) is parametric;
-  `worldBowlReset()` rebuilds spots and ground. Weather on the bowl: every 5 s per place from `environmentState`.
-- **Airship** (`airship.js`): masts are props `act:'fly'`; `flyMenu` lists visited towns with a fare from bowl
-  distance; `startAirshipFlight(i)` **sets `trip.node` immediately**, switches to the Map tab and animates a **2D
-  sprite** (`map/airship.png`) along a parabola for 2-3 s on the bowl overlay; `flyLand` puts you by the `fly` prop.
-  The 3D airship is only the mast prop model.
-- **`startGame` is 40 lines (ui.js:2263-2302)**, not 574 (the audit's number spans the global click handler):
-  new save keeping preferences, starter at `RULES.start.starterLevel`, `trip = {node: START_NODE}`, starter
-  encounters and egg, save, walk tab, welcome modal or `storyRivalBattle`. Boot: `boot.js:905-951`. Tabs:
-  `walk, map, team, ledger (Guide), bag` + profile; Settings, shop, dressing room, things-to-do, fishing, talk,
-  gallery, friends are overlays.
-- **Opening today:** `cutsceneStart` → `openingCity` (cutscenes/city.json, 21 s) → `fallPlay` (crust to Copperleaf)
-  → cutscenes/opening.json on Copperleaf (wake, Hazel, dressing room, Blake, staged fight, coins, `pick-starter`,
-  `rival-battle`) → `startGame`. `nw-opening-done` (story.js:161-172) is a per-device "offer Skip" flag, **kept on
-  purpose** (HANDOFF 740); only its prefix is legacy (so is the save key `networth-save-v1`).
-- **Story layer:** flags in `saveData.story` (`storyFlags()`), trainers beaten in `saveData.flags`, badges in
-  `saveData.seats`; scripts, `when`/`unless`, `requires`/`locked`, chapters, presets (`?story=`), story checks.
-- **Badges/gates:** 8 leaders with `trainer.seat` (oil, retail, haven, peak, bloom, vault, morel, carat); 11
-  locations carry `gate: <seat>`, 4 `ride: 1`; `canEnter` (rules.js:629). `world-graph.test.mjs` snapshots places,
-  roads, exits, gates, lifts and requires `map.locationId === location.id`.
-- **Map generator** (`logic/mapgen.js`, imports only test-globals, Node-safe, **not loaded by the game page**):
-  `mapgenParams`, `mapgenScene(params, {scenery, biomes}) → {scene, notes}`, `mapgenRandom`, `mapgenNoise`,
-  `mapgenUnreachable`. Output: a full route scene with `edgeExits [{id, side, t, in, width, len, path}]`, `hub`,
-  `gen {v, params, seed}` (seeds inside params). **Routes only**: the `lots` stage and town kinds are named but
-  missing (MG-3 not started); no `locationId`; no seam alignment to a neighbour (MG-2 not started). Measured here:
-  136 ms (112×64), 184 ms (128×96), 451 ms (200×200). 11 biomes. A seam join must satisfy check-data (opposite
-  sides, equal width, integer `t` offset, walkable ground, ≤ 2 exits a side 44 m apart) and a02_joins (heights within
-  5 cm and identical tiles within ±6 m, a straight walk across).
-- **Adding a data section** (pattern of commit 2457957, biomes): `game/data/<key>.json`, `index.json keys`, a
-  schema in `game/data/schema/`, a type in `game/types/game-data.d.ts`, a check in `tools/check-data.mjs`; an export
-  in `game-data.js` to use it; `data-files.js SPLIT` only for a per-id folder. Data is one generated `gamedata.js`
-  (+ lazy map files); `data-fallback.js` loads files one by one when it is missing.
-- Candidates to park: `jobs.json` (unused), `fishing.json` (water encounters), lore, postcards, `regions.json`
-  (one entry), story.json `quests` (empty), location `requires` (unused).
-
-### Findings C: robots, Alpha, online, security, tests, eggs (verified)
-
-- **Robots:** 4 slots `torso, armL, armR, legs` + `gem` (**no head slot**; the head is torso art). Data: 3 torsos, 6
-  arms (either side), 3 legs, 3 gems = 972 builds; 12 robot moves (`fx.aim`, `fx.breaker`, `fx.repair`); moves from
-  parts (`robotMathMoves`); `makeRobot(gem, fit, lvl)` → `kind:'robot', sp:'bot:…'`; everything else via
-  `speciesOf(m)`. Gem = stat bonus, signature move, type affinity, keeps level across bodies; **no personality/passive
-  trait**, "personality core" appears nowhere. Reachable only via the debug menu (`giveRobotKit`, Tinker Rho). No wild
-  robots, no repair kits in shops. `robot-art.js robotRig` draws parts on the biped skeleton. The phase 17 prototype
-  is unapproved and untagged.
-- **Alpha:** one fighter, one HP pool, `m.boss = {hp:3, st:1.3}`, foe side capped at 2 actors (`SIDE_ACTORS`,
-  `allSnapshots` hard-coded 0..4), `alphaPhase` once at 50%. **A Voltron as one robot with `m.boss`** gets boss HP,
-  3 breakable limbs, aimed hits, the shield phase and double actions with no engine change; limbs are part ids, not
-  whole bots. Separate bots would need the foe side widened (formations, snapshots). Visuals: scale 1.6 for boss,
-  alpha formation, red glow, shield light, screen shake, broken limbs drawn faint.
-- **Online:** Firebase Auth **Google only** (no anonymous); compat SDK loaded from jsdelivr with no SRI; cloud save
-  `saves/{uid}` `{json, savedAt, saveVersion, name, game}` (< 1 MB, no key whitelist); friends: codes, requests,
-  presence (`users/{uid}`: name, avatar, partner, `at {node, place, sid, x, z, t}`), friends drawn walking in the
-  world; **no trading, battling or visiting**. Rules: 4 match blocks, default deny; new collections need their own
-  blocks + emulator tests (13 today, Java 21, `firebase emulators:exec`). Rules can check shape and size only; a
-  legal team can't be checked without server code (SECURITY.md). Known friend bugs: re-adding from the other side,
-  `friendWorldItems` reads `p.build` which `cleanFriend` drops, `codes/` never deletable.
-- **Security/dead weight:** `studio/js/github.js:131` links a classic `public_repo` token, `:137` ticks Remember me
-  (localStorage); SECURITY.md recommends A (fine-grained single-repo token) and B (session-only default), marked
-  "ask before changing". `cleanName` is in `logic/rules.js:210` (SECURITY.md says game-state.js: stale; it also says
-  `esc`, `N(m)`, SAVE_VERSION 1). `escapeHtml` (game-state.js:53) used 299 times; 58 `innerHTML` in game/js, 73 in
-  studio; `modal()` and `toast` put titles in unescaped, so safety rests on callers + `cleanName`. Version-stamped
-  tools: 10 `*-v46/v47.py` + `build-v28.py` + 5 `scene_props_v*.py` (most are live generators, not dead: RL-1); `eslint.config.js:2-3` and `CLAUDE.md:30` still
-  describe shared globals (README is current). `account-config.js` is committed (normal for Firebase; header stale).
-- **to-module.mjs:** new module state = `export let x` + `export function setX(v) { x = v; provide({ x }); }`, then
-  `npm run modules`; `check:modules` also checks load order. The edit hook does **not** run check:modules or format.
-- **Tests/CI:** 52 test files, 266 literal `test(` calls (279 cases with loops); fixture vs real data setups;
-  `sim/` holds only robot-sim. CI: lint job (lint, typecheck, test, data, modules, format, build), smoke job
-  (check-fast in Playwright), rules job, nightly full + selftest; `check-quick --smoke` is **not** in CI.
-  `runFullTest` phases include Alpha, double, opening, world map; **no robot phase**. Debug log: counts and
-  preferences only + small scene screenshots; check-fast plants names and checks the export. Typing: 34/129 game
-  files (all 29 logic files), 0/34 Studio files.
-- **Eggs:** tiers 2/5/10, `need` in metres (2000/4000/8000), capacity 8, 2 incubator slots, 12% drop after wild wins,
-  `addWalked` outdoors only; `hatchEgg` picks by weight and rolls a coat. **No breeding code exists.** Dex: `seen`,
-  `caught` records of species id → 1. Billie "parts" are size builds `{head, body, front, back, sig}` S/M/L
-  (`logic/parts.js`: weight, stat factor, Prime +10%); not swappable in game; `partKits.json` is a Studio art kit.
-
-### Findings D: plans that already exist for what the brief asks (verified)
-
-- **Phase 19 "Battle core: seeded, replayable, two-sided, effect handlers"** exists only on the branch
-  `plan/engine-phases-19-21` (docs/phases/19-battle-core.md, 12 KB), decided by the owner on 2026-10-19 to come
-  **before** phases 18, 20 and 21. It designs exactly what brief section 4.2 asks: a battle-owned seeded PRNG
-  (`logic/prng.js`, `b.rng`, cosmetic `fxRandom` apart), `createBattle({sides, seed, rules, kind})` on a JSON-safe copy
-  of the fighters, `battleResult`/`applyBattleResult` so the engine never calls `save()`/`toast()`, two-sided inputs
-  with controllers (`player | ai | remote`), a replayable input log with an engine version and a rules hash, an
-  effect-handler table (`logic/effects.js`), seeded wild encounters (place id + a counter in the save), scripted
-  battles for Project Story S6, a golden-record test first. Its "Ask me before": mid-battle quit (recommends keeping
-  the battle in the save and resuming), Lullaby turns, and finishing/tagging the phase 17 prototype first. **Nothing
-  of it is in main** (no prng.js, no effects.js, no golden record; `random` is still `Math.random`).
-- **Phase 21 "Texture atlases and KTX2"** (same branch): after phase 20; not needed by the roguelite.
-- **Phase 20** (renderer batching) is in main with stages A, B, C-1, C-2 done; its later stages wait on phase 19.
-- Numbering: 19 and 21 are taken on that branch, 22 (story layer) was absorbed into Project Story, so **23 is the
-  first free phase number**; the tracks use prefixes (ST-N, MG-N, PS-SN).
-
-## 0b. Old phases: where they stand (read from docs/HANDOFF.md only)
-
-No `phase-NN-done` tag was ever pushed (every session's tag push got HTTP 403), so "done" below means the HANDOFF
-entry says the phase's work is finished, not that a tag or the tag-triggered CI full run exists. "Open" lists what
-the entry itself left undone or asked the owner.
-
-| Phase | Status | Open (from HANDOFF) | In the rework |
-|---|---|---|---|
-| 00 Finish current work | done (`Baseline` tag is the one tag on GitHub) | — | keep |
-| 01 Baseline and bug fixes | done 10-16 | tag; Studio round trip in CI | keep |
-| 02 Security | done 10-16 | owner console steps (publish rules, restrict the key); Studio token options A/B "ask before" | absorb: hardening phase does A and B |
-| 03 Fresh base | done 10-16 | full quick check skipped; no picture baseline (made by the first phase tag) | keep |
-| 04 Modernize (04a-04e) | done 10-18 | tag; check-studio-github in CI?; Studio local mode | keep |
-| 05 Internal renaming | done 10-18 | tag | keep |
-| 06 UI structure (06-1..06-4) | mostly done 10-19 | plan not fully met: ui.js ~3,000 lines not split, old CSS layers not emptied; owner's answer on a 06-5 session; tag | park 06-5; the run screens are new modules anyway |
-| 07 Portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | renderer, Studio section, tests, old system removal | park (not needed by the loop) |
-| 08 Movement, maps, rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | room templates and slot sets, Studio edits links/doors, the full quick check, the first picture baseline, tag | absorb: the run-loop phase composes generated maps on 08b's seam model; 08b-3 templates parked |
-| 09 Props and terrain | partly: Copperleaf, Route 1, Marigold and the city set redone (batches 1-8) | the rest of the world's props; duplicates and unused props; baseline; tag | park: the other towns move to legacy anyway; run biomes reuse the done kits |
-| 10 World-map bowl | done pending the owner's phone look (E-map-1..4, look s1-5, fixes) | phone look, then tag; the mthing shader location (ST-5/6 note) | absorb: the bowl must show a run's node map |
-| 11 Opening | moved to Project Story S7-S8: the city plays from New game before the fall | lite version, sounds, logo, show-once skip (beat sheet "Still to do") | absorb: the first run starts from the airship (see opening decision) |
-| 12 Ranch | not started (plan doc only) | everything | absorb: the ranch milestone |
-| 13 Testing | 13a done (unit tests, check-fast, fixtures, graphics test, edit hook); 13b, 13c not | fixtures per group, parallel groups, waits, key shots; lazy debug code; opt-in error reports; smoke and full over budget | absorb: 13b's fixtures are what run tests need; 13c parked |
-| 14 Studio | partly, early, through the Studio track (ST-0..ST-6) | performance, new editors for new formats, local mode | absorb: run-content editors come with their data sections |
-| 15 Design and story | archived; story half → Project Story S4 (not done); design half (core loop, tax mechanics) never written | — | superseded: this plan is the design half |
-| 16 Billies | prep + prototype part 1 (parts, 7 lines, Studio Parts) | starter split by body, passives, quirks, Prime moves, breed function, abominations, breeding sim, full roster | absorb: breeding/abominations in the ranch milestone; the rest parked |
-| 17 Robots | prototype built, unapproved, untagged, debug-only | the "Ask me" list, first robot in play, balance bounds, 3D preview, paint, loadouts, crafting, wild robots | absorb: bots-as-enemies phase (sourcing from runs, the Voltron) |
-| 18 Friends trading and battles | not started | everything | absorb: online phase (ghosts, daily seeds); trading stays out of scope |
-| 19 Battle core | plan only, on branch `plan/engine-phases-19-21` | the whole phase; asks: mid-battle quit, Lullaby, finish 17's prototype first | absorb: it IS the state-separation phase |
-| 20 Renderer batching | stages A, B, C-1, C-2 done; C5 and stage D not; frameBlock off by default | owner's phone check of the Frame block; tags 20a/20b | park |
-| 21 Atlases and KTX2 | plan only, on the branch | — | park |
-| Project Story | S1-S3 done; cutscene tools s1, s3 done (s2 not); S7 built; S8 partly (city before the fall) | S4 story bible, S5 Hazel's opening rewrite, S6 (waits for 19), S8's rest, cutscene tools s2 | absorb S5/S8 into the opening decision; S4, S6 parked |
-| Studio track | ST-0..ST-6 done; ST-7 next | st-N-done tags local only; ST-5/6 questions | keep running alongside |
-| Map generator | MG-1 done (routes); MG-2..MG-5 not | linking (MG-2), towns (MG-3), presets/regenerate (MG-4), checks (MG-5) | absorb: MG-2 and MG-3 are prerequisites of the run map |
-| Other | Graphics test and bench done; debug session; Parts fixes 1-2 (PR #77, #78) | **PR #78's entry says its validation could not run** | hardening phase verifies #78 first |
-
-Owner questions still open in HANDOFF that touch the rework: tags for 01-05, 06, 10, 20, ST-4..6, PS-S1/S2; phase 06's
-06-5; phase 10's phone look; phase 17's prototype approval and ask list; phase 16's breeding mode (5.1); phase 19's
-three asks; whether old account saves may be replaced (02).
-
-### 0c. Old work the roguelite does not need (parked) and what it does need
-
-Owner's decisions (this session): the rework is a **track**, `docs/phases/roguelite-track.md`, sessions **RL-1..RL-N**
-tagged `rl-N-done` (like the Studio and Map generator tracks; 19 and 21 stay reserved on `plan/engine-phases-19-21`);
-parked phases are **marked parked in docs/ROADMAP.md** with a note saying what brings them back.
-
-**Parked (nothing in the rework depends on them):** 06-5 (ui.js split, old CSS); 07's remainder (portrait renderer,
-Studio section, old system removal); 08b-3 (room templates, slot sets, Studio door editing); 09's remainder (the other
-towns' props, dedupe, unused props: those maps go to legacy); 13c (lazy debug code, error reports); 14's remainder
-(Studio performance, local mode); Project Story S4, S5, S6, S8's leftovers and cutscene tools s2; 16's remainder except
-breeding (starter split by body, passives, quirks, Prime moves, full roster); 17's remainder except enemies (3D
-preview, paint, loadouts, crafting, the workshop's place); 18's trading half; 20 C5 and stage D; 21; ST-7 and the rest
-of the Studio track (runs alongside); MG-4, MG-5; the mthing shader location (a fix, not a dependency).
-
-**On the path (remaining work the rework absorbs):** 02's Studio token options A and B (RL hardening); 10's bowl
-showing a run's node map; 12 the ranch (all four functions); 13b's fixtures for starting inside a run; 16's breeding
-and abominations (ranch milestone); 17's bots as enemies (trainer bots in runs, the Voltron, salvage); 18's async
-battle half (ghosts, daily seeds); **19 battle core as the state-separation session**; MG-2 linking and MG-3 towns
-(prerequisites of the run map); S7/S8's city opening (where it sits once the first run starts from the airship).
-Count: 14 parked items, 10 on the path.
-
-## 1. The reworked roadmap (what docs/ROADMAP.md becomes when the plan is approved)
-
-**Restructured 2026-10-23 (section 9):** after RL-12a the order is section 9.4's (regions, encounters, story, then
-brackets, bots, online). The table below is the original plan.
-
-- The roguelite rework is the spine: one track, `docs/phases/roguelite-track.md`, sessions **RL-1..RL-16** (plus
-  MG-2 pulled onto the path), each one session unless marked, tagged `rl-N-done`, a HANDOFF entry per session, Plan
-  Mode first, one cause per commit, the quick check tiers of docs/TESTING.md after every change.
-- Tracks alongside: Studio (ST-7+), Map generator (MG-2 on the path; MG-3 when a town node needs it; MG-4/5 after
-  the first cut), Project Story (S6 unblocked by RL-4; S4, S5, S8's leftovers parked until the first cut is played).
-- Old phases stay in the roadmap in one table (section 0b): done in one line each, parked with what brings them back,
-  absorbed with their RL session. docs/VISION.md gets a rewritten "How the game plays"; CLAUDE.md gains one ground
-  rule ("a roguelite: hub + runs; every map outside the hub is legacy") and loses the stale camTo/dioTileHalf gotcha.
-- Order after the first cut follows the brief (ranch, hub upgrades, relics, modifiers, bots, online).
-
-| # | Session | Goal | Sessions | Playable |
-|---|---|---|---|---|
-| RL-1 | Hardening | brief 2.6-2.8, PR #78 verified, the set-aside bug, RNG facts written down | 1 | no |
-| RL-2 | Golden record and RNG module | battle golden snapshot; `logic/rng.js` (mapgen's sfc32 moved); seeded `pickWeighted`/`spawn` | 1 | no |
-| RL-3 | State separation | SAVE_VERSION 4; `meta`, `run`, `ranch` in the save; validators; `migrate` keeps a run's trip | 1 | no |
-| RL-4 | Battle state injected (phase 19's core) | engine context `useBattle`, no save writes, silent host, `b.rng`, turn cap | 1-2 | no |
-| RL-5 | Legacy parking and the world setter | 47 maps and their places to `game/data/legacy/`, `worldSetGraph`, fixtures and checks retargeted | 1-2 | no |
-| MG-2 | Seam agreement in mapgen | generated parent/child pairs pass check-data's seam rules and a02_joins' numbers | 1 | no |
-| RL-6 | Run map and clock logic | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | 1 | no |
-| RL-7 | Run world | generated scenes installed and walkable, the bowl shows the run | 1-2 | no |
-| RL-8 | Run loop and payout | airship start, town with paid healing, mini-boss, payout, resume: **first playable cut** | 2 | yes |
-| RL-8b | Run look | the owner's notes from the first play: rooms darker, the hub an island, a run's own world map | 1 | yes |
-| RL-9 | Ranch A | the building, store and keep, train between runs, the keep-one rule | 2 | yes |
-| RL-10 | Ranch B | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | 2 | yes |
-| RL-11 | Hub upgrades, currencies, unlocks | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | 1-2 | yes |
-| RL-12 | Relics and effects | `relics.json`, `events.json`, `logic/effects.js` (phase 19's handler table), picks | 1-2 | yes |
-| RL-13 | Expeditions, challenges, starter points (done 2026-10-24; section 9.4's row and the HANDOFF) | `modifiers.json`, the Expedition and challenge pick at the mast, starter points, leaders of their own type | 1 | yes |
-| RL-14 | Bots as enemies, salvage, the Voltron | `factions.json`, `bosses.json`, data-driven `alphaPhase`, a robot phase in the full test | 2 | yes |
-| RL-15 | Online | run record, friend ghosts, daily seeds, rules and emulator tests | 2 | yes |
-| RL-16 | Content packs and Studio editors | `mergeInto`, pack checks, editors for the new sections | 1-2 | yes |
-
-Total about 22-28 sessions; the first cut (RL-1..RL-8 plus MG-2) about 10-13. If the scope is too big: RL-1..RL-8 with
-MG-2, then play; then RL-9, RL-10, RL-11, RL-12, RL-13, RL-14, RL-15, RL-16. Cut order inside the ranch milestone: the
-server timestamp first (keep the local guard), then risky breeding, then the walkable yard; never store/keep or train.
+after RL-12a around regions, encounters and a story director; its order wins over the first roadmap's.**
+The first audit and roadmap (sections 0, 0b, 0c and 1) and 9.5's name options were removed on 2026-10-28 (git
+history has them); what each session changed is in its HANDOFF entry (older ones in docs/archive/HANDOFF-2026-10.md).
 
 ## 2. Architecture decisions (recommendations; options are in section 8 where the owner decides)
 
@@ -586,7 +66,7 @@ on the board, `shop` at a building, `auto` by condition) and `requires` drawing 
 `PB_DATA.mergeInto` (build, Studio, fallback), ids prefixed `<pack>_`, duplicates a check-data error, text escaped on
 output; no code in packs, no remote loader (RL-16). Rejected: a JS plugin registry (packs would ship code), a DSL.
 
-**2e. The node map, clock, bowl, seamless world, airship.** (Built in RL-6 as section 0 says: `runMapMake(seed,
+**2e. The node map, clock, bowl, seamless world, airship.** (Built in RL-6, HANDOFF says how: `runMapMake(seed,
 nodeTypes, rules.run.map)`, `runMapStart`, `runArrive`; the rows' roles are rules.json `run.map`'s, fillers are
 nodeTypes.json weights; shops and their apart rule come with RL-12.) `run.map` from `logic/run-map.js runMapMake(seed, tier,
 nodeTypes, rules.run)`: a layered DAG, row 0 the landing, rows 1..R-2 of one or two nodes (two lanes, a merge every
@@ -752,7 +232,7 @@ break: the Studio's Generate card. 1 session.
 `runOverdue`, bowl spots), `logic/weather.js` (move of `CLIMATE_WEATHER_ODDS`; `weatherPick(climate, rnd)`),
 `data/nodeTypes.json` + schema + type + check + export, `rules.json run`. Tests: `run-map.test.mjs` (same seed same
 snapshot, every node reachable, 8-12 nodes on every path, row rules, reveal, backtrack ticks, forecast determinism,
-deadline maths). Could break: nothing in the page. 1 session. Done 2026-10-21 (HANDOFF; section 0 for what changed
+deadline maths). Could break: nothing in the page. 1 session. Done 2026-10-21 (HANDOFF; the archived HANDOFF entry for what changed
 from this paragraph): also `runMapRows`, `runMapStart`, `runBack`, `runExits`, `runSpot`, `runForecastFill`, biome
 climates, the payout's distinct nodes; `run-map-real.test.mjs` and `weather.test.mjs`.
 
@@ -762,7 +242,7 @@ lazy generation, run trainers, `seamlessWorld.gen++`, `worldBowlReset()`), `boot
 `environment.js` (forced weather on arrival). Tests: `run-world.test.mjs` on real data (every run road's exits face
 and align; restore leaves the hub tables as before). Could break: the walk view when tables change mid-session,
 seamless caches, name-free debug log. Verify: (a), (b), smoke, a quick-check step on `?fixture=run` (install, open the
-map, walk one seam). 1-2 sessions. Done 2026-10-21 in one session (HANDOFF; section 0 for what changed from this
+map, walk one seam). 1-2 sessions. Done 2026-10-21 in one session (HANDOFF; the archived HANDOFF entry for what changed from this
 paragraph): `logic/run-scenes.js` and `game/js/run-world.js` (`runWorldSync`, all scenes at once), `worldPut` and
 `worldHubBack`, the weather from the forecast, the bowl's run pins and day chip, a run place's wild stock; tested by
 `run-scenes.test.mjs`, `run-world-real.test.mjs`, the `run` fixture, a fast-check page, a quick-check step and an
@@ -778,7 +258,7 @@ run towns, the mast act), `shop.js` (seeded stock), `things-to-do.js` (`extra.wx
 the `run` fixture (mast → flight → node → battle → town heal → mini-boss → payout; reload mid-run resumes), the
 smoke phone flow extended by the mast tap. Could break: Start-Game, the opening's end, the phone flow, the full
 test's airship step, the debug log export. Verify: all tiers, `--selftest`, then the owner's phone. 2 sessions. Done 2026-10-21 in one session (HANDOFF;
-section 0 for what changed from this paragraph): `logic/battle-rewards.js`, `logic/run-loop.js`, `run.js`,
+the archived HANDOFF entry for what changed from this paragraph): `logic/battle-rewards.js`, `logic/run-loop.js`, `run.js`,
 `run-payout.js`, the run's buildings, battles (seed, forecast weather, checkpoint and restart), towns (paid clinic, the
 day's shop), mini-bosses and the Alpha boss, the payout and resume, `sim/run-sim.mjs`, the fall-only opening, hints, the
 debug menu's runs; tested by `battle-rewards`, `run-loop` and `run-sim` tests, a fast-check page, a quick-check step and
@@ -790,7 +270,7 @@ cut first if time is short), store and keep (the box behind it), train (Scrap + 
 `gainXp`, capped by building level, the rollback guard shared with income), the keep-one rule as decided. Files:
 `logic/ranch.js`, `ranch.js`, `scenery.json` props, `buildings.json` stub, `self-test.js` (ranch step),
 `check-quick.py` (edit-and-reload step, TESTING.md phase 12). Tests: `ranch.test.mjs`. Could break: team/box screens.
-2 sessions. First half done 2026-10-22 (HANDOFF; section 0 for what changed): the barn and its sheet (`ranch-screen.js`),
+2 sessions. First half done 2026-10-22 (HANDOFF; the archived HANDOFF entry for what changed): the barn and its sheet (`ranch-screen.js`),
 `logic/ranch.js`, `rules.ranch`, Scrap from the payout, the fixture, check-fast and in-game steps. RL-9b done
 2026-10-22: the mast's pick of 1 home Billie and the packed bag (8.2), the storage trap in `runEnd`, the bag home on a
 win, the sim's policy, check-fast's "Packing for a run".
@@ -799,8 +279,8 @@ win, the sim's policy, check-fast's "Packing for a run".
 guard, offline, the cloud `t` anchor and its rule. Files: `logic/breeding.js`, `logic/ranch.js`, `logic/rules.js`
 (eggs), `account.js:331-351`, `firebase/firestore.rules` + `firebase/test/rules.test.mjs`,
 `tools/test/sim/breeding-sim.mjs` (reports only until bounds are agreed). Could break: cloud saves (publish the rule
-after the emulator passes). 2 sessions. RL-10a done 2026-10-22 (HANDOFF; section 0 for what changed): breeding,
-hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b done 2026-10-23 (section 0): passive income, one ranch
+after the emulator passes). 2 sessions. RL-10a done 2026-10-22 (HANDOFF; the archived HANDOFF entry for what changed): breeding,
+hatching, `m.mut`, the old walking eggs retired, the sim. RL-10b done 2026-10-23 (HANDOFF): passive income, one ranch
 clock with the rollback guard (training's fixed), offline, the cloud `t` anchor with a measured skew, the key whitelist
 (8.12).
 
@@ -808,14 +288,14 @@ clock with the rollback guard (training's fixed), offline, the cloud `t` anchor 
 `unlocks.json` with the three doors, `logic/unlocks.js` (`unlockReady`, buy, auto at payout and on load),
 `conditions.js` (`unlock:`, `won:`), `hub.js` board screen, `copperleaf.json` building variants per level. Tests:
 `unlocks.test.mjs`, `conditions.test.mjs`, check-data (a fifth currency fails, every grant exists). 1-2 sessions. Done
-2026-10-22 in one session (HANDOFF; section 0 for what changed from this paragraph): the three sections,
+2026-10-22 in one session (HANDOFF; the archived HANDOFF entry for what changed from this paragraph): the three sections,
 `logic/unlocks.js`, the conditions `unlock:`, `runs`, `wins`, `run.unlocks`, `lab-board.js` (the Lab tab, the ranch's
 and the mast's upgrade rows, levels in labels), the `lab` fixture, check-fast's Lab step, the in-game phase.
 
 **RL-12 Relics and effects.** `relics.json`, `events.json` (scripts with `relic`, `wager`), `logic/effects.js` (kinds,
 hooks, `B().fx`; phase 19's handler idea), one hook call each in `calcDamage`, `catchOdds`, `newBattle`, the pick
 sheet, the Bag's relic list, the waystation node engine. Tests: `effects.test.mjs` (each kind, stacking order, a run
-with every relic stays finite), a golden battle with a relic, story checks on events. 1-2 sessions. RL-12a done 2026-10-22 (HANDOFF; section 0 for what changed): `relics.json`
+with every relic stays finite), a golden battle with a relic, story checks on events. 1-2 sessions. RL-12a done 2026-10-22 (HANDOFF; the archived HANDOFF entry for what changed): `relics.json`
 (ten Loopholes), `logic/effects.js`, `logic/relics.js`, the battle, shop, clinic, arrival and payout hooks, the
 mini-boss pick and a shop's Loophole, the Loopholes tab (`relic-screen.js`). RL-12b: `events.json` with `relic` and
 `wager`, the event and shop places (waystations, 8.6), the no-two-shops rule.
@@ -885,7 +365,7 @@ a pack filter and the new sections' editors.
 
 ## 7. Risks and unknowns
 
-**Verified facts:** everything in sections 0, 0b-0c and the spot checks: `random` unseedable at runtime; the engine's
+**Verified facts:** everything in the first audit (sections 0-0c, removed) and the spot checks: `random` unseedable at runtime; the engine's
 16 draws and three page-side outcome rolls; `mapgenRandom` pure and versioned; the engine shares `saveData.team` by
 reference and writes XP and `seen`; weather enters battles only through `activeBattle.wx` and `environmentWeatherFor`
 short-circuits on force/preferences and uses local time; `migrate` resets the trip at load; node indices are identity;
@@ -971,7 +451,7 @@ were read at 2361848; verify again before each session.
 
 **Words (2026-10-23, docs/phases/reflavour-track.md):** the owner moved the game off finance. Read Loopholes as
 **Perks**, Brackets as **Expeditions**, Capital as **Research**, Audit Seals as **Crests**, $ as **Moneys** ("1 Money", RF-1); catching is
-with pyramids. The organization is the Bureau of Lost, Found and Beans; the game is Pocket B&B² (9.5 is superseded by
+with pyramids. The organization is the Bureau of Lost, Found and Beans; the game is Pocket B&B² (the old 9.5's name options were superseded by
 reflavour-track.md section 4).
 
 ### 9.1 Why runs feel the same today (verified at 2361848)
@@ -1001,7 +481,7 @@ reflavour-track.md section 4).
 | Field move requirement | A Billie of the type **plus that type's badge** |
 | Badges | **Carry over** between runs (meta): a field move opens for good once its badge is won |
 | Why you return after losing | **Both**: Professor Chosen loudly takes credit for "saving" you; Hazel quietly finds the organization's portal is the real cause. Funny up front, eerie underneath |
-| The organization | **The villain team of the runs, bots are its army**; the Voltron is its first big weapon. Claude drafts 3 name options (9.5) |
+| The organization | **The villain team of the runs, bots are its army**; the Voltron is its first big weapon. Claude drafts 3 name options (answered in 9.6) |
 | Blake | **A rival in runs**: 1-2 times a run, his team built against your starter, growing over your runs, lines that remember past fights |
 | Hub characters | **Lines and relationships** (Hades): they react to your run history; gifts or favours unlock lines, cosmetics or small run bonuses |
 | Story arc | **One chapter per bracket** (five); each ends with its boss and reveals part of the mystery; hub lines fill in between |
@@ -1047,7 +527,7 @@ reflavour-track.md section 4).
 | RO-2.. | Roster: new lines | from 7 lines (24 species) to about 40 species, through the Studio's kit bake; one or two lines a session, art first | RO-1 | 4-6 |
 | RL-E | Endless mode | after RL-15 | RL-15 | 1 |
 
-About 14-19 sessions after RL-12a (was 8-10), plus the roster sessions alongside. Section 1's table and the order in
+About 14-19 sessions after RL-12a (was 8-10), plus the roster sessions alongside. The first roadmap (the old section 1) and the order in
 section 4 stand for RL-1..RL-12a; from here the order is this table's. If the scope is too big: RO-1, RL-R1, RL-12b,
 RL-S1, then play; side areas, the rival and relationships next; endless last.
 
@@ -1171,7 +651,7 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   check's Node start get the field moves. Not done: the world map's crowding at Expeditions III-V (the owner left it
   out), a picker in the Run Lab that forces a side area (likewise).
 - **The encounter sessions (RL-12b's two parts, RL-12c)** live on one branch (the owner, 2026-10-23). Branch: track/encounters
-- **RL-12b part 1** (done 2026-10-23; HANDOFF and section 0 "Corrected in RL-12b" have what changed). Part 2 (after
+- **RL-12b part 1** (done 2026-10-23; HANDOFF has what changed). Part 2 (after
   RL-R2 merges): the `event` and `stall` waystation node types and their stand, the no-two-shops rule in run-map.js,
   the run sim and preview, a check-fast page and the in-game test's step. RL-12c: held items (9.6 27).
 - **RL-12c as built (2026-10-25).** Held items are items.json items with `hold` effect rows (not a file of their own:
@@ -1271,19 +751,6 @@ RL-S1, then play; side areas, the rival and relationships next; endless last.
   Billie only), so the Voltron has its own path; the stage already drew a boss at 1.6. The first numbers (HP x3,
   stats x1.3) took Expedition I's wins from 62 to 4 of 200 in the sim; tuned to HP x2, stats x1.1 (62 -> 75 at level
   20, 18 -> 9 at level 15). Its four bots joining are drawn as its four parts flying in, not four walking rigs.
-
-### 9.5 The organization: three name options (superseded 2026-10-23: finance names; see reflavour-track.md section 4)
-
-1. **The Office of Unclaimed Property (OUP)** (recommended). It files everything that falls through a portal as
-   unclaimed property, you included, and "returns" lost property to the drop point: Copperleaf. That is why a lost
-   run ends there (Hazel's discovery), and why Chosen's credit is wrong. Logo: a luggage tag with a keyhole. Terms:
-   "claims", "lots", "the Register". Goal: catalogue the Hollow Earth, then auction it.
-2. **The Escrow.** Holds the anomalous "in escrow" until a buyer appears. Logo: a sealed envelope with a wax eye.
-   Goal: sell the Inner Sun to the surface's billionaires.
-3. **Quiet Holdings.** A holding company that owns things nobody is allowed to know exist. Logo: a hollow circle with
-   a notch. Goal: hold the Hollow Earth off every map.
-
-The bots fit any of them as "repossession units"; the Voltron as the first "Lot".
 
 ### 9.6 Ask me before (new; recommendation first)
 
