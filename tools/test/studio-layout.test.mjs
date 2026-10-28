@@ -107,7 +107,7 @@ test('the sidebar rows: Looks and Wardrobe are one Characters row, unknown keys 
     ppl.map(r => r.name || r.key),
     ['trainers', 'Characters', 'lore', 'story']
   );
-  assert.deepEqual(ppl[1].keys, ['people', 'wardrobe']);
+  assert.deepEqual(ppl[1].keys, ['people', 'wardrobe', 'figures']);
   assert.equal(ppl[1].key, 'people', 'the row opens its first section');
   assert.ok(!rows.some(w => w[0] === 'More'), 'no More with every section placed');
   assert.equal(L.navJoined('wardrobe').name, 'Characters');

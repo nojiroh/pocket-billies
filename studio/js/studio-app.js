@@ -677,6 +677,7 @@ export const SECTION_LIST = [
   ['engine', 'Engine', 'Light, shadows, blur and color of the 3D scenes'],
   ['camera', 'Camera', 'The walking camera: framing, zoom and its feel, follow, moments, with its real numbers'],
   ['wardrobe', 'Wardrobe', 'Trainer body, hairstyles, faces and clothes'],
+  ['figures', 'Figures', 'The figure kit: head shapes, builds, hair and hats as data, on a turntable'],
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
   ['lore', 'Lore & story', 'The world, the story, people, places, legends, clues, books and what people say'],
   ['story', 'Story scripts', 'The story’s own scripts (story.json), its flags, start presets and quests'],

@@ -876,6 +876,34 @@ canvas.spr-prev.big {
   min-width: 120px;
   justify-content: center;
 }
+/* characters track CH-5: the Figures section's turntable and the kit's fields */
+.fig-side {
+  overflow: auto;
+  padding: 8px;
+}
+.fig-prev canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #d7eae8, #e9f1e0 70%, #c0d7af 70%, #d8e3bd);
+}
+.fig-row {
+  margin: 8px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.fig-vrow {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.fig-sum input {
+  font-family: ui-monospace, monospace;
+}
 .wmap {
   position: relative;
   border-radius: 10px;

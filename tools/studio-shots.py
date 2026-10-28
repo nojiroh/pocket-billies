@@ -28,6 +28,9 @@ VIEWS = {
     # SA-4: the Characters row's two sections, with the Looks | Wardrobe switch on top
     'looks': ('people', '', '.nav-switch'),
     'wardrobe': ('wardrobe', '', '.nav-switch'),
+    # CH-5: the figure kit on its turntable (the game's figure baker on the Studio's data)
+    'figures': ('figures', "figureEditor.spin = false; render()", '#figInfo:not(:empty)'),
+    'figure-hats': ('figures', "Object.assign(figureEditor, { spin: false, who: 'boy', view: 'head', tab: 'accessories' }); figureEditor.pick.accessories = 'hat_beanie'; render()", '#figInfo:not(:empty)'),
     'preview': ('preview', '', '#cvWorld'),
     'skeleton': ('billionaires', "void openSkeleton(studioState.D.lines[0].id + '0', 'front')", '.pxed.skel'),
     'pixels': ('billionaires', "void openPixelEditor(studioState.D.lines[0].id + '0', 'front')", '#pxCv'),
