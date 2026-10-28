@@ -261,12 +261,6 @@ body.on-map #bgfx {
   font: 600 13px var(--font-prose);
   cursor: pointer;
 }
-.mc-fold .uico {
-  transform: rotate(90deg);
-}
-.mc-fold[aria-expanded='true'] .uico {
-  transform: rotate(-90deg);
-}
 .map-full .mapcard .racts {
   margin-top: var(--s2);
 }

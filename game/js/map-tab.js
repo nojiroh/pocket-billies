@@ -146,7 +146,7 @@ function worldMapCardHTML() {
      unfolds the rest (the place's words, its zone and rumour, the week's forecast, its Billies, roads and services) */
   const open = uiState.mapCardOpen === sel,
     more = `${runZoneHTML(n)}${runRumourHTML(n)}<p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}${rm ? runForecastHTML(sel) : ''}${poolStrip(n.pool)}${nb.length ? `<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>` : ''}${nodeActions(sel)}`;
-  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2>${rm ? runTodayHTML(sel) : ''}${kindChip || `<span class="sub">${escapeHtml(locationSubtitle(n))}</span>`}</div>${placeHasHTML(sel)}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${open ? `<div class="mc-more">${more}</div>` : ''}<button class="mc-fold" data-a="mcfold" aria-expanded="${open}">${open ? 'Less' : 'More'}${uiIconHTML('chev', 12)}</button>`;
+  return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2>${rm ? runTodayHTML(sel) : ''}${kindChip || `<span class="sub">${escapeHtml(locationSubtitle(n))}</span>`}</div>${placeHasHTML(sel)}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${open ? `<div class="mc-more">${more}</div>` : ''}<button class="mc-fold" data-a="mcfold" aria-expanded="${open}">${open ? 'Less' : 'More'}</button>`;
 }
 /** UI-18: a run place's weather today (its forecast's first day), glyph and word, for the folded card */
 function runTodayHTML(node) {
