@@ -10,8 +10,9 @@ const r2 = v => Math.round(v * 100) / 100;
 export const PORTAL_ZC = 6.5;
 
 /** @param {{ x: number, z: number, rot?: number }} station @param {{ y: number }} L its plot
- * @param {Record<string, any>} C the catalogue's props @param {number} depth the station's box depth */
-export function stationProps(station, L, C, depth) {
+ * @param {Record<string, any>} C the catalogue's props @param {number} depth the station's box depth
+ * @param {{ looks?: string[], tear?: number[] }} [rail] a placement's own track pieces and portal (SKY_RAIL's when left out) */
+export function stationProps(station, L, C, depth, rail = {}) {
   const r = ((station.rot || 0) * Math.PI) / 180,
     c = Math.cos(r),
     s = Math.sin(r),
@@ -22,7 +23,9 @@ export function stationProps(station, L, C, depth) {
     },
     track = depth / 2 + SKY_RAIL.from[1],
     out = [];
-  SKY_RAIL.looks.forEach((look, i) => {
+  const looks = rail.looks || SKY_RAIL.looks,
+    tear = rail.tear || SKY_RAIL.tear;
+  looks.forEach((look, i) => {
     const v = look ? (C.sky_rail.variants || []).findIndex(V => V.form === look) + 1 : 0;
     if (look && !v) throw new Error('sky_rail has no look ' + look);
     const q = at('sky_rail', SKY_RAIL.from[0] + SKY_RAIL.piece * (i + 0.5), track, v ? { v } : {});
@@ -30,10 +33,10 @@ export function stationProps(station, L, C, depth) {
     q.y = L.y;
     out.push(q);
   });
-  const P = at('sky_portal', SKY_RAIL.from[0] + SKY_RAIL.tear[0], track - SKY_RAIL.tear[1], {});
+  const P = at('sky_portal', SKY_RAIL.from[0] + tear[0], track - tear[1], {});
   /* it faces its -y: turned half round from the station, it faces back at it */
   P.rot = r2((((((station.rot || 0) + 180 + 180) % 360) + 360) % 360) - 180);
-  P.y = r2(L.y + SKY_RAIL.tear[2] - PORTAL_ZC);
+  P.y = r2(L.y + tear[2] - PORTAL_ZC);
   out.push(P);
   return out;
 }

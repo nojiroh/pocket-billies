@@ -297,7 +297,9 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
           });
       }
     }
-    if (M.glow && on > 0.01) {
+    /* scenery glow.light: how much of its light shines by day too (the sky portal's, the owner 2026-10-28) */
+    const gOn = M.glow ? Math.max(on, M.glow.light || 0) : 0;
+    if (M.glow && gOn > 0.01) {
       const c = hexToRgb(M.glow.c),
         p = [it.x, it.y + M.glow.y, it.z - 0.1];
       L.push({
@@ -306,7 +308,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
         own: it.p,
         src: it.p,
         kind: LIGHT_KIND.lamp,
-        c: [(c[0] / 255) * 1.3, (c[1] / 255) * 1.3, (c[2] / 255) * 1.3].map(v => v * lb * on),
+        c: [(c[0] / 255) * 1.3, (c[1] / 255) * 1.3, (c[2] / 255) * 1.3].map(v => v * lb * gOn),
       });
       /* v34: a lamp up high also lays a pool of light on the ground under it after dark */
       if (M.glow.y > 1.2 && pk > 0)

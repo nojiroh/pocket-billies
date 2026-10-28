@@ -414,6 +414,48 @@ export function effectsPass(C, items, X, dark, t, dt) {
             it.M.glowCol ? hexToRgb(it.M.glowCol).map(v => v / 255) : [1, 0.9, 0.62],
             (0.5 + 0.8 * on) * share * k * fl * lb * (it.M.glowK ?? 1),
           ]);
+      } else if (e.k === 'portal') {
+        /* the sky portal's light (the owner, 2026-10-28: nothing but light, glow, fog and depth): a soft glow round it
+           at every hour (brighter after dark), mist curling round its edge in its own plane (half the puffs a little in
+           front of it, half behind), motes spiralling in, glints flickering on the rim; its colour is its glow's (the
+           gold look's after a win). Reduced motion holds the mist and the motes still */
+        const on = lampLit(it.x, it.z, dark),
+          col = it.M.glow ? hexToRgb(it.M.glow.c).map(v => v / 255) : [0.56, 0.85, 1],
+          pale = col.map(v => 0.55 + 0.45 * v),
+          /* the mist: the portal's colour, deeper (pale mist on a bright sky is only haze) */
+          mist = col.map(v => 0.25 + 0.6 * v),
+          R0 = (e.r || 4) * s * (it.M.ppm || 32),
+          nx = -r2,
+          nz = r0,
+          w = (t * rm) / 1000,
+          at = (/** @type {number} */ a, /** @type {number} */ r, /** @type {number} */ d) => [
+            x + r0 * Math.cos(a) * r + nx * d,
+            y + Math.sin(a) * r,
+            z + r2 * Math.cos(a) * r + nz * d,
+          ];
+        /* the glow in its own colour, faint (added in HDR, the bloom spreads it): bright enough to read as light, never
+           so bright it whites out the swirl behind it */
+        glows.push([x, y, z, R0 * 1.5 * gk, col, (0.06 + 0.14 * on) * lb]);
+        glows.push([x, y, z, R0 * 0.7 * gk, col, (0.12 + 0.22 * on) * lb]);
+        for (let n = 0; n < 18; n++) {
+          const a = (n / 18) * Math.PI * 2 + w * (n % 2 ? 0.11 : -0.07),
+            r = R0 * (1.02 + 0.1 * Math.sin(w * 0.7 + n * 1.3)),
+            sz = R0 * (0.5 + 0.18 * Math.sin(n * 1.7)),
+            [px, py, pz] = at(a, r, (n % 2 ? 0.7 : -0.7) * (0.6 + 0.4 * Math.sin(n * 2.3)));
+          quad('smoke', n % 4, px, py - sz * 0.5, pz, sz, sz, 0.1 + 0.06 * on, mist);
+        }
+        for (let n = 0; n < 16; n++) {
+          const ph = (w / 4 + n / 16 + sd * 0.01) % 1,
+            [px, py, pz] = at(n * 2.4 + ph * 2.6, R0 * 1.7 * (1 - ph) + R0 * 0.08, -1.2 * ph);
+          quad('sparkle', Math.floor(ph * 4), px, py, pz, 0.35, 0.35, Math.sin(ph * Math.PI) * 0.9, pale);
+        }
+        for (let n = 0; n < 6; n++) {
+          const g = Math.max(0, Math.sin(w * (1.3 + n * 0.37) + n * 2.1)) ** 4;
+          if (g > 0.05) {
+            const [px, py, pz] = at(n * 1.05 + w * 0.05, R0 * 0.98, -0.3);
+            glows.push([px, py, pz, 0.5 * gk, pale, 1.4 * g * lb]);
+          }
+        }
       } else if (e.k === 'fireflies') {
         /* HB-10b: n fireflies drifting within r metres of the point after dusk, each blinking on its own slow beat;
         none by day. Reduced motion holds them still (they still blink, more slowly) */

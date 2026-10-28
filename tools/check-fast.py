@@ -310,9 +310,11 @@ def hub_orbit(pg, base):
 
 # IS-1: the camera's yaw (0 looking north) and the wrapped difference between two angles, in the page
 WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
-# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
-# keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
-ORBIT_R = 30
+# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026, again on 28 Oct after the hub's
+# wider mountain and the pond's terrace): holding right from the south keeps to 32 m for the 0.7 rad the check needs
+# (its radial slope under 0.15 the whole way); at 30 m it ends at the terrace's rock face, nearer the summit the
+# mountain's foot slides you in
+ORBIT_R = 32
 ORBIT_FRAMES = 300   # the hold-right walk's frames on a slow machine, four times what it needs
 
 
@@ -1617,12 +1619,13 @@ def train_ride(pg, base):
     after a loss the battered one with its smoke"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')&&walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});0")
-    if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
     # the ride runs on the clock: on a slow page a frame can fall either side of the lift, so one moment of it is held
     # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end.
-    # Cutscenes track A: by then it has risen straight up over the station on its engines
-    pg.evaluate("trainRide.hold=6900;0")
+    # Cutscenes track A: by then it has risen straight up over the station on its engines. The hold is set in the same
+    # call that starts the ride: on the CI runner's slow draw (the hub inland since 2026-10-28) the ride's 10.3 s could
+    # run out before a second call came
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});trainRide.hold=7600;0")
+    if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
     if not until(pg, "trainRide.W&&trainRide.W.train.lift>8&&Math.hypot(trainRide.W.train.x-trainRide.W.H.x,trainRide.W.train.z-trainRide.W.H.z)<3", 90): raise Exception(f'the train never rose over the station: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
     pg.evaluate("trainRide.hold=null;0")
     if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 90): raise Exception('the departure didn’t end in the white veil')

@@ -1718,7 +1718,8 @@ def name_caught_room_windows(P):
 def terraces_and_floating(P):
     """the land between metre corners is smooth and terraces of rock round off at the top and fan out at the foot:
     from every place's hub you reach exactly the same half-metre cells and exits as without that shaping, and no
-    prop's base is more than 15 cm above the ground under its footprint (fences and the like follow the slope)"""
+    prop's base is more than 15 cm above the ground under its footprint, turned with it (fences and the like follow
+    the slope; a turned station's box was measured unturned, off its levelled pad)"""
     pg = P.pg
     all_maps(pg)   # TC-4: this step reads every map (the page's other steps may have run without them)
     R2 = pg.evaluate("""(()=>{const out=[],C=walkData().sc,keep=walkView.sc;
@@ -1727,7 +1728,7 @@ def terraces_and_floating(P):
         let n=0;for(const v of seen)n+=v;let ex=0;for(const e of sc.exits||[]){const c=nearestWalkableCell(e[0],e[1]);if(c&&seen[c.j*gw+c.i])ex++}return [n,ex]};
       for(const id of LOCATIONS.map(r=>r.mapId).filter(Boolean)){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.noShape=1;const a=reach(sc);walkView.noShape=0;const b=reach(sc);
         let fl=[];for(const p of sc.props||[]){const M=C.props[p.k];if(!M||M.flat||M.walk||M.build||M.door!=null||(typeof propShown==='function'&&!propShown(p)))continue;const g=(M.group||'')+' '+p.k;if(SLOPE_HUGGERS.test(g)&&!/tree|lamp|post|sign|pole/.test(g))continue;
-          const s=p.s||1,y=propBaseHeight(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s;pts=[[p.x-bw,p.z-.05],[p.x+bw,p.z-.05],[p.x-bw,p.z+bd],[p.x+bw,p.z+bd]]}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
+          const s=p.s||1,y=propBaseHeight(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s,r=(p.rot||0)*Math.PI/180,c=Math.cos(r),sn=Math.sin(r);pts=[[-bw,-.05],[bw,-.05],[-bw,bd],[bw,bd]].map(([u,w])=>[p.x+u*c-w*sn,p.z+u*sn+w*c])}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
           let lo=1e9;for(const [x,z] of pts)if(Math.abs(stepLevelAt(x,z)-lv)<=.05)lo=Math.min(lo,standingHeightAt(x,z));if(lo<1e8&&y-lo>.15)fl.push(p.k+'@'+p.x.toFixed(1)+','+p.z.toFixed(1))}
         out.push({id,a,b,fl})}
       walkView.sc=keep;walkView.nav=null;walkView.navSc=null;return out})()""")
