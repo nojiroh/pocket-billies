@@ -16,7 +16,7 @@
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
-/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number> }} PerkRules */
+/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
@@ -49,6 +49,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   perkTake: [() => perkTake, v => (perkTake = v)],
   perkTeamOf: [() => perkTeamOf],
+  // @ts-expect-error -- replaced on purpose
+  perkWeight: [() => perkWeight, v => (perkWeight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -69,6 +71,18 @@ export function perkCount(run, id, perks) {
   return [...new Set(out)].join(' · ');
 }
 
+/** PK-4: a Perk's weight in a draw: its rarity's (rules.json run.perks.rarity), times run.perks.bias when one of its
+ * tags is a type on the team (each Billie's types) or a tag of a Perk held (data-checks.js PERK_THEMES: the themes) (itemization's lean toward the build,
+ * the rest still offered) @param {Run} run @param {string} id @param {Record<string, Perk>} perks
+ * @param {PerkRules} rule @param {string[][]} [team] */
+export function perkWeight(run, id, perks, rule, team) {
+  const P = perks[id],
+    w = rule.rarity[P.rarity] || 0,
+    b = rule.bias || 1;
+  if (b === 1 || !P.tags || !w) return w;
+  const on = new Set([...(team || []).flat(), ...run.perks.flatMap(h => (perks[h] && perks[h].tags) || [])]);
+  return P.tags.some(t => on.has(t)) ? w * b : w;
+}
 /** PK-4: a team as the offers see it: each Billie's types @param {any[]} team the save's team
  * @returns {string[][]} */
 export const perkTeamOf = team => (team || []).map(m => billyTypes(m));
@@ -94,13 +108,15 @@ export const perkPool = (run, perks, rule, also = [], team) =>
           perkFits(perks[id], team)
       );
 
-/** draw up to n Perks from a stream, by rarity weight, none twice @param {{ pick: (w: Record<string, number>) => string }} g
- * @param {string[]} pool @param {Record<string, Perk>} perks @param {PerkRules} rule @param {number} n */
-export function perkDraw(g, pool, perks, rule, n) {
+/** draw up to n Perks from a stream, by rarity weight, none twice; PK-4: by `weigh` when given (perkWeight: the bias
+ * toward the team's types and the tags held) @param {{ pick: (w: Record<string, number>) => string }} g
+ * @param {string[]} pool @param {Record<string, Perk>} perks @param {PerkRules} rule @param {number} n
+ * @param {(id: string) => number} [weigh] */
+export function perkDraw(g, pool, perks, rule, n, weigh) {
   const out = [];
   let left = pool.slice();
   while (out.length < n && left.length) {
-    const id = g.pick(Object.fromEntries(left.map(k => [k, rule.rarity[perks[k].rarity]])));
+    const id = g.pick(Object.fromEntries(left.map(k => [k, weigh ? weigh(k) : rule.rarity[perks[k].rarity]])));
     out.push(id);
     left = left.filter(k => k !== id);
   }
@@ -111,7 +127,9 @@ export function perkDraw(g, pool, perks, rule, n) {
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[][]} [team]
  * @returns {string[]} */
 export const perkOffer = (run, perks, rule, team) =>
-  perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, rule, [], team), perks, rule, rule.pick);
+  perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, rule, [], team), perks, rule, rule.pick, id =>
+    perkWeight(run, id, perks, rule, team)
+  );
 
 /** make the next pick: run.offer is set (null when nothing is left to offer) and the counter moves on; the caller
  * saves before showing it @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
@@ -135,7 +153,8 @@ export function perkShelf(run, i, day, perks, rule, team) {
     perkPool(run, perks, rule, [], team),
     perks,
     rule,
-    1
+    1,
+    id => perkWeight(run, id, perks, rule, team)
   )[0];
   run.shelf[key] = id || '';
   return run.shelf[key];

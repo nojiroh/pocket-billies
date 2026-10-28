@@ -29,6 +29,7 @@
    "d": {"description": "what it does, in one sentence", "type": "string", "minLength": 1, "maxLength": 160},
    "img": {"description": "PK-2: its picture, a 36 x 36 icon under game/art (tools/build-icons.mjs draws it; the Studio's icon editor edits it); without one it shows the relic icon", "type": "string", "pattern": "^perks/[a-z][a-z0-9_]*\\.svg$"},
    "needs": {"description": "PK-4: offered only to a team this holds for (logic/perks.js perkFits): team:<Type> (a Billie of that type), mono; a list must all hold", "$ref": "#/$defs/if"},
+   "tags": {"description": "PK-4: its types (types.json) and themes (logic/perks.js PERK_THEMES): offers draw it rules.json run.perks.bias times as often when a tag matches a type on the team or a tag of a Perk held", "type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"}},
    "say": {"description": "PK-1: the line it says in battle when one of its rows acts at a moment ({name}: the Billie it acted on); without one a stat or heal row says what it did", "type": "string", "minLength": 1, "maxLength": 40},
    "rarity": {"description": "how often it is offered (rules.json run.perks.rarity) and what a shop asks (run.perks.price)", "enum": ["common", "uncommon", "rare"]},
    "fx": {

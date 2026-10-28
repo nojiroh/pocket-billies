@@ -259,7 +259,8 @@
    "cap": 6,
    "pick": 3,
    "rarity": {"common":6,"uncommon":3,"rare":1},
-   "price": {"common":150,"uncommon":250,"rare":400}
+   "price": {"common":150,"uncommon":250,"rare":400},
+   "bias": 2
   },
   "side": {
    "detour": 0.6,

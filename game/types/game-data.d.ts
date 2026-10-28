@@ -1086,6 +1086,8 @@ export interface Rules {
       pick: number;
       rarity: Record<PerkRarity, number>;
       price: Record<PerkRarity, number>;
+      /** PK-4: a Perk whose tags match the team's types or a held Perk's tags is drawn this many times as often */
+      bias?: number;
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
@@ -2300,6 +2302,9 @@ export interface Perk {
   img?: string;
   /** PK-4: offered only to a team this holds for (a condition or a list, all of which must hold: team:<Type>, mono) */
   needs?: string | string[];
+  /** PK-4: its types and themes (types.json ids; logic/perks.js PERK_THEMES): offers lean toward a Perk whose tag
+      matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
+  tags?: string[];
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */

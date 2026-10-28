@@ -27,7 +27,7 @@ import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
 import { fxRunFoeLevels } from './effects.js';
-import { perkDraw, perkPool } from './perks.js';
+import { perkDraw, perkPool, perkWeight } from './perks.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -236,7 +236,7 @@ export function encPickBilly(run, team) {
 export function encPerk(run, arg, perks, rule, team) {
   if (arg && perks[arg]) return run.perks.includes(arg) ? '' : arg;
   const pool = perkPool(run, perks, rule, [], team).filter(id => !arg || perks[id].rarity === arg);
-  return perkDraw(encRng(run), pool, perks, rule, 1)[0] || '';
+  return perkDraw(encRng(run), pool, perks, rule, 1, id => perkWeight(run, id, perks, rule, team))[0] || '';
 }
 
 /** species to meet at a level: the region's dex (else every species given), the stages that fit the level (a first

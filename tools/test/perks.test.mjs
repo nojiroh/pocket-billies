@@ -188,3 +188,34 @@ test('PK-4 needs: a Perk that needs team:Fire is drawn only for a team with a Fi
   }
   assert.equal(modules.encounters.encPerk(r, 'test_fire_only', NEEDY, RULE, water), 'test_fire_only', 'named: given');
 });
+
+test('PK-4 tags: a Perk whose tag is a type on the team or a held Perk’s tag weighs run.perks.bias times more', () => {
+  const P = {
+      test_fire: { name: 'T', d: 'T.', rarity: 'common', tags: ['Fire'], fx: [{ kind: 'money', mult: 1.1 }] },
+      test_kit: { name: 'T', d: 'T.', rarity: 'common', tags: ['weather'], fx: [{ kind: 'money', mult: 1.1 }] },
+      test_umb: { name: 'T', d: 'T.', rarity: 'uncommon', tags: ['weather'], fx: [{ kind: 'money', mult: 1.1 }] },
+      test_none: { name: 'T', d: 'T.', rarity: 'common', fx: [{ kind: 'money', mult: 1.1 }] },
+    },
+    rule = { ...RULE, bias: 2 },
+    r = run(),
+    w = RULE.rarity.common;
+  assert.equal(R.perkWeight(r, 'test_fire', P, rule, [['Fire']]), 2 * w);
+  assert.equal(R.perkWeight(r, 'test_fire', P, rule, [['Water']]), w);
+  assert.equal(R.perkWeight(r, 'test_fire', P, rule), w, 'no team: no type lean');
+  assert.equal(R.perkWeight(r, 'test_kit', P, rule, [['Water']]), w);
+  r.perks = ['test_umb'];
+  assert.equal(R.perkWeight(r, 'test_kit', P, rule, [['Water']]), 2 * w, 'a held Perk’s theme');
+  assert.equal(R.perkWeight(r, 'test_none', P, rule, [['Fire']]), w, 'no tags');
+  assert.equal(R.perkWeight(r, 'test_kit', P, { ...rule, bias: 1 }, [['Water']]), w, 'bias 1: none');
+  /* over many shelves, the matching Perk is drawn about twice as often as the other common one */
+  const Q = { test_fire: P.test_fire, test_none: P.test_none },
+    count = team => {
+      let n = 0;
+      for (let k = 0; k < 400; k++) if (R.perkShelf(run('BIAS' + k), 1, 1, Q, rule, team) === 'test_fire') n++;
+      return n / 400;
+    };
+  const lean = count([['Fire']]),
+    even = count([['Water']]);
+  assert.ok(Math.abs(even - 0.5) < 0.08, `even ${even}`);
+  assert.ok(Math.abs(lean - 2 / 3) < 0.08, `lean ${lean}`);
+});

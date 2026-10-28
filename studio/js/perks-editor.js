@@ -443,7 +443,14 @@ function perkRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type 
     'Rarity and the picks',
     `<table class="tbl relic-rarity"><thead><tr><th>Rarity</th><th>Weight</th><th>Shop price</th><th>Perks</th><th></th></tr></thead><tbody>${rows}</tbody></table>${grid(
       numberField('Held at most', 'rules.run.perks.cap', { min: 1, max: 12, step: 1 }),
-      numberField('Offered at each pick', 'rules.run.perks.pick', { min: 1, max: 5, step: 1 })
+      numberField('Offered at each pick', 'rules.run.perks.pick', { min: 1, max: 5, step: 1 }),
+      numberField('Lean toward a tag match ×', 'rules.run.perks.bias', {
+        min: 1,
+        max: 10,
+        step: 0.5,
+        opt: 1,
+        help: 'PK-4: a Perk whose tags match a type on the team or a tag of a Perk held is drawn this many times as often.',
+      })
     )}${rules}`,
     {
       sub: 'rules.json run.perks. A pick after each mini-boss draws this many by weight, none held; each run town’s shop has one a day at its rarity’s price.',
@@ -509,6 +516,7 @@ SECTIONS.relics = () => {
        ph: 'Approved, {name}!',
      }) +
      `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
+     `<label class="fld"><span>Tags (PK-4: types and themes; offers lean ×${D.rules.run.perks.bias || 1} toward a match with the team’s types or a Perk held)</span><input type="text" data-relic-tags="${escapeHtml(k)}" value="${escapeHtml((R.tags || []).join(', '))}" placeholder="Fire, weather"></label>` +
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
@@ -685,20 +693,21 @@ document.addEventListener('change', ev => {
   changed();
   render();
 });
-/* PK-4: a Perk's Needs, as a row's If: words split at commas */
+/* PK-4: a Perk's Needs and Tags, as a row's If: words split at commas (Tags always a list) */
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLInputElement} */ (ev.target);
-  if (!el.dataset || !el.dataset.relicNeeds) return;
-  const R = /** @type {any} */ (studioState.D.perks[el.dataset.relicNeeds]);
+  if (!el.dataset || (!el.dataset.relicNeeds && !el.dataset.relicTags)) return;
+  const R = /** @type {any} */ (studioState.D.perks[el.dataset.relicNeeds || el.dataset.relicTags || '']);
   if (!R) return;
-  const was = JSON.stringify(R.needs),
+  const key = el.dataset.relicNeeds ? 'needs' : 'tags',
+    was = JSON.stringify(R[key]),
     L = el.value
       .split(',')
       .map(w => w.trim())
       .filter(Boolean);
-  if (!L.length) delete R.needs;
-  else R.needs = L.length === 1 ? L[0] : L;
-  if (JSON.stringify(R.needs) === was) return;
+  if (!L.length) delete R[key];
+  else R[key] = key === 'tags' || L.length > 1 ? L : L[0];
+  if (JSON.stringify(R[key]) === was) return;
   changed();
   render();
 });

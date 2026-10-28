@@ -75,6 +75,7 @@ expose({
   GENE_KINDS: [() => GENE_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   PERK_NEEDS: [() => PERK_NEEDS],
+  PERK_THEMES: [() => PERK_THEMES],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
@@ -1960,12 +1961,21 @@ export function dataPerks(D, valid = () => true) {
           problem('perks.json', `${k}.say: a line of 1-${FX_SAY} letters`);
     /* PK-4: what a Perk needs to be offered: conditions an offer can know (the team's types) */
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
-      for (const [k, R] of Object.entries(D.perks))
+      for (const [k, R] of Object.entries(D.perks)) {
         perkNeedsProblems(R.needs, `${k}.needs`, D, w => problem('perks.json', w));
+        /* PK-4: its tags: types of types.json and the themes of perks.js PERK_THEMES */
+        for (const t of R.tags || [])
+          if (!types.has(t) && !(/** @type {readonly string[]} */ (PERK_THEMES).includes(t)))
+            problem('perks.json', `${k}.tags: "${t}" is no type (types.json) or theme (${PERK_THEMES.join(', ')})`);
+      }
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
-        if (!['cap', 'pick', 'rarity', 'price'].includes(k)) problem('rules.json', `run.perks.${k}: no such rule`);
+        if (!['cap', 'pick', 'rarity', 'price', 'bias'].includes(k))
+          problem('rules.json', `run.perks.${k}: no such rule`);
+      /* PK-4: the lean toward a Perk whose tags match (1 is none) */
+      if (RR.bias != null && !(typeof RR.bias === 'number' && RR.bias >= 1 && RR.bias <= 10))
+        problem('rules.json', 'run.perks.bias is not a factor from 1 to 10');
       if (!whole(RR.cap, 1, 12)) problem('rules.json', 'run.perks.cap is not a whole number from 1 to 12');
       if (!whole(RR.pick, 1, 5)) problem('rules.json', 'run.perks.pick is not a whole number from 1 to 5');
       for (const g of ['rarity', 'price']) {
@@ -2102,6 +2112,9 @@ export function fxPassiveProblems(f, at, D, problem) {
       problem(`${at}.stages: a whole number of stages from 1 to ${FX_STAGES}`);
   }
 }
+/** PK-4: the themes a Perk's tags may name besides types: the Perk sets planned for PK-8 (perks-track.md 5.7, which
+ * makes them a data section) */
+export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
 /** PK-4: the conditions a Perk's needs can name: those an offer knows (the team) */
 export const PERK_NEEDS = ['team', 'mono'];
 /** PK-4: a Perk's needs: one condition or a list of 1-4, each a condition word (fxCondProblem) of PERK_NEEDS

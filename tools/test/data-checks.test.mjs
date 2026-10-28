@@ -547,3 +547,20 @@ test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () =
     );
   }
 });
+
+test('PK-4: a Perk’s tags are types or themes; rules.json run.perks.bias a factor from 1 to 10', () => {
+  const D = structuredClone(GAME_DATA);
+  D.perks.lucky_charm.tags = ['Fire', 'weather'];
+  assert.deepEqual(C.dataPerks(D), []);
+  D.perks.lucky_charm.tags = ['Fyre'];
+  D.rules.run.perks.bias = 0.5;
+  const all = C.dataPerks(D).map(p => p.join(': '));
+  assert.ok(
+    all.some(w => w.includes('lucky_charm.tags: "Fyre" is no type')),
+    JSON.stringify(all)
+  );
+  assert.ok(
+    all.some(w => w.includes('run.perks.bias is not a factor from 1 to 10')),
+    JSON.stringify(all)
+  );
+});
