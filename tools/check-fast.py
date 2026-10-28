@@ -1393,15 +1393,20 @@ def run_town_quests(pg, base):
 
 def run_village_stall(pg, base):
     """WM-5: the run fixture's village (Expedition I's last town): its name says Village; its market stall, tapped,
-    opens a shop of its own with 2 held items at their prices, no Perk and no fresh stock; the town's shop is another"""
-    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!LOCATIONS[runWorldNode(i)].stall)")
+    opens a shop of its own with 2 held items at their prices and no Perk (Mo's fresh stock, when the run has one, its own);
+    the town's shop is another"""
+    # the run's world in (the page's first check, alone, starts before it is)
+    if not until(pg, "!!(saveData.run&&saveData.run.map&&runWorld.seed===saveData.run.seed&&LOCATIONS.length>saveData.run.map.nodes.length)", 120):
+        raise Exception("the run's world never came in")
+    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!(LOCATIONS[runWorldNode(i)]||{}).stall)")
     if i < 0: raise Exception("no town on the run fixture's map has a market stall")
     node = pg.evaluate(f"runWorldNode({i})")
     name = pg.evaluate(f"LOCATIONS[{node}].name")
     if not name.endswith(' Village'): raise Exception(f'the town with a stall is called {name}')
     go_scene(pg, node, 120)
     if not pg.evaluate("walkView.sc.props.some(p=>p.act==='stall')"): raise Exception('the village has no market stall')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+    # Mo at Lv 3 on this run (one fresh stock a run: logic/residents.js resRerolls), so the stall's own is tried below
+    pg.evaluate("saveData.run.res=Object.assign(saveData.run.res||{},{mo:3});saveData.run.reshop=[];uiState.modal=null;uiState.mq=[];renderOverlay();"
                 "(()=>{const p=walkView.sc.props.find(q=>q.act==='stall');walkPick({k:'act',p,act:'stall'});return 0})()")
     if not until(pg, "uiState.modal&&uiState.modal.shop&&document.querySelectorAll('#ov .shop-sheet .ware2').length>0", 15):
         raise Exception('tapping the market stall opened no shop')
@@ -1412,9 +1417,17 @@ def run_village_stall(pg, base):
     if len(wares) != 2 or not pg.evaluate(f"{json.dumps(wares)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
         raise Exception(f'the stall sells {wares}, not 2 held items')
     if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the stall offers a Perk')
-    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers a fresh stock')
+    # the owner: Mo's fresh stock works at the stall too (one of the run's rerolls), its own apart from the shop's
+    if pg.evaluate("runRerollsLeft(saveData.run,RESIDENTS)<1"): raise Exception('Mo at Lv 3 gave the run no fresh stock')
+    if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers no fresh stock with a reroll left')
+    pg.evaluate("document.querySelector('#ov .shop-sheet [data-a=shopreroll]').click();0")
+    if not until(pg, f"saveData.run.reshop&&saveData.run.reshop.includes('{i}:'+saveData.run.clock+':s')", 10): raise Exception('the fresh stock wasn’t kept as the stall’s')
+    again = pg.evaluate(f"SHOPS['{sid}'].stock.map(w=>w.item)")
+    if len(again) != 2 or not pg.evaluate(f"{json.dumps(again)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
+        raise Exception(f'the fresh stock is {again}, not 2 held items')
+    fresh = f'; a fresh stock: {", ".join(again)}'
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
-    return f'{name}: its stall sells {", ".join(wares)}'
+    return f'{name}: its stall sells {", ".join(wares)}{fresh}'
 
 
 def waystations(pg, base):
@@ -1784,7 +1797,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
-             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk (WM-5)", run_village_stall)]),
+             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk, Mo's fresh stock (WM-5)", run_village_stall)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),

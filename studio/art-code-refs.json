@@ -1639,9 +1639,9 @@
    "game/js/lore.js:209",
    "game/js/shop.js:57",
    "game/js/shop.js:77",
-   "game/js/shop.js:160",
-   "game/js/shop.js:170",
-   "game/js/shop.js:239",
+   "game/js/shop.js:166",
+   "game/js/shop.js:176",
+   "game/js/shop.js:245",
    "game/js/sound.js:448",
    "game/js/sound.js:1550",
    "game/js/town-square.js:159",
@@ -1832,7 +1832,7 @@
    "game/js/battle-stage.js:2152",
    "game/js/billie-sheet.js:194",
    "game/js/boot.js:156",
-   "game/js/shop.js:164"
+   "game/js/shop.js:170"
   ],
   "pow": [
    "game/js/game-data.js:157",
