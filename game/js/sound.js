@@ -25,6 +25,7 @@ import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from 
 import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
 import { squareBuskSong, squareBusker } from './logic/square-day.js';
+import { hitTier, koAhead } from './logic/battle-anims.js';
 import { runWeather } from './logic/run-map.js';
 import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
@@ -42,7 +43,13 @@ import {
   ambienceRandom,
   ambienceStep,
 } from './logic/ambience-sound.js';
-import { musicLayerWalk, musicLayerWeather } from './logic/music-layers.js';
+import {
+  musicLayerBattle,
+  musicLayerFight,
+  musicLayerFightStart,
+  musicLayerWalk,
+  musicLayerWeather,
+} from './logic/music-layers.js';
 import { soundscapePreview } from './logic/soundscape.js';
 import { natureBetween, natureBirdWait, natureBirds, natureStep, natureStepSurface } from './logic/nature-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
@@ -110,6 +117,7 @@ expose({
   music: [() => music, v => (music = v)],
   musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicLayersIntensity: [() => musicLayersIntensity, v => (musicLayersIntensity = v)],
   musicLayersNow: [() => musicLayersNow, v => (musicLayersNow = v)],
   musicLayersPrepare: [() => musicLayersPrepare, v => (musicLayersPrepare = v)],
   musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
@@ -1350,9 +1358,23 @@ function musicLayersNow(sc, E, moving, night) {
     snow: W.snow,
     storm: W.storm,
     night: Math.round(night * 50) / 50,
-    build: 1,
-    peak: 0,
+    ...musicLayersIntensity(),
   };
+}
+/* SND-13: a battle's intensity (build from its intro to full as turns pass, KOs land, big hits and a boss's phases;
+   peak in the red zone, as a KO lands, once a boss has changed phase), heard from the lines played so far
+   (activeBattle.events up to .ev; the VFX track's hitTier and koAhead, logic/battle-anims.js); out of a battle full
+   and no peak */
+function musicLayersIntensity() {
+  const B = typeof activeBattle !== 'undefined' && activeBattle;
+  if (!B || !B.events) {
+    soundEngine.fight = null;
+    return { build: 1, peak: 0 };
+  }
+  if (!soundEngine.fight || soundEngine.fight.B !== B) soundEngine.fight = { B, F: musicLayerFightStart() };
+  const F = musicLayerFight(soundEngine.fight.F, B.events, B.ev || 0, { hitTier, koAhead }),
+    st = musicState();
+  return musicLayerBattle(F, !!st.redZone, st.battle === 'boss' || st.battle === 'leader');
 }
 /* SND-13: the walking beat, the weather and night a song's ensemble has layers for, baked ahead on arrival (the rest
    bake when they first come) */
