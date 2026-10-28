@@ -731,7 +731,10 @@ export interface Item {
   n: string;
   price: number;
   d: string;
-  icon: string;
+  /** the old atlas's rectangle, `i_` + this (art/icons/icons.png; battle.js itemIcon), for an item without `img` */
+  icon?: string;
+  /** PK-11: its own picture, `items/<id>.svg` under game/art (a 36 px icon), which itemIcon prefers */
+  img?: string;
   hp?: number;
   hpAll?: number;
   cure?: string;

@@ -114,6 +114,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
   // @ts-expect-error -- replaced on purpose
+  dataItemArt: [() => dataItemArt, v => (dataItemArt = v)],
+  // @ts-expect-error -- replaced on purpose
   dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
@@ -2529,6 +2531,41 @@ export function dataPerkArt(perks, read) {
     else {
       const bad = svgProblem(t);
       if (bad) out.push({ lvl: 'error', where: 'perks.json', msg: `${k}.img: art/${R.img} is not an icon: ${bad}` });
+    }
+  }
+  return out;
+}
+/**
+ * PK-11: the items' pictures, as dataPerkArt checks the Perks'. items.json has no schema, so the path's form is checked
+ * here: an item's img is `items/<its id>.svg`, there, and an icon (svgProblem). An item without one draws its old atlas
+ * rectangle (`i_` + its icon; battle.js itemIcon): a warning for a Bag item; a held item is left alone until PK-10
+ * draws them.
+ * @param {any} items @param {(path: string) => string | null} read @returns {DataFinding[]}
+ */
+export function dataItemArt(items, read) {
+  /** @type {DataFinding[]} */
+  const out = [],
+    error = (/** @type {string} */ msg) => out.push({ lvl: 'error', where: 'items.json', msg });
+  for (const [k, I] of Object.entries(items || {})) {
+    if (!I || typeof I !== 'object') continue;
+    if (I.img === undefined) {
+      if (I.hold) continue;
+      out.push({
+        lvl: 'warn',
+        where: 'items.json',
+        msg: `${k}: no img, so it draws the old atlas's i_${I.icon || k} (tools/build-icons.mjs)`,
+      });
+      continue;
+    }
+    if (I.img !== `items/${k}.svg`) {
+      error(`${k}.img: items/${k}.svg (its id, in the items folder), not ${JSON.stringify(I.img)}`);
+      continue;
+    }
+    const t = read(I.img);
+    if (t == null) error(`${k}.img: no picture art/${I.img}`);
+    else {
+      const bad = svgProblem(t);
+      if (bad) error(`${k}.img: art/${I.img} is not an icon: ${bad}`);
     }
   }
   return out;

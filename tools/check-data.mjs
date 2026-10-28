@@ -36,6 +36,7 @@ import {
   dataBuildings,
   dataCatchArt,
   dataPerkArt,
+  dataItemArt,
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
@@ -405,6 +406,13 @@ for (const [where, what] of dataCatchArt(D.pyramids, p => {
   problem(where, what);
 // PK-2: the Perks' pictures (an img that is there and is an icon; a Perk without one warns)
 for (const f of dataPerkArt(D.perks, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
+// PK-11: the items' pictures (an img at items/<id>.svg that is there and is an icon; an item without one warns)
+for (const f of dataItemArt(D.items, p => {
   const f = join(DATA, '..', 'art', p);
   return existsSync(f) ? readFileSync(f, 'utf8') : null;
 }))
