@@ -126,6 +126,7 @@ import {
   battleStageToCss,
   camAt,
 } from './battle-stage.js';
+import { battleAnimSkip } from './battle-anim-run.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES } from './environment.js';
@@ -184,6 +185,7 @@ expose({
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   koThisEvent: [() => koThisEvent, v => (koThisEvent = v)],
+  lineReady: [() => lineReady, v => (lineReady = v)],
   logLine: [() => logLine, v => (logLine = v)],
   moveInfoHide: [() => moveInfoHide, v => (moveInfoHide = v)],
   moveInfoNodes: [() => moveInfoNodes, v => (moveInfoNodes = v)],
@@ -512,11 +514,14 @@ function showEvent() {
   uiState.evReady = false;
   /* the next line waits for the animation on the scene's own clock (a slow device draws fewer frames, so it takes
     longer in real time) as well as for the text to finish typing */
-  afterStageTime('evT', r.dur + 120, tt + 120 * k, () => {
-    uiState.evReady = true;
-    $('#msg') && $('#msg').classList.add('ready');
-    uiState.evT = setTimeout(nextEvent, (reducedMotion ? 1300 : 820) * k);
-  });
+  afterStageTime('evT', r.dur + 120, tt + 120 * k, lineReady);
+}
+/* the line is ready: a tap moves on, or it moves on by itself after a while */
+function lineReady() {
+  clearTimeout(uiState.evT);
+  uiState.evReady = true;
+  $('#msg') && $('#msg').classList.add('ready');
+  uiState.evT = setTimeout(nextEvent, (reducedMotion ? 1300 : 820) / battleStage.speed);
 }
 function afterStageTime(slot, sceneMs, realMs, fn) {
   const t0 = battleStage.t,
@@ -564,13 +569,19 @@ export function tapMessage() {
   if (!activeBattle || activeBattle.phase !== 'playing' || !$('#msg')) return;
   /* SY-5: a tap hides the join's notice, as it would skip ahead */
   if (bureauUi.notice) bureauNoticeClose();
+  if (uiState.evReady) return nextEvent();
+  /* VFX-8: a tap skips: what the animation still had to show and play is dropped (its end framing and the hit's
+     numbers stay), the line's plates are painted, its text shown whole, and the line is ready (a second tap moves on) */
   if (uiState.typing) {
     clearInterval(uiState.typeT);
     uiState.typing = false;
     $('#msgT').textContent = uiState.typeFull || '';
-    return;
   }
-  if (uiState.evReady) nextEvent();
+  clearTimeout(uiState.hpT);
+  battleAnimSkip();
+  const ev = activeBattle.events[activeBattle.ev];
+  if (ev) paintBoxes(ev.s, ev.mk, true);
+  lineReady();
 }
 /* phase 06-4: the corner cards are gone (the plates in the scene show everything); a Billie coming in repaints them */
 function boxAnims(ev) {
