@@ -24,7 +24,7 @@
  },
  "figure": {
   "head": "long",
-  "build": "slim",
+  "build": "lanky",
   "gait": {"swing":0.6,"arms":0.35,"bounce":0.3}
  }
 }

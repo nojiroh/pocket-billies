@@ -10,7 +10,7 @@
  },
  "figure": {
   "head": "heart",
-  "build": "slim",
+  "build": "athletic",
   "gait": {"swing":1.25,"lean":0.06}
  }
 }

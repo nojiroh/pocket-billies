@@ -24,7 +24,7 @@
  },
  "figure": {
   "head": "square",
-  "build": "stocky",
+  "build": "athletic",
   "gait": {"lean":0.08,"swing":1.15}
  }
 }

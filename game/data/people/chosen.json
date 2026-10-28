@@ -38,6 +38,6 @@
  "figure": {
   "head": "heart",
   "build": "small",
-  "gait": {"bounce":1.4,"lean":-0.05}
+  "gait": {"bounce":1.4,"lean":-0.07}
  }
 }

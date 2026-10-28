@@ -34,7 +34,7 @@
  },
  "figure": {
   "head": "long",
-  "build": "slim",
-  "gait": {"swing":1.2,"lean":0.04}
+  "build": "athletic",
+  "gait": {"swing":1.2,"lean":-0.02}
  }
 }
