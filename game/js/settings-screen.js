@@ -424,6 +424,11 @@ function settingsHTML() {
         switchHTML('alwaysRun', !!p.alwaysRun, '1', '')
       ) +
       settingsRowHTML(
+        'Shrink the bar while walking',
+        'A few seconds into a walk the bottom bar folds down so you see more of the world. It grows back when you stop.',
+        switchHTML('navShrink', p.navShrink !== 'off', 'on', 'off')
+      ) +
+      settingsRowHTML(
         'Scene tilt',
         'Tilt your phone to look a little around the scene.',
         switchHTML('tilt', p.tilt !== false, 'on', 'off')
