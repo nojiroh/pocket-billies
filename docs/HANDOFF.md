@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Clean-up track CU lane S - the Studio's words: no "placeholder", "AI" or "Claude"; Sketch Billies - 2026-10-28
+Branch `track/cleanup` (origin/main merged first: up to date). Lane S's plan and the owner's answers were approved
+before the session (docs/phases/cleanup-track.md sections 1, 3, 4, "Lane S"); steps 1-8 done, the music step waits
+(section 7). One rename per commit; pulled with lanes D, R and T before each push (no conflicts).
+- Facts checked against the plan: they held, with these differences. The model drop zone's help was one string in
+  workbench-model.js (line ~388) and the header comment, as said. rename.mjs `file` missed relative-path imports
+  (`./placeholder-art.js`, `../bake-placeholders.mjs`) and the worker's import list: repointed by hand in the same
+  commit; the worker's import moved to its name-order place (verify flags that one moved line). rename.mjs `prefix`
+  covers only the pages' top-level names, so the Node tools' own names (`placeholderData`, `placeholderRigs`,
+  `bakePlaceholders`, `samplePlaceholder`, kit-bake-parity's `PLACEHOLDER`) and the JSDoc typedefs got their own
+  whole-word commits (verify: a pure rename). The `ph` attributes (`data-ph`, `data-ph-sp`) and the class can't be
+  paired by verify: checked by the diff. Also found and changed: check-studio-github.py's `kit_off_placeholder` and
+  its economy step's wording, STUDIO.md's data-keep line ("empty slot", as studio-app.js), and the `about` notes of
+  bosses, factions, genes and modifiers ("first guesses"; on no live branch) so the final grep is clean.
+- Changed (30 commits, `CU-S1`..`CU-S8b`, plus this entry):
+  - Words: the Model drop zone (Blender, Blockbench and MagicaVoxel), Genes ("first guess"), economy ("a notice"),
+    pixel-snap ("a painted image"), prop-models ("some apps' web views"), STUDIO.md.
+  - Players see: the Retrieval Unit's four parts lose "RL-14b: " and " Placeholder art." (first letter capitalised);
+    the region word "Placeholder" is "Untitled" in the same slot (run-start snapshot: only the 200-seed hash moved);
+    quests.json's about drops "drafted by Claude"; robots.schema.json's art description.
+  - The 53 cry names in 22 lines/*.json are plain (4 now fit one line: check-data --fix); line.schema.json.
+  - The sketch rename: `blankPart` first; logic/sketch-art.js and its test; prefix `sketch*` (30 names), the Node
+    tools' names, `graftSketch*`, `graftBakeSketch`, `Sketch*` typedefs; graft-sketch.test.mjs;
+    studio/js/sketch-sheets.js with `SKETCH_*`, `sketch*`, its actions, `data-sketch`, `data-sketch-sp`, class
+    `sketch-sheets`; tools/bake-sketches.mjs, `npm run bake:sketches`, export folder tools/art-source/sketches (the
+    rigs-next.js header and github.js's header string identical); the rig key `sketch: "bodyPlans.json"` (130);
+    the density row key `sketch`; game/art/next/sketches/kappi.png; the debug log's "a kit Billie and a sketch one,
+    or no sketch form"; check-studio-github.py `kit_off_sketch`.
+  - "Sketch Billie" in the words (Part mode heading and help, the Repack toast keeps "baked from its body plan", the
+    kit recipe, the density table, bodyPlans.json's note and schema, game-data.d.ts, STUDIO.md's section).
+  - docs/phases/studio-self-test.md is STUDIO.md's "Self-test" section (its "Done when" left out); three code
+    comments point there; the file is gone.
+  - The guard tools/test/studio-words.test.mjs (fails on main: 2 of 3 red; here 3 pass). One NAMING row, one
+    CHANGELOG bullet.
+- Kept on purpose: HTML's `placeholder=` / `ph:` / `.placeholder`; the battle engine's AI names; game-only comments
+  with the plain word (placeholder numbers in game-data.d.ts, starter-points.js, run-state.js, battle-stage.js's
+  robot picture, robot-art.js "phase 17, placeholder"); ART-NOTES.md's robots heading (lane D/round 2's file).
+- Final grep (`git grep -n -i -w -e placeholder -e placeholders -e AI -e Claude -- studio docs/STUDIO.md
+  game/data`): only the HTML hints and the music step's lines (music.json 40, music.schema.json 4,
+  music-editor.js 3, STUDIO.md's line 718).
+- Verified: lint, typecheck, check:modules (521 names), format:check, check:data (178 files), build, `npm test`
+  1,927 pass; studio-words, sketch-art (the committed bake), graft-sketch, pixel-density, rig-swap, kit-bake-parity,
+  logic-worker, run-start, version-source tests; `npm run bake:sketches -- --check` (every Billie as committed);
+  `node tools/art-unused.mjs --check` (0 unused, 0 missing); `npm run check:smoke` no problems (377 s); `python3 tools/check-studio-github.py --only=sections,studio_test,art_browser` ok (32 sections, 21 edits undone)
+  and `--only=repack,kit_write` ok (a sketch Billie refused by Repack; the kit write pixel-equal to the Node bake).
+- Live branches: a test merge (`git merge-tree`) of every live branch into this one adds no conflict over main's but
+  generated files: tools/test/run-start.test.mjs.snapshot's hash line (track/perks, track/perks-items also change it:
+  take either side and run `node --test --test-update-snapshots tools/test/run-start.test.mjs`).
+- Risky: a live branch that adds code calling a renamed name (`placeholderFormOf`, `placeholderBake`, the rig key
+  `placeholder`, `npm run bake:placeholders`...) merges cleanly but breaks: after merging one, grep for
+  `placeholder[A-Z]`, `\.placeholder\b` on rigs and `bake:placeholders`; NAMING.md's row lists the new names.
+- For round 2:
+  - The music step (section 7), and then the guard's MUSIC and MUSIC_LINES go.
+  - docs/ROADMAP.md line ~143 still points at docs/phases/studio-self-test.md: "docs/STUDIO.md, Self-test".
+  - Owner's call: game-data.d.ts's "the placeholder picture" (robot art, line ~1463) and ART-NOTES.md's "Robots
+    (phase 17, placeholder)" heading say the same as robots.schema.json did; left, as game-only and lane D's file.
+- For the owner on the phone: section 9's list (a run may be called "Untitled ..."; the Bureau boss's salvage card
+  has no "Placeholder art."; Part mode on a sketch Billie says "Sketch Billie"; Genes' cards; the Model drop zone; a
+  Billie's Cry card).
+- Next: round 2 (section 6).
+
 ### Clean-up track CU lane T - files: scratch tools, the portrait kit, orphan art, the test map, .gitignore - 2026-10-28
 Branch `track/cleanup` (origin/main merged first: up to date). Lane T's plan and the owner's answers were approved
 before the session (docs/phases/cleanup-track.md sections 1, 3, 4, "Lane T"); steps 1-5 done, one cause per commit,
