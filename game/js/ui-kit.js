@@ -38,11 +38,19 @@ expose({
   html: [() => html],
   inboxShown: [() => inboxShown, v => (inboxShown = v)],
   motionNow: [() => motionNow],
+  msOf: [() => msOf],
   nothing: [() => nothing],
   patternVars: [() => patternVars],
+  pbBump: [() => pbBump, v => (pbBump = v)],
+  pbDoneHTML: [() => pbDoneHTML, v => (pbDoneHTML = v)],
+  pbDrawDone: [() => pbDrawDone, v => (pbDrawDone = v)],
   pbFloat: [() => pbFloat, v => (pbFloat = v)],
+  pbFlyTo: [() => pbFlyTo, v => (pbFlyTo = v)],
   pbInboxDot: [() => pbInboxDot, v => (pbInboxDot = v)],
   pbInboxPop: [() => pbInboxPop, v => (pbInboxPop = v)],
+  pbNudge: [() => pbNudge, v => (pbNudge = v)],
+  pbSlideBar: [() => pbSlideBar, v => (pbSlideBar = v)],
+  pbSound: [() => pbSound, v => (pbSound = v)],
   reduced: [() => reduced],
   shadowLayer: [() => shadowLayer],
   shaped: [() => shaped],
@@ -318,10 +326,6 @@ const PbButton = class extends LitElement {
       :host([wide]) {
         display: block;
       }
-      :host(:active:not([disabled])) {
-        transform: scale(0.96);
-        transition-duration: 80ms;
-      }
       .face {
         width: 100%;
         min-height: var(--tap);
@@ -366,11 +370,6 @@ const PbButton = class extends LitElement {
       }
       .face:disabled {
         cursor: default;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        :host(:active:not([disabled])) {
-          transform: none;
-        }
       }
     `,
   ];
@@ -1028,6 +1027,123 @@ export function pbFloat(anchor, text, tone) {
   document.body.appendChild(el);
   /* UI-16a: the pop and the float (motion.css m-float, --m-pop + --m-float) */
   setTimeout(() => el.remove(), reduced() ? 400 : 900);
+}
+
+/* ================= UI-16a: feedback you caused (docs/phases/ui-track.md "Alive, without clutter") =================
+   Transform and opacity only, on the motion tokens; nothing under Reduced but a fade. The kit makes no sound itself: it
+   sends pb-sound ({k}: a music.json ui sound) on the document, which the game's ui-motion.js plays. */
+const msOf = (/** @type {string} */ name, /** @type {number} */ dflt) => {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  return Number.isFinite(v) ? v : dflt;
+};
+/** asks the game for one of its UI sounds (music.json ui: sheet, flip, count, toast, cant...) @param {string} k */
+export function pbSound(k) {
+  document.dispatchEvent(new CustomEvent('pb-sound', { detail: { k } }));
+}
+/** the selection bar slides from where it was to its new row (a ghost of the slanted bar, over both; the real one is
+ * already there and shows through as the ghost fades) @param {DOMRect | null} from @param {DOMRect | null} to */
+export function pbSlideBar(from, to) {
+  if (!from || !to || reduced() || !to.width || !to.height) return;
+  if (Math.abs(from.left - to.left) < 2 && Math.abs(from.top - to.top) < 2) return;
+  const el = document.createElement('i');
+  el.className = 'pb-slidebar';
+  el.setAttribute('aria-hidden', 'true');
+  Object.assign(el.style, {
+    left: to.left + 'px',
+    top: to.top + 'px',
+    width: to.width + 'px',
+    height: to.height + 'px',
+  });
+  document.body.appendChild(el);
+  const sx = from.width / to.width,
+    sy = from.height / to.height;
+  el.animate(
+    [
+      { transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`, opacity: 1 },
+      { transform: 'none', opacity: 1, offset: 0.75 },
+      { transform: 'none', opacity: 0 },
+    ],
+    { duration: msOf('--m-base', 240), easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }
+  ).onfinish = () => el.remove();
+}
+/** the target of a gain bumps (it got something): a small pop; a fade under Reduced @param {Element | null} el */
+function pbBump(el) {
+  if (!el || !el.isConnected || !(/** @type {any} */ (el).animate)) return;
+  const ms = msOf('--m-pop', 150) * 1.4;
+  if (reduced()) el.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: ms });
+  else el.animate([{ scale: '1' }, { scale: '1.18' }, { scale: '1' }], { duration: ms, easing: 'ease-out' });
+}
+/** a wrong input: the control shakes once (no red flash); with sound, the can't buzz @param {Element | null} el
+ * @param {boolean} [sound] */
+export function pbNudge(el, sound) {
+  if (sound) pbSound('cant');
+  if (!el || !el.isConnected || reduced() || !(/** @type {any} */ (el).animate)) return;
+  el.animate(
+    [
+      { translate: '0' },
+      { translate: '-4px 0' },
+      { translate: '4px 0' },
+      { translate: '-3px 0' },
+      { translate: '2px 0' },
+      { translate: '0' },
+    ],
+    { duration: 320, easing: 'ease-out' }
+  );
+}
+/** a gain flies from where it happened to where it goes, and the target bumps when it lands (the Moneys chip, the Bag
+ * or Perks tab). what: the element that flies (an icon). Under Reduced nothing flies; the target only bumps (a fade)
+ * @param {DOMRect | null} from @param {Element | null} target @param {Element} what @param {number} [delay] */
+export function pbFlyTo(from, target, what, delay = 0) {
+  if (!target || !target.isConnected) return;
+  const to = target.getBoundingClientRect();
+  if (!from || reduced() || !to.width) {
+    pbBump(target);
+    return;
+  }
+  const el = document.createElement('span');
+  el.className = 'pb-fly';
+  el.setAttribute('aria-hidden', 'true');
+  el.appendChild(what);
+  document.body.appendChild(el);
+  const x0 = from.left + from.width / 2,
+    y0 = from.top + from.height / 2,
+    x1 = to.left + to.width / 2,
+    y1 = to.top + to.height / 2,
+    lift = Math.min(80, Math.abs(x1 - x0) * 0.25 + 30),
+    at = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ k) =>
+      `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${k})`;
+  el.animate(
+    [
+      { transform: at(x0, y0, 0.6), opacity: 0 },
+      { transform: at(x0, y0 - 10, 1.15), opacity: 1, offset: 0.2 },
+      { transform: at((x0 + x1) / 2, Math.min(y0, y1) - lift, 1), opacity: 1, offset: 0.55 },
+      { transform: at(x1, y1, 0.55), opacity: 0.9 },
+    ],
+    { duration: msOf('--m-float', 600), delay, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'backwards' }
+  ).onfinish = () => {
+    el.remove();
+    pbBump(target);
+  };
+}
+/** a check mark that draws itself (motion.css m-done; shadow roots draw it with pbDrawDone) */
+function pbDoneHTML(size = 16) {
+  return `<svg class="m-done" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg>`;
+}
+/** draws a done check's path inside a shadow root (motion.css's m-done can't reach in) @param {Element | null} svg */
+function pbDrawDone(svg) {
+  const p = svg && svg.querySelector('path');
+  if (!p || reduced()) return;
+  p.animate(
+    [
+      { strokeDasharray: '1', strokeDashoffset: '1' },
+      { strokeDasharray: '1', strokeDashoffset: '0' },
+    ],
+    {
+      duration: msOf('--m-slow', 380),
+      easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+      fill: 'backwards',
+    }
+  );
 }
 
 /* the inbox dot on the portrait: how many notices wait (0: no dot). The top bar is redrawn often, so the dot pops

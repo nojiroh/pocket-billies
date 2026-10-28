@@ -40,7 +40,6 @@
   transition: transform var(--m-fast) var(--spring);
 }
 .m-press:active {
-  transform: scale(0.96);
   transition-duration: 80ms;
 }
 

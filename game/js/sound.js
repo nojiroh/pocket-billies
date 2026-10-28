@@ -87,13 +87,22 @@ expose({
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
   testVolume: [() => testVolume, v => ((testVolume = v), provide({ testVolume }))],
   uiButton: [() => uiButton, v => (uiButton = v)],
-  uiSound: [() => uiSound, v => (uiSound = v)],
+  uiSound: [() => uiSound, v => ((uiSound = v), provide({ uiSound }))],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
   updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ applyAmbienceVolume, applyVolumes, battleSoundEffect, jingle, soundEffect, soundEffectAt, testVolume });
+provide({
+  applyAmbienceVolume,
+  applyVolumes,
+  battleSoundEffect,
+  jingle,
+  soundEffect,
+  soundEffectAt,
+  testVolume,
+  uiSound,
+});
 /* to-module: end */
 export const soundEngine = {
   ctx: null,

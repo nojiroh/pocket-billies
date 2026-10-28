@@ -288,7 +288,7 @@ body:has(.topbar) .toast {
       background-color 0.2s;
   }
   .tb-btn:active {
-    transform: rotate(90deg) scale(0.9);
+    transform: rotate(90deg);
   }
   /* toasts and modals */
   .toast {
@@ -461,9 +461,6 @@ button.tb-where .uico:first-child {
   .tb-me:hover {
     transform: translateY(-2px) scale(1.04);
   }
-}
-.tb-me:active {
-  transform: scale(0.95);
 }
 .tb-me[aria-current='page'] {
   box-shadow:

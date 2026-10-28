@@ -524,9 +524,6 @@
   cursor: pointer;
   transition: transform var(--m-fast) var(--spring);
 }
-.pk-arrow:active {
-  transform: scale(0.92);
-}
 .pk-name {
   display: grid;
   justify-items: center;
@@ -811,9 +808,6 @@
 }
 .bag-row + .bag-row {
   border-top: 1px solid var(--g-bd) !important;
-}
-.bag-row:active {
-  transform: scale(0.98);
 }
 .bag-row.on {
   box-shadow:

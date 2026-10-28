@@ -1066,9 +1066,6 @@ section > h2,
   width: calc(100% - 6px);
   color: var(--text);
 }
-.mon:active {
-  transform: scale(0.98);
-}
 .mt {
   min-width: 0;
   display: flex;
@@ -1411,7 +1408,7 @@ section > h2,
 }
 .pb:not(.wh-row .pb):active:not(:disabled) {
   --dep: 0px;
-  transform: translateY(3px) scale(1.01, 0.97);
+  transform: translateY(3px);
   filter: brightness(0.97);
 }
 .pb.gold {
@@ -1529,10 +1526,10 @@ section > h2::before,
   /* ---------- motion (only when the viewer allows it) ---------- */
   /* buttons */
   .pb:not(.wh-row .pb) {
+    /* UI-16a: no filter transition (transform and opacity only); the squash is ui-motion.js's */
     transition:
       transform 0.2s var(--spring),
-      box-shadow 0.12s ease-out,
-      filter 0.2s;
+      box-shadow 0.12s ease-out;
   }
   .pb:not(.wh-row .pb):active:not(:disabled) {
     transition-duration: 0.06s;
@@ -1740,8 +1737,7 @@ html[data-contrast='high'] .px {
     0 6px 14px -6px color-mix(in srgb, var(--c-shadow) 45%, transparent);
   transition:
     transform var(--m-fast) var(--spring),
-    box-shadow 0.2s,
-    filter 0.2s;
+    box-shadow 0.2s;
 }
 .pb.gold {
   background: linear-gradient(var(--gold-a), var(--gold-b));
@@ -1775,7 +1771,7 @@ html[data-contrast='high'] .px {
   }
 }
 .pb:active:not(:disabled) {
-  transform: translateY(1px) scale(0.97) !important;
+  transform: translateY(1px) !important;
   filter: brightness(0.97);
 }
 .pb.big {

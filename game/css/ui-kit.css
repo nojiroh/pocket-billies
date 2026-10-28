@@ -78,6 +78,36 @@
   white-space: nowrap;
 }
 
+/* UI-16a: the selection bar sliding to its new row (pbSlideBar): a ghost of .pb-sel's slanted bar */
+.pb-slidebar {
+  position: fixed;
+  z-index: var(--z-float);
+  pointer-events: none;
+  transform-origin: 0 0;
+}
+.pb-slidebar::before {
+  content: '';
+  position: absolute;
+  inset: 2px 0;
+  transform: skewX(calc(-1 * var(--slant)));
+  border-left: 4px solid var(--gold-b);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gold-b) 34%, transparent),
+    color-mix(in srgb, var(--gold-a) 10%, transparent)
+  );
+}
+/* UI-16a: a gain flying to where it goes (pbFlyTo) */
+.pb-fly {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--z-float);
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
 /* phase 06-4: every sheet is a floating card that keeps clear of the screen's edges, with room to breathe (on wide
    screens style.css centres it in the middle of the screen). UI-2: the panel's two cuts and its edge line; no
    shadow (a clip-path would cut it off, and the scrim behind already sets the sheet apart) */

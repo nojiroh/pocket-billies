@@ -255,11 +255,6 @@
     grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .bx:active {
-    transform: scale(0.98);
-  }
-}
 
 /* ---------- UI-5: from v05.css, as it was ---------- */
 .tm-ribbon {

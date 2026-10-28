@@ -39,9 +39,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
     0 6px 14px -4px var(--gold-sh);
 }
-.bag-pockets button:active {
-  transform: scale(0.95);
-}
 .bag-list {
   margin-top: var(--s3);
   padding: var(--s1) !important;
@@ -70,9 +67,6 @@
 }
 .bag-row.on {
   background: rgba(242, 184, 75, 0.22);
-}
-.bag-row:active {
-  transform: scale(0.985);
 }
 .bag-ic {
   width: 44px;

@@ -284,9 +284,6 @@ html[data-contrast='high'] small {
 .gfx-pre.on small {
   color: #5b4a2b;
 }
-.gfx-pre:active {
-  transform: scale(0.96);
-}
 .gfx-group {
   display: flex;
   flex-direction: column;

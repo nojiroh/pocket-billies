@@ -135,7 +135,7 @@
 .px.mon:active,
 .px.ware:active,
 .px.slot:active {
-  transform: translateY(1px) scale(0.98);
+  transform: translateY(1px);
 }
 /* ---------- (UI-5 and earlier) ---------- */
 

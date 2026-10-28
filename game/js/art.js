@@ -175,6 +175,7 @@ export const uiIconURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]
     ? window.NW_ART[`ui/${k}.svg`]
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
+provide({ uiIconURL }); /* to-module */
 /* an icon's tag: `uico` shows the picture, `ugl` (UI-13) uses it as a mask; `vars` adds custom properties */
 const iconTag = (cls, key, size, vars = '') =>
   `<i class="${cls}" style="--ico:url('${uiIconURL(key)}')${vars};width:${size}px;height:${size}px" aria-hidden="true"></i>`;

@@ -450,7 +450,7 @@
   transform: translateX(120%);
 }
 .bt:active:not(:disabled) {
-  transform: translateY(2px) scale(0.97);
+  transform: translateY(2px);
 }
 .bt:disabled {
   opacity: 0.38;
@@ -587,7 +587,7 @@
   filter: brightness(1.1);
 }
 .mv:active {
-  transform: translateY(2px) scale(0.97);
+  transform: translateY(2px);
 }
 .mv-top {
   display: flex;
@@ -695,9 +695,6 @@
 .ccard:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
 }
-.ccard:active:not(:disabled) {
-  transform: scale(0.97);
-}
 .ccard:disabled {
   opacity: 0.4;
 }
@@ -753,9 +750,6 @@
 }
 .pick:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
-}
-.pick:active:not(:disabled) {
-  transform: scale(0.98);
 }
 .pick:disabled {
   opacity: 0.42;
@@ -1360,7 +1354,7 @@ html[data-flash='off'] .hatch.flash {
     filter var(--m-fast);
 }
 .battle .bt:not(:disabled):active {
-  transform: translateY(2px) scale(0.97);
+  transform: translateY(2px);
   filter: brightness(1.08);
 }
 .battle .bt:disabled {
@@ -1394,9 +1388,6 @@ html[data-flash='off'] .hatch.flash {
     inset 0 -3px 0 rgba(0, 0, 0, 0.2),
     0 6px 14px rgba(0, 0, 0, 0.28);
   transition: transform var(--m-fast) cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-.battle .mv:active {
-  transform: scale(0.97);
 }
 .battle .mv em {
   border-radius: var(--r-xs);
