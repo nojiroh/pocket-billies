@@ -2,6 +2,63 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-8a - calm beds: their own soft noise, drift, start and stop, re-voiced; a loudness report; a Sound test - 2026-10-28
+Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
+standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 27 commits, one cause each;
+tag `snd-8a-done` (for the owner to push) on this session's last commit. Details: sound-track.md "SND-8a as built".
+- **Plan**: (1) the after-edit hook runs the sound tests; (2) a BS.1770 meter and `check-sound.py --loudness`, measured
+  on the code before any change; (3) logic/ambience-sound.js with the beds as recipes on their own seeded pink and
+  brown loops, today's filters kept; (4) drift for the LFOs, then start and stop, then a preview entry point, then
+  water buckets; (5) one commit per re-voiced bed (rain, stream, fountain, leaves, town, wind, sea, fire, crickets);
+  (6) birds, rooms' night, footsteps (varied, then the World bus); (7) trims from the report; (8) the debug log's
+  audio lines; (9) the Sound test and the quick check's two steps; (10) docs.
+- **Changed**: see the list in sound-track.md. New files: game/js/logic/ambience-sound.js, game/js/sound-test.js,
+  tools/sound-loudness.mjs, tools/test/ambience-sound.test.mjs, tools/test/sound-loudness.test.mjs. Touched:
+  sound.js, audio/tracker.js (two counters only), debug-log.js, debug-menu.js, game/index.html (two script tags),
+  studio/js/logic-worker-modules.js, studio/art-code-refs.json, tools/check-sound.py, tools/check-quick.py,
+  tools/after-edit.mjs.
+- **Loudness, LU under the route song** (before -> after): rain +4.6 -> -13.9; falls at 3 m -5.2 -> -13.0; leaves
+  -7.1 -> -18.2; crickets -7.4 -> -19.0; fountain -8.3 -> -15.2; stream -10.1 -> -14.7; fire -12.3 -> -16.8; the sea
+  coast-wide -13.5 -> -18.0; birds' loudest 3 s -20.0 -> -27.1; steps -29.5 -> -27.4 (softer, and now heard in a
+  phone's band). Every bed is 12 LU or more under; the 2-6 kHz share of rain fell from 50 to 11 %. Copperleaf's
+  square as a scene: -7.1 -> -11.2 (the hub song itself is still 15 LU under the route song: SND-8b).
+- **Risky or unfinished**:
+  - Claude can't hear: every re-voicing is a sketch judged by numbers and the listening page. The owner's ears decide.
+  - Commits from the beds' recipes up to the debug lines fail lint's art-code-refs check (sound.js line numbers in
+    studio/art-code-refs.json); the Sound test commit refreshes it. Every other check passes on each.
+  - Footsteps now follow the World slider and its fade-in and duck: on arrival in a place the first steps are
+    quieter for about 3 s.
+  - The loudness scenes are made-up mixes of beds, not readings of the real places; the report renders at 44.1 kHz.
+  - The debug log's late-step count is high in headless Chromium (168 in 13 s, from software-rendered frames); the
+    phone's log will say what it is there.
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules` (0 changed); `node --test
+  tools/test/tracker.test.mjs tools/test/sound.test.mjs` (33 pass), `ambience-sound.test.mjs` (13),
+  `sound-loudness.test.mjs` (6); `npm test`: all pass but run-map-checks' "1,000 maps in under a second" (1036 ms,
+  timing on a loaded machine; not touched here). `python3 tools/check-sound.py --loudness`: 194 fingerprints, 0
+  changed, no loudness warning. `check-quick.py --steps=sound,song,music,"debug menu",animals`: 8 of 9 passed; Battle
+  music failed once ("wild: no battle cue") while a second browser ran beside it with 13-27 s shader stalls, and passed
+  alone. Browser probes: the bucketed water lookup equals the scan at 2,400 positions; the Sound test plays a song and
+  a bed, stops on close and leaves the save unchanged, buttons 56 px tall; the debug log's audio lines filled.
+  `npm run check:smoke`: no problems (Phone, Actions sheet, the in-game full test's one step).
+  The full `npm run check:quick`: running at the time of writing; its result follows in this entry's next commit.
+- **Decided for the owner, to review**:
+  - WA-8's water sounds move to SND-10 (recommended; nothing built here).
+  - The music's rain low-pass softens to about 4 kHz in SND-8b (recommended; untouched here).
+  - Levels by internal trims, the sliders' defaults kept (done: bed trims in AMBIENCE_BEDS, the coast-wide sea 0.35 to
+    0.2).
+  - Footsteps on the World bus (done).
+  - Mine: the meter lives in tools/ (not logic/); the report's scenes are made-up mixes; wind was re-voiced too (not in
+    the draft's list: rain and wind bother the owner); falls, still water, lava, cave and room keep today's filters with
+    drift and a trim (SND-10 rebuilds water); the cave keeps its 49 Hz tone (only while the cave bed plays); the
+    Sound test sits after "Places and test scenes".
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test): rain, storm wind, crickets,
+  birds, a campfire at 1 m and 3 m, a stream and a fountain at 3 m, the sea, Copperleaf's square with the route song
+  playing; steps on a lawn, stone and boards. Then in play: Copperleaf (the sea never covers the hub song once SND-8b
+  lifts it), forced rain, a night, a forest, walking and running. Listen for hiss, whine or buzz (there should be
+  none), one bird at a time, soft varied steps; export a debug log and check `audio`: few beds live, late steps near 0.
+- **Next**: SND-8b (mix fixes: the echo bugs, the songs' trims with copperleaf up about 15 LU, the rain's music
+  low-pass, iOS "interrupted"; the baseline written again).
+
 ### Sound track SND-7 - Part 2 planned: layered music, gentle world sounds, water (research, a listening page) - 2026-10-27
 Branch `ccr-1e8a9924-tt5x1q`, at main 07c9b284 (`track/sound` doesn't exist yet). Plan Mode, plan approved after four
 questions. Docs only: no game code, data or art changed; plus a private listening page (nothing committed). Tag
