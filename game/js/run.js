@@ -51,6 +51,7 @@ import {
   runWareHeals,
 } from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
+import { perkCap } from './logic/perks.js';
 import { boardPlan, boardPlayed } from './logic/daily.js';
 import { runRecord } from './logic/run-record.js';
 import {
@@ -794,8 +795,8 @@ const RUN_HINTS = {
   scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
   rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',
-  relic: () =>
-    `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
+  relic: run =>
+    `Perks last the run: hold up to ${perkCap(run, RULES.run.perks, PERKS)}. The Perks tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

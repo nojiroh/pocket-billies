@@ -318,7 +318,7 @@ function debugHTML() {
         'dbgRelic',
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
-      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.perks.length} of ${RULES.run.perks.cap}${saveData.run.perks.length ? ` (${escapeHtml(saveData.run.perks.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p><div class="dbg-row">${debugSelectHTML(
+      )}${debugButtonHTML('relicgive', 'Give a Perk', 'gold')}${debugButtonHTML('relicpick', 'A mini-boss’s pick')}</div><p class="note">Perks held: ${saveData.run.perks.length} of ${perkCap(saveData.run, RULES.run.perks, PERKS)}${saveData.run.perks.length ? ` (${escapeHtml(saveData.run.perks.map(k => (PERKS[k] || { name: k }).name).join(', '))})` : ''}. Past the cap, the one held longest makes room.</p><div class="dbg-row">${debugSelectHTML(
         'dbgEvent',
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''

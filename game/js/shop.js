@@ -127,7 +127,7 @@ function shopPerkHTML(id, sh) {
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
   /* UI-14b: the Perk's tier (frame, name colour, pill), its stat rows as tags, its kind by the Perk glyph (violet) */
-  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${artIconHTML(R.img, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${artIconHTML(R.img, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${perkCap(saveData.run, RULES.run.perks, PERKS)}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {

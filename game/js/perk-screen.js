@@ -72,8 +72,9 @@ export function perkPickOpen(o) {
     perkPickThen = o.then || null;
   }
   if (!run || !run.offer) return;
-  const rule = RULES.run.perks,
-    ids = run.offer.filter(id => PERKS[id]),
+  const ids = run.offer.filter(id => PERKS[id]),
+    /* PK-7: the run's cap (PK-6's cap rows: Accordion File), as the "Let one go" sheet and the Perks tab say */
+    cap = perkCap(run, RULES.run.perks, PERKS),
     /* UI-16a: the first time this offer shows, its cards come face down and turn over one by one */
     flipKey = `perk:${ids.join(',')}`,
     flip = pbFlipFresh(flipKey),
@@ -82,7 +83,7 @@ export function perkPickOpen(o) {
     title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
+    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${cap}.${run.perks.length >= cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => perkPickTake(/** @type {string} */ (sel)) },
       { l: ids.length > 1 ? 'Take none' : 'Leave it', c: 'quiet', f: () => perkPickDone(null) },
