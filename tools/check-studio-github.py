@@ -2419,6 +2419,13 @@ def art_browser_steps(pg, errs):
     if 'perks' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('art browser: Used by for a Perk’s picture does not name perks.json')
     if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Edit icon' && b.dataset.n === 'perks/lucky_charm')"):
         errs.append('art browser: a Perk’s picture has no Edit icon')
+    # PK-11: a Bag item's picture: Used by names items.json, and Edit icon opens it
+    pg.evaluate("artBrowser.q = ''; ACTIONS.abPick({ p: 'art/items/potion.svg' })")
+    end = time.time() + 30
+    while time.time() < end and 'items' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'items' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('art browser: Used by for an item’s picture does not name items.json')
+    if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Edit icon' && b.dataset.n === 'items/potion')"):
+        errs.append('art browser: an item’s picture has no Edit icon')
     tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
     path = 'art/' + tile
     pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
@@ -2623,7 +2630,52 @@ def icons_steps(pg, errs):
     E("undo()"); time.sleep(0.3)
     if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
     E("ACTIONS.icClose()")
-    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; a Perk’s picture painted and a new one in art/perks staged; all undone', flush=True)
+    # PK-11: a Bag item's picture opens the same way, its folder's others beside it; a stroke reaches artURL
+    E("void iconEditOpen('items/potion')")
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.4)
+    P = "loadedText('art/items/potion.svg')"
+    orig = E(P)
+    if E("document.querySelectorAll('#main .ic-other').length") != E("iconNames('items').length") or E("iconNames('items').length") < 13:
+        errs.append(f"icons: an item's picture shows {E('document.querySelectorAll(\'#main .ic-other\').length')} beside it")
+    box, z = pg.locator('#icStage .pc-art').bounding_box(), E("iconEd.pc.zoom")
+    pg.mouse.click(box['x'] + 1.5 * z, box['y'] + 1.5 * z); time.sleep(0.4)
+    if E(P) == orig or not E("(window.NW_ART || {})['items/potion.svg'] && artURL('items/potion.svg').startsWith('data:')"):
+        errs.append('icons: a stroke on an item’s picture did not write it or reach the previews')
+    E("undo()"); time.sleep(0.3)
+    if E(P) != orig or E("studioState.textDirty.size"): errs.append('icons: undo did not put the item’s picture back')
+    E("ACTIONS.icClose()")
+    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; a Perk’s picture painted and a new one in art/perks staged; an item’s picture painted; all undone', flush=True)
+
+
+def items_steps(pg, errs):
+    """PK-11: the Items & pyramids editor shows a Bag item's own picture at 72 and 36 px with Edit art (no atlas Icon
+    field); Edit art opens it in the icon editor. An item without a picture keeps its atlas icon and Draw one, which
+    names art/items/<id>.svg in its img and opens it blank (two undo steps); all undone."""
+    E = pg.evaluate
+    E("void openSection('items')")
+    pg.wait_for_selector('#main [data-act="icOpen"][data-n="items/potion"]', timeout=20000)
+    row = "[...document.querySelectorAll('#main .item-row')].find(r => r.querySelector('.item-ic small').textContent === %s)"
+    sizes = E(f"[...({row % json.dumps('potion')}).querySelectorAll('.item-ic img.item-art')].map(i => i.width)")
+    if sizes != [72, 36]: errs.append(f'items: the Potion’s picture shows at {sizes}, not 72 and 36 px')
+    if E(f"!!({row % json.dumps('potion')}).querySelector('[data-p=\"items.potion.icon\"]')"): errs.append('items: an item with a picture still offers the atlas Icon field')
+    held = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].img)")
+    if not held: errs.append('items: no item without a picture to try Draw one on'); return
+    if not E(f"!!({row % json.dumps(held)}).querySelector('[data-act=\"itemArt\"]')"): errs.append(f'items: {held} (no picture) has no Draw one')
+    pg.click('#main [data-act="icOpen"][data-n="items/potion"]')
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.3)
+    if E("artBrowser.icon") != 'items/potion': errs.append(f"items: Edit art opened {E('artBrowser.icon')!r}")
+    E("ACTIONS.icClose()")
+    steps0 = E("studioState.undo.length")
+    E(f"void openSection('items')"); time.sleep(0.4)
+    E(f"ACTIONS.itemArt({{ k: {json.dumps(held)} }})"); time.sleep(0.8)
+    path = f'art/items/{held}.svg'
+    if E(f"studioState.D.items[{json.dumps(held)}].img") != f'items/{held}.svg' or not E(f"studioState.textDirty.has({json.dumps(path)})") or E("artBrowser.icon") != f'items/{held}':
+        errs.append(f'items: Draw one on {held} did not name and open a blank {path}')
+    if E("studioState.undo.length") != steps0 + 2: errs.append(f"items: Draw one made {E('studioState.undo.length') - steps0} undo steps, not 2")
+    E("undo(); undo()"); time.sleep(0.4)
+    E("ACTIONS.icClose()")
+    if E(f"'img' in studioState.D.items[{json.dumps(held)}]") or E("studioState.textDirty.size"): errs.append('items: undo did not take Draw one back')
+    print(f'items: the Potion’s picture at 72 and 36 px with Edit art (opens it), {held} drawn from blank with Draw one; all undone', flush=True)
 
 
 def atlas_steps(pg, errs):
@@ -2698,6 +2750,7 @@ STEPS = [
     ('strips', strips_steps),
     ('robot_art', robot_art_steps),
     ('icons', icons_steps),
+    ('items', items_steps),
     ('atlas', atlas_steps),
     ('scene_art', scene_art_steps),
     ('split', split_steps),

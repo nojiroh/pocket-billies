@@ -7,6 +7,9 @@ import {
   PLAN_INFO,
   artPaint,
   artPicSrc,
+  artPictures,
+  iconEditOpen,
+  iconSrc,
   loadWardrobe,
   makeBlankBody,
   musicCryCardHTML,
@@ -28,6 +31,7 @@ import {
 } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import { renameTypeIn } from '../../game/js/logic/type-rename.js';
 import {
   ACTIONS,
@@ -63,18 +67,17 @@ import {
   updateTopBar,
   writePath,
 } from './studio-app.js';
+import { textStep } from './pixel-canvas.js';
 import { conditionField, scriptField } from './story-editor.js';
 import {
   ATLAS_CACHE,
   atlasGet,
   atlasPath,
-  fileToCanvas,
   hueShift,
   loadedAtlas,
   markArt,
   mountPreviews,
   openPixelEditor,
-  pickFile,
   playSpritePreviewAction,
   rigFor,
   spritePreviewHTML,
@@ -93,6 +96,9 @@ expose({
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
   evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
   iconSpriteHTML: [() => iconSpriteHTML, v => (iconSpriteHTML = v)],
+  itemArtButtonsHTML: [() => itemArtButtonsHTML, v => (itemArtButtonsHTML = v)],
+  itemArtKey: [() => itemArtKey, v => (itemArtKey = v)],
+  itemPicHTML: [() => itemPicHTML, v => (itemPicHTML = v)],
   lineIndexOf: [() => lineIndexOf],
   personLook: [() => personLook, v => (personLook = v)],
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
@@ -1046,25 +1052,48 @@ document.addEventListener('change', ev => {
 const ITEM_ICONS = Object.keys(ARTMAN.icons)
   .filter(k => k.startsWith('i_'))
   .map(k => k.slice(2));
+/* PK-11: an item's own picture's key ('items/<id>') while its file is there (on disk or made here, not saved), else '' */
+function itemArtKey(I) {
+  const key = I.img ? svgIconKey('art/' + I.img) : '',
+    path = 'art/' + I.img;
+  return key && (artPictures().includes(path) || studioState.textDirty.has(path)) ? key : '';
+}
+/* PK-11: an item's picture: its own (img, art/items/<id>.svg, drawn as the UI icons are) at the game's 72 and 36 px,
+   else its rectangle of the old atlas at 3x */
+function itemPicHTML(k, I) {
+  const key = itemArtKey(I);
+  if (!key) return `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`;
+  const src = escapeHtml(iconSrc(key));
+  return `<img class="pix item-art" src="${src}" alt="" width="72" height="72"><img class="pix item-art" src="${src}" alt="" width="36" height="36">`;
+}
+/* PK-11: Edit art opens its picture in the icon editor; Draw one makes art/items/<id>.svg (blank, or the one there) its
+   picture; back to the atlas only where its rectangle is still on the sheet */
+function itemArtButtonsHTML(k, I) {
+  const key = itemArtKey(I),
+    atlas = !!ARTMAN.icons['i_' + (I.icon || k)];
+  return `${key ? `<button class="btn subtle" data-act="icOpen" data-n="${escapeHtml(key)}">Edit art</button>` : `<button class="btn subtle" data-act="itemArt" data-k="${escapeHtml(k)}">Draw one</button>`}${I.img && atlas ? `<button class="btn subtle" data-act="itemImgOff" data-k="${escapeHtml(k)}">Use an atlas icon</button>` : ''}`;
+}
 SECTIONS.items = () => {
   const D = studioState.D;
   const items = Object.entries(D.items)
     .map(([k, I]) => {
       const p = `items.${k}`;
-      return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${escapeHtml(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${escapeHtml(k)}</small></div>
+      return `<div class="item-row"><div class="item-ic">${itemPicHTML(k, I)}<small class="mono">${escapeHtml(k)}</small></div>
   <div>${grid(
     textField('Name', `${p}.n`, { max: 24 }),
     numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10 }),
     checkboxField('Sold in the Shop', `${p}.mint`, { help: 'Untick to make it a town-shop special.' }),
-    selectField(
-      'Icon',
-      `${p}.icon`,
-      ITEM_ICONS.map(i => [i, i]),
-      { rr: 1 }
-    )
+    I.img
+      ? ''
+      : selectField(
+          'Icon',
+          `${p}.icon`,
+          ITEM_ICONS.map(i => [i, i]),
+          { rr: 1 }
+        )
   )}
   ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOptions()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }), numberField('Repairs robot parts', `${p}.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Phase 17: fixes this share of each part of one robot (1 = all).' }))}
-  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
+  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row">${itemArtButtonsHTML(k, I)}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
   const pyramids = Object.entries(D.pyramids)
@@ -1101,17 +1130,18 @@ ACTIONS.itemDel = async d => {
   changed();
   render();
 };
-ACTIONS.itemImg = async d => {
-  const f = await pickFile('image/png');
-  if (!f) return;
-  const c = await fileToCanvas(f);
-  if (c.width > 64 || c.height > 64) return toast('Use a small pixel icon (16×16 works best).', 'err');
-  const path = `art/items/${d.k}.png`;
-  markArt(path, c);
-  studioState.D.items[d.k].img = path.slice(4);
+/* PK-11: an item's own picture, art/items/<id>.svg: made blank first when it isn't there, named in its img, then open in
+   the icon editor (the new file and the img are two steps of the undo; Propose sends both). It replaces the PNG upload:
+   an item's picture is an icon (logic/data-checks.js dataItemArt) */
+ACTIONS.itemArt = d => {
+  const I = studioState.D.items[d.k],
+    path = `art/items/${d.k}.svg`;
+  if (!I) return;
+  if (!artPictures().includes(path) && !studioState.textDirty.has(path))
+    textStep(path, null, pixelsToSvg(new Uint8ClampedArray(36 * 36 * 4), 36, 36));
+  I.img = `items/${d.k}.svg`;
   changed();
-  render();
-  toast('Icon added. Save to game to keep it.');
+  iconEditOpen(`items/${d.k}`);
 };
 ACTIONS.itemImgOff = d => {
   delete studioState.D.items[d.k].img;

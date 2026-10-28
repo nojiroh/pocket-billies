@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · the UI icons (Studio art track SA-2b) =================
    The interface icons are art/ui/<name>.svg: 36 x 36 pixel art in fixed colours, the "block and split" look. Since
    SA-2b these SVG files are the source (tools/build-ui-icons.py retired, decision 6). PK-2: the Perks' pictures
-   (art/perks, and art/items and art/boons later: logic/svg-pixels.js ICON_DIRS) are drawn the same way and edited here
+   (art/perks; PK-11 art/items; art/boons later: logic/svg-pixels.js ICON_DIRS) are drawn the same way and edited here
    too; an icon outside art/ui is known by its key 'perks/<id>' (svgIconKey). Here an icon is edited three ways,
    each change one step of the Studio's undo and saved as text (Propose sends it):
    - its pixels on the shared pixel canvas (an icon in the pixel format: logic/svg-pixels.js writes the same text back);
@@ -48,7 +48,7 @@ expose({
   iconDir: [() => iconDir],
   iconDrawPreviews: [() => iconDrawPreviews, v => (iconDrawPreviews = v)],
   iconEd: [() => iconEd],
-  iconEditOpen: [() => iconEditOpen, v => (iconEditOpen = v)],
+  iconEditOpen: [() => iconEditOpen, v => ((iconEditOpen = v), provide({ iconEditOpen }))],
   iconEditorHTML: [() => iconEditorHTML, v => (iconEditorHTML = v)],
   iconNames: [() => iconNames, v => (iconNames = v)],
   iconPath: [() => iconPath],
@@ -65,7 +65,7 @@ expose({
   svgParseProblem: [() => svgParseProblem, v => (svgParseProblem = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ iconReplace });
+provide({ iconEditOpen, iconReplace });
 /* to-module: end */
 /* the open icon and the painter's state */
 const iconEd = {
@@ -207,6 +207,7 @@ export const iconSrc = name => {
   const p = iconPath(name);
   return studioState.textDirty.has(p) ? svgDataUrl(studioState.textDirty.get(p).text) : `../game/${p}`;
 };
+provide({ iconSrc }); /* to-module */
 
 /* ---------- drawing and painting ---------- */
 function iconDrawPreviews() {
