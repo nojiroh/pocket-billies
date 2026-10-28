@@ -8,7 +8,9 @@ as a fast-forward, hooks.js unchanged; main 6acee223, the UI fixes #309, merged 
 art-code-refs.json met, regenerated, hooks.js remade by `npm run modules`; that merge commit, c503ff47, left
 conflict markers in this file by mistake, fixed by the next merge). At the planning session's request the items lane,
 `track/perks-items` at 0c138c24 (PK-11 and PK-10, PR #310), merged last: HANDOFF keeps every entry, ROADMAP both
-lines, art-code-refs.json and hooks.js regenerated; then the commit tier, 1971 unit tests, smoke and the fast check. Started by PK-0's session under the owner's standing instruction (perks-track.md
+lines, art-code-refs.json and hooks.js regenerated; then the commit tier, 1971 unit tests, smoke (7/7), `check:fast --only=perks` and the Studio check.
+`check:fast --only=held` alone fails at once here ("Cannot read properties of undefined (reading 'name')") on main
+4423a457, the items lane and this branch alike; CI's whole fast check passes that step. Started by PK-0's session under the owner's standing instruction (perks-track.md
 section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
 perks-track.md section 8, "Corrected in PK-7". The items lane (`track/perks-items`, PR #310) had not landed in
 track/perks until the end (merged then, above); nothing of items.json, itemIcon, bag.js or art/items was touched by PK-7
