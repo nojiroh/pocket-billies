@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SPECIES } from './game-data.js';
+import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from './game-data.js';
 import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
 import { squareBuskSong, squareBusker } from './logic/square-day.js';
@@ -18,7 +18,6 @@ import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } 
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
-  AMBIENCE_BEDS,
   AMBIENCE_FIXED,
   ambienceBirdWait,
   ambienceBuckets,
@@ -923,7 +922,7 @@ function initAmbience() {
   };
   ambience.noiseMs = Math.round(performance.now() - t0);
   ambience.rng = ambienceRandom(0x50d3);
-  /* a layer of a bed (AMBIENCE_BEDS): its filters and its gain, waiting for its noise (ambienceBedStart) */
+  /* a layer of a bed (soundscape.json beds): its filters and its gain, waiting for its noise (ambienceBedStart) */
   const layer = (L, dest, b) => {
     const F = [];
     let n = null,
@@ -949,7 +948,7 @@ function initAmbience() {
   };
   /* SND-8a: each bed is a level (g), a pan and its trim, its layers' filters and the drifts; its sources are made
      when it starts and stopped when it stops (ambienceLiveStep), so a silent bed costs nothing */
-  for (const [name, B] of Object.entries(AMBIENCE_BEDS)) {
+  for (const [name, B] of Object.entries(SOUNDSCAPE.beds)) {
     const g = c.createGain(),
       p = c.createStereoPanner ? c.createStereoPanner() : null,
       tr = c.createGain(),

@@ -59,6 +59,8 @@ export interface GameData {
   nodeTypes?: Record<DataId, NodeType>;
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
+  /** sound track SND-10: the world's sounds as recipes (game/data/soundscape.json; sound.js plays them) */
+  soundscape?: { about?: string; beds: Record<string, import('../js/logic/ambience-sound.js').AmbienceBed> };
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
   /** RL-12b: events.json */

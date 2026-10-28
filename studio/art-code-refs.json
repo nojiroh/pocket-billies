@@ -1642,8 +1642,8 @@
    "game/js/shop.js:158",
    "game/js/shop.js:168",
    "game/js/shop.js:234",
-   "game/js/sound.js:500",
-   "game/js/sound.js:1753",
+   "game/js/sound.js:499",
+   "game/js/sound.js:1752",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:626",
    "game/js/ui-run-kit.js:83",
@@ -1834,8 +1834,8 @@
    "game/js/shop.js:162"
   ],
   "pow": [
-   "game/js/game-data.js:157",
-   "game/js/game-data.js:160"
+   "game/js/game-data.js:158",
+   "game/js/game-data.js:161"
   ],
   "ring": [
    "game/js/engine/webgl.js:784",
@@ -1890,8 +1890,8 @@
    "game/js/battle-stage.js:2222",
    "game/js/battle-stage.js:2491",
    "game/js/cutscene/opening.js:344",
-   "game/js/game-data.js:157",
-   "game/js/game-data.js:160"
+   "game/js/game-data.js:158",
+   "game/js/game-data.js:161"
   ],
   "tag": [
    "game/js/battle.js:568",

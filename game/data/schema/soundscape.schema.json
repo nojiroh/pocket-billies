@@ -1,0 +1,182 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "soundscape.schema.json",
+ "title": "game/data/soundscape.json: the world's sounds as recipes (sound track SND-10; game/js/sound.js plays them, game/js/logic/ambience-sound.js and logic/soundscape.js hold their logic)",
+ "type": "object",
+ "required": [
+  "beds"
+ ],
+ "additionalProperties": false,
+ "$defs": {
+  "filter": {
+   "description": "a filter: [type, frequency Hz, Q, gain dB (a shelf's)]",
+   "type": "array",
+   "prefixItems": [
+    {
+     "enum": [
+      "lowpass",
+      "highpass",
+      "bandpass",
+      "highshelf",
+      "lowshelf",
+      "peaking"
+     ]
+    },
+    {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    {
+     "type": "number"
+    }
+   ],
+   "minItems": 2,
+   "maxItems": 4
+  },
+  "drift": {
+   "description": "what wanders: the layer's gain, or the frequency of its filter number `on`, around base by depth (a fraction, or octaves with oct), a new value every min-max seconds, reached with the time constant tau",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "on",
+    "base",
+    "depth",
+    "min",
+    "max",
+    "tau"
+   ],
+   "properties": {
+    "on": {
+     "oneOf": [
+      {
+       "const": "gain"
+      },
+      {
+       "type": "integer",
+       "minimum": 0
+      }
+     ]
+    },
+    "base": {
+     "type": "number",
+     "minimum": 0
+    },
+    "depth": {
+     "type": "number",
+     "minimum": 0
+    },
+    "min": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "max": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "tau": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "oct": {
+     "type": "boolean"
+    }
+   }
+  },
+  "layer": {
+   "description": "a layer: a noise loop (the beds' own pink or brown, at a playback rate) through filters, at a gain",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "noise",
+    "gain",
+    "filters"
+   ],
+   "properties": {
+    "noise": {
+     "enum": [
+      "pink",
+      "brown"
+     ]
+    },
+    "rate": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "gain": {
+     "type": "number",
+     "minimum": 0
+    },
+    "filters": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/filter"
+     }
+    },
+    "drift": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/drift"
+     }
+    }
+   }
+  },
+  "bed": {
+   "description": "a bed: where it plays (bus world or amb: the World or Ambience slider), its trim (from tools/check-sound.py --loudness), its layers, a low hum (tone, Hz), its events (crickets or crackles) at eventGain",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "bus",
+    "trim",
+    "layers"
+   ],
+   "properties": {
+    "bus": {
+     "enum": [
+      "world",
+      "amb"
+     ]
+    },
+    "trim": {
+     "type": "number",
+     "minimum": 0
+    },
+    "layers": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/layer"
+     }
+    },
+    "tone": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "events": {
+     "enum": [
+      "crickets",
+      "crackles"
+     ]
+    },
+    "eventGain": {
+     "type": "number",
+     "minimum": 0
+    }
+   }
+  }
+ },
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "beds": {
+   "description": "a place's beds of sound by name (sound.js initAmbience makes them, updateAmbience sets their levels)",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/bed"
+   }
+  }
+ }
+}

@@ -3,8 +3,8 @@
 // the preview the Sound Test and the loudness report share.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import {
-  AMBIENCE_BEDS,
   AMBIENCE_FIXED,
   AMBIENCE_NOISE_RMS,
   AMBIENCE_SOFT_GROUND,
@@ -24,6 +24,10 @@ import {
   ambienceRandom,
   ambienceStep,
 } from '../../game/js/logic/ambience-sound.js';
+/* SND-10: the beds' recipes are data (game/data/soundscape.json `beds`) */
+const AMBIENCE_BEDS = JSON.parse(
+  readFileSync(new URL('../../game/data/soundscape.json', import.meta.url), 'utf8')
+).beds;
 
 const rms = d => Math.sqrt(d.reduce((a, v) => a + v * v, 0) / d.length);
 /* the energy of a signal's sample-to-sample differences against its own: high for white, low for brown */
