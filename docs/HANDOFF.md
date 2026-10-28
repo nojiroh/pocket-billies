@@ -93,8 +93,20 @@ the plan written here, recommended options taken and listed below. Draft PR #295
   container and passes alone, before and after my changes). Smoke: no problems (401 s) on the merged head. Films:
   contact sheets of tos, overload and deepdrill (super, super crit, both sides) before and after; the battle-anims
   tests keep every move's {dur, hit} (no move is longer; `maxMs` untouched). The golden record untouched (the engine
-  isn't changed). Sound files untouched (no message to the sound track needed). Full quick check: running on this
-  commit; its result follows in the next commit.
+  isn't changed). Sound files untouched (no message to the sound track needed). Full quick check (at 1f5dfee7, before
+  the second main merge; the merge's unit tests ran beside it, so the machine was loaded): 34 of 42 in 2516 s. Every
+  other battle step passed (doubles, Alpha at 4x, weather, the phone's battle, the debug log). The 8 problems, each
+  rerun alone on this branch and on main: Terraces, RL-8's seam and room light/settings tabs (main's, as UI checks'
+  entry lists); Ground tiles' lab room (fails on main too, alone); Starters' rig buffers, RT-2's double and Granny
+  Juniper pass alone on both; Battle music passed twice alone here (the wild drums 4.8-7.3 s after the flash, near
+  the 8 s fallback: the step races under load either way). The two frame-rate-bound fast-check steps, alone, after the
+  second merge (897dcd48): the island's orbit passes here (151 s) and fails on main (0.51 rad in 60 s); Tall ground
+  fails the same way on both ("the walk view never got ready"). CI's smoke at 1f5dfee7 failed only main's and the
+  frame-rate-bound steps (7 of 42; every battle step passed); its lint, on a docs-only commit, failed only the
+  run-map-checks timing test (1016 ms; main has since raised that budget to 1.5 s). Main merged again at 897dcd48
+  (#293, #303: Characters, cloud tooling, Sound; conflicts as the sound track's recipe said, plus the GPU tags and
+  walk/sprites.js); lint, typecheck, check:modules, format:check, check:data and unit tests (1742 of 1743, the same
+  timing test under load) there.
 - Next: VFX-10 (effect art), started by the planning session. It adds the strips to battle-fx.js's atlas (pack them
   after the icons in `battleFxAtlasSheet`) and the ramps; the families stay `legacy_*` until VFX-11.
 
