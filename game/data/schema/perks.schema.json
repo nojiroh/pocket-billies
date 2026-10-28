@@ -57,6 +57,11 @@
        "properties": {"kind": {"const": "catch"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
+       "description": "xp (PK-7 on a Perk): the XP your Billies get from a battle, times mult (battle-engine.js heldXp reads the run's rows since RL-S2)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
+       "properties": {"kind": {"const": "xp"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
        "description": "dna (SP-6): the DNA a spliced wild Billie knocked out pays (a Gene Sample), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
        "properties": {"kind": {"const": "dna"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}

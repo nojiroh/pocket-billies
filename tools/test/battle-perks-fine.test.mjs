@@ -515,3 +515,16 @@ test('PK-7 the reward pick’s Perk card: an ordinary Perk not held, never Fine 
   );
   void PK;
 });
+
+/* ---------- xp rows on a Perk ---------- */
+
+test('PK-7 xp on a Perk: the XP your Billies get from a battle, times its mult (heldXp reads the run’s rows)', () => {
+  const { P, fx } = perks({ id: 'test_planner', fx: [{ kind: 'xp', mult: 0.25 }] });
+  withPerks(P, () => {
+    const b = battle(fx),
+      m = mine(b);
+    assert.equal(fn('heldXp')(m, 100), 25);
+  });
+  const b = battle(null);
+  assert.equal(fn('heldXp')(mine(b), 100), 100);
+});
