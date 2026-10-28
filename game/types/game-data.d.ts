@@ -2053,8 +2053,13 @@ export type FxKindRow =
   /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
   | { kind: 'benchXp'; share: number }
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
-   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place) */
-  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal'; n: number }
+   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
+   * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds) */
+  | {
+      kind: 'rule';
+      rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap' | 'sideOpen' | 'sideFind';
+      n: number;
+    }
   /** PK-5: a Billie you catch joins n levels higher */
   | { kind: 'catchLevel'; n: number }
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
@@ -2062,7 +2067,11 @@ export type FxKindRow =
   /** PK-5: what was just bought in a run shop is free (its price back), at buy */
   | { kind: 'free' }
   /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
-  | { kind: 'salvage'; mult: number };
+  | { kind: 'salvage'; mult: number }
+  /** PK-6: Moneys and Bag items (items.json ids) at once, when the Perk is taken */
+  | { kind: 'give'; money?: number; items?: Record<string, number> }
+  /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
+  | { kind: 'copy' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

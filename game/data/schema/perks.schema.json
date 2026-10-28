@@ -162,9 +162,9 @@
        "properties": {"kind": {"const": "benchXp"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
-       "description": "rule (PK-4): a run rule changed by n (effects.js FX_RULES: forecastDays, the forecast shows n more days; PK-5: rewardPick, reward picks show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal (n 1), the run map shows what every place is)",
+       "description": "rule (PK-4): a run rule changed by n (effects.js FX_RULES: forecastDays, the forecast shows n more days; PK-5: rewardPick, reward picks show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal (n 1), the run map shows what every place is; PK-6: cap, n more Perks held; sideOpen (n 1), a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds)",
        "type": "object", "additionalProperties": false, "required": ["kind", "rule", "n"],
-       "properties": {"kind": {"const": "rule"}, "rule": {"enum": ["forecastDays", "rewardPick", "rerollFree", "mapReveal"]}, "n": {"type": "integer", "minimum": -30, "maximum": 30}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+       "properties": {"kind": {"const": "rule"}, "rule": {"enum": ["forecastDays", "rewardPick", "rerollFree", "mapReveal", "cap", "sideOpen", "sideFind"]}, "n": {"type": "integer", "minimum": -30, "maximum": 30}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "catchLevel (PK-5): a Billie you catch joins n levels higher (its moves learned on the way; at most 10 together)",
@@ -180,6 +180,16 @@
        "description": "salvage (PK-5): what beaten bots leave (their parts offered and the Scrap), times mult",
        "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
        "properties": {"kind": {"const": "salvage"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "give (PK-6): Moneys and Bag items (items.json ids, 1-99 each) at once, when the Perk is taken (when: take)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "when"],
+       "properties": {"kind": {"const": "give"}, "money": {"type": "integer", "minimum": 1, "maximum": 9999}, "items": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 99}}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "copy (PK-6): stands for the rows of the Perk just above it in the list held (downsides too; never itself or another copier); no other fields",
+       "type": "object", "additionalProperties": false, "required": ["kind"],
+       "properties": {"kind": {"const": "copy"}}
       },
       {
        "description": "free (PK-5): what was just bought in a run shop is free (one of it: its price comes back); it acts at buy, usually every N",
