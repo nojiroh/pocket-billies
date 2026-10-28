@@ -81,31 +81,23 @@ test('figure kit: the face faces the camera and blinks; glasses frame the eyes',
     };
   const front = marks(0, Math.PI),
     eyes = front.filter(m => m.kind === 'eye');
+  /* at 48 px a metre: each eye's lid, white, iris, pupil and two shines; glasses' frames and a shine on each lens */
   assert.equal(eyes.length, 2);
-  /* at 48 px a metre: a pupil 2 by 3 or more, with a glint; an iris wider round it; a lash line over it */
   assert.ok(
-    eyes.every(e => e.w >= 2 && e.h >= 3),
+    eyes.every(e => e.w >= 3 && e.h >= 2),
     JSON.stringify(eyes)
   );
-  /* two white shines in each eye (Gen 5's), and one on each lens */
-  assert.equal(front.filter(m => m.kind === 'shine').length, 6);
+  for (const k of ['white', 'iris', 'pupil']) assert.equal(front.filter(m => m.kind === k).length, 2, k);
   assert.ok(front.filter(m => m.kind === 'iris').every(m => m.w >= 3));
-  /* behind clear glasses the frame is the line over the eye (no lash line); a lens shine on each */
-  assert.equal(front.filter(m => m.kind === 'lash').length, 0);
-
+  assert.equal(front.filter(m => m.kind === 'shine').length, 6);
   assert.equal(front.filter(m => m.kind === 'glasses' && m.hollow).length, 2);
-  assert.ok(front.some(m => m.kind === 'iris'));
   /* the back of the head shows no face */
-  assert.equal(marks(0, 0).length, 0);
-  /* a blink: the eyes are lines, no iris, no glint; the lash lines stay */
+  assert.equal(marks(0, 0).filter(m => m.part !== 'torso').length, 0);
+  /* a blink: the lids are lines; no white, iris, pupil or eye shine */
   const blink = marks(14, Math.PI);
-  assert.ok(blink.filter(m => m.kind === 'eye').every(e => e.h === 1));
-  assert.ok(!blink.some(m => m.kind === 'iris' || m.kind === 'glint'));
-  /* without glasses the lash lines stay through a blink */
-  const bare = lookFigure({ ...look, wear: { ...look.wear, glasses: null } }, W.items, { name: 'chosen' }),
-    P14 = figurePose(bare, 'idle', 14),
-    shut = figureFaceMarks(bare, jointMatrices(bare, P14, 48), P14, { rel: Math.PI, tilt: 0.45 }, 48, S);
-  assert.equal(shut.filter(m => m.kind === 'lash').length, 2);
+  assert.ok(blink.filter(m => m.kind === 'eye').every(e => e.h === 1 && !e.shape));
+  assert.ok(!blink.some(m => ['white', 'iris', 'pupil'].includes(m.kind)));
+  assert.equal(blink.filter(m => m.kind === 'shine').length, 2, 'only the lenses shine');
 });
 
 test('figure kit: shapes, builds and heights vary; a person’s choice wins', () => {
