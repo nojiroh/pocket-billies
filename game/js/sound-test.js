@@ -4,15 +4,19 @@
    and any world sound alone or in a made-up scene, at a distance. It plays through the game's own sound code
    (soundEngine; sound.js ambiencePreviewTick, the same preview tools/check-sound.py --loudness measures), never writes
    the save, and stops when the menu closes: the place's own music and world sounds come back. SND-9: and the first
-   baked instrument, the harp, playing Copperleaf's tune and chords with a little reverb, as in a chosen place. */
+   baked instrument, the harp, playing Copperleaf's tune and chords with a little reverb, as in a chosen place. SND-11:
+   any instrument (music.json instruments; a drum plays a beat), and a song as its ensemble or with GB Sounds. */
 /* the world sounds it can play: [id, label, [[kind, metres or 'd' for the distance picked], ...]] */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
+import { MUSIC } from './game-data.js';
+import { musicEnsembleFit } from './logic/music-patterns.js';
 import { uiState } from './game-state.js';
 import { SONGS, ambience, music, musicSync, musicVariant, soundEngine, unlockSound } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
+  SOUND_TEST_AS: [() => SOUND_TEST_AS],
   SOUND_TEST_DISTANCES: [() => SOUND_TEST_DISTANCES],
   SOUND_TEST_HARP: [() => SOUND_TEST_HARP],
   SOUND_TEST_PLACES: [() => SOUND_TEST_PLACES],
@@ -194,7 +198,12 @@ const SOUND_TEST_PLACES = [
 ];
 /* the harp's own send to the reverb (a little), its notes' levels */
 const SOUND_TEST_HARP = { send: 0.35, lead: 0.36, chord: 0.16 };
-const soundTest = { song: null, world: null, timer: 0, harp: null };
+/* SND-11: how a song plays in the test: as its ensemble (when it has one; gb until its notes are baked) or GB Sounds */
+const SOUND_TEST_AS = [
+  ['ensemble', 'As its ensemble'],
+  ['gb', 'GB Sounds'],
+];
+const soundTest = { song: null, world: null, timer: 0, harp: null, as: 'ensemble', inst: 'harp' };
 const soundTestSelect = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${v}"${v === val ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
 const soundTestButton = (x, l) => `<button class="pb small" data-a="dbg" data-x="${x}">${l}</button>`;
@@ -208,7 +217,7 @@ function soundTestHTML() {
       ['night', 'At night'],
     ],
     soundTest.song && soundTest.song.endsWith('@night') ? 'night' : 'day'
-  )}${soundTestButton('sndSong', 'Play the song')}</div>
+  )}${soundTestSelect('sndAs', SOUND_TEST_AS, soundTest.as)}${soundTestButton('sndSong', 'Play the song')}</div>
   <div class="dbg-row">${soundTestSelect(
     'sndWorld',
     SOUND_TEST_WORLD.map(([id, l]) => [id, l]),
@@ -218,9 +227,13 @@ function soundTestHTML() {
     SOUND_TEST_DISTANCES.map(d => [String(d), d + ' m away']),
     soundTest.world ? String(soundTest.world.d) : '3'
   )}${soundTestButton('sndWorld', 'Play the sound')}</div>
-  <div class="dbg-row">${soundTestSelect('sndPlace', SOUND_TEST_PLACES, soundTest.harp ? soundTest.harp.place : 'town')}${soundTestButton(
+  <div class="dbg-row">${soundTestSelect(
+    'sndInst',
+    Object.keys(MUSIC.instruments || {}).map(k => [k, k]),
+    soundTest.inst
+  )}${soundTestSelect('sndPlace', SOUND_TEST_PLACES, soundTest.harp ? soundTest.harp.place : 'town')}${soundTestButton(
     'sndHarp',
-    'Play the harp'
+    'Play the instrument'
   )}</div>
   <div class="dbg-row">${soundTestButton('sndStop', 'Stop the test')}</div>
   <p class="note">Plays at your sliders over the place’s sound; the song and the world sound can play together. Closing the menu stops the test. iPhones mute the game with the silent switch.</p>`;
@@ -236,9 +249,19 @@ function soundTestAction(x) {
     const name = v('sndSong');
     if (!name) return;
     soundTest.song = v('sndTime') === 'night' ? musicVariant(name, 1) : name;
+    soundTest.as = v('sndAs') || 'ensemble';
     soundEngine.test = true;
-    music(soundTest.song, { restart: true });
-    toast(`Playing ${soundTest.song}.`);
+    /* SND-11: GB Sounds for the test alone (the setting is left as it is); an ensemble's notes baked first */
+    soundEngine.testGb = soundTest.as === 'gb';
+    const T = soundEngine.tracker,
+      song = soundTest.song,
+      go = () => soundTest.song === song && music(song, { restart: true });
+    if (T && T.prepare && !soundEngine.testGb) T.prepare(song).then(go);
+    else go();
+    const D = T && T.recipe ? T.recipe(song) : null;
+    toast(
+      `Playing ${song}${soundEngine.testGb ? ' with GB Sounds' : D && D.ensemble && D.ensemble !== 'gb' ? ` as ${D.ensemble}` : ' (gb: it has no ensemble)'}.`
+    );
   } else if (x === 'sndWorld') {
     const W = SOUND_TEST_WORLD.find(w => w[0] === v('sndWorld'));
     if (!W) return;
@@ -252,9 +275,10 @@ function soundTestAction(x) {
     toast(`Playing ${W[1].toLowerCase()}${W[2].some(e => e[1] === 'd') ? `, ${d} m away` : ''}.`);
   } else if (x === 'sndHarp') {
     const place = v('sndPlace') || 'town';
-    soundTestHarp(place);
+    soundTest.inst = v('sndInst') || 'harp';
+    soundTestHarp(place, soundTest.inst);
     const P = SOUND_TEST_PLACES.find(q => q[0] === place);
-    toast(`Playing the harp, ${(P ? P[1] : place).toLowerCase()}.`);
+    toast(`Playing the ${soundTest.inst}, ${(P ? P[1] : place).toLowerCase()}.`);
   } else if (x === 'sndStop') {
     soundTestStop();
     toast('Sound test stopped.');
@@ -274,6 +298,7 @@ function soundTestStop() {
   soundTest.world = null;
   soundTestHarpStop();
   ambience.preview = null;
+  soundEngine.testGb = null;
   if (soundEngine.test) {
     soundEngine.test = false;
     musicSync();
@@ -281,8 +306,9 @@ function soundTestStop() {
 }
 /* SND-9: the harp (the first baked instrument, logic/sound-bake.js) plays Copperleaf's tune once, with its chords
    plucked low, alone: the place's song stops for it (soundEngine.test). The bank bakes it on the first press (in
-   slices, so nothing stalls) and the reverb is made with its impulse; then the notes are scheduled */
-function soundTestHarp(place) {
+   slices, so nothing stalls) and the reverb is made with its impulse; then the notes are scheduled. SND-11: any
+   instrument (inst), its notes moved by octaves into its range; a drum (one note) plays a beat of eighths */
+function soundTestHarp(place, inst = 'harp') {
   const T = soundEngine.tracker,
     c = soundEngine.ctx;
   if (!T || !c) return;
@@ -301,23 +327,30 @@ function soundTestHarp(place) {
     stem.connect(H.send);
     H.send.connect(T.reverbSend('music'));
   }
-  Promise.all([T.bankReady('harp'), place !== 'dry' ? T.reverbReady() : null]).then(() => {
+  Promise.all([T.bankReady(inst), place !== 'dry' ? T.reverbReady() : null]).then(() => {
     if (soundTest.harp !== H) return;
-    const D = T.compose('copperleaf');
-    if (!D) return;
+    const D = T.compose('copperleaf'),
+      R = (MUSIC.instruments || {})[inst];
+    if (!D || !R) return;
     const spb = 60 / D.bpm / 4,
-      t0 = c.currentTime + 0.1;
+      t0 = c.currentTime + 0.1,
+      fit = m => musicEnsembleFit(m, R);
+    if (R.lo === R.hi) {
+      for (let k = 0; k < 32; k++)
+        T.sampleVoice(stem, { inst, midi: R.lo, t: t0 + k * 2 * spb, dur: spb, vol: k % 4 ? 0.3 : 0.6 });
+      return;
+    }
     for (let st = 0; st < D.steps; st++) {
       const N = D.notes[st],
         t = t0 + st * spb;
-      if (N) T.sampleVoice(stem, { inst: 'harp', midi: N[0], t, dur: N[1] * spb, vol: SOUND_TEST_HARP.lead });
+      if (N) T.sampleVoice(stem, { inst, midi: fit(N[0]), t, dur: N[1] * spb, vol: SOUND_TEST_HARP.lead });
       /* each bar's chord, plucked up from its root an octave under the tune */
       if (st % 16 === 0) {
         const ch = D.prog[st / 16];
         [0, 2, 4].forEach((x, i) =>
           T.sampleVoice(stem, {
-            inst: 'harp',
-            midi: D.deg(ch + x) - 12,
+            inst,
+            midi: fit(D.deg(ch + x) - 12),
             t: t + i * spb,
             dur: 14 * spb,
             vol: SOUND_TEST_HARP.chord,

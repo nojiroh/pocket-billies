@@ -439,6 +439,8 @@ function bankContext(rate) {
   return new Proxy(t, { get: (o, k) => (k in o ? o[k] : any()) });
 }
 const { soundBakeBank, SOUND_BAKE_BUDGET } = /** @type {any} */ (globalThis);
+/* SND-11: the instruments are music.json's, given to a tracker as opts.instruments (the bank's recipes are shared) */
+trackerCreate(fakeContext(), {}, { instruments: MUSIC.instruments });
 
 test('SND-9: the bank bakes in slices, once per rate; bankReady resolves when every zone is in', async () => {
   const c = bankContext(22050),
@@ -588,7 +590,7 @@ test('SND-10: the bank takes recipes from data; sampleShot plays a zone once, mo
   await T.bankReady('tdrop');
   assert.ok(T.bankStats().instruments.some(k => k.startsWith('tdrop@16000')));
   /* the harp keeps its own recipe (an id the bank has is never replaced) */
-  assert.equal(soundBakeBank.recipes.harp, undefined);
+  assert.equal(soundBakeBank.recipes.harp, MUSIC.instruments.harp);
   const v = T.sampleShot(out, { inst: 'tdrop', midi: 71, t: 2, vol: 0.4, rate: 1.1 });
   const z = soundBakeBank.entries.get('tdrop@16000').zones.find(q => 71 >= q.lo && 71 <= q.hi);
   assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (71 - z.root) / 12) * 1.1) < 1e-9);
@@ -615,4 +617,151 @@ test('SND-10: the reverb has a World send, scaled by the World slider', async ()
   assert.ok(Math.abs(w.gain.value - 0.2 * 0.8) < 1e-9, 'a town sends 0.8 of the slider');
   T.reverbLevels(0.5, 0.25);
   assert.ok(Math.abs(w.gain.calls.at(-1)[1] - 0.2 * 0.8) < 1e-9, 'left out, the World level stays');
+});
+
+/* SND-11: a context whose nodes remember what they connect to and what made them */
+function wireContext() {
+  const made = [],
+    param = () => new Proxy({ value: 1 }, { get: (t, k) => (k in t ? t[k] : () => {}) }),
+    node = kind => {
+      const n = { kind, to: [], gain: param(), connect: x => n.to.push(x), disconnect: () => (n.to = []) };
+      made.push(n);
+      return n;
+    };
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() });
+  const c = new Proxy(
+    { currentTime: 0, sampleRate: 8000, made },
+    {
+      get: (t, k) =>
+        k in t
+          ? t[k]
+          : k === 'createGain'
+            ? () => node('gain')
+            : k === 'createStereoPanner'
+              ? () => node('panner')
+              : k === 'createBuffer'
+                ? () => ({ getChannelData: () => new Float32Array(8), length: 8 })
+                : any(),
+    }
+  );
+  return c;
+}
+
+test('SND-11: the gb path plays each line into its own stem: plain gains under the fader, no panner', () => {
+  const D = { ...MUSIC.songs.route, extra: false },
+    c = wireContext(),
+    T = trackerCreate(c, {}, { songs: { s: { ...D, night: false } } }),
+    seen = new Map();
+  const tap = k => (bus, o) => seen.set(bus, (seen.get(bus) || new Set()).add(k));
+  T.synthVoice = (bus, o) => tap(o.type)(bus);
+  T.synthNoise = tap('noise');
+  T.synthKick = tap('kick');
+  T.play('s');
+  clearInterval(T.timer);
+  c.currentTime = 4;
+  T.tick();
+  clearInterval(T.timer);
+  const S = T.song.stems;
+  assert.deepEqual(Object.keys(S).sort(), ['bass', 'counter', 'drums', 'harmony', 'lead', 'pad']);
+  assert.equal(S.drums, T.song.drums, "the drums' stem is the drums' own bus");
+  for (const k of ['lead', 'counter', 'bass', 'harmony', 'pad']) {
+    assert.equal(S[k].gain.value, 1, k);
+    assert.deepEqual(S[k].to, [T.song.gain], k + ' goes straight to the fader');
+  }
+  assert.ok(!seen.has(T.song.gain), 'nothing plays on the fader itself');
+  assert.ok(seen.get(S.lead).has(D.lead) && seen.get(S.bass).has('triangle') && seen.get(S.harmony).has('p12'));
+  assert.ok(seen.get(S.drums).has('kick') && seen.get(S.drums).has('noise'));
+  assert.ok(!c.made.some(n => n.kind === 'panner'), 'no StereoPanner on the gb path (a centred one costs 3 dB)');
+});
+
+/* SND-11: a small ensemble: the chip lead, a pizzicato bass, a kick and a hat */
+const BAND = {
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'bass', inst: 'pizz', pan: -0.3, verb: 0.2 },
+    { line: 'drums', kit: { kick: 'kick', hat: 'hat' } },
+  ],
+};
+function bandPlay(rate, o = {}) {
+  const c = bankContext(rate);
+  /* a plain convolver (the catch-all stand-in would look like a promise to the reverb's ready) */
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const S = { ...MUSIC.songs.route, ensemble: 'band', night: false },
+    gb = { on: !!o.gb },
+    T = trackerCreate(
+      c,
+      {},
+      { songs: { s: S, g: { ...S, ensemble: 'gb' } }, ensembles: { band: BAND }, gb: () => gb.on }
+    ),
+    seen = [];
+  T.synthVoice = (bus, v) => seen.push(['chip', T.song.step, bus, v.type]);
+  T.synthNoise = bus => seen.push(['noise', T.song.step, bus]);
+  T.synthKick = bus => seen.push(['kick', T.song.step, bus]);
+  const sample = T.sampleVoice;
+  T.sampleVoice = (bus, v) => (seen.push(['baked', T.song.step, bus, v.inst]), sample(bus, v));
+  return { c, T, seen, gb };
+}
+const run16 = (c, T, bars = 1) => {
+  for (let k = 0; k < 16 * bars; k++) {
+    c.currentTime = T.song.next - 0.13;
+    T.tick();
+  }
+  clearInterval(T.timer);
+};
+
+test('SND-11: a song with an ensemble plays gb until its notes are baked, then the ensemble from the next bar line', async () => {
+  const { c, T, seen } = bandPlay(11025);
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.ok(
+    seen.some(([k]) => k === 'noise'),
+    'the first bar is gb (its noise drums)'
+  );
+  assert.ok(!seen.some(([k]) => k === 'baked'));
+  await T.prepare('s');
+  assert.ok(T.ensembleReady('s'));
+  seen.length = 0;
+  run16(c, T, 2);
+  assert.ok(!seen.some(([k]) => k === 'noise'), 'then no chip drums');
+  const baked = new Set(seen.filter(([k]) => k === 'baked').map(x => x[3]));
+  assert.deepEqual([...baked].sort(), ['hat', 'kick', 'pizz']);
+  /* each part into its own stem; the drums' through the drums' bus */
+  const sg = T.song;
+  assert.equal(sg.parts.length, 3);
+  assert.ok(seen.filter(([k, , , i]) => i === 'pizz').every(([, , bus]) => bus === sg.parts[1]));
+  assert.deepEqual(sg.parts[2].to, [sg.drums]);
+  assert.ok(
+    seen.some(([k, , bus, type]) => k === 'chip' && type === 'p25' && bus === sg.parts[0]),
+    'the chip lead'
+  );
+  /* the bass's reverb send goes to the song's own reverb fader */
+  assert.ok(sg.verb, 'a reverb fader');
+});
+
+test('SND-11: only the zones an ensemble plays are baked; GB Sounds plays gb whatever is baked; gb is reserved', async () => {
+  const { c, T, seen, gb } = bandPlay(12000, { gb: true });
+  const N = T.needs('s');
+  assert.ok(N.pizz.length >= 1 && N.kick.length === 1 && !N.harp);
+  await T.prepare('s');
+  const E = soundBakeBank.entries.get('pizz@12000');
+  assert.ok(
+    E.zones.some(z => !z),
+    'the pizz zones nothing plays stay unbaked'
+  );
+  assert.ok(E.zones.some(Boolean));
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.ok(seen.some(([k]) => k === 'noise') && !seen.some(([k]) => k === 'baked'), 'GB Sounds: gb');
+  gb.on = false;
+  seen.length = 0;
+  run16(c, T);
+  assert.ok(
+    seen.some(([k]) => k === 'baked'),
+    'GB Sounds off: the ensemble from the next bar'
+  );
+  /* a song (or a version) naming gb plays today's code, with nothing to bake */
+  assert.equal(T.needs('g'), null);
+  assert.equal(await T.prepare('g'), false);
 });

@@ -6,22 +6,28 @@
    noise buffer through filters, and a kick; a soft echo that every voice can send to. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { soundBakeImpulse, soundBakeRoots, soundBakeZoneFor, soundBakeZoneSteps } from '../logic/sound-bake.js';
 import {
-  SOUND_BAKE_INSTRUMENTS,
-  soundBakeImpulse,
-  soundBakeRoots,
-  soundBakeZoneFor,
-  soundBakeZoneSteps,
-} from '../logic/sound-bake.js';
+  MUSIC_ENSEMBLE_VEL,
+  musicArpAt,
+  musicBassAt,
+  musicDrumsAt,
+  musicEnsembleNeeds,
+  musicEnsembleStep,
+} from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
+  MUSIC_STEM_LINES: [() => MUSIC_STEM_LINES],
   SCALES: [() => SCALES],
   SOUND_BAKE_BUDGET: [() => SOUND_BAKE_BUDGET],
   SOUND_BAKE_IMPULSE_SEC: [() => SOUND_BAKE_IMPULSE_SEC],
   SOUND_BAKE_PLACES: [() => SOUND_BAKE_PLACES],
   SOUND_BAKE_ROOM_GAIN: [() => SOUND_BAKE_ROOM_GAIN],
   SOUND_BAKE_SLICE_MS: [() => SOUND_BAKE_SLICE_MS],
+  TRACKER_GB_ARP: [() => TRACKER_GB_ARP],
+  TRACKER_GB_BASS: [() => TRACKER_GB_BASS],
   midiToFrequency: [() => midiToFrequency],
+  musicStemsMake: [() => musicStemsMake, v => (musicStemsMake = v)],
   songRandom: [() => songRandom, v => (songRandom = v)],
   soundBakeBank: [() => soundBakeBank],
   soundBakeBytes: [() => soundBakeBytes, v => (soundBakeBytes = v)],
@@ -34,6 +40,8 @@ expose({
   soundBakeStart: [() => soundBakeStart, v => (soundBakeStart = v)],
   soundBakeStats: [() => soundBakeStats, v => (soundBakeStats = v)],
   soundBakeWant: [() => soundBakeWant, v => (soundBakeWant = v)],
+  soundBakeZoneIndex: [() => soundBakeZoneIndex, v => (soundBakeZoneIndex = v)],
+  soundBakeZonesFor: [() => soundBakeZonesFor, v => (soundBakeZonesFor = v)],
   trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
@@ -203,7 +211,7 @@ function trackerArc(D, band) {
 /* SND-5: the recipe a song name plays: 'town' itself, 'town@night' its night version; null for a song or a part that
    doesn't exist; 'wild@tense' its tense version, 'meadow@late' its arc band's (run.arc), 'meadow@late@night' both. `run` is music.json's run (the arc's bands), for the parts that need
    it */
-function trackerRecipe(songs, name, run) {
+export function trackerRecipe(songs, name, run) {
   const [base, ...parts] = String(name).split('@');
   let D = (songs && songs[base]) || null;
   for (const p of parts) {
@@ -242,7 +250,8 @@ const soundBakeBank = {
   entries: new Map(),
   /** the reverb's impulse by sample rate: a Promise of its AudioBuffer */
   impulses: new Map(),
-  /** SND-10: recipes from data beside SOUND_BAKE_INSTRUMENTS (soundscape.json `banks`: water's bubbles and babble) */
+  /** the recipes by id, from data: SND-10 soundscape.json `banks` (water's bubbles and babble); SND-11 music.json
+      `instruments` (opts.instruments, given to every tracker) */
   recipes: /** @type {Record<string, any>} */ ({}),
   queue: [],
   timer: 0,
@@ -264,7 +273,7 @@ const soundBakeBank = {
 const soundBakeNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 /* the bank's entry for an instrument at a context's rate (made empty the first time) */
 function soundBakeEntry(id, c) {
-  const R = SOUND_BAKE_INSTRUMENTS[id] || soundBakeBank.recipes[id];
+  const R = soundBakeBank.recipes[id];
   if (!R) return null;
   const key = id + '@' + c.sampleRate;
   let E = soundBakeBank.entries.get(key);
@@ -285,10 +294,12 @@ function soundBakeEntry(id, c) {
   }
   return E;
 }
-/* bakes what an entry lacks; resolves with the entry once every zone is baked */
-function soundBakeWant(E) {
+/* bakes what an entry lacks (SND-11: or only the zones `only` lists); resolves with the entry once nothing it asked
+   for is still queued */
+function soundBakeWant(E, only = null) {
   E.zones.forEach((z, i) => {
-    if (!z && !E.queued.has(i)) {
+    /* SND-11: only the zones asked for (an ensemble's notes), else all */
+    if (!z && !E.queued.has(i) && (!only || only.includes(i))) {
       E.queued.add(i);
       soundBakeBank.queue.push({ make: () => soundBakeZoneSteps(E.R, E.rate, i), keep: Z => soundBakeKeep(E, i, Z) });
     }
@@ -296,6 +307,21 @@ function soundBakeWant(E) {
   if (!E.queued.size) return Promise.resolve(E);
   soundBakeStart();
   return new Promise(res => E.wait.push(res));
+}
+/* SND-11: the zone a note belongs to (its index), or -1 outside the instrument */
+function soundBakeZoneIndex(E, midi) {
+  if (!E.roots) E.roots = soundBakeRoots(E.R);
+  return E.roots.findIndex(z => midi >= z.lo && midi <= z.hi);
+}
+/* SND-11: the zones a list of notes plays from (each note's own; one outside the instrument, the nearest end) */
+function soundBakeZonesFor(E, notes) {
+  if (!E.roots) E.roots = soundBakeRoots(E.R);
+  const out = new Set();
+  for (const m of notes) {
+    const k = soundBakeZoneIndex(E, m);
+    out.add(k >= 0 ? k : m < E.roots[0].lo ? 0 : E.roots.length - 1);
+  }
+  return [...out];
 }
 /* the slices start (when they aren't running) */
 function soundBakeStart() {
@@ -407,6 +433,38 @@ function soundBakeStats() {
     stepMaxMs: Math.round(B.stepMaxMs * 100) / 100,
     lastSlicesMs: B.lastSlicesMs.slice(),
   };
+}
+/* SND-11: how the `gb` path's chips play the patterns (logic/music-patterns.js): the bass by its pattern (bassVoice
+   then moves it to the triangle or the second pulse in a four-voice song), the arpeggio by its kind ('four:' the
+   four-voice song's). Today's sound, kept as it was */
+const TRACKER_GB_BASS = {
+  bounce: { type: 'triangle', vol: 0.2, s: 0.7 },
+  gallop: { type: 'triangle', vol: 0.2 },
+  long: { type: 'triangle', vol: 0.16, a: 0.2, s: 0.8, r: 0.4 },
+  walk: { type: 'triangle', vol: 0.2 },
+  drive: { type: 'p50', vol: 0.07, cut: 900 },
+  pedal: { type: 'p50', vol: 0.07, cut: 900 },
+};
+const TRACKER_GB_ARP = {
+  'four:drip': { type: 'p12', vol: 0.04, s: 0.2, r: 0.15, echo: 0.5 },
+  'four:chord7': { type: 'p12', vol: 0.035, s: 0.3, echo: 0.15 },
+  up: { type: 'p12', vol: 0.035, s: 0.3, echo: 0.2 },
+  updown: { type: 'p12', vol: 0.035, s: 0.3, echo: 0.15 },
+  drip: { type: 'sine', vol: 0.05, s: 0.2, r: 0.3, echo: 0.7 },
+  chord7: { type: 'sine', vol: 0.03, a: 0.02, s: 0.5, r: 0.2 },
+};
+/* SND-11: a song's stems, each line's own small bus: lead (and the intro), counter, bass, harmony (the arpeggio),
+   pad (the night pad), and drums (the drums' own bus, which the game turns down standing still or at night). Plain
+   gains of 1, no panner (a centred StereoPanner costs 3 dB), so the gb path is today's sound */
+const MUSIC_STEM_LINES = ['lead', 'counter', 'bass', 'harmony', 'pad'];
+function musicStemsMake(c, out, drums) {
+  /** @type {Record<string, any>} */
+  const S = { drums };
+  for (const k of MUSIC_STEM_LINES) {
+    S[k] = c.createGain();
+    S[k].connect(out);
+  }
+  return S;
 }
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
@@ -561,9 +619,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.bankStats = soundBakeStats;
   /* SND-10: recipes from data (soundscape.json `banks`) the bank may bake, by id; an id it already has keeps its own */
   T.bankAdd = recipes => {
-    for (const [id, R] of Object.entries(recipes || {}))
-      if (!SOUND_BAKE_INSTRUMENTS[id] && !soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
+    for (const [id, R] of Object.entries(recipes || {})) if (!soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
   };
+  /* SND-11: music.json's instruments (sound.js, the Studio) */
+  if (opts.instruments) T.bankAdd(opts.instruments);
   /* SND-10: a baked zone's buffer and the rate that moves it to midi (a texture loops it); null (and the bank asked)
      when nothing of it is baked yet */
   T.bankBuffer = (inst, midi) => {
@@ -607,20 +666,25 @@ export function trackerCreate(ctx, bus, opts = {}) {
     const E = soundBakeEntry(inst, c);
     if (!E) return null;
     const P = soundBakeZoneFor(E.zones, midi);
-    if (!P || !P.own) soundBakeWant(E);
+    /* SND-11: a note off its own zone bakes that zone alone (an ensemble bakes only the notes it plays) */
+    if (!P || !P.own) soundBakeWant(E, soundBakeZonesFor(E, [midi]));
     if (!P) return null;
     const Z = P.zone;
     E.used[Z.i] = ++soundBakeBank.clock;
     T.started++;
-    const s = c.createBufferSource(),
+    /* SND-11: a one-shot zone (a struck bar, a drum: no loop) rings to its end whatever the note's length */
+    const once = Z.loopEnd <= Z.loopStart,
+      s = c.createBufferSource(),
       g = c.createGain(),
       body = Z.loopStart / P.rate,
-      end = t + Math.max(0.01, dur);
+      end = t + Math.max(0.01, once ? Z.buffer.length / Z.buffer.sampleRate / P.rate : dur);
     s.buffer = Z.buffer;
     s.playbackRate.value = P.rate;
-    s.loop = true;
-    s.loopStart = Z.loopStart;
-    s.loopEnd = Z.loopEnd;
+    if (!once) {
+      s.loop = true;
+      s.loopStart = Z.loopStart;
+      s.loopEnd = Z.loopEnd;
+    }
     g.gain.setValueAtTime(vol, t);
     if (Z.tau && body < end - t) g.gain.setTargetAtTime(0, t + body, Z.tau / P.rate);
     g.gain.setTargetAtTime(0, end, r / 4);
@@ -628,6 +692,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     g.connect(out);
     s.start(t);
     s.stop(end + r * 1.5);
+    s.onended = () => g.disconnect();
     return { source: s, gain: g };
   };
   /* SND-9: the reverb's sends. A part that wants reverb connects to T.reverbSend('music'), ('sfx') or (SND-10) ('world') after its own
@@ -713,25 +778,145 @@ export function trackerCreate(ctx, bus, opts = {}) {
   /* SND-8b: a song's fader. Its gain and its echo send move together, so the echo follows the fade-in, a crossfade, a
      stop and a jingle's duck (the send used to be taken before the fader). f moves one AudioParam and runs for both;
      unplug disconnects both after ms */
-  const fader = (sg, f) => [sg.gain, sg.echo].forEach(n => f(n.gain)),
+  /* SND-11: and an ensemble's reverb send (sg.verb), so its room follows the fader too */
+  const fader = (sg, f) => [sg.gain, sg.echo, sg.verb].forEach(n => n && f(n.gain)),
     /* SND-8b: a song's level, its `trim` (dB, music.json) as a gain: the fader's top, and what a duck is a share of */
     level = D => Math.pow(10, (D.trim || 0) / 20),
-    unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo].forEach(n => n.disconnect()), ms);
+    unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo, sg.verb].forEach(n => n && n.disconnect()), ms);
   T.compose = name => {
     const D = T.recipe(name);
     if (!D) return null;
     if (!composed.has(name)) composed.set(name, trackerCompose(D));
     return composed.get(name);
   };
+  /* ---------- SND-11: ensembles ----------
+     A song whose recipe names an ensemble (music.json ensembles) plays it in place of the four chip voices once its
+     notes are baked; until then, and while GB Sounds is on (opts.gb), it plays `gb`: today's code, kept as it was
+     (`gb` is a reserved id, never data). The switch happens on a bar line. Each part plays into a stem of its own
+     (pan, a reverb send), the drums' into the drums' bus */
+  const needs = new Map();
+  /** @returns {Record<string, any>} */
+  const ensembles = () => opts.ensembles || {};
+  T.gbOn = () => !!(opts.gb && opts.gb());
+  /* the ensemble a composed song names (null: gb) */
+  T.ensembleOf = D => (D && D.ensemble && D.ensemble !== 'gb' && ensembles()[D.ensemble]) || null;
+  /* the baked notes a song's ensemble plays: instrument -> midi notes (logic/music-patterns.js musicEnsembleNeeds) */
+  T.needs = name => {
+    const D = T.compose(name),
+      E = T.ensembleOf(D);
+    if (!E) return null;
+    if (!needs.has(name)) needs.set(name, musicEnsembleNeeds(D, E, soundBakeBank.recipes));
+    return needs.get(name);
+  };
+  /* every zone a song's ensemble needs is baked at this context's rate */
+  T.ensembleReady = name => {
+    const N = T.needs(name);
+    if (!N) return false;
+    for (const [id, notes] of Object.entries(N)) {
+      const E = soundBakeEntry(id, c);
+      if (!E || soundBakeZonesFor(E, notes).some(k => !E.zones[k])) return false;
+    }
+    return true;
+  };
+  /* SND-11: a song made ready before it plays (sound.js on arrival: the scene's songs and the battle's): its
+     ensemble's zones baked in the bank's slices, and the reverb made now, at a load, not on the first note (its
+     impulse's assignment is one main-thread step). Resolves true when it is ready, false for a gb song */
+  T.prepare = name => {
+    const N = T.needs(name);
+    if (!N) return Promise.resolve(false);
+    const E = T.ensembleOf(T.compose(name)),
+      waits = Object.entries(N).map(([id, notes]) => {
+        const B = soundBakeEntry(id, c);
+        return B ? soundBakeWant(B, soundBakeZonesFor(B, notes)) : null;
+      });
+    if (T.verbOk() && E.parts.some(P => P.verb > 0)) waits.push(T.reverbReady());
+    return Promise.all(waits).then(() => true);
+  };
+  /* the reverb may be used (opts.reverb: sound.js keeps it off the low graphics tier) */
+  T.verbOk = () => !opts.reverb || !!opts.reverb();
+  /* a song's ensemble's stems: a gain each, a panner where it isn't centred, a send to the song's reverb fader */
+  const partsMake = sg => {
+    const E = sg.ens;
+    if (sg.parts) setTimeout(() => sg.parts.forEach(g => g.disconnect()), 1500);
+    sg.parts = E.parts.map(P => {
+      const g = c.createGain(),
+        to = P.line === 'drums' ? sg.drums : sg.gain;
+      if (P.pan) {
+        const pn = c.createStereoPanner();
+        pn.pan.value = P.pan;
+        g.connect(pn);
+        pn.connect(to);
+      } else g.connect(to);
+      if (P.verb > 0 && T.verbOk()) {
+        if (!sg.verb) {
+          sg.verb = c.createGain();
+          sg.verb.gain.value = sg.gain.gain.value;
+          sg.verb.connect(T.reverbSend('music'));
+        }
+        const v = c.createGain();
+        v.gain.value = P.verb;
+        g.connect(v);
+        v.connect(sg.verb);
+      }
+      return g;
+    });
+    sg.ensGain = Math.pow(10, (E.trim || 0) / 20);
+  };
+  /* whether the ensemble plays this bar: it has one, GB Sounds is off and its notes are baked (asked for if not) */
+  const ensembleNow = sg => {
+    if (!sg.ens || T.gbOn()) return false;
+    if (T.ensembleReady(sg.name)) return true;
+    T.prepare(sg.name);
+    return false;
+  };
+  /* one step of the ensemble (logic/music-patterns.js musicEnsembleStep): baked notes through sampleVoice, chip parts
+     through synthVoice as the gb lead plays (the signature), each into its part's stem */
+  const ensembleStep = (sg, st, t, spb) => {
+    const D = sg.D,
+      E = sg.ens;
+    for (const N of musicEnsembleStep(D, E, st, { held: !!sg.hold, instruments: soundBakeBank.recipes })) {
+      const P = E.parts[N.part],
+        out = sg.parts[N.part],
+        vol = N.vel * sg.ensGain;
+      if (N.inst)
+        T.sampleVoice(out, {
+          inst: N.inst,
+          midi: N.m,
+          t,
+          dur: N.len * spb * 0.92,
+          vol,
+          r: P.line === 'pad' ? 0.6 : 0.25,
+        });
+      else
+        T.synthVoice(out, {
+          type: N.wave,
+          freq: midiToFrequency(N.m),
+          t,
+          dur: N.len * spb * 0.9,
+          /* a chip at line level 1 plays as loud as the gb lead (0.075; a triangle 0.13) */
+          vol: vol * (0.075 / MUSIC_ENSEMBLE_VEL.lead) * (N.wave === 'triangle' ? 0.13 / 0.075 : 1),
+          d: D.pluck ? 0.14 : 0.1,
+          s: D.pluck ? 0.12 : 0.55,
+          r: D.pluck ? 0.12 : 0.06,
+          vib: !D.pluck && N.len >= 6 ? 1 : 0,
+          echo: P.line === 'lead' ? (D.echo ?? 0.15) : 0,
+          echoTo: sg.echo,
+        });
+    }
+  };
   /* the Studio (SND-3): after a recipe is edited, compose again; the song playing keeps its place and plays the new
      notes from the next step. A new table (after an undo) replaces the old; a song gone from it stops */
   T.refresh = table => {
     if (table) songs = table;
     composed.clear();
+    needs.clear();
     if (!T.song) return;
     const D = T.compose(T.song.name);
     if (!D) return T.stop();
     T.song.D = D;
+    /* SND-11: an ensemble edited (or a new one named) is heard from the next bar */
+    T.song.ens = T.ensembleOf(D);
+    if (T.song.ens) partsMake(T.song);
     /* SND-8b: a new trim is heard at once */
     const lv = level(D);
     if (lv !== T.song.level) {
@@ -762,6 +947,13 @@ export function trackerCreate(ctx, bus, opts = {}) {
     T.song.drums = c.createGain();
     T.song.drums.gain.value = L ? L.drums : 1;
     T.song.drums.connect(T.song.gain);
+    /* SND-11: each line plays into its own stem (the drums' is the drums' bus): plain gains of 1 under the fader, so the
+       gb path sounds as before; the layers (SND-13) move them */
+    T.song.stems = musicStemsMake(c, T.song.gain, T.song.drums);
+    /* SND-11: its ensemble's stems, and whether it plays from the first step */
+    T.song.ens = T.ensembleOf(D);
+    if (T.song.ens) partsMake(T.song);
+    T.song.ensOn = ensembleNow(T.song);
     const now = c.currentTime;
     fader(T.song, g => {
       g.setValueAtTime(0, now);
@@ -814,11 +1006,19 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (sg.hold && c.currentTime > sg.hold) sg.hold = 0;
     while (sg.next < c.currentTime + 0.14) {
       if (sg.next < c.currentTime - 0.005) T.late++;
+      /* SND-11: on a bar line, the ensemble or gb (GB Sounds, or its notes not baked yet) */
+      if (sg.step >= 0 && sg.step % 16 === 0) sg.ensOn = ensembleNow(sg);
+      if (sg.ensOn) {
+        ensembleStep(sg, sg.step, sg.next + (sg.step >= 0 && sg.step % 2 ? spb * (D.swing || 0) : 0), spb);
+        sg.step++;
+        sg.next += spb;
+        continue;
+      }
       /* SND-5: the intro, on the lead alone */
       if (sg.step < 0) {
         const N = D.introNotes[sg.step + D.introSteps];
         if (N)
-          T.synthVoice(sg.gain, {
+          T.synthVoice(sg.stems.lead, {
             type: D.lead,
             freq: midiToFrequency(N[0]),
             t: sg.next,
@@ -839,7 +1039,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         b = Math.floor(st / 16),
         i = st % 16,
         t = sg.next + (i % 2 ? spb * (D.swing || 0) : 0),
-        bus = sg.gain,
+        S = sg.stems,
         ch = D.prog[b],
         dg = D.deg,
         /* SND-4: four voices, as on the Game Boy: a pulse for the lead, a second pulse for the countermelody or the
@@ -851,7 +1051,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         bassVoice = o =>
           !(waveLead && D.counterBars && D.counterBars[b]) &&
           T.synthVoice(
-            bus,
+            S.bass,
             !four
               ? o
               : waveLead
@@ -860,7 +1060,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           );
       /* lead */ const L = D.notes[st];
       if (L)
-        T.synthVoice(bus, {
+        T.synthVoice(S.lead, {
           type: D.lead,
           freq: midiToFrequency(L[0]),
           t,
@@ -876,7 +1076,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         });
       /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
       if (C)
-        T.synthVoice(bus, {
+        T.synthVoice(S.counter, {
           type: 'p12',
           freq: midiToFrequency(C[0]),
           t,
@@ -888,167 +1088,32 @@ export function trackerCreate(ctx, bus, opts = {}) {
           echo: 0.1,
           echoTo: sg.echo,
         });
-      /* bass */ const bs = D.bass,
-        root = dg(ch) - 24;
-      if (bs === 'bounce' && i % 4 === 0)
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(i % 8 ? root + 7 : root),
-          t,
-          dur: spb * 3,
-          vol: 0.2,
-          s: 0.7,
-        });
-      else if (bs === 'gallop' && [0, 3, 4, 8, 11, 12].includes(i))
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(i % 8 === 4 ? root + 12 : root),
-          t,
-          dur: spb * 1.5,
-          vol: 0.2,
-        });
-      else if (bs === 'long' && i === 0)
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(root),
-          t,
-          dur: spb * 15,
-          vol: 0.16,
-          a: 0.2,
-          s: 0.8,
-          r: 0.4,
-        });
-      else if (bs === 'walk' && i % 4 === 0)
-        bassVoice({
-          type: 'triangle',
-          freq: midiToFrequency(dg(ch + [0, 2, 4, 5][i / 4]) - 24),
-          t,
-          dur: spb * 3.5,
-          vol: 0.2,
-        });
-      else if (bs === 'drive' && i % 2 === 0)
-        bassVoice({
-          type: 'p50',
-          freq: midiToFrequency(root + (i % 8 === 6 ? 12 : 0)),
-          t,
-          dur: spb * 1.6,
-          vol: 0.07,
-          cut: 900,
-        });
-      else if (bs === 'pedal' && i % 2 === 0)
-        /* SND-5: the tense pedal, eighths on the key's flat seventh (under the bass's home) whatever the chord */
-        bassVoice({
-          type: 'p50',
-          freq: midiToFrequency(D.key - 26 + (i % 8 === 6 ? 12 : 0)),
-          t,
-          dur: spb * 1.6,
-          vol: 0.07,
-          cut: 900,
-        });
-      /* harmony (SND-5: arpOctave lifts the arp, the run's later rows) */ const ar = D.arp,
-        tri = [0, 2, 4, D.seventh ? 6 : 7].map(x => dg(ch + x) + 12 * (D.arpOctave || 0)),
-        pick = k => tri[((k % 4) + 4) % 4];
-      if (pulse2Busy) {
-        /* the second pulse plays the countermelody or the bass this bar */
-      } else if (four && ar === 'drip' && (i === 0 || i === 6 || i === 11))
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(pick(i) + 12),
-          t,
-          dur: spb * 1.5,
-          vol: 0.04,
-          s: 0.2,
-          r: 0.15,
-          echo: 0.5,
-          echoTo: sg.echo,
-        });
-      else if (four && ar === 'chord7' && i % 2 === 0)
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(tri[i % 4 ? 3 : 1] + 12),
-          t,
-          dur: spb * 1.2,
-          vol: 0.035,
-          s: 0.3,
-          echo: 0.15,
-          echoTo: sg.echo,
-        });
-      else if (ar === 'up' && i % 2 === 0)
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(pick(i / 2) + 12),
-          t,
-          dur: spb * 1.2,
-          vol: 0.035,
-          s: 0.3,
-          echo: 0.2,
-          echoTo: sg.echo,
-        });
-      else if (ar === 'updown' && i % 2 === 0) {
-        const k = i / 2,
-          seq = [0, 1, 2, 3, 2, 1, 0, 1];
-        T.synthVoice(bus, {
-          type: 'p12',
-          freq: midiToFrequency(pick(seq[k % 8]) + 12),
-          t,
-          dur: spb * 1.2,
-          vol: 0.035,
-          s: 0.3,
-          echo: 0.15,
-          echoTo: sg.echo,
-        });
-      } else if (ar === 'drip' && (i === 0 || i === 6 || i === 11))
-        T.synthVoice(bus, {
-          type: 'sine',
-          freq: midiToFrequency(pick(i) + 24),
-          t,
-          dur: spb * 2,
-          vol: 0.05,
-          s: 0.2,
-          r: 0.3,
-          echo: 0.7,
-          echoTo: sg.echo,
-        });
-      else if (ar === 'chord7' && (i === 0 || i === 6 || i === 10))
-        tri.forEach(n =>
-          T.synthVoice(bus, {
-            type: 'sine',
-            freq: midiToFrequency(n + 12),
+      /* bass (SND-11: the pattern is logic/music-patterns.js musicBassAt; here, how the chip plays it) */
+      const bn = musicBassAt(D, b, i);
+      if (bn) bassVoice({ ...TRACKER_GB_BASS[D.bass], freq: midiToFrequency(bn.m), t, dur: spb * bn.len });
+      /* harmony (SND-5: arpOctave lifts the arp, the run's later rows; SND-11: musicArpAt) */
+      const ap = pulse2Busy ? null : musicArpAt(D, b, i, four);
+      /* the second pulse plays the countermelody or the bass this bar when pulse2Busy */
+      if (ap) {
+        const V = TRACKER_GB_ARP[(four ? 'four:' : '') + ap.kind] || TRACKER_GB_ARP[ap.kind];
+        for (const n of ap.notes)
+          T.synthVoice(S.harmony, {
+            ...V,
+            freq: midiToFrequency(n),
             t,
-            dur: spb * (i === 0 ? 5 : 3),
-            vol: 0.03,
-            a: 0.02,
-            s: 0.5,
-            r: 0.2,
-          })
-        );
-      /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw) */ const dr =
-          sg.hold ? 'none' : D.drums,
-        db = sg.drums || bus;
-      if (dr === 'soft') {
-        if (i === 0 || i === 8) T.synthKick(db, t, 0.25);
-        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.08, vol: 0.08, bp: 1800, q: 0.8 });
-        if (i % 4 === 2) T.synthNoise(db, { t, dur: 0.03, vol: 0.04, hp: 7000 });
-      } else if (dr === 'skip') {
-        if (i === 0 || i === 10) T.synthKick(db, t, 0.3);
-        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.1, vol: 0.1, bp: 2000, q: 0.7 });
-        if (i % 2 === 0) T.synthNoise(db, { t, dur: 0.025, vol: 0.035, hp: 8000 });
-      } else if (dr === 'drive') {
-        if (i % 4 === 0) T.synthKick(db, t, 0.42);
-        if (i === 4 || i === 12) T.synthNoise(db, { t, dur: 0.12, vol: 0.14, bp: 1800, q: 0.6 });
-        T.synthNoise(db, { t, dur: 0.02, vol: i % 2 ? 0.025 : 0.045, hp: 8000 });
-      } else if (dr === 'march') {
-        if (i === 0 || i === 8 || i === 11) T.synthKick(db, t, 0.42);
-        if (i % 4 === 2 || i === 14 || i === 15) T.synthNoise(db, { t, dur: 0.07, vol: 0.11, bp: 2400, q: 0.8 });
-        if (i % 2 === 0) T.synthNoise(db, { t, dur: 0.02, vol: 0.03, hp: 9000 });
-      } else if (dr === 'bossa') {
-        if (i === 0 || i === 6 || i === 8 || i === 14) T.synthKick(db, t, 0.2);
-        if ([3, 6, 10, 13].includes(i)) T.synthNoise(db, { t, dur: 0.03, vol: 0.05, bp: 3500, q: 2 });
+            dur: spb * ap.len,
+            ...(V.echo ? { echoTo: sg.echo } : {}),
+          });
       }
+      /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw; SND-11:
+         musicDrumsAt) */
+      for (const h of musicDrumsAt(sg.hold ? 'none' : D.drums, i))
+        if (h.hit === 'kick') T.synthKick(S.drums, t, h.vol);
+        else T.synthNoise(S.drums, { t, ...h.gb, vol: h.vol });
       /* v27: a soft pad under the night (SND-4: an `extra` song's only; a four-voice song has its night version) */
       if (!four && i === 0 && (Lv = levels()) && Lv.pad > 0.05)
         [0, 2, 4].forEach(x =>
-          T.synthVoice(bus, {
+          T.synthVoice(S.pad, {
             type: 'sine',
             freq: midiToFrequency(dg(ch + x) - 12),
             t,

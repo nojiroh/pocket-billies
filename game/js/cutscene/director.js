@@ -8,11 +8,12 @@
 import { expose } from '../test-globals.js';
 import { landing, landingFrame, openingFall, provide } from '../hooks.js';
 import { $, clamp } from '../util.js';
+import { copiedAnchor, faceToward, seenWord } from '../logic/person-view.js';
 import { reducedMotion } from '../game-state.js';
 import { makeCanvas } from '../art.js';
 import { personBattlePose, personWalkFrames } from '../person-art.js';
 import { particleSprite } from '../battle-stage.js';
-import { directionOf, stopWalkView, walkData, walkView } from '../walk-view.js';
+import { stopWalkView, walkData, walkView } from '../walk-view.js';
 import { walkRenderer } from '../walk/walk-state.js';
 import { personItem } from '../walk/frame-items.js';
 import { talkBox, talkHide, talkLine } from '../talk.js';
@@ -133,7 +134,7 @@ export function cutsceneActor(id, who, at, dir, dark = false) {
 export function cutsceneWalk(id, to, ms) {
   const a = cutscene.actors[id];
   a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: cutsceneNow(), dur: ms };
-  a.dir = directionOf(to[0] - a.x, to[1] - a.z);
+  faceToward(a, to[0] - a.x, to[1] - a.z);
   return cutsceneWait(ms);
 }
 export function cutsceneAct(id, act, ms) {
@@ -144,9 +145,12 @@ export function cutsceneAct(id, act, ms) {
     if (ms) a.act = null;
   });
 }
-function cutscenePersonItem(a, t, C0) {
+function cutscenePersonItem(a, t, C0, yaw = 0) {
   let im;
-  const now = cutsceneNow();
+  const now = cutsceneNow(),
+    /* CH-1: the side the shot's camera sees (logic/person-view.js): a plain word (`face X down`) as it is on the screen,
+       a walk's or a turn's heading as seen from this shot */
+    seen = seenWord(a, yaw);
   if (a.walk) {
     const k = cutscene.skip || reducedMotion ? 1 : clamp((now - a.walk.t0) / a.walk.dur, 0, 1);
     a.x = a.walk.x0 + (a.walk.x1 - a.walk.x0) * k;
@@ -154,19 +158,21 @@ function cutscenePersonItem(a, t, C0) {
     if (k >= 1) a.walk = null;
   }
   if (a.walk) {
-    const set = personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down;
+    const set = personWalkFrames(a.who)[seen] || personWalkFrames(a.who).down;
     im = set.cyc ? set.cyc[Math.floor(t / 110) % 6] : set[1 + (Math.floor(t / 150) % 2)];
   } else if (a.act === 'throw') im = personBattlePose(a.who, 'front', 'throw', clamp((now - a.actT) / 700, 0, 1));
   else if (a.act === 'cheer' || a.act === 'react') im = personBattlePose(a.who, 'front', a.act, 0, now - a.actT);
   else if (a.act === 'reach') {
     /* an arm held out the way they face: the throw's wind-up, held */
-    const view = a.dir === 'up' ? 'back' : a.dir === 'down' ? 'front' : 'side';
+    const view = seen === 'up' ? 'back' : seen === 'down' ? 'front' : 'side';
     im = personBattlePose(a.who, view, 'throw', 0.35);
-    if (a.dir === 'sideR') im = cutsceneMirrored(im);
-  } else im = (personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down)[0];
+    /* CH-1: a side view as drawn faces right (person-art.js personFrame; the walk frames mirror it for 'side') */
+    if (seen === 'side') im = cutsceneMirrored(im);
+  } else im = (personWalkFrames(a.who)[seen] || personWalkFrames(a.who).down)[0];
   return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});
 }
-/* a picture of a person, flat dark (a silhouette) or mirrored, made once per picture */
+/* a picture of a person, flat dark (a silhouette) or mirrored, made once per picture; CH-1: the copy keeps the
+   original's anchor and size (logic/person-view.js copiedAnchor), so it stands where the person stands */
 const DARK_ART = new WeakMap(),
   MIRROR_ART = new WeakMap();
 function cutsceneDark(im) {
@@ -180,6 +186,7 @@ function cutsceneDark(im) {
     x.fillStyle = '#0D0A16';
     x.fillRect(0, 0, d.width, d.height);
     if (im.__mat) d.__mat = im.__mat;
+    Object.assign(d, copiedAnchor(im));
     DARK_ART.set(im, d);
   }
   return d;
@@ -193,6 +200,7 @@ function cutsceneMirrored(im) {
     x.imageSmoothingEnabled = false;
     x.setTransform(-1, 0, 0, 1, d.width, 0);
     x.drawImage(im, 0, 0);
+    Object.assign(d, copiedAnchor(im, true));
     MIRROR_ART.set(im, d);
   }
   return d;
@@ -248,7 +256,10 @@ export function cutsceneFrame() {
   items.length = 0;
   parts.length = 0;
   lights.length = 0;
-  for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(cutscenePersonItem(a, t, C0));
+  /* CH-1: people are seen from this shot's own turn: its eye to its aim, without the sway below */
+  const K0 = cutsceneCameraNow(),
+    yaw = K0 ? Math.atan2(K0.tgt[0] - K0.eye[0], K0.tgt[2] - K0.eye[2]) : 0;
+  for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(cutscenePersonItem(a, t, C0, yaw));
   /* what a cutscene adds of its own (the opening's starters and coins: opening.js), and its traffic */
   for (const f of cutscene.layers) f(items, parts, lights, now, t);
   if (cutscene.traffic.length) cutsceneTrafficTick(now);

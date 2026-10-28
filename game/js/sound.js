@@ -61,7 +61,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
-import { midiToFrequency, trackerCreate } from './audio/tracker.js';
+import { midiToFrequency, trackerCreate, trackerRecipe } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
@@ -100,9 +100,11 @@ expose({
   jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
+  musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
   musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
+  musicPrepare: [() => musicPrepare, v => (musicPrepare = v)],
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
@@ -209,6 +211,13 @@ function initSound() {
     const T = trackerCreate(c, soundEngine.mus, {
       songs: SONGS,
       run: MUSIC.run,
+      /* SND-11: the baked instruments and the ensembles that play them (music.json instruments, ensembles); GB Sounds
+         (Settings -> Sound) plays every song on today's four chip voices; the music's reverb stays off at Graphics Off */
+      instruments: MUSIC.instruments,
+      ensembles: MUSIC.ensembles,
+      /* the Sound test's own choice (soundEngine.testGb) while it plays a song */
+      gb: () => (soundEngine.testGb != null ? soundEngine.testGb : !!soundPreferences().gbSounds),
+      reverb: () => soundPreferences().aim !== 'off',
       levels: () => soundEngine.L,
       fx: soundEngine.fx,
       /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
@@ -387,7 +396,23 @@ export function musicSync() {
     soundEngine.cued = B;
     soundLog('battle ' + st.battle + ': no flash, the song without its intro');
   }
-  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run));
+  const name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run);
+  music(name);
+  musicPrepare(st, name);
+}
+/* SND-11: baked on arrival: where you are changes (the song asked for does), the ensembles of the song, its night
+   version (from dusk) and a wild battle's song here are baked in the bank's slices (only the notes they play), and the reverb is
+   made then, at a load, not on a song's first note. Songs on gb bake nothing */
+function musicPrepare(st, name) {
+  const T = soundEngine.tracker;
+  if (!T || !T.prepare || !name || soundEngine.prepared === name) return;
+  soundEngine.prepared = name;
+  const base = name.split('@')[0],
+    wild = st.battle ? null : { ...st, battle: 'wild' },
+    /* the night version once evening comes (by day its zones would only crowd the bank) */
+    want = new Set([name, st.night > 0 ? songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run) : null]);
+  if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));
+  for (const n of want) if (n) T.prepare(n);
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
@@ -419,6 +444,11 @@ function musicParts(name) {
   /* a run's songs (a biome's): each arc band */
   if (S && S.arc !== false && MUSIC.where.some(W => W.biome && W.song === name))
     for (const B of (MUSIC.run && MUSIC.run.arc) || []) out.push(B.name);
+  /* SND-11: a song (or its night version) that names an ensemble, as its ensemble plays it: new fingerprints beside the
+     gb ones (which check-sound renders with GB Sounds on) */
+  const ens = D => D && D.ensemble && D.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[D.ensemble];
+  if (ens(S)) out.push('ensemble');
+  if (S && S.night !== false && ens(trackerRecipe(SONGS, musicVariant(name, 1), MUSIC.run))) out.push('ensemble-night');
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
@@ -1301,6 +1331,21 @@ export function soundDebugLines() {
         }
       : null,
     reverb: T && T.reverbStats ? T.reverbStats() : null,
+    /* SND-11: the music's ensemble: which one the song names, whether it plays (or gb: GB Sounds, its notes not baked
+       yet), GB Sounds, the songs made ready on arrival */
+    ensemble: musicEnsembleLine(),
+  };
+}
+/* SND-11: the debug log's ensemble line (no save data: the song's and ensemble's ids, on or off) */
+function musicEnsembleLine() {
+  const T = soundEngine.tracker,
+    sg = T && T.song;
+  return {
+    song: sg ? sg.name : null,
+    ensemble: sg && sg.D && sg.D.ensemble ? sg.D.ensemble : 'gb',
+    playing: sg ? (sg.ensOn ? 'ensemble' : 'gb') : null,
+    gbSounds: !!soundPreferences().gbSounds,
+    prepared: soundEngine.prepared || null,
   };
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */

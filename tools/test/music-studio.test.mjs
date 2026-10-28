@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import {
   MUSIC_CHOICES,
   MUSIC_CODE_SONGS,
+  MUSIC_RECIPE_KEYS,
   MUSIC_SCALES,
   chordNumeral,
   isMusicPlaceholder,
@@ -190,4 +191,53 @@ test('SND-6: placeholder base cries and Billie cries are listed once each, as no
   assert.match(F[0].msg, /placeholder base cries \(1\): beast/);
   assert.equal(F[0].cry, 'beast');
   assert.match(F[1].msg, /placeholder Billie cries \(1\): Xa\./);
+});
+
+test('SND-11: the Studio offers the schema’s lines and kinds; the recipe keys are the schema’s', () => {
+  const S = json('schema/music.schema.json').$defs,
+    ids = k => MUSIC_CHOICES[k].map(c => c[0]);
+  assert.deepEqual(ids('line'), S.ensemblePart.properties.line.enum);
+  assert.deepEqual(ids('kind'), S.instrument.properties.kind.enum);
+  assert.deepEqual([...MUSIC_RECIPE_KEYS].sort(), Object.keys(S.recipe.properties).sort());
+});
+
+test('SND-11: musicFindings catches ensembles, instruments and patterns that do not exist, and typos in versions', () => {
+  const M = JSON.parse(JSON.stringify(MUSIC)),
+    msgs = () => musicFindings(M).map(f => f.lvl + ': ' + f.msg),
+    has = (re, lvl) => msgs().some(m => m.startsWith(lvl) && re.test(m));
+  M.ensembles = {
+    band: {
+      parts: [
+        { line: 'lead', wave: 'p25' },
+        { line: 'pad', inst: 'stringz' },
+        { line: 'bass', inst: 'bass', style: 'gallop' },
+        { line: 'arp', inst: 'harp', style: 'gallop' },
+        { line: 'drums', inst: 'kick' },
+        { line: 'drums', kit: { kick: 'kick', snare: 'snair' } },
+      ],
+    },
+  };
+  M.songs.town.ensemble = 'band';
+  M.songs.route.ensemble = 'gb';
+  M.songs.cave.ensemble = 'nothing';
+  M.songs.town.night = { bpm: 90, ensembel: 'band', hook: [] };
+  M.songs.wild.tense = { ensemble: 'missing' };
+  M.run.arc[0].changes = { ...M.run.arc[0].changes, ensemble: 'nope', arpOctave: 1, drumz: 'drive' };
+  assert.ok(has(/song "cave": no ensemble "nothing"/, 'error'));
+  assert.ok(!msgs().some(m => /"(town|route)": no ensemble/.test(m)), 'band and gb are fine');
+  assert.ok(has(/song "wild" tense: no ensemble "missing"/, 'error'));
+  assert.ok(has(/song "town" night: "ensembel" is not part of a recipe/, 'warn'));
+  assert.ok(!msgs().some(m => /"hook" is not part/.test(m)), 'a version may write its own hook');
+  assert.ok(has(/run arc "[a-z]+": no ensemble "nope"/, 'error'));
+  assert.ok(has(/run arc "[a-z]+": "drumz" is not part of a recipe/, 'warn'));
+  assert.ok(has(/part 2 \(pad\): no instrument "stringz"/, 'error'));
+  assert.ok(!msgs().some(m => /part 3 /.test(m)), 'a gallop is a bass pattern');
+  assert.ok(has(/part 4 \(arp\): "gallop" is not a arp pattern/, 'error'));
+  assert.ok(has(/part 5 \(drums\): drums with no kit play nothing/, 'warn'));
+  assert.ok(has(/part 6 \(drums\): its snare names no instrument "snair"/, 'error'));
+});
+
+test('SND-11: the data names only ensembles and instruments that exist', () => {
+  const bad = musicFindings(MUSIC).filter(f => f.lvl === 'error');
+  assert.deepEqual(bad, []);
 });

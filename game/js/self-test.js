@@ -128,6 +128,7 @@ import {
   PROP_CLOCK,
   actionSpot,
   climbEnds,
+  directionOf,
   findPath,
   hubResidentWalkers,
   mapBridges,
@@ -2844,8 +2845,9 @@ async function runFullTest(mode) {
                 walkRenderer.camT.every((v, k) => Math.abs(v - cam.T[k]) < 1e-6) &&
                 walkRenderer.yawT === cam.yaw &&
                 walkRenderer.zoomT === cam.zoom;
+            /* facing out of the door: the word a walk out of it gets (CH-1: leaveRoom turns you with faceToward) */
             const o = I.out || [0, -1],
-              way = Math.abs(o[0]) > Math.abs(o[1]) ? (o[0] > 0 ? 'right' : 'left') : o[1] < 0 ? 'down' : 'up';
+              way = directionOf(o[0], o[1]);
             if (pd > 0.01 || P.dir !== way)
               throw new Error(`out at ${pd.toFixed(2)} m from the door, facing ${P.dir} (not ${way})`);
             if (!camOk) throw new Error('the camera isn’t as it was when you went in');
