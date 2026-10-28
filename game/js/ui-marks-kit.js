@@ -25,7 +25,7 @@ import { i18nText } from './hooks.js';
 import { STATUS_NAMES } from './game-data.js';
 import { glyphOf, sigVar } from './logic/signals.js';
 import { MARK_RARITY, chipLook, fxTags, rarityTier, tagLook } from './logic/marks.js';
-import { LitElement, css, html, nothing, patternVars } from './ui-kit.js';
+import { LitElement, css, html, nothing, patternVars, typeGlyphURL } from './ui-kit.js';
 import { PbCoin, runIconURL, runKitMotion, runNumber } from './ui-run-kit.js';
 expose({
   PbChip: [() => PbChip],
@@ -282,8 +282,9 @@ const PbChip = class extends PbCoin {
 /* ---------- the blip: a Perk, held item, trait or type passive firing ---------- */
 /* its glyph in its family's colour and a short line ("Quick Laces ▲Spe", "Bubble Wrap −10%") on the battle's dark
    glass. mark: a glyph id in `group` (UI_GLYPHS: kind by default; status, effect, family); family overrides the
-   colour; stat and stages add a boost or drop after the line. The look only: UI-16b shows it by a plate when the
-   battle reports the trigger */
+   colour; stat and stages add a boost or drop after the line. UI-16b: type (a type id) shows a type passive's glyph
+   instead, in tone (a CSS colour: the type's). The look only: battle.js shows it by a plate when the battle reports
+   the trigger (an event's `by`) */
 const PbProc = class extends LitElement {
   static properties = {
     group: {},
@@ -292,6 +293,8 @@ const PbProc = class extends LitElement {
     text: {},
     stat: {},
     stages: { type: Number },
+    type: {},
+    tone: {},
   };
   static styles = [
     marksBase,
@@ -328,14 +331,26 @@ const PbProc = class extends LitElement {
     this.text = '';
     this.stat = '';
     this.stages = 0;
+    this.type = '';
+    this.tone = '';
   }
   render() {
-    const G = glyphOf(this.group, this.mark),
+    const G = this.type ? null : glyphOf(this.group, this.mark),
       sig = this.family || (G ? G[1] : ''),
+      tone = sig ? `var(${sigVar(sig)})` : this.tone,
+      tg = this.type ? typeGlyphURL(this.type) : '',
       S = this.stat ? tagLook({ kind: 'stat', stat: this.stat, stages: this.stages }) : null,
       word = [this.text, S && S.code ? S.word : ''].filter(Boolean).join(': ');
-    return html`<span class="proc" style=${sig ? `--tone:var(${sigVar(sig)})` : ''} role="img" aria-label=${word}
-      >${G ? markGlyph(G[0], 14, sig ? `var(${sigVar(sig)})` : '') : nothing}<span aria-hidden="true"
+    return html`<span class="proc" style=${tone ? `--tone:${tone}` : ''} role="img" aria-label=${word}
+      >${G ? markGlyph(G[0], 14, tone) : nothing}${
+        tg
+          ? html`<i
+              class="gl"
+              style=${`--ico:url('${tg}');width:14px;height:14px${tone ? `;--tone:${tone}` : ''}`}
+              aria-hidden="true"
+            ></i>`
+          : nothing
+      }<span aria-hidden="true"
         >${this.text}${
           S && S.arrow
             ? html` <span class="st" style=${`--st:var(${sigVar(S.sig)})`}>${S.arrow}${S.code}</span>`

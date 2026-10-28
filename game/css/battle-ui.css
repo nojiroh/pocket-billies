@@ -183,6 +183,20 @@
 .bplate .pl-sg pb-tag {
   flex: none;
 }
+/* UI-16b: the trigger blips (pb-proc) stack over the plate, the newest nearest it */
+.bplate .pl-procs {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--s1));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  pointer-events: none;
+}
+.bplate .pl-procs:empty {
+  display: none;
+}
 .bplate .pl-parts {
   display: flex;
   gap: var(--s1);

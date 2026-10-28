@@ -34,13 +34,18 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
+  GENES,
   ITEMS,
   MOVES,
+  PASSIVE,
+  PASSIVE_INFO,
+  PERKS,
   PYRAMIDS,
   STATUS_NAMES,
   STAT_NAMES,
   TYPES,
   TYPE_COLORS,
+  TYPE_GLOW,
   typeEffectiveness,
 } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
@@ -117,6 +122,8 @@ import { addRipple, waterAt } from './walk/water.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
+  BLIP_MAX: [() => BLIP_MAX],
+  BLIP_MS: [() => BLIP_MS],
   FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
   MOVE_HOLD_MS: [() => MOVE_HOLD_MS],
   PLATE_TAGS: [() => PLATE_TAGS],
@@ -135,12 +142,14 @@ expose({
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
+  blipLook: [() => blipLook, v => (blipLook = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
   cmdButtonHTML: [() => cmdButtonHTML, v => (cmdButtonHTML = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
+  eventBlips: [() => eventBlips, v => (eventBlips = v)],
   fieldChipHTML: [() => fieldChipHTML, v => (fieldChipHTML = v)],
   fieldStripUpdate: [() => fieldStripUpdate, v => (fieldStripUpdate = v)],
   fieldTip: [() => fieldTip, v => (fieldTip = v)],
@@ -469,7 +478,10 @@ function showEvent() {
   if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
-  afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
+  afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
+    paintBoxes(ev.s, ev.mk, true);
+    eventBlips(ev);
+  });
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
   /* the next line waits for the animation on the scene's own clock (a slow device draws fewer frames, so it takes
@@ -1327,7 +1339,7 @@ function plateElement(k) {
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}<span class="pl-procs"></span>`;
   L.appendChild(e);
   return e;
 }
@@ -1407,6 +1419,56 @@ function paintPlates(s, anim) {
     }
   }
   turnBar();
+}
+/* UI-16b: the blips: a Perk, held item, Gene or type passive firing shows by its fighter's plate as a pb-proc (its
+   glyph in its family's colour, "Bubble Wrap −10%", "Kindling ▲Atk"), read from the event's `by` (the battle's own
+   report, logic/battle-engine.js); a boss's shield phase (RL-14b) blips its shield. Two at most on a plate; each
+   pops in (motion.css m-pop), stays BLIP_MS and fades out */
+const BLIP_MS = 1500,
+  BLIP_MAX = 2;
+/** what a `by` entry's blip shows: pb-proc's attributes @param {{ src: string, mult?: number, stat?: string,
+ * stages?: number }} b */
+function blipLook(b) {
+  const src = String(b.src || ''),
+    cut = src.indexOf(':'),
+    kind = cut < 0 ? (src === 'unstable' ? 'unstable' : 'perk') : src.slice(0, cut),
+    id = cut < 0 ? src : src.slice(cut + 1),
+    pct = b.mult && b.mult !== 1 ? ` ${b.mult > 1 ? '+' : '−'}${Math.round(Math.abs(b.mult - 1) * 100)}%` : '',
+    o = { stat: b.stat || '', stages: b.stat ? b.stages || 1 : 0 };
+  if (kind === 'perk') return { ...o, group: 'kind', mark: 'perk', text: ((PERKS[id] || {}).name || id) + pct };
+  if (kind === 'held') return { ...o, group: 'kind', mark: 'held', text: ((ITEMS[id] || {}).n || id) + pct };
+  if (kind === 'gene')
+    return { ...o, group: 'family', mark: 'bio', text: (((GENES.traits || {})[id] || {}).name || id) + pct };
+  if (kind === 'unstable') return { ...o, group: 'family', mark: 'bio', text: 'Unstable' + pct };
+  const ty = Object.keys(PASSIVE).find(t => PASSIVE[t] === id) || '';
+  return { ...o, type: ty, tone: ty ? TYPE_GLOW[ty] : '', text: ((PASSIVE_INFO[ty] || {}).name || id) + pct };
+}
+function eventBlips(ev) {
+  const list = (ev.by || []).map(b => [b.si, blipLook(b)]),
+    an = ev.an;
+  if (an && an.k === 'alphaPhase' && an.shield !== false && an.si != null)
+    list.push([
+      an.si,
+      {
+        group: 'effect',
+        mark: 'shield',
+        text: `Shield −${Math.round((1 - (BATTLE_RULES.alphaShieldMult ?? 0.5)) * 100)}%`,
+      },
+    ]);
+  for (const [si, L] of list) {
+    const P = $(`#plates .bplate[data-k="${si}"]:not(.gone) .pl-procs`);
+    if (!P) continue;
+    const el = document.createElement('pb-proc');
+    for (const [a, v] of Object.entries(L)) if (v) el.setAttribute(a, String(v));
+    el.className = 'm-pop';
+    P.appendChild(el);
+    while (P.children.length > BLIP_MAX) P.firstElementChild.remove();
+    setTimeout(() => {
+      const out = el.animate ? el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }) : null;
+      if (out) out.onfinish = () => el.remove();
+      else el.remove();
+    }, BLIP_MS);
+  }
 }
 /* UI-16b: a plate's tags as markRow orders them (TagSpecs: logic/marks.js). Fainted: none */
 function plateTagSpecs(x) {
