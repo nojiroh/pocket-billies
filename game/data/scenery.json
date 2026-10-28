@@ -12580,6 +12580,21 @@
    "fx": [
     {"k":"smoke","x":0,"y":-16}
    ]
+  },
+  "bureau_sign": {
+   "name": "Bureau sign",
+   "img": "scene/next/routes/bureau_sign.png",
+   "ox": -24,
+   "oy": -76,
+   "shadow": 0.4,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["route","bureau"],
+   "group": "bureau",
+   "model": "scene/next/models/bureau_sign.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0},
+   "box": [1.3,0.3]
   }
  },
  "person": 1.75,

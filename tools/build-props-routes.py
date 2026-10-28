@@ -11,7 +11,8 @@ in the style of phase 09's batches (tools/build-props-batch1.py .. batch11b.py a
     wayside    milestone, waymarker_post, shrine_small (a stone niche, a solar cell on its roof, a glowing seed)
     farm       haystack, rain_barrel, water_pump, beehive_stand, tool_shed, veg_patch_frame
     solarpunk  wind_turbine_small, solar_post_light, seed_library_box
-    Bureau     bureau_barrier, bureau_crate (SY-7: red tape on both)
+    Bureau     bureau_barrier, bureau_crate (SY-7: red tape on both), bureau_sign (SY-7: the emblem, a decal made
+               from art/ui/bureau.svg: scene/next/decals/bureau_emblem.png)
   RP-3, the converter test (tools/glb-to-recipe.py from CC0 models in validation/cc0-src; showcase only):
                wind_turbine_small_cc0, footbridge_wood_cc0, arch_ruin_cc0
 
@@ -602,6 +603,55 @@ def bureau_crate():
     return rec(L)
 
 
+def emblem_decal():
+    """SY-7: the Bureau's emblem (art/ui/bureau.svg, SY-3's bean on a lost-property tag, drawn in the Studio's icon
+    editor as one-pixel rectangles) as a decal picture at 1 px a pixel: scene/next/decals/bureau_emblem.png. Rerun this
+    script after repainting the emblem."""
+    import re
+    svg = (B1.ART / 'ui' / 'bureau.svg').read_text()
+    W, H = (int(float(v)) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg).groups())
+    a = np.zeros((H, W, 4), np.uint8)
+    for d, fill in re.findall(r'<path d="([^"]+)" fill="(#[0-9A-Fa-f]{6})"', svg):
+        rgb = [int(fill[i:i + 2], 16) for i in (1, 3, 5)]
+        for x, y, w, h in re.findall(r'M(\d+) (\d+)h(\d+)v(\d+)h-\d+z', d):
+            x, y, w, h = int(x), int(y), int(w), int(h)
+            a[y:y + h, x:x + w] = rgb + [255]
+    return B1.save_png(a, B1.ART / 'scene' / 'next' / 'decals' / 'bureau_emblem.png'), W, H
+
+
+EMBLEM = 'scene/next/decals/bureau_emblem.png'
+EMBLEM_AT = (0.0, -0.045, 1.02)  # the decal's bottom middle on the sign's board (x, y toward the eye negative, z up)
+
+
+def bureau_sign():
+    """SY-7: the checkpoint's sign: a square slate board on two posts, mustard edges, the Bureau's emblem on it as a
+    decal (flat on purpose: the emblem is drawn art), a red tape strip across its foot."""
+    L = []
+    for sx in (-1, 1):
+        L += [box(sx * 0.5, 0.05, 0, 0.16, 0.16, 0.06, SLATE_D, 'metal', 'foot'),
+              box(sx * 0.5, 0.05, 0.06, 0.08, 0.08, 2.2, SLATE_D, 'metal', 'post')]
+    L += [box(0, 0, 0.95, 1.3, 0.06, 1.3, SLATE, 'metal', 'board'),
+          box(0, 0, 2.25, 1.36, 0.08, 0.05, MUSTARD, 'metal', 'board edge'),
+          box(0, 0, 0.9, 1.36, 0.08, 0.05, MUSTARD, 'metal', 'board edge'),
+          box(0, -0.035, 0.96, 1.3, 0.01, 0.05, TAPE, 'plain', 'red tape'),
+          img(EMBLEM, *EMBLEM_AT, face='fixed', recv=0, shadow=0, sway=0, name='emblem')]
+    return rec(L)
+
+
+def paste_emblem(C, size):
+    """the baked picture (the fallback and the far view) draws no decals: the emblem goes on it where the model has it"""
+    from PIL import Image
+    M = C['bureau_sign']
+    path = B1.ART / M['img']
+    pic = Image.open(path).convert('RGBA')
+    em = Image.open(B1.ART / EMBLEM).convert('RGBA')
+    x, y, z = EMBLEM_AT
+    bx = round(-M['ox'] + x * PPM)
+    by = round(-M['oy'] - (z + y * BI.TILT) * PPM)
+    pic.alpha_composite(em, (bx - size[0] // 2, by - (size[1] - 1)))
+    pic.save(path, optimize=True)
+
+
 # ================================================================ the catalogue
 SWAP = {'firewood': firewood, 'firewood_b': firewood_b, 'scrap': scrap, 'statue': statue, 'tires': tires,
         'tollbooth': tollbooth}
@@ -627,6 +677,7 @@ NEW = {
     'seed_library_box': (seed_library_box, 'Seed library', 'wayside', 0.3, ('route',), {'solid': 0.25}, {}),
     'bureau_barrier': (bureau_barrier, 'Bureau barrier', 'bureau', 0.5, ('route', 'bureau'), {'box': [1.6, 0.5]}, {}),
     'bureau_crate': (bureau_crate, 'Bureau crate', 'bureau', 0.5, ('route', 'bureau'), {'solid': 0.5}, {}),
+    'bureau_sign': (bureau_sign, 'Bureau sign', 'bureau', 0.4, ('route', 'bureau'), {'box': [1.3, 0.3]}, {}),
 }
 
 
@@ -684,7 +735,7 @@ ROWS = [('wayside', ['milestone', 'waymarker_post', 'shrine_small', 'seed_librar
         ('farm-big', ['tool_shed', 'wind_turbine_small', 'footbridge_wood', 'pier_deck'], 4.4),
         ('ruins', ['pillar_broken', 'arch_ruin', 'wall_ruin_corner', 'statue'], 4.0),
         ('junk', ['firewood', 'firewood_b', 'tires', 'scrap'], 3.6),
-        ('bureau', ['tollbooth', 'bureau_barrier', 'bureau_crate', 'bollard'], 4.6),
+        ('bureau', ['tollbooth', 'bureau_barrier', 'bureau_crate', 'bureau_sign', 'bollard'], 4.6),
         ('converter', ['wind_turbine_small', 'wind_turbine_small_cc0', 'arch_ruin', 'arch_ruin_cc0', 'footbridge_wood',
                        'footbridge_wood_cc0'], 4.4)]  # RP-3: RP-1's recipe, then the converted model
 
@@ -717,7 +768,9 @@ def main():
     D = gamedata.load()
     C = D['scenery']['props']
     swap(C)
+    _, ew, eh = emblem_decal()
     add_new(C)
+    paste_emblem(C, (ew, eh))
     add_converted(C)
     D['maps']['test_props_routes'] = showcase(C)
     gamedata.save(D)

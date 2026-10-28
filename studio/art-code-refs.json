@@ -627,6 +627,12 @@
    ]
   },
   {
+   "p": "scene/next/decals/bureau_emblem.png",
+   "at": [
+    "game/art/scene/next/models/bureau_sign.json"
+   ]
+  },
+  {
    "p": "scene/next/decals/campfire_flames.png",
    "at": [
     "game/art/scene/next/models/campfire.json"
