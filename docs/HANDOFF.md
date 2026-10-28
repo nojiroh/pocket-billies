@@ -2,6 +2,82 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-2 - the art pipeline - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-1's c5e12cc1; main already merged: nothing new at
+07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 6, "Corrected
+in PK-2".
+- The plan (as set at the start): (1) `tools/build-icons.mjs` and its test, the grid file seeded with PK-0's 8
+  samples; (2) the 12 other existing Perks drawn as grids; (3) `img` on Perks (schema, types, a data check) and the
+  13 SVGs written; (4) the screens: 72 px on the pick card, 36 px in the Perks tab, the shop row and the "Let one go"
+  sheet, the card's back and the bar's tab kept on `relic`; (5) the Studio: the icon editor and art browser on
+  art/perks (and items, boons later), the Perks editor's picture with Edit art; (6) the contact sheets; (7) docs. One
+  cause per commit.
+- Changed (7 commits):
+  - **tools/build-icons.mjs** (new) and tools/test/build-icons.test.mjs: grids in `tools/art/icon-grids/<folder>.json`
+    (`about`, `mono`, `icons`), checked (34x34, palette letters, digits only with a `mono` hue, svgProblem, no two
+    shapes overlapping 90% or more as intersection over union), shaded by `iconBlockKeyed` and written by
+    `pixelsToSvg` to `game/art/<folder>/<id>.svg` **once the data names the picture**; never over an SVG on disk
+    without `--force` (the SVG is the source); `--check`, `--only=`, `--sheet` (contact sheets through the container's
+    Playwright). Its test shades the 51 UI icon grids back to their SVGs byte for byte.
+  - **Art**: `tools/art/icon-grids/perks.json`: the 8 PK-0 samples and 12 new grids; `game/art/perks/*.svg`: the 13
+    existing Perks. The 7 later-wave samples stay grids (nothing names them yet).
+  - **Data**: perks.json `img` on all 13; perks.schema.json `img` (`^perks/<id>.svg$`); game-data.d.ts `Perk.img`;
+    data-checks.js `dataPerkArt` (an error when the picture is missing or fails svgProblem, a warning without `img`),
+    run by check-data.
+  - **Screens**: art.js `artIconHTML` (a picture drawn as the UI icons are, `relic` without one; `uiIconHTML` now builds
+    both tags, so ui-lint's style count stays at its ceiling), `.art-ic` pixelated; perk-screen.js (pick 72 px, drop
+    sheet 36, Perks tab 36 in its 44 px tile), shop.js (the Perk row at 36). check-fast's Perks step checks every
+    card's and row's picture and size.
+  - **Studio**: svg-pixels.js `ICON_DIRS`, `svgIconKey`, `svgIconPath` (an icon outside art/ui is `perks/<id>`); the
+    icon editor opens and saves them (its folder's others beside it, previews at 18/36/72/108, an unsaved one through
+    `artURL`, New icon in the open folder with `_` ids); the art browser's Edit icon covers them ("Used by" needed no
+    change); the Perks editor shows the picture at 72 and 36 px with **Edit art**, or **Draw one** (a blank
+    `art/perks/<id>.svg` named in the Perk). check-studio-github.py: relics (the picture, Edit art), icons (a Perk's
+    picture painted and undone, a new one staged in art/perks), art_browser (Used by perks.json, Edit icon).
+  - **validation/icon-sheets/perks-{light,dark}.png**: the contact sheets (cards at 72 px, rows at 36 and 18).
+  - Docs: perks-track.md (PK-2 done, "Corrected in PK-2"), ROADMAP, STUDIO.md (icon editor, Perks editor),
+    ART-NOTES.md ("Perk pictures"), TESTING.md.
+- Risky:
+  - UI-14a/b (PRs #286, #288) restyle the same cards; whichever lands second merges (perk-screen.js `perkCardHTML`,
+    shop.js's Perk row). The art slot keeps its min-height 64; a 72 px picture makes each pick card 8 px taller.
+  - The drop sheet's 36 px picture sits in a 64 px slot (the cards are a column of six; 72 would make the sheet long).
+  - **Draw one** is checked only up to its message in the Studio check (the button's new file and img are not driven).
+  - Every icon's look is new art for the owner's eye; nothing is checked on a phone yet.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1595 at the start, 1603 at the end, all passing locally); before every commit check:modules,
+  format:check, check:data (176 files fine) and build; `check:smoke` 6/6 before each commit touching game/ (Python
+  Playwright 1.63.0). `check:fast --only=perks` passed with the new picture checks (its first try measured the tab's
+  pictures mid-animation at 35 px; it now reads the laid-out size). `check:ui` passed. `check-studio-github.py
+  --only=relics` and `--only=icons,art_browser` ok with their new PK-2 steps. `node tools/build-icons.mjs perks
+  --check` fine (closest silhouettes 88%). Full quick check on 1155c85: 41 steps, 37 passed; the 4 PROBLEMs are the
+  four PK-1 recorded as main's (Terraces "props in the air: train_station", RL-8 "crossed into Thicket Route but its
+  view never showed", "room light", Battle music "the drums never came in on a throw"). CI on #301: lint red once on
+  d47bfa0 (`run-map-checks.test.mjs`'s 1,000-map sweep took 1014 ms of its 1,000 ms budget; run-map code untouched),
+  green on the later pushes with the same code; smoke red on the two Studio steps with 404s for
+  `game/art/billionaires/*.png`, main's as PK-1's PR comment established. `npm run test:slow` not run (no scene,
+  map or run-sim code changed).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 12 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Clinic Loyalty Card (a paper card, red band and cross, two punched holes), Coupon Book (a green stub,
+    dashed cut line, paper coupons stacked), Steady Hand (the game's pyramid pinched by a paper-coloured thumb and
+    finger: the weakest read, a candidate to redraw), Running Shoes (a red sneaker, cream sole and stripes), Power
+    Gloves (a one-colour red mitt, the thumb parted by a seam, a cream cuff), Bubble Wrap (a one-colour blue sheet of
+    bubbles), Trail Snacks (a wood bag, crimped stone top, a paper label with a green leaf), Field Notebook (green,
+    a slate band, cream pages, a pencil), Lost Property Form (paper, text lines, a gold stamp, a slate clip), Petri
+    Dish (an ice octagon, cloud agar, green and violet spots), Gene Lure (a one-colour teal fish lure, a cream and
+    slate helix, a steel treble hook), Stabilizer Gel (a one-colour teal tube, crimped end, cream label with a teal
+    cross, steel cap).
+  - Lucky Charm stays PK-0's horseshoe (section 11, item 8).
+  - The drop sheet shows pictures at 36 px, the pick at 72.
+  - "Overlapping 90%" measured as intersection over union.
+  - A grid is written only when the data names its picture (`img`), never by a flag that writes all.
+  - check-data warns (does not fail) on a Perk without `img` (a pack's Perk may come without art, as section 6 says).
+- Phone checks to do (listed, not waited for): a mini-boss's pick shows three pictures crisp at 72 px; the Perks tab and
+  a run shop's Perk row at 36 px; light and dark themes.
+- Next: PK-3 (Wave A, the battle kit: 15 Perks of 5.2 with their kinds and art) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-2-done` on this entry's commit.
+
 ### Perks track PK-1 - the effects core - 2026-10-28
 Branch `track/perks` (made in this session from `ccr-24be55e6-2bmqci`, main merged first: already up to date at
 07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
