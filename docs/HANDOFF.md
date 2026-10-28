@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-8b - mix fixes: the echo bugs, a trim per song (the hub song up), the rain's muffle, iOS "interrupted" - 2026-10-28
+Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
+standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 8 change commits and the
+baseline commit, one cause each, plus docs; tag `snd-8b-done` (for the owner to push) on this session's last commit.
+PR #292. Details: sound-track.md "SND-8b as built".
+- **Plan**: (1) `D.echo ?? 0.15`; (2) a song's echo send after its fader, one helper for play, crossfade, stop and
+  duck; (3) the effects' own echo (jingles, heal, seal); (4) `old.fade` removed; (5) `trim` per song, both schema
+  places; (6) Copperleaf's trim from the loudness report, about 1.5 LU under the route song; (7) the rain's music
+  low-pass to 4 kHz; (8) iOS "interrupted"; each commit rendered against the one before in a worktree; (9) the baseline
+  once, plain `--baseline`; (10) docs; the VFX track told before and after.
+- **Changed**: game/js/audio/tracker.js (`fader`, `unplug`, `level`; `sg.echo`, `sg.level`; `synthVoice`'s `echoTo`;
+  `echoLine`, `T.echoFx` from `opts.fx`; `old.fade` gone; `refresh` applies a new trim); game/js/sound.js (`fx` to the
+  tracker; heal and seal on `echoFx`; the rain cut 4000; `soundWake`); music.json (copperleaf `trim: 13.5`); the music
+  schema (`trim` in `$defs.recipe` and the song's list); studio/js/music-editor.js ("Level trim (dB)" on the Recipe
+  card); tools/test/tracker.test.mjs (+5 tests); validation/sound-baseline/ (written again); studio/art-code-refs.json.
+- **Fingerprints changed, and why** (each commit rendered against the one before it with `check-sound.py
+  --loudness`): `D.echo ??` none; the echo after the fader **20** (cave, hazel, fall, meadow, spore, crystal, every
+  part, from 0.35 s: the fade-in now reaches the echo; other songs move under the 1 % tolerance); the effects' echo
+  **the 12 jingles** (their tails: the Sound effects bus, not Music's); `old.fade` none; `trim` none (no song wrote
+  one: the level is exactly 1); Copperleaf's trim **copperleaf day and night**; the rain cut none; `soundWake` none.
+  Baseline written once with plain `--baseline` (b63734f4); cries.json kept as committed (only its key order differed).
+- **Loudness**: copperleaf -15.2 -> **-1.7 LU** under the route song (-33.6 LUFS, peak -16.1 dBFS); the coast-wide sea
+  (-18.0) and a fountain at 3 m (-15.2) now 13-16 LU under the hub song. Every other song as before.
+- **Risky or unfinished**:
+  - Claude can't hear: the hub song +13.5 dB is from the K-weighted report; the owner's ears decide (the Studio's new
+    "Level trim (dB)" slider changes it live).
+  - Jingle echo tails now follow the Sound effects slider and sit a little louder at default sliders (the effects bus
+    is above Music's); the echo returns to the effects bus unpanned.
+  - `soundWake` resumes on every touch even when running (a no-op promise); 'interrupted' was probed with a faked
+    state in headless Chromium, not on an iPhone.
+  - CI `smoke` on PR #292 is red from two Studio steps that fail on main too (the Studio asks for
+    `game/art/billionaires/*.png`, gone; "the landmark field doesn't offer Auto (the great oak)"); Tall ground, Behind
+    things and "Copperleaf is the island" (its timed orbit walk) each failed in one run and passed in another of the same
+    commit or on main; A run's world (RL-8) fails on main. Explained
+    on the PR; not fixed (outside SND-8b).
+  - Merging with the VFX track (VFX-8, c1a9f00b on track/vfx): the planning session's trial merge into b63734f4 leaves
+    sound.js and hooks.js clean; docs/HANDOFF.md (keep both entries) and studio/art-code-refs.json (regenerate with
+    `node tools/art-code-refs.mjs`) conflict. Whichever track reaches main second resolves it that way.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `node --test tools/test/tracker.test.mjs
+  tools/test/sound.test.mjs` (37 pass); `npm test` 1591 of 1592 (the one failure, "1,000 maps in under a second",
+  is timing on a loaded machine, as in SND-8a; not touched here); `npm run check:modules` (`soundWake` exposed);
+  `npm run check:data` (176 files fine; its Copperleaf bridge warning is main's too). `check-sound.py --loudness` on
+  each commit against the one before it (above); after the baseline commit 194, 0 changed. `npm run check:smoke`: no
+  problems (6 of 6). A browser probe of `soundWake` with a faked state: 'interrupted' suspends then resumes, 'running'
+  resumes, 'closed' does nothing, no page errors. `check-studio-github.py --only=music`: ok. The full `npm run
+  check:quick`: 35 of 41 (1975 s); every sound step passed (Sound settings, Animals and world sounds, Sound effects and
+  jingles, Run music, Run map music, Battle music, Debug menu, Song fingerprints 0 changed). Of the six problems,
+  Terraces (train_station floats), RL-8 (a run's seam view) and "Walking left and right..." (room light) fail on main
+  too (SND-8a's entry); RT-2's route trainers, Granny Juniper's line and the lab's room in place failed under load and
+  passed run alone (`--steps="route trainers","Granny Juniper","rooms laid in"`, 3 of 3).
+- **Decided for the owner, to review**:
+  - The music's rain low-pass softened to 4 kHz (recommended, already decided); the run map's forecast cut-offs
+    (music.json `run.weather`, rain 2200) left as they are.
+  - Levels by internal trims, the sliders' defaults kept (recommended, already decided): copperleaf +13.5 dB.
+  - Mine: the hub song 1.7 LU under the route song (the brief said about 1.5; 13.5 is the Studio slider's 0.5 dB step);
+    the trim's range -24..+24 dB; a "Level trim (dB)" slider on the Studio's Recipe card; the effects' echo is a second
+    copy of the music's (same 0.27 s, 0.28, 0.16), and a jingle played on the music bus (Settings' Music test) keeps
+    the music's echo; `old.fade` simply removed; `soundWake` also on showing the page.
+- **The owner's listening list** (phone, silent switch OFF): with Sound effects at 0, a victory or level-up leaves no
+  echo; a jingle over a song ducks the song's echo too; after Siri or a call, a tap brings sound back; Copperleaf's song
+  now sits above the sea and the fountain (walk the square and the shore; the Sound test's Copperleaf scene); a song's
+  start fades in with its echo (cave or crystal); rain muffles the music less.
+- **Next**: SND-9 (bake and reverb: `logic/sound-bake.js`, the tracker's bank, one reverb bus, a brightness
+  fingerprint).
+
 ### Sound track SND-8a - calm beds: their own soft noise, drift, start and stop, re-voiced; a loudness report; a Sound test - 2026-10-28
 Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
 standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 27 commits, one cause each;
