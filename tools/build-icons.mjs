@@ -1,4 +1,4 @@
-// Perks track PK-2: pictures for Perks (and later held items, Bag items, boons) drawn as the UI icons are. A folder's
+// Perks track PK-2: pictures for Perks (PK-11: Bag items; later held items and boons) drawn as the UI icons are. A folder's
 // grids, tools/art/icon-grids/<folder>.json, hold each picture's flat 34 x 34 front in the icon builder's letters
 // (ICON_PALETTE; '.' empty; digits 1-4 are the light, mid, dark and ink of the one hue `mono` names for it, its
 // letters then accents). Each front is shaded by iconBlockKeyed (game/js/logic/icon-block.js) and written by
@@ -211,13 +211,32 @@ h1{font-size:18px;margin:0 0 4px}.sub{color:${T.text2};margin:0 0 12px}
 <div class="row">${items.map(it => img(it.svg, 18)).join('')}</div></body></html>`;
 }
 
+/** a folder's data as the sheet names it: { name, sub, d, rarity } by id (perks.json's Perks, items.json's items) */
+function sheetNames(/** @type {string} */ folder, root = ROOT) {
+  const RAR = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical', fine: 'Fine Print' },
+    read = (/** @type {string} */ f) => JSON.parse(readFileSync(join(root, 'game/data', f), 'utf8')),
+    /** @type {Record<string, { name: string, sub: string, d: string, rarity: string }>} */
+    out = {};
+  if (folder === 'perks')
+    for (const [id, P] of Object.entries(read('perks.json')))
+      out[id] = { name: P.name, sub: `${RAR[P.rarity] || P.rarity} · Perk`, d: P.d, rarity: P.rarity };
+  /* PK-11: the Bag's items (a held item with its tier) */
+  if (folder === 'items')
+    for (const [id, I] of Object.entries(read('items.json')))
+      out[id] = {
+        name: I.n,
+        sub: I.hold ? `${RAR[I.rarity] || I.rarity} · Held item` : 'Bag item',
+        d: I.d,
+        rarity: I.hold ? I.rarity : '',
+      };
+  return out;
+}
+
 /** what a sheet shows for each grid: its SVG on disk when there is one, else the grid shaded */
 function sheetItems(/** @type {string} */ folder, root = ROOT) {
   const G = readIconGrids(folder, root),
     names = dataArtPaths(),
-    data =
-      folder === 'perks' ? JSON.parse(readFileSync(join(root, 'game/data/perks.json'), 'utf8')) : /** @type {any} */ ({});
-  const RAR = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', fine: 'Fine Print' };
+    data = sheetNames(folder, root);
   return Object.entries(G.icons).map(([id, rows]) => {
     const path = join(root, 'game/art', folder, id + '.svg'),
       svg = existsSync(path) ? readFileSync(path, 'utf8') : iconGridSvg(rows, G.mono[id]),
@@ -226,7 +245,7 @@ function sheetItems(/** @type {string} */ folder, root = ROOT) {
       id,
       svg,
       name: P ? P.name : id.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()),
-      sub: P ? `${RAR[P.rarity] || P.rarity} · Perk` : 'Drawn ahead',
+      sub: P ? P.sub : 'Drawn ahead',
       d: P ? P.d : '',
       rarity: P ? P.rarity : '',
       waiting: !names.has(`${folder}/${id}.svg`),
