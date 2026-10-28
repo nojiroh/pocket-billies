@@ -24,6 +24,7 @@
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { runMarkLook } from './logic/run-marks.js';
+import { caseTyped } from './logic/case-file.js';
 import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
 expose({
   PbCoin: [() => PbCoin],
@@ -35,6 +36,7 @@ expose({
   PbPayout: [() => PbPayout],
   PbPickCard: [() => PbPickCard],
   PbStamp: [() => PbStamp],
+  PbTyped: [() => PbTyped],
   RUN_CURRENCY_ICONS: [() => RUN_CURRENCY_ICONS],
   RUN_NAV_SETS: [() => RUN_NAV_SETS],
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
@@ -47,6 +49,7 @@ expose({
   runMsVar: [() => runMsVar],
   runNumber: [() => runNumber],
   runSvg: [() => runSvg],
+  typedAt: [() => typedAt],
   unsafeCSS: [() => unsafeCSS],
 });
 /* to-module: end */
@@ -1539,6 +1542,92 @@ const PbLoading = class extends LitElement {
   }
 };
 
+/* ---------- SY-4: lines typed in, a letter at a time (a case file's) ---------- */
+/* <pb-typed key="7" skip="2"> around a sheet's lines (.ev-line): the lines after the first `skip` type in, one after
+   another, a letter every CASE_TYPE_MS (logic/case-file.js). Light DOM, so the page's own styles and words stay as
+   they are. The overlay draws a sheet again from its HTML on any render, so where the typing is comes from the clock
+   since `key` first showed, never from the element: a redraw picks it up where it was. A tap on the sheet's body shows
+   it all; a tap on a redaction bar (.redact) lifts it. Reduced motion: all at once. The buttons work all the time, so
+   the typing never makes an event longer. */
+/** when each key's typing began (performance.now()); -Infinity once it is all shown */
+const typedAt = new Map();
+const PbTyped = class extends HTMLElement {
+  connectedCallback() {
+    const key = this.getAttribute('key') || '';
+    if (!typedAt.has(key)) {
+      typedAt.set(key, performance.now());
+      if (typedAt.size > 40) typedAt.delete(typedAt.keys().next().value);
+    }
+    this._key = key;
+    this._units = this._prep();
+    this._tap = (/** @type {Event} */ e) => {
+      const bar = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('.redact') : null);
+      if (bar && this.contains(bar) && typedAt.get(key) === -Infinity) bar.classList.add('lifted');
+      typedAt.set(key, -Infinity);
+      this._tick();
+    };
+    this._area = this.closest('.body') || this;
+    this._area.addEventListener('click', this._tap);
+    this._tick();
+  }
+  disconnectedCallback() {
+    cancelAnimationFrame(this._raf || 0);
+    if (this._area) this._area.removeEventListener('click', this._tap);
+  }
+  /** the letters to type, in order: each text node, and each redaction bar as one piece (it shows whole) */
+  _prep() {
+    const skip = Number(this.getAttribute('skip')) || 0,
+      /** @type {{ node?: Text, bar?: HTMLElement, text: string, len: number, rest?: HTMLElement }[]} */
+      units = [];
+    for (const line of [...this.querySelectorAll('.ev-line')].slice(skip)) {
+      const walk = document.createTreeWalker(line, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+        acceptNode: n =>
+          n.nodeType === 1
+            ? /** @type {Element} */ (n).classList.contains('redact')
+              ? NodeFilter.FILTER_ACCEPT
+              : NodeFilter.FILTER_SKIP
+            : /** @type {Element | null} */ (n.parentElement)?.closest('.redact')
+              ? NodeFilter.FILTER_REJECT
+              : NodeFilter.FILTER_ACCEPT,
+      });
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        const text = n.textContent || '';
+        if (n.nodeType === 1) units.push({ bar: /** @type {HTMLElement} */ (n), text, len: text.length });
+        else if (text) units.push({ node: /** @type {Text} */ (n), text, len: text.length });
+      }
+    }
+    return units;
+  }
+  _tick() {
+    const units = this._units || [],
+      total = units.reduce((t, u) => t + u.len, 0),
+      at = typedAt.get(this._key),
+      n = reduced() || at === -Infinity ? total : caseTyped(total, performance.now() - at);
+    let left = n;
+    for (const u of units) {
+      const show = Math.max(0, Math.min(u.len, left));
+      left -= u.len;
+      if (u.bar) u.bar.classList.toggle('tw-wait', show === 0);
+      else if (u.node) {
+        u.node.data = u.text.slice(0, show);
+        if (show < u.len) {
+          if (!u.rest) {
+            u.rest = document.createElement('span');
+            u.rest.className = 'tw-rest';
+            u.node.after(u.rest);
+          }
+          u.rest.textContent = u.text.slice(show);
+        } else if (u.rest) {
+          u.rest.remove();
+          u.rest = undefined;
+        }
+      }
+    }
+    if (n < total) this._raf = requestAnimationFrame(() => this._tick());
+    else typedAt.set(this._key, -Infinity);
+  }
+};
+
 for (const [tag, cls] of /** @type {const} */ ([
   ['pb-day-chip', PbDayChip],
   ['pb-forecast', PbForecast],
@@ -1549,5 +1638,6 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-nav-bar', PbNavBar],
   ['pb-loading', PbLoading],
   ['pb-stamp', PbStamp],
+  ['pb-typed', PbTyped],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
