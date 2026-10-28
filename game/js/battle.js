@@ -572,7 +572,15 @@ function fieldStripUpdate(mk) {
             0,
             'wx'
           )
-        : '') + (m ? fieldChipHTML(glyphHTML('effect', 'sandstorm', 14, 'fill'), `${shockName()}: ${plural(m.n, 'turn')} left`, m.n, 'warn') : '');
+        : '') +
+      (m
+        ? fieldChipHTML(
+            glyphHTML('effect', 'sandstorm', 14, 'fill'),
+            `${shockName()}: ${plural(m.n, 'turn')} left`,
+            m.n,
+            'warn'
+          )
+        : '');
   const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
   if (el.innerHTML !== h) el.innerHTML = h;
   $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
