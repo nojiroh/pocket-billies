@@ -44,9 +44,12 @@ session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The w
   - In headless Chromium the page's frames block the 200 ms timer for seconds, so in-page counts of one-shots are
     much lower than on a phone; the offline report is the measure. The debug log's `audio.nature` line (sources
     started, thunder rolls, the bolts heard, the last thunder's km and delay) shows the phone's.
-  - `check-sound.py --loudness` on the merged head took over 90 min here and the full fingerprint pass did not finish
-    in an hour (SND-11's ensemble parts bake per job while the game page draws in software); `--only=route` takes
-    6 s and lists the two new ensemble parts as "not in the baseline" (SND-11's to write). For the music lane.
+  - `check-sound.py --loudness` on the merged head takes over 90 min (25 before), for SND-15 to fix: since SND-11 each
+    job waits a tick before it renders, so the game page's software-drawn frames run between jobs, about 10 s per job
+    here (measured: batches of six world rows took 40-70 s each, steady, so nothing piles up per page), and this
+    session's 39 nature rows join SND-10's 66 water rows. A fix (fewer frames between jobs, or the world rows on a page
+    of their own that never starts the walk view) belongs in a commit of its own with the report's numbers identical.
+    The fingerprint pass alone (`check-sound.py`, no `--loudness`) takes 3 min.
   - The merge of SND-11 (0ba9f941) regenerated studio/art-code-refs.json and hooks.js inside the merge commit, not in
     a commit of their own.
 - **Verified**: `npm run lint`, `typecheck`, `check:modules`, `format:check` and `check:data` after every commit (the
@@ -57,11 +60,13 @@ session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The w
   worktree); the second trims measured on their rows alone. `npm run check:smoke` on 1edb2c77: 7 of 7, no problems.
   Browser probes (headless Chromium, Copperleaf): a storm at night (two bolts: thunder rolled, the far one 12.5 s
   later), dawn, and every new Sound test row: no page error. `check-quick.py --steps=sound,song,music,"debug
-  menu",weather,animals`: 10 of 12 (battle music failed under load and passed alone; Song fingerprints lists only
-  SND-11's 4-5 new ensemble parts as not in the baseline). `check-studio-github.py --only=music`: ok (steps on gravel
+  menu",weather,animals`: 10 of 12 (battle music failed under load and passed alone; Song fingerprints listed
+  SND-11's new ensemble parts as not in the baseline: the tested commit 323fc0c2 had SND-11's ensemble code but not its
+  baseline commit 32f497c4, which came later; origin/track/sound has those renders). `check-studio-github.py --only=music`: ok (steps on gravel
   on the World sounds card). The full `npm run check:quick` on 323fc0c2: 38 of 42 in 2152 s; every sound step passed;
-  Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (SND-11's baseline).
-  CI on the pushes: see below.
+  Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (the baseline commit 32f497c4 was not yet in the tested tree).
+  CI on 4874a99d (the session's merge push): lint and rules green; smoke still running when this entry was
+  written (locally: smoke 7 of 7, the full quick check as above). Tag `snd-14-done` on this entry's commit.
 - **Decided for the owner, to review**:
   - Thunder: from a bolt counter in environment.js (the thin hook; its flash unchanged); distances 0.4-4.5 km, more
     far than near; the speed of sound for the delay (1.2-13 s); a crack only within 1.2 km; at most two rolling; none
