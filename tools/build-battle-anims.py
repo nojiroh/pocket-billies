@@ -1076,27 +1076,23 @@ def ramp_colours(D):
 
 
 def sheet():
-    """every sprite (rows) through every ramp (columns), each frame at 3x, on a dark and a light ground"""
+    """every sprite through every ramp: a panel per ramp (the grey one first), each sprite's whole strip at 2x on a
+    dark ground, five panels a row; the sprite ids down the left of each row of panels"""
     D = load_data()
     S = D.get('sprites') or {}
     R = ramp_colours(D)
     rids = ['grey'] + list(R)
-    sc, pad = 3, 6
-    rows = []
-    for sid, e in S.items():
-        p = OUT / f'{sid}.png'
-        if p.exists():
-            rows.append((sid, Image.open(p).convert('RGBA'), e))
-    colw = max(im.size[0] for _, im, _ in rows) * sc + pad
-    rowh = [im.size[1] * sc + pad for _, im, _ in rows]
-    W, H = colw * len(rids) + pad, sum(rowh) + pad + 14
-    out = Image.new('RGBA', (W, H), (34, 30, 44, 255))
-    d = ImageDraw.Draw(out)
-    for j, rid in enumerate(rids):
-        d.text((pad + j * colw, 2), rid, fill=(230, 230, 230, 255))
-    y = 14 + pad
-    for (sid, im, e), rh in zip(rows, rowh):
-        for j, rid in enumerate(rids):
+    sc, pad, label = 2, 4, 90
+    rows = [(sid, Image.open(OUT / f'{sid}.png').convert('RGBA')) for sid in S if (OUT / f'{sid}.png').exists()]
+    pw = max(im.size[0] for _, im in rows) * sc + pad * 2
+    ph = sum(im.size[1] * sc + pad for _, im in rows) + 16 + pad
+
+    def panel(rid):
+        o = Image.new('RGBA', (pw, ph), (24, 22, 32, 255))
+        d = ImageDraw.Draw(o)
+        d.text((pad, 2), rid, fill=(235, 235, 235, 255))
+        y = 16
+        for sid, im in rows:
             c = im.copy()
             if rid != 'grey':
                 px = c.load()
@@ -1104,19 +1100,26 @@ def sheet():
                     for xx in range(c.size[0]):
                         r_, _, _, a = px[xx, yy]
                         if a:
-                            px[xx, yy] = R[rid][GREYS.index(r_)] + (255,) if r_ in GREYS else (255, 0, 255, 255)
-            c = c.resize((c.size[0] * sc, c.size[1] * sc), Image.NEAREST)
-            bg = Image.new('RGBA', c.size, (58, 54, 70, 255) if j % 2 else (24, 22, 32, 255))
-            bg.alpha_composite(c)
-            out.paste(bg, (pad + j * colw, y))
-        d.text((2, y), '', fill=(255, 255, 255, 255))
-        y += rh
+                            px[xx, yy] = (R[rid][GREYS.index(r_)] if r_ in GREYS else (255, 0, 255)) + (255,)
+            o.alpha_composite(c.resize((c.size[0] * sc, c.size[1] * sc), Image.NEAREST), (pad, y))
+            y += im.size[1] * sc + pad
+        return o
+    per = 5
+    nrow = (len(rids) + per - 1) // per
+    out = Image.new('RGBA', (label + per * (pw + pad), nrow * (ph + pad)), (44, 40, 56, 255))
+    d = ImageDraw.Draw(out)
+    for k, rid in enumerate(rids):
+        r, c = divmod(k, per)
+        out.paste(panel(rid), (label + c * (pw + pad), r * (ph + pad)))
+    for r in range(nrow):
+        y = r * (ph + pad) + 16
+        for sid, im in rows:
+            d.text((2, y), sid, fill=(235, 235, 235, 255))
+            y += im.size[1] * sc + pad
     SHEET.mkdir(parents=True, exist_ok=True)
     p = SHEET / 'sheet.png'
     out.save(p)
-    labels = SHEET / 'sheet.txt'
-    labels.write_text('rows, top to bottom: ' + ', '.join(sid for sid, _, _ in rows) + '\ncolumns: ' + ', '.join(rids) + '\n')
-    print(f'battle anims: contact sheet {p.relative_to(ROOT)} ({len(rows)} sprites x {len(rids)} ramps; rows named in sheet.txt)')
+    print(f'battle anims: contact sheet {p.relative_to(ROOT)} ({len(rows)} sprites x {len(rids)} ramps)')
 
 
 def main():

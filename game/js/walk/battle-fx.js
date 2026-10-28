@@ -6,19 +6,23 @@
    against a 4x4 Bayer pattern on the effect's own texels; alpha 0 out, so the ink outlines skip it as they skip the
    ground), then the glowing ones' white cores added on top. Copied from the weather's batch (walk/effects.js
    weatherBatch). The atlas packs icons.png's cells (logic/kit-assemble.js kitPack) with a white block for the flat
-   kinds; VFX-10 adds the effect strips. */
+   kinds and (VFX-10) the effect strips (art/battle/anims, battleAnims.json sprites) and the ramps, one row of 8 texels
+   each: a strip is 8 greys, and its sprite reads its grey's colour from its ramp's row (index 7, the white core, is
+   its glow). A strip's texel is a stage pixel at its depth, so its pixels are the rig pixels' size beside it. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { BATTLE_ANIMS, TYPE_GLOW, provide } from '../hooks.js';
 import { kitBlank } from '../logic/kit-pixels.js';
 import { kitPack } from '../logic/kit-assemble.js';
+import { BATTLE_ANIM_ART_DIR, battleRampColors } from '../logic/battle-anims.js';
 import { gpuTag } from '../engine/gpu-counters.js';
-import { ART_CACHE, ICON_ATLAS, artReady, makeCanvas } from '../art.js';
+import { ART_CACHE, ICON_ATLAS, artLoad, artReady, hexToRgb, makeCanvas } from '../art.js';
 import {
   LIGHT_GLSL,
   bindQuad,
   ensurePrograms,
   gpuBuffer,
+  gpuFree,
   gpuSized,
   gpuState,
   gpuTexture,
@@ -31,19 +35,27 @@ expose({
   BATTLE_FX_ATLAS_WIDTH: [() => BATTLE_FX_ATLAS_WIDTH],
   BATTLE_FX_FLOATS: [() => BATTLE_FX_FLOATS],
   BATTLE_FX_GLOW: [() => BATTLE_FX_GLOW],
+  BATTLE_FX_GROUND_PX_M: [() => BATTLE_FX_GROUND_PX_M],
   BATTLE_FX_KIND: [() => BATTLE_FX_KIND],
   BATTLE_FX_LIT: [() => BATTLE_FX_LIT],
   BATTLE_FX_ONE: [() => BATTLE_FX_ONE],
+  BATTLE_FX_RAMP: [() => BATTLE_FX_RAMP],
   BATTLE_FX_SHADERS: [() => BATTLE_FX_SHADERS],
   BATTLE_FX_UV: [() => BATTLE_FX_UV],
   STAGE_PIXELS_PER_METRE_AT_1M: [() => STAGE_PIXELS_PER_METRE_AT_1M],
+  battleFxAnimAsked: [() => battleFxAnimAsked, v => (battleFxAnimAsked = v)],
+  battleFxAnimPictures: [() => battleFxAnimPictures, v => (battleFxAnimPictures = v)],
   battleFxAtlas: [() => battleFxAtlas],
   battleFxAtlasSheet: [() => battleFxAtlasSheet, v => (battleFxAtlasSheet = v)],
+  battleFxAtlasStale: [() => battleFxAtlasStale, v => (battleFxAtlasStale = v)],
   battleFxBatch: [() => battleFxBatch],
+  battleFxHasAnim: [() => battleFxHasAnim, v => (battleFxHasAnim = v)],
   battleFxPass: [() => battleFxPass, v => ((battleFxPass = v), provide({ battleFxPass }))],
   battleFxPut: [() => battleFxPut, v => (battleFxPut = v)],
+  battleFxRampRows: [() => battleFxRampRows, v => (battleFxRampRows = v)],
   battleFxRect: [() => battleFxRect, v => (battleFxRect = v)],
   battleFxTexture: [() => battleFxTexture, v => (battleFxTexture = v)],
+  battleRampRgb: [() => battleRampRgb, v => (battleRampRgb = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battleFxPass });
@@ -54,7 +66,11 @@ const BATTLE_FX_FLOATS = 21;
 /* the kinds */
 export const BATTLE_FX_KIND = { sprite: 0, square: 1, ring: 2, beam: 3 };
 const BATTLE_FX_LIT = 1,
-  BATTLE_FX_GLOW = 2;
+  BATTLE_FX_GLOW = 2,
+  /* VFX-10: a strip coloured by a ramp; the ramp's row is the flags over 8 */
+  BATTLE_FX_RAMP = 4;
+/* VFX-10: a mark on the ground keeps the world's 32 px/m */
+const BATTLE_FX_GROUND_PX_M = 32;
 /* a stage pixel at depth z is z / 170 m (the rigs' size rule, battle-stage.js STAGE_FRAME_WIDTH and the focal length) */
 const STAGE_PIXELS_PER_METRE_AT_1M = 170;
 export const BATTLE_FX_SHADERS = {
@@ -65,27 +81,96 @@ uniform mat4 uVP;uniform float uCore;out vec2 vC;out vec2 vUV;out vec3 vW;flat o
 void main(){vec2 c=aC*2.-1.;vec3 p=iP+iA*c.x+iB*(-c.y);vW=p;vC=aC;vUV=vec2(iUV.x+aC.x*iUV.z,iUV.y+aC.y*iUV.w);vCol=iCol;vK=iK;
  gl_Position=uCore>.5&&mod(floor(iK.w/2.),2.)<.5?vec4(2.,2.,2.,1.):uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vC;in vec2 vUV;in vec3 vW;flat in vec4 vCol;flat in vec4 vK;out vec4 o;uniform sampler2D uTex;uniform float uCore;${LIGHT_GLSL}
+precision highp float;in vec2 vC;in vec2 vUV;in vec3 vW;flat in vec4 vCol;flat in vec4 vK;out vec4 o;uniform sampler2D uTex;uniform float uCore;uniform vec2 uRamp;${LIGHT_GLSL}
 float fxBayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
-void main(){int k=int(vK.x+.5);vec3 c=vCol.rgb;bool core=false;vec2 cell=gl_FragCoord.xy;
- if(k==0){vec2 ts=vec2(textureSize(uTex,0));vec4 t=texture(uTex,vUV);if(t.a<.5)discard;cell=floor(vUV*ts);core=min(t.r,min(t.g,t.b))>.75;c*=t.rgb;}
+void main(){int k=int(vK.x+.5),fl=int(vK.w+.5),gi=-1;vec3 c=vCol.rgb;bool core=false;vec2 cell=gl_FragCoord.xy;
+ /* VFX-10: a strip's grey (8 greys, 36..255) picks its colour from its ramp's row */
+ if(k==0){vec2 ts=vec2(textureSize(uTex,0));vec4 t=texture(uTex,vUV);if(t.a<.5)discard;cell=floor(vUV*ts);
+  if((fl&4)!=0){gi=clamp(int(floor((t.r*255.-32.)/32.+.5)),0,7);core=gi==7;c*=texelFetch(uTex,ivec2(uRamp)+ivec2(gi,fl>>3),0).rgb;}
+  else{core=min(t.r,min(t.g,t.b))>.75;c*=t.rgb;}}
  else if(k==2){float n=max(vK.y,1.);vec2 q=floor(vC*n);vec2 g=(q+.5)/n*2.-1.;float d=length(g);if(d>1.||d<1.-2.*max(vK.z,1.)/n)discard;cell=q;}
  else if(k==3){core=abs(vC.y*2.-1.)<.35;if(core)c=vec3(1.);}
  else core=true;
- if(fxBayer(cell)>=vCol.a)discard;
- float fl=vK.w;bool glow=mod(floor(fl/2.),2.)>.5;
+ float bv=fxBayer(cell);if(bv>=vCol.a)discard;
+ /* VFX-10: the eroding edge's texels (just under the threshold) are a rim, brighter: a strip two greys up its ramp */
+ if(vCol.a<1.&&bv>vCol.a-.19){if(gi>=0)c=vCol.rgb*texelFetch(uTex,ivec2(uRamp)+ivec2(min(gi+2,7),fl>>3),0).rgb;else c=min(c*1.4+.12,vec3(1.));}
+ bool glow=(fl&2)!=0;
  if(uCore>.5){if(!core)discard;o=vec4(fogit(c*.6,vW),0.);return;}
- if(!glow&&mod(fl,2.)>.5)c*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4+points(vW,vec3(0.,1.,0.))*.6;
+ if(!glow&&(fl&1)!=0)c*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4+points(vW,vec3(0.,1.,0.))*.6;
  o=vec4(fogit(c,vW),0.);}`,
   ],
 };
 /* the atlas: made once from icons.png when it has loaded (the sheet kept, so a new context only uploads it again) */
-const battleFxAtlas = { sheet: null, rects: null, white: null, t: null, gl: null, gen: -1, w: 1, h: 1 };
-const BATTLE_FX_ATLAS_WIDTH = 128;
+const battleFxAtlas = {
+  sheet: null,
+  rects: null,
+  white: null,
+  t: null,
+  gl: null,
+  gen: -1,
+  w: 1,
+  h: 1,
+  /* VFX-10: the strips' places ({x, y, w, h, n} by sprite id), the ramps' rows by id and where the ramp block sits;
+     the pictures and the ramps the sheet was made from, so a repainted strip (the Studio) or edited ramps make it
+     again; up: bumped each time the sheet is made, so the texture uploads it */
+  anims: {},
+  rampRow: {},
+  rampAt: [0, 0],
+  made: null,
+  up: 0,
+  tUp: -1,
+};
+/* the widest strip is 8 frames of 32 px */
+const BATTLE_FX_ATLAS_WIDTH = 260;
+/* VFX-10: the effect strips' pictures (asked for on the first call; null until every one has loaded or failed).
+   Through artLoad, so the Studio's unsaved pictures stay (it puts a repainted strip's canvas in ART_CACHE, marked
+   complete, and the atlas is made again with it) */
+let battleFxAnimAsked = false;
+function battleFxAnimPictures() {
+  const S = (BATTLE_ANIMS && BATTLE_ANIMS.sprites) || {},
+    ids = Object.keys(S),
+    path = id => `${BATTLE_ANIM_ART_DIR}${id}.png`;
+  if (!battleFxAnimAsked) {
+    battleFxAnimAsked = true;
+    artLoad(ids.map(path));
+  }
+  const out = [];
+  for (const id of ids) {
+    const im = ART_CACHE.img[path(id)];
+    if (!im) {
+      /* a sprite added since (the Studio): ask for it */
+      artLoad([path(id)]);
+      return null;
+    }
+    if (!im.complete) return null;
+    if (im.naturalWidth) out.push({ id, im, S: S[id] });
+  }
+  return out;
+}
+/* the ramps' colours (rows of 8), white for a ramp that doesn't resolve */
+function battleFxRampRows() {
+  const R = (BATTLE_ANIMS && BATTLE_ANIMS.ramps) || {},
+    pal = (typeof window !== 'undefined' && window.NW_PALETTE && window.NW_PALETTE.ramps) || {},
+    white = (BATTLE_ANIMS && BATTLE_ANIMS.colors && BATTLE_ANIMS.colors.white) || [255, 255, 255];
+  return Object.keys(R).map(id => {
+    const C = battleRampColors(R[id], pal, white, TYPE_GLOW && TYPE_GLOW[id]);
+    return { id, rgb: (C ? C.steps : Array(8).fill(white)).map(h => hexToRgb(h)) };
+  });
+}
+/* whether the sheet must be made again: the strips loaded since, a strip repainted, the ramps edited */
+function battleFxAtlasStale(A, pics) {
+  const M = A.made;
+  if (!M) return true;
+  if (pics && !M.pics) return true;
+  if (pics && (pics.length !== M.pics.length || pics.some((p, i) => p.im !== M.pics[i].im || p.S !== M.pics[i].S)))
+    return true;
+  return !!(BATTLE_ANIMS && BATTLE_ANIMS.ramps !== M.ramps);
+}
 function battleFxAtlasSheet() {
   const A = battleFxAtlas;
-  if (A.sheet) return A;
-  if (typeof ARTMAN === 'undefined' || !ARTMAN.icons || !artReady(ICON_ATLAS)) return null;
+  if (typeof ARTMAN === 'undefined' || !ARTMAN.icons || !artReady(ICON_ATLAS)) return A.sheet ? A : null;
+  const pics0 = battleFxAnimPictures();
+  if (A.sheet && !battleFxAtlasStale(A, pics0)) return A;
   const im = ART_CACHE.img[ICON_ATLAS],
     cv = makeCanvas(im.naturalWidth || im.width, im.naturalHeight || im.height),
     x = cv.getContext('2d');
@@ -106,23 +191,69 @@ function battleFxAtlasSheet() {
     white = kitBlank(4, 4);
   white.data.fill(255);
   pics.push(white);
+  /* VFX-10: the strips after the icons, then the ramps' block (8 texels a row) */
+  const strips = pics0 || [],
+    ramps = battleFxRampRows(),
+    block = kitBlank(8, Math.max(1, ramps.length));
+  for (const { im } of strips) {
+    const c = makeCanvas(im.naturalWidth, im.naturalHeight),
+      cx = c.getContext('2d');
+    cx.drawImage(im, 0, 0);
+    const d = cx.getImageData(0, 0, c.width, c.height),
+      p = kitBlank(c.width, c.height);
+    p.data.set(d.data);
+    pics.push(p);
+  }
+  ramps.forEach((r, j) =>
+    r.rgb.forEach((c, i) => {
+      const o = (j * 8 + i) * 4;
+      block.data[o] = c[0];
+      block.data[o + 1] = c[1];
+      block.data[o + 2] = c[2];
+      block.data[o + 3] = 255;
+    })
+  );
+  pics.push(block);
   const { sheet, spots } = kitPack(pics, BATTLE_FX_ATLAS_WIDTH);
   A.rects = {};
   keys.forEach((k, i) => (A.rects[k] = [spots[i][0], spots[i][1], pics[i].width, pics[i].height]));
-  const ws = spots[spots.length - 1];
+  const ws = spots[keys.length];
   /* the white block's middle, so a flat kind's texture reads are all white */
   A.white = [(ws[0] + 1) / sheet.width, (ws[1] + 1) / sheet.height, 2 / sheet.width, 2 / sheet.height];
+  A.anims = {};
+  strips.forEach(({ id, S }, i) => {
+    const at = spots[keys.length + 1 + i];
+    A.anims[id] = { x: at[0], y: at[1], w: S.cell[0], h: S.cell[1], n: S.frames, S };
+  });
+  A.rampRow = {};
+  ramps.forEach((r, j) => (A.rampRow[r.id] = j));
+  A.rampAt = spots[spots.length - 1];
+  A.made = { pics: pics0, ramps: BATTLE_ANIMS && BATTLE_ANIMS.ramps };
   A.sheet = sheet;
   A.w = sheet.width;
   A.h = sheet.height;
+  A.up++;
   return A;
+}
+/* VFX-10: whether a strip is in the atlas (until the strips have loaded the stage keeps the old icons) */
+export function battleFxHasAnim(id) {
+  const A = battleFxAtlasSheet();
+  return !!(A && A.anims[id]);
+}
+/* VFX-10: a ramp's 8 colours as [r, g, b] (0-255), index 7 the white core, for whoever colours a strip of its own
+   (VFX-15's scars); null for an id with no ramp */
+function battleRampRgb(id) {
+  const r = battleFxRampRows().find(x => x.id === id);
+  return r ? r.rgb : null;
 }
 /* the atlas texture, made again on a new context (gpuState.gen) */
 function battleFxTexture() {
   const A = battleFxAtlasSheet();
   if (!A) return null;
   const gl = gpuState.gl;
-  if (A.t && A.gl === gl && A.gen === gpuState.gen) return A;
+  if (A.t && A.gl === gl && A.gen === gpuState.gen && A.tUp === A.up) return A;
+  /* a new context, or the sheet made again (VFX-10: the strips loaded, a strip repainted): a texture of its size */
+  if (A.t && A.gl === gl && A.gen === gpuState.gen) gpuFree(A.t);
   A.t = gpuTexture('other', A.w * A.h * 4);
   /* on unit 0, which the pass uses (another unit may hold a texture another pass counts on) */
   gl.activeTexture(gl.TEXTURE0);
@@ -131,6 +262,7 @@ function battleFxTexture() {
   setTextureParams({});
   A.gl = gl;
   A.gen = gpuState.gen;
+  A.tUp = A.up;
   return A;
 }
 /* an icon's rect in the atlas (null for a key it hasn't) */
@@ -187,14 +319,56 @@ function battleFxPass(C, F, X) {
     E = C.eye,
     W = C.fwd,
     B = battleFxBatch,
-    S = STAGE_PIXELS_PER_METRE_AT_1M;
+    S = STAGE_PIXELS_PER_METRE_AT_1M,
+    S0 = STAGE_PIXELS_PER_METRE_AT_1M;
   B.n = 0;
   B.glow = 0;
   for (const q of F) {
     const fl = (q.glow ? BATTLE_FX_GLOW : 0) | (q.lit === false ? 0 : BATTLE_FX_LIT),
       a = Math.min(1, Math.max(0, q.a));
     if (a <= 0.01) continue;
-    if (q.k === BATTLE_FX_KIND.sprite) {
+    if (q.k === BATTLE_FX_KIND.sprite && q.anim && A.anims[q.anim]) {
+      /* VFX-10: a strip's frame, coloured by its ramp's row, its anchor on its place: a texel is a stage pixel at its
+         depth (the rig pixels' size beside it), or on the ground the world's 32 px/m, times a whole number */
+      const N = A.anims[q.anim],
+        S = N.S,
+        z = Math.max(0.3, (q.x - E[0]) * W[0] + (q.y - E[1]) * W[1] + (q.z - E[2]) * W[2]),
+        k = Math.max(1, Math.round(q.scale || 1)),
+        px = S.ground ? k / BATTLE_FX_GROUND_PX_M : (z / S0) * k,
+        f = Math.min(N.n - 1, Math.max(0, q.f | 0)),
+        hw = (N.w * px) / 2,
+        hh = (N.h * px) / 2,
+        ox = (N.w / 2 - S.anchor[0] - 0.5) * px,
+        oy = (S.anchor[1] + 0.5 - N.h / 2) * px,
+        row = A.rampRow[q.ramp] ?? A.rampRow.None ?? 0,
+        fr = fl | BATTLE_FX_RAMP | (row << 3),
+        uv = BATTLE_FX_UV;
+      uv[0] = (N.x + f * N.w) / A.w;
+      uv[1] = N.y / A.h;
+      uv[2] = N.w / A.w;
+      uv[3] = N.h / A.h;
+      /* on the ground: flat, its top row the far side */
+      if (S.ground) battleFxPut(q.x + ox, q.y + 0.02, q.z - oy, hw, 0, 0, 0, 0, -hh, uv, BATTLE_FX_ONE, a, 0, 1, 0, fr);
+      else
+        battleFxPut(
+          q.x + R[0] * ox,
+          q.y + R[1] * ox + oy,
+          q.z + R[2] * ox,
+          R[0] * hw,
+          R[1] * hw,
+          R[2] * hw,
+          0,
+          hh,
+          0,
+          uv,
+          BATTLE_FX_ONE,
+          a,
+          0,
+          1,
+          0,
+          fr
+        );
+    } else if (q.k === BATTLE_FX_KIND.sprite) {
       const r = A.rects[q.key];
       if (!r) continue;
       const hw = (r[2] * q.s) / 2,
@@ -268,6 +442,7 @@ function battleFxPass(C, F, X) {
     p.bfx = { vao, buf };
   }
   gl.uniform1i(p.U.uTex, 0);
+  if (p.U.uRamp) gl.uniform2f(p.U.uRamp, A.rampAt[0], A.rampAt[1]);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, A.t);
   gl.bindBuffer(gl.ARRAY_BUFFER, p.bfx.buf);

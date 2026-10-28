@@ -1698,6 +1698,8 @@ function burst(P, t, n = 10, sp = 2.2, k = 1) {
       ay: -5,
       life: 460 + fxRandom() * 300,
       spr: key,
+      /* VFX-10: drawn as a strip in its type's ramp */
+      ramp: t,
       k,
       glow: GLOWING_PARTICLES[key],
     });

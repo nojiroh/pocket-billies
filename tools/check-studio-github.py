@@ -2525,6 +2525,43 @@ def art_browser_steps(pg, errs):
     print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, the Report, read-only legacy, Used by (a Perk’s picture too, with Edit icon), Edit pixels and its undo, Ctrl K', flush=True)
 
 
+def battle_anim_art_steps(pg, errs):
+    """VFX-10: a battle effect strip (art/battle/anims) in the Art browser: it plays as a strip, Used by names
+    battleAnims, the builder is named, a preview per ramp; Edit pixels round trip: a grey painted on it shows in every
+    ramp's preview in that ramp's colour, the game's picture cache gets the unsaved canvas (so the battle draws it),
+    and undo takes it back."""
+    path = 'art/battle/anims/spark.png'
+    pg.evaluate(f"artBrowser.q = ''; artBrowserShow({json.dumps(path)})")
+    pg.wait_for_selector('.ab-side canvas.sp-cv')
+    end = time.time() + 30
+    while time.time() < end and 'battleAnims' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'battleAnims' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('battle anim art: Used by does not name battleAnims')
+    if 'build-battle-anims.py' not in pg.evaluate("document.querySelector('.ab-side').textContent"): errs.append('battle anim art: the builder is not named')
+    ramps = pg.evaluate("Object.keys(studioState.D.battleAnims.ramps)")
+    shown = pg.evaluate("[...document.querySelectorAll('.ab-ramps canvas')].map(c => c.dataset.ramp)")
+    if shown != ramps: errs.append(f'battle anim art: ramp previews {shown}, the data has {ramps}')
+    pg.evaluate(f"ACTIONS.abEdit({{ p: {json.dumps(path)} }})")
+    pg.wait_for_selector('#abPeStage .pc-art'); time.sleep(0.5)
+    h0 = pg.evaluate(f"{PIXELS}({json.dumps(path)})")
+    pg.locator('#abPeStage .pc-art').scroll_into_view_if_needed()
+    box = pg.locator('#abPeStage .pc-art').bounding_box()
+    Z = pg.evaluate('artBrowser.pc.zoom')
+    pg.evaluate("pixelCanvasTool(artBrowser.pc, 'pen'); pixelCanvasColor(artBrowser.pc, '#E0E0E0')")
+    pg.mouse.click(box['x'] + Z / 2, box['y'] + Z / 2)
+    if pg.evaluate(f"{PIXEL_AT}({json.dumps(path)}, 0, 0)") != [224, 224, 224, 255]: errs.append('battle anim art: Edit pixels: a click did not paint grey 224')
+    if not pg.evaluate(f"studioState.artDirty.has({json.dumps(path)})"): errs.append('battle anim art: the strip is not marked to save')
+    pg.evaluate(f"ACTIONS.abEditDone(); artBrowserShow({json.dumps(path)})")
+    time.sleep(1.0)
+    got = pg.evaluate("""(() => { const c = document.querySelector('.ab-ramps canvas[data-ramp="Fire"]'); return c && c.width ? Array.from(c.getContext('2d').getImageData(0, 0, 1, 1).data) : null })()""")
+    want = pg.evaluate("(() => { const h = NW_PALETTE.ramps.ember[6]; return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).concat(255) })()")
+    if got != want: errs.append(f'battle anim art: the Fire preview shows the painted grey as {got}, ember step 6 is {want}')
+    if not pg.evaluate("ART_CACHE.img['battle/anims/spark.png'] === studioState.artDirty.get('art/battle/anims/spark.png')"): errs.append("battle anim art: the game's picture cache doesn't hold the repainted strip")
+    pg.evaluate('undo()'); time.sleep(0.3)
+    if pg.evaluate(f"{PIXELS}({json.dumps(path)})") != h0: errs.append('battle anim art: undo did not take the stroke back')
+    pg.evaluate(f"studioState.artDirty.delete({json.dumps(path)}); delete ART_CACHE.img['battle/anims/spark.png']; updateTopBar()")
+    print(f'battle anim art: a strip plays, Used by battleAnims, {len(shown)} ramp previews; a painted grey shows in the Fire ramp and in the game\'s cache; undo', flush=True)
+
+
 def tile_set_steps(pg, errs):
     """Studio art track SA-2a: the ground tile set. The tiles47 folder opens it; a pen click on tile 1 of a kind whose
     Lite tiles are made from its set paints the tile, makes its Lite tile again and redraws the preview, all one step of
@@ -2774,6 +2811,7 @@ STEPS = [
     ('art_browser', art_browser_steps),
     ('tile_set', tile_set_steps),
     ('strips', strips_steps),
+    ('battle_anim_art', battle_anim_art_steps),
     ('robot_art', robot_art_steps),
     ('icons', icons_steps),
     ('atlas', atlas_steps),

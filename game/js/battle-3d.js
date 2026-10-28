@@ -22,6 +22,7 @@ import {
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
+import { battleAnimFrame, battleIconSprite } from './logic/battle-anims.js';
 import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
@@ -56,7 +57,7 @@ import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { BATTLE_FX_KIND } from './walk/battle-fx.js';
+import { BATTLE_FX_KIND, battleFxHasAnim } from './walk/battle-fx.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -296,10 +297,10 @@ function battle3dFrame() {
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
-      /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
-      hit: battle3dHit(B.s, i),
       /* style track SY-6: a coated Billie's foil, on the scene's clock */
       foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
+      /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
+      hit: battle3dHit(B.s, i),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -317,8 +318,8 @@ function battle3dFrame() {
         fade: g.fade * B.s.a,
         glow: g.glow,
         ghost: true,
-        hit: null,
         foil: null,
+        hit: null,
       });
     }
     /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
@@ -406,6 +407,18 @@ function battle3dFrame() {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
+      /* VFX-10: an icon with a strip like it (battleAnims.json iconSprites) is drawn as that strip, in its type's ramp
+         (else the icon's), its frame stepped on the stage clock; a strip that plays once carries its own fade (its
+         last frames erode), so only a looping one also erodes by its age */
+      const I = battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
+      if (I && battleFxHasAnim(I.sprite)) {
+        const S = BATTLE_ANIMS.sprites[I.sprite];
+        q.anim = I.sprite;
+        q.ramp = I.ramp;
+        q.f = battleAnimFrame(S, p.age, p.life);
+        q.scale = p.k || 1;
+        if (!S.loop) q.a = p.twinkle ? clamp(0.5 + 0.5 * Math.sin(p.age / 120), 0, 1) : 1;
+      }
     } else if (p.ring) {
       q.k = BATTLE_FX_KIND.ring;
       q.r = (p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) / 30;

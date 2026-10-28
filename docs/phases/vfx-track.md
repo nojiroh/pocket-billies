@@ -615,11 +615,12 @@ session (2026-10-28):
   lower middle of the stage from 0 to 1300 ms; the VS splash fits around it.
 - **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
   same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
-  SY-6 landed on track/style and VFX-9 on track/vfx the same day; VFX-10's merge of main (2026-10-28) joined them:
+  SY-6 landed on track/style and VFX-9 on track/vfx the same day; main's merge of track/vfx (#312, with a test) joined
+  them, and VFX-10 took that resolution:
   `uniform vec4 uGhost,uHit;` and `uniform vec4 uFoil;`, then, after the light and vRip, SY-6's `if(uFoil.x>0.){...}`
   block, then `col=mix(col,uHit.rgb,uHit.a);` (a hit's flash reads over the sheen), then the final fogit. A rig item
   with `hit`, or a coated one whose band is crossing it, draws on its own on the plain sprite program
-  (walk/sprites.js drawFoilRecord, which sets and clears both). spriteI carries the text but sets neither. `uHit` shows
+  (walk/sprites.js: drawFoilRecord for a crossing foil, else the plain record; uHit cleared after). spriteI carries the text but sets neither. `uHit` shows
   the same sprite flashes rigTint baked in before (send-out, recall, heal, the limiter's held flash), under the same
   settings: none of them was gated by Reduced motion, and VFX-9 doesn't change that (VFX-13/14 can).
 - **battleStageFlash's order** (SY-1 and SY-8 both on main now): `F = flashFor(col, a, !!reducedMotion, flashesOff())`

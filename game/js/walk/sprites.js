@@ -531,15 +531,14 @@ function flushSpriteRun(ip) {
 /* a picture whose blades or clock hands are drawn right after it */
 const spriteHasParts = it => !!(it.M && (it.M.blades || (it.M.hands && !it.far && !it.layer)));
 /* style track SY-6: a coated Billie while its foil's band crosses it (item.foil, logic/coat-foil.js) is drawn on its own
-   on the sprite program, with uFoil, which goes back to 0 after it; between sweeps it stays in its run. VFX-9: a rig
-   with a hit flash is drawn here too, foil or not (uHit, also back to 0 after it) */
+   on the sprite program, with uFoil, which goes back to 0 after it; between sweeps it stays in its run */
 function drawFoilRecord(p, r) {
   const gl = gpuState.gl,
     U = p.U;
   setSpriteRecord(p, r);
-  if (U.uFoil && r.it.foil) gl.uniform4fv(U.uFoil, r.it.foil);
+  if (U.uFoil) gl.uniform4fv(U.uFoil, r.it.foil);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-  if (U.uFoil && r.it.foil) gl.uniform4f(U.uFoil, 0, 0, 0, 0);
+  if (U.uFoil) gl.uniform4f(U.uFoil, 0, 0, 0, 0);
   if (r.dz) gl.uniform1f(U.uDZ, 0);
   clearSpriteHit(p, r);
 }
@@ -562,14 +561,19 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
     const r = spriteRecordAt(i),
       it = r.it,
       tag = it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
-    /* VFX-9: a flashing rig leaves the run for the plain program, which has uHit; SY-6: so does a coated one whose
-       foil band is crossing it (uFoil) */
-    if (r.mode === 'quad' && (r.hit || (it.foil && !r.crossOn))) {
+    if (r.mode === 'quad' && ((it.foil && !r.crossOn) || r.hit)) {
+      /* SY-6's coat foil and VFX-9's hit flash (uHit) leave the run for the plain program */
       flushSpriteRun(ip);
       if (R.on) gl.useProgram(p.p);
       R.on = false;
       gpuTag(tag);
-      drawFoilRecord(p, r);
+      if (it.foil && !r.crossOn) drawFoilRecord(p, r);
+      else {
+        setSpriteRecord(p, r);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        if (r.dz) gl.uniform1f(p.U.uDZ, 0);
+        clearSpriteHit(p, r);
+      }
     } else if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
       if (!R.n) {
@@ -635,7 +639,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       gpuTag(it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0);
       const mode = spriteRecord(it, F, r);
       if (mode === 'wave') drawSpriteWave(p, r);
-      else if (mode === 'quad' && (r.hit || (it.foil && !r.crossOn))) drawFoilRecord(p, r);
+      else if (mode === 'quad' && it.foil && !r.crossOn) drawFoilRecord(p, r);
       else if (mode === 'quad') {
         setSpriteRecord(p, r);
         gl.drawArrays(gl.TRIANGLES, 0, 6);

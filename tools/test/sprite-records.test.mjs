@@ -392,6 +392,47 @@ for (const instanced of [false, true])
 
 // style track SY-6: a coated Billie while its foil's band crosses it (item.foil) is drawn on its own on the sprite
 // program with uFoil, put back to 0 right after; in both passes, the instanced one leaving its run for it
+// the style and VFX tracks met (SY-6's foil, VFX-9's uHit): a coated Billie that is also flashing is drawn once with
+// both, and uHit is put back to 0 before the next picture, in both passes
+for (const inst of [false, true])
+  test(`a coated Billie's hit flash${inst ? ' as instances' : ''}: uFoil and uHit on one draw, uHit back to 0 after`, () => {
+    const gl = inst ? setupInstanced() : setup(),
+      im = pic(32, 48),
+      man = (id, x, foil, hit) => ({
+        k: 'npc',
+        id,
+        im,
+        x,
+        y: 0,
+        z: 6,
+        mpp: 1 / 32,
+        ox: -16,
+        oy: -48,
+        w: 32,
+        h: 48,
+        flip: 1,
+        person: true,
+        foil,
+        hit,
+      }),
+      F = [0.55, 0.7, 0.2, 0.3],
+      H = [1, 1, 1, 0.5];
+    G.drawSprites(camera(), [man('a', 1, F, H), man('b', 2, null, null)], X, [], [], 32);
+    const c = gl.calls.map(q => q.map(round).join(' ')),
+      hitOn = c.indexOf('uniform4fv uHit ' + H.join(',')),
+      foilOn = c.indexOf('uniform4fv uFoil ' + F.join(',')),
+      hitOff = c.indexOf('uniform4f uHit 0 0 0 0');
+    assert.ok(hitOn >= 0 && foilOn >= 0, 'uHit and uFoil set');
+    assert.equal(
+      c.slice(Math.max(hitOn, foilOn), hitOff).filter(q => q.startsWith('drawArrays ')).length,
+      1,
+      'one draw with both'
+    );
+    assert.ok(hitOff > Math.max(hitOn, foilOn), 'uHit put back');
+    const next = c.findIndex((q, j) => j > hitOff && q.startsWith('drawArrays'));
+    assert.ok(next > hitOff, 'the next picture is drawn after uHit is back to 0');
+  });
+
 for (const inst of [false, true])
   test(`the coat's foil${inst ? ' as instances' : ''}: the Billie drawn alone with uFoil, then uFoil back to 0`, () => {
     const gl = inst ? setupInstanced() : setup(),

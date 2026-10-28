@@ -4,6 +4,7 @@
 // else once it has loaded. A slot no module of the page fills stays undefined (typeof checks still work).
 export let ALTERNATE_PROPS,
   BATTLE_ANIMS,
+  BATTLE_ANIM_ART_DIR,
   BATTLE_STAGES,
   BODY_TEMPLATES,
   BUILDING_SHADERS,
@@ -518,6 +519,7 @@ export let ALTERNATE_PROPS,
 const set = {
   ALTERNATE_PROPS: v => (ALTERNATE_PROPS = v),
   BATTLE_ANIMS: v => (BATTLE_ANIMS = v),
+  BATTLE_ANIM_ART_DIR: v => (BATTLE_ANIM_ART_DIR = v),
   BATTLE_STAGES: v => (BATTLE_STAGES = v),
   BODY_TEMPLATES: v => (BODY_TEMPLATES = v),
   BUILDING_SHADERS: v => (BUILDING_SHADERS = v),
