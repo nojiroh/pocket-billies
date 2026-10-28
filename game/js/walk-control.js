@@ -8,6 +8,7 @@ import { $, clamp } from './util.js';
 import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, trainersAt } from './game-data.js';
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
+import { faceToward } from './logic/person-view.js';
 import { runArrive, runMapNode } from './logic/run-map.js';
 import { runWorldData } from './logic/run-world-data.js';
 import { startWild } from './logic/battle-engine.js';
@@ -17,7 +18,6 @@ import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
 import {
   closedText,
-  directionOf,
   doorLinkOf,
   doorOf,
   isOpenNow,
@@ -304,7 +304,8 @@ export function leaveRoom() {
     P.z = fr[1];
     P.route = null;
     P.goal = null;
-    P.dir = Math.abs(out[0]) > Math.abs(out[1]) ? (out[0] > 0 ? 'right' : 'left') : out[1] < 0 ? 'down' : 'up';
+    /* facing out of the door (CH-1: a heading, logic/person-view.js, so you face out whichever way the camera looks) */
+    faceToward(P, out[0], out[1]);
   }
   const B = mapById(I.base),
     o = (B && B.baseOff) || [0, 0];
@@ -497,10 +498,11 @@ export function walkState() {
       if (T.route && T.route.at) {
         const o = sc.baseOff || [0, 0],
           at = /** @type {[number, number]} */ ([T.route.at[0] + o[0], T.route.at[1] + o[1]]),
-          look = /** @type {[number, number]} */ ([T.route.look[0] + o[0], T.route.look[1] + o[1]]),
-          dir = directionOf(look[0] - at[0], look[1] - at[1]);
+          look = /** @type {[number, number]} */ ([T.route.look[0] + o[0], T.route.look[1] + o[1]]);
         walkView.npcLook[T.id] = look;
-        const me = { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit: null, dir, route: true, at };
+        /** @type {any} */
+        const me = { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit: null, route: true, at };
+        faceToward(me, look[0] - at[0], look[1] - at[1]);
         /* RT-2: a pair's second trainer stands beside the first; talking to either is talking to the pair */
         if (!T.mate || !T.route.mate) return me;
         const mate = {
@@ -517,16 +519,19 @@ export function walkState() {
       if (A) {
         const o = sc.baseOff || [0, 0],
           at = /** @type {[number, number]} */ ([A.leader[0] + o[0], A.leader[1] + o[1]]);
-        return {
+        /** @type {any} */
+        const L = {
           who: T.who,
           id: T.id,
           done: !!saveData.flags[T.id],
           exit: null,
-          dir: directionOf(A.from[0] - A.leader[0], A.from[1] - A.leader[1]),
           boss: T.runFoe === 'boss',
           at,
           arena: true,
         };
+        /* CH-1: a heading (logic/person-view.js): seen facing your way, whichever way the camera looks */
+        faceToward(L, A.from[0] - A.leader[0], A.from[1] - A.leader[1]);
+        return L;
       }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     })
@@ -552,17 +557,19 @@ export function walkState() {
     /* RT-3: a set piece's people (the Bureau checkpoint's agent), facing the road; tapped, piecePersonTalk */
     if (base && bid === mapIdAt(v.node))
       (base.pieces || []).forEach((/** @type {any} */ L, /** @type {number} */ n) =>
-        (L.people || []).forEach((/** @type {any} */ q, /** @type {number} */ m) =>
-          v.npcs.push({
+        (L.people || []).forEach((/** @type {any} */ q, /** @type {number} */ m) => {
+          /** @type {any} */
+          const r = {
             who: q.who,
             id: `_piece:${n}:${m}`,
             piece: q,
             done: true,
             exit: null,
-            dir: directionOf(Math.cos((q.face * Math.PI) / 180), Math.sin((q.face * Math.PI) / 180)),
             at: [q.x + o[0], q.z + o[1]],
-          })
-        )
+          };
+          faceToward(r, Math.cos((q.face * Math.PI) / 180), Math.sin((q.face * Math.PI) / 180));
+          v.npcs.push(r);
+        })
       );
   }
   v.who = 'me';

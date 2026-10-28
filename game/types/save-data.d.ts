@@ -350,6 +350,9 @@ export interface Run {
   /** RL-12: each run shop's Perk for a day, by '<map node>:<day>' ('' once bought), drawn when the shop first
       opens that day (logic/perks.js perkShelf) */
   shelf: Record<string, string>;
+  /** PK-1: the Perks' counters (n, for `every`), growth (v, for `grow`) and once-a-run marks (used), by
+      '<source>/<row>' (logic/effects.js fxKey); missing until a row keeps state, and missing reads as empty */
+  perkState?: Record<string, { n?: number; v?: number; used?: 1 }>;
   /** the hub's working fields as the run started */
   start: RunStart;
   /** counters, so a resumed run carries on its random streams and ids */

@@ -132,11 +132,23 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
     PENDING, FILED, VOID; the owner's to edit), `forms` (form numbers for events: "Form 7B", ...).
   - `pb-stamp`: a word in a rough red border, slammed on at a small slant with UI-16b's stamp motion, a thunk (a
     placeholder sound in the sound track's set). In the gallery in every palette.
-- **SY-4** case files: Bureau events (`bureau: 1`, or an event in a Bureau set piece) open in a manila-folder sheet:
+- **SY-4** case files. Done 2026-10-28 on `track/style` (built as below; events.json `bureau: 1` on nine events, `redact`
+  words, `form` where the intro names its form, an option's `stamp`; logic/case-file.js; `pb-typed`; css/case-file.css.
+  The Bureau set piece needs no code: its event, the checkpoint, is marked. The bars lift when you choose: the intro
+  stays on file above the script's lines, its bars lifted. Unless an option names its stamp, the last option, the one
+  that walks away, is DENIED and any other is FILED):
+  Bureau events (`bureau: 1`, or an event in a Bureau set piece) open in a manila-folder sheet:
   the form number, the emblem, the body typed in line by line (Oxanium, 20 ms a letter, a tap shows it all).
   **Redaction bars** cover flavour words only and lift when you choose; costs and outcomes are never hidden (verify in
   `encChoose` what each choice shows today). The event's result is stamped (FILED, DENIED).
-- **SY-5** the Bureau in battle:
+- **SY-5** the Bureau in battle. Done 2026-10-28 on `track/style` (built as below, with UI-16a/b merged in for their
+  plates; logic/bureau-battle.js, battle.js "THE BUREAU IN BATTLE", css/bureau-battle.css; bosses.json `faction`,
+  factions.json `look.notice` and `look.property`. Who fights for the Bureau: a bot whose build is one of its bots, or
+  a boss whose `faction` is `bureau`. RETRIEVED only when a Bureau bot's own hit (or a spread hit riding on its move)
+  knocks yours out, never a burn, the stones or a delayed hit. The win's DENIED replaces a knockout's stamp; against the
+  boss the win line's PENDING is on the sheet after the battle, a screen of its own. The join intro is 2,200 ms (its
+  bots lock at 1,300), not 900: the notice is gone by the lock. The notice is stamped FILED. Stamps land on a paper slip
+  so the red reads on any stage):
   - **Stamps:** RETRIEVED when a Bureau bot knocks out one of yours; VOID when you knock out a Bureau bot; DENIED on
     your win; PENDING over the Retrieval Unit's win line. One stamp per event, never two at once.
   - **Notice of Retrieval:** during the join intro (battle-stage.js 1808), a form slides up listing the four bots as
@@ -144,17 +156,68 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
     Shares the boss banner with UI-17 and RL-14b.
   - **ID plates:** a Bureau bot's plate is form paper with a serial number (from the bot's id) and "Property of the
     Bureau" in red; after UI-14b's plates. Your own bots, later, keep the plain plate.
-- **SY-6** the coat's foil in the world: the UI track's prism foil, carried onto the Billie in battle and on the maps.
+- **SY-6** the coat's foil in the world. Done 2026-10-28 on `track/style` (logic/coat-foil.js, the sprite shader's
+  `uFoil`, walk/sprites.js `drawFoilRecord`; set on the items in world-billies.js `worldBillyItem` and battle-3d.js
+  `battle3dFrame`, not in walk/sprites.js. The instanced program gets the same text but never sets `uFoil`: a coated
+  Billie leaves its run only while its band crosses it (0.7 s of every 3.5 s). "Quality 2 and up" exists only in
+  battle (`battleStage.q.lvl`); on the maps the foil is off with Graphics Off. A regional form's coat has no foil. The
+  brightness step is 0.3 (lit-colour luma). UI-17's menu foil isn't built: this goes first, so UI-17 matches it.
+  Graphics bench before and after is the owner's, on the phone (the bench is never run headless)):
+  the UI track's prism foil, carried onto the Billie in battle and on the maps.
   A sheen term in the sprite shader (walk-shaders.js 181 and the instanced 511): a band sweeping across the sprite
   every 3-4 s on the 24 fps grid, Bayer-dithered edges, only on pixels above a brightness step, hue shifted from the
   coat's own colours. A `uFoil` uniform set in walk/sprites.js from the Billie's coat; off at quality 2 and up, under
   Reduced motion and with Flashes off. Graphics bench before and after.
-- **SY-7** the Bureau in the world: red tape on `bureau_barrier` and `bureau_crate`, the emblem on the checkpoint's
-  sign, loose forms blowing past near Bureau places (an ambient-life kind with the `fly` flag). Flat props stay flat
-  (CLAUDE.md). Art from the Studio.
-- **SY-8** tuning and docs: Studio dials (stamp size and slant, the roll's time, the pop's sizes, the foil's speed and
+- **SY-7** the Bureau in the world. Done 2026-10-28 on `track/style` (built in tools/build-props-routes.py, the
+  props' own build script, so the art stays editable in the Studio: red tape layers on both models; the checkpoint had
+  a plain `signpost`, so the emblem went on a new low-poly `bureau_sign` as a fixed decal made from art/ui/bureau.svg
+  (scene/next/decals/bureau_emblem.png); the forms are ambient-life kind `form` with `fly` and a new `drift` flag
+  (low, sideways, never walks, rustles), art/scene/life/form.png from tools/build-bureau-forms.py, in the checkpoint's
+  and the scrap heap's `life`; MAPGEN_VERSION 25 at SY-7, 26 after main's WM-6 took 25): red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
+  checkpoint's sign, loose forms blowing past near Bureau places (an ambient-life kind with the `fly` flag). Flat
+  props stay flat (CLAUDE.md). Art from the Studio.
+- **SY-8** tuning and docs. Done 2026-10-28 on `track/style`; **the track is done** (built as below: the dials are
+  uiTheme.json `style`, the Studio's UI section, group Style; logic/style-dials.js; the theme sheet writes them as
+  `--stamp-scale`, `--stamp-slant`, `--hp-roll`, `--pop-min`, `--pop-max`, `--foil-*`; theme-sheet.js `styleDials()`
+  reads them for battle.js and the foil, at most twice a second. The debug log's line is `state.style`: the state now
+  and, per "flashes on/off, full/calm/reduced" state that ran, counts of flashes shown, held to 15% and skipped, stamps,
+  pops, rolls and foil frames. Every default is the number SY-2 to SY-6 shipped, so nothing looks different until a
+  dial moves): Studio dials (stamp size and slant, the roll's time, the pop's sizes, the foil's speed and
   width), a debug-log line with the Flashes and Animation states that ran (never save data), HANDOFF. Tag
   `style-done`.
+
+## Decided for the owner, to review (SY-1 to SY-8, in one place)
+Every step ran without waiting (the owner, 2026-10-27). Each choice below is in that step's HANDOFF entry too.
+- **SY-1:** a bright flash with Flashes off keeps its colour, held to 15% (the plan said "drops white to the
+  palette's surface"); a dark flash (the faint's deep red) stays as it is.
+- **SY-2:** no beat added before a faint (it already waits for its own event; "Ask me before" 6); say if you want
+  150-250 ms. Sizes replace the kind's size (a small crit shows small, in the crit's colour). Status damage is sized
+  too. A heal's plate number rolls; its "+N" pop keeps its fixed size.
+- **SY-3:** the emblem's drawing (a draft; repaint in the Studio's icon editor). Form numbers "Form 7B", "Form 12-C",
+  "Form 4A-4", "Form 31", "Form 9-Lost", "Form 0" ("Ask me before" 2). Stamp words keyed by moment. The thunk is a
+  fifth UI sound (music.json `ui.sounds.stamp`, a placeholder). No Studio card for the Bureau's look (still not added:
+  see SY-8).
+- **SY-4:** which nine events are the Bureau's (`bureau` in events.json; Form 27-B is in). The redaction words. The
+  stamp rule (the last option DENIED, any other FILED, unless an option names its own). Form 27-B, 9-C and 9-G are
+  events' own `form`. Bars lift when the intro shows again on file (a tap lifts one early). Buttons work while it
+  types. The stamp sits under the summary. The manila colours are the file's own tokens. The lines are in Oxanium
+  in every look.
+- **SY-5:** UI-16a/b merged into `track/style` (so #289 carries them). The notice's stamp is FILED. RETRIEVED only on a
+  Bureau bot's own hit. The boss: DENIED in battle, PENDING on its sheet after. Stamps land on a paper slip. Serial
+  "No. NNNN-XX". The plate's paper is the case files' tokens. No gallery section for the plate and notice yet (UI-18).
+- **SY-6:** maps: foil off with Graphics Off (they have no quality level). Regional forms' coats have no foil.
+  Brightness step 0.3, sweep 3.5 s / 0.7 s, band along x + .6 y, hue turn per coat from a hash of its id, lift x1.25
+  + .06 at 0.55. A foiled Billie leaves the instanced run while its band crosses. Reflections get no foil.
+- **SY-7:** a new prop `bureau_sign` for the checkpoint (not the shared signpost). The tape is the scenery's red
+  #DE4048. Forms also in the scrap heap. A new `drift` flag; size 0.95, lift 1.6 m. MAPGEN_VERSION 25 (26 since SY-8's merge of main, where WM-6 had taken 25). The emblem
+  decal is made from art/ui/bureau.svg by the build script (rerun it after repainting).
+- **SY-8:** the dials live in uiTheme.json `style` (the UI section's Style group), not in factions.json or engine.json,
+  so palettes and presets can set them and the Studio's live preview shows them. Stamp size is a multiplier (x1) and
+  slant is degrees (8) that scales each page's own tilt (-7 and -8 stay apart). The roll dial times the fill's move
+  too, so number and bar land together. The foil dials are its period, sweep time and band half width; strength,
+  brightness step and hue stay in code. Pop sizes are the smallest and largest (a KO is the largest). The log counts
+  foil per frame drawn (a number that grows fast, but cheap). No Studio card for the Bureau's words and forms (edit
+  factions.json `bureau.look`); a small one would fit the factions' own editor when there is one.
 
 Optional, only if the owner asks (see "Ask me before" 4): **SY-9 Laminated**, a rarer finish, a second sheen on any
 coat, given by the Bureau (a field-lab event, a Showcase prize), saved as `Billy.finish`, shared by the Showcase and

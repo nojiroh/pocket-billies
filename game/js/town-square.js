@@ -157,7 +157,8 @@ function fountainWishToss(p) {
   save();
   if (typeof debugLog !== 'undefined') debugLog.add('hub', `fountain coin: ${r.out.id}`);
   if (typeof soundEffect === 'function') soundEffect('coin');
-  if (p && typeof soundEffectAt === 'function') setTimeout(() => soundEffectAt('plop', p.x, p.z), 350);
+  /* SND-10: a coin's small plop */
+  if (p && typeof soundEffectAt === 'function') setTimeout(() => soundEffectAt('plop', p.x, p.z, { size: 0.12 }), 350);
   /* queued before the ask closes, so the result comes next (before any window waiting its turn) */
   modal({
     title: 'Fountain',

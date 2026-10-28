@@ -206,7 +206,7 @@
        ],
        "properties": {
         "k": {
-         "description": "an ambient animal (art/scene/life)",
+         "description": "an ambient animal (art/scene/life); form is a loose Bureau form (SY-7)",
          "enum": [
           "chicken",
           "sheep",
@@ -218,7 +218,8 @@
           "frog",
           "goat",
           "pigeon",
-          "lizard"
+          "lizard",
+          "form"
          ]
         },
         "n": {

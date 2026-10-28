@@ -105,7 +105,7 @@ No art changed. The Studio can now change three more things, all saved into `gam
   seams and expression variants of eyes, brows and mouths. The old trainer renderer and its PNGs
   are no longer used. Edit pieces in the Studio's Wardrobe section; `build-trainer-art.py` without
   `--force` never overwrites them.
-- The data is `wardrobe` in `data/gamedata.js`: `skeleton` (joints per view), `body`, `slots`,
+- The data is `wardrobe` in `game/data/wardrobe.json`: `skeleton` (joints per view), `body`, `slots`,
   `sliders`, `palettes`, `crops` (thumbnail and portrait frames) and `items`. A piece is
   `{"v":"front","b":"head","r":[x,y,w,h],"o":[ox,oy],"z":0.7,"x":"happy"}`: view, bone, its
   rectangle in the item's picture, its offset from the joint, an optional layer and an optional
@@ -554,6 +554,23 @@ art pipeline (phase 17 task 11).
   front, tilted 12 and 10 degrees: the owner asked for playful angles, so this one breaks the 45-degree rule.
   The far one is sand, not gold: the pale top half washed a gold one out to near white.
 - Weather icons are unchanged (offered, not picked).
+
+## Perk pictures, 36x36 (Perks track PK-2, 2026-10-28)
+- Every Perk has its own picture in the UI icons' look: `game/art/perks/<id>.svg`, named by the Perk's `img`. Same
+  rules as the UI icons above (fixed colours on both themes, nothing darker than slate, 45-degree lines, octagons for
+  circles, strokes of 3 px), plus docs/phases/perks-track.md section 6: one object, a silhouette that reads filled with
+  one colour, at most 4-5 colour letters, and no cream or pale shape alone on the background.
+- Drawn as flat 34x34 grids in `tools/art/icon-grids/perks.json` (the fixture format: `about`, `mono`, `icons`) and
+  written by `node tools/build-icons.mjs perks`, which shades each with `iconBlockKeyed` and writes it with
+  `pixelsToSvg` once perks.json names it (grids drawn ahead of their wave wait). The SVG is the source from then on
+  (the Studio's icon editor); the tool never writes over one without `--force`. `--check` also refuses two pictures
+  whose shapes overlap 90% or more (intersection over union), `--sheet` renders
+  `validation/icon-sheets/perks-{light,dark}.png`.
+- Shown at whole multiples only: 72 px on a pick card, 36 px in the Perks tab, a shop's row and the "Let one go"
+  sheet (`artIconHTML`, `.art-ic` pixelated). The card's back and the bar's Perks tab keep the `relic` icon.
+- In a one-colour (`mono`) picture the ramp's shades get no seam between them, so a detail in a darker shade can vanish
+  in the pale top half. To part two areas of one colour, draw one of them with the matching letter (the letter `r` is
+  the red ramp's mid): a letter is its own block, so a seam is drawn between them (Power Gloves' thumb).
 
 ## Terrain TR-4 (2026-10-26): the biomes' cliff faces
 - `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept

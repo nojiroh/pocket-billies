@@ -9,8 +9,8 @@ those sessions; until then, follow the rule next to them.
 
 | Tier | Command | Now | Budget | When |
 |---|---|---|---|---|
-| (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s | under 10 s | after every edit (the Claude Code hook runs it) |
-| (b) unit tests | `npm test` | about 20 s in a cloud container (TC-4 round 3, 23 Oct 2026, after RF-3 and RO-1 merged; 26 s in round 2, 72 s before) | under 30 s | after every edit to logic, data or tests (the hook) |
+| (a) lint, types | `npm run lint`, `npm run typecheck` | 4 s warm (9 s cold) + 0.6 s; 11-13 s + 2.5 s in a cloud container on 27 Oct 2026 | under 10 s | after every edit (the Claude Code hook runs it) |
+| (b) unit tests | `npm test` | about 104-148 s in a cloud container (1,569 tests, 27 Oct 2026; about 20 s on 23 Oct, TC-4 round 3) | under 30 s, not met | the edited area's files after every edit to logic or tests (the after-edit hook); the whole tier before Claude's reply ends when logic, data or tests changed (the Stop hook): "Claude Code in the cloud" below |
 | (b2) slow unit tests | `npm run test:slow` | about 58 s (50 tests: the scene sweeps that generate whole maps and islands, runs played with their scenes, the weather's every-roll sweep; `SLOW_TESTS` in tools/unit-tests.mjs) | none | in CI beside `npm test`; `npm run test:all` runs both |
 | before a commit | `npm run check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` | about 15 s | none | every commit |
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
@@ -38,6 +38,46 @@ fewer drawn steps (more logic checked in Node, as TC-3 did) or a faster machine;
 The update check (update-check.js, the owner 2026-10-22) works only on the built site (`npm run build`, then serve
 `dist/game`): no check runs it, since the checks serve the repository, where PB_BUILD is '' and it is off. To try it,
 load the built game, build again while it runs, and bring the page back to the front: it loads the new build.
+
+## Claude Code in the cloud
+
+How a cloud session (claude.ai/code, the Claude app) gets ready and checks its work (Tooling, 2026-10-27).
+
+**The environment's setup script** (the owner pastes it once: the environment menu in a session's title bar, Edit
+cloud environment, Setup script; the result is cached about 7 days). The cloud image's Chromium only works with the
+Python Playwright of its own version, not the 1.56.0 tools/requirements-check.txt pins for CI:
+
+```bash
+#!/bin/bash
+# Python Playwright matching the cloud image's Chromium
+PW=$(node -p "require('$(npm root -g)/playwright/package.json').version" 2>/dev/null || echo 1.63.0)
+pip install -q --root-user-action=ignore "playwright==$PW" pillow numpy || true
+```
+
+**The hooks** (.claude/settings.json; a session reads them when it starts):
+- SessionStart, `tools/session-start.mjs` (cloud sessions only): `npm ci` when node_modules is missing or the
+  lockfile changed, `npm run data`, Python Playwright installed when the setup script didn't, and the starting state
+  of the files the unit tests guard. Claude sees one "Session setup: ..." line. About 1 s on a ready machine, 14 s
+  from a bare one.
+- PostToolUse, `tools/after-edit.mjs`: lint and the type check for game code, `check:data` for data,
+  `py_compile` for Python, and the unit test files for the edited area (`<name>.test.mjs`, `<name>-real.test.mjs`,
+  then the files using `modules['<name>']`, then `<name>-*`; at most 12, the slow tier left out). A check that runs
+  out of time is reported as not finished, never as failed.
+- Stop, `tools/before-stop.mjs`: `npm test` before a reply ends, when game/js/logic, game-data.js, game/data or
+  tools/test changed since the session started and since the last passing run; never while Claude waits on
+  background work. A failure sends Claude back to fix it once; if it still fails, the reply ends and the owner sees
+  the failure.
+
+**Looking at the game**: .mcp.json starts Microsoft's Playwright MCP server through `tools/mcp-playwright.mjs`, with
+the cloud image's Chromium, browser_check.py's flags and page set-up, and a 390x844 touch page. The look skill
+(.claude/skills/look) says how to serve the game, open a fixture and take screenshots. Frame rates and `mediump`
+precision still come from a real phone: software drawing can't show them.
+
+**Reading a debug log**: `python3 tools/read-debug-log.py <log.json>` prints a one-screen summary and saves the log's
+picture to validation/debug-log/ (the debug-log skill).
+
+**Skills and rules**: .claude/skills (start-session, handoff, look, debug-log) load when a session needs them or the
+owner types `/<name>`; .claude/rules load when Claude touches game/js, game/data or tools/*.py.
 
 ## Where a new test goes
 
@@ -355,6 +395,22 @@ same phase:
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
   copy equals the generator's) and `tools/test/ui-icons.test.mjs` checks game/art/ui/*.svg (51 icons, 36×36, the
   pixel format the Studio's icon editor writes, every icon the code names; the SVGs are the source since SA-2b).
+  PK-2: `tools/test/build-icons.test.mjs` checks tools/build-icons.mjs (the 51 UI icon grids shade back to their SVGs
+  byte for byte; every grid file in tools/art/icon-grids passes `--check`, and every picture the data names is
+  written; a grid's faults; silhouettes; never over an SVG without `--force`), `data-checks.test.mjs` the Perks'
+  `img` (dataPerkArt), and check-fast's Perks step each card's and row's picture at 72 and 36 px.
+  PK-3: `tools/test/battle-perks-wave-a.test.mjs` checks the battle kit's kinds with test-only Perks (crit, immune,
+  inflict and its 50% cap on one roll of the battle's stream, chip, first, revive in singles and doubles), then each
+  of the 15 Wave A Perks of perks.json in a battle, and battles holding all 15 that end within 200 turns, replayable;
+  `data-checks.test.mjs` the kinds' rows (good ones pass check-data and the schema, planted faults named);
+  `perks.test.mjs` perkCount; check-fast's Perks step the tab's counters (Click Pen 5/8, Warranty Card VOID).
+  PK-4: `tools/test/battle-perks-wave-b.test.mjs` checks Wave B's kinds with test-only Perks (passive: each of the
+  nine type passives stronger for yours, the foe's unchanged; weather noWeaken and boost; benchXp; rule
+  forecastDays, the days already rolled unchanged), then each of the 15 Wave B Perks of perks.json, and battles
+  holding all 30 Wave A and B Perks; `perks.test.mjs` needs, tags and the bias (every Perk of each rarity over 300
+  picks with a team of every type, no type Perk offered without its type in a pick, a shelf or an event, a tagged
+  Perk about bias times as often); `type-rename.test.mjs` a Perk's tags, needs and conditions renamed;
+  `data-checks.test.mjs` the kinds' rows, needs, tags and the bias.
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
@@ -457,6 +513,37 @@ same phase:
   makes which sound), `sound-levels.test.mjs` (the mix's trims, `bedDuck`), `music-studio.test.mjs` (placeholder base
   cries and Billie cries). `check-studio-github.py --only=music` plays a base cry and a button sound on the Sounds
   tab, changes the mix and undoes it, and changes a stage's own cry, hearing its base's notes and the low-HP version.
+  Since RL-R2 (594a094e) there is no deadline version: `musicParts` names none, "Run music" no longer looks for one,
+  and `sound.test.mjs` asserts there is none (the SND-5 lines above are history). The baseline holds 194 fingerprints
+  (checked in SND-7, 2026-10-27).
+  SND-8a: `python3 tools/check-sound.py --loudness` adds a loudness report after the comparison (never its exit
+  status): every song's day version and 17 world sounds and three made-up scenes, rendered in stereo at default
+  sliders through the game's code (sound.js `ambiencePreviewTick`, as the debug menu's Sound test plays them) and
+  measured by `tools/sound-loudness.mjs` (BS.1770), in LU under the route song; a bed over -12 LU or an event's 3 s
+  maximum over -8 LU warns (ceilings warn until SND-15). Unit tests: `sound-loudness.test.mjs`,
+  `ambience-sound.test.mjs`; the after-edit hook runs `tracker.test.mjs` and `sound.test.mjs` for `audio/` and sound.js.
+  The full check's Debug menu step expects eleven sections (`sound` after `places`); the Animals step names the live
+  beds (never all 14, never the crickets by day).
+  SND-8b: the baseline was written again on purpose (a song's echo after its fader, the jingles' own echo, Copperleaf's
+  trim); each commit was rendered against the one before it in a worktree. `tracker.test.mjs` adds `echo: 0`, the
+  echo send moving with the fader, the jingles' echo bus and a song's `trim`.
+  SND-9: each fingerprint file holds, beside every part's RMS array, its brightness `zc:<part>` (zero crossings per
+  50 ms, ±0.0001 hysteresis, 0 under 0.0001 RMS; a window may differ by 2 % or 2 crossings), so a change of timbre at
+  the same loudness fails too; the summary still counts 194 fingerprints. Written once with plain `--baseline`.
+  `sound-bake.test.mjs` (logic/sound-bake.js: the same bake every time, never `Math.random`, no NaN, peaks at most 1,
+  seamless loops, strings within 3 cents, a size budget, the impulse); `tracker.test.mjs` adds the bank (slices, once
+  per rate, the least recently played zone dropped and baked again), `sampleVoice` (one source, one gain) and the
+  reverb (made only on a send, post-fader sends, one impulse per rate).
+  SND-10: `--loudness` adds every water recipe (game/data/soundscape.json `water`) at 1, 3 and 10 m (a fall at its
+  height), its banks baked once before the jobs; a water row warns over either ceiling (its level -12 LU, its loudest
+  3 s -8 LU); the old stream, falls, fountain, pond, lava and near-sea rows are gone (their beds went). Unit tests:
+  `soundscape.test.mjs` (logic/soundscape.js: cells from the grid and the tiles, emitters, falls by height, level and
+  air, the nearest few, bubbles, laps, waves and the tide, a splash, the preview, the game's soundscape.json findings);
+  `sound-bake.test.mjs` adds bubbles and the babble loop, `tracker.test.mjs` `bankAdd`, `sampleShot` and the World
+  send; `ambience-sound.test.mjs` reads the beds from soundscape.json (9 beds). check:data checks soundscape.json's
+  schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
+  `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
+  Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

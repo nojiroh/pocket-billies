@@ -542,6 +542,21 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   or this one when offered), the same as the Run Lab's for that seed. **Rarity and the picks**: each rarity's weight,
   shop price and how many Perks have it (a rarity nobody has, or Perks never offered, are flagged), the cap and
   how many are offered.
+  **Its picture** (PK-2): the Perk's `img` (`perks/<id>.svg`) at the game's 72 and 36 px, and **Edit art**, which opens
+  it in the icon editor (below). A Perk without one shows the relic icon in the game (check:data warns); **Draw one**
+  makes a blank `art/perks/<id>.svg`, names it in the Perk and opens it (two steps of the undo; Propose sends both).
+  **The battle kit's kinds** (PK-3): crit (critical-hit stages, or with a When of move that move is critical), immune
+  (a status, the Sandstorm or sharp stones), inflict (a status and a chance at a hit; chances acting together count at
+  most 0.5), chip (what a burn takes, times), first (yours move first where its If holds) and revive (a wiped team
+  gets back up with a share of HP; it needs Once). check-studio-github.py `--only=relics` opens the 15 Wave A Perks
+  and checks every row shows its inputs with no error.
+  **Wave B's kinds** (PK-4): passive (a type passive and the numbers it takes: Kindling's rate, Undertow's and
+  Bedrock's HP share, Regrowth's and Live Wire's ×, Bedrock's uses, Wild Mind's rolls, Parting Roar's stat and
+  stages; Slipstream and Alloy take a flag), weather (never weakens, or boosts counted ×), benchXp (a share more for
+  the bench) and rule (forecastDays: the forecast's days more). **Needs** (to be offered: team:Fire, mono) and
+  **Tags** (types and themes) per Perk, and the rarity card's **Lean toward a tag match ×** (rules.json
+  run.perks.bias). The Studio's offer order gives no team, so it doesn't ask needs. `--only=relics` opens the 15
+  Wave B Perks too, and checks Bellows's Needs and Tags.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,
@@ -768,8 +783,16 @@ files are the source** (decision 6): tools/build-ui-icons.py retired. Open one w
   An unsaved icon also shows in the Studio's own previews of the menus.
 - **New icon**: a name (lower case, digits and -), blank or a copy. `tools/test/ui-icons.test.mjs` counts the set (52; SY-3 added `bureau`, the Bureau's emblem):
   raise the count when a new icon goes in.
-- Checks: `tools/test/svg-pixels.test.mjs`, `icon-block.test.mjs`, `ui-icons.test.mjs`, `check-studio-github.py
-  --only=icons`, the self-test's "Icons" row, `studio-shots.py --views icons`.
+- **The Perks' pictures** (PK-2): `art/perks/<id>.svg` (and later `art/items/`, `art/boons/`: `ICON_DIRS` in
+  svg-pixels.js) are drawn the same way and open here too, from the Art browser's **Edit icon** or the Perks editor's
+  **Edit art**. Such an icon is known as `perks/<id>` (`svgIconKey`). Beside it are its own folder's pictures, the
+  preview shows 18, 36, 72 and 108 px (the game draws them at 36 in rows and 72 on pick cards), an unsaved one reaches
+  the Studio's previews through `artURL`, and **New icon** makes one in the open folder (an id: lower case, digits and
+  _). They were first drawn as grids by `tools/build-icons.mjs` (`tools/art/icon-grids/<folder>.json`); once written
+  the SVG is the source, and the tool never writes over one without `--force`.
+- Checks: `tools/test/svg-pixels.test.mjs`, `icon-block.test.mjs`, `ui-icons.test.mjs`, `build-icons.test.mjs`,
+  `check-studio-github.py --only=icons` (a Perk's picture too) and `--only=relics` (Edit art), the self-test's "Icons"
+  row, `studio-shots.py --views icons`.
 
 ## Icon atlas (Studio art track SA-2b)
 
