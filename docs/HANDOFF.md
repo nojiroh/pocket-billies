@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-5 - Attack lunges: the lean, afterimages, the dash ribbon - 2026-10-28
+Branch `track/vfx` (main and `ccr-7526d712-gliikp`, PR #290, merged in first, both clean; main was a fast-forward).
+Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options
+taken and listed below. Draft PR #295 (`track/vfx` to main) opened for the track. Tag `vfx-5-done` for the owner (the
+git proxy refuses tag pushes) on this entry's commit.
+- The plan: VFX-5 as Part 1 planned it, built as helpers Part 2's runner (VFX-8) calls: logic/smear.js gets a lunge's
+  lean, its afterimages and the dash list; battle-stage.js gets one callable step (`battleLunge`) that both H-move
+  lunges (the hit and the miss) go through with their old tweens; battle-3d.js draws from it. Nothing added to any
+  move's time.
+- Changed:
+  - logic/smear.js: `LUNGE_GHOSTS` (two looks: fade .5 / .28, glow .35 / .6), `lungeGhostCount` (2 / 2 / 1 / 0 by
+    `battleStage.q.lvl`, none under Reduced motion), `lungeLeanOn`, `lungeLeanFor` / `lungeLean` (the sideways speed
+    between the two newest places, in stage px a ms, x 1, capped at 0.3, half that moving back home, rounded to
+    hundredths and held for its 24 fps cell), `LUNGE_DASH` / `lungeDash`, `lungeRibbonHalf` (0.3 of the Billie's
+    height, 0.12-0.45 m). `smearGhosts` takes the copies' looks, `smearRibbon` a half width; the throw's defaults stay.
+    Five new tests in tools/test/smear.test.mjs (the lean held per cell, the same for the near and far Billie and
+    mirrored for the foe; the afterimages; the quality ladder; the dash ids are real H moves).
+  - battle-stage.js: `battleLunge(i, {dx, dy, dur, ease, delay, backDur, backAt, dash, col})`; the Billie's
+    `lunge` (its window, its way on screen) and `trail`; `battleLungeRecord` in the stage frame after the tweens;
+    `battleLungeLean`, `battleLungeGhosts`, `battleLungeRibbon`; `battleStageFlush` drops the lunges' places (they
+    would jump to the end). The unused `me` in case `move` is gone.
+  - battle-3d.js: the rig item's `shear` is the lean; the afterimages are copies of the rig item (its own posed
+    picture) at the older places with their lean, `fade`, `glow` and `ghost`; `BT.rigRibbons` for dashes.
+    walk-view-gl.js draws them with Part 1's `ribbonPass`. walk/shadows.js, walk/lighting.js and walk/ground-draw.js
+    skip ghosts (no shadow, contact shade or grass push).
+- Where the track file was wrong or vague (checked in the code): the H lunge starts 100 ms in (+30 px in 120 ms eased
+  in, back from 240 ms in 200), not at 0; `uShear` was indeed 0 for every battle rig; there is no dash family in the
+  code or data yet (VFX-8/11), so the six dash moves are a list of ids for now; Part 1's 0.12 m gap means the near
+  Billie (65 px/m) shows one afterimage for its lunge and the far one two; Calm doesn't exist yet in the code
+  (UI-16a), so "plays under Calm" holds by nothing reading it.
+- Decided for the owner, to review:
+  - The lean: at most 0.3 (about 17 degrees at the top), into the lunge; moving back home half as much (it settles
+    rather than leaning back hard). Off at quality 3 with the afterimages (it costs nothing, but Part 1's rule is
+    "every smear thins out").
+  - Two afterimages (one at quality 2), fainter than a throw's three (a Billie is far bigger on screen).
+  - Dash moves = the family table's six (Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It): their
+    ribbon is the type's colour (`TYPE_COLORS[t][0]`, brightened) with the white core, at the Billie's middle.
+  - The miss's lunge smears too (it is the same step).
+  - Under Calm the smears play (Part 2's rule 9). No move is longer.
+- Risky: the near Billie fills much of a phone's screen, so its afterimage may read as a flicker over itself rather
+  than a copy behind; the lean on wide creatures (it bends the whole picture from the feet). A slow device drops the
+  battle's quality to 3 and turns all smears off (seen headless: films need `battleStage.lockQ` and `q.lvl = 0`).
+- Phone checks (listed, not waited for): the lean's strength; your own Billie's afterimage; the dash ribbon's width
+  (Quick Strike or Zip); a normal move's time unchanged; Reduced motion shows none of it.
+- Verified: lint, typecheck, `npm test` 1574 of 1574, check:modules, format:check, check:data (its two bridge
+  warnings are main's), build. A headless film (390 x 844, phone, Quick Strike from both sides, quality locked at 0,
+  the clock slowed): the lean climbs 0.02, 0.09, 0.21 into the hit and settles at -0.09 to -0.03 going home; two
+  afterimages, then one, then none about 125 ms after the lunge; the ribbon shows and erodes; no page errors (one
+  404: data/gamedata.js isn't built in a checkout, and the game then reads the JSON files, data-files.js). Smoke check: 6 of 6 in 252 s. Full quick check: running at this commit; its result follows in a commit of its own.
+  Python Playwright was missing: 1.63.0 installed (the pinned 1.56.0 can't find the container's Chromium).
+- Next: VFX-8 (anims as data), started by the planning session. It wraps `battleLunge` as the runner's lunge and dash
+  steps and moves `LUNGE_DASH` into battleAnims.json's families.
+
 ### VFX track VFX-7 - Part 2 planned: battle effects (research, the owner's answers) - 2026-10-27
 Branch `ccr-7526d712-gliikp` (the session's own, made from main at 07c9b284; main had not moved). Plan Mode, plan
 approved. Docs only, one cause per commit; nothing in the game changed. Tag `vfx-7-done` (for the owner to push) on

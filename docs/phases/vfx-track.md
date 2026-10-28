@@ -76,7 +76,21 @@ VFX-1 were built on `ccr-a98cc267-eqso1d` at the owner's word (`track/vfx` didn'
   flat pyramid icon over a GL battle, and the post pass covers it.
 - **VFX-5** attack lunges: the lean (`uShear`) driven by the lunge's speed, one or two afterimages of the rig's
   billboard (its texture exists already); dash moves reuse the ribbon. Since Part 2: the lean and the afterimages
-  are built as helpers (logic/smear.js and one callable step) that Part 2's runner reuses.
+  are built as helpers (logic/smear.js and one callable step) that Part 2's runner reuses. Done 2026-10-28 (the
+  owner's standing instruction: recommended options taken, listed in HANDOFF). As built: battle-stage.js
+  `battleLunge(i, o)` is the step (the runner's lunge and dash): the same tweens the H move's lunge and its miss always
+  had, so no time is added; while it runs the Billie's place is kept on the 24 fps grid (`battleLungeRecord`, one
+  `smearHistory` per Billie). From that: the lean (`lungeLean`: its sideways speed over the last cell in stage px a
+  ms, x `LUNGE_LEAN_K` 1, at most 0.3, half that moving back home; held for the cell) into the rig item's `shear`;
+  up to two afterimages of the rig's own picture (`LUNGE_GHOSTS`: fade .5 / .28, glow .35 / .6; dithered by the
+  sprite shader's `uFade`, brighter by `uEmit`; no shadow, contact shade or grass push); the six dash moves of
+  Part 2's family table (`LUNGE_DASH`, by move id until VFX-8/11 give moves families) also get Part 1's ribbon at the
+  Billie's middle, in the type's colour, its half width 0.3 of the Billie's height (`BT.rigRibbons`, drawn by the same
+  `ribbonPass`). Off under Reduced motion; at quality 2 one afterimage and a four-cell ribbon; at 3 none, no ribbon and
+  no lean; nothing reads Calm (UI-16a hasn't landed), so they play under it. A flush (the next line) drops the lunges'
+  places. Checked against the code: the H lunge starts 100 ms in (+30 px in 120 ms eased in, back from 240 ms in
+  200), not at 0; the near Billie's first lunge cell moves under Part 1's 0.12 m gap, so it shows one afterimage and
+  the far Billie two.
 - **VFX-6** tuning and docs: Studio dials (ghost count, colours, ribbon length, stretch), a debug-log line saying
   which smears ran and at which quality (never save data), HANDOFF. Folded into Part 2 (VFX-7): the debug-log line
   goes to VFX-8, the dials to VFX-12, where they become battleAnims data instead of being built twice.
@@ -486,7 +500,7 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 
 | # | Session | Does | Visible change | Done when |
 | --- | --- | --- | --- | --- |
-| VFX-5 | Attack lunges (Part 1) | as planned; the lean and afterimages as helpers the runner can call | lunges | as planned. Phone |
+| VFX-5 (done 2026-10-28) | Attack lunges (Part 1) | as planned; the lean and afterimages as helpers the runner can call | lunges | as planned. Phone |
 | VFX-7 (done 2026-10-27) | The plan | Part 2, with research; the owner's answers | none | merged |
 | VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; Flashes reaches the battle; the debug-log line; the look tool, first version | none, but the tap skips and Flashes off works | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
 | VFX-9 | One draw for effects | the atlas, the instanced pool, cutout drawing, the budgets; rings, dust and beams into GL; `uHit`; fixed light keys; the `uCA` pulse | rings sit in the scene; no CPU flash redraws | a move's effects in at most 3 draws (gpu counters); rig uploads down (`rigStats`); frame time not worse. Phone |
