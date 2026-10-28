@@ -41,6 +41,7 @@ import {
   figureMix,
   figurePose,
   figureRamp,
+  figureSceneLight,
   figureTick,
   figureView,
   jointMatrices,
@@ -52,8 +53,11 @@ import { figureSeed, kappiFigure, kitExtent, lookFigure } from './logic/figure-k
 import { artImg, artURL, makeCanvas } from './art.js';
 import { lookOf, wardrobeData } from './person-art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
-import { engineSetting } from './engine/settings.js';
+import { engineContext, engineSetting } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
+import { environment } from './environment.js';
+import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -75,6 +79,7 @@ expose({
   FIGURE_SHADOW_SIZE: [() => FIGURE_SHADOW_SIZE],
   FIGURE_SHADOW_VS: [() => FIGURE_SHADOW_VS],
   FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
+  FIGURE_STUDIO_LIGHT: [() => FIGURE_STUDIO_LIGHT],
   FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
   HD2D_BODY: [() => HD2D_BODY],
@@ -88,6 +93,7 @@ expose({
   figureChoice: [() => figureChoice, v => (figureChoice = v)],
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
+  figureDesign: [() => figureDesign, v => (figureDesign = v)],
   figureFolk: [() => figureFolk, v => ((figureFolk = v), provide({ figureFolk }))],
   figureFor: [() => figureFor, v => (figureFor = v)],
   figureFromFile: [() => figureFromFile, v => (figureFromFile = v)],
@@ -95,6 +101,7 @@ expose({
   figureGl: [() => figureGl, v => (figureGl = v)],
   figureItems: [() => figureItems, v => (figureItems = v)],
   figureLast: [() => figureLast],
+  figureLightNow: [() => figureLightNow, v => (figureLightNow = v)],
   figureLightSpace: [() => figureLightSpace, v => (figureLightSpace = v)],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
   figureLookColour: [() => figureLookColour, v => (figureLookColour = v)],
@@ -182,15 +189,24 @@ export function figureFor(who) {
     const c = figureChoice();
     if (c !== 'look') return c;
     const L = typeof lookOf === 'function' ? lookOf('me') : null;
-    return 'look:me#' + figureSeed(JSON.stringify(L || {})).toString(36);
+    return 'look:me#' + figureSeed(JSON.stringify(L || {})).toString(36) + figureDesign(figureStyle());
   }
-  let n = FIGURE_LOOK_NAMES.get(who);
-  if (!n) FIGURE_LOOK_NAMES.set(who, (n = 'look:' + who));
+  /* a direction with its own designs (its cast, flair or proportions: FIGURE_LOOKS) builds everyone its way */
+  const st = figureStyle(),
+    k = who + '@' + st;
+  let n = FIGURE_LOOK_NAMES.get(k);
+  if (!n) FIGURE_LOOK_NAMES.set(k, (n = 'look:' + who + figureDesign(st)));
   return n;
+}
+/** the '@direction' a figure's name carries when the style has designs of its own (figureDef reads it), else '' */
+function figureDesign(style) {
+  const LK = FIGURE_LOOKS[style];
+  return LK && (LK.cast || LK.flair || LK.chibi) ? '@' + style : '';
 }
 /** how figures are drawn (Engine > People > Style): 'pixel' (the pixel puppet, C) or 'smooth' (the plain 3D figure, B) */
 export function figureStyle() {
-  return typeof engineSetting === 'function' && engineSetting('people', 'style') === 'smooth' ? 'smooth' : 'pixel';
+  const v = typeof engineSetting === 'function' ? engineSetting('people', 'style') : null;
+  return v === 'smooth' || (typeof v === 'string' && v in FIGURE_LOOKS) ? v : 'pixel';
 }
 /** whether townsfolk are drawn as figures too (Engine > People > Townsfolk as figures) */
 export function figureFolk() {
@@ -324,12 +340,12 @@ precision mediump float;out vec4 o;void main(){o=vec4(1.);}`;
    a white rim), 6 faceted (each triangle flat) */
 const FIGURE_FS = `#version 300 es
 precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;in vec3 vP;flat in int vC;uniform vec3 uPal[140];uniform vec3 uL;
-uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn,uH;uniform int uMode;uniform vec4 uFx,uRim2;uniform vec3 uRimCol;
+uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn,uH,uFlat;uniform int uMode;uniform vec4 uFx,uRim2;uniform vec3 uRimCol,uKeyT,uAmbT,uWarm;
 uniform sampler2D uTx;uniform highp sampler2D uSM;
 out vec4 o;
 void main(){vec3 n=normalize(vN);
  if(uMode==6){n=normalize(cross(dFdx(vP),dFdy(vP)));if(n.z>0.)n=-n;}
- float d=dot(n,uL);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:(d>uB.w?0:-1)));
+ float d=mix(dot(n,uL),.3,uFlat*.45);int b=d>uB.z?3:(d>uB.x?2:(d>uB.y?1:(d>uB.w?0:-1)));
  /* a part in another's shadow (the light's depth map) drops to the shadow tone */
  bool shd=false;
  if(uShadowOn>.5&&d>uB.y){vec3 q=vLS*.5+.5;shd=q.x>0.&&q.y>0.&&q.x<1.&&q.y<1.&&q.z-.006>texture(uSM,q.xy).r;}
@@ -352,13 +368,18 @@ void main(){vec3 n=normalize(vN);
     behind (uRim2: its way and strength, uRimCol) */
  else if(uMode==7){ivec2 fp=ivec2(gl_FragCoord.xy)&1;float bay=(fp.x==fp.y?(fp.x==0?0.:.5):(fp.x==0?.75:.25))-.375;
   float dd=d+bay*uFx.x;int bb=dd>uB.z?3:(dd>uB.x?2:(dd>uB.y?1:(dd>uB.w?0:-1)));
-  if(shd)bb=min(bb,0);else if(rim&&bb>=0)bb=max(bb,2);
+  int b0=bb;if(shd)bb=min(bb,0);else if(rim&&bb>=0)bb=max(bb,2);
   c=bb==3?sn:(bb==2?li:(bb==1?base:(bb==0?sh:dp)));
+  /* a cast shadow (a brim on a face) on a side that faces the light is lifted toward the base, so a face under a
+     hat still reads */
+  if(shd&&b0>=1)c=mix(sh,base,.4);
   float hy=clamp(vP.y/max(uH,.5),0.,1.);c*=mix(vec3(.9,.93,1.05),vec3(1.05,1.02,.95),mix(.5,hy,uFx.y));
   vec2 gp=floor(gl_FragCoord.xy*vec2(1.,.5));float g=fract(sin(dot(gp,vec2(12.9898,78.233)))*43758.5453)-.5;c*=1.+g*uFx.z;
-  if(rim)c=mix(c,vec3(255.,214.,150.),.32*uFx.w);
+  if(rim)c=mix(c,uWarm,.32*uFx.w);
   if(uRim2.w>0.&&dot(n,normalize(uRim2.xyz))>.5&&n.z>-.5)c=mix(c,uRimCol,uRim2.w);
   c=clamp(c,0.,255.);}
+ /* CH-3b: the scene's light: the lit side takes the key's colour, the shade the sky's */
+ if(uSmooth<.5){float t=shd?0.:smoothstep(uB.w,uB.x,d);c=clamp(c*mix(uAmbT,uKeyT,t),0.,255.);}
 /* the depth, nearer larger, in alpha: 0 is no figure */
 o=vec4(c/255.,mix(1.,.08,gl_FragCoord.z));}`;
 const FIGURE_OUT_VS = `#version 300 es
@@ -728,8 +749,9 @@ FIGURE_LOOKS.gnight = {
   inner: 0.014,
   detail: 1.5,
   ppm: 48,
-  chibi: { head: 1.1, legs: 0.92, torso: 0.95, arms: 0.95, neck: 0.9 },
-  flair: { hair: 1.35, scarf: true, col: [230, 57, 70], detail: true },
+  /* the owner (2026-10-28): "the eyes look way too chibi and cute": about 3.2 heads, not 2.6 */
+  chibi: { head: 0.9, legs: 1.06, torso: 1.03, arms: 1.03, neck: 1.0 },
+  flair: { hair: 1.25, scarf: true, col: [230, 57, 70], detail: true },
   /* each of the cast redesigned for the look (the owner: "Completely redesign their aesthetic") */
   cast: {
     me: { goggles: true, gloves: true, ahoge: true, col: [95, 183, 192], wear: { outer: 'denim_jacket' } },
@@ -752,15 +774,52 @@ function figureSlotMatrices(J, slots) {
   slots.forEach((i, k) => out.set(J.subarray(i * 16, i * 16 + 16), k * 16));
   return out;
 }
+/** the light a figure is baked in away from a scene (a portrait, the Studio's sheets): the fixed top-left light, no
+ * tint */
+const FIGURE_STUDIO_LIGHT = Object.freeze({
+  L: FIGURE_LIGHT,
+  flat: 0,
+  keyT: [1, 1, 1],
+  ambT: [1, 1, 1],
+  rim: [0.85, 0.25, 0.5],
+  rimCol: [104, 232, 244],
+  rimK: 1,
+  key: 's',
+});
+/**
+ * the light of the scene a figure stands in this frame (logic/figure-pose.js figureSceneLight): the walk's sun (a
+ * room's window light, the moon), its sky and the lamps near `at` (world x, z), seen from this frame's camera; null
+ * with no scene drawing (a portrait, the Studio)
+ */
+function figureLightNow(at) {
+  const R = typeof walkRenderer !== 'undefined' ? walkRenderer : null,
+    C = typeof walkView !== 'undefined' ? walkView.C : null;
+  if (!R || !R.sun || !C || !C.right || !C.fwd) return null;
+  const X = R.X || null,
+    y = at && typeof standingHeightAt === 'function' ? standingHeightAt(at[0], at[1]) : 0,
+    E =
+      typeof environment !== 'undefined' && typeof engineContext !== 'undefined' && engineContext.env
+        ? environment
+        : null;
+  return figureSceneLight({
+    sunDir: R.sun.dir,
+    sunCol: R.sun.col,
+    amb: X && X.ambTop ? X.ambTop : undefined,
+    lamps: X && X.lights ? X.lights : undefined,
+    at: at ? [at[0], y + 1, at[1]] : null,
+    right: C.right,
+    fwd: C.fwd,
+    dark: R.sun.room ? 0.4 : E ? Math.max(E.lampK || 0, E.night || 0) : 0,
+  });
+}
 /** the light's depth map's size (pixels square) */
 const FIGURE_SHADOW_SIZE = 512;
 /**
  * the matrix from a figure's turned frame (x to the camera's right, y up, z into the view) to the light's clip space:
  * an orthographic view along the light (FIGURE_LIGHT points to it) round the figure's middle, as big as its extent
  */
-function figureLightSpace(ext) {
-  const L = FIGURE_LIGHT,
-    f = [-L[0], -L[1], -L[2]],
+function figureLightSpace(ext, L = FIGURE_LIGHT) {
+  const f = [-L[0], -L[1], -L[2]],
     rr = (() => {
       const x = [f[2], 0, -f[0]],
         l = Math.hypot(x[0], x[2]) || 1;
@@ -863,7 +922,7 @@ function figurePalette(F, colours, ramp = 'props', LK = null) {
  * toon bands and the outline as `outline` says; 'smooth': the plain 3D figure, a soft light and no outline). A canvas
  * tagged as a person's picture, or null if the baker can't draw it now.
  */
-function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
+function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = null) {
   const gl = figureGl();
   if (!gl) return null;
   /* a direction (FIGURE_LOOKS) or the plain 3D figure ('smooth') */
@@ -888,7 +947,9 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
     c = Math.cos(V.rel),
     s = Math.sin(V.rel);
   /* pass 0 (CH-3b): the figure's depth from the light, in the figure's turned frame; not for the plain 3D style */
-  const LS = figureLightSpace(Fig.ext),
+  /* the scene's light (logic/figure-pose.js figureSceneLight), or the fixed top-left one (a portrait, the Studio) */
+  const LT = light || FIGURE_STUDIO_LIGHT,
+    LS = figureLightSpace(Fig.ext, LT.L),
     shadows = !smooth && !!B.Sh;
   if (shadows) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, B.smFb);
@@ -934,9 +995,14 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.uniform1i(U.uMode, smooth ? 0 : LK.mode);
   gl.uniform1f(U.uH, Fig.height || 1.7);
   gl.uniform4fv(U.uFx, new Float32Array(LK.fx || [0, 0, 0, 0]));
-  gl.uniform4fv(U.uRim2, new Float32Array(LK.rim2 || [0, 0, 1, 0]));
-  gl.uniform3fv(U.uRimCol, new Float32Array(LK.rimCol || [255, 255, 255]));
-  gl.uniform3fv(U.uL, FIGURE_LIGHT);
+  const r2 = LK.rim2 || [0, 0, 1, 0];
+  gl.uniform4fv(U.uRim2, new Float32Array(light ? [...light.rim, r2[3] * light.rimK] : r2));
+  gl.uniform3fv(U.uRimCol, new Float32Array(light ? light.rimCol : LK.rimCol || [255, 255, 255]));
+  gl.uniform3fv(U.uL, new Float32Array(LT.L));
+  gl.uniform1f(U.uFlat, LT.flat);
+  gl.uniform3fv(U.uKeyT, new Float32Array(LT.keyT));
+  gl.uniform3fv(U.uAmbT, new Float32Array(LT.ambT));
+  gl.uniform3fv(U.uWarm, new Float32Array([255, 214, 150].map((v, i) => Math.min(255, v * LT.keyT[i]))));
   const BD = LK.bands || FIGURE_BANDS;
   gl.uniform4f(U.uB, BD.light, BD.base, BD.shine, BD.deep);
   gl.uniformMatrix4fv(U.uLS, false, LS);
@@ -1075,7 +1141,7 @@ function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
  * `tilt` the camera's tilt, `style` 'pixel' or 'smooth' (the plain 3D figure, baked at FIGURE_SMOOTH_PPM); a pixel
  * figure at `ppmAt` pixels a metre if given (a battle's), else at the dial's.
  */
-function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixel', ppmAt = 0) {
+function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixel', ppmAt = 0, at = null) {
   const Fig = figureDef(name);
   let im = null;
   if (Fig) {
@@ -1086,7 +1152,9 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
       steps = ys >= 32 ? 32 : ys >= 16 ? 16 : 8,
       outline = !smooth && e('outline') !== false,
       V = figureView(heading, yaw, tilt, steps),
-      key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, smooth ? 'smooth' : 'pixel');
+      /* CH-3b: lit by the scene (its sun, sky and lamps), kept by that light too */
+      light = smooth ? null : figureLightNow(at),
+      key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, style + (light ? '~' + light.key : ''));
     im = FIGURE_CACHE.get(key) || null;
     if (im) {
       /* kept the longest by the last use */
@@ -1107,7 +1175,7 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
         (B.frameBakes === 0 || typeof frameBudgetLeft !== 'function' || frameBudgetLeft())
       ) {
         B.frameBakes++;
-        im = bakeFigure(Fig, clip, frame, V, ppm, outline, smooth ? 'smooth' : 'pixel');
+        im = bakeFigure(Fig, clip, frame, V, ppm, outline, style, light);
         if (im) {
           FIGURE_CACHE.set(key, im);
           B.bytes += im.width * im.height * 4;
@@ -1139,7 +1207,7 @@ function figureTilt() {
  * camera, in `style`. `rec` keeps their last picture and their gait at the last tick (nothing is written on it). Null
  * until a first picture is baked (or while a model's file loads).
  */
-export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'pixel') {
+export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'pixel', at = null) {
   const Fig = figureDef(name);
   if (!Fig) return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
   const tick = figureTick(t);
@@ -1158,7 +1226,7 @@ export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'p
     const speed = clip === 'run' ? WALK_SPEED * RUN_FACTOR : WALK_SPEED;
     frame = meshClipFrame(Fig.clips[clip], t, g.gait, speed);
   }
-  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style);
+  return figurePicture(rec, name, clip, frame, heading, seenYaw(), figureTilt(), style, 0, at);
 }
 /**
  * a battle's trainer drawn as your figure (battle-stage.js trainerBattleFrame): you from behind (i 0) or the rival

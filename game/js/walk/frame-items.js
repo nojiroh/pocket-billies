@@ -330,7 +330,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
           'idle',
           0,
           near ? Math.atan2(P.x - pos[0], P.z - pos[1]) : personHeading(n, yaw),
-          figureStyle()
+          figureStyle(),
+          pos
         );
       if (g) nim = g;
     }
@@ -441,7 +442,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
           f.waveT > 0 ? 'cheer' : f.walk ? 'walk' : 'idle',
           (figureTick(t) / FIGURE_FPS) * 1.4,
           personHeading(f, seenYaw()),
-          figureStyle()
+          figureStyle(),
+          [f.x, f.z]
         );
         if (g) fim = g;
       }
@@ -465,7 +467,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
           pace = (figureTick(t) / FIGURE_FPS) * WALK_SPEED * (L.run ? RUN_FACTOR : 1),
           /* CH-3b: `figure: 'look'` with a `who` is that person's own figure (the figure kit) */
           name = L.figure === 'look' && typeof L.who === 'string' ? figureFor(L.who) : L.figure,
-          im = figurePersonPicture(L, name, t, act, pace, head, L.style === 'smooth' ? 'smooth' : 'pixel');
+          im = figurePersonPicture(L, name, t, act, pace, head, L.style || figureStyle(), [L.x, L.z]);
         if (im) out.push(personItem('line', im, L.x, L.z, C0, { line: i }));
         return;
       }
@@ -524,7 +526,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
             P.walk || P.hop ? (P.running ? 'run' : 'walk') : 'idle',
             P.gait || 0,
             figHead,
-            figureStyle()
+            figureStyle(),
+            [P.x, P.z]
           )
         : null;
     const me = personItem(
@@ -550,7 +553,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     if (mt) {
       out.push(mt.it);
       me.y += mt.lift;
-      me.im = (fig && figurePersonPicture(P, figureFor(st.who), t, 'sit', 0, figHead, figureStyle())) || set[0];
+      me.im =
+        (fig && figurePersonPicture(P, figureFor(st.who), t, 'sit', 0, figHead, figureStyle(), [P.x, P.z])) || set[0];
       me.z -= 0.02;
     }
     out.push(me);

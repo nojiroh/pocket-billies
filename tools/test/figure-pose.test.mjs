@@ -15,6 +15,7 @@ import {
   figureMesh,
   figurePose,
   figureRamp,
+  figureSceneLight,
   figureTick,
   figureView,
   frontOf,
@@ -489,4 +490,47 @@ test('figure pose: marks in their own colour, hollow, and how much they must fac
   assert.equal(M.length, 1, 'the tag needs the head square to the camera');
   assert.equal(M[0].hollow, true);
   assert.deepEqual(M[0].rgb, [10, 20, 30]);
+});
+
+test('figure pose: the scene lights a figure (CH-3b): the sun by its side, a lamp up close, an overcast sky softer', () => {
+  /* the camera looking north (into the view: -z), its right +x */
+  const cam = { right: [1, 0, 0], fwd: [0, -0.4, -0.9] },
+    sun = (dir, col = [1, 0.95, 0.85]) => figureSceneLight({ sunDir: dir, sunCol: col, amb: [0.5, 0.55, 0.7], ...cam });
+  /* a sun in the west lights the figure's left, one in the east its right */
+  assert.ok(sun([-0.7, 0.6, 0.2]).L[0] < -0.3);
+  assert.ok(sun([0.7, 0.6, 0.2]).L[0] > 0.3);
+  /* a sun behind the camera lights the front (z toward the viewer), one beyond the figure its back */
+  assert.ok(sun([0, 0.5, 0.8]).L[2] < -0.3);
+  assert.ok(sun([0, 0.5, -0.8]).L[2] > 0.3);
+  /* turned with the camera: a sun in the north, a camera looking east (its right the south): from the left
+  assert.ok(
+    figureSceneLight({ sunDir: [0, 0.6, -0.8], sunCol: [1, 1, 1], right: [0, 0, 1], fwd: [1, 0, 0] }).L[0] < -0.3
+  );
+  /* stepped: a small move of the sun keeps the same picture */
+  assert.equal(sun([-0.7, 0.6, 0.2]).key, sun([-0.69, 0.61, 0.2]).key);
+  /* at night a lamp just to the east of the figure is its key, warm on the lit side */
+  const night = figureSceneLight({
+    sunDir: [-0.3, 0.8, -0.2],
+    sunCol: [0.08, 0.09, 0.14],
+    amb: [0.1, 0.12, 0.25],
+    lamps: [{ p: [1.2, 2.2, 0], r: 5, c: [1.3, 0.9, 0.5] }],
+    at: [0, 1, 0],
+    dark: 1,
+    ...cam,
+  });
+  assert.ok(night.L[0] > 0.3, JSON.stringify(night.L));
+  assert.ok(night.keyT[0] > night.keyT[2], 'a warm key');
+  assert.ok(night.ambT[2] > night.ambT[0], 'a cool shade');
+  assert.ok(night.rimK > 0.9, 'the back rim after dark');
+  /* the same night far from the lamp: lit by the moon, and softer (more of it the sky's) */
+  const far = figureSceneLight({
+    ...cam,
+    sunDir: [-0.3, 0.8, -0.2],
+    sunCol: [0.08, 0.09, 0.14],
+    amb: [0.1, 0.12, 0.25],
+    lamps: [{ p: [40, 2, 0], r: 5, c: [1, 1, 1] }],
+    at: [0, 1, 0],
+  });
+  assert.ok(far.L[0] < 0);
+  assert.ok(far.flat > sun([-0.7, 0.6, 0.2]).flat);
 });

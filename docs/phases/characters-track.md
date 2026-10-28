@@ -256,6 +256,17 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     "Your look" by default and "Everyone else as figures" (on by default, behind Figures, still off);
   - drawn: you, townsfolk and residents, a map's people (turned to you within 4.5 m), cutscene actors, both
     trainers in battle; test_people's front row is the cast as figures; look-people `--cast`.
+  - the look rounds the owner steered in the same session (2026-10-28): no default backpacks, 48 px a metre, hair
+    as locks, self-shadows and rims; six directions, then five HD-2D painterly hybrids (figures.js FIGURE_LOOKS),
+    then **gouache night** (gouache bold crossed with lantern night: the cast redesigned, painted bands, a coloured
+    line), the default Engine > People > Figure style;
+  - round 4 ("the eyes look way too chibi and cute. Hats also look weird. Heads and everything should be made of
+    various shapes and forms. Make sure the lighting is used to make sense in all scenes"): almond eyes under a heavy
+    lid, about 3.2 heads; each head built from a cranium, a jaw, a chin, cheekbones, a brow ridge, a nose (bridge,
+    tip, wings) and ears, varied by the head shape and the person's seed; hats as crowns fitted round the head and
+    hair with bills, brims, bands and rolled edges; figures lit by the scene they stand in (logic/figure-pose.js
+    figureSceneLight: the sun, the moon, a room's window light and the lamps near them, the sky's colour in the
+    shade, a back rim after dark), the pictures kept by that light, portraits in the fixed studio light.
 - **CH-3c The rest of the cast and the movement pass:** every person and a crowd of townsfolk checked on sheets
   and in the towns; shop keepers and the arena's leader in place; the walk's stride fitted to the game's speed;
   start, stop and turns; the dressing room's pictures still today's. **Phone gate:** the owner tries Figures on.

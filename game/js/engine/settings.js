@@ -257,7 +257,7 @@ export const ENGINE_DEFAULTS = {
   /* characters track CH-2 and CH-3 (the spike): people as small 3D figures baked into pixel pictures
      (game/js/figures.js), off; which figure you are, the style (the pixel puppet or the plain 3D figure), how many
      pixels a metre they are baked at, how many ways round, their outline, and townsfolk as figures too */
-  people: { figures: false, figure: 'look', style: 'pixel', density: 48, yawSteps: 16, outline: true, folk: true },
+  people: { figures: false, figure: 'look', style: 'gnight', density: 48, yawSteps: 16, outline: true, folk: true },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -1147,9 +1147,12 @@ export const ENGINE_SPEC = [
         'sel',
         [
           ['pixel', 'Pixel puppet'],
+          ['gnight', 'Gouache night (CH-3b)'],
+          ['hd2d', 'HD-2D'],
+          ['paint', 'Painterly'],
           ['smooth', 'Plain 3D'],
         ],
-        'Pixel puppet: toon bands and an outline on the pixel grid. Plain 3D: the same figure, smooth, for comparison.',
+        'Pixel puppet: toon bands and an outline on the pixel grid. Gouache night: the CH-3b redesign, painted bands, rims and its own outfits. HD-2D and Painterly: two of the directions. Plain 3D: the same figure, smooth, for comparison. Every style is lit by the scene: its sun, sky, rooms and lamps.',
       ],
       [
         'density',

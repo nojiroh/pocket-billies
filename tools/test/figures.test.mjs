@@ -391,7 +391,7 @@ test('figures: at most 48 MB of pictures kept: big plain 3D pictures go sooner',
 });
 
 test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, Kappi the capybara', () => {
-  const was3 = [G.lookOf, G.figureChoice, G.figureItems],
+  const was3 = [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle],
     W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
     looks = {
       me: { body: {}, skin: '#E6B08A', wear: { hair: 'hair_short', top: 'tee' } },
@@ -403,6 +403,11 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
     G.lookOf = who => looks[who === 'boy' || who === 'girl' ? 'me' : who];
     G.figureItems = () => W.items;
     G.figureChoice = () => 'look';
+    /* a direction with designs of its own builds everyone its way (its name after '@') */
+    G.figureStyle = () => 'gnight';
+    assert.equal(G.figureFor('clerk'), 'look:clerk@gnight');
+    assert.match(G.figureFor('me'), /^look:me#[0-9a-z]+@gnight$/);
+    G.figureStyle = () => 'pixel';
     assert.equal(G.figureFor('clerk'), 'look:clerk');
     assert.equal(G.figureFor('folk:12'), 'look:folk:12');
     const me = G.figureFor('boy');
@@ -426,7 +431,7 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
     assert.ok(D.made.gl.calls.some(c => c[0] === 'drawArrays'));
   } finally {
     G.document.createElement = was;
-    [G.lookOf, G.figureChoice, G.figureItems] = was3;
+    [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle] = was3;
     for (const k of Object.keys(G.FIGURE_DEFS)) if (k.startsWith('look:')) delete G.FIGURE_DEFS[k];
   }
 });

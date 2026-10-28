@@ -181,7 +181,7 @@ function cutscenePersonItem(a, t, C0, yaw = 0) {
             ? 'cheer'
             : 'idle',
       gait = a.walk ? Math.hypot(a.x - a.walk.x0, a.z - a.walk.z0) : 0,
-      g = figurePersonPicture(a, figureFor(a.who), t, act, gait, personHeading(a, yaw), figureStyle());
+      g = figurePersonPicture(a, figureFor(a.who), t, act, gait, personHeading(a, yaw), figureStyle(), [a.x, a.z]);
     if (g) im = g;
   }
   return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});

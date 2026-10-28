@@ -27,6 +27,8 @@
                                                     # CH-3b: the directions to choose from (figures.js FIGURE_LOOKS):
                                                     # a panel each, the people three quarters on at the direction's
                                                     # density and proportions, and a portrait (figure-styles-*.png)
+    python3 tools/look-people.py --styles=gnight --player=girl --cast=me
+                                                    # you as the girl (or the boy) preset, not the save's look
     python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
                                                     # (and with --folk=1 the rival) as figures at 64 px a metre
                                                     # (battle-*.png); --no-shots for the battle (or --lose) alone
@@ -67,6 +69,7 @@ NO_SHOTS = '--no-shots' in ARGS
 SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
 CAST = arg('cast')
 STYLES = arg('styles')
+PLAYER = arg('player')  # boy or girl: you in that preset (people/<id>.json's look) instead of the save's look
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
                                ('figure', arg('figure')), ('style', arg('style')), ('folk', arg('folk'))) if v is not None}
@@ -156,6 +159,8 @@ def styles(pg, t0):
     from PIL import Image, ImageDraw
     looks = STYLES.split(',')
     whos = (CAST or 'me,chosen,marina,vault').split(',')
+    if PLAYER:
+        pg.evaluate("p => { saveData.avatar = JSON.parse(JSON.stringify(PEOPLE[p].look)); for (const k of Object.keys(FIGURE_DEFS)) if (k.startsWith('look:me')) delete FIGURE_DEFS[k]; return 0 }", PLAYER)
     for _ in range(60):
         r = pg.evaluate(f'{STYLES_JS}({json.dumps(looks)},{json.dumps(whos)},{TILT})')
         if r != 'loading': break

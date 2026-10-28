@@ -65,6 +65,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureRound: [() => figureRound, v => (figureRound = v)],
   // @ts-expect-error -- replaced on purpose
+  figureSceneLight: [() => figureSceneLight, v => (figureSceneLight = v)],
+  // @ts-expect-error -- replaced on purpose
   figureTick: [() => figureTick, v => (figureTick = v)],
   // @ts-expect-error -- replaced on purpose
   figureUnit: [() => figureUnit, v => (figureUnit = v)],
@@ -125,6 +127,86 @@ export const OUTLINE_RGB = Object.freeze([36, 25, 54]);
 /** the top-left light in the camera's frame (x to the screen's right, y up, z into the view): from the upper left
  * and a little from the viewer, as the props are painted */
 export const FIGURE_LIGHT = Object.freeze(figureUnit([-0.55, 0.7, -0.45]));
+/**
+ * CH-3b (the owner, 2026-10-28: "make sure the lighting is used to make sense in all scenes in the game"): the light
+ * a figure is baked in, from the scene it stands in rather than the fixed top-left FIGURE_LIGHT. The key is the sun
+ * (or the moon, or a room's window light: walk/lighting.js mapSun) and the lamps near the figure, each by how strongly
+ * it reaches it (the shader's falloff, engine/webgl.js points); it is turned into the camera's frame and stepped (16
+ * ways round, 15 degree heights) so the pictures are shared. `flat` is how much of the light is the sky's (an
+ * overcast day, the night, a room: softer forms); keyT and ambT tint the lit side by the key's colour and the shade by
+ * the sky's; the back rim comes from the side away from the key in the sky's colour, stronger after dark.
+ * @param {{ sunDir: number[], sunCol: number[], amb?: number[], lamps?: { p: number[], r: number, c: number[], pool?: number, src?: unknown }[],
+ *   at?: number[] | null, right: number[], fwd: number[], dark?: number }} S
+ * @returns {{ L: Vec3, flat: number, keyT: Vec3, ambT: Vec3, rim: Vec3, rimCol: Vec3, rimK: number, key: string }}
+ */
+export function figureSceneLight(S) {
+  const lum = (/** @type {number[]} */ c) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2],
+    sd = S.sunDir,
+    sunI = lum(S.sunCol) * Math.max(0, Math.min(1, sd[1] * 3 + 0.15)),
+    K = [sd[0] * sunI, sd[1] * sunI, sd[2] * sunI],
+    KC = S.sunCol.map(v => v * sunI);
+  let total = sunI;
+  if (S.at && S.lamps)
+    for (const l of S.lamps) {
+      /* not a pool on the ground, nor the lantern you carry (it lights the place round you, not you from behind) */
+      if (l.pool || l.src === 'lantern') continue;
+      const d = [l.p[0] - S.at[0], l.p[1] - S.at[1], l.p[2] - S.at[2]],
+        len = Math.hypot(d[0], d[1], d[2]),
+        x = Math.min(1, len / Math.max(0.01, Math.abs(l.r)));
+      if (x >= 1 || len < 1e-3) continue;
+      const f = ((1 - x * x) * (1 - x * x)) / (1 + len * len * 0.6),
+        I = lum(l.c) * f;
+      for (let i = 0; i < 3; i++) {
+        K[i] += (d[i] / len) * I;
+        KC[i] += l.c[i] * f;
+      }
+      total += I;
+    }
+  /* into the camera's frame: x its right, y up, z into the view (level: the figure stands upright on its card) */
+  const rh = figureUnit([S.right[0], 0, S.right[2]]),
+    fh = figureUnit([S.fwd[0], 0, S.fwd[2]]),
+    kl = Math.hypot(K[0], K[1], K[2]);
+  let L = kl > 1e-4 ? [K[0] * rh[0] + K[2] * rh[2], K[1], K[0] * fh[0] + K[2] * fh[2]] : [...FIGURE_LIGHT];
+  /* stepped: 16 ways round the upright, heights 15 to 75 degrees (a light from below the figure's middle still lights
+     it from above: the ground and the sky fill the rest) */
+  const az = Math.round((Math.atan2(L[0], -L[2]) / (2 * Math.PI)) * 16) & 15,
+    el = Math.max(
+      1,
+      Math.min(
+        5,
+        Math.round((Math.asin(Math.max(-1, Math.min(1, L[1] / (Math.hypot(...L) || 1)))) * 180) / Math.PI / 15)
+      )
+    ),
+    a = (az / 16) * 2 * Math.PI,
+    e = (el * 15 * Math.PI) / 180;
+  L = [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
+  const amb = S.amb || [0.6, 0.65, 0.75],
+    ambI = lum(amb),
+    flat = Math.round(Math.max(0, Math.min(1, ambI / (ambI + total + 1e-3) - 0.2) * 1.4) * 4) / 4,
+    /* a colour's hue at the light's brightness, stepped to 1/16 */
+    hue = (/** @type {number[]} */ c, /** @type {number} */ k) => {
+      const l = lum(c);
+      return /** @type {Vec3} */ (
+        c.map(v => Math.round((1 + ((l > 1e-4 ? Math.max(0.55, Math.min(1.5, v / l)) : 1) - 1) * k) * 16) / 16)
+      );
+    },
+    keyT = hue(KC, 0.45),
+    ambT = hue(amb, 0.4),
+    dark = Math.round(Math.max(0, Math.min(1, S.dark ?? 0)) * 4) / 4,
+    rim = figureUnit([-L[0], 0.35, 0.6]),
+    rimCol = /** @type {Vec3} */ (hue(amb, 1).map(v => Math.min(248, Math.round((v * 200) / 8) * 8))),
+    rimK = 0.3 + 0.7 * dark;
+  return {
+    L: /** @type {Vec3} */ (L),
+    flat,
+    keyT,
+    ambT,
+    rim,
+    rimCol,
+    rimK,
+    key: `${az}.${el}.${flat}.${dark}.${keyT.join(',')}.${ambT.join(',')}`,
+  };
+}
 /** where the toon bands split, on the light's dot with a face's normal: above LIGHT the light band, above BASE the base;
  * above SHINE a glossy colour's shine (CH-3b: hair, shoes, lenses: the anime hair highlight); below DEEP the deep
  * shadow (CH-3b's fidelity pass: a fourth tone, so forms turn) */
@@ -153,14 +235,15 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86,
  * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour; `stripe` bands it
  * in a second colour every `every` metres of its height (from `from`) */
 /** @typedef {{ part: string, kind: string, at: Vec3, n: Vec3, w: number, h: number, col?: string,
- *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' | 'slant', dir?: number, t?: number }}
+ *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' | 'slant', dir?: number, t?: number, close?: boolean }}
  * FaceMark
  * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres, in colour `col`
  * (else the figure's colour named as its kind); `hollow` paints only its edge (a glasses frame); `min` how much it
  * must face the camera to show (else by kind: an eye 0.15, a mouth 0.25, anything else 0.2); `narrow` makes it a
  * pixel wide seen from the side, as an eye is; `shut` hides it in a blink; `glint: false` keeps an eye's own glint
  * off (the kit paints bigger ones); `shape` paints it as an oval, a smile's arc or a brow's cap (an arc the other
- * way up) once it is 3 pixels or more (a portrait). An 'eye' blinks and
+ * way up) once it is 3 pixels or more (a portrait); `close` shows it only in a close-up (90 px a metre or more: a
+ * portrait, a battle). An 'eye' blinks and
  * narrows to a pixel seen from the side; an eye 2 pixels wide and 3 tall or more gets a glint (CH-3b: brows, lashes,
  * glasses, a stache, freckles, a name tag are marks too) */
 /** @typedef {{ swing?: number, arms?: number, bounce?: number, lean?: number, hang?: number, head?: number }}
@@ -973,6 +1056,7 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
       facing = -(n[1] * -st + nz * ct) / (Math.hypot(nx, n[1], nz) || 1);
     /* the camera looks down, so a face's lower half faces it less: the eyes show the longest, the mouth the least */
     if (facing < (m.min ?? (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2))) continue;
+    if (m.close && ppm < 90) continue;
     /* an iris is on an open eye, and so is anything `shut` (an eye's shines) */
     if ((m.kind === 'iris' || m.shut) && P.blink) continue;
     let w = Math.max(1, Math.round(m.w * ppm)),

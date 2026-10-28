@@ -82,15 +82,18 @@ test('figure kit: the face faces the camera and blinks; glasses frame the eyes',
     };
   const front = marks(0, Math.PI),
     eyes = front.filter(m => m.kind === 'eye');
-  /* at 48 px a metre: each eye's lid, white, iris, pupil and two shines; glasses' frames and a shine on each lens */
+  /* at 48 px a metre: each eye's lid (a line: almond eyes under a heavy lid, not big chibi ones), white, iris, pupil
+     and a shine; glasses' frames and a shine on each lens */
   assert.equal(eyes.length, 2);
   assert.ok(
-    eyes.every(e => e.w >= 3 && e.h >= 2),
+    eyes.every(e => e.w >= 3 && e.w <= 6 && e.h >= 1),
     JSON.stringify(eyes)
   );
   for (const k of ['white', 'iris', 'pupil']) assert.equal(front.filter(m => m.kind === k).length, 2, k);
-  assert.ok(front.filter(m => m.kind === 'iris').every(m => m.w >= 3));
-  assert.equal(front.filter(m => m.kind === 'shine').length, 6);
+  assert.ok(front.filter(m => m.kind === 'iris').every(m => m.w >= 2));
+  assert.equal(front.filter(m => m.kind === 'shine').length, 4);
+  /* a close-up's own marks (the lid's crease, the lower lid) stay off at walking size */
+  assert.equal(front.filter(m => m.kind === 'crease' || m.kind === 'under').length, 0);
   assert.equal(front.filter(m => m.kind === 'glasses' && m.hollow).length, 2);
   /* the back of the head shows no face */
   assert.equal(marks(0, 0).filter(m => m.part !== 'torso').length, 0);
