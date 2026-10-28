@@ -242,7 +242,7 @@ export function battleFxHasAnim(id) {
 }
 /* VFX-10: a ramp's 8 colours as [r, g, b] (0-255), index 7 the white core, for whoever colours a strip of its own
    (VFX-15's scars); null for an id with no ramp */
-function battleRampRgb(id) {
+export function battleRampRgb(id) {
   const r = battleFxRampRows().find(x => x.id === id);
   return r ? r.rgb : null;
 }

@@ -53,12 +53,14 @@ import {
   trainerMetersPerPixel,
 } from './battle-stage.js';
 import { battleLookGhost } from './battle-looks.js';
+import { battleStageLookFrame } from './battle-stage-look.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { BATTLE_FX_KIND, battleFxHasAnim } from './walk/battle-fx.js';
+import { battleScarsEnd } from './walk/battle-scars.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -75,6 +77,7 @@ expose({
   battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
   battle3dRgb: [() => battle3dRgb, v => ((battle3dRgb = v), provide({ battle3dRgb }))],
+  battle3dScenePoint: [() => battle3dScenePoint, v => ((battle3dScenePoint = v), provide({ battle3dScenePoint }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
@@ -90,7 +93,7 @@ expose({
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dRgb, battle3dStart, battle3dStop, ribbonColour });
+provide({ battle3dLayout, battle3dRgb, battle3dScenePoint, battle3dStart, battle3dStop, ribbonColour });
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -216,6 +219,8 @@ export function battle3dLayout() {
 export function battle3dStop() {
   if (!battle3d.on) return;
   battle3d.on = false;
+  /* VFX-15: the battle's scars go (walk/battle-scars.js, four dithered steps) */
+  if (typeof battleScarsEnd === 'function') battleScarsEnd();
   walkView.battle = null;
   walkRenderer.bt = null;
   walkRenderer.camT = null;
@@ -525,12 +530,18 @@ function battle3dFrame() {
     impact,
     /* VFX-9: the chromatic flash, a pulse in the grade pass */
     caPulse: battleStageChromaticPulse(),
+    /* VFX-15: the stage's mood, the battle's weather look and the Sandstorm (battle-stage-look.js) */
+    stageLook: typeof battleStageLookFrame === 'function' ? battleStageLookFrame() : null,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
+}
+/* VFX-15: a point of the battle (battle space, metres) in the walk scene (battle-stage-look.js lays scars there) */
+function battle3dScenePoint(x, z) {
+  return battleTurnPoint(x, z, battle3d.yaw || 0, actionCenter, battle3d.off);
 }
 /* VFX-9: a Billie's white and dark flashes (s.white, s.dark: 0..1, white first, then dark, as rigTint laid them on
    the picture) as one colour and amount after the light: [r, g, b, a], or null with none */

@@ -117,6 +117,7 @@ import {
   fxWeather,
   fxXp,
 } from './effects.js';
+import { TRADE_XP } from './trade.js';
 import { makeBattle, newFieldState } from './battle-state.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1049,7 +1050,9 @@ export function award(e) {
  * @param {any} m @param {number} n */
 export const heldXp = (m, n) => {
   const run = (battleNow() && fxBattleRows(battleNow())) || [];
-  return fxXp([...run, ...(fxOfBillie(m, ITEMS) || [])], n);
+  /* ON-4: a Billie that came by a friend trade learns faster, as in Pokémon (the owner's pick over obedience) */
+  const traded = m && m.traded ? [{ kind: 'xp', mult: TRADE_XP }] : [];
+  return fxXp([...run, ...(fxOfBillie(m, ITEMS) || []), ...traded], n);
 };
 /** RL-12c: a held item's stat stages for a fighter as it takes the field (the battle's start: battle-state.js) */
 export function heldStages(k) {
