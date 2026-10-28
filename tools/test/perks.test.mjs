@@ -49,7 +49,8 @@ test('PK-4 relics: with a team of every type, every Perk of each rarity turns up
 });
 
 test('PK-4 relics: a Perk that needs a type is never offered without it, in a pick, a shelf or an event', () => {
-  const needy = Object.keys(PERKS).filter(id => PERKS[id].needs);
+  /* PK-5: the Perks that need a type (Magnet on a String needs bots: perks.test's own test) */
+  const needy = Object.keys(PERKS).filter(id => PERKS[id].needs && String(PERKS[id].needs).startsWith('team:'));
   assert.ok(needy.length >= 9, 'the type Perks need their types');
   for (const T of GAME_DATA.types.map(t => t.id)) {
     const team = [[T]],
@@ -61,7 +62,7 @@ test('PK-4 relics: a Perk that needs a type is never offered without it, in a pi
       got.add(R.perkShelf(r, 1, 1, PERKS, RULE, team));
       got.add(modules.encounters.encPerk(r, undefined, PERKS, RULE, team));
     }
-    for (const id of got) assert.ok(!PERKS[id] || !PERKS[id].needs || ok.has(id), `${id} offered to a ${T} team`);
+    for (const id of got) assert.ok(!PERKS[id] || !needy.includes(id) || ok.has(id), `${id} offered to a ${T} team`);
     assert.equal(ok.size, 1, `${T}: one type Perk fits`);
     assert.ok(
       [...ok].every(id => got.has(id)),
