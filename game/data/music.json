@@ -524,7 +524,7 @@
   }
  },
  "ui": {
-  "about": "SND-6: the buttons' four sounds (logic/ui-sounds.js); UI-16a: sheet, flip, count and toast for the UI's motions (ui-motion.js plays them). sounds: each a few notes (at and len in s, midi, wave, vol, slide: where the note ends, x its frequency). A disabled button makes cant; one whose data-a or class cancel names makes cancel, then confirm the same way; any other select",
+  "about": "SND-6: the buttons' four sounds (logic/ui-sounds.js); UI-16a: sheet, flip, count and toast for the UI's motions (ui-motion.js plays them); SY-3: stamp, the thunk when a stamp (pb-stamp) lands. sounds: each a few notes (at and len in s, midi, wave, vol, slide: where the note ends, x its frequency). A disabled button makes cant; one whose data-a or class cancel names makes cancel, then confirm the same way; any other select",
   "sounds": {
    "select": {
     "name": "the tick (as before)",
@@ -578,6 +578,14 @@
     "notes": [
      {"at":0,"midi":79,"len":0.06,"wave":"triangle","vol":0.035},
      {"at":0.07,"midi":84,"len":0.1,"wave":"triangle","vol":0.03}
+    ]
+   },
+   "stamp": {
+    "name": "placeholder: a stamp's thunk, a low drop with a click (Claude's draft, SY-3)",
+    "notes": [
+     {"at":0,"midi":40,"len":0.09,"wave":"triangle","vol":0.09,"slide":0.6},
+     {"at":0,"midi":28,"len":0.07,"wave":"square","vol":0.03,"slide":0.8},
+     {"at":0,"midi":72,"len":0.015,"wave":"p12","vol":0.025}
     ]
    }
   },
