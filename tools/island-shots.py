@@ -156,6 +156,8 @@ def main():
                 ('station', 'Skyline Station inland, from the east, and the portal over the sea', 'train_station', [34, 16, -26], [-2, 3, 2]),
                 ('station-rail', 'From the station toward the portal over the sea', 'train_station', [-5, 5, -6], [60, 20, 4]),
                 ('station-near', 'Skyline Station, its steps and platform, close', 'train_station', [12, 4, -9], [-2, 2, 1]),
+                # the portal itself (nothing but light, the owner 2026-10-28), from the station's side, level with it
+                ('portal', 'The portal close, from the station side', 'sky_portal', [-20, 0, 4], [0, 0, 0]),
                 ('lighthouse', 'The lighthouse on the cove', 'lighthouse', [-14, 10, -18], [0, 4, 0]),
                 ('windmill', 'The windmill by the farm', 'windmill', [-12, 8, -16], [0, 3, 0]),
                 ('town', 'The town round the square, from above', 'fountain', [-10, 34, -40], [0, 0, 4]),
@@ -169,7 +171,8 @@ def main():
             # beside a fountain, not in its basin (HB-10a: the hub's own spot is 3 m east of it)
             sx = p['x'] + (3 if k == 'fountain' else 0)
             fast.stand(pg, *pg.evaluate(f"walkablePointNear({sx},{p['z']})"), frames=4)
-            y = pg.evaluate(f"standingHeightAt({p['x']},{p['z']})")
+            # a prop floating over the ground (the portal): its own height, its middle 6.5 m over its base point
+            y = pg.evaluate(f"standingHeightAt({p['x']},{p['z']})") if not p.get('y') else p['y'] + 6.5
             pg.evaluate(f"walkView.opt.look=()=>({{eye:[{p['x'] + eye[0]},{y + eye[1]},{p['z'] + eye[2]}],tgt:[{p['x'] + tgt[0]},{y + tgt[1]},{p['z'] + tgt[2]}],fov:55}})")
             shot(name, label, [p['x'], p['z']])
         # the owner, 2026-10-28: the mountain, and the pond on its terrace with its fall and the river, from a free camera
