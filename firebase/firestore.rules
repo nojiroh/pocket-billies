@@ -17,6 +17,8 @@ rules_version = '2';
 //                           signed in, 20 at a time
 //   votes/<entry>_<k>_<uid> ON-3: one account's vote on one entry ({ e, k, by, t }); the entry's v goes up by one in
 //                           the same batch, and down by one when the vote is taken back
+//   offers/<a>_<b>          ON-4: a trade between two friends (a < b): what each side gives, each side's ok on the
+//                           offer's version, gave / received / took back marks; read by the two players only
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -234,6 +236,85 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.by == me()
         && (!exists(entry(resource.data)) || get(entry(resource.data)).data.k != resource.data.k
           || getAfter(entry(resource.data)).data.v == get(entry(resource.data)).data.v - 1);
+    }
+
+    // ON-4: a trade between two friends (js/trade.js, js/logic/trade.js). One live offer per pair, offers/<a>_<b> with
+    // a < b; side 'a' or 'b' is which of the two you are. Each side writes only its own fields. The steps:
+    //   1 my give (up to 3 things, each an online copy as JSON text) changes: the version v goes up, so no ok stands
+    //   2 my ok: the version I agreed to (o_ == v), or 0 to take it back; both oks on v lock the gives
+    //   3 I gave (d_): only when locked, with my save written in the same batch (its t is this write's time)
+    //   4 I received (r_): only after both gave, with my save in the same batch
+    //   closing: cancel while nobody gave; refused (what came failed the game's check) while they haven't received;
+    //   stale when I gave 7 days ago and they never did; then a side that gave takes its things back (k_, with its
+    //   save). Deleted once both received, or once closed with every giver's things back.
+    // Spark has no server: the rules can't read a save, so a cheater can mark "gave" and keep the thing, or restore
+    // their save after (docs/SECURITY.md). Tested by firebase/test/offers.test.mjs.
+    match /offers/{id} {
+      function sideOf(d) { return me() == d.a ? 'a' : 'b'; }
+      function otherOf(d) { return me() == d.a ? 'b' : 'a'; }
+      function party(d) { return d.a == me() || d.b == me(); }
+      function savedNow() {
+        return getAfter(/databases/$(database)/documents/saves/$(me())).data.t == request.time;
+      }
+      function friendsBoth(a, b) {
+        return a in get(/databases/$(database)/documents/users/$(b)).data.get('friends', [])
+          && b in get(/databases/$(database)/documents/users/$(a)).data.get('friends', []);
+      }
+      allow get: if signedIn() && (resource == null || party(resource.data));
+      allow list: if signedIn() && party(resource.data);
+      allow create: if signedIn() && validOffer(request.resource.data) && party(request.resource.data)
+        && request.resource.data.a < request.resource.data.b
+        && id == request.resource.data.a + '_' + request.resource.data.b
+        && request.resource.data.v == 1 && request.resource.data.oa == 0 && request.resource.data.ob == 0
+        && !request.resource.data.da && !request.resource.data.db && !request.resource.data.ra
+        && !request.resource.data.rb && !request.resource.data.ka && !request.resource.data.kb
+        && request.resource.data.ta == 0 && request.resource.data.tb == 0
+        && request.resource.data.x == '' && request.resource.data.by == ''
+        && request.resource.data['g' + otherOf(request.resource.data)].size() == 0
+        && request.resource.data['n' + otherOf(request.resource.data)] == ''
+        && friendsBoth(request.resource.data.a, request.resource.data.b)
+        && !blocked(request.resource.data[otherOf(request.resource.data)], me());
+      // one step of the list above: R before, N after, K the keys it changes, s my side, o the other
+      function step(R, N, K, s, o) {
+        return (K.hasOnly(['g' + s, 'n' + s, 'v', 't']) && R.x == '' && !R.da && !R.db && N.v == R.v + 1)
+          || (K.hasOnly(['o' + s, 't']) && R.x == '' && !R.da && !R.db && N['o' + s] in [0, R.v])
+          || (K.hasOnly(['d' + s, 't' + s, 't']) && R.x == '' && R.oa == R.v && R.ob == R.v && R.ga.size() > 0
+            && R.gb.size() > 0 && !R['d' + s] && N['d' + s] == true && N['t' + s] == request.time && savedNow())
+          || (K.hasOnly(['r' + s, 't']) && R.x == '' && R['d' + s] && R['d' + o] && !R['r' + s] && N['r' + s] == true
+            && savedNow())
+          || (K.hasOnly(['x', 'by', 't']) && R.x == '' && N.by == me() && (
+            (N.x == 'cancel' && !R.da && !R.db)
+            || (N.x == 'refused' && R['d' + o] && !R['r' + o] && !R['r' + s])
+            || (N.x == 'stale' && R['d' + s] && !R['d' + o] && request.time > R['t' + s] + duration.value(7, 'd'))))
+          || (K.hasOnly(['k' + s, 't']) && R.x in ['refused', 'stale'] && R['d' + s] && !R['k' + s]
+            && N['k' + s] == true && savedNow());
+      }
+      allow update: if signedIn() && party(resource.data) && validOffer(request.resource.data)
+        && step(resource.data, request.resource.data, request.resource.data.diff(resource.data).affectedKeys(),
+          sideOf(resource.data), otherOf(resource.data));
+      allow delete: if signedIn() && party(resource.data) && ((resource.data.ra && resource.data.rb)
+        || resource.data.x == 'cancel'
+        || (resource.data.x in ['refused', 'stale'] && (!resource.data.da || resource.data.ka)
+          && (!resource.data.db || resource.data.kb)));
+    }
+    function offerThing(e) {
+      return e is map && e.keys().hasOnly(['k', 'd']) && e.k in ['b', 'e', 'p'] && e.d is string && e.d.size() <= 16000;
+    }
+    function offerGive(g) {
+      return g is list && g.size() <= 3 && (g.size() < 1 || offerThing(g[0])) && (g.size() < 2 || offerThing(g[1]))
+        && (g.size() < 3 || offerThing(g[2]));
+    }
+    function validOffer(d) {
+      return d.keys().hasOnly(['a', 'b', 'na', 'nb', 'ga', 'gb', 'oa', 'ob', 'da', 'db', 'ta', 'tb', 'ra', 'rb', 'ka',
+          'kb', 'x', 'by', 't', 'v'])
+        && d.size() == 20
+        && shortText(d.a, 128) && shortText(d.b, 128) && shortText(d.na, 40) && shortText(d.nb, 40)
+        && offerGive(d.ga) && offerGive(d.gb)
+        && d.v is int && d.oa is int && d.ob is int
+        && d.da is bool && d.db is bool && d.ra is bool && d.rb is bool && d.ka is bool && d.kb is bool
+        && (d.ta == 0 || d.ta is timestamp) && (d.tb == 0 || d.tb is timestamp)
+        && d.x in ['', 'cancel', 'refused', 'stale'] && shortText(d.by, 128)
+        && d.t == request.time;
     }
 
     function validRequest(d) {
