@@ -2,6 +2,75 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Region map track WM-6 - a region's look: town districts, landmarks, route numbers on signposts and the map - 2026-10-27
+Branch `claude/wm-6-region-look` (made from main at 07c9b284, which held WM-3a/3b, WM-4a/4b, WM-5a and WM-7;
+`track/worldmap` with WM-5b merged in before the PR), PR into `track/worldmap`. Run with the plan approved in advance
+(the owner's standing instruction for this step). During the session the owner asked to be asked before design choices.
+Every choice made until then was put to them, and they kept all four as built (below). Suggested tag `wm-6-done` (sessions
+can't push tags).
+- **Claims checked against the code**: `mapgenTownPlan`/`mapgenStageTown` and the sizes (`MAPGEN_TOWN_SIZES`: hamlet 2
+  cells, village 4, town 6) are as WM-5a's entry says. **Signposts at the seams already existed** (RT-3,
+  `mapgenStageProps`: one by each exit, tapped "You're in <place>."). They were not tied to their exit, and nothing
+  numbered routes. Real water can't be painted at the town stage: the water stage lowers and carves it before the
+  streets. So "a park or pond" means a park, by the place's own pond when it has one. Props flagged `landmark: 1`
+  exist (the great oak with a swing, giant sunflower, windmill, lookout tower, lighthouse); the clock tower and the
+  great cherry are town props.
+- logic/mapgen.js (**MAPGEN_VERSION 25**; WM-5b kept 24, so 25 stands after the merge):
+  - `mapgenTownDistricts`, after the houses and before the plots, on its own random stream ('lots', '|districts'), so
+    houses and plots draw as before. **The park** is a lawn (10 x 7 m in a hamlet, 13 x 8 in a village, 16 x 9 in a
+    town) beside the through road, south of it first and as near the square as it fits. It goes by the place's pond
+    first, and anywhere within 64 m when the road has no room. It has the biome's trees at its back corners,
+    flowerbeds along its front, two benches facing the camera, a lamp, and **the landmark** in the middle.
+    **The farm edge** is a field of farm soil (10 x 6 to 16 x 8 m) toward the place's far end from the square. It has
+    crop rows, hay at its back (a second stack in a village or town), a scarecrow in a village or town, and a fence
+    along its front. Each district keeps off roads, verges, water, banks, tall grass, lots and exits, on ground
+    spreading at most 1.5 m. One with no room is left out (null, no note). `scene.town.districts` is `{ park, farm,
+    landmark }`.
+  - `MAPGEN_TOWN_SET.landmarks` by size: hamlet `tree_giant_swing`, village `tree_blossom_great`, town `clock_tower`,
+    each with `statue` as the fallback; a biome's town set may name its own. No new art.
+  - An exit's signpost carries `exit` (its edge exit's id).
+- logic/run-scenes.js:
+  - `runRouteNumbers` numbers the main path's route-like places (nodeTypes routeLike: route, rival, ghost, scrapyard,
+    leader) from the landing out: by step, then west to east, then south to north. A side area's places keep their
+    name.
+  - `runPlaceSign` reads "Route 3", or the place's name through `runPlaceName` (WM-5b's name function, not changed).
+  - `runSignposts`: each exit's sign shows that as a label over it in the walk (the label pill the notice board
+    uses; walk-view.js untouched). Tapped, it says "Route 1, Thicket Route. East: Route 3.", or for a town "Meadow
+    Hamlet. East: Route 6.". A sign by a side area's door, or out of one, names only its own place.
+  - A run's location row carries `routeNo`.
+- world-bowl.js `worldBowlName`: a numbered place's map label reads "Route 3", a town and the rest their names. Only the
+  label's text changed; UI-8c's font change (`worldBowlFont`, PR #281) merges with no conflict in world-bowl.js (tried
+  with `git merge-tree`; only the generated art-code-refs.json conflicts, regenerate it).
+- self-test.js: the in-game full test reads an exit's sign (its words now hold the number and the way on too).
+- Stall and givers: left where WM-5a/5b put them; no district moved them.
+- **The owner's answers** (asked during the session, each built before it was asked; all kept as built):
+  - all four districts at every size, the park and the farm edge scaling with size;
+  - the landmarks: oak / cherry / clock, the statue as the fallback;
+  - signposts: "Route 3" over the sign, the place and the way on when tapped;
+  - the map: "Route 3" for numbered places, names for towns.
+- Tests: mapgen-town (new: every size's 72 fixed towns have a park on lawn with the size's landmark and a farm edge on
+  farm soil with crops, apart and off the square, nothing unreachable, at least 95% / 90%; run towns have both), new
+  run-signs.test.mjs (slow tier: numbers 1..n with no gaps and never lower on a later step; every exit's sign label
+  and words). Remade on purpose: rng's scene hash (a route: gen.v, then the signs' `exit`), run-start (mapgenV),
+  mapgen-golden (props hashes only: the signs' `exit`; tiles, heights and counts unchanged).
+- Measured in Node at WM-5b's sizes, 40 runs over Expeditions I-V: 159 towns, every one with a park, 158 with a farm
+  edge. A run town's scene takes about 42 ms for a hamlet, 84 ms for a village and 126 ms for a town.
+- **Pictures for the owner** (headless Chromium, the Studio's Generate card as WM-5a made them; not in git): each size
+  from above and in the preview at its park, farm edge and square (hamlet in meadow, village in lake, town in autumn
+  with the clock tower), and the run fixture's Route 1 with its signpost's "Route 1" label and its words.
+- **Found, not fixed**: on the world map, your figure (drawn beside the pin after the label) covers the end of the
+  label where you stand ("Route 1" reads "Route"); towns' names the same. Older than WM-6; UI-18 (less clutter on
+  the Map) is the place for it. Unrevealed places keep their names to themselves as before, numbers included.
+- Verified: lint, typecheck, format, check:modules, art-code-refs; unit tests quick tier 1576 pass, slow tier 108 of 108
+  (after the WM-5b merge); check-fast's run pages 14 of 14 on the merged branch (the run's world and its seam, the
+  helper thread's places equal to the page's, waystations, the shop, held items, salvage, the town's life and quest,
+  the village's stall, the battle held, the leader's arena, Blake, Play this seed, the world map). Before the merge
+  one run had "A run's world" fail after the seam crossing (the known slow-runner failure); it passed after.
+  QUICK_RESULT
+- Risky: a run's towns are a little bigger in props (a park and a field: about 20-40 more props) and take slightly
+  longer to make; frame times in a 3 x 2 town on the phone (the clock tower, the park's trees) are unmeasured.
+- Next: UI-18 (less clutter on the Map) from this branch; WM-8 (ledges and loops). The owner looks at the pictures.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's

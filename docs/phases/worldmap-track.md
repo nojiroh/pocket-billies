@@ -124,6 +124,23 @@ the in-game checks. MAPGEN_VERSION 24 (22 is RT-4b's on `track/routes`, 23 left 
   fixed box round a town's road; nothing kept a tall-grass patch at a town's edge.
 - Measured in Node: a run's town 34 ms; the TW-1 stage at 128 x 128 57 ms and 192 x 128 73 ms; a run's places 1.2-4.3 s.
 
+## WM-6's answers and what it found (2026-10-27)
+
+Built on `claude/wm-6-region-look` with the plan approved in advance; the owner then asked to be asked about design
+choices and kept all four as built:
+- **Districts**: every size gets the square, homes, a park and a farm edge (a fenced field of crop rows); the park sits
+  by the place's own pond when it has one; sizes and extras grow with the town.
+- **Landmarks** (existing props, in the park's middle): hamlet the great oak with a swing, village the great cherry,
+  town the clock tower; the statue as the fallback.
+- **Signposts**: the existing signpost by each exit shows "Route 3" (a town its name) over it; tapped: "Route 3,
+  Meadow Route. East: Meadow Hamlet."
+- **World map**: a numbered place is labelled "Route 3", towns by name.
+
+- Found: signposts by the exits already existed (RT-3), not tied to their exit; real water can't be painted at the
+  town stage (the water stage lowers and carves it first), so the park uses an existing pond; route numbers are per
+  run, from the landing out, main path only (a side area keeps its name). On the world map your figure covers the end
+  of the label where you stand (older than WM-6).
+
 ## Risks
 
 - Bigger places cost generation time on the phone (18-600 ms a place in Node today); LD-4's helper thread covers the
